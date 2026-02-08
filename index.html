@@ -1,0 +1,2638 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Practice Script & Playbook</title>
+    <link rel="stylesheet" href="css/styles.css" />
+  </head>
+  <body>
+    <h1>🏈 Practice Script & Playbook</h1>
+
+    <!-- Upload Section -->
+    <div id="uploadSection" class="upload-section">
+      <div class="upload-box">
+        <button
+          id="backToAppBtn"
+          class="back-btn"
+          onclick="backToApp()"
+          style="display: none"
+        >
+          ← Back to App
+        </button>
+        <h2>📁 Upload Your Playbook CSV</h2>
+        <p>Upload your CSV file (headers excluded) to get started</p>
+        <input
+          type="file"
+          id="csvFile"
+          accept=".csv"
+          onchange="handleFileUpload(event)"
+        />
+        <button
+          class="btn btn-primary"
+          onclick="document.getElementById('csvFile').click()"
+        >
+          Choose CSV File
+        </button>
+        <p class="hint">Or drag and drop your file here</p>
+
+        <div class="backup-section">
+          <h3>💾 Backup & Restore</h3>
+          <p>
+            Export your playbook, scripts, and wristbands to a file for backup
+          </p>
+          <div class="backup-buttons">
+            <button class="btn btn-secondary" onclick="exportBackup()">
+              ⬇️ Export Backup
+            </button>
+            <input
+              type="file"
+              id="backupFile"
+              accept=".json"
+              onchange="importBackup(event)"
+              style="display: none"
+            />
+            <button
+              class="btn btn-secondary"
+              onclick="document.getElementById('backupFile').click()"
+            >
+              ⬆️ Import Backup
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div id="mainApp" style="display: none">
+      <div class="tabs">
+        <button class="tab active" onclick="showTab('playbook')">
+          Playbook
+        </button>
+        <button class="tab" onclick="showTab('script')">
+          Practice Script Builder
+        </button>
+        <button class="tab" onclick="showTab('wristband')">
+          Wristband Maker
+        </button>
+        <button class="tab" onclick="showTab('tendencies')">
+          Def Tendencies
+        </button>
+        <button class="tab" onclick="showTab('callsheet')">Call Sheet</button>
+        <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
+        <button class="tab" onclick="showUpload()">📁 Load New CSV</button>
+      </div>
+
+      <!-- Playbook Panel -->
+      <div id="playbook" class="panel active">
+        <!-- Quick Stats Bar -->
+        <div class="stats-bar" id="statsBar"></div>
+
+        <!-- Toolbar -->
+        <div class="playbook-toolbar">
+          <div class="column-toggle">
+            <button
+              class="btn btn-sm"
+              onclick="toggleColumnMenu()"
+              title="Toggle Columns"
+            >
+              ⚙️ Columns
+            </button>
+            <div class="column-menu" id="columnMenu">
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('type')"
+                />
+                Type</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('formation')"
+                />
+                Formation</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('tags')"
+                />
+                Tags</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('back')"
+                />
+                Back</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('motion')"
+                />
+                Motion</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('protection')"
+                />
+                Protection</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('play')"
+                />
+                Play</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('basePlay')"
+                />
+                Base Play</label
+              >
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('tempo')"
+                />
+                Tempo</label
+              >
+            </div>
+          </div>
+          <div class="wristband-highlight">
+            <select
+              id="playbookWristbandHighlight"
+              onchange="highlightWristbandPlays()"
+              title="Highlight plays on wristband"
+            >
+              <option value="">🏈 Highlight Wristband</option>
+            </select>
+          </div>
+          <div class="backup-buttons">
+            <button
+              class="btn btn-sm"
+              onclick="exportBackup()"
+              title="Export all data"
+            >
+              📥 Export Backup
+            </button>
+            <button
+              class="btn btn-sm"
+              onclick="document.getElementById('importBackupFile').click()"
+              title="Import backup"
+            >
+              📤 Import Backup
+            </button>
+            <input
+              type="file"
+              id="importBackupFile"
+              accept=".json"
+              style="display: none"
+              onchange="importBackup(event)"
+            />
+            <button
+              class="btn btn-sm"
+              onclick="showStorageInfo()"
+              title="View storage usage"
+            >
+              💾 Storage Info
+            </button>
+          </div>
+          <button
+            class="btn btn-sm"
+            onclick="showKeyboardShortcuts()"
+            title="Keyboard shortcuts"
+          >
+            ⌨️ Shortcuts
+          </button>
+        </div>
+
+        <div class="filters">
+          <select id="filterType" onchange="filterPlays()">
+            <option value="">All Play Types</option>
+          </select>
+          <select id="filterFormation" onchange="filterPlays()">
+            <option value="">All Formations</option>
+          </select>
+          <select id="filterBasePlay" onchange="filterPlays()">
+            <option value="">All Base Plays</option>
+          </select>
+          <input
+            type="text"
+            id="searchPlay"
+            placeholder="Search plays..."
+            oninput="filterPlays()"
+          />
+          <button class="btn btn-primary" onclick="clearFilters()">
+            Clear Filters
+          </button>
+          <span id="playCount" class="play-count"></span>
+        </div>
+        <div class="table-container" tabindex="0" id="playbookContainer">
+          <table id="playbookTable" class="sortable">
+            <thead>
+              <tr>
+                <th onclick="sortPlaybook('type')">
+                  Type <span class="sort-icon" data-col="type"></span>
+                </th>
+                <th onclick="sortPlaybook('formation')">
+                  Formation <span class="sort-icon" data-col="formation"></span>
+                </th>
+                <th onclick="sortPlaybook('tags')">
+                  Tags <span class="sort-icon" data-col="tags"></span>
+                </th>
+                <th onclick="sortPlaybook('back')">
+                  Back <span class="sort-icon" data-col="back"></span>
+                </th>
+                <th onclick="sortPlaybook('motion')">
+                  Motion <span class="sort-icon" data-col="motion"></span>
+                </th>
+                <th onclick="sortPlaybook('protection')">
+                  Protection
+                  <span class="sort-icon" data-col="protection"></span>
+                </th>
+                <th onclick="sortPlaybook('play')">
+                  Play <span class="sort-icon" data-col="play"></span>
+                </th>
+                <th onclick="sortPlaybook('basePlay')">
+                  Base Play <span class="sort-icon" data-col="basePlay"></span>
+                </th>
+                <th onclick="sortPlaybook('tempo')">
+                  Tempo <span class="sort-icon" data-col="tempo"></span>
+                </th>
+              </tr>
+            </thead>
+            <tbody></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Practice Script Builder Panel -->
+      <div id="script" class="panel">
+        <div class="script-header-panel">
+          <div class="script-header-top">
+            <div class="script-title-group">
+              <label class="script-label">📋 Practice Title</label>
+              <input
+                type="text"
+                id="scriptName"
+                class="script-name-input"
+                value="Practice Script"
+                placeholder="e.g., Tuesday Team Install"
+              />
+            </div>
+            <div class="script-date-group">
+              <label class="script-label">📅 Date</label>
+              <input type="date" id="scriptDate" class="script-date-input" />
+            </div>
+          </div>
+        </div>
+
+        <div class="script-builder">
+          <div class="play-list">
+            <h3>
+              <span
+                >Available Plays
+                <span id="availablePlayCount" class="play-count">0</span></span
+              >
+              <button
+                class="btn btn-sm"
+                onclick="toggleFiltersCollapse()"
+                id="toggleFiltersBtn"
+                title="Toggle filters"
+              >
+                � Filters
+              </button>
+            </h3>
+
+            <div id="scriptFiltersContainer" class="filters-collapsible">
+              <div class="filter-actions-row">
+                <span
+                  id="activeFilterCount"
+                  class="active-filter-badge"
+                  style="display: none"
+                  >0 active</span
+                >
+                <button
+                  class="btn btn-sm"
+                  onclick="clearAllScriptFilters()"
+                  title="Clear all filters"
+                >
+                  ✖ Clear Filters
+                </button>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Play Type
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptTypeFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Personnel
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptPersonnelFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Situation
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptSituationFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Down
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptDownFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Distance
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptDistanceFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Hash
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptHashFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Field Position
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="scriptFieldPosFilters"
+                ></div>
+              </div>
+
+              <div class="filters" style="margin-bottom: 10px">
+                <select
+                  id="scriptFilterFormation"
+                  onchange="filterScriptPlays()"
+                  style="width: 100%"
+                >
+                  <option value="">All Formations</option>
+                </select>
+              </div>
+              <div class="filters" style="margin-bottom: 10px">
+                <select
+                  id="scriptFilterBasePlay"
+                  onchange="filterScriptPlays()"
+                  style="width: 100%"
+                >
+                  <option value="">All Base Plays</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filters" style="margin-bottom: 10px">
+              <input
+                type="text"
+                id="scriptSearchPlay"
+                placeholder="🔍 Search plays..."
+                oninput="filterScriptPlays()"
+                style="width: 100%"
+              />
+            </div>
+            <div class="available-plays-actions">
+              <button
+                class="btn btn-sm btn-primary"
+                onclick="addAllFilteredToScript()"
+                title="Add all filtered plays to script"
+              >
+                ➕ Add All
+              </button>
+              <button
+                class="btn btn-sm btn-secondary"
+                onclick="addSelectedToScript()"
+                title="Add selected plays to script"
+              >
+                ✓ Add Selected
+              </button>
+              <label class="select-all-label">
+                <input
+                  type="checkbox"
+                  id="selectAllAvailable"
+                  onchange="toggleSelectAllAvailable()"
+                />
+                All
+              </label>
+            </div>
+            <div class="available-plays-container" id="availablePlays"></div>
+          </div>
+          <div class="script-list">
+            <h3>
+              <span
+                >Script <span id="scriptCount" class="play-count">0</span></span
+              >
+              <div class="period-buttons">
+                <button class="btn btn-add-period" onclick="addSeparator()">
+                  ＋ Add Period
+                </button>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="insertPeriodFromTemplate()"
+                  title="Insert a saved period template"
+                >
+                  📋 From Template
+                </button>
+              </div>
+            </h3>
+
+            <div class="script-stats-bar">
+              <div class="stat-item">
+                <span class="stat-label">Plays</span>
+                <span class="stat-value" id="statPlays">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Reps</span>
+                <span class="stat-value" id="statReps">0</span>
+              </div>
+              <div class="stat-item run">
+                <span class="stat-label">Run</span>
+                <span class="stat-value" id="statRun">0</span>
+              </div>
+              <div class="stat-item pass">
+                <span class="stat-label">Pass</span>
+                <span class="stat-value" id="statPass">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Time</span>
+                <span class="stat-value" id="statTime">0</span
+                ><span class="stat-unit">min</span>
+              </div>
+              <div class="stat-item ratio" id="statRatioContainer">
+                <span class="stat-label">R/P</span>
+                <span class="stat-value" id="statRatio">-</span>
+              </div>
+            </div>
+
+            <!-- Script Toolbar -->
+            <div class="script-toolbar">
+              <div class="script-toolbar-left">
+                <label class="bulk-select-label">
+                  <input
+                    type="checkbox"
+                    id="bulkSelectAll"
+                    onchange="selectAllScriptItems()"
+                  />
+                  <span>Select All</span>
+                </label>
+                <span id="bulkEditIndicator" class="bulk-indicator"></span>
+              </div>
+              <div class="script-toolbar-center">
+                <select id="scriptSortField" class="toolbar-sort-select">
+                  <option value="">Sort by…</option>
+                  <option value="personnel">Personnel</option>
+                  <option value="preferredSituation">Situation</option>
+                  <option value="type">Play Type</option>
+                  <option value="formation">Formation</option>
+                  <option value="preferredDown">Down</option>
+                  <option value="preferredDistance">Distance</option>
+                  <option value="preferredHash">Hash</option>
+                  <option value="preferredFieldPosition">Field Position</option>
+                </select>
+                <button
+                  class="btn btn-sm btn-primary toolbar-btn-sm"
+                  onclick="sortScript()"
+                  title="Sort all periods by selected field"
+                >
+                  Sort All
+                </button>
+                <button
+                  class="btn btn-sm toolbar-btn-xs"
+                  onclick="reverseScriptSort()"
+                  title="Reverse order in all periods"
+                >
+                  ↕️
+                </button>
+                <button
+                  class="btn btn-sm toolbar-btn-xs"
+                  onclick="openScriptCustomOrderModal()"
+                  title="Customize sort order for selected field"
+                >
+                  ⚙️ Order
+                </button>
+                <span id="scriptSortStatus" class="script-sort-status"></span>
+              </div>
+              <div class="script-toolbar-right">
+                <input
+                  type="text"
+                  id="scriptSearchBox"
+                  placeholder="🔍 Search script..."
+                  oninput="filterScriptItems()"
+                  class="script-search-input"
+                />
+              </div>
+            </div>
+
+            <div class="script-container" id="scriptPlays"></div>
+
+            <!-- Script Actions -->
+            <div class="script-actions">
+              <button
+                id="scriptUndoBtn"
+                class="btn btn-undo"
+                onclick="undoScript()"
+                disabled
+                title="Nothing to undo"
+              >
+                ↩️ Undo
+              </button>
+              <button
+                id="scriptRedoBtn"
+                class="btn btn-redo"
+                onclick="redoScript()"
+                disabled
+                title="Nothing to redo"
+              >
+                ↪️ Redo
+              </button>
+              <button
+                class="btn btn-sm btn-smart-script"
+                onclick="openSmartScript()"
+                title="Intelligently reorder all periods for realistic game flow"
+              >
+                🧠 Smart Script All
+              </button>
+              <button
+                class="btn btn-sm btn-scouting-fill"
+                onclick="autoFillDefenseFromTendencies()"
+                title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data"
+              >
+                🎯 Auto-Fill Defense
+              </button>
+              <button class="btn btn-success" onclick="generatePDF()">
+                📄 Print Script
+              </button>
+              <button class="btn btn-primary" onclick="saveScript()">
+                💾 Save Script
+              </button>
+              <button class="btn btn-danger" onclick="clearScript()">
+                🗑 Clear
+              </button>
+
+              <div class="more-tools-wrap">
+                <button
+                  class="more-tools-btn"
+                  onclick="this.parentElement.classList.toggle('open')"
+                  title="More tools"
+                >
+                  ⋯ More Tools
+                </button>
+                <div
+                  class="more-tools-menu"
+                  onclick="this.parentElement.classList.remove('open')"
+                >
+                  <button
+                    onclick="applyPreferredFields()"
+                    title="Apply preferred metadata to selected plays (or all if none selected)"
+                  >
+                    ★ Apply Preferred Fields
+                  </button>
+                  <button
+                    onclick="shuffleScript()"
+                    title="Randomly shuffle play order within periods"
+                  >
+                    🔀 Shuffle
+                  </button>
+                  <div class="tool-divider"></div>
+                  <button
+                    onclick="compareScripts()"
+                    title="Compare two saved scripts"
+                  >
+                    📊 Compare Scripts
+                  </button>
+                  <button
+                    onclick="mergeFromScript()"
+                    title="Merge plays from another script"
+                  >
+                    ➕ Merge From Script
+                  </button>
+                  <button
+                    onclick="copyPeriodToClipboard()"
+                    title="Copy a period to clipboard"
+                  >
+                    📋 Copy Period
+                  </button>
+                </div>
+              </div>
+            </div>
+
+            <div class="display-options-panel">
+              <div
+                class="display-options-header"
+                onclick="toggleDisplayOptions(this)"
+              >
+                <strong>🖨️ Print Options</strong>
+                <span class="toggle-icon">▼</span>
+              </div>
+              <div class="display-options-content">
+                <div class="display-options-btns">
+                  <button class="btn-mini" onclick="selectAllScriptOptions()">
+                    All
+                  </button>
+                  <button class="btn-mini" onclick="clearAllScriptOptions()">
+                    Clear
+                  </button>
+                </div>
+                <div class="display-options-grid">
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptShowEmoji"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    🔵 Personnel Color</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptUseSquares"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    🟦 Use Squares</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptUnderEmoji"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    🍑 Under = Peach</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptBoldShifts"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    <b>Bold</b> Shifts</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptRedShifts"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    <span class="red">Red</span> Shifts</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptItalicMotions"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    <i>Italic</i> Motions</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptRedMotions"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    <span class="red">Red</span> Motions</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptRemoveVowels"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    Remove Vowels</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptShowLineCall"
+                      checked
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    Show [Line Call]</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptHighlightHuddle"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    🟡 Highlight Huddle</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptHighlightCandy"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    🩷 Highlight Candy</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptShowWbNum"
+                      checked
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    Show WB#</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="scriptShowPrintPreview"
+                      onchange="renderScript();saveScriptDisplayOptions()"
+                    />
+                    👁️ Show Print Preview</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <div class="wristband-integration-panel">
+              <div
+                class="integration-header"
+                onclick="toggleIntegrationPanel(this)"
+              >
+                <strong>🏈 Wristband Integration</strong>
+                <span class="toggle-icon">▼</span>
+              </div>
+              <div class="integration-content">
+                <div class="wristband-loader-row">
+                  <select
+                    id="scriptWristbandSelect"
+                    onchange="loadWristbandForScript()"
+                  >
+                    <option value="">-- No Wristband --</option>
+                  </select>
+                  <label class="wristband-show-num">
+                    <input
+                      type="checkbox"
+                      id="showWristbandNums"
+                      onchange="renderScript()"
+                      checked
+                    />
+                    Show #
+                  </label>
+                </div>
+                <div class="wristband-actions-row">
+                  <button
+                    class="btn btn-sm"
+                    onclick="openLoadWristbandToScriptModal()"
+                    title="Add plays from a wristband to script"
+                  >
+                    ➕ Load Plays
+                  </button>
+                  <button
+                    class="btn btn-sm"
+                    onclick="highlightPlaysNotOnWristband()"
+                    title="Highlight plays not on selected wristband"
+                  >
+                    🔍 Find Missing
+                  </button>
+                </div>
+                <div id="scriptWristbandInfo" class="wristband-info"></div>
+              </div>
+            </div>
+
+            <div
+              class="saved-scripts"
+              id="savedScriptsSection"
+              style="display: none"
+            >
+              <div class="saved-scripts-header">
+                <h4>📁 Saved Scripts</h4>
+                <button
+                  class="btn btn-sm"
+                  onclick="deletePeriodTemplate()"
+                  title="Manage period templates"
+                  style="font-size: 11px"
+                >
+                  🗑 Templates
+                </button>
+              </div>
+              <div id="savedScriptsList"></div>
+            </div>
+
+            <div
+              class="full-day-section"
+              id="fullDaySection"
+              style="display: none"
+            >
+              <div class="full-day-header">
+                <h4>📅 Full Practice Day</h4>
+                <p class="full-day-desc">
+                  Combine multiple saved scripts into one printable document.
+                  Check the scripts you want to include:
+                </p>
+              </div>
+              <div id="fullDayScriptList" class="full-day-list"></div>
+              <div class="full-day-actions">
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="selectAllDayScripts()"
+                >
+                  ✅ Select All
+                </button>
+                <button
+                  class="btn btn-secondary btn-sm"
+                  onclick="clearDayScripts()"
+                >
+                  Clear
+                </button>
+                <button class="btn btn-success btn-sm" onclick="printFullDay()">
+                  🖨️ Print Full Day
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div id="previewContainer" class="script-preview" style="display: none">
+          <h2 id="previewTitle">Practice Script</h2>
+          <p
+            id="previewMeta"
+            style="text-align: center; margin-bottom: 15px"
+          ></p>
+          <div id="previewPeriodSummary" class="preview-period-summary"></div>
+          <table class="script-table">
+            <thead>
+              <tr>
+                <th style="width: 25px">#</th>
+                <th style="width: 30px">Hash</th>
+                <th style="width: 40px">Tempo</th>
+                <th style="width: 35px">WB#</th>
+                <th>Play Call</th>
+                <th style="width: 50px">Type</th>
+                <th style="width: 55px">Front</th>
+                <th style="width: 45px">Cov</th>
+                <th style="width: 50px">Stunt</th>
+                <th style="width: 45px">Blitz</th>
+                <th style="width: 30px">Reps</th>
+                <th style="width: 70px">Notes</th>
+              </tr>
+            </thead>
+            <tbody id="previewBody"></tbody>
+          </table>
+        </div>
+      </div>
+
+      <!-- Wristband Maker Panel -->
+      <div id="wristband" class="panel">
+        <div class="wristband-container">
+          <div class="wristband-plays">
+            <h3>
+              <span
+                >Available Plays
+                <span id="wbPlayCount" class="play-count">0</span></span
+              >
+              <button
+                class="btn btn-sm"
+                onclick="toggleWbFiltersCollapse()"
+                id="toggleWbFiltersBtn"
+                title="Toggle filters"
+              >
+                🔽 Filters
+              </button>
+            </h3>
+
+            <div id="wbFiltersContainer" class="filters-collapsible">
+              <div class="filter-actions-row">
+                <span
+                  id="wbActiveFilterCount"
+                  class="active-filter-badge"
+                  style="display: none"
+                  >0 active</span
+                >
+                <button
+                  class="btn btn-sm"
+                  onclick="clearAllWbFilters()"
+                  title="Clear all filters"
+                >
+                  ✖ Clear Filters
+                </button>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Personnel
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="wbPersonnelFilters"
+                ></div>
+              </div>
+
+              <div class="checkbox-filters collapsible-section">
+                <div
+                  class="checkbox-filters-title"
+                  onclick="toggleFilterSection(this)"
+                >
+                  ▶ Tempo
+                </div>
+                <div
+                  class="checkbox-group filter-content"
+                  id="wbTempoFilters"
+                ></div>
+              </div>
+
+              <div
+                class="filters"
+                style="margin-bottom: 10px; margin-top: 10px"
+              >
+                <select
+                  id="wbFilterType"
+                  onchange="filterWristbandPlays()"
+                  style="width: 100%"
+                >
+                  <option value="">All Play Types</option>
+                </select>
+              </div>
+            </div>
+
+            <div class="filters" style="margin-bottom: 10px">
+              <input
+                type="text"
+                id="wbSearchPlay"
+                placeholder="🔍 Search plays..."
+                oninput="filterWristbandPlays()"
+                style="width: 100%"
+              />
+            </div>
+            <div
+              class="available-plays-container"
+              id="wbAvailablePlays"
+              style="max-height: 350px"
+            ></div>
+          </div>
+
+          <div class="wristband-preview">
+            <h3>
+              <span>Wristband Cards</span>
+              <span style="font-weight: normal; font-size: 12px; color: #666"
+                >(Click cell to add/edit • Double-click play to add)</span
+              >
+            </h3>
+
+            <!-- Wristband Stats Bar -->
+            <div class="wb-stats-bar">
+              <div class="stat-item">
+                <span class="stat-label">Cards</span>
+                <span class="stat-value" id="wbStatCards">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Plays</span>
+                <span class="stat-value" id="wbStatPlays">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Empty</span>
+                <span class="stat-value" id="wbStatEmpty">0</span>
+              </div>
+              <div class="stat-item run">
+                <span class="stat-label">Run</span>
+                <span class="stat-value" id="wbStatRun">0</span>
+              </div>
+              <div class="stat-item pass">
+                <span class="stat-label">Pass</span>
+                <span class="stat-value" id="wbStatPass">0</span>
+              </div>
+              <div class="stat-item">
+                <span class="stat-label">Format</span>
+                <span
+                  class="stat-value"
+                  id="wbStatFormat"
+                  style="font-size: 11px"
+                  >5.5×3</span
+                >
+              </div>
+            </div>
+
+            <!-- Wristband Toolbar -->
+            <div class="wb-toolbar">
+              <div class="wb-toolbar-left">
+                <div class="color-picker">
+                  <span>Color:</span>
+                  <button
+                    class="color-btn color-btn-transparent active"
+                    onclick="setHeaderColor('transparent', this)"
+                    title="No fill (save ink)"
+                  ></button>
+                  <button
+                    class="color-btn"
+                    style="background: #333"
+                    onclick="setHeaderColor('#333', this)"
+                    title="Black"
+                  ></button>
+                  <button
+                    class="color-btn"
+                    style="background: #007bff"
+                    onclick="setHeaderColor('#007bff', this)"
+                  ></button>
+                  <button
+                    class="color-btn"
+                    style="background: #28a745"
+                    onclick="setHeaderColor('#28a745', this)"
+                  ></button>
+                  <button
+                    class="color-btn"
+                    style="background: #dc3545"
+                    onclick="setHeaderColor('#dc3545', this)"
+                  ></button>
+                  <button
+                    class="color-btn"
+                    style="background: #6f42c1"
+                    onclick="setHeaderColor('#6f42c1', this)"
+                  ></button>
+                  <button
+                    class="color-btn"
+                    style="background: #fd7e14"
+                    onclick="setHeaderColor('#fd7e14', this)"
+                  ></button>
+                </div>
+              </div>
+              <div class="wb-toolbar-right">
+                <button
+                  id="wristbandUndoBtn"
+                  class="btn btn-undo btn-sm"
+                  onclick="undoWristband()"
+                  disabled
+                  title="Nothing to undo"
+                >
+                  ↩️
+                </button>
+                <button
+                  id="wristbandRedoBtn"
+                  class="btn btn-redo btn-sm"
+                  onclick="redoWristband()"
+                  disabled
+                  title="Nothing to redo"
+                >
+                  ↪️
+                </button>
+                <button
+                  class="btn btn-success btn-sm"
+                  onclick="printWristband()"
+                >
+                  🖨️ Print
+                </button>
+                <button
+                  class="btn btn-primary btn-sm"
+                  onclick="saveWristband()"
+                >
+                  💾 Save
+                </button>
+                <button
+                  class="btn btn-danger btn-sm"
+                  onclick="clearWristband()"
+                >
+                  🗑 Clear
+                </button>
+                <button
+                  class="btn btn-sm"
+                  style="background: #6c757d; color: white"
+                  onclick="autoFillWristband()"
+                >
+                  ⚡ Auto-Fill
+                </button>
+              </div>
+            </div>
+
+            <div class="card-tabs" id="cardTabs"></div>
+            <div class="wristband-card" id="wristbandCard">
+              <div id="wristbandGrid" class="wristband-grid"></div>
+            </div>
+
+            <!-- Display Options Panel (collapsible) -->
+            <div class="display-options-panel wb-display-panel">
+              <div
+                class="display-options-header"
+                onclick="toggleWbDisplayOptions(this)"
+              >
+                <strong>🖨️ Display Options</strong>
+                <span class="toggle-icon">▼</span>
+              </div>
+              <div class="display-options-content">
+                <div class="display-options-btns">
+                  <button class="btn-mini" onclick="selectAllWbOptions()">
+                    All
+                  </button>
+                  <button class="btn-mini" onclick="clearAllWbOptions()">
+                    Clear
+                  </button>
+                </div>
+                <div class="display-options-grid">
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbShowEmoji"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    🔵 Personnel Color</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbUseSquares"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    🟦 Use Squares</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbUnderEmoji"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    🍑 Under = Peach</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbBoldShifts"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    <b>Bold</b> Shifts</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbRedShifts"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    <span class="red">Red</span> Shifts</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbItalicMotions"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    <i>Italic</i> Motions</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbRedMotions"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    <span class="red">Red</span> Motions</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbRemoveVowels"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    Remove Vowels</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbShowLineCall"
+                      checked
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    Show [Line Call]</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbHighlightHuddle"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    🟡 Highlight Huddle</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      id="wbHighlightCandy"
+                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                    />
+                    🩷 Highlight Candy</label
+                  >
+                </div>
+              </div>
+            </div>
+
+            <!-- Sort Panel (collapsible) -->
+            <div class="wb-sort-panel">
+              <div class="wb-sort-header" onclick="toggleWbSortPanel(this)">
+                <strong>🔄 Sort & Organize</strong>
+                <span class="toggle-icon">▼</span>
+              </div>
+              <div class="wb-sort-content">
+                <div class="wb-sort-toolbar">
+                  <button
+                    class="btn btn-sm btn-primary"
+                    onclick="applyWristbandSort()"
+                  >
+                    🔄 Apply Sort
+                  </button>
+                  <span class="wb-sort-divider">|</span>
+                  <select
+                    id="sortPresetDropdown"
+                    onchange="loadSortPreset()"
+                    style="padding: 3px 6px; font-size: 12px"
+                  >
+                    <option value="">-- Select Preset --</option>
+                  </select>
+                  <button
+                    class="btn btn-sm"
+                    onclick="saveSortPreset()"
+                    title="Save current sort as preset"
+                  >
+                    💾 Save
+                  </button>
+                  <button
+                    class="btn btn-sm btn-danger"
+                    onclick="deleteSortPreset()"
+                    title="Delete selected preset"
+                  >
+                    🗑️
+                  </button>
+                </div>
+                <div class="wb-sort-hint">
+                  Drag to reorder priority • Click ⚙️ to set custom value order
+                  • Click ↕ to toggle direction
+                </div>
+                <div id="sortCriteriaList" class="sort-criteria-list"></div>
+                <div class="wb-sort-actions">
+                  <button class="btn btn-sm" onclick="addSortCriteria()">
+                    + Add Sort Field
+                  </button>
+                  <label class="wb-sort-across-label">
+                    <input
+                      type="checkbox"
+                      id="sortAcrossCardsCheckbox"
+                      onchange="toggleSortAcrossCards()"
+                    />
+                    Sort across all cards
+                    <span
+                      title="When enabled, sorts ALL plays across all cards as one pool, then redistributes them starting from Card 1"
+                      style="cursor: help; color: #666"
+                      >ⓘ</span
+                    >
+                  </label>
+                </div>
+              </div>
+            </div>
+
+            <div
+              class="saved-scripts"
+              id="savedWristbandsSection"
+              style="display: none"
+            >
+              <h4>📁 Saved Wristbands</h4>
+              <div id="savedWristbandsList"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Game Week Dashboard Panel -->
+      <div id="dashboard" class="panel">
+        <div class="dash-container">
+          <!-- Opponent Selector Bar -->
+          <div class="dash-opponent-bar">
+            <div class="dash-opponent-left">
+              <h2 class="dash-title">📊 Game Week Dashboard</h2>
+              <div class="dash-opponent-select-group">
+                <label for="dashOpponentSelect" class="dash-label"
+                  >Active Opponent:</label
+                >
+                <select
+                  id="dashOpponentSelect"
+                  class="dash-select"
+                  onchange="onDashOpponentChange(this.value)"
+                >
+                  <option value="">— Select Opponent —</option>
+                </select>
+                <input
+                  type="text"
+                  id="dashWeekLabel"
+                  class="dash-week-input"
+                  placeholder="Week label (e.g. Week 3)"
+                  onchange="onDashWeekLabelChange(this.value)"
+                />
+              </div>
+            </div>
+            <div class="dash-opponent-right">
+              <span id="dashActiveOpponentBadge" class="dash-opp-badge"></span>
+            </div>
+          </div>
+
+          <!-- Game Week Notes -->
+          <div class="dash-notes-section" id="dashNotesSection">
+            <h3 class="dash-section-title">📝 Game Week Notes</h3>
+            <textarea id="dashNotesArea" class="dash-notes-textarea" placeholder="Scouting notes, reminders, adjustments, key matchups..." onchange="onDashNotesChange(this.value)" oninput="onDashNotesChange(this.value)"></textarea>
+          </div>
+
+          <!-- Status Cards Row -->
+          <div class="dash-cards" id="dashCards"></div>
+
+          <!-- Scouting Summary -->
+          <div class="dash-scouting-section" id="dashScoutingSection"></div>
+
+          <!-- Quick Links -->
+          <div class="dash-quick-links" id="dashQuickLinks"></div>
+        </div>
+      </div>
+
+      <!-- Defensive Tendencies Panel -->
+      <div id="tendencies" class="panel">
+        <div id="tendenciesContent"></div>
+      </div>
+
+      <!-- Call Sheet Panel -->
+      <div id="callsheet" class="panel">
+        <!-- Toolbar -->
+        <div class="cs-toolbar">
+          <div class="cs-toolbar-left">
+            <h2 class="cs-title">📋 Call Sheet</h2>
+            <div class="cs-toggle-group page-toggle">
+              <button
+                id="callsheetFrontBtn"
+                class="cs-toggle active"
+                onclick="switchCallSheetPage('front')"
+              >
+                Front
+              </button>
+              <button
+                id="callsheetBackBtn"
+                class="cs-toggle"
+                onclick="switchCallSheetPage('back')"
+              >
+                Back
+              </button>
+            </div>
+            <div class="cs-toggle-group orientation-toggle">
+              <button
+                id="callsheetPortraitBtn"
+                class="cs-toggle active"
+                onclick="setCallSheetOrientation('portrait')"
+                title="Portrait"
+              >
+                📄
+              </button>
+              <button
+                id="callsheetLandscapeBtn"
+                class="cs-toggle"
+                onclick="setCallSheetOrientation('landscape')"
+                title="Landscape"
+              >
+                📃
+              </button>
+            </div>
+          </div>
+          <div class="cs-toolbar-right">
+            <button
+              class="btn btn-primary btn-sm"
+              onclick="autoPopulateCallSheet()"
+            >
+              ⚡ Auto-Populate
+            </button>
+            <button
+              class="btn btn-secondary btn-sm"
+              onclick="openLoadWristbandModal()"
+            >
+              📋 Load Wristband
+            </button>
+            <span id="loadedWristbandDisplay" class="cs-wb-display"></span>
+            <button class="btn btn-success btn-sm" onclick="printCallSheet()">
+              🖨️ Print
+            </button>
+            <button class="btn btn-danger btn-sm" onclick="clearCallSheet()">
+              🗑️ Clear
+            </button>
+          </div>
+        </div>
+
+        <!-- Secondary Toolbar -->
+        <div class="cs-toolbar-secondary">
+          <button
+            class="cs-tool-btn cs-scouting-btn"
+            onclick="toggleScoutingOverlay()"
+            title="Show/hide opponent scouting intel on categories"
+            id="csScoutingToggle"
+          >
+            🎯 Scouting Intel
+          </button>
+          <button
+            class="cs-tool-btn"
+            onclick="toggleStatsPanel()"
+            title="Quick Stats"
+          >
+            📊 Stats
+          </button>
+          <button
+            class="cs-tool-btn"
+            onclick="toggleNotOnSheet()"
+            title="Plays not on sheet"
+          >
+            🔍 Not On Sheet
+          </button>
+          <button
+            class="cs-tool-btn"
+            onclick="openTemplatesModal()"
+            title="Save/Load Templates"
+          >
+            📁 Templates
+          </button>
+          <div class="cs-tool-divider"></div>
+          <button
+            class="cs-tool-btn"
+            onclick="smartReorderCategories()"
+            title="Auto-arrange for best print layout"
+          >
+            🧩 Smart Layout
+          </button>
+          <button
+            class="cs-tool-btn"
+            onclick="resetCategoryOrder()"
+            title="Reset category order"
+          >
+            ↩️ Reset Order
+          </button>
+          <div class="cs-tool-divider"></div>
+          <button
+            class="cs-tool-btn"
+            onclick="expandAllCategories()"
+            title="Expand all"
+          >
+            ▼ Expand All
+          </button>
+          <button
+            class="cs-tool-btn"
+            onclick="collapseAllCategories()"
+            title="Collapse all"
+          >
+            ▶ Collapse All
+          </button>
+        </div>
+
+        <!-- Unified Display & Format Bar -->
+        <div class="cs-unified-bar">
+          <div class="cs-unified-header" onclick="toggleCsPanel(this)">
+            <strong>⚙️ Display &amp; Format</strong>
+            <div class="cs-unified-header-right">
+              <select
+                id="csDisplayPreset"
+                class="cs-preset-select"
+                onchange="loadDisplayPreset(this.value)"
+                onclick="event.stopPropagation()"
+              >
+                <option value="">Presets...</option>
+                <option value="__all">✅ Show All Fields</option>
+                <option value="__minimal">📄 Minimal</option>
+                <option value="__gameday">🏈 Game Day</option>
+                <option value="__print_friendly">🖨️ Print Friendly</option>
+              </select>
+              <button
+                class="cs-preset-save-btn"
+                onclick="event.stopPropagation(); saveDisplayPreset()"
+                title="Save current as preset"
+              >
+                💾
+              </button>
+              <span class="toggle-icon">▼</span>
+            </div>
+          </div>
+          <div class="cs-unified-content">
+            <!-- Tab Buttons -->
+            <div class="cs-tab-bar">
+              <button
+                class="cs-tab active"
+                onclick="switchDisplayTab('fields', this)"
+              >
+                Fields
+              </button>
+              <button class="cs-tab" onclick="switchDisplayTab('format', this)">
+                Format
+              </button>
+              <button
+                class="cs-tab"
+                onclick="switchDisplayTab('borders', this)"
+              >
+                Borders
+              </button>
+            </div>
+
+            <!-- FIELDS TAB -->
+            <div class="cs-tab-content" id="csTabFields">
+              <div class="cs-field-actions">
+                <button class="btn btn-xs" onclick="csSelectAllFields(true)">
+                  Select All
+                </button>
+                <button class="btn btn-xs" onclick="csSelectAllFields(false)">
+                  Deselect All
+                </button>
+              </div>
+              <div class="display-options-grid cs-show-grid">
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowNumbers"
+                    onchange="renderCallSheet()"
+                    checked
+                  />
+                  WB#</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowPersonnel"
+                    onchange="renderCallSheet()"
+                    checked
+                  />
+                  Personnel</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowFormation"
+                    onchange="renderCallSheet()"
+                    checked
+                  />
+                  Formation</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowProtection"
+                    onchange="renderCallSheet()"
+                  />
+                  Protection</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowPlayName"
+                    onchange="renderCallSheet()"
+                    checked
+                  />
+                  Play</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowTags"
+                    onchange="renderCallSheet()"
+                  />
+                  Tags</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowMotion"
+                    onchange="renderCallSheet()"
+                  />
+                  Motion</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowLineCall"
+                    onchange="renderCallSheet()"
+                    checked
+                  />
+                  [Line Call]</label
+                >
+              </div>
+            </div>
+
+            <!-- FORMAT TAB -->
+            <div class="cs-tab-content" id="csTabFormat" style="display: none">
+              <div class="display-options-grid">
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetShowEmoji"
+                    onchange="renderCallSheet()"
+                  />
+                  🔵 Personnel Color</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetUseSquares"
+                    onchange="renderCallSheet()"
+                  />
+                  🟦 Use Squares</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetUnderEmoji"
+                    onchange="renderCallSheet()"
+                  />
+                  🍑 Under=Peach</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetBoldShifts"
+                    onchange="renderCallSheet()"
+                  />
+                  <b>Bold</b> Shifts</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetRedShifts"
+                    onchange="renderCallSheet()"
+                  />
+                  <span class="red">Red</span> Shifts</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetItalicMotions"
+                    onchange="renderCallSheet()"
+                  />
+                  <i>Italic</i> Motions</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetRedMotions"
+                    onchange="renderCallSheet()"
+                  />
+                  <span class="red">Red</span> Motions</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetRemoveVowels"
+                    onchange="renderCallSheet()"
+                  />
+                  Remove Vowels</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetHighlightHuddle"
+                    onchange="renderCallSheet()"
+                  />
+                  🟡 Huddle</label
+                >
+                <label
+                  ><input
+                    type="checkbox"
+                    id="callsheetHighlightCandy"
+                    onchange="renderCallSheet()"
+                  />
+                  🩷 Candy</label
+                >
+              </div>
+            </div>
+
+            <!-- BORDERS TAB -->
+            <div class="cs-tab-content" id="csTabBorders" style="display: none">
+              <div class="cs-border-row">
+                <span class="cs-border-section-label">By Play Type:</span>
+                <div class="cs-border-selectors">
+                  <label class="cs-border-label"
+                    ><span style="color: #dc3545">🔴</span>
+                    <select
+                      id="callsheetRedBorder"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="">None</option>
+                      <option value="run">Run</option>
+                      <option value="pass">Pass</option>
+                      <option value="rpo">RPO</option>
+                      <option value="screen">Screen</option>
+                      <option value="playaction">Play Action</option>
+                      <option value="quick">Quick</option>
+                      <option value="highlighted">Highlighted</option>
+                    </select></label
+                  >
+                  <label class="cs-border-label"
+                    ><span style="color: #007bff">🔵</span>
+                    <select
+                      id="callsheetBlueBorder"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="">None</option>
+                      <option value="run">Run</option>
+                      <option value="pass">Pass</option>
+                      <option value="rpo">RPO</option>
+                      <option value="screen">Screen</option>
+                      <option value="playaction">Play Action</option>
+                      <option value="quick">Quick</option>
+                      <option value="highlighted">Highlighted</option>
+                    </select></label
+                  >
+                  <label class="cs-border-label"
+                    ><span style="color: #28a745">🟢</span>
+                    <select
+                      id="callsheetGreenBorder"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="">None</option>
+                      <option value="run">Run</option>
+                      <option value="pass">Pass</option>
+                      <option value="rpo">RPO</option>
+                      <option value="screen">Screen</option>
+                      <option value="playaction">Play Action</option>
+                      <option value="quick">Quick</option>
+                      <option value="highlighted">Highlighted</option>
+                    </select></label
+                  >
+                  <label class="cs-border-label"
+                    ><span style="color: #fd7e14">🟠</span>
+                    <select
+                      id="callsheetOrangeBorder"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="">None</option>
+                      <option value="run">Run</option>
+                      <option value="pass">Pass</option>
+                      <option value="rpo">RPO</option>
+                      <option value="screen">Screen</option>
+                      <option value="playaction">Play Action</option>
+                      <option value="quick">Quick</option>
+                      <option value="highlighted">Highlighted</option>
+                    </select></label
+                  >
+                  <label class="cs-border-label"
+                    ><span style="color: #6f42c1">🟣</span>
+                    <select
+                      id="callsheetPurpleBorder"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="">None</option>
+                      <option value="run">Run</option>
+                      <option value="pass">Pass</option>
+                      <option value="rpo">RPO</option>
+                      <option value="screen">Screen</option>
+                      <option value="playaction">Play Action</option>
+                      <option value="quick">Quick</option>
+                      <option value="highlighted">Highlighted</option>
+                    </select></label
+                  >
+                </div>
+              </div>
+              <div class="cs-border-row">
+                <span class="cs-border-section-label">By Personnel:</span>
+                <div class="cs-border-selectors">
+                  <label class="cs-border-label">
+                    <select
+                      id="callsheetPersonnelBorder"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="">None</option>
+                      <option value="black">Black</option>
+                      <option value="blue">Blue</option>
+                      <option value="green">Green</option>
+                      <option value="yellow">Yellow</option>
+                      <option value="orange">Orange</option>
+                      <option value="red">Red</option>
+                      <option value="star">Star</option>
+                    </select>
+                    →
+                    <select
+                      id="callsheetPersonnelBorderColor"
+                      onchange="renderCallSheet()"
+                    >
+                      <option value="#dc3545">🔴 Red</option>
+                      <option value="#007bff">🔵 Blue</option>
+                      <option value="#28a745">🟢 Green</option>
+                      <option value="#fd7e14">🟠 Orange</option>
+                      <option value="#6f42c1">🟣 Purple</option>
+                    </select>
+                  </label>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cs-hint">
+          💡 Double-click plays to highlight • Right-click play to customize
+          (border, background, text style, notes) • Double-click headers to
+          rename • Drag plays to reorder • Drag category headers to rearrange •
+          Click ⋯ for category options
+        </div>
+
+        <!-- Stats Panel (hidden by default) -->
+        <div
+          id="csStatsPanel"
+          class="cs-stats-panel"
+          style="display: none"
+        ></div>
+
+        <!-- Not On Sheet Panel (hidden by default) -->
+        <div
+          id="csNotOnSheetPanel"
+          class="cs-not-on-sheet-panel"
+          style="display: none"
+        ></div>
+
+        <div id="callSheetGrid" class="callsheet-grid"></div>
+      </div>
+    </div>
+    <!-- End mainApp -->
+
+    <!-- Call Sheet Print Container -->
+    <div id="callSheetPrint" class="callsheet-print" style="display: none">
+      <div id="callSheetPrintContent"></div>
+    </div>
+
+    <!-- Call Sheet Play Picker Popup -->
+    <div
+      id="callSheetPickerOverlay"
+      class="cell-popup-overlay"
+      onclick="closeCallSheetPicker(event)"
+      style="display: none"
+    >
+      <div class="cell-popup cs-picker-popup" onclick="event.stopPropagation()">
+        <h3>➕ Add Play to Call Sheet</h3>
+
+        <!-- Filter Row 1 -->
+        <div class="cs-picker-filters">
+          <input
+            type="text"
+            id="callSheetPlaySearch"
+            class="cs-picker-search"
+            placeholder="Search anything — play, type, player, tags..."
+            oninput="populateCallSheetPlayList()"
+          />
+          <select
+            id="callSheetPickerPersonnel"
+            class="cs-picker-select"
+            onchange="populateCallSheetPlayList()"
+          >
+            <option value="">All Personnel</option>
+          </select>
+          <select
+            id="callSheetPickerFormation"
+            class="cs-picker-select"
+            onchange="populateCallSheetPlayList()"
+          >
+            <option value="">All Formations</option>
+          </select>
+        </div>
+        <!-- Filter Row 2 -->
+        <div class="cs-picker-filters">
+          <select
+            id="callSheetPickerPlayType"
+            class="cs-picker-select"
+            onchange="populateCallSheetPlayList()"
+          >
+            <option value="">All Types</option>
+          </select>
+          <select
+            id="callSheetPickerBack"
+            class="cs-picker-select"
+            onchange="populateCallSheetPlayList()"
+          >
+            <option value="">All Backs</option>
+          </select>
+          <select
+            id="callSheetPickerTempo"
+            class="cs-picker-select"
+            onchange="populateCallSheetPlayList()"
+          >
+            <option value="">All Tempos</option>
+          </select>
+          <select
+            id="callSheetPickerSort"
+            class="cs-picker-select"
+            onchange="populateCallSheetPlayList()"
+          >
+            <option value="">Default Order</option>
+            <option value="personnel">Sort by Personnel</option>
+            <option value="type">Sort by Play Type</option>
+            <option value="formation">Sort by Formation</option>
+            <option value="play">Sort by Play Name</option>
+            <option value="back">Sort by Back</option>
+            <option value="tempo">Sort by Tempo</option>
+            <option value="basePlay">Sort by Base Play</option>
+          </select>
+        </div>
+
+        <!-- Source Toggle -->
+        <div class="cs-picker-source">
+          <label class="cs-picker-source-label"
+            ><input
+              type="radio"
+              name="callSheetSource"
+              value="playbook"
+              checked
+              onchange="populateCallSheetPlayList()"
+            />
+            📚 Playbook</label
+          >
+          <label class="cs-picker-source-label"
+            ><input
+              type="radio"
+              name="callSheetSource"
+              value="wristband"
+              onchange="populateCallSheetPlayList()"
+            />
+            📋 From Loaded Wristband</label
+          >
+          <span id="pickerWristbandInfo" class="cs-picker-wb-info"></span>
+        </div>
+
+        <div id="csPickerMatchCount" class="cs-picker-match-count"></div>
+        <div id="callSheetPlayList" class="cs-picker-list"></div>
+        <div class="cs-picker-footer">
+          <button
+            class="btn btn-sm btn-secondary"
+            onclick="closeCallSheetPicker()"
+          >
+            Cancel
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Load Wristband Modal -->
+    <div
+      id="loadWristbandModal"
+      class="cell-popup-overlay"
+      onclick="closeLoadWristbandModal(event)"
+      style="display: none"
+    >
+      <div class="cell-popup cs-wb-modal" onclick="event.stopPropagation()">
+        <h3>📋 Load Wristband to Call Sheet</h3>
+        <p class="cs-wb-modal-desc">
+          Select a saved wristband to import plays with their wristband numbers.
+        </p>
+        <select id="loadWristbandSelect" class="cs-wb-modal-select">
+          <option value="">Select a wristband...</option>
+        </select>
+        <div class="cs-wb-modal-actions">
+          <button
+            class="btn btn-sm btn-secondary"
+            onclick="closeLoadWristbandModal()"
+          >
+            Cancel
+          </button>
+          <button
+            class="btn btn-sm btn-primary"
+            onclick="loadWristbandToCallSheet()"
+          >
+            Load Wristband
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wristband Print Container - Outside mainApp for printing -->
+    <div id="wristbandPrint" class="wristband-print" style="display: none">
+      <div id="wristbandPrintCards"></div>
+    </div>
+
+    <!-- Cell Edit Popup -->
+    <div
+      id="cellPopupOverlay"
+      class="cell-popup-overlay"
+      onclick="closeCellPopup(event)"
+    >
+      <div
+        class="cell-popup"
+        onclick="event.stopPropagation()"
+        style="min-width: 350px; max-width: 450px"
+      >
+        <h3 id="cellPopupTitle">📝 Edit Cell</h3>
+
+        <!-- Play Info (shown when cell has a play) -->
+        <div
+          id="cellPopupPlayInfo"
+          style="
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #f5f5f5;
+            border-radius: 5px;
+          "
+        >
+          <div
+            id="cellPopupPlayName"
+            style="font-size: 12px; margin-bottom: 8px"
+          ></div>
+          <button
+            onclick="removeCellPlayFromPopup()"
+            style="
+              background: #dc3545;
+              color: white;
+              border: none;
+              padding: 5px 12px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 11px;
+            "
+          >
+            🗑️ Remove Play
+          </button>
+          <button
+            onclick="showPlaySelector()"
+            style="
+              background: #17a2b8;
+              color: white;
+              border: none;
+              padding: 5px 12px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 11px;
+              margin-left: 5px;
+            "
+          >
+            🔄 Change Play
+          </button>
+        </div>
+
+        <!-- Play Selector (shown when adding/changing play) -->
+        <div
+          id="cellPopupPlaySelector"
+          style="display: none; margin-bottom: 15px"
+        >
+          <div style="margin-bottom: 10px">
+            <input
+              type="text"
+              id="cellPlaySearch"
+              placeholder="🔍 Search plays..."
+              style="
+                width: 100%;
+                padding: 8px;
+                border: 1px solid #ddd;
+                border-radius: 5px;
+                font-size: 13px;
+              "
+              oninput="filterCellPlays()"
+            />
+          </div>
+          <div
+            id="cellPlayList"
+            style="
+              max-height: 200px;
+              overflow-y: auto;
+              border: 1px solid #ddd;
+              border-radius: 5px;
+            "
+          ></div>
+        </div>
+
+        <!-- Color Customization -->
+        <div id="cellPopupColors">
+          <div class="cell-popup-row">
+            <label>On Two Cadence:</label>
+            <div style="display: flex; gap: 10px; align-items: center">
+              <label style="cursor: pointer; font-size: 14px"
+                ><input
+                  type="checkbox"
+                  id="cellOnTwo"
+                  style="margin-right: 5px"
+                />
+                💲 Add $ prefix</label
+              >
+            </div>
+          </div>
+
+          <div class="cell-popup-row">
+            <label>Background Color:</label>
+            <div class="color-swatches" id="bgColorSwatches">
+              <div
+                class="color-swatch"
+                style="background: transparent; border-style: dashed"
+                data-color=""
+                title="None"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #ffeb3b"
+                data-color="#ffeb3b"
+                title="Yellow"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #ff9800"
+                data-color="#ff9800"
+                title="Orange"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #f44336"
+                data-color="#f44336"
+                title="Red"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #e91e63"
+                data-color="#e91e63"
+                title="Pink"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #9c27b0"
+                data-color="#9c27b0"
+                title="Purple"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #2196f3"
+                data-color="#2196f3"
+                title="Blue"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #4caf50"
+                data-color="#4caf50"
+                title="Green"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #8bc34a"
+                data-color="#8bc34a"
+                title="Light Green"
+              ></div>
+            </div>
+          </div>
+
+          <div class="cell-popup-row">
+            <label>Text Color:</label>
+            <div class="color-swatches" id="textColorSwatches">
+              <div
+                class="color-swatch"
+                style="background: #000"
+                data-color="#000"
+                title="Black"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #fff; border-color: #999"
+                data-color="#fff"
+                title="White"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #f44336"
+                data-color="#f44336"
+                title="Red"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #2196f3"
+                data-color="#2196f3"
+                title="Blue"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #4caf50"
+                data-color="#4caf50"
+                title="Green"
+              ></div>
+              <div
+                class="color-swatch"
+                style="background: #9c27b0"
+                data-color="#9c27b0"
+                title="Purple"
+              ></div>
+            </div>
+          </div>
+        </div>
+
+        <div class="cell-popup-buttons">
+          <button
+            style="background: #6c757d; color: white"
+            onclick="closeCellPopup()"
+          >
+            Cancel
+          </button>
+          <button
+            id="cellPopupApplyBtn"
+            style="background: #28a745; color: white"
+            onclick="applyCellStyle()"
+          >
+            Apply
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Smart Script Modal -->
+    <div
+      class="modal-overlay"
+      id="smartScriptModal"
+      onclick="closeSmartScript()"
+    >
+      <div
+        class="modal-content smart-script-modal"
+        onclick="event.stopPropagation()"
+      >
+        <div class="smart-script-header">
+          <h3>🧠 Smart Script</h3>
+          <p class="smart-script-subtitle">
+            Intelligently reorder plays for realistic game-situation flow
+          </p>
+        </div>
+
+        <div class="smart-script-rules">
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleHashFlow" checked />
+              <span class="smart-rule-name">🏈 Hash Flow</span>
+            </label>
+            <p class="smart-rule-desc">
+              Next play starts on the hash matching where the previous play's
+              key player ends up (hit chart). Creates realistic field position
+              transitions.
+            </p>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightHashFlow"
+                min="1"
+                max="10"
+                value="8"
+              />
+              <span class="weight-value" id="ssWeightHashFlowVal">8</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleDownProgression" checked />
+              <span class="smart-rule-name">📊 Down Progression</span>
+            </label>
+            <p class="smart-rule-desc">
+              Every Nth play favors a specific down situation (e.g., every 3rd
+              play is a 3rd-down style).
+            </p>
+            <div class="smart-rule-config">
+              <label
+                >Every
+                <input
+                  type="number"
+                  id="ssDownCycle"
+                  value="3"
+                  min="2"
+                  max="10"
+                  class="smart-input-sm"
+                />
+                plays → favor down
+                <select id="ssDownTarget" class="smart-input-sm">
+                  <option value="3">3rd</option>
+                  <option value="2">2nd</option>
+                  <option value="1">1st</option>
+                </select>
+              </label>
+            </div>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightDownProg"
+                min="1"
+                max="10"
+                value="6"
+              />
+              <span class="weight-value" id="ssWeightDownProgVal">6</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleTypeVariety" checked />
+              <span class="smart-rule-name">🔀 Play Type Variety</span>
+            </label>
+            <p class="smart-rule-desc">
+              Avoids consecutive plays of the same type (Run, Drop, RPO, etc.).
+              Keeps the defense guessing.
+            </p>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightTypeVariety"
+                min="1"
+                max="10"
+                value="5"
+              />
+              <span class="weight-value" id="ssWeightTypeVarietyVal">5</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRulePersonnelCluster" />
+              <span class="smart-rule-name">👥 Personnel Clustering</span>
+            </label>
+            <p class="smart-rule-desc">
+              Groups consecutive plays by personnel to minimize substitution
+              time. Good for up-tempo stretches.
+            </p>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightPersonnel"
+                min="1"
+                max="10"
+                value="4"
+              />
+              <span class="weight-value" id="ssWeightPersonnelVal">4</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleTempoVariety" />
+              <span class="smart-rule-name">⏱️ Tempo Variety</span>
+            </label>
+            <p class="smart-rule-desc">
+              Avoids long stretches of the same tempo. Mixes Huddle, Smoke, Band
+              etc. to keep defense off-balance.
+            </p>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightTempo"
+                min="1"
+                max="10"
+                value="3"
+              />
+              <span class="weight-value" id="ssWeightTempoVal">3</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleFormationSpread" />
+              <span class="smart-rule-name">📐 Formation Spread</span>
+            </label>
+            <p class="smart-rule-desc">
+              Avoids repeating the same formation back-to-back. Shows the
+              defense different looks.
+            </p>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightFormation"
+                min="1"
+                max="10"
+                value="3"
+              />
+              <span class="weight-value" id="ssWeightFormationVal">3</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleStartHash" checked />
+              <span class="smart-rule-name">📍 Starting Hash</span>
+            </label>
+            <p class="smart-rule-desc">
+              First play should match this hash preference.
+            </p>
+            <div class="smart-rule-config">
+              <label
+                >Start on:
+                <select id="ssStartHash" class="smart-input-sm">
+                  <option value="Left">Left</option>
+                  <option value="Middle">Middle</option>
+                  <option value="Right">Right</option>
+                </select>
+              </label>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleRunPassBal" checked />
+              <span class="smart-rule-name">⚖️ Run/Pass Balance</span>
+            </label>
+            <p class="smart-rule-desc">
+              Steers the script toward a target run/pass ratio. Rewards plays
+              that push the mix toward your goal and penalizes drifting too far
+              off.
+            </p>
+            <div class="smart-rule-config">
+              <label
+                >Target run %:
+                <input
+                  type="range"
+                  id="ssRunPct"
+                  min="20"
+                  max="80"
+                  value="50"
+                  class="smart-input-sm"
+                  style="width: 100px"
+                />
+                <span class="weight-value" id="ssRunPctVal">50%</span>
+              </label>
+            </div>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightRunPassBal"
+                min="1"
+                max="10"
+                value="5"
+              />
+              <span class="weight-value" id="ssWeightRunPassBalVal">5</span>
+            </div>
+          </div>
+
+          <div class="smart-rule">
+            <label class="smart-rule-toggle">
+              <input type="checkbox" id="ssRuleConstraint" checked />
+              <span class="smart-rule-name">🔗 Constraint Pairing</span>
+            </label>
+            <p class="smart-rule-desc">
+              Places constraint/complement plays near their parent play. If a
+              play has constraint links, the algorithm tries to schedule them
+              back-to-back or within 2 plays.
+            </p>
+            <div class="smart-rule-weight">
+              <span>Weight:</span>
+              <input
+                type="range"
+                id="ssWeightConstraint"
+                min="1"
+                max="10"
+                value="7"
+              />
+              <span class="weight-value" id="ssWeightConstraintVal">7</span>
+            </div>
+          </div>
+        </div>
+
+        <div class="smart-script-preview" id="smartScriptPreview"></div>
+
+        <div class="smart-script-actions">
+          <button
+            class="btn"
+            onclick="previewSmartScript()"
+            style="background: #6c757d; color: white"
+          >
+            👁️ Preview
+          </button>
+          <button
+            class="btn"
+            onclick="previewSmartScript()"
+            style="background: #17a2b8; color: white"
+          >
+            🎲 Re-Roll
+          </button>
+          <button class="btn btn-success" onclick="applySmartScript()">
+            ✨ Apply Smart Script
+          </button>
+          <button class="btn" onclick="closeSmartScript()">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Keyboard Shortcuts Modal -->
+    <div
+      class="modal-overlay"
+      id="shortcutsModal"
+      onclick="hideKeyboardShortcuts()"
+    >
+      <div
+        class="modal-content shortcuts-modal"
+        onclick="event.stopPropagation()"
+      >
+        <h3>⌨️ Keyboard Shortcuts</h3>
+        <div class="shortcuts-grid">
+          <div class="shortcut-section">
+            <h4>Playbook Navigation</h4>
+            <div class="shortcut-row">
+              <kbd>↑</kbd> / <kbd>↓</kbd> <span>Navigate rows</span>
+            </div>
+            <div class="shortcut-row">
+              <kbd>Enter</kbd> <span>Add selected play to script</span>
+            </div>
+            <div class="shortcut-row">
+              <kbd>Ctrl</kbd>+<kbd>C</kbd> <span>Copy selected play name</span>
+            </div>
+            <div class="shortcut-row">
+              <kbd>?</kbd> <span>Show this help</span>
+            </div>
+            <div class="shortcut-row">
+              <kbd>Esc</kbd> <span>Close dialogs</span>
+            </div>
+          </div>
+          <div class="shortcut-section">
+            <h4>Quick Actions</h4>
+            <div class="shortcut-row">
+              <kbd>Click</kbd> play name <span>Copy to clipboard</span>
+            </div>
+            <div class="shortcut-row">
+              <kbd>Double-click</kbd> row <span>Add to script</span>
+            </div>
+            <div class="shortcut-row">
+              <kbd>Hover</kbd> row <span>Preview play details</span>
+            </div>
+          </div>
+        </div>
+        <button class="btn btn-primary" onclick="hideKeyboardShortcuts()">
+          Close
+        </button>
+      </div>
+    </div>
+
+    <!-- Play Preview Tooltip -->
+    <div class="play-preview-tooltip" id="playPreviewTooltip"></div>
+
+    <!-- Floating Help Button -->
+    <button
+      class="help-fab"
+      id="helpFab"
+      onclick="toggleHelpPanel()"
+      title="Shortcuts & Features"
+    >
+      ?
+    </button>
+
+    <!-- Help Panel Overlay -->
+    <div class="help-overlay" id="helpOverlay" onclick="closeHelpPanel(event)">
+      <div class="help-panel" onclick="event.stopPropagation()">
+        <div class="help-panel-header">
+          <h3 id="helpPanelTitle">Shortcuts & Features</h3>
+          <button class="help-close-btn" onclick="toggleHelpPanel()">
+            &times;
+          </button>
+        </div>
+        <div class="help-panel-body" id="helpPanelBody"></div>
+      </div>
+    </div>
+
+    <!-- JavaScript Files -->
+    <script src="js/utils.js"></script>
+    <script src="js/playbook.js"></script>
+    <script src="js/script.js"></script>
+    <script src="js/wristband.js"></script>
+    <script src="js/callsheet.js"></script>
+    <script src="js/tendencies.js"></script>
+    <script src="js/app.js"></script>
+  </body>
+</html>
