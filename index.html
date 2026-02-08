@@ -78,7 +78,9 @@
           Def Tendencies
         </button>
         <button class="tab" onclick="showTab('callsheet')">Call Sheet</button>
-        <button class="tab" onclick="showTab('installation')">📦 Installation</button>
+        <button class="tab" onclick="showTab('installation')">
+          📦 Installation
+        </button>
         <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
         <button class="tab" onclick="showUpload()">📁 Load New CSV</button>
       </div>
@@ -99,6 +101,14 @@
               ⚙️ Columns
             </button>
             <div class="column-menu" id="columnMenu">
+              <label
+                ><input
+                  type="checkbox"
+                  checked
+                  onchange="toggleColumn('install')"
+                />
+                ★ Install</label
+              >
               <label
                 ><input
                   type="checkbox"
@@ -246,6 +256,7 @@
           <table id="playbookTable" class="sortable">
             <thead>
               <tr>
+                <th class="col-install">★</th>
                 <th onclick="sortPlaybook('type')">
                   Type <span class="sort-icon" data-col="type"></span>
                 </th>

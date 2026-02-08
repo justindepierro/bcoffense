@@ -260,13 +260,15 @@ function renderPlaybook() {
       const wbIndicator = onWristband
         ? '<span class="wb-indicator" title="On wristband">🏈</span>'
         : "";
-      const installBadge = typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
+      const installBadge =
+        typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
 
       return `
             <tr class="${wbClass}" onclick="selectPlaybookRow(${idx})" ondblclick="addPlayFromPlaybook(${idx})" 
                 onmouseenter="showPlayPreview(event, ${idx})" onmouseleave="hidePlayPreview()"
                 title="Click to select, double-click to add to script">
-                <td class="col-type">${wbIndicator}${installBadge}${highlightSearch(p.type, searchTerm)}</td>
+                <td class="col-install">${installBadge}</td>
+                <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(p.formation, searchTerm)}</td>
                 <td class="col-tags">${[p.formTag1, p.formTag2].filter(Boolean).join(", ") || "-"}</td>
                 <td class="col-back">${highlightSearch(p.back || "-", searchTerm)}</td>
@@ -528,6 +530,7 @@ function updateStatsBar() {
  * Column visibility state
  */
 const columnVisibility = {
+  install: true,
   type: true,
   formation: true,
   tags: true,
@@ -553,6 +556,7 @@ function toggleColumn(column) {
  */
 function applyColumnVisibility() {
   const columns = [
+    "install",
     "type",
     "formation",
     "tags",
@@ -591,6 +595,7 @@ function restoreColumnVisibility() {
       const menu = document.getElementById("columnMenu");
       if (menu) {
         const columns = [
+          "install",
           "type",
           "formation",
           "tags",

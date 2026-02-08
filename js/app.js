@@ -596,20 +596,44 @@ function getHelpDataForTab(tab) {
         icon: "✅",
         name: "Component Tracking",
         items: [
-          { key: "Categories", desc: "Personnel, Formations, Motions, Shifts, Protections, Concepts, Tempos, Backfield, Plays, Tags" },
-          { key: "Check Off", desc: "Toggle components as installed (taught/repped) in each category" },
-          { key: "Bulk Actions", desc: "\u2018\u2705 All\u2019 to install all, \u2018\u2715 Clear\u2019 to reset a category" },
-          { key: "Play Counts", desc: "See how many plays each component appears in" },
+          {
+            key: "Categories",
+            desc: "Personnel, Formations, Motions, Shifts, Protections, Concepts, Tempos, Backfield, Plays, Tags",
+          },
+          {
+            key: "Check Off",
+            desc: "Toggle components as installed (taught/repped) in each category",
+          },
+          {
+            key: "Bulk Actions",
+            desc: "\u2018\u2705 All\u2019 to install all, \u2018\u2715 Clear\u2019 to reset a category",
+          },
+          {
+            key: "Play Counts",
+            desc: "See how many plays each component appears in",
+          },
         ],
       },
       {
         icon: "⭐",
         name: "Star Rating System",
         items: [
-          { key: "Star Badge", desc: "Each play in the Playbook shows filled/empty stars based on installed components" },
-          { key: "Hover Detail", desc: "Hover any play to see exactly which components are installed vs missing" },
-          { key: "Game Ready", desc: "Plays with all components installed are \u2018Game Ready\u2019" },
-          { key: "Progress Ring", desc: "Overall installation percentage shown at the top" },
+          {
+            key: "Star Badge",
+            desc: "Each play in the Playbook shows filled/empty stars based on installed components",
+          },
+          {
+            key: "Hover Detail",
+            desc: "Hover any play to see exactly which components are installed vs missing",
+          },
+          {
+            key: "Game Ready",
+            desc: "Plays with all components installed are \u2018Game Ready\u2019",
+          },
+          {
+            key: "Progress Ring",
+            desc: "Overall installation percentage shown at the top",
+          },
         ],
       },
     ],

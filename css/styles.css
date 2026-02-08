@@ -6744,13 +6744,13 @@ kbd {
   justify-content: center;
   background: conic-gradient(
     #28a745 calc(var(--pct) * 1%),
-    rgba(255,255,255,0.15) calc(var(--pct) * 1%)
+    rgba(255, 255, 255, 0.15) calc(var(--pct) * 1%)
   );
   margin: 0 auto 6px;
   position: relative;
 }
 .install-overall-ring::before {
-  content: '';
+  content: "";
   width: 56px;
   height: 56px;
   border-radius: 50%;
@@ -6783,21 +6783,33 @@ kbd {
   border-radius: 10px;
   padding: 14px 16px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   border-top: 3px solid #dee2e6;
 }
-.install-readiness-max { border-top-color: #28a745; }
-.install-readiness-partial { border-top-color: #ffc107; }
-.install-readiness-none { border-top-color: #dc3545; }
+.install-readiness-max {
+  border-top-color: #28a745;
+}
+.install-readiness-partial {
+  border-top-color: #ffc107;
+}
+.install-readiness-none {
+  border-top-color: #dc3545;
+}
 .install-readiness-val {
   font-size: 28px;
   font-weight: 700;
   line-height: 1;
   margin-bottom: 4px;
 }
-.install-readiness-max .install-readiness-val { color: #28a745; }
-.install-readiness-partial .install-readiness-val { color: #e6a000; }
-.install-readiness-none .install-readiness-val { color: #dc3545; }
+.install-readiness-max .install-readiness-val {
+  color: #28a745;
+}
+.install-readiness-partial .install-readiness-val {
+  color: #e6a000;
+}
+.install-readiness-none .install-readiness-val {
+  color: #dc3545;
+}
 .install-readiness-label {
   font-size: 11px;
   color: #888;
@@ -6830,12 +6842,12 @@ kbd {
 .install-cat-card:hover {
   border-color: #007bff;
   transform: translateY(-1px);
-  box-shadow: 0 3px 12px rgba(0,0,0,0.08);
+  box-shadow: 0 3px 12px rgba(0, 0, 0, 0.08);
 }
 .install-cat-active {
   border-color: #007bff !important;
   background: #e7f1ff !important;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.15);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
 }
 .install-cat-icon {
   font-size: 22px;
@@ -6876,7 +6888,7 @@ kbd {
 .install-detail {
   background: white;
   border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
   overflow: hidden;
 }
 .install-detail-header {
@@ -6913,7 +6925,7 @@ kbd {
 .install-search:focus {
   outline: none;
   border-color: #007bff;
-  box-shadow: 0 0 0 2px rgba(0,123,255,0.15);
+  box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.15);
 }
 
 /* Checklist */
@@ -7026,13 +7038,19 @@ kbd {
 }
 .install-star.filled {
   color: #ffc107;
-  text-shadow: 0 0 2px rgba(255,193,7,0.4);
+  text-shadow: 0 0 2px rgba(255, 193, 7, 0.4);
 }
 .install-star.empty {
   color: #ddd;
 }
 
 /* Star badge in playbook table */
+.col-install {
+  width: 80px;
+  min-width: 60px;
+  text-align: center;
+  white-space: nowrap;
+}
 .install-badge {
   display: inline-flex;
   align-items: center;
@@ -7043,16 +7061,41 @@ kbd {
   background: #f8f9fa;
   border: 1px solid #eee;
 }
-.install-level-max .install-star.filled { color: #ffc107; }
-.install-level-max { border-color: #ffc107; background: #fffde7; }
-.install-level-high .install-star.filled { color: #8bc34a; }
-.install-level-high { border-color: #c5e1a5; background: #f1f8e9; }
-.install-level-mid .install-star.filled { color: #ff9800; }
-.install-level-mid { border-color: #ffe0b2; background: #fff8e1; }
-.install-level-low .install-star.filled { color: #f44336; }
-.install-level-low { border-color: #ffcdd2; background: #fce4ec; }
-.install-level-none { border-color: #e0e0e0; background: #fafafa; }
-.install-level-none .install-star.empty { color: #e0e0e0; }
+.install-level-max .install-star.filled {
+  color: #ffc107;
+}
+.install-level-max {
+  border-color: #ffc107;
+  background: #fffde7;
+}
+.install-level-high .install-star.filled {
+  color: #8bc34a;
+}
+.install-level-high {
+  border-color: #c5e1a5;
+  background: #f1f8e9;
+}
+.install-level-mid .install-star.filled {
+  color: #ff9800;
+}
+.install-level-mid {
+  border-color: #ffe0b2;
+  background: #fff8e1;
+}
+.install-level-low .install-star.filled {
+  color: #f44336;
+}
+.install-level-low {
+  border-color: #ffcdd2;
+  background: #fce4ec;
+}
+.install-level-none {
+  border-color: #e0e0e0;
+  background: #fafafa;
+}
+.install-level-none .install-star.empty {
+  color: #e0e0e0;
+}
 .install-na {
   font-size: 10px;
   color: #ccc;

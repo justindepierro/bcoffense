@@ -29,8 +29,8 @@ const INSTALL_CATEGORIES = [
  */
 function getInstallationData() {
   return storageManager.get(INSTALL_STORAGE_KEY, {
-    installed: {},  // { categoryId: ["value1", "value2", ...] }
-    order: {},      // { categoryId: ["value1", "value2", ...] } (ordered list)
+    installed: {}, // { categoryId: ["value1", "value2", ...] }
+    order: {}, // { categoryId: ["value1", "value2", ...] } (ordered list)
   });
 }
 
@@ -48,10 +48,10 @@ function saveInstallationData(data) {
 function extractComponentsFromPlaybook() {
   const components = {};
 
-  INSTALL_CATEGORIES.forEach(cat => {
+  INSTALL_CATEGORIES.forEach((cat) => {
     const values = new Set();
 
-    plays.forEach(p => {
+    plays.forEach((p) => {
       if (cat.id === "formTag") {
         // Combine formTag1 and formTag2
         if (p.formTag1) values.add(p.formTag1.trim());
@@ -63,7 +63,7 @@ function extractComponentsFromPlaybook() {
     });
 
     components[cat.id] = [...values].sort((a, b) =>
-      a.toLowerCase().localeCompare(b.toLowerCase())
+      a.toLowerCase().localeCompare(b.toLowerCase()),
     );
   });
 
@@ -121,7 +121,7 @@ function getPlayInstallRating(play) {
   let stars = 0;
   let maxStars = 0;
 
-  INSTALL_CATEGORIES.forEach(cat => {
+  INSTALL_CATEGORIES.forEach((cat) => {
     let value = null;
 
     if (cat.id === "formTag") {
@@ -129,7 +129,7 @@ function getPlayInstallRating(play) {
       const tags = [play.formTag1, play.formTag2].filter(Boolean);
       if (tags.length > 0) {
         const installed = data.installed[cat.id] || [];
-        tags.forEach(tag => {
+        tags.forEach((tag) => {
           maxStars++;
           const isInstalled = installed.includes(tag.trim());
           if (isInstalled) stars++;
@@ -233,20 +233,28 @@ function renderInstallation() {
   // Calculate overall progress
   let totalComponents = 0;
   let totalInstalled = 0;
-  const categorySummaries = INSTALL_CATEGORIES.map(cat => {
+  const categorySummaries = INSTALL_CATEGORIES.map((cat) => {
     const items = components[cat.id] || [];
-    const installed = (data.installed[cat.id] || []).filter(v => items.includes(v));
+    const installed = (data.installed[cat.id] || []).filter((v) =>
+      items.includes(v),
+    );
     totalComponents += items.length;
     totalInstalled += installed.length;
     return {
       ...cat,
       total: items.length,
       installed: installed.length,
-      pct: items.length > 0 ? Math.round((installed.length / items.length) * 100) : 0,
+      pct:
+        items.length > 0
+          ? Math.round((installed.length / items.length) * 100)
+          : 0,
     };
-  }).filter(s => s.total > 0); // Only show categories with items
+  }).filter((s) => s.total > 0); // Only show categories with items
 
-  const overallPct = totalComponents > 0 ? Math.round((totalInstalled / totalComponents) * 100) : 0;
+  const overallPct =
+    totalComponents > 0
+      ? Math.round((totalInstalled / totalComponents) * 100)
+      : 0;
 
   // If no active category, default to first
   if (!installActiveCategory && categorySummaries.length > 0) {
@@ -257,7 +265,7 @@ function renderInstallation() {
   let fullyInstalled = 0;
   let partiallyInstalled = 0;
   let notInstalled = 0;
-  plays.forEach(p => {
+  plays.forEach((p) => {
     const rating = getPlayInstallRating(p);
     if (rating.maxStars === 0) return;
     if (rating.stars === rating.maxStars) fullyInstalled++;
@@ -306,8 +314,10 @@ function renderInstallation() {
 
       <!-- Category Navigation Cards -->
       <div class="install-category-grid">
-        ${categorySummaries.map(cat => `
-          <button class="install-cat-card ${installActiveCategory === cat.id ? 'install-cat-active' : ''}"
+        ${categorySummaries
+          .map(
+            (cat) => `
+          <button class="install-cat-card ${installActiveCategory === cat.id ? "install-cat-active" : ""}"
                   onclick="installActiveCategory='${cat.id}'; installSearchTerm=''; renderInstallation();">
             <div class="install-cat-icon">${cat.icon}</div>
             <div class="install-cat-info">
@@ -318,7 +328,9 @@ function renderInstallation() {
               <div class="install-cat-counts">${cat.installed}/${cat.total}</div>
             </div>
           </button>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
 
       <!-- Active Category Detail -->
@@ -333,16 +345,18 @@ function renderInstallation() {
  * Render the detail panel for the active category
  */
 function renderInstallCategoryDetail(components, data) {
-  const cat = INSTALL_CATEGORIES.find(c => c.id === installActiveCategory);
+  const cat = INSTALL_CATEGORIES.find((c) => c.id === installActiveCategory);
   if (!cat) return "";
 
   const allItems = components[cat.id] || [];
   const installed = data.installed[cat.id] || [];
-  const installedCount = installed.filter(v => allItems.includes(v)).length;
+  const installedCount = installed.filter((v) => allItems.includes(v)).length;
 
   // Filter by search
   const filtered = installSearchTerm
-    ? allItems.filter(v => v.toLowerCase().includes(installSearchTerm.toLowerCase()))
+    ? allItems.filter((v) =>
+        v.toLowerCase().includes(installSearchTerm.toLowerCase()),
+      )
     : allItems;
 
   // Sort: installed first, then alphabetical
@@ -355,9 +369,9 @@ function renderInstallCategoryDetail(components, data) {
 
   // Count plays per component value
   const playCounts = {};
-  plays.forEach(p => {
+  plays.forEach((p) => {
     if (cat.id === "formTag") {
-      [p.formTag1, p.formTag2].filter(Boolean).forEach(t => {
+      [p.formTag1, p.formTag2].filter(Boolean).forEach((t) => {
         const key = t.trim();
         playCounts[key] = (playCounts[key] || 0) + 1;
       });
@@ -381,11 +395,12 @@ function renderInstallCategoryDetail(components, data) {
         </div>
       </div>
       <div class="install-checklist">
-        ${sorted.map((value, idx) => {
-          const isInstalled = installed.includes(value);
-          const count = playCounts[value] || 0;
-          return `
-            <label class="install-item ${isInstalled ? 'install-item-done' : ''}"
+        ${sorted
+          .map((value, idx) => {
+            const isInstalled = installed.includes(value);
+            const count = playCounts[value] || 0;
+            return `
+            <label class="install-item ${isInstalled ? "install-item-done" : ""}"
                    draggable="true"
                    ondragstart="installDragStart(event, '${cat.id}', '${escapeAttr(value)}')"
                    ondragover="event.preventDefault()"
@@ -394,10 +409,11 @@ function renderInstallCategoryDetail(components, data) {
                      onchange="toggleComponentInstalled('${cat.id}', '${escapeAttr(value)}'); renderInstallation();">
               <span class="install-item-check">${isInstalled ? "✅" : "⬜"}</span>
               <span class="install-item-name">${value}</span>
-              <span class="install-item-count" title="${count} play${count !== 1 ? 's' : ''} use this">${count} play${count !== 1 ? 's' : ''}</span>
+              <span class="install-item-count" title="${count} play${count !== 1 ? "s" : ""} use this">${count} play${count !== 1 ? "s" : ""}</span>
               <span class="install-item-drag" title="Drag to reorder">⠿</span>
             </label>`;
-        }).join("")}
+          })
+          .join("")}
         ${sorted.length === 0 ? `<div class="install-empty-cat">No ${cat.label.toLowerCase()} found${installSearchTerm ? " matching search" : ""}</div>` : ""}
       </div>
     </div>
@@ -418,13 +434,17 @@ function installAll(categoryId) {
   const allValues = components[categoryId] || [];
   setAllCategoryInstalled(categoryId, true, allValues);
   renderInstallation();
-  showToast(`✅ All ${INSTALL_CATEGORIES.find(c => c.id === categoryId)?.label || ""} marked as installed`);
+  showToast(
+    `✅ All ${INSTALL_CATEGORIES.find((c) => c.id === categoryId)?.label || ""} marked as installed`,
+  );
 }
 
 function uninstallAll(categoryId) {
   setAllCategoryInstalled(categoryId, false, []);
   renderInstallation();
-  showToast(`Cleared all ${INSTALL_CATEGORIES.find(c => c.id === categoryId)?.label || ""}`);
+  showToast(
+    `Cleared all ${INSTALL_CATEGORIES.find((c) => c.id === categoryId)?.label || ""}`,
+  );
 }
 
 // ============ Drag to Reorder ============
@@ -460,7 +480,9 @@ function installDragDrop(event, categoryId, targetValue) {
   }
 
   installDragItem = null;
-  document.querySelectorAll(".install-dragging").forEach(el => el.classList.remove("install-dragging"));
+  document
+    .querySelectorAll(".install-dragging")
+    .forEach((el) => el.classList.remove("install-dragging"));
 }
 
 // ============ Playbook Integration ============
@@ -487,8 +509,8 @@ function getPlayInstallTooltip(play) {
     <div class="install-tooltip-title">📦 Installation ${renderStarRating(rating.stars, rating.maxStars, "md")}</div>
     <div class="install-tooltip-details">`;
 
-  rating.details.forEach(d => {
-    html += `<div class="install-tooltip-row ${d.installed ? 'install-tooltip-done' : 'install-tooltip-missing'}">
+  rating.details.forEach((d) => {
+    html += `<div class="install-tooltip-row ${d.installed ? "install-tooltip-done" : "install-tooltip-missing"}">
       <span>${d.installed ? "✅" : "❌"}</span>
       <span class="install-tooltip-cat">${d.icon} ${d.category}:</span>
       <span class="install-tooltip-val">${d.value}</span>
