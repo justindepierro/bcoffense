@@ -294,15 +294,15 @@ function renderInstallation() {
 
       <!-- Playbook Readiness Summary -->
       <div class="install-readiness">
-        <div class="install-readiness-item install-readiness-max">
+        <div class="install-readiness-item install-readiness-max install-readiness-clickable" onclick="showReadinessModal('ready')">
           <div class="install-readiness-val">${fullyInstalled}</div>
           <div class="install-readiness-label">★ Game Ready</div>
         </div>
-        <div class="install-readiness-item install-readiness-partial">
+        <div class="install-readiness-item install-readiness-partial install-readiness-clickable" onclick="showReadinessModal('partial')">
           <div class="install-readiness-val">${partiallyInstalled}</div>
           <div class="install-readiness-label">◐ Partial</div>
         </div>
-        <div class="install-readiness-item install-readiness-none">
+        <div class="install-readiness-item install-readiness-none install-readiness-clickable" onclick="showReadinessModal('none')">
           <div class="install-readiness-val">${notInstalled}</div>
           <div class="install-readiness-label">○ Not Ready</div>
         </div>
@@ -483,6 +483,87 @@ function installDragDrop(event, categoryId, targetValue) {
   document
     .querySelectorAll(".install-dragging")
     .forEach((el) => el.classList.remove("install-dragging"));
+}
+
+// ============ Readiness Modal ============
+
+/**
+ * Show a modal listing plays for a given readiness level
+ * @param {'ready'|'partial'|'none'} type
+ */
+function showReadinessModal(type) {
+  if (!plays || plays.length === 0) return;
+
+  const titles = {
+    ready:   { title: '★ Game Ready Plays',   icon: '★' },
+    partial: { title: '◐ Partially Installed', icon: '◐' },
+    none:    { title: '○ Not Ready',           icon: '○' },
+  };
+
+  // Collect plays matching this readiness level
+  const matched = [];
+  plays.forEach((p) => {
+    const rating = getPlayInstallRating(p);
+    if (rating.maxStars === 0) return;
+    const isReady   = rating.stars === rating.maxStars;
+    const isPartial = rating.stars > 0 && rating.stars < rating.maxStars;
+    const isNone    = rating.stars === 0;
+
+    if (type === 'ready'   && isReady)   matched.push({ play: p, rating });
+    if (type === 'partial' && isPartial) matched.push({ play: p, rating });
+    if (type === 'none'    && isNone)    matched.push({ play: p, rating });
+  });
+
+  if (matched.length === 0) {
+    showModal('No plays in this category.', titles[type]);
+    return;
+  }
+
+  // Sort: by stars desc, then play name
+  matched.sort((a, b) => {
+    const diff = b.rating.stars - a.rating.stars;
+    if (diff !== 0) return diff;
+    const nameA = (a.play.playName || a.play.baseConcept || '').toLowerCase();
+    const nameB = (b.play.playName || b.play.baseConcept || '').toLowerCase();
+    return nameA.localeCompare(nameB);
+  });
+
+  let html = `<div class="readiness-modal-list">`;
+
+  matched.forEach(({ play, rating }) => {
+    const playName = play.playName || play.baseConcept || 'Unnamed';
+    const formation = play.formation || '';
+    const personnel = play.personnel || '';
+    const subtitle = [personnel, formation].filter(Boolean).join(' · ');
+    const level = getInstallRatingClass(rating.stars, rating.maxStars);
+
+    html += `<div class="readiness-modal-play ${level}">`;
+    html += `  <div class="readiness-modal-play-header">`;
+    html += `    <div class="readiness-modal-play-name">${playName}</div>`;
+    html += `    <div class="readiness-modal-play-stars">${renderStarRating(rating.stars, rating.maxStars, 'sm')}</div>`;
+    html += `  </div>`;
+    if (subtitle) {
+      html += `<div class="readiness-modal-play-sub">${subtitle}</div>`;
+    }
+
+    // For partial and not-ready, show missing components
+    if (type !== 'ready') {
+      const missing = rating.details.filter(d => !d.installed);
+      if (missing.length > 0) {
+        html += `<div class="readiness-modal-missing">`;
+        missing.forEach(d => {
+          html += `<div class="readiness-modal-missing-row">❌ <span class="readiness-modal-cat">${d.icon} ${d.category}:</span> <span class="readiness-modal-val">${d.value}</span></div>`;
+        });
+        html += `</div>`;
+      }
+    }
+
+    html += `</div>`;
+  });
+
+  html += `</div>`;
+
+  showModal(html, { ...titles[type] });
 }
 
 // ============ Playbook Integration ============
