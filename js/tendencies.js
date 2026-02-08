@@ -1188,7 +1188,7 @@ function renderOpponentDetail() {
           <button class="btn btn-primary td-new-play-btn" onclick="startNewPlay()">＋ New Play</button>
           <button class="btn btn-secondary" onclick="exportSingleOpponentCSV(${tendenciesCurrentOpponent})">📄 CSV</button>
           <button class="btn btn-secondary" onclick="printTendencies()">🖨️ Print</button>
-          <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? 'btn-success' : 'btn-danger'}" onclick="setAsActiveOpponent(${tendenciesCurrentOpponent})" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? '✅ Active Opponent' : '🏈 Set Active'}</button>
+          <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "btn-success" : "btn-danger"}" onclick="setAsActiveOpponent(${tendenciesCurrentOpponent})" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active Opponent" : "🏈 Set Active"}</button>
         </div>
       </div>
 

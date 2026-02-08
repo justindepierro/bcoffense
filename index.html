@@ -78,6 +78,7 @@
           Def Tendencies
         </button>
         <button class="tab" onclick="showTab('callsheet')">Call Sheet</button>
+        <button class="tab" onclick="showTab('installation')">📦 Installation</button>
         <button class="tab" onclick="showTab('dashboard')">📊 Dashboard</button>
         <button class="tab" onclick="showUpload()">📁 Load New CSV</button>
       </div>
@@ -1351,6 +1352,11 @@
         </div>
       </div>
 
+      <!-- Installation Tracker Panel -->
+      <div id="installation" class="panel">
+        <div id="installationContent"></div>
+      </div>
+
       <!-- Game Week Dashboard Panel -->
       <div id="dashboard" class="panel">
         <div class="dash-container">
@@ -1386,7 +1392,13 @@
           <!-- Game Week Notes -->
           <div class="dash-notes-section" id="dashNotesSection">
             <h3 class="dash-section-title">📝 Game Week Notes</h3>
-            <textarea id="dashNotesArea" class="dash-notes-textarea" placeholder="Scouting notes, reminders, adjustments, key matchups..." onchange="onDashNotesChange(this.value)" oninput="onDashNotesChange(this.value)"></textarea>
+            <textarea
+              id="dashNotesArea"
+              class="dash-notes-textarea"
+              placeholder="Scouting notes, reminders, adjustments, key matchups..."
+              onchange="onDashNotesChange(this.value)"
+              oninput="onDashNotesChange(this.value)"
+            ></textarea>
           </div>
 
           <!-- Status Cards Row -->
@@ -2633,6 +2645,7 @@
     <script src="js/wristband.js"></script>
     <script src="js/callsheet.js"></script>
     <script src="js/tendencies.js"></script>
+    <script src="js/installation.js"></script>
     <script src="js/app.js"></script>
   </body>
 </html>

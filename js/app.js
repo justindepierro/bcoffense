@@ -76,13 +76,18 @@ function showTab(tabName) {
       wristband: 2,
       tendencies: 3,
       callsheet: 4,
-      dashboard: 5,
+      installation: 5,
+      dashboard: 6,
     };
     const tabs = document.querySelectorAll(".tab");
     const idx = tabMap[tabName];
     if (idx !== undefined && tabs[idx]) tabs[idx].classList.add("active");
   }
 
+  // Initialize installation if switching to that tab
+  if (tabName === "installation") {
+    initInstallation();
+  }
   // Initialize wristband if switching to that tab
   if (tabName === "wristband") {
     if (wristbandCards.length === 0) {
@@ -584,6 +589,31 @@ function getHelpDataForTab(tab) {
       },
     ],
   };
+  data.installation = {
+    title: "📦 Offensive Installation — Shortcuts & Features",
+    sections: [
+      {
+        icon: "✅",
+        name: "Component Tracking",
+        items: [
+          { key: "Categories", desc: "Personnel, Formations, Motions, Shifts, Protections, Concepts, Tempos, Backfield, Plays, Tags" },
+          { key: "Check Off", desc: "Toggle components as installed (taught/repped) in each category" },
+          { key: "Bulk Actions", desc: "\u2018\u2705 All\u2019 to install all, \u2018\u2715 Clear\u2019 to reset a category" },
+          { key: "Play Counts", desc: "See how many plays each component appears in" },
+        ],
+      },
+      {
+        icon: "⭐",
+        name: "Star Rating System",
+        items: [
+          { key: "Star Badge", desc: "Each play in the Playbook shows filled/empty stars based on installed components" },
+          { key: "Hover Detail", desc: "Hover any play to see exactly which components are installed vs missing" },
+          { key: "Game Ready", desc: "Plays with all components installed are \u2018Game Ready\u2019" },
+          { key: "Progress Ring", desc: "Overall installation percentage shown at the top" },
+        ],
+      },
+    ],
+  };
   data.dashboard = {
     title: "📊 Game Week Dashboard — Shortcuts & Features",
     sections: [
@@ -1038,6 +1068,7 @@ function renderDashboard() {
       <div class="dash-links-grid">
         <button class="dash-link-btn" onclick="dashGoToTab('script')">📋 Build Script</button>
         <button class="dash-link-btn" onclick="dashGoToTab('callsheet')">🗂️ Edit Call Sheet</button>
+        <button class="dash-link-btn" onclick="dashGoToTab('installation')">📦 Installation</button>
         <button class="dash-link-btn" onclick="dashGoToTab('tendencies')">🎯 Chart Tendencies</button>
         <button class="dash-link-btn" onclick="dashGoToTab('wristband')">⌚ Wristband Maker</button>
         <button class="dash-link-btn dash-link-print" onclick="printFullGamePlan()">🖨️ Print Game Plan</button>
@@ -1101,16 +1132,22 @@ function printFullGamePlan() {
       { label: "Red Zone", data: rz },
     ];
 
-    sections.forEach(s => {
+    sections.forEach((s) => {
       html += `<div class="gp-scout-col">
         <h3>${s.label} (${s.data.total})</h3>
         <table class="gp-scout-table">
           <tr><th>Fronts</th><th>%</th></tr>
-          ${s.data.topFront.slice(0, 4).map(f => `<tr><td>${f.term}</td><td>${f.pct}%</td></tr>`).join("")}
+          ${s.data.topFront
+            .slice(0, 4)
+            .map((f) => `<tr><td>${f.term}</td><td>${f.pct}%</td></tr>`)
+            .join("")}
         </table>
         <table class="gp-scout-table">
           <tr><th>Coverages</th><th>%</th></tr>
-          ${s.data.topCoverage.slice(0, 4).map(c => `<tr><td>${c.term}</td><td>${c.pct}%</td></tr>`).join("")}
+          ${s.data.topCoverage
+            .slice(0, 4)
+            .map((c) => `<tr><td>${c.term}</td><td>${c.pct}%</td></tr>`)
+            .join("")}
         </table>
         <p class="gp-blitz-line">Blitz Rate: <strong>${s.data.blitzRate}%</strong></p>
         ${s.data.topStunt && s.data.topStunt.length > 0 ? `<p class="gp-stunt-line">Top Stunt: ${s.data.topStunt[0].term} (${s.data.topStunt[0].pct}%)</p>` : ""}
@@ -1122,11 +1159,11 @@ function printFullGamePlan() {
 
   // Call Sheet Summary (both pages)
   if (typeof CALLSHEET_FRONT !== "undefined") {
-    ["Front", "Back"].forEach(pageName => {
+    ["Front", "Back"].forEach((pageName) => {
       const cats = pageName === "Front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
-      const filledCats = cats.filter(cat => {
+      const filledCats = cats.filter((cat) => {
         const data = callSheet[cat.id];
-        return data && ((data.left || []).length + (data.right || []).length > 0);
+        return data && (data.left || []).length + (data.right || []).length > 0;
       });
       if (filledCats.length === 0) return;
 
@@ -1134,11 +1171,15 @@ function printFullGamePlan() {
         <h2 class="gp-print-section-title">🗂️ Call Sheet — ${pageName} Page</h2>
         <div class="gp-cs-grid">`;
 
-      filledCats.forEach(cat => {
+      filledCats.forEach((cat) => {
         const data = callSheet[cat.id] || { left: [], right: [] };
-        const displayName = typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name;
+        const displayName =
+          typeof getCategoryDisplayName === "function"
+            ? getCategoryDisplayName(cat)
+            : cat.name;
         const allPlays = [...(data.left || []), ...(data.right || [])];
-        const textColor = (cat.color === "#ffc107" || cat.color === "#f8f9fa") ? "#000" : "#fff";
+        const textColor =
+          cat.color === "#ffc107" || cat.color === "#f8f9fa" ? "#000" : "#fff";
 
         html += `<div class="gp-cs-cat">
           <div class="gp-cs-cat-header" style="background:${cat.color};color:${textColor}">${displayName} (${allPlays.length})</div>
@@ -1147,13 +1188,23 @@ function printFullGamePlan() {
         // Show left hash
         if ((data.left || []).length > 0) {
           html += `<div class="gp-cs-hash-group"><span class="gp-cs-hash-label">L:</span> `;
-          html += (data.left || []).map(p => `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : (p.play || p.name || "?")}</span>`).join(", ");
+          html += (data.left || [])
+            .map(
+              (p) =>
+                `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
+            )
+            .join(", ");
           html += `</div>`;
         }
         // Show right hash
         if ((data.right || []).length > 0) {
           html += `<div class="gp-cs-hash-group"><span class="gp-cs-hash-label">R:</span> `;
-          html += (data.right || []).map(p => `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : (p.play || p.name || "?")}</span>`).join(", ");
+          html += (data.right || [])
+            .map(
+              (p) =>
+                `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
+            )
+            .join(", ");
           html += `</div>`;
         }
 
@@ -1164,7 +1215,7 @@ function printFullGamePlan() {
     });
   }
 
-  html += '</div>';
+  html += "</div>";
 
   // Use the call sheet print container
   const container = document.getElementById("callSheetPrint");
@@ -1179,7 +1230,8 @@ function printFullGamePlan() {
     printStyle.id = "wristbandPrintStyle";
     document.head.appendChild(printStyle);
   }
-  printStyle.textContent = "@media print { @page { size: letter; margin: 0.4in; } }";
+  printStyle.textContent =
+    "@media print { @page { size: letter; margin: 0.4in; } }";
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
@@ -1227,7 +1279,8 @@ function dashGoToTab(tabName) {
     wristband: 2,
     tendencies: 3,
     callsheet: 4,
-    dashboard: 5,
+    installation: 5,
+    dashboard: 6,
   };
   const idx = tabMap[tabName];
   if (idx !== undefined && tabs[idx]) {

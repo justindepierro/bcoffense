@@ -1868,13 +1868,17 @@ async function pushPeriodToCallSheet(separatorIndex) {
  */
 async function importFromCallSheet(separatorIndex) {
   // Make sure call sheet is initialized
-  if (typeof initCallSheet === "function" && Object.keys(callSheet).length === 0) {
+  if (
+    typeof initCallSheet === "function" &&
+    Object.keys(callSheet).length === 0
+  ) {
     initCallSheet();
   }
 
   // Build list of categories that have plays
-  const cats = typeof CALLSHEET_CATEGORIES !== "undefined" ? CALLSHEET_CATEGORIES : [];
-  const filledCats = cats.filter(cat => {
+  const cats =
+    typeof CALLSHEET_CATEGORIES !== "undefined" ? CALLSHEET_CATEGORIES : [];
+  const filledCats = cats.filter((cat) => {
     const data = callSheet[cat.id];
     if (!data) return false;
     return (data.left || []).length + (data.right || []).length > 0;
@@ -1892,18 +1896,23 @@ async function importFromCallSheet(separatorIndex) {
   overlay.className = "period-create-overlay";
   overlay.onclick = () => overlay.remove();
 
-  let catListHtml = filledCats.map(cat => {
-    const data = callSheet[cat.id] || { left: [], right: [] };
-    const count = (data.left || []).length + (data.right || []).length;
-    const displayName = typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name;
-    return `
+  let catListHtml = filledCats
+    .map((cat) => {
+      const data = callSheet[cat.id] || { left: [], right: [] };
+      const count = (data.left || []).length + (data.right || []).length;
+      const displayName =
+        typeof getCategoryDisplayName === "function"
+          ? getCategoryDisplayName(cat)
+          : cat.name;
+      return `
       <label class="cs-import-cat-item">
         <input type="checkbox" value="${cat.id}" class="cs-import-cat-cb">
         <span class="cs-import-cat-color" style="background:${cat.color}"></span>
         <span class="cs-import-cat-name">${displayName}</span>
         <span class="cs-import-cat-count">${count}</span>
       </label>`;
-  }).join("");
+    })
+    .join("");
 
   overlay.innerHTML = `
     <div class="period-create-modal cs-import-modal" onclick="event.stopPropagation()">
@@ -1930,7 +1939,7 @@ async function importFromCallSheet(separatorIndex) {
  */
 function doImportFromCallSheet(separatorIndex, modal) {
   const checked = modal.querySelectorAll(".cs-import-cat-cb:checked");
-  const selectedIds = Array.from(checked).map(cb => cb.value);
+  const selectedIds = Array.from(checked).map((cb) => cb.value);
 
   if (selectedIds.length === 0) {
     showToast("Select at least one category");
@@ -1944,13 +1953,13 @@ function doImportFromCallSheet(separatorIndex, modal) {
   let skipped = 0;
   const insertAt = findPeriodEndIndex(separatorIndex);
 
-  selectedIds.forEach(catId => {
+  selectedIds.forEach((catId) => {
     const data = callSheet[catId] || { left: [], right: [] };
     const allPlays = [...(data.left || []), ...(data.right || [])];
 
-    allPlays.forEach(csPlay => {
+    allPlays.forEach((csPlay) => {
       // Check if already in this period
-      const isDupe = existingPlays.some(ep => playsMatch(ep, csPlay));
+      const isDupe = existingPlays.some((ep) => playsMatch(ep, csPlay));
       if (isDupe) {
         skipped++;
         return;
@@ -1993,7 +2002,9 @@ function doImportFromCallSheet(separatorIndex, modal) {
 
   markScriptDirty();
   renderScript();
-  showToast(`📋 Imported ${imported} play(s) from call sheet${skipped > 0 ? `, ${skipped} duplicates skipped` : ""}`);
+  showToast(
+    `📋 Imported ${imported} play(s) from call sheet${skipped > 0 ? `, ${skipped} duplicates skipped` : ""}`,
+  );
 }
 
 /**

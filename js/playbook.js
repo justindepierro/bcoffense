@@ -260,12 +260,13 @@ function renderPlaybook() {
       const wbIndicator = onWristband
         ? '<span class="wb-indicator" title="On wristband">🏈</span>'
         : "";
+      const installBadge = typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
 
       return `
             <tr class="${wbClass}" onclick="selectPlaybookRow(${idx})" ondblclick="addPlayFromPlaybook(${idx})" 
                 onmouseenter="showPlayPreview(event, ${idx})" onmouseleave="hidePlayPreview()"
                 title="Click to select, double-click to add to script">
-                <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
+                <td class="col-type">${wbIndicator}${installBadge}${highlightSearch(p.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(p.formation, searchTerm)}</td>
                 <td class="col-tags">${[p.formTag1, p.formTag2].filter(Boolean).join(", ") || "-"}</td>
                 <td class="col-back">${highlightSearch(p.back || "-", searchTerm)}</td>
@@ -673,6 +674,7 @@ function showPlayPreview(event, index) {
       <div class="preview-row"><span class="preview-label">Tempo:</span> ${play.tempo || "-"}</div>
       ${play.formTag1 || play.formTag2 ? `<div class="preview-row"><span class="preview-label">Form Tags:</span> ${[play.formTag1, play.formTag2].filter(Boolean).join(", ")}</div>` : ""}
       ${play.playTag1 || play.playTag2 ? `<div class="preview-row"><span class="preview-label">Play Tags:</span> ${[play.playTag1, play.playTag2].filter(Boolean).join(", ")}</div>` : ""}
+      ${typeof getPlayInstallTooltip === "function" ? getPlayInstallTooltip(play) : ""}
     `;
 
     // Position tooltip near the mouse

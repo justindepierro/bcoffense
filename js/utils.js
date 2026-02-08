@@ -199,11 +199,18 @@ function showChoice(message, opts = {}) {
 
     let buttonsHtml = "";
     if (choices && Array.isArray(choices)) {
-      buttonsHtml = choices.map((c, i) => {
-        const btnClass = i === 0 ? "btn-primary" : c.value === "cancel" ? "custom-modal-cancel" : "btn-secondary";
-        const iconStr = c.icon ? c.icon + " " : "";
-        return `<button class="btn ${btnClass} custom-modal-btn custom-modal-btn-full" data-choice-value="${c.value}">${iconStr}${c.label}</button>`;
-      }).join("");
+      buttonsHtml = choices
+        .map((c, i) => {
+          const btnClass =
+            i === 0
+              ? "btn-primary"
+              : c.value === "cancel"
+                ? "custom-modal-cancel"
+                : "btn-secondary";
+          const iconStr = c.icon ? c.icon + " " : "";
+          return `<button class="btn ${btnClass} custom-modal-btn custom-modal-btn-full" data-choice-value="${c.value}">${iconStr}${c.label}</button>`;
+        })
+        .join("");
     } else {
       const option1 = opts.option1 || "Option 1";
       const option2 = opts.option2 || "Option 2";
@@ -376,6 +383,7 @@ const STORAGE_KEYS = {
   TENDENCIES_DRAFT: "tendenciesDraft",
   TENDENCIES_SETTINGS: "tendenciesSettings",
   GAME_WEEK: "gameWeek",
+  INSTALLATION: "installationData",
 };
 
 /**

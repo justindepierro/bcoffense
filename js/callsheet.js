@@ -335,7 +335,8 @@ let csCollapsed = new Set();
 // Scouting overlay state (persisted)
 let csScoutingOverlayOn = false;
 try {
-  csScoutingOverlayOn = JSON.parse(localStorage.getItem("csScoutingOverlay")) || false;
+  csScoutingOverlayOn =
+    JSON.parse(localStorage.getItem("csScoutingOverlay")) || false;
 } catch (e) {}
 
 // All call sheet display/format/border checkbox & select IDs for persistence
@@ -4108,7 +4109,12 @@ function toggleScoutingOverlay() {
     return;
   }
   csScoutingOverlayOn = !csScoutingOverlayOn;
-  try { localStorage.setItem("csScoutingOverlay", JSON.stringify(csScoutingOverlayOn)); } catch (e) {}
+  try {
+    localStorage.setItem(
+      "csScoutingOverlay",
+      JSON.stringify(csScoutingOverlayOn),
+    );
+  } catch (e) {}
   const btn = document.getElementById("csScoutingToggle");
   if (btn) btn.classList.toggle("cs-scouting-active", csScoutingOverlayOn);
   renderCallSheet();
