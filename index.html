@@ -256,7 +256,9 @@
           <table id="playbookTable" class="sortable">
             <thead>
               <tr>
-                <th class="col-install">★</th>
+                <th class="col-install" onclick="sortPlaybook('install')">
+                  ★ <span class="sort-icon" data-col="install"></span>
+                </th>
                 <th onclick="sortPlaybook('type')">
                   Type <span class="sort-icon" data-col="type"></span>
                 </th>
