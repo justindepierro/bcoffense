@@ -149,7 +149,7 @@ function renderSortPresetDropdown() {
   dropdown.innerHTML =
     '<option value="">-- Select Preset --</option>' +
     presetNames
-      .map((name) => `<option value="${name}">${name}</option>`)
+      .map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
       .join("");
 }
 
@@ -184,7 +184,7 @@ async function saveSortPreset() {
     customOrders: safeDeepClone(wbCustomSortOrders),
     acrossCards: wbSortAcrossCards,
   };
-  storageManager.set("sortPresets", savedSortPresets);
+  storageManager.set(STORAGE_KEYS.SORT_PRESETS, savedSortPresets);
   renderSortPresetDropdown();
   document.getElementById("sortPresetDropdown").value = trimmedName;
   showToast(`Sort preset "${trimmedName}" saved!`);
@@ -238,7 +238,7 @@ async function deleteSortPreset() {
   if (!ok) return;
 
   delete savedSortPresets[presetName];
-  storageManager.set("sortPresets", savedSortPresets);
+  storageManager.set(STORAGE_KEYS.SORT_PRESETS, savedSortPresets);
   renderSortPresetDropdown();
   showToast(`Preset "${presetName}" deleted`);
 }
@@ -398,12 +398,12 @@ function openCustomOrderModal(field) {
     title: `Custom Sort Order: ${fieldLabel}`,
     onSave(order) {
       wbCustomSortOrders[field] = order;
-      storageManager.set("customSortOrders", wbCustomSortOrders);
+      storageManager.set(STORAGE_KEYS.CUSTOM_SORT_ORDERS, wbCustomSortOrders);
       renderSortCriteria();
     },
     onClear() {
       delete wbCustomSortOrders[field];
-      storageManager.set("customSortOrders", wbCustomSortOrders);
+      storageManager.set(STORAGE_KEYS.CUSTOM_SORT_ORDERS, wbCustomSortOrders);
       renderSortCriteria();
     },
   });
@@ -1281,7 +1281,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
 
   if (hasPlay) {
     document.getElementById("cellPopupPlayName").innerHTML =
-      `<strong>Current Play:</strong> ${getFullCall(currentPlay, getWristbandDisplayOptions())}`;  
+      `<strong>Current Play:</strong> ${getFullCall(currentPlay, getWristbandDisplayOptions())}`;
   } else {
     document.getElementById("cellPlaySearch").value = "";
     populateCellPlayList();
@@ -1375,7 +1375,7 @@ function selectPlayForCell(playIndex) {
   document.getElementById("cellPopupPlaySelector").style.display = "none";
   document.getElementById("cellPopupColors").style.display = "block";
   document.getElementById("cellPopupPlayName").innerHTML =
-    `<strong>Current Play:</strong> ${getFullCall(play, getWristbandDisplayOptions())}`;  
+    `<strong>Current Play:</strong> ${getFullCall(play, getWristbandDisplayOptions())}`;
 
   renderCardTabs();
   renderWristbandGrid();
@@ -1779,7 +1779,7 @@ async function saveWristband() {
       existing.cellStyles = safeDeepClone(cellCustomizations);
       existing.displaySettings = captureWbDisplaySettings();
       existing.savedAt = new Date().toISOString();
-      storageManager.set("savedWristbands", saved);
+      storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
       loadSavedWristbandsList();
       populateScriptWristbandSelect();
       populateWristbandHighlightDropdown();
@@ -1802,7 +1802,7 @@ async function saveWristband() {
     savedAt: new Date().toISOString(),
   });
 
-  storageManager.set("savedWristbands", saved);
+  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
   loadSavedWristbandsList();
   populateScriptWristbandSelect();
   populateWristbandHighlightDropdown();
@@ -1848,7 +1848,7 @@ function loadSavedWristbandsList() {
       return `
         <div class="saved-script-card">
           <div class="saved-card-main">
-            <div class="saved-card-title">${s.title}</div>
+            <div class="saved-card-title">${escapeHtml(s.title)}</div>
             <div class="saved-card-meta">
               <span>🃏 ${cardCount(s)} card(s)</span>
               <span>📝 ${totalPlays(s)} plays</span>
@@ -1943,7 +1943,7 @@ async function deleteSavedWristband(id) {
   });
   if (!ok) return;
   const filtered = saved.filter((s) => s.id !== id);
-  storageManager.set("savedWristbands", filtered);
+  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, filtered);
   loadSavedWristbandsList();
   populateScriptWristbandSelect();
   populateWristbandHighlightDropdown();
@@ -1971,7 +1971,7 @@ async function renameSavedWristband(id) {
   });
   if (newName && newName.trim()) {
     wb.title = newName.trim();
-    storageManager.set("savedWristbands", saved);
+    storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
     loadSavedWristbandsList();
     populateScriptWristbandSelect();
     populateWristbandHighlightDropdown();
@@ -1998,7 +1998,7 @@ async function overwriteSavedWristband(id) {
   wb.cellStyles = safeDeepClone(cellCustomizations);
   wb.displaySettings = captureWbDisplaySettings();
   wb.savedAt = new Date().toISOString();
-  storageManager.set("savedWristbands", saved);
+  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
   loadSavedWristbandsList();
   populateScriptWristbandSelect();
   populateWristbandHighlightDropdown();

@@ -1206,20 +1206,24 @@ async function openScriptCustomOrderModal() {
     title: `Custom Sort Order: ${fieldLabel}`,
     onSave(order) {
       scriptCustomSortOrders[field] = order;
-      storageManager.set("scriptCustomSortOrders", scriptCustomSortOrders);
+      storageManager.set(STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, scriptCustomSortOrders);
       if (statusEl) {
         statusEl.textContent = `✓ Custom order saved for ${fieldLabel}`;
         statusEl.style.color = "#28a745";
-        setTimeout(() => { statusEl.textContent = ""; }, 3000);
+        setTimeout(() => {
+          statusEl.textContent = "";
+        }, 3000);
       }
     },
     onClear() {
       delete scriptCustomSortOrders[field];
-      storageManager.set("scriptCustomSortOrders", scriptCustomSortOrders);
+      storageManager.set(STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, scriptCustomSortOrders);
       if (statusEl) {
         statusEl.textContent = `✓ Custom order cleared for ${fieldLabel}`;
         statusEl.style.color = "#6c757d";
-        setTimeout(() => { statusEl.textContent = ""; }, 3000);
+        setTimeout(() => {
+          statusEl.textContent = "";
+        }, 3000);
       }
     },
   });
@@ -1279,7 +1283,7 @@ function addSeparator() {
 function confirmAddPeriod() {
   const name = document.getElementById("newPeriodName").value.trim();
   const minutes =
-    parseInt(document.getElementById("newPeriodMinutes", 10).value) || 0;
+    parseInt(document.getElementById("newPeriodMinutes").value, 10) || 0;
   const color = document.getElementById("newPeriodColor").value || "#333333";
 
   if (!name) {
@@ -1418,7 +1422,7 @@ async function savePeriodAsTemplate(separatorIndex) {
   };
 
   periodTemplates.push(template);
-  storageManager.set("periodTemplates", periodTemplates);
+  storageManager.set(STORAGE_KEYS.PERIOD_TEMPLATES, periodTemplates);
   showToast(`Template "${name}" saved!`);
 }
 
@@ -1999,7 +2003,7 @@ async function doDeleteTemplate(idx) {
   });
   if (!ok) return;
   periodTemplates.splice(idx, 1);
-  storageManager.set("periodTemplates", periodTemplates);
+  storageManager.set(STORAGE_KEYS.PERIOD_TEMPLATES, periodTemplates);
   // Refresh the manage modal
   document.querySelector(".period-create-overlay")?.remove();
   if (periodTemplates.length > 0) {
@@ -2153,11 +2157,11 @@ function handleDrop(event) {
   const source = event.dataTransfer.getData("source");
 
   if (source === "available") {
-    const playIndex = parseInt(event.dataTransfer.getData("playIndex", 10));
+    const playIndex = parseInt(event.dataTransfer.getData("playIndex"), 10);
     if (isNaN(playIndex)) return;
     addToScript(playIndex);
   } else if (source === "script") {
-    const fromIndex = parseInt(event.dataTransfer.getData("scriptIndex", 10));
+    const fromIndex = parseInt(event.dataTransfer.getData("scriptIndex"), 10);
     if (isNaN(fromIndex)) return;
 
     // Find drop target index
@@ -2395,13 +2399,17 @@ async function autoFillDefenseFromTendencies() {
  * Call this instead of renderScript() for non-structural data changes
  */
 function updateScriptStats() {
-  let playCount = 0, totalReps = 0, runCount = 0, passCount = 0, totalTime = 0;
+  let playCount = 0,
+    totalReps = 0,
+    runCount = 0,
+    passCount = 0,
+    totalTime = 0;
   for (const p of script) {
     if (p.isSeparator) {
       if (p.minutes) totalTime += p.minutes;
     } else {
       playCount++;
-      totalReps += (p.reps || 1);
+      totalReps += p.reps || 1;
       if (p.type === "Run") runCount++;
       else if (p.type === "Pass") passCount++;
     }
@@ -2481,12 +2489,25 @@ function renderScript() {
         scoutStuntOpts = _cachedScoutOpts.stunt;
       } else {
         const _scoutResult = queryTendencies(_scoutOpp, {});
-        const mapOpts = (arr) => arr ? arr.map(x => `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`).join("") : "";
+        const mapOpts = (arr) =>
+          arr
+            ? arr
+                .map(
+                  (x) =>
+                    `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
+                )
+                .join("")
+            : "";
         scoutFrontOpts = mapOpts(_scoutResult.topFront);
         scoutCovOpts = mapOpts(_scoutResult.topCoverage);
         scoutBlitzOpts = mapOpts(_scoutResult.topBlitz);
         scoutStuntOpts = mapOpts(_scoutResult.topStunt);
-        _cachedScoutOpts = { front: scoutFrontOpts, cov: scoutCovOpts, blitz: scoutBlitzOpts, stunt: scoutStuntOpts };
+        _cachedScoutOpts = {
+          front: scoutFrontOpts,
+          cov: scoutCovOpts,
+          blitz: scoutBlitzOpts,
+          stunt: scoutStuntOpts,
+        };
         _cachedScoutOppName = _scoutOppName;
       }
     } else {
@@ -2771,7 +2792,7 @@ async function saveScript() {
       existing.date = date;
       existing.plays = safeDeepClone(script);
       existing.savedAt = new Date().toISOString();
-      storageManager.set("savedScripts", savedScripts);
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
       loadSavedScriptsList();
       markScriptClean();
       storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
@@ -2794,7 +2815,7 @@ async function saveScript() {
   };
 
   savedScripts.push(scriptData);
-  storageManager.set("savedScripts", savedScripts);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
   markScriptClean();
   storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
@@ -2841,13 +2862,13 @@ function loadSavedScriptsList() {
       return `
             <div class="saved-script-card">
                 <div class="saved-card-main">
-                  <div class="saved-card-title">${s.name}</div>
+                  <div class="saved-card-title">${escapeHtml(s.name)}</div>
                   <div class="saved-card-meta">
                     <span>📅 ${dateStr}</span>
                     <span>📝 ${playCount} plays</span>
                     ${periodCount > 0 ? `<span>📂 ${periodCount} periods</span>` : ""}
                   </div>
-                  ${periods ? `<div class="saved-card-periods">${periods}</div>` : ""}
+                  ${periods ? `<div class="saved-card-periods">${escapeHtml(periods)}</div>` : ""}
                 </div>
                 <div class="saved-card-actions">
                     <button class="saved-load-btn" onclick="loadScript(${s.id})" title="Load this script">Load</button>
@@ -2912,7 +2933,7 @@ async function deleteSavedScript(id) {
   });
   if (!ok) return;
   const filtered = savedScripts.filter((s) => s.id !== id);
-  storageManager.set("savedScripts", filtered);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, filtered);
   loadSavedScriptsList();
   showToast(`"${target.name}" deleted`);
 }
@@ -2931,7 +2952,7 @@ async function renameSavedScript(id) {
   });
   if (newName && newName.trim()) {
     s.name = newName.trim();
-    storageManager.set("savedScripts", savedScripts);
+    storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
     loadSavedScriptsList();
     showToast(`Renamed to "${s.name}"`);
   }
@@ -2955,7 +2976,7 @@ async function overwriteSavedScript(id) {
   s.date = document.getElementById("scriptDate").value || s.date;
   s.plays = safeDeepClone(script);
   s.savedAt = new Date().toISOString();
-  storageManager.set("savedScripts", savedScripts);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
   markScriptClean();
   storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
@@ -3128,7 +3149,7 @@ function closeLoadWbToScriptModal(event) {
  */
 function executeLoadWbToScript() {
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wbIdx = parseInt(document.getElementById("wbToScriptSelect", 10).value);
+  const wbIdx = parseInt(document.getElementById("wbToScriptSelect").value, 10);
   const destination = document.getElementById("wbToScriptDestination").value;
   const cardChoice = document.getElementById("wbToScriptCards").value;
 
@@ -3147,7 +3168,8 @@ function executeLoadWbToScript() {
   // Collect plays from selected card(s)
   const playsToAdd = [];
   wb.cards.forEach((card, cardIdx) => {
-    if (cardChoice !== "all" && parseInt(cardChoice, 10) !== cardIdx + 1) return;
+    if (cardChoice !== "all" && parseInt(cardChoice, 10) !== cardIdx + 1)
+      return;
 
     card.data.forEach((play) => {
       if (play !== null) {
@@ -3202,7 +3224,11 @@ function buildScriptPlayRow(p, displayNum, opts) {
   let rowColor = "";
   if (opts.highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
     rowColor = "background: #fff9c4;";
-  } else if (opts.highlightCandy && p.tempo && p.tempo.toLowerCase() === "candy") {
+  } else if (
+    opts.highlightCandy &&
+    p.tempo &&
+    p.tempo.toLowerCase() === "candy"
+  ) {
     rowColor = "background: #fce4ec;";
   }
 
@@ -3273,7 +3299,7 @@ function generatePDF() {
         const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
         return `<tr class="print-period-header" style="background: ${periodColor}; color: white;">
           <td colspan="12" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
-            ${p.label.toUpperCase()}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
+            ${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
           </td>
         </tr>`;
       }
@@ -3340,8 +3366,8 @@ function loadFullDayScriptList() {
       <label class="full-day-item">
         <input type="checkbox" class="day-script-checkbox" value="${s.id}" data-order="${i}">
         <div class="full-day-item-info">
-          <span class="full-day-item-name">${s.name}</span>
-          <span class="full-day-item-meta">${playCount} plays${periodCount > 0 ? " • " + periodCount + " periods" : ""}${periodsStr ? " (" + periodsStr + ")" : ""}</span>
+          <span class="full-day-item-name">${escapeHtml(s.name)}</span>
+          <span class="full-day-item-meta">${playCount} plays${periodCount > 0 ? " • " + periodCount + " periods" : ""}${periodsStr ? " (" + escapeHtml(periodsStr) + ")" : ""}</span>
         </div>
       </label>
     `;
@@ -3413,7 +3439,7 @@ async function printFullDay() {
     allContent += `
       <tr class="script-section-header">
         <td colspan="12" style="background: #1a1a2e; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid #667eea;">
-          📋 ${scriptData.name.toUpperCase()} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
+          📋 ${escapeHtml(scriptData.name.toUpperCase())} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
         </td>
       </tr>
     `;
@@ -3429,7 +3455,7 @@ async function printFullDay() {
         }
         const periodColor = p.color || "#444";
         const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
-        allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="12" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${p.label.toUpperCase()}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
+        allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="12" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
         return;
       }
 
@@ -3817,29 +3843,29 @@ function getSmartScriptConfig() {
   return {
     hashFlow: {
       enabled: document.getElementById("ssRuleHashFlow").checked,
-      weight: parseInt(document.getElementById("ssWeightHashFlow", 10).value),
+      weight: parseInt(document.getElementById("ssWeightHashFlow").value, 10),
     },
     downProgression: {
       enabled: document.getElementById("ssRuleDownProgression").checked,
-      weight: parseInt(document.getElementById("ssWeightDownProg", 10).value),
-      cycle: parseInt(document.getElementById("ssDownCycle", 10).value),
+      weight: parseInt(document.getElementById("ssWeightDownProg").value, 10),
+      cycle: parseInt(document.getElementById("ssDownCycle").value, 10),
       targetDown: document.getElementById("ssDownTarget").value,
     },
     typeVariety: {
       enabled: document.getElementById("ssRuleTypeVariety").checked,
-      weight: parseInt(document.getElementById("ssWeightTypeVariety", 10).value),
+      weight: parseInt(document.getElementById("ssWeightTypeVariety").value, 10),
     },
     personnelCluster: {
       enabled: document.getElementById("ssRulePersonnelCluster").checked,
-      weight: parseInt(document.getElementById("ssWeightPersonnel", 10).value),
+      weight: parseInt(document.getElementById("ssWeightPersonnel").value, 10),
     },
     tempoVariety: {
       enabled: document.getElementById("ssRuleTempoVariety").checked,
-      weight: parseInt(document.getElementById("ssWeightTempo", 10).value),
+      weight: parseInt(document.getElementById("ssWeightTempo").value, 10),
     },
     formationSpread: {
       enabled: document.getElementById("ssRuleFormationSpread").checked,
-      weight: parseInt(document.getElementById("ssWeightFormation", 10).value),
+      weight: parseInt(document.getElementById("ssWeightFormation").value, 10),
     },
     startHash: {
       enabled: document.getElementById("ssRuleStartHash").checked,
@@ -3847,12 +3873,12 @@ function getSmartScriptConfig() {
     },
     runPassBalance: {
       enabled: document.getElementById("ssRuleRunPassBal").checked,
-      weight: parseInt(document.getElementById("ssWeightRunPassBal", 10).value),
-      targetRunPct: parseInt(document.getElementById("ssRunPct", 10).value),
+      weight: parseInt(document.getElementById("ssWeightRunPassBal").value, 10),
+      targetRunPct: parseInt(document.getElementById("ssRunPct").value, 10),
     },
     constraintPairing: {
       enabled: document.getElementById("ssRuleConstraint").checked,
-      weight: parseInt(document.getElementById("ssWeightConstraint", 10).value),
+      weight: parseInt(document.getElementById("ssWeightConstraint").value, 10),
     },
   };
 }

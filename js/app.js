@@ -203,7 +203,7 @@ function handleFileUpload(event) {
     filteredPlays = [...plays];
 
     // Store in localStorage
-    storageManager.set("playbook", plays);
+    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
 
     // Show main app
     document.getElementById("uploadSection").style.display = "none";
@@ -352,14 +352,14 @@ function renderDashboard() {
 
   if (!select) return;
 
-  const opponents = storageManager.get("defensiveTendencies", []);
+  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   const gw = getGameWeek();
 
   // Build opponent options
   let optHtml = '<option value="">— Select Opponent —</option>';
   opponents.forEach((opp, idx) => {
     const sel = gw.opponentIndex === idx ? "selected" : "";
-    optHtml += `<option value="${idx}" ${sel}>${opp.name} (${opp.plays.length} plays)</option>`;
+    optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays.length} plays)</option>`;
   });
   select.innerHTML = optHtml;
 
@@ -372,7 +372,7 @@ function renderDashboard() {
 
   if (badge) {
     badge.innerHTML = gw.opponentName
-      ? `<span class="dash-opp-active">🏈 ${gw.opponentName}${gw.weekLabel ? " — " + gw.weekLabel : ""}</span>`
+      ? `<span class="dash-opp-active">🏈 ${escapeHtml(gw.opponentName)}${gw.weekLabel ? " — " + escapeHtml(gw.weekLabel) : ""}</span>`
       : '<span class="dash-opp-none">No opponent selected</span>';
   }
 
@@ -462,7 +462,7 @@ function renderDashboard() {
       const rz = queryTendencies(opp, { situation: ["Red Zone"] });
 
       scoutEl.innerHTML = `
-        <h3 class="dash-section-title">🎯 Scouting Summary — ${opp.name}</h3>
+        <h3 class="dash-section-title">🎯 Scouting Summary — ${escapeHtml(opp.name)}</h3>
         <div class="dash-scout-grid">
           <div class="dash-scout-card">
             <div class="dash-scout-card-title">Overall (${overall.total} plays)</div>
@@ -471,14 +471,14 @@ function renderDashboard() {
                 .slice(0, 3)
                 .map(
                   (f) =>
-                    `<div class="dash-scout-row"><span>Front:</span> <b>${f.term}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+                    `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
                 )
                 .join("")}
               ${overall.topCoverage
                 .slice(0, 3)
                 .map(
                   (c) =>
-                    `<div class="dash-scout-row"><span>Cov:</span> <b>${c.term}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+                    `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
                 )
                 .join("")}
               <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${overall.blitzRate}%</b></div>
@@ -491,14 +491,14 @@ function renderDashboard() {
                 .slice(0, 2)
                 .map(
                   (f) =>
-                    `<div class="dash-scout-row"><span>Front:</span> <b>${f.term}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+                    `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
                 )
                 .join("")}
               ${thirdDown.topCoverage
                 .slice(0, 2)
                 .map(
                   (c) =>
-                    `<div class="dash-scout-row"><span>Cov:</span> <b>${c.term}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+                    `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
                 )
                 .join("")}
               <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${thirdDown.blitzRate}%</b></div>
@@ -511,14 +511,14 @@ function renderDashboard() {
                 .slice(0, 2)
                 .map(
                   (f) =>
-                    `<div class="dash-scout-row"><span>Front:</span> <b>${f.term}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+                    `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
                 )
                 .join("")}
               ${rz.topCoverage
                 .slice(0, 2)
                 .map(
                   (c) =>
-                    `<div class="dash-scout-row"><span>Cov:</span> <b>${c.term}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+                    `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
                 )
                 .join("")}
               <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${rz.blitzRate}%</b></div>
@@ -564,7 +564,7 @@ function onDashNotesChange(value) {
   _dashNotesTimer = setTimeout(() => {
     const gw = getGameWeek();
     gw.notes = value;
-    storageManager.set(GAME_WEEK_KEY, gw);
+    storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   }, 400);
 }
 
@@ -580,7 +580,7 @@ function printFullGamePlan() {
 
   // Header
   html += `<div class="gp-print-header">
-    <h1>🏈 Game Plan${gw.opponentName ? " — vs. " + gw.opponentName : ""}${gw.weekLabel ? " (" + gw.weekLabel + ")" : ""}</h1>
+    <h1>🏈 Game Plan${gw.opponentName ? " — vs. " + escapeHtml(gw.opponentName) : ""}${gw.weekLabel ? " (" + escapeHtml(gw.weekLabel) + ")" : ""}</h1>
     <p class="gp-print-date">${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
   </div>`;
 
@@ -588,7 +588,7 @@ function printFullGamePlan() {
   if (gw.notes && gw.notes.trim()) {
     html += `<div class="gp-print-section">
       <h2 class="gp-print-section-title">📝 Game Week Notes</h2>
-      <div class="gp-print-notes">${gw.notes.replace(/\n/g, "<br>")}</div>
+      <div class="gp-print-notes">${escapeHtml(gw.notes).replace(/\n/g, "<br>")}</div>
     </div>`;
   }
 
@@ -599,7 +599,7 @@ function printFullGamePlan() {
     const rz = queryTendencies(opp, { situation: ["Red Zone"] });
 
     html += `<div class="gp-print-section">
-      <h2 class="gp-print-section-title">🎯 Scouting Report — ${opp.name} (${overall.total} charted plays)</h2>
+      <h2 class="gp-print-section-title">🎯 Scouting Report — ${escapeHtml(opp.name)} (${overall.total} charted plays)</h2>
       <div class="gp-scout-grid">`;
 
     const sections = [
@@ -615,18 +615,18 @@ function printFullGamePlan() {
           <tr><th>Fronts</th><th>%</th></tr>
           ${s.data.topFront
             .slice(0, 4)
-            .map((f) => `<tr><td>${f.term}</td><td>${f.pct}%</td></tr>`)
+            .map((f) => `<tr><td>${escapeHtml(f.term)}</td><td>${f.pct}%</td></tr>`)
             .join("")}
         </table>
         <table class="gp-scout-table">
           <tr><th>Coverages</th><th>%</th></tr>
           ${s.data.topCoverage
             .slice(0, 4)
-            .map((c) => `<tr><td>${c.term}</td><td>${c.pct}%</td></tr>`)
+            .map((c) => `<tr><td>${escapeHtml(c.term)}</td><td>${c.pct}%</td></tr>`)
             .join("")}
         </table>
         <p class="gp-blitz-line">Blitz Rate: <strong>${s.data.blitzRate}%</strong></p>
-        ${s.data.topStunt && s.data.topStunt.length > 0 ? `<p class="gp-stunt-line">Top Stunt: ${s.data.topStunt[0].term} (${s.data.topStunt[0].pct}%)</p>` : ""}
+        ${s.data.topStunt && s.data.topStunt.length > 0 ? `<p class="gp-stunt-line">Top Stunt: ${escapeHtml(s.data.topStunt[0].term)} (${s.data.topStunt[0].pct}%)</p>` : ""}
       </div>`;
     });
 
@@ -739,7 +739,7 @@ function onDashOpponentChange(value) {
 function onDashWeekLabelChange(value) {
   const gw = getGameWeek();
   gw.weekLabel = value;
-  storageManager.set(GAME_WEEK_KEY, gw);
+  storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   renderDashboard();
 }
 

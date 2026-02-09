@@ -2,8 +2,6 @@
 // Tracks which offensive components have been installed (taught/repped)
 // and provides a readiness rating for each play
 
-const INSTALL_STORAGE_KEY = "installationData";
-
 /**
  * Component categories that map to play object fields
  * Each play is rated on up to 10 of these components
@@ -31,7 +29,7 @@ const INSTALL_CATEGORIES = [
 let _installDataCache = null;
 function getInstallationData() {
   if (_installDataCache) return _installDataCache;
-  _installDataCache = storageManager.get(INSTALL_STORAGE_KEY, {
+  _installDataCache = storageManager.get(STORAGE_KEYS.INSTALLATION, {
     installed: {},
     order: {},
   });
@@ -43,7 +41,7 @@ function getInstallationData() {
  */
 function saveInstallationData(data) {
   _installDataCache = null; // invalidate cache
-  storageManager.set(INSTALL_STORAGE_KEY, data);
+  storageManager.set(STORAGE_KEYS.INSTALLATION, data);
 }
 
 /**

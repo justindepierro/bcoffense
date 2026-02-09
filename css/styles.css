@@ -1284,7 +1284,11 @@ tr:hover {
   user-select: none;
 }
 .wristband-integration-panel .integration-header:hover {
-  background: linear-gradient(135deg, var(--color-success-hover) 0%, #1aa179 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-success-hover) 0%,
+    #1aa179 100%
+  );
 }
 .wristband-integration-panel .integration-content {
   padding: 12px;
@@ -1437,6 +1441,11 @@ tr:hover {
 .btn-secondary {
   background: #6c757d;
   color: white;
+  border: none;
+  padding: 8px 16px;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 0.9rem;
 }
 
 .btn-secondary:hover {
@@ -1703,6 +1712,10 @@ tr:hover {
 .btn-danger {
   background: var(--color-danger);
   color: white;
+  border: none;
+}
+.btn-danger:hover {
+  background: var(--color-danger-hover);
 }
 
 /* Script Preview */
@@ -2112,7 +2125,11 @@ input.smart-input-sm[type="number"] {
 }
 
 .btn-smart-script {
-  background: linear-gradient(135deg, var(--color-accent) 0%, #764ba2 100%) !important;
+  background: linear-gradient(
+    135deg,
+    var(--color-accent) 0%,
+    #764ba2 100%
+  ) !important;
   color: white !important;
   font-weight: 600;
 }
@@ -2744,20 +2761,6 @@ input.smart-input-sm[type="number"] {
 .btn-redo:disabled {
   opacity: 0.5;
   cursor: not-allowed;
-}
-
-.btn-secondary {
-  background: #6c757d;
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: 6px;
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.btn-secondary:hover {
-  background: #5a6268;
 }
 
 .upload-section {
@@ -3945,7 +3948,6 @@ kbd {
   transform: scale(1.2);
 }
 
-
 /* ===== Call Sheet Picker Modal (cleaned up) ===== */
 .cs-picker-popup {
   max-width: 600px;
@@ -5035,14 +5037,6 @@ kbd {
   display: flex;
   gap: 4px;
 }
-.btn-danger {
-  background: var(--color-danger);
-  color: #fff;
-  border: none;
-}
-.btn-danger:hover {
-  background: var(--color-danger-hover);
-}
 
 /* --- Print: category notes --- */
 .print-cat-note {
@@ -5484,16 +5478,6 @@ kbd {
 }
 .td-save-btn:hover {
   background: var(--color-success-hover) !important;
-}
-
-/* Danger button */
-.btn-danger {
-  background: var(--color-danger);
-  color: white;
-  border: none;
-}
-.btn-danger:hover {
-  background: var(--color-danger-hover);
 }
 
 /* Textarea in wizard */

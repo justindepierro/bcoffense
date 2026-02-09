@@ -5,8 +5,7 @@ let currentSortColumn = null;
 let currentSortDirection = "asc";
 let selectedRowIndex = -1;
 
-// Storage key for persisting filter/sort state
-const PLAYBOOK_STATE_KEY = "playbookState";
+// Storage key for persisting filter/sort state is STORAGE_KEYS.PLAYBOOK_STATE
 
 /**
  * Apply current sort to filteredPlays (without toggling direction)
@@ -262,7 +261,7 @@ function clearFilters() {
   });
 
   // Clear saved state
-  storageManager.remove(PLAYBOOK_STATE_KEY);
+  storageManager.remove(STORAGE_KEYS.PLAYBOOK_STATE);
 
   renderPlaybook();
 }
@@ -409,14 +408,14 @@ function savePlaybookState() {
     sortColumn: currentSortColumn,
     sortDirection: currentSortDirection,
   };
-  storageManager.set(PLAYBOOK_STATE_KEY, state);
+  storageManager.set(STORAGE_KEYS.PLAYBOOK_STATE, state);
 }
 
 /**
  * Restore playbook filter/sort state from localStorage
  */
 function restorePlaybookState() {
-  const state = storageManager.get(PLAYBOOK_STATE_KEY, null);
+  const state = storageManager.get(STORAGE_KEYS.PLAYBOOK_STATE, null);
   if (!state) return;
 
   // Restore filters
@@ -555,7 +554,7 @@ const columnVisibility = {
 function toggleColumn(column) {
   columnVisibility[column] = !columnVisibility[column];
   applyColumnVisibility();
-  storageManager.set("columnVisibility", columnVisibility);
+  storageManager.set(STORAGE_KEYS.COLUMN_VISIBILITY, columnVisibility);
 }
 
 /**
@@ -594,7 +593,7 @@ function applyColumnVisibility() {
  * Restore column visibility from localStorage
  */
 function restoreColumnVisibility() {
-  const savedVis = storageManager.get("columnVisibility", null);
+  const savedVis = storageManager.get(STORAGE_KEYS.COLUMN_VISIBILITY, null);
   if (savedVis) {
     Object.assign(columnVisibility, savedVis);
     // Update checkboxes

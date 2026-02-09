@@ -653,7 +653,8 @@ function importCompleteBackup(event) {
   const reader = new FileReader();
   reader.onload = async function (e) {
     try {
-      const backup = JSON.parse(e.target.result);
+      const backup = safeJSONParse(e.target.result, null);
+      if (!backup) throw new Error("Invalid JSON");
 
       if (await storageManager.restoreAllData(backup)) {
         // Reload app state from storage
@@ -1654,14 +1655,12 @@ function checkDeadVs(play, defCoverage, defFront) {
 // ============ Game Week / Active Opponent ============
 // Central concept that ties tendencies data to script, call sheet, and dashboard.
 
-const GAME_WEEK_KEY = "gameWeek";
-
 /**
  * Get the current game week configuration
  * @returns {{ opponentName: string|null, opponentIndex: number|null, weekLabel: string, notes: string }}
  */
 function getGameWeek() {
-  return storageManager.get(GAME_WEEK_KEY, {
+  return storageManager.get(STORAGE_KEYS.GAME_WEEK, {
     opponentName: null,
     opponentIndex: null,
     weekLabel: "",
@@ -1675,13 +1674,13 @@ function getGameWeek() {
  * @param {string} [weekLabel]        – e.g. "Week 3"
  */
 function setGameWeek(opponentIndex, weekLabel) {
-  const opponents = storageManager.get("defensiveTendencies", []);
+  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   const opp = opponentIndex !== null ? opponents[opponentIndex] : null;
   const gw = getGameWeek();
   gw.opponentIndex = opponentIndex;
   gw.opponentName = opp ? opp.name : null;
   if (weekLabel !== undefined) gw.weekLabel = weekLabel;
-  storageManager.set(GAME_WEEK_KEY, gw);
+  storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   // Invalidate script's scouting cache so next render fetches fresh data
   if (typeof invalidateScoutCache === "function") invalidateScoutCache();
 }
@@ -1693,7 +1692,7 @@ function setGameWeek(opponentIndex, weekLabel) {
 function getActiveOpponent() {
   const gw = getGameWeek();
   if (gw.opponentIndex === null) return null;
-  const opponents = storageManager.get("defensiveTendencies", []);
+  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   return opponents[gw.opponentIndex] || null;
 }
 

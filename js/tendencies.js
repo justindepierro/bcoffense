@@ -36,8 +36,6 @@ let tdDragIndex = null;
 // Stats dashboard toggle
 let tdShowStats = false;
 
-const TENDENCIES_STORAGE_KEY = "defensiveTendencies";
-
 // Default values users can quick-pick (big buttons). Users can always type custom.
 const TENDENCIES_OPTIONS = {
   quarter: ["1", "2", "3", "4", "OT"],
@@ -513,14 +511,14 @@ const TD_FILTER_FIELDS = [
 // ============ Persistence ============
 
 function loadTendencies() {
-  tendenciesOpponents = storageManager.get(TENDENCIES_STORAGE_KEY, []);
+  tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   const settings = storageManager.get(STORAGE_KEYS.TENDENCIES_SETTINGS, {});
   tdVisibleColumns = settings.visibleColumns || [...TD_DEFAULT_VISIBLE];
   tendenciesRapidMode = settings.rapidMode || false;
 }
 
 function saveTendencies() {
-  storageManager.set(TENDENCIES_STORAGE_KEY, tendenciesOpponents);
+  storageManager.set(STORAGE_KEYS.DEFENSIVE_TENDENCIES, tendenciesOpponents);
 }
 
 function saveTendenciesSettings() {
@@ -2146,8 +2144,8 @@ function importTendenciesJSON() {
     const reader = new FileReader();
     reader.onload = async (ev) => {
       try {
-        const data = JSON.parse(ev.target.result);
-        if (!Array.isArray(data)) throw new Error("Invalid format");
+        const data = safeJSONParse(ev.target.result, null);
+        if (!data || !Array.isArray(data)) throw new Error("Invalid format");
         data.forEach((opp) => {
           if (!opp.name || !Array.isArray(opp.plays))
             throw new Error("Invalid opponent structure");

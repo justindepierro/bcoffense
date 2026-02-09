@@ -434,7 +434,7 @@ function initCallSheet() {
 async function autoPopulateCallSheet() {
   const ok = await showConfirm(
     "This will clear the current call sheet and repopulate from your playbook based on preferred fields and play types. Continue?",
-    { title: "Auto-Populate Call Sheet", icon: "⚡", confirmText: "Populate" }
+    { title: "Auto-Populate Call Sheet", icon: "⚡", confirmText: "Populate" },
   );
   if (!ok) return;
 
@@ -443,63 +443,63 @@ async function autoPopulateCallSheet() {
     callSheet[cat.id] = { left: [], right: [] };
   });
 
-      // Track which plays go where for dedup per category
-      const seen = {}; // { catId: Set of play keys }
-      let totalPlaced = 0;
-      let unmatched = 0;
+  // Track which plays go where for dedup per category
+  const seen = {}; // { catId: Set of play keys }
+  let totalPlaced = 0;
+  let unmatched = 0;
 
-      // Build a unique key for a play (formation + play name + personnel)
-      const playKey = (p) =>
-        `${(p.formation || "").toLowerCase()}|${(p.play || "").toLowerCase()}|${(p.personnel || "").toLowerCase()}`;
+  // Build a unique key for a play (formation + play name + personnel)
+  const playKey = (p) =>
+    `${(p.formation || "").toLowerCase()}|${(p.play || "").toLowerCase()}|${(p.personnel || "").toLowerCase()}`;
 
-      // Go through each play and categorize
-      plays.forEach((play) => {
-        const categories = findMatchingCategories(play);
+  // Go through each play and categorize
+  plays.forEach((play) => {
+    const categories = findMatchingCategories(play);
 
-        if (categories.length === 0) {
-          unmatched++;
-          return;
+    if (categories.length === 0) {
+      unmatched++;
+      return;
+    }
+
+    categories.forEach((catId) => {
+      // Dedup: don't add same play to same category twice
+      if (!seen[catId]) seen[catId] = new Set();
+      const key = playKey(play);
+      if (seen[catId].has(key)) return;
+      seen[catId].add(key);
+
+      const hash = (play.preferredHash || "").toLowerCase().trim();
+      const playWithNum = {
+        ...play,
+        wristbandNumber: getWristbandNumberForPlay(play),
+      };
+
+      if (hash === "left" || hash === "l") {
+        callSheet[catId].left.push(playWithNum);
+      } else if (hash === "right" || hash === "r") {
+        callSheet[catId].right.push(playWithNum);
+      } else {
+        // Unspecified hash — distribute evenly (alternate L/R)
+        const leftLen = callSheet[catId].left.length;
+        const rightLen = callSheet[catId].right.length;
+        if (leftLen <= rightLen) {
+          callSheet[catId].left.push(playWithNum);
+        } else {
+          callSheet[catId].right.push(playWithNum);
         }
-
-        categories.forEach((catId) => {
-          // Dedup: don't add same play to same category twice
-          if (!seen[catId]) seen[catId] = new Set();
-          const key = playKey(play);
-          if (seen[catId].has(key)) return;
-          seen[catId].add(key);
-
-          const hash = (play.preferredHash || "").toLowerCase().trim();
-          const playWithNum = {
-            ...play,
-            wristbandNumber: getWristbandNumberForPlay(play),
-          };
-
-          if (hash === "left" || hash === "l") {
-            callSheet[catId].left.push(playWithNum);
-          } else if (hash === "right" || hash === "r") {
-            callSheet[catId].right.push(playWithNum);
-          } else {
-            // Unspecified hash — distribute evenly (alternate L/R)
-            const leftLen = callSheet[catId].left.length;
-            const rightLen = callSheet[catId].right.length;
-            if (leftLen <= rightLen) {
-              callSheet[catId].left.push(playWithNum);
-            } else {
-              callSheet[catId].right.push(playWithNum);
-            }
-          }
-          totalPlaced++;
-        });
-      });
-
-      renderCallSheet();
-      saveCallSheet();
-
-      let msg = `⚡ Placed ${totalPlaced} entries from ${plays.length} plays`;
-      if (unmatched > 0) {
-        msg += ` (${unmatched} unmatched)`;
       }
-      showToast(msg);
+      totalPlaced++;
+    });
+  });
+
+  renderCallSheet();
+  saveCallSheet();
+
+  let msg = `⚡ Placed ${totalPlaced} entries from ${plays.length} plays`;
+  if (unmatched > 0) {
+    msg += ` (${unmatched} unmatched)`;
+  }
+  showToast(msg);
 }
 
 /**
@@ -938,7 +938,7 @@ function setCallSheetOrientation(orient) {
  * Save call sheet settings
  */
 function saveCallSheetSettings() {
-  storageManager.set("callSheetSettings", callSheetSettings);
+  storageManager.set(STORAGE_KEYS.CALL_SHEET_SETTINGS, callSheetSettings);
 }
 
 /**
@@ -1058,7 +1058,7 @@ function renderCategory(cat, data, dupeMap) {
     // Category note (if any)
     const note = csNotes[cat.id];
     if (note) {
-      html += `<div class="cs-cat-note" ondblclick="editCategoryNote('${cat.id}')">${note}</div>`;
+      html += `<div class="cs-cat-note" ondblclick="editCategoryNote('${cat.id}')">${escapeHtml(note)}</div>`;
     }
 
     html += `
@@ -2004,7 +2004,7 @@ function updateLoadedWristbandDisplay() {
   if (display) {
     if (callSheetSettings.loadedWristbandName) {
       display.innerHTML = `<span class="cs-loaded-wb-badge">
-        📋 ${callSheetSettings.loadedWristbandName} (${callSheetSettings.loadedWristbandPlays.length} plays)
+        📋 ${escapeHtml(callSheetSettings.loadedWristbandName)} (${callSheetSettings.loadedWristbandPlays.length} plays)
         <button class="cs-loaded-wb-clear" onclick="clearLoadedWristband()" aria-label="Clear loaded wristband">×</button>
       </span>`;
     } else {
@@ -2126,7 +2126,12 @@ function loadCallSheet() {
 async function clearCallSheet() {
   const ok = await showConfirm(
     "This will remove all plays from every category. This cannot be undone. Continue?",
-    { title: "Clear Call Sheet", icon: "🗑️", confirmText: "Clear", danger: true }
+    {
+      title: "Clear Call Sheet",
+      icon: "🗑️",
+      confirmText: "Clear",
+      danger: true,
+    },
   );
   if (!ok) return;
 
@@ -2789,7 +2794,7 @@ async function checkCallSheetDraft() {
   const timeStr = savedAt.toLocaleTimeString();
   const ok = await showConfirm(
     `A draft from ${timeStr} was found. Would you like to restore it?`,
-    { title: "Restore Call Sheet Draft?", icon: "📋", confirmText: "Restore" }
+    { title: "Restore Call Sheet Draft?", icon: "📋", confirmText: "Restore" },
   );
   if (ok) {
     callSheet = draft.callSheet;
@@ -2842,9 +2847,9 @@ function buildCallSheetPlayParts(play, options) {
 
   // Handle shift with bold/red options
   if (play.shift) {
-    let shiftText = escapeHtml(options.removeVowels
-      ? removeVowels(play.shift)
-      : play.shift);
+    let shiftText = escapeHtml(
+      options.removeVowels ? removeVowels(play.shift) : play.shift,
+    );
     if (options.boldShifts) shiftText = `<b>${shiftText}</b>`;
     if (options.redShifts)
       shiftText = `<span class="cs-red-text">${shiftText}</span>`;
@@ -2853,9 +2858,9 @@ function buildCallSheetPlayParts(play, options) {
 
   // Handle motion with italic/red options
   if (options.showMotion && play.motion) {
-    let motionText = escapeHtml(options.removeVowels
-      ? removeVowels(play.motion)
-      : play.motion);
+    let motionText = escapeHtml(
+      options.removeVowels ? removeVowels(play.motion) : play.motion,
+    );
     if (options.italicMotions) motionText = `<i>${motionText}</i>`;
     if (options.redMotions)
       motionText = `<span class="cs-red-text">${motionText}</span>`;
@@ -2891,9 +2896,9 @@ function buildCallSheetPlayParts(play, options) {
 
   // Add line call in brackets
   if (options.showLineCall && play.lineCall) {
-    const lc = escapeHtml(options.removeVowels
-      ? removeVowels(play.lineCall)
-      : play.lineCall);
+    const lc = escapeHtml(
+      options.removeVowels ? removeVowels(play.lineCall) : play.lineCall,
+    );
     playParts.push(`<i class="cs-line-call">[${lc}]</i>`);
   }
 
@@ -3424,7 +3429,7 @@ async function loadTemplate(idx) {
 
   const ok = await showConfirm(
     `Load "${template.name}"? This will replace your current call sheet.`,
-    { title: "Load Template", icon: "📁", confirmText: "Load" }
+    { title: "Load Template", icon: "📁", confirmText: "Load" },
   );
   if (!ok) return;
 
@@ -3442,10 +3447,7 @@ async function loadTemplate(idx) {
   saveCallSheetSettings();
   storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
   storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
-  storageManager.set(
-    STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
-    csCategoryOrder,
-  );
+  storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
 
   renderCallSheet();
   closeTemplateModal();
@@ -3456,7 +3458,10 @@ async function deleteTemplate(idx) {
   const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
   const name = templates[idx]?.name || "template";
   const ok = await showConfirm(`Delete "${name}"?`, {
-    title: "Delete Template", icon: "🗑️", confirmText: "Delete", danger: true
+    title: "Delete Template",
+    icon: "🗑️",
+    confirmText: "Delete",
+    danger: true,
   });
   if (!ok) return;
 
@@ -4010,11 +4015,11 @@ function buildScoutingBadge(categoryId) {
   let parts = [];
   if (intel.topFront.length > 0)
     parts.push(
-      `<span class="cs-scout-item">Fr: <b>${intel.topFront[0].term}</b> ${intel.topFront[0].pct}%</span>`,
+      `<span class="cs-scout-item">Fr: <b>${escapeHtml(intel.topFront[0].term)}</b> ${intel.topFront[0].pct}%</span>`,
     );
   if (intel.topCoverage.length > 0)
     parts.push(
-      `<span class="cs-scout-item">Cov: <b>${intel.topCoverage[0].term}</b> ${intel.topCoverage[0].pct}%</span>`,
+      `<span class="cs-scout-item">Cov: <b>${escapeHtml(intel.topCoverage[0].term)}</b> ${intel.topCoverage[0].pct}%</span>`,
     );
   if (intel.blitzRate > 0)
     parts.push(
@@ -4153,8 +4158,6 @@ function openSmartSuggestionsModal(categoryId) {
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
-
-
 
 /**
  * Add a suggested play to the call sheet
