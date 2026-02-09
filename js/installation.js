@@ -639,14 +639,16 @@ function generateSmartInstallReport() {
     (r) => r.maxStars > 0 && r.stars === r.maxStars,
   );
   const nearReady = playRatings.filter(
-    (r) => r.maxStars > 0 && r.stars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
+    (r) =>
+      r.maxStars > 0 &&
+      r.stars > 0 &&
+      r.maxStars - r.stars <= 2 &&
+      r.stars < r.maxStars,
   );
   const inProgress = playRatings.filter(
     (r) => r.maxStars > 0 && r.stars > 0 && r.maxStars - r.stars > 2,
   );
-  const notStarted = playRatings.filter(
-    (r) => r.maxStars > 0 && r.stars === 0,
-  );
+  const notStarted = playRatings.filter((r) => r.maxStars > 0 && r.stars === 0);
 
   // ── Step 3: Score every UNINSTALLED component ────────────────
   const componentScores = [];
@@ -706,7 +708,8 @@ function generateSmartInstallReport() {
       // ── Dimension 6: Cluster synergy ──
       // How many plays needing 1-2 more components does this help?
       const clusterPlays = affectedPlays.filter(
-        (r) => r.maxStars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
+        (r) =>
+          r.maxStars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
       ).length;
 
       // ── Composite score (weighted) ──
@@ -859,8 +862,14 @@ function showSmartInstallReport() {
   }
 
   const { balance } = report;
-  const runReadyPct = balance.totalRuns > 0 ? Math.round((balance.readyRuns / balance.totalRuns) * 100) : 0;
-  const passReadyPct = balance.totalPasses > 0 ? Math.round((balance.readyPasses / balance.totalPasses) * 100) : 0;
+  const runReadyPct =
+    balance.totalRuns > 0
+      ? Math.round((balance.readyRuns / balance.totalRuns) * 100)
+      : 0;
+  const passReadyPct =
+    balance.totalPasses > 0
+      ? Math.round((balance.readyPasses / balance.totalPasses) * 100)
+      : 0;
 
   let html = `<div class="sir-container">`;
 
@@ -1086,7 +1095,12 @@ function showSmartInstallReport() {
 
     report.gameReadySummary.plays.forEach((p) => {
       const subtitle = [p.personnel, p.formation].filter(Boolean).join(" · ");
-      const typeClass = p.type === "Run" ? "sir-type-run" : p.type === "Pass" ? "sir-type-pass" : "";
+      const typeClass =
+        p.type === "Run"
+          ? "sir-type-run"
+          : p.type === "Pass"
+            ? "sir-type-pass"
+            : "";
       html += `
             <div class="sir-list-row sir-list-ready">
               <div class="sir-list-info">
@@ -1103,7 +1117,10 @@ function showSmartInstallReport() {
 
   html += `</div>`; // close .sir-container
 
-  showModal(html, { title: "🧠 Smart Installation Report", confirmText: "Close" });
+  showModal(html, {
+    title: "🧠 Smart Installation Report",
+    confirmText: "Close",
+  });
 }
 
 /**
@@ -1118,11 +1135,24 @@ function printSmartInstallReport() {
   if (!container || !content) return;
 
   const { balance } = report;
-  const runReadyPct = balance.totalRuns > 0 ? Math.round((balance.readyRuns / balance.totalRuns) * 100) : 0;
-  const passReadyPct = balance.totalPasses > 0 ? Math.round((balance.readyPasses / balance.totalPasses) * 100) : 0;
-  const overallReady = report.totalPlays > 0 ? Math.round((report.totalGameReady / report.totalPlays) * 100) : 0;
+  const runReadyPct =
+    balance.totalRuns > 0
+      ? Math.round((balance.readyRuns / balance.totalRuns) * 100)
+      : 0;
+  const passReadyPct =
+    balance.totalPasses > 0
+      ? Math.round((balance.readyPasses / balance.totalPasses) * 100)
+      : 0;
+  const overallReady =
+    report.totalPlays > 0
+      ? Math.round((report.totalGameReady / report.totalPlays) * 100)
+      : 0;
   const now = new Date();
-  const dateStr = now.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+  const dateStr = now.toLocaleDateString("en-US", {
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
 
   let html = `
     <div class="sirp">
@@ -1216,7 +1246,9 @@ function printSmartInstallReport() {
           <thead><tr><th>Play</th><th>Personnel</th><th>Formation</th><th>Missing Components</th></tr></thead>
           <tbody>`;
     report.twoAway.forEach((p) => {
-      const missingStr = p.missing.map((m) => m.icon + " " + escapeHtml(m.value)).join(", ");
+      const missingStr = p.missing
+        .map((m) => m.icon + " " + escapeHtml(m.value))
+        .join(", ");
       html += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td>${escapeHtml(p.personnel)}</td><td>${escapeHtml(p.formation)}</td><td>${missingStr}</td></tr>`;
     });
     html += `</tbody></table></div>`;
@@ -1257,8 +1289,12 @@ function printSmartInstallReport() {
         <div class="sirp-section-title">✅ Game Ready Roster — ${report.gameReadySummary.count} Play${report.gameReadySummary.count !== 1 ? "s" : ""} Fully Installed</div>
         <div class="sirp-roster">`;
     const runs = report.gameReadySummary.plays.filter((p) => p.type === "Run");
-    const passes = report.gameReadySummary.plays.filter((p) => p.type === "Pass");
-    const other = report.gameReadySummary.plays.filter((p) => p.type !== "Run" && p.type !== "Pass");
+    const passes = report.gameReadySummary.plays.filter(
+      (p) => p.type === "Pass",
+    );
+    const other = report.gameReadySummary.plays.filter(
+      (p) => p.type !== "Run" && p.type !== "Pass",
+    );
     if (runs.length > 0) {
       html += `<div class="sirp-roster-group"><div class="sirp-roster-heading">🏃 Run (${runs.length})</div><div class="sirp-roster-items">${runs.map((p) => `<span class="sirp-roster-item">${escapeHtml(p.name)} <span class="sirp-roster-sub">${escapeHtml(p.formation)}</span></span>`).join("")}</div></div>`;
     }
