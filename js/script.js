@@ -1195,191 +1195,34 @@ async function openScriptCustomOrderModal() {
 
   // Get existing custom order or use unique values
   let orderedValues = scriptCustomSortOrders[field] || [];
-
-  // Add any new values not in the custom order
   uniqueValues.forEach((val) => {
-    if (!orderedValues.includes(val)) {
-      orderedValues.push(val);
-    }
+    if (!orderedValues.includes(val)) orderedValues.push(val);
   });
-
-  // Remove values no longer in the data
   orderedValues = orderedValues.filter((val) => uniqueValues.includes(val));
 
-  // Store temporarily for the modal
-  window._scriptTempCustomOrder = orderedValues;
-  window._scriptTempCustomOrderField = field;
-
-  // Build modal HTML
-  const modalHtml = `
-    <div id="scriptCustomOrderModal" class="modal-overlay" style="display: flex;" onclick="closeScriptCustomOrderModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-          <h3 style="margin: 0;">Custom Sort Order: ${fieldLabel}</h3>
-          <button onclick="closeScriptCustomOrderModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
-        </div>
-        <div class="modal-body">
-          <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-            Drag values to set your preferred sort order. Top = first.
-          </p>
-          <div id="scriptCustomOrderList" class="custom-order-list">
-            ${orderedValues
-              .map(
-                (val, idx) => `
-              <div class="custom-order-item" draggable="true" data-value="${val}" data-idx="${idx}"
-                   ondragstart="handleScriptCustomOrderDragStart(event, ${idx})"
-                   ondragover="handleScriptCustomOrderDragOver(event)"
-                   ondrop="handleScriptCustomOrderDrop(event, ${idx})"
-                   ondragend="handleScriptCustomOrderDragEnd(event)">
-                <span class="drag-handle">☰</span>
-                <span class="order-number">${idx + 1}.</span>
-                <span class="order-value">${val}</span>
-              </div>
-            `,
-              )
-              .join("")}
-          </div>
-          <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="saveScriptCustomOrder()" class="btn btn-primary" style="padding: 8px 16px;">
-              💾 Save Order
-            </button>
-            <button onclick="clearScriptCustomOrder()" class="btn btn-secondary" style="padding: 8px 16px;">
-              🗑️ Clear Custom Order
-            </button>
-            <button onclick="closeScriptCustomOrderModal()" class="btn" style="padding: 8px 16px;">
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML("beforeend", modalHtml);
-}
-
-/**
- * Close the script custom order modal
- */
-function closeScriptCustomOrderModal(event) {
-  if (event && event.target.id !== "scriptCustomOrderModal") return;
-  const modal = document.getElementById("scriptCustomOrderModal");
-  if (modal) modal.remove();
-  delete window._scriptTempCustomOrder;
-  delete window._scriptTempCustomOrderField;
-}
-
-/**
- * Save the script custom order
- */
-function saveScriptCustomOrder() {
-  const field = window._scriptTempCustomOrderField;
-  const order = window._scriptTempCustomOrder;
   const statusEl = document.getElementById("scriptSortStatus");
 
-  if (field && order) {
-    scriptCustomSortOrders[field] = order;
-    storageManager.set("scriptCustomSortOrders", scriptCustomSortOrders);
-
-    const fieldLabel =
-      SCRIPT_SORT_FIELDS.find((f) => f.value === field)?.label || field;
-    if (statusEl) {
-      statusEl.textContent = `✓ Custom order saved for ${fieldLabel}`;
-      statusEl.style.color = "#28a745";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, 3000);
-    }
-  }
-
-  closeScriptCustomOrderModal();
-}
-
-/**
- * Clear script custom order for current field
- */
-function clearScriptCustomOrder() {
-  const field = window._scriptTempCustomOrderField;
-  const statusEl = document.getElementById("scriptSortStatus");
-
-  if (field) {
-    delete scriptCustomSortOrders[field];
-    storageManager.set("scriptCustomSortOrders", scriptCustomSortOrders);
-
-    const fieldLabel =
-      SCRIPT_SORT_FIELDS.find((f) => f.value === field)?.label || field;
-    if (statusEl) {
-      statusEl.textContent = `✓ Custom order cleared for ${fieldLabel}`;
-      statusEl.style.color = "#6c757d";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, 3000);
-    }
-  }
-  closeScriptCustomOrderModal();
-}
-
-// Script custom order drag and drop
-let draggedScriptCustomOrderItem = null;
-
-function handleScriptCustomOrderDragStart(event, idx) {
-  draggedScriptCustomOrderItem = idx;
-  event.target.classList.add("dragging");
-}
-
-function handleScriptCustomOrderDragOver(event) {
-  event.preventDefault();
-  event.currentTarget.classList.add("drag-over");
-}
-
-function handleScriptCustomOrderDrop(event, targetIdx) {
-  event.preventDefault();
-  event.currentTarget.classList.remove("drag-over");
-
-  if (
-    draggedScriptCustomOrderItem === null ||
-    draggedScriptCustomOrderItem === targetIdx
-  )
-    return;
-
-  const order = window._scriptTempCustomOrder;
-  const draggedValue = order[draggedScriptCustomOrderItem];
-
-  // Remove from old position
-  order.splice(draggedScriptCustomOrderItem, 1);
-
-  // Insert at new position
-  order.splice(targetIdx, 0, draggedValue);
-
-  window._scriptTempCustomOrder = order;
-
-  // Re-render the list
-  const listContainer = document.getElementById("scriptCustomOrderList");
-  if (listContainer) {
-    listContainer.innerHTML = order
-      .map(
-        (val, idx) => `
-        <div class="custom-order-item" draggable="true" data-value="${val}" data-idx="${idx}"
-             ondragstart="handleScriptCustomOrderDragStart(event, ${idx})"
-             ondragover="handleScriptCustomOrderDragOver(event)"
-             ondrop="handleScriptCustomOrderDrop(event, ${idx})"
-             ondragend="handleScriptCustomOrderDragEnd(event)">
-          <span class="drag-handle">☰</span>
-          <span class="order-number">${idx + 1}.</span>
-          <span class="order-value">${val}</span>
-        </div>
-      `,
-      )
-      .join("");
-  }
-}
-
-function handleScriptCustomOrderDragEnd(event) {
-  event.target.classList.remove("dragging");
-  document.querySelectorAll(".custom-order-item").forEach((el) => {
-    el.classList.remove("drag-over");
+  showReorderModal(orderedValues, {
+    title: `Custom Sort Order: ${fieldLabel}`,
+    onSave(order) {
+      scriptCustomSortOrders[field] = order;
+      storageManager.set("scriptCustomSortOrders", scriptCustomSortOrders);
+      if (statusEl) {
+        statusEl.textContent = `✓ Custom order saved for ${fieldLabel}`;
+        statusEl.style.color = "#28a745";
+        setTimeout(() => { statusEl.textContent = ""; }, 3000);
+      }
+    },
+    onClear() {
+      delete scriptCustomSortOrders[field];
+      storageManager.set("scriptCustomSortOrders", scriptCustomSortOrders);
+      if (statusEl) {
+        statusEl.textContent = `✓ Custom order cleared for ${fieldLabel}`;
+        statusEl.style.color = "#6c757d";
+        setTimeout(() => { statusEl.textContent = ""; }, 3000);
+      }
+    },
   });
-  draggedScriptCustomOrderItem = null;
 }
 
 /**
@@ -3340,27 +3183,51 @@ function executeLoadWbToScript() {
 }
 
 /**
+ * Build an HTML <tr> for a single play in a print table.
+ * Shared by generatePDF and printFullDay.
+ * @param {Object} p - Play object
+ * @param {number} displayNum - Row number to show
+ * @param {Object} opts - Display options from getScriptDisplayOptions()
+ * @returns {string} HTML table-row string
+ */
+function buildScriptPlayRow(p, displayNum, opts) {
+  const fullCall = getFullCall(p, opts);
+
+  let wbNum = "";
+  if (opts.showWbNum && scriptWristband) {
+    const num = findPlayOnWristband(p);
+    if (num !== null) wbNum = `#${num}`;
+  }
+
+  let rowColor = "";
+  if (opts.highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
+    rowColor = "background: #fff9c4;";
+  } else if (opts.highlightCandy && p.tempo && p.tempo.toLowerCase() === "candy") {
+    rowColor = "background: #fce4ec;";
+  }
+
+  return `<tr style="${rowColor}">
+    <td>${displayNum}</td>
+    <td>${p.hash || ""}</td>
+    <td>${p.tempo || "-"}</td>
+    <td><strong>${wbNum}</strong></td>
+    <td><strong>${fullCall}</strong></td>
+    <td>${p.type}</td>
+    <td>${p.defFront || ""}</td>
+    <td>${p.defCoverage || ""}</td>
+    <td>${p.defStunt || ""}</td>
+    <td>${p.defBlitz || ""}</td>
+    <td>${p.reps}</td>
+    <td>${p.notes || ""}</td>
+  </tr>`;
+}
+
+/**
  * Generate and print the script as PDF
  */
 function generatePDF() {
   const name = document.getElementById("scriptName").value;
   const date = document.getElementById("scriptDate").value;
-
-  // Get display options
-  const {
-    showEmoji,
-    useSquares,
-    underEmoji,
-    boldShifts,
-    redShifts,
-    italicMotions,
-    redMotions,
-    noVowels,
-    showLineCall,
-    highlightHuddle,
-    highlightCandy,
-    showWbNum,
-  } = getScriptDisplayOptions();
 
   // Build title
   const dateStr = date
@@ -3396,6 +3263,7 @@ function generatePDF() {
   let periodPlayNum = 0;
   let globalPlayNum = 0;
   let hasPeriods = periods.length > 0;
+  const displayOpts = getScriptDisplayOptions();
   tbody.innerHTML = script
     .map((p, i) => {
       if (p.isSeparator) {
@@ -3412,57 +3280,7 @@ function generatePDF() {
       periodPlayNum++;
       globalPlayNum++;
       const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-      const fullCall = getFullCall(p, {
-        showEmoji,
-        useSquares,
-        underEmoji,
-        boldShifts,
-        redShifts,
-        italicMotions,
-        redMotions,
-        noVowels,
-        showLineCall,
-        highlightHuddle,
-        highlightCandy,
-      });
-
-      // Find wristband number
-      let wbNum = "";
-      if (showWbNum && scriptWristband) {
-        const num = findPlayOnWristband(p);
-        if (num !== null) {
-          wbNum = `#${num}`;
-        }
-      }
-
-      // Highlight row based on tempo only (like wristband)
-      let rowColor = "";
-      if (highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
-        rowColor = "background: #fff9c4;";
-      } else if (
-        highlightCandy &&
-        p.tempo &&
-        p.tempo.toLowerCase() === "candy"
-      ) {
-        rowColor = "background: #fce4ec;";
-      }
-
-      return `
-            <tr style="${rowColor}">
-                <td>${displayNum}</td>
-                <td>${p.hash || ""}</td>
-                <td>${p.tempo || "-"}</td>
-                <td><strong>${wbNum}</strong></td>
-                <td><strong>${fullCall}</strong></td>
-                <td>${p.type}</td>
-                <td>${p.defFront || ""}</td>
-                <td>${p.defCoverage || ""}</td>
-                <td>${p.defStunt || ""}</td>
-                <td>${p.defBlitz || ""}</td>
-                <td>${p.reps}</td>
-                <td>${p.notes || ""}</td>
-            </tr>
-        `;
+      return buildScriptPlayRow(p, displayNum, displayOpts);
     })
     .join("");
 
@@ -3567,20 +3385,7 @@ async function printFullDay() {
   }
 
   // Get display options
-  const {
-    showEmoji,
-    useSquares,
-    underEmoji,
-    boldShifts,
-    redShifts,
-    italicMotions,
-    redMotions,
-    noVowels,
-    showLineCall,
-    highlightHuddle,
-    highlightCandy,
-    showWbNum,
-  } = getScriptDisplayOptions();
+  const displayOpts = getScriptDisplayOptions();
 
   // Build combined content
   let allContent = "";
@@ -3631,55 +3436,7 @@ async function printFullDay() {
       globalPlayNum++;
       periodPlayNum++;
       const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-      const fullCall = getFullCall(p, {
-        showEmoji,
-        useSquares,
-        underEmoji,
-        boldShifts,
-        redShifts,
-        italicMotions,
-        redMotions,
-        noVowels,
-        showLineCall,
-        highlightHuddle,
-        highlightCandy,
-      });
-
-      // Find wristband number
-      let wbNum = "";
-      if (showWbNum && scriptWristband) {
-        const num = findPlayOnWristband(p);
-        if (num !== null) wbNum = `#${num}`;
-      }
-
-      // Highlight row based on tempo only (like wristband)
-      let rowColor = "";
-      if (highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
-        rowColor = "background: #fff9c4;"; // Light yellow for huddle
-      } else if (
-        highlightCandy &&
-        p.tempo &&
-        p.tempo.toLowerCase() === "candy"
-      ) {
-        rowColor = "background: #fce4ec;"; // Light pink for candy
-      }
-
-      allContent += `
-        <tr style="${rowColor}">
-          <td>${displayNum}</td>
-          <td>${p.hash || ""}</td>
-          <td>${p.tempo || "-"}</td>
-          <td><strong>${wbNum}</strong></td>
-          <td><strong>${fullCall}</strong></td>
-          <td>${p.type}</td>
-          <td>${p.defFront || ""}</td>
-          <td>${p.defCoverage || ""}</td>
-          <td>${p.defStunt || ""}</td>
-          <td>${p.defBlitz || ""}</td>
-          <td>${p.reps}</td>
-          <td>${p.notes || ""}</td>
-        </tr>
-      `;
+      allContent += buildScriptPlayRow(p, displayNum, displayOpts);
     });
   });
 

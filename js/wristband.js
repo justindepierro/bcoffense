@@ -389,158 +389,24 @@ function openCustomOrderModal(field) {
 
   // Get existing custom order or use unique values
   let orderedValues = wbCustomSortOrders[field] || [];
-
-  // Add any new values not in the custom order
   uniqueValues.forEach((val) => {
-    if (!orderedValues.includes(val)) {
-      orderedValues.push(val);
-    }
+    if (!orderedValues.includes(val)) orderedValues.push(val);
   });
-
-  // Remove values no longer in the data
   orderedValues = orderedValues.filter((val) => uniqueValues.includes(val));
 
-  // Store temporarily for the modal
-  window._tempCustomOrder = orderedValues;
-  window._tempCustomOrderField = field;
-
-  // Build modal HTML
-  const modalHtml = `
-    <div id="customOrderModal" class="modal-overlay" style="display: flex;" onclick="closeCustomOrderModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-          <h3 style="margin: 0;">Custom Sort Order: ${fieldLabel}</h3>
-          <button onclick="closeCustomOrderModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
-        </div>
-        <div class="modal-body">
-          <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
-            Drag values to set your preferred sort order. Top = first.
-          </p>
-          <div id="customOrderList" class="custom-order-list">
-            ${orderedValues
-              .map(
-                (val, idx) => `
-              <div class="custom-order-item" draggable="true" data-value="${val}" data-idx="${idx}"
-                   ondragstart="handleCustomOrderDragStart(event, ${idx})"
-                   ondragover="handleCustomOrderDragOver(event)"
-                   ondrop="handleCustomOrderDrop(event, ${idx})"
-                   ondragend="handleCustomOrderDragEnd(event)">
-                <span class="drag-handle">☰</span>
-                <span class="order-number">${idx + 1}.</span>
-                <span class="order-value">${val}</span>
-              </div>
-            `,
-              )
-              .join("")}
-          </div>
-          <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="saveCustomOrder()" class="btn btn-primary" style="padding: 8px 16px;">
-              💾 Save Order
-            </button>
-            <button onclick="clearCustomOrder()" class="btn btn-secondary" style="padding: 8px 16px;">
-              🗑️ Clear Custom Order
-            </button>
-            <button onclick="closeCustomOrderModal()" class="btn" style="padding: 8px 16px;">
-              Cancel
-            </button>
-          </div>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML("beforeend", modalHtml);
-}
-
-/**
- * Close the custom order modal
- */
-function closeCustomOrderModal(event) {
-  if (event && event.target.id !== "customOrderModal") return;
-  const modal = document.getElementById("customOrderModal");
-  if (modal) modal.remove();
-  delete window._tempCustomOrder;
-  delete window._tempCustomOrderField;
-}
-
-/**
- * Save the custom order
- */
-function saveCustomOrder() {
-  const field = window._tempCustomOrderField;
-  const order = window._tempCustomOrder;
-
-  if (field && order) {
-    wbCustomSortOrders[field] = order;
-    storageManager.set("customSortOrders", wbCustomSortOrders);
-    renderSortCriteria();
-  }
-
-  closeCustomOrderModal();
-}
-
-/**
- * Clear custom order for current field
- */
-function clearCustomOrder() {
-  const field = window._tempCustomOrderField;
-  if (field) {
-    delete wbCustomSortOrders[field];
-    storageManager.set("customSortOrders", wbCustomSortOrders);
-    renderSortCriteria();
-  }
-  closeCustomOrderModal();
-}
-
-// Custom order drag and drop
-let draggedCustomOrderItem = null;
-
-function handleCustomOrderDragStart(event, idx) {
-  draggedCustomOrderItem = idx;
-  event.target.classList.add("dragging");
-}
-
-function handleCustomOrderDragOver(event) {
-  event.preventDefault();
-  event.currentTarget.classList.add("drag-over");
-}
-
-function handleCustomOrderDrop(event, targetIdx) {
-  event.preventDefault();
-  event.currentTarget.classList.remove("drag-over");
-
-  if (draggedCustomOrderItem === null || draggedCustomOrderItem === targetIdx)
-    return;
-
-  const order = window._tempCustomOrder;
-  const moved = order.splice(draggedCustomOrderItem, 1)[0];
-  order.splice(targetIdx, 0, moved);
-
-  // Re-render the list
-  const listContainer = document.getElementById("customOrderList");
-  listContainer.innerHTML = order
-    .map(
-      (val, idx) => `
-    <div class="custom-order-item" draggable="true" data-value="${val}" data-idx="${idx}"
-         ondragstart="handleCustomOrderDragStart(event, ${idx})"
-         ondragover="handleCustomOrderDragOver(event)"
-         ondrop="handleCustomOrderDrop(event, ${idx})"
-         ondragend="handleCustomOrderDragEnd(event)">
-      <span class="drag-handle">☰</span>
-      <span class="order-number">${idx + 1}.</span>
-      <span class="order-value">${val}</span>
-    </div>
-  `,
-    )
-    .join("");
-}
-
-function handleCustomOrderDragEnd(event) {
-  event.target.classList.remove("dragging");
-  document
-    .querySelectorAll(".custom-order-item")
-    .forEach((el) => el.classList.remove("drag-over"));
-  draggedCustomOrderItem = null;
+  showReorderModal(orderedValues, {
+    title: `Custom Sort Order: ${fieldLabel}`,
+    onSave(order) {
+      wbCustomSortOrders[field] = order;
+      storageManager.set("customSortOrders", wbCustomSortOrders);
+      renderSortCriteria();
+    },
+    onClear() {
+      delete wbCustomSortOrders[field];
+      storageManager.set("customSortOrders", wbCustomSortOrders);
+      renderSortCriteria();
+    },
+  });
 }
 
 /**
@@ -1209,104 +1075,21 @@ function removeCellPlay(playIndex, e) {
 }
 
 /**
- * Get the formatted play name for wristband display
- * @param {Object} play - Play object
- * @returns {string} Formatted play name HTML
+ * Build wristband display options from checkbox state.
+ * Returns an options object suitable for getFullCall().
  */
-function getWristbandPlayName(play) {
-  if (!play) return "";
-
-  const showEmoji = document.getElementById("wbShowEmoji")?.checked || false;
-  const useSquares = document.getElementById("wbUseSquares")?.checked || false;
-  const underEmoji = document.getElementById("wbUnderEmoji")?.checked || false;
-  const boldShifts = document.getElementById("wbBoldShifts")?.checked || false;
-  const redShifts = document.getElementById("wbRedShifts")?.checked || false;
-  const italicMotions =
-    document.getElementById("wbItalicMotions")?.checked || false;
-  const redMotions = document.getElementById("wbRedMotions")?.checked || false;
-  const noVowels = document.getElementById("wbRemoveVowels")?.checked || false;
-  const showLineCall =
-    document.getElementById("wbShowLineCall")?.checked || false;
-
-  // Check if play has "Under" - check the under column or legacy formTag locations
-  const hasUnder =
-    (play.under && play.under.trim() !== "") ||
-    (play.formTag1 && play.formTag1.toLowerCase() === "under") ||
-    (play.formTag2 && play.formTag2.toLowerCase() === "under");
-
-  let parts = [];
-
-  if (play.formation) parts.push(play.formation);
-  if (play.formTag1 && !(underEmoji && play.formTag1.toLowerCase() === "under"))
-    parts.push(play.formTag1);
-  if (play.formTag2 && !(underEmoji && play.formTag2.toLowerCase() === "under"))
-    parts.push(play.formTag2);
-  // Add Under (if not using emoji display for it)
-  if (play.under && !(underEmoji && play.under.trim() !== ""))
-    parts.push(play.under);
-  if (play.back) parts.push(play.back);
-
-  // Handle shift with bold/red options
-  if (play.shift) {
-    let shiftText = noVowels ? removeVowels(play.shift) : play.shift;
-    let shiftHtml = shiftText;
-    if (boldShifts) shiftHtml = `<b>${shiftHtml}</b>`;
-    if (redShifts) shiftHtml = `<span style="color:red">${shiftHtml}</span>`;
-    if (boldShifts || redShifts) {
-      parts.push(shiftHtml);
-    } else {
-      parts.push(play.shift);
-    }
-  }
-
-  // Handle motion with italic/red options
-  if (play.motion) {
-    let motionText = noVowels ? removeVowels(play.motion) : play.motion;
-    let motionHtml = motionText;
-    if (italicMotions) motionHtml = `<i>${motionHtml}</i>`;
-    if (redMotions) motionHtml = `<span style="color:red">${motionHtml}</span>`;
-    if (italicMotions || redMotions) {
-      parts.push(motionHtml);
-    } else {
-      parts.push(play.motion);
-    }
-  }
-
-  if (play.protection) parts.push(play.protection);
-  if (play.play) parts.push(play.play);
-  if (play.playTag1) parts.push(play.playTag1);
-  if (play.playTag2) parts.push(play.playTag2);
-
-  let name = parts.join(" ");
-
-  // Remove vowels if requested (skip already formatted shift/motion)
-  if (noVowels) {
-    name = name
-      .split(/(<[^>]+>)/)
-      .map((part) => {
-        if (part.startsWith("<")) return part;
-        return removeVowels(part);
-      })
-      .join("");
-  }
-
-  // Add line call in brackets
-  if (showLineCall && play.lineCall) {
-    const lc = noVowels ? removeVowels(play.lineCall) : play.lineCall;
-    name += ` <i style="color:#888;font-size:0.85em">[${lc}]</i>`;
-  }
-
-  // Add emoji prefix
-  let prefix = "";
-  if (showEmoji && play.personnel) {
-    prefix += getPersonnelEmoji(play.personnel, useSquares);
-  }
-  if (underEmoji && hasUnder) {
-    prefix += "🍑";
-  }
-  if (prefix) name = prefix + " " + name;
-
-  return name.trim();
+function getWristbandDisplayOptions() {
+  return {
+    showEmoji: document.getElementById("wbShowEmoji")?.checked || false,
+    useSquares: document.getElementById("wbUseSquares")?.checked || false,
+    underEmoji: document.getElementById("wbUnderEmoji")?.checked || false,
+    boldShifts: document.getElementById("wbBoldShifts")?.checked || false,
+    redShifts: document.getElementById("wbRedShifts")?.checked || false,
+    italicMotions: document.getElementById("wbItalicMotions")?.checked || false,
+    redMotions: document.getElementById("wbRedMotions")?.checked || false,
+    noVowels: document.getElementById("wbRemoveVowels")?.checked || false,
+    showLineCall: document.getElementById("wbShowLineCall")?.checked || false,
+  };
 }
 
 /**
@@ -1406,7 +1189,7 @@ function renderWristbandGrid() {
              ondrop="handleCellDrop(event, ${oddIndex})"
              ondragend="handleCellDragEnd(event)"
              onclick="openCellPopup(${currentCardIndex}, ${oddIndex}, event)">
-          <span class="cell-play">${oddPrefix}${getWristbandPlayName(oddPlay)}</span>
+          <span class="cell-play">${oddPrefix}${getFullCall(oddPlay, getWristbandDisplayOptions())}</span>
         </div>
       `;
     } else {
@@ -1431,7 +1214,7 @@ function renderWristbandGrid() {
              ondrop="handleCellDrop(event, ${evenIndex})"
              ondragend="handleCellDragEnd(event)"
              onclick="openCellPopup(${currentCardIndex}, ${evenIndex}, event)">
-          <span class="cell-play">${evenPrefix}${getWristbandPlayName(evenPlay)}</span>
+          <span class="cell-play">${evenPrefix}${getFullCall(evenPlay, getWristbandDisplayOptions())}</span>
         </div>
       `;
     } else {
@@ -1498,7 +1281,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
 
   if (hasPlay) {
     document.getElementById("cellPopupPlayName").innerHTML =
-      `<strong>Current Play:</strong> ${getWristbandPlayName(currentPlay)}`;
+      `<strong>Current Play:</strong> ${getFullCall(currentPlay, getWristbandDisplayOptions())}`;  
   } else {
     document.getElementById("cellPlaySearch").value = "";
     populateCellPlayList();
@@ -1592,7 +1375,7 @@ function selectPlayForCell(playIndex) {
   document.getElementById("cellPopupPlaySelector").style.display = "none";
   document.getElementById("cellPopupColors").style.display = "block";
   document.getElementById("cellPopupPlayName").innerHTML =
-    `<strong>Current Play:</strong> ${getWristbandPlayName(play)}`;
+    `<strong>Current Play:</strong> ${getFullCall(play, getWristbandDisplayOptions())}`;  
 
   renderCardTabs();
   renderWristbandGrid();
@@ -1886,9 +1669,9 @@ function printWristband() {
           : wristbandHeaderColor;
       const pNumFg = wristbandHeaderColor === "transparent" ? "#333" : "white";
       cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${oddNum}</div>`;
-      cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getWristbandPlayName(oddPlay) : ""}</span></div>`;
+      cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getFullCall(oddPlay, getWristbandDisplayOptions()) : ""}</span></div>`;
       cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${evenNum}</div>`;
-      cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + getWristbandPlayName(evenPlay) : ""}</span></div>`;
+      cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + getFullCall(evenPlay, getWristbandDisplayOptions()) : ""}</span></div>`;
     }
 
     cardHtml += "</div></div>";

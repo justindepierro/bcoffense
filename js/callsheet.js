@@ -3856,127 +3856,26 @@ function openCsCustomOrderModal(field) {
   }
 
   let orderedValues = csSortCustomOrders[field] || [];
-  // Add new values not yet in custom order
   uniqueValues.forEach((val) => {
     if (!orderedValues.includes(val)) orderedValues.push(val);
   });
-  // Remove stale values
   orderedValues = orderedValues.filter((val) => uniqueValues.includes(val));
 
-  window._csTempOrder = orderedValues;
-  window._csTempOrderField = field;
-
-  const modalHtml = `
-    <div id="csCustomOrderOverlay" class="cs-sort-overlay" style="z-index: 10004;" onclick="closeCsCustomOrderModal(event)">
-      <div class="cs-sort-modal" onclick="event.stopPropagation()" style="max-width: 400px;">
-        <div class="cs-sort-header">
-          <h3>Custom Order: ${fieldLabel}</h3>
-          <button class="cs-sort-close" onclick="closeCsCustomOrderModal()">&times;</button>
-        </div>
-        <div class="cs-sort-body">
-          <p class="cs-sort-desc">Drag values to set preferred sort order. Top = first.</p>
-          <div id="csCustomOrderList" class="cs-custom-order-list">
-            ${orderedValues
-              .map(
-                (val, idx) => `
-              <div class="cs-custom-order-item" draggable="true" data-idx="${idx}"
-                   ondragstart="handleCsOrderDragStart(event, ${idx})"
-                   ondragover="handleCsOrderDragOver(event)"
-                   ondrop="handleCsOrderDrop(event, ${idx})"
-                   ondragend="handleCsOrderDragEnd(event)">
-                <span class="drag-handle">☰</span>
-                <span class="cs-order-number">${idx + 1}.</span>
-                <span class="cs-order-value">${val}</span>
-              </div>`,
-              )
-              .join("")}
-          </div>
-        </div>
-        <div class="cs-sort-actions">
-          <button class="btn btn-primary btn-sm" onclick="saveCsCustomOrder()">💾 Save Order</button>
-          <button class="btn btn-danger btn-sm" onclick="clearCsCustomOrder()">🗑️ Clear</button>
-          <button class="btn btn-sm" onclick="closeCsCustomOrderModal()">Cancel</button>
-        </div>
-      </div>
-    </div>
-  `;
-
-  document.body.insertAdjacentHTML("beforeend", modalHtml);
-}
-
-function closeCsCustomOrderModal(event) {
-  if (
-    event &&
-    event.target.id !== "csCustomOrderOverlay" &&
-    !event.target.closest(".cs-sort-close")
-  )
-    return;
-  const overlay = document.getElementById("csCustomOrderOverlay");
-  if (overlay) overlay.remove();
-  delete window._csTempOrder;
-  delete window._csTempOrderField;
-}
-
-function saveCsCustomOrder() {
-  const field = window._csTempOrderField;
-  const order = window._csTempOrder;
-  if (field && order) {
-    csSortCustomOrders[field] = [...order];
-    showToast(
-      `Custom order saved for ${CS_SORT_FIELDS.find((f) => f.value === field)?.label || field}`,
-    );
-    renderCsSortCriteria();
-  }
-  closeCsCustomOrderModal();
-}
-
-function clearCsCustomOrder() {
-  const field = window._csTempOrderField;
-  if (field) {
-    delete csSortCustomOrders[field];
-    showToast("Custom order cleared");
-    renderCsSortCriteria();
-  }
-  closeCsCustomOrderModal();
-}
-
-// Drag handlers for custom order items
-let csOrderDraggedIdx = null;
-
-function handleCsOrderDragStart(event, idx) {
-  csOrderDraggedIdx = idx;
-  event.target.classList.add("dragging");
-}
-function handleCsOrderDragOver(event) {
-  event.preventDefault();
-}
-function handleCsOrderDrop(event, targetIdx) {
-  event.preventDefault();
-  if (csOrderDraggedIdx === null || csOrderDraggedIdx === targetIdx) return;
-  const moved = window._csTempOrder.splice(csOrderDraggedIdx, 1)[0];
-  window._csTempOrder.splice(targetIdx, 0, moved);
-  // Re-render the list
-  const container = document.getElementById("csCustomOrderList");
-  if (container) {
-    container.innerHTML = window._csTempOrder
-      .map(
-        (val, idx) => `
-        <div class="cs-custom-order-item" draggable="true" data-idx="${idx}"
-             ondragstart="handleCsOrderDragStart(event, ${idx})"
-             ondragover="handleCsOrderDragOver(event)"
-             ondrop="handleCsOrderDrop(event, ${idx})"
-             ondragend="handleCsOrderDragEnd(event)">
-          <span class="drag-handle">☰</span>
-          <span class="cs-order-number">${idx + 1}.</span>
-          <span class="cs-order-value">${val}</span>
-        </div>`,
-      )
-      .join("");
-  }
-}
-function handleCsOrderDragEnd(event) {
-  event.target.classList.remove("dragging");
-  csOrderDraggedIdx = null;
+  showReorderModal(orderedValues, {
+    title: `Custom Order: ${fieldLabel}`,
+    onSave(order) {
+      csSortCustomOrders[field] = [...order];
+      showToast(
+        `Custom order saved for ${CS_SORT_FIELDS.find((f) => f.value === field)?.label || field}`,
+      );
+      renderCsSortCriteria();
+    },
+    onClear() {
+      delete csSortCustomOrders[field];
+      showToast("Custom order cleared");
+      renderCsSortCriteria();
+    },
+  });
 }
 
 // ============ Apply Sort ============

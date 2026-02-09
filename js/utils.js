@@ -1184,6 +1184,142 @@ function getFullCall(play, options = {}) {
   return fullCall.trim();
 }
 
+// ============ Shared Reorder Modal ============
+let _reorderDraggedIdx = null;
+let _reorderTempOrder = null;
+
+/**
+ * Open a generic drag-reorder modal.
+ * @param {string[]} values - The ordered list of values to reorder
+ * @param {Object} opts
+ * @param {string} opts.title - Modal header text (e.g. "Custom Sort Order: Formation")
+ * @param {Function} opts.onSave  - Called with final ordered array on save
+ * @param {Function} opts.onClear - Called when user clicks Clear
+ * @param {Function} [opts.onClose] - Optional extra cleanup on close
+ */
+function showReorderModal(values, opts) {
+  const modalId = "_reorderModal";
+  const listId = "_reorderList";
+  _reorderTempOrder = [...values];
+
+  function renderList() {
+    return _reorderTempOrder
+      .map(
+        (val, idx) => `
+      <div class="custom-order-item" draggable="true" data-idx="${idx}"
+           ondragstart="_reorderDragStart(event, ${idx})"
+           ondragover="_reorderDragOver(event)"
+           ondrop="_reorderDrop(event, ${idx})"
+           ondragend="_reorderDragEnd(event)">
+        <span class="drag-handle">☰</span>
+        <span class="order-number">${idx + 1}.</span>
+        <span class="order-value">${escapeHtml(val)}</span>
+      </div>`,
+      )
+      .join("");
+  }
+
+  function close() {
+    const el = document.getElementById(modalId);
+    if (el) el.remove();
+    _reorderTempOrder = null;
+    _reorderDraggedIdx = null;
+    if (opts.onClose) opts.onClose();
+  }
+
+  // Expose close globally so inline onclick can reach it
+  window._reorderClose = function (event) {
+    if (event && event.target.id !== modalId) return;
+    close();
+  };
+
+  window._reorderSave = function () {
+    if (_reorderTempOrder && opts.onSave) opts.onSave([..._reorderTempOrder]);
+    close();
+  };
+
+  window._reorderClear = function () {
+    if (opts.onClear) opts.onClear();
+    close();
+  };
+
+  const modalHtml = `
+    <div id="${modalId}" class="modal-overlay" style="display: flex;" onclick="_reorderClose(event)">
+      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
+        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+          <h3 style="margin: 0;">${opts.title || "Custom Order"}</h3>
+          <button onclick="_reorderClose()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
+        </div>
+        <div class="modal-body">
+          <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+            Drag values to set your preferred sort order. Top = first.
+          </p>
+          <div id="${listId}" class="custom-order-list">
+            ${renderList()}
+          </div>
+          <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
+            <button onclick="_reorderSave()" class="btn btn-primary" style="padding: 8px 16px;">
+              💾 Save Order
+            </button>
+            <button onclick="_reorderClear()" class="btn btn-secondary" style="padding: 8px 16px;">
+              🗑️ Clear Custom Order
+            </button>
+            <button onclick="_reorderClose()" class="btn" style="padding: 8px 16px;">
+              Cancel
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+}
+
+// Drag handlers for the shared reorder modal
+function _reorderDragStart(event, idx) {
+  _reorderDraggedIdx = idx;
+  event.target.classList.add("dragging");
+}
+
+function _reorderDragOver(event) {
+  event.preventDefault();
+  event.currentTarget.classList.add("drag-over");
+}
+
+function _reorderDrop(event, targetIdx) {
+  event.preventDefault();
+  event.currentTarget.classList.remove("drag-over");
+  if (_reorderDraggedIdx === null || _reorderDraggedIdx === targetIdx) return;
+  const moved = _reorderTempOrder.splice(_reorderDraggedIdx, 1)[0];
+  _reorderTempOrder.splice(targetIdx, 0, moved);
+  const container = document.getElementById("_reorderList");
+  if (container) {
+    container.innerHTML = _reorderTempOrder
+      .map(
+        (val, idx) => `
+      <div class="custom-order-item" draggable="true" data-idx="${idx}"
+           ondragstart="_reorderDragStart(event, ${idx})"
+           ondragover="_reorderDragOver(event)"
+           ondrop="_reorderDrop(event, ${idx})"
+           ondragend="_reorderDragEnd(event)">
+        <span class="drag-handle">☰</span>
+        <span class="order-number">${idx + 1}.</span>
+        <span class="order-value">${escapeHtml(val)}</span>
+      </div>`,
+      )
+      .join("");
+  }
+}
+
+function _reorderDragEnd(event) {
+  event.target.classList.remove("dragging");
+  document
+    .querySelectorAll(".custom-order-item")
+    .forEach((el) => el.classList.remove("drag-over"));
+  _reorderDraggedIdx = null;
+}
+
 /**
  * Compare two plays to determine if they match
  * @param {Object} p1 - First play object
