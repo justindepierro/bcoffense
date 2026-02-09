@@ -6779,12 +6779,12 @@ kbd {
   margin-bottom: 24px;
 }
 .install-readiness-item {
-  background: #1e1e1e;
+  background: white;
   border-radius: 10px;
   padding: 14px 16px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
-  border-top: 3px solid #444;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  border-top: 3px solid #dee2e6;
 }
 .install-readiness-max {
   border-top-color: #28a745;
@@ -6812,7 +6812,7 @@ kbd {
 }
 .install-readiness-label {
   font-size: 11px;
-  color: #ccc;
+  color: #888;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6843,10 +6843,10 @@ kbd {
   padding: 4px 2px;
 }
 .readiness-modal-play {
-  background: #1e1e1e;
+  background: #f5f6f8;
   border-radius: 8px;
   padding: 12px 14px;
-  border-left: 4px solid #555;
+  border-left: 4px solid #ccc;
 }
 .readiness-modal-play.install-level-max {
   border-left-color: #28a745;
@@ -6872,34 +6872,34 @@ kbd {
 .readiness-modal-play-name {
   font-weight: 700;
   font-size: 14px;
-  color: #f0f0f0;
+  color: #1a1a1a;
 }
 .readiness-modal-play-sub {
   font-size: 11px;
-  color: #999;
+  color: #666;
   margin-top: 2px;
 }
 .readiness-modal-missing {
   margin-top: 8px;
   padding-top: 8px;
-  border-top: 1px solid #333;
+  border-top: 1px solid #ddd;
   display: flex;
   flex-direction: column;
   gap: 3px;
 }
 .readiness-modal-missing-row {
   font-size: 12px;
-  color: #ff8a8a;
+  color: #c0392b;
   display: flex;
   align-items: center;
   gap: 6px;
 }
 .readiness-modal-cat {
-  color: #aaa;
+  color: #555;
   font-weight: 600;
 }
 .readiness-modal-val {
-  color: #f0f0f0;
+  color: #1a1a1a;
 }
 
 /* Category Grid Navigation */
