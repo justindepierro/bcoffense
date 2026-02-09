@@ -337,7 +337,9 @@ let csScoutingOverlayOn = false;
 try {
   csScoutingOverlayOn =
     JSON.parse(localStorage.getItem(STORAGE_KEYS.CS_SCOUTING_OVERLAY)) || false;
-} catch (e) {}
+} catch (e) {
+  console.warn("Error loading scouting overlay state:", e.message);
+}
 
 // All call sheet display/format/border checkbox & select IDs for persistence
 const CALLSHEET_DISPLAY_IDS = [
@@ -2749,8 +2751,8 @@ function scheduleCallSheetAutosave() {
   if (callSheetAutosaveTimer) clearTimeout(callSheetAutosaveTimer);
   callSheetAutosaveTimer = setTimeout(() => {
     const draft = {
-      callSheet: JSON.parse(JSON.stringify(callSheet)),
-      settings: JSON.parse(JSON.stringify(callSheetSettings)),
+      callSheet: safeDeepClone(callSheet),
+      settings: safeDeepClone(callSheetSettings),
       savedAt: new Date().toISOString(),
     };
     storageManager.set(STORAGE_KEYS.CALLSHEET_DRAFT, draft);
@@ -3424,11 +3426,11 @@ function saveTemplate() {
     name,
     savedAt: new Date().toISOString(),
     playCount,
-    callSheet: JSON.parse(JSON.stringify(callSheet)),
-    settings: JSON.parse(JSON.stringify(callSheetSettings)),
-    notes: JSON.parse(JSON.stringify(csNotes)),
-    targets: JSON.parse(JSON.stringify(csTargets)),
-    categoryOrder: JSON.parse(JSON.stringify(csCategoryOrder)),
+    callSheet: safeDeepClone(callSheet),
+    settings: safeDeepClone(callSheetSettings),
+    notes: safeDeepClone(csNotes),
+    targets: safeDeepClone(csTargets),
+    categoryOrder: safeDeepClone(csCategoryOrder),
   };
 
   const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);

@@ -17,11 +17,7 @@ let collapsedPeriods = new Set();
 
 // Period templates
 let periodTemplates = [];
-try {
-  periodTemplates = JSON.parse(localStorage.getItem("periodTemplates") || "[]");
-} catch (e) {
-  console.error("Error loading period templates:", e);
-}
+periodTemplates = safeJSONParse(localStorage.getItem("periodTemplates"), []);
 
 // Bulk edit state - tracks selected script item indices
 let bulkSelectedIndices = [];
@@ -277,13 +273,15 @@ function toggleIntegrationPanel(headerEl) {
  */
 function highlightPlaysNotOnWristband() {
   const wbSelect = document.getElementById("scriptWristbandSelect");
-  if (!wbSelect.value) {
+  if (!wbSelect || !wbSelect.value) {
     showToast("⚠️ Please select a wristband first");
     return;
   }
 
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
-  const wb = saved.find((w) => w.id === parseInt(wbSelect.value));
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const wbId = parseInt(wbSelect.value);
+  if (isNaN(wbId)) return;
+  const wb = saved.find((w) => w.id === wbId);
   if (!wb) return;
 
   // Get all plays on wristband
@@ -2324,9 +2322,11 @@ function handleDrop(event) {
 
   if (source === "available") {
     const playIndex = parseInt(event.dataTransfer.getData("playIndex"));
+    if (isNaN(playIndex)) return;
     addToScript(playIndex);
   } else if (source === "script") {
     const fromIndex = parseInt(event.dataTransfer.getData("scriptIndex"));
+    if (isNaN(fromIndex)) return;
 
     // Find drop target index
     const items = document.querySelectorAll(".script-item");
@@ -2950,7 +2950,7 @@ async function saveScript() {
     return;
   }
 
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
 
   // Check for duplicate name
   const existing = savedScripts.find(
@@ -2970,7 +2970,7 @@ async function saveScript() {
       // Overwrite existing
       existing.name = name;
       existing.date = date;
-      existing.plays = JSON.parse(JSON.stringify(script));
+      existing.plays = safeDeepClone(script);
       existing.savedAt = new Date().toISOString();
       storageManager.set("savedScripts", savedScripts);
       loadSavedScriptsList();
@@ -2990,7 +2990,7 @@ async function saveScript() {
     date,
     period: "",
     tempo: "",
-    plays: JSON.parse(JSON.stringify(script)),
+    plays: safeDeepClone(script),
     savedAt: new Date().toISOString(),
   };
 
@@ -3006,7 +3006,7 @@ async function saveScript() {
  * Load the list of saved scripts
  */
 function loadSavedScriptsList() {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const container = document.getElementById("savedScriptsList");
   const section = document.getElementById("savedScriptsSection");
 
@@ -3070,7 +3070,7 @@ function loadSavedScriptsList() {
  * @param {number} id - Script ID
  */
 function loadScript(id) {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const scriptData = savedScripts.find((s) => s.id === id);
   if (!scriptData) return;
 
@@ -3102,7 +3102,7 @@ function loadScript(id) {
  * @param {number} id - Script ID
  */
 async function deleteSavedScript(id) {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const target = savedScripts.find((s) => s.id === id);
   if (!target) return;
   const ok = await showConfirm(`Delete "${target.name}"?`, {
@@ -3123,7 +3123,7 @@ async function deleteSavedScript(id) {
  * @param {number} id - Script ID
  */
 async function renameSavedScript(id) {
-  let savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  let savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const s = savedScripts.find((s) => s.id === id);
   if (!s) return;
   const newName = await showPrompt("Rename script:", s.name, {
@@ -3143,7 +3143,7 @@ async function renameSavedScript(id) {
  * @param {number} id - Script ID
  */
 async function overwriteSavedScript(id) {
-  let savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  let savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const s = savedScripts.find((s) => s.id === id);
   if (!s) return;
   const ok = await showConfirm(
@@ -3154,7 +3154,7 @@ async function overwriteSavedScript(id) {
 
   s.name = document.getElementById("scriptName").value || s.name;
   s.date = document.getElementById("scriptDate").value || s.date;
-  s.plays = JSON.parse(JSON.stringify(script));
+  s.plays = safeDeepClone(script);
   s.savedAt = new Date().toISOString();
   storageManager.set("savedScripts", savedScripts);
   loadSavedScriptsList();
@@ -3169,7 +3169,7 @@ async function overwriteSavedScript(id) {
  * Populate the wristband select dropdown for script reference
  */
 function populateScriptWristbandSelect() {
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const select = document.getElementById("scriptWristbandSelect");
   if (!select) return;
 
@@ -3203,7 +3203,7 @@ function loadWristbandForScript() {
     return;
   }
 
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const wb = saved.find((w) => w.id === id);
 
   if (wb) {
@@ -3246,7 +3246,7 @@ function findPlayOnWristband(play) {
  * Open modal to load plays from a wristband into the script
  */
 function openLoadWristbandToScriptModal() {
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
 
   if (saved.length === 0) {
     showToast("No saved wristbands found — create one first");
@@ -3328,11 +3328,15 @@ function closeLoadWbToScriptModal(event) {
  * Execute loading wristband plays into script
  */
 function executeLoadWbToScript() {
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const wbIdx = parseInt(document.getElementById("wbToScriptSelect").value);
   const destination = document.getElementById("wbToScriptDestination").value;
   const cardChoice = document.getElementById("wbToScriptCards").value;
 
+  if (isNaN(wbIdx) || wbIdx < 0 || wbIdx >= saved.length) {
+    showToast("⚠️ Could not load wristband");
+    return;
+  }
   const wb = saved[wbIdx];
   if (!wb || !wb.cards) {
     showToast("⚠️ Could not load wristband");
@@ -3550,7 +3554,7 @@ function generatePDF() {
  * Load the full day script list with checkboxes
  */
 function loadFullDayScriptList() {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const container = document.getElementById("fullDayScriptList");
   const section = document.getElementById("fullDaySection");
 
@@ -3603,7 +3607,7 @@ function clearDayScripts() {
  * Print full day - combines selected scripts
  */
 async function printFullDay() {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
   const selectedIds = Array.from(
     document.querySelectorAll(".day-script-checkbox:checked"),
   ).map((cb) => parseInt(cb.value));
@@ -3828,7 +3832,7 @@ function filterScriptItems() {
  * Compare two saved scripts side by side
  */
 async function compareScripts() {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
 
   if (savedScripts.length < 2) {
     await showModal("Need at least 2 saved scripts to compare.", {
@@ -3907,7 +3911,7 @@ async function compareScripts() {
  * Merge plays from another saved script
  */
 async function mergeFromScript() {
-  const savedScripts = JSON.parse(localStorage.getItem("savedScripts") || "[]");
+  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
 
   if (savedScripts.length === 0) {
     await showModal("No saved scripts to merge from.", {

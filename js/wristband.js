@@ -25,24 +25,16 @@ let draggedSortItem = null;
 
 // Custom value orders per field: { fieldName: ["value1", "value2", ...] }
 let wbCustomSortOrders = {};
-try {
-  wbCustomSortOrders = JSON.parse(
-    localStorage.getItem("customSortOrders") || "{}",
-  );
-} catch (e) {
-  console.error("Error loading custom sort orders:", e);
-}
+wbCustomSortOrders = safeJSONParse(
+  localStorage.getItem("customSortOrders"), {},
+);
 
 // Sort across all cards as one pool
 let wbSortAcrossCards = false;
 
 // Saved sort presets
 let savedSortPresets = {};
-try {
-  savedSortPresets = JSON.parse(localStorage.getItem("sortPresets") || "{}");
-} catch (e) {
-  console.error("Error loading sort presets:", e);
-}
+savedSortPresets = safeJSONParse(localStorage.getItem("sortPresets"), {});
 
 // Drag-and-drop cell swap state
 let draggedCellIndex = null;
@@ -110,9 +102,9 @@ async function checkWristbandDraft() {
     },
   );
   if (doRestore) {
-    wristbandCards = JSON.parse(JSON.stringify(draft.cards));
+    wristbandCards = safeDeepClone(draft.cards);
     cellCustomizations = draft.cellStyles
-      ? JSON.parse(JSON.stringify(draft.cellStyles))
+      ? safeDeepClone(draft.cellStyles)
       : {};
     wristbandHeaderColor = draft.headerColor || "transparent";
     currentCardIndex = 0;
@@ -191,7 +183,7 @@ async function saveSortPreset() {
 
   savedSortPresets[trimmedName] = {
     criteria: [...wbSortCriteria.map((c) => ({ ...c }))],
-    customOrders: JSON.parse(JSON.stringify(wbCustomSortOrders)),
+    customOrders: safeDeepClone(wbCustomSortOrders),
     acrossCards: wbSortAcrossCards,
   };
   storageManager.set("sortPresets", savedSortPresets);
@@ -217,7 +209,7 @@ function loadSortPreset() {
   } else {
     // New format with customOrders and acrossCards
     wbSortCriteria = [...(preset.criteria || []).map((c) => ({ ...c }))];
-    wbCustomSortOrders = JSON.parse(JSON.stringify(preset.customOrders || {}));
+    wbCustomSortOrders = safeDeepClone(preset.customOrders || {});
     wbSortAcrossCards = preset.acrossCards || false;
 
     // Update checkbox
@@ -828,8 +820,8 @@ function applyWristbandSortAcrossCards() {
  */
 function getWristbandState() {
   return {
-    cards: JSON.parse(JSON.stringify(wristbandCards)),
-    customizations: JSON.parse(JSON.stringify(cellCustomizations)),
+    cards: safeDeepClone(wristbandCards),
+    customizations: safeDeepClone(cellCustomizations),
     currentCardIndex: currentCardIndex,
   };
 }
@@ -1983,7 +1975,7 @@ async function saveWristband() {
     { title: "Save Wristband", icon: "💾" },
   );
   if (!name) return;
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
 
   // Check for duplicate name
   const existing = saved.find(
@@ -2002,8 +1994,8 @@ async function saveWristband() {
     if (choice === "option1") {
       existing.title = name;
       existing.headerColor = wristbandHeaderColor;
-      existing.cards = JSON.parse(JSON.stringify(wristbandCards));
-      existing.cellStyles = JSON.parse(JSON.stringify(cellCustomizations));
+      existing.cards = safeDeepClone(wristbandCards);
+      existing.cellStyles = safeDeepClone(cellCustomizations);
       existing.displaySettings = captureWbDisplaySettings();
       existing.savedAt = new Date().toISOString();
       storageManager.set("savedWristbands", saved);
@@ -2023,8 +2015,8 @@ async function saveWristband() {
     id: Date.now(),
     title: name,
     headerColor: wristbandHeaderColor,
-    cards: JSON.parse(JSON.stringify(wristbandCards)),
-    cellStyles: JSON.parse(JSON.stringify(cellCustomizations)),
+    cards: safeDeepClone(wristbandCards),
+    cellStyles: safeDeepClone(cellCustomizations),
     displaySettings: captureWbDisplaySettings(),
     savedAt: new Date().toISOString(),
   });
@@ -2042,7 +2034,7 @@ async function saveWristband() {
  * Load the list of saved wristbands
  */
 function loadSavedWristbandsList() {
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const container = document.getElementById("savedWristbandsList");
   const section = document.getElementById("savedWristbandsSection");
 
@@ -2099,14 +2091,14 @@ function loadSavedWristbandsList() {
  * @param {number} id - Wristband ID
  */
 function loadWristband(id) {
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
 
   wristbandHeaderColor = wb.headerColor || "transparent";
 
   if (wb.cards) {
-    wristbandCards = JSON.parse(JSON.stringify(wb.cards));
+    wristbandCards = safeDeepClone(wb.cards);
   } else if (wb.data) {
     wristbandCards = [{ name: "Card 1", data: wb.data }];
   } else {
@@ -2114,7 +2106,7 @@ function loadWristband(id) {
   }
 
   cellCustomizations = wb.cellStyles
-    ? JSON.parse(JSON.stringify(wb.cellStyles))
+    ? safeDeepClone(wb.cellStyles)
     : {};
   currentCardIndex = 0;
 
@@ -2161,7 +2153,7 @@ function loadWristband(id) {
  * @param {number} id - Wristband ID
  */
 async function deleteSavedWristband(id) {
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const target = saved.find((s) => s.id === id);
   if (!target) return;
   const ok = await showConfirm(`Delete "${target.title}"?`, {
@@ -2191,7 +2183,7 @@ async function deleteSavedWristband(id) {
  * @param {number} id - Wristband ID
  */
 async function renameSavedWristband(id) {
-  let saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  let saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
   const newName = await showPrompt("Rename wristband:", wb.title, {
@@ -2213,7 +2205,7 @@ async function renameSavedWristband(id) {
  * @param {number} id - Wristband ID
  */
 async function overwriteSavedWristband(id) {
-  let saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  let saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
   const ok = await showConfirm(
@@ -2223,8 +2215,8 @@ async function overwriteSavedWristband(id) {
   if (!ok) return;
 
   wb.headerColor = wristbandHeaderColor;
-  wb.cards = JSON.parse(JSON.stringify(wristbandCards));
-  wb.cellStyles = JSON.parse(JSON.stringify(cellCustomizations));
+  wb.cards = safeDeepClone(wristbandCards);
+  wb.cellStyles = safeDeepClone(cellCustomizations);
   wb.displaySettings = captureWbDisplaySettings();
   wb.savedAt = new Date().toISOString();
   storageManager.set("savedWristbands", saved);
@@ -2354,7 +2346,8 @@ function updateWbStats() {
   let passCount = 0;
 
   wristbandCards.forEach((card) => {
-    card.forEach((cell) => {
+    const cells = card.data || card || [];
+    cells.forEach((cell) => {
       if (cell) {
         totalPlays++;
         const type = (cell.type || "").toLowerCase();

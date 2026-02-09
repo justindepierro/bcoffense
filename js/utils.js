@@ -388,6 +388,34 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Safe JSON parse with fallback — use instead of raw JSON.parse on external data
+ */
+function safeJSONParse(str, fallback) {
+  if (str === null || str === undefined) return fallback;
+  try {
+    return JSON.parse(str);
+  } catch (e) {
+    console.warn("safeJSONParse failed:", e.message);
+    return fallback;
+  }
+}
+
+/**
+ * Safe deep clone — use instead of raw JSON.parse(JSON.stringify(...))
+ */
+function safeDeepClone(obj) {
+  try {
+    return JSON.parse(JSON.stringify(obj));
+  } catch (e) {
+    console.warn("safeDeepClone failed:", e.message);
+    // Shallow clone fallback
+    if (Array.isArray(obj)) return [...obj];
+    if (obj && typeof obj === "object") return { ...obj };
+    return obj;
+  }
+}
+
+/**
  * Storage Manager - centralized storage operations
  */
 const storageManager = {
@@ -847,7 +875,7 @@ const historyManager = {
   saveState(type, state) {
     const history = this[type];
     // Deep clone the state
-    const stateCopy = JSON.parse(JSON.stringify(state));
+    const stateCopy = safeDeepClone(state);
     history.past.push(stateCopy);
     // Clear future on new action
     history.future = [];
@@ -864,7 +892,7 @@ const historyManager = {
     if (history.past.length === 0) return null;
 
     // Save current state to future
-    history.future.push(JSON.parse(JSON.stringify(currentState)));
+    history.future.push(safeDeepClone(currentState));
     // Get previous state
     const previousState = history.past.pop();
     this.updateButtons(type);
@@ -877,7 +905,7 @@ const historyManager = {
     if (history.future.length === 0) return null;
 
     // Save current state to past
-    history.past.push(JSON.parse(JSON.stringify(currentState)));
+    history.past.push(safeDeepClone(currentState));
     // Get future state
     const futureState = history.future.pop();
     this.updateButtons(type);

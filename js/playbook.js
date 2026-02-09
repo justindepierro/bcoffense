@@ -140,7 +140,7 @@ function populateWristbandHighlightDropdown() {
   const select = document.getElementById("playbookWristbandHighlight");
   if (!select) return;
 
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
 
   select.innerHTML =
     '<option value="">🏈 Highlight Wristband</option>' +
@@ -173,7 +173,7 @@ function highlightWristbandPlays() {
     return;
   }
 
-  const saved = JSON.parse(localStorage.getItem("savedWristbands") || "[]");
+  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
   const wb = saved[parseInt(wbIdx)];
 
   if (!wb || !wb.cards) {
