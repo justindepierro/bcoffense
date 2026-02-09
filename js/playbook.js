@@ -438,61 +438,71 @@ function restorePlaybookState() {
 /**
  * Initialize keyboard navigation for playbook
  */
+/**
+ * Named document-level keydown handler (extractable for remove-before-add)
+ */
+function _playbookDocKeydown(e) {
+  // ? to show shortcuts (Shift + /)
+  if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
+    const activeEl = document.activeElement;
+    if (activeEl.tagName !== "INPUT" && activeEl.tagName !== "TEXTAREA") {
+      e.preventDefault();
+      showKeyboardShortcuts();
+    }
+  }
+  // Escape to close modals
+  if (e.key === "Escape") {
+    hideKeyboardShortcuts();
+    hideColumnMenu();
+  }
+}
+
 function initPlaybookKeyboard() {
   const container = document.getElementById("playbookContainer");
   if (!container) return;
 
-  container.addEventListener("keydown", (e) => {
-    const rows = document.querySelectorAll("#playbookTable tbody tr");
-    if (rows.length === 0) return;
+  // Guard: only attach container listener once
+  if (!container._kbInit) {
+    container.addEventListener("keydown", (e) => {
+      const rows = document.querySelectorAll("#playbookTable tbody tr");
+      if (rows.length === 0) return;
 
-    switch (e.key) {
-      case "ArrowDown":
-        e.preventDefault();
-        selectedRowIndex = Math.min(selectedRowIndex + 1, rows.length - 1);
-        selectPlaybookRow(selectedRowIndex);
-        rows[selectedRowIndex]?.scrollIntoView({ block: "nearest" });
-        break;
-      case "ArrowUp":
-        e.preventDefault();
-        selectedRowIndex = Math.max(selectedRowIndex - 1, 0);
-        selectPlaybookRow(selectedRowIndex);
-        rows[selectedRowIndex]?.scrollIntoView({ block: "nearest" });
-        break;
-      case "Enter":
-        e.preventDefault();
-        if (selectedRowIndex >= 0) {
-          addPlayFromPlaybook(selectedRowIndex);
-        }
-        break;
-      case "c":
-        if (e.metaKey || e.ctrlKey) {
-          // Cmd/Ctrl+C to copy selected play
-          if (selectedRowIndex >= 0 && filteredPlays[selectedRowIndex]) {
-            e.preventDefault();
-            copyPlayName(filteredPlays[selectedRowIndex].play);
+      switch (e.key) {
+        case "ArrowDown":
+          e.preventDefault();
+          selectedRowIndex = Math.min(selectedRowIndex + 1, rows.length - 1);
+          selectPlaybookRow(selectedRowIndex);
+          rows[selectedRowIndex]?.scrollIntoView({ block: "nearest" });
+          break;
+        case "ArrowUp":
+          e.preventDefault();
+          selectedRowIndex = Math.max(selectedRowIndex - 1, 0);
+          selectPlaybookRow(selectedRowIndex);
+          rows[selectedRowIndex]?.scrollIntoView({ block: "nearest" });
+          break;
+        case "Enter":
+          e.preventDefault();
+          if (selectedRowIndex >= 0) {
+            addPlayFromPlaybook(selectedRowIndex);
           }
-        }
-        break;
-    }
-  });
-
-  // Global keyboard listener for shortcuts
-  document.addEventListener("keydown", (e) => {
-    // ? to show shortcuts (Shift + /)
-    if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
-      const activeEl = document.activeElement;
-      if (activeEl.tagName !== "INPUT" && activeEl.tagName !== "TEXTAREA") {
-        e.preventDefault();
-        showKeyboardShortcuts();
+          break;
+        case "c":
+          if (e.metaKey || e.ctrlKey) {
+            // Cmd/Ctrl+C to copy selected play
+            if (selectedRowIndex >= 0 && filteredPlays[selectedRowIndex]) {
+              e.preventDefault();
+              copyPlayName(filteredPlays[selectedRowIndex].play);
+            }
+          }
+          break;
       }
-    }
-    // Escape to close modals
-    if (e.key === "Escape") {
-      hideKeyboardShortcuts();
-      hideColumnMenu();
-    }
-  });
+    });
+    container._kbInit = true;
+  }
+
+  // Remove-before-add to prevent duplicate document listeners
+  document.removeEventListener("keydown", _playbookDocKeydown);
+  document.addEventListener("keydown", _playbookDocKeydown);
 }
 
 /**

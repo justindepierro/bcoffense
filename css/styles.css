@@ -7305,3 +7305,48 @@ kbd {
     text-align: center;
   }
 }
+
+/* ── Storage Info Modal ─────────────────────────────── */
+.si-summary {
+  margin-bottom: 15px;
+  padding: 10px;
+  background: #f0f7ff;
+  border-radius: 8px;
+}
+.si-hint {
+  font-size: 11px;
+  color: #666;
+  margin-top: 5px;
+}
+.si-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 13px;
+}
+.si-thead-row {
+  background: #f5f5f5;
+}
+.si-th {
+  padding: 8px 10px;
+  text-align: left;
+}
+.si-th-right {
+  text-align: right;
+}
+.si-td {
+  padding: 5px 10px;
+}
+.si-td-right {
+  text-align: right;
+}
+.si-empty {
+  padding: 10px;
+  text-align: center;
+  color: #666;
+}
+.si-actions {
+  margin-top: 20px;
+  display: flex;
+  gap: 10px;
+  flex-wrap: wrap;
+}

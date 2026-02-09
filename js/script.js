@@ -461,7 +461,6 @@ function selectPeriodPlays(separatorIndex) {
   }
 
   updateBulkSelectUI();
-  renderScript();
 }
 
 /**
@@ -529,21 +528,7 @@ function clearBulkSelection() {
  * Select all print options for script
  */
 function selectAllScriptOptions() {
-  const ids = [
-    "scriptShowEmoji",
-    "scriptUseSquares",
-    "scriptUnderEmoji",
-    "scriptBoldShifts",
-    "scriptRedShifts",
-    "scriptItalicMotions",
-    "scriptRedMotions",
-    "scriptRemoveVowels",
-    "scriptShowLineCall",
-    "scriptHighlightHuddle",
-    "scriptHighlightCandy",
-    "scriptShowWbNum",
-  ];
-  ids.forEach((id) => {
+  SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.checked = true;
   });
@@ -553,21 +538,7 @@ function selectAllScriptOptions() {
  * Clear all print options for script
  */
 function clearAllScriptOptions() {
-  const ids = [
-    "scriptShowEmoji",
-    "scriptUseSquares",
-    "scriptUnderEmoji",
-    "scriptBoldShifts",
-    "scriptRedShifts",
-    "scriptItalicMotions",
-    "scriptRedMotions",
-    "scriptRemoveVowels",
-    "scriptShowLineCall",
-    "scriptHighlightHuddle",
-    "scriptHighlightCandy",
-    "scriptShowWbNum",
-  ];
-  ids.forEach((id) => {
+  SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
@@ -1206,7 +1177,10 @@ async function openScriptCustomOrderModal() {
     title: `Custom Sort Order: ${fieldLabel}`,
     onSave(order) {
       scriptCustomSortOrders[field] = order;
-      storageManager.set(STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, scriptCustomSortOrders);
+      storageManager.set(
+        STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+        scriptCustomSortOrders,
+      );
       if (statusEl) {
         statusEl.textContent = `✓ Custom order saved for ${fieldLabel}`;
         statusEl.style.color = "#28a745";
@@ -1217,7 +1191,10 @@ async function openScriptCustomOrderModal() {
     },
     onClear() {
       delete scriptCustomSortOrders[field];
-      storageManager.set(STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, scriptCustomSortOrders);
+      storageManager.set(
+        STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+        scriptCustomSortOrders,
+      );
       if (statusEl) {
         statusEl.textContent = `✓ Custom order cleared for ${fieldLabel}`;
         statusEl.style.color = "#6c757d";
@@ -1316,6 +1293,33 @@ function togglePeriodCollapse(periodId) {
     collapsedPeriods.add(periodId);
   }
   renderScript();
+}
+
+/**
+ * Update period header color without full re-render
+ */
+function updatePeriodColor(index, el) {
+  script[index].color = el.value;
+  const header = el.closest('.period-header');
+  if (header) header.style.background = el.value;
+  const wrapper = el.closest('.period-header-wrapper');
+  if (wrapper) wrapper.style.borderLeftColor = el.value;
+  saveScriptState();
+}
+
+/**
+ * Update period minutes without full re-render
+ */
+function updatePeriodMinutes(index, el) {
+  script[index].minutes = parseInt(el.value, 10) || 0;
+  const span = el.closest('.ph-left')?.querySelector('.ph-meta-span');
+  if (span) {
+    const playCount = getPeriodPlays(index).length;
+    const timeDisplay = script[index].minutes ? `${script[index].minutes} min` : '';
+    span.textContent = `${playCount} plays${timeDisplay ? ' • ' + timeDisplay : ''}`;
+  }
+  saveScriptState();
+  updateScriptStats();
 }
 
 /**
@@ -2083,6 +2087,7 @@ function movePlay(index, direction) {
 function updateReps(index, reps) {
   script[index].reps = parseInt(reps, 10) || 1;
   updateScriptStats();
+  saveScriptState();
 }
 
 /**
@@ -2096,6 +2101,7 @@ function updateNotes(index, notes) {
     renderScript();
   } else {
     script[index].notes = notes;
+    saveScriptState();
   }
 }
 
@@ -2108,6 +2114,7 @@ function updateHash(index, value) {
     renderScript();
   } else {
     script[index].hash = value;
+    saveScriptState();
   }
 }
 
@@ -2120,6 +2127,7 @@ function updateDefField(index, field, value) {
     renderScript();
   } else {
     script[index][field] = value;
+    saveScriptState();
   }
 }
 
@@ -2449,9 +2457,9 @@ function renderScript() {
       periodHeaders += `
         <div class="script-item period-header" style="background: ${periodColor}; color: white;">
           <div class="ph-left">
-            <input type="color" class="ph-color-input" value="${periodColor}" onchange="script[${i}].color = this.value; renderScript();" title="Period color">
-            <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value" placeholder="Period name">
-            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="script[${i}].minutes = parseInt(this.value, 10) || 0; renderScript();" placeholder="min" title="Time in minutes">
+            <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
+            <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value; saveScriptState()" placeholder="Period name">
+            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="updatePeriodMinutes(${i}, this)" placeholder="min" title="Time in minutes">
           </div>
           <div class="ph-right">
             <button class="remove" onclick="removeFromScript(${i})" style="margin-left: 4px;">✕</button>
@@ -2519,7 +2527,16 @@ function renderScript() {
     let currentPeriodId = null;
     let skipPlays = false;
 
+    // Shared datalists — built once, reused by all play rows
+    const sharedDatalistsHtml = `
+      <datalist id="dl-front-shared">${scoutFrontOpts}</datalist>
+      <datalist id="dl-cov-shared">${scoutCovOpts}</datalist>
+      <datalist id="dl-stunt-shared">${scoutStuntOpts}</datalist>
+      <datalist id="dl-blitz-shared">${scoutBlitzOpts}</datalist>
+    `;
+
     container.innerHTML =
+      sharedDatalistsHtml +
       `
       <div class="script-column-headers">
         <div class="sch-spacer"></div>
@@ -2549,9 +2566,9 @@ function renderScript() {
               <div class="script-item period-header" style="background: ${periodColor}; color: white;">
                 <div class="ph-left">
                   <button class="ph-collapse-btn" onclick="togglePeriodCollapse('${p.id}')" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
-                  <input type="color" class="ph-color-input" value="${periodColor}" onchange="script[${i}].color = this.value; renderScript();" title="Period color">
-                  <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value">
-                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="script[${i}].minutes = parseInt(this.value, 10) || 0; renderScript();" placeholder="min" title="Time in minutes">
+                  <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
+                  <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value; saveScriptState()">
+                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="updatePeriodMinutes(${i}, this)" placeholder="min" title="Time in minutes">
                   <span class="ph-meta-span">${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}</span>
                 </div>
                 <div class="ph-right">
@@ -2620,14 +2637,14 @@ function renderScript() {
               </select>
             </div>
             <div class="defense-inputs">
-              <input type="text" list="dl-front-${i}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
-              <datalist id="dl-front-${i}">${p.practiceFront ? `<option value="${p.practiceFront}">★ ${p.practiceFront}</option>` : ""}${scoutFrontOpts}</datalist>
-              <input type="text" list="dl-cov-${i}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
-              <datalist id="dl-cov-${i}">${p.practiceCoverage ? `<option value="${p.practiceCoverage}">★ ${p.practiceCoverage}</option>` : ""}${scoutCovOpts}</datalist>
-              <input type="text" list="dl-stunt-${i}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
-              <datalist id="dl-stunt-${i}">${p.practiceStunt ? `<option value="${p.practiceStunt}">★ ${p.practiceStunt}</option>` : ""}${scoutStuntOpts}</datalist>
-              <input type="text" list="dl-blitz-${i}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
-              <datalist id="dl-blitz-${i}">${p.practiceBlitz ? `<option value="${p.practiceBlitz}">★ ${p.practiceBlitz}</option>` : ""}${scoutBlitzOpts}</datalist>
+              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : 'dl-front-shared'}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
+              ${p.practiceFront ? `<datalist id="dl-front-${i}"><option value="${p.practiceFront}">★ ${p.practiceFront}</option>${scoutFrontOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : 'dl-cov-shared'}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
+              ${p.practiceCoverage ? `<datalist id="dl-cov-${i}"><option value="${p.practiceCoverage}">★ ${p.practiceCoverage}</option>${scoutCovOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : 'dl-stunt-shared'}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
+              ${p.practiceStunt ? `<datalist id="dl-stunt-${i}"><option value="${p.practiceStunt}">★ ${p.practiceStunt}</option>${scoutStuntOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : 'dl-blitz-shared'}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
+              ${p.practiceBlitz ? `<datalist id="dl-blitz-${i}"><option value="${p.practiceBlitz}">★ ${p.practiceBlitz}</option>${scoutBlitzOpts}</datalist>` : ""}
             </div>
             <div class="play-controls">
               <div class="move-btns">
@@ -3853,7 +3870,10 @@ function getSmartScriptConfig() {
     },
     typeVariety: {
       enabled: document.getElementById("ssRuleTypeVariety").checked,
-      weight: parseInt(document.getElementById("ssWeightTypeVariety").value, 10),
+      weight: parseInt(
+        document.getElementById("ssWeightTypeVariety").value,
+        10,
+      ),
     },
     personnelCluster: {
       enabled: document.getElementById("ssRulePersonnelCluster").checked,

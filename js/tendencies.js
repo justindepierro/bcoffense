@@ -511,7 +511,10 @@ const TD_FILTER_FIELDS = [
 // ============ Persistence ============
 
 function loadTendencies() {
-  tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+  tendenciesOpponents = storageManager.get(
+    STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+    [],
+  );
   const settings = storageManager.get(STORAGE_KEYS.TENDENCIES_SETTINGS, {});
   tdVisibleColumns = settings.visibleColumns || [...TD_DEFAULT_VISIBLE];
   tendenciesRapidMode = settings.rapidMode || false;

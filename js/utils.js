@@ -4,6 +4,33 @@
 // Replaces native alert(), confirm(), prompt() with styled modals
 
 /**
+ * Trap keyboard focus within an overlay element (WCAG 2.4.3)
+ * @param {HTMLElement} overlay - The modal overlay container
+ */
+function trapFocus(overlay) {
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key !== "Tab") return;
+    const focusable = overlay.querySelectorAll(
+      'button, [href], input, select, textarea, [tabindex]:not([tabindex="-1"])',
+    );
+    if (focusable.length === 0) return;
+    const first = focusable[0];
+    const last = focusable[focusable.length - 1];
+    if (e.shiftKey) {
+      if (document.activeElement === first) {
+        e.preventDefault();
+        last.focus();
+      }
+    } else {
+      if (document.activeElement === last) {
+        e.preventDefault();
+        first.focus();
+      }
+    }
+  });
+}
+
+/**
  * Show a styled alert modal (replaces alert())
  * @param {string} message - The message to display
  * @param {object} opts - Options: { title, icon }
@@ -28,6 +55,7 @@ function showModal(message, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
+    trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const okBtn = overlay.querySelector("#modalOkBtn");
@@ -82,6 +110,7 @@ function showConfirm(message, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
+    trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const confirmBtn = overlay.querySelector("#modalConfirmBtn");
@@ -142,6 +171,7 @@ function showPrompt(message, defaultValue = "", opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
+    trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const input = overlay.querySelector("#modalInput");
@@ -236,6 +266,7 @@ function showChoice(message, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
+    trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const firstBtn = overlay.querySelector("[data-choice-value]");
@@ -309,6 +340,7 @@ function showListPicker(message, items, opts = {}) {
       </div>
     `;
     document.body.appendChild(overlay);
+    trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     function close(val) {
@@ -765,7 +797,7 @@ function reloadAppFromStorage() {
 }
 
 /**
- * Show storage info modal with usage details
+ * Show storage info modal with usage details (uses showModal system)
  */
 function showStorageInfo() {
   const info = storageManager.getStorageInfo();
@@ -810,72 +842,38 @@ function showStorageInfo() {
     counts.periodTemplates = Array.isArray(templates) ? templates.length : 0;
   } catch (e) {}
 
-  // Build items table
+  // Build items table rows
   let itemsHtml = "";
   Object.entries(info.itemSizes).forEach(([key, size]) => {
     const name = friendlyNames[key] || key;
     const sizeStr = storageManager.formatBytes(size);
     const countStr = counts[key] !== undefined ? ` (${counts[key]} items)` : "";
-    itemsHtml += `
-      <tr>
-        <td style="padding: 5px 10px;">${name}${countStr}</td>
-        <td style="padding: 5px 10px; text-align: right;">${sizeStr}</td>
-      </tr>
-    `;
+    itemsHtml += `<tr><td class="si-td">${escapeHtml(name)}${escapeHtml(countStr)}</td><td class="si-td si-td-right">${escapeHtml(sizeStr)}</td></tr>`;
   });
 
-  const modalHtml = `
-    <div id="storageInfoModal" class="modal-overlay" style="display: flex;" onclick="closeStorageInfoModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 500px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-          <h3 style="margin: 0;">💾 Storage Information</h3>
-          <button onclick="closeStorageInfoModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
-        </div>
-        
-        <div style="margin-bottom: 15px; padding: 10px; background: #f0f7ff; border-radius: 8px;">
-          <strong>Total Storage Used:</strong> ${info.totalSizeFormatted}
-          <div style="font-size: 11px; color: #666; margin-top: 5px;">
-            localStorage limit is typically 5-10 MB per domain
-          </div>
-        </div>
-        
-        <table style="width: 100%; border-collapse: collapse; font-size: 13px;">
-          <thead>
-            <tr style="background: #f5f5f5;">
-              <th style="padding: 8px 10px; text-align: left;">Data Type</th>
-              <th style="padding: 8px 10px; text-align: right;">Size</th>
-            </tr>
-          </thead>
-          <tbody>
-            ${itemsHtml || '<tr><td colspan="2" style="padding: 10px; text-align: center; color: #666;">No data stored</td></tr>'}
-          </tbody>
-        </table>
-        
-        <div style="margin-top: 20px; display: flex; gap: 10px; flex-wrap: wrap;">
-          <button onclick="exportBackup()" class="btn btn-primary" style="padding: 8px 16px;">
-            📥 Export Backup
-          </button>
-          <button onclick="if(storageManager.clearAll()) location.reload();" class="btn btn-danger" style="padding: 8px 16px;">
-            🗑️ Clear All Data
-          </button>
-          <button onclick="closeStorageInfoModal()" class="btn" style="padding: 8px 16px;">
-            Close
-          </button>
-        </div>
-      </div>
+  const body = `
+    <div class="si-summary">
+      <strong>Total Storage Used:</strong> ${escapeHtml(info.totalSizeFormatted)}
+      <div class="si-hint">localStorage limit is typically 5-10 MB per domain</div>
     </div>
-  `;
+    <table class="si-table">
+      <thead><tr class="si-thead-row"><th class="si-th">Data Type</th><th class="si-th si-th-right">Size</th></tr></thead>
+      <tbody>${itemsHtml || '<tr><td colspan="2" class="si-empty">No data stored</td></tr>'}</tbody>
+    </table>
+    <div class="si-actions">
+      <button id="siExportBtn" class="btn btn-primary">📥 Export Backup</button>
+      <button id="siClearBtn" class="btn btn-danger">🗑️ Clear All Data</button>
+    </div>`;
 
-  document.body.insertAdjacentHTML("beforeend", modalHtml);
-}
+  showModal(body, { title: "💾 Storage Information", confirmText: "Close" });
 
-/**
- * Close storage info modal
- */
-function closeStorageInfoModal(event) {
-  if (event && event.target.id !== "storageInfoModal") return;
-  const modal = document.getElementById("storageInfoModal");
-  if (modal) modal.remove();
+  // Wire up action buttons after modal is in DOM
+  setTimeout(() => {
+    document.getElementById("siExportBtn")?.addEventListener("click", () => exportBackup());
+    document.getElementById("siClearBtn")?.addEventListener("click", () => {
+      if (storageManager.clearAll()) location.reload();
+    });
+  }, 0);
 }
 
 // History management for undo/redo (max 50 states)

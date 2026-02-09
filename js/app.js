@@ -65,9 +65,13 @@ function showTab(tabName) {
   // Update tab buttons
   document
     .querySelectorAll(".tab")
-    .forEach((t) => t.classList.remove("active"));
+    .forEach((t) => {
+      t.classList.remove("active");
+      t.setAttribute("aria-selected", "false");
+    });
   if (typeof event !== "undefined" && event && event.target) {
     event.target.classList.add("active");
+    event.target.setAttribute("aria-selected", "true");
   } else {
     // Find the tab button for this tab by matching text or position
     const tabMap = {
@@ -81,7 +85,10 @@ function showTab(tabName) {
     };
     const tabs = document.querySelectorAll(".tab");
     const idx = tabMap[tabName];
-    if (idx !== undefined && tabs[idx]) tabs[idx].classList.add("active");
+    if (idx !== undefined && tabs[idx]) {
+      tabs[idx].classList.add("active");
+      tabs[idx].setAttribute("aria-selected", "true");
+    }
   }
 
   // Initialize installation if switching to that tab
@@ -615,14 +622,20 @@ function printFullGamePlan() {
           <tr><th>Fronts</th><th>%</th></tr>
           ${s.data.topFront
             .slice(0, 4)
-            .map((f) => `<tr><td>${escapeHtml(f.term)}</td><td>${f.pct}%</td></tr>`)
+            .map(
+              (f) =>
+                `<tr><td>${escapeHtml(f.term)}</td><td>${f.pct}%</td></tr>`,
+            )
             .join("")}
         </table>
         <table class="gp-scout-table">
           <tr><th>Coverages</th><th>%</th></tr>
           ${s.data.topCoverage
             .slice(0, 4)
-            .map((c) => `<tr><td>${escapeHtml(c.term)}</td><td>${c.pct}%</td></tr>`)
+            .map(
+              (c) =>
+                `<tr><td>${escapeHtml(c.term)}</td><td>${c.pct}%</td></tr>`,
+            )
             .join("")}
         </table>
         <p class="gp-blitz-line">Blitz Rate: <strong>${s.data.blitzRate}%</strong></p>

@@ -149,7 +149,10 @@ function renderSortPresetDropdown() {
   dropdown.innerHTML =
     '<option value="">-- Select Preset --</option>' +
     presetNames
-      .map((name) => `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`)
+      .map(
+        (name) =>
+          `<option value="${escapeHtml(name)}">${escapeHtml(name)}</option>`,
+      )
       .join("");
 }
 
