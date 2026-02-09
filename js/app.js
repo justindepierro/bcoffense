@@ -1271,7 +1271,7 @@ function printFullGamePlan() {
  * Handle opponent selection change on dashboard
  */
 function onDashOpponentChange(value) {
-  const idx = value === "" ? null : parseInt(value);
+  const idx = value === "" ? null : parseInt(value, 10);
   const weekLabel = document.getElementById("dashWeekLabel")?.value || "";
   setGameWeek(idx, weekLabel);
   renderDashboard();

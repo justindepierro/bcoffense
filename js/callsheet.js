@@ -1937,7 +1937,7 @@ function loadWristbandToCallSheet() {
   }
 
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wristbandData = saved[parseInt(wristbandIdx)];
+  const wristbandData = saved[parseInt(wristbandIdx, 10)];
 
   if (!wristbandData || !wristbandData.cards) {
     showToast("⚠️ Could not load wristband data");
@@ -2072,7 +2072,7 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
   const targetPlay = event.target.closest(".callsheet-play");
   let insertIdx = -1;
   if (targetPlay) {
-    insertIdx = parseInt(targetPlay.dataset.index);
+    insertIdx = parseInt(targetPlay.dataset.index, 10);
     // If dropping in same hash and source is above target, adjust
     if (
       categoryId === targetCategory &&
@@ -2837,14 +2837,14 @@ function buildCallSheetPlayParts(play, options) {
     let formText = options.removeVowels
       ? removeVowels(play.formation)
       : play.formation;
-    playParts.push(formText);
+    playParts.push(escapeHtml(formText));
   }
 
   // Handle shift with bold/red options
   if (play.shift) {
-    let shiftText = options.removeVowels
+    let shiftText = escapeHtml(options.removeVowels
       ? removeVowels(play.shift)
-      : play.shift;
+      : play.shift);
     if (options.boldShifts) shiftText = `<b>${shiftText}</b>`;
     if (options.redShifts)
       shiftText = `<span class="cs-red-text">${shiftText}</span>`;
@@ -2853,9 +2853,9 @@ function buildCallSheetPlayParts(play, options) {
 
   // Handle motion with italic/red options
   if (options.showMotion && play.motion) {
-    let motionText = options.removeVowels
+    let motionText = escapeHtml(options.removeVowels
       ? removeVowels(play.motion)
-      : play.motion;
+      : play.motion);
     if (options.italicMotions) motionText = `<i>${motionText}</i>`;
     if (options.redMotions)
       motionText = `<span class="cs-red-text">${motionText}</span>`;
@@ -2866,12 +2866,12 @@ function buildCallSheetPlayParts(play, options) {
     let protText = options.removeVowels
       ? removeVowels(play.protection)
       : play.protection;
-    playParts.push(protText);
+    playParts.push(escapeHtml(protText));
   }
 
   if (options.showPlayName && play.play) {
     let playText = options.removeVowels ? removeVowels(play.play) : play.play;
-    playParts.push(playText);
+    playParts.push(escapeHtml(playText));
   }
 
   if (options.showTags) {
@@ -2879,21 +2879,21 @@ function buildCallSheetPlayParts(play, options) {
       let tag = options.removeVowels
         ? removeVowels(play.playTag1)
         : play.playTag1;
-      playParts.push(tag);
+      playParts.push(escapeHtml(tag));
     }
     if (play.playTag2) {
       let tag = options.removeVowels
         ? removeVowels(play.playTag2)
         : play.playTag2;
-      playParts.push(tag);
+      playParts.push(escapeHtml(tag));
     }
   }
 
   // Add line call in brackets
   if (options.showLineCall && play.lineCall) {
-    const lc = options.removeVowels
+    const lc = escapeHtml(options.removeVowels
       ? removeVowels(play.lineCall)
-      : play.lineCall;
+      : play.lineCall);
     playParts.push(`<i class="cs-line-call">[${lc}]</i>`);
   }
 
@@ -3053,7 +3053,7 @@ function setCategoryTarget(categoryId) {
   const close = () => overlay.remove();
 
   overlay.querySelector(".cs-target-save").addEventListener("click", () => {
-    const val = parseInt(input.value);
+    const val = parseInt(input.value, 10);
     if (val > 0) {
       csTargets[categoryId] = val;
     } else {

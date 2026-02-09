@@ -174,7 +174,7 @@ function highlightWristbandPlays() {
   }
 
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wb = saved[parseInt(wbIdx)];
+  const wb = saved[parseInt(wbIdx, 10)];
 
   if (!wb || !wb.cards) {
     highlightedWristbandPlays = [];

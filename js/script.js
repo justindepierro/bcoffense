@@ -311,7 +311,7 @@ function highlightPlaysNotOnWristband() {
   }
 
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wbId = parseInt(wbSelect.value);
+  const wbId = parseInt(wbSelect.value, 10);
   if (isNaN(wbId)) return;
   const wb = saved.find((w) => w.id === wbId);
   if (!wb) return;
@@ -357,8 +357,8 @@ function updateRunPassRatio() {
 
   if (!ratioEl) return;
 
-  const run = parseInt(runEl?.textContent) || 0;
-  const pass = parseInt(passEl?.textContent) || 0;
+  const run = parseInt(runEl?.textContent, 10) || 0;
+  const pass = parseInt(passEl?.textContent, 10) || 0;
 
   if (run === 0 && pass === 0) {
     ratioEl.textContent = "-";
@@ -470,7 +470,7 @@ function selectPeriodPlays(separatorIndex) {
 function updateBulkSelectUI() {
   // Update individual checkboxes
   document.querySelectorAll(".bulk-select-cb").forEach((cb) => {
-    cb.checked = bulkSelectedIndices.includes(parseInt(cb.dataset.index));
+    cb.checked = bulkSelectedIndices.includes(parseInt(cb.dataset.index, 10));
   });
 
   // Update select all checkbox
@@ -1436,7 +1436,7 @@ function addSeparator() {
 function confirmAddPeriod() {
   const name = document.getElementById("newPeriodName").value.trim();
   const minutes =
-    parseInt(document.getElementById("newPeriodMinutes").value) || 0;
+    parseInt(document.getElementById("newPeriodMinutes", 10).value) || 0;
   const color = document.getElementById("newPeriodColor").value || "#333333";
 
   if (!name) {
@@ -2234,7 +2234,7 @@ function movePlay(index, direction) {
  * @param {number} reps - New reps value
  */
 function updateReps(index, reps) {
-  script[index].reps = parseInt(reps) || 1;
+  script[index].reps = parseInt(reps, 10) || 1;
   updateScriptStats();
 }
 
@@ -2265,50 +2265,14 @@ function updateHash(index, value) {
 }
 
 /**
- * Update defense front for a play
+ * Update any defense field for a play (front, coverage, stunt, blitz)
  */
-function updateDefFront(index, value) {
+function updateDefField(index, field, value) {
   if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
-    applyBulkEdit("defFront", value);
+    applyBulkEdit(field, value);
     renderScript();
   } else {
-    script[index].defFront = value;
-  }
-}
-
-/**
- * Update defense coverage for a play
- */
-function updateDefCoverage(index, value) {
-  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
-    applyBulkEdit("defCoverage", value);
-    renderScript();
-  } else {
-    script[index].defCoverage = value;
-  }
-}
-
-/**
- * Update defense stunt for a play
- */
-function updateDefStunt(index, value) {
-  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
-    applyBulkEdit("defStunt", value);
-    renderScript();
-  } else {
-    script[index].defStunt = value;
-  }
-}
-
-/**
- * Update defense blitz for a play
- */
-function updateDefBlitz(index, value) {
-  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
-    applyBulkEdit("defBlitz", value);
-    renderScript();
-  } else {
-    script[index].defBlitz = value;
+    script[index][field] = value;
   }
 }
 
@@ -2346,11 +2310,11 @@ function handleDrop(event) {
   const source = event.dataTransfer.getData("source");
 
   if (source === "available") {
-    const playIndex = parseInt(event.dataTransfer.getData("playIndex"));
+    const playIndex = parseInt(event.dataTransfer.getData("playIndex", 10));
     if (isNaN(playIndex)) return;
     addToScript(playIndex);
   } else if (source === "script") {
-    const fromIndex = parseInt(event.dataTransfer.getData("scriptIndex"));
+    const fromIndex = parseInt(event.dataTransfer.getData("scriptIndex", 10));
     if (isNaN(fromIndex)) return;
 
     // Find drop target index
@@ -2636,7 +2600,7 @@ function renderScript() {
           <div class="ph-left">
             <input type="color" class="ph-color-input" value="${periodColor}" onchange="script[${i}].color = this.value; renderScript();" title="Period color">
             <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value" placeholder="Period name">
-            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="script[${i}].minutes = parseInt(this.value) || 0; renderScript();" placeholder="min" title="Time in minutes">
+            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="script[${i}].minutes = parseInt(this.value, 10) || 0; renderScript();" placeholder="min" title="Time in minutes">
           </div>
           <div class="ph-right">
             <button class="remove" onclick="removeFromScript(${i})" style="margin-left: 4px;">✕</button>
@@ -2723,7 +2687,7 @@ function renderScript() {
                   <button class="ph-collapse-btn" onclick="togglePeriodCollapse('${p.id}')" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
                   <input type="color" class="ph-color-input" value="${periodColor}" onchange="script[${i}].color = this.value; renderScript();" title="Period color">
                   <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value">
-                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="script[${i}].minutes = parseInt(this.value) || 0; renderScript();" placeholder="min" title="Time in minutes">
+                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="script[${i}].minutes = parseInt(this.value, 10) || 0; renderScript();" placeholder="min" title="Time in minutes">
                   <span class="ph-meta-span">${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}</span>
                 </div>
                 <div class="ph-right">
@@ -2792,13 +2756,13 @@ function renderScript() {
               </select>
             </div>
             <div class="defense-inputs">
-              <input type="text" list="dl-front-${i}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefFront(${i}, this.value)" title="Defensive Front" class="def-input">
+              <input type="text" list="dl-front-${i}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
               <datalist id="dl-front-${i}">${p.practiceFront ? `<option value="${p.practiceFront}">★ ${p.practiceFront}</option>` : ""}${scoutFrontOpts}</datalist>
-              <input type="text" list="dl-cov-${i}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefCoverage(${i}, this.value)" title="Coverage" class="def-input">
+              <input type="text" list="dl-cov-${i}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
               <datalist id="dl-cov-${i}">${p.practiceCoverage ? `<option value="${p.practiceCoverage}">★ ${p.practiceCoverage}</option>` : ""}${scoutCovOpts}</datalist>
-              <input type="text" list="dl-stunt-${i}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefStunt(${i}, this.value)" title="Stunt" class="def-input">
+              <input type="text" list="dl-stunt-${i}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
               <datalist id="dl-stunt-${i}">${p.practiceStunt ? `<option value="${p.practiceStunt}">★ ${p.practiceStunt}</option>` : ""}${scoutStuntOpts}</datalist>
-              <input type="text" list="dl-blitz-${i}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefBlitz(${i}, this.value)" title="Blitz" class="def-input">
+              <input type="text" list="dl-blitz-${i}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
               <datalist id="dl-blitz-${i}">${p.practiceBlitz ? `<option value="${p.practiceBlitz}">★ ${p.practiceBlitz}</option>` : ""}${scoutBlitzOpts}</datalist>
             </div>
             <div class="play-controls">
@@ -3185,7 +3149,7 @@ function populateScriptWristbandSelect() {
  */
 function loadWristbandForScript() {
   const select = document.getElementById("scriptWristbandSelect");
-  const id = parseInt(select.value);
+  const id = parseInt(select.value, 10);
   const infoDiv = document.getElementById("scriptWristbandInfo");
 
   if (!id) {
@@ -3321,7 +3285,7 @@ function closeLoadWbToScriptModal(event) {
  */
 function executeLoadWbToScript() {
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wbIdx = parseInt(document.getElementById("wbToScriptSelect").value);
+  const wbIdx = parseInt(document.getElementById("wbToScriptSelect", 10).value);
   const destination = document.getElementById("wbToScriptDestination").value;
   const cardChoice = document.getElementById("wbToScriptCards").value;
 
@@ -3340,7 +3304,7 @@ function executeLoadWbToScript() {
   // Collect plays from selected card(s)
   const playsToAdd = [];
   wb.cards.forEach((card, cardIdx) => {
-    if (cardChoice !== "all" && parseInt(cardChoice) !== cardIdx + 1) return;
+    if (cardChoice !== "all" && parseInt(cardChoice, 10) !== cardIdx + 1) return;
 
     card.data.forEach((play) => {
       if (play !== null) {
@@ -3592,7 +3556,7 @@ async function printFullDay() {
   const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const selectedIds = Array.from(
     document.querySelectorAll(".day-script-checkbox:checked"),
-  ).map((cb) => parseInt(cb.value));
+  ).map((cb) => parseInt(cb.value, 10));
 
   if (selectedIds.length === 0) {
     await showModal("Please select at least one script to print.", {
@@ -4096,29 +4060,29 @@ function getSmartScriptConfig() {
   return {
     hashFlow: {
       enabled: document.getElementById("ssRuleHashFlow").checked,
-      weight: parseInt(document.getElementById("ssWeightHashFlow").value),
+      weight: parseInt(document.getElementById("ssWeightHashFlow", 10).value),
     },
     downProgression: {
       enabled: document.getElementById("ssRuleDownProgression").checked,
-      weight: parseInt(document.getElementById("ssWeightDownProg").value),
-      cycle: parseInt(document.getElementById("ssDownCycle").value),
+      weight: parseInt(document.getElementById("ssWeightDownProg", 10).value),
+      cycle: parseInt(document.getElementById("ssDownCycle", 10).value),
       targetDown: document.getElementById("ssDownTarget").value,
     },
     typeVariety: {
       enabled: document.getElementById("ssRuleTypeVariety").checked,
-      weight: parseInt(document.getElementById("ssWeightTypeVariety").value),
+      weight: parseInt(document.getElementById("ssWeightTypeVariety", 10).value),
     },
     personnelCluster: {
       enabled: document.getElementById("ssRulePersonnelCluster").checked,
-      weight: parseInt(document.getElementById("ssWeightPersonnel").value),
+      weight: parseInt(document.getElementById("ssWeightPersonnel", 10).value),
     },
     tempoVariety: {
       enabled: document.getElementById("ssRuleTempoVariety").checked,
-      weight: parseInt(document.getElementById("ssWeightTempo").value),
+      weight: parseInt(document.getElementById("ssWeightTempo", 10).value),
     },
     formationSpread: {
       enabled: document.getElementById("ssRuleFormationSpread").checked,
-      weight: parseInt(document.getElementById("ssWeightFormation").value),
+      weight: parseInt(document.getElementById("ssWeightFormation", 10).value),
     },
     startHash: {
       enabled: document.getElementById("ssRuleStartHash").checked,
@@ -4126,12 +4090,12 @@ function getSmartScriptConfig() {
     },
     runPassBalance: {
       enabled: document.getElementById("ssRuleRunPassBal").checked,
-      weight: parseInt(document.getElementById("ssWeightRunPassBal").value),
-      targetRunPct: parseInt(document.getElementById("ssRunPct").value),
+      weight: parseInt(document.getElementById("ssWeightRunPassBal", 10).value),
+      targetRunPct: parseInt(document.getElementById("ssRunPct", 10).value),
     },
     constraintPairing: {
       enabled: document.getElementById("ssRuleConstraint").checked,
-      weight: parseInt(document.getElementById("ssWeightConstraint").value),
+      weight: parseInt(document.getElementById("ssWeightConstraint", 10).value),
     },
   };
 }

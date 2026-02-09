@@ -319,7 +319,7 @@ function showListPicker(message, items, opts = {}) {
 
     overlay.querySelectorAll(".custom-modal-list-item").forEach((el) => {
       el.addEventListener("click", () => {
-        const idx = parseInt(el.dataset.index);
+        const idx = parseInt(el.dataset.index, 10);
         close(items[idx].value);
       });
     });
@@ -1122,20 +1122,20 @@ function getFullCall(play, options = {}) {
 
   let parts = [];
 
-  // Build full call
-  if (play.formation) parts.push(play.formation);
+  // Build full call — escape all user-provided values for safe HTML injection
+  if (play.formation) parts.push(escapeHtml(play.formation));
   if (play.formTag1 && !(underEmoji && play.formTag1.toLowerCase() === "under"))
-    parts.push(play.formTag1);
+    parts.push(escapeHtml(play.formTag1));
   if (play.formTag2 && !(underEmoji && play.formTag2.toLowerCase() === "under"))
-    parts.push(play.formTag2);
+    parts.push(escapeHtml(play.formTag2));
   // Add Under (if not using emoji display for it)
   if (play.under && !(underEmoji && play.under.trim() !== ""))
-    parts.push(play.under);
-  if (play.back) parts.push(play.back);
+    parts.push(escapeHtml(play.under));
+  if (play.back) parts.push(escapeHtml(play.back));
 
   // Handle shift with bold/red options
   if (play.shift) {
-    let shiftHtml = play.shift;
+    let shiftHtml = escapeHtml(play.shift);
     if (boldShifts) shiftHtml = `<b>${shiftHtml}</b>`;
     if (redShifts) shiftHtml = `<span style="color:red">${shiftHtml}</span>`;
     parts.push(shiftHtml);
@@ -1143,16 +1143,16 @@ function getFullCall(play, options = {}) {
 
   // Handle motion with italic/red options
   if (play.motion) {
-    let motionHtml = play.motion;
+    let motionHtml = escapeHtml(play.motion);
     if (italicMotions) motionHtml = `<i>${motionHtml}</i>`;
     if (redMotions) motionHtml = `<span style="color:red">${motionHtml}</span>`;
     parts.push(motionHtml);
   }
 
-  if (play.protection) parts.push(play.protection);
-  if (play.play) parts.push(play.play);
-  if (play.playTag1) parts.push(play.playTag1);
-  if (play.playTag2) parts.push(play.playTag2);
+  if (play.protection) parts.push(escapeHtml(play.protection));
+  if (play.play) parts.push(escapeHtml(play.play));
+  if (play.playTag1) parts.push(escapeHtml(play.playTag1));
+  if (play.playTag2) parts.push(escapeHtml(play.playTag2));
 
   let fullCall = parts.join(" ");
 
@@ -1165,7 +1165,8 @@ function getFullCall(play, options = {}) {
 
   // Add line call in brackets
   if (showLineCall && play.lineCall) {
-    const lc = noVowels ? removeVowels(play.lineCall) : play.lineCall;
+    const rawLc = noVowels ? removeVowels(play.lineCall) : play.lineCall;
+    const lc = escapeHtml(rawLc);
     fullCall += ` <span class="line-call">[${lc}]</span>`;
   }
 
@@ -1652,7 +1653,7 @@ function queryTendencies(opponent, filters) {
     }
     // Yard range
     if (filters.yardRange) {
-      const yl = parseInt(p.yardLine);
+      const yl = parseInt(p.yardLine, 10);
       if (isNaN(yl)) return false;
       if (yl < filters.yardRange[0] || yl > filters.yardRange[1]) return false;
     }
