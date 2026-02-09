@@ -6779,12 +6779,12 @@ kbd {
   margin-bottom: 24px;
 }
 .install-readiness-item {
-  background: white;
+  background: #1e1e1e;
   border-radius: 10px;
   padding: 14px 16px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-  border-top: 3px solid #dee2e6;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.25);
+  border-top: 3px solid #444;
 }
 .install-readiness-max {
   border-top-color: #28a745;
@@ -6812,7 +6812,7 @@ kbd {
 }
 .install-readiness-label {
   font-size: 11px;
-  color: #888;
+  color: #ccc;
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -6821,7 +6821,9 @@ kbd {
 /* Clickable Readiness Cards */
 .install-readiness-clickable {
   cursor: pointer;
-  transition: transform 0.15s ease, box-shadow 0.15s ease;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease;
 }
 .install-readiness-clickable:hover {
   transform: translateY(-3px);

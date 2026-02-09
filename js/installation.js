@@ -495,9 +495,9 @@ function showReadinessModal(type) {
   if (!plays || plays.length === 0) return;
 
   const titles = {
-    ready:   { title: '★ Game Ready Plays',   icon: '★' },
-    partial: { title: '◐ Partially Installed', icon: '◐' },
-    none:    { title: '○ Not Ready',           icon: '○' },
+    ready: { title: "★ Game Ready Plays", icon: "★" },
+    partial: { title: "◐ Partially Installed", icon: "◐" },
+    none: { title: "○ Not Ready", icon: "○" },
   };
 
   // Collect plays matching this readiness level
@@ -505,17 +505,17 @@ function showReadinessModal(type) {
   plays.forEach((p) => {
     const rating = getPlayInstallRating(p);
     if (rating.maxStars === 0) return;
-    const isReady   = rating.stars === rating.maxStars;
+    const isReady = rating.stars === rating.maxStars;
     const isPartial = rating.stars > 0 && rating.stars < rating.maxStars;
-    const isNone    = rating.stars === 0;
+    const isNone = rating.stars === 0;
 
-    if (type === 'ready'   && isReady)   matched.push({ play: p, rating });
-    if (type === 'partial' && isPartial) matched.push({ play: p, rating });
-    if (type === 'none'    && isNone)    matched.push({ play: p, rating });
+    if (type === "ready" && isReady) matched.push({ play: p, rating });
+    if (type === "partial" && isPartial) matched.push({ play: p, rating });
+    if (type === "none" && isNone) matched.push({ play: p, rating });
   });
 
   if (matched.length === 0) {
-    showModal('No plays in this category.', titles[type]);
+    showModal("No plays in this category.", titles[type]);
     return;
   }
 
@@ -523,35 +523,35 @@ function showReadinessModal(type) {
   matched.sort((a, b) => {
     const diff = b.rating.stars - a.rating.stars;
     if (diff !== 0) return diff;
-    const nameA = (a.play.playName || a.play.baseConcept || '').toLowerCase();
-    const nameB = (b.play.playName || b.play.baseConcept || '').toLowerCase();
+    const nameA = (a.play.play || a.play.basePlay || "").toLowerCase();
+    const nameB = (b.play.play || b.play.basePlay || "").toLowerCase();
     return nameA.localeCompare(nameB);
   });
 
   let html = `<div class="readiness-modal-list">`;
 
   matched.forEach(({ play, rating }) => {
-    const playName = play.playName || play.baseConcept || 'Unnamed';
-    const formation = play.formation || '';
-    const personnel = play.personnel || '';
-    const subtitle = [personnel, formation].filter(Boolean).join(' · ');
+    const playName = play.play || play.basePlay || "Unnamed";
+    const formation = play.formation || "";
+    const personnel = play.personnel || "";
+    const subtitle = [personnel, formation].filter(Boolean).join(" · ");
     const level = getInstallRatingClass(rating.stars, rating.maxStars);
 
     html += `<div class="readiness-modal-play ${level}">`;
     html += `  <div class="readiness-modal-play-header">`;
     html += `    <div class="readiness-modal-play-name">${playName}</div>`;
-    html += `    <div class="readiness-modal-play-stars">${renderStarRating(rating.stars, rating.maxStars, 'sm')}</div>`;
+    html += `    <div class="readiness-modal-play-stars">${renderStarRating(rating.stars, rating.maxStars, "sm")}</div>`;
     html += `  </div>`;
     if (subtitle) {
       html += `<div class="readiness-modal-play-sub">${subtitle}</div>`;
     }
 
     // For partial and not-ready, show missing components
-    if (type !== 'ready') {
-      const missing = rating.details.filter(d => !d.installed);
+    if (type !== "ready") {
+      const missing = rating.details.filter((d) => !d.installed);
       if (missing.length > 0) {
         html += `<div class="readiness-modal-missing">`;
-        missing.forEach(d => {
+        missing.forEach((d) => {
           html += `<div class="readiness-modal-missing-row">❌ <span class="readiness-modal-cat">${d.icon} ${d.category}:</span> <span class="readiness-modal-val">${d.value}</span></div>`;
         });
         html += `</div>`;

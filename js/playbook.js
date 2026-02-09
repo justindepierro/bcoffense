@@ -19,8 +19,14 @@ function applyCurrentSort() {
 
     // Handle special 'install' column — numeric sort by star %
     if (currentSortColumn === "install") {
-      const rA = typeof getPlayInstallRating === "function" ? getPlayInstallRating(a) : { stars: 0, maxStars: 0 };
-      const rB = typeof getPlayInstallRating === "function" ? getPlayInstallRating(b) : { stars: 0, maxStars: 0 };
+      const rA =
+        typeof getPlayInstallRating === "function"
+          ? getPlayInstallRating(a)
+          : { stars: 0, maxStars: 0 };
+      const rB =
+        typeof getPlayInstallRating === "function"
+          ? getPlayInstallRating(b)
+          : { stars: 0, maxStars: 0 };
       valA = rA.maxStars > 0 ? rA.stars / rA.maxStars : -1;
       valB = rB.maxStars > 0 ? rB.stars / rB.maxStars : -1;
       if (valA < valB) return currentSortDirection === "asc" ? -1 : 1;
