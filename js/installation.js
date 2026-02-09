@@ -288,6 +288,7 @@ function renderInstallation() {
           <p class="install-subtitle">Track what you've taught — see what's game-ready</p>
         </div>
         <div class="install-header-right">
+          <button class="btn btn-primary sir-btn" onclick="showSmartInstallReport()" title="Smart Installation Report">🧠 Smart Report</button>
           <div class="install-overall-progress">
             <div class="install-overall-ring" style="--pct:${overallPct}">
               <span class="install-overall-pct">${overallPct}%</span>
@@ -605,4 +606,496 @@ function getPlayInstallTooltip(play) {
 
   html += `</div></div>`;
   return html;
+}
+// ============ Smart Installation Report ============
+
+/**
+ * Generate a comprehensive smart installation report
+ * Analyzes the entire playbook to produce prioritized install recommendations
+ *
+ * The algorithm scores every uninstalled component across several dimensions:
+ *   1. GAME-READY UNLOCK — how many plays would become fully installed
+ *   2. NEAR-READY LIFT   — how many "almost there" plays get closer
+ *   3. BREADTH IMPACT    — total # of plays that use this component
+ *   4. VARIETY BONUS      — does it unlock new formations/personnel combos?
+ *   5. CLUSTER SYNERGY    — installing this + one more finishes a group of plays
+ *
+ * Returns structured data consumed by the rendering function.
+ */
+function generateSmartInstallReport() {
+  if (!plays || plays.length === 0) return null;
+
+  const data = getInstallationData();
+  const components = extractComponentsFromPlaybook();
+
+  // ── Step 1: Rate every play ──────────────────────────────────
+  const playRatings = plays.map((p) => {
+    const rating = getPlayInstallRating(p);
+    return { play: p, ...rating };
+  });
+
+  // ── Step 2: Classify plays by readiness ──────────────────────
+  const gameReady = playRatings.filter(
+    (r) => r.maxStars > 0 && r.stars === r.maxStars,
+  );
+  const nearReady = playRatings.filter(
+    (r) => r.maxStars > 0 && r.stars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
+  );
+  const inProgress = playRatings.filter(
+    (r) => r.maxStars > 0 && r.stars > 0 && r.maxStars - r.stars > 2,
+  );
+  const notStarted = playRatings.filter(
+    (r) => r.maxStars > 0 && r.stars === 0,
+  );
+
+  // ── Step 3: Score every UNINSTALLED component ────────────────
+  const componentScores = [];
+
+  INSTALL_CATEGORIES.forEach((cat) => {
+    const allItems = components[cat.id] || [];
+    const installed = data.installed[cat.id] || [];
+
+    allItems.forEach((value) => {
+      if (installed.includes(value)) return; // skip already installed
+
+      // Find all plays that use this component
+      const affectedPlays = playRatings.filter((r) => {
+        if (cat.id === "formTag") {
+          const tags = [r.play.formTag1, r.play.formTag2]
+            .filter(Boolean)
+            .map((t) => t.trim());
+          return tags.includes(value);
+        }
+        const v = r.play[cat.field];
+        return v && v.trim() === value;
+      });
+
+      if (affectedPlays.length === 0) return;
+
+      // ── Dimension 1: Game-ready unlocks ──
+      // How many plays would become fully installed if we install this?
+      const wouldUnlock = affectedPlays.filter(
+        (r) => r.maxStars - r.stars === 1,
+      ).length;
+
+      // ── Dimension 2: Near-ready lift ──
+      // How many plays are within 2 of done and this helps?
+      const wouldLift = affectedPlays.filter(
+        (r) => r.maxStars - r.stars === 2,
+      ).length;
+
+      // ── Dimension 3: Breadth impact ──
+      const breadth = affectedPlays.length;
+
+      // ── Dimension 4: Variety — unique formation+personnel combos unlocked ──
+      const combos = new Set();
+      affectedPlays.forEach((r) => {
+        const combo = `${r.play.formation || "?"}|${r.play.personnel || "?"}`;
+        combos.add(combo);
+      });
+      const variety = combos.size;
+
+      // ── Dimension 5: Run/Pass balance contribution ──
+      const runCount = affectedPlays.filter(
+        (r) => r.play.type === "Run",
+      ).length;
+      const passCount = affectedPlays.filter(
+        (r) => r.play.type === "Pass",
+      ).length;
+
+      // ── Dimension 6: Cluster synergy ──
+      // How many plays needing 1-2 more components does this help?
+      const clusterPlays = affectedPlays.filter(
+        (r) => r.maxStars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
+      ).length;
+
+      // ── Composite score (weighted) ──
+      const score =
+        wouldUnlock * 50 + // Highest priority: finishes plays
+        clusterPlays * 20 + // High priority: near-completion synergy
+        wouldLift * 15 + // Good: gets plays closer
+        breadth * 5 + // Moderate: breadth of impact
+        variety * 3; // Modest: variety bonus
+
+      componentScores.push({
+        categoryId: cat.id,
+        categoryLabel: cat.label,
+        icon: cat.icon,
+        value,
+        score,
+        wouldUnlock,
+        wouldLift,
+        clusterPlays,
+        breadth,
+        variety,
+        runCount,
+        passCount,
+        affectedPlayNames: affectedPlays
+          .slice(0, 8)
+          .map((r) => r.play.play || r.play.basePlay || "Unnamed"),
+        totalAffected: affectedPlays.length,
+      });
+    });
+  });
+
+  // Sort by composite score desc
+  componentScores.sort((a, b) => b.score - a.score);
+
+  // ── Step 4: Build structured sections ────────────────────────
+
+  // Section A: "Game Ready" plays summary
+  const gameReadySummary = {
+    count: gameReady.length,
+    plays: gameReady.map((r) => ({
+      name: r.play.play || r.play.basePlay || "Unnamed",
+      formation: r.play.formation || "",
+      personnel: r.play.personnel || "",
+      type: r.play.type || "",
+      stars: r.stars,
+      maxStars: r.maxStars,
+    })),
+  };
+
+  // Section B: "One Install Away" — plays needing exactly 1 more component
+  const oneAway = playRatings
+    .filter((r) => r.maxStars > 0 && r.maxStars - r.stars === 1)
+    .map((r) => {
+      const missing = r.details.filter((d) => !d.installed);
+      return {
+        name: r.play.play || r.play.basePlay || "Unnamed",
+        formation: r.play.formation || "",
+        personnel: r.play.personnel || "",
+        type: r.play.type || "",
+        stars: r.stars,
+        maxStars: r.maxStars,
+        missing: missing[0] || null,
+      };
+    })
+    .sort((a, b) => b.maxStars - a.maxStars); // sort by complexity (more stars = more complex play)
+
+  // Section C: "Two Away" — plays needing exactly 2 more
+  const twoAway = playRatings
+    .filter((r) => r.maxStars > 0 && r.maxStars - r.stars === 2)
+    .map((r) => {
+      const missing = r.details.filter((d) => !d.installed);
+      return {
+        name: r.play.play || r.play.basePlay || "Unnamed",
+        formation: r.play.formation || "",
+        personnel: r.play.personnel || "",
+        type: r.play.type || "",
+        stars: r.stars,
+        maxStars: r.maxStars,
+        missing,
+      };
+    })
+    .sort((a, b) => b.maxStars - a.maxStars);
+
+  // Section D: Top priority installs (top 15)
+  const topInstalls = componentScores.slice(0, 15);
+
+  // Section E: "Quick wins" — components that unlock the most plays with 1 install
+  const quickWins = componentScores
+    .filter((c) => c.wouldUnlock >= 1)
+    .sort((a, b) => b.wouldUnlock - a.wouldUnlock)
+    .slice(0, 10);
+
+  // Section F: "Variety boosters" — components that unlock the most unique combos
+  const varietyBoosters = componentScores
+    .filter((c) => c.variety >= 2)
+    .sort((a, b) => b.variety - a.variety || b.breadth - a.breadth)
+    .slice(0, 10);
+
+  // Section G: "Coverage gaps" — categories with lowest install %
+  const categoryGaps = INSTALL_CATEGORIES.map((cat) => {
+    const allItems = components[cat.id] || [];
+    const installed = (data.installed[cat.id] || []).filter((v) =>
+      allItems.includes(v),
+    );
+    return {
+      ...cat,
+      total: allItems.length,
+      installed: installed.length,
+      remaining: allItems.length - installed.length,
+      pct:
+        allItems.length > 0
+          ? Math.round((installed.length / allItems.length) * 100)
+          : 100,
+    };
+  })
+    .filter((c) => c.total > 0 && c.remaining > 0)
+    .sort((a, b) => a.pct - b.pct);
+
+  // Section H: Run/Pass readiness balance
+  const readyRuns = gameReady.filter((r) => r.play.type === "Run").length;
+  const readyPasses = gameReady.filter((r) => r.play.type === "Pass").length;
+  const totalRuns = playRatings.filter((r) => r.play.type === "Run").length;
+  const totalPasses = playRatings.filter((r) => r.play.type === "Pass").length;
+
+  return {
+    gameReadySummary,
+    oneAway,
+    twoAway,
+    topInstalls,
+    quickWins,
+    varietyBoosters,
+    categoryGaps,
+    balance: { readyRuns, readyPasses, totalRuns, totalPasses },
+    totalPlays: plays.length,
+    totalGameReady: gameReady.length,
+    totalNearReady: nearReady.length,
+    totalInProgress: inProgress.length,
+    totalNotStarted: notStarted.length,
+  };
+}
+
+/**
+ * Render and show the Smart Installation Report modal
+ */
+function showSmartInstallReport() {
+  const report = generateSmartInstallReport();
+  if (!report) {
+    showModal("No playbook loaded.", { title: "🧠 Smart Install Report" });
+    return;
+  }
+
+  const { balance } = report;
+  const runReadyPct = balance.totalRuns > 0 ? Math.round((balance.readyRuns / balance.totalRuns) * 100) : 0;
+  const passReadyPct = balance.totalPasses > 0 ? Math.round((balance.readyPasses / balance.totalPasses) * 100) : 0;
+
+  let html = `<div class="sir-container">`;
+
+  // ── Overview Banner ──────────────────────────────────────────
+  html += `
+    <div class="sir-overview">
+      <div class="sir-ov-stat sir-ov-ready">
+        <div class="sir-ov-num">${report.totalGameReady}</div>
+        <div class="sir-ov-label">Game Ready</div>
+      </div>
+      <div class="sir-ov-stat sir-ov-near">
+        <div class="sir-ov-num">${report.totalNearReady}</div>
+        <div class="sir-ov-label">Near Ready</div>
+      </div>
+      <div class="sir-ov-stat sir-ov-progress">
+        <div class="sir-ov-num">${report.totalInProgress}</div>
+        <div class="sir-ov-label">In Progress</div>
+      </div>
+      <div class="sir-ov-stat sir-ov-none">
+        <div class="sir-ov-num">${report.totalNotStarted}</div>
+        <div class="sir-ov-label">Not Started</div>
+      </div>
+    </div>`;
+
+  // ── Run/Pass Balance ─────────────────────────────────────────
+  html += `
+    <div class="sir-section">
+      <div class="sir-section-title">⚖️ Run/Pass Readiness Balance</div>
+      <div class="sir-balance">
+        <div class="sir-balance-bar">
+          <div class="sir-balance-label">Run Ready</div>
+          <div class="sir-bar-track">
+            <div class="sir-bar-fill sir-bar-run" style="width:${runReadyPct}%"></div>
+          </div>
+          <div class="sir-balance-nums">${balance.readyRuns}/${balance.totalRuns} (${runReadyPct}%)</div>
+        </div>
+        <div class="sir-balance-bar">
+          <div class="sir-balance-label">Pass Ready</div>
+          <div class="sir-bar-track">
+            <div class="sir-bar-fill sir-bar-pass" style="width:${passReadyPct}%"></div>
+          </div>
+          <div class="sir-balance-nums">${balance.readyPasses}/${balance.totalPasses} (${passReadyPct}%)</div>
+        </div>
+      </div>
+    </div>`;
+
+  // ── Quick Wins ───────────────────────────────────────────────
+  if (report.quickWins.length > 0) {
+    html += `
+      <div class="sir-section">
+        <div class="sir-section-title">⚡ Quick Wins <span class="sir-section-hint">Install one thing, unlock game-ready plays</span></div>
+        <div class="sir-cards">`;
+
+    report.quickWins.forEach((c) => {
+      html += `
+          <div class="sir-card sir-card-quickwin">
+            <div class="sir-card-head">
+              <span class="sir-card-icon">${c.icon}</span>
+              <span class="sir-card-value">${escapeHtml(c.value)}</span>
+              <span class="sir-card-cat">${c.categoryLabel}</span>
+            </div>
+            <div class="sir-card-impact">
+              <span class="sir-badge sir-badge-unlock">🔓 Unlocks ${c.wouldUnlock} play${c.wouldUnlock !== 1 ? "s" : ""}</span>
+              ${c.breadth > c.wouldUnlock ? `<span class="sir-badge sir-badge-breadth">📊 Helps ${c.breadth} total</span>` : ""}
+            </div>
+            <div class="sir-card-plays">${c.affectedPlayNames.map((n) => escapeHtml(n)).join(", ")}${c.totalAffected > 8 ? ` +${c.totalAffected - 8} more` : ""}</div>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  // ── One Install Away ─────────────────────────────────────────
+  if (report.oneAway.length > 0) {
+    html += `
+      <div class="sir-section">
+        <div class="sir-section-title">🎯 One Install Away <span class="sir-section-hint">${report.oneAway.length} play${report.oneAway.length !== 1 ? "s" : ""} need just 1 more component</span></div>
+        <div class="sir-list">`;
+
+    report.oneAway.forEach((p) => {
+      const subtitle = [p.personnel, p.formation].filter(Boolean).join(" · ");
+      html += `
+          <div class="sir-list-row sir-list-oneaway">
+            <div class="sir-list-info">
+              <div class="sir-list-name">${escapeHtml(p.name)}</div>
+              ${subtitle ? `<div class="sir-list-sub">${escapeHtml(subtitle)}</div>` : ""}
+            </div>
+            <div class="sir-list-stars">${renderStarRating(p.stars, p.maxStars, "sm")}</div>
+            ${p.missing ? `<div class="sir-list-missing"><span class="sir-missing-badge">${p.missing.icon} ${escapeHtml(p.missing.value)}</span></div>` : ""}
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  // ── Top Priority Installs ────────────────────────────────────
+  if (report.topInstalls.length > 0) {
+    html += `
+      <div class="sir-section">
+        <div class="sir-section-title">📋 Recommended Install Order <span class="sir-section-hint">Prioritized by impact across your playbook</span></div>
+        <div class="sir-priority-list">`;
+
+    report.topInstalls.forEach((c, idx) => {
+      const tags = [];
+      if (c.wouldUnlock > 0) tags.push(`🔓 ${c.wouldUnlock} game-ready`);
+      if (c.clusterPlays > 0) tags.push(`🎯 ${c.clusterPlays} near-ready`);
+      if (c.variety >= 3) tags.push(`🌐 ${c.variety} combos`);
+      if (c.runCount > 0 && c.passCount > 0) tags.push("⚖️ Run+Pass");
+      else if (c.runCount > 0) tags.push("🏃 Run");
+      else if (c.passCount > 0) tags.push("🎯 Pass");
+
+      html += `
+          <div class="sir-priority-row">
+            <div class="sir-priority-rank">${idx + 1}</div>
+            <div class="sir-priority-info">
+              <div class="sir-priority-head">
+                <span class="sir-priority-icon">${c.icon}</span>
+                <span class="sir-priority-value">${escapeHtml(c.value)}</span>
+                <span class="sir-priority-cat">${c.categoryLabel}</span>
+              </div>
+              <div class="sir-priority-tags">${tags.map((t) => `<span class="sir-tag">${t}</span>`).join("")}</div>
+            </div>
+            <div class="sir-priority-stat">
+              <div class="sir-priority-breadth">${c.breadth} play${c.breadth !== 1 ? "s" : ""}</div>
+            </div>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  // ── Two Away ─────────────────────────────────────────────────
+  if (report.twoAway.length > 0) {
+    html += `
+      <div class="sir-section">
+        <div class="sir-section-title">🔜 Two Installs Away <span class="sir-section-hint">${report.twoAway.length} play${report.twoAway.length !== 1 ? "s" : ""} need 2 more</span></div>
+        <div class="sir-list">`;
+
+    report.twoAway.slice(0, 20).forEach((p) => {
+      const subtitle = [p.personnel, p.formation].filter(Boolean).join(" · ");
+      html += `
+          <div class="sir-list-row sir-list-twoaway">
+            <div class="sir-list-info">
+              <div class="sir-list-name">${escapeHtml(p.name)}</div>
+              ${subtitle ? `<div class="sir-list-sub">${escapeHtml(subtitle)}</div>` : ""}
+            </div>
+            <div class="sir-list-stars">${renderStarRating(p.stars, p.maxStars, "sm")}</div>
+            <div class="sir-list-missing">${p.missing.map((m) => `<span class="sir-missing-badge">${m.icon} ${escapeHtml(m.value)}</span>`).join("")}</div>
+          </div>`;
+    });
+
+    if (report.twoAway.length > 20) {
+      html += `<div class="sir-list-more">+${report.twoAway.length - 20} more plays</div>`;
+    }
+
+    html += `</div></div>`;
+  }
+
+  // ── Variety Boosters ─────────────────────────────────────────
+  if (report.varietyBoosters.length > 0) {
+    html += `
+      <div class="sir-section">
+        <div class="sir-section-title">🌐 Variety Boosters <span class="sir-section-hint">Add diversity to your game plan</span></div>
+        <div class="sir-cards">`;
+
+    report.varietyBoosters.forEach((c) => {
+      html += `
+          <div class="sir-card sir-card-variety">
+            <div class="sir-card-head">
+              <span class="sir-card-icon">${c.icon}</span>
+              <span class="sir-card-value">${escapeHtml(c.value)}</span>
+              <span class="sir-card-cat">${c.categoryLabel}</span>
+            </div>
+            <div class="sir-card-impact">
+              <span class="sir-badge sir-badge-variety">🌐 ${c.variety} unique combos</span>
+              <span class="sir-badge sir-badge-breadth">📊 ${c.breadth} plays</span>
+            </div>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  // ── Coverage Gaps ────────────────────────────────────────────
+  if (report.categoryGaps.length > 0) {
+    html += `
+      <div class="sir-section">
+        <div class="sir-section-title">📉 Coverage Gaps <span class="sir-section-hint">Categories with the most room to grow</span></div>
+        <div class="sir-gaps">`;
+
+    report.categoryGaps.forEach((g) => {
+      html += `
+          <div class="sir-gap-row">
+            <div class="sir-gap-label">${g.icon} ${g.label}</div>
+            <div class="sir-gap-bar-wrap">
+              <div class="sir-bar-track">
+                <div class="sir-bar-fill sir-bar-gap" style="width:${g.pct}%"></div>
+              </div>
+            </div>
+            <div class="sir-gap-nums">${g.installed}/${g.total} (${g.remaining} left)</div>
+          </div>`;
+    });
+
+    html += `</div></div>`;
+  }
+
+  // ── Game Ready Roster ────────────────────────────────────────
+  if (report.gameReadySummary.plays.length > 0) {
+    html += `
+      <div class="sir-section sir-section-collapsed" id="sirGameReadySection">
+        <div class="sir-section-title sir-section-toggle" onclick="this.parentElement.classList.toggle('sir-section-collapsed')">
+          ✅ Game Ready Roster <span class="sir-section-hint">${report.gameReadySummary.count} play${report.gameReadySummary.count !== 1 ? "s" : ""} fully installed</span>
+          <span class="sir-collapse-icon">▶</span>
+        </div>
+        <div class="sir-collapsible">
+          <div class="sir-list">`;
+
+    report.gameReadySummary.plays.forEach((p) => {
+      const subtitle = [p.personnel, p.formation].filter(Boolean).join(" · ");
+      const typeClass = p.type === "Run" ? "sir-type-run" : p.type === "Pass" ? "sir-type-pass" : "";
+      html += `
+            <div class="sir-list-row sir-list-ready">
+              <div class="sir-list-info">
+                <div class="sir-list-name">${escapeHtml(p.name)}</div>
+                ${subtitle ? `<div class="sir-list-sub">${escapeHtml(subtitle)}</div>` : ""}
+              </div>
+              <div class="sir-list-stars">${renderStarRating(p.stars, p.maxStars, "sm")}</div>
+              ${p.type ? `<span class="sir-type-badge ${typeClass}">${escapeHtml(p.type)}</span>` : ""}
+            </div>`;
+    });
+
+    html += `</div></div></div>`;
+  }
+
+  html += `</div>`; // close .sir-container
+
+  showModal(html, { title: "🧠 Smart Installation Report", confirmText: "Close" });
 }

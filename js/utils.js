@@ -869,7 +869,9 @@ function showStorageInfo() {
 
   // Wire up action buttons after modal is in DOM
   setTimeout(() => {
-    document.getElementById("siExportBtn")?.addEventListener("click", () => exportBackup());
+    document
+      .getElementById("siExportBtn")
+      ?.addEventListener("click", () => exportBackup());
     document.getElementById("siClearBtn")?.addEventListener("click", () => {
       if (storageManager.clearAll()) location.reload();
     });

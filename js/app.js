@@ -63,12 +63,10 @@ function showTab(tabName) {
   document.getElementById(tabName).classList.add("active");
 
   // Update tab buttons
-  document
-    .querySelectorAll(".tab")
-    .forEach((t) => {
-      t.classList.remove("active");
-      t.setAttribute("aria-selected", "false");
-    });
+  document.querySelectorAll(".tab").forEach((t) => {
+    t.classList.remove("active");
+    t.setAttribute("aria-selected", "false");
+  });
   if (typeof event !== "undefined" && event && event.target) {
     event.target.classList.add("active");
     event.target.setAttribute("aria-selected", "true");

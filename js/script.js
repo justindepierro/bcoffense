@@ -1300,9 +1300,9 @@ function togglePeriodCollapse(periodId) {
  */
 function updatePeriodColor(index, el) {
   script[index].color = el.value;
-  const header = el.closest('.period-header');
+  const header = el.closest(".period-header");
   if (header) header.style.background = el.value;
-  const wrapper = el.closest('.period-header-wrapper');
+  const wrapper = el.closest(".period-header-wrapper");
   if (wrapper) wrapper.style.borderLeftColor = el.value;
   saveScriptState();
 }
@@ -1312,11 +1312,13 @@ function updatePeriodColor(index, el) {
  */
 function updatePeriodMinutes(index, el) {
   script[index].minutes = parseInt(el.value, 10) || 0;
-  const span = el.closest('.ph-left')?.querySelector('.ph-meta-span');
+  const span = el.closest(".ph-left")?.querySelector(".ph-meta-span");
   if (span) {
     const playCount = getPeriodPlays(index).length;
-    const timeDisplay = script[index].minutes ? `${script[index].minutes} min` : '';
-    span.textContent = `${playCount} plays${timeDisplay ? ' • ' + timeDisplay : ''}`;
+    const timeDisplay = script[index].minutes
+      ? `${script[index].minutes} min`
+      : "";
+    span.textContent = `${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}`;
   }
   saveScriptState();
   updateScriptStats();
@@ -2637,13 +2639,13 @@ function renderScript() {
               </select>
             </div>
             <div class="defense-inputs">
-              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : 'dl-front-shared'}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
+              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : "dl-front-shared"}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
               ${p.practiceFront ? `<datalist id="dl-front-${i}"><option value="${p.practiceFront}">★ ${p.practiceFront}</option>${scoutFrontOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : 'dl-cov-shared'}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
+              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : "dl-cov-shared"}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
               ${p.practiceCoverage ? `<datalist id="dl-cov-${i}"><option value="${p.practiceCoverage}">★ ${p.practiceCoverage}</option>${scoutCovOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : 'dl-stunt-shared'}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
+              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : "dl-stunt-shared"}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
               ${p.practiceStunt ? `<datalist id="dl-stunt-${i}"><option value="${p.practiceStunt}">★ ${p.practiceStunt}</option>${scoutStuntOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : 'dl-blitz-shared'}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
+              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : "dl-blitz-shared"}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
               ${p.practiceBlitz ? `<datalist id="dl-blitz-${i}"><option value="${p.practiceBlitz}">★ ${p.practiceBlitz}</option>${scoutBlitzOpts}</datalist>` : ""}
             </div>
             <div class="play-controls">

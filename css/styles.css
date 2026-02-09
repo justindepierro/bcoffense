@@ -7350,3 +7350,454 @@ kbd {
   gap: 10px;
   flex-wrap: wrap;
 }
+
+/* ── Smart Installation Report ───────────────────────── */
+.sir-btn {
+  white-space: nowrap;
+  font-weight: 600;
+}
+.sir-container {
+  max-height: 70vh;
+  overflow-y: auto;
+  padding: 2px;
+}
+/* Overview banner */
+.sir-overview {
+  display: flex;
+  gap: 12px;
+  margin-bottom: 18px;
+  flex-wrap: wrap;
+}
+.sir-ov-stat {
+  flex: 1 1 0;
+  min-width: 80px;
+  text-align: center;
+  padding: 12px 8px;
+  border-radius: 10px;
+  background: #f5f5f5;
+}
+.sir-ov-num {
+  font-size: 28px;
+  font-weight: 800;
+  line-height: 1.1;
+}
+.sir-ov-label {
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  color: #666;
+}
+.sir-ov-ready {
+  background: #e6f9e6;
+  color: #1a7a1a;
+}
+.sir-ov-ready .sir-ov-num {
+  color: #1a7a1a;
+}
+.sir-ov-near {
+  background: #fff8e1;
+  color: #b58900;
+}
+.sir-ov-near .sir-ov-num {
+  color: #b58900;
+}
+.sir-ov-progress {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.sir-ov-progress .sir-ov-num {
+  color: #1565c0;
+}
+.sir-ov-none {
+  background: #fce4ec;
+  color: #c62828;
+}
+.sir-ov-none .sir-ov-num {
+  color: #c62828;
+}
+/* Sections */
+.sir-section {
+  margin-bottom: 20px;
+  border: 1px solid #e0e0e0;
+  border-radius: 10px;
+  padding: 14px;
+  background: #fafafa;
+}
+.sir-section-title {
+  font-size: 15px;
+  font-weight: 700;
+  margin-bottom: 10px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sir-section-hint {
+  font-size: 12px;
+  font-weight: 400;
+  color: #888;
+}
+/* Collapsible sections */
+.sir-section-toggle {
+  cursor: pointer;
+  user-select: none;
+}
+.sir-collapse-icon {
+  margin-left: auto;
+  font-size: 12px;
+  transition: transform 0.2s;
+}
+.sir-section-collapsed .sir-collapse-icon {
+  transform: rotate(0deg);
+}
+.sir-section:not(.sir-section-collapsed) .sir-collapse-icon {
+  transform: rotate(90deg);
+}
+.sir-section-collapsed .sir-collapsible {
+  display: none;
+}
+/* Balance bars */
+.sir-balance {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sir-balance-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sir-balance-label {
+  width: 80px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+}
+.sir-bar-track {
+  flex: 1;
+  height: 14px;
+  background: #e0e0e0;
+  border-radius: 7px;
+  overflow: hidden;
+}
+.sir-bar-fill {
+  height: 100%;
+  border-radius: 7px;
+  transition: width 0.3s;
+}
+.sir-bar-run {
+  background: linear-gradient(90deg, #4caf50, #66bb6a);
+}
+.sir-bar-pass {
+  background: linear-gradient(90deg, #2196f3, #42a5f5);
+}
+.sir-bar-gap {
+  background: linear-gradient(90deg, #ff9800, #ffa726);
+}
+.sir-balance-nums {
+  font-size: 12px;
+  color: #666;
+  width: 100px;
+  text-align: right;
+}
+/* Cards (quick wins, variety) */
+.sir-cards {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(240px, 1fr));
+  gap: 10px;
+}
+.sir-card {
+  border: 1px solid #e0e0e0;
+  border-radius: 8px;
+  padding: 10px 12px;
+  background: #fff;
+}
+.sir-card-quickwin {
+  border-left: 4px solid #4caf50;
+}
+.sir-card-variety {
+  border-left: 4px solid #9c27b0;
+}
+.sir-card-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 6px;
+}
+.sir-card-icon {
+  font-size: 16px;
+}
+.sir-card-value {
+  font-weight: 700;
+  font-size: 14px;
+}
+.sir-card-cat {
+  font-size: 11px;
+  color: #999;
+  margin-left: auto;
+  text-transform: uppercase;
+}
+.sir-card-impact {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 6px;
+}
+.sir-card-plays {
+  font-size: 11px;
+  color: #777;
+  line-height: 1.4;
+}
+/* Badges */
+.sir-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 7px;
+  border-radius: 10px;
+  font-weight: 600;
+}
+.sir-badge-unlock {
+  background: #e6f9e6;
+  color: #1a7a1a;
+}
+.sir-badge-breadth {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+.sir-badge-variety {
+  background: #f3e5f5;
+  color: #7b1fa2;
+}
+/* List rows (one away, two away, game ready) */
+.sir-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 300px;
+  overflow-y: auto;
+}
+.sir-list-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  background: #fff;
+  border: 1px solid #eee;
+}
+.sir-list-oneaway {
+  border-left: 3px solid #ff9800;
+}
+.sir-list-twoaway {
+  border-left: 3px solid #2196f3;
+}
+.sir-list-ready {
+  border-left: 3px solid #4caf50;
+}
+.sir-list-info {
+  flex: 1;
+  min-width: 0;
+}
+.sir-list-name {
+  font-weight: 600;
+  font-size: 13px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.sir-list-sub {
+  font-size: 11px;
+  color: #888;
+}
+.sir-list-stars {
+  flex-shrink: 0;
+}
+.sir-list-missing {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  flex-shrink: 0;
+}
+.sir-missing-badge {
+  display: inline-block;
+  font-size: 11px;
+  padding: 2px 6px;
+  border-radius: 8px;
+  background: #fff3e0;
+  color: #e65100;
+  font-weight: 600;
+  white-space: nowrap;
+}
+.sir-list-more {
+  text-align: center;
+  font-size: 12px;
+  color: #999;
+  padding: 6px;
+}
+/* Priority list (ranked install order) */
+.sir-priority-list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.sir-priority-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 10px;
+  background: #fff;
+  border: 1px solid #eee;
+  border-radius: 6px;
+}
+.sir-priority-rank {
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #1565c0;
+  color: #fff;
+  font-weight: 800;
+  font-size: 13px;
+  flex-shrink: 0;
+}
+.sir-priority-row:nth-child(1) .sir-priority-rank {
+  background: #ffd700;
+  color: #333;
+}
+.sir-priority-row:nth-child(2) .sir-priority-rank {
+  background: #c0c0c0;
+  color: #333;
+}
+.sir-priority-row:nth-child(3) .sir-priority-rank {
+  background: #cd7f32;
+  color: #fff;
+}
+.sir-priority-info {
+  flex: 1;
+  min-width: 0;
+}
+.sir-priority-head {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.sir-priority-icon {
+  font-size: 14px;
+}
+.sir-priority-value {
+  font-weight: 700;
+  font-size: 13px;
+}
+.sir-priority-cat {
+  font-size: 10px;
+  color: #999;
+  text-transform: uppercase;
+}
+.sir-priority-tags {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  margin-top: 3px;
+}
+.sir-tag {
+  display: inline-block;
+  font-size: 10px;
+  padding: 1px 6px;
+  border-radius: 8px;
+  background: #f0f0f0;
+  color: #555;
+}
+.sir-priority-stat {
+  flex-shrink: 0;
+  text-align: right;
+}
+.sir-priority-breadth {
+  font-size: 12px;
+  color: #666;
+}
+/* Coverage gaps */
+.sir-gaps {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+.sir-gap-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.sir-gap-label {
+  width: 110px;
+  font-size: 13px;
+  font-weight: 600;
+  text-align: right;
+  flex-shrink: 0;
+}
+.sir-gap-bar-wrap {
+  flex: 1;
+}
+.sir-gap-nums {
+  font-size: 12px;
+  color: #666;
+  width: 110px;
+  text-align: right;
+  flex-shrink: 0;
+}
+/* Type badges */
+.sir-type-badge {
+  display: inline-block;
+  font-size: 10px;
+  padding: 2px 8px;
+  border-radius: 8px;
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.sir-type-run {
+  background: #e6f9e6;
+  color: #2e7d32;
+}
+.sir-type-pass {
+  background: #e3f2fd;
+  color: #1565c0;
+}
+/* Responsive */
+@media (max-width: 600px) {
+  .sir-overview {
+    gap: 6px;
+  }
+  .sir-ov-stat {
+    padding: 8px 4px;
+    min-width: 60px;
+  }
+  .sir-ov-num {
+    font-size: 22px;
+  }
+  .sir-cards {
+    grid-template-columns: 1fr;
+  }
+  .sir-balance-label {
+    width: 60px;
+    font-size: 11px;
+  }
+  .sir-balance-nums {
+    width: 70px;
+    font-size: 11px;
+  }
+  .sir-gap-label {
+    width: 80px;
+    font-size: 12px;
+  }
+  .sir-gap-nums {
+    width: 80px;
+    font-size: 11px;
+  }
+  .sir-list-row {
+    flex-wrap: wrap;
+  }
+}
