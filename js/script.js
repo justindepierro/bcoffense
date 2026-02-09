@@ -3,6 +3,16 @@
 // Drag and drop state
 let draggedElement = null;
 
+// Cached scouting options — invalidated when opponent or tendencies data changes
+let _cachedScoutOpts = null;
+let _cachedScoutOppName = null;
+
+/** Call this to force scouting options to recompute on next render */
+function invalidateScoutCache() {
+  _cachedScoutOpts = null;
+  _cachedScoutOppName = null;
+}
+
 // Script checkbox filter state
 let scriptSelectedTypes = [];
 let scriptSelectedSituation = [];
@@ -28,7 +38,8 @@ let selectedAvailablePlays = [];
 // Custom sort orders for script sorting
 let scriptCustomSortOrders = {};
 scriptCustomSortOrders = storageManager.get(
-  STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, {},
+  STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+  {},
 );
 
 // Sort field options for script
@@ -101,12 +112,16 @@ function getScriptDisplayOptions() {
     underEmoji: document.getElementById("scriptUnderEmoji")?.checked || false,
     boldShifts: document.getElementById("scriptBoldShifts")?.checked || false,
     redShifts: document.getElementById("scriptRedShifts")?.checked || false,
-    italicMotions: document.getElementById("scriptItalicMotions")?.checked || false,
+    italicMotions:
+      document.getElementById("scriptItalicMotions")?.checked || false,
     redMotions: document.getElementById("scriptRedMotions")?.checked || false,
     noVowels: document.getElementById("scriptRemoveVowels")?.checked || false,
-    showLineCall: document.getElementById("scriptShowLineCall")?.checked !== false,
-    highlightHuddle: document.getElementById("scriptHighlightHuddle")?.checked || false,
-    highlightCandy: document.getElementById("scriptHighlightCandy")?.checked || false,
+    showLineCall:
+      document.getElementById("scriptShowLineCall")?.checked !== false,
+    highlightHuddle:
+      document.getElementById("scriptHighlightHuddle")?.checked || false,
+    highlightCandy:
+      document.getElementById("scriptHighlightCandy")?.checked || false,
     showWbNum: document.getElementById("scriptShowWbNum")?.checked !== false,
   };
 }
@@ -2093,13 +2108,6 @@ function doInsertTemplate(idx) {
   showToast(`Inserted "${template.name}" (${template.plays.length} plays)`);
 }
 
-/**
- * Manage period templates — show modal with delete buttons
- */
-function deletePeriodTemplate() {
-  manageTemplates();
-}
-
 function manageTemplates() {
   if (periodTemplates.length === 0) {
     showToast("No templates to manage");
@@ -2580,19 +2588,17 @@ async function autoFillDefenseFromTendencies() {
  * Call this instead of renderScript() for non-structural data changes
  */
 function updateScriptStats() {
-  const playCount = script.filter((p) => !p.isSeparator).length;
-  const totalReps = script
-    .filter((p) => !p.isSeparator)
-    .reduce((sum, p) => sum + (p.reps || 1), 0);
-  const runCount = script.filter(
-    (p) => !p.isSeparator && p.type === "Run",
-  ).length;
-  const passCount = script.filter(
-    (p) => !p.isSeparator && p.type === "Pass",
-  ).length;
-  const totalTime = script
-    .filter((p) => p.isSeparator && p.minutes)
-    .reduce((sum, p) => sum + (p.minutes || 0), 0);
+  let playCount = 0, totalReps = 0, runCount = 0, passCount = 0, totalTime = 0;
+  for (const p of script) {
+    if (p.isSeparator) {
+      if (p.minutes) totalTime += p.minutes;
+    } else {
+      playCount++;
+      totalReps += (p.reps || 1);
+      if (p.type === "Run") runCount++;
+      else if (p.type === "Pass") passCount++;
+    }
+  }
 
   const el = (id) => document.getElementById(id);
   if (el("scriptCount")) el("scriptCount").textContent = playCount;
@@ -2651,43 +2657,34 @@ function renderScript() {
     container.classList.remove("empty");
     let playNum = 0;
 
-    // Pre-compute scouting datalist options from active opponent
+    // Pre-compute scouting datalist options from active opponent (cached)
     let scoutFrontOpts = "";
     let scoutCovOpts = "";
     let scoutBlitzOpts = "";
     let scoutStuntOpts = "";
     const _scoutOpp =
       typeof getActiveOpponent === "function" ? getActiveOpponent() : null;
+    const _scoutOppName = _scoutOpp ? _scoutOpp.name : null;
     if (_scoutOpp && _scoutOpp.plays && _scoutOpp.plays.length > 0) {
-      const _scoutResult = queryTendencies(_scoutOpp, {});
-      if (_scoutResult.topFront)
-        scoutFrontOpts = _scoutResult.topFront
-          .map(
-            (f) =>
-              `<option value="${f.term}">🎯 ${f.term} (${f.pct}%)</option>`,
-          )
-          .join("");
-      if (_scoutResult.topCoverage)
-        scoutCovOpts = _scoutResult.topCoverage
-          .map(
-            (c) =>
-              `<option value="${c.term}">🎯 ${c.term} (${c.pct}%)</option>`,
-          )
-          .join("");
-      if (_scoutResult.topBlitz)
-        scoutBlitzOpts = _scoutResult.topBlitz
-          .map(
-            (b) =>
-              `<option value="${b.term}">🎯 ${b.term} (${b.pct}%)</option>`,
-          )
-          .join("");
-      if (_scoutResult.topStunt)
-        scoutStuntOpts = _scoutResult.topStunt
-          .map(
-            (s) =>
-              `<option value="${s.term}">🎯 ${s.term} (${s.pct}%)</option>`,
-          )
-          .join("");
+      // Use cache if same opponent
+      if (_cachedScoutOpts && _cachedScoutOppName === _scoutOppName) {
+        scoutFrontOpts = _cachedScoutOpts.front;
+        scoutCovOpts = _cachedScoutOpts.cov;
+        scoutBlitzOpts = _cachedScoutOpts.blitz;
+        scoutStuntOpts = _cachedScoutOpts.stunt;
+      } else {
+        const _scoutResult = queryTendencies(_scoutOpp, {});
+        const mapOpts = (arr) => arr ? arr.map(x => `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`).join("") : "";
+        scoutFrontOpts = mapOpts(_scoutResult.topFront);
+        scoutCovOpts = mapOpts(_scoutResult.topCoverage);
+        scoutBlitzOpts = mapOpts(_scoutResult.topBlitz);
+        scoutStuntOpts = mapOpts(_scoutResult.topStunt);
+        _cachedScoutOpts = { front: scoutFrontOpts, cov: scoutCovOpts, blitz: scoutBlitzOpts, stunt: scoutStuntOpts };
+        _cachedScoutOppName = _scoutOppName;
+      }
+    } else {
+      _cachedScoutOpts = null;
+      _cachedScoutOppName = null;
     }
 
     // Track which periods are collapsed for skipping plays
@@ -2843,29 +2840,7 @@ function renderScript() {
   updateBulkSelectUI();
 
   // Update stats
-  const playCount = script.filter((p) => !p.isSeparator).length;
-  const totalReps = script
-    .filter((p) => !p.isSeparator)
-    .reduce((sum, p) => sum + (p.reps || 1), 0);
-  const runCount = script.filter(
-    (p) => !p.isSeparator && p.type === "Run",
-  ).length;
-  const passCount = script.filter(
-    (p) => !p.isSeparator && p.type === "Pass",
-  ).length;
-  const totalTime = script
-    .filter((p) => p.isSeparator && p.minutes)
-    .reduce((sum, p) => sum + (p.minutes || 0), 0);
-
-  document.getElementById("scriptCount").textContent = playCount;
-  document.getElementById("statPlays").textContent = playCount;
-  document.getElementById("statReps").textContent = totalReps;
-  document.getElementById("statRun").textContent = runCount;
-  document.getElementById("statPass").textContent = passCount;
-  document.getElementById("statTime").textContent = totalTime;
-
-  // Update run/pass ratio
-  updateRunPassRatio();
+  updateScriptStats();
 
   // Update undo/redo buttons
   historyManager.updateButtons("script");
@@ -3408,9 +3383,20 @@ function generatePDF() {
   const date = document.getElementById("scriptDate").value;
 
   // Get display options
-  const { showEmoji, useSquares, underEmoji, boldShifts, redShifts,
-    italicMotions, redMotions, noVowels, showLineCall,
-    highlightHuddle, highlightCandy, showWbNum } = getScriptDisplayOptions();
+  const {
+    showEmoji,
+    useSquares,
+    underEmoji,
+    boldShifts,
+    redShifts,
+    italicMotions,
+    redMotions,
+    noVowels,
+    showLineCall,
+    highlightHuddle,
+    highlightCandy,
+    showWbNum,
+  } = getScriptDisplayOptions();
 
   // Build title
   const dateStr = date
@@ -3617,9 +3603,20 @@ async function printFullDay() {
   }
 
   // Get display options
-  const { showEmoji, useSquares, underEmoji, boldShifts, redShifts,
-    italicMotions, redMotions, noVowels, showLineCall,
-    highlightHuddle, highlightCandy, showWbNum } = getScriptDisplayOptions();
+  const {
+    showEmoji,
+    useSquares,
+    underEmoji,
+    boldShifts,
+    redShifts,
+    italicMotions,
+    redMotions,
+    noVowels,
+    showLineCall,
+    highlightHuddle,
+    highlightCandy,
+    showWbNum,
+  } = getScriptDisplayOptions();
 
   // Build combined content
   let allContent = "";

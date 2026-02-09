@@ -262,7 +262,7 @@ function clearFilters() {
   });
 
   // Clear saved state
-  localStorage.removeItem(PLAYBOOK_STATE_KEY);
+  storageManager.remove(PLAYBOOK_STATE_KEY);
 
   renderPlaybook();
 }
@@ -421,19 +421,19 @@ function restorePlaybookState() {
 
   // Restore filters
   if (state.filterType)
-      document.getElementById("filterType").value = state.filterType;
-    if (state.filterFormation)
-      document.getElementById("filterFormation").value = state.filterFormation;
-    if (state.filterBasePlay)
-      document.getElementById("filterBasePlay").value = state.filterBasePlay;
-    if (state.searchPlay)
-      document.getElementById("searchPlay").value = state.searchPlay;
+    document.getElementById("filterType").value = state.filterType;
+  if (state.filterFormation)
+    document.getElementById("filterFormation").value = state.filterFormation;
+  if (state.filterBasePlay)
+    document.getElementById("filterBasePlay").value = state.filterBasePlay;
+  if (state.searchPlay)
+    document.getElementById("searchPlay").value = state.searchPlay;
 
-    // Restore sort
-    if (state.sortColumn) {
-      currentSortColumn = state.sortColumn;
-      currentSortDirection = state.sortDirection || "asc";
-    }
+  // Restore sort
+  if (state.sortColumn) {
+    currentSortColumn = state.sortColumn;
+    currentSortDirection = state.sortDirection || "asc";
+  }
 }
 
 /**
@@ -505,10 +505,7 @@ function highlightSearch(text, searchTerm) {
   const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
   const safeEscaped = escapeHtml(escaped);
   const regex = new RegExp(`(${safeEscaped})`, "gi");
-  return safeText.replace(
-    regex,
-    '<span class="search-highlight">$1</span>',
-  );
+  return safeText.replace(regex, '<span class="search-highlight">$1</span>');
 }
 
 /**

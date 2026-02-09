@@ -700,7 +700,10 @@ function reloadAppFromStorage() {
 
   // Reload custom sort orders (wristband)
   if (typeof wbCustomSortOrders !== "undefined") {
-    wbCustomSortOrders = storageManager.get(STORAGE_KEYS.CUSTOM_SORT_ORDERS, {});
+    wbCustomSortOrders = storageManager.get(
+      STORAGE_KEYS.CUSTOM_SORT_ORDERS,
+      {},
+    );
   }
 
   // Reload call sheet
@@ -717,17 +720,26 @@ function reloadAppFromStorage() {
 
   // Reload script custom sort orders
   if (typeof scriptCustomSortOrders !== "undefined") {
-    scriptCustomSortOrders = storageManager.get(STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, {});
+    scriptCustomSortOrders = storageManager.get(
+      STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
+      {},
+    );
   }
 
   // Reload defensive tendencies
   if (typeof tendenciesOpponents !== "undefined") {
-    tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+    tendenciesOpponents = storageManager.get(
+      STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+      [],
+    );
   }
 
   // Reload scouting overlay state
   if (typeof csScoutingOverlayOn !== "undefined") {
-    csScoutingOverlayOn = storageManager.get(STORAGE_KEYS.CS_SCOUTING_OVERLAY, false);
+    csScoutingOverlayOn = storageManager.get(
+      STORAGE_KEYS.CS_SCOUTING_OVERLAY,
+      false,
+    );
   }
 
   // Restore call sheet display options
@@ -1533,6 +1545,8 @@ function setGameWeek(opponentIndex, weekLabel) {
   gw.opponentName = opp ? opp.name : null;
   if (weekLabel !== undefined) gw.weekLabel = weekLabel;
   storageManager.set(GAME_WEEK_KEY, gw);
+  // Invalidate script's scouting cache so next render fetches fresh data
+  if (typeof invalidateScoutCache === "function") invalidateScoutCache();
 }
 
 /**

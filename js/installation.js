@@ -25,19 +25,24 @@ const INSTALL_CATEGORIES = [
 
 /**
  * Load installation data from localStorage
+ * Caches the result to avoid re-parsing on every per-play call.
  * @returns {{ installed: Object<string, string[]>, order: Object<string, string[]> }}
  */
+let _installDataCache = null;
 function getInstallationData() {
-  return storageManager.get(INSTALL_STORAGE_KEY, {
-    installed: {}, // { categoryId: ["value1", "value2", ...] }
-    order: {}, // { categoryId: ["value1", "value2", ...] } (ordered list)
+  if (_installDataCache) return _installDataCache;
+  _installDataCache = storageManager.get(INSTALL_STORAGE_KEY, {
+    installed: {},
+    order: {},
   });
+  return _installDataCache;
 }
 
 /**
  * Save installation data to localStorage
  */
 function saveInstallationData(data) {
+  _installDataCache = null; // invalidate cache
   storageManager.set(INSTALL_STORAGE_KEY, data);
 }
 
@@ -215,6 +220,7 @@ function initInstallation() {
  * Render the full installation page
  */
 function renderInstallation() {
+  _installDataCache = null; // refresh from storage on each render
   const container = document.getElementById("installationContent");
   if (!container) return;
 

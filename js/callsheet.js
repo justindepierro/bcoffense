@@ -333,7 +333,10 @@ let csTargets = {};
 let csCollapsed = new Set();
 
 // Scouting overlay state (persisted)
-let csScoutingOverlayOn = storageManager.get(STORAGE_KEYS.CS_SCOUTING_OVERLAY, false);
+let csScoutingOverlayOn = storageManager.get(
+  STORAGE_KEYS.CS_SCOUTING_OVERLAY,
+  false,
+);
 
 // All call sheet display/format/border checkbox & select IDs for persistence
 const CALLSHEET_DISPLAY_IDS = [
@@ -428,15 +431,17 @@ function initCallSheet() {
 /**
  * Auto-populate call sheet from playbook based on preferred fields
  */
-function autoPopulateCallSheet() {
-  showConfirmModal(
-    "⚡ Auto-Populate Call Sheet",
+async function autoPopulateCallSheet() {
+  const ok = await showConfirm(
     "This will clear the current call sheet and repopulate from your playbook based on preferred fields and play types. Continue?",
-    () => {
-      // Clear existing
-      CALLSHEET_CATEGORIES.forEach((cat) => {
-        callSheet[cat.id] = { left: [], right: [] };
-      });
+    { title: "Auto-Populate Call Sheet", icon: "⚡", confirmText: "Populate" }
+  );
+  if (!ok) return;
+
+  // Clear existing
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    callSheet[cat.id] = { left: [], right: [] };
+  });
 
       // Track which plays go where for dedup per category
       const seen = {}; // { catId: Set of play keys }
@@ -495,8 +500,6 @@ function autoPopulateCallSheet() {
         msg += ` (${unmatched} unmatched)`;
       }
       showToast(msg);
-    },
-  );
 }
 
 /**
@@ -1343,6 +1346,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menu.style.position = "fixed";
   menu.style.left = `${event.clientX}px`;
   menu.style.top = `${event.clientY}px`;
+  menu.style.visibility = "hidden";
 
   // ─── Border Color ───
   let menuHtml = `<div class="cs-ctx-section"><span class="cs-ctx-label">Border Color</span><div class="cs-ctx-colors">`;
@@ -1521,6 +1525,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       menu.style.left = `${window.innerWidth - rect.width - 8}px`;
     if (rect.bottom > window.innerHeight)
       menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+    menu.style.visibility = "visible";
   });
 
   const closeHandler = (e) => {
@@ -2118,19 +2123,19 @@ function loadCallSheet() {
 /**
  * Clear call sheet
  */
-function clearCallSheet() {
-  showConfirmModal(
-    "🗑️ Clear Call Sheet",
+async function clearCallSheet() {
+  const ok = await showConfirm(
     "This will remove all plays from every category. This cannot be undone. Continue?",
-    () => {
-      CALLSHEET_CATEGORIES.forEach((cat) => {
-        callSheet[cat.id] = { left: [], right: [] };
-      });
-      renderCallSheet();
-      saveCallSheet();
-      showToast("🗑️ Call sheet cleared");
-    },
+    { title: "Clear Call Sheet", icon: "🗑️", confirmText: "Clear", danger: true }
   );
+  if (!ok) return;
+
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    callSheet[cat.id] = { left: [], right: [] };
+  });
+  renderCallSheet();
+  saveCallSheet();
+  showToast("🗑️ Call sheet cleared");
 }
 
 /**
@@ -2165,6 +2170,9 @@ function printCallSheet() {
       ? "print-landscape"
       : "print-portrait";
 
+  // Hoist display options once — avoids re-reading checkboxes per play
+  const printOptions = getCallSheetDisplayOptions();
+
   // Build print HTML
   let html = `<div class="${orientClass}">`;
   html += `<h1 class="cs-print-title">Burke Catholic Football 2026 - ${pageTitle}</h1>`;
@@ -2181,7 +2189,7 @@ function printCallSheet() {
     html += '<div class="print-column">';
     column.forEach((cat) => {
       const data = callSheet[cat.id] || { left: [], right: [] };
-      html += renderPrintCategory(cat, data);
+      html += renderPrintCategory(cat, data, printOptions);
     });
     html += "</div>";
   });
@@ -2203,10 +2211,12 @@ function printCallSheet() {
 /**
  * Render a category for print
  */
-function renderPrintCategory(cat, data) {
+function renderPrintCategory(cat, data, options) {
   const leftPlays = data.left || [];
   const rightPlays = data.right || [];
   const displayName = getCategoryDisplayName(cat);
+  // options passed through from printCallSheet to avoid per-play DOM reads
+  if (!options) options = getCallSheetDisplayOptions();
 
   // Determine text color
   const textColor =
@@ -2234,13 +2244,13 @@ function renderPrintCategory(cat, data) {
   `;
 
   leftPlays.forEach((play) => {
-    html += renderPrintPlay(play);
+    html += renderPrintPlay(play, options);
   });
 
   html += '</div><div class="print-hash-column">';
 
   rightPlays.forEach((play) => {
-    html += renderPrintPlay(play);
+    html += renderPrintPlay(play, options);
   });
 
   html += "</div></div></div>";
@@ -2251,8 +2261,8 @@ function renderPrintCategory(cat, data) {
 /**
  * Render a play for print - matches screen display formatting
  */
-function renderPrintPlay(play) {
-  const options = getCallSheetDisplayOptions();
+function renderPrintPlay(play, options) {
+  if (!options) options = getCallSheetDisplayOptions();
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
@@ -2756,7 +2766,7 @@ function scheduleCallSheetAutosave() {
 /**
  * Check for unsaved call sheet draft on init
  */
-function checkCallSheetDraft() {
+async function checkCallSheetDraft() {
   const draft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
   if (!draft || !draft.savedAt) return;
 
@@ -2777,66 +2787,26 @@ function checkCallSheetDraft() {
   }
 
   const timeStr = savedAt.toLocaleTimeString();
-  showConfirmModal(
-    "📋 Restore Call Sheet Draft?",
+  const ok = await showConfirm(
     `A draft from ${timeStr} was found. Would you like to restore it?`,
-    () => {
-      callSheet = draft.callSheet;
-      if (draft.settings) {
-        callSheetSettings = { ...callSheetSettings, ...draft.settings };
-      }
-      CALLSHEET_CATEGORIES.forEach((cat) => {
-        if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
-      });
-      renderCallSheet();
-      saveCallSheet();
-      saveCallSheetSettings();
-      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
-      showToast("📋 Call sheet draft restored");
-    },
-    () => {
-      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
-    },
+    { title: "Restore Call Sheet Draft?", icon: "📋", confirmText: "Restore" }
   );
-}
-
-/**
- * Reusable confirmation modal
- */
-function showConfirmModal(title, message, onConfirm, onCancel) {
-  // Remove any existing confirm modal
-  document.querySelector(".cs-confirm-overlay")?.remove();
-
-  const overlay = document.createElement("div");
-  overlay.className = "cs-confirm-overlay";
-  overlay.innerHTML = `
-    <div class="cs-confirm-modal">
-      <h3>${title}</h3>
-      <p>${message}</p>
-      <div class="cs-confirm-actions">
-        <button class="btn btn-sm btn-secondary cs-confirm-cancel">Cancel</button>
-        <button class="btn btn-sm btn-primary cs-confirm-ok">Confirm</button>
-      </div>
-    </div>
-  `;
-
-  overlay.querySelector(".cs-confirm-cancel").addEventListener("click", () => {
-    overlay.remove();
-    if (onCancel) onCancel();
-  });
-  overlay.querySelector(".cs-confirm-ok").addEventListener("click", () => {
-    overlay.remove();
-    onConfirm();
-  });
-  overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) {
-      overlay.remove();
-      if (onCancel) onCancel();
+  if (ok) {
+    callSheet = draft.callSheet;
+    if (draft.settings) {
+      callSheetSettings = { ...callSheetSettings, ...draft.settings };
     }
-  });
-
-  document.body.appendChild(overlay);
-  overlay.querySelector(".cs-confirm-ok").focus();
+    CALLSHEET_CATEGORIES.forEach((cat) => {
+      if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
+    });
+    renderCallSheet();
+    saveCallSheet();
+    saveCallSheetSettings();
+    storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+    showToast("📋 Call sheet draft restored");
+  } else {
+    storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+  }
 }
 
 /**
@@ -3122,6 +3092,7 @@ function openCategoryMenu(event, categoryId) {
   menu.style.position = "fixed";
   menu.style.left = `${event.clientX}px`;
   menu.style.top = `${event.clientY}px`;
+  menu.style.visibility = "hidden";
 
   const hasNote = csNotes[categoryId];
   const hasTarget = csTargets[categoryId];
@@ -3143,6 +3114,16 @@ function openCategoryMenu(event, categoryId) {
   `;
 
   document.body.appendChild(menu);
+
+  // Keep menu in viewport
+  requestAnimationFrame(() => {
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth)
+      menu.style.left = `${window.innerWidth - rect.width - 8}px`;
+    if (rect.bottom > window.innerHeight)
+      menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+    menu.style.visibility = "visible";
+  });
 
   const closeHandler = (e) => {
     if (!menu.contains(e.target)) {
@@ -3436,51 +3417,54 @@ function saveTemplate() {
   showToast(`📁 Template "${name}" saved`);
 }
 
-function loadTemplate(idx) {
+async function loadTemplate(idx) {
   const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
   const template = templates[idx];
   if (!template) return;
 
-  showConfirmModal(
-    "📁 Load Template",
+  const ok = await showConfirm(
     `Load "${template.name}"? This will replace your current call sheet.`,
-    () => {
-      callSheet = template.callSheet || {};
-      CALLSHEET_CATEGORIES.forEach((cat) => {
-        if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
-      });
-      if (template.settings)
-        callSheetSettings = { ...callSheetSettings, ...template.settings };
-      if (template.notes) csNotes = template.notes;
-      if (template.targets) csTargets = template.targets;
-      if (template.categoryOrder) csCategoryOrder = template.categoryOrder;
-
-      saveCallSheet();
-      saveCallSheetSettings();
-      storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
-      storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
-      storageManager.set(
-        STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
-        csCategoryOrder,
-      );
-
-      renderCallSheet();
-      closeTemplateModal();
-      showToast(`📁 Loaded "${template.name}"`);
-    },
+    { title: "Load Template", icon: "📁", confirmText: "Load" }
   );
+  if (!ok) return;
+
+  callSheet = template.callSheet || {};
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
+  });
+  if (template.settings)
+    callSheetSettings = { ...callSheetSettings, ...template.settings };
+  if (template.notes) csNotes = template.notes;
+  if (template.targets) csTargets = template.targets;
+  if (template.categoryOrder) csCategoryOrder = template.categoryOrder;
+
+  saveCallSheet();
+  saveCallSheetSettings();
+  storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
+  storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
+  storageManager.set(
+    STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
+    csCategoryOrder,
+  );
+
+  renderCallSheet();
+  closeTemplateModal();
+  showToast(`📁 Loaded "${template.name}"`);
 }
 
-function deleteTemplate(idx) {
+async function deleteTemplate(idx) {
   const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
   const name = templates[idx]?.name || "template";
-  showConfirmModal("🗑️ Delete Template", `Delete "${name}"?`, () => {
-    templates.splice(idx, 1);
-    storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
-    closeTemplateModal();
-    openTemplatesModal();
-    showToast(`🗑️ Deleted "${name}"`);
+  const ok = await showConfirm(`Delete "${name}"?`, {
+    title: "Delete Template", icon: "🗑️", confirmText: "Delete", danger: true
   });
+  if (!ok) return;
+
+  templates.splice(idx, 1);
+  storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+  closeTemplateModal();
+  openTemplatesModal();
+  showToast(`🗑️ Deleted "${name}"`);
 }
 
 // ============ Category Drag Reorder ============
@@ -4271,8 +4255,7 @@ function openSmartSuggestionsModal(categoryId) {
   document.body.insertAdjacentHTML("beforeend", modalHtml);
 }
 
-// Cache suggestions for add-to-sheet
-let _lastSuggestions = [];
+
 
 /**
  * Add a suggested play to the call sheet

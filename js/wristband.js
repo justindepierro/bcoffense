@@ -25,9 +25,7 @@ let draggedSortItem = null;
 
 // Custom value orders per field: { fieldName: ["value1", "value2", ...] }
 let wbCustomSortOrders = {};
-wbCustomSortOrders = storageManager.get(
-  STORAGE_KEYS.CUSTOM_SORT_ORDERS, {},
-);
+wbCustomSortOrders = storageManager.get(STORAGE_KEYS.CUSTOM_SORT_ORDERS, {});
 
 // Sort across all cards as one pool
 let wbSortAcrossCards = false;
@@ -2105,9 +2103,7 @@ function loadWristband(id) {
     wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
   }
 
-  cellCustomizations = wb.cellStyles
-    ? safeDeepClone(wb.cellStyles)
-    : {};
+  cellCustomizations = wb.cellStyles ? safeDeepClone(wb.cellStyles) : {};
   currentCardIndex = 0;
 
   // Restore display settings if saved
