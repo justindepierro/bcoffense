@@ -864,6 +864,12 @@ function showSmartInstallReport() {
 
   let html = `<div class="sir-container">`;
 
+  // ── Print Button ────────────────────────────────────────────
+  html += `
+    <div class="sir-print-bar">
+      <button class="btn btn-sm sir-print-btn" onclick="printSmartInstallReport()" title="Print a professional copy of this report">🖨️ Print Report</button>
+    </div>`;
+
   // ── Overview Banner ──────────────────────────────────────────
   html += `
     <div class="sir-overview">
@@ -1098,4 +1104,184 @@ function showSmartInstallReport() {
   html += `</div>`; // close .sir-container
 
   showModal(html, { title: "🧠 Smart Installation Report", confirmText: "Close" });
+}
+
+/**
+ * Print a professional version of the Smart Installation Report
+ */
+function printSmartInstallReport() {
+  const report = generateSmartInstallReport();
+  if (!report) return;
+
+  const container = document.getElementById("installReportPrint");
+  const content = document.getElementById("installReportPrintContent");
+  if (!container || !content) return;
+
+  const { balance } = report;
+  const runReadyPct = balance.totalRuns > 0 ? Math.round((balance.readyRuns / balance.totalRuns) * 100) : 0;
+  const passReadyPct = balance.totalPasses > 0 ? Math.round((balance.readyPasses / balance.totalPasses) * 100) : 0;
+  const overallReady = report.totalPlays > 0 ? Math.round((report.totalGameReady / report.totalPlays) * 100) : 0;
+  const now = new Date();
+  const dateStr = now.toLocaleDateString("en-US", { year: "numeric", month: "long", day: "numeric" });
+
+  let html = `
+    <div class="sirp">
+      <div class="sirp-header">
+        <div class="sirp-header-left">
+          <div class="sirp-title">Smart Installation Report</div>
+          <div class="sirp-date">${dateStr}</div>
+        </div>
+        <div class="sirp-header-right">
+          <div class="sirp-overall">
+            <div class="sirp-overall-pct">${overallReady}%</div>
+            <div class="sirp-overall-label">Game Ready</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="sirp-stats-row">
+        <div class="sirp-stat sirp-stat-ready"><span class="sirp-stat-num">${report.totalGameReady}</span><span class="sirp-stat-label">Game Ready</span></div>
+        <div class="sirp-stat sirp-stat-near"><span class="sirp-stat-num">${report.totalNearReady}</span><span class="sirp-stat-label">Near Ready</span></div>
+        <div class="sirp-stat sirp-stat-prog"><span class="sirp-stat-num">${report.totalInProgress}</span><span class="sirp-stat-label">In Progress</span></div>
+        <div class="sirp-stat sirp-stat-none"><span class="sirp-stat-num">${report.totalNotStarted}</span><span class="sirp-stat-label">Not Started</span></div>
+        <div class="sirp-stat"><span class="sirp-stat-num">${report.totalPlays}</span><span class="sirp-stat-label">Total Plays</span></div>
+      </div>
+
+      <div class="sirp-balance-row">
+        <div class="sirp-balance-item">
+          <span class="sirp-balance-label">Run Ready:</span>
+          <span class="sirp-balance-bar-wrap"><span class="sirp-balance-fill sirp-fill-run" style="width:${runReadyPct}%"></span></span>
+          <span class="sirp-balance-val">${balance.readyRuns}/${balance.totalRuns} (${runReadyPct}%)</span>
+        </div>
+        <div class="sirp-balance-item">
+          <span class="sirp-balance-label">Pass Ready:</span>
+          <span class="sirp-balance-bar-wrap"><span class="sirp-balance-fill sirp-fill-pass" style="width:${passReadyPct}%"></span></span>
+          <span class="sirp-balance-val">${balance.readyPasses}/${balance.totalPasses} (${passReadyPct}%)</span>
+        </div>
+      </div>`;
+
+  // ── Quick Wins ──
+  if (report.quickWins.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">⚡ Quick Wins — Install One, Unlock Game-Ready Plays</div>
+        <table class="sirp-table">
+          <thead><tr><th>Component</th><th>Category</th><th>Unlocks</th><th>Total Impact</th></tr></thead>
+          <tbody>`;
+    report.quickWins.forEach((c) => {
+      html += `<tr><td><strong>${escapeHtml(c.value)}</strong></td><td>${c.icon} ${c.categoryLabel}</td><td class="sirp-center">${c.wouldUnlock}</td><td class="sirp-center">${c.breadth} plays</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── Recommended Install Order ──
+  if (report.topInstalls.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">📋 Recommended Install Order — Prioritized by Impact</div>
+        <table class="sirp-table">
+          <thead><tr><th class="sirp-rank-col">#</th><th>Component</th><th>Category</th><th>Unlocks</th><th>Near-Ready</th><th>Total</th><th>Details</th></tr></thead>
+          <tbody>`;
+    report.topInstalls.forEach((c, idx) => {
+      const tags = [];
+      if (c.variety >= 3) tags.push(`${c.variety} combos`);
+      if (c.runCount > 0 && c.passCount > 0) tags.push("Run+Pass");
+      else if (c.runCount > 0) tags.push("Run");
+      else if (c.passCount > 0) tags.push("Pass");
+      html += `<tr><td class="sirp-center"><strong>${idx + 1}</strong></td><td><strong>${escapeHtml(c.value)}</strong></td><td>${c.icon} ${c.categoryLabel}</td><td class="sirp-center">${c.wouldUnlock || "-"}</td><td class="sirp-center">${c.clusterPlays || "-"}</td><td class="sirp-center">${c.breadth}</td><td class="sirp-tags-cell">${tags.join(", ") || "-"}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── One Install Away ──
+  if (report.oneAway.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">🎯 One Install Away — ${report.oneAway.length} Play${report.oneAway.length !== 1 ? "s" : ""}</div>
+        <table class="sirp-table">
+          <thead><tr><th>Play</th><th>Personnel</th><th>Formation</th><th>Missing Component</th></tr></thead>
+          <tbody>`;
+    report.oneAway.forEach((p) => {
+      html += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td>${escapeHtml(p.personnel)}</td><td>${escapeHtml(p.formation)}</td><td>${p.missing ? p.missing.icon + " " + escapeHtml(p.missing.value) : "-"}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── Two Away ──
+  if (report.twoAway.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">🔜 Two Installs Away — ${report.twoAway.length} Play${report.twoAway.length !== 1 ? "s" : ""}</div>
+        <table class="sirp-table">
+          <thead><tr><th>Play</th><th>Personnel</th><th>Formation</th><th>Missing Components</th></tr></thead>
+          <tbody>`;
+    report.twoAway.forEach((p) => {
+      const missingStr = p.missing.map((m) => m.icon + " " + escapeHtml(m.value)).join(", ");
+      html += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td>${escapeHtml(p.personnel)}</td><td>${escapeHtml(p.formation)}</td><td>${missingStr}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── Variety Boosters ──
+  if (report.varietyBoosters.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">🌐 Variety Boosters — Add Diversity to Your Game Plan</div>
+        <table class="sirp-table">
+          <thead><tr><th>Component</th><th>Category</th><th>Unique Combos</th><th>Total Plays</th></tr></thead>
+          <tbody>`;
+    report.varietyBoosters.forEach((c) => {
+      html += `<tr><td><strong>${escapeHtml(c.value)}</strong></td><td>${c.icon} ${c.categoryLabel}</td><td class="sirp-center">${c.variety}</td><td class="sirp-center">${c.breadth}</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── Coverage Gaps ──
+  if (report.categoryGaps.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">📉 Coverage Gaps</div>
+        <table class="sirp-table">
+          <thead><tr><th>Category</th><th>Installed</th><th>Remaining</th><th>Progress</th></tr></thead>
+          <tbody>`;
+    report.categoryGaps.forEach((g) => {
+      html += `<tr><td>${g.icon} <strong>${g.label}</strong></td><td class="sirp-center">${g.installed}/${g.total}</td><td class="sirp-center">${g.remaining}</td><td class="sirp-center">${g.pct}%</td></tr>`;
+    });
+    html += `</tbody></table></div>`;
+  }
+
+  // ── Game Ready Roster ──
+  if (report.gameReadySummary.plays.length > 0) {
+    html += `
+      <div class="sirp-section">
+        <div class="sirp-section-title">✅ Game Ready Roster — ${report.gameReadySummary.count} Play${report.gameReadySummary.count !== 1 ? "s" : ""} Fully Installed</div>
+        <div class="sirp-roster">`;
+    const runs = report.gameReadySummary.plays.filter((p) => p.type === "Run");
+    const passes = report.gameReadySummary.plays.filter((p) => p.type === "Pass");
+    const other = report.gameReadySummary.plays.filter((p) => p.type !== "Run" && p.type !== "Pass");
+    if (runs.length > 0) {
+      html += `<div class="sirp-roster-group"><div class="sirp-roster-heading">🏃 Run (${runs.length})</div><div class="sirp-roster-items">${runs.map((p) => `<span class="sirp-roster-item">${escapeHtml(p.name)} <span class="sirp-roster-sub">${escapeHtml(p.formation)}</span></span>`).join("")}</div></div>`;
+    }
+    if (passes.length > 0) {
+      html += `<div class="sirp-roster-group"><div class="sirp-roster-heading">🎯 Pass (${passes.length})</div><div class="sirp-roster-items">${passes.map((p) => `<span class="sirp-roster-item">${escapeHtml(p.name)} <span class="sirp-roster-sub">${escapeHtml(p.formation)}</span></span>`).join("")}</div></div>`;
+    }
+    if (other.length > 0) {
+      html += `<div class="sirp-roster-group"><div class="sirp-roster-heading">Other (${other.length})</div><div class="sirp-roster-items">${other.map((p) => `<span class="sirp-roster-item">${escapeHtml(p.name)} <span class="sirp-roster-sub">${escapeHtml(p.formation)}</span></span>`).join("")}</div></div>`;
+    }
+    html += `</div></div>`;
+  }
+
+  html += `
+      <div class="sirp-footer">Generated by BC Offense · ${dateStr}</div>
+    </div>`;
+
+  content.innerHTML = html;
+  container.style.display = "block";
+
+  setTimeout(() => {
+    const restoreTitle = setPrintTitle("Install-Report");
+    window.print();
+    restoreTitle();
+    container.style.display = "none";
+  }, 150);
 }
