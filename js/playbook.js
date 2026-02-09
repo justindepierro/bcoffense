@@ -287,13 +287,13 @@ function renderPlaybook() {
                 <td class="col-install">${installBadge}</td>
                 <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(p.formation, searchTerm)}</td>
-                <td class="col-tags">${[p.formTag1, p.formTag2].filter(Boolean).join(", ") || "-"}</td>
+                <td class="col-tags">${escapeHtml([p.formTag1, p.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlightSearch(p.back || "-", searchTerm)}</td>
                 <td class="col-motion">${highlightSearch(p.motion || "-", searchTerm)}</td>
                 <td class="col-protection">${highlightSearch(p.protection || "-", searchTerm)}</td>
-                <td class="col-play play-cell" onclick="event.stopPropagation(); copyPlayName('${escapeHtml(p.play)}')"><strong>${highlightSearch(p.play, searchTerm)}</strong> ${[p.playTag1, p.playTag2].filter(Boolean).join(" ")}</td>
-                <td class="col-basePlay">${p.basePlay || "-"}</td>
-                <td class="col-tempo">${p.tempo || "-"}</td>
+                <td class="col-play play-cell" onclick="event.stopPropagation(); copyPlayName(this.dataset.play)" data-play="${escapeHtml(p.play)}"><strong>${highlightSearch(p.play, searchTerm)}</strong> ${escapeHtml([p.playTag1, p.playTag2].filter(Boolean).join(" "))}</td>
+                <td class="col-basePlay">${escapeHtml(p.basePlay || "-")}</td>
+                <td class="col-tempo">${escapeHtml(p.tempo || "-")}</td>
             </tr>
         `;
     })
@@ -328,9 +328,11 @@ function renderPlaybook() {
  */
 function escapeHtml(text) {
   return String(text || "")
-    .replace(/\\/g, "\\\\")
-    .replace(/'/g, "\\'")
-    .replace(/"/g, "&quot;");
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
 }
 
 /**
@@ -509,10 +511,12 @@ function initPlaybookKeyboard() {
  * Highlight search term in text
  */
 function highlightSearch(text, searchTerm) {
-  if (!searchTerm || !text || text === "-") return text;
+  if (!searchTerm || !text || text === "-") return escapeHtml(text);
+  const safeText = escapeHtml(String(text));
   const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const regex = new RegExp(`(${escaped})`, "gi");
-  return String(text).replace(
+  const safeEscaped = escapeHtml(escaped);
+  const regex = new RegExp(`(${safeEscaped})`, "gi");
+  return safeText.replace(
     regex,
     '<span class="search-highlight">$1</span>',
   );
@@ -685,17 +689,17 @@ function showPlayPreview(event, index) {
     if (!tooltip) return;
 
     tooltip.innerHTML = `
-      <div class="preview-title">${play.play}</div>
-      <div class="preview-row"><span class="preview-label">Formation:</span> ${play.formation || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Type:</span> ${play.type || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Protection:</span> ${play.protection || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Motion:</span> ${play.motion || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Shift:</span> ${play.shift || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Back:</span> ${play.back || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Base Play:</span> ${play.basePlay || "-"}</div>
-      <div class="preview-row"><span class="preview-label">Tempo:</span> ${play.tempo || "-"}</div>
-      ${play.formTag1 || play.formTag2 ? `<div class="preview-row"><span class="preview-label">Form Tags:</span> ${[play.formTag1, play.formTag2].filter(Boolean).join(", ")}</div>` : ""}
-      ${play.playTag1 || play.playTag2 ? `<div class="preview-row"><span class="preview-label">Play Tags:</span> ${[play.playTag1, play.playTag2].filter(Boolean).join(", ")}</div>` : ""}
+      <div class="preview-title">${escapeHtml(play.play)}</div>
+      <div class="preview-row"><span class="preview-label">Formation:</span> ${escapeHtml(play.formation || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Type:</span> ${escapeHtml(play.type || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Protection:</span> ${escapeHtml(play.protection || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Motion:</span> ${escapeHtml(play.motion || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Shift:</span> ${escapeHtml(play.shift || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Back:</span> ${escapeHtml(play.back || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Base Play:</span> ${escapeHtml(play.basePlay || "-")}</div>
+      <div class="preview-row"><span class="preview-label">Tempo:</span> ${escapeHtml(play.tempo || "-")}</div>
+      ${play.formTag1 || play.formTag2 ? `<div class="preview-row"><span class="preview-label">Form Tags:</span> ${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", "))}</div>` : ""}
+      ${play.playTag1 || play.playTag2 ? `<div class="preview-row"><span class="preview-label">Play Tags:</span> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(", "))}</div>` : ""}
       ${typeof getPlayInstallTooltip === "function" ? getPlayInstallTooltip(play) : ""}
     `;
 

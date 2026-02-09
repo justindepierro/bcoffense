@@ -47,6 +47,7 @@ function saveInstallationData(data) {
  */
 function extractComponentsFromPlaybook() {
   const components = {};
+  if (!plays || plays.length === 0) return components;
 
   INSTALL_CATEGORIES.forEach((cat) => {
     const values = new Set();
