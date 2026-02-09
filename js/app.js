@@ -825,6 +825,21 @@ function initApp() {
     // Check for unsaved script draft
     checkScriptDraft();
 
+    // Check for unsaved wristband draft
+    if (typeof checkWristbandDraft === "function") {
+      checkWristbandDraft();
+    }
+
+    // Check for unsaved call sheet draft
+    if (typeof checkCallSheetDraft === "function") {
+      checkCallSheetDraft();
+    }
+
+    // Restore call sheet display options
+    if (typeof restoreCallSheetDisplayOptions === "function") {
+      restoreCallSheetDisplayOptions();
+    }
+
     // Load call sheet data if stored
     const storedCallSheet = localStorage.getItem("callSheet");
     if (storedCallSheet) {
@@ -1315,94 +1330,96 @@ function dashGoToTab(tabName) {
 // ============ CSV Template Modal ============
 
 function showCSVTemplateModal() {
-  const overlay = document.createElement('div');
-  overlay.className = 'custom-modal-overlay';
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay";
 
   const offenseHeaders = [
-    ['PlayType',       'Run / Pass / RPO / Screen', 'Yes'],
-    ['Personnel',      'Personnel grouping (e.g. Blue, Red)', 'Yes'],
-    ['Formation',      'Formation name', 'Yes'],
-    ['FormTag1',       'Formation tag 1 (e.g. Rt, Lt)', ''],
-    ['FormTag2',       'Formation tag 2', ''],
-    ['Under',          'Under center / Shotgun / Pistol', ''],
-    ['Back',           'Backfield set (e.g. Strong, Weak)', ''],
-    ['Shift',          'Pre-snap shift', ''],
-    ['Motion',         'Motion call', ''],
-    ['Protection',     'Protection scheme', ''],
-    ['LineCall',       'O-Line call', ''],
-    ['Play',           'Full play call name', 'Yes'],
-    ['PlayTag1',       'Play tag / modifier 1', ''],
-    ['PlayTag2',       'Play tag / modifier 2', ''],
-    ['BasePlay',       'Base concept (e.g. Inside Zone, Counter)', ''],
-    ['OneWord',        'One-word wristband call', ''],
-    ['PreferredSituation', 'Situation tag (e.g. Openers, Red Zone)', ''],
-    ['PreferredDown',  'Down preference (1, 2, 3, 4)', ''],
-    ['PreferredDistance', 'Distance preference (Short, Med, Long)', ''],
-    ['PreferredHash',  'Hash preference (L, M, R)', ''],
-    ['PreferredFieldPosition', 'Field position preference', ''],
-    ['Tempo',          'Tempo call (e.g. Freeze, Sugar, Fire)', ''],
-    ['PracticeFront',  'Practice rep front', ''],
-    ['PracticeDefense','Practice rep defense look', ''],
-    ['PracticeCoverage','Practice rep coverage', ''],
-    ['PracticeBlitz',  'Practice rep blitz', ''],
-    ['PracticeStunt',  'Practice rep stunt', ''],
-    ['KeyPlayer1',     'Key player to watch 1', ''],
-    ['KeyPlayer2',     'Key player to watch 2', ''],
-    ['KeyPlayer3',     'Key player to watch 3', ''],
-    ['HitChart1',      'Hit chart tag 1', ''],
-    ['HitChart2',      'Hit chart tag 2', ''],
-    ['HitChart3',      'Hit chart tag 3', ''],
-    ['Constraint1',    'Constraint / complement 1', ''],
-    ['Constraint2',    'Constraint / complement 2', ''],
-    ['Constraint3',    'Constraint / complement 3', ''],
-    ['DeadVs',         'Killed vs this defense', ''],
-    ['Opponent',       'Opponent tag', ''],
-    ['Notes',          'Free-form notes', ''],
+    ["PlayType", "Run / Pass / RPO / Screen", "Yes"],
+    ["Personnel", "Personnel grouping (e.g. Blue, Red)", "Yes"],
+    ["Formation", "Formation name", "Yes"],
+    ["FormTag1", "Formation tag 1 (e.g. Rt, Lt)", ""],
+    ["FormTag2", "Formation tag 2", ""],
+    ["Under", "Under center / Shotgun / Pistol", ""],
+    ["Back", "Backfield set (e.g. Strong, Weak)", ""],
+    ["Shift", "Pre-snap shift", ""],
+    ["Motion", "Motion call", ""],
+    ["Protection", "Protection scheme", ""],
+    ["LineCall", "O-Line call", ""],
+    ["Play", "Full play call name", "Yes"],
+    ["PlayTag1", "Play tag / modifier 1", ""],
+    ["PlayTag2", "Play tag / modifier 2", ""],
+    ["BasePlay", "Base concept (e.g. Inside Zone, Counter)", ""],
+    ["OneWord", "One-word wristband call", ""],
+    ["PreferredSituation", "Situation tag (e.g. Openers, Red Zone)", ""],
+    ["PreferredDown", "Down preference (1, 2, 3, 4)", ""],
+    ["PreferredDistance", "Distance preference (Short, Med, Long)", ""],
+    ["PreferredHash", "Hash preference (L, M, R)", ""],
+    ["PreferredFieldPosition", "Field position preference", ""],
+    ["Tempo", "Tempo call (e.g. Freeze, Sugar, Fire)", ""],
+    ["PracticeFront", "Practice rep front", ""],
+    ["PracticeDefense", "Practice rep defense look", ""],
+    ["PracticeCoverage", "Practice rep coverage", ""],
+    ["PracticeBlitz", "Practice rep blitz", ""],
+    ["PracticeStunt", "Practice rep stunt", ""],
+    ["KeyPlayer1", "Key player to watch 1", ""],
+    ["KeyPlayer2", "Key player to watch 2", ""],
+    ["KeyPlayer3", "Key player to watch 3", ""],
+    ["HitChart1", "Hit chart tag 1", ""],
+    ["HitChart2", "Hit chart tag 2", ""],
+    ["HitChart3", "Hit chart tag 3", ""],
+    ["Constraint1", "Constraint / complement 1", ""],
+    ["Constraint2", "Constraint / complement 2", ""],
+    ["Constraint3", "Constraint / complement 3", ""],
+    ["DeadVs", "Killed vs this defense", ""],
+    ["Opponent", "Opponent tag", ""],
+    ["Notes", "Free-form notes", ""],
   ];
 
   const defenseHeaders = [
-    ['Opponent',       'Opponent name', 'Yes'],
-    ['Week',           'Week number', ''],
-    ['Game',           'Game number or name', ''],
-    ['Quarter',        'Quarter (1-4, OT)', ''],
-    ['Time',           'Game clock time', ''],
-    ['Down',           'Down (1-4)', 'Yes'],
-    ['Distance',       'Distance to go', 'Yes'],
-    ['Hash',           'Hash (L, M, R)', ''],
-    ['Field Position', 'Field position zone', ''],
-    ['Yard Line',      'Yard line number', ''],
-    ['Situation',      'Situation tag (e.g. Red Zone, 2-min)', ''],
-    ['Offense Play Type','Off. play type scouted', ''],
-    ['Offense Formation','Off. formation scouted', ''],
-    ['Def Front',      'Defensive front called', 'Yes'],
-    ['Def Coverage',   'Coverage called', 'Yes'],
-    ['Def Stunt',      'Stunt called', ''],
-    ['Def Blitz',      'Blitz called', ''],
-    ['Blitzer 1',      'Blitzing player 1', ''],
-    ['Blitzer 2',      'Blitzing player 2', ''],
-    ['Blitzer 3',      'Blitzing player 3', ''],
-    ['Tackler 1',      'Tackler 1', ''],
-    ['Tackler 2',      'Tackler 2', ''],
-    ['Tackler 3',      'Tackler 3', ''],
-    ['Front Strength Direction', 'Direction of front strength', ''],
-    ['Coverage Strength Direction','Direction of coverage strength', ''],
-    ['Person Of Interest 1 Direction','POI 1 alignment direction', ''],
-    ['Person of Interest 2 Direction','POI 2 alignment direction', ''],
-    ['Person of Interest 3 Direction','POI 3 alignment direction', ''],
-    ['Turnover',       'Turnover (Y/N)', ''],
-    ['Turnover Forcer','Player who forced turnover', ''],
-    ['Turnover Player','Player who committed turnover', ''],
-    ['Tackle for Loss Player','TFL player', ''],
-    ['Penalty',        'Penalty (Y/N)', ''],
-    ['Penalty Player', 'Penalty player', ''],
-    ['Notes',          'Free-form notes', ''],
+    ["Opponent", "Opponent name", "Yes"],
+    ["Week", "Week number", ""],
+    ["Game", "Game number or name", ""],
+    ["Quarter", "Quarter (1-4, OT)", ""],
+    ["Time", "Game clock time", ""],
+    ["Down", "Down (1-4)", "Yes"],
+    ["Distance", "Distance to go", "Yes"],
+    ["Hash", "Hash (L, M, R)", ""],
+    ["Field Position", "Field position zone", ""],
+    ["Yard Line", "Yard line number", ""],
+    ["Situation", "Situation tag (e.g. Red Zone, 2-min)", ""],
+    ["Offense Play Type", "Off. play type scouted", ""],
+    ["Offense Formation", "Off. formation scouted", ""],
+    ["Def Front", "Defensive front called", "Yes"],
+    ["Def Coverage", "Coverage called", "Yes"],
+    ["Def Stunt", "Stunt called", ""],
+    ["Def Blitz", "Blitz called", ""],
+    ["Blitzer 1", "Blitzing player 1", ""],
+    ["Blitzer 2", "Blitzing player 2", ""],
+    ["Blitzer 3", "Blitzing player 3", ""],
+    ["Tackler 1", "Tackler 1", ""],
+    ["Tackler 2", "Tackler 2", ""],
+    ["Tackler 3", "Tackler 3", ""],
+    ["Front Strength Direction", "Direction of front strength", ""],
+    ["Coverage Strength Direction", "Direction of coverage strength", ""],
+    ["Person Of Interest 1 Direction", "POI 1 alignment direction", ""],
+    ["Person of Interest 2 Direction", "POI 2 alignment direction", ""],
+    ["Person of Interest 3 Direction", "POI 3 alignment direction", ""],
+    ["Turnover", "Turnover (Y/N)", ""],
+    ["Turnover Forcer", "Player who forced turnover", ""],
+    ["Turnover Player", "Player who committed turnover", ""],
+    ["Tackle for Loss Player", "TFL player", ""],
+    ["Penalty", "Penalty (Y/N)", ""],
+    ["Penalty Player", "Penalty player", ""],
+    ["Notes", "Free-form notes", ""],
   ];
 
   function buildTable(headers) {
-    let rows = headers.map(([col, desc, req]) => {
-      const badge = req ? '<span class="csv-tpl-req">Required</span>' : '';
-      return `<tr><td class="csv-tpl-col">${col}</td><td class="csv-tpl-desc">${desc}</td><td class="csv-tpl-center">${badge}</td></tr>`;
-    }).join('');
+    let rows = headers
+      .map(([col, desc, req]) => {
+        const badge = req ? '<span class="csv-tpl-req">Required</span>' : "";
+        return `<tr><td class="csv-tpl-col">${col}</td><td class="csv-tpl-desc">${desc}</td><td class="csv-tpl-center">${badge}</td></tr>`;
+      })
+      .join("");
     return `<table class="csv-tpl-table">
       <thead><tr><th>Column Header</th><th>Description</th><th></th></tr></thead>
       <tbody>${rows}</tbody>
@@ -1440,36 +1457,117 @@ function showCSVTemplateModal() {
   `;
 
   document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add('visible'));
+  requestAnimationFrame(() => overlay.classList.add("visible"));
 
-  const okBtn = overlay.querySelector('#csvTplOk');
+  const okBtn = overlay.querySelector("#csvTplOk");
   okBtn.focus();
 
   function close() {
-    overlay.classList.remove('visible');
+    overlay.classList.remove("visible");
     setTimeout(() => overlay.remove(), 200);
   }
-  okBtn.addEventListener('click', close);
-  overlay.addEventListener('click', (e) => { if (e.target === overlay) close(); });
-  overlay.addEventListener('keydown', (e) => {
-    if (e.key === 'Escape' || e.key === 'Enter') { e.preventDefault(); close(); }
+  okBtn.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) close();
+  });
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "Enter") {
+      e.preventDefault();
+      close();
+    }
   });
 }
 
 function downloadCSVTemplate(type) {
   let headers;
   let filename;
-  if (type === 'offense') {
-    headers = ['PlayType','Personnel','Formation','FormTag1','FormTag2','Under','Back','Shift','Motion','Protection','LineCall','Play','PlayTag1','PlayTag2','BasePlay','OneWord','PreferredSituation','PreferredDown','PreferredDistance','PreferredHash','PreferredFieldPosition','Tempo','PracticeFront','PracticeDefense','PracticeCoverage','PracticeBlitz','PracticeStunt','KeyPlayer1','KeyPlayer2','KeyPlayer3','HitChart1','HitChart2','HitChart3','Constraint1','Constraint2','Constraint3','DeadVs','Opponent','Notes'];
-    filename = 'offensive_playbook_template.csv';
+  if (type === "offense") {
+    headers = [
+      "PlayType",
+      "Personnel",
+      "Formation",
+      "FormTag1",
+      "FormTag2",
+      "Under",
+      "Back",
+      "Shift",
+      "Motion",
+      "Protection",
+      "LineCall",
+      "Play",
+      "PlayTag1",
+      "PlayTag2",
+      "BasePlay",
+      "OneWord",
+      "PreferredSituation",
+      "PreferredDown",
+      "PreferredDistance",
+      "PreferredHash",
+      "PreferredFieldPosition",
+      "Tempo",
+      "PracticeFront",
+      "PracticeDefense",
+      "PracticeCoverage",
+      "PracticeBlitz",
+      "PracticeStunt",
+      "KeyPlayer1",
+      "KeyPlayer2",
+      "KeyPlayer3",
+      "HitChart1",
+      "HitChart2",
+      "HitChart3",
+      "Constraint1",
+      "Constraint2",
+      "Constraint3",
+      "DeadVs",
+      "Opponent",
+      "Notes",
+    ];
+    filename = "offensive_playbook_template.csv";
   } else {
-    headers = ['Opponent','Week','Game','Quarter','Time','Down','Distance','Hash','Field Position','Yard Line','Situation','Offense Play Type','Offense Formation','Def Front','Def Coverage','Def Stunt','Def Blitz','Blitzer 1','Blitzer 2','Blitzer 3','Tackler 1','Tackler 2','Tackler 3','Front Strength Direction','Coverage Strength Direction','Person Of Interest 1 Direction','Person of Interest 2 Direction','Person of Interest 3 Direction','Turnover','Turnover Forcer','Turnover Player','Tackle for Loss Player','Penalty','Penalty Player','Notes'];
-    filename = 'defensive_tendencies_template.csv';
+    headers = [
+      "Opponent",
+      "Week",
+      "Game",
+      "Quarter",
+      "Time",
+      "Down",
+      "Distance",
+      "Hash",
+      "Field Position",
+      "Yard Line",
+      "Situation",
+      "Offense Play Type",
+      "Offense Formation",
+      "Def Front",
+      "Def Coverage",
+      "Def Stunt",
+      "Def Blitz",
+      "Blitzer 1",
+      "Blitzer 2",
+      "Blitzer 3",
+      "Tackler 1",
+      "Tackler 2",
+      "Tackler 3",
+      "Front Strength Direction",
+      "Coverage Strength Direction",
+      "Person Of Interest 1 Direction",
+      "Person of Interest 2 Direction",
+      "Person of Interest 3 Direction",
+      "Turnover",
+      "Turnover Forcer",
+      "Turnover Player",
+      "Tackle for Loss Player",
+      "Penalty",
+      "Penalty Player",
+      "Notes",
+    ];
+    filename = "defensive_tendencies_template.csv";
   }
-  const csv = headers.join(',') + '\n';
-  const blob = new Blob([csv], { type: 'text/csv' });
+  const csv = headers.join(",") + "\n";
+  const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
-  const a = document.createElement('a');
+  const a = document.createElement("a");
   a.href = url;
   a.download = filename;
   a.click();

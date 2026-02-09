@@ -336,7 +336,7 @@ let csCollapsed = new Set();
 let csScoutingOverlayOn = false;
 try {
   csScoutingOverlayOn =
-    JSON.parse(localStorage.getItem("csScoutingOverlay")) || false;
+    JSON.parse(localStorage.getItem(STORAGE_KEYS.CS_SCOUTING_OVERLAY)) || false;
 } catch (e) {}
 
 // All call sheet display/format/border checkbox & select IDs for persistence
@@ -4111,7 +4111,7 @@ function toggleScoutingOverlay() {
   csScoutingOverlayOn = !csScoutingOverlayOn;
   try {
     localStorage.setItem(
-      "csScoutingOverlay",
+      STORAGE_KEYS.CS_SCOUTING_OVERLAY,
       JSON.stringify(csScoutingOverlayOn),
     );
   } catch (e) {}

@@ -104,7 +104,7 @@
 .csv-tpl-col {
   font-weight: 600;
   color: #1a1a1a;
-  font-family: 'SF Mono', 'Menlo', 'Consolas', monospace;
+  font-family: "SF Mono", "Menlo", "Consolas", monospace;
   white-space: nowrap;
 }
 .csv-tpl-desc {

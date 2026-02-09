@@ -384,6 +384,7 @@ const STORAGE_KEYS = {
   TENDENCIES_SETTINGS: "tendenciesSettings",
   GAME_WEEK: "gameWeek",
   INSTALLATION: "installationData",
+  CS_SCOUTING_OVERLAY: "csScoutingOverlay",
 };
 
 /**
@@ -650,7 +651,7 @@ function reloadAppFromStorage() {
     } catch (e) {}
   }
 
-  // Reload custom sort orders
+  // Reload custom sort orders (wristband)
   const storedCustomOrders = localStorage.getItem(
     STORAGE_KEYS.CUSTOM_SORT_ORDERS,
   );
@@ -686,9 +687,38 @@ function reloadAppFromStorage() {
     } catch (e) {}
   }
 
+  // Reload defensive tendencies
+  if (typeof tendenciesOpponents !== "undefined") {
+    try {
+      tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+    } catch (e) {}
+  }
+
+  // Reload scouting overlay state
+  if (typeof csScoutingOverlayOn !== "undefined") {
+    try {
+      csScoutingOverlayOn = storageManager.get(STORAGE_KEYS.CS_SCOUTING_OVERLAY, false);
+    } catch (e) {}
+  }
+
   // Restore call sheet display options
   if (typeof restoreCallSheetDisplayOptions === "function") {
     restoreCallSheetDisplayOptions();
+  }
+
+  // Restore script display options
+  if (typeof restoreScriptDisplayOptions === "function") {
+    restoreScriptDisplayOptions();
+  }
+
+  // Restore column visibility
+  if (typeof restoreColumnVisibility === "function") {
+    restoreColumnVisibility();
+  }
+
+  // Restore playbook filter/sort state
+  if (typeof restorePlaybookState === "function") {
+    restorePlaybookState();
   }
 }
 

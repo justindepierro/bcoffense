@@ -733,17 +733,3 @@ function hidePlayPreview() {
   const tooltip = document.getElementById("playPreviewTooltip");
   if (tooltip) tooltip.classList.remove("show");
 }
-
-/**
- * Export all data as JSON backup - uses centralized storage manager
- */
-function exportBackup() {
-  exportCompleteBackup();
-}
-
-/**
- * Import backup from JSON file - uses centralized storage manager
- */
-function importBackup(event) {
-  importCompleteBackup(event);
-}
