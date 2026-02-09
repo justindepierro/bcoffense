@@ -773,13 +773,9 @@ function handleFileUpload(event) {
     renderScript();
 
     // Load call sheet data if stored
-    const storedCallSheet = localStorage.getItem("callSheet");
+    const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
     if (storedCallSheet) {
-      try {
-        callSheet = JSON.parse(storedCallSheet);
-      } catch (e) {
-        console.error("Error loading call sheet:", e);
-      }
+      callSheet = storedCallSheet;
     }
   };
   reader.readAsText(file);
@@ -790,14 +786,9 @@ function handleFileUpload(event) {
  */
 function initApp() {
   // Check for stored playbook
-  const storedPlaybook = localStorage.getItem("playbook");
+  const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
   if (storedPlaybook) {
-    try {
-      plays = JSON.parse(storedPlaybook);
-    } catch (e) {
-      console.error("Error loading playbook:", e);
-      plays = [];
-    }
+    plays = storedPlaybook;
     filteredPlays = [...plays];
     document.getElementById("uploadSection").style.display = "none";
     document.getElementById("mainApp").style.display = "block";
@@ -841,13 +832,9 @@ function initApp() {
     }
 
     // Load call sheet data if stored
-    const storedCallSheet = localStorage.getItem("callSheet");
+    const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
     if (storedCallSheet) {
-      try {
-        callSheet = JSON.parse(storedCallSheet);
-      } catch (e) {
-        console.error("Error loading call sheet:", e);
-      }
+      callSheet = storedCallSheet;
     }
   }
 

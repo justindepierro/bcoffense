@@ -140,7 +140,7 @@ function populateWristbandHighlightDropdown() {
   const select = document.getElementById("playbookWristbandHighlight");
   if (!select) return;
 
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
 
   select.innerHTML =
     '<option value="">🏈 Highlight Wristband</option>' +
@@ -173,7 +173,7 @@ function highlightWristbandPlays() {
     return;
   }
 
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wb = saved[parseInt(wbIdx)];
 
   if (!wb || !wb.cards) {
@@ -203,6 +203,11 @@ function isPlayOnHighlightedWristband(play) {
 
   return highlightedWristbandPlays.some((wbPlay) => playsMatch(play, wbPlay));
 }
+
+/**
+ * Debounced filter — used for search input to avoid re-rendering on every keystroke
+ */
+const debouncedFilterPlays = debounce(filterPlays, 150);
 
 /**
  * Filter plays based on selected criteria and render table
@@ -323,17 +328,7 @@ function renderPlaybook() {
   savePlaybookState();
 }
 
-/**
- * Escape HTML for safe insertion
- */
-function escapeHtml(text) {
-  return String(text || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#39;");
-}
+// escapeHtml is now defined in utils.js
 
 /**
  * Select a row in the playbook table
@@ -421,14 +416,11 @@ function savePlaybookState() {
  * Restore playbook filter/sort state from localStorage
  */
 function restorePlaybookState() {
-  const saved = localStorage.getItem(PLAYBOOK_STATE_KEY);
-  if (!saved) return;
+  const state = storageManager.get(PLAYBOOK_STATE_KEY, null);
+  if (!state) return;
 
-  try {
-    const state = JSON.parse(saved);
-
-    // Restore filters
-    if (state.filterType)
+  // Restore filters
+  if (state.filterType)
       document.getElementById("filterType").value = state.filterType;
     if (state.filterFormation)
       document.getElementById("filterFormation").value = state.filterFormation;
@@ -442,9 +434,6 @@ function restorePlaybookState() {
       currentSortColumn = state.sortColumn;
       currentSortDirection = state.sortDirection || "asc";
     }
-  } catch (e) {
-    console.error("Failed to restore playbook state:", e);
-  }
 }
 
 /**
@@ -608,32 +597,28 @@ function applyColumnVisibility() {
  * Restore column visibility from localStorage
  */
 function restoreColumnVisibility() {
-  const saved = localStorage.getItem("columnVisibility");
-  if (saved) {
-    try {
-      Object.assign(columnVisibility, JSON.parse(saved));
-      // Update checkboxes
-      const menu = document.getElementById("columnMenu");
-      if (menu) {
-        const columns = [
-          "install",
-          "type",
-          "formation",
-          "tags",
-          "back",
-          "motion",
-          "protection",
-          "play",
-          "basePlay",
-          "tempo",
-        ];
-        const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach((cb, idx) => {
-          cb.checked = columnVisibility[columns[idx]];
-        });
-      }
-    } catch (e) {
-      console.error("Failed to restore column visibility:", e);
+  const savedVis = storageManager.get("columnVisibility", null);
+  if (savedVis) {
+    Object.assign(columnVisibility, savedVis);
+    // Update checkboxes
+    const menu = document.getElementById("columnMenu");
+    if (menu) {
+      const columns = [
+        "install",
+        "type",
+        "formation",
+        "tags",
+        "back",
+        "motion",
+        "protection",
+        "play",
+        "basePlay",
+        "tempo",
+      ];
+      const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
+      checkboxes.forEach((cb, idx) => {
+        cb.checked = columnVisibility[columns[idx]];
+      });
     }
   }
 }

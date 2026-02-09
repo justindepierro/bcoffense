@@ -17,7 +17,7 @@ let collapsedPeriods = new Set();
 
 // Period templates
 let periodTemplates = [];
-periodTemplates = safeJSONParse(localStorage.getItem("periodTemplates"), []);
+periodTemplates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
 
 // Bulk edit state - tracks selected script item indices
 let bulkSelectedIndices = [];
@@ -27,13 +27,9 @@ let selectedAvailablePlays = [];
 
 // Custom sort orders for script sorting
 let scriptCustomSortOrders = {};
-try {
-  scriptCustomSortOrders = JSON.parse(
-    localStorage.getItem("scriptCustomSortOrders") || "{}",
-  );
-} catch (e) {
-  console.error("Error loading script custom sort orders:", e);
-}
+scriptCustomSortOrders = storageManager.get(
+  STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, {},
+);
 
 // Sort field options for script
 const SCRIPT_SORT_FIELDS = [
@@ -92,6 +88,27 @@ function restoreScriptDisplayOptions() {
     const el = document.getElementById(id);
     if (el && opts[id] !== undefined) el.checked = opts[id];
   });
+}
+
+/**
+ * Get current script display option values from checkboxes
+ * Used by generatePDF and printFullDay to avoid duplicating option reads
+ */
+function getScriptDisplayOptions() {
+  return {
+    showEmoji: document.getElementById("scriptShowEmoji")?.checked || false,
+    useSquares: document.getElementById("scriptUseSquares")?.checked || false,
+    underEmoji: document.getElementById("scriptUnderEmoji")?.checked || false,
+    boldShifts: document.getElementById("scriptBoldShifts")?.checked || false,
+    redShifts: document.getElementById("scriptRedShifts")?.checked || false,
+    italicMotions: document.getElementById("scriptItalicMotions")?.checked || false,
+    redMotions: document.getElementById("scriptRedMotions")?.checked || false,
+    noVowels: document.getElementById("scriptRemoveVowels")?.checked || false,
+    showLineCall: document.getElementById("scriptShowLineCall")?.checked !== false,
+    highlightHuddle: document.getElementById("scriptHighlightHuddle")?.checked || false,
+    highlightCandy: document.getElementById("scriptHighlightCandy")?.checked || false,
+    showWbNum: document.getElementById("scriptShowWbNum")?.checked !== false,
+  };
 }
 
 /**
@@ -278,7 +295,7 @@ function highlightPlaysNotOnWristband() {
     return;
   }
 
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wbId = parseInt(wbSelect.value);
   if (isNaN(wbId)) return;
   const wb = saved.find((w) => w.id === wbId);
@@ -2950,7 +2967,7 @@ async function saveScript() {
     return;
   }
 
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
 
   // Check for duplicate name
   const existing = savedScripts.find(
@@ -3006,7 +3023,7 @@ async function saveScript() {
  * Load the list of saved scripts
  */
 function loadSavedScriptsList() {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const container = document.getElementById("savedScriptsList");
   const section = document.getElementById("savedScriptsSection");
 
@@ -3070,7 +3087,7 @@ function loadSavedScriptsList() {
  * @param {number} id - Script ID
  */
 function loadScript(id) {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const scriptData = savedScripts.find((s) => s.id === id);
   if (!scriptData) return;
 
@@ -3102,7 +3119,7 @@ function loadScript(id) {
  * @param {number} id - Script ID
  */
 async function deleteSavedScript(id) {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const target = savedScripts.find((s) => s.id === id);
   if (!target) return;
   const ok = await showConfirm(`Delete "${target.name}"?`, {
@@ -3123,7 +3140,7 @@ async function deleteSavedScript(id) {
  * @param {number} id - Script ID
  */
 async function renameSavedScript(id) {
-  let savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  let savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const s = savedScripts.find((s) => s.id === id);
   if (!s) return;
   const newName = await showPrompt("Rename script:", s.name, {
@@ -3143,7 +3160,7 @@ async function renameSavedScript(id) {
  * @param {number} id - Script ID
  */
 async function overwriteSavedScript(id) {
-  let savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  let savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const s = savedScripts.find((s) => s.id === id);
   if (!s) return;
   const ok = await showConfirm(
@@ -3169,7 +3186,7 @@ async function overwriteSavedScript(id) {
  * Populate the wristband select dropdown for script reference
  */
 function populateScriptWristbandSelect() {
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const select = document.getElementById("scriptWristbandSelect");
   if (!select) return;
 
@@ -3203,7 +3220,7 @@ function loadWristbandForScript() {
     return;
   }
 
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wb = saved.find((w) => w.id === id);
 
   if (wb) {
@@ -3246,7 +3263,7 @@ function findPlayOnWristband(play) {
  * Open modal to load plays from a wristband into the script
  */
 function openLoadWristbandToScriptModal() {
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
 
   if (saved.length === 0) {
     showToast("No saved wristbands found — create one first");
@@ -3328,7 +3345,7 @@ function closeLoadWbToScriptModal(event) {
  * Execute loading wristband plays into script
  */
 function executeLoadWbToScript() {
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wbIdx = parseInt(document.getElementById("wbToScriptSelect").value);
   const destination = document.getElementById("wbToScriptDestination").value;
   const cardChoice = document.getElementById("wbToScriptCards").value;
@@ -3391,30 +3408,9 @@ function generatePDF() {
   const date = document.getElementById("scriptDate").value;
 
   // Get display options
-  const showEmoji =
-    document.getElementById("scriptShowEmoji")?.checked || false;
-  const useSquares =
-    document.getElementById("scriptUseSquares")?.checked || false;
-  const underEmoji =
-    document.getElementById("scriptUnderEmoji")?.checked || false;
-  const boldShifts =
-    document.getElementById("scriptBoldShifts")?.checked || false;
-  const redShifts =
-    document.getElementById("scriptRedShifts")?.checked || false;
-  const italicMotions =
-    document.getElementById("scriptItalicMotions")?.checked || false;
-  const redMotions =
-    document.getElementById("scriptRedMotions")?.checked || false;
-  const noVowels =
-    document.getElementById("scriptRemoveVowels")?.checked || false;
-  const showLineCall =
-    document.getElementById("scriptShowLineCall")?.checked !== false;
-  const highlightHuddle =
-    document.getElementById("scriptHighlightHuddle")?.checked || false;
-  const highlightCandy =
-    document.getElementById("scriptHighlightCandy")?.checked || false;
-  const showWbNum =
-    document.getElementById("scriptShowWbNum")?.checked !== false;
+  const { showEmoji, useSquares, underEmoji, boldShifts, redShifts,
+    italicMotions, redMotions, noVowels, showLineCall,
+    highlightHuddle, highlightCandy, showWbNum } = getScriptDisplayOptions();
 
   // Build title
   const dateStr = date
@@ -3554,7 +3550,7 @@ function generatePDF() {
  * Load the full day script list with checkboxes
  */
 function loadFullDayScriptList() {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const container = document.getElementById("fullDayScriptList");
   const section = document.getElementById("fullDaySection");
 
@@ -3607,7 +3603,7 @@ function clearDayScripts() {
  * Print full day - combines selected scripts
  */
 async function printFullDay() {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const selectedIds = Array.from(
     document.querySelectorAll(".day-script-checkbox:checked"),
   ).map((cb) => parseInt(cb.value));
@@ -3621,30 +3617,9 @@ async function printFullDay() {
   }
 
   // Get display options
-  const showEmoji =
-    document.getElementById("scriptShowEmoji")?.checked || false;
-  const useSquares =
-    document.getElementById("scriptUseSquares")?.checked || false;
-  const underEmoji =
-    document.getElementById("scriptUnderEmoji")?.checked || false;
-  const boldShifts =
-    document.getElementById("scriptBoldShifts")?.checked || false;
-  const redShifts =
-    document.getElementById("scriptRedShifts")?.checked || false;
-  const italicMotions =
-    document.getElementById("scriptItalicMotions")?.checked || false;
-  const redMotions =
-    document.getElementById("scriptRedMotions")?.checked || false;
-  const noVowels =
-    document.getElementById("scriptRemoveVowels")?.checked || false;
-  const showLineCall =
-    document.getElementById("scriptShowLineCall")?.checked !== false;
-  const highlightHuddle =
-    document.getElementById("scriptHighlightHuddle")?.checked || false;
-  const highlightCandy =
-    document.getElementById("scriptHighlightCandy")?.checked || false;
-  const showWbNum =
-    document.getElementById("scriptShowWbNum")?.checked !== false;
+  const { showEmoji, useSquares, underEmoji, boldShifts, redShifts,
+    italicMotions, redMotions, noVowels, showLineCall,
+    highlightHuddle, highlightCandy, showWbNum } = getScriptDisplayOptions();
 
   // Build combined content
   let allContent = "";
@@ -3832,7 +3807,7 @@ function filterScriptItems() {
  * Compare two saved scripts side by side
  */
 async function compareScripts() {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
 
   if (savedScripts.length < 2) {
     await showModal("Need at least 2 saved scripts to compare.", {
@@ -3911,7 +3886,7 @@ async function compareScripts() {
  * Merge plays from another saved script
  */
 async function mergeFromScript() {
-  const savedScripts = safeJSONParse(localStorage.getItem("savedScripts"), []);
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
 
   if (savedScripts.length === 0) {
     await showModal("No saved scripts to merge from.", {

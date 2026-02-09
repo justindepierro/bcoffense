@@ -333,13 +333,7 @@ let csTargets = {};
 let csCollapsed = new Set();
 
 // Scouting overlay state (persisted)
-let csScoutingOverlayOn = false;
-try {
-  csScoutingOverlayOn =
-    JSON.parse(localStorage.getItem(STORAGE_KEYS.CS_SCOUTING_OVERLAY)) || false;
-} catch (e) {
-  console.warn("Error loading scouting overlay state:", e.message);
-}
+let csScoutingOverlayOn = storageManager.get(STORAGE_KEYS.CS_SCOUTING_OVERLAY, false);
 
 // All call sheet display/format/border checkbox & select IDs for persistence
 const CALLSHEET_DISPLAY_IDS = [
@@ -4111,12 +4105,7 @@ function toggleScoutingOverlay() {
     return;
   }
   csScoutingOverlayOn = !csScoutingOverlayOn;
-  try {
-    localStorage.setItem(
-      STORAGE_KEYS.CS_SCOUTING_OVERLAY,
-      JSON.stringify(csScoutingOverlayOn),
-    );
-  } catch (e) {}
+  storageManager.set(STORAGE_KEYS.CS_SCOUTING_OVERLAY, csScoutingOverlayOn);
   const btn = document.getElementById("csScoutingToggle");
   if (btn) btn.classList.toggle("cs-scouting-active", csScoutingOverlayOn);
   renderCallSheet();

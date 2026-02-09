@@ -388,6 +388,33 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Escape HTML for safe insertion — shared across all modules
+ */
+function escapeHtml(text) {
+  return String(text || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/"/g, "&quot;")
+    .replace(/'/g, "&#39;");
+}
+
+// Alias for modules using escapeHTML (tendencies.js)
+const escapeHTML = escapeHtml;
+
+/**
+ * Debounce — returns a function that delays invoking fn until after wait ms
+ * have elapsed since the last invocation. Useful for search inputs, resize, etc.
+ */
+function debounce(fn, wait = 150) {
+  let timer;
+  return function (...args) {
+    clearTimeout(timer);
+    timer = setTimeout(() => fn.apply(this, args), wait);
+  };
+}
+
+/**
  * Safe JSON parse with fallback — use instead of raw JSON.parse on external data
  */
 function safeJSONParse(str, fallback) {
@@ -655,78 +682,52 @@ function importCompleteBackup(event) {
  */
 function reloadAppFromStorage() {
   // Reload playbook
-  const storedPlaybook = localStorage.getItem(STORAGE_KEYS.PLAYBOOK);
+  const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
   if (storedPlaybook) {
-    try {
-      plays = JSON.parse(storedPlaybook);
-      filteredPlays = [...plays];
-    } catch (e) {}
+    plays = storedPlaybook;
+    filteredPlays = [...plays];
   }
 
   // Reload sort presets
-  const storedPresets = localStorage.getItem(STORAGE_KEYS.SORT_PRESETS);
-  if (storedPresets && typeof savedSortPresets !== "undefined") {
-    try {
-      savedSortPresets = JSON.parse(storedPresets);
-    } catch (e) {}
+  if (typeof savedSortPresets !== "undefined") {
+    savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
   }
 
   // Reload period templates
-  const storedTemplates = localStorage.getItem(STORAGE_KEYS.PERIOD_TEMPLATES);
-  if (storedTemplates && typeof periodTemplates !== "undefined") {
-    try {
-      periodTemplates = JSON.parse(storedTemplates);
-    } catch (e) {}
+  if (typeof periodTemplates !== "undefined") {
+    periodTemplates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
   }
 
   // Reload custom sort orders (wristband)
-  const storedCustomOrders = localStorage.getItem(
-    STORAGE_KEYS.CUSTOM_SORT_ORDERS,
-  );
-  if (storedCustomOrders && typeof wbCustomSortOrders !== "undefined") {
-    try {
-      wbCustomSortOrders = JSON.parse(storedCustomOrders);
-    } catch (e) {}
+  if (typeof wbCustomSortOrders !== "undefined") {
+    wbCustomSortOrders = storageManager.get(STORAGE_KEYS.CUSTOM_SORT_ORDERS, {});
   }
 
   // Reload call sheet
-  const storedCallSheet = localStorage.getItem(STORAGE_KEYS.CALL_SHEET);
-  if (storedCallSheet && typeof callSheet !== "undefined") {
-    try {
-      callSheet = JSON.parse(storedCallSheet);
-    } catch (e) {}
+  if (typeof callSheet !== "undefined") {
+    const cs = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
+    if (cs) callSheet = cs;
   }
 
   // Reload call sheet settings
-  const storedSettings = localStorage.getItem(STORAGE_KEYS.CALL_SHEET_SETTINGS);
-  if (storedSettings && typeof callSheetSettings !== "undefined") {
-    try {
-      callSheetSettings = JSON.parse(storedSettings);
-    } catch (e) {}
+  if (typeof callSheetSettings !== "undefined") {
+    const css = storageManager.get(STORAGE_KEYS.CALL_SHEET_SETTINGS, null);
+    if (css) callSheetSettings = css;
   }
 
   // Reload script custom sort orders
-  const storedScriptSortOrders = localStorage.getItem(
-    STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
-  );
-  if (storedScriptSortOrders && typeof scriptCustomSortOrders !== "undefined") {
-    try {
-      scriptCustomSortOrders = JSON.parse(storedScriptSortOrders);
-    } catch (e) {}
+  if (typeof scriptCustomSortOrders !== "undefined") {
+    scriptCustomSortOrders = storageManager.get(STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS, {});
   }
 
   // Reload defensive tendencies
   if (typeof tendenciesOpponents !== "undefined") {
-    try {
-      tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
-    } catch (e) {}
+    tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   }
 
   // Reload scouting overlay state
   if (typeof csScoutingOverlayOn !== "undefined") {
-    try {
-      csScoutingOverlayOn = storageManager.get(STORAGE_KEYS.CS_SCOUTING_OVERLAY, false);
-    } catch (e) {}
+    csScoutingOverlayOn = storageManager.get(STORAGE_KEYS.CS_SCOUTING_OVERLAY, false);
   }
 
   // Restore call sheet display options

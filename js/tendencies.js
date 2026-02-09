@@ -1079,11 +1079,7 @@ function renderTendenciesHome() {
   `;
 }
 
-function escapeHTML(str) {
-  const div = document.createElement("div");
-  div.textContent = str;
-  return div.innerHTML;
-}
+// escapeHTML is now defined in utils.js
 
 // ============ Opponent CRUD ============
 

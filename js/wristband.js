@@ -25,8 +25,8 @@ let draggedSortItem = null;
 
 // Custom value orders per field: { fieldName: ["value1", "value2", ...] }
 let wbCustomSortOrders = {};
-wbCustomSortOrders = safeJSONParse(
-  localStorage.getItem("customSortOrders"), {},
+wbCustomSortOrders = storageManager.get(
+  STORAGE_KEYS.CUSTOM_SORT_ORDERS, {},
 );
 
 // Sort across all cards as one pool
@@ -34,7 +34,7 @@ let wbSortAcrossCards = false;
 
 // Saved sort presets
 let savedSortPresets = {};
-savedSortPresets = safeJSONParse(localStorage.getItem("sortPresets"), {});
+savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
 
 // Drag-and-drop cell swap state
 let draggedCellIndex = null;
@@ -1975,7 +1975,7 @@ async function saveWristband() {
     { title: "Save Wristband", icon: "💾" },
   );
   if (!name) return;
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
 
   // Check for duplicate name
   const existing = saved.find(
@@ -2034,7 +2034,7 @@ async function saveWristband() {
  * Load the list of saved wristbands
  */
 function loadSavedWristbandsList() {
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const container = document.getElementById("savedWristbandsList");
   const section = document.getElementById("savedWristbandsSection");
 
@@ -2091,7 +2091,7 @@ function loadSavedWristbandsList() {
  * @param {number} id - Wristband ID
  */
 function loadWristband(id) {
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
 
@@ -2153,7 +2153,7 @@ function loadWristband(id) {
  * @param {number} id - Wristband ID
  */
 async function deleteSavedWristband(id) {
-  const saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const target = saved.find((s) => s.id === id);
   if (!target) return;
   const ok = await showConfirm(`Delete "${target.title}"?`, {
@@ -2183,7 +2183,7 @@ async function deleteSavedWristband(id) {
  * @param {number} id - Wristband ID
  */
 async function renameSavedWristband(id) {
-  let saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  let saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
   const newName = await showPrompt("Rename wristband:", wb.title, {
@@ -2205,7 +2205,7 @@ async function renameSavedWristband(id) {
  * @param {number} id - Wristband ID
  */
 async function overwriteSavedWristband(id) {
-  let saved = safeJSONParse(localStorage.getItem("savedWristbands"), []);
+  let saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
   const ok = await showConfirm(
