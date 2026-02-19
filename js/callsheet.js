@@ -2180,7 +2180,8 @@ function printCallSheet() {
 
   // Build print HTML
   let html = `<div class="${orientClass}">`;
-  html += `<h1 class="cs-print-title">Burke Catholic Football 2026 - ${pageTitle}</h1>`;
+  const teamName = getTeamName() + ' ' + new Date().getFullYear();
+  html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
   html += '<div class="print-callsheet-grid">';
 
   // Arrange in 3-column layout for print

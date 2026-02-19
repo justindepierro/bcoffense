@@ -431,8 +431,19 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;");
 }
 
-// Alias for modules using escapeHTML (tendencies.js)
-const escapeHTML = escapeHtml;
+/**
+ * Escape a string for safe use in HTML attributes (onclick, title, etc.)
+ * More thorough than escapeHtml — also handles backticks
+ */
+function escapeAttrSafe(str) {
+  return String(str || "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;")
+    .replace(/`/g, "&#96;");
+}
 
 /**
  * Debounce — returns a function that delays invoking fn until after wait ms
@@ -2122,4 +2133,58 @@ function setPrintTitle(type, customName) {
   return function restoreTitle() {
     document.title = originalTitle;
   };
+}
+
+/**
+ * Consolidated print helper — standardizes the print workflow across all modules.
+ * Handles showing container, setting print styles, title, print, cleanup.
+ *
+ * @param {object} opts
+ * @param {HTMLElement} opts.container - The print container element
+ * @param {HTMLElement} opts.contentEl - The element to inject HTML into
+ * @param {string} opts.html - The HTML content to print
+ * @param {string} opts.type - Print type for the filename (e.g. "Practice Script")
+ * @param {string} [opts.customName] - Optional custom name for filename
+ * @param {string} [opts.pageCSS] - Optional @page CSS (e.g. "size: landscape;")
+ * @param {number} [opts.delay=100] - Delay before printing (ms)
+ */
+function printDocument(opts) {
+  const { container, contentEl, html, type, customName, pageCSS, delay = 100 } = opts;
+
+  contentEl.innerHTML = html;
+  container.style.display = "block";
+
+  // Inject/update page style
+  if (pageCSS) {
+    let printStyle = document.getElementById("dynamicPrintStyle");
+    if (!printStyle) {
+      printStyle = document.createElement("style");
+      printStyle.id = "dynamicPrintStyle";
+      document.head.appendChild(printStyle);
+    }
+    printStyle.textContent = `@media print { @page { ${pageCSS} } }`;
+  }
+
+  setTimeout(() => {
+    const restoreTitle = setPrintTitle(type, customName || "");
+    window.print();
+    restoreTitle();
+    container.style.display = "none";
+  }, delay);
+}
+
+/**
+ * Get the configured team name (used in call sheet headers, game plan, etc.)
+ * @returns {string}
+ */
+function getTeamName() {
+  return storageManager.get("teamName", "My Team Football");
+}
+
+/**
+ * Set the configured team name
+ * @param {string} name
+ */
+function setTeamName(name) {
+  storageManager.set("teamName", name);
 }

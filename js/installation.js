@@ -430,7 +430,13 @@ function renderInstallCategoryDetail(components, data) {
  * Escape a value for use in HTML attributes (onclick etc)
  */
 function escapeAttr(str) {
-  return String(str).replace(/'/g, "\\'").replace(/"/g, "&quot;");
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;")
+    .replace(/`/g, "&#96;");
 }
 
 // ============ Bulk Actions ============

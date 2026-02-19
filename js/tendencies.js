@@ -1028,7 +1028,7 @@ function renderTendenciesHome() {
       (opp, i) => `
     <div class="td-opponent-card" onclick="selectTendenciesOpponent(${i})">
       <div class="td-opponent-card-info">
-        <span class="td-opponent-name">${escapeHTML(opp.name)}</span>
+        <span class="td-opponent-name">${escapeHtml(opp.name)}</span>
         <span class="td-opponent-count">${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}</span>
       </div>
       <div class="td-opponent-card-actions">
@@ -1178,7 +1178,7 @@ function renderOpponentDetail() {
     <div class="td-detail">
       <div class="td-detail-header">
         <button class="btn btn-secondary" onclick="tendenciesGoHome()">← Back</button>
-        <h2>🎯 ${escapeHTML(opp.name)}</h2>
+        <h2>🎯 ${escapeHtml(opp.name)}</h2>
         <div class="td-detail-actions">
           <button class="btn" id="tendenciesUndoBtn" onclick="undoTendencies()" disabled title="Nothing to undo">↩️</button>
           <button class="btn" id="tendenciesRedoBtn" onclick="redoTendencies()" disabled title="Nothing to redo">↪️</button>
@@ -1209,7 +1209,7 @@ function renderOpponentDetail() {
         <div class="td-toolbar-left">
           <div class="td-search-box">
             <input type="text" class="td-search-input" id="tdSearchInput" placeholder="🔍 Search plays…"
-                   value="${escapeHTML(tdSearchText)}" oninput="setTdSearch(this.value)">
+                   value="${escapeHtml(tdSearchText)}" oninput="setTdSearch(this.value)">
             ${tdSearchText ? "<button class=\"td-search-clear\" onclick=\"setTdSearch(''); document.getElementById('tdSearchInput').value=''\">✕</button>" : ""}
           </div>
           <button class="btn btn-sm ${tdShowFilters ? "btn-primary" : ""}" onclick="toggleTdFilters()">
@@ -1351,7 +1351,7 @@ function renderCellValue(col, play, idx) {
     case "defStunt":
       return `<td>${play.defStunt && play.defStunt !== "None" ? '<span class="td-tag td-tag-stunt">' + play.defStunt + "</span>" : "—"}</td>`;
     case "notes":
-      return `<td class="td-notes-cell" title="${escapeHTML(play.notes || "")}">${play.notes ? "📝 " + (play.notes.length > 20 ? escapeHTML(play.notes.substring(0, 20)) + "…" : escapeHTML(play.notes)) : ""}</td>`;
+      return `<td class="td-notes-cell" title="${escapeHtml(play.notes || "")}">${play.notes ? "📝 " + (play.notes.length > 20 ? escapeHtml(play.notes.substring(0, 20)) + "…" : escapeHtml(play.notes)) : ""}</td>`;
     case "_actions":
       return `<td class="td-play-actions">
         ${
@@ -1611,7 +1611,7 @@ function showPlayTooltip(e, origIdx) {
     .map(([k, label]) => {
       const val = play[k];
       if (!val) return null;
-      return `<div class="td-tip-row"><span class="td-tip-label">${label}</span><span class="td-tip-val">${escapeHTML(val)}</span></div>`;
+      return `<div class="td-tip-row"><span class="td-tip-label">${label}</span><span class="td-tip-val">${escapeHtml(val)}</span></div>`;
     })
     .filter(Boolean)
     .join("");
@@ -2050,7 +2050,7 @@ function printTendencies() {
 
   const printWin = window.open("", "_blank");
   printWin.document
-    .write(`<!DOCTYPE html><html><head><title>${escapeHTML(opp.name)} — Defensive Tendencies</title>
+    .write(`<!DOCTYPE html><html><head><title>${escapeHtml(opp.name)} — Defensive Tendencies</title>
     <style>
       body { font-family: -apple-system, sans-serif; font-size: 11px; margin: 20px; }
       h1 { font-size: 18px; margin-bottom: 4px; }
@@ -2063,7 +2063,7 @@ function printTendencies() {
       tr:nth-child(even) { background: #fafafa; }
       @media print { body { margin: 10px; } }
     </style></head><body>
-    <h1>🎯 ${escapeHTML(opp.name)} — Defensive Tendencies</h1>
+    <h1>🎯 ${escapeHtml(opp.name)} — Defensive Tendencies</h1>
     <div class="stats">
       <span>Plays: <strong>${total}</strong></span>
       <span>Run: <strong>${runP}</strong> (${total > 0 ? Math.round((runP / total) * 100) : 0}%)</span>

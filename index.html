@@ -3,10 +3,16 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="Football practice script builder, wristband maker, call sheet creator, and defensive tendencies tracker." />
+    <meta name="theme-color" content="#1a1a2e" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
     <title>Practice Script & Playbook</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>" />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
+    <a href="#mainApp" class="skip-link">Skip to main content</a>
     <h1>🏈 Practice Script & Playbook</h1>
 
     <!-- Upload Section -->
@@ -67,12 +73,27 @@
             </button>
           </div>
         </div>
+
+        <div class="backup-section">
+          <h3>⚙️ Team Settings</h3>
+          <p>Set your team name for call sheet headers and printed documents</p>
+          <div class="team-name-row">
+            <input
+              type="text"
+              id="teamNameInput"
+              class="team-name-input"
+              placeholder="e.g., Burke Catholic Football"
+              onchange="setTeamName(this.value)"
+            />
+          </div>
+        </div>
       </div>
     </div>
 
     <div id="mainApp" style="display: none">
       <div class="tabs" role="tablist" aria-label="Main navigation">
         <button
+          id="tab-playbook"
           class="tab active"
           role="tab"
           aria-selected="true"
@@ -82,6 +103,7 @@
           Playbook
         </button>
         <button
+          id="tab-script"
           class="tab"
           role="tab"
           aria-selected="false"
@@ -91,6 +113,7 @@
           Practice Script Builder
         </button>
         <button
+          id="tab-wristband"
           class="tab"
           role="tab"
           aria-selected="false"
@@ -100,6 +123,7 @@
           Wristband Maker
         </button>
         <button
+          id="tab-tendencies"
           class="tab"
           role="tab"
           aria-selected="false"
@@ -109,6 +133,7 @@
           Def Tendencies
         </button>
         <button
+          id="tab-callsheet"
           class="tab"
           role="tab"
           aria-selected="false"
@@ -118,6 +143,7 @@
           Call Sheet
         </button>
         <button
+          id="tab-installation"
           class="tab"
           role="tab"
           aria-selected="false"
@@ -127,6 +153,7 @@
           📦 Installation
         </button>
         <button
+          id="tab-dashboard"
           class="tab"
           role="tab"
           aria-selected="false"
@@ -510,7 +537,7 @@
                 ></div>
               </div>
 
-              <div class="filters" style="margin-bottom: 10px">
+              <div class="filters filters-compact">
                 <select
                   id="scriptFilterFormation"
                   onchange="filterScriptPlays()"
@@ -519,7 +546,7 @@
                   <option value="">All Formations</option>
                 </select>
               </div>
-              <div class="filters" style="margin-bottom: 10px">
+              <div class="filters filters-compact">
                 <select
                   id="scriptFilterBasePlay"
                   onchange="filterScriptPlays()"
@@ -530,7 +557,7 @@
               </div>
             </div>
 
-            <div class="filters" style="margin-bottom: 10px">
+            <div class="filters filters-compact">
               <input
                 type="text"
                 id="scriptSearchPlay"
@@ -1088,8 +1115,8 @@
               </div>
 
               <div
-                class="filters"
-                style="margin-bottom: 10px; margin-top: 10px"
+                class="filters filters-compact"
+                style="margin-top: 10px"
               >
                 <select
                   id="wbFilterType"
@@ -1101,7 +1128,7 @@
               </div>
             </div>
 
-            <div class="filters" style="margin-bottom: 10px">
+            <div class="filters filters-compact">
               <input
                 type="text"
                 id="wbSearchPlay"

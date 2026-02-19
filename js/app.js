@@ -62,31 +62,25 @@ function showTab(tabName) {
   // Show selected panel
   document.getElementById(tabName).classList.add("active");
 
-  // Update tab buttons
-  document.querySelectorAll(".tab").forEach((t) => {
+  // Update tab buttons using the reliable tab map
+  const tabMap = {
+    playbook: 0,
+    script: 1,
+    wristband: 2,
+    tendencies: 3,
+    callsheet: 4,
+    installation: 5,
+    dashboard: 6,
+  };
+  const tabs = document.querySelectorAll(".tab");
+  tabs.forEach((t) => {
     t.classList.remove("active");
     t.setAttribute("aria-selected", "false");
   });
-  if (typeof event !== "undefined" && event && event.target) {
-    event.target.classList.add("active");
-    event.target.setAttribute("aria-selected", "true");
-  } else {
-    // Find the tab button for this tab by matching text or position
-    const tabMap = {
-      playbook: 0,
-      script: 1,
-      wristband: 2,
-      tendencies: 3,
-      callsheet: 4,
-      installation: 5,
-      dashboard: 6,
-    };
-    const tabs = document.querySelectorAll(".tab");
-    const idx = tabMap[tabName];
-    if (idx !== undefined && tabs[idx]) {
-      tabs[idx].classList.add("active");
-      tabs[idx].setAttribute("aria-selected", "true");
-    }
+  const idx = tabMap[tabName];
+  if (idx !== undefined && tabs[idx]) {
+    tabs[idx].classList.add("active");
+    tabs[idx].setAttribute("aria-selected", "true");
   }
 
   // Initialize installation if switching to that tab
@@ -320,6 +314,12 @@ function initApp() {
 
   // Set today's date as default
   document.getElementById("scriptDate").valueAsDate = new Date();
+
+  // Initialize team name input with stored value
+  const teamNameInput = document.getElementById("teamNameInput");
+  if (teamNameInput) {
+    teamNameInput.value = getTeamName();
+  }
 
   // Initialize swatch handlers for wristband
   initSwatchHandlers();
