@@ -74,6 +74,63 @@ function extractComponentsFromPlaybook() {
   return components;
 }
 
+/**
+ * Derive a "base" play name for grouping variations.
+ *
+ * Priority:
+ *  1. If the CSV has BasePlay filled in, use that (cleanest signal).
+ *  2. Otherwise, fall back to a heuristic on the Play column:
+ *     - Strip trailing parenthetical or bracket tags: "(RPO)", "[SHOT]".
+ *     - Strip trailing short all-caps tags (e.g. "QK", "LT", "RT").
+ *     - Strip leading position tags (X/Z/Y/F/H/RB/TB/TE/WR/SL).
+ */
+function getSmartBasePlayName(play) {
+  const explicitBase = (play.basePlay || "").trim();
+  if (explicitBase) return explicitBase;
+
+  let name = (play.play || "").trim();
+  if (!name) return "";
+
+  // Remove trailing (...) or [...] annotations
+  name = name.replace(/\s*\([^)]*\)\s*$/, "");
+  name = name.replace(/\s*\[[^]]*\]\s*$/, "");
+
+  let parts = name.split(/\s+/).filter(Boolean);
+
+  // Strip common leading position tags (single/backfield letters, etc.)
+  const leadTagRe = /^(X|Z|Y|F|H|R|L|Q|RB|TB|TE|WR|SL)$/i;
+  while (parts.length > 1 && leadTagRe.test(parts[0])) {
+    parts.shift();
+  }
+
+  // Strip short all-caps trailing tags (1–3 chars, optional digit)
+  const tailTagRe = /^[A-Z]{1,3}\d?$/;
+  while (parts.length > 1 && tailTagRe.test(parts[parts.length - 1])) {
+    parts.pop();
+  }
+
+  const cleaned = parts.join(" ").trim();
+  return cleaned || name;
+}
+
+/**
+ * For a given smart base play name, return all underlying raw Play values
+ * that map to it (unique, trimmed strings).
+ */
+function getRawPlayNamesForBase(baseName) {
+  if (!baseName) return [];
+  const rawSet = new Set();
+
+  (plays || []).forEach((p) => {
+    const raw = (p.play || "").trim();
+    if (!raw) return;
+    const base = getSmartBasePlayName(p);
+    if (base === baseName) rawSet.add(raw);
+  });
+
+  return Array.from(rawSet);
+}
+
 // Removed: isComponentInstalled - dead code (never called)
 
 /**
@@ -82,6 +139,32 @@ function extractComponentsFromPlaybook() {
 function toggleComponentInstalled(categoryId, value) {
   const data = getInstallationData();
   if (!data.installed[categoryId]) data.installed[categoryId] = [];
+
+  // In smart base plays mode, toggling a "play" value represents a base
+  // concept and should fan out to all underlying raw Play strings.
+  if (categoryId === "play" && installSmartBasePlays) {
+    const rawPlays = getRawPlayNamesForBase(value);
+    if (rawPlays.length === 0) return;
+
+    const installed = data.installed[categoryId];
+    const installedSet = new Set(installed.map((v) => v.trim()).filter(Boolean));
+    const allInstalled = rawPlays.every((name) => installedSet.has(name));
+
+    if (allInstalled) {
+      // Uninstall all plays in this base group
+      const toRemove = new Set(rawPlays);
+      data.installed[categoryId] = installed.filter((v) => !toRemove.has(v.trim()));
+    } else {
+      // Install any missing plays in this base group
+      rawPlays.forEach((name) => {
+        if (!installedSet.has(name)) installed.push(name);
+      });
+      data.installed[categoryId] = installed;
+    }
+
+    saveInstallationData(data);
+    return;
+  }
 
   const idx = data.installed[categoryId].indexOf(value);
   if (idx >= 0) {
@@ -199,6 +282,10 @@ function getInstallRatingClass(stars, maxStars) {
 
 let installActiveCategory = null;
 let installSearchTerm = "";
+// When true and the active category is "play", the Plays list groups
+// variations by their base concept (using the BasePlay column when
+// available and a heuristic fallback on the Play column).
+let installSmartBasePlays = false;
 
 /**
  * Initialize the installation page
@@ -346,10 +433,70 @@ function renderInstallation() {
 function renderInstallCategoryDetail(components, data) {
   const cat = INSTALL_CATEGORIES.find((c) => c.id === installActiveCategory);
   if (!cat) return "";
+  const isSmartPlayMode = cat.id === "play" && installSmartBasePlays;
 
-  const allItems = components[cat.id] || [];
-  const installed = data.installed[cat.id] || [];
-  const installedCount = installed.filter((v) => allItems.includes(v)).length;
+  let allItems;
+  let installed;
+  let installedCount;
+  let playCounts = {};
+  let groupInstalledMap = {};
+
+  if (isSmartPlayMode) {
+    // Build base-concept groups from the plays array
+    const baseInfo = new Map(); // baseName -> { count, rawSet }
+    (plays || []).forEach((p) => {
+      const raw = (p.play || "").trim();
+      if (!raw) return;
+      const base = getSmartBasePlayName(p);
+      if (!base) return;
+      let info = baseInfo.get(base);
+      if (!info) {
+        info = { count: 0, rawSet: new Set() };
+        baseInfo.set(base, info);
+      }
+      info.count += 1;
+      info.rawSet.add(raw);
+    });
+
+    const installedRaw = (data.installed[cat.id] || []).map((v) => v.trim());
+    const installedSet = new Set(installedRaw.filter(Boolean));
+
+    playCounts = {};
+    groupInstalledMap = {};
+    baseInfo.forEach((info, base) => {
+      playCounts[base] = info.count;
+      const allInstalled = Array.from(info.rawSet).every((raw) =>
+        installedSet.has(raw),
+      );
+      groupInstalledMap[base] = allInstalled;
+    });
+
+    allItems = Array.from(baseInfo.keys()).sort((a, b) =>
+      a.toLowerCase().localeCompare(b.toLowerCase()),
+    );
+    installed = allItems.filter((name) => groupInstalledMap[name]);
+    installedCount = installed.length;
+  } else {
+    allItems = components[cat.id] || [];
+    installed = data.installed[cat.id] || [];
+    installedCount = installed.filter((v) => allItems.includes(v)).length;
+
+    // Count plays per component value
+    plays.forEach((p) => {
+      if (cat.id === "formTag") {
+        [p.formTag1, p.formTag2].filter(Boolean).forEach((t) => {
+          const key = t.trim();
+          playCounts[key] = (playCounts[key] || 0) + 1;
+        });
+      } else {
+        const val = p[cat.field];
+        if (val && val.trim()) {
+          const key = val.trim();
+          playCounts[key] = (playCounts[key] || 0) + 1;
+        }
+      }
+    });
+  }
 
   // Filter by search
   const filtered = installSearchTerm
@@ -360,26 +507,16 @@ function renderInstallCategoryDetail(components, data) {
 
   // Sort: installed first, then alphabetical
   const sorted = [...filtered].sort((a, b) => {
+    if (isSmartPlayMode) {
+      const aInstalled = groupInstalledMap[a] ? 0 : 1;
+      const bInstalled = groupInstalledMap[b] ? 0 : 1;
+      if (aInstalled !== bInstalled) return aInstalled - bInstalled;
+      return a.toLowerCase().localeCompare(b.toLowerCase());
+    }
     const aInstalled = installed.includes(a) ? 0 : 1;
     const bInstalled = installed.includes(b) ? 0 : 1;
     if (aInstalled !== bInstalled) return aInstalled - bInstalled;
     return a.toLowerCase().localeCompare(b.toLowerCase());
-  });
-
-  // Count plays per component value
-  const playCounts = {};
-  plays.forEach((p) => {
-    if (cat.id === "formTag") {
-      [p.formTag1, p.formTag2].filter(Boolean).forEach((t) => {
-        const key = t.trim();
-        playCounts[key] = (playCounts[key] || 0) + 1;
-      });
-    } else {
-      const val = p[cat.field];
-      if (val && val.trim()) {
-        playCounts[val.trim()] = (playCounts[val.trim()] || 0) + 1;
-      }
-    }
   });
 
   return `
@@ -389,6 +526,15 @@ function renderInstallCategoryDetail(components, data) {
         <div class="install-detail-actions">
           <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
                  value="${installSearchTerm}" oninput="installSearchTerm=this.value; renderInstallation();">
+          ${
+            cat.id === "play"
+              ? `<label class="install-smart-toggle" title="Group play variations by base concept">
+                  <input type="checkbox" ${installSmartBasePlays ? "checked" : ""}
+                         onchange="installSmartBasePlays=this.checked; renderInstallation();">
+                  <span>Smart base plays</span>
+                 </label>`
+              : ""
+          }
           <button class="btn btn-sm btn-success" onclick="installAll('${cat.id}')" title="Mark all as installed">✅ All</button>
           <button class="btn btn-sm btn-danger" onclick="uninstallAll('${cat.id}')" title="Clear all">✕ Clear</button>
         </div>
@@ -396,7 +542,9 @@ function renderInstallCategoryDetail(components, data) {
       <div class="install-checklist">
         ${sorted
           .map((value, idx) => {
-            const isInstalled = installed.includes(value);
+            const isInstalled = isSmartPlayMode
+              ? !!groupInstalledMap[value]
+              : installed.includes(value);
             const count = playCounts[value] || 0;
             return `
             <label class="install-item ${isInstalled ? "install-item-done" : ""}"
