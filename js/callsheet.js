@@ -555,15 +555,7 @@ function splitPreferredValues(value) {
     .filter(Boolean);
 }
 
-/**
- * Check if a target value appears in a multi-value preferred field.
- */
-function preferredIncludes(fieldValue, target) {
-  if (!fieldValue || !target) return false;
-  const values = splitPreferredValues(fieldValue);
-  const t = target.toLowerCase();
-  return values.some((v) => v === t);
-}
+// Removed: preferredIncludes - dead code (never called)
 
 /**
  * Find which categories a play belongs to (FRONT page: situational; BACK page: play-type).
@@ -1126,7 +1118,7 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetItalicMotions")?.checked ?? false,
     redMotions:
       document.getElementById("callsheetRedMotions")?.checked ?? false,
-    removeVowels:
+    noVowels:
       document.getElementById("callsheetRemoveVowels")?.checked ?? false,
     highlightHuddle:
       document.getElementById("callsheetHighlightHuddle")?.checked ?? false,
@@ -1301,9 +1293,6 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
  * Show context menu for play (border color, copy to category, move)
  */
 function showPlayContextMenu(event, categoryId, hash, index) {
-  event.preventDefault();
-  document.querySelector(".cs-context-menu")?.remove();
-
   const page = callSheetSettings.currentPage;
   const categories = page === "front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
   const otherHash = hash === "left" ? "right" : "left";
@@ -1343,10 +1332,6 @@ function showPlayContextMenu(event, categoryId, hash, index) {
 
   const menu = document.createElement("div");
   menu.className = "cs-context-menu cs-ctx-wide";
-  menu.style.position = "fixed";
-  menu.style.left = `${event.clientX}px`;
-  menu.style.top = `${event.clientY}px`;
-  menu.style.visibility = "hidden";
 
   // ─── Border Color ───
   let menuHtml = `<div class="cs-ctx-section"><span class="cs-ctx-label">Border Color</span><div class="cs-ctx-colors">`;
@@ -1516,25 +1501,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     noteInput.addEventListener("click", (e) => e.stopPropagation());
   }
 
-  document.body.appendChild(menu);
-
-  // Keep menu in viewport
-  requestAnimationFrame(() => {
-    const rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth)
-      menu.style.left = `${window.innerWidth - rect.width - 8}px`;
-    if (rect.bottom > window.innerHeight)
-      menu.style.top = `${window.innerHeight - rect.height - 8}px`;
-    menu.style.visibility = "visible";
-  });
-
-  const closeHandler = (e) => {
-    if (!menu.contains(e.target)) {
-      menu.remove();
-      document.removeEventListener("click", closeHandler);
-    }
-  };
-  setTimeout(() => document.addEventListener("click", closeHandler), 0);
+  showContextMenu(event, menu);
 }
 
 /**
@@ -1580,7 +1547,7 @@ function openCallSheetPlayPicker(categoryId, hash) {
   updatePickerSourceUI();
 
   populateCallSheetPlayList();
-  document.getElementById("callSheetPickerOverlay").style.display = "flex";
+  document.getElementById("callSheetPickerOverlay").classList.remove("hidden");
 }
 
 /**
@@ -1643,11 +1610,12 @@ function updatePickerSourceUI() {
       callSheetSettings.loadedWristbandPlays?.length > 0
     ) {
       infoSpan.textContent = `(${callSheetSettings.loadedWristbandName}: ${callSheetSettings.loadedWristbandPlays.length} plays)`;
-      infoSpan.style.color = source === "wristband" ? "#28a745" : "#666";
+      infoSpan.className =
+        source === "wristband" ? "text-success" : "text-muted";
     } else {
       infoSpan.textContent =
         source === "wristband" ? "(No wristband loaded)" : "";
-      infoSpan.style.color = "#dc3545";
+      infoSpan.className = "text-danger";
     }
   }
 }
@@ -1657,7 +1625,7 @@ function updatePickerSourceUI() {
  */
 function closeCallSheetPicker(event) {
   if (event && event.target !== event.currentTarget) return;
-  document.getElementById("callSheetPickerOverlay").style.display = "none";
+  document.getElementById("callSheetPickerOverlay").classList.add("hidden");
 }
 
 /**
@@ -1878,19 +1846,7 @@ function addCallSheetPlayFromPicker(playData) {
   saveCallSheet();
 }
 
-/**
- * Add a play to the call sheet (legacy - for playbook index)
- */
-function addCallSheetPlay(playIndex) {
-  if (!editingCategory || !editingHash) return;
-
-  const play = { ...plays[playIndex] };
-  callSheet[editingCategory][editingHash].push(play);
-
-  closeCallSheetPicker();
-  renderCallSheet();
-  saveCallSheet();
-}
+// Removed: addCallSheetPlay - dead code (never called)
 
 /**
  * Open load wristband modal
@@ -1915,7 +1871,7 @@ function openLoadWristbandModal() {
       )
       .join("");
 
-  modal.style.display = "flex";
+  modal.classList.remove("hidden");
 }
 
 /**
@@ -1923,7 +1879,7 @@ function openLoadWristbandModal() {
  */
 function closeLoadWristbandModal(event) {
   if (event && event.target !== event.currentTarget) return;
-  document.getElementById("loadWristbandModal").style.display = "none";
+  document.getElementById("loadWristbandModal").classList.add("hidden");
 }
 
 /**
@@ -2109,16 +2065,7 @@ function saveCallSheet() {
   scheduleCallSheetAutosave();
 }
 
-/**
- * Load call sheet from localStorage
- */
-function loadCallSheet() {
-  const saved = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-  if (saved) {
-    callSheet = saved;
-  }
-  renderCallSheet();
-}
+// Removed: loadCallSheet - dead code (never called)
 
 /**
  * Clear call sheet
@@ -2180,7 +2127,7 @@ function printCallSheet() {
 
   // Build print HTML
   let html = `<div class="${orientClass}">`;
-  const teamName = getTeamName() + ' ' + new Date().getFullYear();
+  const teamName = getTeamName() + " " + new Date().getFullYear();
   html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
   html += '<div class="print-callsheet-grid">';
 
@@ -2203,14 +2150,14 @@ function printCallSheet() {
   html += "</div></div>";
 
   content.innerHTML = html;
-  container.style.display = "block";
+  container.classList.remove("hidden");
 
   setTimeout(() => {
     const pageLabel = page === "front" ? "Front" : "Back";
     const restoreTitle = setPrintTitle("Game Plan", pageLabel);
     window.print();
     restoreTitle();
-    container.style.display = "none";
+    container.classList.add("hidden");
   }, 100);
 }
 
@@ -2316,15 +2263,7 @@ function renderPrintPlay(play, options) {
   `;
 }
 
-/**
- * Toggle any call sheet collapsible panel
- */
-function toggleCsPanel(headerEl) {
-  const content = headerEl.nextElementSibling;
-  content.classList.toggle("collapsed");
-  const icon = headerEl.querySelector(".toggle-icon");
-  icon.textContent = content.classList.contains("collapsed") ? "▶" : "▼";
-}
+/* toggleCsPanel merged into shared toggleCollapsiblePanel() in script.js */
 
 // ============ Unified Display Bar Helpers ============
 
@@ -2333,9 +2272,9 @@ function toggleCsPanel(headerEl) {
  */
 function switchDisplayTab(tabName, btnEl) {
   // Hide all tabs
-  document.getElementById("csTabFields").style.display = "none";
-  document.getElementById("csTabFormat").style.display = "none";
-  document.getElementById("csTabBorders").style.display = "none";
+  document.getElementById("csTabFields").classList.add("hidden");
+  document.getElementById("csTabFormat").classList.add("hidden");
+  document.getElementById("csTabBorders").classList.add("hidden");
 
   // Deactivate all tab buttons
   document
@@ -2349,7 +2288,7 @@ function switchDisplayTab(tabName, btnEl) {
       : tabName === "format"
         ? "csTabFormat"
         : "csTabBorders";
-  document.getElementById(tabId).style.display = "block";
+  document.getElementById(tabId).classList.remove("hidden");
   btnEl.classList.add("active");
 }
 
@@ -2766,7 +2705,7 @@ function scheduleCallSheetAutosave() {
       savedAt: new Date().toISOString(),
     };
     storageManager.set(STORAGE_KEYS.CALLSHEET_DRAFT, draft);
-  }, 3000);
+  }, AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
@@ -2779,7 +2718,7 @@ async function checkCallSheetDraft() {
   const savedAt = new Date(draft.savedAt);
   const age = Date.now() - savedAt.getTime();
   // Only offer if draft is less than 24h old
-  if (age > 86400000) {
+  if (age > DRAFT_EXPIRY_MS) {
     storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
     return;
   }
@@ -2840,7 +2779,7 @@ function buildCallSheetPlayParts(play, options) {
   }
 
   if (options.showFormation && play.formation) {
-    let formText = options.removeVowels
+    let formText = options.noVowels
       ? removeVowels(play.formation)
       : play.formation;
     playParts.push(escapeHtml(formText));
@@ -2849,7 +2788,7 @@ function buildCallSheetPlayParts(play, options) {
   // Handle shift with bold/red options
   if (play.shift) {
     let shiftText = escapeHtml(
-      options.removeVowels ? removeVowels(play.shift) : play.shift,
+      options.noVowels ? removeVowels(play.shift) : play.shift,
     );
     if (options.boldShifts) shiftText = `<b>${shiftText}</b>`;
     if (options.redShifts)
@@ -2860,7 +2799,7 @@ function buildCallSheetPlayParts(play, options) {
   // Handle motion with italic/red options
   if (options.showMotion && play.motion) {
     let motionText = escapeHtml(
-      options.removeVowels ? removeVowels(play.motion) : play.motion,
+      options.noVowels ? removeVowels(play.motion) : play.motion,
     );
     if (options.italicMotions) motionText = `<i>${motionText}</i>`;
     if (options.redMotions)
@@ -2869,28 +2808,24 @@ function buildCallSheetPlayParts(play, options) {
   }
 
   if (options.showProtection && play.protection) {
-    let protText = options.removeVowels
+    let protText = options.noVowels
       ? removeVowels(play.protection)
       : play.protection;
     playParts.push(escapeHtml(protText));
   }
 
   if (options.showPlayName && play.play) {
-    let playText = options.removeVowels ? removeVowels(play.play) : play.play;
+    let playText = options.noVowels ? removeVowels(play.play) : play.play;
     playParts.push(escapeHtml(playText));
   }
 
   if (options.showTags) {
     if (play.playTag1) {
-      let tag = options.removeVowels
-        ? removeVowels(play.playTag1)
-        : play.playTag1;
+      let tag = options.noVowels ? removeVowels(play.playTag1) : play.playTag1;
       playParts.push(escapeHtml(tag));
     }
     if (play.playTag2) {
-      let tag = options.removeVowels
-        ? removeVowels(play.playTag2)
-        : play.playTag2;
+      let tag = options.noVowels ? removeVowels(play.playTag2) : play.playTag2;
       playParts.push(escapeHtml(tag));
     }
   }
@@ -2898,7 +2833,7 @@ function buildCallSheetPlayParts(play, options) {
   // Add line call in brackets
   if (options.showLineCall && play.lineCall) {
     const lc = escapeHtml(
-      options.removeVowels ? removeVowels(play.lineCall) : play.lineCall,
+      options.noVowels ? removeVowels(play.lineCall) : play.lineCall,
     );
     playParts.push(`<i class="cs-line-call">[${lc}]</i>`);
   }
@@ -3088,17 +3023,11 @@ function setCategoryTarget(categoryId) {
 // ============ Category Options Menu ============
 
 function openCategoryMenu(event, categoryId) {
-  document.querySelector(".cs-context-menu")?.remove();
-
   const cat = CALLSHEET_CATEGORIES.find((c) => c.id === categoryId);
   if (!cat) return;
 
   const menu = document.createElement("div");
   menu.className = "cs-context-menu";
-  menu.style.position = "fixed";
-  menu.style.left = `${event.clientX}px`;
-  menu.style.top = `${event.clientY}px`;
-  menu.style.visibility = "hidden";
 
   const hasNote = csNotes[categoryId];
   const hasTarget = csTargets[categoryId];
@@ -3119,25 +3048,7 @@ function openCategoryMenu(event, categoryId) {
     </button>
   `;
 
-  document.body.appendChild(menu);
-
-  // Keep menu in viewport
-  requestAnimationFrame(() => {
-    const rect = menu.getBoundingClientRect();
-    if (rect.right > window.innerWidth)
-      menu.style.left = `${window.innerWidth - rect.width - 8}px`;
-    if (rect.bottom > window.innerHeight)
-      menu.style.top = `${window.innerHeight - rect.height - 8}px`;
-    menu.style.visibility = "visible";
-  });
-
-  const closeHandler = (e) => {
-    if (!menu.contains(e.target)) {
-      menu.remove();
-      document.removeEventListener("click", closeHandler);
-    }
-  };
-  setTimeout(() => document.addEventListener("click", closeHandler), 0);
+  showContextMenu(event, menu);
 }
 
 function clearCategory(categoryId) {
@@ -3152,14 +3063,14 @@ function clearCategory(categoryId) {
 function toggleStatsPanel() {
   const panel = document.getElementById("csStatsPanel");
   if (!panel) return;
-  const isHidden = panel.style.display === "none";
-  panel.style.display = isHidden ? "block" : "none";
+  const isHidden = panel.classList.contains("hidden");
+  panel.classList.toggle("hidden");
   if (isHidden) updateStatsPanel();
 }
 
 function updateStatsPanel() {
   const panel = document.getElementById("csStatsPanel");
-  if (!panel || panel.style.display === "none") return;
+  if (!panel || panel.classList.contains("hidden")) return;
 
   // Collect all plays across all categories
   const allPlays = [];
@@ -3271,8 +3182,8 @@ function updateStatsPanel() {
 function toggleNotOnSheet() {
   const panel = document.getElementById("csNotOnSheetPanel");
   if (!panel) return;
-  const isHidden = panel.style.display === "none";
-  panel.style.display = isHidden ? "block" : "none";
+  const isHidden = panel.classList.contains("hidden");
+  panel.classList.toggle("hidden");
   if (isHidden) updateNotOnSheetPanel();
 }
 

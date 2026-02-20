@@ -50,6 +50,17 @@ window.addEventListener("beforeunload", (e) => {
  * Show a specific tab panel
  * @param {string} tabName - Name of the tab to show
  */
+// Tab name → index map (single source of truth)
+const TAB_INDEX_MAP = {
+  playbook: 0,
+  script: 1,
+  wristband: 2,
+  tendencies: 3,
+  callsheet: 4,
+  installation: 5,
+  dashboard: 6,
+};
+
 function showTab(tabName) {
   // Track active tab for help panel
   currentActiveTab = tabName;
@@ -62,33 +73,22 @@ function showTab(tabName) {
   // Show selected panel
   document.getElementById(tabName).classList.add("active");
 
-  // Update tab buttons using the reliable tab map
-  const tabMap = {
-    playbook: 0,
-    script: 1,
-    wristband: 2,
-    tendencies: 3,
-    callsheet: 4,
-    installation: 5,
-    dashboard: 6,
-  };
+  // Update tab buttons
   const tabs = document.querySelectorAll(".tab");
   tabs.forEach((t) => {
     t.classList.remove("active");
     t.setAttribute("aria-selected", "false");
   });
-  const idx = tabMap[tabName];
+  const idx = TAB_INDEX_MAP[tabName];
   if (idx !== undefined && tabs[idx]) {
     tabs[idx].classList.add("active");
     tabs[idx].setAttribute("aria-selected", "true");
   }
 
-  // Initialize installation if switching to that tab
+  // Initialize tab-specific content
   if (tabName === "installation") {
     initInstallation();
-  }
-  // Initialize wristband if switching to that tab
-  if (tabName === "wristband") {
+  } else if (tabName === "wristband") {
     if (wristbandCards.length === 0) {
       initWristband();
     } else {
@@ -96,20 +96,14 @@ function showTab(tabName) {
       renderWristbandPlays();
       renderCardTabs();
     }
-  }
-  // Initialize tendencies if switching to that tab
-  if (tabName === "tendencies") {
+  } else if (tabName === "tendencies") {
     initTendencies();
-  }
-  // Initialize call sheet if switching to that tab
-  if (tabName === "callsheet") {
+  } else if (tabName === "callsheet") {
     if (Object.keys(callSheet).length === 0) {
       initCallSheet();
     }
     renderCallSheet();
-  }
-  // Initialize dashboard if switching to that tab
-  if (tabName === "dashboard") {
+  } else if (tabName === "dashboard") {
     renderDashboard();
   }
 }
@@ -167,13 +161,13 @@ function renderHelpContent() {
  * Show the upload section to load a new CSV
  */
 function showUpload() {
-  document.getElementById("mainApp").style.display = "none";
-  document.getElementById("uploadSection").style.display = "flex";
+  document.getElementById("mainApp").classList.add("hidden");
+  document.getElementById("uploadSection").classList.remove("hidden");
 
   // Show back button if we have data
   const backBtn = document.getElementById("backToAppBtn");
   if (backBtn && plays.length > 0) {
-    backBtn.style.display = "block";
+    backBtn.classList.remove("hidden");
   }
 }
 
@@ -182,8 +176,8 @@ function showUpload() {
  */
 function backToApp() {
   if (plays.length > 0) {
-    document.getElementById("uploadSection").style.display = "none";
-    document.getElementById("mainApp").style.display = "block";
+    document.getElementById("uploadSection").classList.add("hidden");
+    document.getElementById("mainApp").classList.remove("hidden");
   }
 }
 
@@ -191,6 +185,30 @@ function backToApp() {
  * Handle CSV file upload
  * @param {Event} event - File input change event
  */
+/**
+ * Shared initialization for all modules after playbook data is loaded.
+ * Called by both handleFileUpload() and initApp().
+ */
+function initAllModules() {
+  populateFilters();
+  restoreColumnVisibility();
+  initPlaybookKeyboard();
+  filterPlays();
+  updateStatsBar();
+  renderAvailablePlays();
+  loadSavedScriptsList();
+  populateScriptWristbandSelect();
+  restoreScriptDisplayOptions();
+  ensureFirstPeriod();
+  renderScript();
+
+  // Load call sheet data if stored
+  const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
+  if (storedCallSheet) {
+    callSheet = storedCallSheet;
+  }
+}
+
 function handleFileUpload(event) {
   const file = event.target.files[0];
   if (!file) return;
@@ -205,27 +223,10 @@ function handleFileUpload(event) {
     storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
 
     // Show main app
-    document.getElementById("uploadSection").style.display = "none";
-    document.getElementById("mainApp").style.display = "block";
+    document.getElementById("uploadSection").classList.add("hidden");
+    document.getElementById("mainApp").classList.remove("hidden");
 
-    // Initialize UI
-    populateFilters();
-    restoreColumnVisibility();
-    initPlaybookKeyboard();
-    filterPlays(); // Apply any restored filters
-    updateStatsBar();
-    renderAvailablePlays();
-    loadSavedScriptsList();
-    populateScriptWristbandSelect();
-    restoreScriptDisplayOptions();
-    ensureFirstPeriod();
-    renderScript();
-
-    // Load call sheet data if stored
-    const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-    if (storedCallSheet) {
-      callSheet = storedCallSheet;
-    }
+    initAllModules();
   };
   reader.readAsText(file);
 }
@@ -239,51 +240,30 @@ function initApp() {
   if (storedPlaybook) {
     plays = storedPlaybook;
     filteredPlays = [...plays];
-    document.getElementById("uploadSection").style.display = "none";
-    document.getElementById("mainApp").style.display = "block";
-    populateFilters();
+    document.getElementById("uploadSection").classList.add("hidden");
+    document.getElementById("mainApp").classList.remove("hidden");
+
+    // Restore playbook-specific state before shared init
     restorePlaybookState();
-    restoreColumnVisibility();
-    initPlaybookKeyboard();
-    // Apply restored state (filters and sort)
+
+    initAllModules();
+
+    // Apply restored sort state
     if (currentSortColumn) {
-      // Update sort icon
       const activeIcon = document.querySelector(
         `#playbookTable .sort-icon[data-col="${currentSortColumn}"]`,
       );
       if (activeIcon) activeIcon.classList.add(currentSortDirection);
     }
-    filterPlays(); // This will also apply any sort
-    updateStatsBar();
-    renderAvailablePlays();
-    loadSavedScriptsList();
-    populateScriptWristbandSelect();
-    restoreScriptDisplayOptions();
-    ensureFirstPeriod();
-    renderScript();
 
-    // Check for unsaved script draft
+    // Check for unsaved drafts
     checkScriptDraft();
-
-    // Check for unsaved wristband draft
-    if (typeof checkWristbandDraft === "function") {
-      checkWristbandDraft();
-    }
-
-    // Check for unsaved call sheet draft
-    if (typeof checkCallSheetDraft === "function") {
-      checkCallSheetDraft();
-    }
+    if (typeof checkWristbandDraft === "function") checkWristbandDraft();
+    if (typeof checkCallSheetDraft === "function") checkCallSheetDraft();
 
     // Restore call sheet display options
     if (typeof restoreCallSheetDisplayOptions === "function") {
       restoreCallSheetDisplayOptions();
-    }
-
-    // Load call sheet data if stored
-    const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-    if (storedCallSheet) {
-      callSheet = storedCallSheet;
     }
   }
 
@@ -708,7 +688,7 @@ function printFullGamePlan() {
   const container = document.getElementById("callSheetPrint");
   const content = document.getElementById("callSheetPrintContent");
   content.innerHTML = html;
-  container.style.display = "block";
+  container.classList.remove("hidden");
 
   // Print style
   let printStyle = document.getElementById("wristbandPrintStyle");
@@ -724,7 +704,7 @@ function printFullGamePlan() {
     const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
     window.print();
     restoreTitle();
-    container.style.display = "none";
+    container.classList.add("hidden");
   }, 100);
 }
 
@@ -758,18 +738,8 @@ function onDashWeekLabelChange(value) {
  * Navigate to a tab from the dashboard quick links
  */
 function dashGoToTab(tabName) {
-  // Find the correct tab button and simulate click
   const tabs = document.querySelectorAll(".tab");
-  const tabMap = {
-    playbook: 0,
-    script: 1,
-    wristband: 2,
-    tendencies: 3,
-    callsheet: 4,
-    installation: 5,
-    dashboard: 6,
-  };
-  const idx = tabMap[tabName];
+  const idx = TAB_INDEX_MAP[tabName];
   if (idx !== undefined && tabs[idx]) {
     tabs[idx].click();
   }

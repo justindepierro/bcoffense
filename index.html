@@ -3,12 +3,21 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <meta name="description" content="Football practice script builder, wristband maker, call sheet creator, and defensive tendencies tracker." />
+    <meta
+      name="description"
+      content="Football practice script builder, wristband maker, call sheet creator, and defensive tendencies tracker."
+    />
     <meta name="theme-color" content="#1a1a2e" />
     <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <meta
+      name="apple-mobile-web-app-status-bar-style"
+      content="black-translucent"
+    />
     <title>Practice Script & Playbook</title>
-    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>" />
+    <link
+      rel="icon"
+      href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>"
+    />
     <link rel="stylesheet" href="css/styles.css" />
   </head>
   <body>
@@ -20,9 +29,9 @@
       <div class="upload-box">
         <button
           id="backToAppBtn"
-          class="back-btn"
+          class="back-btn hidden"
           onclick="backToApp()"
-          style="display: none"
+          
         >
           ← Back to App
         </button>
@@ -63,8 +72,8 @@
               id="backupFile"
               accept=".json"
               onchange="importBackup(event)"
-              style="display: none"
-            />
+              
+            / class="hidden">
             <button
               class="btn btn-secondary"
               onclick="document.getElementById('backupFile').click()"
@@ -90,7 +99,7 @@
       </div>
     </div>
 
-    <div id="mainApp" style="display: none">
+    <div id="mainApp"  class="hidden">
       <div class="tabs" role="tablist" aria-label="Main navigation">
         <button
           id="tab-playbook"
@@ -303,9 +312,9 @@
               type="file"
               id="importBackupFile"
               accept=".json"
-              style="display: none"
+              
               onchange="importBackup(event)"
-            />
+            / class="hidden">
             <button
               class="btn btn-sm"
               onclick="showStorageInfo()"
@@ -433,8 +442,8 @@
               <div class="filter-actions-row">
                 <span
                   id="activeFilterCount"
-                  class="active-filter-badge"
-                  style="display: none"
+                  class="active-filter-badge hidden"
+                  
                   >0 active</span
                 >
                 <button
@@ -794,7 +803,7 @@
             <div class="display-options-panel">
               <div
                 class="display-options-header"
-                onclick="toggleDisplayOptions(this)"
+                onclick="toggleCollapsiblePanel(this)"
               >
                 <strong>🖨️ Print Options</strong>
                 <span class="toggle-icon">▼</span>
@@ -922,7 +931,7 @@
             <div class="wristband-integration-panel">
               <div
                 class="integration-header"
-                onclick="toggleIntegrationPanel(this)"
+                onclick="toggleCollapsiblePanel(this)"
               >
                 <strong>🏈 Wristband Integration</strong>
                 <span class="toggle-icon">▼</span>
@@ -966,9 +975,9 @@
             </div>
 
             <div
-              class="saved-scripts"
+              class="saved-scripts hidden"
               id="savedScriptsSection"
-              style="display: none"
+              
             >
               <div class="saved-scripts-header">
                 <h4>📁 Saved Scripts</h4>
@@ -984,9 +993,9 @@
             </div>
 
             <div
-              class="full-day-section"
+              class="full-day-section hidden"
               id="fullDaySection"
-              style="display: none"
+              
             >
               <div class="full-day-header">
                 <h4>📅 Full Practice Day</h4>
@@ -1017,7 +1026,7 @@
           </div>
         </div>
 
-        <div id="previewContainer" class="script-preview" style="display: none">
+        <div id="previewContainer" class="script-preview hidden" >
           <h2 id="previewTitle">Practice Script</h2>
           <p id="previewMeta" class="preview-meta"></p>
           <div id="previewPeriodSummary" class="preview-period-summary"></div>
@@ -1071,8 +1080,8 @@
               <div class="filter-actions-row">
                 <span
                   id="wbActiveFilterCount"
-                  class="active-filter-badge"
-                  style="display: none"
+                  class="active-filter-badge hidden"
+                  
                   >0 active</span
                 >
                 <button
@@ -1110,9 +1119,7 @@
                 ></div>
               </div>
 
-              <div
-                class="filters filters-compact mt-sm"
-              >
+              <div class="filters filters-compact mt-sm">
                 <select
                   id="wbFilterType"
                   onchange="filterWristbandPlays()"
@@ -1171,11 +1178,7 @@
               </div>
               <div class="stat-item">
                 <span class="stat-label">Format</span>
-                <span
-                  class="stat-value text-xs"
-                  id="wbStatFormat"
-                  >5.5×3</span
-                >
+                <span class="stat-value text-xs" id="wbStatFormat">5.5×3</span>
               </div>
             </div>
 
@@ -1261,7 +1264,7 @@
                 </button>
                 <button
                   class="btn btn-sm"
-                  style="background: #6c757d; color: white"
+                  class="btn btn-secondary"
                   onclick="autoFillWristband()"
                 >
                   ⚡ Auto-Fill
@@ -1278,7 +1281,7 @@
             <div class="display-options-panel wb-display-panel">
               <div
                 class="display-options-header"
-                onclick="toggleWbDisplayOptions(this)"
+                onclick="toggleCollapsiblePanel(this)"
               >
                 <strong>🖨️ Display Options</strong>
                 <span class="toggle-icon">▼</span>
@@ -1388,7 +1391,7 @@
 
             <!-- Sort Panel (collapsible) -->
             <div class="wb-sort-panel">
-              <div class="wb-sort-header" onclick="toggleWbSortPanel(this)">
+              <div class="wb-sort-header" onclick="toggleCollapsiblePanel(this)">
                 <strong>🔄 Sort & Organize</strong>
                 <span class="toggle-icon">▼</span>
               </div>
@@ -1450,9 +1453,9 @@
             </div>
 
             <div
-              class="saved-scripts"
+              class="saved-scripts hidden"
               id="savedWristbandsSection"
-              style="display: none"
+              
             >
               <h4>📁 Saved Wristbands</h4>
               <div id="savedWristbandsList"></div>
@@ -1665,7 +1668,7 @@
 
         <!-- Unified Display & Format Bar -->
         <div class="cs-unified-bar">
-          <div class="cs-unified-header" onclick="toggleCsPanel(this)">
+          <div class="cs-unified-header" onclick="toggleCollapsiblePanel(this)">
             <strong>⚙️ Display &amp; Format</strong>
             <div class="cs-unified-header-right">
               <select
@@ -1794,7 +1797,7 @@
             </div>
 
             <!-- FORMAT TAB -->
-            <div class="cs-tab-content" id="csTabFormat" style="display: none">
+            <div class="cs-tab-content hidden" id="csTabFormat" >
               <div class="display-options-grid">
                 <label
                   ><input
@@ -1880,7 +1883,7 @@
             </div>
 
             <!-- BORDERS TAB -->
-            <div class="cs-tab-content" id="csTabBorders" style="display: none">
+            <div class="cs-tab-content hidden" id="csTabBorders" >
               <div class="cs-border-row">
                 <span class="cs-border-section-label">By Play Type:</span>
                 <div class="cs-border-selectors">
@@ -2011,15 +2014,15 @@
         <!-- Stats Panel (hidden by default) -->
         <div
           id="csStatsPanel"
-          class="cs-stats-panel"
-          style="display: none"
+          class="cs-stats-panel hidden"
+          
         ></div>
 
         <!-- Not On Sheet Panel (hidden by default) -->
         <div
           id="csNotOnSheetPanel"
-          class="cs-not-on-sheet-panel"
-          style="display: none"
+          class="cs-not-on-sheet-panel hidden"
+          
         ></div>
 
         <div id="callSheetGrid" class="callsheet-grid"></div>
@@ -2028,16 +2031,16 @@
     <!-- End mainApp -->
 
     <!-- Call Sheet Print Container -->
-    <div id="callSheetPrint" class="callsheet-print" style="display: none">
+    <div id="callSheetPrint" class="callsheet-print hidden" >
       <div id="callSheetPrintContent"></div>
     </div>
 
     <!-- Call Sheet Play Picker Popup -->
     <div
       id="callSheetPickerOverlay"
-      class="cell-popup-overlay"
+      class="cell-popup-overlay hidden"
       onclick="closeCallSheetPicker(event)"
-      style="display: none"
+      
     >
       <div class="cell-popup cs-picker-popup" onclick="event.stopPropagation()">
         <h3>➕ Add Play to Call Sheet</h3>
@@ -2145,9 +2148,9 @@
     <!-- Load Wristband Modal -->
     <div
       id="loadWristbandModal"
-      class="cell-popup-overlay"
+      class="cell-popup-overlay hidden"
       onclick="closeLoadWristbandModal(event)"
-      style="display: none"
+      
     >
       <div class="cell-popup cs-wb-modal" onclick="event.stopPropagation()">
         <h3>📋 Load Wristband to Call Sheet</h3>
@@ -2175,15 +2178,15 @@
     </div>
 
     <!-- Wristband Print Container - Outside mainApp for printing -->
-    <div id="wristbandPrint" class="wristband-print" style="display: none">
+    <div id="wristbandPrint" class="wristband-print hidden" >
       <div id="wristbandPrintCards"></div>
     </div>
 
     <!-- Installation Report Print Container -->
     <div
       id="installReportPrint"
-      class="install-report-print"
-      style="display: none"
+      class="install-report-print hidden"
+      
     >
       <div id="installReportPrintContent"></div>
     </div>
@@ -2195,52 +2198,30 @@
       onclick="closeCellPopup(event)"
     >
       <div
-        class="cell-popup"
+        class="cell-popup cell-popup-container"
         onclick="event.stopPropagation()"
-        style="min-width: 350px; max-width: 450px"
       >
         <h3 id="cellPopupTitle">📝 Edit Cell</h3>
 
         <!-- Play Info (shown when cell has a play) -->
         <div
           id="cellPopupPlayInfo"
-          style="
-            margin-bottom: 15px;
-            padding: 10px;
-            background: #f5f5f5;
-            border-radius: 5px;
-          "
+          class="cell-popup-play-info"
         >
           <div
             id="cellPopupPlayName"
-            style="font-size: 12px; margin-bottom: 8px"
+            class="cell-popup-play-name"
           ></div>
           <button
             onclick="removeCellPlayFromPopup()"
-            style="
-              background: #dc3545;
-              color: white;
-              border: none;
-              padding: 5px 12px;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 11px;
-            "
+            class="btn btn-danger btn-sm"
           >
             🗑️ Remove Play
           </button>
           <button
             onclick="showPlaySelector()"
-            style="
-              background: #17a2b8;
-              color: white;
-              border: none;
-              padding: 5px 12px;
-              border-radius: 4px;
-              cursor: pointer;
-              font-size: 11px;
-              margin-left: 5px;
-            "
+            class="btn btn-info btn-sm"
+            style="margin-left: 5px;"
           >
             🔄 Change Play
           </button>
@@ -2249,31 +2230,20 @@
         <!-- Play Selector (shown when adding/changing play) -->
         <div
           id="cellPopupPlaySelector"
-          style="display: none; margin-bottom: 15px"
+          class="cell-popup-play-selector hidden"
         >
-          <div style="margin-bottom: 10px">
+          <div class="cell-popup-search-container">
             <input
               type="text"
               id="cellPlaySearch"
               placeholder="🔍 Search plays..."
-              style="
-                width: 100%;
-                padding: 8px;
-                border: 1px solid #ddd;
-                border-radius: 5px;
-                font-size: 13px;
-              "
+              class="cell-popup-search-input"
               oninput="filterCellPlays()"
             />
           </div>
           <div
             id="cellPlayList"
-            style="
-              max-height: 200px;
-              overflow-y: auto;
-              border: 1px solid #ddd;
-              border-radius: 5px;
-            "
+            class="cell-popup-play-list"
           ></div>
         </div>
 
@@ -2281,12 +2251,12 @@
         <div id="cellPopupColors">
           <div class="cell-popup-row">
             <label>On Two Cadence:</label>
-            <div style="display: flex; gap: 10px; align-items: center">
-              <label style="cursor: pointer; font-size: 14px"
+            <div class="cell-popup-on-two">
+              <label class="cell-popup-on-two-label"
                 ><input
                   type="checkbox"
                   id="cellOnTwo"
-                  style="margin-right: 5px"
+                  class="cell-popup-on-two-input"
                 />
                 💲 Add $ prefix</label
               >
@@ -2398,14 +2368,14 @@
 
         <div class="cell-popup-buttons">
           <button
-            style="background: #6c757d; color: white"
+            class="btn btn-secondary"
             onclick="closeCellPopup()"
           >
             Cancel
           </button>
           <button
             id="cellPopupApplyBtn"
-            style="background: #28a745; color: white"
+            class="btn btn-success"
             onclick="applyCellStyle()"
           >
             Apply
@@ -2672,14 +2642,14 @@
           <button
             class="btn"
             onclick="previewSmartScript()"
-            style="background: #6c757d; color: white"
+            class="btn btn-secondary"
           >
             👁️ Preview
           </button>
           <button
             class="btn"
             onclick="previewSmartScript()"
-            style="background: #17a2b8; color: white"
+            class="btn btn-info"
           >
             🎲 Re-Roll
           </button>

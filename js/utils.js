@@ -1,5 +1,13 @@
 // Utility functions for the Practice Script & Playbook app
 
+// ============ Global Constants ============
+const AUTOSAVE_DEBOUNCE_MS = 3000;
+const DRAFT_EXPIRY_MS = 86400000; // 24 hours
+const CELLS_PER_CARD = 40;
+const WRISTBAND_OFFSET = 11;
+const PICKER_LIMIT = 150;
+const TOOLTIP_DELAY_MS = 200;
+
 // ============ Custom Modal System ============
 // Replaces native alert(), confirm(), prompt() with styled modals
 
@@ -78,6 +86,43 @@ function showModal(message, opts = {}) {
       }
     });
   });
+}
+
+/**
+ * Show a toast notification
+ * @param {string} message - Text to display
+ * @param {number|object} durationOrOpts - Duration in ms, or options object
+ *   Options: { duration: 2000, type: 'success'|'error'|'warning'|'info' }
+ */
+function showToast(message, durationOrOpts = 2000) {
+  let duration = 2000;
+  let type = null;
+
+  if (typeof durationOrOpts === "object") {
+    duration = durationOrOpts.duration || 2000;
+    type = durationOrOpts.type || null;
+  } else {
+    duration = durationOrOpts;
+  }
+
+  // Remove existing toast
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "toast";
+  if (type) toast.classList.add("toast-" + type);
+  toast.textContent = message;
+  document.body.appendChild(toast);
+
+  // Trigger animation
+  setTimeout(() => toast.classList.add("show"), 10);
+
+  // Remove after duration
+  setTimeout(() => {
+    toast.classList.remove("show");
+    setTimeout(() => toast.remove(), 300);
+  }, duration);
 }
 
 /**
@@ -420,6 +465,53 @@ const STORAGE_KEYS = {
 };
 
 /**
+ * Show a context menu at the given mouse event position, auto-clamped to viewport.
+ * Handles: remove existing, position, viewport clamping, click-outside dismiss.
+ * @param {MouseEvent} event - The triggering mouse event
+ * @param {HTMLElement} menu - The menu element (with innerHTML already set)
+ * @param {string} [selector='.cs-context-menu'] - Selector to remove any existing menu
+ */
+function showContextMenu(event, menu, selector = ".cs-context-menu") {
+  event.preventDefault();
+  document.querySelector(selector)?.remove();
+
+  menu.style.position = "fixed";
+  menu.style.left = `${event.clientX}px`;
+  menu.style.top = `${event.clientY}px`;
+  menu.style.visibility = "hidden";
+  document.body.appendChild(menu);
+
+  requestAnimationFrame(() => {
+    const rect = menu.getBoundingClientRect();
+    if (rect.right > window.innerWidth)
+      menu.style.left = `${window.innerWidth - rect.width - 8}px`;
+    if (rect.bottom > window.innerHeight)
+      menu.style.top = `${window.innerHeight - rect.height - 8}px`;
+    menu.style.visibility = "visible";
+  });
+
+  const closeHandler = (e) => {
+    if (!menu.contains(e.target)) {
+      menu.remove();
+      document.removeEventListener("click", closeHandler);
+    }
+  };
+  setTimeout(() => document.addEventListener("click", closeHandler), 0);
+}
+
+/**
+ * Toggle a collapsible panel section (display options, integration, etc.)
+ * Used across script, wristband, and callsheet modules.
+ */
+function toggleCollapsiblePanel(headerEl) {
+  const content = headerEl.nextElementSibling;
+  content.classList.toggle("collapsed");
+
+  const icon = headerEl.querySelector(".toggle-icon");
+  icon.textContent = content.classList.contains("collapsed") ? "▶" : "▼";
+}
+
+/**
  * Escape HTML for safe insertion — shared across all modules
  */
 function escapeHtml(text) {
@@ -431,19 +523,7 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;");
 }
 
-/**
- * Escape a string for safe use in HTML attributes (onclick, title, etc.)
- * More thorough than escapeHtml — also handles backticks
- */
-function escapeAttrSafe(str) {
-  return String(str || "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/'/g, "&#39;")
-    .replace(/"/g, "&quot;")
-    .replace(/`/g, "&#96;");
-}
+// Removed: escapeAttrSafe - dead code (never called)
 
 /**
  * Debounce — returns a function that delays invoking fn until after wait ms
@@ -2135,43 +2215,7 @@ function setPrintTitle(type, customName) {
   };
 }
 
-/**
- * Consolidated print helper — standardizes the print workflow across all modules.
- * Handles showing container, setting print styles, title, print, cleanup.
- *
- * @param {object} opts
- * @param {HTMLElement} opts.container - The print container element
- * @param {HTMLElement} opts.contentEl - The element to inject HTML into
- * @param {string} opts.html - The HTML content to print
- * @param {string} opts.type - Print type for the filename (e.g. "Practice Script")
- * @param {string} [opts.customName] - Optional custom name for filename
- * @param {string} [opts.pageCSS] - Optional @page CSS (e.g. "size: landscape;")
- * @param {number} [opts.delay=100] - Delay before printing (ms)
- */
-function printDocument(opts) {
-  const { container, contentEl, html, type, customName, pageCSS, delay = 100 } = opts;
-
-  contentEl.innerHTML = html;
-  container.style.display = "block";
-
-  // Inject/update page style
-  if (pageCSS) {
-    let printStyle = document.getElementById("dynamicPrintStyle");
-    if (!printStyle) {
-      printStyle = document.createElement("style");
-      printStyle.id = "dynamicPrintStyle";
-      document.head.appendChild(printStyle);
-    }
-    printStyle.textContent = `@media print { @page { ${pageCSS} } }`;
-  }
-
-  setTimeout(() => {
-    const restoreTitle = setPrintTitle(type, customName || "");
-    window.print();
-    restoreTitle();
-    container.style.display = "none";
-  }, delay);
-}
+// Removed: printDocument - dead code (never called)
 
 /**
  * Get the configured team name (used in call sheet headers, game plan, etc.)

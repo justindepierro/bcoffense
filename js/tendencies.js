@@ -546,14 +546,14 @@ function scheduleTendenciesAutosave() {
       timestamp: Date.now(),
     };
     storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, draft);
-  }, 3000);
+  }, AUTOSAVE_DEBOUNCE_MS);
 }
 
 async function checkTendenciesDraft() {
   const draft = storageManager.get(STORAGE_KEYS.TENDENCIES_DRAFT, null);
   if (!draft || !draft.play) return;
   // Only offer if < 24 hours old
-  if (Date.now() - draft.timestamp > 86400000) {
+  if (Date.now() - draft.timestamp > DRAFT_EXPIRY_MS) {
     storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, null);
     return;
   }
@@ -893,7 +893,7 @@ function exitBulkMode() {
   renderPlayLog();
 }
 
-function toggleBulkSelect(origIndex) {
+function tdToggleBulkSelect(origIndex) {
   if (tdSelectedPlays.has(origIndex)) {
     tdSelectedPlays.delete(origIndex);
   } else {
@@ -1321,7 +1321,7 @@ function renderPlayLogTable(filtered) {
                 data-orig="${play._origIndex}"
                 onmouseenter="showPlayTooltip(event, ${play._origIndex})"
                 onmouseleave="hidePlayTooltip()">
-              ${tdBulkMode ? `<td><input type="checkbox" ${isSelected ? "checked" : ""} onchange="toggleBulkSelect(${play._origIndex})"></td>` : ""}${cells}
+              ${tdBulkMode ? `<td><input type="checkbox" ${isSelected ? "checked" : ""} onchange="tdToggleBulkSelect(${play._origIndex})"></td>` : ""}${cells}
             </tr>`;
     })
     .join("");
@@ -1641,7 +1641,7 @@ function hidePlayTooltip() {
 function toggleColumnPanel() {
   const panel = document.getElementById("tdColumnPanel");
   if (!panel) return;
-  panel.style.display = panel.style.display === "none" ? "block" : "none";
+  panel.classList.toggle("hidden");
 }
 
 // ============ Navigation ============

@@ -74,14 +74,7 @@ function extractComponentsFromPlaybook() {
   return components;
 }
 
-/**
- * Check if a specific component value is installed
- */
-function isComponentInstalled(categoryId, value) {
-  const data = getInstallationData();
-  const installed = data.installed[categoryId] || [];
-  return installed.includes(value);
-}
+// Removed: isComponentInstalled - dead code (never called)
 
 /**
  * Toggle a component's installation status
@@ -1318,12 +1311,12 @@ function printSmartInstallReport() {
     </div>`;
 
   content.innerHTML = html;
-  container.style.display = "block";
+  container.classList.remove("hidden");
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Install-Report");
     window.print();
     restoreTitle();
-    container.style.display = "none";
+    container.classList.add("hidden");
   }, 150);
 }

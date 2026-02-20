@@ -140,7 +140,7 @@ function scheduleScriptAutosave() {
       savedAt: new Date().toISOString(),
     };
     storageManager.set(STORAGE_KEYS.SCRIPT_DRAFT, draft);
-  }, 3000); // 3-second debounce
+  }, AUTOSAVE_DEBOUNCE_MS); // 3-second debounce
 }
 
 /**
@@ -262,43 +262,15 @@ function updateActiveFilterCount() {
   const badge = document.getElementById("activeFilterCount");
   if (badge) {
     if (count > 0) {
-      badge.style.display = "inline";
+      badge.classList.remove("hidden");
       badge.textContent = `${count} active`;
     } else {
-      badge.style.display = "none";
+      badge.classList.add("hidden");
     }
   }
 }
 
-/**
- * Toggle display options panel
- */
-function toggleDisplayOptions(headerEl) {
-  const content = headerEl.nextElementSibling;
-  content.classList.toggle("collapsed");
-
-  const icon = headerEl.querySelector(".toggle-icon");
-  if (content.classList.contains("collapsed")) {
-    icon.textContent = "▶";
-  } else {
-    icon.textContent = "▼";
-  }
-}
-
-/**
- * Toggle integration panel
- */
-function toggleIntegrationPanel(headerEl) {
-  const content = headerEl.nextElementSibling;
-  content.classList.toggle("collapsed");
-
-  const icon = headerEl.querySelector(".toggle-icon");
-  if (content.classList.contains("collapsed")) {
-    icon.textContent = "▶";
-  } else {
-    icon.textContent = "▼";
-  }
-}
+/* toggleCollapsiblePanel() moved to utils.js */
 
 /**
  * Highlight plays not on the selected wristband
@@ -978,7 +950,7 @@ function sortScript() {
   if (!field) {
     if (statusEl) {
       statusEl.textContent = "⚠️ Select a field first";
-      statusEl.style.color = "#dc3545";
+      statusEl.className = "text-danger";
       setTimeout(() => {
         statusEl.textContent = "";
       }, 2000);
@@ -991,7 +963,7 @@ function sortScript() {
   if (playsToSort.length === 0) {
     if (statusEl) {
       statusEl.textContent = "⚠️ No plays to sort";
-      statusEl.style.color = "#dc3545";
+      statusEl.className = "text-danger";
       setTimeout(() => {
         statusEl.textContent = "";
       }, 2000);
@@ -1062,10 +1034,10 @@ function sortScript() {
   if (statusEl) {
     const orderType = hasCustomOrder ? "(custom)" : "(A-Z)";
     statusEl.textContent = `✓ Sorted by ${fieldLabel} ${orderType}`;
-    statusEl.style.color = "#28a745";
+    statusEl.className = "text-success";
     setTimeout(() => {
       statusEl.textContent = "";
-    }, 3000);
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 }
 
@@ -1079,7 +1051,7 @@ function reverseScriptSort() {
   if (playsToSort.length === 0) {
     if (statusEl) {
       statusEl.textContent = "⚠️ No plays to reverse";
-      statusEl.style.color = "#dc3545";
+      statusEl.className = "text-danger";
       setTimeout(() => {
         statusEl.textContent = "";
       }, 2000);
@@ -1118,7 +1090,7 @@ function reverseScriptSort() {
   // Show feedback
   if (statusEl) {
     statusEl.textContent = "✓ Order reversed";
-    statusEl.style.color = "#28a745";
+    statusEl.className = "text-success";
     setTimeout(() => {
       statusEl.textContent = "";
     }, 2000);
@@ -1183,10 +1155,10 @@ async function openScriptCustomOrderModal() {
       );
       if (statusEl) {
         statusEl.textContent = `✓ Custom order saved for ${fieldLabel}`;
-        statusEl.style.color = "#28a745";
+        statusEl.className = "text-success";
         setTimeout(() => {
           statusEl.textContent = "";
-        }, 3000);
+        }, AUTOSAVE_DEBOUNCE_MS);
       }
     },
     onClear() {
@@ -1197,10 +1169,10 @@ async function openScriptCustomOrderModal() {
       );
       if (statusEl) {
         statusEl.textContent = `✓ Custom order cleared for ${fieldLabel}`;
-        statusEl.style.color = "#6c757d";
+        statusEl.className = "text-muted";
         setTimeout(() => {
           statusEl.textContent = "";
-        }, 3000);
+        }, AUTOSAVE_DEBOUNCE_MS);
       }
     },
   });
@@ -1264,7 +1236,7 @@ function confirmAddPeriod() {
   const color = document.getElementById("newPeriodColor").value || "#333333";
 
   if (!name) {
-    document.getElementById("newPeriodName").style.borderColor = "#f44336";
+    document.getElementById("newPeriodName").classList.add("input-error");
     document.getElementById("newPeriodName").focus();
     return;
   }
@@ -1443,7 +1415,7 @@ function sortPeriod(separatorIndex) {
   if (!field) {
     if (statusEl) {
       statusEl.textContent = "⚠️ Select a sort field first";
-      statusEl.style.color = "#dc3545";
+      statusEl.className = "text-danger";
       setTimeout(() => {
         statusEl.textContent = "";
       }, 2000);
@@ -1491,10 +1463,10 @@ function sortPeriod(separatorIndex) {
   const periodLabel = script[separatorIndex].label || "Period";
   if (statusEl) {
     statusEl.textContent = `✓ ${periodLabel} sorted by ${fieldLabel}`;
-    statusEl.style.color = "#28a745";
+    statusEl.className = "text-success";
     setTimeout(() => {
       statusEl.textContent = "";
-    }, 3000);
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 }
 
@@ -1522,7 +1494,7 @@ function reversePeriod(separatorIndex) {
   const periodLabel = script[separatorIndex].label || "Period";
   if (statusEl) {
     statusEl.textContent = `✓ ${periodLabel} reversed`;
-    statusEl.style.color = "#28a745";
+    statusEl.className = "text-success";
     setTimeout(() => {
       statusEl.textContent = "";
     }, 2000);
@@ -1647,10 +1619,10 @@ async function applyPreferredForPeriod(separatorIndex) {
   const statusEl = document.getElementById("scriptSortStatus");
   if (statusEl) {
     statusEl.textContent = `✓ ${periodLabel}: ${updatedCount} play(s) updated with preferred fields`;
-    statusEl.style.color = "#28a745";
+    statusEl.className = "text-success";
     setTimeout(() => {
       statusEl.textContent = "";
-    }, 3000);
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 }
 
@@ -2770,7 +2742,7 @@ function shuffleScript() {
   const statusEl = document.getElementById("scriptSortStatus");
   if (statusEl) {
     statusEl.textContent = "\u2713 Shuffled within periods";
-    statusEl.style.color = "#28a745";
+    statusEl.className = "text-success";
     setTimeout(() => {
       statusEl.textContent = "";
     }, 2000);
@@ -2850,12 +2822,12 @@ function loadSavedScriptsList() {
   const section = document.getElementById("savedScriptsSection");
 
   if (savedScripts.length === 0) {
-    section.style.display = "none";
-    document.getElementById("fullDaySection").style.display = "none";
+    section.classList.add("hidden");
+    document.getElementById("fullDaySection").classList.add("hidden");
     return;
   }
 
-  section.style.display = "block";
+  section.classList.remove("hidden");
   container.innerHTML = savedScripts
     .map((s) => {
       const playCount = s.plays.filter((p) => !p.isSeparator).length;
@@ -3329,8 +3301,8 @@ function generatePDF() {
     })
     .join("");
 
-  document.getElementById("previewContainer").style.display = "block";
-  document.getElementById("wristbandPrint").style.display = "none";
+  document.getElementById("previewContainer").classList.remove("hidden");
+  document.getElementById("wristbandPrint").classList.add("hidden");
 
   // Add print-script class to body for correct print styling
   document.body.classList.add("print-script");
@@ -3351,7 +3323,7 @@ function generatePDF() {
     // Clean up after print
     setTimeout(() => {
       restoreTitle();
-      document.getElementById("previewContainer").style.display = "none";
+      document.getElementById("previewContainer").classList.add("hidden");
       document.body.classList.remove("print-script");
     }, 500);
   }, 100);
@@ -3368,11 +3340,11 @@ function loadFullDayScriptList() {
   const section = document.getElementById("fullDaySection");
 
   if (savedScripts.length < 2) {
-    section.style.display = "none";
+    section.classList.add("hidden");
     return;
   }
 
-  section.style.display = "block";
+  section.classList.remove("hidden");
   container.innerHTML = savedScripts
     .map((s, i) => {
       const playCount = s.plays.filter((p) => !p.isSeparator).length;
@@ -3507,8 +3479,8 @@ async function printFullDay() {
 
   document.getElementById("previewBody").innerHTML = allContent;
 
-  document.getElementById("previewContainer").style.display = "block";
-  document.getElementById("wristbandPrint").style.display = "none";
+  document.getElementById("previewContainer").classList.remove("hidden");
+  document.getElementById("wristbandPrint").classList.add("hidden");
   document.body.classList.add("print-script");
 
   let printStyle = document.getElementById("wristbandPrintStyle");
@@ -3525,7 +3497,7 @@ async function printFullDay() {
     window.print();
     setTimeout(() => {
       restoreTitle();
-      document.getElementById("previewContainer").style.display = "none";
+      document.getElementById("previewContainer").classList.add("hidden");
       document.body.classList.remove("print-script");
     }, 500);
   }, 100);
@@ -3548,10 +3520,10 @@ function filterScriptItems() {
   items.forEach((item) => {
     const text = item.textContent.toLowerCase();
     if (searchTerm === "" || text.includes(searchTerm)) {
-      item.style.display = "";
+      item.classList.remove("hidden");
       item.classList.remove("search-hidden");
     } else {
-      item.style.display = "none";
+      item.classList.add("hidden");
       item.classList.add("search-hidden");
     }
   });
@@ -4416,10 +4388,10 @@ function applySmartScript() {
     const statusEl = document.getElementById("scriptSortStatus");
     if (statusEl) {
       statusEl.textContent = `\u2713 Smart Script applied to ${periodLabel}`;
-      statusEl.style.color = "#764ba2";
+      statusEl.className = "text-accent";
       setTimeout(() => {
         statusEl.textContent = "";
-      }, 3000);
+      }, AUTOSAVE_DEBOUNCE_MS);
     }
     return;
   }
@@ -4476,10 +4448,10 @@ function applySmartScript() {
   const statusEl = document.getElementById("scriptSortStatus");
   if (statusEl) {
     statusEl.textContent = "✓ Smart Script applied";
-    statusEl.style.color = "#764ba2";
+    statusEl.className = "text-accent";
     setTimeout(() => {
       statusEl.textContent = "";
-    }, 3000);
+    }, AUTOSAVE_DEBOUNCE_MS);
   }
 }
 
