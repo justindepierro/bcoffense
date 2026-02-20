@@ -77,40 +77,90 @@ function extractComponentsFromPlaybook() {
 /**
  * Derive a "base" play name for grouping variations.
  *
- * Priority:
- *  1. If the CSV has BasePlay filled in, use that (cleanest signal).
- *  2. Otherwise, fall back to a heuristic on the Play column:
- *     - Strip trailing parenthetical or bracket tags: "(RPO)", "[SHOT]".
- *     - Strip trailing short all-caps tags (e.g. "QK", "LT", "RT").
- *     - Strip leading position tags (X/Z/Y/F/H/RB/TB/TE/WR/SL).
+ * Uses BOTH BasePlay and Play, and aggressively strips things that
+ * "look like" tags:
+ *  - Position letters (X/Z/Y/F/H/RB/TB/TE/WR/SL) at the front
+ *  - Trailing short all‑caps tokens (LT/RT/QK/etc.)
+ *  - Parenthetical / bracketed notes anywhere: (RPO), [SHOT], etc.
+ *  - Very short all‑caps words that commonly behave like tags.
  */
 function getSmartBasePlayName(play) {
-  const explicitBase = (play.basePlay || "").trim();
-  if (explicitBase) return explicitBase;
+  const rawBase = (play.basePlay || "").trim();
+  const rawName = (play.play || "").trim();
+  if (!rawBase && !rawName) return "";
 
-  let name = (play.play || "").trim();
-  if (!name) return "";
+  function normalizeCandidate(str) {
+    if (!str) return "";
 
-  // Remove trailing (...) or [...] annotations
-  name = name.replace(/\s*\([^)]*\)\s*$/, "");
-  name = name.replace(/\s*\[[^]]*\]\s*$/, "");
+    // Remove any (...) or [...] segments
+    let s = str.replace(/\([^)]*\)/g, " ").replace(/\[[^]]*\]/g, " ");
 
-  let parts = name.split(/\s+/).filter(Boolean);
+    // Normalize separators like '/' and '-' into spaces
+    s = s.replace(/[\/|-]/g, " ");
 
-  // Strip common leading position tags (single/backfield letters, etc.)
-  const leadTagRe = /^(X|Z|Y|F|H|R|L|Q|RB|TB|TE|WR|SL)$/i;
-  while (parts.length > 1 && leadTagRe.test(parts[0])) {
-    parts.shift();
+    let parts = s.split(/\s+/).filter(Boolean);
+
+    if (parts.length === 0) return "";
+
+    // Strip common leading position tags (single/backfield letters, etc.)
+    const leadTagRe = /^(X|Z|Y|F|H|R|L|Q|RB|TB|TE|WR|SL)$/i;
+    while (parts.length > 1 && leadTagRe.test(parts[0])) {
+      parts.shift();
+    }
+
+    // Known taggy words we almost never want as the base concept
+    const knownTagWords = new Set([
+      "RPO",
+      "NAKED",
+      "BOOT",
+      "KEEP",
+      "SHOT",
+      "CHECK",
+      "ALERT",
+      "READ",
+      "QK",
+      "LT",
+      "RT",
+      "L",
+      "R",
+    ]);
+
+    // Strip trailing tag‑like tokens: short all‑caps, digits, or known words
+    const tailTagRe = /^[A-Z]{1,3}\d?$/;
+    while (parts.length > 1) {
+      const last = parts[parts.length - 1];
+      if (
+        tailTagRe.test(last) ||
+        knownTagWords.has(last.toUpperCase())
+      ) {
+        parts.pop();
+      } else {
+        break;
+      }
+    }
+
+    const cleaned = parts.join(" ").trim();
+    return cleaned;
   }
 
-  // Strip short all-caps trailing tags (1–3 chars, optional digit)
-  const tailTagRe = /^[A-Z]{1,3}\d?$/;
-  while (parts.length > 1 && tailTagRe.test(parts[parts.length - 1])) {
-    parts.pop();
+  const baseCandidate = normalizeCandidate(rawBase);
+  const nameCandidate = normalizeCandidate(rawName);
+
+  // If we have both, pick the one that best represents the shared core.
+  if (baseCandidate && nameCandidate) {
+    const b = baseCandidate.toLowerCase();
+    const n = nameCandidate.toLowerCase();
+    if (n.includes(b)) return baseCandidate; // play name contains base
+    if (b.includes(n)) return nameCandidate; // base contains play text
+    // Otherwise, prefer the shorter string as the more generic concept
+    return baseCandidate.length <= nameCandidate.length
+      ? baseCandidate
+      : nameCandidate;
   }
 
-  const cleaned = parts.join(" ").trim();
-  return cleaned || name;
+  if (baseCandidate) return baseCandidate;
+  if (nameCandidate) return nameCandidate;
+  return "";
 }
 
 /**
