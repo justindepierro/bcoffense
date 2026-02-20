@@ -1,0 +1,8 @@
+{
+  "chat.tools.terminal.autoApprove": {
+    "/^cat /Users/justindepierro/Downloads/athlete_analytics_export\\.json \\| python3 -c \"\nimport json, sys\ndata = json\\.load\\(sys\\.stdin\\)\n# Show athletes with actual data\nathletes = \\[a for a in data\\['athletes'\\] if a\\.get\\('name'\\)\\]\nprint\\(f'Total athletes: \\{len\\(data\\[\\\\\"athletes\\\\\"\\]\\)\\}'\\)\nprint\\(f'Named athletes: \\{len\\(athletes\\)\\}'\\)\nprint\\(\\)\nfor a in athletes:\n    print\\(f\\\\\"\\{a\\['athlete_id'\\]\\}: \\{a\\['name'\\]\\} \\| pos=\\{a\\.get\\('position'\\)\\} \\| wt=\\{a\\.get\\('weight_lb'\\)\\} \\| tests=\\{a\\.get\\('tests'\\)\\} \\| analytics keys=\\{list\\(a\\.get\\('analytics',\\{\\}\\)\\.keys\\(\\)\\) if a\\.get\\('analytics'\\) else 'none'\\}\\\\\"\\)\n\"$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
+}

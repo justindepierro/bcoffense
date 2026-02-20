@@ -44,7 +44,7 @@
         <button
           class="btn btn-outline"
           onclick="showCSVTemplateModal()"
-          style="margin-top: 10px"
+          class="mt-sm"
         >
           📋 CSV Column Template
         </button>
@@ -541,7 +541,7 @@
                 <select
                   id="scriptFilterFormation"
                   onchange="filterScriptPlays()"
-                  style="width: 100%"
+                  class="w-full"
                 >
                   <option value="">All Formations</option>
                 </select>
@@ -550,7 +550,7 @@
                 <select
                   id="scriptFilterBasePlay"
                   onchange="filterScriptPlays()"
-                  style="width: 100%"
+                  class="w-full"
                 >
                   <option value="">All Base Plays</option>
                 </select>
@@ -563,7 +563,7 @@
                 id="scriptSearchPlay"
                 placeholder="🔍 Search plays..."
                 oninput="filterScriptPlays()"
-                style="width: 100%"
+                class="w-full"
               />
             </div>
             <div class="available-plays-actions">
@@ -973,10 +973,9 @@
               <div class="saved-scripts-header">
                 <h4>📁 Saved Scripts</h4>
                 <button
-                  class="btn btn-sm"
+                  class="btn btn-sm text-xs"
                   onclick="manageTemplates()"
                   title="Manage period templates"
-                  style="font-size: 11px"
                 >
                   🗑 Templates
                 </button>
@@ -1020,26 +1019,23 @@
 
         <div id="previewContainer" class="script-preview" style="display: none">
           <h2 id="previewTitle">Practice Script</h2>
-          <p
-            id="previewMeta"
-            style="text-align: center; margin-bottom: 15px"
-          ></p>
+          <p id="previewMeta" class="preview-meta"></p>
           <div id="previewPeriodSummary" class="preview-period-summary"></div>
           <table class="script-table">
             <thead>
               <tr>
-                <th style="width: 25px">#</th>
-                <th style="width: 30px">Hash</th>
-                <th style="width: 40px">Tempo</th>
-                <th style="width: 35px">WB#</th>
+                <th class="col-num">#</th>
+                <th class="col-hash">Hash</th>
+                <th class="col-tempo">Tempo</th>
+                <th class="col-wb">WB#</th>
                 <th>Play Call</th>
-                <th style="width: 50px">Type</th>
-                <th style="width: 55px">Front</th>
-                <th style="width: 45px">Cov</th>
-                <th style="width: 50px">Stunt</th>
-                <th style="width: 45px">Blitz</th>
-                <th style="width: 30px">Reps</th>
-                <th style="width: 70px">Notes</th>
+                <th class="col-type">Type</th>
+                <th class="col-front">Front</th>
+                <th class="col-cov">Cov</th>
+                <th class="col-stunt">Stunt</th>
+                <th class="col-blitz">Blitz</th>
+                <th class="col-reps">Reps</th>
+                <th class="col-notes">Notes</th>
               </tr>
             </thead>
             <tbody id="previewBody"></tbody>
@@ -1115,13 +1111,12 @@
               </div>
 
               <div
-                class="filters filters-compact"
-                style="margin-top: 10px"
+                class="filters filters-compact mt-sm"
               >
                 <select
                   id="wbFilterType"
                   onchange="filterWristbandPlays()"
-                  style="width: 100%"
+                  class="w-full"
                 >
                   <option value="">All Play Types</option>
                 </select>
@@ -1134,7 +1129,7 @@
                 id="wbSearchPlay"
                 placeholder="🔍 Search plays..."
                 oninput="filterWristbandPlays()"
-                style="width: 100%"
+                class="w-full"
               />
             </div>
             <div
@@ -1147,7 +1142,7 @@
           <div class="wristband-preview">
             <h3>
               <span>Wristband Cards</span>
-              <span style="font-weight: normal; font-size: 12px; color: #666"
+              <span class="text-hint"
                 >(Click cell to add/edit • Double-click play to add)</span
               >
             </h3>
@@ -1177,9 +1172,8 @@
               <div class="stat-item">
                 <span class="stat-label">Format</span>
                 <span
-                  class="stat-value"
+                  class="stat-value text-xs"
                   id="wbStatFormat"
-                  style="font-size: 11px"
                   >5.5×3</span
                 >
               </div>

@@ -375,14 +375,28 @@ function addPlayFromPlaybook(index) {
 
 /**
  * Show a toast notification
+ * @param {string} message - Text to display
+ * @param {number|object} durationOrOpts - Duration in ms, or options object
+ *   Options: { duration: 2000, type: 'success'|'error'|'warning'|'info' }
  */
-function showToast(message, duration = 2000) {
+function showToast(message, durationOrOpts = 2000) {
+  let duration = 2000;
+  let type = null;
+
+  if (typeof durationOrOpts === "object") {
+    duration = durationOrOpts.duration || 2000;
+    type = durationOrOpts.type || null;
+  } else {
+    duration = durationOrOpts;
+  }
+
   // Remove existing toast
   const existing = document.querySelector(".toast");
   if (existing) existing.remove();
 
   const toast = document.createElement("div");
   toast.className = "toast";
+  if (type) toast.classList.add("toast-" + type);
   toast.textContent = message;
   document.body.appendChild(toast);
 
