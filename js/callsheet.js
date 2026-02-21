@@ -2151,6 +2151,7 @@ function printCallSheet() {
 
   content.innerHTML = html;
   container.classList.remove("hidden");
+  document.body.dataset.printMode = "callsheet";
 
   setTimeout(() => {
     const pageLabel = page === "front" ? "Front" : "Back";
@@ -2158,6 +2159,7 @@ function printCallSheet() {
     window.print();
     restoreTitle();
     container.classList.add("hidden");
+    delete document.body.dataset.printMode;
   }, 100);
 }
 

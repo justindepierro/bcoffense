@@ -692,6 +692,7 @@ function printFullGamePlan() {
   const content = document.getElementById("callSheetPrintContent");
   content.innerHTML = html;
   container.classList.remove("hidden");
+  document.body.dataset.printMode = "gameplan";
 
   // Print style
   let printStyle = document.getElementById("wristbandPrintStyle");
@@ -708,6 +709,7 @@ function printFullGamePlan() {
     window.print();
     restoreTitle();
     container.classList.add("hidden");
+    delete document.body.dataset.printMode;
   }, 100);
 }
 

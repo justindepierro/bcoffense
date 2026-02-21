@@ -1654,6 +1654,7 @@ function printWristband() {
   container.className = useMultiCardLayout ? "multi-card-layout" : "";
 
   document.getElementById("wristbandPrint").classList.remove("hidden");
+  document.body.dataset.printMode = "wristband";
 
   let printStyle = document.getElementById("wristbandPrintStyle");
   if (!printStyle) {
@@ -1693,6 +1694,7 @@ function printWristband() {
     setTimeout(() => {
       restoreTitle();
       document.getElementById("wristbandPrint").classList.add("hidden");
+      delete document.body.dataset.printMode;
     }, 500);
   }, 100);
 }

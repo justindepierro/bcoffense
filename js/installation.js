@@ -1510,11 +1510,13 @@ function printSmartInstallReport() {
 
   content.innerHTML = html;
   container.classList.remove("hidden");
+  document.body.dataset.printMode = "install";
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Install-Report");
     window.print();
     restoreTitle();
     container.classList.add("hidden");
+    delete document.body.dataset.printMode;
   }, 150);
 }

@@ -2450,9 +2450,12 @@ input.smart-input-sm[type="number"] {
     padding: 0 !important;
     margin: 0 !important;
     background: white !important;
-    width: 5.5in !important;
     height: auto !important;
     min-height: 0 !important;
+  }
+  /* Wristband-specific body width */
+  body[data-print-mode="wristband"] {
+    width: 5.5in !important;
   }
   body:not(.print-script) .tabs,
   body:not(.print-script) .filters,
@@ -2478,7 +2481,7 @@ input.smart-input-sm[type="number"] {
     height: 0 !important;
     overflow: hidden !important;
   }
-  body:not(.print-script) #wristbandPrint {
+  body[data-print-mode="wristband"] #wristbandPrint {
     display: block !important;
     visibility: visible !important;
     position: absolute !important;
@@ -2489,9 +2492,9 @@ input.smart-input-sm[type="number"] {
     z-index: 9999 !important;
     background: white !important;
   }
-  body:not(.print-script) #wristbandPrint *,
-  body:not(.print-script) #wristbandPrintCards,
-  body:not(.print-script) #wristbandPrintCards * {
+  body[data-print-mode="wristband"] #wristbandPrint *,
+  body[data-print-mode="wristband"] #wristbandPrintCards,
+  body[data-print-mode="wristband"] #wristbandPrintCards * {
     visibility: visible !important;
   }
   body:not(.print-script) .script-preview {
@@ -3184,16 +3187,19 @@ input.smart-input-sm[type="number"] {
 }
 
 @media print {
-  body * {
+  body[data-print-mode="callsheet"] > *,
+  body[data-print-mode="gameplan"] > * {
     visibility: hidden;
   }
 
-  .callsheet-print,
-  .callsheet-print * {
+  body[data-print-mode="callsheet"] .callsheet-print,
+  body[data-print-mode="callsheet"] .callsheet-print *,
+  body[data-print-mode="gameplan"] .callsheet-print,
+  body[data-print-mode="gameplan"] .callsheet-print * {
     visibility: visible !important;
   }
 
-  .callsheet-print {
+  .callsheet-print:not(.hidden) {
     position: absolute;
     left: 0;
     top: 0;
@@ -8378,7 +8384,10 @@ kbd {
 }
 
 @media print {
-  .install-report-print {
+  body[data-print-mode="install"] > * {
+    visibility: hidden;
+  }
+  body[data-print-mode="install"] .install-report-print {
     display: block !important;
     visibility: visible !important;
     position: absolute;
@@ -8388,8 +8397,8 @@ kbd {
     z-index: 99999;
     background: var(--color-white);
   }
-  .install-report-print,
-  .install-report-print * {
+  body[data-print-mode="install"] .install-report-print,
+  body[data-print-mode="install"] .install-report-print * {
     visibility: visible !important;
   }
   .install-report-print .sirp {
