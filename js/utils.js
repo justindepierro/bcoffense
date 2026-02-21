@@ -462,6 +462,7 @@ const STORAGE_KEYS = {
   GAME_WEEK: "gameWeek",
   INSTALLATION: "installationData",
   CS_SCOUTING_OVERLAY: "csScoutingOverlay",
+  PLAY_COLLECTIONS: "playCollections",
 };
 
 /**

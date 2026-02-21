@@ -3737,6 +3737,151 @@ input.smart-input-sm[type="number"] {
   white-space: nowrap;
 }
 
+/* -- Actions row -- */
+.pb-actions-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+  flex-wrap: wrap;
+}
+.pb-actions-left {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+.pb-action-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 12px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all 0.15s ease;
+  color: var(--color-text);
+}
+.pb-action-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: rgba(102, 126, 234, 0.06);
+  transform: translateY(-1px);
+}
+.pb-action-save { border-color: #667eea; color: #667eea; }
+.pb-action-save:hover { background: rgba(102, 126, 234, 0.1); color: #4c63d2; }
+.pb-action-script { border-color: #28a745; color: #28a745; }
+.pb-action-script:hover { background: rgba(40, 167, 69, 0.1); color: #1e7e34; }
+.pb-action-callsheet { border-color: #e67e22; color: #e67e22; }
+.pb-action-callsheet:hover { background: rgba(230, 126, 34, 0.1); color: #bf6516; }
+.pb-action-collections {
+  margin-left: auto;
+}
+.pb-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-border);
+  font-size: 10px;
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+
+/* -- Collections panel -- */
+.pb-collections-panel {
+  display: none;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-white);
+  padding: 10px 14px;
+  max-height: 260px;
+  overflow-y: auto;
+}
+.pb-collections-panel.open {
+  display: block;
+}
+.pb-collections-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pb-collection-empty {
+  text-align: center;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: 16px 0;
+}
+.pb-coll-card {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  transition: border-color 0.15s ease, background 0.15s ease;
+}
+.pb-coll-card:hover {
+  border-color: var(--color-primary);
+  background: rgba(102, 126, 234, 0.04);
+}
+.pb-coll-info {
+  flex: 1;
+  min-width: 0;
+}
+.pb-coll-name {
+  font-weight: 600;
+  font-size: 13px;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-coll-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+.pb-coll-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.pb-coll-btn {
+  padding: 4px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-size: 11px;
+  font-weight: 600;
+  font-family: inherit;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  white-space: nowrap;
+}
+.pb-coll-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.pb-coll-btn.danger {
+  color: var(--color-danger);
+  border-color: var(--color-danger);
+}
+.pb-coll-btn.danger:hover {
+  background: var(--color-danger);
+  color: white;
+}
+
 /* Legacy toolbar (keep for compat) */
 .playbook-toolbar {
   display: flex;
@@ -8779,6 +8924,23 @@ kbd {
   .pb-chip-row {
     flex-wrap: nowrap;
     overflow-x: auto;
+  }
+  .pb-actions-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pb-actions-left {
+    flex-wrap: wrap;
+  }
+  .pb-action-collections {
+    margin-left: 0;
+  }
+  .pb-coll-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pb-coll-actions {
+    flex-wrap: wrap;
   }
   .script-actions {
     flex-wrap: wrap;

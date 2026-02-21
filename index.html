@@ -300,6 +300,21 @@
             <button class="pb-clear-all" id="pbClearAll" onclick="clearFilters()">&#10005; Clear All</button>
             <span id="playCount" class="play-count"></span>
           </div>
+
+          <!-- Actions row -->
+          <div class="pb-actions-row" id="pbActionsRow">
+            <div class="pb-actions-left">
+              <button class="pb-action-btn pb-action-save" onclick="savePlayCollection()" title="Save current filtered plays as a collection">&#128278; Save Collection</button>
+              <button class="pb-action-btn pb-action-script" onclick="sendFilteredToScript()" title="Add filtered plays to practice script">&#128203; Send to Script</button>
+              <button class="pb-action-btn pb-action-callsheet" onclick="sendFilteredToCallSheet()" title="Auto-place filtered plays on call sheet">&#128202; Send to Call Sheet</button>
+            </div>
+            <button class="pb-action-btn pb-action-collections" onclick="toggleCollectionsPanel()" title="View saved collections">&#128193; Collections <span id="pbCollectionCount" class="pb-badge">0</span></button>
+          </div>
+
+          <!-- Saved Collections panel (collapsible) -->
+          <div class="pb-collections-panel" id="pbCollectionsPanel">
+            <div class="pb-collections-list" id="pbCollectionsList"></div>
+          </div>
         </div>
 
         <!-- Quick Stats Bar -->

@@ -195,6 +195,7 @@ function backToApp() {
 function initAllModules() {
   populateFilters();
   initChipListeners();
+  initCollections();
   restoreColumnVisibility();
   initPlaybookKeyboard();
   filterPlays();
