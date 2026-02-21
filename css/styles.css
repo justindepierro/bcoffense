@@ -6229,12 +6229,13 @@ kbd {
 .ob-body { display: grid; grid-template-columns: 340px 1fr; gap: 1rem; }
 @media (max-width: 900px) { .ob-body { grid-template-columns: 1fr; } }
 
-/* Concept list */
-.ob-concept-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 80vh; overflow-y: auto; padding-right: 0.25rem; }
+/* Play list */
+.ob-play-list { display: flex; flex-direction: column; gap: 0.5rem; max-height: 80vh; overflow-y: auto; padding-right: 0.25rem; }
 .ob-empty-list { text-align: center; color: var(--color-secondary); padding: 2rem; }
 
-/* Concept card */
+/* Play card */
 .ob-card { background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.65rem 0.85rem; cursor: pointer; transition: border-color 0.15s, box-shadow 0.15s; }
+.ob-card-base { font-size: 0.75rem; color: var(--color-secondary); margin-top: 0.15rem; font-style: italic; }
 .ob-card:hover { border-color: var(--color-primary); }
 .ob-card-active { border-color: var(--color-primary); box-shadow: 0 0 0 2px rgba(0,123,255,0.2); }
 .ob-card-core { border-left: 3px solid var(--color-warning); }
@@ -6298,6 +6299,9 @@ kbd {
 .ob-plays-table td { padding: 0.3rem 0.5rem; border-top: 1px solid #eee; }
 .ob-plays-table tr:hover td { background: #f0f7ff; }
 .ob-play-installed td { background: #f0fdf4; }
+.ob-note-item { font-size: 0.82rem; padding: 0.3rem 0; border-bottom: 1px solid #f0f0f0; color: var(--color-text); }
+.ob-note-item:last-child { border-bottom: none; }
+.ob-related-chip { cursor: pointer; }
 
 /* Recommendations */
 .ob-recs { background: #fff; border: 1px solid var(--color-border); border-radius: var(--radius-md); padding: 0.85rem; }
