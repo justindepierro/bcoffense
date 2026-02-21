@@ -198,171 +198,112 @@
         role="tabpanel"
         aria-label="Playbook"
       >
-        <!-- Quick Stats Bar -->
-        <div class="stats-bar" id="statsBar"></div>
+        <!-- Playbook Controls -->
+        <div class="pb-controls">
+          <!-- Row 1: Search + Sort + Utilities -->
+          <div class="pb-controls-row pb-top-row">
+            <div class="pb-search-wrap">
+              <span class="pb-search-icon">&#128269;</span>
+              <input type="text" id="searchPlay" placeholder="Search plays..." oninput="debouncedFilterPlays()" />
+            </div>
 
-        <!-- Toolbar -->
-        <div class="playbook-toolbar">
-          <div class="column-toggle">
-            <button
-              class="btn btn-sm"
-              onclick="toggleColumnMenu()"
-              title="Toggle Columns"
-            >
-              ⚙️ Columns
-            </button>
-            <div class="column-menu" id="columnMenu">
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('install')"
-                />
-                ★ Install</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('type')"
-                />
-                Type</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('formation')"
-                />
-                Formation</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('tags')"
-                />
-                Tags</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('back')"
-                />
-                Back</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('motion')"
-                />
-                Motion</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('protection')"
-                />
-                Protection</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('play')"
-                />
-                Play</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('basePlay')"
-                />
-                Base Play</label
-              >
-              <label
-                ><input
-                  type="checkbox"
-                  checked
-                  onchange="toggleColumn('tempo')"
-                />
-                Tempo</label
-              >
+            <div class="pb-sort-group">
+              <label class="pb-sort-label">Sort</label>
+              <select id="pbSortPrimary" onchange="applyAdvancedSort()">
+                <option value="">--</option>
+                <option value="type">Type</option>
+                <option value="personnel">Personnel</option>
+                <option value="formation">Formation</option>
+                <option value="basePlay">Base Play</option>
+                <option value="back">Back</option>
+                <option value="motion">Motion</option>
+                <option value="protection">Protection</option>
+                <option value="play">Play Name</option>
+                <option value="tempo">Tempo</option>
+                <option value="install">&#9733; Install</option>
+              </select>
+              <button class="pb-sort-dir" id="pbSortPrimaryDir" onclick="toggleSortDir('primary')" title="Toggle direction">&#9650;</button>
+              <label class="pb-sort-label pb-then">then</label>
+              <select id="pbSortSecondary" onchange="applyAdvancedSort()">
+                <option value="">--</option>
+                <option value="type">Type</option>
+                <option value="personnel">Personnel</option>
+                <option value="formation">Formation</option>
+                <option value="basePlay">Base Play</option>
+                <option value="back">Back</option>
+                <option value="motion">Motion</option>
+                <option value="protection">Protection</option>
+                <option value="play">Play Name</option>
+                <option value="tempo">Tempo</option>
+                <option value="install">&#9733; Install</option>
+              </select>
+              <button class="pb-sort-dir" id="pbSortSecondaryDir" onclick="toggleSortDir('secondary')" title="Toggle direction">&#9650;</button>
+            </div>
+
+            <div class="pb-utility-group">
+              <div class="column-toggle">
+                <button class="btn btn-sm" onclick="toggleColumnMenu()" title="Toggle Columns">&#9881; Columns</button>
+                <div class="column-menu" id="columnMenu">
+                  <label><input type="checkbox" checked onchange="toggleColumn('install')" /> &#9733; Install</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('type')" /> Type</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('formation')" /> Formation</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('tags')" /> Tags</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('back')" /> Back</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('motion')" /> Motion</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('protection')" /> Protection</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('play')" /> Play</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('basePlay')" /> Base Play</label>
+                  <label><input type="checkbox" checked onchange="toggleColumn('tempo')" /> Tempo</label>
+                </div>
+              </div>
+              <select id="playbookWristbandHighlight" onchange="highlightWristbandPlays()" title="Highlight plays on wristband">
+                <option value="">&#127944; Wristband</option>
+              </select>
+              <button class="btn btn-sm" onclick="exportBackup()" title="Export all data">&#128229; Export</button>
+              <button class="btn btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Import backup">&#128228; Import</button>
+              <input type="file" id="importBackupFile" accept=".json" onchange="importBackup(event)" class="hidden" />
+              <button class="btn btn-sm" onclick="showStorageInfo()" title="View storage usage">&#128190;</button>
+              <button class="btn btn-sm" onclick="showKeyboardShortcuts()" title="Keyboard shortcuts">&#9000;</button>
             </div>
           </div>
-          <div class="wristband-highlight">
-            <select
-              id="playbookWristbandHighlight"
-              onchange="highlightWristbandPlays()"
-              title="Highlight plays on wristband"
-            >
-              <option value="">🏈 Highlight Wristband</option>
-            </select>
+
+          <!-- Row 2: Type toggle chips -->
+          <div class="pb-controls-row pb-chip-row">
+            <span class="pb-chip-label">Type</span>
+            <div class="pb-chip-group" id="pbChipsType"></div>
           </div>
-          <div class="backup-buttons">
-            <button
-              class="btn btn-sm"
-              onclick="exportBackup()"
-              title="Export all data"
-            >
-              📥 Export Backup
-            </button>
-            <button
-              class="btn btn-sm"
-              onclick="document.getElementById('importBackupFile').click()"
-              title="Import backup"
-            >
-              📤 Import Backup
-            </button>
-            <input
-              type="file"
-              id="importBackupFile"
-              accept=".json"
-              
-              onchange="importBackup(event)"
-            / class="hidden">
-            <button
-              class="btn btn-sm"
-              onclick="showStorageInfo()"
-              title="View storage usage"
-            >
-              💾 Storage Info
+
+          <!-- Row 3: Personnel toggle chips -->
+          <div class="pb-controls-row pb-chip-row">
+            <span class="pb-chip-label">Personnel</span>
+            <div class="pb-chip-group" id="pbChipsPersonnel"></div>
+          </div>
+
+          <!-- Row 4: More filters (collapsible) -->
+          <div class="pb-controls-row pb-more-toggle-row">
+            <button class="pb-more-toggle" id="pbMoreToggle" onclick="toggleMoreFilters()">
+              <span class="pb-more-arrow" id="pbMoreArrow">&#9654;</span> More Filters
             </button>
           </div>
-          <button
-            class="btn btn-sm"
-            onclick="showKeyboardShortcuts()"
-            title="Keyboard shortcuts"
-          >
-            ⌨️ Shortcuts
-          </button>
+          <div class="pb-more-filters" id="pbMoreFilters">
+            <select id="filterFormation" onchange="filterPlays()"><option value="">All Formations</option></select>
+            <select id="filterBasePlay" onchange="filterPlays()"><option value="">All Base Plays</option></select>
+            <select id="pbFilterBack" onchange="filterPlays()"><option value="">All Backs</option></select>
+            <select id="pbFilterMotion" onchange="filterPlays()"><option value="">All Motions</option></select>
+            <select id="pbFilterProtection" onchange="filterPlays()"><option value="">All Protections</option></select>
+            <select id="pbFilterTempo" onchange="filterPlays()"><option value="">All Tempos</option></select>
+          </div>
+
+          <!-- Active filter pills + count -->
+          <div class="pb-active-bar" id="pbActiveBar">
+            <div class="pb-active-pills" id="pbActivePills"></div>
+            <button class="pb-clear-all" id="pbClearAll" onclick="clearFilters()">&#10005; Clear All</button>
+            <span id="playCount" class="play-count"></span>
+          </div>
         </div>
 
-        <div class="filters">
-          <select id="filterType" onchange="filterPlays()">
-            <option value="">All Play Types</option>
-          </select>
-          <select id="filterFormation" onchange="filterPlays()">
-            <option value="">All Formations</option>
-          </select>
-          <select id="filterBasePlay" onchange="filterPlays()">
-            <option value="">All Base Plays</option>
-          </select>
-          <input
-            type="text"
-            id="searchPlay"
-            placeholder="Search plays..."
-            oninput="debouncedFilterPlays()"
-          />
-          <button class="btn btn-primary" onclick="clearFilters()">
-            Clear Filters
-          </button>
-          <span id="playCount" class="play-count"></span>
-        </div>
+        <!-- Quick Stats Bar -->
+        <div class="stats-bar" id="statsBar"></div>
         <div class="table-container" tabindex="0" id="playbookContainer">
           <table id="playbookTable" class="sortable">
             <thead>

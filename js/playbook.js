@@ -1,87 +1,215 @@
 // Playbook viewer functionality
 
-// Sorting state
+// ── Sorting state ──
 let currentSortColumn = null;
 let currentSortDirection = "asc";
+let secondarySortColumn = null;
+let secondarySortDirection = "asc";
 let selectedRowIndex = -1;
+
+// ── Chip filter state (multi-select) ──
+let activeTypeChips = new Set();
+let activePersonnelChips = new Set();
+
+// ── More-filters collapsed state ──
+let moreFiltersOpen = false;
 
 // Storage key for persisting filter/sort state is STORAGE_KEYS.PLAYBOOK_STATE
 
 /**
- * Apply current sort to filteredPlays (without toggling direction)
+ * Get sort value for a play by column key
+ */
+function _sortVal(play, col) {
+  if (col === "install") {
+    const r =
+      typeof getPlayInstallRating === "function"
+        ? getPlayInstallRating(play)
+        : { stars: 0, maxStars: 0 };
+    return r.maxStars > 0 ? r.stars / r.maxStars : -1;
+  }
+  if (col === "tags") {
+    return [play.formTag1, play.formTag2].filter(Boolean).join(", ") || "";
+  }
+  return play[col] || "";
+}
+
+/**
+ * Compare two values for sort (numeric or string)
+ */
+function _sortCmp(a, b, dir) {
+  if (typeof a === "number" && typeof b === "number") {
+    return dir === "asc" ? a - b : b - a;
+  }
+  const sa = String(a).toLowerCase();
+  const sb = String(b).toLowerCase();
+  if (sa < sb) return dir === "asc" ? -1 : 1;
+  if (sa > sb) return dir === "asc" ? 1 : -1;
+  return 0;
+}
+
+/**
+ * Apply current sort (primary + secondary) to filteredPlays
  */
 function applyCurrentSort() {
   if (!currentSortColumn) return;
-
   filteredPlays.sort((a, b) => {
-    let valA, valB;
-
-    // Handle special 'install' column — numeric sort by star %
-    if (currentSortColumn === "install") {
-      const rA =
-        typeof getPlayInstallRating === "function"
-          ? getPlayInstallRating(a)
-          : { stars: 0, maxStars: 0 };
-      const rB =
-        typeof getPlayInstallRating === "function"
-          ? getPlayInstallRating(b)
-          : { stars: 0, maxStars: 0 };
-      valA = rA.maxStars > 0 ? rA.stars / rA.maxStars : -1;
-      valB = rB.maxStars > 0 ? rB.stars / rB.maxStars : -1;
-      if (valA < valB) return currentSortDirection === "asc" ? -1 : 1;
-      if (valA > valB) return currentSortDirection === "asc" ? 1 : -1;
-      return 0;
-    }
-
-    // Handle special 'tags' column (combined field)
-    if (currentSortColumn === "tags") {
-      valA = [a.formTag1, a.formTag2].filter(Boolean).join(", ") || "";
-      valB = [b.formTag1, b.formTag2].filter(Boolean).join(", ") || "";
-    } else {
-      valA = a[currentSortColumn] || "";
-      valB = b[currentSortColumn] || "";
-    }
-
-    // Case-insensitive string comparison
-    valA = String(valA).toLowerCase();
-    valB = String(valB).toLowerCase();
-
-    if (valA < valB) return currentSortDirection === "asc" ? -1 : 1;
-    if (valA > valB) return currentSortDirection === "asc" ? 1 : -1;
-    return 0;
+    const cmp1 = _sortCmp(
+      _sortVal(a, currentSortColumn),
+      _sortVal(b, currentSortColumn),
+      currentSortDirection,
+    );
+    if (cmp1 !== 0 || !secondarySortColumn) return cmp1;
+    return _sortCmp(
+      _sortVal(a, secondarySortColumn),
+      _sortVal(b, secondarySortColumn),
+      secondarySortDirection,
+    );
   });
 }
 
 /**
- * Sort the playbook table by a column (toggles direction on same column)
+ * Sort the playbook table by a column header click (toggles direction)
  */
 function sortPlaybook(column) {
-  // Toggle direction if same column, otherwise reset to ascending
   if (currentSortColumn === column) {
     currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
   } else {
     currentSortColumn = column;
     currentSortDirection = "asc";
   }
-
-  // Update sort icons
-  document.querySelectorAll("#playbookTable .sort-icon").forEach((icon) => {
-    icon.classList.remove("asc", "desc");
-  });
-  const activeIcon = document.querySelector(
-    `#playbookTable .sort-icon[data-col="${column}"]`,
-  );
-  if (activeIcon) {
-    activeIcon.classList.add(currentSortDirection);
-  }
-
-  // Apply the sort
+  // Sync the sort dropdowns
+  _syncSortUI();
   applyCurrentSort();
   renderPlaybook();
 }
 
 /**
- * Populate filter dropdowns with unique values from plays
+ * Called by the primary/secondary sort dropdowns
+ */
+function applyAdvancedSort() {
+  const p = document.getElementById("pbSortPrimary");
+  const s = document.getElementById("pbSortSecondary");
+  currentSortColumn = p ? p.value || null : null;
+  secondarySortColumn = s ? s.value || null : null;
+  _syncSortUI();
+  applyCurrentSort();
+  renderPlaybook();
+}
+
+/**
+ * Toggle sort direction button for primary or secondary
+ */
+function toggleSortDir(which) {
+  if (which === "primary") {
+    currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
+  } else {
+    secondarySortDirection =
+      secondarySortDirection === "asc" ? "desc" : "asc";
+  }
+  _syncSortUI();
+  applyCurrentSort();
+  renderPlaybook();
+}
+
+/**
+ * Sync sort dropdowns, direction buttons, and column header icons
+ */
+function _syncSortUI() {
+  const p = document.getElementById("pbSortPrimary");
+  const s = document.getElementById("pbSortSecondary");
+  const pd = document.getElementById("pbSortPrimaryDir");
+  const sd = document.getElementById("pbSortSecondaryDir");
+  if (p) p.value = currentSortColumn || "";
+  if (s) s.value = secondarySortColumn || "";
+  if (pd) {
+    pd.innerHTML = currentSortDirection === "asc" ? "&#9650;" : "&#9660;";
+    pd.classList.toggle("desc", currentSortDirection === "desc");
+  }
+  if (sd) {
+    sd.innerHTML = secondarySortDirection === "asc" ? "&#9650;" : "&#9660;";
+    sd.classList.toggle("desc", secondarySortDirection === "desc");
+  }
+  // Column header sort icons
+  document.querySelectorAll("#playbookTable .sort-icon").forEach((icon) => {
+    icon.classList.remove("asc", "desc");
+  });
+  if (currentSortColumn) {
+    const icon = document.querySelector(
+      `#playbookTable .sort-icon[data-col="${currentSortColumn}"]`,
+    );
+    if (icon) icon.classList.add(currentSortDirection);
+  }
+}
+
+// ── Chip Filters ──
+
+/**
+ * Build the toggle chips for Type and Personnel from loaded plays
+ */
+function buildFilterChips() {
+  _buildChipGroup("pbChipsType", "type", activeTypeChips);
+  _buildChipGroup("pbChipsPersonnel", "personnel", activePersonnelChips);
+}
+
+function _buildChipGroup(containerId, field, activeSet) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  const values = [...new Set(plays.map((p) => p[field]))]
+    .filter(Boolean)
+    .sort();
+  container.innerHTML = values
+    .map((v) => {
+      const active = activeSet.has(v) ? " active" : "";
+      return `<button class="pb-chip${active}" data-value="${escapeHtml(v)}">${escapeHtml(v)}</button>`;
+    })
+    .join("");
+}
+
+/**
+ * Delegated click handler for chip groups
+ */
+function _onChipClick(e) {
+  const chip = e.target.closest(".pb-chip");
+  if (!chip) return;
+  const group = chip.closest(".pb-chip-group");
+  if (!group) return;
+  const val = chip.dataset.value;
+  const isType = group.id === "pbChipsType";
+  const set = isType ? activeTypeChips : activePersonnelChips;
+  if (set.has(val)) {
+    set.delete(val);
+    chip.classList.remove("active");
+  } else {
+    set.add(val);
+    chip.classList.add("active");
+  }
+  filterPlays();
+}
+
+// Attach chip click listeners (called once after DOM ready)
+function initChipListeners() {
+  document
+    .getElementById("pbChipsType")
+    ?.addEventListener("click", _onChipClick);
+  document
+    .getElementById("pbChipsPersonnel")
+    ?.addEventListener("click", _onChipClick);
+}
+
+// ── More Filters toggle ──
+
+function toggleMoreFilters() {
+  moreFiltersOpen = !moreFiltersOpen;
+  const panel = document.getElementById("pbMoreFilters");
+  const arrow = document.getElementById("pbMoreArrow");
+  if (panel) panel.classList.toggle("open", moreFiltersOpen);
+  if (arrow) arrow.classList.toggle("open", moreFiltersOpen);
+}
+
+// ── Populate Filters ──
+
+/**
+ * Populate filter dropdowns and chip groups with unique values from plays
  */
 function populateFilters() {
   const types = [...new Set(plays.map((p) => p.type))].filter(Boolean).sort();
@@ -91,45 +219,63 @@ function populateFilters() {
   const basePlays = [...new Set(plays.map((p) => p.basePlay))]
     .filter(Boolean)
     .sort();
+  const backs = [...new Set(plays.map((p) => p.back))].filter(Boolean).sort();
+  const motions = [...new Set(plays.map((p) => p.motion))]
+    .filter(Boolean)
+    .sort();
+  const protections = [...new Set(plays.map((p) => p.protection))]
+    .filter(Boolean)
+    .sort();
+  const tempos = [...new Set(plays.map((p) => p.tempo))]
+    .filter(Boolean)
+    .sort();
 
-  // Playbook filters
-  const typeFilter = document.getElementById("filterType");
-  typeFilter.innerHTML =
-    '<option value="">All Play Types</option>' +
-    types.map((t) => `<option value="${t}">${t}</option>`).join("");
+  // Playbook dropdown filters
+  _fillSelect("filterFormation", "All Formations", formations);
+  _fillSelect("filterBasePlay", "All Base Plays", basePlays);
+  _fillSelect("pbFilterBack", "All Backs", backs);
+  _fillSelect("pbFilterMotion", "All Motions", motions);
+  _fillSelect("pbFilterProtection", "All Protections", protections);
+  _fillSelect("pbFilterTempo", "All Tempos", tempos);
 
-  const formFilter = document.getElementById("filterFormation");
-  formFilter.innerHTML =
-    '<option value="">All Formations</option>' +
-    formations.map((f) => `<option value="${f}">${f}</option>`).join("");
-
-  const baseFilter = document.getElementById("filterBasePlay");
-  baseFilter.innerHTML =
-    '<option value="">All Base Plays</option>' +
-    basePlays.map((b) => `<option value="${b}">${b}</option>`).join("");
+  // Build chip groups
+  buildFilterChips();
 
   // Script builder filters (dropdowns only - checkboxes populated separately)
   const scriptFormFilter = document.getElementById("scriptFilterFormation");
-  scriptFormFilter.innerHTML =
-    '<option value="">All Formations</option>' +
-    formations.map((f) => `<option value="${f}">${f}</option>`).join("");
-
+  if (scriptFormFilter) {
+    scriptFormFilter.innerHTML =
+      '<option value="">All Formations</option>' +
+      formations.map((f) => `<option value="${f}">${f}</option>`).join("");
+  }
   const scriptBaseFilter = document.getElementById("scriptFilterBasePlay");
-  scriptBaseFilter.innerHTML =
-    '<option value="">All Base Plays</option>' +
-    basePlays.map((b) => `<option value="${b}">${b}</option>`).join("");
+  if (scriptBaseFilter) {
+    scriptBaseFilter.innerHTML =
+      '<option value="">All Base Plays</option>' +
+      basePlays.map((b) => `<option value="${b}">${b}</option>`).join("");
+  }
 
   // Populate script checkbox filters
   populateScriptCheckboxFilters();
 
   // Wristband filters
   const wbTypeFilter = document.getElementById("wbFilterType");
-  wbTypeFilter.innerHTML =
-    '<option value="">All Play Types</option>' +
-    types.map((t) => `<option value="${t}">${t}</option>`).join("");
+  if (wbTypeFilter) {
+    wbTypeFilter.innerHTML =
+      '<option value="">All Play Types</option>' +
+      types.map((t) => `<option value="${t}">${t}</option>`).join("");
+  }
 
   // Populate wristband highlight dropdown
   populateWristbandHighlightDropdown();
+}
+
+function _fillSelect(id, allLabel, values) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  el.innerHTML =
+    `<option value="">${allLabel}</option>` +
+    values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
 }
 
 /**
@@ -209,18 +355,36 @@ function isPlayOnHighlightedWristband(play) {
 const debouncedFilterPlays = debounce(filterPlays, 150);
 
 /**
- * Filter plays based on selected criteria and render table
+ * Filter plays based on all filter layers and render table
  */
 function filterPlays() {
-  const type = document.getElementById("filterType").value;
-  const formation = document.getElementById("filterFormation").value;
-  const basePlay = document.getElementById("filterBasePlay").value;
-  const search = document.getElementById("searchPlay").value.toLowerCase();
+  // Chip filters (multi-select)
+  const activeTypes = activeTypeChips;
+  const activePersonnel = activePersonnelChips;
+
+  // Dropdown filters
+  const formation = document.getElementById("filterFormation")?.value || "";
+  const basePlay = document.getElementById("filterBasePlay")?.value || "";
+  const back = document.getElementById("pbFilterBack")?.value || "";
+  const motion = document.getElementById("pbFilterMotion")?.value || "";
+  const protection = document.getElementById("pbFilterProtection")?.value || "";
+  const tempo = document.getElementById("pbFilterTempo")?.value || "";
+  const search = document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
   filteredPlays = plays.filter((p) => {
-    if (type && p.type !== type) return false;
+    // Type chips (OR within layer)
+    if (activeTypes.size > 0 && !activeTypes.has(p.type)) return false;
+    // Personnel chips (OR within layer)
+    if (activePersonnel.size > 0 && !activePersonnel.has(p.personnel))
+      return false;
+    // Dropdown layers (AND between layers)
     if (formation && p.formation !== formation) return false;
     if (basePlay && p.basePlay !== basePlay) return false;
+    if (back && p.back !== back) return false;
+    if (motion && p.motion !== motion) return false;
+    if (protection && p.protection !== protection) return false;
+    if (tempo && p.tempo !== tempo) return false;
+    // Text search
     if (search) {
       const searchFields = [
         p.play,
@@ -229,6 +393,10 @@ function filterPlays() {
         p.motion,
         p.shift,
         p.back,
+        p.basePlay,
+        p.personnel,
+        p.type,
+        p.tempo,
       ]
         .join(" ")
         .toLowerCase();
@@ -237,33 +405,126 @@ function filterPlays() {
     return true;
   });
 
-  // Re-apply current sort if active
   applyCurrentSort();
   renderPlaybook();
+  updateActiveFilterBar();
 }
 
 /**
  * Clear all playbook filters
  */
 function clearFilters() {
-  document.getElementById("filterType").value = "";
-  document.getElementById("filterFormation").value = "";
-  document.getElementById("filterBasePlay").value = "";
-  document.getElementById("searchPlay").value = "";
-  filteredPlays = [...plays];
+  // Clear chips
+  activeTypeChips.clear();
+  activePersonnelChips.clear();
+  document.querySelectorAll(".pb-chip.active").forEach((c) => c.classList.remove("active"));
 
-  // Reset sort state
+  // Clear dropdowns
+  const ids = [
+    "filterFormation",
+    "filterBasePlay",
+    "pbFilterBack",
+    "pbFilterMotion",
+    "pbFilterProtection",
+    "pbFilterTempo",
+  ];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+
+  // Clear search
+  const search = document.getElementById("searchPlay");
+  if (search) search.value = "";
+
+  // Reset sort
   currentSortColumn = null;
   currentSortDirection = "asc";
+  secondarySortColumn = null;
+  secondarySortDirection = "asc";
   selectedRowIndex = -1;
-  document.querySelectorAll("#playbookTable .sort-icon").forEach((icon) => {
-    icon.classList.remove("asc", "desc");
-  });
+  _syncSortUI();
 
   // Clear saved state
   storageManager.remove(STORAGE_KEYS.PLAYBOOK_STATE);
 
+  filteredPlays = [...plays];
   renderPlaybook();
+  updateActiveFilterBar();
+}
+
+/**
+ * Update the active-filter pill bar
+ */
+function updateActiveFilterBar() {
+  const bar = document.getElementById("pbActiveBar");
+  const pills = document.getElementById("pbActivePills");
+  const clearBtn = document.getElementById("pbClearAll");
+  if (!bar || !pills) return;
+
+  const parts = [];
+
+  // Type chips
+  activeTypeChips.forEach((v) => {
+    parts.push({ label: v, layer: "type", value: v });
+  });
+  // Personnel chips
+  activePersonnelChips.forEach((v) => {
+    parts.push({ label: `Personnel: ${v}`, layer: "personnel", value: v });
+  });
+  // Dropdown values
+  const dropdowns = [
+    { id: "filterFormation", prefix: "Formation" },
+    { id: "filterBasePlay", prefix: "Base Play" },
+    { id: "pbFilterBack", prefix: "Back" },
+    { id: "pbFilterMotion", prefix: "Motion" },
+    { id: "pbFilterProtection", prefix: "Protection" },
+    { id: "pbFilterTempo", prefix: "Tempo" },
+  ];
+  dropdowns.forEach(({ id, prefix }) => {
+    const val = document.getElementById(id)?.value;
+    if (val) parts.push({ label: `${prefix}: ${val}`, layer: id, value: val });
+  });
+  // Search
+  const search = document.getElementById("searchPlay")?.value;
+  if (search) parts.push({ label: `"${search}"`, layer: "search", value: search });
+
+  if (parts.length === 0) {
+    if (clearBtn) clearBtn.style.display = "none";
+    pills.innerHTML = "";
+    return;
+  }
+
+  if (clearBtn) clearBtn.style.display = "";
+  pills.innerHTML = parts
+    .map(
+      (p) =>
+        `<span class="pb-pill" data-layer="${p.layer}" data-value="${escapeHtml(p.value)}">${escapeHtml(p.label)} <button onclick="removeFilter('${p.layer}','${escapeHtml(p.value)}')">&times;</button></span>`,
+    )
+    .join("");
+}
+
+/**
+ * Remove a single filter by layer+value
+ */
+function removeFilter(layer, value) {
+  if (layer === "type") {
+    activeTypeChips.delete(value);
+    const chip = document.querySelector(`#pbChipsType .pb-chip[data-value="${value}"]`);
+    if (chip) chip.classList.remove("active");
+  } else if (layer === "personnel") {
+    activePersonnelChips.delete(value);
+    const chip = document.querySelector(`#pbChipsPersonnel .pb-chip[data-value="${value}"]`);
+    if (chip) chip.classList.remove("active");
+  } else if (layer === "search") {
+    const el = document.getElementById("searchPlay");
+    if (el) el.value = "";
+  } else {
+    // Dropdown filter
+    const el = document.getElementById(layer);
+    if (el) el.value = "";
+  }
+  filterPlays();
 }
 
 /**
@@ -380,12 +641,20 @@ function addPlayFromPlaybook(index) {
  */
 function savePlaybookState() {
   const state = {
-    filterType: document.getElementById("filterType")?.value || "",
+    activeTypes: [...activeTypeChips],
+    activePersonnel: [...activePersonnelChips],
     filterFormation: document.getElementById("filterFormation")?.value || "",
     filterBasePlay: document.getElementById("filterBasePlay")?.value || "",
+    filterBack: document.getElementById("pbFilterBack")?.value || "",
+    filterMotion: document.getElementById("pbFilterMotion")?.value || "",
+    filterProtection: document.getElementById("pbFilterProtection")?.value || "",
+    filterTempo: document.getElementById("pbFilterTempo")?.value || "",
     searchPlay: document.getElementById("searchPlay")?.value || "",
     sortColumn: currentSortColumn,
     sortDirection: currentSortDirection,
+    secondarySortColumn: secondarySortColumn,
+    secondarySortDirection: secondarySortDirection,
+    moreFiltersOpen: moreFiltersOpen,
   };
   storageManager.set(STORAGE_KEYS.PLAYBOOK_STATE, state);
 }
@@ -397,21 +666,51 @@ function restorePlaybookState() {
   const state = storageManager.get(STORAGE_KEYS.PLAYBOOK_STATE, null);
   if (!state) return;
 
-  // Restore filters
-  if (state.filterType)
-    document.getElementById("filterType").value = state.filterType;
+  // Restore chip filters
+  if (state.activeTypes) {
+    activeTypeChips = new Set(state.activeTypes);
+  }
+  if (state.activePersonnel) {
+    activePersonnelChips = new Set(state.activePersonnel);
+  }
+
+  // Restore dropdowns
   if (state.filterFormation)
-    document.getElementById("filterFormation").value = state.filterFormation;
+    _setVal("filterFormation", state.filterFormation);
   if (state.filterBasePlay)
-    document.getElementById("filterBasePlay").value = state.filterBasePlay;
-  if (state.searchPlay)
-    document.getElementById("searchPlay").value = state.searchPlay;
+    _setVal("filterBasePlay", state.filterBasePlay);
+  if (state.filterBack) _setVal("pbFilterBack", state.filterBack);
+  if (state.filterMotion) _setVal("pbFilterMotion", state.filterMotion);
+  if (state.filterProtection)
+    _setVal("pbFilterProtection", state.filterProtection);
+  if (state.filterTempo) _setVal("pbFilterTempo", state.filterTempo);
+  if (state.searchPlay) _setVal("searchPlay", state.searchPlay);
 
   // Restore sort
   if (state.sortColumn) {
     currentSortColumn = state.sortColumn;
     currentSortDirection = state.sortDirection || "asc";
   }
+  if (state.secondarySortColumn) {
+    secondarySortColumn = state.secondarySortColumn;
+    secondarySortDirection = state.secondarySortDirection || "asc";
+  }
+
+  // Restore more-filters collapsed state
+  if (state.moreFiltersOpen) {
+    moreFiltersOpen = true;
+    const panel = document.getElementById("pbMoreFilters");
+    const arrow = document.getElementById("pbMoreArrow");
+    if (panel) panel.classList.add("open");
+    if (arrow) arrow.classList.add("open");
+  }
+
+  _syncSortUI();
+}
+
+function _setVal(id, val) {
+  const el = document.getElementById(id);
+  if (el) el.value = val;
 }
 
 /**

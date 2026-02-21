@@ -194,6 +194,7 @@ function backToApp() {
  */
 function initAllModules() {
   populateFilters();
+  initChipListeners();
   restoreColumnVisibility();
   initPlaybookKeyboard();
   filterPlays();
@@ -251,13 +252,8 @@ function initApp() {
 
     initAllModules();
 
-    // Apply restored sort state
-    if (currentSortColumn) {
-      const activeIcon = document.querySelector(
-        `#playbookTable .sort-icon[data-col="${currentSortColumn}"]`,
-      );
-      if (activeIcon) activeIcon.classList.add(currentSortDirection);
-    }
+    // Sync sort UI from restored state
+    _syncSortUI();
 
     // Check for unsaved drafts
     checkScriptDraft();
