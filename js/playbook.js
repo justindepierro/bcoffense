@@ -1472,6 +1472,21 @@ function syncFromWristbandOptions() {
 }
 
 /**
+ * Check or uncheck all playbook print option checkboxes
+ */
+function toggleAllPbPrintOptions(state) {
+  const ids = [
+    "pbShowEmoji", "pbUseSquares", "pbUnderEmoji", "pbBoldShifts",
+    "pbRedShifts", "pbItalicMotions", "pbRedMotions", "pbRemoveVowels",
+    "pbShowLineCall", "pbHighlightHuddle", "pbHighlightCandy",
+  ];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = state;
+  });
+}
+
+/**
  * Print the currently filtered plays in wristband-card grid format
  */
 function printFilteredPlays() {
