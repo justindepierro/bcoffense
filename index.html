@@ -307,8 +307,33 @@
               <button class="pb-action-btn pb-action-save" onclick="savePlayCollection()" title="Save current filtered plays as a collection">&#128278; Save Collection</button>
               <button class="pb-action-btn pb-action-script" onclick="sendFilteredToScript()" title="Add filtered plays to practice script">&#128203; Send to Script</button>
               <button class="pb-action-btn pb-action-callsheet" onclick="sendFilteredToCallSheet()" title="Auto-place filtered plays on call sheet">&#128202; Send to Call Sheet</button>
+              <button class="pb-action-btn pb-action-print" onclick="togglePrintOptionsPanel()" title="Print filtered plays in wristband format">&#128424; Print Plays</button>
             </div>
             <button class="pb-action-btn pb-action-collections" onclick="toggleCollectionsPanel()" title="View saved collections">&#128193; Collections <span id="pbCollectionCount" class="pb-badge">0</span></button>
+          </div>
+
+          <!-- Print Options Panel (collapsible) -->
+          <div class="pb-print-panel" id="pbPrintPanel">
+            <div class="pb-print-header">
+              <strong>🖨️ Print Options</strong>
+            </div>
+            <div class="pb-print-options-grid">
+              <label><input type="checkbox" id="pbShowEmoji"> 🔵 Personnel Color</label>
+              <label><input type="checkbox" id="pbUseSquares"> 🟦 Use Squares</label>
+              <label><input type="checkbox" id="pbUnderEmoji"> 🍑 Under = Peach</label>
+              <label><input type="checkbox" id="pbBoldShifts"> <b>Bold</b> Shifts</label>
+              <label><input type="checkbox" id="pbRedShifts"> <span class="red">Red</span> Shifts</label>
+              <label><input type="checkbox" id="pbItalicMotions"> <i>Italic</i> Motions</label>
+              <label><input type="checkbox" id="pbRedMotions"> <span class="red">Red</span> Motions</label>
+              <label><input type="checkbox" id="pbRemoveVowels"> Remove Vowels</label>
+              <label><input type="checkbox" id="pbShowLineCall" checked> Show [Line Call]</label>
+              <label><input type="checkbox" id="pbHighlightHuddle"> 🟡 Highlight Huddle</label>
+              <label><input type="checkbox" id="pbHighlightCandy"> 🩷 Highlight Candy</label>
+            </div>
+            <div class="pb-print-actions">
+              <button class="btn btn-sm" onclick="syncFromWristbandOptions()">Sync from Wristband</button>
+              <button class="btn btn-sm btn-primary" onclick="printFilteredPlays()">🖨️ Print</button>
+            </div>
           </div>
 
           <!-- Saved Collections panel (collapsible) -->
@@ -2156,6 +2181,11 @@
     <!-- Wristband Print Container - Outside mainApp for printing -->
     <div id="wristbandPrint" class="wristband-print hidden" >
       <div id="wristbandPrintCards"></div>
+    </div>
+
+    <!-- Playbook Print Container - Outside mainApp for printing -->
+    <div id="playbookPrint" class="wristband-print hidden">
+      <div id="playbookPrintCards"></div>
     </div>
 
     <!-- Installation Report Print Container -->

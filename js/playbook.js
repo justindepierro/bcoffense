@@ -1415,3 +1415,167 @@ function renderCollectionsPanel() {
 function initCollections() {
   updateCollectionsBadge();
 }
+
+// ============ Print Filtered Plays (Wristband Format) ============
+
+const PB_PRINT_ROWS = 20; // rows per wristband card (matches WB_ROWS)
+const PB_PLAYS_PER_CARD = 40; // 20 rows × 2 play columns
+
+/**
+ * Toggle the print options panel visibility
+ */
+function togglePrintOptionsPanel() {
+  const panel = document.getElementById("pbPrintPanel");
+  if (!panel) return;
+  panel.classList.toggle("open");
+}
+
+/**
+ * Read the playbook-specific print formatting checkboxes
+ */
+function _getPbPrintOptions() {
+  return {
+    showEmoji: document.getElementById("pbShowEmoji")?.checked || false,
+    useSquares: document.getElementById("pbUseSquares")?.checked || false,
+    underEmoji: document.getElementById("pbUnderEmoji")?.checked || false,
+    boldShifts: document.getElementById("pbBoldShifts")?.checked || false,
+    redShifts: document.getElementById("pbRedShifts")?.checked || false,
+    italicMotions: document.getElementById("pbItalicMotions")?.checked || false,
+    redMotions: document.getElementById("pbRedMotions")?.checked || false,
+    noVowels: document.getElementById("pbRemoveVowels")?.checked || false,
+    showLineCall: document.getElementById("pbShowLineCall")?.checked || false,
+    highlightHuddle: document.getElementById("pbHighlightHuddle")?.checked || false,
+    highlightCandy: document.getElementById("pbHighlightCandy")?.checked || false,
+  };
+}
+
+/**
+ * Copy current wristband display-option checkboxes into the playbook print checkboxes
+ */
+function syncFromWristbandOptions() {
+  const mappings = [
+    ["wbShowEmoji", "pbShowEmoji"],
+    ["wbUseSquares", "pbUseSquares"],
+    ["wbUnderEmoji", "pbUnderEmoji"],
+    ["wbBoldShifts", "pbBoldShifts"],
+    ["wbRedShifts", "pbRedShifts"],
+    ["wbItalicMotions", "pbItalicMotions"],
+    ["wbRedMotions", "pbRedMotions"],
+    ["wbRemoveVowels", "pbRemoveVowels"],
+    ["wbShowLineCall", "pbShowLineCall"],
+    ["wbHighlightHuddle", "pbHighlightHuddle"],
+    ["wbHighlightCandy", "pbHighlightCandy"],
+  ];
+  mappings.forEach(([src, dst]) => {
+    const srcEl = document.getElementById(src);
+    const dstEl = document.getElementById(dst);
+    if (srcEl && dstEl) dstEl.checked = srcEl.checked;
+  });
+  showToast("Synced formatting options from Wristband tab");
+}
+
+/**
+ * Print the currently filtered plays in wristband-card grid format
+ */
+function printFilteredPlays() {
+  if (!filteredPlays || filteredPlays.length === 0) {
+    showToast("No plays to print — adjust your filters first.");
+    return;
+  }
+
+  const opts = _getPbPrintOptions();
+  const { highlightHuddle, highlightCandy } = opts;
+  const container = document.getElementById("playbookPrintCards");
+
+  // Split plays into cards of PB_PLAYS_PER_CARD each
+  const cards = [];
+  for (let i = 0; i < filteredPlays.length; i += PB_PLAYS_PER_CARD) {
+    cards.push(filteredPlays.slice(i, i + PB_PLAYS_PER_CARD));
+  }
+
+  const numCards = cards.length;
+  const useMultiCardLayout = numCards > 1 && numCards <= 5;
+
+  let allHtml = "";
+
+  cards.forEach((cardPlays, cardIdx) => {
+    const cardOffset = cardIdx * PB_PLAYS_PER_CARD;
+    let cardHtml = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${PB_PRINT_ROWS}, 1fr);">`;
+
+    for (let row = 0; row < PB_PRINT_ROWS; row++) {
+      const oddNum = row * 2 + 1 + cardOffset;
+      const evenNum = row * 2 + 2 + cardOffset;
+      const oddIndex = row * 2;
+      const evenIndex = row * 2 + 1;
+
+      const oddPlay = cardPlays[oddIndex] || null;
+      const evenPlay = cardPlays[evenIndex] || null;
+
+      // Huddle/candy highlight
+      const oddIsHuddle = highlightHuddle && oddPlay && oddPlay.tempo && oddPlay.tempo.toLowerCase() === "huddle";
+      const evenIsHuddle = highlightHuddle && evenPlay && evenPlay.tempo && evenPlay.tempo.toLowerCase() === "huddle";
+      const oddIsCandy = highlightCandy && oddPlay && oddPlay.tempo && oddPlay.tempo.toLowerCase() === "candy";
+      const evenIsCandy = highlightCandy && evenPlay && evenPlay.tempo && evenPlay.tempo.toLowerCase() === "candy";
+
+      const oddStyle = oddIsHuddle ? "background:#fff59d;" : oddIsCandy ? "background:#f8bbd9;" : "";
+      const evenStyle = evenIsHuddle ? "background:#fff59d;" : evenIsCandy ? "background:#f8bbd9;" : "";
+
+      cardHtml += `<div class="wristband-cell num-cell">${oddNum}</div>`;
+      cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? getFullCall(oddPlay, opts) : ""}</span></div>`;
+      cardHtml += `<div class="wristband-cell num-cell">${evenNum}</div>`;
+      cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? getFullCall(evenPlay, opts) : ""}</span></div>`;
+    }
+
+    cardHtml += "</div></div>";
+    allHtml += cardHtml;
+  });
+
+  container.innerHTML = allHtml;
+  container.className = useMultiCardLayout ? "multi-card-layout" : "";
+
+  // Show print container + set print mode
+  document.getElementById("playbookPrint").classList.remove("hidden");
+  document.body.dataset.printMode = "playbook";
+
+  // Inject dynamic page-size style
+  let printStyle = document.getElementById("playbookPrintStyle");
+  if (!printStyle) {
+    printStyle = document.createElement("style");
+    printStyle.id = "playbookPrintStyle";
+    document.head.appendChild(printStyle);
+  }
+
+  if (useMultiCardLayout) {
+    printStyle.textContent = `
+      @media print {
+        @page { size: letter portrait; margin: 0.25in; }
+        html, body { width: 8.5in !important; height: 11in !important; }
+        #playbookPrintCards.multi-card-layout {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          gap: 0.15in !important;
+          padding-top: 0.1in !important;
+        }
+        #playbookPrintCards.multi-card-layout .wristband-card {
+          width: 4.7in !important;
+          height: 2.8in !important;
+          page-break-after: avoid !important;
+          flex-shrink: 0 !important;
+        }
+      }
+    `;
+  } else {
+    printStyle.textContent = "@media print { @page { size: 5.5in 3in; margin: 0; } }";
+  }
+
+  setTimeout(() => {
+    const restoreTitle = setPrintTitle("Playbook");
+    window.print();
+    setTimeout(() => {
+      restoreTitle();
+      document.getElementById("playbookPrint").classList.add("hidden");
+      delete document.body.dataset.printMode;
+    }, 500);
+  }, 100);
+}

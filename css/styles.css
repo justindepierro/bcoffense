@@ -2540,6 +2540,27 @@ input.smart-input-sm[type="number"] {
     text-overflow: clip !important;
   }
 
+  /* Playbook print mode — reuses wristband-card structure */
+  body[data-print-mode="playbook"] {
+    width: 5.5in !important;
+  }
+  body[data-print-mode="playbook"] #playbookPrint {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+  }
+  body[data-print-mode="playbook"] #playbookPrint *,
+  body[data-print-mode="playbook"] #playbookPrintCards,
+  body[data-print-mode="playbook"] #playbookPrintCards * {
+    visibility: visible !important;
+  }
+
   /* Script Print Styles - Letter size */
   body.print-script {
     width: 100% !important;
@@ -3780,6 +3801,8 @@ input.smart-input-sm[type="number"] {
 .pb-action-script:hover { background: rgba(40, 167, 69, 0.1); color: #1e7e34; }
 .pb-action-callsheet { border-color: #e67e22; color: #e67e22; }
 .pb-action-callsheet:hover { background: rgba(230, 126, 34, 0.1); color: #bf6516; }
+.pb-action-print { border-color: #6c63ff; color: #6c63ff; }
+.pb-action-print:hover { background: rgba(108, 99, 255, 0.1); color: #5548d9; }
 .pb-action-collections {
   margin-left: auto;
 }
@@ -3880,6 +3903,46 @@ input.smart-input-sm[type="number"] {
 .pb-coll-btn.danger:hover {
   background: var(--color-danger);
   color: white;
+}
+
+/* -- Print options panel -- */
+.pb-print-panel {
+  display: none;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-white);
+  padding: 10px 14px;
+}
+.pb-print-panel.open {
+  display: block;
+}
+.pb-print-header {
+  margin-bottom: 8px;
+  font-size: 13px;
+}
+.pb-print-options-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+  gap: 4px 16px;
+  margin-bottom: 10px;
+}
+.pb-print-options-grid label {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 3px 0;
+}
+.pb-print-options-grid input[type="checkbox"] {
+  margin: 0;
+  cursor: pointer;
+}
+.pb-print-actions {
+  display: flex;
+  gap: 8px;
+  justify-content: flex-end;
+  padding-top: 6px;
+  border-top: 1px solid var(--color-border-light);
 }
 
 /* Legacy toolbar (keep for compat) */
@@ -8941,6 +9004,9 @@ kbd {
   }
   .pb-coll-actions {
     flex-wrap: wrap;
+  }
+  .pb-print-options-grid {
+    grid-template-columns: 1fr 1fr;
   }
   .script-actions {
     flex-wrap: wrap;
