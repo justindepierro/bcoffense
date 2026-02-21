@@ -2053,6 +2053,10 @@ tr:hover {
 .wristband-print .wristband-card {
   margin: 0 auto;
 }
+.playbook-print {
+  background: white;
+  padding: 10px;
+}
 
 /* Checkbox Filters */
 .checkbox-filters {
@@ -2540,9 +2544,9 @@ input.smart-input-sm[type="number"] {
     text-overflow: clip !important;
   }
 
-  /* Playbook print mode — reuses wristband-card structure */
+  /* Playbook print mode — numbered list */
   body[data-print-mode="playbook"] {
-    width: 5.5in !important;
+    width: 8.5in !important;
   }
   body[data-print-mode="playbook"] #playbookPrint {
     display: block !important;
@@ -2559,6 +2563,21 @@ input.smart-input-sm[type="number"] {
   body[data-print-mode="playbook"] #playbookPrintCards,
   body[data-print-mode="playbook"] #playbookPrintCards * {
     visibility: visible !important;
+  }
+  .pb-print-list {
+    margin: 0 !important;
+    padding: 0 0 0 2em !important;
+    list-style: decimal !important;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+    color: #000 !important;
+    columns: 2 !important;
+    column-gap: 0.4in !important;
+  }
+  .pb-print-list li {
+    padding: 1px 4px !important;
+    break-inside: avoid !important;
   }
 
   /* Script Print Styles - Letter size */
