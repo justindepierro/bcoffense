@@ -58,7 +58,8 @@ const TAB_INDEX_MAP = {
   tendencies: 3,
   callsheet: 4,
   installation: 5,
-  dashboard: 6,
+  offensebuilder: 6,
+  dashboard: 7,
 };
 
 function showTab(tabName) {
@@ -103,6 +104,8 @@ function showTab(tabName) {
       initCallSheet();
     }
     renderCallSheet();
+  } else if (tabName === "offensebuilder") {
+    initOffenseBuilder();
   } else if (tabName === "dashboard") {
     renderDashboard();
   }

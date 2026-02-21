@@ -1085,7 +1085,14 @@ function parseCSV(text) {
     values.push(current.trim());
 
     // Map CSV columns to play object
-    // Columns: PlayType, Personnel, Formation, FormTag1, FormTag2, Under, Back, Shift, Motion, Protection, LineCall, Play, PlayTag1, PlayTag2, BasePlay, OneWord, PreferredSituation, PreferredDown, PreferredDistance, PreferredHash, PreferredFieldPosition, Tempo, PracticeFront, PracticeDefense, PracticeCoverage, PracticeBlitz, PracticeStunt, KeyPlayer1, KeyPlayer2, KeyPlayer3, HitChart1, HitChart2, HitChart3, Constraint1, Constraint2, Constraint3, DeadVs, Opponent, Notes
+    // Columns: PlayType, Personnel, Formation, FormTag1, FormTag2, Under, Back,
+    // Shift, Motion, Protection, LineCall, Play, PlayTag1, PlayTag2, BasePlay,
+    // OneWord, PreferredSituation, PreferredDown, PreferredDistance, PreferredHash,
+    // PreferredFieldPosition, Tempo, PracticeFront, PracticeDefense,
+    // PracticeCoverage, PracticeBlitz, PracticeStunt, KeyPlayer1, KeyPlayer2,
+    // KeyPlayer3, KeyPlayerName1, KeyPlayerName2, KeyPlayerName3, HitChart1,
+    // HitChart2, HitChart3, Constraint1, Constraint2, Constraint3, DeadVs,
+    // Opponent, Notes
     if (values.length >= 10) {
       result.push({
         type: values[0] || "",
@@ -1118,15 +1125,18 @@ function parseCSV(text) {
         keyPlayer1: values[27] || "",
         keyPlayer2: values[28] || "",
         keyPlayer3: values[29] || "",
-        hitChart1: values[30] || "",
-        hitChart2: values[31] || "",
-        hitChart3: values[32] || "",
-        constraint1: values[33] || "",
-        constraint2: values[34] || "",
-        constraint3: values[35] || "",
-        deadVs: values[36] || "",
-        opponent: values[37] || "",
-        notes: values[38] || "",
+        keyPlayerName1: values[30] || "",
+        keyPlayerName2: values[31] || "",
+        keyPlayerName3: values[32] || "",
+        hitChart1: values[33] || "",
+        hitChart2: values[34] || "",
+        hitChart3: values[35] || "",
+        constraint1: values[36] || "",
+        constraint2: values[37] || "",
+        constraint3: values[38] || "",
+        deadVs: values[39] || "",
+        opponent: values[40] || "",
+        notes: values[41] || "",
       });
     }
   }

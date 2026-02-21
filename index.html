@@ -162,6 +162,16 @@
           📦 Installation
         </button>
         <button
+          id="tab-offensebuilder"
+          class="tab"
+          role="tab"
+          aria-selected="false"
+          aria-controls="offensebuilder"
+          onclick="showTab('offensebuilder')"
+        >
+          🧠 Offense Builder
+        </button>
+        <button
           id="tab-dashboard"
           class="tab"
           role="tab"
@@ -1474,6 +1484,16 @@
         <div id="installationContent"></div>
       </div>
 
+      <!-- Offense Builder Panel -->
+      <div
+        id="offensebuilder"
+        class="panel"
+        role="tabpanel"
+        aria-label="Offense Builder"
+      >
+        <div id="offenseBuilderContent"></div>
+      </div>
+
       <!-- Game Week Dashboard Panel -->
       <div id="dashboard" class="panel" role="tabpanel" aria-label="Dashboard">
         <div class="dash-container">
@@ -2744,6 +2764,7 @@
     <script src="js/callsheet.js"></script>
     <script src="js/tendencies.js"></script>
     <script src="js/installation.js"></script>
+    <script src="js/offensebuilder.js"></script>
     <script src="js/help.js"></script>
     <script src="js/app.js"></script>
   </body>
