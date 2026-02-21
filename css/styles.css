@@ -3200,6 +3200,7 @@ input.smart-input-sm[type="number"] {
   }
 
   .callsheet-print:not(.hidden) {
+    display: block !important;
     position: absolute;
     left: 0;
     top: 0;
