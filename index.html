@@ -330,6 +330,17 @@
               <label><input type="checkbox" id="pbHighlightHuddle"> 🟡 Highlight Huddle</label>
               <label><input type="checkbox" id="pbHighlightCandy"> 🩷 Highlight Candy</label>
             </div>
+
+            <!-- Print Sort -->
+            <div class="pb-print-sort">
+              <div class="pb-print-sort-header">
+                <strong>🔄 Sort Order</strong>
+                <button class="btn btn-sm" onclick="addPbPrintSortField()" style="margin-left:auto;">+ Add Field</button>
+              </div>
+              <div class="pb-print-sort-hint">Drag to reorder priority • Click ⚙️ for custom value order • Click ↕ to toggle direction</div>
+              <div id="pbPrintSortList" class="sort-criteria-list"></div>
+            </div>
+
             <div class="pb-print-actions">
               <button class="btn btn-sm" onclick="toggleAllPbPrintOptions(true)">All</button>
               <button class="btn btn-sm" onclick="toggleAllPbPrintOptions(false)">Clear</button>

@@ -3956,6 +3956,25 @@ input.smart-input-sm[type="number"] {
   margin: 0;
   cursor: pointer;
 }
+.pb-print-sort {
+  margin-bottom: 10px;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-light);
+}
+.pb-print-sort-header {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  margin-bottom: 4px;
+}
+.pb-print-sort-hint {
+  font-size: 11px;
+  color: var(--color-text-muted);
+  margin-bottom: 6px;
+}
+.pb-print-sort .sort-criteria-list {
+  min-height: 0;
+}
 .pb-print-actions {
   display: flex;
   gap: 8px;

@@ -1416,6 +1416,127 @@ function initCollections() {
   updateCollectionsBadge();
 }
 
+// ============ Print Sort ============
+
+const PB_PRINT_SORT_FIELDS = [
+  { value: "personnel", label: "Personnel" },
+  { value: "type", label: "Play Type" },
+  { value: "tempo", label: "Tempo" },
+  { value: "formation", label: "Formation" },
+  { value: "basePlay", label: "Base Play" },
+  { value: "play", label: "Play Name" },
+  { value: "back", label: "Back" },
+  { value: "protection", label: "Protection" },
+  { value: "motion", label: "Motion" },
+];
+
+let pbPrintSortCriteria = [{ field: "formation", direction: "asc" }];
+let _pbSortDragged = null;
+
+function renderPbPrintSort() {
+  const container = document.getElementById("pbPrintSortList");
+  if (!container) return;
+
+  container.innerHTML = pbPrintSortCriteria
+    .map((c, idx) => {
+      const fieldOpts = PB_PRINT_SORT_FIELDS.map(
+        (f) => `<option value="${f.value}" ${c.field === f.value ? "selected" : ""}>${f.label}</option>`
+      ).join("");
+
+      const dirIcon = c.direction === "asc" ? "↑" : "↓";
+      const dirTitle = c.direction === "asc" ? "Ascending (A→Z)" : "Descending (Z→A)";
+
+      const hasCustom = wbCustomSortOrders[c.field] && wbCustomSortOrders[c.field].length > 0;
+      const customIcon = hasCustom ? "🎨" : "⚙️";
+      const customTitle = hasCustom ? "Custom order set - click to edit" : "Set custom value order";
+
+      return `
+      <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
+           ondragstart="_pbSortDragStart(event, ${idx})"
+           ondragover="_pbSortDragOver(event)"
+           ondrop="_pbSortDrop(event, ${idx})"
+           ondragend="_pbSortDragEnd(event)">
+        <span class="drag-handle">☰</span>
+        <select onchange="_pbSortUpdateField(${idx}, this.value)">${fieldOpts}</select>
+        <button class="sort-dir-btn" onclick="_pbSortToggleDir(${idx})" title="${dirTitle}">${dirIcon}</button>
+        <button class="custom-order-btn" onclick="openCustomOrderModal('${c.field}')" title="${customTitle}" style="font-size:11px;padding:2px 6px;">${customIcon}</button>
+        <button class="remove-sort-btn" onclick="_pbSortRemove(${idx})">✕</button>
+      </div>`;
+    })
+    .join("");
+}
+
+function addPbPrintSortField() {
+  const used = pbPrintSortCriteria.map((c) => c.field);
+  const next = PB_PRINT_SORT_FIELDS.find((f) => !used.includes(f.value));
+  if (next) {
+    pbPrintSortCriteria.push({ field: next.value, direction: "asc" });
+    renderPbPrintSort();
+  } else {
+    showToast("All sort fields are already in use");
+  }
+}
+
+function _pbSortRemove(idx) {
+  if (pbPrintSortCriteria.length <= 1) {
+    showToast("Need at least one sort field");
+    return;
+  }
+  pbPrintSortCriteria.splice(idx, 1);
+  renderPbPrintSort();
+}
+
+function _pbSortUpdateField(idx, val) {
+  pbPrintSortCriteria[idx].field = val;
+}
+
+function _pbSortToggleDir(idx) {
+  pbPrintSortCriteria[idx].direction = pbPrintSortCriteria[idx].direction === "asc" ? "desc" : "asc";
+  renderPbPrintSort();
+}
+
+function _pbSortDragStart(e, idx) {
+  _pbSortDragged = idx;
+  e.target.classList.add("dragging");
+  e.dataTransfer.effectAllowed = "move";
+}
+function _pbSortDragOver(e) {
+  e.preventDefault();
+  e.dataTransfer.dropEffect = "move";
+  e.currentTarget.classList.add("drag-over");
+}
+function _pbSortDrop(e, targetIdx) {
+  e.preventDefault();
+  e.currentTarget.classList.remove("drag-over");
+  if (_pbSortDragged === null || _pbSortDragged === targetIdx) return;
+  const [moved] = pbPrintSortCriteria.splice(_pbSortDragged, 1);
+  pbPrintSortCriteria.splice(targetIdx, 0, moved);
+  _pbSortDragged = null;
+  renderPbPrintSort();
+}
+function _pbSortDragEnd(e) {
+  e.target.classList.remove("dragging");
+  _pbSortDragged = null;
+  document.querySelectorAll("#pbPrintSortList .drag-over").forEach((el) => el.classList.remove("drag-over"));
+}
+
+/**
+ * Sort an array of plays using the print sort criteria.
+ * Returns a new sorted array (does not mutate input).
+ */
+function _applyPbPrintSort(playsArr) {
+  if (!pbPrintSortCriteria.length) return playsArr;
+  return [...playsArr].sort((a, b) => {
+    for (const c of pbPrintSortCriteria) {
+      const valA = String(a[c.field] || "").trim();
+      const valB = String(b[c.field] || "").trim();
+      const cmp = compareWithCustomOrder(valA, valB, c.field, c.direction);
+      if (cmp !== 0) return cmp;
+    }
+    return 0;
+  });
+}
+
 // ============ Print Filtered Plays ============
 
 /**
@@ -1424,7 +1545,9 @@ function initCollections() {
 function togglePrintOptionsPanel() {
   const panel = document.getElementById("pbPrintPanel");
   if (!panel) return;
+  const wasOpen = panel.classList.contains("open");
   panel.classList.toggle("open");
+  if (!wasOpen) renderPbPrintSort();
 }
 
 /**
@@ -1499,9 +1622,12 @@ function printFilteredPlays() {
   const { highlightHuddle, highlightCandy } = opts;
   const container = document.getElementById("playbookPrintCards");
 
+  // Sort a copy of filteredPlays using the print sort criteria
+  const sortedPlays = _applyPbPrintSort(filteredPlays);
+
   let html = '<ol class="pb-print-list">';
 
-  filteredPlays.forEach((play) => {
+  sortedPlays.forEach((play) => {
     const isHuddle = highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle";
     const isCandy = highlightCandy && play.tempo && play.tempo.toLowerCase() === "candy";
     const bgStyle = isHuddle ? ' style="background:#fff59d;"' : isCandy ? ' style="background:#f8bbd9;"' : "";
