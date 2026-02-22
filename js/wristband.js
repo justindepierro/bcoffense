@@ -324,6 +324,7 @@ function removeSortCriteria(idx) {
  */
 function updateSortField(idx, newField) {
   wbSortCriteria[idx].field = newField;
+  renderSortCriteria();
 }
 
 /**

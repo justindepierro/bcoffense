@@ -1523,6 +1523,7 @@ function _pbSortRemove(idx) {
 
 function _pbSortUpdateField(idx, val) {
   pbPrintSortCriteria[idx].field = val;
+  renderPbPrintSort();
 }
 
 function _pbSortToggleDir(idx) {
