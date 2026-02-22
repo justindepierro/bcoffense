@@ -69,10 +69,10 @@ tr:hover {
   background: var(--color-success-light);
 }
 #playbookTable tbody tr.on-wristband:nth-child(even) {
-  background: #7EDB7E;
+  background: #7edb7e;
 }
 #playbookTable tbody tr.on-wristband:hover {
-  background: #6AD06A;
+  background: #6ad06a;
 }
 .wb-indicator {
   margin-right: 5px;
@@ -421,6 +421,9 @@ tr:hover {
   margin-left: auto;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
+  background: none;
+  padding: 0;
+  border-radius: 0;
   white-space: nowrap;
 }
 
@@ -655,7 +658,6 @@ tr:hover {
   padding-top: 6px;
   border-top: 1px solid var(--color-border-light);
 }
-
 
 /* size: sm */
 .btn-sm {

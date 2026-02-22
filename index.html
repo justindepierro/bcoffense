@@ -53,7 +53,11 @@
         </div>
       </div>
       <div class="app-header-actions">
-        <button class="header-action-btn" onclick="showUpload()" title="Import / Export">
+        <button
+          class="header-action-btn"
+          onclick="showUpload()"
+          title="Import / Export"
+        >
           <span>⚙️</span>
           <span class="header-action-label">Settings</span>
         </button>
@@ -63,11 +67,7 @@
     <!-- Upload Section -->
     <div id="uploadSection" class="upload-section">
       <div class="upload-box">
-        <button
-          id="backToAppBtn"
-          class="back-btn hidden"
-          onclick="backToApp()"
-        >
+        <button id="backToAppBtn" class="back-btn hidden" onclick="backToApp()">
           ← Back to Dashboard
         </button>
         <h2>📁 Upload Your Playbook CSV</h2>
@@ -85,10 +85,7 @@
           Choose CSV File
         </button>
         <p class="hint">Or drag and drop your file here</p>
-        <button
-          class="btn btn-outline mt-sm"
-          onclick="showCSVTemplateModal()"
-        >
+        <button class="btn btn-outline mt-sm" onclick="showCSVTemplateModal()">
           📋 CSV Column Template
         </button>
 
@@ -107,7 +104,7 @@
               accept=".json"
               onchange="importBackup(event)"
               class="hidden"
-            >
+            />
             <button
               class="btn btn-secondary"
               onclick="document.getElementById('backupFile').click()"
@@ -133,7 +130,7 @@
       </div>
     </div>
 
-    <div id="mainApp"  class="hidden">
+    <div id="mainApp" class="hidden">
       <div class="tabs" role="tablist" aria-label="Main navigation">
         <button
           id="tab-playbook"
@@ -238,7 +235,12 @@
           <div class="pb-controls-row pb-top-row">
             <div class="pb-search-wrap">
               <span class="pb-search-icon">&#128269;</span>
-              <input type="text" id="searchPlay" placeholder="Search plays..." oninput="debouncedFilterPlays()" />
+              <input
+                type="text"
+                id="searchPlay"
+                placeholder="Search plays..."
+                oninput="debouncedFilterPlays()"
+              />
             </div>
 
             <div class="pb-sort-group">
@@ -256,7 +258,14 @@
                 <option value="tempo">Tempo</option>
                 <option value="install">&#9733; Install</option>
               </select>
-              <button class="pb-sort-dir" id="pbSortPrimaryDir" onclick="toggleSortDir('primary')" title="Toggle direction">&#9650;</button>
+              <button
+                class="pb-sort-dir"
+                id="pbSortPrimaryDir"
+                onclick="toggleSortDir('primary')"
+                title="Toggle direction"
+              >
+                &#9650;
+              </button>
               <label class="pb-sort-label pb-then">then</label>
               <select id="pbSortSecondary" onchange="applyAdvancedSort()">
                 <option value="">--</option>
@@ -271,33 +280,150 @@
                 <option value="tempo">Tempo</option>
                 <option value="install">&#9733; Install</option>
               </select>
-              <button class="pb-sort-dir" id="pbSortSecondaryDir" onclick="toggleSortDir('secondary')" title="Toggle direction">&#9650;</button>
+              <button
+                class="pb-sort-dir"
+                id="pbSortSecondaryDir"
+                onclick="toggleSortDir('secondary')"
+                title="Toggle direction"
+              >
+                &#9650;
+              </button>
             </div>
 
             <div class="pb-utility-group">
               <div class="column-toggle">
-                <button class="btn btn-sm" onclick="toggleColumnMenu()" title="Toggle Columns">&#9881; Columns</button>
+                <button
+                  class="btn btn-sm"
+                  onclick="toggleColumnMenu()"
+                  title="Toggle Columns"
+                >
+                  &#9881; Columns
+                </button>
                 <div class="column-menu" id="columnMenu">
-                  <label><input type="checkbox" checked onchange="toggleColumn('install')" /> &#9733; Install</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('type')" /> Type</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('formation')" /> Formation</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('tags')" /> Tags</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('back')" /> Back</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('motion')" /> Motion</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('protection')" /> Protection</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('play')" /> Play</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('basePlay')" /> Base Play</label>
-                  <label><input type="checkbox" checked onchange="toggleColumn('tempo')" /> Tempo</label>
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('install')"
+                    />
+                    &#9733; Install</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('type')"
+                    />
+                    Type</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('formation')"
+                    />
+                    Formation</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('tags')"
+                    />
+                    Tags</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('back')"
+                    />
+                    Back</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('motion')"
+                    />
+                    Motion</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('protection')"
+                    />
+                    Protection</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('play')"
+                    />
+                    Play</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('basePlay')"
+                    />
+                    Base Play</label
+                  >
+                  <label
+                    ><input
+                      type="checkbox"
+                      checked
+                      onchange="toggleColumn('tempo')"
+                    />
+                    Tempo</label
+                  >
                 </div>
               </div>
-              <select id="playbookWristbandHighlight" onchange="highlightWristbandPlays()" title="Highlight plays on wristband">
+              <select
+                id="playbookWristbandHighlight"
+                onchange="highlightWristbandPlays()"
+                title="Highlight plays on wristband"
+              >
                 <option value="">&#127944; Wristband</option>
               </select>
-              <button class="btn btn-sm" onclick="exportBackup()" title="Export all data">&#128229; Export</button>
-              <button class="btn btn-sm" onclick="document.getElementById('importBackupFile').click()" title="Import backup">&#128228; Import</button>
-              <input type="file" id="importBackupFile" accept=".json" onchange="importBackup(event)" class="hidden" />
-              <button class="btn btn-sm" onclick="showStorageInfo()" title="View storage usage">&#128190;</button>
-              <button class="btn btn-sm" onclick="showKeyboardShortcuts()" title="Keyboard shortcuts">&#9000;</button>
+              <button
+                class="btn btn-sm"
+                onclick="exportBackup()"
+                title="Export all data"
+              >
+                &#128229; Export
+              </button>
+              <button
+                class="btn btn-sm"
+                onclick="document.getElementById('importBackupFile').click()"
+                title="Import backup"
+              >
+                &#128228; Import
+              </button>
+              <input
+                type="file"
+                id="importBackupFile"
+                accept=".json"
+                onchange="importBackup(event)"
+                class="hidden"
+              />
+              <button
+                class="btn btn-sm"
+                onclick="showStorageInfo()"
+                title="View storage usage"
+              >
+                &#128190;
+              </button>
+              <button
+                class="btn btn-sm"
+                onclick="showKeyboardShortcuts()"
+                title="Keyboard shortcuts"
+              >
+                &#9000;
+              </button>
             </div>
           </div>
 
@@ -315,35 +441,89 @@
 
           <!-- Row 4: More filters (collapsible) -->
           <div class="pb-controls-row pb-more-toggle-row">
-            <button class="pb-more-toggle" id="pbMoreToggle" onclick="toggleMoreFilters()">
-              <span class="pb-more-arrow" id="pbMoreArrow">&#9654;</span> More Filters
+            <button
+              class="pb-more-toggle"
+              id="pbMoreToggle"
+              onclick="toggleMoreFilters()"
+            >
+              <span class="pb-more-arrow" id="pbMoreArrow">&#9654;</span> More
+              Filters
             </button>
           </div>
           <div class="pb-more-filters" id="pbMoreFilters">
-            <select id="filterFormation" onchange="filterPlays()"><option value="">All Formations</option></select>
-            <select id="filterBasePlay" onchange="filterPlays()"><option value="">All Base Plays</option></select>
-            <select id="pbFilterBack" onchange="filterPlays()"><option value="">All Backs</option></select>
-            <select id="pbFilterMotion" onchange="filterPlays()"><option value="">All Motions</option></select>
-            <select id="pbFilterProtection" onchange="filterPlays()"><option value="">All Protections</option></select>
-            <select id="pbFilterTempo" onchange="filterPlays()"><option value="">All Tempos</option></select>
+            <select id="filterFormation" onchange="filterPlays()">
+              <option value="">All Formations</option>
+            </select>
+            <select id="filterBasePlay" onchange="filterPlays()">
+              <option value="">All Base Plays</option>
+            </select>
+            <select id="pbFilterBack" onchange="filterPlays()">
+              <option value="">All Backs</option>
+            </select>
+            <select id="pbFilterMotion" onchange="filterPlays()">
+              <option value="">All Motions</option>
+            </select>
+            <select id="pbFilterProtection" onchange="filterPlays()">
+              <option value="">All Protections</option>
+            </select>
+            <select id="pbFilterTempo" onchange="filterPlays()">
+              <option value="">All Tempos</option>
+            </select>
           </div>
 
           <!-- Active filter pills + count -->
           <div class="pb-active-bar" id="pbActiveBar">
             <div class="pb-active-pills" id="pbActivePills"></div>
-            <button class="pb-clear-all" id="pbClearAll" onclick="clearFilters()">&#10005; Clear All</button>
+            <button
+              class="pb-clear-all"
+              id="pbClearAll"
+              onclick="clearFilters()"
+            >
+              &#10005; Clear All
+            </button>
             <span id="playCount" class="play-count"></span>
           </div>
 
           <!-- Actions row -->
           <div class="pb-actions-row" id="pbActionsRow">
             <div class="pb-actions-left">
-              <button class="pb-action-btn pb-action-save" onclick="savePlayCollection()" title="Save current filtered plays as a collection">&#128278; Save Collection</button>
-              <button class="pb-action-btn pb-action-script" onclick="sendFilteredToScript()" title="Add filtered plays to practice script">&#128203; Send to Script</button>
-              <button class="pb-action-btn pb-action-callsheet" onclick="sendFilteredToCallSheet()" title="Auto-place filtered plays on call sheet">&#128202; Send to Call Sheet</button>
-              <button class="pb-action-btn pb-action-print" onclick="togglePrintOptionsPanel()" title="Print filtered plays in wristband format">&#128424; Print Plays</button>
+              <button
+                class="pb-action-btn pb-action-save"
+                onclick="savePlayCollection()"
+                title="Save current filtered plays as a collection"
+              >
+                &#128278; Save Collection
+              </button>
+              <button
+                class="pb-action-btn pb-action-script"
+                onclick="sendFilteredToScript()"
+                title="Add filtered plays to practice script"
+              >
+                &#128203; Send to Script
+              </button>
+              <button
+                class="pb-action-btn pb-action-callsheet"
+                onclick="sendFilteredToCallSheet()"
+                title="Auto-place filtered plays on call sheet"
+              >
+                &#128202; Send to Call Sheet
+              </button>
+              <button
+                class="pb-action-btn pb-action-print"
+                onclick="togglePrintOptionsPanel()"
+                title="Print filtered plays in wristband format"
+              >
+                &#128424; Print Plays
+              </button>
             </div>
-            <button class="pb-action-btn pb-action-collections" onclick="toggleCollectionsPanel()" title="View saved collections">&#128193; Collections <span id="pbCollectionCount" class="pb-badge">0</span></button>
+            <button
+              class="pb-action-btn pb-action-collections"
+              onclick="toggleCollectionsPanel()"
+              title="View saved collections"
+            >
+              &#128193; Collections
+              <span id="pbCollectionCount" class="pb-badge">0</span>
+            </button>
           </div>
 
           <!-- Print Options Panel (collapsible) -->
@@ -352,34 +532,93 @@
               <strong>🖨️ Print Options</strong>
             </div>
             <div class="pb-print-options-grid">
-              <label><input type="checkbox" id="pbShowEmoji"> 🔵 Personnel Color</label>
-              <label><input type="checkbox" id="pbUseSquares"> 🟦 Use Squares</label>
-              <label><input type="checkbox" id="pbUnderEmoji"> 🍑 Under = Peach</label>
-              <label><input type="checkbox" id="pbBoldShifts"> <b>Bold</b> Shifts</label>
-              <label><input type="checkbox" id="pbRedShifts"> <span class="red">Red</span> Shifts</label>
-              <label><input type="checkbox" id="pbItalicMotions"> <i>Italic</i> Motions</label>
-              <label><input type="checkbox" id="pbRedMotions"> <span class="red">Red</span> Motions</label>
-              <label><input type="checkbox" id="pbRemoveVowels"> Remove Vowels</label>
-              <label><input type="checkbox" id="pbShowLineCall" checked> Show [Line Call]</label>
-              <label><input type="checkbox" id="pbHighlightHuddle"> 🟡 Highlight Huddle</label>
-              <label><input type="checkbox" id="pbHighlightCandy"> 🩷 Highlight Candy</label>
+              <label
+                ><input type="checkbox" id="pbShowEmoji" /> 🔵 Personnel
+                Color</label
+              >
+              <label
+                ><input type="checkbox" id="pbUseSquares" /> 🟦 Use
+                Squares</label
+              >
+              <label
+                ><input type="checkbox" id="pbUnderEmoji" /> 🍑 Under =
+                Peach</label
+              >
+              <label
+                ><input type="checkbox" id="pbBoldShifts" />
+                <b>Bold</b> Shifts</label
+              >
+              <label
+                ><input type="checkbox" id="pbRedShifts" />
+                <span class="red">Red</span> Shifts</label
+              >
+              <label
+                ><input type="checkbox" id="pbItalicMotions" />
+                <i>Italic</i> Motions</label
+              >
+              <label
+                ><input type="checkbox" id="pbRedMotions" />
+                <span class="red">Red</span> Motions</label
+              >
+              <label
+                ><input type="checkbox" id="pbRemoveVowels" /> Remove
+                Vowels</label
+              >
+              <label
+                ><input type="checkbox" id="pbShowLineCall" checked /> Show
+                [Line Call]</label
+              >
+              <label
+                ><input type="checkbox" id="pbHighlightHuddle" /> 🟡 Highlight
+                Huddle</label
+              >
+              <label
+                ><input type="checkbox" id="pbHighlightCandy" /> 🩷 Highlight
+                Candy</label
+              >
             </div>
 
             <!-- Print Sort -->
             <div class="pb-print-sort">
               <div class="pb-print-sort-header">
                 <strong>🔄 Sort Order</strong>
-                <button class="btn btn-sm" onclick="addPbPrintSortField()" style="margin-left:auto;">+ Add Field</button>
+                <button
+                  class="btn btn-sm"
+                  onclick="addPbPrintSortField()"
+                  style="margin-left: auto"
+                >
+                  + Add Field
+                </button>
               </div>
-              <div class="pb-print-sort-hint">Drag to reorder priority • Click ⚙️ for custom value order • Click ↕ to toggle direction</div>
+              <div class="pb-print-sort-hint">
+                Drag to reorder priority • Click ⚙️ for custom value order •
+                Click ↕ to toggle direction
+              </div>
               <div id="pbPrintSortList" class="sort-criteria-list"></div>
             </div>
 
             <div class="pb-print-actions">
-              <button class="btn btn-sm" onclick="toggleAllPbPrintOptions(true)">All</button>
-              <button class="btn btn-sm" onclick="toggleAllPbPrintOptions(false)">Clear</button>
-              <button class="btn btn-sm" onclick="syncFromWristbandOptions()">Sync from Wristband</button>
-              <button class="btn btn-sm btn-primary" onclick="printFilteredPlays()">🖨️ Print</button>
+              <button
+                class="btn btn-sm"
+                onclick="toggleAllPbPrintOptions(true)"
+              >
+                All
+              </button>
+              <button
+                class="btn btn-sm"
+                onclick="toggleAllPbPrintOptions(false)"
+              >
+                Clear
+              </button>
+              <button class="btn btn-sm" onclick="syncFromWristbandOptions()">
+                Sync from Wristband
+              </button>
+              <button
+                class="btn btn-sm btn-primary"
+                onclick="printFilteredPlays()"
+              >
+                🖨️ Print
+              </button>
             </div>
           </div>
 
@@ -478,10 +717,7 @@
 
             <div id="scriptFiltersContainer" class="filters-collapsible">
               <div class="filter-actions-row">
-                <span
-                  id="activeFilterCount"
-                  class="active-filter-badge hidden"
-                  
+                <span id="activeFilterCount" class="active-filter-badge hidden"
                   >0 active</span
                 >
                 <button
@@ -1012,11 +1248,7 @@
               </div>
             </div>
 
-            <div
-              class="saved-scripts hidden"
-              id="savedScriptsSection"
-              
-            >
+            <div class="saved-scripts hidden" id="savedScriptsSection">
               <div class="saved-scripts-header">
                 <h4>📁 Saved Scripts</h4>
                 <button
@@ -1030,11 +1262,7 @@
               <div id="savedScriptsList"></div>
             </div>
 
-            <div
-              class="full-day-section hidden"
-              id="fullDaySection"
-              
-            >
+            <div class="full-day-section hidden" id="fullDaySection">
               <div class="full-day-header">
                 <h4>📅 Full Practice Day</h4>
                 <p class="full-day-desc">
@@ -1064,7 +1292,7 @@
           </div>
         </div>
 
-        <div id="previewContainer" class="script-preview hidden" >
+        <div id="previewContainer" class="script-preview hidden">
           <h2 id="previewTitle">Practice Script</h2>
           <p id="previewMeta" class="preview-meta"></p>
           <div id="previewPeriodSummary" class="preview-period-summary"></div>
@@ -1119,7 +1347,6 @@
                 <span
                   id="wbActiveFilterCount"
                   class="active-filter-badge hidden"
-                  
                   >0 active</span
                 >
                 <button
@@ -1429,7 +1656,10 @@
 
             <!-- Sort Panel (collapsible) -->
             <div class="wb-sort-panel">
-              <div class="wb-sort-header" onclick="toggleCollapsiblePanel(this)">
+              <div
+                class="wb-sort-header"
+                onclick="toggleCollapsiblePanel(this)"
+              >
                 <strong>🔄 Sort & Organize</strong>
                 <span class="toggle-icon">▼</span>
               </div>
@@ -1490,11 +1720,7 @@
               </div>
             </div>
 
-            <div
-              class="saved-scripts hidden"
-              id="savedWristbandsSection"
-              
-            >
+            <div class="saved-scripts hidden" id="savedWristbandsSection">
               <h4>📁 Saved Wristbands</h4>
               <div id="savedWristbandsList"></div>
             </div>
@@ -1845,7 +2071,7 @@
             </div>
 
             <!-- FORMAT TAB -->
-            <div class="cs-tab-content hidden" id="csTabFormat" >
+            <div class="cs-tab-content hidden" id="csTabFormat">
               <div class="display-options-grid">
                 <label
                   ><input
@@ -1931,7 +2157,7 @@
             </div>
 
             <!-- BORDERS TAB -->
-            <div class="cs-tab-content hidden" id="csTabBorders" >
+            <div class="cs-tab-content hidden" id="csTabBorders">
               <div class="cs-border-row">
                 <span class="cs-border-section-label">By Play Type:</span>
                 <div class="cs-border-selectors">
@@ -2060,18 +2286,10 @@
         </div>
 
         <!-- Stats Panel (hidden by default) -->
-        <div
-          id="csStatsPanel"
-          class="cs-stats-panel hidden"
-          
-        ></div>
+        <div id="csStatsPanel" class="cs-stats-panel hidden"></div>
 
         <!-- Not On Sheet Panel (hidden by default) -->
-        <div
-          id="csNotOnSheetPanel"
-          class="cs-not-on-sheet-panel hidden"
-          
-        ></div>
+        <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
 
         <div id="callSheetGrid" class="callsheet-grid"></div>
       </div>
@@ -2079,7 +2297,7 @@
     <!-- End mainApp -->
 
     <!-- Call Sheet Print Container -->
-    <div id="callSheetPrint" class="callsheet-print hidden" >
+    <div id="callSheetPrint" class="callsheet-print hidden">
       <div id="callSheetPrintContent"></div>
     </div>
 
@@ -2088,7 +2306,6 @@
       id="callSheetPickerOverlay"
       class="cell-popup-overlay hidden"
       onclick="closeCallSheetPicker(event)"
-      
     >
       <div class="cell-popup cs-picker-popup" onclick="event.stopPropagation()">
         <h3>➕ Add Play to Call Sheet</h3>
@@ -2198,7 +2415,6 @@
       id="loadWristbandModal"
       class="cell-popup-overlay hidden"
       onclick="closeLoadWristbandModal(event)"
-      
     >
       <div class="cell-popup cs-wb-modal" onclick="event.stopPropagation()">
         <h3>📋 Load Wristband to Call Sheet</h3>
@@ -2226,7 +2442,7 @@
     </div>
 
     <!-- Wristband Print Container - Outside mainApp for printing -->
-    <div id="wristbandPrint" class="wristband-print hidden" >
+    <div id="wristbandPrint" class="wristband-print hidden">
       <div id="wristbandPrintCards"></div>
     </div>
 
@@ -2236,11 +2452,7 @@
     </div>
 
     <!-- Installation Report Print Container -->
-    <div
-      id="installReportPrint"
-      class="install-report-print hidden"
-      
-    >
+    <div id="installReportPrint" class="install-report-print hidden">
       <div id="installReportPrintContent"></div>
     </div>
 
@@ -2257,14 +2469,8 @@
         <h3 id="cellPopupTitle">📝 Edit Cell</h3>
 
         <!-- Play Info (shown when cell has a play) -->
-        <div
-          id="cellPopupPlayInfo"
-          class="cell-popup-play-info"
-        >
-          <div
-            id="cellPopupPlayName"
-            class="cell-popup-play-name"
-          ></div>
+        <div id="cellPopupPlayInfo" class="cell-popup-play-info">
+          <div id="cellPopupPlayName" class="cell-popup-play-name"></div>
           <button
             onclick="removeCellPlayFromPopup()"
             class="btn btn-danger btn-sm"
@@ -2274,17 +2480,14 @@
           <button
             onclick="showPlaySelector()"
             class="btn btn-info btn-sm"
-            style="margin-left: 5px;"
+            style="margin-left: 5px"
           >
             🔄 Change Play
           </button>
         </div>
 
         <!-- Play Selector (shown when adding/changing play) -->
-        <div
-          id="cellPopupPlaySelector"
-          class="cell-popup-play-selector hidden"
-        >
+        <div id="cellPopupPlaySelector" class="cell-popup-play-selector hidden">
           <div class="cell-popup-search-container">
             <input
               type="text"
@@ -2294,10 +2497,7 @@
               oninput="filterCellPlays()"
             />
           </div>
-          <div
-            id="cellPlayList"
-            class="cell-popup-play-list"
-          ></div>
+          <div id="cellPlayList" class="cell-popup-play-list"></div>
         </div>
 
         <!-- Color Customization -->
@@ -2420,10 +2620,7 @@
         </div>
 
         <div class="cell-popup-buttons">
-          <button
-            class="btn btn-secondary"
-            onclick="closeCellPopup()"
-          >
+          <button class="btn btn-secondary" onclick="closeCellPopup()">
             Cancel
           </button>
           <button

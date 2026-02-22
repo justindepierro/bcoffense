@@ -89,7 +89,6 @@ h1 {
   font-size: 12px;
 }
 
-
 .tabs {
   display: flex;
   gap: 2px;
@@ -106,7 +105,9 @@ h1 {
   top: 52px;
   z-index: 999;
 }
-.tabs::-webkit-scrollbar { display: none; }
+.tabs::-webkit-scrollbar {
+  display: none;
+}
 .tab {
   padding: 12px 18px;
   background: transparent;
@@ -174,7 +175,6 @@ h1 {
 .filters select {
   min-width: 150px;
 }
-
 
 /* Upload Section */
 .back-btn {
@@ -306,6 +306,7 @@ h1 {
   border-color: var(--color-primary);
   background: var(--color-primary-light);
   transform: scale(1.01);
-  box-shadow: var(--shadow-lg), 0 0 0 4px var(--color-primary-light);
+  box-shadow:
+    var(--shadow-lg),
+    0 0 0 4px var(--color-primary-light);
 }
-

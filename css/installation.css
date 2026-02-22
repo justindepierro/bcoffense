@@ -260,7 +260,11 @@
 }
 .install-cat-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
+  background: linear-gradient(
+    90deg,
+    var(--color-success),
+    var(--color-success-light)
+  );
   border-radius: var(--radius-sm);
   transition: width 0.3s;
 }
@@ -341,7 +345,7 @@
   background: var(--color-success-light);
 }
 .install-item-done:hover {
-  background: #D1F5D1;
+  background: #d1f5d1;
 }
 .install-item-done .install-item-name {
   color: var(--color-success);
@@ -729,7 +733,11 @@
   transition: width 0.3s;
 }
 .sir-bar-run {
-  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
+  background: linear-gradient(
+    90deg,
+    var(--color-success),
+    var(--color-success-light)
+  );
 }
 .sir-bar-pass {
   background: linear-gradient(90deg, var(--color-primary), var(--color-info));
@@ -1286,4 +1294,3 @@
   color: var(--color-text-placeholder);
   text-align: center;
 }
-

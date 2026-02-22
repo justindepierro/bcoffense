@@ -191,8 +191,6 @@
   display: none;
 }
 
-
-
 /* Call Sheet Highlight */
 .callsheet-play.highlighted {
   background: var(--color-accent-light) !important;
@@ -372,7 +370,11 @@
   font-size: var(--font-size-sm);
 }
 .cs-unified-header:hover {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-primary-dark) 100%
+  );
 }
 .cs-unified-header-right {
   display: flex;
@@ -988,7 +990,6 @@
 
 /* Hide sort button in print */
 
-
 /* ========================================
    Call Sheet — New Feature Styles
    ======================================== */
@@ -1346,8 +1347,6 @@
   margin-left: 2px;
 }
 
-
-
 /* --- Target Popup --- */
 .cs-target-popup {
   position: fixed;
@@ -1628,7 +1627,6 @@
   background: var(--color-info-hover) !important;
 }
 
-
 /* ============ Call Sheet Scouting Overlay ============ */
 .cs-scouting-btn {
   font-weight: 600;
@@ -1857,4 +1855,3 @@
   padding: 40px 20px;
   color: var(--color-text-placeholder);
 }
-

@@ -410,7 +410,6 @@
   }
 }
 
-
 @media print {
   .gp-print-wrap {
     max-width: none;
@@ -428,7 +427,6 @@
     page-break-before: always;
   }
 }
-
 
 @media print {
   body[data-print-mode="install"] > * {
@@ -460,4 +458,3 @@
     print-color-adjust: exact !important;
   }
 }
-

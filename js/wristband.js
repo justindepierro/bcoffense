@@ -1975,6 +1975,23 @@ async function overwriteSavedWristband(id) {
 }
 
 /**
+ * Get relative luminance of a hex color (0 = black, 1 = white).
+ * Used for auto-contrast: returns true if the color is dark.
+ */
+function isColorDark(hex) {
+  if (!hex) return false;
+  hex = hex.replace("#", "");
+  if (hex.length === 3)
+    hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
+  const r = parseInt(hex.substring(0, 2), 16) / 255;
+  const g = parseInt(hex.substring(2, 4), 16) / 255;
+  const b = parseInt(hex.substring(4, 6), 16) / 255;
+  // Relative luminance (ITU-R BT.709)
+  const luminance = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  return luminance < 0.45;
+}
+
+/**
  * Initialize swatch click handlers
  */
 function initSwatchHandlers() {
@@ -1982,6 +1999,13 @@ function initSwatchHandlers() {
     if (e.target.classList.contains("color-swatch")) {
       pendingBgColor = e.target.dataset.color;
       updateSwatchSelection("bgColorSwatches", pendingBgColor);
+      // Auto-flip text color for contrast
+      if (pendingBgColor && isColorDark(pendingBgColor)) {
+        pendingTextColor = "#fff";
+      } else if (pendingBgColor) {
+        pendingTextColor = "#000";
+      }
+      updateSwatchSelection("textColorSwatches", pendingTextColor);
     }
   });
 

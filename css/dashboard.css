@@ -284,17 +284,24 @@
 }
 
 .dash-link-print {
-  background: linear-gradient(135deg, var(--color-dark), var(--color-dark-lighter)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--color-dark),
+    var(--color-dark-lighter)
+  ) !important;
   color: white !important;
   border-color: var(--color-dark) !important;
   font-weight: 600;
 }
 .dash-link-print:hover {
-  background: linear-gradient(135deg, var(--color-dark-lighter), var(--color-primary)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--color-dark-lighter),
+    var(--color-primary)
+  ) !important;
   border-color: var(--color-primary) !important;
   color: white !important;
 }
-
 
 /* ============ Print Game Plan ============ */
 .gp-print-wrap {
@@ -403,4 +410,3 @@
 .gp-cs-play {
   color: var(--color-text);
 }
-

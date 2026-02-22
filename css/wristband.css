@@ -355,7 +355,11 @@
   user-select: none;
 }
 .wb-sort-header:hover {
-  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary) 0%,
+    var(--color-secondary) 100%
+  );
 }
 .wb-sort-content {
   padding: 12px;
@@ -402,4 +406,3 @@
 .wb-display-panel {
   margin-top: 15px;
 }
-

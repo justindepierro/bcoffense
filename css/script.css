@@ -728,7 +728,11 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-light) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-success) 0%,
+    var(--color-success-light) 100%
+  );
   color: white;
   cursor: pointer;
   user-select: none;
@@ -788,7 +792,11 @@
   user-select: none;
 }
 .display-options-panel .display-options-header:hover {
-  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-hover) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-info) 0%,
+    var(--color-info-hover) 100%
+  );
 }
 .display-options-panel .display-options-content {
   padding: 12px;
@@ -1157,7 +1165,6 @@
 
 /* Wristband Maker - 4.7" x 2.8" format */
 
-
 /* Redesigned Script Header Panel */
 .script-header-panel {
   background: var(--gradient-dark);
@@ -1382,19 +1389,25 @@
   margin-left: 10px;
 }
 
-
 /* ============ Script Auto-Fill Button ============ */
 .btn-scouting-fill {
-  background: linear-gradient(135deg, var(--color-danger), var(--color-danger-hover)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--color-danger),
+    var(--color-danger-hover)
+  ) !important;
   color: white !important;
   border: none !important;
   font-weight: 600;
 }
 .btn-scouting-fill:hover {
-  background: linear-gradient(135deg, var(--color-danger), var(--color-danger-hover)) !important;
+  background: linear-gradient(
+    135deg,
+    var(--color-danger),
+    var(--color-danger-hover)
+  ) !important;
   transform: translateY(-1px);
 }
-
 
 /* ============ Script Push to Call Sheet Button ============ */
 .pat-btn-callsheet {
@@ -1403,9 +1416,8 @@
   border-color: var(--color-purple) !important;
 }
 .pat-btn-callsheet:hover {
-  background: #4A2D66 !important;
+  background: #4a2d66 !important;
 }
-
 
 /* ============ Script Preview Table Column Widths ============ */
 .script-table .col-num {
@@ -1441,4 +1453,3 @@
 .script-table .col-notes {
   width: 70px;
 }
-

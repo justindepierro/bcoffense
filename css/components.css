@@ -256,7 +256,6 @@
   color: var(--color-text-light);
 }
 
-
 /* Sort Controls */
 .sort-criteria-list {
   display: flex;
@@ -387,7 +386,6 @@
 .custom-order-btn:hover {
   background: var(--color-border-med);
 }
-
 
 /* ============ Unified Button System ============ */
 .btn {
@@ -836,8 +834,6 @@ input.smart-input-sm[type="number"] {
   cursor: pointer;
 }
 
-
-
 .shortcut-row span {
   color: var(--color-text-secondary);
   margin-left: auto;
@@ -895,7 +891,6 @@ kbd {
 #playbookTable td.hidden {
   display: none;
 }
-
 
 /* ========================================
    Floating Help Button (FAB)
@@ -1077,7 +1072,6 @@ kbd {
   color: var(--color-text);
 }
 
-
 /* ============ Loading Spinner ============ */
 .loading-spinner {
   display: inline-block;
@@ -1102,7 +1096,6 @@ kbd {
   background: var(--color-primary);
   color: white;
 }
-
 
 /* ============ Utility Classes ============ */
 .hidden {
@@ -1167,7 +1160,6 @@ kbd {
   color: var(--color-primary);
   text-decoration: underline;
 }
-
 
 /* Cell Popup Extracted Styles */
 .cell-popup-container {
