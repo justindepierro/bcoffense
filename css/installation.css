@@ -1070,8 +1070,7 @@
 
 /* ── Professional Print Layout (sirp-*) ──────────────── */
 .sirp {
-  font-family:
-    -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  font-family: var(--font-sans);
   color: var(--color-text);
   font-size: var(--font-size-xs);
   line-height: 1.4;

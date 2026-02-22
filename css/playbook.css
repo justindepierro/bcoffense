@@ -18,6 +18,10 @@ td {
   text-align: left;
   border-bottom: 1px solid var(--color-border-light);
 }
+td {
+  font-family: var(--font-mono);
+  font-size: var(--font-size-sm);
+}
 th {
   background: var(--color-dark);
   color: white;
@@ -34,7 +38,7 @@ table.sortable th {
   transition: background var(--transition-fast);
 }
 table.sortable th:hover {
-  background: #252547;
+  background: var(--color-primary);
 }
 .sort-icon {
   font-size: 10px;
@@ -65,10 +69,10 @@ tr:hover {
   background: var(--color-success-light);
 }
 #playbookTable tbody tr.on-wristband:nth-child(even) {
-  background: #c8e6c9;
+  background: #7EDB7E;
 }
 #playbookTable tbody tr.on-wristband:hover {
-  background: #a5d6a7;
+  background: #6AD06A;
 }
 .wb-indicator {
   margin-right: 5px;
@@ -87,7 +91,7 @@ tr:hover {
   display: flex;
   gap: 15px;
   padding: 10px 15px;
-  background: linear-gradient(135deg, var(--color-accent) 0%, var(--color-purple) 100%);
+  background: var(--gradient-stats);
   border-radius: var(--radius-md);
   margin-bottom: 15px;
   flex-wrap: wrap;
@@ -291,14 +295,14 @@ tr:hover {
 }
 .pb-chip:hover {
   border-color: var(--color-primary);
-  background: rgba(102, 126, 234, 0.08);
+  background: rgba(25, 42, 81, 0.06);
   color: var(--color-primary);
 }
 .pb-chip.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
   color: white;
-  box-shadow: 0 1px 4px rgba(102, 126, 234, 0.35);
+  box-shadow: 0 1px 4px rgba(25, 42, 81, 0.3);
 }
 
 /* -- More Filters toggle & panel -- */
@@ -375,8 +379,8 @@ tr:hover {
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  background: rgba(102, 126, 234, 0.12);
-  border: 1px solid rgba(102, 126, 234, 0.3);
+  background: rgba(25, 42, 81, 0.08);
+  border: 1px solid rgba(25, 42, 81, 0.2);
   border-radius: var(--radius-pill);
   font-size: 11px;
   font-weight: 500;
@@ -470,7 +474,7 @@ tr:hover {
   color: var(--color-success);
 }
 .pb-action-script:hover {
-  background: #e8f8ef;
+  background: var(--color-success-light);
   color: var(--color-success-hover);
 }
 .pb-action-callsheet {
@@ -478,16 +482,16 @@ tr:hover {
   color: var(--color-warning);
 }
 .pb-action-callsheet:hover {
-  background: #fef5e7;
-  color: #bf6516;
+  background: var(--color-accent-light);
+  color: var(--color-orange-deep);
 }
 .pb-action-print {
   border-color: var(--color-accent);
   color: var(--color-accent);
 }
 .pb-action-print:hover {
-  background: #eff0fe;
-  color: #5548d9;
+  background: var(--color-purple-light);
+  color: var(--color-purple);
 }
 .pb-action-collections {
   margin-left: auto;
@@ -544,7 +548,7 @@ tr:hover {
 }
 .pb-coll-card:hover {
   border-color: var(--color-primary);
-  background: rgba(102, 126, 234, 0.04);
+  background: rgba(25, 42, 81, 0.03);
 }
 .pb-coll-info {
   flex: 1;
@@ -745,7 +749,7 @@ tr:hover {
 
 /* Search Highlighting */
 .search-highlight {
-  background: #fff3cd;
+  background: var(--color-accent-light);
   padding: 1px 2px;
   border-radius: 2px;
 }

@@ -1,55 +1,79 @@
 /* ============ CSS Custom Properties ============ */
 :root {
-  /* Brand Colors — refined palette */
-  --color-primary: #4361ee;
-  --color-primary-hover: #3a56d4;
-  --color-primary-dark: #2d46b9;
-  --color-primary-light: #eef1fd;
-  --color-success: #2ecc71;
-  --color-success-hover: #27ae60;
-  --color-success-light: #e8f5e9;
-  --color-danger: #e74c3c;
-  --color-danger-hover: #c0392b;
-  --color-danger-light: #fdeaea;
-  --color-warning: #f39c12;
-  --color-warning-hover: #e08e0b;
-  --color-warning-light: #fff3e0;
-  --color-info: #3498db;
-  --color-info-hover: #2980b9;
-  --color-info-light: #e1f5fe;
-  --color-secondary: #7f8c8d;
-  --color-dark: #1a1a2e;
-  --color-dark-lighter: #16213e;
-  --color-accent: #667eea;
-  --color-purple: #764ba2;
-  --color-purple-light: #f3e5f5;
-  --color-orange-deep: #e65100;
+  /* ── Brand Palette ──
+     #0A122A  Near-Black Navy   (darkest)
+     #192A51  Deep Navy         (primary)
+     #8B9EB7  Steel Blue        (secondary / muted)
+     #D7BA89  Gold              (accent / highlight)
+     #90EE90  Light Green       (success tint)
+     #D0CCD0  Silver            (neutral / borders)
+  */
+
+  /* Primary — Deep Navy */
+  --color-primary: #192A51;
+  --color-primary-hover: #0F1E3D;
+  --color-primary-dark: #0A122A;
+  --color-primary-light: #E8ECF3;
+
+  /* Accent — Gold */
+  --color-accent: #D7BA89;
+  --color-accent-hover: #C5A06B;
+  --color-accent-light: #F5EDE0;
+
+  /* Functional: Success */
+  --color-success: #2E7D32;
+  --color-success-hover: #1B5E20;
+  --color-success-light: #90EE90;
+
+  /* Functional: Danger */
+  --color-danger: #C62828;
+  --color-danger-hover: #B71C1C;
+  --color-danger-light: #FFEBEE;
+
+  /* Functional: Warning */
+  --color-warning: #E68A00;
+  --color-warning-hover: #CC7A00;
+  --color-warning-light: #FFF3E0;
+
+  /* Functional: Info */
+  --color-info: #8B9EB7;
+  --color-info-hover: #7389A6;
+  --color-info-light: #E8EDF3;
+
+  /* Secondary & Neutrals */
+  --color-secondary: #8B9EB7;
+  --color-dark: #0A122A;
+  --color-dark-lighter: #192A51;
+  --color-purple: #5C3D7A;
+  --color-purple-light: #F0E6F6;
+  --color-orange-deep: #BF6516;
 
   /* Shared gradients */
-  --gradient-dark: linear-gradient(135deg, var(--color-dark) 0%, var(--color-dark-lighter) 100%);
-  --gradient-stats: linear-gradient(135deg, #2c3e50 0%, var(--color-info) 100%);
+  --gradient-dark: linear-gradient(135deg, #0A122A 0%, #192A51 100%);
+  --gradient-stats: linear-gradient(135deg, #192A51 0%, #8B9EB7 100%);
+  --gradient-accent: linear-gradient(135deg, #D7BA89 0%, #C5A06B 100%);
 
   /* Backgrounds */
-  --color-bg-body: #f0f2f5;
-  --color-bg-light: #f7f8fa;
-  --color-bg-lighter: #f0f2f5;
-  --color-bg-input: #f0f2f5;
-  --color-bg-blue-tint: #eef1fd;
-  --color-bg-blue-light: #f5f7ff;
-  --color-bg-hover-row: #f5f7ff;
+  --color-bg-body: #F0F1F3;
+  --color-bg-light: #F7F7F9;
+  --color-bg-lighter: #F0F1F3;
+  --color-bg-input: #F5F5F7;
+  --color-bg-blue-tint: var(--color-primary-light);
+  --color-bg-blue-light: #F5F6FA;
+  --color-bg-hover-row: #F5F6FA;
 
-  /* Borders */
-  --color-border: #e2e5ea;
-  --color-border-light: #eceef2;
-  --color-border-med: #dcdfe4;
-  --color-border-input: #d1d5db;
+  /* Borders — Silver family */
+  --color-border: #D0CCD0;
+  --color-border-light: #DDD9DD;
+  --color-border-med: #C5C0C5;
+  --color-border-input: #D0CCD0;
 
   /* Text */
-  --color-text: #1a1a2e;
-  --color-text-muted: #4a5568;
-  --color-text-secondary: #718096;
-  --color-text-light: #a0aec0;
-  --color-text-placeholder: #a0aec0;
+  --color-text: #0A122A;
+  --color-text-muted: #4A5568;
+  --color-text-secondary: #8B9EB7;
+  --color-text-light: #A0AAB8;
+  --color-text-placeholder: #B0ABBA;
   --color-white: #fff;
 
   /* Spacing Scale */
@@ -67,19 +91,17 @@
   --radius-pill: 999px;
   --radius-round: 50%;
 
-  /* Shadows */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
-  --shadow-md: 0 4px 16px rgba(0, 0, 0, 0.08);
-  --shadow-lg: 0 12px 40px rgba(0, 0, 0, 0.12);
-  --shadow-focus: 0 0 0 3px rgba(67, 97, 238, 0.15);
-  --shadow-focus-sm: 0 0 0 2px rgba(67, 97, 238, 0.2);
+  /* Shadows — navy tinted */
+  --shadow-xs: 0 1px 2px rgba(10, 18, 42, 0.05);
+  --shadow-sm: 0 1px 3px rgba(10, 18, 42, 0.07), 0 1px 2px rgba(10, 18, 42, 0.04);
+  --shadow-md: 0 4px 16px rgba(10, 18, 42, 0.09);
+  --shadow-lg: 0 12px 40px rgba(10, 18, 42, 0.13);
+  --shadow-focus: 0 0 0 3px rgba(25, 42, 81, 0.18);
+  --shadow-focus-sm: 0 0 0 2px rgba(25, 42, 81, 0.22);
 
   /* Typography */
-  --font-sans:
-    "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue",
-    Arial, sans-serif;
-  --font-mono: "SF Mono", "Menlo", "Consolas", monospace;
+  --font-sans: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "IBM Plex Mono", "SF Mono", "Menlo", "Consolas", monospace;
   --font-size-xs: 11px;
   --font-size-sm: 13px;
   --font-size-base: 14px;

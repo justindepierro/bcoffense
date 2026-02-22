@@ -112,7 +112,7 @@
 .csv-tpl-req {
   display: inline-block;
   background: var(--color-success-light);
-  color: #2e7d32;
+  color: var(--color-success);
   font-size: 10px;
   font-weight: 700;
   padding: 2px 7px;
@@ -232,8 +232,8 @@
   width: 26px;
   height: 26px;
   border-radius: var(--radius-round);
-  background: #e8eaf6;
-  color: #3949ab;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
   font-size: var(--font-size-sm);
   font-weight: 700;
   display: flex;
@@ -876,7 +876,7 @@ kbd {
   font-weight: bold;
   font-size: 15px;
   margin-bottom: 8px;
-  color: #4fc3f7;
+  color: var(--color-accent);
 }
 
 .play-preview-tooltip .preview-row {
@@ -908,29 +908,29 @@ kbd {
   height: 44px;
   border-radius: var(--radius-round);
   border: none;
-  background: rgba(67, 97, 238, 0.25);
-  color: rgba(67, 97, 238, 0.6);
+  background: rgba(25, 42, 81, 0.2);
+  color: rgba(25, 42, 81, 0.5);
   font-size: 22px;
   font-weight: 700;
   cursor: pointer;
   z-index: 9000;
   transition: all 0.25s ease;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+  box-shadow: 0 2px 8px rgba(10, 18, 42, 0.08);
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: Georgia, serif;
+  font-family: var(--font-sans);
 }
 .help-fab:hover {
-  background: rgba(67, 97, 238, 0.85);
+  background: var(--color-primary);
   color: var(--color-white);
-  box-shadow: 0 4px 16px rgba(67, 97, 238, 0.35);
+  box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
   transform: scale(1.1);
 }
 .help-fab.help-fab-active {
   background: var(--color-primary);
   color: var(--color-white);
-  box-shadow: 0 4px 16px rgba(67, 97, 238, 0.4);
+  box-shadow: 0 4px 16px rgba(25, 42, 81, 0.4);
 }
 
 /* Help Overlay */
@@ -982,7 +982,7 @@ kbd {
   justify-content: space-between;
   align-items: center;
   padding: 14px 18px;
-  background: linear-gradient(135deg, var(--color-text-muted) 0%, #343a40 100%);
+  background: var(--gradient-dark);
   color: var(--color-white);
 }
 .help-panel-header h3 {
@@ -1041,13 +1041,13 @@ kbd {
   border-radius: var(--radius-sm);
 }
 .help-item:hover {
-  background: #f5f7fa;
+  background: var(--color-bg-light);
 }
 .help-key {
   font-family: var(--font-mono);
   font-size: 10.5px;
   font-weight: 600;
-  background: #f1f3f5;
+  background: var(--color-bg-lighter);
   color: var(--color-text-muted);
   padding: 2px 6px;
   border-radius: var(--radius-sm);

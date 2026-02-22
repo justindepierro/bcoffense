@@ -67,7 +67,7 @@
 }
 
 .play-item.selected {
-  background: #d4edda;
+  background: var(--color-success-light);
   border-left: 3px solid var(--color-success);
 }
 
@@ -129,7 +129,7 @@
 }
 .script-item:hover {
   border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 8px rgba(10, 18, 42, 0.1);
 }
 .script-item.dragging {
   opacity: 0.5;
@@ -235,14 +235,14 @@
 }
 
 .pat-btn-smart {
-  background: linear-gradient(135deg, var(--color-accent), var(--color-purple));
-  color: white;
-  border-color: var(--color-purple);
+  background: var(--gradient-accent);
+  color: var(--color-dark);
+  border-color: var(--color-accent-hover);
 }
 
 .pat-btn-smart:hover {
-  filter: brightness(1.1);
-  border-color: #5a3a80;
+  filter: brightness(1.05);
+  border-color: var(--color-accent-hover);
 }
 
 /* Period header element classes */
@@ -522,19 +522,19 @@
 }
 .print-preview-row .preview-field.type {
   background: var(--color-purple-light);
-  color: #7b1fa2;
+  color: var(--color-purple);
 }
 .print-preview-row .preview-field.front,
 .print-preview-row .preview-field.cov,
 .print-preview-row .preview-field.stunt,
 .print-preview-row .preview-field.blitz {
-  background: #fff8e1;
-  color: #f57c00;
+  background: var(--color-accent-light);
+  color: var(--color-orange-deep);
   min-width: 50px;
 }
 .print-preview-row .preview-field.reps {
   background: var(--color-info-light);
-  color: #0277bd;
+  color: var(--color-primary);
   font-weight: bold;
 }
 
@@ -622,10 +622,10 @@
   background: rgba(40, 167, 69, 0.3);
 }
 .script-stats-bar .stat-item.pass {
-  background: rgba(67, 97, 238, 0.3);
+  background: rgba(25, 42, 81, 0.35);
 }
 .script-stats-bar .stat-item.ratio {
-  background: rgba(255, 193, 7, 0.3);
+  background: rgba(215, 186, 137, 0.35);
 }
 .script-stats-bar .stat-label {
   font-size: 10px;

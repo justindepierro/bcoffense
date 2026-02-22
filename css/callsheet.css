@@ -78,13 +78,14 @@
   padding: 2px 4px;
   background: var(--color-bg-lighter);
   border-radius: var(--radius-sm);
+  font-family: var(--font-mono);
   font-size: 10px;
   cursor: grab;
   position: relative;
 }
 
 .callsheet-play:hover {
-  background: #e8f4ff;
+  background: var(--color-primary-light);
 }
 
 .callsheet-play.dragging {
@@ -194,13 +195,13 @@
 
 /* Call Sheet Highlight */
 .callsheet-play.highlighted {
-  background: #fff3cd !important;
-  border: 1px solid var(--color-warning);
+  background: var(--color-accent-light) !important;
+  border: 1px solid var(--color-accent);
   font-weight: bold;
 }
 
 .callsheet-play.highlighted .play-text {
-  color: #856404;
+  color: var(--color-dark);
 }
 
 /* Call Sheet Orientation Classes */
@@ -364,14 +365,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 8px 14px;
-  background: linear-gradient(135deg, var(--color-text-muted) 0%, #343a40 100%);
+  background: var(--gradient-dark);
   color: var(--color-white);
   cursor: pointer;
   user-select: none;
   font-size: var(--font-size-sm);
 }
 .cs-unified-header:hover {
-  background: linear-gradient(135deg, #5a6268 0%, #3d4349 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-primary-dark) 100%);
 }
 .cs-unified-header-right {
   display: flex;
@@ -433,7 +434,7 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: 600;
-  color: #868e96;
+  color: var(--color-secondary);
   text-align: center;
   transition: all var(--transition-fast);
   border-bottom: 2px solid transparent;
@@ -591,10 +592,10 @@
 
 /* Tempo highlight classes (replaces inline styles) */
 .callsheet-play.tempo-huddle {
-  background: #fff3cd;
+  background: var(--color-accent-light);
 }
 .callsheet-play.tempo-candy {
-  background: #ffe4ec;
+  background: var(--color-danger-light);
 }
 
 /* Red text class for shifts/motions (replaces inline style="color:red") */
@@ -1051,22 +1052,22 @@
 .cs-cat-note {
   font-size: var(--font-size-xs);
   padding: 3px 6px;
-  background: #fffbe6;
-  color: #856404;
-  border-bottom: 1px solid #ffeeba;
+  background: var(--color-accent-light);
+  color: var(--color-dark);
+  border-bottom: 1px solid var(--color-accent);
   cursor: pointer;
   font-style: italic;
 }
 .cs-cat-note:hover {
-  background: #fff3cd;
+  background: var(--color-accent-light);
 }
 .cs-note-input {
   width: 100%;
   border: none;
   padding: 3px 6px;
   font-size: var(--font-size-xs);
-  background: #fff3cd;
-  color: #856404;
+  background: var(--color-accent-light);
+  color: var(--color-dark);
   outline: 2px solid var(--color-warning);
   box-sizing: border-box;
 }
@@ -1088,7 +1089,7 @@
 .cs-hash-swap {
   display: none;
   border: none;
-  background: rgba(67, 97, 238, 0.15);
+  background: rgba(25, 42, 81, 0.12);
   color: var(--color-primary);
   cursor: pointer;
   padding: 0 3px;
@@ -1212,7 +1213,7 @@
 }
 .cs-color-swatch.cs-swatch-active {
   border-color: var(--color-text);
-  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.4);
+  box-shadow: 0 0 0 2px rgba(25, 42, 81, 0.35);
 }
 /* Text style toggle buttons */
 .cs-ctx-styles {

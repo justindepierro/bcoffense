@@ -31,6 +31,7 @@
   border: 1px solid var(--color-text);
   padding: 2px 4px;
   text-align: left;
+  font-family: var(--font-mono);
   font-size: 10px;
   display: flex;
   align-items: center;
@@ -83,8 +84,8 @@
   background: var(--color-bg-blue-tint) !important;
 }
 .wristband-cell.drag-over {
-  background: #bbdefb !important;
-  border: 2px dashed #1976d2 !important;
+  background: var(--color-primary-light) !important;
+  border: 2px dashed var(--color-primary) !important;
 }
 .wristband-header {
   background: var(--color-text) !important;
@@ -290,7 +291,7 @@
   background: rgba(40, 167, 69, 0.3);
 }
 .wb-stats-bar .stat-item.pass {
-  background: rgba(67, 97, 238, 0.3);
+  background: rgba(25, 42, 81, 0.35);
 }
 .wb-stats-bar .stat-label {
   font-size: 10px;
@@ -348,17 +349,17 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: linear-gradient(135deg, var(--color-info) 0%, #138496 100%);
+  background: var(--gradient-stats);
   color: white;
   cursor: pointer;
   user-select: none;
 }
 .wb-sort-header:hover {
-  background: linear-gradient(135deg, #138496 0%, #117a8b 100%);
+  background: linear-gradient(135deg, var(--color-primary) 0%, var(--color-secondary) 100%);
 }
 .wb-sort-content {
   padding: 12px;
-  background: #f0fafb;
+  background: var(--color-bg-light);
 }
 .wb-sort-content.collapsed {
   display: none;
@@ -379,7 +380,7 @@
   color: var(--color-text-secondary);
   margin-bottom: 8px;
   padding: 4px 8px;
-  background: rgba(23, 162, 184, 0.08);
+  background: rgba(25, 42, 81, 0.06);
   border-radius: var(--radius-sm);
 }
 .wb-sort-actions {

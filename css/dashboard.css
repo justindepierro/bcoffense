@@ -72,12 +72,12 @@
   font-size: var(--font-size-sm);
 }
 .dash-opp-active {
-  background: rgba(40, 167, 69, 0.2);
-  color: #7dffb3;
+  background: rgba(46, 125, 50, 0.15);
+  color: var(--color-success-light);
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   font-weight: 600;
-  border: 1px solid rgba(40, 167, 69, 0.3);
+  border: 1px solid rgba(46, 125, 50, 0.25);
 }
 .dash-opp-none {
   opacity: 0.5;
@@ -138,13 +138,13 @@
   border-left-color: var(--color-success);
 }
 .dash-card-wristband {
-  border-left-color: #fd7e14;
+  border-left-color: var(--color-accent);
 }
 .dash-card-tendencies {
   border-left-color: var(--color-danger);
 }
 .dash-card-callsheet {
-  border-left-color: #6f42c1;
+  border-left-color: var(--color-purple);
 }
 
 /* Scouting Summary */
@@ -265,7 +265,7 @@
   outline: none;
   border-color: var(--color-primary);
   box-shadow:
-    0 0 0 3px rgba(67, 97, 238, 0.12),
+    0 0 0 3px rgba(25, 42, 81, 0.12),
     inset 0 1px 3px rgba(0, 0, 0, 0.04);
 }
 .dash-notes-textarea::placeholder {
@@ -290,8 +290,8 @@
   font-weight: 600;
 }
 .dash-link-print:hover {
-  background: linear-gradient(135deg, var(--color-dark-lighter), #0f3460) !important;
-  border-color: #0f3460 !important;
+  background: linear-gradient(135deg, var(--color-dark-lighter), var(--color-primary)) !important;
+  border-color: var(--color-primary) !important;
   color: white !important;
 }
 

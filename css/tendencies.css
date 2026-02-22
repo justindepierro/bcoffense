@@ -126,10 +126,10 @@
 @keyframes td-pulse {
   0%,
   100% {
-    box-shadow: 0 0 0 0 rgba(67, 97, 238, 0.4);
+    box-shadow: 0 0 0 0 rgba(25, 42, 81, 0.4);
   }
   50% {
-    box-shadow: 0 0 0 8px rgba(67, 97, 238, 0);
+    box-shadow: 0 0 0 8px rgba(25, 42, 81, 0);
   }
 }
 
@@ -215,12 +215,12 @@
   font-weight: 500;
 }
 .td-tag-front {
-  background: #e8eaf6;
-  color: #3949ab;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 .td-tag-cov {
-  background: #e0f2f1;
-  color: #00796b;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 
 /* ============ Wizard ============ */
@@ -362,7 +362,7 @@
   background: var(--color-primary);
   color: white;
   border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(67, 97, 238, 0.3);
+  box-shadow: 0 2px 8px rgba(25, 42, 81, 0.3);
 }
 
 /* Custom input row */
@@ -596,17 +596,17 @@
   transition: background 0.12s;
 }
 .td-sortable-th:hover {
-  background: #e8e8e8;
+  background: var(--color-bg-lighter);
 }
 .td-sorted {
   background: var(--color-bg-blue-tint) !important;
-  color: #1565c0;
+  color: var(--color-primary);
 }
 
 /* ============ Row States ============ */
 .td-row-selected {
   background: var(--color-bg-blue-tint) !important;
-  outline: 2px solid #42a5f5;
+  outline: 2px solid var(--color-primary);
   outline-offset: -2px;
 }
 .td-row-bulk-selected {
@@ -754,13 +754,13 @@
   min-width: 2px;
 }
 .td-bar-front {
-  background: linear-gradient(135deg, #5c6bc0, #3949ab);
+  background: linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
 }
 .td-bar-cov {
-  background: linear-gradient(135deg, #26a69a, #00796b);
+  background: linear-gradient(135deg, var(--color-success), var(--color-success-hover));
 }
 .td-bar-blitz {
-  background: linear-gradient(135deg, #ef5350, #c62828);
+  background: linear-gradient(135deg, var(--color-danger), var(--color-danger-hover));
 }
 .td-dist-val {
   width: 70px;
