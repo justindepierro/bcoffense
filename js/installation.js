@@ -129,10 +129,7 @@ function getSmartBasePlayName(play) {
     const tailTagRe = /^[A-Z]{1,3}\d?$/;
     while (parts.length > 1) {
       const last = parts[parts.length - 1];
-      if (
-        tailTagRe.test(last) ||
-        knownTagWords.has(last.toUpperCase())
-      ) {
+      if (tailTagRe.test(last) || knownTagWords.has(last.toUpperCase())) {
         parts.pop();
       } else {
         break;
@@ -197,13 +194,17 @@ function toggleComponentInstalled(categoryId, value) {
     if (rawPlays.length === 0) return;
 
     const installed = data.installed[categoryId];
-    const installedSet = new Set(installed.map((v) => v.trim()).filter(Boolean));
+    const installedSet = new Set(
+      installed.map((v) => v.trim()).filter(Boolean),
+    );
     const allInstalled = rawPlays.every((name) => installedSet.has(name));
 
     if (allInstalled) {
       // Uninstall all plays in this base group
       const toRemove = new Set(rawPlays);
-      data.installed[categoryId] = installed.filter((v) => !toRemove.has(v.trim()));
+      data.installed[categoryId] = installed.filter(
+        (v) => !toRemove.has(v.trim()),
+      );
     } else {
       // Install any missing plays in this base group
       rawPlays.forEach((name) => {

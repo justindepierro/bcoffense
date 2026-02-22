@@ -103,8 +103,7 @@ function toggleSortDir(which) {
   if (which === "primary") {
     currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
   } else {
-    secondarySortDirection =
-      secondarySortDirection === "asc" ? "desc" : "asc";
+    secondarySortDirection = secondarySortDirection === "asc" ? "desc" : "asc";
   }
   _syncSortUI();
   applyCurrentSort();
@@ -226,9 +225,7 @@ function populateFilters() {
   const protections = [...new Set(plays.map((p) => p.protection))]
     .filter(Boolean)
     .sort();
-  const tempos = [...new Set(plays.map((p) => p.tempo))]
-    .filter(Boolean)
-    .sort();
+  const tempos = [...new Set(plays.map((p) => p.tempo))].filter(Boolean).sort();
 
   // Playbook dropdown filters
   _fillSelect("filterFormation", "All Formations", formations);
@@ -275,7 +272,9 @@ function _fillSelect(id, allLabel, values) {
   if (!el) return;
   el.innerHTML =
     `<option value="">${allLabel}</option>` +
-    values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+    values
+      .map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`)
+      .join("");
 }
 
 /**
@@ -369,7 +368,8 @@ function filterPlays() {
   const motion = document.getElementById("pbFilterMotion")?.value || "";
   const protection = document.getElementById("pbFilterProtection")?.value || "";
   const tempo = document.getElementById("pbFilterTempo")?.value || "";
-  const search = document.getElementById("searchPlay")?.value?.toLowerCase() || "";
+  const search =
+    document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
   filteredPlays = plays.filter((p) => {
     // Type chips (OR within layer)
@@ -417,7 +417,9 @@ function clearFilters() {
   // Clear chips
   activeTypeChips.clear();
   activePersonnelChips.clear();
-  document.querySelectorAll(".pb-chip.active").forEach((c) => c.classList.remove("active"));
+  document
+    .querySelectorAll(".pb-chip.active")
+    .forEach((c) => c.classList.remove("active"));
 
   // Clear dropdowns
   const ids = [
@@ -487,7 +489,8 @@ function updateActiveFilterBar() {
   });
   // Search
   const search = document.getElementById("searchPlay")?.value;
-  if (search) parts.push({ label: `"${search}"`, layer: "search", value: search });
+  if (search)
+    parts.push({ label: `"${search}"`, layer: "search", value: search });
 
   if (parts.length === 0) {
     if (clearBtn) clearBtn.style.display = "none";
@@ -510,11 +513,15 @@ function updateActiveFilterBar() {
 function removeFilter(layer, value) {
   if (layer === "type") {
     activeTypeChips.delete(value);
-    const chip = document.querySelector(`#pbChipsType .pb-chip[data-value="${value}"]`);
+    const chip = document.querySelector(
+      `#pbChipsType .pb-chip[data-value="${value}"]`,
+    );
     if (chip) chip.classList.remove("active");
   } else if (layer === "personnel") {
     activePersonnelChips.delete(value);
-    const chip = document.querySelector(`#pbChipsPersonnel .pb-chip[data-value="${value}"]`);
+    const chip = document.querySelector(
+      `#pbChipsPersonnel .pb-chip[data-value="${value}"]`,
+    );
     if (chip) chip.classList.remove("active");
   } else if (layer === "search") {
     const el = document.getElementById("searchPlay");
@@ -647,7 +654,8 @@ function savePlaybookState() {
     filterBasePlay: document.getElementById("filterBasePlay")?.value || "",
     filterBack: document.getElementById("pbFilterBack")?.value || "",
     filterMotion: document.getElementById("pbFilterMotion")?.value || "",
-    filterProtection: document.getElementById("pbFilterProtection")?.value || "",
+    filterProtection:
+      document.getElementById("pbFilterProtection")?.value || "",
     filterTempo: document.getElementById("pbFilterTempo")?.value || "",
     searchPlay: document.getElementById("searchPlay")?.value || "",
     sortColumn: currentSortColumn,
@@ -675,10 +683,8 @@ function restorePlaybookState() {
   }
 
   // Restore dropdowns
-  if (state.filterFormation)
-    _setVal("filterFormation", state.filterFormation);
-  if (state.filterBasePlay)
-    _setVal("filterBasePlay", state.filterBasePlay);
+  if (state.filterFormation) _setVal("filterFormation", state.filterFormation);
+  if (state.filterBasePlay) _setVal("filterBasePlay", state.filterBasePlay);
   if (state.filterBack) _setVal("pbFilterBack", state.filterBack);
   if (state.filterMotion) _setVal("pbFilterMotion", state.filterMotion);
   if (state.filterProtection)
@@ -1016,7 +1022,9 @@ function hidePlayPreview() {
  */
 async function savePlayCollection() {
   if (filteredPlays.length === 0) {
-    showToast("No plays to save — adjust your filters first", { type: "warning" });
+    showToast("No plays to save — adjust your filters first", {
+      type: "warning",
+    });
     return;
   }
 
@@ -1057,7 +1065,9 @@ async function savePlayCollection() {
   storageManager.set(STORAGE_KEYS.PLAY_COLLECTIONS, collections);
   updateCollectionsBadge();
   renderCollectionsPanel();
-  showToast(`Saved "${name.trim()}" (${filteredPlays.length} plays)`, { type: "success" });
+  showToast(`Saved "${name.trim()}" (${filteredPlays.length} plays)`, {
+    type: "success",
+  });
 }
 
 /**
@@ -1071,7 +1081,8 @@ function _captureFilterState() {
     filterBasePlay: document.getElementById("filterBasePlay")?.value || "",
     filterBack: document.getElementById("pbFilterBack")?.value || "",
     filterMotion: document.getElementById("pbFilterMotion")?.value || "",
-    filterProtection: document.getElementById("pbFilterProtection")?.value || "",
+    filterProtection:
+      document.getElementById("pbFilterProtection")?.value || "",
     filterTempo: document.getElementById("pbFilterTempo")?.value || "",
     searchPlay: document.getElementById("searchPlay")?.value || "",
   };
@@ -1102,7 +1113,14 @@ function loadCollection(index) {
     _setVal("searchPlay", s.searchPlay || "");
 
     // Open more filters if any dropdown is active
-    if (s.filterFormation || s.filterBasePlay || s.filterBack || s.filterMotion || s.filterProtection || s.filterTempo) {
+    if (
+      s.filterFormation ||
+      s.filterBasePlay ||
+      s.filterBack ||
+      s.filterMotion ||
+      s.filterProtection ||
+      s.filterTempo
+    ) {
       moreFiltersOpen = true;
       const panel = document.getElementById("pbMoreFilters");
       const arrow = document.getElementById("pbMoreArrow");
@@ -1127,12 +1145,18 @@ function _loadCollectionByKeys(coll) {
   activeTypeChips.clear();
   activePersonnelChips.clear();
   buildFilterChips();
-  ["filterFormation", "filterBasePlay", "pbFilterBack", "pbFilterMotion", "pbFilterProtection", "pbFilterTempo", "searchPlay"].forEach((id) => _setVal(id, ""));
+  [
+    "filterFormation",
+    "filterBasePlay",
+    "pbFilterBack",
+    "pbFilterMotion",
+    "pbFilterProtection",
+    "pbFilterTempo",
+    "searchPlay",
+  ].forEach((id) => _setVal(id, ""));
 
   filteredPlays = plays.filter((p) =>
-    coll.playKeys.some(
-      (k) => k.formation === p.formation && k.play === p.play,
-    ),
+    coll.playKeys.some((k) => k.formation === p.formation && k.play === p.play),
   );
   applyCurrentSort();
   renderPlaybook();
@@ -1172,7 +1196,9 @@ async function sendCollectionToScript(index) {
 
   const matchedPlays = _resolveCollectionPlays(coll);
   if (matchedPlays.length === 0) {
-    showToast("No matching plays found in current playbook", { type: "warning" });
+    showToast("No matching plays found in current playbook", {
+      type: "warning",
+    });
     return;
   }
 
@@ -1183,7 +1209,9 @@ async function sendCollectionToScript(index) {
   if (!ok) return;
 
   _addPlaysToScript(matchedPlays);
-  showToast(`Added ${matchedPlays.length} plays to script`, { type: "success" });
+  showToast(`Added ${matchedPlays.length} plays to script`, {
+    type: "success",
+  });
 }
 
 /**
@@ -1196,7 +1224,9 @@ async function sendCollectionToCallSheet(index) {
 
   const matchedPlays = _resolveCollectionPlays(coll);
   if (matchedPlays.length === 0) {
-    showToast("No matching plays found in current playbook", { type: "warning" });
+    showToast("No matching plays found in current playbook", {
+      type: "warning",
+    });
     return;
   }
 
@@ -1215,9 +1245,7 @@ async function sendCollectionToCallSheet(index) {
  */
 function _resolveCollectionPlays(coll) {
   return plays.filter((p) =>
-    coll.playKeys.some(
-      (k) => k.formation === p.formation && k.play === p.play,
-    ),
+    coll.playKeys.some((k) => k.formation === p.formation && k.play === p.play),
   );
 }
 
@@ -1239,7 +1267,9 @@ async function sendFilteredToScript() {
   if (!ok) return;
 
   _addPlaysToScript(filteredPlays);
-  showToast(`Added ${filteredPlays.length} plays to script`, { type: "success" });
+  showToast(`Added ${filteredPlays.length} plays to script`, {
+    type: "success",
+  });
 }
 
 /**
@@ -1440,15 +1470,20 @@ function renderPbPrintSort() {
   container.innerHTML = pbPrintSortCriteria
     .map((c, idx) => {
       const fieldOpts = PB_PRINT_SORT_FIELDS.map(
-        (f) => `<option value="${f.value}" ${c.field === f.value ? "selected" : ""}>${f.label}</option>`
+        (f) =>
+          `<option value="${f.value}" ${c.field === f.value ? "selected" : ""}>${f.label}</option>`,
       ).join("");
 
       const dirIcon = c.direction === "asc" ? "↑" : "↓";
-      const dirTitle = c.direction === "asc" ? "Ascending (A→Z)" : "Descending (Z→A)";
+      const dirTitle =
+        c.direction === "asc" ? "Ascending (A→Z)" : "Descending (Z→A)";
 
-      const hasCustom = wbCustomSortOrders[c.field] && wbCustomSortOrders[c.field].length > 0;
+      const hasCustom =
+        wbCustomSortOrders[c.field] && wbCustomSortOrders[c.field].length > 0;
       const customIcon = hasCustom ? "🎨" : "⚙️";
-      const customTitle = hasCustom ? "Custom order set - click to edit" : "Set custom value order";
+      const customTitle = hasCustom
+        ? "Custom order set - click to edit"
+        : "Set custom value order";
 
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
@@ -1491,7 +1526,8 @@ function _pbSortUpdateField(idx, val) {
 }
 
 function _pbSortToggleDir(idx) {
-  pbPrintSortCriteria[idx].direction = pbPrintSortCriteria[idx].direction === "asc" ? "desc" : "asc";
+  pbPrintSortCriteria[idx].direction =
+    pbPrintSortCriteria[idx].direction === "asc" ? "desc" : "asc";
   renderPbPrintSort();
 }
 
@@ -1517,7 +1553,9 @@ function _pbSortDrop(e, targetIdx) {
 function _pbSortDragEnd(e) {
   e.target.classList.remove("dragging");
   _pbSortDragged = null;
-  document.querySelectorAll("#pbPrintSortList .drag-over").forEach((el) => el.classList.remove("drag-over"));
+  document
+    .querySelectorAll("#pbPrintSortList .drag-over")
+    .forEach((el) => el.classList.remove("drag-over"));
 }
 
 /**
@@ -1564,8 +1602,10 @@ function _getPbPrintOptions() {
     redMotions: document.getElementById("pbRedMotions")?.checked || false,
     noVowels: document.getElementById("pbRemoveVowels")?.checked || false,
     showLineCall: document.getElementById("pbShowLineCall")?.checked || false,
-    highlightHuddle: document.getElementById("pbHighlightHuddle")?.checked || false,
-    highlightCandy: document.getElementById("pbHighlightCandy")?.checked || false,
+    highlightHuddle:
+      document.getElementById("pbHighlightHuddle")?.checked || false,
+    highlightCandy:
+      document.getElementById("pbHighlightCandy")?.checked || false,
   };
 }
 
@@ -1599,9 +1639,17 @@ function syncFromWristbandOptions() {
  */
 function toggleAllPbPrintOptions(state) {
   const ids = [
-    "pbShowEmoji", "pbUseSquares", "pbUnderEmoji", "pbBoldShifts",
-    "pbRedShifts", "pbItalicMotions", "pbRedMotions", "pbRemoveVowels",
-    "pbShowLineCall", "pbHighlightHuddle", "pbHighlightCandy",
+    "pbShowEmoji",
+    "pbUseSquares",
+    "pbUnderEmoji",
+    "pbBoldShifts",
+    "pbRedShifts",
+    "pbItalicMotions",
+    "pbRedMotions",
+    "pbRemoveVowels",
+    "pbShowLineCall",
+    "pbHighlightHuddle",
+    "pbHighlightCandy",
   ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
@@ -1628,9 +1676,15 @@ function printFilteredPlays() {
   let html = '<ol class="pb-print-list">';
 
   sortedPlays.forEach((play) => {
-    const isHuddle = highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle";
-    const isCandy = highlightCandy && play.tempo && play.tempo.toLowerCase() === "candy";
-    const bgStyle = isHuddle ? ' style="background:#fff59d;"' : isCandy ? ' style="background:#f8bbd9;"' : "";
+    const isHuddle =
+      highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle";
+    const isCandy =
+      highlightCandy && play.tempo && play.tempo.toLowerCase() === "candy";
+    const bgStyle = isHuddle
+      ? ' style="background:#fff59d;"'
+      : isCandy
+        ? ' style="background:#f8bbd9;"'
+        : "";
 
     html += `<li${bgStyle}>${getFullCall(play, opts)}</li>`;
   });
@@ -1649,7 +1703,8 @@ function printFilteredPlays() {
     printStyle.id = "playbookPrintStyle";
     document.head.appendChild(printStyle);
   }
-  printStyle.textContent = "@media print { @page { size: letter portrait; margin: 0.4in 0.5in; } }";
+  printStyle.textContent =
+    "@media print { @page { size: letter portrait; margin: 0.4in 0.5in; } }";
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Playbook");

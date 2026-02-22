@@ -367,6 +367,7 @@ function handleSortDragEnd(event) {
  */
 function getUniqueValuesForField(field) {
   const values = new Set();
+  // Check wristband cards
   wristbandCards.forEach((card) => {
     card.data.forEach((play) => {
       if (play && play[field]) {
@@ -374,6 +375,14 @@ function getUniqueValuesForField(field) {
       }
     });
   });
+  // Also check global plays array (for playbook print sort)
+  if (typeof plays !== "undefined" && Array.isArray(plays)) {
+    plays.forEach((play) => {
+      if (play && play[field]) {
+        values.add(String(play[field]).trim());
+      }
+    });
+  }
   return Array.from(values).sort();
 }
 
@@ -403,11 +412,13 @@ function openCustomOrderModal(field) {
       wbCustomSortOrders[field] = order;
       storageManager.set(STORAGE_KEYS.CUSTOM_SORT_ORDERS, wbCustomSortOrders);
       renderSortCriteria();
+      if (typeof renderPbPrintSort === "function") renderPbPrintSort();
     },
     onClear() {
       delete wbCustomSortOrders[field];
       storageManager.set(STORAGE_KEYS.CUSTOM_SORT_ORDERS, wbCustomSortOrders);
       renderSortCriteria();
+      if (typeof renderPbPrintSort === "function") renderPbPrintSort();
     },
   });
 }
