@@ -90,7 +90,7 @@
   background: var(--color-bg-light);
 }
 .csv-tpl-table tbody tr:hover {
-  background: #f0f4ff;
+  background: var(--color-bg-hover-row);
 }
 .csv-tpl-table td {
   padding: 5px 10px;
@@ -204,7 +204,7 @@
   color: var(--color-text-muted);
 }
 .custom-modal-cancel:hover {
-  background: #e4e4e4;
+  background: var(--color-border-light);
 }
 
 /* List picker items */
@@ -226,7 +226,7 @@
   background: var(--color-bg-blue-light);
 }
 .custom-modal-list-item:active {
-  background: #e3f0ff;
+  background: var(--color-primary-light);
 }
 .custom-modal-list-num {
   width: 26px;
@@ -595,7 +595,7 @@
 
 .smart-rule:has(input[type="checkbox"]:checked) {
   border-color: var(--color-success);
-  background: #f0faf3;
+  background: var(--color-success-light);
 }
 
 .smart-rule-toggle {
@@ -844,7 +844,7 @@ input.smart-input-sm[type="number"] {
 }
 
 kbd {
-  background: #f4f4f4;
+  background: var(--color-bg-input);
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
   padding: 3px 8px;

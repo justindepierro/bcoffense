@@ -486,8 +486,8 @@ tr:hover {
   color: var(--color-orange-deep);
 }
 .pb-action-print {
-  border-color: var(--color-accent);
-  color: var(--color-accent);
+  border-color: var(--color-accent-dark);
+  color: var(--color-accent-dark);
 }
 .pb-action-print:hover {
   background: var(--color-purple-light);

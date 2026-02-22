@@ -170,7 +170,7 @@
   color: var(--color-orange-deep);
 }
 .ob-meta-gap {
-  background: #fee2e2;
+  background: var(--color-danger-light);
   color: var(--color-danger);
   font-weight: 600;
 }
@@ -184,16 +184,16 @@
 .ob-star {
   cursor: pointer;
   font-size: 1.1rem;
-  color: #d4d4d4;
+  color: var(--color-border-med);
   transition: color 0.1s;
   user-select: none;
 }
 .ob-star-filled {
-  color: #f59e0b;
+  color: var(--color-accent-hover);
 }
 .ob-star:hover,
 .ob-star:hover ~ .ob-star {
-  color: #fbbf24;
+  color: var(--color-accent);
 }
 .ob-star-clear {
   font-size: 0.75rem;
@@ -325,8 +325,8 @@
   font-size: 0.78rem;
   padding: 0.15rem 0.5rem;
   border-radius: var(--radius-sm);
-  background: #e0f2fe;
-  color: #075985;
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 .ob-hc-chip small {
   opacity: 0.7;
@@ -366,18 +366,18 @@
 }
 .ob-plays-table td {
   padding: 0.3rem 0.5rem;
-  border-top: 1px solid #eee;
+  border-top: 1px solid var(--color-border-light);
 }
 .ob-plays-table tr:hover td {
-  background: #f0f7ff;
+  background: var(--color-bg-hover-row);
 }
 .ob-play-installed td {
-  background: #f0fdf4;
+  background: var(--color-success-light);
 }
 .ob-note-item {
   font-size: 0.82rem;
   padding: 0.3rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
   color: var(--color-text);
 }
 .ob-note-item:last-child {
@@ -413,7 +413,7 @@
   display: flex;
   gap: 0.5rem;
   padding: 0.45rem 0;
-  border-bottom: 1px solid #f0f0f0;
+  border-bottom: 1px solid var(--color-border-light);
   align-items: flex-start;
 }
 .ob-rec-row:last-child {

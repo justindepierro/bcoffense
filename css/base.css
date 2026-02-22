@@ -39,21 +39,22 @@
   --color-warning-light: #FFF3E0;
 
   /* Functional: Info */
-  --color-info: #8B9EB7;
-  --color-info-hover: #7389A6;
+  --color-info: #5A6F87;
+  --color-info-hover: #4A5D73;
   --color-info-light: #E8EDF3;
 
   /* Secondary & Neutrals */
-  --color-secondary: #8B9EB7;
+  --color-secondary: #64748B;
   --color-dark: #0A122A;
   --color-dark-lighter: #192A51;
   --color-purple: #5C3D7A;
   --color-purple-light: #F0E6F6;
   --color-orange-deep: #BF6516;
+  --color-accent-dark: #9E8A60;
 
   /* Shared gradients */
   --gradient-dark: linear-gradient(135deg, #0A122A 0%, #192A51 100%);
-  --gradient-stats: linear-gradient(135deg, #192A51 0%, #8B9EB7 100%);
+  --gradient-stats: linear-gradient(135deg, #192A51 0%, #5A6F87 100%);
   --gradient-accent: linear-gradient(135deg, #D7BA89 0%, #C5A06B 100%);
 
   /* Backgrounds */
@@ -74,9 +75,9 @@
   /* Text */
   --color-text: #0A122A;
   --color-text-muted: #4A5568;
-  --color-text-secondary: #8B9EB7;
-  --color-text-light: #A0AAB8;
-  --color-text-placeholder: #B0ABBA;
+  --color-text-secondary: #64748B;
+  --color-text-light: #6B7A8D;
+  --color-text-placeholder: #9CA3AF;
   --color-white: #fff;
 
   /* Spacing Scale */

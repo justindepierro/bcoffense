@@ -166,7 +166,7 @@
   background: var(--color-bg-blue-tint);
 }
 .td-stat-blitz {
-  background: #fce4ec;
+  background: var(--color-danger-light);
 }
 
 /* Play log table */
@@ -196,7 +196,7 @@
   white-space: nowrap;
 }
 .td-table tr:hover {
-  background: #f8f9ff;
+  background: var(--color-bg-hover-row);
 }
 .td-play-num {
   color: var(--color-text-placeholder);
@@ -516,7 +516,7 @@
 
 /* ============ Filter Panel ============ */
 .td-filter-panel {
-  background: #f8f9fb;
+  background: var(--color-bg-light);
   border: 1px solid var(--color-border-med);
   border-radius: var(--radius-lg);
   padding: 14px 18px;
@@ -613,7 +613,7 @@
   background: var(--color-warning-light) !important;
 }
 .td-row-bulk-selected:hover {
-  background: #ffe0b2 !important;
+  background: var(--color-accent-light) !important;
 }
 
 /* Drag states */
@@ -626,8 +626,8 @@
 
 /* Tag for blitz/stunt */
 .td-tag-blitz {
-  background: #ffebee;
-  color: #c62828;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
 .td-tag-stunt {
   background: var(--color-warning-light);
@@ -649,7 +649,7 @@
   align-items: center;
   gap: 8px;
   background: var(--color-warning-light);
-  border: 1px solid #ffcc80;
+  border: 1px solid var(--color-warning);
   border-radius: var(--radius-md);
   padding: 8px 14px;
   margin-bottom: 10px;
@@ -664,7 +664,7 @@
 
 /* ============ Column Toggle ============ */
 .td-col-toggle-panel {
-  background: #f8f9fb;
+  background: var(--color-bg-light);
   border: 1px solid var(--color-border-med);
   border-radius: var(--radius-md);
   padding: 12px 16px;
@@ -709,7 +709,7 @@
   gap: 12px;
 }
 .td-stats-card {
-  background: #f8f9fb;
+  background: var(--color-bg-light);
   border: 1px solid var(--color-border-med);
   border-radius: var(--radius-lg);
   padding: 14px 18px;
@@ -823,7 +823,7 @@
 .td-tip-title {
   font-weight: 700;
   font-size: var(--font-size-sm);
-  color: #82b1ff;
+  color: var(--color-accent);
   margin-bottom: 8px;
   border-bottom: 1px solid var(--color-text);
   padding-bottom: 4px;
@@ -862,7 +862,7 @@
   margin-bottom: 24px;
   padding: 16px 20px;
   background: var(--color-bg-light);
-  border: 1px solid #e8e8e8;
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
 }
 .td-rapid-section-title {

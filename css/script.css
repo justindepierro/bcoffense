@@ -468,9 +468,9 @@
 
 /* Preferred option styling for hash dropdown */
 .script-item .hash-input select option.preferred-option {
-  background: #e8f4fd;
+  background: var(--color-primary-light);
   font-weight: bold;
-  color: #0066cc;
+  color: var(--color-primary);
 }
 
 /* Print Preview Row */
@@ -703,9 +703,9 @@
   align-items: center;
   margin-bottom: 10px;
   padding: 8px;
-  background: #e8f4fd;
+  background: var(--color-primary-light);
   border-radius: var(--radius-md);
-  border: 1px solid #b8daff;
+  border: 1px solid var(--color-border);
 }
 .select-all-label {
   display: flex;
@@ -728,7 +728,7 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: linear-gradient(135deg, var(--color-success) 0%, #20c997 100%);
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-light) 100%);
   color: white;
   cursor: pointer;
   user-select: none;
@@ -737,12 +737,12 @@
   background: linear-gradient(
     135deg,
     var(--color-success-hover) 0%,
-    #1aa179 100%
+    var(--color-success) 100%
   );
 }
 .wristband-integration-panel .integration-content {
   padding: 12px;
-  background: #f8fff9;
+  background: var(--color-success-light);
 }
 .wristband-integration-panel .integration-content.collapsed {
   display: none;
@@ -788,7 +788,7 @@
   user-select: none;
 }
 .display-options-panel .display-options-header:hover {
-  background: linear-gradient(135deg, #5a6268 0%, #343a40 100%);
+  background: linear-gradient(135deg, var(--color-info) 0%, var(--color-info-hover) 100%);
 }
 .display-options-panel .display-options-content {
   padding: 12px;
@@ -967,9 +967,9 @@
 .wristband-loader {
   margin-top: 15px;
   padding: 12px 15px;
-  background: #f0f8ff;
+  background: var(--color-info-light);
   border-radius: var(--radius-md);
-  border: 1px solid #b3d9ff;
+  border: 1px solid var(--color-border);
 }
 
 .wristband-loader-row {
@@ -984,7 +984,7 @@
   flex: 1;
   min-width: 150px;
   padding: 6px 10px;
-  border: 1px solid #b3d9ff;
+  border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
 }
@@ -1385,25 +1385,25 @@
 
 /* ============ Script Auto-Fill Button ============ */
 .btn-scouting-fill {
-  background: linear-gradient(135deg, #e74c3c, #c0392b) !important;
+  background: linear-gradient(135deg, var(--color-danger), var(--color-danger-hover)) !important;
   color: white !important;
   border: none !important;
   font-weight: 600;
 }
 .btn-scouting-fill:hover {
-  background: linear-gradient(135deg, #c0392b, #a93226) !important;
+  background: linear-gradient(135deg, var(--color-danger), var(--color-danger-hover)) !important;
   transform: translateY(-1px);
 }
 
 
 /* ============ Script Push to Call Sheet Button ============ */
 .pat-btn-callsheet {
-  background: #6f42c1 !important;
+  background: var(--color-purple) !important;
   color: white !important;
-  border-color: #6f42c1 !important;
+  border-color: var(--color-purple) !important;
 }
 .pat-btn-callsheet:hover {
-  background: #5a32a3 !important;
+  background: #4A2D66 !important;
 }
 
 

@@ -107,7 +107,7 @@
   color: var(--color-success);
 }
 .install-readiness-partial .install-readiness-val {
-  color: #e6a000;
+  color: var(--color-warning);
 }
 .install-readiness-none .install-readiness-val {
   color: var(--color-danger);
@@ -145,7 +145,7 @@
   padding: 4px 2px;
 }
 .readiness-modal-play {
-  background: #f5f6f8;
+  background: var(--color-bg-light);
   border-radius: var(--radius-md);
   padding: 12px 14px;
   border-left: 4px solid var(--color-border-input);
@@ -154,13 +154,13 @@
   border-left-color: var(--color-success);
 }
 .readiness-modal-play.install-level-high {
-  border-left-color: #85e085;
+  border-left-color: var(--color-success-light);
 }
 .readiness-modal-play.install-level-mid {
   border-left-color: var(--color-warning);
 }
 .readiness-modal-play.install-level-low {
-  border-left-color: #ff7b54;
+  border-left-color: var(--color-danger);
 }
 .readiness-modal-play.install-level-none {
   border-left-color: var(--color-danger);
@@ -191,7 +191,7 @@
 }
 .readiness-modal-missing-row {
   font-size: var(--font-size-sm);
-  color: #c0392b;
+  color: var(--color-danger);
   display: flex;
   align-items: center;
   gap: 6px;
@@ -260,7 +260,7 @@
 }
 .install-cat-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, var(--color-success), #20c997);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
   border-radius: var(--radius-sm);
   transition: width 0.3s;
 }
@@ -338,10 +338,10 @@
   display: none;
 }
 .install-item-done {
-  background: #f0fff4;
+  background: var(--color-success-light);
 }
 .install-item-done:hover {
-  background: #e6f9ec;
+  background: #D1F5D1;
 }
 .install-item-done .install-item-name {
   color: var(--color-success);
@@ -369,8 +369,8 @@
   border-radius: var(--radius-lg);
 }
 .install-item-done .install-item-count {
-  background: #d4edda;
-  color: #155724;
+  background: var(--color-success-light);
+  color: var(--color-success-hover);
 }
 .install-item-drag {
   font-size: var(--font-size-base);
@@ -452,28 +452,28 @@
 }
 .install-level-max {
   border-color: var(--color-warning);
-  background: #fffde7;
+  background: var(--color-warning-light);
 }
 .install-level-high .install-star.filled {
-  color: #8bc34a;
+  color: var(--color-success);
 }
 .install-level-high {
-  border-color: #c5e1a5;
-  background: #f1f8e9;
+  border-color: var(--color-success-light);
+  background: var(--color-success-light);
 }
 .install-level-mid .install-star.filled {
-  color: #ff9800;
+  color: var(--color-warning);
 }
 .install-level-mid {
-  border-color: #ffe0b2;
-  background: #fff8e1;
+  border-color: var(--color-warning-light);
+  background: var(--color-warning-light);
 }
 .install-level-low .install-star.filled {
-  color: #f44336;
+  color: var(--color-danger);
 }
 .install-level-low {
-  border-color: #ffcdd2;
-  background: #fce4ec;
+  border-color: var(--color-danger-light);
+  background: var(--color-danger-light);
 }
 .install-level-none {
   border-color: var(--color-border-med);
@@ -631,32 +631,32 @@
   color: var(--color-text-secondary);
 }
 .sir-ov-ready {
-  background: #e6f9e6;
-  color: #1a7a1a;
+  background: var(--color-success-light);
+  color: var(--color-success-hover);
 }
 .sir-ov-ready .sir-ov-num {
-  color: #1a7a1a;
+  color: var(--color-success-hover);
 }
 .sir-ov-near {
-  background: #fff8e1;
-  color: #b58900;
+  background: var(--color-warning-light);
+  color: var(--color-warning-hover);
 }
 .sir-ov-near .sir-ov-num {
-  color: #b58900;
+  color: var(--color-warning-hover);
 }
 .sir-ov-progress {
   background: var(--color-bg-blue-tint);
-  color: #1565c0;
+  color: var(--color-primary);
 }
 .sir-ov-progress .sir-ov-num {
-  color: #1565c0;
+  color: var(--color-primary);
 }
 .sir-ov-none {
-  background: #fce4ec;
-  color: #c62828;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
 }
 .sir-ov-none .sir-ov-num {
-  color: #c62828;
+  color: var(--color-danger);
 }
 /* Sections */
 .sir-section {
@@ -729,13 +729,13 @@
   transition: width 0.3s;
 }
 .sir-bar-run {
-  background: linear-gradient(90deg, #4caf50, #66bb6a);
+  background: linear-gradient(90deg, var(--color-success), var(--color-success-light));
 }
 .sir-bar-pass {
-  background: linear-gradient(90deg, #2196f3, #42a5f5);
+  background: linear-gradient(90deg, var(--color-primary), var(--color-info));
 }
 .sir-bar-gap {
-  background: linear-gradient(90deg, #ff9800, #ffa726);
+  background: linear-gradient(90deg, var(--color-warning), var(--color-accent));
 }
 .sir-balance-nums {
   font-size: var(--font-size-sm);
@@ -756,10 +756,10 @@
   background: var(--color-white);
 }
 .sir-card-quickwin {
-  border-left: 4px solid #4caf50;
+  border-left: 4px solid var(--color-success);
 }
 .sir-card-variety {
-  border-left: 4px solid #9c27b0;
+  border-left: 4px solid var(--color-purple);
 }
 .sir-card-head {
   display: flex;
@@ -800,16 +800,16 @@
   font-weight: 600;
 }
 .sir-badge-unlock {
-  background: #e6f9e6;
-  color: #1a7a1a;
+  background: var(--color-success-light);
+  color: var(--color-success-hover);
 }
 .sir-badge-breadth {
   background: var(--color-bg-blue-tint);
-  color: #1565c0;
+  color: var(--color-primary);
 }
 .sir-badge-variety {
   background: var(--color-purple-light);
-  color: #7b1fa2;
+  color: var(--color-purple);
 }
 /* List rows (one away, two away, game ready) */
 .sir-list {
@@ -829,13 +829,13 @@
   border: 1px solid var(--color-border-light);
 }
 .sir-list-oneaway {
-  border-left: 3px solid #ff9800;
+  border-left: 3px solid var(--color-warning);
 }
 .sir-list-twoaway {
-  border-left: 3px solid #2196f3;
+  border-left: 3px solid var(--color-primary);
 }
 .sir-list-ready {
-  border-left: 3px solid #4caf50;
+  border-left: 3px solid var(--color-success);
 }
 .sir-list-info {
   flex: 1;
@@ -901,22 +901,22 @@
   align-items: center;
   justify-content: center;
   border-radius: var(--radius-round);
-  background: #1565c0;
+  background: var(--color-primary);
   color: var(--color-white);
   font-weight: 800;
   font-size: var(--font-size-sm);
   flex-shrink: 0;
 }
 .sir-priority-row:nth-child(1) .sir-priority-rank {
-  background: #ffd700;
+  background: var(--color-accent);
   color: var(--color-text);
 }
 .sir-priority-row:nth-child(2) .sir-priority-rank {
-  background: #c0c0c0;
+  background: var(--color-border);
   color: var(--color-text);
 }
 .sir-priority-row:nth-child(3) .sir-priority-rank {
-  background: #cd7f32;
+  background: var(--color-accent-dark);
   color: var(--color-white);
 }
 .sir-priority-info {
@@ -1001,12 +1001,12 @@
   flex-shrink: 0;
 }
 .sir-type-run {
-  background: #e6f9e6;
-  color: #2e7d32;
+  background: var(--color-success-light);
+  color: var(--color-success);
 }
 .sir-type-pass {
   background: var(--color-bg-blue-tint);
-  color: #1565c0;
+  color: var(--color-primary);
 }
 /* Responsive */
 @media (max-width: 600px) {
@@ -1131,32 +1131,32 @@
   color: var(--color-text-secondary);
 }
 .sirp-stat-ready {
-  border-color: #4caf50;
-  background: #f1f8e9;
+  border-color: var(--color-success);
+  background: var(--color-success-light);
 }
 .sirp-stat-ready .sirp-stat-num {
-  color: #2e7d32;
+  color: var(--color-success);
 }
 .sirp-stat-near {
-  border-color: #ff9800;
-  background: #fff8e1;
+  border-color: var(--color-warning);
+  background: var(--color-warning-light);
 }
 .sirp-stat-near .sirp-stat-num {
   color: var(--color-orange-deep);
 }
 .sirp-stat-prog {
-  border-color: #2196f3;
+  border-color: var(--color-primary);
   background: var(--color-bg-blue-tint);
 }
 .sirp-stat-prog .sirp-stat-num {
-  color: #1565c0;
+  color: var(--color-primary);
 }
 .sirp-stat-none {
-  border-color: #ef5350;
-  background: #fce4ec;
+  border-color: var(--color-danger);
+  background: var(--color-danger-light);
 }
 .sirp-stat-none .sirp-stat-num {
-  color: #c62828;
+  color: var(--color-danger);
 }
 .sirp-balance-row {
   display: flex;
@@ -1192,10 +1192,10 @@
   border-radius: var(--radius-sm);
 }
 .sirp-fill-run {
-  background: #4caf50;
+  background: var(--color-success);
 }
 .sirp-fill-pass {
-  background: #2196f3;
+  background: var(--color-primary);
 }
 .sirp-balance-val {
   font-size: 10px;
@@ -1221,8 +1221,8 @@
   font-size: 10px;
 }
 .sirp-table th {
-  background: #2c2c2c;
-  color: #ffffff;
+  background: var(--color-dark);
+  color: var(--color-white);
   font-weight: 700;
   text-align: left;
   padding: 4px 6px;
