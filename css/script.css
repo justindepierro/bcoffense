@@ -1151,8 +1151,6 @@
 
 /* Buttons */
 
-  color: var(--color-text);
-}
 .full-day-section label:hover {
   background: var(--color-bg-blue-tint) !important;
 }

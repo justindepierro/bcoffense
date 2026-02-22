@@ -194,8 +194,6 @@
 
 /* Generic Modal Overlay */
 
-  transform: scale(1.1);
-}
 .cell-popup-buttons {
   display: flex;
   gap: 10px;
