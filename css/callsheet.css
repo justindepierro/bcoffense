@@ -1,0 +1,1859 @@
+/* ============ Call Sheet: Grid, Columns, Categories ============ */
+/* Auto-split from styles.css */
+
+/* Call Sheet Styles */
+.callsheet-grid {
+  width: 100%;
+}
+
+.callsheet-columns {
+  display: flex;
+  gap: 15px;
+}
+
+.callsheet-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.callsheet-category {
+  border: 2px solid var(--color-text);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-white);
+}
+
+.category-header {
+  padding: 8px 12px;
+  font-weight: bold;
+  color: white;
+  text-align: center;
+  font-size: var(--font-size-sm);
+}
+
+.category-subheader {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  background: var(--color-bg-input);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.hash-header {
+  padding: 4px 8px;
+  font-size: var(--font-size-xs);
+  font-style: italic;
+  text-align: center;
+  color: var(--color-text-secondary);
+  border-right: 1px solid var(--color-border);
+}
+
+.hash-header:last-child {
+  border-right: none;
+}
+
+.category-content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  min-height: 60px;
+}
+
+.hash-column {
+  padding: 4px;
+  border-right: 1px solid var(--color-border-light);
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.hash-column:last-child {
+  border-right: none;
+}
+
+.callsheet-play {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 4px;
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  cursor: grab;
+  position: relative;
+}
+
+.callsheet-play:hover {
+  background: #e8f4ff;
+}
+
+.callsheet-play.dragging {
+  opacity: 0.5;
+}
+
+.callsheet-play .personnel-code {
+  padding: 1px 4px;
+  border-radius: 2px;
+  font-size: 9px;
+  font-weight: bold;
+  flex-shrink: 0;
+}
+
+.callsheet-play .play-text {
+  flex: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.callsheet-play .remove-play {
+  opacity: 0;
+  background: var(--color-danger);
+  color: white;
+  border: none;
+  border-radius: var(--radius-round);
+  width: 14px;
+  height: 14px;
+  font-size: 10px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.callsheet-play:hover .remove-play {
+  opacity: 1;
+}
+
+.callsheet-dropzone {
+  padding: 4px 8px;
+  text-align: center;
+  color: var(--color-text-placeholder);
+  font-size: 10px;
+  cursor: pointer;
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-top: 2px;
+}
+
+.callsheet-dropzone:hover {
+  background: var(--color-bg-blue-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Wristband number badge in call sheet */
+.wristband-num {
+  background: var(--color-secondary);
+  color: white;
+  padding: 1px 4px;
+  border-radius: var(--radius-sm);
+  font-size: 9px;
+  font-weight: bold;
+  margin-right: 2px;
+}
+
+.wristband-badge {
+  background: var(--color-info);
+  color: white;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Call Sheet Picker */
+.picker-play {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.picker-play:hover {
+  background: var(--color-bg-blue-light);
+}
+
+.picker-play .personnel-code {
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  font-size: 10px;
+  font-weight: bold;
+}
+
+/* Call Sheet Print Styles */
+.callsheet-print {
+  display: none;
+}
+
+
+
+/* Call Sheet Highlight */
+.callsheet-play.highlighted {
+  background: #fff3cd !important;
+  border: 1px solid var(--color-warning);
+  font-weight: bold;
+}
+
+.callsheet-play.highlighted .play-text {
+  color: #856404;
+}
+
+/* Call Sheet Orientation Classes */
+.callsheet-landscape .callsheet-columns {
+  flex-direction: row;
+}
+
+.callsheet-landscape .callsheet-category {
+  min-height: 80px;
+}
+
+/* Category header edit hint */
+.category-header {
+  position: relative;
+  cursor: default;
+}
+
+.category-header .edit-hint {
+  position: absolute;
+  right: 8px;
+  font-size: var(--font-size-sm);
+  opacity: 0.7;
+}
+
+/* Toast Notification */
+
+.category-header:hover .edit-hint {
+  opacity: 1;
+}
+
+/* Quick Stats Bar */
+
+/* ========================================
+   Call Sheet - Redesigned Panels
+   ======================================== */
+
+/* Call Sheet Toolbar */
+.cs-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 14px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  gap: 12px;
+  border: 1px solid var(--color-border-light);
+  flex-wrap: wrap;
+}
+.cs-toolbar-left {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+.cs-toolbar-right {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+/* Call Sheet Toggle Groups */
+.cs-toggle-group {
+  display: flex;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+.cs-toggle-group.page-toggle {
+  border: 1px solid var(--color-primary);
+}
+.cs-toggle-group.orientation-toggle {
+  border: 1px solid var(--color-success);
+}
+.cs-toggle {
+  padding: 6px 14px;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  transition: all 0.2s;
+}
+.cs-toggle-group.page-toggle .cs-toggle {
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+.cs-toggle-group.page-toggle .cs-toggle.active {
+  background: var(--color-primary);
+  color: white;
+}
+.cs-toggle-group.orientation-toggle .cs-toggle {
+  background: var(--color-white);
+  color: var(--color-success);
+}
+.cs-toggle-group.orientation-toggle .cs-toggle.active {
+  background: var(--color-success);
+  color: white;
+}
+
+/* Call Sheet Display Panel (legacy, kept for script/wristband panels) */
+.cs-display-panel {
+  margin-bottom: 8px;
+  margin-top: 0;
+}
+.cs-show-grid {
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+}
+
+/* ========================================
+   Secondary Toolbar (Stats, Templates, etc.)
+   ======================================== */
+.cs-toolbar-secondary {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 6px 12px;
+  margin-bottom: 8px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  flex-wrap: wrap;
+}
+.cs-tool-btn {
+  padding: 4px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+  transition: all var(--transition-fast);
+}
+.cs-tool-btn:hover {
+  background: var(--color-border-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+.cs-tool-divider {
+  width: 1px;
+  height: 18px;
+  background: var(--color-border);
+  margin: 0 2px;
+}
+
+/* ========================================
+   Unified Display & Format Bar
+   ======================================== */
+.cs-unified-bar {
+  margin-bottom: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+  background: var(--color-white);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+}
+.cs-unified-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 14px;
+  background: linear-gradient(135deg, var(--color-text-muted) 0%, #343a40 100%);
+  color: var(--color-white);
+  cursor: pointer;
+  user-select: none;
+  font-size: var(--font-size-sm);
+}
+.cs-unified-header:hover {
+  background: linear-gradient(135deg, #5a6268 0%, #3d4349 100%);
+}
+.cs-unified-header-right {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+.cs-preset-select {
+  font-size: var(--font-size-xs);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.12);
+  color: var(--color-white);
+  cursor: pointer;
+  min-width: 120px;
+}
+.cs-preset-select:focus {
+  outline: none;
+  border-color: rgba(255, 255, 255, 0.6);
+  background: rgba(255, 255, 255, 0.2);
+}
+.cs-preset-select option {
+  background: var(--color-white);
+  color: var(--color-text);
+}
+.cs-preset-save-btn {
+  background: none;
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  border-radius: var(--radius-sm);
+  padding: 3px 8px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  color: var(--color-white);
+  transition: background var(--transition-fast);
+}
+.cs-preset-save-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+}
+.cs-unified-content {
+  padding: 0;
+}
+.cs-unified-content.collapsed {
+  display: none;
+}
+
+/* Tab Bar */
+.cs-tab-bar {
+  display: flex;
+  background: var(--color-bg-light);
+  border-bottom: 2px solid var(--color-border);
+  padding: 0;
+}
+.cs-tab {
+  flex: 1;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: #868e96;
+  text-align: center;
+  transition: all var(--transition-fast);
+  border-bottom: 2px solid transparent;
+  margin-bottom: -2px;
+  letter-spacing: 0.3px;
+}
+.cs-tab:hover {
+  color: var(--color-text-muted);
+  background: var(--color-border-light);
+}
+.cs-tab.active {
+  color: var(--color-primary);
+  border-bottom-color: var(--color-primary);
+  background: var(--color-white);
+}
+
+/* Tab Content */
+.cs-tab-content {
+  padding: 12px 14px;
+}
+
+/* Field Actions (Select All / Deselect All) */
+.cs-field-actions {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.btn-xs {
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+.btn-xs:hover {
+  background: var(--color-border-light);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* Border Controls */
+.cs-border-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.cs-border-row:last-child {
+  margin-bottom: 0;
+}
+.cs-border-section-label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  min-width: 100px;
+}
+.cs-border-selectors {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  align-items: center;
+}
+.cs-border-label {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+}
+.cs-border-label select {
+  font-size: var(--font-size-xs);
+  padding: 3px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-white);
+}
+
+/* Call Sheet Hint */
+.cs-hint {
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+  margin-bottom: 8px;
+  padding: 6px 10px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
+  border-left: 3px solid var(--color-border);
+}
+
+/* Call Sheet Title */
+.cs-title {
+  margin: 0;
+  font-size: var(--font-size-lg);
+}
+
+/* Call Sheet Wristband Display */
+.cs-wb-display {
+  font-size: var(--font-size-xs);
+}
+
+/* Loaded wristband badge */
+.cs-loaded-wb-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--color-info);
+  color: white;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+}
+.cs-loaded-wb-clear {
+  background: none;
+  border: none;
+  color: white;
+  cursor: pointer;
+  margin-left: 4px;
+  font-size: var(--font-size-base);
+  line-height: 1;
+  padding: 0 2px;
+}
+.cs-loaded-wb-clear:hover {
+  opacity: 0.7;
+}
+.cs-no-wb-loaded {
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-xs);
+}
+
+/* Play count badge in category header */
+/* Category header with play count */
+.cs-cat-header {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+}
+
+/* Inline rename input for category headers */
+.cs-rename-input {
+  background: rgba(255, 255, 255, 0.95);
+  border: 2px solid var(--color-white);
+  border-radius: var(--radius-sm);
+  padding: 2px 8px;
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  text-align: center;
+  width: 80%;
+  outline: none;
+  color: var(--color-text);
+}
+
+/* Tempo highlight classes (replaces inline styles) */
+.callsheet-play.tempo-huddle {
+  background: #fff3cd;
+}
+.callsheet-play.tempo-candy {
+  background: #ffe4ec;
+}
+
+/* Red text class for shifts/motions (replaces inline style="color:red") */
+.cs-red-text {
+  color: red;
+}
+
+/* Line call styling (replaces inline style) */
+.cs-line-call {
+  color: var(--color-text-light);
+  font-size: 0.85em;
+}
+
+/* Border color picker popup */
+.cs-border-picker {
+  z-index: 10001;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 6px;
+  display: flex;
+  gap: 2px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.2);
+}
+.cs-border-swatch {
+  border: none;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-size-lg);
+  padding: 4px 6px;
+  border-radius: var(--radius-sm);
+  transition: background var(--transition-fast);
+}
+.cs-border-swatch:hover {
+  background: var(--color-border-light);
+  transform: scale(1.2);
+}
+
+/* ===== Call Sheet Picker Modal (cleaned up) ===== */
+.cs-picker-popup {
+  max-width: 600px;
+}
+.cs-picker-filters {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+  flex-wrap: wrap;
+}
+.cs-picker-search {
+  flex: 1;
+  min-width: 150px;
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.cs-picker-select {
+  padding: 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.cs-picker-source {
+  display: flex;
+  gap: 10px;
+  margin-bottom: 10px;
+  align-items: center;
+  padding: 8px;
+  background: #e7f3ff;
+  border-radius: var(--radius-sm);
+  flex-wrap: wrap;
+}
+.cs-picker-source-label {
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.cs-picker-wb-info {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.cs-picker-list {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+}
+.cs-picker-footer {
+  margin-top: 15px;
+  text-align: right;
+}
+
+/* ===== Call Sheet Wristband Modal (cleaned up) ===== */
+.cs-wb-modal {
+  max-width: 400px;
+}
+.cs-wb-modal-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.cs-wb-modal-select {
+  width: 100%;
+  padding: 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  margin-bottom: 15px;
+}
+.cs-wb-modal-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+}
+
+/* Picker match count */
+.cs-picker-match-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  padding: 4px 2px;
+  text-align: right;
+}
+
+/* Picker play text and chips */
+.cs-picker-play-text {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-picker-chips {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.cs-picker-chip {
+  font-size: 9px;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--color-border-light);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.cs-picker-chip-type {
+  background: #d4edda;
+  color: #155724;
+}
+
+/* Empty state message in picker */
+.cs-picker-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-text-placeholder);
+}
+
+/* Print title */
+.cs-print-title {
+  text-align: center;
+  margin-bottom: 10px;
+  font-size: var(--font-size-base);
+}
+
+/* ===== Call Sheet Sort Button & Modal ===== */
+.cs-sort-btn {
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  margin-left: 6px;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast);
+  font-weight: bold;
+}
+.cs-sort-btn:hover {
+  opacity: 1;
+}
+
+/* Sort modal overlay */
+.cs-sort-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 10003;
+}
+.cs-sort-modal {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  max-width: 480px;
+  width: 92%;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+  overflow: hidden;
+}
+.cs-sort-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.cs-sort-header h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+}
+.cs-sort-close {
+  background: none;
+  border: none;
+  font-size: 22px;
+  cursor: pointer;
+  color: var(--color-text-secondary);
+  line-height: 1;
+  padding: 0 4px;
+}
+.cs-sort-close:hover {
+  color: #000;
+}
+.cs-sort-body {
+  padding: 16px 20px;
+}
+.cs-sort-desc {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin: 0 0 12px 0;
+}
+.cs-sort-actions {
+  display: flex;
+  gap: 10px;
+  justify-content: flex-end;
+  padding: 12px 20px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+}
+
+/* Sort criteria list */
+.cs-sort-criteria-list {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cs-sort-criteria-item {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  cursor: grab;
+  transition:
+    background var(--transition-fast),
+    box-shadow var(--transition-fast);
+}
+.cs-sort-criteria-item:hover {
+  background: var(--color-border-light);
+}
+.cs-sort-criteria-item.dragging {
+  opacity: 0.4;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+.cs-sort-criteria-item select {
+  flex: 1;
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+.cs-sort-criteria-item .drag-handle {
+  cursor: grab;
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-base);
+}
+.cs-sort-criteria-item .sort-dir-btn,
+.cs-sort-criteria-item .custom-order-btn,
+.cs-sort-criteria-item .remove-sort-btn {
+  background: none;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 2px 6px;
+  font-size: var(--font-size-sm);
+}
+.cs-sort-criteria-item .sort-dir-btn:hover,
+.cs-sort-criteria-item .custom-order-btn:hover {
+  background: var(--color-border-light);
+}
+.cs-sort-criteria-item .remove-sort-btn:hover {
+  background: #f8d7da;
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+
+/* Add sort field button */
+.cs-sort-add-btn {
+  width: 100%;
+  border: 1px dashed var(--color-border-input);
+  background: transparent;
+  color: var(--color-text-muted);
+  padding: 6px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  margin-bottom: 16px;
+}
+.cs-sort-add-btn:hover {
+  background: var(--color-bg-input);
+  border-color: var(--color-text-muted);
+}
+
+/* Sort scope options */
+.cs-sort-scope {
+  margin-bottom: 12px;
+}
+.cs-sort-scope-label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: var(--font-size-sm);
+}
+.cs-sort-scope-options {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.cs-sort-radio {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+.cs-sort-radio input[type="radio"] {
+  margin: 0;
+}
+.cs-sort-scope-name {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Hash option */
+.cs-sort-hash-option {
+  background: #f0f4ff;
+  border: 1px solid #d0daf0;
+  border-radius: var(--radius-md);
+  padding: 10px 12px;
+}
+.cs-sort-hash-option label {
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.cs-sort-hash-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  margin: 4px 0 0 22px;
+}
+
+/* Custom order list */
+.cs-custom-order-list {
+  max-height: 300px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+.cs-custom-order-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  background: var(--color-white);
+  border-bottom: 1px solid var(--color-bg-input);
+  cursor: grab;
+  transition: background var(--transition-fast);
+}
+.cs-custom-order-item:last-child {
+  border-bottom: none;
+}
+.cs-custom-order-item:hover {
+  background: var(--color-bg-light);
+}
+.cs-custom-order-item.dragging {
+  opacity: 0.4;
+}
+.cs-order-number {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-placeholder);
+  min-width: 20px;
+}
+.cs-order-value {
+  font-size: var(--font-size-sm);
+}
+
+/* Hide sort button in print */
+
+
+/* ========================================
+   Call Sheet — New Feature Styles
+   ======================================== */
+
+/* --- Collapse / Expand --- */
+.cs-collapse-btn {
+  cursor: pointer;
+  font-size: 10px;
+  opacity: 0.7;
+  margin-right: 4px;
+  user-select: none;
+}
+.cs-collapse-btn:hover {
+  opacity: 1;
+}
+.cs-collapsed .category-subheader,
+.cs-collapsed .category-content,
+.cs-collapsed .cs-cat-note,
+.cs-collapsed .callsheet-dropzone {
+  display: none !important;
+}
+
+/* --- Category Header Enhancements --- */
+.cs-cat-header {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  position: relative;
+}
+.cs-cat-header .header-text {
+  flex: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-cat-menu-btn {
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  font-weight: bold;
+  opacity: 0.5;
+  padding: 0 4px;
+  user-select: none;
+  line-height: 1;
+}
+.cs-cat-menu-btn:hover {
+  opacity: 1;
+}
+
+/* --- Play Count Badge --- */
+.cs-play-count {
+  font-size: 10px;
+  padding: 1px 5px;
+  border-radius: var(--radius-md);
+  background: rgba(255, 255, 255, 0.3);
+  white-space: nowrap;
+  font-weight: 600;
+  margin-left: 4px;
+}
+
+/* --- Category Notes --- */
+.cs-cat-note {
+  font-size: var(--font-size-xs);
+  padding: 3px 6px;
+  background: #fffbe6;
+  color: #856404;
+  border-bottom: 1px solid #ffeeba;
+  cursor: pointer;
+  font-style: italic;
+}
+.cs-cat-note:hover {
+  background: #fff3cd;
+}
+.cs-note-input {
+  width: 100%;
+  border: none;
+  padding: 3px 6px;
+  font-size: var(--font-size-xs);
+  background: #fff3cd;
+  color: #856404;
+  outline: 2px solid var(--color-warning);
+  box-sizing: border-box;
+}
+
+/* --- Duplicate Badge --- */
+.cs-dupe-badge {
+  font-size: 9px;
+  padding: 0 4px;
+  border-radius: var(--radius-md);
+  background: #fd7e14;
+  color: var(--color-white);
+  font-weight: 700;
+  flex-shrink: 0;
+  margin-left: 2px;
+  line-height: 1.4;
+}
+
+/* --- Hash Swap Button --- */
+.cs-hash-swap {
+  display: none;
+  border: none;
+  background: rgba(67, 97, 238, 0.15);
+  color: var(--color-primary);
+  cursor: pointer;
+  padding: 0 3px;
+  font-size: 10px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+  margin-left: 2px;
+  line-height: 1.4;
+}
+.callsheet-play:hover .cs-hash-swap {
+  display: inline-block;
+}
+.cs-hash-swap:hover {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+/* --- Drag Insertion Indicator --- */
+.callsheet-play.cs-drop-above {
+  border-top: 3px solid var(--color-primary) !important;
+}
+
+/* --- Category Drag --- */
+.callsheet-category.cs-cat-dragging {
+  opacity: 0.4;
+  border: 2px dashed var(--color-primary);
+}
+
+/* --- Context Menu --- */
+.cs-context-menu {
+  position: fixed;
+  z-index: 10000;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: 0 6px 24px rgba(0, 0, 0, 0.22);
+  min-width: 180px;
+  max-width: 260px;
+  padding: 6px 0;
+  font-size: var(--font-size-sm);
+  max-height: 90vh;
+  overflow-y: auto;
+}
+.cs-context-menu.cs-ctx-wide {
+  min-width: 240px;
+  max-width: 300px;
+}
+.cs-ctx-item {
+  display: block;
+  width: 100%;
+  padding: 6px 12px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  white-space: nowrap;
+}
+.cs-ctx-item:hover {
+  background: var(--color-bg-input);
+}
+.cs-ctx-item.cs-ctx-clear {
+  color: var(--color-danger);
+  font-size: var(--font-size-sm);
+}
+.cs-ctx-item.cs-ctx-clear:hover {
+  background: #fde8e8;
+}
+.cs-ctx-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 4px 0;
+}
+.cs-ctx-section {
+  padding: 4px 12px;
+}
+.cs-ctx-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+  font-weight: 600;
+  display: block;
+  margin-bottom: 4px;
+}
+.cs-ctx-colors {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+/* Emoji border swatches */
+.cs-border-swatch {
+  border: 2px solid transparent;
+  background: none;
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  line-height: 1;
+  transition: transform 0.1s;
+}
+.cs-border-swatch:hover {
+  background: var(--color-border-med);
+  transform: scale(1.15);
+}
+.cs-border-swatch.cs-swatch-active {
+  border-color: var(--color-text);
+  border-radius: var(--radius-sm);
+}
+/* Color square swatches (bg / text) */
+.cs-color-swatch {
+  width: 22px;
+  height: 22px;
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  transition: transform 0.1s;
+  padding: 0;
+}
+.cs-color-swatch:hover {
+  transform: scale(1.15);
+  border-color: var(--color-text-light);
+}
+.cs-color-swatch.cs-swatch-active {
+  border-color: var(--color-text);
+  box-shadow: 0 0 0 2px rgba(67, 97, 238, 0.4);
+}
+/* Text style toggle buttons */
+.cs-ctx-styles {
+  display: flex;
+  gap: 4px;
+}
+.cs-style-btn {
+  width: 28px;
+  height: 28px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.12s;
+  color: var(--color-text-muted);
+}
+.cs-style-btn:hover {
+  background: #e2e6ea;
+  border-color: var(--color-text-placeholder);
+}
+.cs-style-btn.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+/* Font size buttons */
+.cs-ctx-sizes {
+  display: flex;
+  gap: 3px;
+}
+.cs-size-btn {
+  padding: 3px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  transition: all 0.12s;
+}
+.cs-size-btn:hover {
+  background: #e2e6ea;
+  border-color: var(--color-text-placeholder);
+}
+.cs-size-btn.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+/* Note input */
+.cs-ctx-note-row {
+  display: flex;
+  gap: 4px;
+  margin-top: 4px;
+}
+.cs-ctx-note-input {
+  flex: 1;
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  outline: none;
+}
+.cs-ctx-note-input:focus {
+  border-color: var(--color-primary);
+}
+.cs-ctx-note-save {
+  padding: 4px 8px;
+  border: 1px solid var(--color-success);
+  border-radius: var(--radius-sm);
+  background: var(--color-success);
+  color: var(--color-white);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  line-height: 1;
+}
+.cs-ctx-note-save:hover {
+  background: var(--color-success-hover);
+}
+/* Category copy list */
+.cs-ctx-cat-list {
+  max-height: 160px;
+  overflow-y: auto;
+  margin-top: 4px;
+}
+.cs-ctx-cat-btn {
+  display: block;
+  width: 100%;
+  padding: 4px 8px;
+  border: none;
+  background: none;
+  text-align: left;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+}
+.cs-ctx-cat-btn:hover {
+  background: #e7f1ff;
+}
+
+/* --- Per-Cell Indicators --- */
+.cs-cell-format-dot {
+  color: var(--color-primary);
+  font-size: 8px;
+  flex-shrink: 0;
+  margin-left: 1px;
+  opacity: 0.7;
+}
+.cs-cell-note-badge {
+  font-size: 9px;
+  flex-shrink: 0;
+  cursor: default;
+  margin-left: 1px;
+  opacity: 0.8;
+}
+.cs-cell-note-badge:hover {
+  opacity: 1;
+}
+/* Print cell note */
+.print-cell-note {
+  font-size: 7px;
+  color: var(--color-text-secondary);
+  font-style: italic;
+  margin-left: 2px;
+}
+
+
+
+/* --- Target Popup --- */
+.cs-target-popup {
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--color-white);
+  border-radius: var(--radius-md);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.25);
+  padding: 16px 20px;
+  z-index: 10001;
+  min-width: 250px;
+}
+.cs-target-popup label {
+  display: block;
+  margin-bottom: 8px;
+  font-size: var(--font-size-sm);
+}
+.cs-target-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-base);
+  margin-bottom: 10px;
+  box-sizing: border-box;
+}
+.cs-target-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+/* --- Stats Panel --- */
+.cs-stats-panel {
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+}
+.cs-stats-grid {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 12px;
+}
+.cs-stat-card {
+  flex: 1;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 12px;
+  text-align: center;
+}
+.cs-stat-number {
+  font-size: 28px;
+  font-weight: 700;
+  color: var(--color-text);
+}
+.cs-stat-split {
+  font-size: 22px;
+}
+.cs-stat-title {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  margin-top: 2px;
+}
+.cs-stat-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-placeholder);
+}
+.cs-stats-sections summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  padding: 4px 0;
+  user-select: none;
+}
+.cs-stat-bars {
+  padding: 4px 0;
+}
+.cs-stat-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 3px 0;
+  font-size: var(--font-size-sm);
+}
+.cs-stat-label {
+  min-width: 100px;
+  color: var(--color-text-muted);
+}
+.cs-stat-bar-bg {
+  flex: 1;
+  height: 14px;
+  background: var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.cs-stat-bar {
+  height: 100%;
+  border-radius: var(--radius-md);
+  transition: width 0.3s ease;
+}
+.cs-stat-val {
+  min-width: 70px;
+  text-align: right;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+/* --- Not On Sheet Panel --- */
+.cs-not-on-sheet-panel {
+  background: #fff8f0;
+  border: 1px solid #f5c6a0;
+  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  margin-bottom: 12px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+.cs-nos-count {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  margin-bottom: 8px;
+  color: #856404;
+}
+.cs-nos-empty {
+  text-align: center;
+  padding: 16px;
+  color: var(--color-success);
+  font-weight: 600;
+}
+.cs-nos-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 6px 0;
+}
+.cs-nos-play {
+  font-size: var(--font-size-sm);
+  padding: 3px 8px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.cs-not-on-sheet-panel summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  padding: 3px 0;
+  color: #8a6d3b;
+}
+.cs-not-on-sheet-panel details {
+  margin-bottom: 4px;
+}
+
+/* --- Templates --- */
+.cs-template-save-row {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+.cs-template-name-input {
+  flex: 1;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+}
+.cs-template-list {
+  max-height: 300px;
+  overflow-y: auto;
+}
+.cs-template-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-bg-input);
+}
+.cs-template-item:last-child {
+  border-bottom: none;
+}
+.cs-template-info {
+  display: flex;
+  flex-direction: column;
+}
+.cs-template-info strong {
+  font-size: var(--font-size-sm);
+}
+.cs-template-date {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+}
+.cs-template-actions {
+  display: flex;
+  gap: 4px;
+}
+
+/* --- Print: category notes --- */
+.print-cat-note {
+  font-size: 9px;
+  padding: 2px 4px;
+  background: #fffde0;
+  font-style: italic;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+/* --- Print: hide new UI elements --- */
+
+/* ============ Import from Call Sheet Modal ============ */
+.cs-import-modal {
+  max-width: 480px !important;
+}
+.cs-import-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-light);
+  margin: 0 0 10px 0;
+}
+.cs-import-actions-top {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cs-import-cat-list {
+  max-height: 350px;
+  overflow-y: auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 6px;
+}
+.cs-import-cat-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 7px 8px;
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: background 0.1s;
+  font-size: var(--font-size-sm);
+}
+.cs-import-cat-item:hover {
+  background: var(--color-bg-lighter);
+}
+.cs-import-cat-color {
+  width: 12px;
+  height: 12px;
+  border-radius: var(--radius-sm);
+  flex-shrink: 0;
+}
+.cs-import-cat-name {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-import-cat-count {
+  background: var(--color-border-light);
+  color: var(--color-text-muted);
+  padding: 2px 8px;
+  border-radius: var(--radius-lg);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.pat-btn-import-cs {
+  background: var(--color-info) !important;
+  color: white !important;
+  border-color: var(--color-info) !important;
+}
+.pat-btn-import-cs:hover {
+  background: #138496 !important;
+}
+
+
+/* ============ Call Sheet Scouting Overlay ============ */
+.cs-scouting-btn {
+  font-weight: 600;
+}
+.cs-scouting-btn.cs-scouting-active {
+  background: var(--color-danger) !important;
+  color: white !important;
+  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+}
+
+/* Scouting badge per category */
+.cs-scouting-badge {
+  background: linear-gradient(135deg, var(--color-warning-light), #ffe0b2);
+  padding: 5px 10px;
+  font-size: var(--font-size-xs);
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  flex-wrap: wrap;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.cs-scout-item {
+  color: var(--color-text-muted);
+}
+.cs-scout-item b {
+  color: #d32f2f;
+}
+.cs-scout-blitz {
+  color: var(--color-orange-deep);
+  font-weight: 600;
+}
+.cs-scout-n {
+  color: var(--color-text-placeholder);
+  font-size: 10px;
+}
+
+/* Suggest button */
+.cs-suggest-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  padding: 0 4px;
+  opacity: 0.8;
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+.cs-suggest-btn:hover {
+  opacity: 1;
+  transform: scale(1.2);
+}
+
+/* Dead-vs warning badge */
+.cs-dead-vs-badge {
+  font-size: var(--font-size-sm);
+  cursor: help;
+  flex-shrink: 0;
+  animation: deadVsPulse 2s ease-in-out infinite;
+}
+@keyframes deadVsPulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.6;
+  }
+}
+.cs-play-has-warning {
+  border-left: 3px solid var(--color-warning) !important;
+}
+
+/* ============ Smart Suggestions Modal ============ */
+.cs-suggest-modal {
+  max-width: 700px !important;
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.cs-suggest-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-bottom: 12px;
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 12px;
+}
+.cs-suggest-header h3 {
+  margin: 0;
+  font-size: 17px;
+}
+
+.cs-suggest-intel {
+  background: var(--color-bg-blue-tint);
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  color: #1565c0;
+  margin-bottom: 12px;
+}
+.cs-suggest-no-intel {
+  background: var(--color-bg-lighter);
+  color: var(--color-text-light);
+}
+
+.cs-suggest-list {
+  overflow-y: auto;
+  flex: 1;
+  min-height: 200px;
+}
+
+.cs-suggest-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 12px;
+  border-bottom: 1px solid var(--color-bg-input);
+  transition: background 0.1s;
+}
+.cs-suggest-item:hover {
+  background: var(--color-bg-light);
+}
+.cs-suggest-on-sheet {
+  opacity: 0.5;
+  background: #f0fff0;
+}
+
+.cs-suggest-rank {
+  width: 24px;
+  text-align: center;
+  font-weight: 700;
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-sm);
+  flex-shrink: 0;
+}
+
+.cs-suggest-score {
+  width: 36px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  flex-shrink: 0;
+}
+.cs-score-high {
+  background: #c8e6c9;
+  color: #2e7d32;
+}
+.cs-score-med {
+  background: #fff9c4;
+  color: #f57f17;
+}
+.cs-score-low {
+  background: var(--color-bg-lighter);
+  color: var(--color-text-placeholder);
+}
+
+.cs-suggest-play-info {
+  flex: 1;
+  min-width: 0;
+}
+.cs-suggest-call {
+  font-size: var(--font-size-sm);
+  font-weight: 500;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.cs-suggest-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+  margin-top: 2px;
+}
+.cs-suggest-reasons {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: #2e7d32;
+  margin-top: 2px;
+}
+.cs-suggest-warnings {
+  display: block;
+  font-size: var(--font-size-xs);
+  color: var(--color-orange-deep);
+  margin-top: 2px;
+}
+.cs-suggest-deadvs {
+  display: block;
+  font-size: 10px;
+  color: #d32f2f;
+  font-style: italic;
+  margin-top: 1px;
+}
+
+.cs-suggest-actions {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+.cs-suggest-added {
+  font-size: var(--font-size-xs);
+  color: var(--color-success);
+  font-weight: 600;
+}
+
+.cs-suggest-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+  margin-top: 12px;
+}
+.cs-suggest-legend {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-placeholder);
+}
+
+.cs-suggest-empty {
+  text-align: center;
+  padding: 40px 20px;
+  color: var(--color-text-placeholder);
+}
+

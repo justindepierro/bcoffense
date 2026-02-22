@@ -1,0 +1,464 @@
+/* ============ Print: All @media print blocks ============ */
+/* Auto-split from styles.css */
+
+@media print {
+  /* Remove browser headers/footers by setting margins to 0 */
+  @page {
+    margin: 0;
+    size: auto;
+  }
+
+  * {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  /* Reset html/body to prevent extra pages */
+  html,
+  body {
+    height: auto !important;
+    overflow: visible !important;
+  }
+
+  /* Hide everything by default when printing */
+  body:not(.print-script) {
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    height: auto !important;
+    min-height: 0 !important;
+  }
+  /* Wristband-specific body width */
+  body[data-print-mode="wristband"] {
+    width: 5.5in !important;
+  }
+  body:not(.print-script) .tabs,
+  body:not(.print-script) .filters,
+  body:not(.print-script) .pb-controls,
+  body:not(.print-script) .script-builder,
+  body:not(.print-script) .btn,
+  body:not(.print-script) h1,
+  body:not(.print-script) .wristband-plays,
+  body:not(.print-script) .script-actions,
+  body:not(.print-script) .saved-scripts,
+  body:not(.print-script) .script-header,
+  body:not(.print-script) .script-header-panel,
+  body:not(.print-script) .card-tabs,
+  body:not(.print-script) .wristband-container,
+  body:not(.print-script) .wristband-preview,
+  body:not(.print-script) #uploadSection,
+  body:not(.print-script) #mainApp > h1 {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  body:not(.print-script) .panel {
+    display: none !important;
+    height: 0 !important;
+    overflow: hidden !important;
+  }
+  body[data-print-mode="wristband"] #wristbandPrint {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+  }
+  body[data-print-mode="wristband"] #wristbandPrint *,
+  body[data-print-mode="wristband"] #wristbandPrintCards,
+  body[data-print-mode="wristband"] #wristbandPrintCards * {
+    visibility: visible !important;
+  }
+  body:not(.print-script) .script-preview {
+    display: none !important;
+  }
+  .wristband-print .wristband-card {
+    width: 5.5in !important;
+    height: 3in !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0.5px solid var(--color-text) !important;
+    page-break-after: always;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
+  }
+  .wristband-print .wristband-card:last-child {
+    page-break-after: avoid;
+  }
+  .wristband-print .wristband-grid {
+    width: 100% !important;
+    height: 100% !important;
+    display: grid !important;
+    grid-template-columns: 22px 1fr 22px 1fr !important;
+  }
+  .wristband-print .wristband-cell {
+    font-size: 7.5px !important;
+    padding: 0 2px !important;
+    border: 0.3px solid var(--color-text-muted) !important;
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+  }
+  .wristband-print .wristband-cell.num-cell {
+    font-size: 8px !important;
+    justify-content: center !important;
+  }
+  .wristband-print .cell-play {
+    font-size: 7.5px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
+  }
+
+  /* Playbook print mode — numbered list */
+  body[data-print-mode="playbook"] {
+    width: 8.5in !important;
+  }
+  body[data-print-mode="playbook"] #playbookPrint {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute !important;
+    top: 0 !important;
+    left: 0 !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    z-index: 9999 !important;
+    background: white !important;
+  }
+  body[data-print-mode="playbook"] #playbookPrint *,
+  body[data-print-mode="playbook"] #playbookPrintCards,
+  body[data-print-mode="playbook"] #playbookPrintCards * {
+    visibility: visible !important;
+  }
+  .pb-print-list {
+    margin: 0 !important;
+    padding: 0 0 0 2em !important;
+    list-style: decimal !important;
+    font-family:
+      -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+    font-size: 11pt !important;
+    line-height: 1.6 !important;
+    color: #000 !important;
+    columns: 2 !important;
+    column-gap: 0.4in !important;
+  }
+  .pb-print-list li {
+    padding: 1px 4px !important;
+    break-inside: avoid !important;
+  }
+
+  /* Script Print Styles - Letter size */
+  body.print-script {
+    width: 100% !important;
+    height: auto !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+  }
+  body.print-script .tabs,
+  body.print-script .panel:not(#script),
+  body.print-script .filters,
+  body.print-script .pb-controls,
+  body.print-script .script-builder,
+  body.print-script .btn,
+  body.print-script > h1,
+  body.print-script #mainApp > h1,
+  body.print-script .script-actions,
+  body.print-script .saved-scripts,
+  body.print-script .script-header,
+  body.print-script .script-header-panel,
+  body.print-script .wristband-container,
+  body.print-script .wristband-preview,
+  body.print-script #wristbandPrint,
+  body.print-script #fullDaySection,
+  body.print-script #uploadSection {
+    display: none !important;
+  }
+  body.print-script #script {
+    display: block !important;
+    padding: 0 !important;
+    margin: 0 !important;
+    background: white !important;
+    box-shadow: none !important;
+  }
+  body.print-script .script-preview {
+    display: block !important;
+    visibility: visible !important;
+    position: static !important;
+    width: 100% !important;
+    background: white !important;
+    padding: 0.4in !important;
+    margin: 0 !important;
+    box-sizing: border-box !important;
+  }
+  body.print-script .script-preview,
+  body.print-script .script-preview * {
+    visibility: visible !important;
+  }
+  body.print-script .script-preview h2 {
+    font-size: var(--font-size-md) !important;
+    margin: 0 0 5px 0 !important;
+  }
+  body.print-script .script-preview p {
+    font-size: var(--font-size-xs) !important;
+    margin: 0 0 8px 0 !important;
+  }
+  body.print-script .script-table {
+    width: 100% !important;
+    border-collapse: collapse !important;
+    font-size: 9px !important;
+  }
+  body.print-script .script-table th {
+    background: var(--color-text) !important;
+    color: white !important;
+    padding: 4px 3px !important;
+    font-size: 8px !important;
+    font-weight: bold !important;
+    white-space: nowrap !important;
+  }
+  body.print-script .script-table td {
+    padding: 3px 4px !important;
+    border: 0.5px solid var(--color-text) !important;
+    font-size: 9px !important;
+    line-height: 1.2 !important;
+    white-space: nowrap !important;
+  }
+  body.print-script .script-table td:nth-child(5) {
+    text-align: left !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    max-width: 200px !important;
+  }
+  body.print-script .line-call {
+    font-size: 8px !important;
+  }
+  /* Remove alternating color - we use play type colors instead */
+}
+
+@media print {
+  body[data-print-mode="callsheet"] > *,
+  body[data-print-mode="gameplan"] > * {
+    visibility: hidden;
+  }
+
+  body[data-print-mode="callsheet"] .callsheet-print,
+  body[data-print-mode="callsheet"] .callsheet-print *,
+  body[data-print-mode="gameplan"] .callsheet-print,
+  body[data-print-mode="gameplan"] .callsheet-print * {
+    visibility: visible !important;
+  }
+
+  .callsheet-print:not(.hidden) {
+    display: block !important;
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 100%;
+    background: var(--color-white);
+  }
+
+  .print-callsheet-grid {
+    display: flex;
+    gap: 8px;
+    font-size: 8px;
+  }
+
+  .print-column {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+  }
+
+  .print-category {
+    border: 1.5px solid var(--color-text);
+    break-inside: avoid;
+  }
+
+  .print-category-header {
+    padding: 3px 6px;
+    font-weight: bold;
+    text-align: center;
+    font-size: 9px;
+  }
+
+  .print-hash-headers {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    background: var(--color-bg-input);
+    font-size: 7px;
+    font-style: italic;
+    text-align: center;
+  }
+
+  .print-hash-headers > div {
+    padding: 2px;
+    border-right: 1px solid var(--color-border);
+  }
+
+  .print-hash-headers > div:last-child {
+    border-right: none;
+  }
+
+  .print-plays-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .print-hash-column {
+    padding: 2px;
+    border-right: 1px solid var(--color-border-light);
+  }
+
+  .print-hash-column:last-child {
+    border-right: none;
+  }
+
+  .print-play {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    padding: 1px 2px;
+    font-size: 7px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+  }
+
+  .print-code {
+    padding: 0 3px;
+    border-radius: 2px;
+    font-size: 6px;
+    font-weight: bold;
+  }
+
+  /* Portrait orientation */
+  .print-portrait {
+    width: 8.5in;
+  }
+
+  /* Landscape orientation */
+  .print-landscape {
+    width: 11in;
+  }
+
+  .print-landscape .print-callsheet-grid {
+    gap: 12px;
+  }
+
+  .print-landscape .print-category-header {
+    font-size: 10px;
+  }
+
+  .print-landscape .print-play {
+    font-size: 8px;
+  }
+
+  @page {
+    margin: 0.25in;
+  }
+}
+
+@media print {
+  .cs-sort-btn {
+    display: none !important;
+  }
+}
+
+@media print {
+  .help-fab,
+  .help-overlay {
+    display: none !important;
+  }
+}
+
+@media print {
+  .cs-collapse-btn,
+  .cs-cat-menu-btn,
+  .cs-hash-swap,
+  .cs-dupe-badge,
+  .cs-stats-panel,
+  .cs-not-on-sheet-panel,
+  .cs-context-menu,
+  .cs-target-popup,
+  .cs-toolbar-secondary,
+  .cs-unified-bar {
+    display: none !important;
+  }
+}
+
+@media print {
+  .td-toolbar,
+  .td-filter-panel,
+  .td-bulk-bar,
+  .td-col-toggle-panel,
+  .td-new-play-btn,
+  .td-detail-actions,
+  .td-play-actions,
+  .tabs,
+  .app-header,
+  #tdColumnPanel {
+    display: none !important;
+  }
+  .td-stats-dashboard {
+    break-inside: avoid;
+  }
+}
+
+
+@media print {
+  .gp-print-wrap {
+    max-width: none;
+  }
+  .gp-scout-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .gp-cs-grid {
+    grid-template-columns: repeat(3, 1fr);
+  }
+  .gp-print-section {
+    page-break-inside: avoid;
+  }
+  .gp-cs-section {
+    page-break-before: always;
+  }
+}
+
+
+@media print {
+  body[data-print-mode="install"] > * {
+    visibility: hidden;
+  }
+  body[data-print-mode="install"] .install-report-print {
+    display: block !important;
+    visibility: visible !important;
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 99999;
+    background: var(--color-white);
+  }
+  body[data-print-mode="install"] .install-report-print,
+  body[data-print-mode="install"] .install-report-print * {
+    visibility: visible !important;
+  }
+  .install-report-print .sirp {
+    padding: 0.3in;
+  }
+  /* Make stat colors print */
+  .install-report-print .sirp-stat,
+  .install-report-print .sirp-balance-fill,
+  .install-report-print .sirp-table th,
+  .install-report-print .sirp-table tbody tr:nth-child(even) {
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+}
+

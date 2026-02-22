@@ -1,0 +1,202 @@
+/* ============ Responsive: Global Breakpoints ============ */
+/* Auto-split from styles.css */
+
+/* ============ Responsive ============ */
+@media (max-width: 600px) {
+  .td-option-btn {
+    padding: 10px 12px;
+    font-size: var(--font-size-sm);
+    min-width: 44px;
+  }
+  .td-text-input {
+    max-width: 100%;
+  }
+  .td-textarea {
+    max-width: 100%;
+  }
+  .td-custom-input {
+    max-width: 180px;
+  }
+  .td-detail-header {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  .td-detail-actions {
+    flex-wrap: wrap;
+  }
+  .td-step-label {
+    display: none;
+  }
+  .td-step-connector {
+    width: 10px;
+  }
+  .td-toolbar {
+    padding: 8px 10px;
+  }
+  .td-search-input {
+    width: 140px;
+  }
+  .td-search-input:focus {
+    width: 180px;
+  }
+  .td-stats-grid {
+    grid-template-columns: 1fr;
+  }
+  .td-dist-label {
+    width: 60px;
+    font-size: var(--font-size-xs);
+  }
+  .td-bulk-bar {
+    flex-wrap: wrap;
+  }
+  .td-rapid-section {
+    padding: 12px 14px;
+  }
+  .tabs {
+    flex-wrap: wrap;
+  }
+}
+
+
+/* ============ Responsive Design ============ */
+@media (max-width: 1024px) {
+  .script-builder {
+    flex-direction: column;
+  }
+  .play-list {
+    max-width: 100%;
+  }
+  .wristband-container {
+    flex-direction: column;
+  }
+}
+
+@media (max-width: 768px) {
+  .app-header {
+    padding: 10px 16px;
+  }
+  .app-title {
+    font-size: 16px;
+  }
+  .app-logo {
+    font-size: 22px;
+  }
+  .header-action-label {
+    display: none;
+  }
+  .tabs {
+    gap: var(--space-xs);
+    justify-content: flex-start;
+    padding: 0 12px;
+    top: 46px;
+  }
+  .tab {
+    padding: 8px 14px;
+    font-size: var(--font-size-xs);
+  }
+  .panel {
+    margin: 12px;
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+  .filters {
+    flex-direction: column;
+  }
+  .playbook-toolbar {
+    flex-direction: column;
+    gap: var(--space-sm);
+  }
+  /* Playbook controls responsive */
+  .pb-top-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pb-search-wrap {
+    max-width: 100%;
+  }
+  .pb-sort-group {
+    flex-wrap: wrap;
+  }
+  .pb-utility-group {
+    margin-left: 0;
+    flex-wrap: wrap;
+  }
+  .pb-chip-row {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+  }
+  .pb-actions-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pb-actions-left {
+    flex-wrap: wrap;
+  }
+  .pb-action-collections {
+    margin-left: 0;
+  }
+  .pb-coll-card {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pb-coll-actions {
+    flex-wrap: wrap;
+  }
+  .pb-print-options-grid {
+    grid-template-columns: 1fr 1fr;
+  }
+  .script-actions {
+    flex-wrap: wrap;
+  }
+  .upload-box {
+    padding: 30px 20px;
+  }
+  .callsheet-columns {
+    flex-direction: column;
+  }
+  .dash-cards {
+    grid-template-columns: repeat(2, 1fr) !important;
+  }
+  .dash-scout-grid {
+    grid-template-columns: 1fr !important;
+  }
+}
+
+@media (max-width: 480px) {
+  .app-header {
+    padding: 8px 12px;
+  }
+  .app-title {
+    font-size: 14px;
+  }
+  .app-logo {
+    font-size: 20px;
+  }
+  .tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding: 0 8px 0;
+    top: 42px;
+  }
+  .tab {
+    padding: 6px 10px;
+    font-size: var(--font-size-xs);
+  }
+  .panel {
+    margin: 8px;
+    padding: 10px;
+    border-radius: var(--radius-sm);
+  }
+  .btn {
+    padding: 8px 14px;
+    font-size: var(--font-size-xs);
+  }
+  .upload-box {
+    padding: 20px 15px;
+    border-width: 2px;
+  }
+  .dash-cards {
+    grid-template-columns: 1fr !important;
+  }
+}
+
