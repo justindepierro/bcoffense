@@ -301,6 +301,13 @@ function initApp() {
     teamNameInput.value = getTeamName();
   }
 
+  // Populate header subtitle with team name
+  const teamSub = document.getElementById("teamSubtitle");
+  if (teamSub) {
+    const name = getTeamName();
+    teamSub.textContent = name && name !== "My Team Football" ? name : "";
+  }
+
   // Initialize swatch handlers for wristband
   initSwatchHandlers();
 

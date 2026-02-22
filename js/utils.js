@@ -2242,4 +2242,9 @@ function getTeamName() {
  */
 function setTeamName(name) {
   storageManager.set("teamName", name);
+  // Update header subtitle
+  const teamSub = document.getElementById("teamSubtitle");
+  if (teamSub) {
+    teamSub.textContent = name && name !== "My Team Football" ? name : "";
+  }
 }

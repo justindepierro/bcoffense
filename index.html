@@ -22,7 +22,23 @@
   </head>
   <body>
     <a href="#mainApp" class="skip-link">Skip to main content</a>
-    <h1>🏈 Practice Script & Playbook</h1>
+
+    <!-- App Header -->
+    <header class="app-header">
+      <div class="app-header-brand">
+        <span class="app-logo">🏈</span>
+        <div class="app-title-group">
+          <h1 class="app-title">Practice Script & Playbook</h1>
+          <span class="app-subtitle" id="teamSubtitle"></span>
+        </div>
+      </div>
+      <div class="app-header-actions">
+        <button class="header-action-btn" onclick="showUpload()" title="Import / Export">
+          <span>⚙️</span>
+          <span class="header-action-label">Settings</span>
+        </button>
+      </div>
+    </header>
 
     <!-- Upload Section -->
     <div id="uploadSection" class="upload-section">
@@ -51,9 +67,8 @@
         </button>
         <p class="hint">Or drag and drop your file here</p>
         <button
-          class="btn btn-outline"
+          class="btn btn-outline mt-sm"
           onclick="showCSVTemplateModal()"
-          class="mt-sm"
         >
           📋 CSV Column Template
         </button>
@@ -72,8 +87,8 @@
               id="backupFile"
               accept=".json"
               onchange="importBackup(event)"
-              
-            / class="hidden">
+              class="hidden"
+            >
             <button
               class="btn btn-secondary"
               onclick="document.getElementById('backupFile').click()"
