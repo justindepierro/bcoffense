@@ -32,7 +32,7 @@
   padding: 2px 4px;
   text-align: left;
   font-family: var(--font-mono);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   display: flex;
   align-items: center;
   cursor: pointer;
@@ -55,7 +55,7 @@
 }
 .wristband-cell .cell-play {
   font-weight: bold;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   line-height: 1.2;
   white-space: nowrap;
   overflow: hidden;
@@ -90,7 +90,7 @@
 .wristband-header {
   background: var(--color-text) !important;
   color: white !important;
-  font-weight: bold;
+  font-weight: 700;
 }
 .color-picker {
   display: flex;
@@ -133,7 +133,7 @@
   margin: 0 auto;
 }
 .playbook-print {
-  background: white;
+  background: var(--color-white);
   padding: 10px;
 }
 
@@ -143,9 +143,11 @@
 }
 .checkbox-filters-title {
   font-size: var(--font-size-xs);
-  font-weight: bold;
+  font-weight: 700;
   color: var(--color-text-muted);
   margin-bottom: 5px;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 .checkbox-group {
   display: flex;
@@ -181,7 +183,7 @@
   font-style: italic;
   color: var(--color-text-light);
   font-weight: normal;
-  font-size: 0.85em;
+  font-size: var(--font-size-sm);
 }
 .personnel-emoji {
   margin-right: 3px;
@@ -237,7 +239,7 @@
   color: var(--color-primary);
 }
 .card-tab .card-count {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: var(--color-text-secondary);
   font-weight: normal;
 }
@@ -294,7 +296,7 @@
   background: rgba(25, 42, 81, 0.35);
 }
 .wb-stats-bar .stat-label {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: rgba(255, 255, 255, 0.8);
   text-transform: uppercase;
   letter-spacing: 0.5px;

@@ -59,7 +59,7 @@
   margin-bottom: 6px;
 }
 .csv-tpl-section-header h4 {
-  font-size: 15px;
+  font-size: var(--font-size-md);
   font-weight: 700;
   color: var(--color-text);
   margin: 0;
@@ -113,7 +113,7 @@
   display: inline-block;
   background: var(--color-success-light);
   color: var(--color-success);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   padding: 2px 7px;
   border-radius: var(--radius-md);
@@ -159,7 +159,7 @@
   padding: 11px 14px;
   border: 2px solid var(--color-border-input);
   border-radius: var(--radius-md);
-  font-size: 15px;
+  font-size: var(--font-size-md);
   transition: border-color var(--transition-fast);
   font-family: inherit;
 }
@@ -494,6 +494,31 @@
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
+.btn-secondary {
+  background: var(--color-secondary);
+  color: white;
+  border-color: var(--color-secondary);
+}
+.btn-secondary:hover {
+  background: var(--color-text-muted);
+  border-color: var(--color-text-muted);
+}
+
+/* ---- Size modifiers ---- */
+.btn-sm {
+  padding: 5px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.btn-sm:hover {
+  transform: translateY(-1px);
+}
+.btn-xs,
+.btn-mini {
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+}
 
 /* Script Preview */
 .script-preview {
@@ -518,7 +543,7 @@
   text-align: center;
 }
 .script-table th {
-  background: var(--color-text);
+  background: var(--color-dark);
   color: white;
 }
 .script-table .script-section-header td {
@@ -678,7 +703,7 @@ input.smart-input-sm[type="number"] {
 }
 
 .smart-preview-table th {
-  background: var(--color-text);
+  background: var(--color-dark);
   color: white;
   padding: 4px 8px;
   text-align: left;
@@ -869,8 +894,8 @@ kbd {
 }
 
 .play-preview-tooltip .preview-title {
-  font-weight: bold;
-  font-size: 15px;
+  font-weight: 700;
+  font-size: var(--font-size-md);
   margin-bottom: 8px;
   color: var(--color-accent);
 }
@@ -905,7 +930,7 @@ kbd {
   border: none;
   background: rgba(25, 42, 81, 0.2);
   color: rgba(25, 42, 81, 0.5);
-  font-size: 22px;
+  font-size: var(--font-size-h1);
   font-weight: 700;
   cursor: pointer;
   z-index: 9000;
@@ -954,7 +979,7 @@ kbd {
 .help-panel {
   background: var(--color-white);
   border-radius: var(--radius-lg);
-  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.22);
+  box-shadow: var(--shadow-lg);
   width: 380px;
   max-height: calc(100vh - 80px);
   display: flex;
@@ -982,14 +1007,14 @@ kbd {
 }
 .help-panel-header h3 {
   margin: 0;
-  font-size: 15px;
+  font-size: var(--font-size-md);
   font-weight: 600;
 }
 .help-close-btn {
   background: none;
   border: none;
   color: rgba(255, 255, 255, 0.7);
-  font-size: 22px;
+  font-size: var(--font-size-h1);
   cursor: pointer;
   padding: 0 4px;
   line-height: 1;
@@ -1040,7 +1065,7 @@ kbd {
 }
 .help-key {
   font-family: var(--font-mono);
-  font-size: 10.5px;
+  font-size: var(--font-size-xs);
   font-weight: 600;
   background: var(--color-bg-lighter);
   color: var(--color-text-muted);
@@ -1062,7 +1087,7 @@ kbd {
 .modal-close-btn {
   background: none;
   border: none;
-  font-size: 22px;
+  font-size: var(--font-size-h1);
   cursor: pointer;
   color: var(--color-text-secondary);
   padding: 0 4px;

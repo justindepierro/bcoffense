@@ -110,11 +110,11 @@
 }
 
 .dash-card-icon {
-  font-size: 28px;
+  font-size: var(--font-size-3xl);
   flex-shrink: 0;
 }
 .dash-card-value {
-  font-size: 24px;
+  font-size: var(--font-size-2xl);
   font-weight: 700;
   line-height: 1;
 }
@@ -318,7 +318,7 @@
 }
 .gp-print-header h1 {
   margin: 0 0 4px 0;
-  font-size: 22px;
+  font-size: var(--font-size-h1);
 }
 .gp-print-date {
   font-size: var(--font-size-sm);
@@ -363,7 +363,7 @@
 }
 .gp-scout-table th {
   text-align: left;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: var(--color-text-light);
   border-bottom: 1px solid var(--color-border);
   padding: 2px 4px;

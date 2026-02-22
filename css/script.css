@@ -148,7 +148,7 @@
 .script-item .play-num .wb-badge {
   background: var(--color-success);
   color: white;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   font-weight: bold;
@@ -184,7 +184,7 @@
   padding: 6px 12px;
   background: var(--color-bg-input);
   border-bottom: 2px solid var(--color-border);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   font-weight: 700;
   color: var(--color-text-secondary);
   text-transform: uppercase;
@@ -449,7 +449,7 @@
 
 .script-item .defense-inputs .def-input::placeholder {
   color: var(--color-text-placeholder);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   font-style: italic;
 }
 
@@ -494,7 +494,7 @@
 .print-preview-row .preview-label {
   color: var(--color-text-secondary);
   font-weight: bold;
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   text-transform: uppercase;
 }
 .print-preview-row .preview-field {
@@ -554,7 +554,7 @@
   padding: 2px 6px;
   cursor: pointer;
   border-radius: var(--radius-sm);
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
 }
 .script-item .move-btn:hover {
   background: var(--color-border);
@@ -628,7 +628,7 @@
   background: rgba(215, 186, 137, 0.35);
 }
 .script-stats-bar .stat-label {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: rgba(255, 255, 255, 0.8);
   text-transform: uppercase;
   letter-spacing: 0.5px;
@@ -639,7 +639,7 @@
   color: white;
 }
 .script-stats-bar .stat-unit {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: rgba(255, 255, 255, 0.7);
   margin-left: 2px;
 }
@@ -667,9 +667,9 @@
   background: var(--color-primary);
   color: white;
   padding: 2px 8px;
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
-  font-weight: bold;
+  font-weight: 700;
 }
 .collapsible-section .checkbox-filters-title {
   cursor: pointer;
@@ -679,6 +679,8 @@
   border-radius: var(--radius-sm);
   margin-bottom: 5px;
   font-size: var(--font-size-sm);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
   transition: background 0.2s;
 }
 .collapsible-section .checkbox-filters-title:hover {
@@ -763,7 +765,7 @@
   margin-bottom: 10px;
 }
 .toggle-icon {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   transition: transform 0.2s;
 }
 .collapsed .toggle-icon {
@@ -900,20 +902,6 @@
   gap: 5px;
 }
 
-.btn-secondary {
-  background: var(--color-secondary);
-  color: white;
-  border: none;
-  padding: 8px 16px;
-  border-radius: var(--radius-md);
-  cursor: pointer;
-  font-size: 0.9rem;
-}
-
-.btn-secondary:hover {
-  background: var(--color-text-muted);
-}
-
 /* Script Actions */
 .script-actions {
   display: flex;
@@ -927,22 +915,6 @@
 .display-options-btns {
   display: flex;
   gap: 5px;
-}
-
-.btn-mini {
-  padding: 3px 8px;
-  font-size: var(--font-size-xs);
-  font-weight: 500;
-  background: var(--color-bg-light);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-sm);
-  cursor: pointer;
-  transition: all var(--transition-fast);
-}
-.btn-mini:hover {
-  background: var(--color-border-light);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
 }
 
 .display-options-grid {
@@ -1035,9 +1007,9 @@
   align-items: center;
   padding: 10px 12px;
   background: var(--color-white);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   margin-bottom: 6px;
-  border: 1px solid var(--color-border-med);
+  border: 1px solid var(--color-border-light);
   transition: border-color var(--transition-fast);
 }
 .saved-script-card:hover {
@@ -1060,7 +1032,7 @@
   color: var(--color-text-light);
 }
 .saved-card-periods {
-  font-size: 10px;
+  font-size: var(--font-size-2xs);
   color: var(--color-text-placeholder);
   margin-top: 2px;
   white-space: nowrap;
@@ -1416,7 +1388,8 @@
   border-color: var(--color-purple) !important;
 }
 .pat-btn-callsheet:hover {
-  background: #4a2d66 !important;
+  background: var(--color-purple) !important;
+  filter: brightness(0.85);
 }
 
 /* ============ Script Preview Table Column Widths ============ */
