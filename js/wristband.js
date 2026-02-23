@@ -830,7 +830,7 @@ function renderCardTabs() {
       const count = card.data.filter((p) => p !== null).length;
       return `
         <div class="card-tab ${i === currentCardIndex ? "active" : ""}" onclick="switchCard(${i})">
-          ${card.name} <span class="card-count">(${count}/40)</span>
+          ${escapeHtml(card.name)} <span class="card-count">(${count}/40)</span>
         </div>
       `;
     })
@@ -926,8 +926,8 @@ function populateWristbandCheckboxFilters() {
   tempoContainer.innerHTML = tempos
     .map(
       (t) => `
-        <label onclick="toggleWbCheckbox(this, 'tempo', '${t}')">
-          <input type="checkbox" value="${t}"> ${t}
+        <label onclick="toggleWbCheckbox(this, 'tempo', '${t.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+          <input type="checkbox" value="${escapeHtml(t)}"> ${escapeHtml(t)}
         </label>
       `,
     )
@@ -938,8 +938,8 @@ function populateWristbandCheckboxFilters() {
   personnelContainer.innerHTML = personnel
     .map(
       (p) => `
-        <label onclick="toggleWbCheckbox(this, 'personnel', '${p}')">
-          <input type="checkbox" value="${p}"> ${p}
+        <label onclick="toggleWbCheckbox(this, 'personnel', '${p.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+          <input type="checkbox" value="${escapeHtml(p)}"> ${escapeHtml(p)}
         </label>
       `,
     )
@@ -1040,8 +1040,8 @@ function renderWristbandPlays() {
       return `
         <div class="play-item" style="cursor: pointer;" ondblclick="addPlayToNextEmpty(${idx})" title="Double-click to add to next empty cell">
           <div class="play-info">
-            <div class="play-name">${emoji}${p.formation} ${p.protection} ${p.play}</div>
-            <div class="play-details">${p.type}${lineCallDisplay}</div>
+            <div class="play-name">${emoji}${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}</div>
+            <div class="play-details">${escapeHtml(p.type)}${lineCallDisplay}</div>
           </div>
         </div>
       `;
@@ -1343,7 +1343,7 @@ function populateCellPlayList() {
     .map(
       (p, idx) => `
       <div class="cell-play-option" onclick="selectPlayForCell(${plays.indexOf(p)})" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid ${UI_COLORS.borderLight}; font-size: 12px; ${idx % 2 === 0 ? `background: ${UI_COLORS.bgSubtle};` : ""}">
-        <span style="color: ${UI_COLORS.textLight}; font-size: 10px;">${p.type || "Play"}</span> ${getFullCall(p)}
+        <span style="color: ${UI_COLORS.textLight}; font-size: 10px;">${escapeHtml(p.type || "Play")}</span> ${getFullCall(p)}
       </div>
     `,
     )

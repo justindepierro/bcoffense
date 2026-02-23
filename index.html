@@ -2988,15 +2988,24 @@
     </div>
 
     <!-- JavaScript Files -->
-    <script src="js/utils.js"></script>
-    <script src="js/playbook.js"></script>
-    <script src="js/script.js"></script>
-    <script src="js/wristband.js"></script>
-    <script src="js/callsheet.js"></script>
-    <script src="js/tendencies.js"></script>
-    <script src="js/installation.js"></script>
-    <script src="js/offensebuilder.js"></script>
-    <script src="js/help.js"></script>
-    <script src="js/app.js"></script>
+    <script defer src="js/utils.js"></script>
+    <script defer src="js/playbook.js"></script>
+    <script defer src="js/script.js"></script>
+    <script defer src="js/wristband.js"></script>
+    <script defer src="js/callsheet.js"></script>
+    <script defer src="js/tendencies.js"></script>
+    <script defer src="js/installation.js"></script>
+    <script defer src="js/offensebuilder.js"></script>
+    <script defer src="js/help.js"></script>
+    <script defer src="js/app.js"></script>
+
+    <!-- Service Worker Registration -->
+    <script>
+      if ("serviceWorker" in navigator) {
+        navigator.serviceWorker
+          .register("./sw.js")
+          .catch((err) => console.warn("SW registration failed:", err));
+      }
+    </script>
   </body>
 </html>

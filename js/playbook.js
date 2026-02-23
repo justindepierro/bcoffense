@@ -246,13 +246,13 @@ function populateFilters() {
     if (scriptFormFilter) {
       scriptFormFilter.innerHTML =
         '<option value="">All Formations</option>' +
-        formations.map((f) => `<option value="${f}">${f}</option>`).join("");
+        formations.map((f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`).join("");
     }
     const scriptBaseFilter = document.getElementById("scriptFilterBasePlay");
     if (scriptBaseFilter) {
       scriptBaseFilter.innerHTML =
         '<option value="">All Base Plays</option>' +
-        basePlays.map((b) => `<option value="${b}">${b}</option>`).join("");
+        basePlays.map((b) => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`).join("");
     }
 
     // Populate script checkbox filters
@@ -263,7 +263,7 @@ function populateFilters() {
     if (wbTypeFilter) {
       wbTypeFilter.innerHTML =
         '<option value="">All Play Types</option>' +
-        types.map((t) => `<option value="${t}">${t}</option>`).join("");
+        types.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
     }
 
     // Populate wristband highlight dropdown
@@ -303,7 +303,7 @@ function populateWristbandHighlightDropdown() {
               0,
             )
           : 0;
-        return `<option value="${idx}">${wb.title} (${totalPlays} plays)</option>`;
+        return `<option value="${idx}">${escapeHtml(wb.title)} (${totalPlays} plays)</option>`;
       })
       .join("");
 }
@@ -839,7 +839,7 @@ function updateStatsBar() {
   statsBar.innerHTML = sorted
     .map(
       ([type, count]) =>
-        `<div class="stat-item"><span class="stat-count">${count}</span> ${type}</div>`,
+        `<div class="stat-item"><span class="stat-count">${count}</span> ${escapeHtml(type)}</div>`,
     )
     .join("");
 }

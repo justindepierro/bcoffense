@@ -579,8 +579,8 @@ function populateScriptCheckboxFilters() {
     typeContainer.innerHTML = types
       .map(
         (t) => `
-          <label onclick="toggleScriptCheckbox(this, 'type', '${t}')">
-            <input type="checkbox" value="${t}"> ${t}
+          <label onclick="toggleScriptCheckbox(this, 'type', '${t.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(t)}"> ${escapeHtml(t)}
           </label>
         `,
       )
@@ -593,8 +593,8 @@ function populateScriptCheckboxFilters() {
     situationContainer.innerHTML = situations
       .map(
         (s) => `
-          <label onclick="toggleScriptCheckbox(this, 'situation', '${s}')">
-            <input type="checkbox" value="${s}"> ${s}
+          <label onclick="toggleScriptCheckbox(this, 'situation', '${s.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(s)}"> ${escapeHtml(s)}
           </label>
         `,
       )
@@ -607,8 +607,8 @@ function populateScriptCheckboxFilters() {
     downContainer.innerHTML = downs
       .map(
         (d) => `
-          <label onclick="toggleScriptCheckbox(this, 'down', '${d}')">
-            <input type="checkbox" value="${d}"> ${d}
+          <label onclick="toggleScriptCheckbox(this, 'down', '${d.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(d)}"> ${escapeHtml(d)}
           </label>
         `,
       )
@@ -621,8 +621,8 @@ function populateScriptCheckboxFilters() {
     distanceContainer.innerHTML = distances
       .map(
         (d) => `
-          <label onclick="toggleScriptCheckbox(this, 'distance', '${d}')">
-            <input type="checkbox" value="${d}"> ${d}
+          <label onclick="toggleScriptCheckbox(this, 'distance', '${d.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(d)}"> ${escapeHtml(d)}
           </label>
         `,
       )
@@ -635,8 +635,8 @@ function populateScriptCheckboxFilters() {
     hashContainer.innerHTML = hashes
       .map(
         (h) => `
-          <label onclick="toggleScriptCheckbox(this, 'hash', '${h}')">
-            <input type="checkbox" value="${h}"> ${h}
+          <label onclick="toggleScriptCheckbox(this, 'hash', '${h.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(h)}"> ${escapeHtml(h)}
           </label>
         `,
       )
@@ -649,8 +649,8 @@ function populateScriptCheckboxFilters() {
     fieldPosContainer.innerHTML = fieldPositions
       .map(
         (f) => `
-          <label onclick="toggleScriptCheckbox(this, 'fieldPos', '${f}')">
-            <input type="checkbox" value="${f}"> ${f}
+          <label onclick="toggleScriptCheckbox(this, 'fieldPos', '${f.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(f)}"> ${escapeHtml(f)}
           </label>
         `,
       )
@@ -663,8 +663,8 @@ function populateScriptCheckboxFilters() {
     personnelContainer.innerHTML = personnels
       .map(
         (p) => `
-          <label onclick="toggleScriptCheckbox(this, 'personnel', '${p}')">
-            <input type="checkbox" value="${p}"> ${p}
+          <label onclick="toggleScriptCheckbox(this, 'personnel', '${p.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+            <input type="checkbox" value="${escapeHtml(p)}"> ${escapeHtml(p)}
           </label>
         `,
       )
@@ -780,8 +780,8 @@ function renderAvailablePlays() {
                        onchange="toggleAvailablePlaySelect(${playIdx})" 
                        onclick="event.stopPropagation()" />
                 <div class="play-info">
-                    <div class="play-name">${p.formation} ${p.protection} ${p.play}</div>
-                    <div class="play-details">${p.type} ${p.motion ? "• " + p.motion : ""}</div>
+                    <div class="play-name">${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}</div>
+                    <div class="play-details">${escapeHtml(p.type)} ${p.motion ? "• " + escapeHtml(p.motion) : ""}</div>
                 </div>
                 <button onclick="addToScript(${playIdx})">+ Add</button>
             </div>
@@ -1904,7 +1904,7 @@ function insertPeriodFromTemplate() {
           .map(
             (t, i) => `
           <div class="template-picker-item" onclick="doInsertTemplate(${i}); this.closest('.period-create-overlay').remove();">
-            <div class="tpi-name">${t.name}</div>
+            <div class="tpi-name">${escapeHtml(t.name)}</div>
             <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
           </div>
         `,
@@ -1966,7 +1966,7 @@ function manageTemplates() {
             (t, i) => `
           <div class="template-picker-item" style="justify-content:space-between;">
             <div>
-              <div class="tpi-name">${t.name}</div>
+              <div class="tpi-name">${escapeHtml(t.name)}</div>
               <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
             </div>
             <button class="btn btn-danger btn-sm" onclick="doDeleteTemplate(${i})">✕</button>
@@ -2445,7 +2445,7 @@ function renderScript() {
         <div class="script-item period-header" style="background: ${periodColor}; color: white;">
           <div class="ph-left">
             <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
-            <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value; saveScriptState()" placeholder="Period name">
+            <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" onchange="script[${i}].label = this.value; saveScriptState()" placeholder="Period name">
             <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="updatePeriodMinutes(${i}, this)" placeholder="min" title="Time in minutes">
           </div>
           <div class="ph-right">
@@ -2554,7 +2554,7 @@ function renderScript() {
                 <div class="ph-left">
                   <button class="ph-collapse-btn" onclick="togglePeriodCollapse('${p.id}')" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
                   <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
-                  <input type="text" class="ph-label-input" value="${p.label}" onchange="script[${i}].label = this.value; saveScriptState()">
+                  <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" onchange="script[${i}].label = this.value; saveScriptState()">
                   <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="updatePeriodMinutes(${i}, this)" placeholder="min" title="Time in minutes">
                   <span class="ph-meta-span">${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}</span>
                 </div>
@@ -2616,7 +2616,7 @@ function renderScript() {
             <div class="play-num">${playNum}${wbBadge}</div>
             <div class="play-call">
               <div class="full-call">${fullCall}</div>
-              <div class="call-meta">${p.type} ${p.tempo ? "• " + p.tempo : ""}</div>
+              <div class="call-meta">${escapeHtml(p.type)} ${p.tempo ? "• " + escapeHtml(p.tempo) : ""}</div>
             </div>
             <div class="hash-input">
               <select onchange="updateHash(${i}, this.value)" title="Hash">
@@ -2624,14 +2624,14 @@ function renderScript() {
               </select>
             </div>
             <div class="defense-inputs">
-              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : "dl-front-shared"}" value="${p.defFront || ""}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
-              ${p.practiceFront ? `<datalist id="dl-front-${i}"><option value="${p.practiceFront}">★ ${p.practiceFront}</option>${scoutFrontOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : "dl-cov-shared"}" value="${p.defCoverage || ""}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
-              ${p.practiceCoverage ? `<datalist id="dl-cov-${i}"><option value="${p.practiceCoverage}">★ ${p.practiceCoverage}</option>${scoutCovOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : "dl-stunt-shared"}" value="${p.defStunt || ""}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
-              ${p.practiceStunt ? `<datalist id="dl-stunt-${i}"><option value="${p.practiceStunt}">★ ${p.practiceStunt}</option>${scoutStuntOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : "dl-blitz-shared"}" value="${p.defBlitz || ""}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
-              ${p.practiceBlitz ? `<datalist id="dl-blitz-${i}"><option value="${p.practiceBlitz}">★ ${p.practiceBlitz}</option>${scoutBlitzOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : "dl-front-shared"}" value="${escapeHtml(p.defFront || "")}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
+              ${p.practiceFront ? `<datalist id="dl-front-${i}"><option value="${escapeHtml(p.practiceFront)}">★ ${escapeHtml(p.practiceFront)}</option>${scoutFrontOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : "dl-cov-shared"}" value="${escapeHtml(p.defCoverage || "")}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
+              ${p.practiceCoverage ? `<datalist id="dl-cov-${i}"><option value="${escapeHtml(p.practiceCoverage)}">★ ${escapeHtml(p.practiceCoverage)}</option>${scoutCovOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : "dl-stunt-shared"}" value="${escapeHtml(p.defStunt || "")}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
+              ${p.practiceStunt ? `<datalist id="dl-stunt-${i}"><option value="${escapeHtml(p.practiceStunt)}">★ ${escapeHtml(p.practiceStunt)}</option>${scoutStuntOpts}</datalist>` : ""}
+              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : "dl-blitz-shared"}" value="${escapeHtml(p.defBlitz || "")}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
+              ${p.practiceBlitz ? `<datalist id="dl-blitz-${i}"><option value="${escapeHtml(p.practiceBlitz)}">★ ${escapeHtml(p.practiceBlitz)}</option>${scoutBlitzOpts}</datalist>` : ""}
             </div>
             <div class="play-controls">
               <div class="move-btns">
@@ -2639,7 +2639,7 @@ function renderScript() {
                 <button class="move-btn" onclick="movePlay(${i}, 1)" aria-label="Move play down">▼</button>
               </div>
               <input type="number" value="${p.reps}" min="1" onchange="updateReps(${i}, this.value)" title="Reps">
-              <input type="text" value="${p.notes || ""}" placeholder="Notes" onchange="updateNotes(${i}, this.value)">
+              <input type="text" value="${escapeHtml(p.notes || "")}" placeholder="Notes" onchange="updateNotes(${i}, this.value)">
               <button class="dup-btn" onclick="duplicatePlay(${i})" title="Duplicate" aria-label="Duplicate play">⧉</button>
               <button class="remove" onclick="removeFromScript(${i})" aria-label="Remove play">✕</button>
             </div>
@@ -2650,14 +2650,14 @@ function renderScript() {
           <div class="print-preview-row">
             <span class="preview-label">Print:</span>
             <span class="preview-field"><b>#${playNum}</b></span>
-            <span class="preview-field hash">${p.hash || "-"}</span>
-            <span class="preview-field tempo">${p.tempo || "-"}</span>
+            <span class="preview-field hash">${escapeHtml(p.hash || "-")}</span>
+            <span class="preview-field tempo">${escapeHtml(p.tempo || "-")}</span>
             <span class="preview-field call">${fullCall}</span>
-            <span class="preview-field type">${p.type}</span>
-            <span class="preview-field front">${p.defFront || "-"}</span>
-            <span class="preview-field cov">${p.defCoverage || "-"}</span>
-            <span class="preview-field stunt">${p.defStunt || "-"}</span>
-            <span class="preview-field blitz">${p.defBlitz || "-"}</span>
+            <span class="preview-field type">${escapeHtml(p.type)}</span>
+            <span class="preview-field front">${escapeHtml(p.defFront || "-")}</span>
+            <span class="preview-field cov">${escapeHtml(p.defCoverage || "-")}</span>
+            <span class="preview-field stunt">${escapeHtml(p.defStunt || "-")}</span>
+            <span class="preview-field blitz">${escapeHtml(p.defBlitz || "-")}</span>
             <span class="preview-field reps">×${p.reps}</span>
           </div>
           `
@@ -3021,7 +3021,7 @@ function populateScriptWristbandSelect() {
               0,
             )
           : 0;
-        return `<option value="${wb.id}">${wb.title} (${totalPlays} plays)</option>`;
+        return `<option value="${wb.id}">${escapeHtml(wb.title)} (${totalPlays} plays)</option>`;
       })
       .join("");
 }
@@ -3252,17 +3252,17 @@ function buildScriptPlayRow(p, displayNum, opts) {
 
   return `<tr style="${rowColor}">
     <td>${displayNum}</td>
-    <td>${p.hash || ""}</td>
-    <td>${p.tempo || "-"}</td>
+    <td>${escapeHtml(p.hash || "")}</td>
+    <td>${escapeHtml(p.tempo || "-")}</td>
     <td><strong>${wbNum}</strong></td>
     <td><strong>${fullCall}</strong></td>
-    <td>${p.type}</td>
-    <td>${p.defFront || ""}</td>
-    <td>${p.defCoverage || ""}</td>
-    <td>${p.defStunt || ""}</td>
-    <td>${p.defBlitz || ""}</td>
+    <td>${escapeHtml(p.type)}</td>
+    <td>${escapeHtml(p.defFront || "")}</td>
+    <td>${escapeHtml(p.defCoverage || "")}</td>
+    <td>${escapeHtml(p.defStunt || "")}</td>
+    <td>${escapeHtml(p.defBlitz || "")}</td>
     <td>${p.reps}</td>
-    <td>${p.notes || ""}</td>
+    <td>${escapeHtml(p.notes || "")}</td>
   </tr>`;
 }
 
@@ -4358,15 +4358,15 @@ function previewSmartScript() {
 
       html += `<tr>
         <td>${num++}</td>
-        <td>${hash}</td>
-        <td>${p.type || ""}</td>
+        <td>${escapeHtml(hash)}</td>
+        <td>${escapeHtml(p.type || "")}</td>
         <td>${rpLabel}</td>
-        <td>${p.formation || ""}</td>
-        <td>${p.play || ""}</td>
-        <td>${p.personnel || ""}</td>
-        <td>${p.preferredDown || "-"}</td>
+        <td>${escapeHtml(p.formation || "")}</td>
+        <td>${escapeHtml(p.play || "")}</td>
+        <td>${escapeHtml(p.personnel || "")}</td>
+        <td>${escapeHtml(p.preferredDown || "-")}</td>
         <td class="hash-arrow">${arrow}</td>
-        <td title="${tooltip}" style="color:${scoreColor};cursor:help;font-weight:600;">${scoreVal > 0 ? "+" : ""}${scoreVal}</td>
+        <td title="${escapeHtml(tooltip)}" style="color:${scoreColor};cursor:help;font-weight:600;">${scoreVal > 0 ? "+" : ""}${scoreVal}</td>
       </tr>`;
     });
 

@@ -1343,13 +1343,13 @@ function renderCellValue(col, play, idx) {
     case "_fieldPos":
       return `<td>${(play.fieldPosition || "") + " " + (play.yardLine || "")}</td>`;
     case "defFront":
-      return `<td><span class="td-tag td-tag-front">${play.defFront || "—"}</span></td>`;
+      return `<td><span class="td-tag td-tag-front">${escapeHtml(play.defFront || "—")}</span></td>`;
     case "defCoverage":
-      return `<td><span class="td-tag td-tag-cov">${play.defCoverage || "—"}</span></td>`;
+      return `<td><span class="td-tag td-tag-cov">${escapeHtml(play.defCoverage || "—")}</span></td>`;
     case "defBlitz":
-      return `<td>${play.defBlitz && play.defBlitz !== "None" ? '<span class="td-tag td-tag-blitz">🔴 ' + play.defBlitz + "</span>" : "—"}</td>`;
+      return `<td>${play.defBlitz && play.defBlitz !== "None" ? '<span class="td-tag td-tag-blitz">🔴 ' + escapeHtml(play.defBlitz) + "</span>" : "—"}</td>`;
     case "defStunt":
-      return `<td>${play.defStunt && play.defStunt !== "None" ? '<span class="td-tag td-tag-stunt">' + play.defStunt + "</span>" : "—"}</td>`;
+      return `<td>${play.defStunt && play.defStunt !== "None" ? '<span class="td-tag td-tag-stunt">' + escapeHtml(play.defStunt) + "</span>" : "—"}</td>`;
     case "notes":
       return `<td class="td-notes-cell" title="${escapeHtml(play.notes || "")}">${play.notes ? "📝 " + (play.notes.length > 20 ? escapeHtml(play.notes.substring(0, 20)) + "…" : escapeHtml(play.notes)) : ""}</td>`;
     case "_actions":
@@ -1365,7 +1365,7 @@ function renderCellValue(col, play, idx) {
         }
       </td>`;
     default:
-      return `<td>${play[col.key] || "—"}</td>`;
+      return `<td>${escapeHtml(play[col.key] || "—")}</td>`;
   }
 }
 
@@ -1388,7 +1388,7 @@ function renderFilterPanel(opp) {
         if (count === 0) return "";
         const active = activeVals.includes(v);
         return `<button class="td-filter-chip ${active ? "active" : ""}"
-                onclick="toggleTdFilter('${f.key}', '${v.replace(/'/g, "\\'")}')">${v} <span class="td-chip-count">${count}</span></button>`;
+                onclick="toggleTdFilter('${f.key}', '${v.replace(/'/g, "\\'")}')">${escapeHtml(v)} <span class="td-chip-count">${count}</span></button>`;
       })
       .filter(Boolean)
       .join("");
@@ -1837,8 +1837,8 @@ function renderFieldHtml(field, mode) {
       .map(
         (opt) => `
       <button class="td-option-btn ${currentValue === opt ? "selected" : ""}"
-              onclick="setWizardField('${field.key}', '${opt.replace(/'/g, "\\'")}', this)">
-        ${opt}
+              onclick="setWizardField('${field.key}', '${opt.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', this)">
+        ${escapeHtml(opt)}
       </button>
     `,
       )
@@ -2032,17 +2032,17 @@ function printTendencies() {
     .map(
       (p, i) => `
     <tr>
-      <td>${i + 1}</td><td>${p.quarter || ""}</td>
-      <td>${p.down || ""}${p.distance ? "&" + p.distance : ""}</td>
-      <td>${p.hash || ""}</td>
-      <td>${(p.fieldPosition || "") + " " + (p.yardLine || "")}</td>
-      <td>${p.situation || ""}</td><td>${p.offenseFormation || ""}</td>
-      <td>${p.offensePlayType || ""}</td>
-      <td><strong>${p.defFront || ""}</strong></td>
-      <td><strong>${p.defCoverage || ""}</strong></td>
-      <td>${p.defBlitz && p.defBlitz !== "None" ? p.defBlitz : ""}</td>
-      <td>${p.defStunt && p.defStunt !== "None" ? p.defStunt : ""}</td>
-      <td style="max-width:120px;font-size:9px;overflow:hidden">${p.notes || ""}</td>
+      <td>${i + 1}</td><td>${escapeHtml(p.quarter || "")}</td>
+      <td>${escapeHtml(p.down || "")}${p.distance ? "&amp;" + escapeHtml(p.distance) : ""}</td>
+      <td>${escapeHtml(p.hash || "")}</td>
+      <td>${escapeHtml((p.fieldPosition || "") + " " + (p.yardLine || ""))}</td>
+      <td>${escapeHtml(p.situation || "")}</td><td>${escapeHtml(p.offenseFormation || "")}</td>
+      <td>${escapeHtml(p.offensePlayType || "")}</td>
+      <td><strong>${escapeHtml(p.defFront || "")}</strong></td>
+      <td><strong>${escapeHtml(p.defCoverage || "")}</strong></td>
+      <td>${p.defBlitz && p.defBlitz !== "None" ? escapeHtml(p.defBlitz) : ""}</td>
+      <td>${p.defStunt && p.defStunt !== "None" ? escapeHtml(p.defStunt) : ""}</td>
+      <td style="max-width:120px;font-size:9px;overflow:hidden">${escapeHtml(p.notes || "")}</td>
     </tr>
   `,
     )

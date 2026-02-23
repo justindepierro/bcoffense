@@ -1061,7 +1061,7 @@ function renderCategory(cat, data, dupeMap) {
          ondragend="handleCatDragEnd(event)">
       <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};">
         <span class="cs-collapse-btn" onclick="toggleCategoryCollapse('${cat.id}')" title="Collapse/Expand">${collapseIcon}</span>
-        <span class="header-text" ondblclick="editCategoryName('${cat.id}')">${displayName}</span>
+        <span class="header-text" ondblclick="editCategoryName('${cat.id}')">${escapeHtml(displayName)}</span>
         ${countDisplay}
         ${sortBtn}
         ${isPlayerSpecific ? '<span class="edit-hint" title="Double-click to rename">✏️</span>' : ""}
@@ -1593,7 +1593,7 @@ function populateCallSheetPickerFilters() {
     ].sort();
     select.innerHTML =
       `<option value="">${allLabel}</option>` +
-      values.map((v) => `<option value="${v}">${v}</option>`).join("");
+      values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
   }
 
   populateDropdown("callSheetPickerPersonnel", "personnel", "All Personnel");
@@ -1607,7 +1607,7 @@ function populateCallSheetPickerFilters() {
     const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
     typeSelect.innerHTML =
       '<option value="">All Types</option>' +
-      types.map((t) => `<option value="${t}">${t}</option>`).join("");
+      types.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
   }
 
   // Populate wristband select
@@ -1619,7 +1619,7 @@ function populateCallSheetPickerFilters() {
       saved
         .map(
           (wb, idx) =>
-            `<option value="${idx}">${wb.title || "Untitled"}</option>`,
+            `<option value="${idx}">${escapeHtml(wb.title || "Untitled")}</option>`,
         )
         .join("");
   }
@@ -1833,10 +1833,10 @@ function populateCallSheetPlayList() {
       const chips = [];
       if (p.type)
         chips.push(
-          `<span class="cs-picker-chip cs-picker-chip-type">${p.type}</span>`,
+          `<span class="cs-picker-chip cs-picker-chip-type">${escapeHtml(p.type)}</span>`,
         );
-      if (p.back) chips.push(`<span class="cs-picker-chip">${p.back}</span>`);
-      if (p.tempo) chips.push(`<span class="cs-picker-chip">${p.tempo}</span>`);
+      if (p.back) chips.push(`<span class="cs-picker-chip">${escapeHtml(p.back)}</span>`);
+      if (p.tempo) chips.push(`<span class="cs-picker-chip">${escapeHtml(p.tempo)}</span>`);
       const chipHtml =
         chips.length > 0
           ? `<span class="cs-picker-chips">${chips.join("")}</span>`
@@ -1846,7 +1846,7 @@ function populateCallSheetPlayList() {
       <div class="picker-play" onclick="addCallSheetPlayFromPicker(${JSON.stringify(p).replace(/"/g, "&quot;")})">
         ${wristbandNum}
         <span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>
-        <span class="cs-picker-play-text">${p.formation || ""} ${p.protection || ""} <strong>${p.play || ""}</strong></span>
+        <span class="cs-picker-play-text">${escapeHtml(p.formation || "")} ${escapeHtml(p.protection || "")} <strong>${escapeHtml(p.play || "")}</strong></span>
         ${chipHtml}
       </div>
     `;
@@ -1897,7 +1897,7 @@ function openLoadWristbandModal() {
     saved
       .map(
         (wb, idx) =>
-          `<option value="${idx}">${wb.title || "Untitled"}</option>`,
+          `<option value="${idx}">${escapeHtml(wb.title || "Untitled")}</option>`,
       )
       .join("");
 
@@ -2219,11 +2219,11 @@ function renderPrintCategory(cat, data, options) {
   let html = `
     <div class="print-category">
       <div class="print-category-header" style="background: ${cat.color}; color: ${textColor};">
-        ${displayName}
+        ${escapeHtml(displayName)}
       </div>`;
 
   if (note) {
-    html += `<div class="print-cat-note">${note}</div>`;
+    html += `<div class="print-cat-note">${escapeHtml(note)}</div>`;
   }
 
   html += `
@@ -2656,7 +2656,7 @@ function manageDisplayPresets() {
     .map((p, idx) => {
       const date = new Date(p.savedAt).toLocaleDateString();
       return `<div class="cs-template-item">
-      <div class="cs-template-info"><strong>${p.name}</strong><span class="cs-template-date">${date}</span></div>
+      <div class="cs-template-info"><strong>${escapeHtml(p.name)}</strong><span class="cs-template-date">${date}</span></div>
       <button class="btn btn-sm btn-danger" onclick="deleteDisplayPreset(${idx})">✕</button>
     </div>`;
     })
@@ -3025,7 +3025,7 @@ function setCategoryTarget(categoryId) {
   const overlay = document.createElement("div");
   overlay.className = "cs-target-popup";
   overlay.innerHTML = `
-    <label>Target play count for <strong>${getCategoryDisplayName(cat)}</strong>:</label>
+    <label>Target play count for <strong>${escapeHtml(getCategoryDisplayName(cat))}</strong>:</label>
     <input type="number" min="0" max="50" value="${current}" class="cs-target-input" placeholder="e.g. 6">
     <div class="cs-target-actions">
       <button class="btn btn-sm btn-primary cs-target-save">Save</button>
@@ -3181,7 +3181,7 @@ function updateStatsPanel() {
     return sorted
       .map(([name, count]) => {
         const pct = total > 0 ? Math.round((count / total) * 100) : 0;
-        return `<div class="cs-stat-row"><span class="cs-stat-label">${name}</span><div class="cs-stat-bar-bg"><div class="cs-stat-bar" style="width: ${pct}%; background: ${colorFn(name)};"></div></div><span class="cs-stat-val">${count} (${pct}%)</span></div>`;
+        return `<div class="cs-stat-row"><span class="cs-stat-label">${escapeHtml(name)}</span><div class="cs-stat-bar-bg"><div class="cs-stat-bar" style="width: ${pct}%; background: ${colorFn(name)};"></div></div><span class="cs-stat-val">${count} (${pct}%)</span></div>`;
       })
       .join("");
   };
@@ -3278,7 +3278,7 @@ function updateNotOnSheetPanel() {
         const tc = getPersonnelTextColor(p.personnel);
         html += `<div class="cs-nos-play">
         <span class="personnel-code" style="background: ${bg}; color: ${tc};">${code}</span>
-        ${p.formation || ""} ${p.play || ""}
+        ${escapeHtml(p.formation || "")} ${escapeHtml(p.play || "")}
       </div>`;
       });
       html += `</div></details>`;
@@ -3300,7 +3300,7 @@ function openTemplatesModal() {
             const date = new Date(t.savedAt).toLocaleDateString();
             return `<div class="cs-template-item">
           <div class="cs-template-info">
-            <strong>${t.name}</strong>
+            <strong>${escapeHtml(t.name)}</strong>
             <span class="cs-template-date">${date} · ${t.playCount || 0} plays</span>
           </div>
           <div class="cs-template-actions">
@@ -4047,7 +4047,7 @@ function openSmartSuggestionsModal(categoryId) {
   let intelHtml = "";
   if (intel && intel.total > 0) {
     intelHtml = `<div class="cs-suggest-intel">
-      <strong>🎯 Opponent Intel (${opp?.name || "Unknown"}):</strong> ${intel.summary}
+      <strong>🎯 Opponent Intel (${escapeHtml(opp?.name || "Unknown")}):</strong> ${intel.summary}
     </div>`;
   } else if (!opp) {
     intelHtml = `<div class="cs-suggest-intel cs-suggest-no-intel">No opponent selected — suggestions based on play metadata only</div>`;
@@ -4076,7 +4076,7 @@ function openSmartSuggestionsModal(categoryId) {
             ? `<span class="cs-suggest-warnings">${s.warnings.join(" • ")}</span>`
             : "";
         const deadVsNote = s.play.deadVs
-          ? `<span class="cs-suggest-deadvs">Dead vs: ${s.play.deadVs}</span>`
+          ? `<span class="cs-suggest-deadvs">Dead vs: ${escapeHtml(s.play.deadVs)}</span>`
           : "";
         const alreadyOnSheet = isPlayOnCallSheet(s.play, categoryId);
         const addedClass = alreadyOnSheet ? "cs-suggest-on-sheet" : "";
@@ -4086,7 +4086,7 @@ function openSmartSuggestionsModal(categoryId) {
         <span class="cs-suggest-score ${scoreClass}">${s.score}</span>
         <div class="cs-suggest-play-info">
           <div class="cs-suggest-call">${fullCall}</div>
-          <div class="cs-suggest-meta">${s.play.type} ${s.play.personnel ? "• " + s.play.personnel : ""} ${s.play.formation || ""}</div>
+          <div class="cs-suggest-meta">${escapeHtml(s.play.type)} ${s.play.personnel ? "• " + escapeHtml(s.play.personnel) : ""} ${escapeHtml(s.play.formation || "")}</div>
           ${reasonsHtml}${warningsHtml}${deadVsNote}
         </div>
         <div class="cs-suggest-actions">
@@ -4108,7 +4108,7 @@ function openSmartSuggestionsModal(categoryId) {
     <div id="csSuggestOverlay" class="modal-overlay" style="display:flex;" onclick="if(event.target===this) this.remove()">
       <div class="modal-content cs-suggest-modal" onclick="event.stopPropagation()">
         <div class="cs-suggest-header">
-          <h3>💡 Smart Suggestions — ${catName}</h3>
+          <h3>💡 Smart Suggestions — ${escapeHtml(catName)}</h3>
           <button onclick="document.getElementById('csSuggestOverlay').remove()" class="modal-close-btn">✕</button>
         </div>
         ${intelHtml}

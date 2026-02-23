@@ -899,7 +899,7 @@ function _obBuildDetailHtml() {
     (entry.formations.size !== 1 ? "s" : "") +
     "</span>" +
     "<span>" +
-    Array.from(entry.types).join(", ") +
+    escapeHtml(Array.from(entry.types).join(", ")) +
     "</span>" +
     "</div>" +
     '<div class="ob-detail-section"><div class="ob-section-title">\u{1F4E6} Base Concept</div><div class="ob-section-body">' +

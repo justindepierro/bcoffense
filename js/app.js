@@ -690,7 +690,7 @@ function printFullGamePlan() {
             html += (data.left || [])
               .map(
                 (p) =>
-                  `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
+                  `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : escapeHtml(p.play || p.name || "?")}</span>`,
               )
               .join(", ");
             html += `</div>`;
@@ -701,7 +701,7 @@ function printFullGamePlan() {
             html += (data.right || [])
               .map(
                 (p) =>
-                  `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
+                  `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : escapeHtml(p.play || p.name || "?")}</span>`,
               )
               .join(", ");
             html += `</div>`;
