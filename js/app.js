@@ -251,79 +251,79 @@ function handleFileUpload(event) {
  */
 function initApp() {
   try {
-  // Check for stored playbook
-  const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
-  if (storedPlaybook) {
-    plays = storedPlaybook;
-    filteredPlays = [...plays];
-    document.getElementById("uploadSection").classList.add("hidden");
-    document.getElementById("mainApp").classList.remove("hidden");
+    // Check for stored playbook
+    const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
+    if (storedPlaybook) {
+      plays = storedPlaybook;
+      filteredPlays = [...plays];
+      document.getElementById("uploadSection").classList.add("hidden");
+      document.getElementById("mainApp").classList.remove("hidden");
 
-    // Restore playbook-specific state before shared init
-    restorePlaybookState();
+      // Restore playbook-specific state before shared init
+      restorePlaybookState();
 
-    initAllModules();
+      initAllModules();
 
-    // Sync sort UI from restored state
-    _syncSortUI();
+      // Sync sort UI from restored state
+      _syncSortUI();
 
-    // Check for unsaved drafts
-    checkScriptDraft();
-    if (typeof checkWristbandDraft === "function") checkWristbandDraft();
-    if (typeof checkCallSheetDraft === "function") checkCallSheetDraft();
+      // Check for unsaved drafts
+      checkScriptDraft();
+      if (typeof checkWristbandDraft === "function") checkWristbandDraft();
+      if (typeof checkCallSheetDraft === "function") checkCallSheetDraft();
 
-    // Restore call sheet display options
-    if (typeof restoreCallSheetDisplayOptions === "function") {
-      restoreCallSheetDisplayOptions();
+      // Restore call sheet display options
+      if (typeof restoreCallSheetDisplayOptions === "function") {
+        restoreCallSheetDisplayOptions();
+      }
     }
-  }
 
-  // Set up drag and drop for file upload
-  const uploadBox = document.querySelector(".upload-box");
-  uploadBox.addEventListener("dragover", (e) => {
-    e.preventDefault();
-    uploadBox.classList.add("dragover");
-  });
-  uploadBox.addEventListener("dragleave", () => {
-    uploadBox.classList.remove("dragover");
-  });
-  uploadBox.addEventListener("drop", (e) => {
-    e.preventDefault();
-    uploadBox.classList.remove("dragover");
-    const file = e.dataTransfer.files[0];
-    if (file && file.name.endsWith(".csv")) {
-      document.getElementById("csvFile").files = e.dataTransfer.files;
-      handleFileUpload({ target: { files: [file] } });
+    // Set up drag and drop for file upload
+    const uploadBox = document.querySelector(".upload-box");
+    uploadBox.addEventListener("dragover", (e) => {
+      e.preventDefault();
+      uploadBox.classList.add("dragover");
+    });
+    uploadBox.addEventListener("dragleave", () => {
+      uploadBox.classList.remove("dragover");
+    });
+    uploadBox.addEventListener("drop", (e) => {
+      e.preventDefault();
+      uploadBox.classList.remove("dragover");
+      const file = e.dataTransfer.files[0];
+      if (file && file.name.endsWith(".csv")) {
+        document.getElementById("csvFile").files = e.dataTransfer.files;
+        handleFileUpload({ target: { files: [file] } });
+      }
+    });
+
+    // Set up drag and drop for script container
+    const scriptContainer = document.getElementById("scriptPlays");
+    scriptContainer.addEventListener("dragover", handleDragOver);
+    scriptContainer.addEventListener("dragleave", handleDragLeave);
+    scriptContainer.addEventListener("drop", handleDrop);
+
+    // Set today's date as default
+    document.getElementById("scriptDate").valueAsDate = new Date();
+
+    // Initialize team name input with stored value
+    const teamNameInput = document.getElementById("teamNameInput");
+    if (teamNameInput) {
+      teamNameInput.value = getTeamName();
     }
-  });
 
-  // Set up drag and drop for script container
-  const scriptContainer = document.getElementById("scriptPlays");
-  scriptContainer.addEventListener("dragover", handleDragOver);
-  scriptContainer.addEventListener("dragleave", handleDragLeave);
-  scriptContainer.addEventListener("drop", handleDrop);
+    // Populate header subtitle with team name
+    const teamSub = document.getElementById("teamSubtitle");
+    if (teamSub) {
+      const name = getTeamName();
+      teamSub.textContent = name && name !== "My Team Football" ? name : "";
+    }
 
-  // Set today's date as default
-  document.getElementById("scriptDate").valueAsDate = new Date();
+    // Initialize swatch handlers for wristband
+    initSwatchHandlers();
 
-  // Initialize team name input with stored value
-  const teamNameInput = document.getElementById("teamNameInput");
-  if (teamNameInput) {
-    teamNameInput.value = getTeamName();
-  }
-
-  // Populate header subtitle with team name
-  const teamSub = document.getElementById("teamSubtitle");
-  if (teamSub) {
-    const name = getTeamName();
-    teamSub.textContent = name && name !== "My Team Football" ? name : "";
-  }
-
-  // Initialize swatch handlers for wristband
-  initSwatchHandlers();
-
-  // Initialize script keyboard shortcuts
-  initScriptKeyboard();
+    // Initialize script keyboard shortcuts
+    initScriptKeyboard();
   } catch (err) {
     console.error("initApp error:", err);
     showToast("❌ Error initializing app. Try refreshing.", 5000);
@@ -353,71 +353,71 @@ function importBackup(event) {
  */
 function renderDashboard() {
   try {
-  // Populate opponent dropdown
-  const select = document.getElementById("dashOpponentSelect");
-  const weekInput = document.getElementById("dashWeekLabel");
-  const badge = document.getElementById("dashActiveOpponentBadge");
+    // Populate opponent dropdown
+    const select = document.getElementById("dashOpponentSelect");
+    const weekInput = document.getElementById("dashWeekLabel");
+    const badge = document.getElementById("dashActiveOpponentBadge");
 
-  if (!select) return;
+    if (!select) return;
 
-  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
-  const gw = getGameWeek();
+    const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+    const gw = getGameWeek();
 
-  // Build opponent options
-  let optHtml = '<option value="">— Select Opponent —</option>';
-  opponents.forEach((opp, idx) => {
-    const sel = gw.opponentIndex === idx ? "selected" : "";
-    optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays.length} plays)</option>`;
-  });
-  select.innerHTML = optHtml;
+    // Build opponent options
+    let optHtml = '<option value="">— Select Opponent —</option>';
+    opponents.forEach((opp, idx) => {
+      const sel = gw.opponentIndex === idx ? "selected" : "";
+      optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays.length} plays)</option>`;
+    });
+    select.innerHTML = optHtml;
 
-  if (weekInput) weekInput.value = gw.weekLabel || "";
-  // Populate notes
-  const notesArea = document.getElementById("dashNotesArea");
-  if (notesArea && notesArea !== document.activeElement) {
-    notesArea.value = gw.notes || "";
-  }
-
-  if (badge) {
-    badge.innerHTML = gw.opponentName
-      ? `<span class="dash-opp-active">🏈 ${escapeHtml(gw.opponentName)}${gw.weekLabel ? " — " + escapeHtml(gw.weekLabel) : ""}</span>`
-      : '<span class="dash-opp-none">No opponent selected</span>';
-  }
-
-  // Build status cards
-  const cardsEl = document.getElementById("dashCards");
-  if (cardsEl) {
-    const playCount = typeof plays !== "undefined" ? plays.length : 0;
-    const scriptCount = script.filter((p) => !p.isSeparator).length;
-    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
-    const savedScriptCount = Array.isArray(savedScripts)
-      ? savedScripts.length
-      : Object.keys(savedScripts).length;
-    const wristbandCount =
-      typeof wristbandCards !== "undefined" ? wristbandCards.length : 0;
-    const savedWristbands = storageManager.get(
-      STORAGE_KEYS.SAVED_WRISTBANDS,
-      [],
-    );
-
-    // Count call sheet plays
-    let csPlayCount = 0;
-    let csCatsFilled = 0;
-    if (typeof callSheet !== "undefined") {
-      Object.values(callSheet).forEach((data) => {
-        const count = (data.left || []).length + (data.right || []).length;
-        if (count > 0) {
-          csPlayCount += count;
-          csCatsFilled++;
-        }
-      });
+    if (weekInput) weekInput.value = gw.weekLabel || "";
+    // Populate notes
+    const notesArea = document.getElementById("dashNotesArea");
+    if (notesArea && notesArea !== document.activeElement) {
+      notesArea.value = gw.notes || "";
     }
 
-    const oppPlays = gw.opponentName
-      ? opponents[gw.opponentIndex]?.plays?.length || 0
-      : 0;
+    if (badge) {
+      badge.innerHTML = gw.opponentName
+        ? `<span class="dash-opp-active">🏈 ${escapeHtml(gw.opponentName)}${gw.weekLabel ? " — " + escapeHtml(gw.weekLabel) : ""}</span>`
+        : '<span class="dash-opp-none">No opponent selected</span>';
+    }
 
-    cardsEl.innerHTML = `
+    // Build status cards
+    const cardsEl = document.getElementById("dashCards");
+    if (cardsEl) {
+      const playCount = typeof plays !== "undefined" ? plays.length : 0;
+      const scriptCount = script.filter((p) => !p.isSeparator).length;
+      const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+      const savedScriptCount = Array.isArray(savedScripts)
+        ? savedScripts.length
+        : Object.keys(savedScripts).length;
+      const wristbandCount =
+        typeof wristbandCards !== "undefined" ? wristbandCards.length : 0;
+      const savedWristbands = storageManager.get(
+        STORAGE_KEYS.SAVED_WRISTBANDS,
+        [],
+      );
+
+      // Count call sheet plays
+      let csPlayCount = 0;
+      let csCatsFilled = 0;
+      if (typeof callSheet !== "undefined") {
+        Object.values(callSheet).forEach((data) => {
+          const count = (data.left || []).length + (data.right || []).length;
+          if (count > 0) {
+            csPlayCount += count;
+            csCatsFilled++;
+          }
+        });
+      }
+
+      const oppPlays = gw.opponentName
+        ? opponents[gw.opponentIndex]?.plays?.length || 0
+        : 0;
+
+      cardsEl.innerHTML = `
       <div class="dash-card dash-card-playbook">
         <div class="dash-card-icon">📖</div>
         <div class="dash-card-info">
@@ -458,18 +458,18 @@ function renderDashboard() {
         </div>
       </div>
     `;
-  }
+    }
 
-  // Build scouting summary
-  const scoutEl = document.getElementById("dashScoutingSection");
-  if (scoutEl) {
-    const opp = getActiveOpponent();
-    if (opp && opp.plays.length > 0) {
-      const overall = queryTendencies(opp, {});
-      const thirdDown = queryTendencies(opp, { down: ["3"] });
-      const rz = queryTendencies(opp, { situation: ["Red Zone"] });
+    // Build scouting summary
+    const scoutEl = document.getElementById("dashScoutingSection");
+    if (scoutEl) {
+      const opp = getActiveOpponent();
+      if (opp && opp.plays.length > 0) {
+        const overall = queryTendencies(opp, {});
+        const thirdDown = queryTendencies(opp, { down: ["3"] });
+        const rz = queryTendencies(opp, { situation: ["Red Zone"] });
 
-      scoutEl.innerHTML = `
+        scoutEl.innerHTML = `
         <h3 class="dash-section-title">🎯 Scouting Summary — ${escapeHtml(opp.name)}</h3>
         <div class="dash-scout-grid">
           <div class="dash-scout-card">
@@ -534,20 +534,20 @@ function renderDashboard() {
           </div>
         </div>
       `;
-    } else {
-      scoutEl.innerHTML = `
+      } else {
+        scoutEl.innerHTML = `
         <div class="dash-no-scouting">
           <p>📊 Select an opponent above to see scouting intel here</p>
           <p class="dash-hint">Go to the <strong>Def Tendencies</strong> tab to add opponents and chart plays</p>
         </div>
       `;
+      }
     }
-  }
 
-  // Build quick links
-  const linksEl = document.getElementById("dashQuickLinks");
-  if (linksEl) {
-    linksEl.innerHTML = `
+    // Build quick links
+    const linksEl = document.getElementById("dashQuickLinks");
+    if (linksEl) {
+      linksEl.innerHTML = `
       <h3 class="dash-section-title">⚡ Quick Actions</h3>
       <div class="dash-links-grid">
         <button class="dash-link-btn" onclick="dashGoToTab('script')">📋 Build Script</button>
@@ -559,7 +559,7 @@ function renderDashboard() {
         <button class="dash-link-btn" onclick="showStorageInfo()">💾 Storage Info</button>
       </div>
     `;
-  }
+    }
   } catch (err) {
     console.error("renderDashboard error:", err);
     showToast("❌ Error loading dashboard.", 3000);
@@ -585,44 +585,44 @@ function onDashNotesChange(value) {
  */
 function printFullGamePlan() {
   try {
-  const gw = getGameWeek();
-  const opp = getActiveOpponent();
+    const gw = getGameWeek();
+    const opp = getActiveOpponent();
 
-  // Build the print content
-  let html = '<div class="gp-print-wrap">';
+    // Build the print content
+    let html = '<div class="gp-print-wrap">';
 
-  // Header
-  html += `<div class="gp-print-header">
+    // Header
+    html += `<div class="gp-print-header">
     <h1>🏈 Game Plan${gw.opponentName ? " — vs. " + escapeHtml(gw.opponentName) : ""}${gw.weekLabel ? " (" + escapeHtml(gw.weekLabel) + ")" : ""}</h1>
     <p class="gp-print-date">${new Date().toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric", year: "numeric" })}</p>
   </div>`;
 
-  // Game Week Notes
-  if (gw.notes && gw.notes.trim()) {
-    html += `<div class="gp-print-section">
+    // Game Week Notes
+    if (gw.notes && gw.notes.trim()) {
+      html += `<div class="gp-print-section">
       <h2 class="gp-print-section-title">📝 Game Week Notes</h2>
       <div class="gp-print-notes">${escapeHtml(gw.notes).replace(/\n/g, "<br>")}</div>
     </div>`;
-  }
+    }
 
-  // Scouting Summary
-  if (opp && opp.plays.length > 0) {
-    const overall = queryTendencies(opp, {});
-    const thirdDown = queryTendencies(opp, { down: ["3"] });
-    const rz = queryTendencies(opp, { situation: ["Red Zone"] });
+    // Scouting Summary
+    if (opp && opp.plays.length > 0) {
+      const overall = queryTendencies(opp, {});
+      const thirdDown = queryTendencies(opp, { down: ["3"] });
+      const rz = queryTendencies(opp, { situation: ["Red Zone"] });
 
-    html += `<div class="gp-print-section">
+      html += `<div class="gp-print-section">
       <h2 class="gp-print-section-title">🎯 Scouting Report — ${escapeHtml(opp.name)} (${overall.total} charted plays)</h2>
       <div class="gp-scout-grid">`;
 
-    const sections = [
-      { label: "Overall", data: overall },
-      { label: "3rd Down", data: thirdDown },
-      { label: "Red Zone", data: rz },
-    ];
+      const sections = [
+        { label: "Overall", data: overall },
+        { label: "3rd Down", data: thirdDown },
+        { label: "Red Zone", data: rz },
+      ];
 
-    sections.forEach((s) => {
-      html += `<div class="gp-scout-col">
+      sections.forEach((s) => {
+        html += `<div class="gp-scout-col">
         <h3>${s.label} (${s.data.total})</h3>
         <table class="gp-scout-table">
           <tr><th>Fronts</th><th>%</th></tr>
@@ -647,95 +647,99 @@ function printFullGamePlan() {
         <p class="gp-blitz-line">Blitz Rate: <strong>${s.data.blitzRate}%</strong></p>
         ${s.data.topStunt && s.data.topStunt.length > 0 ? `<p class="gp-stunt-line">Top Stunt: ${escapeHtml(s.data.topStunt[0].term)} (${s.data.topStunt[0].pct}%)</p>` : ""}
       </div>`;
-    });
-
-    html += `</div></div>`;
-  }
-
-  // Call Sheet Summary (both pages)
-  if (typeof CALLSHEET_FRONT !== "undefined") {
-    ["Front", "Back"].forEach((pageName) => {
-      const cats = pageName === "Front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
-      const filledCats = cats.filter((cat) => {
-        const data = callSheet[cat.id];
-        return data && (data.left || []).length + (data.right || []).length > 0;
-      });
-      if (filledCats.length === 0) return;
-
-      html += `<div class="gp-print-section gp-cs-section">
-        <h2 class="gp-print-section-title">🗂️ Call Sheet — ${pageName} Page</h2>
-        <div class="gp-cs-grid">`;
-
-      filledCats.forEach((cat) => {
-        const data = callSheet[cat.id] || { left: [], right: [] };
-        const displayName =
-          typeof getCategoryDisplayName === "function"
-            ? getCategoryDisplayName(cat)
-            : cat.name;
-        const allPlays = [...(data.left || []), ...(data.right || [])];
-        const textColor =
-          cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa" ? UI_COLORS.textBlack : UI_COLORS.textWhite;
-
-        html += `<div class="gp-cs-cat">
-          <div class="gp-cs-cat-header" style="background:${cat.color};color:${textColor}">${displayName} (${allPlays.length})</div>
-          <div class="gp-cs-cat-plays">`;
-
-        // Show left hash
-        if ((data.left || []).length > 0) {
-          html += `<div class="gp-cs-hash-group"><span class="gp-cs-hash-label">L:</span> `;
-          html += (data.left || [])
-            .map(
-              (p) =>
-                `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
-            )
-            .join(", ");
-          html += `</div>`;
-        }
-        // Show right hash
-        if ((data.right || []).length > 0) {
-          html += `<div class="gp-cs-hash-group"><span class="gp-cs-hash-label">R:</span> `;
-          html += (data.right || [])
-            .map(
-              (p) =>
-                `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
-            )
-            .join(", ");
-          html += `</div>`;
-        }
-
-        html += `</div></div>`;
       });
 
       html += `</div></div>`;
-    });
-  }
+    }
 
-  html += "</div>";
+    // Call Sheet Summary (both pages)
+    if (typeof CALLSHEET_FRONT !== "undefined") {
+      ["Front", "Back"].forEach((pageName) => {
+        const cats = pageName === "Front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
+        const filledCats = cats.filter((cat) => {
+          const data = callSheet[cat.id];
+          return (
+            data && (data.left || []).length + (data.right || []).length > 0
+          );
+        });
+        if (filledCats.length === 0) return;
 
-  // Use the call sheet print container
-  const container = document.getElementById("callSheetPrint");
-  const content = document.getElementById("callSheetPrintContent");
-  content.innerHTML = html;
-  container.classList.remove("hidden");
-  document.body.dataset.printMode = "gameplan";
+        html += `<div class="gp-print-section gp-cs-section">
+        <h2 class="gp-print-section-title">🗂️ Call Sheet — ${pageName} Page</h2>
+        <div class="gp-cs-grid">`;
 
-  // Print style
-  let printStyle = document.getElementById("wristbandPrintStyle");
-  if (!printStyle) {
-    printStyle = document.createElement("style");
-    printStyle.id = "wristbandPrintStyle";
-    document.head.appendChild(printStyle);
-  }
-  printStyle.textContent =
-    "@media print { @page { size: letter; margin: 0.4in; } }";
+        filledCats.forEach((cat) => {
+          const data = callSheet[cat.id] || { left: [], right: [] };
+          const displayName =
+            typeof getCategoryDisplayName === "function"
+              ? getCategoryDisplayName(cat)
+              : cat.name;
+          const allPlays = [...(data.left || []), ...(data.right || [])];
+          const textColor =
+            cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa"
+              ? UI_COLORS.textBlack
+              : UI_COLORS.textWhite;
 
-  setTimeout(() => {
-    const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
-    window.print();
-    restoreTitle();
-    container.classList.add("hidden");
-    delete document.body.dataset.printMode;
-  }, 100);
+          html += `<div class="gp-cs-cat">
+          <div class="gp-cs-cat-header" style="background:${cat.color};color:${textColor}">${displayName} (${allPlays.length})</div>
+          <div class="gp-cs-cat-plays">`;
+
+          // Show left hash
+          if ((data.left || []).length > 0) {
+            html += `<div class="gp-cs-hash-group"><span class="gp-cs-hash-label">L:</span> `;
+            html += (data.left || [])
+              .map(
+                (p) =>
+                  `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
+              )
+              .join(", ");
+            html += `</div>`;
+          }
+          // Show right hash
+          if ((data.right || []).length > 0) {
+            html += `<div class="gp-cs-hash-group"><span class="gp-cs-hash-label">R:</span> `;
+            html += (data.right || [])
+              .map(
+                (p) =>
+                  `<span class="gp-cs-play">${typeof getFullCall === "function" ? getFullCall(p) : p.play || p.name || "?"}</span>`,
+              )
+              .join(", ");
+            html += `</div>`;
+          }
+
+          html += `</div></div>`;
+        });
+
+        html += `</div></div>`;
+      });
+    }
+
+    html += "</div>";
+
+    // Use the call sheet print container
+    const container = document.getElementById("callSheetPrint");
+    const content = document.getElementById("callSheetPrintContent");
+    content.innerHTML = html;
+    container.classList.remove("hidden");
+    document.body.dataset.printMode = "gameplan";
+
+    // Print style
+    let printStyle = document.getElementById("wristbandPrintStyle");
+    if (!printStyle) {
+      printStyle = document.createElement("style");
+      printStyle.id = "wristbandPrintStyle";
+      document.head.appendChild(printStyle);
+    }
+    printStyle.textContent =
+      "@media print { @page { size: letter; margin: 0.4in; } }";
+
+    setTimeout(() => {
+      const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
+      window.print();
+      restoreTitle();
+      container.classList.add("hidden");
+      delete document.body.dataset.printMode;
+    }, 100);
   } catch (err) {
     console.error("printFullGamePlan error:", err);
     showToast("❌ Error generating game plan print.", 4000);
@@ -935,103 +939,103 @@ function showCSVTemplateModal() {
 
 function downloadCSVTemplate(type) {
   try {
-  let headers;
-  let filename;
-  if (type === "offense") {
-    headers = [
-      "PlayType",
-      "Personnel",
-      "Formation",
-      "FormTag1",
-      "FormTag2",
-      "Under",
-      "Back",
-      "Shift",
-      "Motion",
-      "Protection",
-      "LineCall",
-      "Play",
-      "PlayTag1",
-      "PlayTag2",
-      "BasePlay",
-      "OneWord",
-      "PreferredSituation",
-      "PreferredDown",
-      "PreferredDistance",
-      "PreferredHash",
-      "PreferredFieldPosition",
-      "Tempo",
-      "PracticeFront",
-      "PracticeDefense",
-      "PracticeCoverage",
-      "PracticeBlitz",
-      "PracticeStunt",
-      "KeyPlayer1",
-      "KeyPlayer2",
-      "KeyPlayer3",
-      "KeyPlayerName1",
-      "KeyPlayerName2",
-      "KeyPlayerName3",
-      "Constraint1",
-      "Constraint2",
-      "Constraint3",
-      "HitChart1",
-      "HitChart2",
-      "HitChart3",
-      "DeadVs",
-      "Opponent",
-      "Notes",
-    ];
-    filename = "offensive_playbook_template.csv";
-  } else {
-    headers = [
-      "Opponent",
-      "Week",
-      "Game",
-      "Quarter",
-      "Time",
-      "Down",
-      "Distance",
-      "Hash",
-      "Field Position",
-      "Yard Line",
-      "Situation",
-      "Offense Play Type",
-      "Offense Formation",
-      "Def Front",
-      "Def Coverage",
-      "Def Stunt",
-      "Def Blitz",
-      "Blitzer 1",
-      "Blitzer 2",
-      "Blitzer 3",
-      "Tackler 1",
-      "Tackler 2",
-      "Tackler 3",
-      "Front Strength Direction",
-      "Coverage Strength Direction",
-      "Person Of Interest 1 Direction",
-      "Person of Interest 2 Direction",
-      "Person of Interest 3 Direction",
-      "Turnover",
-      "Turnover Forcer",
-      "Turnover Player",
-      "Tackle for Loss Player",
-      "Penalty",
-      "Penalty Player",
-      "Notes",
-    ];
-    filename = "defensive_tendencies_template.csv";
-  }
-  const csv = headers.join(",") + "\n";
-  const blob = new Blob([csv], { type: "text/csv" });
-  const url = URL.createObjectURL(blob);
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename;
-  a.click();
-  URL.revokeObjectURL(url);
-  showToast(`⬇️ Downloaded ${filename}`);
+    let headers;
+    let filename;
+    if (type === "offense") {
+      headers = [
+        "PlayType",
+        "Personnel",
+        "Formation",
+        "FormTag1",
+        "FormTag2",
+        "Under",
+        "Back",
+        "Shift",
+        "Motion",
+        "Protection",
+        "LineCall",
+        "Play",
+        "PlayTag1",
+        "PlayTag2",
+        "BasePlay",
+        "OneWord",
+        "PreferredSituation",
+        "PreferredDown",
+        "PreferredDistance",
+        "PreferredHash",
+        "PreferredFieldPosition",
+        "Tempo",
+        "PracticeFront",
+        "PracticeDefense",
+        "PracticeCoverage",
+        "PracticeBlitz",
+        "PracticeStunt",
+        "KeyPlayer1",
+        "KeyPlayer2",
+        "KeyPlayer3",
+        "KeyPlayerName1",
+        "KeyPlayerName2",
+        "KeyPlayerName3",
+        "Constraint1",
+        "Constraint2",
+        "Constraint3",
+        "HitChart1",
+        "HitChart2",
+        "HitChart3",
+        "DeadVs",
+        "Opponent",
+        "Notes",
+      ];
+      filename = "offensive_playbook_template.csv";
+    } else {
+      headers = [
+        "Opponent",
+        "Week",
+        "Game",
+        "Quarter",
+        "Time",
+        "Down",
+        "Distance",
+        "Hash",
+        "Field Position",
+        "Yard Line",
+        "Situation",
+        "Offense Play Type",
+        "Offense Formation",
+        "Def Front",
+        "Def Coverage",
+        "Def Stunt",
+        "Def Blitz",
+        "Blitzer 1",
+        "Blitzer 2",
+        "Blitzer 3",
+        "Tackler 1",
+        "Tackler 2",
+        "Tackler 3",
+        "Front Strength Direction",
+        "Coverage Strength Direction",
+        "Person Of Interest 1 Direction",
+        "Person of Interest 2 Direction",
+        "Person of Interest 3 Direction",
+        "Turnover",
+        "Turnover Forcer",
+        "Turnover Player",
+        "Tackle for Loss Player",
+        "Penalty",
+        "Penalty Player",
+        "Notes",
+      ];
+      filename = "defensive_tendencies_template.csv";
+    }
+    const csv = headers.join(",") + "\n";
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+    showToast(`⬇️ Downloaded ${filename}`);
   } catch (err) {
     console.error("downloadCSVTemplate error:", err);
     showToast("❌ Error creating template.", 3000);

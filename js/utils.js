@@ -40,15 +40,41 @@ const UI_COLORS = {
 function sanitizeHTML(html) {
   if (!html) return "";
   const DANGEROUS_TAGS = new Set([
-    "script", "iframe", "object", "embed", "link", "base",
-    "meta", "form", "input", "textarea", "select", "button",
+    "script",
+    "iframe",
+    "object",
+    "embed",
+    "link",
+    "base",
+    "meta",
+    "form",
+    "input",
+    "textarea",
+    "select",
+    "button",
     "style",
   ]);
   const ALLOWED_ATTR_PREFIX = ["data-", "aria-"];
   const SAFE_ATTRS = new Set([
-    "href", "src", "alt", "title", "class", "id", "width", "height",
-    "colspan", "rowspan", "type", "value", "checked", "disabled",
-    "placeholder", "name", "target", "rel", "download",
+    "href",
+    "src",
+    "alt",
+    "title",
+    "class",
+    "id",
+    "width",
+    "height",
+    "colspan",
+    "rowspan",
+    "type",
+    "value",
+    "checked",
+    "disabled",
+    "placeholder",
+    "name",
+    "target",
+    "rel",
+    "download",
   ]);
 
   try {
@@ -66,15 +92,24 @@ function sanitizeHTML(html) {
         [...node.attributes].forEach((attr) => {
           const name = attr.name.toLowerCase();
           // Strip event handlers (on*)
-          if (name.startsWith("on")) { node.removeAttribute(attr.name); return; }
+          if (name.startsWith("on")) {
+            node.removeAttribute(attr.name);
+            return;
+          }
           // Strip javascript: URIs
-          if ((name === "href" || name === "src") &&
-              attr.value.replace(/\s/g, "").toLowerCase().startsWith("javascript:")) {
+          if (
+            (name === "href" || name === "src") &&
+            attr.value
+              .replace(/\s/g, "")
+              .toLowerCase()
+              .startsWith("javascript:")
+          ) {
             node.removeAttribute(attr.name);
             return;
           }
           // Allow known safe attrs and data-/aria- prefixes
-          const allowed = SAFE_ATTRS.has(name) ||
+          const allowed =
+            SAFE_ATTRS.has(name) ||
             ALLOWED_ATTR_PREFIX.some((p) => name.startsWith(p));
           if (!allowed) node.removeAttribute(attr.name);
         });

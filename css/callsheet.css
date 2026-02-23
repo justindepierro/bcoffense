@@ -281,7 +281,10 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: 500;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  transition:
+    background 0.2s ease,
+    color 0.2s ease,
+    border-color 0.2s ease;
 }
 .cs-toggle-group.page-toggle .cs-toggle {
   background: var(--color-white);
@@ -1216,7 +1219,10 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
   color: var(--color-text-muted);
 }
 .cs-style-btn:hover {
@@ -1242,7 +1248,10 @@
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-muted);
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 .cs-size-btn:hover {
   background: var(--color-border-light);

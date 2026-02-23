@@ -344,7 +344,12 @@
   border-radius: var(--radius-lg);
   background: var(--color-bg-lighter);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   min-width: 54px;
   text-align: center;
   user-select: none;
@@ -567,7 +572,10 @@
   background: var(--color-white);
   font-size: var(--font-size-sm);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
   display: flex;
   align-items: center;
   gap: 4px;

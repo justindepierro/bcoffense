@@ -387,58 +387,58 @@ const CALLSHEET_DISPLAY_IDS = [
  */
 function initCallSheet() {
   try {
-  // Load settings
-  const savedSettings = storageManager.get(
-    STORAGE_KEYS.CALL_SHEET_SETTINGS,
-    null,
-  );
-  if (savedSettings) {
-    callSheetSettings = { ...callSheetSettings, ...savedSettings };
-  }
-
-  // Load saved call sheet data
-  const savedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-  if (savedCallSheet) {
-    callSheet = savedCallSheet;
-  }
-
-  // Initialize empty data structure for any missing categories
-  CALLSHEET_CATEGORIES.forEach((cat) => {
-    if (!callSheet[cat.id]) {
-      callSheet[cat.id] = { left: [], right: [] };
+    // Load settings
+    const savedSettings = storageManager.get(
+      STORAGE_KEYS.CALL_SHEET_SETTINGS,
+      null,
+    );
+    if (savedSettings) {
+      callSheetSettings = { ...callSheetSettings, ...savedSettings };
     }
-  });
 
-  // Load category order
-  const savedOrder = storageManager.get(
-    STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
-    null,
-  );
-  if (savedOrder) csCategoryOrder = savedOrder;
+    // Load saved call sheet data
+    const savedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
+    if (savedCallSheet) {
+      callSheet = savedCallSheet;
+    }
 
-  // Load notes
-  csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
+    // Initialize empty data structure for any missing categories
+    CALLSHEET_CATEGORIES.forEach((cat) => {
+      if (!callSheet[cat.id]) {
+        callSheet[cat.id] = { left: [], right: [] };
+      }
+    });
 
-  // Load targets
-  csTargets = storageManager.get(STORAGE_KEYS.CALLSHEET_TARGETS, {});
+    // Load category order
+    const savedOrder = storageManager.get(
+      STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
+      null,
+    );
+    if (savedOrder) csCategoryOrder = savedOrder;
 
-  // Load collapsed
-  const savedCollapsed = storageManager.get(
-    STORAGE_KEYS.CALLSHEET_COLLAPSED,
-    [],
-  );
-  csCollapsed = new Set(savedCollapsed);
+    // Load notes
+    csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
 
-  // Restore display option checkbox states
-  restoreCallSheetDisplayOptions();
+    // Load targets
+    csTargets = storageManager.get(STORAGE_KEYS.CALLSHEET_TARGETS, {});
 
-  // Populate user presets in dropdown
-  refreshPresetDropdown();
+    // Load collapsed
+    const savedCollapsed = storageManager.get(
+      STORAGE_KEYS.CALLSHEET_COLLAPSED,
+      [],
+    );
+    csCollapsed = new Set(savedCollapsed);
 
-  renderCallSheet();
+    // Restore display option checkbox states
+    restoreCallSheetDisplayOptions();
 
-  // Check for unsaved draft
-  checkCallSheetDraft();
+    // Populate user presets in dropdown
+    refreshPresetDropdown();
+
+    renderCallSheet();
+
+    // Check for unsaved draft
+    checkCallSheetDraft();
   } catch (err) {
     console.error("initCallSheet error:", err);
     showToast("❌ Error initializing call sheet.", 4000);
@@ -450,74 +450,78 @@ function initCallSheet() {
  */
 async function autoPopulateCallSheet() {
   try {
-  const ok = await showConfirm(
-    "This will clear the current call sheet and repopulate from your playbook based on preferred fields and play types. Continue?",
-    { title: "Auto-Populate Call Sheet", icon: "⚡", confirmText: "Populate" },
-  );
-  if (!ok) return;
+    const ok = await showConfirm(
+      "This will clear the current call sheet and repopulate from your playbook based on preferred fields and play types. Continue?",
+      {
+        title: "Auto-Populate Call Sheet",
+        icon: "⚡",
+        confirmText: "Populate",
+      },
+    );
+    if (!ok) return;
 
-  // Clear existing
-  CALLSHEET_CATEGORIES.forEach((cat) => {
-    callSheet[cat.id] = { left: [], right: [] };
-  });
-
-  // Track which plays go where for dedup per category
-  const seen = {}; // { catId: Set of play keys }
-  let totalPlaced = 0;
-  let unmatched = 0;
-
-  // Build a unique key for a play (formation + play name + personnel)
-  const playKey = (p) =>
-    `${(p.formation || "").toLowerCase()}|${(p.play || "").toLowerCase()}|${(p.personnel || "").toLowerCase()}`;
-
-  // Go through each play and categorize
-  plays.forEach((play) => {
-    const categories = findMatchingCategories(play);
-
-    if (categories.length === 0) {
-      unmatched++;
-      return;
-    }
-
-    categories.forEach((catId) => {
-      // Dedup: don't add same play to same category twice
-      if (!seen[catId]) seen[catId] = new Set();
-      const key = playKey(play);
-      if (seen[catId].has(key)) return;
-      seen[catId].add(key);
-
-      const hash = (play.preferredHash || "").toLowerCase().trim();
-      const playWithNum = {
-        ...play,
-        wristbandNumber: getWristbandNumberForPlay(play),
-      };
-
-      if (hash === "left" || hash === "l") {
-        callSheet[catId].left.push(playWithNum);
-      } else if (hash === "right" || hash === "r") {
-        callSheet[catId].right.push(playWithNum);
-      } else {
-        // Unspecified hash — distribute evenly (alternate L/R)
-        const leftLen = callSheet[catId].left.length;
-        const rightLen = callSheet[catId].right.length;
-        if (leftLen <= rightLen) {
-          callSheet[catId].left.push(playWithNum);
-        } else {
-          callSheet[catId].right.push(playWithNum);
-        }
-      }
-      totalPlaced++;
+    // Clear existing
+    CALLSHEET_CATEGORIES.forEach((cat) => {
+      callSheet[cat.id] = { left: [], right: [] };
     });
-  });
 
-  renderCallSheet();
-  saveCallSheet();
+    // Track which plays go where for dedup per category
+    const seen = {}; // { catId: Set of play keys }
+    let totalPlaced = 0;
+    let unmatched = 0;
 
-  let msg = `⚡ Placed ${totalPlaced} entries from ${plays.length} plays`;
-  if (unmatched > 0) {
-    msg += ` (${unmatched} unmatched)`;
-  }
-  showToast(msg);
+    // Build a unique key for a play (formation + play name + personnel)
+    const playKey = (p) =>
+      `${(p.formation || "").toLowerCase()}|${(p.play || "").toLowerCase()}|${(p.personnel || "").toLowerCase()}`;
+
+    // Go through each play and categorize
+    plays.forEach((play) => {
+      const categories = findMatchingCategories(play);
+
+      if (categories.length === 0) {
+        unmatched++;
+        return;
+      }
+
+      categories.forEach((catId) => {
+        // Dedup: don't add same play to same category twice
+        if (!seen[catId]) seen[catId] = new Set();
+        const key = playKey(play);
+        if (seen[catId].has(key)) return;
+        seen[catId].add(key);
+
+        const hash = (play.preferredHash || "").toLowerCase().trim();
+        const playWithNum = {
+          ...play,
+          wristbandNumber: getWristbandNumberForPlay(play),
+        };
+
+        if (hash === "left" || hash === "l") {
+          callSheet[catId].left.push(playWithNum);
+        } else if (hash === "right" || hash === "r") {
+          callSheet[catId].right.push(playWithNum);
+        } else {
+          // Unspecified hash — distribute evenly (alternate L/R)
+          const leftLen = callSheet[catId].left.length;
+          const rightLen = callSheet[catId].right.length;
+          if (leftLen <= rightLen) {
+            callSheet[catId].left.push(playWithNum);
+          } else {
+            callSheet[catId].right.push(playWithNum);
+          }
+        }
+        totalPlaced++;
+      });
+    });
+
+    renderCallSheet();
+    saveCallSheet();
+
+    let msg = `⚡ Placed ${totalPlaced} entries from ${plays.length} plays`;
+    if (unmatched > 0) {
+      msg += ` (${unmatched} unmatched)`;
+    }
+    showToast(msg);
   } catch (err) {
     console.error("autoPopulateCallSheet error:", err);
     showToast("❌ Error auto-populating call sheet.", 4000);
@@ -1023,7 +1027,9 @@ function renderCategory(cat, data, dupeMap) {
 
   // Determine header text color based on background
   const textColor =
-    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa" ? UI_COLORS.textBlack : UI_COLORS.textWhite;
+    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa"
+      ? UI_COLORS.textBlack
+      : UI_COLORS.textWhite;
 
   const playCount = leftPlays.length + rightPlays.length;
   const target = csTargets[cat.id];
@@ -1195,8 +1201,10 @@ function getPlayBorderColor(play, options) {
 
   // Check type-based borders
   if (options.redBorder && checkMatch(options.redBorder)) return CS_COLORS.red;
-  if (options.blueBorder && checkMatch(options.blueBorder)) return CS_COLORS.blue;
-  if (options.greenBorder && checkMatch(options.greenBorder)) return CS_COLORS.green;
+  if (options.blueBorder && checkMatch(options.blueBorder))
+    return CS_COLORS.blue;
+  if (options.greenBorder && checkMatch(options.greenBorder))
+    return CS_COLORS.green;
   if (options.orangeBorder && checkMatch(options.orangeBorder))
     return CS_COLORS.orange;
   if (options.purpleBorder && checkMatch(options.purpleBorder))
@@ -2117,73 +2125,73 @@ async function clearCallSheet() {
  */
 function printCallSheet() {
   try {
-  const container = document.getElementById("callSheetPrint");
-  const content = document.getElementById("callSheetPrintContent");
+    const container = document.getElementById("callSheetPrint");
+    const content = document.getElementById("callSheetPrintContent");
 
-  // Get current page categories (respect custom order)
-  const page = callSheetSettings.currentPage;
-  let categories =
-    page === "front" ? [...CALLSHEET_FRONT] : [...CALLSHEET_BACK];
-  const customOrder = csCategoryOrder[page];
-  if (customOrder && customOrder.length > 0) {
-    const ordered = [];
-    customOrder.forEach((id) => {
-      const cat = categories.find((c) => c.id === id);
-      if (cat) ordered.push(cat);
+    // Get current page categories (respect custom order)
+    const page = callSheetSettings.currentPage;
+    let categories =
+      page === "front" ? [...CALLSHEET_FRONT] : [...CALLSHEET_BACK];
+    const customOrder = csCategoryOrder[page];
+    if (customOrder && customOrder.length > 0) {
+      const ordered = [];
+      customOrder.forEach((id) => {
+        const cat = categories.find((c) => c.id === id);
+        if (cat) ordered.push(cat);
+      });
+      categories.forEach((cat) => {
+        if (!ordered.find((c) => c.id === cat.id)) ordered.push(cat);
+      });
+      categories = ordered;
+    }
+    const pageTitle =
+      page === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
+
+    // Set orientation class
+    const orientClass =
+      callSheetSettings.orientation === "landscape"
+        ? "print-landscape"
+        : "print-portrait";
+
+    // Hoist display options once — avoids re-reading checkboxes per play
+    const printOptions = getCallSheetDisplayOptions();
+
+    // Build print HTML
+    let html = `<div class="${orientClass}">`;
+    const teamName = getTeamName() + " " + new Date().getFullYear();
+    html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
+    html += '<div class="print-callsheet-grid">';
+
+    // Arrange in 3-column layout for print
+    const columns = [
+      categories.filter((_, i) => i % 3 === 0),
+      categories.filter((_, i) => i % 3 === 1),
+      categories.filter((_, i) => i % 3 === 2),
+    ];
+
+    columns.forEach((column) => {
+      html += '<div class="print-column">';
+      column.forEach((cat) => {
+        const data = callSheet[cat.id] || { left: [], right: [] };
+        html += renderPrintCategory(cat, data, printOptions);
+      });
+      html += "</div>";
     });
-    categories.forEach((cat) => {
-      if (!ordered.find((c) => c.id === cat.id)) ordered.push(cat);
-    });
-    categories = ordered;
-  }
-  const pageTitle =
-    page === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
 
-  // Set orientation class
-  const orientClass =
-    callSheetSettings.orientation === "landscape"
-      ? "print-landscape"
-      : "print-portrait";
+    html += "</div></div>";
 
-  // Hoist display options once — avoids re-reading checkboxes per play
-  const printOptions = getCallSheetDisplayOptions();
+    content.innerHTML = html;
+    container.classList.remove("hidden");
+    document.body.dataset.printMode = "callsheet";
 
-  // Build print HTML
-  let html = `<div class="${orientClass}">`;
-  const teamName = getTeamName() + " " + new Date().getFullYear();
-  html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
-  html += '<div class="print-callsheet-grid">';
-
-  // Arrange in 3-column layout for print
-  const columns = [
-    categories.filter((_, i) => i % 3 === 0),
-    categories.filter((_, i) => i % 3 === 1),
-    categories.filter((_, i) => i % 3 === 2),
-  ];
-
-  columns.forEach((column) => {
-    html += '<div class="print-column">';
-    column.forEach((cat) => {
-      const data = callSheet[cat.id] || { left: [], right: [] };
-      html += renderPrintCategory(cat, data, printOptions);
-    });
-    html += "</div>";
-  });
-
-  html += "</div></div>";
-
-  content.innerHTML = html;
-  container.classList.remove("hidden");
-  document.body.dataset.printMode = "callsheet";
-
-  setTimeout(() => {
-    const pageLabel = page === "front" ? "Front" : "Back";
-    const restoreTitle = setPrintTitle("Game Plan", pageLabel);
-    window.print();
-    restoreTitle();
-    container.classList.add("hidden");
-    delete document.body.dataset.printMode;
-  }, 100);
+    setTimeout(() => {
+      const pageLabel = page === "front" ? "Front" : "Back";
+      const restoreTitle = setPrintTitle("Game Plan", pageLabel);
+      window.print();
+      restoreTitle();
+      container.classList.add("hidden");
+      delete document.body.dataset.printMode;
+    }, 100);
   } catch (err) {
     console.error("printCallSheet error:", err);
     showToast("❌ Error printing call sheet.", 4000);
@@ -2202,7 +2210,9 @@ function renderPrintCategory(cat, data, options) {
 
   // Determine text color
   const textColor =
-    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa" ? UI_COLORS.textBlack : UI_COLORS.textWhite;
+    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa"
+      ? UI_COLORS.textBlack
+      : UI_COLORS.textWhite;
 
   const note = csNotes[cat.id];
 
@@ -2742,46 +2752,50 @@ function scheduleCallSheetAutosave() {
  */
 async function checkCallSheetDraft() {
   try {
-  const draft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
-  if (!draft || !draft.savedAt) return;
+    const draft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
+    if (!draft || !draft.savedAt) return;
 
-  const savedAt = new Date(draft.savedAt);
-  const age = Date.now() - savedAt.getTime();
-  // Only offer if draft is less than 24h old
-  if (age > DRAFT_EXPIRY_MS) {
-    storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
-    return;
-  }
-
-  // Check if draft is different from current
-  const currentStr = JSON.stringify(callSheet);
-  const draftStr = JSON.stringify(draft.callSheet);
-  if (currentStr === draftStr) {
-    storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
-    return;
-  }
-
-  const timeStr = savedAt.toLocaleTimeString();
-  const ok = await showConfirm(
-    `A draft from ${timeStr} was found. Would you like to restore it?`,
-    { title: "Restore Call Sheet Draft?", icon: "📋", confirmText: "Restore" },
-  );
-  if (ok) {
-    callSheet = draft.callSheet;
-    if (draft.settings) {
-      callSheetSettings = { ...callSheetSettings, ...draft.settings };
+    const savedAt = new Date(draft.savedAt);
+    const age = Date.now() - savedAt.getTime();
+    // Only offer if draft is less than 24h old
+    if (age > DRAFT_EXPIRY_MS) {
+      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      return;
     }
-    CALLSHEET_CATEGORIES.forEach((cat) => {
-      if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
-    });
-    renderCallSheet();
-    saveCallSheet();
-    saveCallSheetSettings();
-    storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
-    showToast("📋 Call sheet draft restored");
-  } else {
-    storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
-  }
+
+    // Check if draft is different from current
+    const currentStr = JSON.stringify(callSheet);
+    const draftStr = JSON.stringify(draft.callSheet);
+    if (currentStr === draftStr) {
+      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      return;
+    }
+
+    const timeStr = savedAt.toLocaleTimeString();
+    const ok = await showConfirm(
+      `A draft from ${timeStr} was found. Would you like to restore it?`,
+      {
+        title: "Restore Call Sheet Draft?",
+        icon: "📋",
+        confirmText: "Restore",
+      },
+    );
+    if (ok) {
+      callSheet = draft.callSheet;
+      if (draft.settings) {
+        callSheetSettings = { ...callSheetSettings, ...draft.settings };
+      }
+      CALLSHEET_CATEGORIES.forEach((cat) => {
+        if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
+      });
+      renderCallSheet();
+      saveCallSheet();
+      saveCallSheetSettings();
+      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      showToast("📋 Call sheet draft restored");
+    } else {
+      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+    }
   } catch (err) {
     console.error("checkCallSheetDraft error:", err);
     showToast("❌ Error restoring call sheet draft.", 3000);
@@ -3370,35 +3384,35 @@ function saveTemplate() {
 
 async function loadTemplate(idx) {
   try {
-  const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
-  const template = templates[idx];
-  if (!template) return;
+    const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+    const template = templates[idx];
+    if (!template) return;
 
-  const ok = await showConfirm(
-    `Load "${template.name}"? This will replace your current call sheet.`,
-    { title: "Load Template", icon: "📁", confirmText: "Load" },
-  );
-  if (!ok) return;
+    const ok = await showConfirm(
+      `Load "${template.name}"? This will replace your current call sheet.`,
+      { title: "Load Template", icon: "📁", confirmText: "Load" },
+    );
+    if (!ok) return;
 
-  callSheet = template.callSheet || {};
-  CALLSHEET_CATEGORIES.forEach((cat) => {
-    if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
-  });
-  if (template.settings)
-    callSheetSettings = { ...callSheetSettings, ...template.settings };
-  if (template.notes) csNotes = template.notes;
-  if (template.targets) csTargets = template.targets;
-  if (template.categoryOrder) csCategoryOrder = template.categoryOrder;
+    callSheet = template.callSheet || {};
+    CALLSHEET_CATEGORIES.forEach((cat) => {
+      if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
+    });
+    if (template.settings)
+      callSheetSettings = { ...callSheetSettings, ...template.settings };
+    if (template.notes) csNotes = template.notes;
+    if (template.targets) csTargets = template.targets;
+    if (template.categoryOrder) csCategoryOrder = template.categoryOrder;
 
-  saveCallSheet();
-  saveCallSheetSettings();
-  storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
-  storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
-  storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
+    saveCallSheet();
+    saveCallSheetSettings();
+    storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
+    storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
+    storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
 
-  renderCallSheet();
-  closeTemplateModal();
-  showToast(`📁 Loaded "${template.name}"`);
+    renderCallSheet();
+    closeTemplateModal();
+    showToast(`📁 Loaded "${template.name}"`);
   } catch (err) {
     console.error("loadTemplate error:", err);
     showToast("❌ Error loading template.", 4000);

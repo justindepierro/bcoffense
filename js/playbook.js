@@ -212,60 +212,62 @@ function toggleMoreFilters() {
  */
 function populateFilters() {
   try {
-  const types = [...new Set(plays.map((p) => p.type))].filter(Boolean).sort();
-  const formations = [...new Set(plays.map((p) => p.formation))]
-    .filter(Boolean)
-    .sort();
-  const basePlays = [...new Set(plays.map((p) => p.basePlay))]
-    .filter(Boolean)
-    .sort();
-  const backs = [...new Set(plays.map((p) => p.back))].filter(Boolean).sort();
-  const motions = [...new Set(plays.map((p) => p.motion))]
-    .filter(Boolean)
-    .sort();
-  const protections = [...new Set(plays.map((p) => p.protection))]
-    .filter(Boolean)
-    .sort();
-  const tempos = [...new Set(plays.map((p) => p.tempo))].filter(Boolean).sort();
+    const types = [...new Set(plays.map((p) => p.type))].filter(Boolean).sort();
+    const formations = [...new Set(plays.map((p) => p.formation))]
+      .filter(Boolean)
+      .sort();
+    const basePlays = [...new Set(plays.map((p) => p.basePlay))]
+      .filter(Boolean)
+      .sort();
+    const backs = [...new Set(plays.map((p) => p.back))].filter(Boolean).sort();
+    const motions = [...new Set(plays.map((p) => p.motion))]
+      .filter(Boolean)
+      .sort();
+    const protections = [...new Set(plays.map((p) => p.protection))]
+      .filter(Boolean)
+      .sort();
+    const tempos = [...new Set(plays.map((p) => p.tempo))]
+      .filter(Boolean)
+      .sort();
 
-  // Playbook dropdown filters
-  _fillSelect("filterFormation", "All Formations", formations);
-  _fillSelect("filterBasePlay", "All Base Plays", basePlays);
-  _fillSelect("pbFilterBack", "All Backs", backs);
-  _fillSelect("pbFilterMotion", "All Motions", motions);
-  _fillSelect("pbFilterProtection", "All Protections", protections);
-  _fillSelect("pbFilterTempo", "All Tempos", tempos);
+    // Playbook dropdown filters
+    _fillSelect("filterFormation", "All Formations", formations);
+    _fillSelect("filterBasePlay", "All Base Plays", basePlays);
+    _fillSelect("pbFilterBack", "All Backs", backs);
+    _fillSelect("pbFilterMotion", "All Motions", motions);
+    _fillSelect("pbFilterProtection", "All Protections", protections);
+    _fillSelect("pbFilterTempo", "All Tempos", tempos);
 
-  // Build chip groups
-  buildFilterChips();
+    // Build chip groups
+    buildFilterChips();
 
-  // Script builder filters (dropdowns only - checkboxes populated separately)
-  const scriptFormFilter = document.getElementById("scriptFilterFormation");
-  if (scriptFormFilter) {
-    scriptFormFilter.innerHTML =
-      '<option value="">All Formations</option>' +
-      formations.map((f) => `<option value="${f}">${f}</option>`).join("");
-  }
-  const scriptBaseFilter = document.getElementById("scriptFilterBasePlay");
-  if (scriptBaseFilter) {
-    scriptBaseFilter.innerHTML =
-      '<option value="">All Base Plays</option>' +
-      basePlays.map((b) => `<option value="${b}">${b}</option>`).join("");
-  }
+    // Script builder filters (dropdowns only - checkboxes populated separately)
+    const scriptFormFilter = document.getElementById("scriptFilterFormation");
+    if (scriptFormFilter) {
+      scriptFormFilter.innerHTML =
+        '<option value="">All Formations</option>' +
+        formations.map((f) => `<option value="${f}">${f}</option>`).join("");
+    }
+    const scriptBaseFilter = document.getElementById("scriptFilterBasePlay");
+    if (scriptBaseFilter) {
+      scriptBaseFilter.innerHTML =
+        '<option value="">All Base Plays</option>' +
+        basePlays.map((b) => `<option value="${b}">${b}</option>`).join("");
+    }
 
-  // Populate script checkbox filters
-  populateScriptCheckboxFilters();
+    // Populate script checkbox filters
+    populateScriptCheckboxFilters();
 
-  // Wristband filters
-  const wbTypeFilter = document.getElementById("wbFilterType");
-  if (wbTypeFilter) {
-    wbTypeFilter.innerHTML =
-      '<option value="">All Play Types</option>' +
-      types.map((t) => `<option value="${t}">${t}</option>`).join("");
-  }
+    // Wristband filters
+    const wbTypeFilter = document.getElementById("wbFilterType");
+    if (wbTypeFilter) {
+      wbTypeFilter.innerHTML =
+        '<option value="">All Play Types</option>' +
+        types.map((t) => `<option value="${t}">${t}</option>`).join("");
+    }
 
-  // Populate wristband highlight dropdown
-  populateWristbandHighlightDropdown();
+    // Populate wristband highlight dropdown
+    populateWristbandHighlightDropdown();
   } catch (err) {
     console.error("populateFilters error:", err);
     showToast("❌ Error loading filters.", 3000);
@@ -544,21 +546,21 @@ function removeFilter(layer, value) {
  */
 function renderPlaybook() {
   try {
-  const tbody = document.querySelector("#playbookTable tbody");
-  const searchTerm =
-    document.getElementById("searchPlay")?.value?.toLowerCase() || "";
+    const tbody = document.querySelector("#playbookTable tbody");
+    const searchTerm =
+      document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
-  tbody.innerHTML = filteredPlays
-    .map((p, idx) => {
-      const onWristband = isPlayOnHighlightedWristband(p);
-      const wbClass = onWristband ? " on-wristband" : "";
-      const wbIndicator = onWristband
-        ? '<span class="wb-indicator" title="On wristband">🏈</span>'
-        : "";
-      const installBadge =
-        typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
+    tbody.innerHTML = filteredPlays
+      .map((p, idx) => {
+        const onWristband = isPlayOnHighlightedWristband(p);
+        const wbClass = onWristband ? " on-wristband" : "";
+        const wbIndicator = onWristband
+          ? '<span class="wb-indicator" title="On wristband">🏈</span>'
+          : "";
+        const installBadge =
+          typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
 
-      return `
+        return `
             <tr class="${wbClass}" onclick="selectPlaybookRow(${idx})" ondblclick="addPlayFromPlaybook(${idx})" 
                 onmouseenter="showPlayPreview(event, ${idx})" onmouseleave="hidePlayPreview()"
                 title="Click to select, double-click to add to script">
@@ -574,31 +576,31 @@ function renderPlaybook() {
                 <td class="col-tempo">${escapeHtml(p.tempo || "-")}</td>
             </tr>
         `;
-    })
-    .join("");
+      })
+      .join("");
 
-  // Update play count
-  const countEl = document.getElementById("playCount");
-  if (countEl) {
-    countEl.textContent = `Showing ${filteredPlays.length} of ${plays.length} plays`;
-  }
-
-  // Update stats bar
-  updateStatsBar();
-
-  // Re-apply selection if valid
-  if (selectedRowIndex >= 0 && selectedRowIndex < filteredPlays.length) {
-    const rows = tbody.querySelectorAll("tr");
-    if (rows[selectedRowIndex]) {
-      rows[selectedRowIndex].classList.add("selected");
+    // Update play count
+    const countEl = document.getElementById("playCount");
+    if (countEl) {
+      countEl.textContent = `Showing ${filteredPlays.length} of ${plays.length} plays`;
     }
-  }
 
-  // Re-apply column visibility
-  applyColumnVisibility();
+    // Update stats bar
+    updateStatsBar();
 
-  // Save state
-  savePlaybookState();
+    // Re-apply selection if valid
+    if (selectedRowIndex >= 0 && selectedRowIndex < filteredPlays.length) {
+      const rows = tbody.querySelectorAll("tr");
+      if (rows[selectedRowIndex]) {
+        rows[selectedRowIndex].classList.add("selected");
+      }
+    }
+
+    // Re-apply column visibility
+    applyColumnVisibility();
+
+    // Save state
+    savePlaybookState();
   } catch (err) {
     console.error("renderPlaybook error:", err);
     showToast("❌ Error rendering playbook.", 3000);
@@ -682,47 +684,48 @@ function savePlaybookState() {
  */
 function restorePlaybookState() {
   try {
-  const state = storageManager.get(STORAGE_KEYS.PLAYBOOK_STATE, null);
-  if (!state) return;
+    const state = storageManager.get(STORAGE_KEYS.PLAYBOOK_STATE, null);
+    if (!state) return;
 
-  // Restore chip filters
-  if (state.activeTypes) {
-    activeTypeChips = new Set(state.activeTypes);
-  }
-  if (state.activePersonnel) {
-    activePersonnelChips = new Set(state.activePersonnel);
-  }
+    // Restore chip filters
+    if (state.activeTypes) {
+      activeTypeChips = new Set(state.activeTypes);
+    }
+    if (state.activePersonnel) {
+      activePersonnelChips = new Set(state.activePersonnel);
+    }
 
-  // Restore dropdowns
-  if (state.filterFormation) _setVal("filterFormation", state.filterFormation);
-  if (state.filterBasePlay) _setVal("filterBasePlay", state.filterBasePlay);
-  if (state.filterBack) _setVal("pbFilterBack", state.filterBack);
-  if (state.filterMotion) _setVal("pbFilterMotion", state.filterMotion);
-  if (state.filterProtection)
-    _setVal("pbFilterProtection", state.filterProtection);
-  if (state.filterTempo) _setVal("pbFilterTempo", state.filterTempo);
-  if (state.searchPlay) _setVal("searchPlay", state.searchPlay);
+    // Restore dropdowns
+    if (state.filterFormation)
+      _setVal("filterFormation", state.filterFormation);
+    if (state.filterBasePlay) _setVal("filterBasePlay", state.filterBasePlay);
+    if (state.filterBack) _setVal("pbFilterBack", state.filterBack);
+    if (state.filterMotion) _setVal("pbFilterMotion", state.filterMotion);
+    if (state.filterProtection)
+      _setVal("pbFilterProtection", state.filterProtection);
+    if (state.filterTempo) _setVal("pbFilterTempo", state.filterTempo);
+    if (state.searchPlay) _setVal("searchPlay", state.searchPlay);
 
-  // Restore sort
-  if (state.sortColumn) {
-    currentSortColumn = state.sortColumn;
-    currentSortDirection = state.sortDirection || "asc";
-  }
-  if (state.secondarySortColumn) {
-    secondarySortColumn = state.secondarySortColumn;
-    secondarySortDirection = state.secondarySortDirection || "asc";
-  }
+    // Restore sort
+    if (state.sortColumn) {
+      currentSortColumn = state.sortColumn;
+      currentSortDirection = state.sortDirection || "asc";
+    }
+    if (state.secondarySortColumn) {
+      secondarySortColumn = state.secondarySortColumn;
+      secondarySortDirection = state.secondarySortDirection || "asc";
+    }
 
-  // Restore more-filters collapsed state
-  if (state.moreFiltersOpen) {
-    moreFiltersOpen = true;
-    const panel = document.getElementById("pbMoreFilters");
-    const arrow = document.getElementById("pbMoreArrow");
-    if (panel) panel.classList.add("open");
-    if (arrow) arrow.classList.add("open");
-  }
+    // Restore more-filters collapsed state
+    if (state.moreFiltersOpen) {
+      moreFiltersOpen = true;
+      const panel = document.getElementById("pbMoreFilters");
+      const arrow = document.getElementById("pbMoreArrow");
+      if (panel) panel.classList.add("open");
+      if (arrow) arrow.classList.add("open");
+    }
 
-  _syncSortUI();
+    _syncSortUI();
   } catch (err) {
     console.error("restorePlaybookState error:", err);
     showToast("❌ Error restoring playbook state.", 3000);
@@ -903,30 +906,30 @@ function applyColumnVisibility() {
  */
 function restoreColumnVisibility() {
   try {
-  const savedVis = storageManager.get(STORAGE_KEYS.COLUMN_VISIBILITY, null);
-  if (savedVis) {
-    Object.assign(columnVisibility, savedVis);
-    // Update checkboxes
-    const menu = document.getElementById("columnMenu");
-    if (menu) {
-      const columns = [
-        "install",
-        "type",
-        "formation",
-        "tags",
-        "back",
-        "motion",
-        "protection",
-        "play",
-        "basePlay",
-        "tempo",
-      ];
-      const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
-      checkboxes.forEach((cb, idx) => {
-        cb.checked = columnVisibility[columns[idx]];
-      });
+    const savedVis = storageManager.get(STORAGE_KEYS.COLUMN_VISIBILITY, null);
+    if (savedVis) {
+      Object.assign(columnVisibility, savedVis);
+      // Update checkboxes
+      const menu = document.getElementById("columnMenu");
+      if (menu) {
+        const columns = [
+          "install",
+          "type",
+          "formation",
+          "tags",
+          "back",
+          "motion",
+          "protection",
+          "play",
+          "basePlay",
+          "tempo",
+        ];
+        const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
+        checkboxes.forEach((cb, idx) => {
+          cb.checked = columnVisibility[columns[idx]];
+        });
+      }
     }
-  }
   } catch (err) {
     console.error("restoreColumnVisibility error:", err);
   }
@@ -1041,53 +1044,53 @@ function hidePlayPreview() {
  */
 async function savePlayCollection() {
   try {
-  if (filteredPlays.length === 0) {
-    showToast("No plays to save — adjust your filters first", {
-      type: "warning",
+    if (filteredPlays.length === 0) {
+      showToast("No plays to save — adjust your filters first", {
+        type: "warning",
+      });
+      return;
+    }
+
+    const name = await showPrompt(
+      `Save ${filteredPlays.length} filtered plays as a collection:`,
+      "",
+      {
+        title: "Save Collection",
+        icon: "🔖",
+        placeholder: "e.g. Red Zone Passes, 3rd Down Package",
+        confirmText: "Save",
+      },
+    );
+    if (!name || !name.trim()) return;
+
+    const collections = storageManager.get(STORAGE_KEYS.PLAY_COLLECTIONS, []);
+
+    // Capture current filter state so we can restore it later
+    const filterState = _captureFilterState();
+
+    // Store play keys (formation + play name) for matching — not full objects
+    // This way they stay in sync if the playbook CSV is re-uploaded
+    const playKeys = filteredPlays.map((p) => ({
+      formation: p.formation || "",
+      play: p.play || "",
+      type: p.type || "",
+      personnel: p.personnel || "",
+    }));
+
+    collections.push({
+      name: name.trim(),
+      playKeys: playKeys,
+      filterState: filterState,
+      count: filteredPlays.length,
+      created: new Date().toISOString(),
     });
-    return;
-  }
 
-  const name = await showPrompt(
-    `Save ${filteredPlays.length} filtered plays as a collection:`,
-    "",
-    {
-      title: "Save Collection",
-      icon: "🔖",
-      placeholder: "e.g. Red Zone Passes, 3rd Down Package",
-      confirmText: "Save",
-    },
-  );
-  if (!name || !name.trim()) return;
-
-  const collections = storageManager.get(STORAGE_KEYS.PLAY_COLLECTIONS, []);
-
-  // Capture current filter state so we can restore it later
-  const filterState = _captureFilterState();
-
-  // Store play keys (formation + play name) for matching — not full objects
-  // This way they stay in sync if the playbook CSV is re-uploaded
-  const playKeys = filteredPlays.map((p) => ({
-    formation: p.formation || "",
-    play: p.play || "",
-    type: p.type || "",
-    personnel: p.personnel || "",
-  }));
-
-  collections.push({
-    name: name.trim(),
-    playKeys: playKeys,
-    filterState: filterState,
-    count: filteredPlays.length,
-    created: new Date().toISOString(),
-  });
-
-  storageManager.set(STORAGE_KEYS.PLAY_COLLECTIONS, collections);
-  updateCollectionsBadge();
-  renderCollectionsPanel();
-  showToast(`Saved "${name.trim()}" (${filteredPlays.length} plays)`, {
-    type: "success",
-  });
+    storageManager.set(STORAGE_KEYS.PLAY_COLLECTIONS, collections);
+    updateCollectionsBadge();
+    renderCollectionsPanel();
+    showToast(`Saved "${name.trim()}" (${filteredPlays.length} plays)`, {
+      type: "success",
+    });
   } catch (err) {
     console.error("savePlayCollection error:", err);
     showToast("❌ Error saving collection.", 4000);

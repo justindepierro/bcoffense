@@ -29,12 +29,12 @@ const INSTALL_CATEGORIES = [
 let _installDataCache = null;
 function getInstallationData() {
   try {
-  if (_installDataCache) return _installDataCache;
-  _installDataCache = storageManager.get(STORAGE_KEYS.INSTALLATION, {
-    installed: {},
-    order: {},
-  });
-  return _installDataCache;
+    if (_installDataCache) return _installDataCache;
+    _installDataCache = storageManager.get(STORAGE_KEYS.INSTALLATION, {
+      installed: {},
+      order: {},
+    });
+    return _installDataCache;
   } catch (err) {
     console.error("getInstallationData error:", err);
     return { installed: {}, order: {} };
@@ -55,29 +55,29 @@ function saveInstallationData(data) {
  */
 function extractComponentsFromPlaybook() {
   try {
-  const components = {};
-  if (!plays || plays.length === 0) return components;
+    const components = {};
+    if (!plays || plays.length === 0) return components;
 
-  INSTALL_CATEGORIES.forEach((cat) => {
-    const values = new Set();
+    INSTALL_CATEGORIES.forEach((cat) => {
+      const values = new Set();
 
-    plays.forEach((p) => {
-      if (cat.id === "formTag") {
-        // Combine formTag1 and formTag2
-        if (p.formTag1) values.add(p.formTag1.trim());
-        if (p.formTag2) values.add(p.formTag2.trim());
-      } else {
-        const val = p[cat.field];
-        if (val && val.trim()) values.add(val.trim());
-      }
+      plays.forEach((p) => {
+        if (cat.id === "formTag") {
+          // Combine formTag1 and formTag2
+          if (p.formTag1) values.add(p.formTag1.trim());
+          if (p.formTag2) values.add(p.formTag2.trim());
+        } else {
+          const val = p[cat.field];
+          if (val && val.trim()) values.add(val.trim());
+        }
+      });
+
+      components[cat.id] = [...values].sort((a, b) =>
+        a.toLowerCase().localeCompare(b.toLowerCase()),
+      );
     });
 
-    components[cat.id] = [...values].sort((a, b) =>
-      a.toLowerCase().localeCompare(b.toLowerCase()),
-    );
-  });
-
-  return components;
+    return components;
   } catch (err) {
     console.error("extractComponentsFromPlaybook error:", err);
     return {};
@@ -360,68 +360,68 @@ function initInstallation() {
  */
 function renderInstallation() {
   try {
-  _installDataCache = null; // refresh from storage on each render
-  const container = document.getElementById("installationContent");
-  if (!container) return;
+    _installDataCache = null; // refresh from storage on each render
+    const container = document.getElementById("installationContent");
+    if (!container) return;
 
-  const components = extractComponentsFromPlaybook();
-  const data = getInstallationData();
+    const components = extractComponentsFromPlaybook();
+    const data = getInstallationData();
 
-  // If no playbook loaded
-  if (!plays || plays.length === 0) {
-    container.innerHTML = `
+    // If no playbook loaded
+    if (!plays || plays.length === 0) {
+      container.innerHTML = `
       <div class="install-empty">
         <h3>📦 No playbook loaded</h3>
         <p>Upload a playbook CSV first — the Installation page will automatically extract all your components.</p>
       </div>`;
-    return;
-  }
+      return;
+    }
 
-  // Calculate overall progress
-  let totalComponents = 0;
-  let totalInstalled = 0;
-  const categorySummaries = INSTALL_CATEGORIES.map((cat) => {
-    const items = components[cat.id] || [];
-    const installed = (data.installed[cat.id] || []).filter((v) =>
-      items.includes(v),
-    );
-    totalComponents += items.length;
-    totalInstalled += installed.length;
-    return {
-      ...cat,
-      total: items.length,
-      installed: installed.length,
-      pct:
-        items.length > 0
-          ? Math.round((installed.length / items.length) * 100)
-          : 0,
-    };
-  }).filter((s) => s.total > 0); // Only show categories with items
+    // Calculate overall progress
+    let totalComponents = 0;
+    let totalInstalled = 0;
+    const categorySummaries = INSTALL_CATEGORIES.map((cat) => {
+      const items = components[cat.id] || [];
+      const installed = (data.installed[cat.id] || []).filter((v) =>
+        items.includes(v),
+      );
+      totalComponents += items.length;
+      totalInstalled += installed.length;
+      return {
+        ...cat,
+        total: items.length,
+        installed: installed.length,
+        pct:
+          items.length > 0
+            ? Math.round((installed.length / items.length) * 100)
+            : 0,
+      };
+    }).filter((s) => s.total > 0); // Only show categories with items
 
-  const overallPct =
-    totalComponents > 0
-      ? Math.round((totalInstalled / totalComponents) * 100)
-      : 0;
+    const overallPct =
+      totalComponents > 0
+        ? Math.round((totalInstalled / totalComponents) * 100)
+        : 0;
 
-  // If no active category, default to first
-  if (!installActiveCategory && categorySummaries.length > 0) {
-    installActiveCategory = categorySummaries[0].id;
-  }
+    // If no active category, default to first
+    if (!installActiveCategory && categorySummaries.length > 0) {
+      installActiveCategory = categorySummaries[0].id;
+    }
 
-  // Calculate playbook readiness
-  let fullyInstalled = 0;
-  let partiallyInstalled = 0;
-  let notInstalled = 0;
-  plays.forEach((p) => {
-    const rating = getPlayInstallRating(p);
-    if (rating.maxStars === 0) return;
-    if (rating.stars === rating.maxStars) fullyInstalled++;
-    else if (rating.stars > 0) partiallyInstalled++;
-    else notInstalled++;
-  });
+    // Calculate playbook readiness
+    let fullyInstalled = 0;
+    let partiallyInstalled = 0;
+    let notInstalled = 0;
+    plays.forEach((p) => {
+      const rating = getPlayInstallRating(p);
+      if (rating.maxStars === 0) return;
+      if (rating.stars === rating.maxStars) fullyInstalled++;
+      else if (rating.stars > 0) partiallyInstalled++;
+      else notInstalled++;
+    });
 
-  // Build HTML
-  let html = `
+    // Build HTML
+    let html = `
     <div class="install-container">
       <!-- Overall Progress Header -->
       <div class="install-header">
@@ -486,7 +486,7 @@ function renderInstallation() {
     </div>
   `;
 
-  container.innerHTML = html;
+    container.innerHTML = html;
   } catch (err) {
     console.error("renderInstallation error:", err);
     showToast("❌ Error rendering installation.", 3000);
@@ -712,78 +712,78 @@ function installDragDrop(event, categoryId, targetValue) {
  */
 function showReadinessModal(type) {
   try {
-  if (!plays || plays.length === 0) return;
+    if (!plays || plays.length === 0) return;
 
-  const titles = {
-    ready: { title: "★ Game Ready Plays", icon: "★" },
-    partial: { title: "◐ Partially Installed", icon: "◐" },
-    none: { title: "○ Not Ready", icon: "○" },
-  };
+    const titles = {
+      ready: { title: "★ Game Ready Plays", icon: "★" },
+      partial: { title: "◐ Partially Installed", icon: "◐" },
+      none: { title: "○ Not Ready", icon: "○" },
+    };
 
-  // Collect plays matching this readiness level
-  const matched = [];
-  plays.forEach((p) => {
-    const rating = getPlayInstallRating(p);
-    if (rating.maxStars === 0) return;
-    const isReady = rating.stars === rating.maxStars;
-    const isPartial = rating.stars > 0 && rating.stars < rating.maxStars;
-    const isNone = rating.stars === 0;
+    // Collect plays matching this readiness level
+    const matched = [];
+    plays.forEach((p) => {
+      const rating = getPlayInstallRating(p);
+      if (rating.maxStars === 0) return;
+      const isReady = rating.stars === rating.maxStars;
+      const isPartial = rating.stars > 0 && rating.stars < rating.maxStars;
+      const isNone = rating.stars === 0;
 
-    if (type === "ready" && isReady) matched.push({ play: p, rating });
-    if (type === "partial" && isPartial) matched.push({ play: p, rating });
-    if (type === "none" && isNone) matched.push({ play: p, rating });
-  });
+      if (type === "ready" && isReady) matched.push({ play: p, rating });
+      if (type === "partial" && isPartial) matched.push({ play: p, rating });
+      if (type === "none" && isNone) matched.push({ play: p, rating });
+    });
 
-  if (matched.length === 0) {
-    showModal("No plays in this category.", titles[type]);
-    return;
-  }
-
-  // Sort: by stars desc, then play name
-  matched.sort((a, b) => {
-    const diff = b.rating.stars - a.rating.stars;
-    if (diff !== 0) return diff;
-    const nameA = (a.play.play || a.play.basePlay || "").toLowerCase();
-    const nameB = (b.play.play || b.play.basePlay || "").toLowerCase();
-    return nameA.localeCompare(nameB);
-  });
-
-  let html = `<div class="readiness-modal-list">`;
-
-  matched.forEach(({ play, rating }) => {
-    const playName = play.play || play.basePlay || "Unnamed";
-    const formation = play.formation || "";
-    const personnel = play.personnel || "";
-    const subtitle = [personnel, formation].filter(Boolean).join(" · ");
-    const level = getInstallRatingClass(rating.stars, rating.maxStars);
-
-    html += `<div class="readiness-modal-play ${level}">`;
-    html += `  <div class="readiness-modal-play-header">`;
-    html += `    <div class="readiness-modal-play-name">${playName}</div>`;
-    html += `    <div class="readiness-modal-play-stars">${renderStarRating(rating.stars, rating.maxStars, "sm")}</div>`;
-    html += `  </div>`;
-    if (subtitle) {
-      html += `<div class="readiness-modal-play-sub">${subtitle}</div>`;
+    if (matched.length === 0) {
+      showModal("No plays in this category.", titles[type]);
+      return;
     }
 
-    // For partial and not-ready, show missing components
-    if (type !== "ready") {
-      const missing = rating.details.filter((d) => !d.installed);
-      if (missing.length > 0) {
-        html += `<div class="readiness-modal-missing">`;
-        missing.forEach((d) => {
-          html += `<div class="readiness-modal-missing-row">❌ <span class="readiness-modal-cat">${d.icon} ${d.category}:</span> <span class="readiness-modal-val">${d.value}</span></div>`;
-        });
-        html += `</div>`;
+    // Sort: by stars desc, then play name
+    matched.sort((a, b) => {
+      const diff = b.rating.stars - a.rating.stars;
+      if (diff !== 0) return diff;
+      const nameA = (a.play.play || a.play.basePlay || "").toLowerCase();
+      const nameB = (b.play.play || b.play.basePlay || "").toLowerCase();
+      return nameA.localeCompare(nameB);
+    });
+
+    let html = `<div class="readiness-modal-list">`;
+
+    matched.forEach(({ play, rating }) => {
+      const playName = play.play || play.basePlay || "Unnamed";
+      const formation = play.formation || "";
+      const personnel = play.personnel || "";
+      const subtitle = [personnel, formation].filter(Boolean).join(" · ");
+      const level = getInstallRatingClass(rating.stars, rating.maxStars);
+
+      html += `<div class="readiness-modal-play ${level}">`;
+      html += `  <div class="readiness-modal-play-header">`;
+      html += `    <div class="readiness-modal-play-name">${playName}</div>`;
+      html += `    <div class="readiness-modal-play-stars">${renderStarRating(rating.stars, rating.maxStars, "sm")}</div>`;
+      html += `  </div>`;
+      if (subtitle) {
+        html += `<div class="readiness-modal-play-sub">${subtitle}</div>`;
       }
-    }
+
+      // For partial and not-ready, show missing components
+      if (type !== "ready") {
+        const missing = rating.details.filter((d) => !d.installed);
+        if (missing.length > 0) {
+          html += `<div class="readiness-modal-missing">`;
+          missing.forEach((d) => {
+            html += `<div class="readiness-modal-missing-row">❌ <span class="readiness-modal-cat">${d.icon} ${d.category}:</span> <span class="readiness-modal-val">${d.value}</span></div>`;
+          });
+          html += `</div>`;
+        }
+      }
+
+      html += `</div>`;
+    });
 
     html += `</div>`;
-  });
 
-  html += `</div>`;
-
-  showModal(html, { ...titles[type] });
+    showModal(html, { ...titles[type] });
   } catch (err) {
     console.error("showReadinessModal error:", err);
     showToast("❌ Error showing readiness report.", 3000);
@@ -842,232 +842,236 @@ function getPlayInstallTooltip(play) {
  */
 function generateSmartInstallReport() {
   try {
-  if (!plays || plays.length === 0) return null;
+    if (!plays || plays.length === 0) return null;
 
-  const data = getInstallationData();
-  const components = extractComponentsFromPlaybook();
+    const data = getInstallationData();
+    const components = extractComponentsFromPlaybook();
 
-  // ── Step 1: Rate every play ──────────────────────────────────
-  const playRatings = plays.map((p) => {
-    const rating = getPlayInstallRating(p);
-    return { play: p, ...rating };
-  });
+    // ── Step 1: Rate every play ──────────────────────────────────
+    const playRatings = plays.map((p) => {
+      const rating = getPlayInstallRating(p);
+      return { play: p, ...rating };
+    });
 
-  // ── Step 2: Classify plays by readiness ──────────────────────
-  const gameReady = playRatings.filter(
-    (r) => r.maxStars > 0 && r.stars === r.maxStars,
-  );
-  const nearReady = playRatings.filter(
-    (r) =>
-      r.maxStars > 0 &&
-      r.stars > 0 &&
-      r.maxStars - r.stars <= 2 &&
-      r.stars < r.maxStars,
-  );
-  const inProgress = playRatings.filter(
-    (r) => r.maxStars > 0 && r.stars > 0 && r.maxStars - r.stars > 2,
-  );
-  const notStarted = playRatings.filter((r) => r.maxStars > 0 && r.stars === 0);
+    // ── Step 2: Classify plays by readiness ──────────────────────
+    const gameReady = playRatings.filter(
+      (r) => r.maxStars > 0 && r.stars === r.maxStars,
+    );
+    const nearReady = playRatings.filter(
+      (r) =>
+        r.maxStars > 0 &&
+        r.stars > 0 &&
+        r.maxStars - r.stars <= 2 &&
+        r.stars < r.maxStars,
+    );
+    const inProgress = playRatings.filter(
+      (r) => r.maxStars > 0 && r.stars > 0 && r.maxStars - r.stars > 2,
+    );
+    const notStarted = playRatings.filter(
+      (r) => r.maxStars > 0 && r.stars === 0,
+    );
 
-  // ── Step 3: Score every UNINSTALLED component ────────────────
-  const componentScores = [];
+    // ── Step 3: Score every UNINSTALLED component ────────────────
+    const componentScores = [];
 
-  INSTALL_CATEGORIES.forEach((cat) => {
-    const allItems = components[cat.id] || [];
-    const installed = data.installed[cat.id] || [];
+    INSTALL_CATEGORIES.forEach((cat) => {
+      const allItems = components[cat.id] || [];
+      const installed = data.installed[cat.id] || [];
 
-    allItems.forEach((value) => {
-      if (installed.includes(value)) return; // skip already installed
+      allItems.forEach((value) => {
+        if (installed.includes(value)) return; // skip already installed
 
-      // Find all plays that use this component
-      const affectedPlays = playRatings.filter((r) => {
-        if (cat.id === "formTag") {
-          const tags = [r.play.formTag1, r.play.formTag2]
-            .filter(Boolean)
-            .map((t) => t.trim());
-          return tags.includes(value);
-        }
-        const v = r.play[cat.field];
-        return v && v.trim() === value;
-      });
+        // Find all plays that use this component
+        const affectedPlays = playRatings.filter((r) => {
+          if (cat.id === "formTag") {
+            const tags = [r.play.formTag1, r.play.formTag2]
+              .filter(Boolean)
+              .map((t) => t.trim());
+            return tags.includes(value);
+          }
+          const v = r.play[cat.field];
+          return v && v.trim() === value;
+        });
 
-      if (affectedPlays.length === 0) return;
+        if (affectedPlays.length === 0) return;
 
-      // ── Dimension 1: Game-ready unlocks ──
-      // How many plays would become fully installed if we install this?
-      const wouldUnlock = affectedPlays.filter(
-        (r) => r.maxStars - r.stars === 1,
-      ).length;
+        // ── Dimension 1: Game-ready unlocks ──
+        // How many plays would become fully installed if we install this?
+        const wouldUnlock = affectedPlays.filter(
+          (r) => r.maxStars - r.stars === 1,
+        ).length;
 
-      // ── Dimension 2: Near-ready lift ──
-      // How many plays are within 2 of done and this helps?
-      const wouldLift = affectedPlays.filter(
-        (r) => r.maxStars - r.stars === 2,
-      ).length;
+        // ── Dimension 2: Near-ready lift ──
+        // How many plays are within 2 of done and this helps?
+        const wouldLift = affectedPlays.filter(
+          (r) => r.maxStars - r.stars === 2,
+        ).length;
 
-      // ── Dimension 3: Breadth impact ──
-      const breadth = affectedPlays.length;
+        // ── Dimension 3: Breadth impact ──
+        const breadth = affectedPlays.length;
 
-      // ── Dimension 4: Variety — unique formation+personnel combos unlocked ──
-      const combos = new Set();
-      affectedPlays.forEach((r) => {
-        const combo = `${r.play.formation || "?"}|${r.play.personnel || "?"}`;
-        combos.add(combo);
-      });
-      const variety = combos.size;
+        // ── Dimension 4: Variety — unique formation+personnel combos unlocked ──
+        const combos = new Set();
+        affectedPlays.forEach((r) => {
+          const combo = `${r.play.formation || "?"}|${r.play.personnel || "?"}`;
+          combos.add(combo);
+        });
+        const variety = combos.size;
 
-      // ── Dimension 5: Run/Pass balance contribution ──
-      const runCount = affectedPlays.filter(
-        (r) => r.play.type === "Run",
-      ).length;
-      const passCount = affectedPlays.filter(
-        (r) => r.play.type === "Pass",
-      ).length;
+        // ── Dimension 5: Run/Pass balance contribution ──
+        const runCount = affectedPlays.filter(
+          (r) => r.play.type === "Run",
+        ).length;
+        const passCount = affectedPlays.filter(
+          (r) => r.play.type === "Pass",
+        ).length;
 
-      // ── Dimension 6: Cluster synergy ──
-      // How many plays needing 1-2 more components does this help?
-      const clusterPlays = affectedPlays.filter(
-        (r) =>
-          r.maxStars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
-      ).length;
+        // ── Dimension 6: Cluster synergy ──
+        // How many plays needing 1-2 more components does this help?
+        const clusterPlays = affectedPlays.filter(
+          (r) =>
+            r.maxStars > 0 && r.maxStars - r.stars <= 2 && r.stars < r.maxStars,
+        ).length;
 
-      // ── Composite score (weighted) ──
-      const score =
-        wouldUnlock * 50 + // Highest priority: finishes plays
-        clusterPlays * 20 + // High priority: near-completion synergy
-        wouldLift * 15 + // Good: gets plays closer
-        breadth * 5 + // Moderate: breadth of impact
-        variety * 3; // Modest: variety bonus
+        // ── Composite score (weighted) ──
+        const score =
+          wouldUnlock * 50 + // Highest priority: finishes plays
+          clusterPlays * 20 + // High priority: near-completion synergy
+          wouldLift * 15 + // Good: gets plays closer
+          breadth * 5 + // Moderate: breadth of impact
+          variety * 3; // Modest: variety bonus
 
-      componentScores.push({
-        categoryId: cat.id,
-        categoryLabel: cat.label,
-        icon: cat.icon,
-        value,
-        score,
-        wouldUnlock,
-        wouldLift,
-        clusterPlays,
-        breadth,
-        variety,
-        runCount,
-        passCount,
-        affectedPlayNames: affectedPlays
-          .slice(0, 8)
-          .map((r) => r.play.play || r.play.basePlay || "Unnamed"),
-        totalAffected: affectedPlays.length,
+        componentScores.push({
+          categoryId: cat.id,
+          categoryLabel: cat.label,
+          icon: cat.icon,
+          value,
+          score,
+          wouldUnlock,
+          wouldLift,
+          clusterPlays,
+          breadth,
+          variety,
+          runCount,
+          passCount,
+          affectedPlayNames: affectedPlays
+            .slice(0, 8)
+            .map((r) => r.play.play || r.play.basePlay || "Unnamed"),
+          totalAffected: affectedPlays.length,
+        });
       });
     });
-  });
 
-  // Sort by composite score desc
-  componentScores.sort((a, b) => b.score - a.score);
+    // Sort by composite score desc
+    componentScores.sort((a, b) => b.score - a.score);
 
-  // ── Step 4: Build structured sections ────────────────────────
+    // ── Step 4: Build structured sections ────────────────────────
 
-  // Section A: "Game Ready" plays summary
-  const gameReadySummary = {
-    count: gameReady.length,
-    plays: gameReady.map((r) => ({
-      name: r.play.play || r.play.basePlay || "Unnamed",
-      formation: r.play.formation || "",
-      personnel: r.play.personnel || "",
-      type: r.play.type || "",
-      stars: r.stars,
-      maxStars: r.maxStars,
-    })),
-  };
-
-  // Section B: "One Install Away" — plays needing exactly 1 more component
-  const oneAway = playRatings
-    .filter((r) => r.maxStars > 0 && r.maxStars - r.stars === 1)
-    .map((r) => {
-      const missing = r.details.filter((d) => !d.installed);
-      return {
+    // Section A: "Game Ready" plays summary
+    const gameReadySummary = {
+      count: gameReady.length,
+      plays: gameReady.map((r) => ({
         name: r.play.play || r.play.basePlay || "Unnamed",
         formation: r.play.formation || "",
         personnel: r.play.personnel || "",
         type: r.play.type || "",
         stars: r.stars,
         maxStars: r.maxStars,
-        missing: missing[0] || null,
-      };
-    })
-    .sort((a, b) => b.maxStars - a.maxStars); // sort by complexity (more stars = more complex play)
-
-  // Section C: "Two Away" — plays needing exactly 2 more
-  const twoAway = playRatings
-    .filter((r) => r.maxStars > 0 && r.maxStars - r.stars === 2)
-    .map((r) => {
-      const missing = r.details.filter((d) => !d.installed);
-      return {
-        name: r.play.play || r.play.basePlay || "Unnamed",
-        formation: r.play.formation || "",
-        personnel: r.play.personnel || "",
-        type: r.play.type || "",
-        stars: r.stars,
-        maxStars: r.maxStars,
-        missing,
-      };
-    })
-    .sort((a, b) => b.maxStars - a.maxStars);
-
-  // Section D: Top priority installs (top 15)
-  const topInstalls = componentScores.slice(0, 15);
-
-  // Section E: "Quick wins" — components that unlock the most plays with 1 install
-  const quickWins = componentScores
-    .filter((c) => c.wouldUnlock >= 1)
-    .sort((a, b) => b.wouldUnlock - a.wouldUnlock)
-    .slice(0, 10);
-
-  // Section F: "Variety boosters" — components that unlock the most unique combos
-  const varietyBoosters = componentScores
-    .filter((c) => c.variety >= 2)
-    .sort((a, b) => b.variety - a.variety || b.breadth - a.breadth)
-    .slice(0, 10);
-
-  // Section G: "Coverage gaps" — categories with lowest install %
-  const categoryGaps = INSTALL_CATEGORIES.map((cat) => {
-    const allItems = components[cat.id] || [];
-    const installed = (data.installed[cat.id] || []).filter((v) =>
-      allItems.includes(v),
-    );
-    return {
-      ...cat,
-      total: allItems.length,
-      installed: installed.length,
-      remaining: allItems.length - installed.length,
-      pct:
-        allItems.length > 0
-          ? Math.round((installed.length / allItems.length) * 100)
-          : 100,
+      })),
     };
-  })
-    .filter((c) => c.total > 0 && c.remaining > 0)
-    .sort((a, b) => a.pct - b.pct);
 
-  // Section H: Run/Pass readiness balance
-  const readyRuns = gameReady.filter((r) => r.play.type === "Run").length;
-  const readyPasses = gameReady.filter((r) => r.play.type === "Pass").length;
-  const totalRuns = playRatings.filter((r) => r.play.type === "Run").length;
-  const totalPasses = playRatings.filter((r) => r.play.type === "Pass").length;
+    // Section B: "One Install Away" — plays needing exactly 1 more component
+    const oneAway = playRatings
+      .filter((r) => r.maxStars > 0 && r.maxStars - r.stars === 1)
+      .map((r) => {
+        const missing = r.details.filter((d) => !d.installed);
+        return {
+          name: r.play.play || r.play.basePlay || "Unnamed",
+          formation: r.play.formation || "",
+          personnel: r.play.personnel || "",
+          type: r.play.type || "",
+          stars: r.stars,
+          maxStars: r.maxStars,
+          missing: missing[0] || null,
+        };
+      })
+      .sort((a, b) => b.maxStars - a.maxStars); // sort by complexity (more stars = more complex play)
 
-  return {
-    gameReadySummary,
-    oneAway,
-    twoAway,
-    topInstalls,
-    quickWins,
-    varietyBoosters,
-    categoryGaps,
-    balance: { readyRuns, readyPasses, totalRuns, totalPasses },
-    totalPlays: plays.length,
-    totalGameReady: gameReady.length,
-    totalNearReady: nearReady.length,
-    totalInProgress: inProgress.length,
-    totalNotStarted: notStarted.length,
-  };
+    // Section C: "Two Away" — plays needing exactly 2 more
+    const twoAway = playRatings
+      .filter((r) => r.maxStars > 0 && r.maxStars - r.stars === 2)
+      .map((r) => {
+        const missing = r.details.filter((d) => !d.installed);
+        return {
+          name: r.play.play || r.play.basePlay || "Unnamed",
+          formation: r.play.formation || "",
+          personnel: r.play.personnel || "",
+          type: r.play.type || "",
+          stars: r.stars,
+          maxStars: r.maxStars,
+          missing,
+        };
+      })
+      .sort((a, b) => b.maxStars - a.maxStars);
+
+    // Section D: Top priority installs (top 15)
+    const topInstalls = componentScores.slice(0, 15);
+
+    // Section E: "Quick wins" — components that unlock the most plays with 1 install
+    const quickWins = componentScores
+      .filter((c) => c.wouldUnlock >= 1)
+      .sort((a, b) => b.wouldUnlock - a.wouldUnlock)
+      .slice(0, 10);
+
+    // Section F: "Variety boosters" — components that unlock the most unique combos
+    const varietyBoosters = componentScores
+      .filter((c) => c.variety >= 2)
+      .sort((a, b) => b.variety - a.variety || b.breadth - a.breadth)
+      .slice(0, 10);
+
+    // Section G: "Coverage gaps" — categories with lowest install %
+    const categoryGaps = INSTALL_CATEGORIES.map((cat) => {
+      const allItems = components[cat.id] || [];
+      const installed = (data.installed[cat.id] || []).filter((v) =>
+        allItems.includes(v),
+      );
+      return {
+        ...cat,
+        total: allItems.length,
+        installed: installed.length,
+        remaining: allItems.length - installed.length,
+        pct:
+          allItems.length > 0
+            ? Math.round((installed.length / allItems.length) * 100)
+            : 100,
+      };
+    })
+      .filter((c) => c.total > 0 && c.remaining > 0)
+      .sort((a, b) => a.pct - b.pct);
+
+    // Section H: Run/Pass readiness balance
+    const readyRuns = gameReady.filter((r) => r.play.type === "Run").length;
+    const readyPasses = gameReady.filter((r) => r.play.type === "Pass").length;
+    const totalRuns = playRatings.filter((r) => r.play.type === "Run").length;
+    const totalPasses = playRatings.filter(
+      (r) => r.play.type === "Pass",
+    ).length;
+
+    return {
+      gameReadySummary,
+      oneAway,
+      twoAway,
+      topInstalls,
+      quickWins,
+      varietyBoosters,
+      categoryGaps,
+      balance: { readyRuns, readyPasses, totalRuns, totalPasses },
+      totalPlays: plays.length,
+      totalGameReady: gameReady.length,
+      totalNearReady: nearReady.length,
+      totalInProgress: inProgress.length,
+      totalNotStarted: notStarted.length,
+    };
   } catch (err) {
     console.error("generateSmartInstallReport error:", err);
     return null;

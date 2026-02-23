@@ -148,47 +148,48 @@ function scheduleScriptAutosave() {
  */
 async function checkScriptDraft() {
   try {
-  const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
-  if (!draft || !draft.plays || draft.plays.length === 0) return;
+    const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
+    if (!draft || !draft.plays || draft.plays.length === 0) return;
 
-  // Discard drafts older than 24 hours
-  const age = Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
-  if (age > DRAFT_EXPIRY_MS) {
-    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
-    return;
-  }
-  const currentPlays = script.filter((p) => !p.isSeparator).length;
-  if (currentPlays > 0) return;
+    // Discard drafts older than 24 hours
+    const age =
+      Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
+    if (age > DRAFT_EXPIRY_MS) {
+      storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+      return;
+    }
+    const currentPlays = script.filter((p) => !p.isSeparator).length;
+    if (currentPlays > 0) return;
 
-  const draftPlays = draft.plays.filter((p) => !p.isSeparator).length;
-  const savedTime = draft.savedAt
-    ? new Date(draft.savedAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    : "unknown time";
+    const draftPlays = draft.plays.filter((p) => !p.isSeparator).length;
+    const savedTime = draft.savedAt
+      ? new Date(draft.savedAt).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "unknown time";
 
-  const doRestore = await showConfirm(
-    `Found unsaved script draft!\n\n"${draft.name || "Untitled"}" — ${draftPlays} plays\nLast edited: ${savedTime}\n\nRestore it?`,
-    {
-      title: "📋 Draft Found",
-      icon: "📋",
-      confirmText: "Restore",
-      cancelText: "Discard",
-    },
-  );
-  if (doRestore) {
-    if (draft.name) document.getElementById("scriptName").value = draft.name;
-    if (draft.date) document.getElementById("scriptDate").value = draft.date;
-    script = draft.plays;
-    renderScript();
-    markScriptDirty();
-    showToast("📋 Draft restored");
-  } else {
-    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
-  }
+    const doRestore = await showConfirm(
+      `Found unsaved script draft!\n\n"${draft.name || "Untitled"}" — ${draftPlays} plays\nLast edited: ${savedTime}\n\nRestore it?`,
+      {
+        title: "📋 Draft Found",
+        icon: "📋",
+        confirmText: "Restore",
+        cancelText: "Discard",
+      },
+    );
+    if (doRestore) {
+      if (draft.name) document.getElementById("scriptName").value = draft.name;
+      if (draft.date) document.getElementById("scriptDate").value = draft.date;
+      script = draft.plays;
+      renderScript();
+      markScriptDirty();
+      showToast("📋 Draft restored");
+    } else {
+      storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+    }
   } catch (err) {
     console.error("checkScriptDraft error:", err);
     showToast("❌ Error restoring script draft.", 3000);
@@ -1243,7 +1244,8 @@ function confirmAddPeriod() {
   const name = document.getElementById("newPeriodName").value.trim();
   const minutes =
     parseInt(document.getElementById("newPeriodMinutes").value, 10) || 0;
-  const color = document.getElementById("newPeriodColor").value || UI_COLORS.periodDefault;
+  const color =
+    document.getElementById("newPeriodColor").value || UI_COLORS.periodDefault;
 
   if (!name) {
     document.getElementById("newPeriodName").classList.add("input-error");
@@ -2422,24 +2424,24 @@ function updateScriptStats() {
  */
 function renderScript() {
   try {
-  const container = document.getElementById("scriptPlays");
-  const showWbNums =
-    document.getElementById("showWristbandNums")?.checked !== false;
-  const showPrintPreview =
-    document.getElementById("scriptShowPrintPreview")?.checked || false;
+    const container = document.getElementById("scriptPlays");
+    const showWbNums =
+      document.getElementById("showWristbandNums")?.checked !== false;
+    const showPrintPreview =
+      document.getElementById("scriptShowPrintPreview")?.checked || false;
 
-  const hasPlays = script.some((p) => !p.isSeparator);
-  if (script.length === 0) {
-    container.innerHTML = "";
-    container.classList.add("empty");
-  } else if (!hasPlays) {
-    // Only separators exist (auto-seeded period) — show guided state
-    container.classList.remove("empty");
-    let periodHeaders = "";
-    script.forEach((p, i) => {
-      if (!p.isSeparator) return;
-      const periodColor = p.color || UI_COLORS.periodDefault;
-      periodHeaders += `
+    const hasPlays = script.some((p) => !p.isSeparator);
+    if (script.length === 0) {
+      container.innerHTML = "";
+      container.classList.add("empty");
+    } else if (!hasPlays) {
+      // Only separators exist (auto-seeded period) — show guided state
+      container.classList.remove("empty");
+      let periodHeaders = "";
+      script.forEach((p, i) => {
+        if (!p.isSeparator) return;
+        const periodColor = p.color || UI_COLORS.periodDefault;
+        periodHeaders += `
         <div class="script-item period-header" style="background: ${periodColor}; color: white;">
           <div class="ph-left">
             <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
@@ -2451,78 +2453,78 @@ function renderScript() {
           </div>
         </div>
       `;
-    });
-    container.innerHTML =
-      periodHeaders +
-      `
+      });
+      container.innerHTML =
+        periodHeaders +
+        `
       <div class="script-empty-guide">
         <div class="seg-icon">📋</div>
         <div class="seg-text">Add plays from the left panel to start building this period</div>
         <div class="seg-hint">Click <strong>+ Add</strong> on any play, or check multiple and use <strong>Add Selected</strong></div>
       </div>
     `;
-  } else {
-    container.classList.remove("empty");
-    let playNum = 0;
-
-    // Pre-compute scouting datalist options from active opponent (cached)
-    let scoutFrontOpts = "";
-    let scoutCovOpts = "";
-    let scoutBlitzOpts = "";
-    let scoutStuntOpts = "";
-    const _scoutOpp =
-      typeof getActiveOpponent === "function" ? getActiveOpponent() : null;
-    const _scoutOppName = _scoutOpp ? _scoutOpp.name : null;
-    if (_scoutOpp && _scoutOpp.plays && _scoutOpp.plays.length > 0) {
-      // Use cache if same opponent
-      if (_cachedScoutOpts && _cachedScoutOppName === _scoutOppName) {
-        scoutFrontOpts = _cachedScoutOpts.front;
-        scoutCovOpts = _cachedScoutOpts.cov;
-        scoutBlitzOpts = _cachedScoutOpts.blitz;
-        scoutStuntOpts = _cachedScoutOpts.stunt;
-      } else {
-        const _scoutResult = queryTendencies(_scoutOpp, {});
-        const mapOpts = (arr) =>
-          arr
-            ? arr
-                .map(
-                  (x) =>
-                    `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
-                )
-                .join("")
-            : "";
-        scoutFrontOpts = mapOpts(_scoutResult.topFront);
-        scoutCovOpts = mapOpts(_scoutResult.topCoverage);
-        scoutBlitzOpts = mapOpts(_scoutResult.topBlitz);
-        scoutStuntOpts = mapOpts(_scoutResult.topStunt);
-        _cachedScoutOpts = {
-          front: scoutFrontOpts,
-          cov: scoutCovOpts,
-          blitz: scoutBlitzOpts,
-          stunt: scoutStuntOpts,
-        };
-        _cachedScoutOppName = _scoutOppName;
-      }
     } else {
-      _cachedScoutOpts = null;
-      _cachedScoutOppName = null;
-    }
+      container.classList.remove("empty");
+      let playNum = 0;
 
-    // Track which periods are collapsed for skipping plays
-    let currentPeriodId = null;
-    let skipPlays = false;
+      // Pre-compute scouting datalist options from active opponent (cached)
+      let scoutFrontOpts = "";
+      let scoutCovOpts = "";
+      let scoutBlitzOpts = "";
+      let scoutStuntOpts = "";
+      const _scoutOpp =
+        typeof getActiveOpponent === "function" ? getActiveOpponent() : null;
+      const _scoutOppName = _scoutOpp ? _scoutOpp.name : null;
+      if (_scoutOpp && _scoutOpp.plays && _scoutOpp.plays.length > 0) {
+        // Use cache if same opponent
+        if (_cachedScoutOpts && _cachedScoutOppName === _scoutOppName) {
+          scoutFrontOpts = _cachedScoutOpts.front;
+          scoutCovOpts = _cachedScoutOpts.cov;
+          scoutBlitzOpts = _cachedScoutOpts.blitz;
+          scoutStuntOpts = _cachedScoutOpts.stunt;
+        } else {
+          const _scoutResult = queryTendencies(_scoutOpp, {});
+          const mapOpts = (arr) =>
+            arr
+              ? arr
+                  .map(
+                    (x) =>
+                      `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
+                  )
+                  .join("")
+              : "";
+          scoutFrontOpts = mapOpts(_scoutResult.topFront);
+          scoutCovOpts = mapOpts(_scoutResult.topCoverage);
+          scoutBlitzOpts = mapOpts(_scoutResult.topBlitz);
+          scoutStuntOpts = mapOpts(_scoutResult.topStunt);
+          _cachedScoutOpts = {
+            front: scoutFrontOpts,
+            cov: scoutCovOpts,
+            blitz: scoutBlitzOpts,
+            stunt: scoutStuntOpts,
+          };
+          _cachedScoutOppName = _scoutOppName;
+        }
+      } else {
+        _cachedScoutOpts = null;
+        _cachedScoutOppName = null;
+      }
 
-    // Shared datalists — built once, reused by all play rows
-    const sharedDatalistsHtml = `
+      // Track which periods are collapsed for skipping plays
+      let currentPeriodId = null;
+      let skipPlays = false;
+
+      // Shared datalists — built once, reused by all play rows
+      const sharedDatalistsHtml = `
       <datalist id="dl-front-shared">${scoutFrontOpts}</datalist>
       <datalist id="dl-cov-shared">${scoutCovOpts}</datalist>
       <datalist id="dl-stunt-shared">${scoutStuntOpts}</datalist>
       <datalist id="dl-blitz-shared">${scoutBlitzOpts}</datalist>
     `;
 
-    container.innerHTML =
-      sharedDatalistsHtml +
-      `
+      container.innerHTML =
+        sharedDatalistsHtml +
+        `
       <div class="script-column-headers">
         <div class="sch-spacer"></div>
         <div class="sch-num">#</div>
@@ -2535,18 +2537,18 @@ function renderScript() {
         <div class="sch-controls">Controls</div>
       </div>
     ` +
-      script
-        .map((p, i) => {
-          if (p.isSeparator) {
-            currentPeriodId = p.id;
-            skipPlays = collapsedPeriods.has(p.id);
-            const isCollapsed = collapsedPeriods.has(p.id);
-            const collapseIcon = isCollapsed ? "▶" : "▼";
-            const playCount = getPeriodPlays(i).length;
-            const timeDisplay = p.minutes ? `${p.minutes} min` : "";
-            const periodColor = p.color || UI_COLORS.periodDefault;
+        script
+          .map((p, i) => {
+            if (p.isSeparator) {
+              currentPeriodId = p.id;
+              skipPlays = collapsedPeriods.has(p.id);
+              const isCollapsed = collapsedPeriods.has(p.id);
+              const collapseIcon = isCollapsed ? "▶" : "▼";
+              const playCount = getPeriodPlays(i).length;
+              const timeDisplay = p.minutes ? `${p.minutes} min` : "";
+              const periodColor = p.color || UI_COLORS.periodDefault;
 
-            return `
+              return `
             <div class="period-header-wrapper" style="border-left: 4px solid ${periodColor};">
               <div class="script-item period-header" style="background: ${periodColor}; color: white;">
                 <div class="ph-left">
@@ -2580,35 +2582,35 @@ function renderScript() {
               }
             </div>
           `;
-          }
-
-          // Skip plays if period is collapsed
-          if (skipPlays) {
-            return ""; // Return empty, will be filtered out
-          }
-
-          playNum++;
-          const fullCall = getFullCall(p);
-
-          // Find wristband number if wristband is loaded
-          let wbBadge = "";
-          if (scriptWristband && showWbNums) {
-            const wbNum = findPlayOnWristband(p);
-            if (wbNum !== null) {
-              wbBadge = `<span class="wb-badge">#${wbNum}</span>`;
             }
-          }
 
-          const isSelected = bulkSelectedIndices.includes(i);
+            // Skip plays if period is collapsed
+            if (skipPlays) {
+              return ""; // Return empty, will be filtered out
+            }
 
-          // Build hash options with preferred value
-          const hashOptions = buildDefenseOptions(
-            ["L", "M", "R"],
-            p.preferredHash,
-            p.hash,
-          );
+            playNum++;
+            const fullCall = getFullCall(p);
 
-          return `
+            // Find wristband number if wristband is loaded
+            let wbBadge = "";
+            if (scriptWristband && showWbNums) {
+              const wbNum = findPlayOnWristband(p);
+              if (wbNum !== null) {
+                wbBadge = `<span class="wb-badge">#${wbNum}</span>`;
+              }
+            }
+
+            const isSelected = bulkSelectedIndices.includes(i);
+
+            // Build hash options with preferred value
+            const hashOptions = buildDefenseOptions(
+              ["L", "M", "R"],
+              p.preferredHash,
+              p.hash,
+            );
+
+            return `
           <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" ondragstart="handleScriptDragStart(event, ${i})" ondragend="handleDragEnd(event)">
             <input type="checkbox" class="bulk-select-cb" data-index="${i}" ${isSelected ? "checked" : ""} onchange="toggleBulkSelect(${i})" title="Select for bulk edit">
             <div class="play-num">${playNum}${wbBadge}</div>
@@ -2662,18 +2664,18 @@ function renderScript() {
               : ""
           }
         `;
-        })
-        .join("");
-  }
+          })
+          .join("");
+    }
 
-  // Update bulk select UI
-  updateBulkSelectUI();
+    // Update bulk select UI
+    updateBulkSelectUI();
 
-  // Update stats
-  updateScriptStats();
+    // Update stats
+    updateScriptStats();
 
-  // Update undo/redo buttons
-  historyManager.updateButtons("script");
+    // Update undo/redo buttons
+    historyManager.updateButtons("script");
   } catch (err) {
     console.error("renderScript error:", err);
     showToast("❌ Error rendering script.", 3000);
@@ -2769,64 +2771,64 @@ function shuffleScript() {
  */
 async function saveScript() {
   try {
-  const name = document.getElementById("scriptName").value;
-  const date = document.getElementById("scriptDate").value;
+    const name = document.getElementById("scriptName").value;
+    const date = document.getElementById("scriptDate").value;
 
-  if (!name) {
-    showToast("⚠️ Please enter a script name");
-    return;
-  }
-
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
-
-  // Check for duplicate name
-  const existing = savedScripts.find(
-    (s) => s.name.toLowerCase() === name.toLowerCase(),
-  );
-  if (existing) {
-    const choice = await showChoice(
-      `A script named "${existing.name}" already exists.`,
-      {
-        title: "Duplicate Name",
-        icon: "⚠️",
-        option1: "💾 Overwrite",
-        option2: "➕ Save as Copy",
-      },
-    );
-    if (choice === "option1") {
-      // Overwrite existing
-      existing.name = name;
-      existing.date = date;
-      existing.plays = safeDeepClone(script);
-      existing.savedAt = new Date().toISOString();
-      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
-      loadSavedScriptsList();
-      markScriptClean();
-      storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
-      showToast(`✅ "${name}" updated!`);
+    if (!name) {
+      showToast("⚠️ Please enter a script name");
       return;
-    } else if (choice !== "option2") {
-      return; // Cancelled
     }
-    // else fall through to save as new copy
-  }
 
-  const scriptData = {
-    id: Date.now(),
-    name,
-    date,
-    period: "",
-    tempo: "",
-    plays: safeDeepClone(script),
-    savedAt: new Date().toISOString(),
-  };
+    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
 
-  savedScripts.push(scriptData);
-  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
-  loadSavedScriptsList();
-  markScriptClean();
-  storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
-  showToast(`✅ "${name}" saved!`);
+    // Check for duplicate name
+    const existing = savedScripts.find(
+      (s) => s.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (existing) {
+      const choice = await showChoice(
+        `A script named "${existing.name}" already exists.`,
+        {
+          title: "Duplicate Name",
+          icon: "⚠️",
+          option1: "💾 Overwrite",
+          option2: "➕ Save as Copy",
+        },
+      );
+      if (choice === "option1") {
+        // Overwrite existing
+        existing.name = name;
+        existing.date = date;
+        existing.plays = safeDeepClone(script);
+        existing.savedAt = new Date().toISOString();
+        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+        loadSavedScriptsList();
+        markScriptClean();
+        storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+        showToast(`✅ "${name}" updated!`);
+        return;
+      } else if (choice !== "option2") {
+        return; // Cancelled
+      }
+      // else fall through to save as new copy
+    }
+
+    const scriptData = {
+      id: Date.now(),
+      name,
+      date,
+      period: "",
+      tempo: "",
+      plays: safeDeepClone(script),
+      savedAt: new Date().toISOString(),
+    };
+
+    savedScripts.push(scriptData);
+    storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+    loadSavedScriptsList();
+    markScriptClean();
+    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+    showToast(`✅ "${name}" saved!`);
   } catch (err) {
     console.error("saveScript error:", err);
     showToast("❌ Error saving script.", 4000);
@@ -2902,31 +2904,31 @@ function loadSavedScriptsList() {
  */
 function loadScript(id) {
   try {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
-  const scriptData = savedScripts.find((s) => s.id === id);
-  if (!scriptData) return;
+    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const scriptData = savedScripts.find((s) => s.id === id);
+    if (!scriptData) return;
 
-  document.getElementById("scriptName").value = scriptData.name;
-  document.getElementById("scriptDate").value = scriptData.date;
-  script = scriptData.plays;
+    document.getElementById("scriptName").value = scriptData.name;
+    document.getElementById("scriptDate").value = scriptData.date;
+    script = scriptData.plays;
 
-  // Backward compat: if the loaded script has plays but no periods, wrap them in one
-  const hasPlays = script.some((p) => !p.isSeparator);
-  const hasSeparator = script.some((p) => p.isSeparator);
-  if (hasPlays && !hasSeparator) {
-    script.unshift({
-      isSeparator: true,
-      label: scriptData.period || scriptData.name || "Period 1",
-      minutes: 0,
-      color: UI_COLORS.periodDefault,
-      id: Date.now() + Math.random(),
-    });
-  }
+    // Backward compat: if the loaded script has plays but no periods, wrap them in one
+    const hasPlays = script.some((p) => !p.isSeparator);
+    const hasSeparator = script.some((p) => p.isSeparator);
+    if (hasPlays && !hasSeparator) {
+      script.unshift({
+        isSeparator: true,
+        label: scriptData.period || scriptData.name || "Period 1",
+        minutes: 0,
+        color: UI_COLORS.periodDefault,
+        id: Date.now() + Math.random(),
+      });
+    }
 
-  renderScript();
-  markScriptClean();
-  storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
-  showToast(`Loaded "${scriptData.name}"`);
+    renderScript();
+    markScriptClean();
+    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+    showToast(`Loaded "${scriptData.name}"`);
   } catch (err) {
     console.error("loadScript error:", err);
     showToast("❌ Error loading script.", 4000);
@@ -3269,90 +3271,90 @@ function buildScriptPlayRow(p, displayNum, opts) {
  */
 function generatePDF() {
   try {
-  const name = document.getElementById("scriptName").value;
-  const date = document.getElementById("scriptDate").value;
+    const name = document.getElementById("scriptName").value;
+    const date = document.getElementById("scriptDate").value;
 
-  // Build title
-  const dateStr = date
-    ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-        weekday: "long",
-        month: "long",
-        day: "numeric",
-        year: "numeric",
-      })
-    : "";
-  document.getElementById("previewTitle").textContent =
-    name || "Practice Script";
-  document.getElementById("previewMeta").textContent = dateStr;
+    // Build title
+    const dateStr = date
+      ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+          weekday: "long",
+          month: "long",
+          day: "numeric",
+          year: "numeric",
+        })
+      : "";
+    document.getElementById("previewTitle").textContent =
+      name || "Practice Script";
+    document.getElementById("previewMeta").textContent = dateStr;
 
-  // Build period summary
-  const periods = script.filter((p) => p.isSeparator);
-  const summaryEl = document.getElementById("previewPeriodSummary");
-  if (periods.length > 0) {
-    const totalPlays = script.filter((p) => !p.isSeparator).length;
-    const totalTime = periods.reduce((s, p) => s + (p.minutes || 0), 0);
-    summaryEl.innerHTML = `
+    // Build period summary
+    const periods = script.filter((p) => p.isSeparator);
+    const summaryEl = document.getElementById("previewPeriodSummary");
+    if (periods.length > 0) {
+      const totalPlays = script.filter((p) => !p.isSeparator).length;
+      const totalTime = periods.reduce((s, p) => s + (p.minutes || 0), 0);
+      summaryEl.innerHTML = `
       <div class="preview-summary-bar">
         <span><strong>${totalPlays}</strong> plays</span>
         <span><strong>${periods.length}</strong> periods</span>
         ${totalTime > 0 ? `<span><strong>${totalTime}</strong> min total</span>` : ""}
       </div>
     `;
-  } else {
-    summaryEl.innerHTML = "";
-  }
+    } else {
+      summaryEl.innerHTML = "";
+    }
 
-  const tbody = document.getElementById("previewBody");
-  let periodPlayNum = 0;
-  let globalPlayNum = 0;
-  let hasPeriods = periods.length > 0;
-  const displayOpts = getScriptDisplayOptions();
-  tbody.innerHTML = script
-    .map((p, i) => {
-      if (p.isSeparator) {
-        periodPlayNum = 0;
-        const periodPlays = getPeriodPlays(i);
-        const periodColor = p.color || UI_COLORS.periodDefault;
-        const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
-        return `<tr class="print-period-header" style="background: ${periodColor}; color: white;">
+    const tbody = document.getElementById("previewBody");
+    let periodPlayNum = 0;
+    let globalPlayNum = 0;
+    let hasPeriods = periods.length > 0;
+    const displayOpts = getScriptDisplayOptions();
+    tbody.innerHTML = script
+      .map((p, i) => {
+        if (p.isSeparator) {
+          periodPlayNum = 0;
+          const periodPlays = getPeriodPlays(i);
+          const periodColor = p.color || UI_COLORS.periodDefault;
+          const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
+          return `<tr class="print-period-header" style="background: ${periodColor}; color: white;">
           <td colspan="12" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
             ${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
           </td>
         </tr>`;
-      }
-      periodPlayNum++;
-      globalPlayNum++;
-      const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-      return buildScriptPlayRow(p, displayNum, displayOpts);
-    })
-    .join("");
+        }
+        periodPlayNum++;
+        globalPlayNum++;
+        const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
+        return buildScriptPlayRow(p, displayNum, displayOpts);
+      })
+      .join("");
 
-  document.getElementById("previewContainer").classList.remove("hidden");
-  document.getElementById("wristbandPrint").classList.add("hidden");
+    document.getElementById("previewContainer").classList.remove("hidden");
+    document.getElementById("wristbandPrint").classList.add("hidden");
 
-  // Add print-script class to body for correct print styling
-  document.body.classList.add("print-script");
+    // Add print-script class to body for correct print styling
+    document.body.classList.add("print-script");
 
-  // Set page size for script (letter size)
-  let printStyle = document.getElementById("wristbandPrintStyle");
-  if (!printStyle) {
-    printStyle = document.createElement("style");
-    printStyle.id = "wristbandPrintStyle";
-    document.head.appendChild(printStyle);
-  }
-  printStyle.textContent =
-    "@media print { @page { size: letter; margin: 0.5in; } }";
+    // Set page size for script (letter size)
+    let printStyle = document.getElementById("wristbandPrintStyle");
+    if (!printStyle) {
+      printStyle = document.createElement("style");
+      printStyle.id = "wristbandPrintStyle";
+      document.head.appendChild(printStyle);
+    }
+    printStyle.textContent =
+      "@media print { @page { size: letter; margin: 0.5in; } }";
 
-  setTimeout(() => {
-    const restoreTitle = setPrintTitle("Practice Script", name || "");
-    window.print();
-    // Clean up after print
     setTimeout(() => {
-      restoreTitle();
-      document.getElementById("previewContainer").classList.add("hidden");
-      document.body.classList.remove("print-script");
-    }, 500);
-  }, 100);
+      const restoreTitle = setPrintTitle("Practice Script", name || "");
+      window.print();
+      // Clean up after print
+      setTimeout(() => {
+        restoreTitle();
+        document.getElementById("previewContainer").classList.add("hidden");
+        document.body.classList.remove("print-script");
+      }, 500);
+    }, 100);
   } catch (err) {
     console.error("generatePDF error:", err);
     showToast("❌ Error generating print preview.", 4000);
@@ -3419,46 +3421,46 @@ function clearDayScripts() {
  */
 async function printFullDay() {
   try {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
-  const selectedIds = Array.from(
-    document.querySelectorAll(".day-script-checkbox:checked"),
-  ).map((cb) => parseInt(cb.value, 10));
+    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const selectedIds = Array.from(
+      document.querySelectorAll(".day-script-checkbox:checked"),
+    ).map((cb) => parseInt(cb.value, 10));
 
-  if (selectedIds.length === 0) {
-    await showModal("Please select at least one script to print.", {
-      title: "Print",
-      icon: "🖨️",
-    });
-    return;
-  }
+    if (selectedIds.length === 0) {
+      await showModal("Please select at least one script to print.", {
+        title: "Print",
+        icon: "🖨️",
+      });
+      return;
+    }
 
-  // Get display options
-  const displayOpts = getScriptDisplayOptions();
+    // Get display options
+    const displayOpts = getScriptDisplayOptions();
 
-  // Build combined content
-  let allContent = "";
-  let globalPlayNum = 0;
+    // Build combined content
+    let allContent = "";
+    let globalPlayNum = 0;
 
-  selectedIds.forEach((id, scriptIndex) => {
-    const scriptData = savedScripts.find((s) => s.id === id);
-    if (!scriptData) return;
+    selectedIds.forEach((id, scriptIndex) => {
+      const scriptData = savedScripts.find((s) => s.id === id);
+      if (!scriptData) return;
 
-    const scriptPlayCount = scriptData.plays.filter(
-      (p) => !p.isSeparator,
-    ).length;
-    const scriptPeriods = scriptData.plays.filter((p) => p.isSeparator);
-    const hasPeriods = scriptPeriods.length > 0;
-    let periodPlayNum = 0;
+      const scriptPlayCount = scriptData.plays.filter(
+        (p) => !p.isSeparator,
+      ).length;
+      const scriptPeriods = scriptData.plays.filter((p) => p.isSeparator);
+      const hasPeriods = scriptPeriods.length > 0;
+      let periodPlayNum = 0;
 
-    // Add script header — more prominent with play count
-    const dateStr = scriptData.date
-      ? new Date(scriptData.date + "T00:00:00").toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        })
-      : "";
-    allContent += `
+      // Add script header — more prominent with play count
+      const dateStr = scriptData.date
+        ? new Date(scriptData.date + "T00:00:00").toLocaleDateString("en-US", {
+            weekday: "short",
+            month: "short",
+            day: "numeric",
+          })
+        : "";
+      allContent += `
       <tr class="script-section-header">
         <td colspan="12" style="background: ${UI_COLORS.bgDarkNav}; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid ${UI_COLORS.accentBlue};">
           📋 ${escapeHtml(scriptData.name.toUpperCase())} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
@@ -3466,72 +3468,72 @@ async function printFullDay() {
       </tr>
     `;
 
-    // Add plays
-    scriptData.plays.forEach((p, pIdx) => {
-      if (p.isSeparator) {
-        periodPlayNum = 0;
-        const periodPlays = [];
-        for (let j = pIdx + 1; j < scriptData.plays.length; j++) {
-          if (scriptData.plays[j].isSeparator) break;
-          periodPlays.push(scriptData.plays[j]);
+      // Add plays
+      scriptData.plays.forEach((p, pIdx) => {
+        if (p.isSeparator) {
+          periodPlayNum = 0;
+          const periodPlays = [];
+          for (let j = pIdx + 1; j < scriptData.plays.length; j++) {
+            if (scriptData.plays[j].isSeparator) break;
+            periodPlays.push(scriptData.plays[j]);
+          }
+          const periodColor = p.color || UI_COLORS.periodDefault;
+          const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
+          allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="12" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
+          return;
         }
-        const periodColor = p.color || UI_COLORS.periodDefault;
-        const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
-        allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="12" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
-        return;
-      }
 
-      globalPlayNum++;
-      periodPlayNum++;
-      const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-      allContent += buildScriptPlayRow(p, displayNum, displayOpts);
+        globalPlayNum++;
+        periodPlayNum++;
+        const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
+        allContent += buildScriptPlayRow(p, displayNum, displayOpts);
+      });
     });
-  });
 
-  // Get current date for header
-  const today = new Date().toLocaleDateString("en-US", {
-    weekday: "long",
-    month: "long",
-    day: "numeric",
-    year: "numeric",
-  });
+    // Get current date for header
+    const today = new Date().toLocaleDateString("en-US", {
+      weekday: "long",
+      month: "long",
+      day: "numeric",
+      year: "numeric",
+    });
 
-  document.getElementById("previewTitle").textContent = "Full Practice Day";
-  document.getElementById("previewMeta").textContent = today;
+    document.getElementById("previewTitle").textContent = "Full Practice Day";
+    document.getElementById("previewMeta").textContent = today;
 
-  // Period summary for full day
-  const summaryEl = document.getElementById("previewPeriodSummary");
-  summaryEl.innerHTML = `
+    // Period summary for full day
+    const summaryEl = document.getElementById("previewPeriodSummary");
+    summaryEl.innerHTML = `
     <div class="preview-summary-bar">
       <span><strong>${selectedIds.length}</strong> scripts</span>
       <span><strong>${globalPlayNum}</strong> total plays</span>
     </div>
   `;
 
-  document.getElementById("previewBody").innerHTML = allContent;
+    document.getElementById("previewBody").innerHTML = allContent;
 
-  document.getElementById("previewContainer").classList.remove("hidden");
-  document.getElementById("wristbandPrint").classList.add("hidden");
-  document.body.classList.add("print-script");
+    document.getElementById("previewContainer").classList.remove("hidden");
+    document.getElementById("wristbandPrint").classList.add("hidden");
+    document.body.classList.add("print-script");
 
-  let printStyle = document.getElementById("wristbandPrintStyle");
-  if (!printStyle) {
-    printStyle = document.createElement("style");
-    printStyle.id = "wristbandPrintStyle";
-    document.head.appendChild(printStyle);
-  }
-  printStyle.textContent =
-    "@media print { @page { size: letter; margin: 0.25in; } }";
+    let printStyle = document.getElementById("wristbandPrintStyle");
+    if (!printStyle) {
+      printStyle = document.createElement("style");
+      printStyle.id = "wristbandPrintStyle";
+      document.head.appendChild(printStyle);
+    }
+    printStyle.textContent =
+      "@media print { @page { size: letter; margin: 0.25in; } }";
 
-  setTimeout(() => {
-    const restoreTitle = setPrintTitle("Full Practice Day");
-    window.print();
     setTimeout(() => {
-      restoreTitle();
-      document.getElementById("previewContainer").classList.add("hidden");
-      document.body.classList.remove("print-script");
-    }, 500);
-  }, 100);
+      const restoreTitle = setPrintTitle("Full Practice Day");
+      window.print();
+      setTimeout(() => {
+        restoreTitle();
+        document.getElementById("previewContainer").classList.add("hidden");
+        document.body.classList.remove("print-script");
+      }, 500);
+    }, 100);
   } catch (err) {
     console.error("printFullDay error:", err);
     showToast("❌ Error printing full day.", 4000);
@@ -4348,7 +4350,11 @@ function previewSmartScript() {
       const tooltip = parts.length > 0 ? parts.join(" | ") : "—";
 
       const scoreColor =
-        scoreVal > 0 ? UI_COLORS.scoreGreen : scoreVal < 0 ? UI_COLORS.scoreRed : UI_COLORS.textLight;
+        scoreVal > 0
+          ? UI_COLORS.scoreGreen
+          : scoreVal < 0
+            ? UI_COLORS.scoreRed
+            : UI_COLORS.textLight;
 
       html += `<tr>
         <td>${num++}</td>

@@ -66,61 +66,62 @@ function scheduleWristbandAutosave() {
  */
 async function checkWristbandDraft() {
   try {
-  const draft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
-  if (!draft || !draft.cards || draft.cards.length === 0) return;
+    const draft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
+    if (!draft || !draft.cards || draft.cards.length === 0) return;
 
-  // Discard drafts older than 24 hours
-  const age = Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
-  if (age > DRAFT_EXPIRY_MS) {
-    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
-    return;
-  }
+    // Discard drafts older than 24 hours
+    const age =
+      Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
+    if (age > DRAFT_EXPIRY_MS) {
+      storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+      return;
+    }
 
-  const draftPlays = draft.cards.reduce(
-    (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
-    0,
-  );
-  if (draftPlays === 0) return;
+    const draftPlays = draft.cards.reduce(
+      (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
+      0,
+    );
+    if (draftPlays === 0) return;
 
-  // Only offer if current wristband is empty
-  const currentPlays = wristbandCards.reduce(
-    (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
-    0,
-  );
-  if (currentPlays > 0) return;
+    // Only offer if current wristband is empty
+    const currentPlays = wristbandCards.reduce(
+      (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
+      0,
+    );
+    if (currentPlays > 0) return;
 
-  const savedTime = draft.savedAt
-    ? new Date(draft.savedAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      })
-    : "unknown time";
+    const savedTime = draft.savedAt
+      ? new Date(draft.savedAt).toLocaleString("en-US", {
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
+      : "unknown time";
 
-  const doRestore = await showConfirm(
-    `Found unsaved wristband draft!\n\n${draftPlays} plays across ${draft.cards.length} card(s)\nLast edited: ${savedTime}\n\nRestore it?`,
-    {
-      title: "🃏 Draft Found",
-      icon: "🃏",
-      confirmText: "Restore",
-      cancelText: "Discard",
-    },
-  );
-  if (doRestore) {
-    wristbandCards = safeDeepClone(draft.cards);
-    cellCustomizations = draft.cellStyles
-      ? safeDeepClone(draft.cellStyles)
-      : {};
-    wristbandHeaderColor = draft.headerColor || "transparent";
-    currentCardIndex = 0;
-    renderCardTabs();
-    renderWristbandGrid();
-    markWristbandDirty();
-    showToast("🃏 Draft restored");
-  } else {
-    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
-  }
+    const doRestore = await showConfirm(
+      `Found unsaved wristband draft!\n\n${draftPlays} plays across ${draft.cards.length} card(s)\nLast edited: ${savedTime}\n\nRestore it?`,
+      {
+        title: "🃏 Draft Found",
+        icon: "🃏",
+        confirmText: "Restore",
+        cancelText: "Discard",
+      },
+    );
+    if (doRestore) {
+      wristbandCards = safeDeepClone(draft.cards);
+      cellCustomizations = draft.cellStyles
+        ? safeDeepClone(draft.cellStyles)
+        : {};
+      wristbandHeaderColor = draft.headerColor || "transparent";
+      currentCardIndex = 0;
+      renderCardTabs();
+      renderWristbandGrid();
+      markWristbandDirty();
+      showToast("🃏 Draft restored");
+    } else {
+      storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+    }
   } catch (err) {
     console.error("checkWristbandDraft error:", err);
     showToast("❌ Error restoring wristband draft.", 3000);
@@ -800,19 +801,19 @@ function clearAllWbOptions() {
  */
 function initWristband() {
   try {
-  if (wristbandCards.length === 0) {
-    wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
-  }
-  currentCardIndex = 0;
-  populateWristbandCheckboxFilters();
-  renderCardTabs();
-  renderWristbandPlays();
-  renderWristbandGrid();
-  loadSavedWristbandsList();
-  initSortCriteria();
+    if (wristbandCards.length === 0) {
+      wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
+    }
+    currentCardIndex = 0;
+    populateWristbandCheckboxFilters();
+    renderCardTabs();
+    renderWristbandPlays();
+    renderWristbandGrid();
+    loadSavedWristbandsList();
+    initSortCriteria();
 
-  // Check for unsaved wristband draft
-  checkWristbandDraft();
+    // Check for unsaved wristband draft
+    checkWristbandDraft();
   } catch (err) {
     console.error("initWristband error:", err);
     showToast("❌ Error initializing wristband.", 3000);
@@ -1178,7 +1179,8 @@ function renderWristbandGrid() {
       wristbandHeaderColor === "transparent"
         ? "transparent"
         : wristbandHeaderColor;
-    const numFg = wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
+    const numFg =
+      wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
     html += `<div class="wristband-cell num-cell" style="background: ${numBg}; color: ${numFg};">${oddNum}</div>`;
 
     // Odd play cell
@@ -1332,8 +1334,7 @@ function populateCellPlayList() {
 
   const container = document.getElementById("cellPlayList");
   if (filtered.length === 0) {
-    container.innerHTML =
-      `<div style="padding: 15px; text-align: center; color: ${UI_COLORS.textLight};">No plays match filters</div>`;
+    container.innerHTML = `<div style="padding: 15px; text-align: center; color: ${UI_COLORS.textLight};">No plays match filters</div>`;
     return;
   }
 
@@ -1594,107 +1595,110 @@ async function autoFillWristband() {
  */
 function printWristband() {
   try {
-  const container = document.getElementById("wristbandPrintCards");
-  const numCards = wristbandCards.length;
-  const opts = getWristbandDisplayOptions();
-  const { highlightHuddle, highlightCandy } = opts;
+    const container = document.getElementById("wristbandPrintCards");
+    const numCards = wristbandCards.length;
+    const opts = getWristbandDisplayOptions();
+    const { highlightHuddle, highlightCandy } = opts;
 
-  const useMultiCardLayout = numCards > 1 && numCards <= 5;
+    const useMultiCardLayout = numCards > 1 && numCards <= 5;
 
-  let allHtml = "";
+    let allHtml = "";
 
-  wristbandCards.forEach((card, cardIdx) => {
-    let cardHtml = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${WB_ROWS}, 1fr);">`;
+    wristbandCards.forEach((card, cardIdx) => {
+      let cardHtml = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${WB_ROWS}, 1fr);">`;
 
-    // Calculate offset for this card's numbers
-    const cardOffset = cardIdx * 40;
+      // Calculate offset for this card's numbers
+      const cardOffset = cardIdx * 40;
 
-    for (let row = 0; row < WB_ROWS; row++) {
-      const oddNum = row * 2 + 11 + cardOffset;
-      const evenNum = row * 2 + 12 + cardOffset;
-      const oddIndex = row * 2;
-      const evenIndex = row * 2 + 1;
+      for (let row = 0; row < WB_ROWS; row++) {
+        const oddNum = row * 2 + 11 + cardOffset;
+        const evenNum = row * 2 + 12 + cardOffset;
+        const oddIndex = row * 2;
+        const evenIndex = row * 2 + 1;
 
-      const oddPlay = card.data[oddIndex];
-      const evenPlay = card.data[evenIndex];
+        const oddPlay = card.data[oddIndex];
+        const evenPlay = card.data[evenIndex];
 
-      const oddKey = `${cardIdx}-${oddIndex}`;
-      const evenKey = `${cardIdx}-${evenIndex}`;
-      const oddCustom = cellCustomizations[oddKey] || {};
-      const evenCustom = cellCustomizations[evenKey] || {};
+        const oddKey = `${cardIdx}-${oddIndex}`;
+        const evenKey = `${cardIdx}-${evenIndex}`;
+        const oddCustom = cellCustomizations[oddKey] || {};
+        const evenCustom = cellCustomizations[evenKey] || {};
 
-      const oddIsHuddle =
-        highlightHuddle &&
-        oddPlay &&
-        oddPlay.tempo &&
-        oddPlay.tempo.toLowerCase() === "huddle";
-      const evenIsHuddle =
-        highlightHuddle &&
-        evenPlay &&
-        evenPlay.tempo &&
-        evenPlay.tempo.toLowerCase() === "huddle";
-      const oddIsCandy =
-        highlightCandy &&
-        oddPlay &&
-        oddPlay.tempo &&
-        oddPlay.tempo.toLowerCase() === "candy";
-      const evenIsCandy =
-        highlightCandy &&
-        evenPlay &&
-        evenPlay.tempo &&
-        evenPlay.tempo.toLowerCase() === "candy";
+        const oddIsHuddle =
+          highlightHuddle &&
+          oddPlay &&
+          oddPlay.tempo &&
+          oddPlay.tempo.toLowerCase() === "huddle";
+        const evenIsHuddle =
+          highlightHuddle &&
+          evenPlay &&
+          evenPlay.tempo &&
+          evenPlay.tempo.toLowerCase() === "huddle";
+        const oddIsCandy =
+          highlightCandy &&
+          oddPlay &&
+          oddPlay.tempo &&
+          oddPlay.tempo.toLowerCase() === "candy";
+        const evenIsCandy =
+          highlightCandy &&
+          evenPlay &&
+          evenPlay.tempo &&
+          evenPlay.tempo.toLowerCase() === "candy";
 
-      let oddStyle = oddCustom.bgColor
-        ? `background:${oddCustom.bgColor};`
-        : oddIsHuddle
-          ? `background:${UI_COLORS.highlightHuddle};`
-          : oddIsCandy
-            ? `background:${UI_COLORS.highlightCandy};`
-            : "";
-      oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
+        let oddStyle = oddCustom.bgColor
+          ? `background:${oddCustom.bgColor};`
+          : oddIsHuddle
+            ? `background:${UI_COLORS.highlightHuddle};`
+            : oddIsCandy
+              ? `background:${UI_COLORS.highlightCandy};`
+              : "";
+        oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
-      let evenStyle = evenCustom.bgColor
-        ? `background:${evenCustom.bgColor};`
-        : evenIsHuddle
-          ? `background:${UI_COLORS.highlightHuddle};`
-          : evenIsCandy
-            ? `background:${UI_COLORS.highlightCandy};`
-            : "";
-      evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
+        let evenStyle = evenCustom.bgColor
+          ? `background:${evenCustom.bgColor};`
+          : evenIsHuddle
+            ? `background:${UI_COLORS.highlightHuddle};`
+            : evenIsCandy
+              ? `background:${UI_COLORS.highlightCandy};`
+              : "";
+        evenStyle += evenCustom.textColor
+          ? `color:${evenCustom.textColor};`
+          : "";
 
-      const oddPrefix = oddCustom.onTwo ? "💲 " : "";
-      const evenPrefix = evenCustom.onTwo ? "💲 " : "";
+        const oddPrefix = oddCustom.onTwo ? "💲 " : "";
+        const evenPrefix = evenCustom.onTwo ? "💲 " : "";
 
-      const pNumBg =
-        wristbandHeaderColor === "transparent"
-          ? "transparent"
-          : wristbandHeaderColor;
-      const pNumFg = wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
-      cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${oddNum}</div>`;
-      cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getFullCall(oddPlay, opts) : ""}</span></div>`;
-      cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${evenNum}</div>`;
-      cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + getFullCall(evenPlay, opts) : ""}</span></div>`;
+        const pNumBg =
+          wristbandHeaderColor === "transparent"
+            ? "transparent"
+            : wristbandHeaderColor;
+        const pNumFg =
+          wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
+        cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${oddNum}</div>`;
+        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getFullCall(oddPlay, opts) : ""}</span></div>`;
+        cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${evenNum}</div>`;
+        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + getFullCall(evenPlay, opts) : ""}</span></div>`;
+      }
+
+      cardHtml += "</div></div>";
+      allHtml += cardHtml;
+    });
+
+    container.innerHTML = allHtml;
+    container.className = useMultiCardLayout ? "multi-card-layout" : "";
+
+    document.getElementById("wristbandPrint").classList.remove("hidden");
+    document.body.dataset.printMode = "wristband";
+
+    let printStyle = document.getElementById("wristbandPrintStyle");
+    if (!printStyle) {
+      printStyle = document.createElement("style");
+      printStyle.id = "wristbandPrintStyle";
+      document.head.appendChild(printStyle);
     }
 
-    cardHtml += "</div></div>";
-    allHtml += cardHtml;
-  });
-
-  container.innerHTML = allHtml;
-  container.className = useMultiCardLayout ? "multi-card-layout" : "";
-
-  document.getElementById("wristbandPrint").classList.remove("hidden");
-  document.body.dataset.printMode = "wristband";
-
-  let printStyle = document.getElementById("wristbandPrintStyle");
-  if (!printStyle) {
-    printStyle = document.createElement("style");
-    printStyle.id = "wristbandPrintStyle";
-    document.head.appendChild(printStyle);
-  }
-
-  if (useMultiCardLayout) {
-    printStyle.textContent = `
+    if (useMultiCardLayout) {
+      printStyle.textContent = `
       @media print { 
         @page { size: letter portrait; margin: 0.25in; }
         html, body { width: 8.5in !important; height: 11in !important; }
@@ -1713,20 +1717,20 @@ function printWristband() {
         }
       }
     `;
-  } else {
-    printStyle.textContent =
-      "@media print { @page { size: 4.7in 2.8in; margin: 0; } }";
-  }
+    } else {
+      printStyle.textContent =
+        "@media print { @page { size: 4.7in 2.8in; margin: 0; } }";
+    }
 
-  setTimeout(() => {
-    const restoreTitle = setPrintTitle("Wristband");
-    window.print();
     setTimeout(() => {
-      restoreTitle();
-      document.getElementById("wristbandPrint").classList.add("hidden");
-      delete document.body.dataset.printMode;
-    }, 500);
-  }, 100);
+      const restoreTitle = setPrintTitle("Wristband");
+      window.print();
+      setTimeout(() => {
+        restoreTitle();
+        document.getElementById("wristbandPrint").classList.add("hidden");
+        delete document.body.dataset.printMode;
+      }, 500);
+    }, 100);
   } catch (err) {
     console.error("printWristband error:", err);
     showToast("❌ Error printing wristband.", 4000);
@@ -1740,65 +1744,65 @@ function printWristband() {
  */
 async function saveWristband() {
   try {
-  const name = await showPrompt(
-    "Name for this wristband set:",
-    `Wristband Set ${new Date().toLocaleDateString()}`,
-    { title: "Save Wristband", icon: "💾" },
-  );
-  if (!name) return;
-  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-
-  // Check for duplicate name
-  const existing = saved.find(
-    (s) => s.title.toLowerCase() === name.toLowerCase(),
-  );
-  if (existing) {
-    const choice = await showChoice(
-      `A wristband named "${existing.title}" already exists.`,
-      {
-        title: "Duplicate Name",
-        icon: "⚠️",
-        option1: "💾 Overwrite",
-        option2: "➕ Save as Copy",
-      },
+    const name = await showPrompt(
+      "Name for this wristband set:",
+      `Wristband Set ${new Date().toLocaleDateString()}`,
+      { title: "Save Wristband", icon: "💾" },
     );
-    if (choice === "option1") {
-      existing.title = name;
-      existing.headerColor = wristbandHeaderColor;
-      existing.cards = safeDeepClone(wristbandCards);
-      existing.cellStyles = safeDeepClone(cellCustomizations);
-      existing.displaySettings = getWristbandDisplayOptions();
-      existing.savedAt = new Date().toISOString();
-      storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-      loadSavedWristbandsList();
-      populateScriptWristbandSelect();
-      populateWristbandHighlightDropdown();
-      markWristbandClean();
-      storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
-      showToast(`✅ "${name}" updated!`);
-      return;
-    } else if (choice !== "option2") {
-      return; // Cancelled
+    if (!name) return;
+    const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+
+    // Check for duplicate name
+    const existing = saved.find(
+      (s) => s.title.toLowerCase() === name.toLowerCase(),
+    );
+    if (existing) {
+      const choice = await showChoice(
+        `A wristband named "${existing.title}" already exists.`,
+        {
+          title: "Duplicate Name",
+          icon: "⚠️",
+          option1: "💾 Overwrite",
+          option2: "➕ Save as Copy",
+        },
+      );
+      if (choice === "option1") {
+        existing.title = name;
+        existing.headerColor = wristbandHeaderColor;
+        existing.cards = safeDeepClone(wristbandCards);
+        existing.cellStyles = safeDeepClone(cellCustomizations);
+        existing.displaySettings = getWristbandDisplayOptions();
+        existing.savedAt = new Date().toISOString();
+        storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
+        loadSavedWristbandsList();
+        populateScriptWristbandSelect();
+        populateWristbandHighlightDropdown();
+        markWristbandClean();
+        storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+        showToast(`✅ "${name}" updated!`);
+        return;
+      } else if (choice !== "option2") {
+        return; // Cancelled
+      }
     }
-  }
 
-  saved.push({
-    id: Date.now(),
-    title: name,
-    headerColor: wristbandHeaderColor,
-    cards: safeDeepClone(wristbandCards),
-    cellStyles: safeDeepClone(cellCustomizations),
-    displaySettings: getWristbandDisplayOptions(),
-    savedAt: new Date().toISOString(),
-  });
+    saved.push({
+      id: Date.now(),
+      title: name,
+      headerColor: wristbandHeaderColor,
+      cards: safeDeepClone(wristbandCards),
+      cellStyles: safeDeepClone(cellCustomizations),
+      displaySettings: getWristbandDisplayOptions(),
+      savedAt: new Date().toISOString(),
+    });
 
-  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-  loadSavedWristbandsList();
-  populateScriptWristbandSelect();
-  populateWristbandHighlightDropdown();
-  markWristbandClean();
-  storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
-  showToast(`✅ "${name}" saved!`);
+    storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
+    loadSavedWristbandsList();
+    populateScriptWristbandSelect();
+    populateWristbandHighlightDropdown();
+    markWristbandClean();
+    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+    showToast(`✅ "${name}" saved!`);
   } catch (err) {
     console.error("saveWristband error:", err);
     showToast("❌ Error saving wristband.", 4000);
@@ -1867,59 +1871,59 @@ function loadSavedWristbandsList() {
  */
 function loadWristband(id) {
   try {
-  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wb = saved.find((s) => s.id === id);
-  if (!wb) return;
+    const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+    const wb = saved.find((s) => s.id === id);
+    if (!wb) return;
 
-  wristbandHeaderColor = wb.headerColor || "transparent";
+    wristbandHeaderColor = wb.headerColor || "transparent";
 
-  if (wb.cards) {
-    wristbandCards = safeDeepClone(wb.cards);
-  } else if (wb.data) {
-    wristbandCards = [{ name: "Card 1", data: wb.data }];
-  } else {
-    wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
-  }
+    if (wb.cards) {
+      wristbandCards = safeDeepClone(wb.cards);
+    } else if (wb.data) {
+      wristbandCards = [{ name: "Card 1", data: wb.data }];
+    } else {
+      wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
+    }
 
-  cellCustomizations = wb.cellStyles ? safeDeepClone(wb.cellStyles) : {};
-  currentCardIndex = 0;
+    cellCustomizations = wb.cellStyles ? safeDeepClone(wb.cellStyles) : {};
+    currentCardIndex = 0;
 
-  // Restore display settings if saved
-  if (wb.displaySettings) {
-    const ds = wb.displaySettings;
-    const setCheckbox = (id, value) => {
-      const el = document.getElementById(id);
-      if (el) el.checked = value;
-    };
+    // Restore display settings if saved
+    if (wb.displaySettings) {
+      const ds = wb.displaySettings;
+      const setCheckbox = (id, value) => {
+        const el = document.getElementById(id);
+        if (el) el.checked = value;
+      };
 
-    setCheckbox("wbShowEmoji", ds.showEmoji);
-    setCheckbox("wbUseSquares", ds.useSquares);
-    setCheckbox("wbUnderEmoji", ds.underEmoji);
-    setCheckbox("wbBoldShifts", ds.boldShifts);
-    setCheckbox("wbRedShifts", ds.redShifts);
-    setCheckbox("wbItalicMotions", ds.italicMotions);
-    setCheckbox("wbRedMotions", ds.redMotions);
-    setCheckbox("wbRemoveVowels", ds.noVowels || ds.removeVowels);
-    setCheckbox("wbShowLineCall", ds.showLineCall);
-    setCheckbox("wbHighlightHuddle", ds.highlightHuddle);
-    setCheckbox("wbHighlightCandy", ds.highlightCandy);
-  }
+      setCheckbox("wbShowEmoji", ds.showEmoji);
+      setCheckbox("wbUseSquares", ds.useSquares);
+      setCheckbox("wbUnderEmoji", ds.underEmoji);
+      setCheckbox("wbBoldShifts", ds.boldShifts);
+      setCheckbox("wbRedShifts", ds.redShifts);
+      setCheckbox("wbItalicMotions", ds.italicMotions);
+      setCheckbox("wbRedMotions", ds.redMotions);
+      setCheckbox("wbRemoveVowels", ds.noVowels || ds.removeVowels);
+      setCheckbox("wbShowLineCall", ds.showLineCall);
+      setCheckbox("wbHighlightHuddle", ds.highlightHuddle);
+      setCheckbox("wbHighlightCandy", ds.highlightCandy);
+    }
 
-  document.querySelectorAll(".color-btn").forEach((b) => {
-    const isTransparentBtn = b.classList.contains("color-btn-transparent");
-    const isMatch =
-      wristbandHeaderColor === "transparent"
-        ? isTransparentBtn
-        : b.style.background === wristbandHeaderColor ||
-          b.style.backgroundColor === wristbandHeaderColor;
-    b.classList.toggle("active", isMatch);
-  });
+    document.querySelectorAll(".color-btn").forEach((b) => {
+      const isTransparentBtn = b.classList.contains("color-btn-transparent");
+      const isMatch =
+        wristbandHeaderColor === "transparent"
+          ? isTransparentBtn
+          : b.style.background === wristbandHeaderColor ||
+            b.style.backgroundColor === wristbandHeaderColor;
+      b.classList.toggle("active", isMatch);
+    });
 
-  renderCardTabs();
-  renderWristbandGrid();
-  markWristbandClean();
-  storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
-  showToast(`Loaded "${wb.title}"`);
+    renderCardTabs();
+    renderWristbandGrid();
+    markWristbandClean();
+    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+    showToast(`Loaded "${wb.title}"`);
   } catch (err) {
     console.error("loadWristband error:", err);
     showToast("❌ Error loading wristband.", 4000);
