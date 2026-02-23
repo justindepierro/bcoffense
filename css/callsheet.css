@@ -4,6 +4,8 @@
 /* Call Sheet Styles */
 .callsheet-grid {
   width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
   content-visibility: auto;
   contain-intrinsic-size: auto 800px;
 }
@@ -11,10 +13,12 @@
 .callsheet-columns {
   display: flex;
   gap: 15px;
+  min-width: max-content;
 }
 
 .callsheet-column {
   flex: 1;
+  min-width: 250px;
   display: flex;
   flex-direction: column;
   gap: 15px;
