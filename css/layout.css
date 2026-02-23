@@ -150,6 +150,7 @@ h1 {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border-light);
+  overflow: hidden;
 }
 .panel.active {
   display: block;
