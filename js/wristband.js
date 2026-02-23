@@ -922,8 +922,18 @@ function populateWristbandCheckboxFilters() {
   ].sort();
 
   // Populate checkbox filters using shared utility
-  buildCheckboxFilterGroup("wbTempoFilters", tempos, "tempo", "toggleWbCheckbox");
-  buildCheckboxFilterGroup("wbPersonnelFilters", personnel, "personnel", "toggleWbCheckbox");
+  buildCheckboxFilterGroup(
+    "wbTempoFilters",
+    tempos,
+    "tempo",
+    "toggleWbCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "wbPersonnelFilters",
+    personnel,
+    "personnel",
+    "toggleWbCheckbox",
+  );
 }
 
 /**

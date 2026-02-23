@@ -662,13 +662,18 @@ function escapeHtml(text) {
  * @param {string} filterType - Key passed to the toggle function (e.g. 'type', 'tempo')
  * @param {string} toggleFnName - Global toggle function name (e.g. 'toggleScriptCheckbox')
  */
-function buildCheckboxFilterGroup(containerId, values, filterType, toggleFnName) {
+function buildCheckboxFilterGroup(
+  containerId,
+  values,
+  filterType,
+  toggleFnName,
+) {
   const container = document.getElementById(containerId);
   if (!container) return;
   container.innerHTML = values
     .map(
       (v) => `
-        <label onclick="${toggleFnName}(this, '${filterType}', '${v.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+        <label onclick="${toggleFnName}(this, '${filterType}', '${v.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">
           <input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}
         </label>
       `,
@@ -905,11 +910,13 @@ const storageManager = {
     if (_crossTabToastShown) return; // one notice is enough
     _crossTabToastShown = true;
     showToast(
-      "⚠️ Data changed in another tab. <button onclick=\"location.reload()\" style=\"margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;\">Reload</button>",
+      '⚠️ Data changed in another tab. <button onclick="location.reload()" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;">Reload</button>',
       8000,
     );
     // Reset after the toast disappears so a later change can notify again
-    setTimeout(() => { _crossTabToastShown = false; }, 9000);
+    setTimeout(() => {
+      _crossTabToastShown = false;
+    }, 9000);
   });
 })();
 
@@ -1248,9 +1255,14 @@ function parseCSV(text) {
     let inQ = false;
     for (let i = 0; i < line.length; i++) {
       const ch = line[i];
-      if (ch === '"') { inQ = !inQ; }
-      else if (ch === "," && !inQ) { vals.push(cur.trim()); cur = ""; }
-      else { cur += ch; }
+      if (ch === '"') {
+        inQ = !inQ;
+      } else if (ch === "," && !inQ) {
+        vals.push(cur.trim());
+        cur = "";
+      } else {
+        cur += ch;
+      }
     }
     vals.push(cur.trim());
     return vals;
@@ -1258,15 +1270,23 @@ function parseCSV(text) {
 
   // --- Expected column names → play-object keys ---
   const COLUMN_MAP = {
-    playtype: "type", type: "type",
+    playtype: "type",
+    type: "type",
     personnel: "personnel",
     formation: "formation",
-    formtag1: "formTag1", formtag2: "formTag2",
-    under: "under", back: "back", shift: "shift",
-    motion: "motion", protection: "protection",
-    linecall: "lineCall", play: "play",
-    playtag1: "playTag1", playtag2: "playTag2",
-    baseplay: "basePlay", oneword: "oneWord",
+    formtag1: "formTag1",
+    formtag2: "formTag2",
+    under: "under",
+    back: "back",
+    shift: "shift",
+    motion: "motion",
+    protection: "protection",
+    linecall: "lineCall",
+    play: "play",
+    playtag1: "playTag1",
+    playtag2: "playTag2",
+    baseplay: "basePlay",
+    oneword: "oneWord",
     preferredsituation: "preferredSituation",
     preferreddown: "preferredDown",
     preferreddistance: "preferredDistance",
@@ -1278,24 +1298,67 @@ function parseCSV(text) {
     practicecoverage: "practiceCoverage",
     practiceblitz: "practiceBlitz",
     practicestunt: "practiceStunt",
-    keyplayer1: "keyPlayer1", keyplayer2: "keyPlayer2", keyplayer3: "keyPlayer3",
-    keyplayername1: "keyPlayerName1", keyplayername2: "keyPlayerName2", keyplayername3: "keyPlayerName3",
-    constraint1: "constraint1", constraint2: "constraint2", constraint3: "constraint3",
-    hitchart1: "hitChart1", hitchart2: "hitChart2", hitchart3: "hitChart3",
-    deadvs: "deadVs", opponent: "opponent", notes: "notes",
+    keyplayer1: "keyPlayer1",
+    keyplayer2: "keyPlayer2",
+    keyplayer3: "keyPlayer3",
+    keyplayername1: "keyPlayerName1",
+    keyplayername2: "keyPlayerName2",
+    keyplayername3: "keyPlayerName3",
+    constraint1: "constraint1",
+    constraint2: "constraint2",
+    constraint3: "constraint3",
+    hitchart1: "hitChart1",
+    hitchart2: "hitChart2",
+    hitchart3: "hitChart3",
+    deadvs: "deadVs",
+    opponent: "opponent",
+    notes: "notes",
   };
 
   // Positional fallback (original column order)
   const POS_KEYS = [
-    "type", "personnel", "formation", "formTag1", "formTag2", "under", "back",
-    "shift", "motion", "protection", "lineCall", "play", "playTag1", "playTag2",
-    "basePlay", "oneWord", "preferredSituation", "preferredDown",
-    "preferredDistance", "preferredHash", "preferredFieldPosition", "tempo",
-    "practiceFront", "practiceDefense", "practiceCoverage", "practiceBlitz",
-    "practiceStunt", "keyPlayer1", "keyPlayer2", "keyPlayer3", "keyPlayerName1",
-    "keyPlayerName2", "keyPlayerName3", "constraint1", "constraint2",
-    "constraint3", "hitChart1", "hitChart2", "hitChart3", "deadVs",
-    "opponent", "notes",
+    "type",
+    "personnel",
+    "formation",
+    "formTag1",
+    "formTag2",
+    "under",
+    "back",
+    "shift",
+    "motion",
+    "protection",
+    "lineCall",
+    "play",
+    "playTag1",
+    "playTag2",
+    "basePlay",
+    "oneWord",
+    "preferredSituation",
+    "preferredDown",
+    "preferredDistance",
+    "preferredHash",
+    "preferredFieldPosition",
+    "tempo",
+    "practiceFront",
+    "practiceDefense",
+    "practiceCoverage",
+    "practiceBlitz",
+    "practiceStunt",
+    "keyPlayer1",
+    "keyPlayer2",
+    "keyPlayer3",
+    "keyPlayerName1",
+    "keyPlayerName2",
+    "keyPlayerName3",
+    "constraint1",
+    "constraint2",
+    "constraint3",
+    "hitChart1",
+    "hitChart2",
+    "hitChart3",
+    "deadVs",
+    "opponent",
+    "notes",
   ];
 
   // --- Detect headers from row 0 ---
@@ -1309,7 +1372,9 @@ function parseCSV(text) {
 
   if (useHeaders) {
     headerMap = {};
-    norm.forEach((h, i) => { if (COLUMN_MAP[h]) headerMap[i] = COLUMN_MAP[h]; });
+    norm.forEach((h, i) => {
+      if (COLUMN_MAP[h]) headerMap[i] = COLUMN_MAP[h];
+    });
   } else if (firstRow.length >= 10) {
     startLine = 0; // first row looks like data, include it
   }
@@ -1321,20 +1386,33 @@ function parseCSV(text) {
     const line = lines[li];
     if (!line.trim()) continue;
     const values = parseLine(line);
-    if (values.length < 3) { skipped++; continue; }
+    if (values.length < 3) {
+      skipped++;
+      continue;
+    }
 
     const play = {};
     if (headerMap) {
-      POS_KEYS.forEach((k) => { play[k] = ""; });
+      POS_KEYS.forEach((k) => {
+        play[k] = "";
+      });
       Object.entries(headerMap).forEach(([idx, key]) => {
         play[key] = values[idx] || "";
       });
     } else {
-      if (values.length < 10) { skipped++; continue; }
-      POS_KEYS.forEach((key, i) => { play[key] = values[i] || ""; });
+      if (values.length < 10) {
+        skipped++;
+        continue;
+      }
+      POS_KEYS.forEach((key, i) => {
+        play[key] = values[i] || "";
+      });
     }
 
-    if (!play.formation && !play.play && !play.type) { skipped++; continue; }
+    if (!play.formation && !play.play && !play.type) {
+      skipped++;
+      continue;
+    }
     result.push(play);
   }
 

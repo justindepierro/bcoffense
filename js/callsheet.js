@@ -1593,7 +1593,11 @@ function populateCallSheetPickerFilters() {
     ].sort();
     select.innerHTML =
       `<option value="">${allLabel}</option>` +
-      values.map((v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`).join("");
+      values
+        .map(
+          (v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`,
+        )
+        .join("");
   }
 
   populateDropdown("callSheetPickerPersonnel", "personnel", "All Personnel");
@@ -1607,7 +1611,11 @@ function populateCallSheetPickerFilters() {
     const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
     typeSelect.innerHTML =
       '<option value="">All Types</option>' +
-      types.map((t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`).join("");
+      types
+        .map(
+          (t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`,
+        )
+        .join("");
   }
 
   // Populate wristband select
@@ -1835,8 +1843,12 @@ function populateCallSheetPlayList() {
         chips.push(
           `<span class="cs-picker-chip cs-picker-chip-type">${escapeHtml(p.type)}</span>`,
         );
-      if (p.back) chips.push(`<span class="cs-picker-chip">${escapeHtml(p.back)}</span>`);
-      if (p.tempo) chips.push(`<span class="cs-picker-chip">${escapeHtml(p.tempo)}</span>`);
+      if (p.back)
+        chips.push(`<span class="cs-picker-chip">${escapeHtml(p.back)}</span>`);
+      if (p.tempo)
+        chips.push(
+          `<span class="cs-picker-chip">${escapeHtml(p.tempo)}</span>`,
+        );
       const chipHtml =
         chips.length > 0
           ? `<span class="cs-picker-chips">${chips.join("")}</span>`

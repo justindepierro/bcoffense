@@ -1839,7 +1839,7 @@ function renderFieldHtml(field, mode) {
       .map(
         (opt) => `
       <button class="td-option-btn ${currentValue === opt ? "selected" : ""}"
-              onclick="setWizardField('${field.key}', '${opt.replace(/'/g, "\\'").replace(/"/g, '&quot;')}', this)">
+              onclick="setWizardField('${field.key}', '${opt.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', this)">
         ${escapeHtml(opt)}
       </button>
     `,

@@ -580,13 +580,48 @@ function populateScriptCheckboxFilters() {
   ].sort();
 
   // Populate checkbox filters using shared utility
-  buildCheckboxFilterGroup("scriptTypeFilters", types, "type", "toggleScriptCheckbox");
-  buildCheckboxFilterGroup("scriptSituationFilters", situations, "situation", "toggleScriptCheckbox");
-  buildCheckboxFilterGroup("scriptDownFilters", downs, "down", "toggleScriptCheckbox");
-  buildCheckboxFilterGroup("scriptDistanceFilters", distances, "distance", "toggleScriptCheckbox");
-  buildCheckboxFilterGroup("scriptHashFilters", hashes, "hash", "toggleScriptCheckbox");
-  buildCheckboxFilterGroup("scriptFieldPosFilters", fieldPositions, "fieldPos", "toggleScriptCheckbox");
-  buildCheckboxFilterGroup("scriptPersonnelFilters", personnels, "personnel", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup(
+    "scriptTypeFilters",
+    types,
+    "type",
+    "toggleScriptCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "scriptSituationFilters",
+    situations,
+    "situation",
+    "toggleScriptCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "scriptDownFilters",
+    downs,
+    "down",
+    "toggleScriptCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "scriptDistanceFilters",
+    distances,
+    "distance",
+    "toggleScriptCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "scriptHashFilters",
+    hashes,
+    "hash",
+    "toggleScriptCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "scriptFieldPosFilters",
+    fieldPositions,
+    "fieldPos",
+    "toggleScriptCheckbox",
+  );
+  buildCheckboxFilterGroup(
+    "scriptPersonnelFilters",
+    personnels,
+    "personnel",
+    "toggleScriptCheckbox",
+  );
 }
 
 /**
