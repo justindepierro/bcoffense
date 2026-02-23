@@ -151,7 +151,12 @@ async function checkScriptDraft() {
   const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
   if (!draft || !draft.plays || draft.plays.length === 0) return;
 
-  // Only offer if current script is empty or default
+  // Discard drafts older than 24 hours
+  const age = Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
+  if (age > DRAFT_EXPIRY_MS) {
+    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+    return;
+  }
   const currentPlays = script.filter((p) => !p.isSeparator).length;
   if (currentPlays > 0) return;
 

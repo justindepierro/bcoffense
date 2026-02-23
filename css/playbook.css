@@ -104,7 +104,7 @@ tr:hover {
   align-items: center;
   gap: 6px;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-white-alpha-20);
   border-radius: var(--radius-pill);
   color: white;
   font-size: var(--font-size-sm);
@@ -286,7 +286,7 @@ tr:hover {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-white);
-  font-size: 12px;
+  font-size: var(--font-size-xs2);
   font-family: inherit;
   font-weight: 500;
   color: var(--color-text);
@@ -297,7 +297,7 @@ tr:hover {
 }
 .pb-chip:hover {
   border-color: var(--color-primary);
-  background: rgba(25, 42, 81, 0.06);
+  background: var(--color-navy-alpha-06);
   color: var(--color-primary);
 }
 .pb-chip.active {
@@ -315,7 +315,7 @@ tr:hover {
 .pb-more-toggle {
   background: none;
   border: none;
-  font-size: 12px;
+  font-size: var(--font-size-xs2);
   font-weight: 600;
   color: var(--color-text-muted);
   cursor: pointer;
@@ -329,7 +329,7 @@ tr:hover {
   color: var(--color-primary);
 }
 .pb-more-arrow {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   transition: transform 0.2s ease;
   display: inline-block;
 }
@@ -381,7 +381,7 @@ tr:hover {
   align-items: center;
   gap: 4px;
   padding: 3px 10px;
-  background: rgba(25, 42, 81, 0.08);
+  background: var(--color-navy-alpha-08);
   border: 1px solid rgba(25, 42, 81, 0.2);
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
@@ -626,7 +626,7 @@ tr:hover {
   display: flex;
   align-items: center;
   gap: 5px;
-  font-size: 12px;
+  font-size: var(--font-size-xs2);
   cursor: pointer;
   padding: 3px 0;
 }

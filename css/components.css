@@ -563,7 +563,7 @@
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   z-index: var(--z-modal);
   justify-content: center;
   align-items: center;
@@ -757,7 +757,7 @@ input.smart-input-sm[type="number"] {
   left: 0;
   width: 100%;
   height: 100%;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   z-index: var(--z-header);
   justify-content: center;
   align-items: center;
@@ -928,7 +928,7 @@ kbd {
   height: 44px;
   border-radius: var(--radius-round);
   border: none;
-  background: rgba(25, 42, 81, 0.2);
+  background: var(--color-navy-alpha-20);
   color: rgba(25, 42, 81, 0.5);
   font-size: var(--font-size-h1);
   font-weight: 700;
@@ -960,7 +960,7 @@ kbd {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.35);
+  background: var(--color-overlay-sm);
   z-index: var(--z-overlay);
   display: flex;
   align-items: flex-end;
@@ -1013,7 +1013,7 @@ kbd {
 .help-close-btn {
   background: none;
   border: none;
-  color: rgba(255, 255, 255, 0.7);
+  color: var(--color-white-alpha-70);
   font-size: var(--font-size-h1);
   cursor: pointer;
   padding: 0 4px;
@@ -1168,7 +1168,7 @@ kbd {
   border-radius: var(--radius-lg);
 }
 .empty-state__icon {
-  font-size: 48px;
+  font-size: var(--font-size-5xl);
   display: block;
   margin-bottom: 12px;
 }

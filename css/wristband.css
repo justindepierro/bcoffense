@@ -45,6 +45,7 @@
 }
 .wristband-cell.filled {
   background: var(--color-bg-lighter);
+  cursor: grab;
 }
 .wristband-cell.num-cell {
   text-align: center;
@@ -65,16 +66,13 @@
   position: absolute;
   top: 0;
   right: 1px;
-  font-size: 8px;
+  font-size: var(--font-size-micro);
   color: var(--color-text-placeholder);
   cursor: pointer;
   display: none;
 }
 .wristband-cell:hover .remove-cell {
   display: block;
-}
-.wristband-cell.filled {
-  cursor: grab;
 }
 .wristband-cell.filled:active {
   cursor: grabbing;
@@ -86,11 +84,6 @@
 .wristband-cell.drag-over {
   background: var(--color-primary-light) !important;
   border: 2px dashed var(--color-primary) !important;
-}
-.wristband-header {
-  background: var(--color-text) !important;
-  color: white !important;
-  font-weight: 700;
 }
 .color-picker {
   display: flex;
@@ -211,7 +204,7 @@
   font-size: var(--font-size-sm);
 }
 .cell-play-option:hover {
-  background: var(--color-bg-blue-tint) !important;
+  background: var(--color-bg-blue-tint);
 }
 
 /* Card Tabs */
@@ -285,7 +278,7 @@
   flex-direction: column;
   align-items: center;
   padding: 6px 12px;
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-white-alpha-15);
   border-radius: var(--radius-md);
   min-width: 50px;
 }
@@ -293,11 +286,11 @@
   background: rgba(40, 167, 69, 0.3);
 }
 .wb-stats-bar .stat-item.pass {
-  background: rgba(25, 42, 81, 0.35);
+  background: var(--color-navy-alpha-35);
 }
 .wb-stats-bar .stat-label {
   font-size: var(--font-size-2xs);
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--color-white-alpha-80);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
@@ -386,7 +379,7 @@
   color: var(--color-text-secondary);
   margin-bottom: 8px;
   padding: 4px 8px;
-  background: rgba(25, 42, 81, 0.06);
+  background: var(--color-navy-alpha-06);
   border-radius: var(--radius-sm);
 }
 .wb-sort-actions {

@@ -18,6 +18,7 @@
       rel="icon"
       href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>"
     />
+    <link rel="manifest" href="manifest.json" />
     <!-- Google Fonts: Inter (UI) + IBM Plex Mono (playbook data) -->
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -65,7 +66,7 @@
     </header>
 
     <!-- Upload Section -->
-    <div id="uploadSection" class="upload-section">
+    <div id="uploadSection" class="upload-section" role="region" aria-label="File upload and settings">
       <div class="upload-box">
         <button id="backToAppBtn" class="back-btn hidden" onclick="backToApp()">
           ← Back to Dashboard
@@ -130,7 +131,7 @@
       </div>
     </div>
 
-    <div id="mainApp" class="hidden">
+    <div id="mainApp" class="hidden" role="main">
       <div class="tabs" role="tablist" aria-label="Main navigation">
         <button
           id="tab-playbook"
@@ -2975,7 +2976,11 @@
       <div class="help-panel" onclick="event.stopPropagation()">
         <div class="help-panel-header">
           <h3 id="helpPanelTitle">Shortcuts & Features</h3>
-          <button class="help-close-btn" onclick="toggleHelpPanel()">
+          <button
+            class="help-close-btn"
+            onclick="toggleHelpPanel()"
+            aria-label="Close help panel"
+          >
             &times;
           </button>
         </div>

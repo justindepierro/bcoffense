@@ -95,7 +95,7 @@
 .callsheet-play .personnel-code {
   padding: 1px 4px;
   border-radius: 2px;
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   font-weight: bold;
   flex-shrink: 0;
 }
@@ -150,7 +150,7 @@
   color: white;
   padding: 1px 4px;
   border-radius: var(--radius-sm);
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   font-weight: bold;
   margin-right: 2px;
 }
@@ -281,7 +281,7 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: 500;
-  transition: all 0.2s;
+  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
 }
 .cs-toggle-group.page-toggle .cs-toggle {
   background: var(--color-white);
@@ -385,7 +385,7 @@
   font-size: var(--font-size-xs);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--color-white-alpha-20);
   background: rgba(255, 255, 255, 0.12);
   color: var(--color-white);
   cursor: pointer;
@@ -393,8 +393,8 @@
 }
 .cs-preset-select:focus {
   outline: none;
-  border-color: rgba(255, 255, 255, 0.6);
-  background: rgba(255, 255, 255, 0.2);
+  border-color: var(--color-white-alpha-60);
+  background: var(--color-white-alpha-20);
 }
 .cs-preset-select option {
   background: var(--color-white);
@@ -402,7 +402,7 @@
 }
 .cs-preset-save-btn {
   background: none;
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-sm);
   padding: 3px 8px;
   cursor: pointer;
@@ -412,7 +412,7 @@
   transition: background var(--transition-fast);
 }
 .cs-preset-save-btn:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--color-white-alpha-20);
 }
 .cs-unified-content {
   padding: 0;
@@ -615,7 +615,7 @@
   border-radius: var(--radius-sm);
   transition: background var(--transition-fast);
 }
-.cs-border-swatch:hover {
+.cs-picker-popup .cs-border-swatch:hover {
   background: var(--color-border-light);
   transform: scale(1.2);
 }
@@ -715,7 +715,7 @@
   margin-left: auto;
 }
 .cs-picker-chip {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   background: var(--color-border-light);
@@ -758,7 +758,7 @@
 .cs-sort-overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.5);
+  background: var(--color-overlay);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -1059,7 +1059,7 @@
 
 /* --- Duplicate Badge --- */
 .cs-dupe-badge {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   padding: 0 4px;
   border-radius: var(--radius-pill);
   background: var(--color-warning);
@@ -1074,7 +1074,7 @@
 .cs-hash-swap {
   display: none;
   border: none;
-  background: rgba(25, 42, 81, 0.12);
+  background: var(--color-navy-alpha-12);
   color: var(--color-primary);
   cursor: pointer;
   padding: 0 3px;
@@ -1174,7 +1174,7 @@
   line-height: 1;
   transition: transform 0.1s;
 }
-.cs-border-swatch:hover {
+.cs-ctx-colors .cs-border-swatch:hover {
   background: var(--color-border-med);
   transform: scale(1.15);
 }
@@ -1216,7 +1216,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.12s;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   color: var(--color-text-muted);
 }
 .cs-style-btn:hover {
@@ -1242,7 +1242,7 @@
   font-size: var(--font-size-xs);
   font-weight: 600;
   color: var(--color-text-muted);
-  transition: all 0.12s;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
 }
 .cs-size-btn:hover {
   background: var(--color-border-light);
@@ -1308,13 +1308,13 @@
 /* --- Per-Cell Indicators --- */
 .cs-cell-format-dot {
   color: var(--color-primary);
-  font-size: 8px;
+  font-size: var(--font-size-micro);
   flex-shrink: 0;
   margin-left: 1px;
   opacity: 0.7;
 }
 .cs-cell-note-badge {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   flex-shrink: 0;
   cursor: default;
   margin-left: 1px;
@@ -1433,6 +1433,7 @@
 .cs-stat-bar {
   height: 100%;
   border-radius: var(--radius-md);
+  will-change: width;
   transition: width 0.3s ease;
 }
 .cs-stat-val {
@@ -1536,7 +1537,7 @@
 
 /* --- Print: category notes --- */
 .print-cat-note {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   padding: 2px 4px;
   background: var(--color-warning-light);
   font-style: italic;

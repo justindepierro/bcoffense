@@ -43,8 +43,8 @@
 .dash-select {
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-alpha-20);
+  background: var(--color-white-alpha-10);
   color: white;
   font-size: var(--font-size-base);
   min-width: 220px;
@@ -58,14 +58,14 @@
 .dash-week-input {
   padding: 8px 12px;
   border-radius: var(--radius-md);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid var(--color-white-alpha-20);
+  background: var(--color-white-alpha-10);
   color: white;
   font-size: var(--font-size-base);
   width: 160px;
 }
 .dash-week-input::placeholder {
-  color: rgba(255, 255, 255, 0.5);
+  color: var(--color-white-alpha-60);
 }
 
 .dash-opp-badge {
@@ -283,24 +283,24 @@
   align-items: center;
 }
 
-.dash-link-print {
+.btn.dash-link-print {
   background: linear-gradient(
     135deg,
     var(--color-dark),
     var(--color-dark-lighter)
-  ) !important;
-  color: white !important;
-  border-color: var(--color-dark) !important;
+  );
+  color: white;
+  border-color: var(--color-dark);
   font-weight: 600;
 }
-.dash-link-print:hover {
+.btn.dash-link-print:hover {
   background: linear-gradient(
     135deg,
     var(--color-dark-lighter),
     var(--color-primary)
-  ) !important;
-  border-color: var(--color-primary) !important;
-  color: white !important;
+  );
+  border-color: var(--color-primary);
+  color: white;
 }
 
 /* ============ Print Game Plan ============ */

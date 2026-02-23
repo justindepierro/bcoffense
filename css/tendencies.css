@@ -81,7 +81,7 @@
   margin-top: 8px;
 }
 .td-empty-icon {
-  font-size: 48px;
+  font-size: var(--font-size-5xl);
   display: block;
   margin-bottom: 12px;
 }
@@ -117,9 +117,10 @@
   gap: 8px;
 }
 
-.td-new-play-btn {
-  font-size: var(--font-size-md) !important;
-  padding: 10px 20px !important;
+.btn.td-new-play-btn {
+  font-size: var(--font-size-md);
+  padding: 10px 20px;
+  will-change: box-shadow;
   animation: td-pulse 2s ease-in-out infinite;
 }
 @keyframes td-pulse {
@@ -343,7 +344,7 @@
   border-radius: var(--radius-lg);
   background: var(--color-bg-lighter);
   cursor: pointer;
-  transition: all 0.12s;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
   min-width: 54px;
   text-align: center;
   user-select: none;
@@ -378,8 +379,8 @@
   font-size: var(--font-size-base);
   max-width: 250px;
 }
-.td-clear-btn {
-  color: var(--color-danger) !important;
+.btn.td-clear-btn {
+  color: var(--color-danger);
 }
 
 /* Text input */
@@ -407,16 +408,16 @@
   margin-top: 20px;
   border-top: 1px solid var(--color-border-light);
 }
-.td-nav-btn {
-  padding: 12px 28px !important;
-  font-size: var(--font-size-md) !important;
+.btn.td-nav-btn {
+  padding: 12px 28px;
+  font-size: var(--font-size-md);
 }
-.td-save-btn {
-  background: var(--color-success) !important;
-  border-color: var(--color-success) !important;
+.btn.td-save-btn {
+  background: var(--color-success);
+  border-color: var(--color-success);
 }
-.td-save-btn:hover {
-  background: var(--color-success-hover) !important;
+.btn.td-save-btn:hover {
+  background: var(--color-success-hover);
 }
 
 /* Textarea in wizard */
@@ -566,7 +567,7 @@
   background: var(--color-white);
   font-size: var(--font-size-sm);
   cursor: pointer;
-  transition: all 0.12s;
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   display: flex;
   align-items: center;
   gap: 4px;
@@ -749,6 +750,7 @@
 .td-dist-bar-fill {
   height: 100%;
   border-radius: var(--radius-sm);
+  will-change: width;
   transition: width 0.3s ease;
   min-width: 2px;
 }
@@ -836,7 +838,7 @@
   font-size: var(--font-size-sm);
   color: var(--color-accent);
   margin-bottom: 8px;
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  border-bottom: 1px solid var(--color-white-alpha-20);
   padding-bottom: 4px;
 }
 .td-tip-row {
@@ -847,7 +849,7 @@
   font-size: var(--font-size-xs);
 }
 .td-tip-label {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--color-white-alpha-60);
   white-space: nowrap;
 }
 .td-tip-val {

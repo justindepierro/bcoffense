@@ -266,6 +266,7 @@
     var(--color-success-light)
   );
   border-radius: var(--radius-sm);
+  will-change: width;
   transition: width 0.3s;
 }
 .install-cat-counts {
@@ -730,6 +731,7 @@
 .sir-bar-fill {
   height: 100%;
   border-radius: var(--radius-md);
+  will-change: width;
   transition: width 0.3s;
 }
 .sir-bar-run {
@@ -1105,7 +1107,7 @@
   text-align: center;
 }
 .sirp-overall-pct {
-  font-size: 32px;
+  font-size: var(--font-size-4xl);
   font-weight: 900;
   line-height: 1;
 }
@@ -1133,7 +1135,7 @@
   font-weight: 800;
 }
 .sirp-stat-label {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-secondary);
@@ -1235,7 +1237,7 @@
   text-align: left;
   padding: 4px 6px;
   border-bottom: 2px solid var(--color-text);
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   text-transform: uppercase;
   letter-spacing: 0.3px;
 }
@@ -1255,7 +1257,7 @@
   text-align: center;
 }
 .sirp-tags-cell {
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   color: var(--color-text-secondary);
 }
 .sirp-roster {
@@ -1284,13 +1286,13 @@
 }
 .sirp-roster-sub {
   color: var(--color-text-light);
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
 }
 .sirp-footer {
   margin-top: 18px;
   padding-top: 8px;
   border-top: 1px solid var(--color-border-input);
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   color: var(--color-text-placeholder);
   text-align: center;
 }

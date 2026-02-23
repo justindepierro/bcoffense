@@ -27,6 +27,80 @@ const UI_COLORS = {
   scoreRed: "#f44336",
 };
 
+// ============ HTML Sanitization ============
+
+/**
+ * Sanitize an HTML string to prevent XSS injection.
+ * Removes dangerous tags, event handler attributes, and javascript: URIs.
+ * Use this for any innerHTML that contains user-supplied text.
+ *
+ * @param {string} html - Raw HTML string to sanitize
+ * @returns {string} - Safe HTML string
+ */
+function sanitizeHTML(html) {
+  if (!html) return "";
+  const DANGEROUS_TAGS = new Set([
+    "script", "iframe", "object", "embed", "link", "base",
+    "meta", "form", "input", "textarea", "select", "button",
+    "style",
+  ]);
+  const ALLOWED_ATTR_PREFIX = ["data-", "aria-"];
+  const SAFE_ATTRS = new Set([
+    "href", "src", "alt", "title", "class", "id", "width", "height",
+    "colspan", "rowspan", "type", "value", "checked", "disabled",
+    "placeholder", "name", "target", "rel", "download",
+  ]);
+
+  try {
+    const parser = new DOMParser();
+    const doc = parser.parseFromString(html, "text/html");
+    const walker = document.createTreeWalker(doc.body, NodeFilter.SHOW_ELEMENT);
+
+    const toRemove = [];
+    let node = walker.currentNode;
+    while (node) {
+      if (DANGEROUS_TAGS.has(node.tagName.toLowerCase())) {
+        toRemove.push(node);
+      } else {
+        // Remove unsafe attributes
+        [...node.attributes].forEach((attr) => {
+          const name = attr.name.toLowerCase();
+          // Strip event handlers (on*)
+          if (name.startsWith("on")) { node.removeAttribute(attr.name); return; }
+          // Strip javascript: URIs
+          if ((name === "href" || name === "src") &&
+              attr.value.replace(/\s/g, "").toLowerCase().startsWith("javascript:")) {
+            node.removeAttribute(attr.name);
+            return;
+          }
+          // Allow known safe attrs and data-/aria- prefixes
+          const allowed = SAFE_ATTRS.has(name) ||
+            ALLOWED_ATTR_PREFIX.some((p) => name.startsWith(p));
+          if (!allowed) node.removeAttribute(attr.name);
+        });
+      }
+      node = walker.nextNode();
+    }
+    toRemove.forEach((el) => el.remove());
+    return doc.body.innerHTML;
+  } catch {
+    // Fallback: strip all tags
+    return String(html).replace(/<[^>]*>/g, "");
+  }
+}
+
+/**
+ * Safely set innerHTML with sanitized content.
+ * Drop-in replacement for `element.innerHTML = userContent`.
+ *
+ * @param {HTMLElement} el - Target element
+ * @param {string} html - HTML string (may contain user input)
+ */
+function setInnerHTML(el, html) {
+  if (!el) return;
+  el.innerHTML = sanitizeHTML(html);
+}
+
 // ============ Custom Modal System ============
 // Replaces native alert(), confirm(), prompt() with styled modals
 

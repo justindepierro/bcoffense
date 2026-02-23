@@ -55,8 +55,8 @@ h1 {
   text-align: left;
 }
 .app-subtitle {
-  font-size: 12px;
-  color: rgba(255, 255, 255, 0.6);
+  font-size: var(--font-size-xs2);
+  color: var(--color-white-alpha-60);
   font-weight: 400;
   letter-spacing: 0.01em;
 }
@@ -70,10 +70,10 @@ h1 {
   align-items: center;
   gap: 6px;
   padding: 7px 14px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.08);
-  color: rgba(255, 255, 255, 0.85);
+  color: var(--color-white-alpha-85);
   font-size: var(--font-size-sm);
   font-weight: 500;
   cursor: pointer;
@@ -81,12 +81,12 @@ h1 {
   font-family: inherit;
 }
 .header-action-btn:hover {
-  background: rgba(255, 255, 255, 0.15);
+  background: var(--color-white-alpha-15);
   color: white;
-  border-color: rgba(255, 255, 255, 0.35);
+  border-color: var(--color-white-alpha-20);
 }
 .header-action-label {
-  font-size: 12px;
+  font-size: var(--font-size-xs2);
 }
 
 .tabs {

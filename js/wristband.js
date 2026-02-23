@@ -69,6 +69,13 @@ async function checkWristbandDraft() {
   const draft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
   if (!draft || !draft.cards || draft.cards.length === 0) return;
 
+  // Discard drafts older than 24 hours
+  const age = Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
+  if (age > DRAFT_EXPIRY_MS) {
+    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+    return;
+  }
+
   const draftPlays = draft.cards.reduce(
     (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
     0,
