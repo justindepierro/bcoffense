@@ -65,6 +65,25 @@ h1 {
   align-items: center;
   gap: 8px;
 }
+
+/* Autosave status indicator */
+.save-status {
+  font-size: var(--font-size-xs2);
+  color: var(--color-white-alpha-60);
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  transition: all 0.3s ease;
+  white-space: nowrap;
+}
+.save-status.saved {
+  color: var(--color-success-light);
+}
+.save-status.saving {
+  color: var(--color-accent);
+}
+.save-status.unsaved {
+  color: var(--color-warning);
+}
 .header-action-btn {
   display: flex;
   align-items: center;
@@ -175,6 +194,27 @@ h1 {
 .tab.active::after {
   left: 0;
   right: 0;
+}
+
+/* Tab badge counts */
+.tab-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 5px;
+  margin-left: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-navy-alpha-12);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  line-height: 1;
+}
+.tab.active .tab-badge {
+  background: var(--color-primary);
+  color: white;
 }
 .panel {
   display: none;

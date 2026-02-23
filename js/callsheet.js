@@ -901,6 +901,18 @@ function renderCallSheet() {
 
   // Update stats panel if visible
   updateStatsPanel();
+
+  // Attach long-press for mobile context menus on callsheet plays
+  if (typeof addLongPress === "function") {
+    container.querySelectorAll(".callsheet-play").forEach((el) => {
+      const catId = el.dataset.category;
+      const hash = el.dataset.hash;
+      const idx = parseInt(el.dataset.index, 10);
+      if (catId && hash && !isNaN(idx)) {
+        addLongPress(el, (ev) => showPlayContextMenu(ev, catId, hash, idx));
+      }
+    });
+  }
 }
 
 /**
@@ -2113,23 +2125,27 @@ function saveCallSheet() {
  * Clear call sheet
  */
 async function clearCallSheet() {
-  const ok = await showConfirm(
-    "This will remove all plays from every category. This cannot be undone. Continue?",
-    {
-      title: "Clear Call Sheet",
-      icon: "🗑️",
-      confirmText: "Clear",
-      danger: true,
-    },
-  );
-  if (!ok) return;
+  // Check if any categories have plays
+  const hasPlays = CALLSHEET_CATEGORIES.some((cat) => {
+    const d = callSheet[cat.id];
+    return d && ((d.left && d.left.length) || (d.right && d.right.length));
+  });
+  if (!hasPlays) return;
+
+  // Snapshot for undo
+  const snapshot = safeDeepClone(callSheet);
 
   CALLSHEET_CATEGORIES.forEach((cat) => {
     callSheet[cat.id] = { left: [], right: [] };
   });
   renderCallSheet();
   saveCallSheet();
-  showToast("🗑️ Call sheet cleared");
+
+  showUndoToast("🗑️ Call sheet cleared", () => {
+    Object.assign(callSheet, snapshot);
+    renderCallSheet();
+    saveCallSheet();
+  });
 }
 
 /**

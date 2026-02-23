@@ -132,6 +132,7 @@ function getScriptDisplayOptions() {
  */
 function scheduleScriptAutosave() {
   if (scriptAutosaveTimer) clearTimeout(scriptAutosaveTimer);
+  if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
   scriptAutosaveTimer = setTimeout(() => {
     const draft = {
       name: document.getElementById("scriptName")?.value || "",
@@ -140,6 +141,7 @@ function scheduleScriptAutosave() {
       savedAt: new Date().toISOString(),
     };
     storageManager.set(STORAGE_KEYS.SCRIPT_DRAFT, draft);
+    if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
   }, AUTOSAVE_DEBOUNCE_MS); // 3-second debounce
 }
 
@@ -2628,6 +2630,9 @@ function renderScript() {
 
     // Update undo/redo buttons
     historyManager.updateButtons("script");
+
+    // Refresh tab badge counts
+    if (typeof updateTabBadges === "function") updateTabBadges();
   } catch (err) {
     console.error("renderScript error:", err);
     showToast("❌ Error rendering script.", 3000);
@@ -2640,15 +2645,13 @@ function renderScript() {
 async function clearScript() {
   // Don't count it as "has content" if it's just the auto-seeded period
   const hasPlays = script.some((p) => !p.isSeparator);
-  if (hasPlays) {
-    const ok = await showConfirm("Clear the entire script?", {
-      title: "Clear Script",
-      icon: "🗑️",
-      confirmText: "Clear",
-      danger: true,
-    });
-    if (!ok) return;
-  }
+  if (!hasPlays) return;
+
+  // Snapshot for undo
+  const snapshot = safeDeepClone(script);
+  const oldName = document.getElementById("scriptName")?.value || "";
+  const oldDate = document.getElementById("scriptDate")?.value || "";
+
   saveScriptState();
   script = [];
   // Reset header fields
@@ -2658,6 +2661,15 @@ async function clearScript() {
   // Auto-seed a fresh first period
   ensureFirstPeriod();
   renderScript();
+
+  showUndoToast("🗑️ Script cleared", () => {
+    script = snapshot;
+    document.getElementById("scriptName").value = oldName;
+    const dateEl2 = document.getElementById("scriptDate");
+    if (dateEl2) dateEl2.value = oldDate;
+    renderScript();
+    markScriptDirty();
+  });
 }
 
 /**
@@ -3298,14 +3310,26 @@ function generatePDF() {
       "@media print { @page { size: letter; margin: 0.5in; } }";
 
     setTimeout(() => {
-      const restoreTitle = setPrintTitle("Practice Script", name || "");
-      window.print();
-      // Clean up after print
-      setTimeout(() => {
-        restoreTitle();
-        document.getElementById("previewContainer").classList.add("hidden");
-        document.body.classList.remove("print-script");
-      }, 500);
+      const previewEl = document.getElementById("previewContainer");
+      if (typeof showPrintPreview === "function") {
+        showPrintPreview(previewEl, () => {
+          const restoreTitle = setPrintTitle("Practice Script", name || "");
+          window.print();
+          setTimeout(() => {
+            restoreTitle();
+            previewEl.classList.add("hidden");
+            document.body.classList.remove("print-script");
+          }, 500);
+        });
+      } else {
+        const restoreTitle = setPrintTitle("Practice Script", name || "");
+        window.print();
+        setTimeout(() => {
+          restoreTitle();
+          previewEl.classList.add("hidden");
+          document.body.classList.remove("print-script");
+        }, 500);
+      }
     }, 100);
   } catch (err) {
     console.error("generatePDF error:", err);

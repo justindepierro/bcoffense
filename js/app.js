@@ -15,6 +15,7 @@ let wristbandDirty = false;
  */
 function markScriptDirty() {
   scriptDirty = true;
+  updateSaveStatus("unsaved");
 }
 
 /**
@@ -22,6 +23,7 @@ function markScriptDirty() {
  */
 function markScriptClean() {
   scriptDirty = false;
+  updateSaveStatus("saved");
 }
 
 /**
@@ -29,6 +31,7 @@ function markScriptClean() {
  */
 function markWristbandDirty() {
   wristbandDirty = true;
+  updateSaveStatus("unsaved");
 }
 
 /**
@@ -36,6 +39,7 @@ function markWristbandDirty() {
  */
 function markWristbandClean() {
   wristbandDirty = false;
+  updateSaveStatus("saved");
 }
 
 // Warn before closing tab with unsaved work
@@ -230,6 +234,9 @@ function initAllModules() {
       if (storedCallSheet) {
         callSheet = storedCallSheet;
       }
+
+      // Update tab badge counts
+      updateTabBadges();
     },
     { timeout: 2000 },
   );
@@ -244,7 +251,9 @@ function handleFileUpload(event) {
     reader.onload = async function (e) {
       try {
         const text = e.target.result;
-        const parsed = parseCSV(text);
+        const csvResult = parseCSV(text);
+        const parsed = csvResult.plays || csvResult;
+        const skippedRows = csvResult.skipped || [];
 
         if (parsed.length === 0) {
           showToast(
@@ -262,7 +271,7 @@ function handleFileUpload(event) {
               `• ${escapeHtml(p.formation || "?")} ${escapeHtml(p.play || "?")} (${escapeHtml(p.type || "?")})`,
           )
           .join("<br>");
-        const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
+        const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
         const ok = await showConfirm(msg, {
           title: "Confirm CSV Import",
           icon: "📋",
@@ -281,6 +290,25 @@ function handleFileUpload(event) {
         document.getElementById("mainApp").classList.remove("hidden");
 
         initAllModules();
+
+        // Show validation report for skipped rows
+        if (skippedRows.length > 0) {
+          const skipMsg = skippedRows
+            .slice(0, 5)
+            .map((s) => `Row ${s.line}: ${escapeHtml(s.reason)}`)
+            .join("<br>");
+          const extra =
+            skippedRows.length > 5
+              ? "<br>…and " + (skippedRows.length - 5) + " more"
+              : "";
+          showModal(
+            skippedRows.length +
+              " row(s) were skipped:<br><br>" +
+              skipMsg +
+              extra,
+            { title: "⚠️ Import Warnings", icon: "⚠️" },
+          );
+        }
       } catch (err) {
         console.error("handleFileUpload reader.onload error:", err);
         showToast("❌ Error reading file. Check format and try again.", 4000);
@@ -514,6 +542,9 @@ function renderDashboard() {
         const n = parseInt(el.textContent, 10);
         if (!isNaN(n) && n > 0) _animateCountUp(el, n, 600);
       });
+
+      // Refresh tab badges when dashboard renders
+      updateTabBadges();
     }
 
     // Build scouting summary
@@ -1098,6 +1129,92 @@ function downloadCSVTemplate(type) {
   }
 }
 
+// ── Dark mode toggle ──
+function toggleDarkMode() {
+  const isDark = document.documentElement.getAttribute("data-theme") === "dark";
+  document.documentElement.setAttribute("data-theme", isDark ? "" : "dark");
+  localStorage.setItem("theme", isDark ? "light" : "dark");
+  const icon = document.getElementById("darkModeIcon");
+  if (icon) icon.textContent = isDark ? "🌙" : "☀️";
+}
+// Restore theme on load
+(function _restoreTheme() {
+  const saved =
+    localStorage.getItem("theme") ||
+    (window.matchMedia("(prefers-color-scheme: dark)").matches
+      ? "dark"
+      : "light");
+  if (saved === "dark") {
+    document.documentElement.setAttribute("data-theme", "dark");
+    const icon = document.getElementById("darkModeIcon");
+    if (icon) icon.textContent = "☀️";
+  }
+})();
+
+// ── Autosave status indicator ──
+function updateSaveStatus(state) {
+  const el = document.getElementById("saveStatus");
+  if (!el) return;
+  el.className = "save-status " + state;
+  el.textContent =
+    state === "saved"
+      ? "✓ Saved"
+      : state === "saving"
+        ? "⏳ Saving…"
+        : "● Unsaved";
+}
+
+// ── Offline connectivity banner ──
+(function _initOfflineBanner() {
+  const banner = document.createElement("div");
+  banner.className = "offline-banner";
+  banner.setAttribute("role", "status");
+  banner.setAttribute("aria-live", "polite");
+  banner.textContent =
+    "📡 You\u2019re offline \u2014 changes are saved locally and will sync when reconnected";
+  document.body.prepend(banner);
+  const update = () => banner.classList.toggle("visible", !navigator.onLine);
+  window.addEventListener("online", update);
+  window.addEventListener("offline", update);
+  update();
+})();
+
+// ── Tab badge counts ──
+function updateTabBadges() {
+  const badges = {
+    "tab-playbook": typeof plays !== "undefined" ? plays.length : 0,
+    "tab-script": Array.isArray(script)
+      ? script.filter((p) => !p.isSeparator).length
+      : 0,
+    "tab-wristband":
+      typeof wristbandCards !== "undefined"
+        ? wristbandCards.reduce(
+            (s, c) => s + (c.data ? c.data.filter(Boolean).length : 0),
+            0,
+          )
+        : 0,
+    "tab-tendencies":
+      typeof tendenciesOpponents !== "undefined"
+        ? tendenciesOpponents.length
+        : 0,
+  };
+  Object.entries(badges).forEach(([id, count]) => {
+    const tab = document.getElementById(id);
+    if (!tab) return;
+    let badge = tab.querySelector(".tab-badge");
+    if (count > 0) {
+      if (!badge) {
+        badge = document.createElement("span");
+        badge.className = "tab-badge";
+        tab.appendChild(badge);
+      }
+      badge.textContent = count;
+    } else if (badge) {
+      badge.remove();
+    }
+  });
+}
+
 // ── Scroll-to-top FAB ──
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
@@ -1501,6 +1618,33 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
     });
     pbBody.addEventListener("dblclick", (e) => {
+      // Inline cell editing on double-click
+      const td = e.target.closest("td");
+      if (td && typeof startInlineEdit === "function") {
+        const row = td.closest("tr");
+        if (row) {
+          const rowIdx = parseInt(row.dataset.idx, 10);
+          const colIdx = Array.from(row.children).indexOf(td);
+          const colMap = [
+            null,
+            "type",
+            "formation",
+            null,
+            "back",
+            "motion",
+            "protection",
+            "play",
+            "basePlay",
+            "tempo",
+          ];
+          const field = colMap[colIdx];
+          if (field) {
+            startInlineEdit(td, rowIdx, field);
+            e.stopPropagation();
+            return;
+          }
+        }
+      }
       const row = e.target.closest("tr[data-dblaction]");
       if (row) addPlayFromPlaybook(parseInt(row.dataset.idx, 10));
     });

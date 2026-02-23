@@ -45,6 +45,7 @@ let wristbandAutosaveTimer = null;
  */
 function scheduleWristbandAutosave() {
   if (wristbandAutosaveTimer) clearTimeout(wristbandAutosaveTimer);
+  if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
   wristbandAutosaveTimer = setTimeout(() => {
     if (wristbandCards.length === 0) return;
     const hasPlays = wristbandCards.some(
@@ -58,6 +59,7 @@ function scheduleWristbandAutosave() {
       savedAt: new Date().toISOString(),
     };
     storageManager.set(STORAGE_KEYS.WRISTBAND_DRAFT, draft);
+    if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
@@ -1228,6 +1230,9 @@ function renderWristbandGrid() {
 
   // Update stats bar
   updateWbStats();
+
+  // Refresh tab badge counts
+  if (typeof updateTabBadges === "function") updateTabBadges();
 }
 
 // ============ Cell Popup Functions ============
@@ -1447,23 +1452,39 @@ function applyCellStyle() {
  */
 async function clearWristband() {
   const cardData = getCurrentCardData();
-  if (cardData.some((c) => c !== null)) {
-    const ok = await showConfirm(
-      `Clear ${wristbandCards[currentCardIndex].name}?`,
-      { title: "Clear Card", icon: "🗑️", confirmText: "Clear", danger: true },
-    );
-    if (!ok) return;
-  }
+  if (!cardData.some((c) => c !== null)) return;
+
+  // Snapshot for undo
+  const snapshot = safeDeepClone(wristbandCards[currentCardIndex].data);
+  const custSnapshot = {};
+  Object.keys(cellCustomizations).forEach((key) => {
+    if (key.startsWith(currentCardIndex + "-")) {
+      custSnapshot[key] = safeDeepClone(cellCustomizations[key]);
+    }
+  });
+  const cardIdx = currentCardIndex;
+
   saveWristbandState();
   wristbandCards[currentCardIndex].data = Array(40).fill(null);
   // Also clear cell customizations for this card
   Object.keys(cellCustomizations).forEach((key) => {
-    if (key.startsWith(`${currentCardIndex}-`)) {
+    if (key.startsWith(currentCardIndex + "-")) {
       delete cellCustomizations[key];
     }
   });
   renderCardTabs();
   renderWristbandGrid();
+
+  showUndoToast(
+    "🗑️ " + escapeHtml(wristbandCards[cardIdx].name) + " cleared",
+    () => {
+      wristbandCards[cardIdx].data = snapshot;
+      Object.assign(cellCustomizations, custSnapshot);
+      renderCardTabs();
+      renderWristbandGrid();
+      markWristbandDirty();
+    },
+  );
 }
 
 /**

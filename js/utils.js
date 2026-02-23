@@ -167,6 +167,126 @@ function trapFocus(overlay) {
 }
 
 /**
+ * Show an undo toast for destructive actions (replaces confirm + delete pattern)
+ * @param {string} message - What happened (e.g. "Script cleared")
+ * @param {Function} undoCallback - Called if user clicks Undo within the window
+ * @param {number} duration - Time window in ms (default 5000)
+ */
+function showUndoToast(message, undoCallback, duration) {
+  duration = duration || 5000;
+  const existing = document.querySelector(".toast");
+  if (existing) existing.remove();
+
+  const toast = document.createElement("div");
+  toast.className = "toast toast-warning show";
+  toast.style.setProperty("--toast-duration", duration + "ms");
+  toast.innerHTML =
+    escapeHtml(message) +
+    ' <button class="btn btn-sm" style="margin-left:10px;padding:3px 12px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-weight:600;">Undo</button>';
+  document.body.appendChild(toast);
+
+  let undone = false;
+  toast.querySelector("button").addEventListener("click", () => {
+    undone = true;
+    undoCallback();
+    toast.remove();
+    showToast("↩️ Action undone");
+  });
+
+  setTimeout(() => {
+    if (!undone) {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 300);
+    }
+  }, duration);
+}
+
+/**
+ * Show a print preview modal before printing
+ * @param {HTMLElement} contentEl - The content to preview
+ * @param {Function} onPrint - Called when user clicks Print
+ */
+function showPrintPreview(contentEl, onPrint) {
+  const overlay = document.createElement("div");
+  overlay.className = "print-preview-overlay";
+  overlay.innerHTML =
+    '<div class="print-preview-frame">' +
+    '<div class="print-preview-toolbar">' +
+    "<strong>🖨️ Print Preview</strong>" +
+    '<span style="flex:1"></span>' +
+    '<button class="btn btn-primary btn-sm" id="ppPrintBtn">🖨️ Print</button>' +
+    '<button class="btn btn-sm" id="ppCancelBtn">Cancel</button>' +
+    "</div>" +
+    '<div class="print-preview-content"><div id="ppContent"></div></div>' +
+    "</div>";
+  document.body.appendChild(overlay);
+  document.getElementById("ppContent").appendChild(contentEl.cloneNode(true));
+  document.getElementById("ppPrintBtn").addEventListener("click", () => {
+    overlay.remove();
+    onPrint();
+  });
+  document.getElementById("ppCancelBtn").addEventListener("click", () => {
+    overlay.remove();
+  });
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) overlay.remove();
+  });
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") overlay.remove();
+  });
+}
+
+/**
+ * Attach a long-press handler for mobile (replaces contextmenu on touch)
+ * @param {HTMLElement} element - Target element
+ * @param {Function} callback - Called with synthetic event-like object
+ * @param {number} duration - Hold duration in ms (default 500)
+ */
+function addLongPress(element, callback, duration) {
+  duration = duration || 500;
+  let timer = null;
+  let startX = 0;
+  let startY = 0;
+
+  element.addEventListener(
+    "touchstart",
+    (e) => {
+      startX = e.touches[0].clientX;
+      startY = e.touches[0].clientY;
+      timer = setTimeout(() => {
+        const touch = e.changedTouches[0] || e.touches[0];
+        callback({
+          clientX: touch.clientX,
+          clientY: touch.clientY,
+          preventDefault: () => {},
+          target: e.target,
+        });
+      }, duration);
+    },
+    { passive: true },
+  );
+
+  element.addEventListener("touchmove", (e) => {
+    if (!timer) return;
+    const dx = e.touches[0].clientX - startX;
+    const dy = e.touches[0].clientY - startY;
+    if (Math.abs(dx) > 10 || Math.abs(dy) > 10) {
+      clearTimeout(timer);
+      timer = null;
+    }
+  });
+
+  element.addEventListener("touchend", () => {
+    clearTimeout(timer);
+    timer = null;
+  });
+  element.addEventListener("touchcancel", () => {
+    clearTimeout(timer);
+    timer = null;
+  });
+}
+
+/**
  * Show a styled alert modal (replaces alert())
  * @param {string} message - The message to display
  * @param {object} opts - Options: { title, icon }
@@ -1460,14 +1580,14 @@ function parseCSV(text) {
   }
 
   const result = [];
-  let skipped = 0;
+  const skippedRows = [];
 
   for (let li = startLine; li < lines.length; li++) {
     const line = lines[li];
     if (!line.trim()) continue;
     const values = parseLine(line);
     if (values.length < 3) {
-      skipped++;
+      skippedRows.push({ line: li + 1, reason: "Too few columns" });
       continue;
     }
 
@@ -1481,7 +1601,10 @@ function parseCSV(text) {
       });
     } else {
       if (values.length < 10) {
-        skipped++;
+        skippedRows.push({
+          line: li + 1,
+          reason: "Too few columns (" + values.length + ")",
+        });
         continue;
       }
       POS_KEYS.forEach((key, i) => {
@@ -1490,14 +1613,18 @@ function parseCSV(text) {
     }
 
     if (!play.formation && !play.play && !play.type) {
-      skipped++;
+      skippedRows.push({
+        line: li + 1,
+        reason: "Missing formation, play, and type",
+      });
       continue;
     }
     result.push(play);
   }
 
-  if (skipped > 0) console.warn(`parseCSV: skipped ${skipped} invalid row(s)`);
-  return result;
+  if (skippedRows.length > 0)
+    console.warn(`parseCSV: skipped ${skippedRows.length} invalid row(s)`);
+  return { plays: result, skipped: skippedRows };
 }
 
 /**

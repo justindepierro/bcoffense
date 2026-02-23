@@ -52,15 +52,31 @@
   <body>
     <noscript>
       <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif;
-               display: flex; align-items: center; justify-content: center;
-               min-height: 100vh; background: #0A122A; color: #fff; text-align: center; }
-        .noscript-msg { max-width: 400px; padding: 2rem; }
-        .noscript-msg h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+        body {
+          font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          min-height: 100vh;
+          background: #0a122a;
+          color: #fff;
+          text-align: center;
+        }
+        .noscript-msg {
+          max-width: 400px;
+          padding: 2rem;
+        }
+        .noscript-msg h1 {
+          font-size: 1.5rem;
+          margin-bottom: 1rem;
+        }
       </style>
       <div class="noscript-msg">
         <h1>🏈 Practice Script & Playbook</h1>
-        <p>This app requires JavaScript to run. Please enable JavaScript in your browser settings and reload.</p>
+        <p>
+          This app requires JavaScript to run. Please enable JavaScript in your
+          browser settings and reload.
+        </p>
       </div>
     </noscript>
     <a href="#mainApp" class="skip-link">Skip to main content</a>
@@ -75,6 +91,14 @@
         </div>
       </div>
       <div class="app-header-actions">
+        <span id="saveStatus" class="save-status" aria-live="polite"></span>
+        <button
+          class="header-action-btn"
+          data-action="toggleDarkMode"
+          title="Toggle dark mode"
+        >
+          <span id="darkModeIcon">🌙</span>
+        </button>
         <button
           class="header-action-btn"
           data-action="showUpload"
@@ -108,7 +132,8 @@
           type="file"
           id="csvFile"
           accept=".csv"
-          data-onchange="handleFileUpload" data-pass="event"
+          data-onchange="handleFileUpload"
+          data-pass="event"
           data-testid="csv-upload"
         />
         <button
@@ -143,7 +168,8 @@
               type="file"
               id="backupFile"
               accept=".json"
-              data-onchange="importBackup" data-pass="event"
+              data-onchange="importBackup"
+              data-pass="event"
               class="hidden"
             />
             <button
@@ -165,7 +191,8 @@
               id="teamNameInput"
               class="team-name-input"
               placeholder="e.g., Burke Catholic Football"
-              data-onchange="setTeamName" data-pass="value"
+              data-onchange="setTeamName"
+              data-pass="value"
             />
           </div>
         </div>
@@ -365,7 +392,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="install"
+                      data-onchange="toggleColumn"
+                      data-arg="install"
                     />
                     &#9733; Install</label
                   >
@@ -373,7 +401,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="type"
+                      data-onchange="toggleColumn"
+                      data-arg="type"
                     />
                     Type</label
                   >
@@ -381,7 +410,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="formation"
+                      data-onchange="toggleColumn"
+                      data-arg="formation"
                     />
                     Formation</label
                   >
@@ -389,7 +419,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="tags"
+                      data-onchange="toggleColumn"
+                      data-arg="tags"
                     />
                     Tags</label
                   >
@@ -397,7 +428,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="back"
+                      data-onchange="toggleColumn"
+                      data-arg="back"
                     />
                     Back</label
                   >
@@ -405,7 +437,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="motion"
+                      data-onchange="toggleColumn"
+                      data-arg="motion"
                     />
                     Motion</label
                   >
@@ -413,7 +446,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="protection"
+                      data-onchange="toggleColumn"
+                      data-arg="protection"
                     />
                     Protection</label
                   >
@@ -421,7 +455,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="play"
+                      data-onchange="toggleColumn"
+                      data-arg="play"
                     />
                     Play</label
                   >
@@ -429,7 +464,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="basePlay"
+                      data-onchange="toggleColumn"
+                      data-arg="basePlay"
                     />
                     Base Play</label
                   >
@@ -437,7 +473,8 @@
                     ><input
                       type="checkbox"
                       checked
-                      data-onchange="toggleColumn" data-arg="tempo"
+                      data-onchange="toggleColumn"
+                      data-arg="tempo"
                     />
                     Tempo</label
                   >
@@ -469,7 +506,8 @@
                 type="file"
                 id="importBackupFile"
                 accept=".json"
-                data-onchange="importBackup" data-pass="event"
+                data-onchange="importBackup"
+                data-pass="event"
                 class="hidden"
               />
               <button
@@ -1865,7 +1903,8 @@
                 <select
                   id="dashOpponentSelect"
                   class="dash-select"
-                  data-onchange="onDashOpponentChange" data-pass="value"
+                  data-onchange="onDashOpponentChange"
+                  data-pass="value"
                 >
                   <option value="">— Select Opponent —</option>
                 </select>
@@ -1874,7 +1913,8 @@
                   id="dashWeekLabel"
                   class="dash-week-input"
                   placeholder="e.g., Week 3"
-                  data-onchange="onDashWeekLabelChange" data-pass="value"
+                  data-onchange="onDashWeekLabelChange"
+                  data-pass="value"
                 />
               </div>
             </div>
@@ -1890,8 +1930,10 @@
               id="dashNotesArea"
               class="dash-notes-textarea"
               placeholder="e.g., Key matchups, adjustments…"
-              data-onchange="onDashNotesChange" data-pass="value"
-              data-oninput="onDashNotesChange" data-pass="value"
+              data-onchange="onDashNotesChange"
+              data-pass="value"
+              data-oninput="onDashNotesChange"
+              data-pass="value"
             ></textarea>
           </div>
 
@@ -2063,7 +2105,8 @@
               <select
                 id="csDisplayPreset"
                 class="cs-preset-select"
-                data-onchange="loadDisplayPreset" data-pass="value"
+                data-onchange="loadDisplayPreset"
+                data-pass="value"
               >
                 <option value="">Presets...</option>
                 <option value="__all">✅ Show All Fields</option>
@@ -3149,7 +3192,10 @@
               const nw = reg.installing;
               if (!nw) return;
               nw.addEventListener("statechange", () => {
-                if (nw.state === "activated" && navigator.serviceWorker.controller) {
+                if (
+                  nw.state === "activated" &&
+                  navigator.serviceWorker.controller
+                ) {
                   showToast(
                     '\uD83D\uDD04 App updated. <button data-action="reloadPage" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer">Reload</button>',
                     8000,

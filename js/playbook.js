@@ -708,6 +708,52 @@ function copyPlayName(playName) {
 }
 
 /**
+ * Inline edit a playbook cell on double-click
+ * @param {HTMLElement} td - The table cell
+ * @param {number} playIndex - Index in filteredPlays
+ * @param {string} field - Play object field key
+ */
+function startInlineEdit(td, playIndex, field) {
+  if (td.querySelector(".pb-inline-edit")) return;
+  const play = filteredPlays[playIndex];
+  if (!play) return;
+  const original = play[field] || "";
+
+  const input = document.createElement("input");
+  input.className = "pb-inline-edit";
+  input.type = "text";
+  input.value = original;
+  td.textContent = "";
+  td.appendChild(input);
+  input.focus();
+  input.select();
+
+  function commit() {
+    const newVal = input.value.trim();
+    // Update in filteredPlays AND plays master array
+    const masterIdx = plays.indexOf(play);
+    play[field] = newVal;
+    if (masterIdx >= 0) plays[masterIdx][field] = newVal;
+    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    renderPlaybook();
+    if (newVal !== original) showToast("✏️ Updated");
+  }
+
+  input.addEventListener("blur", commit);
+  input.addEventListener("keydown", (e) => {
+    if (e.key === "Enter") {
+      e.preventDefault();
+      commit();
+    }
+    if (e.key === "Escape") {
+      e.preventDefault();
+      input.value = original;
+      input.blur();
+    }
+  });
+}
+
+/**
  * Add play from playbook to practice script (double-click)
  */
 function addPlayFromPlaybook(index) {

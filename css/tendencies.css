@@ -49,7 +49,6 @@
   transition: all var(--transition-fast);
 }
 @media (hover: hover) {
-
   .td-opponent-card:hover {
     border-color: var(--color-primary);
     background: var(--color-bg-blue-light);
@@ -200,7 +199,6 @@
   white-space: nowrap;
 }
 @media (hover: hover) {
-
   .td-table tr:hover {
     background: var(--color-bg-hover-row);
   }
@@ -278,7 +276,6 @@
   opacity: 0.5;
 }
 @media (hover: hover) {
-
   .td-step-dot:hover {
     opacity: 0.8;
     background: var(--color-bg-input);
@@ -368,7 +365,6 @@
   -webkit-user-select: none;
 }
 @media (hover: hover) {
-
   .td-option-btn:hover {
     border-color: var(--color-primary);
     background: var(--color-bg-blue-light);
@@ -384,6 +380,27 @@
   color: white;
   border-color: var(--color-primary);
   box-shadow: 0 2px 8px rgba(25, 42, 81, 0.3);
+}
+
+/* Keyboard shortcut hints on wizard buttons */
+.td-option-btn[data-key-hint]::before {
+  content: attr(data-key-hint);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
+  border-radius: var(--radius-sm);
+  background: var(--color-navy-alpha-12);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  margin-right: 6px;
+  flex-shrink: 0;
+}
+.td-option-btn.selected[data-key-hint]::before {
+  background: rgba(255, 255, 255, 0.2);
+  color: white;
 }
 
 /* Custom input row */
@@ -438,12 +455,10 @@
   border-color: var(--color-success);
 }
 @media (hover: hover) {
-
   .btn.td-save-btn:hover {
     background: var(--color-success-hover);
   }
 }
-
 
 /* Textarea in wizard */
 .td-textarea {
@@ -518,12 +533,10 @@
   padding: 2px 4px;
 }
 @media (hover: hover) {
-
   .td-search-clear:hover {
     color: var(--color-text);
   }
 }
-
 
 /* Filter badge */
 .td-filter-badge {
@@ -605,7 +618,6 @@
   gap: 4px;
 }
 @media (hover: hover) {
-
   .td-filter-chip:hover {
     border-color: var(--color-primary);
     background: var(--color-bg-blue-light);
@@ -632,7 +644,6 @@
   transition: background 0.12s;
 }
 @media (hover: hover) {
-
   .td-sortable-th:hover {
     background: var(--color-bg-lighter);
   }
@@ -653,12 +664,10 @@
   background: var(--color-warning-light) !important;
 }
 @media (hover: hover) {
-
   .td-row-bulk-selected:hover {
     background: var(--color-accent-light) !important;
   }
 }
-
 
 /* Drag states */
 .td-dragging {
@@ -850,12 +859,10 @@
   border-bottom: 1px solid var(--color-bg-input);
 }
 @media (hover: hover) {
-
   .td-mini-table tr:hover {
     background: var(--color-bg-lighter);
   }
 }
-
 
 /* ============ Hover Tooltip ============ */
 .td-tooltip {

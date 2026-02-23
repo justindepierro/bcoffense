@@ -1769,7 +1769,53 @@ function renderRapidChart() {
 
 // ============ Wizard ============
 
+// ── Keyboard shortcuts for wizard (number keys, Enter, Backspace) ──
+let _wizardKeyActive = false;
+function _wizardKeyHandler(e) {
+  // Don't intercept when typing in inputs/textareas
+  if (e.target.matches("input, textarea, select")) return;
+
+  // Number keys 1-9 → click corresponding button
+  if (e.key >= "1" && e.key <= "9") {
+    const allBtns = document.querySelectorAll(".td-option-btn");
+    const idx = parseInt(e.key, 10) - 1;
+    if (allBtns[idx]) {
+      allBtns[idx].click();
+      e.preventDefault();
+    }
+    return;
+  }
+  // Enter → advance to next step / save
+  if (e.key === "Enter") {
+    e.preventDefault();
+    const saveBtn = document.querySelector(".td-save-btn");
+    if (saveBtn) {
+      saveBtn.click();
+    } else {
+      wizardNext();
+    }
+    return;
+  }
+  // Backspace → go back
+  if (e.key === "Backspace") {
+    e.preventDefault();
+    wizardPrev();
+  }
+}
+
+function _enableWizardKeys() {
+  if (_wizardKeyActive) return;
+  document.addEventListener("keydown", _wizardKeyHandler);
+  _wizardKeyActive = true;
+}
+
+function _disableWizardKeys() {
+  document.removeEventListener("keydown", _wizardKeyHandler);
+  _wizardKeyActive = false;
+}
+
 function renderWizard() {
+  _enableWizardKeys();
   const container = document.getElementById("tendenciesContent");
   if (!container || !tendenciesCurrentPlay) return;
   const step = TENDENCIES_STEPS[tendenciesWizardStep];
@@ -1837,8 +1883,9 @@ function renderFieldHtml(field, mode) {
     const opts = TENDENCIES_OPTIONS[field.options] || [];
     const buttons = opts
       .map(
-        (opt) => `
+        (opt, btnIdx) => `
       <button class="td-option-btn ${currentValue === opt ? "selected" : ""}"
+              ${btnIdx < 9 ? 'data-key-hint="' + (btnIdx + 1) + '"' : ""}
               onclick="setWizardField('${field.key}', '${opt.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', this)">
         ${escapeHtml(opt)}
       </button>
@@ -1952,6 +1999,7 @@ function skipStep() {
 }
 
 function cancelWizard() {
+  _disableWizardKeys();
   tendenciesCurrentPlay = null;
   tendenciesEditIndex = -1;
   clearTendenciesDraft();
@@ -1963,6 +2011,7 @@ async function saveWizardPlay() {
   const opp = tendenciesOpponents[tendenciesCurrentOpponent];
   if (!opp) return;
 
+  _disableWizardKeys();
   saveTendenciesState();
 
   if (tendenciesEditIndex >= 0) {
