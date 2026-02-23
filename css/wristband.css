@@ -40,9 +40,13 @@
   overflow: hidden;
   box-sizing: border-box;
 }
-.wristband-cell:hover {
-  background: var(--color-bg-blue-light);
+@media (hover: hover) {
+
+  .wristband-cell:hover {
+    background: var(--color-bg-blue-light);
+  }
 }
+
 .wristband-cell.filled {
   background: var(--color-bg-lighter);
   cursor: grab;
@@ -71,9 +75,13 @@
   cursor: pointer;
   display: none;
 }
-.wristband-cell:hover .remove-cell {
-  display: block;
+@media (hover: hover) {
+
+  .wristband-cell:hover .remove-cell {
+    display: block;
+  }
 }
+
 .wristband-cell.filled:active {
   cursor: grabbing;
 }
@@ -158,9 +166,13 @@
   cursor: pointer;
   user-select: none;
 }
-.checkbox-group label:hover {
-  background: var(--color-border-med);
+@media (hover: hover) {
+
+  .checkbox-group label:hover {
+    background: var(--color-border-med);
+  }
 }
+
 .checkbox-group input[type="checkbox"] {
   margin: 0;
 }
@@ -168,9 +180,13 @@
   background: var(--color-primary);
   color: white;
 }
-.checkbox-group label.checked:hover {
-  background: var(--color-primary-dark);
+@media (hover: hover) {
+
+  .checkbox-group label.checked:hover {
+    background: var(--color-primary-dark);
+  }
 }
+
 
 .line-call {
   font-style: italic;
@@ -203,9 +219,13 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
-.cell-play-option:hover {
-  background: var(--color-bg-blue-tint);
+@media (hover: hover) {
+
+  .cell-play-option:hover {
+    background: var(--color-bg-blue-tint);
+  }
 }
+
 
 /* Card Tabs */
 .card-tabs {
@@ -223,9 +243,13 @@
   font-weight: bold;
   font-size: var(--font-size-sm);
 }
-.card-tab:hover {
-  background: var(--color-border-light);
+@media (hover: hover) {
+
+  .card-tab:hover {
+    background: var(--color-border-light);
+  }
 }
+
 .card-tab.active {
   background: var(--color-white);
   border-bottom-color: white;
@@ -248,9 +272,13 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
-.add-card-btn:hover {
-  background: var(--color-success-hover);
+@media (hover: hover) {
+
+  .add-card-btn:hover {
+    background: var(--color-success-hover);
+  }
 }
+
 .add-card-btn:disabled {
   background: var(--color-border-input);
   cursor: not-allowed;
@@ -349,13 +377,17 @@
   cursor: pointer;
   user-select: none;
 }
-.wb-sort-header:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-secondary) 100%
-  );
+@media (hover: hover) {
+
+  .wb-sort-header:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-primary) 0%,
+      var(--color-secondary) 100%
+    );
+  }
 }
+
 .wb-sort-content {
   padding: 12px;
   background: var(--color-bg-light);

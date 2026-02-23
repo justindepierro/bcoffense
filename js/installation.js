@@ -356,6 +356,11 @@ function initInstallation() {
 }
 
 /**
+ * Debounced render for search input — avoids full re-render on every keystroke
+ */
+const debouncedRenderInstallation = debounce(renderInstallation, 150);
+
+/**
  * Render the full installation page
  */
 function renderInstallation() {
@@ -591,7 +596,7 @@ function renderInstallCategoryDetail(components, data) {
         <h3>${cat.icon} ${cat.label} <span class="install-detail-count">${installedCount}/${allItems.length}</span></h3>
         <div class="install-detail-actions">
           <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
-                 value="${installSearchTerm}" oninput="installSearchTerm=this.value; renderInstallation();">
+                 value="${installSearchTerm}" oninput="installSearchTerm=this.value; debouncedRenderInstallation();">
           ${
             cat.id === "play"
               ? `<label class="install-smart-toggle" title="Group play variations by base concept">

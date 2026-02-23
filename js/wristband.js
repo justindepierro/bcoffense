@@ -921,29 +921,9 @@ function populateWristbandCheckboxFilters() {
     ...new Set(plays.map((p) => p.personnel).filter((p) => p && p.trim())),
   ].sort();
 
-  // Populate tempo checkboxes
-  const tempoContainer = document.getElementById("wbTempoFilters");
-  tempoContainer.innerHTML = tempos
-    .map(
-      (t) => `
-        <label onclick="toggleWbCheckbox(this, 'tempo', '${t.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-          <input type="checkbox" value="${escapeHtml(t)}"> ${escapeHtml(t)}
-        </label>
-      `,
-    )
-    .join("");
-
-  // Populate personnel checkboxes
-  const personnelContainer = document.getElementById("wbPersonnelFilters");
-  personnelContainer.innerHTML = personnel
-    .map(
-      (p) => `
-        <label onclick="toggleWbCheckbox(this, 'personnel', '${p.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-          <input type="checkbox" value="${escapeHtml(p)}"> ${escapeHtml(p)}
-        </label>
-      `,
-    )
-    .join("");
+  // Populate checkbox filters using shared utility
+  buildCheckboxFilterGroup("wbTempoFilters", tempos, "tempo", "toggleWbCheckbox");
+  buildCheckboxFilterGroup("wbPersonnelFilters", personnel, "personnel", "toggleWbCheckbox");
 }
 
 /**

@@ -37,9 +37,13 @@ table.sortable th {
   user-select: none;
   transition: background var(--transition-fast);
 }
-table.sortable th:hover {
-  background: var(--color-primary);
+@media (hover: hover) {
+
+  table.sortable th:hover {
+    background: var(--color-primary);
+  }
 }
+
 .sort-icon {
   font-size: var(--font-size-2xs);
   margin-left: 4px;
@@ -50,15 +54,23 @@ table.sortable th:hover {
 .sort-icon.desc::after {
   content: "▼";
 }
-tr:hover {
-  background: var(--color-bg-hover-row);
+@media (hover: hover) {
+
+  tr:hover {
+    background: var(--color-bg-hover-row);
+  }
 }
+
 #playbookTable tbody tr:nth-child(even) {
   background: var(--color-bg-light);
 }
-#playbookTable tbody tr:nth-child(even):hover {
-  background: var(--color-bg-hover-row);
+@media (hover: hover) {
+
+  #playbookTable tbody tr:nth-child(even):hover {
+    background: var(--color-bg-hover-row);
+  }
 }
+
 #playbookTable tbody tr.selected {
   background: var(--color-primary-light);
   outline: 2px solid var(--color-primary);
@@ -72,10 +84,14 @@ tr:hover {
   background: var(--color-success-light);
   filter: brightness(0.92);
 }
-#playbookTable tbody tr.on-wristband:hover {
-  background: var(--color-success-light);
-  filter: brightness(0.88);
+@media (hover: hover) {
+
+  #playbookTable tbody tr.on-wristband:hover {
+    background: var(--color-success-light);
+    filter: brightness(0.88);
+  }
 }
+
 .wb-indicator {
   margin-right: 5px;
   font-size: var(--font-size-sm);
@@ -222,10 +238,14 @@ tr:hover {
     color var(--transition-fast),
     transform var(--transition-fast);
 }
-.pb-sort-dir:hover {
-  background: var(--color-bg-hover-row);
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .pb-sort-dir:hover {
+    background: var(--color-bg-hover-row);
+    color: var(--color-primary);
+  }
 }
+
 .pb-sort-dir.desc {
   transform: rotate(180deg);
 }
@@ -295,11 +315,15 @@ tr:hover {
   transition: all var(--transition-fast);
   user-select: none;
 }
-.pb-chip:hover {
-  border-color: var(--color-primary);
-  background: var(--color-navy-alpha-06);
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .pb-chip:hover {
+    border-color: var(--color-primary);
+    background: var(--color-navy-alpha-06);
+    color: var(--color-primary);
+  }
 }
+
 .pb-chip.active {
   background: var(--color-primary);
   border-color: var(--color-primary);
@@ -325,9 +349,13 @@ tr:hover {
   gap: 6px;
   font-family: inherit;
 }
-.pb-more-toggle:hover {
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .pb-more-toggle:hover {
+    color: var(--color-primary);
+  }
 }
+
 .pb-more-arrow {
   font-size: var(--font-size-3xs);
   transition: transform 0.2s ease;
@@ -399,9 +427,13 @@ tr:hover {
   padding: 0 0 0 2px;
   opacity: 0.6;
 }
-.pb-pill button:hover {
-  opacity: 1;
+@media (hover: hover) {
+
+  .pb-pill button:hover {
+    opacity: 1;
+  }
 }
+
 .pb-clear-all {
   background: none;
   border: 1px solid var(--color-danger);
@@ -415,10 +447,14 @@ tr:hover {
   transition: all var(--transition-fast);
   font-family: inherit;
 }
-.pb-clear-all:hover {
-  background: var(--color-danger);
-  color: white;
+@media (hover: hover) {
+
+  .pb-clear-all:hover {
+    background: var(--color-danger);
+    color: white;
+  }
 }
+
 .pb-active-bar .play-count {
   margin-left: auto;
   font-size: var(--font-size-sm);
@@ -460,44 +496,64 @@ tr:hover {
   transition: all var(--transition-fast);
   color: var(--color-text);
 }
-.pb-action-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
-  background: var(--color-primary-light);
-  transform: translateY(-1px);
+@media (hover: hover) {
+
+  .pb-action-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    background: var(--color-primary-light);
+    transform: translateY(-1px);
+  }
 }
+
 .pb-action-save {
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
-.pb-action-save:hover {
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
+@media (hover: hover) {
+
+  .pb-action-save:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary-dark);
+  }
 }
+
 .pb-action-script {
   border-color: var(--color-success);
   color: var(--color-success);
 }
-.pb-action-script:hover {
-  background: var(--color-success-light);
-  color: var(--color-success-hover);
+@media (hover: hover) {
+
+  .pb-action-script:hover {
+    background: var(--color-success-light);
+    color: var(--color-success-hover);
+  }
 }
+
 .pb-action-callsheet {
   border-color: var(--color-warning);
   color: var(--color-warning);
 }
-.pb-action-callsheet:hover {
-  background: var(--color-accent-light);
-  color: var(--color-orange-deep);
+@media (hover: hover) {
+
+  .pb-action-callsheet:hover {
+    background: var(--color-accent-light);
+    color: var(--color-orange-deep);
+  }
 }
+
 .pb-action-print {
   border-color: var(--color-accent-dark);
   color: var(--color-accent-dark);
 }
-.pb-action-print:hover {
-  background: var(--color-purple-light);
-  color: var(--color-purple);
+@media (hover: hover) {
+
+  .pb-action-print:hover {
+    background: var(--color-purple-light);
+    color: var(--color-purple);
+  }
 }
+
 .pb-action-collections {
   margin-left: auto;
 }
@@ -551,10 +607,14 @@ tr:hover {
     border-color var(--transition-fast),
     background var(--transition-fast);
 }
-.pb-coll-card:hover {
-  border-color: var(--color-primary);
-  background: rgba(25, 42, 81, 0.03);
+@media (hover: hover) {
+
+  .pb-coll-card:hover {
+    border-color: var(--color-primary);
+    background: rgba(25, 42, 81, 0.03);
+  }
 }
+
 .pb-coll-info {
   flex: 1;
   min-width: 0;
@@ -589,18 +649,26 @@ tr:hover {
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
-.pb-coll-btn:hover {
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .pb-coll-btn:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
+
 .pb-coll-btn.danger {
   color: var(--color-danger);
   border-color: var(--color-danger);
 }
-.pb-coll-btn.danger:hover {
-  background: var(--color-danger);
-  color: white;
+@media (hover: hover) {
+
+  .pb-coll-btn.danger:hover {
+    background: var(--color-danger);
+    color: white;
+  }
 }
+
 
 /* -- Print options panel -- */
 .pb-print-panel {
@@ -692,10 +760,14 @@ tr:hover {
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
+@media (hover: hover) {
 
-.column-menu label:hover {
-  color: var(--color-primary);
+
+  .column-menu label:hover {
+    color: var(--color-primary);
+  }
 }
+
 
 /* Search Highlighting */
 .search-highlight {

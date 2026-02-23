@@ -806,10 +806,12 @@ function toggleTdFilters() {
   renderOpponentDetail();
 }
 
+const debouncedRenderPlayLog = debounce(renderPlayLog, 150);
+
 function setTdSearch(val) {
   tdSearchText = val;
   tdSelectedRow = -1;
-  renderPlayLog();
+  debouncedRenderPlayLog();
 }
 
 function toggleTdFilter(key, value) {

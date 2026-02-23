@@ -655,6 +655,28 @@ function escapeHtml(text) {
 // Removed: escapeAttrSafe - dead code (never called)
 
 /**
+ * Build checkbox filter HTML for a container.
+ * Eliminates duplicate checkbox-generation blocks across modules.
+ * @param {string} containerId - DOM element id to populate
+ * @param {string[]} values - Sorted unique filter values
+ * @param {string} filterType - Key passed to the toggle function (e.g. 'type', 'tempo')
+ * @param {string} toggleFnName - Global toggle function name (e.g. 'toggleScriptCheckbox')
+ */
+function buildCheckboxFilterGroup(containerId, values, filterType, toggleFnName) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.innerHTML = values
+    .map(
+      (v) => `
+        <label onclick="${toggleFnName}(this, '${filterType}', '${v.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
+          <input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}
+        </label>
+      `,
+    )
+    .join("");
+}
+
+/**
  * Debounce — returns a function that delays invoking fn until after wait ms
  * have elapsed since the last invocation. Useful for search inputs, resize, etc.
  */
@@ -680,10 +702,14 @@ function safeJSONParse(str, fallback) {
 }
 
 /**
- * Safe deep clone — use instead of raw JSON.parse(JSON.stringify(...))
+ * Safe deep clone — uses native structuredClone (faster, handles more types)
+ * Falls back to JSON round-trip for older browsers.
  */
 function safeDeepClone(obj) {
   try {
+    if (typeof structuredClone === "function") {
+      return structuredClone(obj);
+    }
     return JSON.parse(JSON.stringify(obj));
   } catch (e) {
     console.warn("safeDeepClone failed:", e.message);
@@ -866,6 +892,26 @@ const storageManager = {
     return true;
   },
 };
+
+/**
+ * Cross-tab data protection — detects when another tab writes to localStorage
+ * and shows a non-blocking toast so the user can reload to pick up changes.
+ */
+(function initCrossTabProtection() {
+  let _crossTabToastShown = false;
+  window.addEventListener("storage", (e) => {
+    // Only react to keys our app owns
+    if (!e.key || !Object.values(STORAGE_KEYS).includes(e.key)) return;
+    if (_crossTabToastShown) return; // one notice is enough
+    _crossTabToastShown = true;
+    showToast(
+      "⚠️ Data changed in another tab. <button onclick=\"location.reload()\" style=\"margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;\">Reload</button>",
+      8000,
+    );
+    // Reset after the toast disappears so a later change can notify again
+    setTimeout(() => { _crossTabToastShown = false; }, 9000);
+  });
+})();
 
 /**
  * Export complete backup to JSON file
@@ -1098,12 +1144,12 @@ function showStorageInfo() {
   }, 0);
 }
 
-// History management for undo/redo (max 50 states)
+// History management for undo/redo (max 25 states per module)
 const historyManager = {
   script: { past: [], future: [] },
   wristband: { past: [], future: [] },
   tendencies: { past: [], future: [] },
-  maxHistory: 50,
+  maxHistory: 25,
 
   // Save current state before making changes
   saveState(type, state) {
@@ -1185,90 +1231,114 @@ const historyManager = {
 };
 
 /**
- * Parse CSV text into an array of play objects
+ * Parse CSV text into an array of play objects.
+ * Auto-detects header row to map columns by name, falling back to positional mapping.
+ * Skips blank lines and rows that lack formation/play/type.
  * @param {string} text - Raw CSV text content
  * @returns {Array} Array of play objects
  */
 function parseCSV(text) {
   const lines = text.trim().split("\n");
-  const result = [];
+  if (lines.length < 2) return [];
 
-  // Skip the first row (headers)
-  for (let lineIndex = 1; lineIndex < lines.length; lineIndex++) {
-    const line = lines[lineIndex];
-    const values = [];
-    let current = "";
-    let inQuotes = false;
-
+  // --- CSV line parser (handles quoted fields) ---
+  function parseLine(line) {
+    const vals = [];
+    let cur = "";
+    let inQ = false;
     for (let i = 0; i < line.length; i++) {
-      const char = line[i];
-      if (char === '"') {
-        inQuotes = !inQuotes;
-      } else if (char === "," && !inQuotes) {
-        values.push(current.trim());
-        current = "";
-      } else {
-        current += char;
-      }
+      const ch = line[i];
+      if (ch === '"') { inQ = !inQ; }
+      else if (ch === "," && !inQ) { vals.push(cur.trim()); cur = ""; }
+      else { cur += ch; }
     }
-    values.push(current.trim());
-
-    // Map CSV columns to play object
-    // Columns: PlayType, Personnel, Formation, FormTag1, FormTag2, Under, Back,
-    // Shift, Motion, Protection, LineCall, Play, PlayTag1, PlayTag2, BasePlay,
-    // OneWord, PreferredSituation, PreferredDown, PreferredDistance, PreferredHash,
-    // PreferredFieldPosition, Tempo, PracticeFront, PracticeDefense,
-    // PracticeCoverage, PracticeBlitz, PracticeStunt, KeyPlayer1, KeyPlayer2,
-    // KeyPlayer3, KeyPlayerName1, KeyPlayerName2, KeyPlayerName3, Constraint1,
-    // Constraint2, Constraint3, HitChart1, HitChart2, HitChart3, DeadVs,
-    // Opponent, Notes
-    if (values.length >= 10) {
-      result.push({
-        type: values[0] || "",
-        personnel: values[1] || "",
-        formation: values[2] || "",
-        formTag1: values[3] || "",
-        formTag2: values[4] || "",
-        under: values[5] || "",
-        back: values[6] || "",
-        shift: values[7] || "",
-        motion: values[8] || "",
-        protection: values[9] || "",
-        lineCall: values[10] || "",
-        play: values[11] || "",
-        playTag1: values[12] || "",
-        playTag2: values[13] || "",
-        basePlay: values[14] || "",
-        oneWord: values[15] || "",
-        preferredSituation: values[16] || "",
-        preferredDown: values[17] || "",
-        preferredDistance: values[18] || "",
-        preferredHash: values[19] || "",
-        preferredFieldPosition: values[20] || "",
-        tempo: values[21] || "",
-        practiceFront: values[22] || "",
-        practiceDefense: values[23] || "",
-        practiceCoverage: values[24] || "",
-        practiceBlitz: values[25] || "",
-        practiceStunt: values[26] || "",
-        keyPlayer1: values[27] || "",
-        keyPlayer2: values[28] || "",
-        keyPlayer3: values[29] || "",
-        keyPlayerName1: values[30] || "",
-        keyPlayerName2: values[31] || "",
-        keyPlayerName3: values[32] || "",
-        constraint1: values[33] || "",
-        constraint2: values[34] || "",
-        constraint3: values[35] || "",
-        hitChart1: values[36] || "",
-        hitChart2: values[37] || "",
-        hitChart3: values[38] || "",
-        deadVs: values[39] || "",
-        opponent: values[40] || "",
-        notes: values[41] || "",
-      });
-    }
+    vals.push(cur.trim());
+    return vals;
   }
+
+  // --- Expected column names → play-object keys ---
+  const COLUMN_MAP = {
+    playtype: "type", type: "type",
+    personnel: "personnel",
+    formation: "formation",
+    formtag1: "formTag1", formtag2: "formTag2",
+    under: "under", back: "back", shift: "shift",
+    motion: "motion", protection: "protection",
+    linecall: "lineCall", play: "play",
+    playtag1: "playTag1", playtag2: "playTag2",
+    baseplay: "basePlay", oneword: "oneWord",
+    preferredsituation: "preferredSituation",
+    preferreddown: "preferredDown",
+    preferreddistance: "preferredDistance",
+    preferredhash: "preferredHash",
+    preferredfieldposition: "preferredFieldPosition",
+    tempo: "tempo",
+    practicefront: "practiceFront",
+    practicedefense: "practiceDefense",
+    practicecoverage: "practiceCoverage",
+    practiceblitz: "practiceBlitz",
+    practicestunt: "practiceStunt",
+    keyplayer1: "keyPlayer1", keyplayer2: "keyPlayer2", keyplayer3: "keyPlayer3",
+    keyplayername1: "keyPlayerName1", keyplayername2: "keyPlayerName2", keyplayername3: "keyPlayerName3",
+    constraint1: "constraint1", constraint2: "constraint2", constraint3: "constraint3",
+    hitchart1: "hitChart1", hitchart2: "hitChart2", hitchart3: "hitChart3",
+    deadvs: "deadVs", opponent: "opponent", notes: "notes",
+  };
+
+  // Positional fallback (original column order)
+  const POS_KEYS = [
+    "type", "personnel", "formation", "formTag1", "formTag2", "under", "back",
+    "shift", "motion", "protection", "lineCall", "play", "playTag1", "playTag2",
+    "basePlay", "oneWord", "preferredSituation", "preferredDown",
+    "preferredDistance", "preferredHash", "preferredFieldPosition", "tempo",
+    "practiceFront", "practiceDefense", "practiceCoverage", "practiceBlitz",
+    "practiceStunt", "keyPlayer1", "keyPlayer2", "keyPlayer3", "keyPlayerName1",
+    "keyPlayerName2", "keyPlayerName3", "constraint1", "constraint2",
+    "constraint3", "hitChart1", "hitChart2", "hitChart3", "deadVs",
+    "opponent", "notes",
+  ];
+
+  // --- Detect headers from row 0 ---
+  const firstRow = parseLine(lines[0]);
+  const norm = firstRow.map((h) => h.toLowerCase().replace(/[\s_\-]/g, ""));
+  const hits = norm.filter((h) => COLUMN_MAP[h]);
+  const useHeaders = hits.length >= 3;
+
+  let headerMap = null;
+  let startLine = 1;
+
+  if (useHeaders) {
+    headerMap = {};
+    norm.forEach((h, i) => { if (COLUMN_MAP[h]) headerMap[i] = COLUMN_MAP[h]; });
+  } else if (firstRow.length >= 10) {
+    startLine = 0; // first row looks like data, include it
+  }
+
+  const result = [];
+  let skipped = 0;
+
+  for (let li = startLine; li < lines.length; li++) {
+    const line = lines[li];
+    if (!line.trim()) continue;
+    const values = parseLine(line);
+    if (values.length < 3) { skipped++; continue; }
+
+    const play = {};
+    if (headerMap) {
+      POS_KEYS.forEach((k) => { play[k] = ""; });
+      Object.entries(headerMap).forEach(([idx, key]) => {
+        play[key] = values[idx] || "";
+      });
+    } else {
+      if (values.length < 10) { skipped++; continue; }
+      POS_KEYS.forEach((key, i) => { play[key] = values[i] || ""; });
+    }
+
+    if (!play.formation && !play.play && !play.type) { skipped++; continue; }
+    result.push(play);
+  }
+
+  if (skipped > 0) console.warn(`parseCSV: skipped ${skipped} invalid row(s)`);
   return result;
 }
 

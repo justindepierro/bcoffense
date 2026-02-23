@@ -48,12 +48,16 @@
   cursor: pointer;
   transition: all var(--transition-fast);
 }
-.td-opponent-card:hover {
-  border-color: var(--color-primary);
-  background: var(--color-bg-blue-light);
-  transform: translateX(4px);
-  box-shadow: var(--shadow-sm);
+@media (hover: hover) {
+
+  .td-opponent-card:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-blue-light);
+    transform: translateX(4px);
+    box-shadow: var(--shadow-sm);
+  }
 }
+
 .td-opponent-card-info {
   display: flex;
   flex-direction: column;
@@ -195,9 +199,13 @@
   border-bottom: 1px solid var(--color-border-light);
   white-space: nowrap;
 }
-.td-table tr:hover {
-  background: var(--color-bg-hover-row);
+@media (hover: hover) {
+
+  .td-table tr:hover {
+    background: var(--color-bg-hover-row);
+  }
 }
+
 .td-play-num {
   color: var(--color-text-placeholder);
   font-size: var(--font-size-xs);
@@ -269,10 +277,14 @@
   transition: all var(--transition-fast);
   opacity: 0.5;
 }
-.td-step-dot:hover {
-  opacity: 0.8;
-  background: var(--color-bg-input);
+@media (hover: hover) {
+
+  .td-step-dot:hover {
+    opacity: 0.8;
+    background: var(--color-bg-input);
+  }
 }
+
 .td-step-dot.active {
   opacity: 1;
   background: var(--color-bg-blue-tint);
@@ -355,11 +367,15 @@
   user-select: none;
   -webkit-user-select: none;
 }
-.td-option-btn:hover {
-  border-color: var(--color-primary);
-  background: var(--color-bg-blue-light);
-  transform: translateY(-1px);
+@media (hover: hover) {
+
+  .td-option-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-blue-light);
+    transform: translateY(-1px);
+  }
 }
+
 .td-option-btn:active {
   transform: translateY(0);
 }
@@ -421,9 +437,13 @@
   background: var(--color-success);
   border-color: var(--color-success);
 }
-.btn.td-save-btn:hover {
-  background: var(--color-success-hover);
+@media (hover: hover) {
+
+  .btn.td-save-btn:hover {
+    background: var(--color-success-hover);
+  }
 }
+
 
 /* Textarea in wizard */
 .td-textarea {
@@ -497,9 +517,13 @@
   color: var(--color-text-placeholder);
   padding: 2px 4px;
 }
-.td-search-clear:hover {
-  color: var(--color-text);
+@media (hover: hover) {
+
+  .td-search-clear:hover {
+    color: var(--color-text);
+  }
 }
+
 
 /* Filter badge */
 .td-filter-badge {
@@ -580,10 +604,14 @@
   align-items: center;
   gap: 4px;
 }
-.td-filter-chip:hover {
-  border-color: var(--color-primary);
-  background: var(--color-bg-blue-light);
+@media (hover: hover) {
+
+  .td-filter-chip:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-blue-light);
+  }
 }
+
 .td-filter-chip.active {
   background: var(--color-primary);
   color: white;
@@ -603,9 +631,13 @@
   user-select: none;
   transition: background 0.12s;
 }
-.td-sortable-th:hover {
-  background: var(--color-bg-lighter);
+@media (hover: hover) {
+
+  .td-sortable-th:hover {
+    background: var(--color-bg-lighter);
+  }
 }
+
 .td-sorted {
   background: var(--color-bg-blue-tint) !important;
   color: var(--color-primary);
@@ -620,9 +652,13 @@
 .td-row-bulk-selected {
   background: var(--color-warning-light) !important;
 }
-.td-row-bulk-selected:hover {
-  background: var(--color-accent-light) !important;
+@media (hover: hover) {
+
+  .td-row-bulk-selected:hover {
+    background: var(--color-accent-light) !important;
+  }
 }
+
 
 /* Drag states */
 .td-dragging {
@@ -813,9 +849,13 @@
   padding: 4px 8px;
   border-bottom: 1px solid var(--color-bg-input);
 }
-.td-mini-table tr:hover {
-  background: var(--color-bg-lighter);
+@media (hover: hover) {
+
+  .td-mini-table tr:hover {
+    background: var(--color-bg-lighter);
+  }
 }
+
 
 /* ============ Hover Tooltip ============ */
 .td-tooltip {

@@ -83,10 +83,14 @@
   cursor: grab;
   position: relative;
 }
+@media (hover: hover) {
 
-.callsheet-play:hover {
-  background: var(--color-primary-light);
+
+  .callsheet-play:hover {
+    background: var(--color-primary-light);
+  }
 }
+
 
 .callsheet-play.dragging {
   opacity: 0.5;
@@ -122,10 +126,14 @@
   justify-content: center;
   flex-shrink: 0;
 }
+@media (hover: hover) {
 
-.callsheet-play:hover .remove-play {
-  opacity: 1;
+
+  .callsheet-play:hover .remove-play {
+    opacity: 1;
+  }
 }
+
 
 .callsheet-dropzone {
   padding: 4px 8px;
@@ -137,12 +145,16 @@
   border-radius: var(--radius-sm);
   margin-top: 2px;
 }
+@media (hover: hover) {
 
-.callsheet-dropzone:hover {
-  background: var(--color-bg-blue-light);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+
+  .callsheet-dropzone:hover {
+    background: var(--color-bg-blue-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
+
 
 /* Wristband number badge in call sheet */
 .wristband-num {
@@ -174,10 +186,14 @@
   align-items: center;
   gap: 8px;
 }
+@media (hover: hover) {
 
-.picker-play:hover {
-  background: var(--color-bg-blue-light);
+
+  .picker-play:hover {
+    background: var(--color-bg-blue-light);
+  }
 }
+
 
 .picker-play .personnel-code {
   padding: 2px 6px;
@@ -225,10 +241,14 @@
 }
 
 /* Toast Notification */
+@media (hover: hover) {
 
-.category-header:hover .edit-hint {
-  opacity: 1;
+
+  .category-header:hover .edit-hint {
+    opacity: 1;
+  }
 }
+
 
 /* Quick Stats Bar */
 
@@ -338,11 +358,15 @@
   white-space: nowrap;
   transition: all var(--transition-fast);
 }
-.cs-tool-btn:hover {
-  background: var(--color-border-light);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .cs-tool-btn:hover {
+    background: var(--color-border-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
+
 .cs-tool-divider {
   width: 1px;
   height: 18px;
@@ -372,13 +396,17 @@
   user-select: none;
   font-size: var(--font-size-sm);
 }
-.cs-unified-header:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-primary) 0%,
-    var(--color-primary-dark) 100%
-  );
+@media (hover: hover) {
+
+  .cs-unified-header:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-primary) 0%,
+      var(--color-primary-dark) 100%
+    );
+  }
 }
+
 .cs-unified-header-right {
   display: flex;
   align-items: center;
@@ -414,9 +442,13 @@
   color: var(--color-white);
   transition: background var(--transition-fast);
 }
-.cs-preset-save-btn:hover {
-  background: var(--color-white-alpha-20);
+@media (hover: hover) {
+
+  .cs-preset-save-btn:hover {
+    background: var(--color-white-alpha-20);
+  }
 }
+
 .cs-unified-content {
   padding: 0;
 }
@@ -446,10 +478,14 @@
   margin-bottom: -2px;
   letter-spacing: 0.3px;
 }
-.cs-tab:hover {
-  color: var(--color-text-muted);
-  background: var(--color-border-light);
+@media (hover: hover) {
+
+  .cs-tab:hover {
+    color: var(--color-text-muted);
+    background: var(--color-border-light);
+  }
 }
+
 .cs-tab.active {
   color: var(--color-primary);
   border-bottom-color: var(--color-primary);
@@ -548,9 +584,13 @@
   line-height: 1;
   padding: 0 2px;
 }
-.cs-loaded-wb-clear:hover {
-  opacity: 0.7;
+@media (hover: hover) {
+
+  .cs-loaded-wb-clear:hover {
+    opacity: 0.7;
+  }
 }
+
 .cs-no-wb-loaded {
   color: var(--color-text-placeholder);
   font-size: var(--font-size-xs);
@@ -618,10 +658,14 @@
   border-radius: var(--radius-sm);
   transition: background var(--transition-fast);
 }
-.cs-picker-popup .cs-border-swatch:hover {
-  background: var(--color-border-light);
-  transform: scale(1.2);
+@media (hover: hover) {
+
+  .cs-picker-popup .cs-border-swatch:hover {
+    background: var(--color-border-light);
+    transform: scale(1.2);
+  }
 }
+
 
 /* ===== Call Sheet Picker Modal (cleaned up) ===== */
 .cs-picker-popup {
@@ -753,9 +797,13 @@
   transition: opacity var(--transition-fast);
   font-weight: bold;
 }
-.cs-sort-btn:hover {
-  opacity: 1;
+@media (hover: hover) {
+
+  .cs-sort-btn:hover {
+    opacity: 1;
+  }
 }
+
 
 /* Sort modal overlay */
 .cs-sort-overlay {
@@ -795,9 +843,13 @@
   line-height: 1;
   padding: 0 4px;
 }
-.cs-sort-close:hover {
-  color: var(--color-text);
+@media (hover: hover) {
+
+  .cs-sort-close:hover {
+    color: var(--color-text);
+  }
 }
+
 .cs-sort-body {
   padding: 16px 20px;
 }
@@ -835,9 +887,13 @@
     background var(--transition-fast),
     box-shadow var(--transition-fast);
 }
-.cs-sort-criteria-item:hover {
-  background: var(--color-border-light);
+@media (hover: hover) {
+
+  .cs-sort-criteria-item:hover {
+    background: var(--color-border-light);
+  }
 }
+
 .cs-sort-criteria-item.dragging {
   opacity: 0.4;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
@@ -864,15 +920,19 @@
   padding: 2px 6px;
   font-size: var(--font-size-sm);
 }
-.cs-sort-criteria-item .sort-dir-btn:hover,
-.cs-sort-criteria-item .custom-order-btn:hover {
-  background: var(--color-border-light);
+@media (hover: hover) {
+
+  .cs-sort-criteria-item .sort-dir-btn:hover,
+  .cs-sort-criteria-item .custom-order-btn:hover {
+    background: var(--color-border-light);
+  }
+  .cs-sort-criteria-item .remove-sort-btn:hover {
+    background: var(--color-danger-light);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
 }
-.cs-sort-criteria-item .remove-sort-btn:hover {
-  background: var(--color-danger-light);
-  border-color: var(--color-danger);
-  color: var(--color-danger);
-}
+
 
 /* Add sort field button */
 .cs-sort-add-btn {
@@ -886,10 +946,14 @@
   font-size: var(--font-size-sm);
   margin-bottom: 16px;
 }
-.cs-sort-add-btn:hover {
-  background: var(--color-bg-input);
-  border-color: var(--color-text-muted);
+@media (hover: hover) {
+
+  .cs-sort-add-btn:hover {
+    background: var(--color-bg-input);
+    border-color: var(--color-text-muted);
+  }
 }
+
 
 /* Sort scope options */
 .cs-sort-scope {
@@ -960,9 +1024,13 @@
 .cs-custom-order-item:last-child {
   border-bottom: none;
 }
-.cs-custom-order-item:hover {
-  background: var(--color-bg-light);
+@media (hover: hover) {
+
+  .cs-custom-order-item:hover {
+    background: var(--color-bg-light);
+  }
 }
+
 .cs-custom-order-item.dragging {
   opacity: 0.4;
 }
@@ -989,9 +1057,13 @@
   margin-right: 4px;
   user-select: none;
 }
-.cs-collapse-btn:hover {
-  opacity: 1;
+@media (hover: hover) {
+
+  .cs-collapse-btn:hover {
+    opacity: 1;
+  }
 }
+
 .cs-collapsed .category-subheader,
 .cs-collapsed .category-content,
 .cs-collapsed .cs-cat-note,
@@ -1021,9 +1093,13 @@
   user-select: none;
   line-height: 1;
 }
-.cs-cat-menu-btn:hover {
-  opacity: 1;
+@media (hover: hover) {
+
+  .cs-cat-menu-btn:hover {
+    opacity: 1;
+  }
 }
+
 
 /* --- Play Count Badge --- */
 .cs-play-count {
@@ -1046,9 +1122,13 @@
   cursor: pointer;
   font-style: italic;
 }
-.cs-cat-note:hover {
-  background: var(--color-accent-light);
+@media (hover: hover) {
+
+  .cs-cat-note:hover {
+    background: var(--color-accent-light);
+  }
 }
+
 .cs-note-input {
   width: 100%;
   border: none;
@@ -1087,13 +1167,17 @@
   margin-left: 2px;
   line-height: 1.4;
 }
-.callsheet-play:hover .cs-hash-swap {
-  display: inline-block;
+@media (hover: hover) {
+
+  .callsheet-play:hover .cs-hash-swap {
+    display: inline-block;
+  }
+  .cs-hash-swap:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+  }
 }
-.cs-hash-swap:hover {
-  background: var(--color-primary);
-  color: var(--color-white);
-}
+
 
 /* --- Drag Insertion Indicator --- */
 .callsheet-play.cs-drop-above {
@@ -1136,16 +1220,24 @@
   font-size: var(--font-size-sm);
   white-space: nowrap;
 }
-.cs-ctx-item:hover {
-  background: var(--color-bg-input);
+@media (hover: hover) {
+
+  .cs-ctx-item:hover {
+    background: var(--color-bg-input);
+  }
 }
+
 .cs-ctx-item.cs-ctx-clear {
   color: var(--color-danger);
   font-size: var(--font-size-sm);
 }
-.cs-ctx-item.cs-ctx-clear:hover {
-  background: var(--color-danger-light);
+@media (hover: hover) {
+
+  .cs-ctx-item.cs-ctx-clear:hover {
+    background: var(--color-danger-light);
+  }
 }
+
 .cs-ctx-divider {
   height: 1px;
   background: var(--color-border-light);
@@ -1177,10 +1269,14 @@
   line-height: 1;
   transition: transform 0.1s;
 }
-.cs-ctx-colors .cs-border-swatch:hover {
-  background: var(--color-border-med);
-  transform: scale(1.15);
+@media (hover: hover) {
+
+  .cs-ctx-colors .cs-border-swatch:hover {
+    background: var(--color-border-med);
+    transform: scale(1.15);
+  }
 }
+
 .cs-border-swatch.cs-swatch-active {
   border-color: var(--color-text);
   border-radius: var(--radius-sm);
@@ -1195,10 +1291,14 @@
   transition: transform 0.1s;
   padding: 0;
 }
-.cs-color-swatch:hover {
-  transform: scale(1.15);
-  border-color: var(--color-text-light);
+@media (hover: hover) {
+
+  .cs-color-swatch:hover {
+    transform: scale(1.15);
+    border-color: var(--color-text-light);
+  }
 }
+
 .cs-color-swatch.cs-swatch-active {
   border-color: var(--color-text);
   box-shadow: 0 0 0 2px rgba(25, 42, 81, 0.35);
@@ -1225,10 +1325,14 @@
     border-color var(--transition-fast);
   color: var(--color-text-muted);
 }
-.cs-style-btn:hover {
-  background: var(--color-border-light);
-  border-color: var(--color-text-placeholder);
+@media (hover: hover) {
+
+  .cs-style-btn:hover {
+    background: var(--color-border-light);
+    border-color: var(--color-text-placeholder);
+  }
 }
+
 .cs-style-btn.active {
   background: var(--color-primary);
   color: var(--color-white);
@@ -1253,10 +1357,14 @@
     color var(--transition-fast),
     border-color var(--transition-fast);
 }
-.cs-size-btn:hover {
-  background: var(--color-border-light);
-  border-color: var(--color-text-placeholder);
+@media (hover: hover) {
+
+  .cs-size-btn:hover {
+    background: var(--color-border-light);
+    border-color: var(--color-text-placeholder);
+  }
 }
+
 .cs-size-btn.active {
   background: var(--color-primary);
   color: var(--color-white);
@@ -1290,9 +1398,13 @@
   font-weight: bold;
   line-height: 1;
 }
-.cs-ctx-note-save:hover {
-  background: var(--color-success-hover);
+@media (hover: hover) {
+
+  .cs-ctx-note-save:hover {
+    background: var(--color-success-hover);
+  }
 }
+
 /* Category copy list */
 .cs-ctx-cat-list {
   max-height: 160px;
@@ -1310,9 +1422,13 @@
   font-size: var(--font-size-sm);
   border-radius: var(--radius-sm);
 }
-.cs-ctx-cat-btn:hover {
-  background: var(--color-primary-light);
+@media (hover: hover) {
+
+  .cs-ctx-cat-btn:hover {
+    background: var(--color-primary-light);
+  }
 }
+
 
 /* --- Per-Cell Indicators --- */
 .cs-cell-format-dot {
@@ -1329,9 +1445,13 @@
   margin-left: 1px;
   opacity: 0.8;
 }
-.cs-cell-note-badge:hover {
-  opacity: 1;
+@media (hover: hover) {
+
+  .cs-cell-note-badge:hover {
+    opacity: 1;
+  }
 }
+
 /* Print cell note */
 .print-cell-note {
   font-size: 7px;
@@ -1586,9 +1706,13 @@
   transition: background 0.1s;
   font-size: var(--font-size-sm);
 }
-.cs-import-cat-item:hover {
-  background: var(--color-bg-lighter);
+@media (hover: hover) {
+
+  .cs-import-cat-item:hover {
+    background: var(--color-bg-lighter);
+  }
 }
+
 .cs-import-cat-color {
   width: 12px;
   height: 12px;
@@ -1617,9 +1741,13 @@
   color: white !important;
   border-color: var(--color-info) !important;
 }
-.pat-btn-import-cs:hover {
-  background: var(--color-info-hover) !important;
+@media (hover: hover) {
+
+  .pat-btn-import-cs:hover {
+    background: var(--color-info-hover) !important;
+  }
 }
+
 
 /* ============ Call Sheet Scouting Overlay ============ */
 .cs-scouting-btn {
@@ -1673,10 +1801,14 @@
     opacity var(--transition-fast),
     transform var(--transition-fast);
 }
-.cs-suggest-btn:hover {
-  opacity: 1;
-  transform: scale(1.2);
+@media (hover: hover) {
+
+  .cs-suggest-btn:hover {
+    opacity: 1;
+    transform: scale(1.2);
+  }
 }
+
 
 /* Dead-vs warning badge */
 .cs-dead-vs-badge {
@@ -1746,9 +1878,13 @@
   border-bottom: 1px solid var(--color-bg-input);
   transition: background 0.1s;
 }
-.cs-suggest-item:hover {
-  background: var(--color-bg-light);
+@media (hover: hover) {
+
+  .cs-suggest-item:hover {
+    background: var(--color-bg-light);
+  }
 }
+
 .cs-suggest-on-sheet {
   opacity: 0.5;
   background: var(--color-success-light);

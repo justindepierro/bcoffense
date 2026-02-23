@@ -363,6 +363,12 @@ function saveScriptState() {
 }
 
 /**
+ * Debounced version — used for inline field edits (notes, hash, defense)
+ * so every keystroke doesn't flood the undo stack.
+ */
+const debouncedSaveScriptState = debounce(saveScriptState, 400);
+
+/**
  * Undo last script action
  */
 function undoScript() {
@@ -573,103 +579,14 @@ function populateScriptCheckboxFilters() {
     ...new Set(plays.map((p) => normalizeCase(p.personnel)).filter((p) => p)),
   ].sort();
 
-  // Populate type checkboxes
-  const typeContainer = document.getElementById("scriptTypeFilters");
-  if (typeContainer) {
-    typeContainer.innerHTML = types
-      .map(
-        (t) => `
-          <label onclick="toggleScriptCheckbox(this, 'type', '${t.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(t)}"> ${escapeHtml(t)}
-          </label>
-        `,
-      )
-      .join("");
-  }
-
-  // Populate situation checkboxes
-  const situationContainer = document.getElementById("scriptSituationFilters");
-  if (situationContainer) {
-    situationContainer.innerHTML = situations
-      .map(
-        (s) => `
-          <label onclick="toggleScriptCheckbox(this, 'situation', '${s.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(s)}"> ${escapeHtml(s)}
-          </label>
-        `,
-      )
-      .join("");
-  }
-
-  // Populate down checkboxes
-  const downContainer = document.getElementById("scriptDownFilters");
-  if (downContainer) {
-    downContainer.innerHTML = downs
-      .map(
-        (d) => `
-          <label onclick="toggleScriptCheckbox(this, 'down', '${d.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(d)}"> ${escapeHtml(d)}
-          </label>
-        `,
-      )
-      .join("");
-  }
-
-  // Populate distance checkboxes
-  const distanceContainer = document.getElementById("scriptDistanceFilters");
-  if (distanceContainer) {
-    distanceContainer.innerHTML = distances
-      .map(
-        (d) => `
-          <label onclick="toggleScriptCheckbox(this, 'distance', '${d.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(d)}"> ${escapeHtml(d)}
-          </label>
-        `,
-      )
-      .join("");
-  }
-
-  // Populate hash checkboxes
-  const hashContainer = document.getElementById("scriptHashFilters");
-  if (hashContainer) {
-    hashContainer.innerHTML = hashes
-      .map(
-        (h) => `
-          <label onclick="toggleScriptCheckbox(this, 'hash', '${h.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(h)}"> ${escapeHtml(h)}
-          </label>
-        `,
-      )
-      .join("");
-  }
-
-  // Populate field position checkboxes
-  const fieldPosContainer = document.getElementById("scriptFieldPosFilters");
-  if (fieldPosContainer) {
-    fieldPosContainer.innerHTML = fieldPositions
-      .map(
-        (f) => `
-          <label onclick="toggleScriptCheckbox(this, 'fieldPos', '${f.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(f)}"> ${escapeHtml(f)}
-          </label>
-        `,
-      )
-      .join("");
-  }
-
-  // Populate personnel checkboxes
-  const personnelContainer = document.getElementById("scriptPersonnelFilters");
-  if (personnelContainer) {
-    personnelContainer.innerHTML = personnels
-      .map(
-        (p) => `
-          <label onclick="toggleScriptCheckbox(this, 'personnel', '${p.replace(/'/g, "\\'").replace(/"/g, '&quot;')}')">
-            <input type="checkbox" value="${escapeHtml(p)}"> ${escapeHtml(p)}
-          </label>
-        `,
-      )
-      .join("");
-  }
+  // Populate checkbox filters using shared utility
+  buildCheckboxFilterGroup("scriptTypeFilters", types, "type", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup("scriptSituationFilters", situations, "situation", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup("scriptDownFilters", downs, "down", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup("scriptDistanceFilters", distances, "distance", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup("scriptHashFilters", hashes, "hash", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup("scriptFieldPosFilters", fieldPositions, "fieldPos", "toggleScriptCheckbox");
+  buildCheckboxFilterGroup("scriptPersonnelFilters", personnels, "personnel", "toggleScriptCheckbox");
 }
 
 /**
@@ -766,12 +683,15 @@ function renderAvailablePlays() {
 
   const container = document.getElementById("availablePlays");
 
+  // Pre-build index map to avoid O(n²) indexOf calls
+  const playIndexMap = new Map(plays.map((p, i) => [p, i]));
+
   // Store filtered play indices for Add All Filtered
-  window.currentFilteredPlayIndices = filtered.map((p) => plays.indexOf(p));
+  window.currentFilteredPlayIndices = filtered.map((p) => playIndexMap.get(p));
 
   container.innerHTML = filtered
     .map((p, i) => {
-      const playIdx = plays.indexOf(p);
+      const playIdx = playIndexMap.get(p);
       const isSelected = selectedAvailablePlays.includes(playIdx);
       return `
             <div class="play-item ${isSelected ? "selected" : ""}" draggable="true" ondragstart="handleDragStart(event, ${playIdx})">
@@ -794,11 +714,12 @@ function renderAvailablePlays() {
   // Update select all checkbox state
   const selectAllCb = document.getElementById("selectAllAvailable");
   if (selectAllCb) {
+    const selectedSet = new Set(selectedAvailablePlays);
     const allSelected =
       filtered.length > 0 &&
-      filtered.every((p) => selectedAvailablePlays.includes(plays.indexOf(p)));
+      filtered.every((p) => selectedSet.has(playIndexMap.get(p)));
     const someSelected = filtered.some((p) =>
-      selectedAvailablePlays.includes(plays.indexOf(p)),
+      selectedSet.has(playIndexMap.get(p)),
     );
     selectAllCb.checked = allSelected;
     selectAllCb.indeterminate = someSelected && !allSelected;
@@ -2084,10 +2005,9 @@ function updateReps(index, reps) {
 function updateNotes(index, notes) {
   if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
     applyBulkEdit("notes", notes);
-    renderScript();
   } else {
     script[index].notes = notes;
-    saveScriptState();
+    debouncedSaveScriptState();
   }
 }
 
@@ -2097,10 +2017,9 @@ function updateNotes(index, notes) {
 function updateHash(index, value) {
   if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
     applyBulkEdit("hash", value);
-    renderScript();
   } else {
     script[index].hash = value;
-    saveScriptState();
+    debouncedSaveScriptState();
   }
 }
 
@@ -2110,10 +2029,9 @@ function updateHash(index, value) {
 function updateDefField(index, field, value) {
   if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
     applyBulkEdit(field, value);
-    renderScript();
   } else {
     script[index][field] = value;
-    saveScriptState();
+    debouncedSaveScriptState();
   }
 }
 

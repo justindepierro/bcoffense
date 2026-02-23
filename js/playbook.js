@@ -81,6 +81,7 @@ function sortPlaybook(column) {
   _syncSortUI();
   applyCurrentSort();
   renderPlaybook();
+  savePlaybookState();
 }
 
 /**
@@ -94,6 +95,7 @@ function applyAdvancedSort() {
   _syncSortUI();
   applyCurrentSort();
   renderPlaybook();
+  savePlaybookState();
 }
 
 /**
@@ -108,6 +110,7 @@ function toggleSortDir(which) {
   _syncSortUI();
   applyCurrentSort();
   renderPlaybook();
+  savePlaybookState();
 }
 
 /**
@@ -414,6 +417,7 @@ function filterPlays() {
 
   applyCurrentSort();
   renderPlaybook();
+  savePlaybookState();
   updateActiveFilterBar();
 }
 
@@ -598,9 +602,6 @@ function renderPlaybook() {
 
     // Re-apply column visibility
     applyColumnVisibility();
-
-    // Save state
-    savePlaybookState();
   } catch (err) {
     console.error("renderPlaybook error:", err);
     showToast("❌ Error rendering playbook.", 3000);

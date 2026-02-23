@@ -38,9 +38,13 @@
   font-size: var(--font-size-sm);
   border-left: 3px solid var(--color-primary);
 }
-.play-item:hover {
-  background: var(--color-bg-blue-light);
+@media (hover: hover) {
+
+  .play-item:hover {
+    background: var(--color-bg-blue-light);
+  }
 }
+
 .play-item .play-info {
   flex: 1;
 }
@@ -62,9 +66,13 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
-.play-item button:hover {
-  background: var(--color-success-hover);
+@media (hover: hover) {
+
+  .play-item button:hover {
+    background: var(--color-success-hover);
+  }
 }
+
 
 .play-item.selected {
   background: var(--color-success-light);
@@ -127,10 +135,14 @@
   cursor: grab;
   transition: all 0.2s;
 }
-.script-item:hover {
-  border-color: var(--color-primary);
-  box-shadow: 0 2px 8px rgba(10, 18, 42, 0.1);
+@media (hover: hover) {
+
+  .script-item:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 2px 8px rgba(10, 18, 42, 0.1);
+  }
 }
+
 .script-item.dragging {
   opacity: 0.5;
   transform: scale(1.02);
@@ -228,22 +240,30 @@
   transition: all var(--transition-fast);
   white-space: nowrap;
 }
-.pat-btn:hover {
-  background: var(--color-primary-light);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .pat-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
+
 
 .pat-btn-smart {
   background: var(--gradient-accent);
   color: var(--color-dark);
   border-color: var(--color-accent-hover);
 }
+@media (hover: hover) {
 
-.pat-btn-smart:hover {
-  filter: brightness(1.05);
-  border-color: var(--color-accent-hover);
+
+  .pat-btn-smart:hover {
+    filter: brightness(1.05);
+    border-color: var(--color-accent-hover);
+  }
 }
+
 
 /* Period header element classes */
 .ph-collapse-btn {
@@ -293,10 +313,14 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
+@media (hover: hover) {
 
-.ph-btn:hover {
-  background: rgba(255, 255, 255, 0.35);
+
+  .ph-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
 }
+
 
 .ph-left {
   display: flex;
@@ -343,10 +367,14 @@
   cursor: pointer;
   transition: background var(--transition-fast);
 }
+@media (hover: hover) {
 
-.more-tools-btn:hover {
-  background: var(--color-border-light);
+
+  .more-tools-btn:hover {
+    background: var(--color-border-light);
+  }
 }
+
 
 .more-tools-menu {
   display: none;
@@ -378,10 +406,14 @@
   cursor: pointer;
   color: var(--color-text);
 }
+@media (hover: hover) {
 
-.more-tools-menu button:hover {
-  background: var(--color-bg-input);
+
+  .more-tools-menu button:hover {
+    background: var(--color-bg-input);
+  }
 }
+
 
 .more-tools-menu .tool-divider {
   height: 1px;
@@ -556,9 +588,13 @@
   border-radius: var(--radius-sm);
   font-size: var(--font-size-2xs);
 }
-.script-item .move-btn:hover {
-  background: var(--color-border);
+@media (hover: hover) {
+
+  .script-item .move-btn:hover {
+    background: var(--color-border);
+  }
 }
+
 .script-item input[type="number"] {
   width: 45px;
   padding: 4px;
@@ -582,9 +618,13 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
-.script-item .remove:hover {
-  background: var(--color-danger-hover);
+@media (hover: hover) {
+
+  .script-item .remove:hover {
+    background: var(--color-danger-hover);
+  }
 }
+
 .script-item .dup-btn {
   background: var(--color-secondary);
   color: white;
@@ -594,9 +634,13 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
-.script-item .dup-btn:hover {
-  background: var(--color-text-muted);
+@media (hover: hover) {
+
+  .script-item .dup-btn:hover {
+    background: var(--color-text-muted);
+  }
 }
+
 
 /* Script Stats Bar - New Compact Design */
 .script-stats-bar {
@@ -683,9 +727,13 @@
   letter-spacing: 0.5px;
   transition: background 0.2s;
 }
-.collapsible-section .checkbox-filters-title:hover {
-  background: var(--color-border);
+@media (hover: hover) {
+
+  .collapsible-section .checkbox-filters-title:hover {
+    background: var(--color-border);
+  }
 }
+
 .collapsible-section .filter-content {
   display: none;
   padding: 5px 0;
@@ -739,13 +787,17 @@
   cursor: pointer;
   user-select: none;
 }
-.wristband-integration-panel .integration-header:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-success-hover) 0%,
-    var(--color-success) 100%
-  );
+@media (hover: hover) {
+
+  .wristband-integration-panel .integration-header:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-success-hover) 0%,
+      var(--color-success) 100%
+    );
+  }
 }
+
 .wristband-integration-panel .integration-content {
   padding: 12px;
   background: var(--color-success-light);
@@ -794,13 +846,17 @@
   cursor: pointer;
   user-select: none;
 }
-.display-options-panel .display-options-header:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-info) 0%,
-    var(--color-info-hover) 100%
-  );
+@media (hover: hover) {
+
+  .display-options-panel .display-options-header:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-info) 0%,
+      var(--color-info-hover) 100%
+    );
+  }
 }
+
 .display-options-panel .display-options-content {
   padding: 12px;
   background: var(--color-bg-light);
@@ -851,10 +907,14 @@
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
 }
+@media (hover: hover) {
 
-.bulk-select-label:hover {
-  color: var(--color-primary);
+
+  .bulk-select-label:hover {
+    color: var(--color-primary);
+  }
 }
+
 
 .bulk-indicator {
   display: none;
@@ -935,10 +995,14 @@
   cursor: pointer;
   transition: background 0.2s;
 }
+@media (hover: hover) {
 
-.display-options-grid label:hover {
-  background: var(--color-bg-blue-tint);
+
+  .display-options-grid label:hover {
+    background: var(--color-bg-blue-tint);
+  }
 }
+
 
 .display-options-grid .red {
   color: var(--color-danger);
@@ -1005,9 +1069,13 @@
   border: 1px solid var(--color-border-light);
   transition: border-color var(--transition-fast);
 }
-.saved-script-card:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+
+  .saved-script-card:hover {
+    border-color: var(--color-primary);
+  }
 }
+
 .saved-card-main {
   flex: 1;
   min-width: 0;
@@ -1046,9 +1114,13 @@
   cursor: pointer;
   transition: opacity var(--transition-fast);
 }
-.saved-card-actions button:hover {
-  opacity: 0.85;
+@media (hover: hover) {
+
+  .saved-card-actions button:hover {
+    opacity: 0.85;
+  }
 }
+
 .saved-load-btn {
   background: var(--color-primary);
   color: white;
@@ -1100,9 +1172,13 @@
   border: 1px solid var(--color-border-light);
   transition: border-color var(--transition-fast);
 }
-.full-day-item:hover {
-  border-color: var(--color-primary);
+@media (hover: hover) {
+
+  .full-day-item:hover {
+    border-color: var(--color-primary);
+  }
 }
+
 .full-day-item-info {
   display: flex;
   flex-direction: column;
@@ -1123,10 +1199,14 @@
 }
 
 /* Buttons */
+@media (hover: hover) {
 
-.full-day-section label:hover {
-  background: var(--color-bg-blue-tint) !important;
+
+  .full-day-section label:hover {
+    background: var(--color-bg-blue-tint) !important;
+  }
 }
+
 
 /* Wristband Maker - 4.7" x 2.8" format */
 
@@ -1203,9 +1283,13 @@
   cursor: pointer;
   transition: opacity var(--transition-fast);
 }
-.btn-add-period:hover {
-  opacity: 0.85;
+@media (hover: hover) {
+
+  .btn-add-period:hover {
+    opacity: 0.85;
+  }
 }
+
 
 /* Period Create Mini-Modal */
 .period-create-overlay {
@@ -1286,11 +1370,15 @@
   cursor: pointer;
   transition: all var(--transition-fast);
 }
-.pcf-preset:hover {
-  background: var(--color-accent);
-  color: white;
-  border-color: var(--color-accent);
+@media (hover: hover) {
+
+  .pcf-preset:hover {
+    background: var(--color-accent);
+    color: white;
+    border-color: var(--color-accent);
+  }
 }
+
 .period-create-actions {
   display: flex;
   gap: 8px;
@@ -1314,10 +1402,14 @@
   cursor: pointer;
   transition: all var(--transition-fast);
 }
-.template-picker-item:hover {
-  background: var(--color-bg-blue-tint);
-  border-color: var(--color-accent);
+@media (hover: hover) {
+
+  .template-picker-item:hover {
+    background: var(--color-bg-blue-tint);
+    border-color: var(--color-accent);
+  }
 }
+
 .tpi-name {
   font-weight: 600;
   font-size: var(--font-size-sm);
@@ -1365,14 +1457,18 @@
   border: none !important;
   font-weight: 600;
 }
-.btn-scouting-fill:hover {
-  background: linear-gradient(
-    135deg,
-    var(--color-danger),
-    var(--color-danger-hover)
-  ) !important;
-  transform: translateY(-1px);
+@media (hover: hover) {
+
+  .btn-scouting-fill:hover {
+    background: linear-gradient(
+      135deg,
+      var(--color-danger),
+      var(--color-danger-hover)
+    ) !important;
+    transform: translateY(-1px);
+  }
 }
+
 
 /* ============ Script Push to Call Sheet Button ============ */
 .pat-btn-callsheet {
@@ -1380,10 +1476,14 @@
   color: white !important;
   border-color: var(--color-purple) !important;
 }
-.pat-btn-callsheet:hover {
-  background: var(--color-purple) !important;
-  filter: brightness(0.85);
+@media (hover: hover) {
+
+  .pat-btn-callsheet:hover {
+    background: var(--color-purple) !important;
+    filter: brightness(0.85);
+  }
 }
+
 
 /* ============ Script Preview Table Column Widths ============ */
 .script-table .col-num {

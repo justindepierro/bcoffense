@@ -89,9 +89,13 @@
 .csv-tpl-table tbody tr:nth-child(even) {
   background: var(--color-bg-light);
 }
-.csv-tpl-table tbody tr:hover {
-  background: var(--color-bg-hover-row);
+@media (hover: hover) {
+
+  .csv-tpl-table tbody tr:hover {
+    background: var(--color-bg-hover-row);
+  }
 }
+
 .csv-tpl-table td {
   padding: 5px 10px;
   border-bottom: 1px solid var(--color-border-light);
@@ -189,9 +193,13 @@
   transition: all 0.12s;
   font-family: inherit;
 }
-.custom-modal-btn:hover {
-  filter: brightness(0.92);
+@media (hover: hover) {
+
+  .custom-modal-btn:hover {
+    filter: brightness(0.92);
+  }
 }
+
 .custom-modal-btn:active {
   transform: scale(0.97);
 }
@@ -203,9 +211,13 @@
   background: var(--color-bg-input);
   color: var(--color-text-muted);
 }
-.custom-modal-cancel:hover {
-  background: var(--color-border-light);
+@media (hover: hover) {
+
+  .custom-modal-cancel:hover {
+    background: var(--color-border-light);
+  }
 }
+
 
 /* List picker items */
 .custom-modal-list {
@@ -222,9 +234,13 @@
   cursor: pointer;
   transition: background 0.1s;
 }
-.custom-modal-list-item:hover {
-  background: var(--color-bg-blue-light);
+@media (hover: hover) {
+
+  .custom-modal-list-item:hover {
+    background: var(--color-bg-blue-light);
+  }
 }
+
 .custom-modal-list-item:active {
   background: var(--color-primary-light);
 }
@@ -306,10 +322,14 @@
   cursor: pointer;
   min-width: 28px;
 }
+@media (hover: hover) {
 
-.sort-criteria-item .sort-dir-btn:hover {
-  background: var(--color-border-med);
+
+  .sort-criteria-item .sort-dir-btn:hover {
+    background: var(--color-border-med);
+  }
 }
+
 
 .sort-criteria-item .remove-sort-btn {
   padding: 2px 6px;
@@ -320,10 +340,14 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
 }
+@media (hover: hover) {
 
-.sort-criteria-item .remove-sort-btn:hover {
-  background: var(--color-danger-hover);
+
+  .sort-criteria-item .remove-sort-btn:hover {
+    background: var(--color-danger-hover);
+  }
 }
+
 
 /* Custom Order Modal and List */
 .custom-order-list {
@@ -382,10 +406,14 @@
   background: var(--color-bg-input);
   cursor: pointer;
 }
+@media (hover: hover) {
 
-.custom-order-btn:hover {
-  background: var(--color-border-med);
+
+  .custom-order-btn:hover {
+    background: var(--color-border-med);
+  }
 }
+
 
 /* ============ Unified Button System ============ */
 .btn {
@@ -410,10 +438,14 @@
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
 }
-.btn:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+@media (hover: hover) {
+
+  .btn:hover {
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
 }
+
 .btn:active {
   transform: translateY(0);
   box-shadow: none;
@@ -434,75 +466,107 @@
   color: white;
   border-color: var(--color-primary);
 }
-.btn-primary:hover {
-  background: var(--color-primary-hover);
-  border-color: var(--color-primary-hover);
+@media (hover: hover) {
+
+  .btn-primary:hover {
+    background: var(--color-primary-hover);
+    border-color: var(--color-primary-hover);
+  }
 }
+
 .btn-success {
   background: var(--color-success);
   color: white;
   border-color: var(--color-success);
 }
-.btn-success:hover {
-  background: var(--color-success-hover);
-  border-color: var(--color-success-hover);
+@media (hover: hover) {
+
+  .btn-success:hover {
+    background: var(--color-success-hover);
+    border-color: var(--color-success-hover);
+  }
 }
+
 .btn-danger {
   background: var(--color-danger);
   color: white;
   border-color: var(--color-danger);
 }
-.btn-danger:hover {
-  background: var(--color-danger-hover);
-  border-color: var(--color-danger-hover);
+@media (hover: hover) {
+
+  .btn-danger:hover {
+    background: var(--color-danger-hover);
+    border-color: var(--color-danger-hover);
+  }
 }
+
 .btn-warning {
   background: var(--color-warning);
   color: white;
   border-color: var(--color-warning);
 }
-.btn-warning:hover {
-  background: var(--color-warning-hover);
-  border-color: var(--color-warning-hover);
+@media (hover: hover) {
+
+  .btn-warning:hover {
+    background: var(--color-warning-hover);
+    border-color: var(--color-warning-hover);
+  }
 }
+
 .btn-info {
   background: var(--color-info);
   color: white;
   border-color: var(--color-info);
 }
-.btn-info:hover {
-  background: var(--color-info-hover);
-  border-color: var(--color-info-hover);
+@media (hover: hover) {
+
+  .btn-info:hover {
+    background: var(--color-info-hover);
+    border-color: var(--color-info-hover);
+  }
 }
+
 .btn-outline {
   background: transparent;
   color: var(--color-primary);
   border: 1.5px solid var(--color-primary);
 }
-.btn-outline:hover {
-  background: var(--color-primary);
-  color: white;
+@media (hover: hover) {
+
+  .btn-outline:hover {
+    background: var(--color-primary);
+    color: white;
+  }
 }
+
 /* ghost (subtle toolbar-style) */
 .btn-ghost {
   background: transparent;
   color: var(--color-text-muted);
   border-color: var(--color-border);
 }
-.btn-ghost:hover {
-  background: var(--color-bg-light);
-  border-color: var(--color-primary);
-  color: var(--color-primary);
+@media (hover: hover) {
+
+  .btn-ghost:hover {
+    background: var(--color-bg-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
 }
+
 .btn-secondary {
   background: var(--color-secondary);
   color: white;
   border-color: var(--color-secondary);
 }
-.btn-secondary:hover {
-  background: var(--color-text-muted);
-  border-color: var(--color-text-muted);
+@media (hover: hover) {
+
+  .btn-secondary:hover {
+    background: var(--color-text-muted);
+    border-color: var(--color-text-muted);
+  }
 }
+
 
 /* ---- Size modifiers ---- */
 .btn-sm {
@@ -510,9 +574,13 @@
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
-.btn-sm:hover {
-  transform: translateY(-1px);
+@media (hover: hover) {
+
+  .btn-sm:hover {
+    transform: translateY(-1px);
+  }
 }
+
 .btn-xs,
 .btn-mini {
   padding: 3px 10px;
@@ -744,10 +812,14 @@ input.smart-input-sm[type="number"] {
   color: white !important;
   font-weight: 600;
 }
+@media (hover: hover) {
 
-.btn-smart-script:hover {
-  opacity: 0.9;
+
+  .btn-smart-script:hover {
+    opacity: 0.9;
+  }
 }
+
 
 /* Cell Popup Modal */
 .cell-popup-overlay {
@@ -799,11 +871,15 @@ input.smart-input-sm[type="number"] {
   cursor: pointer;
   border: 2px solid var(--color-border-input);
 }
-.color-swatch:hover,
-.color-swatch.selected {
-  border-color: var(--color-text);
-  transform: scale(1.1);
+@media (hover: hover) {
+
+  .color-swatch:hover,
+  .color-swatch.selected {
+    border-color: var(--color-text);
+    transform: scale(1.1);
+  }
 }
+
 
 .toast {
   position: fixed;
@@ -849,11 +925,15 @@ input.smart-input-sm[type="number"] {
 #playbookTable .play-cell {
   cursor: pointer;
 }
+@media (hover: hover) {
 
-#playbookTable .play-cell:hover {
-  background: var(--color-bg-blue-tint);
-  text-decoration: underline;
+
+  #playbookTable .play-cell:hover {
+    background: var(--color-bg-blue-tint);
+    text-decoration: underline;
+  }
 }
+
 
 #playbookTable tbody tr {
   cursor: pointer;
@@ -941,12 +1021,16 @@ kbd {
   justify-content: center;
   font-family: var(--font-sans);
 }
-.help-fab:hover {
-  background: var(--color-primary);
-  color: var(--color-white);
-  box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
-  transform: scale(1.1);
+@media (hover: hover) {
+
+  .help-fab:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+    box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
+    transform: scale(1.1);
+  }
 }
+
 .help-fab.help-fab-active {
   background: var(--color-primary);
   color: var(--color-white);
@@ -1020,9 +1104,13 @@ kbd {
   line-height: 1;
   transition: color var(--transition-fast);
 }
-.help-close-btn:hover {
-  color: var(--color-white);
+@media (hover: hover) {
+
+  .help-close-btn:hover {
+    color: var(--color-white);
+  }
 }
+
 .help-panel-body {
   overflow-y: auto;
   padding: 12px 16px 16px;
@@ -1060,9 +1148,13 @@ kbd {
   padding: 3px 6px;
   border-radius: var(--radius-sm);
 }
-.help-item:hover {
-  background: var(--color-bg-light);
+@media (hover: hover) {
+
+  .help-item:hover {
+    background: var(--color-bg-light);
+  }
 }
+
 .help-key {
   font-family: var(--font-mono);
   font-size: var(--font-size-xs);
@@ -1093,9 +1185,13 @@ kbd {
   padding: 0 4px;
   line-height: 1;
 }
-.modal-close-btn:hover {
-  color: var(--color-text);
+@media (hover: hover) {
+
+  .modal-close-btn:hover {
+    color: var(--color-text);
+  }
 }
+
 
 /* ============ Loading Spinner ============ */
 .loading-spinner {

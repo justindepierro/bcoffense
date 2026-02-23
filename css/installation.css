@@ -127,10 +127,14 @@
     transform var(--transition-fast),
     box-shadow var(--transition-fast);
 }
-.install-readiness-clickable:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+@media (hover: hover) {
+
+  .install-readiness-clickable:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
+  }
 }
+
 .install-readiness-clickable:active {
   transform: translateY(-1px);
 }
@@ -225,11 +229,15 @@
   font-family: inherit;
   font-size: inherit;
 }
-.install-cat-card:hover {
-  border-color: var(--color-primary);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+@media (hover: hover) {
+
+  .install-cat-card:hover {
+    border-color: var(--color-primary);
+    transform: translateY(-1px);
+    box-shadow: var(--shadow-sm);
+  }
 }
+
 .install-cat-active {
   border-color: var(--color-primary) !important;
   background: var(--color-primary-light) !important;
@@ -336,18 +344,26 @@
   border-bottom: 1px solid var(--color-bg-lighter);
   user-select: none;
 }
-.install-item:hover {
-  background: var(--color-bg-light);
+@media (hover: hover) {
+
+  .install-item:hover {
+    background: var(--color-bg-light);
+  }
 }
+
 .install-item input[type="checkbox"] {
   display: none;
 }
 .install-item-done {
   background: var(--color-success-light);
 }
-.install-item-done:hover {
-  background: var(--color-success-light);
+@media (hover: hover) {
+
+  .install-item-done:hover {
+    background: var(--color-success-light);
+  }
 }
+
 .install-item-done .install-item-name {
   color: var(--color-success);
 }
@@ -384,9 +400,13 @@
   flex-shrink: 0;
   padding: 0 4px;
 }
-.install-item-drag:hover {
-  color: var(--color-text-placeholder);
+@media (hover: hover) {
+
+  .install-item-drag:hover {
+    color: var(--color-text-placeholder);
+  }
 }
+
 .install-dragging {
   opacity: 0.5;
   background: var(--color-bg-blue-tint) !important;
@@ -1069,9 +1089,13 @@
   border-radius: var(--radius-md);
   padding: 5px 14px;
 }
-.sir-print-btn:hover {
-  background: var(--color-border-med);
+@media (hover: hover) {
+
+  .sir-print-btn:hover {
+    background: var(--color-border-med);
+  }
 }
+
 
 /* ── Smart Install Report — Print Container ──────────── */
 .install-report-print {

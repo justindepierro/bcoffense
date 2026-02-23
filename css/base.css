@@ -192,9 +192,13 @@
   background: var(--color-border-med);
   border-radius: var(--radius-pill);
 }
-::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-light);
+@media (hover: hover) {
+
+  ::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-light);
+  }
 }
+
 
 /* Accessible focus ring for keyboard navigation */
 :focus-visible {

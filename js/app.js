@@ -220,10 +220,29 @@ function handleFileUpload(event) {
     if (!file) return;
 
     const reader = new FileReader();
-    reader.onload = function (e) {
+    reader.onload = async function (e) {
       try {
         const text = e.target.result;
-        plays = parseCSV(text);
+        const parsed = parseCSV(text);
+
+        if (parsed.length === 0) {
+          showToast("❌ No valid plays found in file. Check the CSV format.", 4000);
+          return;
+        }
+
+        // Show confirmation with sample data
+        const sample = parsed.slice(0, 3).map((p) =>
+          `• ${escapeHtml(p.formation || "?")} ${escapeHtml(p.play || "?")} (${escapeHtml(p.type || "?")})`
+        ).join("<br>");
+        const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
+        const ok = await showConfirm(msg, {
+          title: "Confirm CSV Import",
+          icon: "📋",
+          confirmText: `Import ${parsed.length} Plays`,
+        });
+        if (!ok) return;
+
+        plays = parsed;
         filteredPlays = [...plays];
 
         // Store in localStorage
