@@ -23,9 +23,17 @@
     <link rel="preconnect" href="https://fonts.googleapis.com" />
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
     <link
-      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=Inter:wght@400;500;600;700&display=swap"
+      href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600&display=swap"
       rel="stylesheet"
+      media="print"
+      onload="this.media='all'"
     />
+    <noscript>
+      <link
+        href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;600&display=swap"
+        rel="stylesheet"
+      />
+    </noscript>
     <!-- Modular CSS: base → layout → components → features → print → responsive -->
     <link rel="stylesheet" href="css/base.css" />
     <link rel="stylesheet" href="css/layout.css" />
@@ -42,6 +50,19 @@
     <link rel="stylesheet" href="css/responsive.css" />
   </head>
   <body>
+    <noscript>
+      <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, sans-serif;
+               display: flex; align-items: center; justify-content: center;
+               min-height: 100vh; background: #0A122A; color: #fff; text-align: center; }
+        .noscript-msg { max-width: 400px; padding: 2rem; }
+        .noscript-msg h1 { font-size: 1.5rem; margin-bottom: 1rem; }
+      </style>
+      <div class="noscript-msg">
+        <h1>🏈 Practice Script & Playbook</h1>
+        <p>This app requires JavaScript to run. Please enable JavaScript in your browser settings and reload.</p>
+      </div>
+    </noscript>
     <a href="#mainApp" class="skip-link">Skip to main content</a>
 
     <!-- App Header -->
@@ -87,7 +108,7 @@
           type="file"
           id="csvFile"
           accept=".csv"
-          onchange="handleFileUpload(event)"
+          data-onchange="handleFileUpload" data-pass="event"
           data-testid="csv-upload"
         />
         <button
@@ -122,7 +143,7 @@
               type="file"
               id="backupFile"
               accept=".json"
-              onchange="importBackup(event)"
+              data-onchange="importBackup" data-pass="event"
               class="hidden"
             />
             <button
@@ -144,7 +165,7 @@
               id="teamNameInput"
               class="team-name-input"
               placeholder="e.g., Burke Catholic Football"
-              onchange="setTeamName(this.value)"
+              data-onchange="setTeamName" data-pass="value"
             />
           </div>
         </div>
@@ -276,14 +297,14 @@
                 type="text"
                 id="searchPlay"
                 placeholder="Search plays..."
-                oninput="debouncedFilterPlays()"
+                data-oninput="debouncedFilterPlays"
                 data-testid="search-input"
               />
             </div>
 
             <div class="pb-sort-group">
               <label class="pb-sort-label">Sort</label>
-              <select id="pbSortPrimary" onchange="applyAdvancedSort()">
+              <select id="pbSortPrimary" data-onchange="applyAdvancedSort">
                 <option value="">--</option>
                 <option value="type">Type</option>
                 <option value="personnel">Personnel</option>
@@ -306,7 +327,7 @@
                 &#9650;
               </button>
               <label class="pb-sort-label pb-then">then</label>
-              <select id="pbSortSecondary" onchange="applyAdvancedSort()">
+              <select id="pbSortSecondary" data-onchange="applyAdvancedSort">
                 <option value="">--</option>
                 <option value="type">Type</option>
                 <option value="personnel">Personnel</option>
@@ -344,7 +365,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('install')"
+                      data-onchange="toggleColumn" data-arg="install"
                     />
                     &#9733; Install</label
                   >
@@ -352,7 +373,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('type')"
+                      data-onchange="toggleColumn" data-arg="type"
                     />
                     Type</label
                   >
@@ -360,7 +381,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('formation')"
+                      data-onchange="toggleColumn" data-arg="formation"
                     />
                     Formation</label
                   >
@@ -368,7 +389,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('tags')"
+                      data-onchange="toggleColumn" data-arg="tags"
                     />
                     Tags</label
                   >
@@ -376,7 +397,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('back')"
+                      data-onchange="toggleColumn" data-arg="back"
                     />
                     Back</label
                   >
@@ -384,7 +405,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('motion')"
+                      data-onchange="toggleColumn" data-arg="motion"
                     />
                     Motion</label
                   >
@@ -392,7 +413,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('protection')"
+                      data-onchange="toggleColumn" data-arg="protection"
                     />
                     Protection</label
                   >
@@ -400,7 +421,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('play')"
+                      data-onchange="toggleColumn" data-arg="play"
                     />
                     Play</label
                   >
@@ -408,7 +429,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('basePlay')"
+                      data-onchange="toggleColumn" data-arg="basePlay"
                     />
                     Base Play</label
                   >
@@ -416,7 +437,7 @@
                     ><input
                       type="checkbox"
                       checked
-                      onchange="toggleColumn('tempo')"
+                      data-onchange="toggleColumn" data-arg="tempo"
                     />
                     Tempo</label
                   >
@@ -424,7 +445,7 @@
               </div>
               <select
                 id="playbookWristbandHighlight"
-                onchange="highlightWristbandPlays()"
+                data-onchange="highlightWristbandPlays"
                 title="Highlight plays on wristband"
               >
                 <option value="">&#127944; Wristband</option>
@@ -448,7 +469,7 @@
                 type="file"
                 id="importBackupFile"
                 accept=".json"
-                onchange="importBackup(event)"
+                data-onchange="importBackup" data-pass="event"
                 class="hidden"
               />
               <button
@@ -492,22 +513,22 @@
             </button>
           </div>
           <div class="pb-more-filters" id="pbMoreFilters">
-            <select id="filterFormation" onchange="filterPlays()">
+            <select id="filterFormation" data-onchange="filterPlays">
               <option value="">All Formations</option>
             </select>
-            <select id="filterBasePlay" onchange="filterPlays()">
+            <select id="filterBasePlay" data-onchange="filterPlays">
               <option value="">All Base Plays</option>
             </select>
-            <select id="pbFilterBack" onchange="filterPlays()">
+            <select id="pbFilterBack" data-onchange="filterPlays">
               <option value="">All Backs</option>
             </select>
-            <select id="pbFilterMotion" onchange="filterPlays()">
+            <select id="pbFilterMotion" data-onchange="filterPlays">
               <option value="">All Motions</option>
             </select>
-            <select id="pbFilterProtection" onchange="filterPlays()">
+            <select id="pbFilterProtection" data-onchange="filterPlays">
               <option value="">All Protections</option>
             </select>
-            <select id="pbFilterTempo" onchange="filterPlays()">
+            <select id="pbFilterTempo" data-onchange="filterPlays">
               <option value="">All Tempos</option>
             </select>
           </div>
@@ -874,7 +895,7 @@
               <div class="filters filters-compact">
                 <select
                   id="scriptFilterFormation"
-                  onchange="filterScriptPlays()"
+                  data-onchange="filterScriptPlays"
                   class="w-full"
                 >
                   <option value="">All Formations</option>
@@ -883,7 +904,7 @@
               <div class="filters filters-compact">
                 <select
                   id="scriptFilterBasePlay"
-                  onchange="filterScriptPlays()"
+                  data-onchange="filterScriptPlays"
                   class="w-full"
                 >
                   <option value="">All Base Plays</option>
@@ -896,7 +917,7 @@
                 type="text"
                 id="scriptSearchPlay"
                 placeholder="🔍 Search plays..."
-                oninput="filterScriptPlays()"
+                data-oninput="filterScriptPlays"
                 class="w-full"
               />
             </div>
@@ -919,7 +940,7 @@
                 <input
                   type="checkbox"
                   id="selectAllAvailable"
-                  onchange="toggleSelectAllAvailable()"
+                  data-onchange="toggleSelectAllAvailable"
                 />
                 All
               </label>
@@ -980,7 +1001,7 @@
                   <input
                     type="checkbox"
                     id="bulkSelectAll"
-                    onchange="selectAllScriptItems()"
+                    data-onchange="selectAllScriptItems"
                   />
                   <span>Select All</span>
                 </label>
@@ -1026,7 +1047,7 @@
                   type="text"
                   id="scriptSearchBox"
                   placeholder="🔍 Search script..."
-                  oninput="filterScriptItems()"
+                  data-oninput="filterScriptItems"
                   class="script-search-input"
                 />
               </div>
@@ -1166,7 +1187,7 @@
                     ><input
                       type="checkbox"
                       id="scriptShowEmoji"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     🔵 Personnel Color</label
                   >
@@ -1174,7 +1195,7 @@
                     ><input
                       type="checkbox"
                       id="scriptUseSquares"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     🟦 Use Squares</label
                   >
@@ -1182,7 +1203,7 @@
                     ><input
                       type="checkbox"
                       id="scriptUnderEmoji"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     🍑 Under = Peach</label
                   >
@@ -1190,7 +1211,7 @@
                     ><input
                       type="checkbox"
                       id="scriptBoldShifts"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     <b>Bold</b> Shifts</label
                   >
@@ -1198,7 +1219,7 @@
                     ><input
                       type="checkbox"
                       id="scriptRedShifts"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     <span class="red">Red</span> Shifts</label
                   >
@@ -1206,7 +1227,7 @@
                     ><input
                       type="checkbox"
                       id="scriptItalicMotions"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     <i>Italic</i> Motions</label
                   >
@@ -1214,7 +1235,7 @@
                     ><input
                       type="checkbox"
                       id="scriptRedMotions"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     <span class="red">Red</span> Motions</label
                   >
@@ -1222,7 +1243,7 @@
                     ><input
                       type="checkbox"
                       id="scriptRemoveVowels"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     Remove Vowels</label
                   >
@@ -1231,7 +1252,7 @@
                       type="checkbox"
                       id="scriptShowLineCall"
                       checked
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     Show [Line Call]</label
                   >
@@ -1239,7 +1260,7 @@
                     ><input
                       type="checkbox"
                       id="scriptHighlightHuddle"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     🟡 Highlight Huddle</label
                   >
@@ -1247,7 +1268,7 @@
                     ><input
                       type="checkbox"
                       id="scriptHighlightCandy"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     🩷 Highlight Candy</label
                   >
@@ -1256,7 +1277,7 @@
                       type="checkbox"
                       id="scriptShowWbNum"
                       checked
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     Show WB#</label
                   >
@@ -1264,7 +1285,7 @@
                     ><input
                       type="checkbox"
                       id="scriptShowPrintPreview"
-                      onchange="renderScript();saveScriptDisplayOptions()"
+                      data-onchange="renderScript;saveScriptDisplayOptions"
                     />
                     👁️ Show Print Preview</label
                   >
@@ -1284,7 +1305,7 @@
                 <div class="wristband-loader-row">
                   <select
                     id="scriptWristbandSelect"
-                    onchange="loadWristbandForScript()"
+                    data-onchange="loadWristbandForScript"
                   >
                     <option value="">-- No Wristband --</option>
                   </select>
@@ -1292,7 +1313,7 @@
                     <input
                       type="checkbox"
                       id="showWristbandNums"
-                      onchange="renderScript()"
+                      data-onchange="renderScript"
                       checked
                     />
                     Show #
@@ -1460,7 +1481,7 @@
               <div class="filters filters-compact mt-sm">
                 <select
                   id="wbFilterType"
-                  onchange="filterWristbandPlays()"
+                  data-onchange="filterWristbandPlays"
                   class="w-full"
                 >
                   <option value="">All Play Types</option>
@@ -1473,7 +1494,7 @@
                 type="text"
                 id="wbSearchPlay"
                 placeholder="🔍 Search plays..."
-                oninput="filterWristbandPlays()"
+                data-oninput="filterWristbandPlays"
                 class="w-full"
               />
             </div>
@@ -1650,7 +1671,7 @@
                     ><input
                       type="checkbox"
                       id="wbShowEmoji"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     🔵 Personnel Color</label
                   >
@@ -1658,7 +1679,7 @@
                     ><input
                       type="checkbox"
                       id="wbUseSquares"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     🟦 Use Squares</label
                   >
@@ -1666,7 +1687,7 @@
                     ><input
                       type="checkbox"
                       id="wbUnderEmoji"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     🍑 Under = Peach</label
                   >
@@ -1674,7 +1695,7 @@
                     ><input
                       type="checkbox"
                       id="wbBoldShifts"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     <b>Bold</b> Shifts</label
                   >
@@ -1682,7 +1703,7 @@
                     ><input
                       type="checkbox"
                       id="wbRedShifts"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     <span class="red">Red</span> Shifts</label
                   >
@@ -1690,7 +1711,7 @@
                     ><input
                       type="checkbox"
                       id="wbItalicMotions"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     <i>Italic</i> Motions</label
                   >
@@ -1698,7 +1719,7 @@
                     ><input
                       type="checkbox"
                       id="wbRedMotions"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     <span class="red">Red</span> Motions</label
                   >
@@ -1706,7 +1727,7 @@
                     ><input
                       type="checkbox"
                       id="wbRemoveVowels"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     Remove Vowels</label
                   >
@@ -1715,7 +1736,7 @@
                       type="checkbox"
                       id="wbShowLineCall"
                       checked
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     Show [Line Call]</label
                   >
@@ -1723,7 +1744,7 @@
                     ><input
                       type="checkbox"
                       id="wbHighlightHuddle"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     🟡 Highlight Huddle</label
                   >
@@ -1731,7 +1752,7 @@
                     ><input
                       type="checkbox"
                       id="wbHighlightCandy"
-                      onchange="renderWristbandGrid(); renderWristbandPlays();"
+                      data-onchange="renderWristbandGrid;renderWristbandPlays"
                     />
                     🩷 Highlight Candy</label
                   >
@@ -1756,7 +1777,7 @@
                   <span class="wb-sort-divider">|</span>
                   <select
                     id="sortPresetDropdown"
-                    onchange="loadSortPreset()"
+                    data-onchange="loadSortPreset"
                     style="padding: 3px 6px; font-size: 12px"
                   >
                     <option value="">-- Select Preset --</option>
@@ -1789,7 +1810,7 @@
                     <input
                       type="checkbox"
                       id="sortAcrossCardsCheckbox"
-                      onchange="toggleSortAcrossCards()"
+                      data-onchange="toggleSortAcrossCards"
                     />
                     Sort across all cards
                     <span
@@ -1844,7 +1865,7 @@
                 <select
                   id="dashOpponentSelect"
                   class="dash-select"
-                  onchange="onDashOpponentChange(this.value)"
+                  data-onchange="onDashOpponentChange" data-pass="value"
                 >
                   <option value="">— Select Opponent —</option>
                 </select>
@@ -1853,7 +1874,7 @@
                   id="dashWeekLabel"
                   class="dash-week-input"
                   placeholder="Week label (e.g. Week 3)"
-                  onchange="onDashWeekLabelChange(this.value)"
+                  data-onchange="onDashWeekLabelChange" data-pass="value"
                 />
               </div>
             </div>
@@ -1869,8 +1890,8 @@
               id="dashNotesArea"
               class="dash-notes-textarea"
               placeholder="Scouting notes, reminders, adjustments, key matchups..."
-              onchange="onDashNotesChange(this.value)"
-              oninput="onDashNotesChange(this.value)"
+              data-onchange="onDashNotesChange" data-pass="value"
+              data-oninput="onDashNotesChange" data-pass="value"
             ></textarea>
           </div>
 
@@ -2042,7 +2063,7 @@
               <select
                 id="csDisplayPreset"
                 class="cs-preset-select"
-                onchange="loadDisplayPreset(this.value)"
+                data-onchange="loadDisplayPreset" data-pass="value"
               >
                 <option value="">Presets...</option>
                 <option value="__all">✅ Show All Fields</option>
@@ -2109,7 +2130,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowNumbers"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                     checked
                   />
                   WB#</label
@@ -2118,7 +2139,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowPersonnel"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                     checked
                   />
                   Personnel</label
@@ -2127,7 +2148,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowFormation"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                     checked
                   />
                   Formation</label
@@ -2136,7 +2157,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowProtection"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   Protection</label
                 >
@@ -2144,7 +2165,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowPlayName"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                     checked
                   />
                   Play</label
@@ -2153,7 +2174,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowTags"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   Tags</label
                 >
@@ -2161,7 +2182,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowMotion"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   Motion</label
                 >
@@ -2169,7 +2190,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowLineCall"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                     checked
                   />
                   [Line Call]</label
@@ -2184,7 +2205,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetShowEmoji"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   🔵 Personnel Color</label
                 >
@@ -2192,7 +2213,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetUseSquares"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   🟦 Use Squares</label
                 >
@@ -2200,7 +2221,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetUnderEmoji"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   🍑 Under=Peach</label
                 >
@@ -2208,7 +2229,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetBoldShifts"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   <b>Bold</b> Shifts</label
                 >
@@ -2216,7 +2237,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetRedShifts"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   <span class="red">Red</span> Shifts</label
                 >
@@ -2224,7 +2245,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetItalicMotions"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   <i>Italic</i> Motions</label
                 >
@@ -2232,7 +2253,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetRedMotions"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   <span class="red">Red</span> Motions</label
                 >
@@ -2240,7 +2261,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetRemoveVowels"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   Remove Vowels</label
                 >
@@ -2248,7 +2269,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetHighlightHuddle"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   🟡 Huddle</label
                 >
@@ -2256,7 +2277,7 @@
                   ><input
                     type="checkbox"
                     id="callsheetHighlightCandy"
-                    onchange="renderCallSheet()"
+                    data-onchange="renderCallSheet"
                   />
                   🩷 Candy</label
                 >
@@ -2272,7 +2293,7 @@
                     ><span style="color: #dc3545">🔴</span>
                     <select
                       id="callsheetRedBorder"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="">None</option>
                       <option value="run">Run</option>
@@ -2288,7 +2309,7 @@
                     ><span style="color: #007bff">🔵</span>
                     <select
                       id="callsheetBlueBorder"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="">None</option>
                       <option value="run">Run</option>
@@ -2304,7 +2325,7 @@
                     ><span style="color: #28a745">🟢</span>
                     <select
                       id="callsheetGreenBorder"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="">None</option>
                       <option value="run">Run</option>
@@ -2320,7 +2341,7 @@
                     ><span style="color: #fd7e14">🟠</span>
                     <select
                       id="callsheetOrangeBorder"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="">None</option>
                       <option value="run">Run</option>
@@ -2336,7 +2357,7 @@
                     ><span style="color: #6f42c1">🟣</span>
                     <select
                       id="callsheetPurpleBorder"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="">None</option>
                       <option value="run">Run</option>
@@ -2356,7 +2377,7 @@
                   <label class="cs-border-label">
                     <select
                       id="callsheetPersonnelBorder"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="">None</option>
                       <option value="black">Black</option>
@@ -2370,7 +2391,7 @@
                     →
                     <select
                       id="callsheetPersonnelBorderColor"
-                      onchange="renderCallSheet()"
+                      data-onchange="renderCallSheet"
                     >
                       <option value="#dc3545">🔴 Red</option>
                       <option value="#007bff">🔵 Blue</option>
@@ -2428,19 +2449,19 @@
             id="callSheetPlaySearch"
             class="cs-picker-search"
             placeholder="Search anything — play, type, player, tags..."
-            oninput="populateCallSheetPlayList()"
+            data-oninput="populateCallSheetPlayList"
           />
           <select
             id="callSheetPickerPersonnel"
             class="cs-picker-select"
-            onchange="populateCallSheetPlayList()"
+            data-onchange="populateCallSheetPlayList"
           >
             <option value="">All Personnel</option>
           </select>
           <select
             id="callSheetPickerFormation"
             class="cs-picker-select"
-            onchange="populateCallSheetPlayList()"
+            data-onchange="populateCallSheetPlayList"
           >
             <option value="">All Formations</option>
           </select>
@@ -2450,28 +2471,28 @@
           <select
             id="callSheetPickerPlayType"
             class="cs-picker-select"
-            onchange="populateCallSheetPlayList()"
+            data-onchange="populateCallSheetPlayList"
           >
             <option value="">All Types</option>
           </select>
           <select
             id="callSheetPickerBack"
             class="cs-picker-select"
-            onchange="populateCallSheetPlayList()"
+            data-onchange="populateCallSheetPlayList"
           >
             <option value="">All Backs</option>
           </select>
           <select
             id="callSheetPickerTempo"
             class="cs-picker-select"
-            onchange="populateCallSheetPlayList()"
+            data-onchange="populateCallSheetPlayList"
           >
             <option value="">All Tempos</option>
           </select>
           <select
             id="callSheetPickerSort"
             class="cs-picker-select"
-            onchange="populateCallSheetPlayList()"
+            data-onchange="populateCallSheetPlayList"
           >
             <option value="">Default Order</option>
             <option value="personnel">Sort by Personnel</option>
@@ -2492,7 +2513,7 @@
               name="callSheetSource"
               value="playbook"
               checked
-              onchange="populateCallSheetPlayList()"
+              data-onchange="populateCallSheetPlayList"
             />
             📚 Playbook</label
           >
@@ -2501,7 +2522,7 @@
               type="radio"
               name="callSheetSource"
               value="wristband"
-              onchange="populateCallSheetPlayList()"
+              data-onchange="populateCallSheetPlayList"
             />
             📋 From Loaded Wristband</label
           >
@@ -2602,7 +2623,7 @@
               id="cellPlaySearch"
               placeholder="🔍 Search plays..."
               class="cell-popup-search-input"
-              oninput="filterCellPlays()"
+              data-oninput="filterCellPlays"
             />
           </div>
           <div id="cellPlayList" class="cell-popup-play-list"></div>
@@ -3113,6 +3134,20 @@
       if ("serviceWorker" in navigator) {
         navigator.serviceWorker
           .register("./sw.js")
+          .then((reg) => {
+            reg.addEventListener("updatefound", () => {
+              const nw = reg.installing;
+              if (!nw) return;
+              nw.addEventListener("statechange", () => {
+                if (nw.state === "activated" && navigator.serviceWorker.controller) {
+                  showToast(
+                    '\uD83D\uDD04 App updated. <button data-action="reloadPage" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer">Reload</button>',
+                    8000,
+                  );
+                }
+              });
+            });
+          })
           .catch((err) => console.warn("SW registration failed:", err));
       }
     </script>

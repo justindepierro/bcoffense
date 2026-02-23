@@ -4,6 +4,8 @@
 /* Call Sheet Styles */
 .callsheet-grid {
   width: 100%;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 800px;
 }
 
 .callsheet-columns {

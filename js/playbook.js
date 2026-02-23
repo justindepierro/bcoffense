@@ -14,6 +14,10 @@ let activePersonnelChips = new Set();
 // ── More-filters collapsed state ──
 let moreFiltersOpen = false;
 
+// ── Pagination state ──
+const PLAYS_PER_PAGE = 50;
+let currentPage = 0;
+
 // Storage key for persisting filter/sort state is STORAGE_KEYS.PLAYBOOK_STATE
 
 /**
@@ -437,6 +441,7 @@ function filterPlays() {
  * Clear all playbook filters
  */
 function clearFilters() {
+  currentPage = 0;
   // Clear chips
   activeTypeChips.clear();
   activePersonnelChips.clear();
@@ -525,7 +530,7 @@ function updateActiveFilterBar() {
   pills.innerHTML = parts
     .map(
       (p) =>
-        `<span class="pb-pill" data-layer="${p.layer}" data-value="${escapeHtml(p.value)}">${escapeHtml(p.label)} <button onclick="removeFilter('${p.layer}','${escapeHtml(p.value)}')">&times;</button></span>`,
+        `<span class="pb-pill" data-layer="${p.layer}" data-value="${escapeHtml(p.value)}">${escapeHtml(p.label)} <button data-action="removeFilter" data-layer="${p.layer}" data-filter-value="${escapeHtml(p.value)}">&times;</button></span>`,
     )
     .join("");
 }
@@ -566,8 +571,17 @@ function renderPlaybook() {
     const searchTerm =
       document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
-    tbody.innerHTML = filteredPlays
-      .map((p, idx) => {
+    // ── Pagination ──
+    const totalFiltered = filteredPlays.length;
+    const totalPages = Math.max(1, Math.ceil(totalFiltered / PLAYS_PER_PAGE));
+    if (currentPage >= totalPages) currentPage = totalPages - 1;
+    if (currentPage < 0) currentPage = 0;
+    const start = currentPage * PLAYS_PER_PAGE;
+    const pageSlice = filteredPlays.slice(start, start + PLAYS_PER_PAGE);
+
+    tbody.innerHTML = pageSlice
+      .map((p, localIdx) => {
+        const idx = start + localIdx; // global filteredPlays index
         const onWristband = isPlayOnHighlightedWristband(p);
         const wbClass = onWristband ? " on-wristband" : "";
         const wbIndicator = onWristband
@@ -577,8 +591,8 @@ function renderPlaybook() {
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
 
         return `
-            <tr class="${wbClass}" onclick="selectPlaybookRow(${idx})" ondblclick="addPlayFromPlaybook(${idx})" 
-                onmouseenter="showPlayPreview(event, ${idx})" onmouseleave="hidePlayPreview()"
+            <tr class="${wbClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
+                data-preview="${idx}"
                 title="Click to select, double-click to add to script">
                 <td class="col-install">${installBadge}</td>
                 <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
@@ -587,7 +601,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlightSearch(p.back || "-", searchTerm)}</td>
                 <td class="col-motion">${highlightSearch(p.motion || "-", searchTerm)}</td>
                 <td class="col-protection">${highlightSearch(p.protection || "-", searchTerm)}</td>
-                <td class="col-play play-cell" onclick="event.stopPropagation(); copyPlayName(this.dataset.play)" data-play="${escapeHtml(p.play)}"><strong>${highlightSearch(p.play, searchTerm)}</strong> ${escapeHtml([p.playTag1, p.playTag2].filter(Boolean).join(" "))}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(p.play)}"><strong>${highlightSearch(p.play, searchTerm)}</strong> ${escapeHtml([p.playTag1, p.playTag2].filter(Boolean).join(" "))}</td>
                 <td class="col-basePlay">${escapeHtml(p.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(p.tempo || "-")}</td>
             </tr>
@@ -595,11 +609,18 @@ function renderPlaybook() {
       })
       .join("");
 
-    // Update play count
+    // Update play count with pagination info
     const countEl = document.getElementById("playCount");
     if (countEl) {
-      countEl.textContent = `Showing ${filteredPlays.length} of ${plays.length} plays`;
+      if (totalFiltered <= PLAYS_PER_PAGE) {
+        countEl.textContent = `Showing ${totalFiltered} of ${plays.length} plays`;
+      } else {
+        countEl.textContent = `Showing ${start + 1}–${Math.min(start + PLAYS_PER_PAGE, totalFiltered)} of ${totalFiltered} plays (${plays.length} total)`;
+      }
     }
+
+    // Render pagination controls
+    _renderPagination(totalPages, totalFiltered);
 
     // Update stats bar
     updateStatsBar();
@@ -607,8 +628,9 @@ function renderPlaybook() {
     // Re-apply selection if valid
     if (selectedRowIndex >= 0 && selectedRowIndex < filteredPlays.length) {
       const rows = tbody.querySelectorAll("tr");
-      if (rows[selectedRowIndex]) {
-        rows[selectedRowIndex].classList.add("selected");
+      const localSel = selectedRowIndex - start;
+      if (localSel >= 0 && localSel < rows.length) {
+        rows[localSel].classList.add("selected");
       }
     }
 
@@ -617,6 +639,43 @@ function renderPlaybook() {
   } catch (err) {
     console.error("renderPlaybook error:", err);
     showToast("❌ Error rendering playbook.", 3000);
+  }
+}
+
+/**
+ * Render pagination controls below the table
+ */
+function _renderPagination(totalPages, totalFiltered) {
+  let pager = document.getElementById("pbPagination");
+  if (totalFiltered <= PLAYS_PER_PAGE) {
+    if (pager) pager.remove();
+    return;
+  }
+  if (!pager) {
+    pager = document.createElement("div");
+    pager.id = "pbPagination";
+    pager.className = "pb-pagination";
+    const container = document.getElementById("playbookContainer");
+    if (container) container.appendChild(pager);
+  }
+  pager.innerHTML = `
+    <button class="btn btn-sm" data-action="pbPagePrev" ${currentPage === 0 ? "disabled" : ""}>◀ Prev</button>
+    <span class="pb-page-info">Page ${currentPage + 1} of ${totalPages}</span>
+    <button class="btn btn-sm" data-action="pbPageNext" ${currentPage >= totalPages - 1 ? "disabled" : ""}>Next ▶</button>
+  `;
+}
+
+function pbPagePrev() {
+  if (currentPage > 0) {
+    currentPage--;
+    renderPlaybook();
+  }
+}
+function pbPageNext() {
+  const totalPages = Math.ceil(filteredPlays.length / PLAYS_PER_PAGE);
+  if (currentPage < totalPages - 1) {
+    currentPage++;
+    renderPlaybook();
   }
 }
 
@@ -1469,10 +1528,10 @@ function renderCollectionsPanel() {
             <div class="pb-coll-meta">${coll.count} plays${date ? " &middot; " + date : ""}</div>
           </div>
           <div class="pb-coll-actions">
-            <button class="pb-coll-btn" onclick="loadCollection(${idx})" title="Load filters">Load</button>
-            <button class="pb-coll-btn" onclick="sendCollectionToScript(${idx})" title="Send to script">&#128203; Script</button>
-            <button class="pb-coll-btn" onclick="sendCollectionToCallSheet(${idx})" title="Send to call sheet">&#128202; Sheet</button>
-            <button class="pb-coll-btn danger" onclick="deleteCollection(${idx})" title="Delete">&times;</button>
+            <button class="pb-coll-btn" data-action="loadCollection" data-idx="${idx}" title="Load filters">Load</button>
+            <button class="pb-coll-btn" data-action="sendCollectionToScript" data-idx="${idx}" title="Send to script">&#128203; Script</button>
+            <button class="pb-coll-btn" data-action="sendCollectionToCallSheet" data-idx="${idx}" title="Send to call sheet">&#128202; Sheet</button>
+            <button class="pb-coll-btn danger" data-action="deleteCollection" data-idx="${idx}" title="Delete">&times;</button>
           </div>
         </div>`;
     })
@@ -1527,15 +1586,15 @@ function renderPbPrintSort() {
 
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
-           ondragstart="_pbSortDragStart(event, ${idx})"
+           data-drag="pbSortStart" data-idx="${idx}"
            ondragover="_pbSortDragOver(event)"
            ondrop="_pbSortDrop(event, ${idx})"
-           ondragend="_pbSortDragEnd(event)">
+           data-drag="pbSortEnd">
         <span class="drag-handle">☰</span>
-        <select onchange="_pbSortUpdateField(${idx}, this.value)">${fieldOpts}</select>
-        <button class="sort-dir-btn" onclick="_pbSortToggleDir(${idx})" title="${dirTitle}">${dirIcon}</button>
-        <button class="custom-order-btn" onclick="openCustomOrderModal('${c.field}')" title="${customTitle}" style="font-size:11px;padding:2px 6px;">${customIcon}</button>
-        <button class="remove-sort-btn" onclick="_pbSortRemove(${idx})">✕</button>
+        <select data-field="pbSortField" data-idx="${idx}">${fieldOpts}</select>
+        <button class="sort-dir-btn" data-action="_pbSortToggleDir" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
+        <button class="custom-order-btn" data-action="openCustomOrderModal" data-sort-field="${c.field}" title="${customTitle}" style="font-size:11px;padding:2px 6px;">${customIcon}</button>
+        <button class="remove-sort-btn" data-action="_pbSortRemove" data-idx="${idx}">✕</button>
       </div>`;
     })
     .join("");

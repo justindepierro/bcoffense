@@ -25,6 +25,8 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   padding: 5px;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 400px;
 }
 .play-item {
   padding: 8px 10px;
@@ -134,6 +136,8 @@
   gap: 10px;
   cursor: grab;
   transition: all 0.2s;
+  content-visibility: auto;
+  contain-intrinsic-size: auto 52px;
 }
 @media (hover: hover) {
 

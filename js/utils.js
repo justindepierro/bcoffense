@@ -176,6 +176,7 @@ let _modalIdCounter = 0;
 
 function showModal(message, opts = {}) {
   return new Promise((resolve) => {
+    const previouslyFocused = document.activeElement;
     const title = opts.title || "Notice";
     const icon = opts.icon || "ℹ️";
     const mid = ++_modalIdCounter;
@@ -202,7 +203,10 @@ function showModal(message, opts = {}) {
 
     function close() {
       overlay.classList.remove("visible");
-      setTimeout(() => overlay.remove(), 200);
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+      }, 200);
       resolve();
     }
 
@@ -276,6 +280,7 @@ function showToast(message, durationOrOpts = 2000) {
  */
 function showConfirm(message, opts = {}) {
   return new Promise((resolve) => {
+    const previouslyFocused = document.activeElement;
     const title = opts.title || "Confirm";
     const icon = opts.icon || "❓";
     const confirmText = opts.confirmText || "OK";
@@ -308,7 +313,10 @@ function showConfirm(message, opts = {}) {
 
     function close(result) {
       overlay.classList.remove("visible");
-      setTimeout(() => overlay.remove(), 200);
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+      }, 200);
       resolve(result);
     }
 
@@ -335,6 +343,7 @@ function showConfirm(message, opts = {}) {
  */
 function showPrompt(message, defaultValue = "", opts = {}) {
   return new Promise((resolve) => {
+    const previouslyFocused = document.activeElement;
     const title = opts.title || "Input";
     const icon = opts.icon || "✏️";
     const placeholder = opts.placeholder || "";
@@ -372,7 +381,10 @@ function showPrompt(message, defaultValue = "", opts = {}) {
 
     function close(value) {
       overlay.classList.remove("visible");
-      setTimeout(() => overlay.remove(), 200);
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+      }, 200);
       resolve(value);
     }
 
@@ -409,6 +421,7 @@ function showPrompt(message, defaultValue = "", opts = {}) {
  */
 function showChoice(message, opts = {}) {
   return new Promise((resolve) => {
+    const previouslyFocused = document.activeElement;
     const title = opts.title || "Choose";
     const icon = opts.icon || "🔀";
 
@@ -465,7 +478,10 @@ function showChoice(message, opts = {}) {
 
     function close(val) {
       overlay.classList.remove("visible");
-      setTimeout(() => overlay.remove(), 200);
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+      }, 200);
       resolve(val === "__cancel__" ? null : val);
     }
 
@@ -498,6 +514,7 @@ function showChoice(message, opts = {}) {
  */
 function showListPicker(message, items, opts = {}) {
   return new Promise((resolve) => {
+    const previouslyFocused = document.activeElement;
     const title = opts.title || "Select";
     const icon = opts.icon || "📋";
 
@@ -537,7 +554,10 @@ function showListPicker(message, items, opts = {}) {
 
     function close(val) {
       overlay.classList.remove("visible");
-      setTimeout(() => overlay.remove(), 200);
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+      }, 200);
       resolve(val);
     }
 

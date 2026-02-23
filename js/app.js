@@ -193,25 +193,38 @@ function backToApp() {
  * Called by both handleFileUpload() and initApp().
  */
 function initAllModules() {
+  // ── Critical path: render the visible UI ──
   populateFilters();
   initChipListeners();
-  initCollections();
   restoreColumnVisibility();
-  initPlaybookKeyboard();
   filterPlays();
-  updateStatsBar();
-  renderAvailablePlays();
-  loadSavedScriptsList();
-  populateScriptWristbandSelect();
-  restoreScriptDisplayOptions();
-  ensureFirstPeriod();
-  renderScript();
 
-  // Load call sheet data if stored
-  const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-  if (storedCallSheet) {
-    callSheet = storedCallSheet;
-  }
+  // ── Deferred: non-blocking init for secondary features ──
+  const _idle =
+    typeof requestIdleCallback === "function"
+      ? requestIdleCallback
+      : (cb) => setTimeout(cb, 50);
+
+  _idle(
+    () => {
+      initCollections();
+      initPlaybookKeyboard();
+      updateStatsBar();
+      renderAvailablePlays();
+      loadSavedScriptsList();
+      populateScriptWristbandSelect();
+      restoreScriptDisplayOptions();
+      ensureFirstPeriod();
+      renderScript();
+
+      // Load call sheet data if stored
+      const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
+      if (storedCallSheet) {
+        callSheet = storedCallSheet;
+      }
+    },
+    { timeout: 2000 },
+  );
 }
 
 function handleFileUpload(event) {
@@ -1166,6 +1179,92 @@ document.addEventListener("click", (e) => {
     el.parentElement.classList.remove("open");
     return;
   }
+  if (action === "reloadPage") {
+    location.reload();
+    return;
+  }
+
+  // ── Actions from dynamically-rendered HTML (overlays & panels) ──
+  // These use data-idx / data-sid / data-layer etc. instead of data-arg,
+  // so they must be dispatched explicitly before the generic fallback.
+  switch (action) {
+    case "setPeriodPreset": {
+      const input = document.getElementById("newPeriodName");
+      if (input) input.value = el.dataset.preset;
+      return;
+    }
+    case "closePeriodOverlay": {
+      const ov = el.closest(".period-create-overlay");
+      if (ov) ov.remove();
+      return;
+    }
+    case "doInsertTemplate": {
+      doInsertTemplate(parseInt(el.dataset.idx, 10));
+      const ov = el.closest(".period-create-overlay");
+      if (ov) ov.remove();
+      return;
+    }
+    case "doDeleteTemplate":
+      doDeleteTemplate(parseInt(el.dataset.idx, 10));
+      return;
+    case "doImportFromCallSheet": {
+      const modal = el.closest(".cs-import-modal");
+      if (modal) doImportFromCallSheet(parseInt(el.dataset.idx, 10), modal);
+      return;
+    }
+    case "csImportSelectAll": {
+      const modal = el.closest(".cs-import-modal");
+      if (modal)
+        modal
+          .querySelectorAll(".cs-import-cat-cb")
+          .forEach((cb) => (cb.checked = true));
+      return;
+    }
+    case "csImportClearAll": {
+      const modal = el.closest(".cs-import-modal");
+      if (modal)
+        modal
+          .querySelectorAll(".cs-import-cat-cb")
+          .forEach((cb) => (cb.checked = false));
+      return;
+    }
+    case "loadScript":
+      loadScript(parseInt(el.dataset.sid, 10));
+      return;
+    case "renameSavedScript":
+      renameSavedScript(parseInt(el.dataset.sid, 10));
+      return;
+    case "overwriteSavedScript":
+      overwriteSavedScript(parseInt(el.dataset.sid, 10));
+      return;
+    case "deleteSavedScript":
+      deleteSavedScript(parseInt(el.dataset.sid, 10));
+      return;
+    case "removeFilter":
+      removeFilter(el.dataset.layer, el.dataset.filterValue);
+      return;
+    case "openCustomOrderModal":
+      openCustomOrderModal(el.dataset.sortField);
+      return;
+    case "loadCollection":
+      loadCollection(parseInt(el.dataset.idx, 10));
+      return;
+    case "sendCollectionToScript":
+      sendCollectionToScript(parseInt(el.dataset.idx, 10));
+      return;
+    case "sendCollectionToCallSheet":
+      sendCollectionToCallSheet(parseInt(el.dataset.idx, 10));
+      return;
+    case "deleteCollection":
+      deleteCollection(parseInt(el.dataset.idx, 10));
+      return;
+    case "_pbSortToggleDir":
+      _pbSortToggleDir(parseInt(el.dataset.idx, 10));
+      return;
+    case "_pbSortRemove":
+      _pbSortRemove(parseInt(el.dataset.idx, 10));
+      return;
+  }
 
   // General function dispatch
   const fn = window[action];
@@ -1184,3 +1283,214 @@ document.addEventListener("click", (e) => {
     fn();
   }
 });
+
+/* ── Delegated listeners for dynamically-rendered HTML ────────────
+ * Covers #scriptPlays, #availablePlays, #playbookTable, and
+ * document-level actions from dynamically-created overlays.
+ * ─────────────────────────────────────────────────────────────── */
+document.addEventListener("DOMContentLoaded", () => {
+  /* ---------- Script container: click ---------- */
+  const scriptEl = document.getElementById("scriptPlays");
+  if (scriptEl) {
+    scriptEl.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-action]");
+      if (!el) return;
+      const action = el.dataset.action;
+      const idx = parseInt(el.dataset.idx, 10);
+      const dir = parseInt(el.dataset.dir, 10);
+      switch (action) {
+        case "movePlay":
+          movePlay(idx, dir);
+          break;
+        case "removeFromScript":
+          removeFromScript(idx);
+          break;
+        case "duplicatePlay":
+          duplicatePlay(idx);
+          break;
+        case "togglePeriodCollapse":
+          togglePeriodCollapse(el.dataset.periodId);
+          break;
+        case "movePeriod":
+          movePeriod(idx, dir);
+          break;
+        case "duplicatePeriod":
+          duplicatePeriod(idx);
+          break;
+        case "savePeriodAsTemplate":
+          savePeriodAsTemplate(idx);
+          break;
+        case "selectPeriodPlays":
+          selectPeriodPlays(idx);
+          break;
+        case "sortPeriod":
+          sortPeriod(idx);
+          break;
+        case "reversePeriod":
+          reversePeriod(idx);
+          break;
+        case "openSmartScriptForPeriod":
+          openSmartScriptForPeriod(idx);
+          break;
+        case "applyPreferredForPeriod":
+          applyPreferredForPeriod(idx);
+          break;
+        case "pushPeriodToCallSheet":
+          pushPeriodToCallSheet(idx);
+          break;
+        case "importFromCallSheet":
+          importFromCallSheet(idx);
+          break;
+        default:
+          return; // let it bubble for unhandled actions
+      }
+      e.stopPropagation();
+    });
+
+    /* ---------- Script container: change ---------- */
+    scriptEl.addEventListener("change", (e) => {
+      const el = e.target;
+      const field = el.dataset.field;
+      if (!field) return;
+      const idx = parseInt(el.dataset.idx, 10);
+      switch (field) {
+        case "hash":
+          updateHash(idx, el.value);
+          break;
+        case "defFront":
+          updateDefField(idx, "defFront", el.value);
+          break;
+        case "defCoverage":
+          updateDefField(idx, "defCoverage", el.value);
+          break;
+        case "defStunt":
+          updateDefField(idx, "defStunt", el.value);
+          break;
+        case "defBlitz":
+          updateDefField(idx, "defBlitz", el.value);
+          break;
+        case "reps":
+          updateReps(idx, el.value);
+          break;
+        case "notes":
+          updateNotes(idx, el.value);
+          break;
+        case "bulkSelect":
+          toggleBulkSelect(idx);
+          break;
+        case "periodColor":
+          updatePeriodColor(idx, el);
+          break;
+        case "periodLabel":
+          script[idx].label = el.value;
+          saveScriptState();
+          break;
+        case "periodMinutes":
+          updatePeriodMinutes(idx, el);
+          break;
+      }
+    });
+
+    /* ---------- Script container: dragstart/dragend ---------- */
+    scriptEl.addEventListener("dragstart", (e) => {
+      const el = e.target.closest("[data-drag]");
+      if (!el) return;
+      if (el.dataset.drag === "scriptStart") {
+        handleScriptDragStart(e, parseInt(el.dataset.idx, 10));
+      }
+    });
+    scriptEl.addEventListener("dragend", (e) => {
+      if (e.target.closest("[data-drag]")) handleDragEnd(e);
+    });
+  }
+
+  /* ---------- Available plays container: click + change ---------- */
+  const availEl = document.getElementById("availablePlays");
+  if (availEl) {
+    availEl.addEventListener("click", (e) => {
+      const el = e.target.closest("[data-action]");
+      if (!el) return;
+      if (el.dataset.action === "addToScript") {
+        addToScript(parseInt(el.dataset.idx, 10));
+        e.stopPropagation();
+      }
+    });
+    availEl.addEventListener("change", (e) => {
+      if (e.target.dataset.field === "availableSelect") {
+        toggleAvailablePlaySelect(parseInt(e.target.dataset.idx, 10));
+      }
+    });
+    availEl.addEventListener("dragstart", (e) => {
+      const el = e.target.closest("[data-drag]");
+      if (el && el.dataset.drag === "availStart") {
+        handleDragStart(e, parseInt(el.dataset.idx, 10));
+      }
+    });
+  }
+
+  /* ---------- Playbook table: click + mouseover ---------- */
+  const pbBody = document.querySelector("#playbookTable tbody");
+  if (pbBody) {
+    pbBody.addEventListener("click", (e) => {
+      const row = e.target.closest("tr[data-action]");
+      if (!row) return;
+      const idx = parseInt(row.dataset.idx, 10);
+      // Copy play name from play-cell click
+      const cell = e.target.closest("[data-action='copyPlayName']");
+      if (cell) {
+        e.stopPropagation();
+        copyPlayName(cell.dataset.play);
+        return;
+      }
+      selectPlaybookRow(idx);
+      e.stopPropagation();
+    });
+    pbBody.addEventListener("dblclick", (e) => {
+      const row = e.target.closest("tr[data-dblaction]");
+      if (row) addPlayFromPlaybook(parseInt(row.dataset.idx, 10));
+    });
+    pbBody.addEventListener(
+      "mouseenter",
+      (e) => {
+        const row = e.target.closest("tr[data-preview]");
+        if (row) showPlayPreview(e, parseInt(row.dataset.preview, 10));
+      },
+      true,
+    );
+    pbBody.addEventListener(
+      "mouseleave",
+      (e) => {
+        const row = e.target.closest("tr[data-preview]");
+        if (row) hidePlayPreview();
+      },
+      true,
+    );
+  }
+});
+
+/* ── Delegated change / input handler ────────────────────────────
+ * Replaces all inline onchange= and oninput= attributes in index.html.
+ * Each element uses data-onchange="fnName" or data-oninput="fnName"
+ * (semicolon-separated for compound calls).
+ * Optional: data-pass="value" → pass el.value,
+ *           data-pass="event" → pass the event,
+ *           data-arg="x"     → pass the string x.
+ * ─────────────────────────────────────────────────────────────── */
+function _dispatchDataHandler(e, attr) {
+  const el = e.target;
+  const raw = el.dataset[attr]; // "onchange" → el.dataset.onchange
+  if (!raw) return;
+  const fns = raw.split(";");
+  const pass = el.dataset.pass;
+  const arg = el.dataset.arg;
+  for (const name of fns) {
+    const fn = window[name];
+    if (typeof fn !== "function") continue;
+    if (pass === "value") fn(el.value);
+    else if (pass === "event") fn(e);
+    else if (arg !== undefined) fn(arg);
+    else fn();
+  }
+}
+document.addEventListener("change", (e) => _dispatchDataHandler(e, "onchange"));
+document.addEventListener("input", (e) => _dispatchDataHandler(e, "oninput"));

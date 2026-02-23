@@ -729,16 +729,15 @@ function renderAvailablePlays() {
       const playIdx = playIndexMap.get(p);
       const isSelected = selectedAvailablePlays.includes(playIdx);
       return `
-            <div class="play-item ${isSelected ? "selected" : ""}" draggable="true" ondragstart="handleDragStart(event, ${playIdx})">
+            <div class="play-item ${isSelected ? "selected" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
                 <input type="checkbox" class="available-play-cb" data-index="${playIdx}" 
                        ${isSelected ? "checked" : ""} 
-                       onchange="toggleAvailablePlaySelect(${playIdx})" 
-                       onclick="event.stopPropagation()" />
+                       data-field="availableSelect" data-idx="${playIdx}" />
                 <div class="play-info">
                     <div class="play-name">${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}</div>
                     <div class="play-details">${escapeHtml(p.type)} ${p.motion ? "• " + escapeHtml(p.motion) : ""}</div>
                 </div>
-                <button onclick="addToScript(${playIdx})">+ Add</button>
+                <button data-action="addToScript" data-idx="${playIdx}">+ Add</button>
             </div>
         `;
     })
@@ -1154,7 +1153,7 @@ function addSeparator() {
   const overlay = document.createElement("div");
   overlay.className = "period-create-overlay";
   overlay.innerHTML = `
-    <div class="period-create-modal" onclick="event.stopPropagation()">
+    <div class="period-create-modal">
       <h4>➕ New Period</h4>
       <div class="period-create-fields">
         <div class="pcf-row">
@@ -1172,18 +1171,18 @@ function addSeparator() {
       </div>
       <div class="period-create-presets">
         <span class="pcf-presets-label">Quick:</span>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='Indy'">Indy</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='Team Run'">Team Run</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='Team Pass'">Team Pass</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='7-on-7'">7-on-7</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='Red Zone'">Red Zone</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='2-Minute'">2-Minute</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='Short Yardage'">Short Yardage</button>
-        <button class="pcf-preset" onclick="document.getElementById('newPeriodName').value='Goal Line'">Goal Line</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="Indy">Indy</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="Team Run">Team Run</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="Team Pass">Team Pass</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="7-on-7">7-on-7</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="Red Zone">Red Zone</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="2-Minute">2-Minute</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="Short Yardage">Short Yardage</button>
+        <button class="pcf-preset" data-action="setPeriodPreset" data-preset="Goal Line">Goal Line</button>
       </div>
       <div class="period-create-actions">
-        <button class="btn btn-success" onclick="confirmAddPeriod()">✓ Add Period</button>
-        <button class="btn" onclick="this.closest('.period-create-overlay').remove()">Cancel</button>
+        <button class="btn btn-success" data-action="confirmAddPeriod">✓ Add Period</button>
+        <button class="btn" data-action="closePeriodOverlay">Cancel</button>
       </div>
     </div>
   `;
@@ -1738,19 +1737,19 @@ async function importFromCallSheet(separatorIndex) {
     .join("");
 
   overlay.innerHTML = `
-    <div class="period-create-modal cs-import-modal" onclick="event.stopPropagation()">
+    <div class="period-create-modal cs-import-modal">
       <h4>📋 Import from Call Sheet → ${periodLabel}</h4>
       <p class="cs-import-hint">Select categories to import plays from. Duplicates will be skipped.</p>
       <div class="cs-import-actions-top">
-        <button class="btn btn-sm" onclick="this.closest('.cs-import-modal').querySelectorAll('.cs-import-cat-cb').forEach(cb => cb.checked = true)">Select All</button>
-        <button class="btn btn-sm" onclick="this.closest('.cs-import-modal').querySelectorAll('.cs-import-cat-cb').forEach(cb => cb.checked = false)">Clear</button>
+        <button class="btn btn-sm" data-action="csImportSelectAll">Select All</button>
+        <button class="btn btn-sm" data-action="csImportClearAll">Clear</button>
       </div>
       <div class="cs-import-cat-list">
         ${catListHtml}
       </div>
       <div class="period-create-actions" style="margin-top:12px;">
-        <button class="btn btn-primary" onclick="doImportFromCallSheet(${separatorIndex}, this.closest('.cs-import-modal'))">Import Selected</button>
-        <button class="btn" onclick="this.closest('.period-create-overlay').remove()">Cancel</button>
+        <button class="btn btn-primary" data-action="doImportFromCallSheet" data-idx="${separatorIndex}">Import Selected</button>
+        <button class="btn" data-action="closePeriodOverlay">Cancel</button>
       </div>
     </div>
   `;
@@ -1853,13 +1852,13 @@ function insertPeriodFromTemplate() {
   overlay.className = "period-create-overlay";
   overlay.onclick = () => overlay.remove();
   overlay.innerHTML = `
-    <div class="period-create-modal" onclick="event.stopPropagation()">
+    <div class="period-create-modal">
       <h4>📋 Insert from Template</h4>
       <div class="template-picker-list">
         ${periodTemplates
           .map(
             (t, i) => `
-          <div class="template-picker-item" onclick="doInsertTemplate(${i}); this.closest('.period-create-overlay').remove();">
+          <div class="template-picker-item" data-action="doInsertTemplate" data-idx="${i}">
             <div class="tpi-name">${escapeHtml(t.name)}</div>
             <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
           </div>
@@ -1868,8 +1867,8 @@ function insertPeriodFromTemplate() {
           .join("")}
       </div>
       <div class="period-create-actions" style="margin-top:12px;">
-        <button class="btn btn-danger btn-sm" onclick="manageTemplates()">🗑 Manage</button>
-        <button class="btn" onclick="this.closest('.period-create-overlay').remove()">Cancel</button>
+        <button class="btn btn-danger btn-sm" data-action="manageTemplates">🗑 Manage</button>
+        <button class="btn" data-action="closePeriodOverlay">Cancel</button>
       </div>
     </div>
   `;
@@ -1914,7 +1913,7 @@ function manageTemplates() {
   overlay.className = "period-create-overlay";
   overlay.onclick = () => overlay.remove();
   overlay.innerHTML = `
-    <div class="period-create-modal" onclick="event.stopPropagation()">
+    <div class="period-create-modal">
       <h4>🗑 Manage Templates</h4>
       <div class="template-picker-list" id="templateManageList">
         ${periodTemplates
@@ -1925,14 +1924,14 @@ function manageTemplates() {
               <div class="tpi-name">${escapeHtml(t.name)}</div>
               <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
             </div>
-            <button class="btn btn-danger btn-sm" onclick="doDeleteTemplate(${i})">✕</button>
+            <button class="btn btn-danger btn-sm" data-action="doDeleteTemplate" data-idx="${i}">✕</button>
           </div>
         `,
           )
           .join("")}
       </div>
       <div class="period-create-actions" style="margin-top:12px;">
-        <button class="btn" onclick="this.closest('.period-create-overlay').remove()">Done</button>
+        <button class="btn" data-action="closePeriodOverlay">Done</button>
       </div>
     </div>
   `;
@@ -2397,12 +2396,12 @@ function renderScript() {
         periodHeaders += `
         <div class="script-item period-header" style="background: ${periodColor}; color: white;">
           <div class="ph-left">
-            <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
-            <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" onchange="script[${i}].label = this.value; saveScriptState()" placeholder="Period name">
-            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="updatePeriodMinutes(${i}, this)" placeholder="min" title="Time in minutes">
+            <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color">
+            <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" data-field="periodLabel" data-idx="${i}" placeholder="Period name">
+            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes">
           </div>
           <div class="ph-right">
-            <button class="remove" onclick="removeFromScript(${i})" style="margin-left: 4px;">✕</button>
+            <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;">✕</button>
           </div>
         </div>
       `;
@@ -2505,31 +2504,31 @@ function renderScript() {
             <div class="period-header-wrapper" style="border-left: 4px solid ${periodColor};">
               <div class="script-item period-header" style="background: ${periodColor}; color: white;">
                 <div class="ph-left">
-                  <button class="ph-collapse-btn" onclick="togglePeriodCollapse('${p.id}')" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
-                  <input type="color" class="ph-color-input" value="${periodColor}" onchange="updatePeriodColor(${i}, this)" title="Period color">
-                  <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" onchange="script[${i}].label = this.value; saveScriptState()">
-                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" onchange="updatePeriodMinutes(${i}, this)" placeholder="min" title="Time in minutes">
+                  <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${p.id}" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
+                  <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color">
+                  <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" data-field="periodLabel" data-idx="${i}">
+                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes">
                   <span class="ph-meta-span">${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}</span>
                 </div>
                 <div class="ph-right">
-                  <button class="ph-btn" onclick="movePeriod(${i}, -1)" title="Move period up" aria-label="Move period up">▲</button>
-                  <button class="ph-btn" onclick="movePeriod(${i}, 1)" title="Move period down" aria-label="Move period down">▼</button>
-                  <button class="ph-btn" onclick="duplicatePeriod(${i})" title="Duplicate period" aria-label="Duplicate period">⧉</button>
-                  <button class="ph-btn" onclick="savePeriodAsTemplate(${i})" title="Save as template" aria-label="Save as template">💾</button>
-                  <button class="remove" onclick="removeFromScript(${i})" style="margin-left: 4px;" aria-label="Delete period">✕</button>
+                  <button class="ph-btn" data-action="movePeriod" data-idx="${i}" data-dir="-1" title="Move period up" aria-label="Move period up">▲</button>
+                  <button class="ph-btn" data-action="movePeriod" data-idx="${i}" data-dir="1" title="Move period down" aria-label="Move period down">▼</button>
+                  <button class="ph-btn" data-action="duplicatePeriod" data-idx="${i}" title="Duplicate period" aria-label="Duplicate period">⧉</button>
+                  <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${i}" title="Save as template" aria-label="Save as template">💾</button>
+                  <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete period">✕</button>
                 </div>
               </div>
               ${
                 !isCollapsed && playCount > 0
                   ? `
               <div class="period-actions-toolbar">
-                <button class="pat-btn" onclick="selectPeriodPlays(${i})" title="Select / deselect all plays in this period">☑ Select All</button>
-                <button class="pat-btn" onclick="sortPeriod(${i})" title="Sort this period by the selected sort field">⬍ Sort</button>
-                <button class="pat-btn" onclick="reversePeriod(${i})" title="Reverse play order in this period">↕ Reverse</button>
-                <button class="pat-btn pat-btn-smart" onclick="openSmartScriptForPeriod(${i})" title="Run Smart Script on just this period">🧠 Smart Script</button>
-                <button class="pat-btn" onclick="applyPreferredForPeriod(${i})" title="Apply preferred metadata to plays in this period">★ Preferred</button>
-                <button class="pat-btn pat-btn-callsheet" onclick="pushPeriodToCallSheet(${i})" title="Push this period's plays to matching call sheet categories">📋 → Call Sheet</button>
-                <button class="pat-btn pat-btn-import-cs" onclick="importFromCallSheet(${i})" title="Import plays from call sheet categories into this period">📋 ← Call Sheet</button>
+                <button class="pat-btn" data-action="selectPeriodPlays" data-idx="${i}" title="Select / deselect all plays in this period">☑ Select All</button>
+                <button class="pat-btn" data-action="sortPeriod" data-idx="${i}" title="Sort this period by the selected sort field">⬍ Sort</button>
+                <button class="pat-btn" data-action="reversePeriod" data-idx="${i}" title="Reverse play order in this period">↕ Reverse</button>
+                <button class="pat-btn pat-btn-smart" data-action="openSmartScriptForPeriod" data-idx="${i}" title="Run Smart Script on just this period">🧠 Smart Script</button>
+                <button class="pat-btn" data-action="applyPreferredForPeriod" data-idx="${i}" title="Apply preferred metadata to plays in this period">★ Preferred</button>
+                <button class="pat-btn pat-btn-callsheet" data-action="pushPeriodToCallSheet" data-idx="${i}" title="Push this period's plays to matching call sheet categories">📋 → Call Sheet</button>
+                <button class="pat-btn pat-btn-import-cs" data-action="importFromCallSheet" data-idx="${i}" title="Import plays from call sheet categories into this period">📋 ← Call Sheet</button>
               </div>`
                   : ""
               }
@@ -2564,37 +2563,37 @@ function renderScript() {
             );
 
             return `
-          <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" ondragstart="handleScriptDragStart(event, ${i})" ondragend="handleDragEnd(event)">
-            <input type="checkbox" class="bulk-select-cb" data-index="${i}" ${isSelected ? "checked" : ""} onchange="toggleBulkSelect(${i})" title="Select for bulk edit">
+          <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" data-drag="scriptStart" data-idx="${i}" data-drag="end">
+            <input type="checkbox" class="bulk-select-cb" data-index="${i}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${i}" title="Select for bulk edit">
             <div class="play-num">${playNum}${wbBadge}</div>
             <div class="play-call">
               <div class="full-call">${fullCall}</div>
               <div class="call-meta">${escapeHtml(p.type)} ${p.tempo ? "• " + escapeHtml(p.tempo) : ""}</div>
             </div>
             <div class="hash-input">
-              <select onchange="updateHash(${i}, this.value)" title="Hash">
+              <select data-field="hash" data-idx="${i}" title="Hash">
                 ${hashOptions}
               </select>
             </div>
             <div class="defense-inputs">
-              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : "dl-front-shared"}" value="${escapeHtml(p.defFront || "")}" placeholder="Front" onchange="updateDefField(${i}, 'defFront', this.value)" title="Defensive Front" class="def-input">
+              <input type="text" list="${p.practiceFront ? `dl-front-${i}` : "dl-front-shared"}" value="${escapeHtml(p.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${i}" title="Defensive Front" class="def-input">
               ${p.practiceFront ? `<datalist id="dl-front-${i}"><option value="${escapeHtml(p.practiceFront)}">★ ${escapeHtml(p.practiceFront)}</option>${scoutFrontOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : "dl-cov-shared"}" value="${escapeHtml(p.defCoverage || "")}" placeholder="Cov" onchange="updateDefField(${i}, 'defCoverage', this.value)" title="Coverage" class="def-input">
+              <input type="text" list="${p.practiceCoverage ? `dl-cov-${i}` : "dl-cov-shared"}" value="${escapeHtml(p.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${i}" title="Coverage" class="def-input">
               ${p.practiceCoverage ? `<datalist id="dl-cov-${i}"><option value="${escapeHtml(p.practiceCoverage)}">★ ${escapeHtml(p.practiceCoverage)}</option>${scoutCovOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : "dl-stunt-shared"}" value="${escapeHtml(p.defStunt || "")}" placeholder="Stunt" onchange="updateDefField(${i}, 'defStunt', this.value)" title="Stunt" class="def-input">
+              <input type="text" list="${p.practiceStunt ? `dl-stunt-${i}` : "dl-stunt-shared"}" value="${escapeHtml(p.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${i}" title="Stunt" class="def-input">
               ${p.practiceStunt ? `<datalist id="dl-stunt-${i}"><option value="${escapeHtml(p.practiceStunt)}">★ ${escapeHtml(p.practiceStunt)}</option>${scoutStuntOpts}</datalist>` : ""}
-              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : "dl-blitz-shared"}" value="${escapeHtml(p.defBlitz || "")}" placeholder="Blitz" onchange="updateDefField(${i}, 'defBlitz', this.value)" title="Blitz" class="def-input">
+              <input type="text" list="${p.practiceBlitz ? `dl-blitz-${i}` : "dl-blitz-shared"}" value="${escapeHtml(p.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${i}" title="Blitz" class="def-input">
               ${p.practiceBlitz ? `<datalist id="dl-blitz-${i}"><option value="${escapeHtml(p.practiceBlitz)}">★ ${escapeHtml(p.practiceBlitz)}</option>${scoutBlitzOpts}</datalist>` : ""}
             </div>
             <div class="play-controls">
               <div class="move-btns">
-                <button class="move-btn" onclick="movePlay(${i}, -1)" aria-label="Move play up">▲</button>
-                <button class="move-btn" onclick="movePlay(${i}, 1)" aria-label="Move play down">▼</button>
+                <button class="move-btn" data-action="movePlay" data-idx="${i}" data-dir="-1" aria-label="Move play up">▲</button>
+                <button class="move-btn" data-action="movePlay" data-idx="${i}" data-dir="1" aria-label="Move play down">▼</button>
               </div>
-              <input type="number" value="${p.reps}" min="1" onchange="updateReps(${i}, this.value)" title="Reps">
-              <input type="text" value="${escapeHtml(p.notes || "")}" placeholder="Notes" onchange="updateNotes(${i}, this.value)">
-              <button class="dup-btn" onclick="duplicatePlay(${i})" title="Duplicate" aria-label="Duplicate play">⧉</button>
-              <button class="remove" onclick="removeFromScript(${i})" aria-label="Remove play">✕</button>
+              <input type="number" value="${p.reps}" min="1" data-field="reps" data-idx="${i}" title="Reps">
+              <input type="text" value="${escapeHtml(p.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${i}">
+              <button class="dup-btn" data-action="duplicatePlay" data-idx="${i}" title="Duplicate" aria-label="Duplicate play">⧉</button>
+              <button class="remove" data-action="removeFromScript" data-idx="${i}" aria-label="Remove play">✕</button>
             </div>
           </div>
           ${
@@ -2837,10 +2836,10 @@ function loadSavedScriptsList() {
                   ${periods ? `<div class="saved-card-periods">${escapeHtml(periods)}</div>` : ""}
                 </div>
                 <div class="saved-card-actions">
-                    <button class="saved-load-btn" onclick="loadScript(${s.id})" title="Load this script">Load</button>
-                    <button class="saved-rename-btn" onclick="renameSavedScript(${s.id})" title="Rename">✏️</button>
-                    <button class="saved-overwrite-btn" onclick="overwriteSavedScript(${s.id})" title="Overwrite with current script">⬆️</button>
-                    <button class="saved-del-btn" onclick="deleteSavedScript(${s.id})" title="Delete">✕</button>
+                    <button class="saved-load-btn" data-action="loadScript" data-sid="${s.id}" title="Load this script">Load</button>
+                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${s.id}" title="Rename">✏️</button>
+                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${s.id}" title="Overwrite with current script">⬆️</button>
+                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${s.id}" title="Delete">✕</button>
                 </div>
             </div>
         `;
@@ -3057,11 +3056,11 @@ function openLoadWristbandToScriptModal() {
     .join("");
 
   const modalHtml = `
-    <div id="loadWbToScriptModal" class="modal-overlay" style="display: flex;" onclick="closeLoadWbToScriptModal(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 450px;">
+    <div id="loadWbToScriptModal" class="modal-overlay" style="display: flex;" data-action="closeLoadWbToScriptModalOverlay">
+      <div class="modal-content" style="max-width: 450px;">
         <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid ${UI_COLORS.borderLight};">
           <h3 style="margin: 0;">➕ Load Wristband Plays to Script</h3>
-          <button onclick="closeLoadWbToScriptModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: ${UI_COLORS.textMuted};">✕</button>
+          <button data-action="closeLoadWbToScriptModal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: ${UI_COLORS.textMuted};">✕</button>
         </div>
         
         <div style="margin-bottom: 15px;">
@@ -3092,10 +3091,10 @@ function openLoadWristbandToScriptModal() {
         </div>
         
         <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button onclick="executeLoadWbToScript()" class="btn btn-primary" style="padding: 10px 20px;">
+          <button data-action="executeLoadWbToScript" class="btn btn-primary" style="padding: 10px 20px;">
             ✅ Load Plays
           </button>
-          <button onclick="closeLoadWbToScriptModal()" class="btn" style="padding: 10px 20px;">
+          <button data-action="closeLoadWbToScriptModal" class="btn" style="padding: 10px 20px;">
             Cancel
           </button>
         </div>
