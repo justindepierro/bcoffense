@@ -13,12 +13,10 @@
 .callsheet-columns {
   display: flex;
   gap: 15px;
-  min-width: max-content;
 }
 
 .callsheet-column {
-  flex: 1;
-  min-width: 250px;
+  flex: 1 0 250px;
   display: flex;
   flex-direction: column;
   gap: 15px;

@@ -152,7 +152,9 @@
   }
   .callsheet-columns {
     flex-direction: column;
-    min-width: 0;
+  }
+  .callsheet-column {
+    flex: 1 1 auto;
   }
   .dash-cards {
     grid-template-columns: repeat(2, 1fr) !important;
