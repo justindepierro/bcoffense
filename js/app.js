@@ -277,6 +277,9 @@ function handleFileUpload(event) {
  */
 function initApp() {
   try {
+    // Run storage migrations before loading any data
+    runMigrations();
+
     // Check for stored playbook
     const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
     if (storedPlaybook) {
@@ -912,10 +915,10 @@ function showCSVTemplateModal() {
   }
 
   overlay.innerHTML = `
-    <div class="custom-modal csv-tpl-modal">
+    <div class="custom-modal csv-tpl-modal" role="dialog" aria-modal="true" aria-labelledby="csvTplTitle">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">📋</span>
-        <h3 class="custom-modal-title">CSV Column Templates</h3>
+        <h3 class="custom-modal-title" id="csvTplTitle">CSV Column Templates</h3>
       </div>
       <div class="custom-modal-body csv-tpl-body">
         <div class="csv-tpl-section">
@@ -1071,11 +1074,113 @@ function downloadCSVTemplate(type) {
 // Initialize when DOM is ready
 document.addEventListener("DOMContentLoaded", initApp);
 
+// Global error handlers — surface silent failures to the user
+window.addEventListener("unhandledrejection", (e) => {
+  console.error("Unhandled promise rejection:", e.reason);
+  showToast("\u26a0\ufe0f Something went wrong. Check console.", {
+    duration: 4000,
+    type: "error",
+  });
+});
+window.addEventListener("error", (e) => {
+  console.error("Uncaught error:", e.error || e.message);
+});
+
+// Tab bar arrow-key navigation (WCAG 2.1.1)
+document.addEventListener("DOMContentLoaded", () => {
+  const tablist = document.querySelector('[role="tablist"]');
+  if (!tablist) return;
+  // Set tabindex: active=0, inactive=-1
+  tablist.querySelectorAll('[role="tab"]').forEach((t) => {
+    t.setAttribute(
+      "tabindex",
+      t.getAttribute("aria-selected") === "true" ? "0" : "-1",
+    );
+  });
+  tablist.addEventListener("keydown", (e) => {
+    const tabs = [...tablist.querySelectorAll('[role="tab"]')];
+    const idx = tabs.indexOf(e.target);
+    if (idx < 0) return;
+    let next;
+    if (e.key === "ArrowRight") next = tabs[(idx + 1) % tabs.length];
+    else if (e.key === "ArrowLeft")
+      next = tabs[(idx - 1 + tabs.length) % tabs.length];
+    if (next) {
+      e.preventDefault();
+      tabs.forEach((t) => t.setAttribute("tabindex", "-1"));
+      next.setAttribute("tabindex", "0");
+      next.focus();
+      next.click();
+    }
+  });
+});
+
 // Close any open dropdowns when clicking outside
 document.addEventListener("click", (e) => {
   if (!e.target.closest(".more-tools-wrap")) {
     document
       .querySelectorAll(".more-tools-wrap.open")
       .forEach((el) => el.classList.remove("open"));
+  }
+});
+
+/* ── Delegated click handler ─────────────────────────────────────
+ * Replaces all inline onclick= attributes in index.html.
+ * Each interactive element uses data-action="fnName" (and optionally
+ * data-arg / data-target) instead of inline JS.
+ * ────────────────────────────────────────────────────────────────── */
+const _ELEMENT_FNS = new Set([
+  "toggleFilterSection",
+  "toggleCollapsiblePanel",
+  "setHeaderColor",
+  "switchDisplayTab",
+]);
+const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
+
+document.addEventListener("click", (e) => {
+  const el = e.target.closest("[data-action]");
+  if (!el) return;
+  const action = el.dataset.action;
+
+  // Overlay close: only fire when clicking the overlay bg itself
+  if (action.endsWith("Overlay")) {
+    if (e.target !== el) return;
+    const fn = window[action.slice(0, -7)];
+    if (typeof fn === "function") fn();
+    return;
+  }
+
+  // Click proxy: trigger click on another element
+  if (action === "triggerClick") {
+    const t = el.dataset.target;
+    if (t) document.getElementById(t)?.click();
+    return;
+  }
+
+  // Inline DOM toggles
+  if (action === "toggleParentOpen") {
+    el.parentElement.classList.toggle("open");
+    return;
+  }
+  if (action === "removeParentOpen") {
+    el.parentElement.classList.remove("open");
+    return;
+  }
+
+  // General function dispatch
+  const fn = window[action];
+  if (typeof fn !== "function") return;
+
+  const arg = el.dataset.arg;
+  if (arg !== undefined && _ELEMENT_FNS.has(action)) {
+    fn(arg, el);
+  } else if (arg !== undefined && _BOOL_FNS.has(action)) {
+    fn(arg === "true");
+  } else if (arg !== undefined) {
+    fn(arg);
+  } else if (_ELEMENT_FNS.has(action)) {
+    fn(el);
+  } else {
+    fn();
   }
 });

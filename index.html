@@ -56,7 +56,7 @@
       <div class="app-header-actions">
         <button
           class="header-action-btn"
-          onclick="showUpload()"
+          data-action="showUpload"
           title="Import / Export"
         >
           <span>⚙️</span>
@@ -72,8 +72,13 @@
       role="region"
       aria-label="File upload and settings"
     >
-      <div class="upload-box">
-        <button id="backToAppBtn" class="back-btn hidden" onclick="backToApp()">
+      <div class="upload-box" data-testid="upload-box">
+        <button
+          id="backToAppBtn"
+          class="back-btn hidden"
+          data-action="backToApp"
+          data-testid="back-to-app"
+        >
           ← Back to Dashboard
         </button>
         <h2>📁 Upload Your Playbook CSV</h2>
@@ -83,15 +88,20 @@
           id="csvFile"
           accept=".csv"
           onchange="handleFileUpload(event)"
+          data-testid="csv-upload"
         />
         <button
           class="btn btn-primary"
-          onclick="document.getElementById('csvFile').click()"
+          data-action="triggerClick"
+          data-target="csvFile"
         >
           Choose CSV File
         </button>
         <p class="hint">Or drag and drop your file here</p>
-        <button class="btn btn-outline mt-sm" onclick="showCSVTemplateModal()">
+        <button
+          class="btn btn-outline mt-sm"
+          data-action="showCSVTemplateModal"
+        >
           📋 CSV Column Template
         </button>
 
@@ -101,7 +111,11 @@
             Export your playbook, scripts, and wristbands to a file for backup
           </p>
           <div class="backup-buttons">
-            <button class="btn btn-secondary" onclick="exportBackup()">
+            <button
+              class="btn btn-secondary"
+              data-action="exportBackup"
+              data-testid="export-backup"
+            >
               ⬇️ Export Backup
             </button>
             <input
@@ -113,7 +127,8 @@
             />
             <button
               class="btn btn-secondary"
-              onclick="document.getElementById('backupFile').click()"
+              data-action="triggerClick"
+              data-target="backupFile"
             >
               ⬆️ Import Backup
             </button>
@@ -144,7 +159,9 @@
           role="tab"
           aria-selected="true"
           aria-controls="playbook"
-          onclick="showTab('playbook')"
+          data-action="showTab"
+          data-arg="playbook"
+          data-testid="tab-playbook"
         >
           Playbook
         </button>
@@ -154,7 +171,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="script"
-          onclick="showTab('script')"
+          data-action="showTab"
+          data-arg="script"
+          data-testid="tab-script"
         >
           Practice Script Builder
         </button>
@@ -164,7 +183,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="wristband"
-          onclick="showTab('wristband')"
+          data-action="showTab"
+          data-arg="wristband"
+          data-testid="tab-wristband"
         >
           Wristband Maker
         </button>
@@ -174,7 +195,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="tendencies"
-          onclick="showTab('tendencies')"
+          data-action="showTab"
+          data-arg="tendencies"
+          data-testid="tab-tendencies"
         >
           Def Tendencies
         </button>
@@ -184,7 +207,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="callsheet"
-          onclick="showTab('callsheet')"
+          data-action="showTab"
+          data-arg="callsheet"
+          data-testid="tab-callsheet"
         >
           Call Sheet
         </button>
@@ -194,7 +219,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="installation"
-          onclick="showTab('installation')"
+          data-action="showTab"
+          data-arg="installation"
+          data-testid="tab-installation"
         >
           📦 Installation
         </button>
@@ -204,7 +231,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="offensebuilder"
-          onclick="showTab('offensebuilder')"
+          data-action="showTab"
+          data-arg="offensebuilder"
+          data-testid="tab-offensebuilder"
         >
           🧠 Offense Builder
         </button>
@@ -214,7 +243,9 @@
           role="tab"
           aria-selected="false"
           aria-controls="dashboard"
-          onclick="showTab('dashboard')"
+          data-action="showTab"
+          data-arg="dashboard"
+          data-testid="tab-dashboard"
         >
           📊 Dashboard
         </button>
@@ -222,7 +253,7 @@
           class="tab"
           role="tab"
           aria-selected="false"
-          onclick="showUpload()"
+          data-action="showUpload"
         >
           📁 Load New CSV
         </button>
@@ -246,6 +277,7 @@
                 id="searchPlay"
                 placeholder="Search plays..."
                 oninput="debouncedFilterPlays()"
+                data-testid="search-input"
               />
             </div>
 
@@ -267,7 +299,8 @@
               <button
                 class="pb-sort-dir"
                 id="pbSortPrimaryDir"
-                onclick="toggleSortDir('primary')"
+                data-action="toggleSortDir"
+                data-arg="primary"
                 title="Toggle direction"
               >
                 &#9650;
@@ -289,7 +322,8 @@
               <button
                 class="pb-sort-dir"
                 id="pbSortSecondaryDir"
-                onclick="toggleSortDir('secondary')"
+                data-action="toggleSortDir"
+                data-arg="secondary"
                 title="Toggle direction"
               >
                 &#9650;
@@ -300,7 +334,7 @@
               <div class="column-toggle">
                 <button
                   class="btn btn-sm"
-                  onclick="toggleColumnMenu()"
+                  data-action="toggleColumnMenu"
                   title="Toggle Columns"
                 >
                   &#9881; Columns
@@ -397,14 +431,15 @@
               </select>
               <button
                 class="btn btn-sm"
-                onclick="exportBackup()"
+                data-action="exportBackup"
                 title="Export all data"
               >
                 &#128229; Export
               </button>
               <button
                 class="btn btn-sm"
-                onclick="document.getElementById('importBackupFile').click()"
+                data-action="triggerClick"
+                data-target="importBackupFile"
                 title="Import backup"
               >
                 &#128228; Import
@@ -418,14 +453,14 @@
               />
               <button
                 class="btn btn-sm"
-                onclick="showStorageInfo()"
+                data-action="showStorageInfo"
                 title="View storage usage"
               >
                 &#128190;
               </button>
               <button
                 class="btn btn-sm"
-                onclick="showKeyboardShortcuts()"
+                data-action="showKeyboardShortcuts"
                 title="Keyboard shortcuts"
               >
                 &#9000;
@@ -450,7 +485,7 @@
             <button
               class="pb-more-toggle"
               id="pbMoreToggle"
-              onclick="toggleMoreFilters()"
+              data-action="toggleMoreFilters"
             >
               <span class="pb-more-arrow" id="pbMoreArrow">&#9654;</span> More
               Filters
@@ -483,7 +518,7 @@
             <button
               class="pb-clear-all"
               id="pbClearAll"
-              onclick="clearFilters()"
+              data-action="clearFilters"
             >
               &#10005; Clear All
             </button>
@@ -495,28 +530,28 @@
             <div class="pb-actions-left">
               <button
                 class="pb-action-btn pb-action-save"
-                onclick="savePlayCollection()"
+                data-action="savePlayCollection"
                 title="Save current filtered plays as a collection"
               >
                 &#128278; Save Collection
               </button>
               <button
                 class="pb-action-btn pb-action-script"
-                onclick="sendFilteredToScript()"
+                data-action="sendFilteredToScript"
                 title="Add filtered plays to practice script"
               >
                 &#128203; Send to Script
               </button>
               <button
                 class="pb-action-btn pb-action-callsheet"
-                onclick="sendFilteredToCallSheet()"
+                data-action="sendFilteredToCallSheet"
                 title="Auto-place filtered plays on call sheet"
               >
                 &#128202; Send to Call Sheet
               </button>
               <button
                 class="pb-action-btn pb-action-print"
-                onclick="togglePrintOptionsPanel()"
+                data-action="togglePrintOptionsPanel"
                 title="Print filtered plays in wristband format"
               >
                 &#128424; Print Plays
@@ -524,7 +559,7 @@
             </div>
             <button
               class="pb-action-btn pb-action-collections"
-              onclick="toggleCollectionsPanel()"
+              data-action="toggleCollectionsPanel"
               title="View saved collections"
             >
               &#128193; Collections
@@ -590,7 +625,7 @@
                 <strong>🔄 Sort Order</strong>
                 <button
                   class="btn btn-sm"
-                  onclick="addPbPrintSortField()"
+                  data-action="addPbPrintSortField"
                   style="margin-left: auto"
                 >
                   + Add Field
@@ -606,22 +641,24 @@
             <div class="pb-print-actions">
               <button
                 class="btn btn-sm"
-                onclick="toggleAllPbPrintOptions(true)"
+                data-action="toggleAllPbPrintOptions"
+                data-arg="true"
               >
                 All
               </button>
               <button
                 class="btn btn-sm"
-                onclick="toggleAllPbPrintOptions(false)"
+                data-action="toggleAllPbPrintOptions"
+                data-arg="false"
               >
                 Clear
               </button>
-              <button class="btn btn-sm" onclick="syncFromWristbandOptions()">
+              <button class="btn btn-sm" data-action="syncFromWristbandOptions">
                 Sync from Wristband
               </button>
               <button
                 class="btn btn-sm btn-primary"
-                onclick="printFilteredPlays()"
+                data-action="printFilteredPlays"
               >
                 🖨️ Print
               </button>
@@ -637,38 +674,46 @@
         <!-- Quick Stats Bar -->
         <div class="stats-bar" id="statsBar"></div>
         <div class="table-container" tabindex="0" id="playbookContainer">
-          <table id="playbookTable" class="sortable">
+          <table
+            id="playbookTable"
+            class="sortable"
+            data-testid="playbook-table"
+          >
             <thead>
               <tr>
-                <th class="col-install" onclick="sortPlaybook('install')">
+                <th
+                  class="col-install"
+                  data-action="sortPlaybook"
+                  data-arg="install"
+                >
                   ★ <span class="sort-icon" data-col="install"></span>
                 </th>
-                <th onclick="sortPlaybook('type')">
+                <th data-action="sortPlaybook" data-arg="type">
                   Type <span class="sort-icon" data-col="type"></span>
                 </th>
-                <th onclick="sortPlaybook('formation')">
+                <th data-action="sortPlaybook" data-arg="formation">
                   Formation <span class="sort-icon" data-col="formation"></span>
                 </th>
-                <th onclick="sortPlaybook('tags')">
+                <th data-action="sortPlaybook" data-arg="tags">
                   Tags <span class="sort-icon" data-col="tags"></span>
                 </th>
-                <th onclick="sortPlaybook('back')">
+                <th data-action="sortPlaybook" data-arg="back">
                   Back <span class="sort-icon" data-col="back"></span>
                 </th>
-                <th onclick="sortPlaybook('motion')">
+                <th data-action="sortPlaybook" data-arg="motion">
                   Motion <span class="sort-icon" data-col="motion"></span>
                 </th>
-                <th onclick="sortPlaybook('protection')">
+                <th data-action="sortPlaybook" data-arg="protection">
                   Protection
                   <span class="sort-icon" data-col="protection"></span>
                 </th>
-                <th onclick="sortPlaybook('play')">
+                <th data-action="sortPlaybook" data-arg="play">
                   Play <span class="sort-icon" data-col="play"></span>
                 </th>
-                <th onclick="sortPlaybook('basePlay')">
+                <th data-action="sortPlaybook" data-arg="basePlay">
                   Base Play <span class="sort-icon" data-col="basePlay"></span>
                 </th>
-                <th onclick="sortPlaybook('tempo')">
+                <th data-action="sortPlaybook" data-arg="tempo">
                   Tempo <span class="sort-icon" data-col="tempo"></span>
                 </th>
               </tr>
@@ -713,7 +758,7 @@
               >
               <button
                 class="btn btn-sm"
-                onclick="toggleFiltersCollapse()"
+                data-action="toggleFiltersCollapse"
                 id="toggleFiltersBtn"
                 title="Toggle filters"
               >
@@ -728,7 +773,7 @@
                 >
                 <button
                   class="btn btn-sm"
-                  onclick="clearAllScriptFilters()"
+                  data-action="clearAllScriptFilters"
                   title="Clear all filters"
                 >
                   ✖ Clear Filters
@@ -738,7 +783,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Play Type
                 </div>
@@ -751,7 +796,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Personnel
                 </div>
@@ -764,7 +809,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Situation
                 </div>
@@ -777,7 +822,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Down
                 </div>
@@ -790,7 +835,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Distance
                 </div>
@@ -803,7 +848,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Hash
                 </div>
@@ -816,7 +861,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Field Position
                 </div>
@@ -858,14 +903,14 @@
             <div class="available-plays-actions">
               <button
                 class="btn btn-sm btn-primary"
-                onclick="addAllFilteredToScript()"
+                data-action="addAllFilteredToScript"
                 title="Add all filtered plays to script"
               >
                 ➕ Add All
               </button>
               <button
                 class="btn btn-sm btn-secondary"
-                onclick="addSelectedToScript()"
+                data-action="addSelectedToScript"
                 title="Add selected plays to script"
               >
                 ✓ Add Selected
@@ -887,12 +932,12 @@
                 >Script <span id="scriptCount" class="play-count">0</span></span
               >
               <div class="period-buttons">
-                <button class="btn btn-add-period" onclick="addSeparator()">
+                <button class="btn btn-add-period" data-action="addSeparator">
                   ＋ Add Period
                 </button>
                 <button
                   class="btn btn-secondary btn-sm"
-                  onclick="insertPeriodFromTemplate()"
+                  data-action="insertPeriodFromTemplate"
                   title="Insert a saved period template"
                 >
                   📋 From Template
@@ -955,21 +1000,21 @@
                 </select>
                 <button
                   class="btn btn-sm btn-primary toolbar-btn-sm"
-                  onclick="sortScript()"
+                  data-action="sortScript"
                   title="Sort all periods by selected field"
                 >
                   Sort All
                 </button>
                 <button
                   class="btn btn-sm toolbar-btn-xs"
-                  onclick="reverseScriptSort()"
+                  data-action="reverseScriptSort"
                   title="Reverse order in all periods"
                 >
                   ↕️
                 </button>
                 <button
                   class="btn btn-sm toolbar-btn-xs"
-                  onclick="openScriptCustomOrderModal()"
+                  data-action="openScriptCustomOrderModal"
                   title="Customize sort order for selected field"
                 >
                   ⚙️ Order
@@ -987,14 +1032,18 @@
               </div>
             </div>
 
-            <div class="script-container" id="scriptPlays"></div>
+            <div
+              class="script-container"
+              id="scriptPlays"
+              data-testid="script-plays"
+            ></div>
 
             <!-- Script Actions -->
             <div class="script-actions">
               <button
                 id="scriptUndoBtn"
                 class="btn btn-undo"
-                onclick="undoScript()"
+                data-action="undoScript"
                 disabled
                 title="Nothing to undo"
               >
@@ -1003,7 +1052,7 @@
               <button
                 id="scriptRedoBtn"
                 class="btn btn-redo"
-                onclick="redoScript()"
+                data-action="redoScript"
                 disabled
                 title="Nothing to redo"
               >
@@ -1011,67 +1060,76 @@
               </button>
               <button
                 class="btn btn-sm btn-smart-script"
-                onclick="openSmartScript()"
+                data-action="openSmartScript"
                 title="Intelligently reorder all periods for realistic game flow"
               >
                 🧠 Smart Script All
               </button>
               <button
                 class="btn btn-sm btn-scouting-fill"
-                onclick="autoFillDefenseFromTendencies()"
+                data-action="autoFillDefenseFromTendencies"
                 title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data"
               >
                 🎯 Auto-Fill Defense
               </button>
-              <button class="btn btn-success" onclick="generatePDF()">
+              <button
+                class="btn btn-success"
+                data-action="generatePDF"
+                data-testid="generate-pdf"
+              >
                 📄 Print Script
               </button>
-              <button class="btn btn-primary" onclick="saveScript()">
+              <button
+                class="btn btn-primary"
+                data-action="saveScript"
+                data-testid="save-script"
+              >
                 💾 Save Script
               </button>
-              <button class="btn btn-danger" onclick="clearScript()">
+              <button
+                class="btn btn-danger"
+                data-action="clearScript"
+                data-testid="clear-script"
+              >
                 🗑 Clear
               </button>
 
               <div class="more-tools-wrap">
                 <button
                   class="more-tools-btn"
-                  onclick="this.parentElement.classList.toggle('open')"
+                  data-action="toggleParentOpen"
                   title="More tools"
                 >
                   ⋯ More Tools
                 </button>
-                <div
-                  class="more-tools-menu"
-                  onclick="this.parentElement.classList.remove('open')"
-                >
+                <div class="more-tools-menu" data-action="removeParentOpen">
                   <button
-                    onclick="applyPreferredFields()"
+                    data-action="applyPreferredFields"
                     title="Apply preferred metadata to selected plays (or all if none selected)"
                   >
                     ★ Apply Preferred Fields
                   </button>
                   <button
-                    onclick="shuffleScript()"
+                    data-action="shuffleScript"
                     title="Randomly shuffle play order within periods"
                   >
                     🔀 Shuffle
                   </button>
                   <div class="tool-divider"></div>
                   <button
-                    onclick="compareScripts()"
+                    data-action="compareScripts"
                     title="Compare two saved scripts"
                   >
                     📊 Compare Scripts
                   </button>
                   <button
-                    onclick="mergeFromScript()"
+                    data-action="mergeFromScript"
                     title="Merge plays from another script"
                   >
                     ➕ Merge From Script
                   </button>
                   <button
-                    onclick="copyPeriodToClipboard()"
+                    data-action="copyPeriodToClipboard"
                     title="Copy a period to clipboard"
                   >
                     📋 Copy Period
@@ -1083,17 +1141,23 @@
             <div class="display-options-panel">
               <div
                 class="display-options-header"
-                onclick="toggleCollapsiblePanel(this)"
+                data-action="toggleCollapsiblePanel"
               >
                 <strong>🖨️ Print Options</strong>
                 <span class="toggle-icon">▼</span>
               </div>
               <div class="display-options-content">
                 <div class="display-options-btns">
-                  <button class="btn btn-xs" onclick="selectAllScriptOptions()">
+                  <button
+                    class="btn btn-xs"
+                    data-action="selectAllScriptOptions"
+                  >
                     All
                   </button>
-                  <button class="btn btn-xs" onclick="clearAllScriptOptions()">
+                  <button
+                    class="btn btn-xs"
+                    data-action="clearAllScriptOptions"
+                  >
                     Clear
                   </button>
                 </div>
@@ -1211,7 +1275,7 @@
             <div class="wristband-integration-panel">
               <div
                 class="integration-header"
-                onclick="toggleCollapsiblePanel(this)"
+                data-action="toggleCollapsiblePanel"
               >
                 <strong>🏈 Wristband Integration</strong>
                 <span class="toggle-icon">▼</span>
@@ -1237,14 +1301,14 @@
                 <div class="wristband-actions-row">
                   <button
                     class="btn btn-sm"
-                    onclick="openLoadWristbandToScriptModal()"
+                    data-action="openLoadWristbandToScriptModal"
                     title="Add plays from a wristband to script"
                   >
                     ➕ Load Plays
                   </button>
                   <button
                     class="btn btn-sm"
-                    onclick="highlightPlaysNotOnWristband()"
+                    data-action="highlightPlaysNotOnWristband"
                     title="Highlight plays not on selected wristband"
                   >
                     🔍 Find Missing
@@ -1259,7 +1323,7 @@
                 <h4>📁 Saved Scripts</h4>
                 <button
                   class="btn btn-sm text-xs"
-                  onclick="manageTemplates()"
+                  data-action="manageTemplates"
                   title="Manage period templates"
                 >
                   🗑 Templates
@@ -1280,17 +1344,20 @@
               <div class="full-day-actions">
                 <button
                   class="btn btn-secondary btn-sm"
-                  onclick="selectAllDayScripts()"
+                  data-action="selectAllDayScripts"
                 >
                   ✅ Select All
                 </button>
                 <button
                   class="btn btn-secondary btn-sm"
-                  onclick="clearDayScripts()"
+                  data-action="clearDayScripts"
                 >
                   Clear
                 </button>
-                <button class="btn btn-success btn-sm" onclick="printFullDay()">
+                <button
+                  class="btn btn-success btn-sm"
+                  data-action="printFullDay"
+                >
                   🖨️ Print Full Day
                 </button>
               </div>
@@ -1340,7 +1407,7 @@
               >
               <button
                 class="btn btn-sm"
-                onclick="toggleWbFiltersCollapse()"
+                data-action="toggleWbFiltersCollapse"
                 id="toggleWbFiltersBtn"
                 title="Toggle filters"
               >
@@ -1357,7 +1424,7 @@
                 >
                 <button
                   class="btn btn-sm"
-                  onclick="clearAllWbFilters()"
+                  data-action="clearAllWbFilters"
                   title="Clear all filters"
                 >
                   ✖ Clear Filters
@@ -1367,7 +1434,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Personnel
                 </div>
@@ -1380,7 +1447,7 @@
               <div class="checkbox-filters collapsible-section">
                 <div
                   class="checkbox-filters-title"
-                  onclick="toggleFilterSection(this)"
+                  data-action="toggleFilterSection"
                 >
                   ▶ Tempo
                 </div>
@@ -1460,39 +1527,46 @@
                   <span>Color:</span>
                   <button
                     class="color-btn color-btn-transparent active"
-                    onclick="setHeaderColor('transparent', this)"
+                    data-action="setHeaderColor"
+                    data-arg="transparent"
                     title="No fill (save ink)"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #333"
-                    onclick="setHeaderColor('#333', this)"
+                    data-action="setHeaderColor"
+                    data-arg="#333"
                     title="Black"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #007bff"
-                    onclick="setHeaderColor('#007bff', this)"
+                    data-action="setHeaderColor"
+                    data-arg="#007bff"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #28a745"
-                    onclick="setHeaderColor('#28a745', this)"
+                    data-action="setHeaderColor"
+                    data-arg="#28a745"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #dc3545"
-                    onclick="setHeaderColor('#dc3545', this)"
+                    data-action="setHeaderColor"
+                    data-arg="#dc3545"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #6f42c1"
-                    onclick="setHeaderColor('#6f42c1', this)"
+                    data-action="setHeaderColor"
+                    data-arg="#6f42c1"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #fd7e14"
-                    onclick="setHeaderColor('#fd7e14', this)"
+                    data-action="setHeaderColor"
+                    data-arg="#fd7e14"
                   ></button>
                 </div>
               </div>
@@ -1500,7 +1574,7 @@
                 <button
                   id="wristbandUndoBtn"
                   class="btn btn-undo btn-sm"
-                  onclick="undoWristband()"
+                  data-action="undoWristband"
                   disabled
                   title="Nothing to undo"
                 >
@@ -1509,7 +1583,7 @@
                 <button
                   id="wristbandRedoBtn"
                   class="btn btn-redo btn-sm"
-                  onclick="redoWristband()"
+                  data-action="redoWristband"
                   disabled
                   title="Nothing to redo"
                 >
@@ -1517,25 +1591,27 @@
                 </button>
                 <button
                   class="btn btn-success btn-sm"
-                  onclick="printWristband()"
+                  data-action="printWristband"
                 >
                   🖨️ Print
                 </button>
                 <button
                   class="btn btn-primary btn-sm"
-                  onclick="saveWristband()"
+                  data-action="saveWristband"
+                  data-testid="save-wristband"
                 >
                   💾 Save
                 </button>
                 <button
                   class="btn btn-danger btn-sm"
-                  onclick="clearWristband()"
+                  data-action="clearWristband"
+                  data-testid="clear-wristband"
                 >
                   🗑 Clear
                 </button>
                 <button
                   class="btn btn-sm btn-secondary"
-                  onclick="autoFillWristband()"
+                  data-action="autoFillWristband"
                 >
                   ⚡ Auto-Fill
                 </button>
@@ -1544,24 +1620,28 @@
 
             <div class="card-tabs" id="cardTabs"></div>
             <div class="wristband-card" id="wristbandCard">
-              <div id="wristbandGrid" class="wristband-grid"></div>
+              <div
+                id="wristbandGrid"
+                class="wristband-grid"
+                data-testid="wristband-grid"
+              ></div>
             </div>
 
             <!-- Display Options Panel (collapsible) -->
             <div class="display-options-panel wb-display-panel">
               <div
                 class="display-options-header"
-                onclick="toggleCollapsiblePanel(this)"
+                data-action="toggleCollapsiblePanel"
               >
                 <strong>🖨️ Display Options</strong>
                 <span class="toggle-icon">▼</span>
               </div>
               <div class="display-options-content">
                 <div class="display-options-btns">
-                  <button class="btn btn-xs" onclick="selectAllWbOptions()">
+                  <button class="btn btn-xs" data-action="selectAllWbOptions">
                     All
                   </button>
-                  <button class="btn btn-xs" onclick="clearAllWbOptions()">
+                  <button class="btn btn-xs" data-action="clearAllWbOptions">
                     Clear
                   </button>
                 </div>
@@ -1661,10 +1741,7 @@
 
             <!-- Sort Panel (collapsible) -->
             <div class="wb-sort-panel">
-              <div
-                class="wb-sort-header"
-                onclick="toggleCollapsiblePanel(this)"
-              >
+              <div class="wb-sort-header" data-action="toggleCollapsiblePanel">
                 <strong>🔄 Sort & Organize</strong>
                 <span class="toggle-icon">▼</span>
               </div>
@@ -1672,7 +1749,7 @@
                 <div class="wb-sort-toolbar">
                   <button
                     class="btn btn-sm btn-primary"
-                    onclick="applyWristbandSort()"
+                    data-action="applyWristbandSort"
                   >
                     🔄 Apply Sort
                   </button>
@@ -1686,14 +1763,14 @@
                   </select>
                   <button
                     class="btn btn-sm"
-                    onclick="saveSortPreset()"
+                    data-action="saveSortPreset"
                     title="Save current sort as preset"
                   >
                     💾 Save
                   </button>
                   <button
                     class="btn btn-sm btn-danger"
-                    onclick="deleteSortPreset()"
+                    data-action="deleteSortPreset"
                     title="Delete selected preset"
                   >
                     🗑️
@@ -1705,7 +1782,7 @@
                 </div>
                 <div id="sortCriteriaList" class="sort-criteria-list"></div>
                 <div class="wb-sort-actions">
-                  <button class="btn btn-sm" onclick="addSortCriteria()">
+                  <button class="btn btn-sm" data-action="addSortCriteria">
                     + Add Sort Field
                   </button>
                   <label class="wb-sort-across-label">
@@ -1828,14 +1905,16 @@
               <button
                 id="callsheetFrontBtn"
                 class="cs-toggle active"
-                onclick="switchCallSheetPage('front')"
+                data-action="switchCallSheetPage"
+                data-arg="front"
               >
                 Front
               </button>
               <button
                 id="callsheetBackBtn"
                 class="cs-toggle"
-                onclick="switchCallSheetPage('back')"
+                data-action="switchCallSheetPage"
+                data-arg="back"
               >
                 Back
               </button>
@@ -1844,7 +1923,8 @@
               <button
                 id="callsheetPortraitBtn"
                 class="cs-toggle active"
-                onclick="setCallSheetOrientation('portrait')"
+                data-action="setCallSheetOrientation"
+                data-arg="portrait"
                 title="Portrait"
               >
                 📄
@@ -1852,7 +1932,8 @@
               <button
                 id="callsheetLandscapeBtn"
                 class="cs-toggle"
-                onclick="setCallSheetOrientation('landscape')"
+                data-action="setCallSheetOrientation"
+                data-arg="landscape"
                 title="Landscape"
               >
                 📃
@@ -1862,21 +1943,29 @@
           <div class="cs-toolbar-right">
             <button
               class="btn btn-primary btn-sm"
-              onclick="autoPopulateCallSheet()"
+              data-action="autoPopulateCallSheet"
             >
               ⚡ Auto-Populate
             </button>
             <button
               class="btn btn-secondary btn-sm"
-              onclick="openLoadWristbandModal()"
+              data-action="openLoadWristbandModal"
             >
               📋 Load Wristband
             </button>
             <span id="loadedWristbandDisplay" class="cs-wb-display"></span>
-            <button class="btn btn-success btn-sm" onclick="printCallSheet()">
+            <button
+              class="btn btn-success btn-sm"
+              data-action="printCallSheet"
+              data-testid="print-callsheet"
+            >
               🖨️ Print
             </button>
-            <button class="btn btn-danger btn-sm" onclick="clearCallSheet()">
+            <button
+              class="btn btn-danger btn-sm"
+              data-action="clearCallSheet"
+              data-testid="clear-callsheet"
+            >
               🗑️ Clear
             </button>
           </div>
@@ -1886,7 +1975,7 @@
         <div class="cs-toolbar-secondary">
           <button
             class="cs-tool-btn cs-scouting-btn"
-            onclick="toggleScoutingOverlay()"
+            data-action="toggleScoutingOverlay"
             title="Show/hide opponent scouting intel on categories"
             id="csScoutingToggle"
           >
@@ -1894,21 +1983,21 @@
           </button>
           <button
             class="cs-tool-btn"
-            onclick="toggleStatsPanel()"
+            data-action="toggleStatsPanel"
             title="Quick Stats"
           >
             📊 Stats
           </button>
           <button
             class="cs-tool-btn"
-            onclick="toggleNotOnSheet()"
+            data-action="toggleNotOnSheet"
             title="Plays not on sheet"
           >
             🔍 Not On Sheet
           </button>
           <button
             class="cs-tool-btn"
-            onclick="openTemplatesModal()"
+            data-action="openTemplatesModal"
             title="Save/Load Templates"
           >
             📁 Templates
@@ -1916,14 +2005,14 @@
           <div class="cs-tool-divider"></div>
           <button
             class="cs-tool-btn"
-            onclick="smartReorderCategories()"
+            data-action="smartReorderCategories"
             title="Auto-arrange for best print layout"
           >
             🧩 Smart Layout
           </button>
           <button
             class="cs-tool-btn"
-            onclick="resetCategoryOrder()"
+            data-action="resetCategoryOrder"
             title="Reset category order"
           >
             ↩️ Reset Order
@@ -1931,14 +2020,14 @@
           <div class="cs-tool-divider"></div>
           <button
             class="cs-tool-btn"
-            onclick="expandAllCategories()"
+            data-action="expandAllCategories"
             title="Expand all"
           >
             ▼ Expand All
           </button>
           <button
             class="cs-tool-btn"
-            onclick="collapseAllCategories()"
+            data-action="collapseAllCategories"
             title="Collapse all"
           >
             ▶ Collapse All
@@ -1947,14 +2036,13 @@
 
         <!-- Unified Display & Format Bar -->
         <div class="cs-unified-bar">
-          <div class="cs-unified-header" onclick="toggleCollapsiblePanel(this)">
+          <div class="cs-unified-header" data-action="toggleCollapsiblePanel">
             <strong>⚙️ Display &amp; Format</strong>
             <div class="cs-unified-header-right">
               <select
                 id="csDisplayPreset"
                 class="cs-preset-select"
                 onchange="loadDisplayPreset(this.value)"
-                onclick="event.stopPropagation()"
               >
                 <option value="">Presets...</option>
                 <option value="__all">✅ Show All Fields</option>
@@ -1964,7 +2052,7 @@
               </select>
               <button
                 class="cs-preset-save-btn"
-                onclick="event.stopPropagation(); saveDisplayPreset()"
+                data-action="saveDisplayPreset"
                 title="Save current as preset"
               >
                 💾
@@ -1977,16 +2065,22 @@
             <div class="cs-tab-bar">
               <button
                 class="cs-tab active"
-                onclick="switchDisplayTab('fields', this)"
+                data-action="switchDisplayTab"
+                data-arg="fields"
               >
                 Fields
               </button>
-              <button class="cs-tab" onclick="switchDisplayTab('format', this)">
+              <button
+                class="cs-tab"
+                data-action="switchDisplayTab"
+                data-arg="format"
+              >
                 Format
               </button>
               <button
                 class="cs-tab"
-                onclick="switchDisplayTab('borders', this)"
+                data-action="switchDisplayTab"
+                data-arg="borders"
               >
                 Borders
               </button>
@@ -1995,10 +2089,18 @@
             <!-- FIELDS TAB -->
             <div class="cs-tab-content" id="csTabFields">
               <div class="cs-field-actions">
-                <button class="btn btn-xs" onclick="csSelectAllFields(true)">
+                <button
+                  class="btn btn-xs"
+                  data-action="csSelectAllFields"
+                  data-arg="true"
+                >
                   Select All
                 </button>
-                <button class="btn btn-xs" onclick="csSelectAllFields(false)">
+                <button
+                  class="btn btn-xs"
+                  data-action="csSelectAllFields"
+                  data-arg="false"
+                >
                   Deselect All
                 </button>
               </div>
@@ -2296,7 +2398,11 @@
         <!-- Not On Sheet Panel (hidden by default) -->
         <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
 
-        <div id="callSheetGrid" class="callsheet-grid"></div>
+        <div
+          id="callSheetGrid"
+          class="callsheet-grid"
+          data-testid="callsheet-grid"
+        ></div>
       </div>
     </div>
     <!-- End mainApp -->
@@ -2310,9 +2416,9 @@
     <div
       id="callSheetPickerOverlay"
       class="cell-popup-overlay hidden"
-      onclick="closeCallSheetPicker(event)"
+      data-action="closeCallSheetPickerOverlay"
     >
-      <div class="cell-popup cs-picker-popup" onclick="event.stopPropagation()">
+      <div class="cell-popup cs-picker-popup">
         <h3>➕ Add Play to Call Sheet</h3>
 
         <!-- Filter Row 1 -->
@@ -2407,7 +2513,7 @@
         <div class="cs-picker-footer">
           <button
             class="btn btn-sm btn-secondary"
-            onclick="closeCallSheetPicker()"
+            data-action="closeCallSheetPicker"
           >
             Cancel
           </button>
@@ -2419,9 +2525,9 @@
     <div
       id="loadWristbandModal"
       class="cell-popup-overlay hidden"
-      onclick="closeLoadWristbandModal(event)"
+      data-action="closeLoadWristbandModalOverlay"
     >
-      <div class="cell-popup cs-wb-modal" onclick="event.stopPropagation()">
+      <div class="cell-popup cs-wb-modal">
         <h3>📋 Load Wristband to Call Sheet</h3>
         <p class="cs-wb-modal-desc">
           Select a saved wristband to import plays with their wristband numbers.
@@ -2432,13 +2538,13 @@
         <div class="cs-wb-modal-actions">
           <button
             class="btn btn-sm btn-secondary"
-            onclick="closeLoadWristbandModal()"
+            data-action="closeLoadWristbandModal"
           >
             Cancel
           </button>
           <button
             class="btn btn-sm btn-primary"
-            onclick="loadWristbandToCallSheet()"
+            data-action="loadWristbandToCallSheet"
           >
             Load Wristband
           </button>
@@ -2465,25 +2571,22 @@
     <div
       id="cellPopupOverlay"
       class="cell-popup-overlay"
-      onclick="closeCellPopup(event)"
+      data-action="closeCellPopupOverlay"
     >
-      <div
-        class="cell-popup cell-popup-container"
-        onclick="event.stopPropagation()"
-      >
+      <div class="cell-popup cell-popup-container">
         <h3 id="cellPopupTitle">📝 Edit Cell</h3>
 
         <!-- Play Info (shown when cell has a play) -->
         <div id="cellPopupPlayInfo" class="cell-popup-play-info">
           <div id="cellPopupPlayName" class="cell-popup-play-name"></div>
           <button
-            onclick="removeCellPlayFromPopup()"
+            data-action="removeCellPlayFromPopup"
             class="btn btn-danger btn-sm"
           >
             🗑️ Remove Play
           </button>
           <button
-            onclick="showPlaySelector()"
+            data-action="showPlaySelector"
             class="btn btn-info btn-sm"
             style="margin-left: 5px"
           >
@@ -2625,13 +2728,13 @@
         </div>
 
         <div class="cell-popup-buttons">
-          <button class="btn btn-secondary" onclick="closeCellPopup()">
+          <button class="btn btn-secondary" data-action="closeCellPopup">
             Cancel
           </button>
           <button
             id="cellPopupApplyBtn"
             class="btn btn-success"
-            onclick="applyCellStyle()"
+            data-action="applyCellStyle"
           >
             Apply
           </button>
@@ -2643,12 +2746,9 @@
     <div
       class="modal-overlay"
       id="smartScriptModal"
-      onclick="closeSmartScript()"
+      data-action="closeSmartScriptOverlay"
     >
-      <div
-        class="modal-content smart-script-modal"
-        onclick="event.stopPropagation()"
-      >
+      <div class="modal-content smart-script-modal">
         <div class="smart-script-header">
           <h3>🧠 Smart Script</h3>
           <p class="smart-script-subtitle">
@@ -2894,16 +2994,16 @@
         <div class="smart-script-preview" id="smartScriptPreview"></div>
 
         <div class="smart-script-actions">
-          <button class="btn btn-secondary" onclick="previewSmartScript()">
+          <button class="btn btn-secondary" data-action="previewSmartScript">
             👁️ Preview
           </button>
-          <button class="btn btn-info" onclick="previewSmartScript()">
+          <button class="btn btn-info" data-action="previewSmartScript">
             🎲 Re-Roll
           </button>
-          <button class="btn btn-success" onclick="applySmartScript()">
+          <button class="btn btn-success" data-action="applySmartScript">
             ✨ Apply Smart Script
           </button>
-          <button class="btn" onclick="closeSmartScript()">Cancel</button>
+          <button class="btn" data-action="closeSmartScript">Cancel</button>
         </div>
       </div>
     </div>
@@ -2912,12 +3012,9 @@
     <div
       class="modal-overlay"
       id="shortcutsModal"
-      onclick="hideKeyboardShortcuts()"
+      data-action="hideKeyboardShortcutsOverlay"
     >
-      <div
-        class="modal-content shortcuts-modal"
-        onclick="event.stopPropagation()"
-      >
+      <div class="modal-content shortcuts-modal">
         <h3>⌨️ Keyboard Shortcuts</h3>
         <div class="shortcuts-grid">
           <div class="shortcut-section">
@@ -2951,7 +3048,7 @@
             </div>
           </div>
         </div>
-        <button class="btn btn-primary" onclick="hideKeyboardShortcuts()">
+        <button class="btn btn-primary" data-action="hideKeyboardShortcuts">
           Close
         </button>
       </div>
@@ -2964,20 +3061,24 @@
     <button
       class="help-fab"
       id="helpFab"
-      onclick="toggleHelpPanel()"
+      data-action="toggleHelpPanel"
       title="Shortcuts & Features"
     >
       ?
     </button>
 
     <!-- Help Panel Overlay -->
-    <div class="help-overlay" id="helpOverlay" onclick="closeHelpPanel(event)">
-      <div class="help-panel" onclick="event.stopPropagation()">
+    <div
+      class="help-overlay"
+      id="helpOverlay"
+      data-action="closeHelpPanelOverlay"
+    >
+      <div class="help-panel">
         <div class="help-panel-header">
           <h3 id="helpPanelTitle">Shortcuts & Features</h3>
           <button
             class="help-close-btn"
-            onclick="toggleHelpPanel()"
+            data-action="toggleHelpPanel"
             aria-label="Close help panel"
           >
             &times;
@@ -2998,6 +3099,14 @@
     <script defer src="js/offensebuilder.js"></script>
     <script defer src="js/help.js"></script>
     <script defer src="js/app.js"></script>
+
+    <!-- Screen reader live region for toast announcements -->
+    <div
+      id="liveAnnouncer"
+      class="sr-only"
+      aria-live="polite"
+      aria-atomic="true"
+    ></div>
 
     <!-- Service Worker Registration -->
     <script>

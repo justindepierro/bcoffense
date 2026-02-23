@@ -40,6 +40,11 @@ const LOCAL_ASSETS = [
   "./js/offensebuilder.js",
   "./js/help.js",
   "./js/app.js",
+  // Icons
+  "./icons/icon-192.png",
+  "./icons/icon-512.png",
+  // Offline fallback
+  "./offline.html",
 ];
 
 // Install: pre-cache all local assets
@@ -102,7 +107,15 @@ self.addEventListener("fetch", (event) => {
         })
         .catch(() => cached);
 
-      return cached || networkFetch;
+      return (
+        cached ||
+        networkFetch.catch(() => {
+          // Navigation requests get the offline fallback page
+          if (event.request.mode === "navigate") {
+            return caches.match("./offline.html");
+          }
+        })
+      );
     }),
   );
 });

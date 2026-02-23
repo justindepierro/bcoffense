@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Offline – Practice Script &amp; Playbook</title>
+    <style>
+      * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+      }
+      body {
+        font-family:
+          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        background: #0a122a;
+        color: #e2e8f0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh;
+        text-align: center;
+        padding: 1rem;
+      }
+      .offline-card {
+        max-width: 420px;
+        background: #192a51;
+        border: 1px solid #d7ba89;
+        border-radius: 12px;
+        padding: 2.5rem 2rem;
+      }
+      .offline-icon {
+        font-size: 3.5rem;
+        margin-bottom: 1rem;
+      }
+      h1 {
+        font-size: 1.5rem;
+        color: #d7ba89;
+        margin-bottom: 0.75rem;
+      }
+      p {
+        color: #94a3b8;
+        line-height: 1.6;
+        margin-bottom: 1.25rem;
+      }
+      .retry-btn {
+        display: inline-block;
+        padding: 0.6rem 1.5rem;
+        background: #d7ba89;
+        color: #0a122a;
+        border: none;
+        border-radius: 6px;
+        font-size: 1rem;
+        font-weight: 600;
+        cursor: pointer;
+        text-decoration: none;
+      }
+      .retry-btn:hover {
+        opacity: 0.9;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="offline-card">
+      <div class="offline-icon">📡</div>
+      <h1>You're Offline</h1>
+      <p>
+        It looks like you've lost your internet connection. Your saved data is
+        safe in local storage — reconnect and try again.
+      </p>
+      <a href="./" class="retry-btn">Retry</a>
+    </div>
+  </body>
+</html>

@@ -172,19 +172,22 @@ function trapFocus(overlay) {
  * @param {object} opts - Options: { title, icon }
  * @returns {Promise<void>}
  */
+let _modalIdCounter = 0;
+
 function showModal(message, opts = {}) {
   return new Promise((resolve) => {
     const title = opts.title || "Notice";
     const icon = opts.icon || "ℹ️";
+    const mid = ++_modalIdCounter;
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal">
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title">${title}</h3>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
         </div>
-        <div class="custom-modal-body">${formatModalMessage(message)}</div>
+        <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions">
           <button class="btn btn-primary custom-modal-btn" id="modalOkBtn">OK</button>
         </div>
@@ -240,8 +243,20 @@ function showToast(message, durationOrOpts = 2000) {
   const toast = document.createElement("div");
   toast.className = "toast";
   if (type) toast.classList.add("toast-" + type);
-  toast.textContent = message;
+
+  // Support HTML content (e.g. inline buttons)
+  if (/<[a-z][\s\S]*>/i.test(message)) {
+    toast.innerHTML = message;
+  } else {
+    toast.textContent = message;
+  }
   document.body.appendChild(toast);
+
+  // Announce to screen readers via live region
+  const announcer = document.getElementById("liveAnnouncer");
+  if (announcer) {
+    announcer.textContent = message.replace(/<[^>]*>/g, "");
+  }
 
   // Trigger animation
   setTimeout(() => toast.classList.add("show"), 10);
@@ -266,16 +281,17 @@ function showConfirm(message, opts = {}) {
     const confirmText = opts.confirmText || "OK";
     const cancelText = opts.cancelText || "Cancel";
     const danger = opts.danger || false;
+    const mid = ++_modalIdCounter;
 
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal">
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title">${title}</h3>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
         </div>
-        <div class="custom-modal-body">${formatModalMessage(message)}</div>
+        <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions">
           <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn">${cancelText}</button>
           <button class="btn ${danger ? "btn-danger" : "btn-primary"} custom-modal-btn" id="modalConfirmBtn">${confirmText}</button>
@@ -323,16 +339,17 @@ function showPrompt(message, defaultValue = "", opts = {}) {
     const icon = opts.icon || "✏️";
     const placeholder = opts.placeholder || "";
     const confirmText = opts.confirmText || "OK";
+    const mid = ++_modalIdCounter;
 
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal">
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title">${title}</h3>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
         </div>
-        <div class="custom-modal-body">${formatModalMessage(message)}</div>
+        <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-input-wrap">
           <input type="text" class="custom-modal-input" id="modalInput"
                  value="${defaultValue.replace(/"/g, "&quot;")}" placeholder="${placeholder}">
@@ -423,15 +440,16 @@ function showChoice(message, opts = {}) {
       `;
     }
 
+    const mid = ++_modalIdCounter;
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal">
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title">${title}</h3>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
         </div>
-        <div class="custom-modal-body">${formatModalMessage(message)}</div>
+        <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions custom-modal-actions-stacked">
           ${buttonsHtml}
           ${choices ? "" : '<button class="btn custom-modal-btn custom-modal-cancel custom-modal-btn-full" data-choice-value="__cancel__">Cancel</button>'}
@@ -497,13 +515,14 @@ function showListPicker(message, items, opts = {}) {
       )
       .join("");
 
+    const mid = ++_modalIdCounter;
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal custom-modal-wide">
+      <div class="custom-modal custom-modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title">${title}</h3>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
         </div>
         ${message ? `<div class="custom-modal-body">${formatModalMessage(message)}</div>` : ""}
         <div class="custom-modal-list">${itemsHtml}</div>
@@ -728,6 +747,33 @@ function safeDeepClone(obj) {
 /**
  * Storage Manager - centralized storage operations
  */
+/**
+ * Run sequential storage migrations from the user's saved version
+ * up to the current STORAGE_VERSION.
+ * Each key in MIGRATIONS maps from a version to an upgrade function.
+ */
+const MIGRATIONS = {
+  // Example: version 1 → 2 migration (no-op, initial schema)
+  // 2: () => { /* transform data from v1 → v2 */ },
+};
+
+function runMigrations() {
+  const saved = parseInt(localStorage.getItem("_storageVersion") || "0", 10);
+  if (saved >= STORAGE_VERSION) return;
+  for (let v = saved + 1; v <= STORAGE_VERSION; v++) {
+    if (typeof MIGRATIONS[v] === "function") {
+      try {
+        MIGRATIONS[v]();
+        console.log(`Storage migration v${v} applied`);
+      } catch (e) {
+        console.error(`Storage migration v${v} failed:`, e);
+        break;
+      }
+    }
+  }
+  localStorage.setItem("_storageVersion", String(STORAGE_VERSION));
+}
+
 const storageManager = {
   /**
    * Get a value from localStorage with default
