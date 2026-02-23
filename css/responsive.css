@@ -183,15 +183,22 @@
   .tab {
     padding: 6px 10px;
     font-size: var(--font-size-xs);
+    min-height: 44px;
+    display: inline-flex;
+    align-items: center;
   }
   .panel {
     margin: 8px;
     padding: 10px;
     border-radius: var(--radius-sm);
   }
-  .btn {
+  .btn,
+  .btn-sm,
+  .btn-xs {
     padding: 8px 14px;
     font-size: var(--font-size-xs);
+    min-height: 44px;
+    min-width: 44px;
   }
   .upload-box {
     padding: 20px 15px;

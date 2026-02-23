@@ -296,7 +296,7 @@
               <input
                 type="text"
                 id="searchPlay"
-                placeholder="Search plays..."
+                placeholder="🔍 Search plays…"
                 data-oninput="debouncedFilterPlays"
                 data-testid="search-input"
               />
@@ -1873,7 +1873,7 @@
                   type="text"
                   id="dashWeekLabel"
                   class="dash-week-input"
-                  placeholder="Week label (e.g. Week 3)"
+                  placeholder="e.g., Week 3"
                   data-onchange="onDashWeekLabelChange" data-pass="value"
                 />
               </div>
@@ -1889,7 +1889,7 @@
             <textarea
               id="dashNotesArea"
               class="dash-notes-textarea"
-              placeholder="Scouting notes, reminders, adjustments, key matchups..."
+              placeholder="e.g., Key matchups, adjustments…"
               data-onchange="onDashNotesChange" data-pass="value"
               data-oninput="onDashNotesChange" data-pass="value"
             ></textarea>
@@ -2448,7 +2448,7 @@
             type="text"
             id="callSheetPlaySearch"
             class="cs-picker-search"
-            placeholder="Search anything — play, type, player, tags..."
+            placeholder="🔍 Search plays, types, tags…"
             data-oninput="populateCallSheetPlayList"
           />
           <select
@@ -3077,6 +3077,16 @@
 
     <!-- Play Preview Tooltip -->
     <div class="play-preview-tooltip" id="playPreviewTooltip"></div>
+
+    <!-- Scroll-to-Top FAB -->
+    <button
+      class="scroll-top-fab"
+      id="scrollTopFab"
+      data-action="scrollToTop"
+      aria-label="Scroll to top"
+    >
+      &uarr;
+    </button>
 
     <!-- Floating Help Button -->
     <button

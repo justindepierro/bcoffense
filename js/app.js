@@ -193,6 +193,14 @@ function backToApp() {
  * Called by both handleFileUpload() and initApp().
  */
 function initAllModules() {
+  // Show skeleton loading in playbook table while data loads
+  const _tbody = document.querySelector("#playbookTable tbody");
+  if (_tbody && _tbody.children.length === 0) {
+    _tbody.innerHTML = Array(8)
+      .fill('<tr><td colspan="10"><div class="skeleton-row"></div></td></tr>')
+      .join("");
+  }
+
   // ── Critical path: render the visible UI ──
   populateFilters();
   initChipListeners();
@@ -500,6 +508,12 @@ function renderDashboard() {
         </div>
       </div>
     `;
+
+      // Animate card values
+      cardsEl.querySelectorAll(".dash-card-value").forEach((el) => {
+        const n = parseInt(el.textContent, 10);
+        if (!isNaN(n) && n > 0) _animateCountUp(el, n, 600);
+      });
     }
 
     // Build scouting summary
@@ -1082,6 +1096,47 @@ function downloadCSVTemplate(type) {
     console.error("downloadCSVTemplate error:", err);
     showToast("❌ Error creating template.", 3000);
   }
+}
+
+// ── Scroll-to-top FAB ──
+function scrollToTop() {
+  window.scrollTo({ top: 0, behavior: "smooth" });
+}
+const _scrollFab = document.getElementById("scrollTopFab");
+if (_scrollFab) {
+  window.addEventListener(
+    "scroll",
+    () => _scrollFab.classList.toggle("visible", window.scrollY > 400),
+    { passive: true },
+  );
+}
+
+// ── Tab bar scroll-fade indicator ──
+const _tabBar = document.querySelector(".tabs");
+if (_tabBar) {
+  const _checkTabScroll = () => {
+    const atEnd =
+      _tabBar.scrollLeft + _tabBar.clientWidth >= _tabBar.scrollWidth - 2;
+    _tabBar.classList.toggle("scrolled-end", atEnd);
+  };
+  _tabBar.addEventListener("scroll", _checkTabScroll, { passive: true });
+  _checkTabScroll();
+}
+
+// ── Count-up animation for dashboard cards ──
+function _animateCountUp(el, target, duration) {
+  duration = duration || 600;
+  if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
+    el.textContent = target;
+    return;
+  }
+  const start = performance.now();
+  (function tick(now) {
+    const p = Math.min((now - start) / duration, 1);
+    const ease = 1 - Math.pow(1 - p, 3);
+    el.textContent = Math.round(target * ease);
+    if (p < 1) requestAnimationFrame(tick);
+  })(start);
 }
 
 // Initialize when DOM is ready

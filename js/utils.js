@@ -205,7 +205,8 @@ function showModal(message, opts = {}) {
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
-        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+        if (previouslyFocused && previouslyFocused.focus)
+          previouslyFocused.focus();
       }, 200);
       resolve();
     }
@@ -263,6 +264,15 @@ function showToast(message, durationOrOpts = 2000) {
   }
 
   // Trigger animation
+  toast.style.setProperty("--toast-duration", duration + "ms");
+  toast.addEventListener(
+    "click",
+    () => {
+      toast.classList.remove("show");
+      setTimeout(() => toast.remove(), 300);
+    },
+    { once: true },
+  );
   setTimeout(() => toast.classList.add("show"), 10);
 
   // Remove after duration
@@ -315,7 +325,8 @@ function showConfirm(message, opts = {}) {
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
-        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+        if (previouslyFocused && previouslyFocused.focus)
+          previouslyFocused.focus();
       }, 200);
       resolve(result);
     }
@@ -383,7 +394,8 @@ function showPrompt(message, defaultValue = "", opts = {}) {
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
-        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+        if (previouslyFocused && previouslyFocused.focus)
+          previouslyFocused.focus();
       }, 200);
       resolve(value);
     }
@@ -480,7 +492,8 @@ function showChoice(message, opts = {}) {
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
-        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+        if (previouslyFocused && previouslyFocused.focus)
+          previouslyFocused.focus();
       }, 200);
       resolve(val === "__cancel__" ? null : val);
     }
@@ -556,7 +569,8 @@ function showListPicker(message, items, opts = {}) {
       overlay.classList.remove("visible");
       setTimeout(() => {
         overlay.remove();
-        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+        if (previouslyFocused && previouslyFocused.focus)
+          previouslyFocused.focus();
       }, 200);
       resolve(val);
     }
