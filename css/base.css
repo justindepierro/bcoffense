@@ -52,6 +52,15 @@
   --color-orange-deep: #bf6516;
   --color-accent-dark: #9e8a60;
 
+  /* Category Palette — call sheet & UI badges */
+  --cat-red: #dc3545;
+  --cat-yellow: #ffc107;
+  --cat-orange: #fd7e14;
+  --cat-green: #28a745;
+  --cat-purple: #6f42c1;
+  --cat-teal: #17a2b8;
+  --cat-gray: #6c757d;
+
   /* Shared gradients */
   --gradient-dark: linear-gradient(135deg, #0a122a 0%, #192a51 100%);
   --gradient-stats: linear-gradient(135deg, #192a51 0%, #5a6f87 100%);
@@ -125,6 +134,21 @@
   /* Transitions */
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+
+  /* Z-index scale */
+  --z-base: 1;
+  --z-sticky: 2;
+  --z-dropdown: 100;
+  --z-tab-bar: 999;
+  --z-header: 1000;
+  --z-fab: 9000;
+  --z-overlay: 9500;
+  --z-modal: 9999;
+  --z-toast: 10000;
+  --z-tooltip: 10001;
+  --z-popover: 10003;
+  --z-modal-top: 99999;
+  --z-skip-link: 100000;
 }
 
 /* Base Styles */
@@ -199,7 +223,7 @@ textarea:focus {
   color: white;
   padding: var(--space-sm) var(--space-md);
   border-radius: var(--radius-sm);
-  z-index: 100000;
+  z-index: var(--z-skip-link);
   font-weight: 600;
   text-decoration: none;
   transition: top var(--transition-fast);

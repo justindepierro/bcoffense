@@ -8,6 +8,25 @@ const WRISTBAND_OFFSET = 11;
 const PICKER_LIMIT = 150;
 const TOOLTIP_DELAY_MS = 200;
 
+// ============ Shared Color Tokens ============
+// Mirrors CSS custom properties for use in JS-generated inline styles
+const UI_COLORS = {
+  periodDefault: "#333333",
+  highlightHuddle: "#fff59d",
+  highlightCandy: "#f8bbd9",
+  textBlack: "#000",
+  textWhite: "#fff",
+  textDark: "#333",
+  textMuted: "#666",
+  textLight: "#888",
+  borderLight: "#eee",
+  bgSubtle: "#fafafa",
+  bgDarkNav: "#1a1a2e",
+  accentBlue: "#667eea",
+  scoreGreen: "#4caf50",
+  scoreRed: "#f44336",
+};
+
 // ============ Custom Modal System ============
 // Replaces native alert(), confirm(), prompt() with styled modals
 

@@ -28,12 +28,17 @@ const INSTALL_CATEGORIES = [
  */
 let _installDataCache = null;
 function getInstallationData() {
+  try {
   if (_installDataCache) return _installDataCache;
   _installDataCache = storageManager.get(STORAGE_KEYS.INSTALLATION, {
     installed: {},
     order: {},
   });
   return _installDataCache;
+  } catch (err) {
+    console.error("getInstallationData error:", err);
+    return { installed: {}, order: {} };
+  }
 }
 
 /**
@@ -49,6 +54,7 @@ function saveInstallationData(data) {
  * @returns {Object<string, string[]>} - Map of categoryId to sorted unique values
  */
 function extractComponentsFromPlaybook() {
+  try {
   const components = {};
   if (!plays || plays.length === 0) return components;
 
@@ -72,6 +78,10 @@ function extractComponentsFromPlaybook() {
   });
 
   return components;
+  } catch (err) {
+    console.error("extractComponentsFromPlaybook error:", err);
+    return {};
+  }
 }
 
 /**
@@ -349,6 +359,7 @@ function initInstallation() {
  * Render the full installation page
  */
 function renderInstallation() {
+  try {
   _installDataCache = null; // refresh from storage on each render
   const container = document.getElementById("installationContent");
   if (!container) return;
@@ -476,6 +487,10 @@ function renderInstallation() {
   `;
 
   container.innerHTML = html;
+  } catch (err) {
+    console.error("renderInstallation error:", err);
+    showToast("❌ Error rendering installation.", 3000);
+  }
 }
 
 /**
@@ -696,6 +711,7 @@ function installDragDrop(event, categoryId, targetValue) {
  * @param {'ready'|'partial'|'none'} type
  */
 function showReadinessModal(type) {
+  try {
   if (!plays || plays.length === 0) return;
 
   const titles = {
@@ -768,6 +784,10 @@ function showReadinessModal(type) {
   html += `</div>`;
 
   showModal(html, { ...titles[type] });
+  } catch (err) {
+    console.error("showReadinessModal error:", err);
+    showToast("❌ Error showing readiness report.", 3000);
+  }
 }
 
 // ============ Playbook Integration ============
@@ -821,6 +841,7 @@ function getPlayInstallTooltip(play) {
  * Returns structured data consumed by the rendering function.
  */
 function generateSmartInstallReport() {
+  try {
   if (!plays || plays.length === 0) return null;
 
   const data = getInstallationData();
@@ -1047,6 +1068,10 @@ function generateSmartInstallReport() {
     totalInProgress: inProgress.length,
     totalNotStarted: notStarted.length,
   };
+  } catch (err) {
+    console.error("generateSmartInstallReport error:", err);
+    return null;
+  }
 }
 
 /**

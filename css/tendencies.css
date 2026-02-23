@@ -810,7 +810,7 @@
 /* ============ Hover Tooltip ============ */
 .td-tooltip {
   position: fixed;
-  z-index: 9999;
+  z-index: var(--z-modal);
   background: var(--color-dark);
   color: var(--color-border-light);
   border-radius: var(--radius-lg);

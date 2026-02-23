@@ -15,7 +15,7 @@ let wbFiltersCollapsed = true;
 let cellCustomizations = {};
 let currentEditingCell = { cardIdx: null, cellIdx: null };
 let pendingBgColor = "";
-let pendingTextColor = "#000";
+let pendingTextColor = UI_COLORS.textBlack;
 let pendingPlaySelection = null;
 let pendingOnTwo = false;
 
@@ -65,6 +65,7 @@ function scheduleWristbandAutosave() {
  * Check for and offer to restore a wristband draft
  */
 async function checkWristbandDraft() {
+  try {
   const draft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
   if (!draft || !draft.cards || draft.cards.length === 0) return;
 
@@ -112,6 +113,10 @@ async function checkWristbandDraft() {
     showToast("🃏 Draft restored");
   } else {
     storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+  }
+  } catch (err) {
+    console.error("checkWristbandDraft error:", err);
+    showToast("❌ Error restoring wristband draft.", 3000);
   }
 }
 
@@ -787,6 +792,7 @@ function clearAllWbOptions() {
  * Initialize the wristband maker
  */
 function initWristband() {
+  try {
   if (wristbandCards.length === 0) {
     wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
   }
@@ -800,6 +806,10 @@ function initWristband() {
 
   // Check for unsaved wristband draft
   checkWristbandDraft();
+  } catch (err) {
+    console.error("initWristband error:", err);
+    showToast("❌ Error initializing wristband.", 3000);
+  }
 }
 
 /**
@@ -1137,18 +1147,18 @@ function renderWristbandGrid() {
     let oddStyle = oddCustom.bgColor
       ? `background:${oddCustom.bgColor};`
       : oddIsHuddle
-        ? "background:#fff59d;"
+        ? `background:${UI_COLORS.highlightHuddle};`
         : oddIsCandy
-          ? "background:#f8bbd9;"
+          ? `background:${UI_COLORS.highlightCandy};`
           : "";
     oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
     let evenStyle = evenCustom.bgColor
       ? `background:${evenCustom.bgColor};`
       : evenIsHuddle
-        ? "background:#fff59d;"
+        ? `background:${UI_COLORS.highlightHuddle};`
         : evenIsCandy
-          ? "background:#f8bbd9;"
+          ? `background:${UI_COLORS.highlightCandy};`
           : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
@@ -1161,7 +1171,7 @@ function renderWristbandGrid() {
       wristbandHeaderColor === "transparent"
         ? "transparent"
         : wristbandHeaderColor;
-    const numFg = wristbandHeaderColor === "transparent" ? "#333" : "white";
+    const numFg = wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
     html += `<div class="wristband-cell num-cell" style="background: ${numBg}; color: ${numFg};">${oddNum}</div>`;
 
     // Odd play cell
@@ -1241,7 +1251,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   const key = `${cardIdx}-${cellIdx}`;
   const existing = cellCustomizations[key] || {};
   pendingBgColor = existing.bgColor || "";
-  pendingTextColor = existing.textColor || "#000";
+  pendingTextColor = existing.textColor || UI_COLORS.textBlack;
   pendingOnTwo = existing.onTwo || false;
   pendingPlaySelection = currentPlay;
 
@@ -1316,7 +1326,7 @@ function populateCellPlayList() {
   const container = document.getElementById("cellPlayList");
   if (filtered.length === 0) {
     container.innerHTML =
-      '<div style="padding: 15px; text-align: center; color: #888;">No plays match filters</div>';
+      `<div style="padding: 15px; text-align: center; color: ${UI_COLORS.textLight};">No plays match filters</div>`;
     return;
   }
 
@@ -1324,8 +1334,8 @@ function populateCellPlayList() {
     .slice(0, 50)
     .map(
       (p, idx) => `
-      <div class="cell-play-option" onclick="selectPlayForCell(${plays.indexOf(p)})" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid #eee; font-size: 12px; ${idx % 2 === 0 ? "background: #fafafa;" : ""}">
-        <span style="color: #888; font-size: 10px;">${p.type || "Play"}</span> ${getFullCall(p)}
+      <div class="cell-play-option" onclick="selectPlayForCell(${plays.indexOf(p)})" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid ${UI_COLORS.borderLight}; font-size: 12px; ${idx % 2 === 0 ? `background: ${UI_COLORS.bgSubtle};` : ""}">
+        <span style="color: ${UI_COLORS.textLight}; font-size: 10px;">${p.type || "Play"}</span> ${getFullCall(p)}
       </div>
     `,
     )
@@ -1420,7 +1430,7 @@ function applyCellStyle() {
   const key = `${cardIdx}-${cellIdx}`;
   const onTwo = document.getElementById("cellOnTwo").checked;
 
-  if (pendingBgColor || pendingTextColor !== "#000" || onTwo) {
+  if (pendingBgColor || pendingTextColor !== UI_COLORS.textBlack || onTwo) {
     cellCustomizations[key] = {
       bgColor: pendingBgColor,
       textColor: pendingTextColor,
@@ -1576,6 +1586,7 @@ async function autoFillWristband() {
  * Print the wristband
  */
 function printWristband() {
+  try {
   const container = document.getElementById("wristbandPrintCards");
   const numCards = wristbandCards.length;
   const opts = getWristbandDisplayOptions();
@@ -1629,18 +1640,18 @@ function printWristband() {
       let oddStyle = oddCustom.bgColor
         ? `background:${oddCustom.bgColor};`
         : oddIsHuddle
-          ? "background:#fff59d;"
+          ? `background:${UI_COLORS.highlightHuddle};`
           : oddIsCandy
-            ? "background:#f8bbd9;"
+            ? `background:${UI_COLORS.highlightCandy};`
             : "";
       oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
       let evenStyle = evenCustom.bgColor
         ? `background:${evenCustom.bgColor};`
         : evenIsHuddle
-          ? "background:#fff59d;"
+          ? `background:${UI_COLORS.highlightHuddle};`
           : evenIsCandy
-            ? "background:#f8bbd9;"
+            ? `background:${UI_COLORS.highlightCandy};`
             : "";
       evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
@@ -1651,7 +1662,7 @@ function printWristband() {
         wristbandHeaderColor === "transparent"
           ? "transparent"
           : wristbandHeaderColor;
-      const pNumFg = wristbandHeaderColor === "transparent" ? "#333" : "white";
+      const pNumFg = wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
       cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${oddNum}</div>`;
       cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getFullCall(oddPlay, opts) : ""}</span></div>`;
       cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${evenNum}</div>`;
@@ -1709,6 +1720,10 @@ function printWristband() {
       delete document.body.dataset.printMode;
     }, 500);
   }, 100);
+  } catch (err) {
+    console.error("printWristband error:", err);
+    showToast("❌ Error printing wristband.", 4000);
+  }
 }
 
 /* captureWbDisplaySettings() merged into getWristbandDisplayOptions() */
@@ -1717,6 +1732,7 @@ function printWristband() {
  * Save the wristband to localStorage
  */
 async function saveWristband() {
+  try {
   const name = await showPrompt(
     "Name for this wristband set:",
     `Wristband Set ${new Date().toLocaleDateString()}`,
@@ -1776,6 +1792,10 @@ async function saveWristband() {
   markWristbandClean();
   storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
   showToast(`✅ "${name}" saved!`);
+  } catch (err) {
+    console.error("saveWristband error:", err);
+    showToast("❌ Error saving wristband.", 4000);
+  }
 }
 
 /**
@@ -1839,6 +1859,7 @@ function loadSavedWristbandsList() {
  * @param {number} id - Wristband ID
  */
 function loadWristband(id) {
+  try {
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const wb = saved.find((s) => s.id === id);
   if (!wb) return;
@@ -1892,6 +1913,10 @@ function loadWristband(id) {
   markWristbandClean();
   storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
   showToast(`Loaded "${wb.title}"`);
+  } catch (err) {
+    console.error("loadWristband error:", err);
+    showToast("❌ Error loading wristband.", 4000);
+  }
 }
 
 /**
@@ -2001,9 +2026,9 @@ function initSwatchHandlers() {
       updateSwatchSelection("bgColorSwatches", pendingBgColor);
       // Auto-flip text color for contrast
       if (pendingBgColor && isColorDark(pendingBgColor)) {
-        pendingTextColor = "#fff";
+        pendingTextColor = UI_COLORS.textWhite;
       } else if (pendingBgColor) {
-        pendingTextColor = "#000";
+        pendingTextColor = UI_COLORS.textBlack;
       }
       updateSwatchSelection("textColorSwatches", pendingTextColor);
     }

@@ -57,7 +57,6 @@
   }
 }
 
-
 /* ============ Responsive Design ============ */
 @media (max-width: 1024px) {
   .script-builder {
@@ -199,4 +198,3 @@
     grid-template-columns: 1fr !important;
   }
 }
-

@@ -7,7 +7,12 @@
 const OB_STORAGE_KEY = "ob_playRatings"; // { playName: 1-5 }
 
 function obLoadRatings() {
-  return storageManager.get(OB_STORAGE_KEY, {});
+  try {
+    return storageManager.get(OB_STORAGE_KEY, {});
+  } catch (err) {
+    console.error("obLoadRatings error:", err);
+    return {};
+  }
 }
 
 function obSaveRatings(ratings) {
@@ -20,6 +25,7 @@ function obSaveRatings(ratings) {
  * @returns {Map<string, Object>} playName → aggregated data
  */
 function obBuildPlayMap() {
+  try {
   const map = new Map();
   if (!plays || plays.length === 0) return map;
 
@@ -87,6 +93,10 @@ function obBuildPlayMap() {
   });
 
   return map;
+  } catch (err) {
+    console.error("obBuildPlayMap error:", err);
+    return new Map();
+  }
 }
 
 // ── Concept Map (for constraint / gap analysis) ────────────────────
@@ -299,6 +309,7 @@ function initOffenseBuilder() {
  * inputs are never destroyed and never lose focus.
  */
 function renderOffenseBuilder() {
+  try {
   const container = document.getElementById("offenseBuilderContent");
   if (!container) return;
 
@@ -375,8 +386,10 @@ function renderOffenseBuilder() {
 
   // Render sub-panels
   obRenderPlayList();
-  obRenderSidebar();
-}
+  obRenderSidebar();  } catch (err) {
+    console.error("renderOffenseBuilder error:", err);
+    showToast("❌ Error rendering offense builder.", 3000);
+  }}
 
 // ── Play List (left panel) ─────────────────────────────────────────
 function obRenderPlayList() {
@@ -466,6 +479,7 @@ function obRenderStarPicker(playName, current) {
 }
 
 function obSetRating(playName, stars) {
+  try {
   var ratings = obLoadRatings();
   if (stars <= 0) {
     delete ratings[playName];
@@ -476,6 +490,10 @@ function obSetRating(playName, stars) {
   _obUpdateHeaderStats();
   obRenderPlayList();
   obRenderSidebar();
+  } catch (err) {
+    console.error("obSetRating error:", err);
+    showToast("❌ Error saving rating.", 3000);
+  }
 }
 
 function _obUpdateHeaderStats() {

@@ -211,6 +211,7 @@ function toggleMoreFilters() {
  * Populate filter dropdowns and chip groups with unique values from plays
  */
 function populateFilters() {
+  try {
   const types = [...new Set(plays.map((p) => p.type))].filter(Boolean).sort();
   const formations = [...new Set(plays.map((p) => p.formation))]
     .filter(Boolean)
@@ -265,6 +266,10 @@ function populateFilters() {
 
   // Populate wristband highlight dropdown
   populateWristbandHighlightDropdown();
+  } catch (err) {
+    console.error("populateFilters error:", err);
+    showToast("❌ Error loading filters.", 3000);
+  }
 }
 
 function _fillSelect(id, allLabel, values) {
@@ -538,6 +543,7 @@ function removeFilter(layer, value) {
  * Render the playbook table with filtered plays
  */
 function renderPlaybook() {
+  try {
   const tbody = document.querySelector("#playbookTable tbody");
   const searchTerm =
     document.getElementById("searchPlay")?.value?.toLowerCase() || "";
@@ -593,6 +599,10 @@ function renderPlaybook() {
 
   // Save state
   savePlaybookState();
+  } catch (err) {
+    console.error("renderPlaybook error:", err);
+    showToast("❌ Error rendering playbook.", 3000);
+  }
 }
 
 // escapeHtml is now defined in utils.js
@@ -671,6 +681,7 @@ function savePlaybookState() {
  * Restore playbook filter/sort state from localStorage
  */
 function restorePlaybookState() {
+  try {
   const state = storageManager.get(STORAGE_KEYS.PLAYBOOK_STATE, null);
   if (!state) return;
 
@@ -712,6 +723,10 @@ function restorePlaybookState() {
   }
 
   _syncSortUI();
+  } catch (err) {
+    console.error("restorePlaybookState error:", err);
+    showToast("❌ Error restoring playbook state.", 3000);
+  }
 }
 
 function _setVal(id, val) {
@@ -887,6 +902,7 @@ function applyColumnVisibility() {
  * Restore column visibility from localStorage
  */
 function restoreColumnVisibility() {
+  try {
   const savedVis = storageManager.get(STORAGE_KEYS.COLUMN_VISIBILITY, null);
   if (savedVis) {
     Object.assign(columnVisibility, savedVis);
@@ -910,6 +926,9 @@ function restoreColumnVisibility() {
         cb.checked = columnVisibility[columns[idx]];
       });
     }
+  }
+  } catch (err) {
+    console.error("restoreColumnVisibility error:", err);
   }
 }
 
@@ -1021,6 +1040,7 @@ function hidePlayPreview() {
  * Save the current filtered plays as a named collection
  */
 async function savePlayCollection() {
+  try {
   if (filteredPlays.length === 0) {
     showToast("No plays to save — adjust your filters first", {
       type: "warning",
@@ -1068,6 +1088,10 @@ async function savePlayCollection() {
   showToast(`Saved "${name.trim()}" (${filteredPlays.length} plays)`, {
     type: "success",
   });
+  } catch (err) {
+    console.error("savePlayCollection error:", err);
+    showToast("❌ Error saving collection.", 4000);
+  }
 }
 
 /**
@@ -1682,9 +1706,9 @@ function printFilteredPlays() {
     const isCandy =
       highlightCandy && play.tempo && play.tempo.toLowerCase() === "candy";
     const bgStyle = isHuddle
-      ? ' style="background:#fff59d;"'
+      ? ` style="background:${UI_COLORS.highlightHuddle};"`
       : isCandy
-        ? ' style="background:#f8bbd9;"'
+        ? ` style="background:${UI_COLORS.highlightCandy};"`
         : "";
 
     html += `<li${bgStyle}>${getFullCall(play, opts)}</li>`;

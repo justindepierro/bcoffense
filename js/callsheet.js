@@ -1,12 +1,24 @@
 // Call Sheet functionality
 
+// Centralized category color palette (mirrors CSS --cat-* tokens)
+const CS_COLORS = {
+  red: "#dc3545",
+  yellow: "#ffc107",
+  orange: "#fd7e14",
+  green: "#28a745",
+  blue: "#007bff",
+  purple: "#6f42c1",
+  teal: "#17a2b8",
+  gray: "#6c757d",
+};
+
 // Call sheet categories with colors and filters - FRONT PAGE
 const CALLSHEET_FRONT = [
   // Row 1
   {
     id: "2nd-medium",
     name: "2nd Down Medium (4-6)",
-    color: "#dc3545",
+    color: CS_COLORS.red,
     down: "2",
     distance: "Medium",
     position: null,
@@ -14,7 +26,7 @@ const CALLSHEET_FRONT = [
   {
     id: "2nd-long",
     name: "2nd and Long (7+)",
-    color: "#dc3545",
+    color: CS_COLORS.red,
     down: "2",
     distance: "Long",
     position: null,
@@ -22,7 +34,7 @@ const CALLSHEET_FRONT = [
   {
     id: "3rd-short-1-3",
     name: "3rd and Short (1-3)",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     down: "3",
     distance: "Short",
     position: null,
@@ -32,14 +44,14 @@ const CALLSHEET_FRONT = [
   {
     id: "short-yardage",
     name: "Short Yardage",
-    color: "#fd7e14",
+    color: CS_COLORS.orange,
     situation: "Short Yardage",
     position: null,
   },
   {
     id: "gbot",
     name: '"G-B-O-T"',
-    color: "#6f42c1",
+    color: CS_COLORS.purple,
     situation: null,
     position: null,
     manual: true,
@@ -47,7 +59,7 @@ const CALLSHEET_FRONT = [
   {
     id: "3rd-short-2down",
     name: "3rd and Short (2 Down)",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     down: "3",
     distance: "Short",
     position: null,
@@ -57,14 +69,14 @@ const CALLSHEET_FRONT = [
   {
     id: "rz-20",
     name: "Red Zone +20",
-    color: "#28a745",
+    color: CS_COLORS.green,
     situation: null,
     position: "Green",
   },
   {
     id: "4th-down",
     name: "4th Down",
-    color: "#6f42c1",
+    color: CS_COLORS.purple,
     down: "4",
     distance: null,
     position: null,
@@ -72,7 +84,7 @@ const CALLSHEET_FRONT = [
   {
     id: "3rd-medium",
     name: "3rd and Medium (4-7)",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     down: "3",
     distance: "Medium",
     position: null,
@@ -82,21 +94,21 @@ const CALLSHEET_FRONT = [
   {
     id: "rz-10",
     name: "Red Zone +10",
-    color: "#28a745",
+    color: CS_COLORS.green,
     situation: null,
     position: "Lo-RZ",
   },
   {
     id: "4-minute",
     name: "4 Minute",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     situation: "4 Minute",
     position: null,
   },
   {
     id: "3rd-long",
     name: "3rd and Long (7+)",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     down: "3",
     distance: "Long",
     position: null,
@@ -106,21 +118,21 @@ const CALLSHEET_FRONT = [
   {
     id: "rz-5",
     name: "Red Zone +5",
-    color: "#28a745",
+    color: CS_COLORS.green,
     situation: null,
     position: "Hi-RZ",
   },
   {
     id: "2-minute",
     name: "2 Minute",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     situation: "2 Minute",
     position: null,
   },
   {
     id: "backed-up",
     name: "Backed Up",
-    color: "#6c757d",
+    color: CS_COLORS.gray,
     situation: null,
     position: "Backed Up",
   },
@@ -129,14 +141,14 @@ const CALLSHEET_FRONT = [
   {
     id: "goal-line",
     name: "Goal Line (3 and In)",
-    color: "#fd7e14",
+    color: CS_COLORS.orange,
     situation: "Short Yardage",
     position: "Goal Line",
   },
   {
     id: "last-plays",
     name: "LAST PLAYS",
-    color: "#dc3545",
+    color: CS_COLORS.red,
     situation: null,
     position: null,
     manual: true,
@@ -144,7 +156,7 @@ const CALLSHEET_FRONT = [
   {
     id: "saigon",
     name: "SAIGON",
-    color: "#6c757d",
+    color: CS_COLORS.gray,
     situation: null,
     position: "Saigon",
   },
@@ -153,7 +165,7 @@ const CALLSHEET_FRONT = [
   {
     id: "must-haves",
     name: "MUST HAVES AND FUN",
-    color: "#17a2b8",
+    color: CS_COLORS.teal,
     situation: null,
     position: null,
     manual: true,
@@ -166,14 +178,14 @@ const CALLSHEET_BACK = [
   {
     id: "openers",
     name: "Openers",
-    color: "#28a745",
+    color: CS_COLORS.green,
     playType: "Opener",
     manual: false,
   },
   {
     id: "1st-down",
     name: "1st Down",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     down: "1",
     distance: null,
     position: null,
@@ -181,21 +193,21 @@ const CALLSHEET_BACK = [
   {
     id: "perimeter-screens",
     name: "Perimeter Screens",
-    color: "#17a2b8",
+    color: CS_COLORS.teal,
     playType: "Screen",
     manual: false,
   },
   {
     id: "screen",
     name: "Screen",
-    color: "#17a2b8",
+    color: CS_COLORS.teal,
     playType: "Screen",
     manual: false,
   },
   {
     id: "p-and-10",
     name: "P and 10",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     situation: null,
     position: null,
     manual: true,
@@ -203,7 +215,7 @@ const CALLSHEET_BACK = [
   {
     id: "2-point",
     name: "2 Point Plays",
-    color: "#28a745",
+    color: CS_COLORS.green,
     situation: null,
     position: null,
     manual: true,
@@ -213,42 +225,42 @@ const CALLSHEET_BACK = [
   {
     id: "base-run",
     name: "Base run",
-    color: "#28a745",
+    color: CS_COLORS.green,
     playType: "Run",
     manual: false,
   },
   {
     id: "run-options",
     name: "Run Options",
-    color: "#28a745",
+    color: CS_COLORS.green,
     playType: "Run Option",
     manual: false,
   },
   {
     id: "base-pass",
     name: "Base Pass",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     playType: "Pass",
     manual: false,
   },
   {
     id: "quick",
     name: "Quick",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     playType: "Quick",
     manual: false,
   },
   {
     id: "play-action",
     name: "Play Action",
-    color: "#17a2b8",
+    color: CS_COLORS.teal,
     playType: "Play Action",
     manual: false,
   },
   {
     id: "rpos",
     name: "RPOs",
-    color: "#fd7e14",
+    color: CS_COLORS.orange,
     playType: "RPO",
     manual: false,
   },
@@ -257,42 +269,42 @@ const CALLSHEET_BACK = [
   {
     id: "player1",
     name: "Lucas",
-    color: "#ffc107",
+    color: CS_COLORS.yellow,
     playerSpecific: true,
     manual: true,
   },
   {
     id: "player2",
     name: "Marco",
-    color: "#28a745",
+    color: CS_COLORS.green,
     playerSpecific: true,
     manual: true,
   },
   {
     id: "player3",
     name: "Diego",
-    color: "#fd7e14",
+    color: CS_COLORS.orange,
     playerSpecific: true,
     manual: true,
   },
   {
     id: "player4",
     name: "Danny",
-    color: "#17a2b8",
+    color: CS_COLORS.teal,
     playerSpecific: true,
     manual: true,
   },
   {
     id: "player5",
     name: "Jayvon",
-    color: "#28a745",
+    color: CS_COLORS.green,
     playerSpecific: true,
     manual: true,
   },
   {
     id: "movement",
     name: "Movement Passes",
-    color: "#6f42c1",
+    color: CS_COLORS.purple,
     playType: "Movement",
     manual: false,
   },
@@ -374,6 +386,7 @@ const CALLSHEET_DISPLAY_IDS = [
  * Initialize call sheet
  */
 function initCallSheet() {
+  try {
   // Load settings
   const savedSettings = storageManager.get(
     STORAGE_KEYS.CALL_SHEET_SETTINGS,
@@ -426,12 +439,17 @@ function initCallSheet() {
 
   // Check for unsaved draft
   checkCallSheetDraft();
+  } catch (err) {
+    console.error("initCallSheet error:", err);
+    showToast("❌ Error initializing call sheet.", 4000);
+  }
 }
 
 /**
  * Auto-populate call sheet from playbook based on preferred fields
  */
 async function autoPopulateCallSheet() {
+  try {
   const ok = await showConfirm(
     "This will clear the current call sheet and repopulate from your playbook based on preferred fields and play types. Continue?",
     { title: "Auto-Populate Call Sheet", icon: "⚡", confirmText: "Populate" },
@@ -500,6 +518,10 @@ async function autoPopulateCallSheet() {
     msg += ` (${unmatched} unmatched)`;
   }
   showToast(msg);
+  } catch (err) {
+    console.error("autoPopulateCallSheet error:", err);
+    showToast("❌ Error auto-populating call sheet.", 4000);
+  }
 }
 
 /**
@@ -780,30 +802,30 @@ function getPersonnelCode(personnel) {
  * Get background color for personnel code
  */
 function getPersonnelBgColor(personnel) {
-  if (!personnel) return "#666";
+  if (!personnel) return UI_COLORS.textMuted;
   const p = personnel.toLowerCase().trim();
   const colors = {
-    black: "#333",
+    black: UI_COLORS.textDark,
     blue: "#0066cc",
-    green: "#28a745",
-    yellow: "#ffc107",
-    orange: "#fd7e14",
-    purple: "#6f42c1",
-    red: "#dc3545",
+    green: CS_COLORS.green,
+    yellow: CS_COLORS.yellow,
+    orange: CS_COLORS.orange,
+    purple: CS_COLORS.purple,
+    red: CS_COLORS.red,
     white: "#f8f9fa",
-    star: "#ffc107",
+    star: CS_COLORS.yellow,
   };
-  return colors[p] || "#666";
+  return colors[p] || UI_COLORS.textMuted;
 }
 
 /**
  * Get text color for personnel (for contrast)
  */
 function getPersonnelTextColor(personnel) {
-  if (!personnel) return "#fff";
+  if (!personnel) return UI_COLORS.textWhite;
   const p = personnel.toLowerCase().trim();
   const darkText = ["yellow", "white", "star"];
-  return darkText.includes(p) ? "#000" : "#fff";
+  return darkText.includes(p) ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 }
 
 /**
@@ -1001,7 +1023,7 @@ function renderCategory(cat, data, dupeMap) {
 
   // Determine header text color based on background
   const textColor =
-    cat.color === "#ffc107" || cat.color === "#f8f9fa" ? "#000" : "#fff";
+    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa" ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 
   const playCount = leftPlays.length + rightPlays.length;
   const target = csTargets[cat.id];
@@ -1010,11 +1032,11 @@ function renderCategory(cat, data, dupeMap) {
     const pct = Math.min(playCount / target, 1);
     const targetColor =
       playCount >= target
-        ? "#28a745"
+        ? CS_COLORS.green
         : playCount >= target * 0.5
-          ? "#ffc107"
-          : "#dc3545";
-    countDisplay = `<span class="cs-play-count" style="background: ${targetColor}; color: ${playCount >= target || pct < 0.5 ? "#fff" : "#000"};">${playCount}/${target}</span>`;
+          ? CS_COLORS.yellow
+          : CS_COLORS.red;
+    countDisplay = `<span class="cs-play-count" style="background: ${targetColor}; color: ${playCount >= target || pct < 0.5 ? UI_COLORS.textWhite : UI_COLORS.textBlack};">${playCount}/${target}</span>`;
   } else if (playCount > 0) {
     countDisplay = `<span class="cs-play-count">${playCount}</span>`;
   }
@@ -1134,7 +1156,7 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetPersonnelBorder")?.value || "",
     personnelBorderColor:
       document.getElementById("callsheetPersonnelBorderColor")?.value ||
-      "#dc3545",
+      CS_COLORS.red,
   };
 }
 
@@ -1172,13 +1194,13 @@ function getPlayBorderColor(play, options) {
   }
 
   // Check type-based borders
-  if (options.redBorder && checkMatch(options.redBorder)) return "#dc3545";
-  if (options.blueBorder && checkMatch(options.blueBorder)) return "#007bff";
-  if (options.greenBorder && checkMatch(options.greenBorder)) return "#28a745";
+  if (options.redBorder && checkMatch(options.redBorder)) return CS_COLORS.red;
+  if (options.blueBorder && checkMatch(options.blueBorder)) return CS_COLORS.blue;
+  if (options.greenBorder && checkMatch(options.greenBorder)) return CS_COLORS.green;
   if (options.orangeBorder && checkMatch(options.orangeBorder))
-    return "#fd7e14";
+    return CS_COLORS.orange;
   if (options.purpleBorder && checkMatch(options.purpleBorder))
-    return "#6f42c1";
+    return CS_COLORS.purple;
 
   return null;
 }
@@ -1301,12 +1323,12 @@ function showPlayContextMenu(event, categoryId, hash, index) {
 
   const borderColors = [
     { name: "None", value: "", swatch: "⬜" },
-    { name: "Red", value: "#dc3545", swatch: "🔴" },
-    { name: "Blue", value: "#007bff", swatch: "🔵" },
-    { name: "Green", value: "#28a745", swatch: "🟢" },
-    { name: "Yellow", value: "#ffc107", swatch: "🟡" },
-    { name: "Orange", value: "#fd7e14", swatch: "🟠" },
-    { name: "Purple", value: "#6f42c1", swatch: "🟣" },
+    { name: "Red", value: CS_COLORS.red, swatch: "🔴" },
+    { name: "Blue", value: CS_COLORS.blue, swatch: "🔵" },
+    { name: "Green", value: CS_COLORS.green, swatch: "🟢" },
+    { name: "Yellow", value: CS_COLORS.yellow, swatch: "🟡" },
+    { name: "Orange", value: CS_COLORS.orange, swatch: "🟠" },
+    { name: "Purple", value: CS_COLORS.purple, swatch: "🟣" },
   ];
 
   const bgColors = [
@@ -1321,13 +1343,13 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   ];
 
   const textColors = [
-    { name: "Default", value: "", css: "#333" },
-    { name: "Red", value: "#dc3545", css: "#dc3545" },
-    { name: "Blue", value: "#007bff", css: "#007bff" },
+    { name: "Default", value: "", css: UI_COLORS.textDark },
+    { name: "Red", value: CS_COLORS.red, css: CS_COLORS.red },
+    { name: "Blue", value: CS_COLORS.blue, css: CS_COLORS.blue },
     { name: "Green", value: "#1b5e20", css: "#1b5e20" },
-    { name: "Purple", value: "#6f42c1", css: "#6f42c1" },
+    { name: "Purple", value: CS_COLORS.purple, css: CS_COLORS.purple },
     { name: "Orange", value: "#e65100", css: "#e65100" },
-    { name: "White", value: "#ffffff", css: "#ffffff" },
+    { name: "White", value: UI_COLORS.textWhite, css: UI_COLORS.textWhite },
   ];
 
   const menu = document.createElement("div");
@@ -2094,6 +2116,7 @@ async function clearCallSheet() {
  * Print call sheet
  */
 function printCallSheet() {
+  try {
   const container = document.getElementById("callSheetPrint");
   const content = document.getElementById("callSheetPrintContent");
 
@@ -2161,6 +2184,10 @@ function printCallSheet() {
     container.classList.add("hidden");
     delete document.body.dataset.printMode;
   }, 100);
+  } catch (err) {
+    console.error("printCallSheet error:", err);
+    showToast("❌ Error printing call sheet.", 4000);
+  }
 }
 
 /**
@@ -2175,7 +2202,7 @@ function renderPrintCategory(cat, data, options) {
 
   // Determine text color
   const textColor =
-    cat.color === "#ffc107" || cat.color === "#f8f9fa" ? "#000" : "#fff";
+    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa" ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 
   const note = csNotes[cat.id];
 
@@ -2345,7 +2372,7 @@ const BUILTIN_PRESETS = {
       callsheetOrangeBorder: "",
       callsheetPurpleBorder: "",
       callsheetPersonnelBorder: "",
-      callsheetPersonnelBorderColor: "#dc3545",
+      callsheetPersonnelBorderColor: CS_COLORS.red,
     },
   },
   __minimal: {
@@ -2375,7 +2402,7 @@ const BUILTIN_PRESETS = {
       callsheetOrangeBorder: "",
       callsheetPurpleBorder: "",
       callsheetPersonnelBorder: "",
-      callsheetPersonnelBorderColor: "#dc3545",
+      callsheetPersonnelBorderColor: CS_COLORS.red,
     },
   },
   __gameday: {
@@ -2405,7 +2432,7 @@ const BUILTIN_PRESETS = {
       callsheetOrangeBorder: "rpo",
       callsheetPurpleBorder: "screen",
       callsheetPersonnelBorder: "",
-      callsheetPersonnelBorderColor: "#dc3545",
+      callsheetPersonnelBorderColor: CS_COLORS.red,
     },
   },
   __print_friendly: {
@@ -2435,7 +2462,7 @@ const BUILTIN_PRESETS = {
       callsheetOrangeBorder: "",
       callsheetPurpleBorder: "",
       callsheetPersonnelBorder: "",
-      callsheetPersonnelBorderColor: "#dc3545",
+      callsheetPersonnelBorderColor: CS_COLORS.red,
     },
   },
 };
@@ -2714,6 +2741,7 @@ function scheduleCallSheetAutosave() {
  * Check for unsaved call sheet draft on init
  */
 async function checkCallSheetDraft() {
+  try {
   const draft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
   if (!draft || !draft.savedAt) return;
 
@@ -2753,6 +2781,10 @@ async function checkCallSheetDraft() {
     showToast("📋 Call sheet draft restored");
   } else {
     storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+  }
+  } catch (err) {
+    console.error("checkCallSheetDraft error:", err);
+    showToast("❌ Error restoring call sheet draft.", 3000);
   }
 }
 
@@ -3142,14 +3174,14 @@ function updateStatsPanel() {
 
   const typeColor = (t) => {
     const c = {
-      Run: "#28a745",
-      Pass: "#007bff",
-      RPO: "#fd7e14",
-      Screen: "#17a2b8",
-      "Play Action": "#6f42c1",
-      Quick: "#ffc107",
+      Run: CS_COLORS.green,
+      Pass: CS_COLORS.blue,
+      RPO: CS_COLORS.orange,
+      Screen: CS_COLORS.teal,
+      "Play Action": CS_COLORS.purple,
+      Quick: CS_COLORS.yellow,
     };
-    return c[t] || "#6c757d";
+    return c[t] || CS_COLORS.gray;
   };
   const persColor = (p) => getPersonnelBgColor(p);
 
@@ -3165,7 +3197,7 @@ function updateStatsPanel() {
       </div>
       <div class="cs-stat-card">
         <div class="cs-stat-number cs-stat-split">
-          <span style="color: #28a745">${runs}</span> / <span style="color: #007bff">${passes}</span>${other > 0 ? ` / <span style="color: #6c757d">${other}</span>` : ""}
+          <span style="color: ${CS_COLORS.green}">${runs}</span> / <span style="color: ${CS_COLORS.blue}">${passes}</span>${other > 0 ? ` / <span style="color: ${CS_COLORS.gray}">${other}</span>` : ""}
         </div>
         <div class="cs-stat-title">Run / Pass${other > 0 ? " / Other" : ""}</div>
         <div class="cs-stat-sub">${runPct}% / ${passPct}%</div>
@@ -3174,7 +3206,7 @@ function updateStatsPanel() {
     <div class="cs-stats-sections">
       <details open><summary>Play Type Breakdown</summary><div class="cs-stat-bars">${buildBar(types, typeColor)}</div></details>
       <details><summary>Personnel Breakdown</summary><div class="cs-stat-bars">${buildBar(personnel, persColor)}</div></details>
-      <details><summary>Tempo Breakdown</summary><div class="cs-stat-bars">${buildBar(tempos, () => "#17a2b8")}</div></details>
+      <details><summary>Tempo Breakdown</summary><div class="cs-stat-bars">${buildBar(tempos, () => CS_COLORS.teal)}</div></details>
     </div>
   `;
 }
@@ -3337,6 +3369,7 @@ function saveTemplate() {
 }
 
 async function loadTemplate(idx) {
+  try {
   const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
   const template = templates[idx];
   if (!template) return;
@@ -3366,6 +3399,10 @@ async function loadTemplate(idx) {
   renderCallSheet();
   closeTemplateModal();
   showToast(`📁 Loaded "${template.name}"`);
+  } catch (err) {
+    console.error("loadTemplate error:", err);
+    showToast("❌ Error loading template.", 4000);
+  }
 }
 
 async function deleteTemplate(idx) {

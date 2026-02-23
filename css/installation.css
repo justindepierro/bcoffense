@@ -61,7 +61,7 @@
 }
 .install-overall-pct {
   position: relative;
-  z-index: 1;
+  z-index: var(--z-base);
   font-size: var(--font-size-lg);
   font-weight: 700;
   color: white;

@@ -147,6 +147,7 @@ function scheduleScriptAutosave() {
  * Check for and offer to restore a script draft
  */
 async function checkScriptDraft() {
+  try {
   const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
   if (!draft || !draft.plays || draft.plays.length === 0) return;
 
@@ -182,6 +183,10 @@ async function checkScriptDraft() {
     showToast("📋 Draft restored");
   } else {
     storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+  }
+  } catch (err) {
+    console.error("checkScriptDraft error:", err);
+    showToast("❌ Error restoring script draft.", 3000);
   }
 }
 
@@ -805,7 +810,7 @@ function ensureFirstPeriod() {
       isSeparator: true,
       label: "Period 1",
       minutes: 10,
-      color: "#333333",
+      color: UI_COLORS.periodDefault,
       id: Date.now() + Math.random(),
     });
   }
@@ -1233,7 +1238,7 @@ function confirmAddPeriod() {
   const name = document.getElementById("newPeriodName").value.trim();
   const minutes =
     parseInt(document.getElementById("newPeriodMinutes").value, 10) || 0;
-  const color = document.getElementById("newPeriodColor").value || "#333333";
+  const color = document.getElementById("newPeriodColor").value || UI_COLORS.periodDefault;
 
   if (!name) {
     document.getElementById("newPeriodName").classList.add("input-error");
@@ -2411,6 +2416,7 @@ function updateScriptStats() {
  * Render the current script
  */
 function renderScript() {
+  try {
   const container = document.getElementById("scriptPlays");
   const showWbNums =
     document.getElementById("showWristbandNums")?.checked !== false;
@@ -2427,7 +2433,7 @@ function renderScript() {
     let periodHeaders = "";
     script.forEach((p, i) => {
       if (!p.isSeparator) return;
-      const periodColor = p.color || "#333333";
+      const periodColor = p.color || UI_COLORS.periodDefault;
       periodHeaders += `
         <div class="script-item period-header" style="background: ${periodColor}; color: white;">
           <div class="ph-left">
@@ -2533,7 +2539,7 @@ function renderScript() {
             const collapseIcon = isCollapsed ? "▶" : "▼";
             const playCount = getPeriodPlays(i).length;
             const timeDisplay = p.minutes ? `${p.minutes} min` : "";
-            const periodColor = p.color || "#333333";
+            const periodColor = p.color || UI_COLORS.periodDefault;
 
             return `
             <div class="period-header-wrapper" style="border-left: 4px solid ${periodColor};">
@@ -2663,6 +2669,10 @@ function renderScript() {
 
   // Update undo/redo buttons
   historyManager.updateButtons("script");
+  } catch (err) {
+    console.error("renderScript error:", err);
+    showToast("❌ Error rendering script.", 3000);
+  }
 }
 
 /**
@@ -2753,6 +2763,7 @@ function shuffleScript() {
  * Save the current script to localStorage
  */
 async function saveScript() {
+  try {
   const name = document.getElementById("scriptName").value;
   const date = document.getElementById("scriptDate").value;
 
@@ -2811,6 +2822,10 @@ async function saveScript() {
   markScriptClean();
   storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
   showToast(`✅ "${name}" saved!`);
+  } catch (err) {
+    console.error("saveScript error:", err);
+    showToast("❌ Error saving script.", 4000);
+  }
 }
 
 /**
@@ -2881,6 +2896,7 @@ function loadSavedScriptsList() {
  * @param {number} id - Script ID
  */
 function loadScript(id) {
+  try {
   const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const scriptData = savedScripts.find((s) => s.id === id);
   if (!scriptData) return;
@@ -2897,7 +2913,7 @@ function loadScript(id) {
       isSeparator: true,
       label: scriptData.period || scriptData.name || "Period 1",
       minutes: 0,
-      color: "#333333",
+      color: UI_COLORS.periodDefault,
       id: Date.now() + Math.random(),
     });
   }
@@ -2906,6 +2922,10 @@ function loadScript(id) {
   markScriptClean();
   storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
   showToast(`Loaded "${scriptData.name}"`);
+  } catch (err) {
+    console.error("loadScript error:", err);
+    showToast("❌ Error loading script.", 4000);
+  }
 }
 
 /**
@@ -3079,9 +3099,9 @@ function openLoadWristbandToScriptModal() {
   const modalHtml = `
     <div id="loadWbToScriptModal" class="modal-overlay" style="display: flex;" onclick="closeLoadWbToScriptModal(event)">
       <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 450px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid ${UI_COLORS.borderLight};">
           <h3 style="margin: 0;">➕ Load Wristband Plays to Script</h3>
-          <button onclick="closeLoadWbToScriptModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
+          <button onclick="closeLoadWbToScriptModal()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: ${UI_COLORS.textMuted};">✕</button>
         </div>
         
         <div style="margin-bottom: 15px;">
@@ -3180,7 +3200,7 @@ function executeLoadWbToScript() {
       isSeparator: true,
       label: wb.title || "Wristband",
       minutes: 0,
-      color: "#333333",
+      color: UI_COLORS.periodDefault,
       id: Date.now() + Math.random(),
     });
     playsToAdd.forEach((play) => script.push(play));
@@ -3214,13 +3234,13 @@ function buildScriptPlayRow(p, displayNum, opts) {
 
   let rowColor = "";
   if (opts.highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
-    rowColor = "background: #fff9c4;";
+    rowColor = `background: ${UI_COLORS.highlightHuddle};`;
   } else if (
     opts.highlightCandy &&
     p.tempo &&
     p.tempo.toLowerCase() === "candy"
   ) {
-    rowColor = "background: #fce4ec;";
+    rowColor = `background: ${UI_COLORS.highlightCandy};`;
   }
 
   return `<tr style="${rowColor}">
@@ -3243,6 +3263,7 @@ function buildScriptPlayRow(p, displayNum, opts) {
  * Generate and print the script as PDF
  */
 function generatePDF() {
+  try {
   const name = document.getElementById("scriptName").value;
   const date = document.getElementById("scriptDate").value;
 
@@ -3286,7 +3307,7 @@ function generatePDF() {
       if (p.isSeparator) {
         periodPlayNum = 0;
         const periodPlays = getPeriodPlays(i);
-        const periodColor = p.color || "#333333";
+        const periodColor = p.color || UI_COLORS.periodDefault;
         const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
         return `<tr class="print-period-header" style="background: ${periodColor}; color: white;">
           <td colspan="12" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
@@ -3327,6 +3348,10 @@ function generatePDF() {
       document.body.classList.remove("print-script");
     }, 500);
   }, 100);
+  } catch (err) {
+    console.error("generatePDF error:", err);
+    showToast("❌ Error generating print preview.", 4000);
+  }
 }
 
 // Full Day Printing Functions
@@ -3388,6 +3413,7 @@ function clearDayScripts() {
  * Print full day - combines selected scripts
  */
 async function printFullDay() {
+  try {
   const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
   const selectedIds = Array.from(
     document.querySelectorAll(".day-script-checkbox:checked"),
@@ -3429,7 +3455,7 @@ async function printFullDay() {
       : "";
     allContent += `
       <tr class="script-section-header">
-        <td colspan="12" style="background: #1a1a2e; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid #667eea;">
+        <td colspan="12" style="background: ${UI_COLORS.bgDarkNav}; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid ${UI_COLORS.accentBlue};">
           📋 ${escapeHtml(scriptData.name.toUpperCase())} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
         </td>
       </tr>
@@ -3444,7 +3470,7 @@ async function printFullDay() {
           if (scriptData.plays[j].isSeparator) break;
           periodPlays.push(scriptData.plays[j]);
         }
-        const periodColor = p.color || "#444";
+        const periodColor = p.color || UI_COLORS.periodDefault;
         const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
         allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="12" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
         return;
@@ -3501,6 +3527,10 @@ async function printFullDay() {
       document.body.classList.remove("print-script");
     }, 500);
   }, 100);
+  } catch (err) {
+    console.error("printFullDay error:", err);
+    showToast("❌ Error printing full day.", 4000);
+  }
 }
 
 // =====================
@@ -4267,7 +4297,7 @@ function previewSmartScript() {
 
   periods.forEach((period) => {
     if (period.separator) {
-      html += `<tr style="background:#333;color:white;font-weight:600;"><td colspan="10">${period.separator.label || "Period"}</td></tr>`;
+      html += `<tr style="background:${UI_COLORS.bgDarkNav};color:white;font-weight:600;"><td colspan="10">${period.separator.label || "Period"}</td></tr>`;
     }
     const sorted = runSmartScript(period.plays, config);
 
@@ -4313,7 +4343,7 @@ function previewSmartScript() {
       const tooltip = parts.length > 0 ? parts.join(" | ") : "—";
 
       const scoreColor =
-        scoreVal > 0 ? "#4caf50" : scoreVal < 0 ? "#f44336" : "#888";
+        scoreVal > 0 ? UI_COLORS.scoreGreen : scoreVal < 0 ? UI_COLORS.scoreRed : UI_COLORS.textLight;
 
       html += `<tr>
         <td>${num++}</td>
@@ -4333,7 +4363,7 @@ function previewSmartScript() {
     const total = runs + passes;
     if (total > 0) {
       const runPct = Math.round((runs / total) * 100);
-      html += `<tr style="background:#1a1a2e;color:#aaa;font-size:0.85em;"><td colspan="10">📊 Period R/P: ${runs}R / ${passes}P (${runPct}% run)</td></tr>`;
+      html += `<tr style="background:${UI_COLORS.bgDarkNav};color:#aaa;font-size:0.85em;"><td colspan="10">📊 Period R/P: ${runs}R / ${passes}P (${runPct}% run)</td></tr>`;
     }
   });
 

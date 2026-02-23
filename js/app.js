@@ -215,31 +215,42 @@ function initAllModules() {
 }
 
 function handleFileUpload(event) {
-  const file = event.target.files[0];
-  if (!file) return;
+  try {
+    const file = event.target.files[0];
+    if (!file) return;
 
-  const reader = new FileReader();
-  reader.onload = function (e) {
-    const text = e.target.result;
-    plays = parseCSV(text);
-    filteredPlays = [...plays];
+    const reader = new FileReader();
+    reader.onload = function (e) {
+      try {
+        const text = e.target.result;
+        plays = parseCSV(text);
+        filteredPlays = [...plays];
 
-    // Store in localStorage
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+        // Store in localStorage
+        storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
 
-    // Show main app
-    document.getElementById("uploadSection").classList.add("hidden");
-    document.getElementById("mainApp").classList.remove("hidden");
+        // Show main app
+        document.getElementById("uploadSection").classList.add("hidden");
+        document.getElementById("mainApp").classList.remove("hidden");
 
-    initAllModules();
-  };
-  reader.readAsText(file);
+        initAllModules();
+      } catch (err) {
+        console.error("handleFileUpload reader.onload error:", err);
+        showToast("❌ Error reading file. Check format and try again.", 4000);
+      }
+    };
+    reader.readAsText(file);
+  } catch (err) {
+    console.error("handleFileUpload error:", err);
+    showToast("❌ Error uploading file.", 4000);
+  }
 }
 
 /**
  * Initialize the application
  */
 function initApp() {
+  try {
   // Check for stored playbook
   const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
   if (storedPlaybook) {
@@ -313,6 +324,10 @@ function initApp() {
 
   // Initialize script keyboard shortcuts
   initScriptKeyboard();
+  } catch (err) {
+    console.error("initApp error:", err);
+    showToast("❌ Error initializing app. Try refreshing.", 5000);
+  }
 }
 
 /**
@@ -337,6 +352,7 @@ function importBackup(event) {
  * Render the Game Week Dashboard panel
  */
 function renderDashboard() {
+  try {
   // Populate opponent dropdown
   const select = document.getElementById("dashOpponentSelect");
   const weekInput = document.getElementById("dashWeekLabel");
@@ -544,6 +560,10 @@ function renderDashboard() {
       </div>
     `;
   }
+  } catch (err) {
+    console.error("renderDashboard error:", err);
+    showToast("❌ Error loading dashboard.", 3000);
+  }
 }
 
 /**
@@ -564,6 +584,7 @@ function onDashNotesChange(value) {
  * Print Full Game Plan — consolidated print with scouting, call sheet, and notes
  */
 function printFullGamePlan() {
+  try {
   const gw = getGameWeek();
   const opp = getActiveOpponent();
 
@@ -653,7 +674,7 @@ function printFullGamePlan() {
             : cat.name;
         const allPlays = [...(data.left || []), ...(data.right || [])];
         const textColor =
-          cat.color === "#ffc107" || cat.color === "#f8f9fa" ? "#000" : "#fff";
+          cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa" ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 
         html += `<div class="gp-cs-cat">
           <div class="gp-cs-cat-header" style="background:${cat.color};color:${textColor}">${displayName} (${allPlays.length})</div>
@@ -715,6 +736,10 @@ function printFullGamePlan() {
     container.classList.add("hidden");
     delete document.body.dataset.printMode;
   }, 100);
+  } catch (err) {
+    console.error("printFullGamePlan error:", err);
+    showToast("❌ Error generating game plan print.", 4000);
+  }
 }
 
 /**
@@ -909,6 +934,7 @@ function showCSVTemplateModal() {
 }
 
 function downloadCSVTemplate(type) {
+  try {
   let headers;
   let filename;
   if (type === "offense") {
@@ -1006,6 +1032,10 @@ function downloadCSVTemplate(type) {
   a.click();
   URL.revokeObjectURL(url);
   showToast(`⬇️ Downloaded ${filename}`);
+  } catch (err) {
+    console.error("downloadCSVTemplate error:", err);
+    showToast("❌ Error creating template.", 3000);
+  }
 }
 
 // Initialize when DOM is ready
