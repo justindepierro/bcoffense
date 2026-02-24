@@ -41,7 +41,6 @@
   box-sizing: border-box;
 }
 @media (hover: hover) {
-
   .wristband-cell:hover {
     background: var(--color-bg-blue-light);
   }
@@ -76,7 +75,6 @@
   display: none;
 }
 @media (hover: hover) {
-
   .wristband-cell:hover .remove-cell {
     display: block;
   }
@@ -167,7 +165,6 @@
   user-select: none;
 }
 @media (hover: hover) {
-
   .checkbox-group label:hover {
     background: var(--color-border-med);
   }
@@ -181,12 +178,10 @@
   color: white;
 }
 @media (hover: hover) {
-
   .checkbox-group label.checked:hover {
     background: var(--color-primary-dark);
   }
 }
-
 
 .line-call {
   font-style: italic;
@@ -220,12 +215,10 @@
   font-size: var(--font-size-sm);
 }
 @media (hover: hover) {
-
   .cell-play-option:hover {
     background: var(--color-bg-blue-tint);
   }
 }
-
 
 /* Card Tabs */
 .card-tabs {
@@ -244,7 +237,6 @@
   font-size: var(--font-size-sm);
 }
 @media (hover: hover) {
-
   .card-tab:hover {
     background: var(--color-border-light);
   }
@@ -273,7 +265,6 @@
   font-size: var(--font-size-sm);
 }
 @media (hover: hover) {
-
   .add-card-btn:hover {
     background: var(--color-success-hover);
   }
@@ -378,7 +369,6 @@
   user-select: none;
 }
 @media (hover: hover) {
-
   .wb-sort-header:hover {
     background: linear-gradient(
       135deg,

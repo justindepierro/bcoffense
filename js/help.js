@@ -15,6 +15,7 @@ function getHelpDataForTab(tab) {
             { key: "↑ / ↓", desc: "Navigate rows" },
             { key: "Enter", desc: "Add selected play to script" },
             { key: "Ctrl/⌘ + C", desc: "Copy play name to clipboard" },
+            { key: "/", desc: "Focus play search" },
             { key: "?", desc: "Show keyboard shortcuts" },
             { key: "Esc", desc: "Close modals" },
           ],
@@ -104,6 +105,7 @@ function getHelpDataForTab(tab) {
             { key: "↕ Reverse", desc: "Reverse play order" },
             { key: "🧠 Smart Script", desc: "Auto-optimize play order" },
             { key: "★ Preferred", desc: "Apply preferred metadata" },
+            { key: "📋 Copy Text", desc: "Copy period plays as plain text to clipboard" },
           ],
         },
         {
@@ -111,6 +113,8 @@ function getHelpDataForTab(tab) {
           name: "Toolbar",
           items: [
             { key: "↩️ / ↪️", desc: "Undo / Redo" },
+            { key: "⌘Z / Ctrl+Z", desc: "Keyboard undo (outside input fields)" },
+            { key: "⌘Y / Ctrl+Y", desc: "Keyboard redo (outside input fields)" },
             { key: "🧠 Smart Script All", desc: "Optimize across all periods" },
             {
               key: "🎯 Auto-Fill Defense",

@@ -777,14 +777,16 @@ function renderAvailablePlays() {
   const inScriptSet = new Set(
     script
       .filter((x) => !x.isSeparator)
-      .map((x) => `${x.formation}||${x.protection}||${x.play}`)
+      .map((x) => `${x.formation}||${x.protection}||${x.play}`),
   );
 
   container.innerHTML = pageFiltered
     .map((p) => {
       const playIdx = playIndexMap.get(p);
       const isSelected = selectedAvailablePlays.includes(playIdx);
-      const alreadyIn = inScriptSet.has(`${p.formation}||${p.protection}||${p.play}`);
+      const alreadyIn = inScriptSet.has(
+        `${p.formation}||${p.protection}||${p.play}`,
+      );
       return `
             <div class="play-item ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
                 <input type="checkbox" class="available-play-cb" data-index="${playIdx}" 
@@ -872,6 +874,17 @@ function addToScript(playIndex) {
     id: Date.now() + Math.random(),
   });
   renderScript();
+
+  // Flash the newly added play row
+  const items = document.querySelectorAll(
+    "#scriptPlays .script-item:not(.period-header)",
+  );
+  const lastItem = items[items.length - 1];
+  if (lastItem) {
+    lastItem.classList.add("just-added");
+    lastItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    setTimeout(() => lastItem.classList.remove("just-added"), 950);
+  }
 }
 
 /**
@@ -1329,7 +1342,10 @@ function updatePeriodMinutes(index, el) {
   const span = el.closest(".ph-left")?.querySelector(".ph-meta-span");
   if (span) {
     const playCount = getPeriodPlays(index).length;
-    const periodReps = getPeriodPlays(index).reduce((s, p) => s + (p.reps || 1), 0);
+    const periodReps = getPeriodPlays(index).reduce(
+      (s, p) => s + (p.reps || 1),
+      0,
+    );
     const timeDisplay = script[index].minutes
       ? `${script[index].minutes} min`
       : "";
@@ -1337,6 +1353,35 @@ function updatePeriodMinutes(index, el) {
   }
   saveScriptState();
   updateScriptStats();
+}
+
+/**
+ * Copy all plays in a period as readable plain text to clipboard
+ * @param {number|string} idx - index of the period separator in script[]
+ */
+function copyPeriodAsText(idx) {
+  const sepIdx = parseInt(idx, 10);
+  const sep = script[sepIdx];
+  if (!sep || !sep.isSeparator) return;
+
+  const periodPlays = getPeriodPlays(sepIdx);
+  if (periodPlays.length === 0) {
+    showToast("⚠️ No plays in this period");
+    return;
+  }
+
+  const header = sep.label || "Period";
+  const lines = [header, "─".repeat(header.length)];
+  periodPlays.forEach((p, n) => {
+    const call = getFullCall(p);
+    const meta = [p.type, p.hash, p.tempo].filter(Boolean).join(" | ");
+    lines.push(`${n + 1}. ${call}${meta ? "  [" + meta + "]" : ""}`);
+  });
+
+  navigator.clipboard
+    .writeText(lines.join("\n"))
+    .then(() => showToast(`📋 ${periodPlays.length} plays copied`))
+    .catch(() => showToast("❌ Clipboard not available"));
 }
 
 /**
@@ -2573,7 +2618,10 @@ function renderScript() {
               const isCollapsed = collapsedPeriods.has(p.id);
               const collapseIcon = isCollapsed ? "▶" : "▼";
               const playCount = getPeriodPlays(i).length;
-              const periodReps = getPeriodPlays(i).reduce((s, p2) => s + (p2.reps || 1), 0);
+              const periodReps = getPeriodPlays(i).reduce(
+                (s, p2) => s + (p2.reps || 1),
+                0,
+              );
               const timeDisplay = p.minutes ? `${p.minutes} min` : "";
               const periodColor = p.color || UI_COLORS.periodDefault;
 
@@ -2606,6 +2654,7 @@ function renderScript() {
                 <button class="pat-btn" data-action="applyPreferredForPeriod" data-idx="${i}" title="Apply preferred metadata to plays in this period">★ Preferred</button>
                 <button class="pat-btn pat-btn-callsheet" data-action="pushPeriodToCallSheet" data-idx="${i}" title="Push this period's plays to matching call sheet categories">📋 → Call Sheet</button>
                 <button class="pat-btn pat-btn-import-cs" data-action="importFromCallSheet" data-idx="${i}" title="Import plays from call sheet categories into this period">📋 ← Call Sheet</button>
+                <button class="pat-btn" data-action="copyPeriodAsText" data-idx="${i}" title="Copy all plays in this period as plain text">📋 Copy Text</button>
               </div>`
                   : ""
               }
@@ -3711,13 +3760,20 @@ function filterScriptItems() {
     }
   });
 
-  // Show match count
+  // Update inline count (replaces toast)
   const visible = document.querySelectorAll(
     "#scriptPlays .script-item:not(.period-header):not(.search-hidden)",
   ).length;
   const total = items.length;
-  if (searchTerm) {
-    showToast(`Found ${visible} of ${total} plays`);
+  const countEl = document.getElementById("scriptSearchCount");
+  if (countEl) {
+    if (searchTerm) {
+      countEl.textContent = `${visible} of ${total}`;
+      countEl.style.display = "inline";
+    } else {
+      countEl.textContent = "";
+      countEl.style.display = "none";
+    }
   }
 }
 

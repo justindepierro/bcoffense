@@ -136,17 +136,22 @@ function _syncSortUI() {
     sd.classList.toggle("desc", secondarySortDirection === "desc");
   }
   // Column header sort icons + aria-sort
-  document.querySelectorAll("#playbookTable th[data-action='sortPlaybook']").forEach((th) => {
-    th.setAttribute("aria-sort", "none");
-    const icon = th.querySelector(".sort-icon");
-    if (icon) icon.classList.remove("asc", "desc");
-  });
+  document
+    .querySelectorAll("#playbookTable th[data-action='sortPlaybook']")
+    .forEach((th) => {
+      th.setAttribute("aria-sort", "none");
+      const icon = th.querySelector(".sort-icon");
+      if (icon) icon.classList.remove("asc", "desc");
+    });
   if (currentSortColumn) {
     const th = document.querySelector(
       `#playbookTable th[data-arg="${currentSortColumn}"]`,
     );
     if (th) {
-      th.setAttribute("aria-sort", currentSortDirection === "asc" ? "ascending" : "descending");
+      th.setAttribute(
+        "aria-sort",
+        currentSortDirection === "asc" ? "ascending" : "descending",
+      );
       const icon = th.querySelector(".sort-icon");
       if (icon) icon.classList.add(currentSortDirection);
     }
@@ -920,7 +925,8 @@ function _setVal(id, val) {
  */
 function _playbookDocKeydown(e) {
   const activeEl = document.activeElement;
-  const inInput = activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA";
+  const inInput =
+    activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA";
 
   // ? to show shortcuts (Shift + /)
   if (e.key === "?" && !e.ctrlKey && !e.metaKey && !inInput) {

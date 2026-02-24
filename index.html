@@ -751,7 +751,11 @@
                 <th data-action="sortPlaybook" data-arg="type" aria-sort="none">
                   Type <span class="sort-icon" data-col="type"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="formation" aria-sort="none">
+                <th
+                  data-action="sortPlaybook"
+                  data-arg="formation"
+                  aria-sort="none"
+                >
                   Formation <span class="sort-icon" data-col="formation"></span>
                 </th>
                 <th data-action="sortPlaybook" data-arg="tags" aria-sort="none">
@@ -760,20 +764,36 @@
                 <th data-action="sortPlaybook" data-arg="back" aria-sort="none">
                   Back <span class="sort-icon" data-col="back"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="motion" aria-sort="none">
+                <th
+                  data-action="sortPlaybook"
+                  data-arg="motion"
+                  aria-sort="none"
+                >
                   Motion <span class="sort-icon" data-col="motion"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="protection" aria-sort="none">
+                <th
+                  data-action="sortPlaybook"
+                  data-arg="protection"
+                  aria-sort="none"
+                >
                   Protection
                   <span class="sort-icon" data-col="protection"></span>
                 </th>
                 <th data-action="sortPlaybook" data-arg="play" aria-sort="none">
                   Play <span class="sort-icon" data-col="play"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="basePlay" aria-sort="none">
+                <th
+                  data-action="sortPlaybook"
+                  data-arg="basePlay"
+                  aria-sort="none"
+                >
                   Base Play <span class="sort-icon" data-col="basePlay"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="tempo" aria-sort="none">
+                <th
+                  data-action="sortPlaybook"
+                  data-arg="tempo"
+                  aria-sort="none"
+                >
                   Tempo <span class="sort-icon" data-col="tempo"></span>
                 </th>
               </tr>
@@ -1029,7 +1049,11 @@
               </div>
               <div class="stat-item ratio" id="statRatioContainer">
                 <span class="stat-label">R/P</span>
-                <span class="stat-value" id="statRatio">-</span>
+                <div class="ratio-bar-wrap">
+                  <div class="ratio-bar-run" id="ratioBarRun"></div>
+                  <div class="ratio-bar-pass" id="ratioBarPass"></div>
+                </div>
+                <span class="stat-value" id="statRatio">&#8212;</span>
               </div>
             </div>
 
@@ -1089,6 +1113,7 @@
                   data-oninput="filterScriptItems"
                   class="script-search-input"
                 />
+                <span id="scriptSearchCount" class="script-search-count" style="display:none"></span>
               </div>
             </div>
 

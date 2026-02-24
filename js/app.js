@@ -113,6 +113,19 @@ function showTab(tabName) {
   } else if (tabName === "dashboard") {
     renderDashboard();
   }
+
+  // Update browser tab title to reflect current module
+  const TAB_TITLES = {
+    playbook: "Playbook",
+    script: "Script Builder",
+    wristband: "Wristband",
+    tendencies: "Tendencies",
+    callsheet: "Call Sheet",
+    installation: "Installation",
+    offensebuilder: "Offense Builder",
+    dashboard: "Dashboard",
+  };
+  document.title = `${TAB_TITLES[tabName] || tabName} — Practice Script & Playbook`;
 }
 
 // ============ Floating Help Panel ============
@@ -495,6 +508,8 @@ function renderDashboard() {
         ? opponents[gw.opponentIndex]?.plays?.length || 0
         : 0;
 
+      const activeScriptName = document.getElementById("scriptName")?.value?.trim() || "Practice Script";
+
       cardsEl.innerHTML = `
       <div class="dash-card dash-card-playbook">
         <div class="dash-card-icon">📖</div>
@@ -509,7 +524,7 @@ function renderDashboard() {
         <div class="dash-card-info">
           <div class="dash-card-value">${scriptCount}</div>
           <div class="dash-card-label">On Script</div>
-          <div class="dash-card-sub">${savedScriptCount} saved</div>
+          <div class="dash-card-sub">📄 ${escapeHtml(activeScriptName)} • ${savedScriptCount} saved</div>
           <button class="dash-card-link" data-action="showTab" data-arg="script">Open →</button>
         </div>
       </div>
@@ -1157,11 +1172,45 @@ function toggleDarkMode() {
 })();
 
 // Runtime OS theme change (only when user hasn't set a manual preference)
-window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
-  if (!localStorage.getItem("theme")) {
-    document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "");
-    const icon = document.getElementById("darkModeIcon");
-    if (icon) icon.textContent = e.matches ? "☀️" : "🌙";
+window
+  .matchMedia("(prefers-color-scheme: dark)")
+  .addEventListener("change", (e) => {
+    if (!localStorage.getItem("theme")) {
+      document.documentElement.setAttribute(
+        "data-theme",
+        e.matches ? "dark" : "",
+      );
+      const icon = document.getElementById("darkModeIcon");
+      if (icon) icon.textContent = e.matches ? "☀️" : "🌙";
+    }
+  });
+
+// ── Global keyboard shortcuts: Undo/Redo (Ctrl/Cmd+Z, Ctrl/Cmd+Y / Shift+Z) ──
+document.addEventListener("keydown", (e) => {
+  const inInput =
+    e.target.tagName === "INPUT" ||
+    e.target.tagName === "TEXTAREA" ||
+    e.target.isContentEditable;
+  if (inInput) return;
+
+  const mod = e.ctrlKey || e.metaKey;
+  if (!mod) return;
+
+  // Undo: Ctrl+Z / Cmd+Z
+  if (e.key === "z" && !e.shiftKey) {
+    if (currentActiveTab === "script" && typeof undoScript === "function") {
+      e.preventDefault();
+      undoScript();
+    }
+    return;
+  }
+
+  // Redo: Ctrl+Y / Cmd+Y or Ctrl+Shift+Z / Cmd+Shift+Z
+  if (e.key === "y" || (e.key === "z" && e.shiftKey)) {
+    if (currentActiveTab === "script" && typeof redoScript === "function") {
+      e.preventDefault();
+      redoScript();
+    }
   }
 });
 
@@ -1526,6 +1575,9 @@ document.addEventListener("DOMContentLoaded", () => {
           break;
         case "importFromCallSheet":
           importFromCallSheet(idx);
+          break;
+        case "copyPeriodAsText":
+          copyPeriodAsText(idx);
           break;
         default:
           return; // let it bubble for unhandled actions

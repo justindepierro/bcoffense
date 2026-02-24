@@ -105,13 +105,11 @@
   transition: all var(--transition-fast);
 }
 @media (hover: hover) {
-
   .dash-card:hover {
     transform: translateY(-2px);
     box-shadow: var(--shadow-md);
   }
 }
-
 
 .dash-card-icon {
   font-size: var(--font-size-3xl);
@@ -236,7 +234,6 @@
   font-weight: 500;
 }
 @media (hover: hover) {
-
   .dash-link-btn:hover {
     background: var(--color-primary);
     color: white;
@@ -244,7 +241,6 @@
     transform: translateY(-1px);
   }
 }
-
 
 /* ============ Dashboard Notes ============ */
 .dash-notes-section {
@@ -302,7 +298,6 @@
   font-weight: 600;
 }
 @media (hover: hover) {
-
   .btn.dash-link-print:hover {
     background: linear-gradient(
       135deg,
@@ -313,7 +308,6 @@
     color: white;
   }
 }
-
 
 /* ============ Print Game Plan ============ */
 .gp-print-wrap {
@@ -435,11 +429,14 @@
   background: transparent;
   cursor: pointer;
   opacity: 0.65;
-  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  transition:
+    opacity 0.15s,
+    background 0.15s,
+    color 0.15s;
   color: inherit;
   line-height: 1.4;
 }
 .dash-card-link:hover {
   opacity: 1;
-  background: rgba(0,0,0,0.08);
+  background: rgba(0, 0, 0, 0.08);
 }

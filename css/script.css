@@ -41,7 +41,6 @@
   border-left: 3px solid var(--color-primary);
 }
 @media (hover: hover) {
-
   .play-item:hover {
     background: var(--color-bg-blue-light);
   }
@@ -69,12 +68,10 @@
   font-size: var(--font-size-sm);
 }
 @media (hover: hover) {
-
   .play-item button:hover {
     background: var(--color-success-hover);
   }
 }
-
 
 .play-item.selected {
   background: var(--color-success-light);
@@ -140,7 +137,6 @@
   contain-intrinsic-size: auto 52px;
 }
 @media (hover: hover) {
-
   .script-item:hover {
     border-color: var(--color-primary);
     box-shadow: 0 2px 8px rgba(10, 18, 42, 0.1);
@@ -245,7 +241,6 @@
   white-space: nowrap;
 }
 @media (hover: hover) {
-
   .pat-btn:hover {
     background: var(--color-primary-light);
     border-color: var(--color-primary);
@@ -253,21 +248,17 @@
   }
 }
 
-
 .pat-btn-smart {
   background: var(--gradient-accent);
   color: var(--color-dark);
   border-color: var(--color-accent-hover);
 }
 @media (hover: hover) {
-
-
   .pat-btn-smart:hover {
     filter: brightness(1.05);
     border-color: var(--color-accent-hover);
   }
 }
-
 
 /* Period header element classes */
 .ph-collapse-btn {
@@ -318,13 +309,10 @@
   cursor: pointer;
 }
 @media (hover: hover) {
-
-
   .ph-btn:hover {
     background: rgba(255, 255, 255, 0.35);
   }
 }
-
 
 .ph-left {
   display: flex;
@@ -372,13 +360,10 @@
   transition: background var(--transition-fast);
 }
 @media (hover: hover) {
-
-
   .more-tools-btn:hover {
     background: var(--color-border-light);
   }
 }
-
 
 .more-tools-menu {
   display: none;
@@ -411,13 +396,10 @@
   color: var(--color-text);
 }
 @media (hover: hover) {
-
-
   .more-tools-menu button:hover {
     background: var(--color-bg-input);
   }
 }
-
 
 .more-tools-menu .tool-divider {
   height: 1px;
@@ -593,7 +575,6 @@
   font-size: var(--font-size-2xs);
 }
 @media (hover: hover) {
-
   .script-item .move-btn:hover {
     background: var(--color-border);
   }
@@ -623,7 +604,6 @@
   font-size: var(--font-size-sm);
 }
 @media (hover: hover) {
-
   .script-item .remove:hover {
     background: var(--color-danger-hover);
   }
@@ -639,12 +619,10 @@
   font-size: var(--font-size-sm);
 }
 @media (hover: hover) {
-
   .script-item .dup-btn:hover {
     background: var(--color-text-muted);
   }
 }
-
 
 /* Script Stats Bar - New Compact Design */
 .script-stats-bar {
@@ -732,7 +710,6 @@
   transition: background 0.2s;
 }
 @media (hover: hover) {
-
   .collapsible-section .checkbox-filters-title:hover {
     background: var(--color-border);
   }
@@ -792,7 +769,6 @@
   user-select: none;
 }
 @media (hover: hover) {
-
   .wristband-integration-panel .integration-header:hover {
     background: linear-gradient(
       135deg,
@@ -851,7 +827,6 @@
   user-select: none;
 }
 @media (hover: hover) {
-
   .display-options-panel .display-options-header:hover {
     background: linear-gradient(
       135deg,
@@ -912,13 +887,10 @@
   color: var(--color-text-muted);
 }
 @media (hover: hover) {
-
-
   .bulk-select-label:hover {
     color: var(--color-primary);
   }
 }
-
 
 .bulk-indicator {
   display: none;
@@ -1000,13 +972,10 @@
   transition: background 0.2s;
 }
 @media (hover: hover) {
-
-
   .display-options-grid label:hover {
     background: var(--color-bg-blue-tint);
   }
 }
-
 
 .display-options-grid .red {
   color: var(--color-danger);
@@ -1074,7 +1043,6 @@
   transition: border-color var(--transition-fast);
 }
 @media (hover: hover) {
-
   .saved-script-card:hover {
     border-color: var(--color-primary);
   }
@@ -1119,7 +1087,6 @@
   transition: opacity var(--transition-fast);
 }
 @media (hover: hover) {
-
   .saved-card-actions button:hover {
     opacity: 0.85;
   }
@@ -1177,7 +1144,6 @@
   transition: border-color var(--transition-fast);
 }
 @media (hover: hover) {
-
   .full-day-item:hover {
     border-color: var(--color-primary);
   }
@@ -1204,13 +1170,10 @@
 
 /* Buttons */
 @media (hover: hover) {
-
-
   .full-day-section label:hover {
     background: var(--color-bg-blue-tint) !important;
   }
 }
-
 
 /* Wristband Maker - 4.7" x 2.8" format */
 
@@ -1288,12 +1251,10 @@
   transition: opacity var(--transition-fast);
 }
 @media (hover: hover) {
-
   .btn-add-period:hover {
     opacity: 0.85;
   }
 }
-
 
 /* Period Create Mini-Modal */
 .period-create-overlay {
@@ -1375,7 +1336,6 @@
   transition: all var(--transition-fast);
 }
 @media (hover: hover) {
-
   .pcf-preset:hover {
     background: var(--color-accent);
     color: white;
@@ -1407,7 +1367,6 @@
   transition: all var(--transition-fast);
 }
 @media (hover: hover) {
-
   .template-picker-item:hover {
     background: var(--color-bg-blue-tint);
     border-color: var(--color-accent);
@@ -1462,7 +1421,6 @@
   font-weight: 600;
 }
 @media (hover: hover) {
-
   .btn-scouting-fill:hover {
     background: linear-gradient(
       135deg,
@@ -1473,7 +1431,6 @@
   }
 }
 
-
 /* ============ Script Push to Call Sheet Button ============ */
 .pat-btn-callsheet {
   background: var(--color-purple) !important;
@@ -1481,13 +1438,11 @@
   border-color: var(--color-purple) !important;
 }
 @media (hover: hover) {
-
   .pat-btn-callsheet:hover {
     background: var(--color-purple) !important;
     filter: brightness(0.85);
   }
 }
-
 
 /* ============ Script Preview Table Column Widths ============ */
 .script-table .col-num {
@@ -1573,4 +1528,78 @@
   background: var(--color-primary);
   color: #fff;
   border-color: var(--color-primary);
+}
+
+/* ── Flash-on-add animation (newly added script play) ── */
+@keyframes flashAdd {
+  0%   { background: rgba(34, 197, 94, 0.35); }
+  60%  { background: rgba(34, 197, 94, 0.15); }
+  100% { background: transparent; }
+}
+.script-item.just-added {
+  animation: flashAdd 0.9s ease-out forwards;
+}
+
+/* ── Notes input expand on focus ── */
+.play-controls input[data-field="notes"] {
+  width: 72px;
+  transition: width 0.22s ease;
+}
+.play-controls input[data-field="notes"]:focus {
+  width: 160px;
+}
+
+/* ── Script item drag discoverable ── */
+.script-item:not(.period-header)[draggable="true"] {
+  cursor: grab;
+}
+.script-item:not(.period-header)[draggable="true"]:active {
+  cursor: grabbing;
+}
+.script-item:not(.period-header) .play-num::before {
+  content: "⠿";
+  display: inline-block;
+  margin-right: 4px;
+  opacity: 0;
+  font-size: 11px;
+  color: var(--color-text-placeholder);
+  transition: opacity 0.15s;
+  user-select: none;
+}
+.script-item:not(.period-header):hover .play-num::before {
+  opacity: 0.55;
+}
+
+/* ── Run/Pass ratio mini-bar ── */
+.ratio-bar-wrap {
+  display: flex;
+  height: 5px;
+  border-radius: var(--radius-sm);
+  overflow: hidden;
+  background: var(--color-bg-input);
+  margin: 3px 0 2px;
+  min-width: 50px;
+  gap: 1px;
+}
+.ratio-bar-run {
+  background: var(--color-success);
+  height: 100%;
+  transition: width 0.3s ease;
+  border-radius: 2px 0 0 2px;
+}
+.ratio-bar-pass {
+  background: var(--color-primary);
+  height: 100%;
+  flex: 1;
+  transition: width 0.3s ease;
+  border-radius: 0 2px 2px 0;
+}
+
+/* ── Script search inline count ── */
+.script-search-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-placeholder);
+  white-space: nowrap;
+  margin-left: 4px;
+  align-self: center;
 }
