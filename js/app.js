@@ -126,6 +126,11 @@ function showTab(tabName) {
     dashboard: "Dashboard",
   };
   document.title = `${TAB_TITLES[tabName] || tabName} — Practice Script & Playbook`;
+
+  // Remember last active tab (skip installation — not a "real" tab to restore to)
+  if (tabName !== "installation") {
+    localStorage.setItem("lastActiveTab", tabName);
+  }
 }
 
 // ============ Floating Help Panel ============
@@ -362,6 +367,12 @@ function initApp() {
       checkScriptDraft();
       if (typeof checkWristbandDraft === "function") checkWristbandDraft();
       if (typeof checkCallSheetDraft === "function") checkCallSheetDraft();
+
+      // Restore last active tab
+      const lastTab = localStorage.getItem("lastActiveTab");
+      if (lastTab && lastTab !== "installation" && TAB_INDEX_MAP[lastTab] !== undefined) {
+        showTab(lastTab);
+      }
 
       // Restore call sheet display options
       if (typeof restoreCallSheetDisplayOptions === "function") {
@@ -1194,6 +1205,15 @@ document.addEventListener("keydown", (e) => {
   if (inInput) return;
 
   const mod = e.ctrlKey || e.metaKey;
+
+  // Number keys 1-8: switch tabs (no modifier, no alt)
+  if (!mod && !e.altKey && !e.shiftKey && e.key >= "1" && e.key <= "8") {
+    const tabNames = ["playbook", "script", "wristband", "tendencies", "callsheet", "installation", "offensebuilder", "dashboard"];
+    const tab = tabNames[parseInt(e.key, 10) - 1];
+    if (tab) { e.preventDefault(); showTab(tab); }
+    return;
+  }
+
   if (!mod) return;
 
   // Undo: Ctrl+Z / Cmd+Z

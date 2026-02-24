@@ -972,13 +972,23 @@
             </div>
 
             <div class="filters filters-compact">
-              <input
-                type="text"
-                id="scriptSearchPlay"
-                placeholder="🔍 Search plays..."
-                data-oninput="filterScriptPlays"
-                class="w-full"
-              />
+              <div class="search-input-wrap">
+                <input
+                  type="text"
+                  id="scriptSearchPlay"
+                  placeholder="🔍 Search plays..."
+                  data-oninput="filterScriptPlays"
+                  class="w-full"
+                />
+                <button
+                  id="clearSearchPlay"
+                  class="search-clear-btn"
+                  data-action="clearSearchPlay"
+                  title="Clear search"
+                  style="display:none"
+                  aria-label="Clear search"
+                >✕</button>
+              </div>
             </div>
             <div class="available-plays-actions">
               <button
@@ -1106,6 +1116,24 @@
                 <span id="scriptSortStatus" class="script-sort-status"></span>
               </div>
               <div class="script-toolbar-right">
+                <button
+                  class="btn btn-sm toolbar-btn-xs"
+                  data-action="collapseAllPeriods"
+                  title="Collapse all periods"
+                >⊟ All</button>
+                <button
+                  class="btn btn-sm toolbar-btn-xs"
+                  data-action="expandAllPeriods"
+                  title="Expand all periods"
+                >⊞ All</button>
+                <select
+                  id="jumpToPeriod"
+                  class="toolbar-sort-select"
+                  data-onchange="jumpToPeriod"
+                  data-pass="value"
+                  title="Jump to period"
+                  style="display:none"
+                ></select>
                 <input
                   type="text"
                   id="scriptSearchBox"
@@ -1142,6 +1170,13 @@
                 title="Nothing to redo"
               >
                 ↪️ Redo
+              </button>
+              <button
+                class="btn btn-sm"
+                data-action="exportScriptAsText"
+                title="Download script as plain-text file"
+              >
+                📄 Export Text
               </button>
               <button
                 class="btn btn-sm btn-smart-script"

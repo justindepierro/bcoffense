@@ -214,6 +214,19 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
+.cell-play-option {
+  padding: 8px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-light, #eee);
+  font-size: 12px;
+}
+.cell-play-option:nth-child(odd) {
+  background: var(--color-bg-subtle, #fafafa);
+}
+.cell-play-option-type {
+  color: var(--color-text-light, #888);
+  font-size: 10px;
+}
 @media (hover: hover) {
   .cell-play-option:hover {
     background: var(--color-bg-blue-tint);

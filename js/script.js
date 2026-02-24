@@ -358,11 +358,14 @@ function updateRunPassRatio() {
 
   if (run === 0 && pass === 0) {
     ratioEl.textContent = "-";
+    ratioEl.title = "";
   } else if (pass === 0) {
     ratioEl.textContent = "∞";
+    ratioEl.title = `${run} Run, 0 Pass`;
   } else {
     const ratio = (run / pass).toFixed(1);
     ratioEl.textContent = ratio;
+    ratioEl.title = `${run} Run, ${pass} Pass (R:P = ${ratio})`;
   }
 }
 
@@ -677,7 +680,23 @@ function toggleScriptCheckbox(label, filterType, value) {
  */
 function filterScriptPlays() {
   scriptAvailPage = 0; // reset to page 1 on every filter change
+  const clearBtn = document.getElementById("clearSearchPlay");
+  if (clearBtn) {
+    const val = document.getElementById("scriptSearchPlay")?.value || "";
+    clearBtn.style.display = val ? "flex" : "none";
+  }
   renderAvailablePlays();
+}
+
+/**
+ * Clear the available plays search input
+ */
+function clearSearchPlay() {
+  const input = document.getElementById("scriptSearchPlay");
+  if (input) input.value = "";
+  const clearBtn = document.getElementById("clearSearchPlay");
+  if (clearBtn) clearBtn.style.display = "none";
+  filterScriptPlays();
 }
 
 function availPagePrev() {
@@ -1319,6 +1338,22 @@ function togglePeriodCollapse(periodId) {
   } else {
     collapsedPeriods.add(periodId);
   }
+  renderScript();
+}
+
+/**
+ * Collapse all periods at once
+ */
+function collapseAllPeriods() {
+  script.filter((p) => p.isSeparator).forEach((p) => collapsedPeriods.add(p.id));
+  renderScript();
+}
+
+/**
+ * Expand all periods at once
+ */
+function expandAllPeriods() {
+  collapsedPeriods.clear();
   renderScript();
 }
 
@@ -2488,7 +2523,15 @@ function updateScriptStats() {
   if (el("statReps")) el("statReps").textContent = totalReps;
   if (el("statRun")) el("statRun").textContent = runCount;
   if (el("statPass")) el("statPass").textContent = passCount;
-  if (el("statTime")) el("statTime").textContent = totalTime;
+  if (el("statTime")) {
+    if (totalTime >= 60) {
+      const h = Math.floor(totalTime / 60);
+      const m = totalTime % 60;
+      el("statTime").textContent = `${h}:${String(m).padStart(2, "0")}h`;
+    } else {
+      el("statTime").textContent = totalTime;
+    }
+  }
   updateRunPassRatio();
 }
 
@@ -2626,7 +2669,7 @@ function renderScript() {
               const periodColor = p.color || UI_COLORS.periodDefault;
 
               return `
-            <div class="period-header-wrapper" style="border-left: 4px solid ${periodColor};">
+            <div class="period-header-wrapper" data-separator-id="${p.id}" style="border-left: 4px solid ${periodColor};">
               <div class="script-item period-header" style="background: ${periodColor}; color: white;">
                 <div class="ph-left">
                   <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${p.id}" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
@@ -2751,6 +2794,19 @@ function renderScript() {
 
     // Update stats
     updateScriptStats();
+
+    // Populate jump-to-period dropdown
+    const jumpSel = document.getElementById("jumpToPeriod");
+    if (jumpSel) {
+      const periods = script.filter((p) => p.isSeparator);
+      if (periods.length > 1) {
+        jumpSel.innerHTML = `<option value="">⬇ Jump</option>` +
+          periods.map((p) => `<option value="${p.id}">${escapeHtml(p.label || "Period")}</option>`).join("");
+        jumpSel.style.display = "";
+      } else {
+        jumpSel.style.display = "none";
+      }
+    }
 
     // Update undo/redo buttons
     historyManager.updateButtons("script");
@@ -3450,6 +3506,65 @@ function exportScriptCSV() {
 }
 
 /**
+ * Export the entire script as a plain-text file (one period per section).
+ */
+function exportScriptAsText() {
+  if (script.length === 0) {
+    showToast("No plays in script to export.");
+    return;
+  }
+  const lines = [];
+  const scriptName = document.getElementById("scriptName")?.value || "Practice Script";
+  const dateStr = document.getElementById("scriptDate")?.value || new Date().toISOString().slice(0, 10);
+  lines.push(`${scriptName} — ${dateStr}`);
+  lines.push("=".repeat(50));
+  let playOrder = 0;
+  let inPeriod = false;
+  script.forEach((item) => {
+    if (item.isSeparator) {
+      if (inPeriod) lines.push("");
+      inPeriod = true;
+      playOrder = 0;
+      const periodMins = item.minutes ? ` (${item.minutes} min)` : "";
+      lines.push(`\n[${item.label || "Period"}]${periodMins}`);
+      lines.push("-".repeat(30));
+    } else {
+      playOrder++;
+      const call = getFullCall(item);
+      const type = item.type ? ` [${item.type}]` : "";
+      const notes = item.notes ? ` — ${item.notes}` : "";
+      const reps = (item.reps || 1) > 1 ? ` ×${item.reps}` : "";
+      lines.push(`${String(playOrder).padStart(3, " ")}. ${call}${type}${reps}${notes}`);
+    }
+  });
+  const text = lines.join("\n");
+  const blob = new Blob([text], { type: "text/plain" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `${scriptName.replace(/\s+/g, "_")}_${dateStr}.txt`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast("✅ Script exported as text file");
+}
+
+/**
+ * Scroll to a period header by its separator id.
+ */
+function jumpToPeriod(periodId) {
+  if (!periodId) return;
+  const el = document.querySelector(`[data-separator-id="${periodId}"]`);
+  if (el) {
+    el.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+  // Reset select to placeholder after jump
+  const sel = document.getElementById("jumpToPeriod");
+  if (sel) setTimeout(() => { sel.value = ""; }, 300);
+}
+
+/**
  * Generate and print the script as PDF
  */
 function generatePDF() {
@@ -4011,6 +4126,25 @@ function initScriptKeyboard() {
         });
       }
     }
+  });
+
+  // Escape clears the script search box and available plays search
+  ["scriptSearchBox", "scriptSearchPlay"].forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && input.value) {
+        e.preventDefault();
+        input.value = "";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+        if (id === "scriptSearchBox") filterScriptItems();
+        else {
+          filterScriptPlays();
+          const clearBtn = document.getElementById("clearSearchPlay");
+          if (clearBtn) clearBtn.style.display = "none";
+        }
+      }
+    });
   });
 }
 

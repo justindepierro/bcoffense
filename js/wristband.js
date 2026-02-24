@@ -1336,9 +1336,9 @@ function populateCellPlayList() {
   container.innerHTML = filtered
     .slice(0, 50)
     .map(
-      (p, idx) => `
-      <div class="cell-play-option" onclick="selectPlayForCell(${plays.indexOf(p)})" style="padding: 8px 12px; cursor: pointer; border-bottom: 1px solid ${UI_COLORS.borderLight}; font-size: 12px; ${idx % 2 === 0 ? `background: ${UI_COLORS.bgSubtle};` : ""}">
-        <span style="color: ${UI_COLORS.textLight}; font-size: 10px;">${escapeHtml(p.type || "Play")}</span> ${getFullCall(p)}
+      (p) => `
+      <div class="cell-play-option" onclick="selectPlayForCell(${plays.indexOf(p)})">
+        <span class="cell-play-option-type">${escapeHtml(p.type || "Play")}</span> ${getFullCall(p)}
       </div>
     `,
     )
