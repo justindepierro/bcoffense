@@ -208,3 +208,43 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+/* ── Playbook mobile card view at ≤540px ── */
+@media (max-width: 540px) {
+  /* Hide desktop table, show card list */
+  #playbookContainer table {
+    display: none;
+  }
+  .pb-cards {
+    display: flex;
+  }
+  /* Available plays pagination nav */
+  .avail-pager {
+    padding: 6px 0;
+  }
+}
+
+/* ── Available plays pagination (all screen sizes) ── */
+.avail-pager {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 8px 0 2px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+}
+.avail-pager span {
+  min-width: 80px;
+  text-align: center;
+}
+
+/* ── aria-sort visual hint on th ── */
+#playbookTable th[aria-sort="ascending"] .sort-icon::after {
+  content: " ▲";
+  font-size: 0.75em;
+}
+#playbookTable th[aria-sort="descending"] .sort-icon::after {
+  content: " ▼";
+  font-size: 0.75em;
+}

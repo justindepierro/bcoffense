@@ -1,8 +1,10 @@
 {
+  "id": "./",
   "name": "Practice Script & Playbook",
   "short_name": "Playbook",
   "description": "Football practice script builder, wristband maker, call sheet creator, and defensive tendencies tracker.",
   "start_url": "./",
+  "scope": "./",
   "display": "standalone",
   "background_color": "#0A122A",
   "theme_color": "#0A122A",
@@ -12,13 +14,48 @@
       "src": "icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
     },
     {
       "src": "icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Practice Script",
+      "short_name": "Script",
+      "description": "Open the practice script builder",
+      "url": "./?tab=script",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Playbook",
+      "short_name": "Playbook",
+      "description": "Open the play library",
+      "url": "./?tab=playbook",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
+    },
+    {
+      "name": "Call Sheet",
+      "short_name": "Call Sheet",
+      "description": "Open the game call sheet",
+      "url": "./?tab=callsheet",
+      "icons": [{ "src": "icons/icon-192.png", "sizes": "192x192" }]
     }
   ],
   "categories": ["sports", "productivity"],

@@ -35,6 +35,10 @@ let bulkSelectedIndices = [];
 // Selected available plays for batch adding
 let selectedAvailablePlays = [];
 
+// Pagination for the available plays list
+const AVAIL_PER_PAGE = 50;
+let scriptAvailPage = 0;
+
 // Custom sort orders for script sorting
 let scriptCustomSortOrders = {};
 scriptCustomSortOrders = storageManager.get(
@@ -665,6 +669,19 @@ function toggleScriptCheckbox(label, filterType, value) {
  * Filter plays for the script builder available plays list
  */
 function filterScriptPlays() {
+  scriptAvailPage = 0; // reset to page 1 on every filter change
+  renderAvailablePlays();
+}
+
+function availPagePrev() {
+  if (scriptAvailPage > 0) {
+    scriptAvailPage--;
+    renderAvailablePlays();
+  }
+}
+
+function availPageNext() {
+  scriptAvailPage++;
   renderAvailablePlays();
 }
 
@@ -723,11 +740,19 @@ function renderAvailablePlays() {
   // Pre-build index map to avoid O(n²) indexOf calls
   const playIndexMap = new Map(plays.map((p, i) => [p, i]));
 
-  // Store filtered play indices for Add All Filtered
+  // Store ALL filtered play indices for Add All Filtered
   window.currentFilteredPlayIndices = filtered.map((p) => playIndexMap.get(p));
 
-  container.innerHTML = filtered
-    .map((p, i) => {
+  // ── Pagination ──
+  const totalAvail = filtered.length;
+  const totalAvailPages = Math.max(1, Math.ceil(totalAvail / AVAIL_PER_PAGE));
+  if (scriptAvailPage >= totalAvailPages) scriptAvailPage = totalAvailPages - 1;
+  if (scriptAvailPage < 0) scriptAvailPage = 0;
+  const availStart = scriptAvailPage * AVAIL_PER_PAGE;
+  const pageFiltered = filtered.slice(availStart, availStart + AVAIL_PER_PAGE);
+
+  container.innerHTML = pageFiltered
+    .map((p) => {
       const playIdx = playIndexMap.get(p);
       const isSelected = selectedAvailablePlays.includes(playIdx);
       return `
@@ -745,16 +770,34 @@ function renderAvailablePlays() {
     })
     .join("");
 
-  document.getElementById("availablePlayCount").textContent = filtered.length;
+  document.getElementById("availablePlayCount").textContent = totalAvail;
+
+  // ── Pagination controls ──
+  let pagerEl = document.getElementById("availPager");
+  if (totalAvail <= AVAIL_PER_PAGE) {
+    if (pagerEl) pagerEl.remove();
+  } else {
+    if (!pagerEl) {
+      pagerEl = document.createElement("div");
+      pagerEl.id = "availPager";
+      pagerEl.className = "avail-pager";
+      container.insertAdjacentElement("afterend", pagerEl);
+    }
+    pagerEl.innerHTML = `
+      <button class="btn btn-sm" data-action="availPagePrev" ${scriptAvailPage === 0 ? "disabled" : ""}>◀</button>
+      <span>${availStart + 1}–${Math.min(availStart + AVAIL_PER_PAGE, totalAvail)} of ${totalAvail}</span>
+      <button class="btn btn-sm" data-action="availPageNext" ${scriptAvailPage >= totalAvailPages - 1 ? "disabled" : ""}>▶</button>
+    `;
+  }
 
   // Update select all checkbox state
   const selectAllCb = document.getElementById("selectAllAvailable");
   if (selectAllCb) {
     const selectedSet = new Set(selectedAvailablePlays);
     const allSelected =
-      filtered.length > 0 &&
-      filtered.every((p) => selectedSet.has(playIndexMap.get(p)));
-    const someSelected = filtered.some((p) =>
+      pageFiltered.length > 0 &&
+      pageFiltered.every((p) => selectedSet.has(playIndexMap.get(p)));
+    const someSelected = pageFiltered.some((p) =>
       selectedSet.has(playIndexMap.get(p)),
     );
     selectAllCb.checked = allSelected;
@@ -3228,6 +3271,101 @@ function buildScriptPlayRow(p, displayNum, opts) {
     <td>${p.reps}</td>
     <td>${escapeHtml(p.notes || "")}</td>
   </tr>`;
+}
+
+/**
+ * Export the active script (non-separator plays) to a CSV file.
+ */
+function exportScriptCSV() {
+  const plays = script.filter((item) => !item.isSeparator);
+  if (plays.length === 0) {
+    showToast("No plays in script to export.");
+    return;
+  }
+
+  const headers = [
+    "Period",
+    "Order",
+    "Formation",
+    "Protection",
+    "Play",
+    "Type",
+    "Back",
+    "Motion",
+    "Tempo",
+    "Personnel",
+    "Reps",
+    "Hash",
+    "Situation",
+    "Down",
+    "Distance",
+    "Field Position",
+    "Def Front",
+    "Def Coverage",
+    "Def Stunt",
+    "Def Blitz",
+    "Notes",
+  ];
+
+  // Build period labels for each play
+  let currentPeriod = "";
+  let playOrder = 0;
+  const rows = [];
+  script.forEach((item) => {
+    if (item.isSeparator) {
+      currentPeriod = item.label || "Period";
+      playOrder = 0;
+      return;
+    }
+    playOrder++;
+    const esc = (v) => {
+      const s = String(v ?? "");
+      return s.includes(",") || s.includes('"') || s.includes("\n")
+        ? '"' + s.replace(/"/g, '""') + '"'
+        : s;
+    };
+    rows.push([
+      esc(currentPeriod),
+      playOrder,
+      esc(item.formation),
+      esc(item.protection),
+      esc(item.play),
+      esc(item.type),
+      esc(item.back),
+      esc(item.motion),
+      esc(item.tempo),
+      esc(item.personnel),
+      item.reps ?? 1,
+      esc(item.hash),
+      esc(item.preferredSituation),
+      esc(item.preferredDown),
+      esc(item.preferredDistance),
+      esc(item.preferredFieldPosition),
+      esc(item.defFront),
+      esc(item.defCoverage),
+      esc(item.defStunt),
+      esc(item.defBlitz),
+      esc(item.notes),
+    ]);
+  });
+
+  const csv =
+    headers.join(",") + "\n" + rows.map((r) => r.join(",")).join("\n");
+  const scriptName =
+    document.getElementById("scriptName")?.value || "Practice Script";
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const filename = `${scriptName.replace(/\s+/g, "_")}_${dateStr}.csv`;
+
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast(`✅ Exported ${plays.length} plays to ${filename}`);
 }
 
 /**

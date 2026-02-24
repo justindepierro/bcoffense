@@ -1104,6 +1104,9 @@ function renderCategory(cat, data, dupeMap) {
     leftPlays.forEach((play, idx) => {
       html += renderCallSheetPlay(play, cat.id, "left", idx, dupeMap);
     });
+    if (leftPlays.length === 0) {
+      html += `<div class="cs-empty-cat">Drop plays here</div>`;
+    }
     html += `<div class="callsheet-dropzone" onclick="openCallSheetPlayPicker('${cat.id}', 'left')">+ Add</div>`;
 
     html += `
@@ -1113,6 +1116,9 @@ function renderCategory(cat, data, dupeMap) {
     rightPlays.forEach((play, idx) => {
       html += renderCallSheetPlay(play, cat.id, "right", idx, dupeMap);
     });
+    if (rightPlays.length === 0) {
+      html += `<div class="cs-empty-cat">Drop plays here</div>`;
+    }
     html += `<div class="callsheet-dropzone" onclick="openCallSheetPlayPicker('${cat.id}', 'right')">+ Add</div>`;
 
     html += `
@@ -2153,6 +2159,7 @@ async function clearCallSheet() {
  */
 function printCallSheet() {
   try {
+    showToast("🖨️ Preparing call sheet…", 2500);
     const container = document.getElementById("callSheetPrint");
     const content = document.getElementById("callSheetPrintContent");
 

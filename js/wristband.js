@@ -1606,6 +1606,7 @@ async function autoFillWristband() {
  */
 function printWristband() {
   try {
+    showToast("🖨️ Preparing wristband…", 2500);
     const container = document.getElementById("wristbandPrintCards");
     const numCards = wristbandCards.length;
     const opts = getWristbandDisplayOptions();

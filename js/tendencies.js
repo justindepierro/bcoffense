@@ -1827,7 +1827,8 @@ function renderWizard() {
   const stepDots = TENDENCIES_STEPS.map(
     (s, i) => `
     <div class="td-step-dot ${i === tendenciesWizardStep ? "active" : ""} ${i < tendenciesWizardStep ? "completed" : ""}"
-         onclick="goToWizardStep(${i})" title="${s.title}">
+         onclick="goToWizardStep(${i})" title="${s.title}"
+         ${i === tendenciesWizardStep ? 'aria-current="step"' : ""}>
       <span class="td-step-icon">${s.icon}</span>
       <span class="td-step-label">${s.title.replace(/^[^\s]+\s/, "")}</span>
     </div>
@@ -1847,7 +1848,10 @@ function renderWizard() {
           <button class="btn btn-sm" onclick="skipStep()">Skip →</button>
         </div>
       </div>
-      <div class="td-step-indicator">${stepDots}</div>
+      <div class="td-step-indicator" role="list" aria-label="Wizard steps">${stepDots}</div>
+      <div aria-live="polite" aria-atomic="true" class="sr-only" id="tdWizardLive">
+        Step ${tendenciesWizardStep + 1} of ${totalSteps}: ${step.title}
+      </div>
       <div class="td-wizard-body">
         <h2 class="td-step-title">${step.title}</h2>
         <div class="td-fields">${fieldsHtml}</div>

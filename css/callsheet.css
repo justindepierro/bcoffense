@@ -1991,3 +1991,18 @@
   padding: 40px 20px;
   color: var(--color-text-placeholder);
 }
+
+/* ── Empty column drop affordance ── */
+.cs-empty-cat {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 56px;
+  padding: 10px 8px;
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-placeholder);
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+  margin-bottom: 4px;
+}

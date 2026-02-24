@@ -135,15 +135,21 @@ function _syncSortUI() {
     sd.innerHTML = secondarySortDirection === "asc" ? "&#9650;" : "&#9660;";
     sd.classList.toggle("desc", secondarySortDirection === "desc");
   }
-  // Column header sort icons
-  document.querySelectorAll("#playbookTable .sort-icon").forEach((icon) => {
-    icon.classList.remove("asc", "desc");
+  // Column header sort icons + aria-sort
+  document.querySelectorAll("#playbookTable th[data-action='sortPlaybook']").forEach((th) => {
+    th.setAttribute("aria-sort", "none");
+    const icon = th.querySelector(".sort-icon");
+    if (icon) icon.classList.remove("asc", "desc");
   });
   if (currentSortColumn) {
-    const icon = document.querySelector(
-      `#playbookTable .sort-icon[data-col="${currentSortColumn}"]`,
+    const th = document.querySelector(
+      `#playbookTable th[data-arg="${currentSortColumn}"]`,
     );
-    if (icon) icon.classList.add(currentSortDirection);
+    if (th) {
+      th.setAttribute("aria-sort", currentSortDirection === "asc" ? "ascending" : "descending");
+      const icon = th.querySelector(".sort-icon");
+      if (icon) icon.classList.add(currentSortDirection);
+    }
   }
 }
 
@@ -441,8 +447,6 @@ function filterPlays() {
  * Clear all playbook filters
  */
 function clearFilters() {
-  currentPage = 0;
-  // Clear chips
   activeTypeChips.clear();
   activePersonnelChips.clear();
   document
@@ -481,6 +485,11 @@ function clearFilters() {
   filteredPlays = [...plays];
   renderPlaybook();
   updateActiveFilterBar();
+}
+
+/** Alias used by the playbook empty-state "Clear All Filters" button */
+function clearAllFilters() {
+  clearFilters();
 }
 
 /**
@@ -609,6 +618,51 @@ function renderPlaybook() {
       })
       .join("");
 
+    // ── Mobile card view ──
+    let cardsEl = document.getElementById("pbCards");
+    if (!cardsEl) {
+      cardsEl = document.createElement("div");
+      cardsEl.id = "pbCards";
+      cardsEl.className = "pb-cards";
+      const container = document.getElementById("playbookContainer");
+      if (container) container.insertBefore(cardsEl, container.firstChild);
+    }
+    cardsEl.innerHTML = pageSlice
+      .map((p, localIdx) => {
+        const idx = start + localIdx;
+        const onWristband = isPlayOnHighlightedWristband(p);
+        const wbClass = onWristband ? " on-wristband" : "";
+        const installBadge =
+          typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
+        const pills = [p.type, p.back, p.motion, p.tempo]
+          .filter(Boolean)
+          .map((v) => `<span class="pb-card-pill">${escapeHtml(v)}</span>`)
+          .join("");
+        return `
+          <div class="pb-card${wbClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
+               tabindex="0" role="button"
+               aria-label="${escapeHtml(p.formation)} ${escapeHtml(p.play)}">
+            <div class="pb-card-play">${installBadge} ${highlightSearch(p.formation, searchTerm)} ${highlightSearch(p.protection || "", searchTerm)} ${highlightSearch(p.play, searchTerm)}</div>
+            <div class="pb-card-sub">${highlightSearch(p.type, searchTerm)}${p.motion ? " · " + highlightSearch(p.motion, searchTerm) : ""}${p.back ? " · " + highlightSearch(p.back, searchTerm) : ""}</div>
+            <div class="pb-card-pills">${pills}</div>
+          </div>
+        `;
+      })
+      .join("");
+
+    // ── Zero-results empty state ──
+    let emptyEl = document.getElementById("pbEmptyState");
+    if (!emptyEl) {
+      emptyEl = document.createElement("div");
+      emptyEl.id = "pbEmptyState";
+      emptyEl.className = "pb-empty-state";
+      emptyEl.innerHTML =
+        '<p>No plays match your filters.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
+      const container = document.getElementById("playbookContainer");
+      if (container) container.appendChild(emptyEl);
+    }
+    emptyEl.hidden = pageSlice.length > 0;
+
     // Update play count with pagination info
     const countEl = document.getElementById("playCount");
     if (countEl) {
@@ -631,6 +685,9 @@ function renderPlaybook() {
       const localSel = selectedRowIndex - start;
       if (localSel >= 0 && localSel < rows.length) {
         rows[localSel].classList.add("selected");
+        if (cardsEl && cardsEl.children[localSel]) {
+          cardsEl.children[localSel].classList.add("selected");
+        }
       }
     }
 
@@ -1811,7 +1868,7 @@ function printFilteredPlays() {
     showToast("No plays to print — adjust your filters first.");
     return;
   }
-
+  showToast("🖨️ Preparing playbook print…", 2500);
   const opts = _getPbPrintOptions();
   const { highlightHuddle, highlightCandy } = opts;
   const container = document.getElementById("playbookPrintCards");

@@ -815,3 +815,68 @@ table.sortable th {
   box-shadow: var(--shadow-focus);
   background: var(--color-white);
 }
+
+/* ── Empty State ── */
+.pb-empty-state {
+  text-align: center;
+  padding: 48px 24px;
+  color: var(--color-text-placeholder);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-lg);
+  margin: 16px 0;
+}
+.pb-empty-state p {
+  margin: 0 0 16px;
+  font-size: var(--font-size-lg);
+}
+
+/* ── Mobile Card View ── */
+.pb-cards {
+  display: none;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 8px;
+}
+.pb-card {
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 12px 14px;
+  cursor: pointer;
+  transition: box-shadow 0.15s, transform 0.1s;
+  position: relative;
+}
+.pb-card.selected,
+.pb-card:focus {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.pb-card:active {
+  transform: scale(0.985);
+}
+.pb-card-play {
+  font-weight: 700;
+  font-size: var(--font-size-base);
+  color: var(--color-primary);
+  margin-bottom: 4px;
+}
+.pb-card-sub {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+.pb-card-pills {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+.pb-card-pill {
+  background: var(--color-bg-muted);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+.pb-card.on-wristband {
+  border-left: 4px solid var(--color-primary);
+}

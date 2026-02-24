@@ -744,35 +744,36 @@
                   class="col-install"
                   data-action="sortPlaybook"
                   data-arg="install"
+                  aria-sort="none"
                 >
                   ★ <span class="sort-icon" data-col="install"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="type">
+                <th data-action="sortPlaybook" data-arg="type" aria-sort="none">
                   Type <span class="sort-icon" data-col="type"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="formation">
+                <th data-action="sortPlaybook" data-arg="formation" aria-sort="none">
                   Formation <span class="sort-icon" data-col="formation"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="tags">
+                <th data-action="sortPlaybook" data-arg="tags" aria-sort="none">
                   Tags <span class="sort-icon" data-col="tags"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="back">
+                <th data-action="sortPlaybook" data-arg="back" aria-sort="none">
                   Back <span class="sort-icon" data-col="back"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="motion">
+                <th data-action="sortPlaybook" data-arg="motion" aria-sort="none">
                   Motion <span class="sort-icon" data-col="motion"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="protection">
+                <th data-action="sortPlaybook" data-arg="protection" aria-sort="none">
                   Protection
                   <span class="sort-icon" data-col="protection"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="play">
+                <th data-action="sortPlaybook" data-arg="play" aria-sort="none">
                   Play <span class="sort-icon" data-col="play"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="basePlay">
+                <th data-action="sortPlaybook" data-arg="basePlay" aria-sort="none">
                   Base Play <span class="sort-icon" data-col="basePlay"></span>
                 </th>
-                <th data-action="sortPlaybook" data-arg="tempo">
+                <th data-action="sortPlaybook" data-arg="tempo" aria-sort="none">
                   Tempo <span class="sort-icon" data-col="tempo"></span>
                 </th>
               </tr>
@@ -1137,6 +1138,13 @@
                 data-testid="generate-pdf"
               >
                 📄 Print Script
+              </button>
+              <button
+                class="btn btn-secondary"
+                data-action="exportScriptCSV"
+                title="Export current script to CSV"
+              >
+                📥 Export CSV
               </button>
               <button
                 class="btn btn-primary"

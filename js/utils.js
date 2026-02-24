@@ -237,8 +237,27 @@ function showPrintPreview(contentEl, onPrint) {
 }
 
 /**
+ * Show a pre-flight toast then open the browser print dialog.
+ * Debounced to prevent accidental double-triggers.
+ * @param {string} label - Short label, e.g. "Call Sheet"
+ */
+let _printDebounceTimer = null;
+function triggerPrint(label) {
+  if (_printDebounceTimer) return;
+  showToast(
+    `🖨️ Preparing ${label || "document"} — opening print dialog…`,
+    3000,
+  );
+  _printDebounceTimer = setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      _printDebounceTimer = null;
+    }, 1500);
+  }, 400);
+}
+
+/**
  * Attach a long-press handler for mobile (replaces contextmenu on touch)
- * @param {HTMLElement} element - Target element
  * @param {Function} callback - Called with synthetic event-like object
  * @param {number} duration - Hold duration in ms (default 500)
  */

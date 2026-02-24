@@ -1693,3 +1693,14 @@ function _dispatchDataHandler(e, attr) {
 }
 document.addEventListener("change", (e) => _dispatchDataHandler(e, "onchange"));
 document.addEventListener("input", (e) => _dispatchDataHandler(e, "oninput"));
+
+// ── PWA shortcut URL: ?tab=<name> → switch to that tab on load ──
+(function _handleTabParam() {
+  const tab = new URLSearchParams(window.location.search).get("tab");
+  if (tab && typeof showTab === "function") {
+    // Defer until after init so the tab panels exist
+    document.addEventListener("DOMContentLoaded", () => showTab(tab), {
+      once: true,
+    });
+  }
+})();
