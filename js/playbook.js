@@ -919,14 +919,21 @@ function _setVal(id, val) {
  * Named document-level keydown handler (extractable for remove-before-add)
  */
 function _playbookDocKeydown(e) {
+  const activeEl = document.activeElement;
+  const inInput = activeEl.tagName === "INPUT" || activeEl.tagName === "TEXTAREA";
+
   // ? to show shortcuts (Shift + /)
-  if (e.key === "?" && !e.ctrlKey && !e.metaKey) {
-    const activeEl = document.activeElement;
-    if (activeEl.tagName !== "INPUT" && activeEl.tagName !== "TEXTAREA") {
-      e.preventDefault();
-      showKeyboardShortcuts();
-    }
+  if (e.key === "?" && !e.ctrlKey && !e.metaKey && !inInput) {
+    e.preventDefault();
+    showKeyboardShortcuts();
   }
+
+  // / to focus play search
+  if (e.key === "/" && !e.ctrlKey && !e.metaKey && !inInput) {
+    e.preventDefault();
+    document.getElementById("searchPlay")?.focus();
+  }
+
   // Escape to close modals
   if (e.key === "Escape") {
     hideKeyboardShortcuts();

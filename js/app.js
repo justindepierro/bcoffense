@@ -501,6 +501,7 @@ function renderDashboard() {
         <div class="dash-card-info">
           <div class="dash-card-value">${playCount}</div>
           <div class="dash-card-label">Plays Loaded</div>
+          <button class="dash-card-link" data-action="showTab" data-arg="playbook">Open →</button>
         </div>
       </div>
       <div class="dash-card dash-card-script">
@@ -509,6 +510,7 @@ function renderDashboard() {
           <div class="dash-card-value">${scriptCount}</div>
           <div class="dash-card-label">On Script</div>
           <div class="dash-card-sub">${savedScriptCount} saved</div>
+          <button class="dash-card-link" data-action="showTab" data-arg="script">Open →</button>
         </div>
       </div>
       <div class="dash-card dash-card-wristband">
@@ -517,6 +519,7 @@ function renderDashboard() {
           <div class="dash-card-value">${wristbandCount}</div>
           <div class="dash-card-label">Wristband Cards</div>
           <div class="dash-card-sub">${savedWristbands.length} saved</div>
+          <button class="dash-card-link" data-action="showTab" data-arg="wristband">Open →</button>
         </div>
       </div>
       <div class="dash-card dash-card-tendencies">
@@ -525,6 +528,7 @@ function renderDashboard() {
           <div class="dash-card-value">${oppPlays}</div>
           <div class="dash-card-label">Scouting Plays</div>
           <div class="dash-card-sub">${opponents.length} opponent${opponents.length !== 1 ? "s" : ""}</div>
+          <button class="dash-card-link" data-action="showTab" data-arg="tendencies">Open →</button>
         </div>
       </div>
       <div class="dash-card dash-card-callsheet">
@@ -533,6 +537,7 @@ function renderDashboard() {
           <div class="dash-card-value">${csPlayCount}</div>
           <div class="dash-card-label">On Call Sheet</div>
           <div class="dash-card-sub">${csCatsFilled} categories</div>
+          <button class="dash-card-link" data-action="showTab" data-arg="callsheet">Open →</button>
         </div>
       </div>
     `;
@@ -1150,6 +1155,15 @@ function toggleDarkMode() {
     if (icon) icon.textContent = "☀️";
   }
 })();
+
+// Runtime OS theme change (only when user hasn't set a manual preference)
+window.matchMedia("(prefers-color-scheme: dark)").addEventListener("change", (e) => {
+  if (!localStorage.getItem("theme")) {
+    document.documentElement.setAttribute("data-theme", e.matches ? "dark" : "");
+    const icon = document.getElementById("darkModeIcon");
+    if (icon) icon.textContent = e.matches ? "☀️" : "🌙";
+  }
+});
 
 // ── Autosave status indicator ──
 function updateSaveStatus(state) {

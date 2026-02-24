@@ -285,6 +285,13 @@ function updateActiveFilterCount() {
       badge.classList.add("hidden");
     }
   }
+
+  // Also update the toggle button label with active count
+  const toggleBtn = document.getElementById("toggleFiltersBtn");
+  if (toggleBtn) {
+    toggleBtn.textContent = count > 0 ? `⚙️ Filters (${count})` : "⚙️ Filters";
+    toggleBtn.classList.toggle("has-active-filters", count > 0);
+  }
 }
 
 /* toggleCollapsiblePanel() moved to utils.js */
@@ -751,17 +758,40 @@ function renderAvailablePlays() {
   const availStart = scriptAvailPage * AVAIL_PER_PAGE;
   const pageFiltered = filtered.slice(availStart, availStart + AVAIL_PER_PAGE);
 
+  // ── Zero-state ──
+  if (pageFiltered.length === 0) {
+    container.innerHTML = `
+      <div class="avail-empty-state">
+        <span class="avail-empty-icon">🔍</span>
+        <p class="avail-empty-msg">No plays match the current filters.</p>
+        <p class="avail-empty-hint">Try adjusting your search or clearing active filters.</p>
+      </div>
+    `;
+    document.getElementById("availablePlayCount").textContent = "0";
+    const pagerEl = document.getElementById("availPager");
+    if (pagerEl) pagerEl.remove();
+    return;
+  }
+
+  // ── Build Set of plays already on the script (for badge) ──
+  const inScriptSet = new Set(
+    script
+      .filter((x) => !x.isSeparator)
+      .map((x) => `${x.formation}||${x.protection}||${x.play}`)
+  );
+
   container.innerHTML = pageFiltered
     .map((p) => {
       const playIdx = playIndexMap.get(p);
       const isSelected = selectedAvailablePlays.includes(playIdx);
+      const alreadyIn = inScriptSet.has(`${p.formation}||${p.protection}||${p.play}`);
       return `
-            <div class="play-item ${isSelected ? "selected" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
+            <div class="play-item ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
                 <input type="checkbox" class="available-play-cb" data-index="${playIdx}" 
                        ${isSelected ? "checked" : ""} 
                        data-field="availableSelect" data-idx="${playIdx}" />
                 <div class="play-info">
-                    <div class="play-name">${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}</div>
+                    <div class="play-name">${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}${alreadyIn ? ' <span class="in-script-badge" title="Already on script">✓ On Script</span>' : ""}</div>
                     <div class="play-details">${escapeHtml(p.type)} ${p.motion ? "• " + escapeHtml(p.motion) : ""}</div>
                 </div>
                 <button data-action="addToScript" data-idx="${playIdx}">+ Add</button>
@@ -1299,10 +1329,11 @@ function updatePeriodMinutes(index, el) {
   const span = el.closest(".ph-left")?.querySelector(".ph-meta-span");
   if (span) {
     const playCount = getPeriodPlays(index).length;
+    const periodReps = getPeriodPlays(index).reduce((s, p) => s + (p.reps || 1), 0);
     const timeDisplay = script[index].minutes
       ? `${script[index].minutes} min`
       : "";
-    span.textContent = `${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}`;
+    span.textContent = `${playCount} plays • ${periodReps} reps${timeDisplay ? " • " + timeDisplay : ""}`;
   }
   saveScriptState();
   updateScriptStats();
@@ -2542,6 +2573,7 @@ function renderScript() {
               const isCollapsed = collapsedPeriods.has(p.id);
               const collapseIcon = isCollapsed ? "▶" : "▼";
               const playCount = getPeriodPlays(i).length;
+              const periodReps = getPeriodPlays(i).reduce((s, p2) => s + (p2.reps || 1), 0);
               const timeDisplay = p.minutes ? `${p.minutes} min` : "";
               const periodColor = p.color || UI_COLORS.periodDefault;
 
@@ -2553,7 +2585,7 @@ function renderScript() {
                   <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color">
                   <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" data-field="periodLabel" data-idx="${i}">
                   <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes">
-                  <span class="ph-meta-span">${playCount} plays${timeDisplay ? " • " + timeDisplay : ""}</span>
+                  <span class="ph-meta-span">${playCount} plays • ${periodReps} reps${timeDisplay ? " • " + timeDisplay : ""}</span>
                 </div>
                 <div class="ph-right">
                   <button class="ph-btn" data-action="movePeriod" data-idx="${i}" data-dir="-1" title="Move period up" aria-label="Move period up">▲</button>

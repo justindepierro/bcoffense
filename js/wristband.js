@@ -1329,7 +1329,7 @@ function populateCellPlayList() {
 
   const container = document.getElementById("cellPlayList");
   if (filtered.length === 0) {
-    container.innerHTML = `<div style="padding: 15px; text-align: center; color: ${UI_COLORS.textLight};">No plays match filters</div>`;
+    container.innerHTML = `<div class="wb-avail-empty">No plays match filters</div>`;
     return;
   }
 

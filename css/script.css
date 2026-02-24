@@ -1523,3 +1523,54 @@
 .script-table .col-notes {
   width: 70px;
 }
+
+/* ── Available plays zero-state ── */
+.avail-empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 32px 16px;
+  text-align: center;
+  color: var(--color-text-muted);
+  gap: 6px;
+}
+.avail-empty-icon {
+  font-size: 2rem;
+  opacity: 0.5;
+}
+.avail-empty-msg {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  margin: 0;
+  color: var(--color-text-secondary);
+}
+.avail-empty-hint {
+  font-size: var(--font-size-xs);
+  margin: 0;
+  color: var(--color-text-placeholder);
+}
+
+/* ── Already-in-script badge ── */
+.play-item.in-script {
+  background: color-mix(in srgb, var(--color-success) 6%, transparent);
+}
+.in-script-badge {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-sm);
+  background: var(--color-success);
+  color: #fff;
+  margin-left: 4px;
+  vertical-align: middle;
+  letter-spacing: 0.3px;
+}
+
+/* ── Filter toggle button active state ── */
+#toggleFiltersBtn.has-active-filters {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}

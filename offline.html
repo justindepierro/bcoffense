@@ -5,14 +5,9 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Offline – Practice Script &amp; Playbook</title>
     <style>
-      * {
-        margin: 0;
-        padding: 0;
-        box-sizing: border-box;
-      }
+      *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
       body {
-        font-family:
-          -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
         background: #0a122a;
         color: #e2e8f0;
         display: flex;
@@ -20,55 +15,154 @@
         justify-content: center;
         min-height: 100vh;
         text-align: center;
-        padding: 1rem;
+        padding: 1.5rem;
       }
       .offline-card {
-        max-width: 420px;
+        max-width: 440px;
+        width: 100%;
         background: #192a51;
-        border: 1px solid #d7ba89;
-        border-radius: 12px;
-        padding: 2.5rem 2rem;
+        border: 1px solid rgba(215,186,137,0.35);
+        border-top: 3px solid #d7ba89;
+        border-radius: 14px;
+        padding: 2.75rem 2.25rem 2.25rem;
+        box-shadow: 0 8px 32px rgba(0,0,0,0.45);
+      }
+      .offline-brand {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+        margin-bottom: 2rem;
+        opacity: 0.72;
+      }
+      .offline-brand-icon { font-size: 1.4rem; }
+      .offline-brand-name {
+        font-size: 0.78rem;
+        letter-spacing: 0.12em;
+        text-transform: uppercase;
+        font-weight: 700;
+        color: #d7ba89;
       }
       .offline-icon {
-        font-size: 3.5rem;
-        margin-bottom: 1rem;
+        font-size: 3.25rem;
+        margin-bottom: 1.1rem;
+        animation: pulse 2.4s ease-in-out infinite;
+      }
+      @keyframes pulse {
+        0%, 100% { opacity: 1; }
+        50% { opacity: 0.45; }
       }
       h1 {
-        font-size: 1.5rem;
+        font-size: 1.45rem;
         color: #d7ba89;
-        margin-bottom: 0.75rem;
+        margin-bottom: 0.6rem;
+        font-weight: 700;
+        letter-spacing: -0.01em;
       }
+      .status-line {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+        font-size: 0.75rem;
+        color: #ef4444;
+        font-weight: 600;
+        text-transform: uppercase;
+        letter-spacing: 0.06em;
+        margin-bottom: 1rem;
+      }
+      .status-dot {
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: #ef4444;
+        animation: blink 1.2s step-start infinite;
+      }
+      @keyframes blink { 50% { opacity: 0; } }
       p {
         color: #94a3b8;
-        line-height: 1.6;
-        margin-bottom: 1.25rem;
+        font-size: 0.93rem;
+        line-height: 1.65;
+        margin-bottom: 1.6rem;
+        max-width: 320px;
+        margin-left: auto;
+        margin-right: auto;
       }
       .retry-btn {
-        display: inline-block;
-        padding: 0.6rem 1.5rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 0.45rem;
+        padding: 0.65rem 1.75rem;
         background: #d7ba89;
         color: #0a122a;
         border: none;
-        border-radius: 6px;
-        font-size: 1rem;
-        font-weight: 600;
+        border-radius: 8px;
+        font-size: 0.95rem;
+        font-weight: 700;
         cursor: pointer;
         text-decoration: none;
+        transition: opacity 0.15s, transform 0.1s;
+        letter-spacing: 0.01em;
       }
-      .retry-btn:hover {
-        opacity: 0.9;
+      .retry-btn:hover { opacity: 0.88; transform: translateY(-1px); }
+      .retry-btn:active { transform: translateY(0); opacity: 1; }
+      .retry-btn.loading .retry-spinner { display: inline-block; }
+      .retry-btn.loading .retry-label { opacity: 0.7; }
+      .retry-spinner {
+        display: none;
+        width: 14px; height: 14px;
+        border: 2px solid rgba(10,18,42,0.3);
+        border-top-color: #0a122a;
+        border-radius: 50%;
+        animation: spin 0.65s linear infinite;
+      }
+      @keyframes spin { to { transform: rotate(360deg); } }
+      .offline-footer {
+        margin-top: 1.75rem;
+        font-size: 0.72rem;
+        color: #475569;
+        letter-spacing: 0.03em;
       }
     </style>
   </head>
   <body>
     <div class="offline-card">
+      <div class="offline-brand">
+        <span class="offline-brand-icon">🏈</span>
+        <span class="offline-brand-name">Practice Script &amp; Playbook</span>
+      </div>
       <div class="offline-icon">📡</div>
       <h1>You're Offline</h1>
+      <div class="status-line">
+        <span class="status-dot"></span>
+        No Connection
+      </div>
       <p>
-        It looks like you've lost your internet connection. Your saved data is
-        safe in local storage — reconnect and try again.
+        Your saved scripts, playbook, and wristbands are safe in local storage.
+        Reconnect to the internet and this page will reload automatically.
       </p>
-      <a href="./" class="retry-btn">Retry</a>
+      <button class="retry-btn" id="retryBtn" onclick="handleRetry()">
+        <span class="retry-spinner" id="retrySpinner"></span>
+        <span class="retry-label">Try Again</span>
+      </button>
+      <div class="offline-footer">Data stored locally &mdash; nothing is lost</div>
     </div>
+    <script>
+      // Auto-reload when connection is restored
+      window.addEventListener("online", () => location.reload());
+
+      function handleRetry() {
+        const btn = document.getElementById("retryBtn");
+        const spinner = document.getElementById("retrySpinner");
+        btn.classList.add("loading");
+        spinner.style.display = "inline-block";
+        setTimeout(() => {
+          if (navigator.onLine) {
+            location.href = "./";
+          } else {
+            btn.classList.remove("loading");
+            spinner.style.display = "none";
+          }
+        }, 900);
+      }
+    </script>
   </body>
 </html>

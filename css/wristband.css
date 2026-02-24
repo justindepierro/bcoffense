@@ -433,3 +433,12 @@
 .wb-display-panel {
   margin-top: 15px;
 }
+
+/* ── Wristband available plays empty state ── */
+.wb-avail-empty {
+  padding: 15px;
+  text-align: center;
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}

@@ -422,3 +422,24 @@
 .gp-cs-play {
   color: var(--color-text);
 }
+
+/* ── Dashboard quick-jump button ── */
+.dash-card-link {
+  display: inline-block;
+  margin-top: 8px;
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  border: 1.5px solid currentColor;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  opacity: 0.65;
+  transition: opacity 0.15s, background 0.15s, color 0.15s;
+  color: inherit;
+  line-height: 1.4;
+}
+.dash-card-link:hover {
+  opacity: 1;
+  background: rgba(0,0,0,0.08);
+}
