@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v8";
+const CACHE_NAME = "bcoffense-v9";
 
 // Allow the app to trigger a cache refresh
 self.addEventListener("message", (event) => {
@@ -42,6 +42,7 @@ const LOCAL_ASSETS = [
   "./js/script.js",
   "./js/wristband.js",
   "./js/callsheet.js",
+  "./js/constraints.js",
   "./js/tendencies.js",
   "./js/installation.js",
   "./js/offensebuilder.js",

@@ -2123,6 +2123,8 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
 function saveCallSheet() {
   storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
   scheduleCallSheetAutosave();
+  // Persist constraints snapshot alongside call sheet
+  if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
 }
 
 // Removed: loadCallSheet - dead code (never called)

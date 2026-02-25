@@ -1953,3 +1953,222 @@
   pointer-events: none;
   margin-bottom: 4px;
 }
+
+/* ═══════════════════════════════════════════════════════════════
+   GAME PLAN CONSTRAINTS PANEL
+   ═══════════════════════════════════════════════════════════════ */
+
+/* Slide-in side panel overlay */
+.constraint-panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1200;
+  display: flex;
+  justify-content: flex-end;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.constraint-panel-overlay.visible {
+  pointer-events: all;
+  opacity: 1;
+  background: rgba(0, 0, 0, 0.38);
+}
+.constraint-panel {
+  width: min(520px, 96vw);
+  height: 100%;
+  background: var(--color-bg-lighter, #fff);
+  border-left: 3px solid var(--color-primary, #667eea);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: -4px 0 24px rgba(0, 0, 0, 0.18);
+}
+.constraint-panel-overlay.visible .constraint-panel {
+  transform: translateX(0);
+}
+
+/* Header */
+.constraint-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  background: var(--color-primary, #667eea);
+  color: white;
+  flex-shrink: 0;
+}
+.constraint-panel-header h3 {
+  margin: 0;
+  font-size: 1rem;
+  font-weight: 700;
+  color: white;
+}
+.cr-close-btn {
+  background: none;
+  border: none;
+  color: white;
+  font-size: 1.5rem;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0 4px;
+  opacity: 0.85;
+}
+.cr-close-btn:hover { opacity: 1; }
+
+/* Scrollable body */
+.constraint-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 16px;
+}
+
+/* Overview score block */
+.cr-overview {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 12px 16px;
+  background: var(--color-bg-subtle, #f9f9f9);
+  border-radius: var(--radius-md, 8px);
+  margin-bottom: 16px;
+  border: 1px solid var(--color-border, #ddd);
+}
+.cr-score {
+  font-size: 2.2rem;
+  font-weight: 800;
+  line-height: 1;
+  min-width: 64px;
+  text-align: center;
+}
+.cr-score-pct { font-size: 1rem; font-weight: 400; }
+.cr-score.constraint-score-ok    { color: var(--color-success, #28a745); }
+.cr-score.constraint-score-warn  { color: var(--color-warning, #e09900); }
+.cr-score.constraint-score-error { color: var(--color-danger, #dc3545); }
+.cr-summary {
+  font-size: var(--font-size-sm, 0.85rem);
+  color: var(--color-text-muted, #666);
+  line-height: 1.5;
+}
+
+/* Bucket list */
+.cr-bucket-list { display: flex; flex-direction: column; gap: 4px; }
+.cr-bucket-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 12px;
+  border-radius: var(--radius-sm, 6px);
+  cursor: pointer;
+  border: 1px solid transparent;
+  transition: background 0.15s;
+  user-select: none;
+}
+.cr-bucket-row:hover { background: var(--color-bg-subtle, #f5f5f5); }
+.cr-status-ok    { border-color: #c3e6cb; }
+.cr-status-warn  { border-color: #ffeeba; background: #fffdf0; }
+.cr-status-error { border-color: #f5c6cb; background: #fff8f8; }
+.cr-status-empty { opacity: 0.5; }
+.cr-bucket-icon { font-size: 1rem; width: 22px; text-align: center; }
+.cr-bucket-name { flex: 1; font-size: var(--font-size-sm, 0.85rem); font-weight: 600; }
+.cr-bucket-count { font-size: 0.75rem; color: var(--color-text-muted, #888); min-width: 52px; text-align: right; }
+.cr-bucket-score { font-size: 0.75rem; color: var(--color-text-muted, #888); min-width: 34px; text-align: right; font-weight: 700; }
+.cr-bucket-arrow { font-size: 0.9rem; color: var(--color-text-muted, #aaa); margin-left: 4px; }
+
+/* Detail section */
+.cr-bucket-detail {
+  padding: 12px 14px 14px;
+  background: var(--color-bg-lightest, #fafafa);
+  border: 1px solid var(--color-border-light, #eee);
+  border-top: none;
+  border-radius: 0 0 var(--radius-sm, 6px) var(--radius-sm, 6px);
+  margin-bottom: 4px;
+}
+.cr-philosophy {
+  font-size: 0.78rem;
+  font-style: italic;
+  color: var(--color-text-muted, #666);
+  margin-bottom: 10px;
+  padding: 8px;
+  border-radius: var(--radius-sm, 4px);
+  background: var(--color-bg-subtle, #f5f5f5);
+}
+.cr-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 10px;
+}
+.cr-stat {
+  font-size: 0.75rem;
+  padding: 2px 8px;
+  border-radius: 12px;
+  background: var(--color-bg-subtle, #eee);
+  color: var(--color-text, #333);
+}
+.cr-touch { background: #e8f4fd; color: #1a73e8; }
+.cr-check-list {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cr-item {
+  font-size: 0.82rem;
+  padding: 5px 8px;
+  border-radius: var(--radius-sm, 4px);
+}
+.cr-item-error  { background: #fff0f0; color: #c0392b; }
+.cr-item-warn   { background: #fffbec; color: #856404; }
+.cr-item-ok     { background: #f0fff4; color: #1b6b38; }
+.cr-detail-empty { font-size: 0.82rem; color: var(--color-text-muted, #888); margin: 0; }
+
+/* Suggest button + suggestions */
+.cr-suggest-btn { margin-top: 6px; }
+.cr-suggestions {
+  margin-top: 10px;
+  border: 1px solid var(--color-border-light, #e0e0e0);
+  border-radius: var(--radius-sm, 6px);
+  overflow: hidden;
+}
+.cr-sug-group { padding: 8px 10px; border-bottom: 1px solid var(--color-border-light, #eee); }
+.cr-sug-group:last-child { border-bottom: none; }
+.cr-sug-label {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--color-primary, #667eea);
+  margin-bottom: 6px;
+}
+.cr-sug-play {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 3px 0;
+  font-size: 0.8rem;
+}
+.cr-sug-type {
+  font-size: 0.7rem;
+  padding: 1px 6px;
+  border-radius: 10px;
+  background: var(--color-bg-subtle, #eee);
+  color: var(--color-text-muted, #666);
+  white-space: nowrap;
+}
+.cr-sug-call { font-weight: 600; color: var(--color-text, #333); }
+.cr-sug-empty { font-size: 0.82rem; color: var(--color-text-muted, #888); padding: 8px; margin: 0; }
+.cr-loading  { color: var(--color-text-muted, #888); font-size: 0.9rem; }
+.cr-empty    { color: var(--color-text-muted, #888); font-size: 0.9rem; }
+
+/* btn-warning (amber) — used for Check Constraints button */
+.btn-warning {
+  background: #ffc107;
+  color: #333;
+  border: none;
+}
+.btn-warning:hover {
+  background: #e0a800;
+  color: #222;
+}

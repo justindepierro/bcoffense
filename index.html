@@ -2093,6 +2093,13 @@
               🖨️ Print
             </button>
             <button
+              class="btn btn-warning btn-sm"
+              data-action="runConstraintCheck"
+              title="Check call sheet buckets against game plan constraints"
+            >
+              🛡️ Check Constraints
+            </button>
+            <button
               class="btn btn-danger btn-sm"
               data-action="clearCallSheet"
               data-testid="clear-callsheet"
@@ -3230,12 +3237,26 @@
       </div>
     </div>
 
+    <!-- ── Game Plan Constraints Panel ─────────────────────────── -->
+    <div class="constraint-panel-overlay" id="constraintPanel" data-action="closeConstraintPanelOverlay" aria-label="Game Plan Constraints">
+      <div class="constraint-panel">
+        <div class="constraint-panel-header">
+          <h3>🛡️ Game Plan Constraints</h3>
+          <button class="cr-close-btn" data-action="closeConstraintPanel" aria-label="Close">×</button>
+        </div>
+        <div class="constraint-panel-body" id="constraintPanelBody">
+          <p class="cr-loading">Running evaluation…</p>
+        </div>
+      </div>
+    </div>
+
     <!-- JavaScript Files -->
     <script defer src="js/utils.js"></script>
     <script defer src="js/playbook.js"></script>
     <script defer src="js/script.js"></script>
     <script defer src="js/wristband.js"></script>
     <script defer src="js/callsheet.js"></script>
+    <script defer src="js/constraints.js"></script>
     <script defer src="js/tendencies.js"></script>
     <script defer src="js/installation.js"></script>
     <script defer src="js/offensebuilder.js"></script>

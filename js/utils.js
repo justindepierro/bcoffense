@@ -783,6 +783,7 @@ const STORAGE_KEYS = {
   INSTALLATION: "installationData",
   CS_SCOUTING_OVERLAY: "csScoutingOverlay",
   PLAY_COLLECTIONS: "playCollections",
+  CALLSHEET_CONSTRAINTS: "callSheetConstraints",
 };
 
 /**
