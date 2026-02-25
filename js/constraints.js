@@ -274,7 +274,7 @@ const CALLSHEET_CONSTRAINTS = {
  * @param {string|undefined} s
  * @returns {string}
  */
-function _cn(s) {
+function _normalize(s) {
   return (s || "").toLowerCase().trim();
 }
 
@@ -295,15 +295,15 @@ function _matchesKeywords(keywords, texts) {
  */
 function categorizePlay(play) {
   const textFields = [
-    _cn(play.play),
-    _cn(play.basePlay),
-    _cn(play.playTag1),
-    _cn(play.playTag2),
-    _cn(play.formation),
-    _cn(play.notes),
+    _normalize(play.play),
+    _normalize(play.basePlay),
+    _normalize(play.playTag1),
+    _normalize(play.playTag2),
+    _normalize(play.formation),
+    _normalize(play.notes),
   ];
 
-  const typeRaw = _cn(play.type || "");
+  const typeRaw = _normalize(play.type || "");
 
   // ── Determine family ───────────────────────────────────────────────────────
   let matchedFamily = "unknown";
@@ -351,7 +351,7 @@ function categorizePlay(play) {
     if (roleMap[k]) touches.add(roleMap[k]);
     // Also accept direct player names
     Object.values(roleMap).forEach((v) => {
-      if (_cn(kp).includes(_cn(v))) touches.add(v);
+      if (_normalize(kp).includes(_normalize(v))) touches.add(v);
     });
   });
 
@@ -369,9 +369,6 @@ function categorizePlay(play) {
   const isCross     = matchedFamily === "Cross";
   const isCover0Ans = matchedFamily === "Smaug" || isQuick;
 
-  // ── Shot is paired to a run family? ───────────────────────────────────────
-  const isShotPaired = isShot && CALLSHEET_CONSTRAINTS.shotPartnerFamilies.includes(matchedFamily);
-
   return {
     family:       matchedFamily,
     category:     matchedCategory,
@@ -384,7 +381,6 @@ function categorizePlay(play) {
     isQBRun,
     isCross,
     isCover0Ans,
-    isShotPaired,
     touches:      [...touches],
   };
 }
@@ -414,7 +410,7 @@ function evaluateBucket(bucketKey, bucketObj) {
   // Counts
   const runCount    = cats.filter((c) => c.isRun && !c.isScreen).length;
   const screenCount = cats.filter((c) => c.isScreen).length;
-  const throwCount  = total - runCount;  // everything else is "throw" for ratio purposes
+  const throwCount  = total - runCount - screenCount;  // throw = everything except runs and screens
   const paCount     = cats.filter((c) => c.isPA).length;
   const shotCount   = cats.filter((c) => c.isShot).length;
   const crossCount  = cats.filter((c) => c.isCross).length;
@@ -557,8 +553,7 @@ function evaluateBucket(bucketKey, bucketObj) {
     : Math.round((successes.length / checkTotal) * 100);
 
   let status;
-  if (total === 0)            status = "empty";
-  else if (errors.length > 0) status = "error";
+  if (errors.length > 0)       status = "error";
   else if (warnings.length > 0) status = "warn";
   else                          status = "ok";
 
@@ -631,7 +626,7 @@ function evaluateCallSheet(cs) {
  */
 function _playRank(play) {
   const tags = [play.playTag1, play.playTag2, play.constraint1, play.constraint2, play.oneWord]
-    .map((t) => _cn(t || ""));
+    .map((t) => _normalize(t || ""));
   if (tags.some((t) => t.includes("core")))      return 0;
   if (tags.some((t) => t.includes("situation"))) return 1;
   if (tags.some((t) => t.includes("answer")))    return 2;
@@ -648,15 +643,19 @@ function _playRank(play) {
 function suggestFixesForBucket(report, playbookPlays) {
   if (!playbookPlays || playbookPlays.length === 0) return [];
 
+  // Pre-compute categorization for all playbook plays once (avoid O(plays × groups))
+  const classified = playbookPlays.map((p) => ({ play: p, cat: categorizePlay(p) }));
+
   const suggestions = [];
   const allErrors = [...report.errors, ...report.warnings];
 
-  // Helper: suggest plays matching a filter
+  // Helper: suggest plays matching a filter on the pre-computed classification
   const suggest = (label, filterFn) => {
-    const matches = playbookPlays
-      .filter(filterFn)
-      .sort((a, b) => _playRank(a) - _playRank(b))
-      .slice(0, 5);
+    const matches = classified
+      .filter(({ cat }) => filterFn(cat))
+      .sort((a, b) => _playRank(a.play) - _playRank(b.play))
+      .slice(0, 5)
+      .map(({ play }) => play);
     if (matches.length > 0) {
       suggestions.push({ label, plays: matches });
     }
@@ -664,61 +663,40 @@ function suggestFixesForBucket(report, playbookPlays) {
 
   // QB run
   if (allErrors.some((e) => e.includes("QB run"))) {
-    suggest("QB Run / Keeper Option", (p) => {
-      const cats = categorizePlay(p);
-      return cats.isQBRun;
-    });
+    suggest("QB Run / Keeper Option", (cat) => cat.isQBRun);
   }
 
   // Marco
   const marcoPlayer = CALLSHEET_CONSTRAINTS.roleMap["X"] || "Marco";
   if (allErrors.some((e) => e.includes(marcoPlayer))) {
-    suggest(`${marcoPlayer} Touch Plays`, (p) => {
-      const cats = categorizePlay(p);
-      return cats.touches.includes(marcoPlayer);
-    });
+    suggest(`${marcoPlayer} Touch Plays`, (cat) => cat.touches.includes(marcoPlayer));
   }
 
   // Jayce
   const jaycePlayer = CALLSHEET_CONSTRAINTS.roleMap["H"] || "Jayce";
   if (allErrors.some((e) => e.includes(jaycePlayer))) {
-    suggest(`${jaycePlayer} Touch Plays`, (p) => {
-      const cats = categorizePlay(p);
-      return cats.touches.includes(jaycePlayer);
-    });
+    suggest(`${jaycePlayer} Touch Plays`, (cat) => cat.touches.includes(jaycePlayer));
   }
 
   // Danny
   const dannyPlayer = CALLSHEET_CONSTRAINTS.roleMap["TE"] || "Danny";
   if (allErrors.some((e) => e.includes(dannyPlayer))) {
-    suggest(`${dannyPlayer} (TE/HB) Option`, (p) => {
-      const cats = categorizePlay(p);
-      return cats.touches.includes(dannyPlayer);
-    });
+    suggest(`${dannyPlayer} (TE/HB) Option`, (cat) => cat.touches.includes(dannyPlayer));
   }
 
   // Cross / mesh
   if (allErrors.some((e) => e.includes("Cross"))) {
-    suggest("Cross (Mesh) Concept", (p) => {
-      const cats = categorizePlay(p);
-      return cats.isCross;
-    });
+    suggest("Cross (Mesh) Concept", (cat) => cat.isCross);
   }
 
   // Cover-0 answer
   if (allErrors.some((e) => e.includes("Cover-0"))) {
-    suggest("Cover-0 / Quick Answer", (p) => {
-      const cats = categorizePlay(p);
-      return cats.isCover0Ans;
-    });
+    suggest("Cover-0 / Quick Answer", (cat) => cat.isCover0Ans);
   }
 
   // Shot play
   if (allErrors.some((e) => e.includes("shot play") || e.includes("Shot"))) {
-    suggest("Shot / PA Concept", (p) => {
-      const cats = categorizePlay(p);
-      return cats.isShot;
-    });
+    suggest("Shot / PA Concept", (cat) => cat.isShot);
   }
 
   return suggestions;
@@ -743,9 +721,14 @@ function runConstraintCheck() {
   if (!panel) return;
   panel.classList.add("visible");
 
-  // Run evaluation
-  const report = evaluateCallSheet(callSheet);
-  renderConstraintPanel(report);
+  try {
+    const report = evaluateCallSheet(callSheet);
+    renderConstraintPanel(report);
+  } catch (err) {
+    console.error("Constraint check failed:", err);
+    const body = document.getElementById("constraintPanelBody");
+    if (body) body.innerHTML = `<p class="cr-loading">⚠️ Evaluation failed — check console for details.</p>`;
+  }
 }
 
 /**
@@ -787,16 +770,17 @@ function renderConstraintPanel(report) {
     // Find human-readable bucket name
     const catDef = CALLSHEET_CATEGORIES?.find((c) => c.id === key);
     const name = catDef ? catDef.name : key;
+    const safeKey = escapeHtml(key);
 
     return `
-      <div class="cr-bucket-row cr-status-${r.status}" data-bucket="${key}" onclick="toggleConstraintDetail('${key}')">
+      <div class="cr-bucket-row cr-status-${r.status}" data-bucket="${safeKey}" data-action="toggleConstraintDetail" data-arg="${safeKey}">
         <span class="cr-bucket-icon">${icon}</span>
         <span class="cr-bucket-name">${escapeHtml(name)}</span>
         <span class="cr-bucket-count">${r.total} plays</span>
         <span class="cr-bucket-score">${r.status !== "empty" ? r.score + "%" : ""}</span>
         <span class="cr-bucket-arrow">›</span>
       </div>
-      <div class="cr-bucket-detail" id="cr-detail-${key}" style="display:none">
+      <div class="cr-bucket-detail" id="cr-detail-${safeKey}" style="display:none">
         ${renderBucketDetail(key, r)}
       </div>
     `;
@@ -805,7 +789,7 @@ function renderConstraintPanel(report) {
   body.innerHTML = `
     <div class="cr-overview">
       <div class="cr-score ${scoreClass}">${overallScore}<span class="cr-score-pct">%</span></div>
-      <div class="cr-summary">${escapeHtml(summary)}</div>
+      <div class="cr-summary">${summary}</div>
     </div>
     <div class="cr-bucket-list">${rows || "<p class='cr-empty'>Call sheet is empty.</p>"}</div>
   `;
@@ -840,11 +824,12 @@ function renderBucketDetail(key, report) {
 
   const listHtml = `<ul class="cr-check-list">${errorItems}${warnItems}${okItems}</ul>`;
 
+  const safeKey = escapeHtml(key);
   const suggestBtn = (report.errors.length > 0)
-    ? `<button class="btn btn-sm btn-primary cr-suggest-btn" onclick="showSuggestions('${key}')">💡 Suggest Fixes</button>`
+    ? `<button class="btn btn-sm btn-primary cr-suggest-btn" data-action="showSuggestions" data-arg="${safeKey}">💡 Suggest Fixes</button>`
     : "";
 
-  const suggDiv = `<div class="cr-suggestions" id="cr-suggest-${key}" style="display:none"></div>`;
+  const suggDiv = `<div class="cr-suggestions" id="cr-suggest-${safeKey}" style="display:none"></div>`;
 
   return philHtml + statsHtml + listHtml + suggestBtn + suggDiv;
 }
@@ -871,6 +856,7 @@ function toggleConstraintDetail(key) {
 function showSuggestions(key) {
   const bucket = callSheet[key];
   if (!bucket) return;
+  if (typeof plays === "undefined" || !Array.isArray(plays)) return;
 
   const report = evaluateBucket(key, bucket);
   const suggestions = suggestFixesForBucket(report, plays);
@@ -887,7 +873,7 @@ function showSuggestions(key) {
         ${group.plays.map((p) => `
           <div class="cr-sug-play" title="${escapeHtml([p.playTag1, p.playTag2].filter(Boolean).join(", "))}">
             <span class="cr-sug-type">${escapeHtml(p.type || "")}</span>
-            <span class="cr-sug-call">${escapeHtml(getFullCall ? getFullCall(p) : (p.formation + " " + p.play))}</span>
+            <span class="cr-sug-call">${typeof getFullCall === "function" ? getFullCall(p) : escapeHtml((p.formation || "") + " " + (p.play || ""))}</span>
           </div>
         `).join("")}
       </div>
@@ -902,13 +888,17 @@ function showSuggestions(key) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Save the current constraints config version to localStorage.
- * Called once on init and after any rule change.
+ * Save the current constraints config version and last check timestamp
+ * to localStorage alongside the call sheet.
  */
 function saveConstraintsSnapshot() {
-  storageManager.set(STORAGE_KEYS.CALLSHEET_CONSTRAINTS, {
-    version: 1,
-    savedAt: new Date().toISOString(),
-    rulesVersion: Object.keys(CALLSHEET_CONSTRAINTS.bucketRules).length,
-  });
+  try {
+    storageManager.set(STORAGE_KEYS.CALLSHEET_CONSTRAINTS, {
+      version: 1,
+      savedAt: new Date().toISOString(),
+      rulesVersion: Object.keys(CALLSHEET_CONSTRAINTS.bucketRules).length,
+    });
+  } catch (e) {
+    console.warn("Failed to save constraints snapshot:", e);
+  }
 }
