@@ -1936,6 +1936,8 @@ function printFilteredPlays() {
 
 /** Index into master `plays` array of the play being edited, or -1 for new */
 let _editingMasterIdx = -1;
+/** Index into `filteredPlays` of the play being edited, for prev/next nav */
+let _editingFilteredIdx = -1;
 
 /**
  * Field definitions for the play editor, grouped into sections.
@@ -1945,7 +1947,21 @@ const _EDITOR_SECTIONS = [
   {
     title: "Core",
     fields: [
-      { key: "type", label: "Play Type", type: "select", options: ["Run", "Pass", "RPO", "Screen", "Quick", "Play Action", "Run Option", "Movement"] },
+      {
+        key: "type",
+        label: "Play Type",
+        type: "select",
+        options: [
+          "Run",
+          "Pass",
+          "RPO",
+          "Screen",
+          "Quick",
+          "Play Action",
+          "Run Option",
+          "Movement",
+        ],
+      },
       { key: "personnel", label: "Personnel" },
       { key: "formation", label: "Formation" },
       { key: "play", label: "Play Name" },
@@ -1976,11 +1992,39 @@ const _EDITOR_SECTIONS = [
   {
     title: "Preferences",
     fields: [
-      { key: "preferredSituation", label: "Situation", type: "select", options: ["", "Short Yardage", "2 Minute", "4 Minute"] },
-      { key: "preferredDown", label: "Down", type: "select", options: ["", "1", "2", "3", "4"] },
-      { key: "preferredDistance", label: "Distance", type: "select", options: ["", "Short", "Medium", "Long"] },
+      {
+        key: "preferredSituation",
+        label: "Situation",
+        type: "select",
+        options: ["", "Short Yardage", "2 Minute", "4 Minute"],
+      },
+      {
+        key: "preferredDown",
+        label: "Down",
+        type: "select",
+        options: ["", "1", "2", "3", "4"],
+      },
+      {
+        key: "preferredDistance",
+        label: "Distance",
+        type: "select",
+        options: ["", "Short", "Medium", "Long"],
+      },
       { key: "preferredHash", label: "Hash" },
-      { key: "preferredFieldPosition", label: "Field Position", type: "select", options: ["", "Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon"] },
+      {
+        key: "preferredFieldPosition",
+        label: "Field Position",
+        type: "select",
+        options: [
+          "",
+          "Green",
+          "Lo-RZ",
+          "Hi-RZ",
+          "Goal Line",
+          "Backed Up",
+          "Saigon",
+        ],
+      },
       { key: "tempo", label: "Tempo" },
     ],
   },
@@ -2032,6 +2076,7 @@ const _EDITOR_SECTIONS = [
 function openPlayEditor(filteredIdx) {
   const play = filteredPlays[filteredIdx];
   if (!play) return;
+  _editingFilteredIdx = filteredIdx;
   _editingMasterIdx = plays.indexOf(play);
   if (_editingMasterIdx < 0) {
     // Fallback: find by matching fields
@@ -2049,6 +2094,7 @@ function addNewPlay() {
     return;
   }
   _editingMasterIdx = -1;
+  _editingFilteredIdx = -1;
   const blank = {};
   _EDITOR_SECTIONS.forEach((s) => s.fields.forEach((f) => (blank[f.key] = "")));
   _populateEditorForm(blank, true);
@@ -2067,6 +2113,38 @@ function _populateEditorForm(play, isNew) {
   title.textContent = isNew ? "New Play" : "Edit Play";
   icon.textContent = isNew ? "➕" : "✏️";
   deleteBtn.style.display = isNew ? "none" : "";
+
+  // Play call preview (as it appears on wristband)
+  const preview = document.getElementById("playEditorPreview");
+  if (preview) {
+    if (isNew) {
+      preview.innerHTML = "";
+      preview.style.display = "none";
+    } else {
+      preview.innerHTML = getFullCall(play, { showLineCall: false });
+      preview.style.display = "";
+    }
+  }
+
+  // Position counter + prev/next button state
+  const posEl = document.getElementById("playEditorPos");
+  const prevBtn = document.getElementById("playEditorPrev");
+  const nextBtn = document.getElementById("playEditorNext");
+  if (isNew || _editingFilteredIdx < 0) {
+    if (posEl) posEl.textContent = "";
+    if (prevBtn) prevBtn.style.display = "none";
+    if (nextBtn) nextBtn.style.display = "none";
+  } else {
+    if (posEl) posEl.textContent = `${_editingFilteredIdx + 1} / ${filteredPlays.length}`;
+    if (prevBtn) {
+      prevBtn.style.display = "";
+      prevBtn.disabled = _editingFilteredIdx <= 0;
+    }
+    if (nextBtn) {
+      nextBtn.style.display = "";
+      nextBtn.disabled = _editingFilteredIdx >= filteredPlays.length - 1;
+    }
+  }
 
   let html = "";
   _EDITOR_SECTIONS.forEach((section) => {
@@ -2172,6 +2250,48 @@ function closePlayEditor() {
   const overlay = document.getElementById("playEditorOverlay");
   if (overlay) overlay.classList.remove("visible");
   _editingMasterIdx = -1;
+  _editingFilteredIdx = -1;
+}
+
+/**
+ * Navigate to the previous play in the filtered list
+ */
+function playEditorPrev() {
+  if (_editingFilteredIdx <= 0) return;
+  _autoSaveCurrentEditorFields();
+  openPlayEditor(_editingFilteredIdx - 1);
+}
+
+/**
+ * Navigate to the next play in the filtered list
+ */
+function playEditorNext() {
+  if (_editingFilteredIdx >= filteredPlays.length - 1) return;
+  _autoSaveCurrentEditorFields();
+  openPlayEditor(_editingFilteredIdx + 1);
+}
+
+/**
+ * Silently save any edits in the current form before navigating away
+ */
+function _autoSaveCurrentEditorFields() {
+  if (_editingMasterIdx < 0) return;
+  const body = document.getElementById("playEditorBody");
+  if (!body) return;
+  const fields = body.querySelectorAll("[data-field]");
+  const existing = plays[_editingMasterIdx];
+  if (!existing) return;
+  let changed = false;
+  fields.forEach((el) => {
+    const val = (el.value || "").trim();
+    if (existing[el.dataset.field] !== val) {
+      existing[el.dataset.field] = val;
+      changed = true;
+    }
+  });
+  if (changed) {
+    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════
@@ -2182,36 +2302,96 @@ function closePlayEditor() {
  * CSV header names matching the import template order
  */
 const _CSV_HEADERS = [
-  "PlayType", "Personnel", "Formation", "FormTag1", "FormTag2",
-  "Under", "Back", "Shift", "Motion", "Protection", "LineCall",
-  "Play", "PlayTag1", "PlayTag2", "BasePlay", "OneWord",
-  "PreferredSituation", "PreferredDown", "PreferredDistance",
-  "PreferredHash", "PreferredFieldPosition", "Tempo",
-  "PracticeFront", "PracticeDefense", "PracticeCoverage",
-  "PracticeBlitz", "PracticeStunt",
-  "KeyPlayer1", "KeyPlayer2", "KeyPlayer3",
-  "KeyPlayerName1", "KeyPlayerName2", "KeyPlayerName3",
-  "Constraint1", "Constraint2", "Constraint3",
-  "HitChart1", "HitChart2", "HitChart3",
-  "DeadVs", "Opponent", "Notes",
+  "PlayType",
+  "Personnel",
+  "Formation",
+  "FormTag1",
+  "FormTag2",
+  "Under",
+  "Back",
+  "Shift",
+  "Motion",
+  "Protection",
+  "LineCall",
+  "Play",
+  "PlayTag1",
+  "PlayTag2",
+  "BasePlay",
+  "OneWord",
+  "PreferredSituation",
+  "PreferredDown",
+  "PreferredDistance",
+  "PreferredHash",
+  "PreferredFieldPosition",
+  "Tempo",
+  "PracticeFront",
+  "PracticeDefense",
+  "PracticeCoverage",
+  "PracticeBlitz",
+  "PracticeStunt",
+  "KeyPlayer1",
+  "KeyPlayer2",
+  "KeyPlayer3",
+  "KeyPlayerName1",
+  "KeyPlayerName2",
+  "KeyPlayerName3",
+  "Constraint1",
+  "Constraint2",
+  "Constraint3",
+  "HitChart1",
+  "HitChart2",
+  "HitChart3",
+  "DeadVs",
+  "Opponent",
+  "Notes",
 ];
 
 /**
  * Matching play object keys in the same order as _CSV_HEADERS
  */
 const _CSV_KEYS = [
-  "type", "personnel", "formation", "formTag1", "formTag2",
-  "under", "back", "shift", "motion", "protection", "lineCall",
-  "play", "playTag1", "playTag2", "basePlay", "oneWord",
-  "preferredSituation", "preferredDown", "preferredDistance",
-  "preferredHash", "preferredFieldPosition", "tempo",
-  "practiceFront", "practiceDefense", "practiceCoverage",
-  "practiceBlitz", "practiceStunt",
-  "keyPlayer1", "keyPlayer2", "keyPlayer3",
-  "keyPlayerName1", "keyPlayerName2", "keyPlayerName3",
-  "constraint1", "constraint2", "constraint3",
-  "hitChart1", "hitChart2", "hitChart3",
-  "deadVs", "opponent", "notes",
+  "type",
+  "personnel",
+  "formation",
+  "formTag1",
+  "formTag2",
+  "under",
+  "back",
+  "shift",
+  "motion",
+  "protection",
+  "lineCall",
+  "play",
+  "playTag1",
+  "playTag2",
+  "basePlay",
+  "oneWord",
+  "preferredSituation",
+  "preferredDown",
+  "preferredDistance",
+  "preferredHash",
+  "preferredFieldPosition",
+  "tempo",
+  "practiceFront",
+  "practiceDefense",
+  "practiceCoverage",
+  "practiceBlitz",
+  "practiceStunt",
+  "keyPlayer1",
+  "keyPlayer2",
+  "keyPlayer3",
+  "keyPlayerName1",
+  "keyPlayerName2",
+  "keyPlayerName3",
+  "constraint1",
+  "constraint2",
+  "constraint3",
+  "hitChart1",
+  "hitChart2",
+  "hitChart3",
+  "deadVs",
+  "opponent",
+  "notes",
 ];
 
 /**
@@ -2219,7 +2399,12 @@ const _CSV_KEYS = [
  */
 function _csvEscape(val) {
   const s = val == null ? "" : String(val);
-  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+  if (
+    s.includes(",") ||
+    s.includes('"') ||
+    s.includes("\n") ||
+    s.includes("\r")
+  ) {
     return '"' + s.replace(/"/g, '""') + '"';
   }
   return s;
@@ -2247,5 +2432,8 @@ function exportPlaybookCSV() {
   a.download = "playbook_export.csv";
   a.click();
   URL.revokeObjectURL(url);
-  showToast(`📥 Exported ${plays.length} plays to CSV`, { duration: 3000, type: "success" });
+  showToast(`📥 Exported ${plays.length} plays to CSV`, {
+    duration: 3000,
+    type: "success",
+  });
 }

@@ -1348,7 +1348,9 @@ function togglePeriodCollapse(periodId) {
  * Collapse all periods at once
  */
 function collapseAllPeriods() {
-  script.filter((p) => p.isSeparator).forEach((p) => collapsedPeriods.add(p.id));
+  script
+    .filter((p) => p.isSeparator)
+    .forEach((p) => collapsedPeriods.add(p.id));
   renderScript();
 }
 
@@ -2803,8 +2805,14 @@ function renderScript() {
     if (jumpSel) {
       const periods = script.filter((p) => p.isSeparator);
       if (periods.length > 1) {
-        jumpSel.innerHTML = `<option value="">⬇ Jump</option>` +
-          periods.map((p) => `<option value="${p.id}">${escapeHtml(p.label || "Period")}</option>`).join("");
+        jumpSel.innerHTML =
+          `<option value="">⬇ Jump</option>` +
+          periods
+            .map(
+              (p) =>
+                `<option value="${p.id}">${escapeHtml(p.label || "Period")}</option>`,
+            )
+            .join("");
         jumpSel.style.display = "";
       } else {
         jumpSel.style.display = "none";
@@ -3517,8 +3525,11 @@ function exportScriptAsText() {
     return;
   }
   const lines = [];
-  const scriptName = document.getElementById("scriptName")?.value || "Practice Script";
-  const dateStr = document.getElementById("scriptDate")?.value || new Date().toISOString().slice(0, 10);
+  const scriptName =
+    document.getElementById("scriptName")?.value || "Practice Script";
+  const dateStr =
+    document.getElementById("scriptDate")?.value ||
+    new Date().toISOString().slice(0, 10);
   lines.push(`${scriptName} — ${dateStr}`);
   lines.push("=".repeat(50));
   let playOrder = 0;
@@ -3537,7 +3548,9 @@ function exportScriptAsText() {
       const type = item.type ? ` [${item.type}]` : "";
       const notes = item.notes ? ` — ${item.notes}` : "";
       const reps = (item.reps || 1) > 1 ? ` ×${item.reps}` : "";
-      lines.push(`${String(playOrder).padStart(3, " ")}. ${call}${type}${reps}${notes}`);
+      lines.push(
+        `${String(playOrder).padStart(3, " ")}. ${call}${type}${reps}${notes}`,
+      );
     }
   });
   const text = lines.join("\n");
@@ -3564,7 +3577,10 @@ function jumpToPeriod(periodId) {
   }
   // Reset select to placeholder after jump
   const sel = document.getElementById("jumpToPeriod");
-  if (sel) setTimeout(() => { sel.value = ""; }, 300);
+  if (sel)
+    setTimeout(() => {
+      sel.value = "";
+    }, 300);
 }
 
 /**

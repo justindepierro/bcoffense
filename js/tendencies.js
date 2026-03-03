@@ -2402,18 +2402,26 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ── Mouse delegation for play tooltips ──
-  container.addEventListener("mouseenter", (e) => {
-    const row = e.target.closest("tr[data-orig]");
-    if (row && typeof showPlayTooltip === "function") {
-      showPlayTooltip(e, parseInt(row.dataset.orig, 10));
-    }
-  }, true);
-  container.addEventListener("mouseleave", (e) => {
-    const row = e.target.closest("tr[data-orig]");
-    if (row && typeof hidePlayTooltip === "function") {
-      hidePlayTooltip();
-    }
-  }, true);
+  container.addEventListener(
+    "mouseenter",
+    (e) => {
+      const row = e.target.closest("tr[data-orig]");
+      if (row && typeof showPlayTooltip === "function") {
+        showPlayTooltip(e, parseInt(row.dataset.orig, 10));
+      }
+    },
+    true,
+  );
+  container.addEventListener(
+    "mouseleave",
+    (e) => {
+      const row = e.target.closest("tr[data-orig]");
+      if (row && typeof hidePlayTooltip === "function") {
+        hidePlayTooltip();
+      }
+    },
+    true,
+  );
 
   // ── Keydown delegation for wizard inputs ──
   container.addEventListener("keydown", (e) => {

@@ -830,16 +830,32 @@
         data-action="closePlayEditorOverlay"
       >
         <div class="custom-modal pb-editor-modal">
-          <div class="custom-modal-header">
-            <span class="custom-modal-icon" id="playEditorIcon">✏️</span>
-            <h3 class="custom-modal-title" id="playEditorTitle">Edit Play</h3>
+          <div class="custom-modal-header pb-editor-header">
+            <button class="btn btn-sm pb-editor-nav" id="playEditorPrev" data-action="playEditorPrev" title="Previous play" aria-label="Previous play">◀</button>
+            <div class="pb-editor-header-center">
+              <div class="pb-editor-header-top">
+                <span class="custom-modal-icon" id="playEditorIcon">✏️</span>
+                <h3 class="custom-modal-title" id="playEditorTitle">Edit Play</h3>
+                <span class="pb-editor-pos" id="playEditorPos"></span>
+              </div>
+              <div class="pb-editor-call-preview" id="playEditorPreview"></div>
+            </div>
+            <button class="btn btn-sm pb-editor-nav" id="playEditorNext" data-action="playEditorNext" title="Next play" aria-label="Next play">▶</button>
           </div>
           <div class="custom-modal-body pb-editor-body" id="playEditorBody">
             <!-- Populated by JS -->
           </div>
           <div class="custom-modal-actions pb-editor-actions">
-            <button class="btn btn-primary" data-action="savePlayEditor">💾 Save</button>
-            <button class="btn btn-danger" data-action="deletePlayFromEditor" id="playEditorDeleteBtn">🗑️ Delete Play</button>
+            <button class="btn btn-primary" data-action="savePlayEditor">
+              💾 Save
+            </button>
+            <button
+              class="btn btn-danger"
+              data-action="deletePlayFromEditor"
+              id="playEditorDeleteBtn"
+            >
+              🗑️ Delete Play
+            </button>
             <button class="btn" data-action="closePlayEditor">Cancel</button>
           </div>
         </div>
@@ -1027,9 +1043,11 @@
                   class="search-clear-btn"
                   data-action="clearSearchPlay"
                   title="Clear search"
-                  style="display:none"
+                  style="display: none"
                   aria-label="Clear search"
-                >✕</button>
+                >
+                  ✕
+                </button>
               </div>
             </div>
             <div class="available-plays-actions">
@@ -1162,19 +1180,23 @@
                   class="btn btn-sm toolbar-btn-xs"
                   data-action="collapseAllPeriods"
                   title="Collapse all periods"
-                >⊟ All</button>
+                >
+                  ⊟ All
+                </button>
                 <button
                   class="btn btn-sm toolbar-btn-xs"
                   data-action="expandAllPeriods"
                   title="Expand all periods"
-                >⊞ All</button>
+                >
+                  ⊞ All
+                </button>
                 <select
                   id="jumpToPeriod"
                   class="toolbar-sort-select"
                   data-onchange="jumpToPeriod"
                   data-pass="value"
                   title="Jump to period"
-                  style="display:none"
+                  style="display: none"
                 ></select>
                 <input
                   type="text"
@@ -1183,7 +1205,11 @@
                   data-oninput="filterScriptItems"
                   class="script-search-input"
                 />
-                <span id="scriptSearchCount" class="script-search-count" style="display:none"></span>
+                <span
+                  id="scriptSearchCount"
+                  class="script-search-count"
+                  style="display: none"
+                ></span>
               </div>
             </div>
 
@@ -3298,11 +3324,22 @@
     </div>
 
     <!-- ── Game Plan Constraints Panel ─────────────────────────── -->
-    <div class="constraint-panel-overlay" id="constraintPanel" data-action="closeConstraintPanelOverlay" aria-label="Game Plan Constraints">
+    <div
+      class="constraint-panel-overlay"
+      id="constraintPanel"
+      data-action="closeConstraintPanelOverlay"
+      aria-label="Game Plan Constraints"
+    >
       <div class="constraint-panel">
         <div class="constraint-panel-header">
           <h3>🛡️ Game Plan Constraints</h3>
-          <button class="cr-close-btn" data-action="closeConstraintPanel" aria-label="Close">×</button>
+          <button
+            class="cr-close-btn"
+            data-action="closeConstraintPanel"
+            aria-label="Close"
+          >
+            ×
+          </button>
         </div>
         <div class="constraint-panel-body" id="constraintPanelBody">
           <p class="cr-loading">Running evaluation…</p>

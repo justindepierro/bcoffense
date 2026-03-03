@@ -14,21 +14,21 @@ const CONSTRAINTS_ENABLED = true;
 const CALLSHEET_CONSTRAINTS = {
   // ── Global philosophy ──────────────────────────────────────────────────────
   global: {
-    idealFeaturedCount: 10,   // target plays per bucket ("top shelf")
-    maxFeaturedCount: 14,     // warning if bucket exceeds this
-    minFeaturedCount: 4,      // warning if bucket is too thin
+    idealFeaturedCount: 10, // target plays per bucket ("top shelf")
+    maxFeaturedCount: 14, // warning if bucket exceeds this
+    minFeaturedCount: 4, // warning if bucket is too thin
   },
 
   // ── Role → player name mapping ─────────────────────────────────────────────
   // Keys match play.keyPlayer1/2/3 OR can match within basePlay/play strings.
   // Add new roles freely.
   roleMap: {
-    X:  "Marco",   // X receiver → Marco
-    H:  "Jayce",   // H / Slot → Jayce
-    Z:  "Jayce",   // Z treated as Jayce/slot
-    TE: "Danny",   // TE / HB leak → Danny
-    HB: "Danny",   // HB checkdown → Danny
-    QB: "Lucas",   // QB keep / run play
+    X: "Marco", // X receiver → Marco
+    H: "Jayce", // H / Slot → Jayce
+    Z: "Jayce", // Z treated as Jayce/slot
+    TE: "Danny", // TE / HB leak → Danny
+    HB: "Danny", // HB checkdown → Danny
+    QB: "Lucas", // QB keep / run play
   },
 
   // ── Play family keyword maps ───────────────────────────────────────────────
@@ -36,37 +36,65 @@ const CALLSHEET_CONSTRAINTS = {
   // category: "quick" | "screen" | "dropback" | "pa" | "run" | "rpo" | "shot"
   familyMap: [
     // Quick game (high-percentage short passing)
-    { keywords: ["smaug", "slant-flat", "slant flat"], family: "Smaug",    category: "quick"    },
-    { keywords: ["syracuse", "double slant"],          family: "Syracuse", category: "quick"    },
-    { keywords: ["queens", "mets", "spacing", "whip"], family: "Queens",   category: "quick"    },
+    {
+      keywords: ["smaug", "slant-flat", "slant flat"],
+      family: "Smaug",
+      category: "quick",
+    },
+    {
+      keywords: ["syracuse", "double slant"],
+      family: "Syracuse",
+      category: "quick",
+    },
+    {
+      keywords: ["queens", "mets", "spacing", "whip"],
+      family: "Queens",
+      category: "quick",
+    },
     // Screens
-    { keywords: ["whopper"],                           family: "Whopper",  category: "screen"   },
-    { keywords: ["big mac", "bigmac", "double screen"],family: "Big Mac",  category: "screen"   },
-    { keywords: ["michigan", "middle screen"],         family: "Michigan", category: "screen"   },
+    { keywords: ["whopper"], family: "Whopper", category: "screen" },
+    {
+      keywords: ["big mac", "bigmac", "double screen"],
+      family: "Big Mac",
+      category: "screen",
+    },
+    {
+      keywords: ["michigan", "middle screen"],
+      family: "Michigan",
+      category: "screen",
+    },
     // Dropback concepts
-    { keywords: ["cross", "mesh"],                     family: "Cross",    category: "dropback" },
-    { keywords: ["sooners", "snag"],                   family: "Sooners",  category: "dropback" },
-    { keywords: ["pirate", "4 vert", "4vert", "four vert"], family: "Pirate", category: "dropback" },
-    { keywords: ["warp", "whip rail"],                 family: "Warp",     category: "dropback" },
+    { keywords: ["cross", "mesh"], family: "Cross", category: "dropback" },
+    { keywords: ["sooners", "snag"], family: "Sooners", category: "dropback" },
+    {
+      keywords: ["pirate", "4 vert", "4vert", "four vert"],
+      family: "Pirate",
+      category: "dropback",
+    },
+    { keywords: ["warp", "whip rail"], family: "Warp", category: "dropback" },
     // Play action → can be shots if tagged
-    { keywords: ["pa over", "p.a. over"],              family: "PA Over",  category: "pa"       },
-    { keywords: ["pa sail", "p.a. sail"],              family: "PA Sail",  category: "pa"       },
+    { keywords: ["pa over", "p.a. over"], family: "PA Over", category: "pa" },
+    { keywords: ["pa sail", "p.a. sail"], family: "PA Sail", category: "pa" },
     // Run families
-    { keywords: ["golden state", "warriors", "curry", "klay"], family: "Wide Zone",   category: "run" },
-    { keywords: ["toronto", "raptors"],                family: "Toss",     category: "run"      },
-    { keywords: ["hulk", "batman"],                    family: "Power",    category: "run"      },
-    { keywords: ["irish", "lucky"],                    family: "Counter",  category: "run"      },
-    { keywords: ["packers"],                           family: "Packers",  category: "run"      },
-    { keywords: ["toledo"],                            family: "Toledo",   category: "run"      },
-    { keywords: ["alpha"],                             family: "Alpha",    category: "run"      },
-    { keywords: ["laredo", "maverick"],                family: "Jet",      category: "run"      },
-    { keywords: ["hammer", "mallet"],                  family: "Hammer",   category: "run"      },
-    { keywords: ["trash", "lid"],                      family: "Trash",    category: "run"      },
-    { keywords: ["crab", "claw"],                      family: "Crab",     category: "run"      },
-    { keywords: ["deer", "lizard"],                    family: "Keeper",   category: "run"      },
-    { keywords: ["follow"],                            family: "Follow",   category: "run"      },
+    {
+      keywords: ["golden state", "warriors", "curry", "klay"],
+      family: "Wide Zone",
+      category: "run",
+    },
+    { keywords: ["toronto", "raptors"], family: "Toss", category: "run" },
+    { keywords: ["hulk", "batman"], family: "Power", category: "run" },
+    { keywords: ["irish", "lucky"], family: "Counter", category: "run" },
+    { keywords: ["packers"], family: "Packers", category: "run" },
+    { keywords: ["toledo"], family: "Toledo", category: "run" },
+    { keywords: ["alpha"], family: "Alpha", category: "run" },
+    { keywords: ["laredo", "maverick"], family: "Jet", category: "run" },
+    { keywords: ["hammer", "mallet"], family: "Hammer", category: "run" },
+    { keywords: ["trash", "lid"], family: "Trash", category: "run" },
+    { keywords: ["crab", "claw"], family: "Crab", category: "run" },
+    { keywords: ["deer", "lizard"], family: "Keeper", category: "run" },
+    { keywords: ["follow"], family: "Follow", category: "run" },
     // RPO
-    { keywords: ["rpo"],                               family: "RPO",      category: "rpo"      },
+    { keywords: ["rpo"], family: "RPO", category: "rpo" },
   ],
 
   // ── Shot marriage rule ─────────────────────────────────────────────────────
@@ -75,7 +103,18 @@ const CALLSHEET_CONSTRAINTS = {
   shotPartnerFamilies: ["Wide Zone", "Power"],
 
   // ── Plays that indicate a QB run (for Lucas touch tracking) ───────────────
-  qbRunKeywords: ["keeper", "keep", "qb draw", "qb sneak", "deer", "lizard", "nakd", "naked", "boot", "rollout"],
+  qbRunKeywords: [
+    "keeper",
+    "keep",
+    "qb draw",
+    "qb sneak",
+    "deer",
+    "lizard",
+    "nakd",
+    "naked",
+    "boot",
+    "rollout",
+  ],
 
   // ── Per-bucket rules ───────────────────────────────────────────────────────
   // Each entry can override any global default.
@@ -85,182 +124,260 @@ const CALLSHEET_CONSTRAINTS = {
   // philosophy: free-text description shown in the UI
   bucketRules: {
     "1st-down": {
-      targetRun: 6, targetThrow: 4,
+      targetRun: 6,
+      targetThrow: 4,
       maxScreens: 2,
       wantShots: true,
-      philosophy: "Ground it. Win the down. 1 shot concept married to run game.",
+      philosophy:
+        "Ground it. Win the down. 1 shot concept married to run game.",
       required: ["marco", "jayce", "danny", "lucas-run", "shot-paired"],
     },
     "p-and-10": {
-      targetRun: 6, targetThrow: 4,
+      targetRun: 6,
+      targetThrow: 4,
       maxScreens: 2,
       philosophy: "Treat like 1st down principles.",
       required: ["marco", "jayce", "danny"],
     },
     "2nd-medium": {
-      targetRun: 5, targetThrow: 5,
+      targetRun: 5,
+      targetThrow: 5,
       maxScreens: 2,
       wantShots: false,
       philosophy: "Balance. Keep the offense moving. Screens can live here.",
       required: ["marco", "jayce", "danny"],
     },
     "2nd-long": {
-      targetRun: 4, targetThrow: 6,
+      targetRun: 4,
+      targetThrow: 6,
       maxScreens: 1,
-      philosophy: "Attack with quick game and RPOs. Limit screens as primary plan.",
+      philosophy:
+        "Attack with quick game and RPOs. Limit screens as primary plan.",
       required: ["marco", "jayce"],
     },
     "3rd-short-1-3": {
-      targetRun: 7, targetThrow: 3,
+      targetRun: 7,
+      targetThrow: 3,
       maxScreens: 1,
       philosophy: "Power the ball. Short yardage. QB sneak / power run leads.",
       required: ["lucas-run"],
     },
     "3rd-short-2down": {
-      targetRun: 7, targetThrow: 3,
+      targetRun: 7,
+      targetThrow: 3,
       maxScreens: 1,
       philosophy: "Same as 3rd & short. Must have QB run or power concept.",
       required: ["lucas-run"],
     },
     "3rd-medium": {
-      targetRun: 2, targetThrow: 8,
+      targetRun: 2,
+      targetThrow: 8,
       maxScreens: 0,
       requireCross: true,
-      philosophy: "Cross (mesh) is the identity play. Need Smaug (Cover 0 answer). No screens.",
+      philosophy:
+        "Cross (mesh) is the identity play. Need Smaug (Cover 0 answer). No screens.",
       required: ["cross-concept", "cover0-answer", "marco"],
     },
     "3rd-long": {
-      targetRun: 1, targetThrow: 9,
+      targetRun: 1,
+      targetThrow: 9,
       maxScreens: 1,
-      philosophy: "Move the chains with quick / RPO. Screens are OK but not primary.",
+      philosophy:
+        "Move the chains with quick / RPO. Screens are OK but not primary.",
       required: ["marco", "jayce"],
     },
     "2-minute": {
-      targetRun: 1, targetThrow: 9,
+      targetRun: 1,
+      targetThrow: 9,
       maxScreens: 2,
       philosophy: "Uptempo pass. Quick game, short completions, get OOB.",
       required: ["marco", "jayce", "danny"],
     },
     "4-minute": {
-      targetRun: 8, targetThrow: 2,
+      targetRun: 8,
+      targetThrow: 2,
       maxScreens: 1,
       philosophy: "Kill the clock. Run heavy. Low risk.",
       required: ["lucas-run"],
     },
     "rz-20": {
-      targetRun: 5, targetThrow: 5,
+      targetRun: 5,
+      targetThrow: 5,
       maxScreens: 1,
       philosophy: "Balanced RZ attack. Open things up with motion.",
     },
     "rz-10": {
-      targetRun: 5, targetThrow: 5,
+      targetRun: 5,
+      targetThrow: 5,
       maxScreens: 1,
       philosophy: "Condensed space. High-percentage throws. Power runs.",
       required: ["marco", "danny"],
     },
     "rz-5": {
-      targetRun: 6, targetThrow: 4,
+      targetRun: 6,
+      targetThrow: 4,
       maxScreens: 0,
       philosophy: "Score. Power / QB sneak available. Quick WR to end zone.",
       required: ["marco", "lucas-run"],
     },
     "goal-line": {
-      targetRun: 8, targetThrow: 2,
+      targetRun: 8,
+      targetThrow: 2,
       maxScreens: 0,
       philosophy: "Power the ball. Must have QB sneak option.",
       required: ["lucas-run"],
     },
     "backed-up": {
-      targetRun: 5, targetThrow: 5,
+      targetRun: 5,
+      targetThrow: 5,
       maxScreens: 0,
       philosophy: "Low risk. Stay away from own end zone. No gadgets.",
     },
-    "saigon": {
-      targetRun: 0, targetThrow: 10,
+    saigon: {
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 0,
       philosophy: "Hail Mary / miracle plays only.",
     },
-    "openers": {
-      targetRun: 5, targetThrow: 5,
+    openers: {
+      targetRun: 5,
+      targetThrow: 5,
       maxScreens: 1,
       wantShots: true,
-      philosophy: "Set the tone. Best play from every family. A shot/PA opener is a plus.",
+      philosophy:
+        "Set the tone. Best play from every family. A shot/PA opener is a plus.",
     },
     "must-haves": {
-      targetRun: 5, targetThrow: 5,
+      targetRun: 5,
+      targetThrow: 5,
       maxScreens: 2,
-      philosophy: "Core identity plays. Should reflect your whole offensive philosophy.",
+      philosophy:
+        "Core identity plays. Should reflect your whole offensive philosophy.",
       required: ["marco", "jayce", "danny", "lucas-run"],
     },
     "short-yardage": {
-      targetRun: 8, targetThrow: 2,
+      targetRun: 8,
+      targetThrow: 2,
       maxScreens: 0,
       philosophy: "Physical short-yardage. Power / QB run leads.",
       required: ["lucas-run"],
     },
     "4th-down": {
-      targetRun: 4, targetThrow: 6,
+      targetRun: 4,
+      targetThrow: 6,
       maxScreens: 0,
       philosophy: "Must-convert plays. Best versions of every weapon.",
       required: ["marco", "jayce", "lucas-run"],
     },
     "perimeter-screens": {
-      targetRun: 0, targetThrow: 10,
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 99,
       philosophy: "Screen-specific bucket. All plays should be screens.",
     },
-    "screen": {
-      targetRun: 0, targetThrow: 10,
+    screen: {
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 99,
       philosophy: "Screen-specific bucket.",
     },
     "base-run": {
-      targetRun: 10, targetThrow: 0,
+      targetRun: 10,
+      targetThrow: 0,
       maxScreens: 0,
       philosophy: "Run-only bucket. All runs.",
     },
     "run-options": {
-      targetRun: 8, targetThrow: 2,
+      targetRun: 8,
+      targetThrow: 2,
       maxScreens: 0,
       philosophy: "Run options / RPO zone.",
     },
     "base-pass": {
-      targetRun: 0, targetThrow: 10,
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 1,
       philosophy: "Dropback pass bucket.",
     },
-    "quick": {
-      targetRun: 0, targetThrow: 10,
+    quick: {
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 0,
       philosophy: "Quick game only. Smaug and Syracuse leads.",
       required: ["cover0-answer"],
     },
     "play-action": {
-      targetRun: 0, targetThrow: 10,
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 0,
       wantShots: true,
       philosophy: "PA concepts married to run game.",
       required: ["shot-paired"],
     },
-    "rpos": {
-      targetRun: 0, targetThrow: 10,
+    rpos: {
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 0,
       philosophy: "RPO only bucket.",
     },
-    "movement": {
-      targetRun: 0, targetThrow: 10,
+    movement: {
+      targetRun: 0,
+      targetThrow: 10,
       maxScreens: 0,
       philosophy: "Movement pass / sprint-out bucket.",
     },
     // Player-specific buckets use player name keys below
-    "player1": { targetRun: 3, targetThrow: 7, maxScreens: 1, philosophy: "Lucas-specific plays. QB run options required.", required: ["lucas-run"] },
-    "player2": { targetRun: 2, targetThrow: 8, maxScreens: 1, philosophy: "Marco-specific plays. Needs variety of routes.", required: ["marco"] },
-    "player3": { targetRun: 2, targetThrow: 8, maxScreens: 1, philosophy: "Receiver-specific plays." },
-    "player4": { targetRun: 2, targetThrow: 8, maxScreens: 1, philosophy: "Danny-specific plays. Checkdown / TE concepts.", required: ["danny"] },
-    "player5": { targetRun: 2, targetThrow: 8, maxScreens: 1, philosophy: "Slot-specific plays." },
-    "2-point": { targetRun: 4, targetThrow: 6, maxScreens: 0, philosophy: "Must-score 2-point plays." },
-    "gbot":    { targetRun: 5, targetThrow: 5, maxScreens: 0, philosophy: "Gadget / trick / special plays." },
-    "last-plays": { targetRun: 3, targetThrow: 7, maxScreens: 0, philosophy: "Emergency plays — last-chance scripts." },
+    player1: {
+      targetRun: 3,
+      targetThrow: 7,
+      maxScreens: 1,
+      philosophy: "Lucas-specific plays. QB run options required.",
+      required: ["lucas-run"],
+    },
+    player2: {
+      targetRun: 2,
+      targetThrow: 8,
+      maxScreens: 1,
+      philosophy: "Marco-specific plays. Needs variety of routes.",
+      required: ["marco"],
+    },
+    player3: {
+      targetRun: 2,
+      targetThrow: 8,
+      maxScreens: 1,
+      philosophy: "Receiver-specific plays.",
+    },
+    player4: {
+      targetRun: 2,
+      targetThrow: 8,
+      maxScreens: 1,
+      philosophy: "Danny-specific plays. Checkdown / TE concepts.",
+      required: ["danny"],
+    },
+    player5: {
+      targetRun: 2,
+      targetThrow: 8,
+      maxScreens: 1,
+      philosophy: "Slot-specific plays.",
+    },
+    "2-point": {
+      targetRun: 4,
+      targetThrow: 6,
+      maxScreens: 0,
+      philosophy: "Must-score 2-point plays.",
+    },
+    gbot: {
+      targetRun: 5,
+      targetThrow: 5,
+      maxScreens: 0,
+      philosophy: "Gadget / trick / special plays.",
+    },
+    "last-plays": {
+      targetRun: 3,
+      targetThrow: 7,
+      maxScreens: 0,
+      philosophy: "Emergency plays — last-chance scripts.",
+    },
   },
 };
 
@@ -318,33 +435,47 @@ function categorizePlay(play) {
 
   // Fallback to play.type if family still unknown
   if (matchedCategory === "unknown") {
-    if (typeRaw.includes("run"))        matchedCategory = "run";
+    if (typeRaw.includes("run")) matchedCategory = "run";
     else if (typeRaw.includes("screen")) matchedCategory = "screen";
     else if (typeRaw.includes("quick")) matchedCategory = "quick";
-    else if (typeRaw.includes("rpo"))   matchedCategory = "rpo";
+    else if (typeRaw.includes("rpo")) matchedCategory = "rpo";
     else if (typeRaw.includes("play action") || typeRaw.includes("pa"))
-                                        matchedCategory = "pa";
+      matchedCategory = "pa";
     else if (typeRaw.includes("pass") || typeRaw.includes("drop"))
-                                        matchedCategory = "dropback";
+      matchedCategory = "dropback";
   }
 
   // ── Is it a run? ───────────────────────────────────────────────────────────
-  const isRun     = matchedCategory === "run" || typeRaw.includes("run");
-  const isScreen  = matchedCategory === "screen" || typeRaw.includes("screen");
-  const isPA      = matchedCategory === "pa" || typeRaw.includes("play action") || typeRaw.includes("p.a.");
-  const isQuick   = matchedCategory === "quick" || typeRaw.includes("quick");
-  const isRPO     = matchedCategory === "rpo" || typeRaw.includes("rpo");
-  const isShot    = isPA || (typeRaw.includes("drop") && (
-    textFields.some((t) => t.includes("pirate") || t.includes("4 vert") || t.includes("seam") || t.includes("post") || t.includes("go") || t.includes("corner shot"))
-  ));
+  const isRun = matchedCategory === "run" || typeRaw.includes("run");
+  const isScreen = matchedCategory === "screen" || typeRaw.includes("screen");
+  const isPA =
+    matchedCategory === "pa" ||
+    typeRaw.includes("play action") ||
+    typeRaw.includes("p.a.");
+  const isQuick = matchedCategory === "quick" || typeRaw.includes("quick");
+  const isRPO = matchedCategory === "rpo" || typeRaw.includes("rpo");
+  const isShot =
+    isPA ||
+    (typeRaw.includes("drop") &&
+      textFields.some(
+        (t) =>
+          t.includes("pirate") ||
+          t.includes("4 vert") ||
+          t.includes("seam") ||
+          t.includes("post") ||
+          t.includes("go") ||
+          t.includes("corner shot"),
+      ));
 
   // ── Is it a QB run? ───────────────────────────────────────────────────────
-  const isQBRun   = CALLSHEET_CONSTRAINTS.qbRunKeywords.some((kw) => textFields.some((t) => t.includes(kw)));
+  const isQBRun = CALLSHEET_CONSTRAINTS.qbRunKeywords.some((kw) =>
+    textFields.some((t) => t.includes(kw)),
+  );
 
   // ── Touch inference ───────────────────────────────────────────────────────
   // Look at keyPlayer1/2/3 and map to role names via roleMap
   const touches = new Set();
-  const roleMap  = CALLSHEET_CONSTRAINTS.roleMap;
+  const roleMap = CALLSHEET_CONSTRAINTS.roleMap;
   [play.keyPlayer1, play.keyPlayer2, play.keyPlayer3].forEach((kp) => {
     if (!kp) return;
     const k = kp.trim().toUpperCase();
@@ -366,12 +497,12 @@ function categorizePlay(play) {
   if (isQBRun) touches.add(roleMap["QB"] || "Lucas");
 
   // ── Is it a Cross / Cover-0 answer? ───────────────────────────────────────
-  const isCross     = matchedFamily === "Cross";
+  const isCross = matchedFamily === "Cross";
   const isCover0Ans = matchedFamily === "Smaug" || isQuick;
 
   return {
-    family:       matchedFamily,
-    category:     matchedCategory,
+    family: matchedFamily,
+    category: matchedCategory,
     isRun,
     isScreen,
     isPA,
@@ -381,7 +512,7 @@ function categorizePlay(play) {
     isQBRun,
     isCross,
     isCover0Ans,
-    touches:      [...touches],
+    touches: [...touches],
   };
 }
 
@@ -397,8 +528,8 @@ function categorizePlay(play) {
  * @returns {Object} report
  */
 function evaluateBucket(bucketKey, bucketObj) {
-  const rules   = CALLSHEET_CONSTRAINTS.bucketRules[bucketKey];
-  const global  = CALLSHEET_CONSTRAINTS.global;
+  const rules = CALLSHEET_CONSTRAINTS.bucketRules[bucketKey];
+  const global = CALLSHEET_CONSTRAINTS.global;
 
   // Collect all plays (left + right combined)
   const all = [...(bucketObj.left || []), ...(bucketObj.right || [])];
@@ -408,14 +539,14 @@ function evaluateBucket(bucketKey, bucketObj) {
   const cats = all.map(categorizePlay);
 
   // Counts
-  const runCount    = cats.filter((c) => c.isRun && !c.isScreen).length;
+  const runCount = cats.filter((c) => c.isRun && !c.isScreen).length;
   const screenCount = cats.filter((c) => c.isScreen).length;
-  const throwCount  = total - runCount - screenCount;  // throw = everything except runs and screens
-  const paCount     = cats.filter((c) => c.isPA).length;
-  const shotCount   = cats.filter((c) => c.isShot).length;
-  const crossCount  = cats.filter((c) => c.isCross).length;
+  const throwCount = total - runCount - screenCount; // throw = everything except runs and screens
+  const paCount = cats.filter((c) => c.isPA).length;
+  const shotCount = cats.filter((c) => c.isShot).length;
+  const crossCount = cats.filter((c) => c.isCross).length;
   const cover0Count = cats.filter((c) => c.isCover0Ans).length;
-  const qbRunCount  = cats.filter((c) => c.isQBRun).length;
+  const qbRunCount = cats.filter((c) => c.isQBRun).length;
 
   // Touch counts per player name
   const touchCounts = {};
@@ -426,33 +557,60 @@ function evaluateBucket(bucketKey, bucketObj) {
   });
 
   const warnings = [];
-  const errors   = [];
+  const errors = [];
   const successes = [];
 
   if (total === 0) {
     return {
-      bucketKey, total, runCount, throwCount, screenCount,
-      paCount, shotCount, crossCount, cover0Count, qbRunCount,
-      touchCounts, warnings: [], errors: ["⛔ Bucket is empty"], successes: [],
-      score: 0, status: "empty",
+      bucketKey,
+      total,
+      runCount,
+      throwCount,
+      screenCount,
+      paCount,
+      shotCount,
+      crossCount,
+      cover0Count,
+      qbRunCount,
+      touchCounts,
+      warnings: [],
+      errors: ["⛔ Bucket is empty"],
+      successes: [],
+      score: 0,
+      status: "empty",
       philosophy: rules?.philosophy || "",
     };
   }
 
   // ── Count check ────────────────────────────────────────────────────────────
   if (total > global.maxFeaturedCount) {
-    warnings.push(`⚠️ ${total} plays — consider trimming to ${global.maxFeaturedCount} featured`);
+    warnings.push(
+      `⚠️ ${total} plays — consider trimming to ${global.maxFeaturedCount} featured`,
+    );
   } else if (total < global.minFeaturedCount) {
-    warnings.push(`⚠️ Only ${total} plays — target at least ${global.minFeaturedCount}`);
+    warnings.push(
+      `⚠️ Only ${total} plays — target at least ${global.minFeaturedCount}`,
+    );
   } else {
     successes.push(`✅ Play count: ${total}`);
   }
 
   if (!rules) {
     return {
-      bucketKey, total, runCount, throwCount, screenCount,
-      paCount, shotCount, crossCount, cover0Count, qbRunCount,
-      touchCounts, warnings, errors, successes,
+      bucketKey,
+      total,
+      runCount,
+      throwCount,
+      screenCount,
+      paCount,
+      shotCount,
+      crossCount,
+      cover0Count,
+      qbRunCount,
+      touchCounts,
+      warnings,
+      errors,
+      successes,
       score: successes.length > 0 ? 50 : 0,
       status: successes.length > 0 ? "ok" : "warn",
       philosophy: "",
@@ -460,7 +618,7 @@ function evaluateBucket(bucketKey, bucketObj) {
   }
 
   // ── Run/Throw ratio ────────────────────────────────────────────────────────
-  const targetRun   = rules.targetRun   ?? 5;
+  const targetRun = rules.targetRun ?? 5;
   const targetThrow = rules.targetThrow ?? 5;
   const targetTotal = targetRun + targetThrow;
 
@@ -471,9 +629,13 @@ function evaluateBucket(bucketKey, bucketObj) {
   if (runDiff <= 2) {
     successes.push(`✅ Run/Throw ratio: ${runCount}R / ${throwCount}T`);
   } else if (runCount > expectedRun) {
-    warnings.push(`⚠️ Run-heavy: ${runCount}R / ${throwCount}T (target ~${targetRun}:${targetThrow})`);
+    warnings.push(
+      `⚠️ Run-heavy: ${runCount}R / ${throwCount}T (target ~${targetRun}:${targetThrow})`,
+    );
   } else {
-    warnings.push(`⚠️ Pass-heavy: ${runCount}R / ${throwCount}T (target ~${targetRun}:${targetThrow})`);
+    warnings.push(
+      `⚠️ Pass-heavy: ${runCount}R / ${throwCount}T (target ~${targetRun}:${targetThrow})`,
+    );
   }
 
   // ── Screen check ──────────────────────────────────────────────────────────
@@ -481,7 +643,9 @@ function evaluateBucket(bucketKey, bucketObj) {
   if (maxScreens === 99) {
     // Screen bucket — skip warning
   } else if (screenCount > maxScreens) {
-    errors.push(`🚨 Too many screens: ${screenCount} (max ${maxScreens} for this situation)`);
+    errors.push(
+      `🚨 Too many screens: ${screenCount} (max ${maxScreens} for this situation)`,
+    );
   } else if (screenCount === 0 && maxScreens === 0) {
     successes.push(`✅ No screens (correct for this situation)`);
   } else {
@@ -502,7 +666,8 @@ function evaluateBucket(bucketKey, bucketObj) {
     const jaycePlayer = CALLSHEET_CONSTRAINTS.roleMap["H"] || "Jayce";
     const cnt = touchCounts[jaycePlayer] || 0;
     if (cnt >= 2) successes.push(`✅ ${jaycePlayer} touches: ${cnt}`);
-    else errors.push(`🚨 Need ≥2 ${jaycePlayer} (H/Z slot) options — have ${cnt}`);
+    else
+      errors.push(`🚨 Need ≥2 ${jaycePlayer} (H/Z slot) options — have ${cnt}`);
   }
 
   if (required.includes("danny")) {
@@ -519,24 +684,30 @@ function evaluateBucket(bucketKey, bucketObj) {
 
   if (required.includes("cross-concept")) {
     if (crossCount >= 1) successes.push(`✅ Cross (mesh) concept present`);
-    else errors.push(`🚨 Missing Cross (mesh) — identity play for 3rd & medium`);
+    else
+      errors.push(`🚨 Missing Cross (mesh) — identity play for 3rd & medium`);
   }
 
   if (required.includes("cover0-answer")) {
-    if (cover0Count >= 1) successes.push(`✅ Cover-0 quick answer (Smaug/quick) present`);
+    if (cover0Count >= 1)
+      successes.push(`✅ Cover-0 quick answer (Smaug/quick) present`);
     else errors.push(`🚨 No Cover-0 answer (need Smaug/quick concept)`);
   }
 
   if (required.includes("shot-paired")) {
-    const paired = cats.filter((c) => c.isShot && (
-      CALLSHEET_CONSTRAINTS.shotPartnerFamilies.some((f) =>
-        cats.some((r) => r.family === f)
-      )
-    ));
+    const paired = cats.filter(
+      (c) =>
+        c.isShot &&
+        CALLSHEET_CONSTRAINTS.shotPartnerFamilies.some((f) =>
+          cats.some((r) => r.family === f),
+        ),
+    );
     if (shotCount === 0) {
       errors.push(`🚨 No shot play — need PA or deep concept for explosives`);
     } else if (paired.length === 0) {
-      warnings.push(`⚠️ Shot exists but not married to ${CALLSHEET_CONSTRAINTS.shotPartnerFamilies.join(" or ")}`);
+      warnings.push(
+        `⚠️ Shot exists but not married to ${CALLSHEET_CONSTRAINTS.shotPartnerFamilies.join(" or ")}`,
+      );
     } else {
       successes.push(`✅ Shot paired to run game`);
     }
@@ -549,13 +720,13 @@ function evaluateBucket(bucketKey, bucketObj) {
 
   // ── Scoring ───────────────────────────────────────────────────────────────
   const checkTotal = successes.length + warnings.length + errors.length;
-  const score = checkTotal === 0 ? 100
-    : Math.round((successes.length / checkTotal) * 100);
+  const score =
+    checkTotal === 0 ? 100 : Math.round((successes.length / checkTotal) * 100);
 
   let status;
-  if (errors.length > 0)       status = "error";
+  if (errors.length > 0) status = "error";
   else if (warnings.length > 0) status = "warn";
-  else                          status = "ok";
+  else status = "ok";
 
   return {
     bucketKey,
@@ -586,7 +757,11 @@ function evaluateBucket(bucketKey, bucketObj) {
  */
 function evaluateCallSheet(cs) {
   if (!cs || typeof cs !== "object") {
-    return { overallScore: 0, bucketReports: {}, summary: "No call sheet data." };
+    return {
+      overallScore: 0,
+      bucketReports: {},
+      summary: "No call sheet data.",
+    };
   }
 
   const bucketReports = {};
@@ -602,12 +777,21 @@ function evaluateCallSheet(cs) {
     }
   });
 
-  const overallScore = bucketCount === 0 ? 0 : Math.round(totalScore / bucketCount);
+  const overallScore =
+    bucketCount === 0 ? 0 : Math.round(totalScore / bucketCount);
 
-  const errorBuckets   = Object.values(bucketReports).filter((r) => r.status === "error").length;
-  const warnBuckets    = Object.values(bucketReports).filter((r) => r.status === "warn").length;
-  const okBuckets      = Object.values(bucketReports).filter((r) => r.status === "ok").length;
-  const emptyBuckets   = Object.values(bucketReports).filter((r) => r.status === "empty").length;
+  const errorBuckets = Object.values(bucketReports).filter(
+    (r) => r.status === "error",
+  ).length;
+  const warnBuckets = Object.values(bucketReports).filter(
+    (r) => r.status === "warn",
+  ).length;
+  const okBuckets = Object.values(bucketReports).filter(
+    (r) => r.status === "ok",
+  ).length;
+  const emptyBuckets = Object.values(bucketReports).filter(
+    (r) => r.status === "empty",
+  ).length;
 
   const summary = `${overallScore}% overall — ${okBuckets} ✅ ${warnBuckets} ⚠️ ${errorBuckets} 🚨 ${emptyBuckets} empty`;
 
@@ -625,11 +809,16 @@ function evaluateCallSheet(cs) {
  * @returns {number} sort order (lower = higher priority)
  */
 function _playRank(play) {
-  const tags = [play.playTag1, play.playTag2, play.constraint1, play.constraint2, play.oneWord]
-    .map((t) => _normalize(t || ""));
-  if (tags.some((t) => t.includes("core")))      return 0;
+  const tags = [
+    play.playTag1,
+    play.playTag2,
+    play.constraint1,
+    play.constraint2,
+    play.oneWord,
+  ].map((t) => _normalize(t || ""));
+  if (tags.some((t) => t.includes("core"))) return 0;
   if (tags.some((t) => t.includes("situation"))) return 1;
-  if (tags.some((t) => t.includes("answer")))    return 2;
+  if (tags.some((t) => t.includes("answer"))) return 2;
   return 3;
 }
 
@@ -644,7 +833,10 @@ function suggestFixesForBucket(report, playbookPlays) {
   if (!playbookPlays || playbookPlays.length === 0) return [];
 
   // Pre-compute categorization for all playbook plays once (avoid O(plays × groups))
-  const classified = playbookPlays.map((p) => ({ play: p, cat: categorizePlay(p) }));
+  const classified = playbookPlays.map((p) => ({
+    play: p,
+    cat: categorizePlay(p),
+  }));
 
   const suggestions = [];
   const allErrors = [...report.errors, ...report.warnings];
@@ -669,19 +861,25 @@ function suggestFixesForBucket(report, playbookPlays) {
   // Marco
   const marcoPlayer = CALLSHEET_CONSTRAINTS.roleMap["X"] || "Marco";
   if (allErrors.some((e) => e.includes(marcoPlayer))) {
-    suggest(`${marcoPlayer} Touch Plays`, (cat) => cat.touches.includes(marcoPlayer));
+    suggest(`${marcoPlayer} Touch Plays`, (cat) =>
+      cat.touches.includes(marcoPlayer),
+    );
   }
 
   // Jayce
   const jaycePlayer = CALLSHEET_CONSTRAINTS.roleMap["H"] || "Jayce";
   if (allErrors.some((e) => e.includes(jaycePlayer))) {
-    suggest(`${jaycePlayer} Touch Plays`, (cat) => cat.touches.includes(jaycePlayer));
+    suggest(`${jaycePlayer} Touch Plays`, (cat) =>
+      cat.touches.includes(jaycePlayer),
+    );
   }
 
   // Danny
   const dannyPlayer = CALLSHEET_CONSTRAINTS.roleMap["TE"] || "Danny";
   if (allErrors.some((e) => e.includes(dannyPlayer))) {
-    suggest(`${dannyPlayer} (TE/HB) Option`, (cat) => cat.touches.includes(dannyPlayer));
+    suggest(`${dannyPlayer} (TE/HB) Option`, (cat) =>
+      cat.touches.includes(dannyPlayer),
+    );
   }
 
   // Cross / mesh
@@ -727,7 +925,8 @@ function runConstraintCheck() {
   } catch (err) {
     console.error("Constraint check failed:", err);
     const body = document.getElementById("constraintPanelBody");
-    if (body) body.innerHTML = `<p class="cr-loading">⚠️ Evaluation failed — check console for details.</p>`;
+    if (body)
+      body.innerHTML = `<p class="cr-loading">⚠️ Evaluation failed — check console for details.</p>`;
   }
 }
 
@@ -751,9 +950,11 @@ function renderConstraintPanel(report) {
 
   // Score colour
   const scoreClass =
-    overallScore >= 80 ? "constraint-score-ok"
-    : overallScore >= 50 ? "constraint-score-warn"
-    : "constraint-score-error";
+    overallScore >= 80
+      ? "constraint-score-ok"
+      : overallScore >= 50
+        ? "constraint-score-warn"
+        : "constraint-score-error";
 
   // Build bucket rows — order: all non-empty first, then empty
   const sorted = Object.entries(bucketReports).sort((a, b) => {
@@ -761,18 +962,23 @@ function renderConstraintPanel(report) {
     return (order[a[1].status] ?? 9) - (order[b[1].status] ?? 9);
   });
 
-  const rows = sorted.map(([key, r]) => {
-    const icon = r.status === "ok" ? "✅"
-      : r.status === "warn" ? "⚠️"
-      : r.status === "empty" ? "—"
-      : "🚨";
+  const rows = sorted
+    .map(([key, r]) => {
+      const icon =
+        r.status === "ok"
+          ? "✅"
+          : r.status === "warn"
+            ? "⚠️"
+            : r.status === "empty"
+              ? "—"
+              : "🚨";
 
-    // Find human-readable bucket name
-    const catDef = CALLSHEET_CATEGORIES?.find((c) => c.id === key);
-    const name = catDef ? catDef.name : key;
-    const safeKey = escapeHtml(key);
+      // Find human-readable bucket name
+      const catDef = CALLSHEET_CATEGORIES?.find((c) => c.id === key);
+      const name = catDef ? catDef.name : key;
+      const safeKey = escapeHtml(key);
 
-    return `
+      return `
       <div class="cr-bucket-row cr-status-${r.status}" data-bucket="${safeKey}" data-action="toggleConstraintDetail" data-arg="${safeKey}">
         <span class="cr-bucket-icon">${icon}</span>
         <span class="cr-bucket-name">${escapeHtml(name)}</span>
@@ -784,7 +990,8 @@ function renderConstraintPanel(report) {
         ${renderBucketDetail(key, r)}
       </div>
     `;
-  }).join("");
+    })
+    .join("");
 
   body.innerHTML = `
     <div class="cr-overview">
@@ -813,21 +1020,32 @@ function renderBucketDetail(key, report) {
       <span class="cr-stat"><b>${report.throwCount}</b> Throw</span>
       <span class="cr-stat"><b>${report.screenCount}</b> Screen</span>
       <span class="cr-stat"><b>${report.shotCount}</b> Shot</span>
-      ${Object.entries(report.touchCounts).map(([p, c]) =>
-        `<span class="cr-stat cr-touch">👤 ${escapeHtml(p)}: ${c}</span>`).join("")}
+      ${Object.entries(report.touchCounts)
+        .map(
+          ([p, c]) =>
+            `<span class="cr-stat cr-touch">👤 ${escapeHtml(p)}: ${c}</span>`,
+        )
+        .join("")}
     </div>
   `;
 
-  const errorItems = report.errors.map((e) => `<li class="cr-item cr-item-error">${escapeHtml(e)}</li>`).join("");
-  const warnItems  = report.warnings.map((w) => `<li class="cr-item cr-item-warn">${escapeHtml(w)}</li>`).join("");
-  const okItems    = report.successes.map((s) => `<li class="cr-item cr-item-ok">${escapeHtml(s)}</li>`).join("");
+  const errorItems = report.errors
+    .map((e) => `<li class="cr-item cr-item-error">${escapeHtml(e)}</li>`)
+    .join("");
+  const warnItems = report.warnings
+    .map((w) => `<li class="cr-item cr-item-warn">${escapeHtml(w)}</li>`)
+    .join("");
+  const okItems = report.successes
+    .map((s) => `<li class="cr-item cr-item-ok">${escapeHtml(s)}</li>`)
+    .join("");
 
   const listHtml = `<ul class="cr-check-list">${errorItems}${warnItems}${okItems}</ul>`;
 
   const safeKey = escapeHtml(key);
-  const suggestBtn = (report.errors.length > 0)
-    ? `<button class="btn btn-sm btn-primary cr-suggest-btn" data-action="showSuggestions" data-arg="${safeKey}">💡 Suggest Fixes</button>`
-    : "";
+  const suggestBtn =
+    report.errors.length > 0
+      ? `<button class="btn btn-sm btn-primary cr-suggest-btn" data-action="showSuggestions" data-arg="${safeKey}">💡 Suggest Fixes</button>`
+      : "";
 
   const suggDiv = `<div class="cr-suggestions" id="cr-suggest-${safeKey}" style="display:none"></div>`;
 
@@ -867,17 +1085,25 @@ function showSuggestions(key) {
   if (suggestions.length === 0) {
     el.innerHTML = `<p class="cr-sug-empty">No specific play suggestions available — check your playbook mapping.</p>`;
   } else {
-    el.innerHTML = suggestions.map((group) => `
+    el.innerHTML = suggestions
+      .map(
+        (group) => `
       <div class="cr-sug-group">
         <div class="cr-sug-label">➕ ${escapeHtml(group.label)}</div>
-        ${group.plays.map((p) => `
+        ${group.plays
+          .map(
+            (p) => `
           <div class="cr-sug-play" title="${escapeHtml([p.playTag1, p.playTag2].filter(Boolean).join(", "))}">
             <span class="cr-sug-type">${escapeHtml(p.type || "")}</span>
             <span class="cr-sug-call">${typeof getFullCall === "function" ? getFullCall(p) : escapeHtml((p.formation || "") + " " + (p.play || ""))}</span>
           </div>
-        `).join("")}
+        `,
+          )
+          .join("")}
       </div>
-    `).join("");
+    `,
+      )
+      .join("");
   }
 
   el.style.display = el.style.display === "none" ? "block" : "none";

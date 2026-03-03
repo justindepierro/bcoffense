@@ -1559,9 +1559,15 @@
 
 /* ── Flash-on-add animation (newly added script play) ── */
 @keyframes flashAdd {
-  0%   { background: rgba(34, 197, 94, 0.35); }
-  60%  { background: rgba(34, 197, 94, 0.15); }
-  100% { background: transparent; }
+  0% {
+    background: rgba(34, 197, 94, 0.35);
+  }
+  60% {
+    background: rgba(34, 197, 94, 0.15);
+  }
+  100% {
+    background: transparent;
+  }
 }
 .script-item.just-added {
   animation: flashAdd 0.9s ease-out forwards;

@@ -3371,9 +3371,11 @@ function openTemplatesModal() {
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
   // backdrop close
-  document.getElementById("csTemplateOverlay")?.addEventListener("click", (e) => {
-    if (e.target.id === "csTemplateOverlay") closeTemplateModal();
-  });
+  document
+    .getElementById("csTemplateOverlay")
+    ?.addEventListener("click", (e) => {
+      if (e.target.id === "csTemplateOverlay") closeTemplateModal();
+    });
 }
 
 function closeTemplateModal() {
@@ -4153,9 +4155,12 @@ function openSmartSuggestionsModal(categoryId) {
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
   // backdrop close
-  document.getElementById("csSuggestOverlay")?.addEventListener("click", (e) => {
-    if (e.target.id === "csSuggestOverlay") document.getElementById("csSuggestOverlay")?.remove();
-  });
+  document
+    .getElementById("csSuggestOverlay")
+    ?.addEventListener("click", (e) => {
+      if (e.target.id === "csSuggestOverlay")
+        document.getElementById("csSuggestOverlay")?.remove();
+    });
 }
 
 /**
@@ -4211,7 +4216,8 @@ function isPlayOnCallSheet(play, categoryId) {
 
 function _csClosestAction(el, attr) {
   while (el) {
-    if (el.dataset && el.dataset[attr !== undefined ? attr : "action"]) return el;
+    if (el.dataset && el.dataset[attr !== undefined ? attr : "action"])
+      return el;
     el = el.parentElement;
   }
   return null;
@@ -4257,19 +4263,33 @@ document.addEventListener("DOMContentLoaded", () => {
     // ── Grid: dragover ──
     grid.addEventListener("dragover", (e) => {
       const catDrag = e.target.closest("[data-drag='catDrag']");
-      if (catDrag) { handleCatDragOver(e); return; }
+      if (catDrag) {
+        handleCatDragOver(e);
+        return;
+      }
       const hashCol = e.target.closest("[data-drop='csHashDrop']");
-      if (hashCol) { handleCallSheetDragOver(e); return; }
+      if (hashCol) {
+        handleCallSheetDragOver(e);
+        return;
+      }
       const play = e.target.closest(".callsheet-play");
-      if (play) { handleCallSheetDragOver(e); }
+      if (play) {
+        handleCallSheetDragOver(e);
+      }
     });
 
     // ── Grid: drop ──
     grid.addEventListener("drop", (e) => {
       const catDrag = e.target.closest("[data-drag='catDrag']");
-      if (catDrag) { handleCatDrop(e, catDrag.dataset.cat); return; }
+      if (catDrag) {
+        handleCatDrop(e, catDrag.dataset.cat);
+        return;
+      }
       const hashCol = e.target.closest("[data-drop='csHashDrop']");
-      if (hashCol) { handleCallSheetDrop(e, hashCol.dataset.cat, hashCol.dataset.hash); return; }
+      if (hashCol) {
+        handleCallSheetDrop(e, hashCol.dataset.cat, hashCol.dataset.hash);
+        return;
+      }
     });
 
     // ── Grid: dragend ──

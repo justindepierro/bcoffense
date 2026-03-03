@@ -370,7 +370,11 @@ function initApp() {
 
       // Restore last active tab
       const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB);
-      if (lastTab && lastTab !== "installation" && TAB_INDEX_MAP[lastTab] !== undefined) {
+      if (
+        lastTab &&
+        lastTab !== "installation" &&
+        TAB_INDEX_MAP[lastTab] !== undefined
+      ) {
         showTab(lastTab);
       }
 
@@ -519,7 +523,9 @@ function renderDashboard() {
         ? opponents[gw.opponentIndex]?.plays?.length || 0
         : 0;
 
-      const activeScriptName = document.getElementById("scriptName")?.value?.trim() || "Practice Script";
+      const activeScriptName =
+        document.getElementById("scriptName")?.value?.trim() ||
+        "Practice Script";
 
       cardsEl.innerHTML = `
       <div class="dash-card dash-card-playbook">
@@ -1208,9 +1214,21 @@ document.addEventListener("keydown", (e) => {
 
   // Number keys 1-8: switch tabs (no modifier, no alt)
   if (!mod && !e.altKey && !e.shiftKey && e.key >= "1" && e.key <= "8") {
-    const tabNames = ["playbook", "script", "wristband", "tendencies", "callsheet", "installation", "offensebuilder", "dashboard"];
+    const tabNames = [
+      "playbook",
+      "script",
+      "wristband",
+      "tendencies",
+      "callsheet",
+      "installation",
+      "offensebuilder",
+      "dashboard",
+    ];
     const tab = tabNames[parseInt(e.key, 10) - 1];
-    if (tab) { e.preventDefault(); showTab(tab); }
+    if (tab) {
+      e.preventDefault();
+      showTab(tab);
+    }
     return;
   }
 
@@ -1525,10 +1543,18 @@ document.addEventListener("click", (e) => {
       return;
     // ── Callsheet delegation ──
     case "swapPlayHash":
-      swapPlayHash(el.dataset.category, el.dataset.hash, parseInt(el.dataset.index, 10));
+      swapPlayHash(
+        el.dataset.category,
+        el.dataset.hash,
+        parseInt(el.dataset.index, 10),
+      );
       return;
     case "removeCallSheetPlay":
-      removeCallSheetPlay(el.dataset.category, el.dataset.hash, parseInt(el.dataset.index, 10));
+      removeCallSheetPlay(
+        el.dataset.category,
+        el.dataset.hash,
+        parseInt(el.dataset.index, 10),
+      );
       return;
     case "openCallSheetPlayPicker":
       openCallSheetPlayPicker(el.dataset.cat, el.dataset.hash);
@@ -1555,7 +1581,11 @@ document.addEventListener("click", (e) => {
       removeCsSortCriteria(parseInt(el.dataset.idx, 10));
       return;
     case "addSuggestionToSheet":
-      addSuggestionToSheet(el.dataset.cat, el.dataset.hash, parseInt(el.dataset.idx, 10));
+      addSuggestionToSheet(
+        el.dataset.cat,
+        el.dataset.hash,
+        parseInt(el.dataset.idx, 10),
+      );
       return;
     // ── Tendencies delegation ──
     case "editTendenciesPlay":
@@ -1820,7 +1850,8 @@ document.addEventListener("DOMContentLoaded", () => {
   /* ---------- Playbook sort: drag delegation ---------- */
   document.body.addEventListener("dragstart", (e) => {
     const el = e.target.closest("[data-drag='pbSort']");
-    if (el && typeof _pbSortDragStart === "function") _pbSortDragStart(e, parseInt(el.dataset.idx, 10));
+    if (el && typeof _pbSortDragStart === "function")
+      _pbSortDragStart(e, parseInt(el.dataset.idx, 10));
   });
   document.body.addEventListener("dragover", (e) => {
     const el = e.target.closest("[data-drag='pbSort']");
@@ -1828,7 +1859,8 @@ document.addEventListener("DOMContentLoaded", () => {
   });
   document.body.addEventListener("drop", (e) => {
     const el = e.target.closest("[data-drag='pbSort']");
-    if (el && typeof _pbSortDrop === "function") _pbSortDrop(e, parseInt(el.dataset.idx, 10));
+    if (el && typeof _pbSortDrop === "function")
+      _pbSortDrop(e, parseInt(el.dataset.idx, 10));
   });
 });
 

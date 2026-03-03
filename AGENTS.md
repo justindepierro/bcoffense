@@ -98,23 +98,30 @@ All files share the **global scope** — there are no modules, imports, or bundl
 ```
 
 **Dispatch priority order:**
+
 1. **Overlay close** — action ending in `"Overlay"` → strips suffix, calls `window[action.slice(0,-7)]()`; only fires on backdrop click (`e.target === el`)
 2. **Click proxy** — `data-action="triggerClick"` + `data-target="elementId"` → clicks that element
 3. **Inline DOM toggles** — `toggleParentOpen`, `removeParentOpen`, `reloadPage`
 4. **Explicit switch/case** — Actions needing `data-idx`, `data-sid`, `data-layer`, `data-preset`, etc.
 5. **Generic fallback** — `window[action](arg)` with smart argument handling:
 
-| Condition | Call |
-|---|---|
-| `data-arg` + action in `_ELEMENT_FNS` | `fn(arg, element)` |
-| `data-arg` + action in `_BOOL_FNS` | `fn(arg === "true")` |
-| `data-arg` present | `fn(arg)` |
-| No `data-arg`, action in `_ELEMENT_FNS` | `fn(element)` |
-| No `data-arg` | `fn()` |
+| Condition                               | Call                 |
+| --------------------------------------- | -------------------- |
+| `data-arg` + action in `_ELEMENT_FNS`   | `fn(arg, element)`   |
+| `data-arg` + action in `_BOOL_FNS`      | `fn(arg === "true")` |
+| `data-arg` present                      | `fn(arg)`            |
+| No `data-arg`, action in `_ELEMENT_FNS` | `fn(element)`        |
+| No `data-arg`                           | `fn()`               |
 
 **Special sets:**
+
 ```js
-const _ELEMENT_FNS = new Set(["toggleFilterSection", "toggleCollapsiblePanel", "setHeaderColor", "switchDisplayTab"]);
+const _ELEMENT_FNS = new Set([
+  "toggleFilterSection",
+  "toggleCollapsiblePanel",
+  "setHeaderColor",
+  "switchDisplayTab",
+]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 ```
 
@@ -125,8 +132,10 @@ Some containers (`#scriptPlays`, `#availablePlays`, `#playbookTable tbody`) have
 ### Change/Input Delegation
 
 ```html
-<select data-onchange="handleSort" data-pass="value">...</select>
-<input data-oninput="filterPlays;updateCount" data-pass="value">
+<select data-onchange="handleSort" data-pass="value">
+  ...
+</select>
+<input data-oninput="filterPlays;updateCount" data-pass="value" />
 ```
 
 - `data-onchange` / `data-oninput` → semicolon-separated function names
@@ -144,13 +153,13 @@ All persistent data uses `localStorage` via the `storageManager` singleton.
 ### storageManager API
 
 ```js
-storageManager.get(key, defaultValue = null)     // JSON.parse; returns default on miss/error
-storageManager.set(key, value)                    // JSON.stringify; shows quota modal on overflow
-storageManager.remove(key)                        // localStorage.removeItem
-storageManager.getAllData()                        // Full backup object for export
-storageManager.restoreAllData(backup, options)    // Restore from backup (async)
-storageManager.getStorageInfo()                   // { totalSize, totalSizeFormatted, itemSizes, itemCount }
-storageManager.clearAll(confirmFirst = true)      // Wipe all keys (async)
+storageManager.get(key, (defaultValue = null)); // JSON.parse; returns default on miss/error
+storageManager.set(key, value); // JSON.stringify; shows quota modal on overflow
+storageManager.remove(key); // localStorage.removeItem
+storageManager.getAllData(); // Full backup object for export
+storageManager.restoreAllData(backup, options); // Restore from backup (async)
+storageManager.getStorageInfo(); // { totalSize, totalSizeFormatted, itemSizes, itemCount }
+storageManager.clearAll((confirmFirst = true)); // Wipe all keys (async)
 ```
 
 ### STORAGE_KEYS (complete list)
@@ -199,13 +208,13 @@ CALLSHEET_CONSTRAINTS      → "callSheetConstraints"
 ### Undo/Redo (historyManager)
 
 ```js
-historyManager.saveState(type, state)       // type: "script" | "wristband" | "tendencies"
-historyManager.undo(type, currentState)     // Returns previous state or null
-historyManager.redo(type, currentState)     // Returns next state or null
-historyManager.clear(type)
-historyManager.canUndo(type)                // boolean
-historyManager.canRedo(type)                // boolean
-historyManager.updateButtons(type)          // Enable/disable #<type>UndoBtn / #<type>RedoBtn
+historyManager.saveState(type, state); // type: "script" | "wristband" | "tendencies"
+historyManager.undo(type, currentState); // Returns previous state or null
+historyManager.redo(type, currentState); // Returns next state or null
+historyManager.clear(type);
+historyManager.canUndo(type); // boolean
+historyManager.canRedo(type); // boolean
+historyManager.updateButtons(type); // Enable/disable #<type>UndoBtn / #<type>RedoBtn
 // maxHistory: 25 snapshots per type
 ```
 
@@ -294,6 +303,7 @@ Imported from CSV via `parseCSV()`. This is the core data shape used everywhere:
 `openers`, `1st-down`, `perimeter-screens`, `screen`, `p-and-10`, `2-point`, `base-run`, `run-options`, `base-pass`, `quick`, `play-action`, `rpos`, `player1`–`player5`, `movement`
 
 **Runtime structure:**
+
 ```js
 callSheet = {
   "1st-down": { left: [play, play, ...], right: [play, ...], customName: "..." },
@@ -307,38 +317,42 @@ callSheet = {
 ## Key Global Variables
 
 ### app.js
+
 ```js
-let plays = [];              // Master playbook array (all imported plays)
-let script = [];             // Current working practice script
-let scriptWristband = null;  // Currently linked wristband
-let filteredPlays = [];      // Filtered playbook subset
-let scriptDirty = false;     // Unsaved script changes flag
-let wristbandDirty = false;  // Unsaved wristband changes flag
-let currentActiveTab = "playbook";  // Active UI tab name
+let plays = []; // Master playbook array (all imported plays)
+let script = []; // Current working practice script
+let scriptWristband = null; // Currently linked wristband
+let filteredPlays = []; // Filtered playbook subset
+let scriptDirty = false; // Unsaved script changes flag
+let wristbandDirty = false; // Unsaved wristband changes flag
+let currentActiveTab = "playbook"; // Active UI tab name
 ```
 
 ### callsheet.js
+
 ```js
-let callSheet = {};              // The call sheet data (see structure above)
-let callSheetSettings = {};      // Orientation, current page, custom names
+let callSheet = {}; // The call sheet data (see structure above)
+let callSheetSettings = {}; // Orientation, current page, custom names
 const CALLSHEET_CATEGORIES = []; // All 39 category definitions
 ```
 
 ### script.js
+
 ```js
-let collapsedPeriods = new Set();    // Collapsed period IDs
-let periodTemplates = [];            // Saved period templates
-let bulkSelectedIndices = [];        // Multi-selected play indices
-let selectedAvailablePlays = [];     // Checked available plays
+let collapsedPeriods = new Set(); // Collapsed period IDs
+let periodTemplates = []; // Saved period templates
+let bulkSelectedIndices = []; // Multi-selected play indices
+let selectedAvailablePlays = []; // Checked available plays
 ```
 
 ### wristband.js
+
 ```js
-let wristbandCards = [];         // Array of card objects
-let currentCardIndex = 0;       // Active card tab
-const WB_ROWS = 20;             // Rows per card
-const MAX_CARDS = 5;            // Maximum cards
-const CELLS_PER_CARD = 40;      // Total cells per card (2 columns × 20 rows)
+let wristbandCards = []; // Array of card objects
+let currentCardIndex = 0; // Active card tab
+const WB_ROWS = 20; // Rows per card
+const MAX_CARDS = 5; // Maximum cards
+const CELLS_PER_CARD = 40; // Total cells per card (2 columns × 20 rows)
 ```
 
 ---
@@ -348,9 +362,9 @@ const CELLS_PER_CARD = 40;      // Total cells per card (2 columns × 20 rows)
 ### HTML Safety
 
 ```js
-escapeHtml(text)                  // Escapes & < > " ' — use for text interpolation
-sanitizeHTML(html)                // Strips dangerous tags/attrs — use for innerHTML
-setInnerHTML(el, html)            // el.innerHTML = sanitizeHTML(html)
+escapeHtml(text); // Escapes & < > " ' — use for text interpolation
+sanitizeHTML(html); // Strips dangerous tags/attrs — use for innerHTML
+setInnerHTML(el, html); // el.innerHTML = sanitizeHTML(html)
 ```
 
 **Rule:** Always `escapeHtml()` user-provided text in template literals. Use `sanitizeHTML()` only when you need to preserve safe HTML formatting. `getFullCall()` already calls `escapeHtml()` internally — never double-escape its output.
@@ -358,44 +372,44 @@ setInnerHTML(el, html)            // el.innerHTML = sanitizeHTML(html)
 ### Play Display
 
 ```js
-getFullCall(play, options = {})   // Returns HTML string with formatted play call
+getFullCall(play, (options = {})); // Returns HTML string with formatted play call
 // Options: showEmoji, useSquares, underEmoji, boldShifts, redShifts,
 //          italicMotions, redMotions, noVowels, showLineCall,
 //          highlightHuddle, highlightCandy
 
-buildCallSheetPlayParts(play, options)  // Returns array of HTML part strings (call sheet specific)
+buildCallSheetPlayParts(play, options); // Returns array of HTML part strings (call sheet specific)
 ```
 
 ### Modals (async, Promise-based)
 
 ```js
-showModal(message, { title, icon })                                    // Alert → Promise<void>
-showConfirm(message, { title, icon, confirmText, cancelText, danger }) // → Promise<boolean>
-showPrompt(message, defaultValue, { title, icon, placeholder })        // → Promise<string|null>
-showChoice(message, { title, icon, option1, option2 })                 // → Promise<"option1"|"option2"|null>
-showListPicker(message, items, { title, icon })                        // → Promise<value|null>
+showModal(message, { title, icon }); // Alert → Promise<void>
+showConfirm(message, { title, icon, confirmText, cancelText, danger }); // → Promise<boolean>
+showPrompt(message, defaultValue, { title, icon, placeholder }); // → Promise<string|null>
+showChoice(message, { title, icon, option1, option2 }); // → Promise<"option1"|"option2"|null>
+showListPicker(message, items, { title, icon }); // → Promise<value|null>
 ```
 
 ### Notifications
 
 ```js
-showToast(message, durationOrOpts)        // durationOrOpts: number | { duration, type }
-showUndoToast(message, undoCallback, duration)  // Toast with undo button (default 5s)
+showToast(message, durationOrOpts); // durationOrOpts: number | { duration, type }
+showUndoToast(message, undoCallback, duration); // Toast with undo button (default 5s)
 ```
 
 ### Other Important Utils
 
 ```js
-debounce(fn, wait = 150)
-safeJSONParse(str, fallback)
-safeDeepClone(obj)                        // structuredClone with JSON fallback
-parseCSV(text)                            // → { plays: [], skipped: [] }
-removeVowels(str)                         // Strip vowels for compressed display
-playsMatch(p1, p2)                        // Compare two play objects by key fields
-showContextMenu(event, menuItems)         // Right-click context menus
-showReorderModal(values, opts)            // Drag-to-reorder modal
-trapFocus(overlay)                        // Focus trap for accessibility
-addLongPress(element, callback, duration) // Mobile long-press handler
+debounce(fn, (wait = 150));
+safeJSONParse(str, fallback);
+safeDeepClone(obj); // structuredClone with JSON fallback
+parseCSV(text); // → { plays: [], skipped: [] }
+removeVowels(str); // Strip vowels for compressed display
+playsMatch(p1, p2); // Compare two play objects by key fields
+showContextMenu(event, menuItems); // Right-click context menus
+showReorderModal(values, opts); // Drag-to-reorder modal
+trapFocus(overlay); // Focus trap for accessibility
+addLongPress(element, callback, duration); // Mobile long-press handler
 ```
 
 ---
@@ -408,19 +422,19 @@ All colors, spacing, typography, shadows, and z-indexes are defined as CSS custo
 
 **Key token families:**
 
-| Category | Examples |
-|---|---|
-| Brand | `--color-primary`, `--color-accent`, `--color-primary-dark` |
-| Functional | `--color-success`, `--color-danger`, `--color-warning`, `--color-info` (each has `-hover`, `-light` variants) |
-| Backgrounds | `--color-bg-body`, `--color-bg-light`, `--color-bg-lighter`, `--color-bg-input`, `--color-bg-hover-row` |
-| Borders | `--color-border`, `--color-border-light`, `--color-border-med`, `--color-border-input` |
-| Text | `--color-text`, `--color-text-muted`, `--color-text-secondary`, `--color-text-light` |
-| Spacing | `--space-xs` (4px) through `--space-xl` (32px) |
-| Radius | `--radius-sm` (6px), `--radius-md` (10px), `--radius-lg` (14px), `--radius-pill` (999px) |
-| Shadows | `--shadow-xs` through `--shadow-lg`, `--shadow-focus` |
-| Z-index | `--z-base` (1) → `--z-toast` (10000) → `--z-skip-link` (100000) |
-| Typography | `--font-sans` (Inter stack), `--font-mono` (IBM Plex Mono), `--font-size-micro` (8px) → `--font-size-5xl` (48px) |
-| Transitions | `--transition-fast` (0.15s), `--transition-normal` (0.25s) |
+| Category    | Examples                                                                                                         |
+| ----------- | ---------------------------------------------------------------------------------------------------------------- |
+| Brand       | `--color-primary`, `--color-accent`, `--color-primary-dark`                                                      |
+| Functional  | `--color-success`, `--color-danger`, `--color-warning`, `--color-info` (each has `-hover`, `-light` variants)    |
+| Backgrounds | `--color-bg-body`, `--color-bg-light`, `--color-bg-lighter`, `--color-bg-input`, `--color-bg-hover-row`          |
+| Borders     | `--color-border`, `--color-border-light`, `--color-border-med`, `--color-border-input`                           |
+| Text        | `--color-text`, `--color-text-muted`, `--color-text-secondary`, `--color-text-light`                             |
+| Spacing     | `--space-xs` (4px) through `--space-xl` (32px)                                                                   |
+| Radius      | `--radius-sm` (6px), `--radius-md` (10px), `--radius-lg` (14px), `--radius-pill` (999px)                         |
+| Shadows     | `--shadow-xs` through `--shadow-lg`, `--shadow-focus`                                                            |
+| Z-index     | `--z-base` (1) → `--z-toast` (10000) → `--z-skip-link` (100000)                                                  |
+| Typography  | `--font-sans` (Inter stack), `--font-mono` (IBM Plex Mono), `--font-size-micro` (8px) → `--font-size-5xl` (48px) |
+| Transitions | `--transition-fast` (0.15s), `--transition-normal` (0.25s)                                                       |
 
 ### Dark Mode
 
@@ -436,14 +450,14 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ### File Responsibilities
 
-| File | Scope |
-|---|---|
-| `base.css` | Tokens, reset, form elements, selections |
-| `layout.css` | Page structure, header, tab bar, panels |
+| File             | Scope                                                           |
+| ---------------- | --------------------------------------------------------------- |
+| `base.css`       | Tokens, reset, form elements, selections                        |
+| `layout.css`     | Page structure, header, tab bar, panels                         |
 | `components.css` | Reusable: `.btn-*`, `.modal-*`, `.toast`, `.badge-*`, utilities |
-| `print.css` | All `@media print` rules (centralized) |
-| `responsive.css` | All `@media` breakpoints (centralized) |
-| `[module].css` | Module-specific styles (callsheet.css, script.css, etc.) |
+| `print.css`      | All `@media print` rules (centralized)                          |
+| `responsive.css` | All `@media` breakpoints (centralized)                          |
+| `[module].css`   | Module-specific styles (callsheet.css, script.css, etc.)        |
 
 ### Naming Conventions
 
@@ -460,12 +474,14 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 **Cache name:** `bcoffense-vN` (currently v10)
 
 **Strategy:**
+
 - **Install:** Pre-cache all local assets listed in `LOCAL_ASSETS` array
 - **Local files:** Stale-while-revalidate (serve cached, then update cache in background)
 - **External resources:** Network-first with cache fallback (Google Fonts, CDNs)
 - **Offline:** Navigation requests fall back to `offline.html`
 
 **When to bump the version:**
+
 - Any time you modify CSS, JS, or HTML files
 - Increment the number in `const CACHE_NAME = "bcoffense-vN"` in `sw.js`
 - If you add a new file, also add it to the `LOCAL_ASSETS` array
@@ -535,7 +551,11 @@ storageManager.set(STORAGE_KEYS.MY_NEW_KEY, data);
 
 ```html
 <!-- In index.html -->
-<button class="btn btn-sm btn-primary" data-action="myFunction" data-arg="optionalArg">
+<button
+  class="btn btn-sm btn-primary"
+  data-action="myFunction"
+  data-arg="optionalArg"
+>
   Label
 </button>
 ```
@@ -571,7 +591,7 @@ function closeMyPanel() {
 ### Toast Notifications
 
 ```js
-showToast("Play added to script");                          // Default 2s
+showToast("Play added to script"); // Default 2s
 showToast("Saved successfully", { duration: 3000, type: "success" });
 showToast("Something went wrong", { duration: 4000, type: "error" });
 ```

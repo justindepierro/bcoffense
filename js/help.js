@@ -105,7 +105,10 @@ function getHelpDataForTab(tab) {
             { key: "↕ Reverse", desc: "Reverse play order" },
             { key: "🧠 Smart Script", desc: "Auto-optimize play order" },
             { key: "★ Preferred", desc: "Apply preferred metadata" },
-            { key: "📋 Copy Text", desc: "Copy period plays as plain text to clipboard" },
+            {
+              key: "📋 Copy Text",
+              desc: "Copy period plays as plain text to clipboard",
+            },
           ],
         },
         {
@@ -113,8 +116,14 @@ function getHelpDataForTab(tab) {
           name: "Toolbar",
           items: [
             { key: "↩️ / ↪️", desc: "Undo / Redo" },
-            { key: "⌘Z / Ctrl+Z", desc: "Keyboard undo (outside input fields)" },
-            { key: "⌘Y / Ctrl+Y", desc: "Keyboard redo (outside input fields)" },
+            {
+              key: "⌘Z / Ctrl+Z",
+              desc: "Keyboard undo (outside input fields)",
+            },
+            {
+              key: "⌘Y / Ctrl+Y",
+              desc: "Keyboard redo (outside input fields)",
+            },
             { key: "🧠 Smart Script All", desc: "Optimize across all periods" },
             {
               key: "🎯 Auto-Fill Defense",

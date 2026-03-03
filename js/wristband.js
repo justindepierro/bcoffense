@@ -2163,7 +2163,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (grid) {
     grid.addEventListener("click", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
-      if (cell) openCellPopup(parseInt(cell.dataset.card, 10), parseInt(cell.dataset.cellIdx, 10), e);
+      if (cell)
+        openCellPopup(
+          parseInt(cell.dataset.card, 10),
+          parseInt(cell.dataset.cellIdx, 10),
+          e,
+        );
     });
     grid.addEventListener("dragstart", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
