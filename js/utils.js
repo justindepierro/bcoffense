@@ -1510,9 +1510,17 @@ function parseCSV(text) {
     constraint1: "constraint1",
     constraint2: "constraint2",
     constraint3: "constraint3",
+    constrant1: "constraint1",
+    constrant2: "constraint2",
+    constrant3: "constraint3",
     hitchart1: "hitChart1",
     hitchart2: "hitChart2",
     hitchart3: "hitChart3",
+    keyplayer1hitchart: "hitChart1",
+    keyplayer2hitchart: "hitChart2",
+    keyplayer3hitchart: "hitChart3",
+    preferredsitutation: "preferredSituation",
+    preferredsitution: "preferredSituation",
     deadvs: "deadVs",
     opponent: "opponent",
     notes: "notes",
@@ -1566,7 +1574,7 @@ function parseCSV(text) {
 
   // --- Detect headers from row 0 ---
   const firstRow = parseLine(lines[0]);
-  const norm = firstRow.map((h) => h.toLowerCase().replace(/[\s_\-]/g, ""));
+  const norm = firstRow.map((h) => h.toLowerCase().replace(/[^a-z0-9]/g, ""));
   const hits = norm.filter((h) => COLUMN_MAP[h]);
   const useHeaders = hits.length >= 3;
 
