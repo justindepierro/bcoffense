@@ -260,6 +260,361 @@ function initAllModules() {
   );
 }
 
+// ── Smart CSV Merge System ──────────────────────────────────────
+
+/** All 41 play CSV field keys */
+const _MERGE_FIELDS = [
+  "type", "personnel", "formation", "formTag1", "formTag2", "under", "back",
+  "shift", "motion", "protection", "lineCall", "play", "playTag1", "playTag2",
+  "basePlay", "oneWord", "preferredSituation", "preferredDown",
+  "preferredDistance", "preferredHash", "preferredFieldPosition", "tempo",
+  "practiceFront", "practiceDefense", "practiceCoverage", "practiceBlitz",
+  "practiceStunt", "keyPlayer1", "keyPlayer2", "keyPlayer3", "keyPlayerName1",
+  "keyPlayerName2", "keyPlayerName3", "constraint1", "constraint2",
+  "constraint3", "hitChart1", "hitChart2", "hitChart3", "deadVs", "opponent",
+  "notes",
+];
+
+/** Script-item fields to preserve during reference update */
+const _MERGE_KEEP = new Set([
+  "reps", "notes", "hash", "defFront", "defCoverage", "defStunt", "defBlitz",
+  "id", "isSeparator", "label", "isBlank",
+]);
+
+/** Partial match key: formation + play (case-insensitive) */
+function _mKey(p) {
+  return (p.formation || "").toLowerCase().trim() +
+    "\0" + (p.play || "").toLowerCase().trim();
+}
+
+/** Full match key: type + personnel + formation + play */
+function _mFullKey(p) {
+  return (p.type || "").toLowerCase().trim() +
+    "\0" + (p.personnel || "").toLowerCase().trim() +
+    "\0" + (p.formation || "").toLowerCase().trim() +
+    "\0" + (p.play || "").toLowerCase().trim();
+}
+
+/**
+ * Smart merge: match new CSV plays against existing playbook.
+ * Pass 1 — exact key (type+personnel+formation+play)
+ * Pass 2 — partial key (formation+play) for remaining
+ * Matched plays get all fields updated from the new CSV.
+ * Unmatched existing plays are kept. New plays are appended.
+ * @param {Array} existing - Current playbook
+ * @param {Array} incoming - Newly parsed CSV plays
+ * @returns {{ merged: Array, report: Object }}
+ */
+function _smartMerge(existing, incoming) {
+  const eMatched = new Uint8Array(existing.length);
+  const nMatched = new Uint8Array(incoming.length);
+  const pairs = [];
+
+  // Pass 1: exact key (type + personnel + formation + play)
+  const byFull = new Map();
+  existing.forEach((p, i) => {
+    const k = _mFullKey(p);
+    if (!byFull.has(k)) byFull.set(k, []);
+    byFull.get(k).push(i);
+  });
+  incoming.forEach((np, ni) => {
+    const k = _mFullKey(np);
+    const cands = byFull.get(k);
+    if (!cands) return;
+    for (const ei of cands) {
+      if (!eMatched[ei]) {
+        eMatched[ei] = 1;
+        nMatched[ni] = 1;
+        pairs.push({ ei, ni });
+        break;
+      }
+    }
+  });
+
+  // Pass 2: partial key (formation + play) for remaining
+  const byPart = new Map();
+  existing.forEach((p, i) => {
+    if (eMatched[i]) return;
+    const k = _mKey(p);
+    if (!byPart.has(k)) byPart.set(k, []);
+    byPart.get(k).push(i);
+  });
+  incoming.forEach((np, ni) => {
+    if (nMatched[ni]) return;
+    const k = _mKey(np);
+    const cands = byPart.get(k);
+    if (!cands) return;
+    for (const ei of cands) {
+      if (!eMatched[ei]) {
+        eMatched[ei] = 1;
+        nMatched[ni] = 1;
+        pairs.push({ ei, ni });
+        break;
+      }
+    }
+  });
+
+  // Classify matches
+  const updated = [];
+  const unchanged = [];
+  for (const pr of pairs) {
+    const op = existing[pr.ei], np = incoming[pr.ni];
+    const changes = [];
+    for (const f of _MERGE_FIELDS) {
+      const ov = (op[f] || "").trim(), nv = (np[f] || "").trim();
+      if (ov !== nv) changes.push({ field: f, from: ov, to: nv });
+    }
+    (changes.length ? updated : unchanged).push({ ...pr, changes: changes });
+  }
+
+  const added = [];
+  incoming.forEach((_, ni) => { if (!nMatched[ni]) added.push(ni); });
+  const removed = [];
+  existing.forEach((_, ei) => { if (!eMatched[ei]) removed.push(ei); });
+
+  // Build merged array: copy existing, apply updates, append new
+  const merged = existing.map((p) => ({ ...p }));
+  for (const u of updated) {
+    const t = merged[u.ei], s = incoming[u.ni];
+    for (const f of _MERGE_FIELDS) t[f] = s[f] || "";
+  }
+  const addedPlays = added.map((ni) => ({ ...incoming[ni] }));
+  merged.push(...addedPlays);
+
+  return {
+    merged,
+    report: {
+      updated,
+      unchanged,
+      added,
+      removed,
+      addedPlays,
+      removedPlays: removed.map((i) => existing[i]),
+      totalExisting: existing.length,
+      totalNew: incoming.length,
+      totalMerged: merged.length,
+    },
+  };
+}
+
+/**
+ * Update play references in saved wristbands, scripts, and call sheet
+ * so they reflect the field changes from the merge.
+ * @param {Array} existing - Pre-merge playbook
+ * @param {Array} incoming - New CSV plays
+ * @param {Object} report  - Report from _smartMerge
+ * @returns {{ wristbands: number, scripts: number, callsheet: number }}
+ */
+function _mergeUpdateRefs(existing, incoming, report) {
+  if (report.updated.length === 0) {
+    return { wristbands: 0, scripts: 0, callsheet: 0 };
+  }
+
+  // Build update lookup keyed by partial key for fast matching
+  const ups = report.updated.map((u) => ({
+    old: existing[u.ei],
+    nw: incoming[u.ni],
+  }));
+  const upsByKey = new Map();
+  for (const u of ups) {
+    const k = _mKey(u.old);
+    if (!upsByKey.has(k)) upsByKey.set(k, []);
+    upsByKey.get(k).push(u);
+  }
+
+  let wbCount = 0, scCount = 0, csCount = 0;
+
+  /** Try to update a play-object reference (wristband / callsheet) */
+  function applyUpdate(ref) {
+    const k = _mKey(ref);
+    const cands = upsByKey.get(k);
+    if (!cands) return false;
+    for (const c of cands) {
+      if (playsMatch(ref, c.old)) {
+        for (const f of _MERGE_FIELDS) ref[f] = c.nw[f] || "";
+        return true;
+      }
+    }
+    return false;
+  }
+
+  /** Same but preserves script-specific metadata fields */
+  function applyScriptUpdate(ref) {
+    const k = _mKey(ref);
+    const cands = upsByKey.get(k);
+    if (!cands) return false;
+    for (const c of cands) {
+      if (playsMatch(ref, c.old)) {
+        for (const f of _MERGE_FIELDS) {
+          if (!_MERGE_KEEP.has(f)) ref[f] = c.nw[f] || "";
+        }
+        return true;
+      }
+    }
+    return false;
+  }
+
+  // ── Saved wristbands ──
+  const savedWB = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  let wbDirty = false;
+  for (const wb of savedWB) {
+    if (!wb.cards) continue;
+    for (const card of wb.cards) {
+      if (!card.data) continue;
+      for (let i = 0; i < card.data.length; i++) {
+        if (card.data[i] && applyUpdate(card.data[i])) {
+          wbCount++;
+          wbDirty = true;
+        }
+      }
+    }
+  }
+  if (wbDirty) storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, savedWB);
+
+  // Active wristband cards (in-memory)
+  if (typeof wristbandCards !== "undefined" && Array.isArray(wristbandCards)) {
+    for (const card of wristbandCards) {
+      if (!card.data) continue;
+      for (let i = 0; i < card.data.length; i++) {
+        if (card.data[i] && applyUpdate(card.data[i])) wbCount++;
+      }
+    }
+  }
+
+  // ── Saved scripts ──
+  const savedSC = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  let scDirty = false;
+  for (const sc of savedSC) {
+    if (!sc.plays) continue;
+    for (const item of sc.plays) {
+      if (item.isSeparator || item.isBlank) continue;
+      if (applyScriptUpdate(item)) { scCount++; scDirty = true; }
+    }
+  }
+  if (scDirty) storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedSC);
+
+  // Active script (in-memory)
+  if (typeof script !== "undefined" && Array.isArray(script)) {
+    for (const item of script) {
+      if (item.isSeparator || item.isBlank) continue;
+      if (applyScriptUpdate(item)) scCount++;
+    }
+  }
+
+  // ── Call sheet (stored) ──
+  const savedCS = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
+  let csDirty = false;
+  if (savedCS) {
+    for (const catId of Object.keys(savedCS)) {
+      const bucket = savedCS[catId];
+      for (const side of ["left", "right"]) {
+        if (!bucket[side]) continue;
+        for (const p of bucket[side]) {
+          if (applyUpdate(p)) { csCount++; csDirty = true; }
+        }
+      }
+    }
+    if (csDirty) {
+      storageManager.set(STORAGE_KEYS.CALL_SHEET, savedCS);
+      callSheet = savedCS;
+    }
+  }
+
+  // Call sheet in-memory (if not already synced from stored)
+  if (!csDirty && typeof callSheet !== "undefined" && callSheet) {
+    for (const catId of Object.keys(callSheet)) {
+      const bucket = callSheet[catId];
+      for (const side of ["left", "right"]) {
+        if (!bucket[side]) continue;
+        for (const p of bucket[side]) {
+          if (applyUpdate(p)) csCount++;
+        }
+      }
+    }
+  }
+
+  return { wristbands: wbCount, scripts: scCount, callsheet: csCount };
+}
+
+/**
+ * Build HTML for the merge report modal.
+ * @returns {string} HTML content
+ */
+function _buildMergeReportHtml(report, refCounts, existingPlays) {
+  const { updated, unchanged, added, removed, addedPlays, removedPlays } = report;
+
+  let h = '<div style="text-align:left;font-size:0.95rem;line-height:1.7">';
+
+  // Summary grid
+  h += '<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-bottom:12px">';
+  h += `<span>🔄</span><span><strong>${updated.length}</strong> play${updated.length !== 1 ? "s" : ""} updated</span>`;
+  h += `<span>➕</span><span><strong>${added.length}</strong> new play${added.length !== 1 ? "s" : ""} added</span>`;
+  h += `<span>📌</span><span><strong>${unchanged.length}</strong> play${unchanged.length !== 1 ? "s" : ""} unchanged</span>`;
+  if (removed.length > 0) {
+    h += `<span>📁</span><span><strong>${removed.length}</strong> play${removed.length !== 1 ? "s" : ""} only in old playbook (kept)</span>`;
+  }
+  h += "</div>";
+
+  // Reference update counts
+  const totalRefs = refCounts.wristbands + refCounts.scripts + refCounts.callsheet;
+  if (totalRefs > 0) {
+    h += '<div style="border-top:1px solid var(--color-border-light);padding-top:8px;margin-bottom:10px">';
+    h += `<strong>🔗 ${totalRefs} reference${totalRefs !== 1 ? "s" : ""} updated:</strong><br>`;
+    const parts = [];
+    if (refCounts.wristbands) parts.push(`${refCounts.wristbands} in wristbands`);
+    if (refCounts.scripts) parts.push(`${refCounts.scripts} in scripts`);
+    if (refCounts.callsheet) parts.push(`${refCounts.callsheet} in call sheet`);
+    h += "&nbsp;&nbsp;" + parts.join(", ");
+    h += "</div>";
+  }
+
+  // Expandable detail: updated plays
+  if (updated.length > 0) {
+    h += '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Updated plays</summary>';
+    h += '<div style="font-size:0.82rem;margin-top:4px;max-height:200px;overflow-y:auto">';
+    const show = updated.slice(0, 20);
+    for (const u of show) {
+      const p = existingPlays[u.ei];
+      const name = (p.formation || "?") + " " + (p.play || "?");
+      const flds = u.changes.slice(0, 4).map((c) => c.field).join(", ");
+      const more = u.changes.length > 4 ? ", …" : "";
+      h += `<div style="margin-bottom:2px">• <strong>${escapeHtml(name)}</strong> — ${u.changes.length} field${u.changes.length !== 1 ? "s" : ""} <span style="color:var(--color-text-muted)">(${escapeHtml(flds)}${more})</span></div>`;
+    }
+    if (updated.length > 20) h += `<div style="color:var(--color-text-muted)">…and ${updated.length - 20} more</div>`;
+    h += "</div></details>";
+  }
+
+  // Expandable detail: added plays
+  if (added.length > 0) {
+    h += '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">New plays added</summary>';
+    h += '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
+    const show = addedPlays.slice(0, 20);
+    for (const p of show) {
+      h += `<div style="margin-bottom:2px">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
+    }
+    if (added.length > 20) h += `<div style="color:var(--color-text-muted)">…and ${added.length - 20} more</div>`;
+    h += "</div></details>";
+  }
+
+  // Expandable detail: removed / orphaned plays
+  if (removed.length > 0) {
+    h += '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Plays only in old playbook</summary>';
+    h += '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
+    h += '<div style="color:var(--color-text-muted);margin-bottom:4px">These plays were not in the new CSV but have been kept in your playbook.</div>';
+    const show = removedPlays.slice(0, 20);
+    for (const p of show) {
+      h += `<div style="margin-bottom:2px">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
+    }
+    if (removed.length > 20) h += `<div style="color:var(--color-text-muted)">…and ${removed.length - 20} more</div>`;
+    h += "</div></details>";
+  }
+
+  h += "</div>";
+  return h;
+}
+
+// ── File Upload (with Smart Merge support) ──────────────────
+
 function handleFileUpload(event) {
   try {
     const file = event.target.files[0];
@@ -281,7 +636,6 @@ function handleFileUpload(event) {
           return;
         }
 
-        // Show confirmation with sample data
         const sample = parsed
           .slice(0, 3)
           .map(
@@ -289,24 +643,103 @@ function handleFileUpload(event) {
               `• ${escapeHtml(p.formation || "?")} ${escapeHtml(p.play || "?")} (${escapeHtml(p.type || "?")})`,
           )
           .join("<br>");
-        const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
-        const ok = await showConfirm(msg, {
-          title: "Confirm CSV Import",
-          icon: "📋",
-          confirmText: `Import ${parsed.length} Plays`,
-        });
-        if (!ok) return;
 
+        const hasExisting = plays.length > 0;
+
+        if (hasExisting) {
+          // ── Re-import: offer Smart Merge vs Full Replace ──
+          const skipNote =
+            skippedRows.length > 0
+              ? ` <strong>(${skippedRows.length} row${skippedRows.length === 1 ? "" : "s"} skipped)</strong>`
+              : "";
+          const choiceMsg =
+            `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"} in new CSV.${skipNote}<br>` +
+            `Current playbook has <strong>${plays.length}</strong> plays.<br><br>` +
+            `<em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>` +
+            `<strong>🔄 Smart Merge</strong> — Matches plays by name, updates changed fields, adds new plays. ` +
+            `Keeps your wristband, script, and call sheet references in sync.<br><br>` +
+            `<strong>🔁 Full Replace</strong> — Replaces entire playbook. Saved wristbands, scripts, and call sheets keep their old play data.`;
+
+          const choice = await showChoice(choiceMsg, {
+            title: "Import Playbook CSV",
+            icon: "📋",
+            choices: [
+              { label: "Smart Merge", value: "merge", icon: "🔄" },
+              { label: "Full Replace", value: "replace", icon: "🔁" },
+              { label: "Cancel", value: "cancel" },
+            ],
+          });
+          if (choice === "cancel" || !choice) return;
+
+          if (choice === "merge") {
+            // Capture pre-merge playbook for reference matching
+            const preMerge = plays.map((p) => ({ ...p }));
+            const { merged, report } = _smartMerge(preMerge, parsed);
+            const refCounts = _mergeUpdateRefs(preMerge, parsed, report);
+
+            plays = merged;
+            filteredPlays = [...plays];
+            storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+
+            document.getElementById("uploadSection").classList.add("hidden");
+            document.getElementById("mainApp").classList.remove("hidden");
+            initAllModules();
+
+            // Show merge report
+            const reportHtml = _buildMergeReportHtml(report, refCounts, preMerge);
+            await showModal(reportHtml, { title: "Merge Complete", icon: "✅" });
+
+            // Show skipped rows after report is dismissed
+            if (skippedRows.length > 0) {
+              const skipMsg = skippedRows
+                .slice(0, 5)
+                .map((s) => `Row ${s.line}: ${escapeHtml(s.reason)}`)
+                .join("<br>");
+              const extra =
+                skippedRows.length > 5
+                  ? "<br>…and " + (skippedRows.length - 5) + " more"
+                  : "";
+              showModal(
+                skippedRows.length +
+                  " row(s) were skipped:<br><br>" +
+                  skipMsg +
+                  extra,
+                { title: "⚠️ Import Warnings", icon: "⚠️" },
+              );
+            }
+            return;
+          }
+
+          // Full Replace: confirm destructive action
+          const replaceOk = await showConfirm(
+            `This will <strong>replace all ${plays.length} existing plays</strong> with ${parsed.length} new plays from the CSV.<br><br>` +
+              `Saved wristbands, scripts, and call sheets will keep their old play data.<br><br>Continue?`,
+            {
+              title: "⚠️ Full Replace",
+              icon: "⚠️",
+              confirmText: "Replace All",
+              danger: true,
+            },
+          );
+          if (!replaceOk) return;
+        } else {
+          // ── First-time import: simple confirm ──
+          const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
+          const ok = await showConfirm(msg, {
+            title: "Confirm CSV Import",
+            icon: "📋",
+            confirmText: `Import ${parsed.length} Plays`,
+          });
+          if (!ok) return;
+        }
+
+        // Apply (first-time or full replace)
         plays = parsed;
         filteredPlays = [...plays];
-
-        // Store in localStorage
         storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
 
-        // Show main app
         document.getElementById("uploadSection").classList.add("hidden");
         document.getElementById("mainApp").classList.remove("hidden");
-
         initAllModules();
 
         // Show validation report for skipped rows
