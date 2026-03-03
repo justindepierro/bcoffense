@@ -1791,35 +1791,13 @@ document.addEventListener("DOMContentLoaded", () => {
       e.stopPropagation();
     });
     pbBody.addEventListener("dblclick", (e) => {
-      // Inline cell editing on double-click
-      const td = e.target.closest("td");
-      if (td && typeof startInlineEdit === "function") {
-        const row = td.closest("tr");
-        if (row) {
-          const rowIdx = parseInt(row.dataset.idx, 10);
-          const colIdx = Array.from(row.children).indexOf(td);
-          const colMap = [
-            null,
-            "type",
-            "formation",
-            null,
-            "back",
-            "motion",
-            "protection",
-            "play",
-            "basePlay",
-            "tempo",
-          ];
-          const field = colMap[colIdx];
-          if (field) {
-            startInlineEdit(td, rowIdx, field);
-            e.stopPropagation();
-            return;
-          }
-        }
+      const row = e.target.closest("tr[data-idx]");
+      if (!row) return;
+      const rowIdx = parseInt(row.dataset.idx, 10);
+      if (typeof openPlayEditor === "function") {
+        openPlayEditor(rowIdx);
       }
-      const row = e.target.closest("tr[data-dblaction]");
-      if (row) addPlayFromPlaybook(parseInt(row.dataset.idx, 10));
+      e.stopPropagation();
     });
     pbBody.addEventListener(
       "mouseenter",

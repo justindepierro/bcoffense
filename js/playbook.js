@@ -607,7 +607,7 @@ function renderPlaybook() {
         return `
             <tr class="${wbClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
                 data-preview="${idx}"
-                title="Click to select, double-click to add to script">
+                title="Click to select, double-click to edit">
                 <td class="col-install">${installBadge}</td>
                 <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(p.formation, searchTerm)}</td>
@@ -1928,4 +1928,324 @@ function printFilteredPlays() {
       delete document.body.dataset.printMode;
     }, 500);
   }, 100);
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ██  Play Editor  ██
+// ══════════════════════════════════════════════════════════════════
+
+/** Index into master `plays` array of the play being edited, or -1 for new */
+let _editingMasterIdx = -1;
+
+/**
+ * Field definitions for the play editor, grouped into sections.
+ * key = play object property, label = human-readable, type = input type
+ */
+const _EDITOR_SECTIONS = [
+  {
+    title: "Core",
+    fields: [
+      { key: "type", label: "Play Type", type: "select", options: ["Run", "Pass", "RPO", "Screen", "Quick", "Play Action", "Run Option", "Movement"] },
+      { key: "personnel", label: "Personnel" },
+      { key: "formation", label: "Formation" },
+      { key: "play", label: "Play Name" },
+      { key: "basePlay", label: "Base Play" },
+      { key: "oneWord", label: "One Word" },
+    ],
+  },
+  {
+    title: "Tags",
+    fields: [
+      { key: "formTag1", label: "Form Tag 1" },
+      { key: "formTag2", label: "Form Tag 2" },
+      { key: "playTag1", label: "Play Tag 1" },
+      { key: "playTag2", label: "Play Tag 2" },
+    ],
+  },
+  {
+    title: "Blocking & Motion",
+    fields: [
+      { key: "under", label: "Under" },
+      { key: "back", label: "Back" },
+      { key: "shift", label: "Shift" },
+      { key: "motion", label: "Motion" },
+      { key: "protection", label: "Protection" },
+      { key: "lineCall", label: "Line Call" },
+    ],
+  },
+  {
+    title: "Preferences",
+    fields: [
+      { key: "preferredSituation", label: "Situation", type: "select", options: ["", "Short Yardage", "2 Minute", "4 Minute"] },
+      { key: "preferredDown", label: "Down", type: "select", options: ["", "1", "2", "3", "4"] },
+      { key: "preferredDistance", label: "Distance", type: "select", options: ["", "Short", "Medium", "Long"] },
+      { key: "preferredHash", label: "Hash" },
+      { key: "preferredFieldPosition", label: "Field Position", type: "select", options: ["", "Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon"] },
+      { key: "tempo", label: "Tempo" },
+    ],
+  },
+  {
+    title: "Practice Look",
+    fields: [
+      { key: "practiceFront", label: "Front" },
+      { key: "practiceDefense", label: "Defense" },
+      { key: "practiceCoverage", label: "Coverage" },
+      { key: "practiceBlitz", label: "Blitz" },
+      { key: "practiceStunt", label: "Stunt" },
+    ],
+  },
+  {
+    title: "Key Players",
+    fields: [
+      { key: "keyPlayer1", label: "Player 1 Position" },
+      { key: "keyPlayerName1", label: "Player 1 Name" },
+      { key: "keyPlayer2", label: "Player 2 Position" },
+      { key: "keyPlayerName2", label: "Player 2 Name" },
+      { key: "keyPlayer3", label: "Player 3 Position" },
+      { key: "keyPlayerName3", label: "Player 3 Name" },
+    ],
+  },
+  {
+    title: "Constraints & Hit Charts",
+    fields: [
+      { key: "constraint1", label: "Constraint 1" },
+      { key: "constraint2", label: "Constraint 2" },
+      { key: "constraint3", label: "Constraint 3" },
+      { key: "hitChart1", label: "Hit Chart 1" },
+      { key: "hitChart2", label: "Hit Chart 2" },
+      { key: "hitChart3", label: "Hit Chart 3" },
+    ],
+  },
+  {
+    title: "Other",
+    fields: [
+      { key: "deadVs", label: "Dead Vs" },
+      { key: "opponent", label: "Opponent" },
+      { key: "notes", label: "Notes", type: "textarea", wide: true },
+    ],
+  },
+];
+
+/**
+ * Open the play editor for an existing play (by filteredPlays index)
+ */
+function openPlayEditor(filteredIdx) {
+  const play = filteredPlays[filteredIdx];
+  if (!play) return;
+  _editingMasterIdx = plays.indexOf(play);
+  if (_editingMasterIdx < 0) {
+    // Fallback: find by matching fields
+    _editingMasterIdx = plays.findIndex((p) => playsMatch(p, play));
+  }
+  _populateEditorForm(play, false);
+}
+
+/**
+ * Open the play editor for creating a new play
+ */
+function addNewPlay() {
+  if (plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 3000, type: "error" });
+    return;
+  }
+  _editingMasterIdx = -1;
+  const blank = {};
+  _EDITOR_SECTIONS.forEach((s) => s.fields.forEach((f) => (blank[f.key] = "")));
+  _populateEditorForm(blank, true);
+}
+
+/**
+ * Populate the editor form and show the overlay
+ */
+function _populateEditorForm(play, isNew) {
+  const overlay = document.getElementById("playEditorOverlay");
+  const body = document.getElementById("playEditorBody");
+  const title = document.getElementById("playEditorTitle");
+  const icon = document.getElementById("playEditorIcon");
+  const deleteBtn = document.getElementById("playEditorDeleteBtn");
+
+  title.textContent = isNew ? "New Play" : "Edit Play";
+  icon.textContent = isNew ? "➕" : "✏️";
+  deleteBtn.style.display = isNew ? "none" : "";
+
+  let html = "";
+  _EDITOR_SECTIONS.forEach((section) => {
+    html += `<div class="pb-editor-section">`;
+    html += `<div class="pb-editor-section-title">${section.title}</div>`;
+    html += `<div class="pb-editor-grid">`;
+    section.fields.forEach((f) => {
+      const val = play[f.key] || "";
+      const wideClass = f.wide ? " pb-editor-field-wide" : "";
+      html += `<div class="pb-editor-field${wideClass}">`;
+      html += `<label for="pe-${f.key}">${escapeHtml(f.label)}</label>`;
+
+      if (f.type === "select") {
+        html += `<select id="pe-${f.key}" data-field="${f.key}">`;
+        (f.options || []).forEach((opt) => {
+          const sel = opt === val ? " selected" : "";
+          const display = opt === "" ? "—" : opt;
+          html += `<option value="${escapeHtml(opt)}"${sel}>${escapeHtml(display)}</option>`;
+        });
+        html += `</select>`;
+      } else if (f.type === "textarea") {
+        html += `<textarea id="pe-${f.key}" data-field="${f.key}" rows="3">${escapeHtml(val)}</textarea>`;
+      } else {
+        html += `<input type="text" id="pe-${f.key}" data-field="${f.key}" value="${escapeHtml(val)}">`;
+      }
+      html += `</div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  body.innerHTML = html;
+  overlay.classList.add("visible");
+
+  // Focus first input
+  const first = body.querySelector("input, select, textarea");
+  if (first) setTimeout(() => first.focus(), 100);
+}
+
+/**
+ * Save the play editor form
+ */
+function savePlayEditor() {
+  const body = document.getElementById("playEditorBody");
+  const fields = body.querySelectorAll("[data-field]");
+  const data = {};
+  fields.forEach((el) => {
+    data[el.dataset.field] = (el.value || "").trim();
+  });
+
+  // Validate: at minimum need a play name
+  if (!data.play) {
+    showToast("Play name is required", { duration: 3000, type: "error" });
+    const playInput = document.getElementById("pe-play");
+    if (playInput) playInput.focus();
+    return;
+  }
+
+  if (_editingMasterIdx >= 0) {
+    // Update existing play
+    const existing = plays[_editingMasterIdx];
+    Object.keys(data).forEach((k) => (existing[k] = data[k]));
+    showToast("✏️ Play updated", { duration: 2000, type: "success" });
+  } else {
+    // Add new play — build full play object
+    const newPlay = {};
+    _EDITOR_SECTIONS.forEach((s) =>
+      s.fields.forEach((f) => (newPlay[f.key] = data[f.key] || "")),
+    );
+    plays.push(newPlay);
+    showToast("➕ Play added to playbook", { duration: 2000, type: "success" });
+  }
+
+  storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  filteredPlays = [...plays];
+  filterPlays();
+  closePlayEditor();
+}
+
+/**
+ * Delete the play being edited
+ */
+async function deletePlayFromEditor() {
+  if (_editingMasterIdx < 0) return;
+  const play = plays[_editingMasterIdx];
+  const ok = await showConfirm(
+    `Delete <strong>${escapeHtml(play.play || "this play")}</strong> from the playbook?`,
+    { title: "Delete Play", icon: "🗑️", confirmText: "Delete", danger: true },
+  );
+  if (!ok) return;
+
+  plays.splice(_editingMasterIdx, 1);
+  storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  filteredPlays = [...plays];
+  filterPlays();
+  closePlayEditor();
+  showToast("🗑️ Play deleted", { duration: 2000, type: "success" });
+}
+
+/**
+ * Close the play editor overlay
+ */
+function closePlayEditor() {
+  const overlay = document.getElementById("playEditorOverlay");
+  if (overlay) overlay.classList.remove("visible");
+  _editingMasterIdx = -1;
+}
+
+// ══════════════════════════════════════════════════════════════════
+// ██  CSV Export  ██
+// ══════════════════════════════════════════════════════════════════
+
+/**
+ * CSV header names matching the import template order
+ */
+const _CSV_HEADERS = [
+  "PlayType", "Personnel", "Formation", "FormTag1", "FormTag2",
+  "Under", "Back", "Shift", "Motion", "Protection", "LineCall",
+  "Play", "PlayTag1", "PlayTag2", "BasePlay", "OneWord",
+  "PreferredSituation", "PreferredDown", "PreferredDistance",
+  "PreferredHash", "PreferredFieldPosition", "Tempo",
+  "PracticeFront", "PracticeDefense", "PracticeCoverage",
+  "PracticeBlitz", "PracticeStunt",
+  "KeyPlayer1", "KeyPlayer2", "KeyPlayer3",
+  "KeyPlayerName1", "KeyPlayerName2", "KeyPlayerName3",
+  "Constraint1", "Constraint2", "Constraint3",
+  "HitChart1", "HitChart2", "HitChart3",
+  "DeadVs", "Opponent", "Notes",
+];
+
+/**
+ * Matching play object keys in the same order as _CSV_HEADERS
+ */
+const _CSV_KEYS = [
+  "type", "personnel", "formation", "formTag1", "formTag2",
+  "under", "back", "shift", "motion", "protection", "lineCall",
+  "play", "playTag1", "playTag2", "basePlay", "oneWord",
+  "preferredSituation", "preferredDown", "preferredDistance",
+  "preferredHash", "preferredFieldPosition", "tempo",
+  "practiceFront", "practiceDefense", "practiceCoverage",
+  "practiceBlitz", "practiceStunt",
+  "keyPlayer1", "keyPlayer2", "keyPlayer3",
+  "keyPlayerName1", "keyPlayerName2", "keyPlayerName3",
+  "constraint1", "constraint2", "constraint3",
+  "hitChart1", "hitChart2", "hitChart3",
+  "deadVs", "opponent", "notes",
+];
+
+/**
+ * Escape a value for CSV (wrap in quotes if it contains comma, quote, or newline)
+ */
+function _csvEscape(val) {
+  const s = val == null ? "" : String(val);
+  if (s.includes(",") || s.includes('"') || s.includes("\n") || s.includes("\r")) {
+    return '"' + s.replace(/"/g, '""') + '"';
+  }
+  return s;
+}
+
+/**
+ * Export the full playbook as a CSV file
+ */
+function exportPlaybookCSV() {
+  if (!plays || plays.length === 0) {
+    showToast("No plays to export", { duration: 3000, type: "error" });
+    return;
+  }
+
+  const rows = [_CSV_HEADERS.join(",")];
+  plays.forEach((p) => {
+    rows.push(_CSV_KEYS.map((k) => _csvEscape(p[k])).join(","));
+  });
+
+  const csv = rows.join("\n");
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = "playbook_export.csv";
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`📥 Exported ${plays.length} plays to CSV`, { duration: 3000, type: "success" });
 }
