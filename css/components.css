@@ -12,11 +12,13 @@
   align-items: center;
   justify-content: center;
   opacity: 0;
+  pointer-events: none;
   transition: opacity 0.2s ease;
   padding: 20px;
 }
 .custom-modal-overlay.visible {
   opacity: 1;
+  pointer-events: auto;
 }
 .custom-modal-overlay.visible .custom-modal {
   transform: translateY(0) scale(1);

@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v12";
+const CACHE_NAME = "bcoffense-v13";
 
 // Allow the app to trigger a cache refresh
 self.addEventListener("message", (event) => {
