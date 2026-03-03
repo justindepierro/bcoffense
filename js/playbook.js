@@ -1943,6 +1943,36 @@ let _editingFilteredIdx = -1;
  * Field definitions for the play editor, grouped into sections.
  * key = play object property, label = human-readable, type = input type
  */
+/**
+ * Build a sorted, deduplicated option list from actual playbook values
+ * for a given field key, seeded with defaults so the list is never empty.
+ * Always includes "" (blank) as first option.
+ */
+function _editorOptions(key, defaults) {
+  const set = new Set(defaults);
+  if (typeof plays !== "undefined" && Array.isArray(plays)) {
+    plays.forEach((p) => {
+      const v = (p[key] || "").trim();
+      if (v) set.add(v);
+    });
+  }
+  // Sort alphabetically (blank always first)
+  const sorted = [...set].filter(Boolean).sort((a, b) => a.localeCompare(b));
+  return ["", ...sorted];
+}
+
+/** Default seed values for select dropdowns */
+const _TYPE_DEFAULTS = [
+  "Run", "Pass", "RPO", "Screen", "Quick", "Play Action",
+  "Play Pass", "Run Option", "Option", "Movement", "Drop", "Tricks",
+];
+const _SITUATION_DEFAULTS = [
+  "Short Yardage", "2 Minute", "4 Minute", "Red Zone", "Silver", "Bad Weather",
+];
+const _FIELD_POS_DEFAULTS = [
+  "Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon", "Fringe", "Coming Out",
+];
+
 const _EDITOR_SECTIONS = [
   {
     title: "Core",
@@ -1951,16 +1981,7 @@ const _EDITOR_SECTIONS = [
         key: "type",
         label: "Play Type",
         type: "select",
-        options: [
-          "Run",
-          "Pass",
-          "RPO",
-          "Screen",
-          "Quick",
-          "Play Action",
-          "Run Option",
-          "Movement",
-        ],
+        optionsFn: () => _editorOptions("type", _TYPE_DEFAULTS),
       },
       { key: "personnel", label: "Personnel" },
       { key: "formation", label: "Formation" },
@@ -1996,7 +2017,7 @@ const _EDITOR_SECTIONS = [
         key: "preferredSituation",
         label: "Situation",
         type: "select",
-        options: ["", "Short Yardage", "2 Minute", "4 Minute"],
+        optionsFn: () => _editorOptions("preferredSituation", _SITUATION_DEFAULTS),
       },
       {
         key: "preferredDown",
@@ -2015,15 +2036,7 @@ const _EDITOR_SECTIONS = [
         key: "preferredFieldPosition",
         label: "Field Position",
         type: "select",
-        options: [
-          "",
-          "Green",
-          "Lo-RZ",
-          "Hi-RZ",
-          "Goal Line",
-          "Backed Up",
-          "Saigon",
-        ],
+        optionsFn: () => _editorOptions("preferredFieldPosition", _FIELD_POS_DEFAULTS),
       },
       { key: "tempo", label: "Tempo" },
     ],
@@ -2158,8 +2171,14 @@ function _populateEditorForm(play, isNew) {
       html += `<label for="pe-${f.key}">${escapeHtml(f.label)}</label>`;
 
       if (f.type === "select") {
+        const opts = f.optionsFn ? f.optionsFn() : (f.options || []);
+        // If the current value isn't in the list, prepend it
+        const valInList = opts.some((o) => o === val);
         html += `<select id="pe-${f.key}" data-field="${f.key}">`;
-        (f.options || []).forEach((opt) => {
+        if (!valInList && val) {
+          html += `<option value="${escapeHtml(val)}" selected>${escapeHtml(val)}</option>`;
+        }
+        opts.forEach((opt) => {
           const sel = opt === val ? " selected" : "";
           const display = opt === "" ? "—" : opt;
           html += `<option value="${escapeHtml(opt)}"${sel}>${escapeHtml(display)}</option>`;
