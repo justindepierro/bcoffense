@@ -1702,10 +1702,7 @@ function renderPbPrintSort() {
 
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
-           data-drag="pbSortStart" data-idx="${idx}"
-           ondragover="_pbSortDragOver(event)"
-           ondrop="_pbSortDrop(event, ${idx})"
-           data-drag="pbSortEnd">
+           data-drag="pbSort">
         <span class="drag-handle">☰</span>
         <select data-field="pbSortField" data-idx="${idx}">${fieldOpts}</select>
         <button class="sort-dir-btn" data-action="_pbSortToggleDir" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>

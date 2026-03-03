@@ -435,7 +435,7 @@ function renderInstallation() {
           <p class="install-subtitle">Track what you've taught — see what's game-ready</p>
         </div>
         <div class="install-header-right">
-          <button class="btn btn-primary sir-btn" onclick="showSmartInstallReport()" title="Smart Installation Report">🧠 Smart Report</button>
+          <button class="btn btn-primary sir-btn" data-action="showSmartInstallReport" title="Smart Installation Report">🧠 Smart Report</button>
           <div class="install-overall-progress">
             <div class="install-overall-ring" style="--pct:${overallPct}">
               <span class="install-overall-pct">${overallPct}%</span>
@@ -447,15 +447,15 @@ function renderInstallation() {
 
       <!-- Playbook Readiness Summary -->
       <div class="install-readiness">
-        <div class="install-readiness-item install-readiness-max install-readiness-clickable" onclick="showReadinessModal('ready')">
+        <div class="install-readiness-item install-readiness-max install-readiness-clickable" data-action="showReadinessModal" data-arg="ready">
           <div class="install-readiness-val">${fullyInstalled}</div>
           <div class="install-readiness-label">★ Game Ready</div>
         </div>
-        <div class="install-readiness-item install-readiness-partial install-readiness-clickable" onclick="showReadinessModal('partial')">
+        <div class="install-readiness-item install-readiness-partial install-readiness-clickable" data-action="showReadinessModal" data-arg="partial">
           <div class="install-readiness-val">${partiallyInstalled}</div>
           <div class="install-readiness-label">◐ Partial</div>
         </div>
-        <div class="install-readiness-item install-readiness-none install-readiness-clickable" onclick="showReadinessModal('none')">
+        <div class="install-readiness-item install-readiness-none install-readiness-clickable" data-action="showReadinessModal" data-arg="none">
           <div class="install-readiness-val">${notInstalled}</div>
           <div class="install-readiness-label">○ Not Ready</div>
         </div>
@@ -471,7 +471,7 @@ function renderInstallation() {
           .map(
             (cat) => `
           <button class="install-cat-card ${installActiveCategory === cat.id ? "install-cat-active" : ""}"
-                  onclick="installActiveCategory='${cat.id}'; installSearchTerm=''; renderInstallation();">
+                  data-action="selectInstallCategory" data-arg="${cat.id}">
             <div class="install-cat-icon">${cat.icon}</div>
             <div class="install-cat-info">
               <div class="install-cat-name">${cat.label}</div>
@@ -596,18 +596,18 @@ function renderInstallCategoryDetail(components, data) {
         <h3>${cat.icon} ${cat.label} <span class="install-detail-count">${installedCount}/${allItems.length}</span></h3>
         <div class="install-detail-actions">
           <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
-                 value="${installSearchTerm}" oninput="installSearchTerm=this.value; debouncedRenderInstallation();">
+                 value="${installSearchTerm}" data-oninput="installSearch" data-pass="value">
           ${
             cat.id === "play"
               ? `<label class="install-smart-toggle" title="Group play variations by base concept">
                   <input type="checkbox" ${installSmartBasePlays ? "checked" : ""}
-                         onchange="installSmartBasePlays=this.checked; renderInstallation();">
+                         data-onchange="toggleSmartBasePlays">
                   <span>Smart base plays</span>
                  </label>`
               : ""
           }
-          <button class="btn btn-sm btn-success" onclick="installAll('${cat.id}')" title="Mark all as installed">✅ All</button>
-          <button class="btn btn-sm btn-danger" onclick="uninstallAll('${cat.id}')" title="Clear all">✕ Clear</button>
+          <button class="btn btn-sm btn-success" data-action="installAll" data-arg="${cat.id}" title="Mark all as installed">✅ All</button>
+          <button class="btn btn-sm btn-danger" data-action="uninstallAll" data-arg="${cat.id}" title="Clear all">✕ Clear</button>
         </div>
       </div>
       <div class="install-checklist">
@@ -620,11 +620,9 @@ function renderInstallCategoryDetail(components, data) {
             return `
             <label class="install-item ${isInstalled ? "install-item-done" : ""}"
                    draggable="true"
-                   ondragstart="installDragStart(event, '${cat.id}', '${escapeAttr(value)}')"
-                   ondragover="event.preventDefault()"
-                   ondrop="installDragDrop(event, '${cat.id}', '${escapeAttr(value)}')">
+                   data-drag="installItem" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
               <input type="checkbox" ${isInstalled ? "checked" : ""}
-                     onchange="toggleComponentInstalled('${cat.id}', '${escapeAttr(value)}'); renderInstallation();">
+                     data-onchange="installToggleItem" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
               <span class="install-item-check">${isInstalled ? "✅" : "⬜"}</span>
               <span class="install-item-name">${value}</span>
               <span class="install-item-count" title="${count} play${count !== 1 ? "s" : ""} use this">${count} play${count !== 1 ? "s" : ""}</span>
@@ -1108,7 +1106,7 @@ function showSmartInstallReport() {
   // ── Print Button ────────────────────────────────────────────
   html += `
     <div class="sir-print-bar">
-      <button class="btn btn-sm sir-print-btn" onclick="printSmartInstallReport()" title="Print a professional copy of this report">🖨️ Print Report</button>
+      <button class="btn btn-sm sir-print-btn" data-action="printSmartInstallReport" title="Print a professional copy of this report">🖨️ Print Report</button>
     </div>`;
 
   // ── Overview Banner ──────────────────────────────────────────
@@ -1318,7 +1316,7 @@ function showSmartInstallReport() {
   if (report.gameReadySummary.plays.length > 0) {
     html += `
       <div class="sir-section sir-section-collapsed" id="sirGameReadySection">
-        <div class="sir-section-title sir-section-toggle" onclick="this.parentElement.classList.toggle('sir-section-collapsed')">
+        <div class="sir-section-title sir-section-toggle" data-action="toggleSirCollapse">
           ✅ Game Ready Roster <span class="sir-section-hint">${report.gameReadySummary.count} play${report.gameReadySummary.count !== 1 ? "s" : ""} fully installed</span>
           <span class="sir-collapse-icon">▶</span>
         </div>
@@ -1555,3 +1553,71 @@ function printSmartInstallReport() {
     delete document.body.dataset.printMode;
   }, 150);
 }
+
+// ============ Delegation Helper Functions ============
+
+/** Select a category and reset search */
+function selectInstallCategory(catId) {
+  installActiveCategory = catId;
+  installSearchTerm = "";
+  renderInstallation();
+}
+
+/** Handle search input */
+function installSearch(val) {
+  installSearchTerm = val;
+  debouncedRenderInstallation();
+}
+
+/** Toggle smart base plays checkbox */
+function toggleSmartBasePlays() {
+  installSmartBasePlays = !installSmartBasePlays;
+  renderInstallation();
+}
+
+/** Toggle a component's installed state and re-render */
+function installToggleItem() {
+  const cat = this.dataset ? this.dataset.cat : null;
+  const val = this.dataset ? this.dataset.val : null;
+  if (cat && val) {
+    toggleComponentInstalled(cat, val);
+    renderInstallation();
+  }
+}
+
+/** Toggle sir section collapsed state */
+function toggleSirCollapse(el) {
+  const section = el ? el.closest(".sir-section") || el.parentElement : null;
+  if (section) section.classList.toggle("sir-section-collapsed");
+}
+
+// ============ Container-Scoped Delegation ============
+
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("installationContainer");
+  if (!container) return;
+
+  // ── Change delegation for install checkboxes ──
+  container.addEventListener("change", (e) => {
+    const cb = e.target.closest("[data-onchange='installToggleItem']");
+    if (cb) {
+      toggleComponentInstalled(cb.dataset.cat, cb.dataset.val);
+      renderInstallation();
+      return;
+    }
+  });
+
+  // ── Drag delegation for install items ──
+  container.addEventListener("dragstart", (e) => {
+    const el = e.target.closest("[data-drag='installItem']");
+    if (el) installDragStart(e, el.dataset.cat, el.dataset.val);
+  });
+  container.addEventListener("dragover", (e) => {
+    const el = e.target.closest("[data-drag='installItem']");
+    if (el) e.preventDefault();
+  });
+  container.addEventListener("drop", (e) => {
+    const el = e.target.closest("[data-drag='installItem']");
+    if (el) installDragDrop(e, el.dataset.cat, el.dataset.val);
+  });
+});

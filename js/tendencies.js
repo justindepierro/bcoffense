@@ -872,7 +872,7 @@ function renderColumnToggle() {
         (c) => `
       <label class="td-col-toggle-item">
         <input type="checkbox" ${tdVisibleColumns.includes(c.key) ? "checked" : ""}
-               onchange="toggleTdColumn('${c.key}')">
+               data-onchange="toggleTdColumn" data-arg="${c.key}">
         <span>${c.label}</span>
       </label>
     `,
@@ -1028,14 +1028,14 @@ function renderTendenciesHome() {
   const opponentList = tendenciesOpponents
     .map(
       (opp, i) => `
-    <div class="td-opponent-card" onclick="selectTendenciesOpponent(${i})">
+    <div class="td-opponent-card" data-action="selectTendenciesOpponent" data-idx="${i}">
       <div class="td-opponent-card-info">
         <span class="td-opponent-name">${escapeHtml(opp.name)}</span>
         <span class="td-opponent-count">${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}</span>
       </div>
       <div class="td-opponent-card-actions">
-        <button class="btn btn-sm" onclick="event.stopPropagation(); renameTendenciesOpponent(${i})" title="Rename">✏️</button>
-        <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteTendenciesOpponent(${i})" title="Delete">🗑️</button>
+        <button class="btn btn-sm" data-action="renameTendenciesOpponent" data-idx="${i}" title="Rename">✏️</button>
+        <button class="btn btn-sm btn-danger" data-action="deleteTendenciesOpponent" data-idx="${i}" title="Delete">🗑️</button>
       </div>
     </div>
   `,
@@ -1051,7 +1051,7 @@ function renderTendenciesHome() {
       <div class="td-opponent-section">
         <div class="td-section-header">
           <h3>📋 Opponents</h3>
-          <button class="btn btn-primary" onclick="addTendenciesOpponent()">＋ New Opponent</button>
+          <button class="btn btn-primary" data-action="addTendenciesOpponent">＋ New Opponent</button>
         </div>
         ${
           tendenciesOpponents.length === 0
@@ -1064,17 +1064,17 @@ function renderTendenciesHome() {
           ? `<div class="td-export-section">
             <div class="td-section-header"><h3>📤 Export / Import</h3></div>
             <div class="td-export-buttons">
-              <button class="btn btn-secondary" onclick="exportTendenciesCSV()">📄 Export All (CSV)</button>
-              <button class="btn btn-secondary" onclick="exportTendenciesJSON()">💾 Export All (JSON)</button>
-              <button class="btn btn-secondary" onclick="importTendenciesJSON()">📥 Import JSON</button>
-              <button class="btn btn-secondary" onclick="importTendenciesCSV()">📥 Import CSV</button>
+              <button class="btn btn-secondary" data-action="exportTendenciesCSV">📄 Export All (CSV)</button>
+              <button class="btn btn-secondary" data-action="exportTendenciesJSON">💾 Export All (JSON)</button>
+              <button class="btn btn-secondary" data-action="importTendenciesJSON">📥 Import JSON</button>
+              <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>
           </div>`
           : `<div class="td-export-section">
             <div class="td-section-header"><h3>📥 Import</h3></div>
             <div class="td-export-buttons">
-              <button class="btn btn-secondary" onclick="importTendenciesJSON()">📥 Import JSON</button>
-              <button class="btn btn-secondary" onclick="importTendenciesCSV()">📥 Import CSV</button>
+              <button class="btn btn-secondary" data-action="importTendenciesJSON">📥 Import JSON</button>
+              <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>
           </div>`
       }
@@ -1179,15 +1179,15 @@ function renderOpponentDetail() {
   container.innerHTML = `
     <div class="td-detail">
       <div class="td-detail-header">
-        <button class="btn btn-secondary" onclick="tendenciesGoHome()">← Back</button>
+        <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
         <h2>🎯 ${escapeHtml(opp.name)}</h2>
         <div class="td-detail-actions">
-          <button class="btn" id="tendenciesUndoBtn" onclick="undoTendencies()" disabled title="Nothing to undo">↩️</button>
-          <button class="btn" id="tendenciesRedoBtn" onclick="redoTendencies()" disabled title="Nothing to redo">↪️</button>
-          <button class="btn btn-primary td-new-play-btn" onclick="startNewPlay()">＋ New Play</button>
-          <button class="btn btn-secondary" onclick="exportSingleOpponentCSV(${tendenciesCurrentOpponent})">📄 CSV</button>
-          <button class="btn btn-secondary" onclick="printTendencies()">🖨️ Print</button>
-          <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "btn-success" : "btn-danger"}" onclick="setAsActiveOpponent(${tendenciesCurrentOpponent})" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active Opponent" : "🏈 Set Active"}</button>
+          <button class="btn" id="tendenciesUndoBtn" data-action="undoTendencies" disabled title="Nothing to undo">↩️</button>
+          <button class="btn" id="tendenciesRedoBtn" data-action="redoTendencies" disabled title="Nothing to redo">↪️</button>
+          <button class="btn btn-primary td-new-play-btn" data-action="startNewPlay">＋ New Play</button>
+          <button class="btn btn-secondary" data-action="exportSingleOpponentCSV" data-idx="${tendenciesCurrentOpponent}">📄 CSV</button>
+          <button class="btn btn-secondary" data-action="printTendencies">🖨️ Print</button>
+          <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "btn-success" : "btn-danger"}" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active Opponent" : "🏈 Set Active"}</button>
         </div>
       </div>
 
@@ -1211,22 +1211,22 @@ function renderOpponentDetail() {
         <div class="td-toolbar-left">
           <div class="td-search-box">
             <input type="text" class="td-search-input" id="tdSearchInput" placeholder="🔍 Search plays…"
-                   value="${escapeHtml(tdSearchText)}" oninput="setTdSearch(this.value)">
-            ${tdSearchText ? "<button class=\"td-search-clear\" onclick=\"setTdSearch(''); document.getElementById('tdSearchInput').value=''\">✕</button>" : ""}
+                   value="${escapeHtml(tdSearchText)}" data-oninput="setTdSearch" data-pass="value">
+            ${tdSearchText ? '<button class="td-search-clear" data-action="clearTdSearch">✕</button>' : ""}
           </div>
-          <button class="btn btn-sm ${tdShowFilters ? "btn-primary" : ""}" onclick="toggleTdFilters()">
+          <button class="btn btn-sm ${tdShowFilters ? "btn-primary" : ""}" data-action="toggleTdFilters">
             🔽 Filters${activeFilters > 0 ? ` <span class="td-filter-badge">${activeFilters}</span>` : ""}
           </button>
-          <button class="btn btn-sm ${tdShowStats ? "btn-primary" : ""}" onclick="toggleTdStats()">📊 Stats</button>
+          <button class="btn btn-sm ${tdShowStats ? "btn-primary" : ""}" data-action="toggleTdStats">📊 Stats</button>
           ${
             !tdBulkMode
-              ? `<button class="btn btn-sm" onclick="enterBulkMode()">☑️ Select</button>`
-              : `<button class="btn btn-sm btn-primary" onclick="exitBulkMode()">✕ Exit Select</button>`
+              ? '<button class="btn btn-sm" data-action="enterBulkMode">☑️ Select</button>'
+              : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
           }
         </div>
         <div class="td-toolbar-right">
-          <button class="btn btn-sm" onclick="toggleColumnPanel()" title="Column visibility">👁️ Columns</button>
-          <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" onclick="toggleRapidMode()" title="Toggle rapid chart mode">⚡ ${tendenciesRapidMode ? "Wizard" : "Rapid"}</button>
+          <button class="btn btn-sm" data-action="toggleColumnPanel" title="Column visibility">👁️ Columns</button>
+          <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" data-action="toggleRapidMode" title="Toggle rapid chart mode">⚡ ${tendenciesRapidMode ? "Wizard" : "Rapid"}</button>
           <span class="td-play-count">${filtered.length === totalPlays ? `${totalPlays} plays` : `${filtered.length} of ${totalPlays}`}</span>
         </div>
       </div>
@@ -1246,10 +1246,10 @@ function renderOpponentDetail() {
           ? `
         <div class="td-bulk-bar">
           <span class="td-bulk-count">${tdSelectedPlays.size} selected</span>
-          <button class="btn btn-sm" onclick="selectAllVisible()">Select All Visible</button>
-          <button class="btn btn-sm" onclick="deselectAllBulk()">Deselect All</button>
-          <button class="btn btn-sm" onclick="bulkEditField()">✏️ Bulk Edit Field</button>
-          <button class="btn btn-sm btn-danger" onclick="bulkDeletePlays()">🗑️ Delete Selected</button>
+          <button class="btn btn-sm" data-action="selectAllVisible">Select All Visible</button>
+          <button class="btn btn-sm" data-action="deselectAllBulk">Deselect All</button>
+          <button class="btn btn-sm" data-action="bulkEditField">✏️ Bulk Edit Field</button>
+          <button class="btn btn-sm btn-danger" data-action="bulkDeletePlays">🗑️ Delete Selected</button>
         </div>
       `
           : ""
@@ -1290,7 +1290,7 @@ function renderPlayLogTable(filtered) {
   if (filtered.length === 0) {
     const opp = tendenciesOpponents[tendenciesCurrentOpponent];
     if (opp && opp.plays.length > 0) {
-      return '<div class="td-empty-state"><span class="td-empty-icon">🔍</span><p>No plays match your filters. <a href="#" onclick="clearTdFilters(); return false;">Clear filters</a></p></div>';
+      return '<div class="td-empty-state"><span class="td-empty-icon">🔍</span><p>No plays match your filters. <button class="btn-link" data-action="clearTdFilters">Clear filters</button></p></div>';
     }
     return '<div class="td-empty-state"><span class="td-empty-icon">📹</span><p>No plays charted yet. Hit <strong>＋ New Play</strong> or press <strong>N</strong> to start!</p></div>';
   }
@@ -1304,7 +1304,7 @@ function renderPlayLogTable(filtered) {
       if (!c.sortable) return `<th>${c.label}</th>`;
       const isActive = tdSortColumn === c.key;
       const arrow = isActive ? (tdSortDirection === "asc" ? " ▲" : " ▼") : "";
-      return `<th class="td-sortable-th ${isActive ? "td-sorted" : ""}" onclick="sortTdColumn('${c.key}')">${c.label}${arrow}</th>`;
+      return `<th class="td-sortable-th ${isActive ? "td-sorted" : ""}" data-action="sortTdColumn" data-arg="${c.key}">${c.label}${arrow}</th>`;
     })
     .join("");
 
@@ -1316,21 +1316,16 @@ function renderPlayLogTable(filtered) {
         .join("");
       return `<tr class="${isSelected ? "td-row-bulk-selected" : ""} ${i === tdSelectedRow ? "td-row-selected" : ""}"
                 draggable="${!tdBulkMode}"
-                ondragstart="tdDragStart(event, ${play._origIndex})"
-                ondragover="tdDragOver(event, ${play._origIndex})"
-                ondrop="tdDrop(event, ${play._origIndex})"
-                ondragend="tdDragEnd(event)"
                 data-orig="${play._origIndex}"
-                onmouseenter="showPlayTooltip(event, ${play._origIndex})"
-                onmouseleave="hidePlayTooltip()">
-              ${tdBulkMode ? `<td><input type="checkbox" ${isSelected ? "checked" : ""} onchange="tdToggleBulkSelect(${play._origIndex})"></td>` : ""}${cells}
+                data-drag="tdPlayRow">
+              ${tdBulkMode ? `<td><input type="checkbox" ${isSelected ? "checked" : ""} data-onchange="tdToggleBulkSelect" data-arg="${play._origIndex}"></td>` : ""}${cells}
             </tr>`;
     })
     .join("");
 
   return `<div class="td-table-container">
     <table class="td-table">
-      <thead><tr>${tdBulkMode ? '<th><input type="checkbox" onchange="this.checked ? selectAllVisible() : deselectAllBulk()" title="Select all"></th>' : ""}${headerCells}</tr></thead>
+      <thead><tr>${tdBulkMode ? '<th><input type="checkbox" data-onchange="tdSelectAllToggle" title="Select all"></th>' : ""}${headerCells}</tr></thead>
       <tbody>${rows}</tbody>
     </table>
   </div>`;
@@ -1360,9 +1355,9 @@ function renderCellValue(col, play, idx) {
           tdBulkMode
             ? ""
             : `
-          <button class="btn btn-sm" onclick="event.stopPropagation(); editTendenciesPlay(${play._origIndex})" title="Edit">✏️</button>
-          <button class="btn btn-sm" onclick="event.stopPropagation(); duplicateTendenciesPlay(${play._origIndex})" title="Duplicate">⧉</button>
-          <button class="btn btn-sm btn-danger" onclick="event.stopPropagation(); deleteTendenciesPlay(${play._origIndex})" title="Delete">✕</button>
+          <button class="btn btn-sm" data-action="editTendenciesPlay" data-idx="${play._origIndex}" title="Edit">✏️</button>
+          <button class="btn btn-sm" data-action="duplicateTendenciesPlay" data-idx="${play._origIndex}" title="Duplicate">⧉</button>
+          <button class="btn btn-sm btn-danger" data-action="deleteTendenciesPlay" data-idx="${play._origIndex}" title="Delete">✕</button>
         `
         }
       </td>`;
@@ -1390,7 +1385,7 @@ function renderFilterPanel(opp) {
         if (count === 0) return "";
         const active = activeVals.includes(v);
         return `<button class="td-filter-chip ${active ? "active" : ""}"
-                onclick="toggleTdFilter('${f.key}', '${v.replace(/'/g, "\\'")}')">${escapeHtml(v)} <span class="td-chip-count">${count}</span></button>`;
+                data-action="toggleTdFilter" data-key="${f.key}" data-val="${escapeHtml(v)}">${escapeHtml(v)} <span class="td-chip-count">${count}</span></button>`;
       })
       .filter(Boolean)
       .join("");
@@ -1407,7 +1402,7 @@ function renderFilterPanel(opp) {
   return `<div class="td-filter-panel">
     <div class="td-filter-panel-header">
       <span>🔽 Filters</span>
-      ${activeFilterCount() > 0 ? `<button class="btn btn-sm" onclick="clearTdFilters()">Clear All</button>` : ""}
+      ${activeFilterCount() > 0 ? `<button class="btn btn-sm" data-action="clearTdFilters">Clear All</button>` : ""}
     </div>
     ${sections}
   </div>`;
@@ -1752,14 +1747,14 @@ function renderRapidChart() {
   container.innerHTML = `
     <div class="td-rapid">
       <div class="td-wizard-top">
-        <button class="btn btn-secondary" onclick="cancelWizard()">✕ Cancel</button>
+        <button class="btn btn-secondary" data-action="cancelWizard">✕ Cancel</button>
         <h3>⚡ ${isEditing ? "Edit" : "Rapid Chart"} — All Fields</h3>
         <div></div>
       </div>
       <div class="td-rapid-body">${fieldsHtml}</div>
       <div class="td-wizard-nav">
         <div></div>
-        <button class="btn btn-primary td-nav-btn td-save-btn" onclick="saveWizardPlay()">💾 Save Play</button>
+        <button class="btn btn-primary td-nav-btn td-save-btn" data-action="saveWizardPlay">💾 Save Play</button>
       </div>
     </div>
   `;
@@ -1827,7 +1822,7 @@ function renderWizard() {
   const stepDots = TENDENCIES_STEPS.map(
     (s, i) => `
     <div class="td-step-dot ${i === tendenciesWizardStep ? "active" : ""} ${i < tendenciesWizardStep ? "completed" : ""}"
-         onclick="goToWizardStep(${i})" title="${s.title}"
+         data-action="goToWizardStep" data-idx="${i}" title="${s.title}"
          ${i === tendenciesWizardStep ? 'aria-current="step"' : ""}>
       <span class="td-step-icon">${s.icon}</span>
       <span class="td-step-label">${s.title.replace(/^[^\s]+\s/, "")}</span>
@@ -1842,10 +1837,10 @@ function renderWizard() {
   container.innerHTML = `
     <div class="td-wizard">
       <div class="td-wizard-top">
-        <button class="btn btn-secondary" onclick="cancelWizard()">✕ Cancel</button>
+        <button class="btn btn-secondary" data-action="cancelWizard">✕ Cancel</button>
         <h3>${isEditing ? "Edit" : "New"} Play — Step ${tendenciesWizardStep + 1} of ${totalSteps}</h3>
         <div class="td-wizard-skip">
-          <button class="btn btn-sm" onclick="skipStep()">Skip →</button>
+          <button class="btn btn-sm" data-action="skipStep">Skip →</button>
         </div>
       </div>
       <div class="td-step-indicator" role="list" aria-label="Wizard steps">${stepDots}</div>
@@ -1857,11 +1852,11 @@ function renderWizard() {
         <div class="td-fields">${fieldsHtml}</div>
       </div>
       <div class="td-wizard-nav">
-        ${!isFirst ? '<button class="btn btn-secondary td-nav-btn" onclick="wizardPrev()">← Back</button>' : "<div></div>"}
+        ${!isFirst ? '<button class="btn btn-secondary td-nav-btn" data-action="wizardPrev">← Back</button>' : "<div></div>"}
         ${
           isLast
-            ? '<button class="btn btn-primary td-nav-btn td-save-btn" onclick="saveWizardPlay()">💾 Save Play</button>'
-            : '<button class="btn btn-primary td-nav-btn" onclick="wizardNext()">Next →</button>'
+            ? '<button class="btn btn-primary td-nav-btn td-save-btn" data-action="saveWizardPlay">💾 Save Play</button>'
+            : '<button class="btn btn-primary td-nav-btn" data-action="wizardNext">Next →</button>'
         }
       </div>
     </div>
@@ -1878,7 +1873,7 @@ function renderFieldHtml(field, mode) {
       <div class="td-field-group">
         <label class="td-field-label">${field.label}</label>
         <textarea class="td-textarea" id="text_${field.key}" placeholder="${field.placeholder || ""}"
-                  oninput="setWizardFieldDirect('${field.key}', this.value)">${currentValue}</textarea>
+                  data-oninput="setWizardFieldDirect" data-key="${field.key}" data-pass="value">${currentValue}</textarea>
       </div>
     `;
   }
@@ -1890,7 +1885,7 @@ function renderFieldHtml(field, mode) {
         (opt, btnIdx) => `
       <button class="td-option-btn ${currentValue === opt ? "selected" : ""}"
               ${btnIdx < 9 ? 'data-key-hint="' + (btnIdx + 1) + '"' : ""}
-              onclick="setWizardField('${field.key}', '${opt.replace(/'/g, "\\'").replace(/"/g, "&quot;")}', this)">
+              data-action="setWizardField" data-key="${field.key}" data-val="${escapeHtml(opt)}">
         ${escapeHtml(opt)}
       </button>
     `,
@@ -1903,10 +1898,10 @@ function renderFieldHtml(field, mode) {
         <div class="td-field-custom">
           <input type="text" class="td-custom-input" id="custom_${field.key}"
                  placeholder="Or type custom…" value="${currentValue && !opts.includes(currentValue) ? currentValue : ""}"
-                 onkeydown="if(event.key==='Enter'){setWizardFieldFromInput('${field.key}')}"
-                 oninput="clearButtonSelection('${field.key}')">
-          <button class="btn btn-sm" onclick="setWizardFieldFromInput('${field.key}')">Set</button>
-          ${currentValue ? `<button class="btn btn-sm td-clear-btn" onclick="clearWizardField('${field.key}')">✕</button>` : ""}
+                 data-oninput="clearButtonSelection" data-arg="${field.key}"
+                 data-wizard-key="${field.key}">
+          <button class="btn btn-sm" data-action="setWizardFieldFromInput" data-arg="${field.key}">Set</button>
+          ${currentValue ? `<button class="btn btn-sm td-clear-btn" data-action="clearWizardField" data-arg="${field.key}">✕</button>` : ""}
         </div>
       </div>
     `;
@@ -1918,8 +1913,7 @@ function renderFieldHtml(field, mode) {
       <label class="td-field-label">${field.label}</label>
       <input type="text" class="td-text-input" id="text_${field.key}"
              placeholder="${field.placeholder || ""}" value="${currentValue}"
-             oninput="setWizardFieldDirect('${field.key}', this.value)"
-             onkeydown="if(event.key==='Enter'){${mode === "wizard" ? "wizardNext()" : ""}}">
+             data-oninput="setWizardFieldDirect" data-key="${field.key}" data-pass="value">
     </div>
   `;
 }
@@ -2367,6 +2361,77 @@ function downloadFile(content, filename, mimeType) {
 }
 
 // ============ Game Week Integration ============
+
+// ============ Delegation Helper Functions ============
+
+/** Clear the search text and re-render */
+function clearTdSearch() {
+  tdSearchText = "";
+  renderOpponentDetail();
+}
+
+/** Select-all checkbox toggle (called with no args from data-onchange) */
+function tdSelectAllToggle() {
+  const cb = document.querySelector(".td-table thead input[type='checkbox']");
+  if (cb && cb.checked) selectAllVisible();
+  else deselectAllBulk();
+}
+
+// ============ Container-Scoped Delegation ============
+
+document.addEventListener("DOMContentLoaded", () => {
+  const container = document.getElementById("tendenciesContent");
+  if (!container) return;
+
+  // ── Drag delegation for play log rows ──
+  container.addEventListener("dragstart", (e) => {
+    const row = e.target.closest("tr[data-drag='tdPlayRow']");
+    if (row) tdDragStart(e, parseInt(row.dataset.orig, 10));
+  });
+  container.addEventListener("dragover", (e) => {
+    const row = e.target.closest("tr[data-drag='tdPlayRow']");
+    if (row) tdDragOver(e, parseInt(row.dataset.orig, 10));
+  });
+  container.addEventListener("drop", (e) => {
+    const row = e.target.closest("tr[data-drag='tdPlayRow']");
+    if (row) tdDrop(e, parseInt(row.dataset.orig, 10));
+  });
+  container.addEventListener("dragend", (e) => {
+    const row = e.target.closest("tr[data-drag='tdPlayRow']");
+    if (row) tdDragEnd(e);
+  });
+
+  // ── Mouse delegation for play tooltips ──
+  container.addEventListener("mouseenter", (e) => {
+    const row = e.target.closest("tr[data-orig]");
+    if (row && typeof showPlayTooltip === "function") {
+      showPlayTooltip(e, parseInt(row.dataset.orig, 10));
+    }
+  }, true);
+  container.addEventListener("mouseleave", (e) => {
+    const row = e.target.closest("tr[data-orig]");
+    if (row && typeof hidePlayTooltip === "function") {
+      hidePlayTooltip();
+    }
+  }, true);
+
+  // ── Keydown delegation for wizard inputs ──
+  container.addEventListener("keydown", (e) => {
+    if (e.key !== "Enter") return;
+    // Custom input → set the field value
+    const customInput = e.target.closest(".td-custom-input");
+    if (customInput && customInput.dataset.wizardKey) {
+      setWizardFieldFromInput(customInput.dataset.wizardKey);
+      return;
+    }
+    // Text input → advance wizard
+    const textInput = e.target.closest(".td-text-input");
+    if (textInput) {
+      wizardNext();
+      return;
+    }
+  });
+});
 
 /**
  * Check if a given opponent index is the active game week opponent

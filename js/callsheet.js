@@ -1,5 +1,8 @@
 // Call Sheet functionality
 
+// Module-scoped picker state (avoids JSON.stringify in onclick for XSS safety)
+let _csPickerFiltered = [];
+
 // Centralized category color palette (mirrors CSS --cat-* tokens)
 const CS_COLORS = {
   red: "#dc3545",
@@ -1060,25 +1063,22 @@ function renderCategory(cat, data, dupeMap) {
   }
   const sortBtn =
     playCount > 1
-      ? `<span class="cs-sort-btn" title="Sort plays" onclick="event.stopPropagation(); openCsSortModal('${cat.id}')">⇅</span>`
+      ? `<span class="cs-sort-btn" title="Sort plays" data-action="openCsSortModal" data-arg="${cat.id}">⇅</span>`
       : "";
   const collapseIcon = isCollapsed ? "▶" : "▼";
 
   let html = `
     <div class="callsheet-category${isCollapsed ? " cs-collapsed" : ""}" data-category="${cat.id}"
          draggable="true"
-         ondragstart="handleCatDragStart(event, '${cat.id}')"
-         ondragover="handleCatDragOver(event)"
-         ondrop="handleCatDrop(event, '${cat.id}')"
-         ondragend="handleCatDragEnd(event)">
+         data-drag="catDrag" data-cat="${cat.id}">
       <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};">
-        <span class="cs-collapse-btn" onclick="toggleCategoryCollapse('${cat.id}')" title="Collapse/Expand">${collapseIcon}</span>
-        <span class="header-text" ondblclick="editCategoryName('${cat.id}')">${escapeHtml(displayName)}</span>
+        <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand">${collapseIcon}</span>
+        <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
         ${countDisplay}
         ${sortBtn}
         ${isPlayerSpecific ? '<span class="edit-hint" title="Double-click to rename">✏️</span>' : ""}
-        <span class="cs-cat-menu-btn" onclick="event.stopPropagation(); openCategoryMenu(event, '${cat.id}')" title="Category options">⋯</span>
-        ${csScoutingOverlayOn ? `<button class="cs-suggest-btn" onclick="event.stopPropagation(); openSmartSuggestionsModal('${cat.id}')" title="Smart play suggestions">💡</button>` : ""}
+        <span class="cs-cat-menu-btn" data-action="openCategoryMenu" data-arg="${cat.id}" title="Category options">⋯</span>
+        ${csScoutingOverlayOn ? `<button class="cs-suggest-btn" data-action="openSmartSuggestionsModal" data-arg="${cat.id}" title="Smart play suggestions">💡</button>` : ""}
       </div>`;
 
   // Scouting intel badge (below header, above plays)
@@ -1090,7 +1090,7 @@ function renderCategory(cat, data, dupeMap) {
     // Category note (if any)
     const note = csNotes[cat.id];
     if (note) {
-      html += `<div class="cs-cat-note" ondblclick="editCategoryNote('${cat.id}')">${escapeHtml(note)}</div>`;
+      html += `<div class="cs-cat-note" data-dblaction="editCategoryNote" data-cat="${cat.id}">${escapeHtml(note)}</div>`;
     }
 
     html += `
@@ -1099,7 +1099,7 @@ function renderCategory(cat, data, dupeMap) {
         <div class="hash-header">Right Hash</div>
       </div>
       <div class="category-content">
-        <div class="hash-column left" ondragover="handleCallSheetDragOver(event)" ondrop="handleCallSheetDrop(event, '${cat.id}', 'left')">`;
+        <div class="hash-column left" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="left">`;
 
     leftPlays.forEach((play, idx) => {
       html += renderCallSheetPlay(play, cat.id, "left", idx, dupeMap);
@@ -1107,11 +1107,11 @@ function renderCategory(cat, data, dupeMap) {
     if (leftPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
     }
-    html += `<div class="callsheet-dropzone" onclick="openCallSheetPlayPicker('${cat.id}', 'left')">+ Add</div>`;
+    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="left">+ Add</div>`;
 
     html += `
         </div>
-        <div class="hash-column right" ondragover="handleCallSheetDragOver(event)" ondrop="handleCallSheetDrop(event, '${cat.id}', 'right')">`;
+        <div class="hash-column right" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="right">`;
 
     rightPlays.forEach((play, idx) => {
       html += renderCallSheetPlay(play, cat.id, "right", idx, dupeMap);
@@ -1119,7 +1119,7 @@ function renderCategory(cat, data, dupeMap) {
     if (rightPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
     }
-    html += `<div class="callsheet-dropzone" onclick="openCallSheetPlayPicker('${cat.id}', 'right')">+ Add</div>`;
+    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="right">+ Add</div>`;
 
     html += `
         </div>
@@ -1313,7 +1313,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
   // Hash swap arrow
   const otherHash = hash === "left" ? "right" : "left";
   const swapArrow = hash === "left" ? "→" : "←";
-  const swapBtn = `<button class="cs-hash-swap" onclick="event.stopPropagation(); swapPlayHash('${categoryId}', '${hash}', ${index})" title="Move to ${otherHash} hash">${swapArrow}</button>`;
+  const swapBtn = `<button class="cs-hash-swap" data-action="swapPlayHash" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" title="Move to ${otherHash} hash">${swapArrow}</button>`;
 
   // Dead-vs warning badge (scouting overlay)
   const deadVsBadgeHtml = buildDeadVsBadge(play, categoryId);
@@ -1321,9 +1321,6 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
   return `
     <div class="callsheet-play ${highlightClass} ${tempoClass}${deadVsBadgeHtml ? " cs-play-has-warning" : ""}" draggable="true"
          style="${cellStyleStr}"
-         ondragstart="handleCallSheetDragStart(event, '${categoryId}', '${hash}', ${index})"
-         ondblclick="togglePlayHighlight('${categoryId}', '${hash}', ${index})"
-         oncontextmenu="showPlayContextMenu(event, '${categoryId}', '${hash}', ${index})"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
       ${personnelHtml}
       <span class="play-text">${playText.trim()}</span>
@@ -1332,7 +1329,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
       ${dupeBadge}
       ${deadVsBadgeHtml}
       ${swapBtn}
-      <button class="remove-play" onclick="event.stopPropagation(); removeCallSheetPlay('${categoryId}', '${hash}', ${index})" aria-label="Remove play">×</button>
+      <button class="remove-play" data-action="removeCallSheetPlay" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" aria-label="Remove play">×</button>
     </div>
   `;
 }
@@ -1845,9 +1842,12 @@ function populateCallSheetPlayList() {
 
   // --- Render play list ---
   const container = document.getElementById("callSheetPlayList");
+  // Store filtered plays at module scope for safe delegation lookup
+  _csPickerFiltered = filtered;
+
   container.innerHTML = filtered
     .slice(0, 150)
-    .map((p) => {
+    .map((p, i) => {
       const code = getPersonnelCode(p.personnel);
       const bgColor = getPersonnelBgColor(p.personnel);
       const textColor = getPersonnelTextColor(p.personnel);
@@ -1873,7 +1873,7 @@ function populateCallSheetPlayList() {
           : "";
 
       return `
-      <div class="picker-play" onclick="addCallSheetPlayFromPicker(${JSON.stringify(p).replace(/"/g, "&quot;")})">
+      <div class="picker-play" data-action="csPickerAddPlay" data-idx="${i}">
         ${wristbandNum}
         <span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>
         <span class="cs-picker-play-text">${escapeHtml(p.formation || "")} ${escapeHtml(p.protection || "")} <strong>${escapeHtml(p.play || "")}</strong></span>
@@ -2021,7 +2021,7 @@ function updateLoadedWristbandDisplay() {
     if (callSheetSettings.loadedWristbandName) {
       display.innerHTML = `<span class="cs-loaded-wb-badge">
         📋 ${escapeHtml(callSheetSettings.loadedWristbandName)} (${callSheetSettings.loadedWristbandPlays.length} plays)
-        <button class="cs-loaded-wb-clear" onclick="clearLoadedWristband()" aria-label="Clear loaded wristband">×</button>
+        <button class="cs-loaded-wb-clear" data-action="clearLoadedWristband" aria-label="Clear loaded wristband">×</button>
       </span>`;
     } else {
       display.innerHTML =
@@ -2694,7 +2694,7 @@ function manageDisplayPresets() {
       const date = new Date(p.savedAt).toLocaleDateString();
       return `<div class="cs-template-item">
       <div class="cs-template-info"><strong>${escapeHtml(p.name)}</strong><span class="cs-template-date">${date}</span></div>
-      <button class="btn btn-sm btn-danger" onclick="deleteDisplayPreset(${idx})">✕</button>
+      <button class="btn btn-sm btn-danger" data-action="deleteDisplayPreset" data-idx="${idx}">✕</button>
     </div>`;
     })
     .join("");
@@ -2703,14 +2703,14 @@ function manageDisplayPresets() {
   overlay.id = "csManagePresetsOverlay";
   overlay.className = "cs-sort-overlay";
   overlay.innerHTML = `
-    <div class="cs-sort-modal" onclick="event.stopPropagation()" style="max-width: 400px;">
+    <div class="cs-sort-modal" style="max-width: 400px;">
       <div class="cs-sort-header">
         <h3>🗑️ Manage Display Presets</h3>
-        <button class="cs-sort-close" onclick="document.getElementById('csManagePresetsOverlay').remove()">&times;</button>
+        <button class="cs-sort-close" data-action="closeCsManagePresets">&times;</button>
       </div>
       <div class="cs-sort-body"><div class="cs-template-list">${listHtml}</div></div>
       <div class="cs-sort-actions">
-        <button class="btn btn-sm" onclick="document.getElementById('csManagePresetsOverlay').remove()">Close</button>
+        <button class="btn btn-sm" data-action="closeCsManagePresets">Close</button>
       </div>
     </div>
   `;
@@ -3118,17 +3118,17 @@ function openCategoryMenu(event, categoryId) {
   const hasTarget = csTargets[categoryId];
 
   menu.innerHTML = `
-    <button class="cs-ctx-item" onclick="editCategoryNote('${categoryId}'); this.closest('.cs-context-menu').remove();">
+    <button class="cs-ctx-item" data-action="editCategoryNote" data-arg="${categoryId}" data-ctx-close="true">
       ${hasNote ? "✏️ Edit Note" : "📝 Add Note"}
     </button>
-    <button class="cs-ctx-item" onclick="setCategoryTarget('${categoryId}'); this.closest('.cs-context-menu').remove();">
+    <button class="cs-ctx-item" data-action="setCategoryTarget" data-arg="${categoryId}" data-ctx-close="true">
       ${hasTarget ? "🎯 Edit Target (" + hasTarget + ")" : "🎯 Set Target Count"}
     </button>
-    <button class="cs-ctx-item" onclick="editCategoryName('${categoryId}'); this.closest('.cs-context-menu').remove();">
+    <button class="cs-ctx-item" data-action="editCategoryName" data-arg="${categoryId}" data-ctx-close="true">
       ✏️ Rename
     </button>
     <div class="cs-ctx-divider"></div>
-    <button class="cs-ctx-item" onclick="clearCategory('${categoryId}'); this.closest('.cs-context-menu').remove();">
+    <button class="cs-ctx-item" data-action="clearCategory" data-arg="${categoryId}" data-ctx-close="true">
       🗑️ Clear Category
     </button>
   `;
@@ -3341,44 +3341,42 @@ function openTemplatesModal() {
             <span class="cs-template-date">${date} · ${t.playCount || 0} plays</span>
           </div>
           <div class="cs-template-actions">
-            <button class="btn btn-sm btn-primary" onclick="loadTemplate(${idx})">Load</button>
-            <button class="btn btn-sm btn-danger" onclick="deleteTemplate(${idx})">✕</button>
+            <button class="btn btn-sm btn-primary" data-action="loadTemplate" data-idx="${idx}">Load</button>
+            <button class="btn btn-sm btn-danger" data-action="deleteTemplate" data-idx="${idx}">✕</button>
           </div>
         </div>`;
           })
           .join("");
 
   const modalHtml = `
-    <div id="csTemplateOverlay" class="cs-sort-overlay" onclick="closeTemplateModal(event)">
-      <div class="cs-sort-modal" onclick="event.stopPropagation()" style="max-width: 500px;">
+    <div id="csTemplateOverlay" class="cs-sort-overlay">
+      <div class="cs-sort-modal" style="max-width: 500px;">
         <div class="cs-sort-header">
           <h3>📁 Game Plan Templates</h3>
-          <button class="cs-sort-close" onclick="closeTemplateModal()">&times;</button>
+          <button class="cs-sort-close" data-action="closeTemplateModal">&times;</button>
         </div>
         <div class="cs-sort-body">
           <div class="cs-template-save-row">
             <input type="text" id="csTemplateName" class="cs-template-name-input" placeholder="Template name (e.g. vs. 4-3 Team)">
-            <button class="btn btn-sm btn-primary" onclick="saveTemplate()">💾 Save Current</button>
+            <button class="btn btn-sm btn-primary" data-action="saveTemplate">💾 Save Current</button>
           </div>
           <div class="cs-template-list">${listHtml}</div>
         </div>
         <div class="cs-sort-actions">
-          <button class="btn btn-sm" onclick="closeTemplateModal()">Close</button>
+          <button class="btn btn-sm" data-action="closeTemplateModal">Close</button>
         </div>
       </div>
     </div>
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+  // backdrop close
+  document.getElementById("csTemplateOverlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "csTemplateOverlay") closeTemplateModal();
+  });
 }
 
-function closeTemplateModal(event) {
-  if (
-    event &&
-    event.target.id !== "csTemplateOverlay" &&
-    !event.target.closest(".cs-sort-close")
-  )
-    return;
+function closeTemplateModal() {
   const overlay = document.getElementById("csTemplateOverlay");
   if (overlay) overlay.remove();
 }
@@ -3673,11 +3671,11 @@ function openCsSortModal(categoryId) {
   }
 
   const modalHtml = `
-    <div id="csSortOverlay" class="cs-sort-overlay" onclick="closeCsSortModal(event)">
-      <div class="cs-sort-modal" onclick="event.stopPropagation()">
+    <div id="csSortOverlay" class="cs-sort-overlay">
+      <div class="cs-sort-modal">
         <div class="cs-sort-header">
           <h3>⇅ Sort Plays</h3>
-          <button class="cs-sort-close" onclick="closeCsSortModal()">&times;</button>
+          <button class="cs-sort-close" data-action="closeCsSortModal">&times;</button>
         </div>
 
         <div class="cs-sort-body">
@@ -3685,7 +3683,7 @@ function openCsSortModal(categoryId) {
 
           <div id="csSortCriteriaList" class="cs-sort-criteria-list"></div>
 
-          <button class="btn btn-sm cs-sort-add-btn" onclick="addCsSortCriteria()">
+          <button class="btn btn-sm cs-sort-add-btn" data-action="addCsSortCriteria">
             + Add Sort Field
           </button>
 
@@ -3717,29 +3715,27 @@ function openCsSortModal(categoryId) {
         </div>
 
         <div class="cs-sort-actions">
-          <button class="btn btn-primary btn-sm" onclick="applyCsSort('${categoryId}')">
+          <button class="btn btn-primary btn-sm" data-action="applyCsSort" data-arg="${categoryId}">
             ✅ Apply Sort
           </button>
-          <button class="btn btn-sm" onclick="closeCsSortModal()">Cancel</button>
+          <button class="btn btn-sm" data-action="closeCsSortModal">Cancel</button>
         </div>
       </div>
     </div>
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+  // backdrop close
+  document.getElementById("csSortOverlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "csSortOverlay") closeCsSortModal();
+  });
   renderCsSortCriteria();
 }
 
 /**
  * Close the sort modal
  */
-function closeCsSortModal(event) {
-  if (
-    event &&
-    event.target.id !== "csSortOverlay" &&
-    !event.target.closest(".cs-sort-close")
-  )
-    return;
+function closeCsSortModal() {
   const overlay = document.getElementById("csSortOverlay");
   if (overlay) overlay.remove();
 }
@@ -3772,15 +3768,12 @@ function renderCsSortCriteria() {
 
       return `
         <div class="cs-sort-criteria-item" draggable="true" data-idx="${idx}"
-             ondragstart="handleCsSortDragStart(event, ${idx})"
-             ondragover="handleCsSortDragOver(event)"
-             ondrop="handleCsSortDrop(event, ${idx})"
-             ondragend="handleCsSortDragEnd(event)">
+             data-drag="csSortDrag">
           <span class="drag-handle">☰</span>
-          <select onchange="updateCsSortField(${idx}, this.value)">${fieldOptions}</select>
-          <button class="sort-dir-btn" onclick="toggleCsSortDirection(${idx})" title="${dirTitle}">${dirIcon}</button>
-          <button class="custom-order-btn" onclick="openCsCustomOrderModal('${criteria.field}')" title="${customTitle}" style="font-size: 11px; padding: 2px 6px;">${customIcon}</button>
-          <button class="remove-sort-btn" onclick="removeCsSortCriteria(${idx})">✕</button>
+          <select data-onchange="updateCsSortField" data-idx="${idx}" data-pass="value">${fieldOptions}</select>
+          <button class="sort-dir-btn" data-action="toggleCsSortDirection" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
+          <button class="custom-order-btn" data-action="openCsCustomOrderModal" data-arg="${criteria.field}" title="${customTitle}" style="font-size: 11px; padding: 2px 6px;">${customIcon}</button>
+          <button class="remove-sort-btn" data-action="removeCsSortCriteria" data-idx="${idx}">✕</button>
         </div>
       `;
     })
@@ -4131,8 +4124,8 @@ function openSmartSuggestionsModal(categoryId) {
             alreadyOnSheet
               ? '<span class="cs-suggest-added">✓ On Sheet</span>'
               : `
-          <button class="btn btn-sm btn-primary" onclick="addSuggestionToSheet('${categoryId}', 'left', ${idx})">← L</button>
-          <button class="btn btn-sm btn-primary" onclick="addSuggestionToSheet('${categoryId}', 'right', ${idx})">R →</button>
+          <button class="btn btn-sm btn-primary" data-action="addSuggestionToSheet" data-cat="${categoryId}" data-hash="left" data-idx="${idx}">← L</button>
+          <button class="btn btn-sm btn-primary" data-action="addSuggestionToSheet" data-cat="${categoryId}" data-hash="right" data-idx="${idx}">R →</button>
           `
           }
         </div>
@@ -4142,23 +4135,27 @@ function openSmartSuggestionsModal(categoryId) {
   }
 
   const modalHtml = `
-    <div id="csSuggestOverlay" class="modal-overlay" style="display:flex;" onclick="if(event.target===this) this.remove()">
-      <div class="modal-content cs-suggest-modal" onclick="event.stopPropagation()">
+    <div id="csSuggestOverlay" class="modal-overlay" style="display:flex;">
+      <div class="modal-content cs-suggest-modal">
         <div class="cs-suggest-header">
           <h3>💡 Smart Suggestions — ${escapeHtml(catName)}</h3>
-          <button onclick="document.getElementById('csSuggestOverlay').remove()" class="modal-close-btn">✕</button>
+          <button data-action="closeCsSuggestOverlay" class="modal-close-btn">✕</button>
         </div>
         ${intelHtml}
         <div class="cs-suggest-list">${listHtml}</div>
         <div class="cs-suggest-footer">
           <span class="cs-suggest-legend">Score = preferred field match − dead-vs penalties</span>
-          <button onclick="document.getElementById('csSuggestOverlay').remove()" class="btn btn-secondary">Close</button>
+          <button data-action="closeCsSuggestOverlay" class="btn btn-secondary">Close</button>
         </div>
       </div>
     </div>
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+  // backdrop close
+  document.getElementById("csSuggestOverlay")?.addEventListener("click", (e) => {
+    if (e.target.id === "csSuggestOverlay") document.getElementById("csSuggestOverlay")?.remove();
+  });
 }
 
 /**
@@ -4206,4 +4203,131 @@ function isPlayOnCallSheet(play, categoryId) {
   if (!data) return false;
   const checkArr = (arr) => arr.some((p) => playsMatch(p, play));
   return checkArr(data.left || []) || checkArr(data.right || []);
+}
+
+// ── Callsheet Container-Scoped Event Delegation ──────────────────────────────
+// Handles click, dblclick, contextmenu, and drag events for dynamically-rendered
+// call sheet elements — replaces all inline on* handlers.
+
+function _csClosestAction(el, attr) {
+  while (el) {
+    if (el.dataset && el.dataset[attr !== undefined ? attr : "action"]) return el;
+    el = el.parentElement;
+  }
+  return null;
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  // ── Grid: dblclick delegation (category rename, note edit) ──
+  const grid = document.getElementById("callSheetGrid");
+  if (grid) {
+    grid.addEventListener("dblclick", (e) => {
+      const el = e.target.closest("[data-dblaction]");
+      if (!el) return;
+      const action = el.dataset.dblaction;
+      const cat = el.dataset.cat;
+      if (action === "editCategoryName" && cat) editCategoryName(cat);
+      else if (action === "editCategoryNote" && cat) editCategoryNote(cat);
+    });
+
+    // ── Grid: contextmenu delegation (play right-click) ──
+    grid.addEventListener("contextmenu", (e) => {
+      const play = e.target.closest(".callsheet-play");
+      if (!play) return;
+      const { category, hash, index } = play.dataset;
+      if (category && hash && index !== undefined) {
+        showPlayContextMenu(e, category, hash, parseInt(index, 10));
+      }
+    });
+
+    // ── Grid: dragstart ──
+    grid.addEventListener("dragstart", (e) => {
+      const catDrag = e.target.closest("[data-drag='catDrag']");
+      if (catDrag) {
+        handleCatDragStart(e, catDrag.dataset.cat);
+        return;
+      }
+      const play = e.target.closest(".callsheet-play");
+      if (play) {
+        const { category, hash, index } = play.dataset;
+        handleCallSheetDragStart(e, category, hash, parseInt(index, 10));
+      }
+    });
+
+    // ── Grid: dragover ──
+    grid.addEventListener("dragover", (e) => {
+      const catDrag = e.target.closest("[data-drag='catDrag']");
+      if (catDrag) { handleCatDragOver(e); return; }
+      const hashCol = e.target.closest("[data-drop='csHashDrop']");
+      if (hashCol) { handleCallSheetDragOver(e); return; }
+      const play = e.target.closest(".callsheet-play");
+      if (play) { handleCallSheetDragOver(e); }
+    });
+
+    // ── Grid: drop ──
+    grid.addEventListener("drop", (e) => {
+      const catDrag = e.target.closest("[data-drag='catDrag']");
+      if (catDrag) { handleCatDrop(e, catDrag.dataset.cat); return; }
+      const hashCol = e.target.closest("[data-drop='csHashDrop']");
+      if (hashCol) { handleCallSheetDrop(e, hashCol.dataset.cat, hashCol.dataset.hash); return; }
+    });
+
+    // ── Grid: dragend ──
+    grid.addEventListener("dragend", (e) => {
+      const catDrag = e.target.closest("[data-drag='catDrag']");
+      if (catDrag) handleCatDragEnd(e);
+    });
+
+    // ── Grid: dblclick on play → toggle highlight ──
+    grid.addEventListener("dblclick", (e) => {
+      const play = e.target.closest(".callsheet-play");
+      if (play && !e.target.closest("[data-dblaction]")) {
+        const { category, hash, index } = play.dataset;
+        if (category && hash && index !== undefined) {
+          togglePlayHighlight(category, hash, parseInt(index, 10));
+        }
+      }
+    });
+  }
+
+  // ── Body: sort criteria drag delegation ──
+  document.body.addEventListener("dragstart", (e) => {
+    const sortItem = e.target.closest("[data-drag='csSortDrag']");
+    if (sortItem) handleCsSortDragStart(e, parseInt(sortItem.dataset.idx, 10));
+  });
+  document.body.addEventListener("dragover", (e) => {
+    const sortItem = e.target.closest("[data-drag='csSortDrag']");
+    if (sortItem) handleCsSortDragOver(e);
+  });
+  document.body.addEventListener("drop", (e) => {
+    const sortItem = e.target.closest("[data-drag='csSortDrag']");
+    if (sortItem) handleCsSortDrop(e, parseInt(sortItem.dataset.idx, 10));
+  });
+  document.body.addEventListener("dragend", (e) => {
+    const sortItem = e.target.closest("[data-drag='csSortDrag']");
+    if (sortItem) handleCsSortDragEnd(e);
+  });
+
+  // ── Body: change delegation for sort field selects ──
+  document.body.addEventListener("change", (e) => {
+    const el = e.target;
+    if (el.dataset && el.dataset.onchange === "updateCsSortField") {
+      updateCsSortField(parseInt(el.dataset.idx, 10), el.value);
+    }
+  });
+});
+
+// ── Global click handler additions for callsheet-specific actions ──
+// These are called by the global delegator in app.js via window[action](arg)
+function closeCsManagePresets() {
+  document.getElementById("csManagePresetsOverlay")?.remove();
+}
+function closeCsSuggestOverlay() {
+  document.getElementById("csSuggestOverlay")?.remove();
+}
+// Picker play click — safe lookup from module-scoped filtered array
+function csPickerAddPlay(el) {
+  const idx = parseInt(el.dataset?.idx ?? el, 10);
+  const play = _csPickerFiltered[idx];
+  if (play) addCallSheetPlayFromPicker(play);
 }

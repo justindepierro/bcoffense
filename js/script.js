@@ -646,7 +646,10 @@ function populateScriptCheckboxFilters() {
  * @param {string} filterType - 'type', 'situation', 'down', 'distance', 'hash', or 'fieldPos'
  * @param {string} value - Filter value
  */
-function toggleScriptCheckbox(label, filterType, value) {
+function toggleScriptCheckbox(el) {
+  const label = el.closest("[data-action='toggleScriptCheckbox']") || el;
+  const filterType = label.dataset.filterType;
+  const value = label.dataset.filterValue;
   const checkbox = label.querySelector('input[type="checkbox"]');
   checkbox.checked = !checkbox.checked;
   label.classList.toggle("checked", checkbox.checked);

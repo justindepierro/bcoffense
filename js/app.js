@@ -129,7 +129,7 @@ function showTab(tabName) {
 
   // Remember last active tab (skip installation — not a "real" tab to restore to)
   if (tabName !== "installation") {
-    localStorage.setItem("lastActiveTab", tabName);
+    storageManager.set(STORAGE_KEYS.LAST_ACTIVE_TAB, tabName);
   }
 }
 
@@ -369,7 +369,7 @@ function initApp() {
       if (typeof checkCallSheetDraft === "function") checkCallSheetDraft();
 
       // Restore last active tab
-      const lastTab = localStorage.getItem("lastActiveTab");
+      const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB);
       if (lastTab && lastTab !== "installation" && TAB_INDEX_MAP[lastTab] !== undefined) {
         showTab(lastTab);
       }
@@ -668,13 +668,13 @@ function renderDashboard() {
       linksEl.innerHTML = `
       <h3 class="dash-section-title">⚡ Quick Actions</h3>
       <div class="dash-links-grid">
-        <button class="dash-link-btn" onclick="dashGoToTab('script')">📋 Build Script</button>
-        <button class="dash-link-btn" onclick="dashGoToTab('callsheet')">🗂️ Edit Call Sheet</button>
-        <button class="dash-link-btn" onclick="dashGoToTab('installation')">📦 Installation</button>
-        <button class="dash-link-btn" onclick="dashGoToTab('tendencies')">🎯 Chart Tendencies</button>
-        <button class="dash-link-btn" onclick="dashGoToTab('wristband')">⌚ Wristband Maker</button>
-        <button class="dash-link-btn dash-link-print" onclick="printFullGamePlan()">🖨️ Print Game Plan</button>
-        <button class="dash-link-btn" onclick="showStorageInfo()">💾 Storage Info</button>
+        <button class="dash-link-btn" data-action="dashGoToTab" data-arg="script">📋 Build Script</button>
+        <button class="dash-link-btn" data-action="dashGoToTab" data-arg="callsheet">🗂️ Edit Call Sheet</button>
+        <button class="dash-link-btn" data-action="dashGoToTab" data-arg="installation">📦 Installation</button>
+        <button class="dash-link-btn" data-action="dashGoToTab" data-arg="tendencies">🎯 Chart Tendencies</button>
+        <button class="dash-link-btn" data-action="dashGoToTab" data-arg="wristband">⌚ Wristband Maker</button>
+        <button class="dash-link-btn dash-link-print" data-action="printFullGamePlan">🖨️ Print Game Plan</button>
+        <button class="dash-link-btn" data-action="showStorageInfo">💾 Storage Info</button>
       </div>
     `;
     }
@@ -1013,7 +1013,7 @@ function showCSVTemplateModal() {
         <div class="csv-tpl-section">
           <div class="csv-tpl-section-header">
             <h4>🏈 Offensive Playbook</h4>
-            <button class="btn btn-sm btn-primary" onclick="downloadCSVTemplate('offense')">⬇ Download Template</button>
+            <button class="btn btn-sm btn-primary" data-action="downloadCSVTemplate" data-arg="offense">⬇ Download Template</button>
           </div>
           <p class="csv-tpl-note">39 columns — used by Playbook, Script, Wristband, Call Sheet & Installation.</p>
           ${buildTable(offenseHeaders)}
@@ -1021,7 +1021,7 @@ function showCSVTemplateModal() {
         <div class="csv-tpl-section">
           <div class="csv-tpl-section-header">
             <h4>🛡️ Defensive Tendencies</h4>
-            <button class="btn btn-sm btn-primary" onclick="downloadCSVTemplate('defense')">⬇ Download Template</button>
+            <button class="btn btn-sm btn-primary" data-action="downloadCSVTemplate" data-arg="defense">⬇ Download Template</button>
           </div>
           <p class="csv-tpl-note">35 columns — imported on the Def Tendencies tab.</p>
           ${buildTable(defenseHeaders)}
@@ -1164,14 +1164,14 @@ function downloadCSVTemplate(type) {
 function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
   document.documentElement.setAttribute("data-theme", isDark ? "" : "dark");
-  localStorage.setItem("theme", isDark ? "light" : "dark");
+  storageManager.set(STORAGE_KEYS.THEME, isDark ? "light" : "dark");
   const icon = document.getElementById("darkModeIcon");
   if (icon) icon.textContent = isDark ? "🌙" : "☀️";
 }
 // Restore theme on load
 (function _restoreTheme() {
   const saved =
-    localStorage.getItem("theme") ||
+    storageManager.get(STORAGE_KEYS.THEME) ||
     (window.matchMedia("(prefers-color-scheme: dark)").matches
       ? "dark"
       : "light");
@@ -1186,7 +1186,7 @@ function toggleDarkMode() {
 window
   .matchMedia("(prefers-color-scheme: dark)")
   .addEventListener("change", (e) => {
-    if (!localStorage.getItem("theme")) {
+    if (!storageManager.get(STORAGE_KEYS.THEME)) {
       document.documentElement.setAttribute(
         "data-theme",
         e.matches ? "dark" : "",
@@ -1402,6 +1402,10 @@ const _ELEMENT_FNS = new Set([
   "toggleCollapsiblePanel",
   "setHeaderColor",
   "switchDisplayTab",
+  "csPickerAddPlay",
+  "toggleSirCollapse",
+  "toggleScriptCheckbox",
+  "toggleWbCheckbox",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
@@ -1519,6 +1523,84 @@ document.addEventListener("click", (e) => {
     case "_pbSortRemove":
       _pbSortRemove(parseInt(el.dataset.idx, 10));
       return;
+    // ── Callsheet delegation ──
+    case "swapPlayHash":
+      swapPlayHash(el.dataset.category, el.dataset.hash, parseInt(el.dataset.index, 10));
+      return;
+    case "removeCallSheetPlay":
+      removeCallSheetPlay(el.dataset.category, el.dataset.hash, parseInt(el.dataset.index, 10));
+      return;
+    case "openCallSheetPlayPicker":
+      openCallSheetPlayPicker(el.dataset.cat, el.dataset.hash);
+      return;
+    case "openCategoryMenu":
+      openCategoryMenu(e, el.dataset.arg);
+      return;
+    case "csPickerAddPlay":
+      csPickerAddPlay(el);
+      return;
+    case "deleteDisplayPreset":
+      deleteDisplayPreset(parseInt(el.dataset.idx, 10));
+      return;
+    case "loadTemplate":
+      loadTemplate(parseInt(el.dataset.idx, 10));
+      return;
+    case "deleteTemplate":
+      deleteTemplate(parseInt(el.dataset.idx, 10));
+      return;
+    case "toggleCsSortDirection":
+      toggleCsSortDirection(parseInt(el.dataset.idx, 10));
+      return;
+    case "removeCsSortCriteria":
+      removeCsSortCriteria(parseInt(el.dataset.idx, 10));
+      return;
+    case "addSuggestionToSheet":
+      addSuggestionToSheet(el.dataset.cat, el.dataset.hash, parseInt(el.dataset.idx, 10));
+      return;
+    // ── Tendencies delegation ──
+    case "editTendenciesPlay":
+      editTendenciesPlay(parseInt(el.dataset.idx, 10));
+      return;
+    case "duplicateTendenciesPlay":
+      duplicateTendenciesPlay(parseInt(el.dataset.idx, 10));
+      return;
+    case "deleteTendenciesPlay":
+      deleteTendenciesPlay(parseInt(el.dataset.idx, 10));
+      return;
+    case "toggleTdFilter":
+      toggleTdFilter(el.dataset.key, el.dataset.val);
+      return;
+    case "goToWizardStep":
+      goToWizardStep(parseInt(el.dataset.idx, 10));
+      return;
+    case "setWizardField":
+      setWizardField(el.dataset.key, el.dataset.val, el);
+      return;
+    // ── Wristband delegation ──
+    case "switchCard":
+      switchCard(parseInt(el.dataset.idx, 10));
+      return;
+    case "toggleSortDirection":
+      toggleSortDirection(parseInt(el.dataset.idx, 10));
+      return;
+    case "removeSortCriteria":
+      removeSortCriteria(parseInt(el.dataset.idx, 10));
+      return;
+    case "selectPlayForCell":
+      selectPlayForCell(parseInt(el.dataset.idx, 10));
+      return;
+    case "loadWristband":
+      loadWristband(parseInt(el.dataset.idx, 10));
+      return;
+    case "renameSavedWristband":
+      renameSavedWristband(parseInt(el.dataset.idx, 10));
+      return;
+    case "overwriteSavedWristband":
+      overwriteSavedWristband(parseInt(el.dataset.idx, 10));
+      return;
+    case "deleteSavedWristband":
+      deleteSavedWristband(parseInt(el.dataset.idx, 10));
+      return;
   }
 
   // General function dispatch
@@ -1536,6 +1618,11 @@ document.addEventListener("click", (e) => {
     fn(el);
   } else {
     fn();
+  }
+
+  // Auto-close context menu if flagged
+  if (el.dataset.ctxClose) {
+    el.closest(".cs-context-menu")?.remove();
   }
 });
 
@@ -1751,6 +1838,20 @@ document.addEventListener("DOMContentLoaded", () => {
       true,
     );
   }
+
+  /* ---------- Playbook sort: drag delegation ---------- */
+  document.body.addEventListener("dragstart", (e) => {
+    const el = e.target.closest("[data-drag='pbSort']");
+    if (el && typeof _pbSortDragStart === "function") _pbSortDragStart(e, parseInt(el.dataset.idx, 10));
+  });
+  document.body.addEventListener("dragover", (e) => {
+    const el = e.target.closest("[data-drag='pbSort']");
+    if (el && typeof _pbSortDragOver === "function") _pbSortDragOver(e);
+  });
+  document.body.addEventListener("drop", (e) => {
+    const el = e.target.closest("[data-drag='pbSort']");
+    if (el && typeof _pbSortDrop === "function") _pbSortDrop(e, parseInt(el.dataset.idx, 10));
+  });
 });
 
 /* ── Delegated change / input handler ────────────────────────────
@@ -1768,10 +1869,12 @@ function _dispatchDataHandler(e, attr) {
   const fns = raw.split(";");
   const pass = el.dataset.pass;
   const arg = el.dataset.arg;
+  const key = el.dataset.key;
   for (const name of fns) {
     const fn = window[name];
     if (typeof fn !== "function") continue;
-    if (pass === "value") fn(el.value);
+    if (key !== undefined && pass === "value") fn(key, el.value);
+    else if (pass === "value") fn(el.value);
     else if (pass === "event") fn(e);
     else if (arg !== undefined) fn(arg);
     else fn();

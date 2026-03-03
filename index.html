@@ -132,6 +132,7 @@
           type="file"
           id="csvFile"
           accept=".csv"
+          aria-label="Upload playbook CSV file"
           data-onchange="handleFileUpload"
           data-pass="event"
           data-testid="csv-upload"
@@ -324,6 +325,7 @@
                 type="text"
                 id="searchPlay"
                 placeholder="🔍 Search plays…"
+                aria-label="Search plays"
                 data-oninput="debouncedFilterPlays"
                 data-testid="search-input"
               />
@@ -506,6 +508,7 @@
                 type="file"
                 id="importBackupFile"
                 accept=".json"
+                aria-label="Import backup file"
                 data-onchange="importBackup"
                 data-pass="event"
                 class="hidden"
@@ -2556,6 +2559,9 @@
       id="callSheetPickerOverlay"
       class="cell-popup-overlay hidden"
       data-action="closeCallSheetPickerOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Add Play to Call Sheet"
     >
       <div class="cell-popup cs-picker-popup">
         <h3>➕ Add Play to Call Sheet</h3>
@@ -2665,6 +2671,9 @@
       id="loadWristbandModal"
       class="cell-popup-overlay hidden"
       data-action="closeLoadWristbandModalOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Load Wristband to Call Sheet"
     >
       <div class="cell-popup cs-wb-modal">
         <h3>📋 Load Wristband to Call Sheet</h3>
@@ -2711,6 +2720,9 @@
       id="cellPopupOverlay"
       class="cell-popup-overlay"
       data-action="closeCellPopupOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="cellPopupTitle"
     >
       <div class="cell-popup cell-popup-container">
         <h3 id="cellPopupTitle">📝 Edit Cell</h3>
@@ -2886,6 +2898,9 @@
       class="modal-overlay"
       id="smartScriptModal"
       data-action="closeSmartScriptOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Smart Script"
     >
       <div class="modal-content smart-script-modal">
         <div class="smart-script-header">
@@ -3152,6 +3167,9 @@
       class="modal-overlay"
       id="shortcutsModal"
       data-action="hideKeyboardShortcutsOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Keyboard Shortcuts"
     >
       <div class="modal-content shortcuts-modal">
         <h3>⌨️ Keyboard Shortcuts</h3>
@@ -3221,6 +3239,9 @@
       class="help-overlay"
       id="helpOverlay"
       data-action="closeHelpPanelOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="helpPanelTitle"
     >
       <div class="help-panel">
         <div class="help-panel-header">

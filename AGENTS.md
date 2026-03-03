@@ -1,0 +1,625 @@
+# AGENTS.md — BCOffense Codebase Guide
+
+> **For AI coding agents** — conventions, architecture, data models, and patterns  
+> needed to make correct changes to this project on the first attempt.
+
+---
+
+## Project Overview
+
+**BCOffense** is a football practice management PWA (Progressive Web App) for building practice scripts, wristbands, call sheets, defensive tendency reports, and game plans. It runs entirely client-side with no backend — data lives in `localStorage`, playbook data is imported via CSV, and the app is served from GitHub Pages.
+
+- **Repo:** `justindepierro/bcoffense` on GitHub
+- **Stack:** Vanilla HTML / CSS / JS — zero build tools, no bundler, no npm, no TypeScript
+- **Hosting:** GitHub Pages (static)
+- **Offline:** Service Worker (`sw.js`) with stale-while-revalidate caching
+- **Entry point:** `index.html` (single-page app, all tabs exist in the DOM)
+
+---
+
+## File Structure
+
+```
+index.html              ← Single HTML file (all markup, ~3300 lines)
+manifest.json           ← PWA manifest
+sw.js                   ← Service worker (cache name: bcoffense-vN)
+offline.html            ← Offline fallback page
+
+css/
+  base.css              ← Design tokens (:root vars), reset, form inputs
+  layout.css            ← Header, tab bar, panels, upload screen
+  components.css        ← Buttons, modals, toast, badges, utilities
+  playbook.css          ← Playbook table, collections, print panel
+  script.css            ← Practice script builder
+  wristband.css         ← Wristband maker, cards, grid
+  callsheet.css         ← Call sheet grid, columns, constraints panel
+  tendencies.css        ← Defensive tendencies analysis
+  offense-builder.css   ← Offense builder module
+  dashboard.css         ← Dashboard, stats, game plan
+  installation.css      ← Installation guide
+  print.css             ← All @media print blocks
+  responsive.css        ← Global breakpoints
+
+js/
+  utils.js              ← Shared utilities, constants, storage, modals, CSV parser
+  playbook.js           ← Playbook table (import, filter, sort, paginate)
+  script.js             ← Practice script builder (periods, drag/drop, smart fill)
+  wristband.js          ← Wristband maker (cards, cells, sorting, print)
+  callsheet.js          ← Call sheet (categories, buckets, auto-populate, display)
+  constraints.js        ← Game plan constraints evaluation engine
+  tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
+  installation.js       ← Installation/help guide
+  offensebuilder.js     ← Offense builder tool
+  help.js               ← Context-sensitive help panel data
+  app.js                ← Orchestration (tabs, global state, event delegation)
+
+icons/                  ← PWA icons (192px, 512px)
+```
+
+---
+
+## Script Load Order (Critical)
+
+All scripts use `defer` and load in this exact order from index.html:
+
+```
+1. js/utils.js          ← Must be first (constants, storageManager, modals, escapeHtml)
+2. js/playbook.js
+3. js/script.js
+4. js/wristband.js
+5. js/callsheet.js
+6. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+7. js/tendencies.js
+8. js/installation.js
+9. js/offensebuilder.js
+10. js/help.js
+11. js/app.js           ← Must be last (orchestration, delegation, initApp)
+```
+
+All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
+
+---
+
+## Event Delegation Pattern
+
+**No inline `onclick` attributes.** All interactive elements use `data-action` attributes dispatched through a single global click listener in `app.js`.
+
+### Click Delegation
+
+```html
+<!-- Basic action (no args) -->
+<button data-action="saveScript">Save</button>
+
+<!-- Action with argument -->
+<button data-action="showTab" data-arg="playbook">Playbook</button>
+
+<!-- Overlay close (only fires when clicking backdrop, not children) -->
+<div data-action="closeModalOverlay" class="overlay">...</div>
+```
+
+**Dispatch priority order:**
+1. **Overlay close** — action ending in `"Overlay"` → strips suffix, calls `window[action.slice(0,-7)]()`; only fires on backdrop click (`e.target === el`)
+2. **Click proxy** — `data-action="triggerClick"` + `data-target="elementId"` → clicks that element
+3. **Inline DOM toggles** — `toggleParentOpen`, `removeParentOpen`, `reloadPage`
+4. **Explicit switch/case** — Actions needing `data-idx`, `data-sid`, `data-layer`, `data-preset`, etc.
+5. **Generic fallback** — `window[action](arg)` with smart argument handling:
+
+| Condition | Call |
+|---|---|
+| `data-arg` + action in `_ELEMENT_FNS` | `fn(arg, element)` |
+| `data-arg` + action in `_BOOL_FNS` | `fn(arg === "true")` |
+| `data-arg` present | `fn(arg)` |
+| No `data-arg`, action in `_ELEMENT_FNS` | `fn(element)` |
+| No `data-arg` | `fn()` |
+
+**Special sets:**
+```js
+const _ELEMENT_FNS = new Set(["toggleFilterSection", "toggleCollapsiblePanel", "setHeaderColor", "switchDisplayTab"]);
+const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
+```
+
+### Container-Scoped Delegation
+
+Some containers (`#scriptPlays`, `#availablePlays`, `#playbookTable tbody`) have their own event listeners that dispatch by `data-action` or `data-field` within `DOMContentLoaded`.
+
+### Change/Input Delegation
+
+```html
+<select data-onchange="handleSort" data-pass="value">...</select>
+<input data-oninput="filterPlays;updateCount" data-pass="value">
+```
+
+- `data-onchange` / `data-oninput` → semicolon-separated function names
+- `data-pass="value"` → passes `el.value`
+- `data-pass="event"` → passes the event object
+- `data-arg="x"` → passes string `"x"`
+- No modifier → calls `fn()` with no arguments
+
+---
+
+## Storage System
+
+All persistent data uses `localStorage` via the `storageManager` singleton.
+
+### storageManager API
+
+```js
+storageManager.get(key, defaultValue = null)     // JSON.parse; returns default on miss/error
+storageManager.set(key, value)                    // JSON.stringify; shows quota modal on overflow
+storageManager.remove(key)                        // localStorage.removeItem
+storageManager.getAllData()                        // Full backup object for export
+storageManager.restoreAllData(backup, options)    // Restore from backup (async)
+storageManager.getStorageInfo()                   // { totalSize, totalSizeFormatted, itemSizes, itemCount }
+storageManager.clearAll(confirmFirst = true)      // Wipe all keys (async)
+```
+
+### STORAGE_KEYS (complete list)
+
+```js
+PLAYBOOK                   → "playbook"
+SAVED_SCRIPTS              → "savedScripts"
+SAVED_WRISTBANDS           → "savedWristbands"
+SORT_PRESETS               → "sortPresets"
+CUSTOM_SORT_ORDERS         → "customSortOrders"
+SCRIPT_CUSTOM_SORT_ORDERS  → "scriptCustomSortOrders"
+PERIOD_TEMPLATES           → "periodTemplates"
+CALL_SHEET                 → "callSheet"
+CALL_SHEET_SETTINGS        → "callSheetSettings"
+COLUMN_VISIBILITY          → "columnVisibility"
+PLAYBOOK_STATE             → "playbookState"
+SCRIPT_DISPLAY_OPTIONS     → "scriptDisplayOptions"
+SCRIPT_DRAFT               → "scriptDraft"
+WRISTBAND_DRAFT            → "wristbandDraft"
+CALLSHEET_DISPLAY_OPTIONS  → "callSheetDisplayOptions"
+CALLSHEET_DISPLAY_PRESETS  → "callSheetDisplayPresets"
+CALLSHEET_DRAFT            → "callSheetDraft"
+CALLSHEET_TEMPLATES        → "callSheetTemplates"
+CALLSHEET_CATEGORY_ORDER   → "callSheetCategoryOrder"
+CALLSHEET_NOTES            → "callSheetNotes"
+CALLSHEET_TARGETS          → "callSheetTargets"
+CALLSHEET_COLLAPSED        → "callSheetCollapsed"
+DEFENSIVE_TENDENCIES       → "defensiveTendencies"
+TENDENCIES_DRAFT           → "tendenciesDraft"
+TENDENCIES_SETTINGS        → "tendenciesSettings"
+GAME_WEEK                  → "gameWeek"
+INSTALLATION               → "installationData"
+CS_SCOUTING_OVERLAY        → "csScoutingOverlay"
+PLAY_COLLECTIONS           → "playCollections"
+CALLSHEET_CONSTRAINTS      → "callSheetConstraints"
+```
+
+### Autosave / Draft Pattern
+
+- **Debounce:** `AUTOSAVE_DEBOUNCE_MS = 3000` (3 seconds)
+- **Draft expiry:** `DRAFT_EXPIRY_MS = 86400000` (24 hours)
+- Each module has its own timer: `scriptAutosaveTimer`, `callSheetAutosaveTimer`, `wristbandAutosaveTimer`, `tendenciesAutosaveTimer`
+- Dirty tracking: `scriptDirty` / `wristbandDirty` booleans with `markScriptDirty()` / `markScriptClean()` etc.
+- `beforeunload` warns if any dirty flag is set
+
+### Undo/Redo (historyManager)
+
+```js
+historyManager.saveState(type, state)       // type: "script" | "wristband" | "tendencies"
+historyManager.undo(type, currentState)     // Returns previous state or null
+historyManager.redo(type, currentState)     // Returns next state or null
+historyManager.clear(type)
+historyManager.canUndo(type)                // boolean
+historyManager.canRedo(type)                // boolean
+historyManager.updateButtons(type)          // Enable/disable #<type>UndoBtn / #<type>RedoBtn
+// maxHistory: 25 snapshots per type
+```
+
+### Storage Migrations
+
+- `STORAGE_VERSION = 2` stored in `localStorage._storageVersion`
+- `runMigrations()` applies version-keyed transforms on app init
+
+---
+
+## Data Models
+
+### Play Object (Playbook)
+
+Imported from CSV via `parseCSV()`. This is the core data shape used everywhere:
+
+```js
+{
+  type: "",                  // "Run", "Pass", "RPO", "Screen", "Quick", "Play Action", "Run Option", "Movement"
+  personnel: "",             // Personnel grouping
+  formation: "",             // Formation name
+  formTag1: "",              // Formation tag 1
+  formTag2: "",              // Formation tag 2
+  under: "",                 // Under center indicator
+  back: "",                  // Backfield alignment
+  shift: "",                 // Pre-snap shift
+  motion: "",                // Motion call
+  protection: "",            // Protection call
+  lineCall: "",              // Line call
+  play: "",                  // Play name
+  playTag1: "",              // Play tag 1
+  playTag2: "",              // Play tag 2
+  basePlay: "",              // Base play family
+  oneWord: "",               // One-word call
+  preferredSituation: "",    // "Short Yardage" | "2 Minute" | "4 Minute"
+  preferredDown: "",         // "1" | "2" | "3" | "4"
+  preferredDistance: "",     // "Short" | "Medium" | "Long"
+  preferredHash: "",         // Hash preference
+  preferredFieldPosition: "", // "Green" | "Lo-RZ" | "Hi-RZ" | "Goal Line" | "Backed Up" | "Saigon"
+  tempo: "",                 // Tempo designation
+  practiceFront: "",         // Practice defensive front
+  practiceDefense: "",       // Practice defense
+  practiceCoverage: "",      // Practice coverage
+  practiceBlitz: "",         // Practice blitz
+  practiceStunt: "",         // Practice stunt
+  keyPlayer1: "",            // Key player 1 position code
+  keyPlayer2: "",            // Key player 2 position code
+  keyPlayer3: "",            // Key player 3 position code
+  keyPlayerName1: "",        // Key player 1 name
+  keyPlayerName2: "",        // Key player 2 name
+  keyPlayerName3: "",        // Key player 3 name
+  constraint1: "",           // Constraint / complement 1
+  constraint2: "",           // Constraint / complement 2
+  constraint3: "",           // Constraint / complement 3
+  hitChart1: "",             // Hit chart target 1
+  hitChart2: "",             // Hit chart target 2
+  hitChart3: "",             // Hit chart target 3
+  deadVs: "",                // Dead vs (defensive looks to avoid)
+  opponent: "",              // Opponent-specific
+  notes: "",                 // Free-text notes
+}
+```
+
+### Call Sheet Category
+
+```js
+{
+  id: "category-slug",        // Unique key (e.g. "1st-down", "rz-20", "player2")
+  name: "Display Name",       // Human label
+  color: "#hex",               // From CS_COLORS palette
+  // Filter criteria (optional, varies):
+  down: "1"|"2"|"3"|"4",
+  distance: "Short"|"Medium"|"Long",
+  position: "Green"|"Lo-RZ"|"Hi-RZ"|"Goal Line"|"Backed Up"|"Saigon"|null,
+  situation: "Short Yardage"|"2 Minute"|"4 Minute"|null,
+  playType: "Run"|"Pass"|"Screen"|"Quick"|"Play Action"|"RPO"|"Run Option"|"Movement"|"Opener",
+  playerSpecific: true,        // Player-specific buckets (player1-player5)
+  manual: true|false,          // If true, no auto-populate from playbook
+}
+```
+
+**CALLSHEET_FRONT** — 21 situation/down-based buckets (front page):
+`2nd-medium`, `2nd-long`, `3rd-short-1-3`, `short-yardage`, `gbot`, `3rd-short-2down`, `rz-20`, `4th-down`, `3rd-medium`, `rz-10`, `4-minute`, `3rd-long`, `rz-5`, `2-minute`, `backed-up`, `goal-line`, `last-plays`, `saigon`, `must-haves`
+
+**CALLSHEET_BACK** — 18 type/player-based buckets (back page):
+`openers`, `1st-down`, `perimeter-screens`, `screen`, `p-and-10`, `2-point`, `base-run`, `run-options`, `base-pass`, `quick`, `play-action`, `rpos`, `player1`–`player5`, `movement`
+
+**Runtime structure:**
+```js
+callSheet = {
+  "1st-down": { left: [play, play, ...], right: [play, ...], customName: "..." },
+  "rz-20":    { left: [...], right: [...] },
+  // ...one entry per populated category
+}
+```
+
+---
+
+## Key Global Variables
+
+### app.js
+```js
+let plays = [];              // Master playbook array (all imported plays)
+let script = [];             // Current working practice script
+let scriptWristband = null;  // Currently linked wristband
+let filteredPlays = [];      // Filtered playbook subset
+let scriptDirty = false;     // Unsaved script changes flag
+let wristbandDirty = false;  // Unsaved wristband changes flag
+let currentActiveTab = "playbook";  // Active UI tab name
+```
+
+### callsheet.js
+```js
+let callSheet = {};              // The call sheet data (see structure above)
+let callSheetSettings = {};      // Orientation, current page, custom names
+const CALLSHEET_CATEGORIES = []; // All 39 category definitions
+```
+
+### script.js
+```js
+let collapsedPeriods = new Set();    // Collapsed period IDs
+let periodTemplates = [];            // Saved period templates
+let bulkSelectedIndices = [];        // Multi-selected play indices
+let selectedAvailablePlays = [];     // Checked available plays
+```
+
+### wristband.js
+```js
+let wristbandCards = [];         // Array of card objects
+let currentCardIndex = 0;       // Active card tab
+const WB_ROWS = 20;             // Rows per card
+const MAX_CARDS = 5;            // Maximum cards
+const CELLS_PER_CARD = 40;      // Total cells per card (2 columns × 20 rows)
+```
+
+---
+
+## Key Utility Functions
+
+### HTML Safety
+
+```js
+escapeHtml(text)                  // Escapes & < > " ' — use for text interpolation
+sanitizeHTML(html)                // Strips dangerous tags/attrs — use for innerHTML
+setInnerHTML(el, html)            // el.innerHTML = sanitizeHTML(html)
+```
+
+**Rule:** Always `escapeHtml()` user-provided text in template literals. Use `sanitizeHTML()` only when you need to preserve safe HTML formatting. `getFullCall()` already calls `escapeHtml()` internally — never double-escape its output.
+
+### Play Display
+
+```js
+getFullCall(play, options = {})   // Returns HTML string with formatted play call
+// Options: showEmoji, useSquares, underEmoji, boldShifts, redShifts,
+//          italicMotions, redMotions, noVowels, showLineCall,
+//          highlightHuddle, highlightCandy
+
+buildCallSheetPlayParts(play, options)  // Returns array of HTML part strings (call sheet specific)
+```
+
+### Modals (async, Promise-based)
+
+```js
+showModal(message, { title, icon })                                    // Alert → Promise<void>
+showConfirm(message, { title, icon, confirmText, cancelText, danger }) // → Promise<boolean>
+showPrompt(message, defaultValue, { title, icon, placeholder })        // → Promise<string|null>
+showChoice(message, { title, icon, option1, option2 })                 // → Promise<"option1"|"option2"|null>
+showListPicker(message, items, { title, icon })                        // → Promise<value|null>
+```
+
+### Notifications
+
+```js
+showToast(message, durationOrOpts)        // durationOrOpts: number | { duration, type }
+showUndoToast(message, undoCallback, duration)  // Toast with undo button (default 5s)
+```
+
+### Other Important Utils
+
+```js
+debounce(fn, wait = 150)
+safeJSONParse(str, fallback)
+safeDeepClone(obj)                        // structuredClone with JSON fallback
+parseCSV(text)                            // → { plays: [], skipped: [] }
+removeVowels(str)                         // Strip vowels for compressed display
+playsMatch(p1, p2)                        // Compare two play objects by key fields
+showContextMenu(event, menuItems)         // Right-click context menus
+showReorderModal(values, opts)            // Drag-to-reorder modal
+trapFocus(overlay)                        // Focus trap for accessibility
+addLongPress(element, callback, duration) // Mobile long-press handler
+```
+
+---
+
+## CSS Architecture
+
+### Design Tokens
+
+All colors, spacing, typography, shadows, and z-indexes are defined as CSS custom properties in `:root` (base.css). Always use tokens rather than hardcoded values.
+
+**Key token families:**
+
+| Category | Examples |
+|---|---|
+| Brand | `--color-primary`, `--color-accent`, `--color-primary-dark` |
+| Functional | `--color-success`, `--color-danger`, `--color-warning`, `--color-info` (each has `-hover`, `-light` variants) |
+| Backgrounds | `--color-bg-body`, `--color-bg-light`, `--color-bg-lighter`, `--color-bg-input`, `--color-bg-hover-row` |
+| Borders | `--color-border`, `--color-border-light`, `--color-border-med`, `--color-border-input` |
+| Text | `--color-text`, `--color-text-muted`, `--color-text-secondary`, `--color-text-light` |
+| Spacing | `--space-xs` (4px) through `--space-xl` (32px) |
+| Radius | `--radius-sm` (6px), `--radius-md` (10px), `--radius-lg` (14px), `--radius-pill` (999px) |
+| Shadows | `--shadow-xs` through `--shadow-lg`, `--shadow-focus` |
+| Z-index | `--z-base` (1) → `--z-toast` (10000) → `--z-skip-link` (100000) |
+| Typography | `--font-sans` (Inter stack), `--font-mono` (IBM Plex Mono), `--font-size-micro` (8px) → `--font-size-5xl` (48px) |
+| Transitions | `--transition-fast` (0.15s), `--transition-normal` (0.25s) |
+
+### Dark Mode
+
+Supported via `[data-theme="dark"]` selector overriding all token values. Never use hardcoded colors in JS-generated HTML — use CSS classes or design tokens.
+
+### Accessibility
+
+- `prefers-reduced-motion: reduce` disables all animations
+- `:focus-visible` ring on interactive elements
+- `.sr-only` for screen-reader-only text
+- `.skip-link` for skip-to-content
+- `#liveAnnouncer` for ARIA live region announcements
+
+### File Responsibilities
+
+| File | Scope |
+|---|---|
+| `base.css` | Tokens, reset, form elements, selections |
+| `layout.css` | Page structure, header, tab bar, panels |
+| `components.css` | Reusable: `.btn-*`, `.modal-*`, `.toast`, `.badge-*`, utilities |
+| `print.css` | All `@media print` rules (centralized) |
+| `responsive.css` | All `@media` breakpoints (centralized) |
+| `[module].css` | Module-specific styles (callsheet.css, script.css, etc.) |
+
+### Naming Conventions
+
+- **Module prefix:** Call sheet uses `cs-*`, constraints panel uses `cr-*`, wristband uses `wb-*`
+- **BEM-lite:** Mostly flat class names with dashes (`cs-cell-format-dot`, `cr-bucket-row`)
+- **State classes:** `active`, `open`, `visible`, `highlighted`, `collapsed`
+- **Status classes:** `cr-status-ok`, `cr-status-warn`, `cr-status-error`, `cr-status-empty`
+- **Button variants:** `.btn`, `.btn-sm`, `.btn-primary`, `.btn-danger`, `.btn-warning`, `.btn-success`
+
+---
+
+## Service Worker
+
+**Cache name:** `bcoffense-vN` (currently v10)
+
+**Strategy:**
+- **Install:** Pre-cache all local assets listed in `LOCAL_ASSETS` array
+- **Local files:** Stale-while-revalidate (serve cached, then update cache in background)
+- **External resources:** Network-first with cache fallback (Google Fonts, CDNs)
+- **Offline:** Navigation requests fall back to `offline.html`
+
+**When to bump the version:**
+- Any time you modify CSS, JS, or HTML files
+- Increment the number in `const CACHE_NAME = "bcoffense-vN"` in `sw.js`
+- If you add a new file, also add it to the `LOCAL_ASSETS` array
+
+---
+
+## Git Conventions
+
+### Commit Messages
+
+Follow Conventional Commits format:
+
+```
+feat: Description of new feature (SW vN)
+fix: Description of bug fix (SW vN)
+perf: Performance improvement description
+style: Formatting only, no logic changes
+refactor: Code restructuring, no behavior change
+```
+
+- **Prefix:** `feat:`, `fix:`, `perf:`, `style:`, `refactor:`
+- Optionally scoped: `feat(tier-8):`, `fix(callsheet):`
+- Include `(SW vN)` when bumping service worker version
+- Lowercase after prefix
+- Body: bullet list of specific changes (use `-` prefix)
+
+### Workflow
+
+- Single branch: `main`
+- No PRs, no CI — direct commit and push
+- Always bump SW version when changing cached assets
+
+---
+
+## Adding New Features — Checklist
+
+1. **Identify which JS file** owns the feature (or create a new one)
+2. **Use `data-action`** for all interactive elements — never inline `onclick`
+3. **Use `escapeHtml()`** on all user text in template literals
+4. **Use design tokens** (CSS custom properties) — never hardcode colors
+5. **Use `storageManager`** for persistence — add a key to `STORAGE_KEYS` in utils.js if needed
+6. **Add to `LOCAL_ASSETS`** in sw.js if creating a new file
+7. **Add the `<script>` tag** in index.html in the correct load order position
+8. **Bump `CACHE_NAME`** version in sw.js
+9. **Test offline** — ensure Service Worker caches necessary assets
+10. **Commit** with conventional commit message including `(SW vN)`
+
+---
+
+## Common Patterns to Follow
+
+### Creating a New Storage Key
+
+```js
+// 1. Add to STORAGE_KEYS in utils.js
+const STORAGE_KEYS = {
+  // ...existing...
+  MY_NEW_KEY: "myNewData",
+};
+
+// 2. Use via storageManager
+const data = storageManager.get(STORAGE_KEYS.MY_NEW_KEY, defaultValue);
+storageManager.set(STORAGE_KEYS.MY_NEW_KEY, data);
+```
+
+### Adding a Button with Delegation
+
+```html
+<!-- In index.html -->
+<button class="btn btn-sm btn-primary" data-action="myFunction" data-arg="optionalArg">
+  Label
+</button>
+```
+
+```js
+// In the appropriate JS file — function must be global
+function myFunction(arg) {
+  // ...
+}
+```
+
+### Creating a Modal Overlay
+
+```html
+<!-- Overlay with data-action ending in "Overlay" auto-closes on backdrop click -->
+<div class="my-panel-overlay" id="myPanel" data-action="closeMyPanelOverlay">
+  <div class="my-panel">
+    <button data-action="closeMyPanel">×</button>
+    <div id="myPanelBody"></div>
+  </div>
+</div>
+```
+
+```js
+function openMyPanel() {
+  document.getElementById("myPanel").classList.add("visible");
+}
+function closeMyPanel() {
+  document.getElementById("myPanel").classList.remove("visible");
+}
+```
+
+### Toast Notifications
+
+```js
+showToast("Play added to script");                          // Default 2s
+showToast("Saved successfully", { duration: 3000, type: "success" });
+showToast("Something went wrong", { duration: 4000, type: "error" });
+```
+
+### Dirty Tracking + Autosave
+
+```js
+// Mark data as changed
+markScriptDirty();
+
+// Debounced autosave pattern
+clearTimeout(scriptAutosaveTimer);
+scriptAutosaveTimer = setTimeout(() => {
+  saveScriptDraft();
+}, AUTOSAVE_DEBOUNCE_MS);
+
+// On explicit save
+saveScript();
+markScriptClean();
+```
+
+---
+
+## Constraints Module (js/constraints.js)
+
+The constraints engine evaluates call sheet buckets against an offensive philosophy config. Key structures:
+
+- **`CALLSHEET_CONSTRAINTS`** — master config with `global`, `roleMap`, `familyMap`, `shotPartnerFamilies`, `qbRunKeywords`, `bucketRules`
+- **`categorizePlay(play)`** — classifies a play by family, category, flags (isRun, isScreen, isShot, etc.), and touch targets
+- **`evaluateBucket(key, bucket)`** — returns `{ score, status, errors, warnings, successes, philosophy, touchCounts, ... }`
+- **`evaluateCallSheet(cs)`** — evaluates entire call sheet, returns `{ overallScore, bucketReports, summary }`
+- **`suggestFixesForBucket(report, playbookPlays)`** — suggests playbook plays to fix bucket deficiencies
+
+To change player names: edit `roleMap` in `CALLSHEET_CONSTRAINTS`.  
+To add play families: add entries to `familyMap` array.  
+To change bucket rules: edit `bucketRules` object.  
+To disable entirely: set `CONSTRAINTS_ENABLED = false`.
+
+---
+
+## Things to NEVER Do
+
+- **Never use inline `onclick`/`onchange`/`oninput`** — use `data-action` / `data-onchange` / `data-oninput`
+- **Never skip `escapeHtml()`** on user text in template literals
+- **Never double-escape** `getFullCall()` output (it already escapes internally)
+- **Never hardcode colors** — use CSS custom properties
+- **Never use ES modules** (`import`/`export`) — this is a global-scope, no-build project
+- **Never add a build step** — no webpack, no Vite, no npm scripts
+- **Never create `package.json`** — this is intentionally dependency-free
+- **Never forget to bump `sw.js`** cache version after code changes
+- **Never use `innerHTML` with unsanitized user content** — use `setInnerHTML()` or `escapeHtml()`

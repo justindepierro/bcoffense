@@ -289,15 +289,12 @@ function renderSortCriteria() {
 
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
-           ondragstart="handleSortDragStart(event, ${idx})"
-           ondragover="handleSortDragOver(event)"
-           ondrop="handleSortDrop(event, ${idx})"
-           ondragend="handleSortDragEnd(event)">
+           data-drag="wbSort">
         <span class="drag-handle">☰</span>
-        <select onchange="updateSortField(${idx}, this.value)">${fieldOptions}</select>
-        <button class="sort-dir-btn" onclick="toggleSortDirection(${idx})" title="${dirTitle}">${dirIcon}</button>
-        <button class="custom-order-btn" onclick="openCustomOrderModal('${criteria.field}')" title="${customOrderTitle}" style="font-size: 11px; padding: 2px 6px;">${customOrderIcon}</button>
-        <button class="remove-sort-btn" onclick="removeSortCriteria(${idx})">✕</button>
+        <select data-onchange="updateSortField" data-key="${idx}" data-pass="value">${fieldOptions}</select>
+        <button class="sort-dir-btn" data-action="toggleSortDirection" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
+        <button class="custom-order-btn" data-action="openCustomOrderModal" data-arg="${criteria.field}" title="${customOrderTitle}" style="font-size: 11px; padding: 2px 6px;">${customOrderIcon}</button>
+        <button class="remove-sort-btn" data-action="removeSortCriteria" data-idx="${idx}">✕</button>
       </div>
     `;
     })
@@ -338,7 +335,7 @@ function removeSortCriteria(idx) {
  * Update the field for a sort criteria
  */
 function updateSortField(idx, newField) {
-  wbSortCriteria[idx].field = newField;
+  wbSortCriteria[parseInt(idx, 10)].field = newField;
   renderSortCriteria();
 }
 
@@ -831,7 +828,7 @@ function renderCardTabs() {
     .map((card, i) => {
       const count = card.data.filter((p) => p !== null).length;
       return `
-        <div class="card-tab ${i === currentCardIndex ? "active" : ""}" onclick="switchCard(${i})">
+        <div class="card-tab ${i === currentCardIndex ? "active" : ""}" data-action="switchCard" data-idx="${i}">
           ${escapeHtml(card.name)} <span class="card-count">(${count}/40)</span>
         </div>
       `;
@@ -839,11 +836,11 @@ function renderCardTabs() {
     .join("");
 
   if (wristbandCards.length < MAX_CARDS) {
-    html += `<button class="add-card-btn" onclick="addNewCard()">+ Add Card</button>`;
+    html += `<button class="add-card-btn" data-action="addNewCard">+ Add Card</button>`;
   }
 
   if (wristbandCards.length > 1) {
-    html += `<button class="btn btn-danger" style="margin-left: auto; padding: 6px 12px; font-size: 12px;" onclick="removeCurrentCard()">🗑 Remove Card</button>`;
+    html += `<button class="btn btn-danger" style="margin-left: auto; padding: 6px 12px; font-size: 12px;" data-action="removeCurrentCard">🗑 Remove Card</button>`;
   }
 
   container.innerHTML = html;
@@ -944,7 +941,10 @@ function populateWristbandCheckboxFilters() {
  * @param {string} filterType - 'tempo' or 'personnel'
  * @param {string} value - Filter value
  */
-function toggleWbCheckbox(label, filterType, value) {
+function toggleWbCheckbox(el) {
+  const label = el.closest("[data-action='toggleWbCheckbox']") || el;
+  const filterType = label.dataset.filterType;
+  const value = label.dataset.filterValue;
   const checkbox = label.querySelector('input[type="checkbox"]');
   checkbox.checked = !checkbox.checked;
   label.classList.toggle("checked", checkbox.checked);
@@ -1180,21 +1180,15 @@ function renderWristbandGrid() {
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
-             ondragstart="handleCellDragStart(event, ${oddIndex})"
-             ondragover="handleCellDragOver(event)"
-             ondragleave="handleCellDragLeave(event)"
-             ondrop="handleCellDrop(event, ${oddIndex})"
-             ondragend="handleCellDragEnd(event)"
-             onclick="openCellPopup(${currentCardIndex}, ${oddIndex}, event)">
+             data-drag="wbCell" data-cell-idx="${oddIndex}"
+             data-card="${currentCardIndex}">
           <span class="cell-play">${oddPrefix}${getFullCall(oddPlay, opts)}</span>
         </div>
       `;
     } else {
       html += `<div class="wristband-cell" 
-                    ondragover="handleCellDragOver(event)" 
-                    ondragleave="handleCellDragLeave(event)"
-                    ondrop="handleCellDrop(event, ${oddIndex})" 
-                    onclick="openCellPopup(${currentCardIndex}, ${oddIndex}, event)"></div>`;
+                    data-drag="wbCell" data-cell-idx="${oddIndex}"
+                    data-card="${currentCardIndex}"></div>`;
     }
 
     // Even number cell
@@ -1205,21 +1199,15 @@ function renderWristbandGrid() {
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
-             ondragstart="handleCellDragStart(event, ${evenIndex})"
-             ondragover="handleCellDragOver(event)"
-             ondragleave="handleCellDragLeave(event)"
-             ondrop="handleCellDrop(event, ${evenIndex})"
-             ondragend="handleCellDragEnd(event)"
-             onclick="openCellPopup(${currentCardIndex}, ${evenIndex}, event)">
+             data-drag="wbCell" data-cell-idx="${evenIndex}"
+             data-card="${currentCardIndex}">
           <span class="cell-play">${evenPrefix}${getFullCall(evenPlay, opts)}</span>
         </div>
       `;
     } else {
       html += `<div class="wristband-cell" 
-                    ondragover="handleCellDragOver(event)" 
-                    ondragleave="handleCellDragLeave(event)"
-                    ondrop="handleCellDrop(event, ${evenIndex})" 
-                    onclick="openCellPopup(${currentCardIndex}, ${evenIndex}, event)"></div>`;
+                    data-drag="wbCell" data-cell-idx="${evenIndex}"
+                    data-card="${currentCardIndex}"></div>`;
     }
   }
 
@@ -1337,7 +1325,7 @@ function populateCellPlayList() {
     .slice(0, 50)
     .map(
       (p) => `
-      <div class="cell-play-option" onclick="selectPlayForCell(${plays.indexOf(p)})">
+      <div class="cell-play-option" data-action="selectPlayForCell" data-idx="${plays.indexOf(p)}">
         <span class="cell-play-option-type">${escapeHtml(p.type || "Play")}</span> ${getFullCall(p)}
       </div>
     `,
@@ -1866,10 +1854,10 @@ function loadSavedWristbandsList() {
             </div>
           </div>
           <div class="saved-card-actions">
-            <button class="saved-load-btn" onclick="loadWristband(${s.id})" title="Load this wristband">Load</button>
-            <button class="saved-rename-btn" onclick="renameSavedWristband(${s.id})" title="Rename">✏️</button>
-            <button class="saved-overwrite-btn" onclick="overwriteSavedWristband(${s.id})" title="Overwrite with current wristband">⬆️</button>
-            <button class="saved-del-btn" onclick="deleteSavedWristband(${s.id})" title="Delete">✕</button>
+            <button class="saved-load-btn" data-action="loadWristband" data-idx="${s.id}" title="Load this wristband">Load</button>
+            <button class="saved-rename-btn" data-action="renameSavedWristband" data-idx="${s.id}" title="Rename">✏️</button>
+            <button class="saved-overwrite-btn" data-action="overwriteSavedWristband" data-idx="${s.id}" title="Overwrite with current wristband">⬆️</button>
+            <button class="saved-del-btn" data-action="deleteSavedWristband" data-idx="${s.id}" title="Delete">✕</button>
           </div>
         </div>
         `;
@@ -2166,3 +2154,54 @@ function updateWbStats() {
   runEl.textContent = runCount;
   passEl.textContent = passCount;
 }
+
+// ============ Container-Scoped Delegation ============
+
+document.addEventListener("DOMContentLoaded", () => {
+  // ── Wristband grid: drag + click delegation ──
+  const grid = document.getElementById("wristbandGrid");
+  if (grid) {
+    grid.addEventListener("click", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (cell) openCellPopup(parseInt(cell.dataset.card, 10), parseInt(cell.dataset.cellIdx, 10), e);
+    });
+    grid.addEventListener("dragstart", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (cell) handleCellDragStart(e, parseInt(cell.dataset.cellIdx, 10));
+    });
+    grid.addEventListener("dragover", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (cell) handleCellDragOver(e);
+    });
+    grid.addEventListener("dragleave", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (cell) handleCellDragLeave(e);
+    });
+    grid.addEventListener("drop", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (cell) handleCellDrop(e, parseInt(cell.dataset.cellIdx, 10));
+    });
+    grid.addEventListener("dragend", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (cell) handleCellDragEnd(e);
+    });
+  }
+
+  // ── Wristband sort criteria: drag delegation ──
+  document.body.addEventListener("dragstart", (e) => {
+    const el = e.target.closest("[data-drag='wbSort']");
+    if (el) handleSortDragStart(e, parseInt(el.dataset.idx, 10));
+  });
+  document.body.addEventListener("dragover", (e) => {
+    const el = e.target.closest("[data-drag='wbSort']");
+    if (el) handleSortDragOver(e);
+  });
+  document.body.addEventListener("drop", (e) => {
+    const el = e.target.closest("[data-drag='wbSort']");
+    if (el) handleSortDrop(e, parseInt(el.dataset.idx, 10));
+  });
+  document.body.addEventListener("dragend", (e) => {
+    const el = e.target.closest("[data-drag='wbSort']");
+    if (el) handleSortDragEnd(e);
+  });
+});

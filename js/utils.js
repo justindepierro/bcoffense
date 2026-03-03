@@ -237,26 +237,6 @@ function showPrintPreview(contentEl, onPrint) {
 }
 
 /**
- * Show a pre-flight toast then open the browser print dialog.
- * Debounced to prevent accidental double-triggers.
- * @param {string} label - Short label, e.g. "Call Sheet"
- */
-let _printDebounceTimer = null;
-function triggerPrint(label) {
-  if (_printDebounceTimer) return;
-  showToast(
-    `🖨️ Preparing ${label || "document"} — opening print dialog…`,
-    3000,
-  );
-  _printDebounceTimer = setTimeout(() => {
-    window.print();
-    setTimeout(() => {
-      _printDebounceTimer = null;
-    }, 1500);
-  }, 400);
-}
-
-/**
  * Attach a long-press handler for mobile (replaces contextmenu on touch)
  * @param {Function} callback - Called with synthetic event-like object
  * @param {number} duration - Hold duration in ms (default 500)
@@ -784,6 +764,9 @@ const STORAGE_KEYS = {
   CS_SCOUTING_OVERLAY: "csScoutingOverlay",
   PLAY_COLLECTIONS: "playCollections",
   CALLSHEET_CONSTRAINTS: "callSheetConstraints",
+  OB_PLAY_RATINGS: "ob_playRatings",
+  LAST_ACTIVE_TAB: "lastActiveTab",
+  THEME: "theme",
 };
 
 /**
@@ -866,7 +849,7 @@ function buildCheckboxFilterGroup(
   container.innerHTML = values
     .map(
       (v) => `
-        <label onclick="${toggleFnName}(this, '${filterType}', '${v.replace(/'/g, "\\'").replace(/"/g, "&quot;")}')">
+        <label data-action="${toggleFnName}" data-filter-type="${filterType}" data-filter-value="${escapeHtml(v)}">
           <input type="checkbox" value="${escapeHtml(v)}"> ${escapeHtml(v)}
         </label>
       `,
@@ -938,7 +921,7 @@ function runMigrations() {
     if (typeof MIGRATIONS[v] === "function") {
       try {
         MIGRATIONS[v]();
-        console.log(`Storage migration v${v} applied`);
+        console.debug(`Storage migration v${v} applied`);
       } catch (e) {
         console.error(`Storage migration v${v} failed:`, e);
         break;
@@ -1130,7 +1113,7 @@ const storageManager = {
     if (_crossTabToastShown) return; // one notice is enough
     _crossTabToastShown = true;
     showToast(
-      '⚠️ Data changed in another tab. <button onclick="location.reload()" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;">Reload</button>',
+      '⚠️ Data changed in another tab. <button data-action="reloadPage" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;">Reload</button>',
       8000,
     );
     // Reset after the toast disappears so a later change can notify again
@@ -1813,10 +1796,7 @@ function showReorderModal(values, opts) {
       .map(
         (val, idx) => `
       <div class="custom-order-item" draggable="true" data-idx="${idx}"
-           ondragstart="_reorderDragStart(event, ${idx})"
-           ondragover="_reorderDragOver(event)"
-           ondrop="_reorderDrop(event, ${idx})"
-           ondragend="_reorderDragEnd(event)">
+           data-drag="reorder">
         <span class="drag-handle">☰</span>
         <span class="order-number">${idx + 1}.</span>
         <span class="order-value">${escapeHtml(val)}</span>
@@ -1833,9 +1813,9 @@ function showReorderModal(values, opts) {
     if (opts.onClose) opts.onClose();
   }
 
-  // Expose close globally so inline onclick can reach it
+  // Expose close globally so delegation can reach it
   window._reorderClose = function (event) {
-    if (event && event.target.id !== modalId) return;
+    if (event && event.target && event.target.id !== modalId) return;
     close();
   };
 
@@ -1850,11 +1830,11 @@ function showReorderModal(values, opts) {
   };
 
   const modalHtml = `
-    <div id="${modalId}" class="modal-overlay" style="display: flex;" onclick="_reorderClose(event)">
-      <div class="modal-content" onclick="event.stopPropagation()" style="max-width: 400px;">
+    <div id="${modalId}" class="modal-overlay" style="display: flex;" data-action="_reorderCloseOverlay">
+      <div class="modal-content" style="max-width: 400px;">
         <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
           <h3 style="margin: 0;">${opts.title || "Custom Order"}</h3>
-          <button onclick="_reorderClose()" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
+          <button data-action="_reorderClose" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
         </div>
         <div class="modal-body">
           <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
@@ -1864,13 +1844,13 @@ function showReorderModal(values, opts) {
             ${renderList()}
           </div>
           <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button onclick="_reorderSave()" class="btn btn-primary" style="padding: 8px 16px;">
+            <button data-action="_reorderSave" class="btn btn-primary" style="padding: 8px 16px;">
               💾 Save Order
             </button>
-            <button onclick="_reorderClear()" class="btn btn-secondary" style="padding: 8px 16px;">
+            <button data-action="_reorderClear" class="btn btn-secondary" style="padding: 8px 16px;">
               🗑️ Clear Custom Order
             </button>
-            <button onclick="_reorderClose()" class="btn" style="padding: 8px 16px;">
+            <button data-action="_reorderClose" class="btn" style="padding: 8px 16px;">
               Cancel
             </button>
           </div>
@@ -1880,6 +1860,27 @@ function showReorderModal(values, opts) {
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+
+  // Add drag delegation on the modal
+  const modal = document.getElementById(modalId);
+  if (modal) {
+    modal.addEventListener("dragstart", (e) => {
+      const el = e.target.closest("[data-drag='reorder']");
+      if (el) _reorderDragStart(e, parseInt(el.dataset.idx, 10));
+    });
+    modal.addEventListener("dragover", (e) => {
+      const el = e.target.closest("[data-drag='reorder']");
+      if (el) _reorderDragOver(e);
+    });
+    modal.addEventListener("drop", (e) => {
+      const el = e.target.closest("[data-drag='reorder']");
+      if (el) _reorderDrop(e, parseInt(el.dataset.idx, 10));
+    });
+    modal.addEventListener("dragend", (e) => {
+      const el = e.target.closest("[data-drag='reorder']");
+      if (el) _reorderDragEnd(e);
+    });
+  }
 }
 
 // Drag handlers for the shared reorder modal
@@ -1905,10 +1906,7 @@ function _reorderDrop(event, targetIdx) {
       .map(
         (val, idx) => `
       <div class="custom-order-item" draggable="true" data-idx="${idx}"
-           ondragstart="_reorderDragStart(event, ${idx})"
-           ondragover="_reorderDragOver(event)"
-           ondrop="_reorderDrop(event, ${idx})"
-           ondragend="_reorderDragEnd(event)">
+           data-drag="reorder">
         <span class="drag-handle">☰</span>
         <span class="order-number">${idx + 1}.</span>
         <span class="order-value">${escapeHtml(val)}</span>

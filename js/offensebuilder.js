@@ -4,7 +4,7 @@
 // The right panel shows detail, related plays, and smart recommendations.
 
 // ── Storage ────────────────────────────────────────────────────────
-const OB_STORAGE_KEY = "ob_playRatings"; // { playName: 1-5 }
+const OB_STORAGE_KEY = STORAGE_KEYS.OB_PLAY_RATINGS;
 
 function obLoadRatings() {
   try {
