@@ -1948,12 +1948,15 @@ let _editingFilteredIdx = -1;
  * for a given field key, seeded with defaults so the list is never empty.
  * Always includes "" (blank) as first option.
  */
-function _editorOptions(key, defaults) {
+function _editorOptions(key, defaults, extraKeys) {
   const set = new Set(defaults);
   if (typeof plays !== "undefined" && Array.isArray(plays)) {
+    const keys = extraKeys || [key];
     plays.forEach((p) => {
-      const v = (p[key] || "").trim();
-      if (v) set.add(v);
+      keys.forEach((k) => {
+        const v = (p[k] || "").trim();
+        if (v) set.add(v);
+      });
     });
   }
   // Sort alphabetically (blank always first)
@@ -1971,6 +1974,13 @@ const _SITUATION_DEFAULTS = [
 ];
 const _FIELD_POS_DEFAULTS = [
   "Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon", "Fringe", "Coming Out",
+];
+const _HIT_CHART_DEFAULTS = [
+  "Left Deep", "Left Seam", "Left Medium", "Left Short", "Left Curl", "Left Hook", "Left Flat",
+  "Middle Hole", "Middle Hook", "Deep Post",
+  "Right Deep", "Right Seam", "Right Medium", "Right Short", "Right Curl", "Right Hook", "Right Flat",
+  "Inside Run Left", "Inside Run Right", "Inside Tackle Left", "Inside Tackle Right",
+  "Off Tackle Left", "Off Tackle Right",
 ];
 
 const _EDITOR_SECTIONS = [
@@ -2068,9 +2078,30 @@ const _EDITOR_SECTIONS = [
       { key: "constraint1", label: "Constraint 1" },
       { key: "constraint2", label: "Constraint 2" },
       { key: "constraint3", label: "Constraint 3" },
-      { key: "hitChart1", label: "Hit Chart 1" },
-      { key: "hitChart2", label: "Hit Chart 2" },
-      { key: "hitChart3", label: "Hit Chart 3" },
+      {
+        key: "hitChart1",
+        label: "Hit Chart 1",
+        type: "select",
+        canAddNew: true,
+        optionsFn: () => _editorOptions("hitChart1", _HIT_CHART_DEFAULTS,
+          ["hitChart1", "hitChart2", "hitChart3"]),
+      },
+      {
+        key: "hitChart2",
+        label: "Hit Chart 2",
+        type: "select",
+        canAddNew: true,
+        optionsFn: () => _editorOptions("hitChart2", _HIT_CHART_DEFAULTS,
+          ["hitChart1", "hitChart2", "hitChart3"]),
+      },
+      {
+        key: "hitChart3",
+        label: "Hit Chart 3",
+        type: "select",
+        canAddNew: true,
+        optionsFn: () => _editorOptions("hitChart3", _HIT_CHART_DEFAULTS,
+          ["hitChart1", "hitChart2", "hitChart3"]),
+      },
     ],
   },
   {
@@ -2174,7 +2205,7 @@ function _populateEditorForm(play, isNew) {
         const opts = f.optionsFn ? f.optionsFn() : (f.options || []);
         // If the current value isn't in the list, prepend it
         const valInList = opts.some((o) => o === val);
-        html += `<select id="pe-${f.key}" data-field="${f.key}">`;
+        html += `<select id="pe-${f.key}" data-field="${f.key}"${f.canAddNew ? ' data-can-add-new="1"' : ''}>`;
         if (!valInList && val) {
           html += `<option value="${escapeHtml(val)}" selected>${escapeHtml(val)}</option>`;
         }
@@ -2183,6 +2214,9 @@ function _populateEditorForm(play, isNew) {
           const display = opt === "" ? "—" : opt;
           html += `<option value="${escapeHtml(opt)}"${sel}>${escapeHtml(display)}</option>`;
         });
+        if (f.canAddNew) {
+          html += `<option value="__add_new__">➕ Add New…</option>`;
+        }
         html += `</select>`;
       } else if (f.type === "textarea") {
         html += `<textarea id="pe-${f.key}" data-field="${f.key}" rows="3">${escapeHtml(val)}</textarea>`;
@@ -2196,6 +2230,30 @@ function _populateEditorForm(play, isNew) {
 
   body.innerHTML = html;
   overlay.classList.add("visible");
+
+  // Wire up "Add New…" option on selects that support it
+  body.querySelectorAll('select[data-can-add-new]').forEach((sel) => {
+    sel.addEventListener("change", async () => {
+      if (sel.value !== "__add_new__") return;
+      // Reset to blank while prompt is open
+      sel.value = "";
+      const newVal = await showPrompt("Enter a new option:", "", {
+        title: "Add New Option",
+        icon: "➕",
+        placeholder: "e.g. Right Seam",
+      });
+      if (newVal && newVal.trim()) {
+        const trimmed = newVal.trim();
+        // Insert before the "Add New" option
+        const addOpt = sel.querySelector('option[value="__add_new__"]');
+        const option = document.createElement("option");
+        option.value = trimmed;
+        option.textContent = trimmed;
+        option.selected = true;
+        sel.insertBefore(option, addOpt);
+      }
+    });
+  });
 
   // Focus first input
   const first = body.querySelector("input, select, textarea");
