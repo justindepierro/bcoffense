@@ -116,6 +116,12 @@ const CALLSHEET_CONSTRAINTS = {
     "rollout",
   ],
 
+  // ── Weighted touch distribution ────────────────────────────────────────────
+  // Key Player 1 = primary read / ball carrier (highest weight)
+  // Key Player 2 = secondary read / option
+  // Key Player 3 = tertiary option / check-down
+  touchWeights: [3, 2, 1], // KP1, KP2, KP3 point values
+
   // ── Per-bucket rules ───────────────────────────────────────────────────────
   // Each entry can override any global default.
   // targetRun/targetThrow are ratios (not counts); both should sum to 10
@@ -496,6 +502,33 @@ function categorizePlay(play) {
   // Mark QB touch
   if (isQBRun) touches.add(roleMap["QB"] || "Lucas");
 
+  // ── Weighted touch distribution ───────────────────────────────────────────
+  // Uses keyPlayerName1/2/3 directly (more reliable), with position→roleMap
+  // fallback. Each priority slot has a different weight.
+  const weights = CALLSHEET_CONSTRAINTS.touchWeights || [3, 2, 1];
+  const weightedTouches = {}; // { playerName: totalWeight }
+  const kpSlots = [
+    { pos: play.keyPlayer1, name: play.keyPlayerName1, w: weights[0] || 3 },
+    { pos: play.keyPlayer2, name: play.keyPlayerName2, w: weights[1] || 2 },
+    { pos: play.keyPlayer3, name: play.keyPlayerName3, w: weights[2] || 1 },
+  ];
+  kpSlots.forEach(({ pos, name, w }) => {
+    // Resolve player name: prefer keyPlayerName, fall back to pos→roleMap
+    let player = (name || "").trim();
+    if (!player && pos) {
+      const k = pos.trim().toUpperCase();
+      player = roleMap[k] || "";
+    }
+    if (player) {
+      weightedTouches[player] = (weightedTouches[player] || 0) + w;
+    }
+  });
+  // QB runs get KP1-level weight
+  if (isQBRun) {
+    const qbName = roleMap["QB"] || "Lucas";
+    weightedTouches[qbName] = (weightedTouches[qbName] || 0) + weights[0];
+  }
+
   // ── Is it a Cross / Cover-0 answer? ───────────────────────────────────────
   const isCross = matchedFamily === "Cross";
   const isCover0Ans = matchedFamily === "Smaug" || isQuick;
@@ -513,6 +546,7 @@ function categorizePlay(play) {
     isCross,
     isCover0Ans,
     touches: [...touches],
+    weightedTouches,
   };
 }
 
@@ -548,12 +582,22 @@ function evaluateBucket(bucketKey, bucketObj) {
   const cover0Count = cats.filter((c) => c.isCover0Ans).length;
   const qbRunCount = cats.filter((c) => c.isQBRun).length;
 
-  // Touch counts per player name
+  // Touch counts per player name (flat — each key-player slot = 1)
   const touchCounts = {};
   cats.forEach((c) => {
     c.touches.forEach((player) => {
       touchCounts[player] = (touchCounts[player] || 0) + 1;
     });
+  });
+
+  // Weighted touch counts (KP1 > KP2 > KP3)
+  const weightedTouchCounts = {};
+  cats.forEach((c) => {
+    if (c.weightedTouches) {
+      Object.entries(c.weightedTouches).forEach(([player, w]) => {
+        weightedTouchCounts[player] = (weightedTouchCounts[player] || 0) + w;
+      });
+    }
   });
 
   const warnings = [];
@@ -573,6 +617,7 @@ function evaluateBucket(bucketKey, bucketObj) {
       cover0Count,
       qbRunCount,
       touchCounts,
+      weightedTouchCounts,
       warnings: [],
       errors: ["⛔ Bucket is empty"],
       successes: [],
@@ -608,6 +653,7 @@ function evaluateBucket(bucketKey, bucketObj) {
       cover0Count,
       qbRunCount,
       touchCounts,
+      weightedTouchCounts,
       warnings,
       errors,
       successes,
@@ -740,6 +786,7 @@ function evaluateBucket(bucketKey, bucketObj) {
     cover0Count,
     qbRunCount,
     touchCounts,
+    weightedTouchCounts,
     warnings,
     errors,
     successes,
@@ -768,12 +815,30 @@ function evaluateCallSheet(cs) {
   let totalScore = 0;
   let bucketCount = 0;
 
+  // Global aggregated weighted touch counts across all buckets
+  const globalWeightedTouches = {};
+  const globalFlatTouches = {};
+
   Object.entries(cs).forEach(([key, bucket]) => {
     const report = evaluateBucket(key, bucket);
     bucketReports[key] = report;
     if (report.status !== "empty") {
       totalScore += report.score;
       bucketCount++;
+
+      // Aggregate weighted touches
+      if (report.weightedTouchCounts) {
+        Object.entries(report.weightedTouchCounts).forEach(([player, w]) => {
+          globalWeightedTouches[player] =
+            (globalWeightedTouches[player] || 0) + w;
+        });
+      }
+      // Aggregate flat touches
+      if (report.touchCounts) {
+        Object.entries(report.touchCounts).forEach(([player, c]) => {
+          globalFlatTouches[player] = (globalFlatTouches[player] || 0) + c;
+        });
+      }
     }
   });
 
@@ -795,7 +860,13 @@ function evaluateCallSheet(cs) {
 
   const summary = `${overallScore}% overall — ${okBuckets} ✅ ${warnBuckets} ⚠️ ${errorBuckets} 🚨 ${emptyBuckets} empty`;
 
-  return { overallScore, bucketReports, summary };
+  return {
+    overallScore,
+    bucketReports,
+    summary,
+    globalWeightedTouches,
+    globalFlatTouches,
+  };
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -901,6 +972,52 @@ function suggestFixesForBucket(report, playbookPlays) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// UI — SHARED HELPERS
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Build HTML for a horizontal bar chart showing weighted touch distribution.
+ * Sorted descending by weight. Each bar shows player name, filled portion
+ * proportional to weight share, percentage, and raw points.
+ *
+ * @param {Object} weightedTouches - { playerName: totalWeight }
+ * @param {Object} [flatTouches]   - { playerName: count } (optional, shown alongside)
+ * @param {string} [title]         - Section title (falsy → no header)
+ * @returns {string} HTML string
+ */
+function _renderTouchDistribution(weightedTouches, flatTouches, title) {
+  if (!weightedTouches || Object.keys(weightedTouches).length === 0) return "";
+
+  const entries = Object.entries(weightedTouches).sort((a, b) => b[1] - a[1]);
+  const totalWeight = entries.reduce((sum, e) => sum + e[1], 0);
+
+  const bars = entries
+    .map(([player, w]) => {
+      const pct = totalWeight > 0 ? (w / totalWeight) * 100 : 0;
+      const flat = flatTouches ? flatTouches[player] || 0 : null;
+      const flatLabel =
+        flat !== null ? `<span class="cr-dist-flat">${flat} plays</span>` : "";
+      return `
+      <div class="cr-dist-row">
+        <span class="cr-dist-name">${escapeHtml(player)}</span>
+        <div class="cr-dist-bar-track">
+          <div class="cr-dist-bar-fill" style="width:${pct.toFixed(1)}%"></div>
+        </div>
+        <span class="cr-dist-pct">${pct.toFixed(0)}%</span>
+        <span class="cr-dist-pts">${Number.isInteger(w) ? w : w.toFixed(1)} pts</span>
+        ${flatLabel}
+      </div>`;
+    })
+    .join("");
+
+  const titleHtml = title
+    ? `<div class="cr-dist-title">🏈 ${escapeHtml(title)}</div>`
+    : "";
+
+  return `<div class="cr-distribution">${titleHtml}${bars}</div>`;
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // UI — RENDERING
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -940,13 +1057,19 @@ function closeConstraintPanel() {
 
 /**
  * Render the constraint panel with the full report.
- * @param {{ overallScore, bucketReports, summary }} report
+ * @param {{ overallScore, bucketReports, summary, globalWeightedTouches, globalFlatTouches }} report
  */
 function renderConstraintPanel(report) {
   const body = document.getElementById("constraintPanelBody");
   if (!body) return;
 
-  const { overallScore, bucketReports, summary } = report;
+  const {
+    overallScore,
+    bucketReports,
+    summary,
+    globalWeightedTouches,
+    globalFlatTouches,
+  } = report;
 
   // Score colour
   const scoreClass =
@@ -993,11 +1116,19 @@ function renderConstraintPanel(report) {
     })
     .join("");
 
+  // Global touch distribution bar chart
+  const distHtml = _renderTouchDistribution(
+    globalWeightedTouches,
+    globalFlatTouches,
+    "Touch Distribution (Weighted)",
+  );
+
   body.innerHTML = `
     <div class="cr-overview">
       <div class="cr-score ${scoreClass}">${overallScore}<span class="cr-score-pct">%</span></div>
       <div class="cr-summary">${summary}</div>
     </div>
+    ${distHtml}
     <div class="cr-bucket-list">${rows || "<p class='cr-empty'>Call sheet is empty.</p>"}</div>
   `;
 }
@@ -1020,14 +1151,14 @@ function renderBucketDetail(key, report) {
       <span class="cr-stat"><b>${report.throwCount}</b> Throw</span>
       <span class="cr-stat"><b>${report.screenCount}</b> Screen</span>
       <span class="cr-stat"><b>${report.shotCount}</b> Shot</span>
-      ${Object.entries(report.touchCounts)
-        .map(
-          ([p, c]) =>
-            `<span class="cr-stat cr-touch">👤 ${escapeHtml(p)}: ${c}</span>`,
-        )
-        .join("")}
     </div>
   `;
+
+  // Per-bucket weighted touch distribution
+  const bucketDistHtml = _renderTouchDistribution(
+    report.weightedTouchCounts,
+    report.touchCounts,
+  );
 
   const errorItems = report.errors
     .map((e) => `<li class="cr-item cr-item-error">${escapeHtml(e)}</li>`)
@@ -1049,7 +1180,7 @@ function renderBucketDetail(key, report) {
 
   const suggDiv = `<div class="cr-suggestions" id="cr-suggest-${safeKey}" style="display:none"></div>`;
 
-  return philHtml + statsHtml + listHtml + suggestBtn + suggDiv;
+  return philHtml + statsHtml + bucketDistHtml + listHtml + suggestBtn + suggDiv;
 }
 
 /**

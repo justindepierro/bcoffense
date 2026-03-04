@@ -636,8 +636,74 @@ function obRenderSidebar() {
   var recs = obAnalyzeGaps(_obPlayMap, _obConceptMap, ratings);
 
   sidebarEl.innerHTML =
-    _obBuildDetailHtml() + _obBuildRecommendationsHtml(recs);
+    _obBuildDetailHtml() +
+    _obBuildTouchDistributionHtml() +
+    _obBuildRecommendationsHtml(recs);
   _obAttachDetailHandlers();
+}
+
+// ── Touch Distribution Panel (whole playbook) ──────────────────────
+/**
+ * Compute weighted touch distribution across all plays and render
+ * a bar chart panel using the constraints engine helper.
+ */
+function _obBuildTouchDistributionHtml() {
+  if (!plays || plays.length === 0) return "";
+  if (typeof categorizePlay !== "function") return "";
+
+  var weightedTouches = {};
+  var flatTouches = {};
+  plays.forEach(function (p) {
+    var cat = categorizePlay(p);
+    if (cat.weightedTouches) {
+      Object.entries(cat.weightedTouches).forEach(function (pair) {
+        weightedTouches[pair[0]] = (weightedTouches[pair[0]] || 0) + pair[1];
+      });
+    }
+    if (cat.touches) {
+      cat.touches.forEach(function (player) {
+        flatTouches[player] = (flatTouches[player] || 0) + 1;
+      });
+    }
+  });
+
+  if (Object.keys(weightedTouches).length === 0) return "";
+
+  // Use the shared renderer from constraints.js if available
+  if (typeof _renderTouchDistribution === "function") {
+    return (
+      '<div class="ob-detail-section"><div class="ob-section-title">\uD83C\uDFC8 Touch Distribution (All Plays)</div><div class="ob-section-body">' +
+      _renderTouchDistribution(weightedTouches, flatTouches) +
+      "</div></div>"
+    );
+  }
+
+  // Fallback: simple text summary
+  var entries = Object.entries(weightedTouches).sort(function (a, b) {
+    return b[1] - a[1];
+  });
+  var total = entries.reduce(function (s, e) {
+    return s + e[1];
+  }, 0);
+  var html = entries
+    .map(function (pair) {
+      var pct = total > 0 ? ((pair[1] / total) * 100).toFixed(0) : 0;
+      return (
+        '<span class="cr-stat cr-touch">\uD83D\uDC64 ' +
+        escapeHtml(pair[0]) +
+        ": " +
+        pct +
+        "% (" +
+        pair[1] +
+        " pts)</span>"
+      );
+    })
+    .join("");
+  return (
+    '<div class="ob-detail-section"><div class="ob-section-title">\uD83C\uDFC8 Touch Distribution (All Plays)</div><div class="ob-section-body">' +
+    html +
+    "</div></div>"
+  );
 }
 
 // ── Detail Panel HTML ──────────────────────────────────────────────
