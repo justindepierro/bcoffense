@@ -3772,7 +3772,7 @@ function renderCsSortCriteria() {
         <div class="cs-sort-criteria-item" draggable="true" data-idx="${idx}"
              data-drag="csSortDrag">
           <span class="drag-handle">☰</span>
-          <select data-onchange="updateCsSortField" data-idx="${idx}" data-pass="value">${fieldOptions}</select>
+          <select data-onchange="updateCsSortField" data-key="${idx}" data-pass="value">${fieldOptions}</select>
           <button class="sort-dir-btn" data-action="toggleCsSortDirection" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
           <button class="custom-order-btn" data-action="openCsCustomOrderModal" data-arg="${criteria.field}" title="${customTitle}" style="font-size: 11px; padding: 2px 6px;">${customIcon}</button>
           <button class="remove-sort-btn" data-action="removeCsSortCriteria" data-idx="${idx}">✕</button>
@@ -4329,12 +4329,7 @@ document.addEventListener("DOMContentLoaded", () => {
   });
 
   // ── Body: change delegation for sort field selects ──
-  document.body.addEventListener("change", (e) => {
-    const el = e.target;
-    if (el.dataset && el.dataset.onchange === "updateCsSortField") {
-      updateCsSortField(parseInt(el.dataset.idx, 10), el.value);
-    }
-  });
+  // Handled by global _dispatchDataHandler via data-onchange + data-key + data-pass="value"
 });
 
 // ── Global click handler additions for callsheet-specific actions ──

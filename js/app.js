@@ -1954,7 +1954,7 @@ document.addEventListener("click", (e) => {
       removeFilter(el.dataset.layer, el.dataset.filterValue);
       return;
     case "openCustomOrderModal":
-      openCustomOrderModal(el.dataset.sortField);
+      openCustomOrderModal(el.dataset.sortField || el.dataset.arg);
       return;
     case "loadCollection":
       loadCollection(parseInt(el.dataset.idx, 10));
