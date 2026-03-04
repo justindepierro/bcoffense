@@ -1886,9 +1886,20 @@ function printFilteredPlays() {
   // Sort a copy of filteredPlays using the print sort criteria
   const sortedPlays = _applyPbPrintSort(filteredPlays);
 
-  let html = '<ol class="pb-print-list">';
+  // Build title + meta line
+  const total = sortedPlays.length;
+  const dateStr = new Date().toLocaleDateString("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  });
+  let html =
+    `<div class="pb-print-title">Playbook — ${escapeHtml(total + "")} Plays</div>` +
+    `<div class="pb-print-meta">${escapeHtml(dateStr)}</div>`;
 
-  sortedPlays.forEach((play) => {
+  html += '<ul class="pb-print-list">';
+
+  sortedPlays.forEach((play, idx) => {
     const isHuddle =
       highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle";
     const isCandy =
@@ -1899,10 +1910,10 @@ function printFilteredPlays() {
         ? ` style="background:${UI_COLORS.highlightCandy};"`
         : "";
 
-    html += `<li${bgStyle}>${getFullCall(play, opts)}</li>`;
+    html += `<li${bgStyle}><span class="pb-print-num">${idx + 1}.</span><span class="pb-print-call">${getFullCall(play, opts)}</span></li>`;
   });
 
-  html += "</ol>";
+  html += "</ul>";
   container.innerHTML = html;
 
   // Show print container + set print mode
@@ -1917,7 +1928,7 @@ function printFilteredPlays() {
     document.head.appendChild(printStyle);
   }
   printStyle.textContent =
-    "@media print { @page { size: letter portrait; margin: 0.4in 0.5in; } }";
+    "@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }";
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Playbook");

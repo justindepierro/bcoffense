@@ -133,7 +133,7 @@
 }
 .playbook-print {
   background: var(--color-white);
-  padding: 10px;
+  padding: 0;
 }
 
 /* Checkbox Filters */
