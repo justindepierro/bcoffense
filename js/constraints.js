@@ -972,6 +972,177 @@ function suggestFixesForBucket(report, playbookPlays) {
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
+// GLOBAL TOUCH ANALYSIS ENGINE
+// Computes rich per-player analytics from any array of plays.
+// ─────────────────────────────────────────────────────────────────────────────
+
+/**
+ * Compute a comprehensive touch analysis for an array of plays.
+ * Used by constraints panel, offense builder, and installation report.
+ *
+ * @param {Object[]} playsArr - array of play objects
+ * @returns {Object} analysis
+ */
+function computeTouchAnalysis(playsArr) {
+  if (!playsArr || playsArr.length === 0) {
+    return {
+      players: {},
+      weighted: {},
+      flat: {},
+      byType: {},
+      bySlot: {},
+      hitZones: {},
+      totalPlays: 0,
+      totalWeightedPts: 0,
+    };
+  }
+
+  const roleMap = CALLSHEET_CONSTRAINTS.roleMap;
+  const weights = CALLSHEET_CONSTRAINTS.touchWeights || [3, 2, 1];
+
+  // Accumulators
+  const weighted = {}; // player → total weighted points
+  const flat = {}; // player → flat play count (at least one KP slot)
+  const byType = {}; // player → { Run: n, Pass: n, Screen: n, ... }
+  const bySlot = {}; // player → { kp1: n, kp2: n, kp3: n }
+  const hitZones = {}; // player → { zone: count }
+  const playTypes = {}; // player → { typeName: Set<playIdx> } — to dedupe
+
+  playsArr.forEach((play, idx) => {
+    const cat = categorizePlay(play);
+
+    // ── Weighted + flat touches from categorizePlay ──
+    if (cat.weightedTouches) {
+      Object.entries(cat.weightedTouches).forEach(([player, w]) => {
+        weighted[player] = (weighted[player] || 0) + w;
+      });
+    }
+    if (cat.touches) {
+      cat.touches.forEach((player) => {
+        flat[player] = (flat[player] || 0) + 1;
+      });
+    }
+
+    // ── Per-slot breakdown (KP1 / KP2 / KP3) ──
+    const kpSlots = [
+      { pos: play.keyPlayer1, name: play.keyPlayerName1, slot: "kp1" },
+      { pos: play.keyPlayer2, name: play.keyPlayerName2, slot: "kp2" },
+      { pos: play.keyPlayer3, name: play.keyPlayerName3, slot: "kp3" },
+    ];
+    kpSlots.forEach(({ pos, name, slot }) => {
+      let player = (name || "").trim();
+      if (!player && pos) {
+        const k = pos.trim().toUpperCase();
+        player = roleMap[k] || "";
+      }
+      if (player) {
+        if (!bySlot[player]) bySlot[player] = { kp1: 0, kp2: 0, kp3: 0 };
+        bySlot[player][slot]++;
+      }
+    });
+
+    // ── Per-type breakdown ──
+    const typeName = (play.type || "Other").trim();
+    kpSlots.forEach(({ pos, name }) => {
+      let player = (name || "").trim();
+      if (!player && pos) {
+        const k = pos.trim().toUpperCase();
+        player = roleMap[k] || "";
+      }
+      if (player) {
+        if (!byType[player]) byType[player] = {};
+        if (!playTypes[player]) playTypes[player] = {};
+        if (!playTypes[player][typeName])
+          playTypes[player][typeName] = new Set();
+        // Only count once per play per player per type
+        if (!playTypes[player][typeName].has(idx)) {
+          playTypes[player][typeName].add(idx);
+          byType[player][typeName] = (byType[player][typeName] || 0) + 1;
+        }
+      }
+    });
+
+    // ── QB runs ──
+    if (cat.isQBRun) {
+      const qbName = roleMap["QB"] || "Lucas";
+      if (!byType[qbName]) byType[qbName] = {};
+      byType[qbName]["QB Run"] = (byType[qbName]["QB Run"] || 0) + 1;
+      if (!bySlot[qbName]) bySlot[qbName] = { kp1: 0, kp2: 0, kp3: 0 };
+      bySlot[qbName].kp1++;
+    }
+
+    // ── Hit chart zones per player ──
+    const hcSlots = [
+      { name: play.keyPlayerName1, pos: play.keyPlayer1, hc: play.hitChart1 },
+      { name: play.keyPlayerName2, pos: play.keyPlayer2, hc: play.hitChart2 },
+      { name: play.keyPlayerName3, pos: play.keyPlayer3, hc: play.hitChart3 },
+    ];
+    hcSlots.forEach(({ name, pos, hc }) => {
+      if (!hc || !hc.trim()) return;
+      let player = (name || "").trim();
+      if (!player && pos) {
+        const k = pos.trim().toUpperCase();
+        player = roleMap[k] || "";
+      }
+      if (player) {
+        if (!hitZones[player]) hitZones[player] = {};
+        const zone = hc.trim();
+        hitZones[player][zone] = (hitZones[player][zone] || 0) + 1;
+      }
+    });
+  });
+
+  // ── Build sorted player summaries ──
+  const totalWeightedPts = Object.values(weighted).reduce(
+    (s, v) => s + v,
+    0,
+  );
+  const players = {};
+
+  Object.keys(weighted)
+    .sort((a, b) => weighted[b] - weighted[a])
+    .forEach((name) => {
+      const w = weighted[name] || 0;
+      const f = flat[name] || 0;
+      const pct = totalWeightedPts > 0 ? (w / totalWeightedPts) * 100 : 0;
+      const slots = bySlot[name] || { kp1: 0, kp2: 0, kp3: 0 };
+      const types = byType[name] || {};
+      const zones = hitZones[name] || {};
+
+      // Sort hit zones descending
+      const sortedZones = Object.entries(zones).sort((a, b) => b[1] - a[1]);
+
+      // Sort types descending
+      const sortedTypes = Object.entries(types).sort((a, b) => b[1] - a[1]);
+
+      players[name] = {
+        name,
+        weightedPts: w,
+        pct,
+        flatCount: f,
+        slots,
+        types: sortedTypes,
+        hitZones: sortedZones,
+        primaryRate:
+          slots.kp1 + slots.kp2 + slots.kp3 > 0
+            ? (slots.kp1 / (slots.kp1 + slots.kp2 + slots.kp3)) * 100
+            : 0,
+      };
+    });
+
+  return {
+    players,
+    weighted,
+    flat,
+    byType,
+    bySlot,
+    hitZones,
+    totalPlays: playsArr.length,
+    totalWeightedPts,
+  };
+}
+
+// ─────────────────────────────────────────────────────────────────────────────
 // UI — SHARED HELPERS
 // ─────────────────────────────────────────────────────────────────────────────
 
@@ -1015,6 +1186,128 @@ function _renderTouchDistribution(weightedTouches, flatTouches, title) {
     : "";
 
   return `<div class="cr-distribution">${titleHtml}${bars}</div>`;
+}
+
+/**
+ * Build a rich, expandable touch analysis panel from a computeTouchAnalysis result.
+ * Shows overview bars + expandable per-player breakdown with slot, type, and hit zone detail.
+ *
+ * @param {Object} analysis - result from computeTouchAnalysis()
+ * @param {Object} [opts]
+ * @param {string} [opts.title] - panel title
+ * @param {boolean} [opts.compact] - skip hit zones / use compact mode
+ * @param {string} [opts.idPrefix] - unique prefix for toggle IDs
+ * @returns {string} HTML string
+ */
+function renderTouchAnalysis(analysis, opts) {
+  if (!analysis || !analysis.players || Object.keys(analysis.players).length === 0) return "";
+
+  const { title = "Touch Distribution", compact = false, idPrefix = "ta" } = opts || {};
+  const playerArr = Object.values(analysis.players);
+  const totalPts = analysis.totalWeightedPts || 0;
+
+  // Bar colors per player (cycle through a curated palette)
+  const palette = [
+    "var(--color-primary, #667eea)",
+    "var(--color-accent, #764ba2)",
+    "var(--color-success, #28a745)",
+    "var(--color-warning, #f0ad4e)",
+    "var(--color-danger, #dc3545)",
+    "var(--color-info, #17a2b8)",
+  ];
+
+  // Overview chips
+  const summaryChips = playerArr
+    .map((p, i) => {
+      const color = palette[i % palette.length];
+      return `<span class="ta-chip" style="--ta-color:${color}"><span class="ta-chip-dot" style="background:${color}"></span>${escapeHtml(p.name)} <b>${p.pct.toFixed(0)}%</b></span>`;
+    })
+    .join("");
+
+  // Player rows with expandable detail
+  const rows = playerArr
+    .map((p, i) => {
+      const color = palette[i % palette.length];
+      const id = `${idPrefix}-${i}`;
+
+      // Slot breakdown mini-bar
+      const slotTotal = p.slots.kp1 + p.slots.kp2 + p.slots.kp3;
+      const kp1Pct = slotTotal > 0 ? (p.slots.kp1 / slotTotal) * 100 : 0;
+      const kp2Pct = slotTotal > 0 ? (p.slots.kp2 / slotTotal) * 100 : 0;
+      const kp3Pct = slotTotal > 0 ? (p.slots.kp3 / slotTotal) * 100 : 0;
+
+      const slotBar = `
+        <div class="ta-slot-bar">
+          <div class="ta-slot-seg ta-seg-kp1" style="width:${kp1Pct.toFixed(0)}%" title="KP1: ${p.slots.kp1}"></div>
+          <div class="ta-slot-seg ta-seg-kp2" style="width:${kp2Pct.toFixed(0)}%" title="KP2: ${p.slots.kp2}"></div>
+          <div class="ta-slot-seg ta-seg-kp3" style="width:${kp3Pct.toFixed(0)}%" title="KP3: ${p.slots.kp3}"></div>
+        </div>`;
+
+      const slotLabels = `
+        <div class="ta-slot-labels">
+          <span class="ta-slot-label ta-lbl-kp1">KP1: ${p.slots.kp1}</span>
+          <span class="ta-slot-label ta-lbl-kp2">KP2: ${p.slots.kp2}</span>
+          <span class="ta-slot-label ta-lbl-kp3">KP3: ${p.slots.kp3}</span>
+        </div>`;
+
+      // Play types
+      const typeChips = p.types
+        .map(([t, n]) => `<span class="ta-type-chip">${escapeHtml(t)} <b>${n}</b></span>`)
+        .join("");
+
+      // Hit zones (top 6)
+      let zoneHtml = "";
+      if (!compact && p.hitZones.length > 0) {
+        const zoneChips = p.hitZones
+          .slice(0, 6)
+          .map(([z, n]) => `<span class="ta-zone-chip">${escapeHtml(z)} <b>${n}</b></span>`)
+          .join("");
+        const more = p.hitZones.length > 6 ? `<span class="ta-zone-more">+${p.hitZones.length - 6} more</span>` : "";
+        zoneHtml = `<div class="ta-detail-row"><span class="ta-detail-label">🎯 Hit Zones</span><div class="ta-detail-chips">${zoneChips}${more}</div></div>`;
+      }
+
+      return `
+      <div class="ta-player-row" data-action="toggleTaDetail" data-arg="${id}">
+        <span class="ta-player-dot" style="background:${color}"></span>
+        <span class="ta-player-name">${escapeHtml(p.name)}</span>
+        <div class="cr-dist-bar-track ta-bar">
+          <div class="cr-dist-bar-fill" style="width:${p.pct.toFixed(1)}%;background:${color}"></div>
+        </div>
+        <span class="ta-player-pct">${p.pct.toFixed(0)}%</span>
+        <span class="ta-player-pts">${Number.isInteger(p.weightedPts) ? p.weightedPts : p.weightedPts.toFixed(1)} pts</span>
+        <span class="ta-player-flat">${p.flatCount} plays</span>
+        <span class="ta-expand-arrow">›</span>
+      </div>
+      <div class="ta-detail" id="${id}" style="display:none">
+        <div class="ta-detail-row"><span class="ta-detail-label">🔵 Priority Slots</span>${slotBar}${slotLabels}</div>
+        <div class="ta-detail-row"><span class="ta-detail-label">🏃 Play Types</span><div class="ta-detail-chips">${typeChips || '<span class="ta-none">—</span>'}</div></div>
+        ${zoneHtml}
+      </div>`;
+    })
+    .join("");
+
+  return `
+  <div class="ta-panel">
+    <div class="ta-title">🏈 ${escapeHtml(title)}</div>
+    <div class="ta-summary">${summaryChips}</div>
+    <div class="ta-total">${analysis.totalPlays} plays · ${totalPts} weighted pts</div>
+    <div class="ta-rows">${rows}</div>
+  </div>`;
+}
+
+/**
+ * Toggle touch analysis detail panel visibility.
+ */
+function toggleTaDetail(id) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const isOpen = el.style.display !== "none";
+  el.style.display = isOpen ? "none" : "block";
+  const row = el.previousElementSibling;
+  if (row) {
+    const arrow = row.querySelector(".ta-expand-arrow");
+    if (arrow) arrow.textContent = isOpen ? "›" : "⌄";
+  }
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
@@ -1116,12 +1409,10 @@ function renderConstraintPanel(report) {
     })
     .join("");
 
-  // Global touch distribution bar chart
-  const distHtml = _renderTouchDistribution(
-    globalWeightedTouches,
-    globalFlatTouches,
-    "Touch Distribution (Weighted)",
-  );
+  // Global touch distribution — rich analysis panel
+  const allCsPlays = Object.values(callSheet).flatMap(b => [...(b.left || []), ...(b.right || [])]);
+  const touchAnalysis = computeTouchAnalysis(allCsPlays);
+  const distHtml = renderTouchAnalysis(touchAnalysis, { title: "Touch Distribution", idPrefix: "cr-ta" });
 
   body.innerHTML = `
     <div class="cr-overview">
@@ -1154,11 +1445,10 @@ function renderBucketDetail(key, report) {
     </div>
   `;
 
-  // Per-bucket weighted touch distribution
-  const bucketDistHtml = _renderTouchDistribution(
-    report.weightedTouchCounts,
-    report.touchCounts,
-  );
+  // Per-bucket touch distribution — rich analysis
+  const bucketPlays = callSheet[key] ? [...(callSheet[key].left || []), ...(callSheet[key].right || [])] : [];
+  const bucketAnalysis = computeTouchAnalysis(bucketPlays);
+  const bucketDistHtml = renderTouchAnalysis(bucketAnalysis, { compact: true, idPrefix: `cr-ta-${key}` });
 
   const errorItems = report.errors
     .map((e) => `<li class="cr-item cr-item-error">${escapeHtml(e)}</li>`)

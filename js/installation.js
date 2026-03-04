@@ -980,6 +980,7 @@ function generateSmartInstallReport() {
         type: r.play.type || "",
         stars: r.stars,
         maxStars: r.maxStars,
+        _play: r.play,
       })),
     };
 
@@ -1151,6 +1152,27 @@ function showSmartInstallReport() {
         </div>
       </div>
     </div>`;
+
+  // ── Touch Distribution ───────────────────────────────────────
+  if (typeof computeTouchAnalysis === "function" && typeof renderTouchAnalysis === "function" && plays && plays.length > 0) {
+    const allTouchAnalysis = computeTouchAnalysis(plays);
+    // Also compute for game-ready plays only
+    const gameReadyPlays = report.gameReadySummary && report.gameReadySummary.plays
+      ? report.gameReadySummary.plays.map(p => p._play || p).filter(p => p && p.play)
+      : [];
+    const gameReadyAnalysis = gameReadyPlays.length > 0 ? computeTouchAnalysis(gameReadyPlays) : null;
+
+    if (allTouchAnalysis && Object.keys(allTouchAnalysis.players).length > 0) {
+      html += `
+        <div class="sir-section">
+          <div class="sir-section-title">🏈 Touch Distribution <span class="sir-section-hint">Weighted player usage across your playbook</span></div>
+          ${renderTouchAnalysis(allTouchAnalysis, { title: "All Plays", idPrefix: "sir-ta-all" })}
+          ${gameReadyAnalysis && Object.keys(gameReadyAnalysis.players).length > 0
+            ? renderTouchAnalysis(gameReadyAnalysis, { title: "Game Ready Only", compact: true, idPrefix: "sir-ta-gr" })
+            : ""}
+        </div>`;
+    }
+  }
 
   // ── Quick Wins ───────────────────────────────────────────────
   if (report.quickWins.length > 0) {
@@ -1419,6 +1441,44 @@ function printSmartInstallReport() {
           <span class="sirp-balance-val">${balance.readyPasses}/${balance.totalPasses} (${passReadyPct}%)</span>
         </div>
       </div>`;
+
+  // ── Touch Distribution (Print) ──
+  if (typeof computeTouchAnalysis === "function" && plays && plays.length > 0) {
+    const allTouch = computeTouchAnalysis(plays);
+    if (allTouch && Object.keys(allTouch.players).length > 0) {
+      const playerRows = Object.values(allTouch.players);
+      html += `
+        <div class="sirp-section">
+          <div class="sirp-section-title">🏈 Touch Distribution — Weighted Player Usage</div>
+          <table class="sirp-table">
+            <thead><tr><th>Player</th><th>Weighted %</th><th>Points</th><th>Plays</th><th>KP1</th><th>KP2</th><th>KP3</th><th>Primary Rate</th></tr></thead>
+            <tbody>`;
+      playerRows.forEach((p) => {
+        html += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td class="sirp-center">${p.pct.toFixed(1)}%</td><td class="sirp-center">${Number.isInteger(p.weightedPts) ? p.weightedPts : p.weightedPts.toFixed(1)}</td><td class="sirp-center">${p.flatCount}</td><td class="sirp-center">${p.slots.kp1}</td><td class="sirp-center">${p.slots.kp2}</td><td class="sirp-center">${p.slots.kp3}</td><td class="sirp-center">${p.primaryRate.toFixed(0)}%</td></tr>`;
+      });
+      html += `</tbody></table>`;
+
+      // Game-ready touch comparison
+      const grPlays = report.gameReadySummary && report.gameReadySummary.plays
+        ? report.gameReadySummary.plays.map(p => p._play).filter(Boolean)
+        : [];
+      if (grPlays.length > 0) {
+        const grTouch = computeTouchAnalysis(grPlays);
+        if (grTouch && Object.keys(grTouch.players).length > 0) {
+          html += `
+            <div class="sirp-section-subtitle" style="margin-top:8px;font-weight:600;font-size:0.82rem;">Game Ready Only</div>
+            <table class="sirp-table">
+              <thead><tr><th>Player</th><th>Weighted %</th><th>Points</th><th>Plays</th></tr></thead>
+              <tbody>`;
+          Object.values(grTouch.players).forEach((p) => {
+            html += `<tr><td><strong>${escapeHtml(p.name)}</strong></td><td class="sirp-center">${p.pct.toFixed(1)}%</td><td class="sirp-center">${Number.isInteger(p.weightedPts) ? p.weightedPts : p.weightedPts.toFixed(1)}</td><td class="sirp-center">${p.flatCount}</td></tr>`;
+          });
+          html += `</tbody></table>`;
+        }
+      }
+      html += `</div>`;
+    }
+  }
 
   // ── Quick Wins ──
   if (report.quickWins.length > 0) {

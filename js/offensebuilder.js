@@ -644,57 +644,35 @@ function obRenderSidebar() {
 
 // ── Touch Distribution Panel (whole playbook) ──────────────────────
 /**
- * Compute weighted touch distribution across all plays and render
- * a bar chart panel using the constraints engine helper.
+ * Compute and render touch distribution across all plays using the
+ * global computeTouchAnalysis engine + renderTouchAnalysis renderer.
  */
 function _obBuildTouchDistributionHtml() {
   if (!plays || plays.length === 0) return "";
-  if (typeof categorizePlay !== "function") return "";
+  if (typeof computeTouchAnalysis !== "function") return "";
 
-  var weightedTouches = {};
-  var flatTouches = {};
-  plays.forEach(function (p) {
-    var cat = categorizePlay(p);
-    if (cat.weightedTouches) {
-      Object.entries(cat.weightedTouches).forEach(function (pair) {
-        weightedTouches[pair[0]] = (weightedTouches[pair[0]] || 0) + pair[1];
-      });
-    }
-    if (cat.touches) {
-      cat.touches.forEach(function (player) {
-        flatTouches[player] = (flatTouches[player] || 0) + 1;
-      });
-    }
-  });
+  var analysis = computeTouchAnalysis(plays);
+  if (!analysis || !analysis.players || Object.keys(analysis.players).length === 0) return "";
 
-  if (Object.keys(weightedTouches).length === 0) return "";
-
-  // Use the shared renderer from constraints.js if available
-  if (typeof _renderTouchDistribution === "function") {
+  // Use the rich renderer from constraints.js if available
+  if (typeof renderTouchAnalysis === "function") {
     return (
-      '<div class="ob-detail-section"><div class="ob-section-title">\uD83C\uDFC8 Touch Distribution (All Plays)</div><div class="ob-section-body">' +
-      _renderTouchDistribution(weightedTouches, flatTouches) +
+      '<div class="ob-detail-section"><div class="ob-section-body">' +
+      renderTouchAnalysis(analysis, { title: "Touch Distribution (All Plays)", idPrefix: "ob-ta" }) +
       "</div></div>"
     );
   }
 
   // Fallback: simple text summary
-  var entries = Object.entries(weightedTouches).sort(function (a, b) {
-    return b[1] - a[1];
-  });
-  var total = entries.reduce(function (s, e) {
-    return s + e[1];
-  }, 0);
-  var html = entries
-    .map(function (pair) {
-      var pct = total > 0 ? ((pair[1] / total) * 100).toFixed(0) : 0;
+  var html = Object.values(analysis.players)
+    .map(function (p) {
       return (
         '<span class="cr-stat cr-touch">\uD83D\uDC64 ' +
-        escapeHtml(pair[0]) +
+        escapeHtml(p.name) +
         ": " +
-        pct +
+        p.pct.toFixed(0) +
         "% (" +
-        pair[1] +
+        p.weightedPts +
         " pts)</span>"
       );
     })

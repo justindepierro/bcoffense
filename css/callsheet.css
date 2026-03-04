@@ -2318,3 +2318,207 @@
   font-size: 0.72rem;
   color: var(--color-text-secondary, #6c757d);
 }
+
+/* ── Enhanced Touch Analysis Panel (.ta-*) ─────────────────────────── */
+.ta-panel {
+  margin: 12px 0 14px;
+  padding: 12px 14px;
+  border-radius: var(--radius-md, 10px);
+  background: var(--color-bg-lighter, #fafafa);
+  border: 1px solid var(--color-border-light, #e8e8e8);
+}
+.ta-title {
+  font-size: 0.84rem;
+  font-weight: 700;
+  color: var(--color-text, #333);
+  margin-bottom: 8px;
+}
+.ta-summary {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-bottom: 8px;
+}
+.ta-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill, 999px);
+  background: var(--color-bg-body, #fff);
+  border: 1px solid var(--color-border-light, #e8e8e8);
+  font-size: 0.74rem;
+  font-weight: 500;
+  color: var(--color-text, #333);
+  white-space: nowrap;
+}
+.ta-chip b { font-weight: 700; }
+.ta-chip-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ta-total {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #888);
+  margin-bottom: 10px;
+}
+.ta-rows {
+  display: flex;
+  flex-direction: column;
+}
+.ta-player-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 4px;
+  cursor: pointer;
+  border-radius: var(--radius-sm, 6px);
+  transition: background var(--transition-fast, 0.15s);
+  font-size: 0.78rem;
+}
+.ta-player-row:hover {
+  background: var(--color-bg-hover-row, #f3f4f8);
+}
+.ta-player-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+.ta-player-name {
+  min-width: 56px;
+  font-weight: 600;
+  color: var(--color-text, #333);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.ta-bar {
+  flex: 1;
+  min-width: 36px;
+}
+.ta-player-pct {
+  min-width: 30px;
+  text-align: right;
+  font-weight: 700;
+  font-size: 0.76rem;
+  color: var(--color-primary-dark, #4a5ab9);
+}
+.ta-player-pts {
+  min-width: 40px;
+  text-align: right;
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #888);
+}
+.ta-player-flat {
+  min-width: 48px;
+  text-align: right;
+  font-size: 0.72rem;
+  color: var(--color-text-secondary, #6c757d);
+}
+.ta-expand-arrow {
+  width: 16px;
+  text-align: center;
+  font-size: 0.9rem;
+  color: var(--color-text-muted, #999);
+  transition: transform var(--transition-fast, 0.15s);
+  flex-shrink: 0;
+  user-select: none;
+}
+
+/* ── Expandable Detail ────────────────── */
+.ta-detail {
+  padding: 8px 12px 10px 28px;
+  border-left: 3px solid var(--color-border-light, #e0e0e0);
+  margin-left: 5px;
+  margin-bottom: 4px;
+}
+.ta-detail-row {
+  margin-bottom: 8px;
+}
+.ta-detail-row:last-child { margin-bottom: 0; }
+.ta-detail-label {
+  display: block;
+  font-size: 0.72rem;
+  font-weight: 600;
+  color: var(--color-text-muted, #888);
+  margin-bottom: 4px;
+}
+.ta-detail-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+/* ── Slot (KP) Stacked Bar ────── */
+.ta-slot-bar {
+  display: flex;
+  height: 12px;
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--color-bg-subtle, #e9ecef);
+  margin-bottom: 4px;
+}
+.ta-slot-seg {
+  height: 100%;
+  min-width: 1px;
+  transition: width var(--transition-normal, 0.25s) ease;
+}
+.ta-seg-kp1 { background: var(--color-primary, #667eea); }
+.ta-seg-kp2 { background: var(--color-accent, #764ba2); }
+.ta-seg-kp3 { background: var(--color-warning, #f0ad4e); }
+.ta-slot-labels {
+  display: flex;
+  gap: 10px;
+  font-size: 0.68rem;
+}
+.ta-slot-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  color: var(--color-text-muted, #888);
+}
+.ta-slot-label::before {
+  content: "";
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 2px;
+}
+.ta-lbl-kp1::before { background: var(--color-primary, #667eea); }
+.ta-lbl-kp2::before { background: var(--color-accent, #764ba2); }
+.ta-lbl-kp3::before { background: var(--color-warning, #f0ad4e); }
+
+/* ── Play-Type & Hit-Zone Chips ── */
+.ta-type-chip,
+.ta-zone-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill, 999px);
+  font-size: 0.68rem;
+  font-weight: 500;
+  white-space: nowrap;
+}
+.ta-type-chip {
+  background: var(--color-info-light, #d1ecf1);
+  color: var(--color-info, #17a2b8);
+}
+.ta-type-chip b { font-weight: 700; }
+.ta-zone-chip {
+  background: var(--color-success-light, #d4edda);
+  color: var(--color-success, #28a745);
+}
+.ta-zone-chip b { font-weight: 700; }
+.ta-zone-more {
+  font-size: 0.66rem;
+  color: var(--color-text-muted, #999);
+  font-style: italic;
+}
+.ta-none {
+  font-size: 0.72rem;
+  color: var(--color-text-muted, #999);
+}
