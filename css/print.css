@@ -61,6 +61,7 @@
   /* Hide toasts, offline banner, and other overlays when printing */
   .toast,
   .offline-banner,
+  .loading-overlay,
   .modal-overlay,
   #liveAnnouncer {
     display: none !important;

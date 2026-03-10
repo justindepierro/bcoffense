@@ -869,6 +869,91 @@ function debounce(fn, wait = 150) {
   };
 }
 
+// ============ RAF Render Coalescing ============
+/**
+ * Create a render function that coalesces multiple calls within the same frame
+ * into a single execution via requestAnimationFrame.
+ * @param {Function} renderFn - The render function to wrap
+ * @returns {Function} Coalesced render function
+ */
+function createRAFRenderer(renderFn) {
+  let scheduled = false;
+  return function (...args) {
+    if (scheduled) return;
+    scheduled = true;
+    requestAnimationFrame(() => {
+      scheduled = false;
+      renderFn.apply(this, args);
+    });
+  };
+}
+
+// ============ Loading Overlay ============
+/**
+ * Show a full-screen loading overlay with spinner and optional message.
+ * @param {string} [message="Loading…"] - Text to display
+ * @returns {HTMLElement} The overlay element (for manual removal if needed)
+ */
+function showLoadingOverlay(message) {
+  hideLoadingOverlay();
+  const overlay = document.createElement("div");
+  overlay.className = "loading-overlay";
+  overlay.id = "globalLoadingOverlay";
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "assertive");
+  overlay.innerHTML = `
+    <div class="loading-overlay-content">
+      <div class="loading-spinner loading-spinner-lg"></div>
+      <span class="loading-overlay-text">${escapeHtml(message || "Loading\u2026")}</span>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  return overlay;
+}
+
+/**
+ * Hide the global loading overlay.
+ */
+function hideLoadingOverlay() {
+  const el = document.getElementById("globalLoadingOverlay");
+  if (el) el.remove();
+}
+
+// ============ Playbook Filter Value Cache ============
+/**
+ * Cached unique filter values derived from the playbook.
+ * Invalidated by calling invalidateFilterCache() after playbook changes.
+ */
+let _filterCache = null;
+
+function getFilterCache() {
+  if (_filterCache) return _filterCache;
+  const normalizeCase = (str) => {
+    if (!str || !str.trim()) return null;
+    const trimmed = str.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+  };
+  const unique = (field) =>
+    [...new Set(plays.map((p) => normalizeCase(p[field])).filter(Boolean))].sort();
+
+  _filterCache = {
+    types: unique("type"),
+    situations: unique("preferredSituation"),
+    downs: unique("preferredDown"),
+    distances: unique("preferredDistance"),
+    hashes: unique("preferredHash"),
+    fieldPositions: unique("preferredFieldPosition"),
+    personnels: unique("personnel"),
+    formations: [...new Set(plays.map((p) => p.formation).filter(Boolean))].sort(),
+    basePlays: [...new Set(plays.map((p) => p.basePlay).filter(Boolean))].sort(),
+  };
+  return _filterCache;
+}
+
+function invalidateFilterCache() {
+  _filterCache = null;
+}
+
 /**
  * Safe JSON parse with fallback — use instead of raw JSON.parse on external data
  */

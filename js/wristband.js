@@ -287,14 +287,22 @@ function renderSortCriteria() {
         ? "Custom order set - click to edit"
         : "Set custom value order";
 
+      const moveUpBtn = idx > 0
+        ? `<button class="sort-move-btn" data-action="moveSortCriteria" data-idx="${idx}" data-arg="-1" title="Move up" aria-label="Move sort field up">▲</button>`
+        : `<button class="sort-move-btn" disabled aria-hidden="true">▲</button>`;
+      const moveDownBtn = idx < wbSortCriteria.length - 1
+        ? `<button class="sort-move-btn" data-action="moveSortCriteria" data-idx="${idx}" data-arg="1" title="Move down" aria-label="Move sort field down">▼</button>`
+        : `<button class="sort-move-btn" disabled aria-hidden="true">▼</button>`;
+
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
-           data-drag="wbSort">
-        <span class="drag-handle">☰</span>
-        <select data-onchange="updateSortField" data-key="${idx}" data-pass="value">${fieldOptions}</select>
-        <button class="sort-dir-btn" data-action="toggleSortDirection" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
+           data-drag="wbSort" role="listitem" aria-label="Sort by ${criteria.field}, ${criteria.direction === "asc" ? "ascending" : "descending"}">
+        <span class="drag-handle" aria-hidden="true">☰</span>
+        <div class="sort-move-btns">${moveUpBtn}${moveDownBtn}</div>
+        <select data-onchange="updateSortField" data-key="${idx}" data-pass="value" aria-label="Sort field">${fieldOptions}</select>
+        <button class="sort-dir-btn" data-action="toggleSortDirection" data-idx="${idx}" title="${dirTitle}" aria-label="${dirTitle}">${dirIcon}</button>
         <button class="custom-order-btn" data-action="openCustomOrderModal" data-arg="${criteria.field}" title="${customOrderTitle}" style="font-size: 11px; padding: 2px 6px;">${customOrderIcon}</button>
-        <button class="remove-sort-btn" data-action="removeSortCriteria" data-idx="${idx}">✕</button>
+        <button class="remove-sort-btn" data-action="removeSortCriteria" data-idx="${idx}" aria-label="Remove sort field">✕</button>
       </div>
     `;
     })
@@ -371,6 +379,20 @@ function handleSortDrop(event, targetIdx) {
 function handleSortDragEnd(event) {
   event.target.classList.remove("dragging");
   draggedSortItem = null;
+}
+
+/**
+ * Move a sort criteria up or down by keyboard-accessible buttons
+ * @param {string} direction - "-1" for up, "1" for down
+ */
+function moveSortCriteria(direction, element) {
+  const idx = parseInt(element.dataset.idx, 10);
+  const dir = parseInt(direction, 10);
+  const newIdx = idx + dir;
+  if (newIdx < 0 || newIdx >= wbSortCriteria.length) return;
+  const moved = wbSortCriteria.splice(idx, 1)[0];
+  wbSortCriteria.splice(newIdx, 0, moved);
+  renderSortCriteria();
 }
 
 // ============ Custom Value Order Functions ============

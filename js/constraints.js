@@ -1093,10 +1093,7 @@ function computeTouchAnalysis(playsArr) {
   });
 
   // ── Build sorted player summaries ──
-  const totalWeightedPts = Object.values(weighted).reduce(
-    (s, v) => s + v,
-    0,
-  );
+  const totalWeightedPts = Object.values(weighted).reduce((s, v) => s + v, 0);
   const players = {};
 
   Object.keys(weighted)
@@ -1200,9 +1197,18 @@ function _renderTouchDistribution(weightedTouches, flatTouches, title) {
  * @returns {string} HTML string
  */
 function renderTouchAnalysis(analysis, opts) {
-  if (!analysis || !analysis.players || Object.keys(analysis.players).length === 0) return "";
+  if (
+    !analysis ||
+    !analysis.players ||
+    Object.keys(analysis.players).length === 0
+  )
+    return "";
 
-  const { title = "Touch Distribution", compact = false, idPrefix = "ta" } = opts || {};
+  const {
+    title = "Touch Distribution",
+    compact = false,
+    idPrefix = "ta",
+  } = opts || {};
   const playerArr = Object.values(analysis.players);
   const totalPts = analysis.totalWeightedPts || 0;
 
@@ -1252,7 +1258,10 @@ function renderTouchAnalysis(analysis, opts) {
 
       // Play types
       const typeChips = p.types
-        .map(([t, n]) => `<span class="ta-type-chip">${escapeHtml(t)} <b>${n}</b></span>`)
+        .map(
+          ([t, n]) =>
+            `<span class="ta-type-chip">${escapeHtml(t)} <b>${n}</b></span>`,
+        )
         .join("");
 
       // Hit zones (top 6)
@@ -1260,9 +1269,15 @@ function renderTouchAnalysis(analysis, opts) {
       if (!compact && p.hitZones.length > 0) {
         const zoneChips = p.hitZones
           .slice(0, 6)
-          .map(([z, n]) => `<span class="ta-zone-chip">${escapeHtml(z)} <b>${n}</b></span>`)
+          .map(
+            ([z, n]) =>
+              `<span class="ta-zone-chip">${escapeHtml(z)} <b>${n}</b></span>`,
+          )
           .join("");
-        const more = p.hitZones.length > 6 ? `<span class="ta-zone-more">+${p.hitZones.length - 6} more</span>` : "";
+        const more =
+          p.hitZones.length > 6
+            ? `<span class="ta-zone-more">+${p.hitZones.length - 6} more</span>`
+            : "";
         zoneHtml = `<div class="ta-detail-row"><span class="ta-detail-label">🎯 Hit Zones</span><div class="ta-detail-chips">${zoneChips}${more}</div></div>`;
       }
 
@@ -1410,9 +1425,15 @@ function renderConstraintPanel(report) {
     .join("");
 
   // Global touch distribution — rich analysis panel
-  const allCsPlays = Object.values(callSheet).flatMap(b => [...(b.left || []), ...(b.right || [])]);
+  const allCsPlays = Object.values(callSheet).flatMap((b) => [
+    ...(b.left || []),
+    ...(b.right || []),
+  ]);
   const touchAnalysis = computeTouchAnalysis(allCsPlays);
-  const distHtml = renderTouchAnalysis(touchAnalysis, { title: "Touch Distribution", idPrefix: "cr-ta" });
+  const distHtml = renderTouchAnalysis(touchAnalysis, {
+    title: "Touch Distribution",
+    idPrefix: "cr-ta",
+  });
 
   body.innerHTML = `
     <div class="cr-overview">
@@ -1446,9 +1467,14 @@ function renderBucketDetail(key, report) {
   `;
 
   // Per-bucket touch distribution — rich analysis
-  const bucketPlays = callSheet[key] ? [...(callSheet[key].left || []), ...(callSheet[key].right || [])] : [];
+  const bucketPlays = callSheet[key]
+    ? [...(callSheet[key].left || []), ...(callSheet[key].right || [])]
+    : [];
   const bucketAnalysis = computeTouchAnalysis(bucketPlays);
-  const bucketDistHtml = renderTouchAnalysis(bucketAnalysis, { compact: true, idPrefix: `cr-ta-${key}` });
+  const bucketDistHtml = renderTouchAnalysis(bucketAnalysis, {
+    compact: true,
+    idPrefix: `cr-ta-${key}`,
+  });
 
   const errorItems = report.errors
     .map((e) => `<li class="cr-item cr-item-error">${escapeHtml(e)}</li>`)
@@ -1470,7 +1496,9 @@ function renderBucketDetail(key, report) {
 
   const suggDiv = `<div class="cr-suggestions" id="cr-suggest-${safeKey}" style="display:none"></div>`;
 
-  return philHtml + statsHtml + bucketDistHtml + listHtml + suggestBtn + suggDiv;
+  return (
+    philHtml + statsHtml + bucketDistHtml + listHtml + suggestBtn + suggDiv
+  );
 }
 
 /**

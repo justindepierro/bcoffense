@@ -264,35 +264,85 @@ function initAllModules() {
 
 /** All 41 play CSV field keys */
 const _MERGE_FIELDS = [
-  "type", "personnel", "formation", "formTag1", "formTag2", "under", "back",
-  "shift", "motion", "protection", "lineCall", "play", "playTag1", "playTag2",
-  "basePlay", "oneWord", "preferredSituation", "preferredDown",
-  "preferredDistance", "preferredHash", "preferredFieldPosition", "tempo",
-  "practiceFront", "practiceDefense", "practiceCoverage", "practiceBlitz",
-  "practiceStunt", "keyPlayer1", "keyPlayer2", "keyPlayer3", "keyPlayerName1",
-  "keyPlayerName2", "keyPlayerName3", "constraint1", "constraint2",
-  "constraint3", "hitChart1", "hitChart2", "hitChart3", "deadVs", "opponent",
+  "type",
+  "personnel",
+  "formation",
+  "formTag1",
+  "formTag2",
+  "under",
+  "back",
+  "shift",
+  "motion",
+  "protection",
+  "lineCall",
+  "play",
+  "playTag1",
+  "playTag2",
+  "basePlay",
+  "oneWord",
+  "preferredSituation",
+  "preferredDown",
+  "preferredDistance",
+  "preferredHash",
+  "preferredFieldPosition",
+  "tempo",
+  "practiceFront",
+  "practiceDefense",
+  "practiceCoverage",
+  "practiceBlitz",
+  "practiceStunt",
+  "keyPlayer1",
+  "keyPlayer2",
+  "keyPlayer3",
+  "keyPlayerName1",
+  "keyPlayerName2",
+  "keyPlayerName3",
+  "constraint1",
+  "constraint2",
+  "constraint3",
+  "hitChart1",
+  "hitChart2",
+  "hitChart3",
+  "deadVs",
+  "opponent",
   "notes",
 ];
 
 /** Script-item fields to preserve during reference update */
 const _MERGE_KEEP = new Set([
-  "reps", "notes", "hash", "defFront", "defCoverage", "defStunt", "defBlitz",
-  "id", "isSeparator", "label", "isBlank",
+  "reps",
+  "notes",
+  "hash",
+  "defFront",
+  "defCoverage",
+  "defStunt",
+  "defBlitz",
+  "id",
+  "isSeparator",
+  "label",
+  "isBlank",
 ]);
 
 /** Partial match key: formation + play (case-insensitive) */
 function _mKey(p) {
-  return (p.formation || "").toLowerCase().trim() +
-    "\0" + (p.play || "").toLowerCase().trim();
+  return (
+    (p.formation || "").toLowerCase().trim() +
+    "\0" +
+    (p.play || "").toLowerCase().trim()
+  );
 }
 
 /** Full match key: type + personnel + formation + play */
 function _mFullKey(p) {
-  return (p.type || "").toLowerCase().trim() +
-    "\0" + (p.personnel || "").toLowerCase().trim() +
-    "\0" + (p.formation || "").toLowerCase().trim() +
-    "\0" + (p.play || "").toLowerCase().trim();
+  return (
+    (p.type || "").toLowerCase().trim() +
+    "\0" +
+    (p.personnel || "").toLowerCase().trim() +
+    "\0" +
+    (p.formation || "").toLowerCase().trim() +
+    "\0" +
+    (p.play || "").toLowerCase().trim()
+  );
 }
 
 /**
@@ -358,24 +408,31 @@ function _smartMerge(existing, incoming) {
   const updated = [];
   const unchanged = [];
   for (const pr of pairs) {
-    const op = existing[pr.ei], np = incoming[pr.ni];
+    const op = existing[pr.ei],
+      np = incoming[pr.ni];
     const changes = [];
     for (const f of _MERGE_FIELDS) {
-      const ov = (op[f] || "").trim(), nv = (np[f] || "").trim();
+      const ov = (op[f] || "").trim(),
+        nv = (np[f] || "").trim();
       if (ov !== nv) changes.push({ field: f, from: ov, to: nv });
     }
     (changes.length ? updated : unchanged).push({ ...pr, changes: changes });
   }
 
   const added = [];
-  incoming.forEach((_, ni) => { if (!nMatched[ni]) added.push(ni); });
+  incoming.forEach((_, ni) => {
+    if (!nMatched[ni]) added.push(ni);
+  });
   const removed = [];
-  existing.forEach((_, ei) => { if (!eMatched[ei]) removed.push(ei); });
+  existing.forEach((_, ei) => {
+    if (!eMatched[ei]) removed.push(ei);
+  });
 
   // Build merged array: copy existing, apply updates, append new
   const merged = existing.map((p) => ({ ...p }));
   for (const u of updated) {
-    const t = merged[u.ei], s = incoming[u.ni];
+    const t = merged[u.ei],
+      s = incoming[u.ni];
     for (const f of _MERGE_FIELDS) t[f] = s[f] || "";
   }
   const addedPlays = added.map((ni) => ({ ...incoming[ni] }));
@@ -422,7 +479,9 @@ function _mergeUpdateRefs(existing, incoming, report) {
     upsByKey.get(k).push(u);
   }
 
-  let wbCount = 0, scCount = 0, csCount = 0;
+  let wbCount = 0,
+    scCount = 0,
+    csCount = 0;
 
   /** Try to update a play-object reference (wristband / callsheet) */
   function applyUpdate(ref) {
@@ -488,7 +547,10 @@ function _mergeUpdateRefs(existing, incoming, report) {
     if (!sc.plays) continue;
     for (const item of sc.plays) {
       if (item.isSeparator || item.isBlank) continue;
-      if (applyScriptUpdate(item)) { scCount++; scDirty = true; }
+      if (applyScriptUpdate(item)) {
+        scCount++;
+        scDirty = true;
+      }
     }
   }
   if (scDirty) storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedSC);
@@ -510,7 +572,10 @@ function _mergeUpdateRefs(existing, incoming, report) {
       for (const side of ["left", "right"]) {
         if (!bucket[side]) continue;
         for (const p of bucket[side]) {
-          if (applyUpdate(p)) { csCount++; csDirty = true; }
+          if (applyUpdate(p)) {
+            csCount++;
+            csDirty = true;
+          }
         }
       }
     }
@@ -541,12 +606,14 @@ function _mergeUpdateRefs(existing, incoming, report) {
  * @returns {string} HTML content
  */
 function _buildMergeReportHtml(report, refCounts, existingPlays) {
-  const { updated, unchanged, added, removed, addedPlays, removedPlays } = report;
+  const { updated, unchanged, added, removed, addedPlays, removedPlays } =
+    report;
 
   let h = '<div style="text-align:left;font-size:0.95rem;line-height:1.7">';
 
   // Summary grid
-  h += '<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-bottom:12px">';
+  h +=
+    '<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-bottom:12px">';
   h += `<span>🔄</span><span><strong>${updated.length}</strong> play${updated.length !== 1 ? "s" : ""} updated</span>`;
   h += `<span>➕</span><span><strong>${added.length}</strong> new play${added.length !== 1 ? "s" : ""} added</span>`;
   h += `<span>📌</span><span><strong>${unchanged.length}</strong> play${unchanged.length !== 1 ? "s" : ""} unchanged</span>`;
@@ -556,12 +623,15 @@ function _buildMergeReportHtml(report, refCounts, existingPlays) {
   h += "</div>";
 
   // Reference update counts
-  const totalRefs = refCounts.wristbands + refCounts.scripts + refCounts.callsheet;
+  const totalRefs =
+    refCounts.wristbands + refCounts.scripts + refCounts.callsheet;
   if (totalRefs > 0) {
-    h += '<div style="border-top:1px solid var(--color-border-light);padding-top:8px;margin-bottom:10px">';
+    h +=
+      '<div style="border-top:1px solid var(--color-border-light);padding-top:8px;margin-bottom:10px">';
     h += `<strong>🔗 ${totalRefs} reference${totalRefs !== 1 ? "s" : ""} updated:</strong><br>`;
     const parts = [];
-    if (refCounts.wristbands) parts.push(`${refCounts.wristbands} in wristbands`);
+    if (refCounts.wristbands)
+      parts.push(`${refCounts.wristbands} in wristbands`);
     if (refCounts.scripts) parts.push(`${refCounts.scripts} in scripts`);
     if (refCounts.callsheet) parts.push(`${refCounts.callsheet} in call sheet`);
     h += "&nbsp;&nbsp;" + parts.join(", ");
@@ -570,42 +640,55 @@ function _buildMergeReportHtml(report, refCounts, existingPlays) {
 
   // Expandable detail: updated plays
   if (updated.length > 0) {
-    h += '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Updated plays</summary>';
-    h += '<div style="font-size:0.82rem;margin-top:4px;max-height:200px;overflow-y:auto">';
+    h +=
+      '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Updated plays</summary>';
+    h +=
+      '<div style="font-size:0.82rem;margin-top:4px;max-height:200px;overflow-y:auto">';
     const show = updated.slice(0, 20);
     for (const u of show) {
       const p = existingPlays[u.ei];
       const name = (p.formation || "?") + " " + (p.play || "?");
-      const flds = u.changes.slice(0, 4).map((c) => c.field).join(", ");
+      const flds = u.changes
+        .slice(0, 4)
+        .map((c) => c.field)
+        .join(", ");
       const more = u.changes.length > 4 ? ", …" : "";
       h += `<div style="margin-bottom:2px">• <strong>${escapeHtml(name)}</strong> — ${u.changes.length} field${u.changes.length !== 1 ? "s" : ""} <span style="color:var(--color-text-muted)">(${escapeHtml(flds)}${more})</span></div>`;
     }
-    if (updated.length > 20) h += `<div style="color:var(--color-text-muted)">…and ${updated.length - 20} more</div>`;
+    if (updated.length > 20)
+      h += `<div style="color:var(--color-text-muted)">…and ${updated.length - 20} more</div>`;
     h += "</div></details>";
   }
 
   // Expandable detail: added plays
   if (added.length > 0) {
-    h += '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">New plays added</summary>';
-    h += '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
+    h +=
+      '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">New plays added</summary>';
+    h +=
+      '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
     const show = addedPlays.slice(0, 20);
     for (const p of show) {
       h += `<div style="margin-bottom:2px">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
     }
-    if (added.length > 20) h += `<div style="color:var(--color-text-muted)">…and ${added.length - 20} more</div>`;
+    if (added.length > 20)
+      h += `<div style="color:var(--color-text-muted)">…and ${added.length - 20} more</div>`;
     h += "</div></details>";
   }
 
   // Expandable detail: removed / orphaned plays
   if (removed.length > 0) {
-    h += '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Plays only in old playbook</summary>';
-    h += '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
-    h += '<div style="color:var(--color-text-muted);margin-bottom:4px">These plays were not in the new CSV but have been kept in your playbook.</div>';
+    h +=
+      '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Plays only in old playbook</summary>';
+    h +=
+      '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
+    h +=
+      '<div style="color:var(--color-text-muted);margin-bottom:4px">These plays were not in the new CSV but have been kept in your playbook.</div>';
     const show = removedPlays.slice(0, 20);
     for (const p of show) {
       h += `<div style="margin-bottom:2px">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
     }
-    if (removed.length > 20) h += `<div style="color:var(--color-text-muted)">…and ${removed.length - 20} more</div>`;
+    if (removed.length > 20)
+      h += `<div style="color:var(--color-text-muted)">…and ${removed.length - 20} more</div>`;
     h += "</div></details>";
   }
 
@@ -620,6 +703,7 @@ function handleFileUpload(event) {
     const file = event.target.files[0];
     if (!file) return;
 
+    showLoadingOverlay("Importing playbook\u2026");
     const reader = new FileReader();
     reader.onload = async function (e) {
       try {
@@ -629,6 +713,7 @@ function handleFileUpload(event) {
         const skippedRows = csvResult.skipped || [];
 
         if (parsed.length === 0) {
+          hideLoadingOverlay();
           showToast(
             "❌ No valid plays found in file. Check the CSV format.",
             4000,
@@ -680,14 +765,23 @@ function handleFileUpload(event) {
             plays = merged;
             filteredPlays = [...plays];
             storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+            invalidateFilterCache();
 
             document.getElementById("uploadSection").classList.add("hidden");
             document.getElementById("mainApp").classList.remove("hidden");
             initAllModules();
+            hideLoadingOverlay();
 
             // Show merge report
-            const reportHtml = _buildMergeReportHtml(report, refCounts, preMerge);
-            await showModal(reportHtml, { title: "Merge Complete", icon: "✅" });
+            const reportHtml = _buildMergeReportHtml(
+              report,
+              refCounts,
+              preMerge,
+            );
+            await showModal(reportHtml, {
+              title: "Merge Complete",
+              icon: "✅",
+            });
 
             // Show skipped rows after report is dismissed
             if (skippedRows.length > 0) {
@@ -737,10 +831,12 @@ function handleFileUpload(event) {
         plays = parsed;
         filteredPlays = [...plays];
         storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+        invalidateFilterCache();
 
         document.getElementById("uploadSection").classList.add("hidden");
         document.getElementById("mainApp").classList.remove("hidden");
         initAllModules();
+        hideLoadingOverlay();
 
         // Show validation report for skipped rows
         if (skippedRows.length > 0) {
@@ -761,12 +857,14 @@ function handleFileUpload(event) {
           );
         }
       } catch (err) {
+        hideLoadingOverlay();
         console.error("handleFileUpload reader.onload error:", err);
         showToast("❌ Error reading file. Check format and try again.", 4000);
       }
     };
     reader.readAsText(file);
   } catch (err) {
+    hideLoadingOverlay();
     console.error("handleFileUpload error:", err);
     showToast("❌ Error uploading file.", 4000);
   }
@@ -1857,6 +1955,7 @@ const _ELEMENT_FNS = new Set([
   "toggleSirCollapse",
   "toggleScriptCheckbox",
   "toggleWbCheckbox",
+  "moveSortCriteria",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 

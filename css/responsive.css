@@ -209,6 +209,58 @@
   }
 }
 
+/* ── Call sheet mobile stacking at ≤600px ── */
+@media (max-width: 600px) {
+  .callsheet-columns {
+    flex-direction: column;
+    gap: 10px;
+  }
+  .callsheet-column {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .category-content {
+    grid-template-columns: 1fr;
+  }
+  .category-subheader {
+    grid-template-columns: 1fr;
+  }
+  .hash-header:first-child {
+    border-bottom: 1px solid var(--color-border);
+    border-right: none;
+  }
+  .hash-column {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border-light);
+  }
+  .hash-column:last-child {
+    border-bottom: none;
+  }
+  .callsheet-play {
+    font-size: var(--font-size-xs);
+  }
+}
+
+/* ── Playbook table scroll affordance ── */
+.table-container {
+  position: relative;
+}
+.table-container::after {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  width: 24px;
+  background: linear-gradient(to right, transparent, rgba(0, 0, 0, 0.06));
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.2s;
+}
+.table-container.is-scrollable::after {
+  opacity: 1;
+}
+
 /* ── Playbook mobile card view at ≤540px ── */
 @media (max-width: 540px) {
   /* Hide desktop table, show card list */

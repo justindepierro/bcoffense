@@ -1154,22 +1154,38 @@ function showSmartInstallReport() {
     </div>`;
 
   // ── Touch Distribution ───────────────────────────────────────
-  if (typeof computeTouchAnalysis === "function" && typeof renderTouchAnalysis === "function" && plays && plays.length > 0) {
+  if (
+    typeof computeTouchAnalysis === "function" &&
+    typeof renderTouchAnalysis === "function" &&
+    plays &&
+    plays.length > 0
+  ) {
     const allTouchAnalysis = computeTouchAnalysis(plays);
     // Also compute for game-ready plays only
-    const gameReadyPlays = report.gameReadySummary && report.gameReadySummary.plays
-      ? report.gameReadySummary.plays.map(p => p._play || p).filter(p => p && p.play)
-      : [];
-    const gameReadyAnalysis = gameReadyPlays.length > 0 ? computeTouchAnalysis(gameReadyPlays) : null;
+    const gameReadyPlays =
+      report.gameReadySummary && report.gameReadySummary.plays
+        ? report.gameReadySummary.plays
+            .map((p) => p._play || p)
+            .filter((p) => p && p.play)
+        : [];
+    const gameReadyAnalysis =
+      gameReadyPlays.length > 0 ? computeTouchAnalysis(gameReadyPlays) : null;
 
     if (allTouchAnalysis && Object.keys(allTouchAnalysis.players).length > 0) {
       html += `
         <div class="sir-section">
           <div class="sir-section-title">🏈 Touch Distribution <span class="sir-section-hint">Weighted player usage across your playbook</span></div>
           ${renderTouchAnalysis(allTouchAnalysis, { title: "All Plays", idPrefix: "sir-ta-all" })}
-          ${gameReadyAnalysis && Object.keys(gameReadyAnalysis.players).length > 0
-            ? renderTouchAnalysis(gameReadyAnalysis, { title: "Game Ready Only", compact: true, idPrefix: "sir-ta-gr" })
-            : ""}
+          ${
+            gameReadyAnalysis &&
+            Object.keys(gameReadyAnalysis.players).length > 0
+              ? renderTouchAnalysis(gameReadyAnalysis, {
+                  title: "Game Ready Only",
+                  compact: true,
+                  idPrefix: "sir-ta-gr",
+                })
+              : ""
+          }
         </div>`;
     }
   }
@@ -1459,9 +1475,10 @@ function printSmartInstallReport() {
       html += `</tbody></table>`;
 
       // Game-ready touch comparison
-      const grPlays = report.gameReadySummary && report.gameReadySummary.plays
-        ? report.gameReadySummary.plays.map(p => p._play).filter(Boolean)
-        : [];
+      const grPlays =
+        report.gameReadySummary && report.gameReadySummary.plays
+          ? report.gameReadySummary.plays.map((p) => p._play).filter(Boolean)
+          : [];
       if (grPlays.length > 0) {
         const grTouch = computeTouchAnalysis(grPlays);
         if (grTouch && Object.keys(grTouch.players).length > 0) {

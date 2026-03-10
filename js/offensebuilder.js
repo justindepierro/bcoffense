@@ -652,13 +652,21 @@ function _obBuildTouchDistributionHtml() {
   if (typeof computeTouchAnalysis !== "function") return "";
 
   var analysis = computeTouchAnalysis(plays);
-  if (!analysis || !analysis.players || Object.keys(analysis.players).length === 0) return "";
+  if (
+    !analysis ||
+    !analysis.players ||
+    Object.keys(analysis.players).length === 0
+  )
+    return "";
 
   // Use the rich renderer from constraints.js if available
   if (typeof renderTouchAnalysis === "function") {
     return (
       '<div class="ob-detail-section"><div class="ob-section-body">' +
-      renderTouchAnalysis(analysis, { title: "Touch Distribution (All Plays)", idPrefix: "ob-ta" }) +
+      renderTouchAnalysis(analysis, {
+        title: "Touch Distribution (All Plays)",
+        idPrefix: "ob-ta",
+      }) +
       "</div></div>"
     );
   }

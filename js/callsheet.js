@@ -842,6 +842,10 @@ function renderCallSheet() {
   const container = document.getElementById("callSheetGrid");
   if (!container) return;
 
+  // Set ARIA role on the grid container
+  container.setAttribute("role", "region");
+  container.setAttribute("aria-label", "Call sheet " + (callSheetSettings.currentPage || "front") + " page");
+
   const page = callSheetSettings.currentPage;
 
   // Get current page categories (respecting custom order)
@@ -948,6 +952,9 @@ function updatePageToggle() {
     );
   }
 }
+
+// RAF-coalesced version: multiple calls within one frame resolve to a single render
+const _scheduleRenderCallSheet = createRAFRenderer(renderCallSheet);
 
 /**
  * Switch between front and back page
@@ -1070,8 +1077,10 @@ function renderCategory(cat, data, dupeMap) {
   let html = `
     <div class="callsheet-category${isCollapsed ? " cs-collapsed" : ""}" data-category="${cat.id}"
          draggable="true"
-         data-drag="catDrag" data-cat="${cat.id}">
-      <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};">
+         data-drag="catDrag" data-cat="${cat.id}"
+         role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? 's' : ''}">
+      <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};"
+           role="heading" aria-level="3">>
         <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand">${collapseIcon}</span>
         <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
         ${countDisplay}
@@ -1094,12 +1103,12 @@ function renderCategory(cat, data, dupeMap) {
     }
 
     html += `
-      <div class="category-subheader">
-        <div class="hash-header">Left Hash</div>
-        <div class="hash-header">Right Hash</div>
+      <div class="category-subheader" role="row">
+        <div class="hash-header" role="columnheader">Left Hash</div>
+        <div class="hash-header" role="columnheader">Right Hash</div>
       </div>
-      <div class="category-content">
-        <div class="hash-column left" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="left">`;
+      <div class="category-content" role="grid" aria-label="${escapeHtml(displayName)} plays">
+        <div class="hash-column left" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="left" role="rowgroup" aria-label="Left hash">`;
 
     leftPlays.forEach((play, idx) => {
       html += renderCallSheetPlay(play, cat.id, "left", idx, dupeMap);
@@ -1107,11 +1116,11 @@ function renderCategory(cat, data, dupeMap) {
     if (leftPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
     }
-    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="left">+ Add</div>`;
+    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="left" role="button" aria-label="Add play to left hash">+ Add</div>`;
 
     html += `
         </div>
-        <div class="hash-column right" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="right">`;
+        <div class="hash-column right" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="right" role="rowgroup" aria-label="Right hash">`;
 
     rightPlays.forEach((play, idx) => {
       html += renderCallSheetPlay(play, cat.id, "right", idx, dupeMap);
@@ -1119,7 +1128,7 @@ function renderCategory(cat, data, dupeMap) {
     if (rightPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
     }
-    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="right">+ Add</div>`;
+    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="right" role="button" aria-label="Add play to right hash">+ Add</div>`;
 
     html += `
         </div>
@@ -1318,18 +1327,22 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
   // Dead-vs warning badge (scouting overlay)
   const deadVsBadgeHtml = buildDeadVsBadge(play, categoryId);
 
+  // Build accessible play label
+  const playLabel = (play.formation || "") + " " + (play.play || "");
+
   return `
     <div class="callsheet-play ${highlightClass} ${tempoClass}${deadVsBadgeHtml ? " cs-play-has-warning" : ""}" draggable="true"
          style="${cellStyleStr}"
+         role="row" aria-label="${escapeHtml(playLabel.trim())}"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
       ${personnelHtml}
-      <span class="play-text">${playText.trim()}</span>
+      <span class="play-text" role="cell">${playText.trim()}</span>
       ${formatIndicator}
       ${noteBadge}
       ${dupeBadge}
       ${deadVsBadgeHtml}
       ${swapBtn}
-      <button class="remove-play" data-action="removeCallSheetPlay" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" aria-label="Remove play">×</button>
+      <button class="remove-play" data-action="removeCallSheetPlay" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" aria-label="Remove ${escapeHtml(playLabel.trim())}">×</button>
     </div>
   `;
 }

@@ -698,6 +698,12 @@ function renderPlaybook() {
 
     // Re-apply column visibility
     applyColumnVisibility();
+
+    // Update scroll affordance on table container
+    const tableWrap = document.querySelector(".table-container");
+    if (tableWrap) {
+      tableWrap.classList.toggle("is-scrollable", tableWrap.scrollWidth > tableWrap.clientWidth);
+    }
   } catch (err) {
     console.error("renderPlaybook error:", err);
     showToast("❌ Error rendering playbook.", 3000);
@@ -797,6 +803,7 @@ function startInlineEdit(td, playIndex, field) {
     play[field] = newVal;
     if (masterIdx >= 0) plays[masterIdx][field] = newVal;
     storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    invalidateFilterCache();
     renderPlaybook();
     if (newVal !== original) showToast("✏️ Updated");
   }
@@ -1977,21 +1984,61 @@ function _editorOptions(key, defaults, extraKeys) {
 
 /** Default seed values for select dropdowns */
 const _TYPE_DEFAULTS = [
-  "Run", "Pass", "RPO", "Screen", "Quick", "Play Action",
-  "Play Pass", "Run Option", "Option", "Movement", "Drop", "Tricks",
+  "Run",
+  "Pass",
+  "RPO",
+  "Screen",
+  "Quick",
+  "Play Action",
+  "Play Pass",
+  "Run Option",
+  "Option",
+  "Movement",
+  "Drop",
+  "Tricks",
 ];
 const _SITUATION_DEFAULTS = [
-  "Short Yardage", "2 Minute", "4 Minute", "Red Zone", "Silver", "Bad Weather",
+  "Short Yardage",
+  "2 Minute",
+  "4 Minute",
+  "Red Zone",
+  "Silver",
+  "Bad Weather",
 ];
 const _FIELD_POS_DEFAULTS = [
-  "Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon", "Fringe", "Coming Out",
+  "Green",
+  "Lo-RZ",
+  "Hi-RZ",
+  "Goal Line",
+  "Backed Up",
+  "Saigon",
+  "Fringe",
+  "Coming Out",
 ];
 const _HIT_CHART_DEFAULTS = [
-  "Left Deep", "Left Seam", "Left Medium", "Left Short", "Left Curl", "Left Hook", "Left Flat",
-  "Middle Hole", "Middle Hook", "Deep Post",
-  "Right Deep", "Right Seam", "Right Medium", "Right Short", "Right Curl", "Right Hook", "Right Flat",
-  "Inside Run Left", "Inside Run Right", "Inside Tackle Left", "Inside Tackle Right",
-  "Off Tackle Left", "Off Tackle Right",
+  "Left Deep",
+  "Left Seam",
+  "Left Medium",
+  "Left Short",
+  "Left Curl",
+  "Left Hook",
+  "Left Flat",
+  "Middle Hole",
+  "Middle Hook",
+  "Deep Post",
+  "Right Deep",
+  "Right Seam",
+  "Right Medium",
+  "Right Short",
+  "Right Curl",
+  "Right Hook",
+  "Right Flat",
+  "Inside Run Left",
+  "Inside Run Right",
+  "Inside Tackle Left",
+  "Inside Tackle Right",
+  "Off Tackle Left",
+  "Off Tackle Right",
 ];
 
 const _EDITOR_SECTIONS = [
@@ -2038,7 +2085,8 @@ const _EDITOR_SECTIONS = [
         key: "preferredSituation",
         label: "Situation",
         type: "select",
-        optionsFn: () => _editorOptions("preferredSituation", _SITUATION_DEFAULTS),
+        optionsFn: () =>
+          _editorOptions("preferredSituation", _SITUATION_DEFAULTS),
       },
       {
         key: "preferredDown",
@@ -2057,7 +2105,8 @@ const _EDITOR_SECTIONS = [
         key: "preferredFieldPosition",
         label: "Field Position",
         type: "select",
-        optionsFn: () => _editorOptions("preferredFieldPosition", _FIELD_POS_DEFAULTS),
+        optionsFn: () =>
+          _editorOptions("preferredFieldPosition", _FIELD_POS_DEFAULTS),
       },
       { key: "tempo", label: "Tempo" },
     ],
@@ -2094,24 +2143,36 @@ const _EDITOR_SECTIONS = [
         label: "Hit Chart 1",
         type: "select",
         canAddNew: true,
-        optionsFn: () => _editorOptions("hitChart1", _HIT_CHART_DEFAULTS,
-          ["hitChart1", "hitChart2", "hitChart3"]),
+        optionsFn: () =>
+          _editorOptions("hitChart1", _HIT_CHART_DEFAULTS, [
+            "hitChart1",
+            "hitChart2",
+            "hitChart3",
+          ]),
       },
       {
         key: "hitChart2",
         label: "Hit Chart 2",
         type: "select",
         canAddNew: true,
-        optionsFn: () => _editorOptions("hitChart2", _HIT_CHART_DEFAULTS,
-          ["hitChart1", "hitChart2", "hitChart3"]),
+        optionsFn: () =>
+          _editorOptions("hitChart2", _HIT_CHART_DEFAULTS, [
+            "hitChart1",
+            "hitChart2",
+            "hitChart3",
+          ]),
       },
       {
         key: "hitChart3",
         label: "Hit Chart 3",
         type: "select",
         canAddNew: true,
-        optionsFn: () => _editorOptions("hitChart3", _HIT_CHART_DEFAULTS,
-          ["hitChart1", "hitChart2", "hitChart3"]),
+        optionsFn: () =>
+          _editorOptions("hitChart3", _HIT_CHART_DEFAULTS, [
+            "hitChart1",
+            "hitChart2",
+            "hitChart3",
+          ]),
       },
     ],
   },
@@ -2190,7 +2251,8 @@ function _populateEditorForm(play, isNew) {
     if (prevBtn) prevBtn.style.display = "none";
     if (nextBtn) nextBtn.style.display = "none";
   } else {
-    if (posEl) posEl.textContent = `${_editingFilteredIdx + 1} / ${filteredPlays.length}`;
+    if (posEl)
+      posEl.textContent = `${_editingFilteredIdx + 1} / ${filteredPlays.length}`;
     if (prevBtn) {
       prevBtn.style.display = "";
       prevBtn.disabled = _editingFilteredIdx <= 0;
@@ -2213,10 +2275,10 @@ function _populateEditorForm(play, isNew) {
       html += `<label for="pe-${f.key}">${escapeHtml(f.label)}</label>`;
 
       if (f.type === "select") {
-        const opts = f.optionsFn ? f.optionsFn() : (f.options || []);
+        const opts = f.optionsFn ? f.optionsFn() : f.options || [];
         // If the current value isn't in the list, prepend it
         const valInList = opts.some((o) => o === val);
-        html += `<select id="pe-${f.key}" data-field="${f.key}"${f.canAddNew ? ' data-can-add-new="1"' : ''}>`;
+        html += `<select id="pe-${f.key}" data-field="${f.key}"${f.canAddNew ? ' data-can-add-new="1"' : ""}>`;
         if (!valInList && val) {
           html += `<option value="${escapeHtml(val)}" selected>${escapeHtml(val)}</option>`;
         }
@@ -2243,7 +2305,7 @@ function _populateEditorForm(play, isNew) {
   overlay.classList.add("visible");
 
   // Wire up "Add New…" option on selects that support it
-  body.querySelectorAll('select[data-can-add-new]').forEach((sel) => {
+  body.querySelectorAll("select[data-can-add-new]").forEach((sel) => {
     sel.addEventListener("change", async () => {
       if (sel.value !== "__add_new__") return;
       // Reset to blank while prompt is open
@@ -2306,6 +2368,7 @@ function savePlayEditor() {
   }
 
   storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  invalidateFilterCache();
   filteredPlays = [...plays];
   filterPlays();
   closePlayEditor();
@@ -2325,6 +2388,7 @@ async function deletePlayFromEditor() {
 
   plays.splice(_editingMasterIdx, 1);
   storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  invalidateFilterCache();
   filteredPlays = [...plays];
   filterPlays();
   closePlayEditor();
@@ -2379,6 +2443,7 @@ function _autoSaveCurrentEditorFields() {
   });
   if (changed) {
     storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    invalidateFilterCache();
   }
 }
 

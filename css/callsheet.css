@@ -90,6 +90,15 @@
     background: var(--color-primary-light);
   }
 }
+.callsheet-play:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+  z-index: 1;
+}
+.callsheet-dropzone:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+}
 
 .callsheet-play.dragging {
   opacity: 0.5;
@@ -2296,7 +2305,11 @@
 .cr-dist-bar-fill {
   height: 100%;
   border-radius: 7px;
-  background: linear-gradient(90deg, var(--color-primary, #667eea), var(--color-accent, #764ba2));
+  background: linear-gradient(
+    90deg,
+    var(--color-primary, #667eea),
+    var(--color-accent, #764ba2)
+  );
   transition: width var(--transition-normal, 0.25s) ease;
   min-width: 2px;
 }
@@ -2352,7 +2365,9 @@
   color: var(--color-text, #333);
   white-space: nowrap;
 }
-.ta-chip b { font-weight: 700; }
+.ta-chip b {
+  font-weight: 700;
+}
 .ta-chip-dot {
   width: 8px;
   height: 8px;
@@ -2438,7 +2453,9 @@
 .ta-detail-row {
   margin-bottom: 8px;
 }
-.ta-detail-row:last-child { margin-bottom: 0; }
+.ta-detail-row:last-child {
+  margin-bottom: 0;
+}
 .ta-detail-label {
   display: block;
   font-size: 0.72rem;
@@ -2466,9 +2483,15 @@
   min-width: 1px;
   transition: width var(--transition-normal, 0.25s) ease;
 }
-.ta-seg-kp1 { background: var(--color-primary, #667eea); }
-.ta-seg-kp2 { background: var(--color-accent, #764ba2); }
-.ta-seg-kp3 { background: var(--color-warning, #f0ad4e); }
+.ta-seg-kp1 {
+  background: var(--color-primary, #667eea);
+}
+.ta-seg-kp2 {
+  background: var(--color-accent, #764ba2);
+}
+.ta-seg-kp3 {
+  background: var(--color-warning, #f0ad4e);
+}
 .ta-slot-labels {
   display: flex;
   gap: 10px;
@@ -2487,9 +2510,15 @@
   height: 7px;
   border-radius: 2px;
 }
-.ta-lbl-kp1::before { background: var(--color-primary, #667eea); }
-.ta-lbl-kp2::before { background: var(--color-accent, #764ba2); }
-.ta-lbl-kp3::before { background: var(--color-warning, #f0ad4e); }
+.ta-lbl-kp1::before {
+  background: var(--color-primary, #667eea);
+}
+.ta-lbl-kp2::before {
+  background: var(--color-accent, #764ba2);
+}
+.ta-lbl-kp3::before {
+  background: var(--color-warning, #f0ad4e);
+}
 
 /* ── Play-Type & Hit-Zone Chips ── */
 .ta-type-chip,
@@ -2507,12 +2536,16 @@
   background: var(--color-info-light, #d1ecf1);
   color: var(--color-info, #17a2b8);
 }
-.ta-type-chip b { font-weight: 700; }
+.ta-type-chip b {
+  font-weight: 700;
+}
 .ta-zone-chip {
   background: var(--color-success-light, #d4edda);
   color: var(--color-success, #28a745);
 }
-.ta-zone-chip b { font-weight: 700; }
+.ta-zone-chip b {
+  font-weight: 700;
+}
 .ta-zone-more {
   font-size: 0.66rem;
   color: var(--color-text-muted, #999);

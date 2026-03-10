@@ -553,47 +553,16 @@ function clearAllScriptOptions() {
  * Populate the script checkbox filters
  */
 function populateScriptCheckboxFilters() {
-  // Helper to normalize case (capitalize first letter, lowercase rest)
-  const normalizeCase = (str) => {
-    if (!str || !str.trim()) return null;
-    const trimmed = str.trim();
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
-  };
+  // Use cached unique values from playbook (avoids re-iterating full array)
+  const cache = getFilterCache();
 
-  // Get unique values from plays (case-normalized to avoid duplicates)
-  const types = [
-    ...new Set(plays.map((p) => normalizeCase(p.type)).filter((t) => t)),
-  ].sort();
-  const situations = [
-    ...new Set(
-      plays.map((p) => normalizeCase(p.preferredSituation)).filter((s) => s),
-    ),
-  ].sort();
-  const downs = [
-    ...new Set(
-      plays.map((p) => normalizeCase(p.preferredDown)).filter((d) => d),
-    ),
-  ].sort();
-  const distances = [
-    ...new Set(
-      plays.map((p) => normalizeCase(p.preferredDistance)).filter((d) => d),
-    ),
-  ].sort();
-  const hashes = [
-    ...new Set(
-      plays.map((p) => normalizeCase(p.preferredHash)).filter((h) => h),
-    ),
-  ].sort();
-  const fieldPositions = [
-    ...new Set(
-      plays
-        .map((p) => normalizeCase(p.preferredFieldPosition))
-        .filter((f) => f),
-    ),
-  ].sort();
-  const personnels = [
-    ...new Set(plays.map((p) => normalizeCase(p.personnel)).filter((p) => p)),
-  ].sort();
+  const types = cache.types;
+  const situations = cache.situations;
+  const downs = cache.downs;
+  const distances = cache.distances;
+  const hashes = cache.hashes;
+  const fieldPositions = cache.fieldPositions;
+  const personnels = cache.personnels;
 
   // Populate checkbox filters using shared utility
   buildCheckboxFilterGroup(
@@ -858,6 +827,9 @@ function renderAvailablePlays() {
     selectAllCb.indeterminate = someSelected && !allSelected;
   }
 }
+
+// RAF-coalesced version for available plays rendering
+const _scheduleRenderAvailable = createRAFRenderer(renderAvailablePlays);
 
 /**
  * Ensure the script has at least one period separator.
@@ -2829,6 +2801,9 @@ function renderScript() {
     showToast("❌ Error rendering script.", 3000);
   }
 }
+
+// RAF-coalesced version: multiple calls within one frame resolve to a single render
+const _scheduleRenderScript = createRAFRenderer(renderScript);
 
 /**
  * Clear the current script
