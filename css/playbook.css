@@ -107,6 +107,44 @@ table.sortable th {
   border-left: 3px solid var(--color-accent);
 }
 
+/* Game Plan quick-toggle button */
+.col-gameplan {
+  width: 36px;
+  text-align: center;
+  padding: 0 4px;
+}
+.gp-toggle-btn {
+  background: none;
+  border: 2px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  width: 30px;
+  height: 28px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0.35;
+  transition: all var(--transition-fast);
+  padding: 0;
+  line-height: 1;
+}
+.gp-toggle-btn:hover {
+  opacity: 0.7;
+  border-color: var(--color-accent);
+  background: rgba(255, 152, 0, 0.06);
+}
+.gp-toggle-btn.gp-active {
+  opacity: 1;
+  border-color: var(--color-accent);
+  background: rgba(255, 152, 0, 0.12);
+  box-shadow: 0 0 0 1px rgba(255, 152, 0, 0.2);
+}
+.gp-card-btn {
+  float: right;
+  margin-left: 6px;
+}
+
 /* Game Plan Filter Bar */
 .pb-gameplan-bar {
   padding: 8px 14px;

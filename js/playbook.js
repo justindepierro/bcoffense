@@ -630,18 +630,21 @@ function renderPlaybook() {
         const wbIndicator = onWristband
           ? '<span class="wb-indicator" title="On wristband">🏈</span>'
           : "";
-        const gpIndicator = isPlayInGamePlan(p)
-          ? '<span class="gp-indicator" title="In game plan">🎯</span>'
-          : "";
         const installBadge =
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
+
+        const gpActive = isPlayInGamePlan(p);
+        const gpToggle = getGameWeek().opponentName
+          ? `<button class="gp-toggle-btn${gpActive ? ' gp-active' : ''}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? 'Remove from' : 'Add to'} game plan">🎯</button>`
+          : '';
 
         return `
             <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
                 data-preview="${idx}"
                 title="Click to select, double-click to edit">
+                <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${installBadge}</td>
-                <td class="col-type">${gpIndicator}${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
+                <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(p.formation, searchTerm)}</td>
                 <td class="col-tags">${escapeHtml([p.formTag1, p.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlightSearch(p.back || "-", searchTerm)}</td>
@@ -670,7 +673,10 @@ function renderPlaybook() {
         const onWristband = isPlayOnHighlightedWristband(p);
         const wbClass = onWristband ? " on-wristband" : "";
         const gpClass = isPlayInGamePlan(p) ? " in-gameplan" : "";
-        const gpBadge = isPlayInGamePlan(p) ? '<span class="gp-indicator" title="In game plan">🎯</span> ' : "";
+        const gpCardActive = isPlayInGamePlan(p);
+        const gpCardToggle = getGameWeek().opponentName
+          ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? ' gp-active' : ''}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? 'Remove from' : 'Add to'} game plan">🎯</button>`
+          : '';
         const installBadge =
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
         const pills = [p.type, p.back, p.motion, p.tempo]
@@ -681,7 +687,7 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(p.formation)} ${escapeHtml(p.play)}">
-            <div class="pb-card-play">${gpBadge}${installBadge} ${highlightSearch(p.formation, searchTerm)} ${highlightSearch(p.protection || "", searchTerm)} ${highlightSearch(p.play, searchTerm)}</div>
+            <div class="pb-card-play">${gpCardToggle}${installBadge} ${highlightSearch(p.formation, searchTerm)} ${highlightSearch(p.protection || "", searchTerm)} ${highlightSearch(p.play, searchTerm)}</div>
             <div class="pb-card-sub">${highlightSearch(p.type, searchTerm)}${p.motion ? " · " + highlightSearch(p.motion, searchTerm) : ""}${p.back ? " · " + highlightSearch(p.back, searchTerm) : ""}</div>
             <div class="pb-card-pills">${pills}</div>
           </div>
@@ -2462,6 +2468,24 @@ function closePlayEditor() {
   if (overlay) overlay.classList.remove("visible");
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
+}
+
+/**
+ * Quick-toggle a play's game plan tag from the playbook row
+ */
+function togglePlaybookGamePlan(filteredIdx) {
+  const play = filteredPlays[filteredIdx];
+  if (!play) return;
+  const gw = getGameWeek();
+  if (!gw.opponentName) {
+    showToast("Select an opponent on the Dashboard first", { duration: 3000, type: "error" });
+    return;
+  }
+  const nowTagged = togglePlayGamePlanTag(play, gw.opponentName);
+  showToast(nowTagged
+    ? `🎯 Added to game plan vs ${gw.opponentName}`
+    : `Removed from game plan`, { duration: 1500, type: nowTagged ? "success" : undefined });
+  renderPlaybook();
 }
 
 /**

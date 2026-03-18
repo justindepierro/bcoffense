@@ -2535,6 +2535,13 @@ document.addEventListener("DOMContentLoaded", () => {
   const pbBody = document.querySelector("#playbookTable tbody");
   if (pbBody) {
     pbBody.addEventListener("click", (e) => {
+      // Game plan toggle
+      const gpBtn = e.target.closest("[data-action='togglePlaybookGamePlan']");
+      if (gpBtn) {
+        e.stopPropagation();
+        togglePlaybookGamePlan(parseInt(gpBtn.dataset.idx, 10));
+        return;
+      }
       const row = e.target.closest("tr[data-action]");
       if (!row) return;
       const idx = parseInt(row.dataset.idx, 10);
