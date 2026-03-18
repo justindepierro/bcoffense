@@ -601,6 +601,15 @@
             <span id="playCount" class="play-count"></span>
           </div>
 
+          <!-- Game Plan Filter -->
+          <div class="pb-gameplan-bar" id="pbGamePlanBar">
+            <label class="pb-gp-filter-toggle" for="pbGamePlanFilter">
+              <input type="checkbox" id="pbGamePlanFilter" data-onchange="filterPlays" />
+              <span class="pb-gp-filter-label">🎯 Game Plan Only</span>
+              <span class="pb-gp-filter-opp" id="pbGamePlanOpp"></span>
+            </label>
+          </div>
+
           <!-- Actions row -->
           <div class="pb-actions-row" id="pbActionsRow">
             <div class="pb-actions-left">
@@ -2090,6 +2099,18 @@
               data-pass="value"
             ></textarea>
           </div>
+
+          <!-- Season Schedule -->
+          <div class="dash-schedule-section" id="dashScheduleSection">
+            <div class="dash-schedule-header">
+              <h3 class="dash-section-title">📅 Season Schedule</h3>
+              <button class="btn btn-sm btn-primary" data-action="addScheduleGame">+ Add Game</button>
+            </div>
+            <div id="dashScheduleBody"></div>
+          </div>
+
+          <!-- Game Plan Summary -->
+          <div class="dash-gameplan-section" id="dashGamePlanSection"></div>
 
           <!-- Status Cards Row -->
           <div class="dash-cards" id="dashCards"></div>

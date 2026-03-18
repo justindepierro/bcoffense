@@ -287,12 +287,14 @@ function renderSortCriteria() {
         ? "Custom order set - click to edit"
         : "Set custom value order";
 
-      const moveUpBtn = idx > 0
-        ? `<button class="sort-move-btn" data-action="moveSortCriteria" data-idx="${idx}" data-arg="-1" title="Move up" aria-label="Move sort field up">▲</button>`
-        : `<button class="sort-move-btn" disabled aria-hidden="true">▲</button>`;
-      const moveDownBtn = idx < wbSortCriteria.length - 1
-        ? `<button class="sort-move-btn" data-action="moveSortCriteria" data-idx="${idx}" data-arg="1" title="Move down" aria-label="Move sort field down">▼</button>`
-        : `<button class="sort-move-btn" disabled aria-hidden="true">▼</button>`;
+      const moveUpBtn =
+        idx > 0
+          ? `<button class="sort-move-btn" data-action="moveSortCriteria" data-idx="${idx}" data-arg="-1" title="Move up" aria-label="Move sort field up">▲</button>`
+          : `<button class="sort-move-btn" disabled aria-hidden="true">▲</button>`;
+      const moveDownBtn =
+        idx < wbSortCriteria.length - 1
+          ? `<button class="sort-move-btn" data-action="moveSortCriteria" data-idx="${idx}" data-arg="1" title="Move down" aria-label="Move sort field down">▼</button>`
+          : `<button class="sort-move-btn" disabled aria-hidden="true">▼</button>`;
 
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"

@@ -408,7 +408,16 @@ function filterPlays() {
   const search =
     document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
+  // Game plan filter
+  const gamePlanOnly = document.getElementById("pbGamePlanFilter")?.checked || false;
+  const gw = getGameWeek();
+  _updateGamePlanFilterBar();
+
   filteredPlays = plays.filter((p) => {
+    // Game plan filter
+    if (gamePlanOnly && gw.opponentName) {
+      if (!isPlayTaggedForOpponent(p, gw.opponentName)) return false;
+    }
     // Type chips (OR within layer)
     if (activeTypes.size > 0 && !activeTypes.has(p.type)) return false;
     // Personnel chips (OR within layer)
@@ -449,6 +458,21 @@ function filterPlays() {
 }
 
 /**
+ * Update the game plan filter bar visibility + opponent name
+ */
+function _updateGamePlanFilterBar() {
+  const bar = document.getElementById("pbGamePlanBar");
+  const oppLabel = document.getElementById("pbGamePlanOpp");
+  const gw = getGameWeek();
+  if (bar) {
+    bar.style.display = gw.opponentName ? "" : "none";
+  }
+  if (oppLabel) {
+    oppLabel.textContent = gw.opponentName ? `vs ${gw.opponentName}` : "";
+  }
+}
+
+/**
  * Clear all playbook filters
  */
 function clearFilters() {
@@ -457,6 +481,10 @@ function clearFilters() {
   document
     .querySelectorAll(".pb-chip.active")
     .forEach((c) => c.classList.remove("active"));
+
+  // Clear game plan filter
+  const gpFilter = document.getElementById("pbGamePlanFilter");
+  if (gpFilter) gpFilter.checked = false;
 
   // Clear dropdowns
   const ids = [
@@ -598,18 +626,22 @@ function renderPlaybook() {
         const idx = start + localIdx; // global filteredPlays index
         const onWristband = isPlayOnHighlightedWristband(p);
         const wbClass = onWristband ? " on-wristband" : "";
+        const gpClass = isPlayInGamePlan(p) ? " in-gameplan" : "";
         const wbIndicator = onWristband
           ? '<span class="wb-indicator" title="On wristband">🏈</span>'
+          : "";
+        const gpIndicator = isPlayInGamePlan(p)
+          ? '<span class="gp-indicator" title="In game plan">🎯</span>'
           : "";
         const installBadge =
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
 
         return `
-            <tr class="${wbClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
+            <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
                 data-preview="${idx}"
                 title="Click to select, double-click to edit">
                 <td class="col-install">${installBadge}</td>
-                <td class="col-type">${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
+                <td class="col-type">${gpIndicator}${wbIndicator}${highlightSearch(p.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(p.formation, searchTerm)}</td>
                 <td class="col-tags">${escapeHtml([p.formTag1, p.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlightSearch(p.back || "-", searchTerm)}</td>
@@ -637,6 +669,8 @@ function renderPlaybook() {
         const idx = start + localIdx;
         const onWristband = isPlayOnHighlightedWristband(p);
         const wbClass = onWristband ? " on-wristband" : "";
+        const gpClass = isPlayInGamePlan(p) ? " in-gameplan" : "";
+        const gpBadge = isPlayInGamePlan(p) ? '<span class="gp-indicator" title="In game plan">🎯</span> ' : "";
         const installBadge =
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
         const pills = [p.type, p.back, p.motion, p.tempo]
@@ -644,10 +678,10 @@ function renderPlaybook() {
           .map((v) => `<span class="pb-card-pill">${escapeHtml(v)}</span>`)
           .join("");
         return `
-          <div class="pb-card${wbClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
+          <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(p.formation)} ${escapeHtml(p.play)}">
-            <div class="pb-card-play">${installBadge} ${highlightSearch(p.formation, searchTerm)} ${highlightSearch(p.protection || "", searchTerm)} ${highlightSearch(p.play, searchTerm)}</div>
+            <div class="pb-card-play">${gpBadge}${installBadge} ${highlightSearch(p.formation, searchTerm)} ${highlightSearch(p.protection || "", searchTerm)} ${highlightSearch(p.play, searchTerm)}</div>
             <div class="pb-card-sub">${highlightSearch(p.type, searchTerm)}${p.motion ? " · " + highlightSearch(p.motion, searchTerm) : ""}${p.back ? " · " + highlightSearch(p.back, searchTerm) : ""}</div>
             <div class="pb-card-pills">${pills}</div>
           </div>
@@ -702,7 +736,10 @@ function renderPlaybook() {
     // Update scroll affordance on table container
     const tableWrap = document.querySelector(".table-container");
     if (tableWrap) {
-      tableWrap.classList.toggle("is-scrollable", tableWrap.scrollWidth > tableWrap.clientWidth);
+      tableWrap.classList.toggle(
+        "is-scrollable",
+        tableWrap.scrollWidth > tableWrap.clientWidth,
+      );
     }
   } catch (err) {
     console.error("renderPlaybook error:", err);
@@ -2264,6 +2301,20 @@ function _populateEditorForm(play, isNew) {
   }
 
   let html = "";
+
+  // Game Plan tag section — only show when editing (not new) and opponent is active
+  const gw = getGameWeek();
+  if (!isNew && gw.opponentName) {
+    const isTagged = isPlayTaggedForOpponent(play, gw.opponentName);
+    html += `<div class="pb-editor-section pb-editor-gameplan">
+      <div class="pb-editor-section-title">🎯 Game Plan — ${escapeHtml(gw.opponentName)}${gw.weekLabel ? " (" + escapeHtml(gw.weekLabel) + ")" : ""}</div>
+      <label class="pb-gp-toggle" for="pe-gameplan">
+        <input type="checkbox" id="pe-gameplan" ${isTagged ? "checked" : ""} />
+        <span>Include in game plan for <strong>${escapeHtml(gw.opponentName)}</strong></span>
+      </label>
+    </div>`;
+  }
+
   _EDITOR_SECTIONS.forEach((section) => {
     html += `<div class="pb-editor-section">`;
     html += `<div class="pb-editor-section-title">${section.title}</div>`;
@@ -2356,6 +2407,10 @@ function savePlayEditor() {
     // Update existing play
     const existing = plays[_editingMasterIdx];
     Object.keys(data).forEach((k) => (existing[k] = data[k]));
+
+    // Handle game plan tag
+    _syncGamePlanCheckbox(existing);
+
     showToast("✏️ Play updated", { duration: 2000, type: "success" });
   } else {
     // Add new play — build full play object
@@ -2364,6 +2419,10 @@ function savePlayEditor() {
       s.fields.forEach((f) => (newPlay[f.key] = data[f.key] || "")),
     );
     plays.push(newPlay);
+
+    // Handle game plan tag for new play
+    _syncGamePlanCheckbox(newPlay);
+
     showToast("➕ Play added to playbook", { duration: 2000, type: "success" });
   }
 
@@ -2406,6 +2465,20 @@ function closePlayEditor() {
 }
 
 /**
+ * Sync the game plan checkbox state with storage
+ */
+function _syncGamePlanCheckbox(play) {
+  const cb = document.getElementById("pe-gameplan");
+  if (!cb) return;
+  const gw = getGameWeek();
+  if (!gw.opponentName) return;
+  const isTagged = isPlayTaggedForOpponent(play, gw.opponentName);
+  if (cb.checked !== isTagged) {
+    togglePlayGamePlanTag(play, gw.opponentName);
+  }
+}
+
+/**
  * Navigate to the previous play in the filtered list
  */
 function playEditorPrev() {
@@ -2445,6 +2518,9 @@ function _autoSaveCurrentEditorFields() {
     storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
     invalidateFilterCache();
   }
+
+  // Sync game plan checkbox
+  _syncGamePlanCheckbox(existing);
 }
 
 // ══════════════════════════════════════════════════════════════════

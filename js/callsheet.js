@@ -844,7 +844,10 @@ function renderCallSheet() {
 
   // Set ARIA role on the grid container
   container.setAttribute("role", "region");
-  container.setAttribute("aria-label", "Call sheet " + (callSheetSettings.currentPage || "front") + " page");
+  container.setAttribute(
+    "aria-label",
+    "Call sheet " + (callSheetSettings.currentPage || "front") + " page",
+  );
 
   const page = callSheetSettings.currentPage;
 
@@ -1078,7 +1081,7 @@ function renderCategory(cat, data, dupeMap) {
     <div class="callsheet-category${isCollapsed ? " cs-collapsed" : ""}" data-category="${cat.id}"
          draggable="true"
          data-drag="catDrag" data-cat="${cat.id}"
-         role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? 's' : ''}">
+         role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
       <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};"
            role="heading" aria-level="3">>
         <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand">${collapseIcon}</span>

@@ -1215,6 +1215,12 @@ function renderDashboard() {
       </div>
     `;
     }
+
+    // Render schedule table
+    renderSchedule();
+
+    // Render game plan summary
+    renderGamePlanSummary();
   } catch (err) {
     console.error("renderDashboard error:", err);
     showToast("❌ Error loading dashboard.", 3000);
@@ -1233,6 +1239,194 @@ function onDashNotesChange(value) {
     gw.notes = value;
     storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   }, 400);
+}
+
+// ============ Season Schedule Manager ============
+
+/**
+ * Render the schedule table in the dashboard
+ */
+function renderSchedule() {
+  const body = document.getElementById("dashScheduleBody");
+  if (!body) return;
+  const schedule = getSchedule();
+  const gw = getGameWeek();
+
+  if (schedule.length === 0) {
+    body.innerHTML = `<div class="dash-schedule-empty">
+      <p>No games scheduled yet. Add your season schedule to quickly set the active opponent each week.</p>
+    </div>`;
+    return;
+  }
+
+  let html = '<table class="dash-schedule-table"><thead><tr>';
+  html += "<th>Week</th><th>Date</th><th>Opponent</th><th>Location</th><th></th>";
+  html += "</tr></thead><tbody>";
+  schedule.forEach((game, i) => {
+    const isActive = gw.opponentName && gw.opponentName === game.opponent && gw.weekLabel === game.week;
+    const activeClass = isActive ? " dash-schedule-active" : "";
+    html += `<tr class="${activeClass}">
+      <td>${escapeHtml(game.week)}</td>
+      <td>${escapeHtml(game.date)}</td>
+      <td><strong>${escapeHtml(game.opponent)}</strong></td>
+      <td>${escapeHtml(game.location)}</td>
+      <td class="dash-schedule-actions">
+        <button class="btn btn-sm btn-primary" data-action="setScheduleActive" data-idx="${i}" title="Set as active game week">🏈</button>
+        <button class="btn btn-sm btn-danger" data-action="removeScheduleGame" data-idx="${i}" title="Remove">✕</button>
+      </td>
+    </tr>`;
+  });
+  html += "</tbody></table>";
+  body.innerHTML = html;
+}
+
+/**
+ * Add a game to the schedule via prompt
+ */
+async function addScheduleGame() {
+  const week = await showPrompt("Week label:", "", {
+    title: "Add Game", icon: "📅", placeholder: "e.g., Week 1"
+  });
+  if (!week) return;
+  const opponent = await showPrompt("Opponent name:", "", {
+    title: "Add Game", icon: "🏈", placeholder: "e.g., Alabama"
+  });
+  if (!opponent) return;
+  const date = await showPrompt("Game date (optional):", "", {
+    title: "Add Game", icon: "📆", placeholder: "e.g., Sep 6"
+  });
+  const location = await showPrompt("Location (optional):", "", {
+    title: "Add Game", icon: "📍", placeholder: "e.g., Home / @ Away"
+  });
+
+  const schedule = getSchedule();
+  schedule.push({
+    week: week.trim(),
+    date: (date || "").trim(),
+    opponent: opponent.trim(),
+    location: (location || "").trim(),
+  });
+  saveSchedule(schedule);
+  renderSchedule();
+  showToast("📅 Game added to schedule", { duration: 2000, type: "success" });
+}
+
+/**
+ * Remove a game from the schedule
+ */
+async function removeScheduleGame(element) {
+  const idx = parseInt(element.dataset.idx, 10);
+  const schedule = getSchedule();
+  if (idx < 0 || idx >= schedule.length) return;
+  const game = schedule[idx];
+  const ok = await showConfirm(
+    `Remove <strong>${escapeHtml(game.week)} vs ${escapeHtml(game.opponent)}</strong> from the schedule?`,
+    { title: "Remove Game", icon: "🗑️", confirmText: "Remove", danger: true }
+  );
+  if (!ok) return;
+  schedule.splice(idx, 1);
+  saveSchedule(schedule);
+  renderSchedule();
+  showToast("Game removed", { duration: 2000 });
+}
+
+/**
+ * Set a scheduled game as the active game week
+ */
+function setScheduleActive(element) {
+  const idx = parseInt(element.dataset.idx, 10);
+  const schedule = getSchedule();
+  if (idx < 0 || idx >= schedule.length) return;
+  const game = schedule[idx];
+
+  // Try to find this opponent in the tendencies opponents list
+  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+  let oppIdx = opponents.findIndex(
+    (o) => o.name.toLowerCase().trim() === game.opponent.toLowerCase().trim()
+  );
+
+  // If opponent not found in tendencies, create a new one
+  if (oppIdx < 0) {
+    opponents.push({ name: game.opponent.trim(), plays: [] });
+    storageManager.set(STORAGE_KEYS.DEFENSIVE_TENDENCIES, opponents);
+    oppIdx = opponents.length - 1;
+  }
+
+  setGameWeek(oppIdx, game.week);
+  renderDashboard();
+  showToast(`🏈 Active: ${escapeHtml(game.week)} vs ${escapeHtml(game.opponent)}`, { duration: 2500, type: "success" });
+}
+
+// ============ Game Plan Dashboard Section ============
+
+/**
+ * Render game plan summary in the dashboard
+ */
+function renderGamePlanSummary() {
+  const section = document.getElementById("dashGamePlanSection");
+  if (!section) return;
+  const gw = getGameWeek();
+
+  if (!gw.opponentName) {
+    section.innerHTML = "";
+    return;
+  }
+
+  const tags = getGamePlanTags();
+  const tagged = tags[gw.opponentName] || [];
+  const taggedCount = tagged.length;
+
+  if (taggedCount === 0) {
+    section.innerHTML = `<div class="dash-gameplan-card">
+      <h3 class="dash-section-title">🎯 Game Plan — ${escapeHtml(gw.opponentName)}</h3>
+      <p class="dash-gameplan-empty">No plays tagged for this opponent yet. Open the <strong>Playbook</strong>, double-click a play, and check <strong>In Game Plan</strong> to start building your game plan.</p>
+    </div>`;
+    return;
+  }
+
+  // Build breakdown by type
+  const typeCounts = {};
+  const matchedPlays = (typeof plays !== "undefined" ? plays : []).filter((p) => {
+    if (tagged.includes(playSignature(p))) {
+      const t = p.type || "Other";
+      typeCounts[t] = (typeCounts[t] || 0) + 1;
+      return true;
+    }
+    return false;
+  });
+
+  let breakdownHtml = Object.entries(typeCounts)
+    .sort((a, b) => b[1] - a[1])
+    .map(([type, count]) => `<div class="dash-gp-row"><span>${escapeHtml(type)}</span><strong>${count}</strong></div>`)
+    .join("");
+
+  section.innerHTML = `<div class="dash-gameplan-card">
+    <h3 class="dash-section-title">🎯 Game Plan — ${escapeHtml(gw.opponentName)}</h3>
+    <div class="dash-gp-summary">
+      <div class="dash-gp-total">
+        <div class="dash-gp-total-num">${taggedCount}</div>
+        <div class="dash-gp-total-label">Plays Tagged</div>
+      </div>
+      <div class="dash-gp-breakdown">
+        <div class="dash-gp-breakdown-title">By Type</div>
+        ${breakdownHtml}
+      </div>
+    </div>
+    <button class="btn btn-sm btn-primary" data-action="filterPlaybookToGamePlan">📖 View in Playbook</button>
+  </div>`;
+}
+
+/**
+ * Switch to playbook tab with game plan filter active
+ */
+function filterPlaybookToGamePlan() {
+  showTab("playbook");
+  // Activate the game plan filter
+  const toggle = document.getElementById("pbGamePlanFilter");
+  if (toggle && !toggle.checked) {
+    toggle.checked = true;
+    filterPlays();
+  }
 }
 
 /**
@@ -1956,6 +2150,8 @@ const _ELEMENT_FNS = new Set([
   "toggleScriptCheckbox",
   "toggleWbCheckbox",
   "moveSortCriteria",
+  "removeScheduleGame",
+  "setScheduleActive",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 

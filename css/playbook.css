@@ -94,6 +94,74 @@ table.sortable th {
   margin-right: 5px;
   font-size: var(--font-size-sm);
 }
+
+/* Game Plan indicators */
+.gp-indicator {
+  margin-right: 4px;
+  font-size: var(--font-size-xs);
+}
+#playbookTable tbody tr.in-gameplan {
+  border-left: 3px solid var(--color-accent);
+}
+.pb-card.in-gameplan {
+  border-left: 3px solid var(--color-accent);
+}
+
+/* Game Plan Filter Bar */
+.pb-gameplan-bar {
+  padding: 8px 14px;
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-md);
+  margin-bottom: 10px;
+  border: 1px solid var(--color-border-light);
+}
+.pb-gp-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  user-select: none;
+}
+.pb-gp-filter-toggle input[type="checkbox"] {
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.pb-gp-filter-label {
+  font-weight: 600;
+}
+.pb-gp-filter-opp {
+  color: var(--color-text-secondary);
+  font-style: italic;
+}
+
+/* Play Editor Game Plan section */
+.pb-editor-gameplan {
+  background: linear-gradient(135deg, rgba(255, 152, 0, 0.06), rgba(255, 152, 0, 0.02));
+  border: 1px solid rgba(255, 152, 0, 0.2);
+  border-radius: var(--radius-md);
+  padding: 14px 16px;
+}
+.pb-gp-toggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  user-select: none;
+}
+.pb-gp-toggle input[type="checkbox"] {
+  width: 18px;
+  height: 18px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.pb-gp-toggle span {
+  line-height: 1.4;
+}
+
 .wristband-highlight select {
   padding: 5px 8px;
   font-size: var(--font-size-sm);

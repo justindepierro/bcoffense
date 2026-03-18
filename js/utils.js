@@ -767,6 +767,8 @@ const STORAGE_KEYS = {
   OB_PLAY_RATINGS: "ob_playRatings",
   LAST_ACTIVE_TAB: "lastActiveTab",
   THEME: "theme",
+  SCHEDULE: "schedule",
+  GAME_PLAN_TAGS: "gamePlanTags",
 };
 
 /**
@@ -934,7 +936,9 @@ function getFilterCache() {
     return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
   };
   const unique = (field) =>
-    [...new Set(plays.map((p) => normalizeCase(p[field])).filter(Boolean))].sort();
+    [
+      ...new Set(plays.map((p) => normalizeCase(p[field])).filter(Boolean)),
+    ].sort();
 
   _filterCache = {
     types: unique("type"),
@@ -944,8 +948,12 @@ function getFilterCache() {
     hashes: unique("preferredHash"),
     fieldPositions: unique("preferredFieldPosition"),
     personnels: unique("personnel"),
-    formations: [...new Set(plays.map((p) => p.formation).filter(Boolean))].sort(),
-    basePlays: [...new Set(plays.map((p) => p.basePlay).filter(Boolean))].sort(),
+    formations: [
+      ...new Set(plays.map((p) => p.formation).filter(Boolean)),
+    ].sort(),
+    basePlays: [
+      ...new Set(plays.map((p) => p.basePlay).filter(Boolean)),
+    ].sort(),
   };
   return _filterCache;
 }
@@ -2390,6 +2398,93 @@ function getActiveOpponent() {
   if (gw.opponentIndex === null) return null;
   const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   return opponents[gw.opponentIndex] || null;
+}
+
+// ============ Schedule Manager ============
+
+/**
+ * Get the season schedule
+ * @returns {Array<{week: string, date: string, opponent: string, location: string}>}
+ */
+function getSchedule() {
+  return storageManager.get(STORAGE_KEYS.SCHEDULE, []);
+}
+
+/**
+ * Save the season schedule
+ */
+function saveSchedule(schedule) {
+  storageManager.set(STORAGE_KEYS.SCHEDULE, schedule);
+}
+
+// ============ Game Plan Tags ============
+// Tag plays for specific opponents so coaches can mark "this play is in our game plan for Week 4 vs Alabama"
+
+/**
+ * Generate a stable signature for a play (used as key for game plan tags)
+ */
+function playSignature(play) {
+  return [
+    (play.formation || "").trim(),
+    (play.play || "").trim(),
+    (play.personnel || "").trim(),
+    (play.type || "").trim(),
+  ].join("|");
+}
+
+/**
+ * Get all game plan tags: { opponentName: [sig1, sig2, ...], ... }
+ */
+function getGamePlanTags() {
+  return storageManager.get(STORAGE_KEYS.GAME_PLAN_TAGS, {});
+}
+
+/**
+ * Check if a play is tagged for the given opponent
+ */
+function isPlayTaggedForOpponent(play, opponentName) {
+  if (!opponentName) return false;
+  const tags = getGamePlanTags();
+  const sigs = tags[opponentName] || [];
+  return sigs.includes(playSignature(play));
+}
+
+/**
+ * Toggle a play's game plan tag for an opponent
+ * @returns {boolean} new tagged state
+ */
+function togglePlayGamePlanTag(play, opponentName) {
+  if (!opponentName) return false;
+  const tags = getGamePlanTags();
+  if (!tags[opponentName]) tags[opponentName] = [];
+  const sig = playSignature(play);
+  const idx = tags[opponentName].indexOf(sig);
+  if (idx >= 0) {
+    tags[opponentName].splice(idx, 1);
+    storageManager.set(STORAGE_KEYS.GAME_PLAN_TAGS, tags);
+    return false;
+  } else {
+    tags[opponentName].push(sig);
+    storageManager.set(STORAGE_KEYS.GAME_PLAN_TAGS, tags);
+    return true;
+  }
+}
+
+/**
+ * Get count of plays tagged for a given opponent
+ */
+function getGamePlanCount(opponentName) {
+  if (!opponentName) return 0;
+  const tags = getGamePlanTags();
+  return (tags[opponentName] || []).length;
+}
+
+/**
+ * Check if a play is tagged for the active game week opponent
+ */
+function isPlayInGamePlan(play) {
+  const gw = getGameWeek();
+  return isPlayTaggedForOpponent(play, gw.opponentName);
 }
 
 // ============ Tendencies Query Engine ============

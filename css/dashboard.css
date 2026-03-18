@@ -309,6 +309,158 @@
   }
 }
 
+/* ============ Season Schedule ============ */
+.dash-schedule-section {
+  margin-bottom: 28px;
+}
+
+.dash-schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
+}
+
+.dash-schedule-header .dash-section-title {
+  margin: 0;
+}
+
+.dash-schedule-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--color-border-light);
+}
+
+.dash-schedule-table th {
+  background: var(--color-bg-light);
+  padding: 10px 14px;
+  text-align: left;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  border-bottom: 2px solid var(--color-border-light);
+}
+
+.dash-schedule-table td {
+  padding: 10px 14px;
+  font-size: var(--font-size-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text);
+}
+
+.dash-schedule-table tr:last-child td {
+  border-bottom: none;
+}
+
+.dash-schedule-active {
+  background: rgba(25, 42, 81, 0.06);
+}
+.dash-schedule-active td {
+  font-weight: 600;
+}
+
+.dash-schedule-actions {
+  display: flex;
+  gap: 6px;
+  justify-content: flex-end;
+}
+
+.dash-schedule-empty {
+  text-align: center;
+  padding: 30px 20px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-lg);
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+
+/* ============ Game Plan Summary ============ */
+.dash-gameplan-section {
+  margin-bottom: 28px;
+}
+
+.dash-gameplan-card {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  box-shadow: var(--shadow-xs);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-accent);
+}
+
+.dash-gameplan-empty {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  margin: 8px 0;
+  line-height: 1.5;
+}
+
+.dash-gp-summary {
+  display: flex;
+  gap: 28px;
+  align-items: flex-start;
+  margin: 16px 0;
+  flex-wrap: wrap;
+}
+
+.dash-gp-total {
+  text-align: center;
+  min-width: 100px;
+}
+
+.dash-gp-total-num {
+  font-size: var(--font-size-3xl);
+  font-weight: 700;
+  color: var(--color-primary);
+  line-height: 1;
+}
+
+.dash-gp-total-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  margin-top: 4px;
+  font-weight: 600;
+}
+
+.dash-gp-breakdown {
+  flex: 1;
+  min-width: 200px;
+}
+
+.dash-gp-breakdown-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-secondary);
+  margin-bottom: 8px;
+}
+
+.dash-gp-row {
+  display: flex;
+  justify-content: space-between;
+  padding: 4px 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.dash-gp-row:last-child {
+  border-bottom: none;
+}
+
+.dash-gp-row strong {
+  color: var(--color-text);
+}
+
 /* ============ Print Game Plan ============ */
 .gp-print-wrap {
   font-family: var(--font-sans);
