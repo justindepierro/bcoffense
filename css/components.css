@@ -826,7 +826,7 @@ input.smart-input-sm[type="number"] {
 
 /* Cell Popup Modal */
 .cell-popup-overlay {
-  display: none;
+  display: flex;
   position: fixed;
   top: 0;
   left: 0;
@@ -836,9 +836,6 @@ input.smart-input-sm[type="number"] {
   z-index: var(--z-header);
   justify-content: center;
   align-items: center;
-}
-.cell-popup-overlay.active {
-  display: flex;
 }
 .cell-popup {
   background: var(--color-white);
