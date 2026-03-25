@@ -2427,13 +2427,14 @@ document.addEventListener("DOMContentLoaded", () => {
         const cardIdx = parseInt(cell.dataset.card, 10);
         const play = wristbandCards[cardIdx]?.data[cellIdx];
         if (!play) {
+          e.stopPropagation();
           // Open cell popup and pre-fill search
           openCellPopup(cardIdx, cellIdx, e);
           setTimeout(() => {
             const searchInput = document.getElementById("cellPlaySearch");
             if (searchInput) {
               searchInput.value = e.key;
-              populateCellPlayList();
+              searchInput.dispatchEvent(new Event("input", { bubbles: true }));
             }
           }, 60);
         }
