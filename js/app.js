@@ -1959,11 +1959,21 @@ document.addEventListener("keydown", (e) => {
 
   if (!mod) return;
 
+  // Cmd+K: Quick search (wristband tab)
+  if (e.key === "k" && currentActiveTab === "wristband" && typeof openWbQuickSearch === "function") {
+    e.preventDefault();
+    openWbQuickSearch();
+    return;
+  }
+
   // Undo: Ctrl+Z / Cmd+Z
   if (e.key === "z" && !e.shiftKey) {
     if (currentActiveTab === "script" && typeof undoScript === "function") {
       e.preventDefault();
       undoScript();
+    } else if (currentActiveTab === "wristband" && typeof undoWristband === "function") {
+      e.preventDefault();
+      undoWristband();
     }
     return;
   }
@@ -1973,6 +1983,9 @@ document.addEventListener("keydown", (e) => {
     if (currentActiveTab === "script" && typeof redoScript === "function") {
       e.preventDefault();
       redoScript();
+    } else if (currentActiveTab === "wristband" && typeof redoWristband === "function") {
+      e.preventDefault();
+      redoWristband();
     }
   }
 });
@@ -2358,6 +2371,9 @@ document.addEventListener("click", (e) => {
       return;
     case "deleteSavedWristband":
       deleteSavedWristband(parseInt(el.dataset.idx, 10));
+      return;
+    case "toggleWbFavorite":
+      toggleWbFavorite(parseInt(el.dataset.idx, 10));
       return;
   }
 

@@ -37,6 +37,18 @@ savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
 // Drag-and-drop cell swap state
 let draggedCellIndex = null;
 
+// Copy/paste cell state
+let copiedCell = null;
+
+// Batch color selection
+let wbSelectedCells = [];
+
+// Favorite/pinned plays (play indices)
+let wbFavorites = storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []);
+
+// Arrow key highlight index in cell popup
+let highlightedPlayIndex = -1;
+
 // Autosave timer
 let wristbandAutosaveTimer = null;
 
@@ -143,11 +155,12 @@ const WB_SORT_FIELDS = [
 ];
 
 /**
- * Initialize sort criteria list with default
+ * Initialize sort criteria list with default (loads from storage if available)
  */
 function initSortCriteria() {
   if (wbSortCriteria.length === 0) {
-    wbSortCriteria = [{ field: "personnel", direction: "asc" }];
+    const saved = storageManager.get(STORAGE_KEYS.WRISTBAND_SORT_CRITERIA, null);
+    wbSortCriteria = saved || [{ field: "personnel", direction: "asc" }];
   }
   renderSortCriteria();
   renderSortPresetDropdown();
@@ -324,6 +337,7 @@ function addSortCriteria() {
 
   if (availableField) {
     wbSortCriteria.push({ field: availableField.value, direction: "asc" });
+    persistSortCriteria();
     renderSortCriteria();
   } else {
     showToast("All sort fields are already in use");
@@ -339,6 +353,7 @@ function removeSortCriteria(idx) {
     return;
   }
   wbSortCriteria.splice(idx, 1);
+  persistSortCriteria();
   renderSortCriteria();
 }
 
@@ -347,6 +362,7 @@ function removeSortCriteria(idx) {
  */
 function updateSortField(idx, newField) {
   wbSortCriteria[parseInt(idx, 10)].field = newField;
+  persistSortCriteria();
   renderSortCriteria();
 }
 
@@ -356,6 +372,7 @@ function updateSortField(idx, newField) {
 function toggleSortDirection(idx) {
   wbSortCriteria[idx].direction =
     wbSortCriteria[idx].direction === "asc" ? "desc" : "asc";
+  persistSortCriteria();
   renderSortCriteria();
 }
 
@@ -376,6 +393,7 @@ function handleSortDrop(event, targetIdx) {
   // Reorder the array
   const moved = wbSortCriteria.splice(draggedSortItem, 1)[0];
   wbSortCriteria.splice(targetIdx, 0, moved);
+  persistSortCriteria();
   renderSortCriteria();
 }
 
@@ -395,6 +413,7 @@ function moveSortCriteria(direction, element) {
   if (newIdx < 0 || newIdx >= wbSortCriteria.length) return;
   const moved = wbSortCriteria.splice(idx, 1)[0];
   wbSortCriteria.splice(newIdx, 0, moved);
+  persistSortCriteria();
   renderSortCriteria();
 }
 
@@ -569,6 +588,13 @@ function compareWithCustomOrder(valA, valB, field, direction) {
     if (direction === "desc") cmp = -cmp;
     return cmp;
   }
+}
+
+/**
+ * Persist sort criteria to localStorage
+ */
+function persistSortCriteria() {
+  storageManager.set(STORAGE_KEYS.WRISTBAND_SORT_CRITERIA, wbSortCriteria);
 }
 
 /**
@@ -852,9 +878,13 @@ function renderCardTabs() {
     .map((card, i) => {
       const count = card.data.filter((p) => p !== null).length;
       const total = card.data.length;
+      const descHtml = card.description
+        ? `<span class="card-tab-desc" title="${escapeHtml(card.description)}">${escapeHtml(card.description)}</span>`
+        : "";
       return `
         <div class="card-tab ${i === currentCardIndex ? "active" : ""}" data-action="switchCard" data-idx="${i}" title="Double-click to rename">
           <span class="card-tab-name">${escapeHtml(card.name)}</span>
+          ${descHtml}
           <span class="card-count">${count}/${total}</span>
         </div>
       `;
@@ -1084,7 +1114,7 @@ function renderWristbandPlays() {
   const type = document.getElementById("wbFilterType").value;
   const search = document.getElementById("wbSearchPlay").value.toLowerCase();
 
-  const filtered = plays.filter((p) => {
+  let filtered = plays.filter((p) => {
     if (type && p.type !== type) return false;
     if (
       search &&
@@ -1103,10 +1133,20 @@ function renderWristbandPlays() {
     return true;
   });
 
+  // Sort favorites to top
+  filtered.sort((a, b) => {
+    const aFav = wbFavorites.includes(plays.indexOf(a));
+    const bFav = wbFavorites.includes(plays.indexOf(b));
+    if (aFav && !bFav) return -1;
+    if (!aFav && bFav) return 1;
+    return 0;
+  });
+
   const container = document.getElementById("wbAvailablePlays");
   container.innerHTML = filtered
     .map((p, i) => {
       const idx = plays.indexOf(p);
+      const isFav = wbFavorites.includes(idx);
       const showEmoji =
         document.getElementById("wbShowEmoji")?.checked || false;
       const useSquares =
@@ -1120,6 +1160,7 @@ function renderWristbandPlays() {
         : "";
       return `
         <div class="play-item wb-play-item" data-play-idx="${idx}" title="Double-click to add to next empty cell">
+          <button class="wb-pin-btn${isFav ? " active" : ""}" data-action="toggleWbFavorite" data-idx="${idx}" title="${isFav ? "Unpin" : "Pin"} play" aria-label="${isFav ? "Unpin" : "Pin"} play">★</button>
           <div class="play-info">
             <div class="play-name">${emoji}${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}</div>
             <div class="play-details">${escapeHtml(p.type)}${lineCallDisplay}</div>
@@ -1361,6 +1402,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
     });
     overlay._focusTrapAdded = true;
   }
+  initCellPopupKeyNav();
   const currentPlay = cardData[cellIdx];
   const key = `${cardIdx}-${cellIdx}`;
   const existing = cellCustomizations[key] || {};
@@ -1423,6 +1465,7 @@ function showPlaySelector() {
  * Populate the play list in the cell popup
  */
 function populateCellPlayList() {
+  highlightedPlayIndex = -1;
   const search = document.getElementById("cellPlaySearch").value.toLowerCase();
   const type = document.getElementById("wbFilterType")?.value || "";
 
@@ -1545,6 +1588,7 @@ function applyCellStyle() {
   const { cardIdx, cellIdx } = currentEditingCell;
   if (cardIdx === null || cellIdx === null) return;
 
+  saveWristbandState();
   const key = `${cardIdx}-${cellIdx}`;
   const onTwo = document.getElementById("cellOnTwo").checked;
 
@@ -1877,6 +1921,17 @@ function printWristband() {
  */
 async function saveWristband() {
   try {
+    // Check if all cards are empty
+    const totalPlays = wristbandCards.reduce((sum, c) => sum + c.data.filter((p) => p !== null).length, 0);
+    if (totalPlays === 0) {
+      const proceed = await showConfirm("All cards are empty. Save anyway?", {
+        title: "Empty Wristband",
+        icon: "⚠️",
+        confirmText: "Save Empty",
+      });
+      if (!proceed) return;
+    }
+
     const name = await showPrompt(
       "Name for this wristband set:",
       `Wristband Set ${new Date().toLocaleDateString()}`,
@@ -2288,6 +2343,423 @@ function updateWbStats() {
   passEl.textContent = passCount;
 }
 
+// ============ Arrow Key Navigation in Cell Popup ============
+
+/**
+ * Handle arrow key navigation in the cell popup play list
+ */
+function initCellPopupKeyNav() {
+  const overlay = document.getElementById("cellPopupOverlay");
+  if (!overlay || overlay._arrowNavAdded) return;
+  overlay._arrowNavAdded = true;
+
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key !== "ArrowDown" && e.key !== "ArrowUp" && e.key !== "Enter") return;
+    const list = document.getElementById("cellPlayList");
+    if (!list) return;
+    const items = list.querySelectorAll(".cell-play-option");
+    if (items.length === 0) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+
+    if (e.key === "ArrowDown") {
+      highlightedPlayIndex = Math.min(highlightedPlayIndex + 1, items.length - 1);
+    } else if (e.key === "ArrowUp") {
+      highlightedPlayIndex = Math.max(highlightedPlayIndex - 1, 0);
+    } else if (e.key === "Enter" && highlightedPlayIndex >= 0 && highlightedPlayIndex < items.length) {
+      items[highlightedPlayIndex].click();
+      return;
+    }
+
+    items.forEach((item, i) => {
+      item.classList.toggle("highlighted", i === highlightedPlayIndex);
+    });
+    if (items[highlightedPlayIndex]) {
+      items[highlightedPlayIndex].scrollIntoView({ block: "nearest" });
+    }
+  });
+}
+
+// ============ Copy/Paste Cells ============
+
+/**
+ * Copy a cell's play and customizations
+ */
+function copyWbCell(cardIdx, cellIdx) {
+  const play = wristbandCards[cardIdx]?.data[cellIdx];
+  if (!play) {
+    showToast("No play to copy");
+    return;
+  }
+  const key = `${cardIdx}-${cellIdx}`;
+  copiedCell = {
+    play: safeDeepClone(play),
+    customization: cellCustomizations[key] ? safeDeepClone(cellCustomizations[key]) : null,
+  };
+  showToast("📋 Cell copied");
+}
+
+/**
+ * Paste a copied cell to the target location
+ */
+function pasteWbCell(cardIdx, cellIdx) {
+  if (!copiedCell) {
+    showToast("Nothing to paste — copy a cell first");
+    return;
+  }
+  saveWristbandState();
+  wristbandCards[cardIdx].data[cellIdx] = safeDeepClone(copiedCell.play);
+  const key = `${cardIdx}-${cellIdx}`;
+  if (copiedCell.customization) {
+    cellCustomizations[key] = safeDeepClone(copiedCell.customization);
+  } else {
+    delete cellCustomizations[key];
+  }
+  renderCardTabs();
+  renderWristbandGrid();
+  showToast("📋 Cell pasted");
+}
+
+// ============ Batch Color Editing ============
+
+/**
+ * Toggle batch selection on a cell (shift+click)
+ */
+function toggleBatchSelect(cardIdx, cellIdx) {
+  const key = `${cardIdx}-${cellIdx}`;
+  const idx = wbSelectedCells.indexOf(key);
+  if (idx >= 0) {
+    wbSelectedCells.splice(idx, 1);
+  } else {
+    wbSelectedCells.push(key);
+  }
+  // Toggle visual class on the cell
+  const cells = document.querySelectorAll(`[data-drag='wbCell'][data-card='${cardIdx}'][data-cell-idx='${cellIdx}']`);
+  cells.forEach((c) => c.classList.toggle("wb-selected", idx < 0));
+}
+
+/**
+ * Apply a background color to all batch-selected cells
+ */
+async function applyBatchColor() {
+  if (wbSelectedCells.length === 0) {
+    showToast("No cells selected — Shift+click cells first");
+    return;
+  }
+
+  // Show color picker using existing swatches approach
+  const colors = [
+    { label: "Red", value: "#e74c3c" },
+    { label: "Blue", value: "#3498db" },
+    { label: "Green", value: "#27ae60" },
+    { label: "Yellow", value: "#f1c40f" },
+    { label: "Orange", value: "#e67e22" },
+    { label: "Purple", value: "#9b59b6" },
+    { label: "Clear", value: "" },
+  ];
+  const items = colors.map((c) => ({ label: c.label, value: c.value }));
+  const picked = await showListPicker("Choose a color for selected cells:", items, {
+    title: "Batch Color",
+    icon: "🎨",
+  });
+  if (picked === null) return;
+
+  saveWristbandState();
+  wbSelectedCells.forEach((key) => {
+    if (!cellCustomizations[key]) cellCustomizations[key] = {};
+    if (picked === "") {
+      delete cellCustomizations[key].bgColor;
+      // Auto-adjust text color back
+      cellCustomizations[key].textColor = UI_COLORS.textBlack;
+    } else {
+      cellCustomizations[key].bgColor = picked;
+      cellCustomizations[key].textColor = isColorDark(picked) ? UI_COLORS.textWhite : UI_COLORS.textBlack;
+    }
+    // Clean up empty customization objects
+    if (!cellCustomizations[key].bgColor && !cellCustomizations[key].onTwo && cellCustomizations[key].textColor === UI_COLORS.textBlack) {
+      delete cellCustomizations[key];
+    }
+  });
+
+  wbSelectedCells = [];
+  renderWristbandGrid();
+  showToast(`🎨 Color applied to ${wbSelectedCells.length || "all selected"} cells`);
+}
+
+/**
+ * Clear all batch selections
+ */
+function clearBatchSelect() {
+  wbSelectedCells = [];
+  document.querySelectorAll(".wristband-cell.wb-selected").forEach((c) => c.classList.remove("wb-selected"));
+}
+
+// ============ Card Descriptions ============
+
+/**
+ * Edit the description/subtitle for a card
+ */
+async function editCardDescription(index) {
+  const card = wristbandCards[index];
+  if (!card) return;
+  const desc = await showPrompt(
+    `Add a description for ${card.name}:`,
+    card.description || "",
+    { title: "Card Description", icon: "📝", placeholder: "e.g. Run Heavy, Pass Heavy, 2-Minute" },
+  );
+  if (desc === null) return;
+  card.description = desc.trim();
+  renderCardTabs();
+  markWristbandDirty();
+  scheduleWristbandAutosave();
+}
+
+// ============ Export CSV ============
+
+/**
+ * Export the current wristband to a CSV file
+ */
+function exportWristbandCSV() {
+  const rows = [["Card", "Cell#", "Formation", "Protection", "Play", "Type", "Personnel", "BgColor", "OnTwo"]];
+
+  wristbandCards.forEach((card, cardIdx) => {
+    const cardOffset = cardIdx * 40;
+    card.data.forEach((play, cellIdx) => {
+      const cellNum = cellIdx + 11 + cardOffset;
+      const key = `${cardIdx}-${cellIdx}`;
+      const custom = cellCustomizations[key] || {};
+      if (play) {
+        rows.push([
+          card.name,
+          cellNum,
+          play.formation || "",
+          play.protection || "",
+          play.play || "",
+          play.type || "",
+          play.personnel || "",
+          custom.bgColor || "",
+          custom.onTwo ? "Yes" : "",
+        ]);
+      }
+    });
+  });
+
+  const csvContent = rows.map((r) => r.map((c) => `"${String(c).replace(/"/g, '""')}"`).join(",")).join("\n");
+  const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
+  const url = URL.createObjectURL(blob);
+  const link = document.createElement("a");
+  link.href = url;
+  link.download = `wristband-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.click();
+  URL.revokeObjectURL(url);
+  showToast("📥 CSV exported");
+}
+
+// ============ Cmd+K Quick Search ============
+
+/**
+ * Open the quick search overlay (Cmd+K)
+ */
+function openWbQuickSearch() {
+  let overlay = document.getElementById("wbQuickSearchOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "wbQuickSearchOverlay";
+    overlay.className = "wb-quicksearch-overlay";
+    overlay.setAttribute("data-action", "closeWbQuickSearchOverlay");
+    overlay.innerHTML = `
+      <div class="wb-quicksearch-box">
+        <input type="text" class="wb-quicksearch-input" id="wbQuickSearchInput"
+               placeholder="Search plays… (type to filter)" autocomplete="off" />
+        <div class="wb-quicksearch-results" id="wbQuickSearchResults">
+          <div class="wb-quicksearch-empty">Type to search your playbook</div>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    // Input handler
+    document.getElementById("wbQuickSearchInput").addEventListener("input", (e) => {
+      renderQuickSearchResults(e.target.value);
+    });
+
+    // Keyboard nav
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        closeWbQuickSearch();
+        return;
+      }
+      const results = document.getElementById("wbQuickSearchResults");
+      const items = results.querySelectorAll(".wb-quicksearch-item");
+      if (items.length === 0) return;
+
+      let current = results.querySelector(".wb-quicksearch-item.highlighted");
+      let idx = current ? Array.from(items).indexOf(current) : -1;
+
+      if (e.key === "ArrowDown") {
+        e.preventDefault();
+        idx = Math.min(idx + 1, items.length - 1);
+      } else if (e.key === "ArrowUp") {
+        e.preventDefault();
+        idx = Math.max(idx - 1, 0);
+      } else if (e.key === "Enter" && idx >= 0) {
+        e.preventDefault();
+        items[idx].click();
+        return;
+      } else {
+        return;
+      }
+      items.forEach((el, i) => el.classList.toggle("highlighted", i === idx));
+      if (items[idx]) items[idx].scrollIntoView({ block: "nearest" });
+    });
+  }
+
+  overlay.classList.add("visible");
+  const input = document.getElementById("wbQuickSearchInput");
+  input.value = "";
+  document.getElementById("wbQuickSearchResults").innerHTML =
+    '<div class="wb-quicksearch-empty">Type to search your playbook</div>';
+  setTimeout(() => input.focus(), 50);
+}
+
+/**
+ * Close the quick search overlay
+ */
+function closeWbQuickSearch() {
+  const overlay = document.getElementById("wbQuickSearchOverlay");
+  if (overlay) overlay.classList.remove("visible");
+}
+
+/**
+ * Render quick search results
+ */
+function renderQuickSearchResults(query) {
+  const results = document.getElementById("wbQuickSearchResults");
+  if (!query.trim()) {
+    results.innerHTML = '<div class="wb-quicksearch-empty">Type to search your playbook</div>';
+    return;
+  }
+  const q = query.toLowerCase();
+  const matches = plays.filter((p) => {
+    const text = `${p.formation} ${p.protection} ${p.play} ${p.type} ${p.personnel}`.toLowerCase();
+    return text.includes(q);
+  }).slice(0, 20);
+
+  if (matches.length === 0) {
+    results.innerHTML = '<div class="wb-quicksearch-empty">No plays found</div>';
+    return;
+  }
+
+  results.innerHTML = matches.map((p) => {
+    const idx = plays.indexOf(p);
+    return `<div class="wb-quicksearch-item" data-play-idx="${idx}">
+      <span class="cell-play-option-type">${escapeHtml(p.type || "Play")}</span>
+      ${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}
+      <span style="color:var(--color-text-muted);font-size:var(--font-size-2xs);">${escapeHtml(p.personnel || "")}</span>
+    </div>`;
+  }).join("");
+
+  // Click to add
+  results.querySelectorAll(".wb-quicksearch-item").forEach((item) => {
+    item.addEventListener("click", () => {
+      const playIdx = parseInt(item.dataset.playIdx, 10);
+      addPlayToNextEmpty(playIdx);
+      closeWbQuickSearch();
+    });
+  });
+}
+
+// ============ Pin/Favorite Plays ============
+
+/**
+ * Toggle a play's favorite status
+ */
+function toggleWbFavorite(playIndex) {
+  const idx = wbFavorites.indexOf(playIndex);
+  if (idx >= 0) {
+    wbFavorites.splice(idx, 1);
+  } else {
+    wbFavorites.push(playIndex);
+  }
+  storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
+  renderWristbandPlays();
+}
+
+// ============ Smart Fill by Situation ============
+
+/**
+ * Auto-fill wristband filtered by situation/down/distance
+ */
+async function smartFillBySituation() {
+  const situations = [
+    { label: "1st Down", value: "1" },
+    { label: "2nd & Short", value: "2s" },
+    { label: "2nd & Long", value: "2l" },
+    { label: "3rd & Short", value: "3s" },
+    { label: "3rd & Long", value: "3l" },
+    { label: "Red Zone", value: "rz" },
+    { label: "Goal Line", value: "gl" },
+    { label: "2-Minute", value: "2min" },
+    { label: "Short Yardage", value: "sy" },
+  ];
+  const items = situations.map((s) => ({ label: s.label, value: s.value }));
+  const picked = await showListPicker("Fill with plays for:", items, {
+    title: "Smart Fill by Situation",
+    icon: "🧠",
+  });
+  if (!picked) return;
+
+  let filtered = plays.filter((p) => {
+    switch (picked) {
+      case "1": return p.preferredDown === "1";
+      case "2s": return p.preferredDown === "2" && p.preferredDistance === "Short";
+      case "2l": return p.preferredDown === "2" && (p.preferredDistance === "Medium" || p.preferredDistance === "Long");
+      case "3s": return p.preferredDown === "3" && p.preferredDistance === "Short";
+      case "3l": return p.preferredDown === "3" && (p.preferredDistance === "Medium" || p.preferredDistance === "Long");
+      case "rz": return p.preferredFieldPosition === "Lo-RZ" || p.preferredFieldPosition === "Hi-RZ";
+      case "gl": return p.preferredFieldPosition === "Goal Line";
+      case "2min": return p.preferredSituation === "2 Minute";
+      case "sy": return p.preferredSituation === "Short Yardage";
+      default: return false;
+    }
+  });
+
+  if (filtered.length === 0) {
+    showToast("No plays found for that situation");
+    return;
+  }
+
+  const cardData = getCurrentCardData();
+  const emptyCount = cardData.filter((c) => c === null).length;
+  const toFill = Math.min(filtered.length, emptyCount);
+
+  if (toFill === 0) {
+    showToast("No empty cells — clear some first");
+    return;
+  }
+
+  const sitLabel = situations.find((s) => s.value === picked)?.label || picked;
+  const ok = await showConfirm(
+    `Add ${toFill} of ${filtered.length} "${sitLabel}" plays to empty cells on ${wristbandCards[currentCardIndex].name}?`,
+    { title: "Smart Fill", icon: "🧠", confirmText: `Fill ${toFill} Plays` },
+  );
+  if (!ok) return;
+
+  saveWristbandState();
+  let fillIdx = 0;
+  for (let cellIdx = 0; cellIdx < 40 && fillIdx < filtered.length; cellIdx++) {
+    if (wristbandCards[currentCardIndex].data[cellIdx] === null) {
+      wristbandCards[currentCardIndex].data[cellIdx] = filtered[fillIdx];
+      fillIdx++;
+    }
+  }
+
+  renderCardTabs();
+  renderWristbandGrid();
+  showToast(`✅ Added ${fillIdx} "${sitLabel}" plays`);
+}
+
 // ============ Container-Scoped Delegation ============
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2296,12 +2768,47 @@ document.addEventListener("DOMContentLoaded", () => {
   if (grid) {
     grid.addEventListener("click", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
-      if (cell)
-        openCellPopup(
-          parseInt(cell.dataset.card, 10),
-          parseInt(cell.dataset.cellIdx, 10),
-          e,
-        );
+      if (!cell) return;
+      const cardIdx = parseInt(cell.dataset.card, 10);
+      const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+
+      // Shift+click for batch color select
+      if (e.shiftKey) {
+        e.preventDefault();
+        toggleBatchSelect(cardIdx, cellIdx);
+        return;
+      }
+
+      openCellPopup(cardIdx, cellIdx, e);
+    });
+
+    // Right-click context menu for copy/paste
+    grid.addEventListener("contextmenu", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (!cell) return;
+      e.preventDefault();
+      const cardIdx = parseInt(cell.dataset.card, 10);
+      const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+      const hasPlay = wristbandCards[cardIdx]?.data[cellIdx] !== null;
+      const menuItems = [];
+      if (hasPlay) {
+        menuItems.push({ label: "📋 Copy Cell", action: () => copyWbCell(cardIdx, cellIdx) });
+      }
+      if (copiedCell) {
+        menuItems.push({ label: "📌 Paste Cell", action: () => pasteWbCell(cardIdx, cellIdx) });
+      }
+      if (hasPlay) {
+        menuItems.push({ label: "🗑️ Clear Cell", action: () => {
+          saveWristbandState();
+          wristbandCards[cardIdx].data[cellIdx] = null;
+          delete cellCustomizations[`${cardIdx}-${cellIdx}`];
+          renderCardTabs();
+          renderWristbandGrid();
+        }});
+      }
+      if (menuItems.length > 0) {
+        showContextMenu(e, menuItems);
+      }
     });
     grid.addEventListener("dragstart", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
@@ -2351,6 +2858,17 @@ document.addEventListener("DOMContentLoaded", () => {
       if (tab && tab.dataset.idx !== undefined) {
         renameCard(parseInt(tab.dataset.idx, 10));
       }
+    });
+    // Right-click card tab for description
+    cardTabsEl.addEventListener("contextmenu", (e) => {
+      const tab = e.target.closest(".card-tab");
+      if (!tab || tab.dataset.idx === undefined) return;
+      e.preventDefault();
+      const idx = parseInt(tab.dataset.idx, 10);
+      showContextMenu(e, [
+        { label: "✏️ Rename Card", action: () => renameCard(idx) },
+        { label: "📝 Edit Description", action: () => editCardDescription(idx) },
+      ]);
     });
   }
 
@@ -2421,10 +2939,26 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.addEventListener("keydown", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
       if (!cell) return;
-      // Only trigger on printable characters (a-z, 0-9)
+      const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+      const cardIdx = parseInt(cell.dataset.card, 10);
+
+      // Ctrl/Cmd+C: copy cell
+      if ((e.ctrlKey || e.metaKey) && e.key === "c") {
+        e.preventDefault();
+        e.stopPropagation();
+        copyWbCell(cardIdx, cellIdx);
+        return;
+      }
+      // Ctrl/Cmd+V: paste cell
+      if ((e.ctrlKey || e.metaKey) && e.key === "v") {
+        e.preventDefault();
+        e.stopPropagation();
+        pasteWbCell(cardIdx, cellIdx);
+        return;
+      }
+
+      // Only trigger type-to-search on printable characters
       if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
-        const cellIdx = parseInt(cell.dataset.cellIdx, 10);
-        const cardIdx = parseInt(cell.dataset.card, 10);
         const play = wristbandCards[cardIdx]?.data[cellIdx];
         if (!play) {
           e.stopPropagation();

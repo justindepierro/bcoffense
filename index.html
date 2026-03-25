@@ -1836,10 +1836,31 @@
                   ⚡ Auto-Fill
                 </button>
                 <button
+                  class="btn btn-sm"
+                  data-action="smartFillBySituation"
+                  title="Fill by down/distance/situation"
+                >
+                  🧠 Smart Fill
+                </button>
+                <button
+                  class="btn btn-sm"
+                  data-action="applyBatchColor"
+                  title="Apply color to Shift+clicked cells"
+                >
+                  🎨 Batch Color
+                </button>
+                <button
                   class="btn btn-success btn-sm"
                   data-action="printWristband"
                 >
                   🖨️ Print
+                </button>
+                <button
+                  class="btn btn-sm"
+                  data-action="exportWristbandCSV"
+                  title="Export current card to CSV"
+                >
+                  📊 Export
                 </button>
                 <button
                   class="btn btn-primary btn-sm"
@@ -1863,6 +1884,8 @@
               <div
                 id="wristbandGrid"
                 class="wristband-grid"
+                role="grid"
+                aria-label="Wristband card grid"
                 data-testid="wristband-grid"
               ></div>
             </div>
@@ -2848,6 +2871,7 @@
     >
       <div class="cell-popup cell-popup-container">
         <h3 id="cellPopupTitle">📝 Edit Cell</h3>
+        <div class="text-hint" style="font-size:11px;margin:-8px 0 10px;color:var(--color-text-secondary)">↑↓ Arrow keys to browse • Enter to select • Esc to close</div>
 
         <!-- Play Info (shown when cell has a play) -->
         <div id="cellPopupPlayInfo" class="cell-popup-play-info">

@@ -769,6 +769,8 @@ const STORAGE_KEYS = {
   THEME: "theme",
   SCHEDULE: "schedule",
   GAME_PLAN_TAGS: "gamePlanTags",
+  WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
+  WRISTBAND_FAVORITES: "wristbandFavorites",
 };
 
 /**

@@ -42,6 +42,11 @@
   box-sizing: border-box;
   transition: background var(--transition-fast), border-color var(--transition-fast);
 }
+.wristband-cell:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -1px;
+  z-index: 1;
+}
 @media (hover: hover) {
   .wristband-cell:hover {
     background: var(--color-bg-blue-light);
@@ -267,6 +272,11 @@
 }
 .cell-play-option:nth-child(odd) {
   background: var(--color-bg-subtle, #fafafa);
+}
+.cell-play-option.highlighted {
+  background: var(--color-bg-blue-tint);
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
 }
 .cell-play-option-type {
   color: var(--color-text-light, #888);
@@ -517,6 +527,18 @@
   margin-right: 4px;
 }
 
+/* ── Card Tab Description ── */
+.card-tab-desc {
+  display: block;
+  font-size: var(--font-size-3xs);
+  color: var(--color-text-muted);
+  font-weight: normal;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 100px;
+}
+
 /* ── Available Play Items ── */
 .wb-play-item {
   cursor: pointer;
@@ -551,6 +573,79 @@
 }
 .wristband-cell.filled .remove-cell:hover {
   color: var(--color-danger);
+}
+
+/* ── Multi-select cell (batch color) ── */
+.wristband-cell.wb-selected {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: -2px;
+  z-index: 1;
+}
+
+/* ── Pinned play star ── */
+.wb-pin-btn {
+  opacity: 0.4;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  margin-left: auto;
+  transition: opacity var(--transition-fast);
+}
+.wb-pin-btn:hover,
+.wb-pin-btn.pinned {
+  opacity: 1;
+}
+
+/* ── Quick search overlay ── */
+.wb-quicksearch-overlay {
+  display: flex;
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay);
+  z-index: var(--z-modal);
+  justify-content: center;
+  align-items: flex-start;
+  padding-top: 15vh;
+}
+.wb-quicksearch-box {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 90%;
+  max-width: 520px;
+  overflow: hidden;
+}
+.wb-quicksearch-input {
+  width: 100%;
+  padding: 16px 20px;
+  border: none;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-lg);
+  outline: none;
+  box-sizing: border-box;
+}
+.wb-quicksearch-results {
+  max-height: 40vh;
+  overflow-y: auto;
+}
+.wb-quicksearch-item {
+  padding: 10px 20px;
+  cursor: pointer;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-sm);
+}
+.wb-quicksearch-item.highlighted {
+  background: var(--color-bg-blue-tint);
+}
+@media (hover: hover) {
+  .wb-quicksearch-item:hover {
+    background: var(--color-bg-blue-light);
+  }
+}
+.wb-quicksearch-empty {
+  padding: 20px;
+  text-align: center;
+  color: var(--color-text-muted);
+  font-style: italic;
 }
 
 /* ── Sort Rank Badge ── */
