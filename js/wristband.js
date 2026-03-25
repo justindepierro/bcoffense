@@ -1309,8 +1309,11 @@ function renderWristbandGrid() {
       emptyOverlay.innerHTML = `
         <div class="wb-empty-icon">📋</div>
         <div class="wb-empty-title">Empty Card</div>
-        <div class="wb-empty-hint">Click any cell to add a play, or use <strong>⚡ Auto-Fill</strong> to populate from your playbook</div>
+        <div class="wb-empty-hint">Tap here to dismiss, then click any cell to add a play — or use <strong>⚡ Auto-Fill</strong> to populate from your playbook</div>
       `;
+      emptyOverlay.addEventListener("click", () => {
+        emptyOverlay.classList.remove("visible");
+      });
       cardEl.appendChild(emptyOverlay);
     }
     emptyOverlay.classList.add("visible");
