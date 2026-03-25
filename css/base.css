@@ -43,6 +43,19 @@
   --color-info-hover: #4a5d73;
   --color-info-light: #e8edf3;
 
+  /* Status tints — constraints & evaluation UI */
+  --color-status-ok-border: #c3e6cb;
+  --color-status-ok-bg: #f0fff4;
+  --color-status-ok-text: #1b6b38;
+  --color-status-warn-border: #ffeeba;
+  --color-status-warn-bg: #fffdf0;
+  --color-status-warn-text: #856404;
+  --color-status-error-border: #f5c6cb;
+  --color-status-error-bg: #fff8f8;
+  --color-status-error-text: #c0392b;
+  --color-status-info-bg: #e8f4fd;
+  --color-status-info-text: #1a73e8;
+
   /* Secondary & Neutrals */
   --color-secondary: #64748b;
   --color-dark: #0a122a;
@@ -292,6 +305,17 @@ textarea:focus {
   --color-success-light: #1a3328;
   --color-danger-light: #3a1c1c;
   --color-warning-light: #3a2e1a;
+  --color-status-ok-border: #2d5e3e;
+  --color-status-ok-bg: #1a3328;
+  --color-status-ok-text: #6fcf8a;
+  --color-status-warn-border: #5e4a1a;
+  --color-status-warn-bg: #3a2e1a;
+  --color-status-warn-text: #e6c866;
+  --color-status-error-border: #5e2a2a;
+  --color-status-error-bg: #3a1c1c;
+  --color-status-error-text: #f0847d;
+  --color-status-info-bg: #1c2d40;
+  --color-status-info-text: #6db3f0;
   --color-navy-alpha-06: rgba(200, 210, 230, 0.06);
   --color-navy-alpha-08: rgba(200, 210, 230, 0.08);
   --color-navy-alpha-12: rgba(200, 210, 230, 0.12);

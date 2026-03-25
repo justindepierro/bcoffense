@@ -209,7 +209,7 @@ function obAnalyzeGaps(playMap, conceptMap, ratings) {
 
   // Per-play analysis for rated plays
   ratedPlayNames.forEach((playName) => {
-    const entry = playMap.get(playName);
+    let entry = playMap.get(playName);
     if (!entry) return;
 
     // Key player single-point-of-failure
@@ -251,7 +251,7 @@ function obAnalyzeGaps(playMap, conceptMap, ratings) {
   let runCount = 0;
   let passCount = 0;
   ratedPlayNames.forEach((playName) => {
-    const entry = playMap.get(playName);
+    let entry = playMap.get(playName);
     if (!entry) return;
     entry.types.forEach((t) => {
       const tl = t.toLowerCase();
@@ -442,9 +442,9 @@ function renderOffenseBuilder() {
       "</div>";
 
     // Attach toolbar event listeners (no inline handlers = input keeps focus)
-    var searchInput = document.getElementById("obSearchInput");
-    var filterSelect = document.getElementById("obFilterType");
-    var ratedCheckbox = document.getElementById("obShowRated");
+    const searchInput = document.getElementById("obSearchInput");
+    const filterSelect = document.getElementById("obFilterType");
+    const ratedCheckbox = document.getElementById("obShowRated");
 
     if (searchInput) {
       searchInput.addEventListener("input", function () {
@@ -476,11 +476,11 @@ function renderOffenseBuilder() {
 
 // ── Play List (left panel) ─────────────────────────────────────────
 function obRenderPlayList() {
-  var listEl = document.getElementById("obPlayList");
+  const listEl = document.getElementById("obPlayList");
   if (!listEl) return;
 
-  var entries = obGetFilteredPlays();
-  var ratings = obLoadRatings();
+  let entries = obGetFilteredPlays();
+  const ratings = obLoadRatings();
 
   if (entries.length === 0) {
     listEl.innerHTML =
@@ -488,19 +488,19 @@ function obRenderPlayList() {
     return;
   }
 
-  var html = "";
-  for (var i = 0; i < entries.length; i++) {
-    var entry = entries[i];
-    var rating = ratings[entry.name] || 0;
-    var isActive = obActivePlayName === entry.name;
-    var typeLabels = Array.from(entry.types).slice(0, 3).join(", ");
-    var formationCount = entry.formations.size;
-    var rowCount = entry.rows.length;
-    var basePlays = Array.from(entry.basePlays).join(", ");
-    var hasGap =
+  let html = "";
+  for (let i = 0; i < entries.length; i++) {
+    let entry = entries[i];
+    const rating = ratings[entry.name] || 0;
+    const isActive = obActivePlayName === entry.name;
+    const typeLabels = Array.from(entry.types).slice(0, 3).join(", ");
+    const formationCount = entry.formations.size;
+    const rowCount = entry.rows.length;
+    const basePlays = Array.from(entry.basePlays).join(", ");
+    const hasGap =
       entry.constraints.size > 0 &&
       Array.from(entry.constraints).some(function (c) {
-        var cLow = c.toLowerCase();
+        const cLow = c.toLowerCase();
         return !Array.from(_obConceptMap.keys()).some(function (k) {
           return k.toLowerCase() === cLow;
         });
@@ -547,22 +547,22 @@ function obRenderPlayList() {
 
   // Event delegation for card clicks & star clicks
   listEl.onclick = function (e) {
-    var starEl = e.target.closest(".ob-star");
-    var clearEl = e.target.closest(".ob-star-clear");
+    const starEl = e.target.closest(".ob-star");
+    const clearEl = e.target.closest(".ob-star-clear");
     if (starEl || clearEl) {
       e.stopPropagation();
-      var container = e.target.closest("[data-star-target]");
+      const container = e.target.closest("[data-star-target]");
       if (!container) return;
-      var playName = container.dataset.starTarget;
+      const playName = container.dataset.starTarget;
       if (starEl) {
-        var val = parseInt(starEl.dataset.value, 10);
+        const val = parseInt(starEl.dataset.value, 10);
         if (!isNaN(val)) obSetRating(playName, val);
       } else if (clearEl) {
         obSetRating(playName, 0);
       }
       return;
     }
-    var card = e.target.closest(".ob-card");
+    const card = e.target.closest(".ob-card");
     if (card) {
       obActivePlayName = card.dataset.play;
       obRenderPlayList();
@@ -573,9 +573,9 @@ function obRenderPlayList() {
 
 // ── Star Picker ────────────────────────────────────────────────────
 function obRenderStarPicker(playName, current) {
-  var html = "";
-  for (var i = 1; i <= 5; i++) {
-    var filled = i <= current;
+  let html = "";
+  for (let i = 1; i <= 5; i++) {
+    const filled = i <= current;
     html +=
       '<span class="ob-star ' +
       (filled ? "ob-star-filled" : "ob-star-empty") +
@@ -595,7 +595,7 @@ function obRenderStarPicker(playName, current) {
 
 function obSetRating(playName, stars) {
   try {
-    var ratings = obLoadRatings();
+    const ratings = obLoadRatings();
     if (stars <= 0) {
       delete ratings[playName];
     } else {
@@ -612,28 +612,28 @@ function obSetRating(playName, stars) {
 }
 
 function _obUpdateHeaderStats() {
-  var ratings = obLoadRatings();
-  var ratedCount = Object.values(ratings).filter(function (r) {
+  const ratings = obLoadRatings();
+  const ratedCount = Object.values(ratings).filter(function (r) {
     return r >= 1;
   }).length;
-  var recs = obAnalyzeGaps(_obPlayMap, _obConceptMap, ratings);
-  var criticalRecs = recs.filter(function (r) {
+  const recs = obAnalyzeGaps(_obPlayMap, _obConceptMap, ratings);
+  const criticalRecs = recs.filter(function (r) {
     return r.severity === "critical";
   });
 
-  var ratedEl = document.getElementById("obStatRated");
-  var gapsEl = document.getElementById("obStatGaps");
+  const ratedEl = document.getElementById("obStatRated");
+  const gapsEl = document.getElementById("obStatGaps");
   if (ratedEl) ratedEl.textContent = ratedCount;
   if (gapsEl) gapsEl.textContent = criticalRecs.length;
 }
 
 // ── Sidebar (detail + recommendations) ─────────────────────────────
 function obRenderSidebar() {
-  var sidebarEl = document.getElementById("obSidebar");
+  const sidebarEl = document.getElementById("obSidebar");
   if (!sidebarEl) return;
 
-  var ratings = obLoadRatings();
-  var recs = obAnalyzeGaps(_obPlayMap, _obConceptMap, ratings);
+  const ratings = obLoadRatings();
+  const recs = obAnalyzeGaps(_obPlayMap, _obConceptMap, ratings);
 
   sidebarEl.innerHTML =
     _obBuildDetailHtml() +
@@ -651,7 +651,7 @@ function _obBuildTouchDistributionHtml() {
   if (!plays || plays.length === 0) return "";
   if (typeof computeTouchAnalysis !== "function") return "";
 
-  var analysis = computeTouchAnalysis(plays);
+  const analysis = computeTouchAnalysis(plays);
   if (
     !analysis ||
     !analysis.players ||
@@ -672,7 +672,7 @@ function _obBuildTouchDistributionHtml() {
   }
 
   // Fallback: simple text summary
-  var html = Object.values(analysis.players)
+  let html = Object.values(analysis.players)
     .map(function (p) {
       return (
         '<span class="cr-stat cr-touch">\uD83D\uDC64 ' +
@@ -698,32 +698,32 @@ function _obBuildDetailHtml() {
     return '<div class="ob-detail ob-detail-empty"><p>\u{1F448} Select a play to explore</p></div>';
   }
 
-  var entry = _obPlayMap ? _obPlayMap.get(obActivePlayName) : null;
+  let entry = _obPlayMap ? _obPlayMap.get(obActivePlayName) : null;
   if (!entry) {
     return '<div class="ob-detail ob-detail-empty"><p>Play not found</p></div>';
   }
 
-  var ratings = obLoadRatings();
-  var rating = ratings[entry.name] || 0;
+  const ratings = obLoadRatings();
+  const rating = ratings[entry.name] || 0;
 
   // Installation status
-  var installData =
+  const installData =
     typeof getInstallationData === "function"
       ? getInstallationData()
       : { installed: {} };
-  var installedPlays =
+  const installedPlays =
     (installData.installed && installData.installed.play) || [];
-  var installedSet = new Set(
+  const installedSet = new Set(
     installedPlays.map(function (v) {
       return v.trim();
     }),
   );
 
   // Constraints
-  var constraintParts = [];
+  const constraintParts = [];
   if (entry.constraints.size > 0) {
     entry.constraints.forEach(function (c) {
-      var exists =
+      const exists =
         _obConceptMap &&
         Array.from(_obConceptMap.keys()).some(function (k) {
           return k.toLowerCase() === c.toLowerCase();
@@ -743,28 +743,28 @@ function _obBuildDetailHtml() {
       );
     });
   }
-  var constraintHtml =
+  const constraintHtml =
     constraintParts.length > 0
       ? constraintParts.join("")
       : '<span class="ob-no-data">None listed</span>';
 
   // Dead vs
-  var deadVsParts = [];
+  const deadVsParts = [];
   entry.deadVs.forEach(function (d) {
     deadVsParts.push(
       '<span class="ob-dead-chip">\u{1F6AB} ' + escapeHtml(d) + "</span>",
     );
   });
-  var deadVsHtml =
+  const deadVsHtml =
     deadVsParts.length > 0
       ? deadVsParts.join("")
       : '<span class="ob-no-data">None listed</span>';
 
   // Key players (Jimmys & Joes)
-  var keyPlayerHtml = "";
+  let keyPlayerHtml = "";
   if (entry.keyPlayers.size > 0) {
     entry.keyPlayers.forEach(function (names, pos) {
-      var nameList = Array.from(names).join(", ");
+      const nameList = Array.from(names).join(", ");
       keyPlayerHtml +=
         '<div class="ob-kp-row"><span class="ob-kp-pos">' +
         escapeHtml(pos) +
@@ -784,10 +784,10 @@ function _obBuildDetailHtml() {
   }
 
   // Hit chart
-  var hitChartEntries = Object.entries(entry.hitCharts).sort(function (a, b) {
+  const hitChartEntries = Object.entries(entry.hitCharts).sort(function (a, b) {
     return b[1] - a[1];
   });
-  var hitChartHtml =
+  const hitChartHtml =
     hitChartEntries.length > 0
       ? hitChartEntries
           .map(function (pair) {
@@ -803,7 +803,7 @@ function _obBuildDetailHtml() {
       : '<span class="ob-no-data">None</span>';
 
   // Formations
-  var formationsHtml =
+  const formationsHtml =
     Array.from(entry.formations)
       .sort()
       .map(function (f) {
@@ -812,7 +812,7 @@ function _obBuildDetailHtml() {
       .join("") || '<span class="ob-no-data">\u2014</span>';
 
   // Personnel
-  var personnelHtml =
+  const personnelHtml =
     Array.from(entry.personnel)
       .map(function (p) {
         return (
@@ -826,7 +826,7 @@ function _obBuildDetailHtml() {
       .join("") || '<span class="ob-no-data">\u2014</span>';
 
   // Base concepts
-  var basePlaysHtml =
+  const basePlaysHtml =
     Array.from(entry.basePlays)
       .map(function (bp) {
         return '<span class="ob-form-chip">' + escapeHtml(bp) + "</span>";
@@ -834,10 +834,10 @@ function _obBuildDetailHtml() {
       .join("") || '<span class="ob-no-data">\u2014</span>';
 
   // Variations table
-  var rowHtml = entry.rows
+  const rowHtml = entry.rows
     .map(function (p) {
-      var isInstalled = installedSet.has((p.play || "").trim());
-      var tags = [p.playTag1, p.playTag2].filter(Boolean).join(", ");
+      const isInstalled = installedSet.has((p.play || "").trim());
+      const tags = [p.playTag1, p.playTag2].filter(Boolean).join(", ");
       return (
         '<tr class="' +
         (isInstalled ? "ob-play-installed" : "") +
@@ -863,22 +863,22 @@ function _obBuildDetailHtml() {
     .join("");
 
   // Related plays (same base concept, different play name)
-  var relatedHtml = "";
+  let relatedHtml = "";
   if (entry.basePlays.size > 0 && _obPlayMap) {
-    var relatedNames = [];
+    const relatedNames = [];
     _obPlayMap.forEach(function (otherEntry, otherName) {
       if (otherName === entry.name) return;
-      var shared = Array.from(otherEntry.basePlays).some(function (bp) {
+      const shared = Array.from(otherEntry.basePlays).some(function (bp) {
         return entry.basePlays.has(bp);
       });
       if (shared) relatedNames.push(otherName);
     });
     relatedNames.sort();
     if (relatedNames.length > 0) {
-      var relatedChips = relatedNames
+      const relatedChips = relatedNames
         .slice(0, 20)
         .map(function (rn) {
-          var rRating = ratings[rn] || 0;
+          const rRating = ratings[rn] || 0;
           return (
             '<span class="ob-constraint-chip ob-constraint-found ob-related-chip" data-related-play="' +
             obEscapeAttr(rn) +
@@ -905,20 +905,20 @@ function _obBuildDetailHtml() {
   }
 
   // Notes
-  var allNotes = entry.rows
+  const allNotes = entry.rows
     .map(function (p) {
       return (p.notes || "").trim();
     })
     .filter(Boolean);
-  var uniqueNotes = [];
-  var notesSeen = {};
+  const uniqueNotes = [];
+  const notesSeen = {};
   allNotes.forEach(function (n) {
     if (!notesSeen[n]) {
       notesSeen[n] = true;
       uniqueNotes.push(n);
     }
   });
-  var notesHtml =
+  const notesHtml =
     uniqueNotes.length > 0
       ? uniqueNotes
           .map(function (n) {
@@ -995,21 +995,21 @@ function _obBuildDetailHtml() {
 
 // ── Attach interactive handlers in detail panel ────────────────────
 function _obAttachDetailHandlers() {
-  var panel = document.getElementById("obDetailPanel");
+  const panel = document.getElementById("obDetailPanel");
   if (!panel) return;
 
   // Constraint chip -> jump to a play under that concept
-  var conceptChips = panel.querySelectorAll(
+  const conceptChips = panel.querySelectorAll(
     ".ob-constraint-chip[data-concept]",
   );
-  for (var i = 0; i < conceptChips.length; i++) {
+  for (let i = 0; i < conceptChips.length; i++) {
     conceptChips[i].style.cursor = "pointer";
     conceptChips[i].addEventListener("click", function () {
-      var concept = this.dataset.concept;
+      const concept = this.dataset.concept;
       if (!_obPlayMap) return;
-      for (var entry of _obPlayMap) {
-        var playName = entry[0];
-        var data = entry[1];
+      for (const entry of _obPlayMap) {
+        const playName = entry[0];
+        const data = entry[1];
         if (
           Array.from(data.basePlays).some(function (bp) {
             return bp.toLowerCase() === concept.toLowerCase();
@@ -1025,8 +1025,8 @@ function _obAttachDetailHandlers() {
   }
 
   // Related play chip -> jump to that play
-  var relatedChips = panel.querySelectorAll("[data-related-play]");
-  for (var j = 0; j < relatedChips.length; j++) {
+  const relatedChips = panel.querySelectorAll("[data-related-play]");
+  for (let j = 0; j < relatedChips.length; j++) {
     relatedChips[j].style.cursor = "pointer";
     relatedChips[j].addEventListener("click", function () {
       obActivePlayName = this.dataset.relatedPlay;
@@ -1036,14 +1036,14 @@ function _obAttachDetailHandlers() {
   }
 
   // Star clicks inside detail panel
-  var starContainer = panel.querySelector(".ob-detail-stars[data-star-target]");
+  const starContainer = panel.querySelector(".ob-detail-stars[data-star-target]");
   if (starContainer) {
-    var playName = starContainer.dataset.starTarget;
+    const playName = starContainer.dataset.starTarget;
     starContainer.addEventListener("click", function (e) {
-      var star = e.target.closest(".ob-star");
-      var clear = e.target.closest(".ob-star-clear");
+      const star = e.target.closest(".ob-star");
+      const clear = e.target.closest(".ob-star-clear");
       if (star) {
-        var val = parseInt(star.dataset.value, 10);
+        const val = parseInt(star.dataset.value, 10);
         if (!isNaN(val)) obSetRating(playName, val);
       } else if (clear) {
         obSetRating(playName, 0);
@@ -1063,16 +1063,16 @@ function _obBuildRecommendationsHtml(recs) {
     );
   }
 
-  var severityOrder = { critical: 0, warn: 1, info: 2 };
-  var sorted = recs.slice().sort(function (a, b) {
+  const severityOrder = { critical: 0, warn: 1, info: 2 };
+  const sorted = recs.slice().sort(function (a, b) {
     return (severityOrder[a.severity] || 9) - (severityOrder[b.severity] || 9);
   });
-  var icons = { critical: "\u{1F534}", warn: "\u{1F7E1}", info: "\u{1F535}" };
+  const icons = { critical: "\u{1F534}", warn: "\u{1F7E1}", info: "\u{1F535}" };
 
-  var rows = "";
-  var limit = Math.min(sorted.length, 25);
-  for (var i = 0; i < limit; i++) {
-    var r = sorted[i];
+  let rows = "";
+  const limit = Math.min(sorted.length, 25);
+  for (let i = 0; i < limit; i++) {
+    const r = sorted[i];
     rows +=
       '<div class="ob-rec-row ob-rec-' +
       r.severity +

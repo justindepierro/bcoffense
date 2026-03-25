@@ -584,8 +584,6 @@ function splitPreferredValues(value) {
     .filter(Boolean);
 }
 
-// Removed: preferredIncludes - dead code (never called)
-
 /**
  * Find which categories a play belongs to (FRONT page: situational; BACK page: play-type).
  *
@@ -1922,8 +1920,6 @@ function addCallSheetPlayFromPicker(playData) {
   saveCallSheet();
 }
 
-// Removed: addCallSheetPlay - dead code (never called)
-
 /**
  * Open load wristband modal
  */
@@ -2142,8 +2138,6 @@ function saveCallSheet() {
   // Persist constraints snapshot alongside call sheet
   if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
 }
-
-// Removed: loadCallSheet - dead code (never called)
 
 /**
  * Clear call sheet

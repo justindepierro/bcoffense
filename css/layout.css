@@ -6,8 +6,6 @@ body {
   background: var(--color-bg-body);
   padding: 0;
   color: var(--color-text);
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
   line-height: 1.5;
   min-height: 100vh;
 }
@@ -118,7 +116,6 @@ h1 {
   justify-content: flex-start;
   flex-wrap: nowrap;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: none;
   background: var(--color-white);
   padding: 0 20px;

@@ -377,7 +377,6 @@ table.sortable th {
   border-bottom: 1px solid var(--color-border-light);
   flex-wrap: nowrap;
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
   scrollbar-width: thin;
 }
 .pb-chip-row::-webkit-scrollbar {

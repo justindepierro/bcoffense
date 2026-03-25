@@ -188,8 +188,6 @@ function getRawPlayNamesForBase(baseName) {
   return Array.from(rawSet);
 }
 
-// Removed: isComponentInstalled - dead code (never called)
-
 /**
  * Toggle a component's installation status
  */

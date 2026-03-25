@@ -1088,10 +1088,6 @@ function addPlayToNextEmpty(playIndex) {
   renderWristbandGrid();
 }
 
-// Removed: placePlayInCell - dead code (never called)
-
-// Removed: removeCellPlay - dead code (never called)
-
 /**
  * Build wristband display options from checkbox state.
  * Returns an options object suitable for getFullCall().

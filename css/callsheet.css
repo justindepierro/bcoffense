@@ -4,7 +4,6 @@
 /* Call Sheet Styles */
 .callsheet-grid {
   overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
 }
 
 .callsheet-columns {
@@ -2097,15 +2096,15 @@
   outline-offset: -2px;
 }
 .cr-status-ok {
-  border-color: #c3e6cb;
+  border-color: var(--color-status-ok-border);
 }
 .cr-status-warn {
-  border-color: #ffeeba;
-  background: #fffdf0;
+  border-color: var(--color-status-warn-border);
+  background: var(--color-status-warn-bg);
 }
 .cr-status-error {
-  border-color: #f5c6cb;
-  background: #fff8f8;
+  border-color: var(--color-status-error-border);
+  background: var(--color-status-error-bg);
 }
 .cr-status-empty {
   opacity: 0.5;
@@ -2171,8 +2170,8 @@
   color: var(--color-text, #333);
 }
 .cr-touch {
-  background: #e8f4fd;
-  color: #1a73e8;
+  background: var(--color-status-info-bg);
+  color: var(--color-status-info-text);
 }
 .cr-check-list {
   list-style: none;
@@ -2188,16 +2187,16 @@
   border-radius: var(--radius-sm, 4px);
 }
 .cr-item-error {
-  background: #fff0f0;
-  color: #c0392b;
+  background: var(--color-status-error-bg);
+  color: var(--color-status-error-text);
 }
 .cr-item-warn {
-  background: #fffbec;
-  color: #856404;
+  background: var(--color-status-warn-bg);
+  color: var(--color-status-warn-text);
 }
 .cr-item-ok {
-  background: #f0fff4;
-  color: #1b6b38;
+  background: var(--color-status-ok-bg);
+  color: var(--color-status-ok-text);
 }
 .cr-detail-empty {
   font-size: 0.82rem;

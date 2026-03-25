@@ -830,8 +830,6 @@ function escapeHtml(text) {
     .replace(/'/g, "&#39;");
 }
 
-// Removed: escapeAttrSafe - dead code (never called)
-
 /**
  * Build checkbox filter HTML for a container.
  * Eliminates duplicate checkbox-generation blocks across modules.
@@ -2914,8 +2912,6 @@ function setPrintTitle(type, customName) {
     document.title = originalTitle;
   };
 }
-
-// Removed: printDocument - dead code (never called)
 
 /**
  * Get the configured team name (used in call sheet headers, game plan, etc.)

@@ -339,7 +339,6 @@ function highlightPlaysNotOnWristband() {
     showToast("✅ All plays in the script are on the wristband!");
   } else {
     showToast(`⚠️ ${notOnWb} play(s) are NOT on the wristband`);
-    // TODO: Could highlight these in the UI
   }
 }
 
