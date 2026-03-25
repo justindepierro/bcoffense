@@ -73,7 +73,6 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptRedShifts",
   "scriptItalicMotions",
   "scriptRedMotions",
-  "scriptRemoveVowels",
   "scriptShowLineCall",
   "scriptHighlightHuddle",
   "scriptHighlightCandy",

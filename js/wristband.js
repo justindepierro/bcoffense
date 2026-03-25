@@ -789,7 +789,6 @@ const WB_DISPLAY_OPTION_IDS = [
   "wbRedShifts",
   "wbItalicMotions",
   "wbRedMotions",
-  "wbRemoveVowels",
   "wbShowLineCall",
   "wbHighlightHuddle",
   "wbHighlightCandy",

@@ -1909,7 +1909,6 @@ function toggleAllPbPrintOptions(state) {
     "pbRedShifts",
     "pbItalicMotions",
     "pbRedMotions",
-    "pbRemoveVowels",
     "pbShowLineCall",
     "pbHighlightHuddle",
     "pbHighlightCandy",
