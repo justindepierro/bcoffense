@@ -1,5 +1,4 @@
 /* ============ Wristband: Maker, Cards, Grid ============ */
-/* Auto-split from styles.css */
 
 .wristband-container {
   display: flex;
@@ -8,6 +7,7 @@
 .wristband-plays {
   flex: 1;
   max-width: 350px;
+  min-width: 280px;
 }
 .wristband-preview {
   flex: 2;
@@ -20,6 +20,7 @@
   overflow: hidden;
   box-sizing: border-box;
   transform-origin: top left;
+  position: relative;
 }
 .wristband-grid {
   display: grid;
@@ -39,6 +40,7 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
 }
 @media (hover: hover) {
   .wristband-cell:hover {
@@ -56,6 +58,7 @@
   font-weight: bold;
   font-size: var(--font-size-xs);
   cursor: default;
+  user-select: none;
 }
 .wristband-cell .cell-play {
   font-weight: bold;
@@ -91,6 +94,42 @@
   background: var(--color-primary-light) !important;
   border: 2px dashed var(--color-primary) !important;
 }
+
+/* ── Empty State Overlay ── */
+.wb-grid-empty-state {
+  position: absolute;
+  inset: 0;
+  display: none;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(255, 255, 255, 0.85);
+  pointer-events: none;
+  z-index: 1;
+}
+.wb-grid-empty-state.visible {
+  display: flex;
+}
+.wb-empty-icon {
+  font-size: 40px;
+  margin-bottom: var(--space-sm);
+  opacity: 0.5;
+}
+.wb-empty-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-bottom: var(--space-xs);
+}
+.wb-empty-hint {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  text-align: center;
+  max-width: 280px;
+  line-height: 1.5;
+}
+
+/* ── Color Picker ── */
 .color-picker {
   display: flex;
   gap: 5px;
@@ -102,6 +141,12 @@
   border: 2px solid var(--color-border-input);
   border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+}
+@media (hover: hover) {
+  .color-btn:hover {
+    transform: scale(1.15);
+  }
 }
 .color-btn.active {
   border-color: var(--color-text);
@@ -444,4 +489,66 @@
   color: var(--color-text-light);
   font-size: var(--font-size-sm);
   font-style: italic;
+}
+
+/* ── Toolbar Groups & Separator ── */
+.wb-toolbar-group {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+.wb-toolbar-sep {
+  width: 1px;
+  height: 22px;
+  background: var(--color-border-med);
+  margin: 0 4px;
+  flex-shrink: 0;
+}
+
+/* ── Remove Card Button ── */
+.wb-remove-card-btn {
+  margin-left: auto;
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+}
+
+/* ── Card Tab Name ── */
+.card-tab-name {
+  margin-right: 4px;
+}
+
+/* ── Available Play Items ── */
+.wb-play-item {
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+
+/* ── Sort Preset Select ── */
+.wb-sort-select {
+  padding: 3px 6px;
+  font-size: var(--font-size-xs);
+}
+
+/* ── Sort Info Tooltip ── */
+.wb-sort-info {
+  cursor: help;
+  color: var(--color-text-secondary);
+}
+
+/* ── Checkbox Group Transitions ── */
+.checkbox-group label {
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+
+/* ── Card Tab Transitions ── */
+.card-tab {
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+}
+
+/* ── Empty Cell Visual Cue ── */
+.wristband-cell:not(.num-cell):not(.filled) {
+  background: var(--color-bg-body);
+}
+.wristband-cell.filled .remove-cell:hover {
+  color: var(--color-danger);
 }

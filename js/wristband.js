@@ -851,20 +851,22 @@ function renderCardTabs() {
   let html = wristbandCards
     .map((card, i) => {
       const count = card.data.filter((p) => p !== null).length;
+      const total = card.data.length;
       return `
-        <div class="card-tab ${i === currentCardIndex ? "active" : ""}" data-action="switchCard" data-idx="${i}">
-          ${escapeHtml(card.name)} <span class="card-count">(${count}/40)</span>
+        <div class="card-tab ${i === currentCardIndex ? "active" : ""}" data-action="switchCard" data-idx="${i}" title="Double-click to rename">
+          <span class="card-tab-name">${escapeHtml(card.name)}</span>
+          <span class="card-count">${count}/${total}</span>
         </div>
       `;
     })
     .join("");
 
   if (wristbandCards.length < MAX_CARDS) {
-    html += `<button class="add-card-btn" data-action="addNewCard">+ Add Card</button>`;
+    html += `<button class="add-card-btn" data-action="addNewCard" title="Add new card">+ Add Card</button>`;
   }
 
   if (wristbandCards.length > 1) {
-    html += `<button class="btn btn-danger" style="margin-left: auto; padding: 6px 12px; font-size: 12px;" data-action="removeCurrentCard">🗑 Remove Card</button>`;
+    html += `<button class="btn btn-danger btn-sm wb-remove-card-btn" data-action="removeCurrentCard" title="Remove current card">🗑 Remove</button>`;
   }
 
   container.innerHTML = html;
@@ -907,11 +909,27 @@ async function removeCurrentCard() {
   if (!ok) return;
   saveWristbandState();
   wristbandCards.splice(currentCardIndex, 1);
-  // Rename cards
-  wristbandCards.forEach((c, i) => (c.name = `Card ${i + 1}`));
   currentCardIndex = Math.min(currentCardIndex, wristbandCards.length - 1);
   renderCardTabs();
   renderWristbandGrid();
+}
+
+/**
+ * Rename a card via double-click on the tab
+ * @param {number} index - Card index
+ */
+async function renameCard(index) {
+  const card = wristbandCards[index];
+  if (!card) return;
+  const newName = await showPrompt("Rename card:", card.name, {
+    title: "Rename Card",
+    icon: "✏️",
+    placeholder: "Card name",
+  });
+  if (newName !== null && newName.trim()) {
+    card.name = newName.trim();
+    renderCardTabs();
+  }
 }
 
 /**
@@ -1052,9 +1070,9 @@ function renderWristbandPlays() {
           : "";
       const lineCallDisplay = p.lineCall
         ? ` [${p.lineCall}]`
-        : " [no lineCall]";
+        : "";
       return `
-        <div class="play-item" style="cursor: pointer;" ondblclick="addPlayToNextEmpty(${idx})" title="Double-click to add to next empty cell">
+        <div class="play-item wb-play-item" data-play-idx="${idx}" title="Double-click to add to next empty cell">
           <div class="play-info">
             <div class="play-name">${emoji}${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}</div>
             <div class="play-details">${escapeHtml(p.type)}${lineCallDisplay}</div>
@@ -1232,6 +1250,26 @@ function renderWristbandGrid() {
   }
 
   grid.innerHTML = html;
+
+  // Show/hide empty state overlay
+  const cardEl = document.getElementById("wristbandCard");
+  let emptyOverlay = cardEl.querySelector(".wb-grid-empty-state");
+  const hasPlays = cardData.some((p) => p !== null);
+  if (!hasPlays) {
+    if (!emptyOverlay) {
+      emptyOverlay = document.createElement("div");
+      emptyOverlay.className = "wb-grid-empty-state";
+      emptyOverlay.innerHTML = `
+        <div class="wb-empty-icon">📋</div>
+        <div class="wb-empty-title">Empty Card</div>
+        <div class="wb-empty-hint">Click any cell to add a play, or use <strong>⚡ Auto-Fill</strong> to populate from your playbook</div>
+      `;
+      cardEl.appendChild(emptyOverlay);
+    }
+    emptyOverlay.classList.add("visible");
+  } else if (emptyOverlay) {
+    emptyOverlay.classList.remove("visible");
+  }
 
   // Update undo/redo buttons
   historyManager.updateButtons("wristband");
@@ -2229,4 +2267,24 @@ document.addEventListener("DOMContentLoaded", () => {
     const el = e.target.closest("[data-drag='wbSort']");
     if (el) handleSortDragEnd(e);
   });
+
+  // ── Card tabs: double-click to rename ──
+  const cardTabsEl = document.getElementById("cardTabs");
+  if (cardTabsEl) {
+    cardTabsEl.addEventListener("dblclick", (e) => {
+      const tab = e.target.closest(".card-tab");
+      if (tab && tab.dataset.idx !== undefined) {
+        renameCard(parseInt(tab.dataset.idx, 10));
+      }
+    });
+  }
+
+  // ── Available plays: double-click to add ──
+  const wbAvailEl = document.getElementById("wbAvailablePlays");
+  if (wbAvailEl) {
+    wbAvailEl.addEventListener("dblclick", (e) => {
+      const item = e.target.closest("[data-play-idx]");
+      if (item) addPlayToNextEmpty(parseInt(item.dataset.playIdx, 10));
+    });
+  }
 });

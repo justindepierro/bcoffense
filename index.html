@@ -1712,7 +1712,7 @@
             <h3>
               <span>Wristband Cards</span>
               <span class="text-hint"
-                >(Click cell to add/edit • Double-click play to add)</span
+                >(Click cell to edit • Double-click play to add • Drag to swap)</span
               >
             </h3>
 
@@ -1747,13 +1747,35 @@
             <!-- Wristband Toolbar -->
             <div class="wb-toolbar">
               <div class="wb-toolbar-left">
+                <div class="wb-toolbar-group">
+                  <button
+                    id="wristbandUndoBtn"
+                    class="btn btn-undo btn-sm"
+                    data-action="undoWristband"
+                    disabled
+                    title="Nothing to undo"
+                  >
+                    ↩️
+                  </button>
+                  <button
+                    id="wristbandRedoBtn"
+                    class="btn btn-redo btn-sm"
+                    data-action="redoWristband"
+                    disabled
+                    title="Nothing to redo"
+                  >
+                    ↪️
+                  </button>
+                </div>
+                <span class="wb-toolbar-sep"></span>
                 <div class="color-picker">
-                  <span>Color:</span>
+                  <span>Header:</span>
                   <button
                     class="color-btn color-btn-transparent active"
                     data-action="setHeaderColor"
                     data-arg="transparent"
                     title="No fill (save ink)"
+                    aria-label="No fill"
                   ></button>
                   <button
                     class="color-btn"
@@ -1761,57 +1783,57 @@
                     data-action="setHeaderColor"
                     data-arg="#333"
                     title="Black"
+                    aria-label="Black"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #007bff"
                     data-action="setHeaderColor"
                     data-arg="#007bff"
+                    title="Blue"
+                    aria-label="Blue"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #28a745"
                     data-action="setHeaderColor"
                     data-arg="#28a745"
+                    title="Green"
+                    aria-label="Green"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #dc3545"
                     data-action="setHeaderColor"
                     data-arg="#dc3545"
+                    title="Red"
+                    aria-label="Red"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #6f42c1"
                     data-action="setHeaderColor"
                     data-arg="#6f42c1"
+                    title="Purple"
+                    aria-label="Purple"
                   ></button>
                   <button
                     class="color-btn"
                     style="background: #fd7e14"
                     data-action="setHeaderColor"
                     data-arg="#fd7e14"
+                    title="Orange"
+                    aria-label="Orange"
                   ></button>
                 </div>
               </div>
               <div class="wb-toolbar-right">
                 <button
-                  id="wristbandUndoBtn"
-                  class="btn btn-undo btn-sm"
-                  data-action="undoWristband"
-                  disabled
-                  title="Nothing to undo"
+                  class="btn btn-sm btn-secondary"
+                  data-action="autoFillWristband"
+                  title="Fill empty cells with filtered plays"
                 >
-                  ↩️
-                </button>
-                <button
-                  id="wristbandRedoBtn"
-                  class="btn btn-redo btn-sm"
-                  data-action="redoWristband"
-                  disabled
-                  title="Nothing to redo"
-                >
-                  ↪️
+                  ⚡ Auto-Fill
                 </button>
                 <button
                   class="btn btn-success btn-sm"
@@ -1832,12 +1854,6 @@
                   data-testid="clear-wristband"
                 >
                   🗑 Clear
-                </button>
-                <button
-                  class="btn btn-sm btn-secondary"
-                  data-action="autoFillWristband"
-                >
-                  ⚡ Auto-Fill
                 </button>
               </div>
             </div>
@@ -1981,7 +1997,7 @@
                   <select
                     id="sortPresetDropdown"
                     data-onchange="loadSortPreset"
-                    style="padding: 3px 6px; font-size: 12px"
+                    class="wb-sort-select"
                   >
                     <option value="">-- Select Preset --</option>
                   </select>
@@ -2018,7 +2034,7 @@
                     Sort across all cards
                     <span
                       title="When enabled, sorts ALL plays across all cards as one pool, then redistributes them starting from Card 1"
-                      style="cursor: help; color: #666"
+                      class="wb-sort-info"
                       >ⓘ</span
                     >
                   </label>

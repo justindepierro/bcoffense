@@ -68,6 +68,12 @@
   .wristband-container {
     flex-direction: column;
   }
+  .wristband-plays {
+    max-width: 100%;
+  }
+  .wb-toolbar {
+    gap: 8px;
+  }
 }
 
 @media (max-width: 768px) {
@@ -149,6 +155,20 @@
   }
   .upload-box {
     padding: 30px 20px;
+  }
+  .wb-stats-bar {
+    gap: 5px;
+    padding: 6px 8px;
+  }
+  .wb-stats-bar .stat-item {
+    padding: 4px 8px;
+    min-width: 42px;
+  }
+  .wb-stats-bar .stat-value {
+    font-size: var(--font-size-sm);
+  }
+  .card-tabs {
+    flex-wrap: wrap;
   }
   .callsheet-columns {
     flex-direction: column;
