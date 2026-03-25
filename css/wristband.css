@@ -104,7 +104,7 @@
   align-items: center;
   justify-content: center;
   background: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
+  pointer-events: none;
   z-index: 1;
 }
 .wb-grid-empty-state.visible {
