@@ -74,6 +74,11 @@
   .wb-toolbar {
     gap: 8px;
   }
+  .wristband-card {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 7 / 4.2;
+  }
 }
 
 @media (max-width: 768px) {
@@ -169,6 +174,14 @@
   }
   .card-tabs {
     flex-wrap: wrap;
+  }
+  .wristband-card {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 7 / 4.2;
+  }
+  .wristband-cell .cell-play {
+    font-size: var(--font-size-micro);
   }
   .callsheet-columns {
     flex-direction: column;

@@ -106,7 +106,7 @@
     grid-template-columns: 22px 1fr 22px 1fr !important;
   }
   .wristband-print .wristband-cell {
-    font-size: 7.5px !important;
+    font-size: 9px !important;
     padding: 0 2px !important;
     border: 0.3px solid var(--color-text-muted) !important;
     display: flex !important;
@@ -115,11 +115,11 @@
     overflow: hidden !important;
   }
   .wristband-print .wristband-cell.num-cell {
-    font-size: 8px !important;
+    font-size: 9px !important;
     justify-content: center !important;
   }
   .wristband-print .cell-play {
-    font-size: 7.5px !important;
+    font-size: 9px !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: clip !important;

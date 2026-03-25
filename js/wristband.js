@@ -299,6 +299,7 @@ function renderSortCriteria() {
       return `
       <div class="sort-criteria-item" draggable="true" data-idx="${idx}"
            data-drag="wbSort" role="listitem" aria-label="Sort by ${criteria.field}, ${criteria.direction === "asc" ? "ascending" : "descending"}">
+        <span class="wb-sort-rank">${idx + 1}</span>
         <span class="drag-handle" aria-hidden="true">☰</span>
         <div class="sort-move-btns">${moveUpBtn}${moveDownBtn}</div>
         <select data-onchange="updateSortField" data-key="${idx}" data-pass="value" aria-label="Sort field">${fieldOptions}</select>
@@ -864,6 +865,10 @@ function renderCardTabs() {
     html += `<button class="add-card-btn" data-action="addNewCard" title="Add new card">+ Add Card</button>`;
   }
 
+  if (wristbandCards.length < MAX_CARDS) {
+    html += `<button class="btn btn-sm wb-duplicate-card-btn" data-action="duplicateCard" title="Duplicate current card">📋 Duplicate</button>`;
+  }
+
   if (wristbandCards.length > 1) {
     html += `<button class="btn btn-danger btn-sm wb-remove-card-btn" data-action="removeCurrentCard" title="Remove current card">🗑 Remove</button>`;
   }
@@ -911,6 +916,49 @@ async function removeCurrentCard() {
   currentCardIndex = Math.min(currentCardIndex, wristbandCards.length - 1);
   renderCardTabs();
   renderWristbandGrid();
+}
+
+/**
+ * Duplicate the current card
+ */
+function duplicateCard() {
+  if (wristbandCards.length >= MAX_CARDS) {
+    showToast(`Maximum ${MAX_CARDS} cards allowed`);
+    return;
+  }
+  saveWristbandState();
+  const src = wristbandCards[currentCardIndex];
+  const clone = {
+    name: `${src.name} (Copy)`,
+    data: safeDeepClone(src.data),
+  };
+  wristbandCards.splice(currentCardIndex + 1, 0, clone);
+  // Copy cell customizations for the new card
+  const newIdx = currentCardIndex + 1;
+  // Shift existing customizations for cards after the insertion point
+  for (let ci = wristbandCards.length - 1; ci > newIdx; ci--) {
+    for (let si = 0; si < 40; si++) {
+      const oldKey = `${ci - 1}-${si}`;
+      const newKey = `${ci}-${si}`;
+      if (cellCustomizations[oldKey]) {
+        cellCustomizations[newKey] = cellCustomizations[oldKey];
+      } else {
+        delete cellCustomizations[newKey];
+      }
+    }
+  }
+  // Copy source card customizations to the new card
+  for (let si = 0; si < 40; si++) {
+    const srcKey = `${currentCardIndex}-${si}`;
+    const dstKey = `${newIdx}-${si}`;
+    if (cellCustomizations[srcKey]) {
+      cellCustomizations[dstKey] = safeDeepClone(cellCustomizations[srcKey]);
+    }
+  }
+  currentCardIndex = newIdx;
+  renderCardTabs();
+  renderWristbandGrid();
+  showToast(`Duplicated as "${escapeHtml(clone.name)}"`);
 }
 
 /**
@@ -1223,7 +1271,7 @@ function renderWristbandGrid() {
         </div>
       `;
     } else {
-      html += `<div class="wristband-cell" 
+      html += `<div class="wristband-cell" tabindex="0"
                     data-drag="wbCell" data-cell-idx="${oddIndex}"
                     data-card="${currentCardIndex}"></div>`;
     }
@@ -1242,7 +1290,7 @@ function renderWristbandGrid() {
         </div>
       `;
     } else {
-      html += `<div class="wristband-cell" 
+      html += `<div class="wristband-cell" tabindex="0"
                     data-drag="wbCell" data-cell-idx="${evenIndex}"
                     data-card="${currentCardIndex}"></div>`;
     }
@@ -1296,6 +1344,19 @@ function openCellPopup(cardIdx, cellIdx, event) {
   if (!cardData) return;
 
   currentEditingCell = { cardIdx, cellIdx };
+
+  // Focus trap + Escape key for the overlay
+  const overlay = document.getElementById("cellPopupOverlay");
+  if (!overlay._focusTrapAdded) {
+    trapFocus(overlay);
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        closeCellPopup();
+      }
+    });
+    overlay._focusTrapAdded = true;
+  }
   const currentPlay = cardData[cellIdx];
   const key = `${cardIdx}-${cellIdx}`;
   const existing = cellCustomizations[key] || {};
@@ -1337,7 +1398,12 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateSwatchSelection("textColorSwatches", pendingTextColor);
   document.getElementById("cellOnTwo").checked = pendingOnTwo;
 
-  document.getElementById("cellPopupOverlay").classList.remove("hidden");
+  overlay.classList.remove("hidden");
+
+  // Auto-focus the search input for empty cells so user can type immediately
+  if (!currentPlay) {
+    setTimeout(() => document.getElementById("cellPlaySearch")?.focus(), 50);
+  }
 }
 
 /**
@@ -1572,36 +1638,49 @@ async function autoFillWristband() {
     totalEmpty += wristbandCards[cardIdx].data.filter((c) => c === null).length;
   }
 
-  // If we need more cells than available, offer to create new cards
+  const willFill = Math.min(filtered.length, totalEmpty);
+  let extraCardsNeeded = 0;
+
+  // If we need more cells than available, calculate new cards needed
   if (filtered.length > totalEmpty) {
-    const playsNeeded = filtered.length;
-    const extraPlays = playsNeeded - totalEmpty;
-    const extraCardsNeeded = Math.ceil(extraPlays / 40);
+    const extraPlays = filtered.length - totalEmpty;
+    extraCardsNeeded = Math.ceil(extraPlays / 40);
     const totalCardsNeeded = wristbandCards.length + extraCardsNeeded;
 
     if (totalCardsNeeded > MAX_CARDS) {
-      const maxPlays = totalEmpty + (MAX_CARDS - wristbandCards.length) * 40;
-      showToast(
-        `${playsNeeded} plays but can only fit ${maxPlays} (max ${MAX_CARDS} cards)`,
-      );
-    } else if (extraCardsNeeded > 0) {
-      const createCards = await showConfirm(
-        `You have ${playsNeeded} plays but only ${totalEmpty} empty cells.\n\nCreate ${extraCardsNeeded} new card(s) to fit all plays?`,
-        { title: "Auto-Fill", icon: "⚡", confirmText: "Create Cards" },
-      );
+      extraCardsNeeded = MAX_CARDS - wristbandCards.length;
+    }
+  }
 
-      if (createCards) {
-        for (
-          let i = 0;
-          i < extraCardsNeeded && wristbandCards.length < MAX_CARDS;
-          i++
-        ) {
-          wristbandCards.push({
-            name: `Card ${wristbandCards.length + 1}`,
-            data: Array(40).fill(null),
-          });
-        }
-      }
+  const totalAvailable = totalEmpty + extraCardsNeeded * 40;
+  const toFill = Math.min(filtered.length, totalAvailable);
+  const cardsAffected = extraCardsNeeded > 0
+    ? (wristbandCards.length - currentCardIndex) + extraCardsNeeded
+    : wristbandCards.length - currentCardIndex;
+
+  // Confirmation modal
+  const msg = extraCardsNeeded > 0
+    ? `Will add ${toFill} of ${filtered.length} plays across ${cardsAffected} card(s).\n\n${extraCardsNeeded} new card(s) will be created.\n\nStarting from ${wristbandCards[currentCardIndex].name}.`
+    : `Will add ${toFill} of ${filtered.length} plays to ${cardsAffected} card(s).\n\nStarting from ${wristbandCards[currentCardIndex].name}.`;
+
+  const ok = await showConfirm(msg, {
+    title: "Auto-Fill Preview",
+    icon: "⚡",
+    confirmText: `Fill ${toFill} Plays`,
+  });
+  if (!ok) return;
+
+  // Create extra cards if needed
+  if (extraCardsNeeded > 0) {
+    for (
+      let i = 0;
+      i < extraCardsNeeded && wristbandCards.length < MAX_CARDS;
+      i++
+    ) {
+      wristbandCards.push({
+        name: `Card ${wristbandCards.length + 1}`,
+        data: Array(40).fill(null),
+      });
     }
   }
 
@@ -1636,14 +1715,7 @@ async function autoFillWristband() {
 
   renderCardTabs();
   renderWristbandGrid();
-
-  // Show summary
-  const cardsUsed = Math.ceil(filledCount / 40) || 1;
-  if (filledCount > 40) {
-    showToast(
-      `✅ Added ${filledCount} plays across ${wristbandCards.length - currentCardIndex} card(s)`,
-    );
-  }
+  showToast(`✅ Added ${filledCount} play${filledCount !== 1 ? "s" : ""}`);
 }
 
 /**
@@ -2284,6 +2356,84 @@ document.addEventListener("DOMContentLoaded", () => {
     wbAvailEl.addEventListener("dblclick", (e) => {
       const item = e.target.closest("[data-play-idx]");
       if (item) addPlayToNextEmpty(parseInt(item.dataset.playIdx, 10));
+    });
+  }
+
+  // ── Card tabs: accept drag-drop from grid cells ──
+  const tabsContainer = document.getElementById("cardTabs");
+  if (tabsContainer) {
+    tabsContainer.addEventListener("dragover", (e) => {
+      if (draggedCellIndex === null) return;
+      const tab = e.target.closest(".card-tab");
+      if (tab) {
+        e.preventDefault();
+        tab.classList.add("drag-over");
+      }
+    });
+    tabsContainer.addEventListener("dragleave", (e) => {
+      const tab = e.target.closest(".card-tab");
+      if (tab) tab.classList.remove("drag-over");
+    });
+    tabsContainer.addEventListener("drop", (e) => {
+      const tab = e.target.closest(".card-tab");
+      if (!tab || draggedCellIndex === null) return;
+      e.preventDefault();
+      tab.classList.remove("drag-over");
+      const targetCardIdx = parseInt(tab.dataset.idx, 10);
+      if (targetCardIdx === currentCardIndex) return;
+
+      const play = wristbandCards[currentCardIndex].data[draggedCellIndex];
+      if (!play) return;
+
+      // Find first empty cell in target card
+      const emptyIdx = wristbandCards[targetCardIdx].data.findIndex((c) => c === null);
+      if (emptyIdx === -1) {
+        showToast("No empty cells on that card");
+        return;
+      }
+
+      saveWristbandState();
+      // Move the play
+      wristbandCards[targetCardIdx].data[emptyIdx] = play;
+      wristbandCards[currentCardIndex].data[draggedCellIndex] = null;
+
+      // Move cell customizations
+      const srcKey = `${currentCardIndex}-${draggedCellIndex}`;
+      const dstKey = `${targetCardIdx}-${emptyIdx}`;
+      if (cellCustomizations[srcKey]) {
+        cellCustomizations[dstKey] = cellCustomizations[srcKey];
+        delete cellCustomizations[srcKey];
+      }
+
+      draggedCellIndex = null;
+      renderCardTabs();
+      renderWristbandGrid();
+      showToast(`Moved to ${wristbandCards[targetCardIdx].name}`);
+    });
+  }
+
+  // ── Keyboard: type on empty cell to search ──
+  if (grid) {
+    grid.addEventListener("keydown", (e) => {
+      const cell = e.target.closest("[data-drag='wbCell']");
+      if (!cell) return;
+      // Only trigger on printable characters (a-z, 0-9)
+      if (e.key.length === 1 && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+        const cardIdx = parseInt(cell.dataset.card, 10);
+        const play = wristbandCards[cardIdx]?.data[cellIdx];
+        if (!play) {
+          // Open cell popup and pre-fill search
+          openCellPopup(cardIdx, cellIdx, e);
+          setTimeout(() => {
+            const searchInput = document.getElementById("cellPlaySearch");
+            if (searchInput) {
+              searchInput.value = e.key;
+              populateCellPlayList();
+            }
+          }, 60);
+        }
+      }
     });
   }
 });
