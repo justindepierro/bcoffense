@@ -688,7 +688,7 @@
 
 /* Drag states */
 .td-dragging {
-  opacity: 0.4;
+  opacity: 0.5;
 }
 .td-drag-over {
   border-top: 3px solid var(--color-primary) !important;

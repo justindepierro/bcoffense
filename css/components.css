@@ -598,6 +598,51 @@
   font-weight: 500;
 }
 
+/* ============ Unified Badge System ============ */
+.badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  line-height: 1;
+  white-space: nowrap;
+}
+.badge-primary {
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+.badge-neutral {
+  background: var(--color-border);
+  color: var(--color-text);
+}
+.badge-muted {
+  background: var(--color-navy-alpha-12);
+  color: var(--color-text-secondary);
+}
+.badge-warning {
+  background: var(--color-warning);
+  color: var(--color-white);
+}
+.badge-success {
+  background: var(--color-success);
+  color: var(--color-white);
+}
+.badge-danger {
+  background: var(--color-danger);
+  color: var(--color-white);
+}
+.badge-sm {
+  min-width: 14px;
+  height: 14px;
+  padding: 0 4px;
+  font-size: var(--font-size-3xs);
+}
+
 /* Script Preview */
 .script-preview {
   margin-top: 20px;

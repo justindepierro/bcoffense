@@ -92,7 +92,7 @@
   cursor: grabbing;
 }
 .wristband-cell.dragging {
-  opacity: 0.4;
+  opacity: 0.5;
   background: var(--color-bg-blue-tint) !important;
 }
 .wristband-cell.drag-over {

@@ -101,6 +101,7 @@
 
 .callsheet-play.dragging {
   opacity: 0.5;
+  background: var(--color-bg-blue-tint);
 }
 
 .callsheet-play .personnel-code {
@@ -897,8 +898,8 @@
 }
 
 .cs-sort-criteria-item.dragging {
-  opacity: 0.4;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  opacity: 0.5;
+  background: var(--color-bg-blue-tint);
 }
 .cs-sort-criteria-item select {
   flex: 1;
@@ -1029,7 +1030,8 @@
 }
 
 .cs-custom-order-item.dragging {
-  opacity: 0.4;
+  opacity: 0.5;
+  background: var(--color-bg-blue-tint);
 }
 .cs-order-number {
   font-size: var(--font-size-xs);
@@ -1099,9 +1101,7 @@
 .cs-play-count {
   font-size: var(--font-size-2xs);
   padding: 1px 5px;
-  border-radius: var(--radius-pill);
   background: rgba(255, 255, 255, 0.3);
-  white-space: nowrap;
   font-weight: 600;
   margin-left: 4px;
 }
@@ -1137,10 +1137,6 @@
 .cs-dupe-badge {
   font-size: var(--font-size-3xs);
   padding: 0 4px;
-  border-radius: var(--radius-pill);
-  background: var(--color-warning);
-  color: var(--color-white);
-  font-weight: 700;
   flex-shrink: 0;
   margin-left: 2px;
   line-height: 1.4;

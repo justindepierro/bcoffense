@@ -197,7 +197,7 @@ async function checkScriptDraft() {
     }
   } catch (err) {
     console.error("checkScriptDraft error:", err);
-    showToast("❌ Error restoring script draft.", 3000);
+    showToast("❌ Error restoring script draft.", { duration: 3000, type: "error" });
   }
 }
 
@@ -301,7 +301,7 @@ function updateActiveFilterCount() {
 function highlightPlaysNotOnWristband() {
   const wbSelect = document.getElementById("scriptWristbandSelect");
   if (!wbSelect || !wbSelect.value) {
-    showToast("⚠️ Please select a wristband first");
+    showToast("⚠️ Please select a wristband first", { type: "warning" });
     return;
   }
 
@@ -335,7 +335,7 @@ function highlightPlaysNotOnWristband() {
   });
 
   if (notOnWb === 0) {
-    showToast("✅ All plays in the script are on the wristband!");
+    showToast("✅ All plays in the script are on the wristband!", { type: "success" });
   } else {
     showToast(`⚠️ ${notOnWb} play(s) are NOT on the wristband`);
   }
@@ -1376,7 +1376,7 @@ function copyPeriodAsText(idx) {
 
   const periodPlays = getPeriodPlays(sepIdx);
   if (periodPlays.length === 0) {
-    showToast("⚠️ No plays in this period");
+    showToast("⚠️ No plays in this period", { type: "warning" });
     return;
   }
 
@@ -1391,7 +1391,7 @@ function copyPeriodAsText(idx) {
   navigator.clipboard
     .writeText(lines.join("\n"))
     .then(() => showToast(`📋 ${periodPlays.length} plays copied`))
-    .catch(() => showToast("❌ Clipboard not available"));
+    .catch(() => showToast("❌ Clipboard not available", { type: "error" }));
 }
 
 /**
@@ -2796,7 +2796,7 @@ function renderScript() {
     if (typeof updateTabBadges === "function") updateTabBadges();
   } catch (err) {
     console.error("renderScript error:", err);
-    showToast("❌ Error rendering script.", 3000);
+    showToast("❌ Error rendering script.", { duration: 3000, type: "error" });
   }
 }
 
@@ -2903,7 +2903,7 @@ async function saveScript() {
     const date = document.getElementById("scriptDate").value;
 
     if (!name) {
-      showToast("⚠️ Please enter a script name");
+      showToast("⚠️ Please enter a script name", { type: "warning" });
       return;
     }
 
@@ -2959,7 +2959,7 @@ async function saveScript() {
     showToast(`✅ "${name}" saved!`);
   } catch (err) {
     console.error("saveScript error:", err);
-    showToast("❌ Error saving script.", 4000);
+    showToast("❌ Error saving script.", { duration: 4000, type: "error" });
   }
 }
 
@@ -3059,7 +3059,7 @@ function loadScript(id) {
     showToast(`Loaded "${scriptData.name}"`);
   } catch (err) {
     console.error("loadScript error:", err);
-    showToast("❌ Error loading script.", 4000);
+    showToast("❌ Error loading script.", { duration: 4000, type: "error" });
   }
 }
 
@@ -3300,12 +3300,12 @@ function executeLoadWbToScript() {
   const cardChoice = document.getElementById("wbToScriptCards").value;
 
   if (isNaN(wbIdx) || wbIdx < 0 || wbIdx >= saved.length) {
-    showToast("⚠️ Could not load wristband");
+    showToast("⚠️ Could not load wristband", { type: "warning" });
     return;
   }
   const wb = saved[wbIdx];
   if (!wb || !wb.cards) {
-    showToast("⚠️ Could not load wristband");
+    showToast("⚠️ Could not load wristband", { type: "warning" });
     return;
   }
 
@@ -3325,7 +3325,7 @@ function executeLoadWbToScript() {
   });
 
   if (playsToAdd.length === 0) {
-    showToast("⚠️ No plays found in selected card(s)");
+    showToast("⚠️ No plays found in selected card(s)", { type: "warning" });
     return;
   }
 
@@ -3536,7 +3536,7 @@ function exportScriptAsText() {
   a.click();
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
-  showToast("✅ Script exported as text file");
+  showToast("✅ Script exported as text file", { type: "success" });
 }
 
 /**
@@ -3659,7 +3659,7 @@ function generatePDF() {
     }, 100);
   } catch (err) {
     console.error("generatePDF error:", err);
-    showToast("❌ Error generating print preview.", 4000);
+    showToast("❌ Error generating print preview.", { duration: 4000, type: "error" });
   }
 }
 
@@ -3838,7 +3838,7 @@ async function printFullDay() {
     }, 100);
   } catch (err) {
     console.error("printFullDay error:", err);
-    showToast("❌ Error printing full day.", 4000);
+    showToast("❌ Error printing full day.", { duration: 4000, type: "error" });
   }
 }
 

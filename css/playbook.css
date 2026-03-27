@@ -663,18 +663,7 @@ table.sortable th {
   margin-left: auto;
 }
 .pb-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
   padding: 0 5px;
-  border-radius: var(--radius-pill);
-  background: var(--color-border);
-  font-size: var(--font-size-2xs);
-  font-weight: 700;
-  color: var(--color-text);
-  line-height: 1;
 }
 
 /* -- Collections panel -- */

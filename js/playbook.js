@@ -300,7 +300,7 @@ function populateFilters() {
     populateWristbandHighlightDropdown();
   } catch (err) {
     console.error("populateFilters error:", err);
-    showToast("❌ Error loading filters.", 3000);
+    showToast("❌ Error loading filters.", { duration: 3000, type: "error" });
   }
 }
 
@@ -763,7 +763,7 @@ function renderPlaybook() {
     }
   } catch (err) {
     console.error("renderPlaybook error:", err);
-    showToast("❌ Error rendering playbook.", 3000);
+    showToast("❌ Error rendering playbook.", { duration: 3000, type: "error" });
   }
 }
 
@@ -972,7 +972,7 @@ function restorePlaybookState() {
     _syncSortUI();
   } catch (err) {
     console.error("restorePlaybookState error:", err);
-    showToast("❌ Error restoring playbook state.", 3000);
+    showToast("❌ Error restoring playbook state.", { duration: 3000, type: "error" });
   }
 }
 
@@ -1345,7 +1345,7 @@ async function savePlayCollection() {
     });
   } catch (err) {
     console.error("savePlayCollection error:", err);
-    showToast("❌ Error saving collection.", 4000);
+    showToast("❌ Error saving collection.", { duration: 4000, type: "error" });
   }
 }
 

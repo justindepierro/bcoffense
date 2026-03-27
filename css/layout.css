@@ -195,19 +195,8 @@ h1 {
 
 /* Tab badge counts */
 .tab-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  min-width: 18px;
-  height: 18px;
   padding: 0 5px;
   margin-left: 5px;
-  border-radius: var(--radius-pill);
-  background: var(--color-navy-alpha-12);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-2xs);
-  font-weight: 700;
-  line-height: 1;
 }
 .tab.active .tab-badge {
   background: var(--color-primary);

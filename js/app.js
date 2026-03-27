@@ -859,14 +859,14 @@ function handleFileUpload(event) {
       } catch (err) {
         hideLoadingOverlay();
         console.error("handleFileUpload reader.onload error:", err);
-        showToast("❌ Error reading file. Check format and try again.", 4000);
+        showToast("❌ Error reading file. Check format and try again.", { duration: 4000, type: "error" });
       }
     };
     reader.readAsText(file);
   } catch (err) {
     hideLoadingOverlay();
     console.error("handleFileUpload error:", err);
-    showToast("❌ Error uploading file.", 4000);
+    showToast("❌ Error uploading file.", { duration: 4000, type: "error" });
   }
 }
 
@@ -963,7 +963,7 @@ function initApp() {
     initScriptKeyboard();
   } catch (err) {
     console.error("initApp error:", err);
-    showToast("❌ Error initializing app. Try refreshing.", 5000);
+    showToast("❌ Error initializing app. Try refreshing.", { duration: 5000, type: "error" });
   }
 }
 
@@ -1223,7 +1223,7 @@ function renderDashboard() {
     renderGamePlanSummary();
   } catch (err) {
     console.error("renderDashboard error:", err);
-    showToast("❌ Error loading dashboard.", 3000);
+    showToast("❌ Error loading dashboard.", { duration: 3000, type: "error" });
   }
 }
 
@@ -1591,7 +1591,7 @@ function printFullGamePlan() {
     }, 100);
   } catch (err) {
     console.error("printFullGamePlan error:", err);
-    showToast("❌ Error generating game plan print.", 4000);
+    showToast("❌ Error generating game plan print.", { duration: 4000, type: "error" });
   }
 }
 
@@ -1887,7 +1887,7 @@ function downloadCSVTemplate(type) {
     showToast(`⬇️ Downloaded ${filename}`);
   } catch (err) {
     console.error("downloadCSVTemplate error:", err);
-    showToast("❌ Error creating template.", 3000);
+    showToast("❌ Error creating template.", { duration: 3000, type: "error" });
   }
 }
 
@@ -1933,9 +1933,72 @@ document.addEventListener("keydown", (e) => {
     e.target.tagName === "INPUT" ||
     e.target.tagName === "TEXTAREA" ||
     e.target.isContentEditable;
-  if (inInput) return;
 
   const mod = e.ctrlKey || e.metaKey;
+
+  // Offense Builder shortcuts (when on OB tab)
+  if (currentActiveTab === "offensebuilder" && !mod && !e.altKey && !e.shiftKey) {
+    // "/" focus search
+    if (e.key === "/" && !inInput) {
+      e.preventDefault();
+      const searchInput = document.getElementById("obSearchInput");
+      if (searchInput) searchInput.focus();
+      return;
+    }
+    // Escape: blur search / deselect play
+    if (e.key === "Escape") {
+      if (inInput) {
+        const searchInput = document.getElementById("obSearchInput");
+        if (searchInput && document.activeElement === searchInput) {
+          if (searchInput.value) {
+            searchInput.value = "";
+            obSearchTerm = "";
+            obRenderPlayList();
+          } else {
+            searchInput.blur();
+          }
+        }
+      } else if (obActivePlayName) {
+        obActivePlayName = null;
+        obRenderPlayList();
+        obRenderSidebar();
+      }
+      return;
+    }
+    // "r" toggle rated only
+    if (e.key === "r" && !inInput) {
+      e.preventDefault();
+      const cb = document.getElementById("obShowRated");
+      if (cb) {
+        cb.checked = !cb.checked;
+        obShowRatedOnly = cb.checked;
+        obRenderPlayList();
+      }
+      return;
+    }
+    // Arrow up/down: navigate play cards
+    if ((e.key === "ArrowUp" || e.key === "ArrowDown") && !inInput) {
+      e.preventDefault();
+      const cards = document.querySelectorAll("#obPlayList .ob-card");
+      if (!cards.length) return;
+      const names = Array.from(cards).map((c) => c.dataset.play);
+      const idx = obActivePlayName ? names.indexOf(obActivePlayName) : -1;
+      let next;
+      if (e.key === "ArrowDown") {
+        next = idx < names.length - 1 ? idx + 1 : 0;
+      } else {
+        next = idx > 0 ? idx - 1 : names.length - 1;
+      }
+      obActivePlayName = names[next];
+      obRenderPlayList();
+      obRenderSidebar();
+      const activeCard = document.querySelector("#obPlayList .ob-card.active");
+      if (activeCard) activeCard.scrollIntoView({ block: "nearest" });
+      return;
+    }
+  }
+
+  if (inInput) return;
 
   // Number keys 1-8: switch tabs (no modifier, no alt)
   if (!mod && !e.altKey && !e.shiftKey && e.key >= "1" && e.key <= "8") {
@@ -2050,7 +2113,7 @@ function updateTabBadges() {
     if (count > 0) {
       if (!badge) {
         badge = document.createElement("span");
-        badge.className = "tab-badge";
+        badge.className = "badge badge-muted tab-badge";
         tab.appendChild(badge);
       }
       badge.textContent = count;

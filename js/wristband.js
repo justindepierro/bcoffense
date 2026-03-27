@@ -138,7 +138,7 @@ async function checkWristbandDraft() {
     }
   } catch (err) {
     console.error("checkWristbandDraft error:", err);
-    showToast("❌ Error restoring wristband draft.", 3000);
+    showToast("❌ Error restoring wristband draft.", { duration: 3000, type: "error" });
   }
 }
 
@@ -256,7 +256,7 @@ async function deleteSortPreset() {
   const dropdown = document.getElementById("sortPresetDropdown");
   const presetName = dropdown.value;
   if (!presetName || !savedSortPresets[presetName]) {
-    showToast("⚠️ No preset selected to delete");
+    showToast("⚠️ No preset selected to delete", { type: "warning" });
     return;
   }
 
@@ -865,7 +865,7 @@ function initWristband() {
     checkWristbandDraft();
   } catch (err) {
     console.error("initWristband error:", err);
-    showToast("❌ Error initializing wristband.", 3000);
+    showToast("❌ Error initializing wristband.", { duration: 3000, type: "error" });
   }
 }
 
@@ -1196,7 +1196,7 @@ function addPlayToNextEmpty(playIndex) {
   const emptyIdx = cardData.findIndex((cell) => cell === null);
 
   if (emptyIdx === -1) {
-    showToast("⚠️ No empty cells! Clear some or switch to another card");
+    showToast("⚠️ No empty cells! Clear some or switch to another card", { type: "warning" });
     return;
   }
 
@@ -1769,7 +1769,7 @@ async function autoFillWristband() {
   }
 
   if (filledCount === 0) {
-    showToast("⚠️ No empty cells available — clear some first");
+    showToast("⚠️ No empty cells available — clear some first", { type: "warning" });
     return;
   }
 
@@ -1922,7 +1922,7 @@ function printWristband() {
     }, 100);
   } catch (err) {
     console.error("printWristband error:", err);
-    showToast("❌ Error printing wristband.", 4000);
+    showToast("❌ Error printing wristband.", { duration: 4000, type: "error" });
   }
 }
 
@@ -2005,7 +2005,7 @@ async function saveWristband() {
     showToast(`✅ "${name}" saved!`);
   } catch (err) {
     console.error("saveWristband error:", err);
-    showToast("❌ Error saving wristband.", 4000);
+    showToast("❌ Error saving wristband.", { duration: 4000, type: "error" });
   }
 }
 
@@ -2126,7 +2126,7 @@ function loadWristband(id) {
     showToast(`Loaded "${wb.title}"`);
   } catch (err) {
     console.error("loadWristband error:", err);
-    showToast("❌ Error loading wristband.", 4000);
+    showToast("❌ Error loading wristband.", { duration: 4000, type: "error" });
   }
 }
 

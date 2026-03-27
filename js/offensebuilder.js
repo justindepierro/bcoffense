@@ -470,7 +470,7 @@ function renderOffenseBuilder() {
     obRenderSidebar();
   } catch (err) {
     console.error("renderOffenseBuilder error:", err);
-    showToast("❌ Error rendering offense builder.", 3000);
+    showToast("❌ Error rendering offense builder.", { duration: 3000, type: "error" });
   }
 }
 
@@ -607,7 +607,7 @@ function obSetRating(playName, stars) {
     obRenderSidebar();
   } catch (err) {
     console.error("obSetRating error:", err);
-    showToast("❌ Error saving rating.", 3000);
+    showToast("❌ Error saving rating.", { duration: 3000, type: "error" });
   }
 }
 

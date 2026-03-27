@@ -492,7 +492,7 @@ function renderInstallation() {
     container.innerHTML = html;
   } catch (err) {
     console.error("renderInstallation error:", err);
-    showToast("❌ Error rendering installation.", 3000);
+    showToast("❌ Error rendering installation.", { duration: 3000, type: "error" });
   }
 }
 
@@ -787,7 +787,7 @@ function showReadinessModal(type) {
     showModal(html, { ...titles[type] });
   } catch (err) {
     console.error("showReadinessModal error:", err);
-    showToast("❌ Error showing readiness report.", 3000);
+    showToast("❌ Error showing readiness report.", { duration: 3000, type: "error" });
   }
 }
 

@@ -444,7 +444,7 @@ function initCallSheet() {
     checkCallSheetDraft();
   } catch (err) {
     console.error("initCallSheet error:", err);
-    showToast("❌ Error initializing call sheet.", 4000);
+    showToast("❌ Error initializing call sheet.", { duration: 4000, type: "error" });
   }
 }
 
@@ -527,7 +527,7 @@ async function autoPopulateCallSheet() {
     showToast(msg);
   } catch (err) {
     console.error("autoPopulateCallSheet error:", err);
-    showToast("❌ Error auto-populating call sheet.", 4000);
+    showToast("❌ Error auto-populating call sheet.", { duration: 4000, type: "error" });
   }
 }
 
@@ -1065,9 +1065,9 @@ function renderCategory(cat, data, dupeMap) {
         : playCount >= target * 0.5
           ? CS_COLORS.yellow
           : CS_COLORS.red;
-    countDisplay = `<span class="cs-play-count" style="background: ${targetColor}; color: ${playCount >= target || pct < 0.5 ? UI_COLORS.textWhite : UI_COLORS.textBlack};">${playCount}/${target}</span>`;
+    countDisplay = `<span class="badge cs-play-count" style="background: ${targetColor}; color: ${playCount >= target || pct < 0.5 ? UI_COLORS.textWhite : UI_COLORS.textBlack};">${playCount}/${target}</span>`;
   } else if (playCount > 0) {
-    countDisplay = `<span class="cs-play-count">${playCount}</span>`;
+    countDisplay = `<span class="badge cs-play-count">${playCount}</span>`;
   }
   const sortBtn =
     playCount > 1
@@ -1317,7 +1317,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
   const dupeCount = dupeMap ? dupeMap[playKey] || 0 : 0;
   const dupeBadge =
     dupeCount > 1
-      ? `<span class="cs-dupe-badge" title="Appears in ${dupeCount} categories">×${dupeCount}</span>`
+      ? `<span class="badge badge-sm badge-warning cs-dupe-badge" title="Appears in ${dupeCount} categories">×${dupeCount}</span>`
       : "";
 
   // Hash swap arrow
@@ -1928,7 +1928,7 @@ function openLoadWristbandModal() {
   const modal = document.getElementById("loadWristbandModal");
 
   if (!select || !modal) {
-    showToast("⚠️ Could not open wristband loader — try refreshing");
+    showToast("⚠️ Could not open wristband loader — try refreshing", { type: "warning" });
     return;
   }
 
@@ -1960,7 +1960,7 @@ function closeLoadWristbandModal(event) {
 function loadWristbandToCallSheet() {
   const wristbandIdx = document.getElementById("loadWristbandSelect").value;
   if (wristbandIdx === "") {
-    showToast("⚠️ Please select a wristband");
+    showToast("⚠️ Please select a wristband", { type: "warning" });
     return;
   }
 
@@ -1968,7 +1968,7 @@ function loadWristbandToCallSheet() {
   const wristbandData = saved[parseInt(wristbandIdx, 10)];
 
   if (!wristbandData || !wristbandData.cards) {
-    showToast("⚠️ Could not load wristband data");
+    showToast("⚠️ Could not load wristband data", { type: "warning" });
     return;
   }
 
@@ -2241,7 +2241,7 @@ function printCallSheet() {
     }, 100);
   } catch (err) {
     console.error("printCallSheet error:", err);
-    showToast("❌ Error printing call sheet.", 4000);
+    showToast("❌ Error printing call sheet.", { duration: 4000, type: "error" });
   }
 }
 
@@ -2549,7 +2549,7 @@ function loadDisplayPreset(presetKey) {
     );
     const preset = userPresets.find((p) => p.key === presetKey);
     if (!preset) {
-      showToast("⚠️ Preset not found");
+      showToast("⚠️ Preset not found", { type: "warning" });
       return;
     }
     opts = preset.opts;
@@ -2605,7 +2605,7 @@ function saveDisplayPreset() {
   const doSave = () => {
     const name = nameInput.value.trim();
     if (!name) {
-      showToast("⚠️ Enter a name");
+      showToast("⚠️ Enter a name", { type: "warning" });
       return;
     }
 
@@ -2845,7 +2845,7 @@ async function checkCallSheetDraft() {
     }
   } catch (err) {
     console.error("checkCallSheetDraft error:", err);
-    showToast("❌ Error restoring call sheet draft.", 3000);
+    showToast("❌ Error restoring call sheet draft.", { duration: 3000, type: "error" });
   }
 }
 
@@ -3397,7 +3397,7 @@ function saveTemplate() {
   const nameInput = document.getElementById("csTemplateName");
   const name = nameInput?.value.trim();
   if (!name) {
-    showToast("⚠️ Enter a template name");
+    showToast("⚠️ Enter a template name", { type: "warning" });
     return;
   }
 
@@ -3462,7 +3462,7 @@ async function loadTemplate(idx) {
     showToast(`📁 Loaded "${template.name}"`);
   } catch (err) {
     console.error("loadTemplate error:", err);
-    showToast("❌ Error loading template.", 4000);
+    showToast("❌ Error loading template.", { duration: 4000, type: "error" });
   }
 }
 
