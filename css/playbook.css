@@ -922,20 +922,6 @@ table.sortable th {
   background: var(--color-white);
 }
 
-/* ── Empty State ── */
-.pb-empty-state {
-  text-align: center;
-  padding: 48px 24px;
-  color: var(--color-text-placeholder);
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  margin: 16px 0;
-}
-.pb-empty-state p {
-  margin: 0 0 16px;
-  font-size: var(--font-size-lg);
-}
-
 /* ── Mobile Card View ── */
 .pb-cards {
   display: none;

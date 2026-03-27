@@ -1573,14 +1573,7 @@ function printFullGamePlan() {
     document.body.dataset.printMode = "gameplan";
 
     // Print style
-    let printStyle = document.getElementById("wristbandPrintStyle");
-    if (!printStyle) {
-      printStyle = document.createElement("style");
-      printStyle.id = "wristbandPrintStyle";
-      document.head.appendChild(printStyle);
-    }
-    printStyle.textContent =
-      "@media print { @page { size: letter; margin: 0.4in; } }";
+    setupPrintPageStyle("@media print { @page { size: letter; margin: 0.4in; } }");
 
     setTimeout(() => {
       const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
@@ -2598,29 +2591,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const idx = parseInt(playEl.dataset.idx, 10);
       if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
       e.preventDefault();
-      const menu = [
-        {
-          label: "📋 Duplicate Play",
-          action: () => duplicatePlay(idx),
-        },
-        {
-          label: "⬆️ Move Up",
-          action: () => movePlay(idx, -1),
-          disabled: idx === 0,
-        },
-        {
-          label: "⬇️ Move Down",
-          action: () => movePlay(idx, 1),
-          disabled: idx === script.length - 1,
-        },
-        { separator: true },
-        {
-          label: "🗑️ Remove",
-          action: () => removeFromScript(idx),
-          danger: true,
-        },
-      ];
-      showContextMenu(e, menu);
+      _showScriptPlayContextMenu(e, idx);
     });
   }
 
@@ -2703,34 +2674,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = e.target.closest("tr[data-idx]");
       if (!row) return;
       const filteredIdx = parseInt(row.dataset.idx, 10);
-      const play = filteredPlays[filteredIdx];
-      if (!play) return;
+      if (isNaN(filteredIdx)) return;
       e.preventDefault();
-      const masterIdx = plays.indexOf(play);
-      const menu = [
-        {
-          label: "✏️ Edit Play",
-          action: () => openPlayEditor(filteredIdx),
-        },
-        {
-          label: "📋 Copy Play Name",
-          action: () => copyPlayName(play.play),
-        },
-      ];
-      if (typeof addToScript === "function") {
-        menu.push({
-          label: "📝 Add to Script",
-          action: () => {
-            addToScript(masterIdx);
-            showToast("Added to script");
-          },
-        });
-      }
-      menu.push({
-        label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan",
-        action: () => togglePlaybookGamePlan(filteredIdx),
-      });
-      showContextMenu(e, menu);
+      _showPlaybookRowContextMenu(e, filteredIdx);
     });
   }
 
@@ -2750,6 +2696,30 @@ document.addEventListener("DOMContentLoaded", () => {
       _pbSortDrop(e, parseInt(el.dataset.idx, 10));
   });
 
+  /* ---------- Tendencies table: contextmenu (right-click) ---------- */
+  const tdContent = document.getElementById("tendenciesContent");
+  if (tdContent) {
+    tdContent.addEventListener("contextmenu", (e) => {
+      const row = e.target.closest("tr[data-orig]");
+      if (!row) return;
+      e.preventDefault();
+      const origIdx = parseInt(row.dataset.orig, 10);
+      if (isNaN(origIdx)) return;
+      _showTdPlayContextMenu(e, origIdx);
+    });
+  }
+
+  /* ---------- Offense Builder: contextmenu (right-click) ---------- */
+  const obContent = document.getElementById("offenseBuilderContent");
+  if (obContent) {
+    obContent.addEventListener("contextmenu", (e) => {
+      const card = e.target.closest(".ob-card[data-play]");
+      if (!card) return;
+      e.preventDefault();
+      _showObCardContextMenu(e, card.dataset.play);
+    });
+  }
+
   /* ---------- Escape key to clear search inputs (PB + WB) ---------- */
   ["searchPlay", "wbSearchPlay"].forEach((id) => {
     const input = document.getElementById(id);
@@ -2763,6 +2733,55 @@ document.addEventListener("DOMContentLoaded", () => {
     });
   });
 });
+
+/* ── Context menu helpers for Tendencies + Offense Builder ─────── */
+
+function _showScriptPlayContextMenu(e, idx) {
+  if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
+  const menu = [
+    { label: "📋 Duplicate Play", action: () => duplicatePlay(idx) },
+    { label: "⬆️ Move Up", action: () => movePlay(idx, -1), disabled: idx === 0 },
+    { label: "⬇️ Move Down", action: () => movePlay(idx, 1), disabled: idx === script.length - 1 },
+    { separator: true },
+    { label: "🗑️ Remove", action: () => removeFromScript(idx), danger: true },
+  ];
+  showContextMenu(e, menu);
+}
+
+function _showPlaybookRowContextMenu(e, filteredIdx) {
+  const play = filteredPlays[filteredIdx];
+  if (!play) return;
+  const masterIdx = plays.indexOf(play);
+  const menu = [
+    { label: "✏️ Edit Play", action: () => openPlayEditor(filteredIdx) },
+    { label: "📋 Copy Play Name", action: () => copyPlayName(play.play) },
+  ];
+  if (typeof addToScript === "function") {
+    menu.push({ label: "📝 Add to Script", action: () => { addToScript(masterIdx); showToast("Added to script"); } });
+  }
+  menu.push({ label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan", action: () => togglePlaybookGamePlan(filteredIdx) });
+  showContextMenu(e, menu);
+}
+
+function _showTdPlayContextMenu(e, origIdx) {
+  const menu = [
+    { label: "✏️ Edit Play", action: () => { if (typeof editTendenciesPlay === "function") editTendenciesPlay(origIdx); } },
+    { label: "⧉ Duplicate Play", action: () => { if (typeof duplicateTendenciesPlay === "function") duplicateTendenciesPlay(origIdx); } },
+    { separator: true },
+    { label: "🗑️ Delete Play", action: () => { if (typeof deleteTendenciesPlay === "function") deleteTendenciesPlay(origIdx); }, danger: true },
+  ];
+  showContextMenu(e, menu);
+}
+
+function _showObCardContextMenu(e, playName) {
+  if (!playName) return;
+  const menu = [
+    { label: "📝 Add to Script", action: () => { const idx = plays.findIndex((p) => p.play === playName); if (idx >= 0 && typeof addToScript === "function") { addToScript(idx); showToast("Added to script"); } } },
+    { label: "⭐ Rate 5 Stars", action: () => { if (typeof obSetRating === "function") obSetRating(playName, 5); } },
+    { label: "🚫 Clear Rating", action: () => { if (typeof obSetRating === "function") obSetRating(playName, 0); } },
+  ];
+  showContextMenu(e, menu);
+}
 
 /* ── Delegated change / input handler ────────────────────────────
  * Replaces all inline onchange= and oninput= attributes in index.html.

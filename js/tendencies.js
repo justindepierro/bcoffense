@@ -811,6 +811,8 @@ const debouncedRenderPlayLog = debounce(renderPlayLog, 150);
 function setTdSearch(val) {
   tdSearchText = val;
   tdSelectedRow = -1;
+  const clearBtn = document.querySelector("#tdSearchInput + .search-clear-btn");
+  if (clearBtn) clearBtn.style.display = val ? "" : "none";
   debouncedRenderPlayLog();
 }
 
@@ -1055,7 +1057,7 @@ function renderTendenciesHome() {
         </div>
         ${
           tendenciesOpponents.length === 0
-            ? '<div class="td-empty-state"><span class="td-empty-icon">🏈</span><p>No opponents yet. Add one to start charting!</p></div>'
+            ? '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
             : `<div class="td-opponent-list">${opponentList}</div>`
         }
       </div>
@@ -1212,7 +1214,7 @@ function renderOpponentDetail() {
           <div class="td-search-box">
             <input type="text" class="td-search-input" id="tdSearchInput" placeholder="🔍 Search plays…"
                    value="${escapeHtml(tdSearchText)}" data-oninput="setTdSearch" data-pass="value">
-            ${tdSearchText ? '<button class="td-search-clear" data-action="clearTdSearch">✕</button>' : ""}
+            <button class="search-clear-btn" data-action="clearTdSearch" style="${tdSearchText ? "" : "display:none"}">✕</button>
           </div>
           <button class="btn btn-sm ${tdShowFilters ? "btn-primary" : ""}" data-action="toggleTdFilters">
             🔽 Filters${activeFilters > 0 ? ` <span class="td-filter-badge">${activeFilters}</span>` : ""}
@@ -1271,6 +1273,14 @@ function renderPlayLog() {
   const filtered = getFilteredPlays();
   el.innerHTML = renderPlayLogTable(filtered);
 
+  // Long-press context menu on mobile
+  el.querySelectorAll("tr[data-orig]").forEach((tr) => {
+    const origIdx = parseInt(tr.dataset.orig, 10);
+    if (!isNaN(origIdx)) {
+      addLongPress(tr, (ev) => _showTdPlayContextMenu(ev, origIdx));
+    }
+  });
+
   // Update play count
   const opp = tendenciesOpponents[tendenciesCurrentOpponent];
   const countEl = document.querySelector(".td-play-count");
@@ -1290,9 +1300,9 @@ function renderPlayLogTable(filtered) {
   if (filtered.length === 0) {
     const opp = tendenciesOpponents[tendenciesCurrentOpponent];
     if (opp && opp.plays.length > 0) {
-      return '<div class="td-empty-state"><span class="td-empty-icon">🔍</span><p>No plays match your filters. <button class="btn-link" data-action="clearTdFilters">Clear filters</button></p></div>';
+      return '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">🔍</span><p class="empty-state__text">No plays match your filters. <button class="btn-link" data-action="clearTdFilters">Clear filters</button></p></div>';
     }
-    return '<div class="td-empty-state"><span class="td-empty-icon">📹</span><p>No plays charted yet. Hit <strong>＋ New Play</strong> or press <strong>N</strong> to start!</p></div>';
+    return '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">📹</span><p class="empty-state__text">No plays charted yet. Hit <strong>＋ New Play</strong> or press <strong>N</strong> to start!</p></div>';
   }
 
   const visibleCols = TD_COLUMNS.filter((c) =>

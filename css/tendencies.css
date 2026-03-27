@@ -79,20 +79,6 @@
   gap: 4px;
 }
 
-.td-empty-state {
-  text-align: center;
-  padding: 40px 20px;
-  color: var(--color-text-placeholder);
-  border: 2px dashed var(--color-border);
-  border-radius: var(--radius-lg);
-  margin-top: 8px;
-}
-.td-empty-icon {
-  font-size: var(--font-size-5xl);
-  display: block;
-  margin-bottom: 12px;
-}
-
 /* Export section */
 .td-export-section {
   margin-top: 24px;
@@ -538,21 +524,6 @@
   outline: none;
   border-color: var(--color-primary);
   width: 260px;
-}
-.td-search-clear {
-  position: absolute;
-  right: 6px;
-  background: none;
-  border: none;
-  cursor: pointer;
-  font-size: var(--font-size-base);
-  color: var(--color-text-placeholder);
-  padding: 2px 4px;
-}
-@media (hover: hover) {
-  .td-search-clear:hover {
-    color: var(--color-text);
-  }
 }
 
 /* Filter badge */

@@ -1374,6 +1374,15 @@ function renderWristbandGrid() {
   // Update undo/redo buttons
   historyManager.updateButtons("wristband");
 
+  // Attach long-press context menus for mobile
+  grid.querySelectorAll("[data-drag='wbCell']").forEach((cell) => {
+    const cardIdx = parseInt(cell.dataset.card, 10);
+    const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+    if (!isNaN(cardIdx) && !isNaN(cellIdx)) {
+      addLongPress(cell, (ev) => _showWbCellContextMenu(ev, cardIdx, cellIdx));
+    }
+  });
+
   // Update stats bar
   updateWbStats();
 
@@ -1879,15 +1888,8 @@ function printWristband() {
     document.getElementById("wristbandPrint").classList.remove("hidden");
     document.body.dataset.printMode = "wristband";
 
-    let printStyle = document.getElementById("wristbandPrintStyle");
-    if (!printStyle) {
-      printStyle = document.createElement("style");
-      printStyle.id = "wristbandPrintStyle";
-      document.head.appendChild(printStyle);
-    }
-
     if (useMultiCardLayout) {
-      printStyle.textContent = `
+      setupPrintPageStyle(`
       @media print { 
         @page { size: letter portrait; margin: 0.25in; }
         html, body { width: 8.5in !important; height: 11in !important; }
@@ -1905,10 +1907,9 @@ function printWristband() {
           flex-shrink: 0 !important;
         }
       }
-    `;
+    `);
     } else {
-      printStyle.textContent =
-        "@media print { @page { size: 4.7in 2.8in; margin: 0; } }";
+      setupPrintPageStyle("@media print { @page { size: 4.7in 2.8in; margin: 0; } }");
     }
 
     setTimeout(() => {
@@ -2772,6 +2773,29 @@ async function smartFillBySituation() {
   showToast(`✅ Added ${fillIdx} "${sitLabel}" plays`);
 }
 
+function _showWbCellContextMenu(e, cardIdx, cellIdx) {
+  const hasPlay = wristbandCards[cardIdx]?.data[cellIdx] !== null;
+  const menuItems = [];
+  if (hasPlay) {
+    menuItems.push({ label: "📋 Copy Cell", action: () => copyWbCell(cardIdx, cellIdx) });
+  }
+  if (copiedCell) {
+    menuItems.push({ label: "📌 Paste Cell", action: () => pasteWbCell(cardIdx, cellIdx) });
+  }
+  if (hasPlay) {
+    menuItems.push({ label: "🗑️ Clear Cell", action: () => {
+      saveWristbandState();
+      wristbandCards[cardIdx].data[cellIdx] = null;
+      delete cellCustomizations[`${cardIdx}-${cellIdx}`];
+      renderCardTabs();
+      renderWristbandGrid();
+    }});
+  }
+  if (menuItems.length > 0) {
+    showContextMenu(e, menuItems);
+  }
+}
+
 // ============ Container-Scoped Delegation ============
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -2801,26 +2825,7 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       const cardIdx = parseInt(cell.dataset.card, 10);
       const cellIdx = parseInt(cell.dataset.cellIdx, 10);
-      const hasPlay = wristbandCards[cardIdx]?.data[cellIdx] !== null;
-      const menuItems = [];
-      if (hasPlay) {
-        menuItems.push({ label: "📋 Copy Cell", action: () => copyWbCell(cardIdx, cellIdx) });
-      }
-      if (copiedCell) {
-        menuItems.push({ label: "📌 Paste Cell", action: () => pasteWbCell(cardIdx, cellIdx) });
-      }
-      if (hasPlay) {
-        menuItems.push({ label: "🗑️ Clear Cell", action: () => {
-          saveWristbandState();
-          wristbandCards[cardIdx].data[cellIdx] = null;
-          delete cellCustomizations[`${cardIdx}-${cellIdx}`];
-          renderCardTabs();
-          renderWristbandGrid();
-        }});
-      }
-      if (menuItems.length > 0) {
-        showContextMenu(e, menuItems);
-      }
+      _showWbCellContextMenu(e, cardIdx, cellIdx);
     });
     grid.addEventListener("dragstart", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");

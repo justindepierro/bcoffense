@@ -380,9 +380,10 @@ function renderOffenseBuilder() {
 
     if (!plays || plays.length === 0) {
       container.innerHTML =
-        '<div class="ob-empty">' +
-        "<h3>\u{1F9E0} No playbook loaded</h3>" +
-        "<p>Upload a playbook CSV first \u2014 the Offense Builder will map out your plays.</p>" +
+        '<div class="empty-state">' +
+        '<span class="empty-state__icon">\u{1F9E0}</span>' +
+        '<h3 class="empty-state__heading">No playbook loaded</h3>' +
+        '<p class="empty-state__text">Upload a playbook CSV first \u2014 the Offense Builder will map out your plays.</p>' +
         "</div>";
       return;
     }
@@ -434,6 +435,7 @@ function renderOffenseBuilder() {
       ">" +
       "<span>Rated only</span>" +
       "</label>" +
+      '<button class="btn btn-sm" data-action="exportOffenseBuilderCSV" title="Export CSV">📄 Export</button>' +
       "</div>" +
       '<div class="ob-body">' +
       '<div class="ob-play-list" id="obPlayList"></div>' +
@@ -484,7 +486,7 @@ function obRenderPlayList() {
 
   if (entries.length === 0) {
     listEl.innerHTML =
-      '<div class="ob-empty-list">No plays match your filters</div>';
+      '<div class="empty-state"><p class="empty-state__text">No plays match your filters</p></div>';
     return;
   }
 
@@ -569,6 +571,11 @@ function obRenderPlayList() {
       obRenderSidebar();
     }
   };
+
+  // Long-press context menu on mobile
+  listEl.querySelectorAll(".ob-card[data-play]").forEach((card) => {
+    addLongPress(card, (ev) => _showObCardContextMenu(ev, card.dataset.play));
+  });
 }
 
 // ── Star Picker ────────────────────────────────────────────────────
@@ -1102,6 +1109,35 @@ function _obBuildRecommendationsHtml(recs) {
       : "") +
     "</div>"
   );
+}
+
+// ── Export ──────────────────────────────────────────────────────────
+function exportOffenseBuilderCSV() {
+  if (!_obPlayMap) _obRebuildMaps();
+  if (!_obPlayMap || _obPlayMap.size === 0) {
+    showToast("No plays to export", { duration: 3000, type: "error" });
+    return;
+  }
+  const ratings = obLoadRatings();
+  const headers = ["Play", "Rating", "Types", "Formations", "Personnel", "Constraints", "Dead Vs"];
+  const rows = [headers.join(",")];
+  const csvField = (v) => '"' + String(v).replace(/"/g, '""') + '"';
+  const setToStr = (s) => Array.from(s).join("; ");
+
+  for (const [name, entry] of _obPlayMap) {
+    rows.push([
+      csvField(name),
+      ratings[name] || 0,
+      csvField(setToStr(entry.types)),
+      csvField(setToStr(entry.formations)),
+      csvField(setToStr(entry.personnel)),
+      csvField(setToStr(entry.constraints)),
+      csvField(setToStr(entry.deadVs)),
+    ].join(","));
+  }
+
+  downloadFile(rows.join("\n"), "offense_builder.csv", "text/csv");
+  showToast("📄 CSV exported");
 }
 
 // ── Helpers ─────────────────────────────────────────────────────────

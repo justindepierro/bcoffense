@@ -492,6 +492,49 @@ function getHelpDataForTab(tab) {
       },
     ],
   };
+  data.offensebuilder = {
+    title: "🧠 Offense Builder — Shortcuts & Features",
+    sections: [
+      {
+        icon: "⌨️",
+        name: "Keyboard Shortcuts",
+        items: [
+          { key: "/", desc: "Focus play search" },
+          { key: "↑ / ↓", desc: "Navigate play cards" },
+          { key: "R", desc: "Toggle show rated plays only" },
+          { key: "Escape", desc: "Clear search or deselect play" },
+        ],
+      },
+      {
+        icon: "🖱️",
+        name: "Mouse & Touch",
+        items: [
+          { key: "Click card", desc: "Select play to view details" },
+          { key: "Right-click card", desc: "Context menu (add to script, rate)" },
+          { key: "Long-press card", desc: "Context menu on mobile" },
+          { key: "Click star", desc: "Rate play (1–5 stars)" },
+        ],
+      },
+      {
+        icon: "🔍",
+        name: "Filtering",
+        items: [
+          { key: "Search bar", desc: "Filter plays by name" },
+          { key: "Type / Personnel / Formation", desc: "Filter by play attributes" },
+          { key: "Rated Only", desc: "Show only plays you've rated" },
+        ],
+      },
+      {
+        icon: "📊",
+        name: "Analysis",
+        items: [
+          { key: "Detail Panel", desc: "View play attributes, constraints, and notes" },
+          { key: "Gap Analysis", desc: "Identifies missing coverage in your rated plays" },
+          { key: "Recommendations", desc: "Suggestions based on gaps in your offense" },
+        ],
+      },
+    ],
+  };
   data.dashboard = {
     title: "📊 Game Week Dashboard — Shortcuts & Features",
     sections: [

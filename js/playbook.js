@@ -714,9 +714,9 @@ function renderPlaybook() {
     if (!emptyEl) {
       emptyEl = document.createElement("div");
       emptyEl.id = "pbEmptyState";
-      emptyEl.className = "pb-empty-state";
+      emptyEl.className = "empty-state empty-state--bordered";
       emptyEl.innerHTML =
-        '<p>No plays match your filters.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
+        '<p class="empty-state__text">No plays match your filters.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
       const container = document.getElementById("playbookContainer");
       if (container) container.appendChild(emptyEl);
     }
@@ -760,6 +760,16 @@ function renderPlaybook() {
         "is-scrollable",
         tableWrap.scrollWidth > tableWrap.clientWidth,
       );
+    }
+
+    // Attach long-press context menus for mobile
+    if (typeof _showPlaybookRowContextMenu === "function") {
+      tbody.querySelectorAll("tr[data-idx]").forEach((row) => {
+        const idx = parseInt(row.dataset.idx, 10);
+        if (!isNaN(idx)) {
+          addLongPress(row, (ev) => _showPlaybookRowContextMenu(ev, idx));
+        }
+      });
     }
   } catch (err) {
     console.error("renderPlaybook error:", err);
@@ -1984,14 +1994,7 @@ function printFilteredPlays() {
   document.body.dataset.printMode = "playbook";
 
   // Inject dynamic page-size style
-  let printStyle = document.getElementById("playbookPrintStyle");
-  if (!printStyle) {
-    printStyle = document.createElement("style");
-    printStyle.id = "playbookPrintStyle";
-    document.head.appendChild(printStyle);
-  }
-  printStyle.textContent =
-    "@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }";
+  setupPrintPageStyle("@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }");
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Playbook");

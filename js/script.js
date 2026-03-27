@@ -2792,6 +2792,16 @@ function renderScript() {
     // Update undo/redo buttons
     historyManager.updateButtons("script");
 
+    // Attach long-press context menus for mobile
+    if (typeof _showScriptPlayContextMenu === "function") {
+      container.querySelectorAll(".script-item:not(.period-header)").forEach((el) => {
+        const idx = parseInt(el.dataset.idx, 10);
+        if (!isNaN(idx) && script[idx] && !script[idx].isSeparator) {
+          addLongPress(el, (ev) => _showScriptPlayContextMenu(ev, idx));
+        }
+      });
+    }
+
     // Refresh tab badge counts
     if (typeof updateTabBadges === "function") updateTabBadges();
   } catch (err) {
@@ -3626,14 +3636,7 @@ function generatePDF() {
     document.body.classList.add("print-script");
 
     // Set page size for script (letter size)
-    let printStyle = document.getElementById("wristbandPrintStyle");
-    if (!printStyle) {
-      printStyle = document.createElement("style");
-      printStyle.id = "wristbandPrintStyle";
-      document.head.appendChild(printStyle);
-    }
-    printStyle.textContent =
-      "@media print { @page { size: letter; margin: 0.5in; } }";
+    setupPrintPageStyle("@media print { @page { size: letter; margin: 0.5in; } }");
 
     setTimeout(() => {
       const previewEl = document.getElementById("previewContainer");
@@ -3818,14 +3821,7 @@ async function printFullDay() {
     document.getElementById("wristbandPrint").classList.add("hidden");
     document.body.classList.add("print-script");
 
-    let printStyle = document.getElementById("wristbandPrintStyle");
-    if (!printStyle) {
-      printStyle = document.createElement("style");
-      printStyle.id = "wristbandPrintStyle";
-      document.head.appendChild(printStyle);
-    }
-    printStyle.textContent =
-      "@media print { @page { size: letter; margin: 0.25in; } }";
+    setupPrintPageStyle("@media print { @page { size: letter; margin: 0.25in; } }");
 
     setTimeout(() => {
       const restoreTitle = setPrintTitle("Full Practice Day");

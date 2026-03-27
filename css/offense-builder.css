@@ -107,12 +107,6 @@
   overflow-y: auto;
   padding-right: 4px;
 }
-.ob-empty-list {
-  text-align: center;
-  color: var(--color-secondary);
-  padding: var(--space-xl);
-}
-
 /* Play card */
 .ob-card {
   background: var(--color-white);
@@ -474,17 +468,6 @@
   font-size: var(--font-size-sm);
   color: var(--color-secondary);
   padding-top: 6px;
-}
-
-/* Empty state */
-.ob-empty {
-  text-align: center;
-  padding: 64px var(--space-md);
-  color: var(--color-secondary);
-}
-.ob-empty h3 {
-  font-size: var(--font-size-xl);
-  margin-bottom: var(--space-sm);
 }
 
 /* ============ Print Styles ============ */

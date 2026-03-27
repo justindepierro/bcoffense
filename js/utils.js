@@ -2878,6 +2878,17 @@ function getSmartSuggestions(categoryId, limit = 20) {
  * @param {string} [customName] - Optional custom name (e.g. script name, wristband name)
  * @returns {Function} Call this to restore the original title
  */
+function setupPrintPageStyle(cssText) {
+  let el = document.getElementById("appPrintStyle");
+  if (!el) {
+    el = document.createElement("style");
+    el.id = "appPrintStyle";
+    document.head.appendChild(el);
+  }
+  el.textContent = cssText;
+  return el;
+}
+
 function setPrintTitle(type, customName) {
   const originalTitle = document.title;
 
