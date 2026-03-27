@@ -4356,3 +4356,79 @@ function csPickerAddPlay(el) {
   const play = _csPickerFiltered[idx];
   if (play) addCallSheetPlayFromPicker(play);
 }
+
+/**
+ * Export the entire call sheet to CSV — one row per play, grouped by bucket.
+ */
+function exportCallSheetCSV() {
+  const hasPlays = CALLSHEET_CATEGORIES.some((cat) => {
+    const bucket = callSheet[cat.id];
+    return bucket && (bucket.left?.length || bucket.right?.length);
+  });
+  if (!hasPlays) {
+    showToast("Call sheet is empty — nothing to export.", { type: "error" });
+    return;
+  }
+
+  const esc = (v) => {
+    const s = String(v ?? "");
+    return s.includes(",") || s.includes('"') || s.includes("\n")
+      ? '"' + s.replace(/"/g, '""') + '"'
+      : s;
+  };
+
+  const headers = [
+    "Category",
+    "Side",
+    "Formation",
+    "Back",
+    "Shift",
+    "Motion",
+    "Protection",
+    "Play",
+    "Type",
+    "Personnel",
+    "OneWord",
+    "Tempo",
+    "Notes",
+  ];
+  const rows = [headers.join(",")];
+
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    const bucket = callSheet[cat.id];
+    if (!bucket) return;
+    const catName = getCategoryDisplayName(cat);
+    ["left", "right"].forEach((side) => {
+      (bucket[side] || []).forEach((p) => {
+        rows.push(
+          [
+            esc(catName),
+            side === "left" ? "L" : "R",
+            esc(p.formation),
+            esc(p.back),
+            esc(p.shift),
+            esc(p.motion),
+            esc(p.protection),
+            esc(p.play),
+            esc(p.type),
+            esc(p.personnel),
+            esc(p.oneWord),
+            esc(p.tempo),
+            esc(p.notes),
+          ].join(",")
+        );
+      });
+    });
+  });
+
+  const csv = rows.join("\n");
+  const dateStr = new Date().toISOString().slice(0, 10);
+  const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `call_sheet_${dateStr}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+  showToast(`📥 Exported call sheet to CSV`, { duration: 3000, type: "success" });
+}

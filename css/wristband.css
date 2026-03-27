@@ -148,6 +148,10 @@
   cursor: pointer;
   transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
 }
+.color-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
 @media (hover: hover) {
   .color-btn:hover {
     transform: scale(1.15);

@@ -13,7 +13,7 @@
   justify-content: center;
   opacity: 0;
   pointer-events: none;
-  transition: opacity 0.2s ease;
+  transition: opacity var(--transition-fast);
   padding: 20px;
 }
 .custom-modal-overlay.visible {
@@ -191,8 +191,12 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   border: none;
-  transition: all 0.12s;
+  transition: background var(--transition-fast), color var(--transition-fast), filter var(--transition-fast), transform 0.05s;
   font-family: inherit;
+}
+.custom-modal-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 @media (hover: hover) {
   .custom-modal-btn:hover {
@@ -230,7 +234,7 @@
   padding: 10px 12px;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--transition-fast);
 }
 @media (hover: hover) {
   .custom-modal-list-item:hover {

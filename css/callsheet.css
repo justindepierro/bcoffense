@@ -297,9 +297,18 @@
   font-size: var(--font-size-sm);
   font-weight: 500;
   transition:
-    background 0.2s ease,
-    color 0.2s ease,
-    border-color 0.2s ease;
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.cs-toggle:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  z-index: 1;
+}
+.cs-toggle:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
 }
 .cs-toggle-group.page-toggle .cs-toggle {
   background: var(--color-white);
@@ -351,7 +360,7 @@
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
 }
 @media (hover: hover) {
   .cs-tool-btn:hover {
@@ -359,6 +368,15 @@
     border-color: var(--color-primary);
     color: var(--color-primary);
   }
+}
+.cs-tool-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.cs-tool-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .cs-tool-divider {

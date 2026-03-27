@@ -132,7 +132,7 @@
   align-items: center;
   gap: 10px;
   cursor: grab;
-  transition: all 0.2s;
+  transition: border-color var(--transition-normal), box-shadow var(--transition-normal);
   content-visibility: auto;
   contain-intrinsic-size: auto 52px;
 }
@@ -237,7 +237,7 @@
   padding: 3px 10px;
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
   white-space: nowrap;
 }
 @media (hover: hover) {
@@ -246,6 +246,15 @@
     border-color: var(--color-primary);
     color: var(--color-primary);
   }
+}
+.pat-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.pat-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 
 .pat-btn-smart {
@@ -258,6 +267,10 @@
     filter: brightness(1.05);
     border-color: var(--color-accent-hover);
   }
+}
+.pat-btn-smart:focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 1px;
 }
 
 /* Period header element classes */
@@ -307,11 +320,16 @@
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   cursor: pointer;
+  transition: background var(--transition-fast);
 }
 @media (hover: hover) {
   .ph-btn:hover {
     background: rgba(255, 255, 255, 0.35);
   }
+}
+.ph-btn:focus-visible {
+  outline: 2px solid white;
+  outline-offset: 1px;
 }
 
 .ph-left {
@@ -363,6 +381,10 @@
   .more-tools-btn:hover {
     background: var(--color-border-light);
   }
+}
+.more-tools-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .more-tools-menu {

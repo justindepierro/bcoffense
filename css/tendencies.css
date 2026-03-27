@@ -46,7 +46,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: all var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform var(--transition-fast), box-shadow var(--transition-fast);
 }
 @media (hover: hover) {
   .td-opponent-card:hover {
@@ -55,6 +55,10 @@
     transform: translateX(4px);
     box-shadow: var(--shadow-sm);
   }
+}
+.td-opponent-card:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 .td-opponent-card-info {
@@ -272,7 +276,7 @@
   padding: 6px 10px;
   cursor: pointer;
   border-radius: var(--radius-md);
-  transition: all var(--transition-fast);
+  transition: opacity var(--transition-fast), background var(--transition-fast);
   opacity: 0.5;
 }
 @media (hover: hover) {
@@ -280,6 +284,10 @@
     opacity: 0.8;
     background: var(--color-bg-input);
   }
+}
+.td-step-dot:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
 }
 
 .td-step-dot.active {
@@ -374,6 +382,15 @@
 
 .td-option-btn:active {
   transform: translateY(0);
+}
+.td-option-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+.td-option-btn:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+  pointer-events: none;
 }
 .td-option-btn.selected {
   background: var(--color-primary);

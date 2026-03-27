@@ -1974,6 +1974,9 @@ document.addEventListener("keydown", (e) => {
     } else if (currentActiveTab === "wristband" && typeof undoWristband === "function") {
       e.preventDefault();
       undoWristband();
+    } else if (currentActiveTab === "tendencies" && typeof undoTendencies === "function") {
+      e.preventDefault();
+      undoTendencies();
     }
     return;
   }
@@ -1986,6 +1989,9 @@ document.addEventListener("keydown", (e) => {
     } else if (currentActiveTab === "wristband" && typeof redoWristband === "function") {
       e.preventDefault();
       redoWristband();
+    } else if (currentActiveTab === "tendencies" && typeof redoTendencies === "function") {
+      e.preventDefault();
+      redoTendencies();
     }
   }
 });
