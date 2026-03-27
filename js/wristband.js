@@ -1107,12 +1107,24 @@ function filterWristbandPlays() {
   renderWristbandPlays();
 }
 
+/** Clear the wristband search input */
+function clearWbSearch() {
+  const input = document.getElementById("wbSearchPlay");
+  if (input) input.value = "";
+  const clearBtn = document.getElementById("clearWbSearch");
+  if (clearBtn) clearBtn.style.display = "none";
+  filterWristbandPlays();
+}
+
 /**
  * Render the available plays list for the wristband
  */
 function renderWristbandPlays() {
   const type = document.getElementById("wbFilterType").value;
   const search = document.getElementById("wbSearchPlay").value.toLowerCase();
+  // Toggle search clear button
+  const clearBtn = document.getElementById("clearWbSearch");
+  if (clearBtn) clearBtn.style.display = search ? "flex" : "none";
 
   let filtered = plays.filter((p) => {
     if (type && p.type !== type) return false;

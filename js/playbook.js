@@ -455,6 +455,9 @@ function filterPlays() {
   renderPlaybook();
   savePlaybookState();
   updateActiveFilterBar();
+  // Toggle search clear button
+  const clearBtn = document.getElementById("clearPbSearch");
+  if (clearBtn) clearBtn.style.display = search ? "flex" : "none";
 }
 
 /**
@@ -503,6 +506,8 @@ function clearFilters() {
   // Clear search
   const search = document.getElementById("searchPlay");
   if (search) search.value = "";
+  const clearBtn = document.getElementById("clearPbSearch");
+  if (clearBtn) clearBtn.style.display = "none";
 
   // Reset sort
   currentSortColumn = null;
@@ -523,6 +528,15 @@ function clearFilters() {
 /** Alias used by the playbook empty-state "Clear All Filters" button */
 function clearAllFilters() {
   clearFilters();
+}
+
+/** Clear the playbook search input */
+function clearPbSearch() {
+  const input = document.getElementById("searchPlay");
+  if (input) input.value = "";
+  const clearBtn = document.getElementById("clearPbSearch");
+  if (clearBtn) clearBtn.style.display = "none";
+  filterPlays();
 }
 
 /**

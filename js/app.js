@@ -2527,6 +2527,38 @@ document.addEventListener("DOMContentLoaded", () => {
     scriptEl.addEventListener("dragend", (e) => {
       if (e.target.closest("[data-drag]")) handleDragEnd(e);
     });
+
+    /* ---------- Script container: contextmenu (right-click) ---------- */
+    scriptEl.addEventListener("contextmenu", (e) => {
+      const playEl = e.target.closest(".script-item:not(.period-header)");
+      if (!playEl) return;
+      const idx = parseInt(playEl.dataset.idx, 10);
+      if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
+      e.preventDefault();
+      const menu = [
+        {
+          label: "📋 Duplicate Play",
+          action: () => duplicatePlay(idx),
+        },
+        {
+          label: "⬆️ Move Up",
+          action: () => movePlay(idx, -1),
+          disabled: idx === 0,
+        },
+        {
+          label: "⬇️ Move Down",
+          action: () => movePlay(idx, 1),
+          disabled: idx === script.length - 1,
+        },
+        { separator: true },
+        {
+          label: "🗑️ Remove",
+          action: () => removeFromScript(idx),
+          danger: true,
+        },
+      ];
+      showContextMenu(e, menu);
+    });
   }
 
   /* ---------- Available plays container: click + change ---------- */
@@ -2602,6 +2634,41 @@ document.addEventListener("DOMContentLoaded", () => {
       },
       true,
     );
+
+    /* ---------- Playbook table: contextmenu (right-click) ---------- */
+    pbBody.addEventListener("contextmenu", (e) => {
+      const row = e.target.closest("tr[data-idx]");
+      if (!row) return;
+      const filteredIdx = parseInt(row.dataset.idx, 10);
+      const play = filteredPlays[filteredIdx];
+      if (!play) return;
+      e.preventDefault();
+      const masterIdx = plays.indexOf(play);
+      const menu = [
+        {
+          label: "✏️ Edit Play",
+          action: () => openPlayEditor(filteredIdx),
+        },
+        {
+          label: "📋 Copy Play Name",
+          action: () => copyPlayName(play.play),
+        },
+      ];
+      if (typeof addToScript === "function") {
+        menu.push({
+          label: "📝 Add to Script",
+          action: () => {
+            addToScript(masterIdx);
+            showToast("Added to script");
+          },
+        });
+      }
+      menu.push({
+        label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan",
+        action: () => togglePlaybookGamePlan(filteredIdx),
+      });
+      showContextMenu(e, menu);
+    });
   }
 
   /* ---------- Playbook sort: drag delegation ---------- */
@@ -2618,6 +2685,19 @@ document.addEventListener("DOMContentLoaded", () => {
     const el = e.target.closest("[data-drag='pbSort']");
     if (el && typeof _pbSortDrop === "function")
       _pbSortDrop(e, parseInt(el.dataset.idx, 10));
+  });
+
+  /* ---------- Escape key to clear search inputs (PB + WB) ---------- */
+  ["searchPlay", "wbSearchPlay"].forEach((id) => {
+    const input = document.getElementById(id);
+    if (!input) return;
+    input.addEventListener("keydown", (e) => {
+      if (e.key === "Escape" && input.value) {
+        e.preventDefault();
+        input.value = "";
+        input.dispatchEvent(new Event("input", { bubbles: true }));
+      }
+    });
   });
 });
 
