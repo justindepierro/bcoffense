@@ -472,7 +472,10 @@ function renderOffenseBuilder() {
     obRenderSidebar();
   } catch (err) {
     console.error("renderOffenseBuilder error:", err);
-    showToast("❌ Error rendering offense builder.", { duration: 3000, type: "error" });
+    showToast("❌ Error rendering offense builder.", {
+      duration: 3000,
+      type: "error",
+    });
   }
 }
 
@@ -1043,7 +1046,9 @@ function _obAttachDetailHandlers() {
   }
 
   // Star clicks inside detail panel
-  const starContainer = panel.querySelector(".ob-detail-stars[data-star-target]");
+  const starContainer = panel.querySelector(
+    ".ob-detail-stars[data-star-target]",
+  );
   if (starContainer) {
     const playName = starContainer.dataset.starTarget;
     starContainer.addEventListener("click", function (e) {
@@ -1119,21 +1124,31 @@ function exportOffenseBuilderCSV() {
     return;
   }
   const ratings = obLoadRatings();
-  const headers = ["Play", "Rating", "Types", "Formations", "Personnel", "Constraints", "Dead Vs"];
+  const headers = [
+    "Play",
+    "Rating",
+    "Types",
+    "Formations",
+    "Personnel",
+    "Constraints",
+    "Dead Vs",
+  ];
   const rows = [headers.join(",")];
   const csvField = (v) => '"' + String(v).replace(/"/g, '""') + '"';
   const setToStr = (s) => Array.from(s).join("; ");
 
   for (const [name, entry] of _obPlayMap) {
-    rows.push([
-      csvField(name),
-      ratings[name] || 0,
-      csvField(setToStr(entry.types)),
-      csvField(setToStr(entry.formations)),
-      csvField(setToStr(entry.personnel)),
-      csvField(setToStr(entry.constraints)),
-      csvField(setToStr(entry.deadVs)),
-    ].join(","));
+    rows.push(
+      [
+        csvField(name),
+        ratings[name] || 0,
+        csvField(setToStr(entry.types)),
+        csvField(setToStr(entry.formations)),
+        csvField(setToStr(entry.personnel)),
+        csvField(setToStr(entry.constraints)),
+        csvField(setToStr(entry.deadVs)),
+      ].join(","),
+    );
   }
 
   downloadFile(rows.join("\n"), "offense_builder.csv", "text/csv");

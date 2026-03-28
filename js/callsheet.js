@@ -444,7 +444,10 @@ function initCallSheet() {
     checkCallSheetDraft();
   } catch (err) {
     console.error("initCallSheet error:", err);
-    showToast("❌ Error initializing call sheet.", { duration: 4000, type: "error" });
+    showToast("❌ Error initializing call sheet.", {
+      duration: 4000,
+      type: "error",
+    });
   }
 }
 
@@ -527,7 +530,10 @@ async function autoPopulateCallSheet() {
     showToast(msg);
   } catch (err) {
     console.error("autoPopulateCallSheet error:", err);
-    showToast("❌ Error auto-populating call sheet.", { duration: 4000, type: "error" });
+    showToast("❌ Error auto-populating call sheet.", {
+      duration: 4000,
+      type: "error",
+    });
   }
 }
 
@@ -1928,7 +1934,9 @@ function openLoadWristbandModal() {
   const modal = document.getElementById("loadWristbandModal");
 
   if (!select || !modal) {
-    showToast("⚠️ Could not open wristband loader — try refreshing", { type: "warning" });
+    showToast("⚠️ Could not open wristband loader — try refreshing", {
+      type: "warning",
+    });
     return;
   }
 
@@ -2241,7 +2249,10 @@ function printCallSheet() {
     }, 100);
   } catch (err) {
     console.error("printCallSheet error:", err);
-    showToast("❌ Error printing call sheet.", { duration: 4000, type: "error" });
+    showToast("❌ Error printing call sheet.", {
+      duration: 4000,
+      type: "error",
+    });
   }
 }
 
@@ -2845,7 +2856,10 @@ async function checkCallSheetDraft() {
     }
   } catch (err) {
     console.error("checkCallSheetDraft error:", err);
-    showToast("❌ Error restoring call sheet draft.", { duration: 3000, type: "error" });
+    showToast("❌ Error restoring call sheet draft.", {
+      duration: 3000,
+      type: "error",
+    });
   }
 }
 
@@ -4415,7 +4429,7 @@ function exportCallSheetCSV() {
             esc(p.oneWord),
             esc(p.tempo),
             esc(p.notes),
-          ].join(",")
+          ].join(","),
         );
       });
     });
@@ -4430,5 +4444,8 @@ function exportCallSheetCSV() {
   a.download = `call_sheet_${dateStr}.csv`;
   a.click();
   URL.revokeObjectURL(url);
-  showToast(`📥 Exported call sheet to CSV`, { duration: 3000, type: "success" });
+  showToast(`📥 Exported call sheet to CSV`, {
+    duration: 3000,
+    type: "success",
+  });
 }

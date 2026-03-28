@@ -361,7 +361,10 @@
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 @media (hover: hover) {
   .cs-tool-btn:hover {

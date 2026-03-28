@@ -114,7 +114,10 @@
   border-radius: var(--radius-lg);
   padding: 10px 14px;
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
 }
 .ob-card:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -127,7 +130,6 @@
   font-style: italic;
 }
 @media (hover: hover) {
-
   .ob-card:hover {
     border-color: var(--color-primary);
   }
@@ -199,7 +201,6 @@
   color: var(--color-accent-hover);
 }
 @media (hover: hover) {
-
   .ob-star:hover,
   .ob-star:hover ~ .ob-star {
     color: var(--color-accent);
@@ -213,12 +214,10 @@
   margin-left: 5px;
 }
 @media (hover: hover) {
-
   .ob-star-clear:hover {
     color: var(--color-danger);
   }
 }
-
 
 /* Detail panel */
 .ob-sidebar {
@@ -391,7 +390,6 @@
   border-top: 1px solid var(--color-border-light);
 }
 @media (hover: hover) {
-
   .ob-plays-table tr:hover td {
     background: var(--color-bg-hover-row);
   }

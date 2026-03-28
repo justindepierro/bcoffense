@@ -859,7 +859,10 @@ function handleFileUpload(event) {
       } catch (err) {
         hideLoadingOverlay();
         console.error("handleFileUpload reader.onload error:", err);
-        showToast("❌ Error reading file. Check format and try again.", { duration: 4000, type: "error" });
+        showToast("❌ Error reading file. Check format and try again.", {
+          duration: 4000,
+          type: "error",
+        });
       }
     };
     reader.readAsText(file);
@@ -963,7 +966,10 @@ function initApp() {
     initScriptKeyboard();
   } catch (err) {
     console.error("initApp error:", err);
-    showToast("❌ Error initializing app. Try refreshing.", { duration: 5000, type: "error" });
+    showToast("❌ Error initializing app. Try refreshing.", {
+      duration: 5000,
+      type: "error",
+    });
   }
 }
 
@@ -1260,10 +1266,14 @@ function renderSchedule() {
   }
 
   let html = '<table class="dash-schedule-table"><thead><tr>';
-  html += "<th>Week</th><th>Date</th><th>Opponent</th><th>Location</th><th></th>";
+  html +=
+    "<th>Week</th><th>Date</th><th>Opponent</th><th>Location</th><th></th>";
   html += "</tr></thead><tbody>";
   schedule.forEach((game, i) => {
-    const isActive = gw.opponentName && gw.opponentName === game.opponent && gw.weekLabel === game.week;
+    const isActive =
+      gw.opponentName &&
+      gw.opponentName === game.opponent &&
+      gw.weekLabel === game.week;
     const activeClass = isActive ? " dash-schedule-active" : "";
     html += `<tr class="${activeClass}">
       <td>${escapeHtml(game.week)}</td>
@@ -1285,18 +1295,26 @@ function renderSchedule() {
  */
 async function addScheduleGame() {
   const week = await showPrompt("Week label:", "", {
-    title: "Add Game", icon: "📅", placeholder: "e.g., Week 1"
+    title: "Add Game",
+    icon: "📅",
+    placeholder: "e.g., Week 1",
   });
   if (!week) return;
   const opponent = await showPrompt("Opponent name:", "", {
-    title: "Add Game", icon: "🏈", placeholder: "e.g., Alabama"
+    title: "Add Game",
+    icon: "🏈",
+    placeholder: "e.g., Alabama",
   });
   if (!opponent) return;
   const date = await showPrompt("Game date (optional):", "", {
-    title: "Add Game", icon: "📆", placeholder: "e.g., Sep 6"
+    title: "Add Game",
+    icon: "📆",
+    placeholder: "e.g., Sep 6",
   });
   const location = await showPrompt("Location (optional):", "", {
-    title: "Add Game", icon: "📍", placeholder: "e.g., Home / @ Away"
+    title: "Add Game",
+    icon: "📍",
+    placeholder: "e.g., Home / @ Away",
   });
 
   const schedule = getSchedule();
@@ -1321,7 +1339,7 @@ async function removeScheduleGame(element) {
   const game = schedule[idx];
   const ok = await showConfirm(
     `Remove <strong>${escapeHtml(game.week)} vs ${escapeHtml(game.opponent)}</strong> from the schedule?`,
-    { title: "Remove Game", icon: "🗑️", confirmText: "Remove", danger: true }
+    { title: "Remove Game", icon: "🗑️", confirmText: "Remove", danger: true },
   );
   if (!ok) return;
   schedule.splice(idx, 1);
@@ -1342,7 +1360,7 @@ function setScheduleActive(element) {
   // Try to find this opponent in the tendencies opponents list
   const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   let oppIdx = opponents.findIndex(
-    (o) => o.name.toLowerCase().trim() === game.opponent.toLowerCase().trim()
+    (o) => o.name.toLowerCase().trim() === game.opponent.toLowerCase().trim(),
   );
 
   // If opponent not found in tendencies, create a new one
@@ -1354,7 +1372,10 @@ function setScheduleActive(element) {
 
   setGameWeek(oppIdx, game.week);
   renderDashboard();
-  showToast(`🏈 Active: ${escapeHtml(game.week)} vs ${escapeHtml(game.opponent)}`, { duration: 2500, type: "success" });
+  showToast(
+    `🏈 Active: ${escapeHtml(game.week)} vs ${escapeHtml(game.opponent)}`,
+    { duration: 2500, type: "success" },
+  );
 }
 
 // ============ Game Plan Dashboard Section ============
@@ -1386,18 +1407,23 @@ function renderGamePlanSummary() {
 
   // Build breakdown by type
   const typeCounts = {};
-  const matchedPlays = (typeof plays !== "undefined" ? plays : []).filter((p) => {
-    if (tagged.includes(playSignature(p))) {
-      const t = p.type || "Other";
-      typeCounts[t] = (typeCounts[t] || 0) + 1;
-      return true;
-    }
-    return false;
-  });
+  const matchedPlays = (typeof plays !== "undefined" ? plays : []).filter(
+    (p) => {
+      if (tagged.includes(playSignature(p))) {
+        const t = p.type || "Other";
+        typeCounts[t] = (typeCounts[t] || 0) + 1;
+        return true;
+      }
+      return false;
+    },
+  );
 
   let breakdownHtml = Object.entries(typeCounts)
     .sort((a, b) => b[1] - a[1])
-    .map(([type, count]) => `<div class="dash-gp-row"><span>${escapeHtml(type)}</span><strong>${count}</strong></div>`)
+    .map(
+      ([type, count]) =>
+        `<div class="dash-gp-row"><span>${escapeHtml(type)}</span><strong>${count}</strong></div>`,
+    )
     .join("");
 
   section.innerHTML = `<div class="dash-gameplan-card">
@@ -1573,7 +1599,9 @@ function printFullGamePlan() {
     document.body.dataset.printMode = "gameplan";
 
     // Print style
-    setupPrintPageStyle("@media print { @page { size: letter; margin: 0.4in; } }");
+    setupPrintPageStyle(
+      "@media print { @page { size: letter; margin: 0.4in; } }",
+    );
 
     setTimeout(() => {
       const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
@@ -1584,7 +1612,10 @@ function printFullGamePlan() {
     }, 100);
   } catch (err) {
     console.error("printFullGamePlan error:", err);
-    showToast("❌ Error generating game plan print.", { duration: 4000, type: "error" });
+    showToast("❌ Error generating game plan print.", {
+      duration: 4000,
+      type: "error",
+    });
   }
 }
 
@@ -1930,7 +1961,12 @@ document.addEventListener("keydown", (e) => {
   const mod = e.ctrlKey || e.metaKey;
 
   // Offense Builder shortcuts (when on OB tab)
-  if (currentActiveTab === "offensebuilder" && !mod && !e.altKey && !e.shiftKey) {
+  if (
+    currentActiveTab === "offensebuilder" &&
+    !mod &&
+    !e.altKey &&
+    !e.shiftKey
+  ) {
     // "/" focus search
     if (e.key === "/" && !inInput) {
       e.preventDefault();
@@ -2016,7 +2052,11 @@ document.addEventListener("keydown", (e) => {
   if (!mod) return;
 
   // Cmd+K: Quick search (wristband tab)
-  if (e.key === "k" && currentActiveTab === "wristband" && typeof openWbQuickSearch === "function") {
+  if (
+    e.key === "k" &&
+    currentActiveTab === "wristband" &&
+    typeof openWbQuickSearch === "function"
+  ) {
     e.preventDefault();
     openWbQuickSearch();
     return;
@@ -2027,10 +2067,16 @@ document.addEventListener("keydown", (e) => {
     if (currentActiveTab === "script" && typeof undoScript === "function") {
       e.preventDefault();
       undoScript();
-    } else if (currentActiveTab === "wristband" && typeof undoWristband === "function") {
+    } else if (
+      currentActiveTab === "wristband" &&
+      typeof undoWristband === "function"
+    ) {
       e.preventDefault();
       undoWristband();
-    } else if (currentActiveTab === "tendencies" && typeof undoTendencies === "function") {
+    } else if (
+      currentActiveTab === "tendencies" &&
+      typeof undoTendencies === "function"
+    ) {
       e.preventDefault();
       undoTendencies();
     }
@@ -2042,10 +2088,16 @@ document.addEventListener("keydown", (e) => {
     if (currentActiveTab === "script" && typeof redoScript === "function") {
       e.preventDefault();
       redoScript();
-    } else if (currentActiveTab === "wristband" && typeof redoWristband === "function") {
+    } else if (
+      currentActiveTab === "wristband" &&
+      typeof redoWristband === "function"
+    ) {
       e.preventDefault();
       redoWristband();
-    } else if (currentActiveTab === "tendencies" && typeof redoTendencies === "function") {
+    } else if (
+      currentActiveTab === "tendencies" &&
+      typeof redoTendencies === "function"
+    ) {
       e.preventDefault();
       redoTendencies();
     }
@@ -2740,8 +2792,16 @@ function _showScriptPlayContextMenu(e, idx) {
   if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
   const menu = [
     { label: "📋 Duplicate Play", action: () => duplicatePlay(idx) },
-    { label: "⬆️ Move Up", action: () => movePlay(idx, -1), disabled: idx === 0 },
-    { label: "⬇️ Move Down", action: () => movePlay(idx, 1), disabled: idx === script.length - 1 },
+    {
+      label: "⬆️ Move Up",
+      action: () => movePlay(idx, -1),
+      disabled: idx === 0,
+    },
+    {
+      label: "⬇️ Move Down",
+      action: () => movePlay(idx, 1),
+      disabled: idx === script.length - 1,
+    },
     { separator: true },
     { label: "🗑️ Remove", action: () => removeFromScript(idx), danger: true },
   ];
@@ -2757,18 +2817,46 @@ function _showPlaybookRowContextMenu(e, filteredIdx) {
     { label: "📋 Copy Play Name", action: () => copyPlayName(play.play) },
   ];
   if (typeof addToScript === "function") {
-    menu.push({ label: "📝 Add to Script", action: () => { addToScript(masterIdx); showToast("Added to script"); } });
+    menu.push({
+      label: "📝 Add to Script",
+      action: () => {
+        addToScript(masterIdx);
+        showToast("Added to script");
+      },
+    });
   }
-  menu.push({ label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan", action: () => togglePlaybookGamePlan(filteredIdx) });
+  menu.push({
+    label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan",
+    action: () => togglePlaybookGamePlan(filteredIdx),
+  });
   showContextMenu(e, menu);
 }
 
 function _showTdPlayContextMenu(e, origIdx) {
   const menu = [
-    { label: "✏️ Edit Play", action: () => { if (typeof editTendenciesPlay === "function") editTendenciesPlay(origIdx); } },
-    { label: "⧉ Duplicate Play", action: () => { if (typeof duplicateTendenciesPlay === "function") duplicateTendenciesPlay(origIdx); } },
+    {
+      label: "✏️ Edit Play",
+      action: () => {
+        if (typeof editTendenciesPlay === "function")
+          editTendenciesPlay(origIdx);
+      },
+    },
+    {
+      label: "⧉ Duplicate Play",
+      action: () => {
+        if (typeof duplicateTendenciesPlay === "function")
+          duplicateTendenciesPlay(origIdx);
+      },
+    },
     { separator: true },
-    { label: "🗑️ Delete Play", action: () => { if (typeof deleteTendenciesPlay === "function") deleteTendenciesPlay(origIdx); }, danger: true },
+    {
+      label: "🗑️ Delete Play",
+      action: () => {
+        if (typeof deleteTendenciesPlay === "function")
+          deleteTendenciesPlay(origIdx);
+      },
+      danger: true,
+    },
   ];
   showContextMenu(e, menu);
 }
@@ -2776,9 +2864,28 @@ function _showTdPlayContextMenu(e, origIdx) {
 function _showObCardContextMenu(e, playName) {
   if (!playName) return;
   const menu = [
-    { label: "📝 Add to Script", action: () => { const idx = plays.findIndex((p) => p.play === playName); if (idx >= 0 && typeof addToScript === "function") { addToScript(idx); showToast("Added to script"); } } },
-    { label: "⭐ Rate 5 Stars", action: () => { if (typeof obSetRating === "function") obSetRating(playName, 5); } },
-    { label: "🚫 Clear Rating", action: () => { if (typeof obSetRating === "function") obSetRating(playName, 0); } },
+    {
+      label: "📝 Add to Script",
+      action: () => {
+        const idx = plays.findIndex((p) => p.play === playName);
+        if (idx >= 0 && typeof addToScript === "function") {
+          addToScript(idx);
+          showToast("Added to script");
+        }
+      },
+    },
+    {
+      label: "⭐ Rate 5 Stars",
+      action: () => {
+        if (typeof obSetRating === "function") obSetRating(playName, 5);
+      },
+    },
+    {
+      label: "🚫 Clear Rating",
+      action: () => {
+        if (typeof obSetRating === "function") obSetRating(playName, 0);
+      },
+    },
   ];
   showContextMenu(e, menu);
 }

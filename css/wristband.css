@@ -40,7 +40,9 @@
   position: relative;
   overflow: hidden;
   box-sizing: border-box;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 .wristband-cell:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -146,7 +148,10 @@
   border: 2px solid var(--color-border-input);
   border-radius: var(--radius-sm);
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 .color-btn:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -563,12 +568,17 @@
 
 /* ── Checkbox Group Transitions ── */
 .checkbox-group label {
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 /* ── Card Tab Transitions ── */
 .card-tab {
-  transition: background var(--transition-fast), color var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 /* ── Empty Cell Visual Cue ── */

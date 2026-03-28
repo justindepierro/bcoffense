@@ -197,7 +197,10 @@ async function checkScriptDraft() {
     }
   } catch (err) {
     console.error("checkScriptDraft error:", err);
-    showToast("❌ Error restoring script draft.", { duration: 3000, type: "error" });
+    showToast("❌ Error restoring script draft.", {
+      duration: 3000,
+      type: "error",
+    });
   }
 }
 
@@ -335,7 +338,9 @@ function highlightPlaysNotOnWristband() {
   });
 
   if (notOnWb === 0) {
-    showToast("✅ All plays in the script are on the wristband!", { type: "success" });
+    showToast("✅ All plays in the script are on the wristband!", {
+      type: "success",
+    });
   } else {
     showToast(`⚠️ ${notOnWb} play(s) are NOT on the wristband`);
   }
@@ -2794,12 +2799,14 @@ function renderScript() {
 
     // Attach long-press context menus for mobile
     if (typeof _showScriptPlayContextMenu === "function") {
-      container.querySelectorAll(".script-item:not(.period-header)").forEach((el) => {
-        const idx = parseInt(el.dataset.idx, 10);
-        if (!isNaN(idx) && script[idx] && !script[idx].isSeparator) {
-          addLongPress(el, (ev) => _showScriptPlayContextMenu(ev, idx));
-        }
-      });
+      container
+        .querySelectorAll(".script-item:not(.period-header)")
+        .forEach((el) => {
+          const idx = parseInt(el.dataset.idx, 10);
+          if (!isNaN(idx) && script[idx] && !script[idx].isSeparator) {
+            addLongPress(el, (ev) => _showScriptPlayContextMenu(ev, idx));
+          }
+        });
     }
 
     // Refresh tab badge counts
@@ -3636,7 +3643,9 @@ function generatePDF() {
     document.body.classList.add("print-script");
 
     // Set page size for script (letter size)
-    setupPrintPageStyle("@media print { @page { size: letter; margin: 0.5in; } }");
+    setupPrintPageStyle(
+      "@media print { @page { size: letter; margin: 0.5in; } }",
+    );
 
     setTimeout(() => {
       const previewEl = document.getElementById("previewContainer");
@@ -3662,7 +3671,10 @@ function generatePDF() {
     }, 100);
   } catch (err) {
     console.error("generatePDF error:", err);
-    showToast("❌ Error generating print preview.", { duration: 4000, type: "error" });
+    showToast("❌ Error generating print preview.", {
+      duration: 4000,
+      type: "error",
+    });
   }
 }
 
@@ -3821,7 +3833,9 @@ async function printFullDay() {
     document.getElementById("wristbandPrint").classList.add("hidden");
     document.body.classList.add("print-script");
 
-    setupPrintPageStyle("@media print { @page { size: letter; margin: 0.25in; } }");
+    setupPrintPageStyle(
+      "@media print { @page { size: letter; margin: 0.25in; } }",
+    );
 
     setTimeout(() => {
       const restoreTitle = setPrintTitle("Full Practice Day");

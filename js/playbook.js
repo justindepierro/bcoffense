@@ -409,7 +409,8 @@ function filterPlays() {
     document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
   // Game plan filter
-  const gamePlanOnly = document.getElementById("pbGamePlanFilter")?.checked || false;
+  const gamePlanOnly =
+    document.getElementById("pbGamePlanFilter")?.checked || false;
   const gw = getGameWeek();
   _updateGamePlanFilterBar();
 
@@ -649,8 +650,8 @@ function renderPlaybook() {
 
         const gpActive = isPlayInGamePlan(p);
         const gpToggle = getGameWeek().opponentName
-          ? `<button class="gp-toggle-btn${gpActive ? ' gp-active' : ''}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? 'Remove from' : 'Add to'} game plan">🎯</button>`
-          : '';
+          ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
+          : "";
 
         return `
             <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
@@ -689,8 +690,8 @@ function renderPlaybook() {
         const gpClass = isPlayInGamePlan(p) ? " in-gameplan" : "";
         const gpCardActive = isPlayInGamePlan(p);
         const gpCardToggle = getGameWeek().opponentName
-          ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? ' gp-active' : ''}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? 'Remove from' : 'Add to'} game plan">🎯</button>`
-          : '';
+          ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
+          : "";
         const installBadge =
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(p) : "";
         const pills = [p.type, p.back, p.motion, p.tempo]
@@ -773,7 +774,10 @@ function renderPlaybook() {
     }
   } catch (err) {
     console.error("renderPlaybook error:", err);
-    showToast("❌ Error rendering playbook.", { duration: 3000, type: "error" });
+    showToast("❌ Error rendering playbook.", {
+      duration: 3000,
+      type: "error",
+    });
   }
 }
 
@@ -982,7 +986,10 @@ function restorePlaybookState() {
     _syncSortUI();
   } catch (err) {
     console.error("restorePlaybookState error:", err);
-    showToast("❌ Error restoring playbook state.", { duration: 3000, type: "error" });
+    showToast("❌ Error restoring playbook state.", {
+      duration: 3000,
+      type: "error",
+    });
   }
 }
 
@@ -1994,7 +2001,9 @@ function printFilteredPlays() {
   document.body.dataset.printMode = "playbook";
 
   // Inject dynamic page-size style
-  setupPrintPageStyle("@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }");
+  setupPrintPageStyle(
+    "@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }",
+  );
 
   setTimeout(() => {
     const restoreTitle = setPrintTitle("Playbook");
@@ -2494,13 +2503,19 @@ function togglePlaybookGamePlan(filteredIdx) {
   if (!play) return;
   const gw = getGameWeek();
   if (!gw.opponentName) {
-    showToast("Select an opponent on the Dashboard first", { duration: 3000, type: "error" });
+    showToast("Select an opponent on the Dashboard first", {
+      duration: 3000,
+      type: "error",
+    });
     return;
   }
   const nowTagged = togglePlayGamePlanTag(play, gw.opponentName);
-  showToast(nowTagged
-    ? `🎯 Added to game plan vs ${gw.opponentName}`
-    : `Removed from game plan`, { duration: 1500, type: nowTagged ? "success" : undefined });
+  showToast(
+    nowTagged
+      ? `🎯 Added to game plan vs ${gw.opponentName}`
+      : `Removed from game plan`,
+    { duration: 1500, type: nowTagged ? "success" : undefined },
+  );
   renderPlaybook();
 }
 
