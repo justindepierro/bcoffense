@@ -119,6 +119,11 @@
   text-overflow: ellipsis;
 }
 
+.callsheet-play .remove-play:focus-visible {
+  display: block;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+}
 .callsheet-play .remove-play {
   opacity: 0;
   background: var(--color-danger);
@@ -808,6 +813,12 @@
     opacity: 1;
   }
 }
+.cs-sort-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
 
 /* Sort modal overlay */
 .cs-sort-overlay {
@@ -1060,6 +1071,12 @@
     opacity: 1;
   }
 }
+.cs-collapse-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
+}
 
 .cs-collapsed .category-subheader,
 .cs-collapsed .category-content,
@@ -1094,6 +1111,12 @@
   .cs-cat-menu-btn:hover {
     opacity: 1;
   }
+}
+.cs-cat-menu-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
 }
 
 /* --- Play Count Badge --- */
@@ -1163,6 +1186,11 @@
     background: var(--color-primary);
     color: var(--color-white);
   }
+}
+.cs-hash-swap:focus-visible {
+  display: inline-block;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
 }
 
 /* --- Drag Insertion Indicator --- */
@@ -1773,6 +1801,12 @@
     opacity: 1;
     transform: scale(1.2);
   }
+}
+.cs-suggest-btn:focus-visible {
+  opacity: 1;
+  outline: 2px solid var(--color-focus);
+  outline-offset: 1px;
+  border-radius: var(--radius-sm);
 }
 
 /* Dead-vs warning badge */

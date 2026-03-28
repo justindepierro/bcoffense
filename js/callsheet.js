@@ -872,6 +872,9 @@ function renderCallSheet() {
     categories = ordered;
   }
 
+  // Hoist display options once — avoids re-reading DOM per play
+  const displayOptions = getCallSheetDisplayOptions();
+
   // Build duplicate map for this render
   const dupeMap = buildDuplicateMap();
 
@@ -895,7 +898,7 @@ function renderCallSheet() {
     html += '<div class="callsheet-column">';
     column.forEach((cat) => {
       const data = callSheet[cat.id] || { left: [], right: [] };
-      html += renderCategory(cat, data, dupeMap);
+      html += renderCategory(cat, data, dupeMap, displayOptions);
     });
     html += "</div>";
   });
@@ -1050,7 +1053,7 @@ function editCategoryName(categoryId) {
 /**
  * Render a single category box
  */
-function renderCategory(cat, data, dupeMap) {
+function renderCategory(cat, data, dupeMap, displayOptions) {
   const leftPlays = data.left || [];
   const rightPlays = data.right || [];
   const displayName = getCategoryDisplayName(cat);
@@ -1121,7 +1124,7 @@ function renderCategory(cat, data, dupeMap) {
         <div class="hash-column left" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="left" role="rowgroup" aria-label="Left hash">`;
 
     leftPlays.forEach((play, idx) => {
-      html += renderCallSheetPlay(play, cat.id, "left", idx, dupeMap);
+      html += renderCallSheetPlay(play, cat.id, "left", idx, dupeMap, displayOptions);
     });
     if (leftPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
@@ -1133,7 +1136,7 @@ function renderCategory(cat, data, dupeMap) {
         <div class="hash-column right" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="right" role="rowgroup" aria-label="Right hash">`;
 
     rightPlays.forEach((play, idx) => {
-      html += renderCallSheetPlay(play, cat.id, "right", idx, dupeMap);
+      html += renderCallSheetPlay(play, cat.id, "right", idx, dupeMap, displayOptions);
     });
     if (rightPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
@@ -1253,8 +1256,8 @@ function getPlayBorderColor(play, options) {
 /**
  * Render a single play in the call sheet
  */
-function renderCallSheetPlay(play, categoryId, hash, index, dupeMap) {
-  const options = getCallSheetDisplayOptions();
+function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
+  if (!options) options = getCallSheetDisplayOptions();
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
@@ -1616,45 +1619,47 @@ function openCallSheetPlayPicker(categoryId, hash) {
 
   populateCallSheetPlayList();
   document.getElementById("callSheetPickerOverlay").classList.remove("hidden");
+  trapFocus(document.getElementById("callSheetPickerOverlay"));
 }
 
 /**
- * Populate filter dropdowns in picker
+ * Populate filter dropdowns in picker (single-pass collection)
  */
 function populateCallSheetPickerFilters() {
-  // Helper to populate a dropdown from play data
-  function populateDropdown(selectId, field, allLabel) {
+  // Collect all unique values in one pass
+  const sets = {
+    personnel: new Set(),
+    formation: new Set(),
+    back: new Set(),
+    tempo: new Set(),
+    type: new Set(),
+  };
+  for (const p of plays) {
+    if (p.personnel) sets.personnel.add(p.personnel);
+    if (p.formation) sets.formation.add(p.formation);
+    if (p.back) sets.back.add(p.back);
+    if (p.tempo) sets.tempo.add(p.tempo);
+    if (p.type) sets.type.add(p.type);
+  }
+
+  function fillDropdown(selectId, values, allLabel) {
     const select = document.getElementById(selectId);
     if (!select) return;
-    const values = [
-      ...new Set(plays.map((p) => p[field]).filter(Boolean)),
-    ].sort();
+    const sorted = [...values].sort();
     select.innerHTML =
       `<option value="">${allLabel}</option>` +
-      values
+      sorted
         .map(
           (v) => `<option value="${escapeHtml(v)}">${escapeHtml(v)}</option>`,
         )
         .join("");
   }
 
-  populateDropdown("callSheetPickerPersonnel", "personnel", "All Personnel");
-  populateDropdown("callSheetPickerFormation", "formation", "All Formations");
-  populateDropdown("callSheetPickerBack", "back", "All Backs");
-  populateDropdown("callSheetPickerTempo", "tempo", "All Tempos");
-
-  // Play Type — use the 'type' field (Run, Pass, RPO, Screen, etc.)
-  const typeSelect = document.getElementById("callSheetPickerPlayType");
-  if (typeSelect) {
-    const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
-    typeSelect.innerHTML =
-      '<option value="">All Types</option>' +
-      types
-        .map(
-          (t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`,
-        )
-        .join("");
-  }
+  fillDropdown("callSheetPickerPersonnel", sets.personnel, "All Personnel");
+  fillDropdown("callSheetPickerFormation", sets.formation, "All Formations");
+  fillDropdown("callSheetPickerBack", sets.back, "All Backs");
+  fillDropdown("callSheetPickerTempo", sets.tempo, "All Tempos");
+  fillDropdown("callSheetPickerPlayType", sets.type, "All Types");
 
   // Populate wristband select
   const wristbandSelect = document.getElementById("callSheetWristbandSelect");
@@ -2073,7 +2078,10 @@ function refreshWristbandNumbers() {
     }
   });
   renderCallSheet();
+  // Save without pushing undo state — wristband number refresh is cosmetic
+  _csUndoInProgress = true;
   saveCallSheet();
+  _csUndoInProgress = false;
 }
 
 /**
@@ -2314,15 +2322,20 @@ function printCallSheet() {
     document.body.dataset.printMode = "callsheet";
 
     setTimeout(() => {
-      const pageLabel = page === "front" ? "Front" : "Back";
-      const restoreTitle = setPrintTitle("Game Plan", pageLabel);
-      window.print();
-      restoreTitle();
-      container.classList.add("hidden");
-      delete document.body.dataset.printMode;
+      try {
+        const pageLabel = page === "front" ? "Front" : "Back";
+        const restoreTitle = setPrintTitle("Game Plan", pageLabel);
+        window.print();
+        restoreTitle();
+      } finally {
+        container.classList.add("hidden");
+        delete document.body.dataset.printMode;
+      }
     }, 100);
   } catch (err) {
     console.error("printCallSheet error:", err);
+    container.classList.add("hidden");
+    delete document.body.dataset.printMode;
     showToast("❌ Error printing call sheet.", {
       duration: 4000,
       type: "error",
@@ -2394,19 +2407,18 @@ function renderPrintPlay(play, options) {
   const borderColor = getPlayBorderColor(play, options);
 
   const tempo = (play.tempo || "").toLowerCase();
-  let tempoHighlight = "";
+  let tempoClass = "";
   if (options.highlightHuddle && tempo === "huddle")
-    tempoHighlight = "background: #fff3cd;";
+    tempoClass = "tempo-huddle";
   else if (options.highlightCandy && tempo === "candy")
-    tempoHighlight = "background: #ffe4ec;";
+    tempoClass = "tempo-candy";
 
   const playParts = buildCallSheetPlayParts(play, options);
   const playText = playParts.join(" ");
 
   let styles = [];
-  if (isHighlighted) styles.push("background: #ffff99; font-weight: bold;");
-  else if (play.cellBg) styles.push(`background: ${play.cellBg};`);
-  else if (tempoHighlight) styles.push(tempoHighlight);
+  const highlightClass = isHighlighted ? "highlighted" : "";
+  if (!isHighlighted && play.cellBg) styles.push(`background: ${play.cellBg};`);
   if (borderColor) styles.push(`border: 2px solid ${borderColor};`);
   if (play.cellTextColor) styles.push(`color: ${play.cellTextColor};`);
   if (play.cellFontSize) styles.push(`font-size: ${play.cellFontSize};`);
@@ -2426,7 +2438,7 @@ function renderPrintPlay(play, options) {
     : "";
 
   return `
-    <div class="print-play" style="${styles.join(" ")}">
+    <div class="print-play ${highlightClass} ${tempoClass}" style="${styles.join(" ")}">
       ${personnelHtml}
       ${playText.trim()}
       ${noteHtml}
@@ -3829,6 +3841,7 @@ function openCsSortModal(categoryId) {
   document.getElementById("csSortOverlay")?.addEventListener("click", (e) => {
     if (e.target.id === "csSortOverlay") closeCsSortModal();
   });
+  trapFocus(document.getElementById("csSortOverlay"));
   renderCsSortCriteria();
 }
 
