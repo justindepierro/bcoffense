@@ -687,9 +687,12 @@
   margin-bottom: 10px;
   flex-wrap: wrap;
 }
-.cs-picker-search {
+.cs-picker-search-wrap {
   flex: 1;
   min-width: 150px;
+}
+.cs-picker-search {
+  width: 100%;
   padding: 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -782,13 +785,6 @@
 .cs-picker-chip-type {
   background: var(--color-success-light);
   color: var(--color-success-hover);
-}
-
-/* Empty state message in picker */
-.cs-picker-empty {
-  padding: 20px;
-  text-align: center;
-  color: var(--color-text-placeholder);
 }
 
 /* Print title */
@@ -1568,12 +1564,6 @@
   margin-bottom: 8px;
   color: var(--color-orange-deep);
 }
-.cs-nos-empty {
-  text-align: center;
-  padding: 16px;
-  color: var(--color-success);
-  font-weight: 600;
-}
 .cs-nos-list {
   display: flex;
   flex-wrap: wrap;
@@ -1955,12 +1945,6 @@
 }
 .cs-suggest-legend {
   font-size: var(--font-size-xs);
-  color: var(--color-text-placeholder);
-}
-
-.cs-suggest-empty {
-  text-align: center;
-  padding: 40px 20px;
   color: var(--color-text-placeholder);
 }
 

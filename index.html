@@ -2315,6 +2315,25 @@
         <!-- Secondary Toolbar -->
         <div class="cs-toolbar-secondary">
           <button
+            id="callsheetUndoBtn"
+            class="cs-tool-btn btn-undo"
+            data-action="undoCallSheet"
+            disabled
+            title="Nothing to undo"
+          >
+            ↩️ Undo
+          </button>
+          <button
+            id="callsheetRedoBtn"
+            class="cs-tool-btn btn-redo"
+            data-action="redoCallSheet"
+            disabled
+            title="Nothing to redo"
+          >
+            ↪️ Redo
+          </button>
+          <div class="cs-tool-divider"></div>
+          <button
             class="cs-tool-btn cs-scouting-btn"
             data-action="toggleScoutingOverlay"
             title="Show/hide opponent scouting intel on categories"
@@ -2768,13 +2787,25 @@
 
         <!-- Filter Row 1 -->
         <div class="cs-picker-filters">
-          <input
-            type="text"
-            id="callSheetPlaySearch"
-            class="cs-picker-search"
-            placeholder="🔍 Search plays, types, tags…"
-            data-oninput="populateCallSheetPlayList"
-          />
+          <div class="search-input-wrap cs-picker-search-wrap">
+            <input
+              type="text"
+              id="callSheetPlaySearch"
+              class="cs-picker-search"
+              placeholder="🔍 Search plays, types, tags…"
+              data-oninput="populateCallSheetPlayList"
+            />
+            <button
+              id="clearCsPickerSearch"
+              class="search-clear-btn"
+              data-action="clearCsPickerSearch"
+              title="Clear search"
+              style="display: none"
+              aria-label="Clear search"
+            >
+              ✕
+            </button>
+          </div>
           <select
             id="callSheetPickerPersonnel"
             class="cs-picker-select"
@@ -2827,6 +2858,13 @@
             <option value="tempo">Sort by Tempo</option>
             <option value="basePlay">Sort by Base Play</option>
           </select>
+          <button
+            class="btn btn-sm btn-secondary"
+            data-action="clearCsPickerFilters"
+            title="Clear all filters"
+          >
+            ✕ Clear Filters
+          </button>
         </div>
 
         <!-- Source Toggle -->

@@ -927,6 +927,9 @@ function renderCallSheet() {
       }
     });
   }
+
+  // Update undo/redo button state
+  historyManager.updateButtons("callsheet");
 }
 
 /**
@@ -1088,7 +1091,7 @@ function renderCategory(cat, data, dupeMap) {
          role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
       <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};"
            role="heading" aria-level="3">>
-        <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand">${collapseIcon}</span>
+        <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand" aria-expanded="${!isCollapsed}">${collapseIcon}</span>
         <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
         ${countDisplay}
         ${sortBtn}
@@ -1694,6 +1697,42 @@ function updatePickerSourceUI() {
 }
 
 /**
+ * Clear the picker search input and refresh results
+ */
+function clearCsPickerSearch() {
+  const input = document.getElementById("callSheetPlaySearch");
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  const btn = document.getElementById("clearCsPickerSearch");
+  if (btn) btn.style.display = "none";
+  populateCallSheetPlayList();
+}
+
+/**
+ * Clear all picker filters and search
+ */
+function clearCsPickerFilters() {
+  const search = document.getElementById("callSheetPlaySearch");
+  if (search) search.value = "";
+  const btn = document.getElementById("clearCsPickerSearch");
+  if (btn) btn.style.display = "none";
+  [
+    "callSheetPickerPersonnel",
+    "callSheetPickerFormation",
+    "callSheetPickerPlayType",
+    "callSheetPickerBack",
+    "callSheetPickerTempo",
+    "callSheetPickerSort",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.value = "";
+  });
+  populateCallSheetPlayList();
+}
+
+/**
  * Close play picker
  */
 function closeCallSheetPicker(event) {
@@ -1712,6 +1751,11 @@ function populateCallSheetPlayList() {
     .getElementById("callSheetPlaySearch")
     .value.toLowerCase()
     .trim();
+
+  // Toggle clear button visibility
+  const clearBtn = document.getElementById("clearCsPickerSearch");
+  if (clearBtn) clearBtn.style.display = search ? "" : "none";
+
   const personnelFilter =
     document.getElementById("callSheetPickerPersonnel")?.value || "";
   const formationFilter =
@@ -1742,7 +1786,7 @@ function populateCallSheetPlayList() {
     } else {
       const container = document.getElementById("callSheetPlayList");
       container.innerHTML =
-        '<div class="cs-picker-empty">No wristband loaded. Click "Load Wristband" button first.</div>';
+        '<div class="empty-state">No wristband loaded. Click "Load Wristband" button first.</div>';
       const countEl = document.getElementById("csPickerMatchCount");
       if (countEl) countEl.textContent = "";
       return;
@@ -1905,7 +1949,7 @@ function populateCallSheetPlayList() {
 
   if (filtered.length === 0) {
     container.innerHTML =
-      '<div class="cs-picker-empty">No plays match your search. Try different terms or clear filters.</div>';
+      '<div class="empty-state">No plays match your search. Try different terms or clear filters.</div>';
   }
 }
 
@@ -2140,11 +2184,41 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
 /**
  * Save call sheet to localStorage
  */
+let _csUndoInProgress = false;
+
+function saveCallSheetState() {
+  if (_csUndoInProgress) return;
+  historyManager.saveState("callsheet", safeDeepClone(callSheet));
+}
+
 function saveCallSheet() {
+  saveCallSheetState();
   storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
   scheduleCallSheetAutosave();
   // Persist constraints snapshot alongside call sheet
   if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
+}
+
+function undoCallSheet() {
+  const prev = historyManager.undo("callsheet", safeDeepClone(callSheet));
+  if (prev) {
+    _csUndoInProgress = true;
+    callSheet = prev;
+    storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
+    renderCallSheet();
+    _csUndoInProgress = false;
+  }
+}
+
+function redoCallSheet() {
+  const next = historyManager.redo("callsheet", safeDeepClone(callSheet));
+  if (next) {
+    _csUndoInProgress = true;
+    callSheet = next;
+    storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
+    renderCallSheet();
+    _csUndoInProgress = false;
+  }
 }
 
 /**
@@ -3315,7 +3389,7 @@ function updateNotOnSheetPanel() {
 
   if (missing.length === 0) {
     panel.innerHTML =
-      '<div class="cs-nos-empty">✅ All playbook plays are on the call sheet!</div>';
+      '<div class="empty-state">✅ All playbook plays are on the call sheet!</div>';
     return;
   }
 
@@ -3355,7 +3429,7 @@ function openTemplatesModal() {
 
   const listHtml =
     saved.length === 0
-      ? '<div class="cs-nos-empty">No templates saved yet.</div>'
+      ? '<div class="empty-state">No templates saved yet.</div>'
       : saved
           .map((t, idx) => {
             const date = new Date(t.savedAt).toLocaleDateString();
@@ -4112,7 +4186,7 @@ function openSmartSuggestionsModal(categoryId) {
   let listHtml = "";
   if (suggestions.length === 0) {
     listHtml =
-      '<div class="cs-suggest-empty">No plays found for this situation</div>';
+      '<div class="empty-state">No plays found for this situation</div>';
   } else {
     listHtml = suggestions
       .map((s, idx) => {

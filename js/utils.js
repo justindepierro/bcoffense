@@ -1452,6 +1452,7 @@ const historyManager = {
   script: { past: [], future: [] },
   wristband: { past: [], future: [] },
   tendencies: { past: [], future: [] },
+  callsheet: { past: [], future: [] },
   maxHistory: 25,
 
   // Save current state before making changes
