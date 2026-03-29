@@ -1406,6 +1406,9 @@ function printSmartInstallReport() {
   const content = document.getElementById("installReportPrintContent");
   if (!container || !content) return;
 
+  try {
+    showToast("🖨️ Preparing install report…", 2500);
+
   const { balance } = report;
   const runReadyPct =
     balance.totalRuns > 0
@@ -1626,13 +1629,29 @@ function printSmartInstallReport() {
   container.classList.remove("hidden");
   document.body.dataset.printMode = "install";
 
+  setupPrintPageStyle(
+    "@media print { @page { size: letter portrait; margin: 0.3in; } }",
+  );
+
   setTimeout(() => {
-    const restoreTitle = setPrintTitle("Install-Report");
-    window.print();
-    restoreTitle();
-    container.classList.add("hidden");
-    delete document.body.dataset.printMode;
+    try {
+      const restoreTitle = setPrintTitle("Install-Report");
+      window.print();
+      restoreTitle();
+    } finally {
+      container.classList.add("hidden");
+      delete document.body.dataset.printMode;
+    }
   }, 150);
+  } catch (err) {
+    console.error("printSmartInstallReport error:", err);
+    document.getElementById("installReportPrint")?.classList?.add("hidden");
+    delete document.body.dataset.printMode;
+    showToast("❌ Error printing install report.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
 }
 
 // ============ Delegation Helper Functions ============

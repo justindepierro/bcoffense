@@ -205,8 +205,9 @@ function showUndoToast(message, undoCallback, duration) {
  * Show a print preview modal before printing
  * @param {HTMLElement} contentEl - The content to preview
  * @param {Function} onPrint - Called when user clicks Print
+ * @param {Function} [onCancel] - Called when user cancels (close/escape/backdrop)
  */
-function showPrintPreview(contentEl, onPrint) {
+function showPrintPreview(contentEl, onPrint, onCancel) {
   const overlay = document.createElement("div");
   overlay.className = "print-preview-overlay";
   overlay.innerHTML =
@@ -221,18 +222,20 @@ function showPrintPreview(contentEl, onPrint) {
     "</div>";
   document.body.appendChild(overlay);
   document.getElementById("ppContent").appendChild(contentEl.cloneNode(true));
+  const cancel = () => {
+    overlay.remove();
+    if (onCancel) onCancel();
+  };
   document.getElementById("ppPrintBtn").addEventListener("click", () => {
     overlay.remove();
     onPrint();
   });
-  document.getElementById("ppCancelBtn").addEventListener("click", () => {
-    overlay.remove();
-  });
+  document.getElementById("ppCancelBtn").addEventListener("click", cancel);
   overlay.addEventListener("click", (e) => {
-    if (e.target === overlay) overlay.remove();
+    if (e.target === overlay) cancel();
   });
   overlay.addEventListener("keydown", (e) => {
-    if (e.key === "Escape") overlay.remove();
+    if (e.key === "Escape") cancel();
   });
 }
 

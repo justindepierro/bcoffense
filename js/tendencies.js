@@ -2056,87 +2056,108 @@ function printTendencies() {
     return;
   }
 
-  const total = opp.plays.length;
-  const runP = opp.plays.filter((p) =>
-    ["Run", "Draw", "QB Run", "Option"].includes(p.offensePlayType),
-  ).length;
-  const passP = opp.plays.filter((p) =>
-    ["Pass", "Screen", "PA"].includes(p.offensePlayType),
-  ).length;
-  const blitzP = opp.plays.filter(
-    (p) => p.defBlitz && p.defBlitz !== "None",
-  ).length;
+  try {
+    showToast("🖨️ Preparing tendencies…", 2500);
 
-  const frontDist = {},
-    covDist = {};
-  opp.plays.forEach((p) => {
-    if (p.defFront) frontDist[p.defFront] = (frontDist[p.defFront] || 0) + 1;
-    if (p.defCoverage)
-      covDist[p.defCoverage] = (covDist[p.defCoverage] || 0) + 1;
-  });
+    const container = document.getElementById("tendenciesPrint");
+    const content = document.getElementById("tendenciesPrintContent");
 
-  const topFronts = Object.entries(frontDist)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([k, v]) => `${k}: ${v} (${Math.round((v / total) * 100)}%)`)
-    .join(", ");
-  const topCovs = Object.entries(covDist)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 5)
-    .map(([k, v]) => `${k}: ${v} (${Math.round((v / total) * 100)}%)`)
-    .join(", ");
+    const total = opp.plays.length;
+    const runP = opp.plays.filter((p) =>
+      ["Run", "Draw", "QB Run", "Option"].includes(p.offensePlayType),
+    ).length;
+    const passP = opp.plays.filter((p) =>
+      ["Pass", "Screen", "PA"].includes(p.offensePlayType),
+    ).length;
+    const blitzP = opp.plays.filter(
+      (p) => p.defBlitz && p.defBlitz !== "None",
+    ).length;
 
-  const filtered = getFilteredPlays();
-  const rows = filtered
-    .map(
-      (p, i) => `
-    <tr>
-      <td>${i + 1}</td><td>${escapeHtml(p.quarter || "")}</td>
-      <td>${escapeHtml(p.down || "")}${p.distance ? "&amp;" + escapeHtml(p.distance) : ""}</td>
-      <td>${escapeHtml(p.hash || "")}</td>
-      <td>${escapeHtml((p.fieldPosition || "") + " " + (p.yardLine || ""))}</td>
-      <td>${escapeHtml(p.situation || "")}</td><td>${escapeHtml(p.offenseFormation || "")}</td>
-      <td>${escapeHtml(p.offensePlayType || "")}</td>
-      <td><strong>${escapeHtml(p.defFront || "")}</strong></td>
-      <td><strong>${escapeHtml(p.defCoverage || "")}</strong></td>
-      <td>${p.defBlitz && p.defBlitz !== "None" ? escapeHtml(p.defBlitz) : ""}</td>
-      <td>${p.defStunt && p.defStunt !== "None" ? escapeHtml(p.defStunt) : ""}</td>
-      <td style="max-width:120px;font-size:9px;overflow:hidden">${escapeHtml(p.notes || "")}</td>
-    </tr>
-  `,
-    )
-    .join("");
+    const frontDist = {},
+      covDist = {};
+    opp.plays.forEach((p) => {
+      if (p.defFront)
+        frontDist[p.defFront] = (frontDist[p.defFront] || 0) + 1;
+      if (p.defCoverage)
+        covDist[p.defCoverage] = (covDist[p.defCoverage] || 0) + 1;
+    });
 
-  const printWin = window.open("", "_blank");
-  printWin.document
-    .write(`<!DOCTYPE html><html><head><title>${escapeHtml(opp.name)} — Defensive Tendencies</title>
-    <style>
-      body { font-family: -apple-system, sans-serif; font-size: 11px; margin: 20px; }
-      h1 { font-size: 18px; margin-bottom: 4px; }
-      .stats { display: flex; gap: 16px; margin: 8px 0 12px; font-size: 12px; }
-      .stats span { background: #f0f0f0; padding: 3px 8px; border-radius: 4px; }
-      .dist { font-size: 10px; color: #555; margin-bottom: 8px; }
-      table { width: 100%; border-collapse: collapse; font-size: 10px; }
-      th { background: #f5f5f5; padding: 4px 6px; text-align: left; font-size: 9px; text-transform: uppercase; border-bottom: 2px solid #ccc; }
-      td { padding: 3px 6px; border-bottom: 1px solid #eee; }
-      tr:nth-child(even) { background: #fafafa; }
-      @media print { body { margin: 10px; } }
-    </style></head><body>
-    <h1>🎯 ${escapeHtml(opp.name)} — Defensive Tendencies</h1>
-    <div class="stats">
-      <span>Plays: <strong>${total}</strong></span>
-      <span>Run: <strong>${runP}</strong> (${total > 0 ? Math.round((runP / total) * 100) : 0}%)</span>
-      <span>Pass: <strong>${passP}</strong> (${total > 0 ? Math.round((passP / total) * 100) : 0}%)</span>
-      <span>Blitz: <strong>${blitzP}</strong> (${total > 0 ? Math.round((blitzP / total) * 100) : 0}%)</span>
-    </div>
-    <div class="dist"><strong>Top Fronts:</strong> ${topFronts}</div>
-    <div class="dist"><strong>Top Coverages:</strong> ${topCovs}</div>
-    <table>
-      <thead><tr><th>#</th><th>Qtr</th><th>D&D</th><th>Hash</th><th>FP</th><th>Sit</th><th>Form</th><th>Type</th><th>Front</th><th>Cov</th><th>Blitz</th><th>Stunt</th><th>Notes</th></tr></thead>
-      <tbody>${rows}</tbody>
-    </table></body></html>`);
-  printWin.document.close();
-  setTimeout(() => printWin.print(), 300);
+    const topFronts = Object.entries(frontDist)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([k, v]) => `${k}: ${v} (${Math.round((v / total) * 100)}%)`)
+      .join(", ");
+    const topCovs = Object.entries(covDist)
+      .sort((a, b) => b[1] - a[1])
+      .slice(0, 5)
+      .map(([k, v]) => `${k}: ${v} (${Math.round((v / total) * 100)}%)`)
+      .join(", ");
+
+    const filtered = getFilteredPlays();
+    const rows = filtered
+      .map(
+        (p, i) => `
+      <tr>
+        <td>${i + 1}</td><td>${escapeHtml(p.quarter || "")}</td>
+        <td>${escapeHtml(p.down || "")}${p.distance ? "&amp;" + escapeHtml(p.distance) : ""}</td>
+        <td>${escapeHtml(p.hash || "")}</td>
+        <td>${escapeHtml((p.fieldPosition || "") + " " + (p.yardLine || ""))}</td>
+        <td>${escapeHtml(p.situation || "")}</td><td>${escapeHtml(p.offenseFormation || "")}</td>
+        <td>${escapeHtml(p.offensePlayType || "")}</td>
+        <td><strong>${escapeHtml(p.defFront || "")}</strong></td>
+        <td><strong>${escapeHtml(p.defCoverage || "")}</strong></td>
+        <td>${p.defBlitz && p.defBlitz !== "None" ? escapeHtml(p.defBlitz) : ""}</td>
+        <td>${p.defStunt && p.defStunt !== "None" ? escapeHtml(p.defStunt) : ""}</td>
+        <td class="td-print-notes">${escapeHtml(p.notes || "")}</td>
+      </tr>
+    `,
+      )
+      .join("");
+
+    content.innerHTML = `
+      <h1 class="td-print-title">🎯 ${escapeHtml(opp.name)} — Defensive Tendencies</h1>
+      <div class="td-print-stats">
+        <span>Plays: <strong>${total}</strong></span>
+        <span>Run: <strong>${runP}</strong> (${total > 0 ? Math.round((runP / total) * 100) : 0}%)</span>
+        <span>Pass: <strong>${passP}</strong> (${total > 0 ? Math.round((passP / total) * 100) : 0}%)</span>
+        <span>Blitz: <strong>${blitzP}</strong> (${total > 0 ? Math.round((blitzP / total) * 100) : 0}%)</span>
+      </div>
+      <div class="td-print-dist"><strong>Top Fronts:</strong> ${topFronts}</div>
+      <div class="td-print-dist"><strong>Top Coverages:</strong> ${topCovs}</div>
+      <table class="td-print-table">
+        <thead><tr><th>#</th><th>Qtr</th><th>D&amp;D</th><th>Hash</th><th>FP</th><th>Sit</th><th>Form</th><th>Type</th><th>Front</th><th>Cov</th><th>Blitz</th><th>Stunt</th><th>Notes</th></tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+
+    container.classList.remove("hidden");
+    document.body.dataset.printMode = "tendencies";
+
+    setupPrintPageStyle(
+      "@media print { @page { size: letter landscape; margin: 0.3in; } }",
+    );
+
+    setTimeout(() => {
+      try {
+        const restoreTitle = setPrintTitle(
+          "Tendencies",
+          opp.name,
+        );
+        window.print();
+        restoreTitle();
+      } finally {
+        container.classList.add("hidden");
+        delete document.body.dataset.printMode;
+      }
+    }, 100);
+  } catch (err) {
+    console.error("printTendencies error:", err);
+    document.getElementById("tendenciesPrint")?.classList?.add("hidden");
+    delete document.body.dataset.printMode;
+    showToast("❌ Error printing tendencies.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
 }
 
 // ============ Export ============

@@ -2321,6 +2321,13 @@ function printCallSheet() {
     container.classList.remove("hidden");
     document.body.dataset.printMode = "callsheet";
 
+    // Set page size based on orientation
+    const pageOrientation =
+      callSheetSettings.orientation === "landscape" ? "landscape" : "portrait";
+    setupPrintPageStyle(
+      `@media print { @page { size: letter ${pageOrientation}; margin: 0.25in; } }`,
+    );
+
     setTimeout(() => {
       try {
         const pageLabel = page === "front" ? "Front" : "Back";
@@ -2334,7 +2341,7 @@ function printCallSheet() {
     }, 100);
   } catch (err) {
     console.error("printCallSheet error:", err);
-    container.classList.add("hidden");
+    document.getElementById("callSheetPrint")?.classList?.add("hidden");
     delete document.body.dataset.printMode;
     showToast("❌ Error printing call sheet.", {
       duration: 4000,

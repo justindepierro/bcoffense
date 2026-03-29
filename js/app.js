@@ -1604,14 +1604,19 @@ function printFullGamePlan() {
     );
 
     setTimeout(() => {
-      const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
-      window.print();
-      restoreTitle();
-      container.classList.add("hidden");
-      delete document.body.dataset.printMode;
+      try {
+        const restoreTitle = setPrintTitle("Game Plan", gw.opponentName || "");
+        window.print();
+        restoreTitle();
+      } finally {
+        container.classList.add("hidden");
+        delete document.body.dataset.printMode;
+      }
     }, 100);
   } catch (err) {
     console.error("printFullGamePlan error:", err);
+    document.getElementById("callSheetPrint")?.classList?.add("hidden");
+    delete document.body.dataset.printMode;
     showToast("❌ Error generating game plan print.", {
       duration: 4000,
       type: "error",

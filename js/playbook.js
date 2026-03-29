@@ -1958,62 +1958,74 @@ function printFilteredPlays() {
     showToast("No plays to print — adjust your filters first.");
     return;
   }
-  showToast("🖨️ Preparing playbook print…", 2500);
-  const opts = _getPbPrintOptions();
-  const { highlightHuddle, highlightCandy } = opts;
-  const container = document.getElementById("playbookPrintCards");
 
-  // Sort a copy of filteredPlays using the print sort criteria
-  const sortedPlays = _applyPbPrintSort(filteredPlays);
+  try {
+    showToast("🖨️ Preparing playbook print…", 2500);
+    const opts = _getPbPrintOptions();
+    const { highlightHuddle, highlightCandy } = opts;
+    const container = document.getElementById("playbookPrintCards");
 
-  // Build title + meta line
-  const total = sortedPlays.length;
-  const dateStr = new Date().toLocaleDateString("en-US", {
-    month: "short",
-    day: "numeric",
-    year: "numeric",
-  });
-  let html =
-    `<div class="pb-print-title">Playbook — ${escapeHtml(total + "")} Plays</div>` +
-    `<div class="pb-print-meta">${escapeHtml(dateStr)}</div>`;
+    // Sort a copy of filteredPlays using the print sort criteria
+    const sortedPlays = _applyPbPrintSort(filteredPlays);
 
-  html += '<ul class="pb-print-list">';
+    // Build title + meta line
+    const total = sortedPlays.length;
+    const dateStr = new Date().toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    });
+    let html =
+      `<div class="pb-print-title">Playbook — ${escapeHtml(total + "")} Plays</div>` +
+      `<div class="pb-print-meta">${escapeHtml(dateStr)}</div>`;
 
-  sortedPlays.forEach((play, idx) => {
-    const isHuddle =
-      highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle";
-    const isCandy =
-      highlightCandy && play.tempo && play.tempo.toLowerCase() === "candy";
-    const bgStyle = isHuddle
-      ? ` style="background:${UI_COLORS.highlightHuddle};"`
-      : isCandy
-        ? ` style="background:${UI_COLORS.highlightCandy};"`
-        : "";
+    html += '<ul class="pb-print-list">';
 
-    html += `<li${bgStyle}><span class="pb-print-num">${idx + 1}.</span><span class="pb-print-call">${getFullCall(play, opts)}</span></li>`;
-  });
+    sortedPlays.forEach((play, idx) => {
+      const isHuddle =
+        highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle";
+      const isCandy =
+        highlightCandy && play.tempo && play.tempo.toLowerCase() === "candy";
+      const bgStyle = isHuddle
+        ? ` style="background:${UI_COLORS.highlightHuddle};"`
+        : isCandy
+          ? ` style="background:${UI_COLORS.highlightCandy};"`
+          : "";
 
-  html += "</ul>";
-  container.innerHTML = html;
+      html += `<li${bgStyle}><span class="pb-print-num">${idx + 1}.</span><span class="pb-print-call">${getFullCall(play, opts)}</span></li>`;
+    });
 
-  // Show print container + set print mode
-  document.getElementById("playbookPrint").classList.remove("hidden");
-  document.body.dataset.printMode = "playbook";
+    html += "</ul>";
+    container.innerHTML = html;
 
-  // Inject dynamic page-size style
-  setupPrintPageStyle(
-    "@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }",
-  );
+    // Show print container + set print mode
+    document.getElementById("playbookPrint").classList.remove("hidden");
+    document.body.dataset.printMode = "playbook";
 
-  setTimeout(() => {
-    const restoreTitle = setPrintTitle("Playbook");
-    window.print();
+    // Inject dynamic page-size style
+    setupPrintPageStyle(
+      "@media print { @page { size: letter portrait; margin: 0.35in 0.4in; } }",
+    );
+
     setTimeout(() => {
-      restoreTitle();
-      document.getElementById("playbookPrint").classList.add("hidden");
-      delete document.body.dataset.printMode;
-    }, 500);
-  }, 100);
+      try {
+        const restoreTitle = setPrintTitle("Playbook");
+        window.print();
+        restoreTitle();
+      } finally {
+        document.getElementById("playbookPrint").classList.add("hidden");
+        delete document.body.dataset.printMode;
+      }
+    }, 100);
+  } catch (err) {
+    console.error("printFilteredPlays error:", err);
+    document.getElementById("playbookPrint")?.classList?.add("hidden");
+    delete document.body.dataset.printMode;
+    showToast("❌ Error printing playbook.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
 }
 
 // ══════════════════════════════════════════════════════════════════

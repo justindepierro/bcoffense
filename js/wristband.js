@@ -1928,13 +1928,14 @@ function printWristband() {
     }
 
     setTimeout(() => {
-      const restoreTitle = setPrintTitle("Wristband");
-      window.print();
-      setTimeout(() => {
+      try {
+        const restoreTitle = setPrintTitle("Wristband");
+        window.print();
         restoreTitle();
+      } finally {
         document.getElementById("wristbandPrint").classList.add("hidden");
         delete document.body.dataset.printMode;
-      }, 500);
+      }
     }, 100);
   } catch (err) {
     console.error("printWristband error:", err);

@@ -3649,28 +3649,41 @@ function generatePDF() {
 
     setTimeout(() => {
       const previewEl = document.getElementById("previewContainer");
+      const cleanupScript = () => {
+        previewEl.classList.add("hidden");
+        document.body.classList.remove("print-script");
+      };
       if (typeof showPrintPreview === "function") {
-        showPrintPreview(previewEl, () => {
+        showPrintPreview(
+          previewEl,
+          () => {
+            try {
+              const restoreTitle = setPrintTitle(
+                "Practice Script",
+                name || "",
+              );
+              window.print();
+              restoreTitle();
+            } finally {
+              cleanupScript();
+            }
+          },
+          cleanupScript,
+        );
+      } else {
+        try {
           const restoreTitle = setPrintTitle("Practice Script", name || "");
           window.print();
-          setTimeout(() => {
-            restoreTitle();
-            previewEl.classList.add("hidden");
-            document.body.classList.remove("print-script");
-          }, 500);
-        });
-      } else {
-        const restoreTitle = setPrintTitle("Practice Script", name || "");
-        window.print();
-        setTimeout(() => {
           restoreTitle();
-          previewEl.classList.add("hidden");
-          document.body.classList.remove("print-script");
-        }, 500);
+        } finally {
+          cleanupScript();
+        }
       }
     }, 100);
   } catch (err) {
     console.error("generatePDF error:", err);
+    document.getElementById("previewContainer")?.classList?.add("hidden");
+    document.body.classList.remove("print-script");
     showToast("❌ Error generating print preview.", {
       duration: 4000,
       type: "error",
@@ -3838,16 +3851,19 @@ async function printFullDay() {
     );
 
     setTimeout(() => {
-      const restoreTitle = setPrintTitle("Full Practice Day");
-      window.print();
-      setTimeout(() => {
+      try {
+        const restoreTitle = setPrintTitle("Full Practice Day");
+        window.print();
         restoreTitle();
+      } finally {
         document.getElementById("previewContainer").classList.add("hidden");
         document.body.classList.remove("print-script");
-      }, 500);
+      }
     }, 100);
   } catch (err) {
     console.error("printFullDay error:", err);
+    document.getElementById("previewContainer")?.classList?.add("hidden");
+    document.body.classList.remove("print-script");
     showToast("❌ Error printing full day.", { duration: 4000, type: "error" });
   }
 }
