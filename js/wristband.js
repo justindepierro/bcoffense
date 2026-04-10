@@ -1895,13 +1895,43 @@ function printWristband() {
       allHtml += cardHtml;
     });
 
+    // Single card: triplicate for cut-and-laminate on one page
+    if (numCards === 1) {
+      allHtml = allHtml + allHtml + allHtml;
+    }
+
     container.innerHTML = allHtml;
-    container.className = useMultiCardLayout ? "multi-card-layout" : "";
+    container.className =
+      numCards === 1
+        ? "single-card-tripled"
+        : useMultiCardLayout
+          ? "multi-card-layout"
+          : "";
 
     document.getElementById("wristbandPrint").classList.remove("hidden");
     document.body.dataset.printMode = "wristband";
 
-    if (useMultiCardLayout) {
+    if (numCards === 1) {
+      setupPrintPageStyle(`
+      @media print {
+        @page { size: letter portrait; margin: 0; }
+        html, body { width: 8.5in !important; height: 11in !important; }
+        #wristbandPrintCards.single-card-tripled {
+          display: flex !important;
+          flex-direction: column !important;
+          align-items: center !important;
+          justify-content: center !important;
+          height: 11in !important;
+        }
+        #wristbandPrintCards.single-card-tripled .wristband-card {
+          width: 5.5in !important;
+          height: 3in !important;
+          page-break-after: avoid !important;
+          flex-shrink: 0 !important;
+        }
+      }
+    `);
+    } else if (useMultiCardLayout) {
       setupPrintPageStyle(`
       @media print { 
         @page { size: letter portrait; margin: 0.25in; }
@@ -1914,8 +1944,8 @@ function printWristband() {
           padding-top: 0.1in !important;
         }
         #wristbandPrintCards.multi-card-layout .wristband-card {
-          width: 4.7in !important;
-          height: 2.8in !important;
+          width: 5.5in !important;
+          height: 3in !important;
           page-break-after: avoid !important;
           flex-shrink: 0 !important;
         }
@@ -1923,7 +1953,7 @@ function printWristband() {
     `);
     } else {
       setupPrintPageStyle(
-        "@media print { @page { size: 4.7in 2.8in; margin: 0; } }",
+        "@media print { @page { size: 5.5in 3in; margin: 0; } }",
       );
     }
 

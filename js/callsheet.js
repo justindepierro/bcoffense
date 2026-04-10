@@ -1124,7 +1124,14 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
         <div class="hash-column left" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="left" role="rowgroup" aria-label="Left hash">`;
 
     leftPlays.forEach((play, idx) => {
-      html += renderCallSheetPlay(play, cat.id, "left", idx, dupeMap, displayOptions);
+      html += renderCallSheetPlay(
+        play,
+        cat.id,
+        "left",
+        idx,
+        dupeMap,
+        displayOptions,
+      );
     });
     if (leftPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
@@ -1136,7 +1143,14 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
         <div class="hash-column right" data-drop="csHashDrop" data-cat="${cat.id}" data-hash="right" role="rowgroup" aria-label="Right hash">`;
 
     rightPlays.forEach((play, idx) => {
-      html += renderCallSheetPlay(play, cat.id, "right", idx, dupeMap, displayOptions);
+      html += renderCallSheetPlay(
+        play,
+        cat.id,
+        "right",
+        idx,
+        dupeMap,
+        displayOptions,
+      );
     });
     if (rightPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;

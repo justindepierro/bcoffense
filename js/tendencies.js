@@ -2076,8 +2076,7 @@ function printTendencies() {
     const frontDist = {},
       covDist = {};
     opp.plays.forEach((p) => {
-      if (p.defFront)
-        frontDist[p.defFront] = (frontDist[p.defFront] || 0) + 1;
+      if (p.defFront) frontDist[p.defFront] = (frontDist[p.defFront] || 0) + 1;
       if (p.defCoverage)
         covDist[p.defCoverage] = (covDist[p.defCoverage] || 0) + 1;
     });
@@ -2138,10 +2137,7 @@ function printTendencies() {
 
     setTimeout(() => {
       try {
-        const restoreTitle = setPrintTitle(
-          "Tendencies",
-          opp.name,
-        );
+        const restoreTitle = setPrintTitle("Tendencies", opp.name);
         window.print();
         restoreTitle();
       } finally {

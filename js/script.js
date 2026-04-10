@@ -3658,10 +3658,7 @@ function generatePDF() {
           previewEl,
           () => {
             try {
-              const restoreTitle = setPrintTitle(
-                "Practice Script",
-                name || "",
-              );
+              const restoreTitle = setPrintTitle("Practice Script", name || "");
               window.print();
               restoreTitle();
             } finally {
