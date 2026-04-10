@@ -1915,7 +1915,7 @@ function printWristband() {
     if (numCards === 1) {
       setupPrintPageStyle(`
       @media print {
-        @page { size: letter portrait; margin: 0; }
+        @page { size: letter portrait; margin: 0.25in; }
         html, body { width: 8.5in !important; height: 11in !important; }
         #wristbandPrintCards.single-card-tripled {
           display: flex !important;
