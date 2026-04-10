@@ -99,7 +99,7 @@
   .wristband-print .wristband-card:last-child {
     page-break-after: avoid;
   }
-  /* Single card tripled: 3 copies on landscape letter */
+  /* Single card tripled: 3 copies on portrait letter */
   #wristbandPrintCards.single-card-tripled {
     display: flex !important;
     flex-direction: column !important;
@@ -108,6 +108,10 @@
   }
   #wristbandPrintCards.single-card-tripled .wristband-card {
     page-break-after: avoid !important;
+    margin-bottom: 0.25in !important;
+  }
+  #wristbandPrintCards.single-card-tripled .wristband-card:last-child {
+    margin-bottom: 0 !important;
   }
   .wristband-print .wristband-grid {
     width: 100% !important;
