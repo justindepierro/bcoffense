@@ -32,6 +32,9 @@
   body[data-print-mode="wristband"] {
     width: 5.5in !important;
   }
+  body[data-print-mode="wristband"].wb-tripled {
+    width: 8.5in !important;
+  }
   body:not(.print-script) .tabs,
   body:not(.print-script) .filters,
   body:not(.print-script) .pb-controls,
@@ -93,6 +96,7 @@
     padding: 0 !important;
     border: 0.5px solid var(--color-text) !important;
     page-break-after: always;
+    page-break-inside: avoid;
     box-sizing: border-box !important;
     overflow: hidden !important;
   }
@@ -105,10 +109,16 @@
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
+    height: 11in !important;
+    gap: 0 !important;
   }
   #wristbandPrintCards.single-card-tripled .wristband-card {
     page-break-after: avoid !important;
-    margin-bottom: 0.25in !important;
+    page-break-before: avoid !important;
+    break-after: avoid !important;
+    break-before: avoid !important;
+    margin: 0 0 0.25in 0 !important;
+    flex-shrink: 0 !important;
   }
   #wristbandPrintCards.single-card-tripled .wristband-card:last-child {
     margin-bottom: 0 !important;

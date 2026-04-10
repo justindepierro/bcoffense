@@ -1910,6 +1910,7 @@ function printWristband() {
 
     document.getElementById("wristbandPrint").classList.remove("hidden");
     document.body.dataset.printMode = "wristband";
+    document.body.classList.toggle("wb-tripled", numCards === 1);
 
     if (numCards === 1) {
       setupPrintPageStyle(`
@@ -1966,6 +1967,7 @@ function printWristband() {
       } finally {
         document.getElementById("wristbandPrint").classList.add("hidden");
         delete document.body.dataset.printMode;
+        document.body.classList.remove("wb-tripled");
       }
     }, 100);
   } catch (err) {
