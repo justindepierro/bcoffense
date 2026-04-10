@@ -1922,6 +1922,7 @@ function printWristband() {
           align-items: center !important;
           justify-content: center !important;
           height: 11in !important;
+          gap: 0.25in !important;
         }
         #wristbandPrintCards.single-card-tripled .wristband-card {
           width: 5.5in !important;
