@@ -3018,16 +3018,13 @@
         <!-- Color Customization -->
         <div id="cellPopupColors">
           <div class="cell-popup-row">
-            <label>On Two Cadence:</label>
+            <label for="cellCadence">Cadence:</label>
             <div class="cell-popup-on-two">
-              <label class="cell-popup-on-two-label"
-                ><input
-                  type="checkbox"
-                  id="cellOnTwo"
-                  class="cell-popup-on-two-input"
-                />
-                💲 Add $ prefix</label
-              >
+              <select id="cellCadence" class="cell-popup-cadence-select">
+                <option value="">None</option>
+                <option value="$">💲 On Two</option>
+                <option value="$$">💲💲 Double</option>
+              </select>
             </div>
           </div>
 
