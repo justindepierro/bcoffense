@@ -43,6 +43,23 @@ function shadeColor(color, amount) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+/** Build line-call-only display: emoji prefix + bold line call (no brackets) */
+function getLineCallOnlyDisplay(play, opts) {
+  let prefix = "";
+  if (opts.showEmoji && play.personnel) {
+    prefix += `${getPersonnelEmoji(play.personnel, opts.useSquares)} `;
+  }
+  const hasUnder =
+    (play.under && play.under.trim() !== "") ||
+    (play.formTag1 && play.formTag1.toLowerCase() === "under") ||
+    (play.formTag2 && play.formTag2.toLowerCase() === "under");
+  if (opts.underEmoji && hasUnder) {
+    prefix += "🍑 ";
+  }
+  const lc = play.lineCall ? escapeHtml(play.lineCall) : "";
+  return lc ? `${prefix}<b>${lc}</b>` : prefix.trim();
+}
+
 /** Get the effective background color for a cell, with alternating row offset */
 function getCellBgColor(custom, isHuddle, isCandy, row, cardColor) {
   // Individual cell override takes priority
@@ -1302,6 +1319,7 @@ function getWristbandDisplayOptions() {
     redMotions: document.getElementById("wbRedMotions")?.checked || false,
     noVowels: document.getElementById("wbRemoveVowels")?.checked || false,
     showLineCall: document.getElementById("wbShowLineCall")?.checked || false,
+    lineCallOnly: document.getElementById("wbLineCallOnly")?.checked || false,
     highlightHuddle:
       document.getElementById("wbHighlightHuddle")?.checked || false,
     highlightCandy:
@@ -1386,12 +1404,13 @@ function renderWristbandGrid() {
 
     // Odd play cell
     if (oddPlay) {
+      const oddDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : getFullCall(oddPlay, opts);
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play">${oddPrefix}${getFullCall(oddPlay, opts)}</span>
+          <span class="cell-play">${oddPrefix}${oddDisplay}</span>
         </div>
       `;
     } else {
@@ -1405,12 +1424,13 @@ function renderWristbandGrid() {
 
     // Even play cell
     if (evenPlay) {
+      const evenDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : getFullCall(evenPlay, opts);
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play">${evenPrefix}${getFullCall(evenPlay, opts)}</span>
+          <span class="cell-play">${evenPrefix}${evenDisplay}</span>
         </div>
       `;
     } else {
@@ -1937,9 +1957,11 @@ function printWristband() {
         const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
-        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getFullCall(oddPlay, opts) : ""}</span></div>`;
+        const oddDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : (oddPlay ? getFullCall(oddPlay, opts) : "");
+        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + oddDisplay : ""}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
-        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + getFullCall(evenPlay, opts) : ""}</span></div>`;
+        const evenDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : (evenPlay ? getFullCall(evenPlay, opts) : "");
+        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + evenDisplay : ""}</span></div>`;
       }
 
       cardHtml += "</div></div>";
@@ -2212,6 +2234,7 @@ function loadWristband(id) {
       setCheckbox("wbRedMotions", ds.redMotions);
       setCheckbox("wbRemoveVowels", ds.noVowels || ds.removeVowels);
       setCheckbox("wbShowLineCall", ds.showLineCall);
+      setCheckbox("wbLineCallOnly", ds.lineCallOnly);
       setCheckbox("wbHighlightHuddle", ds.highlightHuddle);
       setCheckbox("wbHighlightCandy", ds.highlightCandy);
     }
