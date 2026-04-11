@@ -44,25 +44,20 @@ function shadeColor(color, amount) {
 }
 
 /** Get the effective background color for a cell, with alternating row offset */
-function getCellBgColor(custom, isHuddle, isCandy, row) {
-  let base = custom.bgColor
-    ? custom.bgColor
-    : isHuddle
-      ? UI_COLORS.highlightHuddle
-      : isCandy
-        ? UI_COLORS.highlightCandy
-        : "";
-  // Even rows get a subtle shade offset
-  if (row % 2 === 1) {
-    if (base) {
-      // Lighten colored rows slightly
-      base = shadeColor(base, 18);
-    } else {
-      // No color: alternate with very light grey
-      base = "#f4f4f4";
-    }
+function getCellBgColor(custom, isHuddle, isCandy, row, cardColor) {
+  // Individual cell override takes priority
+  if (custom.bgColor) {
+    return row % 2 === 1 ? shadeColor(custom.bgColor, 18) : custom.bgColor;
   }
-  return base;
+  // Tempo highlights
+  if (isHuddle) return UI_COLORS.highlightHuddle;
+  if (isCandy) return UI_COLORS.highlightCandy;
+  // Card-level color with alternating shade
+  if (cardColor && cardColor !== "transparent") {
+    return row % 2 === 1 ? shadeColor(cardColor, 18) : cardColor;
+  }
+  // No color: alternate white / light grey
+  return row % 2 === 1 ? "#f4f4f4" : "";
 }
 
 // Sort criteria state: array of { field, direction, customOrder } objects
@@ -177,6 +172,7 @@ async function checkWristbandDraft() {
       currentCardIndex = 0;
       renderCardTabs();
       renderWristbandGrid();
+      updateCardColorPicker();
       markWristbandDirty();
       showToast("🃏 Draft restored");
     } else {
@@ -969,6 +965,7 @@ function switchCard(index) {
   currentCardIndex = index;
   renderCardTabs();
   renderWristbandGrid();
+  updateCardColorPicker();
 }
 
 /**
@@ -1149,10 +1146,39 @@ function toggleWbCheckbox(el) {
 function setHeaderColor(color, btn) {
   wristbandHeaderColor = color;
   document
-    .querySelectorAll(".color-btn")
+    .querySelectorAll(".color-picker:not(#cardColorPicker) .color-btn")
     .forEach((b) => b.classList.remove("active"));
   btn.classList.add("active");
   renderWristbandGrid();
+}
+
+/**
+ * Set the card background color for the current card
+ */
+function setCardColor(color, btn) {
+  if (!wristbandCards[currentCardIndex]) return;
+  wristbandCards[currentCardIndex].cardColor = color === "transparent" ? "" : color;
+  document
+    .querySelectorAll("#cardColorPicker .card-color-btn")
+    .forEach((b) => b.classList.remove("active"));
+  btn.classList.add("active");
+  markWristbandDirty();
+  renderWristbandGrid();
+}
+
+/**
+ * Update the card color picker active state to match the current card
+ */
+function updateCardColorPicker() {
+  const cardColor = (wristbandCards[currentCardIndex] && wristbandCards[currentCardIndex].cardColor) || "";
+  document.querySelectorAll("#cardColorPicker .card-color-btn").forEach((b) => {
+    const isTransparentBtn = b.classList.contains("color-btn-transparent");
+    const btnColor = b.getAttribute("data-arg");
+    const isMatch = !cardColor || cardColor === "transparent"
+      ? isTransparentBtn
+      : btnColor === cardColor;
+    b.classList.toggle("active", isMatch);
+  });
 }
 
 /**
@@ -1294,6 +1320,7 @@ function renderWristbandGrid() {
   const { highlightHuddle, highlightCandy } = opts;
 
   let html = "";
+  const cardColor = (wristbandCards[currentCardIndex] && wristbandCards[currentCardIndex].cardColor) || "";
 
   // Calculate the starting number based on current card index
   // Card 1: 11-50, Card 2: 51-90, Card 3: 91-130, etc.
@@ -1337,11 +1364,11 @@ function renderWristbandGrid() {
       evenPlay.tempo.toLowerCase() === "candy";
 
     // Build styles with alternating row shading
-    const oddBg = getCellBgColor(oddCustom, oddIsHuddle, oddIsCandy, row);
+    const oddBg = getCellBgColor(oddCustom, oddIsHuddle, oddIsCandy, row, cardColor);
     let oddStyle = oddBg ? `background:${oddBg};` : "";
     oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
-    const evenBg = getCellBgColor(evenCustom, evenIsHuddle, evenIsCandy, row);
+    const evenBg = getCellBgColor(evenCustom, evenIsHuddle, evenIsCandy, row, cardColor);
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
@@ -1855,6 +1882,7 @@ function printWristband() {
 
       // Calculate offset for this card's numbers
       const cardOffset = cardIdx * 40;
+      const pCardColor = card.cardColor || "";
 
       for (let row = 0; row < WB_ROWS; row++) {
         const oddNum = row * 2 + 11 + cardOffset;
@@ -1891,11 +1919,11 @@ function printWristband() {
           evenPlay.tempo &&
           evenPlay.tempo.toLowerCase() === "candy";
 
-        const oddBg = getCellBgColor(oddCustom, oddIsHuddle, oddIsCandy, row);
+        const oddBg = getCellBgColor(oddCustom, oddIsHuddle, oddIsCandy, row, pCardColor);
         let oddStyle = oddBg ? `background:${oddBg};` : "";
         oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
-        const evenBg = getCellBgColor(evenCustom, evenIsHuddle, evenIsCandy, row);
+        const evenBg = getCellBgColor(evenCustom, evenIsHuddle, evenIsCandy, row, pCardColor);
         let evenStyle = evenBg ? `background:${evenBg};` : "";
         evenStyle += evenCustom.textColor
           ? `color:${evenCustom.textColor};`
@@ -2200,6 +2228,7 @@ function loadWristband(id) {
 
     renderCardTabs();
     renderWristbandGrid();
+    updateCardColorPicker();
     markWristbandClean();
     storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
     showToast(`Loaded "${wb.title}"`);
