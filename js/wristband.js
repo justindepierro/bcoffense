@@ -1957,10 +1957,10 @@ function printWristband() {
         const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
-        const oddDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : (oddPlay ? getFullCall(oddPlay, opts) : "");
+        const oddDisplay = oddPlay ? (opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : getFullCall(oddPlay, opts)) : "";
         cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + oddDisplay : ""}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
-        const evenDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : (evenPlay ? getFullCall(evenPlay, opts) : "");
+        const evenDisplay = evenPlay ? (opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : getFullCall(evenPlay, opts)) : "";
         cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + evenDisplay : ""}</span></div>`;
       }
 
