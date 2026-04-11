@@ -27,6 +27,44 @@ function getCadencePrefix(custom) {
   return "";
 }
 
+/** Slightly lighten or darken a color for alternating row shading */
+function shadeColor(color, amount) {
+  if (!color || color === "transparent") return "";
+  // Parse hex
+  let hex = color.replace("#", "");
+  if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  const num = parseInt(hex, 16);
+  let r = (num >> 16) + amount;
+  let g = ((num >> 8) & 0x00FF) + amount;
+  let b = (num & 0x0000FF) + amount;
+  r = Math.min(255, Math.max(0, r));
+  g = Math.min(255, Math.max(0, g));
+  b = Math.min(255, Math.max(0, b));
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+/** Get the effective background color for a cell, with alternating row offset */
+function getCellBgColor(custom, isHuddle, isCandy, row) {
+  let base = custom.bgColor
+    ? custom.bgColor
+    : isHuddle
+      ? UI_COLORS.highlightHuddle
+      : isCandy
+        ? UI_COLORS.highlightCandy
+        : "";
+  // Even rows get a subtle shade offset
+  if (row % 2 === 1) {
+    if (base) {
+      // Lighten colored rows slightly
+      base = shadeColor(base, 18);
+    } else {
+      // No color: alternate with very light grey
+      base = "#f4f4f4";
+    }
+  }
+  return base;
+}
+
 // Sort criteria state: array of { field, direction, customOrder } objects
 let wbSortCriteria = [];
 let draggedSortItem = null;
@@ -1298,37 +1336,26 @@ function renderWristbandGrid() {
       evenPlay.tempo &&
       evenPlay.tempo.toLowerCase() === "candy";
 
-    // Build styles - custom colors override auto highlights
-    let oddStyle = oddCustom.bgColor
-      ? `background:${oddCustom.bgColor};`
-      : oddIsHuddle
-        ? `background:${UI_COLORS.highlightHuddle};`
-        : oddIsCandy
-          ? `background:${UI_COLORS.highlightCandy};`
-          : "";
+    // Build styles with alternating row shading
+    const oddBg = getCellBgColor(oddCustom, oddIsHuddle, oddIsCandy, row);
+    let oddStyle = oddBg ? `background:${oddBg};` : "";
     oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
-    let evenStyle = evenCustom.bgColor
-      ? `background:${evenCustom.bgColor};`
-      : evenIsHuddle
-        ? `background:${UI_COLORS.highlightHuddle};`
-        : evenIsCandy
-          ? `background:${UI_COLORS.highlightCandy};`
-          : "";
+    const evenBg = getCellBgColor(evenCustom, evenIsHuddle, evenIsCandy, row);
+    let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
     // Get cadence prefix
     const oddPrefix = getCadencePrefix(oddCustom);
     const evenPrefix = getCadencePrefix(evenCustom);
 
-    // Odd number cell
-    const numBg =
-      wristbandHeaderColor === "transparent"
-        ? "transparent"
-        : wristbandHeaderColor;
-    const numFg =
-      wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
-    html += `<div class="wristband-cell num-cell" style="background: ${numBg}; color: ${numFg};">${oddNum}</div>`;
+    // Number cells match the play cell background
+    const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+    const oddNumFg = oddBg ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+    const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+    const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+
+    html += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
 
     // Odd play cell
     if (oddPlay) {
@@ -1341,13 +1368,13 @@ function renderWristbandGrid() {
         </div>
       `;
     } else {
-      html += `<div class="wristband-cell" tabindex="0"
+      html += `<div class="wristband-cell" style="${oddStyle}" tabindex="0"
                     data-drag="wbCell" data-cell-idx="${oddIndex}"
                     data-card="${currentCardIndex}"></div>`;
     }
 
     // Even number cell
-    html += `<div class="wristband-cell num-cell" style="background: ${numBg}; color: ${numFg};">${evenNum}</div>`;
+    html += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
 
     // Even play cell
     if (evenPlay) {
@@ -1360,7 +1387,7 @@ function renderWristbandGrid() {
         </div>
       `;
     } else {
-      html += `<div class="wristband-cell" tabindex="0"
+      html += `<div class="wristband-cell" style="${evenStyle}" tabindex="0"
                     data-drag="wbCell" data-cell-idx="${evenIndex}"
                     data-card="${currentCardIndex}"></div>`;
     }
@@ -1864,22 +1891,12 @@ function printWristband() {
           evenPlay.tempo &&
           evenPlay.tempo.toLowerCase() === "candy";
 
-        let oddStyle = oddCustom.bgColor
-          ? `background:${oddCustom.bgColor};`
-          : oddIsHuddle
-            ? `background:${UI_COLORS.highlightHuddle};`
-            : oddIsCandy
-              ? `background:${UI_COLORS.highlightCandy};`
-              : "";
+        const oddBg = getCellBgColor(oddCustom, oddIsHuddle, oddIsCandy, row);
+        let oddStyle = oddBg ? `background:${oddBg};` : "";
         oddStyle += oddCustom.textColor ? `color:${oddCustom.textColor};` : "";
 
-        let evenStyle = evenCustom.bgColor
-          ? `background:${evenCustom.bgColor};`
-          : evenIsHuddle
-            ? `background:${UI_COLORS.highlightHuddle};`
-            : evenIsCandy
-              ? `background:${UI_COLORS.highlightCandy};`
-              : "";
+        const evenBg = getCellBgColor(evenCustom, evenIsHuddle, evenIsCandy, row);
+        let evenStyle = evenBg ? `background:${evenBg};` : "";
         evenStyle += evenCustom.textColor
           ? `color:${evenCustom.textColor};`
           : "";
@@ -1887,15 +1904,13 @@ function printWristband() {
         const oddPrefix = getCadencePrefix(oddCustom);
         const evenPrefix = getCadencePrefix(evenCustom);
 
-        const pNumBg =
-          wristbandHeaderColor === "transparent"
-            ? "transparent"
-            : wristbandHeaderColor;
-        const pNumFg =
-          wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white";
-        cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${oddNum}</div>`;
+        const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+        const oddNumFg = oddBg ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+        const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+        const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+        cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + getFullCall(oddPlay, opts) : ""}</span></div>`;
-        cardHtml += `<div class="wristband-cell num-cell" style="background: ${pNumBg}; color: ${pNumFg};">${evenNum}</div>`;
+        cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + getFullCall(evenPlay, opts) : ""}</span></div>`;
       }
 
