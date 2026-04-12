@@ -27,6 +27,14 @@ function getCadencePrefix(custom) {
   return "";
 }
 
+/** Get cadence postfix (same emoji repeated at end of cell) */
+function getCadencePostfix(custom) {
+  const cadence = custom.cadence || (custom.onTwo ? "$" : "");
+  if (cadence === "$$") return " 💲💲";
+  if (cadence === "$") return " 💲";
+  return "";
+}
+
 /** Slightly lighten or darken a color for alternating row shading */
 function shadeColor(color, amount) {
   if (!color || color === "transparent") return "";
@@ -1320,6 +1328,7 @@ function getWristbandDisplayOptions() {
     noVowels: document.getElementById("wbRemoveVowels")?.checked || false,
     showLineCall: document.getElementById("wbShowLineCall")?.checked || false,
     lineCallOnly: document.getElementById("wbLineCallOnly")?.checked || false,
+    cadenceReminder: document.getElementById("wbCadenceReminder")?.checked || false,
     highlightHuddle:
       document.getElementById("wbHighlightHuddle")?.checked || false,
     highlightCandy:
@@ -1390,9 +1399,11 @@ function renderWristbandGrid() {
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
-    // Get cadence prefix
+    // Get cadence prefix/postfix
     const oddPrefix = getCadencePrefix(oddCustom);
     const evenPrefix = getCadencePrefix(evenCustom);
+    const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
+    const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
 
     // Number cells match the play cell background
     const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
@@ -1410,7 +1421,7 @@ function renderWristbandGrid() {
              draggable="true"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play">${oddPrefix}${oddDisplay}</span>
+          <span class="cell-play">${oddPrefix}${oddDisplay}${oddPostfix}</span>
         </div>
       `;
     } else {
@@ -1430,7 +1441,7 @@ function renderWristbandGrid() {
              draggable="true"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play">${evenPrefix}${evenDisplay}</span>
+          <span class="cell-play">${evenPrefix}${evenDisplay}${evenPostfix}</span>
         </div>
       `;
     } else {
@@ -1951,6 +1962,8 @@ function printWristband() {
 
         const oddPrefix = getCadencePrefix(oddCustom);
         const evenPrefix = getCadencePrefix(evenCustom);
+        const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
+        const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
 
         const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const oddNumFg = oddBg ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
@@ -1958,10 +1971,10 @@ function printWristband() {
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         const oddDisplay = oddPlay ? (opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : getFullCall(oddPlay, opts)) : "";
-        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + oddDisplay : ""}</span></div>`;
+        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + oddDisplay + oddPostfix : ""}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         const evenDisplay = evenPlay ? (opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : getFullCall(evenPlay, opts)) : "";
-        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + evenDisplay : ""}</span></div>`;
+        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + evenDisplay + evenPostfix : ""}</span></div>`;
       }
 
       cardHtml += "</div></div>";
@@ -2235,6 +2248,7 @@ function loadWristband(id) {
       setCheckbox("wbRemoveVowels", ds.noVowels || ds.removeVowels);
       setCheckbox("wbShowLineCall", ds.showLineCall);
       setCheckbox("wbLineCallOnly", ds.lineCallOnly);
+      setCheckbox("wbCadenceReminder", ds.cadenceReminder);
       setCheckbox("wbHighlightHuddle", ds.highlightHuddle);
       setCheckbox("wbHighlightCandy", ds.highlightCandy);
     }
