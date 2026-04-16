@@ -11,13 +11,14 @@ let wbSelectedTempos = [];
 let wbSelectedPersonnel = [];
 let wbFiltersCollapsed = true;
 
-// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, cadence } }
+// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, cadence, extraPersonnel } }
 let cellCustomizations = {};
 let currentEditingCell = { cardIdx: null, cellIdx: null };
 let pendingBgColor = "";
 let pendingTextColor = UI_COLORS.textBlack;
 let pendingPlaySelection = null;
 let pendingCadence = "";
+let pendingExtraPersonnel = "";
 
 /** Get display prefix for a cell's cadence setting (handles legacy onTwo boolean) */
 function getCadencePrefix(custom) {
@@ -33,6 +34,15 @@ function getCadencePostfix(custom) {
   if (cadence === "$$") return " 💲💲";
   if (cadence === "$") return " 💲";
   return "";
+}
+
+/** Get custom extra personnel prefix for a wristband cell */
+function getCustomPersonnelPrefix(custom, opts) {
+  if (!custom || !custom.extraPersonnel) return "";
+  const tag = String(custom.extraPersonnel).trim();
+  if (!tag) return "";
+  const emoji = opts.showEmoji ? getPersonnelEmoji(tag, opts.useSquares) : "";
+  return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
 }
 
 /** Slightly lighten or darken a color for alternating row shading */
@@ -1399,9 +1409,9 @@ function renderWristbandGrid() {
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
-    // Get cadence prefix/postfix
-    const oddPrefix = getCadencePrefix(oddCustom);
-    const evenPrefix = getCadencePrefix(evenCustom);
+    // Get cadence prefix/postfix and optional extra personnel tag
+    const oddPrefix = getCustomPersonnelPrefix(oddCustom, opts) + getCadencePrefix(oddCustom);
+    const evenPrefix = getCustomPersonnelPrefix(evenCustom, opts) + getCadencePrefix(evenCustom);
     const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
     const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
 
@@ -1532,6 +1542,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   pendingBgColor = existing.bgColor || "";
   pendingTextColor = existing.textColor || UI_COLORS.textBlack;
   pendingCadence = existing.cadence || (existing.onTwo ? "$" : "");
+  pendingExtraPersonnel = existing.extraPersonnel || "";
   pendingPlaySelection = currentPlay;
 
   const hasPlay = currentPlay !== null;
@@ -1566,6 +1577,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateSwatchSelection("bgColorSwatches", pendingBgColor);
   updateSwatchSelection("textColorSwatches", pendingTextColor);
   document.getElementById("cellCadence").value = pendingCadence;
+  document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
 
   overlay.classList.remove("hidden");
 
@@ -1714,12 +1726,21 @@ function applyCellStyle() {
   saveWristbandState();
   const key = `${cardIdx}-${cellIdx}`;
   const cadence = document.getElementById("cellCadence").value;
+  const extraPersonnel = document
+    .getElementById("cellExtraPersonnel")
+    .value.trim();
 
-  if (pendingBgColor || pendingTextColor !== UI_COLORS.textBlack || cadence) {
+  if (
+    pendingBgColor ||
+    pendingTextColor !== UI_COLORS.textBlack ||
+    cadence ||
+    extraPersonnel
+  ) {
     cellCustomizations[key] = {
       bgColor: pendingBgColor,
       textColor: pendingTextColor,
       cadence: cadence,
+      extraPersonnel: extraPersonnel,
     };
   } else {
     delete cellCustomizations[key];
