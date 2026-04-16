@@ -1409,9 +1409,9 @@ function renderWristbandGrid() {
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
-    // Get cadence prefix/postfix and optional extra personnel tag
-    const oddPrefix = getCustomPersonnelPrefix(oddCustom, opts) + getCadencePrefix(oddCustom);
-    const evenPrefix = getCustomPersonnelPrefix(evenCustom, opts) + getCadencePrefix(evenCustom);
+    // Build prefix with cadence first, then any extra personnel tag
+    const oddPrefix = getCadencePrefix(oddCustom) + getCustomPersonnelPrefix(oddCustom, opts);
+    const evenPrefix = getCadencePrefix(evenCustom) + getCustomPersonnelPrefix(evenCustom, opts);
     const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
     const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
 
