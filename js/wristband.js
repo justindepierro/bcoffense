@@ -1981,8 +1981,8 @@ function printWristband() {
           ? `color:${evenCustom.textColor};`
           : "";
 
-        const oddPrefix = getCadencePrefix(oddCustom);
-        const evenPrefix = getCadencePrefix(evenCustom);
+        const oddPrefix = getCadencePrefix(oddCustom) + getCustomPersonnelPrefix(oddCustom, opts);
+        const evenPrefix = getCadencePrefix(evenCustom) + getCustomPersonnelPrefix(evenCustom, opts);
         const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
         const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
 
