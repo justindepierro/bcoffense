@@ -3423,9 +3423,10 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       tab.classList.remove("drag-over");
       const targetCardIdx = parseInt(tab.dataset.idx, 10);
-      if (targetCardIdx === currentCardIndex) return;
+      const sourceCardIdx = draggedCellCardIdx !== null ? draggedCellCardIdx : currentCardIndex;
+      if (targetCardIdx === sourceCardIdx) return;
 
-      const play = wristbandCards[currentCardIndex].data[draggedCellIndex];
+      const play = wristbandCards[sourceCardIdx].data[draggedCellIndex];
       if (!play) return;
 
       // Find first empty cell in target card
@@ -3440,10 +3441,10 @@ document.addEventListener("DOMContentLoaded", () => {
       saveWristbandState();
       // Move the play
       wristbandCards[targetCardIdx].data[emptyIdx] = play;
-      wristbandCards[currentCardIndex].data[draggedCellIndex] = null;
+      wristbandCards[sourceCardIdx].data[draggedCellIndex] = null;
 
       // Move cell customizations
-      const srcKey = `${currentCardIndex}-${draggedCellIndex}`;
+      const srcKey = `${sourceCardIdx}-${draggedCellIndex}`;
       const dstKey = `${targetCardIdx}-${emptyIdx}`;
       if (cellCustomizations[srcKey]) {
         cellCustomizations[dstKey] = cellCustomizations[srcKey];
@@ -3464,6 +3465,21 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!cell) return;
       const cellIdx = parseInt(cell.dataset.cellIdx, 10);
       const cardIdx = parseInt(cell.dataset.card, 10);
+
+      // Ctrl/Cmd+A: select all cells on current card
+      if ((e.ctrlKey || e.metaKey) && e.key === "a") {
+        e.preventDefault();
+        e.stopPropagation();
+        wbSelectedCells = [];
+        const allCells = grid.querySelectorAll("[data-drag='wbCell']");
+        allCells.forEach((c) => {
+          const idx = parseInt(c.dataset.cellIdx, 10);
+          if (idx >= 0) wbSelectedCells.push(idx);
+          c.classList.add("selected");
+        });
+        showToast(`Selected ${wbSelectedCells.length} cells`);
+        return;
+      }
 
       // Ctrl/Cmd+C: copy cell
       if ((e.ctrlKey || e.metaKey) && e.key === "c") {
