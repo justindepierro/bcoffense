@@ -128,6 +128,7 @@ Priority: high
 - [x] Identify updates that can patch DOM or update isolated regions instead of forcing full rebuilds
 - [x] Avoid repeated per-period stat rescans during render passes
 - [x] Reuse one render summary for stats, empty-state checks, and jump-menu periods
+- [x] Add a repeatable render benchmark helper for stage timings
 - [ ] Measure `renderScript()` hot paths before and after changes
 
 Definition of done:

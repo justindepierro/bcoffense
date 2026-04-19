@@ -3586,6 +3586,29 @@ function disableScriptRenderProfiling() {
   console.info("Script render profiling disabled.");
 }
 
+function getScriptRenderProfileHistory() {
+  return scriptRenderProfileHistory.slice();
+}
+
+function runScriptRenderProfileBenchmark(iterations = 20) {
+  const runCount = Math.max(1, Number(iterations) || 1);
+  const wasEnabled = scriptRenderProfilingEnabled;
+
+  scriptRenderProfilingEnabled = true;
+  scriptRenderProfileHistory = [];
+
+  for (let index = 0; index < runCount; index++) {
+    renderScript();
+  }
+
+  const summary = printScriptRenderProfileSummary();
+  scriptRenderProfilingEnabled = wasEnabled;
+  console.info(
+    `Script render benchmark captured ${runCount} sample(s). Use getScriptRenderProfileHistory() to inspect raw samples.`,
+  );
+  return summary;
+}
+
 /**
  * Render the current script
  */
