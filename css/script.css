@@ -213,6 +213,8 @@
   border-radius: var(--radius-md);
   overflow: hidden;
   margin-top: 8px;
+  content-visibility: auto;
+  contain: layout style paint;
 }
 
 .script-item.period-header {

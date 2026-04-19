@@ -2621,11 +2621,45 @@ document.addEventListener("DOMContentLoaded", () => {
           updatePeriodColor(idx, el);
           break;
         case "periodLabel":
-          script[idx].label = el.value;
-          saveScriptState();
+          updatePeriodLabel(idx, el.value, false);
           break;
         case "periodMinutes":
           updatePeriodMinutes(idx, el);
+          break;
+      }
+    });
+
+    /* ---------- Script container: input (live typing) ---------- */
+    scriptEl.addEventListener("input", (e) => {
+      const el = e.target;
+      const field = el.dataset.field;
+      if (!field) return;
+      const idx = parseInt(el.dataset.idx, 10);
+      if (Number.isNaN(idx)) return;
+
+      // For multi-select bulk edits, keep commit behavior on change to avoid
+      // applying bulk updates on every keystroke.
+      const isBulkContext =
+        bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(idx);
+
+      switch (field) {
+        case "notes":
+          if (!isBulkContext) updateNotes(idx, el.value);
+          break;
+        case "defFront":
+          if (!isBulkContext) updateDefField(idx, "defFront", el.value);
+          break;
+        case "defCoverage":
+          if (!isBulkContext) updateDefField(idx, "defCoverage", el.value);
+          break;
+        case "defStunt":
+          if (!isBulkContext) updateDefField(idx, "defStunt", el.value);
+          break;
+        case "defBlitz":
+          if (!isBulkContext) updateDefField(idx, "defBlitz", el.value);
+          break;
+        case "periodLabel":
+          updatePeriodLabel(idx, el.value, true);
           break;
       }
     });

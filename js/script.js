@@ -1350,6 +1350,22 @@ function updatePeriodColor(index, el) {
 }
 
 /**
+ * Update period label text.
+ * @param {number} index - separator index in script[]
+ * @param {string} label - new label
+ * @param {boolean} live - true for keystroke updates, false for committed change
+ */
+function updatePeriodLabel(index, label, live = false) {
+  if (!script[index] || !script[index].isSeparator) return;
+  script[index].label = label;
+  if (live) {
+    debouncedSaveScriptState();
+  } else {
+    saveScriptState();
+  }
+}
+
+/**
  * Update period minutes without full re-render
  */
 function updatePeriodMinutes(index, el) {
@@ -4117,6 +4133,34 @@ function initScriptKeyboard() {
   container.setAttribute("tabindex", "0");
 
   container.addEventListener("keydown", (e) => {
+    const target = e.target;
+    const isTypingTarget =
+      target instanceof HTMLInputElement ||
+      target instanceof HTMLTextAreaElement ||
+      target instanceof HTMLSelectElement ||
+      target?.isContentEditable;
+
+    // Ctrl/Cmd+A selects all script plays (when not typing in an input)
+    if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
+      if (isTypingTarget) return;
+      e.preventDefault();
+      bulkSelectedIndices = script
+        .map((p, i) => (p.isSeparator ? -1 : i))
+        .filter((i) => i >= 0);
+      updateBulkSelectUI();
+      _scheduleRenderScript();
+      showToast(`Selected ${bulkSelectedIndices.length} play${bulkSelectedIndices.length === 1 ? "" : "s"}`);
+      return;
+    }
+
+    // Escape clears current bulk selection
+    if (e.key === "Escape" && bulkSelectedIndices.length > 0) {
+      e.preventDefault();
+      clearBulkSelection();
+      showToast("Selection cleared");
+      return;
+    }
+
     // Delete key to remove selected items
     if (e.key === "Delete" || e.key === "Backspace") {
       if (bulkSelectedIndices.length > 0) {
