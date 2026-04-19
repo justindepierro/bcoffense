@@ -1,8 +1,5 @@
 // Practice Script Builder functionality
 
-// Drag and drop state
-let draggedElement = null;
-
 // Cached scouting options — invalidated when opponent or tendencies data changes
 let _cachedScoutOpts = null;
 let _cachedScoutOppName = null;
@@ -2231,12 +2228,10 @@ function handleScriptDragStart(event, scriptIndex) {
   event.target.classList.add("dragging");
   event.dataTransfer.setData("scriptIndex", scriptIndex);
   event.dataTransfer.setData("source", "script");
-  draggedElement = event.target;
 }
 
 function handleDragEnd(event) {
   event.target.classList.remove("dragging");
-  draggedElement = null;
 }
 
 function handleDragOver(event) {
@@ -2537,8 +2532,7 @@ function updateScriptStats() {
 function renderScript() {
   try {
     const container = document.getElementById("scriptPlays");
-    const showWbNums =
-      document.getElementById("showWristbandNums")?.checked !== false;
+    const opts = getScriptDisplayOptions();
     const showPrintPreview =
       document.getElementById("scriptShowPrintPreview")?.checked || false;
 
@@ -2623,7 +2617,6 @@ function renderScript() {
       }
 
       // Track which periods are collapsed for skipping plays
-      let currentPeriodId = null;
       let skipPlays = false;
 
       // Shared datalists — built once, reused by all play rows
@@ -2652,7 +2645,6 @@ function renderScript() {
         script
           .map((p, i) => {
             if (p.isSeparator) {
-              currentPeriodId = p.id;
               skipPlays = collapsedPeriods.has(p.id);
               const isCollapsed = collapsedPeriods.has(p.id);
               const collapseIcon = isCollapsed ? "▶" : "▼";
@@ -2707,11 +2699,11 @@ function renderScript() {
             }
 
             playNum++;
-            const fullCall = getFullCall(p);
+            const fullCall = getFullCall(p, opts);
 
             // Find wristband number if wristband is loaded
             let wbBadge = "";
-            if (scriptWristband && showWbNums) {
+            if (scriptWristband && opts.showWbNum) {
               const wbNum = findPlayOnWristband(p);
               if (wbNum !== null) {
                 wbBadge = `<span class="wb-badge">#${wbNum}</span>`;
@@ -2728,7 +2720,7 @@ function renderScript() {
             );
 
             return `
-          <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" data-drag="scriptStart" data-idx="${i}" data-drag="end">
+          <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" data-drag="scriptStart" data-idx="${i}">
             <input type="checkbox" class="bulk-select-cb" data-index="${i}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${i}" title="Select for bulk edit">
             <div class="play-num">${playNum}${wbBadge}</div>
             <div class="play-call">
