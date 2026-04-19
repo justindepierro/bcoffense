@@ -1804,6 +1804,7 @@ function getFullCall(play, options = {}) {
     redMotions = false,
     noVowels = false,
     showLineCall = true,
+    hideProtection = false,
     highlightHuddle = false,
     highlightCandy = false,
   } = options;
@@ -1843,7 +1844,7 @@ function getFullCall(play, options = {}) {
     parts.push(motionHtml);
   }
 
-  if (play.protection) parts.push(escapeHtml(play.protection));
+  if (!hideProtection && play.protection) parts.push(escapeHtml(play.protection));
   if (play.play) parts.push(escapeHtml(play.play));
   if (play.playTag1) parts.push(escapeHtml(play.playTag1));
   if (play.playTag2) parts.push(escapeHtml(play.playTag2));

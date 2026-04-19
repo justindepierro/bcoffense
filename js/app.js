@@ -2576,6 +2576,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "savePeriodAsTemplate":
           savePeriodAsTemplate(idx);
           break;
+        case "togglePeriodProtection":
+          togglePeriodProtection(idx);
+          break;
         case "selectPeriodPlays":
           selectPeriodPlays(idx);
           break;

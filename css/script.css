@@ -373,6 +373,22 @@
   outline-offset: 1px;
 }
 
+.ph-period-setting {
+  min-width: 72px;
+}
+
+.ph-btn-active {
+  background: var(--color-accent);
+  color: var(--color-dark);
+}
+
+@media (hover: hover) {
+  .ph-btn-active:hover {
+    background: var(--color-accent-hover);
+    color: var(--color-dark);
+  }
+}
+
 .ph-left {
   display: flex;
   align-items: center;

@@ -332,6 +332,11 @@ function getScriptDisplayOptions() {
   };
 }
 
+function getPeriodCallDisplayOptions(separator, baseOptions = {}) {
+  if (!separator?.hideProtection) return baseOptions;
+  return { ...baseOptions, hideProtection: true };
+}
+
 function getScriptWorkspaceCheckboxState() {
   const checkboxState = {};
   SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
@@ -1765,6 +1770,22 @@ function updatePeriodMinutes(index, el) {
   updateScriptStats();
 }
 
+function togglePeriodProtection(idx) {
+  const separatorIndex = parseInt(idx, 10);
+  const separator = script[separatorIndex];
+  if (!separator || !separator.isSeparator) return;
+
+  saveScriptState();
+  separator.hideProtection = !separator.hideProtection;
+  markScriptDirty();
+  renderScript();
+
+  const label = separator.label || "Period";
+  const stateLabel = separator.hideProtection ? "hidden" : "shown";
+  showToast(`Protection ${stateLabel} for "${label}"`);
+  announceScriptA11y(`Protection ${stateLabel} for ${label}`);
+}
+
 /**
  * Copy all plays in a period as readable plain text to clipboard
  * @param {number|string} idx - index of the period separator in script[]
@@ -1781,9 +1802,10 @@ function copyPeriodAsText(idx) {
   }
 
   const header = sep.label || "Period";
+  const callOptions = getPeriodCallDisplayOptions(sep);
   const lines = [header, "─".repeat(header.length)];
   periodPlays.forEach((p, n) => {
-    const call = getFullCall(p);
+    const call = getFullCall(p, callOptions);
     const meta = [p.type, p.hash, p.tempo].filter(Boolean).join(" | ");
     lines.push(`${n + 1}. ${call}${meta ? "  [" + meta + "]" : ""}`);
   });
@@ -1894,6 +1916,7 @@ async function savePeriodAsTemplate(separatorIndex) {
     id: Date.now(),
     name: name,
     minutes: separator.minutes || 0,
+    hideProtection: Boolean(separator.hideProtection),
     plays: plays.map((p) => ({ ...p, id: null })), // Remove IDs for template
   };
 
@@ -2562,6 +2585,7 @@ function doInsertTemplate(idx) {
     isSeparator: true,
     label: template.name,
     minutes: template.minutes,
+    hideProtection: Boolean(template.hideProtection),
     id: Date.now() + Math.random(),
   };
 
@@ -3043,6 +3067,10 @@ function updatePeriodHeaderLabelDisplay(index) {
     ["[data-action=\"movePeriod\"][data-dir=\"1\"]", `Move ${periodLabel} down`],
     ["[data-action=\"duplicatePeriod\"]", `Duplicate ${periodLabel}`],
     ["[data-action=\"savePeriodAsTemplate\"]", `Save ${periodLabel} as a template`],
+    [
+      "[data-action=\"togglePeriodProtection\"]",
+      `${script[index].hideProtection ? "Show" : "Hide"} protection for ${periodLabel}`,
+    ],
     ["[data-action=\"removeFromScript\"]", `Delete ${periodLabel}`],
   ];
 
@@ -3058,6 +3086,10 @@ function renderScriptEmptyPeriodHeaders() {
     if (!p.isSeparator) return;
     const periodColor = p.color || UI_COLORS.periodDefault;
     const periodLabel = p.label || "Period";
+    const protectionButtonLabel = p.hideProtection ? "Prot Off" : "Prot On";
+    const protectionButtonTitle = p.hideProtection
+      ? `Show protection for ${periodLabel}`
+      : `Hide protection for ${periodLabel}`;
     periodHeaders += `
       <div class="script-item period-header" style="background: ${periodColor}; color: white;" role="group" aria-label="${escapeHtml(periodLabel)} period header">
         <div class="ph-left">
@@ -3066,6 +3098,7 @@ function renderScriptEmptyPeriodHeaders() {
           <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
         </div>
         <div class="ph-right">
+          <button class="ph-btn ph-period-setting ${p.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${i}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
           <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
         </div>
       </div>
@@ -3092,6 +3125,10 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
   const periodColor = separator.color || UI_COLORS.periodDefault;
   const periodLabel = separator.label || "Period";
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
+  const protectionButtonLabel = separator.hideProtection ? "Prot Off" : "Prot On";
+  const protectionButtonTitle = separator.hideProtection
+    ? `Show protection for ${periodLabel}`
+    : `Hide protection for ${periodLabel}`;
 
   return `
     <div class="period-header-wrapper" data-separator-id="${separator.id}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
@@ -3108,6 +3145,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
           <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="1" title="Move period down" aria-label="Move ${escapeHtml(periodLabel)} down">▼</button>
           <button class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
           <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
+          <button class="ph-btn ph-period-setting ${separator.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
           <button class="remove" data-action="removeFromScript" data-idx="${index}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
         </div>
       </div>
@@ -3132,6 +3170,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
 function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const {
     opts,
+    callOptions,
     showPrintPreview,
     getCachedFullCall,
     getCachedSummaryText,
@@ -3139,7 +3178,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     getCachedWristbandNumber,
     defenseDatalistState,
   } = renderContext;
-  const fullCall = getCachedFullCall(play);
+  const fullCall = getCachedFullCall(play, Boolean(callOptions?.hideProtection));
   const isSelected = bulkSelectedIndices.includes(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
@@ -3205,10 +3244,12 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
 function renderScriptRows(renderContext) {
   let playNumber = 0;
   let skipPlays = false;
+  let currentSeparator = null;
 
   return script
     .map((play, index) => {
       if (play.isSeparator) {
+        currentSeparator = play;
         skipPlays = collapsedPeriods.has(play.id);
         return renderScriptPeriodHeader(play, index, renderContext);
       }
@@ -3216,7 +3257,10 @@ function renderScriptRows(renderContext) {
       if (skipPlays) return "";
 
       playNumber += 1;
-      return renderScriptPlayRow(play, index, playNumber, renderContext);
+      return renderScriptPlayRow(play, index, playNumber, {
+        ...renderContext,
+        callOptions: getPeriodCallDisplayOptions(currentSeparator, renderContext.opts),
+      });
     })
     .join("");
 }
@@ -3262,11 +3306,20 @@ function createScriptRenderContext(opts, showPrintPreview) {
     defenseDatalistState,
     periodStatsBySeparatorIndex,
     renderSummary,
-    getCachedFullCall(play) {
+    getCachedFullCall(play, hideProtection = false) {
       if (!play) return "";
-      if (fullCallCache.has(play)) return fullCallCache.get(play);
-      const rendered = getFullCall(play, opts);
-      fullCallCache.set(play, rendered);
+      let variants = fullCallCache.get(play);
+      if (!variants) {
+        variants = new Map();
+        fullCallCache.set(play, variants);
+      }
+      const variantKey = hideProtection ? "hideProtection" : "default";
+      if (variants.has(variantKey)) return variants.get(variantKey);
+      const rendered = getFullCall(
+        play,
+        hideProtection ? { ...opts, hideProtection: true } : opts,
+      );
+      variants.set(variantKey, rendered);
       return rendered;
     },
     getCachedSummaryText(play) {
@@ -4441,17 +4494,19 @@ function exportScriptAsText() {
   lines.push("=".repeat(50));
   let playOrder = 0;
   let inPeriod = false;
+  let currentPeriodCallOptions = {};
   script.forEach((item) => {
     if (item.isSeparator) {
       if (inPeriod) lines.push("");
       inPeriod = true;
       playOrder = 0;
+      currentPeriodCallOptions = getPeriodCallDisplayOptions(item);
       const periodMins = item.minutes ? ` (${item.minutes} min)` : "";
       lines.push(`\n[${item.label || "Period"}]${periodMins}`);
       lines.push("-".repeat(30));
     } else {
       playOrder++;
-      const call = getFullCall(item);
+      const call = getFullCall(item, currentPeriodCallOptions);
       const type = item.type ? ` [${item.type}]` : "";
       const notes = item.notes ? ` — ${item.notes}` : "";
       const reps = (item.reps || 1) > 1 ? ` ×${item.reps}` : "";
@@ -4533,10 +4588,12 @@ function generatePDF() {
     let globalPlayNum = 0;
     let hasPeriods = periods.length > 0;
     const displayOpts = getScriptDisplayOptions();
+    let currentPeriodCallOptions = displayOpts;
     tbody.innerHTML = script
       .map((p, i) => {
         if (p.isSeparator) {
           periodPlayNum = 0;
+          currentPeriodCallOptions = getPeriodCallDisplayOptions(p, displayOpts);
           const periodPlays = getPeriodPlays(i);
           const periodColor = p.color || UI_COLORS.periodDefault;
           const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
@@ -4549,7 +4606,7 @@ function generatePDF() {
         periodPlayNum++;
         globalPlayNum++;
         const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-        return buildScriptPlayRow(p, displayNum, displayOpts);
+        return buildScriptPlayRow(p, displayNum, currentPeriodCallOptions);
       })
       .join("");
 
@@ -4695,6 +4752,7 @@ async function printFullDay() {
       const scriptPeriods = scriptData.plays.filter((p) => p.isSeparator);
       const hasPeriods = scriptPeriods.length > 0;
       let periodPlayNum = 0;
+      let currentPeriodCallOptions = displayOpts;
 
       // Add script header — more prominent with play count
       const dateStr = scriptData.date
@@ -4716,6 +4774,7 @@ async function printFullDay() {
       scriptData.plays.forEach((p, pIdx) => {
         if (p.isSeparator) {
           periodPlayNum = 0;
+          currentPeriodCallOptions = getPeriodCallDisplayOptions(p, displayOpts);
           const periodPlays = [];
           for (let j = pIdx + 1; j < scriptData.plays.length; j++) {
             if (scriptData.plays[j].isSeparator) break;
@@ -4730,7 +4789,7 @@ async function printFullDay() {
         globalPlayNum++;
         periodPlayNum++;
         const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-        allContent += buildScriptPlayRow(p, displayNum, displayOpts);
+        allContent += buildScriptPlayRow(p, displayNum, currentPeriodCallOptions);
       });
     });
 
