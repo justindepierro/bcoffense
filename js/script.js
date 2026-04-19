@@ -2809,6 +2809,34 @@ function buildPeriodStatsMap(scriptItems) {
   return statsBySeparatorIndex;
 }
 
+function buildScriptRenderSummary(scriptItems) {
+  const summary = {
+    hasPlays: false,
+    playCount: 0,
+    totalReps: 0,
+    runCount: 0,
+    passCount: 0,
+    totalTime: 0,
+    periods: [],
+  };
+
+  scriptItems.forEach((item) => {
+    if (item.isSeparator) {
+      summary.periods.push(item);
+      if (item.minutes) summary.totalTime += item.minutes;
+      return;
+    }
+
+    summary.hasPlays = true;
+    summary.playCount += 1;
+    summary.totalReps += item.reps || 1;
+    if (item.type === "Run") summary.runCount += 1;
+    else if (item.type === "Pass") summary.passCount += 1;
+  });
+
+  return summary;
+}
+
 function getPeriodStats(separatorIndex, periodStatsMap) {
   if (periodStatsMap && periodStatsMap.has(separatorIndex)) {
     return periodStatsMap.get(separatorIndex);
@@ -3208,12 +3236,14 @@ function createScriptRenderContext(opts, showPrintPreview) {
   const wristbandNumberCache = new Map();
   const defenseDatalistState = buildScriptDefenseDatalistState(script);
   const periodStatsBySeparatorIndex = buildPeriodStatsMap(script);
+  const renderSummary = buildScriptRenderSummary(script);
 
   return {
     opts,
     showPrintPreview,
     defenseDatalistState,
     periodStatsBySeparatorIndex,
+    renderSummary,
     getCachedFullCall(play) {
       if (!play) return "";
       if (fullCallCache.has(play)) return fullCallCache.get(play);
@@ -3250,7 +3280,7 @@ function createScriptRenderContext(opts, showPrintPreview) {
 }
 
 function renderScriptContent(container, renderContext) {
-  const hasPlays = script.some((p) => !p.isSeparator);
+  const hasPlays = renderContext.renderSummary.hasPlays;
 
   if (script.length === 0) {
     container.innerHTML = "";
@@ -3273,11 +3303,11 @@ function renderScriptContent(container, renderContext) {
     renderScriptRows(renderContext);
 }
 
-function updateJumpToPeriodOptions() {
+function updateJumpToPeriodOptions(renderSummary) {
   const jumpSel = document.getElementById("jumpToPeriod");
   if (!jumpSel) return;
 
-  const periods = script.filter((p) => p.isSeparator);
+  const periods = renderSummary?.periods || script.filter((p) => p.isSeparator);
   if (periods.length > 1) {
     jumpSel.innerHTML =
       `<option value="">⬇ Jump</option>` +
@@ -3470,22 +3500,9 @@ async function autoFillDefenseFromTendencies() {
  * Lightweight stats-only update (no DOM rebuild)
  * Call this instead of renderScript() for non-structural data changes
  */
-function updateScriptStats() {
-  let playCount = 0,
-    totalReps = 0,
-    runCount = 0,
-    passCount = 0,
-    totalTime = 0;
-  for (const p of script) {
-    if (p.isSeparator) {
-      if (p.minutes) totalTime += p.minutes;
-    } else {
-      playCount++;
-      totalReps += p.reps || 1;
-      if (p.type === "Run") runCount++;
-      else if (p.type === "Pass") passCount++;
-    }
-  }
+function updateScriptStats(renderSummary) {
+  const summary = renderSummary || buildScriptRenderSummary(script);
+  const { playCount, totalReps, runCount, passCount, totalTime } = summary;
 
   const el = (id) => document.getElementById(id);
   if (el("scriptCount")) el("scriptCount").textContent = playCount;
@@ -3607,14 +3624,14 @@ function renderScript() {
     }
 
     // Update stats
-    updateScriptStats();
+    updateScriptStats(renderContext.renderSummary);
     if (profile) {
       profile.statsMs = performance.now() - stageStart;
       stageStart = performance.now();
     }
 
     // Populate jump-to-period dropdown
-    updateJumpToPeriodOptions();
+    updateJumpToPeriodOptions(renderContext.renderSummary);
     if (profile) {
       profile.jumpMenuMs = performance.now() - stageStart;
       stageStart = performance.now();
