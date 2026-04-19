@@ -57,7 +57,7 @@ Still verified and pending:
 
 - [x] Remove `draggedElement` if no read path is introduced.
 - [x] Remove unused renderer locals such as `currentPeriodId`.
-- [ ] Review duplicated UI state that exists in more than one checkbox or panel.
+- [x] Review duplicated UI state that exists in more than one checkbox or panel.
 
 ### Performance
 
@@ -202,7 +202,6 @@ Definition of done:
 
 When we resume, start here:
 
-- [ ] Review duplicated UI state that still exists across checkboxes or panels
 - [ ] Review keyboard access to bulk-selection flows and period actions
 - [ ] Audit narrow-screen script controls and reduce accidental taps
 - [ ] Measure `renderScript()` hot paths before and after changes

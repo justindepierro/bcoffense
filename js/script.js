@@ -189,6 +189,7 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptRedShifts",
   "scriptItalicMotions",
   "scriptRedMotions",
+  "scriptRemoveVowels",
   "scriptShowLineCall",
   "scriptHighlightHuddle",
   "scriptHighlightCandy",
@@ -321,7 +322,7 @@ function getScriptDisplayOptions() {
 
 function getScriptWorkspaceCheckboxState() {
   const checkboxState = {};
-  [...SCRIPT_DISPLAY_CHECKBOX_IDS, "scriptRemoveVowels"].forEach((id) => {
+  SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (el) checkboxState[id] = Boolean(el.checked);
   });
@@ -3607,10 +3608,41 @@ async function saveScript() {
 
     const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
 
-        if (applyPreferredMetadataToPlay(p)) {
-          syncScriptPlayMetadataFields(i);
-          updatedCount++;
-        }
+    // Check for duplicate name
+    const existing = savedScripts.find(
+      (s) => s.name.toLowerCase() === name.toLowerCase(),
+    );
+    if (existing) {
+      const choice = await showChoice(
+        `A script named "${existing.name}" already exists.`,
+        {
+          title: "Duplicate Name",
+          icon: "⚠️",
+          option1: "💾 Overwrite",
+          option2: "➕ Save as Copy",
+        },
+      );
+      if (choice === "option1") {
+        existing.name = name;
+        existing.date = date;
+        existing.plays = safeDeepClone(script);
+        existing.workspace = getScriptWorkspaceState();
+        existing.savedAt = new Date().toISOString();
+        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+        loadSavedScriptsList();
+        markScriptClean();
+        storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+        showToast(`✅ "${name}" updated!`);
+        return;
+      }
+
+      if (choice !== "option2") {
+        return;
+      }
+    }
+
+    const scriptData = {
+      id: Date.now(),
       name,
       date,
       period: "",
@@ -3756,12 +3788,15 @@ function loadScript(id) {
 /**
  * Delete a saved script
  * @param {number} id - Script ID
-      if (applyDefensiveLookToPlay(p, look, mode)) {
-        syncScriptPlayMetadataFields(i);
-        filled++;
-      } else {
-        skipped++;
-      }
+ */
+async function deleteSavedScript(id) {
+  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const target = savedScripts.find((s) => s.id === id);
+  if (!target) return;
+  const ok = await showConfirm(`Delete "${target.name}"?`, {
+    title: "Delete Script",
+    icon: "🗑️",
+    confirmText: "Delete",
     danger: true,
   });
   if (!ok) return;
