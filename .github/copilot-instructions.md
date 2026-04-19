@@ -20,6 +20,7 @@
 ## Absolute Rules — Never Break These
 
 ### JavaScript
+
 - **NO inline `onclick`/`onchange`/`oninput`** — always use `data-action` / `data-onchange` / `data-oninput` attributes
 - **NO `import` / `export`** — this is a global-scope, no-module project
 - **NO build step** — no webpack, vite, rollup, babel, npm scripts
@@ -31,12 +32,14 @@
 - **ALL toasts** via `showToast()` or `showUndoToast()`
 
 ### CSS
+
 - **NO hardcoded colors** — always use CSS custom properties from `base.css` (e.g., `var(--color-primary)`)
 - **NO hardcoded spacing** — use `var(--space-xs)` through `var(--space-xl)`
 - **Module CSS prefix:** call sheet → `cs-*`, constraints → `cr-*`, wristband → `wb-*`
 - Dark mode: `[data-theme="dark"]` selector — never use JS to detect dark mode
 
 ### Service Worker (CRITICAL — do not forget)
+
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
 - Current version: `bcoffense-v54` — next version will be `bcoffense-v55`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
@@ -63,13 +66,16 @@ All interactions use `data-action`. The dispatcher is in `app.js`.
 The generic fallback: `window[action](arg)` — so the function **must be global** (top-level in any JS file).
 
 Special function sets in `app.js`:
+
 - `_ELEMENT_FNS` — receives the DOM element: `toggleFilterSection`, `toggleCollapsiblePanel`, `setHeaderColor`, `switchDisplayTab`
 - `_BOOL_FNS` — receives boolean: `toggleAllPbPrintOptions`, `csSelectAllFields`
 
 Change/input delegation:
+
 ```html
 <select data-onchange="myHandler" data-pass="value">
-<input data-oninput="handlerA;handlerB" data-pass="value">
+  <input data-oninput="handlerA;handlerB" data-pass="value" />
+</select>
 ```
 
 ---
@@ -78,14 +84,14 @@ Change/input delegation:
 
 ```js
 // User text in template literals:
-`<td>${escapeHtml(play.formation)}</td>`
+`<td>${escapeHtml(play.formation)}</td>`;
 
 // User HTML content (preserve formatting):
-setInnerHTML(el, userHtml);        // calls sanitizeHTML internally
-sanitizeHTML(html);                // strips dangerous tags/attrs
+setInnerHTML(el, userHtml); // calls sanitizeHTML internally
+sanitizeHTML(html); // strips dangerous tags/attrs
 
 // Play display (already escaped internally — do NOT wrap in escapeHtml):
-getFullCall(play, options);        // returns safe HTML string
+getFullCall(play, options); // returns safe HTML string
 buildCallSheetPlayParts(play, opts); // returns array of safe HTML parts
 ```
 
@@ -135,6 +141,7 @@ refactor: restructure, no behavior change
 ## Data Model Quick Reference
 
 ### Play Object key fields
+
 `type`, `personnel`, `formation`, `formTag1`, `formTag2`, `under`, `back`, `shift`, `motion`,
 `protection`, `lineCall`, `play`, `playTag1`, `playTag2`, `basePlay`, `oneWord`,
 `preferredSituation`, `preferredDown`, `preferredDistance`, `preferredHash`, `preferredFieldPosition`,
@@ -142,10 +149,12 @@ refactor: restructure, no behavior change
 `keyPlayer1-3`, `keyPlayerName1-3`, `constraint1-3`, `hitChart1-3`, `deadVs`, `opponent`, `notes`
 
 ### Tab names (TAB_INDEX_MAP)
+
 `playbook(0)`, `script(1)`, `wristband(2)`, `tendencies(3)`, `callsheet(4)`,
 `installation(5)`, `offensebuilder(6)`, `dashboard(7)`
 
 ### Global variables
+
 - `plays[]` — master playbook (app.js)
 - `script[]` — working practice script (app.js)
 - `filteredPlays[]` — filtered subset (app.js)

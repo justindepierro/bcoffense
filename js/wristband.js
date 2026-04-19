@@ -50,7 +50,7 @@ function shadeColor(color, amount) {
   if (!color || color === "transparent") return "";
   // Parse hex
   let hex = color.replace("#", "");
-  if (hex.length === 3) hex = hex[0]+hex[0]+hex[1]+hex[1]+hex[2]+hex[2];
+  if (hex.length === 3) hex = hex[0] + hex[0] + hex[1] + hex[1] + hex[2] + hex[2];
   const num = parseInt(hex, 16);
   let r = (num >> 16) + amount;
   let g = ((num >> 8) & 0x00FF) + amount;
@@ -194,11 +194,11 @@ async function checkWristbandDraft() {
 
     const savedTime = draft.savedAt
       ? new Date(draft.savedAt).toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
       : "unknown time";
 
     const doRestore = await showConfirm(
@@ -2322,11 +2322,11 @@ function loadSavedWristbandsList() {
     .map((s) => {
       const savedTime = s.savedAt
         ? new Date(s.savedAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
         : "";
       return `
         <div class="saved-script-card">
@@ -2407,7 +2407,7 @@ function loadWristband(id) {
         wristbandHeaderColor === "transparent"
           ? isTransparentBtn
           : b.style.background === wristbandHeaderColor ||
-            b.style.backgroundColor === wristbandHeaderColor;
+          b.style.backgroundColor === wristbandHeaderColor;
       b.classList.toggle("active", isMatch);
     });
 

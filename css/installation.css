@@ -128,7 +128,6 @@
     box-shadow var(--transition-fast);
 }
 @media (hover: hover) {
-
   .install-readiness-clickable:hover {
     transform: translateY(-3px);
     box-shadow: 0 6px 16px rgba(0, 0, 0, 0.35);
@@ -230,7 +229,6 @@
   font-size: inherit;
 }
 @media (hover: hover) {
-
   .install-cat-card:hover {
     border-color: var(--color-primary);
     transform: translateY(-1px);
@@ -345,7 +343,6 @@
   user-select: none;
 }
 @media (hover: hover) {
-
   .install-item:hover {
     background: var(--color-bg-light);
   }
@@ -358,7 +355,6 @@
   background: var(--color-success-light);
 }
 @media (hover: hover) {
-
   .install-item-done:hover {
     background: var(--color-success-light);
   }
@@ -401,7 +397,6 @@
   padding: 0 4px;
 }
 @media (hover: hover) {
-
   .install-item-drag:hover {
     color: var(--color-text-placeholder);
   }
@@ -1090,12 +1085,10 @@
   padding: 5px 14px;
 }
 @media (hover: hover) {
-
   .sir-print-btn:hover {
     background: var(--color-border-med);
   }
 }
-
 
 /* ── Smart Install Report — Print Container ──────────── */
 .install-report-print {

@@ -35,11 +35,11 @@ Still verified and pending:
 - [x] Consolidate duplicate wristband-number toggles into one source of truth
 - [x] Remove verified dead state and dead locals
 - [x] Fix malformed drag markup on script rows
-- [ ] Reduce available-play filtering/render cost
-- [ ] Improve touch targets and mobile usability
-- [ ] Improve empty states and filter recovery UX
-- [ ] Reduce global state leakage in sidebar selection/filter flows
-- [ ] Trim render-path complexity and duplicated formatting work
+- [x] Reduce available-play filtering/render cost
+- [x] Improve touch targets and mobile usability
+- [x] Improve empty states and filter recovery UX
+- [x] Reduce global state leakage in sidebar selection/filter flows
+- [x] Trim render-path complexity and duplicated formatting work
 - [ ] Improve saved-script workspace restoration behavior
 
 ## Verified Findings
@@ -59,23 +59,23 @@ Still verified and pending:
 
 ### Performance
 
-- [ ] Debounce available-play filtering on typed search.
+- [x] Debounce available-play filtering on typed search.
 - [ ] Reduce full rebuild work in `renderScript()` where practical.
-- [ ] Cache formatted play-call output during render cycles.
+- [x] Cache formatted play-call output during render cycles.
 - [ ] Reduce per-row datalist duplication when shared lists are enough.
-- [ ] Replace `window.currentFilteredPlayIndices` with module-local state.
+- [x] Replace `window.currentFilteredPlayIndices` with module-local state.
 
 ### UI / UX
 
-- [ ] Make filter recovery clearer when no plays match.
-- [ ] Persist filter-collapse state for repeat users.
+- [x] Make filter recovery clearer when no plays match.
+- [x] Persist filter-collapse state for repeat users.
 - [ ] Improve script toolbar and sidebar clarity around selection state.
 - [ ] Improve saved-script cards with stronger metadata and workflow cues.
 - [ ] Improve period-template flow and preview quality.
 
 ### Accessibility / Mobile
 
-- [ ] Increase touch targets for period and play controls.
+- [x] Increase touch targets for period and play controls.
 - [ ] Improve labels/announcements for checkbox, color, and drag-related controls.
 - [ ] Review period header focus treatment and mobile control density.
 - [ ] Review datalist-heavy defense inputs for keyboard and screen-reader clarity.
@@ -102,12 +102,12 @@ Definition of done:
 
 Priority: high
 
-- [ ] Debounce `scriptSearchPlay` filtering
-- [ ] Keep `clear search` and `active filters` feedback in sync with the actual filter state
-- [ ] Improve zero-results state with a one-click reset path
-- [ ] Replace `window.currentFilteredPlayIndices` with module-local script state
-- [ ] Review `selectedAvailablePlays` lifecycle so selection behavior stays predictable across filtering and paging
-- [ ] Add clearer copy for `Add All` vs `Add Selected`
+- [x] Debounce `scriptSearchPlay` filtering
+- [x] Keep `clear search` and `active filters` feedback in sync with the actual filter state
+- [x] Improve zero-results state with a one-click reset path
+- [x] Replace `window.currentFilteredPlayIndices` with module-local script state
+- [x] Review `selectedAvailablePlays` lifecycle so selection behavior stays predictable across filtering and paging
+- [x] Add clearer copy for `Add All` vs `Add Selected`
 
 Definition of done:
 
@@ -119,7 +119,7 @@ Definition of done:
 
 Priority: high
 
-- [ ] Add memoized/cached `getFullCall()` output inside `renderScript()`
+- [x] Add memoized/cached `getFullCall()` output inside `renderScript()`
 - [ ] Avoid repeated per-row formatting where values are reused in the same render
 - [ ] Reduce per-row datalist generation where shared datalists are sufficient
 - [ ] Identify updates that can patch DOM or update isolated regions instead of forcing full rebuilds
@@ -134,7 +134,7 @@ Definition of done:
 
 Priority: medium
 
-- [ ] Persist filter-collapse state across sessions
+- [x] Persist filter-collapse state across sessions
 - [ ] Improve toolbar clarity for sort state, search state, and selection state
 - [ ] Improve period template browse/insert workflow
 - [ ] Improve saved-script cards with richer metadata and stronger action hierarchy
@@ -150,7 +150,7 @@ Definition of done:
 
 Priority: medium
 
-- [ ] Increase small control hit areas to a mobile-safe size
+- [x] Increase small control hit areas to a mobile-safe size
 - [ ] Review focus rings on period headers, toolbar controls, and row actions
 - [ ] Add or improve labels for color, drag, and selection controls where needed
 - [ ] Review keyboard access to bulk-selection flows and period actions
@@ -198,8 +198,8 @@ Definition of done:
 
 When we resume, start here:
 
-- [ ] Debounce `scriptSearchPlay` filtering
-- [ ] Replace `window.currentFilteredPlayIndices` with module-local state
-- [ ] Improve zero-results recovery UX in the available plays sidebar
-- [ ] Add render-time caching for `getFullCall()` in `renderScript()`
-- [ ] Increase script control hit targets for mobile
+- [ ] Reduce per-row datalist duplication in script render
+- [ ] Continue splitting `renderScript()` into smaller updateable regions
+- [ ] Improve toolbar clarity for sort, search, and selection state
+- [ ] Improve saved-script card metadata and action hierarchy
+- [ ] Add labels/announcements for color, drag, and selection controls

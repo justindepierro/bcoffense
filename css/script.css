@@ -66,6 +66,8 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: var(--font-size-sm);
+  min-height: 32px;
+  min-width: 58px;
 }
 @media (hover: hover) {
   .play-item button:hover {
@@ -81,6 +83,8 @@
 .play-item .available-play-cb {
   margin-right: 8px;
   cursor: pointer;
+  width: 18px;
+  height: 18px;
 }
 
 /* Script Items - Enhanced */
@@ -762,7 +766,13 @@
   background: var(--color-primary-light);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border);
+  flex-wrap: wrap;
 }
+
+.available-plays-actions .btn {
+  min-height: 38px;
+}
+
 .select-all-label {
   display: flex;
   align-items: center;
@@ -770,6 +780,13 @@
   font-size: var(--font-size-xs);
   margin-left: auto;
   cursor: pointer;
+}
+
+.available-selection-status {
+  margin-top: -4px;
+  margin-bottom: 10px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
 }
 
 /* Wristband Integration Panel */
@@ -1529,6 +1546,14 @@
   color: var(--color-text-placeholder);
 }
 
+.avail-empty-actions {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+  justify-content: center;
+  margin-top: 6px;
+}
+
 /* ── Already-in-script badge ── */
 .play-item.in-script {
   background: color-mix(in srgb, var(--color-success) 6%, transparent);
@@ -1631,4 +1656,17 @@
   white-space: nowrap;
   margin-left: 4px;
   align-self: center;
+}
+
+@media (max-width: 768px) {
+  .pat-btn,
+  .ph-btn,
+  .script-item .move-btn,
+  .script-item .remove,
+  .script-item .dup-btn,
+  .play-item button {
+    min-height: 40px;
+    min-width: 40px;
+    padding: 8px 10px;
+  }
 }

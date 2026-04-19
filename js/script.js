@@ -31,6 +31,7 @@ let bulkSelectedIndices = [];
 
 // Selected available plays for batch adding
 let selectedAvailablePlays = [];
+let currentFilteredPlayIndices = [];
 
 // Pagination for the available plays list
 const AVAIL_PER_PAGE = 50;
@@ -77,6 +78,77 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptShowPrintPreview",
 ];
 
+const debouncedRenderAvailablePlays = debounce(() => {
+  _scheduleRenderAvailable();
+}, 180);
+
+function normalizeSelectedAvailablePlays() {
+  selectedAvailablePlays = [...new Set(selectedAvailablePlays)]
+    .map((idx) => parseInt(idx, 10))
+    .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < plays.length);
+}
+
+function applyScriptFiltersCollapsedState() {
+  const container = document.getElementById("scriptFiltersContainer");
+  const btn = document.getElementById("toggleFiltersBtn");
+  if (!container || !btn) return;
+
+  if (filtersCollapsed) {
+    container.classList.add("collapsed");
+    btn.innerHTML = "🔽 Filters";
+  } else {
+    container.classList.remove("collapsed");
+    btn.innerHTML = "🔼 Filters";
+  }
+}
+
+function updateAvailableActionsUI(filteredCount = 0, pageCount = 0) {
+  normalizeSelectedAvailablePlays();
+
+  const addFilteredBtn = document.getElementById("addAllFilteredBtn");
+  const addSelectedBtn = document.getElementById("addSelectedBtn");
+  const statusEl = document.getElementById("availableSelectionStatus");
+  const selectedCount = selectedAvailablePlays.length;
+
+  if (addFilteredBtn) {
+    addFilteredBtn.textContent = `➕ Add Filtered (${filteredCount})`;
+    addFilteredBtn.title = `Add all ${filteredCount} filtered plays to script`;
+    addFilteredBtn.disabled = filteredCount === 0;
+  }
+
+  if (addSelectedBtn) {
+    addSelectedBtn.textContent = `✓ Add Selected (${selectedCount})`;
+    addSelectedBtn.title =
+      selectedCount > 0
+        ? `Add ${selectedCount} selected play${selectedCount === 1 ? "" : "s"} to script`
+        : "Select plays first";
+    addSelectedBtn.disabled = selectedCount === 0;
+  }
+
+  if (statusEl) {
+    statusEl.textContent =
+      selectedCount > 0
+        ? `${selectedCount} selected overall • ${pageCount} on this page`
+        : `${filteredCount} filtered • ${pageCount} on this page`;
+  }
+}
+
+function getScriptPlayFilterState() {
+  return {
+    formation: document.getElementById("scriptFilterFormation")?.value || "",
+    basePlay: document.getElementById("scriptFilterBasePlay")?.value || "",
+    search:
+      document.getElementById("scriptSearchPlay")?.value.toLowerCase() || "",
+  };
+}
+
+function syncScriptSearchClearButton() {
+  const clearBtn = document.getElementById("clearSearchPlay");
+  if (!clearBtn) return;
+  const { search } = getScriptPlayFilterState();
+  clearBtn.style.display = search ? "flex" : "none";
+}
+
 /**
  * Save script display option checkbox states to localStorage
  */
@@ -86,6 +158,7 @@ function saveScriptDisplayOptions() {
     const el = document.getElementById(id);
     if (el) opts[id] = el.checked;
   });
+  opts.filtersCollapsed = filtersCollapsed;
   storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
 }
 
@@ -99,6 +172,8 @@ function restoreScriptDisplayOptions() {
     const el = document.getElementById(id);
     if (el && opts[id] !== undefined) el.checked = opts[id];
   });
+  filtersCollapsed = Boolean(opts.filtersCollapsed);
+  applyScriptFiltersCollapsedState();
 }
 
 /**
@@ -166,11 +241,11 @@ async function checkScriptDraft() {
     const draftPlays = draft.plays.filter((p) => !p.isSeparator).length;
     const savedTime = draft.savedAt
       ? new Date(draft.savedAt).toLocaleString("en-US", {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })
+        month: "short",
+        day: "numeric",
+        hour: "numeric",
+        minute: "2-digit",
+      })
       : "unknown time";
 
     const doRestore = await showConfirm(
@@ -205,17 +280,9 @@ async function checkScriptDraft() {
  * Toggle filters panel collapse
  */
 function toggleFiltersCollapse() {
-  const container = document.getElementById("scriptFiltersContainer");
-  const btn = document.getElementById("toggleFiltersBtn");
   filtersCollapsed = !filtersCollapsed;
-
-  if (filtersCollapsed) {
-    container.classList.add("collapsed");
-    btn.innerHTML = "🔽 Filters";
-  } else {
-    container.classList.remove("collapsed");
-    btn.innerHTML = "🔼 Filters";
-  }
+  applyScriptFiltersCollapsedState();
+  saveScriptDisplayOptions();
 }
 
 /**
@@ -258,7 +325,6 @@ function clearAllScriptFilters() {
       cb.parentElement.classList.remove("checked");
     });
 
-  updateActiveFilterCount();
   filterScriptPlays();
 }
 
@@ -266,6 +332,7 @@ function clearAllScriptFilters() {
  * Update active filter count badge
  */
 function updateActiveFilterCount() {
+  const { formation, basePlay, search } = getScriptPlayFilterState();
   const count =
     scriptSelectedTypes.length +
     scriptSelectedSituation.length +
@@ -273,7 +340,10 @@ function updateActiveFilterCount() {
     scriptSelectedDistance.length +
     scriptSelectedHash.length +
     scriptSelectedFieldPos.length +
-    scriptSelectedPersonnel.length;
+    scriptSelectedPersonnel.length +
+    (formation ? 1 : 0) +
+    (basePlay ? 1 : 0) +
+    (search ? 1 : 0);
 
   const badge = document.getElementById("activeFilterCount");
   if (badge) {
@@ -651,13 +721,20 @@ function toggleScriptCheckbox(el) {
  * Filter plays for the script builder available plays list
  */
 function filterScriptPlays() {
-  scriptAvailPage = 0; // reset to page 1 on every filter change
-  const clearBtn = document.getElementById("clearSearchPlay");
-  if (clearBtn) {
-    const val = document.getElementById("scriptSearchPlay")?.value || "";
-    clearBtn.style.display = val ? "flex" : "none";
-  }
-  renderAvailablePlays();
+  scriptAvailPage = 0;
+  syncScriptSearchClearButton();
+  updateActiveFilterCount();
+  _scheduleRenderAvailable();
+}
+
+/**
+ * Debounced handler for the available-plays search input.
+ */
+function handleScriptSearchInput() {
+  scriptAvailPage = 0;
+  syncScriptSearchClearButton();
+  updateActiveFilterCount();
+  debouncedRenderAvailablePlays();
 }
 
 /**
@@ -666,8 +743,7 @@ function filterScriptPlays() {
 function clearSearchPlay() {
   const input = document.getElementById("scriptSearchPlay");
   if (input) input.value = "";
-  const clearBtn = document.getElementById("clearSearchPlay");
-  if (clearBtn) clearBtn.style.display = "none";
+  syncScriptSearchClearButton();
   filterScriptPlays();
 }
 
@@ -687,11 +763,8 @@ function availPageNext() {
  * Render available plays in the script builder sidebar
  */
 function renderAvailablePlays() {
-  const formation = document.getElementById("scriptFilterFormation").value;
-  const basePlay = document.getElementById("scriptFilterBasePlay").value;
-  const search = document
-    .getElementById("scriptSearchPlay")
-    .value.toLowerCase();
+  const { formation, basePlay, search } = getScriptPlayFilterState();
+  normalizeSelectedAvailablePlays();
 
   // Helper for case-insensitive filter matching
   const matchesFilter = (value, selectedArr) => {
@@ -739,7 +812,7 @@ function renderAvailablePlays() {
   const playIndexMap = new Map(plays.map((p, i) => [p, i]));
 
   // Store ALL filtered play indices for Add All Filtered
-  window.currentFilteredPlayIndices = filtered.map((p) => playIndexMap.get(p));
+  currentFilteredPlayIndices = filtered.map((p) => playIndexMap.get(p));
 
   // ── Pagination ──
   const totalAvail = filtered.length;
@@ -748,14 +821,21 @@ function renderAvailablePlays() {
   if (scriptAvailPage < 0) scriptAvailPage = 0;
   const availStart = scriptAvailPage * AVAIL_PER_PAGE;
   const pageFiltered = filtered.slice(availStart, availStart + AVAIL_PER_PAGE);
+  updateAvailableActionsUI(totalAvail, pageFiltered.length);
 
   // ── Zero-state ──
   if (pageFiltered.length === 0) {
+    const activeFilters = document.getElementById("activeFilterCount")?.textContent || "0 active";
+    const hasSearch = Boolean(search);
     container.innerHTML = `
       <div class="avail-empty-state">
         <span class="avail-empty-icon">🔍</span>
         <p class="avail-empty-msg">No plays match the current filters.</p>
-        <p class="avail-empty-hint">Try adjusting your search or clearing active filters.</p>
+        <p class="avail-empty-hint">${activeFilters}${hasSearch ? " • search active" : ""}</p>
+        <div class="avail-empty-actions">
+          ${hasSearch ? `<button class="btn btn-sm" data-action="clearSearchPlay">Clear Search</button>` : ""}
+          <button class="btn btn-sm btn-secondary" data-action="clearAllScriptFilters">Reset Filters</button>
+        </div>
       </div>
     `;
     document.getElementById("availablePlayCount").textContent = "0";
@@ -886,12 +966,15 @@ function addToScript(playIndex) {
  * @param {number} playIndex - Index in plays array
  */
 function toggleAvailablePlaySelect(playIndex) {
+  playIndex = parseInt(playIndex, 10);
+  if (!Number.isInteger(playIndex)) return;
   const idx = selectedAvailablePlays.indexOf(playIndex);
   if (idx > -1) {
     selectedAvailablePlays.splice(idx, 1);
   } else {
     selectedAvailablePlays.push(playIndex);
   }
+  normalizeSelectedAvailablePlays();
   renderAvailablePlays();
 }
 
@@ -900,7 +983,7 @@ function toggleAvailablePlaySelect(playIndex) {
  */
 function toggleSelectAllAvailable() {
   const selectAllCb = document.getElementById("selectAllAvailable");
-  const filteredIndices = window.currentFilteredPlayIndices || [];
+  const filteredIndices = currentFilteredPlayIndices || [];
 
   if (selectAllCb && selectAllCb.checked) {
     // Add all filtered plays to selection
@@ -915,6 +998,7 @@ function toggleSelectAllAvailable() {
       (idx) => !filteredIndices.includes(idx),
     );
   }
+  normalizeSelectedAvailablePlays();
   renderAvailablePlays();
 }
 
@@ -922,7 +1006,7 @@ function toggleSelectAllAvailable() {
  * Add all currently filtered plays to the script
  */
 async function addAllFilteredToScript() {
-  const filteredIndices = window.currentFilteredPlayIndices || [];
+  const filteredIndices = currentFilteredPlayIndices || [];
   if (filteredIndices.length === 0) {
     showToast("No plays to add — adjust your filters");
     return;
@@ -959,6 +1043,7 @@ async function addAllFilteredToScript() {
  * Add selected available plays to the script
  */
 function addSelectedToScript() {
+  normalizeSelectedAvailablePlays();
   if (selectedAvailablePlays.length === 0) {
     showToast("No plays selected — check the boxes first");
     return;
@@ -2005,15 +2090,15 @@ function insertPeriodFromTemplate() {
       <h4>📋 Insert from Template</h4>
       <div class="template-picker-list">
         ${periodTemplates
-          .map(
-            (t, i) => `
+      .map(
+        (t, i) => `
           <div class="template-picker-item" data-action="doInsertTemplate" data-idx="${i}">
             <div class="tpi-name">${escapeHtml(t.name)}</div>
             <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
           </div>
         `,
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
       <div class="period-create-actions" style="margin-top:12px;">
         <button class="btn btn-danger btn-sm" data-action="manageTemplates">🗑 Manage</button>
@@ -2066,8 +2151,8 @@ function manageTemplates() {
       <h4>🗑 Manage Templates</h4>
       <div class="template-picker-list" id="templateManageList">
         ${periodTemplates
-          .map(
-            (t, i) => `
+      .map(
+        (t, i) => `
           <div class="template-picker-item" style="justify-content:space-between;">
             <div>
               <div class="tpi-name">${escapeHtml(t.name)}</div>
@@ -2076,8 +2161,8 @@ function manageTemplates() {
             <button class="btn btn-danger btn-sm" data-action="doDeleteTemplate" data-idx="${i}">✕</button>
           </div>
         `,
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
       <div class="period-create-actions" style="margin-top:12px;">
         <button class="btn" data-action="closePeriodOverlay">Done</button>
@@ -2535,6 +2620,14 @@ function renderScript() {
     const opts = getScriptDisplayOptions();
     const showPrintPreview =
       document.getElementById("scriptShowPrintPreview")?.checked || false;
+    const fullCallCache = new Map();
+    const getCachedFullCall = (play) => {
+      if (!play) return "";
+      if (fullCallCache.has(play)) return fullCallCache.get(play);
+      const rendered = getFullCall(play, opts);
+      fullCallCache.set(play, rendered);
+      return rendered;
+    };
 
     const hasPlays = script.some((p) => !p.isSeparator);
     if (script.length === 0) {
@@ -2593,11 +2686,11 @@ function renderScript() {
           const mapOpts = (arr) =>
             arr
               ? arr
-                  .map(
-                    (x) =>
-                      `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
-                  )
-                  .join("")
+                .map(
+                  (x) =>
+                    `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
+                )
+                .join("")
               : "";
           scoutFrontOpts = mapOpts(_scoutResult.topFront);
           scoutCovOpts = mapOpts(_scoutResult.topCoverage);
@@ -2674,8 +2767,7 @@ function renderScript() {
                   <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete period">✕</button>
                 </div>
               </div>
-              ${
-                !isCollapsed && playCount > 0
+              ${!isCollapsed && playCount > 0
                   ? `
               <div class="period-actions-toolbar">
                 <button class="pat-btn" data-action="selectPeriodPlays" data-idx="${i}" title="Select / deselect all plays in this period">☑ Select All</button>
@@ -2688,7 +2780,7 @@ function renderScript() {
                 <button class="pat-btn" data-action="copyPeriodAsText" data-idx="${i}" title="Copy all plays in this period as plain text">📋 Copy Text</button>
               </div>`
                   : ""
-              }
+                }
             </div>
           `;
             }
@@ -2699,7 +2791,7 @@ function renderScript() {
             }
 
             playNum++;
-            const fullCall = getFullCall(p, opts);
+            const fullCall = getCachedFullCall(p);
 
             // Find wristband number if wristband is loaded
             let wbBadge = "";
@@ -2753,9 +2845,8 @@ function renderScript() {
               <button class="remove" data-action="removeFromScript" data-idx="${i}" aria-label="Remove play">✕</button>
             </div>
           </div>
-          ${
-            showPrintPreview
-              ? `
+          ${showPrintPreview
+                ? `
           <div class="print-preview-row">
             <span class="preview-label">Print:</span>
             <span class="preview-field"><b>#${playNum}</b></span>
@@ -2770,8 +2861,8 @@ function renderScript() {
             <span class="preview-field reps">×${p.reps}</span>
           </div>
           `
-              : ""
-          }
+                : ""
+              }
         `;
           })
           .join("");
@@ -3013,17 +3104,17 @@ function loadSavedScriptsList() {
         .join(", ");
       const dateStr = s.date
         ? new Date(s.date + "T00:00:00").toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-          })
+          month: "short",
+          day: "numeric",
+        })
         : "No date";
       const savedTime = s.savedAt
         ? new Date(s.savedAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
         : "";
       return `
             <div class="saved-script-card">
@@ -3170,9 +3261,9 @@ function populateScriptWristbandSelect() {
       .map((wb) => {
         const totalPlays = wb.cards
           ? wb.cards.reduce(
-              (sum, c) => sum + c.data.filter((p) => p !== null).length,
-              0,
-            )
+            (sum, c) => sum + c.data.filter((p) => p !== null).length,
+            0,
+          )
           : 0;
         return `<option value="${wb.id}">${escapeHtml(wb.title)} (${totalPlays} plays)</option>`;
       })
@@ -3201,9 +3292,9 @@ function loadWristbandForScript() {
     scriptWristband = wb;
     const totalPlays = wb.cards
       ? wb.cards.reduce(
-          (sum, c) => sum + c.data.filter((p) => p !== null).length,
-          0,
-        )
+        (sum, c) => sum + c.data.filter((p) => p !== null).length,
+        0,
+      )
       : 0;
     infoDiv.textContent = `Loaded: ${wb.title} • ${wb.cards ? wb.cards.length : 1} card(s) • ${totalPlays} plays`;
     renderScript();
@@ -3248,9 +3339,9 @@ function openLoadWristbandToScriptModal() {
     .map((wb, idx) => {
       const totalPlays = wb.cards
         ? wb.cards.reduce(
-            (sum, c) => sum + c.data.filter((p) => p !== null).length,
-            0,
-          )
+          (sum, c) => sum + c.data.filter((p) => p !== null).length,
+          0,
+        )
         : 0;
       return `<option value="${idx}">${wb.title} (${totalPlays} plays)</option>`;
     })
@@ -3592,11 +3683,11 @@ function generatePDF() {
     // Build title
     const dateStr = date
       ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-          weekday: "long",
-          month: "long",
-          day: "numeric",
-          year: "numeric",
-        })
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
       : "";
     document.getElementById("previewTitle").textContent =
       name || "Practice Script";
@@ -3790,10 +3881,10 @@ async function printFullDay() {
       // Add script header — more prominent with play count
       const dateStr = scriptData.date
         ? new Date(scriptData.date + "T00:00:00").toLocaleDateString("en-US", {
-            weekday: "short",
-            month: "short",
-            day: "numeric",
-          })
+          weekday: "short",
+          month: "short",
+          day: "numeric",
+        })
         : "";
       allContent += `
       <tr class="script-section-header">

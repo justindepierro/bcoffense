@@ -795,9 +795,9 @@ function handleFileUpload(event) {
                   : "";
               showModal(
                 skippedRows.length +
-                  " row(s) were skipped:<br><br>" +
-                  skipMsg +
-                  extra,
+                " row(s) were skipped:<br><br>" +
+                skipMsg +
+                extra,
                 { title: "⚠️ Import Warnings", icon: "⚠️" },
               );
             }
@@ -807,7 +807,7 @@ function handleFileUpload(event) {
           // Full Replace: confirm destructive action
           const replaceOk = await showConfirm(
             `This will <strong>replace all ${plays.length} existing plays</strong> with ${parsed.length} new plays from the CSV.<br><br>` +
-              `Saved wristbands, scripts, and call sheets will keep their old play data.<br><br>Continue?`,
+            `Saved wristbands, scripts, and call sheets will keep their old play data.<br><br>Continue?`,
             {
               title: "⚠️ Full Replace",
               icon: "⚠️",
@@ -850,9 +850,9 @@ function handleFileUpload(event) {
               : "";
           showModal(
             skippedRows.length +
-              " row(s) were skipped:<br><br>" +
-              skipMsg +
-              extra,
+            " row(s) were skipped:<br><br>" +
+            skipMsg +
+            extra,
             { title: "⚠️ Import Warnings", icon: "⚠️" },
           );
         }
@@ -1137,19 +1137,19 @@ function renderDashboard() {
             <div class="dash-scout-card-title">Overall (${overall.total} plays)</div>
             <div class="dash-scout-items">
               ${overall.topFront
-                .slice(0, 3)
-                .map(
-                  (f) =>
-                    `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-                )
-                .join("")}
+            .slice(0, 3)
+            .map(
+              (f) =>
+                `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+            )
+            .join("")}
               ${overall.topCoverage
-                .slice(0, 3)
-                .map(
-                  (c) =>
-                    `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-                )
-                .join("")}
+            .slice(0, 3)
+            .map(
+              (c) =>
+                `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+            )
+            .join("")}
               <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${overall.blitzRate}%</b></div>
             </div>
           </div>
@@ -1157,19 +1157,19 @@ function renderDashboard() {
             <div class="dash-scout-card-title">3rd Down (${thirdDown.total} plays)</div>
             <div class="dash-scout-items">
               ${thirdDown.topFront
-                .slice(0, 2)
-                .map(
-                  (f) =>
-                    `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-                )
-                .join("")}
+            .slice(0, 2)
+            .map(
+              (f) =>
+                `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+            )
+            .join("")}
               ${thirdDown.topCoverage
-                .slice(0, 2)
-                .map(
-                  (c) =>
-                    `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-                )
-                .join("")}
+            .slice(0, 2)
+            .map(
+              (c) =>
+                `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+            )
+            .join("")}
               <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${thirdDown.blitzRate}%</b></div>
             </div>
           </div>
@@ -1177,19 +1177,19 @@ function renderDashboard() {
             <div class="dash-scout-card-title">Red Zone (${rz.total} plays)</div>
             <div class="dash-scout-items">
               ${rz.topFront
-                .slice(0, 2)
-                .map(
-                  (f) =>
-                    `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-                )
-                .join("")}
+            .slice(0, 2)
+            .map(
+              (f) =>
+                `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+            )
+            .join("")}
               ${rz.topCoverage
-                .slice(0, 2)
-                .map(
-                  (c) =>
-                    `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-                )
-                .join("")}
+            .slice(0, 2)
+            .map(
+              (c) =>
+                `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+            )
+            .join("")}
               <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${rz.blitzRate}%</b></div>
             </div>
           </div>
@@ -2147,9 +2147,9 @@ function updateTabBadges() {
     "tab-wristband":
       typeof wristbandCards !== "undefined"
         ? wristbandCards.reduce(
-            (s, c) => s + (c.data ? c.data.filter(Boolean).length : 0),
-            0,
-          )
+          (s, c) => s + (c.data ? c.data.filter(Boolean).length : 0),
+          0,
+        )
         : 0,
     "tab-tendencies":
       typeof tendenciesOpponents !== "undefined"
