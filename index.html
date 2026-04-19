@@ -2274,24 +2274,35 @@
   <!-- Service Worker Registration -->
   <script>
     if ("serviceWorker" in navigator) {
+      let hasReloadedForWorker = false;
+
+      navigator.serviceWorker.addEventListener("controllerchange", () => {
+        if (hasReloadedForWorker) return;
+        hasReloadedForWorker = true;
+        window.location.reload();
+      });
+
       navigator.serviceWorker
         .register("./sw.js")
         .then((reg) => {
+          if (reg.waiting) {
+            reg.waiting.postMessage("skipWaiting");
+          }
+
           reg.addEventListener("updatefound", () => {
             const nw = reg.installing;
             if (!nw) return;
             nw.addEventListener("statechange", () => {
               if (
-                nw.state === "activated" &&
+                nw.state === "installed" &&
                 navigator.serviceWorker.controller
               ) {
-                showToast(
-                  '\uD83D\uDD04 App updated. <button data-action="reloadPage" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer">Reload</button>',
-                  8000,
-                );
+                nw.postMessage("skipWaiting");
               }
             });
           });
+
+          reg.update().catch(() => {});
         })
         .catch((err) => console.warn("SW registration failed:", err));
     }

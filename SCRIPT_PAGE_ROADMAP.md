@@ -27,7 +27,9 @@ Completed already:
 - [x] Live inline edits for notes, defense fields, and period labels
 - [x] Script keyboard shortcuts for Cmd/Ctrl+A select all and Escape clear selection
 - [x] Period header containment/content-visibility performance hint
-- [x] Service worker bumped through `SW v61`
+- [x] Saved scripts now restore workspace context beyond play rows
+- [x] Startup init path is hardened against optional UI wiring failures
+- [x] Service worker bumped through `SW v71`
 
 Still verified and pending:
 
@@ -62,7 +64,7 @@ Still verified and pending:
 - [x] Debounce available-play filtering on typed search.
 - [ ] Reduce full rebuild work in `renderScript()` where practical.
 - [x] Cache formatted play-call output during render cycles.
-- [ ] Reduce per-row datalist duplication when shared lists are enough.
+- [x] Reduce per-row datalist duplication when shared lists are enough.
 - [x] Replace `window.currentFilteredPlayIndices` with module-local state.
 
 ### UI / UX
@@ -200,9 +202,8 @@ Definition of done:
 
 When we resume, start here:
 
-- [x] Reduce per-row datalist duplication in script render
 - [ ] Continue splitting `renderScript()` into smaller updateable regions
-- [x] Improve saved-script workspace restoration behavior
-- [x] Add labels/announcements for color, drag, and selection controls
-- [x] Improve period template browse/insert workflow
-- [x] Reduce control crowding in period action bars
+- [ ] Avoid repeated per-row formatting where values are reused in the same render
+- [ ] Review duplicated UI state that still exists across checkboxes or panels
+- [ ] Review keyboard access to bulk-selection flows and period actions
+- [ ] Audit narrow-screen script controls and reduce accidental taps
