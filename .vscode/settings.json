@@ -1,8 +1,80 @@
 {
-  "chat.tools.terminal.autoApprove": {
-    "/^cat /Users/justindepierro/Downloads/athlete_analytics_export\\.json \\| python3 -c \"\nimport json, sys\ndata = json\\.load\\(sys\\.stdin\\)\n# Show athletes with actual data\nathletes = \\[a for a in data\\['athletes'\\] if a\\.get\\('name'\\)\\]\nprint\\(f'Total athletes: \\{len\\(data\\[\\\\\"athletes\\\\\"\\]\\)\\}'\\)\nprint\\(f'Named athletes: \\{len\\(athletes\\)\\}'\\)\nprint\\(\\)\nfor a in athletes:\n    print\\(f\\\\\"\\{a\\['athlete_id'\\]\\}: \\{a\\['name'\\]\\} \\| pos=\\{a\\.get\\('position'\\)\\} \\| wt=\\{a\\.get\\('weight_lb'\\)\\} \\| tests=\\{a\\.get\\('tests'\\)\\} \\| analytics keys=\\{list\\(a\\.get\\('analytics',\\{\\}\\)\\.keys\\(\\)\\) if a\\.get\\('analytics'\\) else 'none'\\}\\\\\"\\)\n\"$/": {
-      "approve": true,
-      "matchCommandLine": true
+  // ─── BCOffense Project Settings ───────────────────────────────────────────
+
+  // Copilot: point to our detailed project guide for every AI interaction
+  "github.copilot.chat.codeGeneration.instructions": [
+    {
+      "file": "AGENTS.md"
     }
-  }
+  ],
+
+  // Copilot: enable agent mode tools
+  "chat.agent.enabled": true,
+  "chat.tools.terminal.autoApprove": {},
+
+  // Copilot: test generation reads our patterns doc
+  "github.copilot.chat.testGeneration.instructions": [
+    {
+      "text": "This project has no test runner. Tests are manual in-browser. Describe steps to verify behavior instead of writing test framework code."
+    }
+  ],
+
+  // Copilot: review instructions — enforce project standards
+  "github.copilot.chat.reviewSelection.instructions": [
+    {
+      "text": "Review against BCOffense rules: no inline onclick, no hardcoded colors, escapeHtml on all user text, storageManager for persistence, data-action for all interactions, SW version must be bumped after any change."
+    }
+  ],
+
+  // Copilot: commit message format
+  "github.copilot.chat.commitMessageGeneration.instructions": [
+    {
+      "text": "Use Conventional Commits: feat/fix/perf/style/refactor prefix, lowercase after colon, include (SW vN) when service worker was bumped. Body as bullet list with - prefix."
+    }
+  ],
+
+  // ─── Editor ───────────────────────────────────────────────────────────────
+
+  // JS: no modules, no TypeScript, vanilla only
+  "javascript.preferences.quoteStyle": "double",
+  "javascript.suggest.autoImports": false,
+  "typescript.suggest.autoImports": false,
+
+  // HTML: index.html is large (~3300 lines), increase fold/performance limits
+  "editor.foldingMaximumRegions": 5000,
+  "[html]": {
+    "editor.defaultFormatter": "vscode.html-language-features",
+    "editor.tabSize": 2
+  },
+  "[javascript]": {
+    "editor.tabSize": 2,
+    "editor.defaultFormatter": "vscode.typescript-language-features"
+  },
+  "[css]": {
+    "editor.tabSize": 2
+  },
+
+  // ─── File Associations ────────────────────────────────────────────────────
+  "files.associations": {
+    "sw.js": "javascript"
+  },
+
+  // Exclude node_modules noise (project has none, but guard against accidents)
+  "files.exclude": {
+    "**/node_modules": true,
+    "**/.DS_Store": true
+  },
+
+  // ─── Search ───────────────────────────────────────────────────────────────
+  "search.exclude": {
+    "**/node_modules": true
+  },
+
+  // ─── Emmet ────────────────────────────────────────────────────────────────
+  // index.html uses lots of data-action attributes — keep emmet helpful
+  "emmet.includeLanguages": {
+    "html": "html"
+  },
+  "emmet.triggerExpansionOnTab": true
 }
+

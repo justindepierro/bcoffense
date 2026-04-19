@@ -20,7 +20,7 @@
   color: white;
   margin-bottom: 20px;
   flex-wrap: wrap;
-  gap: 16px;
+  gap: var(--space-md);
 }
 .install-title {
   margin: 0 0 4px 0;

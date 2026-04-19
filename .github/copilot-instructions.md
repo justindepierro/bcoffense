@@ -1,0 +1,167 @@
+# BCOffense — GitHub Copilot Instructions
+
+> These rules apply to every AI suggestion, completion, and chat response in this repo.
+> Read AGENTS.md for the full reference. This file is the enforced shortlist.
+
+---
+
+## What This Project Is
+
+**BCOffense** is a football practice management PWA. It is a **single-page app** served statically from GitHub Pages.
+
+- **Stack:** Vanilla HTML / CSS / JS only — zero build tools, no bundler, no npm, no TypeScript
+- **Entry point:** `index.html` (all markup lives here, ~3300 lines)
+- **Scripts load with `defer` in order** — all share the global scope, no modules
+- **Data persistence:** `localStorage` only via `storageManager` — no backend, no fetch calls to APIs
+- **Offline support:** Service worker (`sw.js`) with stale-while-revalidate caching
+
+---
+
+## Absolute Rules — Never Break These
+
+### JavaScript
+- **NO inline `onclick`/`onchange`/`oninput`** — always use `data-action` / `data-onchange` / `data-oninput` attributes
+- **NO `import` / `export`** — this is a global-scope, no-module project
+- **NO build step** — no webpack, vite, rollup, babel, npm scripts
+- **NO `package.json`** — intentionally dependency-free
+- **NO `innerHTML` with unsanitized user content** — always use `escapeHtml()`, `setInnerHTML()`, or `sanitizeHTML()`
+- **NEVER double-escape** `getFullCall()` output — it already escapes internally
+- **ALL persistence** goes through `storageManager.get()` / `storageManager.set()` — never raw `localStorage`
+- **ALL modals** are async Promise-based: `showModal()`, `showConfirm()`, `showPrompt()`, `showChoice()`, `showListPicker()`
+- **ALL toasts** via `showToast()` or `showUndoToast()`
+
+### CSS
+- **NO hardcoded colors** — always use CSS custom properties from `base.css` (e.g., `var(--color-primary)`)
+- **NO hardcoded spacing** — use `var(--space-xs)` through `var(--space-xl)`
+- **Module CSS prefix:** call sheet → `cs-*`, constraints → `cr-*`, wristband → `wb-*`
+- Dark mode: `[data-theme="dark"]` selector — never use JS to detect dark mode
+
+### Service Worker (CRITICAL — do not forget)
+- **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
+- Current version: `bcoffense-v54` — next version will be `bcoffense-v55`
+- **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
+
+---
+
+## Event Delegation Pattern
+
+All interactions use `data-action`. The dispatcher is in `app.js`.
+
+```html
+<!-- No-arg action -->
+<button data-action="saveScript">Save</button>
+
+<!-- With argument -->
+<button data-action="showTab" data-arg="callsheet">Call Sheet</button>
+
+<!-- Overlay close (backdrop click only) -->
+<div class="my-overlay" data-action="closeMyPanelOverlay">
+  <div class="my-panel">...</div>
+</div>
+```
+
+The generic fallback: `window[action](arg)` — so the function **must be global** (top-level in any JS file).
+
+Special function sets in `app.js`:
+- `_ELEMENT_FNS` — receives the DOM element: `toggleFilterSection`, `toggleCollapsiblePanel`, `setHeaderColor`, `switchDisplayTab`
+- `_BOOL_FNS` — receives boolean: `toggleAllPbPrintOptions`, `csSelectAllFields`
+
+Change/input delegation:
+```html
+<select data-onchange="myHandler" data-pass="value">
+<input data-oninput="handlerA;handlerB" data-pass="value">
+```
+
+---
+
+## HTML Safety
+
+```js
+// User text in template literals:
+`<td>${escapeHtml(play.formation)}</td>`
+
+// User HTML content (preserve formatting):
+setInnerHTML(el, userHtml);        // calls sanitizeHTML internally
+sanitizeHTML(html);                // strips dangerous tags/attrs
+
+// Play display (already escaped internally — do NOT wrap in escapeHtml):
+getFullCall(play, options);        // returns safe HTML string
+buildCallSheetPlayParts(play, opts); // returns array of safe HTML parts
+```
+
+---
+
+## Storage Pattern
+
+```js
+// Reading (always provide a default):
+const data = storageManager.get(STORAGE_KEYS.MY_KEY, []);
+
+// Writing:
+storageManager.set(STORAGE_KEYS.MY_KEY, data);
+
+// New key → add to STORAGE_KEYS object in utils.js first
+```
+
+---
+
+## Script Load Order
+
+New JS files must be inserted in the correct position in `index.html`:
+
+```
+utils.js → playbook.js → script.js → wristband.js → callsheet.js
+→ constraints.js → tendencies.js → installation.js → offensebuilder.js
+→ help.js → app.js (LAST)
+```
+
+---
+
+## Commit Message Format
+
+```
+feat: description of feature (SW v55)
+fix: description of bug fix
+perf: performance improvement
+style: formatting only, no logic changes
+refactor: restructure, no behavior change
+```
+
+- Always include `(SW vN)` when bumping service worker version
+- Body: bullet list with `-` prefix
+
+---
+
+## Data Model Quick Reference
+
+### Play Object key fields
+`type`, `personnel`, `formation`, `formTag1`, `formTag2`, `under`, `back`, `shift`, `motion`,
+`protection`, `lineCall`, `play`, `playTag1`, `playTag2`, `basePlay`, `oneWord`,
+`preferredSituation`, `preferredDown`, `preferredDistance`, `preferredHash`, `preferredFieldPosition`,
+`tempo`, `practiceFront`, `practiceDefense`, `practiceCoverage`, `practiceBlitz`, `practiceStunt`,
+`keyPlayer1-3`, `keyPlayerName1-3`, `constraint1-3`, `hitChart1-3`, `deadVs`, `opponent`, `notes`
+
+### Tab names (TAB_INDEX_MAP)
+`playbook(0)`, `script(1)`, `wristband(2)`, `tendencies(3)`, `callsheet(4)`,
+`installation(5)`, `offensebuilder(6)`, `dashboard(7)`
+
+### Global variables
+- `plays[]` — master playbook (app.js)
+- `script[]` — working practice script (app.js)
+- `filteredPlays[]` — filtered subset (app.js)
+- `callSheet{}` — call sheet data (callsheet.js)
+- `wristbandCards[]` — wristband cards (wristband.js)
+- `currentActiveTab` — active tab name (app.js)
+
+---
+
+## New Feature Checklist
+
+1. Identify the owning JS file (or create a new one)
+2. Use `data-action` for all interactive elements
+3. `escapeHtml()` on all user text in template literals
+4. CSS custom properties — no hardcoded values
+5. `storageManager` for persistence — add key to `STORAGE_KEYS` in utils.js
+6. If new file: add to `LOCAL_ASSETS` in sw.js + `<script defer>` in index.html (correct order)
+7. **Bump `CACHE_NAME` version in sw.js**
+8. Commit with conventional message including `(SW vN)`

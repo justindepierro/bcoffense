@@ -15,9 +15,9 @@
   background: var(--gradient-dark);
   border-radius: var(--radius-lg);
   padding: 20px 24px;
-  margin-bottom: 24px;
+  margin-bottom: var(--space-lg);
   color: white;
-  gap: 16px;
+  gap: var(--space-md);
   flex-wrap: wrap;
 }
 
@@ -88,7 +88,7 @@
 .dash-cards {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
-  gap: 16px;
+  gap: var(--space-md);
   margin-bottom: 28px;
 }
 
@@ -160,14 +160,14 @@
 .dash-scout-grid {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
-  gap: 16px;
+  gap: var(--space-md);
   margin-bottom: 28px;
 }
 
 .dash-scout-card {
   background: var(--color-white);
   border-radius: var(--radius-lg);
-  padding: 16px;
+  padding: var(--space-md);
   box-shadow: var(--shadow-sm);
   border-top: 3px solid var(--color-danger);
 }

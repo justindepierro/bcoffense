@@ -47,7 +47,7 @@
 .wristband-cell:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -1px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 @media (hover: hover) {
   .wristband-cell:hover {
@@ -112,7 +112,10 @@
   justify-content: center;
   background: rgba(255, 255, 255, 0.85);
   pointer-events: none;
-  z-index: 1;
+  z-index: var(--z-base);
+}
+[data-theme="dark"] .wb-grid-empty-state {
+  background: rgba(18, 22, 32, 0.88);
 }
 .wb-grid-empty-state.visible {
   display: flex;
@@ -593,7 +596,7 @@
 .wristband-cell.wb-selected {
   outline: 2px dashed var(--color-primary);
   outline-offset: -2px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 
 /* ── Pinned play star ── */

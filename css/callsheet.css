@@ -92,7 +92,7 @@
 .callsheet-play:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 .callsheet-dropzone:focus-visible {
   outline: 2px solid var(--color-primary);
@@ -310,7 +310,7 @@
 .cs-toggle:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: -2px;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 .cs-toggle:disabled {
   opacity: 0.5;
@@ -2005,7 +2005,7 @@
 .constraint-panel-overlay {
   position: fixed;
   inset: 0;
-  z-index: 1200;
+  z-index: var(--z-overlay);
   display: flex;
   justify-content: flex-end;
   pointer-events: none;

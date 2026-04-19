@@ -35,7 +35,7 @@
 .td-opponent-list {
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: var(--space-sm);
 }
 .td-opponent-card {
   display: flex;
@@ -80,16 +80,16 @@
 }
 .td-opponent-card-actions {
   display: flex;
-  gap: 4px;
+  gap: var(--space-xs);
 }
 
 /* Export section */
 .td-export-section {
-  margin-top: 24px;
+  margin-top: var(--space-lg);
 }
 .td-export-buttons {
   display: flex;
-  gap: 8px;
+  gap: var(--space-sm);
   flex-wrap: wrap;
 }
 
