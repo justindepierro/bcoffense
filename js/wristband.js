@@ -929,6 +929,74 @@ function clearAllWbOptions() {
 }
 
 /**
+ * Apply display preset (Minimal/Standard/Full)
+ */
+function applyWbDisplayPreset(preset) {
+  // Minimal: only Show Line Call
+  const minimal = {
+    wbShowEmoji: false,
+    wbUseSquares: false,
+    wbUnderEmoji: false,
+    wbBoldShifts: false,
+    wbRedShifts: false,
+    wbItalicMotions: false,
+    wbRedMotions: false,
+    wbRemoveVowels: false,
+    wbShowLineCall: true,
+    wbLineCallOnly: false,
+    wbCadenceReminder: false,
+    wbHighlightHuddle: false,
+    wbHighlightCandy: false,
+  };
+
+  // Standard: emoji + show line call (good for most users)
+  const standard = {
+    wbShowEmoji: true,
+    wbUseSquares: false,
+    wbUnderEmoji: false,
+    wbBoldShifts: false,
+    wbRedShifts: false,
+    wbItalicMotions: false,
+    wbRedMotions: false,
+    wbRemoveVowels: false,
+    wbShowLineCall: true,
+    wbLineCallOnly: false,
+    wbCadenceReminder: false,
+    wbHighlightHuddle: false,
+    wbHighlightCandy: false,
+  };
+
+  // Full: all options on
+  const full = {
+    wbShowEmoji: true,
+    wbUseSquares: true,
+    wbUnderEmoji: true,
+    wbBoldShifts: true,
+    wbRedShifts: true,
+    wbItalicMotions: true,
+    wbRedMotions: true,
+    wbRemoveVowels: false,
+    wbShowLineCall: true,
+    wbLineCallOnly: false,
+    wbCadenceReminder: true,
+    wbHighlightHuddle: true,
+    wbHighlightCandy: true,
+  };
+
+  const presets = { minimal, standard, full };
+  const config = presets[preset] || standard;
+
+  // Apply all checkboxes from preset
+  Object.entries(config).forEach(([id, checked]) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = checked;
+  });
+
+  renderWristbandGrid();
+  renderWristbandPlays();
+}
+
+/**
  * Initialize the wristband maker
  */
 function initWristband() {
@@ -1431,7 +1499,7 @@ function renderWristbandGrid() {
              draggable="true"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play">${oddPrefix}${oddDisplay}${oddPostfix}</span>
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddPrefix}${oddDisplay}${oddPostfix}</span></span>
         </div>
       `;
     } else {
@@ -1451,7 +1519,7 @@ function renderWristbandGrid() {
              draggable="true"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play">${evenPrefix}${evenDisplay}${evenPostfix}</span>
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenPrefix}${evenDisplay}${evenPostfix}</span></span>
         </div>
       `;
     } else {
@@ -3109,6 +3177,124 @@ function _showWbCellContextMenu(e, cardIdx, cellIdx) {
 }
 
 // ============ Container-Scoped Delegation ============
+
+// ============ Wristband Help/Shortcuts ============
+
+/**
+ * Show wristband shortcuts help modal
+ */
+function showWbShortcutHelp() {
+  const overlay = document.getElementById("wbHelpOverlay");
+  if (overlay) overlay.classList.add("visible");
+}
+
+/**
+ * Close wristband shortcuts help modal
+ */
+function closeWbHelpOverlay() {
+  const overlay = document.getElementById("wbHelpOverlay");
+  if (overlay) overlay.classList.remove("visible");
+}
+
+// ============ Wristband Find/Replace ============
+
+/**
+ * Open find/replace modal
+ */
+function openWbFindReplaceModal() {
+  const overlay = document.getElementById("wbFindReplaceOverlay");
+  if (overlay) {
+    overlay.classList.add("visible");
+    document.getElementById("wbFindPlayInput").focus();
+    document.getElementById("wbFindPlayInput").value = "";
+    document.getElementById("wbReplacePlayInput").value = "";
+  }
+}
+
+/**
+ * Close find/replace modal
+ */
+function closeWbFindReplaceModal() {
+  const overlay = document.getElementById("wbFindReplaceOverlay");
+  if (overlay) overlay.classList.remove("visible");
+}
+
+/**
+ * Execute find and replace across all cards
+ */
+async function executeWbFindReplace() {
+  const findInput = document.getElementById("wbFindPlayInput");
+  const replaceInput = document.getElementById("wbReplacePlayInput");
+  const findStr = findInput.value.trim();
+  const replaceStr = replaceInput.value.trim();
+
+  if (!findStr) {
+    showToast("Enter a play name to find");
+    return;
+  }
+  if (!replaceStr) {
+    showToast("Enter a replacement play name");
+    return;
+  }
+
+  // Count matches across all cards
+  let matchCount = 0;
+  let cellsAffected = 0;
+  const findLower = findStr.toLowerCase();
+
+  for (let cardIdx = 0; cardIdx < wristbandCards.length; cardIdx++) {
+    const cardData = wristbandCards[cardIdx].data;
+    for (let cellIdx = 0; cellIdx < cardData.length; cellIdx++) {
+      const play = cardData[cellIdx];
+      if (play && play.play && play.play.toLowerCase().includes(findLower)) {
+        matchCount++;
+      }
+    }
+  }
+
+  if (matchCount === 0) {
+    showToast(`No plays found matching "${findStr}"`);
+    return;
+  }
+
+  // Confirm replacement
+  const ok = await showConfirm(
+    `Replace ${matchCount} play${matchCount === 1 ? "" : "s"} containing "${findStr}" with "${replaceStr}"?`,
+    {
+      title: "Find & Replace",
+      icon: "🔍",
+      confirmText: "Replace All",
+      danger: false,
+    },
+  );
+
+  if (!ok) return;
+
+  saveWristbandState();
+
+  // Execute replacement
+  for (let cardIdx = 0; cardIdx < wristbandCards.length; cardIdx++) {
+    const cardData = wristbandCards[cardIdx].data;
+    for (let cellIdx = 0; cellIdx < cardData.length; cellIdx++) {
+      const play = cardData[cellIdx];
+      if (play && play.play && play.play.toLowerCase().includes(findLower)) {
+        // Create new play object with replaced name
+        const newPlay = safeDeepClone(play);
+        newPlay.play = play.play.replace(
+          new RegExp(findStr, "gi"),
+          replaceStr,
+        );
+        wristbandCards[cardIdx].data[cellIdx] = newPlay;
+        cellsAffected++;
+      }
+    }
+  }
+
+  closeWbFindReplaceModal();
+  renderCardTabs();
+  renderWristbandGrid();
+  showToast(`✅ Replaced ${cellsAffected} play${cellsAffected === 1 ? "" : "s"}`);
+}
 
 document.addEventListener("DOMContentLoaded", () => {
   // ── Batch bar swatch click wiring ──

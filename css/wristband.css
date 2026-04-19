@@ -74,7 +74,47 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  display: flex;
+  align-items: center;
+  gap: 2px;
 }
+
+/* ── Drag Handle ── */
+.cell-drag-handle {
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  cursor: grab;
+  opacity: 0.6;
+  transition: opacity var(--transition-fast);
+  display: none;
+}
+.wristband-cell.filled:hover .cell-drag-handle {
+  display: inline;
+  opacity: 1;
+}
+@media (max-width: 768px) {
+  .cell-drag-handle {
+    display: inline;
+  }
+}
+
+/* ── Mobile Text Truncation ── */
+@media (max-width: 640px) {
+  .wristband-cell .cell-play {
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    max-height: 2.4em;
+  }
+  .cell-play-text {
+    flex: 1;
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+}
+
 .wristband-cell .remove-cell {
   position: absolute;
   top: 0;
@@ -502,6 +542,24 @@
 /* Wristband Display Panel Override */
 .wb-display-panel {
   margin-top: 15px;
+}
+
+/* ── Display Preset Radio Buttons ── */
+.wb-preset-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-sm);
+  margin-bottom: var(--space-sm);
+  flex-wrap: wrap;
+}
+.wb-preset-bar input[type="radio"] {
+  cursor: pointer;
+}
+.wb-preset-bar label {
+  margin: 0;
 }
 
 /* ── Wristband available plays empty state ── */

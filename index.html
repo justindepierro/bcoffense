@@ -1945,6 +1945,13 @@
                   🧠 Smart Fill
                 </button>
                 <button
+                  class="btn btn-sm"
+                  data-action="openWbFindReplaceModal"
+                  title="Find & replace plays across all cards"
+                >
+                  🔍 Find/Replace
+                </button>
+                <button
                   class="btn btn-success btn-sm"
                   data-action="printWristband"
                 >
@@ -1970,6 +1977,13 @@
                   data-testid="clear-wristband"
                 >
                   🗑 Clear
+                </button>
+                <button
+                  class="btn btn-sm"
+                  data-action="showWbShortcutHelp"
+                  title="Keyboard shortcuts & tips"
+                >
+                  ❓ Help
                 </button>
               </div>
             </div>
@@ -2039,6 +2053,21 @@
                 <span class="toggle-icon">▼</span>
               </div>
               <div class="display-options-content">
+                <div class="wb-preset-bar">
+                  <span style="font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600;">Presets:</span>
+                  <label style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); cursor: pointer;">
+                    <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset" />
+                    Minimal
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); cursor: pointer;">
+                    <input type="radio" name="wbDisplayPreset" value="standard" checked data-onchange="applyWbDisplayPreset" />
+                    Standard
+                  </label>
+                  <label style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); cursor: pointer;">
+                    <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset" />
+                    Full
+                  </label>
+                </div>
                 <div class="display-options-btns">
                   <button class="btn btn-xs" data-action="selectAllWbOptions">
                     All
@@ -3265,6 +3294,120 @@
             Apply
           </button>
         </div>
+      </div>
+    </div>
+
+    <!-- Wristband Find/Replace Modal -->
+    <div
+      class="modal-overlay"
+      id="wbFindReplaceOverlay"
+      data-action="closeWbFindReplaceModal"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Find and Replace Plays"
+    >
+      <div class="modal-content" style="max-width: 450px;">
+        <button class="modal-close" data-action="closeWbFindReplaceModal">×</button>
+        <h3>🔍 Find & Replace Plays</h3>
+        
+        <div style="display: grid; gap: var(--space-md);">
+          <div>
+            <label for="wbFindPlayInput" style="display: block; margin-bottom: var(--space-xs); font-weight: 600; font-size: var(--font-size-sm);">Find Play:</label>
+            <input
+              type="text"
+              id="wbFindPlayInput"
+              placeholder="Enter play name to search for (e.g., 'Jet Sweep')"
+              style="width: 100%; padding: var(--space-xs); border: 1px solid var(--color-border-input); border-radius: var(--radius-sm); background: var(--color-bg-input); color: var(--color-text);"
+              autocomplete="off"
+            />
+          </div>
+
+          <div>
+            <label for="wbReplacePlayInput" style="display: block; margin-bottom: var(--space-xs); font-weight: 600; font-size: var(--font-size-sm);">Replace With:</label>
+            <input
+              type="text"
+              id="wbReplacePlayInput"
+              placeholder="New play name (e.g., 'Speed Sweep')"
+              style="width: 100%; padding: var(--space-xs); border: 1px solid var(--color-border-input); border-radius: var(--radius-sm); background: var(--color-bg-input); color: var(--color-text);"
+              autocomplete="off"
+              list="wbPersonnelOptions"
+            />
+          </div>
+
+          <div style="padding: var(--space-sm); background: var(--color-bg-lighter); border-radius: var(--radius-sm); border-left: 3px solid var(--color-primary);">
+            <div style="font-size: var(--font-size-xs); color: var(--color-text-muted);">
+              <strong>ℹ️ Note:</strong> Replacement is case-insensitive substring matching. "jet" will match "Jet Sweep", "Jet Chip", etc.
+            </div>
+          </div>
+
+          <div style="display: flex; gap: var(--space-sm);">
+            <button class="btn btn-secondary" data-action="closeWbFindReplaceModal">Cancel</button>
+            <button class="btn btn-primary" data-action="executeWbFindReplace">Replace All</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Wristband Shortcuts Help Modal -->
+
+    <div
+      class="modal-overlay"
+      id="wbHelpOverlay"
+      data-action="closeWbHelpOverlay"
+      role="dialog"
+      aria-modal="true"
+      aria-label="Wristband Shortcuts & Tips"
+    >
+      <div class="modal-content" style="max-width: 500px;">
+        <button class="modal-close" data-action="closeWbHelpOverlay">×</button>
+        <h3>⚡ Wristband Quick Tips</h3>
+        
+        <div style="display:grid; gap: var(--space-md); font-size: var(--font-size-xs);">
+          <div>
+            <strong>📋 Adding Plays</strong>
+            <div style="margin-top: var(--space-xs); line-height: 1.6;">
+              • Click any cell to open/edit<br>
+              • <kbd style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">⌘K</kbd> for quick search<br>
+              • Drag plays from 💾 Available list
+            </div>
+          </div>
+
+          <div>
+            <strong>🎨 Styling Cells</strong>
+            <div style="margin-top: var(--space-xs); line-height: 1.6;">
+              • Click cell → choose color + cadence + personnel<br>
+              • <kbd style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">Shift</kbd>+Click multiple cells → edit all at once<br>
+              • Batch bar appears below grid with options
+            </div>
+          </div>
+
+          <div>
+            <strong>📋 Copy/Paste</strong>
+            <div style="margin-top: var(--space-xs); line-height: 1.6;">
+              • Right-click (or long-press) cell for menu<br>
+              • <kbd style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">⌘C</kbd> / <kbd style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">⌘V</kbd> to copy with all customizations
+            </div>
+          </div>
+
+          <div>
+            <strong>⚡ Auto-Fill</strong>
+            <div style="margin-top: var(--space-xs); line-height: 1.6;">
+              • 🧠 Smart Fill: Pick situation (1st Down, Red Zone, etc.)<br>
+              • ⚡ Auto-Fill: Fill with current filter results
+            </div>
+          </div>
+
+          <div>
+            <strong>🔄 Drag & Drop</strong>
+            <div style="margin-top: var(--space-xs); line-height: 1.6;">
+              • Drag cells to swap within card<br>
+              • Drag to card tabs to move to different card<br>
+              • Drag sort fields ☰ to reorder priority
+            </div>
+          </div>
+        </div>
+
+        <button class="btn btn-primary btn-sm" data-action="closeWbHelpOverlay" style="margin-top: var(--space-md);">Got it!</button>
       </div>
     </div>
 
