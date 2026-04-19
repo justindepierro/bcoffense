@@ -198,7 +198,7 @@ Definition of done:
 
 When we resume, start here:
 
-- [ ] Reduce per-row datalist duplication in script render
+- [x] Reduce per-row datalist duplication in script render
 - [ ] Continue splitting `renderScript()` into smaller updateable regions
 - [ ] Add labels/announcements for color, drag, and selection controls
 - [ ] Improve period template browse/insert workflow
