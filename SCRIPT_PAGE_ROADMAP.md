@@ -206,4 +206,4 @@ Definition of done:
 
 When we resume, start here:
 
-- [ ] Use the new script render profiling hooks to capture before/after timing samples for large scripts
+- [ ] Use the render benchmark helper on a large saved script and capture a representative timing summary before the next optimization pass

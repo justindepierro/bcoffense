@@ -3529,8 +3529,8 @@ function recordScriptRenderProfileSample(sample) {
   }
 }
 
-function summarizeScriptRenderProfileHistory() {
-  if (scriptRenderProfileHistory.length === 0) return null;
+function summarizeScriptRenderProfileSamples(samples) {
+  if (!Array.isArray(samples) || samples.length === 0) return null;
 
   const keys = [
     "totalMs",
@@ -3543,23 +3543,26 @@ function summarizeScriptRenderProfileHistory() {
     "longPressMs",
     "badgeMs",
   ];
-  const latestSample =
-    scriptRenderProfileHistory[scriptRenderProfileHistory.length - 1];
+  const latestSample = samples[samples.length - 1];
   const summary = {
-    samples: scriptRenderProfileHistory.length,
+    samples: samples.length,
     playCount: latestSample.playCount,
     periodCount: latestSample.periodCount,
   };
 
   keys.forEach((key) => {
-    const total = scriptRenderProfileHistory.reduce(
+    const total = samples.reduce(
       (sum, sample) => sum + (sample[key] || 0),
       0,
     );
-    summary[key] = Number((total / scriptRenderProfileHistory.length).toFixed(2));
+    summary[key] = Number((total / samples.length).toFixed(2));
   });
 
   return summary;
+}
+
+function summarizeScriptRenderProfileHistory() {
+  return summarizeScriptRenderProfileSamples(scriptRenderProfileHistory);
 }
 
 function printScriptRenderProfileSummary() {
@@ -3593,18 +3596,32 @@ function getScriptRenderProfileHistory() {
 function runScriptRenderProfileBenchmark(iterations = 20) {
   const runCount = Math.max(1, Number(iterations) || 1);
   const wasEnabled = scriptRenderProfilingEnabled;
+  const benchmarkSamples = [];
 
   scriptRenderProfilingEnabled = true;
   scriptRenderProfileHistory = [];
 
   for (let index = 0; index < runCount; index++) {
     renderScript();
+    const latestSample = scriptRenderProfileHistory[scriptRenderProfileHistory.length - 1];
+    if (latestSample) benchmarkSamples.push(latestSample);
   }
 
-  const summary = printScriptRenderProfileSummary();
+  const summary = summarizeScriptRenderProfileSamples(benchmarkSamples);
   scriptRenderProfilingEnabled = wasEnabled;
+  if (!summary) {
+    console.info("Script render profiling: no samples collected yet.");
+    return null;
+  }
+
+  console.table([summary]);
+  if (summary.playCount === 0 || summary.periodCount <= 1) {
+    console.warn(
+      "Script render benchmark used a very small script. Load a larger script before using these timings to choose optimization work.",
+    );
+  }
   console.info(
-    `Script render benchmark captured ${runCount} sample(s). Use getScriptRenderProfileHistory() to inspect raw samples.`,
+    `Script render benchmark captured ${benchmarkSamples.length} sample(s). Use getScriptRenderProfileHistory() to inspect the rolling history buffer.`,
   );
   return summary;
 }
