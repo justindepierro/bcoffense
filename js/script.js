@@ -149,6 +149,7 @@ let bulkSelectedIndices = [];
 
 // Selected available plays for batch adding
 let selectedAvailablePlays = [];
+let scriptKeyboardShortcutsInitialized = false;
 let currentFilteredPlayIndices = [];
 
 // Pagination for the available plays list
@@ -200,6 +201,13 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
 const debouncedRenderAvailablePlays = debounce(() => {
   _scheduleRenderAvailable();
 }, 180);
+
+const SCRIPT_PERIOD_ACTION_SHORTCUTS = {
+  selectPeriodPlays: { aria: "Alt+Shift+S", hint: "Alt+Shift+S" },
+  sortPeriod: { aria: "Alt+Shift+O", hint: "Alt+Shift+O" },
+  reversePeriod: { aria: "Alt+Shift+R", hint: "Alt+Shift+R" },
+  applyPreferredForPeriod: { aria: "Alt+Shift+P", hint: "Alt+Shift+P" },
+};
 
 function normalizeSelectedAvailablePlays() {
   selectedAvailablePlays = [...new Set(selectedAvailablePlays)]
@@ -2987,7 +2995,11 @@ function renderScriptEmptyPeriodHeaders() {
 }
 
 function renderPeriodActionButton(action, index, label, icon, title, extraClass = "") {
-  return `<button class="pat-btn ${extraClass}" data-action="${action}" data-idx="${index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"><span class="pat-btn-icon" aria-hidden="true">${icon}</span><span class="pat-btn-label">${escapeHtml(label)}</span></button>`;
+  const shortcut = SCRIPT_PERIOD_ACTION_SHORTCUTS[action] || null;
+  const titleText = shortcut ? `${title} (${shortcut.hint})` : title;
+  const shortcutAttr = shortcut ? ` aria-keyshortcuts="${shortcut.aria}"` : "";
+
+  return `<button class="pat-btn ${extraClass}" data-action="${action}" data-idx="${index}" title="${escapeHtml(titleText)}" aria-label="${escapeHtml(title)}"${shortcutAttr}><span class="pat-btn-icon" aria-hidden="true">${icon}</span><span class="pat-btn-label">${escapeHtml(label)}</span></button>`;
 }
 
 function renderScriptPeriodHeader(separator, index) {
@@ -2999,7 +3011,7 @@ function renderScriptPeriodHeader(separator, index) {
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
 
   return `
-    <div class="period-header-wrapper" data-separator-id="${separator.id}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
+    <div class="period-header-wrapper" data-separator-id="${separator.id}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
       <div class="script-item period-header" style="background: ${periodColor}; color: white;">
         <div class="ph-left">
           <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${separator.id}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
@@ -4800,17 +4812,63 @@ function initScriptKeyboard() {
   // Make container focusable
   container.setAttribute("tabindex", "0");
 
-  container.addEventListener("keydown", (e) => {
-    const target = e.target;
-    const isTypingTarget =
+  function isTypingTarget(target) {
+    return (
       target instanceof HTMLInputElement ||
       target instanceof HTMLTextAreaElement ||
       target instanceof HTMLSelectElement ||
-      target?.isContentEditable;
+      target?.isContentEditable
+    );
+  }
+
+  function isScriptTabActive() {
+    if (typeof currentActiveTab === "string") {
+      return currentActiveTab === "script";
+    }
+
+    const tabPanel = document.getElementById("script");
+    return !tabPanel?.classList.contains("hidden");
+  }
+
+  function getFocusedPeriodIndex(target) {
+    if (!(target instanceof Element)) return null;
+    const wrapper = target.closest(".period-header-wrapper");
+    if (!wrapper) return null;
+    const periodIndex = parseInt(wrapper.dataset.periodIndex || "", 10);
+    return Number.isInteger(periodIndex) ? periodIndex : null;
+  }
+
+  function runPeriodKeyboardShortcut(periodIndex, key) {
+    const separator = script[periodIndex];
+    if (!separator || !separator.isSeparator) return false;
+
+    const periodLabel = separator.label || "Period";
+    switch (key) {
+      case "s":
+        selectPeriodPlays(periodIndex);
+        setScriptToolbarStatus(`${periodLabel} selection updated`, "success");
+        return true;
+      case "o":
+        sortPeriod(periodIndex);
+        return true;
+      case "r":
+        reversePeriod(periodIndex);
+        return true;
+      case "p":
+        applyPreferredForPeriod(periodIndex);
+        return true;
+      default:
+        return false;
+    }
+  }
+
+  container.addEventListener("keydown", (e) => {
+    const target = e.target;
+    const targetIsTyping = isTypingTarget(target);
 
     // Ctrl/Cmd+A selects all script plays (when not typing in an input)
     if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === "a") {
-      if (isTypingTarget) return;
+      if (targetIsTyping) return;
       e.preventDefault();
       bulkSelectedIndices = script
         .map((p, i) => (p.isSeparator ? -1 : i))
@@ -4874,6 +4932,61 @@ function initScriptKeyboard() {
         }
       }
     });
+  });
+
+  if (scriptKeyboardShortcutsInitialized) return;
+  scriptKeyboardShortcutsInitialized = true;
+
+  document.addEventListener("keydown", (e) => {
+    if (!isScriptTabActive()) return;
+    if (isTypingTarget(e.target)) return;
+
+    const key = e.key.toLowerCase();
+
+    if ((e.ctrlKey || e.metaKey) && e.shiftKey && key === "a") {
+      e.preventDefault();
+      bulkSelectedIndices = script
+        .map((p, i) => (p.isSeparator ? -1 : i))
+        .filter((i) => i >= 0);
+      updateBulkSelectUI();
+      _scheduleRenderScript();
+      showToast(`Selected ${bulkSelectedIndices.length} play${bulkSelectedIndices.length === 1 ? "" : "s"}`);
+      announceScriptA11y(`Selected all ${bulkSelectedIndices.length} plays`);
+      return;
+    }
+
+    if (e.key === "Escape" && bulkSelectedIndices.length > 0) {
+      e.preventDefault();
+      clearBulkSelection();
+      showToast("Selection cleared");
+      announceScriptA11y("Selection cleared");
+      return;
+    }
+
+    if (!(e.altKey && e.shiftKey)) return;
+
+    if (key === "c") {
+      e.preventDefault();
+      collapseAllPeriods();
+      setScriptToolbarStatus("All periods collapsed", "success");
+      announceScriptA11y("All periods collapsed");
+      return;
+    }
+
+    if (key === "e") {
+      e.preventDefault();
+      expandAllPeriods();
+      setScriptToolbarStatus("All periods expanded", "success");
+      announceScriptA11y("All periods expanded");
+      return;
+    }
+
+    const periodIndex = getFocusedPeriodIndex(e.target);
+    if (periodIndex === null) return;
+
+    if (runPeriodKeyboardShortcut(periodIndex, key)) {
+      e.preventDefault();
+    }
   });
 }
 
