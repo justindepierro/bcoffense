@@ -1578,6 +1578,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateSwatchSelection("textColorSwatches", pendingTextColor);
   document.getElementById("cellCadence").value = pendingCadence;
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
+  populateWbPersonnelDatalist();
 
   overlay.classList.remove("hidden");
 
@@ -1714,6 +1715,17 @@ function updateSwatchSelection(containerId, selectedColor) {
       swatch.classList.add("selected");
     }
   });
+}
+
+/**
+ * Populate the Extra Personnel datalist with unique personnel values from the playbook.
+ * Runs each time the cell popup opens so it always reflects the current CSV.
+ */
+function populateWbPersonnelDatalist() {
+  const datalist = document.getElementById("wbPersonnelOptions");
+  if (!datalist) return;
+  const unique = [...new Set(plays.map((p) => p.personnel).filter((p) => p && p.trim()))].sort();
+  datalist.innerHTML = unique.map((p) => `<option value="${escapeHtml(p)}"></option>`).join("");
 }
 
 /**
