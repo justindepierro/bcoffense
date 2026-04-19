@@ -112,6 +112,7 @@ savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
 
 // Drag-and-drop cell swap state
 let draggedCellIndex = null;
+let draggedCellCardIdx = null;
 
 // Copy/paste cell state
 let copiedCell = null;
@@ -121,6 +122,16 @@ let wbSelectedCells = [];
 
 // Favorite/pinned plays (play indices)
 let wbFavorites = storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []);
+
+function normalizeWbFavorites(favorites) {
+  if (!Array.isArray(favorites)) return [];
+  const valid = favorites
+    .map((idx) => parseInt(idx, 10))
+    .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < plays.length);
+  return [...new Set(valid)];
+}
+
+wbFavorites = normalizeWbFavorites(wbFavorites);
 
 // Arrow key highlight index in cell popup
 let highlightedPlayIndex = -1;
@@ -143,6 +154,7 @@ function scheduleWristbandAutosave() {
     const draft = {
       cards: wristbandCards,
       cellStyles: cellCustomizations,
+      favorites: wbFavorites,
       headerColor: wristbandHeaderColor,
       savedAt: new Date().toISOString(),
     };
@@ -203,9 +215,12 @@ async function checkWristbandDraft() {
       cellCustomizations = draft.cellStyles
         ? safeDeepClone(draft.cellStyles)
         : {};
+      wbFavorites = normalizeWbFavorites(draft.favorites || []);
+      storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
       wristbandHeaderColor = draft.headerColor || "transparent";
       currentCardIndex = 0;
       renderCardTabs();
+      renderWristbandPlays();
       renderWristbandGrid();
       updateCardColorPicker();
       markWristbandDirty();
@@ -576,8 +591,10 @@ function toggleSortAcrossCards() {
 /**
  * Handle drag start for cell swapping
  */
-function handleCellDragStart(event, cellIdx) {
+function handleCellDragStart(event, cellIdx, cardIdx) {
   draggedCellIndex = cellIdx;
+  draggedCellCardIdx =
+    cardIdx !== undefined && cardIdx !== null ? cardIdx : currentCardIndex;
   event.target.classList.add("dragging");
   event.dataTransfer.effectAllowed = "move";
 }
@@ -643,6 +660,7 @@ function handleCellDrop(event, targetIdx) {
 function handleCellDragEnd(event) {
   event.target.classList.remove("dragging");
   draggedCellIndex = null;
+  draggedCellCardIdx = null;
 }
 
 /**
@@ -1423,6 +1441,16 @@ function renderWristbandGrid() {
   const cardData = getCurrentCardData();
   const opts = getWristbandDisplayOptions();
   const { highlightHuddle, highlightCandy } = opts;
+  const displayCache = new Map();
+  const getCachedDisplay = (play) => {
+    if (!play) return "";
+    if (displayCache.has(play)) return displayCache.get(play);
+    const rendered = opts.lineCallOnly
+      ? getLineCallOnlyDisplay(play, opts)
+      : getFullCall(play, opts);
+    displayCache.set(play, rendered);
+    return rendered;
+  };
 
   let html = "";
   const cardColor = (wristbandCards[currentCardIndex] && wristbandCards[currentCardIndex].cardColor) || "";
@@ -1493,7 +1521,7 @@ function renderWristbandGrid() {
 
     // Odd play cell
     if (oddPlay) {
-      const oddDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : getFullCall(oddPlay, opts);
+      const oddDisplay = getCachedDisplay(oddPlay);
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
@@ -1513,7 +1541,7 @@ function renderWristbandGrid() {
 
     // Even play cell
     if (evenPlay) {
-      const evenDisplay = opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : getFullCall(evenPlay, opts);
+      const evenDisplay = getCachedDisplay(evenPlay);
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
@@ -2004,6 +2032,16 @@ function printWristband() {
     const numCards = wristbandCards.length;
     const opts = getWristbandDisplayOptions();
     const { highlightHuddle, highlightCandy } = opts;
+    const printDisplayCache = new Map();
+    const getPrintDisplay = (play) => {
+      if (!play) return "";
+      if (printDisplayCache.has(play)) return printDisplayCache.get(play);
+      const rendered = opts.lineCallOnly
+        ? getLineCallOnlyDisplay(play, opts)
+        : getFullCall(play, opts);
+      printDisplayCache.set(play, rendered);
+      return rendered;
+    };
 
     const useMultiCardLayout = numCards > 1 && numCards <= 5;
 
@@ -2071,10 +2109,10 @@ function printWristband() {
         const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
-        const oddDisplay = oddPlay ? (opts.lineCallOnly ? getLineCallOnlyDisplay(oddPlay, opts) : getFullCall(oddPlay, opts)) : "";
+        const oddDisplay = oddPlay ? getPrintDisplay(oddPlay) : "";
         cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + oddDisplay + oddPostfix : ""}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
-        const evenDisplay = evenPlay ? (opts.lineCallOnly ? getLineCallOnlyDisplay(evenPlay, opts) : getFullCall(evenPlay, opts)) : "";
+        const evenDisplay = evenPlay ? getPrintDisplay(evenPlay) : "";
         cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + evenDisplay + evenPostfix : ""}</span></div>`;
       }
 
@@ -2214,6 +2252,7 @@ async function saveWristband() {
         existing.headerColor = wristbandHeaderColor;
         existing.cards = safeDeepClone(wristbandCards);
         existing.cellStyles = safeDeepClone(cellCustomizations);
+        existing.favorites = safeDeepClone(wbFavorites);
         existing.displaySettings = getWristbandDisplayOptions();
         existing.savedAt = new Date().toISOString();
         storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
@@ -2235,6 +2274,7 @@ async function saveWristband() {
       headerColor: wristbandHeaderColor,
       cards: safeDeepClone(wristbandCards),
       cellStyles: safeDeepClone(cellCustomizations),
+      favorites: safeDeepClone(wbFavorites),
       displaySettings: getWristbandDisplayOptions(),
       savedAt: new Date().toISOString(),
     });
@@ -2276,6 +2316,8 @@ function loadSavedWristbandsList() {
     return 0;
   };
   const cardCount = (wb) => (wb.cards ? wb.cards.length : 1);
+  const favoriteCount = (wb) =>
+    Array.isArray(wb.favorites) ? normalizeWbFavorites(wb.favorites).length : 0;
   container.innerHTML = saved
     .map((s) => {
       const savedTime = s.savedAt
@@ -2293,6 +2335,7 @@ function loadSavedWristbandsList() {
             <div class="saved-card-meta">
               <span>🃏 ${cardCount(s)} card(s)</span>
               <span>📝 ${totalPlays(s)} plays</span>
+              ${favoriteCount(s) > 0 ? `<span>⭐ ${favoriteCount(s)} pinned</span>` : ""}
               ${savedTime ? `<span>💾 ${savedTime}</span>` : ""}
             </div>
           </div>
@@ -2329,6 +2372,10 @@ function loadWristband(id) {
     }
 
     cellCustomizations = wb.cellStyles ? safeDeepClone(wb.cellStyles) : {};
+    wbFavorites = normalizeWbFavorites(
+      wb.favorites || storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
+    );
+    storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
     currentCardIndex = 0;
 
     // Restore display settings if saved
@@ -2365,6 +2412,7 @@ function loadWristband(id) {
     });
 
     renderCardTabs();
+    renderWristbandPlays();
     renderWristbandGrid();
     updateCardColorPicker();
     markWristbandClean();
@@ -2445,6 +2493,7 @@ async function overwriteSavedWristband(id) {
   wb.headerColor = wristbandHeaderColor;
   wb.cards = safeDeepClone(wristbandCards);
   wb.cellStyles = safeDeepClone(cellCustomizations);
+  wb.favorites = safeDeepClone(wbFavorites);
   wb.displaySettings = getWristbandDisplayOptions();
   wb.savedAt = new Date().toISOString();
   storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
@@ -3041,12 +3090,16 @@ function renderQuickSearchResults(query) {
  * Toggle a play's favorite status
  */
 function toggleWbFavorite(playIndex) {
+  playIndex = parseInt(playIndex, 10);
+  if (!Number.isInteger(playIndex) || playIndex < 0) return;
   const idx = wbFavorites.indexOf(playIndex);
   if (idx >= 0) {
     wbFavorites.splice(idx, 1);
   } else {
     wbFavorites.push(playIndex);
   }
+  wbFavorites = normalizeWbFavorites(wbFavorites);
+  scheduleWristbandAutosave();
   storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
   renderWristbandPlays();
 }
@@ -3330,7 +3383,13 @@ document.addEventListener("DOMContentLoaded", () => {
     });
     grid.addEventListener("dragstart", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
-      if (cell) handleCellDragStart(e, parseInt(cell.dataset.cellIdx, 10));
+      if (cell) {
+        handleCellDragStart(
+          e,
+          parseInt(cell.dataset.cellIdx, 10),
+          parseInt(cell.dataset.card, 10),
+        );
+      }
     });
     grid.addEventListener("dragover", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
@@ -3452,6 +3511,7 @@ document.addEventListener("DOMContentLoaded", () => {
       }
 
       draggedCellIndex = null;
+      draggedCellCardIdx = null;
       renderCardTabs();
       renderWristbandGrid();
       showToast(`Moved to ${wristbandCards[targetCardIdx].name}`);
