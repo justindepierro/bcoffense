@@ -2250,33 +2250,11 @@ async function applyPreferredForPeriod(separatorIndex) {
 
   periodPlayIndices.forEach((i) => {
     const p = script[i];
-    if (!p || p.isSeparator) return;
-    let changed = false;
-
-    if (p.preferredHash && !p.hash) {
-      p.hash = p.preferredHash;
-      changed = true;
+    if (applyPreferredMetadataToPlay(p)) {
+      syncScriptPlayMetadataFields(i);
+      updatedCount++;
     }
-    if (p.practiceFront && !p.defFront) {
-      p.defFront = p.practiceFront;
-      changed = true;
-    }
-    if (p.practiceCoverage && !p.defCoverage) {
-      p.defCoverage = p.practiceCoverage;
-      changed = true;
-    }
-    if (p.practiceStunt && !p.defStunt) {
-      p.defStunt = p.practiceStunt;
-      changed = true;
-    }
-    if (p.practiceBlitz && !p.defBlitz) {
-      p.defBlitz = p.practiceBlitz;
-      changed = true;
-    }
-    if (changed) updatedCount++;
   });
-
-  renderScript();
 
   setScriptToolbarStatus(`${periodLabel}: ${updatedCount} play(s) updated`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
@@ -2853,6 +2831,100 @@ function updateScriptPreviewReps(index, reps) {
   if (repsEl) repsEl.textContent = `×${reps}`;
 }
 
+function updateScriptRowFieldValue(index, field, value) {
+  const { row } = getScriptPlayDom(index);
+  const inputEl = row?.querySelector(`[data-field="${field}"]`);
+  if (!inputEl) return;
+
+  if (inputEl.tagName === "SELECT") {
+    inputEl.innerHTML = buildDefenseOptions(
+      ["L", "M", "R"],
+      script[index]?.preferredHash,
+      value,
+    );
+  }
+
+  inputEl.value = value || "";
+}
+
+function syncScriptPlayMetadataFields(index) {
+  if (!script[index] || script[index].isSeparator) return;
+
+  updateScriptRowFieldValue(index, "hash", script[index].hash || "");
+  updateScriptRowFieldValue(index, "defFront", script[index].defFront || "");
+  updateScriptRowFieldValue(index, "defCoverage", script[index].defCoverage || "");
+  updateScriptRowFieldValue(index, "defStunt", script[index].defStunt || "");
+  updateScriptRowFieldValue(index, "defBlitz", script[index].defBlitz || "");
+
+  updateScriptPreviewField(index, "hash", script[index].hash || "");
+  updateScriptPreviewField(index, "front", script[index].defFront || "");
+  updateScriptPreviewField(index, "cov", script[index].defCoverage || "");
+  updateScriptPreviewField(index, "stunt", script[index].defStunt || "");
+  updateScriptPreviewField(index, "blitz", script[index].defBlitz || "");
+}
+
+function applyPreferredMetadataToPlay(play) {
+  if (!play || play.isSeparator) return false;
+
+  let changed = false;
+
+  if (play.preferredHash && !play.hash) {
+    play.hash = play.preferredHash;
+    changed = true;
+  }
+  if (play.practiceFront && !play.defFront) {
+    play.defFront = play.practiceFront;
+    changed = true;
+  }
+  if (play.practiceCoverage && !play.defCoverage) {
+    play.defCoverage = play.practiceCoverage;
+    changed = true;
+  }
+  if (play.practiceStunt && !play.defStunt) {
+    play.defStunt = play.practiceStunt;
+    changed = true;
+  }
+  if (play.practiceBlitz && !play.defBlitz) {
+    play.defBlitz = play.practiceBlitz;
+    changed = true;
+  }
+
+  return changed;
+}
+
+function applyDefensiveLookToPlay(play, look, mode) {
+  if (!play || play.isSeparator || !look) return false;
+
+  let changed = false;
+
+  if (look.defFront && (mode === "overwrite" || !play.defFront)) {
+    if (play.defFront !== look.defFront) {
+      play.defFront = look.defFront;
+      changed = true;
+    }
+  }
+  if (look.defCoverage && (mode === "overwrite" || !play.defCoverage)) {
+    if (play.defCoverage !== look.defCoverage) {
+      play.defCoverage = look.defCoverage;
+      changed = true;
+    }
+  }
+  if (look.defBlitz && (mode === "overwrite" || !play.defBlitz)) {
+    if (play.defBlitz !== look.defBlitz) {
+      play.defBlitz = look.defBlitz;
+      changed = true;
+    }
+  }
+  if (look.defStunt && (mode === "overwrite" || !play.defStunt)) {
+    if (play.defStunt !== look.defStunt) {
+      play.defStunt = look.defStunt;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
 function updatePeriodHeaderLabelDisplay(index) {
   if (!script[index]?.isSeparator) return;
 
@@ -3249,44 +3321,12 @@ async function applyPreferredFields() {
   let updatedCount = 0;
   indicesToUpdate.forEach((i) => {
     const p = script[i];
-    if (!p || p.isSeparator) return;
-
-    let changed = false;
-
-    // Apply preferred hash
-    if (p.preferredHash && !p.hash) {
-      p.hash = p.preferredHash;
-      changed = true;
+    if (applyPreferredMetadataToPlay(p)) {
+      syncScriptPlayMetadataFields(i);
+      updatedCount++;
     }
-
-    // Apply practice front
-    if (p.practiceFront && !p.defFront) {
-      p.defFront = p.practiceFront;
-      changed = true;
-    }
-
-    // Apply practice coverage
-    if (p.practiceCoverage && !p.defCoverage) {
-      p.defCoverage = p.practiceCoverage;
-      changed = true;
-    }
-
-    // Apply practice stunt
-    if (p.practiceStunt && !p.defStunt) {
-      p.defStunt = p.practiceStunt;
-      changed = true;
-    }
-
-    // Apply practice blitz
-    if (p.practiceBlitz && !p.defBlitz) {
-      p.defBlitz = p.practiceBlitz;
-      changed = true;
-    }
-
-    if (changed) updatedCount++;
   });
 
-  renderScript();
   showToast(`★ Applied preferred fields to ${updatedCount} play(s)`);
 }
 
@@ -3360,18 +3400,14 @@ async function autoFillDefenseFromTendencies() {
       return;
     }
 
-    if (look.defFront && (mode === "overwrite" || !p.defFront))
-      p.defFront = look.defFront;
-    if (look.defCoverage && (mode === "overwrite" || !p.defCoverage))
-      p.defCoverage = look.defCoverage;
-    if (look.defBlitz && (mode === "overwrite" || !p.defBlitz))
-      p.defBlitz = look.defBlitz;
-    if (look.defStunt && (mode === "overwrite" || !p.defStunt))
-      p.defStunt = look.defStunt;
-    filled++;
+    if (applyDefensiveLookToPlay(p, look, mode)) {
+      syncScriptPlayMetadataFields(i);
+      filled++;
+    } else {
+      skipped++;
+    }
   });
 
-  renderScript();
   markScriptDirty();
   showToast(
     `🎯 Filled defense for ${filled} play(s) from ${opp.name} scouting${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
@@ -3571,41 +3607,10 @@ async function saveScript() {
 
     const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
 
-    // Check for duplicate name
-    const existing = savedScripts.find(
-      (s) => s.name.toLowerCase() === name.toLowerCase(),
-    );
-    if (existing) {
-      const choice = await showChoice(
-        `A script named "${existing.name}" already exists.`,
-        {
-          title: "Duplicate Name",
-          icon: "⚠️",
-          option1: "💾 Overwrite",
-          option2: "➕ Save as Copy",
-        },
-      );
-      if (choice === "option1") {
-        // Overwrite existing
-        existing.name = name;
-        existing.date = date;
-        existing.plays = safeDeepClone(script);
-        existing.workspace = getScriptWorkspaceState();
-        existing.savedAt = new Date().toISOString();
-        storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
-        loadSavedScriptsList();
-        markScriptClean();
-        storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
-        showToast(`✅ "${name}" updated!`);
-        return;
-      } else if (choice !== "option2") {
-        return; // Cancelled
-      }
-      // else fall through to save as new copy
-    }
-
-    const scriptData = {
-      id: Date.now(),
+        if (applyPreferredMetadataToPlay(p)) {
+          syncScriptPlayMetadataFields(i);
+          updatedCount++;
+        }
       name,
       date,
       period: "",
@@ -3751,15 +3756,12 @@ function loadScript(id) {
 /**
  * Delete a saved script
  * @param {number} id - Script ID
- */
-async function deleteSavedScript(id) {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
-  const target = savedScripts.find((s) => s.id === id);
-  if (!target) return;
-  const ok = await showConfirm(`Delete "${target.name}"?`, {
-    title: "Delete Script",
-    icon: "🗑️",
-    confirmText: "Delete",
+      if (applyDefensiveLookToPlay(p, look, mode)) {
+        syncScriptPlayMetadataFields(i);
+        filled++;
+      } else {
+        skipped++;
+      }
     danger: true,
   });
   if (!ok) return;
