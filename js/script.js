@@ -1634,25 +1634,41 @@ function addSeparator() {
       </div>
     </div>
   `;
-  overlay.onclick = () => overlay.remove();
+  wireScriptOverlayDismiss(overlay);
   document.body.appendChild(overlay);
   // Focus the name input
   setTimeout(() => document.getElementById("newPeriodName")?.focus(), 50);
+}
+
+function wireScriptOverlayDismiss(overlay) {
+  if (!overlay) return;
+
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) overlay.remove();
+  });
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key !== "Escape") return;
+    event.preventDefault();
+    overlay.remove();
+  });
 }
 
 /**
  * Confirm adding the new period from the mini modal
  */
 function confirmAddPeriod() {
-  const name = document.getElementById("newPeriodName").value.trim();
-  const minutes =
-    parseInt(document.getElementById("newPeriodMinutes").value, 10) || 0;
-  const color =
-    document.getElementById("newPeriodColor").value || UI_COLORS.periodDefault;
+  const nameInput = document.getElementById("newPeriodName");
+  const minutesInput = document.getElementById("newPeriodMinutes");
+  const colorInput = document.getElementById("newPeriodColor");
+  if (!nameInput || !minutesInput || !colorInput) return;
+
+  const name = nameInput.value.trim();
+  const minutes = parseInt(minutesInput.value, 10) || 0;
+  const color = colorInput.value || UI_COLORS.periodDefault;
 
   if (!name) {
-    document.getElementById("newPeriodName").classList.add("input-error");
-    document.getElementById("newPeriodName").focus();
+    nameInput.classList.add("input-error");
+    nameInput.focus();
     return;
   }
 
@@ -1664,7 +1680,10 @@ function confirmAddPeriod() {
     color: color,
     id: Date.now() + Math.random(),
   });
+  markScriptDirty();
   renderScript();
+  showToast(`Added period "${name}"`);
+  announceScriptA11y(`Added period ${name}`);
 
   // Close modal
   document.querySelector(".period-create-overlay")?.remove();
@@ -2039,9 +2058,7 @@ function renderPeriodTemplateModal() {
   if (!overlay) {
     overlay = document.createElement("div");
     overlay.className = "period-create-overlay template-picker-overlay";
-    overlay.onclick = (event) => {
-      if (event.target === overlay) overlay.remove();
-    };
+    wireScriptOverlayDismiss(overlay);
     overlay.innerHTML = `
       <div class="period-create-modal template-picker-modal">
         <h4 id="periodTemplateModalTitle"></h4>
@@ -2395,7 +2412,7 @@ async function importFromCallSheet(separatorIndex) {
   // Build a picker modal
   const overlay = document.createElement("div");
   overlay.className = "period-create-overlay";
-  overlay.onclick = () => overlay.remove();
+  wireScriptOverlayDismiss(overlay);
 
   let catListHtml = filledCats
     .map((cat) => {
@@ -2554,6 +2571,7 @@ function doInsertTemplate(idx) {
   }));
 
   script.push(newSeparator, ...newPlays);
+  markScriptDirty();
   renderScript();
   showToast(`Inserted "${template.name}" (${template.plays.length} plays)`);
   announceScriptA11y(`Inserted template ${template.name}`);
