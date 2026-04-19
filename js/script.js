@@ -1543,6 +1543,8 @@ function updatePeriodColor(index, el) {
 function updatePeriodLabel(index, label, live = false) {
   if (!script[index] || !script[index].isSeparator) return;
   script[index].label = label;
+  updatePeriodHeaderLabelDisplay(index);
+  updateJumpToPeriodOptions();
   if (live) {
     debouncedSaveScriptState();
   } else {
@@ -1555,18 +1557,7 @@ function updatePeriodLabel(index, label, live = false) {
  */
 function updatePeriodMinutes(index, el) {
   script[index].minutes = parseInt(el.value, 10) || 0;
-  const span = el.closest(".ph-left")?.querySelector(".ph-meta-span");
-  if (span) {
-    const playCount = getPeriodPlays(index).length;
-    const periodReps = getPeriodPlays(index).reduce(
-      (s, p) => s + (p.reps || 1),
-      0,
-    );
-    const timeDisplay = script[index].minutes
-      ? `${script[index].minutes} min`
-      : "";
-    span.textContent = `${playCount} plays • ${periodReps} reps${timeDisplay ? " • " + timeDisplay : ""}`;
-  }
+  updatePeriodMetaDisplay(index);
   saveScriptState();
   updateScriptStats();
 }
@@ -1801,10 +1792,10 @@ function buildTemplatePreviewMarkup(template) {
       </div>
       <div class="template-preview-list">
         ${previewLines.length
-          ? previewLines
-              .map((line, idx) => `<div class="template-preview-line"><span class="template-preview-line-num">${idx + 1}</span><span>${line}</span></div>`)
-              .join("")
-          : '<div class="template-empty-copy">This template is empty.</div>'}
+      ? previewLines
+        .map((line, idx) => `<div class="template-preview-line"><span class="template-preview-line-num">${idx + 1}</span><span>${line}</span></div>`)
+        .join("")
+      : '<div class="template-empty-copy">This template is empty.</div>'}
       </div>
       ${extraCount > 0 ? `<div class="template-preview-more">+${extraCount} more play${extraCount === 1 ? "" : "s"}</div>` : ""}
     </div>
@@ -2510,6 +2501,8 @@ function movePlay(index, direction) {
  */
 function updateReps(index, reps) {
   script[index].reps = parseInt(reps, 10) || 1;
+  updateScriptPreviewReps(index, script[index].reps);
+  updatePeriodMetaDisplay(findOwningPeriodIndex(index));
   updateScriptStats();
   saveScriptState();
 }
@@ -2536,6 +2529,7 @@ function updateHash(index, value) {
     applyBulkEdit("hash", value);
   } else {
     script[index].hash = value;
+    updateScriptPreviewField(index, "hash", value);
     debouncedSaveScriptState();
   }
 }
@@ -2548,6 +2542,13 @@ function updateDefField(index, field, value) {
     applyBulkEdit(field, value);
   } else {
     script[index][field] = value;
+    const previewClassMap = {
+      defFront: "front",
+      defCoverage: "cov",
+      defStunt: "stunt",
+      defBlitz: "blitz",
+    };
+    updateScriptPreviewField(index, previewClassMap[field], value);
     debouncedSaveScriptState();
   }
 }
@@ -2628,6 +2629,92 @@ function formatPeriodMetaText(playCount, periodReps, minutes) {
   return `${playCount} plays • ${periodReps} reps${timeDisplay ? ` • ${timeDisplay}` : ""}`;
 }
 
+function getScriptPlayDom(index) {
+  const row = document.querySelector(`.script-item[data-idx="${index}"]`);
+  const previewRow = row?.nextElementSibling?.classList.contains("print-preview-row")
+    ? row.nextElementSibling
+    : null;
+  return { row, previewRow };
+}
+
+function findOwningPeriodIndex(scriptIndex) {
+  for (let i = scriptIndex - 1; i >= 0; i--) {
+    if (script[i]?.isSeparator) return i;
+  }
+  return -1;
+}
+
+function updatePeriodMetaDisplay(separatorIndex) {
+  if (separatorIndex < 0 || !script[separatorIndex]?.isSeparator) return;
+
+  const wrapper = document.querySelector(
+    `.period-header-wrapper[data-separator-id="${script[separatorIndex].id}"]`,
+  );
+  const metaEl = wrapper?.querySelector(".ph-meta-span");
+  if (!metaEl) return;
+
+  const playCount = getPeriodPlays(separatorIndex).length;
+  const periodReps = getPeriodPlays(separatorIndex).reduce(
+    (sum, play) => sum + (play.reps || 1),
+    0,
+  );
+  metaEl.textContent = formatPeriodMetaText(
+    playCount,
+    periodReps,
+    script[separatorIndex].minutes,
+  );
+}
+
+function updateScriptPreviewField(index, fieldClass, value) {
+  const { previewRow } = getScriptPlayDom(index);
+  const fieldEl = previewRow?.querySelector(`.preview-field.${fieldClass}`);
+  if (fieldEl) fieldEl.textContent = value || "-";
+}
+
+function updateScriptPreviewReps(index, reps) {
+  const { previewRow } = getScriptPlayDom(index);
+  const repsEl = previewRow?.querySelector(".preview-field.reps");
+  if (repsEl) repsEl.textContent = `×${reps}`;
+}
+
+function updatePeriodHeaderLabelDisplay(index) {
+  if (!script[index]?.isSeparator) return;
+
+  const periodLabel = script[index].label || "Period";
+  const wrapper = document.querySelector(
+    `.period-header-wrapper[data-separator-id="${script[index].id}"]`,
+  );
+  const header = wrapper?.querySelector(".script-item.period-header") ||
+    document.querySelector(`.script-item.period-header .ph-label-input[data-idx="${index}"]`)?.closest(".script-item.period-header");
+
+  if (wrapper) {
+    wrapper.setAttribute("aria-label", `${periodLabel} period`);
+  }
+  if (!header) return;
+
+  const collapseBtn = header.querySelector(".ph-collapse-btn");
+  if (collapseBtn) {
+    const expanded = collapseBtn.getAttribute("aria-expanded") !== "false";
+    collapseBtn.setAttribute(
+      "aria-label",
+      `${expanded ? "Collapse" : "Expand"} ${periodLabel}`,
+    );
+  }
+
+  const buttons = [
+    ["[data-action=\"movePeriod\"][data-dir=\"-1\"]", `Move ${periodLabel} up`],
+    ["[data-action=\"movePeriod\"][data-dir=\"1\"]", `Move ${periodLabel} down`],
+    ["[data-action=\"duplicatePeriod\"]", `Duplicate ${periodLabel}`],
+    ["[data-action=\"savePeriodAsTemplate\"]", `Save ${periodLabel} as a template`],
+    ["[data-action=\"removeFromScript\"]", `Delete ${periodLabel}`],
+  ];
+
+  buttons.forEach(([selector, label]) => {
+    const btn = header.querySelector(selector);
+    if (btn) btn.setAttribute("aria-label", label);
+  });
+}
+
 function renderScriptEmptyPeriodHeaders() {
   let periodHeaders = "";
   script.forEach((p, i) => {
@@ -2683,7 +2770,7 @@ function renderScriptPeriodHeader(separator, index) {
         </div>
       </div>
       ${!isCollapsed && playCount > 0
-        ? `
+      ? `
         <div class="period-actions-toolbar">
           ${renderPeriodActionButton("selectPeriodPlays", index, "Select", "☑", `Select or deselect plays in ${periodLabel}`)}
           ${renderPeriodActionButton("sortPeriod", index, "Sort", "⬍", `Sort plays in ${periodLabel}`)}
@@ -3111,7 +3198,7 @@ function renderScript() {
         <div class="sch-controls">Controls</div>
       </div>
     ` +
-          renderScriptRows(renderContext);
+        renderScriptRows(renderContext);
     }
 
     // Update bulk select UI
