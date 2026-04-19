@@ -1769,6 +1769,15 @@ function updatePeriodMinutes(index, el) {
   saveScriptState();
   updateScriptStats();
 }
+function updatePeriodNotes(index, notes, live = false) {
+  if (!script[index] || !script[index].isSeparator) return;
+  script[index].notes = notes;
+  if (live) {
+    debouncedSaveScriptState();
+  } else {
+    saveScriptState();
+  }
+}
 
 function togglePeriodProtection(idx) {
   const separatorIndex = parseInt(idx, 10);
@@ -1916,6 +1925,7 @@ async function savePeriodAsTemplate(separatorIndex) {
     id: Date.now(),
     name: name,
     minutes: separator.minutes || 0,
+    notes: separator.notes || "",
     hideProtection: Boolean(separator.hideProtection),
     plays: plays.map((p) => ({ ...p, id: null })), // Remove IDs for template
   };
@@ -2585,6 +2595,7 @@ function doInsertTemplate(idx) {
     isSeparator: true,
     label: template.name,
     minutes: template.minutes,
+    notes: template.notes || "",
     hideProtection: Boolean(template.hideProtection),
     id: Date.now() + Math.random(),
   };
@@ -3053,6 +3064,18 @@ function updatePeriodHeaderLabelDisplay(index) {
   }
   if (!header) return;
 
+    const colorInput = header.querySelector(".ph-color-input");
+    if (colorInput) colorInput.setAttribute("aria-label", `Color for ${periodLabel}`);
+
+    const labelInput = header.querySelector(".ph-label-input");
+    if (labelInput) labelInput.setAttribute("aria-label", `Name for ${periodLabel}`);
+
+    const minutesInput = header.querySelector(".ph-minutes-input");
+    if (minutesInput) minutesInput.setAttribute("aria-label", `Minutes for ${periodLabel}`);
+
+    const notesInput = header.querySelector(".ph-notes-input");
+    if (notesInput) notesInput.setAttribute("aria-label", `Notes for ${periodLabel}`);
+
   const collapseBtn = header.querySelector(".ph-collapse-btn");
   if (collapseBtn) {
     const expanded = collapseBtn.getAttribute("aria-expanded") !== "false";
@@ -3086,20 +3109,26 @@ function renderScriptEmptyPeriodHeaders() {
     if (!p.isSeparator) return;
     const periodColor = p.color || UI_COLORS.periodDefault;
     const periodLabel = p.label || "Period";
+    const periodNotes = p.notes || "";
     const protectionButtonLabel = p.hideProtection ? "Prot Off" : "Prot On";
     const protectionButtonTitle = p.hideProtection
       ? `Show protection for ${periodLabel}`
       : `Hide protection for ${periodLabel}`;
     periodHeaders += `
       <div class="script-item period-header" style="background: ${periodColor}; color: white;" role="group" aria-label="${escapeHtml(periodLabel)} period header">
-        <div class="ph-left">
-          <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
-          <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${i}" placeholder="Period name" aria-label="Period name">
-          <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
+        <div class="ph-top">
+          <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${i}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
-        <div class="ph-right">
-          <button class="ph-btn ph-period-setting ${p.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${i}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
-          <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+        <div class="ph-main">
+          <div class="ph-left">
+            <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
+            <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${i}" placeholder="Period name" aria-label="Name for ${escapeHtml(periodLabel)}">
+            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
+          </div>
+          <div class="ph-right">
+            <button class="ph-btn ph-period-setting ${p.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${i}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
+            <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+          </div>
         </div>
       </div>
     `;
@@ -3124,6 +3153,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
   );
   const periodColor = separator.color || UI_COLORS.periodDefault;
   const periodLabel = separator.label || "Period";
+  const periodNotes = separator.notes || "";
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
   const protectionButtonLabel = separator.hideProtection ? "Prot Off" : "Prot On";
   const protectionButtonTitle = separator.hideProtection
@@ -3133,20 +3163,25 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
   return `
     <div class="period-header-wrapper" data-separator-id="${separator.id}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
       <div class="script-item period-header" style="background: ${periodColor}; color: white;">
-        <div class="ph-left">
-          <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${separator.id}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
-          <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
-          <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" aria-label="Name for ${escapeHtml(periodLabel)}">
-          <input type="number" class="ph-minutes-input" value="${separator.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
-          <span class="ph-meta-span">${metaText}</span>
+        <div class="ph-top">
+          <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
-        <div class="ph-right">
-          <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="-1" title="Move period up" aria-label="Move ${escapeHtml(periodLabel)} up">▲</button>
-          <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="1" title="Move period down" aria-label="Move ${escapeHtml(periodLabel)} down">▼</button>
-          <button class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
-          <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
-          <button class="ph-btn ph-period-setting ${separator.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
-          <button class="remove" data-action="removeFromScript" data-idx="${index}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+        <div class="ph-main">
+          <div class="ph-left">
+            <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${separator.id}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
+            <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
+            <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" aria-label="Name for ${escapeHtml(periodLabel)}">
+            <input type="number" class="ph-minutes-input" value="${separator.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
+            <span class="ph-meta-span">${metaText}</span>
+          </div>
+          <div class="ph-right">
+            <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="-1" title="Move period up" aria-label="Move ${escapeHtml(periodLabel)} up">▲</button>
+            <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="1" title="Move period down" aria-label="Move ${escapeHtml(periodLabel)} down">▼</button>
+            <button class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
+            <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
+            <button class="ph-btn ph-period-setting ${separator.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
+            <button class="remove" data-action="removeFromScript" data-idx="${index}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+          </div>
         </div>
       </div>
       ${!isCollapsed && playCount > 0

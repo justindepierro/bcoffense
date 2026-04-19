@@ -196,6 +196,7 @@
 .ph-btn:focus-visible,
 .ph-color-input:focus-visible,
 .ph-label-input:focus-visible,
+.ph-notes-input:focus-visible,
 .ph-minutes-input:focus-visible,
 .script-item .hash-input select:focus-visible,
 .script-item .defense-inputs .def-input:focus-visible,
@@ -240,8 +241,23 @@
 }
 
 .script-item.period-header {
+  flex-direction: column;
+  align-items: stretch;
   justify-content: space-between;
   padding: 8px 12px;
+}
+
+.ph-top {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.ph-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
 }
 
 .period-actions-toolbar {
@@ -337,6 +353,21 @@
   border: none;
   font-weight: bold;
   width: 150px;
+}
+
+.ph-notes-input {
+  width: 100%;
+  min-height: 52px;
+  background: var(--color-white-alpha-10);
+  color: white;
+  border: 1px solid var(--color-white-alpha-20);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  resize: vertical;
+}
+
+.ph-notes-input::placeholder {
+  color: rgba(255, 255, 255, 0.72);
 }
 
 .ph-minutes-input {
@@ -2096,6 +2127,11 @@
   }
 
   .script-item.period-header {
+    align-items: stretch;
+  }
+
+  .ph-main {
+    flex-direction: column;
     align-items: stretch;
   }
 

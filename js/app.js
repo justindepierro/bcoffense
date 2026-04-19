@@ -2646,6 +2646,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "periodLabel":
           updatePeriodLabel(idx, el.value, false);
           break;
+        case "periodNotes":
+          updatePeriodNotes(idx, el.value, false);
+          break;
         case "periodMinutes":
           updatePeriodMinutes(idx, el);
           break;
@@ -2683,6 +2686,9 @@ document.addEventListener("DOMContentLoaded", () => {
           break;
         case "periodLabel":
           updatePeriodLabel(idx, el.value, true);
+          break;
+        case "periodNotes":
+          updatePeriodNotes(idx, el.value, true);
           break;
       }
     });
