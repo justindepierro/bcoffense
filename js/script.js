@@ -27,6 +27,94 @@ function buildSharedPreferredDatalistMarkup(prefix, values, sharedOptionsHtml) {
   return { idsByValue, html };
 }
 
+function getScriptScoutingDatalistOptions() {
+  let front = "";
+  let cov = "";
+  let blitz = "";
+  let stunt = "";
+
+  const activeOpponent =
+    typeof getActiveOpponent === "function" ? getActiveOpponent() : null;
+  const activeOpponentName = activeOpponent ? activeOpponent.name : null;
+
+  if (activeOpponent && activeOpponent.plays && activeOpponent.plays.length > 0) {
+    if (_cachedScoutOpts && _cachedScoutOppName === activeOpponentName) {
+      front = _cachedScoutOpts.front;
+      cov = _cachedScoutOpts.cov;
+      blitz = _cachedScoutOpts.blitz;
+      stunt = _cachedScoutOpts.stunt;
+    } else {
+      const scoutResult = queryTendencies(activeOpponent, {});
+      const mapOpts = (arr) =>
+        arr
+          ? arr
+            .map(
+              (x) => `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
+            )
+            .join("")
+          : "";
+
+      front = mapOpts(scoutResult.topFront);
+      cov = mapOpts(scoutResult.topCoverage);
+      blitz = mapOpts(scoutResult.topBlitz);
+      stunt = mapOpts(scoutResult.topStunt);
+
+      _cachedScoutOpts = { front, cov, blitz, stunt };
+      _cachedScoutOppName = activeOpponentName;
+    }
+  } else {
+    _cachedScoutOpts = null;
+    _cachedScoutOppName = null;
+  }
+
+  return { front, cov, blitz, stunt };
+}
+
+function buildScriptDefenseDatalistState(scriptItems) {
+  const scoutOptions = getScriptScoutingDatalistOptions();
+  const scriptPlays = scriptItems.filter((p) => !p.isSeparator);
+
+  const preferredFrontLists = buildSharedPreferredDatalistMarkup(
+    "front",
+    scriptPlays.map((p) => p.practiceFront),
+    scoutOptions.front,
+  );
+  const preferredCoverageLists = buildSharedPreferredDatalistMarkup(
+    "cov",
+    scriptPlays.map((p) => p.practiceCoverage),
+    scoutOptions.cov,
+  );
+  const preferredStuntLists = buildSharedPreferredDatalistMarkup(
+    "stunt",
+    scriptPlays.map((p) => p.practiceStunt),
+    scoutOptions.stunt,
+  );
+  const preferredBlitzLists = buildSharedPreferredDatalistMarkup(
+    "blitz",
+    scriptPlays.map((p) => p.practiceBlitz),
+    scoutOptions.blitz,
+  );
+
+  const html = `
+      <datalist id="dl-front-shared">${scoutOptions.front}</datalist>
+      <datalist id="dl-cov-shared">${scoutOptions.cov}</datalist>
+      <datalist id="dl-stunt-shared">${scoutOptions.stunt}</datalist>
+      <datalist id="dl-blitz-shared">${scoutOptions.blitz}</datalist>
+    ` +
+    preferredFrontLists.html +
+    preferredCoverageLists.html +
+    preferredStuntLists.html +
+    preferredBlitzLists.html;
+
+  return {
+    html,
+    preferredFrontIdsByValue: preferredFrontLists.idsByValue,
+    preferredCoverageIdsByValue: preferredCoverageLists.idsByValue,
+    preferredStuntIdsByValue: preferredStuntLists.idsByValue,
+    preferredBlitzIdsByValue: preferredBlitzLists.idsByValue,
+  };
+}
+
 // Script checkbox filter state
 let scriptSelectedTypes = [];
 let scriptSelectedSituation = [];
@@ -2624,91 +2712,12 @@ function renderScript() {
       container.classList.remove("empty");
       let playNum = 0;
 
-      // Pre-compute scouting datalist options from active opponent (cached)
-      let scoutFrontOpts = "";
-      let scoutCovOpts = "";
-      let scoutBlitzOpts = "";
-      let scoutStuntOpts = "";
-      const _scoutOpp =
-        typeof getActiveOpponent === "function" ? getActiveOpponent() : null;
-      const _scoutOppName = _scoutOpp ? _scoutOpp.name : null;
-      if (_scoutOpp && _scoutOpp.plays && _scoutOpp.plays.length > 0) {
-        // Use cache if same opponent
-        if (_cachedScoutOpts && _cachedScoutOppName === _scoutOppName) {
-          scoutFrontOpts = _cachedScoutOpts.front;
-          scoutCovOpts = _cachedScoutOpts.cov;
-          scoutBlitzOpts = _cachedScoutOpts.blitz;
-          scoutStuntOpts = _cachedScoutOpts.stunt;
-        } else {
-          const _scoutResult = queryTendencies(_scoutOpp, {});
-          const mapOpts = (arr) =>
-            arr
-              ? arr
-                .map(
-                  (x) =>
-                    `<option value="${x.term}">🎯 ${x.term} (${x.pct}%)</option>`,
-                )
-                .join("")
-              : "";
-          scoutFrontOpts = mapOpts(_scoutResult.topFront);
-          scoutCovOpts = mapOpts(_scoutResult.topCoverage);
-          scoutBlitzOpts = mapOpts(_scoutResult.topBlitz);
-          scoutStuntOpts = mapOpts(_scoutResult.topStunt);
-          _cachedScoutOpts = {
-            front: scoutFrontOpts,
-            cov: scoutCovOpts,
-            blitz: scoutBlitzOpts,
-            stunt: scoutStuntOpts,
-          };
-          _cachedScoutOppName = _scoutOppName;
-        }
-      } else {
-        _cachedScoutOpts = null;
-        _cachedScoutOppName = null;
-      }
-
       // Track which periods are collapsed for skipping plays
       let skipPlays = false;
-
-      // Shared datalists — built once, reused by all play rows
-      const sharedDatalistsHtml = `
-      <datalist id="dl-front-shared">${scoutFrontOpts}</datalist>
-      <datalist id="dl-cov-shared">${scoutCovOpts}</datalist>
-      <datalist id="dl-stunt-shared">${scoutStuntOpts}</datalist>
-      <datalist id="dl-blitz-shared">${scoutBlitzOpts}</datalist>
-    `;
-
-      const scriptPlays = script.filter((p) => !p.isSeparator);
-      const preferredFrontLists = buildSharedPreferredDatalistMarkup(
-        "front",
-        scriptPlays.map((p) => p.practiceFront),
-        scoutFrontOpts,
-      );
-      const preferredCoverageLists = buildSharedPreferredDatalistMarkup(
-        "cov",
-        scriptPlays.map((p) => p.practiceCoverage),
-        scoutCovOpts,
-      );
-      const preferredStuntLists = buildSharedPreferredDatalistMarkup(
-        "stunt",
-        scriptPlays.map((p) => p.practiceStunt),
-        scoutStuntOpts,
-      );
-      const preferredBlitzLists = buildSharedPreferredDatalistMarkup(
-        "blitz",
-        scriptPlays.map((p) => p.practiceBlitz),
-        scoutBlitzOpts,
-      );
-
-      const sharedDefenseDatalistsHtml =
-        sharedDatalistsHtml +
-        preferredFrontLists.html +
-        preferredCoverageLists.html +
-        preferredStuntLists.html +
-        preferredBlitzLists.html;
+      const defenseDatalistState = buildScriptDefenseDatalistState(script);
 
       container.innerHTML =
-        sharedDefenseDatalistsHtml +
+        defenseDatalistState.html +
         `
       <div class="script-column-headers">
         <div class="sch-spacer"></div>
@@ -2812,10 +2821,10 @@ function renderScript() {
               </select>
             </div>
             <div class="defense-inputs">
-              <input type="text" list="${preferredFrontLists.idsByValue.get((p.practiceFront || "").trim()) || "dl-front-shared"}" value="${escapeHtml(p.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${i}" title="Defensive Front" class="def-input">
-              <input type="text" list="${preferredCoverageLists.idsByValue.get((p.practiceCoverage || "").trim()) || "dl-cov-shared"}" value="${escapeHtml(p.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${i}" title="Coverage" class="def-input">
-              <input type="text" list="${preferredStuntLists.idsByValue.get((p.practiceStunt || "").trim()) || "dl-stunt-shared"}" value="${escapeHtml(p.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${i}" title="Stunt" class="def-input">
-              <input type="text" list="${preferredBlitzLists.idsByValue.get((p.practiceBlitz || "").trim()) || "dl-blitz-shared"}" value="${escapeHtml(p.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${i}" title="Blitz" class="def-input">
+              <input type="text" list="${defenseDatalistState.preferredFrontIdsByValue.get((p.practiceFront || "").trim()) || "dl-front-shared"}" value="${escapeHtml(p.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${i}" title="Defensive Front" class="def-input">
+              <input type="text" list="${defenseDatalistState.preferredCoverageIdsByValue.get((p.practiceCoverage || "").trim()) || "dl-cov-shared"}" value="${escapeHtml(p.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${i}" title="Coverage" class="def-input">
+              <input type="text" list="${defenseDatalistState.preferredStuntIdsByValue.get((p.practiceStunt || "").trim()) || "dl-stunt-shared"}" value="${escapeHtml(p.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${i}" title="Stunt" class="def-input">
+              <input type="text" list="${defenseDatalistState.preferredBlitzIdsByValue.get((p.practiceBlitz || "").trim()) || "dl-blitz-shared"}" value="${escapeHtml(p.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${i}" title="Blitz" class="def-input">
             </div>
             <div class="play-controls">
               <div class="move-btns">
