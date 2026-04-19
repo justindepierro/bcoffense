@@ -9,7 +9,20 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v71";
+const CACHE_NAME = "bcoffense-v72";
+
+const NETWORK_FIRST_PATTERNS = [
+  /\/index\.html$/,
+  /\/manifest\.json$/,
+  /\/offline\.html$/,
+  /\/css\/.*\.css$/,
+  /\/js\/.*\.js$/,
+];
+
+function shouldUseNetworkFirst(request, url) {
+  if (request.mode === "navigate") return true;
+  return NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(url.pathname));
+}
 
 // Allow the app to trigger a cache refresh
 self.addEventListener("message", (event) => {
@@ -102,28 +115,37 @@ self.addEventListener("fetch", (event) => {
     return;
   }
 
-  // Local assets: stale-while-revalidate
+  // App shell assets: network-first to avoid serving stale HTML/JS/CSS after updates
   event.respondWith(
-    caches.match(event.request).then((cached) => {
-      const networkFetch = fetch(event.request)
-        .then((response) => {
-          const clone = response.clone();
-          caches
-            .open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, clone));
-          return response;
-        })
-        .catch(() => cached);
+    (shouldUseNetworkFirst(event.request, url)
+      ? fetch(event.request)
+          .then((response) => {
+            const clone = response.clone();
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, clone));
+            return response;
+          })
+          .catch(async () => {
+            const cached = await caches.match(event.request);
+            if (cached) return cached;
+            if (event.request.mode === "navigate") {
+              return caches.match("./offline.html");
+            }
+            return undefined;
+          })
+      : caches.match(event.request).then((cached) => {
+          const networkFetch = fetch(event.request)
+            .then((response) => {
+              const clone = response.clone();
+              caches
+                .open(CACHE_NAME)
+                .then((cache) => cache.put(event.request, clone));
+              return response;
+            })
+            .catch(() => cached);
 
-      return (
-        cached ||
-        networkFetch.catch(() => {
-          // Navigation requests get the offline fallback page
-          if (event.request.mode === "navigate") {
-            return caches.match("./offline.html");
-          }
-        })
-      );
-    }),
+          return cached || networkFetch;
+        })),
   );
 });
