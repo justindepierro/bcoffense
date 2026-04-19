@@ -62,10 +62,11 @@ Still verified and pending:
 ### Performance
 
 - [x] Debounce available-play filtering on typed search.
-- [ ] Reduce full rebuild work in `renderScript()` where practical.
+- [x] Reduce full rebuild work in `renderScript()` where practical.
 - [x] Cache formatted play-call output during render cycles.
 - [x] Reduce per-row datalist duplication when shared lists are enough.
 - [x] Replace `window.currentFilteredPlayIndices` with module-local state.
+- [ ] Add a repeatable way to inspect `renderScript()` stage timings during development.
 
 ### UI / UX
 
@@ -125,6 +126,7 @@ Priority: high
 - [x] Avoid repeated per-row formatting where values are reused in the same render
 - [x] Reduce per-row datalist generation where shared datalists are sufficient
 - [x] Identify updates that can patch DOM or update isolated regions instead of forcing full rebuilds
+- [x] Avoid repeated per-period stat rescans during render passes
 - [ ] Measure `renderScript()` hot paths before and after changes
 
 Definition of done:
@@ -202,4 +204,4 @@ Definition of done:
 
 When we resume, start here:
 
-- [ ] Measure `renderScript()` hot paths before and after changes
+- [ ] Use the new script render profiling hooks to capture before/after timing samples for large scripts

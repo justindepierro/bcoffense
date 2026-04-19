@@ -151,6 +151,8 @@ let bulkSelectedIndices = [];
 let selectedAvailablePlays = [];
 let scriptKeyboardShortcutsInitialized = false;
 let currentFilteredPlayIndices = [];
+let scriptRenderProfilingEnabled = false;
+let scriptRenderProfileHistory = [];
 
 // Pagination for the available plays list
 const AVAIL_PER_PAGE = 50;
@@ -201,6 +203,8 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
 const debouncedRenderAvailablePlays = debounce(() => {
   _scheduleRenderAvailable();
 }, 180);
+
+const SCRIPT_RENDER_PROFILE_HISTORY_LIMIT = 12;
 
 const SCRIPT_PERIOD_ACTION_SHORTCUTS = {
   selectPeriodPlays: { aria: "Alt+Shift+S", hint: "Alt+Shift+S" },
@@ -2782,13 +2786,43 @@ function getScriptPlaySummaryText(play) {
     .trim() || play.type || "play";
 }
 
-function getPeriodStats(separatorIndex) {
-  const periodPlays = getPeriodPlays(separatorIndex);
-  return {
-    plays: periodPlays,
-    playCount: periodPlays.length,
-    periodReps: periodPlays.reduce((sum, play) => sum + (play.reps || 1), 0),
-  };
+function buildPeriodStatsMap(scriptItems) {
+  const statsBySeparatorIndex = new Map();
+  let activeSeparatorIndex = null;
+
+  scriptItems.forEach((item, index) => {
+    if (item.isSeparator) {
+      activeSeparatorIndex = index;
+      statsBySeparatorIndex.set(index, { playCount: 0, periodReps: 0 });
+      return;
+    }
+
+    if (activeSeparatorIndex === null) return;
+
+    const stats = statsBySeparatorIndex.get(activeSeparatorIndex);
+    if (!stats) return;
+
+    stats.playCount += 1;
+    stats.periodReps += item.reps || 1;
+  });
+
+  return statsBySeparatorIndex;
+}
+
+function getPeriodStats(separatorIndex, periodStatsMap) {
+  if (periodStatsMap && periodStatsMap.has(separatorIndex)) {
+    return periodStatsMap.get(separatorIndex);
+  }
+
+  const stats = { playCount: 0, periodReps: 0 };
+  for (let index = separatorIndex + 1; index < script.length; index++) {
+    const item = script[index];
+    if (item.isSeparator) break;
+    stats.playCount += 1;
+    stats.periodReps += item.reps || 1;
+  }
+
+  return stats;
 }
 
 function formatPeriodMetaText(playCount, periodReps, minutes) {
@@ -3002,10 +3036,13 @@ function renderPeriodActionButton(action, index, label, icon, title, extraClass 
   return `<button class="pat-btn ${extraClass}" data-action="${action}" data-idx="${index}" title="${escapeHtml(titleText)}" aria-label="${escapeHtml(title)}"${shortcutAttr}><span class="pat-btn-icon" aria-hidden="true">${icon}</span><span class="pat-btn-label">${escapeHtml(label)}</span></button>`;
 }
 
-function renderScriptPeriodHeader(separator, index) {
+function renderScriptPeriodHeader(separator, index, renderContext) {
   const isCollapsed = collapsedPeriods.has(separator.id);
   const collapseIcon = isCollapsed ? "▶" : "▼";
-  const { playCount, periodReps } = getPeriodStats(index);
+  const { playCount, periodReps } = getPeriodStats(
+    index,
+    renderContext?.periodStatsBySeparatorIndex,
+  );
   const periodColor = separator.color || UI_COLORS.periodDefault;
   const periodLabel = separator.label || "Period";
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
@@ -3040,8 +3077,8 @@ function renderScriptPeriodHeader(separator, index) {
           ${renderPeriodActionButton("importFromCallSheet", index, "From Call Sheet", "📥", `Import call sheet plays into ${periodLabel}`, "pat-btn-import-cs")}
           ${renderPeriodActionButton("copyPeriodAsText", index, "Copy", "📄", `Copy ${periodLabel} as text`)}
         </div>`
-        : ""
-      }
+      : ""
+    }
     </div>
   `;
 }
@@ -3127,7 +3164,7 @@ function renderScriptRows(renderContext) {
     .map((play, index) => {
       if (play.isSeparator) {
         skipPlays = collapsedPeriods.has(play.id);
-        return renderScriptPeriodHeader(play, index);
+        return renderScriptPeriodHeader(play, index, renderContext);
       }
 
       if (skipPlays) return "";
@@ -3170,11 +3207,13 @@ function createScriptRenderContext(opts, showPrintPreview) {
   const hashOptionsCache = new Map();
   const wristbandNumberCache = new Map();
   const defenseDatalistState = buildScriptDefenseDatalistState(script);
+  const periodStatsBySeparatorIndex = buildPeriodStatsMap(script);
 
   return {
     opts,
     showPrintPreview,
     defenseDatalistState,
+    periodStatsBySeparatorIndex,
     getCachedFullCall(play) {
       if (!play) return "";
       if (fullCallCache.has(play)) return fullCallCache.get(play);
@@ -3466,30 +3505,127 @@ function updateScriptStats() {
   updateRunPassRatio();
 }
 
+function recordScriptRenderProfileSample(sample) {
+  scriptRenderProfileHistory.push(sample);
+  if (scriptRenderProfileHistory.length > SCRIPT_RENDER_PROFILE_HISTORY_LIMIT) {
+    scriptRenderProfileHistory.shift();
+  }
+}
+
+function summarizeScriptRenderProfileHistory() {
+  if (scriptRenderProfileHistory.length === 0) return null;
+
+  const keys = [
+    "totalMs",
+    "contextMs",
+    "contentMs",
+    "bulkUiMs",
+    "statsMs",
+    "jumpMenuMs",
+    "historyButtonsMs",
+    "longPressMs",
+    "badgeMs",
+  ];
+  const latestSample =
+    scriptRenderProfileHistory[scriptRenderProfileHistory.length - 1];
+  const summary = {
+    samples: scriptRenderProfileHistory.length,
+    playCount: latestSample.playCount,
+    periodCount: latestSample.periodCount,
+  };
+
+  keys.forEach((key) => {
+    const total = scriptRenderProfileHistory.reduce(
+      (sum, sample) => sum + (sample[key] || 0),
+      0,
+    );
+    summary[key] = Number((total / scriptRenderProfileHistory.length).toFixed(2));
+  });
+
+  return summary;
+}
+
+function printScriptRenderProfileSummary() {
+  const summary = summarizeScriptRenderProfileHistory();
+  if (!summary) {
+    console.info("Script render profiling: no samples collected yet.");
+    return null;
+  }
+
+  console.table([summary]);
+  return summary;
+}
+
+function enableScriptRenderProfiling() {
+  scriptRenderProfilingEnabled = true;
+  scriptRenderProfileHistory = [];
+  console.info(
+    "Script render profiling enabled. Use printScriptRenderProfileSummary() after interacting with the script tab.",
+  );
+}
+
+function disableScriptRenderProfiling() {
+  scriptRenderProfilingEnabled = false;
+  console.info("Script render profiling disabled.");
+}
+
 /**
  * Render the current script
  */
 function renderScript() {
   try {
     const container = document.getElementById("scriptPlays");
+    const profile = scriptRenderProfilingEnabled
+      ? {
+        startedAt: performance.now(),
+        playCount: script.filter((item) => !item.isSeparator).length,
+        periodCount: script.filter((item) => item.isSeparator).length,
+      }
+      : null;
     const opts = getScriptDisplayOptions();
     const showPrintPreview =
       document.getElementById("scriptShowPrintPreview")?.checked || false;
+
+    let stageStart = profile ? performance.now() : 0;
     const renderContext = createScriptRenderContext(opts, showPrintPreview);
+    if (profile) {
+      profile.contextMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     renderScriptContent(container, renderContext);
+    if (profile) {
+      profile.contentMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     // Update bulk select UI
     updateBulkSelectUI();
+    if (profile) {
+      profile.bulkUiMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     // Update stats
     updateScriptStats();
+    if (profile) {
+      profile.statsMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     // Populate jump-to-period dropdown
     updateJumpToPeriodOptions();
+    if (profile) {
+      profile.jumpMenuMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     // Update undo/redo buttons
     historyManager.updateButtons("script");
+    if (profile) {
+      profile.historyButtonsMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     // Attach long-press context menus for mobile
     if (typeof _showScriptPlayContextMenu === "function") {
@@ -3502,9 +3638,19 @@ function renderScript() {
           }
         });
     }
+    if (profile) {
+      profile.longPressMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
 
     // Refresh tab badge counts
     if (typeof updateTabBadges === "function") updateTabBadges();
+    if (profile) {
+      profile.badgeMs = performance.now() - stageStart;
+      profile.totalMs = performance.now() - profile.startedAt;
+      delete profile.startedAt;
+      recordScriptRenderProfileSample(profile);
+    }
   } catch (err) {
     console.error("renderScript error:", err);
     showToast("❌ Error rendering script.", { duration: 3000, type: "error" });
