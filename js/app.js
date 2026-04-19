@@ -877,6 +877,14 @@ function handleFileUpload(event) {
  * Initialize the application
  */
 function initApp() {
+  const runOptionalInit = (label, callback) => {
+    try {
+      callback();
+    } catch (err) {
+      console.error(`initApp optional step failed: ${label}`, err);
+    }
+  };
+
   try {
     // Run storage migrations before loading any data
     runMigrations();
@@ -920,31 +928,43 @@ function initApp() {
 
     // Set up drag and drop for file upload
     const uploadBox = document.querySelector(".upload-box");
-    uploadBox.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      uploadBox.classList.add("dragover");
-    });
-    uploadBox.addEventListener("dragleave", () => {
-      uploadBox.classList.remove("dragover");
-    });
-    uploadBox.addEventListener("drop", (e) => {
-      e.preventDefault();
-      uploadBox.classList.remove("dragover");
-      const file = e.dataTransfer.files[0];
-      if (file && file.name.endsWith(".csv")) {
-        document.getElementById("csvFile").files = e.dataTransfer.files;
-        handleFileUpload({ target: { files: [file] } });
-      }
-    });
+    if (uploadBox) {
+      uploadBox.addEventListener("dragover", (e) => {
+        e.preventDefault();
+        uploadBox.classList.add("dragover");
+      });
+      uploadBox.addEventListener("dragleave", () => {
+        uploadBox.classList.remove("dragover");
+      });
+      uploadBox.addEventListener("drop", (e) => {
+        e.preventDefault();
+        uploadBox.classList.remove("dragover");
+        const file = e.dataTransfer.files[0];
+        if (file && file.name.endsWith(".csv")) {
+          document.getElementById("csvFile").files = e.dataTransfer.files;
+          handleFileUpload({ target: { files: [file] } });
+        }
+      });
+    }
 
     // Set up drag and drop for script container
     const scriptContainer = document.getElementById("scriptPlays");
-    scriptContainer.addEventListener("dragover", handleDragOver);
-    scriptContainer.addEventListener("dragleave", handleDragLeave);
-    scriptContainer.addEventListener("drop", handleDrop);
+    if (scriptContainer) {
+      scriptContainer.addEventListener("dragover", handleDragOver);
+      scriptContainer.addEventListener("dragleave", handleDragLeave);
+      scriptContainer.addEventListener("drop", handleDrop);
+    }
 
     // Set today's date as default
-    document.getElementById("scriptDate").valueAsDate = new Date();
+    const scriptDateInput = document.getElementById("scriptDate");
+    if (scriptDateInput) {
+      const today = new Date();
+      try {
+        scriptDateInput.valueAsDate = today;
+      } catch (err) {
+        scriptDateInput.value = today.toISOString().slice(0, 10);
+      }
+    }
 
     // Initialize team name input with stored value
     const teamNameInput = document.getElementById("teamNameInput");
@@ -960,10 +980,10 @@ function initApp() {
     }
 
     // Initialize swatch handlers for wristband
-    initSwatchHandlers();
+    runOptionalInit("initSwatchHandlers", () => initSwatchHandlers());
 
     // Initialize script keyboard shortcuts
-    initScriptKeyboard();
+    runOptionalInit("initScriptKeyboard", () => initScriptKeyboard());
   } catch (err) {
     console.error("initApp error:", err);
     showToast("❌ Error initializing app. Try refreshing.", {

@@ -2526,7 +2526,12 @@ function isColorDark(hex) {
  * Initialize swatch click handlers
  */
 function initSwatchHandlers() {
-  document.getElementById("bgColorSwatches").addEventListener("click", (e) => {
+  const bgSwatches = document.getElementById("bgColorSwatches");
+  const textSwatches = document.getElementById("textColorSwatches");
+
+  if (!bgSwatches || !textSwatches) return;
+
+  bgSwatches.addEventListener("click", (e) => {
     if (e.target.classList.contains("color-swatch")) {
       pendingBgColor = e.target.dataset.color;
       updateSwatchSelection("bgColorSwatches", pendingBgColor);
@@ -2540,14 +2545,12 @@ function initSwatchHandlers() {
     }
   });
 
-  document
-    .getElementById("textColorSwatches")
-    .addEventListener("click", (e) => {
-      if (e.target.classList.contains("color-swatch")) {
-        pendingTextColor = e.target.dataset.color;
-        updateSwatchSelection("textColorSwatches", pendingTextColor);
-      }
-    });
+  textSwatches.addEventListener("click", (e) => {
+    if (e.target.classList.contains("color-swatch")) {
+      pendingTextColor = e.target.dataset.color;
+      updateSwatchSelection("textColorSwatches", pendingTextColor);
+    }
+  });
 }
 
 /**

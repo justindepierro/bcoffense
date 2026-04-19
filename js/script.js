@@ -319,6 +319,177 @@ function getScriptDisplayOptions() {
   };
 }
 
+function getScriptWorkspaceCheckboxState() {
+  const checkboxState = {};
+  [...SCRIPT_DISPLAY_CHECKBOX_IDS, "scriptRemoveVowels"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) checkboxState[id] = Boolean(el.checked);
+  });
+  return checkboxState;
+}
+
+function getScriptWorkspaceState() {
+  const wbSelect = document.getElementById("scriptWristbandSelect");
+  const formationFilter = document.getElementById("scriptFilterFormation");
+  const basePlayFilter = document.getElementById("scriptFilterBasePlay");
+  const searchInput = document.getElementById("scriptSearchPlay");
+
+  return {
+    version: 1,
+    displayOptions: getScriptWorkspaceCheckboxState(),
+    filters: {
+      selectedTypes: [...scriptSelectedTypes],
+      selectedSituation: [...scriptSelectedSituation],
+      selectedDown: [...scriptSelectedDown],
+      selectedDistance: [...scriptSelectedDistance],
+      selectedHash: [...scriptSelectedHash],
+      selectedFieldPos: [...scriptSelectedFieldPos],
+      selectedPersonnel: [...scriptSelectedPersonnel],
+      formation: formationFilter?.value || "",
+      basePlay: basePlayFilter?.value || "",
+      search: searchInput?.value || "",
+      filtersCollapsed,
+    },
+    linkedWristbandId: wbSelect?.value ? parseInt(wbSelect.value, 10) || null : null,
+    collapsedPeriodIds: script
+      .filter((item) => item.isSeparator && collapsedPeriods.has(item.id))
+      .map((item) => item.id),
+  };
+}
+
+function syncScriptCheckboxFilterSelections() {
+  const selectedByType = {
+    type: new Set(scriptSelectedTypes),
+    situation: new Set(scriptSelectedSituation),
+    down: new Set(scriptSelectedDown),
+    distance: new Set(scriptSelectedDistance),
+    hash: new Set(scriptSelectedHash),
+    fieldPos: new Set(scriptSelectedFieldPos),
+    personnel: new Set(scriptSelectedPersonnel),
+  };
+
+  document
+    .querySelectorAll("#scriptFiltersContainer [data-action='toggleScriptCheckbox']")
+    .forEach((label) => {
+      const filterType = label.dataset.filterType;
+      const filterValue = label.dataset.filterValue;
+      const checkbox = label.querySelector('input[type="checkbox"]');
+      const isSelected = Boolean(
+        selectedByType[filterType] && selectedByType[filterType].has(filterValue),
+      );
+
+      if (checkbox) checkbox.checked = isSelected;
+      label.classList.toggle("checked", isSelected);
+    });
+}
+
+function setScriptWristbandSelection(wristbandId, shouldRender = true) {
+  const select = document.getElementById("scriptWristbandSelect");
+  const infoDiv = document.getElementById("scriptWristbandInfo");
+  if (!select || !infoDiv) return;
+
+  const normalizedId = Number.isFinite(wristbandId) ? wristbandId : null;
+  select.value = normalizedId ? String(normalizedId) : "";
+
+  if (!normalizedId) {
+    scriptWristband = null;
+    infoDiv.textContent = "";
+    if (shouldRender) renderScript();
+    return;
+  }
+
+  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  const wb = saved.find((item) => item.id === normalizedId);
+  if (!wb) {
+    scriptWristband = null;
+    infoDiv.textContent = "";
+    select.value = "";
+    if (shouldRender) renderScript();
+    return;
+  }
+
+  scriptWristband = wb;
+  const totalPlays = wb.cards
+    ? wb.cards.reduce(
+      (sum, card) => sum + card.data.filter((play) => play !== null).length,
+      0,
+    )
+    : 0;
+  infoDiv.textContent = `Loaded: ${wb.title} • ${wb.cards ? wb.cards.length : 1} card(s) • ${totalPlays} plays`;
+
+  if (shouldRender) renderScript();
+}
+
+function restoreSavedScriptWorkspace(workspace) {
+  if (!workspace || typeof workspace !== "object") return;
+
+  const displayOptions =
+    workspace.displayOptions && typeof workspace.displayOptions === "object"
+      ? workspace.displayOptions
+      : null;
+  if (displayOptions) {
+    Object.entries(displayOptions).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if (el) el.checked = Boolean(value);
+    });
+    saveScriptDisplayOptions();
+  }
+
+  const filters = workspace.filters && typeof workspace.filters === "object"
+    ? workspace.filters
+    : null;
+  if (filters) {
+    scriptSelectedTypes = Array.isArray(filters.selectedTypes)
+      ? [...filters.selectedTypes]
+      : [];
+    scriptSelectedSituation = Array.isArray(filters.selectedSituation)
+      ? [...filters.selectedSituation]
+      : [];
+    scriptSelectedDown = Array.isArray(filters.selectedDown)
+      ? [...filters.selectedDown]
+      : [];
+    scriptSelectedDistance = Array.isArray(filters.selectedDistance)
+      ? [...filters.selectedDistance]
+      : [];
+    scriptSelectedHash = Array.isArray(filters.selectedHash)
+      ? [...filters.selectedHash]
+      : [];
+    scriptSelectedFieldPos = Array.isArray(filters.selectedFieldPos)
+      ? [...filters.selectedFieldPos]
+      : [];
+    scriptSelectedPersonnel = Array.isArray(filters.selectedPersonnel)
+      ? [...filters.selectedPersonnel]
+      : [];
+
+    const formationFilter = document.getElementById("scriptFilterFormation");
+    const basePlayFilter = document.getElementById("scriptFilterBasePlay");
+    const searchInput = document.getElementById("scriptSearchPlay");
+    if (formationFilter) formationFilter.value = filters.formation || "";
+    if (basePlayFilter) basePlayFilter.value = filters.basePlay || "";
+    if (searchInput) searchInput.value = filters.search || "";
+
+    if (typeof filters.filtersCollapsed === "boolean") {
+      filtersCollapsed = filters.filtersCollapsed;
+      applyScriptFiltersCollapsedState();
+    }
+
+    syncScriptCheckboxFilterSelections();
+    syncScriptSearchClearButton();
+    updateActiveFilterCount();
+    _scheduleRenderAvailable();
+  }
+
+  collapsedPeriods = new Set(
+    Array.isArray(workspace.collapsedPeriodIds)
+      ? workspace.collapsedPeriodIds.filter((id) =>
+        script.some((item) => item.isSeparator && item.id === id),
+      )
+      : [],
+  );
+
+  setScriptWristbandSelection(workspace.linkedWristbandId || null, false);
+}
+
 /**
  * Debounced autosave for the working script
  * Saves a draft to localStorage so work isn't lost on accidental close
@@ -3361,6 +3532,7 @@ async function saveScript() {
         existing.name = name;
         existing.date = date;
         existing.plays = safeDeepClone(script);
+        existing.workspace = getScriptWorkspaceState();
         existing.savedAt = new Date().toISOString();
         storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
@@ -3381,6 +3553,7 @@ async function saveScript() {
       period: "",
       tempo: "",
       plays: safeDeepClone(script),
+      workspace: getScriptWorkspaceState(),
       savedAt: new Date().toISOString(),
     };
 
@@ -3439,6 +3612,7 @@ function loadSavedScriptsList() {
           minute: "2-digit",
         })
         : "";
+      const restoresWorkspace = Boolean(s.workspace);
       const isCurrent =
         (document.getElementById("scriptName")?.value || "") === s.name &&
         (document.getElementById("scriptDate")?.value || "") === (s.date || "");
@@ -3458,6 +3632,7 @@ function loadSavedScriptsList() {
                   <div class="saved-card-meta saved-card-meta-secondary">
                     <span>🏃 ${runCount} run</span>
                     <span>🎯 ${passCount} pass</span>
+                    ${restoresWorkspace ? '<span>🧭 Restores workspace</span>' : ""}
                     ${savedTime ? `<span>💾 ${savedTime}</span>` : ""}
                   </div>
                   ${periods ? `<div class="saved-card-periods">${escapeHtml(periods)}</div>` : ""}
@@ -3504,6 +3679,7 @@ function loadScript(id) {
       });
     }
 
+    restoreSavedScriptWorkspace(scriptData.workspace);
     renderScript();
     markScriptClean();
     storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
@@ -3572,6 +3748,7 @@ async function overwriteSavedScript(id) {
   s.name = document.getElementById("scriptName").value || s.name;
   s.date = document.getElementById("scriptDate").value || s.date;
   s.plays = safeDeepClone(script);
+  s.workspace = getScriptWorkspaceState();
   s.savedAt = new Date().toISOString();
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
@@ -3610,30 +3787,8 @@ function populateScriptWristbandSelect() {
  */
 function loadWristbandForScript() {
   const select = document.getElementById("scriptWristbandSelect");
-  const id = parseInt(select.value, 10);
-  const infoDiv = document.getElementById("scriptWristbandInfo");
-
-  if (!id) {
-    scriptWristband = null;
-    infoDiv.textContent = "";
-    renderScript();
-    return;
-  }
-
-  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wb = saved.find((w) => w.id === id);
-
-  if (wb) {
-    scriptWristband = wb;
-    const totalPlays = wb.cards
-      ? wb.cards.reduce(
-        (sum, c) => sum + c.data.filter((p) => p !== null).length,
-        0,
-      )
-      : 0;
-    infoDiv.textContent = `Loaded: ${wb.title} • ${wb.cards ? wb.cards.length : 1} card(s) • ${totalPlays} plays`;
-    renderScript();
-  }
+  if (!select) return;
+  setScriptWristbandSelection(parseInt(select.value, 10), true);
 }
 
 /**

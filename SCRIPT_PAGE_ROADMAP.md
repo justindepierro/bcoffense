@@ -40,7 +40,7 @@ Still verified and pending:
 - [x] Improve empty states and filter recovery UX
 - [x] Reduce global state leakage in sidebar selection/filter flows
 - [x] Trim render-path complexity and duplicated formatting work
-- [ ] Improve saved-script workspace restoration behavior
+- [x] Improve saved-script workspace restoration behavior
 
 ## Verified Findings
 
@@ -138,7 +138,7 @@ Priority: medium
 - [x] Improve toolbar clarity for sort state, search state, and selection state
 - [x] Improve period template browse/insert workflow
 - [x] Improve saved-script cards with richer metadata and stronger action hierarchy
-- [ ] Improve on-screen empty states for script and sidebar flows
+- [x] Improve on-screen empty states for script and sidebar flows
 - [x] Reduce control crowding in period action bars
 
 Definition of done:
@@ -165,11 +165,13 @@ Definition of done:
 
 Priority: medium / future
 
-- [ ] Decide what UI context should be saved with each script
-- [ ] Consider saving linked wristband selection with saved scripts
-- [ ] Consider saving collapse state per period when useful
-- [ ] Consider saving script-specific display preferences separately from global defaults
-- [ ] Review whether saved-script load should restore more of the working context
+Verified implementation now restores saved display options, sidebar filters/search, linked wristband selection, and collapsed period state when a saved script includes workspace data.
+
+- [x] Decide what UI context should be saved with each script
+- [x] Consider saving linked wristband selection with saved scripts
+- [x] Consider saving collapse state per period when useful
+- [x] Consider saving script-specific display preferences separately from global defaults
+- [x] Review whether saved-script load should restore more of the working context
 
 Definition of done:
 
@@ -200,6 +202,7 @@ When we resume, start here:
 
 - [x] Reduce per-row datalist duplication in script render
 - [ ] Continue splitting `renderScript()` into smaller updateable regions
+- [x] Improve saved-script workspace restoration behavior
 - [x] Add labels/announcements for color, drag, and selection controls
 - [x] Improve period template browse/insert workflow
 - [x] Reduce control crowding in period action bars
