@@ -3038,7 +3038,7 @@ function renderScriptPeriodHeader(separator, index) {
           ${renderPeriodActionButton("applyPreferredForPeriod", index, "Preferred", "★", `Apply preferred metadata to ${periodLabel}`)}
           ${renderPeriodActionButton("pushPeriodToCallSheet", index, "To Call Sheet", "📋", `Push ${periodLabel} to call sheet`, "pat-btn-callsheet")}
           ${renderPeriodActionButton("importFromCallSheet", index, "From Call Sheet", "📥", `Import call sheet plays into ${periodLabel}`, "pat-btn-import-cs")}
-          ${renderPeriodActionButton("copyPeriodAsText", index, "Copy", "📄", `Copy ${periodLabel} as text")}
+          ${renderPeriodActionButton("copyPeriodAsText", index, "Copy", "📄", `Copy ${periodLabel} as text`)}
         </div>`
         : ""
       }
