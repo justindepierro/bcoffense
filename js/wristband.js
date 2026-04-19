@@ -2639,66 +2639,119 @@ function toggleBatchSelect(cardIdx, cellIdx) {
     `[data-drag='wbCell'][data-card='${cardIdx}'][data-cell-idx='${cellIdx}']`,
   );
   cells.forEach((c) => c.classList.toggle("wb-selected", idx < 0));
+  _updateBatchBar();
 }
 
 /**
- * Apply a background color to all batch-selected cells
+ * Update the batch action bar visibility and count
  */
-async function applyBatchColor() {
+function _updateBatchBar() {
+  const bar = document.getElementById("wbBatchBar");
+  const countEl = document.getElementById("wbBatchCount");
+  if (!bar) return;
+  const n = wbSelectedCells.length;
+  if (n > 0) {
+    bar.classList.add("visible");
+    countEl.textContent = `${n} cell${n === 1 ? "" : "s"} selected`;
+  } else {
+    bar.classList.remove("visible");
+    // Reset pending color swatch highlight
+    document.querySelectorAll("#wbBatchSwatches .wb-batch-swatch.active").forEach((s) => s.classList.remove("active"));
+  }
+}
+
+/**
+ * Wire up batch swatch clicks (called once on DOMContentLoaded)
+ */
+function _initBatchBarSwatches() {
+  const container = document.getElementById("wbBatchSwatches");
+  if (!container) return;
+  container.addEventListener("click", (e) => {
+    const swatch = e.target.closest(".wb-batch-swatch");
+    if (!swatch) return;
+    // Toggle active highlight
+    container.querySelectorAll(".wb-batch-swatch").forEach((s) => s.classList.remove("active"));
+    swatch.classList.add("active");
+  });
+}
+
+/**
+ * Apply batch edits (color, cadence, personnel) to all selected cells
+ */
+function applyBatchEdit() {
   if (wbSelectedCells.length === 0) {
     showToast("No cells selected — Shift+click cells first");
     return;
   }
 
-  // Show color picker using existing swatches approach
-  const colors = [
-    { label: "Red", value: "#e74c3c" },
-    { label: "Blue", value: "#3498db" },
-    { label: "Green", value: "#27ae60" },
-    { label: "Yellow", value: "#f1c40f" },
-    { label: "Orange", value: "#e67e22" },
-    { label: "Purple", value: "#9b59b6" },
-    { label: "Clear", value: "" },
-  ];
-  const items = colors.map((c) => ({ label: c.label, value: c.value }));
-  const picked = await showListPicker(
-    "Choose a color for selected cells:",
-    items,
-    {
-      title: "Batch Color",
-      icon: "🎨",
-    },
-  );
-  if (picked === null) return;
+  // Read values from the batch bar controls
+  const activeSwatch = document.querySelector("#wbBatchSwatches .wb-batch-swatch.active");
+  const cadenceVal = document.getElementById("wbBatchCadence").value;
+  const personnelVal = document.getElementById("wbBatchPersonnel").value.trim();
+
+  // If nothing was set, warn the user
+  const hasColor = activeSwatch !== null;
+  const hasCadence = cadenceVal !== "__skip__";
+  const hasPersonnel = personnelVal !== "";
+
+  if (!hasColor && !hasCadence && !hasPersonnel) {
+    showToast("Set at least one field (color, cadence, or personnel) to apply");
+    return;
+  }
 
   saveWristbandState();
+  const count = wbSelectedCells.length;
+
   wbSelectedCells.forEach((key) => {
     if (!cellCustomizations[key]) cellCustomizations[key] = {};
-    if (picked === "") {
-      delete cellCustomizations[key].bgColor;
-      // Auto-adjust text color back
-      cellCustomizations[key].textColor = UI_COLORS.textBlack;
-    } else {
-      cellCustomizations[key].bgColor = picked;
-      cellCustomizations[key].textColor = isColorDark(picked)
-        ? UI_COLORS.textWhite
-        : UI_COLORS.textBlack;
+
+    if (hasColor) {
+      const picked = activeSwatch.dataset.color;
+      if (picked === "") {
+        delete cellCustomizations[key].bgColor;
+        cellCustomizations[key].textColor = UI_COLORS.textBlack;
+      } else {
+        cellCustomizations[key].bgColor = picked;
+        cellCustomizations[key].textColor = isColorDark(picked)
+          ? UI_COLORS.textWhite
+          : UI_COLORS.textBlack;
+      }
     }
-    // Clean up empty customization objects
-    if (
-      !cellCustomizations[key].bgColor &&
-      !cellCustomizations[key].cadence &&
-      cellCustomizations[key].textColor === UI_COLORS.textBlack
-    ) {
+
+    if (hasCadence) {
+      if (cadenceVal === "") {
+        delete cellCustomizations[key].cadence;
+      } else {
+        cellCustomizations[key].cadence = cadenceVal;
+      }
+    }
+
+    if (hasPersonnel) {
+      cellCustomizations[key].extraPersonnel = personnelVal;
+    }
+
+    // Clean up entirely empty customization entries
+    const c = cellCustomizations[key];
+    if (!c.bgColor && !c.cadence && !c.extraPersonnel && c.textColor === UI_COLORS.textBlack) {
       delete cellCustomizations[key];
     }
   });
 
-  wbSelectedCells = [];
+  clearBatchSelect();
   renderWristbandGrid();
-  showToast(
-    `🎨 Color applied to ${wbSelectedCells.length || "all selected"} cells`,
-  );
+
+  // Reset batch bar inputs
+  const cadenceEl = document.getElementById("wbBatchCadence");
+  const personnelEl = document.getElementById("wbBatchPersonnel");
+  if (cadenceEl) cadenceEl.value = "__skip__";
+  if (personnelEl) personnelEl.value = "";
+  document.querySelectorAll("#wbBatchSwatches .wb-batch-swatch.active").forEach((s) => s.classList.remove("active"));
+
+  const parts = [];
+  if (hasColor) parts.push("color");
+  if (hasCadence) parts.push("cadence");
+  if (hasPersonnel) parts.push("personnel");
+  showToast(`Applied ${parts.join(", ")} to ${count} cell${count === 1 ? "" : "s"}`);
 }
 
 /**
@@ -2709,6 +2762,7 @@ function clearBatchSelect() {
   document
     .querySelectorAll(".wristband-cell.wb-selected")
     .forEach((c) => c.classList.remove("wb-selected"));
+  _updateBatchBar();
 }
 
 // ============ Card Descriptions ============
@@ -3057,6 +3111,9 @@ function _showWbCellContextMenu(e, cardIdx, cellIdx) {
 // ============ Container-Scoped Delegation ============
 
 document.addEventListener("DOMContentLoaded", () => {
+  // ── Batch bar swatch click wiring ──
+  _initBatchBarSwatches();
+
   // ── Wristband grid: drag + click delegation ──
   const grid = document.getElementById("wristbandGrid");
   if (grid) {
@@ -3066,7 +3123,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const cardIdx = parseInt(cell.dataset.card, 10);
       const cellIdx = parseInt(cell.dataset.cellIdx, 10);
 
-      // Shift+click for batch color select
+      // Shift+click for batch multi-select
       if (e.shiftKey) {
         e.preventDefault();
         toggleBatchSelect(cardIdx, cellIdx);

@@ -592,11 +592,108 @@
   color: var(--color-danger);
 }
 
-/* ── Multi-select cell (batch color) ── */
+/* ── Multi-select cell (batch edit) ── */
 .wristband-cell.wb-selected {
   outline: 2px dashed var(--color-primary);
   outline-offset: -2px;
   z-index: var(--z-base);
+}
+
+/* ── Batch Edit Action Bar ── */
+.wb-batch-bar {
+  display: none;
+  flex-direction: column;
+  gap: var(--space-sm);
+  background: var(--color-bg-light);
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  margin-top: var(--space-sm);
+  box-shadow: var(--shadow-md);
+  animation: wb-batch-fadein 0.18s ease;
+}
+.wb-batch-bar.visible {
+  display: flex;
+}
+@keyframes wb-batch-fadein {
+  from { opacity: 0; transform: translateY(6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+.wb-batch-bar-info {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.wb-batch-count {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-primary);
+}
+.wb-batch-deselect {
+  margin-left: auto;
+  font-size: var(--font-size-xs);
+}
+.wb-batch-controls {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+.wb-batch-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+.wb-batch-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.wb-batch-swatches {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+}
+.wb-batch-swatch {
+  width: 22px;
+  height: 22px;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--color-border);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  flex-shrink: 0;
+}
+.wb-batch-swatch:hover {
+  transform: scale(1.2);
+  box-shadow: var(--shadow-sm);
+}
+.wb-batch-swatch.active {
+  outline: 2.5px solid var(--color-primary);
+  outline-offset: 1px;
+}
+.wb-batch-select {
+  font-size: var(--font-size-xs);
+  padding: 2px var(--space-xs);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  height: 28px;
+}
+.wb-batch-input {
+  font-size: var(--font-size-xs);
+  padding: 2px var(--space-xs);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  height: 28px;
+  width: 120px;
+}
+[data-theme="dark"] .wb-batch-bar {
+  background: var(--color-bg-light);
+  border-color: var(--color-primary);
 }
 
 /* ── Pinned play star ── */

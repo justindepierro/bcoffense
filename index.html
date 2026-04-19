@@ -1945,13 +1945,6 @@
                   🧠 Smart Fill
                 </button>
                 <button
-                  class="btn btn-sm"
-                  data-action="applyBatchColor"
-                  title="Apply color to Shift+clicked cells"
-                >
-                  🎨 Batch Color
-                </button>
-                <button
                   class="btn btn-success btn-sm"
                   data-action="printWristband"
                 >
@@ -1990,6 +1983,50 @@
                 aria-label="Wristband card grid"
                 data-testid="wristband-grid"
               ></div>
+            </div>
+
+            <!-- Batch Edit Action Bar (visible when cells are shift+clicked) -->
+            <div id="wbBatchBar" class="wb-batch-bar" aria-live="polite" aria-label="Batch edit selected cells">
+              <div class="wb-batch-bar-info">
+                <span class="wb-batch-count" id="wbBatchCount">0 cells selected</span>
+                <button class="btn btn-sm wb-batch-deselect" data-action="clearBatchSelect" title="Clear selection">✕ Clear</button>
+              </div>
+              <div class="wb-batch-controls">
+                <div class="wb-batch-group">
+                  <span class="wb-batch-label">Color:</span>
+                  <div class="wb-batch-swatches" id="wbBatchSwatches">
+                    <div class="wb-batch-swatch" data-color="" title="Clear" style="background: transparent; border-style: dashed;"></div>
+                    <div class="wb-batch-swatch" data-color="#ffeb3b" title="Yellow" style="background:#ffeb3b"></div>
+                    <div class="wb-batch-swatch" data-color="#ff9800" title="Orange" style="background:#ff9800"></div>
+                    <div class="wb-batch-swatch" data-color="#f44336" title="Red" style="background:#f44336"></div>
+                    <div class="wb-batch-swatch" data-color="#e91e63" title="Pink" style="background:#e91e63"></div>
+                    <div class="wb-batch-swatch" data-color="#9c27b0" title="Purple" style="background:#9c27b0"></div>
+                    <div class="wb-batch-swatch" data-color="#2196f3" title="Blue" style="background:#2196f3"></div>
+                    <div class="wb-batch-swatch" data-color="#4caf50" title="Green" style="background:#4caf50"></div>
+                  </div>
+                </div>
+                <div class="wb-batch-group">
+                  <label for="wbBatchCadence" class="wb-batch-label">Cadence:</label>
+                  <select id="wbBatchCadence" class="wb-batch-select">
+                    <option value="__skip__">— keep —</option>
+                    <option value="">None</option>
+                    <option value="$">💲 On Two</option>
+                    <option value="$$">💲💲 Double</option>
+                  </select>
+                </div>
+                <div class="wb-batch-group">
+                  <label for="wbBatchPersonnel" class="wb-batch-label">Personnel:</label>
+                  <input
+                    type="text"
+                    id="wbBatchPersonnel"
+                    class="wb-batch-input"
+                    list="wbPersonnelOptions"
+                    placeholder="— keep —"
+                    autocomplete="off"
+                  />
+                </div>
+                <button class="btn btn-primary btn-sm" data-action="applyBatchEdit" title="Apply to all selected cells">Apply</button>
+              </div>
             </div>
 
             <!-- Display Options Panel (collapsible) -->
