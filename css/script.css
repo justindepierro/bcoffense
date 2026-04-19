@@ -1901,6 +1901,105 @@
 }
 
 @media (max-width: 768px) {
+  .available-plays-actions {
+    gap: 8px;
+    padding: 10px;
+  }
+
+  .available-plays-actions .btn {
+    flex: 1 1 180px;
+  }
+
+  .select-all-label {
+    margin-left: 0;
+    width: 100%;
+    justify-content: center;
+    min-height: 42px;
+    padding: 8px 12px;
+    font-size: var(--font-size-sm);
+    background: var(--color-white);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+  }
+
+  .available-selection-status {
+    margin-top: 0;
+    font-size: var(--font-size-sm);
+  }
+
+  .script-toolbar {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .script-toolbar-left,
+  .script-toolbar-center,
+  .script-toolbar-right {
+    width: 100%;
+    max-width: none;
+    justify-content: flex-start;
+  }
+
+  .script-toolbar-center,
+  .script-toolbar-right {
+    gap: 8px;
+  }
+
+  .toolbar-sort-select,
+  .script-search-input {
+    min-height: 42px;
+  }
+
+  .toolbar-sort-select {
+    flex: 1 1 180px;
+  }
+
+  .script-toolbar .btn,
+  .script-toolbar .bulk-select-label,
+  .display-options-btns .btn,
+  .wristband-actions-row .btn,
+  .script-actions .btn,
+  .more-tools-btn {
+    min-height: 42px;
+  }
+
+  .wristband-loader-row,
+  .wristband-actions-row,
+  .display-options-btns,
+  .period-buttons {
+    gap: 10px;
+  }
+
+  .wristband-loader-row select,
+  .wristband-actions-row .btn,
+  .display-options-btns .btn,
+  .period-buttons .btn {
+    flex: 1 1 180px;
+  }
+
+  .script-actions {
+    gap: 10px;
+  }
+
+  .script-actions > .btn,
+  .script-actions > .more-tools-wrap {
+    flex: 1 1 180px;
+  }
+
+  .more-tools-wrap {
+    min-width: 0;
+  }
+
+  .more-tools-btn {
+    width: 100%;
+  }
+
+  .more-tools-menu {
+    min-width: min(260px, 100vw - 32px);
+    right: 0;
+    left: auto;
+  }
+
   .period-actions-toolbar {
     display: grid;
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1934,6 +2033,52 @@
 }
 
 @media (max-width: 560px) {
+  .available-plays-actions,
+  .script-toolbar,
+  .script-actions,
+  .display-options-content,
+  .wristband-integration-panel .integration-content {
+    padding-left: 10px;
+    padding-right: 10px;
+  }
+
+  .available-plays-actions .btn,
+  .script-toolbar .btn,
+  .display-options-btns .btn,
+  .wristband-actions-row .btn,
+  .period-buttons .btn,
+  .script-actions > .btn,
+  .script-actions > .more-tools-wrap,
+  .wristband-loader-row select,
+  .toolbar-sort-select,
+  .script-search-input {
+    flex-basis: 100%;
+    width: 100%;
+  }
+
+  .bulk-select-label,
+  .script-sort-status,
+  .script-search-count,
+  .available-selection-status {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .script-toolbar-left,
+  .script-toolbar-center,
+  .script-toolbar-right {
+    gap: 10px;
+  }
+
+  .display-options-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .display-options-grid label {
+    min-height: 42px;
+    padding: 8px 10px;
+  }
+
   .script-item.period-header {
     align-items: stretch;
   }
@@ -1951,5 +2096,12 @@
 
   .period-actions-toolbar {
     grid-template-columns: 1fr;
+  }
+
+  .more-tools-menu {
+    position: static;
+    width: 100%;
+    min-width: 0;
+    margin-top: 8px;
   }
 }

@@ -156,7 +156,7 @@ Priority: medium
 - [x] Review focus rings on period headers, toolbar controls, and row actions
 - [x] Add or improve labels for color, drag, and selection controls where needed
 - [x] Review keyboard access to bulk-selection flows and period actions
-- [ ] Audit script controls on narrow screens and reduce accidental taps
+- [x] Audit script controls on narrow screens and reduce accidental taps
 
 Definition of done:
 
@@ -202,5 +202,4 @@ Definition of done:
 
 When we resume, start here:
 
-- [ ] Audit narrow-screen script controls and reduce accidental taps
 - [ ] Measure `renderScript()` hot paths before and after changes
