@@ -122,7 +122,7 @@ Definition of done:
 Priority: high
 
 - [x] Add memoized/cached `getFullCall()` output inside `renderScript()`
-- [ ] Avoid repeated per-row formatting where values are reused in the same render
+- [x] Avoid repeated per-row formatting where values are reused in the same render
 - [ ] Reduce per-row datalist generation where shared datalists are sufficient
 - [ ] Identify updates that can patch DOM or update isolated regions instead of forcing full rebuilds
 - [ ] Measure `renderScript()` hot paths before and after changes
@@ -203,7 +203,6 @@ Definition of done:
 When we resume, start here:
 
 - [ ] Continue splitting `renderScript()` into smaller updateable regions
-- [ ] Avoid repeated per-row formatting where values are reused in the same render
 - [ ] Review duplicated UI state that still exists across checkboxes or panels
 - [ ] Review keyboard access to bulk-selection flows and period actions
 - [ ] Audit narrow-screen script controls and reduce accidental taps

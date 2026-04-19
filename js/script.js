@@ -2795,6 +2795,15 @@ function getScriptPlaySummaryText(play) {
     .trim() || play.type || "play";
 }
 
+function getPeriodStats(separatorIndex) {
+  const periodPlays = getPeriodPlays(separatorIndex);
+  return {
+    plays: periodPlays,
+    playCount: periodPlays.length,
+    periodReps: periodPlays.reduce((sum, play) => sum + (play.reps || 1), 0),
+  };
+}
+
 function formatPeriodMetaText(playCount, periodReps, minutes) {
   const timeDisplay = minutes ? `${minutes} min` : "";
   return `${playCount} plays • ${periodReps} reps${timeDisplay ? ` • ${timeDisplay}` : ""}`;
@@ -2824,11 +2833,7 @@ function updatePeriodMetaDisplay(separatorIndex) {
   const metaEl = wrapper?.querySelector(".ph-meta-span");
   if (!metaEl) return;
 
-  const playCount = getPeriodPlays(separatorIndex).length;
-  const periodReps = getPeriodPlays(separatorIndex).reduce(
-    (sum, play) => sum + (play.reps || 1),
-    0,
-  );
+  const { playCount, periodReps } = getPeriodStats(separatorIndex);
   metaEl.textContent = formatPeriodMetaText(
     playCount,
     periodReps,
@@ -2915,9 +2920,7 @@ function renderPeriodActionButton(action, index, label, icon, title, extraClass 
 function renderScriptPeriodHeader(separator, index) {
   const isCollapsed = collapsedPeriods.has(separator.id);
   const collapseIcon = isCollapsed ? "▶" : "▼";
-  const periodPlays = getPeriodPlays(index);
-  const playCount = periodPlays.length;
-  const periodReps = periodPlays.reduce((sum, play) => sum + (play.reps || 1), 0);
+  const { playCount, periodReps } = getPeriodStats(index);
   const periodColor = separator.color || UI_COLORS.periodDefault;
   const periodLabel = separator.label || "Period";
   const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
@@ -2959,15 +2962,23 @@ function renderScriptPeriodHeader(separator, index) {
 }
 
 function renderScriptPlayRow(play, index, playNumber, renderContext) {
-  const { opts, showPrintPreview, getCachedFullCall, defenseDatalistState } = renderContext;
+  const {
+    opts,
+    showPrintPreview,
+    getCachedFullCall,
+    getCachedSummaryText,
+    getCachedHashOptions,
+    getCachedWristbandNumber,
+    defenseDatalistState,
+  } = renderContext;
   const fullCall = getCachedFullCall(play);
   const isSelected = bulkSelectedIndices.includes(index);
-  const hashOptions = buildDefenseOptions(["L", "M", "R"], play.preferredHash, play.hash);
-  const playLabel = getScriptPlaySummaryText(play);
+  const hashOptions = getCachedHashOptions(play);
+  const playLabel = getCachedSummaryText(play);
 
   let wbBadge = "";
   if (scriptWristband && opts.showWbNum) {
-    const wbNum = findPlayOnWristband(play);
+    const wbNum = getCachedWristbandNumber(play);
     if (wbNum !== null) {
       wbBadge = `<span class="wb-badge">#${wbNum}</span>`;
     }
@@ -3040,6 +3051,102 @@ function renderScriptRows(renderContext) {
       return renderScriptPlayRow(play, index, playNumber, renderContext);
     })
     .join("");
+}
+
+function renderScriptColumnHeaders() {
+  return `
+      <div class="script-column-headers">
+        <div class="sch-spacer"></div>
+        <div class="sch-num">#</div>
+        <div class="sch-play">Play Call</div>
+        <div class="sch-hash">Hash</div>
+        <div class="sch-def">Front</div>
+        <div class="sch-def">Cov</div>
+        <div class="sch-def">Stunt</div>
+        <div class="sch-def">Blitz</div>
+        <div class="sch-controls">Controls</div>
+      </div>
+    `;
+}
+
+function renderScriptGuidedEmptyState() {
+  return `
+      <div class="script-empty-guide">
+        <div class="seg-icon">📋</div>
+        <div class="seg-text">Add plays from the left panel to start building this period</div>
+        <div class="seg-hint">Click <strong>+ Add</strong> on any play, or check multiple and use <strong>Add Selected</strong></div>
+      </div>
+    `;
+}
+
+function createScriptRenderContext(opts, showPrintPreview) {
+  const fullCallCache = new Map();
+  const summaryTextCache = new Map();
+  const hashOptionsCache = new Map();
+  const wristbandNumberCache = new Map();
+  const defenseDatalistState = buildScriptDefenseDatalistState(script);
+
+  return {
+    opts,
+    showPrintPreview,
+    defenseDatalistState,
+    getCachedFullCall(play) {
+      if (!play) return "";
+      if (fullCallCache.has(play)) return fullCallCache.get(play);
+      const rendered = getFullCall(play, opts);
+      fullCallCache.set(play, rendered);
+      return rendered;
+    },
+    getCachedSummaryText(play) {
+      if (!play) return "play";
+      if (summaryTextCache.has(play)) return summaryTextCache.get(play);
+      const summary = getScriptPlaySummaryText(play);
+      summaryTextCache.set(play, summary);
+      return summary;
+    },
+    getCachedHashOptions(play) {
+      if (!play) return "";
+      if (hashOptionsCache.has(play)) return hashOptionsCache.get(play);
+      const hashOptions = buildDefenseOptions(
+        ["L", "M", "R"],
+        play.preferredHash,
+        play.hash,
+      );
+      hashOptionsCache.set(play, hashOptions);
+      return hashOptions;
+    },
+    getCachedWristbandNumber(play) {
+      if (!play || !scriptWristband || !opts.showWbNum) return null;
+      if (wristbandNumberCache.has(play)) return wristbandNumberCache.get(play);
+      const wbNum = findPlayOnWristband(play);
+      wristbandNumberCache.set(play, wbNum);
+      return wbNum;
+    },
+  };
+}
+
+function renderScriptContent(container, renderContext) {
+  const hasPlays = script.some((p) => !p.isSeparator);
+
+  if (script.length === 0) {
+    container.innerHTML = "";
+    container.classList.add("empty");
+    return;
+  }
+
+  if (!hasPlays) {
+    container.classList.remove("empty");
+    container.innerHTML =
+      renderScriptEmptyPeriodHeaders() +
+      renderScriptGuidedEmptyState();
+    return;
+  }
+
+  container.classList.remove("empty");
+  container.innerHTML =
+    renderContext.defenseDatalistState.html +
+    renderScriptColumnHeaders() +
+    renderScriptRows(renderContext);
 }
 
 function updateJumpToPeriodOptions() {
@@ -3319,58 +3426,9 @@ function renderScript() {
     const opts = getScriptDisplayOptions();
     const showPrintPreview =
       document.getElementById("scriptShowPrintPreview")?.checked || false;
-    const fullCallCache = new Map();
-    const getCachedFullCall = (play) => {
-      if (!play) return "";
-      if (fullCallCache.has(play)) return fullCallCache.get(play);
-      const rendered = getFullCall(play, opts);
-      fullCallCache.set(play, rendered);
-      return rendered;
-    };
+    const renderContext = createScriptRenderContext(opts, showPrintPreview);
 
-    const hasPlays = script.some((p) => !p.isSeparator);
-    if (script.length === 0) {
-      container.innerHTML = "";
-      container.classList.add("empty");
-    } else if (!hasPlays) {
-      // Only separators exist (auto-seeded period) — show guided state
-      container.classList.remove("empty");
-      container.innerHTML =
-        renderScriptEmptyPeriodHeaders() +
-        `
-      <div class="script-empty-guide">
-        <div class="seg-icon">📋</div>
-        <div class="seg-text">Add plays from the left panel to start building this period</div>
-        <div class="seg-hint">Click <strong>+ Add</strong> on any play, or check multiple and use <strong>Add Selected</strong></div>
-      </div>
-    `;
-    } else {
-      container.classList.remove("empty");
-      const defenseDatalistState = buildScriptDefenseDatalistState(script);
-      const renderContext = {
-        opts,
-        showPrintPreview,
-        getCachedFullCall,
-        defenseDatalistState,
-      };
-
-      container.innerHTML =
-        defenseDatalistState.html +
-        `
-      <div class="script-column-headers">
-        <div class="sch-spacer"></div>
-        <div class="sch-num">#</div>
-        <div class="sch-play">Play Call</div>
-        <div class="sch-hash">Hash</div>
-        <div class="sch-def">Front</div>
-        <div class="sch-def">Cov</div>
-        <div class="sch-def">Stunt</div>
-        <div class="sch-def">Blitz</div>
-        <div class="sch-controls">Controls</div>
-      </div>
-    ` +
-        renderScriptRows(renderContext);
-    }
+    renderScriptContent(container, renderContext);
 
     // Update bulk select UI
     updateBulkSelectUI();

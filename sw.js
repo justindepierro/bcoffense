@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v72";
+const CACHE_NAME = "bcoffense-v73";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -119,6 +119,23 @@ self.addEventListener("fetch", (event) => {
   event.respondWith(
     (shouldUseNetworkFirst(event.request, url)
       ? fetch(event.request)
+        .then((response) => {
+          const clone = response.clone();
+          caches
+            .open(CACHE_NAME)
+            .then((cache) => cache.put(event.request, clone));
+          return response;
+        })
+        .catch(async () => {
+          const cached = await caches.match(event.request);
+          if (cached) return cached;
+          if (event.request.mode === "navigate") {
+            return caches.match("./offline.html");
+          }
+          return undefined;
+        })
+      : caches.match(event.request).then((cached) => {
+        const networkFetch = fetch(event.request)
           .then((response) => {
             const clone = response.clone();
             caches
@@ -126,26 +143,9 @@ self.addEventListener("fetch", (event) => {
               .then((cache) => cache.put(event.request, clone));
             return response;
           })
-          .catch(async () => {
-            const cached = await caches.match(event.request);
-            if (cached) return cached;
-            if (event.request.mode === "navigate") {
-              return caches.match("./offline.html");
-            }
-            return undefined;
-          })
-      : caches.match(event.request).then((cached) => {
-          const networkFetch = fetch(event.request)
-            .then((response) => {
-              const clone = response.clone();
-              caches
-                .open(CACHE_NAME)
-                .then((cache) => cache.put(event.request, clone));
-              return response;
-            })
-            .catch(() => cached);
+          .catch(() => cached);
 
-          return cached || networkFetch;
-        })),
+        return cached || networkFetch;
+      })),
   );
 });
