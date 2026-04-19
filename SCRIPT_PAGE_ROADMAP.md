@@ -69,8 +69,8 @@ Still verified and pending:
 
 - [x] Make filter recovery clearer when no plays match.
 - [x] Persist filter-collapse state for repeat users.
-- [ ] Improve script toolbar and sidebar clarity around selection state.
-- [ ] Improve saved-script cards with stronger metadata and workflow cues.
+- [x] Improve script toolbar and sidebar clarity around selection state.
+- [x] Improve saved-script cards with stronger metadata and workflow cues.
 - [ ] Improve period-template flow and preview quality.
 
 ### Accessibility / Mobile
@@ -89,8 +89,8 @@ Priority: highest
 - [x] Fix duplicate `data-drag` attribute on script rows
 - [x] Remove `draggedElement`
 - [x] Remove `currentPeriodId` if it remains unused
-- [ ] Re-check editor diagnostics after cleanup
-- [ ] Bump service worker after the batch
+- [x] Re-check editor diagnostics after cleanup
+- [x] Bump service worker after the batch
 
 Definition of done:
 
@@ -135,9 +135,9 @@ Definition of done:
 Priority: medium
 
 - [x] Persist filter-collapse state across sessions
-- [ ] Improve toolbar clarity for sort state, search state, and selection state
+- [x] Improve toolbar clarity for sort state, search state, and selection state
 - [ ] Improve period template browse/insert workflow
-- [ ] Improve saved-script cards with richer metadata and stronger action hierarchy
+- [x] Improve saved-script cards with richer metadata and stronger action hierarchy
 - [ ] Improve on-screen empty states for script and sidebar flows
 - [ ] Reduce control crowding in period action bars
 
@@ -200,6 +200,6 @@ When we resume, start here:
 
 - [ ] Reduce per-row datalist duplication in script render
 - [ ] Continue splitting `renderScript()` into smaller updateable regions
-- [ ] Improve toolbar clarity for sort, search, and selection state
-- [ ] Improve saved-script card metadata and action hierarchy
 - [ ] Add labels/announcements for color, drag, and selection controls
+- [ ] Improve period template browse/insert workflow
+- [ ] Reduce control crowding in period action bars

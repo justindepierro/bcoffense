@@ -702,7 +702,7 @@
                 <input type="checkbox" id="bulkSelectAll" data-onchange="selectAllScriptItems" />
                 <span>Select All</span>
               </label>
-              <span id="bulkEditIndicator" class="badge bulk-indicator"></span>
+              <span id="bulkEditIndicator" class="badge bulk-indicator" role="status" aria-live="polite"></span>
             </div>
             <div class="script-toolbar-center">
               <select id="scriptSortField" class="toolbar-sort-select">
@@ -728,7 +728,7 @@
                 title="Customize sort order for selected field">
                 ⚙️ Order
               </button>
-              <span id="scriptSortStatus" class="script-sort-status"></span>
+              <span id="scriptSortStatus" class="script-sort-status" role="status" aria-live="polite"></span>
             </div>
             <div class="script-toolbar-right">
               <button class="btn btn-sm toolbar-btn-xs" data-action="collapseAllPeriods" title="Collapse all periods">
@@ -741,7 +741,8 @@
                 title="Jump to period" style="display: none"></select>
               <input type="text" id="scriptSearchBox" placeholder="🔍 Search script..." data-oninput="filterScriptItems"
                 class="script-search-input" />
-              <span id="scriptSearchCount" class="script-search-count" style="display: none"></span>
+              <span id="scriptSearchCount" class="script-search-count" role="status" aria-live="polite"
+                style="display: none"></span>
             </div>
           </div>
 

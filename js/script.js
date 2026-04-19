@@ -561,12 +561,26 @@ function updateBulkSelectUI() {
   const count = bulkSelectedIndices.length;
   const indicator = document.getElementById("bulkEditIndicator");
   if (indicator) {
-    if (count > 1) {
+    if (count > 0) {
       indicator.classList.add("active");
       indicator.textContent = `${count} selected`;
     } else {
       indicator.classList.remove("active");
+      indicator.textContent = "";
     }
+  }
+}
+
+function setScriptToolbarStatus(message, tone = "info", duration = 2000) {
+  const statusEl = document.getElementById("scriptSortStatus");
+  if (!statusEl) return;
+  statusEl.textContent = message;
+  statusEl.className = `script-sort-status is-${tone}`;
+  if (duration > 0) {
+    setTimeout(() => {
+      statusEl.textContent = "";
+      statusEl.className = "script-sort-status";
+    }, duration);
   }
 }
 
@@ -1078,29 +1092,16 @@ function addSelectedToScript() {
 function sortScript() {
   const fieldSelect = document.getElementById("scriptSortField");
   const field = fieldSelect.value;
-  const statusEl = document.getElementById("scriptSortStatus");
 
   if (!field) {
-    if (statusEl) {
-      statusEl.textContent = "⚠️ Select a field first";
-      statusEl.className = "text-danger";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, 2000);
-    }
+    setScriptToolbarStatus("Select a sort field first", "error");
     return;
   }
 
   // Check if there are plays to sort
   const playsToSort = script.filter((item) => !item.isSeparator);
   if (playsToSort.length === 0) {
-    if (statusEl) {
-      statusEl.textContent = "⚠️ No plays to sort";
-      statusEl.className = "text-danger";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, 2000);
-    }
+    setScriptToolbarStatus("No plays to sort", "error");
     return;
   }
 
@@ -1164,31 +1165,18 @@ function sortScript() {
   renderScript();
 
   // Show feedback
-  if (statusEl) {
-    const orderType = hasCustomOrder ? "(custom)" : "(A-Z)";
-    statusEl.textContent = `✓ Sorted by ${fieldLabel} ${orderType}`;
-    statusEl.className = "text-success";
-    setTimeout(() => {
-      statusEl.textContent = "";
-    }, AUTOSAVE_DEBOUNCE_MS);
-  }
+  const orderType = hasCustomOrder ? "custom order" : "A-Z";
+  setScriptToolbarStatus(`Sorted by ${fieldLabel} • ${orderType}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
  * Reverse the order of plays in the script (within periods)
  */
 function reverseScriptSort() {
-  const statusEl = document.getElementById("scriptSortStatus");
   const playsToSort = script.filter((item) => !item.isSeparator);
 
   if (playsToSort.length === 0) {
-    if (statusEl) {
-      statusEl.textContent = "⚠️ No plays to reverse";
-      statusEl.className = "text-danger";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, 2000);
-    }
+    setScriptToolbarStatus("No plays to reverse", "error");
     return;
   }
 
@@ -1221,13 +1209,7 @@ function reverseScriptSort() {
   renderScript();
 
   // Show feedback
-  if (statusEl) {
-    statusEl.textContent = "✓ Order reversed";
-    statusEl.className = "text-success";
-    setTimeout(() => {
-      statusEl.textContent = "";
-    }, 2000);
-  }
+  setScriptToolbarStatus("Play order reversed", "success");
 }
 
 /**
@@ -1276,8 +1258,6 @@ async function openScriptCustomOrderModal() {
   });
   orderedValues = orderedValues.filter((val) => uniqueValues.includes(val));
 
-  const statusEl = document.getElementById("scriptSortStatus");
-
   showReorderModal(orderedValues, {
     title: `Custom Sort Order: ${fieldLabel}`,
     onSave(order) {
@@ -1286,13 +1266,7 @@ async function openScriptCustomOrderModal() {
         STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
         scriptCustomSortOrders,
       );
-      if (statusEl) {
-        statusEl.textContent = `✓ Custom order saved for ${fieldLabel}`;
-        statusEl.className = "text-success";
-        setTimeout(() => {
-          statusEl.textContent = "";
-        }, AUTOSAVE_DEBOUNCE_MS);
-      }
+      setScriptToolbarStatus(`Custom order saved for ${fieldLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
     },
     onClear() {
       delete scriptCustomSortOrders[field];
@@ -1300,13 +1274,7 @@ async function openScriptCustomOrderModal() {
         STORAGE_KEYS.SCRIPT_CUSTOM_SORT_ORDERS,
         scriptCustomSortOrders,
       );
-      if (statusEl) {
-        statusEl.textContent = `✓ Custom order cleared for ${fieldLabel}`;
-        statusEl.className = "text-muted";
-        setTimeout(() => {
-          statusEl.textContent = "";
-        }, AUTOSAVE_DEBOUNCE_MS);
-      }
+      setScriptToolbarStatus(`Custom order cleared for ${fieldLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
     },
   });
 }
@@ -1611,16 +1579,9 @@ async function savePeriodAsTemplate(separatorIndex) {
 function sortPeriod(separatorIndex) {
   const fieldSelect = document.getElementById("scriptSortField");
   const field = fieldSelect ? fieldSelect.value : "";
-  const statusEl = document.getElementById("scriptSortStatus");
 
   if (!field) {
-    if (statusEl) {
-      statusEl.textContent = "⚠️ Select a sort field first";
-      statusEl.className = "text-danger";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, 2000);
-    }
+    setScriptToolbarStatus("Select a sort field first", "error");
     return;
   }
 
@@ -1662,13 +1623,7 @@ function sortPeriod(separatorIndex) {
   const fieldLabel =
     SCRIPT_SORT_FIELDS.find((f) => f.value === field)?.label || field;
   const periodLabel = script[separatorIndex].label || "Period";
-  if (statusEl) {
-    statusEl.textContent = `✓ ${periodLabel} sorted by ${fieldLabel}`;
-    statusEl.className = "text-success";
-    setTimeout(() => {
-      statusEl.textContent = "";
-    }, AUTOSAVE_DEBOUNCE_MS);
-  }
+  setScriptToolbarStatus(`${periodLabel} sorted by ${fieldLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
@@ -1691,15 +1646,8 @@ function reversePeriod(separatorIndex) {
   );
   renderScript();
 
-  const statusEl = document.getElementById("scriptSortStatus");
   const periodLabel = script[separatorIndex].label || "Period";
-  if (statusEl) {
-    statusEl.textContent = `✓ ${periodLabel} reversed`;
-    statusEl.className = "text-success";
-    setTimeout(() => {
-      statusEl.textContent = "";
-    }, 2000);
-  }
+  setScriptToolbarStatus(`${periodLabel} reversed`, "success");
 }
 
 // Track which period Smart Script is scoped to (null = all periods)
@@ -1817,14 +1765,7 @@ async function applyPreferredForPeriod(separatorIndex) {
 
   renderScript();
 
-  const statusEl = document.getElementById("scriptSortStatus");
-  if (statusEl) {
-    statusEl.textContent = `✓ ${periodLabel}: ${updatedCount} play(s) updated with preferred fields`;
-    statusEl.className = "text-success";
-    setTimeout(() => {
-      statusEl.textContent = "";
-    }, AUTOSAVE_DEBOUNCE_MS);
-  }
+  setScriptToolbarStatus(`${periodLabel}: ${updatedCount} play(s) updated`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
@@ -3098,6 +3039,12 @@ function loadSavedScriptsList() {
     .map((s) => {
       const playCount = s.plays.filter((p) => !p.isSeparator).length;
       const periodCount = s.plays.filter((p) => p.isSeparator).length;
+      const totalReps = s.plays.reduce(
+        (sum, p) => sum + (!p.isSeparator ? p.reps || 1 : 0),
+        0,
+      );
+      const runCount = s.plays.filter((p) => !p.isSeparator && p.type === "Run").length;
+      const passCount = s.plays.filter((p) => !p.isSeparator && p.type === "Pass").length;
       const periods = s.plays
         .filter((p) => p.isSeparator)
         .map((p) => p.label)
@@ -3116,22 +3063,34 @@ function loadSavedScriptsList() {
           minute: "2-digit",
         })
         : "";
+      const isCurrent =
+        (document.getElementById("scriptName")?.value || "") === s.name &&
+        (document.getElementById("scriptDate")?.value || "") === (s.date || "");
       return `
             <div class="saved-script-card">
                 <div class="saved-card-main">
-                  <div class="saved-card-title">${escapeHtml(s.name)}</div>
+                  <div class="saved-card-title-row">
+                    <div class="saved-card-title">${escapeHtml(s.name)}</div>
+                    ${isCurrent ? '<span class="saved-card-badge">Current</span>' : ""}
+                  </div>
                   <div class="saved-card-meta">
                     <span>📅 ${dateStr}</span>
                     <span>📝 ${playCount} plays</span>
+                    <span>🔁 ${totalReps} reps</span>
                     ${periodCount > 0 ? `<span>📂 ${periodCount} periods</span>` : ""}
+                  </div>
+                  <div class="saved-card-meta saved-card-meta-secondary">
+                    <span>🏃 ${runCount} run</span>
+                    <span>🎯 ${passCount} pass</span>
+                    ${savedTime ? `<span>💾 ${savedTime}</span>` : ""}
                   </div>
                   ${periods ? `<div class="saved-card-periods">${escapeHtml(periods)}</div>` : ""}
                 </div>
                 <div class="saved-card-actions">
                     <button class="saved-load-btn" data-action="loadScript" data-sid="${s.id}" title="Load this script">Load</button>
-                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${s.id}" title="Rename">✏️</button>
-                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${s.id}" title="Overwrite with current script">⬆️</button>
-                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${s.id}" title="Delete">✕</button>
+                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${s.id}" title="Rename script">✏️</button>
+                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${s.id}" title="Overwrite with current script">Update</button>
+                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${s.id}" title="Delete script">✕</button>
                 </div>
             </div>
         `;
@@ -3997,7 +3956,7 @@ function filterScriptItems() {
   const countEl = document.getElementById("scriptSearchCount");
   if (countEl) {
     if (searchTerm) {
-      countEl.textContent = `${visible} of ${total}`;
+      countEl.textContent = `Search: ${visible}/${total}`;
       countEl.style.display = "inline";
     } else {
       countEl.textContent = "";
@@ -4904,14 +4863,7 @@ function applySmartScript() {
     const periodLabel = script[sepIdx].label || "Period";
     renderScript();
     closeSmartScript();
-    const statusEl = document.getElementById("scriptSortStatus");
-    if (statusEl) {
-      statusEl.textContent = `\u2713 Smart Script applied to ${periodLabel}`;
-      statusEl.className = "text-accent";
-      setTimeout(() => {
-        statusEl.textContent = "";
-      }, AUTOSAVE_DEBOUNCE_MS);
-    }
+    setScriptToolbarStatus(`Smart Script applied to ${periodLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
     return;
   }
 
@@ -4964,14 +4916,7 @@ function applySmartScript() {
   closeSmartScript();
 
   // Show feedback
-  const statusEl = document.getElementById("scriptSortStatus");
-  if (statusEl) {
-    statusEl.textContent = "✓ Smart Script applied";
-    statusEl.className = "text-accent";
-    setTimeout(() => {
-      statusEl.textContent = "";
-    }, AUTOSAVE_DEBOUNCE_MS);
-  }
+  setScriptToolbarStatus("Smart Script applied", "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
