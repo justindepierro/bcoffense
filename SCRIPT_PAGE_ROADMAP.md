@@ -71,14 +71,14 @@ Still verified and pending:
 - [x] Persist filter-collapse state for repeat users.
 - [x] Improve script toolbar and sidebar clarity around selection state.
 - [x] Improve saved-script cards with stronger metadata and workflow cues.
-- [ ] Improve period-template flow and preview quality.
+- [x] Improve period-template flow and preview quality.
 
 ### Accessibility / Mobile
 
 - [x] Increase touch targets for period and play controls.
-- [ ] Improve labels/announcements for checkbox, color, and drag-related controls.
-- [ ] Review period header focus treatment and mobile control density.
-- [ ] Review datalist-heavy defense inputs for keyboard and screen-reader clarity.
+- [x] Improve labels/announcements for checkbox, color, and drag-related controls.
+- [x] Review period header focus treatment and mobile control density.
+- [x] Review datalist-heavy defense inputs for keyboard and screen-reader clarity.
 
 ## Phase 1: Fix Verified Wiring and Cleanup
 
@@ -136,10 +136,10 @@ Priority: medium
 
 - [x] Persist filter-collapse state across sessions
 - [x] Improve toolbar clarity for sort state, search state, and selection state
-- [ ] Improve period template browse/insert workflow
+- [x] Improve period template browse/insert workflow
 - [x] Improve saved-script cards with richer metadata and stronger action hierarchy
 - [ ] Improve on-screen empty states for script and sidebar flows
-- [ ] Reduce control crowding in period action bars
+- [x] Reduce control crowding in period action bars
 
 Definition of done:
 
@@ -151,8 +151,8 @@ Definition of done:
 Priority: medium
 
 - [x] Increase small control hit areas to a mobile-safe size
-- [ ] Review focus rings on period headers, toolbar controls, and row actions
-- [ ] Add or improve labels for color, drag, and selection controls where needed
+- [x] Review focus rings on period headers, toolbar controls, and row actions
+- [x] Add or improve labels for color, drag, and selection controls where needed
 - [ ] Review keyboard access to bulk-selection flows and period actions
 - [ ] Audit script controls on narrow screens and reduce accidental taps
 
@@ -200,6 +200,6 @@ When we resume, start here:
 
 - [x] Reduce per-row datalist duplication in script render
 - [ ] Continue splitting `renderScript()` into smaller updateable regions
-- [ ] Add labels/announcements for color, drag, and selection controls
-- [ ] Improve period template browse/insert workflow
-- [ ] Reduce control crowding in period action bars
+- [x] Add labels/announcements for color, drag, and selection controls
+- [x] Improve period template browse/insert workflow
+- [x] Reduce control crowding in period action bars

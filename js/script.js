@@ -10,6 +10,16 @@ function invalidateScoutCache() {
   _cachedScoutOppName = null;
 }
 
+function announceScriptA11y(message) {
+  const announcer = document.getElementById("liveAnnouncer");
+  if (!announcer || !message) return;
+
+  announcer.textContent = "";
+  requestAnimationFrame(() => {
+    announcer.textContent = message;
+  });
+}
+
 function buildSharedPreferredDatalistMarkup(prefix, values, sharedOptionsHtml) {
   const idsByValue = new Map();
   let html = "";
@@ -130,6 +140,9 @@ let collapsedPeriods = new Set();
 // Period templates
 let periodTemplates = [];
 periodTemplates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
+let selectedPeriodTemplateIndex = -1;
+let templateModalMode = "insert";
+let templateModalSearchTerm = "";
 
 // Bulk edit state - tracks selected script item indices
 let bulkSelectedIndices = [];
@@ -586,10 +599,14 @@ function redoScript() {
  */
 function toggleBulkSelect(index) {
   const idx = bulkSelectedIndices.indexOf(index);
+  const play = script[index];
+  const playLabel = getScriptPlaySummaryText(play);
   if (idx > -1) {
     bulkSelectedIndices.splice(idx, 1);
+    announceScriptA11y(`${playLabel} deselected`);
   } else {
     bulkSelectedIndices.push(index);
+    announceScriptA11y(`${playLabel} selected`);
   }
   updateBulkSelectUI();
 }
@@ -603,8 +620,10 @@ function selectAllScriptItems() {
     bulkSelectedIndices = script
       .map((p, i) => (p.isSeparator ? -1 : i))
       .filter((i) => i >= 0);
+    announceScriptA11y(`Selected all ${bulkSelectedIndices.length} plays`);
   } else {
     bulkSelectedIndices = [];
+    announceScriptA11y("Cleared script selection");
   }
   updateBulkSelectUI();
 }
@@ -631,6 +650,7 @@ function selectPeriodPlays(separatorIndex) {
     bulkSelectedIndices = bulkSelectedIndices.filter(
       (idx) => !periodPlayIndices.includes(idx),
     );
+    announceScriptA11y(`Cleared selection for ${script[separatorIndex].label || "period"}`);
   } else {
     // Select all plays in this period (add any not already selected)
     periodPlayIndices.forEach((idx) => {
@@ -638,6 +658,9 @@ function selectPeriodPlays(separatorIndex) {
         bulkSelectedIndices.push(idx);
       }
     });
+    announceScriptA11y(
+      `Selected ${periodPlayIndices.length} plays in ${script[separatorIndex].label || "period"}`,
+    );
   }
 
   updateBulkSelectUI();
@@ -716,6 +739,7 @@ function clearBulkSelection() {
   if (selectAll) selectAll.checked = false;
   updateBulkSelectUI();
   renderScript();
+  announceScriptA11y("Selection cleared");
 }
 
 /**
@@ -1466,10 +1490,13 @@ function confirmAddPeriod() {
  * Toggle collapse/expand for a period
  */
 function togglePeriodCollapse(periodId) {
+  const separator = script.find((p) => p.isSeparator && p.id === periodId);
   if (collapsedPeriods.has(periodId)) {
     collapsedPeriods.delete(periodId);
+    announceScriptA11y(`${separator?.label || "Period"} expanded`);
   } else {
     collapsedPeriods.add(periodId);
+    announceScriptA11y(`${separator?.label || "Period"} collapsed`);
   }
   renderScript();
 }
@@ -1482,6 +1509,7 @@ function collapseAllPeriods() {
     .filter((p) => p.isSeparator)
     .forEach((p) => collapsedPeriods.add(p.id));
   renderScript();
+  announceScriptA11y("All periods collapsed");
 }
 
 /**
@@ -1490,6 +1518,7 @@ function collapseAllPeriods() {
 function expandAllPeriods() {
   collapsedPeriods.clear();
   renderScript();
+  announceScriptA11y("All periods expanded");
 }
 
 /**
@@ -1502,6 +1531,7 @@ function updatePeriodColor(index, el) {
   const wrapper = el.closest(".period-header-wrapper");
   if (wrapper) wrapper.style.borderLeftColor = el.value;
   saveScriptState();
+  announceScriptA11y(`Updated color for ${script[index]?.label || "period"}`);
 }
 
 /**
@@ -1676,6 +1706,222 @@ async function savePeriodAsTemplate(separatorIndex) {
   periodTemplates.push(template);
   storageManager.set(STORAGE_KEYS.PERIOD_TEMPLATES, periodTemplates);
   showToast(`Template "${name}" saved!`);
+  announceScriptA11y(`Saved ${name} as a period template`);
+}
+
+function getTemplatePreviewLines(template) {
+  if (!template || !Array.isArray(template.plays)) return [];
+  return template.plays.slice(0, 5).map((play) => getScriptPlaySummaryText(play));
+}
+
+function getFilteredPeriodTemplates() {
+  const search = templateModalSearchTerm.trim().toLowerCase();
+  return periodTemplates
+    .map((template, index) => ({ template, index }))
+    .filter(({ template }) => {
+      if (!search) return true;
+      const haystack = [
+        template.name,
+        ...template.plays.map((play) => getScriptPlaySummaryText(play)),
+      ]
+        .join(" ")
+        .toLowerCase();
+      return haystack.includes(search);
+    });
+}
+
+function ensureSelectedTemplateIndex(visibleTemplates) {
+  if (!visibleTemplates.length) {
+    selectedPeriodTemplateIndex = -1;
+    return;
+  }
+
+  const stillVisible = visibleTemplates.some(
+    ({ index }) => index === selectedPeriodTemplateIndex,
+  );
+  if (!stillVisible) {
+    selectedPeriodTemplateIndex = visibleTemplates[0].index;
+  }
+}
+
+function buildTemplatePickerListMarkup(visibleTemplates) {
+  if (!visibleTemplates.length) {
+    return `
+      <div class="template-empty-state">
+        <div class="template-empty-title">No templates match this search</div>
+        <div class="template-empty-copy">Try a different name or clear the search to see all saved period templates.</div>
+      </div>
+    `;
+  }
+
+  return visibleTemplates
+    .map(({ template, index }) => {
+      const isSelected = index === selectedPeriodTemplateIndex;
+      return `
+        <button
+          type="button"
+          class="template-picker-item${isSelected ? " is-selected" : ""}"
+          data-action="previewPeriodTemplate"
+          data-arg="${index}"
+          aria-pressed="${isSelected ? "true" : "false"}"
+          aria-label="Preview template ${escapeHtml(template.name)}"
+        >
+          <div class="template-picker-main">
+            <div class="tpi-name">${escapeHtml(template.name)}</div>
+            <div class="tpi-meta">${template.plays.length} plays • ${template.minutes || 0} min</div>
+          </div>
+          ${isSelected ? '<span class="template-picker-check" aria-hidden="true">✓</span>' : ""}
+        </button>
+      `;
+    })
+    .join("");
+}
+
+function buildTemplatePreviewMarkup(template) {
+  if (!template) {
+    return `
+      <div class="template-preview-empty">
+        <div class="template-empty-title">No template selected</div>
+        <div class="template-empty-copy">Choose a saved period template to preview its plays and actions.</div>
+      </div>
+    `;
+  }
+
+  const previewLines = getTemplatePreviewLines(template);
+  const extraCount = Math.max((template.plays?.length || 0) - previewLines.length, 0);
+
+  return `
+    <div class="template-preview-card">
+      <div class="template-preview-header">
+        <div>
+          <div class="template-preview-title">${escapeHtml(template.name)}</div>
+          <div class="template-preview-meta">${template.plays.length} plays • ${template.minutes || 0} min</div>
+        </div>
+        <span class="template-preview-badge">${templateModalMode === "manage" ? "Manage" : "Ready"}</span>
+      </div>
+      <div class="template-preview-list">
+        ${previewLines.length
+          ? previewLines
+              .map((line, idx) => `<div class="template-preview-line"><span class="template-preview-line-num">${idx + 1}</span><span>${line}</span></div>`)
+              .join("")
+          : '<div class="template-empty-copy">This template is empty.</div>'}
+      </div>
+      ${extraCount > 0 ? `<div class="template-preview-more">+${extraCount} more play${extraCount === 1 ? "" : "s"}</div>` : ""}
+    </div>
+  `;
+}
+
+function updatePeriodTemplateModalContent() {
+  const overlay = document.querySelector(".period-create-overlay.template-picker-overlay");
+  if (!overlay) return;
+
+  const visibleTemplates = getFilteredPeriodTemplates();
+  ensureSelectedTemplateIndex(visibleTemplates);
+  const activeTemplate =
+    selectedPeriodTemplateIndex >= 0 ? periodTemplates[selectedPeriodTemplateIndex] : null;
+
+  const titleEl = overlay.querySelector("#periodTemplateModalTitle");
+  const countEl = overlay.querySelector("#templatePickerCount");
+  const listEl = overlay.querySelector("#templatePickerList");
+  const previewEl = overlay.querySelector("#templatePreviewPane");
+  const actionsEl = overlay.querySelector("#templatePickerActions");
+  const searchEl = overlay.querySelector("#templateSearchInput");
+
+  if (titleEl) {
+    titleEl.textContent =
+      templateModalMode === "manage" ? "🗑 Manage Period Templates" : "📋 Insert from Template";
+  }
+  if (countEl) {
+    countEl.textContent = `${visibleTemplates.length} shown`;
+  }
+  if (searchEl && searchEl.value !== templateModalSearchTerm) {
+    searchEl.value = templateModalSearchTerm;
+  }
+  if (listEl) {
+    listEl.innerHTML = buildTemplatePickerListMarkup(visibleTemplates);
+  }
+  if (previewEl) {
+    previewEl.innerHTML = buildTemplatePreviewMarkup(activeTemplate);
+  }
+  if (actionsEl) {
+    actionsEl.innerHTML =
+      templateModalMode === "manage"
+        ? `
+          <button class="btn btn-sm" data-action="returnToTemplateInsert">← Back to Insert</button>
+          <button class="btn btn-danger btn-sm" data-action="deleteSelectedTemplate" ${activeTemplate ? "" : "disabled"}>Delete Selected</button>
+          <button class="btn" data-action="closePeriodOverlay">Done</button>
+        `
+        : `
+          <button class="btn btn-secondary btn-sm" data-action="manageTemplates">🗑 Manage</button>
+          <button class="btn" data-action="closePeriodOverlay">Cancel</button>
+          <button class="btn btn-primary" data-action="insertSelectedTemplate" ${activeTemplate ? "" : "disabled"}>Insert Selected</button>
+        `;
+  }
+}
+
+function renderPeriodTemplateModal() {
+  let overlay = document.querySelector(".period-create-overlay.template-picker-overlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.className = "period-create-overlay template-picker-overlay";
+    overlay.onclick = (event) => {
+      if (event.target === overlay) overlay.remove();
+    };
+    overlay.innerHTML = `
+      <div class="period-create-modal template-picker-modal">
+        <h4 id="periodTemplateModalTitle"></h4>
+        <div class="template-picker-toolbar">
+          <input
+            id="templateSearchInput"
+            type="text"
+            class="template-search-input"
+            placeholder="Search templates or plays"
+            data-oninput="filterPeriodTemplates"
+            data-pass="value"
+            aria-label="Search period templates"
+          >
+          <span id="templatePickerCount" class="template-picker-count" role="status" aria-live="polite"></span>
+        </div>
+        <div class="template-picker-layout">
+          <div id="templatePickerList" class="template-picker-list" role="listbox" aria-label="Saved period templates"></div>
+          <div id="templatePreviewPane" class="template-preview-pane"></div>
+        </div>
+        <div id="templatePickerActions" class="period-create-actions template-picker-actions"></div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+  }
+
+  updatePeriodTemplateModalContent();
+}
+
+function filterPeriodTemplates(value) {
+  templateModalSearchTerm = value || "";
+  updatePeriodTemplateModalContent();
+}
+
+function previewPeriodTemplate(idx) {
+  const parsedIndex = parseInt(idx, 10);
+  if (Number.isNaN(parsedIndex) || !periodTemplates[parsedIndex]) return;
+  selectedPeriodTemplateIndex = parsedIndex;
+  updatePeriodTemplateModalContent();
+  announceScriptA11y(`Previewing template ${periodTemplates[parsedIndex].name}`);
+}
+
+function returnToTemplateInsert() {
+  templateModalMode = "insert";
+  updatePeriodTemplateModalContent();
+}
+
+function insertSelectedTemplate() {
+  if (selectedPeriodTemplateIndex < 0 || !periodTemplates[selectedPeriodTemplateIndex]) return;
+  doInsertTemplate(selectedPeriodTemplateIndex);
+  document.querySelector(".period-create-overlay.template-picker-overlay")?.remove();
+}
+
+async function deleteSelectedTemplate() {
+  if (selectedPeriodTemplateIndex < 0 || !periodTemplates[selectedPeriodTemplateIndex]) return;
+  await doDeleteTemplate(selectedPeriodTemplateIndex);
 }
 
 /**
@@ -2128,31 +2374,10 @@ function insertPeriodFromTemplate() {
     return;
   }
 
-  const overlay = document.createElement("div");
-  overlay.className = "period-create-overlay";
-  overlay.onclick = () => overlay.remove();
-  overlay.innerHTML = `
-    <div class="period-create-modal">
-      <h4>📋 Insert from Template</h4>
-      <div class="template-picker-list">
-        ${periodTemplates
-      .map(
-        (t, i) => `
-          <div class="template-picker-item" data-action="doInsertTemplate" data-idx="${i}">
-            <div class="tpi-name">${escapeHtml(t.name)}</div>
-            <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
-          </div>
-        `,
-      )
-      .join("")}
-      </div>
-      <div class="period-create-actions" style="margin-top:12px;">
-        <button class="btn btn-danger btn-sm" data-action="manageTemplates">🗑 Manage</button>
-        <button class="btn" data-action="closePeriodOverlay">Cancel</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
+  templateModalMode = "insert";
+  templateModalSearchTerm = "";
+  selectedPeriodTemplateIndex = 0;
+  renderPeriodTemplateModal();
 }
 
 /**
@@ -2178,6 +2403,7 @@ function doInsertTemplate(idx) {
   script.push(newSeparator, ...newPlays);
   renderScript();
   showToast(`Inserted "${template.name}" (${template.plays.length} plays)`);
+  announceScriptA11y(`Inserted template ${template.name}`);
 }
 
 function manageTemplates() {
@@ -2186,36 +2412,11 @@ function manageTemplates() {
     return;
   }
 
-  // Close any existing picker overlay
-  document.querySelector(".period-create-overlay")?.remove();
-
-  const overlay = document.createElement("div");
-  overlay.className = "period-create-overlay";
-  overlay.onclick = () => overlay.remove();
-  overlay.innerHTML = `
-    <div class="period-create-modal">
-      <h4>🗑 Manage Templates</h4>
-      <div class="template-picker-list" id="templateManageList">
-        ${periodTemplates
-      .map(
-        (t, i) => `
-          <div class="template-picker-item" style="justify-content:space-between;">
-            <div>
-              <div class="tpi-name">${escapeHtml(t.name)}</div>
-              <div class="tpi-meta">${t.plays.length} plays • ${t.minutes} min</div>
-            </div>
-            <button class="btn btn-danger btn-sm" data-action="doDeleteTemplate" data-idx="${i}">✕</button>
-          </div>
-        `,
-      )
-      .join("")}
-      </div>
-      <div class="period-create-actions" style="margin-top:12px;">
-        <button class="btn" data-action="closePeriodOverlay">Done</button>
-      </div>
-    </div>
-  `;
-  document.body.appendChild(overlay);
+  templateModalMode = "manage";
+  if (selectedPeriodTemplateIndex < 0 && periodTemplates.length > 0) {
+    selectedPeriodTemplateIndex = 0;
+  }
+  renderPeriodTemplateModal();
 }
 
 async function doDeleteTemplate(idx) {
@@ -2229,12 +2430,14 @@ async function doDeleteTemplate(idx) {
   if (!ok) return;
   periodTemplates.splice(idx, 1);
   storageManager.set(STORAGE_KEYS.PERIOD_TEMPLATES, periodTemplates);
-  // Refresh the manage modal
-  document.querySelector(".period-create-overlay")?.remove();
+  selectedPeriodTemplateIndex = Math.min(idx, periodTemplates.length - 1);
   if (periodTemplates.length > 0) {
-    manageTemplates();
+    updatePeriodTemplateModalContent();
+  } else {
+    document.querySelector(".period-create-overlay.template-picker-overlay")?.remove();
   }
   showToast(`Template "${name}" deleted`);
+  announceScriptA11y(`Deleted template ${name}`);
 }
 
 /**
@@ -2359,6 +2562,7 @@ function handleScriptDragStart(event, scriptIndex) {
   event.target.classList.add("dragging");
   event.dataTransfer.setData("scriptIndex", scriptIndex);
   event.dataTransfer.setData("source", "script");
+  announceScriptA11y(`Dragging ${getScriptPlaySummaryText(script[scriptIndex])}`);
 }
 
 function handleDragEnd(event) {
@@ -2405,7 +2609,198 @@ function handleDrop(event) {
       if (toIndex > fromIndex) toIndex--;
       script.splice(toIndex, 0, moved);
       renderScript();
+      const movedTo = script.indexOf(moved) + 1;
+      announceScriptA11y(`Moved ${getScriptPlaySummaryText(moved)} to position ${movedTo}`);
     }
+  }
+}
+
+function getScriptPlaySummaryText(play) {
+  if (!play) return "play";
+  return [play.formation, play.protection, play.play]
+    .filter(Boolean)
+    .join(" ")
+    .trim() || play.type || "play";
+}
+
+function formatPeriodMetaText(playCount, periodReps, minutes) {
+  const timeDisplay = minutes ? `${minutes} min` : "";
+  return `${playCount} plays • ${periodReps} reps${timeDisplay ? ` • ${timeDisplay}` : ""}`;
+}
+
+function renderScriptEmptyPeriodHeaders() {
+  let periodHeaders = "";
+  script.forEach((p, i) => {
+    if (!p.isSeparator) return;
+    const periodColor = p.color || UI_COLORS.periodDefault;
+    const periodLabel = p.label || "Period";
+    periodHeaders += `
+      <div class="script-item period-header" style="background: ${periodColor}; color: white;" role="group" aria-label="${escapeHtml(periodLabel)} period header">
+        <div class="ph-left">
+          <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
+          <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${i}" placeholder="Period name" aria-label="Period name">
+          <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
+        </div>
+        <div class="ph-right">
+          <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+        </div>
+      </div>
+    `;
+  });
+  return periodHeaders;
+}
+
+function renderPeriodActionButton(action, index, label, icon, title, extraClass = "") {
+  return `<button class="pat-btn ${extraClass}" data-action="${action}" data-idx="${index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}"><span class="pat-btn-icon" aria-hidden="true">${icon}</span><span class="pat-btn-label">${escapeHtml(label)}</span></button>`;
+}
+
+function renderScriptPeriodHeader(separator, index) {
+  const isCollapsed = collapsedPeriods.has(separator.id);
+  const collapseIcon = isCollapsed ? "▶" : "▼";
+  const periodPlays = getPeriodPlays(index);
+  const playCount = periodPlays.length;
+  const periodReps = periodPlays.reduce((sum, play) => sum + (play.reps || 1), 0);
+  const periodColor = separator.color || UI_COLORS.periodDefault;
+  const periodLabel = separator.label || "Period";
+  const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
+
+  return `
+    <div class="period-header-wrapper" data-separator-id="${separator.id}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
+      <div class="script-item period-header" style="background: ${periodColor}; color: white;">
+        <div class="ph-left">
+          <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${separator.id}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
+          <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
+          <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" aria-label="Name for ${escapeHtml(periodLabel)}">
+          <input type="number" class="ph-minutes-input" value="${separator.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
+          <span class="ph-meta-span">${metaText}</span>
+        </div>
+        <div class="ph-right">
+          <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="-1" title="Move period up" aria-label="Move ${escapeHtml(periodLabel)} up">▲</button>
+          <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="1" title="Move period down" aria-label="Move ${escapeHtml(periodLabel)} down">▼</button>
+          <button class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
+          <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
+          <button class="remove" data-action="removeFromScript" data-idx="${index}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+        </div>
+      </div>
+      ${!isCollapsed && playCount > 0
+        ? `
+        <div class="period-actions-toolbar">
+          ${renderPeriodActionButton("selectPeriodPlays", index, "Select", "☑", `Select or deselect plays in ${periodLabel}`)}
+          ${renderPeriodActionButton("sortPeriod", index, "Sort", "⬍", `Sort plays in ${periodLabel}`)}
+          ${renderPeriodActionButton("reversePeriod", index, "Reverse", "↕", `Reverse play order in ${periodLabel}`)}
+          ${renderPeriodActionButton("openSmartScriptForPeriod", index, "Smart", "🧠", `Run Smart Script on ${periodLabel}`, "pat-btn-smart")}
+          ${renderPeriodActionButton("applyPreferredForPeriod", index, "Preferred", "★", `Apply preferred metadata to ${periodLabel}`)}
+          ${renderPeriodActionButton("pushPeriodToCallSheet", index, "To Call Sheet", "📋", `Push ${periodLabel} to call sheet`, "pat-btn-callsheet")}
+          ${renderPeriodActionButton("importFromCallSheet", index, "From Call Sheet", "📥", `Import call sheet plays into ${periodLabel}`, "pat-btn-import-cs")}
+          ${renderPeriodActionButton("copyPeriodAsText", index, "Copy", "📄", `Copy ${periodLabel} as text")}
+        </div>`
+        : ""
+      }
+    </div>
+  `;
+}
+
+function renderScriptPlayRow(play, index, playNumber, renderContext) {
+  const { opts, showPrintPreview, getCachedFullCall, defenseDatalistState } = renderContext;
+  const fullCall = getCachedFullCall(play);
+  const isSelected = bulkSelectedIndices.includes(index);
+  const hashOptions = buildDefenseOptions(["L", "M", "R"], play.preferredHash, play.hash);
+  const playLabel = getScriptPlaySummaryText(play);
+
+  let wbBadge = "";
+  if (scriptWristband && opts.showWbNum) {
+    const wbNum = findPlayOnWristband(play);
+    if (wbNum !== null) {
+      wbBadge = `<span class="wb-badge">#${wbNum}</span>`;
+    }
+  }
+
+  return `
+    <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" data-drag="scriptStart" data-idx="${index}" role="group" aria-label="Draggable play ${playNumber}: ${escapeHtml(playLabel)}">
+      <input type="checkbox" class="bulk-select-cb" data-index="${index}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${index}" title="Select for bulk edit" aria-label="Select play ${playNumber} for bulk edit">
+      <div class="play-num" aria-hidden="true">${playNumber}${wbBadge}</div>
+      <div class="play-call">
+        <div class="full-call">${fullCall}</div>
+        <div class="call-meta">${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</div>
+      </div>
+      <div class="hash-input">
+        <select data-field="hash" data-idx="${index}" title="Hash" aria-label="Hash for ${escapeHtml(playLabel)}">
+          ${hashOptions}
+        </select>
+      </div>
+      <div class="defense-inputs">
+        <input type="text" list="${defenseDatalistState.preferredFrontIdsByValue.get((play.practiceFront || "").trim()) || "dl-front-shared"}" value="${escapeHtml(play.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${index}" title="Defensive Front" class="def-input" aria-label="Defensive front for ${escapeHtml(playLabel)}">
+        <input type="text" list="${defenseDatalistState.preferredCoverageIdsByValue.get((play.practiceCoverage || "").trim()) || "dl-cov-shared"}" value="${escapeHtml(play.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${index}" title="Coverage" class="def-input" aria-label="Coverage for ${escapeHtml(playLabel)}">
+        <input type="text" list="${defenseDatalistState.preferredStuntIdsByValue.get((play.practiceStunt || "").trim()) || "dl-stunt-shared"}" value="${escapeHtml(play.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${index}" title="Stunt" class="def-input" aria-label="Stunt for ${escapeHtml(playLabel)}">
+        <input type="text" list="${defenseDatalistState.preferredBlitzIdsByValue.get((play.practiceBlitz || "").trim()) || "dl-blitz-shared"}" value="${escapeHtml(play.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${index}" title="Blitz" class="def-input" aria-label="Blitz for ${escapeHtml(playLabel)}">
+      </div>
+      <div class="play-controls">
+        <div class="move-btns">
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
+        </div>
+        <input type="number" value="${play.reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
+        <input type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
+        <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
+        <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
+      </div>
+    </div>
+    ${showPrintPreview
+      ? `
+      <div class="print-preview-row">
+        <span class="preview-label">Print:</span>
+        <span class="preview-field"><b>#${playNumber}</b></span>
+        <span class="preview-field hash">${escapeHtml(play.hash || "-")}</span>
+        <span class="preview-field tempo">${escapeHtml(play.tempo || "-")}</span>
+        <span class="preview-field call">${fullCall}</span>
+        <span class="preview-field type">${escapeHtml(play.type)}</span>
+        <span class="preview-field front">${escapeHtml(play.defFront || "-")}</span>
+        <span class="preview-field cov">${escapeHtml(play.defCoverage || "-")}</span>
+        <span class="preview-field stunt">${escapeHtml(play.defStunt || "-")}</span>
+        <span class="preview-field blitz">${escapeHtml(play.defBlitz || "-")}</span>
+        <span class="preview-field reps">×${play.reps}</span>
+      </div>`
+      : ""
+    }
+  `;
+}
+
+function renderScriptRows(renderContext) {
+  let playNumber = 0;
+  let skipPlays = false;
+
+  return script
+    .map((play, index) => {
+      if (play.isSeparator) {
+        skipPlays = collapsedPeriods.has(play.id);
+        return renderScriptPeriodHeader(play, index);
+      }
+
+      if (skipPlays) return "";
+
+      playNumber += 1;
+      return renderScriptPlayRow(play, index, playNumber, renderContext);
+    })
+    .join("");
+}
+
+function updateJumpToPeriodOptions() {
+  const jumpSel = document.getElementById("jumpToPeriod");
+  if (!jumpSel) return;
+
+  const periods = script.filter((p) => p.isSeparator);
+  if (periods.length > 1) {
+    jumpSel.innerHTML =
+      `<option value="">⬇ Jump</option>` +
+      periods
+        .map(
+          (period) =>
+            `<option value="${period.id}">${escapeHtml(period.label || "Period")}</option>`,
+        )
+        .join("");
+    jumpSel.style.display = "";
+  } else {
+    jumpSel.style.display = "none";
   }
 }
 
@@ -2682,25 +3077,8 @@ function renderScript() {
     } else if (!hasPlays) {
       // Only separators exist (auto-seeded period) — show guided state
       container.classList.remove("empty");
-      let periodHeaders = "";
-      script.forEach((p, i) => {
-        if (!p.isSeparator) return;
-        const periodColor = p.color || UI_COLORS.periodDefault;
-        periodHeaders += `
-        <div class="script-item period-header" style="background: ${periodColor}; color: white;">
-          <div class="ph-left">
-            <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color">
-            <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" data-field="periodLabel" data-idx="${i}" placeholder="Period name">
-            <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes">
-          </div>
-          <div class="ph-right">
-            <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;">✕</button>
-          </div>
-        </div>
-      `;
-      });
       container.innerHTML =
-        periodHeaders +
+        renderScriptEmptyPeriodHeaders() +
         `
       <div class="script-empty-guide">
         <div class="seg-icon">📋</div>
@@ -2710,11 +3088,13 @@ function renderScript() {
     `;
     } else {
       container.classList.remove("empty");
-      let playNum = 0;
-
-      // Track which periods are collapsed for skipping plays
-      let skipPlays = false;
       const defenseDatalistState = buildScriptDefenseDatalistState(script);
+      const renderContext = {
+        opts,
+        showPrintPreview,
+        getCachedFullCall,
+        defenseDatalistState,
+      };
 
       container.innerHTML =
         defenseDatalistState.html +
@@ -2731,133 +3111,7 @@ function renderScript() {
         <div class="sch-controls">Controls</div>
       </div>
     ` +
-        script
-          .map((p, i) => {
-            if (p.isSeparator) {
-              skipPlays = collapsedPeriods.has(p.id);
-              const isCollapsed = collapsedPeriods.has(p.id);
-              const collapseIcon = isCollapsed ? "▶" : "▼";
-              const playCount = getPeriodPlays(i).length;
-              const periodReps = getPeriodPlays(i).reduce(
-                (s, p2) => s + (p2.reps || 1),
-                0,
-              );
-              const timeDisplay = p.minutes ? `${p.minutes} min` : "";
-              const periodColor = p.color || UI_COLORS.periodDefault;
-
-              return `
-            <div class="period-header-wrapper" data-separator-id="${p.id}" style="border-left: 4px solid ${periodColor};">
-              <div class="script-item period-header" style="background: ${periodColor}; color: white;">
-                <div class="ph-left">
-                  <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${p.id}" title="${isCollapsed ? "Expand" : "Collapse"}">${collapseIcon}</button>
-                  <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${i}" title="Period color">
-                  <input type="text" class="ph-label-input" value="${escapeHtml(p.label)}" data-field="periodLabel" data-idx="${i}">
-                  <input type="number" class="ph-minutes-input" value="${p.minutes || ""}" data-field="periodMinutes" data-idx="${i}" placeholder="min" title="Time in minutes">
-                  <span class="ph-meta-span">${playCount} plays • ${periodReps} reps${timeDisplay ? " • " + timeDisplay : ""}</span>
-                </div>
-                <div class="ph-right">
-                  <button class="ph-btn" data-action="movePeriod" data-idx="${i}" data-dir="-1" title="Move period up" aria-label="Move period up">▲</button>
-                  <button class="ph-btn" data-action="movePeriod" data-idx="${i}" data-dir="1" title="Move period down" aria-label="Move period down">▼</button>
-                  <button class="ph-btn" data-action="duplicatePeriod" data-idx="${i}" title="Duplicate period" aria-label="Duplicate period">⧉</button>
-                  <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${i}" title="Save as template" aria-label="Save as template">💾</button>
-                  <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete period">✕</button>
-                </div>
-              </div>
-              ${!isCollapsed && playCount > 0
-                  ? `
-              <div class="period-actions-toolbar">
-                <button class="pat-btn" data-action="selectPeriodPlays" data-idx="${i}" title="Select / deselect all plays in this period">☑ Select All</button>
-                <button class="pat-btn" data-action="sortPeriod" data-idx="${i}" title="Sort this period by the selected sort field">⬍ Sort</button>
-                <button class="pat-btn" data-action="reversePeriod" data-idx="${i}" title="Reverse play order in this period">↕ Reverse</button>
-                <button class="pat-btn pat-btn-smart" data-action="openSmartScriptForPeriod" data-idx="${i}" title="Run Smart Script on just this period">🧠 Smart Script</button>
-                <button class="pat-btn" data-action="applyPreferredForPeriod" data-idx="${i}" title="Apply preferred metadata to plays in this period">★ Preferred</button>
-                <button class="pat-btn pat-btn-callsheet" data-action="pushPeriodToCallSheet" data-idx="${i}" title="Push this period's plays to matching call sheet categories">📋 → Call Sheet</button>
-                <button class="pat-btn pat-btn-import-cs" data-action="importFromCallSheet" data-idx="${i}" title="Import plays from call sheet categories into this period">📋 ← Call Sheet</button>
-                <button class="pat-btn" data-action="copyPeriodAsText" data-idx="${i}" title="Copy all plays in this period as plain text">📋 Copy Text</button>
-              </div>`
-                  : ""
-                }
-            </div>
-          `;
-            }
-
-            // Skip plays if period is collapsed
-            if (skipPlays) {
-              return ""; // Return empty, will be filtered out
-            }
-
-            playNum++;
-            const fullCall = getCachedFullCall(p);
-
-            // Find wristband number if wristband is loaded
-            let wbBadge = "";
-            if (scriptWristband && opts.showWbNum) {
-              const wbNum = findPlayOnWristband(p);
-              if (wbNum !== null) {
-                wbBadge = `<span class="wb-badge">#${wbNum}</span>`;
-              }
-            }
-
-            const isSelected = bulkSelectedIndices.includes(i);
-
-            // Build hash options with preferred value
-            const hashOptions = buildDefenseOptions(
-              ["L", "M", "R"],
-              p.preferredHash,
-              p.hash,
-            );
-
-            return `
-          <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" data-drag="scriptStart" data-idx="${i}">
-            <input type="checkbox" class="bulk-select-cb" data-index="${i}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${i}" title="Select for bulk edit">
-            <div class="play-num">${playNum}${wbBadge}</div>
-            <div class="play-call">
-              <div class="full-call">${fullCall}</div>
-              <div class="call-meta">${escapeHtml(p.type)} ${p.tempo ? "• " + escapeHtml(p.tempo) : ""}</div>
-            </div>
-            <div class="hash-input">
-              <select data-field="hash" data-idx="${i}" title="Hash">
-                ${hashOptions}
-              </select>
-            </div>
-            <div class="defense-inputs">
-              <input type="text" list="${defenseDatalistState.preferredFrontIdsByValue.get((p.practiceFront || "").trim()) || "dl-front-shared"}" value="${escapeHtml(p.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${i}" title="Defensive Front" class="def-input">
-              <input type="text" list="${defenseDatalistState.preferredCoverageIdsByValue.get((p.practiceCoverage || "").trim()) || "dl-cov-shared"}" value="${escapeHtml(p.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${i}" title="Coverage" class="def-input">
-              <input type="text" list="${defenseDatalistState.preferredStuntIdsByValue.get((p.practiceStunt || "").trim()) || "dl-stunt-shared"}" value="${escapeHtml(p.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${i}" title="Stunt" class="def-input">
-              <input type="text" list="${defenseDatalistState.preferredBlitzIdsByValue.get((p.practiceBlitz || "").trim()) || "dl-blitz-shared"}" value="${escapeHtml(p.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${i}" title="Blitz" class="def-input">
-            </div>
-            <div class="play-controls">
-              <div class="move-btns">
-                <button class="move-btn" data-action="movePlay" data-idx="${i}" data-dir="-1" aria-label="Move play up">▲</button>
-                <button class="move-btn" data-action="movePlay" data-idx="${i}" data-dir="1" aria-label="Move play down">▼</button>
-              </div>
-              <input type="number" value="${p.reps}" min="1" data-field="reps" data-idx="${i}" title="Reps">
-              <input type="text" value="${escapeHtml(p.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${i}">
-              <button class="dup-btn" data-action="duplicatePlay" data-idx="${i}" title="Duplicate" aria-label="Duplicate play">⧉</button>
-              <button class="remove" data-action="removeFromScript" data-idx="${i}" aria-label="Remove play">✕</button>
-            </div>
-          </div>
-          ${showPrintPreview
-                ? `
-          <div class="print-preview-row">
-            <span class="preview-label">Print:</span>
-            <span class="preview-field"><b>#${playNum}</b></span>
-            <span class="preview-field hash">${escapeHtml(p.hash || "-")}</span>
-            <span class="preview-field tempo">${escapeHtml(p.tempo || "-")}</span>
-            <span class="preview-field call">${fullCall}</span>
-            <span class="preview-field type">${escapeHtml(p.type)}</span>
-            <span class="preview-field front">${escapeHtml(p.defFront || "-")}</span>
-            <span class="preview-field cov">${escapeHtml(p.defCoverage || "-")}</span>
-            <span class="preview-field stunt">${escapeHtml(p.defStunt || "-")}</span>
-            <span class="preview-field blitz">${escapeHtml(p.defBlitz || "-")}</span>
-            <span class="preview-field reps">×${p.reps}</span>
-          </div>
-          `
-                : ""
-              }
-        `;
-          })
-          .join("");
+          renderScriptRows(renderContext);
     }
 
     // Update bulk select UI
@@ -2867,23 +3121,7 @@ function renderScript() {
     updateScriptStats();
 
     // Populate jump-to-period dropdown
-    const jumpSel = document.getElementById("jumpToPeriod");
-    if (jumpSel) {
-      const periods = script.filter((p) => p.isSeparator);
-      if (periods.length > 1) {
-        jumpSel.innerHTML =
-          `<option value="">⬇ Jump</option>` +
-          periods
-            .map(
-              (p) =>
-                `<option value="${p.id}">${escapeHtml(p.label || "Period")}</option>`,
-            )
-            .join("");
-        jumpSel.style.display = "";
-      } else {
-        jumpSel.style.display = "none";
-      }
-    }
+    updateJumpToPeriodOptions();
 
     // Update undo/redo buttons
     historyManager.updateButtons("script");
@@ -4243,6 +4481,7 @@ function initScriptKeyboard() {
       updateBulkSelectUI();
       _scheduleRenderScript();
       showToast(`Selected ${bulkSelectedIndices.length} play${bulkSelectedIndices.length === 1 ? "" : "s"}`);
+      announceScriptA11y(`Selected all ${bulkSelectedIndices.length} plays`);
       return;
     }
 
@@ -4251,6 +4490,7 @@ function initScriptKeyboard() {
       e.preventDefault();
       clearBulkSelection();
       showToast("Selection cleared");
+      announceScriptA11y("Selection cleared");
       return;
     }
 
