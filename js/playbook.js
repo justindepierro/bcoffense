@@ -2748,3 +2748,11 @@ function exportPlaybookCSV() {
     type: "success",
   });
 }
+
+// ── Playbook search: self-contained listener (belt-and-suspenders) ──
+document.addEventListener("DOMContentLoaded", () => {
+  const _pbSearch = document.getElementById("searchPlay");
+  if (_pbSearch) {
+    _pbSearch.addEventListener("input", () => filterPlays());
+  }
+});
