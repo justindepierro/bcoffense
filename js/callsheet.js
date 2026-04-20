@@ -2141,8 +2141,9 @@ let draggedCallSheetPlay = null;
 
 function handleCallSheetDragStart(event, categoryId, hash, index) {
   draggedCallSheetPlay = { categoryId, hash, index };
+  event.dataTransfer.setData("source", "callsheet");
   event.dataTransfer.effectAllowed = "move";
-  event.target.classList.add("dragging");
+  event.target.closest(".callsheet-play")?.classList.add("dragging");
 }
 
 function handleCallSheetDragOver(event) {
@@ -2166,15 +2167,22 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     .querySelectorAll(".cs-drop-above")
     .forEach((el) => el.classList.remove("cs-drop-above"));
 
-  if (!draggedCallSheetPlay) return;
-
-  const { categoryId, hash, index } = draggedCallSheetPlay;
-
-  // Find drop position based on what element was dropped on
   const targetPlay = event.target.closest(".callsheet-play");
   let insertIdx = -1;
   if (targetPlay) {
     insertIdx = parseInt(targetPlay.dataset.index, 10);
+  }
+
+  if (!callSheet[targetCategory]) {
+    callSheet[targetCategory] = { left: [], right: [] };
+  }
+  if (!Array.isArray(callSheet[targetCategory][targetHash])) {
+    callSheet[targetCategory][targetHash] = [];
+  }
+
+  if (draggedCallSheetPlay) {
+    const { categoryId, hash, index } = draggedCallSheetPlay;
+
     // If dropping in same hash and source is above target, adjust
     if (
       categoryId === targetCategory &&
@@ -2183,22 +2191,61 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     ) {
       insertIdx--;
     }
+
+    // Remove from original
+    const play = callSheet[categoryId]?.[hash]?.splice(index, 1)[0];
+    if (!play) {
+      draggedCallSheetPlay = null;
+      return;
+    }
+
+    if (
+      insertIdx >= 0 &&
+      insertIdx < callSheet[targetCategory][targetHash].length
+    ) {
+      callSheet[targetCategory][targetHash].splice(insertIdx, 0, play);
+    } else {
+      callSheet[targetCategory][targetHash].push(play);
+    }
+
+    draggedCallSheetPlay = null;
+    renderCallSheet();
+    saveCallSheet();
+    return;
   }
 
-  // Remove from original
-  const play = callSheet[categoryId][hash].splice(index, 1)[0];
+  const source = event.dataTransfer?.getData("source");
+  let droppedPlay = null;
 
-  // Add to new location
+  if (source === "available") {
+    const playIndex = parseInt(event.dataTransfer.getData("playIndex"), 10);
+    if (!Number.isNaN(playIndex) && filteredPlays[playIndex]) {
+      droppedPlay = filteredPlays[playIndex];
+    }
+  } else if (source === "script") {
+    const scriptIndex = parseInt(event.dataTransfer.getData("scriptIndex"), 10);
+    if (!Number.isNaN(scriptIndex) && script[scriptIndex] && !script[scriptIndex].isSeparator) {
+      droppedPlay = script[scriptIndex];
+    }
+  }
+
+  if (!droppedPlay) return;
+
+  const playToInsert = { ...droppedPlay };
+  delete playToInsert._sourceIdx;
+  if (typeof getWristbandNumberForPlay === "function") {
+    playToInsert.wristbandNumber = getWristbandNumberForPlay(playToInsert);
+  }
+
   if (
     insertIdx >= 0 &&
     insertIdx < callSheet[targetCategory][targetHash].length
   ) {
-    callSheet[targetCategory][targetHash].splice(insertIdx, 0, play);
+    callSheet[targetCategory][targetHash].splice(insertIdx, 0, playToInsert);
   } else {
-    callSheet[targetCategory][targetHash].push(play);
+    callSheet[targetCategory][targetHash].push(playToInsert);
   }
 
-  draggedCallSheetPlay = null;
   renderCallSheet();
   saveCallSheet();
 }
@@ -4428,6 +4475,14 @@ document.addEventListener("DOMContentLoaded", () => {
     grid.addEventListener("dragend", (e) => {
       const catDrag = e.target.closest("[data-drag='catDrag']");
       if (catDrag) handleCatDragEnd(e);
+      const play = e.target.closest(".callsheet-play");
+      if (play) {
+        play.classList.remove("dragging");
+        draggedCallSheetPlay = null;
+      }
+      document
+        .querySelectorAll(".cs-drop-above")
+        .forEach((el) => el.classList.remove("cs-drop-above"));
     });
 
     // ── Grid: dblclick on play → toggle highlight ──
