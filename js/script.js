@@ -3064,17 +3064,17 @@ function updatePeriodHeaderLabelDisplay(index) {
   }
   if (!header) return;
 
-    const colorInput = header.querySelector(".ph-color-input");
-    if (colorInput) colorInput.setAttribute("aria-label", `Color for ${periodLabel}`);
+  const colorInput = header.querySelector(".ph-color-input");
+  if (colorInput) colorInput.setAttribute("aria-label", `Color for ${periodLabel}`);
 
-    const labelInput = header.querySelector(".ph-label-input");
-    if (labelInput) labelInput.setAttribute("aria-label", `Name for ${periodLabel}`);
+  const labelInput = header.querySelector(".ph-label-input");
+  if (labelInput) labelInput.setAttribute("aria-label", `Name for ${periodLabel}`);
 
-    const minutesInput = header.querySelector(".ph-minutes-input");
-    if (minutesInput) minutesInput.setAttribute("aria-label", `Minutes for ${periodLabel}`);
+  const minutesInput = header.querySelector(".ph-minutes-input");
+  if (minutesInput) minutesInput.setAttribute("aria-label", `Minutes for ${periodLabel}`);
 
-    const notesInput = header.querySelector(".ph-notes-input");
-    if (notesInput) notesInput.setAttribute("aria-label", `Notes for ${periodLabel}`);
+  const notesInput = header.querySelector(".ph-notes-input");
+  if (notesInput) notesInput.setAttribute("aria-label", `Notes for ${periodLabel}`);
 
   const collapseBtn = header.querySelector(".ph-collapse-btn");
   if (collapseBtn) {

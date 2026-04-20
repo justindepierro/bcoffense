@@ -1298,6 +1298,12 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   }
 
   const playText = playParts.join(" ");
+  const fallbackPlayText = escapeHtml(
+    [play.formation, play.protection, play.play].filter(Boolean).join(" ").trim() ||
+      play.type ||
+      "Play",
+  );
+  const visiblePlayText = playText.trim() || fallbackPlayText;
   const highlightClass = isHighlighted ? "highlighted" : "";
 
   // Build per-cell inline styles
@@ -1363,7 +1369,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
          role="row" aria-label="${escapeHtml(playLabel.trim())}"
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
       ${personnelHtml}
-      <span class="play-text" role="cell">${playText.trim()}</span>
+      <span class="play-text" role="cell">${visiblePlayText}</span>
       ${formatIndicator}
       ${noteBadge}
       ${dupeBadge}

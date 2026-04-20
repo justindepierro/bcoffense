@@ -260,7 +260,7 @@ function addLongPress(element, callback, duration) {
         callback({
           clientX: touch.clientX,
           clientY: touch.clientY,
-          preventDefault: () => {},
+          preventDefault: () => { },
           target: e.target,
         });
       }, duration);
@@ -1107,11 +1107,10 @@ const storageManager = {
 
     // Confirm if needed
     if (options.confirmOverwrite) {
-      const msg = `This will replace your current data with the backup from ${
-        backup.exportDate
+      const msg = `This will replace your current data with the backup from ${backup.exportDate
           ? new Date(backup.exportDate).toLocaleDateString()
           : "unknown date"
-      }. Continue?`;
+        }. Continue?`;
       const ok = await showConfirm(msg, {
         title: "Restore Backup",
         icon: "📥",
@@ -1412,7 +1411,7 @@ function showStorageInfo() {
 
     const templates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
     counts.periodTemplates = Array.isArray(templates) ? templates.length : 0;
-  } catch (e) {}
+  } catch (e) { }
 
   // Build items table rows
   let itemsHtml = "";
