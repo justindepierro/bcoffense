@@ -226,6 +226,7 @@ function initAllModules() {
   // ── Critical path: render the visible UI ──
   populateFilters();
   initChipListeners();
+  if (typeof initPlaybookSearch === "function") initPlaybookSearch();
   restoreColumnVisibility();
   filterPlays();
 
@@ -1011,6 +1012,8 @@ function importBackup(event) {
 
 // ============ Game Week Dashboard ============
 
+let dashSearchTerm = "";
+
 /**
  * Render the Game Week Dashboard panel
  */
@@ -1018,6 +1021,7 @@ function renderDashboard() {
   try {
     // Populate opponent dropdown
     const select = document.getElementById("dashOpponentSelect");
+    const searchInput = document.getElementById("dashSearchInput");
     const weekInput = document.getElementById("dashWeekLabel");
     const badge = document.getElementById("dashActiveOpponentBadge");
 
@@ -1025,10 +1029,26 @@ function renderDashboard() {
 
     const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
     const gw = getGameWeek();
+    const normalizedSearch = dashSearchTerm.trim().toLowerCase();
+
+    if (searchInput && searchInput !== document.activeElement) {
+      searchInput.value = dashSearchTerm;
+    }
+
+    const filteredOpponents = normalizedSearch
+      ? opponents
+        .map((opp, idx) => ({ opp, idx }))
+        .filter(({ opp }) =>
+          [opp.name, `${opp.plays?.length || 0}`]
+            .join(" ")
+            .toLowerCase()
+            .includes(normalizedSearch),
+        )
+      : opponents.map((opp, idx) => ({ opp, idx }));
 
     // Build opponent options
     let optHtml = '<option value="">— Select Opponent —</option>';
-    opponents.forEach((opp, idx) => {
+    filteredOpponents.forEach(({ opp, idx }) => {
       const sel = gw.opponentIndex === idx ? "selected" : "";
       optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays.length} plays)</option>`;
     });
@@ -1267,6 +1287,11 @@ function onDashNotesChange(value) {
   }, 400);
 }
 
+function onDashSearchInput(value) {
+  dashSearchTerm = value || "";
+  renderDashboard();
+}
+
 // ============ Season Schedule Manager ============
 
 /**
@@ -1277,6 +1302,7 @@ function renderSchedule() {
   if (!body) return;
   const schedule = getSchedule();
   const gw = getGameWeek();
+  const normalizedSearch = dashSearchTerm.trim().toLowerCase();
 
   if (schedule.length === 0) {
     body.innerHTML = `<div class="dash-schedule-empty">
@@ -1285,11 +1311,29 @@ function renderSchedule() {
     return;
   }
 
+  const filteredSchedule = normalizedSearch
+    ? schedule
+      .map((game, idx) => ({ game, idx }))
+      .filter(({ game }) =>
+        [game.week, game.date, game.opponent, game.location]
+          .join(" ")
+          .toLowerCase()
+          .includes(normalizedSearch),
+      )
+    : schedule.map((game, idx) => ({ game, idx }));
+
+  if (filteredSchedule.length === 0) {
+    body.innerHTML = `<div class="dash-schedule-empty">
+      <p>No schedule entries match "${escapeHtml(dashSearchTerm)}".</p>
+    </div>`;
+    return;
+  }
+
   let html = '<table class="dash-schedule-table"><thead><tr>';
   html +=
     "<th>Week</th><th>Date</th><th>Opponent</th><th>Location</th><th></th>";
   html += "</tr></thead><tbody>";
-  schedule.forEach((game, i) => {
+  filteredSchedule.forEach(({ game, idx }) => {
     const isActive =
       gw.opponentName &&
       gw.opponentName === game.opponent &&
@@ -1301,8 +1345,8 @@ function renderSchedule() {
       <td><strong>${escapeHtml(game.opponent)}</strong></td>
       <td>${escapeHtml(game.location)}</td>
       <td class="dash-schedule-actions">
-        <button class="btn btn-sm btn-primary" data-action="setScheduleActive" data-idx="${i}" title="Set as active game week">🏈</button>
-        <button class="btn btn-sm btn-danger" data-action="removeScheduleGame" data-idx="${i}" title="Remove">✕</button>
+        <button class="btn btn-sm btn-primary" data-action="setScheduleActive" data-idx="${idx}" title="Set as active game week">🏈</button>
+        <button class="btn btn-sm btn-danger" data-action="removeScheduleGame" data-idx="${idx}" title="Remove">✕</button>
       </td>
     </tr>`;
   });

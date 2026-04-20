@@ -1313,6 +1313,8 @@
           <div class="dash-opponent-left">
             <h2 class="dash-title">📊 Game Week Dashboard</h2>
             <div class="dash-opponent-select-group">
+              <input type="text" id="dashSearchInput" class="dash-search-input" placeholder="Search opponents or schedule..."
+                data-oninput="onDashSearchInput" data-pass="value" aria-label="Search dashboard opponents and schedule" />
               <label for="dashOpponentSelect" class="dash-label">Active Opponent:</label>
               <select id="dashOpponentSelect" class="dash-select" data-onchange="onDashOpponentChange"
                 data-pass="value">

@@ -388,7 +388,11 @@ function isPlayOnHighlightedWristband(play) {
 /**
  * Debounced filter — used for search input to avoid re-rendering on every keystroke
  */
-const debouncedFilterPlays = debounce(filterPlays, 150);
+const _debouncedFilterPlays = debounce(filterPlays, 150);
+
+function debouncedFilterPlays() {
+  _debouncedFilterPlays();
+}
 
 /**
  * Filter plays based on all filter layers and render table
@@ -538,6 +542,17 @@ function clearPbSearch() {
   const clearBtn = document.getElementById("clearPbSearch");
   if (clearBtn) clearBtn.style.display = "none";
   filterPlays();
+}
+
+function initPlaybookSearch() {
+  const input = document.getElementById("searchPlay");
+  if (!input || input.dataset.searchBound === "true") return;
+
+  input.addEventListener("input", () => {
+    debouncedFilterPlays();
+  });
+
+  input.dataset.searchBound = "true";
 }
 
 /**
