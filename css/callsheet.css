@@ -481,8 +481,11 @@
 
 .cs-unified-content {
   padding: 14px;
-  background:
-    linear-gradient(180deg, var(--color-bg-light) 0%, var(--color-white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-light) 0%,
+    var(--color-white) 100%
+  );
 }
 .cs-unified-content.collapsed {
   display: none;
@@ -601,18 +604,14 @@
   display: block;
 }
 
-.cs-layout-page-columns {
+.cs-layout-board-head {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
-}
-
-.cs-layout-page-column {
-  min-width: 0;
-}
-
-.cs-layout-col-label {
   margin-bottom: 6px;
+}
+
+.cs-layout-board-head span {
   padding: 4px 6px;
   border-radius: var(--radius-sm);
   background: var(--color-bg-input);
@@ -624,53 +623,24 @@
   text-align: center;
 }
 
-.cs-layout-col-stack {
+.cs-layout-board {
   min-height: 220px;
   display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   gap: 8px;
   align-content: start;
 }
 
-.cs-layout-drop-slot {
-  min-height: 16px;
-  border: 1px dashed transparent;
-  border-radius: var(--radius-sm);
-  background: transparent;
-  color: transparent;
-  font-size: var(--font-size-3xs);
-  line-height: 1;
-  text-align: center;
-  transition:
-    background var(--transition-fast),
-    border-color var(--transition-fast),
-    color var(--transition-fast),
-    min-height var(--transition-fast);
-}
-
 .cs-layout-place-btn {
   width: 100%;
-  min-height: 24px;
+  min-height: 28px;
   border: 1px dashed var(--color-primary);
   border-radius: var(--radius-sm);
   background: var(--color-white);
   color: var(--color-primary-dark);
-  font-size: var(--font-size-3xs);
+  font-size: var(--font-size-xs);
   font-weight: 700;
   cursor: pointer;
-}
-
-.cs-layout-col-stack .cs-layout-drop-slot:first-child {
-  margin-top: -2px;
-}
-
-.cs-layout-drop-slot--active {
-  min-height: 28px;
-  border-color: var(--color-primary);
-  background: var(--color-primary-light);
-  color: var(--color-primary-dark);
-  display: grid;
-  place-items: center;
-  font-weight: 700;
 }
 
 .cs-layout-card {
@@ -683,6 +653,11 @@
 }
 
 .cs-layout-card--picked {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
+}
+
+.cs-layout-card--drop-target {
   border-color: var(--color-primary);
   box-shadow: 0 0 0 2px var(--color-primary-light);
 }
@@ -737,6 +712,10 @@
   gap: 6px;
 }
 
+.cs-layout-card-place {
+  width: 100%;
+}
+
 .cs-layout-pick-btn.is-active {
   border-color: var(--color-primary);
   background: var(--color-primary);
@@ -774,6 +753,17 @@
   width: 100%;
 }
 
+.cs-layout-board-end {
+  margin-top: 10px;
+}
+
+.cs-layout-end-copy {
+  display: block;
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+  text-align: center;
+}
+
 .cs-layout-empty {
   min-height: 96px;
   display: grid;
@@ -783,11 +773,6 @@
   color: var(--color-text-light);
   font-size: var(--font-size-sm);
   background: var(--color-white);
-}
-
-.cs-layout-empty--mini {
-  min-height: 72px;
-  font-size: var(--font-size-xs);
 }
 
 .cs-layout-actions {

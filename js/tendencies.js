@@ -1054,15 +1054,13 @@ function renderTendenciesHome() {
           <h3>📋 Opponents</h3>
           <button class="btn btn-primary" data-action="addTendenciesOpponent">＋ New Opponent</button>
         </div>
-        ${
-          tendenciesOpponents.length === 0
-            ? '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
-            : `<div class="td-opponent-list">${opponentList}</div>`
-        }
+        ${tendenciesOpponents.length === 0
+      ? '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
+      : `<div class="td-opponent-list">${opponentList}</div>`
+    }
       </div>
-      ${
-        tendenciesOpponents.length > 0
-          ? `<div class="td-export-section">
+      ${tendenciesOpponents.length > 0
+      ? `<div class="td-export-section">
             <div class="td-section-header"><h3>📤 Export / Import</h3></div>
             <div class="td-export-buttons">
               <button class="btn btn-secondary" data-action="exportTendenciesCSV">📄 Export All (CSV)</button>
@@ -1071,14 +1069,14 @@ function renderTendenciesHome() {
               <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>
           </div>`
-          : `<div class="td-export-section">
+      : `<div class="td-export-section">
             <div class="td-section-header"><h3>📥 Import</h3></div>
             <div class="td-export-buttons">
               <button class="btn btn-secondary" data-action="importTendenciesJSON">📥 Import JSON</button>
               <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>
           </div>`
-      }
+    }
     </div>
   `;
 }
@@ -1197,14 +1195,13 @@ function renderOpponentDetail() {
         <div class="td-stat td-stat-run"><span class="td-stat-value">${runPlays}</span><span class="td-stat-label">Run</span></div>
         <div class="td-stat td-stat-pass"><span class="td-stat-value">${passPlays}</span><span class="td-stat-label">Pass</span></div>
         <div class="td-stat td-stat-blitz"><span class="td-stat-value">${blitzPlays}</span><span class="td-stat-label">Blitz</span></div>
-        ${
-          totalPlays > 0
-            ? `
+        ${totalPlays > 0
+      ? `
           <div class="td-stat td-stat-pct"><span class="td-stat-value">${Math.round((runPlays / totalPlays) * 100)}%</span><span class="td-stat-label">Run %</span></div>
           <div class="td-stat td-stat-pct"><span class="td-stat-value">${Math.round((blitzPlays / totalPlays) * 100)}%</span><span class="td-stat-label">Blitz %</span></div>
         `
-            : ""
-        }
+      : ""
+    }
       </div>
 
       <!-- Toolbar -->
@@ -1219,11 +1216,10 @@ function renderOpponentDetail() {
             🔽 Filters${activeFilters > 0 ? ` <span class="td-filter-badge">${activeFilters}</span>` : ""}
           </button>
           <button class="btn btn-sm ${tdShowStats ? "btn-primary" : ""}" data-action="toggleTdStats">📊 Stats</button>
-          ${
-            !tdBulkMode
-              ? '<button class="btn btn-sm" data-action="enterBulkMode">☑️ Select</button>'
-              : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
-          }
+          ${!tdBulkMode
+      ? '<button class="btn btn-sm" data-action="enterBulkMode">☑️ Select</button>'
+      : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
+    }
         </div>
         <div class="td-toolbar-right">
           <button class="btn btn-sm" data-action="toggleColumnPanel" title="Column visibility">👁️ Columns</button>
@@ -1242,9 +1238,8 @@ function renderOpponentDetail() {
       ${tdShowStats ? renderStatsDashboard(opp) : ""}
 
       <!-- Bulk action bar -->
-      ${
-        tdBulkMode && tdSelectedPlays.size > 0
-          ? `
+      ${tdBulkMode && tdSelectedPlays.size > 0
+      ? `
         <div class="td-bulk-bar">
           <span class="td-bulk-count">${tdSelectedPlays.size} selected</span>
           <button class="btn btn-sm" data-action="selectAllVisible">Select All Visible</button>
@@ -1253,8 +1248,8 @@ function renderOpponentDetail() {
           <button class="btn btn-sm btn-danger" data-action="bulkDeletePlays">🗑️ Delete Selected</button>
         </div>
       `
-          : ""
-      }
+      : ""
+    }
 
       <!-- Play log -->
       <div class="td-play-log" id="tendenciesPlayLog">
@@ -1360,10 +1355,9 @@ function renderCellValue(col, play, idx) {
       return `<td class="td-notes-cell" title="${escapeHtml(play.notes || "")}">${play.notes ? "📝 " + (play.notes.length > 20 ? escapeHtml(play.notes.substring(0, 20)) + "…" : escapeHtml(play.notes)) : ""}</td>`;
     case "_actions":
       return `<td class="td-play-actions">
-        ${
-          tdBulkMode
-            ? ""
-            : `
+        ${tdBulkMode
+          ? ""
+          : `
           <button class="btn btn-sm" data-action="editTendenciesPlay" data-idx="${play._origIndex}" title="Edit">✏️</button>
           <button class="btn btn-sm" data-action="duplicateTendenciesPlay" data-idx="${play._origIndex}" title="Duplicate">⧉</button>
           <button class="btn btn-sm btn-danger" data-action="deleteTendenciesPlay" data-idx="${play._origIndex}" title="Delete">✕</button>
@@ -1541,9 +1535,9 @@ function renderStatsDashboard(opp) {
           <thead><tr><th>Down</th><th>Plays</th><th>Run%</th><th>Pass%</th><th>Blitz%</th></tr></thead>
           <tbody>
             ${Object.entries(downStats)
-              .sort((a, b) => a[0] - b[0])
-              .map(
-                ([d, s]) => `
+      .sort((a, b) => a[0] - b[0])
+      .map(
+        ([d, s]) => `
               <tr>
                 <td><strong>${d}</strong></td>
                 <td>${s.total}</td>
@@ -1552,8 +1546,8 @@ function renderStatsDashboard(opp) {
                 <td>${s.total > 0 ? Math.round((s.blitz / s.total) * 100) : 0}%</td>
               </tr>
             `,
-              )
-              .join("")}
+      )
+      .join("")}
           </tbody>
         </table>
       </div>
@@ -1563,9 +1557,9 @@ function renderStatsDashboard(opp) {
           <thead><tr><th>Situation</th><th>Plays</th><th>Top Front</th><th>Top Coverage</th></tr></thead>
           <tbody>
             ${Object.entries(sitStats)
-              .sort((a, b) => b[1].total - a[1].total)
-              .map(
-                ([sit, s]) => `
+      .sort((a, b) => b[1].total - a[1].total)
+      .map(
+        ([sit, s]) => `
               <tr>
                 <td><strong>${sit}</strong></td>
                 <td>${s.total}</td>
@@ -1573,8 +1567,8 @@ function renderStatsDashboard(opp) {
                 <td>${topN(s.coverages, 1)}</td>
               </tr>
             `,
-              )
-              .join("")}
+      )
+      .join("")}
           </tbody>
         </table>
       </div>
@@ -1584,10 +1578,10 @@ function renderStatsDashboard(opp) {
           <thead><tr><th>Formation</th><th>Plays</th><th>Top Front</th><th>Top Coverage</th></tr></thead>
           <tbody>
             ${Object.entries(formStats)
-              .sort((a, b) => b[1].total - a[1].total)
-              .slice(0, 10)
-              .map(
-                ([form, s]) => `
+      .sort((a, b) => b[1].total - a[1].total)
+      .slice(0, 10)
+      .map(
+        ([form, s]) => `
               <tr>
                 <td><strong>${form}</strong></td>
                 <td>${s.total}</td>
@@ -1595,8 +1589,8 @@ function renderStatsDashboard(opp) {
                 <td>${topN(s.coverages, 1)}</td>
               </tr>
             `,
-              )
-              .join("")}
+      )
+      .join("")}
           </tbody>
         </table>
       </div>
@@ -1862,11 +1856,10 @@ function renderWizard() {
       </div>
       <div class="td-wizard-nav">
         ${!isFirst ? '<button class="btn btn-secondary td-nav-btn" data-action="wizardPrev">← Back</button>' : "<div></div>"}
-        ${
-          isLast
-            ? '<button class="btn btn-primary td-nav-btn td-save-btn" data-action="saveWizardPlay">💾 Save Play</button>'
-            : '<button class="btn btn-primary td-nav-btn" data-action="wizardNext">Next →</button>'
-        }
+        ${isLast
+      ? '<button class="btn btn-primary td-nav-btn td-save-btn" data-action="saveWizardPlay">💾 Save Play</button>'
+      : '<button class="btn btn-primary td-nav-btn" data-action="wizardNext">Next →</button>'
+    }
       </div>
     </div>
   `;

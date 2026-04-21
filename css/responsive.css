@@ -236,7 +236,8 @@
   .cs-layout-list {
     min-height: 180px;
   }
-  .cs-layout-page-columns {
+  .cs-layout-board-head,
+  .cs-layout-board {
     grid-template-columns: repeat(3, minmax(0, 1fr));
   }
   .cs-settings-section-head {
@@ -369,9 +370,6 @@
   }
   .cs-layout-page-columns {
     gap: 6px;
-  }
-  .cs-layout-drop-slot--active {
-    min-height: 24px;
   }
   .cs-layout-card-header,
   .cs-layout-card-meta {

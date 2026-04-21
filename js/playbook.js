@@ -329,9 +329,9 @@ function populateWristbandHighlightDropdown() {
       .map((wb, idx) => {
         const totalPlays = wb.cards
           ? wb.cards.reduce(
-              (sum, c) => sum + c.data.filter((p) => p !== null).length,
-              0,
-            )
+            (sum, c) => sum + c.data.filter((p) => p !== null).length,
+            0,
+          )
           : 0;
         return `<option value="${idx}">${escapeHtml(wb.title)} (${totalPlays} plays)</option>`;
       })
