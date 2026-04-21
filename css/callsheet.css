@@ -1971,11 +1971,49 @@
 }
 
 /* --- Templates --- */
+.cs-template-modal {
+  width: min(560px, calc(100vw - 32px));
+}
+
+.cs-template-copy {
+  margin: 6px 0 0;
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.cs-template-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 10px;
+  margin-bottom: 10px;
+}
+
+.cs-template-section-head h4 {
+  margin: 0;
+  font-size: var(--font-size-sm);
+}
+
+.cs-template-section-head p {
+  margin: 4px 0 0;
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+}
+
 .cs-template-save-row {
   display: flex;
   gap: 8px;
-  margin-bottom: 12px;
+  margin-bottom: 0;
 }
+
+.cs-template-save-panel {
+  margin-top: 14px;
+  padding-top: 14px;
+  border-top: 1px solid var(--color-border-light);
+}
+
 .cs-template-name-input {
   flex: 1;
   padding: 6px 10px;
@@ -1986,31 +2024,47 @@
 .cs-template-list {
   max-height: 300px;
   overflow-y: auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-white);
 }
+
 .cs-template-item {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 8px 10px;
+  gap: 10px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--color-bg-input);
 }
+
 .cs-template-item:last-child {
   border-bottom: none;
 }
+
 .cs-template-info {
   display: flex;
   flex-direction: column;
+  min-width: 0;
 }
+
 .cs-template-info strong {
   font-size: var(--font-size-sm);
 }
+
 .cs-template-date {
   font-size: var(--font-size-xs);
   color: var(--color-text-light);
 }
+
 .cs-template-actions {
   display: flex;
   gap: 4px;
+  flex-shrink: 0;
+}
+
+.cs-template-empty {
+  padding: 16px;
 }
 
 /* --- Print: category notes --- */

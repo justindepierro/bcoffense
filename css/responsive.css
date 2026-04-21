@@ -379,6 +379,18 @@
   .cs-layout-card-actions-row {
     grid-template-columns: 1fr 36px 36px;
   }
+  .cs-template-section-head,
+  .cs-template-save-row,
+  .cs-template-item {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cs-template-actions {
+    width: 100%;
+  }
+  .cs-template-actions .btn {
+    flex: 1 1 0;
+  }
   .cs-settings-layout,
   .cs-border-panels {
     gap: 10px;

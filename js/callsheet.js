@@ -3878,7 +3878,7 @@ async function saveCallSheetTemplate() {
 
     if (document.getElementById("csTemplateOverlay")) {
       closeTemplateModal();
-      openTemplatesModal();
+      openTemplatesModal(csTemplateModalMode);
     }
 
     showToast(`✅ "${name}" saved!`);
@@ -3891,12 +3891,25 @@ async function saveCallSheetTemplate() {
   }
 }
 
-function openTemplatesModal() {
+let csTemplateModalMode = "manage";
+
+function openLoadCallSheetModal() {
+  openTemplatesModal("load");
+}
+
+function openTemplatesModal(mode = "manage") {
+  csTemplateModalMode =
+    mode === "load" ? "load" : mode === "save" ? "save" : "manage";
   const saved = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+  const isLoadMode = csTemplateModalMode === "load";
+  const title = isLoadMode ? "📂 Load Call Sheet" : "📁 Saved Call Sheets";
+  const modalCopy = isLoadMode
+    ? "Choose a saved call sheet to replace the current one. Saved call sheets restore plays, layout, notes, targets, and display settings."
+    : "Save the current call sheet or load one of your saved call sheets below.";
 
   const listHtml =
     saved.length === 0
-      ? '<div class="empty-state">No templates saved yet.</div>'
+      ? `<div class="empty-state cs-template-empty">${isLoadMode ? "No saved call sheets yet. Save the current sheet first, then load it here later." : "No saved call sheets yet. Save the current sheet to build your library."}</div>`
       : saved
         .map((t, idx) => {
           const date = new Date(t.savedAt).toLocaleDateString();
@@ -3906,8 +3919,8 @@ function openTemplatesModal() {
             <span class="cs-template-date">${date} · ${t.playCount || 0} plays</span>
           </div>
           <div class="cs-template-actions">
-            <button class="btn btn-sm btn-primary" data-action="loadTemplate" data-idx="${idx}">Load</button>
-            <button class="btn btn-sm btn-danger" data-action="deleteTemplate" data-idx="${idx}">✕</button>
+            <button class="btn btn-sm btn-primary" data-action="loadTemplate" data-idx="${idx}">${isLoadMode ? "Load Call Sheet" : "Load"}</button>
+            <button class="btn btn-sm btn-danger" data-action="deleteTemplate" data-idx="${idx}">Delete</button>
           </div>
         </div>`;
         })
@@ -3915,17 +3928,35 @@ function openTemplatesModal() {
 
   const modalHtml = `
     <div id="csTemplateOverlay" class="cs-sort-overlay">
-      <div class="cs-sort-modal" style="max-width: 500px;">
+      <div class="cs-sort-modal cs-template-modal" style="max-width: 560px;">
         <div class="cs-sort-header">
-          <h3>📁 Game Plan Templates</h3>
+          <div>
+            <h3>${title}</h3>
+            <p class="cs-template-copy">${modalCopy}</p>
+          </div>
           <button class="cs-sort-close" data-action="closeTemplateModal">&times;</button>
         </div>
         <div class="cs-sort-body">
-          <div class="cs-template-save-row">
-            <input type="text" id="csTemplateName" class="cs-template-name-input" placeholder="Template name (e.g. vs. 4-3 Team)">
-            <button class="btn btn-sm btn-primary" data-action="saveCallSheetTemplate">💾 Save Current</button>
+          <div class="cs-template-section-head">
+            <div>
+              <h4>Saved Call Sheets</h4>
+              <p>${saved.length === 0 ? "No saved call sheets yet." : `${saved.length} saved call sheet${saved.length === 1 ? "" : "s"} available.`}</p>
+            </div>
+            ${saved.length > 0 && isLoadMode ? '<button class="btn btn-sm" data-action="openTemplatesModal" data-arg="manage">Manage Saves</button>' : ""}
           </div>
           <div class="cs-template-list">${listHtml}</div>
+          <div class="cs-template-save-panel">
+            <div class="cs-template-section-head">
+              <div>
+                <h4>Save Current Call Sheet</h4>
+                <p>Create a reusable saved call sheet with the current plays, layout, notes, and display setup.</p>
+              </div>
+            </div>
+            <div class="cs-template-save-row">
+              <input type="text" id="csTemplateName" class="cs-template-name-input" placeholder="Call sheet name (e.g. vs. 4-3 Team)">
+              <button class="btn btn-sm btn-primary" data-action="saveCallSheetTemplate">💾 Save Current</button>
+            </div>
+          </div>
         </div>
         <div class="cs-sort-actions">
           <button class="btn btn-sm" data-action="closeTemplateModal">Close</button>
@@ -3935,6 +3966,11 @@ function openTemplatesModal() {
   `;
 
   document.body.insertAdjacentHTML("beforeend", modalHtml);
+  const nameInput = document.getElementById("csTemplateName");
+  if (nameInput && csTemplateModalMode === "save") {
+    nameInput.focus();
+    nameInput.select();
+  }
   // backdrop close
   document
     .getElementById("csTemplateOverlay")
@@ -4017,7 +4053,7 @@ async function deleteTemplate(idx) {
   templates.splice(idx, 1);
   storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
   closeTemplateModal();
-  openTemplatesModal();
+  openTemplatesModal(csTemplateModalMode);
   showToast(`🗑️ Deleted "${name}"`);
 }
 
