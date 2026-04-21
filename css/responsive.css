@@ -236,6 +236,9 @@
   .cs-layout-list {
     min-height: 180px;
   }
+  .cs-layout-page-columns {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
   .cs-settings-section-head {
     flex-direction: column;
   }
@@ -364,12 +367,13 @@
   .cs-layout-modal {
     width: calc(100vw - 20px);
   }
-  .cs-layout-card {
-    grid-template-columns: auto auto 1fr;
+  .cs-layout-page-columns {
+    gap: 6px;
   }
-  .cs-layout-page-btn {
-    grid-column: 1 / -1;
-    justify-self: stretch;
+  .cs-layout-card-header,
+  .cs-layout-card-meta {
+    padding-left: 6px;
+    padding-right: 6px;
   }
   .cs-settings-layout,
   .cs-border-panels {

@@ -316,6 +316,17 @@ const CALLSHEET_BACK = [
 // Combined categories for reference
 const CALLSHEET_CATEGORIES = [...CALLSHEET_FRONT, ...CALLSHEET_BACK];
 
+const CS_HEADER_COLOR_OPTIONS = [
+  { name: "Red", value: CS_COLORS.red },
+  { name: "Yellow", value: CS_COLORS.yellow },
+  { name: "Orange", value: CS_COLORS.orange },
+  { name: "Green", value: CS_COLORS.green },
+  { name: "Blue", value: CS_COLORS.blue },
+  { name: "Purple", value: CS_COLORS.purple },
+  { name: "Teal", value: CS_COLORS.teal },
+  { name: "Gray", value: CS_COLORS.gray },
+];
+
 function getDefaultCallSheetCategoryOrder() {
   return {
     front: CALLSHEET_FRONT.map((cat) => cat.id),
@@ -356,6 +367,7 @@ let callSheetSettings = {
   orientation: "portrait", // portrait or landscape
   currentPage: "front", // front or back
   customNames: {}, // { categoryId: "Custom Name" }
+  customColors: {}, // { categoryId: "#hex" }
   loadedWristbandName: "", // Name of loaded wristband
   loadedWristbandPlays: [], // Plays from loaded wristband with numbers
 };
@@ -372,6 +384,7 @@ let csCategoryOrder = getDefaultCallSheetCategoryOrder();
 
 let csLayoutDraft = null;
 let csLayoutDragged = null;
+let csLayoutColorDraft = null;
 
 // Per-category notes
 let csNotes = {};
@@ -1048,6 +1061,10 @@ function getCategoryDisplayName(cat) {
   return callSheetSettings.customNames[cat.id] || cat.name;
 }
 
+function getCategoryColor(cat, colorMap = callSheetSettings.customColors) {
+  return colorMap?.[cat.id] || cat.color;
+}
+
 /**
  * Edit category name
  */
@@ -1107,8 +1124,8 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
   const isPlayerSpecific = cat.playerSpecific;
   const isCollapsed = csCollapsed.has(cat.id);
 
-  // Determine header text color based on background
-  const textColor = getCategoryHeaderTextColor(cat.color);
+  const headerColor = getCategoryColor(cat);
+  const textColor = getCategoryHeaderTextColor(headerColor);
 
   const playCount = leftPlays.length + rightPlays.length;
   const target = csTargets[cat.id];
@@ -1136,7 +1153,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
          draggable="true"
          data-drag="catDrag" data-cat="${cat.id}"
          role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
-      <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};"
+        <div class="category-header cs-cat-header" style="background: ${headerColor}; color: ${textColor};"
           role="heading" aria-level="3">
         <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand" aria-expanded="${!isCollapsed}">${collapseIcon}</span>
         <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
@@ -2454,14 +2471,14 @@ function renderPrintCategory(cat, data, options) {
   // options passed through from printCallSheet to avoid per-play DOM reads
   if (!options) options = getCallSheetDisplayOptions();
 
-  // Determine text color
-  const textColor = getCategoryHeaderTextColor(cat.color);
+  const headerColor = getCategoryColor(cat);
+  const textColor = getCategoryHeaderTextColor(headerColor);
 
   const note = csNotes[cat.id];
 
   let html = `
     <div class="print-category">
-      <div class="print-category-header" style="background: ${cat.color}; color: ${textColor};">
+      <div class="print-category-header" style="background: ${headerColor}; color: ${textColor};">
         ${escapeHtml(displayName)}
       </div>`;
 
@@ -3805,26 +3822,62 @@ function renderCallSheetLayoutPanel(page) {
   const categories = csLayoutDraft[page]
     .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
     .filter(Boolean);
+  const orderIndexById = new Map(categories.map((cat, index) => [cat.id, index + 1]));
+  const columns = buildCallSheetColumns(categories);
 
   if (categories.length === 0) {
     return '<div class="cs-layout-empty">Drag categories here</div>';
   }
 
-  return categories
-    .map((cat, index) => {
-      const otherPage = page === "front" ? "back" : "front";
-      return `
-        <div class="cs-layout-card" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}">
-          <span class="cs-layout-card-handle">☰</span>
-          <span class="cs-layout-card-order">${index + 1}</span>
-          <span class="cs-layout-card-name">${escapeHtml(getCategoryDisplayName(cat))}</span>
-          <button class="btn btn-xs cs-layout-page-btn" data-action="moveCallSheetCategoryToPage" data-arg="${cat.id}|${otherPage}">
-            ${otherPage === "front" ? "Front" : "Back"}
-          </button>
-        </div>
-      `;
-    })
-    .join("");
+  return `
+    <div class="cs-layout-page-columns">
+      ${columns
+        .map(
+          (column, columnIndex) => `
+            <div class="cs-layout-page-column" data-drop="csLayoutPage" data-page="${page}">
+              <div class="cs-layout-col-label">Col ${columnIndex + 1}</div>
+              <div class="cs-layout-col-stack" data-drop="csLayoutPage" data-page="${page}">
+                ${column.length
+                  ? column
+                      .map((cat) => {
+                        const otherPage = page === "front" ? "back" : "front";
+                        const headerColor = getCategoryColor(cat, csLayoutColorDraft);
+                        const textColor = getCategoryHeaderTextColor(headerColor);
+                        const colorOptions = CS_HEADER_COLOR_OPTIONS.map(
+                          (option) =>
+                            `<option value="${option.value}" ${option.value === headerColor ? "selected" : ""}>${option.name}</option>`,
+                        ).join("");
+
+                        return `
+                          <div class="cs-layout-card" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}">
+                            <div class="cs-layout-card-header" style="background: ${headerColor}; color: ${textColor};">
+                              <span class="cs-layout-card-handle">☰</span>
+                              <span class="cs-layout-card-order">${orderIndexById.get(cat.id) || ""}</span>
+                              <span class="cs-layout-card-name">${escapeHtml(getCategoryDisplayName(cat))}</span>
+                            </div>
+                            <div class="cs-layout-card-meta">
+                              <label class="cs-layout-color-field">
+                                <span>Color</span>
+                                <select class="cs-layout-color-select" data-category="${cat.id}">
+                                  ${colorOptions}
+                                </select>
+                              </label>
+                              <button class="btn btn-xs cs-layout-page-btn" data-action="moveCallSheetCategoryToPage" data-arg="${cat.id}|${otherPage}">
+                                Move to ${otherPage === "front" ? "Front" : "Back"}
+                              </button>
+                            </div>
+                          </div>
+                        `;
+                      })
+                      .join("")
+                  : '<div class="cs-layout-empty cs-layout-empty--mini">Drop here</div>'}
+              </div>
+            </div>
+          `,
+        )
+        .join("")}
+    </div>
+  `;
 }
 
 function renderCallSheetLayoutModal() {
@@ -3843,6 +3896,7 @@ function renderCallSheetLayoutModal() {
 
 function openCallSheetLayoutModal() {
   csLayoutDraft = normalizeCallSheetCategoryOrder(csCategoryOrder);
+  csLayoutColorDraft = { ...(callSheetSettings.customColors || {}) };
 
   const modalHtml = `
     <div id="csLayoutOverlay" class="modal-overlay" style="display: flex;" data-action="closeCallSheetLayoutModalOverlay">
@@ -3850,7 +3904,7 @@ function openCallSheetLayoutModal() {
         <div class="modal-header cs-layout-modal-header">
           <div>
             <h3>🗂️ Reorder Call Sheet</h3>
-            <p class="cs-layout-modal-copy">Drag compact category cards to reorder them. Drop a card onto the other panel to move it between the front and back pages.</p>
+            <p class="cs-layout-modal-copy">Each panel mirrors the real three-column page layout. Drag categories to reorder them, move them between front and back, and adjust header colors before applying.</p>
           </div>
           <button class="cs-sort-close" data-action="closeCallSheetLayoutModal">&times;</button>
         </div>
@@ -3920,6 +3974,12 @@ function openCallSheetLayoutModal() {
     handleCsLayoutDragEnd(event);
   });
 
+  overlay.addEventListener("change", (event) => {
+    const select = event.target.closest(".cs-layout-color-select");
+    if (!select) return;
+    setCallSheetLayoutDraftColor(select.dataset.category, select.value);
+  });
+
   renderCallSheetLayoutModal();
 }
 
@@ -3928,6 +3988,7 @@ function closeCallSheetLayoutModal() {
   if (overlay) overlay.remove();
   csLayoutDraft = null;
   csLayoutDragged = null;
+  csLayoutColorDraft = null;
 }
 
 function updateCallSheetLayoutDraft(categoryId, targetPage, beforeCategoryId = null) {
@@ -3956,15 +4017,35 @@ function moveCallSheetCategoryToPage(arg) {
   renderCallSheetLayoutModal();
 }
 
+function setCallSheetLayoutDraftColor(categoryId, color) {
+  const cat = CALLSHEET_CATEGORIES.find((candidate) => candidate.id === categoryId);
+  if (!cat) return;
+
+  if (!csLayoutColorDraft) {
+    csLayoutColorDraft = { ...(callSheetSettings.customColors || {}) };
+  }
+
+  if (!color || color === cat.color) {
+    delete csLayoutColorDraft[categoryId];
+  } else {
+    csLayoutColorDraft[categoryId] = color;
+  }
+
+  renderCallSheetLayoutModal();
+}
+
 function resetCallSheetLayoutModal() {
   csLayoutDraft = getDefaultCallSheetCategoryOrder();
+  csLayoutColorDraft = { ...(callSheetSettings.customColors || {}) };
   renderCallSheetLayoutModal();
 }
 
 function saveCallSheetLayoutModal() {
   if (!csLayoutDraft) return;
   csCategoryOrder = normalizeCallSheetCategoryOrder(csLayoutDraft);
+  callSheetSettings.customColors = { ...(csLayoutColorDraft || {}) };
   persistCallSheetCategoryOrder();
+  saveCallSheetSettings();
   closeCallSheetLayoutModal();
   renderCallSheet();
   showToast("🗂️ Call sheet layout updated");
