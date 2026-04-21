@@ -9,6 +9,37 @@ let filteredPlays = [];
 // Dirty tracking — marks when working data has unsaved changes
 let scriptDirty = false;
 let wristbandDirty = false;
+const draftRestoreChecksRun = new Set();
+const draftRestoreChecksPending = new Set();
+
+function runDraftRestoreCheckForTab(tabName) {
+  const tabDraftCheckMap = {
+    script: window.checkScriptDraft,
+    wristband: window.checkWristbandDraft,
+    callsheet: window.checkCallSheetDraft,
+    tendencies: window.checkTendenciesDraft,
+  };
+
+  const draftCheck = tabDraftCheckMap[tabName];
+  if (typeof draftCheck !== "function") return;
+  if (
+    draftRestoreChecksRun.has(tabName) ||
+    draftRestoreChecksPending.has(tabName)
+  ) {
+    return;
+  }
+
+  draftRestoreChecksPending.add(tabName);
+  Promise.resolve()
+    .then(() => draftCheck())
+    .catch((err) => {
+      console.error(`draft restore check failed for ${tabName}:`, err);
+    })
+    .finally(() => {
+      draftRestoreChecksPending.delete(tabName);
+      draftRestoreChecksRun.add(tabName);
+    });
+}
 
 /**
  * Mark the working script as having unsaved changes
@@ -113,6 +144,8 @@ function showTab(tabName) {
   } else if (tabName === "dashboard") {
     renderDashboard();
   }
+
+  runDraftRestoreCheckForTab(tabName);
 
   // Update browser tab title to reflect current module
   const TAB_TITLES = {
@@ -906,11 +939,6 @@ function initApp() {
       // Sync sort UI from restored state
       _syncSortUI();
 
-      // Check for unsaved drafts
-      checkScriptDraft();
-      if (typeof checkWristbandDraft === "function") checkWristbandDraft();
-      if (typeof checkCallSheetDraft === "function") checkCallSheetDraft();
-
       // Restore last active tab
       const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB);
       if (
@@ -919,6 +947,8 @@ function initApp() {
         TAB_INDEX_MAP[lastTab] !== undefined
       ) {
         showTab(lastTab);
+      } else {
+        runDraftRestoreCheckForTab(currentActiveTab);
       }
 
       // Restore call sheet display options

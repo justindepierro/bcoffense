@@ -107,6 +107,23 @@ function getCadencePostfix(custom, opts = {}) {
   return ` ${markerText}`;
 }
 
+function splitWristbandDisplayLineCall(renderedDisplay) {
+  const lineCallMatch = renderedDisplay.match(/^(.*?)(\s*<span class="line-call">.*?<\/span>)$/);
+  if (!lineCallMatch) {
+    return { main: renderedDisplay, lineCall: "" };
+  }
+
+  return {
+    main: lineCallMatch[1],
+    lineCall: lineCallMatch[2],
+  };
+}
+
+function composeWristbandCellDisplay(prefix, renderedDisplay, postfix) {
+  const { main, lineCall } = splitWristbandDisplayLineCall(renderedDisplay);
+  return `${prefix}${main}${postfix}${lineCall}`;
+}
+
 /** Get custom extra personnel prefix for a wristband cell */
 function getCustomPersonnelPrefix(custom, opts) {
   if (!custom || !custom.extraPersonnel) return "";
@@ -1102,8 +1119,6 @@ function initWristband() {
     loadSavedWristbandsList();
     initSortCriteria();
 
-    // Check for unsaved wristband draft
-    checkWristbandDraft();
   } catch (err) {
     console.error("initWristband error:", err);
     showToast("❌ Error initializing wristband.", {
@@ -1599,7 +1614,7 @@ function renderWristbandGrid() {
              draggable="true"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddPrefix}${oddDisplay}${oddPostfix}</span></span>
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix)}</span></span>
         </div>
       `;
     } else {
@@ -1619,7 +1634,7 @@ function renderWristbandGrid() {
              draggable="true"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenPrefix}${evenDisplay}${evenPostfix}</span></span>
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix)}</span></span>
         </div>
       `;
     } else {
@@ -2280,10 +2295,10 @@ function printWristband() {
           ? `color:${evenCustom.textColor};`
           : "";
 
-        const oddPrefix = getCadencePrefix(oddCustom) + getCustomPersonnelPrefix(oddCustom, opts);
-        const evenPrefix = getCadencePrefix(evenCustom) + getCustomPersonnelPrefix(evenCustom, opts);
-        const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
-        const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
+        const oddPrefix = getCadencePrefix(oddCustom, opts) + getCustomPersonnelPrefix(oddCustom, opts);
+        const evenPrefix = getCadencePrefix(evenCustom, opts) + getCustomPersonnelPrefix(evenCustom, opts);
+        const oddPostfix = getCadencePostfix(oddCustom, opts);
+        const evenPostfix = getCadencePostfix(evenCustom, opts);
 
         const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const oddNumFg = oddBg ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
@@ -2291,10 +2306,10 @@ function printWristband() {
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         const oddDisplay = oddPlay ? getPrintDisplay(oddPlay) : "";
-        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? oddPrefix + oddDisplay + oddPostfix : ""}</span></div>`;
+        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix) : ""}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         const evenDisplay = evenPlay ? getPrintDisplay(evenPlay) : "";
-        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? evenPrefix + evenDisplay + evenPostfix : ""}</span></div>`;
+        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix) : ""}</span></div>`;
       }
 
       cardHtml += "</div></div>";

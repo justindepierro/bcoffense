@@ -633,7 +633,6 @@ function redoTendencies() {
 function initTendencies() {
   loadTendencies();
   renderTendenciesHome();
-  checkTendenciesDraft();
   initTendenciesKeyboard();
 }
 

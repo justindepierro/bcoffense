@@ -440,8 +440,6 @@ function initCallSheet() {
 
     renderCallSheet();
 
-    // Check for unsaved draft
-    checkCallSheetDraft();
   } catch (err) {
     console.error("initCallSheet error:", err);
     showToast("❌ Error initializing call sheet.", {
