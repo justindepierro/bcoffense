@@ -1470,6 +1470,36 @@ kbd {
   gap: var(--space-xs);
 }
 
+.cell-marker-placement {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.cell-marker-placement-btn {
+  flex: 1 1 0;
+  min-width: 88px;
+  padding: 6px 10px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.cell-marker-placement-btn:hover,
+.cell-marker-placement-btn.selected {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+  background: var(--color-bg-blue-tint);
+}
+
 .cell-marker-btn {
   display: flex;
   flex-direction: column;
@@ -1532,6 +1562,10 @@ kbd {
 @media (max-width: 560px) {
   .cell-marker-grid {
     grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+
+  .cell-marker-placement-btn {
+    min-width: 0;
   }
 }
 

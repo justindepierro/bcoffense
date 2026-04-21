@@ -11,13 +11,14 @@ let wbSelectedTempos = [];
 let wbSelectedPersonnel = [];
 let wbFiltersCollapsed = true;
 
-// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, cadence, extraPersonnel } }
+// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel } }
 let cellCustomizations = {};
 let currentEditingCell = { cardIdx: null, cellIdx: null };
 let pendingBgColor = "";
 let pendingTextColor = UI_COLORS.textBlack;
 let pendingPlaySelection = null;
-let pendingCadence = "";
+let pendingMarkers = [];
+let pendingMarkerPlacement = "prefix";
 let pendingExtraPersonnel = "";
 
 const WB_CELL_MARKER_OPTIONS = [
@@ -48,8 +49,18 @@ const WB_CELL_MARKER_OPTIONS = [
   { value: "🔁", emoji: "🔁", label: "Repeat" },
 ];
 
+const WB_MARKER_PLACEMENTS = new Set(["prefix", "suffix", "both"]);
+
 function getCellMarkerValue(custom) {
   return custom.cadence || (custom.onTwo ? "$" : "");
+}
+
+function getCellMarkerValues(custom) {
+  if (Array.isArray(custom?.markers)) {
+    return custom.markers.filter((marker) => typeof marker === "string" && marker.trim());
+  }
+  const legacyMarker = getCellMarkerValue(custom || {});
+  return legacyMarker ? [legacyMarker] : [];
 }
 
 function getCellMarkerDisplay(markerValue) {
@@ -65,16 +76,35 @@ function getCellMarkerLabel(markerValue) {
   return option ? `${option.emoji} ${option.label}` : getCellMarkerDisplay(markerValue);
 }
 
+function getCellMarkerPlacement(custom, opts = {}) {
+  if (WB_MARKER_PLACEMENTS.has(custom?.markerPlacement)) {
+    return custom.markerPlacement;
+  }
+  if (getCellMarkerValue(custom || {})) {
+    return opts.cadenceReminder ? "both" : "prefix";
+  }
+  return "prefix";
+}
+
+function getCellMarkerText(markers) {
+  if (!Array.isArray(markers) || markers.length === 0) return "";
+  return markers.map((marker) => getCellMarkerDisplay(marker)).filter(Boolean).join(" ");
+}
+
 /** Get display prefix for a cell's cadence setting (handles legacy onTwo boolean) */
-function getCadencePrefix(custom) {
-  const marker = getCellMarkerDisplay(getCellMarkerValue(custom));
-  return marker ? `${marker} ` : "";
+function getCadencePrefix(custom, opts = {}) {
+  const markerText = getCellMarkerText(getCellMarkerValues(custom));
+  const placement = getCellMarkerPlacement(custom, opts);
+  if (!markerText || placement === "suffix") return "";
+  return `${markerText} `;
 }
 
 /** Get cadence postfix (same emoji repeated at end of cell) */
-function getCadencePostfix(custom) {
-  const marker = getCellMarkerDisplay(getCellMarkerValue(custom));
-  return marker ? ` ${marker}` : "";
+function getCadencePostfix(custom, opts = {}) {
+  const markerText = getCellMarkerText(getCellMarkerValues(custom));
+  const placement = getCellMarkerPlacement(custom, opts);
+  if (!markerText || placement === "prefix") return "";
+  return ` ${markerText}`;
 }
 
 /** Get custom extra personnel prefix for a wristband cell */
@@ -1548,10 +1578,10 @@ function renderWristbandGrid() {
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
     // Build prefix with cadence first, then any extra personnel tag
-    const oddPrefix = getCadencePrefix(oddCustom) + getCustomPersonnelPrefix(oddCustom, opts);
-    const evenPrefix = getCadencePrefix(evenCustom) + getCustomPersonnelPrefix(evenCustom, opts);
-    const oddPostfix = opts.cadenceReminder ? getCadencePostfix(oddCustom) : "";
-    const evenPostfix = opts.cadenceReminder ? getCadencePostfix(evenCustom) : "";
+    const oddPrefix = getCadencePrefix(oddCustom, opts) + getCustomPersonnelPrefix(oddCustom, opts);
+    const evenPrefix = getCadencePrefix(evenCustom, opts) + getCustomPersonnelPrefix(evenCustom, opts);
+    const oddPostfix = getCadencePostfix(oddCustom, opts);
+    const evenPostfix = getCadencePostfix(evenCustom, opts);
 
     // Number cells match the play cell background
     const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
@@ -1679,7 +1709,11 @@ function openCellPopup(cardIdx, cellIdx, event) {
   const existing = cellCustomizations[key] || {};
   pendingBgColor = existing.bgColor || "";
   pendingTextColor = existing.textColor || UI_COLORS.textBlack;
-  pendingCadence = getCellMarkerValue(existing);
+  pendingMarkers = getCellMarkerValues(existing);
+  pendingMarkerPlacement = getCellMarkerPlacement(
+    existing,
+    getWristbandDisplayOptions(),
+  );
   pendingExtraPersonnel = existing.extraPersonnel || "";
   pendingPlaySelection = currentPlay;
 
@@ -1714,7 +1748,8 @@ function openCellPopup(cardIdx, cellIdx, event) {
   // Update swatch selections
   updateSwatchSelection("bgColorSwatches", pendingBgColor);
   updateSwatchSelection("textColorSwatches", pendingTextColor);
-  updateCellMarkerSelection(pendingCadence);
+  updateCellMarkerSelection(pendingMarkers);
+  updateCellMarkerPlacementSelection(pendingMarkerPlacement);
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
   populateWbPersonnelDatalist();
 
@@ -1875,7 +1910,8 @@ function applyCellStyle() {
 
   saveWristbandState();
   const key = `${cardIdx}-${cellIdx}`;
-  const cadence = document.getElementById("cellCadence").value;
+  const markers = [...pendingMarkers];
+  const markerPlacement = pendingMarkerPlacement;
   const extraPersonnel = document
     .getElementById("cellExtraPersonnel")
     .value.trim();
@@ -1883,13 +1919,14 @@ function applyCellStyle() {
   if (
     pendingBgColor ||
     pendingTextColor !== UI_COLORS.textBlack ||
-    cadence ||
+    markers.length > 0 ||
     extraPersonnel
   ) {
     cellCustomizations[key] = {
       bgColor: pendingBgColor,
       textColor: pendingTextColor,
-      cadence: cadence,
+      markers,
+      markerPlacement,
       extraPersonnel: extraPersonnel,
     };
   } else {
@@ -1902,7 +1939,8 @@ function applyCellStyle() {
 
 function initCellMarkerPalette() {
   const palette = document.getElementById("cellMarkerPalette");
-  if (!palette || palette.dataset.bound === "true") return;
+  const placement = document.getElementById("cellMarkerPlacement");
+  if (!palette || !placement || palette.dataset.bound === "true") return;
 
   palette.innerHTML = WB_CELL_MARKER_OPTIONS.map(
     (option) => `
@@ -1916,36 +1954,72 @@ function initCellMarkerPalette() {
   palette.addEventListener("click", (event) => {
     const button = event.target.closest(".cell-marker-btn");
     if (!button) return;
-    updateCellMarkerSelection(button.dataset.marker || "");
+    toggleCellMarkerSelection(button.dataset.marker || "");
+  });
+
+  placement.addEventListener("click", (event) => {
+    const button = event.target.closest(".cell-marker-placement-btn");
+    if (!button) return;
+    updateCellMarkerPlacementSelection(button.dataset.placement || "prefix");
   });
 
   palette.dataset.bound = "true";
   populateWbBatchMarkerOptions();
-  updateCellMarkerSelection("");
+  updateCellMarkerSelection([]);
+  updateCellMarkerPlacementSelection("prefix");
 }
 
-function updateCellMarkerSelection(markerValue) {
-  const normalizedValue = markerValue || "";
+function updateCellMarkerSelection(markerValues) {
+  const normalizedValues = Array.isArray(markerValues)
+    ? [...new Set(markerValues.filter((marker) => typeof marker === "string" && marker.trim()))]
+    : [];
   const input = document.getElementById("cellCadence");
   const palette = document.getElementById("cellMarkerPalette");
   const summary = document.getElementById("cellMarkerSummary");
 
-  if (input) input.value = normalizedValue;
-  pendingCadence = normalizedValue;
+  if (input) input.value = normalizedValues.join("|");
+  pendingMarkers = normalizedValues;
 
   if (palette) {
     palette.querySelectorAll(".cell-marker-btn").forEach((button) => {
-      button.classList.toggle("selected", button.dataset.marker === normalizedValue);
+      button.classList.toggle("selected", normalizedValues.includes(button.dataset.marker || ""));
     });
   }
 
   if (summary) {
-    summary.textContent = `Selected: ${getCellMarkerLabel(normalizedValue)}`;
+    const selectedText = normalizedValues.length > 0
+      ? normalizedValues.map((marker) => getCellMarkerLabel(marker)).join(" • ")
+      : "None";
+    summary.textContent = `Selected: ${selectedText} · ${pendingMarkerPlacement}`;
   }
 }
 
+function toggleCellMarkerSelection(markerValue) {
+  if (!markerValue) return;
+  const nextValues = pendingMarkers.includes(markerValue)
+    ? pendingMarkers.filter((marker) => marker !== markerValue)
+    : [...pendingMarkers, markerValue];
+  updateCellMarkerSelection(nextValues);
+}
+
+function updateCellMarkerPlacementSelection(placementValue) {
+  const normalizedValue = WB_MARKER_PLACEMENTS.has(placementValue)
+    ? placementValue
+    : "prefix";
+  const container = document.getElementById("cellMarkerPlacement");
+  pendingMarkerPlacement = normalizedValue;
+
+  if (container) {
+    container.querySelectorAll(".cell-marker-placement-btn").forEach((button) => {
+      button.classList.toggle("selected", button.dataset.placement === normalizedValue);
+    });
+  }
+
+  updateCellMarkerSelection(pendingMarkers);
+}
+
 function clearCellMarker() {
-  updateCellMarkerSelection("");
+  updateCellMarkerSelection([]);
 }
 
 function populateWbBatchMarkerOptions() {
@@ -2948,8 +3022,12 @@ function applyBatchEdit() {
     if (hasCadence) {
       if (cadenceVal === "") {
         delete cellCustomizations[key].cadence;
+        delete cellCustomizations[key].markers;
+        delete cellCustomizations[key].markerPlacement;
       } else {
-        cellCustomizations[key].cadence = cadenceVal;
+        delete cellCustomizations[key].cadence;
+        cellCustomizations[key].markers = [cadenceVal];
+        cellCustomizations[key].markerPlacement = "prefix";
       }
     }
 
@@ -2959,7 +3037,7 @@ function applyBatchEdit() {
 
     // Clean up entirely empty customization entries
     const c = cellCustomizations[key];
-    if (!c.bgColor && !c.cadence && !c.extraPersonnel && c.textColor === UI_COLORS.textBlack) {
+    if (!c.bgColor && !c.cadence && !c.markers?.length && !c.extraPersonnel && c.textColor === UI_COLORS.textBlack) {
       delete cellCustomizations[key];
     }
   });
@@ -3032,7 +3110,8 @@ function exportWristbandCSV() {
       "Type",
       "Personnel",
       "BgColor",
-      "Marker",
+      "Markers",
+      "Marker Placement",
     ],
   ];
 
@@ -3052,7 +3131,10 @@ function exportWristbandCSV() {
           play.type || "",
           play.personnel || "",
           custom.bgColor || "",
-          getCellMarkerValue(custom),
+          getCellMarkerValues(custom).join(" "),
+          getCellMarkerValues(custom).length > 0
+            ? getCellMarkerPlacement(custom, getWristbandDisplayOptions())
+            : "",
         ]);
       }
     });

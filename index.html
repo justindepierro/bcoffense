@@ -1811,6 +1811,11 @@
           <div class="cell-popup-marker-tools">
             <input type="hidden" id="cellCadence" value="" />
             <div id="cellMarkerPalette" class="cell-marker-grid" role="listbox" aria-label="Wristband emoji markers"></div>
+            <div id="cellMarkerPlacement" class="cell-marker-placement" role="group" aria-label="Marker placement">
+              <button type="button" class="cell-marker-placement-btn selected" data-placement="prefix">Prefix</button>
+              <button type="button" class="cell-marker-placement-btn" data-placement="suffix">Suffix</button>
+              <button type="button" class="cell-marker-placement-btn" data-placement="both">Both</button>
+            </div>
             <div class="cell-marker-footer">
               <span id="cellMarkerSummary" class="cell-marker-summary">Selected: None</span>
               <button type="button" class="btn btn-sm btn-secondary cell-marker-clear" data-action="clearCellMarker">
