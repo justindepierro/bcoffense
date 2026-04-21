@@ -631,6 +631,36 @@
   align-content: start;
 }
 
+.cs-layout-drop-slot {
+  min-height: 16px;
+  border: 1px dashed transparent;
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: transparent;
+  font-size: var(--font-size-3xs);
+  line-height: 1;
+  text-align: center;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast),
+    min-height var(--transition-fast);
+}
+
+.cs-layout-col-stack .cs-layout-drop-slot:first-child {
+  margin-top: -2px;
+}
+
+.cs-layout-drop-slot--active {
+  min-height: 28px;
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+  display: grid;
+  place-items: center;
+  font-weight: 700;
+}
+
 .cs-layout-card {
   border: 1px solid var(--color-border-med);
   border-radius: var(--radius-sm);
@@ -641,7 +671,8 @@
 }
 
 .cs-layout-card.dragging {
-  opacity: 0.5;
+  opacity: 0.35;
+  transform: scale(0.98);
 }
 
 .cs-layout-card-header {
@@ -654,6 +685,12 @@
 
 .cs-layout-card-handle {
   font-size: var(--font-size-sm);
+  cursor: grab;
+  user-select: none;
+}
+
+.cs-layout-card-handle:active {
+  cursor: grabbing;
 }
 
 .cs-layout-card-order {

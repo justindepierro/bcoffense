@@ -422,6 +422,7 @@ let csCategoryOrder = getDefaultCallSheetCategoryOrder();
 let csLayoutDraft = null;
 let csLayoutDragged = null;
 let csLayoutColorDraft = null;
+let csLayoutActiveDropKey = null;
 
 // Per-category notes
 let csNotes = {};
@@ -4032,6 +4033,12 @@ function renderCallSheetLayoutPanel(page) {
     return '<div class="cs-layout-empty">Drag categories here</div>';
   }
 
+  const buildDropSlot = (targetPage, beforeCategoryId = "", label = "Drop here") => {
+    const key = `${targetPage}:${beforeCategoryId || "end"}`;
+    const activeClass = csLayoutActiveDropKey === key ? " cs-layout-drop-slot--active" : "";
+    return `<div class="cs-layout-drop-slot${activeClass}" data-drop-slot="csLayout" data-page="${targetPage}" data-before="${beforeCategoryId}">${label}</div>`;
+  };
+
   return `
     <div class="cs-layout-page-columns">
       ${columns
@@ -4052,9 +4059,10 @@ function renderCallSheetLayoutPanel(page) {
                         ).join("");
 
                         return `
-                          <div class="cs-layout-card" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}">
+                          ${buildDropSlot(page, cat.id, `Drop before ${escapeHtml(getCategoryDisplayName(cat))}`)}
+                          <div class="cs-layout-card" data-page="${page}" data-category="${cat.id}">
                             <div class="cs-layout-card-header" style="background: ${headerColor}; color: ${textColor};">
-                              <span class="cs-layout-card-handle">☰</span>
+                              <span class="cs-layout-card-handle" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}" title="Drag to reorder">☰</span>
                               <span class="cs-layout-card-order">${orderIndexById.get(cat.id) || ""}</span>
                               <span class="cs-layout-card-name">${escapeHtml(getCategoryDisplayName(cat))}</span>
                             </div>
@@ -4072,8 +4080,8 @@ function renderCallSheetLayoutPanel(page) {
                           </div>
                         `;
                       })
-                      .join("")
-                  : '<div class="cs-layout-empty cs-layout-empty--mini">Drop here</div>'}
+                      .join("") + buildDropSlot(page, "", "Drop at end")
+                  : buildDropSlot(page, "", "Drop here")}
               </div>
             </div>
           `,
@@ -4154,20 +4162,20 @@ function openCallSheetLayoutModal() {
 
   overlay.addEventListener("dragover", (event) => {
     const dropTarget = event.target.closest(
-      "[data-drag='csLayoutCategory'], [data-drop='csLayoutPage']",
+      "[data-drop-slot='csLayout'], [data-drop='csLayoutPage']",
     );
     if (!dropTarget) return;
     handleCsLayoutDragOver(event);
   });
 
   overlay.addEventListener("drop", (event) => {
-    const card = event.target.closest("[data-drag='csLayoutCategory']");
+    const slot = event.target.closest("[data-drop-slot='csLayout']");
     const panel = event.target.closest("[data-drop='csLayoutPage']");
-    if (!card && !panel) return;
+    if (!slot && !panel) return;
     handleCsLayoutDrop(
       event,
-      card?.dataset.category || null,
-      card?.dataset.page || panel?.dataset.page,
+      slot?.dataset.before || "",
+      slot?.dataset.page || panel?.dataset.page,
     );
   });
 
@@ -4192,6 +4200,7 @@ function closeCallSheetLayoutModal() {
   csLayoutDraft = null;
   csLayoutDragged = null;
   csLayoutColorDraft = null;
+  csLayoutActiveDropKey = null;
 }
 
 function updateCallSheetLayoutDraft(categoryId, targetPage, beforeCategoryId = null) {
@@ -4256,38 +4265,54 @@ function saveCallSheetLayoutModal() {
 
 function handleCsLayoutDragStart(event, categoryId, page) {
   csLayoutDragged = { categoryId, page };
+  csLayoutActiveDropKey = null;
   event.dataTransfer.effectAllowed = "move";
   event.target.closest(".cs-layout-card")?.classList.add("dragging");
+}
+
+function setCsLayoutActiveDrop(page, beforeCategoryId = "") {
+  const nextKey = `${page}:${beforeCategoryId || "end"}`;
+  if (csLayoutActiveDropKey === nextKey) return;
+  csLayoutActiveDropKey = nextKey;
+  renderCallSheetLayoutModal();
 }
 
 function handleCsLayoutDragOver(event) {
   if (!csLayoutDragged) return;
   event.preventDefault();
   event.dataTransfer.dropEffect = "move";
+
+  const slot = event.target.closest("[data-drop-slot='csLayout']");
+  if (slot) {
+    setCsLayoutActiveDrop(slot.dataset.page, slot.dataset.before || "");
+  }
 }
 
-function handleCsLayoutDrop(event, targetCategoryId, targetPage) {
+function handleCsLayoutDrop(event, beforeCategoryId, targetPage) {
   if (!csLayoutDragged || !targetPage) return;
   event.preventDefault();
 
   if (
-    targetCategoryId === csLayoutDragged.categoryId &&
+    beforeCategoryId === csLayoutDragged.categoryId &&
     targetPage === csLayoutDragged.page
   ) {
+    csLayoutActiveDropKey = null;
     return;
   }
 
   updateCallSheetLayoutDraft(
     csLayoutDragged.categoryId,
     targetPage,
-    targetCategoryId,
+    beforeCategoryId || null,
   );
+  csLayoutActiveDropKey = null;
   csLayoutDragged = null;
   renderCallSheetLayoutModal();
 }
 
 function handleCsLayoutDragEnd(event) {
   event.target.closest(".cs-layout-card")?.classList.remove("dragging");
+  csLayoutActiveDropKey = null;
   csLayoutDragged = null;
 }
 

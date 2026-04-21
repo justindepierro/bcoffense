@@ -370,6 +370,9 @@
   .cs-layout-page-columns {
     gap: 6px;
   }
+  .cs-layout-drop-slot--active {
+    min-height: 24px;
+  }
   .cs-layout-card-header,
   .cs-layout-card-meta {
     padding-left: 6px;
