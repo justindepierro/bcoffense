@@ -480,70 +480,108 @@
 }
 
 .cs-unified-content {
-  padding: 0;
+  padding: 14px;
+  background:
+    linear-gradient(180deg, var(--color-bg-light) 0%, var(--color-white) 100%);
 }
 .cs-unified-content.collapsed {
   display: none;
 }
 
-/* Tab Bar */
-.cs-tab-bar {
-  display: flex;
-  background: var(--color-bg-light);
-  border-bottom: 2px solid var(--color-border);
-  padding: 0;
-}
-.cs-tab {
-  flex: 1;
-  padding: 8px 16px;
-  border: none;
-  background: none;
-  cursor: pointer;
-  font-size: var(--font-size-sm);
-  font-weight: 600;
-  color: var(--color-secondary);
-  text-align: center;
-  transition: all var(--transition-fast);
-  border-bottom: 2px solid transparent;
-  margin-bottom: -2px;
-  letter-spacing: 0.3px;
-}
-@media (hover: hover) {
-  .cs-tab:hover {
-    color: var(--color-text-muted);
-    background: var(--color-border-light);
-  }
+.cs-settings-layout {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
 }
 
-.cs-tab.active {
-  color: var(--color-primary);
-  border-bottom-color: var(--color-primary);
+.cs-settings-section {
+  grid-column: span 12;
   background: var(--color-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  padding: 12px;
 }
 
-/* Tab Content */
-.cs-tab-content {
-  padding: 12px 14px;
+.cs-settings-section--visibility,
+.cs-settings-section--format {
+  grid-column: span 6;
+}
+
+.cs-settings-section-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 12px;
+  margin-bottom: 10px;
+}
+
+.cs-settings-title {
+  margin: 0 0 4px;
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+  color: var(--color-text);
+}
+
+.cs-settings-copy {
+  margin: 0;
+  font-size: var(--font-size-xs);
+  line-height: 1.4;
+  color: var(--color-text-light);
+}
+
+.cs-settings-grid {
+  gap: 8px;
 }
 
 /* Field Actions (Select All / Deselect All) */
 .cs-field-actions {
   display: flex;
   gap: 6px;
-  margin-bottom: 10px;
+  margin-bottom: 0;
+  flex-wrap: wrap;
 }
 
 /* Border Controls */
-.cs-border-row {
+.cs-border-panels {
+  display: grid;
+  grid-template-columns: repeat(12, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.cs-border-panel {
+  grid-column: span 8;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 10px;
+}
+
+.cs-border-panel:last-child {
+  grid-column: span 4;
+}
+
+.cs-border-panel-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-light);
+  margin-bottom: 8px;
+}
+
+.cs-border-row,
+.cs-border-selectors--grid {
   display: flex;
   align-items: center;
   gap: 12px;
-  margin-bottom: 10px;
   flex-wrap: wrap;
 }
-.cs-border-row:last-child {
-  margin-bottom: 0;
+
+.cs-border-selectors--grid .cs-border-label {
+  flex: 1 1 160px;
 }
+
 .cs-border-section-label {
   font-weight: 600;
   font-size: var(--font-size-sm);
@@ -562,9 +600,20 @@
   gap: 4px;
   font-size: var(--font-size-xs);
 }
+
+.cs-border-label--personnel {
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.cs-border-arrow {
+  color: var(--color-text-light);
+  font-weight: 700;
+}
+
 .cs-border-label select {
   font-size: var(--font-size-xs);
-  padding: 3px 6px;
+  padding: 6px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border);
   background: var(--color-white);

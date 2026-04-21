@@ -1323,8 +1323,8 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const playText = playParts.join(" ");
   const fallbackPlayText = escapeHtml(
     [play.formation, play.protection, play.play].filter(Boolean).join(" ").trim() ||
-      play.type ||
-      "Play",
+    play.type ||
+    "Play",
   );
   const visiblePlayText = playText.trim() || fallbackPlayText;
   const highlightClass = isHighlighted ? "highlighted" : "";
@@ -2528,31 +2528,6 @@ function renderPrintPlay(play, options) {
 // ============ Unified Display Bar Helpers ============
 
 /**
- * Switch between Fields / Format / Borders tabs
- */
-function switchDisplayTab(tabName, btnEl) {
-  // Hide all tabs
-  document.getElementById("csTabFields").classList.add("hidden");
-  document.getElementById("csTabFormat").classList.add("hidden");
-  document.getElementById("csTabBorders").classList.add("hidden");
-
-  // Deactivate all tab buttons
-  document
-    .querySelectorAll(".cs-tab-bar .cs-tab")
-    .forEach((b) => b.classList.remove("active"));
-
-  // Show selected tab
-  const tabId =
-    tabName === "fields"
-      ? "csTabFields"
-      : tabName === "format"
-        ? "csTabFormat"
-        : "csTabBorders";
-  document.getElementById(tabId).classList.remove("hidden");
-  btnEl.classList.add("active");
-}
-
-/**
  * Select All / Deselect All field checkboxes
  */
 function csSelectAllFields(selectAll) {
@@ -3624,9 +3599,9 @@ function openTemplatesModal() {
     saved.length === 0
       ? '<div class="empty-state">No templates saved yet.</div>'
       : saved
-          .map((t, idx) => {
-            const date = new Date(t.savedAt).toLocaleDateString();
-            return `<div class="cs-template-item">
+        .map((t, idx) => {
+          const date = new Date(t.savedAt).toLocaleDateString();
+          return `<div class="cs-template-item">
           <div class="cs-template-info">
             <strong>${escapeHtml(t.name)}</strong>
             <span class="cs-template-date">${date} · ${t.playCount || 0} plays</span>
@@ -3636,8 +3611,8 @@ function openTemplatesModal() {
             <button class="btn btn-sm btn-danger" data-action="deleteTemplate" data-idx="${idx}">✕</button>
           </div>
         </div>`;
-          })
-          .join("");
+        })
+        .join("");
 
   const modalHtml = `
     <div id="csTemplateOverlay" class="cs-sort-overlay">
@@ -4382,10 +4357,9 @@ function openSmartSuggestionsModal(categoryId) {
           ${reasonsHtml}${warningsHtml}${deadVsNote}
         </div>
         <div class="cs-suggest-actions">
-          ${
-            alreadyOnSheet
-              ? '<span class="cs-suggest-added">✓ On Sheet</span>'
-              : `
+          ${alreadyOnSheet
+            ? '<span class="cs-suggest-added">✓ On Sheet</span>'
+            : `
           <button class="btn btn-sm btn-primary" data-action="addSuggestionToSheet" data-cat="${categoryId}" data-hash="left" data-idx="${idx}">← L</button>
           <button class="btn btn-sm btn-primary" data-action="addSuggestionToSheet" data-cat="${categoryId}" data-hash="right" data-idx="${idx}">R →</button>
           `

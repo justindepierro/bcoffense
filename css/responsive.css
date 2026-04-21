@@ -225,11 +225,14 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .cs-tab-bar {
-    overflow-x: auto;
+  .cs-settings-section--visibility,
+  .cs-settings-section--format,
+  .cs-border-panel,
+  .cs-border-panel:last-child {
+    grid-column: span 12;
   }
-  .cs-tab {
-    flex: 1 0 auto;
+  .cs-settings-section-head {
+    flex-direction: column;
   }
   .dash-cards {
     grid-template-columns: repeat(2, 1fr) !important;
@@ -349,6 +352,17 @@
   .cs-tool-btn {
     flex: 1 1 140px;
     text-align: center;
+  }
+  .cs-unified-content {
+    padding: 10px;
+  }
+  .cs-settings-layout,
+  .cs-border-panels {
+    gap: 10px;
+  }
+  .cs-settings-section,
+  .cs-border-panel {
+    padding: 10px;
   }
 }
 
