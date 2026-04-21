@@ -647,6 +647,18 @@
     min-height var(--transition-fast);
 }
 
+.cs-layout-place-btn {
+  width: 100%;
+  min-height: 24px;
+  border: 1px dashed var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-3xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
 .cs-layout-col-stack .cs-layout-drop-slot:first-child {
   margin-top: -2px;
 }
@@ -668,6 +680,11 @@
   box-shadow: var(--shadow-xs);
   cursor: grab;
   overflow: hidden;
+}
+
+.cs-layout-card--picked {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-light);
 }
 
 .cs-layout-card.dragging {
@@ -712,6 +729,22 @@
   gap: 6px;
   padding: 8px;
   background: var(--color-bg-lighter);
+}
+
+.cs-layout-card-actions-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto auto;
+  gap: 6px;
+}
+
+.cs-layout-pick-btn.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-white);
+}
+
+.cs-layout-nudge-btn {
+  min-width: 32px;
 }
 
 .cs-layout-color-field {

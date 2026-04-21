@@ -423,6 +423,35 @@ let csLayoutDraft = null;
 let csLayoutDragged = null;
 let csLayoutColorDraft = null;
 let csLayoutActiveDropKey = null;
+let csLayoutPickedCategoryId = null;
+
+function clearCsLayoutActiveDrop() {
+  document
+    .querySelectorAll(".cs-layout-drop-slot--active")
+    .forEach((slot) => slot.classList.remove("cs-layout-drop-slot--active"));
+  csLayoutActiveDropKey = null;
+}
+
+function getCallSheetLayoutDraftPage(categoryId) {
+  if (!csLayoutDraft) return null;
+  if (csLayoutDraft.front.includes(categoryId)) return "front";
+  if (csLayoutDraft.back.includes(categoryId)) return "back";
+  return null;
+}
+
+function setCsLayoutActiveDrop(page, beforeCategoryId = "") {
+  const nextKey = `${page}:${beforeCategoryId || "end"}`;
+  if (csLayoutActiveDropKey === nextKey) return;
+
+  clearCsLayoutActiveDrop();
+
+  const selector = `[data-drop-slot='csLayout'][data-page='${page}'][data-before='${beforeCategoryId}']`;
+  const slot = document.querySelector(selector);
+  if (slot) {
+    slot.classList.add("cs-layout-drop-slot--active");
+    csLayoutActiveDropKey = nextKey;
+  }
+}
 
 // Per-category notes
 let csNotes = {};
@@ -4036,7 +4065,8 @@ function renderCallSheetLayoutPanel(page) {
   const buildDropSlot = (targetPage, beforeCategoryId = "", label = "Drop here") => {
     const key = `${targetPage}:${beforeCategoryId || "end"}`;
     const activeClass = csLayoutActiveDropKey === key ? " cs-layout-drop-slot--active" : "";
-    return `<div class="cs-layout-drop-slot${activeClass}" data-drop-slot="csLayout" data-page="${targetPage}" data-before="${beforeCategoryId}">${label}</div>`;
+    const showButton = Boolean(csLayoutPickedCategoryId);
+    return `<div class="cs-layout-drop-slot${activeClass}" data-drop-slot="csLayout" data-page="${targetPage}" data-before="${beforeCategoryId}">${showButton ? `<button class="cs-layout-place-btn" data-action="placePickedCallSheetCategory" data-arg="${targetPage}|${beforeCategoryId}">${label}</button>` : label}</div>`;
   };
 
   return `
@@ -4053,6 +4083,11 @@ function renderCallSheetLayoutPanel(page) {
                         const otherPage = page === "front" ? "back" : "front";
                         const headerColor = getCategoryColor(cat, csLayoutColorDraft);
                         const textColor = getCategoryHeaderTextColor(headerColor);
+                        const isPicked = csLayoutPickedCategoryId === cat.id;
+                        const pageIds = csLayoutDraft[page] || [];
+                        const pageIndex = pageIds.indexOf(cat.id);
+                        const canMoveUp = pageIndex > 0;
+                        const canMoveDown = pageIndex !== -1 && pageIndex < pageIds.length - 1;
                         const colorOptions = CS_HEADER_COLOR_OPTIONS.map(
                           (option) =>
                             `<option value="${option.value}" ${option.value === headerColor ? "selected" : ""}>${option.name}</option>`,
@@ -4060,13 +4095,24 @@ function renderCallSheetLayoutPanel(page) {
 
                         return `
                           ${buildDropSlot(page, cat.id, `Drop before ${escapeHtml(getCategoryDisplayName(cat))}`)}
-                          <div class="cs-layout-card" data-page="${page}" data-category="${cat.id}">
+                          <div class="cs-layout-card${isPicked ? " cs-layout-card--picked" : ""}" data-page="${page}" data-category="${cat.id}">
                             <div class="cs-layout-card-header" style="background: ${headerColor}; color: ${textColor};">
                               <span class="cs-layout-card-handle" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}" title="Drag to reorder">☰</span>
                               <span class="cs-layout-card-order">${orderIndexById.get(cat.id) || ""}</span>
                               <span class="cs-layout-card-name">${escapeHtml(getCategoryDisplayName(cat))}</span>
                             </div>
                             <div class="cs-layout-card-meta">
+                              <div class="cs-layout-card-actions-row">
+                                <button class="btn btn-xs cs-layout-pick-btn${isPicked ? " is-active" : ""}" data-action="togglePickCallSheetCategory" data-arg="${cat.id}">
+                                  ${isPicked ? "Selected" : "Pick Up"}
+                                </button>
+                                <button class="btn btn-xs cs-layout-nudge-btn" data-action="nudgeCallSheetCategory" data-arg="${cat.id}|up" ${canMoveUp ? "" : "disabled"}>
+                                  ↑
+                                </button>
+                                <button class="btn btn-xs cs-layout-nudge-btn" data-action="nudgeCallSheetCategory" data-arg="${cat.id}|down" ${canMoveDown ? "" : "disabled"}>
+                                  ↓
+                                </button>
+                              </div>
                               <label class="cs-layout-color-field">
                                 <span>Color</span>
                                 <select class="cs-layout-color-select" data-category="${cat.id}">
@@ -4108,6 +4154,7 @@ function renderCallSheetLayoutModal() {
 function openCallSheetLayoutModal() {
   csLayoutDraft = normalizeCallSheetCategoryOrder(csCategoryOrder);
   csLayoutColorDraft = { ...(callSheetSettings.customColors || {}) };
+  csLayoutPickedCategoryId = null;
 
   const modalHtml = `
     <div id="csLayoutOverlay" class="modal-overlay" style="display: flex;" data-action="closeCallSheetLayoutModalOverlay">
@@ -4115,7 +4162,7 @@ function openCallSheetLayoutModal() {
         <div class="modal-header cs-layout-modal-header">
           <div>
             <h3>🗂️ Reorder Call Sheet</h3>
-            <p class="cs-layout-modal-copy">Each panel mirrors the real three-column page layout. Drag categories to reorder them, move them between front and back, and adjust header colors before applying.</p>
+            <p class="cs-layout-modal-copy">Use Pick Up + Place Here as the primary layout tool, or drag by the handle if you prefer. You can also nudge categories up or down and move them between front and back.</p>
           </div>
           <button class="cs-sort-close" data-action="closeCallSheetLayoutModal">&times;</button>
         </div>
@@ -4200,7 +4247,8 @@ function closeCallSheetLayoutModal() {
   csLayoutDraft = null;
   csLayoutDragged = null;
   csLayoutColorDraft = null;
-  csLayoutActiveDropKey = null;
+  clearCsLayoutActiveDrop();
+  csLayoutPickedCategoryId = null;
 }
 
 function updateCallSheetLayoutDraft(categoryId, targetPage, beforeCategoryId = null) {
@@ -4226,6 +4274,60 @@ function moveCallSheetCategoryToPage(arg) {
   const [categoryId, targetPage] = String(arg || "").split("|");
   if (!categoryId || !targetPage || !csLayoutDraft) return;
   updateCallSheetLayoutDraft(categoryId, targetPage);
+  if (csLayoutPickedCategoryId === categoryId) {
+    csLayoutPickedCategoryId = categoryId;
+  }
+  renderCallSheetLayoutModal();
+}
+
+function togglePickCallSheetCategory(categoryId) {
+  if (!categoryId || !csLayoutDraft) return;
+  csLayoutPickedCategoryId =
+    csLayoutPickedCategoryId === categoryId ? null : categoryId;
+  clearCsLayoutActiveDrop();
+  renderCallSheetLayoutModal();
+}
+
+function placePickedCallSheetCategory(arg) {
+  if (!csLayoutPickedCategoryId || !csLayoutDraft) return;
+  const [targetPage, beforeCategoryId = ""] = String(arg || "").split("|");
+  if (!targetPage) return;
+
+  const pickedPage = getCallSheetLayoutDraftPage(csLayoutPickedCategoryId);
+  if (
+    beforeCategoryId === csLayoutPickedCategoryId &&
+    targetPage === pickedPage
+  ) {
+    csLayoutPickedCategoryId = null;
+    renderCallSheetLayoutModal();
+    return;
+  }
+
+  updateCallSheetLayoutDraft(
+    csLayoutPickedCategoryId,
+    targetPage,
+    beforeCategoryId || null,
+  );
+  csLayoutPickedCategoryId = null;
+  renderCallSheetLayoutModal();
+}
+
+function nudgeCallSheetCategory(arg) {
+  const [categoryId, direction] = String(arg || "").split("|");
+  const page = getCallSheetLayoutDraftPage(categoryId);
+  if (!page || !direction || !csLayoutDraft) return;
+
+  const pageIds = [...(csLayoutDraft[page] || [])];
+  const index = pageIds.indexOf(categoryId);
+  if (index === -1) return;
+
+  const delta = direction === "up" ? -1 : direction === "down" ? 1 : 0;
+  const nextIndex = index + delta;
+  if (nextIndex < 0 || nextIndex >= pageIds.length) return;
+
+  pageIds.splice(index, 1);
+  pageIds.splice(nextIndex, 0, categoryId);
+  csLayoutDraft[page] = pageIds;
   renderCallSheetLayoutModal();
 }
 
@@ -4249,6 +4351,7 @@ function setCallSheetLayoutDraftColor(categoryId, color) {
 function resetCallSheetLayoutModal() {
   csLayoutDraft = getDefaultCallSheetCategoryOrder();
   csLayoutColorDraft = { ...(callSheetSettings.customColors || {}) };
+  csLayoutPickedCategoryId = null;
   renderCallSheetLayoutModal();
 }
 
@@ -4265,16 +4368,9 @@ function saveCallSheetLayoutModal() {
 
 function handleCsLayoutDragStart(event, categoryId, page) {
   csLayoutDragged = { categoryId, page };
-  csLayoutActiveDropKey = null;
   event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("text/plain", categoryId);
   event.target.closest(".cs-layout-card")?.classList.add("dragging");
-}
-
-function setCsLayoutActiveDrop(page, beforeCategoryId = "") {
-  const nextKey = `${page}:${beforeCategoryId || "end"}`;
-  if (csLayoutActiveDropKey === nextKey) return;
-  csLayoutActiveDropKey = nextKey;
-  renderCallSheetLayoutModal();
 }
 
 function handleCsLayoutDragOver(event) {
@@ -4296,7 +4392,7 @@ function handleCsLayoutDrop(event, beforeCategoryId, targetPage) {
     beforeCategoryId === csLayoutDragged.categoryId &&
     targetPage === csLayoutDragged.page
   ) {
-    csLayoutActiveDropKey = null;
+    clearCsLayoutActiveDrop();
     return;
   }
 
@@ -4305,14 +4401,15 @@ function handleCsLayoutDrop(event, beforeCategoryId, targetPage) {
     targetPage,
     beforeCategoryId || null,
   );
-  csLayoutActiveDropKey = null;
+  csLayoutPickedCategoryId = null;
+  clearCsLayoutActiveDrop();
   csLayoutDragged = null;
   renderCallSheetLayoutModal();
 }
 
 function handleCsLayoutDragEnd(event) {
   event.target.closest(".cs-layout-card")?.classList.remove("dragging");
-  csLayoutActiveDropKey = null;
+  clearCsLayoutActiveDrop();
   csLayoutDragged = null;
 }
 

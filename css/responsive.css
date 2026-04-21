@@ -378,6 +378,9 @@
     padding-left: 6px;
     padding-right: 6px;
   }
+  .cs-layout-card-actions-row {
+    grid-template-columns: 1fr 36px 36px;
+  }
   .cs-settings-layout,
   .cs-border-panels {
     gap: 10px;
