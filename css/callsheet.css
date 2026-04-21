@@ -728,6 +728,29 @@
   padding: 0 var(--space-lg) var(--space-lg);
 }
 
+.cs-add-cat-form {
+  display: grid;
+  gap: 12px;
+}
+
+.cs-add-cat-field {
+  display: grid;
+  gap: 6px;
+}
+
+.cs-add-cat-field span {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-light);
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.cs-add-cat-field select,
+.cs-add-cat-field input {
+  width: 100%;
+}
+
 .cs-settings-grid {
   gap: 8px;
 }
