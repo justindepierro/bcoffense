@@ -419,6 +419,12 @@
     break-inside: avoid;
   }
 
+  .print-play .cs-line-call {
+    font-size: 0.78em;
+    white-space: nowrap;
+    opacity: 0.85;
+  }
+
   .print-code {
     padding: 0 3px;
     border-radius: 2px;

@@ -666,7 +666,9 @@
 /* Line call styling (replaces inline style) */
 .cs-line-call {
   color: var(--color-text-light);
-  font-size: var(--font-size-sm);
+  font-size: 0.82em;
+  white-space: nowrap;
+  opacity: 0.9;
 }
 
 /* Border color picker popup */
