@@ -202,6 +202,35 @@
   .callsheet-column {
     flex: 1 1 auto;
   }
+  .cs-toolbar {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cs-toolbar-left,
+  .cs-toolbar-right {
+    width: 100%;
+  }
+  .cs-toolbar-right .btn {
+    flex: 1 1 140px;
+  }
+  .cs-unified-header {
+    flex-wrap: wrap;
+    align-items: flex-start;
+  }
+  .cs-unified-header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+  .cs-preset-select {
+    flex: 1 1 auto;
+    min-width: 0;
+  }
+  .cs-tab-bar {
+    overflow-x: auto;
+  }
+  .cs-tab {
+    flex: 1 0 auto;
+  }
   .dash-cards {
     grid-template-columns: repeat(2, 1fr) !important;
   }
@@ -305,6 +334,21 @@
   }
   .callsheet-play {
     font-size: var(--font-size-xs);
+    min-height: 28px;
+    padding: 4px 6px;
+  }
+  .callsheet-play .remove-play {
+    opacity: 1;
+    width: 24px;
+    height: 24px;
+    font-size: var(--font-size-xs);
+  }
+  .cs-toolbar-secondary {
+    gap: 6px;
+  }
+  .cs-tool-btn {
+    flex: 1 1 140px;
+    text-align: center;
   }
 }
 

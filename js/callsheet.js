@@ -299,7 +299,7 @@ const CALLSHEET_BACK = [
   },
   {
     id: "player5",
-    name: "Jayvon",
+    name: "Jovani",
     color: CS_COLORS.green,
     playerSpecific: true,
     manual: true,
@@ -837,6 +837,52 @@ function getPersonnelTextColor(personnel) {
   return darkText.includes(p) ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 }
 
+function getCategoryHeaderTextColor(color) {
+  if (!color) return UI_COLORS.textWhite;
+
+  const hex = color.replace("#", "");
+  if (!/^[0-9a-f]{6}$/i.test(hex)) {
+    return color === CS_COLORS.yellow ? UI_COLORS.textBlack : UI_COLORS.textWhite;
+  }
+
+  const r = parseInt(hex.slice(0, 2), 16);
+  const g = parseInt(hex.slice(2, 4), 16);
+  const b = parseInt(hex.slice(4, 6), 16);
+  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
+  return yiq >= 150 ? UI_COLORS.textBlack : UI_COLORS.textWhite;
+}
+
+function getCallSheetCategoriesForPage(page) {
+  let categories = page === "front" ? [...CALLSHEET_FRONT] : [...CALLSHEET_BACK];
+  const customOrder = csCategoryOrder[page];
+
+  if (!customOrder || customOrder.length === 0) {
+    return categories;
+  }
+
+  const ordered = [];
+  customOrder.forEach((id) => {
+    const cat = categories.find((candidate) => candidate.id === id);
+    if (cat) ordered.push(cat);
+  });
+
+  categories.forEach((cat) => {
+    if (!ordered.find((candidate) => candidate.id === cat.id)) {
+      ordered.push(cat);
+    }
+  });
+
+  return ordered;
+}
+
+function buildCallSheetColumns(categories) {
+  return [
+    categories.filter((_, i) => i % 3 === 0),
+    categories.filter((_, i) => i % 3 === 1),
+    categories.filter((_, i) => i % 3 === 2),
+  ];
+}
+
 /**
  * Render the call sheet
  */
@@ -852,23 +898,7 @@ function renderCallSheet() {
   );
 
   const page = callSheetSettings.currentPage;
-
-  // Get current page categories (respecting custom order)
-  let categories =
-    page === "front" ? [...CALLSHEET_FRONT] : [...CALLSHEET_BACK];
-  const customOrder = csCategoryOrder[page];
-  if (customOrder && customOrder.length > 0) {
-    const ordered = [];
-    customOrder.forEach((id) => {
-      const cat = categories.find((c) => c.id === id);
-      if (cat) ordered.push(cat);
-    });
-    // Add any new categories not in the saved order
-    categories.forEach((cat) => {
-      if (!ordered.find((c) => c.id === cat.id)) ordered.push(cat);
-    });
-    categories = ordered;
-  }
+  const categories = getCallSheetCategoriesForPage(page);
 
   // Hoist display options once — avoids re-reading DOM per play
   const displayOptions = getCallSheetDisplayOptions();
@@ -879,11 +909,7 @@ function renderCallSheet() {
   let html = "";
 
   // Create 3-column layout
-  const columns = [
-    categories.filter((_, i) => i % 3 === 0),
-    categories.filter((_, i) => i % 3 === 1),
-    categories.filter((_, i) => i % 3 === 2),
-  ];
+  const columns = buildCallSheetColumns(categories);
 
   // Add orientation class
   const orientClass =
@@ -910,9 +936,6 @@ function renderCallSheet() {
 
   // Update loaded wristband display
   updateLoadedWristbandDisplay();
-
-  // Persist display options when rendering (triggered by onchange)
-  saveCallSheetDisplayOptions();
 
   // Update stats panel if visible
   updateStatsPanel();
@@ -966,6 +989,11 @@ function updatePageToggle() {
 
 // RAF-coalesced version: multiple calls within one frame resolve to a single render
 const _scheduleRenderCallSheet = createRAFRenderer(renderCallSheet);
+
+function requestRenderCallSheet() {
+  saveCallSheetDisplayOptions();
+  _scheduleRenderCallSheet();
+}
 
 /**
  * Switch between front and back page
@@ -1059,10 +1087,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
   const isCollapsed = csCollapsed.has(cat.id);
 
   // Determine header text color based on background
-  const textColor =
-    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa"
-      ? UI_COLORS.textBlack
-      : UI_COLORS.textWhite;
+  const textColor = getCategoryHeaderTextColor(cat.color);
 
   const playCount = leftPlays.length + rightPlays.length;
   const target = csTargets[cat.id];
@@ -1091,7 +1116,7 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
          data-drag="catDrag" data-cat="${cat.id}"
          role="group" aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
       <div class="category-header cs-cat-header" style="background: ${cat.color}; color: ${textColor};"
-           role="heading" aria-level="3">>
+          role="heading" aria-level="3">
         <span class="cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand" aria-expanded="${!isCollapsed}">${collapseIcon}</span>
         <span class="header-text" data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</span>
         ${countDisplay}
@@ -2332,20 +2357,7 @@ function printCallSheet() {
 
     // Get current page categories (respect custom order)
     const page = callSheetSettings.currentPage;
-    let categories =
-      page === "front" ? [...CALLSHEET_FRONT] : [...CALLSHEET_BACK];
-    const customOrder = csCategoryOrder[page];
-    if (customOrder && customOrder.length > 0) {
-      const ordered = [];
-      customOrder.forEach((id) => {
-        const cat = categories.find((c) => c.id === id);
-        if (cat) ordered.push(cat);
-      });
-      categories.forEach((cat) => {
-        if (!ordered.find((c) => c.id === cat.id)) ordered.push(cat);
-      });
-      categories = ordered;
-    }
+    const categories = getCallSheetCategoriesForPage(page);
     const pageTitle =
       page === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
 
@@ -2365,11 +2377,7 @@ function printCallSheet() {
     html += '<div class="print-callsheet-grid">';
 
     // Arrange in 3-column layout for print
-    const columns = [
-      categories.filter((_, i) => i % 3 === 0),
-      categories.filter((_, i) => i % 3 === 1),
-      categories.filter((_, i) => i % 3 === 2),
-    ];
+    const columns = buildCallSheetColumns(categories);
 
     columns.forEach((column) => {
       html += '<div class="print-column">';
@@ -2426,10 +2434,7 @@ function renderPrintCategory(cat, data, options) {
   if (!options) options = getCallSheetDisplayOptions();
 
   // Determine text color
-  const textColor =
-    cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa"
-      ? UI_COLORS.textBlack
-      : UI_COLORS.textWhite;
+  const textColor = getCategoryHeaderTextColor(cat.color);
 
   const note = csNotes[cat.id];
 
@@ -2565,7 +2570,7 @@ function csSelectAllFields(selectAll) {
     const el = document.getElementById(id);
     if (el) el.checked = selectAll;
   });
-  renderCallSheet();
+  requestRenderCallSheet();
 }
 
 // ============ Display Presets ============
@@ -2735,7 +2740,7 @@ function loadDisplayPreset(presetKey) {
     }
   });
 
-  renderCallSheet();
+  requestRenderCallSheet();
 
   // Reset the select
   const sel = document.getElementById("csDisplayPreset");
