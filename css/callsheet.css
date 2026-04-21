@@ -503,9 +503,8 @@
   padding: 12px;
 }
 
-.cs-settings-section--visibility,
-.cs-settings-section--format {
-  grid-column: span 6;
+.cs-settings-section--display {
+  grid-column: span 8;
 }
 
 .cs-settings-section-head {
@@ -527,6 +526,21 @@
   margin: 0;
   font-size: var(--font-size-xs);
   line-height: 1.4;
+  color: var(--color-text-light);
+}
+
+.cs-settings-subgroup + .cs-settings-subgroup {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.cs-settings-subtitle {
+  margin-bottom: 8px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
   color: var(--color-text-light);
 }
 

@@ -225,8 +225,7 @@
     flex: 1 1 auto;
     min-width: 0;
   }
-  .cs-settings-section--visibility,
-  .cs-settings-section--format,
+  .cs-settings-section--display,
   .cs-border-panel,
   .cs-border-panel:last-child {
     grid-column: span 12;

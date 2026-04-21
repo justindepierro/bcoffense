@@ -1480,22 +1480,24 @@
         </div>
         <div class="cs-unified-content">
           <div class="cs-settings-layout">
-            <section class="cs-settings-section cs-settings-section--visibility" aria-labelledby="csVisibilityHeading">
+            <section class="cs-settings-section cs-settings-section--display" aria-labelledby="csDisplayHeading">
               <div class="cs-settings-section-head">
                 <div>
-                  <h3 id="csVisibilityHeading" class="cs-settings-title">Show In Each Cell</h3>
-                  <p class="cs-settings-copy">Choose the play parts coaches should see at a glance.</p>
+                  <h3 id="csDisplayHeading" class="cs-settings-title">Cell Display &amp; Emphasis</h3>
+                  <p class="cs-settings-copy">Control the play parts shown in each cell and the visual shorthand used to scan quickly.</p>
                 </div>
                 <div class="cs-field-actions">
                   <button class="btn btn-xs" data-action="csSelectAllFields" data-arg="true">
                     Select All
                   </button>
                   <button class="btn btn-xs" data-action="csSelectAllFields" data-arg="false">
-                    Deselect All
+                    Clear All
                   </button>
                 </div>
               </div>
-              <div class="display-options-grid cs-show-grid cs-settings-grid">
+              <div class="cs-settings-subgroup">
+                <div class="cs-settings-subtitle">Show In Each Cell</div>
+                <div class="display-options-grid cs-show-grid cs-settings-grid">
                 <label><input type="checkbox" id="callsheetShowNumbers" data-onchange="requestRenderCallSheet" checked />
                   WB#</label>
                 <label><input type="checkbox" id="callsheetShowPersonnel" data-onchange="requestRenderCallSheet" checked />
@@ -1512,37 +1514,33 @@
                   Motion</label>
                 <label><input type="checkbox" id="callsheetShowLineCall" data-onchange="requestRenderCallSheet" checked />
                   [Line Call]</label>
-              </div>
-            </section>
-
-            <section class="cs-settings-section cs-settings-section--format" aria-labelledby="csFormatHeading">
-              <div class="cs-settings-section-head">
-                <div>
-                  <h3 id="csFormatHeading" class="cs-settings-title">Formatting & Emphasis</h3>
-                  <p class="cs-settings-copy">Control shorthand, motion styling, and quick visual cues.</p>
                 </div>
               </div>
-              <div class="display-options-grid cs-settings-grid">
-                <label><input type="checkbox" id="callsheetShowEmoji" data-onchange="requestRenderCallSheet" />
-                  🔵 Personnel Color</label>
-                <label><input type="checkbox" id="callsheetUseSquares" data-onchange="requestRenderCallSheet" />
-                  🟦 Use Squares</label>
-                <label><input type="checkbox" id="callsheetUnderEmoji" data-onchange="requestRenderCallSheet" />
-                  🍑 Under = Peach</label>
-                <label><input type="checkbox" id="callsheetBoldShifts" data-onchange="requestRenderCallSheet" />
-                  <b>Bold</b> Shifts</label>
-                <label><input type="checkbox" id="callsheetRedShifts" data-onchange="requestRenderCallSheet" />
-                  <span class="red">Red</span> Shifts</label>
-                <label><input type="checkbox" id="callsheetItalicMotions" data-onchange="requestRenderCallSheet" />
-                  <i>Italic</i> Motions</label>
-                <label><input type="checkbox" id="callsheetRedMotions" data-onchange="requestRenderCallSheet" />
-                  <span class="red">Red</span> Motions</label>
-                <label><input type="checkbox" id="callsheetRemoveVowels" data-onchange="requestRenderCallSheet" />
-                  Remove Vowels</label>
-                <label><input type="checkbox" id="callsheetHighlightHuddle" data-onchange="requestRenderCallSheet" />
-                  🟡 Huddle</label>
-                <label><input type="checkbox" id="callsheetHighlightCandy" data-onchange="requestRenderCallSheet" />
-                  🩷 Candy</label>
+
+              <div class="cs-settings-subgroup">
+                <div class="cs-settings-subtitle">Formatting &amp; Emphasis</div>
+                <div class="display-options-grid cs-settings-grid">
+                  <label><input type="checkbox" id="callsheetShowEmoji" data-onchange="requestRenderCallSheet" />
+                    🔵 Personnel Color</label>
+                  <label><input type="checkbox" id="callsheetUseSquares" data-onchange="requestRenderCallSheet" />
+                    🟦 Use Squares</label>
+                  <label><input type="checkbox" id="callsheetUnderEmoji" data-onchange="requestRenderCallSheet" />
+                    🍑 Under = Peach</label>
+                  <label><input type="checkbox" id="callsheetBoldShifts" data-onchange="requestRenderCallSheet" />
+                    <b>Bold</b> Shifts</label>
+                  <label><input type="checkbox" id="callsheetRedShifts" data-onchange="requestRenderCallSheet" />
+                    <span class="red">Red</span> Shifts</label>
+                  <label><input type="checkbox" id="callsheetItalicMotions" data-onchange="requestRenderCallSheet" />
+                    <i>Italic</i> Motions</label>
+                  <label><input type="checkbox" id="callsheetRedMotions" data-onchange="requestRenderCallSheet" />
+                    <span class="red">Red</span> Motions</label>
+                  <label><input type="checkbox" id="callsheetRemoveVowels" data-onchange="requestRenderCallSheet" />
+                    Remove Vowels</label>
+                  <label><input type="checkbox" id="callsheetHighlightHuddle" data-onchange="requestRenderCallSheet" />
+                    🟡 Huddle</label>
+                  <label><input type="checkbox" id="callsheetHighlightCandy" data-onchange="requestRenderCallSheet" />
+                    🩷 Candy</label>
+                </div>
               </div>
             </section>
 

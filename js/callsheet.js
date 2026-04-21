@@ -2540,6 +2540,16 @@ function csSelectAllFields(selectAll) {
     "callsheetShowTags",
     "callsheetShowMotion",
     "callsheetShowLineCall",
+    "callsheetShowEmoji",
+    "callsheetUseSquares",
+    "callsheetUnderEmoji",
+    "callsheetBoldShifts",
+    "callsheetRedShifts",
+    "callsheetItalicMotions",
+    "callsheetRedMotions",
+    "callsheetRemoveVowels",
+    "callsheetHighlightHuddle",
+    "callsheetHighlightCandy",
   ];
   fieldIds.forEach((id) => {
     const el = document.getElementById(id);
