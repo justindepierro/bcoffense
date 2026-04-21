@@ -1149,7 +1149,7 @@
                 </div>
               </div>
               <div class="wb-batch-group">
-                <label for="wbBatchCadence" class="wb-batch-label">Cadence:</label>
+                <label for="wbBatchCadence" class="wb-batch-label">Marker:</label>
                 <select id="wbBatchCadence" class="wb-batch-select">
                   <option value="__skip__">— keep —</option>
                   <option value="">None</option>
@@ -1235,7 +1235,7 @@
                   Line Call Only</label>
                 <label><input type="checkbox" id="wbCadenceReminder"
                     data-onchange="renderWristbandGrid;renderWristbandPlays" />
-                  💲 Cadence Reminder (postfix)</label>
+                  🏷️ Marker Reminder (postfix)</label>
                 <label data-onchange="renderWristbandGrid;renderWristbandPlays" />
                 🟡 Highlight Huddle</label>
                 <label><input type="checkbox" id="wbHighlightCandy"
@@ -1807,13 +1807,16 @@
       <!-- Color Customization -->
       <div id="cellPopupColors">
         <div class="cell-popup-row">
-          <label for="cellCadence">Cadence:</label>
-          <div class="cell-popup-on-two">
-            <select id="cellCadence" class="cell-popup-cadence-select">
-              <option value="">None</option>
-              <option value="$">💲 On Two</option>
-              <option value="$$">💲💲 Double</option>
-            </select>
+          <label for="cellCadence">Emoji Marker:</label>
+          <div class="cell-popup-marker-tools">
+            <input type="hidden" id="cellCadence" value="" />
+            <div id="cellMarkerPalette" class="cell-marker-grid" role="listbox" aria-label="Wristband emoji markers"></div>
+            <div class="cell-marker-footer">
+              <span id="cellMarkerSummary" class="cell-marker-summary">Selected: None</span>
+              <button type="button" class="btn btn-sm btn-secondary cell-marker-clear" data-action="clearCellMarker">
+                Clear
+              </button>
+            </div>
           </div>
         </div>
 
@@ -1930,7 +1933,7 @@
         <div>
           <strong>🎨 Styling Cells</strong>
           <div style="margin-top: var(--space-xs); line-height: 1.6;">
-            • Click cell → choose color + cadence + personnel<br>
+            • Click cell → choose color + marker + personnel<br>
             • <kbd
               style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">Shift</kbd>+Click
             multiple cells → edit all at once<br>

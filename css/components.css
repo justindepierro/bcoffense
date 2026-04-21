@@ -1414,7 +1414,7 @@ kbd {
 /* Cell Popup Extracted Styles */
 .cell-popup-container {
   min-width: 350px;
-  max-width: 450px;
+  max-width: 560px;
 }
 .cell-popup-play-info {
   margin-bottom: 15px;
@@ -1456,6 +1456,83 @@ kbd {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
+}
+
+.cell-popup-marker-tools {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+
+.cell-marker-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.cell-marker-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 2px;
+  min-height: 56px;
+  padding: 6px 4px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  cursor: pointer;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.cell-marker-btn:hover,
+.cell-marker-btn.selected {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+  background: var(--color-bg-blue-tint);
+}
+
+.cell-marker-btn.selected {
+  transform: translateY(-1px);
+}
+
+.cell-marker-emoji {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.cell-marker-label {
+  font-size: var(--font-size-3xs);
+  font-weight: 600;
+  text-align: center;
+  line-height: 1.1;
+}
+
+.cell-marker-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.cell-marker-summary {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+}
+
+.cell-marker-clear {
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .cell-marker-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
 }
 
 /* Utility Text Color Classes */

@@ -20,20 +20,61 @@ let pendingPlaySelection = null;
 let pendingCadence = "";
 let pendingExtraPersonnel = "";
 
+const WB_CELL_MARKER_OPTIONS = [
+  { value: "$", emoji: "💲", label: "On Two" },
+  { value: "$$", emoji: "💲💲", label: "Double" },
+  { value: "✅", emoji: "✅", label: "Check" },
+  { value: "📋", emoji: "📋", label: "Copy" },
+  { value: "🔄", emoji: "🔄", label: "Xerox" },
+  { value: "↔️", emoji: "↔️", label: "Flip" },
+  { value: "⚔️", emoji: "⚔️", label: "Man Beat" },
+  { value: "🛡️", emoji: "🛡️", label: "Zone Beat" },
+  { value: "🧍", emoji: "🧍", label: "Man" },
+  { value: "🌐", emoji: "🌐", label: "Zone" },
+  { value: "🔥", emoji: "🔥", label: "Hot" },
+  { value: "💣", emoji: "💣", label: "Shot" },
+  { value: "⚡", emoji: "⚡", label: "Tempo" },
+  { value: "🐢", emoji: "🐢", label: "Freeze" },
+  { value: "🎯", emoji: "🎯", label: "Must" },
+  { value: "⭐", emoji: "⭐", label: "Star" },
+  { value: "🚨", emoji: "🚨", label: "Alert" },
+  { value: "🔒", emoji: "🔒", label: "Lock" },
+  { value: "🧠", emoji: "🧠", label: "Read" },
+  { value: "📞", emoji: "📞", label: "Call" },
+  { value: "👀", emoji: "👀", label: "Watch" },
+  { value: "☠️", emoji: "☠️", label: "Kill" },
+  { value: "🏁", emoji: "🏁", label: "Finish" },
+  { value: "➕", emoji: "➕", label: "Add" },
+  { value: "🔁", emoji: "🔁", label: "Repeat" },
+];
+
+function getCellMarkerValue(custom) {
+  return custom.cadence || (custom.onTwo ? "$" : "");
+}
+
+function getCellMarkerDisplay(markerValue) {
+  if (!markerValue) return "";
+  if (markerValue === "$") return "💲";
+  if (markerValue === "$$") return "💲💲";
+  return markerValue;
+}
+
+function getCellMarkerLabel(markerValue) {
+  if (!markerValue) return "None";
+  const option = WB_CELL_MARKER_OPTIONS.find((entry) => entry.value === markerValue);
+  return option ? `${option.emoji} ${option.label}` : getCellMarkerDisplay(markerValue);
+}
+
 /** Get display prefix for a cell's cadence setting (handles legacy onTwo boolean) */
 function getCadencePrefix(custom) {
-  const cadence = custom.cadence || (custom.onTwo ? "$" : "");
-  if (cadence === "$$") return "💲💲 ";
-  if (cadence === "$") return "💲 ";
-  return "";
+  const marker = getCellMarkerDisplay(getCellMarkerValue(custom));
+  return marker ? `${marker} ` : "";
 }
 
 /** Get cadence postfix (same emoji repeated at end of cell) */
 function getCadencePostfix(custom) {
-  const cadence = custom.cadence || (custom.onTwo ? "$" : "");
-  if (cadence === "$$") return " 💲💲";
-  if (cadence === "$") return " 💲";
-  return "";
+  const marker = getCellMarkerDisplay(getCellMarkerValue(custom));
+  return marker ? ` ${marker}` : "";
 }
 
 /** Get custom extra personnel prefix for a wristband cell */
@@ -1023,6 +1064,7 @@ function initWristband() {
       wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
     }
     currentCardIndex = 0;
+    initCellMarkerPalette();
     populateWristbandCheckboxFilters();
     renderCardTabs();
     renderWristbandPlays();
@@ -1637,7 +1679,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   const existing = cellCustomizations[key] || {};
   pendingBgColor = existing.bgColor || "";
   pendingTextColor = existing.textColor || UI_COLORS.textBlack;
-  pendingCadence = existing.cadence || (existing.onTwo ? "$" : "");
+  pendingCadence = getCellMarkerValue(existing);
   pendingExtraPersonnel = existing.extraPersonnel || "";
   pendingPlaySelection = currentPlay;
 
@@ -1672,7 +1714,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   // Update swatch selections
   updateSwatchSelection("bgColorSwatches", pendingBgColor);
   updateSwatchSelection("textColorSwatches", pendingTextColor);
-  document.getElementById("cellCadence").value = pendingCadence;
+  updateCellMarkerSelection(pendingCadence);
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
   populateWbPersonnelDatalist();
 
@@ -1856,6 +1898,71 @@ function applyCellStyle() {
 
   closeCellPopup();
   renderWristbandGrid();
+}
+
+function initCellMarkerPalette() {
+  const palette = document.getElementById("cellMarkerPalette");
+  if (!palette || palette.dataset.bound === "true") return;
+
+  palette.innerHTML = WB_CELL_MARKER_OPTIONS.map(
+    (option) => `
+      <button type="button" class="cell-marker-btn" data-marker="${escapeHtml(option.value)}" title="${escapeHtml(option.label)}" aria-label="${escapeHtml(option.label)}">
+        <span class="cell-marker-emoji">${option.emoji}</span>
+        <span class="cell-marker-label">${escapeHtml(option.label)}</span>
+      </button>
+    `,
+  ).join("");
+
+  palette.addEventListener("click", (event) => {
+    const button = event.target.closest(".cell-marker-btn");
+    if (!button) return;
+    updateCellMarkerSelection(button.dataset.marker || "");
+  });
+
+  palette.dataset.bound = "true";
+  populateWbBatchMarkerOptions();
+  updateCellMarkerSelection("");
+}
+
+function updateCellMarkerSelection(markerValue) {
+  const normalizedValue = markerValue || "";
+  const input = document.getElementById("cellCadence");
+  const palette = document.getElementById("cellMarkerPalette");
+  const summary = document.getElementById("cellMarkerSummary");
+
+  if (input) input.value = normalizedValue;
+  pendingCadence = normalizedValue;
+
+  if (palette) {
+    palette.querySelectorAll(".cell-marker-btn").forEach((button) => {
+      button.classList.toggle("selected", button.dataset.marker === normalizedValue);
+    });
+  }
+
+  if (summary) {
+    summary.textContent = `Selected: ${getCellMarkerLabel(normalizedValue)}`;
+  }
+}
+
+function clearCellMarker() {
+  updateCellMarkerSelection("");
+}
+
+function populateWbBatchMarkerOptions() {
+  const select = document.getElementById("wbBatchCadence");
+  if (!select) return;
+
+  const currentValue = select.value || "__skip__";
+  select.innerHTML =
+    '<option value="__skip__">— keep —</option>' +
+    '<option value="">None</option>' +
+    WB_CELL_MARKER_OPTIONS.map(
+      (option) => `<option value="${escapeHtml(option.value)}">${option.emoji} ${escapeHtml(option.label)}</option>`,
+    ).join("");
+
+  select.value = [...select.options].some((option) => option.value === currentValue)
+    ? currentValue
+    : "__skip__";
 }
 
 /**
@@ -2796,7 +2903,7 @@ function _initBatchBarSwatches() {
 }
 
 /**
- * Apply batch edits (color, cadence, personnel) to all selected cells
+ * Apply batch edits (color, marker, personnel) to all selected cells
  */
 function applyBatchEdit() {
   if (wbSelectedCells.length === 0) {
@@ -2815,7 +2922,7 @@ function applyBatchEdit() {
   const hasPersonnel = personnelVal !== "";
 
   if (!hasColor && !hasCadence && !hasPersonnel) {
-    showToast("Set at least one field (color, cadence, or personnel) to apply");
+    showToast("Set at least one field (color, marker, or personnel) to apply");
     return;
   }
 
@@ -2869,7 +2976,7 @@ function applyBatchEdit() {
 
   const parts = [];
   if (hasColor) parts.push("color");
-  if (hasCadence) parts.push("cadence");
+  if (hasCadence) parts.push("marker");
   if (hasPersonnel) parts.push("personnel");
   showToast(`Applied ${parts.join(", ")} to ${count} cell${count === 1 ? "" : "s"}`);
 }
@@ -2925,7 +3032,7 @@ function exportWristbandCSV() {
       "Type",
       "Personnel",
       "BgColor",
-      "Cadence",
+      "Marker",
     ],
   ];
 
@@ -2945,7 +3052,7 @@ function exportWristbandCSV() {
           play.type || "",
           play.personnel || "",
           custom.bgColor || "",
-          custom.cadence || (custom.onTwo ? "$" : ""),
+          getCellMarkerValue(custom),
         ]);
       }
     });
