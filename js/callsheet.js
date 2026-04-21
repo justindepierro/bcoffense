@@ -316,6 +316,38 @@ const CALLSHEET_BACK = [
 // Combined categories for reference
 const CALLSHEET_CATEGORIES = [...CALLSHEET_FRONT, ...CALLSHEET_BACK];
 
+function getDefaultCallSheetCategoryOrder() {
+  return {
+    front: CALLSHEET_FRONT.map((cat) => cat.id),
+    back: CALLSHEET_BACK.map((cat) => cat.id),
+  };
+}
+
+function normalizeCallSheetCategoryOrder(order) {
+  const defaults = getDefaultCallSheetCategoryOrder();
+  const validIds = new Set(CALLSHEET_CATEGORIES.map((cat) => cat.id));
+  const normalized = { front: [], back: [] };
+  const placed = new Set();
+
+  ["front", "back"].forEach((page) => {
+    const source = Array.isArray(order?.[page]) ? order[page] : defaults[page];
+    source.forEach((id) => {
+      if (!validIds.has(id) || placed.has(id)) return;
+      normalized[page].push(id);
+      placed.add(id);
+    });
+  });
+
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    if (placed.has(cat.id)) return;
+    const defaultPage = defaults.front.includes(cat.id) ? "front" : "back";
+    normalized[defaultPage].push(cat.id);
+    placed.add(cat.id);
+  });
+
+  return normalized;
+}
+
 // Store for call sheet data: { categoryId: { left: [...plays], right: [...plays], customName: "..." } }
 let callSheet = {};
 
@@ -336,7 +368,10 @@ let editingHash = null;
 let callSheetAutosaveTimer = null;
 
 // Custom category ordering (array of category IDs per page)
-let csCategoryOrder = { front: null, back: null };
+let csCategoryOrder = getDefaultCallSheetCategoryOrder();
+
+let csLayoutDraft = null;
+let csLayoutDragged = null;
 
 // Per-category notes
 let csNotes = {};
@@ -417,7 +452,9 @@ function initCallSheet() {
       STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
       null,
     );
-    if (savedOrder) csCategoryOrder = savedOrder;
+    if (savedOrder) {
+      csCategoryOrder = normalizeCallSheetCategoryOrder(savedOrder);
+    }
 
     // Load notes
     csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
@@ -853,26 +890,10 @@ function getCategoryHeaderTextColor(color) {
 }
 
 function getCallSheetCategoriesForPage(page) {
-  let categories = page === "front" ? [...CALLSHEET_FRONT] : [...CALLSHEET_BACK];
-  const customOrder = csCategoryOrder[page];
-
-  if (!customOrder || customOrder.length === 0) {
-    return categories;
-  }
-
-  const ordered = [];
-  customOrder.forEach((id) => {
-    const cat = categories.find((candidate) => candidate.id === id);
-    if (cat) ordered.push(cat);
-  });
-
-  categories.forEach((cat) => {
-    if (!ordered.find((candidate) => candidate.id === cat.id)) {
-      ordered.push(cat);
-    }
-  });
-
-  return ordered;
+  const normalizedOrder = normalizeCallSheetCategoryOrder(csCategoryOrder);
+  return normalizedOrder[page]
+    .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
+    .filter(Boolean);
 }
 
 function buildCallSheetColumns(categories) {
@@ -1408,7 +1429,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
  */
 function showPlayContextMenu(event, categoryId, hash, index) {
   const page = callSheetSettings.currentPage;
-  const categories = page === "front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
+  const categories = getCallSheetCategoriesForPage(page);
   const otherHash = hash === "left" ? "right" : "left";
   const play = callSheet[categoryId]?.[hash]?.[index];
   if (!play) return;
@@ -3158,7 +3179,7 @@ function expandAllCategories() {
 
 function collapseAllCategories() {
   const page = callSheetSettings.currentPage;
-  const cats = page === "front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
+  const cats = getCallSheetCategoriesForPage(page);
   cats.forEach((c) => csCollapsed.add(c.id));
   storageManager.set(STORAGE_KEYS.CALLSHEET_COLLAPSED, [...csCollapsed]);
   renderCallSheet();
@@ -3722,6 +3743,11 @@ async function deleteTemplate(idx) {
 
 let draggedCatId = null;
 
+function persistCallSheetCategoryOrder() {
+  csCategoryOrder = normalizeCallSheetCategoryOrder(csCategoryOrder);
+  storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
+}
+
 function handleCatDragStart(event, categoryId) {
   // Only allow dragging from the header area
   if (
@@ -3750,15 +3776,7 @@ function handleCatDrop(event, targetCategoryId) {
   event.preventDefault();
 
   const page = callSheetSettings.currentPage;
-  const defaultOrder = (
-    page === "front" ? CALLSHEET_FRONT : CALLSHEET_BACK
-  ).map((c) => c.id);
-  let order = csCategoryOrder[page] || [...defaultOrder];
-
-  // Ensure all IDs are in the order
-  defaultOrder.forEach((id) => {
-    if (!order.includes(id)) order.push(id);
-  });
+  let order = getCallSheetCategoriesForPage(page).map((cat) => cat.id);
 
   const fromIdx = order.indexOf(draggedCatId);
   const toIdx = order.indexOf(targetCategoryId);
@@ -3768,7 +3786,7 @@ function handleCatDrop(event, targetCategoryId) {
   order.splice(toIdx, 0, draggedCatId);
 
   csCategoryOrder[page] = order;
-  storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
+  persistCallSheetCategoryOrder();
 
   draggedCatId = null;
   renderCallSheet();
@@ -3781,13 +3799,221 @@ function handleCatDragEnd(event) {
 
 // ============ Smart Reorder ============
 
+function renderCallSheetLayoutPanel(page) {
+  if (!csLayoutDraft) return "";
+
+  const categories = csLayoutDraft[page]
+    .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
+    .filter(Boolean);
+
+  if (categories.length === 0) {
+    return '<div class="cs-layout-empty">Drag categories here</div>';
+  }
+
+  return categories
+    .map((cat, index) => {
+      const otherPage = page === "front" ? "back" : "front";
+      return `
+        <div class="cs-layout-card" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}">
+          <span class="cs-layout-card-handle">☰</span>
+          <span class="cs-layout-card-order">${index + 1}</span>
+          <span class="cs-layout-card-name">${escapeHtml(getCategoryDisplayName(cat))}</span>
+          <button class="btn btn-xs cs-layout-page-btn" data-action="moveCallSheetCategoryToPage" data-arg="${cat.id}|${otherPage}">
+            ${otherPage === "front" ? "Front" : "Back"}
+          </button>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function renderCallSheetLayoutModal() {
+  if (!csLayoutDraft) return;
+
+  const frontList = document.getElementById("csLayoutFrontList");
+  const backList = document.getElementById("csLayoutBackList");
+  const frontCount = document.getElementById("csLayoutFrontCount");
+  const backCount = document.getElementById("csLayoutBackCount");
+
+  if (frontList) frontList.innerHTML = renderCallSheetLayoutPanel("front");
+  if (backList) backList.innerHTML = renderCallSheetLayoutPanel("back");
+  if (frontCount) frontCount.textContent = `${csLayoutDraft.front.length} categories`;
+  if (backCount) backCount.textContent = `${csLayoutDraft.back.length} categories`;
+}
+
+function openCallSheetLayoutModal() {
+  csLayoutDraft = normalizeCallSheetCategoryOrder(csCategoryOrder);
+
+  const modalHtml = `
+    <div id="csLayoutOverlay" class="modal-overlay" style="display: flex;" data-action="closeCallSheetLayoutModalOverlay">
+      <div class="modal-content cs-layout-modal">
+        <div class="modal-header cs-layout-modal-header">
+          <div>
+            <h3>🗂️ Reorder Call Sheet</h3>
+            <p class="cs-layout-modal-copy">Drag compact category cards to reorder them. Drop a card onto the other panel to move it between the front and back pages.</p>
+          </div>
+          <button class="cs-sort-close" data-action="closeCallSheetLayoutModal">&times;</button>
+        </div>
+        <div class="modal-body cs-layout-modal-body">
+          <div class="cs-layout-grid">
+            <section class="cs-layout-panel" data-drop="csLayoutPage" data-page="front">
+              <div class="cs-layout-panel-head">
+                <div>
+                  <h4>Front Page</h4>
+                  <p id="csLayoutFrontCount" class="cs-layout-panel-copy"></p>
+                </div>
+              </div>
+              <div id="csLayoutFrontList" class="cs-layout-list" data-drop="csLayoutPage" data-page="front"></div>
+            </section>
+            <section class="cs-layout-panel" data-drop="csLayoutPage" data-page="back">
+              <div class="cs-layout-panel-head">
+                <div>
+                  <h4>Back Page</h4>
+                  <p id="csLayoutBackCount" class="cs-layout-panel-copy"></p>
+                </div>
+              </div>
+              <div id="csLayoutBackList" class="cs-layout-list" data-drop="csLayoutPage" data-page="back"></div>
+            </section>
+          </div>
+        </div>
+        <div class="cs-layout-actions">
+          <button class="btn btn-primary btn-sm" data-action="saveCallSheetLayoutModal">Apply Layout</button>
+          <button class="btn btn-sm" data-action="resetCallSheetLayoutModal">Reset Default</button>
+          <button class="btn btn-sm" data-action="closeCallSheetLayoutModal">Cancel</button>
+        </div>
+      </div>
+    </div>
+  `;
+
+  document.body.insertAdjacentHTML("beforeend", modalHtml);
+  const overlay = document.getElementById("csLayoutOverlay");
+  if (!overlay) return;
+
+  overlay.addEventListener("dragstart", (event) => {
+    const card = event.target.closest("[data-drag='csLayoutCategory']");
+    if (!card) return;
+    handleCsLayoutDragStart(event, card.dataset.category, card.dataset.page);
+  });
+
+  overlay.addEventListener("dragover", (event) => {
+    const dropTarget = event.target.closest(
+      "[data-drag='csLayoutCategory'], [data-drop='csLayoutPage']",
+    );
+    if (!dropTarget) return;
+    handleCsLayoutDragOver(event);
+  });
+
+  overlay.addEventListener("drop", (event) => {
+    const card = event.target.closest("[data-drag='csLayoutCategory']");
+    const panel = event.target.closest("[data-drop='csLayoutPage']");
+    if (!card && !panel) return;
+    handleCsLayoutDrop(
+      event,
+      card?.dataset.category || null,
+      card?.dataset.page || panel?.dataset.page,
+    );
+  });
+
+  overlay.addEventListener("dragend", (event) => {
+    const card = event.target.closest("[data-drag='csLayoutCategory']");
+    if (!card) return;
+    handleCsLayoutDragEnd(event);
+  });
+
+  renderCallSheetLayoutModal();
+}
+
+function closeCallSheetLayoutModal() {
+  const overlay = document.getElementById("csLayoutOverlay");
+  if (overlay) overlay.remove();
+  csLayoutDraft = null;
+  csLayoutDragged = null;
+}
+
+function updateCallSheetLayoutDraft(categoryId, targetPage, beforeCategoryId = null) {
+  if (!csLayoutDraft || !targetPage) return;
+
+  ["front", "back"].forEach((page) => {
+    csLayoutDraft[page] = csLayoutDraft[page].filter((id) => id !== categoryId);
+  });
+
+  const targetList = [...(csLayoutDraft[targetPage] || [])];
+  const insertIndex = beforeCategoryId ? targetList.indexOf(beforeCategoryId) : -1;
+
+  if (insertIndex === -1) {
+    targetList.push(categoryId);
+  } else {
+    targetList.splice(insertIndex, 0, categoryId);
+  }
+
+  csLayoutDraft[targetPage] = targetList;
+}
+
+function moveCallSheetCategoryToPage(arg) {
+  const [categoryId, targetPage] = String(arg || "").split("|");
+  if (!categoryId || !targetPage || !csLayoutDraft) return;
+  updateCallSheetLayoutDraft(categoryId, targetPage);
+  renderCallSheetLayoutModal();
+}
+
+function resetCallSheetLayoutModal() {
+  csLayoutDraft = getDefaultCallSheetCategoryOrder();
+  renderCallSheetLayoutModal();
+}
+
+function saveCallSheetLayoutModal() {
+  if (!csLayoutDraft) return;
+  csCategoryOrder = normalizeCallSheetCategoryOrder(csLayoutDraft);
+  persistCallSheetCategoryOrder();
+  closeCallSheetLayoutModal();
+  renderCallSheet();
+  showToast("🗂️ Call sheet layout updated");
+}
+
+function handleCsLayoutDragStart(event, categoryId, page) {
+  csLayoutDragged = { categoryId, page };
+  event.dataTransfer.effectAllowed = "move";
+  event.target.closest(".cs-layout-card")?.classList.add("dragging");
+}
+
+function handleCsLayoutDragOver(event) {
+  if (!csLayoutDragged) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+}
+
+function handleCsLayoutDrop(event, targetCategoryId, targetPage) {
+  if (!csLayoutDragged || !targetPage) return;
+  event.preventDefault();
+
+  if (
+    targetCategoryId === csLayoutDragged.categoryId &&
+    targetPage === csLayoutDragged.page
+  ) {
+    return;
+  }
+
+  updateCallSheetLayoutDraft(
+    csLayoutDragged.categoryId,
+    targetPage,
+    targetCategoryId,
+  );
+  csLayoutDragged = null;
+  renderCallSheetLayoutModal();
+}
+
+function handleCsLayoutDragEnd(event) {
+  event.target.closest(".cs-layout-card")?.classList.remove("dragging");
+  csLayoutDragged = null;
+}
+
 /**
  * Smart reorder: arrange categories so the tallest ones are spread across columns
  * to produce the most balanced, print-friendly layout.
  */
 function smartReorderCategories() {
   const page = callSheetSettings.currentPage;
-  const baseCats = page === "front" ? CALLSHEET_FRONT : CALLSHEET_BACK;
+  const baseCats = getCallSheetCategoriesForPage(page);
 
   // Calculate "height" of each category (header + plays)
   const catHeights = baseCats.map((cat) => {
@@ -3832,17 +4058,16 @@ function smartReorderCategories() {
   }
 
   csCategoryOrder[page] = newOrder;
-  storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
+  persistCallSheetCategoryOrder();
   renderCallSheet();
   showToast("🧩 Categories reordered for best layout");
 }
 
 function resetCategoryOrder() {
-  const page = callSheetSettings.currentPage;
-  csCategoryOrder[page] = null;
-  storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
+  csCategoryOrder = getDefaultCallSheetCategoryOrder();
+  persistCallSheetCategoryOrder();
   renderCallSheet();
-  showToast("↩️ Category order reset to default");
+  showToast("↩️ Call sheet layout reset to default");
 }
 
 // ============ Call Sheet Sort Modal ============
@@ -4146,10 +4371,9 @@ function applyCsSort(originCategoryId) {
   if (scope === "category") {
     targetCategoryIds = [originCategoryId];
   } else if (scope === "page") {
-    const pageCategories =
-      callSheetSettings.currentPage === "front"
-        ? CALLSHEET_FRONT
-        : CALLSHEET_BACK;
+    const pageCategories = getCallSheetCategoriesForPage(
+      callSheetSettings.currentPage,
+    );
     targetCategoryIds = pageCategories.map((c) => c.id);
   } else {
     targetCategoryIds = CALLSHEET_CATEGORIES.map((c) => c.id);

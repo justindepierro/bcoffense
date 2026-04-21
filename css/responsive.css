@@ -230,6 +230,12 @@
   .cs-border-panel:last-child {
     grid-column: span 12;
   }
+  .cs-layout-grid {
+    grid-template-columns: 1fr;
+  }
+  .cs-layout-list {
+    min-height: 180px;
+  }
   .cs-settings-section-head {
     flex-direction: column;
   }
@@ -354,6 +360,16 @@
   }
   .cs-unified-content {
     padding: 10px;
+  }
+  .cs-layout-modal {
+    width: calc(100vw - 20px);
+  }
+  .cs-layout-card {
+    grid-template-columns: auto auto 1fr;
+  }
+  .cs-layout-page-btn {
+    grid-column: 1 / -1;
+    justify-self: stretch;
   }
   .cs-settings-layout,
   .cs-border-panels {

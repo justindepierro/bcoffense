@@ -544,6 +544,126 @@
   color: var(--color-text-light);
 }
 
+.cs-layout-modal {
+  width: min(920px, calc(100vw - 32px));
+  max-width: 920px;
+}
+
+.cs-layout-modal-header {
+  align-items: flex-start;
+  gap: var(--space-md);
+}
+
+.cs-layout-modal-copy {
+  margin: 6px 0 0;
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.cs-layout-modal-body {
+  padding-top: 0;
+}
+
+.cs-layout-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-md);
+}
+
+.cs-layout-panel {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-lighter);
+  padding: var(--space-sm);
+}
+
+.cs-layout-panel-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  margin-bottom: var(--space-sm);
+}
+
+.cs-layout-panel-head h4 {
+  margin: 0;
+  font-size: var(--font-size-base);
+}
+
+.cs-layout-panel-copy {
+  margin: 4px 0 0;
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+}
+
+.cs-layout-list {
+  min-height: 280px;
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
+.cs-layout-card {
+  display: grid;
+  grid-template-columns: auto auto 1fr auto;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  box-shadow: var(--shadow-xs);
+  cursor: grab;
+}
+
+.cs-layout-card.dragging {
+  opacity: 0.5;
+}
+
+.cs-layout-card-handle {
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+
+.cs-layout-card-order {
+  width: 20px;
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-align: center;
+}
+
+.cs-layout-card-name {
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.cs-layout-page-btn {
+  min-width: 56px;
+  justify-self: end;
+}
+
+.cs-layout-empty {
+  min-height: 96px;
+  display: grid;
+  place-items: center;
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+  background: var(--color-white);
+}
+
+.cs-layout-actions {
+  display: flex;
+  gap: var(--space-sm);
+  justify-content: flex-end;
+  flex-wrap: wrap;
+  padding: 0 var(--space-lg) var(--space-lg);
+}
+
 .cs-settings-grid {
   gap: 8px;
 }
