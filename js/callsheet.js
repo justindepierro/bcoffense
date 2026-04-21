@@ -979,11 +979,19 @@ function getCallSheetCategoriesForPage(page) {
 }
 
 function buildCallSheetColumns(categories) {
-  return [
-    categories.filter((_, i) => i % 3 === 0),
-    categories.filter((_, i) => i % 3 === 1),
-    categories.filter((_, i) => i % 3 === 2),
-  ];
+  const total = categories.length;
+  const baseSize = Math.floor(total / 3);
+  const remainder = total % 3;
+  const columns = [];
+  let startIndex = 0;
+
+  for (let index = 0; index < 3; index++) {
+    const columnSize = baseSize + (index < remainder ? 1 : 0);
+    columns.push(categories.slice(startIndex, startIndex + columnSize));
+    startIndex += columnSize;
+  }
+
+  return columns;
 }
 
 /**
@@ -4056,6 +4064,7 @@ function renderCallSheetLayoutPanel(page) {
     .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
     .filter(Boolean);
   const orderIndexById = new Map(categories.map((cat, index) => [cat.id, index + 1]));
+  const columns = buildCallSheetColumns(categories);
 
   if (categories.length === 0) {
     return '<div class="cs-layout-empty">Drag categories here</div>';
@@ -4068,8 +4077,12 @@ function renderCallSheetLayoutPanel(page) {
       <span>Col 3</span>
     </div>
     <div class="cs-layout-board" data-drop="csLayoutPage" data-page="${page}">
-      ${categories
-        .map((cat) => {
+      ${columns
+        .map(
+          (column) => `
+            <div class="cs-layout-board-column">
+              ${column
+                .map((cat) => {
           const otherPage = page === "front" ? "back" : "front";
           const headerColor = getCategoryColor(cat, csLayoutColorDraft);
           const textColor = getCategoryHeaderTextColor(headerColor);
@@ -4120,11 +4133,15 @@ function renderCallSheetLayoutPanel(page) {
               </div>
             </div>
           `;
-        })
+                })
+                .join("")}
+            </div>
+          `,
+        )
         .join("")}
     </div>
     <div class="cs-layout-board-end">
-      ${csLayoutPickedCategoryId ? `<button class="cs-layout-place-btn" data-action="placePickedCallSheetCategory" data-arg="${page}|">Place At End Of ${page === "front" ? "Front" : "Back"}</button>` : '<span class="cs-layout-end-copy">Order flows left to right, top to bottom.</span>'}
+      ${csLayoutPickedCategoryId ? `<button class="cs-layout-place-btn" data-action="placePickedCallSheetCategory" data-arg="${page}|">Place At End Of ${page === "front" ? "Front" : "Back"}</button>` : '<span class="cs-layout-end-copy">Order flows top to bottom in each column, then left to right.</span>'}
     </div>
   `;
 }

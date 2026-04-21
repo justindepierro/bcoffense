@@ -631,6 +631,12 @@
   align-content: start;
 }
 
+.cs-layout-board-column {
+  display: grid;
+  gap: 8px;
+  align-content: start;
+}
+
 .cs-layout-place-btn {
   width: 100%;
   min-height: 28px;
