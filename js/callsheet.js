@@ -3513,6 +3513,110 @@ function updateNotOnSheetPanel() {
 
 // ============ Game Plan Templates ============
 
+function getCallSheetPlayCount() {
+  let playCount = 0;
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    const data = callSheet[cat.id];
+    if (!data) return;
+    playCount += (data.left || []).length + (data.right || []).length;
+  });
+  return playCount;
+}
+
+function buildCallSheetTemplate(name) {
+  return {
+    name,
+    savedAt: new Date().toISOString(),
+    playCount: getCallSheetPlayCount(),
+    callSheet: safeDeepClone(callSheet),
+    settings: safeDeepClone(callSheetSettings),
+    notes: safeDeepClone(csNotes),
+    targets: safeDeepClone(csTargets),
+    categoryOrder: safeDeepClone(csCategoryOrder),
+  };
+}
+
+async function saveCallSheetTemplate() {
+  try {
+    const totalPlays = getCallSheetPlayCount();
+    if (totalPlays === 0) {
+      const proceed = await showConfirm("The call sheet is empty. Save anyway?", {
+        title: "Empty Call Sheet",
+        icon: "⚠️",
+        confirmText: "Save Empty",
+      });
+      if (!proceed) return;
+    }
+
+    const nameInput = document.getElementById("csTemplateName");
+    const defaultName = `Call Sheet ${new Date().toLocaleDateString()}`;
+    let name = nameInput?.value.trim();
+
+    if (!name) {
+      name = await showPrompt("Name for this call sheet:", defaultName, {
+        title: "Save Call Sheet",
+        icon: "💾",
+        placeholder: defaultName,
+      });
+      if (!name) return;
+      name = name.trim();
+    }
+
+    if (!name) {
+      showToast("⚠️ Enter a template name", { type: "warning" });
+      return;
+    }
+
+    const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+    const existing = templates.find(
+      (template) => template.name.toLowerCase() === name.toLowerCase(),
+    );
+
+    if (existing) {
+      const choice = await showChoice(
+        `A call sheet named "${existing.name}" already exists.`,
+        {
+          title: "Duplicate Name",
+          icon: "⚠️",
+          option1: "💾 Overwrite",
+          option2: "➕ Save as Copy",
+        },
+      );
+
+      if (choice === "option1") {
+        Object.assign(existing, buildCallSheetTemplate(name));
+        storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+        if (document.getElementById("csTemplateOverlay")) {
+          closeTemplateModal();
+          openTemplatesModal();
+        }
+        showToast(`✅ "${name}" updated!`);
+        return;
+      }
+
+      if (choice !== "option2") {
+        return;
+      }
+    }
+
+    templates.unshift(buildCallSheetTemplate(name));
+    storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
+
+    if (document.getElementById("csTemplateOverlay")) {
+      closeTemplateModal();
+      openTemplatesModal();
+    }
+
+    showToast(`✅ "${name}" saved!`);
+  } catch (err) {
+    console.error("saveCallSheetTemplate error:", err);
+    showToast("❌ Error saving call sheet.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
+}
+
 function openTemplatesModal() {
   const saved = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
 
@@ -3545,7 +3649,7 @@ function openTemplatesModal() {
         <div class="cs-sort-body">
           <div class="cs-template-save-row">
             <input type="text" id="csTemplateName" class="cs-template-name-input" placeholder="Template name (e.g. vs. 4-3 Team)">
-            <button class="btn btn-sm btn-primary" data-action="saveTemplate">💾 Save Current</button>
+            <button class="btn btn-sm btn-primary" data-action="saveCallSheetTemplate">💾 Save Current</button>
           </div>
           <div class="cs-template-list">${listHtml}</div>
         </div>
@@ -3571,39 +3675,7 @@ function closeTemplateModal() {
 }
 
 function saveTemplate() {
-  const nameInput = document.getElementById("csTemplateName");
-  const name = nameInput?.value.trim();
-  if (!name) {
-    showToast("⚠️ Enter a template name", { type: "warning" });
-    return;
-  }
-
-  // Count plays
-  let playCount = 0;
-  CALLSHEET_CATEGORIES.forEach((cat) => {
-    const data = callSheet[cat.id];
-    if (!data) return;
-    playCount += (data.left || []).length + (data.right || []).length;
-  });
-
-  const template = {
-    name,
-    savedAt: new Date().toISOString(),
-    playCount,
-    callSheet: safeDeepClone(callSheet),
-    settings: safeDeepClone(callSheetSettings),
-    notes: safeDeepClone(csNotes),
-    targets: safeDeepClone(csTargets),
-    categoryOrder: safeDeepClone(csCategoryOrder),
-  };
-
-  const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
-  templates.unshift(template);
-  storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
-
-  closeTemplateModal();
-  openTemplatesModal();
-  showToast(`📁 Template "${name}" saved`);
+  saveCallSheetTemplate();
 }
 
 async function loadTemplate(idx) {
