@@ -1106,6 +1106,29 @@ function requestRenderCallSheet() {
   _scheduleRenderCallSheet();
 }
 
+function captureCallSheetDisplayState() {
+  const opts = {};
+  CALLSHEET_DISPLAY_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el) return;
+    opts[id] = el.type === "checkbox" ? el.checked : el.value;
+  });
+  return opts;
+}
+
+function applyCallSheetDisplayState(opts) {
+  if (!opts) return;
+  CALLSHEET_DISPLAY_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (!el || opts[id] === undefined) return;
+    if (el.type === "checkbox") {
+      el.checked = opts[id];
+    } else {
+      el.value = opts[id];
+    }
+  });
+}
+
 /**
  * Switch between front and back page
  */
@@ -3187,14 +3210,10 @@ function deleteDisplayPreset(idx) {
  * Save call sheet display option states to localStorage
  */
 function saveCallSheetDisplayOptions() {
-  const opts = {};
-  CALLSHEET_DISPLAY_IDS.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el) return;
-    // Checkboxes vs selects
-    opts[id] = el.type === "checkbox" ? el.checked : el.value;
-  });
-  storageManager.set(STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS, opts);
+  storageManager.set(
+    STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS,
+    captureCallSheetDisplayState(),
+  );
 }
 
 /**
@@ -3202,16 +3221,7 @@ function saveCallSheetDisplayOptions() {
  */
 function restoreCallSheetDisplayOptions() {
   const opts = storageManager.get(STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS, null);
-  if (!opts) return;
-  CALLSHEET_DISPLAY_IDS.forEach((id) => {
-    const el = document.getElementById(id);
-    if (!el || opts[id] === undefined) return;
-    if (el.type === "checkbox") {
-      el.checked = opts[id];
-    } else {
-      el.value = opts[id];
-    }
-  });
+  applyCallSheetDisplayState(opts);
 }
 
 /**
@@ -3795,6 +3805,8 @@ function buildCallSheetTemplate(name) {
     notes: safeDeepClone(csNotes),
     targets: safeDeepClone(csTargets),
     categoryOrder: safeDeepClone(csCategoryOrder),
+    displayState: captureCallSheetDisplayState(),
+    collapsed: [...csCollapsed],
   };
 }
 
@@ -3962,13 +3974,25 @@ async function loadTemplate(idx) {
     syncCallSheetCategoryData();
     if (template.notes) csNotes = template.notes;
     if (template.targets) csTargets = template.targets;
-    if (template.categoryOrder) csCategoryOrder = template.categoryOrder;
+    csCategoryOrder = normalizeCallSheetCategoryOrder(template.categoryOrder);
+    csCollapsed = new Set(Array.isArray(template.collapsed) ? template.collapsed : []);
+
+    if (template.displayState) {
+      applyCallSheetDisplayState(template.displayState);
+      storageManager.set(
+        STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS,
+        template.displayState,
+      );
+    } else {
+      saveCallSheetDisplayOptions();
+    }
 
     saveCallSheet();
     saveCallSheetSettings();
     storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
     storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
     storageManager.set(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, csCategoryOrder);
+    storageManager.set(STORAGE_KEYS.CALLSHEET_COLLAPSED, [...csCollapsed]);
 
     renderCallSheet();
     closeTemplateModal();
@@ -4078,30 +4102,30 @@ function renderCallSheetLayoutPanel(page) {
     </div>
     <div class="cs-layout-board" data-drop="csLayoutPage" data-page="${page}">
       ${columns
-        .map(
-          (column) => `
+      .map(
+        (column) => `
             <div class="cs-layout-board-column">
               ${column
-                .map((cat) => {
-          const otherPage = page === "front" ? "back" : "front";
-          const headerColor = getCategoryColor(cat, csLayoutColorDraft);
-          const textColor = getCategoryHeaderTextColor(headerColor);
-          const isPicked = csLayoutPickedCategoryId === cat.id;
-          const pageIds = csLayoutDraft[page] || [];
-          const pageIndex = pageIds.indexOf(cat.id);
-          const canMoveUp = pageIndex > 0;
-          const canMoveDown = pageIndex !== -1 && pageIndex < pageIds.length - 1;
-          const colorOptions = CS_HEADER_COLOR_OPTIONS.map(
-            (option) =>
-              `<option value="${option.value}" ${option.value === headerColor ? "selected" : ""}>${option.name}</option>`,
-          ).join("");
-          const dropKey = `${page}:${cat.id}`;
-          const dropActive = csLayoutActiveDropKey === dropKey ? " cs-layout-card--drop-target" : "";
-          const placeAction = isPicked
-            ? ""
-            : `<button class="cs-layout-card-place" data-action="placePickedCallSheetCategory" data-arg="${page}|${cat.id}">Place Before</button>`;
+            .map((cat) => {
+              const otherPage = page === "front" ? "back" : "front";
+              const headerColor = getCategoryColor(cat, csLayoutColorDraft);
+              const textColor = getCategoryHeaderTextColor(headerColor);
+              const isPicked = csLayoutPickedCategoryId === cat.id;
+              const pageIds = csLayoutDraft[page] || [];
+              const pageIndex = pageIds.indexOf(cat.id);
+              const canMoveUp = pageIndex > 0;
+              const canMoveDown = pageIndex !== -1 && pageIndex < pageIds.length - 1;
+              const colorOptions = CS_HEADER_COLOR_OPTIONS.map(
+                (option) =>
+                  `<option value="${option.value}" ${option.value === headerColor ? "selected" : ""}>${option.name}</option>`,
+              ).join("");
+              const dropKey = `${page}:${cat.id}`;
+              const dropActive = csLayoutActiveDropKey === dropKey ? " cs-layout-card--drop-target" : "";
+              const placeAction = isPicked
+                ? ""
+                : `<button class="cs-layout-card-place" data-action="placePickedCallSheetCategory" data-arg="${page}|${cat.id}">Place Before</button>`;
 
-          return `
+              return `
             <div class="cs-layout-card${isPicked ? " cs-layout-card--picked" : ""}${dropActive}" data-page="${page}" data-category="${cat.id}" data-drop-card="csLayoutCard">
               <div class="cs-layout-card-header" style="background: ${headerColor}; color: ${textColor};">
                 <span class="cs-layout-card-handle" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}" title="Drag to reorder">☰</span>
@@ -4133,12 +4157,12 @@ function renderCallSheetLayoutPanel(page) {
               </div>
             </div>
           `;
-                })
-                .join("")}
+            })
+            .join("")}
             </div>
           `,
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
     <div class="cs-layout-board-end">
       ${csLayoutPickedCategoryId ? `<button class="cs-layout-place-btn" data-action="placePickedCallSheetCategory" data-arg="${page}|">Place At End Of ${page === "front" ? "Front" : "Back"}</button>` : '<span class="cs-layout-end-copy">Order flows top to bottom in each column, then left to right.</span>'}
