@@ -487,6 +487,20 @@
     letter-spacing: -0.02em;
   }
 
+  .print-play.tempo-huddle {
+    background: var(--color-accent-light) !important;
+    border-color: var(--color-accent) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
+  .print-play.tempo-candy {
+    background: var(--color-danger-light) !important;
+    border-color: var(--color-danger) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+
   /* Portrait orientation */
   .print-portrait {
     width: 100%;

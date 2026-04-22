@@ -2539,6 +2539,14 @@ function populateCallSheetPlayList() {
         chips.push(
           `<span class="cs-picker-chip">${escapeHtml(p.tempo)}</span>`,
         );
+      const locations = getCallSheetPlayLocations(p);
+      if (locations.length) {
+        locations.forEach((location) => {
+          chips.push(
+            `<span class="cs-picker-chip cs-picker-chip-onsheet">${escapeHtml(location)}</span>`,
+          );
+        });
+      }
       const chipHtml =
         chips.length > 0
           ? `<span class="cs-picker-chips">${chips.join("")}</span>`
@@ -5663,6 +5671,24 @@ function isPlayOnCallSheet(play, categoryId) {
   if (!data) return false;
   const checkArr = (arr) => arr.some((p) => playsMatch(p, play));
   return checkArr(data.left || []) || checkArr(data.right || []);
+}
+
+function getCallSheetPlayLocations(play) {
+  const locations = [];
+
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    const data = callSheet[cat.id];
+    if (!data) return;
+
+    if ((data.left || []).some((entry) => playsMatch(entry, play))) {
+      locations.push(`${getCategoryDisplayName(cat)} - Left`);
+    }
+    if ((data.right || []).some((entry) => playsMatch(entry, play))) {
+      locations.push(`${getCategoryDisplayName(cat)} - Right`);
+    }
+  });
+
+  return locations;
 }
 
 // ── Callsheet Container-Scoped Event Delegation ──────────────────────────────
