@@ -575,6 +575,16 @@ function getCallSheetCellDisplayPreset(presetId) {
   return CALLSHEET_CELL_DISPLAY_PRESETS.find((preset) => preset.id === presetId);
 }
 
+function isCallSheetCellDisplayPresetActive(play, presetId) {
+  const preset = getCallSheetCellDisplayPreset(presetId);
+  if (!preset) return false;
+
+  return CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS.every((prop) => {
+    const expected = Boolean(preset.overrides?.[prop]);
+    return Boolean(play[prop]) === expected;
+  });
+}
+
 function applyCallSheetCellDisplayPreset(play, presetId) {
   const preset = getCallSheetCellDisplayPreset(presetId);
   if (!preset) return false;
@@ -1840,7 +1850,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
 
   // Cell note badge
   const noteBadge = play.cellNote
-    ? `<span class="cs-cell-note-badge" title="${play.cellNote.replace(/"/g, "&quot;")}">📝</span>`
+    ? `<span class="cs-cell-note-badge" title="${escapeHtml(play.cellNote)}">📝</span>`
     : "";
 
   // Duplicate badge
@@ -1983,10 +1993,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   });
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Quick Presets</span><div class="cs-ctx-styles cs-ctx-styles--wrap">`;
   displayPresetButtons.forEach((preset) => {
-    const isReset = preset.id === "default";
-    const isActive = isReset
-      ? !hasCallSheetCellDisplayOverrides(play)
-      : false;
+    const isActive = isCallSheetCellDisplayPresetActive(play, preset.id);
     menuHtml += `<button class="cs-style-btn cs-style-btn--text${isActive ? " active" : ""}" data-action="applyPreset" data-preset="${preset.id}" title="${preset.sublabel}">${preset.label}</button>`;
   });
   menuHtml += `</div></div>`;
@@ -2015,7 +2022,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menuHtml += `<div class="cs-ctx-divider"></div>`;
 
   // ─── Cell Note ───
-  const noteVal = (play.cellNote || "").replace(/"/g, "&quot;");
+  const noteVal = escapeHtml(play.cellNote || "");
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Cell Note</span>`;
   menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input" value="${noteVal}" placeholder="Add a note..." maxlength="60" />`;
   menuHtml += `<button class="cs-ctx-note-save" data-action="saveNote" title="Save note">✓</button></div></div>`;
@@ -2037,6 +2044,20 @@ function showPlayContextMenu(event, categoryId, hash, index) {
 
   menu.innerHTML = menuHtml;
 
+  const reopenMenu = () => {
+    const rect = menu.getBoundingClientRect();
+    showPlayContextMenu(
+      {
+        preventDefault() {},
+        clientX: Math.max(8, rect.left + 6),
+        clientY: Math.max(8, rect.top + 6),
+      },
+      categoryId,
+      hash,
+      index,
+    );
+  };
+
   // ─── Event handlers ───
   menu.addEventListener("click", (e) => {
     const btn = e.target.closest("[data-action]");
@@ -2052,24 +2073,24 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       p.borderColor = btn.dataset.color || undefined;
       renderCallSheet();
       saveCallSheet();
-      menu.remove();
+      reopenMenu();
     } else if (action === "cellBg") {
       p.cellBg = btn.dataset.color || undefined;
       renderCallSheet();
       saveCallSheet();
-      menu.remove();
+      reopenMenu();
     } else if (action === "cellTextColor") {
       p.cellTextColor = btn.dataset.color || undefined;
       renderCallSheet();
       saveCallSheet();
-      menu.remove();
+      reopenMenu();
     } else if (action === "toggleStyle") {
       const prop = btn.dataset.prop;
       p[prop] = !p[prop];
       if (!p[prop]) delete p[prop];
-      btn.classList.toggle("active");
       renderCallSheet();
       saveCallSheet();
+      reopenMenu();
     } else if (action === "applyPreset") {
       const preset = getCallSheetCellDisplayPreset(btn.dataset.preset);
       if (!preset) return;
@@ -2084,12 +2105,12 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       renderCallSheet();
       saveCallSheet();
       showToast(`Applied ${preset.label} display preset`);
-      menu.remove();
+      reopenMenu();
     } else if (action === "fontSize") {
       p.cellFontSize = btn.dataset.size || undefined;
       renderCallSheet();
       saveCallSheet();
-      menu.remove();
+      reopenMenu();
     } else if (action === "saveNote") {
       const input = menu.querySelector(".cs-ctx-note-input");
       const val = (input?.value || "").trim();
@@ -2097,7 +2118,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       renderCallSheet();
       saveCallSheet();
       showToast(val ? "📝 Note saved" : "📝 Note removed");
-      menu.remove();
+      reopenMenu();
     } else if (action === "clearFormat") {
       delete p.borderColor;
       delete p.cellBg;
@@ -2112,7 +2133,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       renderCallSheet();
       saveCallSheet();
       showToast("✖ Formatting cleared");
-      menu.remove();
+      reopenMenu();
     } else if (action === "swap") {
       swapPlayHash(categoryId, hash, index);
       menu.remove();
@@ -2120,6 +2141,9 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       const targetCat = btn.dataset.cat;
       const copy = { ...p };
       const targetData = callSheet[targetCat] || { left: [], right: [] };
+      if (!Array.isArray(targetData.left)) targetData.left = [];
+      if (!Array.isArray(targetData.right)) targetData.right = [];
+      callSheet[targetCat] = targetData;
       if (targetData.left.length <= targetData.right.length) {
         targetData.left.push(copy);
       } else {
@@ -2928,8 +2952,10 @@ function printCallSheet() {
     // Set page size based on orientation
     const pageOrientation =
       callSheetSettings.orientation === "landscape" ? "landscape" : "portrait";
+    const printMargin =
+      callSheetSettings.orientation === "landscape" ? "0.16in" : "0.18in";
     setupPrintPageStyle(
-      `@media print { @page { size: letter ${pageOrientation}; margin: 0.25in; } }`,
+      `@media print { @page { size: letter ${pageOrientation}; margin: ${printMargin}; } }`,
     );
 
     setTimeout(() => {
@@ -3003,6 +3029,29 @@ function renderPrintCategory(cat, data, options) {
   return html;
 }
 
+function getCallSheetPrintDensityClass(play, displayOptions, playText) {
+  const plainText = String(playText || "")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  let densityScore = plainText.length;
+  if (displayOptions.showFormationTags) densityScore += 5;
+  if (displayOptions.showTags) densityScore += 5;
+  if (displayOptions.showLineCall) densityScore += 6;
+  if (displayOptions.showMotion) densityScore += 4;
+  if (displayOptions.showProtection) densityScore += 4;
+  if (displayOptions.showPersonnel) densityScore += 3;
+  if (play.cellNote) densityScore += Math.min(String(play.cellNote).length, 10);
+
+  if (displayOptions.showOneWordOnly) densityScore -= 18;
+
+  if (densityScore >= 58) return "print-play--micro";
+  if (densityScore >= 48) return "print-play--dense";
+  if (densityScore >= 38) return "print-play--compact";
+  return "";
+}
+
 /**
  * Render a play for print - matches screen display formatting
  */
@@ -3024,6 +3073,11 @@ function renderPrintPlay(play, options) {
 
   const playParts = buildCallSheetPlayParts(play, displayOptions);
   const playText = playParts.join(" ");
+  const densityClass = getCallSheetPrintDensityClass(
+    play,
+    displayOptions,
+    playText,
+  );
 
   let styles = [];
   const highlightClass = isHighlighted ? "highlighted" : "";
@@ -3043,14 +3097,13 @@ function renderPrintPlay(play, options) {
     : "";
 
   const noteHtml = play.cellNote
-    ? `<span class="print-cell-note">[${play.cellNote}]</span>`
+    ? `<span class="print-cell-note">[${escapeHtml(play.cellNote)}]</span>`
     : "";
 
   return `
-    <div class="print-play ${highlightClass} ${tempoClass}" style="${styles.join(" ")}">
+    <div class="print-play ${highlightClass} ${tempoClass} ${densityClass}" style="${styles.join(" ")}">
       ${personnelHtml}
-      ${playText.trim()}
-      ${noteHtml}
+      <span class="print-play-text">${playText.trim()}${noteHtml}</span>
     </div>
   `;
 }
@@ -3224,6 +3277,38 @@ const BUILTIN_PRESETS = {
       callsheetPersonnelBorderColor: CS_COLORS.red,
     },
   },
+  __print_ultra_tight: {
+    name: "Print Ultra Tight",
+    opts: {
+      callsheetShowNumbers: false,
+      callsheetShowPersonnel: true,
+      callsheetShowFormation: true,
+      callsheetShowFormationTags: false,
+      callsheetShowOneWordOnly: false,
+      callsheetShowProtection: false,
+      callsheetShowPlayName: true,
+      callsheetShowTags: false,
+      callsheetShowMotion: false,
+      callsheetShowLineCall: true,
+      callsheetShowEmoji: false,
+      callsheetUseSquares: false,
+      callsheetUnderEmoji: false,
+      callsheetBoldShifts: false,
+      callsheetRedShifts: false,
+      callsheetItalicMotions: false,
+      callsheetRedMotions: false,
+      callsheetRemoveVowels: true,
+      callsheetHighlightHuddle: false,
+      callsheetHighlightCandy: false,
+      callsheetRedBorder: "",
+      callsheetBlueBorder: "",
+      callsheetGreenBorder: "",
+      callsheetOrangeBorder: "",
+      callsheetPurpleBorder: "",
+      callsheetPersonnelBorder: "",
+      callsheetPersonnelBorderColor: CS_COLORS.red,
+    },
+  },
 };
 
 /**
@@ -3355,6 +3440,7 @@ function refreshPresetDropdown() {
     "__minimal",
     "__gameday",
     "__print_friendly",
+    "__print_ultra_tight",
   ];
   [...sel.options].forEach((opt) => {
     if (!builtInValues.includes(opt.value)) opt.remove();
