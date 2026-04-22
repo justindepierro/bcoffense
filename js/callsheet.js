@@ -1139,14 +1139,15 @@ function getCallSheetCategoriesForPage(page) {
     .filter(Boolean);
 }
 
-function buildCallSheetColumns(categories) {
+function buildCallSheetColumns(categories, columnCount = 3) {
+  const safeColumnCount = Math.max(1, columnCount || 1);
   const total = categories.length;
-  const baseSize = Math.floor(total / 3);
-  const remainder = total % 3;
+  const baseSize = Math.floor(total / safeColumnCount);
+  const remainder = total % safeColumnCount;
   const columns = [];
   let startIndex = 0;
 
-  for (let index = 0; index < 3; index++) {
+  for (let index = 0; index < safeColumnCount; index++) {
     const columnSize = baseSize + (index < remainder ? 1 : 0);
     columns.push(categories.slice(startIndex, startIndex + columnSize));
     startIndex += columnSize;
@@ -2936,7 +2937,9 @@ function printCallSheet() {
     html += '<div class="print-callsheet-grid">';
 
     // Arrange in 3-column layout for print
-    const columns = buildCallSheetColumns(categories);
+    const printColumnCount =
+      callSheetSettings.orientation === "landscape" ? 2 : 3;
+    const columns = buildCallSheetColumns(categories, printColumnCount);
 
     columns.forEach((column) => {
       html += '<div class="print-column">';
