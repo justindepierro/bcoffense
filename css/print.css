@@ -408,27 +408,33 @@
   .print-play {
     display: flex;
     align-items: flex-start;
-    gap: 3px;
-    padding: 1px 2px;
-    font-size: 7px;
+    gap: 2px;
+    padding: 1px 1.5px;
+    font-size: 6px;
     white-space: normal;
-    overflow-wrap: anywhere;
-    word-break: break-word;
+    overflow-wrap: normal;
+    word-break: normal;
     max-width: 100%;
-    line-height: 1.2;
+    line-height: 1.05;
     break-inside: avoid;
   }
 
   .print-play .cs-line-call {
-    font-size: 0.78em;
+    font-size: 0.72em;
     white-space: nowrap;
     opacity: 0.85;
   }
 
+  .print-play .cs-inline-tag {
+    padding: 0 2px;
+    font-size: 0.72em;
+    line-height: 1.15;
+  }
+
   .print-code {
-    padding: 0 3px;
+    padding: 0 2px;
     border-radius: 2px;
-    font-size: 6px;
+    font-size: 5px;
     font-weight: bold;
     flex-shrink: 0;
   }
@@ -452,7 +458,7 @@
   }
 
   .print-landscape .print-play {
-    font-size: 8px;
+    font-size: 7px;
   }
 
   @page {

@@ -475,6 +475,7 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetShowPersonnel",
   "callsheetShowFormation",
   "callsheetShowFormationTags",
+  "callsheetShowOneWordOnly",
   "callsheetShowProtection",
   "callsheetShowPlayName",
   "callsheetShowTags",
@@ -1503,6 +1504,8 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetShowFormation")?.checked ?? true,
     showFormationTags:
       document.getElementById("callsheetShowFormationTags")?.checked ?? false,
+    showOneWordOnly:
+      document.getElementById("callsheetShowOneWordOnly")?.checked ?? false,
     showProtection:
       document.getElementById("callsheetShowProtection")?.checked ?? false,
     showPlayName:
@@ -2858,6 +2861,8 @@ function csSelectAllFields(selectAll) {
     const el = document.getElementById(id);
     if (el) el.checked = selectAll;
   });
+  const oneWordOnlyEl = document.getElementById("callsheetShowOneWordOnly");
+  if (oneWordOnlyEl) oneWordOnlyEl.checked = false;
   requestRenderCallSheet();
 }
 
@@ -2871,6 +2876,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: true,
+      callsheetShowOneWordOnly: false,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
       callsheetShowTags: true,
@@ -2902,6 +2908,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: false,
+      callsheetShowOneWordOnly: false,
       callsheetShowProtection: false,
       callsheetShowPlayName: true,
       callsheetShowTags: false,
@@ -2933,6 +2940,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: true,
+      callsheetShowOneWordOnly: false,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
       callsheetShowTags: false,
@@ -2964,6 +2972,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: true,
+      callsheetShowOneWordOnly: false,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
       callsheetShowTags: false,
@@ -3314,12 +3323,17 @@ function buildCallSheetPlayParts(play, options) {
     if (!value) return "";
     return escapeHtml(options.noVowels ? removeVowels(value) : value);
   };
+  const oneWordCall = formatTagText(play.oneWord);
   const formationTags = [play.formTag1, play.formTag2]
     .filter((value) => value && String(value).trim())
     .map((value) => formatTagText(value));
   const playTags = [play.playTag1, play.playTag2]
     .filter((value) => value && String(value).trim())
     .map((value) => formatTagText(value));
+
+  if (options.showOneWordOnly && oneWordCall) {
+    return [`<span class="cs-one-word-call">${oneWordCall}</span>`];
+  }
 
   // Check if play has "Under"
   const hasUnder =
