@@ -502,6 +502,151 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetPersonnelBorderColor",
 ];
 
+const CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS = [
+  "cellUseOneWord",
+  "cellHidePersonnel",
+  "cellHideWristband",
+  "cellHideFormation",
+  "cellHideFormationTags",
+  "cellHideShift",
+  "cellHideMotion",
+  "cellHideProtection",
+  "cellHidePlayName",
+  "cellHidePlayTags",
+  "cellHideLineCall",
+];
+
+const CALLSHEET_CELL_DISPLAY_PRESETS = [
+  {
+    id: "default",
+    label: "Reset",
+    sublabel: "Use the global display settings for this cell.",
+    overrides: {},
+  },
+  {
+    id: "scout",
+    label: "Scout",
+    sublabel: "Strip tags and extra detail but keep the main call readable.",
+    overrides: {
+      cellHideWristband: true,
+      cellHideFormationTags: true,
+      cellHideProtection: true,
+      cellHidePlayTags: true,
+      cellHideLineCall: true,
+    },
+  },
+  {
+    id: "ultra-tight",
+    label: "Ultra Tight",
+    sublabel: "Keep only the essential call pieces for dense sheets.",
+    overrides: {
+      cellHideWristband: true,
+      cellHidePersonnel: true,
+      cellHideFormationTags: true,
+      cellHideShift: true,
+      cellHideMotion: true,
+      cellHideProtection: true,
+      cellHidePlayTags: true,
+      cellHideLineCall: true,
+    },
+  },
+  {
+    id: "one-word",
+    label: "One Word",
+    sublabel: "Show only the one-word call in royal blue when available.",
+    requiresOneWord: true,
+    overrides: {
+      cellUseOneWord: true,
+    },
+  },
+];
+
+function hasCallSheetCellDisplayOverrides(play) {
+  return CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS.some((prop) => Boolean(play[prop]));
+}
+
+function clearCallSheetCellDisplayOverrides(play) {
+  CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS.forEach((prop) => {
+    delete play[prop];
+  });
+}
+
+function getCallSheetCellDisplayPreset(presetId) {
+  return CALLSHEET_CELL_DISPLAY_PRESETS.find((preset) => preset.id === presetId);
+}
+
+function applyCallSheetCellDisplayPreset(play, presetId) {
+  const preset = getCallSheetCellDisplayPreset(presetId);
+  if (!preset) return false;
+  if (
+    preset.requiresOneWord &&
+    !(play.oneWord && String(play.oneWord).trim())
+  ) {
+    return false;
+  }
+
+  clearCallSheetCellDisplayOverrides(play);
+  Object.entries(preset.overrides || {}).forEach(([prop, value]) => {
+    if (value) play[prop] = value;
+  });
+  return true;
+}
+
+function getCallSheetCellDisplaySummary(play) {
+  const tokens = [];
+  const titleParts = [];
+  const tokenMap = [
+    ["cellHideWristband", "-#", "Hide wristband number"],
+    ["cellHidePersonnel", "-Pers", "Hide personnel badge"],
+    ["cellHideFormation", "-Form", "Hide formation"],
+    ["cellHideFormationTags", "-FTag", "Hide formation tags"],
+    ["cellHideShift", "-Shift", "Hide shift"],
+    ["cellHideMotion", "-Mot", "Hide motion"],
+    ["cellHideProtection", "-Prot", "Hide protection"],
+    ["cellHidePlayName", "-Play", "Hide play name"],
+    ["cellHidePlayTags", "-PTag", "Hide play tags"],
+    ["cellHideLineCall", "-LC", "Hide line call"],
+  ];
+
+  if (play.cellUseOneWord) {
+    tokens.push("1W");
+    titleParts.push("One-word only");
+  }
+
+  tokenMap.forEach(([prop, token, title]) => {
+    if (play[prop]) {
+      tokens.push(token);
+      titleParts.push(title);
+    }
+  });
+
+  if (!tokens.length) return null;
+
+  const visibleTokens = tokens.slice(0, 3);
+  const overflow = tokens.length - visibleTokens.length;
+  return {
+    label: overflow > 0 ? `${visibleTokens.join(" ")} +${overflow}` : visibleTokens.join(" "),
+    title: `Cell display overrides: ${titleParts.join(", ")}`,
+  };
+}
+
+function getCallSheetScopeLabel(scope) {
+  if (scope === "left") return "Left Hash";
+  if (scope === "right") return "Right Hash";
+  return "Both Hashes";
+}
+
+function getCallSheetScopePlays(categoryId, scope) {
+  const category = callSheet[categoryId] || { left: [], right: [] };
+  if (scope === "left") return Array.isArray(category.left) ? category.left : [];
+  if (scope === "right")
+    return Array.isArray(category.right) ? category.right : [];
+  return [
+    ...(Array.isArray(category.left) ? category.left : []),
+    ...(Array.isArray(category.right) ? category.right : []),
+  ];
+}
+
 /**
  * Initialize call sheet
  */
@@ -1548,6 +1693,27 @@ function getCallSheetDisplayOptions() {
   };
 }
 
+function getCallSheetPlayDisplayOptions(play, baseOptions) {
+  const options = { ...baseOptions };
+
+  if (play.cellUseOneWord && play.oneWord && String(play.oneWord).trim()) {
+    options.showOneWordOnly = true;
+  }
+
+  if (play.cellHidePersonnel) options.showPersonnel = false;
+  if (play.cellHideWristband) options.showNumbers = false;
+  if (play.cellHideFormation) options.showFormation = false;
+  if (play.cellHideFormationTags) options.showFormationTags = false;
+  if (play.cellHideMotion) options.showMotion = false;
+  if (play.cellHideProtection) options.showProtection = false;
+  if (play.cellHidePlayName) options.showPlayName = false;
+  if (play.cellHidePlayTags) options.showTags = false;
+  if (play.cellHideLineCall) options.showLineCall = false;
+  options.hideShift = Boolean(play.cellHideShift);
+
+  return options;
+}
+
 /**
  * Check if a play matches a border type
  */
@@ -1600,6 +1766,8 @@ function getPlayBorderColor(play, options) {
  */
 function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   if (!options) options = getCallSheetDisplayOptions();
+  const displayOptions = getCallSheetPlayDisplayOptions(play, options);
+  const displaySummary = getCallSheetCellDisplaySummary(play);
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
@@ -1615,8 +1783,8 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
     tempoClass = "tempo-candy";
 
   // Use shared play text builder
-  const playParts = buildCallSheetPlayParts(play, options);
-  if (options.showNumbers && play.wristbandNumber) {
+  const playParts = buildCallSheetPlayParts(play, displayOptions);
+  if (displayOptions.showNumbers && play.wristbandNumber) {
     const idx = playParts.findIndex(
       (p) => p === `<b>${play.wristbandNumber}</b>`,
     );
@@ -1651,20 +1819,22 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
 
   // Check if play has any custom formatting
   const hasFormat =
+    play.borderColor ||
     play.cellBg ||
     play.cellTextColor ||
-    play.cellUseOneWord ||
     play.cellBold ||
     play.cellItalic ||
     play.cellUnderline ||
     play.cellStrikethrough ||
-    play.cellFontSize ||
-    play.cellNote;
+    play.cellFontSize;
   const formatIndicator = hasFormat
-    ? `<span class="cs-cell-format-dot" title="Custom formatting applied">✦</span>`
+    ? `<span class="cs-cell-format-dot" title="Custom cell formatting applied">✦</span>`
+    : "";
+  const displayIndicator = displaySummary
+    ? `<span class="cs-cell-display-badge" title="${escapeHtml(displaySummary.title)}">${escapeHtml(displaySummary.label)}</span>`
     : "";
 
-  const personnelHtml = options.showPersonnel
+  const personnelHtml = displayOptions.showPersonnel
     ? `<span class="personnel-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
     : "";
 
@@ -1699,6 +1869,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
          data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
       ${personnelHtml}
       <span class="play-text" role="cell">${visiblePlayText}</span>
+      ${displayIndicator}
       ${formatIndicator}
       ${noteBadge}
       ${dupeBadge}
@@ -1788,6 +1959,38 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menuHtml += `<button class="cs-style-btn${play.cellStrikethrough ? " active" : ""}" data-action="toggleStyle" data-prop="cellStrikethrough" title="Strikethrough"><s>S</s></button>`;
   menuHtml += `</div></div>`;
 
+  const displayOverrideButtons = [
+    { prop: "cellHideWristband", label: "#", title: "Hide wristband number" },
+    { prop: "cellHidePersonnel", label: "Pers", title: "Hide personnel badge" },
+    { prop: "cellHideFormation", label: "Form", title: "Hide formation" },
+    { prop: "cellHideFormationTags", label: "FTag", title: "Hide formation tags" },
+    { prop: "cellHideShift", label: "Shift", title: "Hide shift" },
+    { prop: "cellHideMotion", label: "Mot", title: "Hide motion" },
+    { prop: "cellHideProtection", label: "Prot", title: "Hide protection" },
+    { prop: "cellHidePlayName", label: "Play", title: "Hide play name" },
+    { prop: "cellHidePlayTags", label: "PTag", title: "Hide play tags" },
+    { prop: "cellHideLineCall", label: "LC", title: "Hide line call" },
+  ];
+  menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Hide In This Cell</span><div class="cs-ctx-styles cs-ctx-styles--wrap">`;
+  displayOverrideButtons.forEach((item) => {
+    menuHtml += `<button class="cs-style-btn cs-style-btn--text${play[item.prop] ? " active" : ""}" data-action="toggleStyle" data-prop="${item.prop}" title="${item.title}">${item.label}</button>`;
+  });
+  menuHtml += `</div></div>`;
+
+  const displayPresetButtons = CALLSHEET_CELL_DISPLAY_PRESETS.filter((preset) => {
+    if (!preset.requiresOneWord) return true;
+    return play.oneWord && String(play.oneWord).trim();
+  });
+  menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Quick Presets</span><div class="cs-ctx-styles cs-ctx-styles--wrap">`;
+  displayPresetButtons.forEach((preset) => {
+    const isReset = preset.id === "default";
+    const isActive = isReset
+      ? !hasCallSheetCellDisplayOverrides(play)
+      : false;
+    menuHtml += `<button class="cs-style-btn cs-style-btn--text${isActive ? " active" : ""}" data-action="applyPreset" data-preset="${preset.id}" title="${preset.sublabel}">${preset.label}</button>`;
+  });
+  menuHtml += `</div></div>`;
+
   if (play.oneWord && String(play.oneWord).trim()) {
     menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Display Mode</span><div class="cs-ctx-styles">`;
     menuHtml += `<button class="cs-style-btn${play.cellUseOneWord ? " active" : ""}" data-action="toggleStyle" data-prop="cellUseOneWord" title="Show one-word call only">1W</button>`;
@@ -1867,6 +2070,21 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       btn.classList.toggle("active");
       renderCallSheet();
       saveCallSheet();
+    } else if (action === "applyPreset") {
+      const preset = getCallSheetCellDisplayPreset(btn.dataset.preset);
+      if (!preset) return;
+      const applied = applyCallSheetCellDisplayPreset(p, preset.id);
+      if (!applied) {
+        showToast("One-word call is not available for this play", {
+          duration: 2500,
+          type: "warning",
+        });
+        return;
+      }
+      renderCallSheet();
+      saveCallSheet();
+      showToast(`Applied ${preset.label} display preset`);
+      menu.remove();
     } else if (action === "fontSize") {
       p.cellFontSize = btn.dataset.size || undefined;
       renderCallSheet();
@@ -1884,7 +2102,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       delete p.borderColor;
       delete p.cellBg;
       delete p.cellTextColor;
-      delete p.cellUseOneWord;
+      clearCallSheetCellDisplayOverrides(p);
       delete p.cellBold;
       delete p.cellItalic;
       delete p.cellUnderline;
@@ -2790,6 +3008,7 @@ function renderPrintCategory(cat, data, options) {
  */
 function renderPrintPlay(play, options) {
   if (!options) options = getCallSheetDisplayOptions();
+  const displayOptions = getCallSheetPlayDisplayOptions(play, options);
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
@@ -2803,7 +3022,7 @@ function renderPrintPlay(play, options) {
   else if (options.highlightCandy && tempo === "candy")
     tempoClass = "tempo-candy";
 
-  const playParts = buildCallSheetPlayParts(play, options);
+  const playParts = buildCallSheetPlayParts(play, displayOptions);
   const playText = playParts.join(" ");
 
   let styles = [];
@@ -2819,7 +3038,7 @@ function renderPrintPlay(play, options) {
   if (play.cellStrikethrough) textDeco.push("line-through");
   if (textDeco.length) styles.push(`text-decoration: ${textDeco.join(" ")};`);
 
-  const personnelHtml = options.showPersonnel
+  const personnelHtml = displayOptions.showPersonnel
     ? `<span class="print-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
     : "";
 
@@ -3339,7 +3558,7 @@ function buildCallSheetPlayParts(play, options) {
     .filter((value) => value && String(value).trim())
     .map((value) => formatTagText(value));
 
-  if ((options.showOneWordOnly || play.cellUseOneWord) && oneWordCall) {
+  if (options.showOneWordOnly && oneWordCall) {
     return [`<span class="cs-one-word-call">${oneWordCall}</span>`];
   }
 
@@ -3375,7 +3594,7 @@ function buildCallSheetPlayParts(play, options) {
   }
 
   // Handle shift with bold/red options
-  if (play.shift) {
+  if (play.shift && !options.hideShift) {
     let shiftText = escapeHtml(
       options.noVowels ? removeVowels(play.shift) : play.shift,
     );
@@ -3626,6 +3845,13 @@ function openCategoryMenu(event, categoryId) {
     <button class="cs-ctx-item" data-action="editCategoryName" data-arg="${categoryId}" data-ctx-close="true">
       ✏️ Rename
     </button>
+    <div class="cs-ctx-divider"></div>
+    <button class="cs-ctx-item" data-action="applyCategoryDisplayPreset" data-arg="${categoryId}" data-ctx-close="true">
+      🎛️ Apply Display Preset
+    </button>
+    <button class="cs-ctx-item" data-action="clearCategoryDisplayOverrides" data-arg="${categoryId}" data-ctx-close="true">
+      🧹 Clear Side Display Overrides
+    </button>
     ${cat.custom ? `<button class="cs-ctx-item cs-ctx-clear" data-action="deleteCustomCallSheetCategory" data-arg="${categoryId}" data-ctx-close="true">🗑️ Delete Category</button>` : ""}
     <div class="cs-ctx-divider"></div>
     <button class="cs-ctx-item" data-action="clearCategory" data-arg="${categoryId}" data-ctx-close="true">
@@ -3641,6 +3867,119 @@ function clearCategory(categoryId) {
   renderCallSheet();
   saveCallSheet();
   showToast("🗑️ Category cleared");
+}
+
+async function applyCategoryDisplayPreset(categoryId) {
+  const cat = CALLSHEET_CATEGORIES.find((item) => item.id === categoryId);
+  if (!cat) return;
+
+  const scope = await showListPicker(
+    `Choose where to apply a display preset for ${getCategoryDisplayName(cat)}.`,
+    [
+      {
+        label: "Left Hash",
+        sublabel: "Apply to every play on the left side of this category.",
+        value: "left",
+      },
+      {
+        label: "Right Hash",
+        sublabel: "Apply to every play on the right side of this category.",
+        value: "right",
+      },
+      {
+        label: "Both Hashes",
+        sublabel: "Apply to every play in the full category.",
+        value: "both",
+      },
+    ],
+    { title: "Bulk Display Scope", icon: "🧩" },
+  );
+  if (!scope) return;
+
+  const targetPlays = getCallSheetScopePlays(categoryId, scope);
+  if (!targetPlays.length) {
+    showToast(`No plays in ${getCallSheetScopeLabel(scope)}`);
+    return;
+  }
+
+  const presetId = await showListPicker(
+    "Choose the display preset to apply.",
+    CALLSHEET_CELL_DISPLAY_PRESETS.map((preset) => ({
+      label: preset.label,
+      sublabel: preset.sublabel,
+      value: preset.id,
+    })),
+    { title: "Display Preset", icon: "🎛️" },
+  );
+  if (!presetId) return;
+
+  const preset = getCallSheetCellDisplayPreset(presetId);
+  let appliedCount = 0;
+  targetPlays.forEach((play) => {
+    if (applyCallSheetCellDisplayPreset(play, presetId)) appliedCount += 1;
+  });
+
+  if (!appliedCount) {
+    showToast("No eligible plays for that preset", {
+      duration: 2500,
+      type: "warning",
+    });
+    return;
+  }
+
+  renderCallSheet();
+  saveCallSheet();
+  showToast(
+    `${preset.label} applied to ${appliedCount} play${appliedCount === 1 ? "" : "s"} on ${getCallSheetScopeLabel(scope)}`,
+  );
+}
+
+async function clearCategoryDisplayOverrides(categoryId) {
+  const cat = CALLSHEET_CATEGORIES.find((item) => item.id === categoryId);
+  if (!cat) return;
+
+  const scope = await showListPicker(
+    `Choose where to clear cell display overrides for ${getCategoryDisplayName(cat)}.`,
+    [
+      {
+        label: "Left Hash",
+        sublabel: "Remove cell-level display overrides from the left side only.",
+        value: "left",
+      },
+      {
+        label: "Right Hash",
+        sublabel: "Remove cell-level display overrides from the right side only.",
+        value: "right",
+      },
+      {
+        label: "Both Hashes",
+        sublabel: "Remove cell-level display overrides across the full category.",
+        value: "both",
+      },
+    ],
+    { title: "Clear Display Overrides", icon: "🧹" },
+  );
+  if (!scope) return;
+
+  const targetPlays = getCallSheetScopePlays(categoryId, scope);
+  let clearedCount = 0;
+  targetPlays.forEach((play) => {
+    if (hasCallSheetCellDisplayOverrides(play)) {
+      clearCallSheetCellDisplayOverrides(play);
+      clearedCount += 1;
+    }
+  });
+
+  if (!clearedCount) {
+    showToast(`No cell display overrides on ${getCallSheetScopeLabel(scope)}`);
+    return;
+  }
+
+  renderCallSheet();
+  saveCallSheet();
+  showToast(
+    `Cleared display overrides on ${clearedCount} play${clearedCount === 1 ? "" : "s"} in ${getCallSheetScopeLabel(scope)}`,
+  );
 }
 
 // ============ Quick Stats Panel ============
