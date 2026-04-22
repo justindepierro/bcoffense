@@ -397,7 +397,7 @@ let callSheet = {};
 // Call sheet settings
 function getDefaultCallSheetSettings() {
   return {
-    orientation: "portrait", // portrait or landscape
+    orientation: "landscape", // portrait or landscape
     currentPage: "front", // front or back
     customNames: {}, // { categoryId: "Custom Name" }
     customColors: {}, // { categoryId: "#hex" }
@@ -669,6 +669,10 @@ function initCallSheet() {
     );
     if (savedSettings) {
       callSheetSettings = { ...getDefaultCallSheetSettings(), ...savedSettings };
+    }
+    if (callSheetSettings.orientation !== "landscape") {
+      callSheetSettings.orientation = "landscape";
+      saveCallSheetSettings();
     }
 
     rebuildCallSheetCategoryRegistry();

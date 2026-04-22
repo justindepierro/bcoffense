@@ -370,7 +370,7 @@
     padding: 2.5px 6px;
     font-weight: bold;
     text-align: center;
-    font-size: 8.75px;
+    font-size: 9.2px;
     line-height: 1.12;
   }
 
@@ -378,7 +378,7 @@
     display: grid;
     grid-template-columns: 1fr 1fr;
     background: var(--color-bg-input);
-    font-size: 6.6px;
+    font-size: 7px;
     font-style: italic;
     text-align: center;
   }
@@ -412,10 +412,10 @@
     align-items: center;
     gap: 1.5px;
     padding: 0.9px 1.5px;
-    font-size: 5.8px;
+    font-size: 6.25px;
     font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
-    letter-spacing: -0.012em;
+    letter-spacing: -0.01em;
     white-space: nowrap;
     overflow: hidden;
     max-width: 100%;
@@ -433,26 +433,26 @@
   }
 
   .print-play--compact {
-    font-size: 5.45px;
-    letter-spacing: -0.022em;
+    font-size: 5.95px;
+    letter-spacing: -0.018em;
   }
 
   .print-play--dense {
-    font-size: 5.05px;
-    letter-spacing: -0.032em;
+    font-size: 5.55px;
+    letter-spacing: -0.026em;
   }
 
   .print-play--micro {
-    font-size: 4.7px;
-    letter-spacing: -0.04em;
+    font-size: 5.15px;
+    letter-spacing: -0.032em;
   }
 
   .print-play--micro .print-play-text {
-    letter-spacing: -0.043em;
+    letter-spacing: -0.035em;
   }
 
   .print-play .cs-line-call {
-    font-size: 0.7em;
+    font-size: 0.74em;
     white-space: nowrap;
     opacity: 0.85;
   }
@@ -475,7 +475,7 @@
   .print-code {
     padding: 0 1.75px;
     border-radius: 2px;
-    font-size: 4.8px;
+    font-size: 5.3px;
     font-weight: bold;
     flex-shrink: 0;
   }
@@ -491,15 +491,27 @@
   }
 
   .print-landscape .print-callsheet-grid {
-    gap: 5px;
+    gap: 6px;
   }
 
   .print-landscape .print-category-header {
-    font-size: 9px;
+    font-size: 9.75px;
   }
 
   .print-landscape .print-play {
-    font-size: 6px;
+    font-size: 6.7px;
+  }
+
+  .print-landscape .print-play--compact {
+    font-size: 6.3px;
+  }
+
+  .print-landscape .print-play--dense {
+    font-size: 5.9px;
+  }
+
+  .print-landscape .print-play--micro {
+    font-size: 5.45px;
   }
 
   @page {
