@@ -318,6 +318,41 @@
 }
 
 /* ── Call sheet mobile stacking at ≤600px ── */
+@media (max-width: 980px) {
+  .cs-toolbar-secondary {
+    grid-template-columns: 1fr;
+  }
+
+  .cs-settings-section--display,
+  .cs-settings-section--borders {
+    grid-column: span 12;
+  }
+
+  .cs-unified-header {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .cs-unified-header-right {
+    width: 100%;
+    justify-content: space-between;
+  }
+
+  .cs-preset-cluster {
+    flex: 1 1 320px;
+    min-width: 0;
+  }
+
+  .cs-preset-select {
+    min-width: 0;
+    flex: 1 1 auto;
+  }
+
+  .cs-settings-note {
+    white-space: normal;
+  }
+}
+
 @media (max-width: 600px) {
   .callsheet-columns {
     flex-direction: column;
@@ -358,12 +393,37 @@
   .cs-toolbar-secondary {
     gap: 6px;
   }
+  .cs-toolbar-groups,
+  .cs-tool-group-row {
+    gap: 8px;
+  }
+  .cs-tool-group {
+    width: 100%;
+  }
   .cs-tool-btn {
     flex: 1 1 140px;
     text-align: center;
   }
   .cs-unified-content {
     padding: 10px;
+  }
+  .cs-settings-grid,
+  .cs-border-selectors--grid {
+    grid-template-columns: 1fr;
+  }
+  .cs-settings-subtitle-row,
+  .cs-settings-section-head,
+  .cs-unified-header-right,
+  .cs-preset-cluster {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .cs-border-label--personnel {
+    grid-template-columns: 1fr;
+  }
+  .cs-border-arrow {
+    justify-self: center;
+    transform: rotate(90deg);
   }
   .cs-layout-modal {
     width: calc(100vw - 20px);

@@ -1425,68 +1425,107 @@
 
       <!-- Secondary Toolbar -->
       <div class="cs-toolbar-secondary">
-        <button id="callsheetUndoBtn" class="cs-tool-btn btn-undo" data-action="undoCallSheet" disabled
-          title="Nothing to undo">
-          ↩️ Undo
-        </button>
-        <button id="callsheetRedoBtn" class="cs-tool-btn btn-redo" data-action="redoCallSheet" disabled
-          title="Nothing to redo">
-          ↪️ Redo
-        </button>
-        <div class="cs-tool-divider"></div>
-        <button class="cs-tool-btn cs-scouting-btn" data-action="toggleScoutingOverlay"
-          title="Show/hide opponent scouting intel on categories" id="csScoutingToggle">
-          🎯 Scouting Intel
-        </button>
-        <button class="cs-tool-btn" data-action="toggleStatsPanel" title="Quick Stats">
-          📊 Stats
-        </button>
-        <button class="cs-tool-btn" data-action="toggleNotOnSheet" title="Plays not on sheet">
-          🔍 Not On Sheet
-        </button>
-        <button class="cs-tool-btn" data-action="openTemplatesModal" data-arg="manage"
-          title="Browse saved call sheets and template actions">
-          📁 Saved Call Sheets
-        </button>
-        <button class="cs-tool-btn" data-action="openAddCallSheetCategoryModal"
-          title="Add a custom call sheet category">
-          ➕ Add Category
-        </button>
-        <div class="cs-tool-divider"></div>
-        <button class="cs-tool-btn" data-action="smartReorderCategories" title="Auto-arrange for best print layout">
-          🧩 Smart Layout
-        </button>
-        <button class="cs-tool-btn" data-action="openCallSheetLayoutModal"
-          title="Manually reorder categories and move them between front and back">
-          🗂️ Reorder
-        </button>
-        <button class="cs-tool-btn" data-action="resetCategoryOrder" title="Reset the full front/back category layout">
-          ↩️ Reset Layout
-        </button>
-        <div class="cs-tool-divider"></div>
-        <button class="cs-tool-btn" data-action="expandAllCategories" title="Expand all">
-          ▼ Expand All
-        </button>
-        <button class="cs-tool-btn" data-action="collapseAllCategories" title="Collapse all">
-          ▶ Collapse All
-        </button>
+        <div class="cs-toolbar-meta">
+          <strong>Quick Actions</strong>
+          <span>Manage history, scouting, layout, and board visibility.</span>
+        </div>
+        <div class="cs-toolbar-groups">
+          <div class="cs-tool-group">
+            <span class="cs-tool-group-label">History</span>
+            <div class="cs-tool-group-row">
+              <button id="callsheetUndoBtn" class="cs-tool-btn btn-undo" data-action="undoCallSheet" disabled
+                title="Nothing to undo">
+                ↩️ Undo
+              </button>
+              <button id="callsheetRedoBtn" class="cs-tool-btn btn-redo" data-action="redoCallSheet" disabled
+                title="Nothing to redo">
+                ↪️ Redo
+              </button>
+            </div>
+          </div>
+
+          <div class="cs-tool-group">
+            <span class="cs-tool-group-label">Insights</span>
+            <div class="cs-tool-group-row">
+              <button class="cs-tool-btn cs-scouting-btn" data-action="toggleScoutingOverlay"
+                title="Show/hide opponent scouting intel on categories" id="csScoutingToggle">
+                🎯 Scouting Intel
+              </button>
+              <button class="cs-tool-btn" data-action="toggleStatsPanel" title="Quick Stats">
+                📊 Stats
+              </button>
+              <button class="cs-tool-btn" data-action="toggleNotOnSheet" title="Plays not on sheet">
+                🔍 Not On Sheet
+              </button>
+            </div>
+          </div>
+
+          <div class="cs-tool-group">
+            <span class="cs-tool-group-label">Sheet</span>
+            <div class="cs-tool-group-row">
+              <button class="cs-tool-btn" data-action="openTemplatesModal" data-arg="manage"
+                title="Browse saved call sheets and template actions">
+                📁 Saved Call Sheets
+              </button>
+              <button class="cs-tool-btn" data-action="openAddCallSheetCategoryModal"
+                title="Add a custom call sheet category">
+                ➕ Add Category
+              </button>
+            </div>
+          </div>
+
+          <div class="cs-tool-group">
+            <span class="cs-tool-group-label">Layout</span>
+            <div class="cs-tool-group-row">
+              <button class="cs-tool-btn" data-action="smartReorderCategories" title="Auto-arrange for best print layout">
+                🧩 Smart Layout
+              </button>
+              <button class="cs-tool-btn" data-action="openCallSheetLayoutModal"
+                title="Manually reorder categories and move them between front and back">
+                🗂️ Reorder
+              </button>
+              <button class="cs-tool-btn" data-action="resetCategoryOrder" title="Reset the full front/back category layout">
+                ↩️ Reset Layout
+              </button>
+            </div>
+          </div>
+
+          <div class="cs-tool-group">
+            <span class="cs-tool-group-label">Board</span>
+            <div class="cs-tool-group-row">
+              <button class="cs-tool-btn" data-action="expandAllCategories" title="Expand all">
+                ▼ Expand All
+              </button>
+              <button class="cs-tool-btn" data-action="collapseAllCategories" title="Collapse all">
+                ▶ Collapse All
+              </button>
+            </div>
+          </div>
+        </div>
       </div>
 
       <!-- Unified Display & Format Bar -->
       <div class="cs-unified-bar">
         <div class="cs-unified-header" data-action="toggleCollapsiblePanel">
-          <strong>⚙️ Display &amp; Format</strong>
+          <div class="cs-unified-heading">
+            <strong>⚙️ Display &amp; Format</strong>
+            <span class="cs-unified-heading-copy">Tune what each cell shows and how the board scans at a glance.</span>
+          </div>
           <div class="cs-unified-header-right">
-            <select id="csDisplayPreset" class="cs-preset-select" data-onchange="loadDisplayPreset" data-pass="value">
-              <option value="">Presets...</option>
-              <option value="__all">✅ Show All Fields</option>
-              <option value="__minimal">📄 Minimal</option>
-              <option value="__gameday">🏈 Game Day</option>
-              <option value="__print_friendly">🖨️ Print Friendly</option>
-            </select>
-            <button class="cs-preset-save-btn" data-action="saveDisplayPreset" title="Save current as preset">
-              💾
-            </button>
+            <div class="cs-preset-cluster">
+              <span class="cs-preset-label">Preset</span>
+              <select id="csDisplayPreset" class="cs-preset-select" data-onchange="loadDisplayPreset" data-pass="value">
+                <option value="">Presets...</option>
+                <option value="__all">✅ Show All Fields</option>
+                <option value="__minimal">📄 Minimal</option>
+                <option value="__gameday">🏈 Game Day</option>
+                <option value="__print_friendly">🖨️ Print Friendly</option>
+                <option value="__print_large_3col">📰 Large Print 3-Column</option>
+              </select>
+              <button class="cs-preset-save-btn" data-action="saveDisplayPreset" title="Save current as preset">
+                💾
+              </button>
+            </div>
             <span class="toggle-icon">▼</span>
           </div>
         </div>
@@ -1509,59 +1548,65 @@
                 </div>
               </div>
               <div class="cs-settings-subgroup">
-                <div class="cs-settings-subtitle">Show In Each Cell</div>
+                <div class="cs-settings-subtitle-row">
+                  <div class="cs-settings-subtitle">Show In Each Cell</div>
+                  <span class="cs-settings-note">Core text fields and shorthand</span>
+                </div>
                 <div class="display-options-grid cs-show-grid cs-settings-grid">
-                  <label><input type="checkbox" id="callsheetShowNumbers" data-onchange="requestRenderCallSheet"
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowNumbers" data-onchange="requestRenderCallSheet"
                       checked />
-                    WB#</label>
-                  <label><input type="checkbox" id="callsheetShowPersonnel" data-onchange="requestRenderCallSheet"
+                    <span>WB#</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowPersonnel" data-onchange="requestRenderCallSheet"
                       checked />
-                    Personnel</label>
-                  <label><input type="checkbox" id="callsheetShowFormation" data-onchange="requestRenderCallSheet"
+                    <span>Personnel</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowFormation" data-onchange="requestRenderCallSheet"
                       checked />
-                    Formation</label>
-                  <label><input type="checkbox" id="callsheetShowFormationTags" data-onchange="requestRenderCallSheet" />
-                    Formation Tags</label>
-                  <label><input type="checkbox" id="callsheetShowOneWordOnly" data-onchange="requestRenderCallSheet" />
-                    One Word Only</label>
-                  <label><input type="checkbox" id="callsheetShowProtection" data-onchange="requestRenderCallSheet" />
-                    Protection</label>
-                  <label><input type="checkbox" id="callsheetShowPlayName" data-onchange="requestRenderCallSheet"
+                    <span>Formation</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowFormationTags" data-onchange="requestRenderCallSheet" />
+                    <span>Formation Tags</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowOneWordOnly" data-onchange="requestRenderCallSheet" />
+                    <span>One Word Only</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowProtection" data-onchange="requestRenderCallSheet" />
+                    <span>Protection</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowPlayName" data-onchange="requestRenderCallSheet"
                       checked />
-                    Play</label>
-                  <label><input type="checkbox" id="callsheetShowTags" data-onchange="requestRenderCallSheet" />
-                    Play Tags</label>
-                  <label><input type="checkbox" id="callsheetShowMotion" data-onchange="requestRenderCallSheet" />
-                    Motion</label>
-                  <label><input type="checkbox" id="callsheetShowLineCall" data-onchange="requestRenderCallSheet"
+                    <span>Play</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowTags" data-onchange="requestRenderCallSheet" />
+                    <span>Play Tags</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowMotion" data-onchange="requestRenderCallSheet" />
+                    <span>Motion</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowLineCall" data-onchange="requestRenderCallSheet"
                       checked />
-                    [Line Call]</label>
+                    <span>[Line Call]</span></label>
                 </div>
               </div>
 
               <div class="cs-settings-subgroup">
-                <div class="cs-settings-subtitle">Formatting &amp; Emphasis</div>
+                <div class="cs-settings-subtitle-row">
+                  <div class="cs-settings-subtitle">Formatting &amp; Emphasis</div>
+                  <span class="cs-settings-note">Visual cues that accelerate scanning</span>
+                </div>
                 <div class="display-options-grid cs-settings-grid">
-                  <label><input type="checkbox" id="callsheetShowEmoji" data-onchange="requestRenderCallSheet" />
-                    🔵 Personnel Color</label>
-                  <label><input type="checkbox" id="callsheetUseSquares" data-onchange="requestRenderCallSheet" />
-                    🟦 Use Squares</label>
-                  <label><input type="checkbox" id="callsheetUnderEmoji" data-onchange="requestRenderCallSheet" />
-                    🍑 Under = Peach</label>
-                  <label><input type="checkbox" id="callsheetBoldShifts" data-onchange="requestRenderCallSheet" />
-                    <b>Bold</b> Shifts</label>
-                  <label><input type="checkbox" id="callsheetRedShifts" data-onchange="requestRenderCallSheet" />
-                    <span class="red">Red</span> Shifts</label>
-                  <label><input type="checkbox" id="callsheetItalicMotions" data-onchange="requestRenderCallSheet" />
-                    <i>Italic</i> Motions</label>
-                  <label><input type="checkbox" id="callsheetRedMotions" data-onchange="requestRenderCallSheet" />
-                    <span class="red">Red</span> Motions</label>
-                  <label><input type="checkbox" id="callsheetRemoveVowels" data-onchange="requestRenderCallSheet" />
-                    Remove Vowels</label>
-                  <label><input type="checkbox" id="callsheetHighlightHuddle" data-onchange="requestRenderCallSheet" />
-                    🟡 Huddle</label>
-                  <label><input type="checkbox" id="callsheetHighlightCandy" data-onchange="requestRenderCallSheet" />
-                    🩷 Candy</label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowEmoji" data-onchange="requestRenderCallSheet" />
+                    <span>🔵 Personnel Color</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetUseSquares" data-onchange="requestRenderCallSheet" />
+                    <span>🟦 Use Squares</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetUnderEmoji" data-onchange="requestRenderCallSheet" />
+                    <span>🍑 Under = Peach</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetBoldShifts" data-onchange="requestRenderCallSheet" />
+                    <span><b>Bold</b> Shifts</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetRedShifts" data-onchange="requestRenderCallSheet" />
+                    <span><span class="red">Red</span> Shifts</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetItalicMotions" data-onchange="requestRenderCallSheet" />
+                    <span><i>Italic</i> Motions</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetRedMotions" data-onchange="requestRenderCallSheet" />
+                    <span><span class="red">Red</span> Motions</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetRemoveVowels" data-onchange="requestRenderCallSheet" />
+                    <span>Remove Vowels</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetHighlightHuddle" data-onchange="requestRenderCallSheet" />
+                    <span>🟡 Huddle</span></label>
+                  <label class="cs-option-tile"><input type="checkbox" id="callsheetHighlightCandy" data-onchange="requestRenderCallSheet" />
+                    <span>🩷 Candy</span></label>
                 </div>
               </div>
             </section>
@@ -1575,9 +1620,12 @@
               </div>
               <div class="cs-border-panels">
                 <div class="cs-border-panel">
-                  <div class="cs-border-panel-title">By Play Type</div>
+                  <div class="cs-border-panel-head">
+                    <div class="cs-border-panel-title">By Play Type</div>
+                    <span class="cs-border-panel-copy">Assign a scan color to the play families you care about most.</span>
+                  </div>
                   <div class="cs-border-selectors cs-border-selectors--grid">
-                    <label class="cs-border-label"><span style="color: #dc3545">🔴</span>
+                    <label class="cs-border-label"><span class="cs-border-dot" style="--cs-border-accent: #dc3545;">Red</span>
                       <select id="callsheetRedBorder" data-onchange="requestRenderCallSheet">
                         <option value="">None</option>
                         <option value="run">Run</option>
@@ -1588,7 +1636,7 @@
                         <option value="quick">Quick</option>
                         <option value="highlighted">Highlighted</option>
                       </select></label>
-                    <label class="cs-border-label"><span style="color: #007bff">🔵</span>
+                    <label class="cs-border-label"><span class="cs-border-dot" style="--cs-border-accent: #007bff;">Blue</span>
                       <select id="callsheetBlueBorder" data-onchange="requestRenderCallSheet">
                         <option value="">None</option>
                         <option value="run">Run</option>
@@ -1599,7 +1647,7 @@
                         <option value="quick">Quick</option>
                         <option value="highlighted">Highlighted</option>
                       </select></label>
-                    <label class="cs-border-label"><span style="color: #28a745">🟢</span>
+                    <label class="cs-border-label"><span class="cs-border-dot" style="--cs-border-accent: #28a745;">Green</span>
                       <select id="callsheetGreenBorder" data-onchange="requestRenderCallSheet">
                         <option value="">None</option>
                         <option value="run">Run</option>
@@ -1610,7 +1658,7 @@
                         <option value="quick">Quick</option>
                         <option value="highlighted">Highlighted</option>
                       </select></label>
-                    <label class="cs-border-label"><span style="color: #fd7e14">🟠</span>
+                    <label class="cs-border-label"><span class="cs-border-dot" style="--cs-border-accent: #fd7e14;">Orange</span>
                       <select id="callsheetOrangeBorder" data-onchange="requestRenderCallSheet">
                         <option value="">None</option>
                         <option value="run">Run</option>
@@ -1621,7 +1669,7 @@
                         <option value="quick">Quick</option>
                         <option value="highlighted">Highlighted</option>
                       </select></label>
-                    <label class="cs-border-label"><span style="color: #6f42c1">🟣</span>
+                    <label class="cs-border-label"><span class="cs-border-dot" style="--cs-border-accent: #6f42c1;">Purple</span>
                       <select id="callsheetPurpleBorder" data-onchange="requestRenderCallSheet">
                         <option value="">None</option>
                         <option value="run">Run</option>
@@ -1635,7 +1683,10 @@
                   </div>
                 </div>
                 <div class="cs-border-panel">
-                  <div class="cs-border-panel-title">By Personnel</div>
+                  <div class="cs-border-panel-head">
+                    <div class="cs-border-panel-title">By Personnel</div>
+                    <span class="cs-border-panel-copy">Map one personnel family to a border color for instant recognition.</span>
+                  </div>
                   <div class="cs-border-selectors">
                     <label class="cs-border-label cs-border-label--personnel">
                       <select id="callsheetPersonnelBorder" data-onchange="requestRenderCallSheet">
