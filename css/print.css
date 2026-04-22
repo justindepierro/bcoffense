@@ -412,10 +412,10 @@
     align-items: center;
     gap: 1.5px;
     padding: 0.9px 1.5px;
-    font-size: 6.25px;
+    font-size: 6.45px;
     font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
-    letter-spacing: -0.01em;
+    letter-spacing: -0.009em;
     white-space: nowrap;
     overflow: hidden;
     max-width: 100%;
@@ -433,26 +433,26 @@
   }
 
   .print-play--compact {
-    font-size: 5.95px;
-    letter-spacing: -0.018em;
+    font-size: 6.15px;
+    letter-spacing: -0.015em;
   }
 
   .print-play--dense {
-    font-size: 5.55px;
-    letter-spacing: -0.026em;
+    font-size: 5.85px;
+    letter-spacing: -0.022em;
   }
 
   .print-play--micro {
-    font-size: 5.15px;
-    letter-spacing: -0.032em;
+    font-size: 5.45px;
+    letter-spacing: -0.028em;
   }
 
   .print-play--micro .print-play-text {
-    letter-spacing: -0.035em;
+    letter-spacing: -0.03em;
   }
 
   .print-play .cs-line-call {
-    font-size: 0.74em;
+    font-size: 0.77em;
     white-space: nowrap;
     opacity: 0.85;
   }
@@ -475,7 +475,7 @@
   .print-code {
     padding: 0 1.75px;
     border-radius: 2px;
-    font-size: 5.3px;
+    font-size: 5.5px;
     font-weight: bold;
     flex-shrink: 0;
   }
@@ -495,23 +495,23 @@
   }
 
   .print-landscape .print-category-header {
-    font-size: 9.75px;
+    font-size: 10px;
   }
 
   .print-landscape .print-play {
-    font-size: 6.7px;
+    font-size: 7.05px;
   }
 
   .print-landscape .print-play--compact {
-    font-size: 6.3px;
+    font-size: 6.65px;
   }
 
   .print-landscape .print-play--dense {
-    font-size: 5.9px;
+    font-size: 6.25px;
   }
 
   .print-landscape .print-play--micro {
-    font-size: 5.45px;
+    font-size: 5.85px;
   }
 
   @page {

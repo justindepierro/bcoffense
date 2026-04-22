@@ -3050,9 +3050,9 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText) {
 
   if (displayOptions.showOneWordOnly) densityScore -= 18;
 
-  if (densityScore >= 58) return "print-play--micro";
-  if (densityScore >= 48) return "print-play--dense";
-  if (densityScore >= 38) return "print-play--compact";
+  if (densityScore >= 64) return "print-play--micro";
+  if (densityScore >= 54) return "print-play--dense";
+  if (densityScore >= 43) return "print-play--compact";
   return "";
 }
 
