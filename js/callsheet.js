@@ -2936,10 +2936,8 @@ function printCallSheet() {
     html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
     html += '<div class="print-callsheet-grid">';
 
-    // Arrange in 3-column layout for print
-    const printColumnCount =
-      callSheetSettings.orientation === "landscape" ? 2 : 3;
-    const columns = buildCallSheetColumns(categories, printColumnCount);
+    // Keep the printed call sheet in a consistent 3-column layout.
+    const columns = buildCallSheetColumns(categories, 3);
 
     columns.forEach((column) => {
       html += '<div class="print-column">';
@@ -3053,9 +3051,9 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText) {
 
   if (displayOptions.showOneWordOnly) densityScore -= 18;
 
-  if (densityScore >= 64) return "print-play--micro";
-  if (densityScore >= 54) return "print-play--dense";
-  if (densityScore >= 43) return "print-play--compact";
+  if (densityScore >= 61) return "print-play--micro";
+  if (densityScore >= 51) return "print-play--dense";
+  if (densityScore >= 41) return "print-play--compact";
   return "";
 }
 

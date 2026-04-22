@@ -346,7 +346,7 @@
   .print-callsheet-grid {
     display: flex;
     width: 100%;
-    gap: 7px;
+    gap: 5px;
     font-size: 8px;
     align-items: flex-start;
   }
@@ -355,7 +355,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 5px;
+    gap: 4px;
     min-width: 0;
   }
 
@@ -367,24 +367,24 @@
   }
 
   .print-category-header {
-    padding: 2.5px 6px;
+    padding: 2px 4px;
     font-weight: bold;
     text-align: center;
-    font-size: 9.2px;
-    line-height: 1.12;
+    font-size: 8.8px;
+    line-height: 1.08;
   }
 
   .print-hash-headers {
     display: grid;
     grid-template-columns: 1fr 1fr;
     background: var(--color-bg-input);
-    font-size: 7px;
+    font-size: 6.6px;
     font-style: italic;
     text-align: center;
   }
 
   .print-hash-headers > div {
-    padding: 1.25px 1px;
+    padding: 0.75px 0.5px;
     border-right: 1px solid var(--color-border);
   }
 
@@ -398,7 +398,7 @@
   }
 
   .print-hash-column {
-    padding: 1px 1px 0.75px;
+    padding: 0.5px 0.5px 0.5px;
     border-right: 1px solid var(--color-border-light);
     min-width: 0;
   }
@@ -410,16 +410,16 @@
   .print-play {
     display: flex;
     align-items: center;
-    gap: 1.5px;
-    padding: 0.9px 1.5px;
-    font-size: 6.7px;
+    gap: 1px;
+    padding: 0.5px 0.75px;
+    font-size: 6.9px;
     font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
-    letter-spacing: -0.007em;
+    letter-spacing: -0.014em;
     white-space: nowrap;
     overflow: hidden;
     max-width: 100%;
-    line-height: 1.04;
+    line-height: 1.02;
     break-inside: avoid;
   }
 
@@ -433,26 +433,26 @@
   }
 
   .print-play--compact {
-    font-size: 6.45px;
-    letter-spacing: -0.012em;
+    font-size: 6.55px;
+    letter-spacing: -0.018em;
   }
 
   .print-play--dense {
     font-size: 6.15px;
-    letter-spacing: -0.018em;
+    letter-spacing: -0.022em;
   }
 
   .print-play--micro {
     font-size: 5.75px;
-    letter-spacing: -0.022em;
+    letter-spacing: -0.028em;
   }
 
   .print-play--micro .print-play-text {
-    letter-spacing: -0.024em;
+    letter-spacing: -0.03em;
   }
 
   .print-play .cs-line-call {
-    font-size: 0.77em;
+    font-size: 0.74em;
     white-space: nowrap;
     opacity: 0.85;
   }
@@ -473,9 +473,9 @@
   }
 
   .print-code {
-    padding: 0 1.75px;
+    padding: 0 1.2px;
     border-radius: 2px;
-    font-size: 5.7px;
+    font-size: 5.3px;
     font-weight: bold;
     flex-shrink: 0;
   }
@@ -491,27 +491,27 @@
   }
 
   .print-landscape .print-callsheet-grid {
-    gap: 8px;
+    gap: 5px;
   }
 
   .print-landscape .print-category-header {
-    font-size: 10.4px;
+    font-size: 9.1px;
   }
 
   .print-landscape .print-play {
-    font-size: 7.55px;
+    font-size: 7.15px;
   }
 
   .print-landscape .print-play--compact {
-    font-size: 7.05px;
+    font-size: 6.8px;
   }
 
   .print-landscape .print-play--dense {
-    font-size: 6.65px;
+    font-size: 6.35px;
   }
 
   .print-landscape .print-play--micro {
-    font-size: 6.2px;
+    font-size: 5.95px;
   }
 
   @page {
