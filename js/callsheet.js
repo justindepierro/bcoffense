@@ -474,6 +474,7 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetShowNumbers",
   "callsheetShowPersonnel",
   "callsheetShowFormation",
+  "callsheetShowFormationTags",
   "callsheetShowProtection",
   "callsheetShowPlayName",
   "callsheetShowTags",
@@ -1500,6 +1501,8 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetShowPersonnel")?.checked ?? true,
     showFormation:
       document.getElementById("callsheetShowFormation")?.checked ?? true,
+    showFormationTags:
+      document.getElementById("callsheetShowFormationTags")?.checked ?? false,
     showProtection:
       document.getElementById("callsheetShowProtection")?.checked ?? false,
     showPlayName:
@@ -2834,6 +2837,7 @@ function csSelectAllFields(selectAll) {
     "callsheetShowNumbers",
     "callsheetShowPersonnel",
     "callsheetShowFormation",
+    "callsheetShowFormationTags",
     "callsheetShowProtection",
     "callsheetShowPlayName",
     "callsheetShowTags",
@@ -2866,6 +2870,7 @@ const BUILTIN_PRESETS = {
       callsheetShowNumbers: true,
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
+      callsheetShowFormationTags: true,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
       callsheetShowTags: true,
@@ -2896,6 +2901,7 @@ const BUILTIN_PRESETS = {
       callsheetShowNumbers: false,
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
+      callsheetShowFormationTags: false,
       callsheetShowProtection: false,
       callsheetShowPlayName: true,
       callsheetShowTags: false,
@@ -2926,6 +2932,7 @@ const BUILTIN_PRESETS = {
       callsheetShowNumbers: true,
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
+      callsheetShowFormationTags: true,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
       callsheetShowTags: false,
@@ -2956,6 +2963,7 @@ const BUILTIN_PRESETS = {
       callsheetShowNumbers: true,
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
+      callsheetShowFormationTags: true,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
       callsheetShowTags: false,
@@ -3302,6 +3310,16 @@ async function checkCallSheetDraft() {
  */
 function buildCallSheetPlayParts(play, options) {
   const playParts = [];
+  const formatTagText = (value) => {
+    if (!value) return "";
+    return escapeHtml(options.noVowels ? removeVowels(value) : value);
+  };
+  const formationTags = [play.formTag1, play.formTag2]
+    .filter((value) => value && String(value).trim())
+    .map((value) => formatTagText(value));
+  const playTags = [play.playTag1, play.playTag2]
+    .filter((value) => value && String(value).trim())
+    .map((value) => formatTagText(value));
 
   // Check if play has "Under"
   const hasUnder =
@@ -3326,6 +3344,12 @@ function buildCallSheetPlayParts(play, options) {
       ? removeVowels(play.formation)
       : play.formation;
     playParts.push(escapeHtml(formText));
+  }
+
+  if (options.showFormationTags) {
+    formationTags.forEach((tag) => {
+      playParts.push(`<span class="cs-inline-tag cs-inline-tag--formation">${tag}</span>`);
+    });
   }
 
   // Handle shift with bold/red options
@@ -3363,14 +3387,9 @@ function buildCallSheetPlayParts(play, options) {
   }
 
   if (options.showTags) {
-    if (play.playTag1) {
-      let tag = options.noVowels ? removeVowels(play.playTag1) : play.playTag1;
-      playParts.push(escapeHtml(tag));
-    }
-    if (play.playTag2) {
-      let tag = options.noVowels ? removeVowels(play.playTag2) : play.playTag2;
-      playParts.push(escapeHtml(tag));
-    }
+    playTags.forEach((tag) => {
+      playParts.push(`<span class="cs-inline-tag cs-inline-tag--play">${tag}</span>`);
+    });
   }
 
   // Add line call in brackets

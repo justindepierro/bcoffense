@@ -1002,6 +1002,28 @@
   opacity: 0.9;
 }
 
+.cs-inline-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 0 6px;
+  border-radius: var(--radius-pill);
+  font-size: 0.82em;
+  font-weight: 700;
+  line-height: 1.45;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.cs-inline-tag--formation {
+  background: var(--color-info-light);
+  color: var(--color-info-hover);
+}
+
+.cs-inline-tag--play {
+  background: var(--color-warning-light);
+  color: var(--color-warning-hover);
+}
+
 /* Border color picker popup */
 .cs-border-picker {
   z-index: var(--z-tooltip);
