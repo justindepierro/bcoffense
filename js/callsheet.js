@@ -1653,6 +1653,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const hasFormat =
     play.cellBg ||
     play.cellTextColor ||
+    play.cellUseOneWord ||
     play.cellBold ||
     play.cellItalic ||
     play.cellUnderline ||
@@ -1787,6 +1788,12 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menuHtml += `<button class="cs-style-btn${play.cellStrikethrough ? " active" : ""}" data-action="toggleStyle" data-prop="cellStrikethrough" title="Strikethrough"><s>S</s></button>`;
   menuHtml += `</div></div>`;
 
+  if (play.oneWord && String(play.oneWord).trim()) {
+    menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Display Mode</span><div class="cs-ctx-styles">`;
+    menuHtml += `<button class="cs-style-btn${play.cellUseOneWord ? " active" : ""}" data-action="toggleStyle" data-prop="cellUseOneWord" title="Show one-word call only">1W</button>`;
+    menuHtml += `</div></div>`;
+  }
+
   // ─── Font Size ───
   const curSize = play.cellFontSize || "";
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Font Size</span><div class="cs-ctx-sizes">`;
@@ -1877,6 +1884,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       delete p.borderColor;
       delete p.cellBg;
       delete p.cellTextColor;
+      delete p.cellUseOneWord;
       delete p.cellBold;
       delete p.cellItalic;
       delete p.cellUnderline;
@@ -3331,7 +3339,7 @@ function buildCallSheetPlayParts(play, options) {
     .filter((value) => value && String(value).trim())
     .map((value) => formatTagText(value));
 
-  if (options.showOneWordOnly && oneWordCall) {
+  if ((options.showOneWordOnly || play.cellUseOneWord) && oneWordCall) {
     return [`<span class="cs-one-word-call">${oneWordCall}</span>`];
   }
 
