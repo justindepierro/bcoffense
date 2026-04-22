@@ -2958,7 +2958,7 @@ function printCallSheet() {
     const pageOrientation =
       callSheetSettings.orientation === "landscape" ? "landscape" : "portrait";
     const printMargin =
-      callSheetSettings.orientation === "landscape" ? "0.16in" : "0.18in";
+      callSheetSettings.orientation === "landscape" ? "0.14in" : "0.16in";
     setupPrintPageStyle(
       `@media print { @page { size: letter ${pageOrientation}; margin: ${printMargin}; } }`,
     );
