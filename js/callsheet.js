@@ -3040,6 +3040,8 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText) {
     .replace(/\s+/g, " ")
     .trim();
 
+  const isLandscapePrint = callSheetSettings?.orientation === "landscape";
+
   let densityScore = plainText.length;
   if (displayOptions.showFormationTags) densityScore += 5;
   if (displayOptions.showTags) densityScore += 5;
@@ -3050,10 +3052,12 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText) {
   if (play.cellNote) densityScore += Math.min(String(play.cellNote).length, 10);
 
   if (displayOptions.showOneWordOnly) densityScore -= 18;
+  if (play.cellUseOneWord) densityScore -= 10;
+  if (isLandscapePrint) densityScore -= 8;
 
-  if (densityScore >= 61) return "print-play--micro";
-  if (densityScore >= 51) return "print-play--dense";
-  if (densityScore >= 41) return "print-play--compact";
+  if (densityScore >= (isLandscapePrint ? 74 : 68)) return "print-play--micro";
+  if (densityScore >= (isLandscapePrint ? 63 : 57)) return "print-play--dense";
+  if (densityScore >= (isLandscapePrint ? 51 : 46)) return "print-play--compact";
   return "";
 }
 
@@ -3098,7 +3102,7 @@ function renderPrintPlay(play, options) {
   if (textDeco.length) styles.push(`text-decoration: ${textDeco.join(" ")};`);
 
   const personnelHtml = displayOptions.showPersonnel
-    ? `<span class="print-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
+    ? `<span class="print-inline-code" style="background: ${bgColor}; color: ${textColor};">${code}</span>`
     : "";
 
   const noteHtml = play.cellNote
@@ -3107,8 +3111,7 @@ function renderPrintPlay(play, options) {
 
   return `
     <div class="print-play ${highlightClass} ${tempoClass} ${densityClass}" style="${styles.join(" ")}">
-      ${personnelHtml}
-      <span class="print-play-text">${playText.trim()}${noteHtml}</span>
+      <span class="print-play-text">${personnelHtml}${playText.trim()}${noteHtml}</span>
     </div>
   `;
 }
@@ -3269,6 +3272,38 @@ const BUILTIN_PRESETS = {
       callsheetBoldShifts: true,
       callsheetRedShifts: false,
       callsheetItalicMotions: true,
+      callsheetRedMotions: false,
+      callsheetRemoveVowels: false,
+      callsheetHighlightHuddle: false,
+      callsheetHighlightCandy: false,
+      callsheetRedBorder: "",
+      callsheetBlueBorder: "",
+      callsheetGreenBorder: "",
+      callsheetOrangeBorder: "",
+      callsheetPurpleBorder: "",
+      callsheetPersonnelBorder: "",
+      callsheetPersonnelBorderColor: CS_COLORS.red,
+    },
+  },
+  __print_large_3col: {
+    name: "Large Print 3-Column",
+    opts: {
+      callsheetShowNumbers: false,
+      callsheetShowPersonnel: true,
+      callsheetShowFormation: true,
+      callsheetShowFormationTags: false,
+      callsheetShowOneWordOnly: false,
+      callsheetShowProtection: false,
+      callsheetShowPlayName: true,
+      callsheetShowTags: false,
+      callsheetShowMotion: false,
+      callsheetShowLineCall: true,
+      callsheetShowEmoji: false,
+      callsheetUseSquares: false,
+      callsheetUnderEmoji: false,
+      callsheetBoldShifts: false,
+      callsheetRedShifts: false,
+      callsheetItalicMotions: false,
       callsheetRedMotions: false,
       callsheetRemoveVowels: false,
       callsheetHighlightHuddle: false,

@@ -410,9 +410,9 @@
   .print-play {
     display: flex;
     align-items: center;
-    gap: 1px;
+    gap: 0;
     padding: 0.5px 0.75px;
-    font-size: 7.15px;
+    font-size: 7.35px;
     font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
     letter-spacing: -0.015em;
@@ -436,18 +436,29 @@
     width: 106.4%;
   }
 
+  .print-inline-code {
+    display: inline-block;
+    margin-right: 2px;
+    padding: 0 1px;
+    border-radius: 2px;
+    font-size: 0.72em;
+    font-weight: 700;
+    line-height: 1;
+    vertical-align: baseline;
+  }
+
   .print-play--compact {
-    font-size: 6.8px;
+    font-size: 7px;
     letter-spacing: -0.018em;
   }
 
   .print-play--dense {
-    font-size: 6.4px;
+    font-size: 6.7px;
     letter-spacing: -0.022em;
   }
 
   .print-play--micro {
-    font-size: 6px;
+    font-size: 6.35px;
     letter-spacing: -0.028em;
   }
 
@@ -476,14 +487,6 @@
     letter-spacing: -0.02em;
   }
 
-  .print-code {
-    padding: 0 1.2px;
-    border-radius: 2px;
-    font-size: 5.45px;
-    font-weight: bold;
-    flex-shrink: 0;
-  }
-
   /* Portrait orientation */
   .print-portrait {
     width: 100%;
@@ -503,19 +506,19 @@
   }
 
   .print-landscape .print-play {
-    font-size: 7.65px;
+    font-size: 7.95px;
   }
 
   .print-landscape .print-play--compact {
-    font-size: 7.2px;
+    font-size: 7.55px;
   }
 
   .print-landscape .print-play--dense {
-    font-size: 6.8px;
+    font-size: 7.1px;
   }
 
   .print-landscape .print-play--micro {
-    font-size: 6.35px;
+    font-size: 6.7px;
   }
 
   @page {
