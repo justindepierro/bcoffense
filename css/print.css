@@ -346,7 +346,7 @@
   .print-callsheet-grid {
     display: flex;
     width: 100%;
-    gap: 4px;
+    gap: 5px;
     font-size: 8px;
     align-items: flex-start;
   }
@@ -355,7 +355,7 @@
     flex: 1;
     display: flex;
     flex-direction: column;
-    gap: 4px;
+    gap: 5px;
     min-width: 0;
   }
 
@@ -367,24 +367,24 @@
   }
 
   .print-category-header {
-    padding: 2px 5px;
+    padding: 2.5px 6px;
     font-weight: bold;
     text-align: center;
-    font-size: 8.5px;
-    line-height: 1.1;
+    font-size: 8.75px;
+    line-height: 1.12;
   }
 
   .print-hash-headers {
     display: grid;
     grid-template-columns: 1fr 1fr;
     background: var(--color-bg-input);
-    font-size: 6.5px;
+    font-size: 6.6px;
     font-style: italic;
     text-align: center;
   }
 
   .print-hash-headers > div {
-    padding: 1px;
+    padding: 1.25px 1px;
     border-right: 1px solid var(--color-border);
   }
 
@@ -398,7 +398,7 @@
   }
 
   .print-hash-column {
-    padding: 0.5px;
+    padding: 1px 1px 0.75px;
     border-right: 1px solid var(--color-border-light);
     min-width: 0;
   }
@@ -410,16 +410,16 @@
   .print-play {
     display: flex;
     align-items: center;
-    gap: 1px;
-    padding: 0.5px 1px;
-    font-size: 5.7px;
+    gap: 1.5px;
+    padding: 0.9px 1.5px;
+    font-size: 5.8px;
     font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
-    letter-spacing: -0.015em;
+    letter-spacing: -0.012em;
     white-space: nowrap;
     overflow: hidden;
     max-width: 100%;
-    line-height: 1;
+    line-height: 1.04;
     break-inside: avoid;
   }
 
@@ -433,35 +433,39 @@
   }
 
   .print-play--compact {
-    font-size: 5.3px;
-    letter-spacing: -0.025em;
+    font-size: 5.45px;
+    letter-spacing: -0.022em;
   }
 
   .print-play--dense {
-    font-size: 4.9px;
-    letter-spacing: -0.035em;
+    font-size: 5.05px;
+    letter-spacing: -0.032em;
   }
 
   .print-play--micro {
-    font-size: 4.5px;
-    letter-spacing: -0.045em;
+    font-size: 4.7px;
+    letter-spacing: -0.04em;
   }
 
   .print-play--micro .print-play-text {
-    letter-spacing: -0.05em;
+    letter-spacing: -0.043em;
   }
 
   .print-play .cs-line-call {
-    font-size: 0.68em;
+    font-size: 0.7em;
     white-space: nowrap;
     opacity: 0.85;
   }
 
   .print-play .cs-inline-tag {
-    padding: 0 1px;
-    font-size: 0.66em;
-    line-height: 1;
-    letter-spacing: -0.01em;
+    padding: 0;
+    font-size: inherit;
+    line-height: inherit;
+    letter-spacing: inherit;
+    font-weight: inherit;
+    background: none;
+    color: inherit;
+    border-radius: 0;
   }
 
   .print-play .cs-one-word-call {
@@ -469,9 +473,9 @@
   }
 
   .print-code {
-    padding: 0 1.5px;
+    padding: 0 1.75px;
     border-radius: 2px;
-    font-size: 4.7px;
+    font-size: 4.8px;
     font-weight: bold;
     flex-shrink: 0;
   }
@@ -495,7 +499,7 @@
   }
 
   .print-landscape .print-play {
-    font-size: 6.1px;
+    font-size: 6px;
   }
 
   @page {
