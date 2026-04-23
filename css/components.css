@@ -709,6 +709,70 @@
   overflow-y: auto;
 }
 
+.modal-content-sm {
+  max-width: 450px;
+}
+
+.modal-content-md {
+  max-width: 500px;
+}
+
+.modal-stack {
+  display: grid;
+  gap: var(--space-md);
+}
+
+.modal-stack-copy {
+  display: grid;
+  gap: var(--space-md);
+  font-size: var(--font-size-xs);
+}
+
+.modal-field-label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+
+.modal-field-input {
+  width: 100%;
+  padding: var(--space-xs);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
+
+.modal-note {
+  padding: var(--space-sm);
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-primary);
+}
+
+.modal-note-copy {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
+.modal-action-row {
+  display: flex;
+  gap: var(--space-sm);
+}
+
+.modal-copy-block {
+  margin-top: var(--space-xs);
+  line-height: 1.6;
+}
+
+.kbd-chip {
+  padding: 2px 6px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: 3px;
+}
+
 /* Smart Script Modal */
 .smart-script-modal {
   max-width: 600px;
@@ -1343,6 +1407,15 @@ kbd {
   font-weight: normal;
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
+}
+
+.text-hint-compact {
+  font-size: var(--font-size-xs);
+  margin: calc(-1 * var(--space-sm)) 0 10px;
+}
+
+.btn-inline-offset {
+  margin-left: 5px;
 }
 .text-xs {
   font-size: var(--font-size-xs) !important;

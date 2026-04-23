@@ -191,8 +191,8 @@
             <span class="pb-search-icon">&#128269;</span>
             <input type="text" id="searchPlay" placeholder="🔍 Search plays..." aria-label="Search plays"
               data-oninput="debouncedFilterPlays" data-testid="search-input" />
-            <button id="clearPbSearch" class="search-clear-btn" data-action="clearPbSearch" title="Clear search"
-              style="display: none" aria-label="Clear search">
+            <button id="clearPbSearch" class="search-clear-btn hidden" data-action="clearPbSearch" title="Clear search"
+              aria-label="Clear search">
               ✕
             </button>
           </div>
@@ -627,8 +627,8 @@
             <div class="search-input-wrap">
               <input type="text" id="scriptSearchPlay" placeholder="🔍 Search plays..."
                 data-oninput="handleScriptSearchInput" class="w-full" />
-              <button id="clearSearchPlay" class="search-clear-btn" data-action="clearSearchPlay" title="Clear search"
-                style="display: none" aria-label="Clear search">
+              <button id="clearSearchPlay" class="search-clear-btn hidden" data-action="clearSearchPlay" title="Clear search"
+                aria-label="Clear search">
                 ✕
               </button>
             </div>
@@ -738,12 +738,11 @@
               <button class="btn btn-sm toolbar-btn-xs" data-action="expandAllPeriods" title="Expand all periods">
                 ⊞ All
               </button>
-              <select id="jumpToPeriod" class="toolbar-sort-select" data-onchange="jumpToPeriod" data-pass="value"
-                title="Jump to period" style="display: none"></select>
+              <select id="jumpToPeriod" class="toolbar-sort-select hidden" data-onchange="jumpToPeriod" data-pass="value"
+                title="Jump to period"></select>
               <input type="text" id="scriptSearchBox" placeholder="🔍 Search script..." data-oninput="filterScriptItems"
                 class="script-search-input" />
-              <span id="scriptSearchCount" class="script-search-count" role="status" aria-live="polite"
-                style="display: none"></span>
+              <span id="scriptSearchCount" class="script-search-count hidden" role="status" aria-live="polite"></span>
             </div>
           </div>
 
@@ -996,13 +995,13 @@
             <div class="search-input-wrap">
               <input type="text" id="wbSearchPlay" placeholder="🔍 Search plays..." data-oninput="filterWristbandPlays"
                 class="w-full" />
-              <button id="clearWbSearch" class="search-clear-btn" data-action="clearWbSearch" title="Clear search"
-                style="display: none" aria-label="Clear search">
+              <button id="clearWbSearch" class="search-clear-btn hidden" data-action="clearWbSearch" title="Clear search"
+                aria-label="Clear search">
                 ✕
               </button>
             </div>
           </div>
-          <div class="available-plays-container" id="wbAvailablePlays" style="max-height: 350px"></div>
+          <div class="available-plays-container wb-available-plays" id="wbAvailablePlays"></div>
         </div>
 
         <div class="wristband-preview">
@@ -1058,17 +1057,17 @@
                 <span>Header:</span>
                 <button class="color-btn color-btn-transparent active" data-action="setHeaderColor"
                   data-arg="transparent" title="No fill (save ink)" aria-label="No fill"></button>
-                <button class="color-btn" style="background: #333" data-action="setHeaderColor" data-arg="#333"
+                <button class="color-btn" data-action="setHeaderColor" data-arg="#333"
                   title="Black" aria-label="Black"></button>
-                <button class="color-btn" style="background: #007bff" data-action="setHeaderColor" data-arg="#007bff"
+                <button class="color-btn" data-action="setHeaderColor" data-arg="#007bff"
                   title="Blue" aria-label="Blue"></button>
-                <button class="color-btn" style="background: #28a745" data-action="setHeaderColor" data-arg="#28a745"
+                <button class="color-btn" data-action="setHeaderColor" data-arg="#28a745"
                   title="Green" aria-label="Green"></button>
-                <button class="color-btn" style="background: #dc3545" data-action="setHeaderColor" data-arg="#dc3545"
+                <button class="color-btn" data-action="setHeaderColor" data-arg="#dc3545"
                   title="Red" aria-label="Red"></button>
-                <button class="color-btn" style="background: #6f42c1" data-action="setHeaderColor" data-arg="#6f42c1"
+                <button class="color-btn" data-action="setHeaderColor" data-arg="#6f42c1"
                   title="Purple" aria-label="Purple"></button>
-                <button class="color-btn" style="background: #fd7e14" data-action="setHeaderColor" data-arg="#fd7e14"
+                <button class="color-btn" data-action="setHeaderColor" data-arg="#fd7e14"
                   title="Orange" aria-label="Orange"></button>
               </div>
               <span class="wb-toolbar-sep"></span>
@@ -1076,17 +1075,17 @@
                 <span>Card Color:</span>
                 <button class="color-btn card-color-btn color-btn-transparent active" data-action="setCardColor"
                   data-arg="transparent" title="No fill" aria-label="No fill"></button>
-                <button class="color-btn card-color-btn" style="background: #cce5ff" data-action="setCardColor"
+                <button class="color-btn card-color-btn" data-action="setCardColor"
                   data-arg="#cce5ff" title="Light Blue" aria-label="Light Blue"></button>
-                <button class="color-btn card-color-btn" style="background: #d4edda" data-action="setCardColor"
+                <button class="color-btn card-color-btn" data-action="setCardColor"
                   data-arg="#d4edda" title="Light Green" aria-label="Light Green"></button>
-                <button class="color-btn card-color-btn" style="background: #fff3cd" data-action="setCardColor"
+                <button class="color-btn card-color-btn" data-action="setCardColor"
                   data-arg="#fff3cd" title="Light Yellow" aria-label="Light Yellow"></button>
-                <button class="color-btn card-color-btn" style="background: #f8d7da" data-action="setCardColor"
+                <button class="color-btn card-color-btn" data-action="setCardColor"
                   data-arg="#f8d7da" title="Light Red" aria-label="Light Red"></button>
-                <button class="color-btn card-color-btn" style="background: #e2d5f1" data-action="setCardColor"
+                <button class="color-btn card-color-btn" data-action="setCardColor"
                   data-arg="#e2d5f1" title="Light Purple" aria-label="Light Purple"></button>
-                <button class="color-btn card-color-btn" style="background: #f5f5f5" data-action="setCardColor"
+                <button class="color-btn card-color-btn" data-action="setCardColor"
                   data-arg="#f5f5f5" title="Light Grey" aria-label="Light Grey"></button>
               </div>
             </div>
@@ -1137,15 +1136,14 @@
               <div class="wb-batch-group">
                 <span class="wb-batch-label">Color:</span>
                 <div class="wb-batch-swatches" id="wbBatchSwatches">
-                  <div class="wb-batch-swatch" data-color="" title="Clear"
-                    style="background: transparent; border-style: dashed;"></div>
-                  <div class="wb-batch-swatch" data-color="#ffeb3b" title="Yellow" style="background:#ffeb3b"></div>
-                  <div class="wb-batch-swatch" data-color="#ff9800" title="Orange" style="background:#ff9800"></div>
-                  <div class="wb-batch-swatch" data-color="#f44336" title="Red" style="background:#f44336"></div>
-                  <div class="wb-batch-swatch" data-color="#e91e63" title="Pink" style="background:#e91e63"></div>
-                  <div class="wb-batch-swatch" data-color="#9c27b0" title="Purple" style="background:#9c27b0"></div>
-                  <div class="wb-batch-swatch" data-color="#2196f3" title="Blue" style="background:#2196f3"></div>
-                  <div class="wb-batch-swatch" data-color="#4caf50" title="Green" style="background:#4caf50"></div>
+                  <div class="wb-batch-swatch" data-color="" title="Clear"></div>
+                  <div class="wb-batch-swatch" data-color="#ffeb3b" title="Yellow"></div>
+                  <div class="wb-batch-swatch" data-color="#ff9800" title="Orange"></div>
+                  <div class="wb-batch-swatch" data-color="#f44336" title="Red"></div>
+                  <div class="wb-batch-swatch" data-color="#e91e63" title="Pink"></div>
+                  <div class="wb-batch-swatch" data-color="#9c27b0" title="Purple"></div>
+                  <div class="wb-batch-swatch" data-color="#2196f3" title="Blue"></div>
+                  <div class="wb-batch-swatch" data-color="#4caf50" title="Green"></div>
                 </div>
               </div>
               <div class="wb-batch-group">
@@ -1180,21 +1178,17 @@
             </div>
             <div class="display-options-content">
               <div class="wb-preset-bar">
-                <span
-                  style="font-size: var(--font-size-xs); color: var(--color-text-muted); font-weight: 600;">Presets:</span>
-                <label
-                  style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); cursor: pointer;">
+                <span class="wb-preset-title">Presets:</span>
+                <label class="wb-preset-option">
                   <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset" />
                   Minimal
                 </label>
-                <label
-                  style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); cursor: pointer;">
+                <label class="wb-preset-option">
                   <input type="radio" name="wbDisplayPreset" value="standard" checked
                     data-onchange="applyWbDisplayPreset" />
                   Standard
                 </label>
-                <label
-                  style="display: flex; align-items: center; gap: 4px; font-size: var(--font-size-xs); cursor: pointer;">
+                <label class="wb-preset-option">
                   <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset" />
                   Full
                 </label>
@@ -1780,8 +1774,8 @@
           <label for="callSheetPlaySearch" class="sr-only">Search plays</label>
           <input type="text" id="callSheetPlaySearch" class="cs-picker-search"
             placeholder="🔍 Search plays, types, tags…" data-oninput="populateCallSheetPlayList" />
-          <button id="clearCsPickerSearch" class="search-clear-btn" data-action="clearCsPickerSearch"
-            title="Clear search" style="display: none" aria-label="Clear search">
+          <button id="clearCsPickerSearch" class="search-clear-btn hidden" data-action="clearCsPickerSearch"
+            title="Clear search" aria-label="Clear search">
             ✕
           </button>
         </div>
@@ -1886,11 +1880,7 @@
     aria-modal="true" aria-labelledby="cellPopupTitle">
     <div class="cell-popup cell-popup-container">
       <h3 id="cellPopupTitle">📝 Edit Cell</h3>
-      <div class="text-hint" style="
-            font-size: 11px;
-            margin: -8px 0 10px;
-            color: var(--color-text-secondary);
-          ">
+      <div class="text-hint text-hint-compact">
         ↑↓ Arrow keys to browse • Enter to select • Esc to close
       </div>
 
@@ -1900,7 +1890,7 @@
         <button data-action="removeCellPlayFromPopup" class="btn btn-danger btn-sm">
           🗑️ Remove Play
         </button>
-        <button data-action="showPlaySelector" class="btn btn-info btn-sm" style="margin-left: 5px">
+        <button data-action="showPlaySelector" class="btn btn-info btn-sm btn-inline-offset">
           🔄 Change Play
         </button>
       </div>
@@ -1958,29 +1948,29 @@
         <div class="cell-popup-row">
           <label>Background Color:</label>
           <div class="color-swatches" id="bgColorSwatches">
-            <div class="color-swatch" style="background: transparent; border-style: dashed" data-color="" title="None"
+            <div class="color-swatch" data-color="" title="None"
               aria-label="No background color"></div>
-            <div class="color-swatch" style="background: #ffeb3b" data-color="#ffeb3b" title="Yellow"></div>
-            <div class="color-swatch" style="background: #ff9800" data-color="#ff9800" title="Orange"></div>
-            <div class="color-swatch" style="background: #f44336" data-color="#f44336" title="Red"></div>
-            <div class="color-swatch" style="background: #e91e63" data-color="#e91e63" title="Pink"></div>
-            <div class="color-swatch" style="background: #9c27b0" data-color="#9c27b0" title="Purple"></div>
-            <div class="color-swatch" style="background: #2196f3" data-color="#2196f3" title="Blue"></div>
-            <div class="color-swatch" style="background: #4caf50" data-color="#4caf50" title="Green"></div>
-            <div class="color-swatch" style="background: #8bc34a" data-color="#8bc34a" title="Light Green"></div>
+            <div class="color-swatch" data-color="#ffeb3b" title="Yellow"></div>
+            <div class="color-swatch" data-color="#ff9800" title="Orange"></div>
+            <div class="color-swatch" data-color="#f44336" title="Red"></div>
+            <div class="color-swatch" data-color="#e91e63" title="Pink"></div>
+            <div class="color-swatch" data-color="#9c27b0" title="Purple"></div>
+            <div class="color-swatch" data-color="#2196f3" title="Blue"></div>
+            <div class="color-swatch" data-color="#4caf50" title="Green"></div>
+            <div class="color-swatch" data-color="#8bc34a" title="Light Green"></div>
           </div>
         </div>
 
         <div class="cell-popup-row">
           <label>Text Color:</label>
           <div class="color-swatches" id="textColorSwatches">
-            <div class="color-swatch" style="background: #000" data-color="#000" title="Black"></div>
-            <div class="color-swatch" style="background: #fff; border-color: #999" data-color="#fff" title="White">
+            <div class="color-swatch" data-color="#000" title="Black"></div>
+            <div class="color-swatch" data-color="#fff" title="White">
             </div>
-            <div class="color-swatch" style="background: #f44336" data-color="#f44336" title="Red"></div>
-            <div class="color-swatch" style="background: #2196f3" data-color="#2196f3" title="Blue"></div>
-            <div class="color-swatch" style="background: #4caf50" data-color="#4caf50" title="Green"></div>
-            <div class="color-swatch" style="background: #9c27b0" data-color="#9c27b0" title="Purple"></div>
+            <div class="color-swatch" data-color="#f44336" title="Red"></div>
+            <div class="color-swatch" data-color="#2196f3" title="Blue"></div>
+            <div class="color-swatch" data-color="#4caf50" title="Green"></div>
+            <div class="color-swatch" data-color="#9c27b0" title="Purple"></div>
           </div>
         </div>
       </div>
@@ -1999,38 +1989,33 @@
   <!-- Wristband Find/Replace Modal -->
   <div class="modal-overlay" id="wbFindReplaceOverlay" data-action="closeWbFindReplaceModal" role="dialog"
     aria-modal="true" aria-label="Find and Replace Plays">
-    <div class="modal-content" style="max-width: 450px;">
+    <div class="modal-content modal-content-sm">
       <button class="modal-close" data-action="closeWbFindReplaceModal">×</button>
       <h3>🔍 Find & Replace Plays</h3>
 
-      <div style="display: grid; gap: var(--space-md);">
+      <div class="modal-stack">
         <div>
-          <label for="wbFindPlayInput"
-            style="display: block; margin-bottom: var(--space-xs); font-weight: 600; font-size: var(--font-size-sm);">Find
-            Play:</label>
+          <label for="wbFindPlayInput" class="modal-field-label">Find Play:</label>
           <input type="text" id="wbFindPlayInput" placeholder="Enter play name to search for (e.g., 'Jet Sweep')"
-            style="width: 100%; padding: var(--space-xs); border: 1px solid var(--color-border-input); border-radius: var(--radius-sm); background: var(--color-bg-input); color: var(--color-text);"
+            class="modal-field-input"
             autocomplete="off" />
         </div>
 
         <div>
-          <label for="wbReplacePlayInput"
-            style="display: block; margin-bottom: var(--space-xs); font-weight: 600; font-size: var(--font-size-sm);">Replace
-            With:</label>
+          <label for="wbReplacePlayInput" class="modal-field-label">Replace With:</label>
           <input type="text" id="wbReplacePlayInput" placeholder="New play name (e.g., 'Speed Sweep')"
-            style="width: 100%; padding: var(--space-xs); border: 1px solid var(--color-border-input); border-radius: var(--radius-sm); background: var(--color-bg-input); color: var(--color-text);"
+            class="modal-field-input"
             autocomplete="off" list="wbPersonnelOptions" />
         </div>
 
-        <div
-          style="padding: var(--space-sm); background: var(--color-bg-lighter); border-radius: var(--radius-sm); border-left: 3px solid var(--color-primary);">
-          <div style="font-size: var(--font-size-xs); color: var(--color-text-muted);">
+        <div class="modal-note">
+          <div class="modal-note-copy">
             <strong>ℹ️ Note:</strong> Replacement is case-insensitive substring matching. "jet" will match "Jet Sweep",
             "Jet Chip", etc.
           </div>
         </div>
 
-        <div style="display: flex; gap: var(--space-sm);">
+        <div class="modal-action-row">
           <button class="btn btn-secondary" data-action="closeWbFindReplaceModal">Cancel</button>
           <button class="btn btn-primary" data-action="executeWbFindReplace">Replace All</button>
         </div>
@@ -2042,17 +2027,16 @@
 
   <div class="modal-overlay" id="wbHelpOverlay" data-action="closeWbHelpOverlay" role="dialog" aria-modal="true"
     aria-label="Wristband Shortcuts & Tips">
-    <div class="modal-content" style="max-width: 500px;">
+    <div class="modal-content modal-content-md">
       <button class="modal-close" data-action="closeWbHelpOverlay">×</button>
       <h3>⚡ Wristband Quick Tips</h3>
 
-      <div style="display:grid; gap: var(--space-md); font-size: var(--font-size-xs);">
+      <div class="modal-stack-copy">
         <div>
           <strong>📋 Adding Plays</strong>
-          <div style="margin-top: var(--space-xs); line-height: 1.6;">
+          <div class="modal-copy-block">
             • Click any cell to open/edit<br>
-            • <kbd
-              style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">⌘K</kbd>
+            • <kbd class="kbd-chip">⌘K</kbd>
             for quick search<br>
             • Drag plays from 💾 Available list
           </div>
@@ -2060,10 +2044,9 @@
 
         <div>
           <strong>🎨 Styling Cells</strong>
-          <div style="margin-top: var(--space-xs); line-height: 1.6;">
+          <div class="modal-copy-block">
             • Click cell → choose color + marker + personnel<br>
-            • <kbd
-              style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">Shift</kbd>+Click
+            • <kbd class="kbd-chip">Shift</kbd>+Click
             multiple cells → edit all at once<br>
             • Batch bar appears below grid with options
           </div>
@@ -2071,19 +2054,17 @@
 
         <div>
           <strong>📋 Copy/Paste</strong>
-          <div style="margin-top: var(--space-xs); line-height: 1.6;">
+          <div class="modal-copy-block">
             • Right-click (or long-press) cell for menu<br>
-            • <kbd
-              style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">⌘C</kbd>
-            / <kbd
-              style="padding: 2px 6px; background: var(--color-bg-light); border: 1px solid var(--color-border); border-radius: 3px;">⌘V</kbd>
+            • <kbd class="kbd-chip">⌘C</kbd>
+            / <kbd class="kbd-chip">⌘V</kbd>
             to copy with all customizations
           </div>
         </div>
 
         <div>
           <strong>⚡ Auto-Fill</strong>
-          <div style="margin-top: var(--space-xs); line-height: 1.6;">
+          <div class="modal-copy-block">
             • 🧠 Smart Fill: Pick situation (1st Down, Red Zone, etc.)<br>
             • ⚡ Auto-Fill: Fill with current filter results
           </div>
@@ -2091,7 +2072,7 @@
 
         <div>
           <strong>🔄 Drag & Drop</strong>
-          <div style="margin-top: var(--space-xs); line-height: 1.6;">
+          <div class="modal-copy-block">
             • Drag cells to swap within card<br>
             • Drag to card tabs to move to different card<br>
             • Drag sort fields ☰ to reorder priority
@@ -2099,7 +2080,7 @@
         </div>
       </div>
 
-      <button class="btn btn-primary btn-sm" data-action="closeWbHelpOverlay" style="margin-top: var(--space-md);">Got
+      <button class="btn btn-primary btn-sm mt-md" data-action="closeWbHelpOverlay">Got
         it!</button>
     </div>
   </div>

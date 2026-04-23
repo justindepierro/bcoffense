@@ -66,6 +66,25 @@
   --color-orange-deep: #bf6516;
   --color-accent-dark: #9e8a60;
 
+  /* UI swatches */
+  --color-swatch-black: #333333;
+  --color-swatch-blue: #007bff;
+  --color-swatch-green: #28a745;
+  --color-swatch-red: #dc3545;
+  --color-swatch-purple: #6f42c1;
+  --color-swatch-orange: #fd7e14;
+  --color-swatch-yellow: #ffeb3b;
+  --color-swatch-pink: #e91e63;
+  --color-swatch-light-blue: #cce5ff;
+  --color-swatch-light-green: #d4edda;
+  --color-swatch-light-yellow: #fff3cd;
+  --color-swatch-light-red: #f8d7da;
+  --color-swatch-light-purple: #e2d5f1;
+  --color-swatch-light-gray: #f5f5f5;
+  --color-swatch-lime: #8bc34a;
+  --color-swatch-white: #ffffff;
+  --color-swatch-white-border: #999999;
+
   /* Category Palette — call sheet & UI badges */
   --cat-red: #dc3545;
   --cat-yellow: #ffc107;

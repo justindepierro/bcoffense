@@ -209,6 +209,42 @@
   border-color: var(--color-text);
   box-shadow: 0 0 4px rgba(0, 0, 0, 0.3);
 }
+.color-btn[data-arg="#333"] {
+  background: var(--color-swatch-black);
+}
+.color-btn[data-arg="#007bff"] {
+  background: var(--color-swatch-blue);
+}
+.color-btn[data-arg="#28a745"] {
+  background: var(--color-swatch-green);
+}
+.color-btn[data-arg="#dc3545"] {
+  background: var(--color-swatch-red);
+}
+.color-btn[data-arg="#6f42c1"] {
+  background: var(--color-swatch-purple);
+}
+.color-btn[data-arg="#fd7e14"] {
+  background: var(--color-swatch-orange);
+}
+.card-color-btn[data-arg="#cce5ff"] {
+  background: var(--color-swatch-light-blue);
+}
+.card-color-btn[data-arg="#d4edda"] {
+  background: var(--color-swatch-light-green);
+}
+.card-color-btn[data-arg="#fff3cd"] {
+  background: var(--color-swatch-light-yellow);
+}
+.card-color-btn[data-arg="#f8d7da"] {
+  background: var(--color-swatch-light-red);
+}
+.card-color-btn[data-arg="#e2d5f1"] {
+  background: var(--color-swatch-light-purple);
+}
+.card-color-btn[data-arg="#f5f5f5"] {
+  background: var(--color-swatch-light-gray);
+}
 .color-btn-transparent {
   background: repeating-conic-gradient(var(--color-border) 0% 25%, white 0% 50%)
     50% / 10px 10px;
@@ -562,6 +598,20 @@
   margin: 0;
 }
 
+.wb-preset-title {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+
+.wb-preset-option {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+}
+
 /* ── Wristband available plays empty state ── */
 .wb-avail-empty {
   padding: 15px;
@@ -734,9 +784,84 @@
   transform: scale(1.2);
   box-shadow: var(--shadow-sm);
 }
+.wb-batch-swatch[data-color=""] {
+  background: transparent;
+  border-style: dashed;
+}
+.wb-batch-swatch[data-color="#ffeb3b"] {
+  background: var(--color-swatch-yellow);
+}
+.wb-batch-swatch[data-color="#ff9800"] {
+  background: var(--color-swatch-orange);
+}
+.wb-batch-swatch[data-color="#f44336"] {
+  background: var(--color-swatch-red);
+}
+.wb-batch-swatch[data-color="#e91e63"] {
+  background: var(--color-swatch-pink);
+}
+.wb-batch-swatch[data-color="#9c27b0"] {
+  background: var(--color-swatch-purple);
+}
+.wb-batch-swatch[data-color="#2196f3"] {
+  background: var(--color-swatch-blue);
+}
+.wb-batch-swatch[data-color="#4caf50"] {
+  background: var(--color-swatch-green);
+}
 .wb-batch-swatch.active {
   outline: 2.5px solid var(--color-primary);
   outline-offset: 1px;
+}
+
+.wb-available-plays {
+  max-height: 350px;
+}
+
+.color-swatch[data-color=""] {
+  background: transparent;
+  border-style: dashed;
+}
+
+.color-swatch[data-color="#ffeb3b"] {
+  background: var(--color-swatch-yellow);
+}
+
+.color-swatch[data-color="#ff9800"] {
+  background: var(--color-swatch-orange);
+}
+
+.color-swatch[data-color="#f44336"] {
+  background: var(--color-swatch-red);
+}
+
+.color-swatch[data-color="#e91e63"] {
+  background: var(--color-swatch-pink);
+}
+
+.color-swatch[data-color="#9c27b0"] {
+  background: var(--color-swatch-purple);
+}
+
+.color-swatch[data-color="#2196f3"] {
+  background: var(--color-swatch-blue);
+}
+
+.color-swatch[data-color="#4caf50"] {
+  background: var(--color-swatch-green);
+}
+
+.color-swatch[data-color="#8bc34a"] {
+  background: var(--color-swatch-lime);
+}
+
+.color-swatch[data-color="#000"] {
+  background: var(--color-text);
+}
+
+.color-swatch[data-color="#fff"] {
+  background: var(--color-swatch-white);
+  border-color: var(--color-swatch-white-border);
 }
 .wb-batch-select {
   font-size: var(--font-size-xs);
