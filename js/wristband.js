@@ -122,7 +122,9 @@ function splitWristbandDisplayLineCall(renderedDisplay) {
 
 function composeWristbandCellDisplay(prefix, renderedDisplay, postfix) {
   const { main, lineCall } = splitWristbandDisplayLineCall(renderedDisplay);
-  return `${prefix}${main}${postfix}${lineCall}`;
+  const leadingEmojiPrefix = main.match(/^((?:[\p{Extended_Pictographic}\uFE0F]+\s+)*)/u)?.[1] || "";
+  const remainingMain = main.slice(leadingEmojiPrefix.length);
+  return `${leadingEmojiPrefix}${prefix}${remainingMain}${postfix}${lineCall}`;
 }
 
 /** Get custom extra personnel prefix for a wristband cell */
@@ -1609,7 +1611,7 @@ function renderWristbandGrid() {
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
-    // Build prefix with cadence first, then any extra personnel tag
+    // Build prefix after the base personnel token and before formation text
     const oddPrefix =
       getCadencePrefix(oddCustom, opts) +
       getCustomPersonnelPrefix(oddCustom, opts) +
