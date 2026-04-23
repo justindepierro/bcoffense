@@ -1162,6 +1162,11 @@
                 <input type="text" id="wbBatchPersonnel" class="wb-batch-input" list="wbPersonnelOptions"
                   placeholder="— keep —" autocomplete="off" />
               </div>
+              <div class="wb-batch-group">
+                <label for="wbBatchPreShift" class="wb-batch-label">Pre Shift:</label>
+                <input type="text" id="wbBatchPreShift" class="wb-batch-input" list="wbPreShiftOptions"
+                  placeholder="— keep —" autocomplete="off" />
+              </div>
               <button class="btn btn-primary btn-sm" data-action="applyBatchEdit"
                 title="Apply to all selected cells">Apply</button>
             </div>
@@ -1912,6 +1917,13 @@
           <input type="text" id="cellExtraPersonnel" class="cell-popup-input" list="wbPersonnelOptions"
             placeholder="Select or type personnel" autocomplete="off" />
           <datalist id="wbPersonnelOptions"></datalist>
+        </div>
+
+        <div class="cell-popup-row">
+          <label for="cellPreShift">Pre Shift:</label>
+          <input type="text" id="cellPreShift" class="cell-popup-input" list="wbPreShiftOptions"
+            placeholder="Comma-separated shifts in parentheses" autocomplete="off" />
+          <datalist id="wbPreShiftOptions"></datalist>
         </div>
 
         <div class="cell-popup-row">

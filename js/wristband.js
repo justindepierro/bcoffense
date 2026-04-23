@@ -11,7 +11,7 @@ let wbSelectedTempos = [];
 let wbSelectedPersonnel = [];
 let wbFiltersCollapsed = true;
 
-// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel } }
+// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel, preShift } }
 let cellCustomizations = {};
 let currentEditingCell = { cardIdx: null, cellIdx: null };
 let pendingBgColor = "";
@@ -20,6 +20,7 @@ let pendingPlaySelection = null;
 let pendingMarkers = [];
 let pendingMarkerPlacement = "prefix";
 let pendingExtraPersonnel = "";
+let pendingPreShift = "";
 
 const WB_CELL_MARKER_OPTIONS = [
   { value: "$", emoji: "💲", label: "On Two" },
@@ -131,6 +132,20 @@ function getCustomPersonnelPrefix(custom, opts) {
   if (!tag) return "";
   const emoji = opts.showEmoji ? getPersonnelEmoji(tag, opts.useSquares) : "";
   return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
+}
+
+function getCustomPreShiftValues(custom) {
+  if (!custom || !custom.preShift) return [];
+  return String(custom.preShift)
+    .split(/[;,|]+/)
+    .map((value) => value.trim())
+    .filter(Boolean);
+}
+
+function getCustomPreShiftPrefix(custom) {
+  const values = getCustomPreShiftValues(custom);
+  if (!values.length) return "";
+  return `${values.map((value) => `(${escapeHtml(value)})`).join(" ")} `;
 }
 
 /** Slightly lighten or darken a color for alternating row shading */
@@ -1113,6 +1128,8 @@ function initWristband() {
     currentCardIndex = 0;
     initCellMarkerPalette();
     populateWristbandCheckboxFilters();
+    populateWbPersonnelDatalist();
+    populateWbPreShiftDatalist();
     renderCardTabs();
     renderWristbandPlays();
     renderWristbandGrid();
@@ -1593,8 +1610,14 @@ function renderWristbandGrid() {
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
     // Build prefix with cadence first, then any extra personnel tag
-    const oddPrefix = getCadencePrefix(oddCustom, opts) + getCustomPersonnelPrefix(oddCustom, opts);
-    const evenPrefix = getCadencePrefix(evenCustom, opts) + getCustomPersonnelPrefix(evenCustom, opts);
+    const oddPrefix =
+      getCadencePrefix(oddCustom, opts) +
+      getCustomPersonnelPrefix(oddCustom, opts) +
+      getCustomPreShiftPrefix(oddCustom);
+    const evenPrefix =
+      getCadencePrefix(evenCustom, opts) +
+      getCustomPersonnelPrefix(evenCustom, opts) +
+      getCustomPreShiftPrefix(evenCustom);
     const oddPostfix = getCadencePostfix(oddCustom, opts);
     const evenPostfix = getCadencePostfix(evenCustom, opts);
 
@@ -1730,6 +1753,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
     getWristbandDisplayOptions(),
   );
   pendingExtraPersonnel = existing.extraPersonnel || "";
+  pendingPreShift = existing.preShift || "";
   pendingPlaySelection = currentPlay;
 
   const hasPlay = currentPlay !== null;
@@ -1766,7 +1790,9 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateCellMarkerSelection(pendingMarkers);
   updateCellMarkerPlacementSelection(pendingMarkerPlacement);
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
+  document.getElementById("cellPreShift").value = pendingPreShift;
   populateWbPersonnelDatalist();
+  populateWbPreShiftDatalist();
 
   overlay.classList.remove("hidden");
 
@@ -1916,6 +1942,13 @@ function populateWbPersonnelDatalist() {
   datalist.innerHTML = unique.map((p) => `<option value="${escapeHtml(p)}"></option>`).join("");
 }
 
+function populateWbPreShiftDatalist() {
+  const datalist = document.getElementById("wbPreShiftOptions");
+  if (!datalist) return;
+  const unique = [...new Set(plays.map((p) => p.shift).filter((value) => value && value.trim()))].sort();
+  datalist.innerHTML = unique.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
+}
+
 /**
  * Apply the cell style from the popup
  */
@@ -1930,12 +1963,14 @@ function applyCellStyle() {
   const extraPersonnel = document
     .getElementById("cellExtraPersonnel")
     .value.trim();
+  const preShift = document.getElementById("cellPreShift").value.trim();
 
   if (
     pendingBgColor ||
     pendingTextColor !== UI_COLORS.textBlack ||
     markers.length > 0 ||
-    extraPersonnel
+    extraPersonnel ||
+    preShift
   ) {
     cellCustomizations[key] = {
       bgColor: pendingBgColor,
@@ -1943,6 +1978,7 @@ function applyCellStyle() {
       markers,
       markerPlacement,
       extraPersonnel: extraPersonnel,
+      preShift: preShift,
     };
   } else {
     delete cellCustomizations[key];
@@ -2295,8 +2331,14 @@ function printWristband() {
           ? `color:${evenCustom.textColor};`
           : "";
 
-        const oddPrefix = getCadencePrefix(oddCustom, opts) + getCustomPersonnelPrefix(oddCustom, opts);
-        const evenPrefix = getCadencePrefix(evenCustom, opts) + getCustomPersonnelPrefix(evenCustom, opts);
+        const oddPrefix =
+          getCadencePrefix(oddCustom, opts) +
+          getCustomPersonnelPrefix(oddCustom, opts) +
+          getCustomPreShiftPrefix(oddCustom);
+        const evenPrefix =
+          getCadencePrefix(evenCustom, opts) +
+          getCustomPersonnelPrefix(evenCustom, opts) +
+          getCustomPreShiftPrefix(evenCustom);
         const oddPostfix = getCadencePostfix(oddCustom, opts);
         const evenPostfix = getCadencePostfix(evenCustom, opts);
 
@@ -3004,14 +3046,16 @@ function applyBatchEdit() {
   const activeSwatch = document.querySelector("#wbBatchSwatches .wb-batch-swatch.active");
   const cadenceVal = document.getElementById("wbBatchCadence").value;
   const personnelVal = document.getElementById("wbBatchPersonnel").value.trim();
+  const preShiftVal = document.getElementById("wbBatchPreShift").value.trim();
 
   // If nothing was set, warn the user
   const hasColor = activeSwatch !== null;
   const hasCadence = cadenceVal !== "__skip__";
   const hasPersonnel = personnelVal !== "";
+  const hasPreShift = preShiftVal !== "";
 
-  if (!hasColor && !hasCadence && !hasPersonnel) {
-    showToast("Set at least one field (color, marker, or personnel) to apply");
+  if (!hasColor && !hasCadence && !hasPersonnel && !hasPreShift) {
+    showToast("Set at least one field (color, marker, personnel, or pre shift) to apply");
     return;
   }
 
@@ -3050,9 +3094,13 @@ function applyBatchEdit() {
       cellCustomizations[key].extraPersonnel = personnelVal;
     }
 
+    if (hasPreShift) {
+      cellCustomizations[key].preShift = preShiftVal;
+    }
+
     // Clean up entirely empty customization entries
     const c = cellCustomizations[key];
-    if (!c.bgColor && !c.cadence && !c.markers?.length && !c.extraPersonnel && c.textColor === UI_COLORS.textBlack) {
+    if (!c.bgColor && !c.cadence && !c.markers?.length && !c.extraPersonnel && !c.preShift && c.textColor === UI_COLORS.textBlack) {
       delete cellCustomizations[key];
     }
   });
@@ -3063,14 +3111,17 @@ function applyBatchEdit() {
   // Reset batch bar inputs
   const cadenceEl = document.getElementById("wbBatchCadence");
   const personnelEl = document.getElementById("wbBatchPersonnel");
+  const preShiftEl = document.getElementById("wbBatchPreShift");
   if (cadenceEl) cadenceEl.value = "__skip__";
   if (personnelEl) personnelEl.value = "";
+  if (preShiftEl) preShiftEl.value = "";
   document.querySelectorAll("#wbBatchSwatches .wb-batch-swatch.active").forEach((s) => s.classList.remove("active"));
 
   const parts = [];
   if (hasColor) parts.push("color");
   if (hasCadence) parts.push("marker");
   if (hasPersonnel) parts.push("personnel");
+  if (hasPreShift) parts.push("pre shift");
   showToast(`Applied ${parts.join(", ")} to ${count} cell${count === 1 ? "" : "s"}`);
 }
 
