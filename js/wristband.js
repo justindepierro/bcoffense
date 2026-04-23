@@ -123,7 +123,7 @@ function splitWristbandDisplayLineCall(renderedDisplay) {
 function composeWristbandCellDisplay(prefix, renderedDisplay, postfix) {
   const { main, lineCall } = splitWristbandDisplayLineCall(renderedDisplay);
   const leadingEmojiPrefix =
-    main.match(/^((?:[🔴🔵🟢🟡🟠🟣🟤⚪⚫⭐🟥🟦🟩🟨🟧🟪🟫⬜⬛🍑]\s+)*)/)?.[1] || "";
+    main.match(/^((?:[🔴🔵🟢🟡🟠🟣🟤⚪⚫⭐🟥🟦🟩🟨🟧🟪🟫⬜⬛🍑]\s+)*)/u)?.[1] || "";
   const remainingMain = main.slice(leadingEmojiPrefix.length);
   return `${leadingEmojiPrefix}${prefix}${remainingMain}${postfix}${lineCall}`;
 }
