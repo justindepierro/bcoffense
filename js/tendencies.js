@@ -1055,7 +1055,7 @@ function renderTendenciesHome() {
           <button class="btn btn-primary" data-action="addTendenciesOpponent">＋ New Opponent</button>
         </div>
         ${tendenciesOpponents.length === 0
-      ? '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
+      ? '<div class="empty-state empty-state--bordered empty-state--spaced"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
       : `<div class="td-opponent-list">${opponentList}</div>`
     }
       </div>
@@ -1210,7 +1210,7 @@ function renderOpponentDetail() {
           <div class="td-search-box">
             <input type="text" class="td-search-input" id="tdSearchInput" placeholder="🔍 Search plays…"
                    value="${escapeHtml(tdSearchText)}" data-oninput="setTdSearch" data-pass="value">
-            <button class="search-clear-btn" data-action="clearTdSearch" style="${tdSearchText ? "" : "display:none"}">✕</button>
+            <button class="search-clear-btn${tdSearchText ? "" : " hidden"}" data-action="clearTdSearch">✕</button>
           </div>
           <button class="btn btn-sm ${tdShowFilters ? "btn-primary" : ""}" data-action="toggleTdFilters">
             🔽 Filters${activeFilters > 0 ? ` <span class="td-filter-badge">${activeFilters}</span>` : ""}
@@ -1232,7 +1232,7 @@ function renderOpponentDetail() {
       ${tdShowFilters ? renderFilterPanel(opp) : ""}
 
       <!-- Column visibility -->
-      <div id="tdColumnPanel" style="display:none">${renderColumnToggle()}</div>
+      <div id="tdColumnPanel" class="td-column-panel">${renderColumnToggle()}</div>
 
       <!-- Stats dashboard -->
       ${tdShowStats ? renderStatsDashboard(opp) : ""}
@@ -1294,9 +1294,9 @@ function renderPlayLogTable(filtered) {
   if (filtered.length === 0) {
     const opp = tendenciesOpponents[tendenciesCurrentOpponent];
     if (opp && opp.plays.length > 0) {
-      return '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">🔍</span><p class="empty-state__text">No plays match your filters. <button class="btn-link" data-action="clearTdFilters">Clear filters</button></p></div>';
+      return '<div class="empty-state empty-state--bordered empty-state--spaced"><span class="empty-state__icon">🔍</span><p class="empty-state__text">No plays match your filters. <button class="btn-link" data-action="clearTdFilters">Clear filters</button></p></div>';
     }
-    return '<div class="empty-state empty-state--bordered" style="margin-top:8px"><span class="empty-state__icon">📹</span><p class="empty-state__text">No plays charted yet. Hit <strong>＋ New Play</strong> or press <strong>N</strong> to start!</p></div>';
+    return '<div class="empty-state empty-state--bordered empty-state--spaced"><span class="empty-state__icon">📹</span><p class="empty-state__text">No plays charted yet. Hit <strong>＋ New Play</strong> or press <strong>N</strong> to start!</p></div>';
   }
 
   const visibleCols = TD_COLUMNS.filter((c) =>
@@ -1498,7 +1498,7 @@ function renderStatsDashboard(opp) {
         const pct = Math.round((v / total) * 100);
         return `<div class="td-dist-row">
         <span class="td-dist-label">${k}</span>
-        <div class="td-dist-bar-bg"><div class="td-dist-bar-fill ${color}" style="width:${pct}%"></div></div>
+        <div class="td-dist-bar-bg"><div class="td-dist-bar-fill ${color}" style="--bar-width:${pct}%"></div></div>
         <span class="td-dist-val">${v} <small>(${pct}%)</small></span>
       </div>`;
       })

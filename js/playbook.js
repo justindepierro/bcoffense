@@ -1802,7 +1802,7 @@ function renderPbPrintSort() {
         <span class="drag-handle">☰</span>
         <select data-onchange="_pbSortUpdateField" data-key="${idx}" data-pass="value">${fieldOpts}</select>
         <button class="sort-dir-btn" data-action="_pbSortToggleDir" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
-        <button class="custom-order-btn" data-action="openCustomOrderModal" data-sort-field="${c.field}" title="${customTitle}" style="font-size:11px;padding:2px 6px;">${customIcon}</button>
+        <button class="custom-order-btn custom-order-btn-compact" data-action="openCustomOrderModal" data-sort-field="${c.field}" title="${customTitle}">${customIcon}</button>
         <button class="remove-sort-btn" data-action="_pbSortRemove" data-idx="${idx}">✕</button>
       </div>`;
     })

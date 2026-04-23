@@ -474,7 +474,7 @@ function renderInstallation() {
             <div class="install-cat-info">
               <div class="install-cat-name">${cat.label}</div>
               <div class="install-cat-progress-bar">
-                <div class="install-cat-progress-fill" style="width:${cat.pct}%"></div>
+                <div class="install-cat-progress-fill" style="--bar-width:${cat.pct}%"></div>
               </div>
               <div class="install-cat-counts">${cat.installed}/${cat.total}</div>
             </div>
@@ -1143,14 +1143,14 @@ function showSmartInstallReport() {
         <div class="sir-balance-bar">
           <div class="sir-balance-label">Run Ready</div>
           <div class="sir-bar-track">
-            <div class="sir-bar-fill sir-bar-run" style="width:${runReadyPct}%"></div>
+            <div class="sir-bar-fill sir-bar-run" style="--bar-width:${runReadyPct}%"></div>
           </div>
           <div class="sir-balance-nums">${balance.readyRuns}/${balance.totalRuns} (${runReadyPct}%)</div>
         </div>
         <div class="sir-balance-bar">
           <div class="sir-balance-label">Pass Ready</div>
           <div class="sir-bar-track">
-            <div class="sir-bar-fill sir-bar-pass" style="width:${passReadyPct}%"></div>
+            <div class="sir-bar-fill sir-bar-pass" style="--bar-width:${passReadyPct}%"></div>
           </div>
           <div class="sir-balance-nums">${balance.readyPasses}/${balance.totalPasses} (${passReadyPct}%)</div>
         </div>
@@ -1344,7 +1344,7 @@ function showSmartInstallReport() {
             <div class="sir-gap-label">${g.icon} ${g.label}</div>
             <div class="sir-gap-bar-wrap">
               <div class="sir-bar-track">
-                <div class="sir-bar-fill sir-bar-gap" style="width:${g.pct}%"></div>
+                <div class="sir-bar-fill sir-bar-gap" style="--bar-width:${g.pct}%"></div>
               </div>
             </div>
             <div class="sir-gap-nums">${g.installed}/${g.total} (${g.remaining} left)</div>
@@ -1455,12 +1455,12 @@ function printSmartInstallReport() {
       <div class="sirp-balance-row">
         <div class="sirp-balance-item">
           <span class="sirp-balance-label">Run Ready:</span>
-          <span class="sirp-balance-bar-wrap"><span class="sirp-balance-fill sirp-fill-run" style="width:${runReadyPct}%"></span></span>
+          <span class="sirp-balance-bar-wrap"><span class="sirp-balance-fill sirp-fill-run" style="--bar-width:${runReadyPct}%"></span></span>
           <span class="sirp-balance-val">${balance.readyRuns}/${balance.totalRuns} (${runReadyPct}%)</span>
         </div>
         <div class="sirp-balance-item">
           <span class="sirp-balance-label">Pass Ready:</span>
-          <span class="sirp-balance-bar-wrap"><span class="sirp-balance-fill sirp-fill-pass" style="width:${passReadyPct}%"></span></span>
+          <span class="sirp-balance-bar-wrap"><span class="sirp-balance-fill sirp-fill-pass" style="--bar-width:${passReadyPct}%"></span></span>
           <span class="sirp-balance-val">${balance.readyPasses}/${balance.totalPasses} (${passReadyPct}%)</span>
         </div>
       </div>`;
@@ -1494,7 +1494,7 @@ function printSmartInstallReport() {
           const grTouch = computeTouchAnalysis(grPlays);
           if (grTouch && Object.keys(grTouch.players).length > 0) {
             html += `
-            <div class="sirp-section-subtitle" style="margin-top:8px;font-weight:600;font-size:0.82rem;">Game Ready Only</div>
+            <div class="sirp-section-subtitle">Game Ready Only</div>
             <table class="sirp-table">
               <thead><tr><th>Player</th><th>Weighted %</th><th>Points</th><th>Plays</th></tr></thead>
               <tbody>`;

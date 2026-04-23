@@ -182,7 +182,7 @@ function showUndoToast(message, undoCallback, duration) {
   toast.style.setProperty("--toast-duration", duration + "ms");
   toast.innerHTML =
     escapeHtml(message) +
-    ' <button class="btn btn-sm" style="margin-left:10px;padding:3px 12px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;font-weight:600;">Undo</button>';
+    ' <button class="btn btn-sm btn-ghost-current btn-inline-offset">Undo</button>';
   document.body.appendChild(toast);
 
   let undone = false;
@@ -214,7 +214,7 @@ function showPrintPreview(contentEl, onPrint, onCancel) {
     '<div class="print-preview-frame">' +
     '<div class="print-preview-toolbar">' +
     "<strong>🖨️ Print Preview</strong>" +
-    '<span style="flex:1"></span>' +
+    '<span class="flex-spacer"></span>' +
     '<button class="btn btn-primary btn-sm" id="ppPrintBtn">🖨️ Print</button>' +
     '<button class="btn btn-sm" id="ppCancelBtn">Cancel</button>' +
     "</div>" +
@@ -1108,8 +1108,8 @@ const storageManager = {
     // Confirm if needed
     if (options.confirmOverwrite) {
       const msg = `This will replace your current data with the backup from ${backup.exportDate
-          ? new Date(backup.exportDate).toLocaleDateString()
-          : "unknown date"
+        ? new Date(backup.exportDate).toLocaleDateString()
+        : "unknown date"
         }. Continue?`;
       const ok = await showConfirm(msg, {
         title: "Restore Backup",
@@ -1208,7 +1208,7 @@ const storageManager = {
     if (_crossTabToastShown) return; // one notice is enough
     _crossTabToastShown = true;
     showToast(
-      '⚠️ Data changed in another tab. <button data-action="reloadPage" style="margin-left:6px;padding:2px 8px;border-radius:4px;border:1px solid currentColor;background:transparent;color:inherit;cursor:pointer;">Reload</button>',
+      '⚠️ Data changed in another tab. <button data-action="reloadPage" class="btn btn-sm btn-ghost-current btn-inline-offset-sm">Reload</button>',
       8000,
     );
     // Reset after the toast disappears so a later change can notify again
@@ -1831,7 +1831,7 @@ function getFullCall(play, options = {}) {
   if (play.shift) {
     let shiftHtml = escapeHtml(play.shift);
     if (boldShifts) shiftHtml = `<b>${shiftHtml}</b>`;
-    if (redShifts) shiftHtml = `<span style="color:red">${shiftHtml}</span>`;
+    if (redShifts) shiftHtml = `<span class="text-danger">${shiftHtml}</span>`;
     parts.push(shiftHtml);
   }
 
@@ -1839,7 +1839,7 @@ function getFullCall(play, options = {}) {
   if (play.motion) {
     let motionHtml = escapeHtml(play.motion);
     if (italicMotions) motionHtml = `<i>${motionHtml}</i>`;
-    if (redMotions) motionHtml = `<span style="color:red">${motionHtml}</span>`;
+    if (redMotions) motionHtml = `<span class="text-danger">${motionHtml}</span>`;
     parts.push(motionHtml);
   }
 
@@ -1935,27 +1935,27 @@ function showReorderModal(values, opts) {
   };
 
   const modalHtml = `
-    <div id="${modalId}" class="modal-overlay" style="display: flex;" data-action="_reorderCloseOverlay">
-      <div class="modal-content" style="max-width: 400px;">
-        <div class="modal-header" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid #eee;">
-          <h3 style="margin: 0;">${opts.title || "Custom Order"}</h3>
-          <button data-action="_reorderClose" style="background: none; border: none; font-size: 20px; cursor: pointer; color: #666;">✕</button>
+    <div id="${modalId}" class="modal-overlay show" data-action="_reorderCloseOverlay">
+      <div class="modal-content modal-content-xs">
+        <div class="modal-header-row">
+          <h3 class="modal-title">${opts.title || "Custom Order"}</h3>
+          <button data-action="_reorderClose" class="modal-close-btn">✕</button>
         </div>
         <div class="modal-body">
-          <p style="font-size: 12px; color: #666; margin-bottom: 10px;">
+          <p class="modal-copy-note">
             Drag values to set your preferred sort order. Top = first.
           </p>
           <div id="${listId}" class="custom-order-list">
             ${renderList()}
           </div>
-          <div style="margin-top: 15px; display: flex; gap: 10px; flex-wrap: wrap;">
-            <button data-action="_reorderSave" class="btn btn-primary" style="padding: 8px 16px;">
+          <div class="modal-action-row-wrap">
+            <button data-action="_reorderSave" class="btn btn-primary modal-btn-padded">
               💾 Save Order
             </button>
-            <button data-action="_reorderClear" class="btn btn-secondary" style="padding: 8px 16px;">
+            <button data-action="_reorderClear" class="btn btn-secondary modal-btn-padded">
               🗑️ Clear Custom Order
             </button>
-            <button data-action="_reorderClose" class="btn" style="padding: 8px 16px;">
+            <button data-action="_reorderClose" class="btn modal-btn-padded">
               Cancel
             </button>
           </div>

@@ -433,6 +433,11 @@
   background: var(--color-bg-input);
   cursor: pointer;
 }
+
+.custom-order-btn-compact {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+}
 @media (hover: hover) {
   .custom-order-btn:hover {
     background: var(--color-border-med);
@@ -728,6 +733,10 @@
   font-size: var(--font-size-xs);
 }
 
+.modal-content-xs {
+  max-width: 400px;
+}
+
 .modal-field-label {
   display: block;
   margin-bottom: var(--space-xs);
@@ -759,6 +768,48 @@
 .modal-action-row {
   display: flex;
   gap: var(--space-sm);
+}
+
+.modal-action-row-wrap {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  margin-top: 15px;
+}
+
+.modal-header-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.modal-title {
+  margin: 0;
+}
+
+.modal-close-btn {
+  background: none;
+  border: none;
+  font-size: 20px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+}
+
+.modal-copy-note {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-bottom: 10px;
+}
+
+.modal-btn-padded {
+  padding: 8px 16px;
+}
+
+.modal-btn-lg {
+  padding: 10px 20px;
 }
 
 .modal-copy-block {
@@ -1403,6 +1454,9 @@ kbd {
 .mb-md {
   margin-bottom: var(--space-md);
 }
+.ml-auto {
+  margin-left: auto;
+}
 .text-hint {
   font-weight: normal;
   font-size: var(--font-size-sm);
@@ -1416,6 +1470,83 @@ kbd {
 
 .btn-inline-offset {
   margin-left: 5px;
+}
+
+.btn-ghost-current {
+  border: 1px solid currentColor;
+  background: transparent;
+  color: inherit;
+}
+
+.btn-ghost-current.btn-sm {
+  padding: 3px 12px;
+  font-weight: 600;
+}
+
+.btn-ghost-current.btn-inline-offset-sm {
+  margin-left: 6px;
+  padding: 2px 8px;
+  border-radius: 4px;
+}
+
+.flex-spacer {
+  flex: 1;
+}
+
+.merge-report {
+  text-align: left;
+  font-size: 0.95rem;
+  line-height: 1.7;
+}
+
+.merge-report-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 2px 10px;
+  margin-bottom: 12px;
+}
+
+.merge-report-section {
+  border-top: 1px solid var(--color-border-light);
+  padding-top: 8px;
+  margin-bottom: 10px;
+}
+
+.merge-report-details {
+  margin-bottom: 6px;
+}
+
+.merge-report-summary {
+  cursor: pointer;
+  font-weight: 600;
+  font-size: 0.9rem;
+}
+
+.merge-report-list {
+  font-size: 0.82rem;
+  margin-top: 4px;
+  overflow-y: auto;
+}
+
+.merge-report-list--tall {
+  max-height: 200px;
+}
+
+.merge-report-list--medium {
+  max-height: 150px;
+}
+
+.merge-report-row {
+  margin-bottom: 2px;
+}
+
+.merge-report-muted {
+  color: var(--color-text-muted);
+}
+
+.merge-report-muted-gap {
+  color: var(--color-text-muted);
+  margin-bottom: 4px;
 }
 .text-xs {
   font-size: var(--font-size-xs) !important;
@@ -1464,6 +1595,10 @@ kbd {
 .empty-state--bordered {
   border: 2px dashed var(--color-border);
   border-radius: var(--radius-lg);
+}
+
+.empty-state--spaced {
+  margin-top: var(--space-sm);
 }
 .empty-state__icon {
   font-size: var(--font-size-5xl);

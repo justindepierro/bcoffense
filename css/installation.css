@@ -265,6 +265,7 @@
   margin-bottom: 3px;
 }
 .install-cat-progress-fill {
+  width: var(--bar-width, 0%);
   height: 100%;
   background: linear-gradient(
     90deg,
@@ -744,6 +745,7 @@
   overflow: hidden;
 }
 .sir-bar-fill {
+  width: var(--bar-width, 0%);
   height: 100%;
   border-radius: var(--radius-md);
   will-change: width;
@@ -1215,6 +1217,7 @@
 }
 .sirp-balance-fill {
   display: block;
+  width: var(--bar-width, 0%);
   height: 100%;
   border-radius: var(--radius-sm);
 }
@@ -1224,6 +1227,13 @@
 .sirp-fill-pass {
   background: var(--color-primary);
 }
+
+.sirp-section-subtitle {
+  margin-top: 8px;
+  font-weight: 600;
+  font-size: 0.82rem;
+}
+
 .sirp-balance-val {
   font-size: var(--font-size-2xs);
   color: var(--color-text-muted);

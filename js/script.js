@@ -2476,7 +2476,7 @@ async function importFromCallSheet(separatorIndex) {
       <div class="cs-import-cat-list">
         ${catListHtml}
       </div>
-      <div class="period-create-actions" style="margin-top:12px;">
+      <div class="period-create-actions mt-md">
         <button class="btn btn-primary" data-action="doImportFromCallSheet" data-idx="${separatorIndex}">Import Selected</button>
         <button class="btn" data-action="closePeriodOverlay">Cancel</button>
       </div>
@@ -3127,7 +3127,7 @@ function renderScriptEmptyPeriodHeaders() {
           </div>
           <div class="ph-right">
             <button class="ph-btn ph-period-setting ${p.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${i}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
-            <button class="remove" data-action="removeFromScript" data-idx="${i}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+            <button class="remove btn-inline-offset" data-action="removeFromScript" data-idx="${i}" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
           </div>
         </div>
       </div>
@@ -3180,7 +3180,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
             <button class="ph-btn" data-action="duplicatePeriod" data-idx="${index}" title="Duplicate period" aria-label="Duplicate ${escapeHtml(periodLabel)}">⧉</button>
             <button class="ph-btn" data-action="savePeriodAsTemplate" data-idx="${index}" title="Save as template" aria-label="Save ${escapeHtml(periodLabel)} as a template">💾</button>
             <button class="ph-btn ph-period-setting ${separator.hideProtection ? "ph-btn-active" : ""}" data-action="togglePeriodProtection" data-idx="${index}" title="${escapeHtml(protectionButtonTitle)}" aria-label="${escapeHtml(protectionButtonTitle)}">${protectionButtonLabel}</button>
-            <button class="remove" data-action="removeFromScript" data-idx="${index}" style="margin-left: 4px;" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
+            <button class="remove btn-inline-offset" data-action="removeFromScript" data-idx="${index}" aria-label="Delete ${escapeHtml(periodLabel)}">✕</button>
           </div>
         </div>
       </div>
@@ -4254,31 +4254,31 @@ function openLoadWristbandToScriptModal() {
     .join("");
 
   const modalHtml = `
-    <div id="loadWbToScriptModal" class="modal-overlay" style="display: flex;" data-action="closeLoadWbToScriptModalOverlay">
-      <div class="modal-content" style="max-width: 450px;">
-        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; padding-bottom: 10px; border-bottom: 1px solid ${UI_COLORS.borderLight};">
-          <h3 style="margin: 0;">➕ Load Wristband Plays to Script</h3>
-          <button data-action="closeLoadWbToScriptModal" style="background: none; border: none; font-size: 20px; cursor: pointer; color: ${UI_COLORS.textMuted};">✕</button>
+    <div id="loadWbToScriptModal" class="modal-overlay show" data-action="closeLoadWbToScriptModalOverlay">
+      <div class="modal-content modal-content-sm">
+        <div class="modal-header-row">
+          <h3 class="modal-title">➕ Load Wristband Plays to Script</h3>
+          <button data-action="closeLoadWbToScriptModal" class="modal-close-btn">✕</button>
         </div>
         
-        <div style="margin-bottom: 15px;">
-          <label style="font-weight: bold; display: block; margin-bottom: 5px;">Select Wristband:</label>
-          <select id="wbToScriptSelect" style="width: 100%; padding: 8px; font-size: 14px;">
+        <div class="mb-md">
+          <label class="modal-field-label">Select Wristband:</label>
+          <select id="wbToScriptSelect" class="modal-field-input">
             ${wristbandOptions}
           </select>
         </div>
         
-        <div style="margin-bottom: 15px;">
-          <label style="font-weight: bold; display: block; margin-bottom: 5px;">Add to:</label>
-          <select id="wbToScriptDestination" style="width: 100%; padding: 8px; font-size: 14px;">
+        <div class="mb-md">
+          <label class="modal-field-label">Add to:</label>
+          <select id="wbToScriptDestination" class="modal-field-input">
             <option value="new">New Period (from wristband)</option>
             <option value="current">Current Period / End of Script</option>
           </select>
         </div>
         
-        <div style="margin-bottom: 15px;">
-          <label style="font-weight: bold; display: block; margin-bottom: 5px;">Card(s) to load:</label>
-          <select id="wbToScriptCards" style="width: 100%; padding: 8px; font-size: 14px;">
+        <div class="mb-md">
+          <label class="modal-field-label">Card(s) to load:</label>
+          <select id="wbToScriptCards" class="modal-field-input">
             <option value="all">All Cards</option>
             <option value="1">Card 1 Only</option>
             <option value="2">Card 2 Only</option>
@@ -4288,11 +4288,11 @@ function openLoadWristbandToScriptModal() {
           </select>
         </div>
         
-        <div style="display: flex; gap: 10px; margin-top: 20px;">
-          <button data-action="executeLoadWbToScript" class="btn btn-primary" style="padding: 10px 20px;">
+        <div class="modal-action-row mt-md">
+          <button data-action="executeLoadWbToScript" class="btn btn-primary modal-btn-lg">
             ✅ Load Plays
           </button>
-          <button data-action="closeLoadWbToScriptModal" class="btn" style="padding: 10px 20px;">
+          <button data-action="closeLoadWbToScriptModal" class="btn modal-btn-lg">
             Cancel
           </button>
         </div>

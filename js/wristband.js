@@ -593,7 +593,7 @@ function renderSortCriteria() {
         <div class="sort-move-btns">${moveUpBtn}${moveDownBtn}</div>
         <select data-onchange="updateSortField" data-key="${idx}" data-pass="value" aria-label="Sort field">${fieldOptions}</select>
         <button class="sort-dir-btn" data-action="toggleSortDirection" data-idx="${idx}" title="${dirTitle}" aria-label="${dirTitle}">${dirIcon}</button>
-        <button class="custom-order-btn" data-action="openCustomOrderModal" data-arg="${criteria.field}" title="${customOrderTitle}" style="font-size: 11px; padding: 2px 6px;">${customOrderIcon}</button>
+        <button class="custom-order-btn custom-order-btn-compact" data-action="openCustomOrderModal" data-arg="${criteria.field}" title="${customOrderTitle}">${customOrderIcon}</button>
         <button class="remove-sort-btn" data-action="removeSortCriteria" data-idx="${idx}" aria-label="Remove sort field">✕</button>
       </div>
     `;
@@ -3404,7 +3404,7 @@ function renderQuickSearchResults(query) {
       return `<div class="wb-quicksearch-item" data-play-idx="${idx}">
       <span class="cell-play-option-type">${escapeHtml(p.type || "Play")}</span>
       ${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}
-      <span style="color:var(--color-text-muted);font-size:var(--font-size-2xs);">${escapeHtml(p.personnel || "")}</span>
+      <span class="td-meta-inline">${escapeHtml(p.personnel || "")}</span>
     </div>`;
     })
     .join("");

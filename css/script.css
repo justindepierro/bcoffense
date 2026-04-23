@@ -704,6 +704,10 @@
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
 }
+
+.smart-range-input {
+  width: 100px;
+}
 .script-item .remove {
   background: var(--color-danger);
   color: white;

@@ -1103,6 +1103,26 @@
     );
 }
 
+.cs-border-dot--red {
+  --cs-border-accent: var(--cat-red);
+}
+
+.cs-border-dot--blue {
+  --cs-border-accent: var(--color-swatch-blue);
+}
+
+.cs-border-dot--green {
+  --cs-border-accent: var(--cat-green);
+}
+
+.cs-border-dot--orange {
+  --cs-border-accent: var(--cat-orange);
+}
+
+.cs-border-dot--purple {
+  --cs-border-accent: var(--cat-purple);
+}
+
 .cs-border-arrow {
   color: var(--color-text-light);
   font-weight: 700;
@@ -1438,6 +1458,18 @@
   width: 92%;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   overflow: hidden;
+}
+
+.cs-sort-modal-sm {
+  max-width: 400px;
+}
+
+.cs-sort-modal-md {
+  max-width: 460px;
+}
+
+.cs-sort-modal-lg {
+  max-width: 560px;
 }
 .cs-sort-header {
   display: flex;
@@ -2874,6 +2906,10 @@
   border-radius: 0 0 var(--radius-sm, 6px) var(--radius-sm, 6px);
   margin-bottom: 4px;
 }
+
+.cr-bucket-detail.hidden {
+  display: none;
+}
 .cr-philosophy {
   font-size: 0.78rem;
   font-style: italic;
@@ -2940,6 +2976,10 @@
   border: 1px solid var(--color-border-light, #e0e0e0);
   border-radius: var(--radius-sm, 6px);
   overflow: hidden;
+}
+
+.cr-suggestions.hidden {
+  display: none;
 }
 .cr-sug-group {
   padding: 8px 10px;
@@ -3029,12 +3069,16 @@
   min-width: 40px;
 }
 .cr-dist-bar-fill {
+  width: var(--fill-width, 0%);
   height: 100%;
   border-radius: 7px;
-  background: linear-gradient(
-    90deg,
-    var(--color-primary, #667eea),
-    var(--color-accent, #764ba2)
+  background: var(
+    --fill-color,
+    linear-gradient(
+      90deg,
+      var(--color-primary, #667eea),
+      var(--color-accent, #764ba2)
+    )
   );
   transition: width var(--transition-normal, 0.25s) ease;
   min-width: 2px;
@@ -3099,6 +3143,7 @@
   height: 8px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--ta-color, var(--color-primary, #667eea));
 }
 .ta-total {
   font-size: 0.72rem;
@@ -3127,6 +3172,7 @@
   height: 10px;
   border-radius: 50%;
   flex-shrink: 0;
+  background: var(--ta-color, var(--color-primary, #667eea));
 }
 .ta-player-name {
   min-width: 56px;
@@ -3176,6 +3222,10 @@
   margin-left: 5px;
   margin-bottom: 4px;
 }
+
+.ta-detail.hidden {
+  display: none;
+}
 .ta-detail-row {
   margin-bottom: 8px;
 }
@@ -3205,6 +3255,7 @@
   margin-bottom: 4px;
 }
 .ta-slot-seg {
+  width: var(--seg-width, 0%);
   height: 100%;
   min-width: 1px;
   transition: width var(--transition-normal, 0.25s) ease;

@@ -643,11 +643,10 @@ function _buildMergeReportHtml(report, refCounts, existingPlays) {
   const { updated, unchanged, added, removed, addedPlays, removedPlays } =
     report;
 
-  let h = '<div style="text-align:left;font-size:0.95rem;line-height:1.7">';
+  let h = '<div class="merge-report">';
 
   // Summary grid
-  h +=
-    '<div style="display:grid;grid-template-columns:auto 1fr;gap:2px 10px;margin-bottom:12px">';
+  h += '<div class="merge-report-grid">';
   h += `<span>🔄</span><span><strong>${updated.length}</strong> play${updated.length !== 1 ? "s" : ""} updated</span>`;
   h += `<span>➕</span><span><strong>${added.length}</strong> new play${added.length !== 1 ? "s" : ""} added</span>`;
   h += `<span>📌</span><span><strong>${unchanged.length}</strong> play${unchanged.length !== 1 ? "s" : ""} unchanged</span>`;
@@ -660,8 +659,7 @@ function _buildMergeReportHtml(report, refCounts, existingPlays) {
   const totalRefs =
     refCounts.wristbands + refCounts.scripts + refCounts.callsheet;
   if (totalRefs > 0) {
-    h +=
-      '<div style="border-top:1px solid var(--color-border-light);padding-top:8px;margin-bottom:10px">';
+    h += '<div class="merge-report-section">';
     h += `<strong>🔗 ${totalRefs} reference${totalRefs !== 1 ? "s" : ""} updated:</strong><br>`;
     const parts = [];
     if (refCounts.wristbands)
@@ -674,10 +672,8 @@ function _buildMergeReportHtml(report, refCounts, existingPlays) {
 
   // Expandable detail: updated plays
   if (updated.length > 0) {
-    h +=
-      '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Updated plays</summary>';
-    h +=
-      '<div style="font-size:0.82rem;margin-top:4px;max-height:200px;overflow-y:auto">';
+    h += '<details class="merge-report-details"><summary class="merge-report-summary">Updated plays</summary>';
+    h += '<div class="merge-report-list merge-report-list--tall">';
     const show = updated.slice(0, 20);
     for (const u of show) {
       const p = existingPlays[u.ei];
@@ -687,42 +683,37 @@ function _buildMergeReportHtml(report, refCounts, existingPlays) {
         .map((c) => c.field)
         .join(", ");
       const more = u.changes.length > 4 ? ", …" : "";
-      h += `<div style="margin-bottom:2px">• <strong>${escapeHtml(name)}</strong> — ${u.changes.length} field${u.changes.length !== 1 ? "s" : ""} <span style="color:var(--color-text-muted)">(${escapeHtml(flds)}${more})</span></div>`;
+      h += `<div class="merge-report-row">• <strong>${escapeHtml(name)}</strong> — ${u.changes.length} field${u.changes.length !== 1 ? "s" : ""} <span class="merge-report-muted">(${escapeHtml(flds)}${more})</span></div>`;
     }
     if (updated.length > 20)
-      h += `<div style="color:var(--color-text-muted)">…and ${updated.length - 20} more</div>`;
+      h += `<div class="merge-report-muted">…and ${updated.length - 20} more</div>`;
     h += "</div></details>";
   }
 
   // Expandable detail: added plays
   if (added.length > 0) {
-    h +=
-      '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">New plays added</summary>';
-    h +=
-      '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
+    h += '<details class="merge-report-details"><summary class="merge-report-summary">New plays added</summary>';
+    h += '<div class="merge-report-list merge-report-list--medium">';
     const show = addedPlays.slice(0, 20);
     for (const p of show) {
-      h += `<div style="margin-bottom:2px">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
+      h += `<div class="merge-report-row">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
     }
     if (added.length > 20)
-      h += `<div style="color:var(--color-text-muted)">…and ${added.length - 20} more</div>`;
+      h += `<div class="merge-report-muted">…and ${added.length - 20} more</div>`;
     h += "</div></details>";
   }
 
   // Expandable detail: removed / orphaned plays
   if (removed.length > 0) {
-    h +=
-      '<details style="margin-bottom:6px"><summary style="cursor:pointer;font-weight:600;font-size:0.9rem">Plays only in old playbook</summary>';
-    h +=
-      '<div style="font-size:0.82rem;margin-top:4px;max-height:150px;overflow-y:auto">';
-    h +=
-      '<div style="color:var(--color-text-muted);margin-bottom:4px">These plays were not in the new CSV but have been kept in your playbook.</div>';
+    h += '<details class="merge-report-details"><summary class="merge-report-summary">Plays only in old playbook</summary>';
+    h += '<div class="merge-report-list merge-report-list--medium">';
+    h += '<div class="merge-report-muted-gap">These plays were not in the new CSV but have been kept in your playbook.</div>';
     const show = removedPlays.slice(0, 20);
     for (const p of show) {
-      h += `<div style="margin-bottom:2px">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
+      h += `<div class="merge-report-row">• ${escapeHtml((p.formation || "?") + " " + (p.play || "?"))} (${escapeHtml(p.type || "?")})</div>`;
     }
     if (removed.length > 20)
-      h += `<div style="color:var(--color-text-muted)">…and ${removed.length - 20} more</div>`;
+      h += `<div class="merge-report-muted">…and ${removed.length - 20} more</div>`;
     h += "</div></details>";
   }
 

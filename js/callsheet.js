@@ -1409,7 +1409,7 @@ function buildUniqueCallSheetCategoryId(name) {
 function openAddCallSheetCategoryModal() {
   const modalHtml = `
     <div id="csAddCategoryOverlay" class="cs-sort-overlay">
-      <div class="cs-sort-modal" style="max-width: 460px;">
+      <div class="cs-sort-modal cs-sort-modal-md">
         <div class="cs-sort-header">
           <h3>➕ Add Category</h3>
           <button class="cs-sort-close" data-action="closeAddCallSheetCategoryModal">&times;</button>
@@ -3549,7 +3549,7 @@ function manageDisplayPresets() {
   overlay.id = "csManagePresetsOverlay";
   overlay.className = "cs-sort-overlay";
   overlay.innerHTML = `
-    <div class="cs-sort-modal" style="max-width: 400px;">
+    <div class="cs-sort-modal cs-sort-modal-sm">
       <div class="cs-sort-header">
         <h3>🗑️ Manage Display Presets</h3>
         <button class="cs-sort-close" data-action="closeCsManagePresets">&times;</button>
@@ -4442,7 +4442,7 @@ function openTemplatesModal(mode = "manage") {
 
   const modalHtml = `
     <div id="csTemplateOverlay" class="cs-sort-overlay">
-      <div class="cs-sort-modal cs-template-modal" style="max-width: 560px;">
+      <div class="cs-sort-modal cs-sort-modal-lg cs-template-modal">
         <div class="cs-sort-header">
           <div>
             <h3>${title}</h3>
@@ -4740,7 +4740,7 @@ function openCallSheetLayoutModal() {
   csLayoutPickedCategoryId = null;
 
   const modalHtml = `
-    <div id="csLayoutOverlay" class="modal-overlay" style="display: flex;" data-action="closeCallSheetLayoutModalOverlay">
+    <div id="csLayoutOverlay" class="modal-overlay show" data-action="closeCallSheetLayoutModalOverlay">
       <div class="modal-content cs-layout-modal">
         <div class="modal-header cs-layout-modal-header">
           <div>
@@ -5239,7 +5239,7 @@ function renderCsSortCriteria() {
           <span class="drag-handle">☰</span>
           <select data-onchange="updateCsSortField" data-key="${idx}" data-pass="value">${fieldOptions}</select>
           <button class="sort-dir-btn" data-action="toggleCsSortDirection" data-idx="${idx}" title="${dirTitle}">${dirIcon}</button>
-          <button class="custom-order-btn" data-action="openCsCustomOrderModal" data-arg="${criteria.field}" title="${customTitle}" style="font-size: 11px; padding: 2px 6px;">${customIcon}</button>
+          <button class="custom-order-btn custom-order-btn-compact" data-action="openCsCustomOrderModal" data-arg="${criteria.field}" title="${customTitle}">${customIcon}</button>
           <button class="remove-sort-btn" data-action="removeCsSortCriteria" data-idx="${idx}">✕</button>
         </div>
       `;
@@ -5600,7 +5600,7 @@ function openSmartSuggestionsModal(categoryId) {
   }
 
   const modalHtml = `
-    <div id="csSuggestOverlay" class="modal-overlay" style="display:flex;">
+    <div id="csSuggestOverlay" class="modal-overlay show">
       <div class="modal-content cs-suggest-modal">
         <div class="cs-suggest-header">
           <h3>💡 Smart Suggestions — ${escapeHtml(catName)}</h3>

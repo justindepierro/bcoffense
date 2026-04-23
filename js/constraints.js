@@ -1169,7 +1169,7 @@ function _renderTouchDistribution(weightedTouches, flatTouches, title) {
       <div class="cr-dist-row">
         <span class="cr-dist-name">${escapeHtml(player)}</span>
         <div class="cr-dist-bar-track">
-          <div class="cr-dist-bar-fill" style="width:${pct.toFixed(1)}%"></div>
+          <div class="cr-dist-bar-fill" style="--fill-width:${pct.toFixed(1)}%"></div>
         </div>
         <span class="cr-dist-pct">${pct.toFixed(0)}%</span>
         <span class="cr-dist-pts">${Number.isInteger(w) ? w : w.toFixed(1)} pts</span>
@@ -1226,7 +1226,7 @@ function renderTouchAnalysis(analysis, opts) {
   const summaryChips = playerArr
     .map((p, i) => {
       const color = palette[i % palette.length];
-      return `<span class="ta-chip" style="--ta-color:${color}"><span class="ta-chip-dot" style="background:${color}"></span>${escapeHtml(p.name)} <b>${p.pct.toFixed(0)}%</b></span>`;
+      return `<span class="ta-chip" style="--ta-color:${color}"><span class="ta-chip-dot"></span>${escapeHtml(p.name)} <b>${p.pct.toFixed(0)}%</b></span>`;
     })
     .join("");
 
@@ -1244,9 +1244,9 @@ function renderTouchAnalysis(analysis, opts) {
 
       const slotBar = `
         <div class="ta-slot-bar">
-          <div class="ta-slot-seg ta-seg-kp1" style="width:${kp1Pct.toFixed(0)}%" title="KP1: ${p.slots.kp1}"></div>
-          <div class="ta-slot-seg ta-seg-kp2" style="width:${kp2Pct.toFixed(0)}%" title="KP2: ${p.slots.kp2}"></div>
-          <div class="ta-slot-seg ta-seg-kp3" style="width:${kp3Pct.toFixed(0)}%" title="KP3: ${p.slots.kp3}"></div>
+          <div class="ta-slot-seg ta-seg-kp1" style="--seg-width:${kp1Pct.toFixed(0)}%" title="KP1: ${p.slots.kp1}"></div>
+          <div class="ta-slot-seg ta-seg-kp2" style="--seg-width:${kp2Pct.toFixed(0)}%" title="KP2: ${p.slots.kp2}"></div>
+          <div class="ta-slot-seg ta-seg-kp3" style="--seg-width:${kp3Pct.toFixed(0)}%" title="KP3: ${p.slots.kp3}"></div>
         </div>`;
 
       const slotLabels = `
@@ -1283,17 +1283,17 @@ function renderTouchAnalysis(analysis, opts) {
 
       return `
       <div class="ta-player-row" data-action="toggleTaDetail" data-arg="${id}">
-        <span class="ta-player-dot" style="background:${color}"></span>
+        <span class="ta-player-dot" style="--ta-color:${color}"></span>
         <span class="ta-player-name">${escapeHtml(p.name)}</span>
         <div class="cr-dist-bar-track ta-bar">
-          <div class="cr-dist-bar-fill" style="width:${p.pct.toFixed(1)}%;background:${color}"></div>
+          <div class="cr-dist-bar-fill" style="--fill-width:${p.pct.toFixed(1)}%;--fill-color:${color}"></div>
         </div>
         <span class="ta-player-pct">${p.pct.toFixed(0)}%</span>
         <span class="ta-player-pts">${Number.isInteger(p.weightedPts) ? p.weightedPts : p.weightedPts.toFixed(1)} pts</span>
         <span class="ta-player-flat">${p.flatCount} plays</span>
         <span class="ta-expand-arrow">›</span>
       </div>
-      <div class="ta-detail" id="${id}" style="display:none">
+      <div class="ta-detail hidden" id="${id}">
         <div class="ta-detail-row"><span class="ta-detail-label">🔵 Priority Slots</span>${slotBar}${slotLabels}</div>
         <div class="ta-detail-row"><span class="ta-detail-label">🏃 Play Types</span><div class="ta-detail-chips">${typeChips || '<span class="ta-none">—</span>'}</div></div>
         ${zoneHtml}
@@ -1316,8 +1316,8 @@ function renderTouchAnalysis(analysis, opts) {
 function toggleTaDetail(id) {
   const el = document.getElementById(id);
   if (!el) return;
-  const isOpen = el.style.display !== "none";
-  el.style.display = isOpen ? "none" : "block";
+  const isOpen = !el.classList.contains("hidden");
+  el.classList.toggle("hidden", isOpen);
   const row = el.previousElementSibling;
   if (row) {
     const arrow = row.querySelector(".ta-expand-arrow");
@@ -1417,7 +1417,7 @@ function renderConstraintPanel(report) {
         <span class="cr-bucket-score">${r.status !== "empty" ? r.score + "%" : ""}</span>
         <span class="cr-bucket-arrow">›</span>
       </div>
-      <div class="cr-bucket-detail" id="cr-detail-${safeKey}" style="display:none">
+      <div class="cr-bucket-detail hidden" id="cr-detail-${safeKey}">
         ${renderBucketDetail(key, r)}
       </div>
     `;
@@ -1494,7 +1494,7 @@ function renderBucketDetail(key, report) {
       ? `<button class="btn btn-sm btn-primary cr-suggest-btn" data-action="showSuggestions" data-arg="${safeKey}">💡 Suggest Fixes</button>`
       : "";
 
-  const suggDiv = `<div class="cr-suggestions" id="cr-suggest-${safeKey}" style="display:none"></div>`;
+  const suggDiv = `<div class="cr-suggestions hidden" id="cr-suggest-${safeKey}"></div>`;
 
   return (
     philHtml + statsHtml + bucketDistHtml + listHtml + suggestBtn + suggDiv
@@ -1507,8 +1507,8 @@ function renderBucketDetail(key, report) {
 function toggleConstraintDetail(key) {
   const el = document.getElementById(`cr-detail-${key}`);
   if (!el) return;
-  const isOpen = el.style.display !== "none";
-  el.style.display = isOpen ? "none" : "block";
+  const isOpen = !el.classList.contains("hidden");
+  el.classList.toggle("hidden", isOpen);
   // Update arrow
   const row = document.querySelector(`.cr-bucket-row[data-bucket="${key}"]`);
   if (row) {
@@ -1555,7 +1555,7 @@ function showSuggestions(key) {
       .join("");
   }
 
-  el.style.display = el.style.display === "none" ? "block" : "none";
+  el.classList.toggle("hidden");
 }
 
 // ─────────────────────────────────────────────────────────────────────────────

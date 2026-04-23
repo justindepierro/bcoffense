@@ -114,6 +114,15 @@
   gap: 8px;
 }
 
+.td-column-panel {
+  display: none;
+}
+
+.td-meta-inline {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+}
+
 .btn.td-new-play-btn {
   font-size: var(--font-size-md);
   padding: 10px 20px;
@@ -795,6 +804,7 @@
   overflow: hidden;
 }
 .td-dist-bar-fill {
+  width: var(--bar-width, 0%);
   height: 100%;
   border-radius: var(--radius-sm);
   will-change: width;
