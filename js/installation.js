@@ -623,7 +623,7 @@ function renderInstallCategoryDetail(components, data) {
                    draggable="true"
                    data-drag="installItem" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
               <input type="checkbox" ${isInstalled ? "checked" : ""}
-                     data-onchange="installToggleItem" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
+                data-onchange="installToggleItem" data-pass="event" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
               <span class="install-item-check">${isInstalled ? "✅" : "⬜"}</span>
               <span class="install-item-name">${value}</span>
               <span class="install-item-count" title="${count} play${count !== 1 ? "s" : ""} use this">${count} play${count !== 1 ? "s" : ""}</span>
@@ -1682,9 +1682,10 @@ function toggleSmartBasePlays() {
 }
 
 /** Toggle a component's installed state and re-render */
-function installToggleItem() {
-  const cat = this.dataset ? this.dataset.cat : null;
-  const val = this.dataset ? this.dataset.val : null;
+function installToggleItem(event) {
+  const target = event?.target?.closest("[data-onchange='installToggleItem']");
+  const cat = target?.dataset ? target.dataset.cat : null;
+  const val = target?.dataset ? target.dataset.val : null;
   if (cat && val) {
     toggleComponentInstalled(cat, val);
     renderInstallation();
@@ -1700,18 +1701,8 @@ function toggleSirCollapse(el) {
 // ============ Container-Scoped Delegation ============
 
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.getElementById("installationContainer");
+  const container = document.getElementById("installation");
   if (!container) return;
-
-  // ── Change delegation for install checkboxes ──
-  container.addEventListener("change", (e) => {
-    const cb = e.target.closest("[data-onchange='installToggleItem']");
-    if (cb) {
-      toggleComponentInstalled(cb.dataset.cat, cb.dataset.val);
-      renderInstallation();
-      return;
-    }
-  });
 
   // ── Drag delegation for install items ──
   container.addEventListener("dragstart", (e) => {
