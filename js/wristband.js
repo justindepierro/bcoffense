@@ -20,7 +20,7 @@ let pendingPlaySelection = null;
 let pendingMarkers = [];
 let pendingMarkerPlacement = "prefix";
 let pendingExtraPersonnel = "";
-let pendingPreShift = "";
+let pendingPreShift = [];
 
 const WB_CELL_MARKER_OPTIONS = [
   { value: "$", emoji: "💲", label: "On Two" },
@@ -149,6 +149,78 @@ function getCustomPreShiftPrefix(custom) {
   const values = getCustomPreShiftValues(custom);
   if (!values.length) return "";
   return `${values.map((value) => `(${escapeHtml(value)})`).join(" ")} `;
+}
+
+function normalizePreShiftValue(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function renderPendingPreShiftList() {
+  const list = document.getElementById("cellPreShiftList");
+  const input = document.getElementById("cellPreShiftInput");
+  if (!list || !input) return;
+
+  if (!pendingPreShift.length) {
+    list.innerHTML =
+      '<span class="cell-pre-shift-empty">No pre-shifts added</span>';
+    return;
+  }
+
+  list.innerHTML = pendingPreShift
+    .map(
+      (value, index) => `
+        <span class="cell-pre-shift-chip">
+          <span>${escapeHtml(value)}</span>
+          <button
+            type="button"
+            class="cell-pre-shift-remove"
+            data-action="removeWbPendingPreShift"
+            data-arg="${index}"
+            aria-label="Remove ${escapeHtml(value)}"
+            title="Remove ${escapeHtml(value)}"
+          >
+            ×
+          </button>
+        </span>
+      `,
+    )
+    .join("");
+}
+
+function addWbPendingPreShift(value) {
+  const input = document.getElementById("cellPreShiftInput");
+  const nextValue = normalizePreShiftValue(value || input?.value || "");
+  if (!nextValue) return;
+
+  if (!pendingPreShift.includes(nextValue)) {
+    pendingPreShift.push(nextValue);
+  }
+
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  renderPendingPreShiftList();
+}
+
+function removeWbPendingPreShift(index) {
+  const parsedIndex = parseInt(index, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
+  pendingPreShift = pendingPreShift.filter((_, idx) => idx !== parsedIndex);
+  renderPendingPreShiftList();
+}
+
+function initWbPreShiftInput() {
+  const input = document.getElementById("cellPreShiftInput");
+  if (!input || input.dataset.bound === "true") return;
+  input.dataset.bound = "true";
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addWbPendingPreShift();
+  });
 }
 
 /** Slightly lighten or darken a color for alternating row shading */
@@ -1756,7 +1828,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
     getWristbandDisplayOptions(),
   );
   pendingExtraPersonnel = existing.extraPersonnel || "";
-  pendingPreShift = existing.preShift || "";
+  pendingPreShift = getCustomPreShiftValues(existing);
   pendingPlaySelection = currentPlay;
 
   const hasPlay = currentPlay !== null;
@@ -1793,9 +1865,11 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateCellMarkerSelection(pendingMarkers);
   updateCellMarkerPlacementSelection(pendingMarkerPlacement);
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
-  document.getElementById("cellPreShift").value = pendingPreShift;
+  document.getElementById("cellPreShiftInput").value = "";
   populateWbPersonnelDatalist();
   populateWbPreShiftDatalist();
+  initWbPreShiftInput();
+  renderPendingPreShiftList();
 
   overlay.classList.remove("hidden");
 
@@ -1966,7 +2040,7 @@ function applyCellStyle() {
   const extraPersonnel = document
     .getElementById("cellExtraPersonnel")
     .value.trim();
-  const preShift = document.getElementById("cellPreShift").value.trim();
+  const preShift = pendingPreShift.join("; ");
 
   if (
     pendingBgColor ||

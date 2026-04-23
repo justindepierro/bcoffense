@@ -1458,6 +1458,58 @@ kbd {
   font-size: var(--font-size-sm);
 }
 
+.cell-popup-input-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.cell-popup-input-group .cell-popup-input {
+  flex: 1 1 auto;
+}
+
+.cell-popup-input-group .btn {
+  flex: 0 0 auto;
+  min-width: 36px;
+  padding-inline: 0;
+}
+
+.cell-pre-shift-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  margin-top: var(--space-sm);
+  min-height: 28px;
+}
+
+.cell-pre-shift-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
+.cell-pre-shift-remove {
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  padding: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  cursor: pointer;
+}
+
+.cell-pre-shift-empty {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
 .cell-popup-marker-tools {
   display: flex;
   flex-direction: column;
@@ -1566,6 +1618,10 @@ kbd {
 
   .cell-marker-placement-btn {
     min-width: 0;
+  }
+
+  .cell-popup-input-group {
+    align-items: stretch;
   }
 }
 

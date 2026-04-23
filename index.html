@@ -1944,9 +1944,14 @@
         </div>
 
         <div class="cell-popup-row">
-          <label for="cellPreShift">Pre Shift:</label>
-          <input type="text" id="cellPreShift" class="cell-popup-input" list="wbPreShiftOptions"
-            placeholder="Comma-separated shifts in parentheses" autocomplete="off" />
+          <label for="cellPreShiftInput">Pre Shift:</label>
+          <div class="cell-popup-input-group">
+            <input type="text" id="cellPreShiftInput" class="cell-popup-input" list="wbPreShiftOptions"
+              placeholder="Add a pre-shift" autocomplete="off" />
+            <button type="button" class="btn btn-sm btn-secondary" data-action="addWbPendingPreShift"
+              aria-label="Add pre-shift">+</button>
+          </div>
+          <div id="cellPreShiftList" class="cell-pre-shift-list" aria-live="polite"></div>
           <datalist id="wbPreShiftOptions"></datalist>
         </div>
 
