@@ -318,6 +318,16 @@
 }
 
 /* ── Call sheet mobile stacking at ≤600px ── */
+@media (max-width: 1200px) {
+  .cs-settings-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .cs-border-selectors--grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
 @media (max-width: 980px) {
   .cs-toolbar-secondary {
     grid-template-columns: 1fr;
@@ -350,6 +360,10 @@
 
   .cs-settings-note {
     white-space: normal;
+  }
+
+  .cs-border-selectors--grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

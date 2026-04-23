@@ -366,7 +366,11 @@
   gap: 12px;
   padding: 10px 12px;
   margin-bottom: 8px;
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-light) 100%
+  );
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
@@ -425,7 +429,11 @@
   font-weight: 600;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-light) 100%
+  );
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
@@ -438,7 +446,11 @@
 }
 @media (hover: hover) {
   .cs-tool-btn:hover {
-    background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-white) 100%);
+    background: linear-gradient(
+      180deg,
+      var(--color-primary-light) 0%,
+      var(--color-white) 100%
+    );
     border-color: var(--color-primary);
     color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-light);
@@ -478,7 +490,7 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: var(--gradient-dark);
   color: var(--color-white);
   cursor: pointer;
@@ -488,14 +500,14 @@
 }
 .cs-unified-heading {
   display: grid;
-  gap: 3px;
+  gap: 1px;
   min-width: 0;
 }
 
 .cs-unified-heading-copy {
   color: var(--color-white-alpha-80);
-  font-size: var(--font-size-xs);
-  line-height: 1.35;
+  font-size: var(--font-size-3xs);
+  line-height: 1.2;
 }
 @media (hover: hover) {
   .cs-unified-header:hover {
@@ -516,7 +528,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 4px 6px;
+  padding: 3px 5px;
   border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-sm);
   background: rgba(255, 255, 255, 0.08);
@@ -532,13 +544,13 @@
 
 .cs-preset-select {
   font-size: var(--font-size-xs);
-  padding: 5px 10px;
+  padding: 4px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-white-alpha-20);
   background: rgba(255, 255, 255, 0.12);
   color: var(--color-white);
   cursor: pointer;
-  min-width: 176px;
+  min-width: 156px;
 }
 .cs-preset-select:focus {
   outline: none;
@@ -553,7 +565,7 @@
   background: none;
   border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-sm);
-  padding: 3px 8px;
+  padding: 2px 7px;
   cursor: pointer;
   font-size: var(--font-size-sm);
   line-height: 1;
@@ -567,7 +579,7 @@
 }
 
 .cs-unified-content {
-  padding: 16px;
+  padding: 10px 12px;
   background: linear-gradient(
     180deg,
     var(--color-bg-light) 0%,
@@ -581,7 +593,7 @@
 .cs-settings-layout {
   display: grid;
   grid-template-columns: repeat(12, minmax(0, 1fr));
-  gap: 14px;
+  gap: 10px;
 }
 
 .cs-settings-section {
@@ -590,7 +602,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
-  padding: 14px;
+  padding: 10px;
 }
 
 .cs-settings-section--display {
@@ -605,8 +617,8 @@
   display: flex;
   justify-content: space-between;
   align-items: flex-start;
-  gap: 12px;
-  margin-bottom: 10px;
+  gap: 8px;
+  margin-bottom: 6px;
 }
 
 .cs-settings-title {
@@ -618,8 +630,8 @@
 
 .cs-settings-copy {
   margin: 0;
-  font-size: var(--font-size-xs);
-  line-height: 1.4;
+  font-size: var(--font-size-3xs);
+  line-height: 1.2;
   color: var(--color-text-light);
 }
 
@@ -628,12 +640,12 @@
   align-items: baseline;
   justify-content: space-between;
   gap: 10px;
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 
 .cs-settings-subgroup + .cs-settings-subgroup {
-  margin-top: 12px;
-  padding-top: 12px;
+  margin-top: 8px;
+  padding-top: 8px;
   border-top: 1px solid var(--color-border-light);
 }
 
@@ -654,23 +666,27 @@
 
 .cs-settings-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .cs-option-tile {
   display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 38px;
-  padding: 8px 10px;
+  gap: 6px;
+  min-height: 30px;
+  padding: 5px 8px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-light) 100%
+  );
   color: var(--color-text);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-2xs);
   font-weight: 600;
-  line-height: 1.2;
+  line-height: 1.1;
   cursor: pointer;
   transition:
     border-color var(--transition-fast),
@@ -697,28 +713,41 @@
 }
 
 .cs-option-tile:has(input:checked) {
-  border-color: color-mix(in srgb, var(--color-primary) 55%, var(--color-border-light));
-  background: linear-gradient(180deg, var(--color-primary-light) 0%, var(--color-white) 100%);
-  box-shadow: 0 0 0 1px color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 55%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    180deg,
+    var(--color-primary-light) 0%,
+    var(--color-white) 100%
+  );
+  box-shadow: 0 0 0 1px
+    color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
 
 .cs-border-panels {
   display: grid;
-  gap: 12px;
+  gap: 8px;
 }
 
 .cs-border-panel {
   display: grid;
-  gap: 10px;
-  padding: 12px;
+  gap: 6px;
+  padding: 8px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--color-bg-light) 0%, var(--color-white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-light) 0%,
+    var(--color-white) 100%
+  );
 }
 
 .cs-border-panel-head {
   display: grid;
-  gap: 4px;
+  gap: 2px;
 }
 
 .cs-border-panel-title {
@@ -731,14 +760,14 @@
 
 .cs-border-panel-copy {
   color: var(--color-text-light);
-  font-size: var(--font-size-xs);
-  line-height: 1.35;
+  font-size: var(--font-size-3xs);
+  line-height: 1.2;
 }
 
 .cs-border-selectors--grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 8px;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 6px;
 }
 
 .cs-layout-modal {
@@ -1033,9 +1062,9 @@
 
 .cs-border-label {
   display: grid;
-  gap: 6px;
+  gap: 4px;
   min-width: 0;
-  padding: 8px;
+  padding: 6px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   background: var(--color-white);
@@ -1066,7 +1095,12 @@
   height: 10px;
   border-radius: 999px;
   background: var(--cs-border-accent, var(--color-primary));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cs-border-accent, var(--color-primary)) 20%, transparent);
+  box-shadow: 0 0 0 2px
+    color-mix(
+      in srgb,
+      var(--cs-border-accent, var(--color-primary)) 20%,
+      transparent
+    );
 }
 
 .cs-border-arrow {
@@ -1076,8 +1110,8 @@
 
 .cs-border-label select {
   width: 100%;
-  font-size: var(--font-size-xs);
-  padding: 6px 8px;
+  font-size: var(--font-size-2xs);
+  padding: 4px 6px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-border-input);
   background: var(--color-white);
@@ -2030,8 +2064,13 @@
   max-width: 92px;
   padding: 1px 6px;
   border-radius: var(--radius-pill);
-  background: color-mix(in srgb, var(--color-primary) 14%, var(--color-bg-lighter));
-  border: 1px solid color-mix(in srgb, var(--color-primary) 34%, var(--color-border-light));
+  background: color-mix(
+    in srgb,
+    var(--color-primary) 14%,
+    var(--color-bg-lighter)
+  );
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 34%, var(--color-border-light));
   color: var(--color-primary-dark);
   font-size: var(--font-size-micro);
   font-weight: 700;

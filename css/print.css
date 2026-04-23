@@ -413,7 +413,8 @@
     gap: 0;
     padding: 0.5px 0.75px;
     font-size: 7.35px;
-    font-family: "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
+    font-family:
+      "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
     letter-spacing: -0.015em;
     white-space: nowrap;

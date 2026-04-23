@@ -2053,7 +2053,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     const rect = menu.getBoundingClientRect();
     showPlayContextMenu(
       {
-        preventDefault() {},
+        preventDefault() { },
         clientX: Math.max(8, rect.left + 6),
         clientY: Math.max(8, rect.top + 6),
       },
