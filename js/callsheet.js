@@ -504,6 +504,7 @@ const CALLSHEET_DISPLAY_IDS = [
 
 const CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS = [
   "cellUseOneWord",
+  "cellForceUnderCenter",
   "cellHidePersonnel",
   "cellHideWristband",
   "cellHideFormation",
@@ -514,6 +515,15 @@ const CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS = [
   "cellHidePlayName",
   "cellHidePlayTags",
   "cellHideLineCall",
+];
+
+const CALLSHEET_HIGHLIGHT_SWATCHES = [
+  { key: "", name: "None", bg: "", border: "", css: "#f8f8f8" },
+  { key: "yellow", name: "Yellow", bg: "#fff59d", border: "#d4b106", css: "#fff59d" },
+  { key: "lime", name: "Lime", bg: "#dced8b", border: "#8aa51b", css: "#dced8b" },
+  { key: "cyan", name: "Cyan", bg: "#b2ebf2", border: "#1f8ea0", css: "#b2ebf2" },
+  { key: "pink", name: "Pink", bg: "#f8bbd0", border: "#c04b73", css: "#f8bbd0" },
+  { key: "orange", name: "Orange", bg: "#ffe0b2", border: "#c97a19", css: "#ffe0b2" },
 ];
 
 const CALLSHEET_CELL_DISPLAY_PRESETS = [
@@ -569,6 +579,15 @@ function clearCallSheetCellDisplayOverrides(play) {
   CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS.forEach((prop) => {
     delete play[prop];
   });
+}
+
+function getCallSheetHighlightConfig(play) {
+  if (!play) return null;
+  const highlightKey = play.highlightColor || (play.highlighted ? "yellow" : "");
+  return (
+    CALLSHEET_HIGHLIGHT_SWATCHES.find((swatch) => swatch.key === highlightKey) ||
+    null
+  );
 }
 
 function getCallSheetCustomTagValues(value) {
@@ -636,6 +655,17 @@ function getCallSheetCellDisplaySummary(play) {
   if (play.cellUseOneWord) {
     tokens.push("1W");
     titleParts.push("One-word only");
+  }
+
+  if (play.cellForceUnderCenter) {
+    tokens.push("🍑");
+    titleParts.push("Force under-center peach indicator");
+  }
+
+  const highlightConfig = getCallSheetHighlightConfig(play);
+  if (highlightConfig?.key) {
+    tokens.push("HL");
+    titleParts.push(`${highlightConfig.name} highlighter`);
   }
 
   tokenMap.forEach(([prop, token, title]) => {
@@ -1812,7 +1842,8 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
-  const isHighlighted = play.highlighted || false;
+  const highlightConfig = getCallSheetHighlightConfig(play);
+  const isHighlighted = Boolean(highlightConfig);
   const borderColor = getPlayBorderColor(play, options);
 
   // Build tempo class
@@ -1845,8 +1876,12 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
 
   // Build per-cell inline styles
   let cellStyles = [];
+  if (highlightConfig) {
+    cellStyles.push(`--cs-highlight-bg: ${highlightConfig.bg}`);
+    cellStyles.push(`--cs-highlight-border: ${highlightConfig.border}`);
+  }
   if (borderColor) cellStyles.push(`border: 2px solid ${borderColor}`);
-  if (play.cellBg) cellStyles.push(`background: ${play.cellBg}`);
+  if (play.cellBg && !isHighlighted) cellStyles.push(`background: ${play.cellBg}`);
   if (play.cellTextColor) cellStyles.push(`color: ${play.cellTextColor}`);
   if (play.cellFontSize) cellStyles.push(`font-size: ${play.cellFontSize}`);
   let textDeco = [];
@@ -1860,6 +1895,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
 
   // Check if play has any custom formatting
   const hasFormat =
+    highlightConfig ||
     play.borderColor ||
     play.cellBg ||
     play.cellTextColor ||
@@ -1961,6 +1997,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     { name: "Orange", value: "#e65100", css: "#e65100" },
     { name: "White", value: UI_COLORS.textWhite, css: UI_COLORS.textWhite },
   ];
+  const activeHighlightKey = getCallSheetHighlightConfig(play)?.key || "";
 
   const menu = document.createElement("div");
   menu.className = "cs-context-menu cs-ctx-wide";
@@ -1990,6 +2027,14 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   });
   menuHtml += `</div></div>`;
 
+  // ─── Highlighter ───
+  menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Highlighter</span><div class="cs-ctx-colors">`;
+  CALLSHEET_HIGHLIGHT_SWATCHES.forEach((c) => {
+    const sel = activeHighlightKey === c.key ? " cs-swatch-active" : "";
+    menuHtml += `<button class="cs-color-swatch${sel}" data-action="highlight" data-color="${c.key}" style="background:${c.css};" title="${c.name}"></button>`;
+  });
+  menuHtml += `</div></div>`;
+
   menuHtml += `<div class="cs-ctx-divider"></div>`;
 
   // ─── Text Style ───
@@ -2001,6 +2046,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menuHtml += `</div></div>`;
 
   const displayOverrideButtons = [
+    { prop: "cellForceUnderCenter", label: "🍑", title: "Force under-center peach indicator" },
     { prop: "cellHideWristband", label: "#", title: "Hide wristband number" },
     { prop: "cellHidePersonnel", label: "Pers", title: "Hide personnel badge" },
     { prop: "cellHideFormation", label: "Form", title: "Hide formation" },
@@ -2117,6 +2163,17 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       renderCallSheet();
       saveCallSheet();
       reopenMenu();
+    } else if (action === "highlight") {
+      const nextHighlight = btn.dataset.color || "";
+      if (nextHighlight) {
+        p.highlightColor = nextHighlight;
+      } else {
+        delete p.highlightColor;
+      }
+      delete p.highlighted;
+      renderCallSheet();
+      saveCallSheet();
+      reopenMenu();
     } else if (action === "cellBg") {
       p.cellBg = btn.dataset.color || undefined;
       renderCallSheet();
@@ -2229,6 +2286,8 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       showToast("Back tags removed");
       reopenMenu();
     } else if (action === "clearFormat") {
+      delete p.highlightColor;
+      delete p.highlighted;
       delete p.borderColor;
       delete p.cellBg;
       delete p.cellTextColor;
@@ -2292,7 +2351,12 @@ function togglePlayHighlight(categoryId, hash, index) {
 
   const play = callSheet[categoryId][hash][index];
   if (play) {
-    play.highlighted = !play.highlighted;
+    if (getCallSheetHighlightConfig(play)) {
+      delete play.highlightColor;
+      delete play.highlighted;
+    } else {
+      play.highlightColor = "yellow";
+    }
     renderCallSheet();
     saveCallSheet();
   }
@@ -3184,7 +3248,8 @@ function renderPrintPlay(play, options) {
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
-  const isHighlighted = play.highlighted || false;
+  const highlightConfig = getCallSheetHighlightConfig(play);
+  const isHighlighted = Boolean(highlightConfig);
   const borderColor = getPlayBorderColor(play, options);
 
   const tempo = (play.tempo || "").toLowerCase();
@@ -3204,6 +3269,10 @@ function renderPrintPlay(play, options) {
 
   let styles = [];
   const highlightClass = isHighlighted ? "highlighted" : "";
+  if (highlightConfig) {
+    styles.push(`--cs-highlight-bg: ${highlightConfig.bg};`);
+    styles.push(`--cs-highlight-border: ${highlightConfig.border};`);
+  }
   if (!isHighlighted && play.cellBg) styles.push(`background: ${play.cellBg};`);
   if (borderColor) styles.push(`border: 2px solid ${borderColor};`);
   if (play.cellTextColor) styles.push(`color: ${play.cellTextColor};`);
@@ -3806,6 +3875,7 @@ function buildCallSheetPlayParts(play, options) {
 
   // Check if play has "Under"
   const hasUnder =
+    play.cellForceUnderCenter ||
     (play.under && play.under.trim() !== "") ||
     (play.formTag1 && play.formTag1.toLowerCase() === "under") ||
     (play.formTag2 && play.formTag2.toLowerCase() === "under");
@@ -5758,6 +5828,7 @@ function addSuggestionToSheet(categoryId, hash, suggestionIdx) {
     playType: s.play.type,
     wristbandNumber: null,
     highlighted: false,
+    highlightColor: null,
     borderColor: null,
     cellBg: null,
     cellTextColor: null,
