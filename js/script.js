@@ -337,6 +337,53 @@ function getPeriodCallDisplayOptions(separator, baseOptions = {}) {
   return { ...baseOptions, hideProtection: true };
 }
 
+function getScriptCustomTagValues(value) {
+  if (!value) return [];
+  return String(value)
+    .split(/[;,|]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function getScriptDisplayPlay(play) {
+  if (!play) return play;
+
+  const customFormationTags = getScriptCustomTagValues(play.scriptFormationTags).map(
+    (value) => `(${value})`,
+  );
+  const customBackTags = getScriptCustomTagValues(play.scriptBackTags).map(
+    (value) => `(${value})`,
+  );
+
+  if (!customFormationTags.length && !customBackTags.length) return play;
+
+  const displayPlay = { ...play };
+
+  if (customFormationTags.length) {
+    const formationTagText = customFormationTags.join(" ");
+    if (displayPlay.formTag2 && String(displayPlay.formTag2).trim()) {
+      displayPlay.formTag2 = `${displayPlay.formTag2} ${formationTagText}`;
+    } else if (displayPlay.formTag1 && String(displayPlay.formTag1).trim()) {
+      displayPlay.formTag2 = formationTagText;
+    } else {
+      displayPlay.formTag1 = formationTagText;
+    }
+  }
+
+  if (customBackTags.length) {
+    const backTagText = customBackTags.join(" ");
+    displayPlay.back = displayPlay.back
+      ? `${displayPlay.back} ${backTagText}`
+      : backTagText;
+  }
+
+  return displayPlay;
+}
+
+function getScriptFullCall(play, options = {}) {
+  return getFullCall(getScriptDisplayPlay(play), options);
+}
+
 function getScriptWorkspaceCheckboxState() {
   const checkboxState = {};
   SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
@@ -1814,7 +1861,7 @@ function copyPeriodAsText(idx) {
   const callOptions = getPeriodCallDisplayOptions(sep);
   const lines = [header, "─".repeat(header.length)];
   periodPlays.forEach((p, n) => {
-    const call = getFullCall(p, callOptions);
+    const call = getScriptFullCall(p, callOptions);
     const meta = [p.type, p.hash, p.tempo].filter(Boolean).join(" | ");
     lines.push(`${n + 1}. ${call}${meta ? "  [" + meta + "]" : ""}`);
   });
@@ -3351,7 +3398,7 @@ function createScriptRenderContext(opts, showPrintPreview) {
       const variantKey = hideProtection ? "hideProtection" : "default";
       if (variants.has(variantKey)) return variants.get(variantKey);
       const rendered = getFullCall(
-        play,
+        getScriptDisplayPlay(play),
         hideProtection ? { ...opts, hideProtection: true } : opts,
       );
       variants.set(variantKey, rendered);
@@ -4381,7 +4428,7 @@ function executeLoadWbToScript() {
  * @returns {string} HTML table-row string
  */
 function buildScriptPlayRow(p, displayNum, opts) {
-  const fullCall = getFullCall(p, opts);
+  const fullCall = getScriptFullCall(p, opts);
 
   let wbNum = "";
   if (opts.showWbNum && scriptWristband) {
@@ -4541,7 +4588,7 @@ function exportScriptAsText() {
       lines.push("-".repeat(30));
     } else {
       playOrder++;
-      const call = getFullCall(item, currentPeriodCallOptions);
+      const call = getScriptFullCall(item, currentPeriodCallOptions);
       const type = item.type ? ` [${item.type}]` : "";
       const notes = item.notes ? ` — ${item.notes}` : "";
       const reps = (item.reps || 1) > 1 ? ` ×${item.reps}` : "";

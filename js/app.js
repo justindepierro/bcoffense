@@ -2924,7 +2924,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function _showScriptPlayContextMenu(e, idx) {
   if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
-  const menu = [
+  const play = script[idx];
+  const hasCustomTags = Boolean(
+    (play.scriptFormationTags && String(play.scriptFormationTags).trim()) ||
+    (play.scriptBackTags && String(play.scriptBackTags).trim()),
+  );
+  const menuItems = [
     { label: "📋 Duplicate Play", action: () => duplicatePlay(idx) },
     {
       label: "⬆️ Move Up",
@@ -2937,8 +2942,101 @@ function _showScriptPlayContextMenu(e, idx) {
       disabled: idx === script.length - 1,
     },
     { separator: true },
+    {
+      label: "🏷️ Edit Formation Tags",
+      action: async () => {
+        const currentPlay = script[idx];
+        if (!currentPlay || currentPlay.isSeparator) return;
+        const value = await showPrompt(
+          "Enter formation-tag options separated by semicolons.",
+          currentPlay.scriptFormationTags || "",
+          {
+            title: "Script Formation Tags",
+            icon: "🏷️",
+            placeholder: "Open; Under; Tight",
+          },
+        );
+        if (value === null) return;
+        const normalized = String(value)
+          .split(/[;,|]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .join("; ");
+        saveScriptState();
+        currentPlay.scriptFormationTags = normalized || undefined;
+        markScriptDirty();
+        renderScript();
+        showToast(normalized ? "Formation tags saved" : "Formation tags removed");
+      },
+    },
+    {
+      label: "🏷️ Edit Back Tags",
+      action: async () => {
+        const currentPlay = script[idx];
+        if (!currentPlay || currentPlay.isSeparator) return;
+        const value = await showPrompt(
+          "Enter back-tag options separated by semicolons.",
+          currentPlay.scriptBackTags || "",
+          {
+            title: "Script Back Tags",
+            icon: "🏷️",
+            placeholder: "Pistol; Offset; Strong",
+          },
+        );
+        if (value === null) return;
+        const normalized = String(value)
+          .split(/[;,|]+/)
+          .map((item) => item.trim())
+          .filter(Boolean)
+          .join("; ");
+        saveScriptState();
+        currentPlay.scriptBackTags = normalized || undefined;
+        markScriptDirty();
+        renderScript();
+        showToast(normalized ? "Back tags saved" : "Back tags removed");
+      },
+    },
+    {
+      label: "🚫 Clear Custom Tags",
+      action: () => {
+        const currentPlay = script[idx];
+        if (!currentPlay || currentPlay.isSeparator) return;
+        saveScriptState();
+        delete currentPlay.scriptFormationTags;
+        delete currentPlay.scriptBackTags;
+        markScriptDirty();
+        renderScript();
+        showToast("Custom tags removed");
+      },
+      disabled: !hasCustomTags,
+    },
+    { separator: true },
     { label: "🗑️ Remove", action: () => removeFromScript(idx), danger: true },
   ];
+
+  const menu = document.createElement("div");
+  menu.className = "cs-context-menu";
+
+  menuItems.forEach((item) => {
+    if (item.separator) {
+      const divider = document.createElement("div");
+      divider.className = "cs-ctx-divider";
+      menu.appendChild(divider);
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = item.danger ? "cs-ctx-item cs-ctx-clear" : "cs-ctx-item";
+    button.textContent = item.label;
+    button.disabled = Boolean(item.disabled);
+    button.addEventListener("click", async () => {
+      menu.remove();
+      await item.action();
+    });
+    menu.appendChild(button);
+  });
+
   showContextMenu(e, menu);
 }
 
