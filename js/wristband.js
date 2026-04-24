@@ -11,7 +11,7 @@ let wbSelectedTempos = [];
 let wbSelectedPersonnel = [];
 let wbFiltersCollapsed = true;
 
-// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel, preShift } }
+// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel, preShift, formationTags, backTags } }
 let cellCustomizations = {};
 let currentEditingCell = { cardIdx: null, cellIdx: null };
 let pendingBgColor = "";
@@ -21,6 +21,8 @@ let pendingMarkers = [];
 let pendingMarkerPlacement = "prefix";
 let pendingExtraPersonnel = "";
 let pendingPreShift = [];
+let pendingFormationTags = [];
+let pendingBackTags = [];
 
 const WB_CELL_MARKER_OPTIONS = [
   { value: "$", emoji: "💲", label: "On Two" },
@@ -137,18 +139,41 @@ function getCustomPersonnelPrefix(custom, opts) {
   return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
 }
 
-function getCustomPreShiftValues(custom) {
-  if (!custom || !custom.preShift) return [];
-  return String(custom.preShift)
+function getCustomParenValues(custom, prop) {
+  if (!custom || !custom[prop]) return [];
+  return String(custom[prop])
     .split(/[;,|]+/)
     .map((value) => value.trim())
     .filter(Boolean);
 }
 
-function getCustomPreShiftPrefix(custom) {
-  const values = getCustomPreShiftValues(custom);
+function getCustomPreShiftValues(custom) {
+  return getCustomParenValues(custom, "preShift");
+}
+
+function getCustomFormationTagValues(custom) {
+  return getCustomParenValues(custom, "formationTags");
+}
+
+function getCustomBackTagValues(custom) {
+  return getCustomParenValues(custom, "backTags");
+}
+
+function getParenValuePrefix(values) {
   if (!values.length) return "";
   return `${values.map((value) => `(${escapeHtml(value)})`).join(" ")} `;
+}
+
+function getCustomPreShiftPrefix(custom) {
+  return getParenValuePrefix(getCustomPreShiftValues(custom));
+}
+
+function getCustomFormationTagPrefix(custom) {
+  return getParenValuePrefix(getCustomFormationTagValues(custom));
+}
+
+function getCustomBackTagPrefix(custom) {
+  return getParenValuePrefix(getCustomBackTagValues(custom));
 }
 
 function normalizePreShiftValue(value) {
@@ -157,26 +182,28 @@ function normalizePreShiftValue(value) {
     .replace(/\s+/g, " ");
 }
 
-function renderPendingPreShiftList() {
-  const list = document.getElementById("cellPreShiftList");
-  const input = document.getElementById("cellPreShiftInput");
-  if (!list || !input) return;
+function normalizeParenValue(value) {
+  return normalizePreShiftValue(value);
+}
 
-  if (!pendingPreShift.length) {
-    list.innerHTML =
-      '<span class="cell-pre-shift-empty">No pre-shifts added</span>';
+function renderPendingParenList(listId, values, removeAction, emptyLabel) {
+  const list = document.getElementById(listId);
+  if (!list) return;
+
+  if (!values.length) {
+    list.innerHTML = `<span class="cell-tag-empty">${emptyLabel}</span>`;
     return;
   }
 
-  list.innerHTML = pendingPreShift
+  list.innerHTML = values
     .map(
       (value, index) => `
-        <span class="cell-pre-shift-chip">
+        <span class="cell-tag-chip">
           <span>${escapeHtml(value)}</span>
           <button
             type="button"
-            class="cell-pre-shift-remove"
-            data-action="removeWbPendingPreShift"
+            class="cell-tag-remove"
+            data-action="${removeAction}"
             data-arg="${index}"
             aria-label="Remove ${escapeHtml(value)}"
             title="Remove ${escapeHtml(value)}"
@@ -189,9 +216,20 @@ function renderPendingPreShiftList() {
     .join("");
 }
 
+function renderPendingPreShiftList() {
+  const input = document.getElementById("cellPreShiftInput");
+  if (!input) return;
+  renderPendingParenList(
+    "cellPreShiftList",
+    pendingPreShift,
+    "removeWbPendingPreShift",
+    "No pre-shifts added",
+  );
+}
+
 function addWbPendingPreShift(value) {
   const input = document.getElementById("cellPreShiftInput");
-  const nextValue = normalizePreShiftValue(value || input?.value || "");
+  const nextValue = normalizeParenValue(value || input?.value || "");
   if (!nextValue) return;
 
   if (!pendingPreShift.includes(nextValue)) {
@@ -220,6 +258,92 @@ function initWbPreShiftInput() {
     if (event.key !== "Enter") return;
     event.preventDefault();
     addWbPendingPreShift();
+  });
+}
+
+function renderPendingFormationTagList() {
+  renderPendingParenList(
+    "cellFormationTagList",
+    pendingFormationTags,
+    "removeWbPendingFormationTag",
+    "No formation tags added",
+  );
+}
+
+function addWbPendingFormationTag(value) {
+  const input = document.getElementById("cellFormationTagInput");
+  const nextValue = normalizeParenValue(value || input?.value || "");
+  if (!nextValue) return;
+
+  if (!pendingFormationTags.includes(nextValue)) {
+    pendingFormationTags.push(nextValue);
+  }
+
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  renderPendingFormationTagList();
+}
+
+function removeWbPendingFormationTag(index) {
+  const parsedIndex = parseInt(index, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
+  pendingFormationTags = pendingFormationTags.filter((_, idx) => idx !== parsedIndex);
+  renderPendingFormationTagList();
+}
+
+function initWbFormationTagInput() {
+  const input = document.getElementById("cellFormationTagInput");
+  if (!input || input.dataset.bound === "true") return;
+  input.dataset.bound = "true";
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addWbPendingFormationTag();
+  });
+}
+
+function renderPendingBackTagList() {
+  renderPendingParenList(
+    "cellBackTagList",
+    pendingBackTags,
+    "removeWbPendingBackTag",
+    "No back tags added",
+  );
+}
+
+function addWbPendingBackTag(value) {
+  const input = document.getElementById("cellBackTagInput");
+  const nextValue = normalizeParenValue(value || input?.value || "");
+  if (!nextValue) return;
+
+  if (!pendingBackTags.includes(nextValue)) {
+    pendingBackTags.push(nextValue);
+  }
+
+  if (input) {
+    input.value = "";
+    input.focus();
+  }
+  renderPendingBackTagList();
+}
+
+function removeWbPendingBackTag(index) {
+  const parsedIndex = parseInt(index, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
+  pendingBackTags = pendingBackTags.filter((_, idx) => idx !== parsedIndex);
+  renderPendingBackTagList();
+}
+
+function initWbBackTagInput() {
+  const input = document.getElementById("cellBackTagInput");
+  if (!input || input.dataset.bound === "true") return;
+  input.dataset.bound = "true";
+  input.addEventListener("keydown", (event) => {
+    if (event.key !== "Enter") return;
+    event.preventDefault();
+    addWbPendingBackTag();
   });
 }
 
@@ -1688,11 +1812,15 @@ function renderWristbandGrid() {
     const oddPrefix =
       getCadencePrefix(oddCustom, opts) +
       getCustomPersonnelPrefix(oddCustom, opts) +
-      getCustomPreShiftPrefix(oddCustom);
+      getCustomPreShiftPrefix(oddCustom) +
+      getCustomFormationTagPrefix(oddCustom) +
+      getCustomBackTagPrefix(oddCustom);
     const evenPrefix =
       getCadencePrefix(evenCustom, opts) +
       getCustomPersonnelPrefix(evenCustom, opts) +
-      getCustomPreShiftPrefix(evenCustom);
+      getCustomPreShiftPrefix(evenCustom) +
+      getCustomFormationTagPrefix(evenCustom) +
+      getCustomBackTagPrefix(evenCustom);
     const oddPostfix = getCadencePostfix(oddCustom, opts);
     const evenPostfix = getCadencePostfix(evenCustom, opts);
 
@@ -1829,6 +1957,8 @@ function openCellPopup(cardIdx, cellIdx, event) {
   );
   pendingExtraPersonnel = existing.extraPersonnel || "";
   pendingPreShift = getCustomPreShiftValues(existing);
+  pendingFormationTags = getCustomFormationTagValues(existing);
+  pendingBackTags = getCustomBackTagValues(existing);
   pendingPlaySelection = currentPlay;
 
   const hasPlay = currentPlay !== null;
@@ -1866,10 +1996,18 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateCellMarkerPlacementSelection(pendingMarkerPlacement);
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
   document.getElementById("cellPreShiftInput").value = "";
+  document.getElementById("cellFormationTagInput").value = "";
+  document.getElementById("cellBackTagInput").value = "";
   populateWbPersonnelDatalist();
   populateWbPreShiftDatalist();
+  populateWbFormationTagDatalist();
+  populateWbBackTagDatalist();
   initWbPreShiftInput();
+  initWbFormationTagInput();
+  initWbBackTagInput();
   renderPendingPreShiftList();
+  renderPendingFormationTagList();
+  renderPendingBackTagList();
 
   overlay.classList.remove("hidden");
 
@@ -2026,6 +2164,26 @@ function populateWbPreShiftDatalist() {
   datalist.innerHTML = unique.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
 }
 
+function populateWbFormationTagDatalist() {
+  const datalist = document.getElementById("wbFormationTagOptions");
+  if (!datalist) return;
+  const unique = [
+    ...new Set(
+      plays
+        .flatMap((play) => [play.formTag1, play.formTag2])
+        .filter((value) => value && value.trim()),
+    ),
+  ].sort();
+  datalist.innerHTML = unique.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
+}
+
+function populateWbBackTagDatalist() {
+  const datalist = document.getElementById("wbBackTagOptions");
+  if (!datalist) return;
+  const unique = [...new Set(plays.map((play) => play.back).filter((value) => value && value.trim()))].sort();
+  datalist.innerHTML = unique.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
+}
+
 /**
  * Apply the cell style from the popup
  */
@@ -2041,13 +2199,17 @@ function applyCellStyle() {
     .getElementById("cellExtraPersonnel")
     .value.trim();
   const preShift = pendingPreShift.join("; ");
+  const formationTags = pendingFormationTags.join("; ");
+  const backTags = pendingBackTags.join("; ");
 
   if (
     pendingBgColor ||
     pendingTextColor !== UI_COLORS.textBlack ||
     markers.length > 0 ||
     extraPersonnel ||
-    preShift
+    preShift ||
+    formationTags ||
+    backTags
   ) {
     cellCustomizations[key] = {
       bgColor: pendingBgColor,
@@ -2056,6 +2218,8 @@ function applyCellStyle() {
       markerPlacement,
       extraPersonnel: extraPersonnel,
       preShift: preShift,
+      formationTags,
+      backTags,
     };
   } else {
     delete cellCustomizations[key];
@@ -2411,11 +2575,15 @@ function printWristband() {
         const oddPrefix =
           getCadencePrefix(oddCustom, opts) +
           getCustomPersonnelPrefix(oddCustom, opts) +
-          getCustomPreShiftPrefix(oddCustom);
+          getCustomPreShiftPrefix(oddCustom) +
+          getCustomFormationTagPrefix(oddCustom) +
+          getCustomBackTagPrefix(oddCustom);
         const evenPrefix =
           getCadencePrefix(evenCustom, opts) +
           getCustomPersonnelPrefix(evenCustom, opts) +
-          getCustomPreShiftPrefix(evenCustom);
+          getCustomPreShiftPrefix(evenCustom) +
+          getCustomFormationTagPrefix(evenCustom) +
+          getCustomBackTagPrefix(evenCustom);
         const oddPostfix = getCadencePostfix(oddCustom, opts);
         const evenPostfix = getCadencePostfix(evenCustom, opts);
 

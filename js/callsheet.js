@@ -571,6 +571,27 @@ function clearCallSheetCellDisplayOverrides(play) {
   });
 }
 
+function getCallSheetCustomTagValues(value) {
+  if (!value) return [];
+  return String(value)
+    .split(/[;,|]+/)
+    .map((item) => item.trim())
+    .filter(Boolean);
+}
+
+function normalizeCallSheetCustomTagValue(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function getCallSheetCustomTagMarkup(values, variant) {
+  return values.map(
+    (value) =>
+      `<span class="cs-inline-tag cs-inline-tag--${variant}">(${escapeHtml(value)})</span>`,
+  );
+}
+
 function getCallSheetCellDisplayPreset(presetId) {
   return CALLSHEET_CELL_DISPLAY_PRESETS.find((preset) => preset.id === presetId);
 }
@@ -629,6 +650,17 @@ function getCallSheetCellDisplaySummary(play) {
       titleParts.push(title);
     }
   });
+
+  const customFormationTags = getCallSheetCustomTagValues(play.cellFormationTags);
+  const customBackTags = getCallSheetCustomTagValues(play.cellBackTags);
+  if (customFormationTags.length) {
+    tokens.push(`+FT${customFormationTags.length}`);
+    titleParts.push(`Custom formation tags: ${customFormationTags.join(", ")}`);
+  }
+  if (customBackTags.length) {
+    tokens.push(`+BT${customBackTags.length}`);
+    titleParts.push(`Custom back tags: ${customBackTags.join(", ")}`);
+  }
 
   if (!tokens.length) return null;
 
@@ -2032,6 +2064,18 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input" value="${noteVal}" placeholder="Add a note..." maxlength="60" />`;
   menuHtml += `<button class="cs-ctx-note-save" data-action="saveNote" title="Save note">✓</button></div></div>`;
 
+  const formationTagVal = escapeHtml(play.cellFormationTags || "");
+  menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Custom Formation Tags</span>`;
+  menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input cs-ctx-tag-input" value="${formationTagVal}" placeholder="Open; Under; Tight" maxlength="80" />`;
+  menuHtml += `<button class="cs-ctx-note-save" data-action="saveFormationTags" title="Save formation tags">✓</button></div>`;
+  menuHtml += `<div class="cs-ctx-helper">Separate multiple options with semicolons.</div></div>`;
+
+  const backTagVal = escapeHtml(play.cellBackTags || "");
+  menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Custom Back Tags</span>`;
+  menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input cs-ctx-back-tag-input" value="${backTagVal}" placeholder="Pistol; Offset; Strong" maxlength="80" />`;
+  menuHtml += `<button class="cs-ctx-note-save" data-action="saveBackTags" title="Save back tags">✓</button></div>`;
+  menuHtml += `<div class="cs-ctx-helper">Separate multiple options with semicolons.</div></div>`;
+
   menuHtml += `<div class="cs-ctx-divider"></div>`;
 
   // ─── Actions ───
@@ -2124,6 +2168,28 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       saveCallSheet();
       showToast(val ? "📝 Note saved" : "📝 Note removed");
       reopenMenu();
+    } else if (action === "saveFormationTags") {
+      const input = menu.querySelector(".cs-ctx-tag-input");
+      const val = getCallSheetCustomTagValues(input?.value || "")
+        .map((item) => normalizeCallSheetCustomTagValue(item))
+        .filter(Boolean)
+        .join("; ");
+      p.cellFormationTags = val || undefined;
+      renderCallSheet();
+      saveCallSheet();
+      showToast(val ? "Formation tags saved" : "Formation tags removed");
+      reopenMenu();
+    } else if (action === "saveBackTags") {
+      const input = menu.querySelector(".cs-ctx-back-tag-input");
+      const val = getCallSheetCustomTagValues(input?.value || "")
+        .map((item) => normalizeCallSheetCustomTagValue(item))
+        .filter(Boolean)
+        .join("; ");
+      p.cellBackTags = val || undefined;
+      renderCallSheet();
+      saveCallSheet();
+      showToast(val ? "Back tags saved" : "Back tags removed");
+      reopenMenu();
     } else if (action === "clearFormat") {
       delete p.borderColor;
       delete p.cellBg;
@@ -2135,6 +2201,8 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       delete p.cellStrikethrough;
       delete p.cellFontSize;
       delete p.cellNote;
+      delete p.cellFormationTags;
+      delete p.cellBackTags;
       renderCallSheet();
       saveCallSheet();
       showToast("✖ Formatting cleared");
@@ -3688,6 +3756,12 @@ function buildCallSheetPlayParts(play, options) {
   const formationTags = [play.formTag1, play.formTag2]
     .filter((value) => value && String(value).trim())
     .map((value) => formatTagText(value));
+  const customFormationTags = getCallSheetCustomTagValues(play.cellFormationTags).map(
+    (value) => formatTagText(value),
+  );
+  const customBackTags = getCallSheetCustomTagValues(play.cellBackTags).map(
+    (value) => formatTagText(value),
+  );
   const playTags = [play.playTag1, play.playTag2]
     .filter((value) => value && String(value).trim())
     .map((value) => formatTagText(value));
@@ -3726,6 +3800,9 @@ function buildCallSheetPlayParts(play, options) {
       playParts.push(`<span class="cs-inline-tag cs-inline-tag--formation">${tag}</span>`);
     });
   }
+
+  playParts.push(...getCallSheetCustomTagMarkup(customFormationTags, "formation"));
+  playParts.push(...getCallSheetCustomTagMarkup(customBackTags, "back"));
 
   // Handle shift with bold/red options
   if (play.shift && !options.hideShift) {

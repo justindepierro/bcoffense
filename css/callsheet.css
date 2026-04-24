@@ -2058,6 +2058,12 @@
   }
 }
 
+.cs-ctx-helper {
+  margin-top: 4px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
 /* Category copy list */
 .cs-ctx-cat-list {
   max-height: 160px;

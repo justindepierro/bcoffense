@@ -1682,7 +1682,8 @@ kbd {
   padding-inline: 0;
 }
 
-.cell-pre-shift-list {
+.cell-pre-shift-list,
+.cell-tag-list {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
@@ -1690,7 +1691,8 @@ kbd {
   min-height: 28px;
 }
 
-.cell-pre-shift-chip {
+.cell-pre-shift-chip,
+.cell-tag-chip {
   display: inline-flex;
   align-items: center;
   gap: var(--space-xs);
@@ -1703,7 +1705,8 @@ kbd {
   font-weight: 600;
 }
 
-.cell-pre-shift-remove {
+.cell-pre-shift-remove,
+.cell-tag-remove {
   border: none;
   background: transparent;
   color: var(--color-text-secondary);
@@ -1713,7 +1716,8 @@ kbd {
   cursor: pointer;
 }
 
-.cell-pre-shift-empty {
+.cell-pre-shift-empty,
+.cell-tag-empty {
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
 }

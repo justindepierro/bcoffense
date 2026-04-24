@@ -1941,6 +1941,30 @@
         </div>
 
         <div class="cell-popup-row">
+          <label for="cellFormationTagInput">Formation Tags:</label>
+          <div class="cell-popup-input-group">
+            <input type="text" id="cellFormationTagInput" class="cell-popup-input" list="wbFormationTagOptions"
+              placeholder="Add a formation tag" autocomplete="off" />
+            <button type="button" class="btn btn-sm btn-secondary" data-action="addWbPendingFormationTag"
+              aria-label="Add formation tag">+</button>
+          </div>
+          <div id="cellFormationTagList" class="cell-tag-list" aria-live="polite"></div>
+          <datalist id="wbFormationTagOptions"></datalist>
+        </div>
+
+        <div class="cell-popup-row">
+          <label for="cellBackTagInput">Back Tags:</label>
+          <div class="cell-popup-input-group">
+            <input type="text" id="cellBackTagInput" class="cell-popup-input" list="wbBackTagOptions"
+              placeholder="Add a back tag" autocomplete="off" />
+            <button type="button" class="btn btn-sm btn-secondary" data-action="addWbPendingBackTag"
+              aria-label="Add back tag">+</button>
+          </div>
+          <div id="cellBackTagList" class="cell-tag-list" aria-live="polite"></div>
+          <datalist id="wbBackTagOptions"></datalist>
+        </div>
+
+        <div class="cell-popup-row">
           <label>Background Color:</label>
           <div class="color-swatches" id="bgColorSwatches">
             <div class="color-swatch" data-color="" title="None" aria-label="No background color"></div>
