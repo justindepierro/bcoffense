@@ -293,6 +293,12 @@ function removeWbPendingFormationTag(index) {
   renderPendingFormationTagList();
 }
 
+function clearWbPendingFormationTags() {
+  pendingFormationTags = [];
+  renderPendingFormationTagList();
+  document.getElementById("cellFormationTagInput")?.focus();
+}
+
 function initWbFormationTagInput() {
   const input = document.getElementById("cellFormationTagInput");
   if (!input || input.dataset.bound === "true") return;
@@ -334,6 +340,12 @@ function removeWbPendingBackTag(index) {
   if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
   pendingBackTags = pendingBackTags.filter((_, idx) => idx !== parsedIndex);
   renderPendingBackTagList();
+}
+
+function clearWbPendingBackTags() {
+  pendingBackTags = [];
+  renderPendingBackTagList();
+  document.getElementById("cellBackTagInput")?.focus();
 }
 
 function initWbBackTagInput() {

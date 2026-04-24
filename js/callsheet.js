@@ -2067,13 +2067,15 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   const formationTagVal = escapeHtml(play.cellFormationTags || "");
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Custom Formation Tags</span>`;
   menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input cs-ctx-tag-input" value="${formationTagVal}" placeholder="Open; Under; Tight" maxlength="80" />`;
-  menuHtml += `<button class="cs-ctx-note-save" data-action="saveFormationTags" title="Save formation tags">✓</button></div>`;
+  menuHtml += `<button class="cs-ctx-note-save" data-action="saveFormationTags" title="Save formation tags">✓</button>`;
+  menuHtml += `<button class="cs-ctx-note-clear" data-action="clearFormationTags" title="Clear formation tags">✕</button></div>`;
   menuHtml += `<div class="cs-ctx-helper">Separate multiple options with semicolons.</div></div>`;
 
   const backTagVal = escapeHtml(play.cellBackTags || "");
   menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Custom Back Tags</span>`;
   menuHtml += `<div class="cs-ctx-note-row"><input type="text" class="cs-ctx-note-input cs-ctx-back-tag-input" value="${backTagVal}" placeholder="Pistol; Offset; Strong" maxlength="80" />`;
-  menuHtml += `<button class="cs-ctx-note-save" data-action="saveBackTags" title="Save back tags">✓</button></div>`;
+  menuHtml += `<button class="cs-ctx-note-save" data-action="saveBackTags" title="Save back tags">✓</button>`;
+  menuHtml += `<button class="cs-ctx-note-clear" data-action="clearBackTags" title="Clear back tags">✕</button></div>`;
   menuHtml += `<div class="cs-ctx-helper">Separate multiple options with semicolons.</div></div>`;
 
   menuHtml += `<div class="cs-ctx-divider"></div>`;
@@ -2189,6 +2191,18 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       renderCallSheet();
       saveCallSheet();
       showToast(val ? "Back tags saved" : "Back tags removed");
+      reopenMenu();
+    } else if (action === "clearFormationTags") {
+      delete p.cellFormationTags;
+      renderCallSheet();
+      saveCallSheet();
+      showToast("Formation tags removed");
+      reopenMenu();
+    } else if (action === "clearBackTags") {
+      delete p.cellBackTags;
+      renderCallSheet();
+      saveCallSheet();
+      showToast("Back tags removed");
       reopenMenu();
     } else if (action === "clearFormat") {
       delete p.borderColor;

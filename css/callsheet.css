@@ -2052,9 +2052,23 @@
   font-weight: bold;
   line-height: 1;
 }
+.cs-ctx-note-clear {
+  padding: 4px 8px;
+  border: 1px solid var(--color-danger);
+  border-radius: var(--radius-sm);
+  background: var(--color-danger);
+  color: var(--color-white);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  font-weight: bold;
+  line-height: 1;
+}
 @media (hover: hover) {
   .cs-ctx-note-save:hover {
     background: var(--color-success-hover);
+  }
+  .cs-ctx-note-clear:hover {
+    background: var(--color-danger-hover);
   }
 }
 
