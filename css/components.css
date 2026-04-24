@@ -1733,6 +1733,25 @@ kbd {
   cursor: pointer;
 }
 
+.cell-tag-mode {
+  border: 1px solid var(--color-border-input);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-pill);
+  padding: 2px 6px;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  line-height: 1.2;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .cell-tag-mode:hover {
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+}
+
 .cell-pre-shift-empty,
 .cell-tag-empty {
   color: var(--color-text-secondary);

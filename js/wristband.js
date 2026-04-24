@@ -24,6 +24,12 @@ let pendingPreShift = [];
 let pendingFormationTags = [];
 let pendingBackTags = [];
 
+const WB_CUSTOM_TAG_DISPLAY_MODES = {
+  full: { label: "Full", shortLabel: "Full" },
+  "no-vowels": { label: "No Vowels", shortLabel: "NV" },
+  initial: { label: "First Letter", shortLabel: "1L" },
+};
+
 const WB_CELL_MARKER_OPTIONS = [
   { value: "$", emoji: "💲", label: "On Two" },
   { value: "$$", emoji: "💲💲", label: "Double" },
@@ -139,6 +145,20 @@ function getCustomPersonnelPrefix(custom, opts) {
   return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
 }
 
+function normalizeCustomTagDisplayMode(mode) {
+  return WB_CUSTOM_TAG_DISPLAY_MODES[mode] ? mode : "full";
+}
+
+function normalizeCustomTagEntry(entry) {
+  const rawValue = typeof entry === "string" ? entry : entry?.value || "";
+  const value = normalizeParenValue(rawValue);
+  if (!value) return null;
+  return {
+    value,
+    display: normalizeCustomTagDisplayMode(entry?.display),
+  };
+}
+
 function getCustomParenValues(custom, prop) {
   if (!custom || !custom[prop]) return [];
   return String(custom[prop])
@@ -147,16 +167,28 @@ function getCustomParenValues(custom, prop) {
     .filter(Boolean);
 }
 
+function getCustomTagEntries(custom, prop) {
+  if (!custom || !custom[prop]) return [];
+  const rawValue = custom[prop];
+  if (Array.isArray(rawValue)) {
+    return rawValue.map((entry) => normalizeCustomTagEntry(entry)).filter(Boolean);
+  }
+  return String(rawValue)
+    .split(/[;,|]+/)
+    .map((value) => normalizeCustomTagEntry(value))
+    .filter(Boolean);
+}
+
 function getCustomPreShiftValues(custom) {
   return getCustomParenValues(custom, "preShift");
 }
 
-function getCustomFormationTagValues(custom) {
-  return getCustomParenValues(custom, "formationTags");
+function getCustomFormationTagEntries(custom) {
+  return getCustomTagEntries(custom, "formationTags");
 }
 
-function getCustomBackTagValues(custom) {
-  return getCustomParenValues(custom, "backTags");
+function getCustomBackTagEntries(custom) {
+  return getCustomTagEntries(custom, "backTags");
 }
 
 function getParenValuePrefix(values) {
@@ -168,12 +200,56 @@ function getCustomPreShiftPrefix(custom) {
   return getParenValuePrefix(getCustomPreShiftValues(custom));
 }
 
-function getCustomFormationTagPrefix(custom) {
-  return getParenValuePrefix(getCustomFormationTagValues(custom));
+function formatCustomTagEntry(entry) {
+  const normalizedEntry = normalizeCustomTagEntry(entry);
+  if (!normalizedEntry) return "";
+
+  if (normalizedEntry.display === "no-vowels") {
+    return removeVowels(normalizedEntry.value) || normalizedEntry.value.charAt(0);
+  }
+  if (normalizedEntry.display === "initial") {
+    return normalizedEntry.value.charAt(0).toUpperCase();
+  }
+  return normalizedEntry.value;
 }
 
-function getCustomBackTagPrefix(custom) {
-  return getParenValuePrefix(getCustomBackTagValues(custom));
+function getCustomTagText(entries) {
+  const formattedEntries = entries
+    .map((entry) => formatCustomTagEntry(entry))
+    .filter(Boolean);
+  if (!formattedEntries.length) return "";
+  return formattedEntries.map((value) => `(${value})`).join(" ");
+}
+
+function getCustomDisplayPlay(play, custom) {
+  if (!play) return play;
+
+  const formationTagText = getCustomTagText(getCustomFormationTagEntries(custom));
+  const backTagText = getCustomTagText(getCustomBackTagEntries(custom));
+  if (!formationTagText && !backTagText) return play;
+
+  const displayPlay = { ...play };
+  if (formationTagText) {
+    if (displayPlay.formTag2 && String(displayPlay.formTag2).trim()) {
+      displayPlay.formTag2 = `${displayPlay.formTag2} ${formationTagText}`;
+    } else if (displayPlay.formTag1 && String(displayPlay.formTag1).trim()) {
+      displayPlay.formTag2 = formationTagText;
+    } else {
+      displayPlay.formTag1 = formationTagText;
+    }
+  }
+
+  if (backTagText) {
+    displayPlay.back = displayPlay.back
+      ? `${displayPlay.back} ${backTagText}`
+      : backTagText;
+  }
+
+  return displayPlay;
+}
+
+function getCustomTagModeMeta(mode) {
+  return WB_CUSTOM_TAG_DISPLAY_MODES[normalizeCustomTagDisplayMode(mode)];
 }
 
 function normalizePreShiftValue(value) {
@@ -186,7 +262,7 @@ function normalizeParenValue(value) {
   return normalizePreShiftValue(value);
 }
 
-function renderPendingParenList(listId, values, removeAction, emptyLabel) {
+function renderPendingParenList(listId, values, removeAction, emptyLabel, cycleAction) {
   const list = document.getElementById(listId);
   if (!list) return;
 
@@ -197,21 +273,37 @@ function renderPendingParenList(listId, values, removeAction, emptyLabel) {
 
   list.innerHTML = values
     .map(
-      (value, index) => `
+      (entry, index) => {
+        const normalizedEntry = normalizeCustomTagEntry(entry);
+        const modeMeta = getCustomTagModeMeta(normalizedEntry?.display);
+        return `
         <span class="cell-tag-chip">
-          <span>${escapeHtml(value)}</span>
+          <span>${escapeHtml(normalizedEntry?.value || "")}</span>
+          ${cycleAction
+            ? `<button
+            type="button"
+            class="cell-tag-mode"
+            data-action="${cycleAction}"
+            data-arg="${index}"
+            aria-label="Change display mode for ${escapeHtml(normalizedEntry?.value || "")}; current mode ${escapeHtml(modeMeta.label)}"
+            title="Display mode: ${escapeHtml(modeMeta.label)}"
+          >
+            ${escapeHtml(modeMeta.shortLabel)}
+          </button>`
+            : ""}
           <button
             type="button"
             class="cell-tag-remove"
             data-action="${removeAction}"
             data-arg="${index}"
-            aria-label="Remove ${escapeHtml(value)}"
-            title="Remove ${escapeHtml(value)}"
+            aria-label="Remove ${escapeHtml(normalizedEntry?.value || "")}"
+            title="Remove ${escapeHtml(normalizedEntry?.value || "")}"
           >
             ×
           </button>
         </span>
-      `,
+      `;
+      },
     )
     .join("");
 }
@@ -267,6 +359,7 @@ function renderPendingFormationTagList() {
     pendingFormationTags,
     "removeWbPendingFormationTag",
     "No formation tags added",
+    "cycleWbPendingFormationTagDisplay",
   );
 }
 
@@ -275,8 +368,8 @@ function addWbPendingFormationTag(value) {
   const nextValue = normalizeParenValue(value || input?.value || "");
   if (!nextValue) return;
 
-  if (!pendingFormationTags.includes(nextValue)) {
-    pendingFormationTags.push(nextValue);
+  if (!pendingFormationTags.some((entry) => entry.value === nextValue)) {
+    pendingFormationTags.push({ value: nextValue, display: "full" });
   }
 
   if (input) {
@@ -290,6 +383,20 @@ function removeWbPendingFormationTag(index) {
   const parsedIndex = parseInt(index, 10);
   if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
   pendingFormationTags = pendingFormationTags.filter((_, idx) => idx !== parsedIndex);
+  renderPendingFormationTagList();
+}
+
+function cycleWbPendingFormationTagDisplay(index) {
+  const parsedIndex = parseInt(index, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0 || !pendingFormationTags[parsedIndex]) return;
+  const current = normalizeCustomTagEntry(pendingFormationTags[parsedIndex]);
+  const nextDisplay =
+    current.display === "full"
+      ? "no-vowels"
+      : current.display === "no-vowels"
+        ? "initial"
+        : "full";
+  pendingFormationTags[parsedIndex] = { ...current, display: nextDisplay };
   renderPendingFormationTagList();
 }
 
@@ -316,6 +423,7 @@ function renderPendingBackTagList() {
     pendingBackTags,
     "removeWbPendingBackTag",
     "No back tags added",
+    "cycleWbPendingBackTagDisplay",
   );
 }
 
@@ -324,8 +432,8 @@ function addWbPendingBackTag(value) {
   const nextValue = normalizeParenValue(value || input?.value || "");
   if (!nextValue) return;
 
-  if (!pendingBackTags.includes(nextValue)) {
-    pendingBackTags.push(nextValue);
+  if (!pendingBackTags.some((entry) => entry.value === nextValue)) {
+    pendingBackTags.push({ value: nextValue, display: "full" });
   }
 
   if (input) {
@@ -339,6 +447,20 @@ function removeWbPendingBackTag(index) {
   const parsedIndex = parseInt(index, 10);
   if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
   pendingBackTags = pendingBackTags.filter((_, idx) => idx !== parsedIndex);
+  renderPendingBackTagList();
+}
+
+function cycleWbPendingBackTagDisplay(index) {
+  const parsedIndex = parseInt(index, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0 || !pendingBackTags[parsedIndex]) return;
+  const current = normalizeCustomTagEntry(pendingBackTags[parsedIndex]);
+  const nextDisplay =
+    current.display === "full"
+      ? "no-vowels"
+      : current.display === "no-vowels"
+        ? "initial"
+        : "full";
+  pendingBackTags[parsedIndex] = { ...current, display: nextDisplay };
   renderPendingBackTagList();
 }
 
@@ -1757,13 +1879,23 @@ function renderWristbandGrid() {
   const opts = getWristbandDisplayOptions();
   const { highlightHuddle, highlightCandy } = opts;
   const displayCache = new Map();
-  const getCachedDisplay = (play) => {
+  const getCachedDisplay = (play, custom) => {
     if (!play) return "";
-    if (displayCache.has(play)) return displayCache.get(play);
+    let variants = displayCache.get(play);
+    if (!variants) {
+      variants = new Map();
+      displayCache.set(play, variants);
+    }
+    const variantKey = JSON.stringify({
+      formationTags: getCustomFormationTagEntries(custom),
+      backTags: getCustomBackTagEntries(custom),
+    });
+    if (variants.has(variantKey)) return variants.get(variantKey);
+    const displayPlay = getCustomDisplayPlay(play, custom);
     const rendered = opts.lineCallOnly
       ? getLineCallOnlyDisplay(play, opts)
-      : getFullCall(play, opts);
-    displayCache.set(play, rendered);
+      : getFullCall(displayPlay, opts);
+    variants.set(variantKey, rendered);
     return rendered;
   };
 
@@ -1820,19 +1952,15 @@ function renderWristbandGrid() {
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
-    // Build prefix after the base personnel token and before formation text
+    // Build prefix after the base personnel token and before the rendered call
     const oddPrefix =
       getCadencePrefix(oddCustom, opts) +
       getCustomPersonnelPrefix(oddCustom, opts) +
-      getCustomPreShiftPrefix(oddCustom) +
-      getCustomFormationTagPrefix(oddCustom) +
-      getCustomBackTagPrefix(oddCustom);
+      getCustomPreShiftPrefix(oddCustom);
     const evenPrefix =
       getCadencePrefix(evenCustom, opts) +
       getCustomPersonnelPrefix(evenCustom, opts) +
-      getCustomPreShiftPrefix(evenCustom) +
-      getCustomFormationTagPrefix(evenCustom) +
-      getCustomBackTagPrefix(evenCustom);
+      getCustomPreShiftPrefix(evenCustom);
     const oddPostfix = getCadencePostfix(oddCustom, opts);
     const evenPostfix = getCadencePostfix(evenCustom, opts);
 
@@ -1846,7 +1974,7 @@ function renderWristbandGrid() {
 
     // Odd play cell
     if (oddPlay) {
-      const oddDisplay = getCachedDisplay(oddPlay);
+      const oddDisplay = getCachedDisplay(oddPlay, oddCustom);
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
@@ -1866,7 +1994,7 @@ function renderWristbandGrid() {
 
     // Even play cell
     if (evenPlay) {
-      const evenDisplay = getCachedDisplay(evenPlay);
+      const evenDisplay = getCachedDisplay(evenPlay, evenCustom);
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
@@ -1969,8 +2097,8 @@ function openCellPopup(cardIdx, cellIdx, event) {
   );
   pendingExtraPersonnel = existing.extraPersonnel || "";
   pendingPreShift = getCustomPreShiftValues(existing);
-  pendingFormationTags = getCustomFormationTagValues(existing);
-  pendingBackTags = getCustomBackTagValues(existing);
+  pendingFormationTags = getCustomFormationTagEntries(existing);
+  pendingBackTags = getCustomBackTagEntries(existing);
   pendingPlaySelection = currentPlay;
 
   const hasPlay = currentPlay !== null;
@@ -1995,7 +2123,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
 
   if (hasPlay) {
     document.getElementById("cellPopupPlayName").innerHTML =
-      `<strong>Current Play:</strong> ${getFullCall(currentPlay, getWristbandDisplayOptions())}`;
+      `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(currentPlay, existing), getWristbandDisplayOptions())}`;
   } else {
     document.getElementById("cellPlaySearch").value = "";
     populateCellPlayList();
@@ -2109,7 +2237,10 @@ function selectPlayForCell(playIndex) {
   document.getElementById("cellPopupPlaySelector").classList.add("hidden");
   document.getElementById("cellPopupColors").classList.remove("hidden");
   document.getElementById("cellPopupPlayName").innerHTML =
-    `<strong>Current Play:</strong> ${getFullCall(play, getWristbandDisplayOptions())}`;
+    `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(play, {
+      formationTags: pendingFormationTags,
+      backTags: pendingBackTags,
+    }), getWristbandDisplayOptions())}`;
 
   renderCardTabs();
   renderWristbandGrid();
@@ -2211,8 +2342,12 @@ function applyCellStyle() {
     .getElementById("cellExtraPersonnel")
     .value.trim();
   const preShift = pendingPreShift.join("; ");
-  const formationTags = pendingFormationTags.join("; ");
-  const backTags = pendingBackTags.join("; ");
+  const formationTags = pendingFormationTags
+    .map((entry) => normalizeCustomTagEntry(entry))
+    .filter(Boolean);
+  const backTags = pendingBackTags
+    .map((entry) => normalizeCustomTagEntry(entry))
+    .filter(Boolean);
 
   if (
     pendingBgColor ||
@@ -2220,8 +2355,8 @@ function applyCellStyle() {
     markers.length > 0 ||
     extraPersonnel ||
     preShift ||
-    formationTags ||
-    backTags
+    formationTags.length > 0 ||
+    backTags.length > 0
   ) {
     cellCustomizations[key] = {
       bgColor: pendingBgColor,
@@ -2518,13 +2653,23 @@ function printWristband() {
     const opts = getWristbandDisplayOptions();
     const { highlightHuddle, highlightCandy } = opts;
     const printDisplayCache = new Map();
-    const getPrintDisplay = (play) => {
+    const getPrintDisplay = (play, custom) => {
       if (!play) return "";
-      if (printDisplayCache.has(play)) return printDisplayCache.get(play);
+      let variants = printDisplayCache.get(play);
+      if (!variants) {
+        variants = new Map();
+        printDisplayCache.set(play, variants);
+      }
+      const variantKey = JSON.stringify({
+        formationTags: getCustomFormationTagEntries(custom),
+        backTags: getCustomBackTagEntries(custom),
+      });
+      if (variants.has(variantKey)) return variants.get(variantKey);
+      const displayPlay = getCustomDisplayPlay(play, custom);
       const rendered = opts.lineCallOnly
         ? getLineCallOnlyDisplay(play, opts)
-        : getFullCall(play, opts);
-      printDisplayCache.set(play, rendered);
+        : getFullCall(displayPlay, opts);
+      variants.set(variantKey, rendered);
       return rendered;
     };
 
@@ -2587,15 +2732,11 @@ function printWristband() {
         const oddPrefix =
           getCadencePrefix(oddCustom, opts) +
           getCustomPersonnelPrefix(oddCustom, opts) +
-          getCustomPreShiftPrefix(oddCustom) +
-          getCustomFormationTagPrefix(oddCustom) +
-          getCustomBackTagPrefix(oddCustom);
+          getCustomPreShiftPrefix(oddCustom);
         const evenPrefix =
           getCadencePrefix(evenCustom, opts) +
           getCustomPersonnelPrefix(evenCustom, opts) +
-          getCustomPreShiftPrefix(evenCustom) +
-          getCustomFormationTagPrefix(evenCustom) +
-          getCustomBackTagPrefix(evenCustom);
+          getCustomPreShiftPrefix(evenCustom);
         const oddPostfix = getCadencePostfix(oddCustom, opts);
         const evenPostfix = getCadencePostfix(evenCustom, opts);
 
@@ -2604,10 +2745,10 @@ function printWristband() {
         const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
-        const oddDisplay = oddPlay ? getPrintDisplay(oddPlay) : "";
+        const oddDisplay = oddPlay ? getPrintDisplay(oddPlay, oddCustom) : "";
         cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix) : ""}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
-        const evenDisplay = evenPlay ? getPrintDisplay(evenPlay) : "";
+        const evenDisplay = evenPlay ? getPrintDisplay(evenPlay, evenCustom) : "";
         cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix) : ""}</span></div>`;
       }
 
