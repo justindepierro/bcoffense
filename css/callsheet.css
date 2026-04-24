@@ -2078,6 +2078,12 @@
   font-size: var(--font-size-xs);
 }
 
+.cs-ctx-tag-actions {
+  display: flex;
+  gap: 4px;
+  margin-top: 6px;
+}
+
 /* Category copy list */
 .cs-ctx-cat-list {
   max-height: 160px;

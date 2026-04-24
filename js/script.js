@@ -337,23 +337,15 @@ function getPeriodCallDisplayOptions(separator, baseOptions = {}) {
   return { ...baseOptions, hideProtection: true };
 }
 
-function getScriptCustomTagValues(value) {
-  if (!value) return [];
-  return String(value)
-    .split(/[;,|]+/)
-    .map((item) => item.trim())
-    .filter(Boolean);
-}
-
 function getScriptDisplayPlay(play) {
   if (!play) return play;
 
-  const customFormationTags = getScriptCustomTagValues(play.scriptFormationTags).map(
-    (value) => `(${value})`,
-  );
-  const customBackTags = getScriptCustomTagValues(play.scriptBackTags).map(
-    (value) => `(${value})`,
-  );
+  const customFormationTags = getSharedCustomTagEntries(play.scriptFormationTags)
+    .map((entry) => `(${formatSharedCustomTagEntryText(entry)})`)
+    .filter(Boolean);
+  const customBackTags = getSharedCustomTagEntries(play.scriptBackTags)
+    .map((entry) => `(${formatSharedCustomTagEntryText(entry)})`)
+    .filter(Boolean);
 
   if (!customFormationTags.length && !customBackTags.length) return play;
 

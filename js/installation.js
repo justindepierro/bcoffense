@@ -466,8 +466,8 @@ function renderInstallation() {
       <!-- Category Navigation Cards -->
       <div class="install-category-grid">
         ${categorySummaries
-          .map(
-            (cat) => `
+        .map(
+          (cat) => `
           <button class="install-cat-card ${installActiveCategory === cat.id ? "install-cat-active" : ""}"
                   data-action="selectInstallCategory" data-arg="${cat.id}">
             <div class="install-cat-icon">${cat.icon}</div>
@@ -480,8 +480,8 @@ function renderInstallation() {
             </div>
           </button>
         `,
-          )
-          .join("")}
+        )
+        .join("")}
       </div>
 
       <!-- Active Category Detail -->
@@ -573,8 +573,8 @@ function renderInstallCategoryDetail(components, data) {
   // Filter by search
   const filtered = installSearchTerm
     ? allItems.filter((v) =>
-        v.toLowerCase().includes(installSearchTerm.toLowerCase()),
-      )
+      v.toLowerCase().includes(installSearchTerm.toLowerCase()),
+    )
     : allItems;
 
   // Sort: installed first, then alphabetical
@@ -598,27 +598,26 @@ function renderInstallCategoryDetail(components, data) {
         <div class="install-detail-actions">
           <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
                  value="${installSearchTerm}" data-oninput="installSearch" data-pass="value">
-          ${
-            cat.id === "play"
-              ? `<label class="install-smart-toggle" title="Group play variations by base concept">
+          ${cat.id === "play"
+      ? `<label class="install-smart-toggle" title="Group play variations by base concept">
                   <input type="checkbox" ${installSmartBasePlays ? "checked" : ""}
                          data-onchange="toggleSmartBasePlays">
                   <span>Smart base plays</span>
                  </label>`
-              : ""
-          }
+      : ""
+    }
           <button class="btn btn-sm btn-success" data-action="installAll" data-arg="${cat.id}" title="Mark all as installed">✅ All</button>
           <button class="btn btn-sm btn-danger" data-action="uninstallAll" data-arg="${cat.id}" title="Clear all">✕ Clear</button>
         </div>
       </div>
       <div class="install-checklist">
         ${sorted
-          .map((value, idx) => {
-            const isInstalled = isSmartPlayMode
-              ? !!groupInstalledMap[value]
-              : installed.includes(value);
-            const count = playCounts[value] || 0;
-            return `
+      .map((value, idx) => {
+        const isInstalled = isSmartPlayMode
+          ? !!groupInstalledMap[value]
+          : installed.includes(value);
+        const count = playCounts[value] || 0;
+        return `
             <label class="install-item ${isInstalled ? "install-item-done" : ""}"
                    draggable="true"
                    data-drag="installItem" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
@@ -629,8 +628,8 @@ function renderInstallCategoryDetail(components, data) {
               <span class="install-item-count" title="${count} play${count !== 1 ? "s" : ""} use this">${count} play${count !== 1 ? "s" : ""}</span>
               <span class="install-item-drag" title="Drag to reorder">⠿</span>
             </label>`;
-          })
-          .join("")}
+      })
+      .join("")}
         ${sorted.length === 0 ? `<div class="install-empty-cat">No ${cat.label.toLowerCase()} found${installSearchTerm ? " matching search" : ""}</div>` : ""}
       </div>
     </div>
@@ -1169,8 +1168,8 @@ function showSmartInstallReport() {
     const gameReadyPlays =
       report.gameReadySummary && report.gameReadySummary.plays
         ? report.gameReadySummary.plays
-            .map((p) => p._play || p)
-            .filter((p) => p && p.play)
+          .map((p) => p._play || p)
+          .filter((p) => p && p.play)
         : [];
     const gameReadyAnalysis =
       gameReadyPlays.length > 0 ? computeTouchAnalysis(gameReadyPlays) : null;
@@ -1180,16 +1179,15 @@ function showSmartInstallReport() {
         <div class="sir-section">
           <div class="sir-section-title">🏈 Touch Distribution <span class="sir-section-hint">Weighted player usage across your playbook</span></div>
           ${renderTouchAnalysis(allTouchAnalysis, { title: "All Plays", idPrefix: "sir-ta-all" })}
-          ${
-            gameReadyAnalysis &&
-            Object.keys(gameReadyAnalysis.players).length > 0
-              ? renderTouchAnalysis(gameReadyAnalysis, {
-                  title: "Game Ready Only",
-                  compact: true,
-                  idPrefix: "sir-ta-gr",
-                })
-              : ""
-          }
+          ${gameReadyAnalysis &&
+          Object.keys(gameReadyAnalysis.players).length > 0
+          ? renderTouchAnalysis(gameReadyAnalysis, {
+            title: "Game Ready Only",
+            compact: true,
+            idPrefix: "sir-ta-gr",
+          })
+          : ""
+        }
         </div>`;
     }
   }

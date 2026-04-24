@@ -719,6 +719,179 @@ function showListPicker(message, items, opts = {}) {
   });
 }
 
+const SHARED_CUSTOM_TAG_DISPLAY_MODES = {
+  full: { label: "Full", shortLabel: "Full" },
+  "no-vowels": { label: "No Vowels", shortLabel: "NV" },
+  initial: { label: "First Letter", shortLabel: "1L" },
+};
+
+function normalizeSharedCustomTagDisplayMode(mode) {
+  return SHARED_CUSTOM_TAG_DISPLAY_MODES[mode] ? mode : "full";
+}
+
+function normalizeSharedCustomTagValue(value) {
+  return String(value || "")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function normalizeSharedCustomTagEntry(entry) {
+  const rawValue = typeof entry === "string" ? entry : entry?.value || "";
+  const value = normalizeSharedCustomTagValue(rawValue);
+  if (!value) return null;
+  return {
+    value,
+    display: normalizeSharedCustomTagDisplayMode(entry?.display),
+  };
+}
+
+function getSharedCustomTagEntries(value) {
+  if (!value) return [];
+  if (Array.isArray(value)) {
+    return value.map((entry) => normalizeSharedCustomTagEntry(entry)).filter(Boolean);
+  }
+  return String(value)
+    .split(/[;,|]+/)
+    .map((item) => normalizeSharedCustomTagEntry(item))
+    .filter(Boolean);
+}
+
+function formatSharedCustomTagEntryText(entry) {
+  const normalizedEntry = normalizeSharedCustomTagEntry(entry);
+  if (!normalizedEntry) return "";
+
+  if (normalizedEntry.display === "no-vowels") {
+    return removeVowels(normalizedEntry.value) || normalizedEntry.value.charAt(0);
+  }
+  if (normalizedEntry.display === "initial") {
+    return normalizedEntry.value.charAt(0).toUpperCase();
+  }
+  return normalizedEntry.value;
+}
+
+function getSharedCustomTagModeMeta(mode) {
+  return SHARED_CUSTOM_TAG_DISPLAY_MODES[normalizeSharedCustomTagDisplayMode(mode)];
+}
+
+function showCustomTagEditorModal(opts = {}) {
+  return new Promise((resolve) => {
+    const previouslyFocused = document.activeElement;
+    const title = opts.title || "Edit Tags";
+    const icon = opts.icon || "🏷️";
+    const message = opts.message || "";
+    const placeholder = opts.placeholder || "Add a tag";
+    let entries = getSharedCustomTagEntries(opts.initialEntries);
+    const mid = ++_modalIdCounter;
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal custom-modal-wide custom-tag-editor-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">${icon}</span>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+        </div>
+        ${message ? `<div class="custom-modal-body">${formatModalMessage(message)}</div>` : ""}
+        <div class="custom-tag-editor-input-row">
+          <input type="text" class="custom-modal-input custom-tag-editor-input" id="customTagEditorInput${mid}" placeholder="${escapeHtml(placeholder)}" />
+          <button type="button" class="btn btn-primary custom-modal-btn" id="customTagEditorAdd${mid}">Add</button>
+        </div>
+        <div class="custom-tag-editor-helper">Click a mode pill to cycle Full, NV, and 1L for each tag.</div>
+        <div class="custom-tag-editor-list" id="customTagEditorList${mid}"></div>
+        <div class="custom-modal-actions">
+          <button class="btn custom-modal-btn custom-modal-cancel" id="customTagEditorCancel${mid}">Cancel</button>
+          <button class="btn btn-primary custom-modal-btn" id="customTagEditorSave${mid}">Save</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+    trapFocus(overlay);
+
+    const listEl = overlay.querySelector(`#customTagEditorList${mid}`);
+    const inputEl = overlay.querySelector(`#customTagEditorInput${mid}`);
+
+    const renderEntries = () => {
+      if (!entries.length) {
+        listEl.innerHTML = '<div class="custom-tag-editor-empty">No tags added yet.</div>';
+        return;
+      }
+
+      listEl.innerHTML = entries
+        .map((entry, index) => {
+          const modeMeta = getSharedCustomTagModeMeta(entry.display);
+          return `
+            <div class="custom-tag-editor-chip">
+              <span class="custom-tag-editor-value">${escapeHtml(entry.value)}</span>
+              <button type="button" class="custom-tag-editor-mode" data-index="${index}" data-action="cycle" title="Display mode: ${escapeHtml(modeMeta.label)}">${escapeHtml(modeMeta.shortLabel)}</button>
+              <button type="button" class="custom-tag-editor-remove" data-index="${index}" data-action="remove" aria-label="Remove ${escapeHtml(entry.value)}">×</button>
+            </div>
+          `;
+        })
+        .join("");
+    };
+
+    const addEntry = () => {
+      const nextValue = normalizeSharedCustomTagValue(inputEl.value);
+      if (!nextValue) return;
+      if (!entries.some((entry) => entry.value === nextValue)) {
+        entries.push({ value: nextValue, display: "full" });
+      }
+      inputEl.value = "";
+      inputEl.focus();
+      renderEntries();
+    };
+
+    const close = (value) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && previouslyFocused.focus) previouslyFocused.focus();
+      }, 200);
+      resolve(value);
+    };
+
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) close(null);
+      const btn = event.target.closest("[data-action]");
+      if (!btn) return;
+      const index = parseInt(btn.dataset.index, 10);
+      if (!Number.isInteger(index) || !entries[index]) return;
+      if (btn.dataset.action === "remove") {
+        entries = entries.filter((_, idx) => idx !== index);
+      } else if (btn.dataset.action === "cycle") {
+        const current = entries[index];
+        const nextDisplay =
+          current.display === "full"
+            ? "no-vowels"
+            : current.display === "no-vowels"
+              ? "initial"
+              : "full";
+        entries[index] = { ...current, display: nextDisplay };
+      }
+      renderEntries();
+    });
+
+    overlay.querySelector(`#customTagEditorAdd${mid}`).addEventListener("click", addEntry);
+    overlay.querySelector(`#customTagEditorCancel${mid}`).addEventListener("click", () => close(null));
+    overlay.querySelector(`#customTagEditorSave${mid}`).addEventListener("click", () => close(entries));
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(null);
+      }
+      if (event.key === "Enter" && document.activeElement === inputEl) {
+        event.preventDefault();
+        addEntry();
+      }
+    });
+
+    renderEntries();
+    requestAnimationFrame(() => {
+      overlay.classList.add("visible");
+      inputEl.focus();
+    });
+  });
+}
+
 /**
  * Format message text for modal — converts \n to <br> and wraps in <p>
  */

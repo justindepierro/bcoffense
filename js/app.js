@@ -2925,10 +2925,9 @@ document.addEventListener("DOMContentLoaded", () => {
 function _showScriptPlayContextMenu(e, idx) {
   if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
   const play = script[idx];
-  const hasCustomTags = Boolean(
-    (play.scriptFormationTags && String(play.scriptFormationTags).trim()) ||
-    (play.scriptBackTags && String(play.scriptBackTags).trim()),
-  );
+  const hasCustomTags =
+    getSharedCustomTagEntries(play.scriptFormationTags).length > 0 ||
+    getSharedCustomTagEntries(play.scriptBackTags).length > 0;
   const menuItems = [
     { label: "📋 Duplicate Play", action: () => duplicatePlay(idx) },
     {
@@ -2947,26 +2946,19 @@ function _showScriptPlayContextMenu(e, idx) {
       action: async () => {
         const currentPlay = script[idx];
         if (!currentPlay || currentPlay.isSeparator) return;
-        const value = await showPrompt(
-          "Enter formation-tag options separated by semicolons.",
-          currentPlay.scriptFormationTags || "",
-          {
-            title: "Script Formation Tags",
-            icon: "🏷️",
-            placeholder: "Open; Under; Tight",
-          },
-        );
-        if (value === null) return;
-        const normalized = String(value)
-          .split(/[;,|]+/)
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .join("; ");
+        const entries = await showCustomTagEditorModal({
+          title: "Script Formation Tags",
+          icon: "🏷️",
+          message: "Add formation-tag options and set each one to Full, NV, or 1L.",
+          placeholder: "Open",
+          initialEntries: currentPlay.scriptFormationTags,
+        });
+        if (entries === null) return;
         saveScriptState();
-        currentPlay.scriptFormationTags = normalized || undefined;
+        currentPlay.scriptFormationTags = entries.length ? entries : undefined;
         markScriptDirty();
         renderScript();
-        showToast(normalized ? "Formation tags saved" : "Formation tags removed");
+        showToast(entries.length ? "Formation tags saved" : "Formation tags removed");
       },
     },
     {
@@ -2974,26 +2966,19 @@ function _showScriptPlayContextMenu(e, idx) {
       action: async () => {
         const currentPlay = script[idx];
         if (!currentPlay || currentPlay.isSeparator) return;
-        const value = await showPrompt(
-          "Enter back-tag options separated by semicolons.",
-          currentPlay.scriptBackTags || "",
-          {
-            title: "Script Back Tags",
-            icon: "🏷️",
-            placeholder: "Pistol; Offset; Strong",
-          },
-        );
-        if (value === null) return;
-        const normalized = String(value)
-          .split(/[;,|]+/)
-          .map((item) => item.trim())
-          .filter(Boolean)
-          .join("; ");
+        const entries = await showCustomTagEditorModal({
+          title: "Script Back Tags",
+          icon: "🏷️",
+          message: "Add back-tag options and set each one to Full, NV, or 1L.",
+          placeholder: "Pistol",
+          initialEntries: currentPlay.scriptBackTags,
+        });
+        if (entries === null) return;
         saveScriptState();
-        currentPlay.scriptBackTags = normalized || undefined;
+        currentPlay.scriptBackTags = entries.length ? entries : undefined;
         markScriptDirty();
         renderScript();
-        showToast(normalized ? "Back tags saved" : "Back tags removed");
+        showToast(entries.length ? "Back tags saved" : "Back tags removed");
       },
     },
     {

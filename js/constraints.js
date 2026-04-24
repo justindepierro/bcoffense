@@ -1540,15 +1540,15 @@ function showSuggestions(key) {
       <div class="cr-sug-group">
         <div class="cr-sug-label">➕ ${escapeHtml(group.label)}</div>
         ${group.plays
-          .map(
-            (p) => `
+            .map(
+              (p) => `
           <div class="cr-sug-play" title="${escapeHtml([p.playTag1, p.playTag2].filter(Boolean).join(", "))}">
             <span class="cr-sug-type">${escapeHtml(p.type || "")}</span>
             <span class="cr-sug-call">${typeof getFullCall === "function" ? getFullCall(p) : escapeHtml((p.formation || "") + " " + (p.play || ""))}</span>
           </div>
         `,
-          )
-          .join("")}
+            )
+            .join("")}
       </div>
     `,
       )
