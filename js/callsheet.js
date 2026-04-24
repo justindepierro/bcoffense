@@ -3867,6 +3867,11 @@ function buildCallSheetPlayParts(play, options) {
     playParts.push(escapeHtml(protText));
   }
 
+  if (play.back) {
+    const backText = options.noVowels ? removeVowels(play.back) : play.back;
+    playParts.push(escapeHtml(backText));
+  }
+
   if (options.showPlayName && play.play) {
     let playText = options.noVowels ? removeVowels(play.play) : play.play;
     playParts.push(escapeHtml(playText));
