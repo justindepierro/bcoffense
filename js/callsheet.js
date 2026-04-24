@@ -584,10 +584,8 @@ function clearCallSheetCellDisplayOverrides(play) {
 function getCallSheetHighlightConfig(play) {
   if (!play) return null;
   const highlightKey = play.highlightColor || (play.highlighted ? "yellow" : "");
-  return (
-    CALLSHEET_HIGHLIGHT_SWATCHES.find((swatch) => swatch.key === highlightKey) ||
-    null
-  );
+  if (!highlightKey) return null;
+  return CALLSHEET_HIGHLIGHT_SWATCHES.find((swatch) => swatch.key === highlightKey) || null;
 }
 
 function getCallSheetCustomTagValues(value) {
