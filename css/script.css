@@ -900,9 +900,32 @@
 }
 
 .script-item--compact .defense-inputs .def-input {
-  width: 64px;
-  padding: 4px 5px;
+  width: 100%;
+  min-width: 0;
+  padding: 4px 6px;
   font-size: var(--font-size-xs);
+  text-align: center;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-body);
+  transition:
+    width var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+
+.script-item--compact .defense-inputs .def-input::placeholder {
+  font-style: normal;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.script-item--compact .defense-inputs .def-input:focus {
+  width: 92px;
+  text-align: left;
+  background: var(--color-white);
+  position: relative;
+  z-index: 2;
 }
 
 .script-item .defense-inputs .def-input::placeholder {
@@ -1568,6 +1591,14 @@
   background: var(--color-white);
   font-size: var(--font-size-xs);
   cursor: pointer;
+}
+
+.script-display-preset-bar {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: 8px;
 }
 
 .display-options-grid {
