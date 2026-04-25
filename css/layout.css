@@ -334,8 +334,11 @@ h1 {
   padding: calc(var(--space-lg) + var(--space-sm));
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(180deg, var(--color-bg-light) 0%, var(--color-white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-light) 0%,
+    var(--color-white) 100%
+  );
   box-shadow: var(--shadow-lg);
 }
 
@@ -345,8 +348,12 @@ h1 {
   gap: var(--space-lg);
   padding: var(--space-lg);
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(135deg, var(--color-primary-dark) 0%, var(--color-primary) 70%, var(--color-dark-lighter) 100%);
+  background: linear-gradient(
+    135deg,
+    var(--color-primary-dark) 0%,
+    var(--color-primary) 70%,
+    var(--color-dark-lighter) 100%
+  );
   color: var(--color-white);
   overflow: hidden;
   position: relative;
@@ -441,7 +448,11 @@ h1 {
   padding: var(--space-lg);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-light) 100%
+  );
   box-shadow: var(--shadow-sm);
 }
 
@@ -451,7 +462,11 @@ h1 {
   position: absolute;
   inset: 0;
   border-radius: inherit;
-  background: linear-gradient(135deg, transparent 0%, var(--color-accent-light) 100%);
+  background: linear-gradient(
+    135deg,
+    transparent 0%,
+    var(--color-accent-light) 100%
+  );
   opacity: 0.35;
   pointer-events: none;
 }
@@ -468,6 +483,49 @@ h1 {
   justify-content: space-between;
   gap: var(--space-sm);
   margin-bottom: var(--space-sm);
+}
+
+.team-settings-panel-header--toggle {
+  align-items: center;
+  cursor: pointer;
+  user-select: none;
+}
+
+.team-settings-panel-header-meta {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex: 0 0 auto;
+}
+
+.team-settings-panel-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.team-settings-panel-content.collapsed {
+  display: none;
+}
+
+.team-settings-panel-header--toggle .toggle-icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 26px;
+  height: 26px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  line-height: 1;
+}
+
+.team-settings-panel-header--toggle:hover .toggle-icon,
+.team-settings-panel-header--toggle:focus-visible .toggle-icon {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
 }
 
 .team-settings-panel-kicker {
@@ -590,8 +648,11 @@ h1 {
   resize: vertical;
   min-height: 128px;
   margin-bottom: var(--space-md);
-  background:
-    linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-input) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-input) 100%
+  );
 }
 
 .team-roster-list,
@@ -617,7 +678,11 @@ h1 {
   padding: var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-light) 100%
+  );
   box-shadow: var(--shadow-sm);
 }
 
@@ -678,7 +743,11 @@ h1 {
 }
 
 .team-package-slot--editable {
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-primary-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-primary-light) 100%
+  );
 }
 
 .team-package-slot-eyebrow {
@@ -772,7 +841,11 @@ h1 {
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
-  background: linear-gradient(180deg, var(--color-bg-input) 0%, var(--color-white) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-input) 0%,
+    var(--color-white) 100%
+  );
 }
 
 @media (max-width: 980px) {

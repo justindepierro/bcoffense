@@ -1544,8 +1544,8 @@ function renderTeamSettings() {
                 ${buildTeamPlayerOptionMarkup(playerId)}
               </select>
               ${options.depthChart && depthIndex > 0
-      ? `<button type="button" class="btn btn-xs btn-danger team-slot-sub-remove" data-action="${options.removeSubAction || "removeTeamPackageSub"}" data-item-index="${itemIndex}" data-slot="${slot.key}" data-depth-index="${depthIndex}" aria-label="Remove ${escapeHtml(slot.label)} sub ${depthIndex}">Remove</button>`
-      : ""}
+          ? `<button type="button" class="btn btn-xs btn-danger team-slot-sub-remove" data-action="${options.removeSubAction || "removeTeamPackageSub"}" data-item-index="${itemIndex}" data-slot="${slot.key}" data-depth-index="${depthIndex}" aria-label="Remove ${escapeHtml(slot.label)} sub ${depthIndex}">Remove</button>`
+          : ""}
             </div>
           `).join("");
       const addSubButton = options.depthChart
@@ -2190,10 +2190,16 @@ function showContextMenu(event, menu, selector = ".cs-context-menu") {
  */
 function toggleCollapsiblePanel(headerEl) {
   const content = headerEl.nextElementSibling;
+  if (!content) return;
   content.classList.toggle("collapsed");
+  const isCollapsed = content.classList.contains("collapsed");
+
+  if (headerEl.hasAttribute("aria-expanded")) {
+    headerEl.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+  }
 
   const icon = headerEl.querySelector(".toggle-icon");
-  icon.textContent = content.classList.contains("collapsed") ? "▶" : "▼";
+  if (icon) icon.textContent = isCollapsed ? "▶" : "▼";
 }
 
 /**

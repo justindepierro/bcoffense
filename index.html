@@ -130,7 +130,8 @@
           </button>
         </div>
         <p>
-          Backup includes your roster, personnel packages, package-specific slot labels, swap groups, and other saved team settings.
+          Backup includes your roster, personnel packages, package-specific slot labels, swap groups, and other saved
+          team settings.
         </p>
       </div>
 
@@ -140,13 +141,15 @@
             <div class="team-settings-hero-copy">
               <span class="team-settings-eyebrow">Team Ops</span>
               <h3>Build Your Offensive Identity</h3>
-              <p>Shape roster data, rename slot tags by personnel, and prep every package your playbook already uses from one modern control room.</p>
+              <p>Shape roster data, rename slot tags by personnel, and prep every package your playbook already uses
+                from one modern control room.</p>
             </div>
             <div class="team-settings-hero-notes">
               <span class="team-settings-chip">Personnel-aware labels</span>
               <span class="team-settings-chip">Auto-prepped packages</span>
               <span class="team-settings-chip">Swap groups ready for script</span>
-              <span id="teamSettingsSaveStatus" class="team-settings-chip team-settings-chip--status" aria-live="polite">Autosave on</span>
+              <span id="teamSettingsSaveStatus" class="team-settings-chip team-settings-chip--status"
+                aria-live="polite">Autosave on</span>
             </div>
           </div>
 
@@ -161,76 +164,95 @@
               </div>
               <p>Used across call sheet headers and exported documents.</p>
               <div class="team-name-row">
-                <input type="text" id="teamNameInput" class="team-name-input" placeholder="e.g., Burke Catholic Football"
-                  aria-label="Team name" data-onchange="setTeamName" data-pass="value" />
+                <input type="text" id="teamNameInput" class="team-name-input"
+                  placeholder="e.g., Burke Catholic Football" aria-label="Team name" data-onchange="setTeamName"
+                  data-pass="value" />
               </div>
             </div>
           </div>
 
           <div class="team-settings-grid">
             <div class="team-settings-panel team-settings-panel--roster">
-              <div class="team-settings-panel-header">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" role="button" tabindex="0" aria-expanded="true">
                 <div>
                   <span class="team-settings-panel-kicker">Roster</span>
                   <h4>Players & Import</h4>
                 </div>
-                <span class="team-panel-badge">Bulk-ready</span>
+                <div class="team-settings-panel-header-meta">
+                  <span class="team-panel-badge">Bulk-ready</span>
+                  <span class="toggle-icon">▼</span>
+                </div>
               </div>
-              <p>Paste <strong>number, name, position</strong>, upload a file, or add players manually.</p>
-              <textarea id="teamRosterBulkInput" class="team-roster-bulk-input" rows="4"
-                placeholder="12, John Smith, QB&#10;22, Mike Brown, RB&#10;80, Alex Green, Y"></textarea>
-              <div class="team-settings-actions">
-                <input type="file" id="teamRosterFile" accept=".csv,.txt" class="hidden"
-                  data-onchange="importTeamRosterFile" data-pass="event" />
-                <button class="btn btn-outline" data-action="triggerClick" data-target="teamRosterFile">Upload Roster File</button>
-                <button class="btn btn-secondary" data-action="importTeamRoster">Import Roster</button>
+              <div class="team-settings-panel-content">
+                <p>Paste <strong>number, name, position</strong>, upload a file, or add players manually.</p>
+                <textarea id="teamRosterBulkInput" class="team-roster-bulk-input" rows="4"
+                  placeholder="12, John Smith, QB&#10;22, Mike Brown, RB&#10;80, Alex Green, Y"></textarea>
+                <div class="team-settings-actions">
+                  <input type="file" id="teamRosterFile" accept=".csv,.txt" class="hidden"
+                    data-onchange="importTeamRosterFile" data-pass="event" />
+                  <button class="btn btn-outline" data-action="triggerClick" data-target="teamRosterFile">Upload Roster
+                    File</button>
+                  <button class="btn btn-secondary" data-action="importTeamRoster">Import Roster</button>
+                </div>
+                <div class="team-settings-add-row">
+                  <input type="text" id="teamPlayerNumberInput" class="team-settings-input team-settings-input--short"
+                    placeholder="#" aria-label="Player number" />
+                  <input type="text" id="teamPlayerNameInput" class="team-settings-input" placeholder="Player name"
+                    aria-label="Player name" />
+                  <input type="text" id="teamPlayerPositionInput" class="team-settings-input team-settings-input--short"
+                    placeholder="POS" aria-label="Player position" />
+                  <button class="btn btn-primary" data-action="addTeamPlayer">Add Player</button>
+                </div>
+                <div id="teamRosterList" class="team-roster-list"></div>
               </div>
-              <div class="team-settings-add-row">
-                <input type="text" id="teamPlayerNumberInput" class="team-settings-input team-settings-input--short"
-                  placeholder="#" aria-label="Player number" />
-                <input type="text" id="teamPlayerNameInput" class="team-settings-input" placeholder="Player name"
-                  aria-label="Player name" />
-                <input type="text" id="teamPlayerPositionInput" class="team-settings-input team-settings-input--short"
-                  placeholder="POS" aria-label="Player position" />
-                <button class="btn btn-primary" data-action="addTeamPlayer">Add Player</button>
-              </div>
-              <div id="teamRosterList" class="team-roster-list"></div>
             </div>
 
             <div class="team-settings-panel team-settings-panel--packages">
-              <div class="team-settings-panel-header">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" role="button" tabindex="0" aria-expanded="true">
                 <div>
                   <span class="team-settings-panel-kicker">Personnel</span>
                   <h4>Package Builder</h4>
                 </div>
-                <span class="team-panel-badge">Labels live here</span>
+                <div class="team-settings-panel-header-meta">
+                  <span class="team-panel-badge">Labels live here</span>
+                  <span class="toggle-icon">▼</span>
+                </div>
               </div>
-              <p>Each package can rename its own slot letters, and personnel from the playbook shows up here automatically.</p>
-              <div class="team-settings-add-row">
-                <input type="text" id="teamPackagePersonnelInput" class="team-settings-input"
-                  placeholder="Personnel label (e.g. 11)" aria-label="Personnel label" />
-                <button class="btn btn-primary" data-action="addTeamPersonnelPackage">Add Package</button>
+              <div class="team-settings-panel-content">
+                <p>Each package can rename its own slot letters, and personnel from the playbook shows up here
+                  automatically.</p>
+                <div class="team-settings-add-row">
+                  <input type="text" id="teamPackagePersonnelInput" class="team-settings-input"
+                    placeholder="Personnel label (e.g. 11)" aria-label="Personnel label" />
+                  <button class="btn btn-primary" data-action="addTeamPersonnelPackage">Add Package</button>
+                </div>
+                <div id="teamPersonnelPackages" class="team-personnel-packages"></div>
               </div>
-              <div id="teamPersonnelPackages" class="team-personnel-packages"></div>
             </div>
 
             <div class="team-settings-panel team-settings-panel--swaps">
-              <div class="team-settings-panel-header">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" role="button" tabindex="0" aria-expanded="true">
                 <div>
                   <span class="team-settings-panel-kicker">Sub Packages</span>
                   <h4>Swap Groups</h4>
                 </div>
-                <span class="team-panel-badge">One-click swaps</span>
+                <div class="team-settings-panel-header-meta">
+                  <span class="team-panel-badge">One-click swaps</span>
+                  <span class="toggle-icon">▼</span>
+                </div>
               </div>
-              <p>Build alternate units you can drop onto any script row without reassigning each spot.</p>
-              <div class="team-settings-add-row">
-                <input type="text" id="teamSwapGroupNameInput" class="team-settings-input"
-                  placeholder="Group name (e.g. Tempo 2s)" aria-label="Swap group name" />
-                <input type="text" id="teamSwapGroupPersonnelInput" class="team-settings-input team-settings-input--short"
-                  placeholder="11" aria-label="Swap group personnel" />
-                <button class="btn btn-primary" data-action="addTeamSwapGroup">Add Group</button>
+              <div class="team-settings-panel-content">
+                <p>Build alternate units you can drop onto any script row without reassigning each spot.</p>
+                <div class="team-settings-add-row">
+                  <input type="text" id="teamSwapGroupNameInput" class="team-settings-input"
+                    placeholder="Group name (e.g. Tempo 2s)" aria-label="Swap group name" />
+                  <input type="text" id="teamSwapGroupPersonnelInput"
+                    class="team-settings-input team-settings-input--short" placeholder="11"
+                    aria-label="Swap group personnel" />
+                  <button class="btn btn-primary" data-action="addTeamSwapGroup">Add Group</button>
+                </div>
+                <div id="teamSwapGroups" class="team-personnel-packages"></div>
               </div>
-              <div id="teamSwapGroups" class="team-personnel-packages"></div>
             </div>
           </div>
         </div>

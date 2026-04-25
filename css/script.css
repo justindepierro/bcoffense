@@ -193,7 +193,11 @@
   padding: 10px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-light) 100%
+  );
 }
 
 .script-player-grid-head {
@@ -252,7 +256,10 @@
   font-size: var(--font-size-xs);
   font-weight: 700;
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .script-player-reset-btn:hover {
@@ -305,6 +312,16 @@
   box-shadow: var(--shadow-xs);
 }
 
+.script-player-slot--promoted {
+  border-color: var(--color-primary);
+  background: linear-gradient(
+    180deg,
+    var(--color-white) 0%,
+    var(--color-bg-blue-light) 100%
+  );
+  box-shadow: var(--shadow-sm);
+}
+
 .script-player-slot-head {
   display: flex;
   align-items: center;
@@ -330,6 +347,12 @@
   padding: 2px 6px;
 }
 
+.script-player-slot--promoted .script-player-slot-role {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
 .script-player-slot-select {
   width: 100%;
   min-width: 0;
@@ -349,6 +372,32 @@
   gap: 6px;
 }
 
+.script-player-current-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+}
+
+.script-player-current-pill-label {
+  flex: 0 0 auto;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  color: var(--color-primary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.script-player-current-pill-name {
+  min-width: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text);
+}
+
 .script-player-depth-chip {
   display: inline-flex;
   align-items: center;
@@ -363,7 +412,10 @@
   font-size: var(--font-size-xs);
   text-align: left;
   cursor: pointer;
-  transition: transform var(--transition-fast), box-shadow var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    border-color var(--transition-fast);
 }
 
 .script-player-depth-chip:hover {
