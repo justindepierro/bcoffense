@@ -2298,6 +2298,44 @@
   width: 70px;
 }
 
+.script-print-personnel-row .script-print-personnel-cell {
+  padding: 4px 6px;
+  background: var(--color-bg-body);
+}
+
+.script-print-personnel-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 4px;
+}
+
+.script-print-personnel-pill {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 3px 5px;
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  font-family: var(--font-mono);
+  font-size: var(--font-size-xs);
+}
+
+.script-print-personnel-pos {
+  flex: 0 0 auto;
+  font-weight: 700;
+  color: var(--color-text);
+}
+
+.script-print-personnel-name {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text-muted);
+}
+
 /* ── Available plays zero-state ── */
 .avail-empty-state {
   display: flex;

@@ -433,6 +433,35 @@ function getScriptVisiblePlayerSummary(play, options = {}) {
   });
 }
 
+function getScriptVisiblePlayerLineup(play, options = {}) {
+  if (options.hidePersonnel) return [];
+
+  const visibleAssignments = normalizePlayerAssignments(
+    getScriptPlayerAssignments(play),
+  );
+
+  if (options.hideLinemen) {
+    ["lt", "lg", "c", "rg", "rt"].forEach((slotKey) => {
+      delete visibleAssignments[slotKey];
+    });
+  }
+
+  return getTeamAssignmentSlots(play?.personnel)
+    .map((slot) => {
+      const playerId = String(visibleAssignments[slot.key] || "").trim();
+      if (!playerId) return null;
+      const player = getTeamPlayerById(playerId);
+      const playerName = String(player?.name || playerId).trim();
+      if (!playerName) return null;
+      return {
+        key: slot.key,
+        label: slot.label,
+        playerName,
+      };
+    })
+    .filter(Boolean);
+}
+
 function getScriptPrintColumns(options = {}) {
   return [
     {
@@ -507,14 +536,6 @@ function getScriptPrintColumns(options = {}) {
       className: "col-reps",
       render: (play) => String(play.reps ?? 1),
     },
-    ...(!options.hidePersonnel
-      ? [{
-        key: "players",
-        label: "Players",
-        className: "col-players",
-        render: (play) => escapeHtml(getScriptVisiblePlayerSummary(play, options) || ""),
-      }]
-      : []),
     {
       key: "notes",
       label: "Notes",
@@ -4762,6 +4783,7 @@ function executeLoadWbToScript() {
  */
 function buildScriptPlayRow(p, displayNum, opts) {
   const columns = getScriptPrintColumns(opts);
+  const visibleLineup = getScriptVisiblePlayerLineup(p, opts);
 
   let rowColor = "";
   if (opts.highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
@@ -4774,8 +4796,26 @@ function buildScriptPlayRow(p, displayNum, opts) {
     rowColor = `background: ${UI_COLORS.highlightCandy};`;
   }
 
-  return `<tr style="${rowColor}">
-    ${columns.map((column) => `<td>${column.render(p, displayNum)}</td>`).join("")}
+  const mainRow = `<tr style="${rowColor}">
+    ${columns.map((column) => `<td class="script-table-cell script-table-cell--${column.key}">${column.render(p, displayNum)}</td>`).join("")}
+  </tr>`;
+
+  if (!visibleLineup.length) {
+    return mainRow;
+  }
+
+  return `${mainRow}
+  <tr class="script-print-personnel-row">
+    <td class="script-print-personnel-cell" colspan="${columns.length}">
+      <div class="script-print-personnel-grid">
+        ${visibleLineup.map((entry) => `
+          <div class="script-print-personnel-pill">
+            <span class="script-print-personnel-pos">${escapeHtml(entry.label)}</span>
+            <span class="script-print-personnel-name">${escapeHtml(entry.playerName)}</span>
+          </div>
+        `).join("")}
+      </div>
+    </td>
   </tr>`;
 }
 

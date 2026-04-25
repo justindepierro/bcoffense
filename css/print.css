@@ -308,11 +308,26 @@
     line-height: 1.2 !important;
     white-space: nowrap !important;
   }
-  body.print-script .script-table td:nth-child(5) {
+  body.print-script .script-table td.script-table-cell--call {
     text-align: left !important;
     white-space: nowrap !important;
     overflow: hidden !important;
     max-width: 200px !important;
+  }
+  body.print-script .script-table .script-print-personnel-cell {
+    white-space: normal !important;
+    padding: 4px 6px !important;
+  }
+  body.print-script .script-table .script-print-personnel-grid {
+    display: grid !important;
+    grid-template-columns: repeat(5, minmax(0, 1fr)) !important;
+    gap: 4px !important;
+  }
+  body.print-script .script-table .script-print-personnel-pill {
+    border: 0.5px dashed var(--color-text) !important;
+    background: white !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
   }
   body.print-script .line-call {
     font-size: 8px !important;
