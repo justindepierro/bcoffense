@@ -1120,25 +1120,45 @@
 }
 
 .script-item--printlike {
+  background: var(--color-bg-body);
   border-radius: var(--radius-sm);
-  border-color: var(--color-border-input);
+  border-color: var(--color-text);
+  border-style: dashed;
   box-shadow: none;
+  gap: 8px;
+}
+
+.script-item--printlike:hover {
+  box-shadow: none;
+  border-color: var(--color-text);
+}
+
+.script-item--printlike .bulk-select-cb {
+  accent-color: var(--color-text);
 }
 
 .script-item--printlike .play-num {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
+  color: var(--color-text);
+}
+
+.script-item--printlike .play-num .wb-badge {
+  background: var(--color-text);
+  color: var(--color-white);
 }
 
 .script-item--printlike .play-call .full-call {
   font-family: var(--font-mono);
   font-size: var(--font-size-sm);
+  color: var(--color-text);
 }
 
 .script-item--printlike .play-call .call-meta {
   font-size: var(--font-size-2xs);
   letter-spacing: 0.06em;
   text-transform: uppercase;
+  color: var(--color-text-muted);
 }
 
 .script-item--printlike .hash-input select,
@@ -1147,12 +1167,15 @@
 .script-item--printlike input[type="text"] {
   background: var(--color-bg-light);
   border-style: dashed;
+  border-color: var(--color-text-muted);
+  box-shadow: none;
 }
 
 .script-item--printlike .script-player-grid {
   background: var(--color-bg-body);
   box-shadow: none;
   border-style: dashed;
+  border-color: var(--color-text-muted);
 }
 
 @media (max-width: 1280px) {
