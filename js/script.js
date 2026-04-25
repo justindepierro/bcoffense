@@ -3169,6 +3169,73 @@ function getPlayMoveBounds(index) {
   return { lowerBound, upperBound };
 }
 
+function getScriptPeriodChoices(excludeSeparatorIndex = null) {
+  return script
+    .map((item, index) => ({ item, index }))
+    .filter(({ item, index }) => item?.isSeparator && index !== excludeSeparatorIndex)
+    .map(({ item, index }) => {
+      let playCount = 0;
+      for (let cursor = index + 1; cursor < script.length && !script[cursor].isSeparator; cursor++) {
+        playCount++;
+      }
+      return {
+        label: item.label || `Period ${index + 1}`,
+        sublabel: `${playCount} plays`,
+        value: index,
+      };
+    });
+}
+
+function movePlayToPeriodIndex(index, targetSeparatorIndex) {
+  const play = script[index];
+  if (!play || play.isSeparator) return false;
+
+  const currentSeparatorIndex = findOwningPeriodIndex(index);
+  const targetSeparator = script[targetSeparatorIndex];
+  if (!targetSeparator || !targetSeparator.isSeparator) return false;
+  if (currentSeparatorIndex === targetSeparatorIndex) return false;
+
+  saveScriptState();
+  const [movedPlay] = script.splice(index, 1);
+  const adjustedTargetSeparatorIndex = index < targetSeparatorIndex
+    ? targetSeparatorIndex - 1
+    : targetSeparatorIndex;
+
+  let insertAt = adjustedTargetSeparatorIndex + 1;
+  while (insertAt < script.length && !script[insertAt].isSeparator) insertAt++;
+
+  script.splice(insertAt, 0, movedPlay);
+  renderScript();
+  return true;
+}
+
+async function movePlayToPeriod(index) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  const currentSeparatorIndex = findOwningPeriodIndex(index);
+  const periodChoices = getScriptPeriodChoices(currentSeparatorIndex);
+  if (!periodChoices.length) {
+    setScriptToolbarStatus("Need another period before moving this play", "error");
+    return;
+  }
+
+  const selectedPeriod = await showListPicker(
+    "Choose the period that should receive this play.",
+    periodChoices,
+    { title: "↔ Move Play To Period", icon: "↔" },
+  );
+
+  if (selectedPeriod === null) return;
+  if (!movePlayToPeriodIndex(index, selectedPeriod)) {
+    setScriptToolbarStatus("Could not move play to that period", "error");
+    return;
+  }
+
+  const periodLabel = script[selectedPeriod]?.label || "selected period";
+  setScriptToolbarStatus(`Moved play to ${periodLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
+}
+
 /**
  * Move a play up or down in the script
  * @param {number} index - Current index
@@ -3255,20 +3322,7 @@ function openPeriodReorderModal(separatorIndex) {
 }
 
 async function openScriptReorderModal() {
-  const periodChoices = script
-    .map((item, index) => ({ item, index }))
-    .filter(({ item }) => item?.isSeparator)
-    .map(({ item, index }) => {
-      let playCount = 0;
-      for (let cursor = index + 1; cursor < script.length && !script[cursor].isSeparator; cursor++) {
-        playCount++;
-      }
-      return {
-        label: item.label || `Period ${index + 1}`,
-        sublabel: `${playCount} plays`,
-        value: index,
-      };
-    })
+  const periodChoices = getScriptPeriodChoices()
     .filter((choice) => !choice.sublabel.startsWith("0 plays"));
 
   if (!periodChoices.length) {
@@ -3842,6 +3896,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       </div>
       <div class="play-controls">
         <div class="move-btns">
+          <button class="move-btn" data-action="movePlayToPeriod" data-idx="${index}" title="Move to another period" aria-label="Move ${escapeHtml(playLabel)} to another period">↔</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>

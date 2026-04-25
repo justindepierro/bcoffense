@@ -2628,6 +2628,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "movePlay":
           movePlay(idx, Number.isNaN(dir) ? rawDir : dir);
           break;
+        case "movePlayToPeriod":
+          movePlayToPeriod(idx);
+          break;
         case "removeFromScript":
           removeFromScript(idx);
           break;
