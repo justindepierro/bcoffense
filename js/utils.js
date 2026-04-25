@@ -3294,8 +3294,10 @@ let _reorderTempOrder = null;
  * @param {Object} opts
  * @param {string} opts.title - Modal header text (e.g. "Custom Sort Order: Formation")
  * @param {Function} opts.onSave  - Called with final ordered array on save
- * @param {Function} opts.onClear - Called when user clicks Clear
+ * @param {Function} [opts.onClear] - Called when user clicks Clear
  * @param {Function} [opts.onClose] - Optional extra cleanup on close
+ * @param {string} [opts.note] - Optional helper copy under the title
+ * @param {string} [opts.saveLabel] - Optional save button label
  */
 function showReorderModal(values, opts) {
   const modalId = "_reorderModal";
@@ -3349,18 +3351,21 @@ function showReorderModal(values, opts) {
         </div>
         <div class="modal-body">
           <p class="modal-copy-note">
-            Drag values to set your preferred sort order. Top = first.
+            ${escapeHtml(opts.note || "Drag values to set your preferred sort order. Top = first.")}
           </p>
           <div id="${listId}" class="custom-order-list">
             ${renderList()}
           </div>
           <div class="modal-action-row-wrap">
             <button data-action="_reorderSave" class="btn btn-primary modal-btn-padded">
-              💾 Save Order
+              ${escapeHtml(opts.saveLabel || "💾 Save Order")}
             </button>
-            <button data-action="_reorderClear" class="btn btn-secondary modal-btn-padded">
+            ${opts.onClear
+      ? `<button data-action="_reorderClear" class="btn btn-secondary modal-btn-padded">
               🗑️ Clear Custom Order
-            </button>
+            </button>`
+      : ""
+    }
             <button data-action="_reorderClose" class="btn modal-btn-padded">
               Cancel
             </button>

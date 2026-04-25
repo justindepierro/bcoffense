@@ -2651,6 +2651,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "selectPeriodPlays":
           selectPeriodPlays(idx);
           break;
+        case "openPeriodReorderModal":
+          openPeriodReorderModal(idx);
+          break;
         case "sortPeriod":
           sortPeriod(idx);
           break;

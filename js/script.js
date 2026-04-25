@@ -3169,6 +3169,100 @@ function movePlay(index, direction) {
   }
 }
 
+function getScriptReorderDisplayLabel(play, orderIndex) {
+  const prefix = `${orderIndex + 1}.`;
+  const summary = getScriptPlaySummaryText(play);
+  const meta = [play.type, play.hash, play.tempo].filter(Boolean).join(" • ");
+  return `${prefix} ${summary}${meta ? ` — ${meta}` : ""}`;
+}
+
+function openPlayReorderModal(startIndex, endIndex, title, successMessage) {
+  const sliceStart = Math.max(0, startIndex);
+  const sliceEnd = Math.min(script.length, endIndex);
+  const playsToReorder = script.slice(sliceStart, sliceEnd).filter((item) => item && !item.isSeparator);
+
+  if (playsToReorder.length < 2) {
+    setScriptToolbarStatus("Need at least 2 plays to reorder", "error");
+    return;
+  }
+
+  const reorderEntries = playsToReorder.map((play, idx) => ({
+    label: getScriptReorderDisplayLabel(play, idx),
+    play,
+  }));
+
+  showReorderModal(reorderEntries.map((entry) => entry.label), {
+    title,
+    note: "Drag plays into the exact order you want, then apply the new sequence.",
+    saveLabel: "✅ Apply Order",
+    onSave(order) {
+      saveScriptState();
+      const reorderedPlays = order.map((label) => {
+        const originalIndex = parseInt(label, 10) - 1;
+        return reorderEntries[originalIndex]?.play;
+      }).filter(Boolean);
+
+      script.splice(sliceStart, playsToReorder.length, ...reorderedPlays);
+      renderScript();
+      setScriptToolbarStatus(successMessage, "success", AUTOSAVE_DEBOUNCE_MS);
+    },
+  });
+}
+
+function openPeriodReorderModal(separatorIndex) {
+  const sepIdx = parseInt(separatorIndex, 10);
+  const separator = script[sepIdx];
+  if (!separator || !separator.isSeparator) return;
+
+  let endIndex = sepIdx + 1;
+  while (endIndex < script.length && !script[endIndex].isSeparator) endIndex++;
+
+  const periodLabel = separator.label || "Period";
+  openPlayReorderModal(
+    sepIdx + 1,
+    endIndex,
+    `Reorder ${periodLabel}`,
+    `${periodLabel} reordered`,
+  );
+}
+
+async function openScriptReorderModal() {
+  const periodChoices = script
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item?.isSeparator)
+    .map(({ item, index }) => {
+      let playCount = 0;
+      for (let cursor = index + 1; cursor < script.length && !script[cursor].isSeparator; cursor++) {
+        playCount++;
+      }
+      return {
+        label: item.label || `Period ${index + 1}`,
+        sublabel: `${playCount} plays`,
+        value: index,
+      };
+    })
+    .filter((choice) => !choice.sublabel.startsWith("0 plays"));
+
+  if (!periodChoices.length) {
+    openPlayReorderModal(0, script.length, "Reorder Script", "Script reordered");
+    return;
+  }
+
+  if (periodChoices.length === 1) {
+    openPeriodReorderModal(periodChoices[0].value);
+    return;
+  }
+
+  const selectedPeriod = await showListPicker(
+    "Choose the period you want to reorder.",
+    periodChoices,
+    { title: "🗂️ Reorder Plays", icon: "🗂️" },
+  );
+
+  if (selectedPeriod === null) return;
+  openPeriodReorderModal(selectedPeriod);
+}
+
 /**
  * Update reps for a play in the script
  * @param {number} index - Index in the script array
@@ -3648,6 +3742,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
       ? `
         <div class="period-actions-toolbar">
           ${renderPeriodActionButton("selectPeriodPlays", index, "Select", "☑", `Select or deselect plays in ${periodLabel}`)}
+          ${renderPeriodActionButton("openPeriodReorderModal", index, "Reorder", "🗂️", `Reorder plays in ${periodLabel}`)}
           ${renderPeriodActionButton("sortPeriod", index, "Sort", "⬍", `Sort plays in ${periodLabel}`)}
           ${renderPeriodActionButton("reversePeriod", index, "Reverse", "↕", `Reverse play order in ${periodLabel}`)}
           ${renderPeriodActionButton("openSmartScriptForPeriod", index, "Smart", "🧠", `Run Smart Script on ${periodLabel}`, "pat-btn-smart")}
