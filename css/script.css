@@ -2304,22 +2304,25 @@
 }
 
 .script-print-personnel-grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 4px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .script-print-personnel-pill {
   display: flex;
   align-items: center;
-  gap: 6px;
+  gap: 4px;
+  flex: 1 1 0;
   min-width: 0;
-  padding: 3px 5px;
-  border: 1px dashed var(--color-border-med);
-  border-radius: var(--radius-sm);
-  background: var(--color-white);
+  padding: 2px 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   font-family: var(--font-mono);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-2xs);
 }
 
 .script-print-personnel-pos {
@@ -2329,6 +2332,7 @@
 }
 
 .script-print-personnel-name {
+  flex: 1 1 auto;
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
