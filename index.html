@@ -130,7 +130,7 @@
           </button>
         </div>
         <p>
-          Backup includes your roster, personnel packages, package-specific slot labels, swap groups, and other saved
+          Backup includes your roster, personnel packages, package-specific slot labels, depth charts, and other saved
           team settings.
         </p>
       </div>
@@ -147,7 +147,7 @@
             <div class="team-settings-hero-notes">
               <span class="team-settings-chip">Personnel-aware labels</span>
               <span class="team-settings-chip">Auto-prepped packages</span>
-              <span class="team-settings-chip">Swap groups ready for script</span>
+              <span class="team-settings-chip">Depth chart subs on script</span>
               <span id="teamSettingsSaveStatus" class="team-settings-chip team-settings-chip--status"
                 aria-live="polite">Autosave on</span>
             </div>
@@ -230,32 +230,6 @@
                 <div id="teamPersonnelPackages" class="team-personnel-packages"></div>
               </div>
               <div class="team-settings-panel-summary" id="teamPackagesSummary">No personnel packages configured yet.</div>
-            </div>
-
-            <div class="team-settings-panel team-settings-panel--swaps">
-              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" data-panel-key="swaps" role="button" tabindex="0" aria-expanded="true">
-                <div>
-                  <span class="team-settings-panel-kicker">Sub Packages</span>
-                  <h4>Swap Groups</h4>
-                </div>
-                <div class="team-settings-panel-header-meta">
-                  <span class="team-panel-badge" id="teamSwapGroupsCountBadge">0 groups | 0 subs</span>
-                  <span class="toggle-icon">▼</span>
-                </div>
-              </div>
-              <div class="team-settings-panel-content">
-                <p>Build alternate units you can drop onto any script row without reassigning each spot.</p>
-                <div class="team-settings-add-row">
-                  <input type="text" id="teamSwapGroupNameInput" class="team-settings-input"
-                    placeholder="Group name (e.g. Tempo 2s)" aria-label="Swap group name" />
-                  <input type="text" id="teamSwapGroupPersonnelInput"
-                    class="team-settings-input team-settings-input--short" placeholder="11"
-                    aria-label="Swap group personnel" />
-                  <button class="btn btn-primary" data-action="addTeamSwapGroup">Add Group</button>
-                </div>
-                <div id="teamSwapGroups" class="team-personnel-packages"></div>
-              </div>
-              <div class="team-settings-panel-summary" id="teamSwapsSummary">No swap groups configured yet.</div>
             </div>
           </div>
         </div>

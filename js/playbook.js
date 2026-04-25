@@ -2305,13 +2305,7 @@ function _buildPlayEditorLineupSection(play) {
   return `
     <div class="pb-editor-section">
       <div class="pb-editor-section-title">Lineup Template</div>
-      <div class="pb-editor-field pb-editor-field-wide">
-        <label for="pe-defaultSwapGroupId">Default Swap Group</label>
-        <select id="pe-defaultSwapGroupId" data-field="defaultSwapGroupId">
-          ${buildTeamSwapGroupOptionMarkup(play?.defaultSwapGroupId || "", play?.personnel || "")}
-        </select>
-      </div>
-      <p class="pb-editor-lineup-hint">Blank slots inherit from the personnel package and selected swap group. Saved slots become this play’s master template.</p>
+      <p class="pb-editor-lineup-hint">Blank slots inherit from the personnel package depth chart. Saved starters become this play’s master template.</p>
       ${renderRow(rowOne)}
       ${renderRow(rowTwo)}
     </div>
@@ -2526,7 +2520,6 @@ function savePlayEditor() {
     _EDITOR_SECTIONS.forEach((s) =>
       s.fields.forEach((f) => (newPlay[f.key] = data[f.key] || "")),
     );
-    newPlay.defaultSwapGroupId = data.defaultSwapGroupId || "";
     if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);
 

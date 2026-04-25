@@ -593,7 +593,7 @@ h1 {
 
 .team-settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
+  grid-template-columns: minmax(320px, 1fr) minmax(0, 2fr);
   gap: var(--space-lg);
   margin-top: var(--space-md);
   text-align: left;
@@ -603,8 +603,13 @@ h1 {
   min-width: 0;
 }
 
-.team-settings-panel--roster,
-.team-settings-panel--swaps {
+.team-settings-panel--roster {
+  grid-column: 1;
+  align-self: start;
+}
+
+.team-settings-panel--packages {
+  grid-column: 2;
   align-self: start;
 }
 

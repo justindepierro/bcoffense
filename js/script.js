@@ -441,27 +441,10 @@ function resetScriptPlayerOverrides(index) {
   renderScript();
 }
 
-function applyScriptSwapGroup(index, groupId) {
-  const play = script[index];
-  if (!play || play.isSeparator) return;
-
-  const normalizedGroupId = String(groupId || "").trim();
-  play.activeSwapGroupId = normalizedGroupId;
-  delete play.playerAssignments;
-  debouncedSaveScriptState();
-  renderScript();
-}
-
 function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);
-  const selectedSwapGroupId = Object.prototype.hasOwnProperty.call(
-    play,
-    "activeSwapGroupId",
-  )
-    ? play.activeSwapGroupId
-    : play.defaultSwapGroupId || "";
   const buildRow = (rowIndex) => {
     const slots = getTeamAssignmentSlots(play?.personnel).filter(
       (slot) => slot.row === rowIndex,
@@ -514,12 +497,6 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
           ${hasOverrides ? '<span class="script-player-grid-status">Manual starter override</span>' : ''}
         </div>
         <div class="script-player-grid-actions">
-          <label class="script-player-swap-group">
-            <span class="script-player-swap-group-label">Swap</span>
-            <select class="script-player-swap-select" data-field="scriptSwapGroup" data-idx="${index}" aria-label="Swap group for ${escapeHtml(playLabel)}">
-              ${buildTeamSwapGroupOptionMarkup(selectedSwapGroupId, play.personnel || "")}
-            </select>
-          </label>
           ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ''}
         </div>
       </div>
