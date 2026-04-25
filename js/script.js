@@ -386,7 +386,9 @@ function createScriptPlayerAssignments(play) {
 }
 
 function getScriptPlayerSummary(play) {
-  return formatPlayerAssignmentSummary(getScriptPlayerAssignments(play));
+  return formatPlayerAssignmentSummary(getScriptPlayerAssignments(play), {
+    personnel: play?.personnel,
+  });
 }
 
 function updateScriptPlayerAssignment(index, slotKey, playerId) {
@@ -426,7 +428,9 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
     ? play.activeSwapGroupId
     : play.defaultSwapGroupId || "";
   const buildRow = (rowIndex) => {
-    const slots = getTeamAssignmentSlots().filter((slot) => slot.row === rowIndex);
+    const slots = getTeamAssignmentSlots(play?.personnel).filter(
+      (slot) => slot.row === rowIndex,
+    );
     return `
       <div class="script-player-row script-player-row--${slots.length}">
         ${slots.map((slot) => `

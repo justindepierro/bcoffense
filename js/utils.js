@@ -967,28 +967,74 @@ const TEAM_ASSIGNMENT_SLOTS = [
   { key: "rt", defaultLabel: "RT", row: 1 },
 ];
 
-function getTeamAssignmentLabelMap() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
-  const labels = {};
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const value = String(stored?.[slot.key] || "").trim().toUpperCase();
-    labels[slot.key] = value || slot.defaultLabel;
-  });
-  return labels;
-}
-
-function saveTeamAssignmentLabelMap(labelMap) {
+function normalizeTeamAssignmentLabelMap(labelMap = {}, fallbackMap = null) {
   const normalized = {};
   TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const value = String(labelMap?.[slot.key] || "").trim().toUpperCase();
+    const value = String(
+      labelMap?.[slot.key] || fallbackMap?.[slot.key] || "",
+    )
+      .trim()
+      .toUpperCase();
     normalized[slot.key] = value || slot.defaultLabel;
   });
-  storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
   return normalized;
 }
 
-function getTeamAssignmentSlots() {
-  const labelMap = getTeamAssignmentLabelMap();
+function getLegacyTeamAssignmentLabelMap() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
+  return normalizeTeamAssignmentLabelMap(stored);
+}
+
+function getTeamAssignmentLabelMap(personnel = "") {
+  const legacyLabels = getLegacyTeamAssignmentLabelMap();
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) return legacyLabels;
+
+  const storedPackages = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  if (!Array.isArray(storedPackages)) return legacyLabels;
+  const match = storedPackages.find(
+    (pkg) =>
+      String(pkg?.personnel || "").trim().toLowerCase() ===
+      normalizedPersonnel.toLowerCase(),
+  );
+  return match
+    ? normalizeTeamAssignmentLabelMap(match.labels, legacyLabels)
+    : legacyLabels;
+}
+
+function saveTeamAssignmentLabelMap(labelMap, personnel = "") {
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) {
+    const normalized = normalizeTeamAssignmentLabelMap(labelMap);
+    storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
+    return normalized;
+  }
+
+  const packages = getTeamPersonnelPackages();
+  const packageIndex = packages.findIndex(
+    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
+  );
+  const nextLabels = normalizeTeamAssignmentLabelMap(
+    labelMap,
+    getTeamAssignmentLabelMap(normalizedPersonnel),
+  );
+  if (packageIndex >= 0) {
+    packages[packageIndex].labels = nextLabels;
+  } else {
+    packages.push(
+      normalizePersonnelPackage({
+        personnel: normalizedPersonnel,
+        assignments: {},
+        labels: nextLabels,
+      }),
+    );
+  }
+  saveTeamPersonnelPackages(packages);
+  return nextLabels;
+}
+
+function getTeamAssignmentSlots(personnel = "") {
+  const labelMap = getTeamAssignmentLabelMap(personnel);
   return TEAM_ASSIGNMENT_SLOTS.map((slot) => ({
     ...slot,
     label: labelMap[slot.key] || slot.defaultLabel,
@@ -1040,14 +1086,19 @@ function saveTeamRoster(roster) {
 function normalizePersonnelPackage(pkg = {}) {
   const personnel = String(pkg.personnel || "").trim();
   const assignments = {};
-  getTeamAssignmentSlots().forEach((slot) => {
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
     const value = String(pkg.assignments?.[slot.key] || "").trim();
     if (value) assignments[slot.key] = value;
   });
+  const labels = normalizeTeamAssignmentLabelMap(
+    pkg.labels,
+    getTeamAssignmentLabelMap(personnel),
+  );
 
   return {
     personnel,
     assignments,
+    labels,
   };
 }
 
@@ -1078,11 +1129,21 @@ function getTeamPersonnelPackages() {
     normalizedStored.map((pkg) => [pkg.personnel.toLowerCase(), pkg]),
   );
   const autoPackages = playbookPersonnel.map((personnel) => {
-    return byPersonnel.get(personnel.toLowerCase()) || normalizePersonnelPackage({ personnel, assignments: {} });
+    const existing = byPersonnel.get(personnel.toLowerCase());
+    return existing
+      ? { ...existing, isAutoPrepared: false }
+      : {
+        ...normalizePersonnelPackage({
+          personnel,
+          assignments: {},
+          labels: getTeamAssignmentLabelMap(personnel),
+        }),
+        isAutoPrepared: true,
+      };
   });
   const extras = normalizedStored.filter(
     (pkg) => !playbookPersonnel.some((personnel) => personnel.toLowerCase() === pkg.personnel.toLowerCase()),
-  );
+  ).map((pkg) => ({ ...pkg, isAutoPrepared: false }));
   return [...autoPackages, ...extras];
 }
 
@@ -1220,11 +1281,12 @@ function buildTeamSwapGroupOptionMarkup(
 
 function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
   const includeSlotLabels = options.includeSlotLabels !== false;
+  const personnel = String(options.personnel || "").trim();
   const roster = getTeamRoster();
   const rosterMap = new Map(roster.map((player) => [player.id, player]));
   const normalizedAssignments = normalizePlayerAssignments(assignments);
 
-  return getTeamAssignmentSlots().map((slot) => {
+  return getTeamAssignmentSlots(personnel).map((slot) => {
     const playerId = normalizedAssignments[slot.key];
     if (!playerId) return "";
     const player = rosterMap.get(playerId);
@@ -1273,23 +1335,38 @@ function syncTeamSettingsDependents() {
 
 function renderTeamSettings() {
   const rosterContainer = document.getElementById("teamRosterList");
-  const labelContainer = document.getElementById("teamAssignmentLabels");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapGroupContainer = document.getElementById("teamSwapGroups");
-  if (!rosterContainer || !labelContainer || !packageContainer || !swapGroupContainer) return;
+  if (!rosterContainer || !packageContainer || !swapGroupContainer) return;
 
   const roster = getTeamRoster();
-  const slots = getTeamAssignmentSlots();
   const packages = getTeamPersonnelPackages();
   const swapGroups = getTeamSwapGroups();
-  const rowOne = slots.filter((slot) => slot.row === 0);
-  const rowTwo = slots.filter((slot) => slot.row === 1);
-  const renderAssignmentRow = (slots, assignments, fieldName, itemIndex, label) => `
+  const renderAssignmentRow = (
+    slots,
+    assignments,
+    fieldName,
+    itemIndex,
+    label,
+    options = {},
+  ) => `
     <div class="team-package-grid ${slots.length === 5 ? "team-package-grid--five" : "team-package-grid--six"}">
       ${slots.map((slot) => `
-        <label class="team-package-slot">
-          <span class="team-package-slot-label">${slot.label}</span>
-          <select data-field="${fieldName}" data-item-index="${itemIndex}" data-slot="${slot.key}" aria-label="${escapeHtml(label)} ${slot.label}">
+        <label class="team-package-slot ${options.editableLabels ? "team-package-slot--editable" : ""}">
+          <span class="team-package-slot-eyebrow">${slot.defaultLabel}</span>
+          ${options.editableLabels
+      ? `<input
+                type="text"
+                class="team-slot-label-input"
+                value="${escapeAttr(slot.label)}"
+                data-field="${options.labelField || ""}"
+                data-item-index="${itemIndex}"
+                data-slot="${slot.key}"
+                maxlength="4"
+                aria-label="${escapeHtml(label)} ${slot.defaultLabel} label"
+              />`
+      : `<span class="team-package-slot-label">${slot.label}</span>`}
+          <select class="team-slot-player-select" data-field="${fieldName}" data-item-index="${itemIndex}" data-slot="${slot.key}" aria-label="${escapeHtml(label)} ${slot.label}">
             ${buildTeamPlayerOptionMarkup(assignments[slot.key] || "")}
           </select>
         </label>
@@ -1308,35 +1385,25 @@ function renderTeamSettings() {
       `).join("")
     : '<div class="team-settings-empty">No roster yet. Add players one at a time or paste a roster below.</div>';
 
-  labelContainer.innerHTML = `
-    <div class="team-package-grid team-package-grid--six">
-      ${slots.map((slot) => `
-        <label class="team-package-slot">
-          <span class="team-package-slot-label">${escapeHtml(slot.defaultLabel)}</span>
-          <input
-            type="text"
-            class="team-roster-cell"
-            value="${escapeAttr(slot.label)}"
-            data-field="teamAssignmentLabel"
-            data-slot="${slot.key}"
-            maxlength="4"
-            aria-label="Label for ${escapeHtml(slot.defaultLabel)} slot"
-          />
-        </label>
-      `).join("")}
-    </div>
-  `;
-
   packageContainer.innerHTML = packages.length
     ? packages.map((pkg, pkgIndex) => {
+      const packageSlots = getTeamAssignmentSlots(pkg.personnel);
+      const rowOne = packageSlots.filter((slot) => slot.row === 0);
+      const rowTwo = packageSlots.filter((slot) => slot.row === 1);
       return `
         <div class="team-package-card" data-package-index="${pkgIndex}">
           <div class="team-package-head">
-            <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
+            <div class="team-package-meta">
+              <div class="team-package-meta-top">
+                <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
+                ${pkg.isAutoPrepared ? '<span class="team-package-status">Playbook Ready</span>' : ""}
+              </div>
+              <p class="team-package-copy">Set players and rename the slot tags for ${escapeHtml(pkg.personnel || "this package")}.</p>
+            </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPersonnelPackage" data-package-index="${pkgIndex}" aria-label="Remove ${escapeHtml(pkg.personnel)} package">✕</button>
           </div>
-          ${renderAssignmentRow(rowOne, pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package")}
-          ${renderAssignmentRow(rowTwo, pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package")}
+          ${renderAssignmentRow(rowOne, pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel" })}
+          ${renderAssignmentRow(rowTwo, pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel" })}
         </div>
       `;
     }).join("")
@@ -1346,12 +1413,17 @@ function renderTeamSettings() {
     ? swapGroups.map((group, groupIndex) => `
         <div class="team-package-card" data-swap-group-id="${escapeAttr(group.id)}">
           <div class="team-package-head">
-            <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Tempo 2s" aria-label="Swap group name" />
-            <input type="text" class="team-package-name" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="11 or blank" aria-label="Swap group personnel" />
+            <div class="team-package-meta">
+              <div class="team-package-meta-top team-package-meta-top--stacked">
+                <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Tempo 2s" aria-label="Swap group name" />
+                <input type="text" class="team-package-name team-package-name--short" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="11 or blank" aria-label="Swap group personnel" />
+              </div>
+              <p class="team-package-copy">Build a whole-unit substitution for ${escapeHtml(group.personnel || "any personnel")}.</p>
+            </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} swap group">✕</button>
           </div>
-          ${renderAssignmentRow(rowOne, group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
-          ${renderAssignmentRow(rowTwo, group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
         </div>
       `).join("")
     : '<div class="team-settings-empty">No swap groups yet. Add one to flip a whole cluster of players on a script row.</div>';
@@ -1508,12 +1580,10 @@ function removeTeamSwapGroup(groupIndex) {
 
 function initTeamSettings() {
   const rosterContainer = document.getElementById("teamRosterList");
-  const labelContainer = document.getElementById("teamAssignmentLabels");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapGroupContainer = document.getElementById("teamSwapGroups");
   if (
     !rosterContainer ||
-    !labelContainer ||
     !packageContainer ||
     !swapGroupContainer ||
     rosterContainer.dataset.bound === "true"
@@ -1523,25 +1593,8 @@ function initTeamSettings() {
   }
 
   rosterContainer.dataset.bound = "true";
-  labelContainer.dataset.bound = "true";
   packageContainer.dataset.bound = "true";
   swapGroupContainer.dataset.bound = "true";
-
-  labelContainer.addEventListener("input", (event) => {
-    const input = event.target.closest('[data-field="teamAssignmentLabel"]');
-    if (!input) return;
-    const slotKey = input.dataset.slot;
-    if (!slotKey) return;
-    const next = getTeamAssignmentLabelMap();
-    next[slotKey] = input.value;
-    saveTeamAssignmentLabelMap(next);
-    if (typeof renderScript === "function") renderScript();
-  });
-
-  labelContainer.addEventListener("change", () => {
-    renderTeamSettings();
-    if (typeof renderPlaybookTable === "function") renderPlaybookTable();
-  });
 
   rosterContainer.addEventListener("input", (event) => {
     const input = event.target.closest("[data-player-id][data-field]");
@@ -1567,20 +1620,35 @@ function initTeamSettings() {
   });
 
   packageContainer.addEventListener("input", (event) => {
-    const input = event.target.closest('[data-field="teamPackagePersonnel"]');
+    const input = event.target.closest('[data-field="teamPackagePersonnel"], [data-field="teamPackageLabel"]');
     if (!input) return;
-    const packageIndex = parseInt(input.dataset.packageIndex, 10);
+    const packageIndex = parseInt(
+      input.dataset.packageIndex || input.dataset.itemIndex,
+      10,
+    );
     if (!Number.isInteger(packageIndex)) return;
     const packages = getTeamPersonnelPackages();
     if (!packages[packageIndex]) return;
-    packages[packageIndex].personnel = input.value;
+    if (input.dataset.field === "teamPackagePersonnel") {
+      packages[packageIndex].personnel = input.value;
+    }
+    if (input.dataset.field === "teamPackageLabel") {
+      const slotKey = input.dataset.slot;
+      const nextLabels = { ...(packages[packageIndex].labels || {}) };
+      if (slotKey) nextLabels[slotKey] = input.value;
+      packages[packageIndex].labels = nextLabels;
+    }
     saveTeamPersonnelPackages(packages);
     if (typeof renderScript === "function") renderScript();
   });
 
   packageContainer.addEventListener("change", (event) => {
     const select = event.target.closest('[data-field="teamPackageSlot"]');
-    if (!select) return;
+    if (!select) {
+      renderTeamSettings();
+      if (typeof renderPlaybookTable === "function") renderPlaybookTable();
+      return;
+    }
     const packageIndex = parseInt(select.dataset.itemIndex, 10);
     const slotKey = select.dataset.slot;
     if (!Number.isInteger(packageIndex) || !slotKey) return;
