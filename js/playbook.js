@@ -2283,8 +2283,8 @@ const _EDITOR_SECTIONS = [
 
 function _buildPlayEditorLineupSection(play) {
   const directAssignments = normalizePlayerAssignments(play?.playerAssignments);
-  const rowOne = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 0);
-  const rowTwo = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 1);
+  const rowOne = getTeamAssignmentSlots().filter((slot) => slot.row === 0);
+  const rowTwo = getTeamAssignmentSlots().filter((slot) => slot.row === 1);
   const renderRow = (slots) => `
     <div class="team-package-grid ${slots.length === 5 ? "team-package-grid--five" : "team-package-grid--six"}">
       ${slots.map((slot) => `

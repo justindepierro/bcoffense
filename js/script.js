@@ -426,7 +426,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
     ? play.activeSwapGroupId
     : play.defaultSwapGroupId || "";
   const buildRow = (rowIndex) => {
-    const slots = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === rowIndex);
+    const slots = getTeamAssignmentSlots().filter((slot) => slot.row === rowIndex);
     return `
       <div class="script-player-row script-player-row--${slots.length}">
         ${slots.map((slot) => `

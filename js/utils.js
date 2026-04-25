@@ -950,21 +950,59 @@ const STORAGE_KEYS = {
   TEAM_ROSTER: "teamRoster",
   TEAM_PERSONNEL_PACKAGES: "teamPersonnelPackages",
   TEAM_SWAP_GROUPS: "teamSwapGroups",
+  TEAM_ASSIGNMENT_LABELS: "teamAssignmentLabels",
 };
 
 const TEAM_ASSIGNMENT_SLOTS = [
-  { key: "qb", label: "QB", row: 0 },
-  { key: "rb", label: "RB", row: 0 },
-  { key: "h", label: "H", row: 0 },
-  { key: "x", label: "X", row: 0 },
-  { key: "z", label: "Z", row: 0 },
-  { key: "y", label: "Y", row: 1 },
-  { key: "lt", label: "LT", row: 1 },
-  { key: "lg", label: "LG", row: 1 },
-  { key: "c", label: "C", row: 1 },
-  { key: "rg", label: "RG", row: 1 },
-  { key: "rt", label: "RT", row: 1 },
+  { key: "qb", defaultLabel: "QB", row: 0 },
+  { key: "rb", defaultLabel: "RB", row: 0 },
+  { key: "h", defaultLabel: "H", row: 0 },
+  { key: "x", defaultLabel: "X", row: 0 },
+  { key: "z", defaultLabel: "Z", row: 0 },
+  { key: "y", defaultLabel: "Y", row: 1 },
+  { key: "lt", defaultLabel: "LT", row: 1 },
+  { key: "lg", defaultLabel: "LG", row: 1 },
+  { key: "c", defaultLabel: "C", row: 1 },
+  { key: "rg", defaultLabel: "RG", row: 1 },
+  { key: "rt", defaultLabel: "RT", row: 1 },
 ];
+
+function getTeamAssignmentLabelMap() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
+  const labels = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const value = String(stored?.[slot.key] || "").trim().toUpperCase();
+    labels[slot.key] = value || slot.defaultLabel;
+  });
+  return labels;
+}
+
+function saveTeamAssignmentLabelMap(labelMap) {
+  const normalized = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const value = String(labelMap?.[slot.key] || "").trim().toUpperCase();
+    normalized[slot.key] = value || slot.defaultLabel;
+  });
+  storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
+  return normalized;
+}
+
+function getTeamAssignmentSlots() {
+  const labelMap = getTeamAssignmentLabelMap();
+  return TEAM_ASSIGNMENT_SLOTS.map((slot) => ({
+    ...slot,
+    label: labelMap[slot.key] || slot.defaultLabel,
+  }));
+}
+
+function getPlaybookPersonnelValues() {
+  if (typeof plays === "undefined" || !Array.isArray(plays)) return [];
+  return [...new Set(
+    plays
+      .map((play) => String(play?.personnel || "").trim())
+      .filter(Boolean),
+  )].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
+}
 
 function normalizeTeamPlayer(player = {}) {
   const id = String(player.id || `player-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
@@ -1002,7 +1040,7 @@ function saveTeamRoster(roster) {
 function normalizePersonnelPackage(pkg = {}) {
   const personnel = String(pkg.personnel || "").trim();
   const assignments = {};
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+  getTeamAssignmentSlots().forEach((slot) => {
     const value = String(pkg.assignments?.[slot.key] || "").trim();
     if (value) assignments[slot.key] = value;
   });
@@ -1030,11 +1068,22 @@ function normalizeTeamSwapGroup(group = {}) {
 
 function getTeamPersonnelPackages() {
   const stored = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
-  return Array.isArray(stored)
+  const playbookPersonnel = getPlaybookPersonnelValues();
+  const normalizedStored = Array.isArray(stored)
     ? stored
       .map((pkg) => normalizePersonnelPackage(pkg))
       .filter((pkg) => pkg.personnel)
     : [];
+  const byPersonnel = new Map(
+    normalizedStored.map((pkg) => [pkg.personnel.toLowerCase(), pkg]),
+  );
+  const autoPackages = playbookPersonnel.map((personnel) => {
+    return byPersonnel.get(personnel.toLowerCase()) || normalizePersonnelPackage({ personnel, assignments: {} });
+  });
+  const extras = normalizedStored.filter(
+    (pkg) => !playbookPersonnel.some((personnel) => personnel.toLowerCase() === pkg.personnel.toLowerCase()),
+  );
+  return [...autoPackages, ...extras];
 }
 
 function saveTeamPersonnelPackages(packages) {
@@ -1077,7 +1126,7 @@ function getPersonnelPackageAssignments(personnel) {
 
 function normalizePlayerAssignments(assignments = {}) {
   const normalized = {};
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+  getTeamAssignmentSlots().forEach((slot) => {
     const value = String(assignments?.[slot.key] || "").trim();
     if (value) normalized[slot.key] = value;
   });
@@ -1175,7 +1224,7 @@ function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
   const rosterMap = new Map(roster.map((player) => [player.id, player]));
   const normalizedAssignments = normalizePlayerAssignments(assignments);
 
-  return TEAM_ASSIGNMENT_SLOTS.map((slot) => {
+  return getTeamAssignmentSlots().map((slot) => {
     const playerId = normalizedAssignments[slot.key];
     if (!playerId) return "";
     const player = rosterMap.get(playerId);
@@ -1224,15 +1273,17 @@ function syncTeamSettingsDependents() {
 
 function renderTeamSettings() {
   const rosterContainer = document.getElementById("teamRosterList");
+  const labelContainer = document.getElementById("teamAssignmentLabels");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapGroupContainer = document.getElementById("teamSwapGroups");
-  if (!rosterContainer || !packageContainer || !swapGroupContainer) return;
+  if (!rosterContainer || !labelContainer || !packageContainer || !swapGroupContainer) return;
 
   const roster = getTeamRoster();
+  const slots = getTeamAssignmentSlots();
   const packages = getTeamPersonnelPackages();
   const swapGroups = getTeamSwapGroups();
-  const rowOne = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 0);
-  const rowTwo = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 1);
+  const rowOne = slots.filter((slot) => slot.row === 0);
+  const rowTwo = slots.filter((slot) => slot.row === 1);
   const renderAssignmentRow = (slots, assignments, fieldName, itemIndex, label) => `
     <div class="team-package-grid ${slots.length === 5 ? "team-package-grid--five" : "team-package-grid--six"}">
       ${slots.map((slot) => `
@@ -1256,6 +1307,25 @@ function renderTeamSettings() {
         </div>
       `).join("")
     : '<div class="team-settings-empty">No roster yet. Add players one at a time or paste a roster below.</div>';
+
+  labelContainer.innerHTML = `
+    <div class="team-package-grid team-package-grid--six">
+      ${slots.map((slot) => `
+        <label class="team-package-slot">
+          <span class="team-package-slot-label">${escapeHtml(slot.defaultLabel)}</span>
+          <input
+            type="text"
+            class="team-roster-cell"
+            value="${escapeAttr(slot.label)}"
+            data-field="teamAssignmentLabel"
+            data-slot="${slot.key}"
+            maxlength="4"
+            aria-label="Label for ${escapeHtml(slot.defaultLabel)} slot"
+          />
+        </label>
+      `).join("")}
+    </div>
+  `;
 
   packageContainer.innerHTML = packages.length
     ? packages.map((pkg, pkgIndex) => {
@@ -1360,6 +1430,10 @@ function addTeamPersonnelPackage() {
   }
 
   const packages = getTeamPersonnelPackages();
+  if (packages.some((pkg) => pkg.personnel.toLowerCase() === personnel.toLowerCase())) {
+    showToast(`${personnel} is already in Team Settings`, { duration: 2500, type: "info" });
+    return;
+  }
   packages.push({ personnel, assignments: {} });
   saveTeamPersonnelPackages(packages);
   if (input) input.value = "";
@@ -1434,10 +1508,12 @@ function removeTeamSwapGroup(groupIndex) {
 
 function initTeamSettings() {
   const rosterContainer = document.getElementById("teamRosterList");
+  const labelContainer = document.getElementById("teamAssignmentLabels");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapGroupContainer = document.getElementById("teamSwapGroups");
   if (
     !rosterContainer ||
+    !labelContainer ||
     !packageContainer ||
     !swapGroupContainer ||
     rosterContainer.dataset.bound === "true"
@@ -1447,8 +1523,25 @@ function initTeamSettings() {
   }
 
   rosterContainer.dataset.bound = "true";
+  labelContainer.dataset.bound = "true";
   packageContainer.dataset.bound = "true";
   swapGroupContainer.dataset.bound = "true";
+
+  labelContainer.addEventListener("input", (event) => {
+    const input = event.target.closest('[data-field="teamAssignmentLabel"]');
+    if (!input) return;
+    const slotKey = input.dataset.slot;
+    if (!slotKey) return;
+    const next = getTeamAssignmentLabelMap();
+    next[slotKey] = input.value;
+    saveTeamAssignmentLabelMap(next);
+    if (typeof renderScript === "function") renderScript();
+  });
+
+  labelContainer.addEventListener("change", () => {
+    renderTeamSettings();
+    if (typeof renderPlaybookTable === "function") renderPlaybookTable();
+  });
 
   rosterContainer.addEventListener("input", (event) => {
     const input = event.target.closest("[data-player-id][data-field]");

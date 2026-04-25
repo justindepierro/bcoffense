@@ -791,6 +791,7 @@ function handleFileUpload(event) {
             filteredPlays = [...plays];
             storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
             invalidateFilterCache();
+            if (typeof renderTeamSettings === "function") renderTeamSettings();
 
             document.getElementById("uploadSection").classList.add("hidden");
             document.getElementById("mainApp").classList.remove("hidden");
@@ -857,6 +858,7 @@ function handleFileUpload(event) {
         filteredPlays = [...plays];
         storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
         invalidateFilterCache();
+        if (typeof renderTeamSettings === "function") renderTeamSettings();
 
         document.getElementById("uploadSection").classList.add("hidden");
         document.getElementById("mainApp").classList.remove("hidden");
