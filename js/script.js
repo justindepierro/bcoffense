@@ -546,15 +546,87 @@ function getScriptPrintColumns(options = {}) {
 }
 
 function renderScriptPrintTableHeader(options = {}) {
-  const headerRow = document.querySelector("#previewContainer thead tr");
-  if (!headerRow) return;
-
-  headerRow.innerHTML = getScriptPrintColumns(options)
+  return getScriptPrintColumns(options)
     .map(
       (column) =>
         `<th${column.className ? ` class="${column.className}"` : ""}>${escapeHtml(column.label)}</th>`,
     )
     .join("");
+}
+
+function renderScriptPrintTable(options = {}, bodyMarkup = "") {
+  const previewTable = document.getElementById("previewTable");
+  if (!previewTable) return;
+  previewTable.innerHTML = `
+    <thead>
+      <tr>${renderScriptPrintTableHeader(options)}</tr>
+    </thead>
+    ${bodyMarkup}
+  `;
+}
+
+function buildScriptPrintSectionMarkup(sectionRows = [], sectionHeaderMarkup = "") {
+  if (!sectionRows.length && !sectionHeaderMarkup) return "";
+  return `<tbody class="script-print-period-block">${sectionHeaderMarkup}${sectionRows.join("")}</tbody>`;
+}
+
+function buildScriptPrintBodyMarkup(scriptItems = [], displayOpts = {}, options = {}) {
+  const {
+    scriptHeaderMarkup = "",
+    isFullDay = false,
+  } = options;
+  const periods = scriptItems.filter((item) => item.isSeparator);
+  const hasPeriods = periods.length > 0;
+  const printColumnCount = getScriptPrintColumns(displayOpts).length;
+  const bodySections = [];
+  let currentSectionRows = [];
+  let currentSectionHeader = scriptHeaderMarkup;
+  let periodPlayNum = 0;
+  let globalPlayNum = 0;
+  let currentPeriodCallOptions = displayOpts;
+
+  const flushSection = () => {
+    const markup = buildScriptPrintSectionMarkup(currentSectionRows, currentSectionHeader);
+    if (markup) bodySections.push(markup);
+    currentSectionRows = [];
+    currentSectionHeader = "";
+  };
+
+  scriptItems.forEach((item, index) => {
+    if (item.isSeparator) {
+      flushSection();
+      periodPlayNum = 0;
+      currentPeriodCallOptions = getPeriodCallDisplayOptions(item, displayOpts);
+      const periodPlays = isFullDay
+        ? (() => {
+          const plays = [];
+          for (let cursor = index + 1; cursor < scriptItems.length; cursor++) {
+            if (scriptItems[cursor].isSeparator) break;
+            plays.push(scriptItems[cursor]);
+          }
+          return plays;
+        })()
+        : getPeriodPlays(index);
+      const periodColor = item.color || UI_COLORS.periodDefault;
+      const timeStr = item.minutes ? ` • ${item.minutes} min` : "";
+      currentSectionHeader = `${currentSectionHeader}<tr class="print-period-header" style="background: ${periodColor}; color: white;">
+          <td colspan="${printColumnCount}" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
+            ${escapeHtml(item.label.toUpperCase())}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
+          </td>
+        </tr>`;
+      return;
+    }
+
+    globalPlayNum++;
+    periodPlayNum++;
+    const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
+    currentSectionRows.push(
+      buildScriptPlayRow(item, displayNum, currentPeriodCallOptions),
+    );
+  });
+
+  flushSection();
+  return bodySections.join("");
 }
 
 function hasScriptPlayerOverrides(play) {
@@ -4994,6 +5066,7 @@ function generatePDF() {
   try {
     const name = document.getElementById("scriptName").value;
     const date = document.getElementById("scriptDate").value;
+    const teamName = getTeamName();
 
     // Build title
     const dateStr = date
@@ -5004,6 +5077,7 @@ function generatePDF() {
         year: "numeric",
       })
       : "";
+    document.getElementById("previewTeamName").textContent = teamName || "";
     document.getElementById("previewTitle").textContent =
       name || "Practice Script";
     document.getElementById("previewMeta").textContent = dateStr;
@@ -5025,34 +5099,11 @@ function generatePDF() {
       summaryEl.innerHTML = "";
     }
 
-    const tbody = document.getElementById("previewBody");
-    let periodPlayNum = 0;
-    let globalPlayNum = 0;
-    let hasPeriods = periods.length > 0;
     const displayOpts = getScriptDisplayOptions();
-    const printColumnCount = getScriptPrintColumns(displayOpts).length;
-    renderScriptPrintTableHeader(displayOpts);
-    let currentPeriodCallOptions = displayOpts;
-    tbody.innerHTML = script
-      .map((p, i) => {
-        if (p.isSeparator) {
-          periodPlayNum = 0;
-          currentPeriodCallOptions = getPeriodCallDisplayOptions(p, displayOpts);
-          const periodPlays = getPeriodPlays(i);
-          const periodColor = p.color || UI_COLORS.periodDefault;
-          const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
-          return `<tr class="print-period-header" style="background: ${periodColor}; color: white;">
-          <td colspan="${printColumnCount}" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
-            ${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
-          </td>
-        </tr>`;
-        }
-        periodPlayNum++;
-        globalPlayNum++;
-        const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-        return buildScriptPlayRow(p, displayNum, currentPeriodCallOptions);
-      })
-      .join("");
+    renderScriptPrintTable(
+      displayOpts,
+      buildScriptPrintBodyMarkup(script, displayOpts),
+    );
 
     document.getElementById("previewContainer").classList.remove("hidden");
     document.getElementById("wristbandPrint").classList.add("hidden");
@@ -5182,23 +5233,20 @@ async function printFullDay() {
     // Get display options
     const displayOpts = getScriptDisplayOptions();
     const printColumnCount = getScriptPrintColumns(displayOpts).length;
-    renderScriptPrintTableHeader(displayOpts);
+    const teamName = getTeamName();
 
     // Build combined content
-    let allContent = "";
     let globalPlayNum = 0;
+    const bodySections = [];
 
-    selectedIds.forEach((id, scriptIndex) => {
+    selectedIds.forEach((id) => {
       const scriptData = savedScripts.find((s) => s.id === id);
       if (!scriptData) return;
 
       const scriptPlayCount = scriptData.plays.filter(
         (p) => !p.isSeparator,
       ).length;
-      const scriptPeriods = scriptData.plays.filter((p) => p.isSeparator);
-      const hasPeriods = scriptPeriods.length > 0;
-      let periodPlayNum = 0;
-      let currentPeriodCallOptions = displayOpts;
+      globalPlayNum += scriptPlayCount;
 
       // Add script header — more prominent with play count
       const dateStr = scriptData.date
@@ -5208,35 +5256,19 @@ async function printFullDay() {
           day: "numeric",
         })
         : "";
-      allContent += `
+      const scriptHeaderMarkup = `
       <tr class="script-section-header">
         <td colspan="${printColumnCount}" style="background: ${UI_COLORS.bgDarkNav}; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid ${UI_COLORS.accentBlue};">
           📋 ${escapeHtml(scriptData.name.toUpperCase())} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
         </td>
       </tr>
     `;
-
-      // Add plays
-      scriptData.plays.forEach((p, pIdx) => {
-        if (p.isSeparator) {
-          periodPlayNum = 0;
-          currentPeriodCallOptions = getPeriodCallDisplayOptions(p, displayOpts);
-          const periodPlays = [];
-          for (let j = pIdx + 1; j < scriptData.plays.length; j++) {
-            if (scriptData.plays[j].isSeparator) break;
-            periodPlays.push(scriptData.plays[j]);
-          }
-          const periodColor = p.color || UI_COLORS.periodDefault;
-          const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
-          allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="${printColumnCount}" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
-          return;
-        }
-
-        globalPlayNum++;
-        periodPlayNum++;
-        const displayNum = hasPeriods ? periodPlayNum : globalPlayNum;
-        allContent += buildScriptPlayRow(p, displayNum, currentPeriodCallOptions);
-      });
+      bodySections.push(
+        buildScriptPrintBodyMarkup(scriptData.plays, displayOpts, {
+          scriptHeaderMarkup,
+          isFullDay: true,
+        }),
+      );
     });
 
     // Get current date for header
@@ -5247,6 +5279,7 @@ async function printFullDay() {
       year: "numeric",
     });
 
+    document.getElementById("previewTeamName").textContent = teamName || "";
     document.getElementById("previewTitle").textContent = "Full Practice Day";
     document.getElementById("previewMeta").textContent = today;
 
@@ -5259,7 +5292,7 @@ async function printFullDay() {
     </div>
   `;
 
-    document.getElementById("previewBody").innerHTML = allContent;
+    renderScriptPrintTable(displayOpts, bodySections.join(""));
 
     document.getElementById("previewContainer").classList.remove("hidden");
     document.getElementById("wristbandPrint").classList.add("hidden");

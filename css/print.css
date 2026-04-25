@@ -284,6 +284,12 @@
     font-size: var(--font-size-md) !important;
     margin: 0 0 5px 0 !important;
   }
+  body.print-script .script-preview .preview-team-name {
+    font-size: 14px !important;
+    font-weight: 800 !important;
+    margin: 0 0 4px 0 !important;
+    letter-spacing: 0.08em !important;
+  }
   body.print-script .script-preview p {
     font-size: var(--font-size-xs) !important;
     margin: 0 0 8px 0 !important;
@@ -307,6 +313,14 @@
     font-size: 9px !important;
     line-height: 1.2 !important;
     white-space: nowrap !important;
+  }
+  body.print-script .script-table .script-print-period-block {
+    break-inside: avoid-page !important;
+    page-break-inside: avoid !important;
+  }
+  body.print-script .script-table .print-period-header {
+    break-after: avoid-page !important;
+    page-break-after: avoid !important;
   }
   body.print-script .script-table td.script-table-cell--call {
     text-align: left !important;
