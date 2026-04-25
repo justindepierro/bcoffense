@@ -445,10 +445,11 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);
-  const buildRow = (rowIndex) => {
-    const slots = getTeamAssignmentSlots(play?.personnel).filter(
-      (slot) => slot.row === rowIndex,
-    );
+  const slotMap = new Map(
+    getTeamAssignmentSlots(play?.personnel).map((slot) => [slot.key, slot]),
+  );
+  const buildRow = (slotKeys) => {
+    const slots = slotKeys.map((slotKey) => slotMap.get(slotKey)).filter(Boolean);
     return `
       <div class="script-player-row script-player-row--${slots.length}">
         ${slots.map((slot) => `
@@ -493,15 +494,15 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
     <div class="script-player-grid">
       <div class="script-player-grid-head">
         <div class="script-player-grid-meta">
-          <span class="script-player-grid-title">Players</span>
+          <span class="script-player-grid-title">Personnel</span>
           ${hasOverrides ? '<span class="script-player-grid-status">Manual starter override</span>' : ''}
         </div>
         <div class="script-player-grid-actions">
           ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ''}
         </div>
       </div>
-      ${buildRow(0)}
-      ${buildRow(1)}
+      ${buildRow(["qb", "rb", "h", "x", "y", "z"])}
+      ${buildRow(["lt", "lg", "c", "rg", "rt"])}
     </div>
   `;
 }
