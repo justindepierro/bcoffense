@@ -376,6 +376,88 @@ function getScriptFullCall(play, options = {}) {
   return getFullCall(getScriptDisplayPlay(play), options);
 }
 
+function getScriptPlayerAssignments(play) {
+  return getResolvedPlayerAssignments(play);
+}
+
+function createScriptPlayerAssignments(play) {
+  const assignments = normalizePlayerAssignments(play?.playerAssignments);
+  return Object.keys(assignments).length ? assignments : {};
+}
+
+function getScriptPlayerSummary(play) {
+  return formatPlayerAssignmentSummary(getScriptPlayerAssignments(play));
+}
+
+function updateScriptPlayerAssignment(index, slotKey, playerId) {
+  const play = script[index];
+  if (!play || play.isSeparator || !slotKey) return;
+
+  const baseAssignments = getBasePlayerAssignments(play);
+  const assignments = normalizePlayerAssignments(play.playerAssignments);
+  if (playerId) assignments[slotKey] = playerId;
+  else delete assignments[slotKey];
+
+  if ((assignments[slotKey] || "") === (baseAssignments[slotKey] || "")) {
+    delete assignments[slotKey];
+  }
+
+  play.playerAssignments = Object.keys(assignments).length ? assignments : undefined;
+  debouncedSaveScriptState();
+}
+
+function applyScriptSwapGroup(index, groupId) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  const normalizedGroupId = String(groupId || "").trim();
+  play.activeSwapGroupId = normalizedGroupId;
+  delete play.playerAssignments;
+  debouncedSaveScriptState();
+  renderScript();
+}
+
+function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
+  const assignments = getScriptPlayerAssignments(play);
+  const selectedSwapGroupId = Object.prototype.hasOwnProperty.call(
+    play,
+    "activeSwapGroupId",
+  )
+    ? play.activeSwapGroupId
+    : play.defaultSwapGroupId || "";
+  const buildRow = (rowIndex) => {
+    const slots = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === rowIndex);
+    return `
+      <div class="script-player-row script-player-row--${slots.length}">
+        ${slots.map((slot) => `
+          <label class="script-player-slot">
+            <span class="script-player-slot-label">${slot.label}</span>
+            <select class="script-player-slot-select" data-field="playerAssignment" data-slot="${slot.key}" data-idx="${index}" aria-label="${escapeHtml(playLabel)} ${slot.label} player">
+              ${buildTeamPlayerOptionMarkup(assignments[slot.key] || "")}
+            </select>
+          </label>
+        `).join("")}
+      </div>
+    `;
+  };
+
+  return `
+    <div class="script-player-grid">
+      <div class="script-player-grid-head">
+        <span class="script-player-grid-title">Players</span>
+        <label class="script-player-swap-group">
+          <span class="script-player-swap-group-label">Swap</span>
+          <select class="script-player-swap-select" data-field="scriptSwapGroup" data-idx="${index}" aria-label="Swap group for ${escapeHtml(playLabel)}">
+            ${buildTeamSwapGroupOptionMarkup(selectedSwapGroupId, play.personnel || "")}
+          </select>
+        </label>
+      </div>
+      ${buildRow(0)}
+      ${buildRow(1)}
+    </div>
+  `;
+}
+
 function getScriptWorkspaceCheckboxState() {
   const checkboxState = {};
   SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
@@ -1316,6 +1398,7 @@ function addToScript(playIndex) {
     defCoverage: "",
     defStunt: "",
     defBlitz: "",
+    playerAssignments: createScriptPlayerAssignments(play),
     id: Date.now() + Math.random(),
   });
   renderScript();
@@ -1404,6 +1487,7 @@ async function addAllFilteredToScript() {
       defCoverage: "",
       defStunt: "",
       defBlitz: "",
+      playerAssignments: createScriptPlayerAssignments(play),
       id: Date.now() + Math.random(),
     });
   });
@@ -1433,6 +1517,7 @@ function addSelectedToScript() {
       defCoverage: "",
       defStunt: "",
       defBlitz: "",
+      playerAssignments: createScriptPlayerAssignments(play),
       id: Date.now() + Math.random(),
     });
   });
@@ -3256,6 +3341,8 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const isSelected = bulkSelectedIndices.includes(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
+  const playerAssignmentGrid = buildScriptPlayerAssignmentGrid(play, index, playLabel);
+  const playerSummary = getScriptPlayerSummary(play);
 
   let wbBadge = "";
   if (scriptWristband && opts.showWbNum) {
@@ -3272,6 +3359,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
         <div class="call-meta">${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</div>
+        ${playerAssignmentGrid}
       </div>
       <div class="hash-input">
         <select data-field="hash" data-idx="${index}" title="Hash" aria-label="Hash for ${escapeHtml(playLabel)}">
@@ -3309,6 +3397,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         <span class="preview-field stunt">${escapeHtml(play.defStunt || "-")}</span>
         <span class="preview-field blitz">${escapeHtml(play.defBlitz || "-")}</span>
         <span class="preview-field reps">×${play.reps}</span>
+        <span class="preview-field players">${escapeHtml(playerSummary || "-")}</span>
       </div>`
       : ""
     }
@@ -4421,6 +4510,7 @@ function executeLoadWbToScript() {
  */
 function buildScriptPlayRow(p, displayNum, opts) {
   const fullCall = getScriptFullCall(p, opts);
+  const playerSummary = getScriptPlayerSummary(p);
 
   let wbNum = "";
   if (opts.showWbNum && scriptWristband) {
@@ -4451,6 +4541,7 @@ function buildScriptPlayRow(p, displayNum, opts) {
     <td>${escapeHtml(p.defStunt || "")}</td>
     <td>${escapeHtml(p.defBlitz || "")}</td>
     <td>${p.reps}</td>
+    <td>${escapeHtml(playerSummary || "")}</td>
     <td>${escapeHtml(p.notes || "")}</td>
   </tr>`;
 }
@@ -4486,6 +4577,7 @@ function exportScriptCSV() {
     "Def Coverage",
     "Def Stunt",
     "Def Blitz",
+    "Players",
     "Notes",
   ];
 
@@ -4527,6 +4619,7 @@ function exportScriptCSV() {
       esc(item.defCoverage),
       esc(item.defStunt),
       esc(item.defBlitz),
+      esc(getScriptPlayerSummary(item)),
       esc(item.notes),
     ]);
   });
@@ -4584,8 +4677,10 @@ function exportScriptAsText() {
       const type = item.type ? ` [${item.type}]` : "";
       const notes = item.notes ? ` — ${item.notes}` : "";
       const reps = (item.reps || 1) > 1 ? ` ×${item.reps}` : "";
+      const players = getScriptPlayerSummary(item);
+      const playerText = players ? ` — Players: ${players}` : "";
       lines.push(
-        `${String(playOrder).padStart(3, " ")}. ${call}${type}${reps}${notes}`,
+        `${String(playOrder).padStart(3, " ")}. ${call}${type}${reps}${notes}${playerText}`,
       );
     }
   });

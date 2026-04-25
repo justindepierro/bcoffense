@@ -138,6 +138,52 @@
           <input type="text" id="teamNameInput" class="team-name-input" placeholder="e.g., Burke Catholic Football"
             aria-label="Team name" data-onchange="setTeamName" data-pass="value" />
         </div>
+        <div class="team-settings-grid">
+          <div class="team-settings-panel">
+            <h4>Roster</h4>
+            <p>Paste lines as <strong>number, name, position</strong> or add players one at a time.</p>
+            <textarea id="teamRosterBulkInput" class="team-roster-bulk-input" rows="4"
+              placeholder="12, John Smith, QB&#10;22, Mike Brown, RB&#10;80, Alex Green, Y"></textarea>
+            <div class="team-settings-actions">
+              <input type="file" id="teamRosterFile" accept=".csv,.txt" class="hidden" data-onchange="importTeamRosterFile"
+                data-pass="event" />
+              <button class="btn btn-outline" data-action="triggerClick" data-target="teamRosterFile">Upload Roster File</button>
+              <button class="btn btn-secondary" data-action="importTeamRoster">Import Roster</button>
+            </div>
+            <div class="team-settings-add-row">
+              <input type="text" id="teamPlayerNumberInput" class="team-settings-input team-settings-input--short" placeholder="#"
+                aria-label="Player number" />
+              <input type="text" id="teamPlayerNameInput" class="team-settings-input" placeholder="Player name"
+                aria-label="Player name" />
+              <input type="text" id="teamPlayerPositionInput" class="team-settings-input team-settings-input--short" placeholder="POS"
+                aria-label="Player position" />
+              <button class="btn btn-primary" data-action="addTeamPlayer">Add Player</button>
+            </div>
+            <div id="teamRosterList" class="team-roster-list"></div>
+          </div>
+          <div class="team-settings-panel">
+            <h4>Personnel Packages</h4>
+            <p>Set default 11-man groupings for 10, 11, 12, heavy, or any package you use.</p>
+            <div class="team-settings-add-row">
+              <input type="text" id="teamPackagePersonnelInput" class="team-settings-input" placeholder="Personnel label (e.g. 11)"
+                aria-label="Personnel label" />
+              <button class="btn btn-primary" data-action="addTeamPersonnelPackage">Add Package</button>
+            </div>
+            <div id="teamPersonnelPackages" class="team-personnel-packages"></div>
+          </div>
+          <div class="team-settings-panel">
+            <h4>Swap Groups</h4>
+            <p>Build sub packages you can apply to a script row in one move.</p>
+            <div class="team-settings-add-row">
+              <input type="text" id="teamSwapGroupNameInput" class="team-settings-input" placeholder="Group name (e.g. Tempo 2s)"
+                aria-label="Swap group name" />
+              <input type="text" id="teamSwapGroupPersonnelInput" class="team-settings-input team-settings-input--short" placeholder="11"
+                aria-label="Swap group personnel" />
+              <button class="btn btn-primary" data-action="addTeamSwapGroup">Add Group</button>
+            </div>
+            <div id="teamSwapGroups" class="team-personnel-packages"></div>
+          </div>
+        </div>
       </div>
     </div>
   </div>
@@ -941,6 +987,7 @@
               <th class="col-stunt">Stunt</th>
               <th class="col-blitz">Blitz</th>
               <th class="col-reps">Reps</th>
+              <th class="col-players">Players</th>
               <th class="col-notes">Notes</th>
             </tr>
           </thead>

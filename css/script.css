@@ -184,6 +184,106 @@
   color: var(--color-text-secondary);
   margin-top: 2px;
 }
+
+.script-player-grid {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  margin-top: 8px;
+}
+
+.script-player-grid-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.script-player-grid-title {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.script-player-swap-group {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.script-player-swap-group-label {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: var(--color-text-secondary);
+}
+
+.script-player-swap-select {
+  min-width: 160px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+}
+
+.script-player-row {
+  display: grid;
+  gap: 6px;
+}
+
+.script-player-row--5 {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+}
+
+.script-player-row--6 {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+}
+
+.script-player-slot {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.script-player-slot-label {
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.script-player-slot-select {
+  width: 100%;
+  min-width: 0;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-xs);
+}
+
+.script-player-slot-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+.script-player-swap-select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
 .script-item .bulk-select-cb {
   cursor: pointer;
   width: 16px;
@@ -200,6 +300,7 @@
 .ph-minutes-input:focus-visible,
 .script-item .hash-input select:focus-visible,
 .script-item .defense-inputs .def-input:focus-visible,
+.script-player-slot-select:focus-visible,
 .script-item .move-btn:focus-visible,
 .script-item .dup-btn:focus-visible,
 .script-item .remove:focus-visible,
@@ -664,6 +765,12 @@
   background: var(--color-info-light);
   color: var(--color-primary);
   font-weight: bold;
+}
+
+.print-preview-row .preview-field.players {
+  background: var(--color-bg-body);
+  min-width: 180px;
+  flex: 1 1 220px;
 }
 
 .script-item .play-controls {
@@ -2073,6 +2180,16 @@
     white-space: normal;
   }
 
+  .script-player-row--5,
+  .script-player-row--6 {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .script-player-swap-select {
+    min-width: 0;
+    width: 100%;
+  }
+
   .template-picker-layout {
     grid-template-columns: 1fr;
   }
@@ -2143,6 +2260,16 @@
   .ph-right {
     width: 100%;
     flex-wrap: wrap;
+  }
+
+  .script-player-row--5,
+  .script-player-row--6 {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .script-player-grid-head,
+  .script-player-swap-group {
+    width: 100%;
   }
 
   .ph-meta-span {

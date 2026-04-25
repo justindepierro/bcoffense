@@ -947,7 +947,597 @@ const STORAGE_KEYS = {
   GAME_PLAN_TAGS: "gamePlanTags",
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
   WRISTBAND_FAVORITES: "wristbandFavorites",
+  TEAM_ROSTER: "teamRoster",
+  TEAM_PERSONNEL_PACKAGES: "teamPersonnelPackages",
+  TEAM_SWAP_GROUPS: "teamSwapGroups",
 };
+
+const TEAM_ASSIGNMENT_SLOTS = [
+  { key: "qb", label: "QB", row: 0 },
+  { key: "rb", label: "RB", row: 0 },
+  { key: "h", label: "H", row: 0 },
+  { key: "x", label: "X", row: 0 },
+  { key: "z", label: "Z", row: 0 },
+  { key: "y", label: "Y", row: 1 },
+  { key: "lt", label: "LT", row: 1 },
+  { key: "lg", label: "LG", row: 1 },
+  { key: "c", label: "C", row: 1 },
+  { key: "rg", label: "RG", row: 1 },
+  { key: "rt", label: "RT", row: 1 },
+];
+
+function normalizeTeamPlayer(player = {}) {
+  const id = String(player.id || `player-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const name = String(player.name || "").trim();
+  const number = String(player.number || "").trim();
+  const position = String(player.position || "").trim().toUpperCase();
+  const personnel = Array.isArray(player.personnel)
+    ? player.personnel.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+
+  return {
+    id,
+    name,
+    number,
+    position,
+    personnel,
+  };
+}
+
+function getTeamRoster() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
+  return Array.isArray(stored)
+    ? stored.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
+    : [];
+}
+
+function saveTeamRoster(roster) {
+  const normalized = Array.isArray(roster)
+    ? roster.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
+    : [];
+  storageManager.set(STORAGE_KEYS.TEAM_ROSTER, normalized);
+  return normalized;
+}
+
+function normalizePersonnelPackage(pkg = {}) {
+  const personnel = String(pkg.personnel || "").trim();
+  const assignments = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const value = String(pkg.assignments?.[slot.key] || "").trim();
+    if (value) assignments[slot.key] = value;
+  });
+
+  return {
+    personnel,
+    assignments,
+  };
+}
+
+function normalizeTeamSwapGroup(group = {}) {
+  const id = String(
+    group.id || `swap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  );
+  const name = String(group.name || "").trim();
+  const personnel = String(group.personnel || "").trim();
+
+  return {
+    id,
+    name,
+    personnel,
+    assignments: normalizePlayerAssignments(group.assignments),
+  };
+}
+
+function getTeamPersonnelPackages() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  return Array.isArray(stored)
+    ? stored
+      .map((pkg) => normalizePersonnelPackage(pkg))
+      .filter((pkg) => pkg.personnel)
+    : [];
+}
+
+function saveTeamPersonnelPackages(packages) {
+  const normalized = Array.isArray(packages)
+    ? packages
+      .map((pkg) => normalizePersonnelPackage(pkg))
+      .filter((pkg) => pkg.personnel)
+    : [];
+  storageManager.set(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, normalized);
+  return normalized;
+}
+
+function getTeamSwapGroups() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_SWAP_GROUPS, []);
+  return Array.isArray(stored)
+    ? stored
+      .map((group) => normalizeTeamSwapGroup(group))
+      .filter((group) => group.name)
+    : [];
+}
+
+function saveTeamSwapGroups(groups) {
+  const normalized = Array.isArray(groups)
+    ? groups
+      .map((group) => normalizeTeamSwapGroup(group))
+      .filter((group) => group.name)
+    : [];
+  storageManager.set(STORAGE_KEYS.TEAM_SWAP_GROUPS, normalized);
+  return normalized;
+}
+
+function getPersonnelPackageAssignments(personnel) {
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) return {};
+  const match = getTeamPersonnelPackages().find(
+    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
+  );
+  return match ? safeDeepClone(match.assignments) : {};
+}
+
+function normalizePlayerAssignments(assignments = {}) {
+  const normalized = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const value = String(assignments?.[slot.key] || "").trim();
+    if (value) normalized[slot.key] = value;
+  });
+  return normalized;
+}
+
+function getTeamSwapGroupAssignments(groupId, personnel) {
+  const normalizedGroupId = String(groupId || "").trim();
+  if (!normalizedGroupId) return {};
+
+  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
+  const match = getTeamSwapGroups().find((group) => {
+    if (group.id !== normalizedGroupId) return false;
+    if (!group.personnel) return true;
+    return group.personnel.toLowerCase() === normalizedPersonnel;
+  });
+
+  return match ? safeDeepClone(match.assignments) : {};
+}
+
+function getApplicableTeamSwapGroups(personnel) {
+  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
+  return getTeamSwapGroups().filter((group) => {
+    if (!group.personnel) return true;
+    return group.personnel.toLowerCase() === normalizedPersonnel;
+  });
+}
+
+function getBasePlayerAssignments(play) {
+  const packageAssignments = getPersonnelPackageAssignments(play?.personnel);
+  const hasActiveSwapGroup = Boolean(
+    play && Object.prototype.hasOwnProperty.call(play, "activeSwapGroupId"),
+  );
+  const swapGroupAssignments = getTeamSwapGroupAssignments(
+    hasActiveSwapGroup ? play.activeSwapGroupId : play?.defaultSwapGroupId,
+    play?.personnel,
+  );
+  return {
+    ...normalizePlayerAssignments(packageAssignments),
+    ...normalizePlayerAssignments(swapGroupAssignments),
+  };
+}
+
+function getResolvedPlayerAssignments(play) {
+  const baseAssignments = getBasePlayerAssignments(play);
+  return {
+    ...normalizePlayerAssignments(baseAssignments),
+    ...normalizePlayerAssignments(play?.playerAssignments),
+  };
+}
+
+function formatTeamPlayerLabel(player) {
+  const bits = [];
+  if (player.number) bits.push(`#${player.number}`);
+  if (player.name) bits.push(player.name);
+  if (player.position) bits.push(`(${player.position})`);
+  return bits.join(" ") || "Unnamed Player";
+}
+
+function buildTeamPlayerOptionMarkup(selectedId = "", includeBlank = true) {
+  const roster = getTeamRoster();
+  const blankOption = includeBlank
+    ? `<option value="">${roster.length ? "Open" : "Add roster first"}</option>`
+    : "";
+  return blankOption + roster
+    .map((player) => {
+      const selected = player.id === selectedId ? " selected" : "";
+      return `<option value="${escapeAttr(player.id)}"${selected}>${escapeHtml(formatTeamPlayerLabel(player))}</option>`;
+    })
+    .join("");
+}
+
+function buildTeamSwapGroupOptionMarkup(
+  selectedId = "",
+  personnel = "",
+  includeBlank = true,
+) {
+  const groups = getApplicableTeamSwapGroups(personnel);
+  const blankOption = includeBlank
+    ? `<option value="">${groups.length ? "No swap group" : "Add swap groups first"}</option>`
+    : "";
+
+  return blankOption + groups
+    .map((group) => {
+      const selected = group.id === selectedId ? " selected" : "";
+      const suffix = group.personnel ? ` (${group.personnel})` : "";
+      return `<option value="${escapeAttr(group.id)}"${selected}>${escapeHtml(group.name + suffix)}</option>`;
+    })
+    .join("");
+}
+
+function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
+  const includeSlotLabels = options.includeSlotLabels !== false;
+  const roster = getTeamRoster();
+  const rosterMap = new Map(roster.map((player) => [player.id, player]));
+  const normalizedAssignments = normalizePlayerAssignments(assignments);
+
+  return TEAM_ASSIGNMENT_SLOTS.map((slot) => {
+    const playerId = normalizedAssignments[slot.key];
+    if (!playerId) return "";
+    const player = rosterMap.get(playerId);
+    const label = player ? formatTeamPlayerLabel(player) : playerId;
+    return includeSlotLabels ? `${slot.label}: ${label}` : label;
+  })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function importTeamRosterFromText(rawText) {
+  const lines = String(rawText || "")
+    .split(/\r?\n/)
+    .map((line) => line.trim())
+    .filter(Boolean);
+
+  if (!lines.length) return [];
+
+  return lines
+    .map((line) => {
+      const parts = line.split(/[\t,|]/).map((part) => part.trim());
+      if (parts.length >= 3) {
+        return normalizeTeamPlayer({
+          number: parts[0],
+          name: parts[1],
+          position: parts[2],
+        });
+      }
+      if (parts.length === 2) {
+        return normalizeTeamPlayer({
+          name: parts[0],
+          position: parts[1],
+        });
+      }
+      return normalizeTeamPlayer({ name: line });
+    })
+    .filter((player) => player.name);
+}
+
+function syncTeamSettingsDependents() {
+  renderTeamSettings();
+  if (typeof renderScript === "function") {
+    renderScript();
+  }
+}
+
+function renderTeamSettings() {
+  const rosterContainer = document.getElementById("teamRosterList");
+  const packageContainer = document.getElementById("teamPersonnelPackages");
+  const swapGroupContainer = document.getElementById("teamSwapGroups");
+  if (!rosterContainer || !packageContainer || !swapGroupContainer) return;
+
+  const roster = getTeamRoster();
+  const packages = getTeamPersonnelPackages();
+  const swapGroups = getTeamSwapGroups();
+  const rowOne = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 0);
+  const rowTwo = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 1);
+  const renderAssignmentRow = (slots, assignments, fieldName, itemIndex, label) => `
+    <div class="team-package-grid ${slots.length === 5 ? "team-package-grid--five" : "team-package-grid--six"}">
+      ${slots.map((slot) => `
+        <label class="team-package-slot">
+          <span class="team-package-slot-label">${slot.label}</span>
+          <select data-field="${fieldName}" data-item-index="${itemIndex}" data-slot="${slot.key}" aria-label="${escapeHtml(label)} ${slot.label}">
+            ${buildTeamPlayerOptionMarkup(assignments[slot.key] || "")}
+          </select>
+        </label>
+      `).join("")}
+    </div>
+  `;
+
+  rosterContainer.innerHTML = roster.length
+    ? roster.map((player) => `
+        <div class="team-roster-row" data-player-id="${escapeAttr(player.id)}">
+          <input type="text" class="team-roster-cell team-roster-cell--num" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${escapeAttr(player.id)}" placeholder="#" aria-label="Number for ${escapeHtml(player.name)}" />
+          <input type="text" class="team-roster-cell team-roster-cell--name" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${escapeAttr(player.id)}" placeholder="Player name" aria-label="Name for ${escapeHtml(player.name)}" />
+          <input type="text" class="team-roster-cell team-roster-cell--pos" value="${escapeAttr(player.position)}" data-field="teamPlayerPosition" data-player-id="${escapeAttr(player.id)}" placeholder="POS" aria-label="Position for ${escapeHtml(player.name)}" />
+          <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${escapeAttr(player.id)}" aria-label="Remove ${escapeHtml(player.name)}">✕</button>
+        </div>
+      `).join("")
+    : '<div class="team-settings-empty">No roster yet. Add players one at a time or paste a roster below.</div>';
+
+  packageContainer.innerHTML = packages.length
+    ? packages.map((pkg, pkgIndex) => {
+      return `
+        <div class="team-package-card" data-package-index="${pkgIndex}">
+          <div class="team-package-head">
+            <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
+            <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPersonnelPackage" data-package-index="${pkgIndex}" aria-label="Remove ${escapeHtml(pkg.personnel)} package">✕</button>
+          </div>
+          ${renderAssignmentRow(rowOne, pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package")}
+          ${renderAssignmentRow(rowTwo, pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package")}
+        </div>
+      `;
+    }).join("")
+    : '<div class="team-settings-empty">No personnel packages yet. Add one to preload script lineups by personnel.</div>';
+
+  swapGroupContainer.innerHTML = swapGroups.length
+    ? swapGroups.map((group, groupIndex) => `
+        <div class="team-package-card" data-swap-group-id="${escapeAttr(group.id)}">
+          <div class="team-package-head">
+            <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Tempo 2s" aria-label="Swap group name" />
+            <input type="text" class="team-package-name" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="11 or blank" aria-label="Swap group personnel" />
+            <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} swap group">✕</button>
+          </div>
+          ${renderAssignmentRow(rowOne, group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
+          ${renderAssignmentRow(rowTwo, group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
+        </div>
+      `).join("")
+    : '<div class="team-settings-empty">No swap groups yet. Add one to flip a whole cluster of players on a script row.</div>';
+}
+
+function addTeamPlayer() {
+  const nameEl = document.getElementById("teamPlayerNameInput");
+  const numberEl = document.getElementById("teamPlayerNumberInput");
+  const positionEl = document.getElementById("teamPlayerPositionInput");
+  const player = normalizeTeamPlayer({
+    name: nameEl?.value,
+    number: numberEl?.value,
+    position: positionEl?.value,
+  });
+
+  if (!player.name) {
+    showToast("Enter a player name first", { duration: 2500, type: "warning" });
+    return;
+  }
+
+  const roster = getTeamRoster();
+  roster.push(player);
+  saveTeamRoster(roster);
+
+  if (nameEl) nameEl.value = "";
+  if (numberEl) numberEl.value = "";
+  if (positionEl) positionEl.value = "";
+
+  syncTeamSettingsDependents();
+  showToast(`${player.name} added to roster`);
+}
+
+function importTeamRoster() {
+  const textarea = document.getElementById("teamRosterBulkInput");
+  const imported = importTeamRosterFromText(textarea?.value || "");
+  if (!imported.length) {
+    showToast("Paste roster lines first", { duration: 2500, type: "warning" });
+    return;
+  }
+
+  saveTeamRoster([...getTeamRoster(), ...imported]);
+  if (textarea) textarea.value = "";
+  syncTeamSettingsDependents();
+  showToast(`Imported ${imported.length} player${imported.length === 1 ? "" : "s"}`);
+}
+
+async function importTeamRosterFile(event) {
+  const file = event?.target?.files?.[0];
+  if (!file) return;
+
+  try {
+    const rawText = await file.text();
+    const imported = importTeamRosterFromText(rawText);
+    if (!imported.length) {
+      showToast("No players found in roster file", { duration: 2500, type: "warning" });
+      return;
+    }
+
+    saveTeamRoster([...getTeamRoster(), ...imported]);
+    syncTeamSettingsDependents();
+    showToast(`Imported ${imported.length} player${imported.length === 1 ? "" : "s"} from file`);
+  } catch (error) {
+    console.error("Roster import failed:", error);
+    showToast("Could not read roster file", { duration: 3000, type: "error" });
+  } finally {
+    if (event?.target) event.target.value = "";
+  }
+}
+
+function addTeamPersonnelPackage() {
+  const input = document.getElementById("teamPackagePersonnelInput");
+  const personnel = String(input?.value || "").trim();
+  if (!personnel) {
+    showToast("Enter a personnel group first", { duration: 2500, type: "warning" });
+    return;
+  }
+
+  const packages = getTeamPersonnelPackages();
+  packages.push({ personnel, assignments: {} });
+  saveTeamPersonnelPackages(packages);
+  if (input) input.value = "";
+  syncTeamSettingsDependents();
+  showToast(`${personnel} package added`);
+}
+
+function addTeamSwapGroup() {
+  const nameEl = document.getElementById("teamSwapGroupNameInput");
+  const personnelEl = document.getElementById("teamSwapGroupPersonnelInput");
+  const group = normalizeTeamSwapGroup({
+    name: nameEl?.value,
+    personnel: personnelEl?.value,
+    assignments: {},
+  });
+
+  if (!group.name) {
+    showToast("Enter a swap group name first", { duration: 2500, type: "warning" });
+    return;
+  }
+
+  const groups = getTeamSwapGroups();
+  groups.push(group);
+  saveTeamSwapGroups(groups);
+  if (nameEl) nameEl.value = "";
+  if (personnelEl) personnelEl.value = "";
+  syncTeamSettingsDependents();
+  showToast(`${group.name} swap group added`);
+}
+
+function removeTeamPlayer(playerId) {
+  const roster = getTeamRoster().filter((player) => player.id !== playerId);
+  saveTeamRoster(roster);
+
+  const packages = getTeamPersonnelPackages().map((pkg) => {
+    const assignments = normalizePlayerAssignments(pkg.assignments);
+    Object.keys(assignments).forEach((slotKey) => {
+      if (assignments[slotKey] === playerId) delete assignments[slotKey];
+    });
+    return { ...pkg, assignments };
+  });
+  saveTeamPersonnelPackages(packages);
+
+  const swapGroups = getTeamSwapGroups().map((group) => {
+    const assignments = normalizePlayerAssignments(group.assignments);
+    Object.keys(assignments).forEach((slotKey) => {
+      if (assignments[slotKey] === playerId) delete assignments[slotKey];
+    });
+    return { ...group, assignments };
+  });
+  saveTeamSwapGroups(swapGroups);
+
+  syncTeamSettingsDependents();
+  showToast("Player removed from roster");
+}
+
+function removeTeamPersonnelPackage(packageIndex) {
+  const packages = getTeamPersonnelPackages();
+  packages.splice(packageIndex, 1);
+  saveTeamPersonnelPackages(packages);
+  syncTeamSettingsDependents();
+  showToast("Personnel package removed");
+}
+
+function removeTeamSwapGroup(groupIndex) {
+  const groups = getTeamSwapGroups();
+  groups.splice(groupIndex, 1);
+  saveTeamSwapGroups(groups);
+  syncTeamSettingsDependents();
+  showToast("Swap group removed");
+}
+
+function initTeamSettings() {
+  const rosterContainer = document.getElementById("teamRosterList");
+  const packageContainer = document.getElementById("teamPersonnelPackages");
+  const swapGroupContainer = document.getElementById("teamSwapGroups");
+  if (
+    !rosterContainer ||
+    !packageContainer ||
+    !swapGroupContainer ||
+    rosterContainer.dataset.bound === "true"
+  ) {
+    renderTeamSettings();
+    return;
+  }
+
+  rosterContainer.dataset.bound = "true";
+  packageContainer.dataset.bound = "true";
+  swapGroupContainer.dataset.bound = "true";
+
+  rosterContainer.addEventListener("input", (event) => {
+    const input = event.target.closest("[data-player-id][data-field]");
+    if (!input) return;
+    const playerId = input.dataset.playerId;
+    const field = input.dataset.field;
+    const roster = getTeamRoster();
+    const player = roster.find((entry) => entry.id === playerId);
+    if (!player) return;
+
+    if (field === "teamPlayerNumber") player.number = input.value;
+    if (field === "teamPlayerName") player.name = input.value;
+    if (field === "teamPlayerPosition") player.position = input.value.toUpperCase();
+
+    saveTeamRoster(roster);
+    if (typeof currentActiveTab === "string" && currentActiveTab === "script" && typeof renderScript === "function") {
+      renderScript();
+    }
+  });
+
+  rosterContainer.addEventListener("change", () => {
+    renderTeamSettings();
+  });
+
+  packageContainer.addEventListener("input", (event) => {
+    const input = event.target.closest('[data-field="teamPackagePersonnel"]');
+    if (!input) return;
+    const packageIndex = parseInt(input.dataset.packageIndex, 10);
+    if (!Number.isInteger(packageIndex)) return;
+    const packages = getTeamPersonnelPackages();
+    if (!packages[packageIndex]) return;
+    packages[packageIndex].personnel = input.value;
+    saveTeamPersonnelPackages(packages);
+    if (typeof renderScript === "function") renderScript();
+  });
+
+  packageContainer.addEventListener("change", (event) => {
+    const select = event.target.closest('[data-field="teamPackageSlot"]');
+    if (!select) return;
+    const packageIndex = parseInt(select.dataset.itemIndex, 10);
+    const slotKey = select.dataset.slot;
+    if (!Number.isInteger(packageIndex) || !slotKey) return;
+    const packages = getTeamPersonnelPackages();
+    if (!packages[packageIndex]) return;
+    const assignments = normalizePlayerAssignments(packages[packageIndex].assignments);
+    if (select.value) assignments[slotKey] = select.value;
+    else delete assignments[slotKey];
+    packages[packageIndex].assignments = assignments;
+    saveTeamPersonnelPackages(packages);
+    syncTeamSettingsDependents();
+  });
+
+  swapGroupContainer.addEventListener("input", (event) => {
+    const input = event.target.closest('[data-group-index][data-field]');
+    if (!input) return;
+    const groupIndex = parseInt(input.dataset.groupIndex, 10);
+    if (!Number.isInteger(groupIndex)) return;
+    const groups = getTeamSwapGroups();
+    if (!groups[groupIndex]) return;
+
+    if (input.dataset.field === "teamSwapGroupName") groups[groupIndex].name = input.value;
+    if (input.dataset.field === "teamSwapGroupPersonnel") groups[groupIndex].personnel = input.value;
+
+    saveTeamSwapGroups(groups);
+    if (typeof renderScript === "function") renderScript();
+  });
+
+  swapGroupContainer.addEventListener("change", (event) => {
+    const select = event.target.closest('[data-field="teamSwapGroupSlot"]');
+    if (!select) {
+      renderTeamSettings();
+      return;
+    }
+
+    const groupIndex = parseInt(select.dataset.itemIndex, 10);
+    const slotKey = select.dataset.slot;
+    if (!Number.isInteger(groupIndex) || !slotKey) return;
+    const groups = getTeamSwapGroups();
+    if (!groups[groupIndex]) return;
+    const assignments = normalizePlayerAssignments(groups[groupIndex].assignments);
+    if (select.value) assignments[slotKey] = select.value;
+    else delete assignments[slotKey];
+    groups[groupIndex].assignments = assignments;
+    saveTeamSwapGroups(groups);
+    syncTeamSettingsDependents();
+  });
+
+  renderTeamSettings();
+}
 
 /**
  * Show a context menu at the given mouse event position, auto-clamped to viewport.

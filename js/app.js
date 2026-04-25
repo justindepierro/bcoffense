@@ -994,6 +994,8 @@ function initApp() {
       teamNameInput.value = getTeamName();
     }
 
+    runOptionalInit("initTeamSettings", () => initTeamSettings());
+
     // Populate header subtitle with team name
     const teamSub = document.getElementById("teamSubtitle");
     if (teamSub) {
@@ -2701,6 +2703,12 @@ document.addEventListener("DOMContentLoaded", () => {
           break;
         case "notes":
           updateNotes(idx, el.value);
+          break;
+        case "playerAssignment":
+          updateScriptPlayerAssignment(idx, el.dataset.slot, el.value);
+          break;
+        case "scriptSwapGroup":
+          applyScriptSwapGroup(idx, el.value);
           break;
         case "bulkSelect":
           toggleBulkSelect(idx);

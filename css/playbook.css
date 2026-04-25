@@ -1106,6 +1106,11 @@ table.sortable th {
   resize: vertical;
   min-height: 60px;
 }
+.pb-editor-lineup-hint {
+  margin: 0 0 var(--space-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
 .pb-editor-actions {
   gap: var(--space-sm) !important;
   flex-wrap: wrap;

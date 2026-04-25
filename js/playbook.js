@@ -2281,6 +2281,39 @@ const _EDITOR_SECTIONS = [
   },
 ];
 
+function _buildPlayEditorLineupSection(play) {
+  const directAssignments = normalizePlayerAssignments(play?.playerAssignments);
+  const rowOne = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 0);
+  const rowTwo = TEAM_ASSIGNMENT_SLOTS.filter((slot) => slot.row === 1);
+  const renderRow = (slots) => `
+    <div class="team-package-grid ${slots.length === 5 ? "team-package-grid--five" : "team-package-grid--six"}">
+      ${slots.map((slot) => `
+        <label class="team-package-slot">
+          <span class="team-package-slot-label">${slot.label}</span>
+          <select data-player-slot="${slot.key}" aria-label="${escapeHtml(play?.play || "Play")} ${slot.label} template">
+            ${buildTeamPlayerOptionMarkup(directAssignments[slot.key] || "")}
+          </select>
+        </label>
+      `).join("")}
+    </div>
+  `;
+
+  return `
+    <div class="pb-editor-section">
+      <div class="pb-editor-section-title">Lineup Template</div>
+      <div class="pb-editor-field pb-editor-field-wide">
+        <label for="pe-defaultSwapGroupId">Default Swap Group</label>
+        <select id="pe-defaultSwapGroupId" data-field="defaultSwapGroupId">
+          ${buildTeamSwapGroupOptionMarkup(play?.defaultSwapGroupId || "", play?.personnel || "")}
+        </select>
+      </div>
+      <p class="pb-editor-lineup-hint">Blank slots inherit from the personnel package and selected swap group. Saved slots become this play’s master template.</p>
+      ${renderRow(rowOne)}
+      ${renderRow(rowTwo)}
+    </div>
+  `;
+}
+
 /**
  * Open the play editor for an existing play (by filteredPlays index)
  */
@@ -2410,6 +2443,8 @@ function _populateEditorForm(play, isNew) {
     html += `</div></div>`;
   });
 
+  html += _buildPlayEditorLineupSection(play);
+
   body.innerHTML = html;
   overlay.classList.add("visible");
 
@@ -2448,10 +2483,20 @@ function _populateEditorForm(play, isNew) {
 function savePlayEditor() {
   const body = document.getElementById("playEditorBody");
   const fields = body.querySelectorAll("[data-field]");
+  const assignmentFields = body.querySelectorAll("[data-player-slot]");
   const data = {};
   fields.forEach((el) => {
     data[el.dataset.field] = (el.value || "").trim();
   });
+  const playerAssignments = {};
+  assignmentFields.forEach((el) => {
+    const slotKey = el.dataset.playerSlot;
+    const value = String(el.value || "").trim();
+    if (slotKey && value) playerAssignments[slotKey] = value;
+  });
+  data.playerAssignments = Object.keys(playerAssignments).length
+    ? playerAssignments
+    : undefined;
 
   // Validate: at minimum need a play name
   if (!data.play) {
@@ -2465,6 +2510,7 @@ function savePlayEditor() {
     // Update existing play
     const existing = plays[_editingMasterIdx];
     Object.keys(data).forEach((k) => (existing[k] = data[k]));
+    existing.playerAssignments = data.playerAssignments;
 
     // Handle game plan tag
     _syncGamePlanCheckbox(existing);
@@ -2476,6 +2522,8 @@ function savePlayEditor() {
     _EDITOR_SECTIONS.forEach((s) =>
       s.fields.forEach((f) => (newPlay[f.key] = data[f.key] || "")),
     );
+    newPlay.defaultSwapGroupId = data.defaultSwapGroupId || "";
+    if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);
 
     // Handle game plan tag for new play
