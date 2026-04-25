@@ -186,9 +186,24 @@
 }
 
 .script-item--compact {
+  display: grid;
+  grid-template-columns: 18px 34px minmax(220px, 1.8fr) 52px minmax(272px, 1.45fr) minmax(196px, 1.1fr);
+  align-items: start;
   padding: 8px 10px;
   margin-bottom: 4px;
   gap: 8px;
+}
+
+.script-item--compact .bulk-select-cb,
+.script-item--compact .play-num,
+.script-item--compact .hash-input,
+.script-item--compact .defense-inputs,
+.script-item--compact .play-controls {
+  align-self: start;
+}
+
+.script-item--compact .play-call {
+  min-width: 0;
 }
 
 .script-item--compact .play-call .full-call {
@@ -869,7 +884,10 @@
 }
 
 .script-item--compact .defense-inputs {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
+  min-width: 0;
 }
 
 .script-item .defense-inputs .def-input {
@@ -991,6 +1009,14 @@
 }
 
 .script-item--compact .play-controls {
+  display: grid;
+  grid-template-columns: auto 40px minmax(72px, 1fr) auto auto;
+  gap: 4px;
+  min-width: 0;
+}
+
+.script-item--compact .move-btns {
+  flex-direction: row;
   gap: 4px;
 }
 .script-item .move-btns {
@@ -1104,6 +1130,16 @@
   background: var(--color-bg-body);
   box-shadow: none;
   border-style: dashed;
+}
+
+@media (max-width: 1280px) {
+  .script-item--compact {
+    grid-template-columns: 18px 34px minmax(220px, 1.8fr) 52px minmax(220px, 1.2fr);
+  }
+
+  .script-item--compact .play-controls {
+    grid-column: 3 / -1;
+  }
 }
 
 /* Script Stats Bar - New Compact Design */

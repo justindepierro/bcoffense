@@ -1150,6 +1150,50 @@ function clearAllScriptOptions() {
   renderScript();
 }
 
+function applyScriptDisplayPreset(presetName = "coach") {
+  const presetMap = {
+    coach: {
+      layoutMode: "detail",
+      checked: ["scriptShowLineCall", "scriptShowWbNum"],
+    },
+    compact: {
+      layoutMode: "compact",
+      checked: [
+        "scriptShowLineCall",
+        "scriptShowWbNum",
+        "scriptHideLinemen",
+        "scriptPrintStyle",
+      ],
+    },
+    "print-match": {
+      layoutMode: "detail",
+      checked: [
+        "scriptShowLineCall",
+        "scriptShowWbNum",
+        "scriptPrintStyle",
+        "scriptShowPrintPreview",
+      ],
+    },
+  };
+
+  const preset = presetMap[String(presetName || "coach").trim().toLowerCase()] || presetMap.coach;
+  const enabled = new Set(preset.checked);
+
+  SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = enabled.has(id);
+  });
+
+  const modeEl = document.querySelector(
+    `input[name="scriptLayoutMode"][value="${preset.layoutMode}"]`,
+  );
+  if (modeEl) modeEl.checked = true;
+
+  saveScriptDisplayOptions();
+  renderScript();
+  showToast(`Script preset: ${presetName}`);
+}
+
 /**
  * Populate the script checkbox filters
  */
