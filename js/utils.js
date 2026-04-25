@@ -1148,12 +1148,14 @@ function normalizeTeamSwapGroup(group = {}) {
   );
   const name = String(group.name || "").trim();
   const personnel = String(group.personnel || "").trim();
+  const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
 
   return {
     id,
     name,
     personnel,
-    assignments: normalizePlayerAssignments(group.assignments),
+    assignments: getPrimaryAssignmentsFromDepthChart(depthChart),
+    depthChart,
   };
 }
 
@@ -1258,7 +1260,23 @@ function getTeamSwapGroupAssignments(groupId, personnel) {
     return group.personnel.toLowerCase() === normalizedPersonnel;
   });
 
-  return match ? safeDeepClone(match.assignments) : {};
+  return match
+    ? safeDeepClone(getPrimaryAssignmentsFromDepthChart(match.depthChart || match.assignments))
+    : {};
+}
+
+function getTeamSwapGroupDepthChart(groupId, personnel) {
+  const normalizedGroupId = String(groupId || "").trim();
+  if (!normalizedGroupId) return {};
+
+  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
+  const match = getTeamSwapGroups().find((group) => {
+    if (group.id !== normalizedGroupId) return false;
+    if (!group.personnel) return true;
+    return group.personnel.toLowerCase() === normalizedPersonnel;
+  });
+
+  return match ? safeDeepClone(match.depthChart || {}) : {};
 }
 
 function getApplicableTeamSwapGroups(personnel) {
@@ -1282,6 +1300,42 @@ function getBasePlayerAssignments(play) {
     ...normalizePlayerAssignments(packageAssignments),
     ...normalizePlayerAssignments(swapGroupAssignments),
   };
+}
+
+function getBasePlayerDepthChart(play) {
+  const packageDepthChart = getPersonnelPackageDepthChart(play?.personnel);
+  const hasActiveSwapGroup = Boolean(
+    play && Object.prototype.hasOwnProperty.call(play, "activeSwapGroupId"),
+  );
+  const swapGroupDepthChart = getTeamSwapGroupDepthChart(
+    hasActiveSwapGroup ? play.activeSwapGroupId : play?.defaultSwapGroupId,
+    play?.personnel,
+  );
+  const merged = normalizeTeamDepthChart(packageDepthChart);
+
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const swapDepth = getTeamDepthChartForSlot(swapGroupDepthChart, slot.key);
+    if (swapDepth.length) merged[slot.key] = swapDepth;
+  });
+
+  return merged;
+}
+
+function getResolvedPlayerDepthChart(play) {
+  const baseDepthChart = getBasePlayerDepthChart(play);
+  const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
+  const resolved = normalizeTeamDepthChart(baseDepthChart);
+
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const manualPlayerId = String(manualAssignments[slot.key] || "").trim();
+    if (!manualPlayerId) return;
+    const slotDepth = getTeamDepthChartForSlot(resolved, slot.key).filter(
+      (playerId) => playerId !== manualPlayerId,
+    );
+    resolved[slot.key] = [manualPlayerId, ...slotDepth];
+  });
+
+  return resolved;
 }
 
 function getResolvedPlayerAssignments(play) {
@@ -1488,12 +1542,12 @@ function renderTeamSettings() {
                 ${buildTeamPlayerOptionMarkup(playerId)}
               </select>
               ${options.depthChart && depthIndex > 0
-      ? `<button type="button" class="btn btn-xs btn-danger team-slot-sub-remove" data-action="removeTeamPackageSub" data-item-index="${itemIndex}" data-slot="${slot.key}" data-depth-index="${depthIndex}" aria-label="Remove ${escapeHtml(slot.label)} sub ${depthIndex}">Remove</button>`
+      ? `<button type="button" class="btn btn-xs btn-danger team-slot-sub-remove" data-action="${options.removeSubAction || "removeTeamPackageSub"}" data-item-index="${itemIndex}" data-slot="${slot.key}" data-depth-index="${depthIndex}" aria-label="Remove ${escapeHtml(slot.label)} sub ${depthIndex}">Remove</button>`
       : ""}
             </div>
           `).join("");
       const addSubButton = options.depthChart
-        ? `<button type="button" class="btn btn-xs team-slot-sub-add" data-action="addTeamPackageSub" data-item-index="${itemIndex}" data-slot="${slot.key}">Add sub</button>`
+        ? `<button type="button" class="btn btn-xs team-slot-sub-add" data-action="${options.addSubAction || "addTeamPackageSub"}" data-item-index="${itemIndex}" data-slot="${slot.key}">Add sub</button>`
         : "";
       return `${selectsMarkup}<span class="team-slot-selection">${escapeHtml(formatTeamDepthChartDisplay(playerIds))}</span>${addSubButton}`;
     })()}
@@ -1550,8 +1604,8 @@ function renderTeamSettings() {
             </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} swap group">✕</button>
           </div>
-          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
-          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group")}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
         </div>
       `).join("")
     : '<div class="team-settings-empty">No swap groups yet. Add one to flip a whole cluster of players on a script row.</div>';
@@ -1679,11 +1733,12 @@ function removeTeamPlayer(playerId) {
   saveTeamPersonnelPackages(packages);
 
   const swapGroups = getTeamSwapGroups().map((group) => {
-    const assignments = normalizePlayerAssignments(group.assignments);
-    Object.keys(assignments).forEach((slotKey) => {
-      if (assignments[slotKey] === playerId) delete assignments[slotKey];
+    const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
+    Object.keys(depthChart).forEach((slotKey) => {
+      depthChart[slotKey] = depthChart[slotKey].filter((value) => value !== playerId);
+      if (!depthChart[slotKey].length) delete depthChart[slotKey];
     });
-    return { ...group, assignments };
+    return { ...group, depthChart, assignments: getPrimaryAssignmentsFromDepthChart(depthChart) };
   });
   saveTeamSwapGroups(swapGroups);
 
@@ -1877,15 +1932,75 @@ function initTeamSettings() {
 
     const groupIndex = parseInt(select.dataset.itemIndex, 10);
     const slotKey = select.dataset.slot;
+    const depthIndex = parseInt(select.dataset.depthIndex || "0", 10);
     if (!Number.isInteger(groupIndex) || !slotKey) return;
     const groups = getTeamSwapGroups();
     if (!groups[groupIndex]) return;
-    const assignments = normalizePlayerAssignments(groups[groupIndex].assignments);
-    if (select.value) assignments[slotKey] = select.value;
-    else delete assignments[slotKey];
-    groups[groupIndex].assignments = assignments;
+    const depthChart = normalizeTeamDepthChart(
+      groups[groupIndex].depthChart,
+      groups[groupIndex].assignments,
+    );
+    const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+    if (select.value) slotDepth[depthIndex] = select.value;
+    else slotDepth.splice(depthIndex, 1);
+    const cleanedDepth = [...new Set(slotDepth.map((value) => String(value || "").trim()).filter(Boolean))];
+    if (cleanedDepth.length) depthChart[slotKey] = cleanedDepth;
+    else delete depthChart[slotKey];
+    groups[groupIndex].depthChart = depthChart;
+    groups[groupIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
     saveTeamSwapGroups(groups);
     syncTeamSettingsDependents();
+  });
+
+  swapGroupContainer.addEventListener("click", (event) => {
+    const addButton = event.target.closest('[data-action="addTeamSwapGroupSub"]');
+    if (addButton) {
+      const groupIndex = parseInt(addButton.dataset.itemIndex, 10);
+      const slotKey = addButton.dataset.slot;
+      if (!Number.isInteger(groupIndex) || !slotKey) return;
+      const groups = getTeamSwapGroups();
+      if (!groups[groupIndex]) return;
+      const depthChart = normalizeTeamDepthChart(
+        groups[groupIndex].depthChart,
+        groups[groupIndex].assignments,
+      );
+      const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+      const fallbackPlayer = getTeamRoster().find(
+        (player) => !slotDepth.includes(player.id),
+      );
+      if (!fallbackPlayer) {
+        showToast("Add another roster player first", { duration: 2500, type: "warning" });
+        return;
+      }
+      slotDepth.push(fallbackPlayer.id);
+      depthChart[slotKey] = slotDepth;
+      groups[groupIndex].depthChart = depthChart;
+      groups[groupIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+      saveTeamSwapGroups(groups);
+      renderTeamSettings();
+      return;
+    }
+
+    const removeButton = event.target.closest('[data-action="removeTeamSwapGroupSub"]');
+    if (!removeButton) return;
+    const groupIndex = parseInt(removeButton.dataset.itemIndex, 10);
+    const slotKey = removeButton.dataset.slot;
+    const depthIndex = parseInt(removeButton.dataset.depthIndex || "0", 10);
+    if (!Number.isInteger(groupIndex) || !slotKey || depthIndex <= 0) return;
+    const groups = getTeamSwapGroups();
+    if (!groups[groupIndex]) return;
+    const depthChart = normalizeTeamDepthChart(
+      groups[groupIndex].depthChart,
+      groups[groupIndex].assignments,
+    );
+    const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+    slotDepth.splice(depthIndex, 1);
+    if (slotDepth.length) depthChart[slotKey] = slotDepth;
+    else delete depthChart[slotKey];
+    groups[groupIndex].depthChart = depthChart;
+    groups[groupIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+    saveTeamSwapGroups(groups);
+    renderTeamSettings();
   });
 
   renderTeamSettings();

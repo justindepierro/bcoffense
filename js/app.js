@@ -2666,6 +2666,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "pushPeriodToCallSheet":
           pushPeriodToCallSheet(idx);
           break;
+        case "promoteScriptDepthPlayer":
+          promoteScriptDepthPlayer(idx, el.dataset.slot, el.dataset.playerId);
+          break;
         case "importFromCallSheet":
           importFromCallSheet(idx);
           break;
