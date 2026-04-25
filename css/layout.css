@@ -577,10 +577,14 @@ h1 {
 
 .team-settings-grid {
   display: grid;
-  grid-template-columns: minmax(380px, 0.95fr) minmax(520px, 1.45fr);
+  grid-template-columns: repeat(auto-fit, minmax(min(360px, 100%), 1fr));
   gap: var(--space-lg);
   margin-top: var(--space-md);
   text-align: left;
+}
+
+.team-settings-grid > * {
+  min-width: 0;
 }
 
 .team-settings-panel--roster,
@@ -724,16 +728,17 @@ h1 {
 }
 
 .team-package-grid--five {
-  grid-template-columns: repeat(5, minmax(116px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
 }
 
 .team-package-grid--six {
-  grid-template-columns: repeat(6, minmax(110px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(132px, 1fr));
 }
 
 .team-package-slot {
   display: flex;
   flex-direction: column;
+  min-width: 0;
   gap: 6px;
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
@@ -779,6 +784,8 @@ h1 {
 
 .team-slot-player-row {
   display: flex;
+  flex-wrap: wrap;
+  min-width: 0;
   gap: 6px;
   align-items: stretch;
 }
@@ -812,11 +819,16 @@ h1 {
 
 .team-slot-player-row .team-slot-player-select {
   flex: 1 1 auto;
+  min-width: 0;
 }
 
 .team-slot-sub-add,
 .team-slot-sub-remove {
   align-self: flex-start;
+}
+
+.team-slot-sub-remove {
+  flex: 1 1 100%;
 }
 
 .team-slot-sub-add {
