@@ -496,6 +496,8 @@ h1 {
   align-items: center;
   gap: var(--space-sm);
   flex: 0 0 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .team-settings-panel-content {
@@ -596,9 +598,14 @@ h1 {
 .team-settings-add-row {
   display: flex;
   gap: var(--space-sm);
-  align-items: center;
+  align-items: stretch;
   margin-bottom: var(--space-md);
   flex-wrap: wrap;
+}
+
+.team-settings-actions > *,
+.team-settings-add-row > * {
+  min-height: 42px;
 }
 
 .team-settings-input,
@@ -624,6 +631,7 @@ h1 {
 .team-settings-input,
 .team-package-name {
   flex: 1 1 160px;
+  min-width: 0;
 }
 
 .team-package-name--short {
@@ -721,6 +729,20 @@ h1 {
   font-size: var(--font-size-sm);
 }
 
+.team-package-count {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 5px 9px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
 .team-package-grid {
   display: grid;
   gap: var(--space-sm);
@@ -778,6 +800,7 @@ h1 {
 }
 
 .team-slot-player-select {
+  width: 100%;
   min-height: 44px;
   font-size: var(--font-size-sm);
 }
@@ -818,7 +841,7 @@ h1 {
 }
 
 .team-slot-player-row .team-slot-player-select {
-  flex: 1 1 auto;
+  flex: 1 1 180px;
   min-width: 0;
 }
 
@@ -834,6 +857,12 @@ h1 {
 .team-slot-sub-add {
   width: 100%;
   justify-content: center;
+}
+
+.team-settings-panel-header--toggle .team-panel-badge,
+.team-settings-panel-header--toggle .team-package-count,
+.team-settings-panel-header--toggle .toggle-icon {
+  align-self: center;
 }
 
 .team-slot-selection {
@@ -889,6 +918,10 @@ h1 {
   .team-package-meta-top--stacked {
     flex-direction: column;
     align-items: stretch;
+  }
+
+  .team-settings-panel-header-meta {
+    justify-content: flex-start;
   }
 
   .team-roster-row {

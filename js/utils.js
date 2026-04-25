@@ -951,6 +951,7 @@ const STORAGE_KEYS = {
   TEAM_PERSONNEL_PACKAGES: "teamPersonnelPackages",
   TEAM_SWAP_GROUPS: "teamSwapGroups",
   TEAM_ASSIGNMENT_LABELS: "teamAssignmentLabels",
+  TEAM_SETTINGS_COLLAPSED: "teamSettingsCollapsed",
 };
 
 const TEAM_ASSIGNMENT_SLOTS = [
@@ -1427,6 +1428,52 @@ function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
 let teamSettingsAutosaveTimer = null;
 let teamDepthDragState = null;
 
+function normalizeTeamSettingsCollapsedState(state = {}) {
+  return {
+    roster: Boolean(state?.roster),
+    packages: Boolean(state?.packages),
+    swaps: Boolean(state?.swaps),
+  };
+}
+
+function getTeamSettingsCollapsedState() {
+  return normalizeTeamSettingsCollapsedState(
+    storageManager.get(STORAGE_KEYS.TEAM_SETTINGS_COLLAPSED, {}),
+  );
+}
+
+function saveTeamSettingsCollapsedState(state) {
+  const normalized = normalizeTeamSettingsCollapsedState(state);
+  storageManager.set(STORAGE_KEYS.TEAM_SETTINGS_COLLAPSED, normalized);
+  return normalized;
+}
+
+function setTeamSettingsPanelCollapsed(panelKey, isCollapsed) {
+  const state = getTeamSettingsCollapsedState();
+  state[panelKey] = Boolean(isCollapsed);
+  saveTeamSettingsCollapsedState(state);
+}
+
+function formatTeamCountLabel(count, singular, plural = null) {
+  return `${count} ${count === 1 ? singular : (plural || `${singular}s`)}`;
+}
+
+function applyTeamSettingsCollapsedState() {
+  const state = getTeamSettingsCollapsedState();
+  document
+    .querySelectorAll(".team-settings-panel-header--toggle[data-panel-key]")
+    .forEach((headerEl) => {
+      const panelKey = headerEl.dataset.panelKey;
+      const content = headerEl.nextElementSibling;
+      if (!panelKey || !content) return;
+      const isCollapsed = Boolean(state[panelKey]);
+      content.classList.toggle("collapsed", isCollapsed);
+      headerEl.setAttribute("aria-expanded", isCollapsed ? "false" : "true");
+      const icon = headerEl.querySelector(".toggle-icon");
+      if (icon) icon.textContent = isCollapsed ? "▶" : "▼";
+    });
+}
+
 function updateTeamSettingsAutosaveStatus() {
   const el = document.getElementById("teamSettingsSaveStatus");
   if (!el) return;
@@ -1508,6 +1555,29 @@ function renderTeamSettings() {
   const roster = getTeamRoster();
   const packages = getTeamPersonnelPackages();
   const swapGroups = getTeamSwapGroups();
+  const rosterBadge = document.getElementById("teamRosterCountBadge");
+  const packagesBadge = document.getElementById("teamPackagesCountBadge");
+  const swapBadge = document.getElementById("teamSwapGroupsCountBadge");
+  const totalPackageSubs = packages.reduce(
+    (sum, pkg) => sum + Object.values(normalizeTeamDepthChart(pkg.depthChart, pkg.assignments))
+      .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
+    0,
+  );
+  const totalSwapSubs = swapGroups.reduce(
+    (sum, group) => sum + Object.values(normalizeTeamDepthChart(group.depthChart, group.assignments))
+      .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
+    0,
+  );
+
+  if (rosterBadge) {
+    rosterBadge.textContent = formatTeamCountLabel(roster.length, "player");
+  }
+  if (packagesBadge) {
+    packagesBadge.textContent = `${formatTeamCountLabel(packages.length, "package")} | ${formatTeamCountLabel(totalPackageSubs, "sub")}`;
+  }
+  if (swapBadge) {
+    swapBadge.textContent = `${formatTeamCountLabel(swapGroups.length, "group")} | ${formatTeamCountLabel(totalSwapSubs, "sub")}`;
+  }
   const renderAssignmentRow = (
     slots,
     assignments,
@@ -1574,6 +1644,12 @@ function renderTeamSettings() {
       const packageSlots = getTeamAssignmentSlots(pkg.personnel);
       const rowOne = packageSlots.filter((slot) => slot.row === 0);
       const rowTwo = packageSlots.filter((slot) => slot.row === 1);
+      const depthChart = normalizeTeamDepthChart(pkg.depthChart, pkg.assignments);
+      const starterCount = Object.values(depthChart).filter((playerIds) => playerIds.length > 0).length;
+      const subCount = Object.values(depthChart).reduce(
+        (sum, playerIds) => sum + Math.max(playerIds.length - 1, 0),
+        0,
+      );
       return `
         <div class="team-package-card" data-package-index="${pkgIndex}">
           <div class="team-package-head">
@@ -1581,36 +1657,50 @@ function renderTeamSettings() {
               <div class="team-package-meta-top">
                 <input type="text" class="team-package-name" value="${escapeAttr(pkg.personnel)}" data-field="teamPackagePersonnel" data-package-index="${pkgIndex}" placeholder="11" aria-label="Personnel package name" />
                 ${pkg.isAutoPrepared ? '<span class="team-package-status">Playbook Ready</span>' : ""}
+                <span class="team-package-count">${formatTeamCountLabel(starterCount, "starter")}</span>
+                <span class="team-package-count">${formatTeamCountLabel(subCount, "sub")}</span>
               </div>
               <p class="team-package-copy">Set players and rename the slot tags for ${escapeHtml(pkg.personnel || "this package")}.</p>
             </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPersonnelPackage" data-package-index="${pkgIndex}" aria-label="Remove ${escapeHtml(pkg.personnel)} package">✕</button>
           </div>
-              ${renderAssignmentRow(rowOne, pkg.depthChart || pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
-              ${renderAssignmentRow(rowTwo, pkg.depthChart || pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
+              ${renderAssignmentRow(rowOne, depthChart, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
+              ${renderAssignmentRow(rowTwo, depthChart, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
         </div>
       `;
     }).join("")
     : '<div class="team-settings-empty">No personnel packages yet. Add one to preload script lineups by personnel.</div>';
 
   swapGroupContainer.innerHTML = swapGroups.length
-    ? swapGroups.map((group, groupIndex) => `
+    ? swapGroups.map((group, groupIndex) => {
+      const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
+      const starterCount = Object.values(depthChart).filter((playerIds) => playerIds.length > 0).length;
+      const subCount = Object.values(depthChart).reduce(
+        (sum, playerIds) => sum + Math.max(playerIds.length - 1, 0),
+        0,
+      );
+      return `
         <div class="team-package-card" data-swap-group-id="${escapeAttr(group.id)}">
           <div class="team-package-head">
             <div class="team-package-meta">
               <div class="team-package-meta-top team-package-meta-top--stacked">
                 <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Tempo 2s" aria-label="Swap group name" />
                 <input type="text" class="team-package-name team-package-name--short" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="11 or blank" aria-label="Swap group personnel" />
+                <span class="team-package-count">${formatTeamCountLabel(starterCount, "starter")}</span>
+                <span class="team-package-count">${formatTeamCountLabel(subCount, "sub")}</span>
               </div>
               <p class="team-package-copy">Build a whole-unit substitution for ${escapeHtml(group.personnel || "any personnel")}.</p>
             </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} swap group">✕</button>
           </div>
-          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub", depthKind: "swap" })}
-          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub", depthKind: "swap" })}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub", depthKind: "swap" })}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub", depthKind: "swap" })}
         </div>
-      `).join("")
+      `;
+    }).join("")
     : '<div class="team-settings-empty">No swap groups yet. Add one to flip a whole cluster of players on a script row.</div>';
+
+  applyTeamSettingsCollapsedState();
 }
 
 function reorderTeamDepthChartEntry(kind, itemIndex, slotKey, fromIndex, toIndex) {
@@ -1812,6 +1902,20 @@ function initTeamSettings() {
   rosterContainer.dataset.bound = "true";
   packageContainer.dataset.bound = "true";
   swapGroupContainer.dataset.bound = "true";
+
+  document
+    .querySelectorAll(".team-settings-panel-header--toggle[data-panel-key]")
+    .forEach((headerEl) => {
+      if (headerEl.dataset.bound === "true") return;
+      headerEl.dataset.bound = "true";
+      headerEl.addEventListener("keydown", (event) => {
+        if (event.key !== "Enter" && event.key !== " ") return;
+        event.preventDefault();
+        toggleCollapsiblePanel(headerEl);
+      });
+    });
+
+  applyTeamSettingsCollapsedState();
 
   rosterContainer.addEventListener("input", (event) => {
     const input = event.target.closest("[data-player-id][data-field]");
@@ -2193,6 +2297,11 @@ function toggleCollapsiblePanel(headerEl) {
   if (!content) return;
   content.classList.toggle("collapsed");
   const isCollapsed = content.classList.contains("collapsed");
+
+  const panelKey = headerEl.dataset.panelKey;
+  if (panelKey) {
+    setTeamSettingsPanelCollapsed(panelKey, isCollapsed);
+  }
 
   if (headerEl.hasAttribute("aria-expanded")) {
     headerEl.setAttribute("aria-expanded", isCollapsed ? "false" : "true");

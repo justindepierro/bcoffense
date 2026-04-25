@@ -173,13 +173,13 @@
 
           <div class="team-settings-grid">
             <div class="team-settings-panel team-settings-panel--roster">
-              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" role="button" tabindex="0" aria-expanded="true">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" data-panel-key="roster" role="button" tabindex="0" aria-expanded="true">
                 <div>
                   <span class="team-settings-panel-kicker">Roster</span>
                   <h4>Players & Import</h4>
                 </div>
                 <div class="team-settings-panel-header-meta">
-                  <span class="team-panel-badge">Bulk-ready</span>
+                  <span class="team-panel-badge" id="teamRosterCountBadge">0 players</span>
                   <span class="toggle-icon">▼</span>
                 </div>
               </div>
@@ -208,13 +208,13 @@
             </div>
 
             <div class="team-settings-panel team-settings-panel--packages">
-              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" role="button" tabindex="0" aria-expanded="true">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" data-panel-key="packages" role="button" tabindex="0" aria-expanded="true">
                 <div>
                   <span class="team-settings-panel-kicker">Personnel</span>
                   <h4>Package Builder</h4>
                 </div>
                 <div class="team-settings-panel-header-meta">
-                  <span class="team-panel-badge">Labels live here</span>
+                  <span class="team-panel-badge" id="teamPackagesCountBadge">0 packages | 0 subs</span>
                   <span class="toggle-icon">▼</span>
                 </div>
               </div>
@@ -231,13 +231,13 @@
             </div>
 
             <div class="team-settings-panel team-settings-panel--swaps">
-              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" role="button" tabindex="0" aria-expanded="true">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle" data-action="toggleCollapsiblePanel" data-panel-key="swaps" role="button" tabindex="0" aria-expanded="true">
                 <div>
                   <span class="team-settings-panel-kicker">Sub Packages</span>
                   <h4>Swap Groups</h4>
                 </div>
                 <div class="team-settings-panel-header-meta">
-                  <span class="team-panel-badge">One-click swaps</span>
+                  <span class="team-panel-badge" id="teamSwapGroupsCountBadge">0 groups | 0 subs</span>
                   <span class="toggle-icon">▼</span>
                 </div>
               </div>
