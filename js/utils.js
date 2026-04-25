@@ -1007,6 +1007,7 @@ function saveTeamAssignmentLabelMap(labelMap, personnel = "") {
   if (!normalizedPersonnel) {
     const normalized = normalizeTeamAssignmentLabelMap(labelMap);
     storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
+    updateTeamSettingsAutosaveStatus();
     return normalized;
   }
 
@@ -1080,6 +1081,7 @@ function saveTeamRoster(roster) {
     ? roster.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
     : [];
   storageManager.set(STORAGE_KEYS.TEAM_ROSTER, normalized);
+  updateTeamSettingsAutosaveStatus();
   return normalized;
 }
 
@@ -1154,6 +1156,7 @@ function saveTeamPersonnelPackages(packages) {
       .filter((pkg) => pkg.personnel)
     : [];
   storageManager.set(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, normalized);
+  updateTeamSettingsAutosaveStatus();
   return normalized;
 }
 
@@ -1173,6 +1176,7 @@ function saveTeamSwapGroups(groups) {
       .filter((group) => group.name)
     : [];
   storageManager.set(STORAGE_KEYS.TEAM_SWAP_GROUPS, normalized);
+  updateTeamSettingsAutosaveStatus();
   return normalized;
 }
 
@@ -1247,6 +1251,16 @@ function formatTeamPlayerLabel(player) {
   return bits.join(" ") || "Unnamed Player";
 }
 
+function getTeamPlayerById(playerId) {
+  if (!playerId) return null;
+  return getTeamRoster().find((player) => player.id === playerId) || null;
+}
+
+function getTeamPlayerSelectionDisplay(playerId) {
+  const player = getTeamPlayerById(playerId);
+  return player ? formatTeamPlayerLabel(player) : "Open slot";
+}
+
 function buildTeamPlayerOptionMarkup(selectedId = "", includeBlank = true) {
   const roster = getTeamRoster();
   const blankOption = includeBlank
@@ -1295,6 +1309,39 @@ function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
   })
     .filter(Boolean)
     .join(", ");
+}
+
+let teamSettingsAutosaveTimer = null;
+
+function updateTeamSettingsAutosaveStatus() {
+  const el = document.getElementById("teamSettingsSaveStatus");
+  if (!el) return;
+
+  el.className = "team-settings-chip team-settings-chip--status is-saved";
+  el.textContent = "Autosaved just now";
+
+  clearTimeout(teamSettingsAutosaveTimer);
+  teamSettingsAutosaveTimer = setTimeout(() => {
+    const nextEl = document.getElementById("teamSettingsSaveStatus");
+    if (!nextEl) return;
+    nextEl.className = "team-settings-chip team-settings-chip--status";
+    nextEl.textContent = "Autosave on";
+  }, 2200);
+}
+
+function refreshTeamSettingsSelectionUI() {
+  document
+    .querySelectorAll(".team-slot-player-select")
+    .forEach((selectEl) => {
+      const currentValue = selectEl.value;
+      selectEl.innerHTML = buildTeamPlayerOptionMarkup(currentValue);
+
+      const slotEl = selectEl.closest(".team-package-slot");
+      const previewEl = slotEl?.querySelector(".team-slot-selection");
+      if (previewEl) {
+        previewEl.textContent = getTeamPlayerSelectionDisplay(currentValue);
+      }
+    });
 }
 
 function importTeamRosterFromText(rawText) {
@@ -1369,6 +1416,7 @@ function renderTeamSettings() {
           <select class="team-slot-player-select" data-field="${fieldName}" data-item-index="${itemIndex}" data-slot="${slot.key}" aria-label="${escapeHtml(label)} ${slot.label}">
             ${buildTeamPlayerOptionMarkup(assignments[slot.key] || "")}
           </select>
+          <span class="team-slot-selection">${escapeHtml(getTeamPlayerSelectionDisplay(assignments[slot.key] || ""))}</span>
         </label>
       `).join("")}
     </div>
@@ -1610,6 +1658,7 @@ function initTeamSettings() {
     if (field === "teamPlayerPosition") player.position = input.value.toUpperCase();
 
     saveTeamRoster(roster);
+    refreshTeamSettingsSelectionUI();
     if (typeof currentActiveTab === "string" && currentActiveTab === "script" && typeof renderScript === "function") {
       renderScript();
     }
@@ -1639,6 +1688,7 @@ function initTeamSettings() {
       packages[packageIndex].labels = nextLabels;
     }
     saveTeamPersonnelPackages(packages);
+    refreshTeamSettingsSelectionUI();
     if (typeof renderScript === "function") renderScript();
   });
 
@@ -3868,6 +3918,7 @@ function getTeamName() {
  */
 function setTeamName(name) {
   storageManager.set("teamName", name);
+  updateTeamSettingsAutosaveStatus();
   // Update header subtitle
   const teamSub = document.getElementById("teamSubtitle");
   if (teamSub) {

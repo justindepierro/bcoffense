@@ -331,7 +331,7 @@ h1 {
 
 .team-settings-shell {
   margin-top: var(--space-lg);
-  padding: var(--space-lg);
+  padding: calc(var(--space-lg) + var(--space-sm));
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   background:
@@ -409,13 +409,23 @@ h1 {
   display: inline-flex;
   align-items: center;
   padding: 9px 12px;
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-md);
   background: var(--color-white-alpha-10);
   border: 1px solid var(--color-white-alpha-15);
   color: var(--color-white);
   font-size: var(--font-size-sm);
   font-weight: 600;
   backdrop-filter: blur(8px);
+}
+
+.team-settings-chip--status {
+  background: var(--color-white-alpha-15);
+}
+
+.team-settings-chip--status.is-saved {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+  color: var(--color-primary-dark);
 }
 
 .team-settings-topbar {
@@ -430,7 +440,7 @@ h1 {
   position: relative;
   padding: var(--space-lg);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
   box-shadow: var(--shadow-sm);
 }
@@ -509,10 +519,15 @@ h1 {
 
 .team-settings-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(340px, 1fr));
+  grid-template-columns: minmax(380px, 0.95fr) minmax(520px, 1.45fr);
   gap: var(--space-lg);
   margin-top: var(--space-md);
   text-align: left;
+}
+
+.team-settings-panel--roster,
+.team-settings-panel--swaps {
+  align-self: start;
 }
 
 .team-settings-actions,
@@ -533,7 +548,7 @@ h1 {
 .team-slot-player-select {
   padding: 11px 12px;
   border: 1px solid var(--color-border-input);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   font: inherit;
   background: var(--color-white);
   color: var(--color-text);
@@ -593,7 +608,7 @@ h1 {
   align-items: center;
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--color-white);
   box-shadow: var(--shadow-xs);
 }
@@ -601,7 +616,7 @@ h1 {
 .team-package-card {
   padding: var(--space-md);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-md);
   background: linear-gradient(180deg, var(--color-white) 0%, var(--color-bg-light) 100%);
   box-shadow: var(--shadow-sm);
 }
@@ -644,11 +659,11 @@ h1 {
 }
 
 .team-package-grid--five {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(116px, 1fr));
 }
 
 .team-package-grid--six {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(6, minmax(110px, 1fr));
 }
 
 .team-package-slot {
@@ -657,7 +672,7 @@ h1 {
   gap: 6px;
   padding: var(--space-sm);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-sm);
   background: var(--color-white);
   box-shadow: var(--shadow-xs);
 }
@@ -685,12 +700,30 @@ h1 {
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.05em;
+  text-align: center;
+}
+
+.team-slot-player-select {
+  min-height: 44px;
+  font-size: var(--font-size-sm);
+}
+
+.team-slot-selection {
+  min-height: 32px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-blue-light);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  line-height: 1.35;
+  word-break: break-word;
 }
 
 .team-settings-empty {
   padding: var(--space-md);
   border: 1px dashed var(--color-border);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   color: var(--color-text-secondary);
   background: linear-gradient(180deg, var(--color-bg-input) 0%, var(--color-white) 100%);
 }
@@ -776,6 +809,11 @@ h1 {
   max-width: 540px;
   width: 100%;
   transition: all var(--transition-normal);
+}
+
+.upload-box--wide-settings {
+  max-width: 1360px;
+  padding: 42px clamp(24px, 3vw, 40px);
 }
 .upload-box h2 {
   margin-bottom: 8px;
