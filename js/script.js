@@ -197,6 +197,9 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptHighlightHuddle",
   "scriptHighlightCandy",
   "scriptShowWbNum",
+  "scriptHidePersonnel",
+  "scriptHideLinemen",
+  "scriptPrintStyle",
   "scriptShowPrintPreview",
 ];
 
@@ -289,6 +292,9 @@ function saveScriptDisplayOptions() {
     const el = document.getElementById(id);
     if (el) opts[id] = el.checked;
   });
+  opts.layoutMode =
+    document.querySelector('input[name="scriptLayoutMode"]:checked')?.value ||
+    "detail";
   opts.filtersCollapsed = filtersCollapsed;
   storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
 }
@@ -303,6 +309,11 @@ function restoreScriptDisplayOptions() {
     const el = document.getElementById(id);
     if (el && opts[id] !== undefined) el.checked = opts[id];
   });
+  const layoutMode = opts.layoutMode === "compact" ? "compact" : "detail";
+  const modeEl = document.querySelector(
+    `input[name="scriptLayoutMode"][value="${layoutMode}"]`,
+  );
+  if (modeEl) modeEl.checked = true;
   filtersCollapsed = Boolean(opts.filtersCollapsed);
   applyScriptFiltersCollapsedState();
 }
@@ -329,6 +340,15 @@ function getScriptDisplayOptions() {
     highlightCandy:
       document.getElementById("scriptHighlightCandy")?.checked || false,
     showWbNum: document.getElementById("scriptShowWbNum")?.checked !== false,
+    hidePersonnel:
+      document.getElementById("scriptHidePersonnel")?.checked || false,
+    hideLinemen:
+      document.getElementById("scriptHideLinemen")?.checked || false,
+    printStyle:
+      document.getElementById("scriptPrintStyle")?.checked || false,
+    layoutMode:
+      document.querySelector('input[name="scriptLayoutMode"]:checked')?.value ||
+      "detail",
   };
 }
 
@@ -441,7 +461,7 @@ function resetScriptPlayerOverrides(index) {
   renderScript();
 }
 
-function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
+function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);
@@ -450,6 +470,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
   );
   const buildRow = (slotKeys) => {
     const slots = slotKeys.map((slotKey) => slotMap.get(slotKey)).filter(Boolean);
+    if (!slots.length) return "";
     return `
       <div class="script-player-row script-player-row--${slots.length}">
         ${slots.map((slot) => `
@@ -491,7 +512,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
   };
 
   return `
-    <div class="script-player-grid">
+    <div class="script-player-grid ${opts.layoutMode === "compact" ? "script-player-grid--compact" : "script-player-grid--detail"}">
       <div class="script-player-grid-head">
         <div class="script-player-grid-meta">
           <span class="script-player-grid-title">Personnel</span>
@@ -502,7 +523,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel) {
         </div>
       </div>
       ${buildRow(["qb", "rb", "h", "x", "y", "z"])}
-      ${buildRow(["lt", "lg", "c", "rg", "rt"])}
+      ${opts.hideLinemen ? "" : buildRow(["lt", "lg", "c", "rg", "rt"])}
     </div>
   `;
 }
@@ -1109,6 +1130,8 @@ function selectAllScriptOptions() {
     const el = document.getElementById(id);
     if (el) el.checked = true;
   });
+  saveScriptDisplayOptions();
+  renderScript();
 }
 
 /**
@@ -1119,6 +1142,12 @@ function clearAllScriptOptions() {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
+  const detailEl = document.querySelector(
+    'input[name="scriptLayoutMode"][value="detail"]',
+  );
+  if (detailEl) detailEl.checked = true;
+  saveScriptDisplayOptions();
+  renderScript();
 }
 
 /**
@@ -3390,8 +3419,16 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const isSelected = bulkSelectedIndices.includes(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
-  const playerAssignmentGrid = buildScriptPlayerAssignmentGrid(play, index, playLabel);
+  const playerAssignmentGrid = opts.hidePersonnel
+    ? ""
+    : buildScriptPlayerAssignmentGrid(play, index, playLabel, opts);
   const playerSummary = getScriptPlayerSummary(play);
+  const itemClasses = [
+    "script-item",
+    isSelected ? "bulk-selected" : "",
+    opts.layoutMode === "compact" ? "script-item--compact" : "script-item--detail",
+    opts.printStyle ? "script-item--printlike" : "",
+  ].filter(Boolean).join(" ");
 
   let wbBadge = "";
   if (scriptWristband && opts.showWbNum) {
@@ -3402,7 +3439,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   }
 
   return `
-    <div class="script-item ${isSelected ? "bulk-selected" : ""}" draggable="true" data-drag="scriptStart" data-idx="${index}" role="group" aria-label="Draggable play ${playNumber}: ${escapeHtml(playLabel)}">
+    <div class="${itemClasses}" draggable="true" data-drag="scriptStart" data-idx="${index}" role="group" aria-label="Draggable play ${playNumber}: ${escapeHtml(playLabel)}">
       <input type="checkbox" class="bulk-select-cb" data-index="${index}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${index}" title="Select for bulk edit" aria-label="Select play ${playNumber} for bulk edit">
       <div class="play-num" aria-hidden="true">${playNumber}${wbBadge}</div>
       <div class="play-call">

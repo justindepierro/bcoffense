@@ -909,10 +909,23 @@
 
           <div class="display-options-panel">
             <div class="display-options-header" data-action="toggleCollapsiblePanel">
-              <strong>🖨️ Print Options</strong>
+              <strong>🖨️ Script Display</strong>
               <span class="toggle-icon">▼</span>
             </div>
             <div class="display-options-content">
+              <div class="script-display-mode-bar">
+                <span class="script-display-mode-title">Mode:</span>
+                <label class="script-display-mode-option">
+                  <input type="radio" name="scriptLayoutMode" value="detail" checked
+                    data-onchange="renderScript;saveScriptDisplayOptions" />
+                  Detail
+                </label>
+                <label class="script-display-mode-option">
+                  <input type="radio" name="scriptLayoutMode" value="compact"
+                    data-onchange="renderScript;saveScriptDisplayOptions" />
+                  Compact
+                </label>
+              </div>
               <div class="display-options-btns">
                 <button class="btn btn-xs" data-action="selectAllScriptOptions">
                   All
@@ -958,6 +971,15 @@
                 <label><input type="checkbox" id="scriptShowWbNum" checked
                     data-onchange="renderScript;saveScriptDisplayOptions" />
                   Show WB#</label>
+                <label><input type="checkbox" id="scriptHidePersonnel"
+                    data-onchange="renderScript;saveScriptDisplayOptions" />
+                  Hide Personnel</label>
+                <label><input type="checkbox" id="scriptHideLinemen"
+                    data-onchange="renderScript;saveScriptDisplayOptions" />
+                  Hide Linemen</label>
+                <label><input type="checkbox" id="scriptPrintStyle"
+                    data-onchange="renderScript;saveScriptDisplayOptions" />
+                  Print-style Rows</label>
                 <label><input type="checkbox" id="scriptShowPrintPreview"
                     data-onchange="renderScript;saveScriptDisplayOptions" />
                   👁️ Show Print Preview</label>
