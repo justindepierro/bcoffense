@@ -708,6 +708,26 @@ h1 {
   font-size: var(--font-size-sm);
 }
 
+.team-slot-player-row {
+  display: flex;
+  gap: 6px;
+  align-items: stretch;
+}
+
+.team-slot-player-row .team-slot-player-select {
+  flex: 1 1 auto;
+}
+
+.team-slot-sub-add,
+.team-slot-sub-remove {
+  align-self: flex-start;
+}
+
+.team-slot-sub-add {
+  width: 100%;
+  justify-content: center;
+}
+
 .team-slot-selection {
   min-height: 32px;
   padding: 8px 10px;
