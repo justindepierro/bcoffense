@@ -211,6 +211,7 @@ const SCRIPT_RENDER_PROFILE_HISTORY_LIMIT = 12;
 
 const SCRIPT_PERIOD_ACTION_SHORTCUTS = {
   selectPeriodPlays: { aria: "Alt+Shift+S", hint: "Alt+Shift+S" },
+  openPeriodReorderModal: { aria: "Alt+Shift+M", hint: "Alt+Shift+M" },
   sortPeriod: { aria: "Alt+Shift+O", hint: "Alt+Shift+O" },
   reversePeriod: { aria: "Alt+Shift+R", hint: "Alt+Shift+R" },
   applyPreferredForPeriod: { aria: "Alt+Shift+P", hint: "Alt+Shift+P" },
@@ -3153,20 +3154,47 @@ function duplicatePlay(index) {
   renderScript();
 }
 
+function getPlayMoveBounds(index) {
+  const separatorIndex = findOwningPeriodIndex(index);
+  const lowerBound = separatorIndex >= 0 ? separatorIndex + 1 : 0;
+  let upperBound = script.length - 1;
+
+  for (let i = index + 1; i < script.length; i++) {
+    if (script[i]?.isSeparator) {
+      upperBound = i - 1;
+      break;
+    }
+  }
+
+  return { lowerBound, upperBound };
+}
+
 /**
  * Move a play up or down in the script
  * @param {number} index - Current index
- * @param {number} direction - Direction to move (-1 for up, 1 for down)
+ * @param {number|string} direction - Direction to move (-1 for up, 1 for down, "top" or "bottom")
  */
 function movePlay(index, direction) {
-  const newIndex = index + direction;
-  if (newIndex >= 0 && newIndex < script.length) {
-    saveScriptState();
-    const temp = script[index];
-    script[index] = script[newIndex];
-    script[newIndex] = temp;
-    renderScript();
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  const { lowerBound, upperBound } = getPlayMoveBounds(index);
+  let targetIndex = index;
+
+  if (direction === "top") targetIndex = lowerBound;
+  else if (direction === "bottom") targetIndex = upperBound;
+  else {
+    const numericDirection = Number(direction);
+    if (!Number.isFinite(numericDirection)) return;
+    targetIndex = index + numericDirection;
   }
+
+  if (targetIndex < lowerBound || targetIndex > upperBound || targetIndex === index) return;
+
+  saveScriptState();
+  script.splice(index, 1);
+  script.splice(targetIndex, 0, play);
+  renderScript();
 }
 
 function getScriptReorderDisplayLabel(play, orderIndex) {
@@ -3814,8 +3842,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       </div>
       <div class="play-controls">
         <div class="move-btns">
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
         </div>
         <input type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
         <input type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
@@ -5701,6 +5731,9 @@ function initScriptKeyboard() {
       case "s":
         selectPeriodPlays(periodIndex);
         setScriptToolbarStatus(`${periodLabel} selection updated`, "success");
+        return true;
+      case "m":
+        openPeriodReorderModal(periodIndex);
         return true;
       case "o":
         sortPeriod(periodIndex);

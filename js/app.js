@@ -2622,10 +2622,11 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!el) return;
       const action = el.dataset.action;
       const idx = parseInt(el.dataset.idx, 10);
-      const dir = parseInt(el.dataset.dir, 10);
+      const rawDir = el.dataset.dir;
+      const dir = parseInt(rawDir, 10);
       switch (action) {
         case "movePlay":
-          movePlay(idx, dir);
+          movePlay(idx, Number.isNaN(dir) ? rawDir : dir);
           break;
         case "removeFromScript":
           removeFromScript(idx);

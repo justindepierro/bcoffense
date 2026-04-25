@@ -1039,7 +1039,8 @@
 }
 
 .script-item--compact .move-btns {
-  flex-direction: row;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
 .script-item .move-btns {
@@ -1054,6 +1055,9 @@
   cursor: pointer;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-2xs);
+}
+.script-item--compact .move-btn {
+  width: 100%;
 }
 @media (hover: hover) {
   .script-item .move-btn:hover {
