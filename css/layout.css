@@ -509,6 +509,20 @@ h1 {
   display: none;
 }
 
+.team-settings-panel-summary {
+  display: none;
+  margin-top: var(--space-xs);
+  padding-top: var(--space-sm);
+  border-top: 1px dashed var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  line-height: 1.4;
+}
+
+.team-settings-panel-content.collapsed + .team-settings-panel-summary {
+  display: block;
+}
+
 .team-settings-panel-header--toggle .toggle-icon {
   display: inline-flex;
   align-items: center;
@@ -638,6 +652,14 @@ h1 {
   flex: 0 0 110px;
 }
 
+.team-settings-actions .btn,
+.team-settings-add-row .btn,
+.team-slot-player-select,
+.team-package-name,
+.team-settings-input {
+  max-width: 100%;
+}
+
 .team-settings-input:focus,
 .team-roster-bulk-input:focus,
 .team-roster-cell:focus,
@@ -723,6 +745,10 @@ h1 {
   align-items: stretch;
 }
 
+.team-package-meta-top--stacked .team-package-count {
+  align-self: center;
+}
+
 .team-package-copy {
   margin: var(--space-xs) 0 0;
   color: var(--color-text-secondary);
@@ -803,6 +829,7 @@ h1 {
   width: 100%;
   min-height: 44px;
   font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
 }
 
 .team-slot-player-row {

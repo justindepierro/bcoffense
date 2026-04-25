@@ -1427,6 +1427,7 @@ function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
 
 let teamSettingsAutosaveTimer = null;
 let teamDepthDragState = null;
+let teamSettingsViewState = null;
 
 function normalizeTeamSettingsCollapsedState(state = {}) {
   return {
@@ -1456,6 +1457,109 @@ function setTeamSettingsPanelCollapsed(panelKey, isCollapsed) {
 
 function formatTeamCountLabel(count, singular, plural = null) {
   return `${count} ${count === 1 ? singular : (plural || `${singular}s`)}`;
+}
+
+function captureTeamSettingsViewState() {
+  const section = document.querySelector(".team-settings-section");
+  if (!section) return null;
+
+  const activeEl = document.activeElement;
+  const hasTeamFocus = Boolean(activeEl && section.contains(activeEl));
+  const focus = hasTeamFocus
+    ? {
+      id: activeEl.id || "",
+      field: activeEl.dataset.field || "",
+      playerId: activeEl.dataset.playerId || "",
+      packageIndex: activeEl.dataset.packageIndex || "",
+      groupIndex: activeEl.dataset.groupIndex || "",
+      itemIndex: activeEl.dataset.itemIndex || "",
+      slot: activeEl.dataset.slot || "",
+      depthIndex: activeEl.dataset.depthIndex || "",
+      selectionStart:
+          typeof activeEl.selectionStart === "number" ? activeEl.selectionStart : null,
+      selectionEnd:
+          typeof activeEl.selectionEnd === "number" ? activeEl.selectionEnd : null,
+    }
+    : null;
+
+  return {
+    scrollY: window.scrollY,
+    focus,
+  };
+}
+
+function findTeamSettingsFocusTarget(focus) {
+  if (!focus) return null;
+  if (focus.id) {
+    const byId = document.getElementById(focus.id);
+    if (byId) return byId;
+  }
+
+  const selectors = [];
+  if (focus.field) selectors.push(`[data-field="${escapeAttr(focus.field)}"]`);
+  if (focus.playerId) selectors.push(`[data-player-id="${escapeAttr(focus.playerId)}"]`);
+  if (focus.packageIndex) selectors.push(`[data-package-index="${escapeAttr(focus.packageIndex)}"]`);
+  if (focus.groupIndex) selectors.push(`[data-group-index="${escapeAttr(focus.groupIndex)}"]`);
+  if (focus.itemIndex) selectors.push(`[data-item-index="${escapeAttr(focus.itemIndex)}"]`);
+  if (focus.slot) selectors.push(`[data-slot="${escapeAttr(focus.slot)}"]`);
+  if (focus.depthIndex) selectors.push(`[data-depth-index="${escapeAttr(focus.depthIndex)}"]`);
+  if (!selectors.length) return null;
+  return document.querySelector(selectors.join(""));
+}
+
+function restoreTeamSettingsViewState(state) {
+  if (!state) return;
+  requestAnimationFrame(() => {
+    if (typeof state.scrollY === "number") window.scrollTo(0, state.scrollY);
+    const target = findTeamSettingsFocusTarget(state.focus);
+    if (!target) return;
+    target.focus({ preventScroll: true });
+    if (
+      typeof state.focus?.selectionStart === "number" &&
+      typeof state.focus?.selectionEnd === "number" &&
+      typeof target.setSelectionRange === "function"
+    ) {
+      target.setSelectionRange(state.focus.selectionStart, state.focus.selectionEnd);
+    }
+  });
+}
+
+function buildTeamSettingsRosterSummary(roster) {
+  if (!roster.length) return "No roster loaded yet.";
+  const positionCounts = new Map();
+  roster.forEach((player) => {
+    const key = String(player.position || "UNASSIGNED").trim() || "UNASSIGNED";
+    positionCounts.set(key, (positionCounts.get(key) || 0) + 1);
+  });
+  const topPositions = [...positionCounts.entries()]
+    .sort((left, right) => right[1] - left[1] || left[0].localeCompare(right[0]))
+    .slice(0, 3)
+    .map(([position, count]) => `${position} ${count}`)
+    .join(" | ");
+  return `${formatTeamCountLabel(roster.length, "player")} | ${topPositions}`;
+}
+
+function buildTeamSettingsPackagesSummary(packages) {
+  if (!packages.length) return "No personnel packages configured yet.";
+  const autoPrepared = packages.filter((pkg) => pkg.isAutoPrepared).length;
+  const subCount = packages.reduce(
+    (sum, pkg) => sum + Object.values(normalizeTeamDepthChart(pkg.depthChart, pkg.assignments))
+      .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
+    0,
+  );
+  const labels = packages.slice(0, 4).map((pkg) => pkg.personnel).filter(Boolean).join(", ");
+  return `${formatTeamCountLabel(packages.length, "package")} | ${formatTeamCountLabel(autoPrepared, "auto-prepped", "auto-prepped")} | ${formatTeamCountLabel(subCount, "sub")} | ${labels}`;
+}
+
+function buildTeamSettingsSwapSummary(groups) {
+  if (!groups.length) return "No swap groups configured yet.";
+  const subCount = groups.reduce(
+    (sum, group) => sum + Object.values(normalizeTeamDepthChart(group.depthChart, group.assignments))
+      .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
+    0,
+  );
+  const names = groups.slice(0, 3).map((group) => group.name).filter(Boolean).join(", ");
+  return `${formatTeamCountLabel(groups.length, "group")} | ${formatTeamCountLabel(subCount, "sub")} | ${names}`;
 }
 
 function applyTeamSettingsCollapsedState() {
@@ -1547,6 +1651,7 @@ function syncTeamSettingsDependents() {
 }
 
 function renderTeamSettings() {
+  teamSettingsViewState = captureTeamSettingsViewState();
   const rosterContainer = document.getElementById("teamRosterList");
   const packageContainer = document.getElementById("teamPersonnelPackages");
   const swapGroupContainer = document.getElementById("teamSwapGroups");
@@ -1558,6 +1663,9 @@ function renderTeamSettings() {
   const rosterBadge = document.getElementById("teamRosterCountBadge");
   const packagesBadge = document.getElementById("teamPackagesCountBadge");
   const swapBadge = document.getElementById("teamSwapGroupsCountBadge");
+  const rosterSummary = document.getElementById("teamRosterSummary");
+  const packagesSummary = document.getElementById("teamPackagesSummary");
+  const swapsSummary = document.getElementById("teamSwapsSummary");
   const totalPackageSubs = packages.reduce(
     (sum, pkg) => sum + Object.values(normalizeTeamDepthChart(pkg.depthChart, pkg.assignments))
       .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
@@ -1578,6 +1686,9 @@ function renderTeamSettings() {
   if (swapBadge) {
     swapBadge.textContent = `${formatTeamCountLabel(swapGroups.length, "group")} | ${formatTeamCountLabel(totalSwapSubs, "sub")}`;
   }
+  if (rosterSummary) rosterSummary.textContent = buildTeamSettingsRosterSummary(roster);
+  if (packagesSummary) packagesSummary.textContent = buildTeamSettingsPackagesSummary(packages);
+  if (swapsSummary) swapsSummary.textContent = buildTeamSettingsSwapSummary(swapGroups);
   const renderAssignmentRow = (
     slots,
     assignments,
@@ -1701,6 +1812,7 @@ function renderTeamSettings() {
     : '<div class="team-settings-empty">No swap groups yet. Add one to flip a whole cluster of players on a script row.</div>';
 
   applyTeamSettingsCollapsedState();
+  restoreTeamSettingsViewState(teamSettingsViewState);
 }
 
 function reorderTeamDepthChartEntry(kind, itemIndex, slotKey, fromIndex, toIndex) {
