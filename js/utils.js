@@ -1425,6 +1425,7 @@ function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
 }
 
 let teamSettingsAutosaveTimer = null;
+let teamDepthDragState = null;
 
 function updateTeamSettingsAutosaveStatus() {
   const el = document.getElementById("teamSettingsSaveStatus");
@@ -1537,7 +1538,8 @@ function renderTeamSettings() {
         : [assignments[slot.key] || ""].filter(Boolean);
       const selectIds = playerIds.length ? playerIds : [""];
       const selectsMarkup = selectIds.map((playerId, depthIndex) => `
-            <div class="team-slot-player-row">
+            <div class="team-slot-player-row ${options.depthChart ? "team-slot-player-row--depth" : ""}" ${options.depthChart ? `draggable="true" data-depth-kind="${options.depthKind || "package"}" data-item-index="${itemIndex}" data-slot="${slot.key}" data-depth-index="${depthIndex}"` : ""}>
+              ${options.depthChart ? `<button type="button" class="team-slot-drag-handle" aria-label="Reorder ${escapeHtml(slot.label)} ${depthIndex === 0 ? "starter" : `sub ${depthIndex}`}" title="Drag to reorder">::</button>` : ""}
               <select class="team-slot-player-select" data-field="${fieldName}" data-item-index="${itemIndex}" data-slot="${slot.key}" data-depth-index="${depthIndex}" aria-label="${escapeHtml(label)} ${slot.label}${depthIndex === 0 ? " starter" : ` sub ${depthIndex}`}">
                 ${buildTeamPlayerOptionMarkup(playerId)}
               </select>
@@ -1584,8 +1586,8 @@ function renderTeamSettings() {
             </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPersonnelPackage" data-package-index="${pkgIndex}" aria-label="Remove ${escapeHtml(pkg.personnel)} package">✕</button>
           </div>
-              ${renderAssignmentRow(rowOne, pkg.depthChart || pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true })}
-              ${renderAssignmentRow(rowTwo, pkg.depthChart || pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true })}
+              ${renderAssignmentRow(rowOne, pkg.depthChart || pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
+              ${renderAssignmentRow(rowTwo, pkg.depthChart || pkg.assignments, "teamPackageSlot", pkgIndex, pkg.personnel || "Package", { editableLabels: true, labelField: "teamPackageLabel", depthChart: true, depthKind: "package" })}
         </div>
       `;
     }).join("")
@@ -1604,11 +1606,42 @@ function renderTeamSettings() {
             </div>
             <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} swap group">✕</button>
           </div>
-          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
-          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 0), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub", depthKind: "swap" })}
+          ${renderAssignmentRow(getTeamAssignmentSlots(group.personnel).filter((slot) => slot.row === 1), group.depthChart || group.assignments, "teamSwapGroupSlot", groupIndex, group.name || "Swap group", { depthChart: true, addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub", depthKind: "swap" })}
         </div>
       `).join("")
     : '<div class="team-settings-empty">No swap groups yet. Add one to flip a whole cluster of players on a script row.</div>';
+}
+
+function reorderTeamDepthChartEntry(kind, itemIndex, slotKey, fromIndex, toIndex) {
+  if (!slotKey || fromIndex === toIndex) return false;
+  const isPackage = kind === "package";
+  const collection = isPackage ? getTeamPersonnelPackages() : getTeamSwapGroups();
+  if (!collection[itemIndex]) return false;
+
+  const depthChart = normalizeTeamDepthChart(
+    collection[itemIndex].depthChart,
+    collection[itemIndex].assignments,
+  );
+  const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+  if (
+    fromIndex < 0 ||
+    toIndex < 0 ||
+    fromIndex >= slotDepth.length ||
+    toIndex >= slotDepth.length
+  ) {
+    return false;
+  }
+
+  const [movedPlayer] = slotDepth.splice(fromIndex, 1);
+  slotDepth.splice(toIndex, 0, movedPlayer);
+  depthChart[slotKey] = slotDepth;
+  collection[itemIndex].depthChart = depthChart;
+  collection[itemIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+
+  if (isPackage) saveTeamPersonnelPackages(collection);
+  else saveTeamSwapGroups(collection);
+  return true;
 }
 
 function addTeamPlayer() {
@@ -1908,6 +1941,61 @@ function initTeamSettings() {
     renderTeamSettings();
   });
 
+  packageContainer.addEventListener("dragstart", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (!row) return;
+    teamDepthDragState = {
+      kind: row.dataset.depthKind,
+      itemIndex: parseInt(row.dataset.itemIndex, 10),
+      slotKey: row.dataset.slot,
+      fromIndex: parseInt(row.dataset.depthIndex, 10),
+    };
+    row.classList.add("is-dragging");
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", JSON.stringify(teamDepthDragState));
+    }
+  });
+
+  packageContainer.addEventListener("dragover", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (!row || !teamDepthDragState) return;
+    if (
+      row.dataset.depthKind !== teamDepthDragState.kind ||
+      parseInt(row.dataset.itemIndex, 10) !== teamDepthDragState.itemIndex ||
+      row.dataset.slot !== teamDepthDragState.slotKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    row.classList.add("is-drop-target");
+  });
+
+  packageContainer.addEventListener("dragleave", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (row) row.classList.remove("is-drop-target");
+  });
+
+  packageContainer.addEventListener("drop", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (!row || !teamDepthDragState) return;
+    event.preventDefault();
+    row.classList.remove("is-drop-target");
+    const toIndex = parseInt(row.dataset.depthIndex, 10);
+    if (reorderTeamDepthChartEntry(teamDepthDragState.kind, teamDepthDragState.itemIndex, teamDepthDragState.slotKey, teamDepthDragState.fromIndex, toIndex)) {
+      renderTeamSettings();
+      if (typeof renderScript === "function") renderScript();
+    }
+    teamDepthDragState = null;
+  });
+
+  packageContainer.addEventListener("dragend", (event) => {
+    event.target.closest('.team-slot-player-row--depth')?.classList.remove("is-dragging");
+    packageContainer.querySelectorAll('.team-slot-player-row--depth.is-drop-target').forEach((row) => row.classList.remove("is-drop-target"));
+    teamDepthDragState = null;
+  });
+
   swapGroupContainer.addEventListener("input", (event) => {
     const input = event.target.closest('[data-group-index][data-field]');
     if (!input) return;
@@ -2001,6 +2089,61 @@ function initTeamSettings() {
     groups[groupIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
     saveTeamSwapGroups(groups);
     renderTeamSettings();
+  });
+
+  swapGroupContainer.addEventListener("dragstart", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (!row) return;
+    teamDepthDragState = {
+      kind: row.dataset.depthKind,
+      itemIndex: parseInt(row.dataset.itemIndex, 10),
+      slotKey: row.dataset.slot,
+      fromIndex: parseInt(row.dataset.depthIndex, 10),
+    };
+    row.classList.add("is-dragging");
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", JSON.stringify(teamDepthDragState));
+    }
+  });
+
+  swapGroupContainer.addEventListener("dragover", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (!row || !teamDepthDragState) return;
+    if (
+      row.dataset.depthKind !== teamDepthDragState.kind ||
+      parseInt(row.dataset.itemIndex, 10) !== teamDepthDragState.itemIndex ||
+      row.dataset.slot !== teamDepthDragState.slotKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    row.classList.add("is-drop-target");
+  });
+
+  swapGroupContainer.addEventListener("dragleave", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (row) row.classList.remove("is-drop-target");
+  });
+
+  swapGroupContainer.addEventListener("drop", (event) => {
+    const row = event.target.closest('.team-slot-player-row--depth');
+    if (!row || !teamDepthDragState) return;
+    event.preventDefault();
+    row.classList.remove("is-drop-target");
+    const toIndex = parseInt(row.dataset.depthIndex, 10);
+    if (reorderTeamDepthChartEntry(teamDepthDragState.kind, teamDepthDragState.itemIndex, teamDepthDragState.slotKey, teamDepthDragState.fromIndex, toIndex)) {
+      renderTeamSettings();
+      if (typeof renderScript === "function") renderScript();
+    }
+    teamDepthDragState = null;
+  });
+
+  swapGroupContainer.addEventListener("dragend", (event) => {
+    event.target.closest('.team-slot-player-row--depth')?.classList.remove("is-dragging");
+    swapGroupContainer.querySelectorAll('.team-slot-player-row--depth.is-drop-target').forEach((row) => row.classList.remove("is-drop-target"));
+    teamDepthDragState = null;
   });
 
   renderTeamSettings();

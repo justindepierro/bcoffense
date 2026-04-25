@@ -714,6 +714,33 @@ h1 {
   align-items: stretch;
 }
 
+.team-slot-player-row--depth {
+  cursor: grab;
+}
+
+.team-slot-player-row--depth.is-dragging {
+  opacity: 0.55;
+}
+
+.team-slot-player-row--depth.is-drop-target {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: 2px;
+}
+
+.team-slot-drag-handle {
+  flex: 0 0 auto;
+  min-width: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text-secondary);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: grab;
+}
+
 .team-slot-player-row .team-slot-player-select {
   flex: 1 1 auto;
 }

@@ -2669,6 +2669,9 @@ document.addEventListener("DOMContentLoaded", () => {
         case "promoteScriptDepthPlayer":
           promoteScriptDepthPlayer(idx, el.dataset.slot, el.dataset.playerId);
           break;
+        case "resetScriptPlayerOverrides":
+          resetScriptPlayerOverrides(idx);
+          break;
         case "importFromCallSheet":
           importFromCallSheet(idx);
           break;
