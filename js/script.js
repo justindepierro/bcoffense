@@ -415,6 +415,127 @@ function getScriptPlayerSummary(play) {
   });
 }
 
+function getScriptVisiblePlayerSummary(play, options = {}) {
+  if (options.hidePersonnel) return "";
+
+  const visibleAssignments = normalizePlayerAssignments(
+    getScriptPlayerAssignments(play),
+  );
+
+  if (options.hideLinemen) {
+    ["lt", "lg", "c", "rg", "rt"].forEach((slotKey) => {
+      delete visibleAssignments[slotKey];
+    });
+  }
+
+  return formatPlayerAssignmentSummary(visibleAssignments, {
+    personnel: play?.personnel,
+  });
+}
+
+function getScriptPrintColumns(options = {}) {
+  return [
+    {
+      key: "num",
+      label: "#",
+      className: "col-num",
+      render: (_play, displayNum) => String(displayNum),
+    },
+    {
+      key: "hash",
+      label: "Hash",
+      className: "col-hash",
+      render: (play) => escapeHtml(play.hash || ""),
+    },
+    {
+      key: "tempo",
+      label: "Tempo",
+      className: "col-tempo",
+      render: (play) => escapeHtml(play.tempo || "-"),
+    },
+    ...(options.showWbNum
+      ? [{
+        key: "wb",
+        label: "WB#",
+        className: "col-wb",
+        render: (play) => {
+          if (!scriptWristband) return "<strong></strong>";
+          const num = findPlayOnWristband(play);
+          return `<strong>${num !== null ? `#${num}` : ""}</strong>`;
+        },
+      }]
+      : []),
+    {
+      key: "call",
+      label: "Play Call",
+      className: "",
+      render: (play) => `<strong>${getScriptFullCall(play, options)}</strong>`,
+    },
+    {
+      key: "type",
+      label: "Type",
+      className: "col-type",
+      render: (play) => escapeHtml(play.type || ""),
+    },
+    {
+      key: "front",
+      label: "Front",
+      className: "col-front",
+      render: (play) => escapeHtml(play.defFront || ""),
+    },
+    {
+      key: "cov",
+      label: "Cov",
+      className: "col-cov",
+      render: (play) => escapeHtml(play.defCoverage || ""),
+    },
+    {
+      key: "stunt",
+      label: "Stunt",
+      className: "col-stunt",
+      render: (play) => escapeHtml(play.defStunt || ""),
+    },
+    {
+      key: "blitz",
+      label: "Blitz",
+      className: "col-blitz",
+      render: (play) => escapeHtml(play.defBlitz || ""),
+    },
+    {
+      key: "reps",
+      label: "Reps",
+      className: "col-reps",
+      render: (play) => String(play.reps ?? 1),
+    },
+    ...(!options.hidePersonnel
+      ? [{
+        key: "players",
+        label: "Players",
+        className: "col-players",
+        render: (play) => escapeHtml(getScriptVisiblePlayerSummary(play, options) || ""),
+      }]
+      : []),
+    {
+      key: "notes",
+      label: "Notes",
+      className: "col-notes",
+      render: (play) => escapeHtml(play.notes || ""),
+    },
+  ];
+}
+
+function renderScriptPrintTableHeader(options = {}) {
+  const headerRow = document.querySelector("#previewContainer thead tr");
+  if (!headerRow) return;
+
+  headerRow.innerHTML = getScriptPrintColumns(options)
+    .map(
+      (column) =>
+        `<th${column.className ? ` class="${column.className}"` : ""}>${escapeHtml(column.label)}</th>`,
+    )
+    .join("");
+}
+
 function hasScriptPlayerOverrides(play) {
   const baseAssignments = getBasePlayerAssignments(play);
   const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
@@ -3466,7 +3587,8 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const playerAssignmentGrid = opts.hidePersonnel
     ? ""
     : buildScriptPlayerAssignmentGrid(play, index, playLabel, opts);
-  const playerSummary = getScriptPlayerSummary(play);
+  const playerSummary = getScriptVisiblePlayerSummary(play, opts);
+  const reps = play.reps ?? 1;
   const itemClasses = [
     "script-item",
     isSelected ? "bulk-selected" : "",
@@ -3507,7 +3629,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
         </div>
-        <input type="number" value="${play.reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
+        <input type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
         <input type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
         <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
@@ -3526,7 +3648,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         <span class="preview-field cov">${escapeHtml(play.defCoverage || "-")}</span>
         <span class="preview-field stunt">${escapeHtml(play.defStunt || "-")}</span>
         <span class="preview-field blitz">${escapeHtml(play.defBlitz || "-")}</span>
-        <span class="preview-field reps">×${play.reps}</span>
+        <span class="preview-field reps">×${reps}</span>
         <span class="preview-field players">${escapeHtml(playerSummary || "-")}</span>
       </div>`
       : ""
@@ -4639,14 +4761,7 @@ function executeLoadWbToScript() {
  * @returns {string} HTML table-row string
  */
 function buildScriptPlayRow(p, displayNum, opts) {
-  const fullCall = getScriptFullCall(p, opts);
-  const playerSummary = getScriptPlayerSummary(p);
-
-  let wbNum = "";
-  if (opts.showWbNum && scriptWristband) {
-    const num = findPlayOnWristband(p);
-    if (num !== null) wbNum = `#${num}`;
-  }
+  const columns = getScriptPrintColumns(opts);
 
   let rowColor = "";
   if (opts.highlightHuddle && p.tempo && p.tempo.toLowerCase() === "huddle") {
@@ -4660,19 +4775,7 @@ function buildScriptPlayRow(p, displayNum, opts) {
   }
 
   return `<tr style="${rowColor}">
-    <td>${displayNum}</td>
-    <td>${escapeHtml(p.hash || "")}</td>
-    <td>${escapeHtml(p.tempo || "-")}</td>
-    <td><strong>${wbNum}</strong></td>
-    <td><strong>${fullCall}</strong></td>
-    <td>${escapeHtml(p.type)}</td>
-    <td>${escapeHtml(p.defFront || "")}</td>
-    <td>${escapeHtml(p.defCoverage || "")}</td>
-    <td>${escapeHtml(p.defStunt || "")}</td>
-    <td>${escapeHtml(p.defBlitz || "")}</td>
-    <td>${p.reps}</td>
-    <td>${escapeHtml(playerSummary || "")}</td>
-    <td>${escapeHtml(p.notes || "")}</td>
+    ${columns.map((column) => `<td>${column.render(p, displayNum)}</td>`).join("")}
   </tr>`;
 }
 
@@ -4749,7 +4852,7 @@ function exportScriptCSV() {
       esc(item.defCoverage),
       esc(item.defStunt),
       esc(item.defBlitz),
-      esc(getScriptPlayerSummary(item)),
+      esc(getScriptVisiblePlayerSummary(item, getScriptDisplayOptions())),
       esc(item.notes),
     ]);
   });
@@ -4807,7 +4910,7 @@ function exportScriptAsText() {
       const type = item.type ? ` [${item.type}]` : "";
       const notes = item.notes ? ` — ${item.notes}` : "";
       const reps = (item.reps || 1) > 1 ? ` ×${item.reps}` : "";
-      const players = getScriptPlayerSummary(item);
+      const players = getScriptVisiblePlayerSummary(item, getScriptDisplayOptions());
       const playerText = players ? ` — Players: ${players}` : "";
       lines.push(
         `${String(playOrder).padStart(3, " ")}. ${call}${type}${reps}${notes}${playerText}`,
@@ -4887,6 +4990,8 @@ function generatePDF() {
     let globalPlayNum = 0;
     let hasPeriods = periods.length > 0;
     const displayOpts = getScriptDisplayOptions();
+    const printColumnCount = getScriptPrintColumns(displayOpts).length;
+    renderScriptPrintTableHeader(displayOpts);
     let currentPeriodCallOptions = displayOpts;
     tbody.innerHTML = script
       .map((p, i) => {
@@ -4897,7 +5002,7 @@ function generatePDF() {
           const periodColor = p.color || UI_COLORS.periodDefault;
           const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
           return `<tr class="print-period-header" style="background: ${periodColor}; color: white;">
-          <td colspan="12" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
+          <td colspan="${printColumnCount}" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
             ${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
           </td>
         </tr>`;
@@ -5036,6 +5141,8 @@ async function printFullDay() {
 
     // Get display options
     const displayOpts = getScriptDisplayOptions();
+    const printColumnCount = getScriptPrintColumns(displayOpts).length;
+    renderScriptPrintTableHeader(displayOpts);
 
     // Build combined content
     let allContent = "";
@@ -5063,7 +5170,7 @@ async function printFullDay() {
         : "";
       allContent += `
       <tr class="script-section-header">
-        <td colspan="12" style="background: ${UI_COLORS.bgDarkNav}; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid ${UI_COLORS.accentBlue};">
+        <td colspan="${printColumnCount}" style="background: ${UI_COLORS.bgDarkNav}; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid ${UI_COLORS.accentBlue};">
           📋 ${escapeHtml(scriptData.name.toUpperCase())} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
         </td>
       </tr>
@@ -5081,7 +5188,7 @@ async function printFullDay() {
           }
           const periodColor = p.color || UI_COLORS.periodDefault;
           const timeStr = p.minutes ? ` • ${p.minutes} min` : "";
-          allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="12" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
+          allContent += `<tr style="background: ${periodColor}; color: white;"><td colspan="${printColumnCount}" style="text-align: center; font-weight: bold; padding: 5px; font-size: 11px; letter-spacing: 0.3px;">${escapeHtml(p.label.toUpperCase())}${timeStr} <span style="opacity:0.6;font-weight:normal;">(${periodPlays.length})</span></td></tr>`;
           return;
         }
 

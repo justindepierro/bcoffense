@@ -208,6 +208,10 @@ function showUndoToast(message, undoCallback, duration) {
  * @param {Function} [onCancel] - Called when user cancels (close/escape/backdrop)
  */
 function showPrintPreview(contentEl, onPrint, onCancel) {
+  document.querySelectorAll(".print-preview-overlay").forEach((existingOverlay) => {
+    existingOverlay.remove();
+  });
+
   const overlay = document.createElement("div");
   overlay.className = "print-preview-overlay";
   overlay.innerHTML =
@@ -221,7 +225,14 @@ function showPrintPreview(contentEl, onPrint, onCancel) {
     '<div class="print-preview-content"><div id="ppContent"></div></div>' +
     "</div>";
   document.body.appendChild(overlay);
-  document.getElementById("ppContent").appendChild(contentEl.cloneNode(true));
+
+  const previewClone = contentEl.cloneNode(true);
+  if (previewClone.id) previewClone.removeAttribute("id");
+  previewClone.querySelectorAll("[id]").forEach((element) => {
+    element.removeAttribute("id");
+  });
+
+  document.getElementById("ppContent").appendChild(previewClone);
   const cancel = () => {
     overlay.remove();
     if (onCancel) onCancel();
