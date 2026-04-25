@@ -1057,6 +1057,9 @@ function normalizeTeamPlayer(player = {}) {
   const name = String(player.name || "").trim();
   const number = String(player.number || "").trim();
   const position = String(player.position || "").trim().toUpperCase();
+  const positionGroup = ["skill", "linemen"].includes(String(player.positionGroup || "").trim().toLowerCase())
+    ? String(player.positionGroup || "").trim().toLowerCase()
+    : "";
   const personnel = Array.isArray(player.personnel)
     ? player.personnel.map((value) => String(value || "").trim()).filter(Boolean)
     : [];
@@ -1066,6 +1069,7 @@ function normalizeTeamPlayer(player = {}) {
     name,
     number,
     position,
+    positionGroup,
     personnel,
   };
 }
@@ -1328,6 +1332,7 @@ function formatTeamPlayerLabel(player) {
   if (player.number) bits.push(`#${player.number}`);
   if (player.name) bits.push(player.name);
   if (player.position) bits.push(`(${player.position})`);
+  if (player.positionGroup) bits.push(player.positionGroup === "linemen" ? "[Linemen]" : "[Skill]");
   return bits.join(" ") || "Unnamed Player";
 }
 
@@ -1708,6 +1713,11 @@ function renderTeamSettings() {
           <input type="text" class="team-roster-cell team-roster-cell--num" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${escapeAttr(player.id)}" placeholder="#" aria-label="Number for ${escapeHtml(player.name)}" />
           <input type="text" class="team-roster-cell team-roster-cell--name" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${escapeAttr(player.id)}" placeholder="Player name" aria-label="Name for ${escapeHtml(player.name)}" />
           <input type="text" class="team-roster-cell team-roster-cell--pos" value="${escapeAttr(player.position)}" data-field="teamPlayerPosition" data-player-id="${escapeAttr(player.id)}" placeholder="POS" aria-label="Position for ${escapeHtml(player.name)}" />
+          <select class="team-roster-cell team-roster-cell--group" data-field="teamPlayerPositionGroup" data-player-id="${escapeAttr(player.id)}" aria-label="Position group for ${escapeHtml(player.name)}">
+            <option value="" ${player.positionGroup ? "" : "selected"}>Role type</option>
+            <option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option>
+            <option value="linemen" ${player.positionGroup === "linemen" ? "selected" : ""}>Linemen</option>
+          </select>
           <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamPlayer" data-player-id="${escapeAttr(player.id)}" aria-label="Remove ${escapeHtml(player.name)}">✕</button>
         </div>
       `).join("")
@@ -1784,10 +1794,12 @@ function addTeamPlayer() {
   const nameEl = document.getElementById("teamPlayerNameInput");
   const numberEl = document.getElementById("teamPlayerNumberInput");
   const positionEl = document.getElementById("teamPlayerPositionInput");
+  const positionGroupEl = document.getElementById("teamPlayerPositionGroupInput");
   const player = normalizeTeamPlayer({
     name: nameEl?.value,
     number: numberEl?.value,
     position: positionEl?.value,
+    positionGroup: positionGroupEl?.value,
   });
 
   if (!player.name) {
@@ -1802,6 +1814,7 @@ function addTeamPlayer() {
   if (nameEl) nameEl.value = "";
   if (numberEl) numberEl.value = "";
   if (positionEl) positionEl.value = "";
+  if (positionGroupEl) positionGroupEl.value = "";
 
   syncTeamSettingsDependents();
   showToast(`${player.name} added to roster`);
@@ -1972,6 +1985,7 @@ function initTeamSettings() {
     if (field === "teamPlayerNumber") player.number = input.value;
     if (field === "teamPlayerName") player.name = input.value;
     if (field === "teamPlayerPosition") player.position = input.value.toUpperCase();
+    if (field === "teamPlayerPositionGroup") player.positionGroup = input.value;
 
     saveTeamRoster(roster);
     refreshTeamSettingsSelectionUI();
