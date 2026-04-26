@@ -663,29 +663,43 @@ function showListPicker(message, items, opts = {}) {
     const previouslyFocused = document.activeElement;
     const title = opts.title || "Select";
     const icon = opts.icon || "📋";
+    const modalClass = opts.modalClass ? ` ${escapeAttr(opts.modalClass)}` : "";
 
     const itemsHtml = items
-      .map(
-        (item, i) => `
-      <div class="custom-modal-list-item" data-index="${i}">
+      .map((item, i) => {
+        const itemClasses = [
+          "custom-modal-list-item",
+          item.recommended ? "is-recommended" : "",
+        ].filter(Boolean).join(" ");
+
+        return `
+      <div class="${itemClasses}" data-index="${i}" role="button" tabindex="0" aria-label="${escapeAttr(item.ariaLabel || item.label)}">
         <span class="custom-modal-list-num">${i + 1}</span>
         <div class="custom-modal-list-text">
-          <span class="custom-modal-list-label">${item.label}</span>
-          ${item.sublabel ? `<span class="custom-modal-list-sub">${item.sublabel}</span>` : ""}
+          ${item.eyebrow ? `<span class="custom-modal-list-eyebrow">${escapeHtml(item.eyebrow)}</span>` : ""}
+          <span class="custom-modal-list-label">${escapeHtml(item.label)}</span>
+          ${item.sublabel ? `<span class="custom-modal-list-sub">${escapeHtml(item.sublabel)}</span>` : ""}
+          ${item.meta ? `<span class="custom-modal-list-meta">${escapeHtml(item.meta)}</span>` : ""}
         </div>
+        ${(item.badge || item.ctaLabel)
+          ? `<div class="custom-modal-list-side">
+              ${item.badge ? `<span class="custom-modal-list-badge">${escapeHtml(item.badge)}</span>` : ""}
+              ${item.ctaLabel ? `<span class="custom-modal-list-cta">${escapeHtml(item.ctaLabel)}</span>` : ""}
+            </div>`
+          : ""}
       </div>
-    `,
-      )
+    `;
+      })
       .join("");
 
     const mid = ++_modalIdCounter;
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal custom-modal-wide" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}">
+      <div class="custom-modal custom-modal-wide${modalClass}" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         ${message ? `<div class="custom-modal-body">${formatModalMessage(message)}</div>` : ""}
         <div class="custom-modal-list">${itemsHtml}</div>
@@ -709,9 +723,16 @@ function showListPicker(message, items, opts = {}) {
     }
 
     overlay.querySelectorAll(".custom-modal-list-item").forEach((el) => {
-      el.addEventListener("click", () => {
+      const handleSelect = () => {
         const idx = parseInt(el.dataset.index, 10);
         close(items[idx].value);
+      };
+
+      el.addEventListener("click", handleSelect);
+      el.addEventListener("keydown", (e) => {
+        if (e.key !== "Enter" && e.key !== " ") return;
+        e.preventDefault();
+        handleSelect();
       });
     });
 

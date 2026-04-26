@@ -149,6 +149,7 @@ let bulkSelectedIndices = [];
 
 // Selected available plays for batch adding
 let selectedAvailablePlays = [];
+let lastScriptTargetPeriodId = null;
 let scriptKeyboardShortcutsInitialized = false;
 let currentFilteredPlayIndices = [];
 let scriptRenderProfilingEnabled = false;
@@ -1747,15 +1748,37 @@ function insertPlaysIntoPeriod(targetSeparatorIndex, playsToInsert) {
 
 async function pickTargetPeriodForAdd(playCount) {
   ensureFirstPeriod();
-  const periodChoices = getScriptPeriodChoices();
+  const periodChoices = getScriptPeriodChoices().map((choice) => {
+    const separator = script[choice.value];
+    const isLastUsed = separator?.id && separator.id === lastScriptTargetPeriodId;
+    const minutes = separator?.minutes ? `${separator.minutes} min block` : "No time set";
+    return {
+      ...choice,
+      eyebrow: isLastUsed ? "Last used" : "Period destination",
+      meta: minutes,
+      badge: choice.sublabel,
+      ctaLabel: isLastUsed ? "Add again" : "Add here",
+      recommended: isLastUsed,
+      ariaLabel: `${choice.label}, ${choice.sublabel}, ${minutes}`,
+    };
+  });
   if (!periodChoices.length) return null;
-  if (periodChoices.length === 1) return periodChoices[0].value;
+  if (periodChoices.length === 1) {
+    lastScriptTargetPeriodId = script[periodChoices[0].value]?.id || null;
+    return periodChoices[0].value;
+  }
 
-  return showListPicker(
-    `Choose which period should receive ${playCount} play${playCount === 1 ? "" : "s"}.`,
+  const selectedPeriod = await showListPicker(
+    `Choose where ${playCount === 1 ? "this play" : `these ${playCount} plays`} should go. New plays land at the end of the period you pick.`,
     periodChoices,
-    { title: "➕ Add To Period", icon: "➕" },
+    { title: "➕ Add To Period", icon: "➕", modalClass: "custom-modal-add-period" },
   );
+
+  if (selectedPeriod !== null) {
+    lastScriptTargetPeriodId = script[selectedPeriod]?.id || null;
+  }
+
+  return selectedPeriod;
 }
 
 function flashScriptPlayAtIndex(scriptIndex) {
@@ -1793,6 +1816,7 @@ async function addToScript(playIndex) {
   ]);
   renderScript();
   flashScriptPlayAtIndex(insertedIndices[0]);
+  setScriptToolbarStatus(`Added play to ${script[targetSeparatorIndex]?.label || "selected period"}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
@@ -1866,6 +1890,7 @@ async function addAllFilteredToScript() {
       .map((play) => createScriptPlayFromPlaybook(play)),
   );
   renderScript();
+  setScriptToolbarStatus(`Added ${filteredIndices.length} play${filteredIndices.length === 1 ? "" : "s"} to ${script[targetSeparatorIndex]?.label || "selected period"}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
@@ -1891,9 +1916,11 @@ async function addSelectedToScript() {
   );
 
   // Clear selection after adding
+  const addedCount = selectedAvailablePlays.length;
   selectedAvailablePlays = [];
   renderAvailablePlays();
   renderScript();
+  setScriptToolbarStatus(`Added ${addedCount} play${addedCount === 1 ? "" : "s"} to ${script[targetSeparatorIndex]?.label || "selected period"}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**
