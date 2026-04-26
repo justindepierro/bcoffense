@@ -216,6 +216,10 @@ h1 {
   display: block;
   animation: panelFadeIn 0.25s ease both;
 }
+
+#script.panel {
+  overflow: visible;
+}
 @keyframes panelFadeIn {
   from {
     opacity: 0;
