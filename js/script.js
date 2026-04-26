@@ -1658,7 +1658,10 @@ function renderAvailablePlays() {
                     <div class="play-name">${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}${alreadyIn ? ' <span class="in-script-badge" title="Already on script">✓ On Script</span>' : ""}</div>
                     <div class="play-details">${escapeHtml(p.type)} ${p.motion ? "• " + escapeHtml(p.motion) : ""}</div>
                 </div>
-                <button data-action="addToScript" data-idx="${playIdx}">+ Add</button>
+                <div class="play-item-actions">
+                  ${buildAvailableTargetPeriodSelectMarkup(playIdx)}
+                  <button data-action="addToScript" data-idx="${playIdx}">+ Add</button>
+                </div>
             </div>
         `;
     })
@@ -1734,6 +1737,39 @@ function createScriptPlayFromPlaybook(play) {
   };
 }
 
+function getPreferredTargetPeriodIndex() {
+  const periodChoices = getScriptPeriodChoices();
+  if (!periodChoices.length) return null;
+
+  const lastUsedChoice = periodChoices.find(
+    (choice) => script[choice.value]?.id === lastScriptTargetPeriodId,
+  );
+  return lastUsedChoice ? lastUsedChoice.value : periodChoices[0].value;
+}
+
+function buildAvailableTargetPeriodSelectMarkup(playIndex) {
+  const periodChoices = getScriptPeriodChoices();
+  if (!periodChoices.length) return "";
+
+  const preferredTarget = getPreferredTargetPeriodIndex();
+  const optionsHtml = periodChoices
+    .map((choice) => {
+      const optionLabel = `${choice.label} (${choice.sublabel})`;
+      const selected = choice.value === preferredTarget ? " selected" : "";
+      return `<option value="${escapeAttr(choice.value)}"${selected}>${escapeHtml(optionLabel)}</option>`;
+    })
+    .join("");
+
+  return `
+    <label class="available-target-picker" aria-label="Target period for this play">
+      <span class="available-target-picker-label">To</span>
+      <select class="available-target-select" data-field="availableTargetPeriod" data-idx="${playIndex}" aria-label="Target period for play ${playIndex + 1}">
+        ${optionsHtml}
+      </select>
+    </label>
+  `;
+}
+
 function insertPlaysIntoPeriod(targetSeparatorIndex, playsToInsert) {
   if (!Array.isArray(playsToInsert) || playsToInsert.length === 0) return [];
   const separator = script[targetSeparatorIndex];
@@ -1803,20 +1839,28 @@ function flashScriptPlayAtIndex(scriptIndex) {
  * Add a play to the script
  * @param {number} playIndex - Index of the play in the plays array
  */
-async function addToScript(playIndex) {
+async function addToScript(playIndex, targetSeparatorIndex = null) {
   const play = plays[playIndex];
   if (!play) return;
 
-  const targetSeparatorIndex = await pickTargetPeriodForAdd(1);
-  if (targetSeparatorIndex === null) return;
+  let resolvedTargetIndex = Number.isInteger(targetSeparatorIndex)
+    ? targetSeparatorIndex
+    : parseInt(targetSeparatorIndex, 10);
+
+  if (!Number.isInteger(resolvedTargetIndex) || !script[resolvedTargetIndex]?.isSeparator) {
+    resolvedTargetIndex = await pickTargetPeriodForAdd(1);
+  }
+  if (resolvedTargetIndex === null) return;
+
+  lastScriptTargetPeriodId = script[resolvedTargetIndex]?.id || lastScriptTargetPeriodId;
 
   saveScriptState();
-  const insertedIndices = insertPlaysIntoPeriod(targetSeparatorIndex, [
+  const insertedIndices = insertPlaysIntoPeriod(resolvedTargetIndex, [
     createScriptPlayFromPlaybook(play),
   ]);
   renderScript();
   flashScriptPlayAtIndex(insertedIndices[0]);
-  setScriptToolbarStatus(`Added play to ${script[targetSeparatorIndex]?.label || "selected period"}`, "success", AUTOSAVE_DEBOUNCE_MS);
+  setScriptToolbarStatus(`Added play to ${script[resolvedTargetIndex]?.label || "selected period"}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
 /**

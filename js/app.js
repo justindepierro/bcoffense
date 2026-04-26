@@ -2808,7 +2808,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const el = e.target.closest("[data-action]");
       if (!el) return;
       if (el.dataset.action === "addToScript") {
-        addToScript(parseInt(el.dataset.idx, 10));
+        const playCard = el.closest(".play-item");
+        const targetSelect = playCard?.querySelector('[data-field="availableTargetPeriod"]');
+        addToScript(parseInt(el.dataset.idx, 10), targetSelect?.value ?? null);
         e.stopPropagation();
       }
     });
