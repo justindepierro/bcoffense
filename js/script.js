@@ -1718,15 +1718,8 @@ function ensureFirstPeriod() {
   }
 }
 
-/**
- * Add a play to the script
- * @param {number} playIndex - Index of the play in the plays array
- */
-function addToScript(playIndex) {
-  saveScriptState();
-  ensureFirstPeriod();
-  const play = plays[playIndex];
-  script.push({
+function createScriptPlayFromPlaybook(play) {
+  return {
     ...play,
     reps: 1,
     notes: "",
@@ -1737,19 +1730,69 @@ function addToScript(playIndex) {
     defBlitz: "",
     playerAssignments: createScriptPlayerAssignments(play),
     id: Date.now() + Math.random(),
-  });
-  renderScript();
+  };
+}
 
-  // Flash the newly added play row
+function insertPlaysIntoPeriod(targetSeparatorIndex, playsToInsert) {
+  if (!Array.isArray(playsToInsert) || playsToInsert.length === 0) return [];
+  const separator = script[targetSeparatorIndex];
+  if (!separator || !separator.isSeparator) return [];
+
+  let insertAt = targetSeparatorIndex + 1;
+  while (insertAt < script.length && !script[insertAt].isSeparator) insertAt++;
+
+  script.splice(insertAt, 0, ...playsToInsert);
+  return playsToInsert.map((_, offset) => insertAt + offset);
+}
+
+async function pickTargetPeriodForAdd(playCount) {
+  ensureFirstPeriod();
+  const periodChoices = getScriptPeriodChoices();
+  if (!periodChoices.length) return null;
+  if (periodChoices.length === 1) return periodChoices[0].value;
+
+  return showListPicker(
+    `Choose which period should receive ${playCount} play${playCount === 1 ? "" : "s"}.`,
+    periodChoices,
+    { title: "➕ Add To Period", icon: "➕" },
+  );
+}
+
+function flashScriptPlayAtIndex(scriptIndex) {
+  if (!Number.isInteger(scriptIndex) || scriptIndex < 0) return;
+
   const items = document.querySelectorAll(
     "#scriptPlays .script-item:not(.period-header)",
   );
-  const lastItem = items[items.length - 1];
-  if (lastItem) {
-    lastItem.classList.add("just-added");
-    lastItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
-    setTimeout(() => lastItem.classList.remove("just-added"), 950);
-  }
+  const rowIndex = script
+    .slice(0, scriptIndex + 1)
+    .filter((item) => item && !item.isSeparator).length - 1;
+  const targetItem = items[rowIndex];
+
+  if (!targetItem) return;
+
+  targetItem.classList.add("just-added");
+  targetItem.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  setTimeout(() => targetItem.classList.remove("just-added"), 950);
+}
+
+/**
+ * Add a play to the script
+ * @param {number} playIndex - Index of the play in the plays array
+ */
+async function addToScript(playIndex) {
+  const play = plays[playIndex];
+  if (!play) return;
+
+  const targetSeparatorIndex = await pickTargetPeriodForAdd(1);
+  if (targetSeparatorIndex === null) return;
+
+  saveScriptState();
+  const insertedIndices = insertPlaysIntoPeriod(targetSeparatorIndex, [
+    createScriptPlayFromPlaybook(play),
+  ]);
+  renderScript();
+  flashScriptPlayAtIndex(insertedIndices[0]);
 }
 
 /**
@@ -1811,53 +1854,41 @@ async function addAllFilteredToScript() {
     return;
   }
 
+  const targetSeparatorIndex = await pickTargetPeriodForAdd(filteredIndices.length);
+  if (targetSeparatorIndex === null) return;
+
   saveScriptState();
-  ensureFirstPeriod();
-  filteredIndices.forEach((playIndex) => {
-    const play = plays[playIndex];
-    script.push({
-      ...play,
-      reps: 1,
-      notes: "",
-      hash: "",
-      defFront: "",
-      defCoverage: "",
-      defStunt: "",
-      defBlitz: "",
-      playerAssignments: createScriptPlayerAssignments(play),
-      id: Date.now() + Math.random(),
-    });
-  });
+  insertPlaysIntoPeriod(
+    targetSeparatorIndex,
+    filteredIndices
+      .map((playIndex) => plays[playIndex])
+      .filter(Boolean)
+      .map((play) => createScriptPlayFromPlaybook(play)),
+  );
   renderScript();
 }
 
 /**
  * Add selected available plays to the script
  */
-function addSelectedToScript() {
+async function addSelectedToScript() {
   normalizeSelectedAvailablePlays();
   if (selectedAvailablePlays.length === 0) {
     showToast("No plays selected — check the boxes first");
     return;
   }
 
+  const targetSeparatorIndex = await pickTargetPeriodForAdd(selectedAvailablePlays.length);
+  if (targetSeparatorIndex === null) return;
+
   saveScriptState();
-  ensureFirstPeriod();
-  selectedAvailablePlays.forEach((playIndex) => {
-    const play = plays[playIndex];
-    script.push({
-      ...play,
-      reps: 1,
-      notes: "",
-      hash: "",
-      defFront: "",
-      defCoverage: "",
-      defStunt: "",
-      defBlitz: "",
-      playerAssignments: createScriptPlayerAssignments(play),
-      id: Date.now() + Math.random(),
-    });
-  });
+  insertPlaysIntoPeriod(
+    targetSeparatorIndex,
+    selectedAvailablePlays
+      .map((playIndex) => plays[playIndex])
+      .filter(Boolean)
+      .map((play) => createScriptPlayFromPlaybook(play)),
+  );
 
   // Clear selection after adding
   selectedAvailablePlays = [];
