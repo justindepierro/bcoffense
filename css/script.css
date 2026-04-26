@@ -1263,7 +1263,7 @@
   flex: 1 1 220px;
 }
 
-.script-item .play-controls {
+.script-item:not(.script-item--detail):not(.script-item--compact) .play-controls {
   display: flex;
   align-items: center;
   gap: 5px;
@@ -1307,7 +1307,7 @@
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 4px;
 }
-.script-item .move-btns {
+.script-item:not(.script-item--detail):not(.script-item--compact) .move-btns {
   display: flex;
   flex-direction: column;
   gap: 2px;
@@ -2949,6 +2949,7 @@
 
   .script-item--detail .play-controls,
   .script-item--compact .play-controls {
+    display: grid;
     grid-template-columns: 1fr auto auto;
   }
 
@@ -2959,6 +2960,7 @@
 
   .script-item--detail .move-btns,
   .script-item--compact .move-btns {
+    display: grid;
     grid-column: 1 / -1;
     grid-template-columns: repeat(5, minmax(0, 1fr));
   }
@@ -3111,6 +3113,7 @@
 
   .script-item--detail .play-controls,
   .script-item--compact .play-controls {
+    display: grid;
     grid-template-columns: 1fr;
   }
 
