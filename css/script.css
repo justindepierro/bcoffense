@@ -28,6 +28,7 @@
   display: flex;
   flex-direction: column;
   gap: 14px;
+  overflow: visible;
   background: linear-gradient(
     180deg,
     var(--color-white) 0%,
@@ -1476,6 +1477,11 @@
 }
 
 @media (max-width: 768px) {
+  .script-toolbar {
+    position: static;
+    top: auto;
+  }
+
   .play-list {
     position: static;
     top: auto;
@@ -1747,6 +1753,9 @@
       1fr
     );
   align-items: start;
+  position: sticky;
+  top: 78px;
+  z-index: 6;
   padding: 10px;
   background: var(--color-white);
   border-radius: var(--radius-lg);
@@ -1796,6 +1805,11 @@
   padding: 22px 10px 8px;
   min-height: 58px;
   position: relative;
+}
+
+.script-search-input {
+  min-width: min(260px, 100%);
+  flex: 1 1 220px;
 }
 
 .script-toolbar-left::before,

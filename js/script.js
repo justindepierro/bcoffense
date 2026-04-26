@@ -611,11 +611,12 @@ function buildScriptPrintBodyMarkup(scriptItems = [], displayOpts = {}, options 
         : getPeriodPlays(index);
       const periodColor = item.color || UI_COLORS.periodDefault;
       const timeStr = item.minutes ? ` • ${item.minutes} min` : "";
+      const periodNotes = (item.notes || "").trim();
       currentSectionHeader = `${currentSectionHeader}<tr class="print-period-header" style="background: ${periodColor}; color: white;">
           <td colspan="${printColumnCount}" style="text-align: center; font-weight: bold; font-size: 12px; padding: 6px; letter-spacing: 0.5px;">
             ${escapeHtml(item.label.toUpperCase())}${timeStr} <span style="opacity:0.7;font-weight:normal;font-size:10px;">(${periodPlays.length} plays)</span>
           </td>
-        </tr>`;
+        </tr>${periodNotes ? `<tr class="print-period-notes"><td colspan="${printColumnCount}" style="padding: 6px 8px; font-size: 9px; font-style: italic; color: ${UI_COLORS.text}; background: ${UI_COLORS.bgLight}; border: 0.5px solid ${UI_COLORS.text}; border-top: none; white-space: normal;">${escapeHtml(periodNotes)}</td></tr>` : ""}`;
       return;
     }
 
