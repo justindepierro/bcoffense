@@ -3908,6 +3908,25 @@ function renderPeriodActionButton(action, index, label, icon, title, extraClass 
   return `<button class="pat-btn ${extraClass}" data-action="${action}" data-idx="${index}" title="${escapeHtml(titleText)}" aria-label="${escapeHtml(title)}"${shortcutAttr}><span class="pat-btn-icon" aria-hidden="true">${icon}</span><span class="pat-btn-label">${escapeHtml(label)}</span></button>`;
 }
 
+function renderPeriodActionsToolbar(index, periodLabel) {
+  const actions = [
+    ["selectPeriodPlays", "Select", "☑", `Select or deselect plays in ${periodLabel}`],
+    ["openPeriodReorderModal", "Reorder", "🗂️", `Reorder plays in ${periodLabel}`],
+    ["sortPeriod", "Sort", "⬍", `Sort plays in ${periodLabel}`],
+    ["reversePeriod", "Reverse", "↕", `Reverse play order in ${periodLabel}`],
+    ["openSmartScriptForPeriod", "Smart", "🧠", `Run Smart Script on ${periodLabel}`, "pat-btn-smart"],
+    ["applyPreferredForPeriod", "Preferred", "★", `Apply preferred metadata to ${periodLabel}`],
+    ["pushPeriodToCallSheet", "To Call Sheet", "📋", `Push ${periodLabel} to call sheet`, "pat-btn-callsheet"],
+    ["importFromCallSheet", "From Call Sheet", "📥", `Import call sheet plays into ${periodLabel}`, "pat-btn-import-cs"],
+    ["copyPeriodAsText", "Copy", "📄", `Copy ${periodLabel} as text`],
+  ];
+
+  return `
+        <div class="period-actions-toolbar">
+          ${actions.map(([action, label, icon, title, extraClass = ""]) => renderPeriodActionButton(action, index, label, icon, title, extraClass)).join("")}
+        </div>`;
+}
+
 function renderScriptPeriodHeader(separator, index, renderContext) {
   const isCollapsed = collapsedPeriods.has(separator.id);
   const collapseIcon = isCollapsed ? "▶" : "▼";
@@ -3948,23 +3967,59 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
           </div>
         </div>
       </div>
-      ${!isCollapsed && playCount > 0
-      ? `
-        <div class="period-actions-toolbar">
-          ${renderPeriodActionButton("selectPeriodPlays", index, "Select", "☑", `Select or deselect plays in ${periodLabel}`)}
-          ${renderPeriodActionButton("openPeriodReorderModal", index, "Reorder", "🗂️", `Reorder plays in ${periodLabel}`)}
-          ${renderPeriodActionButton("sortPeriod", index, "Sort", "⬍", `Sort plays in ${periodLabel}`)}
-          ${renderPeriodActionButton("reversePeriod", index, "Reverse", "↕", `Reverse play order in ${periodLabel}`)}
-          ${renderPeriodActionButton("openSmartScriptForPeriod", index, "Smart", "🧠", `Run Smart Script on ${periodLabel}`, "pat-btn-smart")}
-          ${renderPeriodActionButton("applyPreferredForPeriod", index, "Preferred", "★", `Apply preferred metadata to ${periodLabel}`)}
-          ${renderPeriodActionButton("pushPeriodToCallSheet", index, "To Call Sheet", "📋", `Push ${periodLabel} to call sheet`, "pat-btn-callsheet")}
-          ${renderPeriodActionButton("importFromCallSheet", index, "From Call Sheet", "📥", `Import call sheet plays into ${periodLabel}`, "pat-btn-import-cs")}
-          ${renderPeriodActionButton("copyPeriodAsText", index, "Copy", "📄", `Copy ${periodLabel} as text`)}
-        </div>`
-      : ""
-    }
+      ${!isCollapsed && playCount > 0 ? renderPeriodActionsToolbar(index, periodLabel) : ""}
     </div>
   `;
+}
+
+function renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState) {
+  const frontListId = defenseDatalistState.preferredFrontIdsByValue.get((play.practiceFront || "").trim()) || "dl-front-shared";
+  const coverageListId = defenseDatalistState.preferredCoverageIdsByValue.get((play.practiceCoverage || "").trim()) || "dl-cov-shared";
+  const stuntListId = defenseDatalistState.preferredStuntIdsByValue.get((play.practiceStunt || "").trim()) || "dl-stunt-shared";
+  const blitzListId = defenseDatalistState.preferredBlitzIdsByValue.get((play.practiceBlitz || "").trim()) || "dl-blitz-shared";
+
+  return `
+      <div class="defense-inputs">
+        <input type="text" list="${frontListId}" value="${escapeHtml(play.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${index}" title="Defensive Front" class="def-input" aria-label="Defensive front for ${escapeHtml(playLabel)}">
+        <input type="text" list="${coverageListId}" value="${escapeHtml(play.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${index}" title="Coverage" class="def-input" aria-label="Coverage for ${escapeHtml(playLabel)}">
+        <input type="text" list="${stuntListId}" value="${escapeHtml(play.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${index}" title="Stunt" class="def-input" aria-label="Stunt for ${escapeHtml(playLabel)}">
+        <input type="text" list="${blitzListId}" value="${escapeHtml(play.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${index}" title="Blitz" class="def-input" aria-label="Blitz for ${escapeHtml(playLabel)}">
+      </div>`;
+}
+
+function renderScriptPlayControls(play, index, playLabel, reps) {
+  return `
+      <div class="play-controls">
+        <div class="move-btns">
+          <button class="move-btn" data-action="movePlayToPeriod" data-idx="${index}" title="Move to another period" aria-label="Move ${escapeHtml(playLabel)} to another period">↔</button>
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
+          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
+        </div>
+        <input type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
+        <input type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
+        <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
+        <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
+      </div>`;
+}
+
+function renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) {
+  return `
+      <div class="print-preview-row">
+        <span class="preview-label">Print:</span>
+        <span class="preview-field"><b>#${playNumber}</b></span>
+        <span class="preview-field hash">${escapeHtml(play.hash || "-")}</span>
+        <span class="preview-field tempo">${escapeHtml(play.tempo || "-")}</span>
+        <span class="preview-field call">${fullCall}</span>
+        <span class="preview-field type">${escapeHtml(play.type)}</span>
+        <span class="preview-field front">${escapeHtml(play.defFront || "-")}</span>
+        <span class="preview-field cov">${escapeHtml(play.defCoverage || "-")}</span>
+        <span class="preview-field stunt">${escapeHtml(play.defStunt || "-")}</span>
+        <span class="preview-field blitz">${escapeHtml(play.defBlitz || "-")}</span>
+        <span class="preview-field reps">×${reps}</span>
+        <span class="preview-field players">${escapeHtml(playerSummary || "-")}</span>
+      </div>`;
 }
 
 function renderScriptPlayRow(play, index, playNumber, renderContext) {
@@ -4015,45 +4070,11 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
           ${hashOptions}
         </select>
       </div>
-      <div class="defense-inputs">
-        <input type="text" list="${defenseDatalistState.preferredFrontIdsByValue.get((play.practiceFront || "").trim()) || "dl-front-shared"}" value="${escapeHtml(play.defFront || "")}" placeholder="Front" data-field="defFront" data-idx="${index}" title="Defensive Front" class="def-input" aria-label="Defensive front for ${escapeHtml(playLabel)}">
-        <input type="text" list="${defenseDatalistState.preferredCoverageIdsByValue.get((play.practiceCoverage || "").trim()) || "dl-cov-shared"}" value="${escapeHtml(play.defCoverage || "")}" placeholder="Cov" data-field="defCoverage" data-idx="${index}" title="Coverage" class="def-input" aria-label="Coverage for ${escapeHtml(playLabel)}">
-        <input type="text" list="${defenseDatalistState.preferredStuntIdsByValue.get((play.practiceStunt || "").trim()) || "dl-stunt-shared"}" value="${escapeHtml(play.defStunt || "")}" placeholder="Stunt" data-field="defStunt" data-idx="${index}" title="Stunt" class="def-input" aria-label="Stunt for ${escapeHtml(playLabel)}">
-        <input type="text" list="${defenseDatalistState.preferredBlitzIdsByValue.get((play.practiceBlitz || "").trim()) || "dl-blitz-shared"}" value="${escapeHtml(play.defBlitz || "")}" placeholder="Blitz" data-field="defBlitz" data-idx="${index}" title="Blitz" class="def-input" aria-label="Blitz for ${escapeHtml(playLabel)}">
-      </div>
-      <div class="play-controls">
-        <div class="move-btns">
-          <button class="move-btn" data-action="movePlayToPeriod" data-idx="${index}" title="Move to another period" aria-label="Move ${escapeHtml(playLabel)} to another period">↔</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
-        </div>
-        <input type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
-        <input type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
-        <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
-        <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
-      </div>
+      ${renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)}
+      ${renderScriptPlayControls(play, index, playLabel, reps)}
       ${playerAssignmentGrid}
     </div>
-    ${showPrintPreview
-      ? `
-      <div class="print-preview-row">
-        <span class="preview-label">Print:</span>
-        <span class="preview-field"><b>#${playNumber}</b></span>
-        <span class="preview-field hash">${escapeHtml(play.hash || "-")}</span>
-        <span class="preview-field tempo">${escapeHtml(play.tempo || "-")}</span>
-        <span class="preview-field call">${fullCall}</span>
-        <span class="preview-field type">${escapeHtml(play.type)}</span>
-        <span class="preview-field front">${escapeHtml(play.defFront || "-")}</span>
-        <span class="preview-field cov">${escapeHtml(play.defCoverage || "-")}</span>
-        <span class="preview-field stunt">${escapeHtml(play.defStunt || "-")}</span>
-        <span class="preview-field blitz">${escapeHtml(play.defBlitz || "-")}</span>
-        <span class="preview-field reps">×${reps}</span>
-        <span class="preview-field players">${escapeHtml(playerSummary || "-")}</span>
-      </div>`
-      : ""
-    }
+    ${showPrintPreview ? renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) : ""}
   `;
 }
 
