@@ -9,8 +9,11 @@
 }
 .play-list {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
   position: sticky;
   top: 78px;
+  height: calc(100vh - 92px);
   max-height: calc(100vh - 92px);
   overflow: hidden;
   background: linear-gradient(
@@ -53,7 +56,10 @@
   line-height: 1.2;
 }
 .available-plays-container {
-  max-height: min(500px, calc(100vh - 370px));
+  flex: 1 1 auto;
+  min-height: 260px;
+  max-height: none;
+  overflow-x: hidden;
   overflow-y: auto;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -1476,7 +1482,7 @@
   }
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .script-toolbar {
     position: static;
     top: auto;
@@ -1485,11 +1491,13 @@
   .play-list {
     position: static;
     top: auto;
+    height: auto;
     max-height: none;
     overflow: visible;
   }
 
   .available-plays-container {
+    min-height: 0;
     max-height: 420px;
   }
 }
@@ -2889,7 +2897,7 @@
   align-self: center;
 }
 
-@media (max-width: 768px) {
+@media (max-width: 640px) {
   .script-builder {
     grid-template-columns: 1fr;
   }
@@ -2897,6 +2905,7 @@
   .play-list {
     position: static;
     top: auto;
+    height: auto;
   }
 
   .available-plays-actions {
