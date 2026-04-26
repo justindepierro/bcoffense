@@ -663,10 +663,18 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
   debouncedSaveScriptState();
 }
 
+function rerenderScriptPreservingScroll() {
+  const scrollY = window.scrollY;
+  renderScript();
+  requestAnimationFrame(() => {
+    window.scrollTo({ top: scrollY, left: window.scrollX, behavior: "instant" });
+  });
+}
+
 function promoteScriptDepthPlayer(index, slotKey, playerId) {
   if (!slotKey || !playerId) return;
   updateScriptPlayerAssignment(index, slotKey, playerId);
-  renderScript();
+  rerenderScriptPreservingScroll();
 }
 
 function resetScriptPlayerOverrides(index) {
@@ -674,7 +682,7 @@ function resetScriptPlayerOverrides(index) {
   if (!play || play.isSeparator) return;
   delete play.playerAssignments;
   debouncedSaveScriptState();
-  renderScript();
+  rerenderScriptPreservingScroll();
 }
 
 function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
@@ -1563,11 +1571,68 @@ function clearSearchPlay() {
   filterScriptPlays();
 }
 
-function availPagePrev() {
-  if (scriptAvailPage > 0) {
-    scriptAvailPage--;
-    renderAvailablePlays();
-  }
+function normalizeScriptSearchText(value) {
+  return (value || "")
+    .toString()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function devowelScriptSearchText(value) {
+  return normalizeScriptSearchText(value).replace(/[aeiou]/g, "").replace(/\s+/g, "");
+}
+
+function buildScriptSearchHaystack(play) {
+  const raw = [
+    play.play,
+    play.basePlay,
+    play.formation,
+    play.protection,
+    play.motion,
+    play.shift,
+    play.back,
+    play.personnel,
+    play.oneWord,
+    play.playTag1,
+    play.playTag2,
+  ]
+    .filter(Boolean)
+    .join(" ");
+
+  const normalized = normalizeScriptSearchText(raw);
+  return {
+    normalized,
+    condensed: normalized.replace(/\s+/g, ""),
+    devoweled: devowelScriptSearchText(normalized),
+    tokens: normalized.split(/\s+/).filter(Boolean),
+  };
+}
+
+function playMatchesScriptSearch(play, search) {
+  if (!search) return true;
+
+  const normalizedQuery = normalizeScriptSearchText(search);
+  if (!normalizedQuery) return true;
+
+  const queryTokens = normalizedQuery.split(/\s+/).filter(Boolean);
+  const condensedQuery = normalizedQuery.replace(/\s+/g, "");
+  const devoweledQuery = devowelScriptSearchText(normalizedQuery);
+  const haystack = buildScriptSearchHaystack(play);
+
+  if (haystack.normalized.includes(normalizedQuery)) return true;
+  if (condensedQuery && haystack.condensed.includes(condensedQuery)) return true;
+  if (devoweledQuery && haystack.devoweled.includes(devoweledQuery)) return true;
+
+  return queryTokens.every((token) =>
+    haystack.tokens.some(
+      (candidate) =>
+        candidate.includes(token) ||
+        candidate.startsWith(token) ||
+        token.includes(candidate) ||
+        devowelScriptSearchText(candidate).includes(devowelScriptSearchText(token)),
+    ) || haystack.condensed.includes(token) || haystack.devoweled.includes(devowelScriptSearchText(token)),
+  );
 }
 
 function availPageNext() {
@@ -1606,19 +1671,7 @@ function renderAvailablePlays() {
     if (!matchesFilter(p.personnel, scriptSelectedPersonnel)) return false;
     if (formation && p.formation !== formation) return false;
     if (basePlay && p.basePlay !== basePlay) return false;
-    if (search) {
-      const searchFields = [
-        p.play,
-        p.formation,
-        p.protection,
-        p.motion,
-        p.shift,
-        p.back,
-      ]
-        .join(" ")
-        .toLowerCase();
-      if (!searchFields.includes(search)) return false;
-    }
+    if (!playMatchesScriptSearch(p, search)) return false;
     return true;
   });
 

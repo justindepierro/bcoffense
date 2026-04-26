@@ -11,6 +11,8 @@
   min-width: 0;
   position: sticky;
   top: 78px;
+  max-height: calc(100vh - 92px);
+  overflow: hidden;
   background: linear-gradient(
     180deg,
     var(--color-white) 0%,
@@ -50,7 +52,7 @@
   line-height: 1.2;
 }
 .available-plays-container {
-  max-height: 500px;
+  max-height: min(500px, calc(100vh - 370px));
   overflow-y: auto;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -1442,11 +1444,6 @@
 }
 
 @media (max-width: 1280px) {
-  .play-list {
-    position: static;
-    top: auto;
-  }
-
   .script-toolbar {
     grid-template-columns: 1fr;
   }
@@ -1471,6 +1468,19 @@
 
   .script-item--compact .play-controls {
     grid-column: 3 / -1;
+  }
+}
+
+@media (max-width: 768px) {
+  .play-list {
+    position: static;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .available-plays-container {
+    max-height: 420px;
   }
 }
 
