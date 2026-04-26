@@ -687,8 +687,11 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   const buildRow = (slotKeys) => {
     const slots = slotKeys.map((slotKey) => slotMap.get(slotKey)).filter(Boolean);
     if (!slots.length) return "";
+    const rowTypeClass = slotKeys.some((slotKey) => ["lt", "lg", "c", "rg", "rt"].includes(slotKey))
+      ? "script-player-row--line"
+      : "script-player-row--skill";
     return `
-      <div class="script-player-row script-player-row--${slots.length}">
+      <div class="script-player-row script-player-row--${slots.length} ${rowTypeClass}">
         ${slots.map((slot) => `
           <label class="script-player-slot ${isScriptPlayerSlotPromoted(play, slot.key) ? "script-player-slot--promoted" : ""}">
             <div class="script-player-slot-head">
@@ -704,7 +707,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
         const promoted = isScriptPlayerSlotPromoted(play, slot.key);
         const backupIds = slotDepth.filter((playerId) => playerId && playerId !== starterId);
         const currentStarterMarkup = promoted
-          ? `<div class="script-player-current-pill"><span class="script-player-current-pill-label">Live starter</span><span class="script-player-current-pill-name">${escapeHtml(getTeamPlayerSelectionDisplay(starterId))}</span></div>`
+          ? `<div class="script-player-current-pill"><span class="script-player-current-pill-label">Live</span><span class="script-player-current-pill-name">${escapeHtml(getTeamPlayerSelectionDisplay(starterId))}</span></div>`
           : "";
         if (!backupIds.length) {
           return `${currentStarterMarkup}<span class="script-player-slot-empty">No subs set</span>`;
@@ -714,7 +717,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
                 <div class="script-player-depth-list">
                   ${backupIds.map((playerId, depthIndex) => `
                     <button type="button" class="script-player-depth-chip" data-action="promoteScriptDepthPlayer" data-idx="${index}" data-slot="${slot.key}" data-player-id="${escapeAttr(playerId)}" aria-label="Promote ${escapeHtml(getTeamPlayerSelectionDisplay(playerId))} to ${slot.label} starter on ${escapeHtml(playLabel)}">
-                      <span class="script-player-depth-chip-role">Sub ${depthIndex + 1}</span>
+                      <span class="script-player-depth-chip-role">S${depthIndex + 1}</span>
                       <span class="script-player-depth-chip-name">${escapeHtml(getTeamPlayerSelectionDisplay(playerId))}</span>
                     </button>
                   `).join("")}
