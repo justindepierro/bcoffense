@@ -342,16 +342,22 @@
 .script-player-grid {
   display: flex;
   flex-direction: column;
-  gap: 6px;
-  margin-top: 10px;
-  padding: 10px;
+  gap: 10px;
+  margin-top: 12px;
+  padding: 12px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-lg);
   background: linear-gradient(
     180deg,
     var(--color-white) 0%,
     var(--color-bg-light) 100%
   );
+  min-width: 0;
+}
+
+.script-item--detail .script-player-grid,
+.script-item--compact .script-player-grid {
+  grid-column: 3 / -1;
 }
 
 .script-player-grid--compact {
@@ -448,25 +454,25 @@
 
 .script-player-row {
   display: grid;
-  gap: 4px;
+  gap: 8px;
 }
 
 .script-player-row--5 {
-  grid-template-columns: repeat(5, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
 .script-player-row--6 {
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
 }
 
 .script-player-slot {
   display: flex;
   flex-direction: column;
-  gap: 4px;
+  gap: 6px;
   min-width: 0;
-  padding: 6px;
+  padding: 8px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-white);
   box-shadow: var(--shadow-xs);
 }
@@ -486,6 +492,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 6px;
+  flex-wrap: wrap;
 }
 
 .script-player-slot-label {
@@ -504,6 +511,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);
   padding: 2px 6px;
+  white-space: nowrap;
 }
 
 .script-player-slot--promoted .script-player-slot-role {
@@ -515,10 +523,10 @@
 .script-player-slot-select {
   width: 100%;
   min-width: 0;
-  min-height: 34px;
-  padding: 6px 8px;
+  min-height: 36px;
+  padding: 7px 10px;
   border: 1px solid var(--color-border-input);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-white);
   color: var(--color-text);
   font: inherit;
@@ -527,7 +535,7 @@
 
 .script-player-depth-list {
   display: flex;
-  flex-wrap: wrap;
+  flex-direction: column;
   gap: 4px;
 }
 
@@ -535,9 +543,11 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  padding: 4px 7px;
+  flex-wrap: wrap;
+  max-width: 100%;
+  padding: 6px 8px;
   border: 1px solid var(--color-primary);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-white);
 }
 
@@ -552,19 +562,22 @@
 
 .script-player-current-pill-name {
   min-width: 0;
+  flex: 1 1 auto;
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-text);
+  overflow-wrap: anywhere;
 }
 
 .script-player-depth-chip {
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
   max-width: 100%;
-  padding: 4px 7px;
+  width: 100%;
+  padding: 6px 8px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   background: var(--color-bg-blue-light);
   color: var(--color-text);
   font: inherit;
@@ -594,15 +607,15 @@
 
 .script-player-depth-chip-name {
   min-width: 0;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  flex: 1 1 auto;
+  overflow-wrap: anywhere;
+  white-space: normal;
 }
 
 .script-player-slot-empty {
-  padding: 4px 7px;
+  padding: 6px 8px;
   border: 1px dashed var(--color-border-light);
-  border-radius: var(--radius-sm);
+  border-radius: var(--radius-md);
   font-size: var(--font-size-2xs);
   color: var(--color-text-muted);
 }
@@ -2810,6 +2823,11 @@
     grid-template-columns: 1fr auto auto;
   }
 
+  .script-item--detail .script-player-grid,
+  .script-item--compact .script-player-grid {
+    grid-column: 1 / -1;
+  }
+
   .script-item--detail .move-btns,
   .script-item--compact .move-btns {
     grid-column: 1 / -1;
@@ -2962,6 +2980,11 @@
   .script-item--detail .play-controls,
   .script-item--compact .play-controls {
     grid-template-columns: 1fr;
+  }
+
+  .script-item--detail .script-player-grid,
+  .script-item--compact .script-player-grid {
+    grid-column: 1 / -1;
   }
 
   .script-item--detail .defense-inputs,

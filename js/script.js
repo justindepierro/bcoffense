@@ -3983,7 +3983,6 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
         <div class="call-meta">${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</div>
-        ${playerAssignmentGrid}
       </div>
       <div class="hash-input">
         <select data-field="hash" data-idx="${index}" title="Hash" aria-label="Hash for ${escapeHtml(playLabel)}">
@@ -4009,6 +4008,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
         <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
       </div>
+      ${playerAssignmentGrid}
     </div>
     ${showPrintPreview
       ? `
