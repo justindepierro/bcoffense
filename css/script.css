@@ -1271,10 +1271,12 @@
 
 .script-item--detail .play-controls {
   display: grid;
-  grid-template-columns: auto minmax(170px, 1fr) auto;
+  grid-column: 3 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
   gap: 8px;
   min-width: 0;
+  margin-top: 4px;
   padding: 4px 6px;
   border-radius: var(--radius-lg);
   background: linear-gradient(
@@ -1295,9 +1297,35 @@
 
 .script-item--compact .play-controls {
   display: grid;
-  grid-template-columns: auto minmax(132px, 1fr) auto;
+  grid-column: 3 / -1;
+  grid-template-columns: minmax(0, 1fr) auto;
   gap: 6px;
   min-width: 0;
+}
+
+.script-item .play-move-controls {
+  display: grid;
+  grid-column: 1 / -1;
+  grid-template-columns: auto 1fr;
+  align-items: center;
+  gap: 10px;
+  padding-bottom: 4px;
+  margin-bottom: 2px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.script-item .play-control-label {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
 }
 
 .script-item .play-control-fields {
@@ -1332,7 +1360,8 @@
   display: grid;
   grid-template-columns: repeat(5, minmax(24px, 1fr));
   gap: 4px;
-  width: min(176px, 100%);
+  width: 100%;
+  max-width: 240px;
 }
 
 .script-item .move-btn {
@@ -2969,7 +2998,7 @@
   .script-item--detail .play-controls,
   .script-item--compact .play-controls {
     display: grid;
-    grid-template-columns: minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr) auto;
   }
 
   .script-item--detail .script-player-grid,
@@ -2982,6 +3011,13 @@
     display: grid;
     grid-template-columns: repeat(5, minmax(0, 1fr));
     width: 100%;
+    max-width: none;
+  }
+
+  .script-item--detail .play-move-controls,
+  .script-item--compact .play-move-controls {
+    grid-template-columns: 1fr;
+    justify-items: start;
   }
 
   .script-item--detail .play-control-fields,
@@ -3144,6 +3180,12 @@
   .script-item--compact .play-controls {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .script-item--detail .play-move-controls,
+  .script-item--compact .play-move-controls {
+    grid-template-columns: 1fr;
+    gap: 6px;
   }
 
   .script-item--detail .play-control-fields,

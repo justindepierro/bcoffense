@@ -3989,12 +3989,15 @@ function renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)
 function renderScriptPlayControls(play, index, playLabel, reps) {
   return `
       <div class="play-controls">
-        <div class="move-btns">
-          <button class="move-btn" data-action="movePlayToPeriod" data-idx="${index}" title="Move to another period" aria-label="Move ${escapeHtml(playLabel)} to another period">↔</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
-          <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
+        <div class="play-move-controls" aria-label="Move controls for ${escapeHtml(playLabel)}">
+          <span class="play-control-label">Move</span>
+          <div class="move-btns">
+            <button class="move-btn" data-action="movePlayToPeriod" data-idx="${index}" title="Move to another period" aria-label="Move ${escapeHtml(playLabel)} to another period">↔</button>
+            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
+            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
+            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
+            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
+          </div>
         </div>
         <div class="play-control-fields">
           <input class="play-reps-input" type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
