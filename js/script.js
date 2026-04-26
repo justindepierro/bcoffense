@@ -1676,16 +1676,15 @@ function renderAvailablePlays() {
       );
       return `
             <div class="play-item ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
-                <input type="checkbox" class="available-play-cb" data-index="${playIdx}" 
-                       ${isSelected ? "checked" : ""} 
-                       data-field="availableSelect" data-idx="${playIdx}" />
+                <div class="play-item-controls">
+                  <input type="checkbox" class="available-play-cb" data-index="${playIdx}" 
+                         ${isSelected ? "checked" : ""} 
+                         data-field="availableSelect" data-idx="${playIdx}" />
+                  <button type="button" class="available-add-menu-btn" data-action="openAvailableAddMenu" data-idx="${playIdx}" title="Add to script" aria-label="Add ${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)} to script">+</button>
+                </div>
                 <div class="play-info">
                     <div class="play-name">${escapeHtml(p.formation)} ${escapeHtml(p.protection)} ${escapeHtml(p.play)}${alreadyIn ? ' <span class="in-script-badge" title="Already on script">✓ On Script</span>' : ""}</div>
                     <div class="play-details">${escapeHtml(p.type)} ${p.motion ? "• " + escapeHtml(p.motion) : ""}</div>
-                </div>
-                <div class="play-item-actions">
-                  ${buildAvailableTargetPeriodSelectMarkup(playIdx)}
-                  <button data-action="addToScript" data-idx="${playIdx}">+ Add</button>
                 </div>
             </div>
         `;
@@ -1793,6 +1792,85 @@ function buildAvailableTargetPeriodSelectMarkup(playIndex) {
       </select>
     </label>
   `;
+}
+
+function getAvailableAddSelection(playIndex) {
+  normalizeSelectedAvailablePlays();
+  if (
+    selectedAvailablePlays.length > 1 &&
+    selectedAvailablePlays.includes(playIndex)
+  ) {
+    return [...selectedAvailablePlays].sort((a, b) => a - b);
+  }
+  return Number.isInteger(playIndex) ? [playIndex] : [];
+}
+
+function addAvailableSelectionToScript(playIndices, targetSeparatorIndex) {
+  const validIndices = playIndices
+    .filter((idx) => Number.isInteger(idx) && plays[idx])
+    .sort((a, b) => a - b);
+  if (!validIndices.length || !script[targetSeparatorIndex]?.isSeparator) return [];
+
+  lastScriptTargetPeriodId = script[targetSeparatorIndex]?.id || lastScriptTargetPeriodId;
+  saveScriptState();
+  const insertedIndices = insertPlaysIntoPeriod(
+    targetSeparatorIndex,
+    validIndices
+      .map((playIndex) => plays[playIndex])
+      .filter(Boolean)
+      .map((play) => createScriptPlayFromPlaybook(play)),
+  );
+
+  if (selectedAvailablePlays.length) {
+    selectedAvailablePlays = selectedAvailablePlays.filter(
+      (idx) => !validIndices.includes(idx),
+    );
+  }
+
+  renderScript();
+  renderAvailablePlays();
+  if (insertedIndices.length) flashScriptPlayAtIndex(insertedIndices[0]);
+  return insertedIndices;
+}
+
+function openAvailableAddMenu(event, playIndex) {
+  const indices = getAvailableAddSelection(playIndex);
+  if (!indices.length) return;
+
+  const hadPeriod = script.some((item) => item?.isSeparator);
+  ensureFirstPeriod();
+  if (!hadPeriod) renderScript();
+
+  const periodChoices = getScriptPeriodChoices();
+  if (!periodChoices.length) return;
+
+  const selectionLabel = `${indices.length} play${indices.length === 1 ? "" : "s"}`;
+  const preferredTarget = getPreferredTargetPeriodIndex();
+  const menu = document.createElement("div");
+  menu.className = "cs-context-menu available-add-menu";
+
+  periodChoices.forEach((choice) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = "cs-ctx-item";
+    button.textContent = `${choice.value === preferredTarget ? "⭐ " : ""}Add ${selectionLabel} to ${choice.label} (${choice.sublabel})`;
+    button.addEventListener("click", () => {
+      menu.remove();
+      const insertedIndices = addAvailableSelectionToScript(indices, choice.value);
+      if (!insertedIndices.length) {
+        setScriptToolbarStatus("Could not add plays to that period", "error");
+        return;
+      }
+      setScriptToolbarStatus(
+        `Added ${selectionLabel} to ${script[choice.value]?.label || "selected period"}`,
+        "success",
+        AUTOSAVE_DEBOUNCE_MS,
+      );
+    });
+    menu.appendChild(button);
+  });
+
+  showContextMenu(event, menu);
 }
 
 function insertPlaysIntoPeriod(targetSeparatorIndex, playsToInsert) {
@@ -4862,7 +4940,59 @@ const _scheduleRenderScript = createRAFRenderer(renderScript);
 /**
  * Clear the current script
  */
+function resetScriptForNewDraft() {
+  script = [];
+  bulkSelectedIndices = [];
+  selectedAvailablePlays = [];
+  collapsedPeriods = new Set();
+  lastScriptTargetPeriodId = null;
+  scriptAvailPage = 0;
+
+  const scriptNameEl = document.getElementById("scriptName");
+  if (scriptNameEl) scriptNameEl.value = "Practice Script";
+  const dateEl = document.getElementById("scriptDate");
+  if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
+
+  ensureFirstPeriod();
+  renderScript();
+  renderAvailablePlays();
+  markScriptClean();
+  storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+}
+
+async function newScript() {
+  const hasPlays = script.some((p) => !p.isSeparator);
+  const currentName = document.getElementById("scriptName")?.value || "";
+  const isNamedScript = currentName.trim() && currentName.trim() !== "Practice Script";
+  const shouldPrompt = hasPlays || isNamedScript || scriptDirty;
+
+  if (shouldPrompt) {
+    const choice = await showChoice(
+      "Start a fresh script? You can save the current one first or begin a new unsaved script.",
+      {
+        title: "New Script",
+        icon: "✨",
+        option1: "💾 Save & New",
+        option2: "✨ New Without Saving",
+      },
+    );
+
+    if (choice === null) return;
+    if (choice === "option1") {
+      const saved = await saveScript();
+      if (!saved) return;
+    }
+  }
+
+  resetScriptForNewDraft();
+  showToast("✨ Started a new script");
+}
+
 async function clearScript() {
+  return newScript();
+}
+
+async function clearScriptLegacy() {
   // Don't count it as "has content" if it's just the auto-seeded period
   const hasPlays = script.some((p) => !p.isSeparator);
   if (!hasPlays) return;
@@ -4960,7 +5090,7 @@ async function saveScript() {
 
     if (!name) {
       showToast("⚠️ Please enter a script name", { type: "warning" });
-      return;
+      return false;
     }
 
     const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
@@ -4990,11 +5120,11 @@ async function saveScript() {
         markScriptClean();
         storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
         showToast(`✅ "${name}" updated!`);
-        return;
+        return true;
       }
 
       if (choice !== "option2") {
-        return;
+        return false;
       }
     }
 
@@ -5015,9 +5145,11 @@ async function saveScript() {
     markScriptClean();
     storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
     showToast(`✅ "${name}" saved!`);
+    return true;
   } catch (err) {
     console.error("saveScript error:", err);
     showToast("❌ Error saving script.", { duration: 4000, type: "error" });
+    return false;
   }
 }
 
@@ -5133,6 +5265,7 @@ function loadScript(id) {
 
     restoreSavedScriptWorkspace(scriptData.workspace);
     renderScript();
+    renderAvailablePlays();
     markScriptClean();
     storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
     showToast(`Loaded "${scriptData.name}"`);

@@ -2810,10 +2810,13 @@ document.addEventListener("DOMContentLoaded", () => {
     availEl.addEventListener("click", (e) => {
       const el = e.target.closest("[data-action]");
       if (!el) return;
+      if (el.dataset.action === "openAvailableAddMenu") {
+        openAvailableAddMenu(e, parseInt(el.dataset.idx, 10));
+        e.stopPropagation();
+        return;
+      }
       if (el.dataset.action === "addToScript") {
-        const playCard = el.closest(".play-item");
-        const targetSelect = playCard?.querySelector('[data-field="availableTargetPeriod"]');
-        addToScript(parseInt(el.dataset.idx, 10), targetSelect?.value ?? null);
+        addToScript(parseInt(el.dataset.idx, 10));
         e.stopPropagation();
       }
     });
