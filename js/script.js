@@ -730,6 +730,29 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
     `;
   };
 
+  const buildSection = (title, className, rows) => {
+    const content = rows.filter(Boolean).join("");
+    if (!content) return "";
+    return `
+      <div class="script-player-group ${className}">
+        <div class="script-player-group-header">
+          <span class="script-player-group-title">${title}</span>
+        </div>
+        ${content}
+      </div>
+    `;
+  };
+
+  const skillSection = buildSection("Skill", "script-player-group--skill", [
+    buildRow(["qb", "rb", "h"]),
+    buildRow(["x", "y", "z"]),
+  ]);
+  const lineSection = opts.hideLinemen
+    ? ""
+    : buildSection("Offensive Line", "script-player-group--line", [
+      buildRow(["lt", "lg", "c", "rg", "rt"]),
+    ]);
+
   return `
     <div class="script-player-grid ${opts.layoutMode === "compact" ? "script-player-grid--compact" : "script-player-grid--detail"}">
       <div class="script-player-grid-head">
@@ -741,8 +764,8 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
           ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ''}
         </div>
       </div>
-      ${buildRow(["qb", "rb", "h", "x", "y", "z"])}
-      ${opts.hideLinemen ? "" : buildRow(["lt", "lg", "c", "rg", "rt"])}
+      ${skillSection}
+      ${lineSection}
     </div>
   `;
 }
