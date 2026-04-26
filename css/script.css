@@ -1270,12 +1270,11 @@
 }
 
 .script-item--detail .play-controls {
-  display: flex;
+  display: grid;
+  grid-template-columns: auto minmax(170px, 1fr) auto;
   align-items: center;
-  flex-wrap: nowrap;
-  gap: 4px;
+  gap: 8px;
   min-width: 0;
-  justify-content: flex-end;
   padding: 4px 6px;
   border-radius: var(--radius-lg);
   background: linear-gradient(
@@ -1287,19 +1286,35 @@
 }
 
 .script-item--detail .play-controls > * {
-  flex: 0 0 auto;
+  min-width: 0;
 }
 
 .script-item--detail .play-controls input[data-field="notes"] {
-  flex: 1 1 84px;
-  min-width: 64px;
+  min-width: 0;
 }
 
 .script-item--compact .play-controls {
   display: grid;
-  grid-template-columns: auto 40px minmax(72px, 1fr) auto auto;
-  gap: 4px;
+  grid-template-columns: auto minmax(132px, 1fr) auto;
+  gap: 6px;
   min-width: 0;
+}
+
+.script-item .play-control-fields {
+  display: grid;
+  grid-template-columns: 52px minmax(0, 1fr);
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+}
+
+.script-item .play-control-actions {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 38px;
+  gap: 6px;
+  align-items: center;
+  justify-content: end;
 }
 
 .script-item--compact .move-btns {
@@ -1314,10 +1329,10 @@
 }
 
 .script-item--detail .move-btns {
-  display: inline-grid;
-  grid-template-columns: repeat(5, 22px);
-  gap: 3px;
-  flex: 0 0 auto;
+  display: grid;
+  grid-template-columns: repeat(5, minmax(24px, 1fr));
+  gap: 4px;
+  width: min(176px, 100%);
 }
 
 .script-item .move-btn {
@@ -1331,6 +1346,10 @@
 }
 .script-item--compact .move-btn {
   width: 100%;
+}
+.script-item .play-control-fields input,
+.script-item .play-control-actions button {
+  min-width: 0;
 }
 @media (hover: hover) {
   .script-item .move-btn:hover {
@@ -2950,7 +2969,7 @@
   .script-item--detail .play-controls,
   .script-item--compact .play-controls {
     display: grid;
-    grid-template-columns: 1fr auto auto;
+    grid-template-columns: minmax(0, 1fr);
   }
 
   .script-item--detail .script-player-grid,
@@ -2961,8 +2980,18 @@
   .script-item--detail .move-btns,
   .script-item--compact .move-btns {
     display: grid;
-    grid-column: 1 / -1;
     grid-template-columns: repeat(5, minmax(0, 1fr));
+    width: 100%;
+  }
+
+  .script-item--detail .play-control-fields,
+  .script-item--compact .play-control-fields {
+    grid-template-columns: 56px minmax(0, 1fr);
+  }
+
+  .script-item--detail .play-control-actions,
+  .script-item--compact .play-control-actions {
+    justify-content: end;
   }
 
   .script-item--detail input[type="number"],
@@ -3115,6 +3144,18 @@
   .script-item--compact .play-controls {
     display: grid;
     grid-template-columns: 1fr;
+  }
+
+  .script-item--detail .play-control-fields,
+  .script-item--compact .play-control-fields,
+  .script-item--detail .play-control-actions,
+  .script-item--compact .play-control-actions {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .script-item--detail .play-control-fields .play-notes-input,
+  .script-item--compact .play-control-fields .play-notes-input {
+    grid-column: 1 / -1;
   }
 
   .script-item--detail .script-player-grid,

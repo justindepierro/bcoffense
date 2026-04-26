@@ -693,7 +693,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
     return `
       <div class="script-player-row script-player-row--${slots.length} ${rowTypeClass}">
         ${slots.map((slot) => `
-          <label class="script-player-slot ${isScriptPlayerSlotPromoted(play, slot.key) ? "script-player-slot--promoted" : ""}">
+          <div class="script-player-slot ${isScriptPlayerSlotPromoted(play, slot.key) ? "script-player-slot--promoted" : ""}">
             <div class="script-player-slot-head">
               <span class="script-player-slot-label">${slot.label}</span>
               <span class="script-player-slot-role">${isScriptPlayerSlotPromoted(play, slot.key) ? "Promoted" : "Starter"}</span>
@@ -724,7 +724,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
                 </div>
               `;
       })()}
-          </label>
+          </div>
         `).join("")}
       </div>
     `;
@@ -3996,10 +3996,14 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
           <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
         </div>
-        <input type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
-        <input type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
-        <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
-        <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
+        <div class="play-control-fields">
+          <input class="play-reps-input" type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
+          <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
+        </div>
+        <div class="play-control-actions">
+          <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
+          <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
+        </div>
       </div>`;
 }
 
