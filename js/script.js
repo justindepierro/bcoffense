@@ -744,8 +744,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   };
 
   const skillSection = buildSection("Skill", "script-player-group--skill", [
-    buildRow(["qb", "rb", "h"]),
-    buildRow(["x", "y", "z"]),
+    buildRow(["qb", "rb", "h", "x", "y", "z"]),
   ]);
   const lineSection = opts.hideLinemen
     ? ""
