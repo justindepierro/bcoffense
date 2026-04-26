@@ -2625,6 +2625,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const rawDir = el.dataset.dir;
       const dir = parseInt(rawDir, 10);
       switch (action) {
+        case "openScriptMoveMenu":
+          openScriptMoveMenu(e, idx);
+          break;
         case "movePlay":
           movePlay(idx, Number.isNaN(dir) ? rawDir : dir);
           break;

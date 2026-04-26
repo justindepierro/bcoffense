@@ -3363,6 +3363,241 @@ async function movePlayToPeriod(index) {
   setScriptToolbarStatus(`Moved play to ${periodLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
 }
 
+function getScriptMoveSelection(index) {
+  if (
+    bulkSelectedIndices.length > 1 &&
+    bulkSelectedIndices.includes(index)
+  ) {
+    return [...new Set(bulkSelectedIndices)]
+      .filter((idx) => script[idx] && !script[idx].isSeparator)
+      .sort((a, b) => a - b);
+  }
+
+  return script[index] && !script[index].isSeparator ? [index] : [];
+}
+
+function getScriptMoveSelectionCountLabel(indices) {
+  return `${indices.length} play${indices.length === 1 ? "" : "s"}`;
+}
+
+function getScriptMoveSelectionPeriodIndex(indices) {
+  if (!indices.length) return -1;
+  const firstPeriodIndex = findOwningPeriodIndex(indices[0]);
+  return indices.every((idx) => findOwningPeriodIndex(idx) === firstPeriodIndex)
+    ? firstPeriodIndex
+    : -1;
+}
+
+function moveScriptSelectionWithinPeriod(indices, direction) {
+  const sortedIndices = [...indices].sort((a, b) => a - b);
+  if (!sortedIndices.length) return false;
+
+  const periodIndex = getScriptMoveSelectionPeriodIndex(sortedIndices);
+  if (periodIndex < 0) return false;
+
+  const { lowerBound, upperBound } = getPlayMoveBounds(sortedIndices[0]);
+  const selectedSet = new Set(sortedIndices);
+  const periodIndices = [];
+  const periodItems = [];
+
+  for (let idx = lowerBound; idx <= upperBound; idx++) {
+    periodIndices.push(idx);
+    periodItems.push(script[idx]);
+  }
+
+  const selectedFlags = periodIndices.map((idx) => selectedSet.has(idx));
+  const selectedItems = [];
+  const unselectedItems = [];
+
+  periodItems.forEach((item, itemIndex) => {
+    if (selectedFlags[itemIndex]) selectedItems.push(item);
+    else unselectedItems.push(item);
+  });
+
+  let nextPeriodItems = [...periodItems];
+  if (direction === "top") {
+    if (selectedFlags.every((isSelected, idx) => !isSelected || idx < selectedItems.length)) {
+      return false;
+    }
+    nextPeriodItems = [...selectedItems, ...unselectedItems];
+  } else if (direction === "bottom") {
+    if (selectedFlags.every((isSelected, idx) => !isSelected || idx >= periodItems.length - selectedItems.length)) {
+      return false;
+    }
+    nextPeriodItems = [...unselectedItems, ...selectedItems];
+  } else if (Number(direction) === -1) {
+    if (selectedFlags[0]) return false;
+    for (let idx = 1; idx < nextPeriodItems.length; idx++) {
+      if (selectedFlags[idx] && !selectedFlags[idx - 1]) {
+        [nextPeriodItems[idx - 1], nextPeriodItems[idx]] = [nextPeriodItems[idx], nextPeriodItems[idx - 1]];
+        [selectedFlags[idx - 1], selectedFlags[idx]] = [selectedFlags[idx], selectedFlags[idx - 1]];
+      }
+    }
+  } else if (Number(direction) === 1) {
+    if (selectedFlags[selectedFlags.length - 1]) return false;
+    for (let idx = nextPeriodItems.length - 2; idx >= 0; idx--) {
+      if (selectedFlags[idx] && !selectedFlags[idx + 1]) {
+        [nextPeriodItems[idx], nextPeriodItems[idx + 1]] = [nextPeriodItems[idx + 1], nextPeriodItems[idx]];
+        [selectedFlags[idx], selectedFlags[idx + 1]] = [selectedFlags[idx + 1], selectedFlags[idx]];
+      }
+    }
+  } else {
+    return false;
+  }
+
+  if (nextPeriodItems.every((item, idx) => item === periodItems[idx])) return false;
+
+  saveScriptState();
+  nextPeriodItems.forEach((item, idx) => {
+    script[periodIndices[idx]] = item;
+  });
+  renderScript();
+  return true;
+}
+
+function moveScriptSelectionToPeriodIndex(indices, targetSeparatorIndex) {
+  const sortedIndices = [...indices].sort((a, b) => a - b);
+  const selectedPlays = sortedIndices
+    .map((idx) => script[idx])
+    .filter((play) => play && !play.isSeparator);
+  const targetSeparator = script[targetSeparatorIndex];
+  if (!selectedPlays.length || !targetSeparator?.isSeparator) return false;
+
+  const targetAlreadyOwnsAll = sortedIndices.every(
+    (idx) => findOwningPeriodIndex(idx) === targetSeparatorIndex,
+  );
+  if (targetAlreadyOwnsAll) return false;
+
+  saveScriptState();
+  for (let idx = sortedIndices.length - 1; idx >= 0; idx--) {
+    script.splice(sortedIndices[idx], 1);
+  }
+
+  const removedBeforeTarget = sortedIndices.filter((idx) => idx < targetSeparatorIndex).length;
+  const adjustedTargetSeparatorIndex = targetSeparatorIndex - removedBeforeTarget;
+  let insertAt = adjustedTargetSeparatorIndex + 1;
+  while (insertAt < script.length && !script[insertAt].isSeparator) insertAt++;
+
+  script.splice(insertAt, 0, ...selectedPlays);
+  renderScript();
+  return true;
+}
+
+async function moveScriptSelectionToPeriod(index) {
+  const indices = getScriptMoveSelection(index);
+  if (!indices.length) return;
+
+  const currentPeriodIndex = getScriptMoveSelectionPeriodIndex(indices);
+  const periodChoices = getScriptPeriodChoices(currentPeriodIndex);
+  if (!periodChoices.length) {
+    setScriptToolbarStatus("Need another period before moving this selection", "error");
+    return;
+  }
+
+  const selectionLabel = getScriptMoveSelectionCountLabel(indices);
+  const selectedPeriod = await showListPicker(
+    `Choose the period that should receive ${selectionLabel}.`,
+    periodChoices,
+    { title: "↔ Move Selection To Period", icon: "↔" },
+  );
+
+  if (selectedPeriod === null) return;
+  if (!moveScriptSelectionToPeriodIndex(indices, selectedPeriod)) {
+    setScriptToolbarStatus("Could not move that selection to the chosen period", "error");
+    return;
+  }
+
+  const periodLabel = script[selectedPeriod]?.label || "selected period";
+  setScriptToolbarStatus(`Moved ${selectionLabel} to ${periodLabel}`, "success", AUTOSAVE_DEBOUNCE_MS);
+}
+
+function openScriptMoveMenu(event, index) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  const indices = getScriptMoveSelection(index);
+  if (!indices.length) return;
+
+  const selectionLabel = getScriptMoveSelectionCountLabel(indices);
+  const sharedPeriodIndex = getScriptMoveSelectionPeriodIndex(indices);
+  const canReorderWithinPeriod = sharedPeriodIndex >= 0;
+  const menuItems = [
+    {
+      label: `↔ Move ${selectionLabel} to another period`,
+      action: () => moveScriptSelectionToPeriod(index),
+    },
+    { separator: true },
+    {
+      label: `⤒ Move ${selectionLabel} to top`,
+      action: () => {
+        if (!moveScriptSelectionWithinPeriod(indices, "top")) {
+          setScriptToolbarStatus("Could not move that selection to the top", "error");
+          return;
+        }
+        setScriptToolbarStatus(`Moved ${selectionLabel} to top`, "success", AUTOSAVE_DEBOUNCE_MS);
+      },
+      disabled: !canReorderWithinPeriod,
+    },
+    {
+      label: `▲ Move ${selectionLabel} up`,
+      action: () => {
+        if (!moveScriptSelectionWithinPeriod(indices, -1)) {
+          setScriptToolbarStatus("Could not move that selection up", "error");
+          return;
+        }
+        setScriptToolbarStatus(`Moved ${selectionLabel} up`, "success", AUTOSAVE_DEBOUNCE_MS);
+      },
+      disabled: !canReorderWithinPeriod,
+    },
+    {
+      label: `▼ Move ${selectionLabel} down`,
+      action: () => {
+        if (!moveScriptSelectionWithinPeriod(indices, 1)) {
+          setScriptToolbarStatus("Could not move that selection down", "error");
+          return;
+        }
+        setScriptToolbarStatus(`Moved ${selectionLabel} down`, "success", AUTOSAVE_DEBOUNCE_MS);
+      },
+      disabled: !canReorderWithinPeriod,
+    },
+    {
+      label: `⤓ Move ${selectionLabel} to bottom`,
+      action: () => {
+        if (!moveScriptSelectionWithinPeriod(indices, "bottom")) {
+          setScriptToolbarStatus("Could not move that selection to the bottom", "error");
+          return;
+        }
+        setScriptToolbarStatus(`Moved ${selectionLabel} to bottom`, "success", AUTOSAVE_DEBOUNCE_MS);
+      },
+      disabled: !canReorderWithinPeriod,
+    },
+  ];
+
+  const menu = document.createElement("div");
+  menu.className = "cs-context-menu script-move-menu";
+  menuItems.forEach((item) => {
+    if (item.separator) {
+      const divider = document.createElement("div");
+      divider.className = "cs-ctx-divider";
+      menu.appendChild(divider);
+      return;
+    }
+
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = item.danger ? "cs-ctx-item cs-ctx-clear" : "cs-ctx-item";
+    button.textContent = item.label;
+    button.disabled = Boolean(item.disabled);
+    button.addEventListener("click", async () => {
+      menu.remove();
+      await item.action();
+    });
+    menu.appendChild(button);
+  });
+
+  showContextMenu(event, menu);
+}
+
 /**
  * Move a play up or down in the script
  * @param {number} index - Current index
@@ -3989,16 +4224,6 @@ function renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)
 function renderScriptPlayControls(play, index, playLabel, reps) {
   return `
       <div class="play-controls">
-        <div class="play-move-controls" aria-label="Move controls for ${escapeHtml(playLabel)}">
-          <span class="play-control-label">Move</span>
-          <div class="move-btns">
-            <button class="move-btn" data-action="movePlayToPeriod" data-idx="${index}" title="Move to another period" aria-label="Move ${escapeHtml(playLabel)} to another period">↔</button>
-            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="top" title="Move to top of period" aria-label="Move ${escapeHtml(playLabel)} to top of period">⤒</button>
-            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="-1" aria-label="Move ${escapeHtml(playLabel)} up">▲</button>
-            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="1" aria-label="Move ${escapeHtml(playLabel)} down">▼</button>
-            <button class="move-btn" data-action="movePlay" data-idx="${index}" data-dir="bottom" title="Move to bottom of period" aria-label="Move ${escapeHtml(playLabel)} to bottom of period">⤓</button>
-          </div>
-        </div>
         <div class="play-control-fields">
           <input class="play-reps-input" type="number" value="${reps}" min="1" data-field="reps" data-idx="${index}" title="Reps" aria-label="Reps for ${escapeHtml(playLabel)}">
           <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
@@ -4065,7 +4290,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
 
   return `
     <div class="${itemClasses}" draggable="true" data-drag="scriptStart" data-idx="${index}" role="group" aria-label="Draggable play ${playNumber}: ${escapeHtml(playLabel)}">
-      <input type="checkbox" class="bulk-select-cb" data-index="${index}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${index}" title="Select for bulk edit" aria-label="Select play ${playNumber} for bulk edit">
+      <div class="script-select-tools">
+        <input type="checkbox" class="bulk-select-cb" data-index="${index}" ${isSelected ? "checked" : ""} data-field="bulkSelect" data-idx="${index}" title="Select for bulk edit" aria-label="Select play ${playNumber} for bulk edit">
+        <button type="button" class="script-move-menu-btn" data-action="openScriptMoveMenu" data-idx="${index}" title="Move options" aria-label="Open move options for ${escapeHtml(playLabel)}">↕</button>
+      </div>
       <div class="play-num" aria-hidden="true">${playNumber}${wbBadge}</div>
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
