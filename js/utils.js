@@ -8,6 +8,37 @@ const WRISTBAND_OFFSET = 11;
 const PICKER_LIMIT = 150;
 const TOOLTIP_DELAY_MS = 200;
 
+function getDraftTimestamp(draft) {
+  if (!draft || typeof draft !== "object") return 0;
+  if (typeof draft.timestamp === "number" && Number.isFinite(draft.timestamp)) {
+    return draft.timestamp;
+  }
+  if (!draft.savedAt) return 0;
+
+  const parsed = new Date(draft.savedAt).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function isDraftExpired(draft, maxAgeMs = DRAFT_EXPIRY_MS) {
+  const timestamp = getDraftTimestamp(draft);
+  if (!timestamp) return true;
+  return Date.now() - timestamp > maxAgeMs;
+}
+
+function formatDraftSavedAt(draft, locale = "en-US", opts = {}) {
+  const timestamp = getDraftTimestamp(draft);
+  if (!timestamp) return opts.fallback || "unknown time";
+
+  const formatOptions = opts.formatOptions || {
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  };
+
+  return new Date(timestamp).toLocaleString(locale, formatOptions);
+}
+
 // ============ Shared Color Tokens ============
 // Mirrors CSS custom properties for use in JS-generated inline styles
 const UI_COLORS = {

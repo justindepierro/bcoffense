@@ -607,10 +607,7 @@ async function checkWristbandDraft() {
     const draft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
     if (!draft || !draft.cards || draft.cards.length === 0) return;
 
-    // Discard drafts older than 24 hours
-    const age =
-      Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
-    if (age > DRAFT_EXPIRY_MS) {
+    if (isDraftExpired(draft)) {
       storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
       return;
     }
@@ -628,14 +625,7 @@ async function checkWristbandDraft() {
     );
     if (currentPlays > 0) return;
 
-    const savedTime = draft.savedAt
-      ? new Date(draft.savedAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      })
-      : "unknown time";
+    const savedTime = formatDraftSavedAt(draft);
 
     const doRestore = await showConfirm(
       `Found unsaved wristband draft!\n\n${draftPlays} plays across ${draft.cards.length} card(s)\nLast edited: ${savedTime}\n\nRestore it?`,

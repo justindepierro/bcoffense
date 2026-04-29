@@ -3796,12 +3796,9 @@ function scheduleCallSheetAutosave() {
 async function checkCallSheetDraft() {
   try {
     const draft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
-    if (!draft || !draft.savedAt) return;
+    if (!draft || !getDraftTimestamp(draft)) return;
 
-    const savedAt = new Date(draft.savedAt);
-    const age = Date.now() - savedAt.getTime();
-    // Only offer if draft is less than 24h old
-    if (age > DRAFT_EXPIRY_MS) {
+    if (isDraftExpired(draft)) {
       storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
       return;
     }
@@ -3814,7 +3811,13 @@ async function checkCallSheetDraft() {
       return;
     }
 
-    const timeStr = savedAt.toLocaleTimeString();
+    const timeStr = formatDraftSavedAt(draft, undefined, {
+      fallback: "unknown time",
+      formatOptions: {
+        hour: "numeric",
+        minute: "2-digit",
+      },
+    });
     const ok = await showConfirm(
       `A draft from ${timeStr} was found. Would you like to restore it?`,
       {

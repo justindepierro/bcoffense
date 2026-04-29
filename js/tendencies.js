@@ -552,8 +552,7 @@ function scheduleTendenciesAutosave() {
 async function checkTendenciesDraft() {
   const draft = storageManager.get(STORAGE_KEYS.TENDENCIES_DRAFT, null);
   if (!draft || !draft.play) return;
-  // Only offer if < 24 hours old
-  if (Date.now() - draft.timestamp > DRAFT_EXPIRY_MS) {
+  if (isDraftExpired(draft)) {
     storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, null);
     return;
   }

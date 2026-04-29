@@ -976,10 +976,7 @@ async function checkScriptDraft() {
     const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
     if (!draft || !draft.plays || draft.plays.length === 0) return;
 
-    // Discard drafts older than 24 hours
-    const age =
-      Date.now() - (draft.savedAt ? new Date(draft.savedAt).getTime() : 0);
-    if (age > DRAFT_EXPIRY_MS) {
+    if (isDraftExpired(draft)) {
       storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
       return;
     }
@@ -987,14 +984,7 @@ async function checkScriptDraft() {
     if (currentPlays > 0) return;
 
     const draftPlays = draft.plays.filter((p) => !p.isSeparator).length;
-    const savedTime = draft.savedAt
-      ? new Date(draft.savedAt).toLocaleString("en-US", {
-        month: "short",
-        day: "numeric",
-        hour: "numeric",
-        minute: "2-digit",
-      })
-      : "unknown time";
+    const savedTime = formatDraftSavedAt(draft);
 
     const doRestore = await showConfirm(
       `Found unsaved script draft!\n\n"${draft.name || "Untitled"}" — ${draftPlays} plays\nLast edited: ${savedTime}\n\nRestore it?`,
