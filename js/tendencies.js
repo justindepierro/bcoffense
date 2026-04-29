@@ -534,18 +534,15 @@ function saveTendenciesSettings() {
 // ============ Autosave Draft ============
 
 function scheduleTendenciesAutosave() {
-  if (tendenciesAutosaveTimer) clearTimeout(tendenciesAutosaveTimer);
-  tendenciesAutosaveTimer = setTimeout(() => {
+  tendenciesAutosaveTimer = queueAutosave(tendenciesAutosaveTimer, () => {
     if (!tendenciesCurrentPlay) return;
-    const draft = {
+    persistDraftData(STORAGE_KEYS.TENDENCIES_DRAFT, {
       opponentIndex: tendenciesCurrentOpponent,
       play: { ...tendenciesCurrentPlay },
       editIndex: tendenciesEditIndex,
       wizardStep: tendenciesWizardStep,
       rapidMode: tendenciesRapidMode,
-      timestamp: Date.now(),
-    };
-    storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, draft);
+    }, { timestampField: "timestamp" });
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
@@ -553,7 +550,7 @@ async function checkTendenciesDraft() {
   const draft = storageManager.get(STORAGE_KEYS.TENDENCIES_DRAFT, null);
   if (!draft || !draft.play) return;
   if (isDraftExpired(draft)) {
-    storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, null);
+    discardDraftData(STORAGE_KEYS.TENDENCIES_DRAFT);
     return;
   }
   const filledFields = Object.values(draft.play).filter(
@@ -583,13 +580,15 @@ async function checkTendenciesDraft() {
     }
     showToast("📋 Draft restored");
   } else {
-    storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, null);
+    discardDraftData(STORAGE_KEYS.TENDENCIES_DRAFT);
   }
 }
 
 function clearTendenciesDraft() {
-  storageManager.set(STORAGE_KEYS.TENDENCIES_DRAFT, null);
-  if (tendenciesAutosaveTimer) clearTimeout(tendenciesAutosaveTimer);
+  tendenciesAutosaveTimer = discardDraftData(
+    STORAGE_KEYS.TENDENCIES_DRAFT,
+    tendenciesAutosaveTimer,
+  );
 }
 
 // ============ Undo/Redo ============

@@ -579,24 +579,29 @@ let wristbandAutosaveTimer = null;
  * Debounced autosave for the working wristband
  */
 function scheduleWristbandAutosave() {
-  if (wristbandAutosaveTimer) clearTimeout(wristbandAutosaveTimer);
-  if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
-  wristbandAutosaveTimer = setTimeout(() => {
-    if (wristbandCards.length === 0) return;
-    const hasPlays = wristbandCards.some(
-      (c) => c.data && c.data.some((p) => p !== null),
-    );
-    if (!hasPlays) return;
-    const draft = {
+  wristbandAutosaveTimer = queueAutosave(
+    wristbandAutosaveTimer,
+    () => {
+      if (wristbandCards.length === 0) return;
+      const hasPlays = wristbandCards.some(
+        (c) => c.data && c.data.some((p) => p !== null),
+      );
+      if (!hasPlays) return;
+      persistDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, {
       cards: wristbandCards,
       cellStyles: cellCustomizations,
       favorites: wbFavorites,
       headerColor: wristbandHeaderColor,
-      savedAt: new Date().toISOString(),
-    };
-    storageManager.set(STORAGE_KEYS.WRISTBAND_DRAFT, draft);
-    if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
-  }, AUTOSAVE_DEBOUNCE_MS);
+      });
+      if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
+    },
+    {
+      delay: AUTOSAVE_DEBOUNCE_MS,
+      onQueue: () => {
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
+      },
+    },
+  );
 }
 
 /**
@@ -608,7 +613,7 @@ async function checkWristbandDraft() {
     if (!draft || !draft.cards || draft.cards.length === 0) return;
 
     if (isDraftExpired(draft)) {
-      storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+      discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
       return;
     }
 
@@ -652,7 +657,7 @@ async function checkWristbandDraft() {
       markWristbandDirty();
       showToast("🃏 Draft restored");
     } else {
-      storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+      discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
     }
   } catch (err) {
     console.error("checkWristbandDraft error:", err);
@@ -2886,7 +2891,7 @@ async function saveWristband() {
         populateScriptWristbandSelect();
         populateWristbandHighlightDropdown();
         markWristbandClean();
-        storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+        discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
         showToast(`✅ "${name}" updated!`);
         return;
       } else if (choice !== "option2") {
@@ -2910,7 +2915,7 @@ async function saveWristband() {
     populateScriptWristbandSelect();
     populateWristbandHighlightDropdown();
     markWristbandClean();
-    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
     showToast(`✅ "${name}" saved!`);
   } catch (err) {
     console.error("saveWristband error:", err);
@@ -3042,7 +3047,7 @@ function loadWristband(id) {
     renderWristbandGrid();
     updateCardColorPicker();
     markWristbandClean();
-    storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
     showToast(`Loaded "${wb.title}"`);
   } catch (err) {
     console.error("loadWristband error:", err);
@@ -3127,7 +3132,7 @@ async function overwriteSavedWristband(id) {
   populateScriptWristbandSelect();
   populateWristbandHighlightDropdown();
   markWristbandClean();
-  storageManager.remove(STORAGE_KEYS.WRISTBAND_DRAFT);
+  discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
   showToast(`"${wb.title}" updated!`);
 }
 

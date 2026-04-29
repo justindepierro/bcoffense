@@ -3779,14 +3779,11 @@ function restoreCallSheetDisplayOptions() {
  * Schedule autosave for call sheet draft
  */
 function scheduleCallSheetAutosave() {
-  if (callSheetAutosaveTimer) clearTimeout(callSheetAutosaveTimer);
-  callSheetAutosaveTimer = setTimeout(() => {
-    const draft = {
+  callSheetAutosaveTimer = queueAutosave(callSheetAutosaveTimer, () => {
+    persistDraftData(STORAGE_KEYS.CALLSHEET_DRAFT, {
       callSheet: safeDeepClone(callSheet),
       settings: safeDeepClone(callSheetSettings),
-      savedAt: new Date().toISOString(),
-    };
-    storageManager.set(STORAGE_KEYS.CALLSHEET_DRAFT, draft);
+    });
   }, AUTOSAVE_DEBOUNCE_MS);
 }
 
@@ -3799,7 +3796,7 @@ async function checkCallSheetDraft() {
     if (!draft || !getDraftTimestamp(draft)) return;
 
     if (isDraftExpired(draft)) {
-      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      discardDraftData(STORAGE_KEYS.CALLSHEET_DRAFT);
       return;
     }
 
@@ -3807,7 +3804,7 @@ async function checkCallSheetDraft() {
     const currentStr = JSON.stringify(callSheet);
     const draftStr = JSON.stringify(draft.callSheet);
     if (currentStr === draftStr) {
-      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      discardDraftData(STORAGE_KEYS.CALLSHEET_DRAFT);
       return;
     }
 
@@ -3837,10 +3834,10 @@ async function checkCallSheetDraft() {
       renderCallSheet();
       saveCallSheet();
       saveCallSheetSettings();
-      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      discardDraftData(STORAGE_KEYS.CALLSHEET_DRAFT);
       showToast("📋 Call sheet draft restored");
     } else {
-      storageManager.remove(STORAGE_KEYS.CALLSHEET_DRAFT);
+      discardDraftData(STORAGE_KEYS.CALLSHEET_DRAFT);
     }
   } catch (err) {
     console.error("checkCallSheetDraft error:", err);

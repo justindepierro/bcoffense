@@ -954,18 +954,23 @@ function restoreSavedScriptWorkspace(workspace) {
  * Saves a draft to localStorage so work isn't lost on accidental close
  */
 function scheduleScriptAutosave() {
-  if (scriptAutosaveTimer) clearTimeout(scriptAutosaveTimer);
-  if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
-  scriptAutosaveTimer = setTimeout(() => {
-    const draft = {
+  scriptAutosaveTimer = queueAutosave(
+    scriptAutosaveTimer,
+    () => {
+      persistDraftData(STORAGE_KEYS.SCRIPT_DRAFT, {
       name: document.getElementById("scriptName")?.value || "",
       date: document.getElementById("scriptDate")?.value || "",
       plays: script,
-      savedAt: new Date().toISOString(),
-    };
-    storageManager.set(STORAGE_KEYS.SCRIPT_DRAFT, draft);
-    if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
-  }, AUTOSAVE_DEBOUNCE_MS); // 3-second debounce
+      });
+      if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
+    },
+    {
+      delay: AUTOSAVE_DEBOUNCE_MS,
+      onQueue: () => {
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
+      },
+    },
+  );
 }
 
 /**
@@ -977,7 +982,7 @@ async function checkScriptDraft() {
     if (!draft || !draft.plays || draft.plays.length === 0) return;
 
     if (isDraftExpired(draft)) {
-      storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+      discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
       return;
     }
     const currentPlays = script.filter((p) => !p.isSeparator).length;
@@ -1003,7 +1008,7 @@ async function checkScriptDraft() {
       markScriptDirty();
       showToast("📋 Draft restored");
     } else {
-      storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+      discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
     }
   } catch (err) {
     console.error("checkScriptDraft error:", err);
@@ -5001,7 +5006,7 @@ function resetScriptForNewDraft() {
   renderScript();
   renderAvailablePlays();
   markScriptClean();
-  storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+  discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
 }
 
 async function newScript() {
@@ -5162,7 +5167,7 @@ async function saveScript() {
         storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
         loadSavedScriptsList();
         markScriptClean();
-        storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+        discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
         showToast(`✅ "${name}" updated!`);
         return true;
       }
@@ -5187,7 +5192,7 @@ async function saveScript() {
     storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
     loadSavedScriptsList();
     markScriptClean();
-    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+    discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
     showToast(`✅ "${name}" saved!`);
     return true;
   } catch (err) {
@@ -5311,7 +5316,7 @@ function loadScript(id) {
     renderScript();
     renderAvailablePlays();
     markScriptClean();
-    storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+    discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
     showToast(`Loaded "${scriptData.name}"`);
   } catch (err) {
     console.error("loadScript error:", err);
@@ -5382,7 +5387,7 @@ async function overwriteSavedScript(id) {
   storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
   loadSavedScriptsList();
   markScriptClean();
-  storageManager.remove(STORAGE_KEYS.SCRIPT_DRAFT);
+  discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
   showToast(`"${s.name}" updated!`);
 }
 
