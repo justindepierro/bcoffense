@@ -740,11 +740,11 @@ function showListPicker(message, items, opts = {}) {
           ${item.meta ? `<span class="custom-modal-list-meta">${escapeHtml(item.meta)}</span>` : ""}
         </div>
         ${(item.badge || item.ctaLabel)
-          ? `<div class="custom-modal-list-side">
+            ? `<div class="custom-modal-list-side">
               ${item.badge ? `<span class="custom-modal-list-badge">${escapeHtml(item.badge)}</span>` : ""}
               ${item.ctaLabel ? `<span class="custom-modal-list-cta">${escapeHtml(item.ctaLabel)}</span>` : ""}
             </div>`
-          : ""}
+            : ""}
       </div>
     `;
       })

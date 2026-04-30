@@ -958,9 +958,9 @@ function scheduleScriptAutosave() {
     scriptAutosaveTimer,
     () => {
       persistDraftData(STORAGE_KEYS.SCRIPT_DRAFT, {
-      name: document.getElementById("scriptName")?.value || "",
-      date: document.getElementById("scriptDate")?.value || "",
-      plays: script,
+        name: document.getElementById("scriptName")?.value || "",
+        date: document.getElementById("scriptDate")?.value || "",
+        plays: script,
       });
       if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
     },
@@ -5142,7 +5142,7 @@ async function saveScript() {
       return false;
     }
 
-    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const savedScripts = getSavedScripts();
 
     // Check for duplicate name
     const existing = savedScripts.find(
@@ -5202,11 +5202,61 @@ async function saveScript() {
   }
 }
 
+function normalizeSavedScriptRecord(record, index = 0) {
+  const normalized = record && typeof record === "object" ? record : {};
+  return {
+    id: normalized.id ?? Date.now() + index,
+    name: String(normalized.name || `Saved Script ${index + 1}`),
+    date: String(normalized.date || ""),
+    period: String(normalized.period || ""),
+    tempo: String(normalized.tempo || ""),
+    plays: Array.isArray(normalized.plays) ? normalized.plays : [],
+    workspace:
+      normalized.workspace && typeof normalized.workspace === "object"
+        ? normalized.workspace
+        : null,
+    savedAt: normalized.savedAt || "",
+  };
+}
+
+function getSavedScripts() {
+  const stored = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const rawScripts = Array.isArray(stored)
+    ? stored
+    : stored && typeof stored === "object"
+      ? Object.values(stored)
+      : [];
+  const normalizedScripts = rawScripts.map((record, index) =>
+    normalizeSavedScriptRecord(record, index),
+  );
+  const needsRepair =
+    !Array.isArray(stored) ||
+    rawScripts.some((record, index) => {
+      const normalized = normalizedScripts[index];
+      return (
+        normalized.id !== record?.id ||
+        normalized.name !== record?.name ||
+        normalized.date !== (record?.date || "") ||
+        normalized.period !== (record?.period || "") ||
+        normalized.tempo !== (record?.tempo || "") ||
+        normalized.plays !== record?.plays ||
+        normalized.workspace !== record?.workspace ||
+        normalized.savedAt !== (record?.savedAt || "")
+      );
+    });
+
+  if (needsRepair) {
+    storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, normalizedScripts);
+  }
+
+  return normalizedScripts;
+}
+
 /**
  * Load the list of saved scripts
  */
 function loadSavedScriptsList() {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const savedScripts = getSavedScripts();
   const container = document.getElementById("savedScriptsList");
   const section = document.getElementById("savedScriptsSection");
 
@@ -5291,7 +5341,7 @@ function loadSavedScriptsList() {
  */
 function loadScript(id) {
   try {
-    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const savedScripts = getSavedScripts();
     const scriptData = savedScripts.find((s) => s.id === id);
     if (!scriptData) return;
 
@@ -5329,7 +5379,7 @@ function loadScript(id) {
  * @param {number} id - Script ID
  */
 async function deleteSavedScript(id) {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const savedScripts = getSavedScripts();
   const target = savedScripts.find((s) => s.id === id);
   if (!target) return;
   const ok = await showConfirm(`Delete "${target.name}"?`, {
@@ -5350,7 +5400,7 @@ async function deleteSavedScript(id) {
  * @param {number} id - Script ID
  */
 async function renameSavedScript(id) {
-  let savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  let savedScripts = getSavedScripts();
   const s = savedScripts.find((s) => s.id === id);
   if (!s) return;
   const newName = await showPrompt("Rename script:", s.name, {
@@ -5370,7 +5420,7 @@ async function renameSavedScript(id) {
  * @param {number} id - Script ID
  */
 async function overwriteSavedScript(id) {
-  let savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  let savedScripts = getSavedScripts();
   const s = savedScripts.find((s) => s.id === id);
   if (!s) return;
   const ok = await showConfirm(
@@ -5908,7 +5958,7 @@ function generatePDF() {
  * Load the full day script list with checkboxes
  */
 function loadFullDayScriptList() {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const savedScripts = getSavedScripts();
   const container = document.getElementById("fullDayScriptList");
   const section = document.getElementById("fullDaySection");
 
@@ -5962,7 +6012,7 @@ function clearDayScripts() {
  */
 async function printFullDay() {
   try {
-    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const savedScripts = getSavedScripts();
     const selectedIds = Array.from(
       document.querySelectorAll(".day-script-checkbox:checked"),
     ).map((cb) => parseInt(cb.value, 10));
@@ -6111,7 +6161,7 @@ function filterScriptItems() {
  * Compare two saved scripts side by side
  */
 async function compareScripts() {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const savedScripts = getSavedScripts();
 
   if (savedScripts.length < 2) {
     await showModal("Need at least 2 saved scripts to compare.", {
@@ -6190,7 +6240,7 @@ async function compareScripts() {
  * Merge plays from another saved script
  */
 async function mergeFromScript() {
-  const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const savedScripts = getSavedScripts();
 
   if (savedScripts.length === 0) {
     await showModal("No saved scripts to merge from.", {

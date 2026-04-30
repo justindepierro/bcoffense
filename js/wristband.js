@@ -588,10 +588,10 @@ function scheduleWristbandAutosave() {
       );
       if (!hasPlays) return;
       persistDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, {
-      cards: wristbandCards,
-      cellStyles: cellCustomizations,
-      favorites: wbFavorites,
-      headerColor: wristbandHeaderColor,
+        cards: wristbandCards,
+        cellStyles: cellCustomizations,
+        favorites: wbFavorites,
+        headerColor: wristbandHeaderColor,
       });
       if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
     },

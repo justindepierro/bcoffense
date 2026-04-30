@@ -49,9 +49,9 @@ function captureTeamSettingsViewState() {
       slot: activeEl.dataset.slot || "",
       depthIndex: activeEl.dataset.depthIndex || "",
       selectionStart:
-          typeof activeEl.selectionStart === "number" ? activeEl.selectionStart : null,
+        typeof activeEl.selectionStart === "number" ? activeEl.selectionStart : null,
       selectionEnd:
-          typeof activeEl.selectionEnd === "number" ? activeEl.selectionEnd : null,
+        typeof activeEl.selectionEnd === "number" ? activeEl.selectionEnd : null,
     }
     : null;
 
