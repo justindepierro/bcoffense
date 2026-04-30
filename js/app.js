@@ -197,84 +197,13 @@ function initApp() {
 
     const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
     if (storedPlaybook) {
-      plays = storedPlaybook;
-      filteredPlays = [...plays];
-      document.getElementById("uploadSection").classList.add("hidden");
-      document.getElementById("mainApp").classList.remove("hidden");
-
-      restorePlaybookState();
-      initAllModules();
-      _syncSortUI();
-
-      const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB);
-      if (
-        lastTab &&
-        lastTab !== "installation" &&
-        TAB_INDEX_MAP[lastTab] !== undefined
-      ) {
-        showTab(lastTab);
-      } else {
-        runDraftRestoreCheckForTab(currentActiveTab);
-      }
-
-      if (typeof restoreCallSheetDisplayOptions === "function") {
-        restoreCallSheetDisplayOptions();
-      }
+      restoreStoredPlaybookSession(storedPlaybook);
     }
 
-    const uploadBox = document.querySelector(".upload-box");
-    if (uploadBox) {
-      uploadBox.addEventListener("dragover", (e) => {
-        e.preventDefault();
-        uploadBox.classList.add("dragover");
-      });
-      uploadBox.addEventListener("dragleave", () => {
-        uploadBox.classList.remove("dragover");
-      });
-      uploadBox.addEventListener("drop", (e) => {
-        e.preventDefault();
-        uploadBox.classList.remove("dragover");
-        const file = e.dataTransfer.files[0];
-        if (file && file.name.endsWith(".csv")) {
-          document.getElementById("csvFile").files = e.dataTransfer.files;
-          handleFileUpload({ target: { files: [file] } });
-        }
-      });
-    }
-
-    const scriptContainer = document.getElementById("scriptPlays");
-    if (scriptContainer) {
-      scriptContainer.addEventListener("dragover", handleDragOver);
-      scriptContainer.addEventListener("dragleave", handleDragLeave);
-      scriptContainer.addEventListener("drop", handleDrop);
-    }
-
-    const scriptDateInput = document.getElementById("scriptDate");
-    if (scriptDateInput) {
-      const today = new Date();
-      try {
-        scriptDateInput.valueAsDate = today;
-      } catch (err) {
-        scriptDateInput.value = today.toISOString().slice(0, 10);
-      }
-    }
-
-    const teamNameInput = document.getElementById("teamNameInput");
-    if (teamNameInput) {
-      teamNameInput.value = getTeamName();
-    }
-
-    runOptionalInit("initTeamSettings", () => initTeamSettings());
-
-    const teamSubtitle = document.getElementById("teamSubtitle");
-    if (teamSubtitle) {
-      const name = getTeamName();
-      teamSubtitle.textContent =
-        name && name !== "My Team Football" ? name : "";
-    }
-
-    runOptionalInit("initSwatchHandlers", () => initSwatchHandlers());
-    runOptionalInit("initScriptKeyboard", () => initScriptKeyboard());
+    initUploadDropZone();
+    initScriptDropZone();
+    initDefaultScriptDate();
+    initTeamIdentityUi(runOptionalInit);
   } catch (err) {
     console.error("initApp error:", err);
     showToast("❌ Error initializing app. Try refreshing.", {
