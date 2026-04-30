@@ -22,12 +22,7 @@ function initAllModules() {
     () => {
       initCollections();
       initPlaybookKeyboard();
-      renderAvailablePlays();
-      loadSavedScriptsList();
-      populateScriptWristbandSelect();
-      restoreScriptDisplayOptions();
-      ensureFirstPeriod();
-      renderScript();
+      initScriptWorkspace();
 
       const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
       if (storedCallSheet) {

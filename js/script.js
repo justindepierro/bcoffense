@@ -3709,6 +3709,15 @@ function populateScriptWristbandSelect() {
       .join("");
 }
 
+function initScriptWorkspace() {
+  renderAvailablePlays();
+  loadSavedScriptsList();
+  populateScriptWristbandSelect();
+  restoreScriptDisplayOptions();
+  ensureFirstPeriod();
+  renderScript();
+}
+
 /**
  * Load a wristband for script reference
  */
