@@ -3,6 +3,8 @@
  * Extracted from app.js for better separation of concerns.
  */
 
+let currentActiveTab = "playbook";
+
 function getHelpDataForTab(tab) {
   const data = {
     playbook: {
@@ -624,4 +626,55 @@ function getHelpDataForTab(tab) {
     ],
   };
   return data[tab] || data.playbook;
+}
+
+function toggleHelpPanel() {
+  const overlay = document.getElementById("helpOverlay");
+  const fab = document.getElementById("helpFab");
+  if (!overlay) return;
+  const isOpen = overlay.classList.contains("visible");
+  if (isOpen) {
+    overlay.classList.remove("visible");
+    fab?.classList.remove("help-fab-active");
+    return;
+  }
+
+  renderHelpContent();
+  overlay.classList.add("visible");
+  fab?.classList.add("help-fab-active");
+}
+
+function closeHelpPanel(event) {
+  if (event && event.target !== event.currentTarget) return;
+
+  const overlay = document.getElementById("helpOverlay");
+  const fab = document.getElementById("helpFab");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  fab?.classList.remove("help-fab-active");
+}
+
+function renderHelpContent() {
+  const title = document.getElementById("helpPanelTitle");
+  const body = document.getElementById("helpPanelBody");
+  if (!body) return;
+
+  const helpData = getHelpDataForTab(currentActiveTab);
+  if (title) title.textContent = helpData.title;
+
+  let html = "";
+  helpData.sections.forEach((section) => {
+    html += `<div class="help-section">`;
+    html += `<div class="help-section-title">${section.icon} ${section.name}</div>`;
+    html += `<div class="help-items">`;
+    section.items.forEach((item) => {
+      const keyHtml = item.key
+        ? `<span class="help-key">${item.key}</span>`
+        : "";
+      html += `<div class="help-item">${keyHtml}<span class="help-desc">${item.desc}</span></div>`;
+    });
+    html += `</div></div>`;
+  });
+
+  setInnerHTML(body, html);
 }

@@ -166,55 +166,6 @@ function showTab(tabName) {
   }
 }
 
-// ============ Floating Help Panel ============
-
-let currentActiveTab = "playbook";
-
-function toggleHelpPanel() {
-  const overlay = document.getElementById("helpOverlay");
-  const fab = document.getElementById("helpFab");
-  if (!overlay) return;
-  const isOpen = overlay.classList.contains("visible");
-  if (isOpen) {
-    overlay.classList.remove("visible");
-    fab.classList.remove("help-fab-active");
-  } else {
-    renderHelpContent();
-    overlay.classList.add("visible");
-    fab.classList.add("help-fab-active");
-  }
-}
-
-function closeHelpPanel(e) {
-  if (e.target === e.currentTarget) toggleHelpPanel();
-}
-
-function renderHelpContent() {
-  const title = document.getElementById("helpPanelTitle");
-  const body = document.getElementById("helpPanelBody");
-  if (!body) return;
-
-  const helpData = getHelpDataForTab(currentActiveTab);
-  title.textContent = helpData.title;
-
-  let html = "";
-  helpData.sections.forEach((sec) => {
-    html += `<div class="help-section">`;
-    html += `<div class="help-section-title">${sec.icon} ${sec.name}</div>`;
-    html += `<div class="help-items">`;
-    sec.items.forEach((item) => {
-      const keyHtml = item.key
-        ? `<span class="help-key">${item.key}</span>`
-        : "";
-      html += `<div class="help-item">${keyHtml}<span class="help-desc">${item.desc}</span></div>`;
-    });
-    html += `</div></div>`;
-  });
-  body.innerHTML = html;
-}
-
-// getHelpDataForTab() lives in js/help.js
-
 /**
  * Show the upload section to load a new CSV
  */
