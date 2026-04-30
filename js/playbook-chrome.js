@@ -11,6 +11,40 @@ const columnVisibility = {
   tempo: true,
 };
 
+const PLAYBOOK_COLUMNS = [
+  "install",
+  "type",
+  "formation",
+  "tags",
+  "back",
+  "motion",
+  "protection",
+  "play",
+  "basePlay",
+  "tempo",
+];
+
+const PLAYBOOK_HEADER_SELECTORS = {
+  install: '#playbookTable thead th[data-arg="install"]',
+  type: '#playbookTable thead th[data-arg="type"]',
+  formation: '#playbookTable thead th[data-arg="formation"]',
+  tags: '#playbookTable thead th[data-arg="tags"]',
+  back: '#playbookTable thead th[data-arg="back"]',
+  motion: '#playbookTable thead th[data-arg="motion"]',
+  protection: '#playbookTable thead th[data-arg="protection"]',
+  play: '#playbookTable thead th[data-arg="play"]',
+  basePlay: '#playbookTable thead th[data-arg="basePlay"]',
+  tempo: '#playbookTable thead th[data-arg="tempo"]',
+};
+
+function _toggleColumnCells(column, hidden) {
+  const header = document.querySelector(PLAYBOOK_HEADER_SELECTORS[column]);
+  if (header) header.classList.toggle("hidden", hidden);
+  document.querySelectorAll(`#playbookTable .col-${column}`).forEach((cell) => {
+    cell.classList.toggle("hidden", hidden);
+  });
+}
+
 function toggleColumn(column) {
   columnVisibility[column] = !columnVisibility[column];
   applyColumnVisibility();
@@ -18,29 +52,8 @@ function toggleColumn(column) {
 }
 
 function applyColumnVisibility() {
-  const columns = [
-    "install",
-    "type",
-    "formation",
-    "tags",
-    "back",
-    "motion",
-    "protection",
-    "play",
-    "basePlay",
-    "tempo",
-  ];
-  columns.forEach((col, idx) => {
-    const isVisible = columnVisibility[col];
-    const th = document.querySelector(
-      `#playbookTable thead th:nth-child(${idx + 1})`,
-    );
-    if (th) th.classList.toggle("hidden", !isVisible);
-    document
-      .querySelectorAll(`#playbookTable tbody td:nth-child(${idx + 1})`)
-      .forEach((td) => {
-        td.classList.toggle("hidden", !isVisible);
-      });
+  PLAYBOOK_COLUMNS.forEach((column) => {
+    _toggleColumnCells(column, !columnVisibility[column]);
   });
 }
 
@@ -51,24 +64,13 @@ function restoreColumnVisibility() {
       Object.assign(columnVisibility, savedVis);
       const menu = document.getElementById("columnMenu");
       if (menu) {
-        const columns = [
-          "install",
-          "type",
-          "formation",
-          "tags",
-          "back",
-          "motion",
-          "protection",
-          "play",
-          "basePlay",
-          "tempo",
-        ];
         const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
         checkboxes.forEach((cb, idx) => {
-          cb.checked = columnVisibility[columns[idx]];
+          cb.checked = columnVisibility[PLAYBOOK_COLUMNS[idx]];
         });
       }
     }
+    applyColumnVisibility();
   } catch (err) {
     console.error("restoreColumnVisibility error:", err);
   }
