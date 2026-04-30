@@ -240,10 +240,3 @@ function updateStatsBar() {
     )
     .join("");
 }
-
-document.addEventListener("DOMContentLoaded", () => {
-  const playbookSearch = document.getElementById("searchPlay");
-  if (playbookSearch) {
-    playbookSearch.addEventListener("input", () => filterPlays());
-  }
-});

@@ -22,7 +22,6 @@ function initAllModules() {
     () => {
       initCollections();
       initPlaybookKeyboard();
-      updateStatsBar();
       renderAvailablePlays();
       loadSavedScriptsList();
       populateScriptWristbandSelect();
