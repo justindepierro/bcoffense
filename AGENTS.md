@@ -42,6 +42,7 @@ css/
 
 js/
   utils.js              ← Shared utilities, constants, storage, modals, CSV parser
+  team-settings.js      ← Team identity, roster, packages, depth chart runtime
   playbook.js           ← Playbook table (import, filter, sort, paginate)
   script.js             ← Practice script builder (periods, drag/drop, smart fill)
   wristband.js          ← Wristband maker (cards, cells, sorting, print)
@@ -50,8 +51,16 @@ js/
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
   installation.js       ← Installation/help guide
   offensebuilder.js     ← Offense builder tool
-  help.js               ← Context-sensitive help panel data
-  app.js                ← Orchestration (tabs, global state, event delegation)
+  help.js               ← Context-sensitive help content and panel runtime
+  dashboard.js          ← Dashboard and game-week runtime
+  app-events.js         ← Central delegated event routing and DOM listeners
+  app-shell.js          ← Theme, chrome, keyboard shortcuts, page-level runtime
+  app-session.js        ← Dirty-state and draft-restore session helpers
+  app-navigation.js     ← Tab routing and tab index mapping
+  app-module-init.js    ← Shared module initialization after playbook load
+  app-bootstrap.js      ← Stored-session restore and one-time DOM bootstrap helpers
+  app-init.js           ← Top-level app boot and backup wrapper runtime
+  app.js                ← Shared global state only
 
 icons/                  ← PWA icons (192px, 512px)
 ```
@@ -64,16 +73,25 @@ All scripts use `defer` and load in this exact order from index.html:
 
 ```
 1. js/utils.js          ← Must be first (constants, storageManager, modals, escapeHtml)
-2. js/playbook.js
-3. js/script.js
-4. js/wristband.js
-5. js/callsheet.js
-6. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-7. js/tendencies.js
-8. js/installation.js
-9. js/offensebuilder.js
-10. js/help.js
-11. js/app.js           ← Must be last (orchestration, delegation, initApp)
+2. js/team-settings.js
+3. js/playbook.js
+4. js/script.js
+5. js/wristband.js
+6. js/callsheet.js
+7. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+8. js/tendencies.js
+9. js/installation.js
+10. js/offensebuilder.js
+11. js/help.js
+12. js/dashboard.js
+13. js/app-events.js
+14. js/app-shell.js
+15. js/app-session.js
+16. js/app-navigation.js
+17. js/app-module-init.js
+18. js/app-bootstrap.js
+19. js/app-init.js
+20. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -82,7 +100,7 @@ All files share the **global scope** — there are no modules, imports, or bundl
 
 ## Event Delegation Pattern
 
-**No inline `onclick` attributes.** All interactive elements use `data-action` attributes dispatched through a single global click listener in `app.js`.
+**No inline `onclick` attributes.** All interactive elements use `data-action` attributes dispatched through the central delegated listeners in `app-events.js`.
 
 ### Click Delegation
 
@@ -323,9 +341,12 @@ let plays = []; // Master playbook array (all imported plays)
 let script = []; // Current working practice script
 let scriptWristband = null; // Currently linked wristband
 let filteredPlays = []; // Filtered playbook subset
-let scriptDirty = false; // Unsaved script changes flag
-let wristbandDirty = false; // Unsaved wristband changes flag
-let currentActiveTab = "playbook"; // Active UI tab name
+```
+
+### help.js
+
+```js
+let currentActiveTab = "playbook"; // Active UI tab name for help + navigation state
 ```
 
 ### callsheet.js
@@ -471,7 +492,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v10)
+**Cache name:** `bcoffense-vN` (currently v210)
 
 **Strategy:**
 

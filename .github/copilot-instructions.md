@@ -41,14 +41,14 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v54` — next version will be `bcoffense-v55`
+- Current version: `bcoffense-v210` — next version will be `bcoffense-v211`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---
 
 ## Event Delegation Pattern
 
-All interactions use `data-action`. The dispatcher is in `app.js`.
+All interactions use `data-action`. The central delegated dispatcher is in `app-events.js`.
 
 ```html
 <!-- No-arg action -->
@@ -65,7 +65,7 @@ All interactions use `data-action`. The dispatcher is in `app.js`.
 
 The generic fallback: `window[action](arg)` — so the function **must be global** (top-level in any JS file).
 
-Special function sets in `app.js`:
+Special function sets in `app-events.js`:
 
 - `_ELEMENT_FNS` — receives the DOM element: `toggleFilterSection`, `toggleCollapsiblePanel`, `setHeaderColor`, `switchDisplayTab`
 - `_BOOL_FNS` — receives boolean: `toggleAllPbPrintOptions`, `csSelectAllFields`
@@ -116,9 +116,11 @@ storageManager.set(STORAGE_KEYS.MY_KEY, data);
 New JS files must be inserted in the correct position in `index.html`:
 
 ```
-utils.js → playbook.js → script.js → wristband.js → callsheet.js
-→ constraints.js → tendencies.js → installation.js → offensebuilder.js
-→ help.js → app.js (LAST)
+utils.js → team-settings.js → playbook.js → script.js → wristband.js
+→ callsheet.js → constraints.js → tendencies.js → installation.js
+→ offensebuilder.js → help.js → dashboard.js → app-events.js
+→ app-shell.js → app-session.js → app-navigation.js → app-module-init.js
+→ app-bootstrap.js → app-init.js → app.js (LAST)
 ```
 
 ---
@@ -160,7 +162,18 @@ refactor: restructure, no behavior change
 - `filteredPlays[]` — filtered subset (app.js)
 - `callSheet{}` — call sheet data (callsheet.js)
 - `wristbandCards[]` — wristband cards (wristband.js)
-- `currentActiveTab` — active tab name (app.js)
+- `currentActiveTab` — active tab name (help.js)
+
+## Current Runtime Split
+
+- `app.js` now only holds shared global state.
+- `app-init.js` owns top-level startup and backup wrappers.
+- `app-bootstrap.js` owns stored-session restore and one-time DOM bootstrap.
+- `app-module-init.js` owns shared module initialization after playbook load.
+- `app-navigation.js` owns `showTab()` and `TAB_INDEX_MAP`.
+- `app-session.js` owns dirty-state and draft-restore helpers.
+- `app-shell.js` owns theme, chrome, keyboard shortcuts, and page-level runtime.
+- `app-events.js` owns delegated click/change/input routing.
 
 ---
 
