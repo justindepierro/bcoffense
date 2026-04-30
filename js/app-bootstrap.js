@@ -4,7 +4,6 @@ function restoreStoredPlaybookSession(storedPlaybook) {
   document.getElementById("uploadSection").classList.add("hidden");
   document.getElementById("mainApp").classList.remove("hidden");
 
-  restorePlaybookState();
   initAllModules();
   _syncSortUI();
 

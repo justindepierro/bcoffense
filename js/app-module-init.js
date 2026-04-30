@@ -9,6 +9,7 @@ function initAllModules() {
   populateFilters();
   initChipListeners();
   if (typeof initPlaybookSearch === "function") initPlaybookSearch();
+  if (typeof restorePlaybookState === "function") restorePlaybookState();
   restoreColumnVisibility();
   filterPlays();
 
