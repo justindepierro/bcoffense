@@ -25,11 +25,11 @@ let currentPage = 0;
  */
 function _sortVal(play, col) {
   if (col === "install") {
-    const r =
+    const rating =
       typeof getPlayInstallRating === "function"
         ? getPlayInstallRating(play)
         : { stars: 0, maxStars: 0 };
-    return r.maxStars > 0 ? r.stars / r.maxStars : -1;
+    return rating.maxStars > 0 ? rating.stars / rating.maxStars : -1;
   }
   if (col === "tags") {
     return [play.formTag1, play.formTag2].filter(Boolean).join(", ") || "";
@@ -81,7 +81,6 @@ function sortPlaybook(column) {
     currentSortColumn = column;
     currentSortDirection = "asc";
   }
-  // Sync the sort dropdowns
   _syncSortUI();
   applyCurrentSort();
   renderPlaybook();
@@ -92,10 +91,10 @@ function sortPlaybook(column) {
  * Called by the primary/secondary sort dropdowns
  */
 function applyAdvancedSort() {
-  const p = document.getElementById("pbSortPrimary");
-  const s = document.getElementById("pbSortSecondary");
-  currentSortColumn = p ? p.value || null : null;
-  secondarySortColumn = s ? s.value || null : null;
+  const primary = document.getElementById("pbSortPrimary");
+  const secondary = document.getElementById("pbSortSecondary");
+  currentSortColumn = primary ? primary.value || null : null;
+  secondarySortColumn = secondary ? secondary.value || null : null;
   _syncSortUI();
   applyCurrentSort();
   renderPlaybook();
@@ -109,7 +108,8 @@ function toggleSortDir(which) {
   if (which === "primary") {
     currentSortDirection = currentSortDirection === "asc" ? "desc" : "asc";
   } else {
-    secondarySortDirection = secondarySortDirection === "asc" ? "desc" : "asc";
+    secondarySortDirection =
+      secondarySortDirection === "asc" ? "desc" : "asc";
   }
   _syncSortUI();
   applyCurrentSort();
@@ -121,21 +121,22 @@ function toggleSortDir(which) {
  * Sync sort dropdowns, direction buttons, and column header icons
  */
 function _syncSortUI() {
-  const p = document.getElementById("pbSortPrimary");
-  const s = document.getElementById("pbSortSecondary");
-  const pd = document.getElementById("pbSortPrimaryDir");
-  const sd = document.getElementById("pbSortSecondaryDir");
-  if (p) p.value = currentSortColumn || "";
-  if (s) s.value = secondarySortColumn || "";
-  if (pd) {
-    pd.innerHTML = currentSortDirection === "asc" ? "&#9650;" : "&#9660;";
-    pd.classList.toggle("desc", currentSortDirection === "desc");
+  const primary = document.getElementById("pbSortPrimary");
+  const secondary = document.getElementById("pbSortSecondary");
+  const primaryDir = document.getElementById("pbSortPrimaryDir");
+  const secondaryDir = document.getElementById("pbSortSecondaryDir");
+  if (primary) primary.value = currentSortColumn || "";
+  if (secondary) secondary.value = secondarySortColumn || "";
+  if (primaryDir) {
+    primaryDir.innerHTML =
+      currentSortDirection === "asc" ? "&#9650;" : "&#9660;";
+    primaryDir.classList.toggle("desc", currentSortDirection === "desc");
   }
-  if (sd) {
-    sd.innerHTML = secondarySortDirection === "asc" ? "&#9650;" : "&#9660;";
-    sd.classList.toggle("desc", secondarySortDirection === "desc");
+  if (secondaryDir) {
+    secondaryDir.innerHTML =
+      secondarySortDirection === "asc" ? "&#9650;" : "&#9660;";
+    secondaryDir.classList.toggle("desc", secondarySortDirection === "desc");
   }
-  // Column header sort icons + aria-sort
   document
     .querySelectorAll("#playbookTable th[data-action='sortPlaybook']")
     .forEach((th) => {
@@ -171,13 +172,13 @@ function buildFilterChips() {
 function _buildChipGroup(containerId, field, activeSet) {
   const container = document.getElementById(containerId);
   if (!container) return;
-  const values = [...new Set(plays.map((p) => p[field]))]
+  const values = [...new Set(plays.map((play) => play[field]))]
     .filter(Boolean)
     .sort();
   container.innerHTML = values
-    .map((v) => {
-      const active = activeSet.has(v) ? " active" : "";
-      return `<button class="pb-chip${active}" data-value="${escapeHtml(v)}">${escapeHtml(v)}</button>`;
+    .map((value) => {
+      const active = activeSet.has(value) ? " active" : "";
+      return `<button class="pb-chip${active}" data-value="${escapeHtml(value)}">${escapeHtml(value)}</button>`;
     })
     .join("");
 }
@@ -190,20 +191,19 @@ function _onChipClick(e) {
   if (!chip) return;
   const group = chip.closest(".pb-chip-group");
   if (!group) return;
-  const val = chip.dataset.value;
+  const value = chip.dataset.value;
   const isType = group.id === "pbChipsType";
   const set = isType ? activeTypeChips : activePersonnelChips;
-  if (set.has(val)) {
-    set.delete(val);
+  if (set.has(value)) {
+    set.delete(value);
     chip.classList.remove("active");
   } else {
-    set.add(val);
+    set.add(value);
     chip.classList.add("active");
   }
   filterPlays();
 }
 
-// Attach chip click listeners (called once after DOM ready)
 function initChipListeners() {
   document
     .getElementById("pbChipsType")
@@ -1126,197 +1126,6 @@ function updateStatsBar() {
         `<div class="stat-item"><span class="stat-count">${count}</span> ${escapeHtml(type)}</div>`,
     )
     .join("");
-}
-
-/**
- * Column visibility state
- */
-const columnVisibility = {
-  install: true,
-  type: true,
-  formation: true,
-  tags: true,
-  back: true,
-  motion: true,
-  protection: true,
-  play: true,
-  basePlay: true,
-  tempo: true,
-};
-
-/**
- * Toggle column visibility
- */
-function toggleColumn(column) {
-  columnVisibility[column] = !columnVisibility[column];
-  applyColumnVisibility();
-  storageManager.set(STORAGE_KEYS.COLUMN_VISIBILITY, columnVisibility);
-}
-
-/**
- * Apply column visibility to table
- */
-function applyColumnVisibility() {
-  const columns = [
-    "install",
-    "type",
-    "formation",
-    "tags",
-    "back",
-    "motion",
-    "protection",
-    "play",
-    "basePlay",
-    "tempo",
-  ];
-  columns.forEach((col, idx) => {
-    const isVisible = columnVisibility[col];
-    // Header
-    const th = document.querySelector(
-      `#playbookTable thead th:nth-child(${idx + 1})`,
-    );
-    if (th) th.classList.toggle("hidden", !isVisible);
-    // Body cells
-    document
-      .querySelectorAll(`#playbookTable tbody td:nth-child(${idx + 1})`)
-      .forEach((td) => {
-        td.classList.toggle("hidden", !isVisible);
-      });
-  });
-}
-
-/**
- * Restore column visibility from localStorage
- */
-function restoreColumnVisibility() {
-  try {
-    const savedVis = storageManager.get(STORAGE_KEYS.COLUMN_VISIBILITY, null);
-    if (savedVis) {
-      Object.assign(columnVisibility, savedVis);
-      // Update checkboxes
-      const menu = document.getElementById("columnMenu");
-      if (menu) {
-        const columns = [
-          "install",
-          "type",
-          "formation",
-          "tags",
-          "back",
-          "motion",
-          "protection",
-          "play",
-          "basePlay",
-          "tempo",
-        ];
-        const checkboxes = menu.querySelectorAll('input[type="checkbox"]');
-        checkboxes.forEach((cb, idx) => {
-          cb.checked = columnVisibility[columns[idx]];
-        });
-      }
-    }
-  } catch (err) {
-    console.error("restoreColumnVisibility error:", err);
-  }
-}
-
-/**
- * Toggle column menu visibility
- */
-function toggleColumnMenu() {
-  const menu = document.getElementById("columnMenu");
-  menu.classList.toggle("show");
-}
-
-/**
- * Hide column menu
- */
-function hideColumnMenu() {
-  const menu = document.getElementById("columnMenu");
-  if (menu) menu.classList.remove("show");
-}
-
-/**
- * Show keyboard shortcuts modal
- */
-function showKeyboardShortcuts() {
-  document.getElementById("shortcutsModal").classList.add("show");
-}
-
-/**
- * Hide keyboard shortcuts modal
- */
-function hideKeyboardShortcuts() {
-  const modal = document.getElementById("shortcutsModal");
-  if (modal) modal.classList.remove("show");
-}
-
-/**
- * Show play preview tooltip on hover
- */
-let previewTimeout = null;
-
-function showPlayPreview(event, index) {
-  // Clear any pending timeout
-  if (previewTimeout) {
-    clearTimeout(previewTimeout);
-  }
-
-  // Small delay to prevent flickering
-  previewTimeout = setTimeout(() => {
-    const play = filteredPlays[index];
-    if (!play) return;
-
-    const tooltip = document.getElementById("playPreviewTooltip");
-    if (!tooltip) return;
-
-    tooltip.innerHTML = `
-      <div class="preview-title">${escapeHtml(play.play)}</div>
-      <div class="preview-row"><span class="preview-label">Formation:</span> ${escapeHtml(play.formation || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Type:</span> ${escapeHtml(play.type || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Protection:</span> ${escapeHtml(play.protection || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Motion:</span> ${escapeHtml(play.motion || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Shift:</span> ${escapeHtml(play.shift || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Back:</span> ${escapeHtml(play.back || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Base Play:</span> ${escapeHtml(play.basePlay || "-")}</div>
-      <div class="preview-row"><span class="preview-label">Tempo:</span> ${escapeHtml(play.tempo || "-")}</div>
-      ${play.formTag1 || play.formTag2 ? `<div class="preview-row"><span class="preview-label">Form Tags:</span> ${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", "))}</div>` : ""}
-      ${play.playTag1 || play.playTag2 ? `<div class="preview-row"><span class="preview-label">Play Tags:</span> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(", "))}</div>` : ""}
-      ${typeof getPlayInstallTooltip === "function" ? getPlayInstallTooltip(play) : ""}
-    `;
-
-    // Position tooltip near the mouse
-    let left = event.clientX + 15;
-    let top = event.clientY + 10;
-
-    // Show it first to get dimensions
-    tooltip.style.left = `${left}px`;
-    tooltip.style.top = `${top}px`;
-    tooltip.classList.add("show");
-
-    // Adjust if off screen
-    const tooltipRect = tooltip.getBoundingClientRect();
-    if (tooltipRect.right > window.innerWidth - 10) {
-      left = event.clientX - tooltipRect.width - 15;
-      tooltip.style.left = `${left}px`;
-    }
-    if (tooltipRect.bottom > window.innerHeight - 10) {
-      top = window.innerHeight - tooltipRect.height - 10;
-      tooltip.style.top = `${top}px`;
-    }
-  }, 200);
-}
-
-/**
- * Hide play preview tooltip
- */
-function hidePlayPreview() {
-  // Clear pending timeout
-  if (previewTimeout) {
-    clearTimeout(previewTimeout);
-    previewTimeout = null;
-  }
-  const tooltip = document.getElementById("playPreviewTooltip");
-  if (tooltip) tooltip.classList.remove("show");
 }
 
 // ── Playbook search: self-contained listener (belt-and-suspenders) ──
