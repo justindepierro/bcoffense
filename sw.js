@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v257";
+const CACHE_NAME = "bcoffense-v258";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -79,6 +79,7 @@ const LOCAL_ASSETS = [
   "./js/script-smart.js",
   "./js/script-storage.js",
   "./js/wristband.js",
+  "./js/wristband-cell-popup.js",
   "./js/wristband-cell-actions.js",
   "./js/wristband-sort.js",
   "./js/wristband-storage.js",
