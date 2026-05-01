@@ -597,7 +597,7 @@
 
     <!-- Play Editor Overlay -->
     <div id="playEditorOverlay" class="custom-modal-overlay" role="dialog" aria-modal="true" aria-label="Edit Play"
-      data-action="closePlayEditorOverlay">
+      data-action="closePlayEditorOverlay" aria-hidden="true" inert>
       <div class="custom-modal pb-editor-modal">
         <div class="custom-modal-header pb-editor-header">
           <button class="btn btn-sm pb-editor-nav" id="playEditorPrev" data-action="playEditorPrev"
@@ -2503,7 +2503,7 @@
 
   <!-- Help Panel Overlay -->
   <div class="help-overlay" id="helpOverlay" data-action="closeHelpPanelOverlay" role="dialog" aria-modal="true"
-    aria-labelledby="helpPanelTitle">
+    aria-labelledby="helpPanelTitle" aria-hidden="true" inert>
     <div class="help-panel">
       <div class="help-panel-header">
         <h3 id="helpPanelTitle">Shortcuts & Features</h3>
@@ -2517,7 +2517,7 @@
 
   <!-- ── Game Plan Constraints Panel ─────────────────────────── -->
   <div class="constraint-panel-overlay" id="constraintPanel" data-action="closeConstraintPanelOverlay"
-    aria-label="Game Plan Constraints">
+    aria-label="Game Plan Constraints" aria-hidden="true" inert>
     <div class="constraint-panel">
       <div class="constraint-panel-header">
         <h3>🛡️ Game Plan Constraints</h3>
@@ -2546,8 +2546,13 @@
   <script defer src="js/playbook-navigation.js"></script>
   <script defer src="js/playbook-actions.js"></script>
   <script defer src="js/playbook-render.js"></script>
-  <script defer src="js/script.js"></script>
+  <script defer src="js/script-state.js"></script>
+  <script defer src="js/script-shared.js"></script>
+  <script defer src="js/script-players.js"></script>
   <script defer src="js/script-display-options.js"></script>
+  <script defer src="js/script-add.js"></script>
+  <script defer src="js/script-sort.js"></script>
+  <script defer src="js/script-export.js"></script>
   <script defer src="js/script-available.js"></script>
   <script defer src="js/script-selection.js"></script>
   <script defer src="js/script-render.js"></script>

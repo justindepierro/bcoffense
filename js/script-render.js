@@ -2,6 +2,13 @@ let scriptRenderProfilingEnabled = false;
 let scriptRenderProfileHistory = [];
 
 const SCRIPT_RENDER_PROFILE_HISTORY_LIMIT = 12;
+const SCRIPT_PERIOD_ACTION_SHORTCUTS = {
+  selectPeriodPlays: { aria: "Alt+Shift+S", hint: "Alt+Shift+S" },
+  openPeriodReorderModal: { aria: "Alt+Shift+M", hint: "Alt+Shift+M" },
+  sortPeriod: { aria: "Alt+Shift+O", hint: "Alt+Shift+O" },
+  reversePeriod: { aria: "Alt+Shift+R", hint: "Alt+Shift+R" },
+  applyPreferredForPeriod: { aria: "Alt+Shift+P", hint: "Alt+Shift+P" },
+};
 
 function buildPeriodStatsMap(scriptItems) {
   const statsBySeparatorIndex = new Map();
@@ -585,6 +592,78 @@ function updateJumpToPeriodOptions(renderSummary) {
     jumpSel.style.display = "";
   } else {
     jumpSel.style.display = "none";
+  }
+}
+
+function jumpToPeriod(periodId) {
+  if (!periodId) return;
+
+  const periodHeader = document.querySelector(`[data-separator-id="${periodId}"]`);
+  if (periodHeader) {
+    periodHeader.scrollIntoView({ behavior: "smooth", block: "start" });
+  }
+
+  const jumpSelect = document.getElementById("jumpToPeriod");
+  if (jumpSelect) {
+    setTimeout(() => {
+      jumpSelect.value = "";
+    }, 300);
+  }
+}
+
+function updateRunPassRatio() {
+  const runEl = document.getElementById("statRun");
+  const passEl = document.getElementById("statPass");
+  const ratioEl = document.getElementById("statRatio");
+  if (!ratioEl) return;
+
+  const run = parseInt(runEl?.textContent, 10) || 0;
+  const pass = parseInt(passEl?.textContent, 10) || 0;
+
+  if (run === 0 && pass === 0) {
+    ratioEl.textContent = "-";
+    ratioEl.title = "";
+  } else if (pass === 0) {
+    ratioEl.textContent = "∞";
+    ratioEl.title = `${run} Run, 0 Pass`;
+  } else {
+    const ratio = (run / pass).toFixed(1);
+    ratioEl.textContent = ratio;
+    ratioEl.title = `${run} Run, ${pass} Pass (R:P = ${ratio})`;
+  }
+}
+
+function filterScriptItems() {
+  const searchTerm =
+    document.getElementById("scriptSearchBox")?.value.toLowerCase() || "";
+  const items = document.querySelectorAll(
+    "#scriptPlays .script-item:not(.period-header)",
+  );
+
+  items.forEach((item) => {
+    const text = item.textContent.toLowerCase();
+    if (searchTerm === "" || text.includes(searchTerm)) {
+      item.classList.remove("hidden");
+      item.classList.remove("search-hidden");
+    } else {
+      item.classList.add("hidden");
+      item.classList.add("search-hidden");
+    }
+  });
+
+  const visible = document.querySelectorAll(
+    "#scriptPlays .script-item:not(.period-header):not(.search-hidden)",
+  ).length;
+  const total = items.length;
+  const countEl = document.getElementById("scriptSearchCount");
+  if (!countEl) return;
+
+  if (searchTerm) {
+    countEl.textContent = `Search: ${visible}/${total}`;
+    countEl.style.display = "inline";
+  } else {
+    countEl.textContent = "";
+    countEl.style.display = "none";
   }
 }
 

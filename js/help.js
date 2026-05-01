@@ -635,11 +635,15 @@ function toggleHelpPanel() {
   const isOpen = overlay.classList.contains("visible");
   if (isOpen) {
     overlay.classList.remove("visible");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.setAttribute("inert", "");
     fab?.classList.remove("help-fab-active");
     return;
   }
 
   renderHelpContent();
+  overlay.removeAttribute("inert");
+  overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
   fab?.classList.add("help-fab-active");
 }
@@ -651,6 +655,8 @@ function closeHelpPanel(event) {
   const fab = document.getElementById("helpFab");
   if (!overlay) return;
   overlay.classList.remove("visible");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("inert", "");
   fab?.classList.remove("help-fab-active");
 }
 

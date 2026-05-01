@@ -116,11 +116,14 @@ storageManager.set(STORAGE_KEYS.MY_KEY, data);
 New JS files must be inserted in the correct position in `index.html`:
 
 ```
-utils.js → team-settings.js → playbook.js → script.js → wristband.js
-→ callsheet.js → constraints.js → tendencies.js → installation.js
-→ offensebuilder.js → help.js → dashboard.js → app-events.js
-→ app-shell.js → app-session.js → app-navigation.js → app-module-init.js
-→ app-bootstrap.js → app-init.js → app.js (LAST)
+utils.js → team-settings.js → playbook.js → script-state.js → script-shared.js
+→ script-players.js → script-display-options.js → script-add.js → script-sort.js
+→ script-export.js → script-available.js → script-selection.js → script-render.js
+→ script-periods.js → script-period-sync.js → script-smart.js → script-storage.js
+→ wristband.js → callsheet.js → constraints.js → tendencies.js → installation.js
+→ offensebuilder.js → help.js → dashboard.js → app-events.js → app-shell.js
+→ app-session.js → app-navigation.js → app-module-init.js → app-bootstrap.js
+→ app-init.js → app.js (LAST)
 ```
 
 ---

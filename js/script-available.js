@@ -302,8 +302,8 @@ function playMatchesScriptSearch(play, search) {
         token.includes(candidate) ||
         devowelScriptSearchText(candidate).includes(devowelScriptSearchText(token)),
     ) ||
-      haystack.condensed.includes(token) ||
-      haystack.devoweled.includes(devowelScriptSearchText(token)),
+    haystack.condensed.includes(token) ||
+    haystack.devoweled.includes(devowelScriptSearchText(token)),
   );
 }
 

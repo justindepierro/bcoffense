@@ -7,6 +7,8 @@ function getScriptWorkspaceCheckboxState() {
   return checkboxState;
 }
 
+let scriptAutosaveTimer = null;
+
 function getScriptWorkspaceState() {
   const wbSelect = document.getElementById("scriptWristbandSelect");
   const formationFilter = document.getElementById("scriptFilterFormation");
@@ -141,6 +143,101 @@ function restoreSavedScriptWorkspace(workspace) {
   );
 
   setScriptWristbandSelection(workspace.linkedWristbandId || null, false);
+}
+
+function scheduleScriptAutosave() {
+  scriptAutosaveTimer = queueAutosave(
+    scriptAutosaveTimer,
+    () => {
+      const playCount = script.filter((item) => !item?.isSeparator).length;
+      if (playCount === 0) {
+        discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
+        return;
+      }
+
+      persistDraftData(STORAGE_KEYS.SCRIPT_DRAFT, {
+        name: document.getElementById("scriptName")?.value || "",
+        date: document.getElementById("scriptDate")?.value || "",
+        plays: script,
+        workspace: getScriptWorkspaceState(),
+      });
+      if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
+    },
+    {
+      delay: AUTOSAVE_DEBOUNCE_MS,
+      onQueue: () => {
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saving");
+      },
+    },
+  );
+}
+
+function saveScriptState() {
+  historyManager.saveState("script", script);
+  markScriptDirty();
+  scheduleScriptAutosave();
+}
+
+const debouncedSaveScriptState = debounce(saveScriptState, 400);
+
+async function checkScriptDraft() {
+  try {
+    const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
+    if (!draft || !draft.plays || draft.plays.length === 0) return;
+
+    const draftPlayCount = draft.plays.filter((item) => !item?.isSeparator).length;
+    if (draftPlayCount === 0) {
+      discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+      return;
+    }
+
+    if (isDraftExpired(draft)) {
+      discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+      return;
+    }
+
+    const currentPlayCount = script.filter((item) => !item.isSeparator).length;
+    if (currentPlayCount > 0) return;
+    const savedTime = formatDraftSavedAt(draft, undefined, {
+      fallback: "unknown time",
+      formatOptions: {
+        hour: "numeric",
+        minute: "2-digit",
+      },
+    });
+
+    const doRestore = await showConfirm(
+      `Found unsaved script draft!\n\n"${draft.name || "Untitled"}" — ${draftPlayCount} plays\nLast edited: ${savedTime}\n\nRestore it?`,
+      {
+        title: "📋 Draft Found",
+        icon: "📋",
+        confirmText: "Restore",
+        cancelText: "Discard",
+      },
+    );
+
+    if (doRestore) {
+      const scriptNameInput = document.getElementById("scriptName");
+      const scriptDateInput = document.getElementById("scriptDate");
+      if (draft.name && scriptNameInput) scriptNameInput.value = draft.name;
+      if (draft.date && scriptDateInput) scriptDateInput.value = draft.date;
+
+      script = draft.plays;
+      restoreSavedScriptWorkspace(draft.workspace);
+      renderScript();
+      markScriptDirty();
+      showToast("📋 Draft restored");
+    } else {
+      discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+    }
+  } catch (err) {
+    console.error("checkScriptDraft error:", err);
+    showToast("❌ Error restoring script draft.", {
+      duration: 3000,
+      type: "error",
+    });
+  }
 }
 
 async function saveScript() {

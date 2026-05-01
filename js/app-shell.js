@@ -220,9 +220,9 @@ function updateTabBadges() {
     "tab-wristband":
       typeof wristbandCards !== "undefined"
         ? wristbandCards.reduce(
-            (sum, card) => sum + (card.data ? card.data.filter(Boolean).length : 0),
-            0,
-          )
+          (sum, card) => sum + (card.data ? card.data.filter(Boolean).length : 0),
+          0,
+        )
         : 0,
     "tab-tendencies":
       typeof tendenciesOpponents !== "undefined" ? tendenciesOpponents.length : 0,

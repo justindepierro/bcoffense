@@ -381,7 +381,7 @@ function showModal(message, opts = {}) {
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions">
-          <button class="btn btn-primary custom-modal-btn" id="modalOkBtn">OK</button>
+          <button class="btn btn-primary custom-modal-btn" id="modalOkBtn${mid}">OK</button>
         </div>
       </div>
     `;
@@ -389,11 +389,13 @@ function showModal(message, opts = {}) {
     trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
-    const okBtn = overlay.querySelector("#modalOkBtn");
+    const okBtn = overlay.querySelector(`#modalOkBtn${mid}`);
     okBtn.focus();
 
     function close() {
       overlay.classList.remove("visible");
+      overlay.style.pointerEvents = "none";
+      overlay.setAttribute("aria-hidden", "true");
       setTimeout(() => {
         overlay.remove();
         if (previouslyFocused && previouslyFocused.focus)
@@ -499,8 +501,8 @@ function showConfirm(message, opts = {}) {
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn">${cancelText}</button>
-          <button class="btn ${danger ? "btn-danger" : "btn-primary"} custom-modal-btn" id="modalConfirmBtn">${confirmText}</button>
+          <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn${mid}">${cancelText}</button>
+          <button class="btn ${danger ? "btn-danger" : "btn-primary"} custom-modal-btn" id="modalConfirmBtn${mid}">${confirmText}</button>
         </div>
       </div>
     `;
@@ -508,12 +510,14 @@ function showConfirm(message, opts = {}) {
     trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
-    const confirmBtn = overlay.querySelector("#modalConfirmBtn");
-    const cancelBtn = overlay.querySelector("#modalCancelBtn");
+    const confirmBtn = overlay.querySelector(`#modalConfirmBtn${mid}`);
+    const cancelBtn = overlay.querySelector(`#modalCancelBtn${mid}`);
     confirmBtn.focus();
 
     function close(result) {
       overlay.classList.remove("visible");
+      overlay.style.pointerEvents = "none";
+      overlay.setAttribute("aria-hidden", "true");
       setTimeout(() => {
         overlay.remove();
         if (previouslyFocused && previouslyFocused.focus)
@@ -562,12 +566,12 @@ function showPrompt(message, defaultValue = "", opts = {}) {
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-input-wrap">
-          <input type="text" class="custom-modal-input" id="modalInput"
+          <input type="text" class="custom-modal-input" id="modalInput${mid}"
                  value="${defaultValue.replace(/"/g, "&quot;")}" placeholder="${placeholder}">
         </div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn">Cancel</button>
-          <button class="btn btn-primary custom-modal-btn" id="modalConfirmBtn">${confirmText}</button>
+          <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn${mid}">Cancel</button>
+          <button class="btn btn-primary custom-modal-btn" id="modalConfirmBtn${mid}">${confirmText}</button>
         </div>
       </div>
     `;
@@ -575,14 +579,16 @@ function showPrompt(message, defaultValue = "", opts = {}) {
     trapFocus(overlay);
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
-    const input = overlay.querySelector("#modalInput");
-    const confirmBtn = overlay.querySelector("#modalConfirmBtn");
-    const cancelBtn = overlay.querySelector("#modalCancelBtn");
+    const input = overlay.querySelector(`#modalInput${mid}`);
+    const confirmBtn = overlay.querySelector(`#modalConfirmBtn${mid}`);
+    const cancelBtn = overlay.querySelector(`#modalCancelBtn${mid}`);
     input.focus();
     input.select();
 
     function close(value) {
       overlay.classList.remove("visible");
+      overlay.style.pointerEvents = "none";
+      overlay.setAttribute("aria-hidden", "true");
       setTimeout(() => {
         overlay.remove();
         if (previouslyFocused && previouslyFocused.focus)

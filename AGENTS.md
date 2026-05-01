@@ -44,7 +44,7 @@ js/
   utils.js              ← Shared utilities, constants, storage, modals, CSV parser
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
   playbook.js           ← Playbook table (import, filter, sort, paginate)
-  script.js             ← Practice script builder (periods, drag/drop, smart fill)
+  script-*.js           ← Practice script runtime split by concern (state, add, render, storage, etc.)
   wristband.js          ← Wristband maker (cards, cells, sorting, print)
   callsheet.js          ← Call sheet (categories, buckets, auto-populate, display)
   constraints.js        ← Game plan constraints evaluation engine
@@ -75,23 +75,36 @@ All scripts use `defer` and load in this exact order from index.html:
 1. js/utils.js          ← Must be first (constants, storageManager, modals, escapeHtml)
 2. js/team-settings.js
 3. js/playbook.js
-4. js/script.js
-5. js/wristband.js
-6. js/callsheet.js
-7. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-8. js/tendencies.js
-9. js/installation.js
-10. js/offensebuilder.js
-11. js/help.js
-12. js/dashboard.js
-13. js/app-events.js
-14. js/app-shell.js
-15. js/app-session.js
-16. js/app-navigation.js
-17. js/app-module-init.js
-18. js/app-bootstrap.js
-19. js/app-init.js
-20. js/app.js           ← Must be last; shared global state only
+4. js/script-state.js
+5. js/script-shared.js
+6. js/script-players.js
+7. js/script-display-options.js
+8. js/script-add.js
+9. js/script-sort.js
+10. js/script-export.js
+11. js/script-available.js
+12. js/script-selection.js
+13. js/script-render.js
+14. js/script-periods.js
+15. js/script-period-sync.js
+16. js/script-smart.js
+17. js/script-storage.js
+18. js/wristband.js
+19. js/callsheet.js
+20. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+21. js/tendencies.js
+22. js/installation.js
+23. js/offensebuilder.js
+24. js/help.js
+25. js/dashboard.js
+26. js/app-events.js
+27. js/app-shell.js
+28. js/app-session.js
+29. js/app-navigation.js
+30. js/app-module-init.js
+31. js/app-bootstrap.js
+32. js/app-init.js
+33. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -357,7 +370,7 @@ let callSheetSettings = {}; // Orientation, current page, custom names
 const CALLSHEET_CATEGORIES = []; // All 39 category definitions
 ```
 
-### script.js
+### script runtime (script-\*.js)
 
 ```js
 let collapsedPeriods = new Set(); // Collapsed period IDs

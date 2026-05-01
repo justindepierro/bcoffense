@@ -3243,7 +3243,7 @@ function updateWbActiveFilterCount() {
   }
 }
 
-/* toggleWbDisplayOptions and toggleWbSortPanel merged into shared toggleCollapsiblePanel() in script.js */
+/* toggleWbDisplayOptions and toggleWbSortPanel merged into shared toggleCollapsiblePanel() in utils.js */
 
 /**
  * Update wristband stats bar

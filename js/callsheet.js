@@ -3297,7 +3297,7 @@ function renderPrintPlay(play, options) {
   `;
 }
 
-/* toggleCsPanel merged into shared toggleCollapsiblePanel() in script.js */
+/* toggleCsPanel merged into shared toggleCollapsiblePanel() in utils.js */
 
 // ============ Unified Display Bar Helpers ============
 

@@ -1,3 +1,32 @@
+function applyPreferredMetadataToPlay(play) {
+  if (!play || play.isSeparator) return false;
+
+  let changed = false;
+
+  if (play.preferredHash && !play.hash) {
+    play.hash = play.preferredHash;
+    changed = true;
+  }
+  if (play.practiceFront && !play.defFront) {
+    play.defFront = play.practiceFront;
+    changed = true;
+  }
+  if (play.practiceCoverage && !play.defCoverage) {
+    play.defCoverage = play.practiceCoverage;
+    changed = true;
+  }
+  if (play.practiceStunt && !play.defStunt) {
+    play.defStunt = play.practiceStunt;
+    changed = true;
+  }
+  if (play.practiceBlitz && !play.defBlitz) {
+    play.defBlitz = play.practiceBlitz;
+    changed = true;
+  }
+
+  return changed;
+}
+
 async function applyPreferredForPeriod(separatorIndex) {
   const periodPlayIndices = [];
   for (let index = separatorIndex + 1; index < script.length; index++) {

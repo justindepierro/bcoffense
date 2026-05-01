@@ -4,6 +4,19 @@ let selectedPeriodTemplateIndex = -1;
 let templateModalMode = "insert";
 let templateModalSearchTerm = "";
 
+function ensureFirstPeriod() {
+  const hasSeparator = script.some((item) => item?.isSeparator);
+  if (hasSeparator) return;
+
+  script.push({
+    isSeparator: true,
+    label: "Period 1",
+    minutes: 10,
+    color: UI_COLORS.periodDefault,
+    id: Date.now() + Math.random(),
+  });
+}
+
 function addSeparator() {
   const overlay = document.createElement("div");
   overlay.className = "period-create-overlay";

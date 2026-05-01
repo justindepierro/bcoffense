@@ -1342,6 +1342,8 @@ function runConstraintCheck() {
   // Show the panel
   const panel = document.getElementById("constraintPanel");
   if (!panel) return;
+  panel.removeAttribute("inert");
+  panel.setAttribute("aria-hidden", "false");
   panel.classList.add("visible");
 
   try {
@@ -1360,7 +1362,10 @@ function runConstraintCheck() {
  */
 function closeConstraintPanel() {
   const panel = document.getElementById("constraintPanel");
-  if (panel) panel.classList.remove("visible");
+  if (!panel) return;
+  panel.classList.remove("visible");
+  panel.setAttribute("aria-hidden", "true");
+  panel.setAttribute("inert", "");
 }
 
 /**

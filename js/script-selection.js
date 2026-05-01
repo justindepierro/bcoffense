@@ -213,6 +213,22 @@ async function openScriptReorderModal() {
   openPeriodReorderModal(selectedPeriod);
 }
 
+function undoScript() {
+  const previousState = historyManager.undo("script", script);
+  if (!previousState) return;
+
+  script = previousState;
+  renderScript();
+}
+
+function redoScript() {
+  const futureState = historyManager.redo("script", script);
+  if (!futureState) return;
+
+  script = futureState;
+  renderScript();
+}
+
 function initScriptKeyboard() {
   const container = document.getElementById("scriptPlays");
   if (!container) return;

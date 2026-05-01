@@ -499,9 +499,9 @@ function handleFileUpload(event) {
                   : "";
               showModal(
                 skippedRows.length +
-                  " row(s) were skipped:<br><br>" +
-                  skipMsg +
-                  extra,
+                " row(s) were skipped:<br><br>" +
+                skipMsg +
+                extra,
                 { title: "⚠️ Import Warnings", icon: "⚠️" },
               );
             }
@@ -510,7 +510,7 @@ function handleFileUpload(event) {
 
           const replaceOk = await showConfirm(
             `This will <strong>replace all ${plays.length} existing plays</strong> with ${parsed.length} new plays from the CSV.<br><br>` +
-              `Saved wristbands, scripts, and call sheets will keep their old play data.<br><br>Continue?`,
+            `Saved wristbands, scripts, and call sheets will keep their old play data.<br><br>Continue?`,
             {
               title: "⚠️ Full Replace",
               icon: "⚠️",
@@ -551,9 +551,9 @@ function handleFileUpload(event) {
               : "";
           showModal(
             skippedRows.length +
-              " row(s) were skipped:<br><br>" +
-              skipMsg +
-              extra,
+            " row(s) were skipped:<br><br>" +
+            skipMsg +
+            extra,
             { title: "⚠️ Import Warnings", icon: "⚠️" },
           );
         }

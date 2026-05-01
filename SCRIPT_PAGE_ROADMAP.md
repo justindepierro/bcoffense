@@ -4,7 +4,7 @@ This file is the working roadmap and checklist for improving the Practice Script
 
 It is based on the current verified audit of:
 
-- `js/script.js`
+- `js/script-state.js` through `js/script-storage.js`
 - `js/app.js`
 - `css/script.css`
 - the Script section in `index.html`

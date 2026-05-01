@@ -379,6 +379,8 @@ function _populateEditorForm(play, isNew) {
   html += _buildPlayEditorLineupSection(play);
 
   body.innerHTML = html;
+  overlay.removeAttribute("inert");
+  overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
 
   body.querySelectorAll("select[data-can-add-new]").forEach((sel) => {
@@ -479,7 +481,11 @@ async function deletePlayFromEditor() {
 
 function closePlayEditor() {
   const overlay = document.getElementById("playEditorOverlay");
-  if (overlay) overlay.classList.remove("visible");
+  if (overlay) {
+    overlay.classList.remove("visible");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.setAttribute("inert", "");
+  }
   _editingMasterIdx = -1;
   _editingFilteredIdx = -1;
 }
