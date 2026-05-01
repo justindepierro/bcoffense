@@ -29,6 +29,66 @@ function getScriptVisiblePlayerSummary(play, opts = {}) {
 
 window.getScriptVisiblePlayerSummary = getScriptVisiblePlayerSummary;
 
+function buildScriptCompactPlayerSummary(play, opts = {}, summaryContext = {}) {
+  const personnel = String(play?.personnel || "").trim();
+  const visibleSlotKey = `${personnel}::${opts.hideLinemen ? "hideLinemen" : "all"}`;
+  const slotCache = summaryContext.slotCache || new Map();
+  const baseAssignmentCache = summaryContext.baseAssignmentCache || new Map();
+  const playerLabelCache = summaryContext.playerLabelCache || new Map();
+
+  let visibleSlots = slotCache.get(visibleSlotKey);
+  if (!visibleSlots) {
+    visibleSlots = getTeamAssignmentSlots(personnel).filter((slot) => {
+      if (!opts.hideLinemen) return true;
+      return !["lt", "lg", "c", "rg", "rt"].includes(slot.key);
+    });
+    slotCache.set(visibleSlotKey, visibleSlots);
+  }
+
+  let baseAssignments = baseAssignmentCache.get(personnel);
+  if (!baseAssignments) {
+    baseAssignments = getBasePlayerAssignments(play);
+    baseAssignmentCache.set(personnel, baseAssignments);
+  }
+
+  const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
+
+  return visibleSlots
+    .map((slot) => {
+      const playerId = String(
+        manualAssignments[slot.key] || baseAssignments[slot.key] || "",
+      ).trim();
+      if (!playerId) return "";
+
+      if (!playerLabelCache.has(playerId)) {
+        playerLabelCache.set(playerId, getTeamPlayerSelectionDisplay(playerId));
+      }
+      return playerLabelCache.get(playerId) || "";
+    })
+    .filter(Boolean)
+    .join(", ");
+}
+
+function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
+  const hasOverrides = hasScriptPlayerOverrides(play);
+  const summaryText = playerSummary || "No assignments set";
+
+  return `
+    <div class="script-player-summary-card">
+      <div class="script-player-summary-head">
+        <div class="script-player-summary-meta">
+          <span class="script-player-summary-title">Personnel</span>
+          ${hasOverrides ? '<span class="script-player-summary-status">Manual starter override</span>' : ""}
+        </div>
+        <div class="script-player-summary-actions">
+          ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ""}
+        </div>
+      </div>
+      <div class="script-player-summary-body">${escapeHtml(summaryText)}</div>
+    </div>
+  `;
+}
+
 function hasScriptPlayerOverrides(play) {
   const baseAssignments = getBasePlayerAssignments(play);
   const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);

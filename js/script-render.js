@@ -392,16 +392,23 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     getCachedSummaryText,
     getCachedHashOptions,
     getCachedWristbandNumber,
+    getCachedPlayerSummary,
     defenseDatalistState,
   } = renderContext;
   const fullCall = getCachedFullCall(play, Boolean(callOptions?.hideProtection));
   const isSelected = bulkSelectedIndices.includes(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
-  const playerAssignmentGrid = opts.hidePersonnel
-    ? ""
-    : buildScriptPlayerAssignmentGrid(play, index, playLabel, opts);
-  const playerSummary = getScriptVisiblePlayerSummary(play, opts);
+  const shouldRenderDetailGrid = !opts.hidePersonnel && opts.layoutMode !== "compact";
+  const shouldRenderPlayerSummary = !opts.hidePersonnel && opts.layoutMode === "compact";
+  const playerSummary = (showPrintPreview || shouldRenderPlayerSummary)
+    ? getCachedPlayerSummary(play)
+    : "";
+  const playerPersonnelMarkup = shouldRenderDetailGrid
+    ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts)
+    : shouldRenderPlayerSummary
+      ? buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary)
+      : "";
   const reps = play.reps ?? 1;
   const itemClasses = [
     "script-item",
@@ -436,7 +443,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       </div>
       ${renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)}
       ${renderScriptPlayControls(play, index, playLabel, reps)}
-      ${playerAssignmentGrid}
+      ${playerPersonnelMarkup}
     </div>
     ${showPrintPreview ? renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) : ""}
   `;
@@ -495,8 +502,14 @@ function renderScriptGuidedEmptyState() {
 function createScriptRenderContext(opts, showPrintPreview) {
   const fullCallCache = new Map();
   const summaryTextCache = new Map();
+  const playerSummaryCache = new Map();
   const hashOptionsCache = new Map();
   const wristbandNumberCache = new Map();
+  const playerSummaryContext = {
+    slotCache: new Map(),
+    baseAssignmentCache: new Map(),
+    playerLabelCache: new Map(),
+  };
   const defenseDatalistState = buildScriptDefenseDatalistState(script);
   const periodStatsBySeparatorIndex = buildPeriodStatsMap(script);
   const renderSummary = buildScriptRenderSummary(script);
@@ -528,6 +541,17 @@ function createScriptRenderContext(opts, showPrintPreview) {
       if (summaryTextCache.has(play)) return summaryTextCache.get(play);
       const summary = getScriptPlaySummaryText(play);
       summaryTextCache.set(play, summary);
+      return summary;
+    },
+    getCachedPlayerSummary(play) {
+      if (!play) return "";
+      if (playerSummaryCache.has(play)) return playerSummaryCache.get(play);
+      const summary = buildScriptCompactPlayerSummary(
+        play,
+        opts,
+        playerSummaryContext,
+      );
+      playerSummaryCache.set(play, summary);
       return summary;
     },
     getCachedHashOptions(play) {
