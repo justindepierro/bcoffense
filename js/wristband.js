@@ -1514,11 +1514,17 @@ function renderCardTabs() {
  * Switch to a different card
  * @param {number} index - Card index
  */
-function switchCard(index) {
-  currentCardIndex = index;
+function refreshWristbandCardView(opts = {}) {
   renderCardTabs();
   renderWristbandGrid();
-  updateCardColorPicker();
+  if (opts.updateCardColorPicker) {
+    updateCardColorPicker();
+  }
+}
+
+function switchCard(index) {
+  currentCardIndex = index;
+  refreshWristbandCardView({ updateCardColorPicker: true });
 }
 
 /**
@@ -1532,8 +1538,7 @@ function addNewCard() {
     data: Array(40).fill(null),
   });
   currentCardIndex = wristbandCards.length - 1;
-  renderCardTabs();
-  renderWristbandGrid();
+  refreshWristbandCardView();
 }
 
 /**
@@ -1549,8 +1554,7 @@ async function removeCurrentCard() {
   saveWristbandState();
   wristbandCards.splice(currentCardIndex, 1);
   currentCardIndex = Math.min(currentCardIndex, wristbandCards.length - 1);
-  renderCardTabs();
-  renderWristbandGrid();
+  refreshWristbandCardView();
 }
 
 /**
@@ -1591,8 +1595,7 @@ function duplicateCard() {
     }
   }
   currentCardIndex = newIdx;
-  renderCardTabs();
-  renderWristbandGrid();
+  refreshWristbandCardView();
   showToast(`Duplicated as "${escapeHtml(clone.name)}"`);
 }
 
@@ -2086,6 +2089,8 @@ function renderWristbandGrid() {
       addLongPress(cell, (ev) => _showWbCellContextMenu(ev, cardIdx, cellIdx));
     }
   });
+
+  syncWbSelectedCellVisuals(grid);
 
   // Update stats bar
   updateWbStats();
@@ -3094,10 +3099,8 @@ function loadWristband(id) {
       b.classList.toggle("active", isMatch);
     });
 
-    renderCardTabs();
     renderWristbandPlays();
-    renderWristbandGrid();
-    updateCardColorPicker();
+    refreshWristbandCardView({ updateCardColorPicker: true });
     markWristbandClean();
     discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
     showToast(`Loaded "${wb.title}"`);
@@ -3399,30 +3402,50 @@ function pasteWbCell(cardIdx, cellIdx) {
   } else {
     delete cellCustomizations[key];
   }
-  renderCardTabs();
-  renderWristbandGrid();
+  refreshWristbandCardView();
   showToast("📋 Cell pasted");
 }
 
 // ============ Batch Color Editing ============
 
+function getWbSelectedCellKey(cardIdx, cellIdx) {
+  return `${cardIdx}-${cellIdx}`;
+}
+
+function syncWbSelectedCellVisuals(root = document) {
+  const selectedKeys = new Set(wbSelectedCells.map((key) => String(key)));
+  root.querySelectorAll("[data-drag='wbCell']").forEach((cell) => {
+    const cellKey = getWbSelectedCellKey(cell.dataset.card, cell.dataset.cellIdx);
+    cell.classList.toggle("wb-selected", selectedKeys.has(cellKey));
+  });
+}
+
+function setWbSelectedCells(nextSelection) {
+  wbSelectedCells = [...new Set(
+    (Array.isArray(nextSelection) ? nextSelection : [])
+      .map((key) => String(key))
+      .filter((key) => /^\d+-\d+$/.test(key)),
+  )];
+  syncWbSelectedCellVisuals();
+  _updateBatchBar();
+}
+
+function selectAllWbCellsOnCurrentCard(root = document) {
+  const nextSelection = Array.from(root.querySelectorAll("[data-drag='wbCell']"))
+    .map((cell) => getWbSelectedCellKey(cell.dataset.card, cell.dataset.cellIdx));
+  setWbSelectedCells(nextSelection);
+  return wbSelectedCells.length;
+}
+
 /**
  * Toggle batch selection on a cell (shift+click)
  */
 function toggleBatchSelect(cardIdx, cellIdx) {
-  const key = `${cardIdx}-${cellIdx}`;
-  const idx = wbSelectedCells.indexOf(key);
-  if (idx >= 0) {
-    wbSelectedCells.splice(idx, 1);
-  } else {
-    wbSelectedCells.push(key);
-  }
-  // Toggle visual class on the cell
-  const cells = document.querySelectorAll(
-    `[data-drag='wbCell'][data-card='${cardIdx}'][data-cell-idx='${cellIdx}']`,
-  );
-  cells.forEach((c) => c.classList.toggle("wb-selected", idx < 0));
-  _updateBatchBar();
+  const key = getWbSelectedCellKey(cardIdx, cellIdx);
+  const nextSelection = wbSelectedCells.includes(key)
+    ? wbSelectedCells.filter((selectedKey) => selectedKey !== key)
+    : [...wbSelectedCells, key];
+  setWbSelectedCells(nextSelection);
 }
 
 /**
@@ -3533,7 +3556,7 @@ function applyBatchEdit() {
   });
 
   clearBatchSelect();
-  renderWristbandGrid();
+  refreshWristbandCardView();
 
   // Reset batch bar inputs
   const cadenceEl = document.getElementById("wbBatchCadence");
@@ -3556,11 +3579,7 @@ function applyBatchEdit() {
  * Clear all batch selections
  */
 function clearBatchSelect() {
-  wbSelectedCells = [];
-  document
-    .querySelectorAll(".wristband-cell.wb-selected")
-    .forEach((c) => c.classList.remove("wb-selected"));
-  _updateBatchBar();
+  setWbSelectedCells([]);
 }
 
 // ============ Card Descriptions ============
@@ -4235,14 +4254,8 @@ document.addEventListener("DOMContentLoaded", () => {
       if ((e.ctrlKey || e.metaKey) && e.key === "a") {
         e.preventDefault();
         e.stopPropagation();
-        wbSelectedCells = [];
-        const allCells = grid.querySelectorAll("[data-drag='wbCell']");
-        allCells.forEach((c) => {
-          const idx = parseInt(c.dataset.cellIdx, 10);
-          if (idx >= 0) wbSelectedCells.push(idx);
-          c.classList.add("selected");
-        });
-        showToast(`Selected ${wbSelectedCells.length} cells`);
+        const selectedCount = selectAllWbCellsOnCurrentCard(grid);
+        showToast(`Selected ${selectedCount} cells`);
         return;
       }
 
