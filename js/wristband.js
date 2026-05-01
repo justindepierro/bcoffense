@@ -1592,6 +1592,32 @@ function hydrateWristbandState(source, opts = {}) {
   }
 }
 
+function refreshWristbandEditorView(opts = {}) {
+  renderWristbandPlays();
+  refreshWristbandCardView({
+    updateCardColorPicker: !!opts.updateCardColorPicker,
+  });
+}
+
+function buildWristbandSaveRecord(title, opts = {}) {
+  return {
+    id: opts.id ?? Date.now(),
+    title,
+    headerColor: wristbandHeaderColor,
+    cards: safeDeepClone(wristbandCards),
+    cellStyles: safeDeepClone(cellCustomizations),
+    favorites: safeDeepClone(wbFavorites),
+    displaySettings: getWristbandDisplayOptions(),
+    savedAt: opts.savedAt || new Date().toISOString(),
+  };
+}
+
+function finalizeWristbandSave() {
+  refreshWristbandSavedReferences();
+  markWristbandClean();
+  discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+}
+
 /**
  * Undo last wristband action
  */
@@ -1620,44 +1646,41 @@ function redoWristband() {
   }
 }
 
-/**
- * Wristband display-option checkbox IDs (single source of truth)
- */
-const WB_DISPLAY_OPTION_IDS = [
-  "wbShowEmoji",
-  "wbUseSquares",
-  "wbUnderEmoji",
-  "wbBoldShifts",
-  "wbRedShifts",
-  "wbItalicMotions",
-  "wbRedMotions",
-  "wbShowLineCall",
-  "wbHighlightHuddle",
-  "wbHighlightCandy",
-];
+function getWbDisplayOptionIds() {
+  return [
+    "wbShowEmoji",
+    "wbUseSquares",
+    "wbUnderEmoji",
+    "wbBoldShifts",
+    "wbRedShifts",
+    "wbItalicMotions",
+    "wbRedMotions",
+    "wbShowLineCall",
+    "wbHighlightHuddle",
+    "wbHighlightCandy",
+  ];
+}
 
 /**
  * Select all display options for wristband
  */
 function selectAllWbOptions() {
-  WB_DISPLAY_OPTION_IDS.forEach((id) => {
+  getWbDisplayOptionIds().forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.checked = true;
   });
-  renderWristbandGrid();
-  renderWristbandPlays();
+  refreshWristbandEditorView();
 }
 
 /**
  * Clear all display options for wristband
  */
 function clearAllWbOptions() {
-  WB_DISPLAY_OPTION_IDS.forEach((id) => {
+  getWbDisplayOptionIds().forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
-  renderWristbandGrid();
-  renderWristbandPlays();
+  refreshWristbandEditorView();
 }
 
 /**
@@ -1724,8 +1747,7 @@ function applyWbDisplayPreset(preset) {
     if (el) el.checked = checked;
   });
 
-  renderWristbandGrid();
-  renderWristbandPlays();
+  refreshWristbandEditorView();
 }
 
 /**
@@ -1741,9 +1763,7 @@ function initWristband() {
     populateWristbandCheckboxFilters();
     populateWbPersonnelDatalist();
     populateWbPreShiftDatalist();
-    renderCardTabs();
-    renderWristbandPlays();
-    renderWristbandGrid();
+    refreshWristbandEditorView();
     loadSavedWristbandsList();
     initSortCriteria();
 
@@ -3146,17 +3166,12 @@ async function saveWristband() {
         },
       );
       if (choice === "option1") {
-        existing.title = name;
-        existing.headerColor = wristbandHeaderColor;
-        existing.cards = safeDeepClone(wristbandCards);
-        existing.cellStyles = safeDeepClone(cellCustomizations);
-        existing.favorites = safeDeepClone(wbFavorites);
-        existing.displaySettings = getWristbandDisplayOptions();
-        existing.savedAt = new Date().toISOString();
+        Object.assign(
+          existing,
+          buildWristbandSaveRecord(name, { id: existing.id }),
+        );
         storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-        refreshWristbandSavedReferences();
-        markWristbandClean();
-        discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+        finalizeWristbandSave();
         showToast(`✅ "${name}" updated!`);
         return;
       } else if (choice !== "option2") {
@@ -3164,21 +3179,10 @@ async function saveWristband() {
       }
     }
 
-    saved.push({
-      id: Date.now(),
-      title: name,
-      headerColor: wristbandHeaderColor,
-      cards: safeDeepClone(wristbandCards),
-      cellStyles: safeDeepClone(cellCustomizations),
-      favorites: safeDeepClone(wbFavorites),
-      displaySettings: getWristbandDisplayOptions(),
-      savedAt: new Date().toISOString(),
-    });
+    saved.push(buildWristbandSaveRecord(name));
 
     storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-  refreshWristbandSavedReferences();
-    markWristbandClean();
-    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+    finalizeWristbandSave();
     showToast(`✅ "${name}" saved!`);
   } catch (err) {
     console.error("saveWristband error:", err);
@@ -3337,16 +3341,9 @@ async function overwriteSavedWristband(id) {
   );
   if (!ok) return;
 
-  wb.headerColor = wristbandHeaderColor;
-  wb.cards = safeDeepClone(wristbandCards);
-  wb.cellStyles = safeDeepClone(cellCustomizations);
-  wb.favorites = safeDeepClone(wbFavorites);
-  wb.displaySettings = getWristbandDisplayOptions();
-  wb.savedAt = new Date().toISOString();
+  Object.assign(wb, buildWristbandSaveRecord(wb.title, { id: wb.id }));
   storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-  refreshWristbandSavedReferences();
-  markWristbandClean();
-  discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+  finalizeWristbandSave();
   showToast(`"${wb.title}" updated!`);
 }
 
