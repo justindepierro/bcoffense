@@ -10,6 +10,18 @@ let wristbandHeaderColor = "transparent";
 let wbSelectedTempos = [];
 let wbSelectedPersonnel = [];
 let wbFiltersCollapsed = true;
+let wbSortCriteria = [];
+let draggedSortItem = null;
+let wbCustomSortOrders = storageManager.get(STORAGE_KEYS.CUSTOM_SORT_ORDERS, {});
+let wbSortAcrossCards = false;
+let savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
+let draggedCellIndex = null;
+let draggedCellCardIdx = null;
+let copiedCell = null;
+let wbFavorites = normalizeWbFavorites(
+  storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
+);
+let wbSelectedCells = [];
 
 // Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel, preShift, formationTags, backTags } }
 let cellCustomizations = {};
@@ -59,6 +71,16 @@ const WB_CELL_MARKER_OPTIONS = [
 ];
 
 const WB_MARKER_PLACEMENTS = new Set(["prefix", "suffix", "both"]);
+
+function normalizeWbFavorites(favorites) {
+  return Array.from(
+    new Set(
+      (Array.isArray(favorites) ? favorites : [])
+        .map((value) => parseInt(value, 10))
+        .filter((value) => Number.isInteger(value) && value >= 0),
+    ),
+  );
+}
 
 function getCellMarkerValue(custom) {
   return custom.cadence || (custom.onTwo ? "$" : "");
@@ -497,6 +519,18 @@ function shadeColor(color, amount) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
+function getCellBgColor(custom, isHuddle, isCandy, row, cardColor) {
+  if (custom?.bgColor) {
+    return row % 2 === 1 ? shadeColor(custom.bgColor, 18) : custom.bgColor;
+  }
+  if (isHuddle) return UI_COLORS.highlightHuddle;
+  if (isCandy) return UI_COLORS.highlightCandy;
+  if (cardColor && cardColor !== "transparent") {
+    return row % 2 === 1 ? shadeColor(cardColor, 18) : cardColor;
+  }
+  return row % 2 === 1 ? "#f4f4f4" : "";
+}
+
 /** Build line-call-only display: emoji prefix + bold line call (no brackets) */
 function getLineCallOnlyDisplay(play, opts) {
   let prefix = "";
@@ -510,64 +544,9 @@ function getLineCallOnlyDisplay(play, opts) {
   if (opts.underEmoji && hasUnder) {
     prefix += "🍑 ";
   }
-  const lc = play.lineCall ? escapeHtml(play.lineCall) : "";
-  return lc ? `${prefix}<b>${lc}</b>` : prefix.trim();
+  const lineCall = play.lineCall ? escapeHtml(play.lineCall) : "";
+  return lineCall ? `${prefix}<b>${lineCall}</b>` : prefix.trim();
 }
-
-/** Get the effective background color for a cell, with alternating row offset */
-function getCellBgColor(custom, isHuddle, isCandy, row, cardColor) {
-  // Individual cell override takes priority
-  if (custom.bgColor) {
-    return row % 2 === 1 ? shadeColor(custom.bgColor, 18) : custom.bgColor;
-  }
-  // Tempo highlights
-  if (isHuddle) return UI_COLORS.highlightHuddle;
-  if (isCandy) return UI_COLORS.highlightCandy;
-  // Card-level color with alternating shade
-  if (cardColor && cardColor !== "transparent") {
-    return row % 2 === 1 ? shadeColor(cardColor, 18) : cardColor;
-  }
-  // No color: alternate white / light grey
-  return row % 2 === 1 ? "#f4f4f4" : "";
-}
-
-// Sort criteria state: array of { field, direction, customOrder } objects
-let wbSortCriteria = [];
-let draggedSortItem = null;
-
-// Custom value orders per field: { fieldName: ["value1", "value2", ...] }
-let wbCustomSortOrders = {};
-wbCustomSortOrders = storageManager.get(STORAGE_KEYS.CUSTOM_SORT_ORDERS, {});
-
-// Sort across all cards as one pool
-let wbSortAcrossCards = false;
-
-// Saved sort presets
-let savedSortPresets = {};
-savedSortPresets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
-
-// Drag-and-drop cell swap state
-let draggedCellIndex = null;
-let draggedCellCardIdx = null;
-
-// Copy/paste cell state
-let copiedCell = null;
-
-// Batch color selection
-let wbSelectedCells = [];
-
-// Favorite/pinned plays (play indices)
-let wbFavorites = storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []);
-
-function normalizeWbFavorites(favorites) {
-  if (!Array.isArray(favorites)) return [];
-  const valid = favorites
-    .map((idx) => parseInt(idx, 10))
-    .filter((idx) => Number.isInteger(idx) && idx >= 0 && idx < plays.length);
-  return [...new Set(valid)];
-}
-
-wbFavorites = normalizeWbFavorites(wbFavorites);
 
 // Arrow key highlight index in cell popup
 let highlightedPlayIndex = -1;
@@ -575,23 +554,28 @@ let highlightedPlayIndex = -1;
 // Autosave timer
 let wristbandAutosaveTimer = null;
 
-/**
- * Debounced autosave for the working wristband
- */
 function scheduleWristbandAutosave() {
   wristbandAutosaveTimer = queueAutosave(
     wristbandAutosaveTimer,
     () => {
-      if (wristbandCards.length === 0) return;
-      const hasPlays = wristbandCards.some(
-        (c) => c.data && c.data.some((p) => p !== null),
+      const totalPlays = wristbandCards.reduce(
+        (sum, card) => sum + (card.data ? card.data.filter((play) => play !== null).length : 0),
+        0,
       );
-      if (!hasPlays) return;
+
+      if (totalPlays === 0) {
+        discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+        if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
+        return;
+      }
+
       persistDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, {
-        cards: wristbandCards,
-        cellStyles: cellCustomizations,
-        favorites: wbFavorites,
         headerColor: wristbandHeaderColor,
+        cards: safeDeepClone(wristbandCards),
+        cellStyles: safeDeepClone(cellCustomizations),
+        favorites: safeDeepClone(wbFavorites),
+        displaySettings: getWristbandDisplayOptions(),
+        currentCardIndex,
       });
       if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
     },
@@ -1521,101 +1505,11 @@ function rebuildWristbandCellCustomizations(mappings, opts = {}) {
   cellCustomizations = nextCustomizations;
 }
 
-function applyWristbandDisplaySettings(displaySettings) {
-  if (!displaySettings) return;
-
-  const setCheckbox = (id, value) => {
-    const el = document.getElementById(id);
-    if (el) el.checked = !!value;
-  };
-
-  setCheckbox("wbShowEmoji", displaySettings.showEmoji);
-  setCheckbox("wbUseSquares", displaySettings.useSquares);
-  setCheckbox("wbUnderEmoji", displaySettings.underEmoji);
-  setCheckbox("wbBoldShifts", displaySettings.boldShifts);
-  setCheckbox("wbRedShifts", displaySettings.redShifts);
-  setCheckbox("wbItalicMotions", displaySettings.italicMotions);
-  setCheckbox("wbRedMotions", displaySettings.redMotions);
-  setCheckbox("wbRemoveVowels", displaySettings.noVowels || displaySettings.removeVowels);
-  setCheckbox("wbShowLineCall", displaySettings.showLineCall);
-  setCheckbox("wbLineCallOnly", displaySettings.lineCallOnly);
-  setCheckbox("wbCadenceReminder", displaySettings.cadenceReminder);
-  setCheckbox("wbHighlightHuddle", displaySettings.highlightHuddle);
-  setCheckbox("wbHighlightCandy", displaySettings.highlightCandy);
-}
-
-function syncWristbandHeaderColorPicker() {
-  document.querySelectorAll(".color-btn").forEach((button) => {
-    const isTransparentBtn = button.classList.contains("color-btn-transparent");
-    const isMatch =
-      wristbandHeaderColor === "transparent"
-        ? isTransparentBtn
-        : button.style.background === wristbandHeaderColor ||
-          button.style.backgroundColor === wristbandHeaderColor;
-    button.classList.toggle("active", isMatch);
-  });
-}
-
-function hydrateWristbandState(source, opts = {}) {
-  wristbandHeaderColor = source?.headerColor || "transparent";
-
-  if (Array.isArray(source?.cards) && source.cards.length > 0) {
-    wristbandCards = safeDeepClone(source.cards);
-  } else if (Array.isArray(source?.data)) {
-    wristbandCards = [{ name: "Card 1", data: safeDeepClone(source.data) }];
-  } else {
-    wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
-  }
-
-  cellCustomizations = source?.cellStyles ? safeDeepClone(source.cellStyles) : {};
-  wbFavorites = normalizeWbFavorites(
-    source?.favorites || storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
-  );
-  storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
-  currentCardIndex = Number.isInteger(source?.currentCardIndex)
-    ? Math.max(0, Math.min(source.currentCardIndex, wristbandCards.length - 1))
-    : 0;
-
-  applyWristbandDisplaySettings(source?.displaySettings);
-  syncWristbandHeaderColorPicker();
-  renderWristbandPlays();
-  refreshWristbandCardView({ updateCardColorPicker: true });
-
-  if (opts.markDirty) {
-    markWristbandDirty();
-  } else {
-    markWristbandClean();
-  }
-
-  if (opts.discardDraft) {
-    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
-  }
-}
-
 function refreshWristbandEditorView(opts = {}) {
   renderWristbandPlays();
   refreshWristbandCardView({
     updateCardColorPicker: !!opts.updateCardColorPicker,
   });
-}
-
-function buildWristbandSaveRecord(title, opts = {}) {
-  return {
-    id: opts.id ?? Date.now(),
-    title,
-    headerColor: wristbandHeaderColor,
-    cards: safeDeepClone(wristbandCards),
-    cellStyles: safeDeepClone(cellCustomizations),
-    favorites: safeDeepClone(wbFavorites),
-    displaySettings: getWristbandDisplayOptions(),
-    savedAt: opts.savedAt || new Date().toISOString(),
-  };
-}
-
-function finalizeWristbandSave() {
-  refreshWristbandSavedReferences();
-  markWristbandClean();
-  discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
 }
 
 /**
@@ -3120,231 +3014,6 @@ function printWristband() {
       type: "error",
     });
   }
-}
-
-/* captureWbDisplaySettings() merged into getWristbandDisplayOptions() */
-
-/**
- * Save the wristband to localStorage
- */
-async function saveWristband() {
-  try {
-    // Check if all cards are empty
-    const totalPlays = wristbandCards.reduce(
-      (sum, c) => sum + c.data.filter((p) => p !== null).length,
-      0,
-    );
-    if (totalPlays === 0) {
-      const proceed = await showConfirm("All cards are empty. Save anyway?", {
-        title: "Empty Wristband",
-        icon: "⚠️",
-        confirmText: "Save Empty",
-      });
-      if (!proceed) return;
-    }
-
-    const name = await showPrompt(
-      "Name for this wristband set:",
-      `Wristband Set ${new Date().toLocaleDateString()}`,
-      { title: "Save Wristband", icon: "💾" },
-    );
-    if (!name) return;
-    const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-
-    // Check for duplicate name
-    const existing = saved.find(
-      (s) => s.title.toLowerCase() === name.toLowerCase(),
-    );
-    if (existing) {
-      const choice = await showChoice(
-        `A wristband named "${existing.title}" already exists.`,
-        {
-          title: "Duplicate Name",
-          icon: "⚠️",
-          option1: "💾 Overwrite",
-          option2: "➕ Save as Copy",
-        },
-      );
-      if (choice === "option1") {
-        Object.assign(
-          existing,
-          buildWristbandSaveRecord(name, { id: existing.id }),
-        );
-        storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-        finalizeWristbandSave();
-        showToast(`✅ "${name}" updated!`);
-        return;
-      } else if (choice !== "option2") {
-        return; // Cancelled
-      }
-    }
-
-    saved.push(buildWristbandSaveRecord(name));
-
-    storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-    finalizeWristbandSave();
-    showToast(`✅ "${name}" saved!`);
-  } catch (err) {
-    console.error("saveWristband error:", err);
-    showToast("❌ Error saving wristband.", { duration: 4000, type: "error" });
-  }
-}
-
-/**
- * Load the list of saved wristbands
- */
-function loadSavedWristbandsList() {
-  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const container = document.getElementById("savedWristbandsList");
-  const section = document.getElementById("savedWristbandsSection");
-
-  if (saved.length === 0) {
-    setWristbandSavedSectionVisibility(section, false);
-    return;
-  }
-
-  setWristbandSavedSectionVisibility(section, true);
-  const totalPlays = (wb) => {
-    if (wb.cards)
-      return wb.cards.reduce(
-        (sum, c) => sum + c.data.filter((p) => p !== null).length,
-        0,
-      );
-    if (wb.data) return wb.data.filter((p) => p !== null).length;
-    return 0;
-  };
-  const cardCount = (wb) => (wb.cards ? wb.cards.length : 1);
-  const favoriteCount = (wb) =>
-    Array.isArray(wb.favorites) ? normalizeWbFavorites(wb.favorites).length : 0;
-  container.innerHTML = saved
-    .map((s) => {
-      const savedTime = s.savedAt
-        ? new Date(s.savedAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })
-        : "";
-      return `
-        <div class="saved-script-card">
-          <div class="saved-card-main">
-            <div class="saved-card-title">${escapeHtml(s.title)}</div>
-            <div class="saved-card-meta">
-              <span>🃏 ${cardCount(s)} card(s)</span>
-              <span>📝 ${totalPlays(s)} plays</span>
-              ${favoriteCount(s) > 0 ? `<span>⭐ ${favoriteCount(s)} pinned</span>` : ""}
-              ${savedTime ? `<span>💾 ${savedTime}</span>` : ""}
-            </div>
-          </div>
-          <div class="saved-card-actions">
-            <button class="saved-load-btn" data-action="loadWristband" data-idx="${s.id}" title="Load this wristband">Load</button>
-            <button class="saved-rename-btn" data-action="renameSavedWristband" data-idx="${s.id}" title="Rename">✏️</button>
-            <button class="saved-overwrite-btn" data-action="overwriteSavedWristband" data-idx="${s.id}" title="Overwrite with current wristband">⬆️</button>
-            <button class="saved-del-btn" data-action="deleteSavedWristband" data-idx="${s.id}" title="Delete">✕</button>
-          </div>
-        </div>
-        `;
-    })
-    .join("");
-}
-
-function refreshWristbandSavedReferences() {
-  loadSavedWristbandsList();
-  populateScriptWristbandSelect();
-  populateWristbandHighlightDropdown();
-}
-
-function setWristbandSavedSectionVisibility(section, isVisible) {
-  if (!section) return;
-  section.classList.toggle("hidden", !isVisible);
-  section.setAttribute("aria-hidden", isVisible ? "false" : "true");
-}
-
-/**
- * Load a saved wristband
- * @param {number} id - Wristband ID
- */
-function loadWristband(id) {
-  try {
-    const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-    const wb = saved.find((s) => s.id === id);
-    if (!wb) return;
-
-    hydrateWristbandState(wb, { discardDraft: true });
-    showToast(`Loaded "${wb.title}"`);
-  } catch (err) {
-    console.error("loadWristband error:", err);
-    showToast("❌ Error loading wristband.", { duration: 4000, type: "error" });
-  }
-}
-
-/**
- * Delete a saved wristband
- * @param {number} id - Wristband ID
- */
-async function deleteSavedWristband(id) {
-  const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const target = saved.find((s) => s.id === id);
-  if (!target) return;
-  const ok = await showConfirm(`Delete "${target.title}"?`, {
-    title: "Delete Wristband",
-    icon: "🗑️",
-    confirmText: "Delete",
-    danger: true,
-  });
-  if (!ok) return;
-  const filtered = saved.filter((s) => s.id !== id);
-  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, filtered);
-  refreshWristbandSavedReferences();
-  showToast(`"${target.title}" deleted`);
-
-  if (scriptWristband && scriptWristband.id === id) {
-    scriptWristband = null;
-    document.getElementById("scriptWristbandSelect").value = "";
-    document.getElementById("scriptWristbandInfo").textContent = "";
-    renderScript();
-  }
-}
-
-/**
- * Rename a saved wristband
- * @param {number} id - Wristband ID
- */
-async function renameSavedWristband(id) {
-  let saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wb = saved.find((s) => s.id === id);
-  if (!wb) return;
-  const newName = await showPrompt("Rename wristband:", wb.title, {
-    title: "Rename",
-    icon: "✏️",
-  });
-  if (newName && newName.trim()) {
-    wb.title = newName.trim();
-    storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-    refreshWristbandSavedReferences();
-    showToast(`Renamed to "${wb.title}"`);
-  }
-}
-
-/**
- * Overwrite a saved wristband with the current wristband contents
- * @param {number} id - Wristband ID
- */
-async function overwriteSavedWristband(id) {
-  let saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
-  const wb = saved.find((s) => s.id === id);
-  if (!wb) return;
-  const ok = await showConfirm(
-    `Overwrite "${wb.title}" with the current wristband?`,
-    { title: "Overwrite", icon: "⚠️", confirmText: "Overwrite", danger: true },
-  );
-  if (!ok) return;
-
-  Object.assign(wb, buildWristbandSaveRecord(wb.title, { id: wb.id }));
-  storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-  finalizeWristbandSave();
-  showToast(`"${wb.title}" updated!`);
 }
 
 /**
