@@ -642,19 +642,7 @@ async function checkWristbandDraft() {
       },
     );
     if (doRestore) {
-      wristbandCards = safeDeepClone(draft.cards);
-      cellCustomizations = draft.cellStyles
-        ? safeDeepClone(draft.cellStyles)
-        : {};
-      wbFavorites = normalizeWbFavorites(draft.favorites || []);
-      storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
-      wristbandHeaderColor = draft.headerColor || "transparent";
-      currentCardIndex = 0;
-      renderCardTabs();
-      renderWristbandPlays();
-      renderWristbandGrid();
-      updateCardColorPicker();
-      markWristbandDirty();
+      hydrateWristbandState(draft, { markDirty: true });
       showToast("🃏 Draft restored");
     } else {
       discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
@@ -1162,29 +1150,24 @@ function applyWristbandSortPerCard() {
       return 0;
     });
 
-    // Build new customization mappings
-    const newCustomizations = {};
+    const customizationMappings = [];
 
     // Rebuild the card data with sorted plays in order
     const newData = Array(40).fill(null);
     playsWithIdx.forEach((item, newIdx) => {
       newData[newIdx] = item.play;
-
-      // Map customization from old position to new position
-      const oldKey = `${cardIdx}-${item.idx}`;
-      const newKey = `${cardIdx}-${newIdx}`;
-      if (cellCustomizations[oldKey]) {
-        newCustomizations[newKey] = cellCustomizations[oldKey];
-      }
+      customizationMappings.push({
+        sourceCardIdx: cardIdx,
+        sourceCellIdx: item.idx,
+        targetCardIdx: cardIdx,
+        targetCellIdx: newIdx,
+      });
     });
 
-    // Clear old customizations for this card and apply new ones
-    for (let i = 0; i < 40; i++) {
-      delete cellCustomizations[`${cardIdx}-${i}`];
-    }
-    Object.assign(cellCustomizations, newCustomizations);
-
     card.data = newData;
+    rebuildWristbandCellCustomizations(customizationMappings, {
+      clearCardIndices: [cardIdx],
+    });
   });
 }
 
@@ -1194,6 +1177,7 @@ function applyWristbandSortPerCard() {
 function applyWristbandSortAcrossCards() {
   // Collect all plays from all cards with their source info
   const allPlays = [];
+  const sourceCustomizations = { ...cellCustomizations };
   wristbandCards.forEach((card, cardIdx) => {
     card.data.forEach((play, cellIdx) => {
       if (play !== null) {
@@ -1223,16 +1207,11 @@ function applyWristbandSortAcrossCards() {
     return 0;
   });
 
-  // Build new customization mappings
-  const newCustomizations = {};
+  const customizationMappings = [];
 
   // Clear all cards
   wristbandCards.forEach((card, cardIdx) => {
     card.data = Array(40).fill(null);
-    // Clear old customizations for this card
-    for (let i = 0; i < 40; i++) {
-      delete cellCustomizations[`${cardIdx}-${i}`];
-    }
   });
 
   // Redistribute plays across cards (40 per card)
@@ -1259,20 +1238,19 @@ function applyWristbandSortAcrossCards() {
 
     if (currentCardIdx < wristbandCards.length) {
       wristbandCards[currentCardIdx].data[currentCellIdx] = item.play;
-
-      // Map customization from old position to new position
-      const oldKey = `${item.origCardIdx}-${item.origCellIdx}`;
-      const newKey = `${currentCardIdx}-${currentCellIdx}`;
-      if (cellCustomizations[oldKey]) {
-        newCustomizations[newKey] = cellCustomizations[oldKey];
-      }
+      customizationMappings.push({
+        sourceCardIdx: item.origCardIdx,
+        sourceCellIdx: item.origCellIdx,
+        targetCardIdx: currentCardIdx,
+        targetCellIdx: currentCellIdx,
+      });
 
       currentCellIdx++;
     }
   });
 
-  // Apply new customizations
-  Object.assign(cellCustomizations, newCustomizations);
+  cellCustomizations = sourceCustomizations;
+  rebuildWristbandCellCustomizations(customizationMappings, { clearAll: true });
 }
 
 /**
@@ -1491,6 +1469,126 @@ function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
   if (hasPlay) {
     document.getElementById("cellPopupPlayName").innerHTML =
       `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(play, custom), getWristbandDisplayOptions())}`;
+  }
+}
+
+function getRemappedWristbandCellCustomizations(
+  mappings,
+  sourceCustomizations = cellCustomizations,
+) {
+  const sourceMap = { ...sourceCustomizations };
+  const nextCustomizations = {};
+
+  mappings.forEach((mapping) => {
+    const sourceKey = getWristbandCellCustomizationKey(
+      mapping.sourceCardIdx,
+      mapping.sourceCellIdx,
+    );
+    const targetKey = getWristbandCellCustomizationKey(
+      mapping.targetCardIdx,
+      mapping.targetCellIdx,
+    );
+    const sourceCustom = sourceMap[sourceKey];
+
+    if (sourceCustom) {
+      nextCustomizations[targetKey] = mapping.clone
+        ? safeDeepClone(sourceCustom)
+        : sourceCustom;
+    }
+  });
+
+  return nextCustomizations;
+}
+
+function rebuildWristbandCellCustomizations(mappings, opts = {}) {
+  const remappedCustomizations = getRemappedWristbandCellCustomizations(
+    mappings,
+    opts.sourceCustomizations || cellCustomizations,
+  );
+  const nextCustomizations = opts.clearAll ? {} : { ...cellCustomizations };
+
+  if (Array.isArray(opts.clearCardIndices)) {
+    opts.clearCardIndices.forEach((cardIdx) => {
+      if (!Number.isInteger(cardIdx)) return;
+      for (let cellIdx = 0; cellIdx < 40; cellIdx++) {
+        delete nextCustomizations[getWristbandCellCustomizationKey(cardIdx, cellIdx)];
+      }
+    });
+  }
+
+  Object.assign(nextCustomizations, remappedCustomizations);
+
+  cellCustomizations = nextCustomizations;
+}
+
+function applyWristbandDisplaySettings(displaySettings) {
+  if (!displaySettings) return;
+
+  const setCheckbox = (id, value) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = !!value;
+  };
+
+  setCheckbox("wbShowEmoji", displaySettings.showEmoji);
+  setCheckbox("wbUseSquares", displaySettings.useSquares);
+  setCheckbox("wbUnderEmoji", displaySettings.underEmoji);
+  setCheckbox("wbBoldShifts", displaySettings.boldShifts);
+  setCheckbox("wbRedShifts", displaySettings.redShifts);
+  setCheckbox("wbItalicMotions", displaySettings.italicMotions);
+  setCheckbox("wbRedMotions", displaySettings.redMotions);
+  setCheckbox("wbRemoveVowels", displaySettings.noVowels || displaySettings.removeVowels);
+  setCheckbox("wbShowLineCall", displaySettings.showLineCall);
+  setCheckbox("wbLineCallOnly", displaySettings.lineCallOnly);
+  setCheckbox("wbCadenceReminder", displaySettings.cadenceReminder);
+  setCheckbox("wbHighlightHuddle", displaySettings.highlightHuddle);
+  setCheckbox("wbHighlightCandy", displaySettings.highlightCandy);
+}
+
+function syncWristbandHeaderColorPicker() {
+  document.querySelectorAll(".color-btn").forEach((button) => {
+    const isTransparentBtn = button.classList.contains("color-btn-transparent");
+    const isMatch =
+      wristbandHeaderColor === "transparent"
+        ? isTransparentBtn
+        : button.style.background === wristbandHeaderColor ||
+          button.style.backgroundColor === wristbandHeaderColor;
+    button.classList.toggle("active", isMatch);
+  });
+}
+
+function hydrateWristbandState(source, opts = {}) {
+  wristbandHeaderColor = source?.headerColor || "transparent";
+
+  if (Array.isArray(source?.cards) && source.cards.length > 0) {
+    wristbandCards = safeDeepClone(source.cards);
+  } else if (Array.isArray(source?.data)) {
+    wristbandCards = [{ name: "Card 1", data: safeDeepClone(source.data) }];
+  } else {
+    wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
+  }
+
+  cellCustomizations = source?.cellStyles ? safeDeepClone(source.cellStyles) : {};
+  wbFavorites = normalizeWbFavorites(
+    source?.favorites || storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
+  );
+  storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
+  currentCardIndex = Number.isInteger(source?.currentCardIndex)
+    ? Math.max(0, Math.min(source.currentCardIndex, wristbandCards.length - 1))
+    : 0;
+
+  applyWristbandDisplaySettings(source?.displaySettings);
+  syncWristbandHeaderColorPicker();
+  renderWristbandPlays();
+  refreshWristbandCardView({ updateCardColorPicker: true });
+
+  if (opts.markDirty) {
+    markWristbandDirty();
+  } else {
+    markWristbandClean();
+  }
+
+  if (opts.discardDraft) {
+    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
   }
 }
 
@@ -3169,60 +3267,7 @@ function loadWristband(id) {
     const wb = saved.find((s) => s.id === id);
     if (!wb) return;
 
-    wristbandHeaderColor = wb.headerColor || "transparent";
-
-    if (wb.cards) {
-      wristbandCards = safeDeepClone(wb.cards);
-    } else if (wb.data) {
-      wristbandCards = [{ name: "Card 1", data: wb.data }];
-    } else {
-      wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
-    }
-
-    cellCustomizations = wb.cellStyles ? safeDeepClone(wb.cellStyles) : {};
-    wbFavorites = normalizeWbFavorites(
-      wb.favorites || storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
-    );
-    storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
-    currentCardIndex = 0;
-
-    // Restore display settings if saved
-    if (wb.displaySettings) {
-      const ds = wb.displaySettings;
-      const setCheckbox = (id, value) => {
-        const el = document.getElementById(id);
-        if (el) el.checked = value;
-      };
-
-      setCheckbox("wbShowEmoji", ds.showEmoji);
-      setCheckbox("wbUseSquares", ds.useSquares);
-      setCheckbox("wbUnderEmoji", ds.underEmoji);
-      setCheckbox("wbBoldShifts", ds.boldShifts);
-      setCheckbox("wbRedShifts", ds.redShifts);
-      setCheckbox("wbItalicMotions", ds.italicMotions);
-      setCheckbox("wbRedMotions", ds.redMotions);
-      setCheckbox("wbRemoveVowels", ds.noVowels || ds.removeVowels);
-      setCheckbox("wbShowLineCall", ds.showLineCall);
-      setCheckbox("wbLineCallOnly", ds.lineCallOnly);
-      setCheckbox("wbCadenceReminder", ds.cadenceReminder);
-      setCheckbox("wbHighlightHuddle", ds.highlightHuddle);
-      setCheckbox("wbHighlightCandy", ds.highlightCandy);
-    }
-
-    document.querySelectorAll(".color-btn").forEach((b) => {
-      const isTransparentBtn = b.classList.contains("color-btn-transparent");
-      const isMatch =
-        wristbandHeaderColor === "transparent"
-          ? isTransparentBtn
-          : b.style.background === wristbandHeaderColor ||
-          b.style.backgroundColor === wristbandHeaderColor;
-      b.classList.toggle("active", isMatch);
-    });
-
-    renderWristbandPlays();
-    refreshWristbandCardView({ updateCardColorPicker: true });
-    markWristbandClean();
-    discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+    hydrateWristbandState(wb, { discardDraft: true });
     showToast(`Loaded "${wb.title}"`);
   } catch (err) {
     console.error("loadWristband error:", err);
