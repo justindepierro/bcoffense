@@ -1062,23 +1062,12 @@ function handleCellDrop(event, targetIdx) {
     const temp = cardData[draggedCellIndex];
     cardData[draggedCellIndex] = cardData[targetIdx];
     cardData[targetIdx] = temp;
-
-    // Swap customizations too
-    const dragKey = `${currentCardIndex}-${draggedCellIndex}`;
-    const targetKey = `${currentCardIndex}-${targetIdx}`;
-    const tempCustom = cellCustomizations[dragKey];
-
-    if (cellCustomizations[targetKey]) {
-      cellCustomizations[dragKey] = cellCustomizations[targetKey];
-    } else {
-      delete cellCustomizations[dragKey];
-    }
-
-    if (tempCustom) {
-      cellCustomizations[targetKey] = tempCustom;
-    } else {
-      delete cellCustomizations[targetKey];
-    }
+    swapWristbandCellCustomizations(
+      currentCardIndex,
+      draggedCellIndex,
+      currentCardIndex,
+      targetIdx,
+    );
   });
 }
 
@@ -1363,6 +1352,148 @@ function setWristbandCellCustomization(key, custom) {
   }
 }
 
+function getWristbandCellCustomizationKey(cardIdx, cellIdx) {
+  return `${cardIdx}-${cellIdx}`;
+}
+
+function shiftWristbandCardCustomizationIndices(startCardIdx, delta) {
+  if (!Number.isInteger(startCardIdx) || !Number.isInteger(delta) || delta === 0) {
+    return;
+  }
+
+  const entries = Object.entries(cellCustomizations)
+    .map(([key, value]) => {
+      const [cardIdxText, cellIdxText] = key.split("-");
+      const cardIdx = parseInt(cardIdxText, 10);
+      const cellIdx = parseInt(cellIdxText, 10);
+      if (!Number.isInteger(cardIdx) || !Number.isInteger(cellIdx)) return null;
+      return { key, value, cardIdx, cellIdx };
+    })
+    .filter((entry) => entry && entry.cardIdx >= startCardIdx)
+    .sort((left, right) => {
+      if (delta > 0) {
+        if (left.cardIdx !== right.cardIdx) return right.cardIdx - left.cardIdx;
+        return right.cellIdx - left.cellIdx;
+      }
+      if (left.cardIdx !== right.cardIdx) return left.cardIdx - right.cardIdx;
+      return left.cellIdx - right.cellIdx;
+    });
+
+  entries.forEach(({ key, value, cardIdx, cellIdx }) => {
+    delete cellCustomizations[key];
+    cellCustomizations[getWristbandCellCustomizationKey(cardIdx + delta, cellIdx)] = value;
+  });
+}
+
+function moveWristbandCellCustomization(
+  sourceCardIdx,
+  sourceCellIdx,
+  targetCardIdx,
+  targetCellIdx,
+  opts = {},
+) {
+  const sourceKey = getWristbandCellCustomizationKey(sourceCardIdx, sourceCellIdx);
+  const targetKey = getWristbandCellCustomizationKey(targetCardIdx, targetCellIdx);
+  const sourceCustom = cellCustomizations[sourceKey];
+
+  if (sourceCustom) {
+    cellCustomizations[targetKey] = opts.clone
+      ? safeDeepClone(sourceCustom)
+      : sourceCustom;
+  } else {
+    delete cellCustomizations[targetKey];
+  }
+
+  if (opts.removeSource !== false) {
+    delete cellCustomizations[sourceKey];
+  }
+}
+
+function swapWristbandCellCustomizations(
+  firstCardIdx,
+  firstCellIdx,
+  secondCardIdx,
+  secondCellIdx,
+) {
+  const firstKey = getWristbandCellCustomizationKey(firstCardIdx, firstCellIdx);
+  const secondKey = getWristbandCellCustomizationKey(secondCardIdx, secondCellIdx);
+  const firstCustom = cellCustomizations[firstKey];
+
+  if (cellCustomizations[secondKey]) {
+    cellCustomizations[firstKey] = cellCustomizations[secondKey];
+  } else {
+    delete cellCustomizations[firstKey];
+  }
+
+  if (firstCustom) {
+    cellCustomizations[secondKey] = firstCustom;
+  } else {
+    delete cellCustomizations[secondKey];
+  }
+}
+
+function resetWristbandCellPopupPendingState() {
+  pendingBgColor = "";
+  pendingTextColor = UI_COLORS.textBlack;
+  pendingPlaySelection = null;
+  pendingMarkers = [];
+  pendingMarkerPlacement = "prefix";
+  pendingExtraPersonnel = "";
+  pendingPreShift = [];
+  pendingFormationTags = [];
+  pendingBackTags = [];
+}
+
+function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
+  resetWristbandCellPopupPendingState();
+  pendingBgColor = existing.bgColor || "";
+  pendingTextColor = existing.textColor || UI_COLORS.textBlack;
+  pendingMarkers = getCellMarkerValues(existing);
+  pendingMarkerPlacement = getCellMarkerPlacement(
+    existing,
+    getWristbandDisplayOptions(),
+  );
+  pendingExtraPersonnel = existing.extraPersonnel || "";
+  pendingPreShift = getCustomPreShiftValues(existing);
+  pendingFormationTags = getCustomFormationTagEntries(existing);
+  pendingBackTags = getCustomBackTagEntries(existing);
+  pendingPlaySelection = currentPlay || null;
+}
+
+function getWristbandPendingCellCustomization() {
+  return (
+    buildWristbandCellCustomization({
+      bgColor: pendingBgColor,
+      textColor: pendingTextColor,
+      markers: pendingMarkers,
+      markerPlacement: pendingMarkerPlacement,
+      extraPersonnel: pendingExtraPersonnel,
+      preShift: pendingPreShift.join("; "),
+      formationTags: pendingFormationTags,
+      backTags: pendingBackTags,
+    }) || {}
+  );
+}
+
+function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
+  const hasPlay = play !== null;
+  const cardOffset = cardIdx * 40;
+  const displayNum = cellIdx + 11 + cardOffset;
+
+  document.getElementById("cellPopupTitle").textContent = hasPlay
+    ? `📝 Edit Cell #${displayNum}`
+    : `➕ Add Play to Cell #${displayNum}`;
+
+  document.getElementById("cellPopupPlayInfo").classList.toggle("hidden", !hasPlay);
+  document.getElementById("cellPopupPlaySelector").classList.toggle("hidden", hasPlay);
+  document.getElementById("cellPopupColors").classList.toggle("hidden", !hasPlay);
+
+  if (hasPlay) {
+    document.getElementById("cellPopupPlayName").innerHTML =
+      `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(play, custom), getWristbandDisplayOptions())}`;
+  }
+}
+
 /**
  * Undo last wristband action
  */
@@ -1586,13 +1717,13 @@ function switchCard(index) {
  */
 function addNewCard() {
   if (wristbandCards.length >= MAX_CARDS) return;
-  saveWristbandState();
-  wristbandCards.push({
-    name: `Card ${wristbandCards.length + 1}`,
-    data: Array(40).fill(null),
+  mutateWristbandState(() => {
+    wristbandCards.push({
+      name: `Card ${wristbandCards.length + 1}`,
+      data: Array(40).fill(null),
+    });
+    currentCardIndex = wristbandCards.length - 1;
   });
-  currentCardIndex = wristbandCards.length - 1;
-  refreshWristbandCardView();
 }
 
 /**
@@ -1605,10 +1736,12 @@ async function removeCurrentCard() {
     { title: "Remove Card", icon: "🗑️", confirmText: "Remove", danger: true },
   );
   if (!ok) return;
-  saveWristbandState();
-  wristbandCards.splice(currentCardIndex, 1);
-  currentCardIndex = Math.min(currentCardIndex, wristbandCards.length - 1);
-  refreshWristbandCardView();
+  const removedCardIdx = currentCardIndex;
+  mutateWristbandState(() => {
+    wristbandCards.splice(removedCardIdx, 1);
+    shiftWristbandCardCustomizationIndices(removedCardIdx + 1, -1);
+    currentCardIndex = Math.min(removedCardIdx, wristbandCards.length - 1);
+  });
 }
 
 /**
@@ -1619,37 +1752,26 @@ function duplicateCard() {
     showToast(`Maximum ${MAX_CARDS} cards allowed`);
     return;
   }
-  saveWristbandState();
   const src = wristbandCards[currentCardIndex];
   const clone = {
     name: `${src.name} (Copy)`,
     data: safeDeepClone(src.data),
   };
-  wristbandCards.splice(currentCardIndex + 1, 0, clone);
-  // Copy cell customizations for the new card
   const newIdx = currentCardIndex + 1;
-  // Shift existing customizations for cards after the insertion point
-  for (let ci = wristbandCards.length - 1; ci > newIdx; ci--) {
+  mutateWristbandState(() => {
+    wristbandCards.splice(newIdx, 0, clone);
+    shiftWristbandCardCustomizationIndices(newIdx, 1);
     for (let si = 0; si < 40; si++) {
-      const oldKey = `${ci - 1}-${si}`;
-      const newKey = `${ci}-${si}`;
-      if (cellCustomizations[oldKey]) {
-        cellCustomizations[newKey] = cellCustomizations[oldKey];
-      } else {
-        delete cellCustomizations[newKey];
-      }
+      moveWristbandCellCustomization(
+        currentCardIndex,
+        si,
+        newIdx,
+        si,
+        { clone: true, removeSource: false },
+      );
     }
-  }
-  // Copy source card customizations to the new card
-  for (let si = 0; si < 40; si++) {
-    const srcKey = `${currentCardIndex}-${si}`;
-    const dstKey = `${newIdx}-${si}`;
-    if (cellCustomizations[srcKey]) {
-      cellCustomizations[dstKey] = safeDeepClone(cellCustomizations[srcKey]);
-    }
-  }
-  currentCardIndex = newIdx;
-  refreshWristbandCardView();
+    currentCardIndex = newIdx;
+  });
   showToast(`Duplicated as "${escapeHtml(clone.name)}"`);
 }
 
@@ -2212,43 +2334,10 @@ function openCellPopup(cardIdx, cellIdx, event) {
   const currentPlay = cardData[cellIdx];
   const key = `${cardIdx}-${cellIdx}`;
   const existing = cellCustomizations[key] || {};
-  pendingBgColor = existing.bgColor || "";
-  pendingTextColor = existing.textColor || UI_COLORS.textBlack;
-  pendingMarkers = getCellMarkerValues(existing);
-  pendingMarkerPlacement = getCellMarkerPlacement(
-    existing,
-    getWristbandDisplayOptions(),
-  );
-  pendingExtraPersonnel = existing.extraPersonnel || "";
-  pendingPreShift = getCustomPreShiftValues(existing);
-  pendingFormationTags = getCustomFormationTagEntries(existing);
-  pendingBackTags = getCustomBackTagEntries(existing);
-  pendingPlaySelection = currentPlay;
+  setWristbandCellPopupPendingState(currentPlay, existing);
+  syncCellPopupForSelection(cardIdx, cellIdx, currentPlay, existing);
 
-  const hasPlay = currentPlay !== null;
-
-  // Update popup title - account for card offset
-  const cardOffset = cardIdx * 40;
-  const displayNum = cellIdx + 11 + cardOffset;
-  document.getElementById("cellPopupTitle").textContent = hasPlay
-    ? `📝 Edit Cell #${displayNum}`
-    : `➕ Add Play to Cell #${displayNum}`;
-
-  // Show/hide sections
-  if (hasPlay) {
-    document.getElementById("cellPopupPlayInfo").classList.remove("hidden");
-    document.getElementById("cellPopupPlaySelector").classList.add("hidden");
-    document.getElementById("cellPopupColors").classList.remove("hidden");
-  } else {
-    document.getElementById("cellPopupPlayInfo").classList.add("hidden");
-    document.getElementById("cellPopupPlaySelector").classList.remove("hidden");
-    document.getElementById("cellPopupColors").classList.add("hidden");
-  }
-
-  if (hasPlay) {
-    document.getElementById("cellPopupPlayName").innerHTML =
-      `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(currentPlay, existing), getWristbandDisplayOptions())}`;
-  } else {
+  if (currentPlay === null) {
     document.getElementById("cellPlaySearch").value = "";
     populateCellPlayList();
   }
@@ -2341,21 +2430,12 @@ function selectPlayForCell(playIndex) {
     wristbandCards[cardIdx].data[cellIdx] = play;
   });
   pendingPlaySelection = play;
-
-  // Update the popup to show edit mode - account for card offset
-  const cardOffset = cardIdx * 40;
-  const displayNum = cellIdx + 11 + cardOffset;
-  document.getElementById("cellPopupTitle").textContent =
-    `📝 Edit Cell #${displayNum}`;
-  document.getElementById("cellPopupPlayInfo").classList.remove("hidden");
-  document.getElementById("cellPopupPlaySelector").classList.add("hidden");
-  document.getElementById("cellPopupColors").classList.remove("hidden");
-  document.getElementById("cellPopupPlayName").innerHTML =
-    `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(play, {
-      formationTags: pendingFormationTags,
-      backTags: pendingBackTags,
-    }), getWristbandDisplayOptions())}`;
-
+  syncCellPopupForSelection(
+    cardIdx,
+    cellIdx,
+    play,
+    getWristbandPendingCellCustomization(),
+  );
 }
 
 /**
@@ -2382,7 +2462,7 @@ function closeCellPopup(event) {
   if (event && event.target !== event.currentTarget) return;
   setWristbandOverlayVisibility("cellPopupOverlay", false);
   currentEditingCell = { cardIdx: null, cellIdx: null };
-  pendingPlaySelection = null;
+  resetWristbandCellPopupPendingState();
 }
 
 /**
@@ -4266,23 +4346,18 @@ document.addEventListener("DOMContentLoaded", () => {
         return;
       }
 
-      saveWristbandState();
-      // Move the play
-      wristbandCards[targetCardIdx].data[emptyIdx] = play;
-      wristbandCards[sourceCardIdx].data[draggedCellIndex] = null;
-
-      // Move cell customizations
-      const srcKey = `${sourceCardIdx}-${draggedCellIndex}`;
-      const dstKey = `${targetCardIdx}-${emptyIdx}`;
-      if (cellCustomizations[srcKey]) {
-        cellCustomizations[dstKey] = cellCustomizations[srcKey];
-        delete cellCustomizations[srcKey];
-      }
-
-      draggedCellIndex = null;
-      draggedCellCardIdx = null;
-      renderCardTabs();
-      renderWristbandGrid();
+      mutateWristbandState(() => {
+        wristbandCards[targetCardIdx].data[emptyIdx] = play;
+        wristbandCards[sourceCardIdx].data[draggedCellIndex] = null;
+        moveWristbandCellCustomization(
+          sourceCardIdx,
+          draggedCellIndex,
+          targetCardIdx,
+          emptyIdx,
+        );
+        draggedCellIndex = null;
+        draggedCellCardIdx = null;
+      });
       showToast(`Moved to ${wristbandCards[targetCardIdx].name}`);
     });
   }
