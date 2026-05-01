@@ -2389,8 +2389,23 @@ function openCallSheetPlayPicker(categoryId, hash) {
   updatePickerSourceUI();
 
   populateCallSheetPlayList();
-  document.getElementById("callSheetPickerOverlay").classList.remove("hidden");
-  trapFocus(document.getElementById("callSheetPickerOverlay"));
+  const overlay = setCallSheetOverlayVisibility("callSheetPickerOverlay", true);
+  if (overlay) trapFocus(overlay);
+}
+
+function setCallSheetOverlayVisibility(overlayId, isOpen) {
+  const overlay = document.getElementById(overlayId);
+  if (!overlay) return null;
+
+  overlay.classList.toggle("hidden", !isOpen);
+  overlay.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  if (isOpen) {
+    overlay.removeAttribute("inert");
+  } else {
+    overlay.setAttribute("inert", "");
+  }
+
+  return overlay;
 }
 
 /**
@@ -2513,7 +2528,7 @@ function clearCsPickerFilters() {
  */
 function closeCallSheetPicker(event) {
   if (event && event.target !== event.currentTarget) return;
-  document.getElementById("callSheetPickerOverlay").classList.add("hidden");
+  setCallSheetOverlayVisibility("callSheetPickerOverlay", false);
 }
 
 /**
@@ -2779,7 +2794,7 @@ function openLoadWristbandModal() {
       )
       .join("");
 
-  modal.classList.remove("hidden");
+  setCallSheetOverlayVisibility("loadWristbandModal", true);
 }
 
 /**
@@ -2787,7 +2802,7 @@ function openLoadWristbandModal() {
  */
 function closeLoadWristbandModal(event) {
   if (event && event.target !== event.currentTarget) return;
-  document.getElementById("loadWristbandModal").classList.add("hidden");
+  setCallSheetOverlayVisibility("loadWristbandModal", false);
 }
 
 /**
