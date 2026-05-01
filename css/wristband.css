@@ -902,7 +902,7 @@
 
 /* ── Quick search overlay ── */
 .wb-quicksearch-overlay {
-  display: flex;
+  display: none;
   position: fixed;
   inset: 0;
   background: var(--color-overlay);
@@ -910,6 +910,9 @@
   justify-content: center;
   align-items: flex-start;
   padding-top: 15vh;
+}
+.wb-quicksearch-overlay.visible {
+  display: flex;
 }
 .wb-quicksearch-box {
   background: var(--color-white);

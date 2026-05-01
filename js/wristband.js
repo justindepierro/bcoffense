@@ -2048,6 +2048,28 @@ function renderWristbandGrid() {
 
 // ============ Cell Popup Functions ============
 
+function setWristbandOverlayVisibility(target, isOpen, opts = {}) {
+  const overlay =
+    typeof target === "string" ? document.getElementById(target) : target;
+  if (!overlay) return null;
+
+  const visibilityClass = opts.visibilityClass || "hidden";
+  if (opts.openClass) {
+    overlay.classList.toggle(visibilityClass, isOpen);
+  } else {
+    overlay.classList.toggle(visibilityClass, !isOpen);
+  }
+
+  overlay.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  if (isOpen) {
+    overlay.removeAttribute("inert");
+  } else {
+    overlay.setAttribute("inert", "");
+  }
+
+  return overlay;
+}
+
 /**
  * Open the cell popup for editing
  * @param {number} cardIdx - Card index
@@ -2144,7 +2166,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   renderPendingFormationTagList();
   renderPendingBackTagList();
 
-  overlay.classList.remove("hidden");
+  setWristbandOverlayVisibility(overlay, true);
 
   // Auto-focus the search input for empty cells so user can type immediately
   if (!currentPlay) {
@@ -2264,7 +2286,7 @@ function removeCellPlayFromPopup() {
  */
 function closeCellPopup(event) {
   if (event && event.target !== event.currentTarget) return;
-  document.getElementById("cellPopupOverlay").classList.add("hidden");
+  setWristbandOverlayVisibility("cellPopupOverlay", false);
   currentEditingCell = { cardIdx: null, cellIdx: null };
   pendingPlaySelection = null;
 }
@@ -3624,6 +3646,11 @@ function openWbQuickSearch() {
     overlay.id = "wbQuickSearchOverlay";
     overlay.className = "wb-quicksearch-overlay";
     overlay.setAttribute("data-action", "closeWbQuickSearchOverlay");
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Wristband quick search");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.setAttribute("inert", "");
     overlay.innerHTML = `
       <div class="wb-quicksearch-box">
         <input type="text" class="wb-quicksearch-input" id="wbQuickSearchInput"
@@ -3673,8 +3700,11 @@ function openWbQuickSearch() {
     });
   }
 
-  overlay.classList.add("visible");
   const input = document.getElementById("wbQuickSearchInput");
+  setWristbandOverlayVisibility(overlay, true, {
+    visibilityClass: "visible",
+    openClass: true,
+  });
   input.value = "";
   document.getElementById("wbQuickSearchResults").innerHTML =
     '<div class="wb-quicksearch-empty">Type to search your playbook</div>';
@@ -3686,7 +3716,10 @@ function openWbQuickSearch() {
  */
 function closeWbQuickSearch() {
   const overlay = document.getElementById("wbQuickSearchOverlay");
-  if (overlay) overlay.classList.remove("visible");
+  setWristbandOverlayVisibility(overlay, false, {
+    visibilityClass: "visible",
+    openClass: true,
+  });
 }
 
 /**
@@ -3888,16 +3921,20 @@ function _showWbCellContextMenu(e, cardIdx, cellIdx) {
  * Show wristband shortcuts help modal
  */
 function showWbShortcutHelp() {
-  const overlay = document.getElementById("wbHelpOverlay");
-  if (overlay) overlay.classList.add("visible");
+  setWristbandOverlayVisibility("wbHelpOverlay", true, {
+    visibilityClass: "show",
+    openClass: true,
+  });
 }
 
 /**
  * Close wristband shortcuts help modal
  */
 function closeWbHelpOverlay() {
-  const overlay = document.getElementById("wbHelpOverlay");
-  if (overlay) overlay.classList.remove("visible");
+  setWristbandOverlayVisibility("wbHelpOverlay", false, {
+    visibilityClass: "show",
+    openClass: true,
+  });
 }
 
 // ============ Wristband Find/Replace ============
@@ -3908,7 +3945,10 @@ function closeWbHelpOverlay() {
 function openWbFindReplaceModal() {
   const overlay = document.getElementById("wbFindReplaceOverlay");
   if (overlay) {
-    overlay.classList.add("visible");
+    setWristbandOverlayVisibility(overlay, true, {
+      visibilityClass: "show",
+      openClass: true,
+    });
     document.getElementById("wbFindPlayInput").focus();
     document.getElementById("wbFindPlayInput").value = "";
     document.getElementById("wbReplacePlayInput").value = "";
@@ -3919,8 +3959,10 @@ function openWbFindReplaceModal() {
  * Close find/replace modal
  */
 function closeWbFindReplaceModal() {
-  const overlay = document.getElementById("wbFindReplaceOverlay");
-  if (overlay) overlay.classList.remove("visible");
+  setWristbandOverlayVisibility("wbFindReplaceOverlay", false, {
+    visibilityClass: "show",
+    openClass: true,
+  });
 }
 
 /**
