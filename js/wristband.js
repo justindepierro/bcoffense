@@ -1691,6 +1691,74 @@ function toggleWbCheckbox(el) {
   updateWbActiveFilterCount();
 }
 
+function getWristbandFilterState(opts = {}) {
+  const searchInputId = opts.searchInputId || "wbSearchPlay";
+  const type = document.getElementById("wbFilterType")?.value || "";
+  const rawSearch = document.getElementById(searchInputId)?.value || "";
+
+  return {
+    type,
+    search: rawSearch.toLowerCase().trim(),
+    selectedTempos: [...new Set(wbSelectedTempos)],
+    selectedPersonnel: [...new Set(wbSelectedPersonnel)],
+  };
+}
+
+function syncWristbandFilterUi(filterState = getWristbandFilterState()) {
+  const clearBtn = document.getElementById("clearWbSearch");
+  if (clearBtn) {
+    clearBtn.classList.toggle("hidden", !filterState.search);
+    clearBtn.style.display = filterState.search ? "flex" : "none";
+  }
+
+  const activeCount =
+    filterState.selectedPersonnel.length +
+    filterState.selectedTempos.length +
+    (filterState.type ? 1 : 0) +
+    (filterState.search ? 1 : 0);
+
+  const badge = document.getElementById("wbActiveFilterCount");
+  if (!badge) return;
+
+  if (activeCount > 0) {
+    badge.textContent = `${activeCount} active`;
+    badge.classList.remove("hidden");
+  } else {
+    badge.classList.add("hidden");
+  }
+}
+
+function matchesWristbandPlayFilters(play, filterState, opts = {}) {
+  if (!play) return false;
+
+  if (filterState.type && play.type !== filterState.type) return false;
+
+  if (
+    filterState.selectedTempos.length > 0 &&
+    !filterState.selectedTempos.includes(play.tempo)
+  ) {
+    return false;
+  }
+
+  if (
+    filterState.selectedPersonnel.length > 0 &&
+    !filterState.selectedPersonnel.includes(play.personnel)
+  ) {
+    return false;
+  }
+
+  if (!filterState.search) return true;
+
+  if (opts.searchMode === "fullCall") {
+    return getFullCall(play).toLowerCase().includes(filterState.search);
+  }
+
+  const searchFields = [play.play, play.formation, play.protection]
+    .filter(Boolean)
+    .map((value) => String(value).toLowerCase());
+  return searchFields.some((value) => value.includes(filterState.search));
+}
+
 /**
  * Set the header color for the wristband
  * @param {string} color - CSS color value
@@ -1745,8 +1813,6 @@ function filterWristbandPlays() {
 function clearWbSearch() {
   const input = document.getElementById("wbSearchPlay");
   if (input) input.value = "";
-  const clearBtn = document.getElementById("clearWbSearch");
-  if (clearBtn) clearBtn.style.display = "none";
   filterWristbandPlays();
 }
 
@@ -1754,30 +1820,12 @@ function clearWbSearch() {
  * Render the available plays list for the wristband
  */
 function renderWristbandPlays() {
-  const type = document.getElementById("wbFilterType").value;
-  const search = document.getElementById("wbSearchPlay").value.toLowerCase();
-  // Toggle search clear button
-  const clearBtn = document.getElementById("clearWbSearch");
-  if (clearBtn) clearBtn.style.display = search ? "flex" : "none";
+  const filterState = getWristbandFilterState();
+  syncWristbandFilterUi(filterState);
 
-  let filtered = plays.filter((p) => {
-    if (type && p.type !== type) return false;
-    if (
-      search &&
-      !p.play.toLowerCase().includes(search) &&
-      !p.formation.toLowerCase().includes(search) &&
-      !p.protection.toLowerCase().includes(search)
-    )
-      return false;
-    if (wbSelectedTempos.length > 0 && !wbSelectedTempos.includes(p.tempo))
-      return false;
-    if (
-      wbSelectedPersonnel.length > 0 &&
-      !wbSelectedPersonnel.includes(p.personnel)
-    )
-      return false;
-    return true;
-  });
+  let filtered = plays.filter((play) =>
+    matchesWristbandPlayFilters(play, filterState),
+  );
 
   // Sort favorites to top
   filtered.sort((a, b) => {
@@ -2188,24 +2236,13 @@ function showPlaySelector() {
  */
 function populateCellPlayList() {
   highlightedPlayIndex = -1;
-  const search = document.getElementById("cellPlaySearch").value.toLowerCase();
-  const type = document.getElementById("wbFilterType")?.value || "";
-
-  let filtered = plays.filter((p) => {
-    if (type && p.type !== type) return false;
-    if (wbSelectedTempos.length > 0 && !wbSelectedTempos.includes(p.tempo))
-      return false;
-    if (
-      wbSelectedPersonnel.length > 0 &&
-      !wbSelectedPersonnel.includes(p.personnel)
-    )
-      return false;
-    if (search) {
-      const fullCall = getFullCall(p).toLowerCase();
-      if (!fullCall.includes(search)) return false;
-    }
-    return true;
+  const filterState = getWristbandFilterState({
+    searchInputId: "cellPlaySearch",
   });
+
+  let filtered = plays.filter((play) =>
+    matchesWristbandPlayFilters(play, filterState, { searchMode: "fullCall" }),
+  );
 
   const container = document.getElementById("cellPlayList");
   if (filtered.length === 0) {
@@ -2539,26 +2576,11 @@ async function clearWristband() {
  * Auto-fill the wristband with filtered plays (adds to empty cells on current card only)
  */
 async function autoFillWristband() {
-  const type = document.getElementById("wbFilterType").value;
-  const search = document.getElementById("wbSearchPlay").value.toLowerCase();
+  const filterState = getWristbandFilterState();
 
-  const filtered = plays.filter((p) => {
-    if (type && p.type !== type) return false;
-    if (
-      search &&
-      !p.play.toLowerCase().includes(search) &&
-      !p.formation.toLowerCase().includes(search)
-    )
-      return false;
-    if (wbSelectedTempos.length > 0 && !wbSelectedTempos.includes(p.tempo))
-      return false;
-    if (
-      wbSelectedPersonnel.length > 0 &&
-      !wbSelectedPersonnel.includes(p.personnel)
-    )
-      return false;
-    return true;
-  });
+  const filtered = plays.filter((play) =>
+    matchesWristbandPlayFilters(play, filterState),
+  );
 
   if (filtered.length === 0) {
     showToast("No plays match the current filters");
@@ -3250,21 +3272,7 @@ function clearAllWbFilters() {
  * Update active filter count badge for wristband
  */
 function updateWbActiveFilterCount() {
-  let count = wbSelectedPersonnel.length + wbSelectedTempos.length;
-  const typeFilter = document.getElementById("wbFilterType");
-  if (typeFilter && typeFilter.value) count++;
-  const searchBox = document.getElementById("wbSearchPlay");
-  if (searchBox && searchBox.value.trim()) count++;
-
-  const badge = document.getElementById("wbActiveFilterCount");
-  if (badge) {
-    if (count > 0) {
-      badge.textContent = count + " active";
-      badge.classList.remove("hidden");
-    } else {
-      badge.classList.add("hidden");
-    }
-  }
+  syncWristbandFilterUi();
 }
 
 /* toggleWbDisplayOptions and toggleWbSortPanel merged into shared toggleCollapsiblePanel() in utils.js */
