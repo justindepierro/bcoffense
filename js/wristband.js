@@ -2909,9 +2909,7 @@ async function saveWristband() {
         existing.displaySettings = getWristbandDisplayOptions();
         existing.savedAt = new Date().toISOString();
         storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-        loadSavedWristbandsList();
-        populateScriptWristbandSelect();
-        populateWristbandHighlightDropdown();
+        refreshWristbandSavedReferences();
         markWristbandClean();
         discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
         showToast(`✅ "${name}" updated!`);
@@ -2933,9 +2931,7 @@ async function saveWristband() {
     });
 
     storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-    loadSavedWristbandsList();
-    populateScriptWristbandSelect();
-    populateWristbandHighlightDropdown();
+  refreshWristbandSavedReferences();
     markWristbandClean();
     discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
     showToast(`✅ "${name}" saved!`);
@@ -2954,11 +2950,11 @@ function loadSavedWristbandsList() {
   const section = document.getElementById("savedWristbandsSection");
 
   if (saved.length === 0) {
-    section.classList.add("hidden");
+    setWristbandSavedSectionVisibility(section, false);
     return;
   }
 
-  section.classList.remove("hidden");
+  setWristbandSavedSectionVisibility(section, true);
   const totalPlays = (wb) => {
     if (wb.cards)
       return wb.cards.reduce(
@@ -3002,6 +2998,18 @@ function loadSavedWristbandsList() {
         `;
     })
     .join("");
+}
+
+function refreshWristbandSavedReferences() {
+  loadSavedWristbandsList();
+  populateScriptWristbandSelect();
+  populateWristbandHighlightDropdown();
+}
+
+function setWristbandSavedSectionVisibility(section, isVisible) {
+  if (!section) return;
+  section.classList.toggle("hidden", !isVisible);
+  section.setAttribute("aria-hidden", isVisible ? "false" : "true");
 }
 
 /**
@@ -3094,9 +3102,7 @@ async function deleteSavedWristband(id) {
   if (!ok) return;
   const filtered = saved.filter((s) => s.id !== id);
   storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, filtered);
-  loadSavedWristbandsList();
-  populateScriptWristbandSelect();
-  populateWristbandHighlightDropdown();
+  refreshWristbandSavedReferences();
   showToast(`"${target.title}" deleted`);
 
   if (scriptWristband && scriptWristband.id === id) {
@@ -3122,9 +3128,7 @@ async function renameSavedWristband(id) {
   if (newName && newName.trim()) {
     wb.title = newName.trim();
     storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-    loadSavedWristbandsList();
-    populateScriptWristbandSelect();
-    populateWristbandHighlightDropdown();
+    refreshWristbandSavedReferences();
     showToast(`Renamed to "${wb.title}"`);
   }
 }
@@ -3150,9 +3154,7 @@ async function overwriteSavedWristband(id) {
   wb.displaySettings = getWristbandDisplayOptions();
   wb.savedAt = new Date().toISOString();
   storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
-  loadSavedWristbandsList();
-  populateScriptWristbandSelect();
-  populateWristbandHighlightDropdown();
+  refreshWristbandSavedReferences();
   markWristbandClean();
   discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
   showToast(`"${wb.title}" updated!`);
@@ -3425,9 +3427,11 @@ function _updateBatchBar() {
   const n = wbSelectedCells.length;
   if (n > 0) {
     bar.classList.add("visible");
+    bar.setAttribute("aria-hidden", "false");
     countEl.textContent = `${n} cell${n === 1 ? "" : "s"} selected`;
   } else {
     bar.classList.remove("visible");
+    bar.setAttribute("aria-hidden", "true");
     // Reset pending color swatch highlight
     document.querySelectorAll("#wbBatchSwatches .wb-batch-swatch.active").forEach((s) => s.classList.remove("active"));
   }

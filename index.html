@@ -1268,7 +1268,8 @@
           </div>
 
           <!-- Batch Edit Action Bar (visible when cells are shift+clicked) -->
-          <div id="wbBatchBar" class="wb-batch-bar" aria-live="polite" aria-label="Batch edit selected cells">
+          <div id="wbBatchBar" class="wb-batch-bar" aria-live="polite" aria-label="Batch edit selected cells"
+            aria-hidden="true">
             <div class="wb-batch-bar-info">
               <span class="wb-batch-count" id="wbBatchCount">0 cells selected</span>
               <button class="btn btn-sm wb-batch-deselect" data-action="clearBatchSelect" title="Clear selection">✕
@@ -1428,7 +1429,7 @@
             </div>
           </div>
 
-          <div class="saved-scripts hidden" id="savedWristbandsSection">
+          <div class="saved-scripts hidden" id="savedWristbandsSection" aria-hidden="true">
             <h4>📁 Saved Wristbands</h4>
             <div id="savedWristbandsList"></div>
           </div>
