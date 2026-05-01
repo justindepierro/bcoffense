@@ -41,7 +41,7 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v210` — next version will be `bcoffense-v211`
+- Current version: `bcoffense-v243` — next version will be `bcoffense-v244`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---
