@@ -1055,34 +1055,31 @@ function handleCellDrop(event, targetIdx) {
   event.currentTarget.classList.remove("drag-over");
   if (draggedCellIndex === null || draggedCellIndex === targetIdx) return;
 
-  saveWristbandState();
+  mutateWristbandState(() => {
+    const cardData = wristbandCards[currentCardIndex].data;
 
-  const cardData = wristbandCards[currentCardIndex].data;
+    // Swap the plays
+    const temp = cardData[draggedCellIndex];
+    cardData[draggedCellIndex] = cardData[targetIdx];
+    cardData[targetIdx] = temp;
 
-  // Swap the plays
-  const temp = cardData[draggedCellIndex];
-  cardData[draggedCellIndex] = cardData[targetIdx];
-  cardData[targetIdx] = temp;
+    // Swap customizations too
+    const dragKey = `${currentCardIndex}-${draggedCellIndex}`;
+    const targetKey = `${currentCardIndex}-${targetIdx}`;
+    const tempCustom = cellCustomizations[dragKey];
 
-  // Swap customizations too
-  const dragKey = `${currentCardIndex}-${draggedCellIndex}`;
-  const targetKey = `${currentCardIndex}-${targetIdx}`;
-  const tempCustom = cellCustomizations[dragKey];
+    if (cellCustomizations[targetKey]) {
+      cellCustomizations[dragKey] = cellCustomizations[targetKey];
+    } else {
+      delete cellCustomizations[dragKey];
+    }
 
-  if (cellCustomizations[targetKey]) {
-    cellCustomizations[dragKey] = cellCustomizations[targetKey];
-  } else {
-    delete cellCustomizations[dragKey];
-  }
-
-  if (tempCustom) {
-    cellCustomizations[targetKey] = tempCustom;
-  } else {
-    delete cellCustomizations[targetKey];
-  }
-
-  renderCardTabs();
-  renderWristbandGrid();
+    if (tempCustom) {
+      cellCustomizations[targetKey] = tempCustom;
+    } else {
+      delete cellCustomizations[targetKey];
+    }
+  });
 }
 
 /**
@@ -1307,6 +1304,63 @@ function saveWristbandState() {
   historyManager.saveState("wristband", getWristbandState());
   markWristbandDirty();
   scheduleWristbandAutosave();
+}
+
+function mutateWristbandState(mutate, opts = {}) {
+  if (typeof mutate !== "function") return;
+  saveWristbandState();
+  mutate();
+  if (opts.renderPlays) {
+    renderWristbandPlays();
+  }
+  if (opts.refreshCardView !== false) {
+    refreshWristbandCardView({
+      updateCardColorPicker: !!opts.updateCardColorPicker,
+    });
+  }
+}
+
+function buildWristbandCellCustomization(custom = {}) {
+  const normalized = {
+    bgColor: custom.bgColor || "",
+    textColor: custom.textColor || UI_COLORS.textBlack,
+    markers: Array.isArray(custom.markers)
+      ? custom.markers.filter(Boolean)
+      : [],
+    markerPlacement: custom.markerPlacement || "prefix",
+    extraPersonnel: String(custom.extraPersonnel || "").trim(),
+    preShift: String(custom.preShift || "").trim(),
+    formationTags: Array.isArray(custom.formationTags)
+      ? custom.formationTags
+          .map((entry) => normalizeCustomTagEntry(entry))
+          .filter(Boolean)
+      : [],
+    backTags: Array.isArray(custom.backTags)
+      ? custom.backTags
+          .map((entry) => normalizeCustomTagEntry(entry))
+          .filter(Boolean)
+      : [],
+  };
+
+  const hasValue =
+    normalized.bgColor ||
+    normalized.textColor !== UI_COLORS.textBlack ||
+    normalized.markers.length > 0 ||
+    normalized.extraPersonnel ||
+    normalized.preShift ||
+    normalized.formationTags.length > 0 ||
+    normalized.backTags.length > 0;
+
+  return hasValue ? normalized : null;
+}
+
+function setWristbandCellCustomization(key, custom) {
+  const normalized = buildWristbandCellCustomization(custom);
+  if (normalized) {
+    cellCustomizations[key] = normalized;
+  } else {
+    delete cellCustomizations[key];
+  }
 }
 
 /**
@@ -2282,9 +2336,10 @@ function selectPlayForCell(playIndex) {
   const { cardIdx, cellIdx } = currentEditingCell;
   if (cardIdx === null || cellIdx === null) return;
 
-  saveWristbandState();
   const play = plays[playIndex];
-  wristbandCards[cardIdx].data[cellIdx] = play;
+  mutateWristbandState(() => {
+    wristbandCards[cardIdx].data[cellIdx] = play;
+  });
   pendingPlaySelection = play;
 
   // Update the popup to show edit mode - account for card offset
@@ -2301,8 +2356,6 @@ function selectPlayForCell(playIndex) {
       backTags: pendingBackTags,
     }), getWristbandDisplayOptions())}`;
 
-  renderCardTabs();
-  renderWristbandGrid();
 }
 
 /**
@@ -2312,14 +2365,13 @@ function removeCellPlayFromPopup() {
   const { cardIdx, cellIdx } = currentEditingCell;
   if (cardIdx === null || cellIdx === null) return;
 
-  saveWristbandState();
-  wristbandCards[cardIdx].data[cellIdx] = null;
   const key = `${cardIdx}-${cellIdx}`;
-  delete cellCustomizations[key];
+  mutateWristbandState(() => {
+    wristbandCards[cardIdx].data[cellIdx] = null;
+    delete cellCustomizations[key];
+  });
 
   closeCellPopup();
-  renderCardTabs();
-  renderWristbandGrid();
 }
 
 /**
@@ -2393,7 +2445,6 @@ function applyCellStyle() {
   const { cardIdx, cellIdx } = currentEditingCell;
   if (cardIdx === null || cellIdx === null) return;
 
-  saveWristbandState();
   const key = `${cardIdx}-${cellIdx}`;
   const markers = [...pendingMarkers];
   const markerPlacement = pendingMarkerPlacement;
@@ -2408,31 +2459,20 @@ function applyCellStyle() {
     .map((entry) => normalizeCustomTagEntry(entry))
     .filter(Boolean);
 
-  if (
-    pendingBgColor ||
-    pendingTextColor !== UI_COLORS.textBlack ||
-    markers.length > 0 ||
-    extraPersonnel ||
-    preShift ||
-    formationTags.length > 0 ||
-    backTags.length > 0
-  ) {
-    cellCustomizations[key] = {
+  mutateWristbandState(() => {
+    setWristbandCellCustomization(key, {
       bgColor: pendingBgColor,
       textColor: pendingTextColor,
       markers,
       markerPlacement,
-      extraPersonnel: extraPersonnel,
-      preShift: preShift,
+      extraPersonnel,
+      preShift,
       formationTags,
       backTags,
-    };
-  } else {
-    delete cellCustomizations[key];
-  }
+    });
+  }, { refreshCardView: true });
 
   closeCellPopup();
-  renderWristbandGrid();
 }
 
 function initCellMarkerPalette() {
@@ -3394,15 +3434,14 @@ function pasteWbCell(cardIdx, cellIdx) {
     showToast("Nothing to paste — copy a cell first");
     return;
   }
-  saveWristbandState();
-  wristbandCards[cardIdx].data[cellIdx] = safeDeepClone(copiedCell.play);
   const key = `${cardIdx}-${cellIdx}`;
-  if (copiedCell.customization) {
-    cellCustomizations[key] = safeDeepClone(copiedCell.customization);
-  } else {
-    delete cellCustomizations[key];
-  }
-  refreshWristbandCardView();
+  mutateWristbandState(() => {
+    wristbandCards[cardIdx].data[cellIdx] = safeDeepClone(copiedCell.play);
+    setWristbandCellCustomization(
+      key,
+      copiedCell.customization ? safeDeepClone(copiedCell.customization) : null,
+    );
+  });
   showToast("📋 Cell pasted");
 }
 
@@ -3509,54 +3548,60 @@ function applyBatchEdit() {
     return;
   }
 
-  saveWristbandState();
   const count = wbSelectedCells.length;
 
-  wbSelectedCells.forEach((key) => {
-    if (!cellCustomizations[key]) cellCustomizations[key] = {};
+  mutateWristbandState(() => {
+    wbSelectedCells.forEach((key) => {
+      const existing = cellCustomizations[key] || {};
+      const nextCustom = {
+        ...existing,
+        markers: Array.isArray(existing.markers) ? [...existing.markers] : [],
+        formationTags: Array.isArray(existing.formationTags)
+          ? [...existing.formationTags]
+          : [],
+        backTags: Array.isArray(existing.backTags)
+          ? [...existing.backTags]
+          : [],
+      };
 
-    if (hasColor) {
-      const picked = activeSwatch.dataset.color;
-      if (picked === "") {
-        delete cellCustomizations[key].bgColor;
-        cellCustomizations[key].textColor = UI_COLORS.textBlack;
-      } else {
-        cellCustomizations[key].bgColor = picked;
-        cellCustomizations[key].textColor = isColorDark(picked)
-          ? UI_COLORS.textWhite
-          : UI_COLORS.textBlack;
+      if (hasColor) {
+        const picked = activeSwatch.dataset.color;
+        if (picked === "") {
+          delete nextCustom.bgColor;
+          nextCustom.textColor = UI_COLORS.textBlack;
+        } else {
+          nextCustom.bgColor = picked;
+          nextCustom.textColor = isColorDark(picked)
+            ? UI_COLORS.textWhite
+            : UI_COLORS.textBlack;
+        }
       }
-    }
 
-    if (hasCadence) {
-      if (cadenceVal === "") {
-        delete cellCustomizations[key].cadence;
-        delete cellCustomizations[key].markers;
-        delete cellCustomizations[key].markerPlacement;
-      } else {
-        delete cellCustomizations[key].cadence;
-        cellCustomizations[key].markers = [cadenceVal];
-        cellCustomizations[key].markerPlacement = "prefix";
+      if (hasCadence) {
+        if (cadenceVal === "") {
+          delete nextCustom.cadence;
+          nextCustom.markers = [];
+          delete nextCustom.markerPlacement;
+        } else {
+          delete nextCustom.cadence;
+          nextCustom.markers = [cadenceVal];
+          nextCustom.markerPlacement = "prefix";
+        }
       }
-    }
 
-    if (hasPersonnel) {
-      cellCustomizations[key].extraPersonnel = personnelVal;
-    }
+      if (hasPersonnel) {
+        nextCustom.extraPersonnel = personnelVal;
+      }
 
-    if (hasPreShift) {
-      cellCustomizations[key].preShift = preShiftVal;
-    }
+      if (hasPreShift) {
+        nextCustom.preShift = preShiftVal;
+      }
 
-    // Clean up entirely empty customization entries
-    const c = cellCustomizations[key];
-    if (!c.bgColor && !c.cadence && !c.markers?.length && !c.extraPersonnel && !c.preShift && c.textColor === UI_COLORS.textBlack) {
-      delete cellCustomizations[key];
-    }
+      setWristbandCellCustomization(key, nextCustom);
+    });
   });
 
   clearBatchSelect();
-  refreshWristbandCardView();
 
   // Reset batch bar inputs
   const cadenceEl = document.getElementById("wbBatchCadence");
