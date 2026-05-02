@@ -15,6 +15,28 @@ function backToApp() {
   }
 }
 
+function showLoadingOverlay(message) {
+  hideLoadingOverlay();
+  const overlay = document.createElement("div");
+  overlay.className = "loading-overlay";
+  overlay.id = "globalLoadingOverlay";
+  overlay.setAttribute("role", "status");
+  overlay.setAttribute("aria-live", "assertive");
+  overlay.innerHTML = `
+    <div class="loading-overlay-content">
+      <div class="loading-spinner loading-spinner-lg"></div>
+      <span class="loading-overlay-text">${escapeHtml(message || "Loading\u2026")}</span>
+    </div>`;
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  return overlay;
+}
+
+function hideLoadingOverlay() {
+  const el = document.getElementById("globalLoadingOverlay");
+  if (el) el.remove();
+}
+
 const _MERGE_FIELDS = [
   "type",
   "personnel",

@@ -1303,37 +1303,6 @@ function createRAFRenderer(renderFn) {
   };
 }
 
-// ============ Loading Overlay ============
-/**
- * Show a full-screen loading overlay with spinner and optional message.
- * @param {string} [message="Loading…"] - Text to display
- * @returns {HTMLElement} The overlay element (for manual removal if needed)
- */
-function showLoadingOverlay(message) {
-  hideLoadingOverlay();
-  const overlay = document.createElement("div");
-  overlay.className = "loading-overlay";
-  overlay.id = "globalLoadingOverlay";
-  overlay.setAttribute("role", "status");
-  overlay.setAttribute("aria-live", "assertive");
-  overlay.innerHTML = `
-    <div class="loading-overlay-content">
-      <div class="loading-spinner loading-spinner-lg"></div>
-      <span class="loading-overlay-text">${escapeHtml(message || "Loading\u2026")}</span>
-    </div>`;
-  document.body.appendChild(overlay);
-  requestAnimationFrame(() => overlay.classList.add("visible"));
-  return overlay;
-}
-
-/**
- * Hide the global loading overlay.
- */
-function hideLoadingOverlay() {
-  const el = document.getElementById("globalLoadingOverlay");
-  if (el) el.remove();
-}
-
 /**
  * Safe JSON parse with fallback — use instead of raw JSON.parse on external data
  */
