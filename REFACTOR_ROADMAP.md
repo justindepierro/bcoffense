@@ -20,7 +20,7 @@ Priority: highest
 - [x] Create a repo roadmap so the sequence is tracked in-source
 - [x] Start the first callsheet seam with category names/colors/custom-category CRUD
 - [x] Extract category notes, targets, and category metadata menu helpers
-- [ ] Split callsheet layout/render from interactive modal helpers
+- [x] Extract callsheet layout/order modal state and drag-drop helpers
 - [ ] Split callsheet picker/runtime and drag-drop bindings
 - [ ] Validate each seam with syntax, targeted browser checks, and saved-state checks
 
