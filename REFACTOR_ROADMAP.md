@@ -68,6 +68,7 @@ Status:
 - Third seam complete: playbook filter cache helpers now live in `js/playbook-state.js` instead of `js/utils.js`.
 - Fourth seam complete: playbook import loading overlay helpers now live in `js/playbook-import.js` instead of `js/utils.js`.
 - Fifth seam complete: the CSV parser now lives in `js/playbook-import.js` instead of `js/utils.js`.
+- Sixth seam complete: `historyManager` now lives in `js/history.js` instead of `js/utils.js`.
 
 Definition of done:
 
