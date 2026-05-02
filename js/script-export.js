@@ -246,6 +246,7 @@ function getScriptPrintColumns(opts = {}) {
 function buildScriptPlayRow(play, displayNum, opts = {}) {
   const columns = getScriptPrintColumns(opts);
   const visibleLineup = getScriptVisiblePlayerLineup(play, opts);
+  const wrapCellKeys = new Set(["call", "players", "notes"]);
 
   let rowColor = "";
   if (opts.highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle") {
@@ -261,7 +262,12 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
   const mainRow = `<tr style="${rowColor}">
     ${columns
       .map(
-        (column) => `<td class="script-table-cell script-table-cell--${column.key}">${column.render(play, displayNum)}</td>`,
+        (column) => {
+          const wrapStyle = wrapCellKeys.has(column.key)
+            ? ' style="white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; vertical-align: top;"'
+            : "";
+          return `<td class="script-table-cell script-table-cell--${column.key}"${wrapStyle}>${column.render(play, displayNum)}</td>`;
+        },
       )
       .join("")}
   </tr>`;
@@ -271,13 +277,13 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
   return `${mainRow}
   <tr class="script-print-personnel-row">
     <td class="script-print-personnel-cell" colspan="${columns.length}">
-      <div class="script-print-personnel-grid">
+      <div class="script-print-personnel-grid" style="display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; min-width: 0;">
         ${visibleLineup
           .map(
             (entry) => `
-          <div class="script-print-personnel-pill">
+          <div class="script-print-personnel-pill" style="display: flex; align-items: flex-start; gap: 4px; flex: 1 1 120px; min-width: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word;">
             <span class="script-print-personnel-pos">${escapeHtml(entry.label)}</span>
-            <span class="script-print-personnel-name">${escapeHtml(entry.playerName)}</span>
+            <span class="script-print-personnel-name" style="white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; word-break: break-word;">${escapeHtml(entry.playerName)}</span>
           </div>
         `,
           )
