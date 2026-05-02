@@ -1334,47 +1334,6 @@ function hideLoadingOverlay() {
   if (el) el.remove();
 }
 
-// ============ Playbook Filter Value Cache ============
-/**
- * Cached unique filter values derived from the playbook.
- * Invalidated by calling invalidateFilterCache() after playbook changes.
- */
-let _filterCache = null;
-
-function getFilterCache() {
-  if (_filterCache) return _filterCache;
-  const normalizeCase = (str) => {
-    if (!str || !str.trim()) return null;
-    const trimmed = str.trim();
-    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
-  };
-  const unique = (field) =>
-    [
-      ...new Set(plays.map((p) => normalizeCase(p[field])).filter(Boolean)),
-    ].sort();
-
-  _filterCache = {
-    types: unique("type"),
-    situations: unique("preferredSituation"),
-    downs: unique("preferredDown"),
-    distances: unique("preferredDistance"),
-    hashes: unique("preferredHash"),
-    fieldPositions: unique("preferredFieldPosition"),
-    personnels: unique("personnel"),
-    formations: [
-      ...new Set(plays.map((p) => p.formation).filter(Boolean)),
-    ].sort(),
-    basePlays: [
-      ...new Set(plays.map((p) => p.basePlay).filter(Boolean)),
-    ].sort(),
-  };
-  return _filterCache;
-}
-
-function invalidateFilterCache() {
-  _filterCache = null;
-}
-
 /**
  * Safe JSON parse with fallback — use instead of raw JSON.parse on external data
  */

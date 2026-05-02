@@ -19,6 +19,43 @@ function savePlaybookState() {
   storageManager.set(STORAGE_KEYS.PLAYBOOK_STATE, state);
 }
 
+let _filterCache = null;
+
+function getFilterCache() {
+  if (_filterCache) return _filterCache;
+
+  const normalizeCase = (str) => {
+    if (!str || !str.trim()) return null;
+    const trimmed = str.trim();
+    return trimmed.charAt(0).toUpperCase() + trimmed.slice(1).toLowerCase();
+  };
+  const unique = (field) =>
+    [
+      ...new Set(plays.map((play) => normalizeCase(play[field])).filter(Boolean)),
+    ].sort();
+
+  _filterCache = {
+    types: unique("type"),
+    situations: unique("preferredSituation"),
+    downs: unique("preferredDown"),
+    distances: unique("preferredDistance"),
+    hashes: unique("preferredHash"),
+    fieldPositions: unique("preferredFieldPosition"),
+    personnels: unique("personnel"),
+    formations: [
+      ...new Set(plays.map((play) => play.formation).filter(Boolean)),
+    ].sort(),
+    basePlays: [
+      ...new Set(plays.map((play) => play.basePlay).filter(Boolean)),
+    ].sort(),
+  };
+  return _filterCache;
+}
+
+function invalidateFilterCache() {
+  _filterCache = null;
+}
+
 function restorePlaybookState() {
   try {
     const state = storageManager.get(STORAGE_KEYS.PLAYBOOK_STATE, null);

@@ -53,7 +53,7 @@ js/
   playbook-import.js    ← CSV import and hydration
   playbook-export.js    ← Playbook export helpers
   playbook-chrome.js    ← Playbook toolbar, badges, and chrome actions
-  playbook-state.js     ← Shared playbook state helpers
+  playbook-state.js     ← Shared playbook state helpers and filter cache
   playbook-filters.js   ← Playbook filter state and matching
   playbook-navigation.js ← Pagination and table navigation
   playbook-actions.js   ← Row actions and play mutations
@@ -563,7 +563,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v273)
+**Cache name:** `bcoffense-vN` (currently v274)
 
 **Strategy:**
 
@@ -637,7 +637,7 @@ refactor: Code restructuring, no behavior change
 - `playbook-import.js` owns CSV import and imported state hydration.
 - `playbook-export.js` owns playbook export flows.
 - `playbook-chrome.js` owns toolbar-level playbook actions and status UI.
-- `playbook-state.js` owns shared state helpers and reset logic.
+- `playbook-state.js` owns shared state helpers, reset logic, and playbook filter cache.
 - `playbook-filters.js` owns filter extraction and matching.
 - `playbook-navigation.js` owns pagination and table navigation.
 - `playbook-actions.js` owns row-level mutations and action handlers.
