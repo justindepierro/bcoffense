@@ -58,12 +58,13 @@ Definition of done:
 Priority: high
 
 - [x] Separate storage/migrations from modal primitives
-- [ ] Separate DOM helper utilities from backup/restore flows
+- [x] Separate DOM helper utilities from backup/restore flows
 - [ ] Reduce the number of unrelated responsibilities owned by `utils.js`
 
 Status:
 
 - First seam complete: storage keys, migrations, backup/restore, storage info, and draft persistence moved into `js/storage.js`.
+- Second seam complete: shared DOM sanitization, long-press, context menu, and reorder helpers now live in `js/dom-helpers.js`, while backup/export storage UI lives in `js/storage-ui.js`.
 
 Definition of done:
 
