@@ -70,6 +70,7 @@ js/
   wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
   callsheet.js          ← Core call sheet state, rendering, picker, sort, and runtime
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
+  callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   constraints.js        ← Game plan constraints evaluation engine
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
   installation.js       ← Installation/help guide
@@ -137,20 +138,21 @@ All scripts use `defer` and load in this exact order from index.html:
 40. js/wristband-runtime.js
 41. js/callsheet.js
 42. js/callsheet-categories.js
-43. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-44. js/tendencies.js
-45. js/installation.js
-46. js/offensebuilder.js
-47. js/help.js
-48. js/dashboard.js
-49. js/app-events.js
-50. js/app-shell.js
-51. js/app-session.js
-52. js/app-navigation.js
-53. js/app-module-init.js
-54. js/app-bootstrap.js
-55. js/app-init.js
-56. js/app.js           ← Must be last; shared global state only
+43. js/callsheet-metadata.js
+44. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+45. js/tendencies.js
+46. js/installation.js
+47. js/offensebuilder.js
+48. js/help.js
+49. js/dashboard.js
+50. js/app-events.js
+51. js/app-shell.js
+52. js/app-session.js
+53. js/app-navigation.js
+54. js/app-module-init.js
+55. js/app-bootstrap.js
+56. js/app-init.js
+57. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -647,6 +649,7 @@ refactor: Code restructuring, no behavior change
 
 - `callsheet.js` currently owns the core call sheet state, rendering, picker flows, sort helpers, and runtime bindings.
 - `callsheet-categories.js` owns category display names/colors and custom-category CRUD.
+- `callsheet-metadata.js` owns category notes, target counts, clear actions, and category metadata menus.
 
 ## Refactor Guardrails
 
