@@ -4,6 +4,8 @@ function setHeaderColor(color, btn) {
     .querySelectorAll(".color-picker:not(#cardColorPicker) .color-btn")
     .forEach((button) => button.classList.remove("active"));
   btn.classList.add("active");
+  markWristbandDirty();
+  scheduleWristbandAutosave();
   renderWristbandGrid();
 }
 
@@ -15,6 +17,7 @@ function setCardColor(color, btn) {
     .forEach((button) => button.classList.remove("active"));
   btn.classList.add("active");
   markWristbandDirty();
+  scheduleWristbandAutosave();
   renderWristbandGrid();
 }
 
@@ -271,6 +274,7 @@ async function clearWristband() {
       renderCardTabs();
       renderWristbandGrid();
       markWristbandDirty();
+      scheduleWristbandAutosave();
     },
   );
 }

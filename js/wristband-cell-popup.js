@@ -245,8 +245,10 @@ function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
 }
 
 function openCellPopup(cardIdx, cellIdx, event) {
-  event.preventDefault();
-  event.stopPropagation();
+  if (event) {
+    event.preventDefault();
+    event.stopPropagation();
+  }
 
   const cardData = wristbandCards[cardIdx]?.data;
   if (!cardData) return;

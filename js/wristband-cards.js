@@ -110,6 +110,8 @@ async function renameCard(index) {
   if (newName !== null && newName.trim()) {
     card.name = newName.trim();
     renderCardTabs();
+    markWristbandDirty();
+    scheduleWristbandAutosave();
   }
 }
 
