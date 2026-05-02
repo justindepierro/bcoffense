@@ -534,11 +534,68 @@ async function mergeFromScript() {
   showToast(`Merged ${playsToAdd.length} plays from "${sourceScript.name}"`);
 }
 
+async function removeFromScript(index) {
+  const item = script[index];
+
+  if (item && item.isSeparator) {
+    const plays = getPeriodPlays(index);
+    const message = plays.length > 0
+      ? `Delete "${item.label || "Period"}" and its ${plays.length} play(s)?`
+      : `Delete empty period "${item.label || "Period"}"?`;
+    const ok = await showConfirm(message, {
+      title: "Delete Period",
+      icon: "🗑️",
+      confirmText: "Delete",
+      danger: true,
+    });
+    if (!ok) return;
+
+    saveScriptState();
+    let endIndex = index + 1;
+    while (endIndex < script.length && !script[endIndex].isSeparator) {
+      endIndex++;
+    }
+    script.splice(index, endIndex - index);
+  } else {
+    saveScriptState();
+    script.splice(index, 1);
+  }
+
+  renderScript();
+}
+
+function duplicatePlay(index) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  saveScriptState();
+  script.splice(index + 1, 0, {
+    ...play,
+    id: Date.now() + Math.random(),
+  });
+  renderScript();
+}
+
 function findOwningPeriodIndex(scriptIndex) {
   for (let index = scriptIndex - 1; index >= 0; index--) {
     if (script[index]?.isSeparator) return index;
   }
   return -1;
+}
+
+function getPlayMoveBounds(index) {
+  const separatorIndex = findOwningPeriodIndex(index);
+  const lowerBound = separatorIndex >= 0 ? separatorIndex + 1 : 0;
+  let upperBound = script.length - 1;
+
+  for (let cursor = index + 1; cursor < script.length; cursor++) {
+    if (script[cursor]?.isSeparator) {
+      upperBound = cursor - 1;
+      break;
+    }
+  }
+
+  return { lowerBound, upperBound };
 }
 
 function movePlayToPeriodIndex(index, targetSeparatorIndex) {
@@ -561,6 +618,35 @@ function movePlayToPeriodIndex(index, targetSeparatorIndex) {
   script.splice(insertAt, 0, movedPlay);
   renderScript();
   return true;
+}
+
+function movePlay(index, direction) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  const { lowerBound, upperBound } = getPlayMoveBounds(index);
+  let targetIndex = index;
+
+  if (direction === "top") targetIndex = lowerBound;
+  else if (direction === "bottom") targetIndex = upperBound;
+  else {
+    const numericDirection = Number(direction);
+    if (!Number.isFinite(numericDirection)) return;
+    targetIndex = index + numericDirection;
+  }
+
+  if (
+    targetIndex < lowerBound ||
+    targetIndex > upperBound ||
+    targetIndex === index
+  ) {
+    return;
+  }
+
+  saveScriptState();
+  script.splice(index, 1);
+  script.splice(targetIndex, 0, play);
+  renderScript();
 }
 
 async function movePlayToPeriod(index) {

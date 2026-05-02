@@ -140,6 +140,28 @@ function sortPeriod(separatorIndex) {
   );
 }
 
+function reversePeriod(separatorIndex) {
+  let endIndex = separatorIndex + 1;
+  while (endIndex < script.length && !script[endIndex].isSeparator) {
+    endIndex++;
+  }
+
+  const periodPlays = script.slice(separatorIndex + 1, endIndex);
+  if (periodPlays.length < 2) return;
+
+  saveScriptState();
+  periodPlays.reverse();
+  script.splice(
+    separatorIndex + 1,
+    endIndex - separatorIndex - 1,
+    ...periodPlays,
+  );
+  renderScript();
+
+  const periodLabel = script[separatorIndex].label || "Period";
+  setScriptToolbarStatus(`${periodLabel} reversed`, "success");
+}
+
 function reverseScriptSort() {
   const playsToSort = script.filter((item) => !item.isSeparator);
 
