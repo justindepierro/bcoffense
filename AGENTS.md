@@ -68,10 +68,11 @@ js/
   wristband-sort.js     ← Wristband sorting and reorder helpers
   wristband-storage.js  ← Save/load/draft hydration helpers
   wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
-  callsheet.js          ← Core call sheet state, rendering, picker, sort, and runtime
+  callsheet.js          ← Core call sheet state, rendering, and sort helpers
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   callsheet-layout.js   ← Call sheet layout/order modal state and drag-drop helpers
+  callsheet-picker-runtime.js ← Call sheet picker flows, wristband loading, and runtime bindings
   constraints.js        ← Game plan constraints evaluation engine
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
   installation.js       ← Installation/help guide
@@ -141,20 +142,21 @@ All scripts use `defer` and load in this exact order from index.html:
 42. js/callsheet-categories.js
 43. js/callsheet-metadata.js
 44. js/callsheet-layout.js
-45. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-46. js/tendencies.js
-47. js/installation.js
-48. js/offensebuilder.js
-49. js/help.js
-50. js/dashboard.js
-51. js/app-events.js
-52. js/app-shell.js
-53. js/app-session.js
-54. js/app-navigation.js
-55. js/app-module-init.js
-56. js/app-bootstrap.js
-57. js/app-init.js
-58. js/app.js           ← Must be last; shared global state only
+45. js/callsheet-picker-runtime.js
+46. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+47. js/tendencies.js
+48. js/installation.js
+49. js/offensebuilder.js
+50. js/help.js
+51. js/dashboard.js
+52. js/app-events.js
+53. js/app-shell.js
+54. js/app-session.js
+55. js/app-navigation.js
+56. js/app-module-init.js
+57. js/app-bootstrap.js
+58. js/app-init.js
+59. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -649,10 +651,11 @@ refactor: Code restructuring, no behavior change
 
 ### Callsheet runtime
 
-- `callsheet.js` currently owns the core call sheet state, rendering, picker flows, sort helpers, and runtime bindings.
+- `callsheet.js` currently owns the core call sheet state, rendering, and sort helpers.
 - `callsheet-categories.js` owns category display names/colors and custom-category CRUD.
 - `callsheet-metadata.js` owns category notes, target counts, clear actions, and category metadata menus.
 - `callsheet-layout.js` owns category ordering persistence, layout modal draft state, and layout drag/drop helpers.
+- `callsheet-picker-runtime.js` owns picker search/filter flows, wristband loading, call sheet play drag/drop, and callsheet-specific runtime listeners.
 
 ## Refactor Guardrails
 

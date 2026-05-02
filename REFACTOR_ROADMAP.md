@@ -21,13 +21,17 @@ Priority: highest
 - [x] Start the first callsheet seam with category names/colors/custom-category CRUD
 - [x] Extract category notes, targets, and category metadata menu helpers
 - [x] Extract callsheet layout/order modal state and drag-drop helpers
-- [ ] Split callsheet picker/runtime and drag-drop bindings
-- [ ] Validate each seam with syntax, targeted browser checks, and saved-state checks
+- [x] Extract callsheet picker/runtime and remaining drag-drop bindings
+- [x] Validate each seam with syntax, targeted browser checks, and saved-state checks
 
 Definition of done:
 
 - `callsheet.js` is no longer the only owner of category management, overlays, render, and runtime.
 - New callsheet changes can be placed by responsibility without searching the full monolith.
+
+Status:
+
+- Phase 1 is complete. The next active sweep is Phase 2: startup lazy-init and boot performance.
 
 ## Phase 2: Startup Lazy-Init and Boot Performance
 
