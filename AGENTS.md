@@ -50,7 +50,7 @@ js/
   playbook-collections.js ← Saved collections and collection UI
   playbook-print.js     ← Playbook print/export panel
   playbook-editor.js    ← Play editor modal and edit actions
-  playbook-import.js    ← CSV import, hydration, and import loading UI
+  playbook-import.js    ← CSV import, hydration, parser, and import loading UI
   playbook-export.js    ← Playbook export helpers
   playbook-chrome.js    ← Playbook toolbar, badges, and chrome actions
   playbook-state.js     ← Shared playbook state helpers and filter cache
@@ -563,7 +563,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v275)
+**Cache name:** `bcoffense-vN` (currently v276)
 
 **Strategy:**
 
@@ -634,7 +634,7 @@ refactor: Code restructuring, no behavior change
 - `playbook-collections.js` owns collection CRUD and collection-related UI.
 - `playbook-print.js` owns playbook print workflows.
 - `playbook-editor.js` owns play edit/create modal behavior.
-- `playbook-import.js` owns CSV import, imported state hydration, and import loading overlay UI.
+- `playbook-import.js` owns CSV import, parser logic, imported state hydration, and import loading overlay UI.
 - `playbook-export.js` owns playbook export flows.
 - `playbook-chrome.js` owns toolbar-level playbook actions and status UI.
 - `playbook-state.js` owns shared state helpers, reset logic, and playbook filter cache.

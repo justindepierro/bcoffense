@@ -41,7 +41,7 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v275` — next version will be `bcoffense-v276`
+- Current version: `bcoffense-v276` — next version will be `bcoffense-v277`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---
@@ -178,7 +178,7 @@ refactor: restructure, no behavior change
 ## Current Runtime Split
 
 - `playbook.js` is now a shared compatibility surface; playbook ownership is split across `playbook-collections.js`, `playbook-print.js`, `playbook-editor.js`, `playbook-import.js`, `playbook-export.js`, `playbook-chrome.js`, `playbook-state.js`, `playbook-filters.js`, `playbook-navigation.js`, `playbook-actions.js`, and `playbook-render.js`.
-- `playbook-import.js` owns CSV import, imported state hydration, and import loading overlay UI.
+- `playbook-import.js` owns CSV import, parser logic, imported state hydration, and import loading overlay UI.
 - `playbook-state.js` owns shared state helpers, reset logic, and playbook filter cache.
 - `dom-helpers.js` owns shared DOM sanitization, long-press, context menu, and reorder modal helpers.
 - `storage.js` owns storage keys, migrations, backup/restore state, storage info data, and draft persistence helpers.

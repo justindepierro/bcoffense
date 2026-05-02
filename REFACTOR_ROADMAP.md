@@ -67,6 +67,7 @@ Status:
 - Second seam complete: shared DOM sanitization, long-press, context menu, and reorder helpers now live in `js/dom-helpers.js`, while backup/export storage UI lives in `js/storage-ui.js`.
 - Third seam complete: playbook filter cache helpers now live in `js/playbook-state.js` instead of `js/utils.js`.
 - Fourth seam complete: playbook import loading overlay helpers now live in `js/playbook-import.js` instead of `js/utils.js`.
+- Fifth seam complete: the CSV parser now lives in `js/playbook-import.js` instead of `js/utils.js`.
 
 Definition of done:
 
