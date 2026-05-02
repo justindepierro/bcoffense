@@ -31,6 +31,12 @@ function showTab(tabName) {
 
   if (tabName === "installation") {
     initInstallation();
+  } else if (tabName === "script") {
+    if (typeof ensureScriptWorkspaceReady === "function") {
+      ensureScriptWorkspaceReady();
+    } else if (typeof initScriptWorkspace === "function") {
+      initScriptWorkspace();
+    }
   } else if (tabName === "wristband") {
     if (wristbandCards.length === 0) {
       initWristband();

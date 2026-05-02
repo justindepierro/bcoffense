@@ -1,3 +1,13 @@
+let scriptWorkspaceNeedsInit = true;
+
+function ensureScriptWorkspaceReady(force = false) {
+  if (typeof initScriptWorkspace !== "function") return;
+  if (!force && !scriptWorkspaceNeedsInit) return;
+
+  initScriptWorkspace();
+  scriptWorkspaceNeedsInit = false;
+}
+
 function initAllModules() {
   const tableBody = document.querySelector("#playbookTable tbody");
   if (tableBody && tableBody.children.length === 0) {
@@ -12,6 +22,7 @@ function initAllModules() {
   if (typeof restorePlaybookState === "function") restorePlaybookState();
   restoreColumnVisibility();
   filterPlays();
+  scriptWorkspaceNeedsInit = true;
 
   const idle =
     typeof requestIdleCallback === "function"
@@ -22,11 +33,9 @@ function initAllModules() {
     () => {
       initCollections();
       initPlaybookKeyboard();
-      initScriptWorkspace();
 
-      const storedCallSheet = storageManager.get(STORAGE_KEYS.CALL_SHEET, null);
-      if (storedCallSheet) {
-        callSheet = storedCallSheet;
+      if (currentActiveTab === "script") {
+        ensureScriptWorkspaceReady();
       }
 
       updateTabBadges();

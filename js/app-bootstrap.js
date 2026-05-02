@@ -17,10 +17,6 @@ function restoreStoredPlaybookSession(storedPlaybook) {
   } else {
     runDraftRestoreCheckForTab(currentActiveTab);
   }
-
-  if (typeof restoreCallSheetDisplayOptions === "function") {
-    restoreCallSheetDisplayOptions();
-  }
 }
 
 function initUploadDropZone() {

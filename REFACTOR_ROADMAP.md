@@ -37,10 +37,16 @@ Status:
 
 Priority: high
 
-- [ ] Measure current startup cost on a representative stored playbook session
-- [ ] Gate heavy module init behind first-tab-open where possible
+- [x] Measure current startup cost on a representative stored playbook session
+- [x] Gate heavy module init behind first-tab-open where possible
 - [ ] Defer non-critical dashboard, tendencies, and callsheet setup until needed
-- [ ] Re-check saved-session restore and last-tab restore behavior after the gating pass
+- [x] Re-check saved-session restore and last-tab restore behavior after the gating pass
+
+Status:
+
+- Baseline stored-session reload check: `DOMContentLoaded`/`load` both at about `129ms` in the local browser probe.
+- Script workspace init now stays deferred until the Script tab is opened or restored as the active tab.
+- Callsheet data and display options now restore on callsheet open instead of during general playbook boot.
 
 Definition of done:
 
