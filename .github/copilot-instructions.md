@@ -41,7 +41,7 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v243` — next version will be `bcoffense-v244`
+- Current version: `bcoffense-v266` — next version will be `bcoffense-v267`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---
@@ -116,14 +116,21 @@ storageManager.set(STORAGE_KEYS.MY_KEY, data);
 New JS files must be inserted in the correct position in `index.html`:
 
 ```
-utils.js → team-settings.js → playbook.js → script-state.js → script-shared.js
-→ script-players.js → script-display-options.js → script-add.js → script-sort.js
-→ script-export.js → script-available.js → script-selection.js → script-render.js
+utils.js → team-settings.js → playbook.js → playbook-collections.js
+→ playbook-print.js → playbook-editor.js → playbook-import.js
+→ playbook-export.js → playbook-chrome.js → playbook-state.js
+→ playbook-filters.js → playbook-navigation.js → playbook-actions.js
+→ playbook-render.js → script-state.js → script-shared.js → script-players.js
+→ script-display-options.js → script-add.js → script-sort.js → script-export.js
+→ script-available.js → script-selection.js → script-render.js
 → script-periods.js → script-period-sync.js → script-smart.js → script-storage.js
-→ wristband.js → callsheet.js → constraints.js → tendencies.js → installation.js
-→ offensebuilder.js → help.js → dashboard.js → app-events.js → app-shell.js
-→ app-session.js → app-navigation.js → app-module-init.js → app-bootstrap.js
-→ app-init.js → app.js (LAST)
+→ wristband.js → wristband-library.js → wristband-render.js → wristband-cards.js
+→ wristband-export.js → wristband-search.js → wristband-modals.js
+→ wristband-cell-popup.js → wristband-cell-actions.js → wristband-sort.js
+→ wristband-storage.js → wristband-runtime.js → callsheet.js → constraints.js
+→ tendencies.js → installation.js → offensebuilder.js → help.js → dashboard.js
+→ app-events.js → app-shell.js → app-session.js → app-navigation.js
+→ app-module-init.js → app-bootstrap.js → app-init.js → app.js (LAST)
 ```
 
 ---
@@ -164,11 +171,12 @@ refactor: restructure, no behavior change
 - `script[]` — working practice script (app.js)
 - `filteredPlays[]` — filtered subset (app.js)
 - `callSheet{}` — call sheet data (callsheet.js)
-- `wristbandCards[]` — wristband cards (wristband.js)
+- `wristbandCards[]` — wristband cards (shared across wristband*.js)
 - `currentActiveTab` — active tab name (help.js)
 
 ## Current Runtime Split
 
+- `playbook.js` is now a shared compatibility surface; playbook ownership is split across `playbook-collections.js`, `playbook-print.js`, `playbook-editor.js`, `playbook-import.js`, `playbook-export.js`, `playbook-chrome.js`, `playbook-state.js`, `playbook-filters.js`, `playbook-navigation.js`, `playbook-actions.js`, and `playbook-render.js`.
 - `app.js` now only holds shared global state.
 - `app-init.js` owns top-level startup and backup wrappers.
 - `app-bootstrap.js` owns stored-session restore and one-time DOM bootstrap.
@@ -177,6 +185,14 @@ refactor: restructure, no behavior change
 - `app-session.js` owns dirty-state and draft-restore helpers.
 - `app-shell.js` owns theme, chrome, keyboard shortcuts, and page-level runtime.
 - `app-events.js` owns delegated click/change/input routing.
+- `wristband.js` is now the wristband foundation layer; ownership is split across `wristband-library.js`, `wristband-render.js`, `wristband-cards.js`, `wristband-export.js`, `wristband-search.js`, `wristband-modals.js`, `wristband-cell-popup.js`, `wristband-cell-actions.js`, `wristband-sort.js`, `wristband-storage.js`, and `wristband-runtime.js`.
+
+## Refactor Rules
+
+- Prefer the owning split file over adding new logic back into `playbook.js` or `wristband.js`.
+- Functions used by delegated events may also be called directly; optional event parameters must stay optional.
+- Wristband UI mutations that should survive reloads must call both `markWristbandDirty()` and `scheduleWristbandAutosave()`.
+- When adding a split runtime file, update `index.html`, `sw.js`, and the instruction docs in the same change.
 
 ---
 

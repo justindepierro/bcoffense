@@ -43,9 +43,31 @@ css/
 js/
   utils.js              ← Shared utilities, constants, storage, modals, CSV parser
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
-  playbook.js           ← Playbook table (import, filter, sort, paginate)
+  playbook.js           ← Shared playbook helpers and compatibility surface
+  playbook-collections.js ← Saved collections and collection UI
+  playbook-print.js     ← Playbook print/export panel
+  playbook-editor.js    ← Play editor modal and edit actions
+  playbook-import.js    ← CSV import and hydration
+  playbook-export.js    ← Playbook export helpers
+  playbook-chrome.js    ← Playbook toolbar, badges, and chrome actions
+  playbook-state.js     ← Shared playbook state helpers
+  playbook-filters.js   ← Playbook filter state and matching
+  playbook-navigation.js ← Pagination and table navigation
+  playbook-actions.js   ← Row actions and play mutations
+  playbook-render.js    ← Playbook table rendering
   script-*.js           ← Practice script runtime split by concern (state, add, render, storage, etc.)
-  wristband.js          ← Wristband maker (cards, cells, sorting, print)
+  wristband.js          ← Wristband core state, display helpers, and history helpers
+  wristband-library.js  ← Wristband library filters, counts, and available plays
+  wristband-render.js   ← Wristband grid rendering, colors, clear, auto-fill
+  wristband-cards.js    ← Card tabs and card lifecycle
+  wristband-export.js   ← Wristband print and CSV export
+  wristband-search.js   ← Quick search, favorites, and smart fill
+  wristband-modals.js   ← Wristband help and find/replace modals
+  wristband-cell-popup.js ← Cell popup editor and pending tag state
+  wristband-cell-actions.js ← Cell-level actions, swaps, batch edits, copy/paste
+  wristband-sort.js     ← Wristband sorting and reorder helpers
+  wristband-storage.js  ← Save/load/draft hydration helpers
+  wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
   callsheet.js          ← Call sheet (categories, buckets, auto-populate, display)
   constraints.js        ← Game plan constraints evaluation engine
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
@@ -75,36 +97,58 @@ All scripts use `defer` and load in this exact order from index.html:
 1. js/utils.js          ← Must be first (constants, storageManager, modals, escapeHtml)
 2. js/team-settings.js
 3. js/playbook.js
-4. js/script-state.js
-5. js/script-shared.js
-6. js/script-players.js
-7. js/script-display-options.js
-8. js/script-add.js
-9. js/script-sort.js
-10. js/script-export.js
-11. js/script-available.js
-12. js/script-selection.js
-13. js/script-render.js
-14. js/script-periods.js
-15. js/script-period-sync.js
-16. js/script-smart.js
-17. js/script-storage.js
-18. js/wristband.js
-19. js/callsheet.js
-20. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-21. js/tendencies.js
-22. js/installation.js
-23. js/offensebuilder.js
-24. js/help.js
-25. js/dashboard.js
-26. js/app-events.js
-27. js/app-shell.js
-28. js/app-session.js
-29. js/app-navigation.js
-30. js/app-module-init.js
-31. js/app-bootstrap.js
-32. js/app-init.js
-33. js/app.js           ← Must be last; shared global state only
+4. js/playbook-collections.js
+5. js/playbook-print.js
+6. js/playbook-editor.js
+7. js/playbook-import.js
+8. js/playbook-export.js
+9. js/playbook-chrome.js
+10. js/playbook-state.js
+11. js/playbook-filters.js
+12. js/playbook-navigation.js
+13. js/playbook-actions.js
+14. js/playbook-render.js
+15. js/script-state.js
+16. js/script-shared.js
+17. js/script-players.js
+18. js/script-display-options.js
+19. js/script-add.js
+20. js/script-sort.js
+21. js/script-export.js
+22. js/script-available.js
+23. js/script-selection.js
+24. js/script-render.js
+25. js/script-periods.js
+26. js/script-period-sync.js
+27. js/script-smart.js
+28. js/script-storage.js
+29. js/wristband.js
+30. js/wristband-library.js
+31. js/wristband-render.js
+32. js/wristband-cards.js
+33. js/wristband-export.js
+34. js/wristband-search.js
+35. js/wristband-modals.js
+36. js/wristband-cell-popup.js
+37. js/wristband-cell-actions.js
+38. js/wristband-sort.js
+39. js/wristband-storage.js
+40. js/wristband-runtime.js
+41. js/callsheet.js
+42. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+43. js/tendencies.js
+44. js/installation.js
+45. js/offensebuilder.js
+46. js/help.js
+47. js/dashboard.js
+48. js/app-events.js
+49. js/app-shell.js
+50. js/app-session.js
+51. js/app-navigation.js
+52. js/app-module-init.js
+53. js/app-bootstrap.js
+54. js/app-init.js
+55. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -379,7 +423,7 @@ let bulkSelectedIndices = []; // Multi-selected play indices
 let selectedAvailablePlays = []; // Checked available plays
 ```
 
-### wristband.js
+### wristband runtime (wristband*.js)
 
 ```js
 let wristbandCards = []; // Array of card objects
@@ -505,7 +549,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v210)
+**Cache name:** `bcoffense-vN` (currently v266)
 
 **Strategy:**
 
@@ -562,6 +606,47 @@ refactor: Code restructuring, no behavior change
 8. **Bump `CACHE_NAME`** version in sw.js
 9. **Test offline** — ensure Service Worker caches necessary assets
 10. **Commit** with conventional commit message including `(SW vN)`
+
+---
+
+## Refactor Ownership Map
+
+### Playbook runtime
+
+- `playbook.js` keeps shared helpers and compatibility globals used across playbook slices.
+- `playbook-collections.js` owns collection CRUD and collection-related UI.
+- `playbook-print.js` owns playbook print workflows.
+- `playbook-editor.js` owns play edit/create modal behavior.
+- `playbook-import.js` owns CSV import and imported state hydration.
+- `playbook-export.js` owns playbook export flows.
+- `playbook-chrome.js` owns toolbar-level playbook actions and status UI.
+- `playbook-state.js` owns shared state helpers and reset logic.
+- `playbook-filters.js` owns filter extraction and matching.
+- `playbook-navigation.js` owns pagination and table navigation.
+- `playbook-actions.js` owns row-level mutations and action handlers.
+- `playbook-render.js` owns playbook table rendering.
+
+### Wristband runtime
+
+- `wristband.js` is the foundation layer: globals, custom display/tag helpers, and undo/history helpers.
+- `wristband-library.js` owns available-play filtering, search state, counts, and stats.
+- `wristband-render.js` owns card rendering, color controls, clear, and auto-fill.
+- `wristband-cards.js` owns card tabs, duplicate/remove/rename, and active card switching.
+- `wristband-export.js` owns print and CSV export.
+- `wristband-search.js` owns quick search, favorites, and smart fill.
+- `wristband-modals.js` owns help and find/replace overlays.
+- `wristband-cell-popup.js` owns the cell editor popup and pending tag/color state.
+- `wristband-cell-actions.js` owns cell mutations, drag/drop, copy/paste, and batch actions.
+- `wristband-sort.js` owns wristband sorting helpers.
+- `wristband-storage.js` owns save/load/draft hydration.
+- `wristband-runtime.js` owns DOM bootstrap and delegated event bindings.
+
+## Refactor Guardrails
+
+- Prefer editing the owning split file instead of adding more logic back into compatibility surfaces like `playbook.js` or `wristband.js`.
+- When a global function is used by both delegated DOM events and direct programmatic calls, make optional event parameters truly optional.
+- Persisted wristband UI mutations must do both: `markWristbandDirty()` and `scheduleWristbandAutosave()`.
+- After adding any new split runtime file, update `index.html`, `sw.js`, and this load-order documentation together.
 
 ---
 
