@@ -565,7 +565,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v277)
+**Cache name:** `bcoffense-vN` (currently v278)
 
 **Strategy:**
 

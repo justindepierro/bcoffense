@@ -136,6 +136,204 @@ function executeLoadWbToScript() {
   showToast(`✅ Added ${playsToAdd.length} plays from "${wristband.title}"`);
 }
 
+function getScriptVisiblePlayerLineup(play, opts = {}) {
+  if (opts.hidePersonnel) return [];
+
+  return getTeamAssignmentSlots(play?.personnel)
+    .filter((slot) => {
+      if (!opts.hideLinemen) return true;
+      return !["lt", "lg", "c", "rg", "rt"].includes(slot.key);
+    })
+    .map((slot) => {
+      const playerId = String(getScriptPlayerAssignments(play)?.[slot.key] || "").trim();
+      if (!playerId) return null;
+      return {
+        key: slot.key,
+        label: slot.label,
+        playerName: getTeamPlayerSelectionDisplay(playerId),
+      };
+    })
+    .filter(Boolean);
+}
+
+function getScriptPrintColumns(opts = {}) {
+  const columns = [
+    {
+      key: "num",
+      label: "#",
+      render: (_play, displayNum) => `<strong>${displayNum}</strong>`,
+    },
+    {
+      key: "hash",
+      label: "Hash",
+      render: (play) => escapeHtml(play.hash || "-"),
+    },
+    {
+      key: "tempo",
+      label: "Tempo",
+      render: (play) => escapeHtml(play.tempo || "-"),
+    },
+  ];
+
+  if (opts.showWbNum) {
+    columns.push({
+      key: "wb",
+      label: "WB#",
+      render: (play) => {
+        const wristbandNumber = typeof findPlayOnWristband === "function"
+          ? findPlayOnWristband(play)
+          : null;
+        return wristbandNumber === null ? "-" : `#${wristbandNumber}`;
+      },
+    });
+  }
+
+  columns.push(
+    {
+      key: "call",
+      label: "Play Call",
+      render: (play) => getFullCall(play, opts),
+    },
+    {
+      key: "type",
+      label: "Type",
+      render: (play) => escapeHtml(play.type || "-"),
+    },
+    {
+      key: "front",
+      label: "Front",
+      render: (play) => escapeHtml(play.defFront || "-"),
+    },
+    {
+      key: "cov",
+      label: "Cov",
+      render: (play) => escapeHtml(play.defCoverage || "-"),
+    },
+    {
+      key: "stunt",
+      label: "Stunt",
+      render: (play) => escapeHtml(play.defStunt || "-"),
+    },
+    {
+      key: "blitz",
+      label: "Blitz",
+      render: (play) => escapeHtml(play.defBlitz || "-"),
+    },
+    {
+      key: "reps",
+      label: "Reps",
+      render: (play) => `×${escapeHtml(String(play.reps ?? 1))}`,
+    },
+  );
+
+  if (!opts.hidePersonnel) {
+    columns.push({
+      key: "players",
+      label: "Players",
+      render: (play) => escapeHtml(getScriptVisiblePlayerSummary(play, opts) || "-"),
+    });
+  }
+
+  columns.push({
+    key: "notes",
+    label: "Notes",
+    render: (play) => escapeHtml(play.notes || "-"),
+  });
+
+  return columns;
+}
+
+function buildScriptPlayRow(play, displayNum, opts = {}) {
+  const columns = getScriptPrintColumns(opts);
+  const visibleLineup = getScriptVisiblePlayerLineup(play, opts);
+
+  let rowColor = "";
+  if (opts.highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle") {
+    rowColor = `background: ${UI_COLORS.highlightHuddle};`;
+  } else if (
+    opts.highlightCandy &&
+    play.tempo &&
+    play.tempo.toLowerCase() === "candy"
+  ) {
+    rowColor = `background: ${UI_COLORS.highlightCandy};`;
+  }
+
+  const mainRow = `<tr style="${rowColor}">
+    ${columns
+      .map(
+        (column) => `<td class="script-table-cell script-table-cell--${column.key}">${column.render(play, displayNum)}</td>`,
+      )
+      .join("")}
+  </tr>`;
+
+  if (!visibleLineup.length) return mainRow;
+
+  return `${mainRow}
+  <tr class="script-print-personnel-row">
+    <td class="script-print-personnel-cell" colspan="${columns.length}">
+      <div class="script-print-personnel-grid">
+        ${visibleLineup
+          .map(
+            (entry) => `
+          <div class="script-print-personnel-pill">
+            <span class="script-print-personnel-pos">${escapeHtml(entry.label)}</span>
+            <span class="script-print-personnel-name">${escapeHtml(entry.playerName)}</span>
+          </div>
+        `,
+          )
+          .join("")}
+      </div>
+    </td>
+  </tr>`;
+}
+
+function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
+  const columns = getScriptPrintColumns(opts);
+  let displayNum = 0;
+  let bodyHtml = options.scriptHeaderMarkup || "";
+
+  playsToRender.forEach((play) => {
+    if (play.isSeparator) {
+      const metaParts = [];
+      if (play.minutes) metaParts.push(`${play.minutes} min`);
+      const metaMarkup = metaParts.length
+        ? `<span class="print-period-meta">${escapeHtml(metaParts.join(" • "))}</span>`
+        : "";
+      bodyHtml += `
+        <tr class="print-period-header">
+          <td colspan="${columns.length}">
+            <div class="script-print-period-block">
+              <span class="print-period-title">${escapeHtml(play.label || "Period")}</span>
+              ${metaMarkup}
+            </div>
+          </td>
+        </tr>`;
+      return;
+    }
+
+    displayNum += 1;
+    bodyHtml += buildScriptPlayRow(play, displayNum, opts);
+  });
+
+  return bodyHtml;
+}
+
+function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
+  const table = document.getElementById("previewTable");
+  const body = document.getElementById("previewBody");
+  if (!table || !body) return;
+
+  const columns = getScriptPrintColumns(opts);
+  const thead = table.querySelector("thead");
+  if (thead) {
+    thead.innerHTML = `<tr>${columns
+      .map((column) => `<th class="col-${column.key}">${escapeHtml(column.label)}</th>`)
+      .join("")}</tr>`;
+  }
+
+  body.innerHTML = bodyMarkup;
+}
+
 function exportScriptCSV() {
   const playsToExport = script.filter((item) => !item.isSeparator);
   if (playsToExport.length === 0) {
