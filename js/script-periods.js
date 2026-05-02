@@ -197,6 +197,37 @@ function copyPeriodAsText(idx) {
     .catch(() => showToast("❌ Clipboard not available", { type: "error" }));
 }
 
+async function copyPeriodToClipboard() {
+  const separators = script
+    .map((play, index) => ({ ...play, idx: index }))
+    .filter((play) => play.isSeparator);
+
+  if (separators.length === 0) {
+    await showModal("No periods in script.", {
+      title: "Copy Period",
+      icon: "📋",
+    });
+    return;
+  }
+
+  const items = separators.map((separator, index) => ({
+    label: separator.label,
+    value: index,
+  }));
+  const pickedIdx = await showListPicker("Select period to copy:", items, {
+    title: "Copy Period",
+    icon: "📋",
+  });
+  if (pickedIdx === null) return;
+
+  if (pickedIdx < 0 || pickedIdx >= separators.length) {
+    await showModal("Invalid selection.", { title: "Error", icon: "⚠️" });
+    return;
+  }
+
+  copyPeriodAsText(separators[pickedIdx].idx);
+}
+
 function getPeriodPlays(separatorIndex) {
   const plays = [];
   for (let index = separatorIndex + 1; index < script.length; index++) {

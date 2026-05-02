@@ -181,6 +181,58 @@ function saveScriptState() {
 
 const debouncedSaveScriptState = debounce(saveScriptState, 400);
 
+function resetScriptForNewDraft() {
+  script = [];
+  bulkSelectedIndices = [];
+  selectedAvailablePlays = [];
+  collapsedPeriods = new Set();
+  lastScriptTargetPeriodId = null;
+  scriptAvailPage = 0;
+
+  const scriptNameEl = document.getElementById("scriptName");
+  if (scriptNameEl) scriptNameEl.value = "Practice Script";
+  const dateEl = document.getElementById("scriptDate");
+  if (dateEl) dateEl.value = new Date().toISOString().split("T")[0];
+
+  ensureFirstPeriod();
+  renderScript();
+  renderAvailablePlays();
+  markScriptClean();
+  discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+}
+
+async function newScript() {
+  const hasPlays = script.some((play) => !play.isSeparator);
+  const currentName = document.getElementById("scriptName")?.value || "";
+  const isNamedScript = currentName.trim() && currentName.trim() !== "Practice Script";
+  const shouldPrompt = hasPlays || isNamedScript || scriptDirty;
+
+  if (shouldPrompt) {
+    const choice = await showChoice(
+      "Start a fresh script? You can save the current one first or begin a new unsaved script.",
+      {
+        title: "New Script",
+        icon: "✨",
+        option1: "💾 Save & New",
+        option2: "✨ New Without Saving",
+      },
+    );
+
+    if (choice === null) return;
+    if (choice === "option1") {
+      const saved = await saveScript();
+      if (!saved) return;
+    }
+  }
+
+  resetScriptForNewDraft();
+  showToast("✨ Started a new script");
+}
+
+async function clearScript() {
+  return newScript();
+}
+
 async function checkScriptDraft() {
   try {
     const draft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);

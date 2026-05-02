@@ -176,6 +176,53 @@ function reverseScriptSort() {
   setScriptToolbarStatus("Play order reversed", "success");
 }
 
+function shuffleScript() {
+  const playsToShuffle = script.filter((item) => !item.isSeparator);
+  if (playsToShuffle.length === 0) {
+    setScriptToolbarStatus("No plays to shuffle", "error");
+    return;
+  }
+
+  saveScriptState();
+
+  const result = [];
+  let currentPeriodPlays = [];
+
+  script.forEach((item) => {
+    if (item.isSeparator) {
+      if (currentPeriodPlays.length > 0) {
+        for (let index = currentPeriodPlays.length - 1; index > 0; index--) {
+          const swapIndex = Math.floor(Math.random() * (index + 1));
+          [currentPeriodPlays[index], currentPeriodPlays[swapIndex]] = [
+            currentPeriodPlays[swapIndex],
+            currentPeriodPlays[index],
+          ];
+        }
+        result.push(...currentPeriodPlays);
+        currentPeriodPlays = [];
+      }
+      result.push(item);
+    } else {
+      currentPeriodPlays.push(item);
+    }
+  });
+
+  if (currentPeriodPlays.length > 0) {
+    for (let index = currentPeriodPlays.length - 1; index > 0; index--) {
+      const swapIndex = Math.floor(Math.random() * (index + 1));
+      [currentPeriodPlays[index], currentPeriodPlays[swapIndex]] = [
+        currentPeriodPlays[swapIndex],
+        currentPeriodPlays[index],
+      ];
+    }
+    result.push(...currentPeriodPlays);
+  }
+
+  script = result;
+  renderScript();
+  setScriptToolbarStatus("Shuffled within periods", "success", AUTOSAVE_DEBOUNCE_MS);
+}
+
 function getScriptUniqueValuesForField(field) {
   const values = new Set();
   script.forEach((item) => {

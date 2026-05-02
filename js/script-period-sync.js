@@ -27,6 +27,51 @@ function applyPreferredMetadataToPlay(play) {
   return changed;
 }
 
+async function applyPreferredFields() {
+  let indicesToUpdate = [];
+
+  if (bulkSelectedIndices.length > 0) {
+    indicesToUpdate = bulkSelectedIndices.filter(
+      (index) => !script[index]?.isSeparator,
+    );
+  } else {
+    indicesToUpdate = script
+      .map((play, index) => (play.isSeparator ? -1 : index))
+      .filter((index) => index >= 0);
+  }
+
+  if (indicesToUpdate.length === 0) {
+    showToast("No plays to update");
+    return;
+  }
+
+  const selectionText =
+    bulkSelectedIndices.length > 0
+      ? `${indicesToUpdate.length} selected play(s)`
+      : `all ${indicesToUpdate.length} play(s)`;
+
+  const ok = await showConfirm(
+    `Apply preferred metadata to ${selectionText}?\n\nThis will fill in Hash, Front, Coverage, Stunt, and Blitz from each play's metadata.`,
+    { title: "Apply Preferred", icon: "⭐", confirmText: "Apply" },
+  );
+  if (!ok) {
+    return;
+  }
+
+  saveScriptState();
+
+  let updatedCount = 0;
+  indicesToUpdate.forEach((index) => {
+    const play = script[index];
+    if (applyPreferredMetadataToPlay(play)) {
+      syncScriptPlayMetadataFields(index);
+      updatedCount++;
+    }
+  });
+
+  showToast(`★ Applied preferred fields to ${updatedCount} play(s)`);
+}
+
 async function applyPreferredForPeriod(separatorIndex) {
   const periodPlayIndices = [];
   for (let index = separatorIndex + 1; index < script.length; index++) {
@@ -60,6 +105,117 @@ async function applyPreferredForPeriod(separatorIndex) {
   });
 
   setScriptToolbarStatus(`${periodLabel}: ${updatedCount} play(s) updated`, "success", AUTOSAVE_DEBOUNCE_MS);
+}
+
+function applyDefensiveLookToPlay(play, look, mode) {
+  if (!play || play.isSeparator || !look) return false;
+
+  let changed = false;
+
+  if (look.defFront && (mode === "overwrite" || !play.defFront)) {
+    if (play.defFront !== look.defFront) {
+      play.defFront = look.defFront;
+      changed = true;
+    }
+  }
+  if (look.defCoverage && (mode === "overwrite" || !play.defCoverage)) {
+    if (play.defCoverage !== look.defCoverage) {
+      play.defCoverage = look.defCoverage;
+      changed = true;
+    }
+  }
+  if (look.defBlitz && (mode === "overwrite" || !play.defBlitz)) {
+    if (play.defBlitz !== look.defBlitz) {
+      play.defBlitz = look.defBlitz;
+      changed = true;
+    }
+  }
+  if (look.defStunt && (mode === "overwrite" || !play.defStunt)) {
+    if (play.defStunt !== look.defStunt) {
+      play.defStunt = look.defStunt;
+      changed = true;
+    }
+  }
+
+  return changed;
+}
+
+async function autoFillDefenseFromTendencies() {
+  const opp = getActiveOpponent();
+  if (!opp) {
+    showModal(
+      "No active opponent selected.\n\nGo to the 📊 Dashboard tab and select an opponent first.",
+      { title: "No Opponent", icon: "🎯" },
+    );
+    return;
+  }
+
+  let indicesToUpdate = [];
+  if (bulkSelectedIndices.length > 0) {
+    indicesToUpdate = bulkSelectedIndices.filter(
+      (index) => !script[index]?.isSeparator,
+    );
+  } else {
+    indicesToUpdate = script
+      .map((play, index) => (play.isSeparator ? -1 : index))
+      .filter((index) => index >= 0);
+  }
+
+  if (indicesToUpdate.length === 0) {
+    showToast("No plays to update");
+    return;
+  }
+
+  const selectionText =
+    bulkSelectedIndices.length > 0
+      ? `${indicesToUpdate.length} selected play(s)`
+      : `all ${indicesToUpdate.length} play(s)`;
+
+  const mode = await showChoice(
+    `Auto-fill defense for ${selectionText} using scouting data from <b>${opp.name}</b> (${opp.plays.length} charted plays).\n\nChoose fill mode:`,
+    {
+      title: "🎯 Auto-Fill Defense",
+      choices: [
+        { label: "Fill empty only", value: "empty", icon: "📝" },
+        { label: "Overwrite all", value: "overwrite", icon: "🔄" },
+        { label: "Cancel", value: "cancel", icon: "✕" },
+      ],
+    },
+  );
+  if (!mode || mode === "cancel") return;
+
+  saveScriptState();
+
+  let filled = 0;
+  let skipped = 0;
+  indicesToUpdate.forEach((index) => {
+    const play = script[index];
+    if (!play || play.isSeparator) return;
+
+    const look = getBestDefensiveLook(play);
+    if (!look) {
+      skipped++;
+      return;
+    }
+
+    const isEmpty = !play.defFront && !play.defCoverage && !play.defBlitz && !play.defStunt;
+    if (mode === "empty" && !isEmpty) {
+      skipped++;
+      return;
+    }
+
+    if (applyDefensiveLookToPlay(play, look, mode)) {
+      syncScriptPlayMetadataFields(index);
+      filled++;
+    } else {
+      skipped++;
+    }
+  });
+
+  markScriptDirty();
+  showToast(
+    `🎯 Filled defense for ${filled} play(s) from ${opp.name} scouting${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
+  );
 }
 
 async function pushPeriodToCallSheet(separatorIndex) {
