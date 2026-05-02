@@ -41,7 +41,8 @@ css/
   responsive.css        ← Global breakpoints
 
 js/
-  utils.js              ← Shared utilities, constants, storage, modals, CSV parser
+  utils.js              ← Shared utilities, constants, modals, and CSV parser
+  storage.js            ← Storage keys, migrations, backup/restore, and draft persistence
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
   playbook.js           ← Shared playbook helpers and compatibility surface
   playbook-collections.js ← Saved collections and collection UI
@@ -98,56 +99,57 @@ icons/                  ← PWA icons (192px, 512px)
 All scripts use `defer` and load in this exact order from index.html:
 
 ```
-1. js/utils.js          ← Must be first (constants, storageManager, modals, escapeHtml)
-2. js/team-settings.js
-3. js/playbook.js
-4. js/playbook-collections.js
-5. js/playbook-print.js
-6. js/playbook-editor.js
-7. js/playbook-import.js
-8. js/playbook-export.js
-9. js/playbook-chrome.js
-10. js/playbook-state.js
-11. js/playbook-filters.js
-12. js/playbook-navigation.js
-13. js/playbook-actions.js
-14. js/playbook-render.js
-15. js/script-state.js
-16. js/script-shared.js
-17. js/script-players.js
-18. js/script-display-options.js
-19. js/script-add.js
-20. js/script-sort.js
-21. js/script-export.js
-22. js/script-available.js
-23. js/script-selection.js
-24. js/script-render.js
-25. js/script-periods.js
-26. js/script-period-sync.js
-27. js/script-smart.js
-28. js/script-storage.js
-29. js/wristband.js
-30. js/wristband-library.js
-31. js/wristband-render.js
-32. js/wristband-cards.js
-33. js/wristband-export.js
-34. js/wristband-search.js
-35. js/wristband-modals.js
-36. js/wristband-cell-popup.js
-37. js/wristband-cell-actions.js
-38. js/wristband-sort.js
-39. js/wristband-storage.js
-40. js/wristband-runtime.js
-41. js/callsheet.js
-42. js/callsheet-categories.js
-43. js/callsheet-metadata.js
-44. js/callsheet-layout.js
-45. js/callsheet-picker-runtime.js
-46. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-47. js/tendencies.js
-48. js/installation.js
-49. js/offensebuilder.js
-50. js/help.js
+1. js/utils.js          ← Must stay before storage and app consumers (constants, modals, escapeHtml)
+2. js/storage.js        ← Storage keys, migrations, backup/restore, draft persistence
+3. js/team-settings.js
+4. js/playbook.js
+5. js/playbook-collections.js
+6. js/playbook-print.js
+7. js/playbook-editor.js
+8. js/playbook-import.js
+9. js/playbook-export.js
+10. js/playbook-chrome.js
+11. js/playbook-state.js
+12. js/playbook-filters.js
+13. js/playbook-navigation.js
+14. js/playbook-actions.js
+15. js/playbook-render.js
+16. js/script-state.js
+17. js/script-shared.js
+18. js/script-players.js
+19. js/script-display-options.js
+20. js/script-add.js
+21. js/script-sort.js
+22. js/script-export.js
+23. js/script-available.js
+24. js/script-selection.js
+25. js/script-render.js
+26. js/script-periods.js
+27. js/script-period-sync.js
+28. js/script-smart.js
+29. js/script-storage.js
+30. js/wristband.js
+31. js/wristband-library.js
+32. js/wristband-render.js
+33. js/wristband-cards.js
+34. js/wristband-export.js
+35. js/wristband-search.js
+36. js/wristband-modals.js
+37. js/wristband-cell-popup.js
+38. js/wristband-cell-actions.js
+39. js/wristband-sort.js
+40. js/wristband-storage.js
+41. js/wristband-runtime.js
+42. js/callsheet.js
+43. js/callsheet-categories.js
+44. js/callsheet-metadata.js
+45. js/callsheet-layout.js
+46. js/callsheet-picker-runtime.js
+47. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+48. js/tendencies.js
+49. js/installation.js
+50. js/offensebuilder.js
+51. js/help.js
 51. js/dashboard.js
 52. js/app-events.js
 53. js/app-shell.js
@@ -431,7 +433,7 @@ let bulkSelectedIndices = []; // Multi-selected play indices
 let selectedAvailablePlays = []; // Checked available plays
 ```
 
-### wristband runtime (wristband*.js)
+### wristband runtime (wristband\*.js)
 
 ```js
 let wristbandCards = []; // Array of card objects
@@ -557,7 +559,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v271)
+**Cache name:** `bcoffense-vN` (currently v272)
 
 **Strategy:**
 
@@ -608,7 +610,7 @@ refactor: Code restructuring, no behavior change
 2. **Use `data-action`** for all interactive elements — never inline `onclick`
 3. **Use `escapeHtml()`** on all user text in template literals
 4. **Use design tokens** (CSS custom properties) — never hardcode colors
-5. **Use `storageManager`** for persistence — add a key to `STORAGE_KEYS` in utils.js if needed
+5. **Use `storageManager`** for persistence — add a key to `STORAGE_KEYS` in storage.js if needed
 6. **Add to `LOCAL_ASSETS`** in sw.js if creating a new file
 7. **Add the `<script>` tag** in index.html in the correct load order position
 8. **Bump `CACHE_NAME`** version in sw.js
@@ -622,6 +624,7 @@ refactor: Code restructuring, no behavior change
 ### Playbook runtime
 
 - `playbook.js` keeps shared helpers and compatibility globals used across playbook slices.
+- `storage.js` owns storage keys, migrations, backup/restore, storage info, and draft persistence helpers.
 - `playbook-collections.js` owns collection CRUD and collection-related UI.
 - `playbook-print.js` owns playbook print workflows.
 - `playbook-editor.js` owns play edit/create modal behavior.
@@ -671,7 +674,7 @@ refactor: Code restructuring, no behavior change
 ### Creating a New Storage Key
 
 ```js
-// 1. Add to STORAGE_KEYS in utils.js
+// 1. Add to STORAGE_KEYS in storage.js
 const STORAGE_KEYS = {
   // ...existing...
   MY_NEW_KEY: "myNewData",

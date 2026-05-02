@@ -41,7 +41,7 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v271` — next version will be `bcoffense-v272`
+- Current version: `bcoffense-v272` — next version will be `bcoffense-v273`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---
@@ -106,7 +106,7 @@ const data = storageManager.get(STORAGE_KEYS.MY_KEY, []);
 // Writing:
 storageManager.set(STORAGE_KEYS.MY_KEY, data);
 
-// New key → add to STORAGE_KEYS object in utils.js first
+// New key → add to STORAGE_KEYS object in storage.js first
 ```
 
 ---
@@ -116,7 +116,7 @@ storageManager.set(STORAGE_KEYS.MY_KEY, data);
 New JS files must be inserted in the correct position in `index.html`:
 
 ```
-utils.js → team-settings.js → playbook.js → playbook-collections.js
+utils.js → storage.js → team-settings.js → playbook.js → playbook-collections.js
 → playbook-print.js → playbook-editor.js → playbook-import.js
 → playbook-export.js → playbook-chrome.js → playbook-state.js
 → playbook-filters.js → playbook-navigation.js → playbook-actions.js
@@ -172,12 +172,13 @@ refactor: restructure, no behavior change
 - `script[]` — working practice script (app.js)
 - `filteredPlays[]` — filtered subset (app.js)
 - `callSheet{}` — call sheet data (callsheet.js)
-- `wristbandCards[]` — wristband cards (shared across wristband*.js)
+- `wristbandCards[]` — wristband cards (shared across wristband\*.js)
 - `currentActiveTab` — active tab name (help.js)
 
 ## Current Runtime Split
 
 - `playbook.js` is now a shared compatibility surface; playbook ownership is split across `playbook-collections.js`, `playbook-print.js`, `playbook-editor.js`, `playbook-import.js`, `playbook-export.js`, `playbook-chrome.js`, `playbook-state.js`, `playbook-filters.js`, `playbook-navigation.js`, `playbook-actions.js`, and `playbook-render.js`.
+- `storage.js` owns storage keys, migrations, backup/restore, storage info, and draft persistence helpers.
 - `app.js` now only holds shared global state.
 - `app-init.js` owns top-level startup and backup wrappers.
 - `app-bootstrap.js` owns stored-session restore and one-time DOM bootstrap.
@@ -208,7 +209,7 @@ refactor: restructure, no behavior change
 2. Use `data-action` for all interactive elements
 3. `escapeHtml()` on all user text in template literals
 4. CSS custom properties — no hardcoded values
-5. `storageManager` for persistence — add key to `STORAGE_KEYS` in utils.js
+5. `storageManager` for persistence — add key to `STORAGE_KEYS` in storage.js
 6. If new file: add to `LOCAL_ASSETS` in sw.js + `<script defer>` in index.html (correct order)
 7. **Bump `CACHE_NAME` version in sw.js**
 8. Commit with conventional message including `(SW vN)`

@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v271";
+const CACHE_NAME = "bcoffense-v272";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -51,6 +51,7 @@ const LOCAL_ASSETS = [
   "./css/responsive.css",
   // JS
   "./js/utils.js",
+  "./js/storage.js",
   "./js/team-settings.js",
   "./js/playbook.js",
   "./js/playbook-collections.js",
