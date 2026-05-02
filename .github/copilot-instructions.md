@@ -41,7 +41,7 @@
 ### Service Worker (CRITICAL — do not forget)
 
 - **ALWAYS bump `CACHE_NAME`** version in `sw.js` after ANY change to HTML, CSS, or JS files
-- Current version: `bcoffense-v266` — next version will be `bcoffense-v267`
+- Current version: `bcoffense-v267` — next version will be `bcoffense-v268`
 - **NEW files** must be added to `LOCAL_ASSETS` array in `sw.js` AND the `<script>` tag in `index.html`
 
 ---
@@ -127,7 +127,8 @@ utils.js → team-settings.js → playbook.js → playbook-collections.js
 → wristband.js → wristband-library.js → wristband-render.js → wristband-cards.js
 → wristband-export.js → wristband-search.js → wristband-modals.js
 → wristband-cell-popup.js → wristband-cell-actions.js → wristband-sort.js
-→ wristband-storage.js → wristband-runtime.js → callsheet.js → constraints.js
+→ wristband-storage.js → wristband-runtime.js → callsheet.js → callsheet-categories.js
+→ constraints.js
 → tendencies.js → installation.js → offensebuilder.js → help.js → dashboard.js
 → app-events.js → app-shell.js → app-session.js → app-navigation.js
 → app-module-init.js → app-bootstrap.js → app-init.js → app.js (LAST)
@@ -185,6 +186,8 @@ refactor: restructure, no behavior change
 - `app-session.js` owns dirty-state and draft-restore helpers.
 - `app-shell.js` owns theme, chrome, keyboard shortcuts, and page-level runtime.
 - `app-events.js` owns delegated click/change/input routing.
+- `callsheet.js` now owns the core call sheet state, rendering, picker flows, sort helpers, and runtime bindings.
+- `callsheet-categories.js` owns category display names/colors and custom-category CRUD.
 - `wristband.js` is now the wristband foundation layer; ownership is split across `wristband-library.js`, `wristband-render.js`, `wristband-cards.js`, `wristband-export.js`, `wristband-search.js`, `wristband-modals.js`, `wristband-cell-popup.js`, `wristband-cell-actions.js`, `wristband-sort.js`, `wristband-storage.js`, and `wristband-runtime.js`.
 
 ## Refactor Rules

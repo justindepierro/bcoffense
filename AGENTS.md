@@ -68,7 +68,8 @@ js/
   wristband-sort.js     ← Wristband sorting and reorder helpers
   wristband-storage.js  ← Save/load/draft hydration helpers
   wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
-  callsheet.js          ← Call sheet (categories, buckets, auto-populate, display)
+  callsheet.js          ← Core call sheet state, rendering, picker, sort, and runtime
+  callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   constraints.js        ← Game plan constraints evaluation engine
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
   installation.js       ← Installation/help guide
@@ -135,20 +136,21 @@ All scripts use `defer` and load in this exact order from index.html:
 39. js/wristband-storage.js
 40. js/wristband-runtime.js
 41. js/callsheet.js
-42. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-43. js/tendencies.js
-44. js/installation.js
-45. js/offensebuilder.js
-46. js/help.js
-47. js/dashboard.js
-48. js/app-events.js
-49. js/app-shell.js
-50. js/app-session.js
-51. js/app-navigation.js
-52. js/app-module-init.js
-53. js/app-bootstrap.js
-54. js/app-init.js
-55. js/app.js           ← Must be last; shared global state only
+42. js/callsheet-categories.js
+43. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+44. js/tendencies.js
+45. js/installation.js
+46. js/offensebuilder.js
+47. js/help.js
+48. js/dashboard.js
+49. js/app-events.js
+50. js/app-shell.js
+51. js/app-session.js
+52. js/app-navigation.js
+53. js/app-module-init.js
+54. js/app-bootstrap.js
+55. js/app-init.js
+56. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -549,7 +551,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v266)
+**Cache name:** `bcoffense-vN` (currently v267)
 
 **Strategy:**
 
@@ -640,6 +642,11 @@ refactor: Code restructuring, no behavior change
 - `wristband-sort.js` owns wristband sorting helpers.
 - `wristband-storage.js` owns save/load/draft hydration.
 - `wristband-runtime.js` owns DOM bootstrap and delegated event bindings.
+
+### Callsheet runtime
+
+- `callsheet.js` currently owns the core call sheet state, rendering, picker flows, sort helpers, and runtime bindings.
+- `callsheet-categories.js` owns category display names/colors and custom-category CRUD.
 
 ## Refactor Guardrails
 
