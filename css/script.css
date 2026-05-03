@@ -1673,6 +1673,41 @@
   background: var(--color-primary);
 }
 
+/* Script health badge button */
+.script-stats-bar .stat-health-btn {
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+  cursor: pointer;
+  font: inherit;
+  margin-left: 4px;
+  transition: background var(--transition-fast), color var(--transition-fast);
+}
+.script-stats-bar .stat-health-btn:hover {
+  background: var(--color-bg-hover-row);
+}
+.script-stats-bar .stat-health-btn.stat-health-warn {
+  background: var(--color-warning-light);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.script-stats-bar .stat-health-btn.stat-health-error {
+  background: var(--color-danger-light);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+}
+.script-stats-bar .stat-health-btn[hidden] {
+  display: none !important;
+}
+
+/* Script health flash highlight when jumping to an issue */
+@keyframes scriptHealthFlash {
+  0%, 100% { box-shadow: none; }
+  20%, 80% { box-shadow: 0 0 0 3px var(--color-warning); }
+}
+.script-health-flash {
+  animation: scriptHealthFlash 1.8s ease-in-out;
+}
+
 /* Collapsible Filters */
 .filters-collapsible {
   margin-bottom: 8px;
