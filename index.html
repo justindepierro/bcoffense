@@ -918,13 +918,6 @@
             </div>
           </div>
 
-          <div class="display-options-trigger-row">
-            <button class="btn btn-sm" data-action="toggleScriptDisplayPanel" id="scriptDisplayTriggerBtn"
-              title="Open Script Display options">
-              🖨️ Script Display
-            </button>
-          </div>
-
           <div class="wristband-integration-panel">
             <div class="integration-header" data-action="toggleCollapsiblePanel">
               <strong>🏈 Wristband Integration</strong>
@@ -2423,6 +2416,12 @@
     ?
   </button>
 
+  <!-- Floating Script Display Button (script tab only) -->
+  <button class="script-display-fab" id="scriptDisplayFab" data-action="toggleScriptDisplayPanel"
+    title="Script Display options" aria-label="Script Display options">
+    🖨️
+  </button>
+
   <!-- Help Panel Overlay -->
   <div class="help-overlay" id="helpOverlay" data-action="closeHelpPanelOverlay" role="dialog" aria-modal="true"
     aria-labelledby="helpPanelTitle" aria-hidden="true" inert>
@@ -2438,8 +2437,8 @@
   </div>
 
   <!-- Script Display Overlay -->
-  <div class="script-display-overlay" id="scriptDisplayOverlay" data-action="closeScriptDisplayPanelOverlay"
-    role="dialog" aria-modal="true" aria-labelledby="scriptDisplayPanelTitle" aria-hidden="true" inert>
+  <div class="script-display-overlay" id="scriptDisplayOverlay" role="dialog"
+    aria-labelledby="scriptDisplayPanelTitle" aria-hidden="true" inert>
     <div class="script-display-panel">
       <div class="script-display-panel-header">
         <h3 id="scriptDisplayPanelTitle">🖨️ Script Display</h3>

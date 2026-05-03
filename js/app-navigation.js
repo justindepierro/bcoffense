@@ -11,6 +11,7 @@ const TAB_INDEX_MAP = {
 
 function showTab(tabName) {
   currentActiveTab = tabName;
+  if (document.body) document.body.dataset.activeTab = tabName;
 
   document
     .querySelectorAll(".panel")

@@ -148,7 +148,7 @@ function applyScriptDisplayPreset(presetName = "coach") {
 }
 function toggleScriptDisplayPanel() {
   const overlay = document.getElementById("scriptDisplayOverlay");
-  const trigger = document.getElementById("scriptDisplayTriggerBtn");
+  const trigger = document.getElementById("scriptDisplayFab");
   if (!overlay) return;
   const isOpen = overlay.classList.contains("visible");
   if (isOpen) {
@@ -167,7 +167,7 @@ function toggleScriptDisplayPanel() {
 function closeScriptDisplayPanel(event) {
   if (event && event.target !== event.currentTarget) return;
   const overlay = document.getElementById("scriptDisplayOverlay");
-  const trigger = document.getElementById("scriptDisplayTriggerBtn");
+  const trigger = document.getElementById("scriptDisplayFab");
   if (!overlay) return;
   overlay.classList.remove("visible");
   overlay.setAttribute("aria-hidden", "true");

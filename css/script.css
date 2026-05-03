@@ -3429,23 +3429,26 @@
   }
 }
 
-/* Script Display Overlay (popup version of the script-display panel) */
+/* Script Display Overlay (non-modal popup - leaves the page interactive) */
 .script-display-overlay {
   position: fixed;
   inset: 0;
-  background: var(--color-overlay-sm);
-  z-index: var(--z-overlay);
+  background: transparent;
+  z-index: var(--z-fab);
   display: flex;
   align-items: flex-end;
   justify-content: flex-end;
   padding: 24px;
+  padding-bottom: 80px; /* clear the FAB row */
+  pointer-events: none; /* let clicks pass through the empty area */
   opacity: 0;
-  pointer-events: none;
   transition: opacity 0.2s ease;
 }
 .script-display-overlay.visible {
   opacity: 1;
-  pointer-events: auto;
+}
+.script-display-overlay .script-display-panel {
+  pointer-events: auto; /* but the panel itself catches clicks */
 }
 .script-display-panel {
   background: var(--color-white);
@@ -3453,11 +3456,12 @@
   box-shadow: var(--shadow-lg);
   width: 460px;
   max-width: 100%;
-  max-height: calc(100vh - 80px);
+  max-height: calc(100vh - 120px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
   animation: helpSlideUp 0.25s ease;
+  border: 1px solid var(--color-border-light);
 }
 .script-display-panel-header {
   display: flex;
@@ -3481,26 +3485,50 @@
   gap: 10px;
 }
 
-.display-options-trigger-row {
-  margin-top: 12px;
-  display: flex;
-  justify-content: flex-end;
+/* Floating Script Display button (mirrors .help-fab, sits to its left) */
+.script-display-fab {
+  position: fixed;
+  bottom: 24px;
+  right: 76px; /* 24px (help-fab right) + 44px (help-fab width) + 8px gap */
+  width: 44px;
+  height: 44px;
+  border-radius: var(--radius-round);
+  border: none;
+  background: var(--color-navy-alpha-20);
+  color: rgba(25, 42, 81, 0.7);
+  font-size: 20px;
+  cursor: pointer;
+  z-index: var(--z-fab);
+  transition: all 0.25s ease;
+  box-shadow: 0 2px 8px rgba(10, 18, 42, 0.08);
+  display: none;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--font-sans);
 }
-#scriptDisplayTriggerBtn.active {
+body[data-active-tab="script"] .script-display-fab {
+  display: flex;
+}
+@media (hover: hover) {
+  .script-display-fab:hover {
+    background: var(--color-primary);
+    color: var(--color-white);
+    box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
+    transform: scale(1.1);
+  }
+}
+.script-display-fab.active {
   background: var(--color-primary);
   color: var(--color-white);
-  border-color: var(--color-primary);
+  box-shadow: 0 4px 16px rgba(25, 42, 81, 0.4);
 }
 
 @media (max-width: 600px) {
   .script-display-overlay {
-    padding: 0;
-    align-items: stretch;
-    justify-content: stretch;
+    padding: 12px;
+    padding-bottom: 80px;
   }
   .script-display-panel {
     width: 100%;
-    max-height: 100vh;
-    border-radius: 0;
   }
 }
