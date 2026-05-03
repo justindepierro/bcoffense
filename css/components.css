@@ -2193,18 +2193,17 @@ body.fab-idle .script-display-fab:focus-visible {
   display: flex;
   align-items: center;
   justify-content: center;
-  padding: 24px;
+  padding: 16px;
 }
 .print-preview-frame {
   background: white;
   border-radius: var(--radius-xl);
   overflow: hidden;
-  max-width: 90vw;
-  max-height: 90vh;
+  width: min(95vw, 980px);
+  height: min(95vh, 1200px);
   display: flex;
   flex-direction: column;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-  width: 800px;
 }
 .print-preview-toolbar {
   display: flex;
@@ -2218,13 +2217,108 @@ body.fab-idle .script-display-fab:focus-visible {
   flex: 1;
   overflow: auto;
   padding: 20px;
-  background: #e0e0e0;
+  background: #cfcfcf;
 }
 .print-preview-content > div {
   background: white;
   margin: 0 auto;
   box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  padding: 20px;
+  /* Mimic Letter @ 96dpi: 8.5in × 11in with 0.5in margins */
+  width: 8.5in;
+  min-height: 11in;
+  padding: 0.5in;
+  box-sizing: border-box;
+}
+/* Approximate print-script script-table styling inside the preview so
+   the popup matches what will print (rules in print.css are @media print). */
+.print-preview-content .script-preview {
+  margin: 0 !important;
+  padding: 0 !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  box-shadow: none !important;
+}
+.print-preview-content .script-table {
+  width: 100% !important;
+  border-collapse: collapse !important;
+  font-size: 9px !important;
+  table-layout: auto;
+}
+.print-preview-content .script-table th {
+  background: var(--color-text) !important;
+  color: white !important;
+  padding: 4px 3px !important;
+  font-size: 8px !important;
+  font-weight: bold !important;
+  white-space: nowrap !important;
+}
+.print-preview-content .script-table td {
+  padding: 3px 4px !important;
+  border: 0.5px solid var(--color-text) !important;
+  font-size: 9px !important;
+  line-height: 1.2 !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  word-break: break-word !important;
+  vertical-align: top !important;
+}
+.print-preview-content .script-table td.script-table-cell--call {
+  text-align: left !important;
+  white-space: nowrap !important;
+  overflow: visible !important;
+  overflow-wrap: normal !important;
+  word-break: keep-all !important;
+}
+.print-preview-content .script-table td.script-table-cell--num,
+.print-preview-content .script-table td.script-table-cell--hash,
+.print-preview-content .script-table td.script-table-cell--tempo,
+.print-preview-content .script-table td.script-table-cell--wb,
+.print-preview-content .script-table td.script-table-cell--reps,
+.print-preview-content .script-table td.script-table-cell--type,
+.print-preview-content .script-table td.script-table-cell--front,
+.print-preview-content .script-table td.script-table-cell--cov,
+.print-preview-content .script-table td.script-table-cell--stunt,
+.print-preview-content .script-table td.script-table-cell--blitz {
+  white-space: nowrap !important;
+  text-align: center !important;
+}
+.print-preview-content .script-print-personnel-cell {
+  padding: 0 !important;
+}
+.print-preview-content .script-print-personnel-grid {
+  display: grid !important;
+  grid-auto-flow: column !important;
+  grid-auto-columns: minmax(0, 1fr) !important;
+  width: 100% !important;
+  gap: 0 !important;
+}
+.print-preview-content .script-print-personnel-pill {
+  display: grid !important;
+  grid-template-columns: auto minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: 4px !important;
+  padding: 3px 6px !important;
+  border: 0 !important;
+  border-left: 0.5px solid var(--color-text) !important;
+  font-size: 8px !important;
+  line-height: 1.2 !important;
+  min-width: 0 !important;
+}
+.print-preview-content .script-print-personnel-pill:first-child {
+  border-left: 0 !important;
+}
+.print-preview-content .script-print-personnel-name {
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  min-width: 0 !important;
+}
+@media (max-width: 900px) {
+  .print-preview-content > div {
+    width: 100%;
+    min-width: 0;
+    padding: 16px;
+  }
 }
 
 /* ── Dashboard card press ── */
