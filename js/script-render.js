@@ -17,7 +17,7 @@ function buildPeriodStatsMap(scriptItems) {
   scriptItems.forEach((item, index) => {
     if (item.isSeparator) {
       activeSeparatorIndex = index;
-      statsBySeparatorIndex.set(index, { playCount: 0, periodReps: 0 });
+      statsBySeparatorIndex.set(index, { playCount: 0, periodReps: 0, runCount: 0, passCount: 0 });
       return;
     }
 
@@ -28,6 +28,8 @@ function buildPeriodStatsMap(scriptItems) {
 
     stats.playCount += 1;
     stats.periodReps += item.reps || 1;
+    if (item.type === "Run") stats.runCount += 1;
+    else if (item.type === "Pass") stats.passCount += 1;
   });
 
   return statsBySeparatorIndex;
@@ -66,20 +68,26 @@ function getPeriodStats(separatorIndex, periodStatsMap) {
     return periodStatsMap.get(separatorIndex);
   }
 
-  const stats = { playCount: 0, periodReps: 0 };
+  const stats = { playCount: 0, periodReps: 0, runCount: 0, passCount: 0 };
   for (let index = separatorIndex + 1; index < script.length; index++) {
     const item = script[index];
     if (item.isSeparator) break;
     stats.playCount += 1;
     stats.periodReps += item.reps || 1;
+    if (item.type === "Run") stats.runCount += 1;
+    else if (item.type === "Pass") stats.passCount += 1;
   }
 
   return stats;
 }
 
-function formatPeriodMetaText(playCount, periodReps, minutes) {
+function formatPeriodMetaText(playCount, periodReps, minutes, runCount, passCount) {
   const timeDisplay = minutes ? `${minutes} min` : "";
-  return `${playCount} plays • ${periodReps} reps${timeDisplay ? ` • ${timeDisplay}` : ""}`;
+  const runPass =
+    runCount != null && passCount != null && (runCount || passCount)
+      ? ` • ${runCount}R/${passCount}P`
+      : "";
+  return `${playCount} plays • ${periodReps} reps${timeDisplay ? ` • ${timeDisplay}` : ""}${runPass}`;
 }
 
 function getScriptPlayDom(index) {
@@ -99,11 +107,13 @@ function updatePeriodMetaDisplay(separatorIndex) {
   const metaEl = wrapper?.querySelector(".ph-meta-span");
   if (!metaEl) return;
 
-  const { playCount, periodReps } = getPeriodStats(separatorIndex);
+  const { playCount, periodReps, runCount, passCount } = getPeriodStats(separatorIndex);
   metaEl.textContent = formatPeriodMetaText(
     playCount,
     periodReps,
     script[separatorIndex].minutes,
+    runCount,
+    passCount,
   );
 }
 
@@ -294,14 +304,14 @@ function renderPeriodActionsToolbar(index, periodLabel) {
 function renderScriptPeriodHeader(separator, index, renderContext) {
   const isCollapsed = collapsedPeriods.has(separator.id);
   const collapseIcon = isCollapsed ? "▶" : "▼";
-  const { playCount, periodReps } = getPeriodStats(
+  const { playCount, periodReps, runCount, passCount } = getPeriodStats(
     index,
     renderContext?.periodStatsBySeparatorIndex,
   );
   const periodColor = separator.color || UI_COLORS.periodDefault;
   const periodLabel = separator.label || "Period";
   const periodNotes = separator.notes || "";
-  const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes);
+  const metaText = formatPeriodMetaText(playCount, periodReps, separator.minutes, runCount, passCount);
   const protectionButtonLabel = separator.hideProtection ? "Prot Off" : "Prot On";
   const protectionButtonTitle = separator.hideProtection
     ? `Show protection for ${periodLabel}`
