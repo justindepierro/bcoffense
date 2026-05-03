@@ -586,6 +586,17 @@ function csPickerAddPlay(el) {
 }
 
 document.addEventListener("DOMContentLoaded", () => {
+  // Persist Quick Actions collapsible open/closed state
+  const quickWrap = document.getElementById("csQuickActionsWrap");
+  if (quickWrap) {
+    const stored = storageManager.get("csQuickActionsOpen", null);
+    if (stored === true) quickWrap.setAttribute("open", "");
+    else if (stored === false) quickWrap.removeAttribute("open");
+    quickWrap.addEventListener("toggle", () => {
+      storageManager.set("csQuickActionsOpen", quickWrap.open);
+    });
+  }
+
   const grid = document.getElementById("callSheetGrid");
   if (grid) {
     grid.addEventListener("dblclick", (event) => {

@@ -474,6 +474,7 @@ function renderGamePlanSummary() {
       </div>
     </div>
     <button class="btn btn-sm btn-primary" data-action="filterPlaybookToGamePlan">📖 View in Playbook</button>
+    <button class="btn btn-sm btn-success" data-action="sendDashboardGamePlanToBoxes" title="Auto-place tagged plays into the Game Plan boxes">🎯 Send to Game Plan</button>
   </div>`;
 }
 

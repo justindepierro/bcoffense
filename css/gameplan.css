@@ -222,6 +222,19 @@
   background: var(--color-primary-light, rgba(59, 130, 246, 0.08));
 }
 
+/* Holding box — special always-on-top container for untyped tagged plays */
+.gp-box-holding {
+  grid-column: 1 / -1;
+  background: var(--color-warning-light, #fff8e1);
+  border: 1px dashed var(--color-warning, #f59e0b);
+}
+.gp-box-holding .gp-box-header {
+  background: transparent;
+}
+.gp-box-holding .gp-box-title span:first-child {
+  color: var(--color-warning, #b45309);
+}
+
 .gp-box-header {
   display: flex;
   align-items: center;

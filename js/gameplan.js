@@ -19,6 +19,10 @@ const GP_DEFAULT_BOXES = [
   { id: "Movement", label: "Movement" },
 ];
 
+// Special holding box — always present, shown first, excluded from Push to Call Sheet
+const GP_HOLDING_ID = "__holding";
+const GP_HOLDING_BOX = { id: GP_HOLDING_ID, label: "📥 Holding" };
+
 // Map game-plan box id → call sheet category id (for "Push to Call Sheet")
 const GP_BOX_TO_CALLSHEET = {
   Run: "base-run",
@@ -75,6 +79,7 @@ function _gpEnsureBoard() {
     GP_DEFAULT_BOXES.forEach((b) => {
       all[key].assignments[b.id] = [];
     });
+    all[key].assignments[GP_HOLDING_ID] = [];
     _gpSaveBoards(all);
   } else {
     GP_DEFAULT_BOXES.forEach((b) => {
@@ -82,6 +87,9 @@ function _gpEnsureBoard() {
         all[key].assignments[b.id] = [];
       }
     });
+    if (!Array.isArray(all[key].assignments[GP_HOLDING_ID])) {
+      all[key].assignments[GP_HOLDING_ID] = [];
+    }
     if (!Array.isArray(all[key].customBoxes)) all[key].customBoxes = [];
     all[key].customBoxes.forEach((cb) => {
       if (!Array.isArray(all[key].assignments[cb.id])) {
@@ -99,6 +107,7 @@ function _gpUpdateBoard(mutator) {
   if (!all[key]) {
     all[key] = { assignments: {}, customBoxes: [] };
     GP_DEFAULT_BOXES.forEach((b) => { all[key].assignments[b.id] = []; });
+    all[key].assignments[GP_HOLDING_ID] = [];
   }
   mutator(all[key]);
   _gpSaveBoards(all);
@@ -181,6 +190,7 @@ function renderGamePlan() {
   const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";
 
   const allBoxes = [
+    GP_HOLDING_BOX,
     ...GP_DEFAULT_BOXES,
     ...(board.customBoxes || []),
   ];
@@ -300,8 +310,9 @@ function _gpRenderLibraryRow(play, assignedSigs) {
 function _gpRenderBox(box, board) {
   const list = board.assignments[box.id] || [];
   const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
+  const isHolding = box.id === GP_HOLDING_ID;
   return `
-    <div class="gp-box" data-box-id="${escapeHtml(box.id)}">
+    <div class="gp-box${isHolding ? " gp-box-holding" : ""}" data-box-id="${escapeHtml(box.id)}">
       <div class="gp-box-header">
         <div class="gp-box-title">
           <span>${escapeHtml(box.label)}</span>
@@ -320,7 +331,9 @@ function _gpRenderBox(box, board) {
       </div>
       <div class="gp-box-body" data-box-drop="${escapeHtml(box.id)}">
         ${list.length === 0
-          ? `<div class="gp-box-empty">Drop plays here, or use “Add Selected to…”.</div>`
+          ? `<div class="gp-box-empty">${isHolding
+              ? "Untyped tagged plays land here. Drag them out to any box."
+              : "Drop plays here, or use “Add Selected to…”."}</div>`
           : list.map((p, idx) => {
               const sig = _gpPlaySignature(p);
               const callHtml = typeof getFullCall === "function"
@@ -542,7 +555,7 @@ async function assignSelectedToGamePlanBox() {
     return;
   }
   const board = _gpEnsureBoard();
-  const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
   const choice = await showListPicker(
     `Add ${_gpSelected.size} selected play${_gpSelected.size === 1 ? "" : "s"} to which box?`,
     allBoxes.map((b) => ({ value: b.id, label: b.label })),
@@ -746,6 +759,93 @@ async function pushGamePlanToCallSheet() {
 function printGamePlan() {
   // Rely on print.css scoping; just trigger native print.
   window.print();
+}
+
+/* -------------------------------------------------------------------------
+   Send tagged plays from the dashboard's active game plan to the boxes
+   - Plays whose `type` matches a default box go directly into that box
+   - Plays whose `type` doesn't match any default box go into the Holding box
+   - Plays already assigned somewhere on the board are skipped
+   ------------------------------------------------------------------------- */
+
+async function sendDashboardGamePlanToBoxes() {
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw && gw.opponentName ? gw.opponentName : null;
+  if (!opponent) {
+    showToast("Pick an opponent on the Dashboard first.", { type: "warning" });
+    return;
+  }
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("No playbook loaded.", { type: "warning" });
+    return;
+  }
+  const tagged = plays.filter((p) => isPlayTaggedForOpponent(p, opponent));
+  if (tagged.length === 0) {
+    showToast(`No plays tagged for ${opponent} yet.`, { type: "warning" });
+    return;
+  }
+
+  const board = _gpEnsureBoard();
+  const assignedSigs = _gpAllAssignedSigs(board);
+  const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
+
+  // Group tagged plays by destination box id
+  const byBox = {};
+  let alreadyAssigned = 0;
+  tagged.forEach((play) => {
+    const sig = _gpPlaySignature(play);
+    if (assignedSigs.has(sig)) { alreadyAssigned += 1; return; }
+    const dest = defaultIds.has(play.type) ? play.type : GP_HOLDING_ID;
+    if (!byBox[dest]) byBox[dest] = [];
+    byBox[dest].push(sig);
+  });
+
+  const totalToAdd = Object.values(byBox).reduce((n, arr) => n + arr.length, 0);
+  if (totalToAdd === 0) {
+    showToast(
+      `All ${tagged.length} tagged play${tagged.length === 1 ? "" : "s"} already on the board.`,
+      { type: "info" },
+    );
+    return;
+  }
+
+  const summaryLines = Object.entries(byBox)
+    .map(([boxId, sigs]) => {
+      const label = boxId === GP_HOLDING_ID ? "📥 Holding" : boxId;
+      return `• ${label}: ${sigs.length}`;
+    })
+    .join("\n");
+  const ok = await showConfirm(
+    `Send ${totalToAdd} tagged play${totalToAdd === 1 ? "" : "s"} for ${opponent} into the boxes?\n\n${summaryLines}${alreadyAssigned > 0 ? `\n\n(${alreadyAssigned} already on the board, will be skipped.)` : ""}`,
+    { title: "Send to Game Plan", icon: "🎯", confirmText: "Send" },
+  );
+  if (!ok) return;
+
+  let added = 0;
+  _gpUpdateBoard((b) => {
+    Object.entries(byBox).forEach(([boxId, sigs]) => {
+      if (!Array.isArray(b.assignments[boxId])) b.assignments[boxId] = [];
+      const existing = new Set(b.assignments[boxId].map((p) => _gpPlaySignature(p)));
+      sigs.forEach((sig) => {
+        if (existing.has(sig)) return;
+        const play = _gpFindPlayBySig(sig);
+        if (!play) return;
+        b.assignments[boxId].push({ ...play });
+        existing.add(sig);
+        added += 1;
+      });
+    });
+  });
+
+  renderGamePlan();
+  const holdingCount = (byBox[GP_HOLDING_ID] || []).length;
+  showToast(
+    `Sent ${added} play${added === 1 ? "" : "s"} to game plan${holdingCount > 0 ? ` (${holdingCount} in Holding)` : ""}`,
+    { type: "success" },
+  );
+
+  // Navigate to the gameplan tab so the user sees the result
+  if (typeof showTab === "function") showTab("gameplan");
 }
 
 /* -------------------------------------------------------------------------
