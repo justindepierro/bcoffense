@@ -609,6 +609,9 @@ function initScriptWorkspace() {
   populateScriptWristbandSelect();
   restoreScriptDisplayOptions();
   ensureFirstPeriod();
+  if (typeof refreshPeriodTemplateQuickPick === "function") {
+    refreshPeriodTemplateQuickPick();
+  }
   renderScript();
 }
 

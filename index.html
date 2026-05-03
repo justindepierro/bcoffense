@@ -764,8 +764,17 @@
               <button class="btn btn-add-period" data-action="addSeparator">
                 ＋ Add Period
               </button>
+              <select id="periodTemplateQuickPick"
+                class="period-template-quickpick"
+                data-onchange="quickInsertPeriodTemplate"
+                data-pass="value"
+                title="Insert a saved template"
+                aria-label="Quick insert period template"
+                hidden>
+                <option value="">📋 Quick Insert…</option>
+              </select>
               <button class="btn btn-secondary btn-sm" data-action="insertPeriodFromTemplate"
-                title="Insert a saved period template">
+                title="Browse and insert a saved period template">
                 📋 From Template
               </button>
             </div>

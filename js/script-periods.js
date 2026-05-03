@@ -314,8 +314,36 @@ async function savePeriodAsTemplate(separatorIndex) {
 
   periodTemplates.push(template);
   storageManager.set(STORAGE_KEYS.PERIOD_TEMPLATES, periodTemplates);
+  refreshPeriodTemplateQuickPick();
   showToast(`Template "${name}" saved!`);
   announceScriptA11y(`Saved ${name} as a period template`);
+}
+
+function refreshPeriodTemplateQuickPick() {
+  const select = document.getElementById("periodTemplateQuickPick");
+  if (!select) return;
+  if (!Array.isArray(periodTemplates) || periodTemplates.length === 0) {
+    select.hidden = true;
+    select.innerHTML = '<option value="">📋 Quick Insert…</option>';
+    return;
+  }
+  select.hidden = false;
+  const options = ['<option value="">📋 Quick Insert…</option>'];
+  periodTemplates.forEach((tpl, idx) => {
+    const playCount = Array.isArray(tpl.plays) ? tpl.plays.length : 0;
+    const label = `${tpl.name} (${playCount})`;
+    options.push(`<option value="${idx}">${escapeHtml(label)}</option>`);
+  });
+  select.innerHTML = options.join("");
+  select.value = "";
+}
+
+function quickInsertPeriodTemplate(value) {
+  const idx = parseInt(value, 10);
+  const select = document.getElementById("periodTemplateQuickPick");
+  if (select) select.value = "";
+  if (Number.isNaN(idx) || idx < 0 || idx >= periodTemplates.length) return;
+  doInsertTemplate(idx);
 }
 
 function getTemplatePreviewLines(template) {
@@ -593,6 +621,7 @@ async function doDeleteTemplate(idx) {
   if (!ok) return;
   periodTemplates.splice(idx, 1);
   storageManager.set(STORAGE_KEYS.PERIOD_TEMPLATES, periodTemplates);
+  refreshPeriodTemplateQuickPick();
   selectedPeriodTemplateIndex = Math.min(idx, periodTemplates.length - 1);
   if (periodTemplates.length > 0) {
     updatePeriodTemplateModalContent();

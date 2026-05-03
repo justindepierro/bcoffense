@@ -2143,6 +2143,22 @@
   flex-wrap: wrap;
 }
 
+.period-template-quickpick {
+  font-size: var(--font-size-xs);
+  padding: 4px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  max-width: 220px;
+}
+.period-template-quickpick:hover {
+  background: var(--color-bg-hover-row);
+}
+.period-template-quickpick[hidden] {
+  display: none !important;
+}
+
 /* Script Actions - single tight row, sticky to bottom of viewport */
 .script-actions {
   display: flex;
