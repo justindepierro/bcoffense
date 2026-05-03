@@ -584,6 +584,32 @@ function moveWristbandCellCustomization(
   }
 }
 
+/**
+ * Atomically swap the customizations of two wristband cells.
+ * Called by handleCellDrop after swapping cell data.
+ */
+function swapWristbandCellCustomizations(
+  cardIdxA,
+  cellIdxA,
+  cardIdxB,
+  cellIdxB,
+) {
+  const keyA = getWristbandCellCustomizationKey(cardIdxA, cellIdxA);
+  const keyB = getWristbandCellCustomizationKey(cardIdxB, cellIdxB);
+  const customA = cellCustomizations[keyA];
+  const customB = cellCustomizations[keyB];
+  if (customB) {
+    cellCustomizations[keyA] = customB;
+  } else {
+    delete cellCustomizations[keyA];
+  }
+  if (customA) {
+    cellCustomizations[keyB] = customA;
+  } else {
+    delete cellCustomizations[keyB];
+  }
+}
+
 function getRemappedWristbandCellCustomizations(
   mappings,
   sourceCustomizations = cellCustomizations,

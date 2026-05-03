@@ -683,8 +683,10 @@ function _showPlaybookRowContextMenu(e, filteredIdx) {
     menu.push({
       label: "📝 Add to Script",
       action: () => {
-        addToScript(masterIdx);
-        showToast("Added to script");
+        if (masterIdx >= 0) {
+          addToScript(masterIdx);
+          showToast("Added to script");
+        }
       },
     });
   }

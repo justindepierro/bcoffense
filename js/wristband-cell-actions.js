@@ -120,6 +120,7 @@ function updateWbBatchBar() {
   const bar = document.getElementById("wbBatchBar");
   const countEl = document.getElementById("wbBatchCount");
   if (!bar) return;
+  if (!countEl) return;
   const count = wbSelectedCells.length;
   if (count > 0) {
     bar.classList.add("visible");

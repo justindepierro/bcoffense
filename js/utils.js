@@ -2400,3 +2400,17 @@ function setTeamName(name) {
     teamSub.textContent = name && name !== "My Team Football" ? name : "";
   }
 }
+
+/**
+ * Escape a string for safe use in HTML attribute values.
+ * Defined here so it's available before installation.js loads.
+ */
+function escapeAttr(str) {
+  return String(str)
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;")
+    .replace(/'/g, "&#39;")
+    .replace(/"/g, "&quot;")
+    .replace(/`/g, "&#96;");
+}
