@@ -2245,12 +2245,16 @@ body.fab-idle .script-display-fab:focus-visible {
   table-layout: auto;
 }
 .print-preview-content .script-table th {
-  background: var(--color-text) !important;
-  color: white !important;
+  background: white !important;
+  color: var(--color-text) !important;
   padding: 4px 3px !important;
   font-size: 8px !important;
   font-weight: bold !important;
   white-space: nowrap !important;
+  border-top: 0.5px solid var(--color-text) !important;
+  border-bottom: 1.5px solid var(--color-text) !important;
+  text-transform: uppercase !important;
+  letter-spacing: 0.02em !important;
 }
 .print-preview-content .script-table td {
   padding: 3px 4px !important;
