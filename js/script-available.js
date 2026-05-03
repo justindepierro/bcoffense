@@ -191,6 +191,7 @@ function toggleScriptCheckbox(el) {
   const filterType = label.dataset.filterType;
   const value = label.dataset.filterValue;
   const checkbox = label.querySelector('input[type="checkbox"]');
+  if (!checkbox) return;
   checkbox.checked = !checkbox.checked;
   label.classList.toggle("checked", checkbox.checked);
 
