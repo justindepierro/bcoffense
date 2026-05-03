@@ -895,10 +895,11 @@ function exitBulkMode() {
 }
 
 function tdToggleBulkSelect(origIndex) {
-  if (tdSelectedPlays.has(origIndex)) {
-    tdSelectedPlays.delete(origIndex);
+  const idx = Number(origIndex);
+  if (tdSelectedPlays.has(idx)) {
+    tdSelectedPlays.delete(idx);
   } else {
-    tdSelectedPlays.add(origIndex);
+    tdSelectedPlays.add(idx);
   }
   renderPlayLog();
 }
@@ -999,6 +1000,11 @@ function tdDrop(e, idx) {
     tr.classList.remove("td-dragging");
   });
   if (tdDragIndex === null || tdDragIndex === idx) return;
+  if (tdSortColumn || Object.keys(tdFilters).length > 0 || tdSearchText) {
+    showToast("⚠️ Clear filters and sort before reordering");
+    tdDragIndex = null;
+    return;
+  }
   const opp = tendenciesOpponents[tendenciesCurrentOpponent];
   if (!opp) return;
   saveTendenciesState();
@@ -1298,7 +1304,7 @@ function renderPlayLogTable(filtered) {
   }
 
   const visibleCols = TD_COLUMNS.filter((c) =>
-    tdVisibleColumns.includes(c.key),
+    (tdVisibleColumns || TD_DEFAULT_VISIBLE).includes(c.key),
   );
 
   const headerCells = visibleCols

@@ -336,11 +336,11 @@ function obGetFilteredPlays() {
     entries = entries.filter((e) =>
       Array.from(e.types).some((t) =>
         [
-          "Drop",
+          "Pass",
           "Play Action",
-          "Play Pass",
           "Quick",
           "Screen",
+          "RPO",
           "Movement",
         ].includes(t),
       ),
