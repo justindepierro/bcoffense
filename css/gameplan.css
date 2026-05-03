@@ -366,8 +366,127 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* Print: when printing the game plan, hide chrome and show boxes only */
-@media print {
+/* ---- v333 polish: progress, collapse, accent, density, move-btn ---- */
+
+/* Sticky header so it stays visible while scrolling boxes */
+#gameplan .gp-header {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  background: var(--color-bg-light);
+}
+
+/* Color accent left-border (set via inline --gp-box-accent) */
+.gp-box {
+  border-left: 4px solid var(--gp-box-accent, var(--color-border));
+}
+
+/* Box header is now clickable (toggles collapse) */
+.gp-box-header {
+  cursor: pointer;
+  user-select: none;
+}
+.gp-box-header:hover {
+  background: var(--color-bg-hover-row);
+}
+.gp-box-chevron {
+  display: inline-block;
+  width: 12px;
+  font-size: 10px;
+  color: var(--color-text-muted);
+}
+.gp-box-variety {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
+  margin-left: var(--space-xs);
+}
+.gp-box.is-collapsed .gp-box-body {
+  display: none;
+}
+
+/* Per-box progress bar */
+.gp-box-progress {
+  position: relative;
+  height: 6px;
+  background: var(--color-bg-input);
+  border-bottom: 1px solid var(--color-border-light);
+  overflow: hidden;
+}
+.gp-box-progress-bar {
+  height: 100%;
+  background: var(--gp-box-accent, var(--color-primary));
+  transition: width var(--transition-fast);
+}
+.gp-box-progress.is-met .gp-box-progress-bar {
+  background: var(--color-success, #16a34a);
+}
+.gp-box-progress.is-over .gp-box-progress-bar {
+  background: var(--color-warning, #f59e0b);
+}
+.gp-box-progress-label {
+  position: absolute;
+  right: 6px;
+  top: -16px;
+  font-size: 10px;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
+
+/* Play card body + meta line */
+.gp-box-play-body {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.gp-box-play-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.gp-box-play-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-shrink: 0;
+}
+.gp-box-play-btn {
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+.gp-box-play-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-hover-row);
+}
+
+/* Density modes (applied on .gp-boxes) */
+.gp-density-compact .gp-box-play {
+  padding: 2px 4px;
+  font-size: var(--font-size-xs);
+}
+.gp-density-compact .gp-box-play-meta { display: none; }
+.gp-density-compact .gp-box-body { gap: 2px; }
+
+.gp-density-detail .gp-box-play {
+  padding: 6px 8px;
+}
+.gp-density-detail .gp-box-play-meta {
+  font-size: var(--font-size-sm);
+}
+
+/* Holding accent override (warning color) */
+.gp-box-holding {
+  --gp-box-accent: var(--color-warning, #f59e0b);
+}
+
+/* Print: when printing the game plan, hide chrome and show boxes only */@media print {
   body[data-active-tab="gameplan"] .panel:not(#gameplan),
   body[data-active-tab="gameplan"] .tabs,
   body[data-active-tab="gameplan"] header,

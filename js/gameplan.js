@@ -42,10 +42,31 @@ let _gpFilters = {
   formation: "",
   personnel: "",
   hideAssigned: false,
+  density: "comfortable", // "comfortable" | "compact" | "detail"
+  showProgress: true,
 };
 let _gpSelected = new Set(); // play signatures currently checked in library
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
 let _gpDragSource = null; // { boxId, sig } for box → box / box → library
+
+// Type-alias map (used by Send to Game Plan + Holding auto-route)
+const GP_TYPE_ALIASES = {
+  "Play Pass": "Play Action",
+  "Drop": "Pass",
+};
+
+// Color accents per default box id (CSS uses [data-box-id] attribute selectors
+// but we also set a CSS variable so custom boxes can fall back gracefully)
+const GP_BOX_ACCENTS = {
+  Run: "#d97706",
+  Pass: "#2563eb",
+  Screen: "#0891b2",
+  Quick: "#7c3aed",
+  "Play Action": "#db2777",
+  RPO: "#16a34a",
+  "Run Option": "#65a30d",
+  Movement: "#9333ea",
+};
 
 /* -------------------------------------------------------------------------
    Storage helpers
@@ -75,6 +96,8 @@ function _gpEnsureBoard() {
     all[key] = {
       assignments: {},   // boxId → array of play snapshots
       customBoxes: [],   // [{ id, label }]
+      targets: {},       // boxId → number target (per-box)
+      collapsed: [],     // [boxId, ...] collapsed box ids
     };
     GP_DEFAULT_BOXES.forEach((b) => {
       all[key].assignments[b.id] = [];
@@ -91,6 +114,8 @@ function _gpEnsureBoard() {
       all[key].assignments[GP_HOLDING_ID] = [];
     }
     if (!Array.isArray(all[key].customBoxes)) all[key].customBoxes = [];
+    if (!all[key].targets || typeof all[key].targets !== "object") all[key].targets = {};
+    if (!Array.isArray(all[key].collapsed)) all[key].collapsed = [];
     all[key].customBoxes.forEach((cb) => {
       if (!Array.isArray(all[key].assignments[cb.id])) {
         all[key].assignments[cb.id] = [];
@@ -213,6 +238,15 @@ function renderGamePlan() {
         <button class="btn btn-sm" data-action="addGamePlanCustomBox" title="Add a free-form drafting box">
           ➕ Custom Box
         </button>
+        <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
+          ▼ Expand All
+        </button>
+        <button class="btn btn-sm" data-action="collapseAllGamePlanBoxes" title="Collapse every box">
+          ▶ Collapse All
+        </button>
+        <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
+          ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
+        </button>
         <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
           📊 Variety Stats
         </button>
@@ -277,7 +311,7 @@ function renderGamePlan() {
     </div>`;
 
   const boxesHtml = `
-    <div class="gp-boxes" id="gpBoxes">
+    <div class="gp-boxes gp-density-${escapeHtml(_gpFilters.density)}" id="gpBoxes">
       ${allBoxes.map((b) => _gpRenderBox(b, board)).join("")}
     </div>`;
 
@@ -311,45 +345,103 @@ function _gpRenderBox(box, board) {
   const list = board.assignments[box.id] || [];
   const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
   const isHolding = box.id === GP_HOLDING_ID;
-  return `
-    <div class="gp-box${isHolding ? " gp-box-holding" : ""}" data-box-id="${escapeHtml(box.id)}">
-      <div class="gp-box-header">
-        <div class="gp-box-title">
-          <span>${escapeHtml(box.label)}</span>
-          <span class="gp-box-count">${list.length}</span>
-        </div>
-        <div class="gp-box-actions">
-          ${isCustom
-            ? `<button class="btn btn-sm btn-secondary" title="Rename"
-                data-action="renameGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
-               <button class="btn btn-sm btn-danger" title="Delete box"
-                data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
-            : ""}
-          <button class="btn btn-sm" title="Clear plays in this box"
-            data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>
-        </div>
+  const target = Number(board.targets && board.targets[box.id]) || 0;
+  const collapsed = Array.isArray(board.collapsed) && board.collapsed.includes(box.id);
+  const accent = GP_BOX_ACCENTS[box.id] || "";
+
+  // Per-box variety (unique formations + personnel)
+  const uniqForms = new Set();
+  const uniqPers = new Set();
+  list.forEach((p) => {
+    if (p.formation) uniqForms.add(p.formation);
+    if (p.personnel) uniqPers.add(p.personnel);
+  });
+  const varietyHtml = list.length > 0
+    ? `<span class="gp-box-variety">${uniqForms.size} form • ${uniqPers.size} pers</span>`
+    : "";
+
+  // Progress bar (only if a target is set)
+  let progressHtml = "";
+  if (target > 0) {
+    const pct = Math.min(100, Math.round((list.length / target) * 100));
+    const overflow = list.length > target;
+    const status = overflow ? "is-over" : list.length >= target ? "is-met" : "";
+    progressHtml = `
+      <div class="gp-box-progress ${status}" title="${list.length} of ${target} target">
+        <div class="gp-box-progress-bar" style="width:${pct}%"></div>
+        <span class="gp-box-progress-label">${list.length}/${target}</span>
+      </div>`;
+  }
+
+  const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
+  const holdingAutoBtn = isHolding && list.length > 0
+    ? `<button class="btn btn-sm" title="Send each play to its matching default box (by type)"
+        data-action="autoRouteHoldingBox">🚀 Auto-route</button>`
+    : "";
+
+  const headerHtml = `
+    <div class="gp-box-header" data-action="toggleGamePlanBoxCollapse" data-arg="${escapeHtml(box.id)}">
+      <div class="gp-box-title">
+        <span class="gp-box-chevron">${collapsed ? "▶" : "▼"}</span>
+        <span>${escapeHtml(box.label)}</span>
+        <span class="gp-box-count">${list.length}${target > 0 ? `/${target}` : ""}</span>
+        ${varietyHtml}
       </div>
+      <div class="gp-box-actions" data-stop-toggle="1">
+        ${holdingAutoBtn}
+        <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
+          data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
+        ${isCustom
+          ? `<button class="btn btn-sm btn-secondary" title="Rename"
+              data-action="renameGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
+             <button class="btn btn-sm btn-danger" title="Delete box"
+              data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
+          : ""}
+        <button class="btn btn-sm" title="Clear plays in this box"
+          data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>
+      </div>
+    </div>
+    ${progressHtml}`;
+
+  const bodyHtml = collapsed ? "" : `
       <div class="gp-box-body" data-box-drop="${escapeHtml(box.id)}">
         ${list.length === 0
           ? `<div class="gp-box-empty">${isHolding
-              ? "Untyped tagged plays land here. Drag them out to any box."
+              ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
               : "Drop plays here, or use “Add Selected to…”."}</div>`
-          : list.map((p, idx) => {
-              const sig = _gpPlaySignature(p);
-              const callHtml = typeof getFullCall === "function"
-                ? getFullCall(p, { showLineCall: false })
-                : escapeHtml(p.play || "");
-              return `
-                <div class="gp-box-play" draggable="true"
-                     data-box-id="${escapeHtml(box.id)}"
-                     data-sig="${escapeHtml(sig)}"
-                     data-idx="${idx}">
-                  <div class="gp-box-play-call">${callHtml}</div>
-                  <button class="gp-box-play-remove" aria-label="Remove from box"
-                    data-action="removeFromGamePlanBox"
-                    data-arg="${escapeHtml(box.id + "::" + sig)}" title="Remove">×</button>
-                </div>`;
-            }).join("")}
+          : list.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx)).join("")}
+      </div>`;
+
+  return `
+    <div class="gp-box${isHolding ? " gp-box-holding" : ""}${collapsed ? " is-collapsed" : ""}"
+         ${accentStyle}
+         data-box-id="${escapeHtml(box.id)}">
+      ${headerHtml}
+      ${bodyHtml}
+    </div>`;
+}
+
+function _gpRenderBoxPlay(boxId, play, idx) {
+  const sig = _gpPlaySignature(play);
+  const callHtml = typeof getFullCall === "function"
+    ? getFullCall(play, { showLineCall: false })
+    : escapeHtml(play.play || "");
+  const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
+  return `
+    <div class="gp-box-play" draggable="true"
+         data-box-id="${escapeHtml(boxId)}"
+         data-sig="${escapeHtml(sig)}"
+         data-idx="${idx}">
+      <div class="gp-box-play-body">
+        <div class="gp-box-play-call">${callHtml}</div>
+        ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
+      </div>
+      <div class="gp-box-play-actions">
+        <button class="gp-box-play-btn" aria-label="Move to another box"
+          data-action="moveGamePlanPlay" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move to…">↔</button>
+        <button class="gp-box-play-remove" aria-label="Remove from box"
+          data-action="removeFromGamePlanBox"
+          data-arg="${escapeHtml(boxId + "::" + sig)}" title="Remove">×</button>
       </div>
     </div>`;
 }
@@ -789,19 +881,13 @@ async function sendDashboardGamePlanToBoxes() {
   const assignedSigs = _gpAllAssignedSigs(board);
   const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
 
-  // Aliases: route some play types into related default boxes
-  const TYPE_ALIASES = {
-    "Play Pass": "Play Action",
-    "Drop": "Pass",
-  };
-
   // Group tagged plays by destination box id
   const byBox = {};
   let alreadyAssigned = 0;
   tagged.forEach((play) => {
     const sig = _gpPlaySignature(play);
     if (assignedSigs.has(sig)) { alreadyAssigned += 1; return; }
-    const mappedType = TYPE_ALIASES[play.type] || play.type;
+    const mappedType = GP_TYPE_ALIASES[play.type] || play.type;
     const dest = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
     if (!byBox[dest]) byBox[dest] = [];
     byBox[dest].push(sig);
@@ -853,6 +939,127 @@ async function sendDashboardGamePlanToBoxes() {
 
   // Navigate to the gameplan tab so the user sees the result
   if (typeof showTab === "function") showTab("gameplan");
+}
+
+/* -------------------------------------------------------------------------
+   Box collapse / targets / density / move / holding auto-route
+   ------------------------------------------------------------------------- */
+
+function toggleGamePlanBoxCollapse(boxId) {
+  if (!boxId) return;
+  _gpUpdateBoard((board) => {
+    if (!Array.isArray(board.collapsed)) board.collapsed = [];
+    const idx = board.collapsed.indexOf(boxId);
+    if (idx >= 0) board.collapsed.splice(idx, 1);
+    else board.collapsed.push(boxId);
+  });
+  renderGamePlan();
+}
+
+function expandAllGamePlanBoxes() {
+  _gpUpdateBoard((board) => { board.collapsed = []; });
+  renderGamePlan();
+}
+
+function collapseAllGamePlanBoxes() {
+  _gpUpdateBoard((board) => {
+    const allIds = [
+      GP_HOLDING_ID,
+      ...GP_DEFAULT_BOXES.map((b) => b.id),
+      ...(board.customBoxes || []).map((b) => b.id),
+    ];
+    board.collapsed = allIds.slice();
+  });
+  renderGamePlan();
+}
+
+async function setGamePlanBoxTarget(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const current = Number(board.targets && board.targets[boxId]) || 0;
+  const value = await showPrompt(
+    `Set target play count for this box.\nLeave blank or 0 to clear.`,
+    current > 0 ? String(current) : "",
+    { title: "Box Target", icon: "🎯", placeholder: "e.g. 12" },
+  );
+  if (value === null) return;
+  const num = Math.max(0, Math.floor(Number(value) || 0));
+  _gpUpdateBoard((b) => {
+    if (!b.targets || typeof b.targets !== "object") b.targets = {};
+    if (num > 0) b.targets[boxId] = num;
+    else delete b.targets[boxId];
+  });
+  renderGamePlan();
+}
+
+function cycleGamePlanDensity() {
+  const order = ["comfortable", "compact", "detail"];
+  const idx = order.indexOf(_gpFilters.density || "comfortable");
+  _gpFilters.density = order[(idx + 1) % order.length];
+  renderGamePlan();
+  showToast(`Density: ${_gpFilters.density}`, { duration: 1200 });
+}
+
+async function moveGamePlanPlay(combined) {
+  if (!combined) return;
+  const sepIdx = combined.indexOf("::");
+  if (sepIdx < 0) return;
+  const fromBoxId = combined.slice(0, sepIdx);
+  const sig = combined.slice(sepIdx + 2);
+  const board = _gpEnsureBoard();
+  const choices = [
+    GP_HOLDING_BOX,
+    ...GP_DEFAULT_BOXES,
+    ...(board.customBoxes || []),
+  ]
+    .filter((b) => b.id !== fromBoxId)
+    .map((b) => ({ value: b.id, label: b.label }));
+  if (choices.length === 0) return;
+  const dest = await showListPicker(
+    "Move this play to which box?",
+    choices,
+    { title: "Move Play", icon: "↔" },
+  );
+  if (!dest) return;
+  _gpMoveBetweenBoxes(fromBoxId, dest, sig);
+}
+
+function autoRouteHoldingBox() {
+  const board = _gpEnsureBoard();
+  const holding = (board.assignments[GP_HOLDING_ID] || []).slice();
+  if (holding.length === 0) {
+    showToast("Holding is empty.", { duration: 1500 });
+    return;
+  }
+  const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
+  let routed = 0;
+  let leftBehind = 0;
+  _gpUpdateBoard((b) => {
+    const stillHolding = [];
+    holding.forEach((play) => {
+      const mapped = GP_TYPE_ALIASES[play.type] || play.type;
+      if (defaultIds.has(mapped)) {
+        if (!Array.isArray(b.assignments[mapped])) b.assignments[mapped] = [];
+        const sig = _gpPlaySignature(play);
+        const exists = b.assignments[mapped].some((p) => _gpPlaySignature(p) === sig);
+        if (!exists) b.assignments[mapped].push(play);
+        routed += 1;
+      } else {
+        stillHolding.push(play);
+        leftBehind += 1;
+      }
+    });
+    b.assignments[GP_HOLDING_ID] = stillHolding;
+  });
+  renderGamePlan();
+  if (routed === 0) {
+    showToast("No plays in Holding had a matching default box.", { type: "warning" });
+  } else {
+    showToast(
+      `Routed ${routed} play${routed === 1 ? "" : "s"} from Holding${leftBehind > 0 ? ` (${leftBehind} stayed)` : ""}`,
+      { type: "success" },
+    );
+  }
 }
 
 /* -------------------------------------------------------------------------
