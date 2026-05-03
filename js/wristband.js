@@ -560,8 +560,8 @@ function getCellBgColor(custom, isHuddle, isCandy, row, cardColor) {
   return row % 2 === 1 ? "#f4f4f4" : "";
 }
 
-/** Build line-call-only display: emoji prefix + bold line call (no brackets) */
-function getLineCallOnlyDisplay(play, opts) {
+/** Build line-call-only display: emoji prefix + cadence + bold line call (no brackets) */
+function getLineCallOnlyDisplay(play, opts, custom = null) {
   let prefix = "";
   if (opts.showEmoji && play.personnel) {
     prefix += `${getPersonnelEmoji(play.personnel, opts.useSquares)} `;
@@ -573,8 +573,13 @@ function getLineCallOnlyDisplay(play, opts) {
   if (opts.underEmoji && hasUnder) {
     prefix += "🍑 ";
   }
+  // Cadence / marker — honor placement (prefix / suffix / both)
+  const cadencePre = custom ? getCadencePrefix(custom, opts) : "";
+  const cadencePost = custom ? getCadencePostfix(custom, opts) : "";
   const lineCall = play.lineCall ? escapeHtml(play.lineCall) : "";
-  return lineCall ? `${prefix}<b>${lineCall}</b>` : prefix.trim();
+  const body = lineCall ? `<b>${lineCall}</b>` : "";
+  const out = `${prefix}${cadencePre}${body}${cadencePost}`.trim();
+  return out;
 }
 
 // Arrow key highlight index in cell popup

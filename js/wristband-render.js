@@ -63,7 +63,7 @@ function renderWristbandGrid() {
     if (!play) return "";
     // Line Call Only short-circuits everything else (including per-cell
     // custom component orders) so the toggle behaves consistently.
-    if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts);
+    if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts, custom);
     // If the user reordered components for this cell, bypass the canonical
     // getFullCall pipeline and compose tokens directly in their order.
     if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
@@ -81,7 +81,7 @@ function renderWristbandGrid() {
     if (variants.has(variantKey)) return variants.get(variantKey);
     const displayPlay = getCustomDisplayPlay(play, custom);
     const rendered = opts.lineCallOnly
-      ? getLineCallOnlyDisplay(play, opts)
+      ? getLineCallOnlyDisplay(play, opts, custom)
       : getFullCall(displayPlay, opts);
     variants.set(variantKey, rendered);
     return rendered;

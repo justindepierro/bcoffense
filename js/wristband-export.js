@@ -8,7 +8,7 @@ function printWristband() {
     const printDisplayCache = new Map();
     const getPrintDisplay = (play, custom) => {
       if (!play) return "";
-      if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts);
+      if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts, custom);
       if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
         return composeWristbandCellHtml(play, custom, opts);
       }
@@ -24,7 +24,7 @@ function printWristband() {
       if (variants.has(variantKey)) return variants.get(variantKey);
       const displayPlay = getCustomDisplayPlay(play, custom);
       const rendered = opts.lineCallOnly
-        ? getLineCallOnlyDisplay(play, opts)
+        ? getLineCallOnlyDisplay(play, opts, custom)
         : getFullCall(displayPlay, opts);
       variants.set(variantKey, rendered);
       return rendered;
