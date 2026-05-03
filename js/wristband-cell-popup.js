@@ -492,6 +492,84 @@ function openWbComponentReorder() {
   });
 }
 
+/**
+ * Apply the current pending component order to every cell. Asks the user
+ * whether to scope it to the active card or all cards. Cells with no other
+ * customization still get a record so the order persists; clearing the order
+ * (empty array) removes componentOrder from every targeted cell.
+ */
+async function applyWbComponentOrderToAll() {
+  if (typeof showChoice !== "function" || typeof showConfirm !== "function") return;
+  if (!Array.isArray(wristbandCards) || wristbandCards.length === 0) return;
+
+  const order = Array.isArray(pendingComponentOrder)
+    ? normalizeWbComponentOrder(pendingComponentOrder)
+    : [];
+  const isClearing = order.length === 0;
+
+  let scope = "card";
+  if (wristbandCards.length > 1) {
+    const choice = await showChoice(
+      isClearing
+        ? "Clear the custom component order from cells?"
+        : "Apply this component order to which cells?",
+      {
+        title: "Apply Component Order",
+        icon: "📋",
+        option1: `Active card only (${escapeHtml(wristbandCards[currentCardIndex]?.name || "Card")})`,
+        option2: `All ${wristbandCards.length} cards`,
+      },
+    );
+    if (!choice) return;
+    scope = choice === "option2" ? "all" : "card";
+  }
+
+  const targetCards = scope === "all"
+    ? wristbandCards.map((_, idx) => idx)
+    : [currentCardIndex];
+
+  const cellCount = targetCards.length * CELLS_PER_CARD;
+  const ok = await showConfirm(
+    isClearing
+      ? `Reset component order to default on <strong>${cellCount}</strong> cells?`
+      : `Apply this component order to <strong>${cellCount}</strong> cells?`,
+    {
+      title: isClearing ? "Reset Component Order" : "Apply Component Order",
+      icon: "📋",
+      confirmText: isClearing ? "Reset" : "Apply",
+    },
+  );
+  if (!ok) return;
+
+  mutateWristbandState(() => {
+    targetCards.forEach((cardIdx) => {
+      for (let cellIdx = 0; cellIdx < CELLS_PER_CARD; cellIdx += 1) {
+        const key = getWristbandCellCustomizationKey(cardIdx, cellIdx);
+        const existing = cellCustomizations[key] || {};
+        const next = {
+          bgColor: existing.bgColor || "",
+          textColor: existing.textColor || "",
+          markers: Array.isArray(existing.markers) ? [...existing.markers] : [],
+          markerPlacement: existing.markerPlacement || "",
+          extraPersonnel: existing.extraPersonnel || "",
+          preShift: existing.preShift || "",
+          formationTags: Array.isArray(existing.formationTags) ? [...existing.formationTags] : [],
+          backTags: Array.isArray(existing.backTags) ? [...existing.backTags] : [],
+          componentOrder: isClearing ? [] : [...order],
+        };
+        setWristbandCellCustomization(key, next);
+      }
+    });
+  }, { refreshCardView: true });
+
+  showToast(
+    isClearing
+      ? `Reset component order on ${cellCount} cells`
+      : `Applied component order to ${cellCount} cells`,
+    { type: "success" },
+  );
+}
+
 function applyCellStyle() {
   const { cardIdx, cellIdx } = currentEditingCell;
   if (cardIdx === null || cellIdx === null) return;
