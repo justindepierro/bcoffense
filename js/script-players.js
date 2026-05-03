@@ -122,8 +122,11 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
 }
 
 function rerenderScriptPreservingScroll(anchorIndex) {
-  // Try to anchor on a specific row (or the row owning the active element) so
+  // Anchor on a specific row (or the row owning the active element) so
   // height changes from the player grid don't push the user's play out of view.
+  // CRITICAL: restore scroll synchronously after renderScript() (before the
+  // browser paints the new DOM) — using requestAnimationFrame causes a visible
+  // one-frame jump.
   const scriptEl = document.getElementById("scriptPlays");
   let anchorRow = null;
   if (typeof anchorIndex === "number" && scriptEl) {
@@ -134,28 +137,32 @@ function rerenderScriptPreservingScroll(anchorIndex) {
   }
   const anchorOffset = anchorRow ? anchorRow.getBoundingClientRect().top : null;
   const anchorIdx = anchorRow ? anchorRow.getAttribute("data-idx") : null;
-  const scrollY = window.scrollY;
+  const prevScrollY = window.scrollY;
 
   renderScript();
 
-  requestAnimationFrame(() => {
-    if (anchorIdx !== null) {
-      const newAnchor = document
-        .getElementById("scriptPlays")
-        ?.querySelector(`.script-item[data-idx="${anchorIdx}"]`);
-      if (newAnchor) {
-        const newTop = newAnchor.getBoundingClientRect().top;
-        const delta = newTop - anchorOffset;
+  // Synchronous restore — happens before the browser commits the next paint
+  // since we haven't yielded to the event loop yet.
+  if (anchorIdx !== null) {
+    const newAnchor = document
+      .getElementById("scriptPlays")
+      ?.querySelector(`.script-item[data-idx="${anchorIdx}"]`);
+    if (newAnchor) {
+      const newTop = newAnchor.getBoundingClientRect().top;
+      const delta = newTop - anchorOffset;
+      if (delta !== 0) {
         window.scrollTo({
-          top: window.scrollY + delta,
+          top: prevScrollY + delta,
           left: window.scrollX,
           behavior: "instant",
         });
-        return;
       }
+      return;
     }
-    window.scrollTo({ top: scrollY, left: window.scrollX, behavior: "instant" });
-  });
+  }
+  if (window.scrollY !== prevScrollY) {
+    window.scrollTo({ top: prevScrollY, left: window.scrollX, behavior: "instant" });
+  }
 }
 
 function promoteScriptDepthPlayer(index, slotKey, playerId) {
