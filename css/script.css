@@ -1281,18 +1281,14 @@
 .print-preview-row {
   display: flex;
   align-items: center;
-  gap: 8px;
-  padding: 5px 10px;
-  background: linear-gradient(
-    135deg,
-    var(--color-bg-light) 0%,
-    var(--color-border-light) 100%
-  );
-  border: 1px dashed var(--color-border-input);
+  gap: 6px;
+  padding: 4px 8px;
+  background: var(--color-bg-light);
+  border: 1px dashed var(--color-border-light);
   border-top: none;
-  border-radius: 0 0 6px 6px;
+  border-radius: 0 0 var(--radius-sm) var(--radius-sm);
   margin-bottom: 4px;
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-2xs);
   flex-wrap: wrap;
 }
 .print-preview-row .preview-label {
@@ -1767,38 +1763,38 @@
 
 /* Wristband Integration Panel */
 .wristband-integration-panel {
-  margin-top: 15px;
-  border: 1px solid var(--color-success);
+  margin-top: 12px;
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   overflow: hidden;
+  background: var(--color-white);
+  box-shadow: var(--shadow-xs);
 }
 .wristband-integration-panel .integration-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 10px 12px;
-  background: linear-gradient(
-    135deg,
-    var(--color-success) 0%,
-    var(--color-success-light) 100%
-  );
-  color: white;
+  padding: 8px 12px;
+  background: var(--color-bg-light);
+  color: var(--color-text);
   cursor: pointer;
   user-select: none;
+  border-bottom: 1px solid var(--color-border-light);
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+.wristband-integration-panel .integration-header strong {
+  color: var(--color-success);
 }
 @media (hover: hover) {
   .wristband-integration-panel .integration-header:hover {
-    background: linear-gradient(
-      135deg,
-      var(--color-success-hover) 0%,
-      var(--color-success) 100%
-    );
+    background: var(--color-bg-blue-light);
   }
 }
 
 .wristband-integration-panel .integration-content {
-  padding: 12px;
-  background: var(--color-success-light);
+  padding: 10px 12px;
+  background: var(--color-white);
 }
 .wristband-integration-panel .integration-content.collapsed {
   display: none;
