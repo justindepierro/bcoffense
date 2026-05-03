@@ -331,12 +331,17 @@ function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   const columns = getScriptPrintColumns(opts);
   const thead = table.querySelector("thead");
   if (thead) {
-    setInnerHTML(thead, `<tr>${columns
+    // NOTE: do NOT route through setInnerHTML/sanitizeHTML here. DOMParser
+    // drops orphan <tr>/<td> fragments because they're invalid outside a
+    // <table> context, which collapses the entire print table to inline
+    // text. The markup below is fully internal and already escaped via
+    // escapeHtml/getFullCall, so direct innerHTML assignment is safe.
+    thead.innerHTML = `<tr>${columns
       .map((column) => `<th class="col-${column.key}">${escapeHtml(column.label)}</th>`)
-      .join("")}</tr>`);
+      .join("")}</tr>`;
   }
 
-  setInnerHTML(body, bodyMarkup);
+  body.innerHTML = bodyMarkup;
 }
 
 function exportScriptCSV() {
