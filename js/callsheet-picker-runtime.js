@@ -147,6 +147,16 @@ function closeCallSheetPicker(event) {
   setCallSheetOverlayVisibility("callSheetPickerOverlay", false);
 }
 
+function debouncedPopulateCallSheetPlayList() {
+  if (!debouncedPopulateCallSheetPlayList._fn) {
+    debouncedPopulateCallSheetPlayList._fn =
+      typeof debounce === "function"
+        ? debounce(populateCallSheetPlayList, 100)
+        : populateCallSheetPlayList;
+  }
+  debouncedPopulateCallSheetPlayList._fn();
+}
+
 function populateCallSheetPlayList() {
   updatePickerSourceUI();
 

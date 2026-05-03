@@ -1391,7 +1391,7 @@
             <h2 class="dash-title">📊 Game Week Dashboard</h2>
             <div class="dash-opponent-select-group">
               <input type="text" id="dashSearchInput" class="dash-search-input"
-                placeholder="Search opponents or schedule..." data-oninput="onDashSearchInput" data-pass="value"
+                placeholder="Search opponents or schedule..." data-oninput="debouncedOnDashSearchInput" data-pass="value"
                 aria-label="Search dashboard opponents and schedule" />
               <label for="dashOpponentSelect" class="dash-label">Active Opponent:</label>
               <select id="dashOpponentSelect" class="dash-select" data-onchange="onDashOpponentChange"
@@ -1846,7 +1846,7 @@
         <div class="search-input-wrap cs-picker-search-wrap">
           <label for="callSheetPlaySearch" class="sr-only">Search plays</label>
           <input type="text" id="callSheetPlaySearch" class="cs-picker-search"
-            placeholder="🔍 Search plays, types, tags…" data-oninput="populateCallSheetPlayList" />
+            placeholder="🔍 Search plays, types, tags…" data-oninput="debouncedPopulateCallSheetPlayList" />
           <button id="clearCsPickerSearch" class="search-clear-btn hidden" data-action="clearCsPickerSearch"
             title="Clear search" aria-label="Clear search">
             ✕

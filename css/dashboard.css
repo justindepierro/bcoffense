@@ -19,6 +19,15 @@
   color: white;
   gap: var(--space-md);
   flex-wrap: wrap;
+  position: sticky;
+  top: 78px;
+  z-index: 6;
+  box-shadow: var(--shadow-md);
+}
+@media (max-width: 640px) {
+  .dash-opponent-bar {
+    position: static;
+  }
 }
 
 .dash-title {

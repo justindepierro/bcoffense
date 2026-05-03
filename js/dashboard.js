@@ -269,6 +269,9 @@ function onDashSearchInput(value) {
   renderDashboard();
 }
 
+const debouncedOnDashSearchInput =
+  typeof debounce === "function" ? debounce(onDashSearchInput, 120) : onDashSearchInput;
+
 /**
  * Render the schedule table in the dashboard
  */

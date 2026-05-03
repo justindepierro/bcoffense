@@ -1280,6 +1280,10 @@ function updatePageToggle() {
 // RAF-coalesced version: multiple calls within one frame resolve to a single render
 const _scheduleRenderCallSheet = createRAFRenderer(renderCallSheet);
 
+function scheduleRenderCallSheet() {
+  _scheduleRenderCallSheet();
+}
+
 function requestRenderCallSheet() {
   saveCallSheetDisplayOptions();
   _scheduleRenderCallSheet();

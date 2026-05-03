@@ -22,6 +22,8 @@ function _showWbCellContextMenu(e, cardIdx, cellIdx) {
         delete cellCustomizations[`${cardIdx}-${cellIdx}`];
         renderCardTabs();
         renderWristbandGrid();
+        markWristbandDirty();
+        scheduleWristbandAutosave();
       },
     });
   }

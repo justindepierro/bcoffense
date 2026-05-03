@@ -355,6 +355,8 @@ async function autoFillWristband() {
 
   renderCardTabs();
   renderWristbandGrid();
+  markWristbandDirty();
+  scheduleWristbandAutosave();
   showToast(`✅ Added ${filledCount} play${filledCount !== 1 ? "s" : ""}`);
 }
 

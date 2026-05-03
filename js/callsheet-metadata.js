@@ -35,7 +35,7 @@ function editCategoryNote(categoryId) {
       delete csNotes[categoryId];
     }
     storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
-    renderCallSheet();
+    scheduleRenderCallSheet();
   };
 
   input.addEventListener("blur", finish);
@@ -45,7 +45,7 @@ function editCategoryNote(categoryId) {
       input.blur();
     }
     if (e.key === "Escape") {
-      renderCallSheet();
+      scheduleRenderCallSheet();
     }
   });
 }
@@ -72,7 +72,24 @@ function setCategoryTarget(categoryId) {
   input.focus();
   input.select();
 
-  const close = () => overlay.remove();
+  let closed = false;
+  const close = () => {
+    if (closed) return;
+    closed = true;
+    document.removeEventListener("mousedown", onOutside, true);
+    document.removeEventListener("keydown", onEscKey, true);
+    overlay.remove();
+  };
+  const onOutside = (e) => {
+    if (!overlay.contains(e.target)) close();
+  };
+  const onEscKey = (e) => {
+    if (e.key === "Escape") close();
+  };
+  setTimeout(() => {
+    document.addEventListener("mousedown", onOutside, true);
+    document.addEventListener("keydown", onEscKey, true);
+  }, 0);
 
   overlay.querySelector(".cs-target-save").addEventListener("click", () => {
     const val = parseInt(input.value, 10);
@@ -83,14 +100,14 @@ function setCategoryTarget(categoryId) {
     }
     storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
     close();
-    renderCallSheet();
+    scheduleRenderCallSheet();
   });
 
   overlay.querySelector(".cs-target-clear").addEventListener("click", () => {
     delete csTargets[categoryId];
     storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
     close();
-    renderCallSheet();
+    scheduleRenderCallSheet();
   });
 
   overlay.querySelector(".cs-target-cancel").addEventListener("click", close);
@@ -140,7 +157,7 @@ function openCategoryMenu(event, categoryId) {
 
 function clearCategory(categoryId) {
   callSheet[categoryId] = { left: [], right: [] };
-  renderCallSheet();
+  scheduleRenderCallSheet();
   saveCallSheet();
   showToast("🗑️ Category cleared");
 }

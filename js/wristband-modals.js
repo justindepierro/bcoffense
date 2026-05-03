@@ -104,5 +104,7 @@ async function executeWbFindReplace() {
   closeWbFindReplaceModal();
   renderCardTabs();
   renderWristbandGrid();
+  markWristbandDirty();
+  scheduleWristbandAutosave();
   showToast(`✅ Replaced ${cellsAffected} play${cellsAffected === 1 ? "" : "s"}`);
 }
