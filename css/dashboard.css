@@ -432,6 +432,13 @@
   line-height: 1.5;
 }
 
+.dash-gameplan-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
 .dash-gp-summary {
   display: flex;
   gap: 28px;

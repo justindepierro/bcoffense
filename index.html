@@ -1547,85 +1547,85 @@
           <span class="cs-toolbar-secondary-summary-hint">History • Insights • Sheet • Layout • Board</span>
         </summary>
         <div class="cs-toolbar-secondary">
-        <div class="cs-toolbar-meta">
-          <strong>Quick Actions</strong>
-          <span>Manage history, scouting, layout, and board visibility.</span>
-        </div>
-        <div class="cs-toolbar-groups">
-          <div class="cs-tool-group">
-            <span class="cs-tool-group-label">History</span>
-            <div class="cs-tool-group-row">
-              <button id="callsheetUndoBtn" class="cs-tool-btn btn-undo" data-action="undoCallSheet" disabled
-                title="Nothing to undo">
-                ↩️ Undo
-              </button>
-              <button id="callsheetRedoBtn" class="cs-tool-btn btn-redo" data-action="redoCallSheet" disabled
-                title="Nothing to redo">
-                ↪️ Redo
-              </button>
-            </div>
+          <div class="cs-toolbar-meta">
+            <strong>Quick Actions</strong>
+            <span>Manage history, scouting, layout, and board visibility.</span>
           </div>
+          <div class="cs-toolbar-groups">
+            <div class="cs-tool-group">
+              <span class="cs-tool-group-label">History</span>
+              <div class="cs-tool-group-row">
+                <button id="callsheetUndoBtn" class="cs-tool-btn btn-undo" data-action="undoCallSheet" disabled
+                  title="Nothing to undo">
+                  ↩️ Undo
+                </button>
+                <button id="callsheetRedoBtn" class="cs-tool-btn btn-redo" data-action="redoCallSheet" disabled
+                  title="Nothing to redo">
+                  ↪️ Redo
+                </button>
+              </div>
+            </div>
 
-          <div class="cs-tool-group">
-            <span class="cs-tool-group-label">Insights</span>
-            <div class="cs-tool-group-row">
-              <button class="cs-tool-btn cs-scouting-btn" data-action="toggleScoutingOverlay"
-                title="Show/hide opponent scouting intel on categories" id="csScoutingToggle">
-                🎯 Scouting Intel
-              </button>
-              <button class="cs-tool-btn" data-action="toggleStatsPanel" title="Quick Stats">
-                📊 Stats
-              </button>
-              <button class="cs-tool-btn" data-action="toggleNotOnSheet" title="Plays not on sheet">
-                🔍 Not On Sheet
-              </button>
+            <div class="cs-tool-group">
+              <span class="cs-tool-group-label">Insights</span>
+              <div class="cs-tool-group-row">
+                <button class="cs-tool-btn cs-scouting-btn" data-action="toggleScoutingOverlay"
+                  title="Show/hide opponent scouting intel on categories" id="csScoutingToggle">
+                  🎯 Scouting Intel
+                </button>
+                <button class="cs-tool-btn" data-action="toggleStatsPanel" title="Quick Stats">
+                  📊 Stats
+                </button>
+                <button class="cs-tool-btn" data-action="toggleNotOnSheet" title="Plays not on sheet">
+                  🔍 Not On Sheet
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div class="cs-tool-group">
-            <span class="cs-tool-group-label">Sheet</span>
-            <div class="cs-tool-group-row">
-              <button class="cs-tool-btn" data-action="openTemplatesModal" data-arg="manage"
-                title="Browse saved call sheets and template actions">
-                📁 Saved Call Sheets
-              </button>
-              <button class="cs-tool-btn" data-action="openAddCallSheetCategoryModal"
-                title="Add a custom call sheet category">
-                ➕ Add Category
-              </button>
+            <div class="cs-tool-group">
+              <span class="cs-tool-group-label">Sheet</span>
+              <div class="cs-tool-group-row">
+                <button class="cs-tool-btn" data-action="openTemplatesModal" data-arg="manage"
+                  title="Browse saved call sheets and template actions">
+                  📁 Saved Call Sheets
+                </button>
+                <button class="cs-tool-btn" data-action="openAddCallSheetCategoryModal"
+                  title="Add a custom call sheet category">
+                  ➕ Add Category
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div class="cs-tool-group">
-            <span class="cs-tool-group-label">Layout</span>
-            <div class="cs-tool-group-row">
-              <button class="cs-tool-btn" data-action="smartReorderCategories"
-                title="Auto-arrange for best print layout">
-                🧩 Smart Layout
-              </button>
-              <button class="cs-tool-btn" data-action="openCallSheetLayoutModal"
-                title="Manually reorder categories and move them between front and back">
-                🗂️ Reorder
-              </button>
-              <button class="cs-tool-btn" data-action="resetCategoryOrder"
-                title="Reset the full front/back category layout">
-                ↩️ Reset Layout
-              </button>
+            <div class="cs-tool-group">
+              <span class="cs-tool-group-label">Layout</span>
+              <div class="cs-tool-group-row">
+                <button class="cs-tool-btn" data-action="smartReorderCategories"
+                  title="Auto-arrange for best print layout">
+                  🧩 Smart Layout
+                </button>
+                <button class="cs-tool-btn" data-action="openCallSheetLayoutModal"
+                  title="Manually reorder categories and move them between front and back">
+                  🗂️ Reorder
+                </button>
+                <button class="cs-tool-btn" data-action="resetCategoryOrder"
+                  title="Reset the full front/back category layout">
+                  ↩️ Reset Layout
+                </button>
+              </div>
             </div>
-          </div>
 
-          <div class="cs-tool-group">
-            <span class="cs-tool-group-label">Board</span>
-            <div class="cs-tool-group-row">
-              <button class="cs-tool-btn" data-action="expandAllCategories" title="Expand all">
-                ▼ Expand All
-              </button>
-              <button class="cs-tool-btn" data-action="collapseAllCategories" title="Collapse all">
-                ▶ Collapse All
-              </button>
+            <div class="cs-tool-group">
+              <span class="cs-tool-group-label">Board</span>
+              <div class="cs-tool-group-row">
+                <button class="cs-tool-btn" data-action="expandAllCategories" title="Expand all">
+                  ▼ Expand All
+                </button>
+                <button class="cs-tool-btn" data-action="collapseAllCategories" title="Collapse all">
+                  ▶ Collapse All
+                </button>
+              </div>
             </div>
           </div>
-        </div>
         </div>
       </details>
 

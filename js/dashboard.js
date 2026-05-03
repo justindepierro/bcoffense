@@ -439,6 +439,9 @@ function renderGamePlanSummary() {
     section.innerHTML = `<div class="dash-gameplan-card">
       <h3 class="dash-section-title">🎯 Game Plan — ${escapeHtml(gw.opponentName)}</h3>
       <p class="dash-gameplan-empty">No plays tagged for this opponent yet. Open the <strong>Playbook</strong>, double-click a play, and check <strong>In Game Plan</strong> to start building your game plan.</p>
+      <div class="dash-gameplan-actions">
+        <button class="btn btn-sm btn-success" data-action="sendDashboardGamePlanToBoxes" title="Auto-place tagged plays into the Game Plan boxes">🎯 Send to Game Plan</button>
+      </div>
     </div>`;
     return;
   }
@@ -473,8 +476,10 @@ function renderGamePlanSummary() {
         ${breakdownHtml}
       </div>
     </div>
-    <button class="btn btn-sm btn-primary" data-action="filterPlaybookToGamePlan">📖 View in Playbook</button>
-    <button class="btn btn-sm btn-success" data-action="sendDashboardGamePlanToBoxes" title="Auto-place tagged plays into the Game Plan boxes">🎯 Send to Game Plan</button>
+    <div class="dash-gameplan-actions">
+      <button class="btn btn-sm btn-primary" data-action="filterPlaybookToGamePlan">📖 View in Playbook</button>
+      <button class="btn btn-sm btn-success" data-action="sendDashboardGamePlanToBoxes" title="Auto-place tagged plays into the Game Plan boxes">🎯 Send to Game Plan</button>
+    </div>
   </div>`;
 }
 
