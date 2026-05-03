@@ -160,6 +160,17 @@ table.sortable th {
   border-radius: var(--radius-md);
   margin-bottom: 10px;
   border: 1px solid var(--color-border-light);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+}
+.pb-gameplan-bar .pb-gp-filter-toggle {
+  flex: 1;
+  min-width: 0;
+}
+.pb-gp-send-btn {
+  margin-left: auto;
 }
 .pb-gp-filter-toggle {
   display: flex;
