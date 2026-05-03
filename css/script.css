@@ -1680,7 +1680,9 @@
   cursor: pointer;
   font: inherit;
   margin-left: 4px;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 .script-stats-bar .stat-health-btn:hover {
   background: var(--color-bg-hover-row);
@@ -1701,8 +1703,14 @@
 
 /* Script health flash highlight when jumping to an issue */
 @keyframes scriptHealthFlash {
-  0%, 100% { box-shadow: none; }
-  20%, 80% { box-shadow: 0 0 0 3px var(--color-warning); }
+  0%,
+  100% {
+    box-shadow: none;
+  }
+  20%,
+  80% {
+    box-shadow: 0 0 0 3px var(--color-warning);
+  }
 }
 .script-health-flash {
   animation: scriptHealthFlash 1.8s ease-in-out;

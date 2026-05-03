@@ -653,13 +653,13 @@
         <div class="custom-modal-body pb-sanitize-controls">
           <div class="pb-sanitize-row-controls">
             <label for="playbookSanitizeField" class="pb-sanitize-label">Field</label>
-            <select id="playbookSanitizeField" class="pb-sanitize-select"
-              data-onchange="setPlaybookSanitizeField" data-pass="value"></select>
+            <select id="playbookSanitizeField" class="pb-sanitize-select" data-onchange="setPlaybookSanitizeField"
+              data-pass="value"></select>
           </div>
           <div class="pb-sanitize-row-controls">
             <label class="pb-sanitize-toggle">
-              <input id="playbookSanitizeHideToggle" type="checkbox" checked
-                data-onchange="setPlaybookSanitizeHide" data-pass="event" />
+              <input id="playbookSanitizeHideToggle" type="checkbox" checked data-onchange="setPlaybookSanitizeHide"
+                data-pass="event" />
               Hide plays already filled in
             </label>
             <span class="pb-sanitize-status" id="playbookSanitizeStatus"></span>
@@ -802,13 +802,9 @@
               <button class="btn btn-add-period" data-action="addSeparator">
                 ＋ Add Period
               </button>
-              <select id="periodTemplateQuickPick"
-                class="period-template-quickpick"
-                data-onchange="quickInsertPeriodTemplate"
-                data-pass="value"
-                title="Insert a saved template"
-                aria-label="Quick insert period template"
-                hidden>
+              <select id="periodTemplateQuickPick" class="period-template-quickpick"
+                data-onchange="quickInsertPeriodTemplate" data-pass="value" title="Insert a saved template"
+                aria-label="Quick insert period template" hidden>
                 <option value="">📋 Quick Insert…</option>
               </select>
               <button class="btn btn-secondary btn-sm" data-action="insertPeriodFromTemplate"
@@ -848,10 +844,7 @@
               <span class="stat-value" id="statRatio">&#8212;</span>
             </div>
             <button type="button" class="stat-item stat-health-btn" id="statHealthBtn"
-              data-action="showScriptHealthIssues"
-              title="Script health check"
-              aria-label="Script health check"
-              hidden>
+              data-action="showScriptHealthIssues" title="Script health check" aria-label="Script health check" hidden>
               <span class="stat-label">Health</span>
               <span class="stat-value" id="statHealth">0</span>
             </button>
@@ -905,8 +898,8 @@
               </button>
               <select id="jumpToPeriod" class="toolbar-sort-select hidden" data-onchange="jumpToPeriod"
                 data-pass="value" title="Jump to period"></select>
-              <input type="text" id="scriptSearchBox" placeholder="🔍 Search script..." data-oninput="debouncedFilterScriptItems"
-                class="script-search-input" />
+              <input type="text" id="scriptSearchBox" placeholder="🔍 Search script..."
+                data-oninput="debouncedFilterScriptItems" class="script-search-input" />
               <span id="scriptSearchCount" class="script-search-count hidden" role="status" aria-live="polite"></span>
             </div>
           </div>
@@ -1429,8 +1422,8 @@
             <h2 class="dash-title">📊 Game Week Dashboard</h2>
             <div class="dash-opponent-select-group">
               <input type="text" id="dashSearchInput" class="dash-search-input"
-                placeholder="Search opponents or schedule..." data-oninput="debouncedOnDashSearchInput" data-pass="value"
-                aria-label="Search dashboard opponents and schedule" />
+                placeholder="Search opponents or schedule..." data-oninput="debouncedOnDashSearchInput"
+                data-pass="value" aria-label="Search dashboard opponents and schedule" />
               <label for="dashOpponentSelect" class="dash-label">Active Opponent:</label>
               <select id="dashOpponentSelect" class="dash-select" data-onchange="onDashOpponentChange"
                 data-pass="value">
@@ -2507,8 +2500,8 @@
   </div>
 
   <!-- Script Display Overlay -->
-  <div class="script-display-overlay" id="scriptDisplayOverlay" role="dialog"
-    aria-labelledby="scriptDisplayPanelTitle" aria-hidden="true" inert>
+  <div class="script-display-overlay" id="scriptDisplayOverlay" role="dialog" aria-labelledby="scriptDisplayPanelTitle"
+    aria-hidden="true" inert>
     <div class="script-display-panel">
       <div class="script-display-panel-header">
         <h3 id="scriptDisplayPanelTitle">🖨️ Script Display</h3>
@@ -2532,8 +2525,7 @@
           </label>
           <label class="script-display-mode-option">
             <input type="radio" name="scriptLayoutMode" value="compact"
-              aria-label="Compact layout: condensed table view"
-              data-onchange="renderScript;saveScriptDisplayOptions" />
+              aria-label="Compact layout: condensed table view" data-onchange="renderScript;saveScriptDisplayOptions" />
             Compact
           </label>
         </div>
@@ -2544,12 +2536,12 @@
         <div class="display-options-grid">
           <fieldset class="display-options-group">
             <legend>Display</legend>
-            <label><input type="checkbox" id="scriptShowEmoji"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> 🔵 Personnel Color</label>
-            <label><input type="checkbox" id="scriptUseSquares"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> 🟦 Use Squares</label>
-            <label><input type="checkbox" id="scriptUnderEmoji"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> 🍑 Under = Peach</label>
+            <label><input type="checkbox" id="scriptShowEmoji" data-onchange="renderScript;saveScriptDisplayOptions" />
+              🔵 Personnel Color</label>
+            <label><input type="checkbox" id="scriptUseSquares" data-onchange="renderScript;saveScriptDisplayOptions" />
+              🟦 Use Squares</label>
+            <label><input type="checkbox" id="scriptUnderEmoji" data-onchange="renderScript;saveScriptDisplayOptions" />
+              🍑 Under = Peach</label>
             <label><input type="checkbox" id="scriptShowLineCall" checked
                 data-onchange="renderScript;saveScriptDisplayOptions" /> Show [Line Call]</label>
             <label><input type="checkbox" id="scriptShowWbNum" checked
@@ -2559,14 +2551,14 @@
           </fieldset>
           <fieldset class="display-options-group">
             <legend>Highlight</legend>
-            <label><input type="checkbox" id="scriptBoldShifts"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> <b>Bold</b> Shifts</label>
-            <label><input type="checkbox" id="scriptRedShifts"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> <span class="red">Red</span> Shifts</label>
+            <label><input type="checkbox" id="scriptBoldShifts" data-onchange="renderScript;saveScriptDisplayOptions" />
+              <b>Bold</b> Shifts</label>
+            <label><input type="checkbox" id="scriptRedShifts" data-onchange="renderScript;saveScriptDisplayOptions" />
+              <span class="red">Red</span> Shifts</label>
             <label><input type="checkbox" id="scriptItalicMotions"
                 data-onchange="renderScript;saveScriptDisplayOptions" /> <i>Italic</i> Motions</label>
-            <label><input type="checkbox" id="scriptRedMotions"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> <span class="red">Red</span> Motions</label>
+            <label><input type="checkbox" id="scriptRedMotions" data-onchange="renderScript;saveScriptDisplayOptions" />
+              <span class="red">Red</span> Motions</label>
             <label><input type="checkbox" id="scriptHighlightHuddle"
                 data-onchange="renderScript;saveScriptDisplayOptions" /> 🟡 Highlight Huddle</label>
             <label><input type="checkbox" id="scriptHighlightCandy"
@@ -2580,8 +2572,8 @@
                 data-onchange="renderScript;saveScriptDisplayOptions" /> Hide Personnel</label>
             <label><input type="checkbox" id="scriptHideLinemen"
                 data-onchange="renderScript;saveScriptDisplayOptions" /> Hide Linemen</label>
-            <label><input type="checkbox" id="scriptPrintStyle"
-                data-onchange="renderScript;saveScriptDisplayOptions" /> Print-style Rows</label>
+            <label><input type="checkbox" id="scriptPrintStyle" data-onchange="renderScript;saveScriptDisplayOptions" />
+              Print-style Rows</label>
           </fieldset>
         </div>
       </div>
