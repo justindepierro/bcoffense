@@ -8,6 +8,7 @@ let pendingExtraPersonnel = "";
 let pendingPreShift = [];
 let pendingFormationTags = [];
 let pendingBackTags = [];
+let pendingComponentOrder = [];
 
 function renderPendingPreShiftList() {
   const input = document.getElementById("cellPreShiftInput");
@@ -192,6 +193,7 @@ function resetWristbandCellPopupPendingState() {
   pendingPreShift = [];
   pendingFormationTags = [];
   pendingBackTags = [];
+  pendingComponentOrder = [];
 }
 
 function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
@@ -207,6 +209,11 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
   pendingPreShift = getCustomPreShiftValues(existing);
   pendingFormationTags = getCustomFormationTagEntries(existing);
   pendingBackTags = getCustomBackTagEntries(existing);
+  pendingComponentOrder = Array.isArray(existing.componentOrder)
+    ? existing.componentOrder.filter(
+        (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
+      )
+    : [];
   pendingPlaySelection = currentPlay || null;
 }
 
@@ -221,6 +228,7 @@ function getWristbandPendingCellCustomization() {
       preShift: pendingPreShift.join("; "),
       formationTags: pendingFormationTags,
       backTags: pendingBackTags,
+      componentOrder: pendingComponentOrder,
     }) || {}
   );
 }
@@ -426,6 +434,64 @@ function populateWbBackTagDatalist() {
   datalist.innerHTML = unique.map((value) => `<option value="${escapeHtml(value)}"></option>`).join("");
 }
 
+function openWbComponentReorder() {
+  if (typeof showReorderModal !== "function") return;
+  // Build labels from the current pending state so the user sees live values
+  // next to each token (e.g. "Formation: Rex"). Tokens with no value still
+  // show so the user can pre-position them.
+  const play = pendingPlaySelection || {};
+  const livePending = {
+    bgColor: pendingBgColor,
+    textColor: pendingTextColor,
+    markers: pendingMarkers,
+    markerPlacement: pendingMarkerPlacement,
+    extraPersonnel: pendingExtraPersonnel,
+    preShift: pendingPreShift.join("; "),
+    formationTags: pendingFormationTags,
+    backTags: pendingBackTags,
+  };
+  const tokens = buildWristbandCellTokens(play, livePending, getWristbandDisplayOptions());
+  // Determine current order: stored componentOrder if any, else canonical.
+  const currentOrder = (pendingComponentOrder && pendingComponentOrder.length
+    ? normalizeWbComponentOrder(pendingComponentOrder)
+    : WB_CELL_TOKEN_IDS).filter((id) => WB_CELL_TOKEN_LABELS[id]);
+
+  // Map id ↔ label so we can recover ids after the user reorders by label.
+  const idsByLabel = new Map();
+  const labels = currentOrder.map((id) => {
+    const baseLabel = WB_CELL_TOKEN_LABELS[id] || id;
+    // Strip HTML for readable value preview
+    const tmp = document.createElement("div");
+    setInnerHTML(tmp, tokens[id] || "");
+    const valueText = (tmp.textContent || "").trim();
+    const label = valueText ? `${baseLabel}: ${valueText}` : `${baseLabel} (empty)`;
+    // Disambiguate any duplicate labels by appending a counter — required
+    // because showReorderModal keys by label.
+    let unique = label;
+    let n = 2;
+    while (idsByLabel.has(unique)) {
+      unique = `${label} #${n++}`;
+    }
+    idsByLabel.set(unique, id);
+    return unique;
+  });
+
+  showReorderModal(labels, {
+    title: "Reorder Cell Components",
+    onSave: (newLabels) => {
+      const newOrder = newLabels
+        .map((label) => idsByLabel.get(label))
+        .filter((id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id]);
+      pendingComponentOrder = newOrder;
+      showToast("Component order updated", { type: "success" });
+    },
+    onClear: () => {
+      pendingComponentOrder = [];
+      showToast("Component order reset to default");
+    },
+  });
+}
+
 function applyCellStyle() {
   const { cardIdx, cellIdx } = currentEditingCell;
   if (cardIdx === null || cellIdx === null) return;
@@ -454,6 +520,7 @@ function applyCellStyle() {
       preShift,
       formationTags,
       backTags,
+      componentOrder: pendingComponentOrder,
     });
   }, { refreshCardView: true });
 

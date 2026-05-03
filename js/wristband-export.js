@@ -8,6 +8,9 @@ function printWristband() {
     const printDisplayCache = new Map();
     const getPrintDisplay = (play, custom) => {
       if (!play) return "";
+      if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
+        return composeWristbandCellHtml(play, custom, opts);
+      }
       let variants = printDisplayCache.get(play);
       if (!variants) {
         variants = new Map();
@@ -98,10 +101,18 @@ function printWristband() {
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         const oddDisplay = oddPlay ? getPrintDisplay(oddPlay, oddCustom) : "";
-        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddPlay ? composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix) : ""}</span></div>`;
+        const oddHasOrder = oddPlay && Array.isArray(oddCustom?.componentOrder) && oddCustom.componentOrder.length > 0;
+        const oddCellInner = oddPlay
+          ? (oddHasOrder ? oddDisplay : composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix))
+          : "";
+        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddCellInner}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         const evenDisplay = evenPlay ? getPrintDisplay(evenPlay, evenCustom) : "";
-        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenPlay ? composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix) : ""}</span></div>`;
+        const evenHasOrder = evenPlay && Array.isArray(evenCustom?.componentOrder) && evenCustom.componentOrder.length > 0;
+        const evenCellInner = evenPlay
+          ? (evenHasOrder ? evenDisplay : composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix))
+          : "";
+        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenCellInner}</span></div>`;
       }
 
       cardHtml += "</div></div>";

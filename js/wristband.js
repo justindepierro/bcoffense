@@ -139,6 +139,216 @@ function composeWristbandCellDisplay(prefix, renderedDisplay, postfix) {
   return `${leadingEmojiPrefix}${prefix}${remainingMain}${postfix}${lineCall}`;
 }
 
+// ---------- Cell component reorder system ----------
+// Canonical token IDs in default order. Each id maps to a renderer that
+// produces an HTML fragment from (play, custom, opts). When the user has set
+// `custom.componentOrder`, tokens are emitted in that order; tokens not
+// listed in componentOrder fall back to canonical position. Empty tokens are
+// dropped.
+const WB_CELL_TOKEN_IDS = [
+  "cadence-pre",
+  "personnel",
+  "extra-personnel",
+  "pre-shift",
+  "markers",
+  "formation",
+  "form-tag-1",
+  "form-tag-2",
+  "form-custom-tags",
+  "under",
+  "back",
+  "back-custom-tags",
+  "shift",
+  "motion",
+  "protection",
+  "play",
+  "play-tag-1",
+  "play-tag-2",
+  "cadence-post",
+  "line-call",
+];
+
+const WB_CELL_TOKEN_LABELS = {
+  "cadence-pre": "Cadence (start)",
+  "personnel": "Personnel",
+  "extra-personnel": "Extra Personnel",
+  "pre-shift": "Pre-Shift",
+  "markers": "Markers ($ $)",
+  "formation": "Formation",
+  "form-tag-1": "Formation Tag 1",
+  "form-tag-2": "Formation Tag 2",
+  "form-custom-tags": "Formation (Custom Tags)",
+  "under": "Under",
+  "back": "Back",
+  "back-custom-tags": "Back (Custom Tags)",
+  "shift": "Shift",
+  "motion": "Motion",
+  "protection": "Protection",
+  "play": "Play",
+  "play-tag-1": "Play Tag 1",
+  "play-tag-2": "Play Tag 2",
+  "cadence-post": "Cadence (end)",
+  "line-call": "Line Call",
+};
+
+function buildWristbandCellTokens(play, custom = {}, opts = {}) {
+  const {
+    showEmoji = false,
+    useSquares = false,
+    underEmoji = false,
+    boldShifts = false,
+    redShifts = false,
+    italicMotions = false,
+    redMotions = false,
+    noVowels = false,
+    showLineCall = true,
+    hideProtection = false,
+  } = opts;
+
+  const hasUnder =
+    (play?.under && String(play.under).trim() !== "") ||
+    (play?.formTag1 && String(play.formTag1).toLowerCase() === "under") ||
+    (play?.formTag2 && String(play.formTag2).toLowerCase() === "under");
+
+  const txt = (value) => {
+    if (value === null || value === undefined || value === "") return "";
+    let str = escapeHtml(value);
+    if (noVowels) str = removeVowels(str);
+    return str;
+  };
+
+  // Markers
+  const markerValues = getCellMarkerValues(custom);
+  const markerText = getCellMarkerText(markerValues);
+  const markerPlacement = getCellMarkerPlacement(custom, opts);
+  const cadencePreText = markerText && markerPlacement !== "suffix" ? markerText : "";
+  const cadencePostText = markerText && markerPlacement !== "prefix" ? markerText : "";
+
+  // Personnel emoji (only in emoji mode for the play's own personnel)
+  let personnelHtml = "";
+  if (showEmoji && play?.personnel) {
+    personnelHtml = getPersonnelEmoji(play.personnel, useSquares);
+  } else if (!showEmoji && play?.personnel && custom?.extraPersonnel) {
+    // In text-only mode, surface the play's personnel when an extra
+    // personnel was set so the two render together.
+    personnelHtml = escapeHtml(String(play.personnel).trim());
+  }
+
+  // Extra personnel
+  let extraPersonnelHtml = "";
+  if (custom?.extraPersonnel) {
+    const tag = String(custom.extraPersonnel).trim();
+    if (tag) {
+      const emoji = showEmoji ? getPersonnelEmoji(tag, useSquares) : "";
+      extraPersonnelHtml = emoji || escapeHtml(tag);
+    }
+  }
+
+  // Pre-shift
+  const preShiftValues = getCustomPreShiftValues(custom);
+  const preShiftHtml = preShiftValues.length
+    ? preShiftValues.map((value) => `(${escapeHtml(value)})`).join(" ")
+    : "";
+
+  // Custom formation/back tag groups
+  const formCustomTagsHtml = getCustomTagText(getCustomFormationTagEntries(custom));
+  const backCustomTagsHtml = getCustomTagText(getCustomBackTagEntries(custom));
+
+  // Under handling
+  const underVisibleAsText = play?.under && !(underEmoji && String(play.under).trim() !== "");
+  const formTag1IsUnder = play?.formTag1 && String(play.formTag1).toLowerCase() === "under";
+  const formTag2IsUnder = play?.formTag2 && String(play.formTag2).toLowerCase() === "under";
+  const formTag1Visible = play?.formTag1 && !(underEmoji && formTag1IsUnder);
+  const formTag2Visible = play?.formTag2 && !(underEmoji && formTag2IsUnder);
+  const underEmojiHtml = underEmoji && hasUnder ? "🍑" : "";
+
+  // Shift / motion with formatting
+  let shiftHtml = "";
+  if (play?.shift) {
+    let s = txt(play.shift);
+    if (boldShifts) s = `<b>${s}</b>`;
+    if (redShifts) s = `<span class="text-danger">${s}</span>`;
+    shiftHtml = s;
+  }
+  let motionHtml = "";
+  if (play?.motion) {
+    let m = txt(play.motion);
+    if (italicMotions) m = `<i>${m}</i>`;
+    if (redMotions) m = `<span class="text-danger">${m}</span>`;
+    motionHtml = m;
+  }
+
+  const lineCallHtml = showLineCall && play?.lineCall
+    ? `<span class="line-call">[${noVowels ? escapeHtml(removeVowels(play.lineCall)) : escapeHtml(play.lineCall)}]</span>`
+    : "";
+
+  return {
+    "cadence-pre": cadencePreText,
+    "personnel": personnelHtml,
+    "extra-personnel": extraPersonnelHtml,
+    "pre-shift": preShiftHtml,
+    "markers": "", // markers render via cadence-pre / cadence-post by default; this slot is reserved when user overrides order
+    "formation": txt(play?.formation),
+    "form-tag-1": formTag1Visible ? txt(play.formTag1) : "",
+    "form-tag-2": formTag2Visible ? txt(play.formTag2) : "",
+    "form-custom-tags": formCustomTagsHtml,
+    "under": underEmojiHtml || (underVisibleAsText ? txt(play.under) : ""),
+    "back": txt(play?.back),
+    "back-custom-tags": backCustomTagsHtml,
+    "shift": shiftHtml,
+    "motion": motionHtml,
+    "protection": !hideProtection && play?.protection ? txt(play.protection) : "",
+    "play": txt(play?.play),
+    "play-tag-1": txt(play?.playTag1),
+    "play-tag-2": txt(play?.playTag2),
+    "cadence-post": cadencePostText,
+    "line-call": lineCallHtml,
+  };
+}
+
+function normalizeWbComponentOrder(order) {
+  if (!Array.isArray(order)) return null;
+  const seen = new Set();
+  const result = [];
+  order.forEach((id) => {
+    if (typeof id === "string" && WB_CELL_TOKEN_LABELS[id] && !seen.has(id)) {
+      seen.add(id);
+      result.push(id);
+    }
+  });
+  // Append any canonical ids missing from the user's order so we never lose
+  // tokens silently.
+  WB_CELL_TOKEN_IDS.forEach((id) => {
+    if (!seen.has(id)) result.push(id);
+  });
+  return result;
+}
+
+function composeWristbandCellHtml(play, custom = {}, opts = {}) {
+  if (!play) return "";
+  const tokens = buildWristbandCellTokens(play, custom, opts);
+  const order = normalizeWbComponentOrder(custom?.componentOrder) || WB_CELL_TOKEN_IDS;
+  const usingCustomOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
+  const parts = [];
+  order.forEach((id) => {
+    let html = tokens[id] || "";
+    // When the user has set a custom order, the dedicated "markers" token
+    // is honored as a single marker emission; cadence-pre/post are skipped
+    // so markers render exactly once.
+    if (usingCustomOrder) {
+      if (id === "markers") {
+        html = getCellMarkerText(getCellMarkerValues(custom));
+      }
+      if (id === "cadence-pre" || id === "cadence-post") {
+        html = ""; // suppressed in favor of the consolidated markers slot
+      }
+    }
+    if (html) parts.push(html);
+  });
+  return parts.join(" ").trim();
+}
+// ---------- end token system ----------
+
 /** Get custom extra personnel prefix for a wristband cell */
 function getCustomPersonnelPrefix(custom, opts, play) {
   if (!custom || !custom.extraPersonnel) return "";
@@ -515,6 +725,11 @@ function buildWristbandCellCustomization(custom = {}) {
         .map((entry) => normalizeCustomTagEntry(entry))
         .filter(Boolean)
       : [],
+    componentOrder: Array.isArray(custom.componentOrder)
+      ? custom.componentOrder.filter(
+          (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
+        )
+      : [],
   };
 
   const hasValue =
@@ -524,7 +739,8 @@ function buildWristbandCellCustomization(custom = {}) {
     normalized.extraPersonnel ||
     normalized.preShift ||
     normalized.formationTags.length > 0 ||
-    normalized.backTags.length > 0;
+    normalized.backTags.length > 0 ||
+    normalized.componentOrder.length > 0;
 
   return hasValue ? normalized : null;
 }

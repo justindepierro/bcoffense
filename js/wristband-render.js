@@ -61,6 +61,11 @@ function renderWristbandGrid() {
   const displayCache = new Map();
   const getCachedDisplay = (play, custom) => {
     if (!play) return "";
+    // If the user reordered components for this cell, bypass the canonical
+    // getFullCall pipeline and compose tokens directly in their order.
+    if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
+      return composeWristbandCellHtml(play, custom, opts);
+    }
     let variants = displayCache.get(play);
     if (!variants) {
       variants = new Map();
@@ -151,12 +156,17 @@ function renderWristbandGrid() {
 
     if (oddPlay) {
       const oddDisplay = getCachedDisplay(oddPlay, oddCustom);
+      const oddHasCustomOrder =
+        Array.isArray(oddCustom?.componentOrder) && oddCustom.componentOrder.length > 0;
+      const oddCellHtml = oddHasCustomOrder
+        ? oddDisplay
+        : composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix);
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix)}</span></span>
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddCellHtml}</span></span>
         </div>
       `;
     } else {
@@ -169,12 +179,17 @@ function renderWristbandGrid() {
 
     if (evenPlay) {
       const evenDisplay = getCachedDisplay(evenPlay, evenCustom);
+      const evenHasCustomOrder =
+        Array.isArray(evenCustom?.componentOrder) && evenCustom.componentOrder.length > 0;
+      const evenCellHtml = evenHasCustomOrder
+        ? evenDisplay
+        : composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix);
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
-          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix)}</span></span>
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenCellHtml}</span></span>
         </div>
       `;
     } else {
