@@ -1,5 +1,34 @@
 let smartScriptTargetPeriod = null;
 
+function wireSmartScriptSliders() {
+  [
+    "DownProg",
+    "TypeVariety",
+    "Personnel",
+    "Tempo",
+    "Formation",
+    "RunPassBal",
+    "Constraint",
+  ].forEach((name) => {
+    const slider = document.getElementById("ssWeight" + name);
+    const display = document.getElementById("ssWeight" + name + "Val");
+    if (slider && display && !slider.dataset.ssWired) {
+      slider.dataset.ssWired = "1";
+      slider.addEventListener("input", () => {
+        display.textContent = slider.value;
+      });
+    }
+  });
+  const runPctSlider = document.getElementById("ssRunPct");
+  const runPctDisplay = document.getElementById("ssRunPctVal");
+  if (runPctSlider && runPctDisplay && !runPctSlider.dataset.ssWired) {
+    runPctSlider.dataset.ssWired = "1";
+    runPctSlider.addEventListener("input", () => {
+      runPctDisplay.textContent = runPctSlider.value + "%";
+    });
+  }
+}
+
 function openSmartScriptForPeriod(separatorIndex) {
   const plays = getPeriodPlays(separatorIndex);
   if (plays.length < 2) {
@@ -33,21 +62,19 @@ function openSmartScriptForPeriod(separatorIndex) {
     const slider = document.getElementById("ssWeight" + name);
     const display = document.getElementById("ssWeight" + name + "Val");
     if (slider && display) {
-      slider.oninput = () => {
-        display.textContent = slider.value;
-      };
+      display.textContent = slider.value;
     }
   });
+  wireSmartScriptSliders();
 
   const runPctSlider = document.getElementById("ssRunPct");
   const runPctDisplay = document.getElementById("ssRunPctVal");
   if (runPctSlider && runPctDisplay) {
-    runPctSlider.oninput = () => {
-      runPctDisplay.textContent = runPctSlider.value + "%";
-    };
+    runPctDisplay.textContent = runPctSlider.value + "%";
   }
 
-  document.getElementById("smartScriptPreview").innerHTML = "";
+  const previewEl = document.getElementById("smartScriptPreview");
+  if (previewEl) previewEl.innerHTML = "";
 }
 
 function normalizeHash(h) {
@@ -446,21 +473,19 @@ async function openSmartScript() {
     const slider = document.getElementById("ssWeight" + name);
     const display = document.getElementById("ssWeight" + name + "Val");
     if (slider && display) {
-      slider.oninput = () => {
-        display.textContent = slider.value;
-      };
+      display.textContent = slider.value;
     }
   });
+  wireSmartScriptSliders();
 
   const runPctSlider = document.getElementById("ssRunPct");
   const runPctDisplay = document.getElementById("ssRunPctVal");
   if (runPctSlider && runPctDisplay) {
-    runPctSlider.oninput = () => {
-      runPctDisplay.textContent = runPctSlider.value + "%";
-    };
+    runPctDisplay.textContent = runPctSlider.value + "%";
   }
 
-  document.getElementById("smartScriptPreview").innerHTML = "";
+  const previewEl = document.getElementById("smartScriptPreview");
+  if (previewEl) previewEl.innerHTML = "";
 }
 
 function closeSmartScript() {

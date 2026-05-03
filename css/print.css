@@ -299,6 +299,16 @@
     border-collapse: collapse !important;
     font-size: 9px !important;
   }
+  body.print-script .script-table thead {
+    display: table-header-group !important;
+  }
+  body.print-script .script-table tfoot {
+    display: table-footer-group !important;
+  }
+  body.print-script .script-table tr {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
   body.print-script .script-table th {
     background: var(--color-text) !important;
     color: white !important;
@@ -312,6 +322,7 @@
     border: 0.5px solid var(--color-text) !important;
     font-size: 9px !important;
     line-height: 1.2 !important;
+    min-height: 14px !important;
     white-space: normal !important;
     overflow-wrap: anywhere !important;
     word-break: break-word !important;
