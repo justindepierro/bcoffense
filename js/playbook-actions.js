@@ -38,16 +38,11 @@ function startInlineEdit(td, playIndex, field) {
   });
 }
 
-function addPlayFromPlaybook(index) {
+async function addPlayFromPlaybook(index) {
   const play = filteredPlays[index];
   if (!play) return;
-
-  const originalIndex = plays.findIndex(
-    (p) => p.play === play.play && p.formation === play.formation,
-  );
-
+  const originalIndex = plays.indexOf(play);
   if (originalIndex >= 0) {
-    addToScript(originalIndex);
-    showToast(`Added "${play.play}" to script`);
+    await addToScript(originalIndex);
   }
 }

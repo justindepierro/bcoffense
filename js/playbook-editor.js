@@ -435,6 +435,11 @@ function savePlayEditor() {
 
   if (_editingMasterIdx >= 0) {
     const existing = plays[_editingMasterIdx];
+    if (!existing) {
+      showToast("Play no longer exists", { type: "error" });
+      closePlayEditor();
+      return;
+    }
     Object.keys(data).forEach((key) => {
       existing[key] = data[key];
     });
@@ -464,6 +469,7 @@ function savePlayEditor() {
 async function deletePlayFromEditor() {
   if (_editingMasterIdx < 0) return;
   const play = plays[_editingMasterIdx];
+  if (!play) { closePlayEditor(); return; }
   const ok = await showConfirm(
     `Delete <strong>${escapeHtml(play.play || "this play")}</strong> from the playbook?`,
     { title: "Delete Play", icon: "🗑️", confirmText: "Delete", danger: true },
@@ -549,10 +555,23 @@ function _autoSaveCurrentEditorFields() {
       changed = true;
     }
   });
+  // Also capture lineup template player slots so Prev/Next don't drop assignments
+  const slotFields = body.querySelectorAll("[data-player-slot]");
+  const playerAssignments = {};
+  slotFields.forEach((el) => {
+    const val = String(el.value || "").trim();
+    if (val) playerAssignments[el.dataset.playerSlot] = val;
+  });
+  const newAssignments = Object.keys(playerAssignments).length
+    ? playerAssignments
+    : undefined;
+  if (JSON.stringify(existing.playerAssignments) !== JSON.stringify(newAssignments)) {
+    existing.playerAssignments = newAssignments;
+    changed = true;
+  }
   if (changed) {
     storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
     invalidateFilterCache();
   }
-
   _syncGamePlanCheckbox(existing);
 }
