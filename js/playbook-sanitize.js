@@ -534,7 +534,27 @@ function openPlayEditorFromSanitize(masterIdxStr) {
     filteredPlays = [...plays];
     filteredIdx = filteredPlays.indexOf(play);
   }
-  if (filteredIdx >= 0 && typeof openPlayEditor === "function") {
-    openPlayEditor(filteredIdx);
+  if (filteredIdx < 0 || typeof openPlayEditor !== "function") return;
+
+  // The sanitize overlay shares the same z-index as the play editor overlay
+  // and sits later in the DOM, so it stacks on top and blocks edits. Hide it
+  // while the editor is open, then restore + re-render once the editor closes.
+  const sanitizeOverlay = document.getElementById("playbookSanitizeOverlay");
+  const editorOverlay = document.getElementById("playEditorOverlay");
+  const sanitizeWasVisible = sanitizeOverlay && sanitizeOverlay.classList.contains("visible");
+  if (sanitizeWasVisible) sanitizeOverlay.classList.remove("visible");
+
+  openPlayEditor(filteredIdx);
+
+  if (sanitizeWasVisible && editorOverlay && typeof MutationObserver === "function") {
+    const observer = new MutationObserver(() => {
+      if (!editorOverlay.classList.contains("visible")) {
+        observer.disconnect();
+        sanitizeOverlay.classList.add("visible");
+        _renderSanitizePicker();
+        _renderSanitizeList();
+      }
+    });
+    observer.observe(editorOverlay, { attributes: true, attributeFilter: ["class"] });
   }
 }
