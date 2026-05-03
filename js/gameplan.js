@@ -44,6 +44,9 @@ let _gpFilters = {
   hideAssigned: false,
   density: "comfortable", // "comfortable" | "compact" | "detail"
   showProgress: true,
+  goodVsMan: false,
+  goodVsBear: false,
+  goodVsOkie: false,
 };
 let _gpSelected = new Set(); // play signatures currently checked in library
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
@@ -178,6 +181,9 @@ function _gpFilteredLibrary(board) {
     if (_gpFilters.type && p.type !== _gpFilters.type) return false;
     if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
     if (_gpFilters.personnel && p.personnel !== _gpFilters.personnel) return false;
+    if (_gpFilters.goodVsMan && !p.goodVsMan) return false;
+    if (_gpFilters.goodVsBear && !p.goodVsBear) return false;
+    if (_gpFilters.goodVsOkie && !p.goodVsOkie) return false;
     if (_gpFilters.hideAssigned && assignedSigs.has(_gpPlaySignature(p))) return false;
     if (search) {
       const hay = [
@@ -290,6 +296,17 @@ function renderGamePlan() {
         Hide already drafted
       </label>
       <span class="gp-toolbar-spacer"></span>
+      <span class="gp-matchup-chip-row">
+        <button class="gp-matchup-chip ${_gpFilters.goodVsMan ? "is-on" : ""}"
+          data-action="toggleGamePlanMatchupFilter" data-arg="goodVsMan"
+          title="Show only plays marked Good vs. Man">✅ Man</button>
+        <button class="gp-matchup-chip ${_gpFilters.goodVsBear ? "is-on" : ""}"
+          data-action="toggleGamePlanMatchupFilter" data-arg="goodVsBear"
+          title="Show only plays marked Good vs. Bear">🐻 Bear</button>
+        <button class="gp-matchup-chip ${_gpFilters.goodVsOkie ? "is-on" : ""}"
+          data-action="toggleGamePlanMatchupFilter" data-arg="goodVsOkie"
+          title="Show only plays marked Good vs. Okie">🤠 Okie</button>
+      </span>
       <button class="btn btn-sm btn-secondary" data-action="clearGamePlanFilters" title="Reset all filters">Reset</button>
       <button class="btn btn-sm" data-action="assignSelectedToGamePlanBox" title="Add selected plays to a box you choose">
         ➕ Add Selected to…
@@ -334,7 +351,7 @@ function _gpRenderLibraryRow(play, assignedSigs) {
       <input type="checkbox" class="gp-play-row-checkbox" ${checked ? "checked" : ""}
         data-action="toggleGamePlanLibrarySelect" data-arg="${escapeHtml(sig)}" />
       <div class="gp-play-row-body">
-        <div>${callHtml}</div>
+        <div>${callHtml}${_gpMatchupBadges(play)}</div>
         ${meta ? `<div class="gp-play-row-meta">${escapeHtml(meta)}</div>` : ""}
       </div>
       ${play.type ? `<span class="gp-play-row-type-badge">${escapeHtml(play.type)}</span>` : ""}
@@ -427,13 +444,14 @@ function _gpRenderBoxPlay(boxId, play, idx) {
     ? getFullCall(play, { showLineCall: false })
     : escapeHtml(play.play || "");
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
+  const matchupBadges = _gpMatchupBadges(play);
   return `
     <div class="gp-box-play" draggable="true"
          data-box-id="${escapeHtml(boxId)}"
          data-sig="${escapeHtml(sig)}"
          data-idx="${idx}">
       <div class="gp-box-play-body">
-        <div class="gp-box-play-call">${callHtml}</div>
+        <div class="gp-box-play-call">${callHtml}${matchupBadges}</div>
         ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
@@ -444,6 +462,15 @@ function _gpRenderBoxPlay(boxId, play, idx) {
           data-arg="${escapeHtml(boxId + "::" + sig)}" title="Remove">×</button>
       </div>
     </div>`;
+}
+
+function _gpMatchupBadges(play) {
+  if (!play) return "";
+  const parts = [];
+  if (play.goodVsMan) parts.push(`<span class="gp-matchup-badge" title="Good vs. Man">✅</span>`);
+  if (play.goodVsBear) parts.push(`<span class="gp-matchup-badge" title="Good vs. Bear">🐻</span>`);
+  if (play.goodVsOkie) parts.push(`<span class="gp-matchup-badge" title="Good vs. Okie">🤠</span>`);
+  return parts.length ? ` <span class="gp-matchup-badges">${parts.join("")}</span>` : "";
 }
 
 /* -------------------------------------------------------------------------
@@ -632,8 +659,17 @@ function updateGamePlanFilter(field, valueOrEvent) {
 }
 
 function clearGamePlanFilters() {
-  _gpFilters = { search: "", type: "", formation: "", personnel: "", hideAssigned: false };
+  _gpFilters = { search: "", type: "", formation: "", personnel: "", hideAssigned: false,
+    density: _gpFilters.density || "comfortable", showProgress: true,
+    goodVsMan: false, goodVsBear: false, goodVsOkie: false };
   _gpSelected.clear();
+  renderGamePlan();
+}
+
+function toggleGamePlanMatchupFilter(field) {
+  if (!field) return;
+  if (!(field in _gpFilters)) return;
+  _gpFilters[field] = !_gpFilters[field];
   renderGamePlan();
 }
 

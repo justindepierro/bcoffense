@@ -342,6 +342,25 @@ function _populateEditorForm(play, isNew) {
     </div>`;
   }
 
+  // Defensive match-up flags (good vs Man / Bear / Okie)
+  html += `<div class="pb-editor-section pb-editor-matchups">
+    <div class="pb-editor-section-title">🛡️ Defensive Match-ups</div>
+    <div class="pb-editor-matchup-grid">
+      <label class="pb-matchup-toggle" for="pe-goodVsMan">
+        <input type="checkbox" id="pe-goodVsMan" data-bool-field="goodVsMan" ${play.goodVsMan ? "checked" : ""} />
+        <span>✅ Good vs. <strong>Man</strong></span>
+      </label>
+      <label class="pb-matchup-toggle" for="pe-goodVsBear">
+        <input type="checkbox" id="pe-goodVsBear" data-bool-field="goodVsBear" ${play.goodVsBear ? "checked" : ""} />
+        <span>🐻 Good vs. <strong>Bear</strong></span>
+      </label>
+      <label class="pb-matchup-toggle" for="pe-goodVsOkie">
+        <input type="checkbox" id="pe-goodVsOkie" data-bool-field="goodVsOkie" ${play.goodVsOkie ? "checked" : ""} />
+        <span>🤠 Good vs. <strong>Okie</strong></span>
+      </label>
+    </div>
+  </div>`;
+
   _EDITOR_SECTIONS.forEach((section) => {
     html += `<div class="pb-editor-section">`;
     html += `<div class="pb-editor-section-title">${section.title}</div>`;
@@ -419,6 +438,10 @@ function savePlayEditor(opts = {}) {
   const data = {};
   fields.forEach((el) => {
     data[el.dataset.field] = (el.value || "").trim();
+  });
+  // Boolean checkbox fields (defensive match-ups)
+  body.querySelectorAll("[data-bool-field]").forEach((el) => {
+    data[el.dataset.boolField] = !!el.checked;
   });
   const playerAssignments = {};
   assignmentFields.forEach((el) => {
