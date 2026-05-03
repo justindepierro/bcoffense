@@ -496,13 +496,13 @@ function buildWristbandCellCustomization(custom = {}) {
     preShift: String(custom.preShift || "").trim(),
     formationTags: Array.isArray(custom.formationTags)
       ? custom.formationTags
-          .map((entry) => normalizeCustomTagEntry(entry))
-          .filter(Boolean)
+        .map((entry) => normalizeCustomTagEntry(entry))
+        .filter(Boolean)
       : [],
     backTags: Array.isArray(custom.backTags)
       ? custom.backTags
-          .map((entry) => normalizeCustomTagEntry(entry))
-          .filter(Boolean)
+        .map((entry) => normalizeCustomTagEntry(entry))
+        .filter(Boolean)
       : [],
   };
 

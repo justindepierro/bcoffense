@@ -107,30 +107,30 @@ function renderCallSheetLayoutPanel(page) {
     </div>
     <div class="cs-layout-board" data-drop="csLayoutPage" data-page="${page}">
       ${columns
-        .map(
-          (column) => `
+      .map(
+        (column) => `
             <div class="cs-layout-board-column">
               ${column
-                .map((cat) => {
-                  const otherPage = page === "front" ? "back" : "front";
-                  const headerColor = getCategoryColor(cat, csLayoutColorDraft);
-                  const textColor = getCategoryHeaderTextColor(headerColor);
-                  const isPicked = csLayoutPickedCategoryId === cat.id;
-                  const pageIds = csLayoutDraft[page] || [];
-                  const pageIndex = pageIds.indexOf(cat.id);
-                  const canMoveUp = pageIndex > 0;
-                  const canMoveDown = pageIndex !== -1 && pageIndex < pageIds.length - 1;
-                  const colorOptions = CS_HEADER_COLOR_OPTIONS.map(
-                    (option) =>
-                      `<option value="${option.value}" ${option.value === headerColor ? "selected" : ""}>${option.name}</option>`,
-                  ).join("");
-                  const dropKey = `${page}:${cat.id}`;
-                  const dropActive = csLayoutActiveDropKey === dropKey ? " cs-layout-card--drop-target" : "";
-                  const placeAction = isPicked
-                    ? ""
-                    : `<button class="cs-layout-card-place" data-action="placePickedCallSheetCategory" data-arg="${page}|${cat.id}">Place Before</button>`;
+            .map((cat) => {
+              const otherPage = page === "front" ? "back" : "front";
+              const headerColor = getCategoryColor(cat, csLayoutColorDraft);
+              const textColor = getCategoryHeaderTextColor(headerColor);
+              const isPicked = csLayoutPickedCategoryId === cat.id;
+              const pageIds = csLayoutDraft[page] || [];
+              const pageIndex = pageIds.indexOf(cat.id);
+              const canMoveUp = pageIndex > 0;
+              const canMoveDown = pageIndex !== -1 && pageIndex < pageIds.length - 1;
+              const colorOptions = CS_HEADER_COLOR_OPTIONS.map(
+                (option) =>
+                  `<option value="${option.value}" ${option.value === headerColor ? "selected" : ""}>${option.name}</option>`,
+              ).join("");
+              const dropKey = `${page}:${cat.id}`;
+              const dropActive = csLayoutActiveDropKey === dropKey ? " cs-layout-card--drop-target" : "";
+              const placeAction = isPicked
+                ? ""
+                : `<button class="cs-layout-card-place" data-action="placePickedCallSheetCategory" data-arg="${page}|${cat.id}">Place Before</button>`;
 
-                  return `
+              return `
             <div class="cs-layout-card${isPicked ? " cs-layout-card--picked" : ""}${dropActive}" data-page="${page}" data-category="${cat.id}" data-drop-card="csLayoutCard">
               <div class="cs-layout-card-header" style="background: ${headerColor}; color: ${textColor};">
                 <span class="cs-layout-card-handle" draggable="true" data-drag="csLayoutCategory" data-page="${page}" data-category="${cat.id}" title="Drag to reorder">☰</span>
@@ -162,12 +162,12 @@ function renderCallSheetLayoutPanel(page) {
               </div>
             </div>
           `;
-                })
-                .join("")}
+            })
+            .join("")}
             </div>
           `,
-        )
-        .join("")}
+      )
+      .join("")}
     </div>
     <div class="cs-layout-board-end">
       ${csLayoutPickedCategoryId ? `<button class="cs-layout-place-btn" data-action="placePickedCallSheetCategory" data-arg="${page}|">Place At End Of ${page === "front" ? "Front" : "Back"}</button>` : '<span class="cs-layout-end-copy">Order flows top to bottom in each column, then left to right.</span>'}

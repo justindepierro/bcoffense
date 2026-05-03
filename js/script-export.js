@@ -279,15 +279,15 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
     <td class="script-print-personnel-cell" colspan="${columns.length}">
       <div class="script-print-personnel-grid" style="display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; min-width: 0;">
         ${visibleLineup
-          .map(
-            (entry) => `
+      .map(
+        (entry) => `
           <div class="script-print-personnel-pill" style="display: flex; align-items: flex-start; gap: 4px; flex: 1 1 120px; min-width: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word;">
             <span class="script-print-personnel-pos">${escapeHtml(entry.label)}</span>
             <span class="script-print-personnel-name" style="white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; word-break: break-word;">${escapeHtml(entry.playerName)}</span>
           </div>
         `,
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
     </td>
   </tr>`;

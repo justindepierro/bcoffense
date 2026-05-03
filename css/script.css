@@ -281,10 +281,9 @@
 
 .script-item--detail {
   display: grid;
-  grid-template-columns: 54px 38px minmax(240px, 1.55fr) 64px minmax(
-      220px,
-      0.95fr
-    ) minmax(320px, 1.3fr);
+  grid-template-columns:
+    54px 38px minmax(240px, 1.55fr) 64px minmax(220px, 0.95fr)
+    minmax(320px, 1.3fr);
   align-items: start;
 }
 
@@ -298,10 +297,9 @@
 
 .script-item--compact {
   display: grid;
-  grid-template-columns: 54px 34px minmax(220px, 1.8fr) 52px minmax(
-      272px,
-      1.45fr
-    ) minmax(196px, 1.1fr);
+  grid-template-columns:
+    54px 34px minmax(220px, 1.8fr) 52px minmax(272px, 1.45fr)
+    minmax(196px, 1.1fr);
   align-items: start;
   padding: 8px 10px;
   margin-bottom: 4px;
@@ -334,8 +332,14 @@
   gap: 8px;
   margin-top: 12px;
   padding: 10px 8px 8px;
-  border: 1px solid color-mix(in srgb, var(--color-border-light) 78%, var(--color-white));
-  border-top: 1px solid color-mix(in srgb, var(--color-primary-light) 18%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-border-light) 78%, var(--color-white));
+  border-top: 1px solid
+    color-mix(
+      in srgb,
+      var(--color-primary-light) 18%,
+      var(--color-border-light)
+    );
   border-radius: var(--radius-lg);
   background: linear-gradient(
     180deg,
@@ -1332,7 +1336,8 @@
   flex: 1 1 220px;
 }
 
-.script-item:not(.script-item--detail):not(.script-item--compact) .play-controls {
+.script-item:not(.script-item--detail):not(.script-item--compact)
+  .play-controls {
   display: flex;
   align-items: center;
   gap: 5px;
