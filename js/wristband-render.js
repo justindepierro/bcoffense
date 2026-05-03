@@ -129,11 +129,11 @@ function renderWristbandGrid() {
 
     const oddPrefix =
       getCadencePrefix(oddCustom, opts) +
-      getCustomPersonnelPrefix(oddCustom, opts) +
+      getCustomPersonnelPrefix(oddCustom, opts, oddPlay) +
       getCustomPreShiftPrefix(oddCustom);
     const evenPrefix =
       getCadencePrefix(evenCustom, opts) +
-      getCustomPersonnelPrefix(evenCustom, opts) +
+      getCustomPersonnelPrefix(evenCustom, opts, evenPlay) +
       getCustomPreShiftPrefix(evenCustom);
     const oddPostfix = getCadencePostfix(oddCustom, opts);
     const evenPostfix = getCadencePostfix(evenCustom, opts);

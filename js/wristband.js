@@ -140,12 +140,23 @@ function composeWristbandCellDisplay(prefix, renderedDisplay, postfix) {
 }
 
 /** Get custom extra personnel prefix for a wristband cell */
-function getCustomPersonnelPrefix(custom, opts) {
+function getCustomPersonnelPrefix(custom, opts, play) {
   if (!custom || !custom.extraPersonnel) return "";
   const tag = String(custom.extraPersonnel).trim();
   if (!tag) return "";
-  const emoji = opts.showEmoji ? getPersonnelEmoji(tag, opts.useSquares) : "";
-  return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
+  if (opts.showEmoji) {
+    // Emoji mode: composeWristbandCellDisplay slots this right after the
+    // play's personnel emoji, so they render side-by-side already.
+    const emoji = getPersonnelEmoji(tag, opts.useSquares);
+    return emoji ? `${emoji} ` : `${escapeHtml(tag)} `;
+  }
+  // Text-only mode: getFullCall doesn't render the play's own personnel, so
+  // an extra-personnel value would otherwise float alone before the
+  // formation. Show both numbers grouped together (e.g. "11 10 Rex Snug…").
+  const playPersonnel = String(play?.personnel || "").trim();
+  return playPersonnel
+    ? `${escapeHtml(playPersonnel)} ${escapeHtml(tag)} `
+    : `${escapeHtml(tag)} `;
 }
 
 function normalizeCustomTagDisplayMode(mode) {
