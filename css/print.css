@@ -327,9 +327,12 @@
   }
   body.print-script .script-table td.script-table-cell--call {
     text-align: left !important;
-    white-space: normal !important;
+    white-space: nowrap !important;
     overflow: visible !important;
+    overflow-wrap: normal !important;
+    word-break: keep-all !important;
     max-width: none !important;
+    width: 1% !important;
   }
   body.print-script .script-table .script-print-personnel-cell {
     white-space: normal !important;

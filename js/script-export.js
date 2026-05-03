@@ -246,7 +246,7 @@ function getScriptPrintColumns(opts = {}) {
 function buildScriptPlayRow(play, displayNum, opts = {}) {
   const columns = getScriptPrintColumns(opts);
   const visibleLineup = getScriptVisiblePlayerLineup(play, opts);
-  const wrapCellKeys = new Set(["call", "players", "notes"]);
+  const wrapCellKeys = new Set(["players", "notes"]);
 
   let rowColor = "";
   if (opts.highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle") {
