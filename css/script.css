@@ -1866,7 +1866,10 @@
 /* Script Toolbar */
 .script-toolbar {
   display: grid;
-  grid-template-columns: minmax(150px, auto) minmax(280px, 1fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(150px, auto) minmax(280px, 1fr) minmax(
+      260px,
+      1fr
+    );
   align-items: stretch;
   position: sticky;
   top: 78px;
@@ -3423,5 +3426,81 @@
     width: 100%;
     min-width: 0;
     margin-top: 8px;
+  }
+}
+
+/* Script Display Overlay (popup version of the script-display panel) */
+.script-display-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay-sm);
+  z-index: var(--z-overlay);
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  padding: 24px;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.2s ease;
+}
+.script-display-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.script-display-panel {
+  background: var(--color-white);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: 460px;
+  max-width: 100%;
+  max-height: calc(100vh - 80px);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  animation: helpSlideUp 0.25s ease;
+}
+.script-display-panel-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background: var(--gradient-dark);
+  color: var(--color-white);
+}
+.script-display-panel-header h3 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 600;
+}
+.script-display-panel-body {
+  overflow-y: auto;
+  padding: 12px 14px 14px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.display-options-trigger-row {
+  margin-top: 12px;
+  display: flex;
+  justify-content: flex-end;
+}
+#scriptDisplayTriggerBtn.active {
+  background: var(--color-primary);
+  color: var(--color-white);
+  border-color: var(--color-primary);
+}
+
+@media (max-width: 600px) {
+  .script-display-overlay {
+    padding: 0;
+    align-items: stretch;
+    justify-content: stretch;
+  }
+  .script-display-panel {
+    width: 100%;
+    max-height: 100vh;
+    border-radius: 0;
   }
 }

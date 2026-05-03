@@ -918,102 +918,11 @@
             </div>
           </div>
 
-          <div class="display-options-panel">
-            <div class="display-options-header" data-action="toggleCollapsiblePanel">
-              <strong>🖨️ Script Display</strong>
-              <span class="toggle-icon">▼</span>
-            </div>
-            <div class="display-options-content">
-              <div class="script-display-preset-bar">
-                <span class="script-display-mode-title">Presets:</span>
-                <button class="btn btn-xs" data-action="applyScriptDisplayPreset" data-arg="coach">Coach</button>
-                <button class="btn btn-xs" data-action="applyScriptDisplayPreset" data-arg="compact">Compact</button>
-                <button class="btn btn-xs" data-action="applyScriptDisplayPreset" data-arg="print-match">Print
-                  Match</button>
-              </div>
-              <div class="script-display-mode-bar">
-                <span class="script-display-mode-title">Mode:</span>
-                <label class="script-display-mode-option">
-                  <input type="radio" name="scriptLayoutMode" value="detail" checked
-                    aria-label="Detail layout: full play editing controls"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Detail
-                </label>
-                <label class="script-display-mode-option">
-                  <input type="radio" name="scriptLayoutMode" value="compact"
-                    aria-label="Compact layout: condensed table view"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Compact
-                </label>
-              </div>
-              <div class="display-options-btns">
-                <button class="btn btn-xs" data-action="selectAllScriptOptions">
-                  All
-                </button>
-                <button class="btn btn-xs" data-action="clearAllScriptOptions">
-                  Clear
-                </button>
-              </div>
-              <div class="display-options-grid">
-                <fieldset class="display-options-group">
-                  <legend>Display</legend>
-                  <label><input type="checkbox" id="scriptShowEmoji"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    🔵 Personnel Color</label>
-                  <label><input type="checkbox" id="scriptUseSquares"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    🟦 Use Squares</label>
-                  <label><input type="checkbox" id="scriptUnderEmoji"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    🍑 Under = Peach</label>
-                  <label><input type="checkbox" id="scriptShowLineCall" checked
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    Show [Line Call]</label>
-                  <label><input type="checkbox" id="scriptShowWbNum" checked
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    Show WB#</label>
-                  <label><input type="checkbox" id="scriptShowPrintPreview"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    👁️ Show Print Preview</label>
-                </fieldset>
-                <fieldset class="display-options-group">
-                  <legend>Highlight</legend>
-                  <label><input type="checkbox" id="scriptBoldShifts"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    <b>Bold</b> Shifts</label>
-                  <label><input type="checkbox" id="scriptRedShifts"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    <span class="red">Red</span> Shifts</label>
-                  <label><input type="checkbox" id="scriptItalicMotions"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    <i>Italic</i> Motions</label>
-                  <label><input type="checkbox" id="scriptRedMotions"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    <span class="red">Red</span> Motions</label>
-                  <label><input type="checkbox" id="scriptHighlightHuddle"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    🟡 Highlight Huddle</label>
-                  <label><input type="checkbox" id="scriptHighlightCandy"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    🩷 Highlight Candy</label>
-                </fieldset>
-                <fieldset class="display-options-group">
-                  <legend>Hide / Compact</legend>
-                  <label><input type="checkbox" id="scriptRemoveVowels"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    Remove Vowels</label>
-                  <label><input type="checkbox" id="scriptHidePersonnel"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    Hide Personnel</label>
-                  <label><input type="checkbox" id="scriptHideLinemen"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    Hide Linemen</label>
-                  <label><input type="checkbox" id="scriptPrintStyle"
-                      data-onchange="renderScript;saveScriptDisplayOptions" />
-                    Print-style Rows</label>
-                </fieldset>
-              </div>
-            </div>
+          <div class="display-options-trigger-row">
+            <button class="btn btn-sm" data-action="toggleScriptDisplayPanel" id="scriptDisplayTriggerBtn"
+              title="Open Script Display options">
+              🖨️ Script Display
+            </button>
           </div>
 
           <div class="wristband-integration-panel">
@@ -2525,6 +2434,88 @@
         </button>
       </div>
       <div class="help-panel-body" id="helpPanelBody"></div>
+    </div>
+  </div>
+
+  <!-- Script Display Overlay -->
+  <div class="script-display-overlay" id="scriptDisplayOverlay" data-action="closeScriptDisplayPanelOverlay"
+    role="dialog" aria-modal="true" aria-labelledby="scriptDisplayPanelTitle" aria-hidden="true" inert>
+    <div class="script-display-panel">
+      <div class="script-display-panel-header">
+        <h3 id="scriptDisplayPanelTitle">🖨️ Script Display</h3>
+        <button class="help-close-btn" data-action="toggleScriptDisplayPanel"
+          aria-label="Close script display panel">&times;</button>
+      </div>
+      <div class="script-display-panel-body">
+        <div class="script-display-preset-bar">
+          <span class="script-display-mode-title">Presets:</span>
+          <button class="btn btn-xs" data-action="applyScriptDisplayPreset" data-arg="coach">Coach</button>
+          <button class="btn btn-xs" data-action="applyScriptDisplayPreset" data-arg="compact">Compact</button>
+          <button class="btn btn-xs" data-action="applyScriptDisplayPreset" data-arg="print-match">Print Match</button>
+        </div>
+        <div class="script-display-mode-bar">
+          <span class="script-display-mode-title">Mode:</span>
+          <label class="script-display-mode-option">
+            <input type="radio" name="scriptLayoutMode" value="detail" checked
+              aria-label="Detail layout: full play editing controls"
+              data-onchange="renderScript;saveScriptDisplayOptions" />
+            Detail
+          </label>
+          <label class="script-display-mode-option">
+            <input type="radio" name="scriptLayoutMode" value="compact"
+              aria-label="Compact layout: condensed table view"
+              data-onchange="renderScript;saveScriptDisplayOptions" />
+            Compact
+          </label>
+        </div>
+        <div class="display-options-btns">
+          <button class="btn btn-xs" data-action="selectAllScriptOptions">All</button>
+          <button class="btn btn-xs" data-action="clearAllScriptOptions">Clear</button>
+        </div>
+        <div class="display-options-grid">
+          <fieldset class="display-options-group">
+            <legend>Display</legend>
+            <label><input type="checkbox" id="scriptShowEmoji"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 🔵 Personnel Color</label>
+            <label><input type="checkbox" id="scriptUseSquares"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 🟦 Use Squares</label>
+            <label><input type="checkbox" id="scriptUnderEmoji"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 🍑 Under = Peach</label>
+            <label><input type="checkbox" id="scriptShowLineCall" checked
+                data-onchange="renderScript;saveScriptDisplayOptions" /> Show [Line Call]</label>
+            <label><input type="checkbox" id="scriptShowWbNum" checked
+                data-onchange="renderScript;saveScriptDisplayOptions" /> Show WB#</label>
+            <label><input type="checkbox" id="scriptShowPrintPreview"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 👁️ Show Print Preview</label>
+          </fieldset>
+          <fieldset class="display-options-group">
+            <legend>Highlight</legend>
+            <label><input type="checkbox" id="scriptBoldShifts"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> <b>Bold</b> Shifts</label>
+            <label><input type="checkbox" id="scriptRedShifts"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> <span class="red">Red</span> Shifts</label>
+            <label><input type="checkbox" id="scriptItalicMotions"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> <i>Italic</i> Motions</label>
+            <label><input type="checkbox" id="scriptRedMotions"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> <span class="red">Red</span> Motions</label>
+            <label><input type="checkbox" id="scriptHighlightHuddle"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 🟡 Highlight Huddle</label>
+            <label><input type="checkbox" id="scriptHighlightCandy"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> 🩷 Highlight Candy</label>
+          </fieldset>
+          <fieldset class="display-options-group">
+            <legend>Hide / Compact</legend>
+            <label><input type="checkbox" id="scriptRemoveVowels"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> Remove Vowels</label>
+            <label><input type="checkbox" id="scriptHidePersonnel"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> Hide Personnel</label>
+            <label><input type="checkbox" id="scriptHideLinemen"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> Hide Linemen</label>
+            <label><input type="checkbox" id="scriptPrintStyle"
+                data-onchange="renderScript;saveScriptDisplayOptions" /> Print-style Rows</label>
+          </fieldset>
+        </div>
+      </div>
     </div>
   </div>
 

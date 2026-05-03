@@ -146,3 +146,31 @@ function applyScriptDisplayPreset(presetName = "coach") {
   renderScript();
   showToast(`Script preset: ${presetName}`);
 }
+function toggleScriptDisplayPanel() {
+  const overlay = document.getElementById("scriptDisplayOverlay");
+  const trigger = document.getElementById("scriptDisplayTriggerBtn");
+  if (!overlay) return;
+  const isOpen = overlay.classList.contains("visible");
+  if (isOpen) {
+    overlay.classList.remove("visible");
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.setAttribute("inert", "");
+    trigger?.classList.remove("active");
+    return;
+  }
+  overlay.removeAttribute("inert");
+  overlay.setAttribute("aria-hidden", "false");
+  overlay.classList.add("visible");
+  trigger?.classList.add("active");
+}
+
+function closeScriptDisplayPanel(event) {
+  if (event && event.target !== event.currentTarget) return;
+  const overlay = document.getElementById("scriptDisplayOverlay");
+  const trigger = document.getElementById("scriptDisplayTriggerBtn");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("inert", "");
+  trigger?.classList.remove("active");
+}

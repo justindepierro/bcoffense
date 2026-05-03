@@ -740,16 +740,16 @@ function _obBuildDetailHtml() {
         });
       constraintParts.push(
         '<span class="ob-constraint-chip ' +
-          (exists ? "ob-constraint-found" : "ob-constraint-missing") +
-          '"' +
-          (exists ? ' data-concept="' + obEscapeAttr(c) + '"' : "") +
-          ' title="' +
-          (exists ? "Click to explore" : "Not in playbook") +
-          '">' +
-          escapeHtml(c) +
-          " " +
-          (exists ? "\u2705" : "\u26A0\uFE0F") +
-          "</span>",
+        (exists ? "ob-constraint-found" : "ob-constraint-missing") +
+        '"' +
+        (exists ? ' data-concept="' + obEscapeAttr(c) + '"' : "") +
+        ' title="' +
+        (exists ? "Click to explore" : "Not in playbook") +
+        '">' +
+        escapeHtml(c) +
+        " " +
+        (exists ? "\u2705" : "\u26A0\uFE0F") +
+        "</span>",
       );
     });
   }
@@ -800,16 +800,16 @@ function _obBuildDetailHtml() {
   const hitChartHtml =
     hitChartEntries.length > 0
       ? hitChartEntries
-          .map(function (pair) {
-            return (
-              '<span class="ob-hc-chip">' +
-              escapeHtml(pair[0]) +
-              " <small>(" +
-              pair[1] +
-              ")</small></span>"
-            );
-          })
-          .join("")
+        .map(function (pair) {
+          return (
+            '<span class="ob-hc-chip">' +
+            escapeHtml(pair[0]) +
+            " <small>(" +
+            pair[1] +
+            ")</small></span>"
+          );
+        })
+        .join("")
       : '<span class="ob-no-data">None</span>';
 
   // Formations
@@ -906,8 +906,8 @@ function _obBuildDetailHtml() {
         relatedChips +
         (relatedNames.length > 20
           ? '<span class="ob-no-data">+' +
-            (relatedNames.length - 20) +
-            " more</span>"
+          (relatedNames.length - 20) +
+          " more</span>"
           : "") +
         "</div>" +
         "</div>";
@@ -931,10 +931,10 @@ function _obBuildDetailHtml() {
   const notesHtml =
     uniqueNotes.length > 0
       ? uniqueNotes
-          .map(function (n) {
-            return '<div class="ob-note-item">' + escapeHtml(n) + "</div>";
-          })
-          .join("")
+        .map(function (n) {
+          return '<div class="ob-note-item">' + escapeHtml(n) + "</div>";
+        })
+        .join("")
       : '<span class="ob-no-data">None</span>';
 
   return (

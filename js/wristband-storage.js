@@ -28,7 +28,7 @@ function syncWristbandHeaderColorPicker() {
       wristbandHeaderColor === "transparent"
         ? isTransparentBtn
         : button.style.background === wristbandHeaderColor ||
-          button.style.backgroundColor === wristbandHeaderColor;
+        button.style.backgroundColor === wristbandHeaderColor;
     button.classList.toggle("active", isMatch);
   });
 }
@@ -177,11 +177,11 @@ function loadSavedWristbandsList() {
     .map((s) => {
       const savedTime = s.savedAt
         ? new Date(s.savedAt).toLocaleDateString("en-US", {
-            month: "short",
-            day: "numeric",
-            hour: "numeric",
-            minute: "2-digit",
-          })
+          month: "short",
+          day: "numeric",
+          hour: "numeric",
+          minute: "2-digit",
+        })
         : "";
       return `
         <div class="saved-script-card">
