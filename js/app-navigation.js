@@ -3,10 +3,11 @@ const TAB_INDEX_MAP = {
   script: 1,
   wristband: 2,
   tendencies: 3,
-  callsheet: 4,
-  installation: 5,
-  offensebuilder: 6,
-  dashboard: 7,
+  gameplan: 4,
+  callsheet: 5,
+  installation: 6,
+  offensebuilder: 7,
+  dashboard: 8,
 };
 
 function showTab(tabName) {
@@ -48,6 +49,8 @@ function showTab(tabName) {
     }
   } else if (tabName === "tendencies") {
     initTendencies();
+  } else if (tabName === "gameplan") {
+    if (typeof initGamePlan === "function") initGamePlan();
   } else if (tabName === "callsheet") {
     if (Object.keys(callSheet).length === 0) {
       initCallSheet();
@@ -66,6 +69,7 @@ function showTab(tabName) {
     script: "Script Builder",
     wristband: "Wristband",
     tendencies: "Tendencies",
+    gameplan: "Game Plan",
     callsheet: "Call Sheet",
     installation: "Installation",
     offensebuilder: "Offense Builder",

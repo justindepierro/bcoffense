@@ -36,6 +36,7 @@
   <link rel="stylesheet" href="css/tendencies.css" />
   <link rel="stylesheet" href="css/offense-builder.css" />
   <link rel="stylesheet" href="css/dashboard.css" />
+  <link rel="stylesheet" href="css/gameplan.css" />
   <link rel="stylesheet" href="css/installation.css" />
   <link rel="stylesheet" href="css/print.css" />
   <link rel="stylesheet" href="css/responsive.css" />
@@ -265,6 +266,10 @@
       <button id="tab-tendencies" class="tab" role="tab" aria-selected="false" aria-controls="tendencies"
         data-action="showTab" data-arg="tendencies" data-testid="tab-tendencies">
         Def Tendencies
+      </button>
+      <button id="tab-gameplan" class="tab" role="tab" aria-selected="false" aria-controls="gameplan"
+        data-action="showTab" data-arg="gameplan" data-testid="tab-gameplan">
+        🎯 Game Plan
       </button>
       <button id="tab-callsheet" class="tab" role="tab" aria-selected="false" aria-controls="callsheet"
         data-action="showTab" data-arg="callsheet" data-testid="tab-callsheet">
@@ -649,8 +654,7 @@
         <div class="custom-modal-header">
           <span class="custom-modal-icon">🧹</span>
           <h3 class="custom-modal-title">Playbook Data Cleanup</h3>
-          <button class="pb-sanitize-close-btn" data-action="closePlaybookSanitize"
-            aria-label="Close">✕</button>
+          <button class="pb-sanitize-close-btn" data-action="closePlaybookSanitize" aria-label="Close">✕</button>
         </div>
         <div class="custom-modal-body pb-sanitize-controls">
           <div class="pb-sanitize-row-controls">
@@ -1477,6 +1481,9 @@
     <div id="tendencies" class="panel" role="tabpanel" aria-label="Defensive Tendencies">
       <div id="tendenciesContent"></div>
     </div>
+
+    <!-- Game Plan Panel -->
+    <div id="gameplan" class="panel" role="tabpanel" aria-label="Game Plan"></div>
 
     <!-- Call Sheet Panel -->
     <div id="callsheet" class="panel" role="tabpanel" aria-label="Call Sheet">
@@ -2660,6 +2667,7 @@
   <script defer src="js/offensebuilder.js"></script>
   <script defer src="js/help.js"></script>
   <script defer src="js/dashboard.js"></script>
+  <script defer src="js/gameplan.js"></script>
   <script defer src="js/app-events.js"></script>
   <script defer src="js/app-shell.js"></script>
   <script defer src="js/app-session.js"></script>

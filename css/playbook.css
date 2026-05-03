@@ -1157,7 +1157,9 @@ table.sortable th {
   color: var(--color-text-muted);
   cursor: pointer;
   font-size: var(--font-size-base);
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .pb-sanitize-close-btn:hover {
   background: var(--color-bg-hover-row);
@@ -1230,7 +1232,10 @@ table.sortable th {
   background: var(--color-bg-light);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  transition: opacity var(--transition-fast), transform var(--transition-fast), background-color var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast),
+    background-color var(--transition-fast);
 }
 .pb-sanitize-row.is-filled {
   background: var(--color-success-light);
@@ -1355,7 +1360,9 @@ table.sortable th {
   font-size: var(--font-size-xs);
   color: var(--color-primary);
   font-weight: 600;
-  transition: background-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .pb-sanitize-suggest-chip:hover {
   background: var(--color-primary);

@@ -1,0 +1,383 @@
+/* =========================================================================
+   Game Plan tab — drafting board for assigning plays into theoretical buckets
+   Prefix: gp-*
+   ========================================================================= */
+
+#gameplan {
+  padding: var(--space-md);
+}
+
+.gp-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.gp-header-meta {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+
+.gp-header-title {
+  font-size: var(--font-size-lg);
+  font-weight: 600;
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+
+.gp-header-opponent {
+  font-weight: 600;
+  color: var(--color-primary);
+}
+
+.gp-header-week {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+
+.gp-header-empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-warning);
+}
+
+.gp-header-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+/* Toolbar / filters */
+.gp-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  margin-bottom: var(--space-md);
+}
+
+.gp-toolbar input[type="search"],
+.gp-toolbar select {
+  min-width: 140px;
+}
+
+.gp-toolbar-spacer {
+  flex: 1;
+}
+
+/* Layout: library + boxes */
+.gp-layout {
+  display: grid;
+  grid-template-columns: minmax(280px, 380px) 1fr;
+  gap: var(--space-md);
+  align-items: start;
+}
+
+@media (max-width: 900px) {
+  .gp-layout {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* Library (left column) */
+.gp-library {
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  max-height: calc(100vh - 280px);
+  overflow: hidden;
+  position: sticky;
+  top: var(--space-sm);
+}
+
+.gp-library-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  padding-bottom: var(--space-xs);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.gp-library-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.gp-library-list {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding-right: var(--space-xxs, 2px);
+}
+
+.gp-play-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: grab;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.gp-play-row:hover {
+  background: var(--color-bg-hover-row);
+  border-color: var(--color-border);
+}
+
+.gp-play-row.is-selected {
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.12));
+  border-color: var(--color-primary);
+}
+
+.gp-play-row.is-assigned {
+  opacity: 0.55;
+}
+
+.gp-play-row[draggable="true"]:active {
+  cursor: grabbing;
+}
+
+.gp-play-row-checkbox {
+  flex-shrink: 0;
+}
+
+.gp-play-row-body {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  line-height: 1.3;
+  word-break: break-word;
+}
+
+.gp-play-row-meta {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: 2px;
+}
+
+.gp-play-row-type-badge {
+  flex-shrink: 0;
+  display: inline-block;
+  font-size: var(--font-size-micro);
+  font-weight: 600;
+  padding: 2px 6px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+/* Boxes (right column) */
+.gp-boxes {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+  align-content: start;
+}
+
+.gp-box {
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  display: flex;
+  flex-direction: column;
+  min-height: 140px;
+  overflow: hidden;
+}
+
+.gp-box.is-drop-target {
+  outline: 2px dashed var(--color-primary);
+  outline-offset: -4px;
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.08));
+}
+
+.gp-box-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  background: var(--color-bg-lighter);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.gp-box-title {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.gp-box-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 400;
+}
+
+.gp-box-actions {
+  display: flex;
+  gap: 2px;
+}
+
+.gp-box-body {
+  flex: 1;
+  padding: var(--space-xs) var(--space-sm) var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-height: 60px;
+}
+
+.gp-box-empty {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-md) var(--space-xs);
+  font-style: italic;
+}
+
+.gp-box-play {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 4px 6px;
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  cursor: grab;
+}
+
+.gp-box-play:hover {
+  background: var(--color-bg-hover-row);
+}
+
+.gp-box-play-call {
+  flex: 1;
+  min-width: 0;
+  word-break: break-word;
+  line-height: 1.3;
+}
+
+.gp-box-play-remove {
+  flex-shrink: 0;
+  background: transparent;
+  border: 0;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-md);
+  padding: 0 4px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+}
+
+.gp-box-play-remove:hover {
+  color: var(--color-danger);
+  background: var(--color-bg-hover-row);
+}
+
+/* Stats modal content */
+.gp-stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: var(--space-md);
+}
+
+.gp-stats-card {
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+}
+
+.gp-stats-card-title {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin-bottom: var(--space-xs);
+}
+
+.gp-stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.gp-stats-row {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-sm);
+}
+
+.gp-stats-row-value {
+  color: var(--color-text);
+  font-weight: 600;
+}
+.gp-stats-row-count {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Print: when printing the game plan, hide chrome and show boxes only */
+@media print {
+  body[data-active-tab="gameplan"] .panel:not(#gameplan),
+  body[data-active-tab="gameplan"] .tabs,
+  body[data-active-tab="gameplan"] header,
+  body[data-active-tab="gameplan"] #helpFab,
+  body[data-active-tab="gameplan"] .gp-toolbar,
+  body[data-active-tab="gameplan"] .gp-library,
+  body[data-active-tab="gameplan"] .gp-header-actions,
+  body[data-active-tab="gameplan"] .gp-box-play-remove,
+  body[data-active-tab="gameplan"] .gp-box-actions {
+    display: none !important;
+  }
+  body[data-active-tab="gameplan"] .gp-layout {
+    display: block;
+  }
+  body[data-active-tab="gameplan"] .gp-boxes {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  body[data-active-tab="gameplan"] .gp-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    background: white !important;
+    border: 1px solid #888 !important;
+  }
+}
