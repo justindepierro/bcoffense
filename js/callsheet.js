@@ -4146,6 +4146,11 @@ function toggleScoutingOverlay() {
   }
 }
 
+// Alias — overlay-close dispatcher strips "Overlay" suffix before calling
+function toggleScouting() {
+  toggleScoutingOverlay();
+}
+
 /**
  * Build the scouting intel badge HTML for a category header
  */

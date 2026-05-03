@@ -600,3 +600,8 @@ async function doDeleteTemplate(idx) {
   }
   showToast(`Deleted template "${name}"`);
 }
+
+// Alias needed because the delegated Overlay-close check strips the suffix
+function closePeriod() {
+  document.querySelector(".period-create-overlay")?.remove();
+}

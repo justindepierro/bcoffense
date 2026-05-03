@@ -450,3 +450,24 @@ function renderAvailablePlays() {
 }
 
 const _scheduleRenderAvailable = createRAFRenderer(renderAvailablePlays);
+
+function toggleSelectAllAvailable() {
+  const availStart = scriptAvailPage * AVAIL_PER_PAGE;
+  const pageIndices = (currentFilteredPlayIndices || []).slice(
+    availStart,
+    availStart + AVAIL_PER_PAGE,
+  );
+  if (pageIndices.length === 0) return;
+  const selectedSet = new Set(selectedAvailablePlays);
+  const allSelected = pageIndices.every((idx) => selectedSet.has(idx));
+  if (allSelected) {
+    selectedAvailablePlays = selectedAvailablePlays.filter(
+      (idx) => !pageIndices.includes(idx),
+    );
+  } else {
+    pageIndices.forEach((idx) => {
+      if (!selectedSet.has(idx)) selectedAvailablePlays.push(idx);
+    });
+  }
+  renderAvailablePlays();
+}

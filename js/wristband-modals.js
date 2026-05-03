@@ -12,6 +12,11 @@ function closeWbHelpOverlay() {
   });
 }
 
+// Alias — overlay-close dispatcher strips "Overlay" suffix before calling
+function closeWbHelp() {
+  closeWbHelpOverlay();
+}
+
 function openWbFindReplaceModal() {
   const overlay = document.getElementById("wbFindReplaceOverlay");
   if (overlay) {

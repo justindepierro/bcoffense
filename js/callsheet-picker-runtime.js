@@ -564,6 +564,11 @@ function closeCsSuggestOverlay() {
   document.getElementById("csSuggestOverlay")?.remove();
 }
 
+// Alias — overlay-close dispatcher strips "Overlay" suffix before calling
+function closeCsSuggest() {
+  closeCsSuggestOverlay();
+}
+
 function csPickerAddPlay(el) {
   const idx = parseInt(el.dataset?.idx ?? el, 10);
   const play = _csPickerFiltered[idx];
