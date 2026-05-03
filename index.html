@@ -391,6 +391,10 @@
             <button class="btn btn-sm btn-success" data-action="addNewPlay" title="Add a new play to the playbook">
               &#10010; Add Play
             </button>
+            <button class="btn btn-sm" data-action="openPlaybookSanitize"
+              title="Find plays missing data for a field and fill them in fast">
+              🧹 Cleanup Data
+            </button>
             <button class="btn btn-sm btn-primary" data-action="exportPlaybookCSV"
               title="Export playbook as CSV for Excel / Sheets">
               &#128229; Export CSV
@@ -626,10 +630,44 @@
           <button class="btn btn-primary" data-action="savePlayEditor">
             💾 Save
           </button>
+          <button class="btn btn-success" data-action="savePlayEditorAndAddAnother" id="playEditorSaveAddAnotherBtn"
+            title="Save this play and immediately start another">
+            ➕ Save &amp; Add Another
+          </button>
           <button class="btn btn-danger" data-action="deletePlayFromEditor" id="playEditorDeleteBtn">
             🗑️ Delete Play
           </button>
           <button class="btn" data-action="closePlayEditor">Cancel</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Playbook Data Cleanup (Sanitize) Overlay -->
+    <div id="playbookSanitizeOverlay" class="custom-modal-overlay" role="dialog" aria-modal="true"
+      aria-label="Playbook Data Cleanup" data-action="closePlaybookSanitizeOverlay">
+      <div class="custom-modal-content pb-sanitize-modal">
+        <div class="custom-modal-header">
+          <h3 class="custom-modal-title">🧹 Playbook Data Cleanup</h3>
+          <button class="custom-modal-close" data-action="closePlaybookSanitize" aria-label="Close">✕</button>
+        </div>
+        <div class="custom-modal-body pb-sanitize-controls">
+          <div class="pb-sanitize-row-controls">
+            <label for="playbookSanitizeField" class="pb-sanitize-label">Field</label>
+            <select id="playbookSanitizeField" class="pb-sanitize-select"
+              data-onchange="setPlaybookSanitizeField" data-pass="value"></select>
+          </div>
+          <div class="pb-sanitize-row-controls">
+            <label class="pb-sanitize-toggle">
+              <input id="playbookSanitizeHideToggle" type="checkbox" checked
+                data-onchange="setPlaybookSanitizeHide" data-pass="event" />
+              Hide plays already filled in
+            </label>
+            <span class="pb-sanitize-status" id="playbookSanitizeStatus"></span>
+          </div>
+        </div>
+        <div class="pb-sanitize-list" id="playbookSanitizeBody"></div>
+        <div class="custom-modal-actions">
+          <button class="btn" data-action="closePlaybookSanitize">Done</button>
         </div>
       </div>
     </div>
@@ -2585,6 +2623,7 @@
   <script defer src="js/playbook-navigation.js"></script>
   <script defer src="js/playbook-actions.js"></script>
   <script defer src="js/playbook-render.js"></script>
+  <script defer src="js/playbook-sanitize.js"></script>
   <script defer src="js/script-state.js"></script>
   <script defer src="js/script-shared.js"></script>
   <script defer src="js/script-players.js"></script>

@@ -290,10 +290,12 @@ function _populateEditorForm(play, isNew) {
   const title = document.getElementById("playEditorTitle");
   const icon = document.getElementById("playEditorIcon");
   const deleteBtn = document.getElementById("playEditorDeleteBtn");
+  const saveAddAnotherBtn = document.getElementById("playEditorSaveAddAnotherBtn");
 
   title.textContent = isNew ? "New Play" : "Edit Play";
   icon.textContent = isNew ? "➕" : "✏️";
   deleteBtn.style.display = isNew ? "none" : "";
+  if (saveAddAnotherBtn) saveAddAnotherBtn.style.display = isNew ? "" : "none";
 
   const preview = document.getElementById("playEditorPreview");
   if (preview) {
@@ -408,7 +410,9 @@ function _populateEditorForm(play, isNew) {
   if (first) setTimeout(() => first.focus(), 100);
 }
 
-function savePlayEditor() {
+function savePlayEditor(opts = {}) {
+  const keepOpen = opts && opts.keepOpen === true;
+  const wasNew = _editingMasterIdx < 0;
   const body = document.getElementById("playEditorBody");
   const fields = body.querySelectorAll("[data-field]");
   const assignmentFields = body.querySelectorAll("[data-player-slot]");
@@ -463,7 +467,20 @@ function savePlayEditor() {
   invalidateFilterCache();
   filteredPlays = [...plays];
   filterPlays();
+  if (keepOpen && wasNew) {
+    // Reset the editor to a fresh blank new-play form, focus first field.
+    addNewPlay();
+    const firstInput = document.querySelector("#playEditorBody [data-field]");
+    if (firstInput) {
+      try { firstInput.focus(); } catch (_e) { /* ignore */ }
+    }
+    return;
+  }
   closePlayEditor();
+}
+
+function savePlayEditorAndAddAnother() {
+  savePlayEditor({ keepOpen: true });
 }
 
 async function deletePlayFromEditor() {
