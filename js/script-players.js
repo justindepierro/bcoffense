@@ -121,10 +121,39 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
   debouncedSaveScriptState();
 }
 
-function rerenderScriptPreservingScroll() {
+function rerenderScriptPreservingScroll(anchorIndex) {
+  // Try to anchor on a specific row (or the row owning the active element) so
+  // height changes from the player grid don't push the user's play out of view.
+  const scriptEl = document.getElementById("scriptPlays");
+  let anchorRow = null;
+  if (typeof anchorIndex === "number" && scriptEl) {
+    anchorRow = scriptEl.querySelector(`.script-item[data-idx="${anchorIndex}"]`);
+  }
+  if (!anchorRow && document.activeElement && scriptEl?.contains(document.activeElement)) {
+    anchorRow = document.activeElement.closest(".script-item[data-idx]");
+  }
+  const anchorOffset = anchorRow ? anchorRow.getBoundingClientRect().top : null;
+  const anchorIdx = anchorRow ? anchorRow.getAttribute("data-idx") : null;
   const scrollY = window.scrollY;
+
   renderScript();
+
   requestAnimationFrame(() => {
+    if (anchorIdx !== null) {
+      const newAnchor = document
+        .getElementById("scriptPlays")
+        ?.querySelector(`.script-item[data-idx="${anchorIdx}"]`);
+      if (newAnchor) {
+        const newTop = newAnchor.getBoundingClientRect().top;
+        const delta = newTop - anchorOffset;
+        window.scrollTo({
+          top: window.scrollY + delta,
+          left: window.scrollX,
+          behavior: "instant",
+        });
+        return;
+      }
+    }
     window.scrollTo({ top: scrollY, left: window.scrollX, behavior: "instant" });
   });
 }
@@ -132,7 +161,7 @@ function rerenderScriptPreservingScroll() {
 function promoteScriptDepthPlayer(index, slotKey, playerId) {
   if (!slotKey || !playerId) return;
   updateScriptPlayerAssignment(index, slotKey, playerId);
-  rerenderScriptPreservingScroll();
+  rerenderScriptPreservingScroll(index);
 }
 
 function resetScriptPlayerOverrides(index) {
@@ -140,7 +169,7 @@ function resetScriptPlayerOverrides(index) {
   if (!play || play.isSeparator) return;
   delete play.playerAssignments;
   debouncedSaveScriptState();
-  rerenderScriptPreservingScroll();
+  rerenderScriptPreservingScroll(index);
 }
 
 function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
