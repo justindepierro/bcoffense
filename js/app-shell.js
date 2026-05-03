@@ -111,6 +111,17 @@ document.addEventListener("keydown", (e) => {
 
   if (inInput) return;
 
+  if (
+    !mod && !e.altKey && !e.shiftKey &&
+    e.key === "?" &&
+    currentActiveTab === "script" &&
+    typeof showScriptShortcutsModal === "function"
+  ) {
+    e.preventDefault();
+    showScriptShortcutsModal();
+    return;
+  }
+
   if (!mod && !e.altKey && !e.shiftKey && e.key >= "1" && e.key <= "8") {
     const tabNames = [
       "playbook",

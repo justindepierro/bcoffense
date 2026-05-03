@@ -841,6 +841,61 @@ async function showScriptHealthIssues() {
   }
 }
 
+const SCRIPT_KEYBOARD_SHORTCUTS = [
+  { keys: "1 \u2013 8", desc: "Switch tabs (Playbook, Script, Wristband, Tendencies, Call Sheet, Installation, Builder, Dashboard)" },
+  { keys: "Ctrl/Cmd + Z", desc: "Undo last script change" },
+  { keys: "Ctrl/Cmd + Y / Shift+Z", desc: "Redo" },
+  { keys: "Ctrl/Cmd + A", desc: "Select all script rows (when focused on script)" },
+  { keys: "Ctrl/Cmd + Shift + A", desc: "Clear selection" },
+  { keys: "Alt + Shift + C", desc: "Collapse all periods" },
+  { keys: "Alt + Shift + E", desc: "Expand all periods" },
+  { keys: "Alt + Shift + P", desc: "Apply preferred fields to focused period" },
+  { keys: "?", desc: "Open this shortcuts reference" },
+  { keys: "Esc", desc: "Close any open overlay" },
+];
+
+function showScriptShortcutsModal() {
+  if (document.getElementById("scriptShortcutsModal")) return;
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "scriptShortcutsModal";
+  const rows = SCRIPT_KEYBOARD_SHORTCUTS
+    .map((s) => `<tr><td><kbd>${escapeHtml(s.keys)}</kbd></td><td>${escapeHtml(s.desc)}</td></tr>`)
+    .join("");
+  setInnerHTML(
+    overlay,
+    `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="scriptShortcutsTitle" style="max-width:560px;">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">\u2328\uFE0F</span>
+        <h3 class="custom-modal-title" id="scriptShortcutsTitle">Script Keyboard Shortcuts</h3>
+      </div>
+      <div class="custom-modal-body">
+        <table class="script-shortcuts-table">
+          <thead><tr><th>Key</th><th>Action</th></tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+      <div class="custom-modal-actions">
+        <button class="btn btn-primary custom-modal-btn" id="scriptShortcutsCloseBtn">Close</button>
+      </div>
+    </div>
+  `,
+  );
+  document.body.appendChild(overlay);
+  trapFocus(overlay);
+  const close = () => {
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 180);
+  };
+  overlay.querySelector("#scriptShortcutsCloseBtn")?.addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "Escape" || e.key === "Enter") { e.preventDefault(); close(); }
+  });
+  overlay.querySelector("#scriptShortcutsCloseBtn")?.focus();
+}
+
 function recordScriptRenderProfileSample(sample) {
   scriptRenderProfileHistory.push(sample);
   if (scriptRenderProfileHistory.length > SCRIPT_RENDER_PROFILE_HISTORY_LIMIT) {

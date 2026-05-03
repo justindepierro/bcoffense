@@ -1708,6 +1708,36 @@
   animation: scriptHealthFlash 1.8s ease-in-out;
 }
 
+/* Script keyboard shortcuts modal table */
+.script-shortcuts-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--font-size-sm);
+}
+.script-shortcuts-table th,
+.script-shortcuts-table td {
+  padding: 6px 10px;
+  text-align: left;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.script-shortcuts-table th {
+  font-size: var(--font-size-2xs);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-light);
+}
+.script-shortcuts-table kbd {
+  display: inline-block;
+  padding: 2px 8px;
+  font-family: var(--font-mono);
+  font-size: var(--font-size-2xs);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  box-shadow: 0 1px 0 var(--color-border-light);
+}
+
 /* Collapsible Filters */
 .filters-collapsible {
   margin-bottom: 8px;
