@@ -144,6 +144,7 @@ function resetScriptPlayerOverrides(index) {
 }
 
 function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
+  if (opts && opts.hidePersonnel) return "";
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);

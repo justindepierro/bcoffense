@@ -331,12 +331,12 @@ function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   const columns = getScriptPrintColumns(opts);
   const thead = table.querySelector("thead");
   if (thead) {
-    thead.innerHTML = `<tr>${columns
+    setInnerHTML(thead, `<tr>${columns
       .map((column) => `<th class="col-${column.key}">${escapeHtml(column.label)}</th>`)
-      .join("")}</tr>`;
+      .join("")}</tr>`);
   }
 
-  body.innerHTML = bodyMarkup;
+  setInnerHTML(body, bodyMarkup);
 }
 
 function exportScriptCSV() {
