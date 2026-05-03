@@ -405,7 +405,13 @@ function renderGamePlan() {
       ${allBoxes.map((b) => _gpRenderBox(b, board)).join("")}
     </div>`;
 
-  setInnerHTML(root, headerHtml + toolbarHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`);
+  setInnerHTML(root, headerHtml);
+  // Toolbar + boxes contain <input>/<select>/<button>/<textarea>, which
+  // sanitizeHTML strips. Build them directly via innerHTML — every
+  // user-derived value above already passes through escapeHtml().
+  const wrapper = document.createElement("div");
+  wrapper.innerHTML = toolbarHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
 }
