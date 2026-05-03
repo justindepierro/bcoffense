@@ -789,13 +789,20 @@ async function sendDashboardGamePlanToBoxes() {
   const assignedSigs = _gpAllAssignedSigs(board);
   const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
 
+  // Aliases: route some play types into related default boxes
+  const TYPE_ALIASES = {
+    "Play Pass": "Play Action",
+    "Drop": "Pass",
+  };
+
   // Group tagged plays by destination box id
   const byBox = {};
   let alreadyAssigned = 0;
   tagged.forEach((play) => {
     const sig = _gpPlaySignature(play);
     if (assignedSigs.has(sig)) { alreadyAssigned += 1; return; }
-    const dest = defaultIds.has(play.type) ? play.type : GP_HOLDING_ID;
+    const mappedType = TYPE_ALIASES[play.type] || play.type;
+    const dest = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
     if (!byBox[dest]) byBox[dest] = [];
     byBox[dest].push(sig);
   });
