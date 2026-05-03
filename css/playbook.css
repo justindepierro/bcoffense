@@ -1131,18 +1131,45 @@ table.sortable th {
 
 /* ===== Playbook Data Cleanup (Sanitize) ===== */
 .pb-sanitize-modal {
-  max-width: 720px;
+  max-width: 760px;
   width: 95vw;
-  max-height: 90vh;
-  display: flex;
+  max-height: calc(100vh - clamp(32px, 8vh, 64px));
+  display: flex !important;
   flex-direction: column;
+  overflow: hidden !important;
+  background: var(--color-white);
+}
+.pb-sanitize-modal .custom-modal-header {
+  border-bottom: 1px solid var(--color-border-light);
+  padding-bottom: 14px;
+  flex-shrink: 0;
+}
+.pb-sanitize-close-btn {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: transparent;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-base);
+  transition: background-color var(--transition-fast), color var(--transition-fast);
+}
+.pb-sanitize-close-btn:hover {
+  background: var(--color-bg-hover-row);
+  color: var(--color-text);
 }
 .pb-sanitize-controls {
   display: flex;
   flex-direction: column;
   gap: var(--space-sm);
-  padding-bottom: var(--space-sm);
+  padding: var(--space-sm) 22px;
   border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
 }
 .pb-sanitize-row-controls {
   display: flex;
@@ -1155,7 +1182,8 @@ table.sortable th {
   color: var(--color-text);
   min-width: 60px;
 }
-.pb-sanitize-controls select#playbookSanitizeField {
+.pb-sanitize-controls select#playbookSanitizeField,
+.pb-sanitize-controls .pb-sanitize-field-picker {
   flex: 1;
   min-width: 200px;
   padding: var(--space-xs) var(--space-sm);
@@ -1181,13 +1209,18 @@ table.sortable th {
   font-style: italic;
 }
 .pb-sanitize-list {
-  flex: 1;
+  flex: 1 1 auto;
   overflow-y: auto;
-  padding: var(--space-sm) 0;
+  padding: var(--space-sm) 22px;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
   min-height: 200px;
+  background: var(--color-bg-body);
+}
+.pb-sanitize-modal .custom-modal-actions {
+  flex-shrink: 0;
+  border-top: 1px solid var(--color-border-light);
 }
 .pb-sanitize-row {
   display: flex;

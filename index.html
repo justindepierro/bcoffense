@@ -645,15 +645,17 @@
     <!-- Playbook Data Cleanup (Sanitize) Overlay -->
     <div id="playbookSanitizeOverlay" class="custom-modal-overlay" role="dialog" aria-modal="true"
       aria-label="Playbook Data Cleanup" data-action="closePlaybookSanitizeOverlay">
-      <div class="custom-modal-content pb-sanitize-modal">
+      <div class="custom-modal pb-sanitize-modal">
         <div class="custom-modal-header">
-          <h3 class="custom-modal-title">🧹 Playbook Data Cleanup</h3>
-          <button class="custom-modal-close" data-action="closePlaybookSanitize" aria-label="Close">✕</button>
+          <span class="custom-modal-icon">🧹</span>
+          <h3 class="custom-modal-title">Playbook Data Cleanup</h3>
+          <button class="pb-sanitize-close-btn" data-action="closePlaybookSanitize"
+            aria-label="Close">✕</button>
         </div>
         <div class="custom-modal-body pb-sanitize-controls">
           <div class="pb-sanitize-row-controls">
             <label for="playbookSanitizeField" class="pb-sanitize-label">Field</label>
-            <select id="playbookSanitizeField" class="pb-sanitize-select" data-onchange="setPlaybookSanitizeField"
+            <select id="playbookSanitizeField" class="pb-sanitize-field-picker" data-onchange="setPlaybookSanitizeField"
               data-pass="value"></select>
           </div>
           <div class="pb-sanitize-row-controls">
@@ -667,7 +669,7 @@
         </div>
         <div class="pb-sanitize-list" id="playbookSanitizeBody"></div>
         <div class="custom-modal-actions">
-          <button class="btn" data-action="closePlaybookSanitize">Done</button>
+          <button class="btn btn-primary" data-action="closePlaybookSanitize">Done</button>
         </div>
       </div>
     </div>
