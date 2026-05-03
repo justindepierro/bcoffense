@@ -157,12 +157,13 @@ function loadSavedWristbandsList() {
     setWristbandSavedSectionVisibility(section, false);
     return;
   }
+  if (!container) return;
 
   setWristbandSavedSectionVisibility(section, true);
   const totalPlays = (wb) => {
     if (wb.cards) {
       return wb.cards.reduce(
-        (sum, c) => sum + c.data.filter((p) => p !== null).length,
+        (sum, c) => sum + (Array.isArray(c.data) ? c.data.filter((p) => p !== null).length : 0),
         0,
       );
     }
@@ -250,8 +251,10 @@ async function deleteSavedWristband(id) {
 
   if (scriptWristband && scriptWristband.id === id) {
     scriptWristband = null;
-    document.getElementById("scriptWristbandSelect").value = "";
-    document.getElementById("scriptWristbandInfo").textContent = "";
+    const wbSelect = document.getElementById("scriptWristbandSelect");
+    const wbInfo = document.getElementById("scriptWristbandInfo");
+    if (wbSelect) wbSelect.value = "";
+    if (wbInfo) wbInfo.textContent = "";
     renderScript();
   }
 }

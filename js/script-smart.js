@@ -11,6 +11,7 @@ function openSmartScriptForPeriod(separatorIndex) {
   const periodLabel = script[separatorIndex].label || "Period";
 
   const modal = document.getElementById("smartScriptModal");
+  if (!modal) return;
   modal.classList.add("show");
 
   const titleEl =
@@ -423,6 +424,7 @@ async function openSmartScript() {
   smartScriptTargetPeriod = null;
 
   const modal = document.getElementById("smartScriptModal");
+  if (!modal) return;
   modal.classList.add("show");
 
   const titleEl =
@@ -462,9 +464,10 @@ async function openSmartScript() {
 }
 
 function closeSmartScript() {
-  document.getElementById("smartScriptModal").classList.remove("show");
-  smartScriptTargetPeriod = null;
   const modal = document.getElementById("smartScriptModal");
+  if (!modal) return;
+  modal.classList.remove("show");
+  smartScriptTargetPeriod = null;
   const titleEl =
     modal.querySelector("h3") || modal.querySelector(".modal-title");
   if (titleEl) titleEl.textContent = "🧠 Smart Script";

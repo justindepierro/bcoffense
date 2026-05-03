@@ -38,7 +38,7 @@ function renderDashboard() {
     let optHtml = '<option value="">— Select Opponent —</option>';
     filteredOpponents.forEach(({ opp, idx }) => {
       const sel = gw.opponentIndex === idx ? "selected" : "";
-      optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays.length} plays)</option>`;
+      optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays?.length ?? 0} plays)</option>`;
     });
     select.innerHTML = optHtml;
 
@@ -148,7 +148,7 @@ function renderDashboard() {
     const scoutEl = document.getElementById("dashScoutingSection");
     if (scoutEl) {
       const opp = getActiveOpponent();
-      if (opp && opp.plays.length > 0) {
+      if (opp && (opp.plays?.length ?? 0) > 0) {
         const overall = queryTendencies(opp, {});
         const thirdDown = queryTendencies(opp, { down: ["3"] });
         const rz = queryTendencies(opp, { situation: ["Red Zone"] });
@@ -507,7 +507,7 @@ function printFullGamePlan() {
     </div>`;
     }
 
-    if (opp && opp.plays.length > 0) {
+    if (opp && (opp.plays?.length ?? 0) > 0) {
       const overall = queryTendencies(opp, {});
       const thirdDown = queryTendencies(opp, { down: ["3"] });
       const rz = queryTendencies(opp, { situation: ["Red Zone"] });

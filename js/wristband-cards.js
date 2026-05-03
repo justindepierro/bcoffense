@@ -1,5 +1,6 @@
 function renderCardTabs() {
   const container = document.getElementById("cardTabs");
+  if (!container) return;
   let html = wristbandCards
     .map((card, i) => {
       const count = card.data.filter((p) => p !== null).length;
