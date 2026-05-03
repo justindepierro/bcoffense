@@ -41,12 +41,20 @@ let _gpFilters = {
   type: "",
   formation: "",
   personnel: "",
+  basePlay: "",
+  tempo: "",
+  preferredDown: "",
+  preferredDistance: "",
+  preferredSituation: "",
+  preferredFieldPosition: "",
+  onlyOpponentTagged: false,
   hideAssigned: false,
   density: "comfortable", // "comfortable" | "compact" | "detail"
   showProgress: true,
   goodVsMan: false,
   goodVsBear: false,
   goodVsOkie: false,
+  showAdvanced: false,
 };
 let _gpSelected = new Set(); // play signatures currently checked in library
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
@@ -101,6 +109,8 @@ function _gpEnsureBoard() {
       customBoxes: [],   // [{ id, label }]
       targets: {},       // boxId → number target (per-box)
       collapsed: [],     // [boxId, ...] collapsed box ids
+      notes: {},         // boxId → string note
+      sort: {},          // boxId → "manual" | "type" | "formation" | "personnel" | "basePlay"
     };
     GP_DEFAULT_BOXES.forEach((b) => {
       all[key].assignments[b.id] = [];
@@ -119,6 +129,8 @@ function _gpEnsureBoard() {
     if (!Array.isArray(all[key].customBoxes)) all[key].customBoxes = [];
     if (!all[key].targets || typeof all[key].targets !== "object") all[key].targets = {};
     if (!Array.isArray(all[key].collapsed)) all[key].collapsed = [];
+    if (!all[key].notes || typeof all[key].notes !== "object") all[key].notes = {};
+    if (!all[key].sort || typeof all[key].sort !== "object") all[key].sort = {};
     all[key].customBoxes.forEach((cb) => {
       if (!Array.isArray(all[key].assignments[cb.id])) {
         all[key].assignments[cb.id] = [];
@@ -176,14 +188,26 @@ function _gpFilteredLibrary(board) {
   if (!Array.isArray(plays)) return [];
   const search = (_gpFilters.search || "").trim().toLowerCase();
   const assignedSigs = _gpAllAssignedSigs(board);
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw && gw.opponentName ? gw.opponentName : null;
 
   return plays.filter((p) => {
     if (_gpFilters.type && p.type !== _gpFilters.type) return false;
     if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
     if (_gpFilters.personnel && p.personnel !== _gpFilters.personnel) return false;
+    if (_gpFilters.basePlay && p.basePlay !== _gpFilters.basePlay) return false;
+    if (_gpFilters.tempo && p.tempo !== _gpFilters.tempo) return false;
+    if (_gpFilters.preferredDown && p.preferredDown !== _gpFilters.preferredDown) return false;
+    if (_gpFilters.preferredDistance && p.preferredDistance !== _gpFilters.preferredDistance) return false;
+    if (_gpFilters.preferredSituation && p.preferredSituation !== _gpFilters.preferredSituation) return false;
+    if (_gpFilters.preferredFieldPosition && p.preferredFieldPosition !== _gpFilters.preferredFieldPosition) return false;
     if (_gpFilters.goodVsMan && !p.goodVsMan) return false;
     if (_gpFilters.goodVsBear && !p.goodVsBear) return false;
     if (_gpFilters.goodVsOkie && !p.goodVsOkie) return false;
+    if (_gpFilters.onlyOpponentTagged) {
+      if (!opponent) return false;
+      if (typeof isPlayTaggedForOpponent === "function" && !isPlayTaggedForOpponent(p, opponent)) return false;
+    }
     if (_gpFilters.hideAssigned && assignedSigs.has(_gpPlaySignature(p))) return false;
     if (search) {
       const hay = [
@@ -272,6 +296,44 @@ function renderGamePlan() {
   const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
   const formations = [...new Set(plays.map((p) => p.formation).filter(Boolean))].sort();
   const personnel = [...new Set(plays.map((p) => p.personnel).filter(Boolean))].sort();
+  const basePlays = [...new Set(plays.map((p) => p.basePlay).filter(Boolean))].sort();
+  const tempos = [...new Set(plays.map((p) => p.tempo).filter(Boolean))].sort();
+  const situations = [...new Set(plays.map((p) => p.preferredSituation).filter(Boolean))].sort();
+  const fieldPositions = [...new Set(plays.map((p) => p.preferredFieldPosition).filter(Boolean))].sort();
+
+  const advBadge = _gpAdvancedFilterCount();
+  const advancedHtml = _gpFilters.showAdvanced ? `
+    <div class="gp-toolbar-advanced">
+      <select data-onchange="updateGamePlanFilter" data-arg="basePlay" data-pass="value" title="Base play">
+        <option value="">Base Play</option>
+        ${basePlays.map((b) => `<option value="${escapeHtml(b)}" ${b === _gpFilters.basePlay ? "selected" : ""}>${escapeHtml(b)}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="tempo" data-pass="value" title="Tempo">
+        <option value="">Tempo</option>
+        ${tempos.map((t) => `<option value="${escapeHtml(t)}" ${t === _gpFilters.tempo ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredDown" data-pass="value" title="Down">
+        <option value="">Down</option>
+        ${["1","2","3","4"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDown ? "selected" : ""}>${d}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredDistance" data-pass="value" title="Distance">
+        <option value="">Distance</option>
+        ${["Short","Medium","Long"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDistance ? "selected" : ""}>${d}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredSituation" data-pass="value" title="Situation">
+        <option value="">Situation</option>
+        ${situations.map((s) => `<option value="${escapeHtml(s)}" ${s === _gpFilters.preferredSituation ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredFieldPosition" data-pass="value" title="Field Position">
+        <option value="">Field Pos</option>
+        ${fieldPositions.map((f) => `<option value="${escapeHtml(f)}" ${f === _gpFilters.preferredFieldPosition ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}
+      </select>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-sm);">
+        <input type="checkbox" ${_gpFilters.onlyOpponentTagged ? "checked" : ""}
+          data-onchange="updateGamePlanFilter" data-arg="onlyOpponentTagged" data-pass="event" />
+        Only ${opponent ? `tagged for ${escapeHtml(opponent)}` : "opponent-tagged"}
+      </label>
+    </div>` : "";
 
   const toolbarHtml = `
     <div class="gp-toolbar">
@@ -290,6 +352,10 @@ function renderGamePlan() {
         <option value="">All Personnel</option>
         ${personnel.map((p) => `<option value="${escapeHtml(p)}" ${p === _gpFilters.personnel ? "selected" : ""}>${escapeHtml(p)}</option>`).join("")}
       </select>
+      <button class="btn btn-sm btn-secondary" data-action="toggleGamePlanAdvancedFilters"
+        title="Toggle advanced filters">
+        ⚙️ Advanced${advBadge > 0 ? ` <span class="gp-adv-badge">${advBadge}</span>` : ""}
+      </button>
       <label style="display:inline-flex;align-items:center;gap:var(--space-xxs,2px);font-size:var(--font-size-sm);">
         <input type="checkbox" ${_gpFilters.hideAssigned ? "checked" : ""}
           data-onchange="updateGamePlanFilter" data-arg="hideAssigned" data-pass="event" />
@@ -311,14 +377,21 @@ function renderGamePlan() {
       <button class="btn btn-sm" data-action="assignSelectedToGamePlanBox" title="Add selected plays to a box you choose">
         ➕ Add Selected to…
       </button>
-    </div>`;
+    </div>
+    ${advancedHtml}`;
 
   const filtered = _gpFilteredLibrary(board);
   const libraryHtml = `
     <div class="gp-library">
       <div class="gp-library-header">
         <span>Library</span>
-        <span class="gp-library-count">${filtered.length} of ${plays.length} plays</span>
+        <span class="gp-library-count">${filtered.length} of ${plays.length}${_gpSelected.size > 0 ? ` • ${_gpSelected.size} selected` : ""}</span>
+      </div>
+      <div class="gp-library-bulk">
+        <button class="btn btn-sm btn-secondary" data-action="gpSelectAllVisible" title="Check every play matching current filters">☑ All visible</button>
+        <button class="btn btn-sm btn-secondary" data-action="gpClearLibrarySelection" title="Uncheck all">▢ None</button>
+        <button class="btn btn-sm btn-secondary" data-action="gpInvertVisibleSelection" title="Invert selection within visible">⇄ Invert</button>
+        <button class="btn btn-sm" data-action="gpAddAllVisibleToBox" title="Add every visible play to a box you pick">➕ Add all visible to…</button>
       </div>
       <div class="gp-library-list" id="gpLibraryList">
         ${filtered.length === 0
@@ -359,12 +432,15 @@ function _gpRenderLibraryRow(play, assignedSigs) {
 }
 
 function _gpRenderBox(box, board) {
-  const list = board.assignments[box.id] || [];
+  const list = (board.assignments[box.id] || []).slice();
   const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
   const isHolding = box.id === GP_HOLDING_ID;
   const target = Number(board.targets && board.targets[box.id]) || 0;
   const collapsed = Array.isArray(board.collapsed) && board.collapsed.includes(box.id);
   const accent = GP_BOX_ACCENTS[box.id] || "";
+  const note = (board.notes && board.notes[box.id]) || "";
+  const sortMode = (board.sort && board.sort[box.id]) || "manual";
+  const displayList = _gpSortedBoxList(list, sortMode);
 
   // Per-box variety (unique formations + personnel)
   const uniqForms = new Set();
@@ -396,6 +472,16 @@ function _gpRenderBox(box, board) {
         data-action="autoRouteHoldingBox">🚀 Auto-route</button>`
     : "";
 
+  const sortDropdown = `
+    <select class="gp-box-sort" title="Sort plays in this box"
+      data-onchange="setGamePlanBoxSort" data-arg="${escapeHtml(box.id)}" data-pass="value">
+      <option value="manual" ${sortMode === "manual" ? "selected" : ""}>Manual</option>
+      <option value="type" ${sortMode === "type" ? "selected" : ""}>Type</option>
+      <option value="formation" ${sortMode === "formation" ? "selected" : ""}>Formation</option>
+      <option value="personnel" ${sortMode === "personnel" ? "selected" : ""}>Personnel</option>
+      <option value="basePlay" ${sortMode === "basePlay" ? "selected" : ""}>Base Play</option>
+    </select>`;
+
   const headerHtml = `
     <div class="gp-box-header" data-action="toggleGamePlanBoxCollapse" data-arg="${escapeHtml(box.id)}">
       <div class="gp-box-title">
@@ -405,9 +491,14 @@ function _gpRenderBox(box, board) {
         ${varietyHtml}
       </div>
       <div class="gp-box-actions" data-stop-toggle="1">
+        <button class="btn btn-sm" title="Add a play from the playbook to this box"
+          data-action="addPlayToGamePlanBox" data-arg="${escapeHtml(box.id)}">➕ Add Play</button>
+        ${sortDropdown}
         ${holdingAutoBtn}
         <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
           data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
+        <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
+          data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>
         ${isCustom
           ? `<button class="btn btn-sm btn-secondary" title="Rename"
               data-action="renameGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
@@ -418,15 +509,17 @@ function _gpRenderBox(box, board) {
           data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>
       </div>
     </div>
-    ${progressHtml}`;
+    ${progressHtml}
+    ${note ? `<div class="gp-box-note" title="Edit note"
+      data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${escapeHtml(note)}</div>` : ""}`;
 
   const bodyHtml = collapsed ? "" : `
       <div class="gp-box-body" data-box-drop="${escapeHtml(box.id)}">
-        ${list.length === 0
+        ${displayList.length === 0
           ? `<div class="gp-box-empty">${isHolding
               ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
-              : "Drop plays here, or use “Add Selected to…”."}</div>`
-          : list.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx)).join("")}
+              : "Drop plays here, or click ➕ Add Play."}</div>`
+          : displayList.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx, sortMode === "manual")).join("")}
       </div>`;
 
   return `
@@ -438,13 +531,18 @@ function _gpRenderBox(box, board) {
     </div>`;
 }
 
-function _gpRenderBoxPlay(boxId, play, idx) {
+function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
   const sig = _gpPlaySignature(play);
   const callHtml = typeof getFullCall === "function"
     ? getFullCall(play, { showLineCall: false })
     : escapeHtml(play.play || "");
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
   const matchupBadges = _gpMatchupBadges(play);
+  const reorderBtns = allowReorder ? `
+    <button class="gp-box-play-btn gp-box-play-up" aria-label="Move up"
+      data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move up">▲</button>
+    <button class="gp-box-play-btn gp-box-play-down" aria-label="Move down"
+      data-action="moveGamePlanPlayDown" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move down">▼</button>` : "";
   return `
     <div class="gp-box-play" draggable="true"
          data-box-id="${escapeHtml(boxId)}"
@@ -455,6 +553,7 @@ function _gpRenderBoxPlay(boxId, play, idx) {
         ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
+        ${reorderBtns}
         <button class="gp-box-play-btn" aria-label="Move to another box"
           data-action="moveGamePlanPlay" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move to…">↔</button>
         <button class="gp-box-play-remove" aria-label="Remove from box"
@@ -471,6 +570,37 @@ function _gpMatchupBadges(play) {
   if (play.goodVsBear) parts.push(`<span class="gp-matchup-badge" title="Good vs. Bear">🐻</span>`);
   if (play.goodVsOkie) parts.push(`<span class="gp-matchup-badge" title="Good vs. Okie">🤠</span>`);
   return parts.length ? ` <span class="gp-matchup-badges">${parts.join("")}</span>` : "";
+}
+
+/* Sort helpers for per-box sort modes */
+function _gpSortedBoxList(list, mode) {
+  if (!Array.isArray(list) || mode === "manual" || !mode) return list;
+  const get = (p) => {
+    if (mode === "type") return p.type || "";
+    if (mode === "formation") return p.formation || "";
+    if (mode === "personnel") return p.personnel || "";
+    if (mode === "basePlay") return p.basePlay || p.play || "";
+    return "";
+  };
+  return list.slice().sort((a, b) => get(a).localeCompare(get(b)));
+}
+
+function _gpAdvancedFilterCount() {
+  const f = _gpFilters;
+  let n = 0;
+  if (f.basePlay) n += 1;
+  if (f.tempo) n += 1;
+  if (f.preferredDown) n += 1;
+  if (f.preferredDistance) n += 1;
+  if (f.preferredSituation) n += 1;
+  if (f.preferredFieldPosition) n += 1;
+  if (f.onlyOpponentTagged) n += 1;
+  return n;
+}
+
+function toggleGamePlanAdvancedFilters() {
+  _gpFilters.showAdvanced = !_gpFilters.showAdvanced;
+  renderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -503,6 +633,11 @@ function _gpAttachBoxHandlers() {
   boxes.forEach((box) => {
     const boxId = box.dataset.boxId;
     const dropZone = box.querySelector(".gp-box-body");
+    // Prevent header-action clicks from bubbling up and toggling box collapse
+    box.querySelectorAll("[data-stop-toggle], .gp-box-sort").forEach((el) => {
+      el.addEventListener("click", (e) => e.stopPropagation());
+      el.addEventListener("mousedown", (e) => e.stopPropagation());
+    });
     if (!dropZone) return;
 
     dropZone.addEventListener("dragenter", (e) => {
@@ -512,24 +647,36 @@ function _gpAttachBoxHandlers() {
     dropZone.addEventListener("dragover", (e) => {
       e.preventDefault();
       e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
+      // Show insertion indicator for intra-box reorder
+      if (_gpDragSource && _gpDragSource.boxId === boxId) {
+        _gpUpdateDropIndicator(dropZone, e.clientY);
+      }
     });
     dropZone.addEventListener("dragleave", (e) => {
       // Only remove highlight if leaving the box entirely
       if (!box.contains(e.relatedTarget)) {
         box.classList.remove("is-drop-target");
+        _gpClearDropIndicators(dropZone);
       }
     });
     dropZone.addEventListener("drop", (e) => {
       e.preventDefault();
       box.classList.remove("is-drop-target");
       if (_gpDragSource) {
-        // box → box move
-        _gpMoveBetweenBoxes(_gpDragSource.boxId, boxId, _gpDragSource.sig);
+        if (_gpDragSource.boxId === boxId) {
+          // intra-box reorder
+          const targetIdx = _gpComputeDropIndex(dropZone, e.clientY);
+          _gpReorderInBox(boxId, _gpDragSource.sig, targetIdx);
+        } else {
+          // box → box move
+          _gpMoveBetweenBoxes(_gpDragSource.boxId, boxId, _gpDragSource.sig);
+        }
         _gpDragSource = null;
       } else if (_gpDragPayload && Array.isArray(_gpDragPayload.sigs)) {
         _gpAddSigsToBox(_gpDragPayload.sigs, boxId);
         _gpDragPayload = null;
       }
+      _gpClearDropIndicators(dropZone);
     });
   });
 
@@ -543,8 +690,68 @@ function _gpAttachBoxHandlers() {
     });
     row.addEventListener("dragend", () => {
       _gpDragSource = null;
+      document.querySelectorAll(".gp-box-body").forEach(_gpClearDropIndicators);
     });
+    // Right-click context menu
+    row.addEventListener("contextmenu", (e) => {
+      e.preventDefault();
+      _gpOpenPlayContextMenu(e, row.dataset.boxId, row.dataset.sig);
+    });
+    // Mobile long-press → context menu
+    if (typeof addLongPress === "function") {
+      addLongPress(row, () => {
+        const rect = row.getBoundingClientRect();
+        _gpOpenPlayContextMenu(
+          { preventDefault() {}, clientX: rect.left + 20, clientY: rect.top + 20 },
+          row.dataset.boxId,
+          row.dataset.sig,
+        );
+      });
+    }
   });
+}
+
+function _gpComputeDropIndex(dropZone, clientY) {
+  const rows = Array.from(dropZone.querySelectorAll(".gp-box-play"));
+  for (let i = 0; i < rows.length; i += 1) {
+    const r = rows[i].getBoundingClientRect();
+    if (clientY < r.top + r.height / 2) return i;
+  }
+  return rows.length;
+}
+
+function _gpUpdateDropIndicator(dropZone, clientY) {
+  _gpClearDropIndicators(dropZone);
+  const idx = _gpComputeDropIndex(dropZone, clientY);
+  const rows = Array.from(dropZone.querySelectorAll(".gp-box-play"));
+  if (rows.length === 0) return;
+  if (idx >= rows.length) rows[rows.length - 1].classList.add("gp-drop-after");
+  else rows[idx].classList.add("gp-drop-before");
+}
+
+function _gpClearDropIndicators(dropZone) {
+  if (!dropZone) return;
+  dropZone.querySelectorAll(".gp-drop-before, .gp-drop-after").forEach((el) => {
+    el.classList.remove("gp-drop-before");
+    el.classList.remove("gp-drop-after");
+  });
+}
+
+function _gpReorderInBox(boxId, sig, targetIdx) {
+  if (!boxId || !sig) return;
+  _gpUpdateBoard((board) => {
+    const arr = board.assignments[boxId] || [];
+    const fromIdx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    if (fromIdx < 0) return;
+    const [item] = arr.splice(fromIdx, 1);
+    let toIdx = Math.max(0, Math.min(arr.length, targetIdx));
+    if (fromIdx < targetIdx) toIdx = Math.max(0, toIdx - 1);
+    arr.splice(toIdx, 0, item);
+    // Switch to manual sort so the user's order is honored
+    if (!board.sort) board.sort = {};
+    board.sort[boxId] = "manual";
+  });
+  renderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -646,11 +853,11 @@ function toggleGamePlanLibrarySelect(sig) {
 
 function updateGamePlanFilter(field, valueOrEvent) {
   if (!field) return;
-  if (field === "hideAssigned") {
+  if (field === "hideAssigned" || field === "onlyOpponentTagged") {
     if (valueOrEvent && valueOrEvent.target) {
-      _gpFilters.hideAssigned = !!valueOrEvent.target.checked;
+      _gpFilters[field] = !!valueOrEvent.target.checked;
     } else {
-      _gpFilters.hideAssigned = !!valueOrEvent;
+      _gpFilters[field] = !!valueOrEvent;
     }
   } else {
     _gpFilters[field] = valueOrEvent || "";
@@ -659,9 +866,16 @@ function updateGamePlanFilter(field, valueOrEvent) {
 }
 
 function clearGamePlanFilters() {
-  _gpFilters = { search: "", type: "", formation: "", personnel: "", hideAssigned: false,
+  _gpFilters = {
+    search: "", type: "", formation: "", personnel: "",
+    basePlay: "", tempo: "",
+    preferredDown: "", preferredDistance: "",
+    preferredSituation: "", preferredFieldPosition: "",
+    onlyOpponentTagged: false, hideAssigned: false,
     density: _gpFilters.density || "comfortable", showProgress: true,
-    goodVsMan: false, goodVsBear: false, goodVsOkie: false };
+    goodVsMan: false, goodVsBear: false, goodVsOkie: false,
+    showAdvanced: _gpFilters.showAdvanced || false,
+  };
   _gpSelected.clear();
   renderGamePlan();
 }
@@ -1095,6 +1309,225 @@ function autoRouteHoldingBox() {
       `Routed ${routed} play${routed === 1 ? "" : "s"} from Holding${leftBehind > 0 ? ` (${leftBehind} stayed)` : ""}`,
       { type: "success" },
     );
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Library bulk actions
+   ------------------------------------------------------------------------- */
+
+function gpSelectAllVisible() {
+  const board = _gpEnsureBoard();
+  _gpFilteredLibrary(board).forEach((p) => _gpSelected.add(_gpPlaySignature(p)));
+  renderGamePlan();
+}
+
+function gpClearLibrarySelection() {
+  _gpSelected.clear();
+  renderGamePlan();
+}
+
+function gpInvertVisibleSelection() {
+  const board = _gpEnsureBoard();
+  _gpFilteredLibrary(board).forEach((p) => {
+    const sig = _gpPlaySignature(p);
+    if (_gpSelected.has(sig)) _gpSelected.delete(sig);
+    else _gpSelected.add(sig);
+  });
+  renderGamePlan();
+}
+
+async function gpAddAllVisibleToBox() {
+  const board = _gpEnsureBoard();
+  const filtered = _gpFilteredLibrary(board);
+  if (filtered.length === 0) {
+    showToast("No visible plays to add.", { type: "warning" });
+    return;
+  }
+  const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const choice = await showListPicker(
+    `Add all ${filtered.length} visible play${filtered.length === 1 ? "" : "s"} to which box?`,
+    allBoxes.map((b) => ({ value: b.id, label: b.label })),
+    { title: "Add Visible to Box", icon: "➕" },
+  );
+  if (!choice) return;
+  _gpAddSigsToBox(filtered.map((p) => _gpPlaySignature(p)), choice);
+}
+
+/* -------------------------------------------------------------------------
+   Add a play directly to a box (filtered library picker)
+   ------------------------------------------------------------------------- */
+
+async function addPlayToGamePlanBox(boxId) {
+  if (!boxId || !Array.isArray(plays)) return;
+  const board = _gpEnsureBoard();
+  const assignedSigs = _gpAllAssignedSigs(board);
+  // Pick from plays NOT already in this box
+  const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpPlaySignature));
+  const candidates = plays.filter((p) => !inBoxSigs.has(_gpPlaySignature(p)));
+  if (candidates.length === 0) {
+    showToast("Every play is already in this box.", { type: "info" });
+    return;
+  }
+  const items = candidates.map((p) => {
+    const sig = _gpPlaySignature(p);
+    const already = assignedSigs.has(sig) ? " ⓘ already on board" : "";
+    const label = [p.type, p.formation, p.personnel, p.play].filter(Boolean).join(" • ") + already;
+    return { value: sig, label };
+  });
+  const choice = await showListPicker(
+    `Pick a play to add to ${boxId}:`,
+    items,
+    { title: "Add Play", icon: "➕" },
+  );
+  if (!choice) return;
+  _gpAddSigsToBox([choice], boxId);
+}
+
+/* -------------------------------------------------------------------------
+   Per-box note + sort
+   ------------------------------------------------------------------------- */
+
+async function editGamePlanBoxNote(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const current = (board.notes && board.notes[boxId]) || "";
+  const next = await showPrompt(
+    "Box note (visible above the plays). Leave blank to clear.",
+    current,
+    { title: "Box Note", icon: "📝", placeholder: "e.g. Hit deep when they walk down the safety" },
+  );
+  if (next === null) return;
+  _gpUpdateBoard((b) => {
+    if (!b.notes) b.notes = {};
+    if (!next || !next.trim()) delete b.notes[boxId];
+    else b.notes[boxId] = next.trim();
+  });
+  renderGamePlan();
+}
+
+function setGamePlanBoxSort(boxId, mode) {
+  if (!boxId) return;
+  _gpUpdateBoard((b) => {
+    if (!b.sort) b.sort = {};
+    if (!mode || mode === "manual") delete b.sort[boxId];
+    else b.sort[boxId] = mode;
+  });
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Reorder within box (button arrows)
+   ------------------------------------------------------------------------- */
+
+function moveGamePlanPlayUp(combined) {
+  _gpNudgeBoxPlay(combined, -1);
+}
+
+function moveGamePlanPlayDown(combined) {
+  _gpNudgeBoxPlay(combined, 1);
+}
+
+function _gpNudgeBoxPlay(combined, delta) {
+  if (!combined) return;
+  const sepIdx = combined.indexOf("::");
+  if (sepIdx < 0) return;
+  const boxId = combined.slice(0, sepIdx);
+  const sig = combined.slice(sepIdx + 2);
+  _gpUpdateBoard((board) => {
+    const arr = board.assignments[boxId] || [];
+    const idx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    if (idx < 0) return;
+    const next = idx + delta;
+    if (next < 0 || next >= arr.length) return;
+    [arr[idx], arr[next]] = [arr[next], arr[idx]];
+    if (!board.sort) board.sort = {};
+    board.sort[boxId] = "manual";
+  });
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Right-click / long-press context menu on a box play
+   ------------------------------------------------------------------------- */
+
+function _gpOpenPlayContextMenu(e, boxId, sig) {
+  if (!boxId || !sig) return;
+  const board = _gpEnsureBoard();
+  const play = (board.assignments[boxId] || []).find((p) => _gpPlaySignature(p) === sig)
+    || _gpFindPlayBySig(sig);
+  if (!play) return;
+  const items = [];
+  items.push({
+    label: "↔ Move to box…",
+    onClick: () => moveGamePlanPlay(boxId + "::" + sig),
+  });
+  items.push({
+    label: "📋 Duplicate to other box…",
+    onClick: async () => {
+      const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])]
+        .filter((b) => b.id !== boxId);
+      const dest = await showListPicker(
+        "Duplicate this play to which box?",
+        allBoxes.map((b) => ({ value: b.id, label: b.label })),
+        { title: "Duplicate Play", icon: "📋" },
+      );
+      if (!dest) return;
+      _gpAddSigsToBox([sig], dest);
+    },
+  });
+  if (boxId !== GP_HOLDING_ID) {
+    items.push({
+      label: "📥 Send to Holding",
+      onClick: () => _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig),
+    });
+  }
+  items.push({ separator: true });
+  items.push({
+    label: "▲ Move up",
+    onClick: () => moveGamePlanPlayUp(boxId + "::" + sig),
+  });
+  items.push({
+    label: "▼ Move down",
+    onClick: () => moveGamePlanPlayDown(boxId + "::" + sig),
+  });
+  items.push({ separator: true });
+  if (typeof openPlayEditor === "function") {
+    const playbookIdx = Array.isArray(plays) ? plays.findIndex((p) => _gpPlaySignature(p) === sig) : -1;
+    if (playbookIdx >= 0) {
+      items.push({
+        label: "✏️ Edit play in playbook",
+        onClick: () => openPlayEditor(playbookIdx),
+      });
+    }
+  }
+  items.push({
+    label: "× Remove from box",
+    danger: true,
+    onClick: () => removeFromGamePlanBox(boxId + "::" + sig),
+  });
+  if (typeof showContextMenu === "function") {
+    const menu = document.createElement("div");
+    menu.className = "cs-context-menu";
+    items.forEach((item) => {
+      if (item.separator) {
+        const divider = document.createElement("div");
+        divider.className = "cs-ctx-divider";
+        menu.appendChild(divider);
+        return;
+      }
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = item.danger ? "cs-ctx-item cs-ctx-clear" : "cs-ctx-item";
+      button.textContent = item.label;
+      button.disabled = Boolean(item.disabled);
+      button.addEventListener("click", async () => {
+        menu.remove();
+        if (typeof item.onClick === "function") await item.onClick();
+      });
+      menu.appendChild(button);
+    });
+    showContextMenu(e, menu);
   }
 }
 

@@ -52,6 +52,9 @@ const SANITIZE_FIELDS = [
   { key: "deadVs", label: "Dead Vs" },
   { key: "opponent", label: "Opponent" },
   { key: "notes", label: "Notes" },
+  { key: "goodVsMan", label: "Good vs. Man", type: "boolean" },
+  { key: "goodVsBear", label: "Good vs. Bear", type: "boolean" },
+  { key: "goodVsOkie", label: "Good vs. Okie", type: "boolean" },
 ];
 
 let _sanitizeFieldKey = "preferredHash";
@@ -155,6 +158,12 @@ function _sanitizeFindSimilar(value, vocab) {
 }
 
 function _sanitizeIsEmpty(play, key) {
+  const def = SANITIZE_FIELDS.find((f) => f.key === key);
+  if (def && def.type === "boolean") {
+    // Boolean fields are "missing" only until they're explicitly set to
+    // either true or false. Anything else (undefined, null, "", etc.) counts.
+    return typeof (play && play[key]) !== "boolean";
+  }
   const value = (play && play[key] != null ? String(play[key]) : "").trim();
   return value === "";
 }
@@ -272,6 +281,17 @@ function _renderSanitizeList() {
   const inputHtmlFor = (play, masterIdx) => {
     const value = String(play[def.key] || "");
     const inputId = `pbSanitizeInput-${masterIdx}`;
+    if (def.type === "boolean") {
+      const v = play[def.key];
+      const cur = v === true ? "true" : v === false ? "false" : "";
+      return `
+        <select id="${inputId}" class="pb-sanitize-input pb-sanitize-select pb-sanitize-bool"
+          data-master-idx="${masterIdx}" data-bool="1">
+          <option value="" ${cur === "" ? "selected" : ""}>—</option>
+          <option value="true" ${cur === "true" ? "selected" : ""}>✅ Yes</option>
+          <option value="false" ${cur === "false" ? "selected" : ""}>❌ No</option>
+        </select>`;
+    }
     if (def.type === "select" && !def.canAddNew) {
       const optList = def.options || (def.optionsFn ? def.optionsFn() : [""]);
       const options = optList.map((o) => {
@@ -336,8 +356,54 @@ function _commitSanitizeInput(el) {
   const masterIdx = parseInt(el.dataset.masterIdx, 10);
   if (!Number.isFinite(masterIdx) || !plays[masterIdx]) return;
   const def = _sanitizeFieldDef(_sanitizeFieldKey);
-  const value = String(el.value || "").trim();
   const play = plays[masterIdx];
+
+  // Boolean fields: convert "true"/"false"/"" → true/false/delete
+  if (def.type === "boolean") {
+    const raw = String(el.value || "");
+    const previous = play[def.key];
+    let next;
+    if (raw === "true") next = true;
+    else if (raw === "false") next = false;
+    else next = undefined;
+    if (next === previous || (next === undefined && typeof previous !== "boolean")) return;
+    if (next === undefined) delete play[def.key];
+    else play[def.key] = next;
+
+    const row = el.closest(".pb-sanitize-row");
+    if (row) {
+      if (typeof play[def.key] === "boolean") row.classList.add("is-filled");
+      else row.classList.remove("is-filled");
+    }
+
+    clearTimeout(_sanitizeAutosaveTimer);
+    _sanitizeAutosaveTimer = setTimeout(() => {
+      storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+      if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+      if (typeof filterPlays === "function") filterPlays();
+      _renderSanitizePicker();
+    }, 500);
+
+    if (_sanitizeHideCompleted && typeof play[def.key] === "boolean" && row) {
+      setTimeout(() => {
+        if (row.parentNode) {
+          const status = document.getElementById("playbookSanitizeStatus");
+          const def2 = _sanitizeFieldDef(_sanitizeFieldKey);
+          const missingCount = plays.filter((p) => _sanitizeIsEmpty(p, def2.key)).length;
+          if (status) status.textContent = `${missingCount} of ${plays.length} plays missing ${def2.label}`;
+          row.classList.add("is-removing");
+          setTimeout(() => {
+            if (row.parentNode) row.parentNode.removeChild(row);
+            const body = document.getElementById("playbookSanitizeBody");
+            if (body && !body.querySelector(".pb-sanitize-row")) _renderSanitizeList();
+          }, 200);
+        }
+      }, 300);
+    }
+    return;
+  }
+
+  const value = String(el.value || "").trim();
   const previous = String(play[def.key] || "").trim();
 
   // Always re-render suggestions: a typed value that's new gets a typo
