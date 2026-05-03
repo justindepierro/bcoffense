@@ -72,6 +72,7 @@ function confirmAddPeriod() {
   if (!name) {
     nameInput.classList.add("input-error");
     nameInput.focus();
+    showToast("Period name is required", { type: "warning" });
     return;
   }
 
