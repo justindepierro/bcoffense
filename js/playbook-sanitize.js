@@ -160,13 +160,27 @@ function _sanitizeIsEmpty(play, key) {
 }
 
 function _sanitizePlaySummary(play) {
+  // Full formatted call as it would appear on a wristband / call sheet.
+  // getFullCall returns escaped HTML, so callers must NOT double-escape.
+  if (typeof getFullCall === "function") {
+    try {
+      const html = getFullCall(play, { showLineCall: true });
+      if (html && String(html).trim()) return html;
+    } catch (_e) { /* fall through */ }
+  }
   const bits = [
     play.type,
     play.personnel,
     play.formation,
     play.play,
   ].filter(Boolean);
-  return bits.join(" • ") || "(unnamed play)";
+  return escapeHtml(bits.join(" \u2022 ") || "(unnamed play)");
+}
+
+function _sanitizePlayContext(play) {
+  // Short secondary line: type \u2022 personnel \u2022 formation
+  const bits = [play.type, play.personnel, play.formation].filter(Boolean);
+  return bits.join(" \u2022 ");
 }
 
 function openPlaybookSanitize() {
@@ -279,13 +293,14 @@ function _renderSanitizeList() {
   };
 
   const rowsHtml = missingPlays.map(({ play, idx }) => {
-    const summary = _sanitizePlaySummary(play);
+    const fullCallHtml = _sanitizePlaySummary(play); // already HTML-safe
+    const context = _sanitizePlayContext(play);
     const filled = !_sanitizeIsEmpty(play, def.key);
     return `
       <div class="pb-sanitize-row ${filled ? "is-filled" : ""}" data-master-idx="${idx}">
         <div class="pb-sanitize-row-info">
-          <div class="pb-sanitize-row-name">${escapeHtml(play.play || "(no name)")}</div>
-          <div class="pb-sanitize-row-summary">${escapeHtml(summary)}</div>
+          <div class="pb-sanitize-row-name">${fullCallHtml}</div>
+          ${context ? `<div class="pb-sanitize-row-summary">${escapeHtml(context)}</div>` : ""}
         </div>
         <div class="pb-sanitize-row-input">
           ${inputHtmlFor(play, idx)}
