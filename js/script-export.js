@@ -10,7 +10,7 @@ function openLoadWristbandToScriptModal() {
     .map((wristband, index) => {
       const totalPlays = wristband.cards
         ? wristband.cards.reduce(
-          (sum, card) => sum + card.data.filter((play) => play !== null).length,
+          (sum, card) => sum + (Array.isArray(card?.data) ? card.data.filter((play) => play !== null).length : 0),
           0,
         )
         : 0;
@@ -104,7 +104,7 @@ function executeLoadWbToScript() {
     if (cardChoice !== "all" && parseInt(cardChoice, 10) !== cardIndex + 1) {
       return;
     }
-
+    if (!Array.isArray(card?.data)) return;
     card.data.forEach((play) => {
       if (play !== null) {
         playsToAdd.push({ ...play });
@@ -586,6 +586,7 @@ function loadFullDayScriptList() {
   const savedScripts = getSavedScripts();
   const container = document.getElementById("fullDayScriptList");
   const section = document.getElementById("fullDaySection");
+  if (!container || !section) return;
 
   if (savedScripts.length < 2) {
     section.classList.add("hidden");

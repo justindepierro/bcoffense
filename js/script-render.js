@@ -897,3 +897,59 @@ function renderScript() {
 }
 
 const _scheduleRenderScript = createRAFRenderer(renderScript);
+
+// ============ Script Play Field Updaters ============
+// Wired via app-events.js delegated change/input handlers (data-field).
+
+function updateReps(index, reps) {
+  if (!script[index] || script[index].isSeparator) return;
+  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
+    applyBulkEdit("reps", parseInt(reps, 10) || 1);
+    return;
+  }
+  script[index].reps = parseInt(reps, 10) || 1;
+  updateScriptPreviewReps(index, script[index].reps);
+  if (typeof findOwningPeriodIndex === "function") {
+    updatePeriodMetaDisplay(findOwningPeriodIndex(index));
+  }
+  updateScriptStats();
+  saveScriptState();
+}
+
+function updateNotes(index, notes) {
+  if (!script[index] || script[index].isSeparator) return;
+  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
+    applyBulkEdit("notes", notes);
+    return;
+  }
+  script[index].notes = notes;
+  debouncedSaveScriptState();
+}
+
+function updateHash(index, value) {
+  if (!script[index] || script[index].isSeparator) return;
+  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
+    applyBulkEdit("hash", value);
+    return;
+  }
+  script[index].hash = value;
+  updateScriptPreviewField(index, "hash", value);
+  debouncedSaveScriptState();
+}
+
+function updateDefField(index, field, value) {
+  if (!script[index] || script[index].isSeparator) return;
+  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
+    applyBulkEdit(field, value);
+    return;
+  }
+  script[index][field] = value;
+  const previewClassMap = {
+    defFront: "front",
+    defCoverage: "cov",
+    defStunt: "stunt",
+    defBlitz: "blitz",
+  };
+  updateScriptPreviewField(index, previewClassMap[field], value);
+  debouncedSaveScriptState();
+}
