@@ -226,14 +226,6 @@ function getScriptPrintColumns(opts = {}) {
     },
   );
 
-  if (!opts.hidePersonnel) {
-    columns.push({
-      key: "players",
-      label: "Players",
-      render: (play) => escapeHtml(getScriptVisiblePlayerSummary(play, opts) || "-"),
-    });
-  }
-
   columns.push({
     key: "notes",
     label: "Notes",
@@ -246,7 +238,7 @@ function getScriptPrintColumns(opts = {}) {
 function buildScriptPlayRow(play, displayNum, opts = {}) {
   const columns = getScriptPrintColumns(opts);
   const visibleLineup = getScriptVisiblePlayerLineup(play, opts);
-  const wrapCellKeys = new Set(["players", "notes"]);
+  const wrapCellKeys = new Set(["notes"]);
 
   let rowColor = "";
   if (opts.highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle") {

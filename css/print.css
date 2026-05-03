@@ -334,6 +334,11 @@
     max-width: none !important;
     width: 1% !important;
   }
+  body.print-script .scroll-top-fab,
+  body.print-script #scrollTopFab {
+    display: none !important;
+    visibility: hidden !important;
+  }
   body.print-script .script-table .script-print-personnel-cell {
     padding: 0 !important;
     border: 0.5px solid var(--color-text) !important;
