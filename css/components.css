@@ -1434,6 +1434,18 @@ kbd {
   box-shadow: 0 4px 16px rgba(25, 42, 81, 0.4);
 }
 
+/* Idle fade - dim the FAB when the user hasn't moved/clicked recently */
+body.fab-idle .help-fab:not(.help-fab-active),
+body.fab-idle .script-display-fab:not(.active) {
+  opacity: 0.25;
+}
+body.fab-idle .help-fab:hover,
+body.fab-idle .help-fab:focus-visible,
+body.fab-idle .script-display-fab:hover,
+body.fab-idle .script-display-fab:focus-visible {
+  opacity: 1;
+}
+
 /* Help Overlay */
 .help-overlay {
   position: fixed;

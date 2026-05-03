@@ -316,3 +316,23 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+// Auto-fade floating action buttons (help / script-display) after idle
+document.addEventListener("DOMContentLoaded", () => {
+  const fabs = document.querySelectorAll(".help-fab, .script-display-fab");
+  if (!fabs.length) return;
+
+  const IDLE_MS = 2500;
+  let idleTimer = null;
+
+  const setIdle = () => document.body.classList.add("fab-idle");
+  const setActive = () => {
+    document.body.classList.remove("fab-idle");
+    if (idleTimer) clearTimeout(idleTimer);
+    idleTimer = setTimeout(setIdle, IDLE_MS);
+  };
+
+  ["mousemove", "touchstart", "keydown", "scroll", "click"].forEach((evt) => {
+    window.addEventListener(evt, setActive, { passive: true });
+  });
+  setActive();
+});
