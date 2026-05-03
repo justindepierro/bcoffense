@@ -399,16 +399,11 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const isSelected = bulkSelectedIndices.includes(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
-  const shouldRenderDetailGrid = !opts.hidePersonnel && opts.layoutMode !== "compact";
-  const shouldRenderPlayerSummary = !opts.hidePersonnel && opts.layoutMode === "compact";
-  const playerSummary = (showPrintPreview || shouldRenderPlayerSummary)
-    ? getCachedPlayerSummary(play)
-    : "";
-  const playerPersonnelMarkup = shouldRenderDetailGrid
+  const shouldRenderAssignmentGrid = !opts.hidePersonnel;
+  const playerSummary = showPrintPreview ? getCachedPlayerSummary(play) : "";
+  const playerPersonnelMarkup = shouldRenderAssignmentGrid
     ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts)
-    : shouldRenderPlayerSummary
-      ? buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary)
-      : "";
+    : "";
   const reps = play.reps ?? 1;
   const itemClasses = [
     "script-item",
