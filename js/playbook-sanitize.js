@@ -536,25 +536,32 @@ function openPlayEditorFromSanitize(masterIdxStr) {
   }
   if (filteredIdx < 0 || typeof openPlayEditor !== "function") return;
 
-  // The sanitize overlay shares the same z-index as the play editor overlay
-  // and sits later in the DOM, so it stacks on top and blocks edits. Hide it
-  // while the editor is open, then restore + re-render once the editor closes.
+  // The sanitize overlay shares .custom-modal-overlay with the play editor and
+  // sits later in the DOM, so without intervention it stacks on top and blocks
+  // edits. Hide it while the editor is open, then re-show + re-render once the
+  // editor closes (whether via Save, Cancel, Delete, Escape, or backdrop click).
   const sanitizeOverlay = document.getElementById("playbookSanitizeOverlay");
-  const editorOverlay = document.getElementById("playEditorOverlay");
   const sanitizeWasVisible = sanitizeOverlay && sanitizeOverlay.classList.contains("visible");
   if (sanitizeWasVisible) sanitizeOverlay.classList.remove("visible");
 
-  openPlayEditor(filteredIdx);
-
-  if (sanitizeWasVisible && editorOverlay && typeof MutationObserver === "function") {
-    const observer = new MutationObserver(() => {
-      if (!editorOverlay.classList.contains("visible")) {
-        observer.disconnect();
+  // Wrap closePlayEditor exactly once so any close path restores the sanitize
+  // modal. Restore the original after firing so we don't intercept future
+  // unrelated edits.
+  if (sanitizeWasVisible && typeof window.closePlayEditor === "function" && !window.closePlayEditor.__sanitizeWrapped) {
+    const originalClose = window.closePlayEditor;
+    const wrapped = function sanitizePatchedClosePlayEditor(...args) {
+      const result = originalClose.apply(this, args);
+      window.closePlayEditor = originalClose;
+      try {
         sanitizeOverlay.classList.add("visible");
         _renderSanitizePicker();
         _renderSanitizeList();
-      }
-    });
-    observer.observe(editorOverlay, { attributes: true, attributeFilter: ["class"] });
+      } catch (_e) { /* ignore */ }
+      return result;
+    };
+    wrapped.__sanitizeWrapped = true;
+    window.closePlayEditor = wrapped;
   }
+
+  openPlayEditor(filteredIdx);
 }
