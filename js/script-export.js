@@ -287,37 +287,57 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
 
 function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
   const columns = getScriptPrintColumns(opts);
-  let displayNum = 0;
-  let bodyHtml = options.scriptHeaderMarkup || "";
+  let bodyHtml = "";
+  if (options.scriptHeaderMarkup) {
+    bodyHtml += `<tbody class="print-script-header-group">${options.scriptHeaderMarkup}</tbody>`;
+  }
 
-  playsToRender.forEach((play, periodScanIndex) => {
+  // Group plays by period so each group lives in its own <tbody>. The CSS
+  // rule `.print-period-group { break-inside: avoid }` then keeps the period
+  // header and its plays on the same printed page when they fit.
+  const groups = [];
+  let current = { separator: null, plays: [] };
+  playsToRender.forEach((play) => {
     if (play.isSeparator) {
-      let playCount = 0;
-      for (let i = periodScanIndex + 1; i < playsToRender.length; i++) {
-        const next = playsToRender[i];
-        if (!next || next.isSeparator) break;
-        playCount += 1;
-      }
+      if (current.separator || current.plays.length) groups.push(current);
+      current = { separator: play, plays: [] };
+    } else {
+      current.plays.push(play);
+    }
+  });
+  if (current.separator || current.plays.length) groups.push(current);
+
+  groups.forEach((group) => {
+    let groupHtml = "";
+    if (group.separator) {
+      const sep = group.separator;
+      const playCount = group.plays.length;
       const metaParts = [];
-      if (play.minutes) metaParts.push(`${play.minutes} min`);
+      if (sep.minutes) metaParts.push(`${sep.minutes} min`);
       if (playCount) metaParts.push(`${playCount} play${playCount === 1 ? "" : "s"}`);
       const metaMarkup = metaParts.length
         ? `<span class="print-period-meta">${escapeHtml(metaParts.join(" • "))}</span>`
         : "";
-      bodyHtml += `
-        <tr class="print-period-header">
-          <td colspan="${columns.length}">
-            <div class="script-print-period-block">
-              <span class="print-period-title">${escapeHtml(play.label || "Period")}</span>
+      const periodColor = sep.color || (typeof UI_COLORS !== "undefined" ? UI_COLORS.periodDefault : "#333333");
+      const textColor = typeof isColorDark === "function" && isColorDark(periodColor) ? "#ffffff" : "#111111";
+      const headerStyle = `background: ${periodColor} !important; color: ${textColor} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;`;
+      groupHtml += `
+        <tr class="print-period-header" style="${headerStyle}">
+          <td colspan="${columns.length}" style="${headerStyle}">
+            <div class="script-print-period-block" style="color: ${textColor} !important;">
+              <span class="print-period-title" style="color: ${textColor} !important;">${escapeHtml(sep.label || "Period")}</span>
               ${metaMarkup}
             </div>
           </td>
         </tr>`;
-      return;
     }
-
-    displayNum += 1;
-    bodyHtml += buildScriptPlayRow(play, displayNum, opts);
+    // Per-period numbering: each period restarts at 1.
+    let displayNum = 0;
+    group.plays.forEach((play) => {
+      displayNum += 1;
+      groupHtml += buildScriptPlayRow(play, displayNum, opts);
+    });
+    bodyHtml += `<tbody class="print-period-group">${groupHtml}</tbody>`;
   });
 
   return bodyHtml;
@@ -325,23 +345,23 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
 
 function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   const table = document.getElementById("previewTable");
-  const body = document.getElementById("previewBody");
-  if (!table || !body) return;
+  if (!table) return;
 
   const columns = getScriptPrintColumns(opts);
-  const thead = table.querySelector("thead");
-  if (thead) {
-    // NOTE: do NOT route through setInnerHTML/sanitizeHTML here. DOMParser
-    // drops orphan <tr>/<td> fragments because they're invalid outside a
-    // <table> context, which collapses the entire print table to inline
-    // text. The markup below is fully internal and already escaped via
-    // escapeHtml/getFullCall, so direct innerHTML assignment is safe.
-    thead.innerHTML = `<tr>${columns
-      .map((column) => `<th class="col-${column.key}">${escapeHtml(column.label)}</th>`)
-      .join("")}</tr>`;
-  }
-
-  body.innerHTML = bodyMarkup;
+  // Rebuild the entire table so we can emit multiple <tbody> groups (one per
+  // period). Direct innerHTML is safe — getFullCall/escapeHtml already
+  // escape user content. setInnerHTML would drop orphan <tr>/<tbody> nodes
+  // because DOMParser strips them outside a <table> context.
+  const theadMarkup = `<thead><tr>${columns
+    .map((column) => `<th class="col-${column.key}">${escapeHtml(column.label)}</th>`)
+    .join("")}</tr></thead>`;
+  // bodyMarkup already wraps each period in <tbody class="print-period-group">.
+  // Fall back to a single tbody if the markup didn't open one (shouldn't
+  // happen, but keep the table well-formed).
+  const tbodyMarkup = bodyMarkup.includes("<tbody")
+    ? bodyMarkup
+    : `<tbody id="previewBody">${bodyMarkup}</tbody>`;
+  table.innerHTML = theadMarkup + tbodyMarkup;
 }
 
 function exportScriptCSV() {
