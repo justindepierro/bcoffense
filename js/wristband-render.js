@@ -61,6 +61,9 @@ function renderWristbandGrid() {
   const displayCache = new Map();
   const getCachedDisplay = (play, custom) => {
     if (!play) return "";
+    // Line Call Only short-circuits everything else (including per-cell
+    // custom component orders) so the toggle behaves consistently.
+    if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts);
     // If the user reordered components for this cell, bypass the canonical
     // getFullCall pipeline and compose tokens directly in their order.
     if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {

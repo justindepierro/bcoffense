@@ -8,6 +8,7 @@ function printWristband() {
     const printDisplayCache = new Map();
     const getPrintDisplay = (play, custom) => {
       if (!play) return "";
+      if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts);
       if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
         return composeWristbandCellHtml(play, custom, opts);
       }
