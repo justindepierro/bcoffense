@@ -670,8 +670,12 @@ function filterScriptItems() {
   );
 
   items.forEach((item) => {
-    const text = item.textContent.toLowerCase();
-    if (searchTerm === "" || text.includes(searchTerm)) {
+    let haystack = item._cachedSearchHaystack;
+    if (haystack === undefined) {
+      haystack = (item.textContent || "").toLowerCase();
+      item._cachedSearchHaystack = haystack;
+    }
+    if (searchTerm === "" || haystack.includes(searchTerm)) {
       item.classList.remove("hidden");
       item.classList.remove("search-hidden");
     } else {
@@ -695,6 +699,9 @@ function filterScriptItems() {
     countEl.style.display = "none";
   }
 }
+
+const debouncedFilterScriptItems =
+  typeof debounce === "function" ? debounce(filterScriptItems, 80) : filterScriptItems;
 
 function updateScriptStats(renderSummary) {
   const summary = renderSummary || buildScriptRenderSummary(script);
