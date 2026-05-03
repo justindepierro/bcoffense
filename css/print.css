@@ -345,6 +345,28 @@
     max-width: none !important;
     width: 1% !important;
   }
+  body.print-script .script-table td.script-table-cell--num,
+  body.print-script .script-table td.script-table-cell--hash,
+  body.print-script .script-table td.script-table-cell--tempo,
+  body.print-script .script-table td.script-table-cell--wb,
+  body.print-script .script-table td.script-table-cell--reps,
+  body.print-script .script-table td.script-table-cell--type,
+  body.print-script .script-table td.script-table-cell--front,
+  body.print-script .script-table td.script-table-cell--cov,
+  body.print-script .script-table td.script-table-cell--stunt,
+  body.print-script .script-table td.script-table-cell--blitz {
+    white-space: nowrap !important;
+    word-break: keep-all !important;
+    overflow-wrap: normal !important;
+    text-align: center !important;
+  }
+  body.print-script .script-table th:first-child,
+  body.print-script .script-table td.script-table-cell--num {
+    width: 1% !important;
+    min-width: 18px !important;
+    padding-left: 2px !important;
+    padding-right: 2px !important;
+  }
   body.print-script .scroll-top-fab,
   body.print-script #scrollTopFab {
     display: none !important;
