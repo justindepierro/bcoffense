@@ -656,7 +656,7 @@
             <span>Available Plays
               <span id="availablePlayCount" class="badge badge-primary play-count">0</span></span>
             <button class="btn btn-sm" data-action="toggleFiltersCollapse" id="toggleFiltersBtn" title="Toggle filters">
-              � Filters
+              ☰ Filters
             </button>
           </h3>
 
@@ -955,54 +955,63 @@
                 </button>
               </div>
               <div class="display-options-grid">
-                <label><input type="checkbox" id="scriptShowEmoji"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  🔵 Personnel Color</label>
-                <label><input type="checkbox" id="scriptUseSquares"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  🟦 Use Squares</label>
-                <label><input type="checkbox" id="scriptUnderEmoji"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  🍑 Under = Peach</label>
-                <label><input type="checkbox" id="scriptBoldShifts"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  <b>Bold</b> Shifts</label>
-                <label><input type="checkbox" id="scriptRedShifts"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  <span class="red">Red</span> Shifts</label>
-                <label><input type="checkbox" id="scriptItalicMotions"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  <i>Italic</i> Motions</label>
-                <label><input type="checkbox" id="scriptRedMotions"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  <span class="red">Red</span> Motions</label>
-                <label><input type="checkbox" id="scriptRemoveVowels"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Remove Vowels</label>
-                <label><input type="checkbox" id="scriptShowLineCall" checked
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Show [Line Call]</label>
-                <label><input type="checkbox" id="scriptHighlightHuddle"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  🟡 Highlight Huddle</label>
-                <label><input type="checkbox" id="scriptHighlightCandy"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  🩷 Highlight Candy</label>
-                <label><input type="checkbox" id="scriptShowWbNum" checked
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Show WB#</label>
-                <label><input type="checkbox" id="scriptHidePersonnel"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Hide Personnel</label>
-                <label><input type="checkbox" id="scriptHideLinemen"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Hide Linemen</label>
-                <label><input type="checkbox" id="scriptPrintStyle"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  Print-style Rows</label>
-                <label><input type="checkbox" id="scriptShowPrintPreview"
-                    data-onchange="renderScript;saveScriptDisplayOptions" />
-                  👁️ Show Print Preview</label>
+                <fieldset class="display-options-group">
+                  <legend>Display</legend>
+                  <label><input type="checkbox" id="scriptShowEmoji"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    🔵 Personnel Color</label>
+                  <label><input type="checkbox" id="scriptUseSquares"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    🟦 Use Squares</label>
+                  <label><input type="checkbox" id="scriptUnderEmoji"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    🍑 Under = Peach</label>
+                  <label><input type="checkbox" id="scriptShowLineCall" checked
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    Show [Line Call]</label>
+                  <label><input type="checkbox" id="scriptShowWbNum" checked
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    Show WB#</label>
+                  <label><input type="checkbox" id="scriptShowPrintPreview"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    👁️ Show Print Preview</label>
+                </fieldset>
+                <fieldset class="display-options-group">
+                  <legend>Highlight</legend>
+                  <label><input type="checkbox" id="scriptBoldShifts"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    <b>Bold</b> Shifts</label>
+                  <label><input type="checkbox" id="scriptRedShifts"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    <span class="red">Red</span> Shifts</label>
+                  <label><input type="checkbox" id="scriptItalicMotions"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    <i>Italic</i> Motions</label>
+                  <label><input type="checkbox" id="scriptRedMotions"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    <span class="red">Red</span> Motions</label>
+                  <label><input type="checkbox" id="scriptHighlightHuddle"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    🟡 Highlight Huddle</label>
+                  <label><input type="checkbox" id="scriptHighlightCandy"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    🩷 Highlight Candy</label>
+                </fieldset>
+                <fieldset class="display-options-group">
+                  <legend>Hide / Compact</legend>
+                  <label><input type="checkbox" id="scriptRemoveVowels"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    Remove Vowels</label>
+                  <label><input type="checkbox" id="scriptHidePersonnel"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    Hide Personnel</label>
+                  <label><input type="checkbox" id="scriptHideLinemen"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    Hide Linemen</label>
+                  <label><input type="checkbox" id="scriptPrintStyle"
+                      data-onchange="renderScript;saveScriptDisplayOptions" />
+                    Print-style Rows</label>
+                </fieldset>
               </div>
             </div>
           </div>

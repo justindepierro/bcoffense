@@ -1673,14 +1673,10 @@
 
 /* Collapsible Filters */
 .filters-collapsible {
-  margin-bottom: 12px;
-  padding: 12px;
-  background: linear-gradient(
-    180deg,
-    var(--color-white) 0%,
-    var(--color-bg-light) 100%
-  );
-  border-radius: var(--radius-lg);
+  margin-bottom: 8px;
+  padding: 8px;
+  background: var(--color-bg-light);
+  border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
 }
 .filters-collapsible.collapsed {
@@ -1690,23 +1686,27 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
+  margin-bottom: 8px;
+  padding-bottom: 6px;
   border-bottom: 1px solid var(--color-border-light);
 }
 .active-filter-badge {
   padding: 2px 8px;
   font-size: var(--font-size-xs);
 }
+.collapsible-section {
+  margin-bottom: 4px;
+}
 .collapsible-section .checkbox-filters-title {
   cursor: pointer;
   user-select: none;
-  padding: 9px 10px;
+  padding: 5px 8px;
   background: var(--color-white);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  margin-bottom: 6px;
-  font-size: var(--font-size-sm);
+  border-radius: var(--radius-sm);
+  margin-bottom: 4px;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   transition: background 0.2s;
@@ -2161,8 +2161,57 @@
 
 .display-options-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 8px;
+}
+
+.display-options-group {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 14px 8px 6px;
+  margin: 0;
+  background: var(--color-bg-light);
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 4px;
+  position: relative;
+}
+
+.display-options-group legend {
+  position: absolute;
+  top: -7px;
+  left: 8px;
+  padding: 0 6px;
+  background: var(--color-white);
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+}
+
+.display-options-group label {
+  display: flex;
+  align-items: center;
   gap: 6px;
+  font-size: var(--font-size-xs);
+  padding: 4px 6px;
+  background: var(--color-white);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  transition: background 0.2s;
+}
+@media (hover: hover) {
+  .display-options-group label:hover {
+    background: var(--color-bg-blue-tint);
+  }
+}
+
+.display-options-group .red {
+  color: var(--color-danger);
 }
 
 .display-options-grid label {
