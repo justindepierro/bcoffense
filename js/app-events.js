@@ -765,6 +765,8 @@ function _dispatchDataHandler(e, attr) {
     const fn = window[name];
     if (typeof fn !== "function") continue;
     if (key !== undefined && pass === "value") fn(key, el.value);
+    else if (arg !== undefined && pass === "value") fn(arg, el.value);
+    else if (arg !== undefined && pass === "event") fn(arg, e);
     else if (pass === "value") fn(el.value);
     else if (pass === "event") fn(e);
     else if (arg !== undefined) fn(arg);
