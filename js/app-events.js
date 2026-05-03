@@ -16,7 +16,6 @@ const _ELEMENT_FNS = new Set([
   "toggleCollapsiblePanel",
   "setHeaderColor",
   "setCardColor",
-  "switchDisplayTab",
   "csPickerAddPlay",
   "toggleSirCollapse",
   "toggleScriptCheckbox",
