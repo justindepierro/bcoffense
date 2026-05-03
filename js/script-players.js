@@ -122,47 +122,41 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
 }
 
 function rerenderScriptPreservingScroll(anchorIndex) {
-  // Anchor on a specific row (or the row owning the active element) so
-  // height changes from the player grid don't push the user's play out of view.
-  // CRITICAL: restore scroll synchronously after renderScript() (before the
-  // browser paints the new DOM) — using requestAnimationFrame causes a visible
-  // one-frame jump.
+  // Player-grid mutations (promote depth chip / reset overrides) only affect
+  // the personnel grid inside a single row. Doing a full renderScript() is
+  // overkill and visibly bumps the page even with scroll restoration, because
+  // the entire script DOM is torn down and rebuilt. Instead, swap just the
+  // affected row's .script-player-grid in place — nothing above the row
+  // changes, so scrollY can't shift.
   const scriptEl = document.getElementById("scriptPlays");
-  let anchorRow = null;
-  if (typeof anchorIndex === "number" && scriptEl) {
-    anchorRow = scriptEl.querySelector(`.script-item[data-idx="${anchorIndex}"]`);
+  if (!scriptEl || typeof anchorIndex !== "number") {
+    renderScript();
+    return;
   }
-  if (!anchorRow && document.activeElement && scriptEl?.contains(document.activeElement)) {
-    anchorRow = document.activeElement.closest(".script-item[data-idx]");
+  const row = scriptEl.querySelector(`.script-item[data-idx="${anchorIndex}"]`);
+  const play = script[anchorIndex];
+  if (!row || !play || play.isSeparator) {
+    renderScript();
+    return;
   }
-  const anchorOffset = anchorRow ? anchorRow.getBoundingClientRect().top : null;
-  const anchorIdx = anchorRow ? anchorRow.getAttribute("data-idx") : null;
-  const prevScrollY = window.scrollY;
-
-  renderScript();
-
-  // Synchronous restore — happens before the browser commits the next paint
-  // since we haven't yielded to the event loop yet.
-  if (anchorIdx !== null) {
-    const newAnchor = document
-      .getElementById("scriptPlays")
-      ?.querySelector(`.script-item[data-idx="${anchorIdx}"]`);
-    if (newAnchor) {
-      const newTop = newAnchor.getBoundingClientRect().top;
-      const delta = newTop - anchorOffset;
-      if (delta !== 0) {
-        window.scrollTo({
-          top: prevScrollY + delta,
-          left: window.scrollX,
-          behavior: "instant",
-        });
-      }
+  const opts = typeof getScriptDisplayOptions === "function" ? getScriptDisplayOptions() : {};
+  if (opts.hidePersonnel) return;
+  const playLabel = typeof getScriptPlaySummaryText === "function"
+    ? getScriptPlaySummaryText(play)
+    : "";
+  const newGridHtml = buildScriptPlayerAssignmentGrid(play, anchorIndex, playLabel, opts);
+  const existingGrid = row.querySelector(".script-player-grid");
+  if (existingGrid && newGridHtml) {
+    const tmp = document.createElement("div");
+    setInnerHTML(tmp, newGridHtml);
+    const replacement = tmp.firstElementChild;
+    if (replacement) {
+      existingGrid.replaceWith(replacement);
       return;
     }
   }
-  if (window.scrollY !== prevScrollY) {
-    window.scrollTo({ top: prevScrollY, left: window.scrollX, behavior: "instant" });
-  }
+  // Fallback: full re-render if we couldn't do the targeted swap.
+  renderScript();
 }
 
 function promoteScriptDepthPlayer(index, slotKey, playerId) {
