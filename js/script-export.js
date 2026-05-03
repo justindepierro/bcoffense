@@ -277,13 +277,13 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
   return `${mainRow}
   <tr class="script-print-personnel-row">
     <td class="script-print-personnel-cell" colspan="${columns.length}">
-      <div class="script-print-personnel-grid" style="display: flex; align-items: flex-start; gap: 6px; flex-wrap: wrap; min-width: 0;">
+      <div class="script-print-personnel-grid" style="grid-template-columns: repeat(${visibleLineup.length}, minmax(0, 1fr));">
         ${visibleLineup
       .map(
         (entry) => `
-          <div class="script-print-personnel-pill" style="display: flex; align-items: flex-start; gap: 4px; flex: 1 1 120px; min-width: 0; white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word;">
+          <div class="script-print-personnel-pill">
             <span class="script-print-personnel-pos">${escapeHtml(entry.label)}</span>
-            <span class="script-print-personnel-name" style="white-space: normal; overflow: visible; text-overflow: clip; overflow-wrap: anywhere; word-break: break-word;">${escapeHtml(entry.playerName)}</span>
+            <span class="script-print-personnel-name">${escapeHtml(entry.playerName)}</span>
           </div>
         `,
       )
@@ -298,10 +298,17 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
   let displayNum = 0;
   let bodyHtml = options.scriptHeaderMarkup || "";
 
-  playsToRender.forEach((play) => {
+  playsToRender.forEach((play, periodScanIndex) => {
     if (play.isSeparator) {
+      let playCount = 0;
+      for (let i = periodScanIndex + 1; i < playsToRender.length; i++) {
+        const next = playsToRender[i];
+        if (!next || next.isSeparator) break;
+        playCount += 1;
+      }
       const metaParts = [];
       if (play.minutes) metaParts.push(`${play.minutes} min`);
+      if (playCount) metaParts.push(`${playCount} play${playCount === 1 ? "" : "s"}`);
       const metaMarkup = metaParts.length
         ? `<span class="print-period-meta">${escapeHtml(metaParts.join(" • "))}</span>`
         : "";
