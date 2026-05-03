@@ -163,7 +163,7 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
           <div class="script-player-slot ${isScriptPlayerSlotPromoted(play, slot.key) ? "script-player-slot--promoted" : ""}">
             <div class="script-player-slot-head">
               <span class="script-player-slot-label">${slot.label}</span>
-              <span class="script-player-slot-role">${isScriptPlayerSlotPromoted(play, slot.key) ? "Promoted" : "Starter"}</span>
+              ${isScriptPlayerSlotPromoted(play, slot.key) ? '<span class="script-player-slot-role">Promoted</span>' : ""}
             </div>
             <select class="script-player-slot-select" data-field="playerAssignment" data-slot="${slot.key}" data-idx="${index}" aria-label="${escapeHtml(playLabel)} ${slot.label} player">
               ${buildTeamPlayerOptionMarkup(assignments[slot.key] || "")}

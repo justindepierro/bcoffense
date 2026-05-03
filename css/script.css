@@ -421,12 +421,18 @@
 .script-player-group {
   display: flex;
   flex-direction: column;
-  gap: 8px;
-  padding: 6px;
+  gap: 6px;
+  padding: 4px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-md);
   background: var(--color-white);
   box-shadow: var(--shadow-xs);
+}
+
+/* Hide the SKILL/OFFENSIVE LINE label header - the slot positions are
+   self-explanatory and the section is visually distinct via background. */
+.script-player-group .script-player-group-header {
+  display: none;
 }
 
 .script-player-group--skill {
@@ -627,14 +633,17 @@
 .script-player-slot-select {
   width: 100%;
   min-width: 0;
-  min-height: 28px;
-  padding: 3px 5px;
+  min-height: 26px;
+  padding: 3px 22px 3px 6px;
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   background: var(--color-white);
   color: var(--color-text);
   font: inherit;
   font-size: 11px;
+  text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
 }
 
 .script-player-depth-list {
@@ -670,7 +679,9 @@
   font-size: 11px;
   font-weight: 700;
   color: var(--color-text);
-  overflow-wrap: anywhere;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   line-height: 1.15;
 }
 
@@ -714,8 +725,9 @@
 .script-player-depth-chip-name {
   min-width: 0;
   flex: 1 1 auto;
-  overflow-wrap: anywhere;
-  white-space: normal;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
   line-height: 1.05;
 }
 
