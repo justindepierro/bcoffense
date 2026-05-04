@@ -488,6 +488,46 @@ function _gpRenderLibraryRow(play, assignedSigs) {
     </div>`;
 }
 
+function _gpNormalizeHashLabel(raw) {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return null;
+  if (s === "l" || s === "left") return "Left";
+  if (s === "r" || s === "right") return "Right";
+  if (s === "m" || s === "middle" || s === "mid" || s === "center") return "Middle";
+  if (s === "any" || s === "either" || s === "both") return null; // no preference
+  return null;
+}
+
+function _gpRenderBoxHashBar(list) {
+  if (!Array.isArray(list) || list.length === 0) return "";
+  let left = 0, middle = 0, right = 0;
+  list.forEach((p) => {
+    const h = _gpNormalizeHashLabel(p.preferredHash);
+    if (h === "Left") left += 1;
+    else if (h === "Right") right += 1;
+    else if (h === "Middle") middle += 1;
+  });
+  const decided = left + middle + right;
+  if (decided === 0) return "";
+  const total = list.length;
+  const undecided = total - decided;
+  const pctL = Math.round((left / decided) * 100);
+  const pctM = Math.round((middle / decided) * 100);
+  const pctR = 100 - pctL - pctM;
+  const tooltip = `Hash split (of ${decided} with a preference${undecided ? `, ${undecided} unset` : ""}): `
+    + `Left ${left} (${pctL}%) · Middle ${middle} (${pctM}%) · Right ${right} (${pctR}%)`;
+  const segs = [];
+  if (left > 0) segs.push(`<span class="gp-hash-seg gp-hash-left" style="flex:${left} 0 0" title="Left ${left}">L ${pctL}%</span>`);
+  if (middle > 0) segs.push(`<span class="gp-hash-seg gp-hash-middle" style="flex:${middle} 0 0" title="Middle ${middle}">M ${pctM}%</span>`);
+  if (right > 0) segs.push(`<span class="gp-hash-seg gp-hash-right" style="flex:${right} 0 0" title="Right ${right}">R ${pctR}%</span>`);
+  return `
+    <div class="gp-hash-bar" title="${escapeHtml(tooltip)}">
+      <span class="gp-hash-bar-label">Hash</span>
+      <div class="gp-hash-bar-track">${segs.join("")}</div>
+      ${undecided > 0 ? `<span class="gp-hash-bar-unset" title="${undecided} play${undecided === 1 ? "" : "s"} with no hash preference">${undecided} unset</span>` : ""}
+    </div>`;
+}
+
 function _gpRenderBox(box, board) {
   const list = (board.assignments[box.id] || []).slice();
   const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
@@ -522,6 +562,10 @@ function _gpRenderBox(box, board) {
         <span class="gp-box-progress-label">${list.length}/${target}</span>
       </div>`;
   }
+
+  // Hash distribution bar (Left / Middle / Right) — only renders when at
+  // least one play in this box declares a preferred hash.
+  const hashHtml = _gpRenderBoxHashBar(list);
 
   const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
   const holdingAutoBtn = isHolding && list.length > 0
@@ -573,6 +617,7 @@ function _gpRenderBox(box, board) {
       </div>
     </div>
     ${progressHtml}
+    ${hashHtml}
     ${note ? `<div class="gp-box-note" title="Edit note"
       data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${escapeHtml(note)}</div>` : ""}`;
 
