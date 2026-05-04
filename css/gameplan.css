@@ -471,8 +471,12 @@
   padding: 2px 4px;
   font-size: var(--font-size-xs);
 }
-.gp-density-compact .gp-box-play-meta { display: none; }
-.gp-density-compact .gp-box-body { gap: 2px; }
+.gp-density-compact .gp-box-play-meta {
+  display: none;
+}
+.gp-density-compact .gp-box-body {
+  gap: 2px;
+}
 
 .gp-density-detail .gp-box-play {
   padding: 6px 8px;
@@ -499,7 +503,10 @@
   padding: 4px 10px;
   font-size: var(--font-size-xs);
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
   white-space: nowrap;
 }
 .gp-matchup-chip:hover {
@@ -601,13 +608,246 @@
 
 /* Drag drop indicators for intra-box reorder */
 .gp-box-play.gp-drop-before {
-  box-shadow: 0 -2px 0 0 var(--color-primary) inset, 0 -3px 0 0 var(--color-primary);
+  box-shadow:
+    0 -2px 0 0 var(--color-primary) inset,
+    0 -3px 0 0 var(--color-primary);
 }
 .gp-box-play.gp-drop-after {
-  box-shadow: 0 2px 0 0 var(--color-primary) inset, 0 3px 0 0 var(--color-primary);
+  box-shadow:
+    0 2px 0 0 var(--color-primary) inset,
+    0 3px 0 0 var(--color-primary);
 }
 
-/* Print: when printing the game plan, hide chrome and show boxes only */@media print {
+/* -----------------------------------------------------------------
+   v340 — chips, scoreboard, distribution, jump pills, trash zone
+   ----------------------------------------------------------------- */
+
+/* Distribution strip */
+.gp-dist-strip {
+  display: flex;
+  height: 18px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  margin: 0 0 var(--space-sm) 0;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+}
+.gp-dist-seg {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 0;
+  color: #fff;
+  font-size: var(--font-size-micro);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-shadow: 0 1px 1px rgba(0, 0, 0, 0.4);
+}
+.gp-dist-seg-label {
+  padding: 0 var(--space-xs);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Scoreboard */
+.gp-scoreboard {
+  margin: 0 0 var(--space-sm) 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.gp-scoreboard > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+  user-select: none;
+}
+.gp-scoreboard > summary::-webkit-details-marker { display: none; }
+.gp-scoreboard > summary::before {
+  content: "▶ ";
+  display: inline-block;
+  transition: transform var(--transition-fast);
+  font-size: 0.7em;
+  margin-right: 0.25em;
+}
+.gp-scoreboard[open] > summary::before { transform: rotate(90deg); }
+.gp-score-hint {
+  font-weight: 400;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-left: var(--space-sm);
+}
+.gp-score-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(110px, 1fr));
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md) var(--space-md);
+}
+.gp-score-tile {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 2px;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-input);
+  cursor: pointer;
+  transition: transform var(--transition-fast), box-shadow var(--transition-fast);
+  font-family: inherit;
+  text-align: left;
+}
+.gp-score-tile:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.gp-score-tile.is-active {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+.gp-score-label { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text); }
+.gp-score-count { font-size: var(--font-size-xl); font-weight: 700; line-height: 1; }
+.gp-score-empty { background: var(--color-danger-light); border-color: var(--color-danger); }
+.gp-score-empty .gp-score-count { color: var(--color-danger); }
+.gp-score-warn { background: var(--color-warning-light); border-color: var(--color-warning); }
+.gp-score-warn .gp-score-count { color: var(--color-warning); }
+.gp-score-ok { background: var(--color-success-light); border-color: var(--color-success); }
+.gp-score-ok .gp-score-count { color: var(--color-success); }
+
+/* Filter chips */
+.gp-chip-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  margin: 0 0 var(--space-sm) 0;
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  border: 1px dashed var(--color-border-med);
+}
+.gp-chip-bar-label {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+.gp-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px var(--space-xs);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-family: inherit;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+.gp-chip:hover { background: var(--color-bg-hover-row); }
+.gp-chip-icon { font-size: 0.9em; }
+.gp-chip-x {
+  font-weight: 700;
+  color: var(--color-text-muted);
+  margin-left: 2px;
+}
+.gp-chip-clear {
+  background: var(--color-danger-light);
+  border-color: var(--color-danger);
+  color: var(--color-danger);
+  font-weight: 600;
+}
+.gp-chip-clear:hover { background: var(--color-danger); color: #fff; }
+.gp-chip-clear .gp-chip-x { color: inherit; }
+
+/* Jump pills */
+.gp-jump-bar {
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  display: flex;
+  gap: var(--space-xs);
+  overflow-x: auto;
+  scrollbar-width: thin;
+  padding: var(--space-xs) 0;
+  margin: 0 0 var(--space-sm) 0;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-body);
+}
+.gp-jump-bar::-webkit-scrollbar { height: 4px; }
+.gp-jump-pill {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px var(--space-sm);
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-family: inherit;
+  cursor: pointer;
+  white-space: nowrap;
+  transition: background var(--transition-fast), transform var(--transition-fast);
+  border-left: 3px solid var(--gp-box-accent, var(--color-border-med));
+}
+.gp-jump-pill:hover { background: var(--color-bg-hover-row); transform: translateY(-1px); }
+.gp-jump-pill.is-met {
+  background: var(--color-success-light);
+  border-color: var(--color-success);
+}
+.gp-jump-pill-count {
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--color-text-muted);
+}
+.gp-jump-pill.is-met .gp-jump-pill-count { color: var(--color-success); }
+
+/* Box flash on jump */
+.gp-box-flash {
+  animation: gpBoxFlash 0.9s ease-out;
+}
+@keyframes gpBoxFlash {
+  0%, 100% { box-shadow: none; }
+  20%, 60% { box-shadow: 0 0 0 3px var(--color-primary); }
+}
+
+/* Trash zone — only visible while dragging from a box */
+.gp-trash-zone {
+  display: none;
+  position: sticky;
+  bottom: var(--space-sm);
+  z-index: 10;
+  margin: var(--space-sm) auto;
+  max-width: 480px;
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  border: 2px dashed var(--color-danger);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  text-align: center;
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+  pointer-events: none;
+}
+body.gp-dragging-from-box .gp-trash-zone {
+  display: block;
+  pointer-events: auto;
+}
+.gp-trash-zone.is-active {
+  background: var(--color-danger);
+  color: #fff;
+  transform: scale(1.02);
+}
+
+/* Print: when printing the game plan, hide chrome and show boxes only */
+@media print {
   body[data-active-tab="gameplan"] .panel:not(#gameplan),
   body[data-active-tab="gameplan"] .tabs,
   body[data-active-tab="gameplan"] header,

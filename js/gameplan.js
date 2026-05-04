@@ -79,6 +79,42 @@ const GP_BOX_ACCENTS = {
   Movement: "#9333ea",
 };
 
+// Scenario coverage scoreboard — each item maps to a real-world game situation
+// the coach should have plays ready for. Click a tile to auto-apply the
+// matching filter set on the library.
+const GP_COVERAGE_SCENARIOS = [
+  { id: "1st-down", label: "1st Down",
+    filters: { preferredDown: "1" },
+    match: (p) => p.preferredDown === "1" },
+  { id: "3rd-short", label: "3rd & Short",
+    filters: { preferredDown: "3", preferredDistance: "Short" },
+    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Short" },
+  { id: "3rd-med", label: "3rd & Med",
+    filters: { preferredDown: "3", preferredDistance: "Medium" },
+    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Medium" },
+  { id: "3rd-long", label: "3rd & Long",
+    filters: { preferredDown: "3", preferredDistance: "Long" },
+    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Long" },
+  { id: "rz", label: "Red Zone",
+    filters: { preferredFieldPosition: "Lo-RZ" },
+    match: (p) => p.preferredFieldPosition === "Lo-RZ" || p.preferredFieldPosition === "Hi-RZ" },
+  { id: "goal-line", label: "Goal Line",
+    filters: { preferredFieldPosition: "Goal Line" },
+    match: (p) => p.preferredFieldPosition === "Goal Line" },
+  { id: "backed-up", label: "Backed Up",
+    filters: { preferredFieldPosition: "Backed Up" },
+    match: (p) => p.preferredFieldPosition === "Backed Up" },
+  { id: "2-min", label: "2 Min",
+    filters: { preferredSituation: "2 Minute" },
+    match: (p) => p.preferredSituation === "2 Minute" },
+  { id: "4-min", label: "4 Min",
+    filters: { preferredSituation: "4 Minute" },
+    match: (p) => p.preferredSituation === "4 Minute" },
+];
+
+// Snapshots (saved named plans) storage
+const GP_SNAPSHOTS_KEY = "gamePlanSnapshots";
+
 /* -------------------------------------------------------------------------
    Storage helpers
    ------------------------------------------------------------------------- */
@@ -258,8 +294,8 @@ function renderGamePlan() {
         <div class="gp-header-title">
           🎯 Game Plan
           ${opponent
-            ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
-            : `<span class="gp-header-empty">No opponent set — pick one in the Dashboard to keep boards per opponent</span>`}
+      ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
+      : `<span class="gp-header-empty">No opponent set — pick one in the Dashboard to keep boards per opponent</span>`}
           ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
         </div>
         <div class="gp-header-week">${totalAssigned} plays drafted across ${allBoxes.length} boxes</div>
@@ -267,6 +303,12 @@ function renderGamePlan() {
       <div class="gp-header-actions">
         <button class="btn btn-sm" data-action="addGamePlanCustomBox" title="Add a free-form drafting box">
           ➕ Custom Box
+        </button>
+        <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
+          💾 Save Plan
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanSnapshotsMenu" title="Load or delete a saved plan">
+          📂 Plans
         </button>
         <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
           ▼ Expand All
@@ -276,6 +318,9 @@ function renderGamePlan() {
         </button>
         <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
           ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanShortcutsHelp" title="Keyboard shortcuts (?)">
+          ⌨️
         </button>
         <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
           📊 Variety Stats
@@ -314,11 +359,11 @@ function renderGamePlan() {
       </select>
       <select data-onchange="updateGamePlanFilter" data-arg="preferredDown" data-pass="value" title="Down">
         <option value="">Down</option>
-        ${["1","2","3","4"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDown ? "selected" : ""}>${d}</option>`).join("")}
+        ${["1", "2", "3", "4"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDown ? "selected" : ""}>${d}</option>`).join("")}
       </select>
       <select data-onchange="updateGamePlanFilter" data-arg="preferredDistance" data-pass="value" title="Distance">
         <option value="">Distance</option>
-        ${["Short","Medium","Long"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDistance ? "selected" : ""}>${d}</option>`).join("")}
+        ${["Short", "Medium", "Long"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDistance ? "selected" : ""}>${d}</option>`).join("")}
       </select>
       <select data-onchange="updateGamePlanFilter" data-arg="preferredSituation" data-pass="value" title="Situation">
         <option value="">Situation</option>
@@ -395,8 +440,8 @@ function renderGamePlan() {
       </div>
       <div class="gp-library-list" id="gpLibraryList">
         ${filtered.length === 0
-          ? `<div class="gp-box-empty">No plays match the current filters.</div>`
-          : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs)).join("")}
+      ? `<div class="gp-box-empty">No plays match the current filters.</div>`
+      : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs)).join("")}
       </div>
     </div>`;
 
@@ -410,10 +455,16 @@ function renderGamePlan() {
   // sanitizeHTML strips. Build them directly via innerHTML — every
   // user-derived value above already passes through escapeHtml().
   const wrapper = document.createElement("div");
-  wrapper.innerHTML = toolbarHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  const distHtml = _gpRenderDistributionStrip(board);
+  const scoreboardHtml = _gpRenderScoreboard(board);
+  const chipsHtml = _gpRenderFilterChips();
+  const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
+  const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
+  wrapper.innerHTML = distHtml + scoreboardHtml + chipsHtml + toolbarHtml + jumpBarHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
+  _gpAttachTrashZoneHandlers();
 }
 
 function _gpRenderLibraryRow(play, assignedSigs) {
@@ -499,18 +550,24 @@ function _gpRenderBox(box, board) {
       <div class="gp-box-actions" data-stop-toggle="1">
         <button class="btn btn-sm" title="Add a play from the playbook to this box"
           data-action="addPlayToGamePlanBox" data-arg="${escapeHtml(box.id)}">➕ Add Play</button>
+        <button class="btn btn-sm" title="Smart fill — pick from plays that match this box's intent"
+          data-action="gpSuggestFillBox" data-arg="${escapeHtml(box.id)}">💡 Suggest</button>
         ${sortDropdown}
         ${holdingAutoBtn}
+        ${!isHolding && GP_BOX_TO_CALLSHEET[box.id] && list.length > 0
+      ? `<button class="btn btn-sm btn-secondary" title="Push only this box to its call sheet category"
+          data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
+      : ""}
         <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
           data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
         <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
           data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>
         ${isCustom
-          ? `<button class="btn btn-sm btn-secondary" title="Rename"
+      ? `<button class="btn btn-sm btn-secondary" title="Rename"
               data-action="renameGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
              <button class="btn btn-sm btn-danger" title="Delete box"
               data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
-          : ""}
+      : ""}
         <button class="btn btn-sm" title="Clear plays in this box"
           data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>
       </div>
@@ -522,10 +579,10 @@ function _gpRenderBox(box, board) {
   const bodyHtml = collapsed ? "" : `
       <div class="gp-box-body" data-box-drop="${escapeHtml(box.id)}">
         ${displayList.length === 0
-          ? `<div class="gp-box-empty">${isHolding
-              ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
-              : "Drop plays here, or click ➕ Add Play."}</div>`
-          : displayList.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx, sortMode === "manual")).join("")}
+      ? `<div class="gp-box-empty">${isHolding
+        ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
+        : "Drop plays here, or click ➕ Add Play."}</div>`
+      : displayList.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx, sortMode === "manual")).join("")}
       </div>`;
 
   return `
@@ -610,6 +667,185 @@ function toggleGamePlanAdvancedFilters() {
 }
 
 /* -------------------------------------------------------------------------
+   Active filter chips
+   ------------------------------------------------------------------------- */
+
+const _GP_CHIP_LABELS = {
+  search: { icon: "🔎", label: (v) => `“${v}”` },
+  type: { icon: "🏷️", label: (v) => v },
+  formation: { icon: "📐", label: (v) => v },
+  personnel: { icon: "🧮", label: (v) => v },
+  basePlay: { icon: "🌳", label: (v) => v },
+  tempo: { icon: "⏱️", label: (v) => v },
+  preferredDown: { icon: "🔢", label: (v) => `Down ${v}` },
+  preferredDistance: { icon: "📏", label: (v) => v },
+  preferredSituation: { icon: "🕒", label: (v) => v },
+  preferredFieldPosition: { icon: "🟩", label: (v) => v },
+  onlyOpponentTagged: { icon: "🎯", label: () => "Opponent-tagged" },
+  hideAssigned: { icon: "🙈", label: () => "Hide drafted" },
+  goodVsMan: { icon: "✅", label: () => "vs. Man" },
+  goodVsBear: { icon: "🐻", label: () => "vs. Bear" },
+  goodVsOkie: { icon: "🤠", label: () => "vs. Okie" },
+};
+
+function _gpRenderFilterChips() {
+  const f = _gpFilters;
+  const chips = [];
+  Object.keys(_GP_CHIP_LABELS).forEach((k) => {
+    const v = f[k];
+    if (!v) return;
+    const cfg = _GP_CHIP_LABELS[k];
+    chips.push(`
+      <button class="gp-chip" data-action="clearGamePlanFilterField" data-arg="${escapeHtml(k)}"
+        title="Clear this filter">
+        <span class="gp-chip-icon">${cfg.icon}</span>
+        <span class="gp-chip-label">${escapeHtml(cfg.label(v))}</span>
+        <span class="gp-chip-x">×</span>
+      </button>`);
+  });
+  if (chips.length === 0) return "";
+  return `
+    <div class="gp-chip-bar">
+      <span class="gp-chip-bar-label">Filters:</span>
+      ${chips.join("")}
+      <button class="gp-chip gp-chip-clear" data-action="clearGamePlanFilters" title="Clear all filters">
+        <span class="gp-chip-x">×</span> Clear all
+      </button>
+    </div>`;
+}
+
+function clearGamePlanFilterField(field) {
+  if (!field) return;
+  if (!(field in _gpFilters)) return;
+  if (typeof _gpFilters[field] === "boolean") _gpFilters[field] = false;
+  else _gpFilters[field] = "";
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Distribution stat strip + scoreboard
+   ------------------------------------------------------------------------- */
+
+function _gpAllDraftedPlays(board) {
+  const out = [];
+  Object.entries(board.assignments || {}).forEach(([boxId, arr]) => {
+    if (boxId === GP_HOLDING_ID) return; // exclude holding from distribution
+    (arr || []).forEach((p) => out.push(p));
+  });
+  return out;
+}
+
+function _gpRenderDistributionStrip(board) {
+  const drafted = _gpAllDraftedPlays(board);
+  if (drafted.length === 0) return "";
+  const buckets = {
+    Run: 0, Pass: 0, Screen: 0, Quick: 0, "Play Action": 0,
+    RPO: 0, "Run Option": 0, Movement: 0,
+  };
+  drafted.forEach((p) => {
+    const t = GP_TYPE_ALIASES[p.type] || p.type || "Other";
+    if (t in buckets) buckets[t] += 1;
+    else buckets[t] = (buckets[t] || 0) + 1;
+  });
+  const segs = Object.entries(buckets)
+    .filter(([, c]) => c > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => {
+      const pct = (count / drafted.length) * 100;
+      const accent = GP_BOX_ACCENTS[name] || "var(--color-text-muted)";
+      return `
+        <span class="gp-dist-seg" style="flex:${count} 0 0;background:${accent}"
+          title="${escapeHtml(name)}: ${count} (${pct.toFixed(0)}%)">
+          <span class="gp-dist-seg-label">${escapeHtml(name)} ${pct.toFixed(0)}%</span>
+        </span>`;
+    });
+  return `<div class="gp-dist-strip" title="Distribution across drafted plays (excludes Holding)">${segs.join("")}</div>`;
+}
+
+function _gpRenderScoreboard(board) {
+  const drafted = _gpAllDraftedPlays(board);
+  const tiles = GP_COVERAGE_SCENARIOS.map((s) => {
+    const count = drafted.filter(s.match).length;
+    let status = "ok";
+    if (count === 0) status = "empty";
+    else if (count <= 2) status = "warn";
+    const isActive = Object.entries(s.filters).every(([k, v]) => _gpFilters[k] === v);
+    return `
+      <button class="gp-score-tile gp-score-${status}${isActive ? " is-active" : ""}"
+        data-action="applyGamePlanScenario" data-arg="${escapeHtml(s.id)}"
+        title="${count === 0 ? `No plays for ${s.label} yet — click to filter library` : `${count} drafted • click to filter library`}">
+        <span class="gp-score-label">${escapeHtml(s.label)}</span>
+        <span class="gp-score-count">${count}</span>
+      </button>`;
+  }).join("");
+  if (drafted.length === 0) {
+    return `
+      <details class="gp-scoreboard">
+        <summary>📋 Coverage Scoreboard <span class="gp-score-hint">draft plays to populate</span></summary>
+        <div class="gp-score-grid">${tiles}</div>
+      </details>`;
+  }
+  return `
+    <details class="gp-scoreboard" open>
+      <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to filter library</span></summary>
+      <div class="gp-score-grid">${tiles}</div>
+    </details>`;
+}
+
+function applyGamePlanScenario(id) {
+  const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === id);
+  if (!sc) return;
+  const alreadyActive = Object.entries(sc.filters).every(([k, v]) => _gpFilters[k] === v);
+  if (alreadyActive) {
+    Object.keys(sc.filters).forEach((k) => { _gpFilters[k] = ""; });
+  } else {
+    Object.entries(sc.filters).forEach(([k, v]) => { _gpFilters[k] = v; });
+    _gpFilters.showAdvanced = true;
+  }
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Box jump pill bar
+   ------------------------------------------------------------------------- */
+
+function _gpRenderJumpPills(allBoxes, board) {
+  const pills = allBoxes.map((b) => {
+    const list = board.assignments[b.id] || [];
+    const target = Number(board.targets && board.targets[b.id]) || 0;
+    const accent = GP_BOX_ACCENTS[b.id] || "";
+    const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
+    const status = target > 0 && list.length >= target ? " is-met" : "";
+    return `
+      <button class="gp-jump-pill${status}" ${accentStyle}
+        data-action="jumpToGamePlanBox" data-arg="${escapeHtml(b.id)}"
+        title="Jump to ${escapeHtml(b.label)}">
+        <span class="gp-jump-pill-label">${escapeHtml(b.label)}</span>
+        <span class="gp-jump-pill-count">${list.length}${target > 0 ? `/${target}` : ""}</span>
+      </button>`;
+  }).join("");
+  return `<div class="gp-jump-bar" id="gpJumpBar">${pills}</div>`;
+}
+
+function jumpToGamePlanBox(boxId) {
+  if (!boxId) return;
+  const el = document.querySelector(`.gp-box[data-box-id="${CSS.escape(boxId)}"]`);
+  if (!el) return;
+  // If the box is collapsed, expand first so the user actually sees content
+  if (el.classList.contains("is-collapsed")) {
+    toggleGamePlanBoxCollapse(boxId);
+    requestAnimationFrame(() => {
+      const re = document.querySelector(`.gp-box[data-box-id="${CSS.escape(boxId)}"]`);
+      if (re) re.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return;
+  }
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.classList.add("gp-box-flash");
+  setTimeout(() => el.classList.remove("gp-box-flash"), 900);
+}
+
+/* -------------------------------------------------------------------------
    Drag & Drop wiring (native HTML5 dnd)
    ------------------------------------------------------------------------- */
 
@@ -691,11 +927,13 @@ function _gpAttachBoxHandlers() {
     row.addEventListener("dragstart", (e) => {
       _gpDragSource = { boxId: row.dataset.boxId, sig: row.dataset.sig };
       _gpDragPayload = null;
+      document.body.classList.add("gp-dragging-from-box");
       try { e.dataTransfer.setData("text/plain", row.dataset.sig || ""); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "move";
     });
     row.addEventListener("dragend", () => {
       _gpDragSource = null;
+      document.body.classList.remove("gp-dragging-from-box");
       document.querySelectorAll(".gp-box-body").forEach(_gpClearDropIndicators);
     });
     // Right-click context menu
@@ -708,7 +946,7 @@ function _gpAttachBoxHandlers() {
       addLongPress(row, () => {
         const rect = row.getBoundingClientRect();
         _gpOpenPlayContextMenu(
-          { preventDefault() {}, clientX: rect.left + 20, clientY: rect.top + 20 },
+          { preventDefault() { }, clientX: rect.left + 20, clientY: rect.top + 20 },
           row.dataset.boxId,
           row.dataset.sig,
         );
@@ -1003,8 +1241,8 @@ function openGamePlanStats() {
       <div class="gp-stats-card-title">${escapeHtml(title)}</div>
       <div class="gp-stats-list">
         ${rows.length === 0
-          ? `<div class="gp-stats-row"><span class="gp-stats-row-value">—</span></div>`
-          : rows.map(([v, c]) => `
+      ? `<div class="gp-stats-row"><span class="gp-stats-row-value">—</span></div>`
+      : rows.map(([v, c]) => `
             <div class="gp-stats-row">
               <span class="gp-stats-row-value">${escapeHtml(v)}</span>
               <span class="gp-stats-row-count">${c}</span>
@@ -1538,10 +1776,347 @@ function _gpOpenPlayContextMenu(e, boxId, sig) {
 }
 
 /* -------------------------------------------------------------------------
+   Smart Fill (per box) — opens picker pre-filtered to box intent
+   ------------------------------------------------------------------------- */
+
+const GP_BOX_INTENT_TYPES = {
+  Run: ["Run"],
+  Pass: ["Pass", "Drop"],
+  Screen: ["Screen"],
+  Quick: ["Quick"],
+  "Play Action": ["Play Action", "Play Pass"],
+  RPO: ["RPO"],
+  "Run Option": ["Run Option"],
+  Movement: ["Movement"],
+};
+
+async function gpSuggestFillBox(boxId) {
+  if (!boxId || !Array.isArray(plays)) return;
+  const board = _gpEnsureBoard();
+  const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpPlaySignature));
+  const intent = GP_BOX_INTENT_TYPES[boxId];
+  let candidates = plays.filter((p) => !inBoxSigs.has(_gpPlaySignature(p)));
+  if (Array.isArray(intent) && intent.length > 0) {
+    candidates = candidates.filter((p) => intent.includes(p.type));
+  }
+  // Rank: opponent-tagged first, then by base play group, then alphabetical
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw && gw.opponentName ? gw.opponentName : null;
+  if (opponent && typeof isPlayTaggedForOpponent === "function") {
+    candidates.sort((a, b) => {
+      const ta = isPlayTaggedForOpponent(a, opponent) ? 0 : 1;
+      const tb = isPlayTaggedForOpponent(b, opponent) ? 0 : 1;
+      if (ta !== tb) return ta - tb;
+      return (a.play || "").localeCompare(b.play || "");
+    });
+  }
+  if (candidates.length === 0) {
+    showToast(intent ? `No more ${intent.join("/")} plays available.` : "No more plays available.", { type: "warning" });
+    return;
+  }
+  const assignedSigs = _gpAllAssignedSigs(board);
+  const items = candidates.map((p) => {
+    const sig = _gpPlaySignature(p);
+    const tagged = opponent && typeof isPlayTaggedForOpponent === "function" && isPlayTaggedForOpponent(p, opponent) ? "🎯 " : "";
+    const dup = assignedSigs.has(sig) ? " ⓘ on board" : "";
+    const label = tagged + [p.type, p.formation, p.personnel, p.play].filter(Boolean).join(" • ") + dup;
+    return { value: sig, label };
+  });
+  const choice = await showListPicker(
+    `💡 ${candidates.length} suggestion${candidates.length === 1 ? "" : "s"} for ${boxId}${opponent ? ` (opponent-tagged first)` : ""}:`,
+    items,
+    { title: "Smart Fill", icon: "💡" },
+  );
+  if (!choice) return;
+  _gpAddSigsToBox([choice], boxId);
+}
+
+/* -------------------------------------------------------------------------
+   Per-box push to call sheet
+   ------------------------------------------------------------------------- */
+
+async function pushGamePlanBoxToCallSheet(boxId) {
+  if (!boxId) return;
+  const target = GP_BOX_TO_CALLSHEET[boxId];
+  if (!target) {
+    showToast("This box has no matching call sheet category.", { type: "warning" });
+    return;
+  }
+  if (typeof callSheet !== "object" || !callSheet) {
+    showToast("Call sheet isn't ready yet.", { type: "error" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const list = board.assignments[boxId] || [];
+  if (list.length === 0) {
+    showToast("This box has no plays.", { type: "warning" });
+    return;
+  }
+  const choice = await showChoice(
+    `<p>Push <strong>${list.length}</strong> play${list.length === 1 ? "" : "s"} from <strong>${escapeHtml(boxId)}</strong> into call sheet category <code>${escapeHtml(target)}</code>?</p>`,
+    {
+      title: "Push Box to Call Sheet",
+      icon: "➡️",
+      option1: "Append",
+      option2: "Replace",
+    },
+  );
+  if (!choice) return;
+  const replace = choice === "option2";
+  if (!callSheet[target]) callSheet[target] = { left: [], right: [] };
+  if (replace) {
+    callSheet[target].left = [];
+    callSheet[target].right = [];
+  }
+  let pushed = 0;
+  list.forEach((p) => {
+    const exists = (callSheet[target].left || []).some((x) => playsMatch(x, p))
+      || (callSheet[target].right || []).some((x) => playsMatch(x, p));
+    if (exists) return;
+    callSheet[target].left.push({
+      ...p,
+      playType: p.type,
+      wristbandNumber: null,
+      highlighted: false,
+      highlightColor: null,
+      borderColor: null,
+      cellBg: null,
+      cellTextColor: null,
+      cellBold: false,
+      cellItalic: false,
+      cellUnderline: false,
+      cellStrikethrough: false,
+      cellFontSize: null,
+      cellNote: null,
+    });
+    pushed += 1;
+  });
+  if (typeof saveCallSheet === "function") saveCallSheet();
+  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to ${target}`, { type: "success" });
+}
+
+/* -------------------------------------------------------------------------
+   Snapshots — save / load / delete named plans (per opponent)
+   ------------------------------------------------------------------------- */
+
+function _gpLoadAllSnapshots() {
+  return storageManager.get(GP_SNAPSHOTS_KEY, {});
+}
+
+function _gpSaveAllSnapshots(all) {
+  storageManager.set(GP_SNAPSHOTS_KEY, all);
+}
+
+function _gpSnapshotsForOpponent() {
+  const all = _gpLoadAllSnapshots();
+  const key = _gpActiveOpponentKey();
+  return Array.isArray(all[key]) ? all[key] : [];
+}
+
+async function saveGamePlanSnapshot() {
+  const board = _gpEnsureBoard();
+  const total = _gpAllAssignedSigs(board).size;
+  if (total === 0) {
+    const ok = await showConfirm("No plays drafted yet — save an empty plan anyway?",
+      { title: "Save Plan", icon: "💾" });
+    if (!ok) return;
+  }
+  const defaultName = new Date().toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+  const name = await showPrompt("Name this plan:", defaultName, {
+    title: "Save Plan",
+    icon: "💾",
+    placeholder: "e.g. v1 base, blitz-heavy, etc.",
+  });
+  if (!name || !name.trim()) return;
+  const all = _gpLoadAllSnapshots();
+  const key = _gpActiveOpponentKey();
+  if (!Array.isArray(all[key])) all[key] = [];
+  all[key].push({
+    id: `snap-${Date.now()}`,
+    name: name.trim(),
+    savedAt: new Date().toISOString(),
+    board: safeDeepClone(board),
+  });
+  _gpSaveAllSnapshots(all);
+  showToast(`Saved plan “${name.trim()}”`, { type: "success" });
+}
+
+async function openGamePlanSnapshotsMenu() {
+  const snaps = _gpSnapshotsForOpponent();
+  if (snaps.length === 0) {
+    showToast("No saved plans yet for this opponent. Use 💾 Save Plan first.", { type: "info", duration: 3500 });
+    return;
+  }
+  const items = snaps.slice().reverse().map((s) => {
+    const when = new Date(s.savedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    const total = Object.values(s.board?.assignments || {}).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0);
+    return { value: s.id, label: `${s.name} • ${total} plays • ${when}` };
+  });
+  const choice = await showListPicker(
+    "Pick a saved plan:",
+    items,
+    { title: "📂 Saved Plans", icon: "📂" },
+  );
+  if (!choice) return;
+  const action = await showChoice(
+    "What do you want to do with this plan?",
+    {
+      title: "Saved Plan",
+      icon: "📂",
+      option1: "Load (replaces current board)",
+      option2: "Delete",
+    },
+  );
+  if (!action) return;
+  if (action === "option1") await _gpLoadSnapshot(choice);
+  else if (action === "option2") await _gpDeleteSnapshot(choice);
+}
+
+async function _gpLoadSnapshot(snapId) {
+  const all = _gpLoadAllSnapshots();
+  const key = _gpActiveOpponentKey();
+  const snap = (all[key] || []).find((s) => s.id === snapId);
+  if (!snap) return;
+  const ok = await showConfirm(
+    `Load <strong>${escapeHtml(snap.name)}</strong>? This replaces the current game plan board for ${escapeHtml(key === "__unassigned__" ? "this session" : key)}.`,
+    { title: "Load Plan", icon: "📂", confirmText: "Load", danger: true },
+  );
+  if (!ok) return;
+  const boards = _gpLoadBoards();
+  boards[key] = safeDeepClone(snap.board);
+  _gpSaveBoards(boards);
+  renderGamePlan();
+  showToast(`Loaded “${snap.name}”`, { type: "success" });
+}
+
+async function _gpDeleteSnapshot(snapId) {
+  const all = _gpLoadAllSnapshots();
+  const key = _gpActiveOpponentKey();
+  const snap = (all[key] || []).find((s) => s.id === snapId);
+  if (!snap) return;
+  const ok = await showConfirm(
+    `Delete saved plan <strong>${escapeHtml(snap.name)}</strong>?`,
+    { title: "Delete Plan", icon: "🗑️", confirmText: "Delete", danger: true },
+  );
+  if (!ok) return;
+  all[key] = (all[key] || []).filter((s) => s.id !== snapId);
+  _gpSaveAllSnapshots(all);
+  showToast("Plan deleted", { type: "success" });
+}
+
+/* -------------------------------------------------------------------------
+   Trash zone (drag a box-play out)
+   ------------------------------------------------------------------------- */
+
+function _gpAttachTrashZoneHandlers() {
+  const zone = document.getElementById("gpTrashZone");
+  if (!zone) return;
+  zone.addEventListener("dragenter", (e) => {
+    if (!_gpDragSource) return;
+    e.preventDefault();
+    zone.classList.add("is-active");
+  });
+  zone.addEventListener("dragover", (e) => {
+    if (!_gpDragSource) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = "move";
+  });
+  zone.addEventListener("dragleave", () => {
+    zone.classList.remove("is-active");
+  });
+  zone.addEventListener("drop", async (e) => {
+    if (!_gpDragSource) return;
+    e.preventDefault();
+    zone.classList.remove("is-active");
+    const { boxId, sig } = _gpDragSource;
+    _gpDragSource = null;
+    if (boxId === GP_HOLDING_ID) {
+      removeFromGamePlanBox(boxId + "::" + sig);
+    } else {
+      _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig);
+      showToast("Sent to Holding", { duration: 1500 });
+    }
+  });
+}
+
+/* -------------------------------------------------------------------------
+   Keyboard shortcuts
+   ------------------------------------------------------------------------- */
+
+function _gpHandleKeydown(e) {
+  // Only when the gameplan tab is the active tab
+  if (typeof currentActiveTab !== "undefined" && currentActiveTab !== "gameplan") return;
+  // Ignore when typing in an input/textarea/select (except Esc)
+  const tag = (e.target?.tagName || "").toLowerCase();
+  const isEditable = tag === "input" || tag === "textarea" || tag === "select" || e.target?.isContentEditable;
+
+  if (e.key === "?" && !isEditable) {
+    e.preventDefault();
+    openGamePlanShortcutsHelp();
+    return;
+  }
+  if (e.key === "Escape") {
+    const search = document.getElementById("gpSearch");
+    if (document.activeElement === search) {
+      search.blur();
+      return;
+    }
+    if (_gpAdvancedFilterCount() > 0 || _gpFilters.search || _gpFilters.type
+      || _gpFilters.formation || _gpFilters.personnel || _gpFilters.hideAssigned
+      || _gpFilters.goodVsMan || _gpFilters.goodVsBear || _gpFilters.goodVsOkie) {
+      e.preventDefault();
+      clearGamePlanFilters();
+      showToast("Filters cleared", { duration: 1200 });
+    }
+    return;
+  }
+  if (isEditable) return;
+  if (e.key === "/") {
+    e.preventDefault();
+    const search = document.getElementById("gpSearch");
+    if (search) {
+      search.focus();
+      search.select();
+    }
+    return;
+  }
+  // Digit jump 1-9 → first 9 boxes (Holding=1)
+  if (/^[1-9]$/.test(e.key)) {
+    const board = _gpEnsureBoard();
+    const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+    const idx = parseInt(e.key, 10) - 1;
+    if (allBoxes[idx]) {
+      e.preventDefault();
+      jumpToGamePlanBox(allBoxes[idx].id);
+    }
+  }
+}
+
+function openGamePlanShortcutsHelp() {
+  const html = `
+    <div style="display:grid;grid-template-columns:auto 1fr;gap:var(--space-xs) var(--space-md);font-size:var(--font-size-sm);">
+      <kbd>/</kbd><span>Focus library search</span>
+      <kbd>Esc</kbd><span>Blur search · clear all filters</span>
+      <kbd>1</kbd>–<kbd>9</kbd><span>Jump to box (1 = Holding, 2 = Run, 3 = Pass…)</span>
+      <kbd>?</kbd><span>This help</span>
+    </div>
+    <p style="margin-top:var(--space-md);font-size:var(--font-size-xs);color:var(--color-text-muted);">
+      Shortcuts are active only on the Game Plan tab and ignore key presses while typing in inputs.
+    </p>`;
+  showModal(html, { title: "⌨️ Game Plan Shortcuts", icon: "⌨️" });
+}
+
+/* -------------------------------------------------------------------------
    Init
    ------------------------------------------------------------------------- */
 
 function initGamePlan() {
   _gpEnsureBoard();
   renderGamePlan();
+}
+
+// Bind keyboard shortcuts once at script load
+if (typeof document !== "undefined" && !window._gpKeydownBound) {
+  document.addEventListener("keydown", _gpHandleKeydown);
+  window._gpKeydownBound = true;
 }

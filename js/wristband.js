@@ -732,8 +732,8 @@ function buildWristbandCellCustomization(custom = {}) {
       : [],
     componentOrder: Array.isArray(custom.componentOrder)
       ? custom.componentOrder.filter(
-          (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
-        )
+        (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
+      )
       : [],
   };
 
