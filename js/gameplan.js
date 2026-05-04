@@ -301,8 +301,12 @@ function renderGamePlan() {
         <div class="gp-header-week">${totalAssigned} plays drafted across ${allBoxes.length} boxes</div>
       </div>
       <div class="gp-header-actions">
-        <button class="btn btn-sm" data-action="addGamePlanCustomBox" title="Add a free-form drafting box">
-          ➕ Custom Box
+        ${_gpRenderHealthGauge(board)}
+        <button class="btn btn-sm" data-action="openGamePlanAddBucket" title="Add a new bucket from a template">
+          ➕ Add Bucket
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanPrintModal" title="Print the game plan">
+          🖨️ Print
         </button>
         <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
           💾 Save Plan
@@ -457,10 +461,11 @@ function renderGamePlan() {
   const wrapper = document.createElement("div");
   const distHtml = _gpRenderDistributionStrip(board);
   const scoreboardHtml = _gpRenderScoreboard(board);
+  const touchHtml = _gpRenderTouchTracker(board);
   const chipsHtml = _gpRenderFilterChips();
   const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
   const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
-  wrapper.innerHTML = distHtml + scoreboardHtml + chipsHtml + toolbarHtml + jumpBarHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  wrapper.innerHTML = distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
@@ -2149,6 +2154,548 @@ function openGamePlanShortcutsHelp() {
       Shortcuts are active only on the Game Plan tab and ignore key presses while typing in inputs.
     </p>`;
   showModal(html, { title: "⌨️ Game Plan Shortcuts", icon: "⌨️" });
+}
+
+/* -------------------------------------------------------------------------
+   Add Bucket — template-driven custom box creator
+   ------------------------------------------------------------------------- */
+
+const GP_BUCKET_TEMPLATES = [
+  { id: "blank", icon: "📦", label: "Blank Bucket",
+    description: "Free-form box. Add any plays you want.",
+    promptName: "Bucket name:", defaultName: "" },
+  { id: "down-distance", icon: "🔢", label: "Down & Distance",
+    description: "Auto-target plays for a specific down/distance situation.",
+    fields: [
+      { key: "preferredDown", label: "Down", options: ["1", "2", "3", "4"] },
+      { key: "preferredDistance", label: "Distance", options: ["Short", "Medium", "Long"] },
+    ] },
+  { id: "field-position", icon: "🟩", label: "Field Position",
+    description: "Auto-target plays preferred for a specific zone of the field.",
+    fields: [
+      { key: "preferredFieldPosition", label: "Position",
+        options: ["Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon"] },
+    ] },
+  { id: "situation", icon: "🕒", label: "Special Situation",
+    description: "Short Yardage / 2-Min / 4-Min plays.",
+    fields: [
+      { key: "preferredSituation", label: "Situation",
+        options: ["Short Yardage", "2 Minute", "4 Minute"] },
+    ] },
+  { id: "tempo", icon: "⏱️", label: "Tempo Group",
+    description: "Group plays by tempo designation.",
+    fields: [{ key: "tempo", label: "Tempo", source: "tempo" }] },
+  { id: "personnel", icon: "🧮", label: "Personnel Group",
+    description: "Group plays by personnel.",
+    fields: [{ key: "personnel", label: "Personnel", source: "personnel" }] },
+  { id: "formation", icon: "📐", label: "Formation Group",
+    description: "Group plays by formation.",
+    fields: [{ key: "formation", label: "Formation", source: "formation" }] },
+  { id: "vs-coverage", icon: "🛡️", label: "vs. Defense",
+    description: "Plays tagged good vs. specific fronts/coverages.",
+    fields: [
+      { key: "vsTag", label: "Versus", options: ["Man", "Bear", "Okie"] },
+    ] },
+  { id: "must-haves", icon: "⭐", label: "Must Haves",
+    description: "Free-form list of staple plays you must run this game.",
+    promptName: "Bucket name:", defaultName: "Must Haves" },
+  { id: "openers", icon: "🚀", label: "Openers / Script",
+    description: "First 10–15 scripted plays.",
+    promptName: "Bucket name:", defaultName: "Openers" },
+];
+
+function _gpUniqueValues(field) {
+  if (!Array.isArray(plays)) return [];
+  const seen = new Set();
+  plays.forEach((p) => {
+    const v = p[field];
+    if (v && typeof v === "string") seen.add(v.trim());
+  });
+  return Array.from(seen).sort();
+}
+
+async function openGamePlanAddBucket() {
+  const items = GP_BUCKET_TEMPLATES.map((t) => ({
+    value: t.id,
+    label: `${t.icon}  ${t.label} — ${t.description}`,
+  }));
+  const choice = await showListPicker(
+    "Pick a bucket template:",
+    items,
+    { title: "➕ Add Bucket", icon: "➕" },
+  );
+  if (!choice) return;
+  const template = GP_BUCKET_TEMPLATES.find((t) => t.id === choice);
+  if (!template) return;
+  await _gpCreateBucketFromTemplate(template);
+}
+
+async function _gpCreateBucketFromTemplate(template) {
+  // Resolve dynamic field values via per-field pickers
+  const filterCriteria = {};
+  let dynamicLabelPart = "";
+  if (Array.isArray(template.fields)) {
+    for (const field of template.fields) {
+      let opts = field.options;
+      if (!opts && field.source) opts = _gpUniqueValues(field.source);
+      if (!opts || opts.length === 0) {
+        showToast(`No values found for ${field.label}.`, { type: "warning" });
+        return;
+      }
+      const picked = await showListPicker(
+        `Pick ${field.label}:`,
+        opts.map((o) => ({ value: o, label: o })),
+        { title: `${template.icon} ${template.label}`, icon: template.icon },
+      );
+      if (!picked) return;
+      filterCriteria[field.key] = picked;
+      dynamicLabelPart = dynamicLabelPart ? `${dynamicLabelPart} · ${picked}` : picked;
+    }
+  }
+
+  // Compose default name
+  let defaultName = template.defaultName || "";
+  if (!defaultName) {
+    if (template.id === "down-distance") defaultName = `${filterCriteria.preferredDown}rd & ${filterCriteria.preferredDistance}`;
+    else if (template.id === "field-position") defaultName = filterCriteria.preferredFieldPosition;
+    else if (template.id === "situation") defaultName = filterCriteria.preferredSituation;
+    else if (template.id === "tempo") defaultName = `${filterCriteria.tempo} Tempo`;
+    else if (template.id === "personnel") defaultName = `${filterCriteria.personnel} Pers`;
+    else if (template.id === "formation") defaultName = filterCriteria.formation;
+    else if (template.id === "vs-coverage") defaultName = `vs ${filterCriteria.vsTag}`;
+  }
+  const name = await showPrompt("Bucket name:", defaultName, {
+    title: `${template.icon} ${template.label}`,
+    icon: template.icon,
+    placeholder: "Bucket name",
+  });
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+
+  // Generate unique id
+  const board = _gpEnsureBoard();
+  const taken = new Set([
+    ...GP_DEFAULT_BOXES.map((b) => b.id),
+    ...(board.customBoxes || []).map((b) => b.id),
+    GP_HOLDING_ID,
+  ]);
+  let id = trimmed;
+  let n = 2;
+  while (taken.has(id)) id = `${trimmed} ${n++}`;
+
+  _gpUpdateBoard((b) => {
+    b.customBoxes = b.customBoxes || [];
+    b.customBoxes.push({ id, label: trimmed, template: template.id, criteria: filterCriteria });
+    b.assignments[id] = [];
+  });
+
+  // Auto-fill if a template specified criteria
+  if (template.fields && Array.isArray(plays) && plays.length > 0) {
+    const matches = plays.filter((p) => _gpPlayMatchesCriteria(p, template.id, filterCriteria));
+    if (matches.length > 0) {
+      const ok = await showConfirm(
+        `Found <strong>${matches.length}</strong> play${matches.length === 1 ? "" : "s"} matching this template. Add them all to the new bucket?`,
+        { title: "Auto-fill bucket?", icon: "✨", confirmText: `Add ${matches.length}`, cancelText: "Skip" },
+      );
+      if (ok) {
+        _gpAddSigsToBox(matches.map(_gpPlaySignature), id);
+        showToast(`Added ${matches.length} plays to “${trimmed}”`, { type: "success" });
+      }
+    } else {
+      showToast(`Bucket “${trimmed}” added (no matching plays yet)`, { type: "info" });
+    }
+  } else {
+    showToast(`Added bucket “${trimmed}”`, { type: "success" });
+  }
+  renderGamePlan();
+}
+
+function _gpPlayMatchesCriteria(play, templateId, criteria) {
+  if (!play || !criteria) return false;
+  if (templateId === "vs-coverage") {
+    if (criteria.vsTag === "Man") return !!play.goodVsMan;
+    if (criteria.vsTag === "Bear") return !!play.goodVsBear;
+    if (criteria.vsTag === "Okie") return !!play.goodVsOkie;
+    return false;
+  }
+  return Object.entries(criteria).every(([k, v]) => (play[k] || "") === v);
+}
+
+/* -------------------------------------------------------------------------
+   Plan Health Score
+   ------------------------------------------------------------------------- */
+
+function _gpComputePlanHealth(board) {
+  const drafted = _gpAllDraftedPlays(board);
+  if (drafted.length === 0) {
+    return { score: 0, label: "No plan yet", parts: [] };
+  }
+  const parts = [];
+
+  // 1. Target completion (40%)
+  const targets = board.targets || {};
+  const targetIds = Object.keys(targets).filter((k) => Number(targets[k]) > 0);
+  let targetScore = 100;
+  if (targetIds.length > 0) {
+    let met = 0;
+    targetIds.forEach((k) => {
+      const t = Number(targets[k]) || 0;
+      const c = (board.assignments[k] || []).length;
+      if (c >= t) met += 1;
+    });
+    targetScore = Math.round((met / targetIds.length) * 100);
+  }
+  parts.push({ key: "targets", label: "Targets met", score: targetScore, weight: 0.4,
+    detail: targetIds.length === 0 ? "No targets set" : `${targetIds.filter((k) => (board.assignments[k] || []).length >= (Number(targets[k]) || 0)).length} / ${targetIds.length}` });
+
+  // 2. Scenario coverage (30%)
+  let covered = 0;
+  GP_COVERAGE_SCENARIOS.forEach((s) => {
+    const count = drafted.filter(s.match).length;
+    if (count >= 3) covered += 1;
+    else if (count >= 1) covered += 0.5;
+  });
+  const scenarioScore = Math.round((covered / GP_COVERAGE_SCENARIOS.length) * 100);
+  parts.push({ key: "scenarios", label: "Scenario coverage", score: scenarioScore, weight: 0.3,
+    detail: `${Math.round(covered)} / ${GP_COVERAGE_SCENARIOS.length} scenarios` });
+
+  // 3. Type balance (20%)
+  const typeCounts = {};
+  drafted.forEach((p) => {
+    const t = GP_TYPE_ALIASES[p.type] || p.type || "Other";
+    typeCounts[t] = (typeCounts[t] || 0) + 1;
+  });
+  const typesPresent = Object.keys(typeCounts).length;
+  const balanceScore = Math.min(100, typesPresent * 20); // 5+ types = 100
+  parts.push({ key: "balance", label: "Type variety", score: balanceScore, weight: 0.2,
+    detail: `${typesPresent} types in mix` });
+
+  // 4. Holding cleared (10%)
+  const holdingCount = (board.assignments[GP_HOLDING_ID] || []).length;
+  const holdingScore = holdingCount === 0 ? 100 : Math.max(0, 100 - holdingCount * 10);
+  parts.push({ key: "holding", label: "Holding cleared", score: holdingScore, weight: 0.1,
+    detail: holdingCount === 0 ? "Empty" : `${holdingCount} unrouted` });
+
+  const score = Math.round(parts.reduce((sum, p) => sum + (p.score * p.weight), 0));
+  let label = "Excellent";
+  if (score < 40) label = "Needs work";
+  else if (score < 65) label = "In progress";
+  else if (score < 85) label = "Solid";
+  return { score, label, parts };
+}
+
+function _gpRenderHealthGauge(board) {
+  const h = _gpComputePlanHealth(board);
+  const status = h.score >= 85 ? "ok" : h.score >= 65 ? "good" : h.score >= 40 ? "warn" : "low";
+  // SVG circular progress
+  const r = 22;
+  const c = 2 * Math.PI * r;
+  const offset = c - (h.score / 100) * c;
+  return `
+    <button class="gp-health" data-action="openGamePlanHealthDetail"
+      title="Plan Health: ${h.score}/100 — click for breakdown">
+      <svg class="gp-health-svg" viewBox="0 0 50 50" aria-hidden="true">
+        <circle class="gp-health-track" cx="25" cy="25" r="${r}" />
+        <circle class="gp-health-fill gp-health-${status}" cx="25" cy="25" r="${r}"
+          stroke-dasharray="${c.toFixed(2)}" stroke-dashoffset="${offset.toFixed(2)}" />
+      </svg>
+      <div class="gp-health-text">
+        <div class="gp-health-score">${h.score}</div>
+        <div class="gp-health-label">${escapeHtml(h.label)}</div>
+      </div>
+    </button>`;
+}
+
+function openGamePlanHealthDetail() {
+  const board = _gpEnsureBoard();
+  const h = _gpComputePlanHealth(board);
+  const rows = h.parts.map((p) => {
+    const status = p.score >= 85 ? "ok" : p.score >= 65 ? "good" : p.score >= 40 ? "warn" : "low";
+    return `
+      <div class="gp-health-row">
+        <div class="gp-health-row-label">
+          <strong>${escapeHtml(p.label)}</strong>
+          <span class="gp-health-row-detail">${escapeHtml(p.detail)}</span>
+        </div>
+        <div class="gp-health-row-bar">
+          <div class="gp-health-row-fill gp-health-${status}" style="width:${p.score}%"></div>
+        </div>
+        <div class="gp-health-row-score">${p.score}</div>
+      </div>`;
+  }).join("");
+  const html = `
+    <div class="gp-health-detail">
+      <div class="gp-health-detail-summary gp-health-${h.score >= 85 ? "ok" : h.score >= 65 ? "good" : h.score >= 40 ? "warn" : "low"}">
+        <div class="gp-health-detail-score">${h.score}</div>
+        <div class="gp-health-detail-label">${escapeHtml(h.label)}</div>
+      </div>
+      <div class="gp-health-rows">${rows}</div>
+      <p class="gp-health-explainer">
+        Score is a weighted blend of how many bucket targets are met (40%),
+        coverage across the 9 game scenarios (30%), variety of play types (20%),
+        and whether the Holding box is cleared (10%).
+      </p>
+    </div>`.replace(/\n\s+/g, " ");
+  showModal(html, { title: "🩺 Plan Health Breakdown", icon: "🩺" });
+}
+
+/* -------------------------------------------------------------------------
+   Player Touch Tracker
+   ------------------------------------------------------------------------- */
+
+function _gpComputeTouchCounts(board) {
+  const drafted = _gpAllDraftedPlays(board);
+  const counts = {}; // { displayName: { count, positions: Set } }
+  drafted.forEach((p) => {
+    [1, 2, 3].forEach((i) => {
+      const pos = p[`keyPlayer${i}`] || "";
+      const name = p[`keyPlayerName${i}`] || "";
+      const display = (name && name.trim()) || (pos && pos.trim()) || "";
+      if (!display) return;
+      if (!counts[display]) counts[display] = { count: 0, positions: new Set() };
+      counts[display].count += 1;
+      if (pos) counts[display].positions.add(pos);
+    });
+  });
+  return counts;
+}
+
+function _gpRenderTouchTracker(board) {
+  const counts = _gpComputeTouchCounts(board);
+  const entries = Object.entries(counts);
+  if (entries.length === 0) return "";
+  entries.sort((a, b) => b[1].count - a[1].count);
+  const max = entries[0][1].count || 1;
+  const tiles = entries.map(([name, info]) => {
+    const heat = Math.round((info.count / max) * 100);
+    const positions = Array.from(info.positions).join(", ");
+    return `
+      <button class="gp-touch-tile" data-action="filterGamePlanByPlayer"
+        data-arg="${escapeHtml(name)}"
+        title="${escapeHtml(name)} — ${info.count} touches${positions ? ` • ${escapeHtml(positions)}` : ""}. Click to filter library.">
+        <div class="gp-touch-name">${escapeHtml(name)}</div>
+        <div class="gp-touch-count">${info.count}</div>
+        <div class="gp-touch-bar">
+          <div class="gp-touch-bar-fill" style="width:${heat}%"></div>
+        </div>
+      </button>`;
+  }).join("");
+  return `
+    <details class="gp-touch-tracker" ${entries.length <= 8 ? "open" : ""}>
+      <summary>👥 Touch Tracker <span class="gp-touch-hint">${entries.length} player${entries.length === 1 ? "" : "s"} • click a tile to filter library</span></summary>
+      <div class="gp-touch-grid">${tiles}</div>
+    </details>`;
+}
+
+function filterGamePlanByPlayer(name) {
+  if (!name) return;
+  // Use search to filter library by player name
+  if (_gpFilters.search === name) {
+    _gpFilters.search = "";
+  } else {
+    _gpFilters.search = name;
+  }
+  renderGamePlan();
+  const search = document.getElementById("gpSearch");
+  if (search) search.value = _gpFilters.search;
+}
+
+/* -------------------------------------------------------------------------
+   Print View
+   ------------------------------------------------------------------------- */
+
+let _gpPrintOptions = {
+  paperSize: "letter",
+  orientation: "landscape",
+  columns: 3,
+  showHash: true,
+  showNotes: true,
+  showProgress: true,
+  showMeta: true,
+  showHolding: false,
+  showEmpty: false,
+};
+
+async function openGamePlanPrintModal() {
+  const o = _gpPrintOptions;
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal" role="dialog" aria-modal="true">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">🖨️</span>
+          <h3 class="custom-modal-title">Print Game Plan</h3>
+        </div>
+        <div class="custom-modal-body">
+          <div class="gp-print-form">
+            <div class="gp-print-row">
+              <label>Paper</label>
+              <select id="gpPrintPaper">
+                <option value="letter" ${o.paperSize === "letter" ? "selected" : ""}>Letter (8.5×11)</option>
+                <option value="legal" ${o.paperSize === "legal" ? "selected" : ""}>Legal (8.5×14)</option>
+                <option value="tabloid" ${o.paperSize === "tabloid" ? "selected" : ""}>Tabloid (11×17)</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
+              <label>Orientation</label>
+              <select id="gpPrintOrientation">
+                <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait</option>
+                <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
+              <label>Columns</label>
+              <select id="gpPrintColumns">
+                <option value="2" ${o.columns === 2 ? "selected" : ""}>2</option>
+                <option value="3" ${o.columns === 3 ? "selected" : ""}>3</option>
+                <option value="4" ${o.columns === 4 ? "selected" : ""}>4</option>
+                <option value="5" ${o.columns === 5 ? "selected" : ""}>5</option>
+              </select>
+            </div>
+            <div class="gp-print-row gp-print-toggles">
+              <label><input type="checkbox" id="gpPrintMeta" ${o.showMeta ? "checked" : ""}> Show formation/personnel</label>
+              <label><input type="checkbox" id="gpPrintHash" ${o.showHash ? "checked" : ""}> Show hash bar</label>
+              <label><input type="checkbox" id="gpPrintProgress" ${o.showProgress ? "checked" : ""}> Show targets</label>
+              <label><input type="checkbox" id="gpPrintNotes" ${o.showNotes ? "checked" : ""}> Show notes</label>
+              <label><input type="checkbox" id="gpPrintHolding" ${o.showHolding ? "checked" : ""}> Include Holding box</label>
+              <label><input type="checkbox" id="gpPrintEmpty" ${o.showEmpty ? "checked" : ""}> Include empty boxes</label>
+            </div>
+          </div>
+        </div>
+        <div class="custom-modal-actions">
+          <button class="btn custom-modal-btn custom-modal-cancel" id="gpPrintCancel">Cancel</button>
+          <button class="btn btn-primary custom-modal-btn" id="gpPrintConfirm">Print</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    const close = (ok) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.remove(), 200);
+      resolve(ok);
+    };
+    overlay.querySelector("#gpPrintCancel").addEventListener("click", () => close(false));
+    overlay.querySelector("#gpPrintConfirm").addEventListener("click", () => {
+      _gpPrintOptions = {
+        paperSize: overlay.querySelector("#gpPrintPaper").value,
+        orientation: overlay.querySelector("#gpPrintOrientation").value,
+        columns: parseInt(overlay.querySelector("#gpPrintColumns").value, 10) || 3,
+        showMeta: overlay.querySelector("#gpPrintMeta").checked,
+        showHash: overlay.querySelector("#gpPrintHash").checked,
+        showProgress: overlay.querySelector("#gpPrintProgress").checked,
+        showNotes: overlay.querySelector("#gpPrintNotes").checked,
+        showHolding: overlay.querySelector("#gpPrintHolding").checked,
+        showEmpty: overlay.querySelector("#gpPrintEmpty").checked,
+      };
+      close(true);
+      _gpRenderPrintViewAndPrint();
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); close(false); }
+    });
+  });
+}
+
+function _gpRenderPrintViewAndPrint() {
+  const board = _gpEnsureBoard();
+  const o = _gpPrintOptions;
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw && gw.opponentName ? gw.opponentName : "";
+  const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";
+
+  let allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  if (o.showHolding) allBoxes = [GP_HOLDING_BOX, ...allBoxes];
+  if (!o.showEmpty) {
+    allBoxes = allBoxes.filter((b) => (board.assignments[b.id] || []).length > 0);
+  }
+
+  const boxesHtml = allBoxes.map((b) => _gpRenderPrintBox(b, board)).join("");
+  const totalAssigned = _gpAllAssignedSigs(board).size;
+  const headerHtml = `
+    <div class="gp-print-header">
+      <div class="gp-print-title">
+        <span class="gp-print-team">${typeof getTeamName === "function" ? escapeHtml(getTeamName() || "Game Plan") : "Game Plan"}</span>
+        ${opponent ? `<span class="gp-print-opp">vs ${escapeHtml(opponent)}</span>` : ""}
+      </div>
+      <div class="gp-print-meta">
+        ${weekLabel ? `<span>${escapeHtml(weekLabel)}</span>` : ""}
+        <span>${totalAssigned} plays drafted</span>
+        <span>${new Date().toLocaleDateString()}</span>
+      </div>
+    </div>`;
+
+  // Build the print container; written into a hidden host that print CSS unhides
+  let host = document.getElementById("gpPrintRoot");
+  if (!host) {
+    host = document.createElement("div");
+    host.id = "gpPrintRoot";
+    document.body.appendChild(host);
+  }
+  host.className = `gp-print-root gp-print-${o.paperSize} gp-print-${o.orientation}`;
+  host.style.setProperty("--gp-print-cols", String(o.columns));
+  host.innerHTML = headerHtml + `<div class="gp-print-grid">${boxesHtml}</div>`;
+  document.body.classList.add("gp-printing");
+  // Set @page size hint via style tag (one-shot)
+  let pageStyle = document.getElementById("gpPrintPageStyle");
+  if (!pageStyle) {
+    pageStyle = document.createElement("style");
+    pageStyle.id = "gpPrintPageStyle";
+    document.head.appendChild(pageStyle);
+  }
+  pageStyle.textContent = `@page { size: ${o.paperSize} ${o.orientation}; margin: 0.4in; }`;
+  // Print, then clean up
+  setTimeout(() => {
+    window.print();
+    setTimeout(() => {
+      document.body.classList.remove("gp-printing");
+    }, 500);
+  }, 100);
+}
+
+function _gpRenderPrintBox(box, board) {
+  const o = _gpPrintOptions;
+  const list = (board.assignments[box.id] || []).slice();
+  const target = Number(board.targets && board.targets[box.id]) || 0;
+  const note = (board.notes && board.notes[box.id]) || "";
+  const accent = GP_BOX_ACCENTS[box.id] || "";
+  const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
+  const targetLabel = o.showProgress && target > 0 ? `<span class="gp-print-target">${list.length}/${target}</span>` : `<span class="gp-print-target">${list.length}</span>`;
+  const noteHtml = o.showNotes && note ? `<div class="gp-print-note">${escapeHtml(note)}</div>` : "";
+  const hashHtml = o.showHash ? _gpRenderBoxHashBar(list).replace(/gp-hash-/g, "gp-print-hash-") : "";
+  const playsHtml = list.length === 0
+    ? `<div class="gp-print-empty">— empty —</div>`
+    : list.map((p) => _gpRenderPrintPlay(p)).join("");
+  return `
+    <div class="gp-print-box" ${accentStyle}>
+      <div class="gp-print-box-head">
+        <span class="gp-print-box-label">${escapeHtml(box.label)}</span>
+        ${targetLabel}
+      </div>
+      ${hashHtml}
+      ${noteHtml}
+      <ol class="gp-print-plays">${playsHtml}</ol>
+    </div>`;
+}
+
+function _gpRenderPrintPlay(play) {
+  const o = _gpPrintOptions;
+  const callHtml = typeof getFullCall === "function"
+    ? getFullCall(play, { showLineCall: false })
+    : escapeHtml(play.play || "");
+  const meta = [];
+  if (o.showMeta) {
+    if (play.formation) meta.push(escapeHtml(play.formation));
+    if (play.personnel) meta.push(escapeHtml(play.personnel));
+    if (play.preferredHash) meta.push(`<em>${escapeHtml(play.preferredHash)} hash</em>`);
+  }
+  const metaHtml = meta.length > 0 ? `<span class="gp-print-play-meta">${meta.join(" · ")}</span>` : "";
+  return `<li class="gp-print-play">${callHtml}${metaHtml}</li>`;
 }
 
 /* -------------------------------------------------------------------------

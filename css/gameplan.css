@@ -913,6 +913,249 @@ body.gp-dragging-from-box .gp-trash-zone {
   font-style: italic;
 }
 
+/* -------- v343: Plan Health gauge -------- */
+.gp-health {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px var(--space-xs) 2px 2px;
+  cursor: pointer;
+  font-family: inherit;
+}
+.gp-health:hover { background: var(--color-bg-hover-row); }
+.gp-health-svg {
+  width: 38px;
+  height: 38px;
+  transform: rotate(-90deg);
+  flex: 0 0 auto;
+}
+.gp-health-track {
+  fill: none;
+  stroke: var(--color-border-light);
+  stroke-width: 5;
+}
+.gp-health-fill {
+  fill: none;
+  stroke-width: 5;
+  stroke-linecap: round;
+  transition: stroke-dashoffset var(--transition-normal);
+}
+.gp-health-ok { stroke: var(--color-success); }
+.gp-health-good { stroke: var(--color-info, #2563eb); }
+.gp-health-warn { stroke: var(--color-warning); }
+.gp-health-low { stroke: var(--color-danger); }
+.gp-health-text { display: flex; flex-direction: column; line-height: 1; }
+.gp-health-score { font-size: var(--font-size-md); font-weight: 700; color: var(--color-text); }
+.gp-health-label { font-size: 9px; color: var(--color-text-muted); text-transform: uppercase; letter-spacing: 0.04em; }
+
+/* Health detail modal */
+.gp-health-detail { display: flex; flex-direction: column; gap: var(--space-md); }
+.gp-health-detail-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  border-left: 6px solid;
+  background: var(--color-bg-light);
+}
+.gp-health-detail-summary.gp-health-ok { border-left-color: var(--color-success); }
+.gp-health-detail-summary.gp-health-good { border-left-color: var(--color-info, #2563eb); }
+.gp-health-detail-summary.gp-health-warn { border-left-color: var(--color-warning); }
+.gp-health-detail-summary.gp-health-low { border-left-color: var(--color-danger); }
+.gp-health-detail-score { font-size: 48px; font-weight: 800; line-height: 1; }
+.gp-health-detail-label { font-size: var(--font-size-md); color: var(--color-text-muted); }
+.gp-health-rows { display: flex; flex-direction: column; gap: var(--space-sm); }
+.gp-health-row {
+  display: grid;
+  grid-template-columns: 1.6fr 2fr auto;
+  gap: var(--space-sm);
+  align-items: center;
+}
+.gp-health-row-label { display: flex; flex-direction: column; gap: 2px; }
+.gp-health-row-detail { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.gp-health-row-bar {
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-input);
+  overflow: hidden;
+}
+.gp-health-row-fill { height: 100%; transition: width var(--transition-normal); }
+.gp-health-row-fill.gp-health-ok { background: var(--color-success); }
+.gp-health-row-fill.gp-health-good { background: var(--color-info, #2563eb); }
+.gp-health-row-fill.gp-health-warn { background: var(--color-warning); }
+.gp-health-row-fill.gp-health-low { background: var(--color-danger); }
+.gp-health-row-score { font-weight: 700; font-variant-numeric: tabular-nums; min-width: 36px; text-align: right; }
+.gp-health-explainer { font-size: var(--font-size-xs); color: var(--color-text-muted); margin: 0; }
+
+/* -------- v343: Touch Tracker -------- */
+.gp-touch-tracker {
+  margin: 0 0 var(--space-sm) 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+.gp-touch-tracker > summary {
+  cursor: pointer;
+  list-style: none;
+  padding: var(--space-xs) var(--space-md);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  user-select: none;
+}
+.gp-touch-tracker > summary::-webkit-details-marker { display: none; }
+.gp-touch-tracker > summary::before {
+  content: "▶ ";
+  display: inline-block;
+  font-size: 0.7em;
+  margin-right: 0.25em;
+  transition: transform var(--transition-fast);
+}
+.gp-touch-tracker[open] > summary::before { transform: rotate(90deg); }
+.gp-touch-hint { font-weight: 400; font-size: var(--font-size-xs); color: var(--color-text-muted); margin-left: var(--space-sm); }
+.gp-touch-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-md) var(--space-md);
+}
+.gp-touch-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-input);
+  cursor: pointer;
+  font-family: inherit;
+  text-align: left;
+  transition: transform var(--transition-fast);
+}
+.gp-touch-tile:hover { transform: translateY(-1px); box-shadow: var(--shadow-sm); }
+.gp-touch-name { font-size: var(--font-size-xs); font-weight: 600; color: var(--color-text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.gp-touch-count { font-size: var(--font-size-lg); font-weight: 700; line-height: 1; color: var(--color-primary); }
+.gp-touch-bar { height: 4px; border-radius: var(--radius-pill); background: var(--color-bg-light); overflow: hidden; }
+.gp-touch-bar-fill { height: 100%; background: var(--color-primary); transition: width var(--transition-normal); }
+
+/* -------- v343: Add Bucket modal helpers — re-uses .gp-list-picker -------- */
+
+/* -------- v343: Print options form -------- */
+.gp-print-form { display: flex; flex-direction: column; gap: var(--space-sm); }
+.gp-print-row { display: grid; grid-template-columns: 110px 1fr; align-items: center; gap: var(--space-sm); }
+.gp-print-row select { width: 100%; }
+.gp-print-toggles {
+  grid-template-columns: 1fr;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px dashed var(--color-border-light);
+}
+.gp-print-toggles label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+}
+
+/* -------- v343: Print render root (hidden in screen, shown only in print) -------- */
+.gp-print-root { display: none; }
+
+@media screen {
+  body.gp-printing .gp-print-root { display: none; } /* still hidden on screen even when printing flag set */
+}
+
+/* When printing, hide app chrome and show only the print root */
+@media print {
+  body.gp-printing > * { display: none !important; }
+  body.gp-printing > .gp-print-root,
+  body.gp-printing #gpPrintRoot {
+    display: block !important;
+    position: static !important;
+    color: #000 !important;
+    background: #fff !important;
+    font-family: var(--font-sans);
+  }
+  body.gp-printing .gp-print-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 2px solid #000;
+    padding-bottom: 4px;
+    margin-bottom: 8px;
+  }
+  body.gp-printing .gp-print-title { font-size: 16pt; font-weight: 800; display: flex; gap: 12px; }
+  body.gp-printing .gp-print-team { color: #000; }
+  body.gp-printing .gp-print-opp { color: #444; font-weight: 600; }
+  body.gp-printing .gp-print-meta { font-size: 9pt; color: #555; display: flex; gap: 12px; }
+  body.gp-printing .gp-print-grid {
+    display: grid;
+    grid-template-columns: repeat(var(--gp-print-cols, 3), 1fr);
+    gap: 6px;
+  }
+  body.gp-printing .gp-print-box {
+    border: 1px solid #000;
+    border-left: 4px solid var(--gp-box-accent, #000);
+    border-radius: 3px;
+    padding: 4px 6px;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+  body.gp-printing .gp-print-box-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    border-bottom: 1px solid #000;
+    padding-bottom: 2px;
+    margin-bottom: 3px;
+  }
+  body.gp-printing .gp-print-box-label { font-size: 10pt; font-weight: 700; }
+  body.gp-printing .gp-print-target { font-size: 8pt; color: #555; font-variant-numeric: tabular-nums; }
+  body.gp-printing .gp-print-note {
+    font-size: 8pt;
+    font-style: italic;
+    color: #444;
+    border-left: 2px solid #888;
+    padding-left: 4px;
+    margin: 2px 0;
+  }
+  body.gp-printing .gp-print-plays {
+    list-style: decimal inside;
+    margin: 2px 0 0;
+    padding: 0;
+  }
+  body.gp-printing .gp-print-play {
+    font-size: 8.5pt;
+    line-height: 1.25;
+    padding: 1px 0;
+    break-inside: avoid;
+  }
+  body.gp-printing .gp-print-play-meta {
+    color: #555;
+    font-size: 7.5pt;
+    margin-left: 4px;
+  }
+  body.gp-printing .gp-print-empty {
+    font-size: 8pt;
+    color: #888;
+    font-style: italic;
+    text-align: center;
+    padding: 4px;
+  }
+  /* Hash bar in print: small monochrome bar */
+  body.gp-printing .gp-hash-bar { padding: 2px 0; gap: 4px; }
+  body.gp-printing .gp-hash-bar-label { font-size: 7pt; color: #666; }
+  body.gp-printing .gp-hash-bar-track { height: 6px; border: 1px solid #000; }
+  body.gp-printing .gp-hash-seg { font-size: 6pt; }
+  body.gp-printing .gp-hash-left { background: #2563eb !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.gp-printing .gp-hash-middle { background: #777 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.gp-printing .gp-hash-right { background: #16a34a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body.gp-printing .gp-hash-bar-unset { font-size: 7pt; color: #888; }
+}
+
 /* Print: when printing the game plan, hide chrome and show boxes only */
 @media print {
   body[data-active-tab="gameplan"] .panel:not(#gameplan),
