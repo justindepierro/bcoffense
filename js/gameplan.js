@@ -82,6 +82,51 @@ const GP_BOX_ACCENTS = {
   Movement: "#9333ea",
 };
 
+// Coach-facing description of what each default box is for. Shown in the
+// box info popup and the (optional) print "detail" mode.
+const GP_BOX_DESCRIPTIONS = {
+  Run: {
+    intent: "Core run game — physical, downhill plays you trust on early downs and short yardage.",
+    use: "1st & 10, 2nd & medium, short yardage, 4-minute, goal line.",
+    looks: "Inside zone, outside zone, gap schemes (power/counter), iso, lead.",
+  },
+  Pass: {
+    intent: "Drop-back pass concepts — your full menu of route combinations.",
+    use: "2nd & long, 3rd & medium/long, two-minute, comebacks.",
+    looks: "5/7-step protections, full-field reads, levels, mesh, dagger.",
+  },
+  Screen: {
+    intent: "Built-in answer to pressure and aggressive fronts.",
+    use: "vs. heavy blitz, vs. wide-9, getting the ball out hot.",
+    looks: "Bubble, tunnel, slow, jailbreak, swing.",
+  },
+  Quick: {
+    intent: "Quick-game rhythm passes — get the ball out in <2 sec.",
+    use: "1st down, 3rd & short/medium, vs. soft coverage, tempo.",
+    looks: "Hitches, slants, stick, snag, spacing.",
+  },
+  "Play Action": {
+    intent: "Sell run, take a shot — most effective when run game is honest.",
+    use: "1st down, 2nd & short, after 4+ yard run, red zone.",
+    looks: "Boot, naked, deep crossers, posts, overs.",
+  },
+  RPO: {
+    intent: "Run-pass option — eliminates a defender by reading him.",
+    use: "All downs, vs. light boxes, vs. crashing safeties.",
+    looks: "Bubble RPO, glance RPO, slant RPO, pop RPO.",
+  },
+  "Run Option": {
+    intent: "QB-involved run game — read scheme without a forward pass tag.",
+    use: "Boxes you can't outflank, short yardage with a running QB.",
+    looks: "Zone read, power read, midline, speed option.",
+  },
+  Movement: {
+    intent: "Pre-snap motion / shifts that change strength or assignment.",
+    use: "Get a leverage answer, ID coverage, create conflict.",
+    looks: "Jet motion, orbit, return, fly, shift to trips.",
+  },
+};
+
 // Scenario coverage scoreboard — each item maps to a real-world game situation
 // the coach should have plays ready for. Click a tile to auto-apply the
 // matching filter set on the library.
@@ -629,6 +674,161 @@ function _gpRenderBoxHashBar(list) {
     </div>`;
 }
 
+/* -------------------------------------------------------------------------
+   Box info popup — describes what a box is for and shows stats
+   ------------------------------------------------------------------------- */
+
+// Aggregate stats from a list of plays — used by the info modal and (optionally) print-detail mode.
+function _gpComputeBoxStats(list) {
+  const tally = (key) => {
+    const counts = new Map();
+    list.forEach((p) => {
+      const v = (p && p[key] ? String(p[key]).trim() : "") || "—";
+      counts.set(v, (counts.get(v) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  };
+  const touches = new Map();
+  list.forEach((p) => {
+    [p.keyPlayerName1, p.keyPlayerName2, p.keyPlayerName3].forEach((name) => {
+      const n = (name || "").trim();
+      if (!n) return;
+      touches.set(n, (touches.get(n) || 0) + 1);
+    });
+  });
+  const touchList = Array.from(touches.entries()).sort((a, b) => b[1] - a[1]);
+  const dd = new Map();
+  list.forEach((p) => {
+    const d = (p.preferredDown || "").trim();
+    const dist = (p.preferredDistance || "").trim();
+    if (!d && !dist) return;
+    const downSuffix = d === "1" ? "st" : d === "2" ? "nd" : d === "3" ? "rd" : d ? "th" : "";
+    const key = `${d ? d + downSuffix : "—"} & ${dist || "—"}`;
+    dd.set(key, (dd.get(key) || 0) + 1);
+  });
+  return {
+    type: tally("type"),
+    formation: tally("formation"),
+    personnel: tally("personnel"),
+    basePlay: tally("basePlay"),
+    tempo: tally("tempo"),
+    situation: tally("preferredSituation"),
+    fieldPos: tally("preferredFieldPosition"),
+    hash: tally("preferredHash"),
+    downDistance: Array.from(dd.entries()).sort((a, b) => b[1] - a[1]),
+    touches: touchList,
+  };
+}
+
+function _gpStatRowHtml(label, entries, opts) {
+  const o = opts || {};
+  const limit = o.limit || 5;
+  const onlyReal = entries.filter(([k]) => k && k !== "—");
+  if (onlyReal.length === 0) return "";
+  const total = onlyReal.reduce((s, [, n]) => s + n, 0) || 1;
+  const top = onlyReal.slice(0, limit);
+  const more = onlyReal.length - top.length;
+  const chips = top.map(([k, n]) => {
+    const pct = Math.round((n / total) * 100);
+    return `<span class="gp-info-chip"><strong>${escapeHtml(k)}</strong>`
+      + `<span class="gp-info-chip-count">${n}</span>`
+      + `<span class="gp-info-chip-pct">${pct}%</span></span>`;
+  }).join("");
+  const moreLbl = more > 0 ? `<span class="gp-info-chip-more">+${more} more</span>` : "";
+  return `
+    <div class="gp-info-row">
+      <div class="gp-info-row-label">${escapeHtml(label)}</div>
+      <div class="gp-info-row-chips">${chips}${moreLbl}</div>
+    </div>`;
+}
+
+function showGamePlanBoxInfo(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const box = allBoxes.find((b) => b.id === boxId);
+  if (!box) return;
+  const list = (board.assignments[boxId] || []).slice();
+  const target = Number(board.targets && board.targets[boxId]) || 0;
+  const note = (board.notes && board.notes[boxId]) || "";
+  const accent = GP_BOX_ACCENTS[boxId] || "var(--color-primary)";
+  const desc = GP_BOX_DESCRIPTIONS[boxId];
+  const isHolding = boxId === GP_HOLDING_ID;
+  const isCustom = (board.customBoxes || []).some((cb) => cb.id === boxId);
+  const stats = _gpComputeBoxStats(list);
+
+  const descHtml = desc ? `
+    <div class="gp-info-desc">
+      <div class="gp-info-desc-row"><strong>Intent:</strong> ${escapeHtml(desc.intent)}</div>
+      <div class="gp-info-desc-row"><strong>Use it:</strong> ${escapeHtml(desc.use)}</div>
+      <div class="gp-info-desc-row"><strong>Looks like:</strong> ${escapeHtml(desc.looks)}</div>
+    </div>` : isHolding ? `
+    <div class="gp-info-desc">
+      <div class="gp-info-desc-row">Untyped tagged plays land here. Drag them out to any box, or use 🚀 Auto-route to send each play to its matching default box by type.</div>
+    </div>` : isCustom ? `
+    <div class="gp-info-desc">
+      <div class="gp-info-desc-row">Custom box. Use it for situational packages, opponent-specific menus, or anything outside your default play types.</div>
+    </div>` : "";
+
+  const noteHtml = note ? `
+    <div class="gp-info-note">
+      <strong>📝 Your note:</strong> ${escapeHtml(note)}
+    </div>` : "";
+
+  const countHtml = `
+    <div class="gp-info-count">
+      <span class="gp-info-count-num">${list.length}</span>
+      <span class="gp-info-count-lbl">play${list.length === 1 ? "" : "s"} drafted${target > 0 ? ` · target <strong>${target}</strong>` : ""}</span>
+    </div>`;
+
+  const statsHtml = list.length === 0
+    ? `<div class="gp-info-empty">No plays drafted yet — drag from the library or click ➕ Add Play.</div>`
+    : [
+      _gpStatRowHtml("Touches (key player)", stats.touches, { limit: 8 }),
+      _gpStatRowHtml("Type", stats.type, { limit: 6 }),
+      _gpStatRowHtml("Formation", stats.formation, { limit: 6 }),
+      _gpStatRowHtml("Personnel", stats.personnel, { limit: 6 }),
+      _gpStatRowHtml("Down & Distance", stats.downDistance, { limit: 8 }),
+      _gpStatRowHtml("Situation", stats.situation, { limit: 6 }),
+      _gpStatRowHtml("Field position", stats.fieldPos, { limit: 6 }),
+      _gpStatRowHtml("Hash", stats.hash, { limit: 4 }),
+      _gpStatRowHtml("Base play", stats.basePlay, { limit: 8 }),
+      _gpStatRowHtml("Tempo", stats.tempo, { limit: 4 }),
+    ].filter(Boolean).join("");
+
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay gp-info-modal-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal gp-info-modal" role="dialog" aria-modal="true" style="--gp-info-accent:${accent}">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">ℹ️</span>
+        <h3 class="custom-modal-title">${escapeHtml(box.label)}</h3>
+      </div>
+      <div class="custom-modal-body">
+        ${countHtml}
+        ${descHtml}
+        ${noteHtml}
+        <div class="gp-info-stats">${statsHtml}</div>
+      </div>
+      <div class="custom-modal-actions">
+        <button class="btn custom-modal-btn custom-modal-cancel" data-gp-info-close>Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+
+  const close = () => {
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 200);
+  };
+  overlay.querySelector("[data-gp-info-close]").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+  });
+}
+
 function _gpRenderBox(box, board) {
   const list = (board.assignments[box.id] || []).slice();
   const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
@@ -707,6 +907,8 @@ function _gpRenderBox(box, board) {
           data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
         <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
           data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>
+        <button class="btn btn-sm btn-secondary" title="What goes in this box? View stats and breakdown"
+          data-action="showGamePlanBoxInfo" data-arg="${escapeHtml(box.id)}">ℹ️</button>
         ${!isHolding ? `
           <button class="btn btn-sm btn-secondary" title="Move up"
             data-action="moveGamePlanBoxUp" data-arg="${escapeHtml(box.id)}">↑</button>
@@ -2725,6 +2927,7 @@ let _gpPrintOptions = {
   bucketPerPage: false,
   showPageNumbers: true,
   showFooter: true,
+  showDetail: false,
 };
 
 async function openGamePlanPrintModal() {
@@ -2774,6 +2977,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintBucketPerPage" ${o.bucketPerPage ? "checked" : ""}> One bucket per page</label>
               <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
               <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
+              <label><input type="checkbox" id="gpPrintDetail" ${o.showDetail ? "checked" : ""}> Show bucket detail (touches, type, D&D)</label>
             </div>
           </div>
         </div>
@@ -2806,6 +3010,7 @@ async function openGamePlanPrintModal() {
         bucketPerPage: overlay.querySelector("#gpPrintBucketPerPage").checked,
         showPageNumbers: overlay.querySelector("#gpPrintPageNumbers").checked,
         showFooter: overlay.querySelector("#gpPrintFooter").checked,
+        showDetail: overlay.querySelector("#gpPrintDetail").checked,
       };
       close(true);
       _gpRenderPrintViewAndPrint();
@@ -2901,6 +3106,7 @@ function _gpRenderPrintBox(box, board) {
   const targetLabel = o.showProgress && target > 0 ? `<span class="gp-print-target">${list.length}/${target}</span>` : `<span class="gp-print-target">${list.length}</span>`;
   const noteHtml = o.showNotes && note ? `<div class="gp-print-note">${escapeHtml(note)}</div>` : "";
   const hashHtml = o.showHash ? _gpRenderBoxHashBar(list) : "";
+  const detailHtml = o.showDetail && list.length > 0 ? _gpRenderPrintBoxDetail(box, list) : "";
   const playsHtml = list.length === 0
     ? `<div class="gp-print-empty">— empty —</div>`
     : list.map((p) => _gpRenderPrintPlay(p)).join("");
@@ -2912,7 +3118,31 @@ function _gpRenderPrintBox(box, board) {
       </div>
       ${hashHtml}
       ${noteHtml}
+      ${detailHtml}
       <ol class="gp-print-plays">${playsHtml}</ol>
+    </div>`;
+}
+
+function _gpRenderPrintBoxDetail(box, list) {
+  const stats = _gpComputeBoxStats(list);
+  const desc = GP_BOX_DESCRIPTIONS[box.id];
+  const fmtRow = (label, entries, limit) => {
+    const onlyReal = entries.filter(([k]) => k && k !== "—");
+    if (onlyReal.length === 0) return "";
+    const top = onlyReal.slice(0, limit || 5).map(([k, n]) => `${escapeHtml(k)}\u00a0${n}`).join(" · ");
+    return `<div class="gp-print-detail-row"><span class="gp-print-detail-label">${escapeHtml(label)}</span><span class="gp-print-detail-val">${top}</span></div>`;
+  };
+  const intentHtml = desc ? `<div class="gp-print-detail-intent">${escapeHtml(desc.intent)}</div>` : "";
+  return `
+    <div class="gp-print-detail">
+      ${intentHtml}
+      ${fmtRow("Touches", stats.touches, 6)}
+      ${fmtRow("Type", stats.type, 6)}
+      ${fmtRow("Formation", stats.formation, 5)}
+      ${fmtRow("Personnel", stats.personnel, 5)}
+      ${fmtRow("D&D", stats.downDistance, 6)}
+      ${fmtRow("Situation", stats.situation, 4)}
+      ${fmtRow("Field", stats.fieldPos, 4)}
     </div>`;
 }
 
