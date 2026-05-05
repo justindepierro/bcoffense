@@ -1254,6 +1254,19 @@ function _gpAttachBoxHandlers() {
       el.addEventListener("click", (e) => e.stopPropagation());
       el.addEventListener("mousedown", (e) => e.stopPropagation());
     });
+    // The stopPropagation above also blocks document-level data-action delegation
+    // for buttons inside .gp-box-actions, so we wire those directly here.
+    box.querySelectorAll(".gp-box-actions [data-action]").forEach((btn) => {
+      btn.addEventListener("click", (ev) => {
+        ev.stopPropagation();
+        const action = btn.dataset.action;
+        const arg = btn.dataset.arg;
+        const fn = window[action];
+        if (typeof fn !== "function") return;
+        if (arg !== undefined) fn(arg);
+        else fn();
+      });
+    });
     // Double-click on title to rename
     const titleEl = box.querySelector(".gp-box-title");
     if (titleEl && boxId && boxId !== GP_HOLDING_ID) {
