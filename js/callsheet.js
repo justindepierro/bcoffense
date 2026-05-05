@@ -822,6 +822,52 @@ async function autoPopulateCallSheet() {
     if (unmatched > 0) {
       msg += ` (${unmatched} unmatched)`;
     }
+    // Vision Mode: re-sort each bucket so Picture-tagged families lead
+    // (Wide Zone first, then Pullers, Downhill, Anti-front, then untagged)
+    // and trim to bucketTargets.targetMax (default 10).
+    const visionOn = typeof isVisionMode === "function" && isVisionMode();
+    if (visionOn && typeof getPlayPicture === "function") {
+      const order = { wideZone: 0, pullers: 1, downhill: 2, antiFront: 3 };
+      const targetMax =
+        (typeof VISION_2026 !== "undefined" &&
+          VISION_2026.bucketTargets &&
+          VISION_2026.bucketTargets.targetMax) ||
+        10;
+      let trimmed = 0;
+      Object.keys(callSheet).forEach((catId) => {
+        ["left", "right"].forEach((side) => {
+          const arr = callSheet[catId][side];
+          if (!Array.isArray(arr) || arr.length === 0) return;
+          arr.sort((a, b) => {
+            const pa = getPlayPicture(a);
+            const pb = getPlayPicture(b);
+            const oa = pa && order[pa] !== undefined ? order[pa] : 99;
+            const ob = pb && order[pb] !== undefined ? order[pb] : 99;
+            return oa - ob;
+          });
+        });
+        // Trim combined bucket size to targetMax (preserve hash split)
+        const total = callSheet[catId].left.length + callSheet[catId].right.length;
+        if (total > targetMax) {
+          const overflow = total - targetMax;
+          let remaining = overflow;
+          // Trim from end of right first, then left
+          while (remaining > 0 && callSheet[catId].right.length > 0) {
+            callSheet[catId].right.pop();
+            remaining--;
+            trimmed++;
+          }
+          while (remaining > 0 && callSheet[catId].left.length > 0) {
+            callSheet[catId].left.pop();
+            remaining--;
+            trimmed++;
+          }
+        }
+      });
+      renderCallSheet();
+      saveCallSheet();
+      msg += ` • 🎯 Vision: prioritized by Picture${trimmed > 0 ? `, trimmed ${trimmed} over target` : ""}`;
+    }
     showToast(msg);
   } catch (err) {
     console.error("autoPopulateCallSheet error:", err);

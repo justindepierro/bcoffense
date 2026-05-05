@@ -69,6 +69,16 @@ function filterPlays() {
     if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
       return false;
     }
+    if (
+      typeof activePictureChips !== "undefined" &&
+      activePictureChips.size > 0 &&
+      typeof isVisionMode === "function" &&
+      isVisionMode() &&
+      typeof getPlayPicture === "function"
+    ) {
+      const pic = getPlayPicture(play);
+      if (!pic || !activePictureChips.has(pic)) return false;
+    }
     if (formation && play.formation !== formation) return false;
     if (basePlay && play.basePlay !== basePlay) return false;
     if (back && play.back !== back) return false;

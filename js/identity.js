@@ -190,6 +190,24 @@ function renderIdentity() {
   const qbHtml = _idList(v.qbLanguage);
   const checklistHtml = _idList(v.staffChecklist);
 
+  const ip = v.installPlan || {};
+  const installHtml = `
+    <div class="id-install">
+      <div class="id-install-day">
+        <h4>Day 1</h4>
+        ${_idList(ip.day1)}
+      </div>
+      <div class="id-install-day">
+        <h4>Day 2</h4>
+        ${_idList(ip.day2)}
+      </div>
+      <div class="id-install-day">
+        <h4>Day 3</h4>
+        ${_idList(ip.day3)}
+      </div>
+    </div>
+  `;
+
   root.innerHTML = `
     <div class="id-shell ${visionOn ? "id-vision-on" : ""}">
       <header class="id-hero">
@@ -229,6 +247,7 @@ function renderIdentity() {
         ${_idCard("3rd Down Pass Families", thirdDownHtml)}
         ${_idCard("QB Language", qbHtml)}
         ${_idCard("Practice Rep Distribution (target)", repHtml)}
+        ${_idCard("Camp Install Plan (Day 1–2–3)", installHtml, { cls: "id-card-wide" })}
         ${_idCard("Staff Checklist", checklistHtml, { cls: "id-card-wide" })}
       </div>
     </div>

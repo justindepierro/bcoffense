@@ -67,6 +67,17 @@ function setVisionMode(on) {
   } catch (_e) {
     /* no-op */
   }
+  // Rebuild Vision-only filter chips (e.g., Picture row in playbook)
+  try {
+    if (typeof buildFilterChips === "function") buildFilterChips();
+  } catch (_e) {
+    /* no-op */
+  }
+  try {
+    if (typeof filterPlays === "function") filterPlays();
+  } catch (_e) {
+    /* no-op */
+  }
   if (typeof showToast === "function") {
     showToast(
       next ? "Vision Mode ON — 2026 framework" : "Vision Mode OFF",
@@ -77,6 +88,36 @@ function setVisionMode(on) {
 
 function toggleVisionMode() {
   setVisionMode(!isVisionMode());
+}
+
+// Public helper: classify a play into one of the four Pictures
+// (wideZone | pullers | downhill | antiFront) using the active
+// vision-aware familyMap from constraints.js. Returns null if no
+// match. Safe to call when Vision Mode is OFF (returns null).
+function getPlayPicture(play) {
+  if (!play) return null;
+  if (typeof _activeFamilyMap !== "function") return null;
+  const text = [
+    play.play,
+    play.basePlay,
+    play.playTag1,
+    play.playTag2,
+    play.formation,
+    play.oneWord,
+    play.notes,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!text) return null;
+  const map = _activeFamilyMap();
+  for (const e of map) {
+    if (!e.picture) continue;
+    if (e.keywords && e.keywords.some((kw) => text.includes(kw))) {
+      return e.picture;
+    }
+  }
+  return null;
 }
 
 // Restore on load
@@ -256,7 +297,33 @@ const VISION_2026 = {
   },
 
   // Install plan + rep distribution placeholders (Phase 2 fills these out)
-  installPlan: { day1: [], day2: [], day3: [] },
+  installPlan: {
+    day1: [
+      "Identity meeting: who we are, what we major in, what we refuse",
+      "Wide Zone install: Worm/Wolf base — directional rules, fit/end/leverage reads",
+      "Naked/Boot off Wide Zone (movement pass intro)",
+      "Smaug (Slant–Arrow) base — quick game identity",
+      "Big Mac / Whopper double screen install",
+      "Yellow personnel introduction (bodies + Crow base)",
+    ],
+    day2: [
+      "Wide Zone reps continue — Split/Slice WZ + Danny whack motion option",
+      "Pullers Picture install: Rebel + BASH give sweep",
+      "Conflict throws install: Golden State / Warriors + Irish / Lucky (GANG)",
+      "Cross / Trail / Railroad family (3rd-medium identity)",
+      "Rodgers / Lamar tunnel screens",
+      "Yellow Core 6: Warp + Trail + River Dagger",
+    ],
+    day3: [
+      "Downhill Picture install: Hulk + Cavs + Beaver/Beetle",
+      "Anti-front Picture install: Toledo trap + Maverick/Laredo + Crunch",
+      "Dagger / Sail / Bench (3rd-long identity)",
+      "RPO module: Hulk, Packers, Lucky/Irish, Golf, Maverick, Toledo",
+      "Michigan + X Middle screens",
+      "Yellow Core 6: Z Sail Switch + Roll/Texas Sprint + Naked constraint",
+      "Earned-shot install (Variations): NEVER repped without their base on tape",
+    ],
+  },
   repDistribution: {
     byPicture: { wideZone: 0.4, pullers: 0.2, downhill: 0.25, antiFront: 0.15 },
     bySituation: {},

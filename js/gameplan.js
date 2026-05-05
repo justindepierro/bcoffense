@@ -868,6 +868,38 @@ function _gpRenderBox(box, board) {
   // least one play in this box declares a preferred hash.
   const hashHtml = _gpRenderBoxHashBar(list);
 
+  // Vision Mode: surface variation/directional warnings inline so the
+  // staff sees "earned shot" + handedness reminders right in the box.
+  let visionWarnHtml = "";
+  if (
+    typeof isVisionMode === "function" &&
+    isVisionMode() &&
+    list.length > 0
+  ) {
+    const warnings = [];
+    try {
+      if (typeof _visionVariationWarnings === "function") {
+        _visionVariationWarnings(list).forEach((w) => warnings.push(w));
+      }
+      if (typeof _visionDirectionalWarnings === "function") {
+        _visionDirectionalWarnings(list).forEach((w) => warnings.push(w));
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+    if (warnings.length > 0) {
+      visionWarnHtml = `
+        <div class="gp-vision-warnings" title="Vision Mode reminders">
+          ${warnings
+            .map(
+              (w) =>
+                `<div class="gp-vision-warning">⚠️ ${escapeHtml(String(w))}</div>`,
+            )
+            .join("")}
+        </div>`;
+    }
+  }
+
   const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
   const holdingAutoBtn = isHolding && list.length > 0
     ? `<button class="btn btn-sm" title="Send each play to its matching default box (by type)"
@@ -929,6 +961,7 @@ function _gpRenderBox(box, board) {
     </div>
     ${progressHtml}
     ${hashHtml}
+    ${visionWarnHtml}
     ${note ? `<div class="gp-box-note" title="Edit note"
       data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${escapeHtml(note)}</div>` : ""}`;
 

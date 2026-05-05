@@ -2075,3 +2075,20 @@ body.gp-printing .gp-print-detail-label {
   flex: 0 0 52px;
 }
 body.gp-printing .gp-print-detail-val { flex: 1; }
+
+/* ── Vision Mode: per-box variation/directional warnings ── */
+.gp-vision-warnings {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  margin: var(--space-xs) 0;
+  background: var(--color-warning-light);
+  border-left: 3px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+}
+.gp-vision-warning {
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
+  line-height: 1.3;
+}

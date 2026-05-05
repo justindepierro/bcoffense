@@ -10,6 +10,7 @@ let selectedRowIndex = -1;
 // ── Chip filter state (multi-select) ──
 let activeTypeChips = new Set();
 let activePersonnelChips = new Set();
+let activePictureChips = new Set();
 
 // ── More-filters collapsed state ──
 let moreFiltersOpen = false;
@@ -167,6 +168,34 @@ function _syncSortUI() {
 function buildFilterChips() {
   _buildChipGroup("pbChipsType", "type", activeTypeChips);
   _buildChipGroup("pbChipsPersonnel", "personnel", activePersonnelChips);
+  _buildPictureChips();
+}
+
+// Build the Vision Mode "Picture" chip row from VISION_2026.pictures.
+// Visible only when Vision Mode is ON.
+function _buildPictureChips() {
+  const row = document.getElementById("pbChipsPictureRow");
+  const container = document.getElementById("pbChipsPicture");
+  if (!row || !container) return;
+  const on = typeof isVisionMode === "function" && isVisionMode();
+  if (!on || typeof VISION_2026 === "undefined") {
+    row.style.display = "none";
+    container.innerHTML = "";
+    return;
+  }
+  const labels = {
+    wideZone: "Wide Zone",
+    pullers: "Pullers/Counter",
+    downhill: "Downhill/ISO",
+    antiFront: "Anti-front",
+  };
+  row.style.display = "";
+  container.innerHTML = Object.keys(labels)
+    .map((key) => {
+      const active = activePictureChips.has(key) ? " active" : "";
+      return `<button class="pb-chip${active}" data-value="${escapeHtml(key)}">${escapeHtml(labels[key])}</button>`;
+    })
+    .join("");
 }
 
 function _buildChipGroup(containerId, field, activeSet) {
@@ -192,8 +221,11 @@ function _onChipClick(e) {
   const group = chip.closest(".pb-chip-group");
   if (!group) return;
   const value = chip.dataset.value;
-  const isType = group.id === "pbChipsType";
-  const set = isType ? activeTypeChips : activePersonnelChips;
+  let set;
+  if (group.id === "pbChipsType") set = activeTypeChips;
+  else if (group.id === "pbChipsPersonnel") set = activePersonnelChips;
+  else if (group.id === "pbChipsPicture") set = activePictureChips;
+  else return;
   if (set.has(value)) {
     set.delete(value);
     chip.classList.remove("active");
@@ -210,6 +242,9 @@ function initChipListeners() {
     ?.addEventListener("click", _onChipClick);
   document
     .getElementById("pbChipsPersonnel")
+    ?.addEventListener("click", _onChipClick);
+  document
+    .getElementById("pbChipsPicture")
     ?.addEventListener("click", _onChipClick);
 }
 
