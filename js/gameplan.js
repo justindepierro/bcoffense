@@ -508,7 +508,8 @@ function renderGamePlan() {
       ${allBoxes.map((b) => _gpRenderBox(b, board)).join("")}
     </div>`;
 
-  setInnerHTML(root, headerHtml);
+  setInnerHTML(root, "");
+  // Header contains <button> elements which sanitizeHTML strips.
   // Toolbar + boxes contain <input>/<select>/<button>/<textarea>, which
   // sanitizeHTML strips. Build them directly via innerHTML — every
   // user-derived value above already passes through escapeHtml().
@@ -519,7 +520,7 @@ function renderGamePlan() {
   const chipsHtml = _gpRenderFilterChips();
   const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
   const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
-  wrapper.innerHTML = distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  wrapper.innerHTML = headerHtml + distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
