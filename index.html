@@ -409,6 +409,10 @@
               title="Find plays missing data for a field and fill them in fast">
               🧹 Cleanup Data
             </button>
+            <button class="btn btn-sm" data-action="openPlaybookSanitizeFiltered"
+              title="Cleanup Data, but only the plays currently shown by your filters">
+              🧹 Cleanup Filtered
+            </button>
             <button class="btn btn-sm btn-primary" data-action="exportPlaybookCSV"
               title="Export playbook as CSV for Excel / Sheets">
               &#128229; Export CSV
@@ -686,6 +690,11 @@
               <input id="playbookSanitizeHideToggle" type="checkbox" checked data-onchange="setPlaybookSanitizeHide"
                 data-pass="event" />
               Hide plays already filled in
+            </label>
+            <label class="pb-sanitize-toggle">
+              <input id="playbookSanitizeFilteredToggle" type="checkbox" data-onchange="setPlaybookSanitizeFiltered"
+                data-pass="event" />
+              Only filtered plays
             </label>
             <span class="pb-sanitize-status" id="playbookSanitizeStatus"></span>
           </div>

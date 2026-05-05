@@ -59,9 +59,39 @@ const SANITIZE_FIELDS = [
 
 let _sanitizeFieldKey = "preferredHash";
 let _sanitizeHideCompleted = true;
+let _sanitizeUseFiltered = false;
 let _sanitizeAutosaveTimer = null;
 let _sanitizeVocabCache = null;
 let _sanitizeVocabCacheKey = "";
+
+// Returns the array of plays the cleanup tool should iterate over. When the
+// "Only filtered plays" toggle is on, we walk `filteredPlays` and resolve
+// each entry back to its master index in `plays` so commits stay correct.
+// Falls back to full `plays` if filteredPlays isn't populated.
+function _sanitizeSourceEntries() {
+  const master = Array.isArray(plays) ? plays : [];
+  if (
+    _sanitizeUseFiltered &&
+    Array.isArray(filteredPlays) &&
+    filteredPlays.length > 0
+  ) {
+    const seen = new Set();
+    const entries = [];
+    filteredPlays.forEach((play) => {
+      const idx = master.indexOf(play);
+      if (idx >= 0 && !seen.has(idx)) {
+        seen.add(idx);
+        entries.push({ play, idx });
+      }
+    });
+    return entries;
+  }
+  return master.map((play, idx) => ({ play, idx }));
+}
+
+function _sanitizeScopeLabel() {
+  return _sanitizeUseFiltered ? "filtered plays" : "plays";
+}
 
 function _sanitizeFieldDef(key) {
   return SANITIZE_FIELDS.find((f) => f.key === key) || SANITIZE_FIELDS[0];
@@ -197,9 +227,65 @@ function openPlaybookSanitize() {
     showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
     return;
   }
+  _sanitizeUseFiltered = false;
   const overlay = document.getElementById("playbookSanitizeOverlay");
   if (!overlay) return;
   overlay.classList.add("visible");
+  _renderSanitizePicker();
+  _renderSanitizeList();
+}
+
+// Open the cleanup tool scoped to the currently filtered plays.
+// If no filters are active (or the filter result equals the full playbook),
+// falls back to the full playbook scope so the modal is never empty.
+function openPlaybookSanitizeFiltered() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
+    return;
+  }
+  const hasFilter =
+    Array.isArray(filteredPlays) &&
+    filteredPlays.length > 0 &&
+    filteredPlays.length < plays.length;
+  _sanitizeUseFiltered = hasFilter;
+  if (!hasFilter) {
+    showToast("No active filters — showing full playbook", {
+      duration: 2200,
+      type: "info",
+    });
+  } else {
+    showToast(`Cleaning up ${filteredPlays.length} filtered plays`, {
+      duration: 2000,
+      type: "info",
+    });
+  }
+  const overlay = document.getElementById("playbookSanitizeOverlay");
+  if (!overlay) return;
+  overlay.classList.add("visible");
+  _renderSanitizePicker();
+  _renderSanitizeList();
+}
+
+function setPlaybookSanitizeFiltered(eventOrValue) {
+  let next;
+  if (eventOrValue && eventOrValue.target && typeof eventOrValue.target.checked === "boolean") {
+    next = eventOrValue.target.checked;
+  } else {
+    next = (eventOrValue === true || eventOrValue === "true");
+  }
+  // If turning on but no filters are active, ignore and warn.
+  if (
+    next &&
+    (!Array.isArray(filteredPlays) ||
+      filteredPlays.length === 0 ||
+      filteredPlays.length === plays.length)
+  ) {
+    showToast("No active filters", { duration: 1800, type: "info" });
+    const cb = document.getElementById("playbookSanitizeFilteredToggle");
+    if (cb) cb.checked = false;
+    return;
+  }
+  _sanitizeUseFiltered = next;
   _renderSanitizePicker();
   _renderSanitizeList();
 }
@@ -213,9 +299,10 @@ function closePlaybookSanitize() {
 function _renderSanitizePicker() {
   const picker = document.getElementById("playbookSanitizeField");
   if (!picker) return;
+  const entries = _sanitizeSourceEntries();
+  const total = entries.length;
   const html = SANITIZE_FIELDS.map((f) => {
-    const missing = plays.filter((p) => _sanitizeIsEmpty(p, f.key)).length;
-    const total = plays.length;
+    const missing = entries.filter(({ play }) => _sanitizeIsEmpty(play, f.key)).length;
     const sel = f.key === _sanitizeFieldKey ? "selected" : "";
     return `<option value="${escapeHtml(f.key)}" ${sel}>${escapeHtml(f.label)} — ${missing}/${total} empty</option>`;
   }).join("");
@@ -223,6 +310,8 @@ function _renderSanitizePicker() {
 
   const hideToggle = document.getElementById("playbookSanitizeHideToggle");
   if (hideToggle) hideToggle.checked = _sanitizeHideCompleted;
+  const filteredToggle = document.getElementById("playbookSanitizeFilteredToggle");
+  if (filteredToggle) filteredToggle.checked = _sanitizeUseFiltered;
 }
 
 function setPlaybookSanitizeField(key) {
@@ -245,17 +334,17 @@ function _renderSanitizeList() {
   const status = document.getElementById("playbookSanitizeStatus");
   if (!body) return;
   const def = _sanitizeFieldDef(_sanitizeFieldKey);
-  const total = plays.length;
-  const missingPlays = plays
-    .map((play, idx) => ({ play, idx }))
-    .filter(({ play }) => _sanitizeHideCompleted
-      ? _sanitizeIsEmpty(play, def.key)
-      : true);
-  const missingCount = plays.filter((p) => _sanitizeIsEmpty(p, def.key)).length;
+  const entries = _sanitizeSourceEntries();
+  const total = entries.length;
+  const scopeLabel = _sanitizeScopeLabel();
+  const missingPlays = entries.filter(({ play }) =>
+    _sanitizeHideCompleted ? _sanitizeIsEmpty(play, def.key) : true,
+  );
+  const missingCount = entries.filter(({ play }) => _sanitizeIsEmpty(play, def.key)).length;
   if (status) {
     status.textContent = _sanitizeHideCompleted
-      ? `${missingCount} of ${total} plays missing ${def.label}`
-      : `${missingCount} of ${total} plays missing ${def.label} — showing all`;
+      ? `${missingCount} of ${total} ${scopeLabel} missing ${def.label}`
+      : `${missingCount} of ${total} ${scopeLabel} missing ${def.label} — showing all`;
   }
 
   if (missingPlays.length === 0) {
