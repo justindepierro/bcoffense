@@ -55,6 +55,9 @@ let _gpFilters = {
   goodVsBear: false,
   goodVsOkie: false,
   showAdvanced: false,
+  // Spotlight mode: when active, dims non-matching boxes and pulses matching plays.
+  // Shape: null | { kind: "scenario", id: "3rd-long" } | { kind: "player", name: "Marco" }
+  spotlight: null,
 };
 let _gpSelected = new Set(); // play signatures currently checked in library
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
@@ -274,6 +277,7 @@ function _gpFilteredLibrary(board) {
         p.type, p.personnel, p.formation, p.formTag1, p.formTag2,
         p.back, p.shift, p.motion, p.protection, p.lineCall,
         p.play, p.playTag1, p.playTag2, p.basePlay, p.oneWord, p.notes,
+        p.keyPlayerName1, p.keyPlayerName2, p.keyPlayerName3,
       ].filter(Boolean).join(" ").toLowerCase();
       if (!hay.includes(search)) return false;
     }
@@ -538,7 +542,26 @@ function renderGamePlan() {
   const chipsHtml = _gpRenderFilterChips();
   const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
   const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
-  wrapper.innerHTML = headerHtml + distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  // Sticky spotlight banner — appears when a coverage tile or touch tile is active.
+  let spotlightBannerHtml = "";
+  if (_gpFilters.spotlight) {
+    const spot = _gpFilters.spotlight;
+    let label = "";
+    if (spot.kind === "scenario") {
+      const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === spot.id);
+      label = sc ? sc.label : spot.id;
+    } else if (spot.kind === "player") {
+      label = spot.name;
+    }
+    const matchCount = allBoxes.reduce((n, b) => n + ((board.assignments[b.id] || []).filter(_gpPlayMatchesSpotlight).length), 0);
+    spotlightBannerHtml = `
+      <div class="gp-spotlight-banner" role="status">
+        <span class="gp-spotlight-icon">🔦</span>
+        <span class="gp-spotlight-text">Spotlighting <strong>${escapeHtml(label)}</strong> — ${matchCount} matching play${matchCount === 1 ? "" : "s"} highlighted</span>
+        <button class="gp-spotlight-clear" data-action="clearGamePlanSpotlight" title="Clear spotlight (Esc)">✕ Clear</button>
+      </div>`;
+  }
+  wrapper.innerHTML = headerHtml + distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + spotlightBannerHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
@@ -716,8 +739,18 @@ function _gpRenderBox(box, board) {
       : displayList.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx, sortMode === "manual")).join("")}
       </div>`;
 
+  // Spotlight: highlight boxes that contain at least one matching play; dim others.
+  const spot = _gpFilters.spotlight;
+  let spotlightClass = "";
+  if (spot) {
+    const hasMatch = list.some((p) => _gpPlayMatchesSpotlight(p));
+    spotlightClass = hasMatch ? " gp-box-spotlight" : " gp-box-dim";
+    // Holding never gets dimmed — it's the staging area, always relevant.
+    if (isHolding && !hasMatch) spotlightClass = "";
+  }
+
   return `
-    <div class="gp-box${isHolding ? " gp-box-holding" : ""}${collapsed ? " is-collapsed" : ""}"
+    <div class="gp-box${isHolding ? " gp-box-holding" : ""}${collapsed ? " is-collapsed" : ""}${spotlightClass}"
          ${accentStyle}
          data-box-id="${escapeHtml(box.id)}">
       ${headerHtml}
@@ -732,13 +765,14 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
     : escapeHtml(play.play || "");
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
   const matchupBadges = _gpMatchupBadges(play);
+  const isSpotlit = _gpPlayMatchesSpotlight(play);
   const reorderBtns = allowReorder ? `
     <button class="gp-box-play-btn gp-box-play-up" aria-label="Move up"
       data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move up">▲</button>
     <button class="gp-box-play-btn gp-box-play-down" aria-label="Move down"
       data-action="moveGamePlanPlayDown" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move down">▼</button>` : "";
   return `
-    <div class="gp-box-play" draggable="true"
+    <div class="gp-box-play${isSpotlit ? " is-spotlit" : ""}" draggable="true"
          data-box-id="${escapeHtml(boxId)}"
          data-sig="${escapeHtml(sig)}"
          data-idx="${idx}">
@@ -895,16 +929,17 @@ function _gpRenderDistributionStrip(board) {
 
 function _gpRenderScoreboard(board) {
   const drafted = _gpAllDraftedPlays(board);
+  const spot = _gpFilters.spotlight;
   const tiles = GP_COVERAGE_SCENARIOS.map((s) => {
     const count = drafted.filter(s.match).length;
     let status = "ok";
     if (count === 0) status = "empty";
     else if (count <= 2) status = "warn";
-    const isActive = Object.entries(s.filters).every(([k, v]) => _gpFilters[k] === v);
+    const isActive = spot && spot.kind === "scenario" && spot.id === s.id;
     return `
       <button class="gp-score-tile gp-score-${status}${isActive ? " is-active" : ""}"
         data-action="applyGamePlanScenario" data-arg="${escapeHtml(s.id)}"
-        title="${count === 0 ? `No plays for ${s.label} yet — click to filter library` : `${count} drafted • click to filter library`}">
+        title="${count === 0 ? `No plays for ${s.label} yet — click to highlight matching buckets` : `${count} drafted • click to spotlight matching buckets`}">
         <span class="gp-score-label">${escapeHtml(s.label)}</span>
         <span class="gp-score-count">${count}</span>
       </button>`;
@@ -918,7 +953,7 @@ function _gpRenderScoreboard(board) {
   }
   return `
     <details class="gp-scoreboard" open>
-      <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to filter library</span></summary>
+      <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to spotlight matching buckets &amp; plays</span></summary>
       <div class="gp-score-grid">${tiles}</div>
     </details>`;
 }
@@ -926,12 +961,18 @@ function _gpRenderScoreboard(board) {
 function applyGamePlanScenario(id) {
   const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === id);
   if (!sc) return;
-  const alreadyActive = Object.entries(sc.filters).every(([k, v]) => _gpFilters[k] === v);
+  const alreadyActive = _gpFilters.spotlight
+    && _gpFilters.spotlight.kind === "scenario"
+    && _gpFilters.spotlight.id === id;
   if (alreadyActive) {
+    // Toggle off: clear spotlight + clear the library filters that were applied.
+    _gpFilters.spotlight = null;
     Object.keys(sc.filters).forEach((k) => { _gpFilters[k] = ""; });
   } else {
+    // Apply: set library filters AND turn on spotlight to highlight matching boxes/plays.
     Object.entries(sc.filters).forEach(([k, v]) => { _gpFilters[k] = v; });
     _gpFilters.showAdvanced = true;
+    _gpFilters.spotlight = { kind: "scenario", id };
   }
   renderGamePlan();
 }
@@ -1259,6 +1300,7 @@ function clearGamePlanFilters() {
     density: _gpFilters.density || "comfortable", showProgress: true,
     goodVsMan: false, goodVsBear: false, goodVsOkie: false,
     showAdvanced: _gpFilters.showAdvanced || false,
+    spotlight: null,
   };
   _gpSelected.clear();
   renderGamePlan();
@@ -2201,6 +2243,13 @@ function _gpHandleKeydown(e) {
       search.blur();
       return;
     }
+    // Spotlight has highest priority — clear it first if active.
+    if (_gpFilters.spotlight) {
+      e.preventDefault();
+      clearGamePlanSpotlight();
+      showToast("Spotlight cleared", { duration: 1200 });
+      return;
+    }
     if (_gpAdvancedFilterCount() > 0 || _gpFilters.search || _gpFilters.type
       || _gpFilters.formation || _gpFilters.personnel || _gpFilters.hideAssigned
       || _gpFilters.goodVsMan || _gpFilters.goodVsBear || _gpFilters.goodVsOkie) {
@@ -2588,13 +2637,15 @@ function _gpRenderTouchTracker(board) {
   if (entries.length === 0) return "";
   entries.sort((a, b) => b[1].count - a[1].count);
   const max = entries[0][1].count || 1;
+  const spot = _gpFilters.spotlight;
   const tiles = entries.map(([name, info]) => {
     const heat = Math.round((info.count / max) * 100);
     const positions = Array.from(info.positions).join(", ");
+    const isActive = spot && spot.kind === "player" && spot.name === name;
     return `
-      <button class="gp-touch-tile" data-action="filterGamePlanByPlayer"
+      <button class="gp-touch-tile${isActive ? " is-active" : ""}" data-action="filterGamePlanByPlayer"
         data-arg="${escapeHtml(name)}"
-        title="${escapeHtml(name)} — ${info.count} touches${positions ? ` • ${escapeHtml(positions)}` : ""}. Click to filter library.">
+        title="${escapeHtml(name)} — ${info.count} touches${positions ? ` • ${escapeHtml(positions)}` : ""}. Click to spotlight buckets featuring this player.">
         <div class="gp-touch-name">${escapeHtml(name)}</div>
         <div class="gp-touch-count">${info.count}</div>
         <div class="gp-touch-bar">
@@ -2604,22 +2655,57 @@ function _gpRenderTouchTracker(board) {
   }).join("");
   return `
     <details class="gp-touch-tracker" ${entries.length <= 8 ? "open" : ""}>
-      <summary>👥 Touch Tracker <span class="gp-touch-hint">${entries.length} player${entries.length === 1 ? "" : "s"} • click a tile to filter library</span></summary>
+      <summary>👥 Touch Tracker <span class="gp-touch-hint">${entries.length} player${entries.length === 1 ? "" : "s"} • click a tile to spotlight buckets</span></summary>
       <div class="gp-touch-grid">${tiles}</div>
     </details>`;
 }
 
 function filterGamePlanByPlayer(name) {
   if (!name) return;
-  // Use search to filter library by player name
-  if (_gpFilters.search === name) {
+  const spot = _gpFilters.spotlight;
+  const alreadyActive = spot && spot.kind === "player" && spot.name === name;
+  if (alreadyActive) {
+    _gpFilters.spotlight = null;
     _gpFilters.search = "";
   } else {
+    _gpFilters.spotlight = { kind: "player", name };
     _gpFilters.search = name;
   }
   renderGamePlan();
   const search = document.getElementById("gpSearch");
   if (search) search.value = _gpFilters.search;
+}
+
+// True if a play matches the active spotlight (used to highlight plays in boxes).
+function _gpPlayMatchesSpotlight(play) {
+  const spot = _gpFilters.spotlight;
+  if (!spot || !play) return false;
+  if (spot.kind === "scenario") {
+    const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === spot.id);
+    return !!(sc && sc.match(play));
+  }
+  if (spot.kind === "player") {
+    const target = (spot.name || "").trim().toLowerCase();
+    if (!target) return false;
+    const names = [play.keyPlayerName1, play.keyPlayerName2, play.keyPlayerName3]
+      .filter(Boolean).map((n) => String(n).trim().toLowerCase());
+    return names.includes(target);
+  }
+  return false;
+}
+
+function clearGamePlanSpotlight() {
+  if (!_gpFilters.spotlight) return;
+  const spot = _gpFilters.spotlight;
+  _gpFilters.spotlight = null;
+  // Also clear the library filter side-effects so the library returns to normal.
+  if (spot.kind === "scenario") {
+    const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === spot.id);
+    if (sc) Object.keys(sc.filters).forEach((k) => { _gpFilters[k] = ""; });
+  } else if (spot.kind === "player") {
+    _gpFilters.search = "";
+  }
+  renderGamePlan();
 }
 
 /* -------------------------------------------------------------------------

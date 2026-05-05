@@ -1201,6 +1201,11 @@ body.gp-dragging-from-box .gp-trash-zone {
   transform: translateY(-1px);
   box-shadow: var(--shadow-sm);
 }
+.gp-touch-tile.is-active {
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+  background: var(--color-primary-light, var(--color-bg-hover-row));
+}
 .gp-touch-name {
   font-size: var(--font-size-xs);
   font-weight: 600;
@@ -1838,4 +1843,77 @@ body.gp-dragging-from-box .gp-trash-zone {
   background: rgba(245, 158, 11, 0.25);
   color: var(--color-warning);
   font-weight: 700;
+}
+
+/* =========================================================================
+   v348: Spotlight system — Coverage Scoreboard / Touch Tracker tile clicks
+   highlight matching boxes & plays, dim non-matching boxes.
+   ========================================================================= */
+.gp-spotlight-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  margin: 0 0 var(--space-sm);
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.12));
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  position: sticky;
+  top: 0;
+  z-index: 5;
+  box-shadow: var(--shadow-sm);
+}
+.gp-spotlight-icon { font-size: var(--font-size-md); }
+.gp-spotlight-text { flex: 1; }
+.gp-spotlight-text strong { color: var(--color-primary); }
+.gp-spotlight-clear {
+  border: 1px solid var(--color-primary);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  padding: 2px var(--space-sm);
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  transition: background var(--transition-fast);
+}
+.gp-spotlight-clear:hover {
+  background: var(--color-primary);
+  color: #fff;
+}
+
+/* When a box matches the spotlight: glow ring + lift */
+.gp-box.gp-box-spotlight {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px rgba(59, 130, 246, 0.15), var(--shadow-md);
+  position: relative;
+  z-index: 2;
+}
+/* When a box does NOT match: dim it so the matches pop */
+.gp-box.gp-box-dim {
+  opacity: 0.32;
+  filter: grayscale(0.4);
+  transition: opacity var(--transition-normal), filter var(--transition-normal);
+}
+.gp-box.gp-box-dim:hover {
+  opacity: 0.85;
+  filter: none;
+}
+
+/* Individual play that matches the spotlight inside a matching box */
+.gp-box-play.is-spotlit {
+  background: var(--color-primary-light, rgba(59, 130, 246, 0.12)) !important;
+  border-left: 3px solid var(--color-primary);
+  animation: gp-spotlight-pulse 1.5s ease-out 1;
+}
+@keyframes gp-spotlight-pulse {
+  0% { background: rgba(59, 130, 246, 0.45); }
+  100% { background: var(--color-primary-light, rgba(59, 130, 246, 0.12)); }
+}
+@media (prefers-reduced-motion: reduce) {
+  .gp-box-play.is-spotlit { animation: none; }
 }
