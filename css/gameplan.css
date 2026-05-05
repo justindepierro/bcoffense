@@ -1094,7 +1094,9 @@ body.gp-dragging-from-box .gp-trash-zone {
   body.gp-printing .gp-print-grid {
     display: grid;
     grid-template-columns: repeat(var(--gp-print-cols, 3), 1fr);
+    grid-auto-flow: row dense;
     gap: 6px;
+    align-items: start;
   }
   body.gp-printing .gp-print-box {
     border: 1px solid #000;
@@ -1103,7 +1105,29 @@ body.gp-dragging-from-box .gp-trash-zone {
     padding: 4px 6px;
     break-inside: avoid;
     page-break-inside: avoid;
+    background: #fff;
   }
+  /* One bucket per page mode */
+  body.gp-printing.gp-print-bucket-per-page .gp-print-grid {
+    display: block;
+  }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-box {
+    page-break-after: always;
+    break-after: page;
+    border: none;
+    border-left: 6px solid var(--gp-box-accent, #000);
+    padding: 12pt 14pt;
+    min-height: 9in;
+  }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-box:last-child {
+    page-break-after: auto;
+    break-after: auto;
+  }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-box-label { font-size: 18pt; }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-target { font-size: 12pt; }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-play { font-size: 12pt; line-height: 1.5; padding: 3px 0; }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-play-meta { font-size: 10pt; }
+  body.gp-printing.gp-print-bucket-per-page .gp-print-note { font-size: 11pt; }
   body.gp-printing .gp-print-box-head {
     display: flex;
     justify-content: space-between;
@@ -1111,6 +1135,8 @@ body.gp-dragging-from-box .gp-trash-zone {
     border-bottom: 1px solid #000;
     padding-bottom: 2px;
     margin-bottom: 3px;
+    break-after: avoid;
+    page-break-after: avoid;
   }
   body.gp-printing .gp-print-box-label { font-size: 10pt; font-weight: 700; }
   body.gp-printing .gp-print-target { font-size: 8pt; color: #555; font-variant-numeric: tabular-nums; }
@@ -1154,6 +1180,31 @@ body.gp-dragging-from-box .gp-trash-zone {
   body.gp-printing .gp-hash-middle { background: #777 !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body.gp-printing .gp-hash-right { background: #16a34a !important; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
   body.gp-printing .gp-hash-bar-unset { font-size: 7pt; color: #888; }
+  /* Print footer (team · opp · date) */
+  body.gp-printing .gp-print-footer {
+    display: flex;
+    justify-content: space-between;
+    border-top: 1px solid #999;
+    margin-top: 10px;
+    padding-top: 4px;
+    font-size: 8pt;
+    color: #555;
+    position: running(gpFooter);
+  }
+  body.gp-printing.gp-print-with-footer { /* placeholder for future running-element support */ }
+  /* Header polish: top accent stripe */
+  body.gp-printing .gp-print-header {
+    border-bottom-width: 3px;
+  }
+  body.gp-printing .gp-print-header::before {
+    content: "";
+    display: block;
+    height: 3pt;
+    background: linear-gradient(90deg, #000 0%, #444 100%);
+    margin-bottom: 4pt;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
 }
 
 /* Print: when printing the game plan, hide chrome and show boxes only */

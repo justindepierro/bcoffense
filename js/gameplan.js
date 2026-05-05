@@ -2575,6 +2575,9 @@ let _gpPrintOptions = {
   showMeta: true,
   showHolding: false,
   showEmpty: false,
+  bucketPerPage: false,
+  showPageNumbers: true,
+  showFooter: true,
 };
 
 async function openGamePlanPrintModal() {
@@ -2621,6 +2624,9 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintNotes" ${o.showNotes ? "checked" : ""}> Show notes</label>
               <label><input type="checkbox" id="gpPrintHolding" ${o.showHolding ? "checked" : ""}> Include Holding box</label>
               <label><input type="checkbox" id="gpPrintEmpty" ${o.showEmpty ? "checked" : ""}> Include empty boxes</label>
+              <label><input type="checkbox" id="gpPrintBucketPerPage" ${o.bucketPerPage ? "checked" : ""}> One bucket per page</label>
+              <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
+              <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
             </div>
           </div>
         </div>
@@ -2650,6 +2656,9 @@ async function openGamePlanPrintModal() {
         showNotes: overlay.querySelector("#gpPrintNotes").checked,
         showHolding: overlay.querySelector("#gpPrintHolding").checked,
         showEmpty: overlay.querySelector("#gpPrintEmpty").checked,
+        bucketPerPage: overlay.querySelector("#gpPrintBucketPerPage").checked,
+        showPageNumbers: overlay.querySelector("#gpPrintPageNumbers").checked,
+        showFooter: overlay.querySelector("#gpPrintFooter").checked,
       };
       close(true);
       _gpRenderPrintViewAndPrint();
@@ -2698,9 +2707,22 @@ function _gpRenderPrintViewAndPrint() {
     host.id = "gpPrintRoot";
     document.body.appendChild(host);
   }
-  host.className = `gp-print-root gp-print-${o.paperSize} gp-print-${o.orientation}`;
+  const rootClasses = [
+    "gp-print-root",
+    `gp-print-${o.paperSize}`,
+    `gp-print-${o.orientation}`,
+    o.bucketPerPage ? "gp-print-bucket-per-page" : "",
+    o.showFooter ? "gp-print-with-footer" : "",
+  ].filter(Boolean).join(" ");
+  host.className = rootClasses;
   host.style.setProperty("--gp-print-cols", String(o.columns));
-  host.innerHTML = headerHtml + `<div class="gp-print-grid">${boxesHtml}</div>`;
+  const footerHtml = o.showFooter ? `
+    <div class="gp-print-footer">
+      <span>${typeof getTeamName === "function" ? escapeHtml(getTeamName() || "") : ""}</span>
+      <span>${opponent ? `vs ${escapeHtml(opponent)}` : ""}</span>
+      <span>${new Date().toLocaleDateString()}</span>
+    </div>` : "";
+  host.innerHTML = headerHtml + `<div class="gp-print-grid">${boxesHtml}</div>` + footerHtml;
   document.body.classList.add("gp-printing");
   // Set @page size hint via style tag (one-shot)
   let pageStyle = document.getElementById("gpPrintPageStyle");
@@ -2709,7 +2731,10 @@ function _gpRenderPrintViewAndPrint() {
     pageStyle.id = "gpPrintPageStyle";
     document.head.appendChild(pageStyle);
   }
-  pageStyle.textContent = `@page { size: ${o.paperSize} ${o.orientation}; margin: 0.4in; }`;
+  const pageNumRule = o.showPageNumbers
+    ? `@page { @bottom-right { content: counter(page) " / " counter(pages); font-family: ${"'Inter', sans-serif"}; font-size: 8pt; color: #555; } }`
+    : "";
+  pageStyle.textContent = `@page { size: ${o.paperSize} ${o.orientation}; margin: 0.45in 0.4in 0.5in; } ${pageNumRule}`;
   // Print, then clean up
   setTimeout(() => {
     window.print();
@@ -2728,7 +2753,7 @@ function _gpRenderPrintBox(box, board) {
   const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
   const targetLabel = o.showProgress && target > 0 ? `<span class="gp-print-target">${list.length}/${target}</span>` : `<span class="gp-print-target">${list.length}</span>`;
   const noteHtml = o.showNotes && note ? `<div class="gp-print-note">${escapeHtml(note)}</div>` : "";
-  const hashHtml = o.showHash ? _gpRenderBoxHashBar(list).replace(/gp-hash-/g, "gp-print-hash-") : "";
+  const hashHtml = o.showHash ? _gpRenderBoxHashBar(list) : "";
   const playsHtml = list.length === 0
     ? `<div class="gp-print-empty">— empty —</div>`
     : list.map((p) => _gpRenderPrintPlay(p)).join("");
