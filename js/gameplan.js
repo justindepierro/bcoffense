@@ -147,6 +147,9 @@ function _gpEnsureBoard() {
       collapsed: [],     // [boxId, ...] collapsed box ids
       notes: {},         // boxId → string note
       sort: {},          // boxId → "manual" | "type" | "formation" | "personnel" | "basePlay"
+      hiddenBoxes: [],   // [boxId, ...] boxes hidden from view
+      boxOrder: [],      // [boxId, ...] custom display order (subset; missing ids fall back to default)
+      boxLabels: {},     // boxId → custom rename for default boxes
     };
     GP_DEFAULT_BOXES.forEach((b) => {
       all[key].assignments[b.id] = [];
@@ -167,6 +170,9 @@ function _gpEnsureBoard() {
     if (!Array.isArray(all[key].collapsed)) all[key].collapsed = [];
     if (!all[key].notes || typeof all[key].notes !== "object") all[key].notes = {};
     if (!all[key].sort || typeof all[key].sort !== "object") all[key].sort = {};
+    if (!Array.isArray(all[key].hiddenBoxes)) all[key].hiddenBoxes = [];
+    if (!Array.isArray(all[key].boxOrder)) all[key].boxOrder = [];
+    if (!all[key].boxLabels || typeof all[key].boxLabels !== "object") all[key].boxLabels = {};
     all[key].customBoxes.forEach((cb) => {
       if (!Array.isArray(all[key].assignments[cb.id])) {
         all[key].assignments[cb.id] = [];
@@ -280,11 +286,34 @@ function renderGamePlan() {
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
   const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";
 
-  const allBoxes = [
+  const rawAllBoxes = [
     GP_HOLDING_BOX,
     ...GP_DEFAULT_BOXES,
     ...(board.customBoxes || []),
   ];
+  // Apply custom labels (default boxes only — custom already store their own)
+  const labeledBoxes = rawAllBoxes.map((b) => {
+    if (b.id === GP_HOLDING_ID) return b;
+    const isCustom = (board.customBoxes || []).some((cb) => cb.id === b.id);
+    if (isCustom) return b;
+    const customLabel = board.boxLabels && board.boxLabels[b.id];
+    return customLabel ? { ...b, label: customLabel } : b;
+  });
+  // Apply custom order (boxOrder is a subset of ids; ids not in boxOrder fall to defaultIndex order, holding always first)
+  const orderIdx = (id) => {
+    if (id === GP_HOLDING_ID) return -1;
+    const i = (board.boxOrder || []).indexOf(id);
+    return i >= 0 ? i : 9999;
+  };
+  const orderedBoxes = labeledBoxes.slice().sort((a, b) => {
+    const da = orderIdx(a.id);
+    const db = orderIdx(b.id);
+    if (da !== db) return da - db;
+    return labeledBoxes.indexOf(a) - labeledBoxes.indexOf(b);
+  });
+  // Hide hidden boxes (Holding never hides)
+  const hidden = new Set((board.hiddenBoxes || []).filter((id) => id !== GP_HOLDING_ID));
+  const allBoxes = orderedBoxes.filter((b) => !hidden.has(b.id));
   const assignedSigs = _gpAllAssignedSigs(board);
   const totalAssigned = assignedSigs.size;
 
@@ -329,11 +358,26 @@ function renderGamePlan() {
         <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
           📊 Variety Stats
         </button>
+        <button class="btn btn-sm" data-action="openGamePlanCoverageMatrix" title="Heatmap of bucket coverage across game scenarios">
+          🌡️ Coverage
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanTendencyMirror" title="Compare opponent's defensive tendencies vs your plan">
+          🪞 vs Defense
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanCompare" title="Compare two saved plans">
+          🔄 Compare
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanReorderBoxes" title="Drag boxes into a custom order">
+          ↕️ Reorder
+        </button>
+        <button class="btn btn-sm" data-action="openGamePlanManageBoxes" title="Hide or show boxes">
+          👁️ Manage Boxes
+        </button>
         <button class="btn btn-sm" data-action="pushGamePlanToCallSheet" title="Copy drafted plays into the call sheet">
           ➡️ Push to Call Sheet
         </button>
-        <button class="btn btn-sm" data-action="printGamePlan" title="Print game plan">
-          🖨️ Print
+        <button class="btn btn-sm" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
+          📋 Push to Script
         </button>
         <button class="btn btn-sm btn-danger" data-action="clearGamePlanBoard" title="Remove every play from every box for this opponent">
           🗑️ Clear All
@@ -611,10 +655,18 @@ function _gpRenderBox(box, board) {
           data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
         <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
           data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>
+        ${!isHolding ? `
+          <button class="btn btn-sm btn-secondary" title="Move up"
+            data-action="moveGamePlanBoxUp" data-arg="${escapeHtml(box.id)}">↑</button>
+          <button class="btn btn-sm btn-secondary" title="Move down"
+            data-action="moveGamePlanBoxDown" data-arg="${escapeHtml(box.id)}">↓</button>
+          <button class="btn btn-sm btn-secondary" title="Rename this box"
+            data-action="renameAnyGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
+          <button class="btn btn-sm btn-secondary" title="Hide this box (Manage Boxes to restore)"
+            data-action="hideGamePlanBox" data-arg="${escapeHtml(box.id)}">👁️‍🗨️</button>
+        ` : ""}
         ${isCustom
-      ? `<button class="btn btn-sm btn-secondary" title="Rename"
-              data-action="renameGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
-             <button class="btn btn-sm btn-danger" title="Delete box"
+      ? `<button class="btn btn-sm btn-danger" title="Delete box"
               data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
       : ""}
         <button class="btn btn-sm" title="Clear plays in this box"
@@ -930,6 +982,15 @@ function _gpAttachBoxHandlers() {
       el.addEventListener("click", (e) => e.stopPropagation());
       el.addEventListener("mousedown", (e) => e.stopPropagation());
     });
+    // Double-click on title to rename
+    const titleEl = box.querySelector(".gp-box-title");
+    if (titleEl && boxId && boxId !== GP_HOLDING_ID) {
+      titleEl.addEventListener("dblclick", (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        renameAnyGamePlanBox(boxId);
+      });
+    }
     if (!dropZone) return;
 
     dropZone.addEventListener("dragenter", (e) => {
@@ -2696,6 +2757,557 @@ function _gpRenderPrintPlay(play) {
   }
   const metaHtml = meta.length > 0 ? `<span class="gp-print-play-meta">${meta.join(" · ")}</span>` : "";
   return `<li class="gp-print-play">${callHtml}${metaHtml}</li>`;
+}
+
+/* -------------------------------------------------------------------------
+   Push to Practice Script
+   ------------------------------------------------------------------------- */
+
+async function pushGamePlanToScript() {
+  if (!Array.isArray(window.script)) {
+    showToast("Script tab isn't ready yet.", { type: "error" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const populated = allBoxes.filter((b) => (board.assignments[b.id] || []).length > 0);
+  if (populated.length === 0) {
+    showToast("No drafted plays to push.", { type: "warning" });
+    return;
+  }
+  const items = [
+    { value: "__all__", label: `📦 All boxes (${populated.length} buckets)` },
+    ...populated.map((b) => ({
+      value: b.id,
+      label: `${b.label} (${(board.assignments[b.id] || []).length})`,
+    })),
+  ];
+  const choice = await showListPicker(
+    "Push which box(es) to the practice script?",
+    items,
+    { title: "📋 Push to Script", icon: "📋" },
+  );
+  if (!choice) return;
+  const targetBoxes = choice === "__all__" ? populated : populated.filter((b) => b.id === choice);
+
+  const mode = await showChoice(
+    "How should plays be added to the script?",
+    {
+      title: "Add Mode",
+      icon: "📋",
+      option1: "📑 New period per box",
+      option2: "➕ Append to end of script",
+    },
+  );
+  if (!mode) return;
+
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opp = gw && gw.opponentName ? gw.opponentName : "";
+  let pushed = 0;
+
+  targetBoxes.forEach((b) => {
+    const list = board.assignments[b.id] || [];
+    if (list.length === 0) return;
+    if (mode === "option1") {
+      script.push({
+        isSeparator: true,
+        label: opp ? `${b.label} — vs ${opp}` : b.label,
+        id: Date.now() + Math.random(),
+      });
+    }
+    list.forEach((p) => {
+      script.push({ ...p, id: Date.now() + Math.random() });
+      pushed += 1;
+    });
+  });
+
+  if (typeof markScriptDirty === "function") markScriptDirty();
+  if (typeof scheduleScriptAutosave === "function") scheduleScriptAutosave();
+  if (typeof renderScript === "function") renderScript();
+  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to the script`,
+    { type: "success", duration: 3000 });
+}
+
+/* -------------------------------------------------------------------------
+   Plan Comparison (snapshot diff)
+   ------------------------------------------------------------------------- */
+
+async function openGamePlanCompare() {
+  const snaps = _gpSnapshotsForOpponent();
+  const board = _gpEnsureBoard();
+  const totalDrafted = _gpAllAssignedSigs(board).size;
+  // Build pickable list: current + saved snapshots
+  const items = [];
+  if (totalDrafted > 0) items.push({ value: "__current__", label: `🟢 Current board (${totalDrafted} plays)` });
+  snaps.forEach((s) => {
+    items.push({ value: s.id, label: `💾 ${s.name} — ${new Date(s.savedAt).toLocaleDateString()}` });
+  });
+  if (items.length < 2) {
+    showToast("Save at least one snapshot to compare. (Use 💾 Save Plan first.)", { type: "warning" });
+    return;
+  }
+  const a = await showListPicker("Pick the FIRST plan:", items, { title: "🔄 Compare Plans (1/2)", icon: "🔄" });
+  if (!a) return;
+  const b = await showListPicker("Pick the SECOND plan:", items.filter((x) => x.value !== a),
+    { title: "🔄 Compare Plans (2/2)", icon: "🔄" });
+  if (!b) return;
+  _gpRenderCompareModal(a, b);
+}
+
+function _gpResolvePlanSource(id) {
+  if (id === "__current__") {
+    const board = _gpEnsureBoard();
+    return { name: "Current board", board };
+  }
+  const snap = _gpSnapshotsForOpponent().find((s) => s.id === id);
+  if (!snap) return null;
+  return { name: snap.name, board: snap.board };
+}
+
+function _gpAssignmentsByBox(board) {
+  // Return Map<boxId, Set<sig>>
+  const map = new Map();
+  Object.entries(board.assignments || {}).forEach(([boxId, list]) => {
+    map.set(boxId, new Set((list || []).map(_gpPlaySignature)));
+  });
+  return map;
+}
+
+function _gpRenderCompareModal(idA, idB) {
+  const a = _gpResolvePlanSource(idA);
+  const b = _gpResolvePlanSource(idB);
+  if (!a || !b) {
+    showToast("Couldn't load one of those plans.", { type: "error" });
+    return;
+  }
+  const mapA = _gpAssignmentsByBox(a.board);
+  const mapB = _gpAssignmentsByBox(b.board);
+  const allBoxIds = new Set([...mapA.keys(), ...mapB.keys()]);
+  const labelFor = (id) => {
+    if (id === GP_HOLDING_ID) return "📥 Holding";
+    const def = GP_DEFAULT_BOXES.find((x) => x.id === id);
+    if (def) return def.label;
+    const cb = (a.board.customBoxes || []).concat(b.board.customBoxes || []).find((x) => x.id === id);
+    return cb ? cb.label : id;
+  };
+
+  let totalAdded = 0;
+  let totalRemoved = 0;
+  let totalShared = 0;
+  const rows = [];
+  allBoxIds.forEach((boxId) => {
+    const sa = mapA.get(boxId) || new Set();
+    const sb = mapB.get(boxId) || new Set();
+    const added = [...sb].filter((s) => !sa.has(s));
+    const removed = [...sa].filter((s) => !sb.has(s));
+    const shared = [...sa].filter((s) => sb.has(s));
+    if (added.length === 0 && removed.length === 0 && shared.length === 0) return;
+    totalAdded += added.length;
+    totalRemoved += removed.length;
+    totalShared += shared.length;
+    rows.push({ boxId, added, removed, shared });
+  });
+
+  rows.sort((x, y) => (y.added.length + y.removed.length) - (x.added.length + x.removed.length));
+
+  const sigToShort = (sig) => {
+    const p = _gpFindPlayBySig(sig);
+    if (!p) return escapeHtml(sig);
+    return typeof getFullCall === "function" ? getFullCall(p, { showLineCall: false }) : escapeHtml(p.play || sig);
+  };
+
+  const rowsHtml = rows.map((r) => {
+    const addedHtml = r.added.length === 0 ? `<li class="gp-cmp-empty">—</li>`
+      : r.added.map((s) => `<li class="gp-cmp-added">+ ${sigToShort(s)}</li>`).join("");
+    const removedHtml = r.removed.length === 0 ? `<li class="gp-cmp-empty">—</li>`
+      : r.removed.map((s) => `<li class="gp-cmp-removed">− ${sigToShort(s)}</li>`).join("");
+    return `
+      <div class="gp-cmp-row">
+        <div class="gp-cmp-row-head">
+          <span class="gp-cmp-row-label">${escapeHtml(labelFor(r.boxId))}</span>
+          <span class="gp-cmp-row-stats">
+            <span class="gp-cmp-shared">${r.shared.length} shared</span>
+            <span class="gp-cmp-added-count">+${r.added.length}</span>
+            <span class="gp-cmp-removed-count">−${r.removed.length}</span>
+          </span>
+        </div>
+        <div class="gp-cmp-row-cols">
+          <ul class="gp-cmp-list gp-cmp-list-added"><li class="gp-cmp-col-head">Added in ${escapeHtml(b.name)}</li>${addedHtml}</ul>
+          <ul class="gp-cmp-list gp-cmp-list-removed"><li class="gp-cmp-col-head">Removed from ${escapeHtml(a.name)}</li>${removedHtml}</ul>
+        </div>
+      </div>`;
+  }).join("");
+
+  const html = `
+    <div class="gp-cmp">
+      <div class="gp-cmp-summary">
+        <div><strong>${escapeHtml(a.name)}</strong> → <strong>${escapeHtml(b.name)}</strong></div>
+        <div class="gp-cmp-summary-stats">
+          <span class="gp-cmp-shared">${totalShared} shared</span>
+          <span class="gp-cmp-added-count">+${totalAdded} added</span>
+          <span class="gp-cmp-removed-count">−${totalRemoved} removed</span>
+        </div>
+      </div>
+      <div class="gp-cmp-rows">${rowsHtml || `<p class="gp-cmp-empty">Both plans are identical.</p>`}</div>
+    </div>`.replace(/\n\s+/g, " ");
+  showModal(html, { title: "🔄 Plan Comparison", icon: "🔄" });
+}
+
+/* -------------------------------------------------------------------------
+   Box Reorder + Hide + Rename
+   ------------------------------------------------------------------------- */
+
+async function openGamePlanReorderBoxes() {
+  const board = _gpEnsureBoard();
+  const visibleBoxes = [
+    ...GP_DEFAULT_BOXES,
+    ...(board.customBoxes || []),
+  ];
+  // Apply current order
+  const orderIdx = (id) => {
+    const i = (board.boxOrder || []).indexOf(id);
+    return i >= 0 ? i : 9999;
+  };
+  const ordered = visibleBoxes.slice().sort((x, y) => {
+    const dx = orderIdx(x.id);
+    const dy = orderIdx(y.id);
+    if (dx !== dy) return dx - dy;
+    return visibleBoxes.indexOf(x) - visibleBoxes.indexOf(y);
+  });
+  const labels = ordered.map((b) => b.label);
+  const idsByLabel = new Map();
+  ordered.forEach((b) => idsByLabel.set(b.label, b.id));
+
+  showReorderModal(labels, {
+    title: "↕️ Reorder Boxes",
+    note: "Drag boxes to set the display order. Holding always stays first.",
+    saveLabel: "💾 Save Order",
+    onSave: (newOrder) => {
+      const newIds = newOrder.map((lab) => idsByLabel.get(lab)).filter(Boolean);
+      _gpUpdateBoard((b) => { b.boxOrder = newIds; });
+      renderGamePlan();
+      showToast("Box order saved", { type: "success" });
+    },
+    onClear: () => {
+      _gpUpdateBoard((b) => { b.boxOrder = []; });
+      renderGamePlan();
+      showToast("Reset to default order", { type: "info" });
+    },
+  });
+}
+
+function moveGamePlanBoxUp(boxId) { _gpNudgeBoxOrder(boxId, -1); }
+function moveGamePlanBoxDown(boxId) { _gpNudgeBoxOrder(boxId, 1); }
+
+function _gpNudgeBoxOrder(boxId, delta) {
+  if (!boxId || boxId === GP_HOLDING_ID) return;
+  const board = _gpEnsureBoard();
+  const visibleIds = [
+    ...GP_DEFAULT_BOXES.map((b) => b.id),
+    ...(board.customBoxes || []).map((b) => b.id),
+  ];
+  // Materialize current order
+  const current = (board.boxOrder && board.boxOrder.length > 0)
+    ? visibleIds.slice().sort((a, b) => {
+      const ia = board.boxOrder.indexOf(a);
+      const ib = board.boxOrder.indexOf(b);
+      return (ia === -1 ? 9999 : ia) - (ib === -1 ? 9999 : ib);
+    })
+    : visibleIds.slice();
+  const idx = current.indexOf(boxId);
+  if (idx < 0) return;
+  const next = idx + delta;
+  if (next < 0 || next >= current.length) return;
+  current.splice(next, 0, current.splice(idx, 1)[0]);
+  _gpUpdateBoard((b) => { b.boxOrder = current; });
+  renderGamePlan();
+}
+
+async function hideGamePlanBox(boxId) {
+  if (!boxId || boxId === GP_HOLDING_ID) return;
+  _gpUpdateBoard((b) => {
+    b.hiddenBoxes = b.hiddenBoxes || [];
+    if (!b.hiddenBoxes.includes(boxId)) b.hiddenBoxes.push(boxId);
+  });
+  renderGamePlan();
+  showToast(`Hidden. Click 👁️ Manage Boxes to restore.`, { type: "info" });
+}
+
+async function openGamePlanManageBoxes() {
+  const board = _gpEnsureBoard();
+  const all = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const hidden = new Set(board.hiddenBoxes || []);
+  const rowsHtml = all.map((b) => {
+    const count = (board.assignments[b.id] || []).length;
+    const isHidden = hidden.has(b.id);
+    return `
+      <label class="gp-mgb-row ${isHidden ? "is-hidden" : ""}">
+        <input type="checkbox" class="gp-mgb-cb" data-box-id="${escapeHtml(b.id)}" ${isHidden ? "" : "checked"} />
+        <span class="gp-mgb-label">${escapeHtml(b.label)}</span>
+        <span class="gp-mgb-count">${count}</span>
+      </label>`;
+  }).join("");
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal" role="dialog" aria-modal="true">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">👁️</span>
+          <h3 class="custom-modal-title">Manage Box Visibility</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p class="gp-mgb-help">Uncheck boxes to hide them from the board. Hidden boxes keep their plays — they're just out of sight.</p>
+          <div class="gp-mgb-list">${rowsHtml}</div>
+          <div class="gp-mgb-bulk">
+            <button class="btn btn-sm" id="gpMgbAll">☑ Show All</button>
+            <button class="btn btn-sm" id="gpMgbNone">▢ Hide All Defaults</button>
+          </div>
+        </div>
+        <div class="custom-modal-actions">
+          <button class="btn custom-modal-btn custom-modal-cancel" id="gpMgbCancel">Cancel</button>
+          <button class="btn btn-primary custom-modal-btn" id="gpMgbSave">Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    const close = (v) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.remove(), 200);
+      resolve(v);
+    };
+    overlay.querySelector("#gpMgbAll").addEventListener("click", () => {
+      overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => { cb.checked = true; });
+    });
+    overlay.querySelector("#gpMgbNone").addEventListener("click", () => {
+      overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => {
+        const id = cb.dataset.boxId;
+        const isDefault = GP_DEFAULT_BOXES.some((d) => d.id === id);
+        if (isDefault) cb.checked = false;
+      });
+    });
+    overlay.querySelector("#gpMgbCancel").addEventListener("click", () => close(false));
+    overlay.querySelector("#gpMgbSave").addEventListener("click", () => {
+      const newHidden = [];
+      overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => {
+        if (!cb.checked) newHidden.push(cb.dataset.boxId);
+      });
+      _gpUpdateBoard((b) => { b.hiddenBoxes = newHidden; });
+      close(true);
+      renderGamePlan();
+      showToast("Box visibility saved", { type: "success" });
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+  });
+}
+
+async function renameAnyGamePlanBox(boxId) {
+  if (!boxId || boxId === GP_HOLDING_ID) return;
+  const board = _gpEnsureBoard();
+  const cb = (board.customBoxes || []).find((b) => b.id === boxId);
+  const def = GP_DEFAULT_BOXES.find((b) => b.id === boxId);
+  const currentLabel = cb ? cb.label : (board.boxLabels && board.boxLabels[boxId]) || (def ? def.label : boxId);
+  const next = await showPrompt("Rename this box:", currentLabel, { title: "✏️ Rename Box", icon: "✏️" });
+  if (!next || !next.trim() || next.trim() === currentLabel) return;
+  const trimmed = next.trim();
+  _gpUpdateBoard((b) => {
+    if (cb) {
+      const target = (b.customBoxes || []).find((x) => x.id === boxId);
+      if (target) target.label = trimmed;
+    } else {
+      b.boxLabels = b.boxLabels || {};
+      b.boxLabels[boxId] = trimmed;
+    }
+  });
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Coverage Matrix (heatmap: rows = boxes, cols = scenarios)
+   ------------------------------------------------------------------------- */
+
+function openGamePlanCoverageMatrix() {
+  const board = _gpEnsureBoard();
+  const visibleBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  // Compute matrix
+  let max = 0;
+  const matrix = visibleBoxes.map((b) => {
+    const list = board.assignments[b.id] || [];
+    const cells = GP_COVERAGE_SCENARIOS.map((s) => {
+      const c = list.filter(s.match).length;
+      if (c > max) max = c;
+      return c;
+    });
+    return { box: b, cells, total: list.length };
+  });
+  const headerCells = GP_COVERAGE_SCENARIOS.map((s) =>
+    `<th class="gp-cmx-col-head" title="${escapeHtml(s.label)}">${escapeHtml(s.icon || "")}<br>${escapeHtml(s.shortLabel || s.label)}</th>`,
+  ).join("");
+  const bodyRows = matrix.map((row) => {
+    const cells = row.cells.map((c, i) => {
+      const intensity = max > 0 ? c / max : 0;
+      const cls = c === 0 ? "gp-cmx-zero" : intensity >= 0.66 ? "gp-cmx-hot" : intensity >= 0.33 ? "gp-cmx-warm" : "gp-cmx-cool";
+      return `<td class="gp-cmx-cell ${cls}" title="${escapeHtml(row.box.label)} × ${escapeHtml(GP_COVERAGE_SCENARIOS[i].label)}: ${c}">${c}</td>`;
+    }).join("");
+    return `
+      <tr>
+        <th class="gp-cmx-row-head">${escapeHtml(row.box.label)}</th>
+        ${cells}
+        <td class="gp-cmx-total">${row.total}</td>
+      </tr>`;
+  }).join("");
+  const html = `
+    <div class="gp-cmx">
+      <p class="gp-cmx-help">Heatmap of how each box covers the 9 game scenarios. Hot cells = strong coverage, gray = no plays match. Use this to spot gaps.</p>
+      <div class="gp-cmx-scroll">
+        <table class="gp-cmx-table">
+          <thead><tr><th class="gp-cmx-corner">Box \\ Scenario</th>${headerCells}<th class="gp-cmx-col-head">Total</th></tr></thead>
+          <tbody>${bodyRows}</tbody>
+        </table>
+      </div>
+    </div>`.replace(/\n\s+/g, " ");
+  showModal(html, { title: "🌡️ Coverage Matrix", icon: "🌡️" });
+}
+
+/* -------------------------------------------------------------------------
+   Tendency Mirror — match opponent defensive tendencies vs offense plan
+   ------------------------------------------------------------------------- */
+
+function _gpResolveOpponentTendencies() {
+  if (!Array.isArray(window.tendenciesOpponents) || window.tendenciesOpponents.length === 0) return null;
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const oppName = gw && gw.opponentName ? gw.opponentName : null;
+  if (oppName) {
+    const exact = window.tendenciesOpponents.find((o) => o.name && o.name.toLowerCase() === oppName.toLowerCase());
+    if (exact) return exact;
+  }
+  // Fallback: current opponent index
+  if (typeof window.tendenciesCurrentOpponent === "number" && window.tendenciesOpponents[window.tendenciesCurrentOpponent]) {
+    return window.tendenciesOpponents[window.tendenciesCurrentOpponent];
+  }
+  return window.tendenciesOpponents[0];
+}
+
+function openGamePlanTendencyMirror() {
+  const opp = _gpResolveOpponentTendencies();
+  if (!opp || !Array.isArray(opp.plays) || opp.plays.length === 0) {
+    showToast("No defensive tendencies recorded for this opponent. Chart some on the Tendencies tab first.", { type: "warning", duration: 4000 });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const drafted = _gpAllDraftedPlays(board);
+
+  const tally = (rows, key) => {
+    const m = new Map();
+    rows.forEach((r) => {
+      const v = (r[key] || "").toString().trim();
+      if (!v) return;
+      m.set(v, (m.get(v) || 0) + 1);
+    });
+    return m;
+  };
+  const pct = (count, total) => total === 0 ? 0 : Math.round((count / total) * 100);
+
+  // Defensive front + coverage seen most by opponent
+  const dFront = tally(opp.plays, "defFront");
+  const dCov = tally(opp.plays, "defCoverage");
+  const dBlitz = tally(opp.plays, "defBlitz");
+  const oppTotal = opp.plays.length;
+  const topN = (m, n) => [...m.entries()].sort((a, b) => b[1] - a[1]).slice(0, n);
+
+  const frontTop = topN(dFront, 4);
+  const covTop = topN(dCov, 4);
+  const blitzTop = topN(dBlitz, 4);
+
+  // Offensive coverage in plan
+  const oFront = tally(drafted, "practiceFront");
+  const oCov = tally(drafted, "practiceCoverage");
+  const oBlitz = tally(drafted, "practiceBlitz");
+  const planTotal = drafted.length;
+
+  const renderMatchRow = (oppMap, planMap, oppKey, planKey, total, totalPlan) => {
+    const items = topN(oppMap, 5);
+    if (items.length === 0) return `<li class="gp-tm-empty">No data</li>`;
+    return items.map(([val, cnt]) => {
+      const oppPct = pct(cnt, total);
+      const planCnt = planMap.get(val) || 0;
+      const planPct = pct(planCnt, totalPlan);
+      const status = planCnt === 0 ? "low" : planPct >= oppPct * 0.6 ? "ok" : "warn";
+      return `
+        <li class="gp-tm-row gp-tm-${status}">
+          <span class="gp-tm-label">${escapeHtml(val)}</span>
+          <span class="gp-tm-bars">
+            <span class="gp-tm-bar-opp" style="width:${oppPct}%" title="Opp shows ${cnt} (${oppPct}%)"></span>
+            <span class="gp-tm-bar-plan" style="width:${planPct}%" title="Plan covers ${planCnt} (${planPct}%)"></span>
+          </span>
+          <span class="gp-tm-counts">${cnt} / ${planCnt}</span>
+        </li>`;
+    }).join("");
+  };
+
+  // Down/distance run-pass tendencies (opp)
+  const ddBuckets = ["1-Any", "2-Short", "2-Medium", "2-Long", "3-Short", "3-Medium", "3-Long"];
+  const bucketOf = (down, dist) => {
+    const d = String(down || "").trim();
+    const distNum = parseInt(dist, 10);
+    let band = "Medium";
+    if (!Number.isNaN(distNum)) {
+      if (distNum <= 3) band = "Short";
+      else if (distNum >= 8) band = "Long";
+    } else if (typeof dist === "string") {
+      const s = dist.toLowerCase();
+      if (s.includes("short")) band = "Short";
+      else if (s.includes("long") || s.includes("20+") || s.includes("16-20") || s.includes("11-15")) band = "Long";
+    }
+    if (d === "1") return "1-Any";
+    if (d === "2") return `2-${band}`;
+    if (d === "3") return `3-${band}`;
+    return null;
+  };
+  const ddRows = ddBuckets.map((bucket) => {
+    const matching = opp.plays.filter((p) => bucketOf(p.down, p.distance) === bucket);
+    if (matching.length === 0) return null;
+    const blitzes = matching.filter((p) => p.defBlitz && p.defBlitz !== "None").length;
+    const blitzPct = pct(blitzes, matching.length);
+    return `
+      <li class="gp-tm-dd-row">
+        <span class="gp-tm-dd-label">${escapeHtml(bucket)}</span>
+        <span class="gp-tm-dd-count">${matching.length} snaps</span>
+        <span class="gp-tm-dd-blitz ${blitzPct >= 40 ? "gp-tm-warn" : ""}">${blitzPct}% blitz</span>
+      </li>`;
+  }).filter(Boolean).join("");
+
+  const html = `
+    <div class="gp-tm">
+      <div class="gp-tm-summary">
+        <strong>${escapeHtml(opp.name || "Opponent")}</strong> — ${oppTotal} charted snap${oppTotal === 1 ? "" : "s"}
+        · Plan has ${planTotal} drafted play${planTotal === 1 ? "" : "s"}
+      </div>
+      <p class="gp-tm-help">Compares opponent's most-shown defensive looks (top bar) vs how often your drafted plays practice that look (bottom bar). Yellow = under-prepped, red = uncovered.</p>
+      <div class="gp-tm-grid">
+        <section>
+          <h4>🛡️ Fronts seen</h4>
+          <ul class="gp-tm-list">${renderMatchRow(dFront, oFront, "defFront", "practiceFront", oppTotal, planTotal)}</ul>
+        </section>
+        <section>
+          <h4>👁️ Coverages seen</h4>
+          <ul class="gp-tm-list">${renderMatchRow(dCov, oCov, "defCoverage", "practiceCoverage", oppTotal, planTotal)}</ul>
+        </section>
+        <section>
+          <h4>🔥 Blitz/Pressure</h4>
+          <ul class="gp-tm-list">${renderMatchRow(dBlitz, oBlitz, "defBlitz", "practiceBlitz", oppTotal, planTotal)}</ul>
+        </section>
+        ${ddRows ? `
+        <section>
+          <h4>📊 Down & Distance pressure</h4>
+          <ul class="gp-tm-dd">${ddRows}</ul>
+        </section>` : ""}
+      </div>
+    </div>`.replace(/\n\s+/g, " ");
+  showModal(html, { title: "🪞 Tendency Mirror", icon: "🪞" });
 }
 
 /* -------------------------------------------------------------------------
