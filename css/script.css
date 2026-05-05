@@ -3629,3 +3629,131 @@ body[data-active-tab="script"] .script-display-fab {
     width: 100%;
   }
 }
+
+/* ============================================================
+   VISION PULSE PANEL — script tab Picture rep distribution
+   (visible only when Vision Mode is ON)
+   ============================================================ */
+.vision-rep-panel {
+  margin: 0 var(--space-md) var(--space-md);
+}
+.vision-rep-panel.hidden {
+  display: none;
+}
+.vrp-shell {
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-light),
+    var(--color-bg-lighter)
+  );
+  border: 1px solid var(--color-accent);
+  border-radius: var(--radius-lg);
+  padding: var(--space-sm) var(--space-md);
+  box-shadow: var(--shadow-xs);
+}
+.vrp-title {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  color: var(--color-accent);
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+.vrp-sub {
+  font-weight: 400;
+  font-size: var(--font-size-xs2);
+  color: var(--color-text-muted);
+}
+.vrp-empty {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+.vrp-rows {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.vrp-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 160px;
+  align-items: center;
+  gap: var(--space-sm);
+  font-size: var(--font-size-xs2);
+}
+.vrp-row-label {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.vrp-bar {
+  position: relative;
+  height: 10px;
+  background: var(--color-bg-input);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.vrp-bar-fill {
+  position: absolute;
+  inset: 0 auto 0 0;
+  background: var(--color-accent);
+  border-radius: var(--radius-pill);
+  transition: width var(--transition-normal);
+}
+.vrp-bar-target {
+  position: absolute;
+  top: -2px;
+  bottom: -2px;
+  width: 2px;
+  background: var(--color-primary-dark);
+  transform: translateX(-1px);
+}
+.vrp-row-stats {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+  font-variant-numeric: tabular-nums;
+}
+.vrp-pct {
+  font-weight: 700;
+  color: var(--color-text);
+}
+.vrp-count {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-micro);
+}
+.vrp-drift {
+  font-weight: 700;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-micro);
+}
+.vrp-drift.vrp-ok {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+.vrp-drift.vrp-warn {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+.vrp-drift.vrp-err {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+.vrp-foot {
+  margin-top: var(--space-xs);
+  font-size: var(--font-size-micro);
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+@media (max-width: 700px) {
+  .vrp-row {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .vrp-row-stats {
+    justify-content: flex-start;
+  }
+}
