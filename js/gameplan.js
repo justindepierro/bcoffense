@@ -3764,7 +3764,36 @@ function openGamePlanTendencyMirror() {
 
 function initGamePlan() {
   _gpEnsureBoard();
+  refreshGamePlanFromPlaybook();
   renderGamePlan();
+}
+
+// Re-sync every play snapshot in the active board's assignments against
+// the master `plays[]` array. The play editor and dashboard mutate plays
+// directly, but the game plan stored a `{...play}` copy at drop time, so
+// edits to tags/notes/key players/etc. don't appear in the game plan boxes
+// until we re-hydrate. We match by `_gpPlaySignature` (immutable-ish key
+// fields) and replace each snapshot with a fresh copy. Any snapshot that
+// no longer matches any master play is left as-is (could be a deleted or
+// renamed play — staff can clean it up manually).
+function refreshGamePlanFromPlaybook() {
+  if (!Array.isArray(plays) || plays.length === 0) return 0;
+  let updated = 0;
+  _gpUpdateBoard((board) => {
+    if (!board || !board.assignments) return;
+    Object.keys(board.assignments).forEach((boxId) => {
+      const arr = board.assignments[boxId];
+      if (!Array.isArray(arr)) return;
+      arr.forEach((snap, i) => {
+        const fresh = _gpFindPlayBySig(_gpPlaySignature(snap));
+        if (fresh) {
+          arr[i] = { ...fresh };
+          updated += 1;
+        }
+      });
+    });
+  });
+  return updated;
 }
 
 // Bind keyboard shortcuts once at script load
