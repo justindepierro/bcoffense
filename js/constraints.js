@@ -401,6 +401,195 @@ function _normalize(s) {
   return (s || "").toLowerCase().trim();
 }
 
+// ─────────────────────────────────────────────────────────────────────────────
+// VISION-MODE OVERLAY
+// When Vision Mode is on, swap roleMap and extend familyMap from VISION_2026.
+// All other constraints behavior is unchanged unless a rule explicitly opts in.
+// ─────────────────────────────────────────────────────────────────────────────
+function _visionOn() {
+  return typeof isVisionMode === "function" && isVisionMode();
+}
+
+// Active role map (vision swaps positions: X=Diego, Y=Alex, Z=Jayce, T=Marco, H=Danny)
+function _activeRoleMap() {
+  if (!_visionOn() || typeof VISION_2026 === "undefined")
+    return CALLSHEET_CONSTRAINTS.roleMap;
+  const v = VISION_2026.yellow && VISION_2026.yellow.bodies;
+  if (!v) return CALLSHEET_CONSTRAINTS.roleMap;
+  return {
+    X: v.X || "Diego",
+    Y: v.Y || "Alex",
+    Z: v.Z || "Jayce",
+    T: v.T || "Marco",
+    H: v.H || "Danny",
+    TE: v.H || "Danny",
+    HB: v.H || "Danny",
+    QB: CALLSHEET_CONSTRAINTS.roleMap.QB || "Lucas",
+  };
+}
+
+// Active family map — vision adds picture-tagged entries from VISION_2026.pictures
+let _VISION_FAMILY_CACHE = null;
+function _activeFamilyMap() {
+  if (!_visionOn()) return CALLSHEET_CONSTRAINTS.familyMap;
+  if (_VISION_FAMILY_CACHE) return _VISION_FAMILY_CACHE;
+  if (typeof VISION_2026 === "undefined")
+    return CALLSHEET_CONSTRAINTS.familyMap;
+  // Picture-tagged keyword extensions (in addition to base familyMap entries)
+  const visionAdds = [
+    // Wide Zone Picture
+    { keywords: ["worm", "wolf"], family: "Wide Zone", category: "run", picture: "wideZone" },
+    { keywords: ["split wz", "slice wz"], family: "Wide Zone", category: "run", picture: "wideZone" },
+    { keywords: ["naked", "boot", "waggle"], family: "Movement Pass", category: "pa", picture: "wideZone" },
+    { keywords: ["sail", "flood"], family: "Sail/Flood", category: "dropback", picture: "wideZone" },
+    // Pullers / Counter Picture
+    { keywords: ["rebel"], family: "Counter", category: "run", picture: "pullers" },
+    { keywords: ["bash"], family: "BASH", category: "run", picture: "pullers" },
+    { keywords: ["rodgers", "lamar"], family: "Tunnel/Influence", category: "screen", picture: "pullers" },
+    // Downhill / ISO / Wrap Picture
+    { keywords: ["beaver", "beetle"], family: "ISO/Wrap", category: "run", picture: "downhill" },
+    { keywords: ["cavs"], family: "Cavs", category: "run", picture: "downhill" },
+    { keywords: ["golf"], family: "Golf", category: "run", picture: "downhill" },
+    // Anti-front Picture
+    { keywords: ["crunch", "san fran", "niners"], family: "Crunch", category: "run", picture: "antiFront" },
+    // X-Middle as a screen
+    { keywords: ["x middle", "xmiddle"], family: "X Middle", category: "screen" },
+  ];
+  _VISION_FAMILY_CACHE = [...visionAdds, ...CALLSHEET_CONSTRAINTS.familyMap];
+  return _VISION_FAMILY_CACHE;
+}
+
+// Vision "why this works here" notes per bucket
+const _VISION_BUCKET_NOTES = {
+  "1st-down":
+    "Win the down on the ground. Wide Zone spine + 1 earned shot married to run.",
+  "p-and-10": "Treat like 1st down — Wide Zone spine, conflict throw built in.",
+  "2nd-medium":
+    "Balance: keep the offense moving. Conflict throws (Golden State / Irish) live here.",
+  "2nd-long":
+    "Quick game and RPOs to stay on schedule. Limit screens as primary plan.",
+  "3rd-short-1-3":
+    "Power the ball. QB run threat (Crab/Rebel/Cavs) and Toledo trap.",
+  "3rd-short-2down":
+    "Same as 3rd & short — must have QB run or downhill power.",
+  "3rd-medium":
+    "Cross / Trail / Railroad family is the identity. Earned Smaug for Cover 0.",
+  "3rd-long":
+    "Crow / Mets / Queens and Dagger / Sail / Bench. Max protect 'outside wins.'",
+  "2-minute":
+    "Uptempo Yellow personnel: Crow, Warp, Trail. Get OOB. Don't tip pass.",
+  "4-minute": "Kill clock. Wide Zone spine + Toledo / Maverick anti-front.",
+  "rz-20":
+    "Fringe (25–20). Balanced — open it up with motion, condense the field.",
+  "rz-10":
+    "High Red Zone. High-percentage throws + downhill power. Earned PA shot.",
+  "rz-5":
+    "Low Red Zone. Quick to end zone, power, QB sneak option.",
+  "goal-line":
+    "5 and in. Power the ball. QB sneak option and Crab/Rebel must exist.",
+  "backed-up": "Saigon: stay safe. No gadgets. Wide Zone + Naked/Boot only.",
+  saigon: "-1 to -10. Get out. Low risk, no dropback longer than 3-step.",
+  openers:
+    "Set the tone. One shot from the Four Pictures. Earned Variation if rep'd.",
+  "must-haves":
+    "Reflect the whole offense: WZ, Counter, Downhill, Anti-front + screens.",
+  "short-yardage":
+    "Crab, Rebel, Cavs, Toledo. QB run or downhill power must lead.",
+  "4th-down":
+    "Best version of every weapon. Yellow conversions live here.",
+  "perimeter-screens":
+    "Big Mac / Whopper / Rodgers / Lamar. Weekly screen package.",
+  screen:
+    "Big Mac / Whopper / Rodgers / Lamar / Michigan / X Middle. Plus optional trap-pass.",
+  "base-run": "Wide Zone spine first. Then Counter, Downhill, Anti-front.",
+  "run-options": "RPO module: Hulk, Packers, Lucky/Irish, Golf, Maverick, Toledo.",
+  "base-pass": "Cross / Trail / Railroad / Crow / Queens / Dagger / Sail.",
+  quick: "Smaug + Hawaii leads. Variations called only after they're earned.",
+  "play-action":
+    "Married to Wide Zone or Power. Naked/Boot/Waggle live here.",
+  rpos: "Hulk, Packers, Lucky/Irish, Golf, Maverick, Toledo.",
+  movement: "Naked/Boot/Waggle + Sprint protections. Movement pass only.",
+};
+
+/**
+ * Detect base→variation pairs and earned-shot violations.
+ * Returns array of warning strings.
+ */
+function _visionVariationWarnings(plays) {
+  if (!_visionOn() || typeof VISION_2026 === "undefined") return [];
+  const warnings = [];
+  const text = plays
+    .map((p) =>
+      [p.play, p.basePlay, p.playTag1, p.playTag2, p.notes]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase(),
+    )
+    .join(" || ");
+  // Smaug/Hawaii base→variation rules
+  const pairs = [
+    {
+      variationKw: ["sluggo", "smaug variation", "smaug var"],
+      baseKw: ["smaug", "slant-arrow", "slant arrow"],
+      label: "Smaug Variation (Sluggo–Seam–Wheel)",
+      base: "Smaug (Slant–Arrow)",
+    },
+    {
+      variationKw: ["hitch-and-go", "hitch and go", "hawaii variation"],
+      baseKw: ["hawaii", "all hitch"],
+      label: "Hawaii Variation (Hitch-and-go)",
+      base: "Hawaii (All Hitch)",
+    },
+    {
+      variationKw: ["stutter-go", "stutter go", "eagles pump"],
+      baseKw: ["eagles", "bubble"],
+      label: "Eagles pump stutter-go",
+      base: "Eagles (bubble)",
+    },
+  ];
+  pairs.forEach((p) => {
+    const hasVar = p.variationKw.some((k) => text.includes(k));
+    const hasBase = p.baseKw.some((k) => text.includes(k));
+    if (hasVar && !hasBase) {
+      warnings.push(
+        `⚠️ ${p.label} called without its base (${p.base}) — Variation must be earned`,
+      );
+    }
+  });
+  return warnings;
+}
+
+/**
+ * Detect directional gap-rule duplicates (right-handed offense).
+ * If both a rule's base call and its mirror direction appear, warn.
+ */
+function _visionDirectionalWarnings(plays) {
+  if (!_visionOn() || typeof VISION_2026 === "undefined") return [];
+  const warnings = [];
+  const allText = plays
+    .map((p) =>
+      [p.play, p.basePlay, p.playTag1, p.playTag2]
+        .filter(Boolean)
+        .join(" ")
+        .toLowerCase(),
+    )
+    .join(" || ");
+  // Right-handed: warn if Power LEFT or Counter RIGHT appears as a base call
+  const wrongDir = [
+    { kw: ["power left", "georgia left"], expected: "Power → right (Georgia)" },
+    { kw: ["counter right", "ali right"], expected: "Counter → left (Ali)" },
+    { kw: ["deer left"], expected: "Deer → right (hammer run)" },
+  ];
+  wrongDir.forEach((w) => {
+    if (w.kw.some((k) => allText.includes(k))) {
+      warnings.push(
+        `⚠️ Directional rule: ${w.expected}. Dress up direction via formation/motion instead.`,
+      );
+    }
+  });
+  return warnings;
+}
+
 /**
  * Check a list of keyword strings against a set of text fields from a play.
  * @param {string[]} keywords
@@ -431,7 +620,7 @@ function categorizePlay(play) {
   // ── Determine family ───────────────────────────────────────────────────────
   let matchedFamily = "unknown";
   let matchedCategory = "unknown";
-  for (const entry of CALLSHEET_CONSTRAINTS.familyMap) {
+  for (const entry of _activeFamilyMap()) {
     if (_matchesKeywords(entry.keywords, textFields)) {
       matchedFamily = entry.family;
       matchedCategory = entry.category;
@@ -481,7 +670,7 @@ function categorizePlay(play) {
   // ── Touch inference ───────────────────────────────────────────────────────
   // Look at keyPlayer1/2/3 and map to role names via roleMap
   const touches = new Set();
-  const roleMap = CALLSHEET_CONSTRAINTS.roleMap;
+  const roleMap = _activeRoleMap();
   [play.keyPlayer1, play.keyPlayer2, play.keyPlayer3].forEach((kp) => {
     if (!kp) return;
     const k = kp.trim().toUpperCase();
@@ -702,14 +891,14 @@ function evaluateBucket(bucketKey, bucketObj) {
   const required = rules.required || [];
 
   if (required.includes("marco")) {
-    const marcoPlayer = CALLSHEET_CONSTRAINTS.roleMap["X"] || "Marco";
+    const marcoPlayer = _activeRoleMap()["X"] || "Marco";
     const cnt = touchCounts[marcoPlayer] || 0;
     if (cnt >= 2) successes.push(`✅ ${marcoPlayer} touches: ${cnt}`);
     else errors.push(`🚨 Need ≥2 ${marcoPlayer} (X) options — have ${cnt}`);
   }
 
   if (required.includes("jayce")) {
-    const jaycePlayer = CALLSHEET_CONSTRAINTS.roleMap["H"] || "Jayce";
+    const jaycePlayer = _activeRoleMap()["H"] || "Jayce";
     const cnt = touchCounts[jaycePlayer] || 0;
     if (cnt >= 2) successes.push(`✅ ${jaycePlayer} touches: ${cnt}`);
     else
@@ -717,7 +906,7 @@ function evaluateBucket(bucketKey, bucketObj) {
   }
 
   if (required.includes("danny")) {
-    const dannyPlayer = CALLSHEET_CONSTRAINTS.roleMap["TE"] || "Danny";
+    const dannyPlayer = _activeRoleMap()["TE"] || "Danny";
     const cnt = touchCounts[dannyPlayer] || 0;
     if (cnt >= 1) successes.push(`✅ ${dannyPlayer} (TE) option present`);
     else warnings.push(`⚠️ No ${dannyPlayer} (TE/HB leak) option`);
@@ -764,6 +953,12 @@ function evaluateBucket(bucketKey, bucketObj) {
     errors.push(`🚨 3rd & medium identity: Cross concept missing`);
   }
 
+  // ── Vision Mode: variation & directional warnings ─────────────────────────
+  if (_visionOn()) {
+    _visionVariationWarnings(all).forEach((w) => warnings.push(w));
+    _visionDirectionalWarnings(all).forEach((w) => warnings.push(w));
+  }
+
   // ── Scoring ───────────────────────────────────────────────────────────────
   const checkTotal = successes.length + warnings.length + errors.length;
   const score =
@@ -792,7 +987,10 @@ function evaluateBucket(bucketKey, bucketObj) {
     successes,
     score,
     status,
-    philosophy: rules.philosophy || "",
+    philosophy:
+      (_visionOn() && _VISION_BUCKET_NOTES[bucketKey]
+        ? _VISION_BUCKET_NOTES[bucketKey] + " "
+        : "") + (rules.philosophy || ""),
   };
 }
 
