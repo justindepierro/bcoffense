@@ -829,7 +829,7 @@ async function showScriptHealthIssues() {
   const items = issues.map((issue, i) => {
     const icon =
       issue.severity === "error" ? "\u26A0\uFE0F" :
-      issue.severity === "warn" ? "\u26A1" : "\u2139\uFE0F";
+        issue.severity === "warn" ? "\u26A1" : "\u2139\uFE0F";
     return { value: i, label: `${icon} ${issue.label}` };
   });
   const choice = await showListPicker(
@@ -869,9 +869,9 @@ function showScriptShortcutsModal() {
   const rows = SCRIPT_KEYBOARD_SHORTCUTS
     .map((s) => `<tr><td><kbd>${escapeHtml(s.keys)}</kbd></td><td>${escapeHtml(s.desc)}</td></tr>`)
     .join("");
-  setInnerHTML(
-    overlay,
-    `
+  // NOTE: cannot use setInnerHTML here — sanitizeHTML strips <button>, which
+  // would remove the Close button. All interpolated values above are escaped.
+  overlay.innerHTML = `
     <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="scriptShortcutsTitle" style="max-width:560px;">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">\u2328\uFE0F</span>
@@ -887,8 +887,7 @@ function showScriptShortcutsModal() {
         <button class="btn btn-primary custom-modal-btn" id="scriptShortcutsCloseBtn">Close</button>
       </div>
     </div>
-  `,
-  );
+  `;
   document.body.appendChild(overlay);
   trapFocus(overlay);
   const close = () => {

@@ -83,33 +83,51 @@ const GP_BOX_ACCENTS = {
 // the coach should have plays ready for. Click a tile to auto-apply the
 // matching filter set on the library.
 const GP_COVERAGE_SCENARIOS = [
-  { id: "1st-down", label: "1st Down",
+  {
+    id: "1st-down", label: "1st Down",
     filters: { preferredDown: "1" },
-    match: (p) => p.preferredDown === "1" },
-  { id: "3rd-short", label: "3rd & Short",
+    match: (p) => p.preferredDown === "1"
+  },
+  {
+    id: "3rd-short", label: "3rd & Short",
     filters: { preferredDown: "3", preferredDistance: "Short" },
-    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Short" },
-  { id: "3rd-med", label: "3rd & Med",
+    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Short"
+  },
+  {
+    id: "3rd-med", label: "3rd & Med",
     filters: { preferredDown: "3", preferredDistance: "Medium" },
-    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Medium" },
-  { id: "3rd-long", label: "3rd & Long",
+    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Medium"
+  },
+  {
+    id: "3rd-long", label: "3rd & Long",
     filters: { preferredDown: "3", preferredDistance: "Long" },
-    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Long" },
-  { id: "rz", label: "Red Zone",
+    match: (p) => p.preferredDown === "3" && p.preferredDistance === "Long"
+  },
+  {
+    id: "rz", label: "Red Zone",
     filters: { preferredFieldPosition: "Lo-RZ" },
-    match: (p) => p.preferredFieldPosition === "Lo-RZ" || p.preferredFieldPosition === "Hi-RZ" },
-  { id: "goal-line", label: "Goal Line",
+    match: (p) => p.preferredFieldPosition === "Lo-RZ" || p.preferredFieldPosition === "Hi-RZ"
+  },
+  {
+    id: "goal-line", label: "Goal Line",
     filters: { preferredFieldPosition: "Goal Line" },
-    match: (p) => p.preferredFieldPosition === "Goal Line" },
-  { id: "backed-up", label: "Backed Up",
+    match: (p) => p.preferredFieldPosition === "Goal Line"
+  },
+  {
+    id: "backed-up", label: "Backed Up",
     filters: { preferredFieldPosition: "Backed Up" },
-    match: (p) => p.preferredFieldPosition === "Backed Up" },
-  { id: "2-min", label: "2 Min",
+    match: (p) => p.preferredFieldPosition === "Backed Up"
+  },
+  {
+    id: "2-min", label: "2 Min",
     filters: { preferredSituation: "2 Minute" },
-    match: (p) => p.preferredSituation === "2 Minute" },
-  { id: "4-min", label: "4 Min",
+    match: (p) => p.preferredSituation === "2 Minute"
+  },
+  {
+    id: "4-min", label: "4 Min",
     filters: { preferredSituation: "4 Minute" },
-    match: (p) => p.preferredSituation === "4 Minute" },
+    match: (p) => p.preferredSituation === "4 Minute"
+  },
 ];
 
 // Snapshots (saved named plans) storage
@@ -2233,47 +2251,71 @@ function openGamePlanShortcutsHelp() {
    ------------------------------------------------------------------------- */
 
 const GP_BUCKET_TEMPLATES = [
-  { id: "blank", icon: "📦", label: "Blank Bucket",
+  {
+    id: "blank", icon: "📦", label: "Blank Bucket",
     description: "Free-form box. Add any plays you want.",
-    promptName: "Bucket name:", defaultName: "" },
-  { id: "down-distance", icon: "🔢", label: "Down & Distance",
+    promptName: "Bucket name:", defaultName: ""
+  },
+  {
+    id: "down-distance", icon: "🔢", label: "Down & Distance",
     description: "Auto-target plays for a specific down/distance situation.",
     fields: [
       { key: "preferredDown", label: "Down", options: ["1", "2", "3", "4"] },
       { key: "preferredDistance", label: "Distance", options: ["Short", "Medium", "Long"] },
-    ] },
-  { id: "field-position", icon: "🟩", label: "Field Position",
+    ]
+  },
+  {
+    id: "field-position", icon: "🟩", label: "Field Position",
     description: "Auto-target plays preferred for a specific zone of the field.",
     fields: [
-      { key: "preferredFieldPosition", label: "Position",
-        options: ["Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon"] },
-    ] },
-  { id: "situation", icon: "🕒", label: "Special Situation",
+      {
+        key: "preferredFieldPosition", label: "Position",
+        options: ["Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up", "Saigon"]
+      },
+    ]
+  },
+  {
+    id: "situation", icon: "🕒", label: "Special Situation",
     description: "Short Yardage / 2-Min / 4-Min plays.",
     fields: [
-      { key: "preferredSituation", label: "Situation",
-        options: ["Short Yardage", "2 Minute", "4 Minute"] },
-    ] },
-  { id: "tempo", icon: "⏱️", label: "Tempo Group",
+      {
+        key: "preferredSituation", label: "Situation",
+        options: ["Short Yardage", "2 Minute", "4 Minute"]
+      },
+    ]
+  },
+  {
+    id: "tempo", icon: "⏱️", label: "Tempo Group",
     description: "Group plays by tempo designation.",
-    fields: [{ key: "tempo", label: "Tempo", source: "tempo" }] },
-  { id: "personnel", icon: "🧮", label: "Personnel Group",
+    fields: [{ key: "tempo", label: "Tempo", source: "tempo" }]
+  },
+  {
+    id: "personnel", icon: "🧮", label: "Personnel Group",
     description: "Group plays by personnel.",
-    fields: [{ key: "personnel", label: "Personnel", source: "personnel" }] },
-  { id: "formation", icon: "📐", label: "Formation Group",
+    fields: [{ key: "personnel", label: "Personnel", source: "personnel" }]
+  },
+  {
+    id: "formation", icon: "📐", label: "Formation Group",
     description: "Group plays by formation.",
-    fields: [{ key: "formation", label: "Formation", source: "formation" }] },
-  { id: "vs-coverage", icon: "🛡️", label: "vs. Defense",
+    fields: [{ key: "formation", label: "Formation", source: "formation" }]
+  },
+  {
+    id: "vs-coverage", icon: "🛡️", label: "vs. Defense",
     description: "Plays tagged good vs. specific fronts/coverages.",
     fields: [
       { key: "vsTag", label: "Versus", options: ["Man", "Bear", "Okie"] },
-    ] },
-  { id: "must-haves", icon: "⭐", label: "Must Haves",
+    ]
+  },
+  {
+    id: "must-haves", icon: "⭐", label: "Must Haves",
     description: "Free-form list of staple plays you must run this game.",
-    promptName: "Bucket name:", defaultName: "Must Haves" },
-  { id: "openers", icon: "🚀", label: "Openers / Script",
+    promptName: "Bucket name:", defaultName: "Must Haves"
+  },
+  {
+    id: "openers", icon: "🚀", label: "Openers / Script",
     description: "First 10–15 scripted plays.",
-    promptName: "Bucket name:", defaultName: "Openers" },
+    promptName: "Bucket name:", defaultName: "Openers"
+  },
 ];
 
 function _gpUniqueValues(field) {
@@ -2417,8 +2459,10 @@ function _gpComputePlanHealth(board) {
     });
     targetScore = Math.round((met / targetIds.length) * 100);
   }
-  parts.push({ key: "targets", label: "Targets met", score: targetScore, weight: 0.4,
-    detail: targetIds.length === 0 ? "No targets set" : `${targetIds.filter((k) => (board.assignments[k] || []).length >= (Number(targets[k]) || 0)).length} / ${targetIds.length}` });
+  parts.push({
+    key: "targets", label: "Targets met", score: targetScore, weight: 0.4,
+    detail: targetIds.length === 0 ? "No targets set" : `${targetIds.filter((k) => (board.assignments[k] || []).length >= (Number(targets[k]) || 0)).length} / ${targetIds.length}`
+  });
 
   // 2. Scenario coverage (30%)
   let covered = 0;
@@ -2428,8 +2472,10 @@ function _gpComputePlanHealth(board) {
     else if (count >= 1) covered += 0.5;
   });
   const scenarioScore = Math.round((covered / GP_COVERAGE_SCENARIOS.length) * 100);
-  parts.push({ key: "scenarios", label: "Scenario coverage", score: scenarioScore, weight: 0.3,
-    detail: `${Math.round(covered)} / ${GP_COVERAGE_SCENARIOS.length} scenarios` });
+  parts.push({
+    key: "scenarios", label: "Scenario coverage", score: scenarioScore, weight: 0.3,
+    detail: `${Math.round(covered)} / ${GP_COVERAGE_SCENARIOS.length} scenarios`
+  });
 
   // 3. Type balance (20%)
   const typeCounts = {};
@@ -2439,14 +2485,18 @@ function _gpComputePlanHealth(board) {
   });
   const typesPresent = Object.keys(typeCounts).length;
   const balanceScore = Math.min(100, typesPresent * 20); // 5+ types = 100
-  parts.push({ key: "balance", label: "Type variety", score: balanceScore, weight: 0.2,
-    detail: `${typesPresent} types in mix` });
+  parts.push({
+    key: "balance", label: "Type variety", score: balanceScore, weight: 0.2,
+    detail: `${typesPresent} types in mix`
+  });
 
   // 4. Holding cleared (10%)
   const holdingCount = (board.assignments[GP_HOLDING_ID] || []).length;
   const holdingScore = holdingCount === 0 ? 100 : Math.max(0, 100 - holdingCount * 10);
-  parts.push({ key: "holding", label: "Holding cleared", score: holdingScore, weight: 0.1,
-    detail: holdingCount === 0 ? "Empty" : `${holdingCount} unrouted` });
+  parts.push({
+    key: "holding", label: "Holding cleared", score: holdingScore, weight: 0.1,
+    detail: holdingCount === 0 ? "Empty" : `${holdingCount} unrouted`
+  });
 
   const score = Math.round(parts.reduce((sum, p) => sum + (p.score * p.weight), 0));
   let label = "Excellent";

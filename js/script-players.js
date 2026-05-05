@@ -148,7 +148,10 @@ function rerenderScriptPreservingScroll(anchorIndex) {
   const existingGrid = row.querySelector(".script-player-grid");
   if (existingGrid && newGridHtml) {
     const tmp = document.createElement("div");
-    setInnerHTML(tmp, newGridHtml);
+    // NOTE: cannot use setInnerHTML — sanitizeHTML strips <select> and <button>
+    // which are the entire point of the player assignment grid. All player
+    // names and labels are passed through escapeHtml/escapeAttr upstream.
+    tmp.innerHTML = newGridHtml;
     const replacement = tmp.firstElementChild;
     if (replacement) {
       existingGrid.replaceWith(replacement);
