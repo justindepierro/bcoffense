@@ -331,54 +331,64 @@ function renderGamePlan() {
       </div>
       <div class="gp-header-actions">
         ${_gpRenderHealthGauge(board)}
-        <button class="btn btn-sm" data-action="openGamePlanAddBucket" title="Add a new bucket from a template">
-          ➕ Add Bucket
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanPrintModal" title="Print the game plan">
-          🖨️ Print
-        </button>
-        <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
-          💾 Save Plan
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanSnapshotsMenu" title="Load or delete a saved plan">
-          📂 Plans
-        </button>
-        <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
-          ▼ Expand All
-        </button>
-        <button class="btn btn-sm" data-action="collapseAllGamePlanBoxes" title="Collapse every box">
-          ▶ Collapse All
-        </button>
-        <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
-          ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanShortcutsHelp" title="Keyboard shortcuts (?)">
-          ⌨️
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
-          📊 Variety Stats
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanCoverageMatrix" title="Heatmap of bucket coverage across game scenarios">
-          🌡️ Coverage
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanTendencyMirror" title="Compare opponent's defensive tendencies vs your plan">
-          🪞 vs Defense
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanCompare" title="Compare two saved plans">
-          🔄 Compare
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanReorderBoxes" title="Drag boxes into a custom order">
-          ↕️ Reorder
-        </button>
-        <button class="btn btn-sm" data-action="openGamePlanManageBoxes" title="Hide or show boxes">
-          👁️ Manage Boxes
-        </button>
-        <button class="btn btn-sm" data-action="pushGamePlanToCallSheet" title="Copy drafted plays into the call sheet">
-          ➡️ Push to Call Sheet
-        </button>
-        <button class="btn btn-sm" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
-          📋 Push to Script
-        </button>
+        <div class="gp-header-group gp-header-group-primary">
+          <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the game plan">
+            🖨️ Print
+          </button>
+          <button class="btn btn-sm btn-success" data-action="pushGamePlanToCallSheet" title="Copy drafted plays into the call sheet">
+            ➡️ Call Sheet
+          </button>
+          <button class="btn btn-sm btn-success" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
+            📋 Script
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
+            💾 Save Plan
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanSnapshotsMenu" title="Load or delete a saved plan">
+            📂 Plans
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanCompare" title="Compare two saved plans">
+            🔄 Compare
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
+            📊 Variety
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanCoverageMatrix" title="Heatmap of bucket coverage across game scenarios">
+            🌡️ Coverage
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanTendencyMirror" title="Compare opponent's defensive tendencies vs your plan">
+            🪞 vs Defense
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="openGamePlanAddBucket" title="Add a new bucket from a template">
+            ➕ Add Bucket
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanReorderBoxes" title="Drag boxes into a custom order">
+            ↕️ Reorder
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanManageBoxes" title="Hide or show boxes">
+            👁️ Manage
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
+            ▼
+          </button>
+          <button class="btn btn-sm" data-action="collapseAllGamePlanBoxes" title="Collapse every box">
+            ▶
+          </button>
+          <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
+            ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanShortcutsHelp" title="Keyboard shortcuts (?)">
+            ⌨️
+          </button>
+        </div>
         <button class="btn btn-sm btn-danger" data-action="clearGamePlanBoard" title="Remove every play from every box for this opponent">
           🗑️ Clear All
         </button>

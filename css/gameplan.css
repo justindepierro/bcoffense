@@ -55,6 +55,24 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-xs);
+  align-items: center;
+}
+
+.gp-header-group {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px;
+  padding: 0 var(--space-xs);
+  border-right: 1px solid var(--color-border-light);
+}
+.gp-header-group:last-of-type {
+  border-right: none;
+}
+.gp-header-group-primary .btn {
+  font-weight: 600;
+}
+.gp-header-group-primary {
+  padding-left: 0;
 }
 
 /* Toolbar / filters */
