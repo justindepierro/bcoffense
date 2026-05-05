@@ -6,8 +6,9 @@ const TAB_INDEX_MAP = {
   gameplan: 4,
   callsheet: 5,
   installation: 6,
-  offensebuilder: 7,
-  dashboard: 8,
+  identity: 7,
+  offensebuilder: 8,
+  dashboard: 9,
 };
 
 function showTab(tabName) {
@@ -33,6 +34,8 @@ function showTab(tabName) {
 
   if (tabName === "installation") {
     initInstallation();
+  } else if (tabName === "identity") {
+    if (typeof renderIdentity === "function") renderIdentity();
   } else if (tabName === "script") {
     if (typeof ensureScriptWorkspaceReady === "function") {
       ensureScriptWorkspaceReady();
@@ -72,6 +75,7 @@ function showTab(tabName) {
     gameplan: "Game Plan",
     callsheet: "Call Sheet",
     installation: "Installation",
+    identity: "Identity",
     offensebuilder: "Offense Builder",
     dashboard: "Dashboard",
   };

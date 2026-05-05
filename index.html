@@ -38,6 +38,7 @@
   <link rel="stylesheet" href="css/dashboard.css" />
   <link rel="stylesheet" href="css/gameplan.css" />
   <link rel="stylesheet" href="css/installation.css" />
+  <link rel="stylesheet" href="css/identity.css" />
   <link rel="stylesheet" href="css/print.css" />
   <link rel="stylesheet" href="css/responsive.css" />
 </head>
@@ -282,6 +283,10 @@
       <button id="tab-installation" class="tab" role="tab" aria-selected="false" aria-controls="installation"
         data-action="showTab" data-arg="installation" data-testid="tab-installation">
         📦 Installation
+      </button>
+      <button id="tab-identity" class="tab" role="tab" aria-selected="false" aria-controls="identity"
+        data-action="showTab" data-arg="identity" data-testid="tab-identity">
+        🧭 Identity
       </button>
       <button id="tab-offensebuilder" class="tab" role="tab" aria-selected="false" aria-controls="offensebuilder"
         data-action="showTab" data-arg="offensebuilder" data-testid="tab-offensebuilder">
@@ -1426,6 +1431,9 @@
     <div id="offensebuilder" class="panel" role="tabpanel" aria-label="Offense Builder">
       <div id="offenseBuilderContent"></div>
     </div>
+
+    <!-- Identity Panel (2026 Vision Framework) -->
+    <div id="identity" class="panel" role="tabpanel" aria-label="Offensive Identity"></div>
 
     <!-- Game Week Dashboard Panel -->
     <div id="dashboard" class="panel" role="tabpanel" aria-label="Dashboard">
@@ -2679,6 +2687,7 @@
   <script defer src="js/constraints.js"></script>
   <script defer src="js/tendencies.js"></script>
   <script defer src="js/installation.js"></script>
+  <script defer src="js/identity.js"></script>
   <script defer src="js/offensebuilder.js"></script>
   <script defer src="js/help.js"></script>
   <script defer src="js/dashboard.js"></script>
