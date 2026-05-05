@@ -87,6 +87,10 @@
     </div>
     <div class="app-header-actions">
       <span id="saveStatus" class="save-status" aria-live="polite"></span>
+      <button id="visionModeBtn" class="header-action-btn vision-toggle" data-action="toggleVisionMode" title="Vision Mode: OFF — current iteration" aria-pressed="false">
+        <span id="visionModeIcon">🧭</span>
+        <span class="header-action-label">Vision</span>
+      </button>
       <button class="header-action-btn" data-action="toggleDarkMode" title="Toggle dark mode">
         <span id="darkModeIcon">🌙</span>
       </button>
@@ -2626,6 +2630,7 @@
   <script defer src="js/dom-helpers.js"></script>
   <script defer src="js/storage.js"></script>
   <script defer src="js/storage-ui.js"></script>
+  <script defer src="js/vision.js"></script>
   <script defer src="js/team-settings.js"></script>
   <script defer src="js/playbook.js"></script>
   <script defer src="js/playbook-collections.js"></script>

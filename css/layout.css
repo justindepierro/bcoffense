@@ -109,6 +109,33 @@ h1 {
   font-size: var(--font-size-xs2);
 }
 
+/* Vision Mode toggle — header button + page-level indicator */
+.header-action-btn.vision-toggle.vision-active {
+  background: var(--color-accent);
+  border-color: var(--color-accent);
+  color: white;
+  box-shadow: 0 0 0 2px var(--color-white-alpha-20) inset;
+}
+[data-vision="on"] body::before {
+  content: "🎯 Vision Mode — 2026 Framework";
+  display: block;
+  text-align: center;
+  font-size: var(--font-size-xs2);
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: white;
+  background: linear-gradient(
+    90deg,
+    var(--color-accent),
+    var(--color-primary)
+  );
+  padding: 4px var(--space-sm);
+  position: sticky;
+  top: 0;
+  z-index: var(--z-toast);
+}
+
 .tabs {
   display: flex;
   gap: 2px;

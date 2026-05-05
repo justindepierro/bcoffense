@@ -92,6 +92,7 @@ const STORAGE_KEYS = {
   OB_PLAY_RATINGS: "ob_playRatings",
   LAST_ACTIVE_TAB: "lastActiveTab",
   THEME: "theme",
+  VISION_MODE: "visionMode",
   SCHEDULE: "schedule",
   GAME_PLAN_TAGS: "gamePlanTags",
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
