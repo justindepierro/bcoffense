@@ -4,6 +4,22 @@ function renderPlaybook() {
     const searchTerm =
       document.getElementById("searchPlay")?.value?.toLowerCase() || "";
 
+    // Vision Mode: small picture pill next to play name. Hidden when off.
+    const visionOn = typeof isVisionMode === "function" && isVisionMode();
+    const PICTURE_PILLS = {
+      wideZone: { label: "WZ", title: "Wide Zone", cls: "pb-pic-wz" },
+      pullers: { label: "Pull", title: "Pullers / Counter", cls: "pb-pic-pull" },
+      downhill: { label: "DH", title: "Downhill / ISO", cls: "pb-pic-dh" },
+      antiFront: { label: "AF", title: "Anti-front", cls: "pb-pic-af" },
+    };
+    const picturePillFor = (play) => {
+      if (!visionOn || typeof getPlayPicture !== "function") return "";
+      const pic = getPlayPicture(play);
+      if (!pic || !PICTURE_PILLS[pic]) return "";
+      const def = PICTURE_PILLS[pic];
+      return ` <span class="pb-picture-pill ${def.cls}" title="${def.title}">${def.label}</span>`;
+    };
+
     const totalFiltered = filteredPlays.length;
     const totalPages = Math.max(1, Math.ceil(totalFiltered / PLAYS_PER_PAGE));
     if (currentPage >= totalPages) currentPage = totalPages - 1;
@@ -40,7 +56,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlightSearch(play.back || "-", searchTerm)}</td>
                 <td class="col-motion">${highlightSearch(play.motion || "-", searchTerm)}</td>
                 <td class="col-protection">${highlightSearch(play.protection || "-", searchTerm)}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlightSearch(play.play, searchTerm)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlightSearch(play.play, searchTerm)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${picturePillFor(play)}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -76,7 +92,7 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
-            <div class="pb-card-play">${gpCardToggle}${installBadge} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}</div>
+            <div class="pb-card-play">${gpCardToggle}${installBadge} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}${picturePillFor(play)}</div>
             <div class="pb-card-sub">${highlightSearch(play.type, searchTerm)}${play.motion ? " · " + highlightSearch(play.motion, searchTerm) : ""}${play.back ? " · " + highlightSearch(play.back, searchTerm) : ""}</div>
             <div class="pb-card-pills">${pills}</div>
           </div>

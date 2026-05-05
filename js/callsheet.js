@@ -735,6 +735,10 @@ function initCallSheet() {
     // Populate user presets in dropdown
     refreshPresetDropdown();
 
+    // Re-sync any stale `{...play}` snapshots against the master playbook
+    // before first render (mirrors the gameplan v358 fix).
+    refreshCallSheetFromPlaybook();
+
     renderCallSheet();
 
   } catch (err) {
@@ -3106,6 +3110,47 @@ function buildCallSheetPlayParts(play, options) {
  */
 function csPlayKey(play) {
   return `${(play.formation || "").toLowerCase()}|${(play.play || "").toLowerCase()}|${(play.personnel || "").toLowerCase()}`;
+}
+
+/**
+ * Re-hydrate every `{...play}` snapshot stored on the call sheet from the
+ * master `plays[]` array. Mirrors `refreshGamePlanFromPlaybook()` in
+ * gameplan.js — when staff edits a play in the editor or dashboard, the
+ * already-placed call sheet entries are stale until re-populated. We match
+ * by `csPlayKey` (formation+play+personnel, lowercased) and replace each
+ * snapshot with a fresh copy. Snapshots whose key no longer maps to any
+ * master play are left as-is (could be a renamed/deleted play). Returns
+ * the number of entries refreshed.
+ */
+function refreshCallSheetFromPlaybook() {
+  if (!Array.isArray(plays) || plays.length === 0) return 0;
+  if (!callSheet || typeof callSheet !== "object") return 0;
+  // Build a quick lookup so we don't do O(n) per entry.
+  const byKey = new Map();
+  plays.forEach((p) => {
+    byKey.set(csPlayKey(p), p);
+  });
+  let updated = 0;
+  Object.keys(callSheet).forEach((catId) => {
+    const data = callSheet[catId];
+    if (!data) return;
+    ["left", "right"].forEach((side) => {
+      const arr = data[side];
+      if (!Array.isArray(arr)) return;
+      arr.forEach((snap, i) => {
+        const fresh = byKey.get(csPlayKey(snap));
+        if (fresh) {
+          // `{ ...snap, ...fresh }` — fresh-wins for any shared key, but
+          // call-sheet-only fields tacked on at placement time (e.g.
+          // `wristbandNumber`) survive because they don't exist on fresh.
+          arr[i] = { ...snap, ...fresh };
+          updated += 1;
+        }
+      });
+    });
+  });
+  if (updated > 0) saveCallSheet();
+  return updated;
 }
 
 /**

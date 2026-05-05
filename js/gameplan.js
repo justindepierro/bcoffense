@@ -891,11 +891,11 @@ function _gpRenderBox(box, board) {
       visionWarnHtml = `
         <div class="gp-vision-warnings" title="Vision Mode reminders">
           ${warnings
-            .map(
-              (w) =>
-                `<div class="gp-vision-warning">⚠️ ${escapeHtml(String(w))}</div>`,
-            )
-            .join("")}
+          .map(
+            (w) =>
+              `<div class="gp-vision-warning">⚠️ ${escapeHtml(String(w))}</div>`,
+          )
+          .join("")}
         </div>`;
     }
   }
@@ -2220,6 +2220,22 @@ const GP_BOX_INTENT_TYPES = {
   Movement: ["Movement"],
 };
 
+// Vision Mode: per-box preferred Picture order. When Vision is ON, the
+// 💡 Suggest list ranks plays whose Picture matches the box's preference
+// before plays without a Picture tag. Run-flavored boxes lead with Wide
+// Zone; pass-flavored boxes lead with Pullers (conflict throws); etc.
+// Boxes not listed fall back to no Picture preference.
+const GP_BOX_PICTURE_PREF = {
+  Run: ["wideZone", "pullers", "downhill", "antiFront"],
+  RPO: ["wideZone", "pullers", "downhill", "antiFront"],
+  "Run Option": ["wideZone", "pullers", "downhill"],
+  Pass: ["pullers", "wideZone", "downhill", "antiFront"],
+  "Play Action": ["wideZone", "pullers", "downhill"],
+  Movement: ["wideZone", "pullers"],
+  Screen: [],
+  Quick: ["pullers", "wideZone"],
+};
+
 async function gpSuggestFillBox(boxId) {
   if (!boxId || !Array.isArray(plays)) return;
   const board = _gpEnsureBoard();
@@ -2232,28 +2248,49 @@ async function gpSuggestFillBox(boxId) {
   // Rank: opponent-tagged first, then by base play group, then alphabetical
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
-  if (opponent && typeof isPlayTaggedForOpponent === "function") {
-    candidates.sort((a, b) => {
+  const visionOn = typeof isVisionMode === "function" && isVisionMode();
+  const pictureOrder = visionOn ? (GP_BOX_PICTURE_PREF[boxId] || []) : [];
+  const pictureRank = (p) => {
+    if (!visionOn || pictureOrder.length === 0) return 99;
+    if (typeof getPlayPicture !== "function") return 99;
+    const pic = getPlayPicture(p);
+    if (!pic) return 50; // untagged sorts after matched, before unmatched
+    const idx = pictureOrder.indexOf(pic);
+    return idx === -1 ? 60 : idx;
+  };
+  candidates.sort((a, b) => {
+    if (opponent && typeof isPlayTaggedForOpponent === "function") {
       const ta = isPlayTaggedForOpponent(a, opponent) ? 0 : 1;
       const tb = isPlayTaggedForOpponent(b, opponent) ? 0 : 1;
       if (ta !== tb) return ta - tb;
-      return (a.play || "").localeCompare(b.play || "");
-    });
-  }
+    }
+    const pa = pictureRank(a);
+    const pb = pictureRank(b);
+    if (pa !== pb) return pa - pb;
+    return (a.play || "").localeCompare(b.play || "");
+  });
   if (candidates.length === 0) {
     showToast(intent ? `No more ${intent.join("/")} plays available.` : "No more plays available.", { type: "warning" });
     return;
   }
   const assignedSigs = _gpAllAssignedSigs(board);
+  const pictureLabels = {
+    wideZone: "🌊 WZ",
+    pullers: "🔁 Pull",
+    downhill: "⛏ DH",
+    antiFront: "🧱 AF",
+  };
   const items = candidates.map((p) => {
     const sig = _gpPlaySignature(p);
     const tagged = opponent && typeof isPlayTaggedForOpponent === "function" && isPlayTaggedForOpponent(p, opponent) ? "🎯 " : "";
+    const pic = visionOn && typeof getPlayPicture === "function" ? getPlayPicture(p) : null;
+    const picBadge = pic && pictureLabels[pic] ? ` [${pictureLabels[pic]}]` : "";
     const dup = assignedSigs.has(sig) ? " ⓘ on board" : "";
-    const label = tagged + [p.type, p.formation, p.personnel, p.play].filter(Boolean).join(" • ") + dup;
+    const label = tagged + [p.type, p.formation, p.personnel, p.play].filter(Boolean).join(" • ") + picBadge + dup;
     return { value: sig, label };
   });
   const choice = await showListPicker(
-    `💡 ${candidates.length} suggestion${candidates.length === 1 ? "" : "s"} for ${boxId}${opponent ? ` (opponent-tagged first)` : ""}:`,
+    `💡 ${candidates.length} suggestion${candidates.length === 1 ? "" : "s"} for ${boxId}${opponent ? ` (opponent-tagged first)` : ""}${visionOn && pictureOrder.length ? ` • 🎯 Vision: ${pictureOrder.map((k) => pictureLabels[k] || k).join(" → ")}` : ""}:`,
     items,
     { title: "Smart Fill", icon: "💡" },
   );
@@ -2974,6 +3011,7 @@ let _gpPrintOptions = {
   showPageNumbers: true,
   showFooter: true,
   showDetail: false,
+  playerHandout: false,
 };
 
 async function openGamePlanPrintModal() {
@@ -3024,6 +3062,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
               <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
               <label><input type="checkbox" id="gpPrintDetail" ${o.showDetail ? "checked" : ""}> Show bucket detail (touches, type, D&D)</label>
+              <label><input type="checkbox" id="gpPrintHandout" ${o.playerHandout ? "checked" : ""}> 👦 <strong>Player handout</strong> (key players · complements · hit chart · notes)</label>
             </div>
           </div>
         </div>
@@ -3057,6 +3096,7 @@ async function openGamePlanPrintModal() {
         showPageNumbers: overlay.querySelector("#gpPrintPageNumbers").checked,
         showFooter: overlay.querySelector("#gpPrintFooter").checked,
         showDetail: overlay.querySelector("#gpPrintDetail").checked,
+        playerHandout: overlay.querySelector("#gpPrintHandout").checked,
       };
       close(true);
       _gpRenderPrintViewAndPrint();
@@ -3111,6 +3151,7 @@ function _gpRenderPrintViewAndPrint() {
     `gp-print-${o.orientation}`,
     o.bucketPerPage ? "gp-print-bucket-per-page" : "",
     o.showFooter ? "gp-print-with-footer" : "",
+    o.playerHandout ? "gp-print-handout" : "",
   ].filter(Boolean).join(" ");
   host.className = rootClasses;
   host.style.setProperty("--gp-print-cols", String(o.columns));
@@ -3204,7 +3245,55 @@ function _gpRenderPrintPlay(play) {
     if (play.preferredHash) meta.push(`<em>${escapeHtml(play.preferredHash)} hash</em>`);
   }
   const metaHtml = meta.length > 0 ? `<span class="gp-print-play-meta">${meta.join(" · ")}</span>` : "";
-  return `<li class="gp-print-play">${callHtml}${metaHtml}</li>`;
+
+  // Player-handout extras: full coaching detail per play so a kid can read
+  // their assignment, the partner/complement, hit chart targets, and notes.
+  let handoutHtml = "";
+  if (o.playerHandout) {
+    const rows = [];
+    // Key players with names + positions (1-3)
+    const kpParts = [];
+    for (let i = 1; i <= 3; i++) {
+      const pos = play[`keyPlayer${i}`];
+      const nm = play[`keyPlayerName${i}`];
+      if (pos || nm) {
+        kpParts.push(`${pos ? `<strong>${escapeHtml(pos)}</strong>` : ""}${pos && nm ? " " : ""}${nm ? escapeHtml(nm) : ""}`);
+      }
+    }
+    if (kpParts.length) rows.push(`<div class="gp-handout-row"><span class="gp-handout-label">Key</span><span class="gp-handout-val">${kpParts.join(" · ")}</span></div>`);
+
+    // Complements (constraint plays)
+    const complements = [play.constraint1, play.constraint2, play.constraint3].filter(Boolean);
+    if (complements.length) {
+      rows.push(`<div class="gp-handout-row"><span class="gp-handout-label">If they…</span><span class="gp-handout-val">${complements.map(escapeHtml).join(" · ")}</span></div>`);
+    }
+
+    // Hit chart targets
+    const hits = [play.hitChart1, play.hitChart2, play.hitChart3].filter(Boolean);
+    if (hits.length) {
+      rows.push(`<div class="gp-handout-row"><span class="gp-handout-label">Hit</span><span class="gp-handout-val">${hits.map(escapeHtml).join(" · ")}</span></div>`);
+    }
+
+    // Tags / one-word
+    const tags = [play.oneWord, play.playTag1, play.playTag2, play.basePlay].filter(Boolean);
+    if (tags.length) {
+      rows.push(`<div class="gp-handout-row"><span class="gp-handout-label">Tags</span><span class="gp-handout-val">${tags.map(escapeHtml).join(" · ")}</span></div>`);
+    }
+
+    // Avoid (deadVs)
+    if (play.deadVs) {
+      rows.push(`<div class="gp-handout-row gp-handout-warn"><span class="gp-handout-label">Dead vs</span><span class="gp-handout-val">${escapeHtml(play.deadVs)}</span></div>`);
+    }
+
+    // Notes
+    if (play.notes) {
+      rows.push(`<div class="gp-handout-row"><span class="gp-handout-label">Notes</span><span class="gp-handout-val">${escapeHtml(play.notes)}</span></div>`);
+    }
+
+    if (rows.length) handoutHtml = `<div class="gp-handout-detail">${rows.join("")}</div>`;
+  }
+
+  return `<li class="gp-print-play">${callHtml}${metaHtml}${handoutHtml}</li>`;
 }
 
 /* -------------------------------------------------------------------------

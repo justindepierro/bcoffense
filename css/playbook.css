@@ -1441,3 +1441,22 @@ table.sortable th {
 .pb-sanitize-row {
   flex-wrap: wrap;
 }
+
+/* ── Vision Mode: per-row Picture pill ── */
+.pb-picture-pill {
+  display: inline-block;
+  font-size: var(--font-size-micro);
+  font-weight: 700;
+  padding: 1px 6px;
+  margin-left: var(--space-xs);
+  border-radius: var(--radius-pill);
+  vertical-align: middle;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #fff;
+}
+.pb-picture-pill.pb-pic-wz { background: #1d6fb8; }     /* Wide Zone — blue */
+.pb-picture-pill.pb-pic-pull { background: #b8541d; }   /* Pullers — orange */
+.pb-picture-pill.pb-pic-dh { background: #6b3fb8; }     /* Downhill — purple */
+.pb-picture-pill.pb-pic-af { background: #1d8a4a; }     /* Anti-front — green */
+[data-theme="dark"] .pb-picture-pill { opacity: 0.92; }

@@ -57,6 +57,8 @@ function showTab(tabName) {
   } else if (tabName === "callsheet") {
     if (Object.keys(callSheet).length === 0) {
       initCallSheet();
+    } else if (typeof refreshCallSheetFromPlaybook === "function") {
+      refreshCallSheetFromPlaybook();
     }
     renderCallSheet();
   } else if (tabName === "offensebuilder") {

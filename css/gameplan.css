@@ -2092,3 +2092,67 @@ body.gp-printing .gp-print-detail-val { flex: 1; }
   color: var(--color-text);
   line-height: 1.3;
 }
+
+/* ── Player Handout Print Mode ──────────────────────────────────────
+   Triggered when the print modal "Player handout" toggle is on.
+   Bigger text, expanded per-play coaching detail, single column reads. */
+@media print {
+  .gp-print-handout .gp-print-grid {
+    --gp-print-cols: 1 !important;
+    grid-template-columns: 1fr !important;
+    gap: 12pt !important;
+  }
+  .gp-print-handout .gp-print-box {
+    page-break-inside: avoid;
+    break-inside: avoid;
+    border: 1.5pt solid #222;
+    padding: 8pt 10pt;
+  }
+  .gp-print-handout .gp-print-box-label {
+    font-size: 14pt !important;
+    font-weight: 800;
+  }
+  .gp-print-handout .gp-print-plays {
+    font-size: 11pt;
+    line-height: 1.5;
+  }
+  .gp-print-handout .gp-print-play {
+    padding: 6pt 0;
+    border-bottom: 0.75pt dashed #aaa;
+    page-break-inside: avoid;
+    break-inside: avoid;
+  }
+  .gp-print-handout .gp-print-play:last-child { border-bottom: none; }
+  .gp-print-handout .gp-print-play-meta {
+    display: block;
+    font-size: 9.5pt;
+    color: #444;
+    margin-top: 2pt;
+  }
+  .gp-print-handout .gp-handout-detail {
+    margin-top: 4pt;
+    padding: 4pt 6pt;
+    background: #f4f4f0;
+    border-left: 2pt solid #888;
+    font-size: 10pt;
+  }
+  .gp-print-handout .gp-handout-row {
+    display: flex;
+    gap: 6pt;
+    align-items: baseline;
+    padding: 1pt 0;
+  }
+  .gp-print-handout .gp-handout-label {
+    flex: 0 0 56pt;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    font-size: 8.5pt;
+    color: #555;
+  }
+  .gp-print-handout .gp-handout-val { flex: 1; }
+  .gp-print-handout .gp-handout-warn .gp-handout-label,
+  .gp-print-handout .gp-handout-warn .gp-handout-val {
+    color: #a02020;
+  }
+}
