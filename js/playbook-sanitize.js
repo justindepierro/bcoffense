@@ -937,7 +937,7 @@ function openPlaybookCategoryCleanup() {
         <div class="cat-cleanup-row2">
           <div class="cat-cleanup-search-wrap">
             <span class="cat-cleanup-search-icon" aria-hidden="true">🔎</span>
-            <input id="catCleanupSearch" type="search" placeholder="Search play, formation, type, personnel, base play, tag, oneWord…" autocomplete="off" spellcheck="false" data-oninput="setPlaybookCategoryCleanupSearch" data-pass="value" />
+            <input id="catCleanupSearch" type="search" placeholder="Search play, formation, type, personnel, base play, tag, oneWord…" autocomplete="off" spellcheck="false" />
             <button class="cat-cleanup-search-clear" type="button" data-action="clearPlaybookCategoryCleanupSearch" aria-label="Clear search" title="Clear (Esc)">×</button>
           </div>
           <div class="cat-cleanup-show" role="group" aria-label="Show">
@@ -969,18 +969,69 @@ function openPlaybookCategoryCleanup() {
   document.body.appendChild(overlay);
   if (typeof trapFocus === "function") trapFocus(overlay);
 
-  overlay.addEventListener("click", (e) => { if (e.target === overlay) closePlaybookCategoryCleanup(); });
+  // -------- Direct, scoped listeners (do not rely on document delegation
+  // for inside-modal controls — this guarantees they fire). --------
 
-  // Bootstrap UI state
-  const scopeRadios = overlay.querySelectorAll("input[name=catCleanupScope]");
-  scopeRadios.forEach((r) => { r.checked = (r.value === _catCleanupScope); });
+  overlay.addEventListener("click", (e) => {
+    if (e.target === overlay) { closePlaybookCategoryCleanup(); return; }
 
-  // Search input wiring — value flows through the standard data-oninput
-  // delegation. Here we only set the initial value and bind the
-  // Esc/Enter keyboard shortcuts.
+    const actEl = e.target.closest("[data-action]");
+    if (!actEl || !overlay.contains(actEl)) return;
+    const action = actEl.dataset.action;
+    const arg = actEl.dataset.arg;
+
+    switch (action) {
+      case "closePlaybookCategoryCleanup":
+        closePlaybookCategoryCleanup();
+        return;
+      case "setPlaybookCategoryCleanupScope":
+        setPlaybookCategoryCleanupScope(arg);
+        return;
+      case "setPlaybookCategoryCleanupShowMode":
+        setPlaybookCategoryCleanupShowMode(arg);
+        return;
+      case "setPlaybookCategoryCleanupTypeFilter":
+        setPlaybookCategoryCleanupTypeFilter(arg || "");
+        return;
+      case "clearPlaybookCategoryCleanupSearch":
+        clearPlaybookCategoryCleanupSearch();
+        return;
+      case "catCleanupCheckAllVisible":
+        catCleanupCheckAllVisible();
+        return;
+      case "catCleanupUncheckAllVisible":
+        catCleanupUncheckAllVisible();
+        return;
+    }
+  });
+
+  // Category select change
+  const catSelect = overlay.querySelector("#catCleanupSelect");
+  if (catSelect) {
+    catSelect.addEventListener("change", () => {
+      setPlaybookCategoryCleanupCategory(catSelect.value);
+    });
+  }
+
+  // Scope radios change (radio click also fires change reliably)
+  overlay.querySelectorAll("input[name=catCleanupScope]").forEach((r) => {
+    r.addEventListener("change", () => {
+      if (r.checked) setPlaybookCategoryCleanupScope(r.value);
+    });
+    r.checked = (r.value === _catCleanupScope);
+  });
+
+  // Search input — direct input listener with debounced re-render
   const searchInput = overlay.querySelector("#catCleanupSearch");
   if (searchInput) {
     searchInput.value = _catCleanupSearch;
+    searchInput.addEventListener("input", () => {
+      _catCleanupSearch = searchInput.value || "";
+      clearTimeout(_catCleanupSearchTimer);
+      _catCleanupSearchTimer = setTimeout(() => {
+        _renderCatCleanupList();
+      }, 80);
+    });
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         if (searchInput.value) {
