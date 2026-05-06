@@ -720,3 +720,373 @@ function openPlayEditorFromSanitize(masterIdxStr) {
 
   openPlayEditor(filteredIdx);
 }
+
+/* =========================================================================
+   Cleanup BY Call Sheet Category
+   Pick a Call Sheet category → see plays in scope (full or filtered) with a
+   single ✅ checkbox. Checking the box writes the right preferred fields so
+   the play matches the category and will be picked up by Push to Call Sheet.
+   ========================================================================= */
+
+let _catCleanupScope = "all"; // "all" | "filtered"
+let _catCleanupCategoryId = "";
+let _catCleanupHideMatching = true;
+
+function _catNormPV(v) {
+  if (typeof splitPreferredValues === "function") return splitPreferredValues(v);
+  if (!v) return [];
+  return String(v).split(/[,|;\/]+/).map((x) => x.trim().toLowerCase()).filter(Boolean);
+}
+
+function _catCategoryDisplayName(cat) {
+  if (typeof getCategoryDisplayName === "function") return getCategoryDisplayName(cat);
+  return cat && cat.name ? cat.name : "";
+}
+
+function _catFieldPosAliasGroup(value) {
+  const map = {
+    green: ["green", "fringe"],
+    fringe: ["green", "fringe"],
+    "lo-rz": ["lo-rz", "low red zone", "low rz"],
+    "hi-rz": ["hi-rz", "high red zone", "high rz", "red zone"],
+    "red zone": ["hi-rz", "red zone"],
+    "goal line": ["goal line", "goalline"],
+    goalline: ["goal line", "goalline"],
+    "backed up": ["backed up", "backedup", "own territory"],
+    backedup: ["backed up", "backedup"],
+    saigon: ["saigon"],
+  };
+  const v = (value || "").toLowerCase();
+  return map[v] || [v];
+}
+
+/** True if the play already matches this category (uses findMatchingCategories when available). */
+function _catPlayMatches(play, cat) {
+  if (!play || !cat) return false;
+  if (typeof findMatchingCategories === "function") {
+    try { return findMatchingCategories(play).includes(cat.id); } catch (_) { /* fall through */ }
+  }
+  // Manual fallback
+  if (cat.playerSpecific) {
+    const dn = (_catCategoryDisplayName(cat) || "").toLowerCase().trim();
+    if (!dn) return false;
+    return [play.keyPlayerName1, play.keyPlayerName2, play.keyPlayerName3]
+      .some((n) => (n || "").toLowerCase().trim() === dn);
+  }
+  if (cat.playType) return (play.type || "").toLowerCase() === cat.playType.toLowerCase();
+  return false;
+}
+
+/** Append `value` to a comma-separated preferred field if not already present (case-insensitive). */
+function _catAddToCsv(play, key, value) {
+  if (!value) return false;
+  const cur = String(play[key] || "");
+  const parts = _catNormPV(cur);
+  const v = String(value).toLowerCase().trim();
+  if (parts.includes(v)) return false;
+  // Preserve original casing for the new value
+  const next = cur.trim() ? `${cur.trim()},${value}` : value;
+  play[key] = next;
+  return true;
+}
+
+/** Remove `value` from a comma-separated preferred field (case-insensitive). */
+function _catRemoveFromCsv(play, key, value) {
+  if (!value || !play[key]) return false;
+  const v = String(value).toLowerCase().trim();
+  const remaining = String(play[key])
+    .split(/[,|;\/]+/)
+    .map((x) => x.trim())
+    .filter((x) => x && x.toLowerCase() !== v);
+  const next = remaining.join(",");
+  if (next === play[key]) return false;
+  play[key] = next;
+  return true;
+}
+
+/** Apply the metadata required to make `play` match `cat`. Returns true if mutated. */
+function _catApplyMetadata(play, cat) {
+  if (!play || !cat) return false;
+  let changed = false;
+  if (cat.playerSpecific) {
+    const dn = _catCategoryDisplayName(cat);
+    if (!dn) return false;
+    const norm = dn.toLowerCase().trim();
+    const slots = ["keyPlayerName1", "keyPlayerName2", "keyPlayerName3"];
+    const already = slots.some((k) => (play[k] || "").toLowerCase().trim() === norm);
+    if (!already) {
+      const empty = slots.find((k) => !play[k] || !String(play[k]).trim());
+      if (empty) { play[empty] = dn; changed = true; }
+      else { play.keyPlayerName3 = dn; changed = true; }
+    }
+    return changed;
+  }
+  if (cat.situation) changed = _catAddToCsv(play, "preferredSituation", cat.situation) || changed;
+  if (cat.down) changed = _catAddToCsv(play, "preferredDown", String(cat.down)) || changed;
+  if (cat.distance) changed = _catAddToCsv(play, "preferredDistance", cat.distance) || changed;
+  if (cat.position) changed = _catAddToCsv(play, "preferredFieldPosition", cat.position) || changed;
+  if (cat.playType && (!play.type || !String(play.type).trim())) {
+    play.type = cat.playType;
+    changed = true;
+  }
+  return changed;
+}
+
+/** Inverse of _catApplyMetadata. Returns true if mutated. */
+function _catRemoveMetadata(play, cat) {
+  if (!play || !cat) return false;
+  let changed = false;
+  if (cat.playerSpecific) {
+    const norm = (_catCategoryDisplayName(cat) || "").toLowerCase().trim();
+    if (!norm) return false;
+    ["keyPlayerName1", "keyPlayerName2", "keyPlayerName3"].forEach((k) => {
+      if ((play[k] || "").toLowerCase().trim() === norm) { play[k] = ""; changed = true; }
+    });
+    return changed;
+  }
+  if (cat.situation) changed = _catRemoveFromCsv(play, "preferredSituation", cat.situation) || changed;
+  if (cat.down) changed = _catRemoveFromCsv(play, "preferredDown", String(cat.down)) || changed;
+  if (cat.distance) changed = _catRemoveFromCsv(play, "preferredDistance", cat.distance) || changed;
+  if (cat.position) changed = _catRemoveFromCsv(play, "preferredFieldPosition", cat.position) || changed;
+  // Don't touch play.type on uncheck (could destroy classification)
+  return changed;
+}
+
+function _catCriteriaSummary(cat) {
+  if (!cat) return "";
+  if (cat.playerSpecific) return `Sets Key Player → ${escapeHtml(_catCategoryDisplayName(cat))}`;
+  const parts = [];
+  if (cat.down) parts.push(`Down ${cat.down}`);
+  if (cat.distance) parts.push(cat.distance);
+  if (cat.situation) parts.push(cat.situation);
+  if (cat.position) parts.push(cat.position);
+  if (cat.playType) parts.push(`Type: ${cat.playType}`);
+  return parts.length ? `Adds: ${escapeHtml(parts.join(" + "))}` : "Manual category";
+}
+
+function _catCleanupScopeEntries() {
+  const useFiltered =
+    _catCleanupScope === "filtered" &&
+    Array.isArray(filteredPlays) &&
+    filteredPlays.length > 0 &&
+    filteredPlays.length < plays.length;
+  const source = useFiltered ? filteredPlays : plays;
+  return source
+    .map((play) => ({ play, masterIdx: plays.indexOf(play) }))
+    .filter((e) => e.masterIdx >= 0);
+}
+
+function openPlaybookCategoryCleanup() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
+    return;
+  }
+  if (typeof CALLSHEET_CATEGORIES === "undefined" || !Array.isArray(CALLSHEET_CATEGORIES)) {
+    showToast("Call sheet categories not loaded", { duration: 2500, type: "error" });
+    return;
+  }
+  // Default category: first non-manual one
+  if (!_catCleanupCategoryId) {
+    const def = CALLSHEET_CATEGORIES.find((c) => !c.manual);
+    _catCleanupCategoryId = def ? def.id : (CALLSHEET_CATEGORIES[0] && CALLSHEET_CATEGORIES[0].id) || "";
+  }
+  document.getElementById("playbookCatCleanupOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "playbookCatCleanupOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="catCleanupTitle" style="max-width:920px;width:96vw;">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🧹</span>
+        <h3 class="custom-modal-title" id="catCleanupTitle">Cleanup by Call Sheet Category</h3>
+        <button class="modal-close" aria-label="Close" data-action="closePlaybookCategoryCleanup">×</button>
+      </div>
+      <div class="custom-modal-body" style="display:flex;flex-direction:column;gap:var(--space-sm);">
+        <div style="display:flex;gap:var(--space-sm);flex-wrap:wrap;align-items:center;">
+          <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);">
+            <strong>Category:</strong>
+            <select id="catCleanupSelect" data-onchange="setPlaybookCategoryCleanupCategory" data-pass="value" style="min-width:240px;padding:4px 8px;border:1px solid var(--color-border-input);border-radius:var(--radius-sm);background:var(--color-bg-input);"></select>
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);">
+            <input type="radio" name="catCleanupScope" value="all" data-action="setPlaybookCategoryCleanupScope" data-arg="all"> All plays
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);">
+            <input type="radio" name="catCleanupScope" value="filtered" data-action="setPlaybookCategoryCleanupScope" data-arg="filtered"> Filtered only
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);margin-left:auto;">
+            <input type="checkbox" id="catCleanupHideMatching" data-onchange="setPlaybookCategoryCleanupHide" data-pass="event"> Hide already matching
+          </label>
+        </div>
+        <div id="catCleanupSummary" style="font-size:var(--font-size-xs);color:var(--color-text-muted);"></div>
+        <div id="catCleanupList" style="border:1px solid var(--color-border-light);border-radius:var(--radius-sm);max-height:60vh;overflow:auto;"></div>
+      </div>
+      <div class="custom-modal-actions">
+        <button class="btn btn-sm" data-action="closePlaybookCategoryCleanup">Done</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) closePlaybookCategoryCleanup(); });
+  overlay.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); closePlaybookCategoryCleanup(); } });
+
+  // Bootstrap UI state
+  const scopeRadios = overlay.querySelectorAll("input[name=catCleanupScope]");
+  scopeRadios.forEach((r) => { r.checked = (r.value === _catCleanupScope); });
+  overlay.querySelector("#catCleanupHideMatching").checked = _catCleanupHideMatching;
+
+  _renderCatCleanupSelect();
+  _renderCatCleanupList();
+}
+
+function closePlaybookCategoryCleanup() {
+  const overlay = document.getElementById("playbookCatCleanupOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function setPlaybookCategoryCleanupCategory(catId) {
+  _catCleanupCategoryId = catId;
+  _renderCatCleanupList();
+}
+
+function setPlaybookCategoryCleanupScope(scope) {
+  if (scope !== "all" && scope !== "filtered") return;
+  if (scope === "filtered") {
+    const hasFilter =
+      Array.isArray(filteredPlays) &&
+      filteredPlays.length > 0 &&
+      filteredPlays.length < plays.length;
+    if (!hasFilter) {
+      showToast("No active filters — staying on All plays", { duration: 1800, type: "info" });
+      const overlay = document.getElementById("playbookCatCleanupOverlay");
+      const radioAll = overlay?.querySelector('input[name=catCleanupScope][value=all]');
+      if (radioAll) radioAll.checked = true;
+      _catCleanupScope = "all";
+      _renderCatCleanupSelect();
+      _renderCatCleanupList();
+      return;
+    }
+  }
+  _catCleanupScope = scope;
+  _renderCatCleanupSelect();
+  _renderCatCleanupList();
+}
+
+function setPlaybookCategoryCleanupHide(eventOrValue) {
+  let next;
+  if (eventOrValue && eventOrValue.target && typeof eventOrValue.target.checked === "boolean") {
+    next = eventOrValue.target.checked;
+  } else {
+    next = (eventOrValue === true || eventOrValue === "true");
+  }
+  _catCleanupHideMatching = next;
+  _renderCatCleanupList();
+}
+
+function _renderCatCleanupSelect() {
+  const sel = document.getElementById("catCleanupSelect");
+  if (!sel) return;
+  const entries = _catCleanupScopeEntries();
+  const html = CALLSHEET_CATEGORIES.map((cat) => {
+    const matching = entries.filter((e) => _catPlayMatches(e.play, cat)).length;
+    const dn = _catCategoryDisplayName(cat);
+    const sl = cat.id === _catCleanupCategoryId ? "selected" : "";
+    return `<option value="${escapeHtml(cat.id)}" ${sl}>${escapeHtml(dn)} — ${matching}/${entries.length} matching</option>`;
+  }).join("");
+  sel.innerHTML = html;
+}
+
+function _renderCatCleanupList() {
+  const listEl = document.getElementById("catCleanupList");
+  const sumEl = document.getElementById("catCleanupSummary");
+  if (!listEl) return;
+
+  const cat = CALLSHEET_CATEGORIES.find((c) => c.id === _catCleanupCategoryId);
+  if (!cat) {
+    listEl.innerHTML = `<div style="padding:var(--space-md);text-align:center;color:var(--color-text-muted);">Pick a category above.</div>`;
+    if (sumEl) sumEl.textContent = "";
+    return;
+  }
+  if (sumEl) {
+    sumEl.innerHTML = `<strong>${escapeHtml(_catCategoryDisplayName(cat))}</strong> — ${_catCriteriaSummary(cat)}`;
+  }
+
+  const entries = _catCleanupScopeEntries();
+  const visible = entries.filter((e) => {
+    if (!_catCleanupHideMatching) return true;
+    return !_catPlayMatches(e.play, cat);
+  });
+
+  if (visible.length === 0) {
+    listEl.innerHTML = `<div style="padding:var(--space-md);text-align:center;color:var(--color-text-muted);">${_catCleanupHideMatching ? "✅ Every play in scope already matches this category." : "(No plays in scope.)"}</div>`;
+    return;
+  }
+
+  if (cat.manual) {
+    listEl.innerHTML = `<div style="padding:var(--space-md);text-align:center;color:var(--color-text-muted);">This is a manual-only category. Add plays directly from the Call Sheet tab.</div>`;
+    return;
+  }
+
+  const rows = visible.map((e) => {
+    const matches = _catPlayMatches(e.play, cat);
+    const callHtml = typeof getFullCall === "function" ? getFullCall(e.play, { showLineCall: true }) : escapeHtml(e.play.play || "(unnamed)");
+    const ctx = [e.play.type, e.play.personnel, e.play.formation].filter(Boolean).join(" • ");
+    return `<label class="cat-cleanup-row" data-master-idx="${e.masterIdx}" style="display:flex;align-items:center;gap:var(--space-sm);padding:8px 10px;border-bottom:1px solid var(--color-border-light);${matches ? "background:var(--color-success-light);" : ""}">
+      <input type="checkbox" class="cat-cleanup-check" ${matches ? "checked" : ""} data-master-idx="${e.masterIdx}" />
+      <div style="flex:1;min-width:0;">
+        <div style="font-family:var(--font-mono);font-size:var(--font-size-sm);">${callHtml}</div>
+        <div style="font-size:var(--font-size-xs);color:var(--color-text-muted);">${escapeHtml(ctx)}</div>
+      </div>
+    </label>`;
+  }).join("");
+
+  listEl.innerHTML = rows;
+
+  // Wire checkbox toggles
+  listEl.querySelectorAll(".cat-cleanup-check").forEach((cb) => {
+    cb.addEventListener("change", () => _onCatCleanupToggle(cb));
+  });
+}
+
+function _onCatCleanupToggle(cb) {
+  const masterIdx = parseInt(cb.dataset.masterIdx, 10);
+  const cat = CALLSHEET_CATEGORIES.find((c) => c.id === _catCleanupCategoryId);
+  if (!cat || isNaN(masterIdx) || !plays[masterIdx]) return;
+  const play = plays[masterIdx];
+  const wantMatch = cb.checked;
+  let mutated = false;
+  if (wantMatch) {
+    mutated = _catApplyMetadata(play, cat);
+    // Verify via findMatchingCategories — if still not matching, revert + warn
+    if (!_catPlayMatches(play, cat)) {
+      // Some categories (e.g. Goal Line) require BOTH position+situation; apply once shouldn't fail
+      // but if it does, leave the writes (they're additive) and notify softly.
+      showToast("Wrote metadata, but this category needs more (e.g. both position + situation). Edit play directly to finish.", { duration: 3500, type: "warning" });
+    }
+  } else {
+    mutated = _catRemoveMetadata(play, cat);
+  }
+  if (mutated) {
+    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    if (typeof invalidateFilterCache === "function") invalidateFilterCache();
+    if (typeof filterPlays === "function") filterPlays();
+    if (typeof renderPlaybook === "function") renderPlaybook();
+  }
+  // Refresh row state inline
+  const row = cb.closest(".cat-cleanup-row");
+  const stillMatches = _catPlayMatches(play, cat);
+  if (row) row.style.background = stillMatches ? "var(--color-success-light)" : "";
+  cb.checked = stillMatches;
+  // Refresh select counts (other categories may have shifted)
+  _renderCatCleanupSelect();
+  // If hide-matching is on and play now matches, drop the row
+  if (_catCleanupHideMatching && stillMatches && row) {
+    row.style.transition = "opacity 0.18s";
+    row.style.opacity = "0";
+    setTimeout(() => row.remove(), 180);
+  }
+}
+
