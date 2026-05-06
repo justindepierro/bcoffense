@@ -1549,10 +1549,6 @@
           </div>
         </div>
         <div class="cs-toolbar-right">
-          <button id="gpDrawerToggleBtn" class="btn btn-info btn-sm" data-action="toggleGameplanDrawer"
-            title="Open the Game Plan plays drawer — drag plays into call sheet categories">
-            🎯 Game Plan Plays
-          </button>
           <button class="btn btn-primary btn-sm" data-action="autoPopulateCallSheet">
             ⚡ Auto-Populate
           </button>
@@ -1920,6 +1916,13 @@
 
   <!-- Game Plan Plays Drawer (slides in from the right; placed at root so no
        ancestor transform/filter can break its position:fixed) -->
+  <button id="gpDrawerToggleBtn" class="gp-drawer-tab" type="button"
+    data-action="toggleGameplanDrawer"
+    aria-controls="gpDrawer" aria-expanded="false"
+    title="Open the Game Plan plays drawer (drag plays into call sheet categories)">
+    <span class="gp-drawer-tab-icon" aria-hidden="true">🎯</span>
+    <span class="gp-drawer-tab-label">Game&nbsp;Plan&nbsp;Plays</span>
+  </button>
   <aside id="gpDrawer" class="gp-drawer" aria-label="Game Plan Plays" aria-hidden="true">
     <header class="gp-drawer-header">
       <div class="gp-drawer-title-row">

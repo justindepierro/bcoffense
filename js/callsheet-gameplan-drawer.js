@@ -250,7 +250,10 @@ function openGameplanDrawer() {
   }
   document.body.classList.add("gp-drawer-body-open");
   const btn = document.getElementById("gpDrawerToggleBtn");
-  if (btn) btn.classList.add("gp-drawer-toggle-active");
+  if (btn) {
+    btn.classList.add("gp-drawer-toggle-active");
+    btn.setAttribute("aria-expanded", "true");
+  }
   _gpDrawerRender();
   // Focus search for fast typing
   setTimeout(() => {
@@ -269,7 +272,10 @@ function closeGameplanDrawer() {
   }
   document.body.classList.remove("gp-drawer-body-open");
   const btn = document.getElementById("gpDrawerToggleBtn");
-  if (btn) btn.classList.remove("gp-drawer-toggle-active");
+  if (btn) {
+    btn.classList.remove("gp-drawer-toggle-active");
+    btn.setAttribute("aria-expanded", "false");
+  }
 }
 
 function toggleGameplanDrawer() {
