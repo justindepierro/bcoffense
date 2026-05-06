@@ -937,7 +937,7 @@ function openPlaybookCategoryCleanup() {
         <div class="cat-cleanup-row2">
           <div class="cat-cleanup-search-wrap">
             <span class="cat-cleanup-search-icon" aria-hidden="true">🔎</span>
-            <input id="catCleanupSearch" type="search" placeholder="Search play, formation, type, personnel, base play, tag, oneWord…" autocomplete="off" spellcheck="false" />
+            <input id="catCleanupSearch" type="search" placeholder="Search play, formation, type, personnel, base play, tag, oneWord…" autocomplete="off" spellcheck="false" data-oninput="setPlaybookCategoryCleanupSearch" data-pass="value" />
             <button class="cat-cleanup-search-clear" type="button" data-action="clearPlaybookCategoryCleanupSearch" aria-label="Clear search" title="Clear (Esc)">×</button>
           </div>
           <div class="cat-cleanup-show" role="group" aria-label="Show">
@@ -975,28 +975,20 @@ function openPlaybookCategoryCleanup() {
   const scopeRadios = overlay.querySelectorAll("input[name=catCleanupScope]");
   scopeRadios.forEach((r) => { r.checked = (r.value === _catCleanupScope); });
 
-  // Search input wiring (debounced)
+  // Search input wiring — value flows through the standard data-oninput
+  // delegation. Here we only set the initial value and bind the
+  // Esc/Enter keyboard shortcuts.
   const searchInput = overlay.querySelector("#catCleanupSearch");
   if (searchInput) {
     searchInput.value = _catCleanupSearch;
-    searchInput.addEventListener("input", () => {
-      clearTimeout(_catCleanupSearchTimer);
-      _catCleanupSearchTimer = setTimeout(() => {
-        _catCleanupSearch = searchInput.value || "";
-        _renderCatCleanupList();
-      }, 120);
-    });
     searchInput.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {
         if (searchInput.value) {
           e.preventDefault();
           e.stopPropagation();
-          searchInput.value = "";
-          _catCleanupSearch = "";
-          _renderCatCleanupList();
+          clearPlaybookCategoryCleanupSearch();
         }
       } else if (e.key === "Enter") {
-        // Toggle the first visible row
         e.preventDefault();
         const firstCb = document.querySelector("#catCleanupList .cat-cleanup-check");
         if (firstCb) {
@@ -1086,6 +1078,16 @@ function _renderCatCleanupSelect() {
 }
 
 /* ----- Search / chip / show-mode helpers ----- */
+
+function setPlaybookCategoryCleanupSearch(value) {
+  // Debounce list re-render so typing stays buttery — but update the
+  // backing variable immediately so other re-renders see the latest text.
+  _catCleanupSearch = value || "";
+  clearTimeout(_catCleanupSearchTimer);
+  _catCleanupSearchTimer = setTimeout(() => {
+    _renderCatCleanupList();
+  }, 90);
+}
 
 function clearPlaybookCategoryCleanupSearch() {
   _catCleanupSearch = "";
