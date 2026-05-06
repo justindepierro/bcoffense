@@ -69,6 +69,113 @@ const GP_TYPE_ALIASES = {
   "Drop": "Pass",
 };
 
+// Per-box matching metadata schema. Each box can have:
+//   criteria: {
+//     down:        ["1", "2", "3", "4"]            // multi-select
+//     distance:    ["short", "medium", "long"]
+//     situation:   ["short yardage", "2 minute", "4 minute", "opener"]
+//     fieldPosition: ["green", "lo-rz", "hi-rz", "goal line", "backed up", "saigon"]
+//     type:        ["Run", "Pass", ...]            // play.type values
+//     keyPlayer:   "Marco"                         // case-insensitive
+//   }
+//   callSheetCategoryId: "rz-20" | null            // explicit Push-to-Call-Sheet target
+const GP_CRITERIA_FIELDS = ["down", "distance", "situation", "fieldPosition", "type", "keyPlayer"];
+
+const GP_DOWN_CHOICES = ["1", "2", "3", "4"];
+const GP_DISTANCE_CHOICES = ["short", "medium", "long"];
+const GP_SITUATION_CHOICES = ["short yardage", "2 minute", "4 minute", "opener"];
+const GP_FIELD_POSITION_CHOICES = ["green", "lo-rz", "hi-rz", "goal line", "backed up", "saigon"];
+const GP_TYPE_CHOICES = [
+  "Run", "Pass", "Screen", "Quick", "Play Action", "RPO", "Run Option", "Movement",
+];
+
+function _gpEmptyCriteria() {
+  return { down: [], distance: [], situation: [], fieldPosition: [], type: [], keyPlayer: "" };
+}
+
+function _gpGetBoxMeta(board, boxId) {
+  if (!board || !boxId) return { criteria: _gpEmptyCriteria(), callSheetCategoryId: null };
+  const raw = (board.boxMeta && board.boxMeta[boxId]) || {};
+  const criteria = { ..._gpEmptyCriteria(), ...(raw.criteria || {}) };
+  GP_CRITERIA_FIELDS.forEach((f) => {
+    if (f === "keyPlayer") return;
+    if (!Array.isArray(criteria[f])) criteria[f] = [];
+  });
+  if (typeof criteria.keyPlayer !== "string") criteria.keyPlayer = "";
+  return {
+    criteria,
+    callSheetCategoryId: raw.callSheetCategoryId || null,
+  };
+}
+
+function _gpHasCriteria(criteria) {
+  if (!criteria) return false;
+  if (criteria.keyPlayer && criteria.keyPlayer.trim()) return true;
+  return ["down", "distance", "situation", "fieldPosition", "type"].some(
+    (f) => Array.isArray(criteria[f]) && criteria[f].length > 0,
+  );
+}
+
+/**
+ * Test whether a play matches a box's criteria. Returns true only if every
+ * non-empty criterion field has at least one match against the play.
+ * Empty criteria (no rules at all) returns false (the box is not auto-claiming).
+ */
+function _gpPlayMatchesCriteria(play, criteria) {
+  if (!play || !criteria || !_gpHasCriteria(criteria)) return false;
+  const splitPV = (v) =>
+    typeof splitPreferredValues === "function"
+      ? splitPreferredValues(v)
+      : (v ? String(v).toLowerCase().split(/[,|;\/]+/).map((s) => s.trim()).filter(Boolean) : []);
+
+  // down
+  if (criteria.down.length > 0) {
+    const playDowns = splitPV(play.preferredDown);
+    if (!criteria.down.some((d) => playDowns.includes(String(d).toLowerCase()))) return false;
+  }
+  // distance
+  if (criteria.distance.length > 0) {
+    const playDist = splitPV(play.preferredDistance);
+    if (!criteria.distance.some((d) => playDist.includes(d))) return false;
+  }
+  // situation
+  if (criteria.situation.length > 0) {
+    const playSit = splitPV(play.preferredSituation);
+    if (!criteria.situation.some((s) => playSit.includes(s))) return false;
+  }
+  // field position (with simple alias support so RZ-20 ≈ Hi-RZ)
+  if (criteria.fieldPosition.length > 0) {
+    const playPos = splitPV(play.preferredFieldPosition);
+    const aliases = {
+      green: ["green", "fringe"],
+      "lo-rz": ["lo-rz", "low red zone", "low rz"],
+      "hi-rz": ["hi-rz", "high red zone", "high rz", "red zone", "rz", "rz-20"],
+      "goal line": ["goal line", "goalline"],
+      "backed up": ["backed up", "backedup", "own territory"],
+      saigon: ["saigon"],
+    };
+    const ok = criteria.fieldPosition.some((target) => {
+      const group = aliases[target] || [target];
+      return playPos.some((pv) => group.includes(pv));
+    });
+    if (!ok) return false;
+  }
+  // play type (exact, case-insensitive)
+  if (criteria.type.length > 0) {
+    const t = (play.type || "").toLowerCase();
+    if (!criteria.type.some((c) => c.toLowerCase() === t)) return false;
+  }
+  // key player (single name, case-insensitive, matches any of keyPlayerName1/2/3)
+  if (criteria.keyPlayer && criteria.keyPlayer.trim()) {
+    const target = criteria.keyPlayer.trim().toLowerCase();
+    const names = [play.keyPlayerName1, play.keyPlayerName2, play.keyPlayerName3]
+      .map((n) => (typeof n === "string" ? n.toLowerCase().trim() : ""))
+      .filter(Boolean);
+    if (!names.includes(target)) return false;
+  }
+  return true;
+}
+
 // Color accents per default box id (CSS uses [data-box-id] attribute selectors
 // but we also set a CSS variable so custom boxes can fall back gracefully)
 const GP_BOX_ACCENTS = {
@@ -216,6 +323,7 @@ function _gpEnsureBoard() {
       hiddenBoxes: [],   // [boxId, ...] boxes hidden from view
       boxOrder: [],      // [boxId, ...] custom display order (subset; missing ids fall back to default)
       boxLabels: {},     // boxId → custom rename for default boxes
+      boxMeta: {},       // boxId → { criteria: {...}, callSheetCategoryId: "..." }
     };
     GP_DEFAULT_BOXES.forEach((b) => {
       all[key].assignments[b.id] = [];
@@ -239,6 +347,7 @@ function _gpEnsureBoard() {
     if (!Array.isArray(all[key].hiddenBoxes)) all[key].hiddenBoxes = [];
     if (!Array.isArray(all[key].boxOrder)) all[key].boxOrder = [];
     if (!all[key].boxLabels || typeof all[key].boxLabels !== "object") all[key].boxLabels = {};
+    if (!all[key].boxMeta || typeof all[key].boxMeta !== "object") all[key].boxMeta = {};
     all[key].customBoxes.forEach((cb) => {
       if (!Array.isArray(all[key].assignments[cb.id])) {
         all[key].assignments[cb.id] = [];
@@ -935,6 +1044,13 @@ function _gpRenderBox(box, board) {
       ? `<button class="btn btn-sm btn-secondary" title="Push only this box's plays — fans out to all matching call sheet categories"
           data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
       : ""}
+        ${!isHolding ? (() => {
+          const meta = _gpGetBoxMeta(board, box.id);
+          const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
+          const summary = _gpFormatBoxMetaSummary(meta);
+          return `<button class="btn btn-sm btn-secondary${hasRules ? " gp-btn-active" : ""}" title="${hasRules ? `Matching rules: ${escapeHtml(summary)}` : "Set matching rules — auto-route plays into this box and Push to Call Sheet"}"
+          data-action="editGamePlanBoxMatching" data-arg="${escapeHtml(box.id)}">🧩</button>`;
+        })() : ""}
         <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
           data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
         <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
@@ -1731,7 +1847,15 @@ function _gpComputeCallSheetTargets(play, sourceBoxId) {
       });
     }
   }
-  // 3) Source box → type bucket fallback (always include if box maps to one)
+  // 3) Box-meta override: explicit Push-to-Call-Sheet category set on this box
+  if (sourceBoxId) {
+    try {
+      const board = _gpEnsureBoard();
+      const meta = _gpGetBoxMeta(board, sourceBoxId);
+      if (meta.callSheetCategoryId) targets.add(meta.callSheetCategoryId);
+    } catch (_) { /* ignore */ }
+  }
+  // 4) Source box → type bucket fallback (always include if box maps to one)
   const fb = sourceBoxId ? GP_BOX_TO_CALLSHEET[sourceBoxId] : null;
   if (fb) targets.add(fb);
   return targets;
@@ -1918,14 +2042,51 @@ async function sendDashboardGamePlanToBoxes() {
   const assignedSigs = _gpAllAssignedSigs(board);
   const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
 
+  // Build the list of candidate boxes (default + custom, excluding Holding)
+  // in display order. The first box whose criteria matches a play wins.
+  const orderedBoxIds = [
+    ...GP_DEFAULT_BOXES.map((b) => b.id),
+    ...((board.customBoxes || []).map((b) => b.id)),
+  ];
+  // Honor user's saved boxOrder when present (subset; missing ids appended).
+  if (Array.isArray(board.boxOrder) && board.boxOrder.length > 0) {
+    const seen = new Set();
+    const ordered = [];
+    board.boxOrder.forEach((id) => {
+      if (orderedBoxIds.includes(id) && !seen.has(id)) {
+        ordered.push(id);
+        seen.add(id);
+      }
+    });
+    orderedBoxIds.forEach((id) => {
+      if (!seen.has(id)) ordered.push(id);
+    });
+    orderedBoxIds.length = 0;
+    orderedBoxIds.push(...ordered);
+  }
+
   // Group tagged plays by destination box id
   const byBox = {};
   let alreadyAssigned = 0;
+  let routedByCriteria = 0;
   tagged.forEach((play) => {
     const sig = _gpPlaySignature(play);
     if (assignedSigs.has(sig)) { alreadyAssigned += 1; return; }
-    const mappedType = GP_TYPE_ALIASES[play.type] || play.type;
-    const dest = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
+    // 1) Try criteria match — first box wins
+    let dest = null;
+    for (const boxId of orderedBoxIds) {
+      const meta = _gpGetBoxMeta(board, boxId);
+      if (_gpHasCriteria(meta.criteria) && _gpPlayMatchesCriteria(play, meta.criteria)) {
+        dest = boxId;
+        routedByCriteria += 1;
+        break;
+      }
+    }
+    // 2) Fallback: type-alias → default box → Holding
+    if (!dest) {
+      const mappedType = GP_TYPE_ALIASES[play.type] || play.type;
+      dest = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
+    }
     if (!byBox[dest]) byBox[dest] = [];
     byBox[dest].push(sig);
   });
@@ -1946,7 +2107,7 @@ async function sendDashboardGamePlanToBoxes() {
     })
     .join("\n");
   const ok = await showConfirm(
-    `Send ${totalToAdd} tagged play${totalToAdd === 1 ? "" : "s"} for ${opponent} into the boxes?\n\n${summaryLines}${alreadyAssigned > 0 ? `\n\n(${alreadyAssigned} already on the board, will be skipped.)` : ""}`,
+    `Send ${totalToAdd} tagged play${totalToAdd === 1 ? "" : "s"} for ${opponent} into the boxes?\n\n${summaryLines}${routedByCriteria > 0 ? `\n\n🧩 ${routedByCriteria} routed by box matching rules.` : ""}${alreadyAssigned > 0 ? `\n\n(${alreadyAssigned} already on the board, will be skipped.)` : ""}`,
     { title: "Send to Game Plan", icon: "🎯", confirmText: "Send" },
   );
   if (!ok) return;
@@ -2169,6 +2330,242 @@ async function addPlayToGamePlanBox(boxId) {
   );
   if (!choice) return;
   _gpAddSigsToBox([choice], boxId);
+}
+
+/* -------------------------------------------------------------------------
+   Per-box matching rules (criteria + Call Sheet target)
+   ------------------------------------------------------------------------- */
+
+function _gpFormatBoxMetaSummary(meta) {
+  const parts = [];
+  if (!meta || !meta.criteria) return "";
+  const c = meta.criteria;
+  if (c.down.length) parts.push(`Down ${c.down.join("/")}`);
+  if (c.distance.length) parts.push(c.distance.join("/"));
+  if (c.situation.length) parts.push(c.situation.join("/"));
+  if (c.fieldPosition.length) parts.push(c.fieldPosition.join("/"));
+  if (c.type.length) parts.push(c.type.join("/"));
+  if (c.keyPlayer && c.keyPlayer.trim()) parts.push(`KP: ${c.keyPlayer.trim()}`);
+  if (meta.callSheetCategoryId) {
+    const cat = (typeof CALLSHEET_CATEGORIES !== "undefined")
+      ? CALLSHEET_CATEGORIES.find((x) => x.id === meta.callSheetCategoryId) : null;
+    const dn = cat && typeof getCategoryDisplayName === "function"
+      ? getCategoryDisplayName(cat) : meta.callSheetCategoryId;
+    parts.push(`→ ${dn}`);
+  }
+  return parts.join(", ") || "(none)";
+}
+
+/**
+ * Detect common preferred values across the box's current plays.
+ * A value is "common" if it appears in >= threshold (default 0.5) of plays.
+ * Returns a partial criteria object (only fields with detections).
+ */
+function _gpSmartDetectCriteriaFromBox(boxId, threshold = 0.5) {
+  const board = _gpEnsureBoard();
+  const list = (board.assignments[boxId] || []).slice();
+  if (list.length === 0) return null;
+  const splitPV = (v) =>
+    typeof splitPreferredValues === "function" ? splitPreferredValues(v) : [];
+  const counts = { down: {}, distance: {}, situation: {}, fieldPosition: {}, type: {} };
+  list.forEach((p) => {
+    const tally = (key, arr) => {
+      const seen = new Set();
+      arr.forEach((v) => {
+        if (!v || seen.has(v)) return;
+        seen.add(v);
+        counts[key][v] = (counts[key][v] || 0) + 1;
+      });
+    };
+    tally("down", splitPV(p.preferredDown));
+    tally("distance", splitPV(p.preferredDistance));
+    tally("situation", splitPV(p.preferredSituation));
+    tally("fieldPosition", splitPV(p.preferredFieldPosition));
+    tally("type", p.type ? [p.type] : []);
+  });
+  const out = _gpEmptyCriteria();
+  const minHits = Math.max(1, Math.ceil(list.length * threshold));
+  Object.keys(counts).forEach((k) => {
+    Object.entries(counts[k]).forEach(([val, n]) => {
+      if (n >= minHits) {
+        // Restore canonical case for type
+        if (k === "type") {
+          const canonical = list.find((p) => (p.type || "").toLowerCase() === val);
+          out.type.push(canonical ? canonical.type : val);
+        } else {
+          out[k].push(val);
+        }
+      }
+    });
+  });
+  return out;
+}
+
+async function editGamePlanBoxMatching(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const meta = _gpGetBoxMeta(board, boxId);
+  // Resolve display label
+  const allBoxes = [
+    ...GP_DEFAULT_BOXES,
+    ...((board.customBoxes || [])),
+  ];
+  const box = allBoxes.find((b) => b.id === boxId);
+  const labelOverride = (board.boxLabels && board.boxLabels[boxId]) || (box && box.label) || boxId;
+
+  // Build choice arrays
+  const checks = (name, choices, selected, formatter) => choices
+    .map((c) => {
+      const checked = selected.includes(c) ? "checked" : "";
+      const label = formatter ? formatter(c) : c;
+      return `<label class="gp-meta-check"><input type="checkbox" data-meta-field="${name}" value="${escapeHtml(c)}" ${checked}> ${escapeHtml(label)}</label>`;
+    })
+    .join("");
+
+  const csOptions = ["<option value=\"\">— None (auto-detect only) —</option>"]
+    .concat(
+      (typeof CALLSHEET_CATEGORIES !== "undefined" ? CALLSHEET_CATEGORIES : []).map((cat) => {
+        const dn = typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name;
+        const sel = meta.callSheetCategoryId === cat.id ? "selected" : "";
+        return `<option value="${escapeHtml(cat.id)}" ${sel}>${escapeHtml(dn)}</option>`;
+      }),
+    )
+    .join("");
+
+  // Remove any existing instance
+  document.getElementById("gpBoxMatchingOverlay")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "gpBoxMatchingOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpBoxMatchingTitle" style="max-width:680px;">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🧩</span>
+        <h3 class="custom-modal-title" id="gpBoxMatchingTitle">Matching Rules — ${escapeHtml(labelOverride)}</h3>
+      </div>
+      <div class="custom-modal-body">
+        <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin:0 0 var(--space-sm);">
+          Plays whose preferred fields match these rules will be auto-routed into this box (Send to Game Plan)
+          and pushed to the matching Call Sheet category (Push to Call Sheet).
+        </p>
+        <div class="gp-meta-grid" style="display:grid;gap:var(--space-sm);">
+          <div>
+            <strong>Down</strong>
+            <div class="gp-meta-row">${checks("down", GP_DOWN_CHOICES, meta.criteria.down)}</div>
+          </div>
+          <div>
+            <strong>Distance</strong>
+            <div class="gp-meta-row">${checks("distance", GP_DISTANCE_CHOICES, meta.criteria.distance, (s) => s.replace(/\b\w/g, (m) => m.toUpperCase()))}</div>
+          </div>
+          <div>
+            <strong>Situation</strong>
+            <div class="gp-meta-row">${checks("situation", GP_SITUATION_CHOICES, meta.criteria.situation, (s) => s.replace(/\b\w/g, (m) => m.toUpperCase()))}</div>
+          </div>
+          <div>
+            <strong>Field Position</strong>
+            <div class="gp-meta-row">${checks("fieldPosition", GP_FIELD_POSITION_CHOICES, meta.criteria.fieldPosition, (s) => s.replace(/\b\w/g, (m) => m.toUpperCase()))}</div>
+          </div>
+          <div>
+            <strong>Play Type</strong>
+            <div class="gp-meta-row">${checks("type", GP_TYPE_CHOICES, meta.criteria.type)}</div>
+          </div>
+          <div>
+            <strong>Key Player</strong>
+            <input type="text" id="gpMetaKeyPlayer" placeholder="e.g. Marco" value="${escapeHtml(meta.criteria.keyPlayer || "")}" style="width:100%;padding:var(--space-xs);border:1px solid var(--color-border-input);border-radius:var(--radius-sm);background:var(--color-bg-input);" />
+            <small style="color:var(--color-text-muted);">Matches against keyPlayerName1/2/3 on each play (case-insensitive).</small>
+          </div>
+          <div>
+            <strong>Push to Call Sheet target</strong>
+            <select id="gpMetaCsCategory" style="width:100%;padding:var(--space-xs);border:1px solid var(--color-border-input);border-radius:var(--radius-sm);background:var(--color-bg-input);">${csOptions}</select>
+            <small style="color:var(--color-text-muted);">Optional. When set, this box always pushes to this category in addition to auto-detected ones.</small>
+          </div>
+        </div>
+      </div>
+      <div class="custom-modal-actions" style="justify-content:space-between;">
+        <div style="display:flex;gap:var(--space-xs);">
+          <button class="btn btn-sm btn-secondary" id="gpMetaSmartBtn" title="Auto-detect rules from this box's current plays">🪄 Smart Detect</button>
+          <button class="btn btn-sm btn-warning" id="gpMetaClearBtn">Clear All</button>
+        </div>
+        <div style="display:flex;gap:var(--space-xs);">
+          <button class="btn btn-sm" id="gpMetaCancelBtn">Cancel</button>
+          <button class="btn btn-sm btn-primary" id="gpMetaSaveBtn">Save</button>
+        </div>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+
+  // Inline styles for the meta rows so we don't need a CSS bump
+  const style = document.createElement("style");
+  style.textContent = `
+    #gpBoxMatchingOverlay .gp-meta-row { display:flex; flex-wrap:wrap; gap:var(--space-xs); margin-top:var(--space-xs); }
+    #gpBoxMatchingOverlay .gp-meta-check { display:inline-flex; align-items:center; gap:4px; padding:2px 8px; border:1px solid var(--color-border-light); border-radius:var(--radius-pill); cursor:pointer; font-size:var(--font-size-sm); background:var(--color-bg-light); }
+    #gpBoxMatchingOverlay .gp-meta-check input { margin:0; }
+    #gpBoxMatchingOverlay .gp-meta-check:has(input:checked) { background:var(--color-primary); color:var(--color-white); border-color:var(--color-primary); }
+  `;
+  overlay.appendChild(style);
+
+  if (typeof trapFocus === "function") trapFocus(overlay);
+
+  const close = () => {
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 180);
+  };
+
+  const collectFromUI = () => {
+    const out = _gpEmptyCriteria();
+    overlay.querySelectorAll("input[type=checkbox][data-meta-field]").forEach((el) => {
+      if (el.checked) out[el.dataset.metaField].push(el.value);
+    });
+    out.keyPlayer = (overlay.querySelector("#gpMetaKeyPlayer").value || "").trim();
+    return out;
+  };
+
+  overlay.querySelector("#gpMetaCancelBtn").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); close(); } });
+
+  overlay.querySelector("#gpMetaClearBtn").addEventListener("click", () => {
+    overlay.querySelectorAll("input[type=checkbox][data-meta-field]").forEach((el) => { el.checked = false; });
+    overlay.querySelector("#gpMetaKeyPlayer").value = "";
+    overlay.querySelector("#gpMetaCsCategory").value = "";
+  });
+
+  overlay.querySelector("#gpMetaSmartBtn").addEventListener("click", () => {
+    const detected = _gpSmartDetectCriteriaFromBox(boxId);
+    if (!detected) {
+      showToast("This box has no plays yet — nothing to detect.", { type: "warning" });
+      return;
+    }
+    const hasAny = _gpHasCriteria(detected);
+    if (!hasAny) {
+      showToast("No common preferred fields found across the plays in this box.", { type: "warning", duration: 3500 });
+      return;
+    }
+    overlay.querySelectorAll("input[type=checkbox][data-meta-field]").forEach((el) => {
+      const field = el.dataset.metaField;
+      el.checked = (detected[field] || []).some((v) => v === el.value);
+    });
+    showToast("Detected common values from this box.", { type: "success", duration: 1800 });
+  });
+
+  overlay.querySelector("#gpMetaSaveBtn").addEventListener("click", () => {
+    const criteria = collectFromUI();
+    const csCat = overlay.querySelector("#gpMetaCsCategory").value || null;
+    _gpUpdateBoard((b) => {
+      if (!b.boxMeta || typeof b.boxMeta !== "object") b.boxMeta = {};
+      const hasAnything = _gpHasCriteria(criteria) || !!csCat;
+      if (hasAnything) {
+        b.boxMeta[boxId] = { criteria, callSheetCategoryId: csCat };
+      } else {
+        delete b.boxMeta[boxId];
+      }
+    });
+    renderGamePlan();
+    close();
+    showToast("Box matching rules saved.", { type: "success", duration: 1800 });
+  });
 }
 
 /* -------------------------------------------------------------------------
