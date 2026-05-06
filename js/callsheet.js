@@ -2281,14 +2281,28 @@ function printCallSheet() {
     );
 
     setTimeout(() => {
-      try {
-        const pageLabel = page === "front" ? "Front" : "Back";
-        const restoreTitle = setPrintTitle("Game Plan", pageLabel);
-        window.print();
-        restoreTitle();
-      } finally {
+      const pageLabel = page === "front" ? "Front" : "Back";
+      const restoreTitle = setPrintTitle("Game Plan", pageLabel);
+      let cleaned = false;
+      const cleanup = () => {
+        if (cleaned) return;
+        cleaned = true;
+        try {
+          restoreTitle();
+        } catch (_) {}
         container.classList.add("hidden");
         delete document.body.dataset.printMode;
+        window.removeEventListener("afterprint", cleanup);
+      };
+      window.addEventListener("afterprint", cleanup);
+      // Safety net: if the browser never fires afterprint (older browsers,
+      // or the user cancels in a way that suppresses it), restore after 60s.
+      setTimeout(cleanup, 60000);
+      try {
+        window.print();
+      } catch (e) {
+        cleanup();
+        throw e;
       }
     }, 100);
   } catch (err) {

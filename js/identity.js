@@ -57,33 +57,33 @@ function renderIdentity() {
       <thead><tr><th>Zone</th><th>Range</th></tr></thead>
       <tbody>
         ${(v.fieldZones || [])
-          .map(
-            (z) =>
-              `<tr><td>${_idEsc(z.name)}</td><td>${_idEsc(z.range)}</td></tr>`,
-          )
-          .join("")}
+      .map(
+        (z) =>
+          `<tr><td>${_idEsc(z.name)}</td><td>${_idEsc(z.range)}</td></tr>`,
+      )
+      .join("")}
       </tbody>
     </table>
   `;
 
   const directionalHtml = `
     <p class="id-note"><strong>Handedness:</strong> ${_idEsc(
-      v.directionalRules?.handedness || "right",
-    )}</p>
+    v.directionalRules?.handedness || "right",
+  )}</p>
     <table class="id-table">
       <thead><tr><th>Concept</th><th>Call</th></tr></thead>
       <tbody>
         ${Object.entries(v.directionalRules?.gapMap || {})
-          .map(
-            ([k, val]) =>
-              `<tr><td>${_idEsc(k)}</td><td>${_idEsc(val)}</td></tr>`,
-          )
-          .join("")}
+      .map(
+        ([k, val]) =>
+          `<tr><td>${_idEsc(k)}</td><td>${_idEsc(val)}</td></tr>`,
+      )
+      .join("")}
       </tbody>
     </table>
     <p class="id-note id-note-muted">${_idEsc(
-      v.directionalRules?.note || "",
-    )}</p>
+        v.directionalRules?.note || "",
+      )}</p>
   `;
 
   const yellow = v.yellow || {};
@@ -93,11 +93,11 @@ function renderIdentity() {
       <thead><tr><th>Position</th><th>Player</th></tr></thead>
       <tbody>
         ${Object.entries(yellow.bodies || {})
-          .map(
-            ([k, val]) =>
-              `<tr><td>${_idEsc(k)}</td><td>${_idEsc(val)}</td></tr>`,
-          )
-          .join("")}
+      .map(
+        ([k, val]) =>
+          `<tr><td>${_idEsc(k)}</td><td>${_idEsc(val)}</td></tr>`,
+      )
+      .join("")}
       </tbody>
     </table>
     <p class="id-note"><strong>Yellow Core 6:</strong></p>
@@ -118,15 +118,15 @@ function renderIdentity() {
       </thead>
       <tbody>
         ${(v.variationTriggers || [])
-          .map(
-            (t) =>
-              `<tr>
+      .map(
+        (t) =>
+          `<tr>
                 <td>${_idEsc(t.base)}</td>
                 <td>${_idEsc(t.variation)}</td>
                 <td>${_idEsc(t.trigger)}</td>
               </tr>`,
-          )
-          .join("")}
+      )
+      .join("")}
       </tbody>
     </table>
   `;
@@ -134,30 +134,30 @@ function renderIdentity() {
   const screens = v.screens || {};
   const screensHtml = `
     <p class="id-note"><strong>Double:</strong> ${_idEsc(
-      (screens.double || []).join(" / "),
-    )}</p>
+    (screens.double || []).join(" / "),
+  )}</p>
     <p class="id-note"><strong>Tunnel / Influence:</strong> ${_idEsc(
-      (screens.tunnelInfluence || []).join(" / "),
-    )}</p>
+    (screens.tunnelInfluence || []).join(" / "),
+  )}</p>
     <p class="id-note"><strong>Middle:</strong> ${_idEsc(
-      (screens.middle || []).join(" / "),
-    )}</p>
+    (screens.middle || []).join(" / "),
+  )}</p>
     <p class="id-note id-note-muted"><strong>Optional:</strong> ${_idEsc(
-      (screens.optional || []).join(" / "),
-    )}</p>
+    (screens.optional || []).join(" / "),
+  )}</p>
   `;
 
   const td = v.thirdDownFamilies || {};
   const thirdDownHtml = `
     <p class="id-note"><strong>Cross / Trail / Railroad:</strong> ${_idEsc(
-      (td.crossTrail || []).join(", "),
-    )}</p>
+    (td.crossTrail || []).join(", "),
+  )}</p>
     <p class="id-note"><strong>Crow / Mets / Queens:</strong> ${_idEsc(
-      (td.crow || []).join(", "),
-    )}</p>
+    (td.crow || []).join(", "),
+  )}</p>
     <p class="id-note"><strong>Dagger / Sail / Bench:</strong> ${_idEsc(
-      (td.daggerSail || []).join(", "),
-    )}</p>
+    (td.daggerSail || []).join(", "),
+  )}</p>
     ${_idList(td.rules)}
   `;
 
@@ -167,13 +167,13 @@ function renderIdentity() {
       <thead><tr><th>Picture</th><th>Target Reps</th></tr></thead>
       <tbody>
         ${Object.entries(rep)
-          .map(
-            ([k, val]) =>
-              `<tr><td>${_idEsc(k)}</td><td>${Math.round(
-                Number(val) * 100,
-              )}%</td></tr>`,
-          )
-          .join("")}
+      .map(
+        ([k, val]) =>
+          `<tr><td>${_idEsc(k)}</td><td>${Math.round(
+            Number(val) * 100,
+          )}%</td></tr>`,
+      )
+      .join("")}
       </tbody>
     </table>
   `;
@@ -214,17 +214,15 @@ function renderIdentity() {
         <div>
           <span class="id-eyebrow">Offensive Identity</span>
           <h2 class="id-title">2026 Framework</h2>
-          <p class="id-subtitle">${
-            visionOn
-              ? "Vision Mode is <strong>ON</strong> — this is the active framework."
-              : "Vision Mode is <strong>OFF</strong> — this page is reference only."
-          }</p>
+          <p class="id-subtitle">${visionOn
+      ? "Vision Mode is <strong>ON</strong> — this is the active framework."
+      : "Vision Mode is <strong>OFF</strong> — this page is reference only."
+    }</p>
         </div>
         <div class="id-hero-actions">
           <button class="btn btn-sm btn-outline" data-action="printIdentity">🖨️ Print</button>
-          <button class="btn btn-sm ${
-            visionOn ? "btn-success" : "btn-primary"
-          }" data-action="toggleVisionMode">
+          <button class="btn btn-sm ${visionOn ? "btn-success" : "btn-primary"
+    }" data-action="toggleVisionMode">
             ${visionOn ? "🎯 Vision ON" : "🧭 Turn Vision On"}
           </button>
         </div>
@@ -233,16 +231,16 @@ function renderIdentity() {
       <div class="id-grid">
         ${_idCard("Identity Statement", identityHtml, { cls: "id-card-wide" })}
         ${_idCard(
-          "The Four Pictures",
-          `<div class="id-pictures">${picturesHtml}</div>`,
-          { cls: "id-card-wide" },
-        )}
+      "The Four Pictures",
+      `<div class="id-pictures">${picturesHtml}</div>`,
+      { cls: "id-card-wide" },
+    )}
         ${_idCard("Field Zones", fieldZonesHtml)}
         ${_idCard("Directional Gap Rules", directionalHtml)}
         ${_idCard("Yellow Personnel", yellowHtml, { cls: "id-card-wide" })}
         ${_idCard("Variation Triggers (earned)", variationHtml, {
-          cls: "id-card-wide",
-        })}
+      cls: "id-card-wide",
+    })}
         ${_idCard("Weekly Screen Module", screensHtml)}
         ${_idCard("3rd Down Pass Families", thirdDownHtml)}
         ${_idCard("QB Language", qbHtml)}
