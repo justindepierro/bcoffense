@@ -324,4 +324,25 @@ document.addEventListener("DOMContentLoaded", () => {
       closeGameplanDrawer();
     }
   });
+
+  // Idle fade for the pull-tab: when the cursor moves near the right edge of
+  // the viewport the tab pops to full opacity, then fades back after idle.
+  const tab = document.getElementById("gpDrawerToggleBtn");
+  if (tab) {
+    let fadeTimer = null;
+    const wakeTab = () => {
+      tab.classList.add("gp-drawer-tab-active");
+      clearTimeout(fadeTimer);
+      fadeTimer = setTimeout(() => {
+        tab.classList.remove("gp-drawer-tab-active");
+      }, 1500);
+    };
+    document.addEventListener("mousemove", (e) => {
+      // Only react when on the call sheet tab and the cursor is near the right edge
+      if (document.body.dataset.activeTab !== "callsheet") return;
+      if (_gpDrawerState.open) return; // already pinned solid when open
+      if (e.clientX > window.innerWidth - 80) wakeTab();
+    });
+    tab.addEventListener("focus", wakeTab);
+  }
 });

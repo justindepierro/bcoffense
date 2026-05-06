@@ -3445,7 +3445,7 @@
   flex-direction: column;
   transform: translateX(100%);
   transition: transform var(--transition-normal);
-  z-index: 90;
+  z-index: 1100; /* above app header (1000) and tabs (999) */
   font-family: var(--font-sans);
 }
 .gp-drawer.gp-drawer-open {
@@ -3713,7 +3713,7 @@ body.gp-drag-active .callsheet-cell {
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-  z-index: 89; /* one below the open drawer (90) */
+  z-index: 1099; /* one below the open drawer (1100) — above header (1000) */
   display: none; /* only visible on the call sheet tab */
   align-items: center;
   gap: 6px;
@@ -3729,16 +3729,28 @@ body.gp-drag-active .callsheet-cell {
   cursor: pointer;
   box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.15);
   writing-mode: vertical-rl;
+  opacity: 0.35;
   transition: right var(--transition-normal), background var(--transition-fast),
-    box-shadow var(--transition-fast);
+    box-shadow var(--transition-fast), opacity var(--transition-normal),
+    transform var(--transition-fast);
+}
+.gp-drawer-tab:hover,
+.gp-drawer-tab:focus-visible,
+.gp-drawer-tab.gp-drawer-tab-active {
+  opacity: 1;
 }
 .gp-drawer-tab:hover {
   background: var(--color-primary);
   border-color: var(--color-primary);
+  transform: translateY(-50%) translateX(-2px);
 }
 .gp-drawer-tab:focus-visible {
   outline: 2px solid var(--color-white);
   outline-offset: -4px;
+}
+/* When the drawer is open the tab is pinned to the drawer edge — keep it solid */
+.gp-drawer-tab.gp-drawer-toggle-active {
+  opacity: 1;
 }
 .gp-drawer-tab-icon {
   font-size: var(--font-size-md);
