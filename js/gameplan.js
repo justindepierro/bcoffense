@@ -1045,12 +1045,12 @@ function _gpRenderBox(box, board) {
           data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
       : ""}
         ${!isHolding ? (() => {
-          const meta = _gpGetBoxMeta(board, box.id);
-          const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
-          const summary = _gpFormatBoxMetaSummary(meta);
-          return `<button class="btn btn-sm btn-secondary${hasRules ? " gp-btn-active" : ""}" title="${hasRules ? `Matching rules: ${escapeHtml(summary)}` : "Set matching rules — auto-route plays into this box and Push to Call Sheet"}"
+      const meta = _gpGetBoxMeta(board, box.id);
+      const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
+      const summary = _gpFormatBoxMetaSummary(meta);
+      return `<button class="btn btn-sm btn-secondary${hasRules ? " gp-btn-active" : ""}" title="${hasRules ? `Matching rules: ${escapeHtml(summary)}` : "Set matching rules — auto-route plays into this box and Push to Call Sheet"}"
           data-action="editGamePlanBoxMatching" data-arg="${escapeHtml(box.id)}">🧩</button>`;
-        })() : ""}
+    })() : ""}
         <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
           data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
         <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"

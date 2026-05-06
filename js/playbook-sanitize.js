@@ -1032,24 +1032,19 @@ function _renderCatCleanupList() {
     if (sumEl) sumEl.textContent = "";
     return;
   }
+
+  // Compute scope FIRST (was a hoist bug — entries was referenced before declaration)
+  const entries = _catCleanupScopeEntries();
+  const matchingCount = entries.filter((e) => _catPlayMatches(e.play, cat)).length;
+
   if (sumEl) {
     const scopeLbl =
       _catCleanupScope === "filtered" ? "Filtered"
-      : _catCleanupScope === "gameplan" ? "Game Plan"
-      : "All plays";
-    const matching = entries.filter((e) => _catPlayMatches(e.play, cat)).length;
-    sumEl.innerHTML = `<strong>${escapeHtml(_catCategoryDisplayName(cat))}</strong> — ${_catCriteriaSummary(cat)} <span style="margin-left:var(--space-sm);">[${escapeHtml(scopeLbl)}: ${matching}/${entries.length} already match]</span>`;
-  }
-
-  const entries = _catCleanupScopeEntries();
-  const visible = entries.filter((e) => {
-    if (!_catCleanupHideMatching) return true;
-    return !_catPlayMatches(e.play, cat);
-  });
-
-  if (visible.length === 0) {
-    listEl.innerHTML = `<div style="padding:var(--space-md);text-align:center;color:var(--color-text-muted);">${_catCleanupHideMatching ? "✅ Every play in scope already matches this category." : "(No plays in scope.)"}</div>`;
-    return;
+        : _catCleanupScope === "gameplan" ? "Game Plan"
+          : "All plays";
+    sumEl.innerHTML =
+      `<strong>${escapeHtml(_catCategoryDisplayName(cat))}</strong> — ${_catCriteriaSummary(cat)} ` +
+      `<span style="margin-left:var(--space-sm);color:var(--color-text-muted);">[${escapeHtml(scopeLbl)}: ${matchingCount}/${entries.length} match]</span>`;
   }
 
   if (cat.manual) {
@@ -1057,11 +1052,41 @@ function _renderCatCleanupList() {
     return;
   }
 
+  const visible = _catCleanupHideMatching
+    ? entries.filter((e) => !_catPlayMatches(e.play, cat))
+    : entries;
+
+  if (entries.length === 0) {
+    const hint =
+      _catCleanupScope === "filtered" ? "No plays match the playbook's current filter."
+        : _catCleanupScope === "gameplan" ? "No plays are tagged for the active opponent yet."
+          : "No plays in the playbook.";
+    listEl.innerHTML = `<div style="padding:var(--space-md);text-align:center;color:var(--color-text-muted);">${escapeHtml(hint)}</div>`;
+    return;
+  }
+  if (visible.length === 0) {
+    listEl.innerHTML = `<div style="padding:var(--space-md);text-align:center;color:var(--color-text-muted);">✅ Every play in scope already matches this category.</div>`;
+    return;
+  }
+
+  // Sort: matching first, then by type/formation/play
+  visible.sort((a, b) => {
+    const am = _catPlayMatches(a.play, cat) ? 0 : 1;
+    const bm = _catPlayMatches(b.play, cat) ? 0 : 1;
+    if (am !== bm) return am - bm;
+    const at = `${a.play.type || ""}|${a.play.formation || ""}|${a.play.play || ""}`;
+    const bt = `${b.play.type || ""}|${b.play.formation || ""}|${b.play.play || ""}`;
+    return at.localeCompare(bt);
+  });
+
   const rows = visible.map((e) => {
     const matches = _catPlayMatches(e.play, cat);
-    const callHtml = typeof getFullCall === "function" ? getFullCall(e.play, { showLineCall: true }) : escapeHtml(e.play.play || "(unnamed)");
+    const callHtml = typeof getFullCall === "function"
+      ? getFullCall(e.play, { showLineCall: true })
+      : escapeHtml(e.play.play || "(unnamed)");
     const ctx = [e.play.type, e.play.personnel, e.play.formation].filter(Boolean).join(" • ");
-    return `<label class="cat-cleanup-row" data-master-idx="${e.masterIdx}" style="display:flex;align-items:center;gap:var(--space-sm);padding:8px 10px;border-bottom:1px solid var(--color-border-light);${matches ? "background:var(--color-success-light);" : ""}">
+    const bg = matches ? "background:var(--color-success-light);" : "";
+    return `<label class="cat-cleanup-row" data-master-idx="${e.masterIdx}" style="display:flex;align-items:center;gap:var(--space-sm);padding:8px 10px;border-bottom:1px solid var(--color-border-light);cursor:pointer;${bg}">
       <input type="checkbox" class="cat-cleanup-check" ${matches ? "checked" : ""} data-master-idx="${e.masterIdx}" />
       <div style="flex:1;min-width:0;">
         <div style="font-family:var(--font-mono);font-size:var(--font-size-sm);">${callHtml}</div>
@@ -1072,7 +1097,6 @@ function _renderCatCleanupList() {
 
   listEl.innerHTML = rows;
 
-  // Wire checkbox toggles
   listEl.querySelectorAll(".cat-cleanup-check").forEach((cb) => {
     cb.addEventListener("change", () => _onCatCleanupToggle(cb));
   });
