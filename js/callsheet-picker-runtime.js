@@ -543,6 +543,14 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
     ) {
       droppedPlay = script[scriptIndex];
     }
+  } else if (source === "gameplan") {
+    const gpIndex = parseInt(event.dataTransfer.getData("gpIndex"), 10);
+    const arr = Array.isArray(window._gpDrawerVisiblePlays)
+      ? window._gpDrawerVisiblePlays
+      : [];
+    if (!Number.isNaN(gpIndex) && arr[gpIndex]) {
+      droppedPlay = arr[gpIndex];
+    }
   }
 
   if (!droppedPlay) return;
