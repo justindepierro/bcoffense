@@ -110,6 +110,59 @@ function _gpDrawerTypeCounts(source) {
   return counts;
 }
 
+/* ---------- Usage map (where each play appears in the call sheet) --------- */
+
+function _gpDrawerBuildUsageMap() {
+  // signature -> [{ catId, name, color }]
+  const map = Object.create(null);
+  if (typeof callSheet !== "object" || !callSheet) return map;
+  if (typeof playSignature !== "function") return map;
+
+  const cats = Array.isArray(CALLSHEET_CATEGORIES) ? CALLSHEET_CATEGORIES : [];
+  const catById = {};
+  cats.forEach((c) => (catById[c.id] = c));
+
+  Object.keys(callSheet).forEach((catId) => {
+    const bucket = callSheet[catId];
+    if (!bucket) return;
+    const catObj = catById[catId];
+    const name =
+      typeof getCategoryDisplayName === "function" && catObj
+        ? getCategoryDisplayName(catObj)
+        : (catObj && catObj.name) || catId;
+    const color =
+      typeof getCategoryColor === "function" && catObj
+        ? getCategoryColor(catObj)
+        : (catObj && catObj.color) || "";
+
+    const seenInBucket = new Set();
+    ["left", "right"].forEach((side) => {
+      const arr = Array.isArray(bucket[side]) ? bucket[side] : [];
+      arr.forEach((play) => {
+        if (!play) return;
+        const sig = playSignature(play);
+        if (!sig) return;
+        // Count once per bucket (both hashes => single chip), but bump count if
+        // the same play is in both hashes of the same bucket.
+        const key = sig + "|" + catId;
+        const dupInBucket = seenInBucket.has(key);
+        seenInBucket.add(key);
+
+        if (!map[sig]) map[sig] = [];
+        if (dupInBucket) {
+          // increment count on the existing entry for this bucket
+          const last = map[sig][map[sig].length - 1];
+          if (last && last.catId === catId) last.count = (last.count || 1) + 1;
+          return;
+        }
+        map[sig].push({ catId, name, color, count: 1 });
+      });
+    });
+  });
+
+  return map;
+}
+
 /* ---------- Render --------------------------------------------------------- */
 
 function _gpDrawerRender() {
@@ -178,6 +231,7 @@ function _gpDrawerRender() {
   }
 
   const q = (_gpDrawerState.search || "").toLowerCase().trim();
+  const usageMap = _gpDrawerBuildUsageMap();
   list.innerHTML = visible
     .map((play, idx) => {
       const call =
@@ -186,14 +240,35 @@ function _gpDrawerRender() {
           : escapeHtml(play.play || "");
       const meta = [play.personnel, play.formation, play.type].filter(Boolean).join(" • ");
       const highlightedMeta = q ? _gpDrawerHighlight(meta, q) : escapeHtml(meta);
+      const sig = typeof playSignature === "function" ? playSignature(play) : "";
+      const uses = (sig && usageMap[sig]) || [];
+      const totalUses = uses.reduce((s, u) => s + (u.count || 1), 0);
+      const usageBadge = totalUses
+        ? `<span class="gp-drawer-uses gp-drawer-uses-${totalUses > 1 ? "multi" : "one"}" title="On the call sheet ${totalUses} time${totalUses === 1 ? "" : "s"}">×${totalUses}</span>`
+        : `<span class="gp-drawer-uses gp-drawer-uses-zero" title="Not on the call sheet">×0</span>`;
+      const chips = uses
+        .map((u) => {
+          const safeColor = /^#[0-9a-fA-F]{3,8}$/.test(u.color || "") ? u.color : "";
+          const style = safeColor ? ` style="--gp-chip-bg:${safeColor}"` : "";
+          const label = u.count > 1 ? `${u.name} ×${u.count}` : u.name;
+          return `<span class="gp-drawer-loc-chip"${style} title="${escapeHtml(u.name)}">${escapeHtml(label)}</span>`;
+        })
+        .join("");
+      const locRow = chips
+        ? `<div class="gp-drawer-locs">${chips}</div>`
+        : "";
       return `
-        <div class="gp-drawer-row" draggable="true"
+        <div class="gp-drawer-row${totalUses ? " gp-drawer-row-used" : ""}" draggable="true"
              data-gp-idx="${idx}"
              title="Drag onto a call sheet category">
           <span class="gp-drawer-grip" aria-hidden="true">⋮⋮</span>
           <div class="gp-drawer-row-body">
-            <div class="gp-drawer-call">${call}</div>
+            <div class="gp-drawer-call-row">
+              <div class="gp-drawer-call">${call}</div>
+              ${usageBadge}
+            </div>
             ${meta ? `<div class="gp-drawer-meta">${highlightedMeta}</div>` : ""}
+            ${locRow}
           </div>
         </div>`;
     })
@@ -344,5 +419,19 @@ document.addEventListener("DOMContentLoaded", () => {
       if (e.clientX > window.innerWidth - 80) wakeTab();
     });
     tab.addEventListener("focus", wakeTab);
+  }
+
+  // When the call sheet re-renders, refresh the drawer's usage chips so they
+  // reflect the latest bucket contents.
+  if (typeof window.renderCallSheet === "function" && !window._gpDrawerHookedRender) {
+    const _origRender = window.renderCallSheet;
+    window.renderCallSheet = function _gpHookedRenderCallSheet() {
+      const out = _origRender.apply(this, arguments);
+      if (_gpDrawerState.open) {
+        try { _gpDrawerRender(); } catch (_e) {}
+      }
+      return out;
+    };
+    window._gpDrawerHookedRender = true;
   }
 });
