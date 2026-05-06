@@ -255,7 +255,22 @@ function renderIdentity() {
 function printIdentity() {
   // Render fresh, then print. Browser print picks up @media print rules.
   renderIdentity();
-  window.print();
+  document.body.dataset.printMode = "identity";
+  let cleaned = false;
+  const cleanup = () => {
+    if (cleaned) return;
+    cleaned = true;
+    delete document.body.dataset.printMode;
+    window.removeEventListener("afterprint", cleanup);
+  };
+  window.addEventListener("afterprint", cleanup);
+  setTimeout(cleanup, 60000);
+  try {
+    window.print();
+  } catch (e) {
+    cleanup();
+    throw e;
+  }
 }
 
 document.addEventListener("visionmodechange", () => {

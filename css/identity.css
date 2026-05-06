@@ -188,18 +188,18 @@
   }
 }
 
-/* Print */
+/* Print — only when explicitly printing identity */
 @media print {
-  body > *:not(#identity) {
+  body[data-print-mode="identity"] > *:not(#identity) {
     display: none !important;
   }
-  #identity {
+  body[data-print-mode="identity"] #identity {
     display: block !important;
   }
-  #identity .id-hero-actions {
+  body[data-print-mode="identity"] #identity .id-hero-actions {
     display: none !important;
   }
-  #identity .id-card {
+  body[data-print-mode="identity"] #identity .id-card {
     break-inside: avoid;
     page-break-inside: avoid;
   }

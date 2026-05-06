@@ -2289,7 +2289,7 @@ function printCallSheet() {
         cleaned = true;
         try {
           restoreTitle();
-        } catch (_) {}
+        } catch (_) { }
         container.classList.add("hidden");
         delete document.body.dataset.printMode;
         window.removeEventListener("afterprint", cleanup);
