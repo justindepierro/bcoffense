@@ -3439,6 +3439,12 @@
 /* =============================================================================
    Game Plan Plays Drawer (Call Sheet)
    ============================================================================= */
+/* Belt-and-suspenders: a drawer translated 100% off the right edge can cause
+   a phantom horizontal scrollbar. `overflow-x: clip` prevents the leak
+   without breaking position:sticky on the cs-toolbar (unlike `hidden`). */
+html, body {
+  overflow-x: clip;
+}
 .gp-drawer {
   position: fixed;
   top: 0;

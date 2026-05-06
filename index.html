@@ -1914,42 +1914,43 @@
       <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
 
       <div id="callSheetGrid" class="callsheet-grid" data-testid="callsheet-grid"></div>
-
-      <!-- Game Plan Plays Drawer (slides in from the right) -->
-      <aside id="gpDrawer" class="gp-drawer" aria-label="Game Plan Plays" aria-hidden="true">
-        <header class="gp-drawer-header">
-          <div class="gp-drawer-title-row">
-            <h3 class="gp-drawer-title">🎯 Game Plan Plays</h3>
-            <button class="gp-drawer-close" data-action="closeGameplanDrawer" title="Close drawer (Esc)" aria-label="Close drawer">×</button>
-          </div>
-          <div class="gp-drawer-subtitle">
-            <span id="gpDrawerOpponent" class="gp-drawer-opp"></span>
-            <span id="gpDrawerCount" class="gp-drawer-count"></span>
-          </div>
-          <div class="gp-drawer-scope">
-            <button id="gpDrawerScopeActive" type="button" class="gp-scope-btn gp-scope-active"
-              data-action="setGameplanDrawerScope" data-arg="active"
-              title="Show plays tagged for the active opponent">Active Opponent</button>
-            <button id="gpDrawerScopeAll" type="button" class="gp-scope-btn"
-              data-action="setGameplanDrawerScope" data-arg="all"
-              title="Show plays tagged for any opponent">All Opponents</button>
-          </div>
-          <div class="gp-drawer-search-wrap">
-            <span class="gp-drawer-search-icon" aria-hidden="true">🔎</span>
-            <input id="gpDrawerSearch" type="search" class="gp-drawer-search" placeholder="Search game plan plays…"
-              data-oninput="setGameplanDrawerSearch" data-pass="value" autocomplete="off" />
-            <button class="gp-drawer-search-clear" data-action="clearGameplanDrawerSearch" title="Clear search" aria-label="Clear search">×</button>
-          </div>
-          <div id="gpDrawerTypeChips" class="gp-drawer-chips"></div>
-        </header>
-        <div id="gpDrawerList" class="gp-drawer-list" role="list"></div>
-        <footer class="gp-drawer-footer">
-          <span class="gp-drawer-hint">Drag a play onto any category bucket on the call sheet.</span>
-        </footer>
-      </aside>
     </div>
   </div>
   <!-- End mainApp -->
+
+  <!-- Game Plan Plays Drawer (slides in from the right; placed at root so no
+       ancestor transform/filter can break its position:fixed) -->
+  <aside id="gpDrawer" class="gp-drawer" aria-label="Game Plan Plays" aria-hidden="true">
+    <header class="gp-drawer-header">
+      <div class="gp-drawer-title-row">
+        <h3 class="gp-drawer-title">🎯 Game Plan Plays</h3>
+        <button class="gp-drawer-close" data-action="closeGameplanDrawer" title="Close drawer (Esc)" aria-label="Close drawer">×</button>
+      </div>
+      <div class="gp-drawer-subtitle">
+        <span id="gpDrawerOpponent" class="gp-drawer-opp"></span>
+        <span id="gpDrawerCount" class="gp-drawer-count"></span>
+      </div>
+      <div class="gp-drawer-scope">
+        <button id="gpDrawerScopeActive" type="button" class="gp-scope-btn gp-scope-active"
+          data-action="setGameplanDrawerScope" data-arg="active"
+          title="Show plays tagged for the active opponent">Active Opponent</button>
+        <button id="gpDrawerScopeAll" type="button" class="gp-scope-btn"
+          data-action="setGameplanDrawerScope" data-arg="all"
+          title="Show plays tagged for any opponent">All Opponents</button>
+      </div>
+      <div class="gp-drawer-search-wrap">
+        <span class="gp-drawer-search-icon" aria-hidden="true">🔎</span>
+        <input id="gpDrawerSearch" type="search" class="gp-drawer-search" placeholder="Search game plan plays…"
+          data-oninput="setGameplanDrawerSearch" data-pass="value" autocomplete="off" />
+        <button class="gp-drawer-search-clear" data-action="clearGameplanDrawerSearch" title="Clear search" aria-label="Clear search">×</button>
+      </div>
+      <div id="gpDrawerTypeChips" class="gp-drawer-chips"></div>
+    </header>
+    <div id="gpDrawerList" class="gp-drawer-list" role="list"></div>
+    <footer class="gp-drawer-footer">
+      <span class="gp-drawer-hint">Drag a play onto any category bucket on the call sheet.</span>
+    </footer>
+  </aside>
 
   <!-- Call Sheet Print Container -->
   <div id="callSheetPrint" class="callsheet-print hidden">
