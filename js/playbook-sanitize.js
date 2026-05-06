@@ -903,8 +903,13 @@ function openPlaybookCategoryCleanup() {
     showToast("Call sheet categories not loaded", { duration: 2500, type: "error" });
     return;
   }
-  // Default category: first non-manual one
-  if (!_catCleanupCategoryId) {
+  // Default category: first non-manual one. Also re-snap if the remembered
+  // id no longer exists or points to a manual category (manual categories
+  // are hidden from this tool — see _renderCatCleanupSelect).
+  const _curCat = _catCleanupCategoryId
+    ? CALLSHEET_CATEGORIES.find((c) => c.id === _catCleanupCategoryId)
+    : null;
+  if (!_curCat || _curCat.manual) {
     const def = CALLSHEET_CATEGORIES.find((c) => !c.manual);
     _catCleanupCategoryId = def ? def.id : (CALLSHEET_CATEGORIES[0] && CALLSHEET_CATEGORIES[0].id) || "";
   }
@@ -1119,13 +1124,35 @@ function _renderCatCleanupSelect() {
   const sel = document.getElementById("catCleanupSelect");
   if (!sel) return;
   const entries = _catCleanupScopeEntries();
-  const html = CALLSHEET_CATEGORIES.map((cat) => {
+  // Only show categories that the cleanup tool can actually populate via
+  // metadata. Manual categories (must-haves, custom buckets without
+  // criteria, etc.) have no auto-populate fields, so they would always
+  // show "manual-only" and confuse the user — hide them here.
+  const usableCats = CALLSHEET_CATEGORIES.filter((c) => !c.manual);
+  // Group: criteria-based first, then player-specific
+  const criteriaCats = usableCats.filter((c) => !c.playerSpecific);
+  const playerCats = usableCats.filter((c) => c.playerSpecific);
+
+  const optHtml = (cat) => {
     const matching = entries.filter((e) => _catPlayMatches(e.play, cat)).length;
     const dn = _catCategoryDisplayName(cat);
     const sl = cat.id === _catCleanupCategoryId ? "selected" : "";
     return `<option value="${escapeHtml(cat.id)}" ${sl}>${escapeHtml(dn)} — ${matching}/${entries.length} matching</option>`;
-  }).join("");
+  };
+
+  let html = "";
+  if (criteriaCats.length) {
+    html += `<optgroup label="Situational / Down / Type">${criteriaCats.map(optHtml).join("")}</optgroup>`;
+  }
+  if (playerCats.length) {
+    html += `<optgroup label="Player Buckets">${playerCats.map(optHtml).join("")}</optgroup>`;
+  }
+  if (!html) {
+    html = `<option value="">(No populatable categories — add criteria to a Call Sheet category first)</option>`;
+  }
   sel.innerHTML = html;
+  // Make sure the select reflects the current id even if the option order changed
+  if (_catCleanupCategoryId) sel.value = _catCleanupCategoryId;
 }
 
 /* ----- Search / chip / show-mode helpers ----- */
