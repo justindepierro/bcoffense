@@ -931,8 +931,8 @@ function _gpRenderBox(box, board) {
           data-action="gpSuggestFillBox" data-arg="${escapeHtml(box.id)}">💡 Suggest</button>
         ${sortDropdown}
         ${holdingAutoBtn}
-        ${!isHolding && GP_BOX_TO_CALLSHEET[box.id] && list.length > 0
-      ? `<button class="btn btn-sm btn-secondary" title="Push only this box to its call sheet category"
+        ${!isHolding && list.length > 0
+      ? `<button class="btn btn-sm btn-secondary" title="Push only this box's plays — fans out to all matching call sheet categories"
           data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
       : ""}
         <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
@@ -1697,30 +1697,156 @@ function openGamePlanStats() {
    Push to call sheet
    ------------------------------------------------------------------------- */
 
+/**
+ * Build the set of call sheet category ids a single play should fan-out to.
+ * - findMatchingCategories() handles all auto categories (front-page situations,
+ *   down/distance, field position, back-page play types).
+ * - Player buckets (manual) are matched by keyPlayerName1/2/3 against the
+ *   bucket's *display* name (custom-renamed or default).
+ * - Source box id is included as a fallback so the box's natural type
+ *   bucket gets filled even when the play lacks preferred fields.
+ */
+function _gpComputeCallSheetTargets(play, sourceBoxId) {
+  const targets = new Set();
+  // 1) Auto categories (front + back via preferred fields and play type)
+  if (typeof findMatchingCategories === "function") {
+    try {
+      findMatchingCategories(play).forEach((id) => targets.add(id));
+    } catch (_) { /* ignore */ }
+  }
+  // 2) Player buckets by Key Player names
+  if (Array.isArray(CALLSHEET_CATEGORIES)) {
+    const names = [play.keyPlayerName1, play.keyPlayerName2, play.keyPlayerName3]
+      .map((n) => (typeof n === "string" ? n.toLowerCase().trim() : ""))
+      .filter(Boolean);
+    if (names.length > 0) {
+      CALLSHEET_CATEGORIES.forEach((cat) => {
+        if (!cat.playerSpecific) return;
+        const dn =
+          (typeof getCategoryDisplayName === "function"
+            ? getCategoryDisplayName(cat)
+            : cat.name) || "";
+        const norm = dn.toLowerCase().trim();
+        if (norm && names.includes(norm)) targets.add(cat.id);
+      });
+    }
+  }
+  // 3) Source box → type bucket fallback (always include if box maps to one)
+  const fb = sourceBoxId ? GP_BOX_TO_CALLSHEET[sourceBoxId] : null;
+  if (fb) targets.add(fb);
+  return targets;
+}
+
+/**
+ * Push a single play entry into a call sheet category, deduped, and
+ * routed to left/right by preferredHash (alternating when unspecified).
+ * Returns true if pushed, false if it was a duplicate.
+ */
+function _gpPushPlayIntoCategory(play, categoryId) {
+  if (!callSheet[categoryId]) callSheet[categoryId] = { left: [], right: [] };
+  const bucket = callSheet[categoryId];
+  const exists =
+    (bucket.left || []).some((x) => playsMatch(x, play)) ||
+    (bucket.right || []).some((x) => playsMatch(x, play));
+  if (exists) return false;
+  const wb =
+    typeof getWristbandNumberForPlay === "function"
+      ? getWristbandNumberForPlay(play)
+      : null;
+  const entry = {
+    ...play,
+    playType: play.type,
+    wristbandNumber: wb,
+    highlighted: false,
+    highlightColor: null,
+    borderColor: null,
+    cellBg: null,
+    cellTextColor: null,
+    cellBold: false,
+    cellItalic: false,
+    cellUnderline: false,
+    cellStrikethrough: false,
+    cellFontSize: null,
+    cellNote: null,
+  };
+  const hash = (play.preferredHash || "").toLowerCase().trim();
+  if (hash === "left" || hash === "l") {
+    bucket.left.push(entry);
+  } else if (hash === "right" || hash === "r") {
+    bucket.right.push(entry);
+  } else if ((bucket.left || []).length <= (bucket.right || []).length) {
+    bucket.left.push(entry);
+  } else {
+    bucket.right.push(entry);
+  }
+  return true;
+}
+
 async function pushGamePlanToCallSheet() {
   if (typeof callSheet !== "object" || !callSheet) {
     showToast("Call sheet isn't ready yet.", { type: "error" });
     return;
   }
   const board = _gpEnsureBoard();
-  const summary = GP_DEFAULT_BOXES
-    .map((b) => {
-      const list = board.assignments[b.id] || [];
-      const target = GP_BOX_TO_CALLSHEET[b.id];
-      return list.length > 0 && target
-        ? `<li>${escapeHtml(b.label)} → <code>${escapeHtml(target)}</code> (${list.length})</li>`
-        : null;
-    })
-    .filter(Boolean)
-    .join("");
-  if (!summary) {
+  // Collect drafted plays from every box (default + custom), excluding Holding.
+  const sourceBoxes = [
+    ...GP_DEFAULT_BOXES,
+    ...((board.customBoxes || []).filter((b) => b && b.id !== GP_HOLDING_ID)),
+  ];
+  /** @type {Array<{play:object, sourceBoxId:string}>} */
+  const allEntries = [];
+  sourceBoxes.forEach((b) => {
+    const list = board.assignments[b.id] || [];
+    list.forEach((p) => allEntries.push({ play: p, sourceBoxId: b.id }));
+  });
+  if (allEntries.length === 0) {
     showToast("No drafted plays to push.", { type: "warning" });
     return;
   }
+
+  // Fan-out: per play, compute target category set
+  const fanOut = allEntries.map(({ play, sourceBoxId }) => ({
+    play,
+    sourceBoxId,
+    targets: _gpComputeCallSheetTargets(play, sourceBoxId),
+  }));
+
+  // Tally targets per category
+  const byCat = {};
+  fanOut.forEach(({ targets }) => {
+    targets.forEach((id) => {
+      byCat[id] = (byCat[id] || 0) + 1;
+    });
+  });
+  const filledCatIds = Object.keys(byCat);
+  const filledCount = filledCatIds.length;
+  if (filledCount === 0) {
+    showToast(
+      "Drafted plays don't match any call sheet category. Set Preferred Down/Distance/Situation/Position or Type on those plays.",
+      { type: "warning", duration: 4500 },
+    );
+    return;
+  }
+
+  // Build human-readable breakdown ordered by call sheet category order
+  const orderIds = CALLSHEET_CATEGORIES.map((c) => c.id);
+  const summaryItems = orderIds
+    .filter((id) => byCat[id])
+    .map((id) => {
+      const cat = CALLSHEET_CATEGORIES.find((c) => c.id === id);
+      const dn = cat
+        ? typeof getCategoryDisplayName === "function"
+          ? getCategoryDisplayName(cat)
+          : cat.name
+        : id;
+      return `<li>${escapeHtml(dn)}: <strong>${byCat[id]}</strong></li>`;
+    })
+    .join("");
+
   const choice = await showChoice(
-    `<p>Push drafted plays into the call sheet?</p>
-     <ul style="margin:var(--space-xs) 0 var(--space-sm) var(--space-md);font-size:var(--font-size-sm);">${summary}</ul>
-     <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);">Custom boxes are not pushed (no matching call sheet category).</p>`,
+    `<p>Push <strong>${allEntries.length}</strong> drafted play${allEntries.length === 1 ? "" : "s"} into <strong>${filledCount}</strong> call sheet categor${filledCount === 1 ? "y" : "ies"}?</p>
+     <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-xs);">Plays fan-out to every matching bucket — front-page situations (down, distance, field position), back-page play types, and player buckets matched by Key Player name.</p>
+     <details style="font-size:var(--font-size-sm);"><summary style="cursor:pointer;color:var(--color-text-muted);">Show breakdown</summary><ul style="margin:var(--space-xs) 0 0 var(--space-md);columns:2;-webkit-columns:2;">${summaryItems}</ul></details>`,
     {
       title: "Push to Call Sheet",
       icon: "➡️",
@@ -1730,42 +1856,29 @@ async function pushGamePlanToCallSheet() {
   );
   if (!choice) return;
   const replace = choice === "option2";
+
+  // If replace: only clear categories we're about to fill
+  if (replace) {
+    filledCatIds.forEach((id) => {
+      if (!callSheet[id]) callSheet[id] = { left: [], right: [] };
+      callSheet[id].left = [];
+      callSheet[id].right = [];
+    });
+  }
+
   let pushed = 0;
-  GP_DEFAULT_BOXES.forEach((b) => {
-    const list = board.assignments[b.id] || [];
-    const target = GP_BOX_TO_CALLSHEET[b.id];
-    if (!target || list.length === 0) return;
-    if (!callSheet[target]) callSheet[target] = { left: [], right: [] };
-    if (replace) {
-      callSheet[target].left = [];
-      callSheet[target].right = [];
-    }
-    list.forEach((p) => {
-      const exists = (callSheet[target].left || []).some((x) => playsMatch(x, p))
-        || (callSheet[target].right || []).some((x) => playsMatch(x, p));
-      if (exists) return;
-      callSheet[target].left.push({
-        ...p,
-        playType: p.type,
-        wristbandNumber: null,
-        highlighted: false,
-        highlightColor: null,
-        borderColor: null,
-        cellBg: null,
-        cellTextColor: null,
-        cellBold: false,
-        cellItalic: false,
-        cellUnderline: false,
-        cellStrikethrough: false,
-        cellFontSize: null,
-        cellNote: null,
-      });
-      pushed += 1;
+  fanOut.forEach(({ play, targets }) => {
+    targets.forEach((id) => {
+      if (_gpPushPlayIntoCategory(play, id)) pushed += 1;
     });
   });
+
   if (typeof saveCallSheet === "function") saveCallSheet();
-  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to the call sheet`,
-    { type: "success", duration: 3000 });
+  if (typeof renderCallSheet === "function") renderCallSheet();
+  showToast(
+    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCount} categor${filledCount === 1 ? "y" : "ies"}`,
+    { type: "success", duration: 3500 },
+  );
 }
 
 /* -------------------------------------------------------------------------
@@ -2304,11 +2417,6 @@ async function gpSuggestFillBox(boxId) {
 
 async function pushGamePlanBoxToCallSheet(boxId) {
   if (!boxId) return;
-  const target = GP_BOX_TO_CALLSHEET[boxId];
-  if (!target) {
-    showToast("This box has no matching call sheet category.", { type: "warning" });
-    return;
-  }
   if (typeof callSheet !== "object" || !callSheet) {
     showToast("Call sheet isn't ready yet.", { type: "error" });
     return;
@@ -2319,8 +2427,43 @@ async function pushGamePlanBoxToCallSheet(boxId) {
     showToast("This box has no plays.", { type: "warning" });
     return;
   }
+
+  // Fan-out: per play, compute target category set
+  const fanOut = list.map((play) => ({
+    play,
+    targets: _gpComputeCallSheetTargets(play, boxId),
+  }));
+  const byCat = {};
+  fanOut.forEach(({ targets }) => {
+    targets.forEach((id) => {
+      byCat[id] = (byCat[id] || 0) + 1;
+    });
+  });
+  const filledCatIds = Object.keys(byCat);
+  if (filledCatIds.length === 0) {
+    showToast(
+      "Plays in this box don't match any call sheet category.",
+      { type: "warning" },
+    );
+    return;
+  }
+  const orderIds = CALLSHEET_CATEGORIES.map((c) => c.id);
+  const summaryItems = orderIds
+    .filter((id) => byCat[id])
+    .map((id) => {
+      const cat = CALLSHEET_CATEGORIES.find((c) => c.id === id);
+      const dn = cat
+        ? typeof getCategoryDisplayName === "function"
+          ? getCategoryDisplayName(cat)
+          : cat.name
+        : id;
+      return `<li>${escapeHtml(dn)}: <strong>${byCat[id]}</strong></li>`;
+    })
+    .join("");
+
   const choice = await showChoice(
-    `<p>Push <strong>${list.length}</strong> play${list.length === 1 ? "" : "s"} from <strong>${escapeHtml(boxId)}</strong> into call sheet category <code>${escapeHtml(target)}</code>?</p>`,
+    `<p>Push <strong>${list.length}</strong> play${list.length === 1 ? "" : "s"} from <strong>${escapeHtml(boxId)}</strong> into <strong>${filledCatIds.length}</strong> call sheet categor${filledCatIds.length === 1 ? "y" : "ies"}?</p>
+     <details style="font-size:var(--font-size-sm);"><summary style="cursor:pointer;color:var(--color-text-muted);">Show breakdown</summary><ul style="margin:var(--space-xs) 0 0 var(--space-md);">${summaryItems}</ul></details>`,
     {
       title: "Push Box to Call Sheet",
       icon: "➡️",
@@ -2330,36 +2473,28 @@ async function pushGamePlanBoxToCallSheet(boxId) {
   );
   if (!choice) return;
   const replace = choice === "option2";
-  if (!callSheet[target]) callSheet[target] = { left: [], right: [] };
+
   if (replace) {
-    callSheet[target].left = [];
-    callSheet[target].right = [];
-  }
-  let pushed = 0;
-  list.forEach((p) => {
-    const exists = (callSheet[target].left || []).some((x) => playsMatch(x, p))
-      || (callSheet[target].right || []).some((x) => playsMatch(x, p));
-    if (exists) return;
-    callSheet[target].left.push({
-      ...p,
-      playType: p.type,
-      wristbandNumber: null,
-      highlighted: false,
-      highlightColor: null,
-      borderColor: null,
-      cellBg: null,
-      cellTextColor: null,
-      cellBold: false,
-      cellItalic: false,
-      cellUnderline: false,
-      cellStrikethrough: false,
-      cellFontSize: null,
-      cellNote: null,
+    filledCatIds.forEach((id) => {
+      if (!callSheet[id]) callSheet[id] = { left: [], right: [] };
+      callSheet[id].left = [];
+      callSheet[id].right = [];
     });
-    pushed += 1;
+  }
+
+  let pushed = 0;
+  fanOut.forEach(({ play, targets }) => {
+    targets.forEach((id) => {
+      if (_gpPushPlayIntoCategory(play, id)) pushed += 1;
+    });
   });
+
   if (typeof saveCallSheet === "function") saveCallSheet();
-  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to ${target}`, { type: "success" });
+  if (typeof renderCallSheet === "function") renderCallSheet();
+  showToast(
+    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCatIds.length} categor${filledCatIds.length === 1 ? "y" : "ies"}`,
+    { type: "success" },
+  );
 }
 
 /* -------------------------------------------------------------------------
