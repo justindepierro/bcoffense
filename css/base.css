@@ -155,6 +155,8 @@
   --color-navy-alpha-12: rgba(25, 42, 81, 0.12);
   --color-navy-alpha-20: rgba(25, 42, 81, 0.2);
   --color-navy-alpha-35: rgba(25, 42, 81, 0.35);
+  --color-success-alpha-15: rgba(46, 125, 50, 0.15);
+  --color-success-alpha-25: rgba(46, 125, 50, 0.25);
   --color-white-alpha-10: rgba(255, 255, 255, 0.1);
   --color-white-alpha-15: rgba(255, 255, 255, 0.15);
   --color-white-alpha-20: rgba(255, 255, 255, 0.2);

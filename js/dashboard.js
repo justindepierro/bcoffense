@@ -2,6 +2,50 @@
 
 let dashSearchTerm = "";
 let _dashNotesTimer = null;
+let _dashLastAnimatedValues = {}; // card key -> last animated value, prevents re-replay
+
+// Pick black/white text for a category background based on relative luminance.
+// Used for the call sheet category headers in the dashboard print view.
+function _dashCategoryTextColor(hex) {
+  if (!hex || typeof hex !== "string") return UI_COLORS.textWhite;
+  const m = hex.replace("#", "");
+  const r = parseInt(m.length === 3 ? m[0] + m[0] : m.slice(0, 2), 16);
+  const g = parseInt(m.length === 3 ? m[1] + m[1] : m.slice(2, 4), 16);
+  const b = parseInt(m.length === 3 ? m[2] + m[2] : m.slice(4, 6), 16);
+  if (Number.isNaN(r) || Number.isNaN(g) || Number.isNaN(b)) return UI_COLORS.textWhite;
+  // Relative luminance (sRGB simplified)
+  const lum = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+  return lum > 0.6 ? UI_COLORS.textBlack : UI_COLORS.textWhite;
+}
+
+// Build a single scouting-card column. Used by both the dashboard scouting
+// summary and the printable game-plan scouting report.
+function _dashBuildScoutCard(label, data, opts = {}) {
+  const limitFront = opts.limitFront || 3;
+  const limitCov = opts.limitCov || 3;
+  const fronts = (data.topFront || [])
+    .slice(0, limitFront)
+    .map(
+      (f) =>
+        `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+    )
+    .join("");
+  const covs = (data.topCoverage || [])
+    .slice(0, limitCov)
+    .map(
+      (c) =>
+        `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+    )
+    .join("");
+  return `<div class="dash-scout-card">
+    <div class="dash-scout-card-title">${escapeHtml(label)} (${data.total} plays)</div>
+    <div class="dash-scout-items">
+      ${fronts}
+      ${covs}
+      <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${data.blitzRate}%</b></div>
+    </div>
+  </div>`;
+}
 
 /**
  * Render the Game Week Dashboard panel
@@ -139,7 +183,14 @@ function renderDashboard() {
 
       cardsEl.querySelectorAll(".dash-card-value").forEach((el) => {
         const n = parseInt(el.textContent, 10);
-        if (!isNaN(n) && n > 0) _animateCountUp(el, n, 600);
+        if (isNaN(n) || n <= 0) return;
+        const key = el.parentElement?.parentElement?.className || el.textContent;
+        if (_dashLastAnimatedValues[key] === n) {
+          el.textContent = n;
+          return;
+        }
+        _dashLastAnimatedValues[key] = n;
+        _animateCountUp(el, n, 600);
       });
 
       updateTabBadges();
@@ -152,72 +203,13 @@ function renderDashboard() {
         const overall = queryTendencies(opp, {});
         const thirdDown = queryTendencies(opp, { down: ["3"] });
         const rz = queryTendencies(opp, { situation: ["Red Zone"] });
-
         scoutEl.innerHTML = `
         <h3 class="dash-section-title">🎯 Scouting Summary — ${escapeHtml(opp.name)}</h3>
         <div class="dash-scout-grid">
-          <div class="dash-scout-card">
-            <div class="dash-scout-card-title">Overall (${overall.total} plays)</div>
-            <div class="dash-scout-items">
-              ${overall.topFront
-            .slice(0, 3)
-            .map(
-              (f) =>
-                `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-            )
-            .join("")}
-              ${overall.topCoverage
-            .slice(0, 3)
-            .map(
-              (c) =>
-                `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-            )
-            .join("")}
-              <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${overall.blitzRate}%</b></div>
-            </div>
-          </div>
-          <div class="dash-scout-card">
-            <div class="dash-scout-card-title">3rd Down (${thirdDown.total} plays)</div>
-            <div class="dash-scout-items">
-              ${thirdDown.topFront
-            .slice(0, 2)
-            .map(
-              (f) =>
-                `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-            )
-            .join("")}
-              ${thirdDown.topCoverage
-            .slice(0, 2)
-            .map(
-              (c) =>
-                `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-            )
-            .join("")}
-              <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${thirdDown.blitzRate}%</b></div>
-            </div>
-          </div>
-          <div class="dash-scout-card">
-            <div class="dash-scout-card-title">Red Zone (${rz.total} plays)</div>
-            <div class="dash-scout-items">
-              ${rz.topFront
-            .slice(0, 2)
-            .map(
-              (f) =>
-                `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-            )
-            .join("")}
-              ${rz.topCoverage
-            .slice(0, 2)
-            .map(
-              (c) =>
-                `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-            )
-            .join("")}
-              <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${rz.blitzRate}%</b></div>
-            </div>
-          </div>
-        </div>
-      `;
+          ${_dashBuildScoutCard("Overall", overall, { limitFront: 3, limitCov: 3 })}
+          ${_dashBuildScoutCard("3rd Down", thirdDown, { limitFront: 2, limitCov: 2 })}
+          ${_dashBuildScoutCard("Red Zone", rz, { limitFront: 2, limitCov: 2 })}
+        </div>`;
       } else {
         scoutEl.innerHTML = `
         <div class="dash-no-scouting">
@@ -582,10 +574,7 @@ function printFullGamePlan() {
               ? getCategoryDisplayName(cat)
               : cat.name;
           const allPlays = [...(data.left || []), ...(data.right || [])];
-          const textColor =
-            cat.color === CS_COLORS.yellow || cat.color === "#f8f9fa"
-              ? UI_COLORS.textBlack
-              : UI_COLORS.textWhite;
+          const textColor = _dashCategoryTextColor(cat.color);
 
           html += `<div class="gp-cs-cat">
           <div class="gp-cs-cat-header" style="background:${cat.color};color:${textColor}">${displayName} (${allPlays.length})</div>

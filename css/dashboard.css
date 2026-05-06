@@ -16,7 +16,7 @@
   border-radius: var(--radius-lg);
   padding: 20px 24px;
   margin-bottom: var(--space-lg);
-  color: white;
+  color: var(--color-white);
   gap: var(--space-md);
   flex-wrap: wrap;
   position: sticky;
@@ -54,7 +54,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--color-white-alpha-20);
   background: var(--color-white-alpha-10);
-  color: white;
+  color: var(--color-white);
   font-size: var(--font-size-base);
   min-width: 240px;
 }
@@ -68,14 +68,14 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--color-white-alpha-20);
   background: var(--color-white-alpha-10);
-  color: white;
+  color: var(--color-white);
   font-size: var(--font-size-base);
   min-width: 220px;
   cursor: pointer;
 }
 .dash-select option {
   background: var(--color-dark);
-  color: white;
+  color: var(--color-white);
 }
 
 .dash-week-input {
@@ -83,7 +83,7 @@
   border-radius: var(--radius-md);
   border: 1px solid var(--color-white-alpha-20);
   background: var(--color-white-alpha-10);
-  color: white;
+  color: var(--color-white);
   font-size: var(--font-size-base);
   width: 160px;
 }
@@ -103,12 +103,12 @@
   font-size: var(--font-size-sm);
 }
 .dash-opp-active {
-  background: rgba(46, 125, 50, 0.15);
+  background: var(--color-success-alpha-15);
   color: var(--color-success-light);
   padding: 6px 14px;
   border-radius: var(--radius-pill);
   font-weight: 600;
-  border: 1px solid rgba(46, 125, 50, 0.25);
+  border: 1px solid var(--color-success-alpha-25);
 }
 .dash-opp-none {
   opacity: 0.5;
@@ -267,7 +267,7 @@
 @media (hover: hover) {
   .dash-link-btn:hover {
     background: var(--color-primary);
-    color: white;
+    color: var(--color-white);
     border-color: var(--color-primary);
     transform: translateY(-1px);
   }
@@ -324,7 +324,7 @@
     var(--color-dark),
     var(--color-dark-lighter)
   );
-  color: white;
+  color: var(--color-white);
   border-color: var(--color-dark);
   font-weight: 600;
 }
@@ -336,7 +336,7 @@
       var(--color-primary)
     );
     border-color: var(--color-primary);
-    color: white;
+    color: var(--color-white);
   }
 }
 
@@ -390,7 +390,7 @@
 }
 
 .dash-schedule-active {
-  background: rgba(25, 42, 81, 0.06);
+  background: var(--color-navy-alpha-06);
 }
 .dash-schedule-active td {
   font-weight: 600;
@@ -628,5 +628,5 @@
 }
 .dash-card-link:hover {
   opacity: 1;
-  background: rgba(0, 0, 0, 0.08);
+  background: var(--color-navy-alpha-08);
 }
