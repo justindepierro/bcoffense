@@ -728,9 +728,9 @@ function openPlayEditorFromSanitize(masterIdxStr) {
    the play matches the category and will be picked up by Push to Call Sheet.
    ========================================================================= */
 
-let _catCleanupScope = "all"; // "all" | "filtered"
+let _catCleanupScope = "filtered"; // "all" | "filtered" | "gameplan"
 let _catCleanupCategoryId = "";
-let _catCleanupHideMatching = true;
+let _catCleanupHideMatching = false;
 
 function _catNormPV(v) {
   if (typeof splitPreferredValues === "function") return splitPreferredValues(v);
@@ -865,12 +865,26 @@ function _catCriteriaSummary(cat) {
 }
 
 function _catCleanupScopeEntries() {
-  const useFiltered =
-    _catCleanupScope === "filtered" &&
-    Array.isArray(filteredPlays) &&
-    filteredPlays.length > 0 &&
-    filteredPlays.length < plays.length;
-  const source = useFiltered ? filteredPlays : plays;
+  let source = plays;
+  if (_catCleanupScope === "filtered") {
+    if (
+      Array.isArray(filteredPlays) &&
+      filteredPlays.length > 0 &&
+      filteredPlays.length <= plays.length
+    ) {
+      source = filteredPlays;
+    }
+  } else if (_catCleanupScope === "gameplan") {
+    const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+    const opp = gw && gw.opponentName ? gw.opponentName : "";
+    if (opp && typeof getGamePlanTags === "function" && typeof playSignature === "function") {
+      const tags = getGamePlanTags() || {};
+      const sigs = new Set(tags[opp] || []);
+      source = plays.filter((p) => sigs.has(playSignature(p)));
+    } else {
+      source = [];
+    }
+  }
   return source
     .map((play) => ({ play, masterIdx: plays.indexOf(play) }))
     .filter((e) => e.masterIdx >= 0);
@@ -908,10 +922,13 @@ function openPlaybookCategoryCleanup() {
             <select id="catCleanupSelect" data-onchange="setPlaybookCategoryCleanupCategory" data-pass="value" style="min-width:240px;padding:4px 8px;border:1px solid var(--color-border-input);border-radius:var(--radius-sm);background:var(--color-bg-input);"></select>
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);">
-            <input type="radio" name="catCleanupScope" value="all" data-action="setPlaybookCategoryCleanupScope" data-arg="all"> All plays
+            <input type="radio" name="catCleanupScope" value="filtered" data-action="setPlaybookCategoryCleanupScope" data-arg="filtered"> Filtered
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);">
-            <input type="radio" name="catCleanupScope" value="filtered" data-action="setPlaybookCategoryCleanupScope" data-arg="filtered"> Filtered only
+            <input type="radio" name="catCleanupScope" value="gameplan" data-action="setPlaybookCategoryCleanupScope" data-arg="gameplan"> Game Plan
+          </label>
+          <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);">
+            <input type="radio" name="catCleanupScope" value="all" data-action="setPlaybookCategoryCleanupScope" data-arg="all"> All plays
           </label>
           <label style="display:flex;align-items:center;gap:6px;font-size:var(--font-size-sm);margin-left:auto;">
             <input type="checkbox" id="catCleanupHideMatching" data-onchange="setPlaybookCategoryCleanupHide" data-pass="event"> Hide already matching
@@ -953,24 +970,29 @@ function setPlaybookCategoryCleanupCategory(catId) {
 }
 
 function setPlaybookCategoryCleanupScope(scope) {
-  if (scope !== "all" && scope !== "filtered") return;
+  if (scope !== "all" && scope !== "filtered" && scope !== "gameplan") return;
   if (scope === "filtered") {
-    const hasFilter =
-      Array.isArray(filteredPlays) &&
-      filteredPlays.length > 0 &&
-      filteredPlays.length < plays.length;
+    const hasFilter = Array.isArray(filteredPlays) && filteredPlays.length > 0;
     if (!hasFilter) {
-      showToast("No active filters — staying on All plays", { duration: 1800, type: "info" });
+      showToast("No filtered plays — switching to All plays", { duration: 1800, type: "info" });
+      scope = "all";
+    }
+  } else if (scope === "gameplan") {
+    const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+    if (!gw || !gw.opponentName) {
+      showToast("No active opponent — pick one on the dashboard first", { duration: 2200, type: "warning" });
       const overlay = document.getElementById("playbookCatCleanupOverlay");
-      const radioAll = overlay?.querySelector('input[name=catCleanupScope][value=all]');
-      if (radioAll) radioAll.checked = true;
-      _catCleanupScope = "all";
-      _renderCatCleanupSelect();
-      _renderCatCleanupList();
+      const prev = overlay?.querySelector(`input[name=catCleanupScope][value="${_catCleanupScope}"]`);
+      if (prev) prev.checked = true;
       return;
     }
   }
   _catCleanupScope = scope;
+  const overlay = document.getElementById("playbookCatCleanupOverlay");
+  if (overlay) {
+    const radio = overlay.querySelector(`input[name=catCleanupScope][value="${scope}"]`);
+    if (radio) radio.checked = true;
+  }
   _renderCatCleanupSelect();
   _renderCatCleanupList();
 }
@@ -1011,7 +1033,12 @@ function _renderCatCleanupList() {
     return;
   }
   if (sumEl) {
-    sumEl.innerHTML = `<strong>${escapeHtml(_catCategoryDisplayName(cat))}</strong> — ${_catCriteriaSummary(cat)}`;
+    const scopeLbl =
+      _catCleanupScope === "filtered" ? "Filtered"
+      : _catCleanupScope === "gameplan" ? "Game Plan"
+      : "All plays";
+    const matching = entries.filter((e) => _catPlayMatches(e.play, cat)).length;
+    sumEl.innerHTML = `<strong>${escapeHtml(_catCategoryDisplayName(cat))}</strong> — ${_catCriteriaSummary(cat)} <span style="margin-left:var(--space-sm);">[${escapeHtml(scopeLbl)}: ${matching}/${entries.length} already match]</span>`;
   }
 
   const entries = _catCleanupScopeEntries();
