@@ -238,6 +238,7 @@ function renderDashboard() {
 
     renderSchedule();
     renderGamePlanSummary();
+    renderDashCallSheetCleanup();
   } catch (err) {
     console.error("renderDashboard error:", err);
     showToast("❌ Error loading dashboard.", { duration: 3000, type: "error" });
@@ -473,6 +474,255 @@ function renderGamePlanSummary() {
       <button class="btn btn-sm btn-success" data-action="sendDashboardGamePlanToBoxes" title="Auto-place tagged plays into the Game Plan boxes">🎯 Send to Game Plan</button>
     </div>
   </div>`;
+}
+
+/* -------------------------------------------------------------------------
+   Call Sheet Cleanup — list empty / under-target categories with picker
+   ------------------------------------------------------------------------- */
+
+function _dashCategoryStats(catId) {
+  const data = (typeof callSheet !== "undefined" && callSheet[catId]) || {};
+  const filled = (data.left || []).length + (data.right || []).length;
+  const target =
+    typeof csTargets !== "undefined" && csTargets && csTargets[catId]
+      ? Number(csTargets[catId])
+      : 0;
+  return { filled, target };
+}
+
+function _dashGetGamePlanPlaysForOpponent(opponentName) {
+  if (!opponentName || typeof plays === "undefined") return [];
+  const tags = (typeof getGamePlanTags === "function" ? getGamePlanTags() : {}) || {};
+  const sigs = new Set(tags[opponentName] || []);
+  if (sigs.size === 0) return [];
+  return plays.filter((p) => sigs.has(playSignature(p)));
+}
+
+function _dashPlaysMatchingCategory(categoryId, gpPlays) {
+  if (!Array.isArray(gpPlays) || gpPlays.length === 0) return [];
+  return gpPlays.filter((play) => {
+    if (typeof _gpComputeCallSheetTargets === "function") {
+      const set = _gpComputeCallSheetTargets(play, null);
+      return set.has(categoryId);
+    }
+    if (typeof findMatchingCategories === "function") {
+      return findMatchingCategories(play).includes(categoryId);
+    }
+    return false;
+  });
+}
+
+function renderDashCallSheetCleanup() {
+  const section = document.getElementById("dashCleanupSection");
+  if (!section) return;
+
+  if (typeof CALLSHEET_CATEGORIES === "undefined" || !Array.isArray(CALLSHEET_CATEGORIES)) {
+    section.innerHTML = "";
+    return;
+  }
+
+  const gw = getGameWeek();
+  const gpPlays = _dashGetGamePlanPlaysForOpponent(gw.opponentName);
+
+  // Build per-category stats
+  const items = CALLSHEET_CATEGORIES.map((cat) => {
+    const { filled, target } = _dashCategoryStats(cat.id);
+    let status = "ok";
+    if (filled === 0) status = "empty";
+    else if (target > 0 && filled < target) status = "under";
+    return { cat, filled, target, status };
+  });
+
+  const toFix = items.filter((i) => i.status !== "ok");
+  const empties = items.filter((i) => i.status === "empty").length;
+  const unders = items.filter((i) => i.status === "under").length;
+
+  const dn = (cat) =>
+    typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name;
+
+  if (toFix.length === 0) {
+    section.innerHTML = `<div class="dash-cleanup-card">
+      <h3 class="dash-section-title">🧹 Call Sheet Cleanup</h3>
+      <div class="dash-cleanup-empty-state">✅ Every Call Sheet category has plays. No cleanup needed.</div>
+    </div>`;
+    return;
+  }
+
+  const oppLabel = gw.opponentName ? escapeHtml(gw.opponentName) : "—";
+  const gpLabel = gw.opponentName
+    ? `<strong>${gpPlays.length}</strong> Game Plan plays available for ${oppLabel}`
+    : `<em>No opponent selected — pick one above to fill from a Game Plan.</em>`;
+
+  const itemsHtml = toFix
+    .map(({ cat, filled, target, status }) => {
+      const matchCount = gpPlays.length
+        ? _dashPlaysMatchingCategory(cat.id, gpPlays).length
+        : 0;
+      const cls = status === "empty" ? "is-empty" : "";
+      const statPill =
+        status === "empty"
+          ? `<span class="pill-empty">empty</span>`
+          : `<span class="pill-under">${filled} / ${target}</span>`;
+      const fillBtn = gw.opponentName
+        ? `<button class="btn btn-sm btn-primary" data-action="dashFillCategoryFromGamePlan" data-arg="${escapeHtml(cat.id)}" title="${matchCount} matching Game Plan play${matchCount === 1 ? "" : "s"}">📥 Fill (${matchCount})</button>`
+        : `<button class="btn btn-sm" disabled title="Select an opponent above">📥 Fill</button>`;
+      return `<div class="dash-cleanup-item ${cls}">
+        <div class="dash-cleanup-item-title">
+          <span class="dash-cleanup-swatch" style="background:${escapeHtml(cat.color || "#999")};"></span>
+          ${escapeHtml(dn(cat))}
+        </div>
+        <div class="dash-cleanup-item-stats">${statPill} • ${filled} play${filled === 1 ? "" : "s"}${target > 0 ? ` (target ${target})` : ""}</div>
+        <div class="dash-cleanup-item-actions">
+          ${fillBtn}
+          <button class="btn btn-sm btn-secondary" data-action="dashOpenCallSheetCategory" data-arg="${escapeHtml(cat.id)}" title="Jump to this category in the Call Sheet">↗</button>
+        </div>
+      </div>`;
+    })
+    .join("");
+
+  section.innerHTML = `<div class="dash-cleanup-card">
+    <h3 class="dash-section-title">🧹 Call Sheet Cleanup</h3>
+    <div class="dash-cleanup-summary">
+      <div><strong>${empties}</strong> empt${empties === 1 ? "y" : "ies"} • <strong>${unders}</strong> under target</div>
+      <div>${gpLabel}</div>
+    </div>
+    <div class="dash-cleanup-grid">${itemsHtml}</div>
+  </div>`;
+}
+
+function dashOpenCallSheetCategory(categoryId) {
+  if (typeof showTab === "function") showTab("callsheet");
+  setTimeout(() => {
+    const el = document.querySelector(`[data-cs-category="${categoryId}"], #cs-cat-${categoryId}, .cs-category[data-id="${categoryId}"]`);
+    if (el && typeof el.scrollIntoView === "function") {
+      el.scrollIntoView({ behavior: "smooth", block: "center" });
+      el.classList.add("highlighted");
+      setTimeout(() => el.classList.remove("highlighted"), 1600);
+    }
+  }, 250);
+}
+
+async function dashFillCategoryFromGamePlan(categoryId) {
+  if (!categoryId) return;
+  const gw = getGameWeek();
+  if (!gw.opponentName) {
+    showToast("Select an opponent first.", { type: "warning" });
+    return;
+  }
+  if (typeof CALLSHEET_CATEGORIES === "undefined") return;
+  const cat = CALLSHEET_CATEGORIES.find((c) => c.id === categoryId);
+  if (!cat) return;
+  const dn =
+    typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name;
+
+  const gpPlays = _dashGetGamePlanPlaysForOpponent(gw.opponentName);
+  if (gpPlays.length === 0) {
+    showToast(`No Game Plan plays tagged for ${gw.opponentName}.`, { type: "warning" });
+    return;
+  }
+  const matches = _dashPlaysMatchingCategory(categoryId, gpPlays);
+  if (matches.length === 0) {
+    showToast(`No Game Plan plays match "${dn}" yet.`, { type: "warning", duration: 3500 });
+    return;
+  }
+
+  // Identify which are already in this category to pre-disable
+  const cur = (typeof callSheet !== "undefined" && callSheet[categoryId]) || { left: [], right: [] };
+  const already = new Set(
+    [...(cur.left || []), ...(cur.right || [])].map((p) => playSignature(p)),
+  );
+
+  document.getElementById("dashFillPickerOverlay")?.remove();
+
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "dashFillPickerOverlay";
+  const rows = matches
+    .map((p, i) => {
+      const sig = playSignature(p);
+      const isDup = already.has(sig);
+      const call =
+        typeof getFullCall === "function"
+          ? getFullCall(p)
+          : escapeHtml(p.play || p.formation || "");
+      return `<label class="dash-fill-row" style="display:flex;gap:var(--space-sm);padding:6px 8px;border-bottom:1px solid var(--color-border-light);${isDup ? "opacity:0.5;" : ""}">
+        <input type="checkbox" class="dash-fill-check" data-idx="${i}" ${isDup ? "disabled" : "checked"} />
+        <span style="flex:1;font-family:var(--font-mono);font-size:var(--font-size-sm);">${call}</span>
+        ${isDup ? `<span style="color:var(--color-text-muted);font-size:var(--font-size-xs);">already added</span>` : ""}
+      </label>`;
+    })
+    .join("");
+
+  overlay.innerHTML = `
+    <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="dashFillTitle" style="max-width:720px;">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">📥</span>
+        <h3 class="custom-modal-title" id="dashFillTitle">Fill "${escapeHtml(dn)}" from Game Plan</h3>
+      </div>
+      <div class="custom-modal-body" style="max-height:60vh;overflow:auto;">
+        <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin:0 0 var(--space-sm);">
+          ${matches.length} play${matches.length === 1 ? "" : "s"} from <strong>${escapeHtml(gw.opponentName)}</strong>'s Game Plan match this category.
+          Hash-routing (left/right) uses each play's preferred hash.
+        </p>
+        <div style="display:flex;gap:var(--space-xs);margin-bottom:var(--space-sm);">
+          <button class="btn btn-sm" id="dashFillSelectAll">Select All</button>
+          <button class="btn btn-sm" id="dashFillSelectNone">Select None</button>
+        </div>
+        <div id="dashFillRows" style="border:1px solid var(--color-border-light);border-radius:var(--radius-sm);">${rows}</div>
+      </div>
+      <div class="custom-modal-actions">
+        <button class="btn btn-sm" id="dashFillCancel">Cancel</button>
+        <button class="btn btn-sm btn-primary" id="dashFillAdd">Add Selected</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+
+  const close = () => {
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 180);
+  };
+
+  overlay.querySelector("#dashFillCancel").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener("keydown", (e) => { if (e.key === "Escape") { e.preventDefault(); close(); } });
+
+  overlay.querySelector("#dashFillSelectAll").addEventListener("click", () => {
+    overlay.querySelectorAll(".dash-fill-check:not(:disabled)").forEach((el) => { el.checked = true; });
+  });
+  overlay.querySelector("#dashFillSelectNone").addEventListener("click", () => {
+    overlay.querySelectorAll(".dash-fill-check").forEach((el) => { el.checked = false; });
+  });
+
+  overlay.querySelector("#dashFillAdd").addEventListener("click", () => {
+    const checked = Array.from(overlay.querySelectorAll(".dash-fill-check:checked"));
+    if (checked.length === 0) {
+      showToast("Nothing selected.", { type: "warning" });
+      return;
+    }
+    let added = 0;
+    checked.forEach((el) => {
+      const idx = Number(el.dataset.idx);
+      const play = matches[idx];
+      if (!play) return;
+      if (typeof _gpPushPlayIntoCategory === "function") {
+        if (_gpPushPlayIntoCategory(play, categoryId)) added += 1;
+      }
+    });
+    // Persist + re-render
+    if (typeof storageManager !== "undefined" && typeof STORAGE_KEYS !== "undefined") {
+      storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
+    }
+    if (typeof renderCallSheet === "function") renderCallSheet();
+    close();
+    if (added > 0) {
+      showToast(`Added ${added} play${added === 1 ? "" : "s"} to "${dn}".`, { type: "success", duration: 2200 });
+    } else {
+      showToast("No new plays added (all duplicates).", { type: "warning" });
+    }
+    renderDashCallSheetCleanup();
+  });
 }
 
 /**
