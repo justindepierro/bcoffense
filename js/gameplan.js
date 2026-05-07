@@ -1040,6 +1040,12 @@ function _gpRenderBox(box, board) {
       <option value="formation" ${sortMode === "formation" ? "selected" : ""}>Formation</option>
       <option value="personnel" ${sortMode === "personnel" ? "selected" : ""}>Personnel</option>
       <option value="basePlay" ${sortMode === "basePlay" ? "selected" : ""}>Base Play</option>
+      <option value="hash" ${sortMode === "hash" ? "selected" : ""}>Hash (L/M/R)</option>
+      <option value="down" ${sortMode === "down" ? "selected" : ""}>Down</option>
+      <option value="distance" ${sortMode === "distance" ? "selected" : ""}>Distance</option>
+      <option value="situation" ${sortMode === "situation" ? "selected" : ""}>Situation</option>
+      <option value="field" ${sortMode === "field" ? "selected" : ""}>Field Position</option>
+      <option value="play" ${sortMode === "play" ? "selected" : ""}>Play Name</option>
     </select>`;
 
   const headerHtml = `
@@ -1171,14 +1177,34 @@ function _gpMatchupBadges(play) {
 /* Sort helpers for per-box sort modes */
 function _gpSortedBoxList(list, mode) {
   if (!Array.isArray(list) || mode === "manual" || !mode) return list;
+  const hashRank = (h) => {
+    const n = (typeof _gpNormalizeHash === "function" ? _gpNormalizeHash(h) : (h || "")).toString();
+    if (n === "Left") return "1";
+    if (n === "Middle") return "2";
+    if (n === "Right") return "3";
+    return "9";
+  };
+  const distRank = (d) => {
+    const s = String(d || "").toLowerCase();
+    if (s.startsWith("short")) return "1";
+    if (s.startsWith("med")) return "2";
+    if (s.startsWith("long")) return "3";
+    return "9";
+  };
   const get = (p) => {
     if (mode === "type") return p.type || "";
     if (mode === "formation") return p.formation || "";
     if (mode === "personnel") return p.personnel || "";
     if (mode === "basePlay") return p.basePlay || p.play || "";
+    if (mode === "hash") return hashRank(p.preferredHash);
+    if (mode === "down") return String(p.preferredDown || "9");
+    if (mode === "distance") return distRank(p.preferredDistance);
+    if (mode === "situation") return p.preferredSituation || "";
+    if (mode === "field") return p.preferredFieldPosition || "";
+    if (mode === "play") return p.play || "";
     return "";
   };
-  return list.slice().sort((a, b) => get(a).localeCompare(get(b)));
+  return list.slice().sort((a, b) => get(a).localeCompare(get(b), undefined, { numeric: true }));
 }
 
 function _gpAdvancedFilterCount() {
@@ -3719,6 +3745,7 @@ let _gpPrintOptions = {
   showFooter: true,
   showDetail: false,
   playerHandout: false,
+  sortMode: "perBox", // perBox | manual | type | formation | personnel | basePlay | hash | down | distance | situation | field | play
 };
 
 async function openGamePlanPrintModal() {
@@ -3758,6 +3785,23 @@ async function openGamePlanPrintModal() {
                 <option value="5" ${o.columns === 5 ? "selected" : ""}>5</option>
               </select>
             </div>
+            <div class="gp-print-row">
+              <label>Sort all buckets</label>
+              <select id="gpPrintSort" title="Override per-box sort for printing">
+                <option value="perBox" ${o.sortMode === "perBox" ? "selected" : ""}>Per-box (use each bucket's setting)</option>
+                <option value="manual" ${o.sortMode === "manual" ? "selected" : ""}>Manual order</option>
+                <option value="type" ${o.sortMode === "type" ? "selected" : ""}>Type</option>
+                <option value="formation" ${o.sortMode === "formation" ? "selected" : ""}>Formation</option>
+                <option value="personnel" ${o.sortMode === "personnel" ? "selected" : ""}>Personnel</option>
+                <option value="basePlay" ${o.sortMode === "basePlay" ? "selected" : ""}>Base Play</option>
+                <option value="hash" ${o.sortMode === "hash" ? "selected" : ""}>Hash (L/M/R)</option>
+                <option value="down" ${o.sortMode === "down" ? "selected" : ""}>Down</option>
+                <option value="distance" ${o.sortMode === "distance" ? "selected" : ""}>Distance</option>
+                <option value="situation" ${o.sortMode === "situation" ? "selected" : ""}>Situation</option>
+                <option value="field" ${o.sortMode === "field" ? "selected" : ""}>Field Position</option>
+                <option value="play" ${o.sortMode === "play" ? "selected" : ""}>Play Name</option>
+              </select>
+            </div>
             <div class="gp-print-row gp-print-toggles">
               <label><input type="checkbox" id="gpPrintMeta" ${o.showMeta ? "checked" : ""}> Show formation/personnel</label>
               <label><input type="checkbox" id="gpPrintHash" ${o.showHash ? "checked" : ""}> Show hash bar</label>
@@ -3793,6 +3837,7 @@ async function openGamePlanPrintModal() {
         paperSize: overlay.querySelector("#gpPrintPaper").value,
         orientation: overlay.querySelector("#gpPrintOrientation").value,
         columns: parseInt(overlay.querySelector("#gpPrintColumns").value, 10) || 3,
+        sortMode: overlay.querySelector("#gpPrintSort").value || "perBox",
         showMeta: overlay.querySelector("#gpPrintMeta").checked,
         showHash: overlay.querySelector("#gpPrintHash").checked,
         showProgress: overlay.querySelector("#gpPrintProgress").checked,
@@ -3892,7 +3937,11 @@ function _gpRenderPrintViewAndPrint() {
 
 function _gpRenderPrintBox(box, board) {
   const o = _gpPrintOptions;
-  const list = (board.assignments[box.id] || []).slice();
+  const rawList = (board.assignments[box.id] || []).slice();
+  const effectiveSort = o.sortMode === "perBox"
+    ? ((board.sort && board.sort[box.id]) || "manual")
+    : o.sortMode;
+  const list = _gpSortedBoxList(rawList, effectiveSort);
   const target = Number(board.targets && board.targets[box.id]) || 0;
   const note = (board.notes && board.notes[box.id]) || "";
   const accent = GP_BOX_ACCENTS[box.id] || "";
