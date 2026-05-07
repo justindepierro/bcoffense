@@ -1455,7 +1455,11 @@ function _gpWireDnd() {
       _gpDragSource = null;
       try { e.dataTransfer.setData("text/plain", sigs.join("\n")); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "copyMove";
-      document.body.classList.add("gp-dragging-from-library");
+      // Defer body class -- adding it synchronously inside dragstart causes
+      // layout reflow (CSS `body.gp-dragging-from-* .gp-trash-zone` toggles
+      // `display`), which Chrome/macOS interprets as a reason to cancel
+      // the drag (no dragenter/dragover ever fires).
+      setTimeout(() => { document.body.classList.add("gp-dragging-from-library"); }, 0);
       _gpLog("dragstart library", { sig, sigs });
       return;
     }
@@ -1464,7 +1468,9 @@ function _gpWireDnd() {
     if (boxRow) {
       _gpDragSource = { boxId: boxRow.dataset.boxId, sig: boxRow.dataset.sig };
       _gpDragPayload = null;
-      document.body.classList.add("gp-dragging-from-box");
+      // Defer body class -- see comment above. Synchronous layout changes
+      // during dragstart kill the drag on Chrome/macOS.
+      setTimeout(() => { document.body.classList.add("gp-dragging-from-box"); }, 0);
       try { e.dataTransfer.setData("text/plain", boxRow.dataset.sig || ""); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "move";
       _gpLog("dragstart box", _gpDragSource);
