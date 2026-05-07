@@ -3943,7 +3943,7 @@ function _gpRenderPrintBoxDetail(box, list) {
 function _gpRenderPrintPlay(play) {
   const o = _gpPrintOptions;
   const callHtml = typeof getFullCall === "function"
-    ? getFullCall(play, { showLineCall: false })
+    ? getFullCall(play, { showLineCall: false, showEmoji: o.showMeta, useSquares: true })
     : escapeHtml(play.play || "");
   const meta = [];
   if (o.showMeta) {
