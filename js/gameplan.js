@@ -1487,9 +1487,31 @@ function _gpWireDnd() {
     _gpLog("dragstart on non-row target", target.tagName, target.className);
   }, true);
 
-  document.addEventListener("dragend", () => {
+  document.addEventListener("dragend", (e) => {
+    if (_gpDbg) {
+      const t = e.target;
+      console.log("[gp-dnd] dragend", {
+        target: t?.tagName + "." + (t?.className || "").toString().slice(0, 40),
+        inDOM: !!(t && document.contains(t)),
+        timestamp: performance.now(),
+      });
+    }
     _gpClearDragState();
   }, true);
+  // Track every drag* event in capture phase so we can see which ones fire.
+  if (_gpDbg) {
+    ["dragenter", "dragover", "dragleave", "drop"].forEach((evt) => {
+      document.addEventListener(evt, (e) => {
+        const t = e.target;
+        const box = t?.closest?.(".gp-box");
+        console.log("[gp-dnd] " + evt, {
+          target: t?.tagName + "." + (t?.className || "").toString().slice(0, 30),
+          boxId: box?.dataset?.boxId,
+          dp: e.defaultPrevented,
+        });
+      }, true);
+    });
+  }
 
   // dragenter -- highlight target box / trash. We unconditionally
   // preventDefault on game-plan drop zones so the browser allows the drop
