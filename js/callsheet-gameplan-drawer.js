@@ -343,6 +343,9 @@ function _gpDrawerOnDragStart(event) {
   // Some browsers require a text/plain payload to register the drag at all.
   try { event.dataTransfer.setData("text/plain", String(idx)); } catch (_e) {}
   event.dataTransfer.effectAllowed = "copy";
+  // Defensive: if a previous within-callsheet drag left state behind, clear it
+  // so the grid's drop handler can't misinterpret our drop as a reorder.
+  try { if (typeof draggedCallSheetPlay !== "undefined") draggedCallSheetPlay = null; } catch (_e) {}
   row.classList.add("gp-drawer-row-dragging");
   // Visual hint: highlight all category drop zones
   document.body.classList.add("gp-drag-active");
@@ -481,63 +484,184 @@ document.addEventListener("DOMContentLoaded", () => {
     tab.addEventListener("focus", wakeTab);
   }
 
-  // Document-level dragover fallback while a drawer drag is in flight.
-  // The browser only fires a drop event if some dragover handler on the path
-  // called preventDefault(). The grid's dragover only does so when the cursor
-  // is over a [data-drop=csHashDrop] descendant; if the cursor wanders over
-  // the gap between hash columns, the '+ Add' button, or the empty-cat
-  // placeholder, the drop gets refused. Here we capture-phase preventDefault
-  // anywhere inside #callSheetGrid, then let the grid's bubble-phase drop
-  // handler do the actual insert (so we don't double-insert).
-  document.addEventListener(
-    "dragover",
-    (event) => {
-      if (!document.body.classList.contains("gp-drag-active")) return;
-      const grid = event.target.closest("#callSheetGrid");
-      if (!grid) return;
-      event.preventDefault();
-      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
-      // Highlight the nearest hash-column for visual feedback
-      const col = event.target.closest("[data-drop='csHashDrop']");
-      document
-        .querySelectorAll(".hash-column.gp-drag-over")
-        .forEach((el) => {
-          if (el !== col) el.classList.remove("gp-drag-over");
-        });
-      if (col) col.classList.add("gp-drag-over");
-    },
-    true,
-  );
+  // === Bulletproof drag-and-drop pipeline for the Game Plan drawer =========
+  // We don't piggy-back on the grid's drop handler at all. We do the entire
+  // dragover / drop dance ourselves in the capture phase so:
+  //   - dragover preventDefaults anywhere inside the grid (otherwise the
+  //     browser refuses the drop when the cursor sits between buckets,
+  //     over '+ Add', the empty placeholder, or a category header)
+  //   - drop reads our gameplan payload, looks up the target column (cursor
+  //     -> elementsFromPoint -> last-highlighted column fallback) and inserts
+  //     directly into callSheet[catId][hash]
+  //   - we stopPropagation() so the grid's bubble drop never runs and the
+  //     within-callsheet draggedCallSheetPlay branch can't swallow us by
+  //     accident.
+
+  function _gpFindHashColumnAt(event) {
+    // Try the direct event target first.
+    let col = event.target && event.target.closest
+      ? event.target.closest("[data-drop='csHashDrop']")
+      : null;
+    if (col) return col;
+    // Fall back to elementFromPoint (works even if the source element is
+    // pointer-events:none).
+    if (typeof document.elementFromPoint === "function") {
+      const stack = document.elementsFromPoint
+        ? document.elementsFromPoint(event.clientX, event.clientY)
+        : [document.elementFromPoint(event.clientX, event.clientY)];
+      for (const el of stack) {
+        if (!el || !el.closest) continue;
+        const c = el.closest("[data-drop='csHashDrop']");
+        if (c) return c;
+      }
+    }
+    // Final fallback: the column we most recently highlighted in dragover.
+    return document.querySelector(".hash-column.gp-drag-over");
+  }
+
+  function _gpHighlightColumn(col) {
+    document.querySelectorAll(".hash-column.gp-drag-over").forEach((el) => {
+      if (el !== col) el.classList.remove("gp-drag-over");
+    });
+    if (col) col.classList.add("gp-drag-over");
+  }
+
+  function _gpClearHighlights() {
+    document
+      .querySelectorAll(".hash-column.gp-drag-over")
+      .forEach((el) => el.classList.remove("gp-drag-over"));
+  }
+
+  // Allow drops anywhere inside the grid while a drawer drag is in flight.
+  ["dragenter", "dragover"].forEach((evt) => {
+    document.addEventListener(
+      evt,
+      (event) => {
+        if (!document.body.classList.contains("gp-drag-active")) return;
+        const grid = event.target && event.target.closest
+          ? event.target.closest("#callSheetGrid")
+          : null;
+        if (!grid) return;
+        event.preventDefault();
+        if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+        if (evt === "dragover") _gpHighlightColumn(_gpFindHashColumnAt(event));
+      },
+      true,
+    );
+  });
+
   document.addEventListener(
     "drop",
     (event) => {
-      const wasDragging = document.body.classList.contains("gp-drag-active");
-      const highlighted = document.querySelector(".hash-column.gp-drag-over");
-      document
-        .querySelectorAll(".hash-column.gp-drag-over")
-        .forEach((el) => el.classList.remove("gp-drag-over"));
+      if (!document.body.classList.contains("gp-drag-active")) return;
+      const source = event.dataTransfer && event.dataTransfer.getData
+        ? event.dataTransfer.getData("source")
+        : "";
+      if (source !== "gameplan") {
+        _gpClearHighlights();
+        return;
+      }
+      const grid = event.target && event.target.closest
+        ? event.target.closest("#callSheetGrid")
+        : null;
+      if (!grid) {
+        _gpClearHighlights();
+        return;
+      }
+      const col = _gpFindHashColumnAt(event);
+      _gpClearHighlights();
+      if (!col) {
+        if (typeof showToast === "function") {
+          showToast("Drop on a Left or Right Hash column", { duration: 2200, type: "warning" });
+        }
+        return;
+      }
 
-      if (!wasDragging) return;
-      // If the cursor isn't directly over a hash column (e.g. dropped in the
-      // gap between left/right or on the category header), the grid's bubble
-      // drop handler will be a no-op. Fall back to the last highlighted
-      // column so the play still lands somewhere sensible.
-      const directCol = event.target.closest("[data-drop='csHashDrop']");
-      if (directCol) return; // grid handler will do the insert
-      if (!highlighted) return;
-      const source = event.dataTransfer?.getData("source");
-      if (source !== "gameplan") return;
+      // Look up the play (set in dragstart on window._gpDrawerVisiblePlays).
+      const gpIdx = parseInt(event.dataTransfer.getData("gpIndex"), 10);
+      const arr = Array.isArray(window._gpDrawerVisiblePlays)
+        ? window._gpDrawerVisiblePlays
+        : [];
+      const play = !Number.isNaN(gpIdx) ? arr[gpIdx] : null;
+      if (!play) {
+        if (typeof showToast === "function") {
+          showToast("Could not resolve dragged play", { duration: 2200, type: "error" });
+        }
+        return;
+      }
+
+      // Stop the grid's bubble-phase drop handler from running -- we'll
+      // perform the insert ourselves so we can't be tripped up by stale
+      // draggedCallSheetPlay state in the picker runtime.
       event.preventDefault();
-      if (typeof handleCallSheetDrop === "function") {
-        handleCallSheetDrop(
-          event,
-          highlighted.dataset.cat,
-          highlighted.dataset.hash,
-        );
+      event.stopPropagation();
+      if (typeof event.stopImmediatePropagation === "function") {
+        event.stopImmediatePropagation();
+      }
+
+      const targetCat = col.dataset.cat;
+      const targetHash = col.dataset.hash;
+      if (!targetCat || !targetHash) return;
+
+      // Optional insert position: if cursor was over an existing play row,
+      // insert before it; otherwise append.
+      const targetPlay = event.target && event.target.closest
+        ? event.target.closest(".callsheet-play")
+        : null;
+      let insertIdx = -1;
+      if (targetPlay) {
+        const idx = parseInt(targetPlay.dataset.index, 10);
+        if (!Number.isNaN(idx)) insertIdx = idx;
+      }
+
+      if (typeof callSheet !== "object" || !callSheet) return;
+      if (!callSheet[targetCat]) callSheet[targetCat] = { left: [], right: [] };
+      if (!Array.isArray(callSheet[targetCat][targetHash])) {
+        callSheet[targetCat][targetHash] = [];
+      }
+
+      const playToInsert = Object.assign({}, play);
+      delete playToInsert._sourceIdx;
+      if (typeof getWristbandNumberForPlay === "function") {
+        playToInsert.wristbandNumber = getWristbandNumberForPlay(playToInsert);
+      }
+      const bucket = callSheet[targetCat][targetHash];
+      if (insertIdx >= 0 && insertIdx < bucket.length) {
+        bucket.splice(insertIdx, 0, playToInsert);
+      } else {
+        bucket.push(playToInsert);
+      }
+
+      if (typeof renderCallSheet === "function") renderCallSheet();
+      if (typeof saveCallSheet === "function") saveCallSheet();
+
+      // Quick toast so the user gets confirmation
+      if (typeof showToast === "function") {
+        const cat = (Array.isArray(CALLSHEET_CATEGORIES) ? CALLSHEET_CATEGORIES : [])
+          .find((c) => c.id === targetCat);
+        const name = cat
+          ? typeof getCategoryDisplayName === "function"
+            ? getCategoryDisplayName(cat)
+            : cat.name
+          : targetCat;
+        showToast(`Added to ${name} (${targetHash === "left" ? "Left" : "Right"} Hash)`, {
+          duration: 1800,
+          type: "success",
+        });
       }
     },
-    true,
+    true, // capture phase: runs before the grid's bubble drop handler
   );
+
+  // Dragend cleanup safety net (in case dragend doesn't fire on the source row)
+  document.addEventListener("dragend", () => {
+    document.body.classList.remove("gp-drag-active");
+    _gpClearHighlights();
+    const drawer = document.getElementById("gpDrawer");
+    const tab = document.getElementById("gpDrawerToggleBtn");
+    if (drawer) drawer.classList.remove("gp-drawer-drag-hide");
+    if (tab) tab.classList.remove("gp-drawer-drag-hide");
+  });
 
   // When the call sheet re-renders, refresh the drawer's usage chips so they
   // reflect the latest bucket contents.
