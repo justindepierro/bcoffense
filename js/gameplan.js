@@ -1428,13 +1428,22 @@ function _gpWireDnd() {
   const _gpLog = _gpDbg ? (...args) => console.log("[gp-dnd]", ...args) : () => { };
   if (_gpDbg) console.log("[gp-dnd] wired (capture-phase delegated)");
 
-  // dragstart -- works for both library rows and box rows
+  // dragstart -- works for both library rows and box rows.
+  // CRITICAL: do NOT perform synchronous DOM mutations (querySelectorAll +
+  // class removals across many elements) inside dragstart -- some Chromium
+  // versions abort the drag gesture if the layout changes mid-dragstart,
+  // resulting in dragstart firing but no ghost image, no dragenter/dragover,
+  // and no drop. We only zero the JS module state here; the previous
+  // gesture's body classes and indicator classes are cleared by dragend
+  // (or by drop's snapshot-then-clear) so they will already be clean by
+  // the time the next gesture starts.
   document.addEventListener("dragstart", (e) => {
-    // Defense-in-depth: clear any stale state from a previous gesture whose
-    // dragend was missed (e.g. source row was detached during drop).
-    _gpClearDragState();
     const target = e.target;
-    if (!target || !target.closest) return;
+    if (!target || !target.closest) {
+      _gpDragPayload = null;
+      _gpDragSource = null;
+      return;
+    }
 
     const libRow = target.closest("#gpLibraryList .gp-play-row[draggable='true']");
     if (libRow) {
@@ -1459,8 +1468,22 @@ function _gpWireDnd() {
       try { e.dataTransfer.setData("text/plain", boxRow.dataset.sig || ""); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "move";
       _gpLog("dragstart box", _gpDragSource);
+      // Diagnostic: confirm browser didn't cancel the drag synchronously.
+      if (_gpDbg) {
+        setTimeout(() => {
+          _gpLog("post-dragstart", {
+            defaultPrevented: e.defaultPrevented,
+            stillHasSrc: !!_gpDragSource,
+            bodyCls: document.body.className,
+          });
+        }, 0);
+      }
       return;
     }
+    // Non-row target (e.g. user drags some random element). Clear state so
+    // we don't leak it into the gesture.
+    _gpDragPayload = null;
+    _gpDragSource = null;
     _gpLog("dragstart on non-row target", target.tagName, target.className);
   }, true);
 
