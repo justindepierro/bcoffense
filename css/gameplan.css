@@ -162,6 +162,11 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   cursor: grab;
+  /* Prevent text-selection drag from hijacking HTML5 element drag.
+     Without this, grabbing text content starts a text drag instead of
+     a row drag and dragstart never fires. */
+  user-select: none;
+  -webkit-user-select: none;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast);
@@ -328,6 +333,9 @@
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
   cursor: grab;
+  /* Prevent text-selection drag from hijacking HTML5 element drag. */
+  user-select: none;
+  -webkit-user-select: none;
 }
 
 .gp-box-play:hover {

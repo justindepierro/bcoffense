@@ -3663,6 +3663,11 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   cursor: grab;
+  /* Prevent text-selection drag from hijacking HTML5 element drag.
+     Without this, grabbing text content starts a text drag and our
+     dragstart never fires (no source/gpIndex set on dataTransfer). */
+  user-select: none;
+  -webkit-user-select: none;
   transition:
     background var(--transition-fast),
     border-color var(--transition-fast),
