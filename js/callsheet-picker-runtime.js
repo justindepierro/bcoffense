@@ -468,7 +468,11 @@ function handleCallSheetDragStart(event, categoryId, hash, index) {
 
 function handleCallSheetDragOver(event) {
   event.preventDefault();
-  event.dataTransfer.dropEffect = "move";
+  // Match dropEffect to the source's effectAllowed so the browser doesn't
+  // silently reject the drop (e.g. drawer rows use "copy", internal moves use
+  // "move"). "copyMove" / "all" / "uninitialized" fall back to "move".
+  const allowed = event.dataTransfer?.effectAllowed || "";
+  event.dataTransfer.dropEffect = allowed === "copy" ? "copy" : "move";
 
   const target = event.target.closest(".callsheet-play");
   document
