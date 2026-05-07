@@ -1385,6 +1385,14 @@ function _gpWireDnd() {
   if (_gpDndWired) return;
   _gpDndWired = true;
 
+  // Diagnostic toggle: append ?gpdebug to URL to enable console tracing.
+  const _gpDbg = (() => {
+    try { return new URLSearchParams(location.search).has("gpdebug"); }
+    catch (_e) { return false; }
+  })();
+  const _gpLog = _gpDbg ? (...args) => console.log("[gp-dnd]", ...args) : () => { };
+  if (_gpDbg) console.log("[gp-dnd] wired (capture-phase delegated)");
+
   // dragstart -- works for both library rows and box rows
   document.addEventListener("dragstart", (e) => {
     const target = e.target;
@@ -1401,6 +1409,7 @@ function _gpWireDnd() {
       try { e.dataTransfer.setData("text/plain", sigs.join("\n")); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "copyMove";
       document.body.classList.add("gp-dragging-from-library");
+      _gpLog("dragstart library", { sig, sigs });
       return;
     }
 
@@ -1411,8 +1420,10 @@ function _gpWireDnd() {
       document.body.classList.add("gp-dragging-from-box");
       try { e.dataTransfer.setData("text/plain", boxRow.dataset.sig || ""); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "move";
+      _gpLog("dragstart box", _gpDragSource);
       return;
     }
+    _gpLog("dragstart on non-row target", target.tagName, target.className);
   }, true);
 
   document.addEventListener("dragend", () => {
@@ -1447,9 +1458,11 @@ function _gpWireDnd() {
     }
   }, true);
 
-  // dragover -- MUST preventDefault to allow drop
+  // dragover -- MUST preventDefault to allow drop. We do NOT gate on
+  // _gpDragPayload/_gpDragSource because if dragstart didn't fire on a
+  // game-plan row (e.g. drag originated elsewhere), the drop will simply
+  // no-op -- but we still want to allow the gesture to land.
   document.addEventListener("dragover", (e) => {
-    if (!_gpDragPayload && !_gpDragSource) return;
     const target = e.target;
     if (!target || !target.closest) return;
 
@@ -1462,6 +1475,9 @@ function _gpWireDnd() {
 
     const dropZone = target.closest(".gp-box .gp-box-body");
     if (!dropZone) return;
+    // Only preventDefault when we have a known game-plan source -- otherwise
+    // we'd hijack drops from unrelated drag sources.
+    if (!_gpDragPayload && !_gpDragSource) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
 
@@ -1489,9 +1505,13 @@ function _gpWireDnd() {
   }, true);
 
   document.addEventListener("drop", (e) => {
-    if (!_gpDragPayload && !_gpDragSource) return;
     const target = e.target;
     if (!target || !target.closest) return;
+    if (!_gpDragPayload && !_gpDragSource) {
+      _gpLog("drop with no source/payload -- ignored", target.tagName);
+      return;
+    }
+    _gpLog("drop", { hasSource: !!_gpDragSource, hasPayload: !!_gpDragPayload, target: target.tagName + "." + (target.className || "").substring(0, 30) });
 
     // Trash drop -- send to holding (or remove if already holding)
     const trash = target.closest("#gpTrashZone");
