@@ -1511,6 +1511,34 @@ function _gpWireDnd() {
         });
       }, true);
     });
+    // Diagnostic: log mousedown on box rows -- we need to see whether the
+    // mousedown event is being preventDefault()ed by something, which would
+    // kill the drag at the platform level (no ghost, no events).
+    document.addEventListener("mousedown", (e) => {
+      const row = e.target?.closest?.(".gp-box-play, #gpLibraryList .gp-play-row");
+      if (!row) return;
+      console.log("[gp-dnd] mousedown on draggable", {
+        target: e.target?.tagName + "." + (e.target?.className || "").toString().slice(0, 40),
+        rowDraggable: row.getAttribute("draggable"),
+        rowComputedUserDrag: getComputedStyle(row).webkitUserDrag || getComputedStyle(row).userDrag,
+        defaultPrevented: e.defaultPrevented,
+      });
+      // Schedule a check after the current task to see if anything called
+      // preventDefault on mousedown, which would suppress the drag.
+      setTimeout(() => {
+        console.log("[gp-dnd] post-mousedown defaultPrevented:", e.defaultPrevented);
+      }, 0);
+    }, true);
+    // Bubble-phase dragstart: if defaultPrevented becomes true here but was
+    // false at capture phase, something between document-capture and the
+    // element bubbled-phase is canceling the drag.
+    document.addEventListener("dragstart", (e) => {
+      console.log("[gp-dnd] dragstart bubble-phase", {
+        defaultPrevented: e.defaultPrevented,
+        effectAllowed: e.dataTransfer?.effectAllowed,
+        dragImage: !!e.dataTransfer,
+      });
+    }, false);
   }
 
   // dragenter -- highlight target box / trash. We unconditionally
