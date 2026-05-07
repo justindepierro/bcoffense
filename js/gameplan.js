@@ -1484,12 +1484,18 @@ function _gpWireDnd() {
       return;
     }
 
-    const dropZone = target.closest(".gp-box .gp-box-body");
-    if (dropZone) {
+    // Allow drops on the entire .gp-box (header included), not just the
+    // body. If the body is hidden because the box is collapsed, auto-
+    // expand it so the drop zone becomes interactive and the user can
+    // see what they're aiming at.
+    const box = target.closest(".gp-box");
+    if (box) {
       e.preventDefault();
       if (_gpDragPayload || _gpDragSource) {
-        const box = dropZone.closest(".gp-box");
-        if (box) box.classList.add("is-drop-target");
+        if (box.classList.contains("is-collapsed")) {
+          box.classList.remove("is-collapsed");
+        }
+        box.classList.add("is-drop-target");
       }
     }
   }, true);
@@ -1510,15 +1516,15 @@ function _gpWireDnd() {
       return;
     }
 
-    const dropZone = target.closest(".gp-box .gp-box-body");
-    if (!dropZone) return;
+    const box = target.closest(".gp-box");
+    if (!box) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
 
-    // intra-box reorder indicator
-    const box = dropZone.closest(".gp-box");
+    // intra-box reorder indicator (only if body is visible)
     const boxId = box?.dataset.boxId;
-    if (_gpDragSource && boxId && _gpDragSource.boxId === boxId) {
+    const dropZone = box.querySelector(".gp-box-body");
+    if (dropZone && _gpDragSource && boxId && _gpDragSource.boxId === boxId) {
       _gpUpdateDropIndicator(dropZone, e.clientY);
     }
   }, true);
@@ -1566,15 +1572,18 @@ function _gpWireDnd() {
       return;
     }
 
-    const dropZone = target.closest(".gp-box .gp-box-body");
-    if (!dropZone) {
+    // Accept drop on the whole .gp-box (header included). Body may be
+    // hidden (collapsed), in which case intra-box reorder index falls
+    // back to the end of the list.
+    const box = target.closest(".gp-box");
+    if (!box) {
       _gpClearDragState();
       return;
     }
     e.preventDefault();
     e.stopPropagation();
-    const box = dropZone.closest(".gp-box");
-    const boxId = box?.dataset.boxId;
+    const boxId = box.dataset.boxId;
+    const dropZone = box.querySelector(".gp-box-body");
     if (!boxId) {
       _gpClearDragState();
       return;
@@ -1589,7 +1598,9 @@ function _gpWireDnd() {
 
     if (dragSource) {
       if (dragSource.boxId === boxId) {
-        const targetIdx = _gpComputeDropIndex(dropZone, dropY);
+        const targetIdx = dropZone
+          ? _gpComputeDropIndex(dropZone, dropY)
+          : Infinity;
         _gpReorderInBox(boxId, dragSource.sig, targetIdx);
       } else {
         _gpMoveBetweenBoxes(dragSource.boxId, boxId, dragSource.sig);
