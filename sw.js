@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v387";
+const CACHE_NAME = "bcoffense-v388";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -170,7 +170,7 @@ self.addEventListener("fetch", (event) => {
             .then((cache) => cache.put(event.request, clone));
           return response;
         })
-        .catch(() => caches.match(event.request)),
+        .catch(() => caches.match(event.request, { ignoreSearch: true })),
     );
     return;
   }
@@ -187,14 +187,14 @@ self.addEventListener("fetch", (event) => {
           return response;
         })
         .catch(async () => {
-          const cached = await caches.match(event.request);
+          const cached = await caches.match(event.request, { ignoreSearch: true });
           if (cached) return cached;
           if (event.request.mode === "navigate") {
             return caches.match("./offline.html");
           }
           return undefined;
         })
-      : caches.match(event.request).then((cached) => {
+      : caches.match(event.request, { ignoreSearch: true }).then((cached) => {
         const networkFetch = fetch(event.request)
           .then((response) => {
             const clone = response.clone();
