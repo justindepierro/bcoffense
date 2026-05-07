@@ -389,6 +389,23 @@ function _gpFindPlayBySig(sig) {
   return plays.find((p) => _gpPlaySignature(p) === sig) || null;
 }
 
+// Friendly box label for toasts (turns "__holding" into "Holding", etc.)
+function _gpBoxLabel(boxId) {
+  if (!boxId) return "";
+  if (boxId === GP_HOLDING_ID) return "Holding";
+  const board = (typeof _gpEnsureBoard === "function") ? _gpEnsureBoard() : null;
+  const custom = board && Array.isArray(board.customBoxes)
+    ? board.customBoxes.find((b) => b.id === boxId)
+    : null;
+  if (custom && custom.label) return custom.label;
+  const def = GP_DEFAULT_BOXES.find((b) => b.id === boxId);
+  if (def) {
+    const customLabel = board && board.boxLabels && board.boxLabels[boxId];
+    return customLabel || def.label;
+  }
+  return boxId;
+}
+
 function _gpAllAssignedSigs(board) {
   const set = new Set();
   Object.values(board.assignments || {}).forEach((arr) => {
@@ -1437,47 +1454,50 @@ function _gpWireDnd() {
     if (trash) trash.classList.remove("is-active");
   }, true);
 
-  // dragenter -- highlight target box / trash
+  // dragenter -- highlight target box / trash. We unconditionally
+  // preventDefault on game-plan drop zones so the browser allows the drop
+  // even if our internal state was somehow lost or never set (e.g. a stray
+  // drag from a foreign source dragged into the gameplan area). The drop
+  // handler still gates on state before mutating data.
   document.addEventListener("dragenter", (e) => {
-    if (!_gpDragPayload && !_gpDragSource) return;
     const target = e.target;
     if (!target || !target.closest) return;
 
     const trash = target.closest("#gpTrashZone");
-    if (trash && _gpDragSource) {
+    if (trash) {
       e.preventDefault();
-      trash.classList.add("is-active");
+      if (_gpDragSource) trash.classList.add("is-active");
       return;
     }
 
     const dropZone = target.closest(".gp-box .gp-box-body");
     if (dropZone) {
       e.preventDefault();
-      const box = dropZone.closest(".gp-box");
-      if (box) box.classList.add("is-drop-target");
+      if (_gpDragPayload || _gpDragSource) {
+        const box = dropZone.closest(".gp-box");
+        if (box) box.classList.add("is-drop-target");
+      }
     }
   }, true);
 
-  // dragover -- MUST preventDefault to allow drop. We do NOT gate on
-  // _gpDragPayload/_gpDragSource because if dragstart didn't fire on a
-  // game-plan row (e.g. drag originated elsewhere), the drop will simply
-  // no-op -- but we still want to allow the gesture to land.
+  // dragover -- MUST preventDefault to allow drop. We unconditionally
+  // preventDefault on game-plan drop zones (matches dragenter). Without
+  // this, any timing issue between dragstart setting state and the first
+  // dragover can cause the browser to flag the zone as no-drop for the
+  // remainder of the gesture.
   document.addEventListener("dragover", (e) => {
     const target = e.target;
     if (!target || !target.closest) return;
 
     const trash = target.closest("#gpTrashZone");
-    if (trash && _gpDragSource) {
+    if (trash) {
       e.preventDefault();
-      e.dataTransfer.dropEffect = "move";
+      e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
       return;
     }
 
     const dropZone = target.closest(".gp-box .gp-box-body");
     if (!dropZone) return;
-    // Only preventDefault when we have a known game-plan source -- otherwise
-    // we'd hijack drops from unrelated drag sources.
-    if (!_gpDragPayload && !_gpDragSource) return;
     e.preventDefault();
     e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
 
@@ -1693,7 +1713,8 @@ function _gpAddSigsToBox(sigs, boxId) {
   _gpSelected.clear();
   renderGamePlan();
   if (added > 0) {
-    showToast(`Added ${added} play${added === 1 ? "" : "s"} to ${boxId}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
+    const label = _gpBoxLabel(boxId);
+    showToast(`Added ${added} play${added === 1 ? "" : "s"} to ${label}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
       { type: "success" });
   } else if (skipped > 0) {
     showToast(`No plays added — ${skipped} were already in the box.`, { type: "warning" });
