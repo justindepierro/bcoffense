@@ -3451,6 +3451,16 @@
 .gp-drawer.gp-drawer-open {
   transform: translateX(0);
 }
+/* While a drawer row is being dragged, slide the drawer (and pull-tab) off
+   so the user can see and drop on every category bucket. */
+.gp-drawer.gp-drawer-open.gp-drawer-drag-hide {
+  transform: translateX(100%);
+  pointer-events: none;
+}
+.gp-drawer-tab.gp-drawer-drag-hide {
+  opacity: 0 !important;
+  pointer-events: none;
+}
 
 .gp-drawer-header {
   padding: var(--space-md);
@@ -3574,6 +3584,27 @@
 }
 .gp-drawer-search-clear:hover {
   background: var(--color-bg-hover-row);
+  color: var(--color-text);
+}
+
+.gp-drawer-sort-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 6px;
+}
+.gp-drawer-sort-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.gp-drawer-sort {
+  flex: 1;
+  font-size: var(--font-size-xs);
+  padding: 4px 6px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
   color: var(--color-text);
 }
 

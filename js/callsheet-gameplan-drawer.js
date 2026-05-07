@@ -27,6 +27,7 @@ let _gpDrawerState = {
   scope: "active", // "active" | "all"
   type: "", // "" | "Run" | "Pass" | "Screen" | "Quick" | "Play Action" | "RPO" | "Run Option" | "Movement"
   search: "",
+  sortBy: "default", // "default" | "az" | "type" | "form" | "uses-desc" | "uses-asc"
   searchTimer: null,
 };
 
@@ -58,7 +59,7 @@ function _gpDrawerSourcePlays() {
   return plays.filter((p) => all.has(playSignature(p)));
 }
 
-function _gpDrawerFilterAndSort(source) {
+function _gpDrawerFilterAndSort(source, usageMap) {
   let out = source.slice();
 
   // Type chip filter
@@ -86,14 +87,45 @@ function _gpDrawerFilterAndSort(source) {
     });
   }
 
-  // Sort: by type, then formation, then play
-  out.sort((a, b) => {
+  // Sort
+  const sigUses = (p) => {
+    if (!usageMap || typeof playSignature !== "function") return 0;
+    const arr = usageMap[playSignature(p)] || [];
+    return arr.reduce((s, u) => s + (u.count || 1), 0);
+  };
+  const cmpDefault = (a, b) => {
     const ta = (a.type || "").localeCompare(b.type || "");
     if (ta) return ta;
     const fa = (a.formation || "").localeCompare(b.formation || "");
     if (fa) return fa;
     return (a.play || "").localeCompare(b.play || "");
-  });
+  };
+  const cmpAZ = (a, b) => (a.play || "").localeCompare(b.play || "");
+  const cmpType = (a, b) => {
+    const t = (a.type || "").localeCompare(b.type || "");
+    return t || cmpAZ(a, b);
+  };
+  const cmpForm = (a, b) => {
+    const f = (a.formation || "").localeCompare(b.formation || "");
+    return f || cmpAZ(a, b);
+  };
+  const cmpUsesDesc = (a, b) => {
+    const d = sigUses(b) - sigUses(a);
+    return d || cmpDefault(a, b);
+  };
+  const cmpUsesAsc = (a, b) => {
+    const d = sigUses(a) - sigUses(b);
+    return d || cmpDefault(a, b);
+  };
+  const sorters = {
+    default: cmpDefault,
+    az: cmpAZ,
+    type: cmpType,
+    form: cmpForm,
+    "uses-desc": cmpUsesDesc,
+    "uses-asc": cmpUsesAsc,
+  };
+  out.sort(sorters[_gpDrawerState.sortBy] || cmpDefault);
 
   return out;
 }
@@ -170,8 +202,15 @@ function _gpDrawerRender() {
   if (!drawer) return;
 
   const source = _gpDrawerSourcePlays();
-  const visible = _gpDrawerFilterAndSort(source);
+  const usageMap = _gpDrawerBuildUsageMap();
+  const visible = _gpDrawerFilterAndSort(source, usageMap);
   window._gpDrawerVisiblePlays = visible;
+
+  // Sync sort dropdown value (in case it was set programmatically)
+  const sortSel = document.getElementById("gpDrawerSort");
+  if (sortSel && sortSel.value !== _gpDrawerState.sortBy) {
+    sortSel.value = _gpDrawerState.sortBy;
+  }
 
   // Counts
   const totalEl = document.getElementById("gpDrawerCount");
@@ -231,7 +270,6 @@ function _gpDrawerRender() {
   }
 
   const q = (_gpDrawerState.search || "").toLowerCase().trim();
-  const usageMap = _gpDrawerBuildUsageMap();
   list.innerHTML = visible
     .map((play, idx) => {
       const call =
@@ -302,15 +340,31 @@ function _gpDrawerOnDragStart(event) {
   if (Number.isNaN(idx)) return;
   event.dataTransfer.setData("source", "gameplan");
   event.dataTransfer.setData("gpIndex", String(idx));
+  // Some browsers require a text/plain payload to register the drag at all.
+  try { event.dataTransfer.setData("text/plain", String(idx)); } catch (_e) {}
   event.dataTransfer.effectAllowed = "copy";
   row.classList.add("gp-drawer-row-dragging");
   // Visual hint: highlight all category drop zones
   document.body.classList.add("gp-drag-active");
+
+  // Auto-hide the drawer mid-drag so the user can see and drop on every
+  // category bucket. The drag image is captured synchronously at the end of
+  // dragstart, so we defer the hide to the next tick to keep the preview clean.
+  const drawer = document.getElementById("gpDrawer");
+  const tab = document.getElementById("gpDrawerToggleBtn");
+  setTimeout(() => {
+    if (drawer) drawer.classList.add("gp-drawer-drag-hide");
+    if (tab) tab.classList.add("gp-drawer-drag-hide");
+  }, 0);
 }
 
 function _gpDrawerOnDragEnd(event) {
   event.currentTarget.classList.remove("gp-drawer-row-dragging");
   document.body.classList.remove("gp-drag-active");
+  const drawer = document.getElementById("gpDrawer");
+  const tab = document.getElementById("gpDrawerToggleBtn");
+  if (drawer) drawer.classList.remove("gp-drawer-drag-hide");
+  if (tab) tab.classList.remove("gp-drawer-drag-hide");
 }
 
 /* ---------- Public API ----------------------------------------------------- */
@@ -365,6 +419,12 @@ function setGameplanDrawerScope(value) {
 
 function setGameplanDrawerType(value) {
   _gpDrawerState.type = value || "";
+  _gpDrawerRender();
+}
+
+function setGameplanDrawerSort(value) {
+  const allowed = ["default", "az", "type", "form", "uses-desc", "uses-asc"];
+  _gpDrawerState.sortBy = allowed.includes(value) ? value : "default";
   _gpDrawerRender();
 }
 

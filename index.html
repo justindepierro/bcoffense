@@ -1947,6 +1947,17 @@
           data-oninput="setGameplanDrawerSearch" data-pass="value" autocomplete="off" />
         <button class="gp-drawer-search-clear" data-action="clearGameplanDrawerSearch" title="Clear search" aria-label="Clear search">×</button>
       </div>
+      <div class="gp-drawer-sort-row">
+        <label for="gpDrawerSort" class="gp-drawer-sort-label">Sort</label>
+        <select id="gpDrawerSort" class="gp-drawer-sort" data-onchange="setGameplanDrawerSort" data-pass="value">
+          <option value="default">Type → Formation → Play</option>
+          <option value="az">Play A → Z</option>
+          <option value="type">Type → Play</option>
+          <option value="form">Formation → Play</option>
+          <option value="uses-desc">Most used on call sheet</option>
+          <option value="uses-asc">Unused / least used first</option>
+        </select>
+      </div>
       <div id="gpDrawerTypeChips" class="gp-drawer-chips"></div>
     </header>
     <div id="gpDrawerList" class="gp-drawer-list" role="list"></div>
