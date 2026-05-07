@@ -1916,8 +1916,7 @@
 
   <!-- Game Plan Plays Drawer (slides in from the right; placed at root so no
        ancestor transform/filter can break its position:fixed) -->
-  <button id="gpDrawerToggleBtn" class="gp-drawer-tab" type="button"
-    data-action="toggleGameplanDrawer"
+  <button id="gpDrawerToggleBtn" class="gp-drawer-tab" type="button" data-action="toggleGameplanDrawer"
     aria-controls="gpDrawer" aria-expanded="false"
     title="Open the Game Plan plays drawer (drag plays into call sheet categories)">
     <span class="gp-drawer-tab-icon" aria-hidden="true">🎯</span>
@@ -1927,7 +1926,8 @@
     <header class="gp-drawer-header">
       <div class="gp-drawer-title-row">
         <h3 class="gp-drawer-title">🎯 Game Plan Plays</h3>
-        <button class="gp-drawer-close" data-action="closeGameplanDrawer" title="Close drawer (Esc)" aria-label="Close drawer">×</button>
+        <button class="gp-drawer-close" data-action="closeGameplanDrawer" title="Close drawer (Esc)"
+          aria-label="Close drawer">×</button>
       </div>
       <div class="gp-drawer-subtitle">
         <span id="gpDrawerOpponent" class="gp-drawer-opp"></span>
@@ -1937,15 +1937,15 @@
         <button id="gpDrawerScopeActive" type="button" class="gp-scope-btn gp-scope-active"
           data-action="setGameplanDrawerScope" data-arg="active"
           title="Show plays tagged for the active opponent">Active Opponent</button>
-        <button id="gpDrawerScopeAll" type="button" class="gp-scope-btn"
-          data-action="setGameplanDrawerScope" data-arg="all"
-          title="Show plays tagged for any opponent">All Opponents</button>
+        <button id="gpDrawerScopeAll" type="button" class="gp-scope-btn" data-action="setGameplanDrawerScope"
+          data-arg="all" title="Show plays tagged for any opponent">All Opponents</button>
       </div>
       <div class="gp-drawer-search-wrap">
         <span class="gp-drawer-search-icon" aria-hidden="true">🔎</span>
         <input id="gpDrawerSearch" type="search" class="gp-drawer-search" placeholder="Search game plan plays…"
           data-oninput="setGameplanDrawerSearch" data-pass="value" autocomplete="off" />
-        <button class="gp-drawer-search-clear" data-action="clearGameplanDrawerSearch" title="Clear search" aria-label="Clear search">×</button>
+        <button class="gp-drawer-search-clear" data-action="clearGameplanDrawerSearch" title="Clear search"
+          aria-label="Clear search">×</button>
       </div>
       <div class="gp-drawer-sort-row">
         <label for="gpDrawerSort" class="gp-drawer-sort-label">Sort</label>

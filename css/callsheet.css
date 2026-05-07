@@ -3840,8 +3840,11 @@ body.gp-drag-active .hash-column.gp-drag-over {
   box-shadow: -2px 2px 8px rgba(0, 0, 0, 0.15);
   writing-mode: vertical-rl;
   opacity: 0.35;
-  transition: right var(--transition-normal), background var(--transition-fast),
-    box-shadow var(--transition-fast), opacity var(--transition-normal),
+  transition:
+    right var(--transition-normal),
+    background var(--transition-fast),
+    box-shadow var(--transition-fast),
+    opacity var(--transition-normal),
     transform var(--transition-fast);
 }
 .gp-drawer-tab:hover,

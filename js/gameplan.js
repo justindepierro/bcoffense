@@ -1369,16 +1369,30 @@ function jumpToGamePlanBox(boxId) {
 }
 
 /* -------------------------------------------------------------------------
-   Drag & Drop wiring (native HTML5 dnd)
+   Drag & Drop wiring (native HTML5 dnd) — DELEGATED
    ------------------------------------------------------------------------- */
 
-function _gpAttachLibraryHandlers() {
-  const list = document.getElementById("gpLibraryList");
-  if (!list) return;
-  list.querySelectorAll(".gp-play-row[draggable='true']").forEach((row) => {
-    row.addEventListener("dragstart", (e) => {
-      const sig = row.dataset.sig;
-      // If the user has multi-selected, drag all selected; otherwise drag this row only.
+// All drag listeners are attached ONCE at module init on document, in
+// capture phase. Per-render attachment is fragile: a re-render between
+// the user's mousedown and the browser's dragstart (e.g. a debounced
+// search/filter, or a state autosave that re-renders) replaces the row
+// element, so its dragstart listener never fires. Document-level
+// delegation can never be lost mid-gesture.
+
+let _gpDndWired = false;
+
+function _gpWireDnd() {
+  if (_gpDndWired) return;
+  _gpDndWired = true;
+
+  // dragstart -- works for both library rows and box rows
+  document.addEventListener("dragstart", (e) => {
+    const target = e.target;
+    if (!target || !target.closest) return;
+
+    const libRow = target.closest("#gpLibraryList .gp-play-row[draggable='true']");
+    if (libRow) {
+      const sig = libRow.dataset.sig;
       const sigs = _gpSelected.size > 0 && _gpSelected.has(sig)
         ? Array.from(_gpSelected)
         : [sig];
@@ -1386,18 +1400,167 @@ function _gpAttachLibraryHandlers() {
       _gpDragSource = null;
       try { e.dataTransfer.setData("text/plain", sigs.join("\n")); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "copyMove";
-    });
-    row.addEventListener("dragend", () => {
+      document.body.classList.add("gp-dragging-from-library");
+      return;
+    }
+
+    const boxRow = target.closest(".gp-box-play[draggable='true']");
+    if (boxRow) {
+      _gpDragSource = { boxId: boxRow.dataset.boxId, sig: boxRow.dataset.sig };
       _gpDragPayload = null;
-    });
+      document.body.classList.add("gp-dragging-from-box");
+      try { e.dataTransfer.setData("text/plain", boxRow.dataset.sig || ""); } catch (_e) { /* ignore */ }
+      e.dataTransfer.effectAllowed = "move";
+      return;
+    }
+  }, true);
+
+  document.addEventListener("dragend", () => {
+    _gpDragPayload = null;
+    _gpDragSource = null;
+    document.body.classList.remove("gp-dragging-from-library");
+    document.body.classList.remove("gp-dragging-from-box");
+    document.querySelectorAll(".gp-box.is-drop-target").forEach((b) => b.classList.remove("is-drop-target"));
+    document.querySelectorAll(".gp-box-body").forEach(_gpClearDropIndicators);
+    const trash = document.getElementById("gpTrashZone");
+    if (trash) trash.classList.remove("is-active");
+  }, true);
+
+  // dragenter -- highlight target box / trash
+  document.addEventListener("dragenter", (e) => {
+    if (!_gpDragPayload && !_gpDragSource) return;
+    const target = e.target;
+    if (!target || !target.closest) return;
+
+    const trash = target.closest("#gpTrashZone");
+    if (trash && _gpDragSource) {
+      e.preventDefault();
+      trash.classList.add("is-active");
+      return;
+    }
+
+    const dropZone = target.closest(".gp-box .gp-box-body");
+    if (dropZone) {
+      e.preventDefault();
+      const box = dropZone.closest(".gp-box");
+      if (box) box.classList.add("is-drop-target");
+    }
+  }, true);
+
+  // dragover -- MUST preventDefault to allow drop
+  document.addEventListener("dragover", (e) => {
+    if (!_gpDragPayload && !_gpDragSource) return;
+    const target = e.target;
+    if (!target || !target.closest) return;
+
+    const trash = target.closest("#gpTrashZone");
+    if (trash && _gpDragSource) {
+      e.preventDefault();
+      e.dataTransfer.dropEffect = "move";
+      return;
+    }
+
+    const dropZone = target.closest(".gp-box .gp-box-body");
+    if (!dropZone) return;
+    e.preventDefault();
+    e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
+
+    // intra-box reorder indicator
+    const box = dropZone.closest(".gp-box");
+    const boxId = box?.dataset.boxId;
+    if (_gpDragSource && boxId && _gpDragSource.boxId === boxId) {
+      _gpUpdateDropIndicator(dropZone, e.clientY);
+    }
+  }, true);
+
+  document.addEventListener("dragleave", (e) => {
+    const target = e.target;
+    if (!target || !target.closest) return;
+    const box = target.closest(".gp-box");
+    if (box && !box.contains(e.relatedTarget)) {
+      box.classList.remove("is-drop-target");
+      const dz = box.querySelector(".gp-box-body");
+      if (dz) _gpClearDropIndicators(dz);
+    }
+    const trash = target.closest("#gpTrashZone");
+    if (trash && !trash.contains(e.relatedTarget)) {
+      trash.classList.remove("is-active");
+    }
+  }, true);
+
+  document.addEventListener("drop", (e) => {
+    if (!_gpDragPayload && !_gpDragSource) return;
+    const target = e.target;
+    if (!target || !target.closest) return;
+
+    // Trash drop -- send to holding (or remove if already holding)
+    const trash = target.closest("#gpTrashZone");
+    if (trash && _gpDragSource) {
+      e.preventDefault();
+      e.stopPropagation();
+      trash.classList.remove("is-active");
+      const { boxId, sig } = _gpDragSource;
+      _gpDragSource = null;
+      if (boxId === GP_HOLDING_ID) {
+        removeFromGamePlanBox(boxId + "::" + sig);
+      } else {
+        _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig);
+        showToast("Sent to Holding", { duration: 1500 });
+      }
+      return;
+    }
+
+    const dropZone = target.closest(".gp-box .gp-box-body");
+    if (!dropZone) return;
+    e.preventDefault();
+    e.stopPropagation();
+    const box = dropZone.closest(".gp-box");
+    const boxId = box?.dataset.boxId;
+    box?.classList.remove("is-drop-target");
+    if (!boxId) {
+      _gpClearDropIndicators(dropZone);
+      return;
+    }
+
+    if (_gpDragSource) {
+      if (_gpDragSource.boxId === boxId) {
+        const targetIdx = _gpComputeDropIndex(dropZone, e.clientY);
+        _gpReorderInBox(boxId, _gpDragSource.sig, targetIdx);
+      } else {
+        _gpMoveBetweenBoxes(_gpDragSource.boxId, boxId, _gpDragSource.sig);
+      }
+      _gpDragSource = null;
+    } else if (_gpDragPayload && Array.isArray(_gpDragPayload.sigs)) {
+      _gpAddSigsToBox(_gpDragPayload.sigs, boxId);
+      _gpDragPayload = null;
+    }
+    _gpClearDropIndicators(dropZone);
+  }, true);
+
+  // Right-click + long-press on a box-play row (still need per-row, but
+  // delegated so re-render doesn't matter)
+  document.addEventListener("contextmenu", (e) => {
+    const row = e.target?.closest?.(".gp-box-play[draggable='true']");
+    if (!row) return;
+    e.preventDefault();
+    _gpOpenPlayContextMenu(e, row.dataset.boxId, row.dataset.sig);
   });
 }
 
+// Called from renderGamePlan -- now mostly a no-op for drag (delegated).
+// Still wires non-drag concerns: dblclick rename on titles, header-action
+// stopPropagation, long-press on box rows.
+function _gpAttachLibraryHandlers() {
+  _gpWireDnd();
+  // Library rows have no other per-row concerns -- delegation handles drag
+  // and data-action handles the checkbox.
+}
+
 function _gpAttachBoxHandlers() {
+  _gpWireDnd();
   const boxes = document.querySelectorAll(".gp-box");
   boxes.forEach((box) => {
     const boxId = box.dataset.boxId;
-    const dropZone = box.querySelector(".gp-box-body");
     // Prevent header-action clicks from bubbling up and toggling box collapse
     box.querySelectorAll("[data-stop-toggle], .gp-box-sort").forEach((el) => {
       el.addEventListener("click", (e) => e.stopPropagation());
@@ -1425,69 +1588,13 @@ function _gpAttachBoxHandlers() {
         renameAnyGamePlanBox(boxId);
       });
     }
-    if (!dropZone) return;
-
-    dropZone.addEventListener("dragenter", (e) => {
-      e.preventDefault();
-      box.classList.add("is-drop-target");
-    });
-    dropZone.addEventListener("dragover", (e) => {
-      e.preventDefault();
-      e.dataTransfer.dropEffect = _gpDragSource ? "move" : "copy";
-      // Show insertion indicator for intra-box reorder
-      if (_gpDragSource && _gpDragSource.boxId === boxId) {
-        _gpUpdateDropIndicator(dropZone, e.clientY);
-      }
-    });
-    dropZone.addEventListener("dragleave", (e) => {
-      // Only remove highlight if leaving the box entirely
-      if (!box.contains(e.relatedTarget)) {
-        box.classList.remove("is-drop-target");
-        _gpClearDropIndicators(dropZone);
-      }
-    });
-    dropZone.addEventListener("drop", (e) => {
-      e.preventDefault();
-      box.classList.remove("is-drop-target");
-      if (_gpDragSource) {
-        if (_gpDragSource.boxId === boxId) {
-          // intra-box reorder
-          const targetIdx = _gpComputeDropIndex(dropZone, e.clientY);
-          _gpReorderInBox(boxId, _gpDragSource.sig, targetIdx);
-        } else {
-          // box → box move
-          _gpMoveBetweenBoxes(_gpDragSource.boxId, boxId, _gpDragSource.sig);
-        }
-        _gpDragSource = null;
-      } else if (_gpDragPayload && Array.isArray(_gpDragPayload.sigs)) {
-        _gpAddSigsToBox(_gpDragPayload.sigs, boxId);
-        _gpDragPayload = null;
-      }
-      _gpClearDropIndicators(dropZone);
-    });
   });
 
-  // Drag from a box (existing assignment)
-  document.querySelectorAll(".gp-box-play[draggable='true']").forEach((row) => {
-    row.addEventListener("dragstart", (e) => {
-      _gpDragSource = { boxId: row.dataset.boxId, sig: row.dataset.sig };
-      _gpDragPayload = null;
-      document.body.classList.add("gp-dragging-from-box");
-      try { e.dataTransfer.setData("text/plain", row.dataset.sig || ""); } catch (_e) { /* ignore */ }
-      e.dataTransfer.effectAllowed = "move";
-    });
-    row.addEventListener("dragend", () => {
-      _gpDragSource = null;
-      document.body.classList.remove("gp-dragging-from-box");
-      document.querySelectorAll(".gp-box-body").forEach(_gpClearDropIndicators);
-    });
-    // Right-click context menu
-    row.addEventListener("contextmenu", (e) => {
-      e.preventDefault();
-      _gpOpenPlayContextMenu(e, row.dataset.boxId, row.dataset.sig);
-    });
-    // Mobile long-press → context menu
-    if (typeof addLongPress === "function") {
+  // Long-press on box-play rows (mobile context menu) -- still per-row
+  if (typeof addLongPress === "function") {
+    document.querySelectorAll(".gp-box-play[draggable='true']").forEach((row) => {
+      if (row._gpLongPressBound) return;
+      row._gpLongPressBound = true;
       addLongPress(row, () => {
         const rect = row.getBoundingClientRect();
         _gpOpenPlayContextMenu(
@@ -1496,8 +1603,8 @@ function _gpAttachBoxHandlers() {
           row.dataset.sig,
         );
       });
-    }
-  });
+    });
+  }
 }
 
 function _gpComputeDropIndex(dropZone, clientY) {
@@ -3008,34 +3115,9 @@ async function _gpDeleteSnapshot(snapId) {
    ------------------------------------------------------------------------- */
 
 function _gpAttachTrashZoneHandlers() {
-  const zone = document.getElementById("gpTrashZone");
-  if (!zone) return;
-  zone.addEventListener("dragenter", (e) => {
-    if (!_gpDragSource) return;
-    e.preventDefault();
-    zone.classList.add("is-active");
-  });
-  zone.addEventListener("dragover", (e) => {
-    if (!_gpDragSource) return;
-    e.preventDefault();
-    e.dataTransfer.dropEffect = "move";
-  });
-  zone.addEventListener("dragleave", () => {
-    zone.classList.remove("is-active");
-  });
-  zone.addEventListener("drop", async (e) => {
-    if (!_gpDragSource) return;
-    e.preventDefault();
-    zone.classList.remove("is-active");
-    const { boxId, sig } = _gpDragSource;
-    _gpDragSource = null;
-    if (boxId === GP_HOLDING_ID) {
-      removeFromGamePlanBox(boxId + "::" + sig);
-    } else {
-      _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig);
-      showToast("Sent to Holding", { duration: 1500 });
-    }
-  });
+  // Trash drop is handled by the delegated document-level listeners in
+  // _gpWireDnd(). This function is intentionally a no-op kept for backward
+  // compatibility with the existing renderGamePlan call site.
 }
 
 /* -------------------------------------------------------------------------
