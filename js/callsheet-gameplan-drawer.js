@@ -481,6 +481,64 @@ document.addEventListener("DOMContentLoaded", () => {
     tab.addEventListener("focus", wakeTab);
   }
 
+  // Document-level dragover fallback while a drawer drag is in flight.
+  // The browser only fires a drop event if some dragover handler on the path
+  // called preventDefault(). The grid's dragover only does so when the cursor
+  // is over a [data-drop=csHashDrop] descendant; if the cursor wanders over
+  // the gap between hash columns, the '+ Add' button, or the empty-cat
+  // placeholder, the drop gets refused. Here we capture-phase preventDefault
+  // anywhere inside #callSheetGrid, then let the grid's bubble-phase drop
+  // handler do the actual insert (so we don't double-insert).
+  document.addEventListener(
+    "dragover",
+    (event) => {
+      if (!document.body.classList.contains("gp-drag-active")) return;
+      const grid = event.target.closest("#callSheetGrid");
+      if (!grid) return;
+      event.preventDefault();
+      if (event.dataTransfer) event.dataTransfer.dropEffect = "copy";
+      // Highlight the nearest hash-column for visual feedback
+      const col = event.target.closest("[data-drop='csHashDrop']");
+      document
+        .querySelectorAll(".hash-column.gp-drag-over")
+        .forEach((el) => {
+          if (el !== col) el.classList.remove("gp-drag-over");
+        });
+      if (col) col.classList.add("gp-drag-over");
+    },
+    true,
+  );
+  document.addEventListener(
+    "drop",
+    (event) => {
+      const wasDragging = document.body.classList.contains("gp-drag-active");
+      const highlighted = document.querySelector(".hash-column.gp-drag-over");
+      document
+        .querySelectorAll(".hash-column.gp-drag-over")
+        .forEach((el) => el.classList.remove("gp-drag-over"));
+
+      if (!wasDragging) return;
+      // If the cursor isn't directly over a hash column (e.g. dropped in the
+      // gap between left/right or on the category header), the grid's bubble
+      // drop handler will be a no-op. Fall back to the last highlighted
+      // column so the play still lands somewhere sensible.
+      const directCol = event.target.closest("[data-drop='csHashDrop']");
+      if (directCol) return; // grid handler will do the insert
+      if (!highlighted) return;
+      const source = event.dataTransfer?.getData("source");
+      if (source !== "gameplan") return;
+      event.preventDefault();
+      if (typeof handleCallSheetDrop === "function") {
+        handleCallSheetDrop(
+          event,
+          highlighted.dataset.cat,
+          highlighted.dataset.hash,
+        );
+      }
+    },
+    true,
+  );
+
   // When the call sheet re-renders, refresh the drawer's usage chips so they
   // reflect the latest bucket contents.
   if (typeof window.renderCallSheet === "function" && !window._gpDrawerHookedRender) {

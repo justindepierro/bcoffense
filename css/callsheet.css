@@ -3799,9 +3799,15 @@
 }
 
 /* Visual hint while dragging from drawer: highlight category drop zones */
-body.gp-drag-active .callsheet-cell {
+body.gp-drag-active .hash-column {
   outline: 2px dashed var(--color-accent);
-  outline-offset: -2px;
+  outline-offset: -3px;
+  background: rgba(255, 200, 0, 0.06);
+}
+body.gp-drag-active .hash-column.gp-drag-over {
+  outline-color: var(--color-success);
+  outline-style: solid;
+  background: rgba(40, 200, 100, 0.12);
 }
 
 /* =============================================================================
