@@ -1474,16 +1474,6 @@ function _gpWireDnd() {
       try { e.dataTransfer.setData("text/plain", boxRow.dataset.sig || ""); } catch (_e) { /* ignore */ }
       e.dataTransfer.effectAllowed = "move";
       _gpLog("dragstart box", _gpDragSource);
-      // Diagnostic: confirm browser didn't cancel the drag synchronously.
-      if (_gpDbg) {
-        setTimeout(() => {
-          _gpLog("post-dragstart", {
-            defaultPrevented: e.defaultPrevented,
-            stillHasSrc: !!_gpDragSource,
-            bodyCls: document.body.className,
-          });
-        }, 0);
-      }
       return;
     }
     // Non-row target (e.g. user drags some random element). Clear state so
@@ -1493,59 +1483,9 @@ function _gpWireDnd() {
     _gpLog("dragstart on non-row target", target.tagName, target.className);
   }, true);
 
-  document.addEventListener("dragend", (e) => {
-    if (_gpDbg) {
-      const t = e.target;
-      console.log("[gp-dnd] dragend", {
-        target: t?.tagName + "." + (t?.className || "").toString().slice(0, 40),
-        inDOM: !!(t && document.contains(t)),
-        timestamp: performance.now(),
-      });
-    }
+  document.addEventListener("dragend", () => {
     _gpClearDragState();
   }, true);
-  // Track every drag* event in capture phase so we can see which ones fire.
-  if (_gpDbg) {
-    ["dragenter", "dragover", "dragleave", "drop"].forEach((evt) => {
-      document.addEventListener(evt, (e) => {
-        const t = e.target;
-        const box = t?.closest?.(".gp-box");
-        console.log("[gp-dnd] " + evt, {
-          target: t?.tagName + "." + (t?.className || "").toString().slice(0, 30),
-          boxId: box?.dataset?.boxId,
-          dp: e.defaultPrevented,
-        });
-      }, true);
-    });
-    // Diagnostic: log mousedown on box rows -- we need to see whether the
-    // mousedown event is being preventDefault()ed by something, which would
-    // kill the drag at the platform level (no ghost, no events).
-    document.addEventListener("mousedown", (e) => {
-      const row = e.target?.closest?.(".gp-box-play, #gpLibraryList .gp-play-row");
-      if (!row) return;
-      console.log("[gp-dnd] mousedown on draggable", {
-        target: e.target?.tagName + "." + (e.target?.className || "").toString().slice(0, 40),
-        rowDraggable: row.getAttribute("draggable"),
-        rowComputedUserDrag: getComputedStyle(row).webkitUserDrag || getComputedStyle(row).userDrag,
-        defaultPrevented: e.defaultPrevented,
-      });
-      // Schedule a check after the current task to see if anything called
-      // preventDefault on mousedown, which would suppress the drag.
-      setTimeout(() => {
-        console.log("[gp-dnd] post-mousedown defaultPrevented:", e.defaultPrevented);
-      }, 0);
-    }, true);
-    // Bubble-phase dragstart: if defaultPrevented becomes true here but was
-    // false at capture phase, something between document-capture and the
-    // element bubbled-phase is canceling the drag.
-    document.addEventListener("dragstart", (e) => {
-      console.log("[gp-dnd] dragstart bubble-phase", {
-        defaultPrevented: e.defaultPrevented,
-        effectAllowed: e.dataTransfer?.effectAllowed,
-        dragImage: !!e.dataTransfer,
-      });
-    }, false);
-  }
 
   // dragenter -- highlight target box / trash. We unconditionally
   // preventDefault on game-plan drop zones so the browser allows the drop
