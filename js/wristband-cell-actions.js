@@ -26,15 +26,24 @@ function handleCellDrop(event, targetIdx) {
   event.currentTarget.classList.remove("drag-over");
   if (draggedCellIndex === null || draggedCellIndex === targetIdx) return;
 
+  // Snapshot then clear drag state BEFORE mutating, since the re-render
+  // detaches the source cell and dragend will not bubble to any document /
+  // body listener afterward.
+  const fromIdx = draggedCellIndex;
+  draggedCellIndex = null;
+  draggedCellCardIdx = null;
+  document.querySelectorAll(".wb-cell.dragging").forEach((el) => el.classList.remove("dragging"));
+  document.querySelectorAll(".wb-cell.drag-over").forEach((el) => el.classList.remove("drag-over"));
+
   mutateWristbandState(() => {
     const cardData = wristbandCards[currentCardIndex].data;
 
-    const temp = cardData[draggedCellIndex];
-    cardData[draggedCellIndex] = cardData[targetIdx];
+    const temp = cardData[fromIdx];
+    cardData[fromIdx] = cardData[targetIdx];
     cardData[targetIdx] = temp;
     swapWristbandCellCustomizations(
       currentCardIndex,
-      draggedCellIndex,
+      fromIdx,
       currentCardIndex,
       targetIdx,
     );

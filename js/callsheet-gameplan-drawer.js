@@ -334,7 +334,23 @@ function _gpDrawerHighlight(text, q) {
 
 /* ---------- Drag wiring ---------------------------------------------------- */
 
+// Cleanup function -- called from both dragend and drop. Mirrors the
+// pattern in gameplan.js: drop handlers must invoke this BEFORE triggering
+// any re-render that detaches the source row, because dragend does not
+// bubble to document if the original target is no longer in the DOM tree.
+function _gpDrawerClearDragState() {
+  document.body.classList.remove("gp-drag-active");
+  document.querySelectorAll(".gp-drawer-row-dragging").forEach((row) => row.classList.remove("gp-drawer-row-dragging"));
+  const drawer = document.getElementById("gpDrawer");
+  const tab = document.getElementById("gpDrawerToggleBtn");
+  if (drawer) drawer.classList.remove("gp-drawer-drag-hide");
+  if (tab) tab.classList.remove("gp-drawer-drag-hide");
+}
+
 function _gpDrawerOnDragStart(event) {
+  // Defense-in-depth: clear stale state from any previous gesture whose
+  // dragend was missed.
+  _gpDrawerClearDragState();
   const row = event.currentTarget;
   const idx = parseInt(row.dataset.gpIdx, 10);
   if (Number.isNaN(idx)) return;
@@ -363,11 +379,8 @@ function _gpDrawerOnDragStart(event) {
 
 function _gpDrawerOnDragEnd(event) {
   event.currentTarget.classList.remove("gp-drawer-row-dragging");
-  document.body.classList.remove("gp-drag-active");
-  const drawer = document.getElementById("gpDrawer");
-  const tab = document.getElementById("gpDrawerToggleBtn");
-  if (drawer) drawer.classList.remove("gp-drawer-drag-hide");
-  if (tab) tab.classList.remove("gp-drawer-drag-hide");
+  _gpDrawerClearDragState();
+  if (typeof _gpClearHighlights === "function") _gpClearHighlights();
 }
 
 /* ---------- Public API ----------------------------------------------------- */
@@ -632,6 +645,13 @@ document.addEventListener("DOMContentLoaded", () => {
         bucket.push(playToInsert);
       }
 
+      // CRITICAL: clear drag state BEFORE renderCallSheet, because the
+      // hooked renderCallSheet rebuilds the drawer DOM and detaches the
+      // source row. Once detached, dragend does NOT bubble to document and
+      // our cleanup listener never fires -- leaving body class stuck.
+      _gpDrawerClearDragState();
+      _gpClearHighlights();
+
       if (typeof renderCallSheet === "function") renderCallSheet();
       if (typeof saveCallSheet === "function") saveCallSheet();
 
@@ -653,15 +673,11 @@ document.addEventListener("DOMContentLoaded", () => {
     true, // capture phase: runs before the grid's bubble drop handler
   );
 
-  // Dragend cleanup safety net (in case dragend doesn't fire on the source row)
+  // Dragend cleanup safety net (capture phase, in case dragend bubbles)
   document.addEventListener("dragend", () => {
-    document.body.classList.remove("gp-drag-active");
+    _gpDrawerClearDragState();
     _gpClearHighlights();
-    const drawer = document.getElementById("gpDrawer");
-    const tab = document.getElementById("gpDrawerToggleBtn");
-    if (drawer) drawer.classList.remove("gp-drawer-drag-hide");
-    if (tab) tab.classList.remove("gp-drawer-drag-hide");
-  });
+  }, true);
 
   // When the call sheet re-renders, refresh the drawer's usage chips so they
   // reflect the latest bucket contents.

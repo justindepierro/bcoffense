@@ -524,7 +524,14 @@ function handleCallSheetDrop(event, targetCategory, targetHash) {
       callSheet[targetCategory][targetHash].push(play);
     }
 
+    // Clear state + dragging classes BEFORE re-render. renderCallSheet
+    // wipes the grid DOM, detaching the source row -- after which dragend
+    // does NOT bubble to document, so any cleanup deferred to dragend would
+    // be lost.
     draggedCallSheetPlay = null;
+    document.querySelectorAll(".callsheet-play.dragging").forEach((el) => el.classList.remove("dragging"));
+    document.querySelectorAll(".cs-drop-above").forEach((el) => el.classList.remove("cs-drop-above"));
+
     renderCallSheet();
     saveCallSheet();
     return;

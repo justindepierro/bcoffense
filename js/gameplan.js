@@ -1398,6 +1398,24 @@ function jumpToGamePlanBox(boxId) {
 
 let _gpDndWired = false;
 
+// Cleanup function shared by dragend + drop. CRITICAL: must be called from
+// drop *before* any mutation that re-renders the source row, because once
+// the source element is detached from the DOM, dragend does NOT bubble to
+// document and our document-level cleanup listener never fires -- leaving
+// body classes and module state stuck.
+function _gpClearDragState() {
+  _gpDragPayload = null;
+  _gpDragSource = null;
+  document.body.classList.remove("gp-dragging-from-library");
+  document.body.classList.remove("gp-dragging-from-box");
+  document.querySelectorAll(".gp-box.is-drop-target").forEach((b) => b.classList.remove("is-drop-target"));
+  document.querySelectorAll(".gp-box-body").forEach((dz) => {
+    if (typeof _gpClearDropIndicators === "function") _gpClearDropIndicators(dz);
+  });
+  const trash = document.getElementById("gpTrashZone");
+  if (trash) trash.classList.remove("is-active");
+}
+
 function _gpWireDnd() {
   if (_gpDndWired) return;
   _gpDndWired = true;
@@ -1412,6 +1430,9 @@ function _gpWireDnd() {
 
   // dragstart -- works for both library rows and box rows
   document.addEventListener("dragstart", (e) => {
+    // Defense-in-depth: clear any stale state from a previous gesture whose
+    // dragend was missed (e.g. source row was detached during drop).
+    _gpClearDragState();
     const target = e.target;
     if (!target || !target.closest) return;
 
@@ -1444,14 +1465,7 @@ function _gpWireDnd() {
   }, true);
 
   document.addEventListener("dragend", () => {
-    _gpDragPayload = null;
-    _gpDragSource = null;
-    document.body.classList.remove("gp-dragging-from-library");
-    document.body.classList.remove("gp-dragging-from-box");
-    document.querySelectorAll(".gp-box.is-drop-target").forEach((b) => b.classList.remove("is-drop-target"));
-    document.querySelectorAll(".gp-box-body").forEach(_gpClearDropIndicators);
-    const trash = document.getElementById("gpTrashZone");
-    if (trash) trash.classList.remove("is-active");
+    _gpClearDragState();
   }, true);
 
   // dragenter -- highlight target box / trash. We unconditionally
@@ -1529,6 +1543,7 @@ function _gpWireDnd() {
     if (!target || !target.closest) return;
     if (!_gpDragPayload && !_gpDragSource) {
       _gpLog("drop with no source/payload -- ignored", target.tagName);
+      _gpClearDragState();
       return;
     }
     _gpLog("drop", { hasSource: !!_gpDragSource, hasPayload: !!_gpDragPayload, target: target.tagName + "." + (target.className || "").substring(0, 30) });
@@ -1538,9 +1553,10 @@ function _gpWireDnd() {
     if (trash && _gpDragSource) {
       e.preventDefault();
       e.stopPropagation();
-      trash.classList.remove("is-active");
       const { boxId, sig } = _gpDragSource;
-      _gpDragSource = null;
+      // Snapshot then clear state BEFORE mutation -- mutation re-renders
+      // and detaches the source, after which dragend won't fire on document.
+      _gpClearDragState();
       if (boxId === GP_HOLDING_ID) {
         removeFromGamePlanBox(boxId + "::" + sig);
       } else {
@@ -1551,30 +1567,36 @@ function _gpWireDnd() {
     }
 
     const dropZone = target.closest(".gp-box .gp-box-body");
-    if (!dropZone) return;
+    if (!dropZone) {
+      _gpClearDragState();
+      return;
+    }
     e.preventDefault();
     e.stopPropagation();
     const box = dropZone.closest(".gp-box");
     const boxId = box?.dataset.boxId;
-    box?.classList.remove("is-drop-target");
     if (!boxId) {
-      _gpClearDropIndicators(dropZone);
+      _gpClearDragState();
       return;
     }
 
-    if (_gpDragSource) {
-      if (_gpDragSource.boxId === boxId) {
-        const targetIdx = _gpComputeDropIndex(dropZone, e.clientY);
-        _gpReorderInBox(boxId, _gpDragSource.sig, targetIdx);
+    // Snapshot drag state, then clear it BEFORE mutating, so cleanup is
+    // not blocked by detached-source dragend semantics.
+    const dragSource = _gpDragSource;
+    const dragPayload = _gpDragPayload;
+    const dropY = e.clientY;
+    _gpClearDragState();
+
+    if (dragSource) {
+      if (dragSource.boxId === boxId) {
+        const targetIdx = _gpComputeDropIndex(dropZone, dropY);
+        _gpReorderInBox(boxId, dragSource.sig, targetIdx);
       } else {
-        _gpMoveBetweenBoxes(_gpDragSource.boxId, boxId, _gpDragSource.sig);
+        _gpMoveBetweenBoxes(dragSource.boxId, boxId, dragSource.sig);
       }
-      _gpDragSource = null;
-    } else if (_gpDragPayload && Array.isArray(_gpDragPayload.sigs)) {
-      _gpAddSigsToBox(_gpDragPayload.sigs, boxId);
-      _gpDragPayload = null;
+    } else if (dragPayload && Array.isArray(dragPayload.sigs)) {
+      _gpAddSigsToBox(dragPayload.sigs, boxId);
     }
-    _gpClearDropIndicators(dropZone);
   }, true);
 
   // Right-click + long-press on a box-play row (still need per-row, but

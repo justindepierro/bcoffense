@@ -176,6 +176,11 @@ function handleDrop(event) {
 
   if (fromIndex === toIndex || fromIndex === toIndex - 1) return;
 
+  // Clear .dragging class BEFORE renderScript wipes the source row --
+  // dragend will not bubble after the source is detached, so we need to
+  // tidy here while it is still in the DOM.
+  document.querySelectorAll(".script-item.dragging").forEach((el) => el.classList.remove("dragging"));
+
   saveScriptState();
   const moved = script.splice(fromIndex, 1)[0];
   if (toIndex > fromIndex) toIndex--;
