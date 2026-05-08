@@ -1432,6 +1432,22 @@ body.gp-dragging-from-box .gp-trash-zone {
   body.gp-printing .gp-print-hash-chip.gp-hash-chip-l { background: #ffe1e1; border-color: #c66; }
   body.gp-printing .gp-print-hash-chip.gp-hash-chip-r { background: #e1ecff; border-color: #66c; }
   body.gp-printing .gp-print-hash-chip.gp-hash-chip-m { background: #e6f7e1; border-color: #6a6; }
+  body.gp-printing .gp-print-wb-num {
+    display: inline-block;
+    min-width: 14pt;
+    padding: 0 3pt;
+    margin-right: 4pt;
+    font-size: 7.5pt;
+    font-weight: 700;
+    line-height: 1.4;
+    text-align: center;
+    border-radius: 2pt;
+    border: 0.5pt solid #333;
+    background: #fff8c5;
+    color: #222;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
   body.gp-printing .gp-print-empty {
     font-size: 8pt;
     color: #888;

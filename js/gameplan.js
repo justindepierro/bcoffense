@@ -371,6 +371,78 @@ function _gpUpdateBoard(mutator) {
 }
 
 /* -------------------------------------------------------------------------
+   Loaded wristband (per opponent board) — used to display wristband numbers
+   next to plays in the on-screen render and printed output. Mirrors the
+   call-sheet load-wristband flow.
+   ------------------------------------------------------------------------- */
+
+async function loadGamePlanWristband() {
+  const saved = (typeof storageManager !== "undefined")
+    ? storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, [])
+    : [];
+  if (!Array.isArray(saved) || saved.length === 0) {
+    showToast("No saved wristbands. Save one in the Wristband tab first.", { type: "warning" });
+    return;
+  }
+  const items = saved.map((wb, idx) => ({
+    value: String(idx),
+    label: `📄 ${wb.title || "Untitled"}`,
+  }));
+  const choice = await showListPicker("Pick a wristband to match against this game plan:", items, {
+    title: "📋 Load Wristband",
+    icon: "📋",
+  });
+  if (choice === null || choice === undefined) return;
+  const wb = saved[parseInt(choice, 10)];
+  if (!wb || !Array.isArray(wb.cards)) {
+    showToast("Could not load wristband data.", { type: "error" });
+    return;
+  }
+  const wristbandPlays = [];
+  wb.cards.forEach((card, cardIdx) => {
+    const cellData = card.data || card;
+    if (!Array.isArray(cellData)) return;
+    cellData.forEach((play, cellIdx) => {
+      if (play && (play.formation || play.play)) {
+        const wristbandNumber = cardIdx * 40 + cellIdx + 11;
+        wristbandPlays.push({ ...play, wristbandNumber });
+      }
+    });
+  });
+  _gpUpdateBoard((b) => {
+    b.loadedWristband = { name: wb.title || "Untitled", plays: wristbandPlays };
+  });
+  showToast(`📋 Loaded “${wb.title}” (${wristbandPlays.length} plays)`);
+  renderGamePlan();
+}
+
+function clearGamePlanWristband() {
+  _gpUpdateBoard((b) => { b.loadedWristband = null; });
+  showToast("🗑️ Wristband unloaded");
+  renderGamePlan();
+}
+
+function _gpWristbandNumberFor(play) {
+  const board = _gpEnsureBoard();
+  const lw = board.loadedWristband;
+  if (!lw || !Array.isArray(lw.plays) || lw.plays.length === 0) return null;
+  const list = lw.plays;
+  let m = list.find((wp) =>
+    wp.formation === play.formation && wp.play === play.play && wp.personnel === play.personnel,
+  );
+  if (!m) m = list.find((wp) => wp.formation === play.formation && wp.play === play.play);
+  if (!m) {
+    const f = (play.formation || "").toLowerCase().trim();
+    const p = (play.play || "").toLowerCase().trim();
+    m = list.find((wp) =>
+      (wp.formation || "").toLowerCase().trim() === f &&
+      (wp.play || "").toLowerCase().trim() === p,
+    );
+  }
+  return m ? m.wristbandNumber : null;
+}
+
+/* -------------------------------------------------------------------------
    Play signatures (used to identify a play across renders)
    ------------------------------------------------------------------------- */
 
@@ -534,6 +606,9 @@ function renderGamePlan() {
           <button class="btn btn-sm btn-success" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
             📋 Script
           </button>
+          ${board.loadedWristband
+            ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
+            : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}
         </div>
         <div class="gp-header-group">
           <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
@@ -3759,6 +3834,7 @@ let _gpPrintOptions = {
   showFooter: true,
   showDetail: false,
   playerHandout: false,
+  showWristbandNumber: true,
   sortMode: "perBox", // primary tier; "perBox" honors each box's own setting
   sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
   sortMode3: "",       // tertiary tier (ignored when sortMode is perBox)
@@ -3854,6 +3930,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintNotes" ${o.showNotes ? "checked" : ""}> Show notes</label>
               <label><input type="checkbox" id="gpPrintHolding" ${o.showHolding ? "checked" : ""}> Include Holding box</label>
               <label><input type="checkbox" id="gpPrintEmpty" ${o.showEmpty ? "checked" : ""}> Include empty boxes</label>
+              <label><input type="checkbox" id="gpPrintWBNum" ${o.showWristbandNumber ? "checked" : ""}> Show wristband number (when loaded)</label>
               <label><input type="checkbox" id="gpPrintBucketPerPage" ${o.bucketPerPage ? "checked" : ""}> One bucket per page</label>
               <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
               <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
@@ -3900,6 +3977,7 @@ async function openGamePlanPrintModal() {
         showNotes: overlay.querySelector("#gpPrintNotes").checked,
         showHolding: overlay.querySelector("#gpPrintHolding").checked,
         showEmpty: overlay.querySelector("#gpPrintEmpty").checked,
+        showWristbandNumber: overlay.querySelector("#gpPrintWBNum").checked,
         bucketPerPage: overlay.querySelector("#gpPrintBucketPerPage").checked,
         showPageNumbers: overlay.querySelector("#gpPrintPageNumbers").checked,
         showFooter: overlay.querySelector("#gpPrintFooter").checked,
@@ -3942,6 +4020,7 @@ function _gpRenderPrintViewAndPrint() {
       <div class="gp-print-meta">
         ${weekLabel ? `<span>${escapeHtml(weekLabel)}</span>` : ""}
         <span>${totalAssigned} plays drafted</span>
+        ${board.loadedWristband && o.showWristbandNumber ? `<span>📋 ${escapeHtml(board.loadedWristband.name || "")}</span>` : ""}
         <span>${new Date().toLocaleDateString()}</span>
       </div>
     </div>`;
@@ -4053,6 +4132,13 @@ function _gpRenderPrintPlay(play) {
   const callHtml = typeof getFullCall === "function"
     ? getFullCall(play, { showLineCall: false, showEmoji: o.showMeta, useSquares: true })
     : escapeHtml(play.play || "");
+  let wbNumHtml = "";
+  if (o.showWristbandNumber) {
+    const num = _gpWristbandNumberFor(play);
+    if (num != null) {
+      wbNumHtml = `<span class="gp-print-wb-num">${escapeHtml(String(num))}</span>`;
+    }
+  }
   const meta = [];
   if (o.showMeta) {
     if (play.formation) meta.push(escapeHtml(play.formation));
@@ -4113,7 +4199,7 @@ function _gpRenderPrintPlay(play) {
     if (rows.length) handoutHtml = `<div class="gp-handout-detail">${rows.join("")}</div>`;
   }
 
-  return `<li class="gp-print-play">${callHtml}${metaHtml}${handoutHtml}</li>`;
+  return `<li class="gp-print-play">${wbNumHtml}${callHtml}${metaHtml}${handoutHtml}</li>`;
 }
 
 /* -------------------------------------------------------------------------
