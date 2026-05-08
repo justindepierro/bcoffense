@@ -648,6 +648,66 @@
     font-size: 6.7px;
   }
 
+  /* Column-aware sizing — fewer columns means more per-play width, so we
+     scale fonts up for legibility. Defaults above are tuned for 3 columns. */
+  .print-cs-cols-2 .print-callsheet-grid {
+    gap: 7px;
+  }
+  .print-cs-cols-2 .print-category-header {
+    font-size: 11.5px;
+  }
+  .print-cs-cols-2 .print-play {
+    font-size: 10px;
+    letter-spacing: -0.01em;
+    line-height: 1.08;
+    padding: 1px 1.5px;
+  }
+  .print-cs-cols-2 .print-play--compact {
+    font-size: 9.4px;
+  }
+  .print-cs-cols-2 .print-play--dense {
+    font-size: 8.8px;
+  }
+  .print-cs-cols-2 .print-play--micro {
+    font-size: 8.2px;
+  }
+  .print-cs-cols-2 .print-play-text {
+    transform: scaleX(0.97);
+    width: 103.1%;
+  }
+  .print-cs-cols-2 .print-hash-headers {
+    font-size: 8.8px;
+  }
+  .print-cs-cols-2.print-landscape .print-category-header {
+    font-size: 12.5px;
+  }
+  .print-cs-cols-2.print-landscape .print-play {
+    font-size: 11px;
+  }
+
+  .print-cs-cols-4 .print-callsheet-grid {
+    gap: 4px;
+  }
+  .print-cs-cols-4 .print-category-header {
+    font-size: 7.6px;
+  }
+  .print-cs-cols-4 .print-play {
+    font-size: 6.5px;
+    letter-spacing: -0.025em;
+  }
+  .print-cs-cols-4 .print-play--compact {
+    font-size: 6.2px;
+  }
+  .print-cs-cols-4 .print-play--dense {
+    font-size: 5.95px;
+  }
+  .print-cs-cols-4 .print-play--micro {
+    font-size: 5.7px;
+  }
+  .print-cs-cols-4 .print-hash-headers {
+    font-size: 5.9px;
+  }
+
   @page {
     margin: 0.16in;
   }

@@ -2224,9 +2224,144 @@ async function clearCallSheet() {
 }
 
 /**
- * Print call sheet
+ * Print call sheet — opens an options modal first (paper, orientation,
+ * columns, margin) so the user can pick a 2-column portrait layout for
+ * better legibility, then renders and prints.
  */
-function printCallSheet() {
+async function printCallSheet() {
+  const choice = await openCallSheetPrintModal();
+  if (!choice) return;
+  _csRunPrint(choice);
+}
+
+const CS_PRINT_DEFAULTS = {
+  paperSize: "letter",       // "letter" | "legal" | "tabloid"
+  orientation: "portrait",   // "portrait" | "landscape"
+  columns: 3,                // 2 | 3 | 4
+  margin: "normal",          // "tight" | "normal" | "wide"
+};
+
+function getCallSheetPrintOptions() {
+  const stored = storageManager.get(STORAGE_KEYS.CALLSHEET_PRINT_OPTIONS, {});
+  return { ...CS_PRINT_DEFAULTS, ...(stored && typeof stored === "object" ? stored : {}) };
+}
+
+function setCallSheetPrintOptions(opts) {
+  const merged = { ...CS_PRINT_DEFAULTS, ...(opts || {}) };
+  storageManager.set(STORAGE_KEYS.CALLSHEET_PRINT_OPTIONS, merged);
+  return merged;
+}
+
+function _csApplyPrintSmartDefaults() {
+  return setCallSheetPrintOptions({
+    paperSize: "letter",
+    orientation: "portrait",
+    columns: 2,
+    margin: "normal",
+  });
+}
+
+function _csPrintMarginValue(orientation, margin) {
+  // Per-orientation defaults match the legacy values
+  const base = orientation === "landscape" ? 0.14 : 0.16;
+  if (margin === "tight") return `${(base - 0.04).toFixed(2)}in`;
+  if (margin === "wide")  return `${(base + 0.14).toFixed(2)}in`;
+  return `${base.toFixed(2)}in`;
+}
+
+async function openCallSheetPrintModal() {
+  const o = getCallSheetPrintOptions();
+  // Default the modal to current orientation toggle if user already set one
+  if (callSheetSettings && callSheetSettings.orientation) {
+    o.orientation = callSheetSettings.orientation === "landscape" ? "landscape" : "portrait";
+  }
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="csPrintTitle">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">🖨️</span>
+          <h3 class="custom-modal-title" id="csPrintTitle">Print Call Sheet</h3>
+        </div>
+        <div class="custom-modal-body">
+          <div class="gp-print-form">
+            <div class="gp-print-row">
+              <label>Paper</label>
+              <select id="csPrintPaper">
+                <option value="letter" ${o.paperSize === "letter" ? "selected" : ""}>Letter (8.5×11)</option>
+                <option value="legal" ${o.paperSize === "legal" ? "selected" : ""}>Legal (8.5×14)</option>
+                <option value="tabloid" ${o.paperSize === "tabloid" ? "selected" : ""}>Tabloid (11×17)</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
+              <label>Orientation</label>
+              <select id="csPrintOrientation">
+                <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait</option>
+                <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
+              <label>Columns</label>
+              <select id="csPrintColumns" title="Fewer columns = larger, more legible text">
+                <option value="2" ${o.columns === 2 ? "selected" : ""}>2 columns (largest text)</option>
+                <option value="3" ${o.columns === 3 ? "selected" : ""}>3 columns (default)</option>
+                <option value="4" ${o.columns === 4 ? "selected" : ""}>4 columns (most plays per page)</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
+              <label>Margin</label>
+              <select id="csPrintMargin">
+                <option value="tight" ${o.margin === "tight" ? "selected" : ""}>Tight</option>
+                <option value="normal" ${o.margin === "normal" ? "selected" : ""}>Normal</option>
+                <option value="wide" ${o.margin === "wide" ? "selected" : ""}>Wide</option>
+              </select>
+            </div>
+            <p class="cs-print-hint" style="margin:10px 0 0;font-size:12px;color:var(--color-text-muted);">
+              💡 <strong>2 columns + portrait</strong> gives the most legible plays. Use 4 columns + landscape if you need everything on one page.
+            </p>
+          </div>
+        </div>
+        <div class="custom-modal-actions">
+          <button class="btn custom-modal-btn custom-modal-cancel" id="csPrintCancel">Cancel</button>
+          <button class="btn btn-secondary custom-modal-btn" id="csPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns">✨ Smart defaults</button>
+          <button class="btn btn-primary custom-modal-btn" id="csPrintConfirm">Print</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    const close = (result) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.remove(), 200);
+      resolve(result);
+    };
+    overlay.querySelector("#csPrintCancel").addEventListener("click", () => close(null));
+    overlay.querySelector("#csPrintSmart").addEventListener("click", () => {
+      _csApplyPrintSmartDefaults();
+      close(null);
+      setTimeout(() => printCallSheet(), 50);
+    });
+    overlay.querySelector("#csPrintConfirm").addEventListener("click", () => {
+      const opts = setCallSheetPrintOptions({
+        paperSize: overlay.querySelector("#csPrintPaper").value,
+        orientation: overlay.querySelector("#csPrintOrientation").value,
+        columns: parseInt(overlay.querySelector("#csPrintColumns").value, 10) || 3,
+        margin: overlay.querySelector("#csPrintMargin").value,
+      });
+      close(opts);
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(null);
+    });
+    overlay.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") { e.preventDefault(); close(null); }
+    });
+  });
+}
+
+function _csRunPrint(opts) {
   try {
     showToast("🖨️ Preparing call sheet…", 2500);
     const container = document.getElementById("callSheetPrint");
@@ -2238,25 +2373,23 @@ function printCallSheet() {
     const pageTitle =
       page === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
 
-    // Set orientation class
-    const orientClass =
-      callSheetSettings.orientation === "landscape"
-        ? "print-landscape"
-        : "print-portrait";
+    const orientation = opts.orientation === "landscape" ? "landscape" : "portrait";
+    const columns = [2, 3, 4].includes(opts.columns) ? opts.columns : 3;
+    const orientClass = orientation === "landscape" ? "print-landscape" : "print-portrait";
+    const colsClass = `print-cs-cols-${columns}`;
 
     // Hoist display options once — avoids re-reading checkboxes per play
     const printOptions = getCallSheetDisplayOptions();
 
     // Build print HTML
-    let html = `<div class="${orientClass}">`;
+    let html = `<div class="${orientClass} ${colsClass}">`;
     const teamName = getTeamName() + " " + new Date().getFullYear();
     html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
     html += '<div class="print-callsheet-grid">';
 
-    // Keep the printed call sheet in a consistent 3-column layout.
-    const columns = buildCallSheetColumns(categories, 3);
+    const columnGroups = buildCallSheetColumns(categories, columns);
 
-    columns.forEach((column) => {
+    columnGroups.forEach((column) => {
       html += '<div class="print-column">';
       column.forEach((cat) => {
         const data = callSheet[cat.id] || { left: [], right: [] };
@@ -2271,18 +2404,15 @@ function printCallSheet() {
     container.classList.remove("hidden");
     document.body.dataset.printMode = "callsheet";
 
-    // Set page size based on orientation
-    const pageOrientation =
-      callSheetSettings.orientation === "landscape" ? "landscape" : "portrait";
-    const printMargin =
-      callSheetSettings.orientation === "landscape" ? "0.14in" : "0.16in";
+    const paper = ["letter", "legal", "tabloid"].includes(opts.paperSize) ? opts.paperSize : "letter";
+    const printMargin = _csPrintMarginValue(orientation, opts.margin);
     setupPrintPageStyle(
-      `@media print { @page { size: letter ${pageOrientation}; margin: ${printMargin}; } }`,
+      `@media print { @page { size: ${paper} ${orientation}; margin: ${printMargin}; } }`,
     );
 
     setTimeout(() => {
       const pageLabel = page === "front" ? "Front" : "Back";
-      const restoreTitle = setPrintTitle("Game Plan", pageLabel);
+      const restoreTitle = setPrintTitle("Call Sheet", pageLabel);
       let cleaned = false;
       const cleanup = () => {
         if (cleaned) return;

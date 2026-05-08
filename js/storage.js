@@ -103,6 +103,7 @@ const STORAGE_KEYS = {
   TEAM_ASSIGNMENT_LABELS: "teamAssignmentLabels",
   TEAM_SETTINGS_COLLAPSED: "teamSettingsCollapsed",
   GAME_PLAN_BOARDS: "gamePlanBoards",
+  CALLSHEET_PRINT_OPTIONS: "callSheetPrintOptions",
 };
 
 const MIGRATIONS = {
