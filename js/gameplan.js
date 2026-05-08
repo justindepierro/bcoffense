@@ -3821,8 +3821,8 @@ function clearGamePlanSpotlight() {
 
 let _gpPrintOptions = {
   paperSize: "letter",
-  orientation: "landscape",
-  columns: 3,
+  orientation: "portrait",
+  columns: 2,
   showHash: true,
   showNotes: true,
   showProgress: true,
@@ -3839,6 +3839,28 @@ let _gpPrintOptions = {
   sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
   sortMode3: "",       // tertiary tier (ignored when sortMode is perBox)
 };
+
+// Smart preset: portrait, 2-col, no bucket splits, single-line plays.
+function _gpApplySmartPrintDefaults() {
+  _gpPrintOptions = {
+    ..._gpPrintOptions,
+    paperSize: "letter",
+    orientation: "portrait",
+    columns: 2,
+    showMeta: true,
+    showHash: true,
+    showProgress: true,
+    showNotes: false,
+    showHolding: false,
+    showEmpty: false,
+    bucketPerPage: false,
+    showPageNumbers: true,
+    showFooter: true,
+    showDetail: false,
+    playerHandout: false,
+    showWristbandNumber: true,
+  };
+}
 
 async function openGamePlanPrintModal() {
   const o = _gpPrintOptions;
@@ -3941,6 +3963,7 @@ async function openGamePlanPrintModal() {
         </div>
         <div class="custom-modal-actions">
           <button class="btn custom-modal-btn custom-modal-cancel" id="gpPrintCancel">Cancel</button>
+          <button class="btn btn-secondary custom-modal-btn" id="gpPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns, no bucket overflow">✨ Smart defaults</button>
           <button class="btn btn-primary custom-modal-btn" id="gpPrintConfirm">Print</button>
         </div>
       </div>`;
@@ -3954,6 +3977,12 @@ async function openGamePlanPrintModal() {
       resolve(ok);
     };
     overlay.querySelector("#gpPrintCancel").addEventListener("click", () => close(false));
+    overlay.querySelector("#gpPrintSmart").addEventListener("click", () => {
+      _gpApplySmartPrintDefaults();
+      close(false);
+      // Re-open the modal so the user sees the new values applied.
+      setTimeout(() => openGamePlanPrintModal(), 50);
+    });
     // Show/hide tier row based on primary selection
     const tierRow = overlay.querySelector("#gpPrintSortTierRow");
     const primarySel = overlay.querySelector("#gpPrintSort");
