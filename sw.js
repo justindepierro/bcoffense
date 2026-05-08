@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v400";
+const CACHE_NAME = "bcoffense-v401";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -113,6 +113,13 @@ const LOCAL_ASSETS = [
   "./js/help.js",
   "./js/dashboard.js",
   "./js/gameplan.js",
+  "./js/gameplan-render.js",
+  "./js/gameplan-dnd.js",
+  "./js/gameplan-actions.js",
+  "./js/gameplan-smart.js",
+  "./js/gameplan-print.js",
+  "./js/gameplan-integrations.js",
+  "./js/gameplan-snapshots.js",
   "./js/app-events.js",
   "./js/app-shell.js",
   "./js/app-session.js",

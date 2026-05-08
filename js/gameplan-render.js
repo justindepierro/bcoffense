@@ -1,0 +1,985 @@
+/* =========================================================================
+   Game Plan — rendering (header, library, boxes, chips, scoreboard, scenarios)
+   Split out of gameplan.js — see AGENTS.md for ownership map.
+   ========================================================================= */
+
+
+function renderGamePlan() {
+  const root = document.getElementById("gameplan");
+  if (!root) return;
+  if (!Array.isArray(plays) || plays.length === 0) {
+    root.innerHTML = `
+      <div class="gp-header">
+        <div class="gp-header-meta">
+          <div class="gp-header-title">🎯 Game Plan</div>
+          <div class="gp-header-empty">Import a playbook CSV to start drafting your game plan.</div>
+        </div>
+      </div>`;
+    return;
+  }
+
+  const board = _gpEnsureBoard();
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw && gw.opponentName ? gw.opponentName : null;
+  const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";
+
+  const rawAllBoxes = [
+    GP_HOLDING_BOX,
+    ...GP_DEFAULT_BOXES,
+    ...(board.customBoxes || []),
+  ];
+  // Apply custom labels (default boxes only — custom already store their own)
+  const labeledBoxes = rawAllBoxes.map((b) => {
+    if (b.id === GP_HOLDING_ID) return b;
+    const isCustom = (board.customBoxes || []).some((cb) => cb.id === b.id);
+    if (isCustom) return b;
+    const customLabel = board.boxLabels && board.boxLabels[b.id];
+    return customLabel ? { ...b, label: customLabel } : b;
+  });
+  // Apply custom order (boxOrder is a subset of ids; ids not in boxOrder fall to defaultIndex order, holding always first)
+  const orderIdx = (id) => {
+    if (id === GP_HOLDING_ID) return -1;
+    const i = (board.boxOrder || []).indexOf(id);
+    return i >= 0 ? i : 9999;
+  };
+  const orderedBoxes = labeledBoxes.slice().sort((a, b) => {
+    const da = orderIdx(a.id);
+    const db = orderIdx(b.id);
+    if (da !== db) return da - db;
+    return labeledBoxes.indexOf(a) - labeledBoxes.indexOf(b);
+  });
+  // Hide hidden boxes (Holding never hides)
+  const hidden = new Set((board.hiddenBoxes || []).filter((id) => id !== GP_HOLDING_ID));
+  const allBoxes = orderedBoxes.filter((b) => !hidden.has(b.id));
+  const assignedSigs = _gpAllAssignedSigs(board);
+  const totalAssigned = assignedSigs.size;
+
+  const headerHtml = `
+    <div class="gp-header">
+      <div class="gp-header-meta">
+        <div class="gp-header-title">
+          🎯 Game Plan
+          ${opponent
+      ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
+      : `<span class="gp-header-empty">No opponent set — pick one in the Dashboard to keep boards per opponent</span>`}
+          ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
+        </div>
+        <div class="gp-header-week">${totalAssigned} plays drafted across ${allBoxes.length} boxes</div>
+      </div>
+      <div class="gp-header-actions">
+        ${_gpRenderHealthGauge(board)}
+        <div class="gp-header-group gp-header-group-primary">
+          <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the game plan">
+            🖨️ Print
+          </button>
+          <button class="btn btn-sm btn-success" data-action="pushGamePlanToCallSheet" title="Copy drafted plays into the call sheet">
+            ➡️ Call Sheet
+          </button>
+          <button class="btn btn-sm btn-success" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
+            📋 Script
+          </button>
+          ${board.loadedWristband
+      ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
+      : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
+            💾 Save Plan
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanSnapshotsMenu" title="Load or delete a saved plan">
+            📂 Plans
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanCompare" title="Compare two saved plans">
+            🔄 Compare
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
+            📊 Variety
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanCoverageMatrix" title="Heatmap of bucket coverage across game scenarios">
+            🌡️ Coverage
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanTendencyMirror" title="Compare opponent's defensive tendencies vs your plan">
+            🪞 vs Defense
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="openGamePlanAddBucket" title="Add a new bucket from a template">
+            ➕ Add Bucket
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanReorderBoxes" title="Drag boxes into a custom order">
+            ↕️ Reorder
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanManageBoxes" title="Hide or show boxes">
+            👁️ Manage
+          </button>
+        </div>
+        <div class="gp-header-group">
+          <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
+            ▼
+          </button>
+          <button class="btn btn-sm" data-action="collapseAllGamePlanBoxes" title="Collapse every box">
+            ▶
+          </button>
+          <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
+            ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanShortcutsHelp" title="Keyboard shortcuts (?)">
+            ⌨️
+          </button>
+        </div>
+        <button class="btn btn-sm btn-danger" data-action="clearGamePlanBoard" title="Remove every play from every box for this opponent">
+          🗑️ Clear All
+        </button>
+      </div>
+    </div>`;
+
+  // Build filter dropdown options from playbook
+  const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
+  const formations = [...new Set(plays.map((p) => p.formation).filter(Boolean))].sort();
+  const personnel = [...new Set(plays.map((p) => p.personnel).filter(Boolean))].sort();
+  const basePlays = [...new Set(plays.map((p) => p.basePlay).filter(Boolean))].sort();
+  const tempos = [...new Set(plays.map((p) => p.tempo).filter(Boolean))].sort();
+  const situations = [...new Set(plays.map((p) => p.preferredSituation).filter(Boolean))].sort();
+  const fieldPositions = [...new Set(plays.map((p) => p.preferredFieldPosition).filter(Boolean))].sort();
+
+  const advBadge = _gpAdvancedFilterCount();
+  const advancedHtml = _gpFilters.showAdvanced ? `
+    <div class="gp-toolbar-advanced">
+      <select data-onchange="updateGamePlanFilter" data-arg="basePlay" data-pass="value" title="Base play">
+        <option value="">Base Play</option>
+        ${basePlays.map((b) => `<option value="${escapeHtml(b)}" ${b === _gpFilters.basePlay ? "selected" : ""}>${escapeHtml(b)}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="tempo" data-pass="value" title="Tempo">
+        <option value="">Tempo</option>
+        ${tempos.map((t) => `<option value="${escapeHtml(t)}" ${t === _gpFilters.tempo ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredDown" data-pass="value" title="Down">
+        <option value="">Down</option>
+        ${["1", "2", "3", "4"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDown ? "selected" : ""}>${d}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredDistance" data-pass="value" title="Distance">
+        <option value="">Distance</option>
+        ${["Short", "Medium", "Long"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDistance ? "selected" : ""}>${d}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredSituation" data-pass="value" title="Situation">
+        <option value="">Situation</option>
+        ${situations.map((s) => `<option value="${escapeHtml(s)}" ${s === _gpFilters.preferredSituation ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}
+      </select>
+      <select data-onchange="updateGamePlanFilter" data-arg="preferredFieldPosition" data-pass="value" title="Field Position">
+        <option value="">Field Pos</option>
+        ${fieldPositions.map((f) => `<option value="${escapeHtml(f)}" ${f === _gpFilters.preferredFieldPosition ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}
+      </select>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-sm);">
+        <input type="checkbox" ${_gpFilters.onlyOpponentTagged ? "checked" : ""}
+          data-onchange="updateGamePlanFilter" data-arg="onlyOpponentTagged" data-pass="event" />
+        Only ${opponent ? `tagged for ${escapeHtml(opponent)}` : "opponent-tagged"}
+      </label>
+    </div>` : "";
+
+  const toolbarHtml = `
+    <div class="gp-toolbar">
+      <input type="search" id="gpSearch" placeholder="Search plays…"
+        value="${escapeHtml(_gpFilters.search || "")}"
+        data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
+      <select id="gpFilterType" data-onchange="updateGamePlanFilter" data-arg="type" data-pass="value">
+        <option value="">All Types</option>
+        ${types.map((t) => `<option value="${escapeHtml(t)}" ${t === _gpFilters.type ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}
+      </select>
+      <select id="gpFilterFormation" data-onchange="updateGamePlanFilter" data-arg="formation" data-pass="value">
+        <option value="">All Formations</option>
+        ${formations.map((f) => `<option value="${escapeHtml(f)}" ${f === _gpFilters.formation ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}
+      </select>
+      <select id="gpFilterPersonnel" data-onchange="updateGamePlanFilter" data-arg="personnel" data-pass="value">
+        <option value="">All Personnel</option>
+        ${personnel.map((p) => `<option value="${escapeHtml(p)}" ${p === _gpFilters.personnel ? "selected" : ""}>${escapeHtml(p)}</option>`).join("")}
+      </select>
+      <button class="btn btn-sm btn-secondary" data-action="toggleGamePlanAdvancedFilters"
+        title="Toggle advanced filters">
+        ⚙️ Advanced${advBadge > 0 ? ` <span class="gp-adv-badge">${advBadge}</span>` : ""}
+      </button>
+      <label style="display:inline-flex;align-items:center;gap:var(--space-xxs,2px);font-size:var(--font-size-sm);">
+        <input type="checkbox" ${_gpFilters.hideAssigned ? "checked" : ""}
+          data-onchange="updateGamePlanFilter" data-arg="hideAssigned" data-pass="event" />
+        Hide already drafted
+      </label>
+      <span class="gp-toolbar-spacer"></span>
+      <span class="gp-matchup-chip-row">
+        <button class="gp-matchup-chip ${_gpFilters.goodVsMan ? "is-on" : ""}"
+          data-action="toggleGamePlanMatchupFilter" data-arg="goodVsMan"
+          title="Show only plays marked Good vs. Man">✅ Man</button>
+        <button class="gp-matchup-chip ${_gpFilters.goodVsBear ? "is-on" : ""}"
+          data-action="toggleGamePlanMatchupFilter" data-arg="goodVsBear"
+          title="Show only plays marked Good vs. Bear">🐻 Bear</button>
+        <button class="gp-matchup-chip ${_gpFilters.goodVsOkie ? "is-on" : ""}"
+          data-action="toggleGamePlanMatchupFilter" data-arg="goodVsOkie"
+          title="Show only plays marked Good vs. Okie">🤠 Okie</button>
+      </span>
+      <button class="btn btn-sm btn-secondary" data-action="clearGamePlanFilters" title="Reset all filters">Reset</button>
+      <button class="btn btn-sm" data-action="assignSelectedToGamePlanBox" title="Add selected plays to a box you choose">
+        ➕ Add Selected to…
+      </button>
+    </div>
+    ${advancedHtml}`;
+
+  const filtered = _gpFilteredLibrary(board);
+  const libraryHtml = `
+    <div class="gp-library">
+      <div class="gp-library-header">
+        <span>Library</span>
+        <span class="gp-library-count">${filtered.length} of ${plays.length}${_gpSelected.size > 0 ? ` • ${_gpSelected.size} selected` : ""}</span>
+      </div>
+      <div class="gp-library-bulk">
+        <button class="btn btn-sm btn-secondary" data-action="gpSelectAllVisible" title="Check every play matching current filters">☑ All visible</button>
+        <button class="btn btn-sm btn-secondary" data-action="gpClearLibrarySelection" title="Uncheck all">▢ None</button>
+        <button class="btn btn-sm btn-secondary" data-action="gpInvertVisibleSelection" title="Invert selection within visible">⇄ Invert</button>
+        <button class="btn btn-sm" data-action="gpAddAllVisibleToBox" title="Add every visible play to a box you pick">➕ Add all visible to…</button>
+      </div>
+      <div class="gp-library-list" id="gpLibraryList">
+        ${filtered.length === 0
+      ? `<div class="gp-box-empty">No plays match the current filters.</div>`
+      : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs)).join("")}
+      </div>
+    </div>`;
+
+  const boxesHtml = `
+    <div class="gp-boxes gp-density-${escapeHtml(_gpFilters.density)}" id="gpBoxes">
+      ${allBoxes.map((b) => _gpRenderBox(b, board)).join("")}
+    </div>`;
+
+  setInnerHTML(root, "");
+  // Header contains <button> elements which sanitizeHTML strips.
+  // Toolbar + boxes contain <input>/<select>/<button>/<textarea>, which
+  // sanitizeHTML strips. Build them directly via innerHTML — every
+  // user-derived value above already passes through escapeHtml().
+  const wrapper = document.createElement("div");
+  const distHtml = _gpRenderDistributionStrip(board);
+  const scoreboardHtml = _gpRenderScoreboard(board);
+  const touchHtml = _gpRenderTouchTracker(board);
+  const chipsHtml = _gpRenderFilterChips();
+  const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
+  const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
+  // Sticky spotlight banner — appears when a coverage tile or touch tile is active.
+  let spotlightBannerHtml = "";
+  if (_gpFilters.spotlight) {
+    const spot = _gpFilters.spotlight;
+    let label = "";
+    if (spot.kind === "scenario") {
+      const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === spot.id);
+      label = sc ? sc.label : spot.id;
+    } else if (spot.kind === "player") {
+      label = spot.name;
+    }
+    const matchCount = allBoxes.reduce((n, b) => n + ((board.assignments[b.id] || []).filter(_gpPlayMatchesSpotlight).length), 0);
+    spotlightBannerHtml = `
+      <div class="gp-spotlight-banner" role="status">
+        <span class="gp-spotlight-icon">🔦</span>
+        <span class="gp-spotlight-text">Spotlighting <strong>${escapeHtml(label)}</strong> — ${matchCount} matching play${matchCount === 1 ? "" : "s"} highlighted</span>
+        <button class="gp-spotlight-clear" data-action="clearGamePlanSpotlight" title="Clear spotlight (Esc)">✕ Clear</button>
+      </div>`;
+  }
+  wrapper.innerHTML = headerHtml + distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + spotlightBannerHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
+  _gpAttachLibraryHandlers();
+  _gpAttachBoxHandlers();
+  _gpAttachTrashZoneHandlers();
+}
+
+function _gpRenderLibraryRow(play, assignedSigs) {
+  const sig = _gpPlaySignature(play);
+  const checked = _gpSelected.has(sig);
+  const assigned = assignedSigs.has(sig);
+  const callHtml = typeof getFullCall === "function"
+    ? getFullCall(play, { showLineCall: false })
+    : escapeHtml(play.play || "");
+  const meta = [play.type, play.personnel, play.formation].filter(Boolean).join(" • ");
+  return `
+    <div class="gp-play-row ${checked ? "is-selected" : ""} ${assigned ? "is-assigned" : ""}"
+         draggable="true" data-sig="${escapeHtml(sig)}">
+      <input type="checkbox" class="gp-play-row-checkbox" ${checked ? "checked" : ""}
+        data-action="toggleGamePlanLibrarySelect" data-arg="${escapeHtml(sig)}" />
+      <div class="gp-play-row-body">
+        <div>${callHtml}${_gpMatchupBadges(play)}</div>
+        ${meta ? `<div class="gp-play-row-meta">${escapeHtml(meta)}</div>` : ""}
+      </div>
+      ${play.type ? `<span class="gp-play-row-type-badge">${escapeHtml(play.type)}</span>` : ""}
+    </div>`;
+}
+
+function _gpNormalizeHashLabel(raw) {
+  const s = String(raw || "").trim().toLowerCase();
+  if (!s) return null;
+  if (s === "l" || s === "left") return "Left";
+  if (s === "r" || s === "right") return "Right";
+  if (s === "m" || s === "middle" || s === "mid" || s === "center") return "Middle";
+  if (s === "any" || s === "either" || s === "both") return null; // no preference
+  return null;
+}
+
+function _gpRenderBoxHashBar(list) {
+  if (!Array.isArray(list) || list.length === 0) return "";
+  let left = 0, middle = 0, right = 0;
+  list.forEach((p) => {
+    const h = _gpNormalizeHashLabel(p.preferredHash);
+    if (h === "Left") left += 1;
+    else if (h === "Right") right += 1;
+    else if (h === "Middle") middle += 1;
+  });
+  const decided = left + middle + right;
+  if (decided === 0) return "";
+  const total = list.length;
+  const undecided = total - decided;
+  const pctL = Math.round((left / decided) * 100);
+  const pctM = Math.round((middle / decided) * 100);
+  const pctR = 100 - pctL - pctM;
+  const tooltip = `Hash split (of ${decided} with a preference${undecided ? `, ${undecided} unset` : ""}): `
+    + `Left ${left} (${pctL}%) · Middle ${middle} (${pctM}%) · Right ${right} (${pctR}%)`;
+  const segs = [];
+  if (left > 0) segs.push(`<span class="gp-hash-seg gp-hash-left" style="flex:${left} 0 0" title="Left ${left}">L ${pctL}%</span>`);
+  if (middle > 0) segs.push(`<span class="gp-hash-seg gp-hash-middle" style="flex:${middle} 0 0" title="Middle ${middle}">M ${pctM}%</span>`);
+  if (right > 0) segs.push(`<span class="gp-hash-seg gp-hash-right" style="flex:${right} 0 0" title="Right ${right}">R ${pctR}%</span>`);
+  return `
+    <div class="gp-hash-bar" title="${escapeHtml(tooltip)}">
+      <span class="gp-hash-bar-label">Hash</span>
+      <div class="gp-hash-bar-track">${segs.join("")}</div>
+      ${undecided > 0 ? `<span class="gp-hash-bar-unset" title="${undecided} play${undecided === 1 ? "" : "s"} with no hash preference">${undecided} unset</span>` : ""}
+    </div>`;
+}
+
+/* -------------------------------------------------------------------------
+   Box info popup — describes what a box is for and shows stats
+   ------------------------------------------------------------------------- */
+
+// Aggregate stats from a list of plays — used by the info modal and (optionally) print-detail mode.
+function _gpComputeBoxStats(list) {
+  const tally = (key) => {
+    const counts = new Map();
+    list.forEach((p) => {
+      const v = (p && p[key] ? String(p[key]).trim() : "") || "—";
+      counts.set(v, (counts.get(v) || 0) + 1);
+    });
+    return Array.from(counts.entries()).sort((a, b) => b[1] - a[1]);
+  };
+  const touches = new Map();
+  list.forEach((p) => {
+    [p.keyPlayerName1, p.keyPlayerName2, p.keyPlayerName3].forEach((name) => {
+      const n = (name || "").trim();
+      if (!n) return;
+      touches.set(n, (touches.get(n) || 0) + 1);
+    });
+  });
+  const touchList = Array.from(touches.entries()).sort((a, b) => b[1] - a[1]);
+  const dd = new Map();
+  list.forEach((p) => {
+    const d = (p.preferredDown || "").trim();
+    const dist = (p.preferredDistance || "").trim();
+    if (!d && !dist) return;
+    const downSuffix = d === "1" ? "st" : d === "2" ? "nd" : d === "3" ? "rd" : d ? "th" : "";
+    const key = `${d ? d + downSuffix : "—"} & ${dist || "—"}`;
+    dd.set(key, (dd.get(key) || 0) + 1);
+  });
+  return {
+    type: tally("type"),
+    formation: tally("formation"),
+    personnel: tally("personnel"),
+    basePlay: tally("basePlay"),
+    tempo: tally("tempo"),
+    situation: tally("preferredSituation"),
+    fieldPos: tally("preferredFieldPosition"),
+    hash: tally("preferredHash"),
+    downDistance: Array.from(dd.entries()).sort((a, b) => b[1] - a[1]),
+    touches: touchList,
+  };
+}
+
+function _gpStatRowHtml(label, entries, opts) {
+  const o = opts || {};
+  const limit = o.limit || 5;
+  const onlyReal = entries.filter(([k]) => k && k !== "—");
+  if (onlyReal.length === 0) return "";
+  const total = onlyReal.reduce((s, [, n]) => s + n, 0) || 1;
+  const top = onlyReal.slice(0, limit);
+  const more = onlyReal.length - top.length;
+  const chips = top.map(([k, n]) => {
+    const pct = Math.round((n / total) * 100);
+    return `<span class="gp-info-chip"><strong>${escapeHtml(k)}</strong>`
+      + `<span class="gp-info-chip-count">${n}</span>`
+      + `<span class="gp-info-chip-pct">${pct}%</span></span>`;
+  }).join("");
+  const moreLbl = more > 0 ? `<span class="gp-info-chip-more">+${more} more</span>` : "";
+  return `
+    <div class="gp-info-row">
+      <div class="gp-info-row-label">${escapeHtml(label)}</div>
+      <div class="gp-info-row-chips">${chips}${moreLbl}</div>
+    </div>`;
+}
+
+function showGamePlanBoxInfo(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const box = allBoxes.find((b) => b.id === boxId);
+  if (!box) return;
+  const list = (board.assignments[boxId] || []).slice();
+  const target = Number(board.targets && board.targets[boxId]) || 0;
+  const note = (board.notes && board.notes[boxId]) || "";
+  const accent = GP_BOX_ACCENTS[boxId] || "var(--color-primary)";
+  const desc = GP_BOX_DESCRIPTIONS[boxId];
+  const isHolding = boxId === GP_HOLDING_ID;
+  const isCustom = (board.customBoxes || []).some((cb) => cb.id === boxId);
+  const stats = _gpComputeBoxStats(list);
+
+  const descHtml = desc ? `
+    <div class="gp-info-desc">
+      <div class="gp-info-desc-row"><strong>Intent:</strong> ${escapeHtml(desc.intent)}</div>
+      <div class="gp-info-desc-row"><strong>Use it:</strong> ${escapeHtml(desc.use)}</div>
+      <div class="gp-info-desc-row"><strong>Looks like:</strong> ${escapeHtml(desc.looks)}</div>
+    </div>` : isHolding ? `
+    <div class="gp-info-desc">
+      <div class="gp-info-desc-row">Untyped tagged plays land here. Drag them out to any box, or use 🚀 Auto-route to send each play to its matching default box by type.</div>
+    </div>` : isCustom ? `
+    <div class="gp-info-desc">
+      <div class="gp-info-desc-row">Custom box. Use it for situational packages, opponent-specific menus, or anything outside your default play types.</div>
+    </div>` : "";
+
+  const noteHtml = note ? `
+    <div class="gp-info-note">
+      <strong>📝 Your note:</strong> ${escapeHtml(note)}
+    </div>` : "";
+
+  const countHtml = `
+    <div class="gp-info-count">
+      <span class="gp-info-count-num">${list.length}</span>
+      <span class="gp-info-count-lbl">play${list.length === 1 ? "" : "s"} drafted${target > 0 ? ` · target <strong>${target}</strong>` : ""}</span>
+    </div>`;
+
+  const statsHtml = list.length === 0
+    ? `<div class="gp-info-empty">No plays drafted yet — drag from the library or click ➕ Add Play.</div>`
+    : [
+      _gpStatRowHtml("Touches (key player)", stats.touches, { limit: 8 }),
+      _gpStatRowHtml("Type", stats.type, { limit: 6 }),
+      _gpStatRowHtml("Formation", stats.formation, { limit: 6 }),
+      _gpStatRowHtml("Personnel", stats.personnel, { limit: 6 }),
+      _gpStatRowHtml("Down & Distance", stats.downDistance, { limit: 8 }),
+      _gpStatRowHtml("Situation", stats.situation, { limit: 6 }),
+      _gpStatRowHtml("Field position", stats.fieldPos, { limit: 6 }),
+      _gpStatRowHtml("Hash", stats.hash, { limit: 4 }),
+      _gpStatRowHtml("Base play", stats.basePlay, { limit: 8 }),
+      _gpStatRowHtml("Tempo", stats.tempo, { limit: 4 }),
+    ].filter(Boolean).join("");
+
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay gp-info-modal-overlay";
+  overlay.innerHTML = `
+    <div class="custom-modal gp-info-modal" role="dialog" aria-modal="true" style="--gp-info-accent:${accent}">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">ℹ️</span>
+        <h3 class="custom-modal-title">${escapeHtml(box.label)}</h3>
+      </div>
+      <div class="custom-modal-body">
+        ${countHtml}
+        ${descHtml}
+        ${noteHtml}
+        <div class="gp-info-stats">${statsHtml}</div>
+      </div>
+      <div class="custom-modal-actions">
+        <button class="btn custom-modal-btn custom-modal-cancel" data-gp-info-close>Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+
+  const close = () => {
+    overlay.classList.remove("visible");
+    setTimeout(() => overlay.remove(), 200);
+  };
+  overlay.querySelector("[data-gp-info-close]").addEventListener("click", close);
+  overlay.addEventListener("click", (e) => { if (e.target === overlay) close(); });
+  overlay.addEventListener("keydown", (e) => {
+    if (e.key === "Escape") { e.preventDefault(); close(); }
+  });
+}
+
+function _gpRenderBox(box, board) {
+  const list = (board.assignments[box.id] || []).slice();
+  const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
+  const isHolding = box.id === GP_HOLDING_ID;
+  const target = Number(board.targets && board.targets[box.id]) || 0;
+  const collapsed = Array.isArray(board.collapsed) && board.collapsed.includes(box.id);
+  const accent = GP_BOX_ACCENTS[box.id] || "";
+  const note = (board.notes && board.notes[box.id]) || "";
+  const sortMode = (board.sort && board.sort[box.id]) || "manual";
+  const displayList = _gpSortedBoxList(list, sortMode);
+
+  // Per-box variety (unique formations + personnel)
+  const uniqForms = new Set();
+  const uniqPers = new Set();
+  list.forEach((p) => {
+    if (p.formation) uniqForms.add(p.formation);
+    if (p.personnel) uniqPers.add(p.personnel);
+  });
+  const varietyHtml = list.length > 0
+    ? `<span class="gp-box-variety">${uniqForms.size} form • ${uniqPers.size} pers</span>`
+    : "";
+
+  // Progress bar (only if a target is set)
+  let progressHtml = "";
+  if (target > 0) {
+    const pct = Math.min(100, Math.round((list.length / target) * 100));
+    const overflow = list.length > target;
+    const status = overflow ? "is-over" : list.length >= target ? "is-met" : "";
+    progressHtml = `
+      <div class="gp-box-progress ${status}" title="${list.length} of ${target} target">
+        <div class="gp-box-progress-bar" style="width:${pct}%"></div>
+        <span class="gp-box-progress-label">${list.length}/${target}</span>
+      </div>`;
+  }
+
+  // Hash distribution bar (Left / Middle / Right) — only renders when at
+  // least one play in this box declares a preferred hash.
+  const hashHtml = _gpRenderBoxHashBar(list);
+
+  // Vision Mode: surface variation/directional warnings inline so the
+  // staff sees "earned shot" + handedness reminders right in the box.
+  let visionWarnHtml = "";
+  if (
+    typeof isVisionMode === "function" &&
+    isVisionMode() &&
+    list.length > 0
+  ) {
+    const warnings = [];
+    try {
+      if (typeof _visionVariationWarnings === "function") {
+        _visionVariationWarnings(list).forEach((w) => warnings.push(w));
+      }
+      if (typeof _visionDirectionalWarnings === "function") {
+        _visionDirectionalWarnings(list).forEach((w) => warnings.push(w));
+      }
+    } catch (_e) {
+      /* ignore */
+    }
+    if (warnings.length > 0) {
+      visionWarnHtml = `
+        <div class="gp-vision-warnings" title="Vision Mode reminders">
+          ${warnings
+          .map(
+            (w) =>
+              `<div class="gp-vision-warning">⚠️ ${escapeHtml(String(w))}</div>`,
+          )
+          .join("")}
+        </div>`;
+    }
+  }
+
+  const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
+  const holdingAutoBtn = isHolding && list.length > 0
+    ? `<button class="btn btn-sm" title="Send each play to its matching default box (by type)"
+        data-action="autoRouteHoldingBox">🚀 Auto-route</button>`
+    : "";
+
+  const sortDropdown = `
+    <select class="gp-box-sort" title="Sort plays in this box"
+      data-onchange="setGamePlanBoxSort" data-arg="${escapeHtml(box.id)}" data-pass="value">
+      <option value="manual" ${sortMode === "manual" ? "selected" : ""}>Manual</option>
+      <option value="type" ${sortMode === "type" ? "selected" : ""}>Type</option>
+      <option value="formation" ${sortMode === "formation" ? "selected" : ""}>Formation</option>
+      <option value="personnel" ${sortMode === "personnel" ? "selected" : ""}>Personnel</option>
+      <option value="basePlay" ${sortMode === "basePlay" ? "selected" : ""}>Base Play</option>
+      <option value="hash" ${sortMode === "hash" ? "selected" : ""}>Hash (L/M/R)</option>
+      <option value="down" ${sortMode === "down" ? "selected" : ""}>Down</option>
+      <option value="distance" ${sortMode === "distance" ? "selected" : ""}>Distance</option>
+      <option value="situation" ${sortMode === "situation" ? "selected" : ""}>Situation</option>
+      <option value="field" ${sortMode === "field" ? "selected" : ""}>Field Position</option>
+      <option value="play" ${sortMode === "play" ? "selected" : ""}>Play Name</option>
+    </select>`;
+
+  const headerHtml = `
+    <div class="gp-box-header" data-action="toggleGamePlanBoxCollapse" data-arg="${escapeHtml(box.id)}">
+      <div class="gp-box-title">
+        <span class="gp-box-chevron">${collapsed ? "▶" : "▼"}</span>
+        <span>${escapeHtml(box.label)}</span>
+        <span class="gp-box-count">${list.length}${target > 0 ? `/${target}` : ""}</span>
+        ${varietyHtml}
+      </div>
+      <div class="gp-box-actions" data-stop-toggle="1">
+        <button class="btn btn-sm" title="Add a play from the playbook to this box"
+          data-action="addPlayToGamePlanBox" data-arg="${escapeHtml(box.id)}">➕ Add Play</button>
+        <button class="btn btn-sm" title="Smart fill — pick from plays that match this box's intent"
+          data-action="gpSuggestFillBox" data-arg="${escapeHtml(box.id)}">💡 Suggest</button>
+        ${sortDropdown}
+        ${holdingAutoBtn}
+        ${!isHolding && list.length > 0
+      ? `<button class="btn btn-sm btn-secondary" title="Push only this box's plays — fans out to all matching call sheet categories"
+          data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
+      : ""}
+        ${!isHolding ? (() => {
+      const meta = _gpGetBoxMeta(board, box.id);
+      const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
+      const summary = _gpFormatBoxMetaSummary(meta);
+      return `<button class="btn btn-sm btn-secondary${hasRules ? " gp-btn-active" : ""}" title="${hasRules ? `Matching rules: ${escapeHtml(summary)}` : "Set matching rules — auto-route plays into this box and Push to Call Sheet"}"
+          data-action="editGamePlanBoxMatching" data-arg="${escapeHtml(box.id)}">🧩</button>`;
+    })() : ""}
+        <button class="btn btn-sm btn-secondary" title="${target > 0 ? `Edit target (currently ${target})` : "Set target count"}"
+          data-action="setGamePlanBoxTarget" data-arg="${escapeHtml(box.id)}">🎯</button>
+        <button class="btn btn-sm btn-secondary" title="${note ? "Edit note" : "Add a note for this box"}"
+          data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${note ? "📝" : "📄"}</button>
+        <button class="btn btn-sm btn-secondary" title="What goes in this box? View stats and breakdown"
+          data-action="showGamePlanBoxInfo" data-arg="${escapeHtml(box.id)}">ℹ️</button>
+        ${!isHolding ? `
+          <button class="btn btn-sm btn-secondary" title="Move up"
+            data-action="moveGamePlanBoxUp" data-arg="${escapeHtml(box.id)}">↑</button>
+          <button class="btn btn-sm btn-secondary" title="Move down"
+            data-action="moveGamePlanBoxDown" data-arg="${escapeHtml(box.id)}">↓</button>
+          <button class="btn btn-sm btn-secondary" title="Rename this box"
+            data-action="renameAnyGamePlanBox" data-arg="${escapeHtml(box.id)}">✏️</button>
+          <button class="btn btn-sm btn-secondary" title="Hide this box (Manage Boxes to restore)"
+            data-action="hideGamePlanBox" data-arg="${escapeHtml(box.id)}">👁️‍🗨️</button>
+        ` : ""}
+        ${isCustom
+      ? `<button class="btn btn-sm btn-danger" title="Delete box"
+              data-action="deleteGamePlanBox" data-arg="${escapeHtml(box.id)}">🗑️</button>`
+      : ""}
+        <button class="btn btn-sm" title="Clear plays in this box"
+          data-action="clearGamePlanBox" data-arg="${escapeHtml(box.id)}">⨯</button>
+      </div>
+    </div>
+    ${progressHtml}
+    ${hashHtml}
+    ${visionWarnHtml}
+    ${note ? `<div class="gp-box-note" title="Edit note"
+      data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${escapeHtml(note)}</div>` : ""}`;
+
+  const bodyHtml = collapsed ? "" : `
+      <div class="gp-box-body" data-box-drop="${escapeHtml(box.id)}">
+        ${displayList.length === 0
+      ? `<div class="gp-box-empty">${isHolding
+        ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
+        : "Drop plays here, or click ➕ Add Play."}</div>`
+      : displayList.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx, sortMode === "manual")).join("")}
+      </div>`;
+
+  // Spotlight: highlight boxes that contain at least one matching play; dim others.
+  const spot = _gpFilters.spotlight;
+  let spotlightClass = "";
+  if (spot) {
+    const hasMatch = list.some((p) => _gpPlayMatchesSpotlight(p));
+    spotlightClass = hasMatch ? " gp-box-spotlight" : " gp-box-dim";
+    // Holding never gets dimmed — it's the staging area, always relevant.
+    if (isHolding && !hasMatch) spotlightClass = "";
+  }
+
+  return `
+    <div class="gp-box${isHolding ? " gp-box-holding" : ""}${collapsed ? " is-collapsed" : ""}${spotlightClass}"
+         ${accentStyle}
+         data-box-id="${escapeHtml(box.id)}">
+      ${headerHtml}
+      ${bodyHtml}
+    </div>`;
+}
+
+function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
+  const sig = _gpPlaySignature(play);
+  const callHtml = typeof getFullCall === "function"
+    ? getFullCall(play, { showLineCall: false })
+    : escapeHtml(play.play || "");
+  const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
+  const matchupBadges = _gpMatchupBadges(play);
+  const isSpotlit = _gpPlayMatchesSpotlight(play);
+  const reorderBtns = allowReorder ? `
+    <button class="gp-box-play-btn gp-box-play-up" aria-label="Move up"
+      data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move up">▲</button>
+    <button class="gp-box-play-btn gp-box-play-down" aria-label="Move down"
+      data-action="moveGamePlanPlayDown" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move down">▼</button>` : "";
+  return `
+    <div class="gp-box-play${isSpotlit ? " is-spotlit" : ""}" draggable="true"
+         data-box-id="${escapeHtml(boxId)}"
+         data-sig="${escapeHtml(sig)}"
+         data-idx="${idx}">
+      <div class="gp-box-play-body">
+        <div class="gp-box-play-call">${callHtml}${matchupBadges}</div>
+        ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
+      </div>
+      <div class="gp-box-play-actions">
+        ${reorderBtns}
+        <button class="gp-box-play-btn" aria-label="Move to another box"
+          data-action="moveGamePlanPlay" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move to…">↔</button>
+        <button class="gp-box-play-remove" aria-label="Remove from box"
+          data-action="removeFromGamePlanBox"
+          data-arg="${escapeHtml(boxId + "::" + sig)}" title="Remove">×</button>
+      </div>
+    </div>`;
+}
+
+function _gpMatchupBadges(play) {
+  if (!play) return "";
+  const parts = [];
+  if (play.goodVsMan) parts.push(`<span class="gp-matchup-badge" title="Good vs. Man">✅</span>`);
+  if (play.goodVsBear) parts.push(`<span class="gp-matchup-badge" title="Good vs. Bear">🐻</span>`);
+  if (play.goodVsOkie) parts.push(`<span class="gp-matchup-badge" title="Good vs. Okie">🤠</span>`);
+  return parts.length ? ` <span class="gp-matchup-badges">${parts.join("")}</span>` : "";
+}
+
+/* Sort helpers for per-box sort modes.
+ * mode may be a single string (one field) or an array of field names for
+ * tiered sorting (primary, secondary, tertiary, ...). */
+function _gpSortedBoxList(list, mode) {
+  if (!Array.isArray(list)) return list;
+  const tiers = Array.isArray(mode)
+    ? mode.filter((m) => m && m !== "manual")
+    : (mode && mode !== "manual" ? [mode] : []);
+  if (tiers.length === 0) return list;
+  const hashRank = (h) => {
+    const n = (typeof _gpNormalizeHash === "function" ? _gpNormalizeHash(h) : (h || "")).toString();
+    if (n === "Left") return "1";
+    if (n === "Middle") return "2";
+    if (n === "Right") return "3";
+    return "9";
+  };
+  const distRank = (d) => {
+    const s = String(d || "").toLowerCase();
+    if (s.startsWith("short")) return "1";
+    if (s.startsWith("med")) return "2";
+    if (s.startsWith("long")) return "3";
+    return "9";
+  };
+  const getField = (p, m) => {
+    if (m === "type") return p.type || "";
+    if (m === "formation") return p.formation || "";
+    if (m === "personnel") return p.personnel || "";
+    if (m === "basePlay") return p.basePlay || p.play || "";
+    if (m === "hash") return hashRank(p.preferredHash);
+    if (m === "down") return String(p.preferredDown || "9");
+    if (m === "distance") return distRank(p.preferredDistance);
+    if (m === "situation") return p.preferredSituation || "";
+    if (m === "field") return p.preferredFieldPosition || "";
+    if (m === "play") return p.play || "";
+    return "";
+  };
+  return list.slice().sort((a, b) => {
+    for (const m of tiers) {
+      const av = getField(a, m);
+      const bv = getField(b, m);
+      const cmp = av.localeCompare(bv, undefined, { numeric: true });
+      if (cmp !== 0) return cmp;
+    }
+    return 0;
+  });
+}
+
+function _gpAdvancedFilterCount() {
+  const f = _gpFilters;
+  let n = 0;
+  if (f.basePlay) n += 1;
+  if (f.tempo) n += 1;
+  if (f.preferredDown) n += 1;
+  if (f.preferredDistance) n += 1;
+  if (f.preferredSituation) n += 1;
+  if (f.preferredFieldPosition) n += 1;
+  if (f.onlyOpponentTagged) n += 1;
+  return n;
+}
+
+function toggleGamePlanAdvancedFilters() {
+  _gpFilters.showAdvanced = !_gpFilters.showAdvanced;
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Active filter chips
+   ------------------------------------------------------------------------- */
+
+const _GP_CHIP_LABELS = {
+  search: { icon: "🔎", label: (v) => `“${v}”` },
+  type: { icon: "🏷️", label: (v) => v },
+  formation: { icon: "📐", label: (v) => v },
+  personnel: { icon: "🧮", label: (v) => v },
+  basePlay: { icon: "🌳", label: (v) => v },
+  tempo: { icon: "⏱️", label: (v) => v },
+  preferredDown: { icon: "🔢", label: (v) => `Down ${v}` },
+  preferredDistance: { icon: "📏", label: (v) => v },
+  preferredSituation: { icon: "🕒", label: (v) => v },
+  preferredFieldPosition: { icon: "🟩", label: (v) => v },
+  onlyOpponentTagged: { icon: "🎯", label: () => "Opponent-tagged" },
+  hideAssigned: { icon: "🙈", label: () => "Hide drafted" },
+  goodVsMan: { icon: "✅", label: () => "vs. Man" },
+  goodVsBear: { icon: "🐻", label: () => "vs. Bear" },
+  goodVsOkie: { icon: "🤠", label: () => "vs. Okie" },
+};
+
+function _gpRenderFilterChips() {
+  const f = _gpFilters;
+  const chips = [];
+  Object.keys(_GP_CHIP_LABELS).forEach((k) => {
+    const v = f[k];
+    if (!v) return;
+    const cfg = _GP_CHIP_LABELS[k];
+    chips.push(`
+      <button class="gp-chip" data-action="clearGamePlanFilterField" data-arg="${escapeHtml(k)}"
+        title="Clear this filter">
+        <span class="gp-chip-icon">${cfg.icon}</span>
+        <span class="gp-chip-label">${escapeHtml(cfg.label(v))}</span>
+        <span class="gp-chip-x">×</span>
+      </button>`);
+  });
+  if (chips.length === 0) return "";
+  return `
+    <div class="gp-chip-bar">
+      <span class="gp-chip-bar-label">Filters:</span>
+      ${chips.join("")}
+      <button class="gp-chip gp-chip-clear" data-action="clearGamePlanFilters" title="Clear all filters">
+        <span class="gp-chip-x">×</span> Clear all
+      </button>
+    </div>`;
+}
+
+function clearGamePlanFilterField(field) {
+  if (!field) return;
+  if (!(field in _gpFilters)) return;
+  if (typeof _gpFilters[field] === "boolean") _gpFilters[field] = false;
+  else _gpFilters[field] = "";
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Distribution stat strip + scoreboard
+   ------------------------------------------------------------------------- */
+
+function _gpAllDraftedPlays(board) {
+  const out = [];
+  Object.entries(board.assignments || {}).forEach(([boxId, arr]) => {
+    if (boxId === GP_HOLDING_ID) return; // exclude holding from distribution
+    (arr || []).forEach((p) => out.push(p));
+  });
+  return out;
+}
+
+function _gpRenderDistributionStrip(board) {
+  const drafted = _gpAllDraftedPlays(board);
+  if (drafted.length === 0) return "";
+  const buckets = {
+    Run: 0, Pass: 0, Screen: 0, Quick: 0, "Play Action": 0,
+    RPO: 0, "Run Option": 0, Movement: 0,
+  };
+  drafted.forEach((p) => {
+    const t = GP_TYPE_ALIASES[p.type] || p.type || "Other";
+    if (t in buckets) buckets[t] += 1;
+    else buckets[t] = (buckets[t] || 0) + 1;
+  });
+  const segs = Object.entries(buckets)
+    .filter(([, c]) => c > 0)
+    .sort((a, b) => b[1] - a[1])
+    .map(([name, count]) => {
+      const pct = (count / drafted.length) * 100;
+      const accent = GP_BOX_ACCENTS[name] || "var(--color-text-muted)";
+      return `
+        <span class="gp-dist-seg" style="flex:${count} 0 0;background:${accent}"
+          title="${escapeHtml(name)}: ${count} (${pct.toFixed(0)}%)">
+          <span class="gp-dist-seg-label">${escapeHtml(name)} ${pct.toFixed(0)}%</span>
+        </span>`;
+    });
+  return `<div class="gp-dist-strip" title="Distribution across drafted plays (excludes Holding)">${segs.join("")}</div>`;
+}
+
+function _gpRenderScoreboard(board) {
+  const drafted = _gpAllDraftedPlays(board);
+  const spot = _gpFilters.spotlight;
+  const tiles = GP_COVERAGE_SCENARIOS.map((s) => {
+    const count = drafted.filter(s.match).length;
+    let status = "ok";
+    if (count === 0) status = "empty";
+    else if (count <= 2) status = "warn";
+    const isActive = spot && spot.kind === "scenario" && spot.id === s.id;
+    return `
+      <button class="gp-score-tile gp-score-${status}${isActive ? " is-active" : ""}"
+        data-action="applyGamePlanScenario" data-arg="${escapeHtml(s.id)}"
+        title="${count === 0 ? `No plays for ${s.label} yet — click to highlight matching buckets` : `${count} drafted • click to spotlight matching buckets`}">
+        <span class="gp-score-label">${escapeHtml(s.label)}</span>
+        <span class="gp-score-count">${count}</span>
+      </button>`;
+  }).join("");
+  if (drafted.length === 0) {
+    return `
+      <details class="gp-scoreboard">
+        <summary>📋 Coverage Scoreboard <span class="gp-score-hint">draft plays to populate</span></summary>
+        <div class="gp-score-grid">${tiles}</div>
+      </details>`;
+  }
+  return `
+    <details class="gp-scoreboard" open>
+      <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to spotlight matching buckets &amp; plays</span></summary>
+      <div class="gp-score-grid">${tiles}</div>
+    </details>`;
+}
+
+function applyGamePlanScenario(id) {
+  const sc = GP_COVERAGE_SCENARIOS.find((s) => s.id === id);
+  if (!sc) return;
+  const alreadyActive = _gpFilters.spotlight
+    && _gpFilters.spotlight.kind === "scenario"
+    && _gpFilters.spotlight.id === id;
+  if (alreadyActive) {
+    // Toggle off: clear spotlight + clear the library filters that were applied.
+    _gpFilters.spotlight = null;
+    Object.keys(sc.filters).forEach((k) => { _gpFilters[k] = ""; });
+  } else {
+    // Apply: set library filters AND turn on spotlight to highlight matching boxes/plays.
+    Object.entries(sc.filters).forEach(([k, v]) => { _gpFilters[k] = v; });
+    _gpFilters.showAdvanced = true;
+    _gpFilters.spotlight = { kind: "scenario", id };
+  }
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Box jump pill bar
+   ------------------------------------------------------------------------- */
+
+function _gpRenderJumpPills(allBoxes, board) {
+  const pills = allBoxes.map((b) => {
+    const list = board.assignments[b.id] || [];
+    const target = Number(board.targets && board.targets[b.id]) || 0;
+    const accent = GP_BOX_ACCENTS[b.id] || "";
+    const accentStyle = accent ? `style="--gp-box-accent:${accent}"` : "";
+    const status = target > 0 && list.length >= target ? " is-met" : "";
+    return `
+      <button class="gp-jump-pill${status}" ${accentStyle}
+        data-action="jumpToGamePlanBox" data-arg="${escapeHtml(b.id)}"
+        title="Jump to ${escapeHtml(b.label)}">
+        <span class="gp-jump-pill-label">${escapeHtml(b.label)}</span>
+        <span class="gp-jump-pill-count">${list.length}${target > 0 ? `/${target}` : ""}</span>
+      </button>`;
+  }).join("");
+  return `<div class="gp-jump-bar" id="gpJumpBar">${pills}</div>`;
+}
+
+function jumpToGamePlanBox(boxId) {
+  if (!boxId) return;
+  const el = document.querySelector(`.gp-box[data-box-id="${CSS.escape(boxId)}"]`);
+  if (!el) return;
+  // If the box is collapsed, expand first so the user actually sees content
+  if (el.classList.contains("is-collapsed")) {
+    toggleGamePlanBoxCollapse(boxId);
+    requestAnimationFrame(() => {
+      const re = document.querySelector(`.gp-box[data-box-id="${CSS.escape(boxId)}"]`);
+      if (re) re.scrollIntoView({ behavior: "smooth", block: "start" });
+    });
+    return;
+  }
+  el.scrollIntoView({ behavior: "smooth", block: "start" });
+  el.classList.add("gp-box-flash");
+  setTimeout(() => el.classList.remove("gp-box-flash"), 900);
+}
+
+/* -------------------------------------------------------------------------
+   Drag & Drop wiring (native HTML5 dnd) — DELEGATED
+   ------------------------------------------------------------------------- */
+
+// All drag listeners are attached ONCE at module init on document, in
+// capture phase. Per-render attachment is fragile: a re-render between
+// the user's mousedown and the browser's dragstart (e.g. a debounced
+// search/filter, or a state autosave that re-renders) replaces the row
+// element, so its dragstart listener never fires. Document-level
+// delegation can never be lost mid-gesture.
+

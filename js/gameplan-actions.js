@@ -1,0 +1,710 @@
+/* =========================================================================
+   Game Plan — box CRUD, selection, density, manage/reorder/hide/rename
+   Split out of gameplan.js — see AGENTS.md for ownership map.
+   ========================================================================= */
+
+function removeFromGamePlanBox(combined) {
+  if (!combined) return;
+  const sepIdx = combined.indexOf("::");
+  if (sepIdx < 0) return;
+  const boxId = combined.slice(0, sepIdx);
+  const sig = combined.slice(sepIdx + 2);
+  _gpUpdateBoard((board) => {
+    const arr = board.assignments[boxId] || [];
+    const idx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    if (idx >= 0) arr.splice(idx, 1);
+  });
+  renderGamePlan();
+}
+
+async function clearGamePlanBox(boxId) {
+  if (!boxId) return;
+  const ok = await showConfirm(
+    `Clear all plays from <strong>${escapeHtml(boxId)}</strong>?`,
+    { title: "Clear Box", icon: "⨯", confirmText: "Clear", danger: true },
+  );
+  if (!ok) return;
+  _gpUpdateBoard((board) => {
+    board.assignments[boxId] = [];
+  });
+  renderGamePlan();
+  showToast(`Cleared ${boxId}`, { type: "success" });
+}
+
+async function clearGamePlanBoard() {
+  const ok = await showConfirm(
+    "Remove every drafted play from every box for this opponent?",
+    { title: "Clear Game Plan", icon: "🗑️", confirmText: "Clear All", danger: true },
+  );
+  if (!ok) return;
+  _gpUpdateBoard((board) => {
+    Object.keys(board.assignments).forEach((k) => { board.assignments[k] = []; });
+  });
+  renderGamePlan();
+  showToast("Game plan cleared", { type: "success" });
+}
+
+/* -------------------------------------------------------------------------
+   Library selection + filters
+   ------------------------------------------------------------------------- */
+
+function toggleGamePlanLibrarySelect(sig) {
+  if (!sig) return;
+  if (_gpSelected.has(sig)) _gpSelected.delete(sig);
+  else _gpSelected.add(sig);
+  // Light re-render of just the row classes — easier to re-render whole list
+  renderGamePlan();
+}
+
+function updateGamePlanFilter(field, valueOrEvent) {
+  if (!field) return;
+  if (field === "hideAssigned" || field === "onlyOpponentTagged") {
+    if (valueOrEvent && valueOrEvent.target) {
+      _gpFilters[field] = !!valueOrEvent.target.checked;
+    } else {
+      _gpFilters[field] = !!valueOrEvent;
+    }
+  } else {
+    _gpFilters[field] = valueOrEvent || "";
+  }
+  renderGamePlan();
+}
+
+function clearGamePlanFilters() {
+  _gpFilters = {
+    search: "", type: "", formation: "", personnel: "",
+    basePlay: "", tempo: "",
+    preferredDown: "", preferredDistance: "",
+    preferredSituation: "", preferredFieldPosition: "",
+    onlyOpponentTagged: false, hideAssigned: false,
+    density: _gpFilters.density || "comfortable", showProgress: true,
+    goodVsMan: false, goodVsBear: false, goodVsOkie: false,
+    showAdvanced: _gpFilters.showAdvanced || false,
+    spotlight: null,
+  };
+  _gpSelected.clear();
+  renderGamePlan();
+}
+
+function toggleGamePlanMatchupFilter(field) {
+  if (!field) return;
+  if (!(field in _gpFilters)) return;
+  _gpFilters[field] = !_gpFilters[field];
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Click-to-assign (selected plays → chosen box)
+   ------------------------------------------------------------------------- */
+
+async function assignSelectedToGamePlanBox() {
+  if (_gpSelected.size === 0) {
+    showToast("Check one or more plays in the library first.", { type: "warning" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const choice = await showListPicker(
+    `Add ${_gpSelected.size} selected play${_gpSelected.size === 1 ? "" : "s"} to which box?`,
+    allBoxes.map((b) => ({ value: b.id, label: b.label })),
+    { title: "Add to Box", icon: "➕" },
+  );
+  if (!choice) return;
+  _gpAddSigsToBox(Array.from(_gpSelected), choice);
+}
+
+/* -------------------------------------------------------------------------
+   Custom boxes
+   ------------------------------------------------------------------------- */
+
+async function addGamePlanCustomBox() {
+  const name = await showPrompt(
+    "Name your custom drafting box (e.g. “4-Min Closers”, “Trick Plays”):",
+    "",
+    { title: "New Custom Box", icon: "➕", placeholder: "Box name" },
+  );
+  if (!name || !name.trim()) return;
+  const trimmed = name.trim();
+  // Avoid id collisions with default boxes
+  let id = trimmed;
+  let n = 2;
+  const board = _gpEnsureBoard();
+  const taken = new Set([
+    ...GP_DEFAULT_BOXES.map((b) => b.id),
+    ...(board.customBoxes || []).map((b) => b.id),
+  ]);
+  while (taken.has(id)) {
+    id = `${trimmed} ${n++}`;
+  }
+  _gpUpdateBoard((b) => {
+    b.customBoxes = b.customBoxes || [];
+    b.customBoxes.push({ id, label: trimmed });
+    b.assignments[id] = [];
+  });
+  renderGamePlan();
+  showToast(`Added box “${trimmed}”`, { type: "success" });
+}
+
+async function renameGamePlanBox(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const cb = (board.customBoxes || []).find((b) => b.id === boxId);
+  if (!cb) return;
+  const next = await showPrompt("Rename this box:", cb.label, { title: "Rename Box", icon: "✏️" });
+  if (!next || !next.trim() || next.trim() === cb.label) return;
+  _gpUpdateBoard((b) => {
+    const target = (b.customBoxes || []).find((x) => x.id === boxId);
+    if (target) target.label = next.trim();
+  });
+  renderGamePlan();
+}
+
+async function deleteGamePlanBox(boxId) {
+  if (!boxId) return;
+  const ok = await showConfirm(
+    `Delete custom box <strong>${escapeHtml(boxId)}</strong> and discard its plays?`,
+    { title: "Delete Box", icon: "🗑️", confirmText: "Delete", danger: true },
+  );
+  if (!ok) return;
+  _gpUpdateBoard((b) => {
+    b.customBoxes = (b.customBoxes || []).filter((x) => x.id !== boxId);
+    delete b.assignments[boxId];
+  });
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Variety stats modal
+   ------------------------------------------------------------------------- */
+
+/* -------------------------------------------------------------------------
+   Box collapse / targets / density / move / holding auto-route
+   ------------------------------------------------------------------------- */
+
+function toggleGamePlanBoxCollapse(boxId) {
+  if (!boxId) return;
+  _gpUpdateBoard((board) => {
+    if (!Array.isArray(board.collapsed)) board.collapsed = [];
+    const idx = board.collapsed.indexOf(boxId);
+    if (idx >= 0) board.collapsed.splice(idx, 1);
+    else board.collapsed.push(boxId);
+  });
+  renderGamePlan();
+}
+
+function expandAllGamePlanBoxes() {
+  _gpUpdateBoard((board) => { board.collapsed = []; });
+  renderGamePlan();
+}
+
+function collapseAllGamePlanBoxes() {
+  _gpUpdateBoard((board) => {
+    const allIds = [
+      GP_HOLDING_ID,
+      ...GP_DEFAULT_BOXES.map((b) => b.id),
+      ...(board.customBoxes || []).map((b) => b.id),
+    ];
+    board.collapsed = allIds.slice();
+  });
+  renderGamePlan();
+}
+
+async function setGamePlanBoxTarget(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const current = Number(board.targets && board.targets[boxId]) || 0;
+  const value = await showPrompt(
+    `Set target play count for this box.\nLeave blank or 0 to clear.`,
+    current > 0 ? String(current) : "",
+    { title: "Box Target", icon: "🎯", placeholder: "e.g. 12" },
+  );
+  if (value === null) return;
+  const num = Math.max(0, Math.floor(Number(value) || 0));
+  _gpUpdateBoard((b) => {
+    if (!b.targets || typeof b.targets !== "object") b.targets = {};
+    if (num > 0) b.targets[boxId] = num;
+    else delete b.targets[boxId];
+  });
+  renderGamePlan();
+}
+
+function cycleGamePlanDensity() {
+  const order = ["comfortable", "compact", "detail"];
+  const idx = order.indexOf(_gpFilters.density || "comfortable");
+  _gpFilters.density = order[(idx + 1) % order.length];
+  renderGamePlan();
+  showToast(`Density: ${_gpFilters.density}`, { duration: 1200 });
+}
+
+async function moveGamePlanPlay(combined) {
+  if (!combined) return;
+  const sepIdx = combined.indexOf("::");
+  if (sepIdx < 0) return;
+  const fromBoxId = combined.slice(0, sepIdx);
+  const sig = combined.slice(sepIdx + 2);
+  const board = _gpEnsureBoard();
+  const choices = [
+    GP_HOLDING_BOX,
+    ...GP_DEFAULT_BOXES,
+    ...(board.customBoxes || []),
+  ]
+    .filter((b) => b.id !== fromBoxId)
+    .map((b) => ({ value: b.id, label: b.label }));
+  if (choices.length === 0) return;
+  const dest = await showListPicker(
+    "Move this play to which box?",
+    choices,
+    { title: "Move Play", icon: "↔" },
+  );
+  if (!dest) return;
+  _gpMoveBetweenBoxes(fromBoxId, dest, sig);
+}
+function autoRouteHoldingBox() {
+  const board = _gpEnsureBoard();
+  const holding = (board.assignments[GP_HOLDING_ID] || []).slice();
+  if (holding.length === 0) {
+    showToast("Holding is empty.", { duration: 1500 });
+    return;
+  }
+  const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
+  let routed = 0;
+  let leftBehind = 0;
+  _gpUpdateBoard((b) => {
+    const stillHolding = [];
+    holding.forEach((play) => {
+      const mapped = GP_TYPE_ALIASES[play.type] || play.type;
+      if (defaultIds.has(mapped)) {
+        if (!Array.isArray(b.assignments[mapped])) b.assignments[mapped] = [];
+        const sig = _gpPlaySignature(play);
+        const exists = b.assignments[mapped].some((p) => _gpPlaySignature(p) === sig);
+        if (!exists) b.assignments[mapped].push(play);
+        routed += 1;
+      } else {
+        stillHolding.push(play);
+        leftBehind += 1;
+      }
+    });
+    b.assignments[GP_HOLDING_ID] = stillHolding;
+  });
+  renderGamePlan();
+  if (routed === 0) {
+    showToast("No plays in Holding had a matching default box.", { type: "warning" });
+  } else {
+    showToast(
+      `Routed ${routed} play${routed === 1 ? "" : "s"} from Holding${leftBehind > 0 ? ` (${leftBehind} stayed)` : ""}`,
+      { type: "success" },
+    );
+  }
+}
+
+/* -------------------------------------------------------------------------
+   Library bulk actions
+   ------------------------------------------------------------------------- */
+
+function gpSelectAllVisible() {
+  const board = _gpEnsureBoard();
+  _gpFilteredLibrary(board).forEach((p) => _gpSelected.add(_gpPlaySignature(p)));
+  renderGamePlan();
+}
+
+function gpClearLibrarySelection() {
+  _gpSelected.clear();
+  renderGamePlan();
+}
+
+function gpInvertVisibleSelection() {
+  const board = _gpEnsureBoard();
+  _gpFilteredLibrary(board).forEach((p) => {
+    const sig = _gpPlaySignature(p);
+    if (_gpSelected.has(sig)) _gpSelected.delete(sig);
+    else _gpSelected.add(sig);
+  });
+  renderGamePlan();
+}
+
+async function gpAddAllVisibleToBox() {
+  const board = _gpEnsureBoard();
+  const filtered = _gpFilteredLibrary(board);
+  if (filtered.length === 0) {
+    showToast("No visible plays to add.", { type: "warning" });
+    return;
+  }
+  const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const choice = await showListPicker(
+    `Add all ${filtered.length} visible play${filtered.length === 1 ? "" : "s"} to which box?`,
+    allBoxes.map((b) => ({ value: b.id, label: b.label })),
+    { title: "Add Visible to Box", icon: "➕" },
+  );
+  if (!choice) return;
+  _gpAddSigsToBox(filtered.map((p) => _gpPlaySignature(p)), choice);
+}
+
+/* -------------------------------------------------------------------------
+   Add a play directly to a box (filtered library picker)
+   ------------------------------------------------------------------------- */
+
+async function addPlayToGamePlanBox(boxId) {
+  if (!boxId || !Array.isArray(plays)) return;
+  const board = _gpEnsureBoard();
+  const assignedSigs = _gpAllAssignedSigs(board);
+  // Pick from plays NOT already in this box
+  const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpPlaySignature));
+  const candidates = plays.filter((p) => !inBoxSigs.has(_gpPlaySignature(p)));
+  if (candidates.length === 0) {
+    showToast("Every play is already in this box.", { type: "info" });
+    return;
+  }
+  const items = candidates.map((p) => {
+    const sig = _gpPlaySignature(p);
+    const already = assignedSigs.has(sig) ? " ⓘ already on board" : "";
+    const label = [p.type, p.formation, p.personnel, p.play].filter(Boolean).join(" • ") + already;
+    return { value: sig, label };
+  });
+  const choice = await showListPicker(
+    `Pick a play to add to ${boxId}:`,
+    items,
+    { title: "Add Play", icon: "➕" },
+  );
+  if (!choice) return;
+  _gpAddSigsToBox([choice], boxId);
+}
+
+/* -------------------------------------------------------------------------
+   Per-box matching rules (criteria + Call Sheet target)
+   ------------------------------------------------------------------------- */
+
+function _gpFormatBoxMetaSummary(meta) {
+  const parts = [];
+  if (!meta || !meta.criteria) return "";
+  const c = meta.criteria;
+  if (c.down.length) parts.push(`Down ${c.down.join("/")}`);
+  if (c.distance.length) parts.push(c.distance.join("/"));
+  if (c.situation.length) parts.push(c.situation.join("/"));
+  if (c.fieldPosition.length) parts.push(c.fieldPosition.join("/"));
+  if (c.type.length) parts.push(c.type.join("/"));
+  if (c.keyPlayer && c.keyPlayer.trim()) parts.push(`KP: ${c.keyPlayer.trim()}`);
+  if (meta.callSheetCategoryId) {
+    const cat = (typeof CALLSHEET_CATEGORIES !== "undefined")
+      ? CALLSHEET_CATEGORIES.find((x) => x.id === meta.callSheetCategoryId) : null;
+    const dn = cat && typeof getCategoryDisplayName === "function"
+      ? getCategoryDisplayName(cat) : meta.callSheetCategoryId;
+    parts.push(`→ ${dn}`);
+  }
+  return parts.join(", ") || "(none)";
+}
+/* -------------------------------------------------------------------------
+   Per-box note + sort
+   ------------------------------------------------------------------------- */
+
+async function editGamePlanBoxNote(boxId) {
+  if (!boxId) return;
+  const board = _gpEnsureBoard();
+  const current = (board.notes && board.notes[boxId]) || "";
+  const next = await showPrompt(
+    "Box note (visible above the plays). Leave blank to clear.",
+    current,
+    { title: "Box Note", icon: "📝", placeholder: "e.g. Hit deep when they walk down the safety" },
+  );
+  if (next === null) return;
+  _gpUpdateBoard((b) => {
+    if (!b.notes) b.notes = {};
+    if (!next || !next.trim()) delete b.notes[boxId];
+    else b.notes[boxId] = next.trim();
+  });
+  renderGamePlan();
+}
+
+function setGamePlanBoxSort(boxId, mode) {
+  if (!boxId) return;
+  _gpUpdateBoard((b) => {
+    if (!b.sort) b.sort = {};
+    if (!mode || mode === "manual") delete b.sort[boxId];
+    else b.sort[boxId] = mode;
+  });
+  renderGamePlan();
+}
+
+/* -------------------------------------------------------------------------
+   Reorder within box (button arrows)
+   ------------------------------------------------------------------------- */
+
+function moveGamePlanPlayUp(combined) {
+  _gpNudgeBoxPlay(combined, -1);
+}
+
+function moveGamePlanPlayDown(combined) {
+  _gpNudgeBoxPlay(combined, 1);
+}
+
+function _gpNudgeBoxPlay(combined, delta) {
+  if (!combined) return;
+  const sepIdx = combined.indexOf("::");
+  if (sepIdx < 0) return;
+  const boxId = combined.slice(0, sepIdx);
+  const sig = combined.slice(sepIdx + 2);
+  _gpUpdateBoard((board) => {
+    const arr = board.assignments[boxId] || [];
+    const idx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    if (idx < 0) return;
+    const next = idx + delta;
+    if (next < 0 || next >= arr.length) return;
+    [arr[idx], arr[next]] = [arr[next], arr[idx]];
+    if (!board.sort) board.sort = {};
+    board.sort[boxId] = "manual";
+  });
+  renderGamePlan();
+}
+/* -------------------------------------------------------------------------
+   Right-click / long-press context menu on a box play
+   ------------------------------------------------------------------------- */
+
+function _gpOpenPlayContextMenu(e, boxId, sig) {
+  if (!boxId || !sig) return;
+  const board = _gpEnsureBoard();
+  const play = (board.assignments[boxId] || []).find((p) => _gpPlaySignature(p) === sig)
+    || _gpFindPlayBySig(sig);
+  if (!play) return;
+  const items = [];
+  items.push({
+    label: "↔ Move to box…",
+    onClick: () => moveGamePlanPlay(boxId + "::" + sig),
+  });
+  items.push({
+    label: "📋 Duplicate to other box…",
+    onClick: async () => {
+      const allBoxes = [GP_HOLDING_BOX, ...GP_DEFAULT_BOXES, ...(board.customBoxes || [])]
+        .filter((b) => b.id !== boxId);
+      const dest = await showListPicker(
+        "Duplicate this play to which box?",
+        allBoxes.map((b) => ({ value: b.id, label: b.label })),
+        { title: "Duplicate Play", icon: "📋" },
+      );
+      if (!dest) return;
+      _gpAddSigsToBox([sig], dest);
+    },
+  });
+  if (boxId !== GP_HOLDING_ID) {
+    items.push({
+      label: "📥 Send to Holding",
+      onClick: () => _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig),
+    });
+  }
+  items.push({ separator: true });
+  items.push({
+    label: "▲ Move up",
+    onClick: () => moveGamePlanPlayUp(boxId + "::" + sig),
+  });
+  items.push({
+    label: "▼ Move down",
+    onClick: () => moveGamePlanPlayDown(boxId + "::" + sig),
+  });
+  items.push({ separator: true });
+  if (typeof openPlayEditor === "function") {
+    const playbookIdx = Array.isArray(plays) ? plays.findIndex((p) => _gpPlaySignature(p) === sig) : -1;
+    if (playbookIdx >= 0) {
+      items.push({
+        label: "✏️ Edit play in playbook",
+        onClick: () => openPlayEditor(playbookIdx),
+      });
+    }
+  }
+  items.push({
+    label: "× Remove from box",
+    danger: true,
+    onClick: () => removeFromGamePlanBox(boxId + "::" + sig),
+  });
+  if (typeof showContextMenu === "function") {
+    const menu = document.createElement("div");
+    menu.className = "cs-context-menu";
+    items.forEach((item) => {
+      if (item.separator) {
+        const divider = document.createElement("div");
+        divider.className = "cs-ctx-divider";
+        menu.appendChild(divider);
+        return;
+      }
+      const button = document.createElement("button");
+      button.type = "button";
+      button.className = item.danger ? "cs-ctx-item cs-ctx-clear" : "cs-ctx-item";
+      button.textContent = item.label;
+      button.disabled = Boolean(item.disabled);
+      button.addEventListener("click", async () => {
+        menu.remove();
+        if (typeof item.onClick === "function") await item.onClick();
+      });
+      menu.appendChild(button);
+    });
+    showContextMenu(e, menu);
+  }
+}
+/* -------------------------------------------------------------------------
+   Box Reorder + Hide + Rename
+   ------------------------------------------------------------------------- */
+
+async function openGamePlanReorderBoxes() {
+  const board = _gpEnsureBoard();
+  const visibleBoxes = [
+    ...GP_DEFAULT_BOXES,
+    ...(board.customBoxes || []),
+  ];
+  // Apply current order
+  const orderIdx = (id) => {
+    const i = (board.boxOrder || []).indexOf(id);
+    return i >= 0 ? i : 9999;
+  };
+  const ordered = visibleBoxes.slice().sort((x, y) => {
+    const dx = orderIdx(x.id);
+    const dy = orderIdx(y.id);
+    if (dx !== dy) return dx - dy;
+    return visibleBoxes.indexOf(x) - visibleBoxes.indexOf(y);
+  });
+  const labels = ordered.map((b) => b.label);
+  const idsByLabel = new Map();
+  ordered.forEach((b) => idsByLabel.set(b.label, b.id));
+
+  showReorderModal(labels, {
+    title: "↕️ Reorder Boxes",
+    note: "Drag boxes to set the display order. Holding always stays first.",
+    saveLabel: "💾 Save Order",
+    onSave: (newOrder) => {
+      const newIds = newOrder.map((lab) => idsByLabel.get(lab)).filter(Boolean);
+      _gpUpdateBoard((b) => { b.boxOrder = newIds; });
+      renderGamePlan();
+      showToast("Box order saved", { type: "success" });
+    },
+    onClear: () => {
+      _gpUpdateBoard((b) => { b.boxOrder = []; });
+      renderGamePlan();
+      showToast("Reset to default order", { type: "info" });
+    },
+  });
+}
+
+function moveGamePlanBoxUp(boxId) { _gpNudgeBoxOrder(boxId, -1); }
+function moveGamePlanBoxDown(boxId) { _gpNudgeBoxOrder(boxId, 1); }
+
+function _gpNudgeBoxOrder(boxId, delta) {
+  if (!boxId || boxId === GP_HOLDING_ID) return;
+  const board = _gpEnsureBoard();
+  const visibleIds = [
+    ...GP_DEFAULT_BOXES.map((b) => b.id),
+    ...(board.customBoxes || []).map((b) => b.id),
+  ];
+  // Materialize current order
+  const current = (board.boxOrder && board.boxOrder.length > 0)
+    ? visibleIds.slice().sort((a, b) => {
+      const ia = board.boxOrder.indexOf(a);
+      const ib = board.boxOrder.indexOf(b);
+      return (ia === -1 ? 9999 : ia) - (ib === -1 ? 9999 : ib);
+    })
+    : visibleIds.slice();
+  const idx = current.indexOf(boxId);
+  if (idx < 0) return;
+  const next = idx + delta;
+  if (next < 0 || next >= current.length) return;
+  current.splice(next, 0, current.splice(idx, 1)[0]);
+  _gpUpdateBoard((b) => { b.boxOrder = current; });
+  renderGamePlan();
+}
+
+async function hideGamePlanBox(boxId) {
+  if (!boxId || boxId === GP_HOLDING_ID) return;
+  _gpUpdateBoard((b) => {
+    b.hiddenBoxes = b.hiddenBoxes || [];
+    if (!b.hiddenBoxes.includes(boxId)) b.hiddenBoxes.push(boxId);
+  });
+  renderGamePlan();
+  showToast(`Hidden. Click 👁️ Manage Boxes to restore.`, { type: "info" });
+}
+
+async function openGamePlanManageBoxes() {
+  const board = _gpEnsureBoard();
+  const all = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const hidden = new Set(board.hiddenBoxes || []);
+  const rowsHtml = all.map((b) => {
+    const count = (board.assignments[b.id] || []).length;
+    const isHidden = hidden.has(b.id);
+    return `
+      <label class="gp-mgb-row ${isHidden ? "is-hidden" : ""}">
+        <input type="checkbox" class="gp-mgb-cb" data-box-id="${escapeHtml(b.id)}" ${isHidden ? "" : "checked"} />
+        <span class="gp-mgb-label">${escapeHtml(b.label)}</span>
+        <span class="gp-mgb-count">${count}</span>
+      </label>`;
+  }).join("");
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal" role="dialog" aria-modal="true">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">👁️</span>
+          <h3 class="custom-modal-title">Manage Box Visibility</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p class="gp-mgb-help">Uncheck boxes to hide them from the board. Hidden boxes keep their plays — they're just out of sight.</p>
+          <div class="gp-mgb-list">${rowsHtml}</div>
+          <div class="gp-mgb-bulk">
+            <button class="btn btn-sm" id="gpMgbAll">☑ Show All</button>
+            <button class="btn btn-sm" id="gpMgbNone">▢ Hide All Defaults</button>
+          </div>
+        </div>
+        <div class="custom-modal-actions">
+          <button class="btn custom-modal-btn custom-modal-cancel" id="gpMgbCancel">Cancel</button>
+          <button class="btn btn-primary custom-modal-btn" id="gpMgbSave">Save</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    const close = (v) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.remove(), 200);
+      resolve(v);
+    };
+    overlay.querySelector("#gpMgbAll").addEventListener("click", () => {
+      overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => { cb.checked = true; });
+    });
+    overlay.querySelector("#gpMgbNone").addEventListener("click", () => {
+      overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => {
+        const id = cb.dataset.boxId;
+        const isDefault = GP_DEFAULT_BOXES.some((d) => d.id === id);
+        if (isDefault) cb.checked = false;
+      });
+    });
+    overlay.querySelector("#gpMgbCancel").addEventListener("click", () => close(false));
+    overlay.querySelector("#gpMgbSave").addEventListener("click", () => {
+      const newHidden = [];
+      overlay.querySelectorAll(".gp-mgb-cb").forEach((cb) => {
+        if (!cb.checked) newHidden.push(cb.dataset.boxId);
+      });
+      _gpUpdateBoard((b) => { b.hiddenBoxes = newHidden; });
+      close(true);
+      renderGamePlan();
+      showToast("Box visibility saved", { type: "success" });
+    });
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close(false);
+    });
+  });
+}
+
+async function renameAnyGamePlanBox(boxId) {
+  if (!boxId || boxId === GP_HOLDING_ID) return;
+  const board = _gpEnsureBoard();
+  const cb = (board.customBoxes || []).find((b) => b.id === boxId);
+  const def = GP_DEFAULT_BOXES.find((b) => b.id === boxId);
+  const currentLabel = cb ? cb.label : (board.boxLabels && board.boxLabels[boxId]) || (def ? def.label : boxId);
+  const next = await showPrompt("Rename this box:", currentLabel, { title: "✏️ Rename Box", icon: "✏️" });
+  if (!next || !next.trim() || next.trim() === currentLabel) return;
+  const trimmed = next.trim();
+  _gpUpdateBoard((b) => {
+    if (cb) {
+      const target = (b.customBoxes || []).find((x) => x.id === boxId);
+      if (target) target.label = trimmed;
+    } else {
+      b.boxLabels = b.boxLabels || {};
+      b.boxLabels[boxId] = trimmed;
+    }
+  });
+  renderGamePlan();
+}

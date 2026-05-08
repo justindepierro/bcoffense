@@ -1435,9 +1435,18 @@ body.gp-dragging-from-box .gp-trash-zone {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
-  body.gp-printing .gp-print-hash-chip.gp-hash-chip-l { background: #ffe1e1; border-color: #c66; }
-  body.gp-printing .gp-print-hash-chip.gp-hash-chip-r { background: #e1ecff; border-color: #66c; }
-  body.gp-printing .gp-print-hash-chip.gp-hash-chip-m { background: #e6f7e1; border-color: #6a6; }
+  body.gp-printing .gp-print-hash-chip.gp-hash-chip-l {
+    background: #ffe1e1;
+    border-color: #c66;
+  }
+  body.gp-printing .gp-print-hash-chip.gp-hash-chip-r {
+    background: #e1ecff;
+    border-color: #66c;
+  }
+  body.gp-printing .gp-print-hash-chip.gp-hash-chip-m {
+    background: #e6f7e1;
+    border-color: #6a6;
+  }
   body.gp-printing .gp-print-wb-num {
     display: inline-block;
     min-width: 14pt;
