@@ -83,6 +83,14 @@ js/
   offensebuilder.js     ← Offense builder tool
   help.js               ← Context-sensitive help content and panel runtime
   dashboard.js          ← Dashboard and game-week runtime
+  gameplan.js           ← Game plan core: state, storage, filtering, signatures, init
+  gameplan-render.js    ← Game plan rendering (header, library, boxes, chips, scoreboard)
+  gameplan-dnd.js       ← Game plan drag & drop wiring
+  gameplan-actions.js   ← Game plan box CRUD, selection, density, manage/reorder/hide/rename
+  gameplan-smart.js     ← Game plan smart features (criteria detect, suggest fill, templates, health, touches, spotlight, coverage matrix, tendency mirror)
+  gameplan-print.js     ← Game plan print modal + print render
+  gameplan-integrations.js ← Game plan push to call sheet/script, dashboard send, plan compare
+  gameplan-snapshots.js ← Game plan named snapshots (save/load/delete/menu)
   app-events.js         ← Central delegated event routing and DOM listeners
   app-shell.js          ← Theme, chrome, keyboard shortcuts, page-level runtime
   app-session.js        ← Dirty-state and draft-restore session helpers
@@ -157,14 +165,22 @@ All scripts use `defer` and load in this exact order from index.html:
 53. js/offensebuilder.js
 54. js/help.js
 55. js/dashboard.js
-56. js/app-events.js
-57. js/app-shell.js
-58. js/app-session.js
-59. js/app-navigation.js
-60. js/app-module-init.js
-61. js/app-bootstrap.js
-62. js/app-init.js
-63. js/app.js           ← Must be last; shared global state only
+56. js/gameplan.js          ← Must load before all gameplan-* split files
+57. js/gameplan-render.js
+58. js/gameplan-dnd.js
+59. js/gameplan-actions.js
+60. js/gameplan-smart.js
+61. js/gameplan-print.js
+62. js/gameplan-integrations.js
+63. js/gameplan-snapshots.js
+64. js/app-events.js
+65. js/app-shell.js
+66. js/app-session.js
+67. js/app-navigation.js
+68. js/app-module-init.js
+69. js/app-bootstrap.js
+70. js/app-init.js
+71. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.

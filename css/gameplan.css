@@ -1,6 +1,23 @@
 /* =========================================================================
    Game Plan tab — drafting board for assigning plays into theoretical buckets
    Prefix: gp-*
+
+   Sections (in order):
+     1.  Header / toolbar / filters
+     2.  Layout (library + boxes shell)
+     3.  Library list + matchup chips + advanced filters
+     4.  Boxes (default + custom + holding) + collapse + density
+     5.  Per-box note + sort + reorder + drag indicators
+     6.  Distribution strip + scoreboard + filter chips + jump pills
+     7.  Trash zone + hash distribution
+     8.  Plan Health gauge + health detail modal
+     9.  Touch tracker
+     10. Add Bucket modal + print options form
+     11. Print render root + @media print rules
+     12. Plan Comparison + Manage Boxes + Coverage Matrix + Tendency Mirror
+     13. Spotlight (dim/glow/pulse)
+     14. Box info popup
+     15. Vision mode + player handout print mode
    ========================================================================= */
 
 #gameplan {
@@ -410,7 +427,7 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* ---- v333 polish: progress, collapse, accent, density, move-btn ---- */
+/* ---- Per-box polish: progress, collapse, accent, density, move-btn ---- */
 
 /* Sticky header so it stays visible while scrolling boxes */
 #gameplan .gp-header {
@@ -1001,7 +1018,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   font-style: italic;
 }
 
-/* -------- v343: Plan Health gauge -------- */
+/* -------- Plan Health gauge -------- */
 .gp-health {
   display: inline-flex;
   align-items: center;
@@ -1152,7 +1169,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   margin: 0;
 }
 
-/* -------- v343: Touch Tracker -------- */
+/* -------- Touch Tracker -------- */
 .gp-touch-tracker {
   margin: 0 0 var(--space-sm) 0;
   border: 1px solid var(--color-border-light);
@@ -1240,9 +1257,9 @@ body.gp-dragging-from-box .gp-trash-zone {
   transition: width var(--transition-normal);
 }
 
-/* -------- v343: Add Bucket modal helpers — re-uses .gp-list-picker -------- */
+/* -------- Add Bucket modal helpers — re-uses .gp-list-picker -------- */
 
-/* -------- v343: Print options form -------- */
+/* -------- Print options form -------- */
 .gp-print-form {
   display: flex;
   flex-direction: column;
@@ -1271,7 +1288,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   cursor: pointer;
 }
 
-/* -------- v343: Print render root (hidden in screen, shown only in print) -------- */
+/* -------- Print render root (hidden in screen, shown only in print) -------- */
 .gp-print-root {
   display: none;
 }
@@ -1563,7 +1580,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   }
 }
 
-/* ======================== v344 — Tier 2/3/4 features ======================== */
+/* ======================== Tier 2/3/4 features ========================= */
 
 /* -------- Plan Comparison -------- */
 .gp-cmp {
