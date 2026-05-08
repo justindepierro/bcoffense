@@ -1174,9 +1174,15 @@ function _gpMatchupBadges(play) {
   return parts.length ? ` <span class="gp-matchup-badges">${parts.join("")}</span>` : "";
 }
 
-/* Sort helpers for per-box sort modes */
+/* Sort helpers for per-box sort modes.
+ * mode may be a single string (one field) or an array of field names for
+ * tiered sorting (primary, secondary, tertiary, ...). */
 function _gpSortedBoxList(list, mode) {
-  if (!Array.isArray(list) || mode === "manual" || !mode) return list;
+  if (!Array.isArray(list)) return list;
+  const tiers = Array.isArray(mode)
+    ? mode.filter((m) => m && m !== "manual")
+    : (mode && mode !== "manual" ? [mode] : []);
+  if (tiers.length === 0) return list;
   const hashRank = (h) => {
     const n = (typeof _gpNormalizeHash === "function" ? _gpNormalizeHash(h) : (h || "")).toString();
     if (n === "Left") return "1";
@@ -1191,20 +1197,28 @@ function _gpSortedBoxList(list, mode) {
     if (s.startsWith("long")) return "3";
     return "9";
   };
-  const get = (p) => {
-    if (mode === "type") return p.type || "";
-    if (mode === "formation") return p.formation || "";
-    if (mode === "personnel") return p.personnel || "";
-    if (mode === "basePlay") return p.basePlay || p.play || "";
-    if (mode === "hash") return hashRank(p.preferredHash);
-    if (mode === "down") return String(p.preferredDown || "9");
-    if (mode === "distance") return distRank(p.preferredDistance);
-    if (mode === "situation") return p.preferredSituation || "";
-    if (mode === "field") return p.preferredFieldPosition || "";
-    if (mode === "play") return p.play || "";
+  const getField = (p, m) => {
+    if (m === "type") return p.type || "";
+    if (m === "formation") return p.formation || "";
+    if (m === "personnel") return p.personnel || "";
+    if (m === "basePlay") return p.basePlay || p.play || "";
+    if (m === "hash") return hashRank(p.preferredHash);
+    if (m === "down") return String(p.preferredDown || "9");
+    if (m === "distance") return distRank(p.preferredDistance);
+    if (m === "situation") return p.preferredSituation || "";
+    if (m === "field") return p.preferredFieldPosition || "";
+    if (m === "play") return p.play || "";
     return "";
   };
-  return list.slice().sort((a, b) => get(a).localeCompare(get(b), undefined, { numeric: true }));
+  return list.slice().sort((a, b) => {
+    for (const m of tiers) {
+      const av = getField(a, m);
+      const bv = getField(b, m);
+      const cmp = av.localeCompare(bv, undefined, { numeric: true });
+      if (cmp !== 0) return cmp;
+    }
+    return 0;
+  });
 }
 
 function _gpAdvancedFilterCount() {
@@ -3745,7 +3759,9 @@ let _gpPrintOptions = {
   showFooter: true,
   showDetail: false,
   playerHandout: false,
-  sortMode: "perBox", // perBox | manual | type | formation | personnel | basePlay | hash | down | distance | situation | field | play
+  sortMode: "perBox", // primary tier; "perBox" honors each box's own setting
+  sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
+  sortMode3: "",       // tertiary tier (ignored when sortMode is perBox)
 };
 
 async function openGamePlanPrintModal() {
@@ -3802,6 +3818,35 @@ async function openGamePlanPrintModal() {
                 <option value="play" ${o.sortMode === "play" ? "selected" : ""}>Play Name</option>
               </select>
             </div>
+            <div class="gp-print-row" id="gpPrintSortTierRow">
+              <label>Then by</label>
+              <select id="gpPrintSort2" title="Secondary sort tier">
+                <option value="" ${!o.sortMode2 ? "selected" : ""}>— none —</option>
+                <option value="type" ${o.sortMode2 === "type" ? "selected" : ""}>Type</option>
+                <option value="formation" ${o.sortMode2 === "formation" ? "selected" : ""}>Formation</option>
+                <option value="personnel" ${o.sortMode2 === "personnel" ? "selected" : ""}>Personnel</option>
+                <option value="basePlay" ${o.sortMode2 === "basePlay" ? "selected" : ""}>Base Play</option>
+                <option value="hash" ${o.sortMode2 === "hash" ? "selected" : ""}>Hash (L/M/R)</option>
+                <option value="down" ${o.sortMode2 === "down" ? "selected" : ""}>Down</option>
+                <option value="distance" ${o.sortMode2 === "distance" ? "selected" : ""}>Distance</option>
+                <option value="situation" ${o.sortMode2 === "situation" ? "selected" : ""}>Situation</option>
+                <option value="field" ${o.sortMode2 === "field" ? "selected" : ""}>Field Position</option>
+                <option value="play" ${o.sortMode2 === "play" ? "selected" : ""}>Play Name</option>
+              </select>
+              <select id="gpPrintSort3" title="Tertiary sort tier">
+                <option value="" ${!o.sortMode3 ? "selected" : ""}>— none —</option>
+                <option value="type" ${o.sortMode3 === "type" ? "selected" : ""}>Type</option>
+                <option value="formation" ${o.sortMode3 === "formation" ? "selected" : ""}>Formation</option>
+                <option value="personnel" ${o.sortMode3 === "personnel" ? "selected" : ""}>Personnel</option>
+                <option value="basePlay" ${o.sortMode3 === "basePlay" ? "selected" : ""}>Base Play</option>
+                <option value="hash" ${o.sortMode3 === "hash" ? "selected" : ""}>Hash (L/M/R)</option>
+                <option value="down" ${o.sortMode3 === "down" ? "selected" : ""}>Down</option>
+                <option value="distance" ${o.sortMode3 === "distance" ? "selected" : ""}>Distance</option>
+                <option value="situation" ${o.sortMode3 === "situation" ? "selected" : ""}>Situation</option>
+                <option value="field" ${o.sortMode3 === "field" ? "selected" : ""}>Field Position</option>
+                <option value="play" ${o.sortMode3 === "play" ? "selected" : ""}>Play Name</option>
+              </select>
+            </div>
             <div class="gp-print-row gp-print-toggles">
               <label><input type="checkbox" id="gpPrintMeta" ${o.showMeta ? "checked" : ""}> Show formation/personnel</label>
               <label><input type="checkbox" id="gpPrintHash" ${o.showHash ? "checked" : ""}> Show hash bar</label>
@@ -3832,12 +3877,23 @@ async function openGamePlanPrintModal() {
       resolve(ok);
     };
     overlay.querySelector("#gpPrintCancel").addEventListener("click", () => close(false));
+    // Show/hide tier row based on primary selection
+    const tierRow = overlay.querySelector("#gpPrintSortTierRow");
+    const primarySel = overlay.querySelector("#gpPrintSort");
+    const syncTierVis = () => {
+      const v = primarySel.value;
+      tierRow.style.display = (v === "perBox" || v === "manual") ? "none" : "";
+    };
+    syncTierVis();
+    primarySel.addEventListener("change", syncTierVis);
     overlay.querySelector("#gpPrintConfirm").addEventListener("click", () => {
       _gpPrintOptions = {
         paperSize: overlay.querySelector("#gpPrintPaper").value,
         orientation: overlay.querySelector("#gpPrintOrientation").value,
         columns: parseInt(overlay.querySelector("#gpPrintColumns").value, 10) || 3,
         sortMode: overlay.querySelector("#gpPrintSort").value || "perBox",
+        sortMode2: overlay.querySelector("#gpPrintSort2").value || "",
+        sortMode3: overlay.querySelector("#gpPrintSort3").value || "",
         showMeta: overlay.querySelector("#gpPrintMeta").checked,
         showHash: overlay.querySelector("#gpPrintHash").checked,
         showProgress: overlay.querySelector("#gpPrintProgress").checked,
@@ -3938,9 +3994,12 @@ function _gpRenderPrintViewAndPrint() {
 function _gpRenderPrintBox(box, board) {
   const o = _gpPrintOptions;
   const rawList = (board.assignments[box.id] || []).slice();
-  const effectiveSort = o.sortMode === "perBox"
-    ? ((board.sort && board.sort[box.id]) || "manual")
-    : o.sortMode;
+  let effectiveSort;
+  if (o.sortMode === "perBox") {
+    effectiveSort = (board.sort && board.sort[box.id]) || "manual";
+  } else {
+    effectiveSort = [o.sortMode, o.sortMode2, o.sortMode3].filter(Boolean);
+  }
   const list = _gpSortedBoxList(rawList, effectiveSort);
   const target = Number(board.targets && board.targets[box.id]) || 0;
   const note = (board.notes && board.notes[box.id]) || "";
