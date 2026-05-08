@@ -512,7 +512,7 @@ async function _gpCreateBucketFromTemplate(template) {
 
   // Auto-fill if a template specified criteria
   if (template.fields && Array.isArray(plays) && plays.length > 0) {
-    const matches = plays.filter((p) => _gpPlayMatchesCriteria(p, template.id, filterCriteria));
+    const matches = plays.filter((p) => _gpPlayMatchesTemplateCriteria(p, template.id, filterCriteria));
     if (matches.length > 0) {
       const ok = await showConfirm(
         `Found <strong>${matches.length}</strong> play${matches.length === 1 ? "" : "s"} matching this template. Add them all to the new bucket?`,
@@ -531,7 +531,7 @@ async function _gpCreateBucketFromTemplate(template) {
   renderGamePlan();
 }
 
-function _gpPlayMatchesCriteria(play, templateId, criteria) {
+function _gpPlayMatchesTemplateCriteria(play, templateId, criteria) {
   if (!play || !criteria) return false;
   if (templateId === "vs-coverage") {
     if (criteria.vsTag === "Man") return !!play.goodVsMan;
