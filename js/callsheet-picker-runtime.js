@@ -139,6 +139,10 @@ function clearCsPickerFilters() {
     const element = document.getElementById(id);
     if (element) element.value = "";
   });
+  ["csPickerGamePlanFilter", "csPickerJvFilter"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
   populateCallSheetPlayList();
 }
 
@@ -259,6 +263,15 @@ function populateCallSheetPlayList() {
   if (playTypeFilter) filtered = filtered.filter((play) => (play.type || "") === playTypeFilter);
   if (backFilter) filtered = filtered.filter((play) => (play.back || "") === backFilter);
   if (tempoFilter) filtered = filtered.filter((play) => (play.tempo || "") === tempoFilter);
+
+  const gamePlanOnly = document.getElementById("csPickerGamePlanFilter")?.checked || false;
+  const jvOnly = document.getElementById("csPickerJvFilter")?.checked || false;
+  if (gamePlanOnly && typeof isPlayInGamePlanBoard === "function") {
+    filtered = filtered.filter((play) => isPlayInGamePlanBoard(play));
+  }
+  if (jvOnly && typeof isPlayFlaggedInGamePlan === "function") {
+    filtered = filtered.filter((play) => isPlayFlaggedInGamePlan(play, "jv"));
+  }
 
   if (sortBy) {
     filtered.sort((playA, playB) => {

@@ -457,6 +457,32 @@ function renderGamePlanSummary() {
     )
     .join("");
 
+  // Game Plan board flag counts (📋 WB / 🟡 JV) — count from current board
+  const wbCount = (typeof getGamePlanFlaggedCount === "function")
+    ? getGamePlanFlaggedCount("wb") : 0;
+  const jvCount = (typeof getGamePlanFlaggedCount === "function")
+    ? getGamePlanFlaggedCount("jv") : 0;
+  const boardSize = (typeof getGamePlanBoardSignatures === "function")
+    ? getGamePlanBoardSignatures().size : 0;
+  const flagsHtml = `
+    <div class="dash-gp-flags">
+      <div class="dash-gp-flag dash-gp-flag-board" title="Plays drafted on the Game Plan board">
+        <span class="dash-gp-flag-icon">🎯</span>
+        <span class="dash-gp-flag-num">${boardSize}</span>
+        <span class="dash-gp-flag-label">On Board</span>
+      </div>
+      <div class="dash-gp-flag dash-gp-flag-wb" title="Plays marked 📋 to send to a wristband">
+        <span class="dash-gp-flag-icon">📋</span>
+        <span class="dash-gp-flag-num">${wbCount}</span>
+        <span class="dash-gp-flag-label">Wristband</span>
+      </div>
+      <div class="dash-gp-flag dash-gp-flag-jv" title="Plays marked 🟡 JV / freshmen">
+        <span class="dash-gp-flag-icon">🟡</span>
+        <span class="dash-gp-flag-num">${jvCount}</span>
+        <span class="dash-gp-flag-label">JV</span>
+      </div>
+    </div>`;
+
   section.innerHTML = `<div class="dash-gameplan-card">
     <h3 class="dash-section-title">🎯 Game Plan — ${escapeHtml(gw.opponentName)}</h3>
     <div class="dash-gp-summary">
@@ -469,6 +495,7 @@ function renderGamePlanSummary() {
         ${breakdownHtml}
       </div>
     </div>
+    ${flagsHtml}
     <div class="dash-gameplan-actions">
       <button class="btn btn-sm btn-primary" data-action="filterPlaybookToGamePlan">📖 View in Playbook</button>
       <button class="btn btn-sm btn-success" data-action="sendDashboardGamePlanToBoxes" title="Auto-place tagged plays into the Game Plan boxes">🎯 Send to Game Plan</button>

@@ -31,6 +31,7 @@ let _gpPrintOptions = {
   showDetail: false,
   playerHandout: false,
   showWristbandNumber: true,
+  jvOnly: false,
   sortMode: "perBox", // primary tier; "perBox" honors each box's own setting
   sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
   sortMode3: "",       // tertiary tier (ignored when sortMode is perBox)
@@ -154,6 +155,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
               <label><input type="checkbox" id="gpPrintDetail" ${o.showDetail ? "checked" : ""}> Show bucket detail (touches, type, D&D)</label>
               <label><input type="checkbox" id="gpPrintHandout" ${o.playerHandout ? "checked" : ""}> 👦 <strong>Player handout</strong> (key players · complements · hit chart · notes)</label>
+              <label><input type="checkbox" id="gpPrintJvOnly" ${o.jvOnly ? "checked" : ""}> 🟡 <strong>JV only</strong> (only plays marked JV)</label>
             </div>
           </div>
         </div>
@@ -208,6 +210,7 @@ async function openGamePlanPrintModal() {
         showFooter: overlay.querySelector("#gpPrintFooter").checked,
         showDetail: overlay.querySelector("#gpPrintDetail").checked,
         playerHandout: overlay.querySelector("#gpPrintHandout").checked,
+        jvOnly: overlay.querySelector("#gpPrintJvOnly").checked,
       };
       close(true);
       _gpRenderPrintViewAndPrint();
@@ -230,12 +233,24 @@ function _gpRenderPrintViewAndPrint() {
 
   let allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
   if (o.showHolding) allBoxes = [GP_HOLDING_BOX, ...allBoxes];
-  if (!o.showEmpty) {
-    allBoxes = allBoxes.filter((b) => (board.assignments[b.id] || []).length > 0);
+  const _isJvPlay = (p) => (typeof _gpHasFlag === "function" && _gpHasFlag(p, "jv"));
+  const _boxListFor = (id) => {
+    const list = board.assignments[id] || [];
+    return o.jvOnly ? list.filter(_isJvPlay) : list;
+  };
+  if (!o.showEmpty || o.jvOnly) {
+    allBoxes = allBoxes.filter((b) => _boxListFor(b.id).length > 0);
   }
 
   const boxesHtml = allBoxes.map((b) => _gpRenderPrintBox(b, board)).join("");
-  const totalAssigned = _gpAllAssignedSigs(board).size;
+  let totalAssigned = _gpAllAssignedSigs(board).size;
+  if (o.jvOnly) {
+    const jvSigs = new Set();
+    Object.values(board.assignments || {}).forEach((arr) => {
+      (arr || []).forEach((p) => { if (_isJvPlay(p)) jvSigs.add(_gpPlaySignature(p)); });
+    });
+    totalAssigned = jvSigs.size;
+  }
   const headerHtml = `
     <div class="gp-print-header">
       <div class="gp-print-title">
@@ -297,7 +312,10 @@ function _gpRenderPrintViewAndPrint() {
 
 function _gpRenderPrintBox(box, board) {
   const o = _gpPrintOptions;
-  const rawList = (board.assignments[box.id] || []).slice();
+  let rawList = (board.assignments[box.id] || []).slice();
+  if (o.jvOnly) {
+    rawList = rawList.filter((p) => typeof _gpHasFlag === "function" && _gpHasFlag(p, "jv"));
+  }
   let effectiveSort;
   if (o.sortMode === "perBox") {
     effectiveSort = (board.sort && board.sort[box.id]) || "manual";

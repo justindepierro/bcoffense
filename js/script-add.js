@@ -390,6 +390,77 @@ async function addSelectedToScript() {
   );
 }
 
+/* ----- Load Game Plan plays into Script ---------------------------------
+   Two entry points: load every play assigned to the current board, or
+   load only the JV-marked plays. Both prompt for a target period.
+   ----------------------------------------------------------------------- */
+async function _addGamePlanPlaysToScriptFlow(label, sourcePlays) {
+  if (!Array.isArray(sourcePlays) || sourcePlays.length === 0) {
+    showToast(`No ${label} plays found in the current game plan.`, {
+      type: "warning", duration: 3000,
+    });
+    return;
+  }
+  const ok = await showConfirm(
+    `Add ${sourcePlays.length} ${label} play${sourcePlays.length === 1 ? "" : "s"} from the game plan to the script?`,
+    { title: `Load ${label}`, icon: "🎯", confirmText: "Add" },
+  );
+  if (!ok) return;
+  const targetSeparatorIndex = await pickTargetPeriodForAdd(sourcePlays.length);
+  if (targetSeparatorIndex === null) return;
+  saveScriptState();
+  insertPlaysIntoPeriod(
+    targetSeparatorIndex,
+    sourcePlays.map((play) => createScriptPlayFromPlaybook(play)),
+  );
+  renderScript();
+  setScriptToolbarStatus(
+    `Added ${sourcePlays.length} ${label} play${sourcePlays.length === 1 ? "" : "s"} to ${script[targetSeparatorIndex]?.label || "selected period"}`,
+    "success",
+    AUTOSAVE_DEBOUNCE_MS,
+  );
+}
+
+async function loadGamePlanIntoScript() {
+  if (typeof getGamePlanBoardSignatures !== "function" || !Array.isArray(plays)) {
+    showToast("Game plan not ready.", { type: "error" });
+    return;
+  }
+  const sigs = getGamePlanBoardSignatures();
+  if (!sigs || sigs.size === 0) {
+    showToast("Game plan board is empty for this opponent.", { type: "warning" });
+    return;
+  }
+  // Pull from playbook so we get the freshest fields, not stale snapshots.
+  const sourcePlays = plays.filter((p) => sigs.has(_gpPlaySignature(p)));
+  await _addGamePlanPlaysToScriptFlow("game plan", sourcePlays);
+}
+
+async function loadGamePlanJvIntoScript() {
+  if (typeof getGamePlanFlaggedPlays !== "function") {
+    showToast("Game plan not ready.", { type: "error" });
+    return;
+  }
+  const flagged = getGamePlanFlaggedPlays("jv");
+  if (!flagged.length) {
+    showToast("No plays marked 🟡 JV in the game plan yet.", { type: "warning" });
+    return;
+  }
+  // Prefer current playbook copies when sigs match.
+  const sigs = new Set(flagged.map((p) => _gpPlaySignature(p)));
+  const sourcePlays = Array.isArray(plays)
+    ? plays.filter((p) => sigs.has(_gpPlaySignature(p)))
+    : flagged;
+  // Fall back to flagged snapshots for any sigs the playbook doesn't have.
+  if (sourcePlays.length < flagged.length) {
+    const havePlaybook = new Set(sourcePlays.map((p) => _gpPlaySignature(p)));
+    flagged.forEach((p) => {
+      if (!havePlaybook.has(_gpPlaySignature(p))) sourcePlays.push(p);
+    });
+  }
+  await _addGamePlanPlaysToScriptFlow("JV", sourcePlays);
+}
+
 async function compareScripts() {
   const savedScripts = getSavedScripts();
 

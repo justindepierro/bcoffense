@@ -468,6 +468,47 @@
   font-weight: 600;
 }
 
+.dash-gp-flags {
+  display: flex;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  flex-wrap: wrap;
+}
+.dash-gp-flag {
+  flex: 1;
+  min-width: 110px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  display: grid;
+  grid-template-columns: auto 1fr;
+  grid-template-rows: auto auto;
+  column-gap: var(--space-sm);
+  align-items: center;
+}
+.dash-gp-flag-icon {
+  grid-row: 1 / span 2;
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+.dash-gp-flag-num {
+  font-size: var(--font-size-2xl);
+  font-weight: 700;
+  color: var(--color-text);
+  line-height: 1;
+}
+.dash-gp-flag-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  font-weight: 600;
+}
+.dash-gp-flag-board { border-left: 3px solid var(--color-primary); }
+.dash-gp-flag-wb { border-left: 3px solid var(--color-info); }
+.dash-gp-flag-jv { border-left: 3px solid var(--color-warning); }
+
 .dash-gp-breakdown {
   flex: 1;
   min-width: 200px;
