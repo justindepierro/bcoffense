@@ -1401,6 +1401,11 @@
   font-size: var(--font-size-sm);
   cursor: pointer;
 }
+.cs-picker-chip-count {
+  color: var(--color-text-secondary);
+  font-weight: 600;
+  font-size: var(--font-size-xs);
+}
 .cs-picker-wb-info {
   font-size: var(--font-size-xs);
   color: var(--color-text-secondary);

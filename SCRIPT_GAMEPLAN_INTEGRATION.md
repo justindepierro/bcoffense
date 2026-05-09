@@ -73,28 +73,24 @@ These are intentionally global — any tab can call them without a dependency.
 
 ---
 
+## Shipped in v408
+
+- **Period-from-box** — every game plan box header has a `📋 To Period` button
+  that pulls just that box's plays into a chosen script period (honors box
+  sort, prefers fresh playbook copies, falls back to snapshots).
+- **From-game-plan card color** — `Build WB Card` now pre-picks light blue
+  (`#cce5ff`) so the new card reads visually as "from the game plan."
+- **Call sheet picker** chips show live count badges (e.g. `🎯 Game Plan (12)`,
+  `🟡 JV (4)`) updated every time the picker repopulates.
+
+---
+
 ## On deck (not yet shipped)
 
 ### Script editing with game plan plays
 
-- **"Load Game Plan into Script"** bulk action on the script tab. Pulls every
-  play from the current game plan board into the available list as a single
-  selection — one click to send all to the script.
 - **"JV Period" smart fill** — auto-add a period at the end of the script
   filled with all `_gpFlags.jv` plays for travel-up freshmen reps.
-- **Period-from-box** — drag a single gameplan box (e.g. `2-minute`) into a
-  script period. We already render box content; the drop target needs to
-  read the box, sort by gameplan order, and append.
-
-### Wristband
-
-- Honor card color picker: pre-pick a card color matching `--color-info` so
-  the new card visually reads as "from game plan."
-
-### Call sheet picker
-
-- Show a count badge in the picker header when the `🎯` / `🟡` filters are
-  active.
 
 ---
 

@@ -164,6 +164,20 @@ function debouncedPopulateCallSheetPlayList() {
 function populateCallSheetPlayList() {
   updatePickerSourceUI();
 
+  // Update chip count badges
+  const gpCountEl = document.getElementById("csPickerGamePlanCount");
+  if (gpCountEl) {
+    const n = (typeof getGamePlanBoardSignatures === "function")
+      ? getGamePlanBoardSignatures().size : 0;
+    gpCountEl.textContent = n > 0 ? ` (${n})` : "";
+  }
+  const jvCountEl = document.getElementById("csPickerJvCount");
+  if (jvCountEl) {
+    const n = (typeof getGamePlanFlaggedCount === "function")
+      ? getGamePlanFlaggedCount("jv") : 0;
+    jvCountEl.textContent = n > 0 ? ` (${n})` : "";
+  }
+
   const search = document.getElementById("callSheetPlaySearch").value.toLowerCase().trim();
   const clearBtn = document.getElementById("clearCsPickerSearch");
   if (clearBtn) clearBtn.style.display = search ? "" : "none";

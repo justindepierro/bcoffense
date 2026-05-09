@@ -461,6 +461,49 @@ async function loadGamePlanJvIntoScript() {
   await _addGamePlanPlaysToScriptFlow("JV", sourcePlays);
 }
 
+async function loadGamePlanBoxIntoScript(boxId) {
+  if (!boxId) return;
+  if (typeof _gpEnsureBoard !== "function") {
+    showToast("Game plan not ready.", { type: "error" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  if (!board) {
+    showToast("No game plan board for this opponent.", { type: "warning" });
+    return;
+  }
+  const list = (board.assignments && board.assignments[boxId]) || [];
+  if (!list.length) {
+    showToast("That box is empty.", { type: "warning" });
+    return;
+  }
+  // Resolve a friendly label
+  let boxLabel = boxId;
+  if (typeof GP_DEFAULT_BOXES !== "undefined") {
+    const def = GP_DEFAULT_BOXES.find((b) => b.id === boxId)
+      || (Array.isArray(board.customBoxes) ? board.customBoxes.find((b) => b.id === boxId) : null);
+    if (def && def.label) boxLabel = def.label;
+    if (board.boxLabels && board.boxLabels[boxId]) boxLabel = board.boxLabels[boxId];
+  }
+  // Honor the box's sort if available
+  let ordered = list.slice();
+  if (typeof _gpSortedBoxList === "function" && board.sort && board.sort[boxId]) {
+    ordered = _gpSortedBoxList(ordered, board.sort[boxId]);
+  }
+  // Prefer current playbook copies so fields are fresh, fall back to snapshots.
+  const sigs = new Set(ordered.map((p) => _gpPlaySignature(p)));
+  let sourcePlays = Array.isArray(plays)
+    ? plays.filter((p) => sigs.has(_gpPlaySignature(p)))
+    : [];
+  if (sourcePlays.length < ordered.length) {
+    const have = new Set(sourcePlays.map((p) => _gpPlaySignature(p)));
+    ordered.forEach((p) => {
+      if (!have.has(_gpPlaySignature(p))) sourcePlays.push(p);
+    });
+  }
+  await _addGamePlanPlaysToScriptFlow(boxLabel, sourcePlays);
+}
+
 async function compareScripts() {
   const savedScripts = getSavedScripts();
 

@@ -72,11 +72,11 @@ async function sendGamePlanToWristbandCard() {
   });
   if (typeof mutateWristbandState === "function") {
     mutateWristbandState(() => {
-      wristbandCards.push({ name: cardName, data });
+      wristbandCards.push({ name: cardName, data, cardColor: "#cce5ff" });
       currentCardIndex = wristbandCards.length - 1;
     });
   } else {
-    wristbandCards.push({ name: cardName, data });
+    wristbandCards.push({ name: cardName, data, cardColor: "#cce5ff" });
     currentCardIndex = wristbandCards.length - 1;
     if (typeof refreshWristbandCardView === "function") {
       refreshWristbandCardView({ updateCardColorPicker: true });

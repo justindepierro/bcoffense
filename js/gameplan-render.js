@@ -621,6 +621,10 @@ function _gpRenderBox(box, board) {
       ? `<button class="btn btn-sm btn-secondary" title="Push only this box's plays — fans out to all matching call sheet categories"
           data-action="pushGamePlanBoxToCallSheet" data-arg="${escapeHtml(box.id)}">➡️ To Call Sheet</button>`
       : ""}
+        ${!isHolding && list.length > 0
+      ? `<button class="btn btn-sm btn-secondary" title="Add only this box's plays to a script period"
+          data-action="loadGamePlanBoxIntoScript" data-arg="${escapeHtml(box.id)}">📋 To Period</button>`
+      : ""}
         ${!isHolding ? (() => {
       const meta = _gpGetBoxMeta(board, box.id);
       const hasRules = _gpHasCriteria(meta.criteria) || !!meta.callSheetCategoryId;
