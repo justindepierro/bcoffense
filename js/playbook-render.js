@@ -32,8 +32,18 @@ function renderPlaybook() {
         const idx = start + localIdx;
         const onWristband = isPlayOnHighlightedWristband(play);
         const wbClass = onWristband ? " on-wristband" : "";
-        const gpClass = isPlayInGamePlan(play) ? " in-gameplan" : "";
-        const wbIndicator = onWristband
+        const gpClass = isPlayInGamePlan(play) ? " in-gameplan" : "";        const isJvFlagged =
+          typeof isPlayFlaggedInGamePlan === "function" &&
+          isPlayFlaggedInGamePlan(play, "jv");
+        const isWbFlagged =
+          typeof isPlayFlaggedInGamePlan === "function" &&
+          isPlayFlaggedInGamePlan(play, "wb");
+        const jvBadge = isJvFlagged
+          ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
+          : "";
+        const wbFlagBadge = isWbFlagged
+          ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
+          : "";        const wbIndicator = onWristband
           ? '<span class="wb-indicator" title="On wristband">🏈</span>'
           : "";
         const installBadge =
@@ -50,7 +60,7 @@ function renderPlaybook() {
                 title="Click to select, double-click to edit">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${installBadge}</td>
-                <td class="col-type">${wbIndicator}${highlightSearch(play.type, searchTerm)}</td>
+                <td class="col-type">${wbIndicator}${jvBadge}${wbFlagBadge}${highlightSearch(play.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(play.formation, searchTerm)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlightSearch(play.back || "-", searchTerm)}</td>
@@ -78,6 +88,16 @@ function renderPlaybook() {
         const onWristband = isPlayOnHighlightedWristband(play);
         const wbClass = onWristband ? " on-wristband" : "";
         const gpClass = isPlayInGamePlan(play) ? " in-gameplan" : "";
+        const cardJv =
+          typeof isPlayFlaggedInGamePlan === "function" &&
+          isPlayFlaggedInGamePlan(play, "jv")
+            ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
+            : "";
+        const cardWbFlag =
+          typeof isPlayFlaggedInGamePlan === "function" &&
+          isPlayFlaggedInGamePlan(play, "wb")
+            ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
+            : "";
         const gpCardActive = isPlayInGamePlan(play);
         const gpCardToggle = getGameWeek().opponentName
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
@@ -92,7 +112,7 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
-            <div class="pb-card-play">${gpCardToggle}${installBadge} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}${picturePillFor(play)}</div>
+            <div class="pb-card-play">${gpCardToggle}${installBadge}${cardJv}${cardWbFlag} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}${picturePillFor(play)}</div>
             <div class="pb-card-sub">${highlightSearch(play.type, searchTerm)}${play.motion ? " · " + highlightSearch(play.motion, searchTerm) : ""}${play.back ? " · " + highlightSearch(play.back, searchTerm) : ""}</div>
             <div class="pb-card-pills">${pills}</div>
           </div>
@@ -105,10 +125,22 @@ function renderPlaybook() {
       emptyEl = document.createElement("div");
       emptyEl.id = "pbEmptyState";
       emptyEl.className = "empty-state empty-state--bordered";
-      emptyEl.innerHTML =
-        '<p class="empty-state__text">No plays match your filters.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
       const container = document.getElementById("playbookContainer");
       if (container) container.appendChild(emptyEl);
+    }
+    if (pageSlice.length === 0) {
+      const jvOn = document.getElementById("pbJvFilter")?.checked || false;
+      const jvCount =
+        typeof getGamePlanFlaggedCount === "function"
+          ? getGamePlanFlaggedCount("jv")
+          : 0;
+      if (jvOn && jvCount === 0) {
+        emptyEl.innerHTML =
+          '<p class="empty-state__text">🟡 No plays marked as JV in the Game Plan yet.</p><p class="empty-state__hint">Open the <strong>Game Plan</strong> tab and tap the 🟡 chip on any play to mark it for the JV / freshmen package.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
+      } else {
+        emptyEl.innerHTML =
+          '<p class="empty-state__text">No plays match your filters.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
+      }
     }
     emptyEl.hidden = pageSlice.length > 0;
 

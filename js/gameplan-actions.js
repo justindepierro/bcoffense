@@ -86,6 +86,21 @@ async function sendGamePlanToWristbandCard() {
     duration: 3500, type: "success",
   });
   if (typeof showTab === "function") showTab("wristband");
+  // Offer to apply current wristband sort criteria so the new card reads top-down nicely.
+  if (
+    typeof wbSortCriteria !== "undefined" &&
+    Array.isArray(wbSortCriteria) &&
+    wbSortCriteria.length > 0 &&
+    typeof applyWristbandSort === "function"
+  ) {
+    setTimeout(async () => {
+      const sortNow = await showConfirm(
+        "Apply your current wristband sort to the new card?",
+        { title: "Sort Wristband", icon: "🔤", confirmText: "Sort", cancelText: "Skip" },
+      );
+      if (sortNow) applyWristbandSort();
+    }, 250);
+  }
 }
 
 async function clearGamePlanBox(boxId) {

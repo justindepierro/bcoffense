@@ -51,6 +51,26 @@ These are intentionally global — any tab can call them without a dependency.
 - **Script (Available Plays)** strip has new `🎯 Game Plan` and `🟡 JV` chips
   that filter by board membership / JV flag respectively.
 
+## Shipped in v406
+
+- **Call sheet picker** has `🎯 Game Plan` + `🟡 JV` checkboxes that filter the
+  source list (cleared on `Clear Filters`).
+- **Script Available toolbar** has `🎯 Load Game Plan` and `🟡 Load JV` bulk
+  buttons that drop board / JV-marked plays directly into a chosen period.
+- **Game plan print modal** has a `🟡 JV only` toggle that prints only the
+  JV-marked plays and auto-hides empty boxes.
+- **Dashboard game plan card** shows `🎯 / 📋 / 🟡` counters for on-board,
+  wristband-marked, and JV-marked totals.
+
+## Shipped in v407
+
+- **Playbook** rows show small `🟡` and `📋` overlay badges when a play is
+  marked JV / wristband in the Game Plan.
+- **Playbook empty state** for the JV filter explains how to mark plays when
+  none exist yet.
+- **Build WB Card** prompts to apply the current wristband sort to the new
+  card when sort criteria are configured.
+
 ---
 
 ## On deck (not yet shipped)
@@ -66,39 +86,15 @@ These are intentionally global — any tab can call them without a dependency.
   script period. We already render box content; the drop target needs to
   read the box, sort by gameplan order, and append.
 
-### Call sheet picker
-
-- Add the same `🎯 Game Plan` / `🟡 JV` toggle chips to the call sheet picker
-  toolbar (`callsheet-picker-runtime.js`). Use `isPlayInGamePlanBoard` and
-  `isPlayFlaggedInGamePlan(play, "jv")`.
-- Show a count badge in the picker header when active.
-
-### Playbook polish
-
-- When the `🟡 JV Only` filter is active without a game plan present, show
-  an empty-state hint: _"Mark plays as JV in the Game Plan tab to see them
-  here."_
-- Optional: `🟡 JV` overlay badge on playbook rows so you can spot them
-  without filtering.
-
 ### Wristband
 
-- After `sendGamePlanToWristbandCard()` builds the new card, allow a follow-up
-  prompt: _"Sort wristband automatically?"_ — call existing wristband sort
-  helpers with a default tier.
 - Honor card color picker: pre-pick a card color matching `--color-info` so
   the new card visually reads as "from game plan."
 
-### Dashboard
+### Call sheet picker
 
-- Surface counters: `# WB-marked` and `# JV-marked` on the dashboard game-plan
-  card so you can see at a glance whether the marks are filled in for the
-  week.
-
-### Print
-
-- JV-only print of the game plan: `printGamePlan({ jvOnly: true })` — a single
-  short page of the freshmen package for travel days.
+- Show a count badge in the picker header when the `🎯` / `🟡` filters are
+  active.
 
 ---
 

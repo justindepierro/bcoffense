@@ -95,6 +95,15 @@ table.sortable th {
   font-size: var(--font-size-sm);
 }
 
+.pb-jv-badge,
+.pb-wbflag-badge {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  vertical-align: baseline;
+}
+
 /* Game Plan indicators */
 .gp-indicator {
   margin-right: 4px;
