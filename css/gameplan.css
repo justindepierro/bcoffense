@@ -1594,6 +1594,58 @@ body.gp-dragging-from-box .gp-trash-zone {
     -webkit-print-color-adjust: exact;
     print-color-adjust: exact;
   }
+  /* Image appendix — extra pages with attached play diagrams */
+  body.gp-printing .gp-print-appendix {
+    page-break-before: always;
+    break-before: page;
+    padding-top: 6pt;
+  }
+  body.gp-printing .gp-print-appendix-title {
+    font-size: 14pt;
+    font-weight: 800;
+    margin: 0 0 8pt;
+    border-bottom: 2px solid #000;
+    padding-bottom: 4pt;
+  }
+  body.gp-printing .gp-print-img-section {
+    page-break-inside: avoid;
+    margin-bottom: 12pt;
+  }
+  body.gp-printing .gp-print-img-title {
+    font-size: 11pt;
+    font-weight: 700;
+    margin: 0 0 4pt;
+    background: #f0f0f0;
+    padding: 2pt 6pt;
+    border-left: 3pt solid #000;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body.gp-printing .gp-print-img-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8pt;
+  }
+  body.gp-printing .gp-print-img-card {
+    margin: 0;
+    padding: 4pt;
+    border: 1px solid #ccc;
+    border-radius: 3pt;
+    page-break-inside: avoid;
+    text-align: center;
+  }
+  body.gp-printing .gp-print-img-card img {
+    max-width: 100%;
+    max-height: 3.2in;
+    object-fit: contain;
+    display: block;
+    margin: 0 auto 4pt;
+  }
+  body.gp-printing .gp-print-img-card figcaption {
+    font-size: 8.5pt;
+    line-height: 1.25;
+    color: #222;
+  }
 }
 
 /* Print: when printing the game plan, hide chrome and show boxes only */

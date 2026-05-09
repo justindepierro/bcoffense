@@ -32,6 +32,7 @@ let _gpPrintOptions = {
   playerHandout: false,
   showWristbandNumber: true,
   jvOnly: false,
+  imageAppendix: false,
   sortMode: "perBox", // primary tier; "perBox" honors each box's own setting
   sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
   sortMode3: "",       // tertiary tier (ignored when sortMode is perBox)
@@ -156,6 +157,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintDetail" ${o.showDetail ? "checked" : ""}> Show bucket detail (touches, type, D&D)</label>
               <label><input type="checkbox" id="gpPrintHandout" ${o.playerHandout ? "checked" : ""}> 👦 <strong>Player handout</strong> (key players · complements · hit chart · notes)</label>
               <label><input type="checkbox" id="gpPrintJvOnly" ${o.jvOnly ? "checked" : ""}> 🟡 <strong>JV only</strong> (only plays marked JV)</label>
+              <label><input type="checkbox" id="gpPrintImgAppendix" ${o.imageAppendix ? "checked" : ""}> 🖼️ <strong>Image appendix</strong> (extra pages with attached play diagrams)</label>
             </div>
           </div>
         </div>
@@ -211,6 +213,7 @@ async function openGamePlanPrintModal() {
         showDetail: overlay.querySelector("#gpPrintDetail").checked,
         playerHandout: overlay.querySelector("#gpPrintHandout").checked,
         jvOnly: overlay.querySelector("#gpPrintJvOnly").checked,
+        imageAppendix: overlay.querySelector("#gpPrintImgAppendix").checked,
       };
       close(true);
       _gpRenderPrintViewAndPrint();
@@ -288,7 +291,8 @@ function _gpRenderPrintViewAndPrint() {
       <span>${opponent ? `vs ${escapeHtml(opponent)}` : ""}</span>
       <span>${new Date().toLocaleDateString()}</span>
     </div>` : "";
-  host.innerHTML = headerHtml + `<div class="gp-print-grid">${boxesHtml}</div>` + footerHtml;
+  const appendixHtml = o.imageAppendix ? _gpRenderPrintImageAppendix(allBoxes, board) : "";
+  host.innerHTML = headerHtml + `<div class="gp-print-grid">${boxesHtml}</div>` + appendixHtml + footerHtml;
   document.body.classList.add("gp-printing");
   // Set @page size hint via style tag (one-shot)
   let pageStyle = document.getElementById("gpPrintPageStyle");
@@ -443,4 +447,44 @@ function _gpRenderPrintPlay(play) {
   }
 
   return `<li class="gp-print-play">${wbNumHtml}${callHtml}${metaHtml}${handoutHtml}</li>`;
+}
+
+/* Image appendix: extra pages grouped by box, showing each play's attached
+   image (when one exists). Renders nothing if no plays in the included
+   boxes have images. */
+function _gpRenderPrintImageAppendix(allBoxes, board) {
+  if (typeof window.playImages === "undefined" || typeof playSignature !== "function") return "";
+  const o = _gpPrintOptions;
+  const _isJvPlay = (p) => (typeof _gpHasFlag === "function" && _gpHasFlag(p, "jv"));
+  const sections = [];
+  let totalImages = 0;
+  for (const box of allBoxes) {
+    let list = (board.assignments[box.id] || []).slice();
+    if (o.jvOnly) list = list.filter(_isJvPlay);
+    const items = [];
+    for (const play of list) {
+      const sig = playSignature(play);
+      const url = window.playImages.urlFor(sig);
+      if (!url) continue;
+      const callHtml = (typeof getFullCall === "function")
+        ? getFullCall(play, { showLineCall: false })
+        : escapeHtml(play.play || "");
+      items.push(`<figure class="gp-print-img-card">
+          <img src="${url}" alt="Play diagram" />
+          <figcaption>${callHtml}</figcaption>
+        </figure>`);
+      totalImages++;
+    }
+    if (items.length) {
+      sections.push(`<section class="gp-print-img-section">
+        <h3 class="gp-print-img-title">${escapeHtml(box.label || box.id)}</h3>
+        <div class="gp-print-img-grid">${items.join("")}</div>
+      </section>`);
+    }
+  }
+  if (!totalImages) return "";
+  return `<div class="gp-print-appendix">
+    <h2 class="gp-print-appendix-title">🖼️ Play Diagrams</h2>
+    ${sections.join("")}
+  </div>`;
 }
