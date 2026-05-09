@@ -2265,7 +2265,7 @@ function _csPrintMarginValue(orientation, margin) {
   // Per-orientation defaults match the legacy values
   const base = orientation === "landscape" ? 0.14 : 0.16;
   if (margin === "tight") return `${(base - 0.04).toFixed(2)}in`;
-  if (margin === "wide")  return `${(base + 0.14).toFixed(2)}in`;
+  if (margin === "wide") return `${(base + 0.14).toFixed(2)}in`;
   return `${base.toFixed(2)}in`;
 }
 

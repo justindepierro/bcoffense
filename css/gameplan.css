@@ -527,6 +527,51 @@
   background: var(--color-bg-hover-row);
 }
 
+/* WB / JV flag toggle buttons (📋 / 🟡) — sit just before reorder buttons */
+.gp-box-play-flag {
+  background: transparent;
+  border: 1px solid transparent;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  padding: 1px 3px;
+  line-height: 1;
+  border-radius: var(--radius-sm);
+  opacity: 0.35;
+  filter: grayscale(0.6);
+  transition: opacity var(--transition-fast), filter var(--transition-fast),
+    background var(--transition-fast), border-color var(--transition-fast);
+}
+.gp-box-play:hover .gp-box-play-flag {
+  opacity: 0.7;
+}
+.gp-box-play-flag:hover {
+  opacity: 1;
+  filter: none;
+  background: var(--color-bg-hover-row);
+}
+.gp-box-play-flag.is-on {
+  opacity: 1;
+  filter: none;
+}
+.gp-box-play-flag-wb.is-on {
+  background: var(--color-info-light);
+  border-color: var(--color-info);
+}
+.gp-box-play-flag-jv.is-on {
+  background: var(--color-warning-light);
+  border-color: var(--color-warning);
+}
+/* Subtle left-border accents on the chip itself when flagged */
+.gp-box-play.gp-flag-wb {
+  box-shadow: inset 3px 0 0 var(--color-info);
+}
+.gp-box-play.gp-flag-jv {
+  box-shadow: inset 3px 0 0 var(--color-warning);
+}
+.gp-box-play.gp-flag-wb.gp-flag-jv {
+  box-shadow: inset 3px 0 0 var(--color-info), inset 6px 0 0 var(--color-warning);
+}
+
 /* Density modes (applied on .gp-boxes) */
 .gp-density-compact .gp-box-play {
   padding: 2px 4px;

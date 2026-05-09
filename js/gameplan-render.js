@@ -81,6 +81,13 @@ function renderGamePlan() {
           ${board.loadedWristband
       ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
       : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}
+          ${(() => {
+      const wbCount = (typeof getGamePlanFlaggedCount === "function") ? getGamePlanFlaggedCount("wb") : 0;
+      return `<button class="btn btn-sm btn-success" data-action="sendGamePlanToWristbandCard"
+          title="Build a new wristband card from plays you've marked with 📋"${wbCount === 0 ? " disabled" : ""}>
+          📋 Build WB Card${wbCount ? ` (${wbCount})` : ""}
+        </button>`;
+    })()}
         </div>
         <div class="gp-header-group">
           <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
@@ -687,13 +694,25 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
   const matchupBadges = _gpMatchupBadges(play);
   const isSpotlit = _gpPlayMatchesSpotlight(play);
+  const wbOn = _gpHasFlag(play, "wb");
+  const jvOn = _gpHasFlag(play, "jv");
+  const flagClasses = `${wbOn ? " gp-flag-wb" : ""}${jvOn ? " gp-flag-jv" : ""}`;
   const reorderBtns = allowReorder ? `
     <button class="gp-box-play-btn gp-box-play-up" aria-label="Move up"
       data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move up">▲</button>
     <button class="gp-box-play-btn gp-box-play-down" aria-label="Move down"
       data-action="moveGamePlanPlayDown" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move down">▼</button>` : "";
+  const flagBtns = `
+    <button class="gp-box-play-flag gp-box-play-flag-wb${wbOn ? " is-on" : ""}"
+      role="checkbox" aria-checked="${wbOn ? "true" : "false"}" aria-label="Send to wristband"
+      data-action="toggleGamePlanPlayFlag" data-arg="${escapeHtml(boxId + "::" + sig + "::wb")}"
+      title="Mark for wristband">📋</button>
+    <button class="gp-box-play-flag gp-box-play-flag-jv${jvOn ? " is-on" : ""}"
+      role="checkbox" aria-checked="${jvOn ? "true" : "false"}" aria-label="JV / freshmen play"
+      data-action="toggleGamePlanPlayFlag" data-arg="${escapeHtml(boxId + "::" + sig + "::jv")}"
+      title="Mark as JV / freshmen play">🟡</button>`;
   return `
-    <div class="gp-box-play${isSpotlit ? " is-spotlit" : ""}" draggable="true"
+    <div class="gp-box-play${isSpotlit ? " is-spotlit" : ""}${flagClasses}" draggable="true"
          data-box-id="${escapeHtml(boxId)}"
          data-sig="${escapeHtml(sig)}"
          data-idx="${idx}">
@@ -702,6 +721,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
         ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
+        ${flagBtns}
         ${reorderBtns}
         <button class="gp-box-play-btn" aria-label="Move to another box"
           data-action="moveGamePlanPlay" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move to…">↔</button>

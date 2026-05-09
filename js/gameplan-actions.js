@@ -17,6 +17,77 @@ function removeFromGamePlanBox(combined) {
   renderGamePlan();
 }
 
+/* ----- Per-play flag toggles + send to wristband -------------------------
+   data-arg layout: "<boxId>::<sig>::<flag>" where <flag> is "wb" or "jv".
+   Signatures use "|" as field separator so splitting on "::" is safe.
+   ----------------------------------------------------------------------- */
+function toggleGamePlanPlayFlag(arg) {
+  if (!arg) return;
+  const parts = arg.split("::");
+  if (parts.length < 3) return;
+  const flag = parts[parts.length - 1];
+  const boxId = parts[0];
+  const sig = parts.slice(1, -1).join("::");
+  const ok = _gpToggleFlag(boxId, sig, flag);
+  if (!ok) return;
+  if (typeof renderGamePlan === "function") renderGamePlan();
+}
+
+async function sendGamePlanToWristbandCard() {
+  if (typeof getGamePlanFlaggedPlays !== "function") return;
+  const flagged = getGamePlanFlaggedPlays("wb");
+  if (!flagged.length) {
+    showToast("Tap 📋 on plays in the game plan to mark them for the wristband first.", {
+      duration: 3500, type: "warning",
+    });
+    return;
+  }
+  if (typeof wristbandCards === "undefined" || !Array.isArray(wristbandCards)) {
+    showToast("Wristband module not ready yet.", { type: "error" });
+    return;
+  }
+  if (typeof MAX_CARDS === "number" && wristbandCards.length >= MAX_CARDS) {
+    showToast(`Maximum ${MAX_CARDS} wristband cards reached. Remove one first.`, {
+      duration: 3500, type: "error",
+    });
+    return;
+  }
+  const cellsPerCard = (typeof CELLS_PER_CARD === "number") ? CELLS_PER_CARD : 40;
+  if (flagged.length > cellsPerCard) {
+    const ok = await showConfirm(
+      `You marked ${flagged.length} plays but a wristband card holds ${cellsPerCard}. ` +
+      `Continue and use the first ${cellsPerCard}?`,
+      { title: "Trim to fit", icon: "📋", confirmText: "Continue", cancelText: "Cancel" },
+    );
+    if (!ok) return;
+  }
+  const gw = (typeof getGameWeek === "function") ? getGameWeek() : null;
+  const opp = gw && gw.opponentName ? gw.opponentName : "";
+  const cardName = opp ? `vs ${opp} (Game Plan)` : "Game Plan";
+  const data = Array(cellsPerCard).fill(null);
+  flagged.slice(0, cellsPerCard).forEach((p, i) => {
+    const copy = { ...p };
+    delete copy._gpFlags;
+    data[i] = copy;
+  });
+  if (typeof mutateWristbandState === "function") {
+    mutateWristbandState(() => {
+      wristbandCards.push({ name: cardName, data });
+      currentCardIndex = wristbandCards.length - 1;
+    });
+  } else {
+    wristbandCards.push({ name: cardName, data });
+    currentCardIndex = wristbandCards.length - 1;
+    if (typeof refreshWristbandCardView === "function") {
+      refreshWristbandCardView({ updateCardColorPicker: true });
+    }
+  }
+  showToast(`Created wristband card "${cardName}" with ${Math.min(flagged.length, cellsPerCard)} plays.`, {
+    duration: 3500, type: "success",
+  });
+  if (typeof showTab === "function") showTab("wristband");
+}
+
 async function clearGamePlanBox(boxId) {
   if (!boxId) return;
   const ok = await showConfirm(

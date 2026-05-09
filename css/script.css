@@ -1,6 +1,15 @@
 /* ============ Script: Practice Script Builder ============ */
 /* Auto-split from styles.css */
 
+/* Game-plan / JV filter chips inside the script available filters strip */
+.script-gp-filters {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-top: var(--space-xs);
+  flex-wrap: wrap;
+}
+
 .script-builder {
   display: grid;
   grid-template-columns: minmax(320px, 390px) minmax(0, 1fr);

@@ -97,6 +97,11 @@ function clearAllScriptFilters() {
   document.getElementById("scriptFilterBasePlay").value = "";
   document.getElementById("scriptSearchPlay").value = "";
 
+  const gpFilter = document.getElementById("scriptGamePlanFilter");
+  if (gpFilter) gpFilter.checked = false;
+  const jvFilter = document.getElementById("scriptJvFilter");
+  if (jvFilter) jvFilter.checked = false;
+
   document
     .querySelectorAll("#scriptFiltersContainer input[type='checkbox']")
     .forEach((checkbox) => {
@@ -322,6 +327,10 @@ function availPageNext() {
 
 function renderAvailablePlays() {
   const { formation, basePlay, search } = getScriptPlayFilterState();
+  const gamePlanOnly =
+    document.getElementById("scriptGamePlanFilter")?.checked || false;
+  const jvOnly =
+    document.getElementById("scriptJvFilter")?.checked || false;
   normalizeSelectedAvailablePlays();
 
   const matchesFilter = (value, selectedArr) => {
@@ -350,6 +359,14 @@ function renderAvailablePlays() {
     if (formation && play.formation !== formation) return false;
     if (basePlay && play.basePlay !== basePlay) return false;
     if (!playMatchesScriptSearch(play, search)) return false;
+    if (gamePlanOnly) {
+      if (typeof isPlayInGamePlanBoard !== "function") return false;
+      if (!isPlayInGamePlanBoard(play)) return false;
+    }
+    if (jvOnly) {
+      if (typeof isPlayFlaggedInGamePlan !== "function") return false;
+      if (!isPlayFlaggedInGamePlan(play, "jv")) return false;
+    }
     return true;
   });
 

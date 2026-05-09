@@ -58,12 +58,18 @@ function filterPlays() {
 
   const gamePlanOnly =
     document.getElementById("pbGamePlanFilter")?.checked || false;
+  const jvOnly =
+    document.getElementById("pbJvFilter")?.checked || false;
   const gameWeek = getGameWeek();
   _updateGamePlanFilterBar();
 
   filteredPlays = plays.filter((play) => {
     if (gamePlanOnly && gameWeek.opponentName) {
       if (!isPlayTaggedForOpponent(play, gameWeek.opponentName)) return false;
+    }
+    if (jvOnly) {
+      if (typeof isPlayFlaggedInGamePlan !== "function") return false;
+      if (!isPlayFlaggedInGamePlan(play, "jv")) return false;
     }
     if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;
     if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
@@ -136,6 +142,8 @@ function clearFilters() {
 
   const gpFilter = document.getElementById("pbGamePlanFilter");
   if (gpFilter) gpFilter.checked = false;
+  const jvFilter = document.getElementById("pbJvFilter");
+  if (jvFilter) jvFilter.checked = false;
 
   [
     "filterFormation",

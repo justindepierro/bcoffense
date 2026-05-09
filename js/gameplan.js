@@ -487,6 +487,94 @@ function _gpAllAssignedSigs(board) {
 }
 
 /* -------------------------------------------------------------------------
+   Per-play flags (wb / jv) — stored on each assignment snapshot under
+   `_gpFlags`. Excluded from `_gpPlaySignature` so toggling never breaks
+   matching, drag/drop, or downstream pushes.
+   ------------------------------------------------------------------------- */
+
+const GP_PLAY_FLAGS = ["wb", "jv"];
+
+function _gpHasFlag(play, flag) {
+  return !!(play && play._gpFlags && play._gpFlags[flag]);
+}
+
+function _gpToggleFlag(boxId, sig, flag) {
+  if (!boxId || !sig || !GP_PLAY_FLAGS.includes(flag)) return false;
+  let toggled = false;
+  _gpUpdateBoard((board) => {
+    const list = board.assignments && board.assignments[boxId];
+    if (!Array.isArray(list)) return;
+    const item = list.find((p) => _gpPlaySignature(p) === sig);
+    if (!item) return;
+    if (!item._gpFlags) item._gpFlags = {};
+    item._gpFlags[flag] = !item._gpFlags[flag];
+    if (!item._gpFlags[flag]) delete item._gpFlags[flag];
+    if (item._gpFlags && Object.keys(item._gpFlags).length === 0) delete item._gpFlags;
+    toggled = true;
+  });
+  return toggled;
+}
+
+// Strip flags before pushing a snapshot somewhere that doesn't need them
+// (wristband, script, etc.). Returns a shallow copy.
+function _gpStripFlags(play) {
+  if (!play) return play;
+  const out = { ...play };
+  delete out._gpFlags;
+  return out;
+}
+
+// Cross-page helpers: are exposed globally so playbook/script/callsheet
+// filters can ask "is this play part of the current game plan board?"
+// or "is this play marked WB / JV?".
+function getGamePlanBoardSignatures() {
+  const board = _gpEnsureBoard();
+  return _gpAllAssignedSigs(board);
+}
+
+function isPlayInGamePlanBoard(play) {
+  if (!play) return false;
+  return getGamePlanBoardSignatures().has(_gpPlaySignature(play));
+}
+
+function _gpFlaggedSigs(flag) {
+  const board = _gpEnsureBoard();
+  const set = new Set();
+  Object.values(board.assignments || {}).forEach((arr) => {
+    (arr || []).forEach((p) => {
+      if (_gpHasFlag(p, flag)) set.add(_gpPlaySignature(p));
+    });
+  });
+  return set;
+}
+
+function isPlayFlaggedInGamePlan(play, flag) {
+  if (!play) return false;
+  return _gpFlaggedSigs(flag).has(_gpPlaySignature(play));
+}
+
+function getGamePlanFlaggedPlays(flag) {
+  if (!GP_PLAY_FLAGS.includes(flag)) return [];
+  const board = _gpEnsureBoard();
+  const out = [];
+  const seen = new Set();
+  Object.values(board.assignments || {}).forEach((arr) => {
+    (arr || []).forEach((p) => {
+      if (!_gpHasFlag(p, flag)) return;
+      const sig = _gpPlaySignature(p);
+      if (seen.has(sig)) return;
+      seen.add(sig);
+      out.push(_gpStripFlags(p));
+    });
+  });
+  return out;
+}
+
+function getGamePlanFlaggedCount(flag) {
+  return _gpFlaggedSigs(flag).size;
+}
+
+/* -------------------------------------------------------------------------
    Filtering library
    ------------------------------------------------------------------------- */
 
