@@ -48,6 +48,14 @@ function renderPlaybook() {
           : "";
         const installBadge =
           typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "";
+        const _imgSig =
+          typeof playSignature === "function" ? playSignature(play) : "";
+        const imgBadge =
+          _imgSig &&
+          typeof window.playImages !== "undefined" &&
+          window.playImages.has(_imgSig)
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_imgSig)}" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+            : "";
 
         const gpActive = isPlayInGamePlan(play);
         const gpToggle = getGameWeek().opponentName
@@ -60,7 +68,7 @@ function renderPlaybook() {
                 title="Click to select, double-click to edit">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${installBadge}</td>
-                <td class="col-type">${wbIndicator}${jvBadge}${wbFlagBadge}${highlightSearch(play.type, searchTerm)}</td>
+                <td class="col-type">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${highlightSearch(play.type, searchTerm)}</td>
                 <td class="col-formation">${highlightSearch(play.formation, searchTerm)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlightSearch(play.back || "-", searchTerm)}</td>
@@ -98,6 +106,14 @@ function renderPlaybook() {
           isPlayFlaggedInGamePlan(play, "wb")
             ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
             : "";
+        const _cardImgSig =
+          typeof playSignature === "function" ? playSignature(play) : "";
+        const cardImgBadge =
+          _cardImgSig &&
+          typeof window.playImages !== "undefined" &&
+          window.playImages.has(_cardImgSig)
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_cardImgSig)}" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+            : "";
         const gpCardActive = isPlayInGamePlan(play);
         const gpCardToggle = getGameWeek().opponentName
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
@@ -112,7 +128,7 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
-            <div class="pb-card-play">${gpCardToggle}${installBadge}${cardJv}${cardWbFlag} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}${picturePillFor(play)}</div>
+            <div class="pb-card-play">${gpCardToggle}${installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}${picturePillFor(play)}</div>
             <div class="pb-card-sub">${highlightSearch(play.type, searchTerm)}${play.motion ? " · " + highlightSearch(play.motion, searchTerm) : ""}${play.back ? " · " + highlightSearch(play.back, searchTerm) : ""}</div>
             <div class="pb-card-pills">${pills}</div>
           </div>

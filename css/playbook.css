@@ -104,6 +104,80 @@ table.sortable th {
   vertical-align: baseline;
 }
 
+/* Image attached to play */
+.pb-img-badge {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  vertical-align: baseline;
+  cursor: zoom-in;
+  user-select: none;
+}
+.pb-img-badge:hover,
+.pb-img-badge:focus {
+  filter: drop-shadow(0 0 2px var(--color-primary));
+}
+.pb-img-popover {
+  position: fixed;
+  z-index: var(--z-toast);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-xs);
+  max-width: 360px;
+  max-height: 360px;
+  pointer-events: none;
+}
+.pb-img-popover img {
+  display: block;
+  max-width: 344px;
+  max-height: 344px;
+  width: auto;
+  height: auto;
+  border-radius: var(--radius-sm);
+}
+
+/* Editor — image attach section */
+.pb-editor-image-row {
+  display: flex;
+  gap: var(--space-md);
+  align-items: flex-start;
+}
+.pb-editor-image-preview {
+  flex: 0 0 160px;
+  width: 160px;
+  height: 120px;
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+.pb-editor-image-preview img {
+  max-width: 100%;
+  max-height: 100%;
+  object-fit: contain;
+}
+.pb-editor-image-placeholder {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+.pb-editor-image-actions {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.pb-editor-hint {
+  margin: var(--space-xs) 0 0;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
 /* Game Plan indicators */
 .gp-indicator {
   margin-right: 4px;

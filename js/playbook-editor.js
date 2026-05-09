@@ -361,6 +361,26 @@ function _populateEditorForm(play, isNew) {
     </div>
   </div>`;
 
+  // Play image (IndexedDB-backed)
+  const _peImgUrl = (!isNew && typeof getPlayImageUrl === "function")
+    ? getPlayImageUrl(play) : null;
+  html += `<div class="pb-editor-section pb-editor-image">
+    <div class="pb-editor-section-title">🖼️ Play Image</div>
+    <div class="pb-editor-image-row">
+      <div class="pb-editor-image-preview" id="peImagePreview">
+        ${_peImgUrl
+          ? `<img src="${_peImgUrl}" alt="Play diagram preview" />`
+          : `<div class="pb-editor-image-placeholder">No image</div>`}
+      </div>
+      <div class="pb-editor-image-actions">
+        <input type="file" id="peImageFile" accept="image/*" style="display:none" />
+        <button type="button" class="btn btn-sm btn-secondary" data-action="triggerClick" data-target="peImageFile">${_peImgUrl ? "Replace" : "Add"} Image…</button>
+        <button type="button" class="btn btn-sm btn-danger" id="peImageRemoveBtn" ${_peImgUrl ? "" : "style=\"display:none\""}>Remove</button>
+        <p class="pb-editor-hint">Pick a PNG/JPG. Auto-resized to ~900px JPEG. Stored in IndexedDB so it survives offline.</p>
+      </div>
+    </div>
+  </div>`;
+
   _EDITOR_SECTIONS.forEach((section) => {
     html += `<div class="pb-editor-section">`;
     html += `<div class="pb-editor-section-title">${section.title}</div>`;
@@ -403,6 +423,9 @@ function _populateEditorForm(play, isNew) {
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
+
+  // Wire up the play image controls
+  _wirePlayEditorImage(play, isNew);
 
   body.querySelectorAll("select[data-can-add-new]").forEach((sel) => {
     sel.addEventListener("change", async () => {
@@ -565,6 +588,73 @@ function _syncGamePlanCheckbox(play) {
   const isTagged = isPlayTaggedForOpponent(play, gw.opponentName);
   if (cb.checked !== isTagged) {
     togglePlayGamePlanTag(play, gw.opponentName);
+  }
+}
+
+function _wirePlayEditorImage(play, isNew) {
+  if (typeof window.playImages === "undefined") return;
+  const fileInput = document.getElementById("peImageFile");
+  const removeBtn = document.getElementById("peImageRemoveBtn");
+  const previewEl = document.getElementById("peImagePreview");
+  if (!fileInput || !previewEl) return;
+
+  // For brand-new plays, the signature isn't stable until save; keep the controls
+  // disabled so users save first, then add an image on the next open.
+  if (isNew) {
+    if (removeBtn) removeBtn.disabled = true;
+    fileInput.disabled = true;
+    const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
+    if (trigger) {
+      trigger.disabled = true;
+      trigger.title = "Save the play first, then re-open to add an image.";
+    }
+    return;
+  }
+
+  const sig = (typeof playSignature === "function") ? playSignature(play) : "";
+  if (!sig) return;
+
+  const _refreshPreview = () => {
+    const url = (typeof getPlayImageUrl === "function") ? getPlayImageUrl(play) : null;
+    if (url) {
+      previewEl.innerHTML = `<img src="${url}" alt="Play diagram preview" />`;
+      if (removeBtn) removeBtn.style.display = "";
+    } else {
+      previewEl.innerHTML = `<div class="pb-editor-image-placeholder">No image</div>`;
+      if (removeBtn) removeBtn.style.display = "none";
+    }
+  };
+
+  fileInput.addEventListener("change", async () => {
+    const file = fileInput.files && fileInput.files[0];
+    fileInput.value = "";
+    if (!file) return;
+    try {
+      const blob = await window.playImages.compress(file, { maxDim: 900, quality: 0.82 });
+      await window.playImages.set(sig, blob);
+      _refreshPreview();
+      showToast(`🖼️ Image added (${Math.round(blob.size / 1024)} KB)`, {
+        duration: 2200, type: "success",
+      });
+      if (typeof renderPlaybook === "function") renderPlaybook();
+    } catch (err) {
+      // eslint-disable-next-line no-console
+      console.warn("Image attach failed:", err);
+      showToast("Could not attach that image.", { type: "error", duration: 3000 });
+    }
+  });
+
+  if (removeBtn) {
+    removeBtn.addEventListener("click", async () => {
+      const ok = await showConfirm("Remove the image attached to this play?", {
+        title: "Remove Image", icon: "🗑️", confirmText: "Remove", danger: true,
+      });
+      if (!ok) return;
+      await window.playImages.delete(sig);
+      _refreshPreview();
+      showToast("Image removed", { duration: 2000 });
+      if (typeof renderPlaybook === "function") renderPlaybook();
+    });
   }
 }
 
