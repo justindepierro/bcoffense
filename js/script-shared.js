@@ -295,7 +295,7 @@ function getScriptFullCall(play, options = {}) {
     if (options.showEmoji && displayPlay.personnel) {
       oneWordParts.push(getPersonnelEmoji(displayPlay.personnel, options.useSquares));
     }
-    if (displayPlay.personnel) {
+    if (!options.showEmoji && displayPlay.personnel) {
       oneWordParts.push(
         `<span class="script-one-word-personnel">${escapeHtml(displayPlay.personnel)}</span>`,
       );
