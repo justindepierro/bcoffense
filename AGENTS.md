@@ -622,6 +622,7 @@ refactor: Code restructuring, no behavior change
 
 - Single branch: `main`
 - No PRs, no CI — direct commit and push
+- After completing and validating a requested code change, commit and push to `main` unless the user explicitly asks to keep changes local.
 - Always bump SW version when changing cached assets
 
 ---

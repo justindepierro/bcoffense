@@ -192,7 +192,7 @@ function getScriptPrintColumns(opts = {}) {
     {
       key: "call",
       label: "Play Call",
-      render: (play) => getFullCall(play, opts),
+      render: (play) => getScriptFullCall(play, opts),
     },
     {
       key: "type",

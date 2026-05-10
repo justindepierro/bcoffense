@@ -272,6 +272,11 @@
   line-height: 1.35;
   overflow-wrap: anywhere;
 }
+
+.script-one-word-call {
+  color: var(--color-royal-blue);
+  font-weight: 800;
+}
 .script-item .play-call .call-meta {
   display: inline-flex;
   align-items: center;

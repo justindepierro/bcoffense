@@ -8,6 +8,7 @@ const SCRIPT_DISPLAY_CHECKBOX_IDS = [
   "scriptRedMotions",
   "scriptRemoveVowels",
   "scriptShowLineCall",
+  "scriptShowOneWordOnly",
   "scriptHighlightHuddle",
   "scriptHighlightCandy",
   "scriptShowWbNum",
@@ -62,6 +63,8 @@ function getScriptDisplayOptions() {
       document.getElementById("scriptRemoveVowels")?.checked || false,
     showLineCall:
       document.getElementById("scriptShowLineCall")?.checked !== false,
+    showOneWordOnly:
+      document.getElementById("scriptShowOneWordOnly")?.checked || false,
     highlightHuddle:
       document.getElementById("scriptHighlightHuddle")?.checked || false,
     highlightCandy:
@@ -84,6 +87,8 @@ function selectAllScriptOptions() {
     const el = document.getElementById(id);
     if (el) el.checked = true;
   });
+  const oneWordOnlyEl = document.getElementById("scriptShowOneWordOnly");
+  if (oneWordOnlyEl) oneWordOnlyEl.checked = false;
   saveScriptDisplayOptions();
   renderScript();
 }

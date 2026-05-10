@@ -534,8 +534,8 @@ function createScriptRenderContext(opts, showPrintPreview) {
       }
       const variantKey = hideProtection ? "hideProtection" : "default";
       if (variants.has(variantKey)) return variants.get(variantKey);
-      const rendered = getFullCall(
-        getScriptDisplayPlay(play),
+      const rendered = getScriptFullCall(
+        play,
         hideProtection ? { ...opts, hideProtection: true } : opts,
       );
       variants.set(variantKey, rendered);

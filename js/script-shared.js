@@ -286,5 +286,12 @@ function getScriptPlaySummaryText(play) {
 }
 
 function getScriptFullCall(play, options = {}) {
-  return getFullCall(getScriptDisplayPlay(play), options);
+  const displayPlay = getScriptDisplayPlay(play);
+  if (!displayPlay) return "";
+  const oneWordCall = String(displayPlay.oneWord || "").trim();
+  if (options.showOneWordOnly && oneWordCall) {
+    const text = options.noVowels ? removeVowels(oneWordCall) : oneWordCall;
+    return `<span class="script-one-word-call">${escapeHtml(text)}</span>`;
+  }
+  return getFullCall(displayPlay, options);
 }
