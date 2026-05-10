@@ -139,7 +139,7 @@ function clearCsPickerFilters() {
     const element = document.getElementById(id);
     if (element) element.value = "";
   });
-  ["csPickerGamePlanFilter", "csPickerJvFilter"].forEach((id) => {
+  ["csPickerGamePlanFilter", "csPickerJvFilter", "csPickerNotOnSheetFilter"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.checked = false;
   });
@@ -230,6 +230,19 @@ function populateCallSheetPlayList() {
     });
   }
 
+  const usedCallSheetKeys =
+    typeof getCallSheetUsedPlayKeys === "function"
+      ? getCallSheetUsedPlayKeys()
+      : new Set();
+  const notOnSheetCountEl = document.getElementById("csPickerNotOnSheetCount");
+  if (notOnSheetCountEl) {
+    const n =
+      typeof csPlayKey === "function"
+        ? sourceList.filter((play) => !usedCallSheetKeys.has(csPlayKey(play))).length
+        : 0;
+    notOnSheetCountEl.textContent = n > 0 ? ` (${n})` : "";
+  }
+
   let filtered = sourceList;
 
   if (search) {
@@ -280,11 +293,15 @@ function populateCallSheetPlayList() {
 
   const gamePlanOnly = document.getElementById("csPickerGamePlanFilter")?.checked || false;
   const jvOnly = document.getElementById("csPickerJvFilter")?.checked || false;
+  const notOnSheetOnly = document.getElementById("csPickerNotOnSheetFilter")?.checked || false;
   if (gamePlanOnly && typeof isPlayInGamePlanBoard === "function") {
     filtered = filtered.filter((play) => isPlayInGamePlanBoard(play));
   }
   if (jvOnly && typeof isPlayFlaggedInGamePlan === "function") {
     filtered = filtered.filter((play) => isPlayFlaggedInGamePlan(play, "jv"));
+  }
+  if (notOnSheetOnly && typeof csPlayKey === "function") {
+    filtered = filtered.filter((play) => !usedCallSheetKeys.has(csPlayKey(play)));
   }
 
   if (sortBy) {
@@ -304,7 +321,10 @@ function populateCallSheetPlayList() {
       formationFilter ||
       playTypeFilter ||
       backFilter ||
-      tempoFilter
+      tempoFilter ||
+      gamePlanOnly ||
+      jvOnly ||
+      notOnSheetOnly
     ) {
       countEl.textContent = `${filtered.length} of ${total} plays${filtered.length > 150 ? " (showing first 150)" : ""}`;
     } else {

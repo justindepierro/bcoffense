@@ -3549,6 +3549,41 @@
   border-color: var(--color-primary);
   color: #fff;
 }
+.gp-drawer-filter-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  cursor: pointer;
+  user-select: none;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.gp-drawer-filter-toggle:hover {
+  background: var(--color-bg-hover-row);
+}
+.gp-drawer-filter-toggle input[type="checkbox"] {
+  width: 14px;
+  height: 14px;
+  accent-color: var(--color-accent);
+  cursor: pointer;
+}
+.gp-drawer-filter-toggle.gp-drawer-filter-active {
+  background: var(--color-accent-light);
+  border-color: var(--color-accent);
+}
+.gp-drawer-filter-count {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-micro);
+  font-weight: 700;
+}
 
 .gp-drawer-search-wrap {
   position: relative;

@@ -11,6 +11,7 @@
      - closeGameplanDrawer()
      - setGameplanDrawerScope(value)              ("active" | "all")
      - setGameplanDrawerType(value)               ("" | "Run" | "Pass" | ...)
+     - setGameplanDrawerNotOnSheetOnly(event)     filters to plays absent from call sheet
      - setGameplanDrawerSearch(value)             debounced
      - clearGameplanDrawerSearch()
      - refreshGameplanDrawer()                    re-pulls plays + re-renders
@@ -26,6 +27,7 @@ let _gpDrawerState = {
   open: false,
   scope: "active", // "active" | "all"
   type: "", // "" | "Run" | "Pass" | "Screen" | "Quick" | "Play Action" | "RPO" | "Run Option" | "Movement"
+  notOnSheetOnly: false,
   search: "",
   sortBy: "default", // "default" | "az" | "type" | "form" | "uses-desc" | "uses-asc"
   searchTimer: null,
@@ -67,6 +69,10 @@ function _gpDrawerFilterAndSort(source, usageMap) {
     out = out.filter((p) => (p.type || "") === _gpDrawerState.type);
   }
 
+  if (_gpDrawerState.notOnSheetOnly) {
+    out = out.filter((p) => _gpDrawerUseCount(p, usageMap) === 0);
+  }
+
   // Search across the same fields the picker uses
   const q = (_gpDrawerState.search || "").toLowerCase().trim();
   if (q) {
@@ -88,11 +94,6 @@ function _gpDrawerFilterAndSort(source, usageMap) {
   }
 
   // Sort
-  const sigUses = (p) => {
-    if (!usageMap || typeof playSignature !== "function") return 0;
-    const arr = usageMap[playSignature(p)] || [];
-    return arr.reduce((s, u) => s + (u.count || 1), 0);
-  };
   const cmpDefault = (a, b) => {
     const ta = (a.type || "").localeCompare(b.type || "");
     if (ta) return ta;
@@ -110,11 +111,11 @@ function _gpDrawerFilterAndSort(source, usageMap) {
     return f || cmpAZ(a, b);
   };
   const cmpUsesDesc = (a, b) => {
-    const d = sigUses(b) - sigUses(a);
+    const d = _gpDrawerUseCount(b, usageMap) - _gpDrawerUseCount(a, usageMap);
     return d || cmpDefault(a, b);
   };
   const cmpUsesAsc = (a, b) => {
-    const d = sigUses(a) - sigUses(b);
+    const d = _gpDrawerUseCount(a, usageMap) - _gpDrawerUseCount(b, usageMap);
     return d || cmpDefault(a, b);
   };
   const sorters = {
@@ -128,6 +129,12 @@ function _gpDrawerFilterAndSort(source, usageMap) {
   out.sort(sorters[_gpDrawerState.sortBy] || cmpDefault);
 
   return out;
+}
+
+function _gpDrawerUseCount(play, usageMap) {
+  if (!usageMap || typeof playSignature !== "function") return 0;
+  const arr = usageMap[playSignature(play)] || [];
+  return arr.reduce((sum, usage) => sum + (usage.count || 1), 0);
 }
 
 /* ---------- Type chip counts ----------------------------------------------- */
@@ -216,6 +223,20 @@ function _gpDrawerRender() {
   const totalEl = document.getElementById("gpDrawerCount");
   if (totalEl) totalEl.textContent = `${visible.length} of ${source.length}`;
 
+  const notOnSheetCount = source.filter((play) => _gpDrawerUseCount(play, usageMap) === 0).length;
+  const notOnSheetCountEl = document.getElementById("gpDrawerNotOnSheetCount");
+  if (notOnSheetCountEl) {
+    notOnSheetCountEl.textContent = notOnSheetCount > 0 ? `(${notOnSheetCount})` : "";
+  }
+  const notOnSheetToggle = document.getElementById("gpDrawerNotOnSheetFilter");
+  if (notOnSheetToggle) {
+    notOnSheetToggle.checked = _gpDrawerState.notOnSheetOnly;
+  }
+  const notOnSheetWrap = document.getElementById("gpDrawerNotOnSheetWrap");
+  if (notOnSheetWrap) {
+    notOnSheetWrap.classList.toggle("gp-drawer-filter-active", _gpDrawerState.notOnSheetOnly);
+  }
+
   // Active opponent label
   const oppEl = document.getElementById("gpDrawerOpponent");
   if (oppEl) {
@@ -280,7 +301,7 @@ function _gpDrawerRender() {
       const highlightedMeta = q ? _gpDrawerHighlight(meta, q) : escapeHtml(meta);
       const sig = typeof playSignature === "function" ? playSignature(play) : "";
       const uses = (sig && usageMap[sig]) || [];
-      const totalUses = uses.reduce((s, u) => s + (u.count || 1), 0);
+      const totalUses = _gpDrawerUseCount(play, usageMap);
       const usageBadge = totalUses
         ? `<span class="gp-drawer-uses gp-drawer-uses-${totalUses > 1 ? "multi" : "one"}" title="On the call sheet ${totalUses} time${totalUses === 1 ? "" : "s"}">×${totalUses}</span>`
         : `<span class="gp-drawer-uses gp-drawer-uses-zero" title="Not on the call sheet">×0</span>`;
@@ -435,6 +456,14 @@ function setGameplanDrawerScope(value) {
 
 function setGameplanDrawerType(value) {
   _gpDrawerState.type = value || "";
+  _gpDrawerRender();
+}
+
+function setGameplanDrawerNotOnSheetOnly(valueOrEvent) {
+  _gpDrawerState.notOnSheetOnly =
+    valueOrEvent && valueOrEvent.target
+      ? !!valueOrEvent.target.checked
+      : !!valueOrEvent;
   _gpDrawerRender();
 }
 

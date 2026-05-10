@@ -1236,6 +1236,9 @@ function renderCallSheet() {
     "aria-label",
     "Call sheet " + (callSheetSettings.currentPage || "front") + " page",
   );
+  const isLandscape = callSheetSettings.orientation === "landscape";
+  container.classList.toggle("callsheet-landscape", isLandscape);
+  container.classList.toggle("callsheet-portrait", !isLandscape);
 
   const page = callSheetSettings.currentPage;
   const categories = getCallSheetCategoriesForPage(page);
@@ -1262,9 +1265,6 @@ function renderCallSheet() {
   // Insert into grid container
   container.innerHTML = html;
 
-  // Render Not Used plays section below the grid
-  renderNotUsedPlays();
-
   // Update page toggle buttons
   updatePageToggle();
 
@@ -1285,40 +1285,6 @@ function renderCallSheet() {
       }
     });
   }
-}
-
-// Not Used plays filter toggle handler
-function toggleCsNotUsedGpOnly(event) {
-  window.__csNotUsedGpOnly = event?.target?.checked;
-  renderCallSheet();
-}
-// Render Not Used plays section in #csNotUsedContainer
-function renderNotUsedPlays() {
-  const container = document.getElementById("csNotUsedContainer");
-  if (!container) return;
-  // Find all plays not on the current call sheet
-  const usedSigs = new Set();
-  Object.values(callSheet).forEach((cat) => {
-    ["left", "right"].forEach((side) => {
-      (cat[side] || []).forEach((p) => usedSigs.add(csPlayKey(p)));
-    });
-  });
-  let notUsedPlays = plays.filter((p) => !usedSigs.has(csPlayKey(p)));
-  const showGpOnly = window.__csNotUsedGpOnly === true;
-  if (showGpOnly && typeof isPlayInGamePlanBoard === "function") {
-    notUsedPlays = notUsedPlays.filter((p) => isPlayInGamePlanBoard(p));
-  }
-  let html = `<div class=\"callsheet-notused-bar\">\n    <label class=\"cs-notused-toggle\">\n      <input type=\"checkbox\" id=\"csNotUsedGpOnly\" ${showGpOnly ? "checked" : ""} data-onchange=\"toggleCsNotUsedGpOnly\" />\n      <span>🎯 Game Plan Only</span>\n    </label>\n    <span class=\"cs-notused-count\">Not Used: <b>${notUsedPlays.length}</b></span>\n  </div>`;
-  html += `<div class=\"callsheet-notused-list\" id=\"csNotUsedList\">`;
-  if (notUsedPlays.length === 0) {
-    html += `<div class=\"cs-notused-empty\">All plays are on the call sheet${showGpOnly ? " (game plan)" : ""}.</div>`;
-  } else {
-    notUsedPlays.forEach((play, idx) => {
-      html += `<div class=\"callsheet-notused-play\">${escapeHtml(play.formation || "")} ${escapeHtml(play.play || "")}</div>`;
-    });
-  }
-  html += `</div>`;
-  container.innerHTML = html;
 
   // Update undo/redo button state
   historyManager.updateButtons("callsheet");
@@ -3284,6 +3250,23 @@ function csPlayKey(play) {
   return `${(play.formation || "").toLowerCase()}|${(play.play || "").toLowerCase()}|${(play.personnel || "").toLowerCase()}`;
 }
 
+function getCallSheetUsedPlayKeys() {
+  const used = new Set();
+  if (!callSheet || typeof callSheet !== "object") return used;
+
+  Object.values(callSheet).forEach((bucket) => {
+    if (!bucket) return;
+    ["left", "right"].forEach((side) => {
+      const list = Array.isArray(bucket[side]) ? bucket[side] : [];
+      list.forEach((play) => {
+        if (play) used.add(csPlayKey(play));
+      });
+    });
+  });
+
+  return used;
+}
+
 /**
  * Re-hydrate every `{...play}` snapshot stored on the call sheet from the
  * master `plays[]` array. Mirrors `refreshGamePlanFromPlaybook()` in
@@ -3628,17 +3611,7 @@ function updateNotOnSheetPanel() {
   const panel = document.getElementById("csNotOnSheetPanel");
   if (!panel) return;
 
-  // Collect all play keys on the call sheet
-  const onSheet = new Set();
-  CALLSHEET_CATEGORIES.forEach((cat) => {
-    const data = callSheet[cat.id];
-    if (!data) return;
-    [...(data.left || []), ...(data.right || [])].forEach((play) => {
-      onSheet.add(csPlayKey(play));
-    });
-  });
-
-  // Find plays NOT on the sheet
+  const onSheet = getCallSheetUsedPlayKeys();
   const missing = plays.filter((p) => !onSheet.has(csPlayKey(p)));
 
   if (missing.length === 0) {

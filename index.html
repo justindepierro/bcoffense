@@ -1934,8 +1934,6 @@
       <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
 
       <div id="callSheetGrid" class="callsheet-grid" data-testid="callsheet-grid"></div>
-      <!-- Not Used Plays (below grid) -->
-      <div id="csNotUsedContainer"></div>
     </div>
   </div>
   <!-- End mainApp -->
@@ -1966,6 +1964,13 @@
         <button id="gpDrawerScopeAll" type="button" class="gp-scope-btn" data-action="setGameplanDrawerScope"
           data-arg="all" title="Show plays tagged for any opponent">All Opponents</button>
       </div>
+      <label id="gpDrawerNotOnSheetWrap" class="gp-drawer-filter-toggle"
+        title="Show only game plan plays not already on the call sheet">
+        <input type="checkbox" id="gpDrawerNotOnSheetFilter" data-onchange="setGameplanDrawerNotOnSheetOnly"
+          data-pass="event" />
+        <span>Not On Call Sheet</span>
+        <span id="gpDrawerNotOnSheetCount" class="gp-drawer-filter-count"></span>
+      </label>
       <div class="gp-drawer-search-wrap">
         <span class="gp-drawer-search-icon" aria-hidden="true">🔎</span>
         <input id="gpDrawerSearch" type="search" class="gp-drawer-search" placeholder="Search game plan plays…"
@@ -2063,6 +2068,10 @@
         <label class="cs-picker-source-label" title="Show only plays marked JV in the Game Plan">
           <input type="checkbox" id="csPickerJvFilter" data-onchange="populateCallSheetPlayList" />
           🟡 JV<span id="csPickerJvCount" class="cs-picker-chip-count"></span>
+        </label>
+        <label class="cs-picker-source-label" title="Show only plays not already on the call sheet">
+          <input type="checkbox" id="csPickerNotOnSheetFilter" data-onchange="populateCallSheetPlayList" />
+          🔍 Not On Sheet<span id="csPickerNotOnSheetCount" class="cs-picker-chip-count"></span>
         </label>
       </div>
 
