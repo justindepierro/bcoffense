@@ -277,6 +277,57 @@
   color: var(--color-royal-blue);
   font-weight: 800;
 }
+
+.script-one-word-personnel {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-body);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  vertical-align: 1px;
+}
+
+.script-call-edits {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  margin-top: 8px;
+  max-width: 360px;
+}
+
+.script-call-edit-field {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+.script-call-edit-field span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.script-item .script-call-edit-field input[type="text"] {
+  width: 100%;
+  min-width: 0;
+  padding: 4px 7px;
+  font-size: var(--font-size-2xs);
+}
+
+.script-item--compact .script-call-edits {
+  margin-top: 4px;
+}
+
+.script-item--compact .script-call-edit-field span {
+  display: none;
+}
 .script-item .play-call .call-meta {
   display: inline-flex;
   align-items: center;

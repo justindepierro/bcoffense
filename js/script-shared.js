@@ -291,7 +291,17 @@ function getScriptFullCall(play, options = {}) {
   const oneWordCall = String(displayPlay.oneWord || "").trim();
   if (options.showOneWordOnly && oneWordCall) {
     const text = options.noVowels ? removeVowels(oneWordCall) : oneWordCall;
-    return `<span class="script-one-word-call">${escapeHtml(text)}</span>`;
+    const oneWordParts = [];
+    if (options.showEmoji && displayPlay.personnel) {
+      oneWordParts.push(getPersonnelEmoji(displayPlay.personnel, options.useSquares));
+    }
+    if (displayPlay.personnel) {
+      oneWordParts.push(
+        `<span class="script-one-word-personnel">${escapeHtml(displayPlay.personnel)}</span>`,
+      );
+    }
+    oneWordParts.push(`<span class="script-one-word-call">${escapeHtml(text)}</span>`);
+    return oneWordParts.join(" ");
   }
   return getFullCall(displayPlay, options);
 }

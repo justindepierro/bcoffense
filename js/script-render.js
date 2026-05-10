@@ -375,6 +375,20 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
       </div>`;
 }
 
+function renderScriptInlineCallEdits(play, index, playLabel) {
+  return `
+      <div class="script-call-edits" aria-label="Inline call edits for ${escapeHtml(playLabel)}">
+        <label class="script-call-edit-field">
+          <span>Shift</span>
+          <input type="text" value="${escapeHtml(play.shift || "")}" placeholder="Shift" data-field="shift" data-idx="${index}" aria-label="Shift for ${escapeHtml(playLabel)}">
+        </label>
+        <label class="script-call-edit-field">
+          <span>Motion</span>
+          <input type="text" value="${escapeHtml(play.motion || "")}" placeholder="Motion" data-field="motion" data-idx="${index}" aria-label="Motion for ${escapeHtml(playLabel)}">
+        </label>
+      </div>`;
+}
+
 function renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) {
   return `
       <div class="print-preview-row">
@@ -440,6 +454,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
         <div class="call-meta">${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</div>
+        ${renderScriptInlineCallEdits(play, index, playLabel)}
       </div>
       <div class="hash-input">
         <select data-field="hash" data-idx="${index}" title="Hash" aria-label="Hash for ${escapeHtml(playLabel)}">
@@ -1112,6 +1127,38 @@ function updateNotes(index, notes) {
     return;
   }
   script[index].notes = notes;
+  debouncedSaveScriptState();
+}
+
+function updateScriptCallDisplay(index) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+  const { row, previewRow } = getScriptPlayDom(index);
+  const opts = typeof getScriptDisplayOptions === "function" ? getScriptDisplayOptions() : {};
+  const periodIndex = typeof findOwningPeriodIndex === "function"
+    ? findOwningPeriodIndex(index)
+    : -1;
+  const separator = periodIndex >= 0 ? script[periodIndex] : null;
+  const callOptions =
+    typeof getPeriodCallDisplayOptions === "function"
+      ? getPeriodCallDisplayOptions(separator, opts)
+      : opts;
+  const fullCall = getScriptFullCall(play, callOptions);
+  const callEl = row?.querySelector(".full-call");
+  if (callEl) callEl.innerHTML = fullCall;
+  const previewCallEl = previewRow?.querySelector(".preview-field.call");
+  if (previewCallEl) previewCallEl.innerHTML = fullCall;
+}
+
+function updateScriptCallField(index, field, value) {
+  if (!script[index] || script[index].isSeparator) return;
+  if (!["shift", "motion"].includes(field)) return;
+  if (bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(index)) {
+    applyBulkEdit(field, value);
+    return;
+  }
+  script[index][field] = value;
+  updateScriptCallDisplay(index);
   debouncedSaveScriptState();
 }
 

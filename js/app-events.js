@@ -348,6 +348,12 @@ document.addEventListener("DOMContentLoaded", () => {
         case "defBlitz":
           updateDefField(idx, "defBlitz", el.value);
           break;
+        case "shift":
+          updateScriptCallField(idx, "shift", el.value);
+          break;
+        case "motion":
+          updateScriptCallField(idx, "motion", el.value);
+          break;
         case "reps":
           updateReps(idx, el.value);
           break;
@@ -400,6 +406,12 @@ document.addEventListener("DOMContentLoaded", () => {
           break;
         case "defBlitz":
           if (!isBulkContext) updateDefField(idx, "defBlitz", el.value);
+          break;
+        case "shift":
+          if (!isBulkContext) updateScriptCallField(idx, "shift", el.value);
+          break;
+        case "motion":
+          if (!isBulkContext) updateScriptCallField(idx, "motion", el.value);
           break;
         case "periodLabel":
           updatePeriodLabel(idx, el.value, true);
