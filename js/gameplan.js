@@ -1,3 +1,15 @@
+// Global handler for JV/wristband flag toggles (called by data-action)
+function toggleGamePlanPlayFlag(arg) {
+  // arg format: boxId::sig::flag
+  if (!arg) return;
+  const parts = arg.split("::");
+  if (parts.length !== 3) return;
+  const [boxId, sig, flag] = parts;
+  if (_gpToggleFlag(boxId, sig, flag)) {
+    renderGamePlan();
+    showToast(flag === "wb" ? "Wristband flag toggled" : "JV flag toggled", { duration: 1200 });
+  }
+}
 /* =========================================================================
    Game Plan tab — drafting board for assigning plays into theoretical buckets
    - Source: full playbook, user-filtered
@@ -732,7 +744,11 @@ function refreshGamePlanFromPlaybook() {
       arr.forEach((snap, i) => {
         const fresh = _gpFindPlayBySig(_gpPlaySignature(snap));
         if (fresh) {
-          arr[i] = { ...fresh };
+          // Preserve assignment metadata (flags, etc.)
+          const preserved = {};
+          if (snap._gpFlags) preserved._gpFlags = { ...snap._gpFlags };
+          // Add more preserved fields here if needed
+          arr[i] = { ...fresh, ...preserved };
           updated += 1;
         }
       });

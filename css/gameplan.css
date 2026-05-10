@@ -538,8 +538,11 @@
   border-radius: var(--radius-sm);
   opacity: 0.35;
   filter: grayscale(0.6);
-  transition: opacity var(--transition-fast), filter var(--transition-fast),
-    background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    filter var(--transition-fast),
+    background var(--transition-fast),
+    border-color var(--transition-fast);
 }
 .gp-box-play:hover .gp-box-play-flag {
   opacity: 0.7;
@@ -569,7 +572,9 @@
   box-shadow: inset 3px 0 0 var(--color-warning);
 }
 .gp-box-play.gp-flag-wb.gp-flag-jv {
-  box-shadow: inset 3px 0 0 var(--color-info), inset 6px 0 0 var(--color-warning);
+  box-shadow:
+    inset 3px 0 0 var(--color-info),
+    inset 6px 0 0 var(--color-warning);
 }
 
 /* Density modes (applied on .gp-boxes) */

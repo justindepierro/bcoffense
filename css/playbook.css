@@ -1538,11 +1538,21 @@ table.sortable th {
   text-transform: uppercase;
   color: #fff;
 }
-.pb-picture-pill.pb-pic-wz { background: #1d6fb8; }     /* Wide Zone — blue */
-.pb-picture-pill.pb-pic-pull { background: #b8541d; }   /* Pullers — orange */
-.pb-picture-pill.pb-pic-dh { background: #6b3fb8; }     /* Downhill — purple */
-.pb-picture-pill.pb-pic-af { background: #1d8a4a; }     /* Anti-front — green */
-[data-theme="dark"] .pb-picture-pill { opacity: 0.92; }
+.pb-picture-pill.pb-pic-wz {
+  background: #1d6fb8;
+} /* Wide Zone — blue */
+.pb-picture-pill.pb-pic-pull {
+  background: #b8541d;
+} /* Pullers — orange */
+.pb-picture-pill.pb-pic-dh {
+  background: #6b3fb8;
+} /* Downhill — purple */
+.pb-picture-pill.pb-pic-af {
+  background: #1d8a4a;
+} /* Anti-front — green */
+[data-theme="dark"] .pb-picture-pill {
+  opacity: 0.92;
+}
 
 /* =========================================================
    Cleanup by Call Sheet Category modal
@@ -1608,7 +1618,9 @@ table.sortable th {
   background: var(--color-bg-input);
   color: var(--color-text);
   font-size: var(--font-size-sm);
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 .cat-cleanup-search-wrap input[type="search"]:focus {
   outline: none;
@@ -1651,7 +1663,9 @@ table.sortable th {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 .cat-cleanup-pill:hover {
   background: var(--color-bg-hover-row);
@@ -1680,7 +1694,9 @@ table.sortable th {
   display: inline-flex;
   align-items: center;
   gap: 6px;
-  transition: background var(--transition-fast), color var(--transition-fast),
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast),
     border-color var(--transition-fast);
 }
 .cat-cleanup-chip:hover {

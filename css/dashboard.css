@@ -505,9 +505,15 @@
   letter-spacing: 0.5px;
   font-weight: 600;
 }
-.dash-gp-flag-board { border-left: 3px solid var(--color-primary); }
-.dash-gp-flag-wb { border-left: 3px solid var(--color-info); }
-.dash-gp-flag-jv { border-left: 3px solid var(--color-warning); }
+.dash-gp-flag-board {
+  border-left: 3px solid var(--color-primary);
+}
+.dash-gp-flag-wb {
+  border-left: 3px solid var(--color-info);
+}
+.dash-gp-flag-jv {
+  border-left: 3px solid var(--color-warning);
+}
 
 .dash-gp-breakdown {
   flex: 1;

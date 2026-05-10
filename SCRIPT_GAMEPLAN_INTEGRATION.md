@@ -28,13 +28,13 @@ matching, drag-and-drop, or downstream pushes.
 
 ## Cross-page filter helpers (shipped v405, in `gameplan.js`)
 
-| Function                                  | Purpose                                                   |
-| ----------------------------------------- | --------------------------------------------------------- |
-| `getGamePlanBoardSignatures()`            | `Set<sig>` of every play assigned to the current board    |
-| `isPlayInGamePlanBoard(play)`             | `true` if play matches any board assignment               |
-| `isPlayFlaggedInGamePlan(play, "wb"\|"jv")` | `true` if any board copy has the flag set              |
-| `getGamePlanFlaggedPlays("wb"\|"jv")`     | Array of unique flagged play snapshots (flags stripped)   |
-| `getGamePlanFlaggedCount("wb"\|"jv")`     | Count of unique flagged signatures                        |
+| Function                                    | Purpose                                                 |
+| ------------------------------------------- | ------------------------------------------------------- |
+| `getGamePlanBoardSignatures()`              | `Set<sig>` of every play assigned to the current board  |
+| `isPlayInGamePlanBoard(play)`               | `true` if play matches any board assignment             |
+| `isPlayFlaggedInGamePlan(play, "wb"\|"jv")` | `true` if any board copy has the flag set               |
+| `getGamePlanFlaggedPlays("wb"\|"jv")`       | Array of unique flagged play snapshots (flags stripped) |
+| `getGamePlanFlaggedCount("wb"\|"jv")`       | Count of unique flagged signatures                      |
 
 These are intentionally global — any tab can call them without a dependency.
 
@@ -47,7 +47,7 @@ These are intentionally global — any tab can call them without a dependency.
 - **`📋 Build WB Card (N)`** button in the gameplan header creates a new
   wristband card named `vs <Opponent> (Game Plan)` filled with WB-flagged plays.
 - **Playbook** has a `🟡 JV Only` checkbox next to the existing `🎯 Game Plan
-  Only` filter.
+Only` filter.
 - **Script (Available Plays)** strip has new `🎯 Game Plan` and `🟡 JV` chips
   that filter by board membership / JV flag respectively.
 
