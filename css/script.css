@@ -3040,13 +3040,30 @@
 .script-table .col-reps {
   width: 30px;
 }
-.script-table .col-notes {
-  width: 70px;
-}
-
 .script-print-personnel-row .script-print-personnel-cell {
   padding: 4px 6px;
   background: var(--color-bg-body);
+}
+
+.script-print-play-note-cell,
+.print-period-notes-cell {
+  padding: 2px 6px;
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
+  font-size: var(--font-size-2xs);
+  line-height: 1.2;
+  color: var(--color-text-secondary);
+}
+
+.script-print-note-label {
+  margin-right: 6px;
+  color: var(--color-text-muted);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+
+.script-print-note-text {
+  font-weight: 500;
 }
 
 .script-print-personnel-grid {

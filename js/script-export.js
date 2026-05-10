@@ -226,19 +226,13 @@ function getScriptPrintColumns(opts = {}) {
     },
   );
 
-  columns.push({
-    key: "notes",
-    label: "Notes",
-    render: (play) => escapeHtml(play.notes || "-"),
-  });
-
   return columns;
 }
 
 function buildScriptPlayRow(play, displayNum, opts = {}) {
   const columns = getScriptPrintColumns(opts);
   const visibleLineup = getScriptVisiblePlayerLineup(play, opts);
-  const wrapCellKeys = new Set(["notes"]);
+  const noteText = String(play.notes || "").trim();
 
   let rowColor = "";
   if (opts.highlightHuddle && play.tempo && play.tempo.toLowerCase() === "huddle") {
@@ -255,19 +249,23 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
     ${columns
       .map(
         (column) => {
-          const wrapStyle = wrapCellKeys.has(column.key)
-            ? ' style="white-space: normal; overflow: visible; overflow-wrap: anywhere; word-break: break-word; vertical-align: top;"'
-            : "";
-          return `<td class="script-table-cell script-table-cell--${column.key}"${wrapStyle}>${column.render(play, displayNum)}</td>`;
+          return `<td class="script-table-cell script-table-cell--${column.key}">${column.render(play, displayNum)}</td>`;
         },
       )
       .join("")}
   </tr>`;
 
-  if (!visibleLineup.length) return mainRow;
+  const noteRow = noteText
+    ? `<tr class="script-print-play-note-row">
+    <td class="script-print-play-note-cell" colspan="${columns.length}">
+      <span class="script-print-note-label">Note</span>
+      <span class="script-print-note-text">${escapeHtml(noteText)}</span>
+    </td>
+  </tr>`
+    : "";
 
-  return `${mainRow}
-  <tr class="script-print-personnel-row">
+  const personnelRow = visibleLineup.length
+    ? `<tr class="script-print-personnel-row">
     <td class="script-print-personnel-cell" colspan="${columns.length}">
       <div class="script-print-personnel-grid" style="grid-template-columns: repeat(${visibleLineup.length}, minmax(0, 1fr));">
         ${visibleLineup
@@ -282,7 +280,10 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
       .join("")}
       </div>
     </td>
-  </tr>`;
+  </tr>`
+    : "";
+
+  return `${mainRow}${noteRow}${personnelRow}`;
 }
 
 function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
@@ -318,6 +319,7 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
       const metaMarkup = metaParts.length
         ? `<span class="print-period-meta">${escapeHtml(metaParts.join(" • "))}</span>`
         : "";
+      const periodNotes = String(sep.notes || "").trim();
       const periodColor = sep.color || (typeof UI_COLORS !== "undefined" ? UI_COLORS.periodDefault : "#333333");
       const textColor = typeof isColorDark === "function" && isColorDark(periodColor) ? "#ffffff" : "#111111";
       const headerStyle = `background: ${periodColor} !important; color: ${textColor} !important; -webkit-print-color-adjust: exact; print-color-adjust: exact;`;
@@ -330,6 +332,15 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
             </div>
           </td>
         </tr>`;
+      if (periodNotes) {
+        groupHtml += `
+        <tr class="print-period-notes-row">
+          <td class="print-period-notes-cell" colspan="${columns.length}">
+            <span class="script-print-note-label">Period Notes</span>
+            <span class="script-print-note-text">${escapeHtml(periodNotes)}</span>
+          </td>
+        </tr>`;
+      }
     }
     // Per-period numbering: each period restarts at 1.
     let displayNum = 0;
