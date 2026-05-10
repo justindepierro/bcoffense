@@ -157,20 +157,49 @@ function getScriptVisiblePlayerLineup(play, opts = {}) {
 }
 
 function getScriptPrintColumns(opts = {}) {
+  const widths = opts.showWbNum
+    ? {
+      num: "3.5%",
+      hash: "4.5%",
+      tempo: "6%",
+      wb: "5%",
+      call: "42%",
+      type: "8%",
+      front: "8%",
+      cov: "6%",
+      stunt: "7%",
+      blitz: "6%",
+      reps: "4%",
+    }
+    : {
+      num: "3.5%",
+      hash: "4.5%",
+      tempo: "6%",
+      call: "47%",
+      type: "8%",
+      front: "8%",
+      cov: "6%",
+      stunt: "7%",
+      blitz: "6%",
+      reps: "4%",
+    };
   const columns = [
     {
       key: "num",
       label: "#",
+      width: widths.num,
       render: (_play, displayNum) => `<strong>${displayNum}</strong>`,
     },
     {
       key: "hash",
       label: "Hash",
+      width: widths.hash,
       render: (play) => escapeHtml(play.hash || "-"),
     },
     {
       key: "tempo",
       label: "Tempo",
+      width: widths.tempo,
       render: (play) => escapeHtml(play.tempo || "-"),
     },
   ];
@@ -179,6 +208,7 @@ function getScriptPrintColumns(opts = {}) {
     columns.push({
       key: "wb",
       label: "WB#",
+      width: widths.wb,
       render: (play) => {
         const wristbandNumber = typeof findPlayOnWristband === "function"
           ? findPlayOnWristband(play)
@@ -192,36 +222,43 @@ function getScriptPrintColumns(opts = {}) {
     {
       key: "call",
       label: "Play Call",
+      width: widths.call,
       render: (play) => getScriptFullCall(play, opts),
     },
     {
       key: "type",
       label: "Type",
+      width: widths.type,
       render: (play) => escapeHtml(play.type || "-"),
     },
     {
       key: "front",
       label: "Front",
+      width: widths.front,
       render: (play) => escapeHtml(play.defFront || "-"),
     },
     {
       key: "cov",
       label: "Cov",
+      width: widths.cov,
       render: (play) => escapeHtml(play.defCoverage || "-"),
     },
     {
       key: "stunt",
       label: "Stunt",
+      width: widths.stunt,
       render: (play) => escapeHtml(play.defStunt || "-"),
     },
     {
       key: "blitz",
       label: "Blitz",
+      width: widths.blitz,
       render: (play) => escapeHtml(play.defBlitz || "-"),
     },
     {
       key: "reps",
       label: "Reps",
+      width: widths.reps,
       render: (play) => `×${escapeHtml(String(play.reps ?? 1))}`,
     },
   );
@@ -245,7 +282,7 @@ function buildScriptPlayRow(play, displayNum, opts = {}) {
     rowColor = `background: ${UI_COLORS.highlightCandy};`;
   }
 
-  const mainRow = `<tr style="${rowColor}">
+  const mainRow = `<tr class="script-print-play-row" style="${rowColor}">
     ${columns
       .map(
         (column) => {
@@ -363,6 +400,9 @@ function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   // period). Direct innerHTML is safe — getFullCall/escapeHtml already
   // escape user content. setInnerHTML would drop orphan <tr>/<tbody> nodes
   // because DOMParser strips them outside a <table> context.
+  const colgroupMarkup = `<colgroup>${columns
+    .map((column) => `<col class="script-col-${column.key}" style="width: ${column.width || "auto"};">`)
+    .join("")}</colgroup>`;
   const theadMarkup = `<thead><tr>${columns
     .map((column) => `<th class="col-${column.key}">${escapeHtml(column.label)}</th>`)
     .join("")}</tr></thead>`;
@@ -372,7 +412,7 @@ function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   const tbodyMarkup = bodyMarkup.includes("<tbody")
     ? bodyMarkup
     : `<tbody id="previewBody">${bodyMarkup}</tbody>`;
-  table.innerHTML = theadMarkup + tbodyMarkup;
+  table.innerHTML = colgroupMarkup + theadMarkup + tbodyMarkup;
 }
 
 function exportScriptCSV() {

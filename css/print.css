@@ -267,11 +267,17 @@
     box-shadow: none !important;
   }
   body.print-script .script-preview {
+    --script-print-ink: #111827;
+    --script-print-grid: #334155;
+    --script-print-grid-soft: #cbd5e1;
+    --script-print-muted: #64748b;
+    --script-print-fill: #f8fafc;
     display: block !important;
     visibility: visible !important;
     position: static !important;
     width: 100% !important;
     background: white !important;
+    color: var(--script-print-ink) !important;
     padding: 0.12in !important;
     margin: 0 !important;
     box-sizing: border-box !important;
@@ -286,24 +292,28 @@
   body.print-script .script-preview h2 {
     font-size: var(--font-size-md) !important;
     margin: 0 0 5px 0 !important;
+    color: var(--script-print-ink) !important;
   }
   body.print-script .script-preview .preview-team-name {
     font-size: 14px !important;
     font-weight: 800 !important;
     margin: 0 0 4px 0 !important;
-    letter-spacing: 0.08em !important;
+    letter-spacing: 0 !important;
+    color: var(--script-print-ink) !important;
   }
   body.print-script .script-preview p {
     font-size: var(--font-size-xs) !important;
     margin: 0 0 8px 0 !important;
+    color: var(--script-print-ink) !important;
   }
   body.print-script .script-table {
     width: 100% !important;
     border-collapse: collapse !important;
     border-spacing: 0 !important;
     table-layout: fixed !important;
-    font-size: 9px !important;
-    border: 0.5px solid var(--color-text) !important;
+    font-size: 8.5px !important;
+    border: 0.6px solid var(--script-print-grid) !important;
+    color: var(--script-print-ink) !important;
   }
   body.print-script .script-table thead {
     display: table-header-group !important;
@@ -317,23 +327,27 @@
   }
   body.print-script .script-table th {
     background: white !important;
-    color: var(--color-text) !important;
-    padding: 4px 3px !important;
-    font-size: 8px !important;
+    color: var(--script-print-ink) !important;
+    padding: 3px 2px !important;
+    font-size: 7.5px !important;
     font-weight: bold !important;
     white-space: nowrap !important;
-    border-top: 0.5px solid var(--color-text) !important;
-    border-bottom: 1.5px solid var(--color-text) !important;
+    border: 0.4px solid var(--script-print-grid-soft) !important;
+    border-bottom: 0.8px solid var(--script-print-grid) !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.02em !important;
+    letter-spacing: 0 !important;
+  }
+  body.print-script .script-table th[class^="col-"] {
+    width: auto !important;
   }
   body.print-script .script-table td {
-    padding: 3px 4px !important;
-    border: 0.5px solid var(--color-text) !important;
+    padding: 2px 3px !important;
+    border: 0.4px solid var(--script-print-grid-soft) !important;
     box-shadow: none !important;
-    font-size: 9px !important;
-    line-height: 1.2 !important;
-    min-height: 14px !important;
+    color: var(--script-print-ink) !important;
+    font-size: 8.5px !important;
+    line-height: 1.12 !important;
+    min-height: 12px !important;
     white-space: normal !important;
     overflow-wrap: anywhere !important;
     word-break: break-word !important;
@@ -352,16 +366,16 @@
   body.print-script .script-table .print-period-header td {
     -webkit-print-color-adjust: exact !important;
     print-color-adjust: exact !important;
-    border: 0.5px solid var(--color-text) !important;
+    border: 0.6px solid var(--script-print-grid) !important;
     border-bottom: 0 !important;
   }
   body.print-script .script-table .print-period-notes-cell,
   body.print-script .script-table .script-print-play-note-cell {
-    padding: 2px 5px !important;
+    padding: 2px 4px !important;
     border-top: 0 !important;
-    border-bottom: 0.5px solid var(--color-text) !important;
-    background: var(--color-bg-lighter) !important;
-    color: var(--color-text-secondary) !important;
+    border-bottom: 0.4px solid var(--script-print-grid-soft) !important;
+    background: var(--script-print-fill) !important;
+    color: var(--script-print-muted) !important;
     font-size: 7.5px !important;
     line-height: 1.15 !important;
     white-space: normal !important;
@@ -370,11 +384,11 @@
   }
   body.print-script .script-table .script-print-note-label {
     margin-right: 5px !important;
-    color: var(--color-text-muted) !important;
+    color: var(--script-print-muted) !important;
     font-size: 7px !important;
     font-weight: 800 !important;
     text-transform: uppercase !important;
-    letter-spacing: 0.03em !important;
+    letter-spacing: 0 !important;
   }
   body.print-script .script-table .script-print-note-text {
     font-weight: 500 !important;
@@ -385,19 +399,19 @@
   }
   body.print-script .script-table td.script-table-cell--call {
     text-align: left !important;
-    white-space: nowrap !important;
-    overflow: visible !important;
-    overflow-wrap: normal !important;
-    word-break: keep-all !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
     max-width: none !important;
-    width: 1% !important;
+    width: auto !important;
+    font-weight: 650 !important;
   }
   body.print-script .script-table td.script-table-cell--num,
   body.print-script .script-table td.script-table-cell--hash,
   body.print-script .script-table td.script-table-cell--tempo,
   body.print-script .script-table td.script-table-cell--wb,
   body.print-script .script-table td.script-table-cell--reps,
-  body.print-script .script-table td.script-table-cell--type,
   body.print-script .script-table td.script-table-cell--front,
   body.print-script .script-table td.script-table-cell--cov,
   body.print-script .script-table td.script-table-cell--stunt,
@@ -405,11 +419,19 @@
     white-space: nowrap !important;
     word-break: keep-all !important;
     overflow-wrap: normal !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
     text-align: center !important;
+  }
+  body.print-script .script-table td.script-table-cell--type {
+    text-align: center !important;
+    white-space: normal !important;
+    overflow: hidden !important;
+    overflow-wrap: anywhere !important;
+    word-break: normal !important;
   }
   body.print-script .script-table th:first-child,
   body.print-script .script-table td.script-table-cell--num {
-    width: 1% !important;
     min-width: 18px !important;
     padding-left: 2px !important;
     padding-right: 2px !important;
@@ -420,37 +442,35 @@
     visibility: hidden !important;
   }
   body.print-script .script-table .script-print-personnel-cell {
-    padding: 0 !important;
-    border: 0.5px solid var(--color-text) !important;
+    padding: 1px 3px !important;
+    border: 0.4px solid var(--script-print-grid-soft) !important;
     border-top: 0 !important;
-    background: var(--color-bg-body) !important;
+    background: var(--script-print-fill) !important;
   }
   body.print-script .script-table .script-print-personnel-grid {
     display: grid !important;
     grid-auto-flow: column !important;
     grid-auto-columns: minmax(0, 1fr) !important;
     width: 100% !important;
-    gap: 0 !important;
+    gap: 3px !important;
   }
   body.print-script .script-table .script-print-personnel-pill {
     display: grid !important;
     grid-template-columns: auto minmax(0, 1fr) !important;
     align-items: center !important;
-    gap: 4px !important;
-    padding: 3px 6px !important;
+    gap: 3px !important;
+    padding: 1px 2px !important;
     border: 0 !important;
-    border-left: 0.5px solid var(--color-text) !important;
     background: transparent !important;
-    font-size: 8px !important;
-    line-height: 1.2 !important;
+    color: var(--script-print-muted) !important;
+    font-size: 7.5px !important;
+    line-height: 1.1 !important;
     min-width: 0 !important;
-  }
-  body.print-script .script-table .script-print-personnel-pill:first-child {
-    border-left: 0 !important;
   }
   body.print-script .script-table .script-print-personnel-pos {
     font-weight: 700 !important;
     text-transform: uppercase !important;
+    color: var(--script-print-ink) !important;
   }
   body.print-script .script-table .script-print-personnel-name {
     white-space: nowrap !important;
@@ -459,7 +479,7 @@
     min-width: 0 !important;
   }
   body.print-script .line-call {
-    font-size: 8px !important;
+    font-size: 7.75px !important;
   }
   /* Remove alternating color - we use play type colors instead */
 }
