@@ -1245,18 +1245,34 @@ function renderCallSheet() {
 
   // Build duplicate map for this render
   const dupeMap = buildDuplicateMap();
-// Not Used plays filter toggle handler
-function toggleCsNotUsedGpOnly(event) {
-  window.__csNotUsedGpOnly = event?.target?.checked;
-  renderCallSheet();
-}
+
+  // Build category columns
+  let html = "";
+  const columns = buildCallSheetColumns(categories, 3);
+  html += '<div class="callsheet-columns">';
+  columns.forEach((col) => {
+    html += '<div class="callsheet-column">';
+    col.forEach((cat) => {
+      html += renderCategory(cat, callSheet[cat.id], dupeMap, displayOptions);
+    });
+    html += '</div>';
+  });
+  html += '</div>';
+
+  // Insert into grid container
+  container.innerHTML = html;
+
+  // Render Not Used plays section below the grid
+  renderNotUsedPlays();
+
+  // Update page toggle buttons
+  updatePageToggle();
 
   // Update loaded wristband display
   updateLoadedWristbandDisplay();
 
   // Update stats panel if visible
   updateStatsPanel();
-
 
   // Attach long-press for mobile context menus on callsheet plays
   if (typeof addLongPress === "function") {
@@ -1269,9 +1285,13 @@ function toggleCsNotUsedGpOnly(event) {
       }
     });
   }
+}
 
-  // Render Not Used plays section below the grid
-  renderNotUsedPlays();
+// Not Used plays filter toggle handler
+function toggleCsNotUsedGpOnly(event) {
+  window.__csNotUsedGpOnly = event?.target?.checked;
+  renderCallSheet();
+}
 // Render Not Used plays section in #csNotUsedContainer
 function renderNotUsedPlays() {
   const container = document.getElementById("csNotUsedContainer");
