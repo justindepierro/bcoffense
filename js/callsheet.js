@@ -1245,41 +1245,6 @@ function renderCallSheet() {
 
   // Build duplicate map for this render
   const dupeMap = buildDuplicateMap();
-
-
-  html += "</div>";
-      (cat[side] || []).forEach((p) => usedSigs.add(csPlayKey(p)));
-    });
-  });
-  // All plays in playbook not on sheet
-  let notUsedPlays = plays.filter((p) => !usedSigs.has(csPlayKey(p)));
-  // Game Plan filter toggle state
-  const showGpOnly = window.__csNotUsedGpOnly === true;
-  if (showGpOnly && typeof isPlayInGamePlanBoard === "function") {
-    notUsedPlays = notUsedPlays.filter((p) => isPlayInGamePlanBoard(p));
-  }
-  // Not Used box UI
-  html += `<div class="callsheet-notused-bar">
-    <label class="cs-notused-toggle">
-      <input type="checkbox" id="csNotUsedGpOnly" ${showGpOnly ? "checked" : ""} data-onchange="toggleCsNotUsedGpOnly" />
-      <span>🎯 Game Plan Only</span>
-    </label>
-    <span class="cs-notused-count">Not Used: <b>${notUsedPlays.length}</b></span>
-  </div>`;
-  html += `<div class="callsheet-notused-list" id="csNotUsedList">`;
-  if (notUsedPlays.length === 0) {
-    html += `<div class="cs-notused-empty">All plays are on the call sheet${showGpOnly ? " (game plan)" : ""}.</div>`;
-  } else {
-    notUsedPlays.forEach((play, idx) => {
-      html += `<div class="callsheet-notused-play">${escapeHtml(play.formation || "")} ${escapeHtml(play.play || "")}</div>`;
-    });
-  }
-  html += `</div>`;
-
-  container.innerHTML = html;
-
-  // Update page toggle buttons
-  updatePageToggle();
 // Not Used plays filter toggle handler
 function toggleCsNotUsedGpOnly(event) {
   window.__csNotUsedGpOnly = event?.target?.checked;
