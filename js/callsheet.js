@@ -12,6 +12,8 @@ const CS_COLORS = {
   gray: "#6c757d",
 };
 
+const CALLSHEET_PLAYER_AUTOFILL_MIN = 6;
+
 // Call sheet categories with colors and filters - FRONT PAGE
 const CALLSHEET_FRONT = [
   // Row 1
@@ -438,6 +440,7 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetShowPersonnel",
   "callsheetShowFormation",
   "callsheetShowFormationTags",
+  "callsheetShowBack",
   "callsheetShowOneWordOnly",
   "callsheetShowProtection",
   "callsheetShowPlayName",
@@ -465,13 +468,19 @@ const CALLSHEET_DISPLAY_IDS = [
   "callsheetPersonnelBorderColor",
 ];
 
+const CALLSHEET_DISPLAY_DEFAULTS = {
+  callsheetShowBack: true,
+};
+
 const CALLSHEET_CELL_DISPLAY_OVERRIDE_PROPS = [
   "cellUseOneWord",
+  "cellDisableOneWord",
   "cellForceUnderCenter",
   "cellHidePersonnel",
   "cellHideWristband",
   "cellHideFormation",
   "cellHideFormationTags",
+  "cellHideBack",
   "cellHideShift",
   "cellHideMotion",
   "cellHideProtection",
@@ -503,6 +512,7 @@ const CALLSHEET_CELL_DISPLAY_PRESETS = [
     overrides: {
       cellHideWristband: true,
       cellHideFormationTags: true,
+      cellHideBack: true,
       cellHideProtection: true,
       cellHidePlayTags: true,
       cellHideLineCall: true,
@@ -516,6 +526,7 @@ const CALLSHEET_CELL_DISPLAY_PRESETS = [
       cellHideWristband: true,
       cellHidePersonnel: true,
       cellHideFormationTags: true,
+      cellHideBack: true,
       cellHideShift: true,
       cellHideMotion: true,
       cellHideProtection: true,
@@ -559,10 +570,13 @@ function normalizeCallSheetCustomTagValue(value) {
   return normalizeSharedCustomTagValue(value);
 }
 
-function getCallSheetCustomTagMarkup(values, variant) {
+function getCallSheetCustomTagMarkup(values, variant, options = {}) {
   return values.map(
-    (entry) =>
-      `<span class="cs-inline-tag cs-inline-tag--${variant}">(${escapeHtml(formatSharedCustomTagEntryText(entry))})</span>`,
+    (entry) => {
+      const text = formatSharedCustomTagEntryText(entry);
+      const displayText = options.noVowels ? removeVowels(text) : text;
+      return `<span class="cs-inline-tag cs-inline-tag--${variant}">(${escapeHtml(displayText)})</span>`;
+    },
   );
 }
 
@@ -605,6 +619,7 @@ function getCallSheetCellDisplaySummary(play) {
     ["cellHidePersonnel", "-Pers", "Hide personnel badge"],
     ["cellHideFormation", "-Form", "Hide formation"],
     ["cellHideFormationTags", "-FTag", "Hide formation tags"],
+    ["cellHideBack", "-Back", "Hide back"],
     ["cellHideShift", "-Shift", "Hide shift"],
     ["cellHideMotion", "-Mot", "Hide motion"],
     ["cellHideProtection", "-Prot", "Hide protection"],
@@ -616,6 +631,10 @@ function getCallSheetCellDisplaySummary(play) {
   if (play.cellUseOneWord) {
     tokens.push("1W");
     titleParts.push("One-word only");
+  }
+  if (play.cellDisableOneWord) {
+    tokens.push("-1W");
+    titleParts.push("Force full call");
   }
 
   if (play.cellForceUnderCenter) {
@@ -776,14 +795,16 @@ async function autoPopulateCallSheet() {
     let unmatched = 0;
 
     // Build a unique key for a play (formation + play name + personnel)
-    const playKey = (p) =>
-      `${(p.formation || "").toLowerCase()}|${(p.play || "").toLowerCase()}|${(p.personnel || "").toLowerCase()}`;
+    const playKey = (p) => csPlayKey(p);
+
+    const playerTargets = buildPlayerCategoryAutoFillTargets(plays);
 
     // Go through each play and categorize
-    plays.forEach((play) => {
-      const categories = findMatchingCategories(play);
+    plays.forEach((play, playIndex) => {
+      const categories = new Set(findMatchingCategories(play));
+      (playerTargets[playIndex] || new Set()).forEach((catId) => categories.add(catId));
 
-      if (categories.length === 0) {
+      if (categories.size === 0) {
         unmatched++;
         return;
       }
@@ -1134,6 +1155,78 @@ function findMatchingCategories(play) {
   return matches;
 }
 
+function normalizeCallSheetPlayerName(value) {
+  return String(value || "").toLowerCase().trim();
+}
+
+function getCallSheetPlayerCategoryName(cat) {
+  const name =
+    typeof getCategoryDisplayName === "function"
+      ? getCategoryDisplayName(cat)
+      : cat?.name;
+  return normalizeCallSheetPlayerName(name);
+}
+
+/**
+ * Player buckets auto-fill from Key Player 1 first. Key Player 2 only backfills
+ * a bucket until it reaches the configured minimum count.
+ */
+function buildPlayerCategoryAutoFillTargets(items, options = {}) {
+  const source = Array.isArray(items) ? items : [];
+  const getPlay =
+    typeof options.getPlay === "function"
+      ? options.getPlay
+      : (item) =>
+        item && typeof item.play === "object" && item.play !== null
+          ? item.play
+          : item;
+  const minCount = Number.isFinite(options.minCount)
+    ? Math.max(0, Math.floor(options.minCount))
+    : CALLSHEET_PLAYER_AUTOFILL_MIN;
+  const targetSets = source.map(() => new Set());
+  const playerCats = Array.isArray(CALLSHEET_CATEGORIES)
+    ? CALLSHEET_CATEGORIES.filter((cat) => cat.playerSpecific)
+    : [];
+
+  playerCats.forEach((cat) => {
+    const playerName = getCallSheetPlayerCategoryName(cat);
+    if (!playerName) return;
+
+    const primary = [];
+    const secondary = [];
+    const primaryKeys = new Set();
+    const secondaryKeys = new Set();
+    source.forEach((item, index) => {
+      const play = getPlay(item);
+      if (!play) return;
+      const key = typeof csPlayKey === "function" ? csPlayKey(play) : String(index);
+      const keyPlayer1 = normalizeCallSheetPlayerName(play.keyPlayerName1);
+      const keyPlayer2 = normalizeCallSheetPlayerName(play.keyPlayerName2);
+      if (keyPlayer1 === playerName) {
+        if (primaryKeys.has(key)) return;
+        primaryKeys.add(key);
+        primary.push(index);
+      } else if (
+        keyPlayer2 === playerName &&
+        !primaryKeys.has(key) &&
+        !secondaryKeys.has(key)
+      ) {
+        secondaryKeys.add(key);
+        secondary.push(index);
+      }
+    });
+
+    primary.forEach((index) => targetSets[index].add(cat.id));
+    if (primary.length < minCount) {
+      secondary
+        .slice(0, minCount - primary.length)
+        .forEach((index) => targetSets[index].add(cat.id));
+    }
+  });
+
+  return targetSets;
+}
+
 /**
  * Get personnel abbreviation code
  */
@@ -1347,11 +1440,14 @@ function applyCallSheetDisplayState(opts) {
   if (!opts) return;
   CALLSHEET_DISPLAY_IDS.forEach((id) => {
     const el = document.getElementById(id);
-    if (!el || opts[id] === undefined) return;
+    if (!el) return;
+    const value =
+      opts[id] !== undefined ? opts[id] : CALLSHEET_DISPLAY_DEFAULTS[id];
+    if (value === undefined) return;
     if (el.type === "checkbox") {
-      el.checked = opts[id];
+      el.checked = value;
     } else {
-      el.value = opts[id];
+      el.value = value;
     }
   });
 }
@@ -1508,6 +1604,7 @@ function getCallSheetDisplayOptions() {
       document.getElementById("callsheetShowFormation")?.checked ?? true,
     showFormationTags:
       document.getElementById("callsheetShowFormationTags")?.checked ?? false,
+    showBack: document.getElementById("callsheetShowBack")?.checked ?? true,
     showOneWordOnly:
       document.getElementById("callsheetShowOneWordOnly")?.checked ?? false,
     showProtection:
@@ -1558,11 +1655,15 @@ function getCallSheetPlayDisplayOptions(play, baseOptions) {
   if (play.cellUseOneWord && play.oneWord && String(play.oneWord).trim()) {
     options.showOneWordOnly = true;
   }
+  if (play.cellDisableOneWord) {
+    options.showOneWordOnly = false;
+  }
 
   if (play.cellHidePersonnel) options.showPersonnel = false;
   if (play.cellHideWristband) options.showNumbers = false;
   if (play.cellHideFormation) options.showFormation = false;
   if (play.cellHideFormationTags) options.showFormationTags = false;
+  if (play.cellHideBack) options.showBack = false;
   if (play.cellHideMotion) options.showMotion = false;
   if (play.cellHideProtection) options.showProtection = false;
   if (play.cellHidePlayName) options.showPlayName = false;
@@ -1839,6 +1940,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
     { prop: "cellHidePersonnel", label: "Pers", title: "Hide personnel badge" },
     { prop: "cellHideFormation", label: "Form", title: "Hide formation" },
     { prop: "cellHideFormationTags", label: "FTag", title: "Hide formation tags" },
+    { prop: "cellHideBack", label: "Back", title: "Hide back" },
     { prop: "cellHideShift", label: "Shift", title: "Hide shift" },
     { prop: "cellHideMotion", label: "Mot", title: "Hide motion" },
     { prop: "cellHideProtection", label: "Prot", title: "Hide protection" },
@@ -1866,6 +1968,7 @@ function showPlayContextMenu(event, categoryId, hash, index) {
   if (play.oneWord && String(play.oneWord).trim()) {
     menuHtml += `<div class="cs-ctx-section"><span class="cs-ctx-label">Display Mode</span><div class="cs-ctx-styles">`;
     menuHtml += `<button class="cs-style-btn${play.cellUseOneWord ? " active" : ""}" data-action="toggleStyle" data-prop="cellUseOneWord" title="Show one-word call only">1W</button>`;
+    menuHtml += `<button class="cs-style-btn${play.cellDisableOneWord ? " active" : ""}" data-action="toggleStyle" data-prop="cellDisableOneWord" title="Force full call even when global one-word is on">Full</button>`;
     menuHtml += `</div></div>`;
   }
 
@@ -1976,6 +2079,8 @@ function showPlayContextMenu(event, categoryId, hash, index) {
       const prop = btn.dataset.prop;
       p[prop] = !p[prop];
       if (!p[prop]) delete p[prop];
+      if (prop === "cellUseOneWord" && p.cellUseOneWord) delete p.cellDisableOneWord;
+      if (prop === "cellDisableOneWord" && p.cellDisableOneWord) delete p.cellUseOneWord;
       renderCallSheet();
       saveCallSheet();
       reopenMenu();
@@ -2503,6 +2608,7 @@ function getCallSheetPrintDensityClass(play, displayOptions, playText) {
   if (displayOptions.showLineCall) densityScore += 6;
   if (displayOptions.showMotion) densityScore += 4;
   if (displayOptions.showProtection) densityScore += 4;
+  if (displayOptions.showBack) densityScore += 3;
   if (displayOptions.showPersonnel) densityScore += 3;
   if (play.cellNote) densityScore += Math.min(String(play.cellNote).length, 10);
 
@@ -2589,6 +2695,7 @@ function csSelectAllFields(selectAll) {
     "callsheetShowPersonnel",
     "callsheetShowFormation",
     "callsheetShowFormationTags",
+    "callsheetShowBack",
     "callsheetShowProtection",
     "callsheetShowPlayName",
     "callsheetShowTags",
@@ -2624,6 +2731,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: true,
+      callsheetShowBack: true,
       callsheetShowOneWordOnly: false,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
@@ -2656,6 +2764,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: false,
+      callsheetShowBack: false,
       callsheetShowOneWordOnly: false,
       callsheetShowProtection: false,
       callsheetShowPlayName: true,
@@ -2688,6 +2797,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: true,
+      callsheetShowBack: true,
       callsheetShowOneWordOnly: false,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
@@ -2720,6 +2830,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: true,
+      callsheetShowBack: true,
       callsheetShowOneWordOnly: false,
       callsheetShowProtection: true,
       callsheetShowPlayName: true,
@@ -2752,6 +2863,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: false,
+      callsheetShowBack: false,
       callsheetShowOneWordOnly: false,
       callsheetShowProtection: false,
       callsheetShowPlayName: true,
@@ -2784,6 +2896,7 @@ const BUILTIN_PRESETS = {
       callsheetShowPersonnel: true,
       callsheetShowFormation: true,
       callsheetShowFormationTags: false,
+      callsheetShowBack: false,
       callsheetShowOneWordOnly: false,
       callsheetShowProtection: false,
       callsheetShowPlayName: true,
@@ -2845,11 +2958,14 @@ function loadDisplayPreset(presetKey) {
   // Apply all options
   CALLSHEET_DISPLAY_IDS.forEach((id) => {
     const el = document.getElementById(id);
-    if (!el || opts[id] === undefined) return;
+    if (!el) return;
+    const value =
+      opts[id] !== undefined ? opts[id] : CALLSHEET_DISPLAY_DEFAULTS[id];
+    if (value === undefined) return;
     if (el.type === "checkbox") {
-      el.checked = opts[id];
+      el.checked = value;
     } else {
-      el.value = opts[id];
+      el.value = value;
     }
   });
 
@@ -3182,8 +3298,12 @@ function buildCallSheetPlayParts(play, options) {
     });
   }
 
-  playParts.push(...getCallSheetCustomTagMarkup(customFormationTags, "formation"));
-  playParts.push(...getCallSheetCustomTagMarkup(customBackTags, "back"));
+  if (options.showFormationTags) {
+    playParts.push(...getCallSheetCustomTagMarkup(customFormationTags, "formation", options));
+  }
+  if (options.showBack) {
+    playParts.push(...getCallSheetCustomTagMarkup(customBackTags, "back", options));
+  }
 
   // Handle shift with bold/red options
   if (play.shift && !options.hideShift) {
@@ -3214,7 +3334,7 @@ function buildCallSheetPlayParts(play, options) {
     playParts.push(escapeHtml(protText));
   }
 
-  if (play.back) {
+  if (options.showBack && play.back) {
     const backText = options.noVowels ? removeVowels(play.back) : play.back;
     playParts.push(escapeHtml(backText));
   }
@@ -3247,7 +3367,7 @@ function buildCallSheetPlayParts(play, options) {
  * Build a unique key for a play (for duplicate detection)
  */
 function csPlayKey(play) {
-  return `${(play.formation || "").toLowerCase()}|${(play.play || "").toLowerCase()}|${(play.personnel || "").toLowerCase()}`;
+  return getPlayIdentityKey(play, "core", { normalizeCase: true, trim: false });
 }
 
 function getCallSheetUsedPlayKeys() {

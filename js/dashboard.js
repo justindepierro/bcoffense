@@ -527,6 +527,14 @@ function _dashGetGamePlanPlaysForOpponent(opponentName) {
 
 function _dashPlaysMatchingCategory(categoryId, gpPlays) {
   if (!Array.isArray(gpPlays) || gpPlays.length === 0) return [];
+  const cat =
+    Array.isArray(CALLSHEET_CATEGORIES)
+      ? CALLSHEET_CATEGORIES.find((item) => item.id === categoryId)
+      : null;
+  if (cat?.playerSpecific && typeof buildPlayerCategoryAutoFillTargets === "function") {
+    const targets = buildPlayerCategoryAutoFillTargets(gpPlays);
+    return gpPlays.filter((_, index) => targets[index]?.has(categoryId));
+  }
   return gpPlays.filter((play) => {
     if (typeof _gpComputeCallSheetTargets === "function") {
       const set = _gpComputeCallSheetTargets(play, null);

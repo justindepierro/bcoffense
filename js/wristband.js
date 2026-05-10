@@ -935,7 +935,10 @@ function getWbDisplayOptionIds() {
     "wbRedShifts",
     "wbItalicMotions",
     "wbRedMotions",
+    "wbRemoveVowels",
     "wbShowLineCall",
+    "wbLineCallOnly",
+    "wbCadenceReminder",
     "wbHighlightHuddle",
     "wbHighlightCandy",
   ];

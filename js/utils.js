@@ -1478,6 +1478,50 @@ function getFullCall(play, options = {}) {
   return fullCall.trim();
 }
 
+const PLAY_IDENTITY_FIELDS = {
+  name: ["formation", "play"],
+  core: ["formation", "play", "personnel"],
+  tag: ["formation", "play", "personnel", "type"],
+  gameplan: [
+    "type",
+    "personnel",
+    "formation",
+    "formTag1",
+    "formTag2",
+    "under",
+    "back",
+    "shift",
+    "motion",
+    "protection",
+    "lineCall",
+    "play",
+    "playTag1",
+    "playTag2",
+    "basePlay",
+    "oneWord",
+  ],
+};
+
+function normalizePlayIdentityValue(value, options = {}) {
+  const raw = value == null ? "" : String(value);
+  const trimmed = options.trim === false ? raw : raw.trim();
+  return options.normalizeCase ? trimmed.toLowerCase() : trimmed;
+}
+
+function getPlayIdentityKey(play, mode = "core", options = {}) {
+  if (!play) return "";
+  const fields = Array.isArray(mode)
+    ? mode
+    : PLAY_IDENTITY_FIELDS[mode] || PLAY_IDENTITY_FIELDS.core;
+  return fields
+    .map((field) => normalizePlayIdentityValue(play[field], options))
+    .join("|");
+}
+
+function playsHaveSameIdentity(p1, p2, mode = "core", options = {}) {
+  return getPlayIdentityKey(p1, mode, options) === getPlayIdentityKey(p2, mode, options);
+}
+
 /**
  * Compare two plays to determine if they match
  * @param {Object} p1 - First play object
@@ -1487,27 +1531,10 @@ function getFullCall(play, options = {}) {
 function playsMatch(p1, p2) {
   if (!p1 || !p2) return false;
 
-  // First try exact match on key fields
-  if (
-    p1.formation === p2.formation &&
-    p1.play === p2.play &&
-    p1.personnel === p2.personnel
-  ) {
-    return true;
-  }
-
-  // Try match without personnel
-  if (p1.formation === p2.formation && p1.play === p2.play) {
-    return true;
-  }
-
-  // Try case-insensitive match
-  const f1 = (p1.formation || "").toLowerCase().trim();
-  const f2 = (p2.formation || "").toLowerCase().trim();
-  const n1 = (p1.play || "").toLowerCase().trim();
-  const n2 = (p2.play || "").toLowerCase().trim();
-
-  return f1 === f2 && n1 === n2;
+  // Preserve the historic matching order while sharing the key builder.
+  if (playsHaveSameIdentity(p1, p2, "core", { trim: false })) return true;
+  if (playsHaveSameIdentity(p1, p2, "name", { trim: false })) return true;
+  return playsHaveSameIdentity(p1, p2, "name", { normalizeCase: true });
 }
 
 // ============ Defense Taxonomy / Normalization ============
@@ -1877,12 +1904,7 @@ function saveSchedule(schedule) {
  * Generate a stable signature for a play (used as key for game plan tags)
  */
 function playSignature(play) {
-  return [
-    (play.formation || "").trim(),
-    (play.play || "").trim(),
-    (play.personnel || "").trim(),
-    (play.type || "").trim(),
-  ].join("|");
+  return getPlayIdentityKey(play, "tag");
 }
 
 /**

@@ -459,13 +459,7 @@ function _gpWristbandNumberFor(play) {
    ------------------------------------------------------------------------- */
 
 function _gpPlaySignature(play) {
-  if (!play) return "";
-  return [
-    play.type, play.personnel, play.formation, play.formTag1, play.formTag2,
-    play.under, play.back, play.shift, play.motion, play.protection,
-    play.lineCall, play.play, play.playTag1, play.playTag2, play.basePlay,
-    play.oneWord,
-  ].map((v) => (v == null ? "" : String(v))).join("|");
+  return getPlayIdentityKey(play, "gameplan", { trim: false });
 }
 
 function _gpFindPlayBySig(sig) {

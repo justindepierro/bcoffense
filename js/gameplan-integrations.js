@@ -11,8 +11,8 @@
  * Build the set of call sheet category ids a single play should fan-out to.
  * - findMatchingCategories() handles all auto categories (front-page situations,
  *   down/distance, field position, back-page play types).
- * - Player buckets (manual) are matched by keyPlayerName1/2/3 against the
- *   bucket's *display* name (custom-renamed or default).
+ * - Player buckets are added later as a group so Key Player 1 can be
+ *   prioritized before Key Player 2 backfill.
  * - Source box id is included as a fallback so the box's natural type
  *   bucket gets filled even when the play lacks preferred fields.
  */
@@ -24,24 +24,7 @@ function _gpComputeCallSheetTargets(play, sourceBoxId) {
       findMatchingCategories(play).forEach((id) => targets.add(id));
     } catch (_) { /* ignore */ }
   }
-  // 2) Player buckets by Key Player names
-  if (Array.isArray(CALLSHEET_CATEGORIES)) {
-    const names = [play.keyPlayerName1, play.keyPlayerName2, play.keyPlayerName3]
-      .map((n) => (typeof n === "string" ? n.toLowerCase().trim() : ""))
-      .filter(Boolean);
-    if (names.length > 0) {
-      CALLSHEET_CATEGORIES.forEach((cat) => {
-        if (!cat.playerSpecific) return;
-        const dn =
-          (typeof getCategoryDisplayName === "function"
-            ? getCategoryDisplayName(cat)
-            : cat.name) || "";
-        const norm = dn.toLowerCase().trim();
-        if (norm && names.includes(norm)) targets.add(cat.id);
-      });
-    }
-  }
-  // 3) Box-meta override: explicit Push-to-Call-Sheet category set on this box
+  // 2) Box-meta override: explicit Push-to-Call-Sheet category set on this box
   if (sourceBoxId) {
     try {
       const board = _gpEnsureBoard();
@@ -49,7 +32,7 @@ function _gpComputeCallSheetTargets(play, sourceBoxId) {
       if (meta.callSheetCategoryId) targets.add(meta.callSheetCategoryId);
     } catch (_) { /* ignore */ }
   }
-  // 4) Source box → type bucket fallback (always include if box maps to one)
+  // 3) Source box → type bucket fallback (always include if box maps to one)
   const fb = sourceBoxId ? GP_BOX_TO_CALLSHEET[sourceBoxId] : null;
   if (fb) targets.add(fb);
   return targets;
@@ -123,11 +106,15 @@ async function pushGamePlanToCallSheet() {
   }
 
   // Fan-out: per play, compute target category set
-  const fanOut = allEntries.map(({ play, sourceBoxId }) => ({
-    play,
-    sourceBoxId,
-    targets: _gpComputeCallSheetTargets(play, sourceBoxId),
-  }));
+  const playerTargets =
+    typeof buildPlayerCategoryAutoFillTargets === "function"
+      ? buildPlayerCategoryAutoFillTargets(allEntries, { getPlay: (entry) => entry.play })
+      : [];
+  const fanOut = allEntries.map(({ play, sourceBoxId }, index) => {
+    const targets = _gpComputeCallSheetTargets(play, sourceBoxId);
+    (playerTargets[index] || new Set()).forEach((catId) => targets.add(catId));
+    return { play, sourceBoxId, targets };
+  });
 
   // Tally targets per category
   const byCat = {};
@@ -163,7 +150,7 @@ async function pushGamePlanToCallSheet() {
 
   const choice = await showChoice(
     `<p>Push <strong>${allEntries.length}</strong> drafted play${allEntries.length === 1 ? "" : "s"} into <strong>${filledCount}</strong> call sheet categor${filledCount === 1 ? "y" : "ies"}?</p>
-     <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-xs);">Plays fan-out to every matching bucket — front-page situations (down, distance, field position), back-page play types, and player buckets matched by Key Player name.</p>
+     <p style="font-size:var(--font-size-sm);color:var(--color-text-muted);margin-bottom:var(--space-xs);">Plays fan-out to every matching bucket — front-page situations (down, distance, field position), back-page play types, and player buckets matched by Key Player 1 first with Key Player 2 backfill up to six.</p>
      <details style="font-size:var(--font-size-sm);"><summary style="cursor:pointer;color:var(--color-text-muted);">Show breakdown</summary><ul style="margin:var(--space-xs) 0 0 var(--space-md);columns:2;-webkit-columns:2;">${summaryItems}</ul></details>`,
     {
       title: "Push to Call Sheet",
@@ -340,10 +327,15 @@ async function pushGamePlanBoxToCallSheet(boxId) {
   }
 
   // Fan-out: per play, compute target category set
-  const fanOut = list.map((play) => ({
-    play,
-    targets: _gpComputeCallSheetTargets(play, boxId),
-  }));
+  const playerTargets =
+    typeof buildPlayerCategoryAutoFillTargets === "function"
+      ? buildPlayerCategoryAutoFillTargets(list)
+      : [];
+  const fanOut = list.map((play, index) => {
+    const targets = _gpComputeCallSheetTargets(play, boxId);
+    (playerTargets[index] || new Set()).forEach((catId) => targets.add(catId));
+    return { play, targets };
+  });
   const byCat = {};
   fanOut.forEach(({ targets }) => {
     targets.forEach((id) => {
