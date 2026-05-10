@@ -573,7 +573,7 @@ function generatePDF() {
     document.body.classList.add("print-script");
 
     setupPrintPageStyle(
-      "@media print { @page { size: letter; margin: 0.5in; } }",
+      "@media print { @page { size: letter; margin: 0.25in; } }",
     );
 
     setTimeout(() => {

@@ -2222,11 +2222,11 @@ body.fab-idle .script-display-fab:focus-visible {
 .print-preview-content > div {
   background: white;
   margin: 0 auto;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-  /* Mimic Letter @ 96dpi: 8.5in × 11in with 0.5in margins */
+  box-shadow: none;
+  /* Mimic Letter @ 96dpi: 8.5in x 11in with tightened script margins */
   width: 8.5in;
   min-height: 11in;
-  padding: 0.5in;
+  padding: 0.25in;
   box-sizing: border-box;
 }
 /* Approximate print-script script-table styling inside the preview so

@@ -272,11 +272,12 @@
     position: static !important;
     width: 100% !important;
     background: white !important;
-    padding: 0.4in !important;
+    padding: 0.12in !important;
     margin: 0 !important;
     box-sizing: border-box !important;
     border: 0 !important;
     border-radius: 0 !important;
+    box-shadow: none !important;
   }
   body.print-script .script-preview,
   body.print-script .script-preview * {
