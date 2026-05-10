@@ -1246,39 +1246,52 @@ function renderCallSheet() {
   // Build duplicate map for this render
   const dupeMap = buildDuplicateMap();
 
-  let html = "";
-
-  // Create 3-column layout
-  const columns = buildCallSheetColumns(categories);
-
-  // Add orientation class
-  const orientClass =
-    callSheetSettings.orientation === "landscape"
-      ? "callsheet-landscape"
-      : "callsheet-portrait";
-  html += `<div class="callsheet-columns ${orientClass}">`;
-
-  columns.forEach((column) => {
-    html += '<div class="callsheet-column">';
-    column.forEach((cat) => {
-      const data = callSheet[cat.id] || { left: [], right: [] };
-      html += renderCategory(cat, data, dupeMap, displayOptions);
-    });
-    html += "</div>";
-  });
 
   html += "</div>";
+      (cat[side] || []).forEach((p) => usedSigs.add(csPlayKey(p)));
+    });
+  });
+  // All plays in playbook not on sheet
+  let notUsedPlays = plays.filter((p) => !usedSigs.has(csPlayKey(p)));
+  // Game Plan filter toggle state
+  const showGpOnly = window.__csNotUsedGpOnly === true;
+  if (showGpOnly && typeof isPlayInGamePlanBoard === "function") {
+    notUsedPlays = notUsedPlays.filter((p) => isPlayInGamePlanBoard(p));
+  }
+  // Not Used box UI
+  html += `<div class="callsheet-notused-bar">
+    <label class="cs-notused-toggle">
+      <input type="checkbox" id="csNotUsedGpOnly" ${showGpOnly ? "checked" : ""} data-onchange="toggleCsNotUsedGpOnly" />
+      <span>🎯 Game Plan Only</span>
+    </label>
+    <span class="cs-notused-count">Not Used: <b>${notUsedPlays.length}</b></span>
+  </div>`;
+  html += `<div class="callsheet-notused-list" id="csNotUsedList">`;
+  if (notUsedPlays.length === 0) {
+    html += `<div class="cs-notused-empty">All plays are on the call sheet${showGpOnly ? " (game plan)" : ""}.</div>`;
+  } else {
+    notUsedPlays.forEach((play, idx) => {
+      html += `<div class="callsheet-notused-play">${escapeHtml(play.formation || "")} ${escapeHtml(play.play || "")}</div>`;
+    });
+  }
+  html += `</div>`;
 
   container.innerHTML = html;
 
   // Update page toggle buttons
   updatePageToggle();
+// Not Used plays filter toggle handler
+function toggleCsNotUsedGpOnly(event) {
+  window.__csNotUsedGpOnly = event?.target?.checked;
+  renderCallSheet();
+}
 
   // Update loaded wristband display
   updateLoadedWristbandDisplay();
 
   // Update stats panel if visible
   updateStatsPanel();
+
 
   // Attach long-press for mobile context menus on callsheet plays
   if (typeof addLongPress === "function") {
@@ -1291,6 +1304,37 @@ function renderCallSheet() {
       }
     });
   }
+
+  // Render Not Used plays section below the grid
+  renderNotUsedPlays();
+// Render Not Used plays section in #csNotUsedContainer
+function renderNotUsedPlays() {
+  const container = document.getElementById("csNotUsedContainer");
+  if (!container) return;
+  // Find all plays not on the current call sheet
+  const usedSigs = new Set();
+  Object.values(callSheet).forEach((cat) => {
+    ["left", "right"].forEach((side) => {
+      (cat[side] || []).forEach((p) => usedSigs.add(csPlayKey(p)));
+    });
+  });
+  let notUsedPlays = plays.filter((p) => !usedSigs.has(csPlayKey(p)));
+  const showGpOnly = window.__csNotUsedGpOnly === true;
+  if (showGpOnly && typeof isPlayInGamePlanBoard === "function") {
+    notUsedPlays = notUsedPlays.filter((p) => isPlayInGamePlanBoard(p));
+  }
+  let html = `<div class=\"callsheet-notused-bar\">\n    <label class=\"cs-notused-toggle\">\n      <input type=\"checkbox\" id=\"csNotUsedGpOnly\" ${showGpOnly ? "checked" : ""} data-onchange=\"toggleCsNotUsedGpOnly\" />\n      <span>🎯 Game Plan Only</span>\n    </label>\n    <span class=\"cs-notused-count\">Not Used: <b>${notUsedPlays.length}</b></span>\n  </div>`;
+  html += `<div class=\"callsheet-notused-list\" id=\"csNotUsedList\">`;
+  if (notUsedPlays.length === 0) {
+    html += `<div class=\"cs-notused-empty\">All plays are on the call sheet${showGpOnly ? " (game plan)" : ""}.</div>`;
+  } else {
+    notUsedPlays.forEach((play, idx) => {
+      html += `<div class=\"callsheet-notused-play\">${escapeHtml(play.formation || "")} ${escapeHtml(play.play || "")}</div>`;
+    });
+  }
+  html += `</div>`;
+  container.innerHTML = html;
+}
 
   // Update undo/redo button state
   historyManager.updateButtons("callsheet");
