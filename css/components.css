@@ -2223,10 +2223,10 @@ body.fab-idle .script-display-fab:focus-visible {
   background: white;
   margin: 0 auto;
   box-shadow: none;
-  /* Mimic Letter @ 96dpi: 8.5in x 11in with tightened script margins */
+  /* Mimic Letter @ 96dpi: 8.5in x 11in with balanced script margins */
   width: 8.5in;
   min-height: 11in;
-  padding: 0.25in;
+  padding: 0.29in;
   box-sizing: border-box;
 }
 /* Approximate print-script script-table styling inside the preview so
