@@ -1319,7 +1319,6 @@ function renderNotUsedPlays() {
   }
   html += `</div>`;
   container.innerHTML = html;
-}
 
   // Update undo/redo button state
   historyManager.updateButtons("callsheet");
