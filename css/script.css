@@ -862,6 +862,7 @@
 .script-item .hash-input select:focus-visible,
 .script-item .defense-inputs .def-input:focus-visible,
 .script-player-slot-select:focus-visible,
+.script-player-swap-select:focus-visible,
 .script-player-reset-btn:focus-visible,
 .script-player-depth-chip:focus-visible,
 .script-item .move-btn:focus-visible,

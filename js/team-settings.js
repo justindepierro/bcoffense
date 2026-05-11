@@ -125,14 +125,19 @@ function buildTeamSettingsPackagesSummary(packages) {
 }
 
 function buildTeamSettingsSwapSummary(groups) {
-  if (!groups.length) return "No swap groups configured yet.";
-  const subCount = groups.reduce(
+  if (!groups.length) return "No sub packages configured yet.";
+  const assignedCount = groups.reduce(
+    (sum, group) => sum + Object.values(normalizeTeamDepthChart(group.depthChart, group.assignments))
+      .filter((playerIds) => playerIds.length > 0).length,
+    0,
+  );
+  const backupCount = groups.reduce(
     (sum, group) => sum + Object.values(normalizeTeamDepthChart(group.depthChart, group.assignments))
       .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
     0,
   );
   const names = groups.slice(0, 3).map((group) => group.name).filter(Boolean).join(", ");
-  return `${formatTeamCountLabel(groups.length, "group")} | ${formatTeamCountLabel(subCount, "sub")} | ${names}`;
+  return `${formatTeamCountLabel(groups.length, "sub package")} | ${formatTeamCountLabel(assignedCount, "assigned slot")} | ${formatTeamCountLabel(backupCount, "backup")} | ${names}`;
 }
 
 function applyTeamSettingsCollapsedState() {
@@ -227,16 +232,30 @@ function renderTeamSettings() {
   teamSettingsViewState = captureTeamSettingsViewState();
   const rosterContainer = document.getElementById("teamRosterList");
   const packageContainer = document.getElementById("teamPersonnelPackages");
-  if (!rosterContainer || !packageContainer) return;
+  const swapContainer = document.getElementById("teamSwapGroups");
+  if (!rosterContainer || !packageContainer || !swapContainer) return;
 
   const roster = getTeamRoster();
   const packages = getTeamPersonnelPackages();
+  const swapGroups = getTeamSwapGroups();
   const rosterBadge = document.getElementById("teamRosterCountBadge");
   const packagesBadge = document.getElementById("teamPackagesCountBadge");
+  const swapGroupsBadge = document.getElementById("teamSwapGroupsCountBadge");
   const rosterSummary = document.getElementById("teamRosterSummary");
   const packagesSummary = document.getElementById("teamPackagesSummary");
+  const swapGroupsSummary = document.getElementById("teamSwapGroupsSummary");
   const totalPackageSubs = packages.reduce(
     (sum, pkg) => sum + Object.values(normalizeTeamDepthChart(pkg.depthChart, pkg.assignments))
+      .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
+    0,
+  );
+  const totalSwapAssignments = swapGroups.reduce(
+    (sum, group) => sum + Object.values(normalizeTeamDepthChart(group.depthChart, group.assignments))
+      .filter((playerIds) => playerIds.length > 0).length,
+    0,
+  );
+  const totalSwapBackups = swapGroups.reduce(
+    (sum, group) => sum + Object.values(normalizeTeamDepthChart(group.depthChart, group.assignments))
       .reduce((slotSum, playerIds) => slotSum + Math.max(playerIds.length - 1, 0), 0),
     0,
   );
@@ -247,8 +266,12 @@ function renderTeamSettings() {
   if (packagesBadge) {
     packagesBadge.textContent = `${formatTeamCountLabel(packages.length, "package")} | ${formatTeamCountLabel(totalPackageSubs, "sub")}`;
   }
+  if (swapGroupsBadge) {
+    swapGroupsBadge.textContent = `${formatTeamCountLabel(swapGroups.length, "preset")} | ${formatTeamCountLabel(totalSwapAssignments, "slot")} | ${formatTeamCountLabel(totalSwapBackups, "backup")}`;
+  }
   if (rosterSummary) rosterSummary.textContent = buildTeamSettingsRosterSummary(roster);
   if (packagesSummary) packagesSummary.textContent = buildTeamSettingsPackagesSummary(packages);
+  if (swapGroupsSummary) swapGroupsSummary.textContent = buildTeamSettingsSwapSummary(swapGroups);
   const renderAssignmentRow = (
     slots,
     assignments,
@@ -347,14 +370,128 @@ function renderTeamSettings() {
     }).join("")
     : '<div class="team-settings-empty">No personnel packages yet. Add one to preload script lineups by personnel.</div>';
 
+  swapContainer.innerHTML = swapGroups.length
+    ? swapGroups.map((group, groupIndex) => {
+      const groupSlots = getTeamAssignmentSlots(group.personnel);
+      const rowOne = groupSlots.filter((slot) => slot.row === 0);
+      const rowTwo = groupSlots.filter((slot) => slot.row === 1);
+      const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
+      const starterCount = Object.values(depthChart).filter((playerIds) => playerIds.length > 0).length;
+      const subCount = Object.values(depthChart).reduce(
+        (sum, playerIds) => sum + Math.max(playerIds.length - 1, 0),
+        0,
+      );
+      const personnelCopy = group.personnel
+        ? `Available on ${group.personnel} script rows.`
+        : "Available on every script row.";
+      return `
+        <div class="team-package-card team-sub-package-card" data-group-index="${groupIndex}">
+          <div class="team-package-head">
+            <div class="team-package-meta">
+              <div class="team-package-meta-top team-package-meta-top--stacked">
+                <input type="text" class="team-package-name" value="${escapeAttr(group.name)}" data-field="teamSwapGroupName" data-group-index="${groupIndex}" placeholder="Sub package name" aria-label="Sub package name" />
+                <input type="text" class="team-package-name team-package-name--short" value="${escapeAttr(group.personnel)}" data-field="teamSwapGroupPersonnel" data-group-index="${groupIndex}" placeholder="Personnel optional" aria-label="Personnel for ${escapeHtml(group.name || "sub package")}" />
+                <span class="team-package-count">${formatTeamCountLabel(starterCount, "slot")}</span>
+                <span class="team-package-count">${formatTeamCountLabel(subCount, "backup")}</span>
+              </div>
+              <p class="team-package-copy">${escapeHtml(personnelCopy)}</p>
+            </div>
+            <button type="button" class="btn btn-sm btn-danger" data-action="removeTeamSwapGroup" data-group-index="${groupIndex}" aria-label="Remove ${escapeHtml(group.name)} sub package">✕</button>
+          </div>
+              ${renderAssignmentRow(rowOne, depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Sub package", { depthChart: true, depthKind: "swap", addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+              ${renderAssignmentRow(rowTwo, depthChart, "teamSwapGroupSlot", groupIndex, group.name || "Sub package", { depthChart: true, depthKind: "swap", addSubAction: "addTeamSwapGroupSub", removeSubAction: "removeTeamSwapGroupSub" })}
+        </div>
+      `;
+    }).join("")
+    : '<div class="team-settings-empty">No sub packages yet. Add one to apply preset substitutions from the script.</div>';
+
   applyTeamSettingsCollapsedState();
   restoreTeamSettingsViewState(teamSettingsViewState);
 }
 
+function getTeamDepthChartCollection(kind) {
+  return kind === "swap" ? getTeamSwapGroups() : getTeamPersonnelPackages();
+}
+
+function saveTeamDepthChartCollection(kind, collection) {
+  if (kind === "swap") return saveTeamSwapGroups(collection);
+  return saveTeamPersonnelPackages(collection);
+}
+
+function updateTeamDepthChartSlot(kind, itemIndex, slotKey, depthIndex, playerId) {
+  if (!slotKey || !Number.isInteger(itemIndex)) return false;
+  const collection = getTeamDepthChartCollection(kind);
+  if (!collection[itemIndex]) return false;
+
+  const depthChart = normalizeTeamDepthChart(
+    collection[itemIndex].depthChart,
+    collection[itemIndex].assignments,
+  );
+  const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+  if (playerId) slotDepth[depthIndex] = playerId;
+  else slotDepth.splice(depthIndex, 1);
+
+  const cleanedDepth = [...new Set(
+    slotDepth.map((value) => String(value || "").trim()).filter(Boolean),
+  )];
+  if (cleanedDepth.length) depthChart[slotKey] = cleanedDepth;
+  else delete depthChart[slotKey];
+
+  collection[itemIndex].depthChart = depthChart;
+  collection[itemIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+  saveTeamDepthChartCollection(kind, collection);
+  return true;
+}
+
+function addTeamDepthChartSub(kind, itemIndex, slotKey) {
+  if (!slotKey || !Number.isInteger(itemIndex)) return false;
+  const collection = getTeamDepthChartCollection(kind);
+  if (!collection[itemIndex]) return false;
+
+  const depthChart = normalizeTeamDepthChart(
+    collection[itemIndex].depthChart,
+    collection[itemIndex].assignments,
+  );
+  const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+  const fallbackPlayer = getTeamRoster().find(
+    (player) => !slotDepth.includes(player.id),
+  );
+  if (!fallbackPlayer) {
+    showToast("Add another roster player first", { duration: 2500, type: "warning" });
+    return false;
+  }
+
+  slotDepth.push(fallbackPlayer.id);
+  depthChart[slotKey] = slotDepth;
+  collection[itemIndex].depthChart = depthChart;
+  collection[itemIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+  saveTeamDepthChartCollection(kind, collection);
+  return true;
+}
+
+function removeTeamDepthChartSub(kind, itemIndex, slotKey, depthIndex) {
+  if (!slotKey || !Number.isInteger(itemIndex) || depthIndex <= 0) return false;
+  const collection = getTeamDepthChartCollection(kind);
+  if (!collection[itemIndex]) return false;
+
+  const depthChart = normalizeTeamDepthChart(
+    collection[itemIndex].depthChart,
+    collection[itemIndex].assignments,
+  );
+  const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
+  slotDepth.splice(depthIndex, 1);
+  if (slotDepth.length) depthChart[slotKey] = slotDepth;
+  else delete depthChart[slotKey];
+
+  collection[itemIndex].depthChart = depthChart;
+  collection[itemIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+  saveTeamDepthChartCollection(kind, collection);
+  return true;
+}
+
 function reorderTeamDepthChartEntry(kind, itemIndex, slotKey, fromIndex, toIndex) {
   if (!slotKey || fromIndex === toIndex) return false;
-  const isPackage = kind === "package";
-  const collection = isPackage ? getTeamPersonnelPackages() : getTeamSwapGroups();
+  const collection = getTeamDepthChartCollection(kind);
   if (!collection[itemIndex]) return false;
 
   const depthChart = normalizeTeamDepthChart(
@@ -377,8 +514,7 @@ function reorderTeamDepthChartEntry(kind, itemIndex, slotKey, fromIndex, toIndex
   collection[itemIndex].depthChart = depthChart;
   collection[itemIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
 
-  if (isPackage) saveTeamPersonnelPackages(collection);
-  else saveTeamSwapGroups(collection);
+  saveTeamDepthChartCollection(kind, collection);
   return true;
 }
 
@@ -479,7 +615,7 @@ function addTeamSwapGroup() {
   });
 
   if (!group.name) {
-    showToast("Enter a swap group name first", { duration: 2500, type: "warning" });
+    showToast("Enter a sub package name first", { duration: 2500, type: "warning" });
     return;
   }
 
@@ -489,10 +625,11 @@ function addTeamSwapGroup() {
   if (nameEl) nameEl.value = "";
   if (personnelEl) personnelEl.value = "";
   syncTeamSettingsDependents();
-  showToast(`${group.name} swap group added`);
+  showToast(`${group.name} sub package added`);
 }
 
 function removeTeamPlayer(playerId) {
+  if (!playerId) return;
   const roster = getTeamRoster().filter((player) => player.id !== playerId);
   saveTeamRoster(roster);
 
@@ -521,7 +658,9 @@ function removeTeamPlayer(playerId) {
 }
 
 function removeTeamPersonnelPackage(packageIndex) {
+  if (!Number.isInteger(packageIndex)) return;
   const packages = getTeamPersonnelPackages();
+  if (!packages[packageIndex]) return;
   packages.splice(packageIndex, 1);
   saveTeamPersonnelPackages(packages);
   syncTeamSettingsDependents();
@@ -529,19 +668,92 @@ function removeTeamPersonnelPackage(packageIndex) {
 }
 
 function removeTeamSwapGroup(groupIndex) {
+  if (!Number.isInteger(groupIndex)) return;
   const groups = getTeamSwapGroups();
+  if (!groups[groupIndex]) return;
   groups.splice(groupIndex, 1);
   saveTeamSwapGroups(groups);
   syncTeamSettingsDependents();
-  showToast("Swap group removed");
+  showToast("Sub package removed");
+}
+
+function bindTeamDepthChartDragHandlers(container) {
+  if (!container) return;
+
+  container.addEventListener("dragstart", (event) => {
+    const row = event.target.closest(".team-slot-player-row--depth");
+    if (!row) return;
+    teamDepthDragState = {
+      kind: row.dataset.depthKind,
+      itemIndex: parseInt(row.dataset.itemIndex, 10),
+      slotKey: row.dataset.slot,
+      fromIndex: parseInt(row.dataset.depthIndex, 10),
+    };
+    row.classList.add("is-dragging");
+    if (event.dataTransfer) {
+      event.dataTransfer.effectAllowed = "move";
+      event.dataTransfer.setData("text/plain", JSON.stringify(teamDepthDragState));
+    }
+  });
+
+  container.addEventListener("dragover", (event) => {
+    const row = event.target.closest(".team-slot-player-row--depth");
+    if (!row || !teamDepthDragState) return;
+    if (
+      row.dataset.depthKind !== teamDepthDragState.kind ||
+      parseInt(row.dataset.itemIndex, 10) !== teamDepthDragState.itemIndex ||
+      row.dataset.slot !== teamDepthDragState.slotKey
+    ) {
+      return;
+    }
+    event.preventDefault();
+    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
+    row.classList.add("is-drop-target");
+  });
+
+  container.addEventListener("dragleave", (event) => {
+    const row = event.target.closest(".team-slot-player-row--depth");
+    if (row) row.classList.remove("is-drop-target");
+  });
+
+  container.addEventListener("drop", (event) => {
+    const row = event.target.closest(".team-slot-player-row--depth");
+    if (!row || !teamDepthDragState) return;
+    event.preventDefault();
+    row.classList.remove("is-drop-target");
+    const toIndex = parseInt(row.dataset.depthIndex, 10);
+    if (
+      reorderTeamDepthChartEntry(
+        teamDepthDragState.kind,
+        teamDepthDragState.itemIndex,
+        teamDepthDragState.slotKey,
+        teamDepthDragState.fromIndex,
+        toIndex,
+      )
+    ) {
+      renderTeamSettings();
+      if (typeof renderScript === "function") renderScript();
+    }
+    teamDepthDragState = null;
+  });
+
+  container.addEventListener("dragend", (event) => {
+    event.target.closest(".team-slot-player-row--depth")?.classList.remove("is-dragging");
+    container
+      .querySelectorAll(".team-slot-player-row--depth.is-drop-target")
+      .forEach((row) => row.classList.remove("is-drop-target"));
+    teamDepthDragState = null;
+  });
 }
 
 function initTeamSettings() {
   const rosterContainer = document.getElementById("teamRosterList");
   const packageContainer = document.getElementById("teamPersonnelPackages");
+  const swapContainer = document.getElementById("teamSwapGroups");
   if (
     !rosterContainer ||
     !packageContainer ||
+    !swapContainer ||
     rosterContainer.dataset.bound === "true"
   ) {
     renderTeamSettings();
@@ -550,6 +762,7 @@ function initTeamSettings() {
 
   rosterContainer.dataset.bound = "true";
   packageContainer.dataset.bound = "true";
+  swapContainer.dataset.bound = "true";
 
   document
     .querySelectorAll(".team-settings-panel-header--toggle[data-panel-key]")
@@ -624,23 +837,9 @@ function initTeamSettings() {
     const packageIndex = parseInt(select.dataset.itemIndex, 10);
     const slotKey = select.dataset.slot;
     const depthIndex = parseInt(select.dataset.depthIndex || "0", 10);
-    if (!Number.isInteger(packageIndex) || !slotKey) return;
-    const packages = getTeamPersonnelPackages();
-    if (!packages[packageIndex]) return;
-    const depthChart = normalizeTeamDepthChart(
-      packages[packageIndex].depthChart,
-      packages[packageIndex].assignments,
-    );
-    const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
-    if (select.value) slotDepth[depthIndex] = select.value;
-    else slotDepth.splice(depthIndex, 1);
-    const cleanedDepth = [...new Set(slotDepth.map((value) => String(value || "").trim()).filter(Boolean))];
-    if (cleanedDepth.length) depthChart[slotKey] = cleanedDepth;
-    else delete depthChart[slotKey];
-    packages[packageIndex].depthChart = depthChart;
-    packages[packageIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
-    saveTeamPersonnelPackages(packages);
-    syncTeamSettingsDependents();
+    if (updateTeamDepthChartSlot("package", packageIndex, slotKey, depthIndex, select.value)) {
+      syncTeamSettingsDependents();
+    }
   });
 
   packageContainer.addEventListener("click", (event) => {
@@ -648,27 +847,9 @@ function initTeamSettings() {
     if (addButton) {
       const packageIndex = parseInt(addButton.dataset.itemIndex, 10);
       const slotKey = addButton.dataset.slot;
-      if (!Number.isInteger(packageIndex) || !slotKey) return;
-      const packages = getTeamPersonnelPackages();
-      if (!packages[packageIndex]) return;
-      const depthChart = normalizeTeamDepthChart(
-        packages[packageIndex].depthChart,
-        packages[packageIndex].assignments,
-      );
-      const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
-      const fallbackPlayer = getTeamRoster().find(
-        (player) => !slotDepth.includes(player.id),
-      );
-      if (!fallbackPlayer) {
-        showToast("Add another roster player first", { duration: 2500, type: "warning" });
-        return;
+      if (addTeamDepthChartSub("package", packageIndex, slotKey)) {
+        renderTeamSettings();
       }
-      slotDepth.push(fallbackPlayer.id);
-      depthChart[slotKey] = slotDepth;
-      packages[packageIndex].depthChart = depthChart;
-      packages[packageIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
-      saveTeamPersonnelPackages(packages);
-      renderTeamSettings();
       return;
     }
 
@@ -677,77 +858,68 @@ function initTeamSettings() {
     const packageIndex = parseInt(removeButton.dataset.itemIndex, 10);
     const slotKey = removeButton.dataset.slot;
     const depthIndex = parseInt(removeButton.dataset.depthIndex || "0", 10);
-    if (!Number.isInteger(packageIndex) || !slotKey || depthIndex <= 0) return;
-    const packages = getTeamPersonnelPackages();
-    if (!packages[packageIndex]) return;
-    const depthChart = normalizeTeamDepthChart(
-      packages[packageIndex].depthChart,
-      packages[packageIndex].assignments,
-    );
-    const slotDepth = getTeamDepthChartForSlot(depthChart, slotKey);
-    slotDepth.splice(depthIndex, 1);
-    if (slotDepth.length) depthChart[slotKey] = slotDepth;
-    else delete depthChart[slotKey];
-    packages[packageIndex].depthChart = depthChart;
-    packages[packageIndex].assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
-    saveTeamPersonnelPackages(packages);
-    renderTeamSettings();
-  });
-
-  packageContainer.addEventListener("dragstart", (event) => {
-    const row = event.target.closest('.team-slot-player-row--depth');
-    if (!row) return;
-    teamDepthDragState = {
-      kind: row.dataset.depthKind,
-      itemIndex: parseInt(row.dataset.itemIndex, 10),
-      slotKey: row.dataset.slot,
-      fromIndex: parseInt(row.dataset.depthIndex, 10),
-    };
-    row.classList.add("is-dragging");
-    if (event.dataTransfer) {
-      event.dataTransfer.effectAllowed = "move";
-      event.dataTransfer.setData("text/plain", JSON.stringify(teamDepthDragState));
+    if (removeTeamDepthChartSub("package", packageIndex, slotKey, depthIndex)) {
+      renderTeamSettings();
     }
   });
 
-  packageContainer.addEventListener("dragover", (event) => {
-    const row = event.target.closest('.team-slot-player-row--depth');
-    if (!row || !teamDepthDragState) return;
-    if (
-      row.dataset.depthKind !== teamDepthDragState.kind ||
-      parseInt(row.dataset.itemIndex, 10) !== teamDepthDragState.itemIndex ||
-      row.dataset.slot !== teamDepthDragState.slotKey
-    ) {
+  swapContainer.addEventListener("input", (event) => {
+    const input = event.target.closest('[data-field="teamSwapGroupName"], [data-field="teamSwapGroupPersonnel"]');
+    if (!input) return;
+    const groupIndex = parseInt(input.dataset.groupIndex, 10);
+    if (!Number.isInteger(groupIndex)) return;
+    const groups = getTeamSwapGroups();
+    if (!groups[groupIndex]) return;
+    if (input.dataset.field === "teamSwapGroupName") {
+      groups[groupIndex].name = input.value;
+    }
+    if (input.dataset.field === "teamSwapGroupPersonnel") {
+      groups[groupIndex].personnel = input.value;
+    }
+    saveTeamSwapGroups(groups);
+    refreshTeamSettingsSelectionUI();
+    if (typeof renderScript === "function") renderScript();
+  });
+
+  swapContainer.addEventListener("change", (event) => {
+    const select = event.target.closest('[data-field="teamSwapGroupSlot"]');
+    if (!select) {
+      renderTeamSettings();
       return;
     }
-    event.preventDefault();
-    if (event.dataTransfer) event.dataTransfer.dropEffect = "move";
-    row.classList.add("is-drop-target");
+    const groupIndex = parseInt(select.dataset.itemIndex, 10);
+    const slotKey = select.dataset.slot;
+    const depthIndex = parseInt(select.dataset.depthIndex || "0", 10);
+    if (updateTeamDepthChartSlot("swap", groupIndex, slotKey, depthIndex, select.value)) {
+      syncTeamSettingsDependents();
+    }
   });
 
-  packageContainer.addEventListener("dragleave", (event) => {
-    const row = event.target.closest('.team-slot-player-row--depth');
-    if (row) row.classList.remove("is-drop-target");
-  });
+  swapContainer.addEventListener("click", (event) => {
+    const addButton = event.target.closest('[data-action="addTeamSwapGroupSub"]');
+    if (addButton) {
+      const groupIndex = parseInt(addButton.dataset.itemIndex, 10);
+      const slotKey = addButton.dataset.slot;
+      if (addTeamDepthChartSub("swap", groupIndex, slotKey)) {
+        renderTeamSettings();
+        if (typeof renderScript === "function") renderScript();
+      }
+      return;
+    }
 
-  packageContainer.addEventListener("drop", (event) => {
-    const row = event.target.closest('.team-slot-player-row--depth');
-    if (!row || !teamDepthDragState) return;
-    event.preventDefault();
-    row.classList.remove("is-drop-target");
-    const toIndex = parseInt(row.dataset.depthIndex, 10);
-    if (reorderTeamDepthChartEntry(teamDepthDragState.kind, teamDepthDragState.itemIndex, teamDepthDragState.slotKey, teamDepthDragState.fromIndex, toIndex)) {
+    const removeButton = event.target.closest('[data-action="removeTeamSwapGroupSub"]');
+    if (!removeButton) return;
+    const groupIndex = parseInt(removeButton.dataset.itemIndex, 10);
+    const slotKey = removeButton.dataset.slot;
+    const depthIndex = parseInt(removeButton.dataset.depthIndex || "0", 10);
+    if (removeTeamDepthChartSub("swap", groupIndex, slotKey, depthIndex)) {
       renderTeamSettings();
       if (typeof renderScript === "function") renderScript();
     }
-    teamDepthDragState = null;
   });
 
-  packageContainer.addEventListener("dragend", (event) => {
-    event.target.closest('.team-slot-player-row--depth')?.classList.remove("is-dragging");
-    packageContainer.querySelectorAll('.team-slot-player-row--depth.is-drop-target').forEach((row) => row.classList.remove("is-drop-target"));
-    teamDepthDragState = null;
-  });
+  bindTeamDepthChartDragHandlers(packageContainer);
+  bindTeamDepthChartDragHandlers(swapContainer);
 
   renderTeamSettings();
 }

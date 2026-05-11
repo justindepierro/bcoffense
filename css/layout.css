@@ -632,11 +632,19 @@ h1 {
 
 .team-settings-panel--roster {
   grid-column: 1;
+  grid-row: 1 / span 2;
   align-self: start;
 }
 
 .team-settings-panel--packages {
   grid-column: 2;
+  grid-row: 1;
+  align-self: start;
+}
+
+.team-settings-panel--sub-packages {
+  grid-column: 2;
+  grid-row: 2;
   align-self: start;
 }
 
@@ -726,7 +734,8 @@ h1 {
 }
 
 .team-roster-list,
-.team-personnel-packages {
+.team-personnel-packages,
+.team-swap-groups {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
@@ -967,6 +976,13 @@ h1 {
 
   .team-settings-grid {
     grid-template-columns: 1fr;
+  }
+
+  .team-settings-panel--roster,
+  .team-settings-panel--packages,
+  .team-settings-panel--sub-packages {
+    grid-column: auto;
+    grid-row: auto;
   }
 }
 

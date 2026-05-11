@@ -224,6 +224,15 @@ document.addEventListener("click", (e) => {
     case "toggleWbFavorite":
       toggleWbFavorite(parseInt(el.dataset.idx, 10));
       return;
+    case "removeTeamPlayer":
+      removeTeamPlayer(el.dataset.playerId);
+      return;
+    case "removeTeamPersonnelPackage":
+      removeTeamPersonnelPackage(parseInt(el.dataset.packageIndex, 10));
+      return;
+    case "removeTeamSwapGroup":
+      removeTeamSwapGroup(parseInt(el.dataset.groupIndex, 10));
+      return;
   }
 
   const fn = window[action];
@@ -362,6 +371,9 @@ document.addEventListener("DOMContentLoaded", () => {
           break;
         case "playerAssignment":
           updateScriptPlayerAssignment(idx, el.dataset.slot, el.value);
+          break;
+        case "scriptSubPackage":
+          applyScriptSubPackage(idx, el.value);
           break;
         case "bulkSelect":
           toggleBulkSelect(idx);

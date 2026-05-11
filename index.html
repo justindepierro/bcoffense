@@ -137,8 +137,8 @@
           </button>
         </div>
         <p>
-          Backup includes your roster, personnel packages, package-specific slot labels, depth charts, and other saved
-          team settings.
+          Backup includes your roster, personnel packages, sub packages, package-specific slot labels, depth charts, and
+          other saved team settings.
         </p>
       </div>
 
@@ -154,6 +154,7 @@
             <div class="team-settings-hero-notes">
               <span class="team-settings-chip">Personnel-aware labels</span>
               <span class="team-settings-chip">Auto-prepped packages</span>
+              <span class="team-settings-chip">Preset sub packages</span>
               <span class="team-settings-chip">Depth chart subs on script</span>
               <span id="teamSettingsSaveStatus" class="team-settings-chip team-settings-chip--status"
                 aria-live="polite">Autosave on</span>
@@ -248,6 +249,35 @@
               </div>
               <div class="team-settings-panel-summary" id="teamPackagesSummary">No personnel packages configured yet.
               </div>
+            </div>
+
+            <div class="team-settings-panel team-settings-panel--sub-packages">
+              <div class="team-settings-panel-header team-settings-panel-header--toggle"
+                data-action="toggleCollapsiblePanel" data-panel-key="swaps" role="button" tabindex="0"
+                aria-expanded="true">
+                <div>
+                  <span class="team-settings-panel-kicker">Sub Packages</span>
+                  <h4>Preset Lineups</h4>
+                </div>
+                <div class="team-settings-panel-header-meta">
+                  <span class="team-panel-badge" id="teamSwapGroupsCountBadge">0 presets | 0 slots | 0 backups</span>
+                  <span class="toggle-icon">▼</span>
+                </div>
+              </div>
+              <div class="team-settings-panel-content">
+                <p>Create named roster presets, optionally tied to a personnel group, then choose them from the script
+                  personnel grid.</p>
+                <div class="team-settings-add-row">
+                  <input type="text" id="teamSwapGroupNameInput" class="team-settings-input"
+                    placeholder="Sub package name (e.g. Heavy)" aria-label="Sub package name" />
+                  <input type="text" id="teamSwapGroupPersonnelInput"
+                    class="team-settings-input team-settings-input--medium" placeholder="Personnel optional"
+                    aria-label="Sub package personnel" />
+                  <button class="btn btn-primary" data-action="addTeamSwapGroup">Add Sub Package</button>
+                </div>
+                <div id="teamSwapGroups" class="team-swap-groups"></div>
+              </div>
+              <div class="team-settings-panel-summary" id="teamSwapGroupsSummary">No sub packages configured yet.</div>
             </div>
           </div>
         </div>

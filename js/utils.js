@@ -1088,6 +1088,22 @@ function getTeamSwapGroupDepthChart(groupId, personnel) {
   return match ? safeDeepClone(match.depthChart || {}) : {};
 }
 
+function getPlaySubPackageId(play) {
+  return String(play?.playerSubPackageId || play?.subPackageId || "").trim();
+}
+
+function getPlaySubPackageAssignments(play) {
+  const groupId = getPlaySubPackageId(play);
+  if (!groupId) return {};
+  return getTeamSwapGroupAssignments(groupId, play?.personnel);
+}
+
+function getPlaySubPackageDepthChart(play) {
+  const groupId = getPlaySubPackageId(play);
+  if (!groupId) return {};
+  return getTeamSwapGroupDepthChart(groupId, play?.personnel);
+}
+
 function getApplicableTeamSwapGroups(personnel) {
   const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
   return getTeamSwapGroups().filter((group) => {
@@ -1106,10 +1122,26 @@ function getBasePlayerDepthChart(play) {
   return normalizeTeamDepthChart(packageDepthChart);
 }
 
+function getPlayerAssignmentBaseline(play) {
+  return normalizePlayerAssignments({
+    ...getBasePlayerAssignments(play),
+    ...getPlaySubPackageAssignments(play),
+  });
+}
+
 function getResolvedPlayerDepthChart(play) {
   const baseDepthChart = getBasePlayerDepthChart(play);
+  const subPackageDepthChart = getPlaySubPackageDepthChart(play);
   const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
   const resolved = normalizeTeamDepthChart(baseDepthChart);
+
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const subDepth = getTeamDepthChartForSlot(subPackageDepthChart, slot.key);
+    if (!subDepth.length) return;
+    const baseDepth = getTeamDepthChartForSlot(resolved, slot.key);
+    const mergedDepth = [...new Set([...subDepth, ...baseDepth])];
+    if (mergedDepth.length) resolved[slot.key] = mergedDepth;
+  });
 
   TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
     const manualPlayerId = String(manualAssignments[slot.key] || "").trim();
@@ -1124,9 +1156,8 @@ function getResolvedPlayerDepthChart(play) {
 }
 
 function getResolvedPlayerAssignments(play) {
-  const baseAssignments = getBasePlayerAssignments(play);
   return {
-    ...normalizePlayerAssignments(baseAssignments),
+    ...getPlayerAssignmentBaseline(play),
     ...normalizePlayerAssignments(play?.playerAssignments),
   };
 }
@@ -1180,7 +1211,7 @@ function buildTeamSwapGroupOptionMarkup(
 ) {
   const groups = getApplicableTeamSwapGroups(personnel);
   const blankOption = includeBlank
-    ? `<option value="">${groups.length ? "No swap group" : "Add swap groups first"}</option>`
+    ? `<option value="">${groups.length ? "No sub package" : "Add sub packages first"}</option>`
     : "";
 
   return blankOption + groups

@@ -31,7 +31,9 @@ window.getScriptVisiblePlayerSummary = getScriptVisiblePlayerSummary;
 
 function buildScriptCompactPlayerSummary(play, opts = {}, summaryContext = {}) {
   const personnel = String(play?.personnel || "").trim();
+  const subPackageId = getPlaySubPackageId(play);
   const visibleSlotKey = `${personnel}::${opts.hideLinemen ? "hideLinemen" : "all"}`;
+  const assignmentCacheKey = `${personnel}::${subPackageId || "base"}`;
   const slotCache = summaryContext.slotCache || new Map();
   const baseAssignmentCache = summaryContext.baseAssignmentCache || new Map();
   const playerLabelCache = summaryContext.playerLabelCache || new Map();
@@ -45,10 +47,10 @@ function buildScriptCompactPlayerSummary(play, opts = {}, summaryContext = {}) {
     slotCache.set(visibleSlotKey, visibleSlots);
   }
 
-  let baseAssignments = baseAssignmentCache.get(personnel);
+  let baseAssignments = baseAssignmentCache.get(assignmentCacheKey);
   if (!baseAssignments) {
-    baseAssignments = getBasePlayerAssignments(play);
-    baseAssignmentCache.set(personnel, baseAssignments);
+    baseAssignments = getPlayerAssignmentBaseline(play);
+    baseAssignmentCache.set(assignmentCacheKey, baseAssignments);
   }
 
   const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
@@ -69,8 +71,32 @@ function buildScriptCompactPlayerSummary(play, opts = {}, summaryContext = {}) {
     .join(", ");
 }
 
+function hasScriptSubPackage(play) {
+  const subPackageId = getPlaySubPackageId(play);
+  if (!subPackageId) return false;
+  return getApplicableTeamSwapGroups(play?.personnel).some((group) => group.id === subPackageId);
+}
+
+function hasScriptManualPlayerOverrides(play) {
+  const baselineAssignments = getPlayerAssignmentBaseline(play);
+  const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
+  return Object.keys(manualAssignments).some(
+    (slotKey) => (manualAssignments[slotKey] || "") !== (baselineAssignments[slotKey] || ""),
+  );
+}
+
+function getScriptPlayerStatusLabel(play) {
+  const labels = [];
+  const subPackageId = getPlaySubPackageId(play);
+  if (hasScriptSubPackage(play)) labels.push("Sub package");
+  else if (subPackageId) labels.push("Missing sub package");
+  if (hasScriptManualPlayerOverrides(play)) labels.push("Manual starter override");
+  return labels.join(" + ");
+}
+
 function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
   const hasOverrides = hasScriptPlayerOverrides(play);
+  const statusLabel = getScriptPlayerStatusLabel(play);
   const summaryText = playerSummary || "No assignments set";
 
   return `
@@ -78,7 +104,7 @@ function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
       <div class="script-player-summary-head">
         <div class="script-player-summary-meta">
           <span class="script-player-summary-title">Personnel</span>
-          ${hasOverrides ? '<span class="script-player-summary-status">Manual starter override</span>' : ""}
+          ${statusLabel ? `<span class="script-player-summary-status">${escapeHtml(statusLabel)}</span>` : ""}
         </div>
         <div class="script-player-summary-actions">
           ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ""}
@@ -90,11 +116,7 @@ function buildScriptPlayerSummaryCard(play, index, playLabel, playerSummary) {
 }
 
 function hasScriptPlayerOverrides(play) {
-  const baseAssignments = getBasePlayerAssignments(play);
-  const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
-  return Object.keys(manualAssignments).some(
-    (slotKey) => (manualAssignments[slotKey] || "") !== (baseAssignments[slotKey] || ""),
-  );
+  return Boolean(getPlaySubPackageId(play)) || hasScriptManualPlayerOverrides(play);
 }
 
 function isScriptPlayerSlotPromoted(play, slotKey) {
@@ -108,12 +130,12 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
   const play = script[index];
   if (!play || play.isSeparator || !slotKey) return;
 
-  const baseAssignments = getBasePlayerAssignments(play);
+  const baselineAssignments = getPlayerAssignmentBaseline(play);
   const assignments = normalizePlayerAssignments(play.playerAssignments);
   if (playerId) assignments[slotKey] = playerId;
   else delete assignments[slotKey];
 
-  if ((assignments[slotKey] || "") === (baseAssignments[slotKey] || "")) {
+  if ((assignments[slotKey] || "") === (baselineAssignments[slotKey] || "")) {
     delete assignments[slotKey];
   }
 
@@ -172,8 +194,86 @@ function resetScriptPlayerOverrides(index) {
   const play = script[index];
   if (!play || play.isSeparator) return;
   delete play.playerAssignments;
+  delete play.playerSubPackageId;
+  delete play.subPackageId;
   debouncedSaveScriptState();
   rerenderScriptPreservingScroll(index);
+}
+
+function applyScriptSubPackage(index, groupId) {
+  const play = script[index];
+  if (!play || play.isSeparator) return;
+
+  const normalizedGroupId = String(groupId || "").trim();
+  const applicableGroups = getApplicableTeamSwapGroups(play.personnel);
+  const selectedGroup = normalizedGroupId
+    ? applicableGroups.find((group) => group.id === normalizedGroupId)
+    : null;
+
+  if (normalizedGroupId && !selectedGroup) {
+    showToast("That sub package does not apply to this personnel group", {
+      duration: 2500,
+      type: "warning",
+    });
+    rerenderScriptPreservingScroll(index);
+    return;
+  }
+
+  const baseAssignments = getBasePlayerAssignments(play);
+  const subPackageAssignments = normalizedGroupId
+    ? getTeamSwapGroupAssignments(normalizedGroupId, play.personnel)
+    : {};
+  const subPackageSlots = new Set(Object.keys(subPackageAssignments));
+  const nextBaseline = normalizePlayerAssignments({
+    ...baseAssignments,
+    ...subPackageAssignments,
+  });
+  const nextManualAssignments = {};
+
+  Object.entries(normalizePlayerAssignments(play.playerAssignments)).forEach(
+    ([slotKey, playerId]) => {
+      if (subPackageSlots.has(slotKey)) return;
+      if ((playerId || "") !== (nextBaseline[slotKey] || "")) {
+        nextManualAssignments[slotKey] = playerId;
+      }
+    },
+  );
+
+  if (normalizedGroupId) {
+    play.playerSubPackageId = normalizedGroupId;
+  } else {
+    delete play.playerSubPackageId;
+  }
+  delete play.subPackageId;
+
+  play.playerAssignments = Object.keys(nextManualAssignments).length
+    ? nextManualAssignments
+    : undefined;
+
+  debouncedSaveScriptState();
+  rerenderScriptPreservingScroll(index);
+}
+
+function buildScriptSubPackagePicker(play, index, playLabel) {
+  const groups = getApplicableTeamSwapGroups(play?.personnel);
+  const selectedId = getPlaySubPackageId(play);
+  const hasMissingSelection = selectedId && !groups.some((group) => group.id === selectedId);
+  if (!groups.length && !hasMissingSelection) return "";
+
+  return `
+    <label class="script-player-swap-group" aria-label="Sub package for ${escapeHtml(playLabel)}">
+      <span class="script-player-swap-group-label">Sub Package</span>
+      <select class="script-player-swap-select" data-field="scriptSubPackage" data-idx="${index}" aria-label="Sub package for ${escapeHtml(playLabel)}">
+        <option value="" ${selectedId ? "" : "selected"}>${groups.length ? "Base lineup" : "Add sub packages first"}</option>
+        ${hasMissingSelection ? `<option value="${escapeAttr(selectedId)}" selected>Missing sub package</option>` : ""}
+        ${groups.map((group) => {
+          const selected = group.id === selectedId ? " selected" : "";
+          const suffix = group.personnel ? ` (${group.personnel})` : "";
+          return `<option value="${escapeAttr(group.id)}"${selected}>${escapeHtml(group.name + suffix)}</option>`;
+        }).join("")}
+      </select>
+    </label>
+  `;
 }
 
 function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
@@ -181,6 +281,8 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
   const assignments = getScriptPlayerAssignments(play);
   const depthChart = getScriptPlayerDepthChart(play);
   const hasOverrides = hasScriptPlayerOverrides(play);
+  const statusLabel = getScriptPlayerStatusLabel(play);
+  const subPackagePicker = buildScriptSubPackagePicker(play, index, playLabel);
   const slotMap = new Map(
     getTeamAssignmentSlots(play?.personnel).map((slot) => [slot.key, slot]),
   );
@@ -257,9 +359,10 @@ function buildScriptPlayerAssignmentGrid(play, index, playLabel, opts = {}) {
       <div class="script-player-grid-head">
         <div class="script-player-grid-meta">
           <span class="script-player-grid-title">Personnel</span>
-          ${hasOverrides ? '<span class="script-player-grid-status">Manual starter override</span>' : ''}
+          ${statusLabel ? `<span class="script-player-grid-status">${escapeHtml(statusLabel)}</span>` : ''}
         </div>
         <div class="script-player-grid-actions">
+          ${subPackagePicker}
           ${hasOverrides ? `<button type="button" class="script-player-reset-btn" data-action="resetScriptPlayerOverrides" data-idx="${index}" aria-label="Reset player overrides for ${escapeHtml(playLabel)}">Reset</button>` : ''}
         </div>
       </div>
