@@ -30,7 +30,7 @@
   }
   /* Wristband-specific body width */
   body[data-print-mode="wristband"] {
-    width: 5.5in !important;
+    width: 4.7in !important;
   }
   body[data-print-mode="wristband"].wb-tripled {
     width: 8.5in !important;
@@ -90,8 +90,8 @@
     display: none !important;
   }
   .wristband-print .wristband-card {
-    width: 5in !important;
-    height: 2.7in !important;
+    width: 4.7in !important;
+    height: 3in !important;
     margin: 0 !important;
     padding: 0 !important;
     border: 0.5px solid var(--color-text) !important;

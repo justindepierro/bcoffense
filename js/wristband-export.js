@@ -1,5 +1,7 @@
 function printWristband() {
   try {
+    const WRISTBAND_PRINT_WIDTH = "4.7in";
+    const WRISTBAND_PRINT_HEIGHT = "3in";
     showToast("🖨️ Preparing wristband…", 2500);
     const container = document.getElementById("wristbandPrintCards");
     const numCards = wristbandCards.length;
@@ -150,8 +152,8 @@ function printWristband() {
           gap: 0.25in !important;
         }
         #wristbandPrintCards.single-card-tripled .wristband-card {
-          width: 5.5in !important;
-          height: 3in !important;
+          width: ${WRISTBAND_PRINT_WIDTH} !important;
+          height: ${WRISTBAND_PRINT_HEIGHT} !important;
           page-break-after: avoid !important;
           flex-shrink: 0 !important;
         }
@@ -170,8 +172,8 @@ function printWristband() {
           padding-top: 0.1in !important;
         }
         #wristbandPrintCards.multi-card-layout .wristband-card {
-          width: 5.5in !important;
-          height: 3in !important;
+          width: ${WRISTBAND_PRINT_WIDTH} !important;
+          height: ${WRISTBAND_PRINT_HEIGHT} !important;
           page-break-after: avoid !important;
           flex-shrink: 0 !important;
         }
@@ -179,7 +181,7 @@ function printWristband() {
     `);
     } else {
       setupPrintPageStyle(
-        "@media print { @page { size: 5.5in 3in; margin: 0; } }",
+        `@media print { @page { size: ${WRISTBAND_PRINT_WIDTH} ${WRISTBAND_PRINT_HEIGHT}; margin: 0; } }`,
       );
     }
 
