@@ -33,6 +33,7 @@ let _gpPrintOptions = {
   showWristbandNumber: true,
   jvOnly: false,
   imageAppendix: false,
+  personnelFilter: "",
   sortMode: "perBox", // primary tier; "perBox" honors each box's own setting
   sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
   sortMode3: "",       // tertiary tier (ignored when sortMode is perBox)
@@ -60,8 +61,66 @@ function _gpApplySmartPrintDefaults() {
   };
 }
 
+function _gpGetPrintPersonnelChoices(board = null) {
+  const sourceBoard = board || _gpEnsureBoard();
+  const values = new Set();
+  Object.values(sourceBoard.assignments || {}).forEach((list) => {
+    (list || []).forEach((play) => {
+      const personnel = String(play?.personnel || "").trim();
+      if (personnel) values.add(personnel);
+    });
+  });
+  const activePersonnel = String(_gpFilters?.personnel || "").trim();
+  if (activePersonnel) values.add(activePersonnel);
+  return [...values].sort((left, right) =>
+    left.localeCompare(right, undefined, { numeric: true }),
+  );
+}
+
+function _gpGetModalPrintPersonnelFilter(options = _gpPrintOptions) {
+  return String(_gpFilters?.personnel || options.personnelFilter || "").trim();
+}
+
+function _gpGetPrintPersonnelFilter() {
+  return String(_gpPrintOptions.personnelFilter || "").trim();
+}
+
+function _gpMatchesPrintFilters(play) {
+  const o = _gpPrintOptions;
+  if (o.jvOnly && !(typeof _gpHasFlag === "function" && _gpHasFlag(play, "jv"))) {
+    return false;
+  }
+  const personnelFilter = _gpGetPrintPersonnelFilter();
+  if (personnelFilter && String(play?.personnel || "").trim() !== personnelFilter) {
+    return false;
+  }
+  return true;
+}
+
+function _gpPrintBoxList(board, boxId) {
+  return ((board.assignments && board.assignments[boxId]) || [])
+    .filter((play) => _gpMatchesPrintFilters(play));
+}
+
+function _gpPrintAssignedSigs(board) {
+  const set = new Set();
+  Object.keys(board.assignments || {}).forEach((boxId) => {
+    _gpPrintBoxList(board, boxId).forEach((play) => set.add(_gpPlaySignature(play)));
+  });
+  return set;
+}
+
 async function openGamePlanPrintModal() {
   const o = _gpPrintOptions;
+  const board = _gpEnsureBoard();
+  const personnelChoices = _gpGetPrintPersonnelChoices(board);
+  const selectedPersonnelFilter = _gpGetModalPrintPersonnelFilter(o);
+  if (selectedPersonnelFilter && !personnelChoices.includes(selectedPersonnelFilter)) {
+    personnelChoices.push(selectedPersonnelFilter);
+    personnelChoices.sort((left, right) =>
+      left.localeCompare(right, undefined, { numeric: true }),
+    );
+  }
   return new Promise((resolve) => {
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
@@ -95,6 +154,13 @@ async function openGamePlanPrintModal() {
                 <option value="3" ${o.columns === 3 ? "selected" : ""}>3</option>
                 <option value="4" ${o.columns === 4 ? "selected" : ""}>4</option>
                 <option value="5" ${o.columns === 5 ? "selected" : ""}>5</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
+              <label>Personnel</label>
+              <select id="gpPrintPersonnelFilter" title="Only include game plan plays from this personnel group">
+                <option value="" ${selectedPersonnelFilter ? "" : "selected"}>All Personnel</option>
+                ${personnelChoices.map((personnel) => `<option value="${escapeAttr(personnel)}" ${personnel === selectedPersonnelFilter ? "selected" : ""}>${escapeHtml(personnel)}</option>`).join("")}
               </select>
             </div>
             <div class="gp-print-row">
@@ -197,6 +263,7 @@ async function openGamePlanPrintModal() {
         paperSize: overlay.querySelector("#gpPrintPaper").value,
         orientation: overlay.querySelector("#gpPrintOrientation").value,
         columns: parseInt(overlay.querySelector("#gpPrintColumns").value, 10) || 3,
+        personnelFilter: overlay.querySelector("#gpPrintPersonnelFilter").value || "",
         sortMode: overlay.querySelector("#gpPrintSort").value || "perBox",
         sortMode2: overlay.querySelector("#gpPrintSort2").value || "",
         sortMode3: overlay.querySelector("#gpPrintSort3").value || "",
@@ -236,24 +303,13 @@ function _gpRenderPrintViewAndPrint() {
 
   let allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
   if (o.showHolding) allBoxes = [GP_HOLDING_BOX, ...allBoxes];
-  const _isJvPlay = (p) => (typeof _gpHasFlag === "function" && _gpHasFlag(p, "jv"));
-  const _boxListFor = (id) => {
-    const list = board.assignments[id] || [];
-    return o.jvOnly ? list.filter(_isJvPlay) : list;
-  };
-  if (!o.showEmpty || o.jvOnly) {
-    allBoxes = allBoxes.filter((b) => _boxListFor(b.id).length > 0);
+  const personnelFilter = _gpGetPrintPersonnelFilter();
+  if (!o.showEmpty || o.jvOnly || personnelFilter) {
+    allBoxes = allBoxes.filter((b) => _gpPrintBoxList(board, b.id).length > 0);
   }
 
   const boxesHtml = allBoxes.map((b) => _gpRenderPrintBox(b, board)).join("");
-  let totalAssigned = _gpAllAssignedSigs(board).size;
-  if (o.jvOnly) {
-    const jvSigs = new Set();
-    Object.values(board.assignments || {}).forEach((arr) => {
-      (arr || []).forEach((p) => { if (_isJvPlay(p)) jvSigs.add(_gpPlaySignature(p)); });
-    });
-    totalAssigned = jvSigs.size;
-  }
+  const totalAssigned = _gpPrintAssignedSigs(board).size;
   const headerHtml = `
     <div class="gp-print-header">
       <div class="gp-print-title">
@@ -263,6 +319,8 @@ function _gpRenderPrintViewAndPrint() {
       <div class="gp-print-meta">
         ${weekLabel ? `<span>${escapeHtml(weekLabel)}</span>` : ""}
         <span>${totalAssigned} plays drafted</span>
+        ${personnelFilter ? `<span>Personnel: ${escapeHtml(personnelFilter)}</span>` : ""}
+        ${o.jvOnly ? "<span>JV only</span>" : ""}
         ${board.loadedWristband && o.showWristbandNumber ? `<span>📋 ${escapeHtml(board.loadedWristband.name || "")}</span>` : ""}
         <span>${new Date().toLocaleDateString()}</span>
       </div>
@@ -316,10 +374,7 @@ function _gpRenderPrintViewAndPrint() {
 
 function _gpRenderPrintBox(box, board) {
   const o = _gpPrintOptions;
-  let rawList = (board.assignments[box.id] || []).slice();
-  if (o.jvOnly) {
-    rawList = rawList.filter((p) => typeof _gpHasFlag === "function" && _gpHasFlag(p, "jv"));
-  }
+  const rawList = _gpPrintBoxList(board, box.id);
   let effectiveSort;
   if (o.sortMode === "perBox") {
     effectiveSort = (board.sort && board.sort[box.id]) || "manual";
@@ -454,13 +509,10 @@ function _gpRenderPrintPlay(play) {
    boxes have images. */
 function _gpRenderPrintImageAppendix(allBoxes, board) {
   if (typeof window.playImages === "undefined" || typeof playSignature !== "function") return "";
-  const o = _gpPrintOptions;
-  const _isJvPlay = (p) => (typeof _gpHasFlag === "function" && _gpHasFlag(p, "jv"));
   const sections = [];
   let totalImages = 0;
   for (const box of allBoxes) {
-    let list = (board.assignments[box.id] || []).slice();
-    if (o.jvOnly) list = list.filter(_isJvPlay);
+    const list = _gpPrintBoxList(board, box.id);
     const items = [];
     for (const play of list) {
       const sig = playSignature(play);
