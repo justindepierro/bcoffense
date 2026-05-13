@@ -73,7 +73,11 @@ function _gpWireDnd() {
 
     const boxRow = target.closest(".gp-box-play[draggable='true']");
     if (boxRow) {
-      _gpDragSource = { boxId: boxRow.dataset.boxId, sig: boxRow.dataset.sig };
+      _gpDragSource = {
+        boxId: boxRow.dataset.boxId,
+        sig: boxRow.dataset.sig,
+        rawIdx: _gpNormalizeBoxPlayIndex(boxRow.dataset.rawIdx),
+      };
       _gpDragPayload = null;
       // Defer body class -- see comment above. Synchronous layout changes
       // during dragstart kill the drag on Chrome/macOS.
@@ -185,14 +189,14 @@ function _gpWireDnd() {
     if (trash && _gpDragSource) {
       e.preventDefault();
       e.stopPropagation();
-      const { boxId, sig } = _gpDragSource;
+      const { boxId, sig, rawIdx } = _gpDragSource;
       // Snapshot then clear state BEFORE mutation -- mutation re-renders
       // and detaches the source, after which dragend won't fire on document.
       _gpClearDragState();
       if (boxId === GP_HOLDING_ID) {
-        removeFromGamePlanBox(boxId + "::" + sig);
+        removeFromGamePlanBox(_gpBuildBoxPlayArg(boxId, sig, rawIdx));
       } else {
-        _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig);
+        _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig, rawIdx);
         showToast("Sent to Holding", { duration: 1500 });
       }
       return;
@@ -227,9 +231,9 @@ function _gpWireDnd() {
         const targetIdx = dropZone
           ? _gpComputeDropIndex(dropZone, dropY)
           : Infinity;
-        _gpReorderInBox(boxId, dragSource.sig, targetIdx);
+        _gpReorderInBox(boxId, dragSource.sig, targetIdx, dragSource.rawIdx);
       } else {
-        _gpMoveBetweenBoxes(dragSource.boxId, boxId, dragSource.sig);
+        _gpMoveBetweenBoxes(dragSource.boxId, boxId, dragSource.sig, dragSource.rawIdx);
       }
     } else if (dragPayload && Array.isArray(dragPayload.sigs)) {
       _gpAddSigsToBox(dragPayload.sigs, boxId);
@@ -242,7 +246,7 @@ function _gpWireDnd() {
     const row = e.target?.closest?.(".gp-box-play[draggable='true']");
     if (!row) return;
     e.preventDefault();
-    _gpOpenPlayContextMenu(e, row.dataset.boxId, row.dataset.sig);
+    _gpOpenPlayContextMenu(e, row.dataset.boxId, row.dataset.sig, row.dataset.rawIdx);
   });
 }
 
@@ -300,6 +304,7 @@ function _gpAttachBoxHandlers() {
           { preventDefault() { }, clientX: rect.left + 20, clientY: rect.top + 20 },
           row.dataset.boxId,
           row.dataset.sig,
+          row.dataset.rawIdx,
         );
       });
     });
@@ -332,11 +337,11 @@ function _gpClearDropIndicators(dropZone) {
   });
 }
 
-function _gpReorderInBox(boxId, sig, targetIdx) {
+function _gpReorderInBox(boxId, sig, targetIdx, rawIdx) {
   if (!boxId || !sig) return;
   _gpUpdateBoard((board) => {
     const arr = board.assignments[boxId] || [];
-    const fromIdx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    const fromIdx = _gpFindBoxPlayIndex(arr, sig, rawIdx);
     if (fromIdx < 0) return;
     const [item] = arr.splice(fromIdx, 1);
     let toIdx = Math.max(0, Math.min(arr.length, targetIdx));
@@ -380,11 +385,11 @@ function _gpAddSigsToBox(sigs, boxId) {
   }
 }
 
-function _gpMoveBetweenBoxes(fromBoxId, toBoxId, sig) {
+function _gpMoveBetweenBoxes(fromBoxId, toBoxId, sig, rawIdx) {
   if (!fromBoxId || !toBoxId || fromBoxId === toBoxId) return;
   _gpUpdateBoard((board) => {
     const fromArr = board.assignments[fromBoxId] || [];
-    const idx = fromArr.findIndex((p) => _gpPlaySignature(p) === sig);
+    const idx = _gpFindBoxPlayIndex(fromArr, sig, rawIdx);
     if (idx < 0) return;
     const [play] = fromArr.splice(idx, 1);
     if (!Array.isArray(board.assignments[toBoxId])) board.assignments[toBoxId] = [];

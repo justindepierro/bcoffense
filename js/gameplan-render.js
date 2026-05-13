@@ -518,6 +518,8 @@ function _gpRenderBox(box, board) {
   const accent = GP_BOX_ACCENTS[box.id] || "";
   const note = (board.notes && board.notes[box.id]) || "";
   const sortMode = (board.sort && board.sort[box.id]) || "manual";
+  const rawIndexByPlay = new Map();
+  list.forEach((play, idx) => rawIndexByPlay.set(play, idx));
   const displayList = _gpSortedBoxList(list, sortMode);
 
   // Per-box variety (unique formations + personnel)
@@ -668,7 +670,13 @@ function _gpRenderBox(box, board) {
       ? `<div class="gp-box-empty">${isHolding
         ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
         : "Drop plays here, or click ➕ Add Play."}</div>`
-      : displayList.map((p, idx) => _gpRenderBoxPlay(box.id, p, idx, sortMode === "manual")).join("")}
+      : displayList.map((p, idx) => _gpRenderBoxPlay(
+        box.id,
+        p,
+        idx,
+        sortMode === "manual",
+        rawIndexByPlay.get(p),
+      )).join("")}
       </div>`;
 
   // Spotlight: highlight boxes that contain at least one matching play; dim others.
@@ -690,8 +698,10 @@ function _gpRenderBox(box, board) {
     </div>`;
 }
 
-function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
+function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx) {
   const sig = _gpPlaySignature(play);
+  const stableRawIdx = _gpNormalizeBoxPlayIndex(rawIdx);
+  const actionArg = _gpBuildBoxPlayArg(boxId, sig, stableRawIdx);
   const callHtml = typeof getFullCall === "function"
     ? getFullCall(play, { showLineCall: false })
     : escapeHtml(play.play || "");
@@ -703,23 +713,24 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
   const flagClasses = `${wbOn ? " gp-flag-wb" : ""}${jvOn ? " gp-flag-jv" : ""}`;
   const reorderBtns = allowReorder ? `
     <button class="gp-box-play-btn gp-box-play-up" aria-label="Move up"
-      data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move up">▲</button>
+      data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(actionArg)}" title="Move up">▲</button>
     <button class="gp-box-play-btn gp-box-play-down" aria-label="Move down"
-      data-action="moveGamePlanPlayDown" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move down">▼</button>` : "";
+      data-action="moveGamePlanPlayDown" data-arg="${escapeHtml(actionArg)}" title="Move down">▼</button>` : "";
   const flagBtns = `
     <button class="gp-box-play-flag gp-box-play-flag-wb${wbOn ? " is-on" : ""}"
       role="checkbox" aria-checked="${wbOn ? "true" : "false"}" aria-label="Send to wristband"
-      data-action="toggleGamePlanPlayFlag" data-arg="${escapeHtml(boxId + "::" + sig + "::wb")}"
+      data-action="toggleGamePlanPlayFlag" data-arg="${escapeHtml(_gpBuildBoxPlayArg(boxId, sig, stableRawIdx, { flag: "wb" }))}"
       title="Mark for wristband">📋</button>
     <button class="gp-box-play-flag gp-box-play-flag-jv${jvOn ? " is-on" : ""}"
       role="checkbox" aria-checked="${jvOn ? "true" : "false"}" aria-label="JV / freshmen play"
-      data-action="toggleGamePlanPlayFlag" data-arg="${escapeHtml(boxId + "::" + sig + "::jv")}"
+      data-action="toggleGamePlanPlayFlag" data-arg="${escapeHtml(_gpBuildBoxPlayArg(boxId, sig, stableRawIdx, { flag: "jv" }))}"
       title="Mark as JV / freshmen play">🟡</button>`;
   return `
     <div class="gp-box-play${isSpotlit ? " is-spotlit" : ""}${flagClasses}" draggable="true"
          data-box-id="${escapeHtml(boxId)}"
          data-sig="${escapeHtml(sig)}"
-         data-idx="${idx}">
+         data-idx="${idx}"
+         data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}">
       <div class="gp-box-play-body">
         <div class="gp-box-play-call">${callHtml}${matchupBadges}</div>
         ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
@@ -728,10 +739,10 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder) {
         ${flagBtns}
         ${reorderBtns}
         <button class="gp-box-play-btn" aria-label="Move to another box"
-          data-action="moveGamePlanPlay" data-arg="${escapeHtml(boxId + "::" + sig)}" title="Move to…">↔</button>
+          data-action="moveGamePlanPlay" data-arg="${escapeHtml(actionArg)}" title="Move to…">↔</button>
         <button class="gp-box-play-remove" aria-label="Remove from box"
           data-action="removeFromGamePlanBox"
-          data-arg="${escapeHtml(boxId + "::" + sig)}" title="Remove">×</button>
+          data-arg="${escapeHtml(actionArg)}" title="Remove">×</button>
       </div>
     </div>`;
 }
@@ -1006,4 +1017,3 @@ function jumpToGamePlanBox(boxId) {
 // search/filter, or a state autosave that re-renders) replaces the row
 // element, so its dragstart listener never fires. Document-level
 // delegation can never be lost mid-gesture.
-

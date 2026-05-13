@@ -4,31 +4,24 @@
    ========================================================================= */
 
 function removeFromGamePlanBox(combined) {
-  if (!combined) return;
-  const sepIdx = combined.indexOf("::");
-  if (sepIdx < 0) return;
-  const boxId = combined.slice(0, sepIdx);
-  const sig = combined.slice(sepIdx + 2);
+  const ref = _gpParseBoxPlayArg(combined);
+  if (!ref || !ref.boxId || !ref.sig) return;
   _gpUpdateBoard((board) => {
-    const arr = board.assignments[boxId] || [];
-    const idx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    const arr = board.assignments[ref.boxId] || [];
+    const idx = _gpFindBoxPlayIndex(arr, ref.sig, ref.rawIdx);
     if (idx >= 0) arr.splice(idx, 1);
   });
   renderGamePlan();
 }
 
 /* ----- Per-play flag toggles + send to wristband -------------------------
-   data-arg layout: "<boxId>::<sig>::<flag>" where <flag> is "wb" or "jv".
-   Signatures use "|" as field separator so splitting on "::" is safe.
+   data-arg uses _gpBuildBoxPlayArg() so duplicate/similar rows can carry
+   the clicked assignment index as a tie-breaker.
    ----------------------------------------------------------------------- */
 function toggleGamePlanPlayFlag(arg) {
-  if (!arg) return;
-  const parts = arg.split("::");
-  if (parts.length < 3) return;
-  const flag = parts[parts.length - 1];
-  const boxId = parts[0];
-  const sig = parts.slice(1, -1).join("::");
-  const ok = _gpToggleFlag(boxId, sig, flag);
+  const ref = _gpParseBoxPlayArg(arg);
+  if (!ref || !ref.boxId || !ref.sig || !ref.flag) return;
+  const ok = _gpToggleFlag(ref.boxId, ref.sig, ref.flag, ref.rawIdx);
   if (!ok) return;
   if (typeof renderGamePlan === "function") renderGamePlan();
 }
@@ -323,11 +316,9 @@ function cycleGamePlanDensity() {
 }
 
 async function moveGamePlanPlay(combined) {
-  if (!combined) return;
-  const sepIdx = combined.indexOf("::");
-  if (sepIdx < 0) return;
-  const fromBoxId = combined.slice(0, sepIdx);
-  const sig = combined.slice(sepIdx + 2);
+  const ref = _gpParseBoxPlayArg(combined);
+  if (!ref || !ref.boxId || !ref.sig) return;
+  const fromBoxId = ref.boxId;
   const board = _gpEnsureBoard();
   const choices = [
     GP_HOLDING_BOX,
@@ -343,7 +334,7 @@ async function moveGamePlanPlay(combined) {
     { title: "Move Play", icon: "↔" },
   );
   if (!dest) return;
-  _gpMoveBetweenBoxes(fromBoxId, dest, sig);
+  _gpMoveBetweenBoxes(fromBoxId, dest, ref.sig, ref.rawIdx);
 }
 function autoRouteHoldingBox() {
   const board = _gpEnsureBoard();
@@ -523,20 +514,17 @@ function moveGamePlanPlayDown(combined) {
 }
 
 function _gpNudgeBoxPlay(combined, delta) {
-  if (!combined) return;
-  const sepIdx = combined.indexOf("::");
-  if (sepIdx < 0) return;
-  const boxId = combined.slice(0, sepIdx);
-  const sig = combined.slice(sepIdx + 2);
+  const ref = _gpParseBoxPlayArg(combined);
+  if (!ref || !ref.boxId || !ref.sig) return;
   _gpUpdateBoard((board) => {
-    const arr = board.assignments[boxId] || [];
-    const idx = arr.findIndex((p) => _gpPlaySignature(p) === sig);
+    const arr = board.assignments[ref.boxId] || [];
+    const idx = _gpFindBoxPlayIndex(arr, ref.sig, ref.rawIdx);
     if (idx < 0) return;
     const next = idx + delta;
     if (next < 0 || next >= arr.length) return;
     [arr[idx], arr[next]] = [arr[next], arr[idx]];
     if (!board.sort) board.sort = {};
-    board.sort[boxId] = "manual";
+    board.sort[ref.boxId] = "manual";
   });
   renderGamePlan();
 }
@@ -544,16 +532,18 @@ function _gpNudgeBoxPlay(combined, delta) {
    Right-click / long-press context menu on a box play
    ------------------------------------------------------------------------- */
 
-function _gpOpenPlayContextMenu(e, boxId, sig) {
+function _gpOpenPlayContextMenu(e, boxId, sig, rawIdx) {
   if (!boxId || !sig) return;
   const board = _gpEnsureBoard();
-  const play = (board.assignments[boxId] || []).find((p) => _gpPlaySignature(p) === sig)
-    || _gpFindPlayBySig(sig);
+  const list = board.assignments[boxId] || [];
+  const idx = _gpFindBoxPlayIndex(list, sig, rawIdx);
+  const play = idx >= 0 ? list[idx] : _gpFindPlayBySig(sig);
   if (!play) return;
+  const playArg = _gpBuildBoxPlayArg(boxId, sig, idx >= 0 ? idx : rawIdx);
   const items = [];
   items.push({
     label: "↔ Move to box…",
-    onClick: () => moveGamePlanPlay(boxId + "::" + sig),
+    onClick: () => moveGamePlanPlay(playArg),
   });
   items.push({
     label: "📋 Duplicate to other box…",
@@ -572,17 +562,17 @@ function _gpOpenPlayContextMenu(e, boxId, sig) {
   if (boxId !== GP_HOLDING_ID) {
     items.push({
       label: "📥 Send to Holding",
-      onClick: () => _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig),
+      onClick: () => _gpMoveBetweenBoxes(boxId, GP_HOLDING_ID, sig, idx >= 0 ? idx : rawIdx),
     });
   }
   items.push({ separator: true });
   items.push({
     label: "▲ Move up",
-    onClick: () => moveGamePlanPlayUp(boxId + "::" + sig),
+    onClick: () => moveGamePlanPlayUp(playArg),
   });
   items.push({
     label: "▼ Move down",
-    onClick: () => moveGamePlanPlayDown(boxId + "::" + sig),
+    onClick: () => moveGamePlanPlayDown(playArg),
   });
   items.push({ separator: true });
   if (typeof openPlayEditor === "function") {
@@ -597,7 +587,7 @@ function _gpOpenPlayContextMenu(e, boxId, sig) {
   items.push({
     label: "× Remove from box",
     danger: true,
-    onClick: () => removeFromGamePlanBox(boxId + "::" + sig),
+    onClick: () => removeFromGamePlanBox(playArg),
   });
   if (typeof showContextMenu === "function") {
     const menu = document.createElement("div");

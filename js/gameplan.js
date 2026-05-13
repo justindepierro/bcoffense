@@ -1,13 +1,10 @@
 // Global handler for JV/wristband flag toggles (called by data-action)
 function toggleGamePlanPlayFlag(arg) {
-  // arg format: boxId::sig::flag
-  if (!arg) return;
-  const parts = arg.split("::");
-  if (parts.length !== 3) return;
-  const [boxId, sig, flag] = parts;
-  if (_gpToggleFlag(boxId, sig, flag)) {
+  const ref = _gpParseBoxPlayArg(arg);
+  if (!ref || !ref.flag) return;
+  if (_gpToggleFlag(ref.boxId, ref.sig, ref.flag, ref.rawIdx)) {
     renderGamePlan();
-    showToast(flag === "wb" ? "Wristband flag toggled" : "JV flag toggled", { duration: 1200 });
+    showToast(ref.flag === "wb" ? "Wristband flag toggled" : "JV flag toggled", { duration: 1200 });
   }
 }
 /* =========================================================================
@@ -73,7 +70,7 @@ let _gpFilters = {
 };
 let _gpSelected = new Set(); // play signatures currently checked in library
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
-let _gpDragSource = null; // { boxId, sig } for box → box / box → library
+let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → library
 
 // Type-alias map (used by Send to Game Plan + Holding auto-route)
 const GP_TYPE_ALIASES = {
@@ -462,6 +459,94 @@ function _gpPlaySignature(play) {
   return getPlayIdentityKey(play, "gameplan", { trim: false });
 }
 
+function _gpNormalizeBoxPlayIndex(value) {
+  if (value === null || value === undefined || value === "") return null;
+  const idx = Number(value);
+  return Number.isInteger(idx) && idx >= 0 ? idx : null;
+}
+
+function _gpBuildBoxPlayArg(boxId, sig, rawIdx, extra) {
+  const payload = {
+    boxId: boxId == null ? "" : String(boxId),
+    sig: sig == null ? "" : String(sig),
+  };
+  const idx = _gpNormalizeBoxPlayIndex(rawIdx);
+  if (idx !== null) payload.rawIdx = idx;
+  if (extra && typeof extra === "object") Object.assign(payload, extra);
+  return JSON.stringify(payload);
+}
+
+function _gpParseBoxPlayArg(arg) {
+  if (!arg) return null;
+  const raw = String(arg);
+  const trimmed = raw.trim();
+  if (trimmed.startsWith("{")) {
+    try {
+      const data = JSON.parse(trimmed);
+      if (!data || typeof data !== "object") return null;
+      return {
+        boxId: data.boxId == null ? "" : String(data.boxId),
+        sig: data.sig == null ? "" : String(data.sig),
+        rawIdx: _gpNormalizeBoxPlayIndex(data.rawIdx),
+        flag: data.flag == null ? "" : String(data.flag),
+      };
+    } catch (_e) {
+      // Fall through to the legacy delimiter parser.
+    }
+  }
+
+  const sepIdx = raw.indexOf("::");
+  if (sepIdx < 0) return null;
+  const boxId = raw.slice(0, sepIdx);
+  let sig = raw.slice(sepIdx + 2);
+  let flag = "";
+  let rawIdx = null;
+
+  const flagMarker = "::flag=";
+  const flagIdx = sig.lastIndexOf(flagMarker);
+  if (flagIdx >= 0) {
+    flag = sig.slice(flagIdx + flagMarker.length);
+    sig = sig.slice(0, flagIdx);
+  } else {
+    const lastSep = sig.lastIndexOf("::");
+    if (lastSep >= 0) {
+      const maybeFlag = sig.slice(lastSep + 2);
+      if (maybeFlag === "wb" || maybeFlag === "jv") {
+        flag = maybeFlag;
+        sig = sig.slice(0, lastSep);
+      }
+    }
+  }
+
+  const idxMarker = "::idx=";
+  const idxMarkerPos = sig.lastIndexOf(idxMarker);
+  if (idxMarkerPos >= 0) {
+    const parsedIdx = _gpNormalizeBoxPlayIndex(sig.slice(idxMarkerPos + idxMarker.length));
+    if (parsedIdx !== null) {
+      rawIdx = parsedIdx;
+      sig = sig.slice(0, idxMarkerPos);
+    }
+  }
+
+  return { boxId, sig, rawIdx, flag };
+}
+
+function _gpFindBoxPlayIndex(list, sig, rawIdx) {
+  if (!Array.isArray(list)) return -1;
+  const idx = _gpNormalizeBoxPlayIndex(rawIdx);
+  if (idx !== null && idx < list.length) {
+    const play = list[idx];
+    if (!sig || _gpPlaySignature(play) === sig) return idx;
+  }
+  if (!sig) return -1;
+  return list.findIndex((p) => _gpPlaySignature(p) === sig);
+}
+
+function _gpFindBoxPlay(list, sig, rawIdx) {
+  const idx = _gpFindBoxPlayIndex(list, sig, rawIdx);
+  return idx >= 0 ? list[idx] : null;
+}
+
 function _gpFindPlayBySig(sig) {
   if (!Array.isArray(plays)) return null;
   return plays.find((p) => _gpPlaySignature(p) === sig) || null;
@@ -504,13 +589,13 @@ function _gpHasFlag(play, flag) {
   return !!(play && play._gpFlags && play._gpFlags[flag]);
 }
 
-function _gpToggleFlag(boxId, sig, flag) {
+function _gpToggleFlag(boxId, sig, flag, rawIdx) {
   if (!boxId || !sig || !GP_PLAY_FLAGS.includes(flag)) return false;
   let toggled = false;
   _gpUpdateBoard((board) => {
     const list = board.assignments && board.assignments[boxId];
     if (!Array.isArray(list)) return;
-    const item = list.find((p) => _gpPlaySignature(p) === sig);
+    const item = _gpFindBoxPlay(list, sig, rawIdx);
     if (!item) return;
     if (!item._gpFlags) item._gpFlags = {};
     item._gpFlags[flag] = !item._gpFlags[flag];
