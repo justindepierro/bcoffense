@@ -6,7 +6,7 @@ function highlightWristbandPlays() {
 
   if (wbIdx === "") {
     highlightedWristbandPlays = [];
-    renderPlaybook();
+    requestRenderPlaybook();
     return;
   }
 
@@ -15,7 +15,7 @@ function highlightWristbandPlays() {
 
   if (!wb || !wb.cards) {
     highlightedWristbandPlays = [];
-    renderPlaybook();
+    requestRenderPlaybook();
     return;
   }
 
@@ -28,7 +28,7 @@ function highlightWristbandPlays() {
     });
   });
 
-  renderPlaybook();
+  requestRenderPlaybook();
 }
 
 function isPlayOnHighlightedWristband(play) {
@@ -61,15 +61,21 @@ function filterPlays() {
   const jvOnly =
     document.getElementById("pbJvFilter")?.checked || false;
   const gameWeek = getGameWeek();
+  const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
+    ? new Set((getGamePlanTags()[gameWeek.opponentName] || []))
+    : null;
+  const jvFlagged = jvOnly && typeof _gpFlaggedSigs === "function"
+    ? _gpFlaggedSigs("jv")
+    : null;
   _updateGamePlanFilterBar();
 
   filteredPlays = plays.filter((play) => {
-    if (gamePlanOnly && gameWeek.opponentName) {
-      if (!isPlayTaggedForOpponent(play, gameWeek.opponentName)) return false;
+    if (taggedForOpponent) {
+      if (!taggedForOpponent.has(playSignature(play))) return false;
     }
     if (jvOnly) {
-      if (typeof isPlayFlaggedInGamePlan !== "function") return false;
-      if (!isPlayFlaggedInGamePlan(play, "jv")) return false;
+      if (!jvFlagged || typeof _gpPlaySignature !== "function") return false;
+      if (!jvFlagged.has(_gpPlaySignature(play))) return false;
     }
     if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;
     if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
@@ -112,7 +118,7 @@ function filterPlays() {
   });
 
   applyCurrentSort();
-  renderPlaybook();
+  requestRenderPlaybook();
   savePlaybookState();
   updateActiveFilterBar();
   const clearBtn = document.getElementById("clearPbSearch");
@@ -172,7 +178,7 @@ function clearFilters() {
   storageManager.remove(STORAGE_KEYS.PLAYBOOK_STATE);
 
   filteredPlays = [...plays];
-  renderPlaybook();
+  requestRenderPlaybook();
   updateActiveFilterBar();
 }
 

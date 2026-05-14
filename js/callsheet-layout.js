@@ -78,7 +78,7 @@ function handleCatDrop(event, targetCategoryId) {
   persistCallSheetCategoryOrder();
 
   draggedCatId = null;
-  renderCallSheet();
+  scheduleRenderCallSheet();
 }
 
 function handleCatDragEnd(event) {
@@ -400,7 +400,7 @@ function saveCallSheetLayoutModal() {
   persistCallSheetCategoryOrder();
   saveCallSheetSettings();
   closeCallSheetLayoutModal();
-  renderCallSheet();
+  scheduleRenderCallSheet();
   showToast("🗂️ Call sheet layout updated");
 }
 

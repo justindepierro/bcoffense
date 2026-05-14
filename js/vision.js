@@ -53,12 +53,20 @@ function setVisionMode(on) {
   }
   // Re-render any visible views that read constraints/category notes
   try {
-    if (typeof renderCallSheet === "function") renderCallSheet();
+    if (typeof scheduleRenderCallSheet === "function") {
+      scheduleRenderCallSheet();
+    } else if (typeof renderCallSheet === "function") {
+      renderCallSheet();
+    }
   } catch (_e) {
     /* no-op */
   }
   try {
-    if (typeof renderGamePlan === "function") renderGamePlan();
+    if (typeof requestRenderGamePlan === "function") {
+      requestRenderGamePlan();
+    } else if (typeof renderGamePlan === "function") {
+      renderGamePlan();
+    }
   } catch (_e) {
     /* no-op */
   }

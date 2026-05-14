@@ -107,7 +107,7 @@ function clearBulkSelection() {
   const selectAll = document.getElementById("bulkSelectAll");
   if (selectAll) selectAll.checked = false;
   updateBulkSelectUI();
-  renderScript();
+  requestRenderScript();
   announceScriptA11y("Selection cleared");
 }
 
@@ -149,7 +149,7 @@ function openPlayReorderModal(startIndex, endIndex, title, successMessage) {
         .filter(Boolean);
 
       script.splice(sliceStart, playsToReorder.length, ...reorderedPlays);
-      renderScript();
+      requestRenderScript();
       setScriptToolbarStatus(successMessage, "success", AUTOSAVE_DEBOUNCE_MS);
     },
   });
@@ -218,7 +218,7 @@ function undoScript() {
   if (!previousState) return;
 
   script = previousState;
-  renderScript();
+  requestRenderScript();
 }
 
 function redoScript() {
@@ -226,7 +226,7 @@ function redoScript() {
   if (!futureState) return;
 
   script = futureState;
-  renderScript();
+  requestRenderScript();
 }
 
 function initScriptKeyboard() {
@@ -330,7 +330,7 @@ function initScriptKeyboard() {
                 script.splice(index, 1);
               });
             bulkSelectedIndices = [];
-            renderScript();
+            requestRenderScript();
           }
         });
       }
@@ -518,7 +518,7 @@ function moveScriptSelectionWithinPeriod(indices, direction) {
   nextPeriodItems.forEach((item, idx) => {
     script[periodIndices[idx]] = item;
   });
-  renderScript();
+  requestRenderScript();
   return true;
 }
 
@@ -546,7 +546,7 @@ function moveScriptSelectionToPeriodIndex(indices, targetSeparatorIndex) {
   while (insertAt < script.length && !script[insertAt].isSeparator) insertAt++;
 
   script.splice(insertAt, 0, ...selectedPlays);
-  renderScript();
+  requestRenderScript();
   return true;
 }
 

@@ -21,7 +21,7 @@ function _renderPagination(totalPages, totalFiltered) {
 function pbPagePrev() {
   if (currentPage > 0) {
     currentPage--;
-    renderPlaybook();
+    requestRenderPlaybook();
   }
 }
 
@@ -29,7 +29,7 @@ function pbPageNext() {
   const totalPages = Math.ceil(filteredPlays.length / PLAYS_PER_PAGE);
   if (currentPage < totalPages - 1) {
     currentPage++;
-    renderPlaybook();
+    requestRenderPlaybook();
   }
 }
 

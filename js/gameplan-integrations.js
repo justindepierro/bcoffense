@@ -179,7 +179,11 @@ async function pushGamePlanToCallSheet() {
   });
 
   if (typeof saveCallSheet === "function") saveCallSheet();
-  if (typeof renderCallSheet === "function") renderCallSheet();
+  if (typeof scheduleRenderCallSheet === "function") {
+    scheduleRenderCallSheet();
+  } else if (typeof renderCallSheet === "function") {
+    renderCallSheet();
+  }
   showToast(
     `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCount} categor${filledCount === 1 ? "y" : "ies"}`,
     { type: "success", duration: 3500 },
@@ -393,7 +397,11 @@ async function pushGamePlanBoxToCallSheet(boxId) {
   });
 
   if (typeof saveCallSheet === "function") saveCallSheet();
-  if (typeof renderCallSheet === "function") renderCallSheet();
+  if (typeof scheduleRenderCallSheet === "function") {
+    scheduleRenderCallSheet();
+  } else if (typeof renderCallSheet === "function") {
+    renderCallSheet();
+  }
   showToast(
     `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCatIds.length} categor${filledCatIds.length === 1 ? "y" : "ies"}`,
     { type: "success" },

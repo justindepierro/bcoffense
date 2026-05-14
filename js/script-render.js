@@ -1102,6 +1102,14 @@ function renderScript() {
 
 const _scheduleRenderScript = createRAFRenderer(renderScript);
 
+function scheduleRenderScript() {
+  _scheduleRenderScript();
+}
+
+function requestRenderScript() {
+  _scheduleRenderScript();
+}
+
 // ============ Script Play Field Updaters ============
 // Wired via app-events.js delegated change/input handlers (data-field).
 

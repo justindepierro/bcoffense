@@ -90,7 +90,7 @@ function selectAllScriptOptions() {
   const oneWordOnlyEl = document.getElementById("scriptShowOneWordOnly");
   if (oneWordOnlyEl) oneWordOnlyEl.checked = false;
   saveScriptDisplayOptions();
-  renderScript();
+  requestRenderScript();
 }
 
 function clearAllScriptOptions() {
@@ -103,7 +103,7 @@ function clearAllScriptOptions() {
   );
   if (detailEl) detailEl.checked = true;
   saveScriptDisplayOptions();
-  renderScript();
+  requestRenderScript();
 }
 
 function applyScriptDisplayPreset(presetName = "coach") {
@@ -148,7 +148,7 @@ function applyScriptDisplayPreset(presetName = "coach") {
   if (modeEl) modeEl.checked = true;
 
   saveScriptDisplayOptions();
-  renderScript();
+  requestRenderScript();
   showToast(`Script preset: ${presetName}`);
 }
 function toggleScriptDisplayPanel() {

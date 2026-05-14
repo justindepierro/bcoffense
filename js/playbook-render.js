@@ -218,6 +218,16 @@ function renderPlaybook() {
   }
 }
 
+const _scheduleRenderPlaybook = createRAFRenderer(renderPlaybook);
+
+function scheduleRenderPlaybook() {
+  _scheduleRenderPlaybook();
+}
+
+function requestRenderPlaybook() {
+  _scheduleRenderPlaybook();
+}
+
 function _playbookDocKeydown(e) {
   const activeEl = document.activeElement;
   const inInput =

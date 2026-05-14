@@ -35,7 +35,7 @@ function editCategoryName(categoryId) {
       saveCallSheetSettings();
       showToast(`✏️ Renamed to "${newName}"`);
     }
-    renderCallSheet();
+    scheduleRenderCallSheet();
   };
 
   input.addEventListener("blur", finishRename);
@@ -165,7 +165,7 @@ function saveNewCallSheetCategory() {
   persistCallSheetCategoryOrder();
   saveCallSheet();
   closeAddCallSheetCategoryModal();
-  renderCallSheet();
+  scheduleRenderCallSheet();
   showToast(`➕ Added ${name}`);
 }
 
@@ -207,6 +207,6 @@ async function deleteCustomCallSheetCategory(categoryId) {
   storageManager.set(STORAGE_KEYS.CALLSHEET_TARGETS, csTargets);
   storageManager.set(STORAGE_KEYS.CALLSHEET_COLLAPSED, [...csCollapsed]);
   saveCallSheet();
-  renderCallSheet();
+  scheduleRenderCallSheet();
   showToast("🗑️ Category deleted");
 }

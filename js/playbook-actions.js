@@ -20,7 +20,7 @@ function startInlineEdit(td, playIndex, field) {
     if (masterIdx >= 0) plays[masterIdx][field] = newVal;
     storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
     invalidateFilterCache();
-    renderPlaybook();
+    requestRenderPlaybook();
     if (newVal !== original) showToast("✏️ Updated");
   }
 

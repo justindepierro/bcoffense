@@ -84,7 +84,7 @@ function sortPlaybook(column) {
   }
   _syncSortUI();
   applyCurrentSort();
-  renderPlaybook();
+  requestRenderPlaybook();
   savePlaybookState();
 }
 
@@ -98,7 +98,7 @@ function applyAdvancedSort() {
   secondarySortColumn = secondary ? secondary.value || null : null;
   _syncSortUI();
   applyCurrentSort();
-  renderPlaybook();
+  requestRenderPlaybook();
   savePlaybookState();
 }
 
@@ -114,7 +114,7 @@ function toggleSortDir(which) {
   }
   _syncSortUI();
   applyCurrentSort();
-  renderPlaybook();
+  requestRenderPlaybook();
   savePlaybookState();
 }
 
@@ -372,4 +372,3 @@ function populateWristbandHighlightDropdown() {
       })
       .join("");
 }
-

@@ -327,7 +327,9 @@
       loadKeys()
         .then(() => {
           // Re-render any visible playbook now that badge keys are warm.
-          if (typeof renderPlaybook === "function") {
+          if (typeof requestRenderPlaybook === "function") {
+            try { requestRenderPlaybook(); } catch (_e) { /* ignore */ }
+          } else if (typeof renderPlaybook === "function") {
             try { renderPlaybook(); } catch (_e) { /* ignore */ }
           }
         })

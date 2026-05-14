@@ -78,7 +78,7 @@ function sortScript() {
   }
 
   script = result;
-  renderScript();
+  requestRenderScript();
 
   const orderType = hasCustomOrder ? "custom order" : "A-Z";
   setScriptToolbarStatus(
@@ -127,7 +127,7 @@ function sortPeriod(separatorIndex) {
     endIndex - separatorIndex - 1,
     ...periodPlays,
   );
-  renderScript();
+  requestRenderScript();
 
   const fieldLabel =
     SCRIPT_SORT_FIELDS.find((sortField) => sortField.value === field)?.label ||
@@ -156,7 +156,7 @@ function reversePeriod(separatorIndex) {
     endIndex - separatorIndex - 1,
     ...periodPlays,
   );
-  renderScript();
+  requestRenderScript();
 
   const periodLabel = script[separatorIndex].label || "Period";
   setScriptToolbarStatus(`${periodLabel} reversed`, "success");
@@ -194,7 +194,7 @@ function reverseScriptSort() {
   }
 
   script = result;
-  renderScript();
+  requestRenderScript();
   setScriptToolbarStatus("Play order reversed", "success");
 }
 
@@ -241,7 +241,7 @@ function shuffleScript() {
   }
 
   script = result;
-  renderScript();
+  requestRenderScript();
   setScriptToolbarStatus("Shuffled within periods", "success", AUTOSAVE_DEBOUNCE_MS);
 }
 

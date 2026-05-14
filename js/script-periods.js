@@ -85,7 +85,7 @@ function confirmAddPeriod() {
     id: Date.now() + Math.random(),
   });
   markScriptDirty();
-  renderScript();
+  requestRenderScript();
   showToast(`Added period "${name}"`);
   announceScriptA11y(`Added period ${name}`);
   document.querySelector(".period-create-overlay")?.remove();
@@ -100,20 +100,20 @@ function togglePeriodCollapse(periodId) {
     collapsedPeriods.add(periodId);
     announceScriptA11y(`${separator?.label || "Period"} collapsed`);
   }
-  renderScript();
+  requestRenderScript();
 }
 
 function collapseAllPeriods() {
   script
     .filter((play) => play.isSeparator)
     .forEach((play) => collapsedPeriods.add(play.id));
-  renderScript();
+  requestRenderScript();
   announceScriptA11y("All periods collapsed");
 }
 
 function expandAllPeriods() {
   collapsedPeriods.clear();
-  renderScript();
+  requestRenderScript();
   announceScriptA11y("All periods expanded");
 }
 
@@ -164,7 +164,7 @@ function togglePeriodProtection(idx) {
   saveScriptState();
   separator.hideProtection = !separator.hideProtection;
   markScriptDirty();
-  renderScript();
+  requestRenderScript();
 
   const label = separator.label || "Period";
   const stateLabel = separator.hideProtection ? "hidden" : "shown";
@@ -255,7 +255,7 @@ function duplicatePeriod(separatorIndex) {
   };
 
   script.splice(endIndex, 0, newSeparator, ...plays);
-  renderScript();
+  requestRenderScript();
 }
 
 function movePeriod(separatorIndex, direction) {
@@ -290,7 +290,7 @@ function movePeriod(separatorIndex, direction) {
     script.splice(insertAt, 0, ...periodItems);
   }
 
-  renderScript();
+  requestRenderScript();
 }
 
 async function savePeriodAsTemplate(separatorIndex) {
@@ -592,7 +592,7 @@ function doInsertTemplate(idx) {
 
   script.push(newSeparator, ...newPlays);
   markScriptDirty();
-  renderScript();
+  requestRenderScript();
   showToast(`Inserted "${template.name}" (${template.plays.length} plays)`);
   announceScriptA11y(`Inserted template ${template.name}`);
 }

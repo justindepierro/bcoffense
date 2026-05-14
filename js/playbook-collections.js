@@ -319,7 +319,11 @@ function _addPlaysToCallSheet(playList) {
     });
   });
 
-  if (typeof renderCallSheet === "function") renderCallSheet();
+  if (typeof scheduleRenderCallSheet === "function") {
+    scheduleRenderCallSheet();
+  } else if (typeof renderCallSheet === "function") {
+    renderCallSheet();
+  }
   if (typeof saveCallSheet === "function") saveCallSheet();
   return totalPlaced;
 }

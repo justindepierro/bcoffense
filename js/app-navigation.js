@@ -60,7 +60,11 @@ function showTab(tabName) {
     } else if (typeof refreshCallSheetFromPlaybook === "function") {
       refreshCallSheetFromPlaybook();
     }
-    renderCallSheet();
+    if (typeof scheduleRenderCallSheet === "function") {
+      scheduleRenderCallSheet();
+    } else {
+      renderCallSheet();
+    }
   } else if (tabName === "offensebuilder") {
     initOffenseBuilder();
   } else if (tabName === "dashboard") {
