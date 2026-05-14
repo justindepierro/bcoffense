@@ -351,7 +351,7 @@ function _gpReorderInBox(boxId, sig, targetIdx, rawIdx) {
     if (!board.sort) board.sort = {};
     board.sort[boxId] = "manual";
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -375,7 +375,7 @@ function _gpAddSigsToBox(sigs, boxId) {
     });
   });
   _gpSelected.clear();
-  renderGamePlan();
+  requestRenderGamePlan();
   if (added > 0) {
     const label = _gpBoxLabel(boxId);
     showToast(`Added ${added} play${added === 1 ? "" : "s"} to ${label}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
@@ -396,5 +396,5 @@ function _gpMoveBetweenBoxes(fromBoxId, toBoxId, sig, rawIdx) {
     const exists = board.assignments[toBoxId].some((p) => _gpPlaySignature(p) === sig);
     if (!exists) board.assignments[toBoxId].push(play);
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }

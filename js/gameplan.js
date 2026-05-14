@@ -3,7 +3,7 @@ function toggleGamePlanPlayFlag(arg) {
   const ref = _gpParseBoxPlayArg(arg);
   if (!ref || !ref.flag) return;
   if (_gpToggleFlag(ref.boxId, ref.sig, ref.flag, ref.rawIdx)) {
-    renderGamePlan();
+    requestRenderGamePlan();
     showToast(ref.flag === "wb" ? "Wristband flag toggled" : "JV flag toggled", { duration: 1200 });
   }
 }
@@ -71,6 +71,30 @@ let _gpFilters = {
 let _gpSelected = new Set(); // play signatures currently checked in library
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
 let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → library
+let _gpRenderQueued = false;
+let _gpRenderDebounceTimer = null;
+
+function requestRenderGamePlan(opts = {}) {
+  const debounceMs = Math.max(0, Number(opts.debounceMs) || 0);
+  const queue = () => {
+    if (_gpRenderQueued) return;
+    _gpRenderQueued = true;
+    const raf = typeof requestAnimationFrame === "function"
+      ? requestAnimationFrame
+      : (callback) => setTimeout(callback, 0);
+    raf(() => {
+      _gpRenderQueued = false;
+      if (typeof renderGamePlan === "function") renderGamePlan();
+    });
+  };
+  if (debounceMs > 0) {
+    clearTimeout(_gpRenderDebounceTimer);
+    _gpRenderDebounceTimer = setTimeout(queue, debounceMs);
+    return;
+  }
+  clearTimeout(_gpRenderDebounceTimer);
+  queue();
+}
 
 // Type-alias map (used by Send to Game Plan + Holding auto-route)
 const GP_TYPE_ALIASES = {
@@ -422,13 +446,13 @@ async function loadGamePlanWristband() {
     b.loadedWristband = { name: wb.title || "Untitled", plays: wristbandPlays };
   });
   showToast(`📋 Loaded “${wb.title}” (${wristbandPlays.length} plays)`);
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function clearGamePlanWristband() {
   _gpUpdateBoard((b) => { b.loadedWristband = null; });
   showToast("🗑️ Wristband unloaded");
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function _gpWristbandNumberFor(play) {
@@ -548,6 +572,9 @@ function _gpFindBoxPlay(list, sig, rawIdx) {
 }
 
 function _gpFindPlayBySig(sig) {
+  if (typeof findPlayByGamePlanSignature === "function") {
+    return findPlayByGamePlanSignature(sig);
+  }
   if (!Array.isArray(plays)) return null;
   return plays.find((p) => _gpPlaySignature(p) === sig) || null;
 }

@@ -503,6 +503,7 @@ function savePlayEditor(opts = {}) {
         newPlay[field.key] = data[field.key] || "";
       }),
     );
+    if (typeof createPlayId === "function") newPlay.id = createPlayId();
     if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);
     _syncGamePlanCheckbox(newPlay);
@@ -614,16 +615,22 @@ function _wirePlayEditorImage(play, isNew) {
   const sig = (typeof playSignature === "function") ? playSignature(play) : "";
   if (!sig) return;
 
-  const _refreshPreview = () => {
-    const url = (typeof getPlayImageUrl === "function") ? getPlayImageUrl(play) : null;
+  const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
+  const _refreshPreview = async () => {
+    const url = (typeof ensurePlayImageUrl === "function")
+      ? await ensurePlayImageUrl(play)
+      : ((typeof getPlayImageUrl === "function") ? getPlayImageUrl(play) : null);
     if (url) {
       previewEl.innerHTML = `<img src="${url}" alt="Play diagram preview" />`;
       if (removeBtn) removeBtn.style.display = "";
+      if (trigger) trigger.textContent = "Replace Image…";
     } else {
       previewEl.innerHTML = `<div class="pb-editor-image-placeholder">No image</div>`;
       if (removeBtn) removeBtn.style.display = "none";
+      if (trigger) trigger.textContent = "Add Image…";
     }
   };
+  _refreshPreview();
 
   fileInput.addEventListener("change", async () => {
     const file = fileInput.files && fileInput.files[0];
@@ -632,7 +639,7 @@ function _wirePlayEditorImage(play, isNew) {
     try {
       const blob = await window.playImages.compress(file, { maxDim: 900, quality: 0.82 });
       await window.playImages.set(sig, blob);
-      _refreshPreview();
+      await _refreshPreview();
       showToast(`🖼️ Image added (${Math.round(blob.size / 1024)} KB)`, {
         duration: 2200, type: "success",
       });
@@ -651,7 +658,7 @@ function _wirePlayEditorImage(play, isNew) {
       });
       if (!ok) return;
       await window.playImages.delete(sig);
-      _refreshPreview();
+      await _refreshPreview();
       showToast("Image removed", { duration: 2000 });
       if (typeof renderPlaybook === "function") renderPlaybook();
     });

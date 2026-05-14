@@ -11,7 +11,7 @@ function removeFromGamePlanBox(combined) {
     const idx = _gpFindBoxPlayIndex(arr, ref.sig, ref.rawIdx);
     if (idx >= 0) arr.splice(idx, 1);
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* ----- Per-play flag toggles + send to wristband -------------------------
@@ -23,7 +23,7 @@ function toggleGamePlanPlayFlag(arg) {
   if (!ref || !ref.boxId || !ref.sig || !ref.flag) return;
   const ok = _gpToggleFlag(ref.boxId, ref.sig, ref.flag, ref.rawIdx);
   if (!ok) return;
-  if (typeof renderGamePlan === "function") renderGamePlan();
+  requestRenderGamePlan();
 }
 
 async function sendGamePlanToWristbandCard() {
@@ -106,7 +106,7 @@ async function clearGamePlanBox(boxId) {
   _gpUpdateBoard((board) => {
     board.assignments[boxId] = [];
   });
-  renderGamePlan();
+  requestRenderGamePlan();
   showToast(`Cleared ${boxId}`, { type: "success" });
 }
 
@@ -119,7 +119,7 @@ async function clearGamePlanBoard() {
   _gpUpdateBoard((board) => {
     Object.keys(board.assignments).forEach((k) => { board.assignments[k] = []; });
   });
-  renderGamePlan();
+  requestRenderGamePlan();
   showToast("Game plan cleared", { type: "success" });
 }
 
@@ -132,7 +132,7 @@ function toggleGamePlanLibrarySelect(sig) {
   if (_gpSelected.has(sig)) _gpSelected.delete(sig);
   else _gpSelected.add(sig);
   // Light re-render of just the row classes — easier to re-render whole list
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function updateGamePlanFilter(field, valueOrEvent) {
@@ -146,7 +146,7 @@ function updateGamePlanFilter(field, valueOrEvent) {
   } else {
     _gpFilters[field] = valueOrEvent || "";
   }
-  renderGamePlan();
+  requestRenderGamePlan({ debounceMs: field === "search" ? 90 : 0 });
 }
 
 function clearGamePlanFilters() {
@@ -162,14 +162,14 @@ function clearGamePlanFilters() {
     spotlight: null,
   };
   _gpSelected.clear();
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function toggleGamePlanMatchupFilter(field) {
   if (!field) return;
   if (!(field in _gpFilters)) return;
   _gpFilters[field] = !_gpFilters[field];
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -220,7 +220,7 @@ async function addGamePlanCustomBox() {
     b.customBoxes.push({ id, label: trimmed });
     b.assignments[id] = [];
   });
-  renderGamePlan();
+  requestRenderGamePlan();
   showToast(`Added box “${trimmed}”`, { type: "success" });
 }
 
@@ -235,7 +235,7 @@ async function renameGamePlanBox(boxId) {
     const target = (b.customBoxes || []).find((x) => x.id === boxId);
     if (target) target.label = next.trim();
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 async function deleteGamePlanBox(boxId) {
@@ -249,7 +249,7 @@ async function deleteGamePlanBox(boxId) {
     b.customBoxes = (b.customBoxes || []).filter((x) => x.id !== boxId);
     delete b.assignments[boxId];
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -268,12 +268,12 @@ function toggleGamePlanBoxCollapse(boxId) {
     if (idx >= 0) board.collapsed.splice(idx, 1);
     else board.collapsed.push(boxId);
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function expandAllGamePlanBoxes() {
   _gpUpdateBoard((board) => { board.collapsed = []; });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function collapseAllGamePlanBoxes() {
@@ -285,7 +285,7 @@ function collapseAllGamePlanBoxes() {
     ];
     board.collapsed = allIds.slice();
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 async function setGamePlanBoxTarget(boxId) {
@@ -304,14 +304,14 @@ async function setGamePlanBoxTarget(boxId) {
     if (num > 0) b.targets[boxId] = num;
     else delete b.targets[boxId];
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function cycleGamePlanDensity() {
   const order = ["comfortable", "compact", "detail"];
   const idx = order.indexOf(_gpFilters.density || "comfortable");
   _gpFilters.density = order[(idx + 1) % order.length];
-  renderGamePlan();
+  requestRenderGamePlan();
   showToast(`Density: ${_gpFilters.density}`, { duration: 1200 });
 }
 
@@ -363,7 +363,7 @@ function autoRouteHoldingBox() {
     });
     b.assignments[GP_HOLDING_ID] = stillHolding;
   });
-  renderGamePlan();
+  requestRenderGamePlan();
   if (routed === 0) {
     showToast("No plays in Holding had a matching default box.", { type: "warning" });
   } else {
@@ -381,12 +381,12 @@ function autoRouteHoldingBox() {
 function gpSelectAllVisible() {
   const board = _gpEnsureBoard();
   _gpFilteredLibrary(board).forEach((p) => _gpSelected.add(_gpPlaySignature(p)));
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function gpClearLibrarySelection() {
   _gpSelected.clear();
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function gpInvertVisibleSelection() {
@@ -396,7 +396,7 @@ function gpInvertVisibleSelection() {
     if (_gpSelected.has(sig)) _gpSelected.delete(sig);
     else _gpSelected.add(sig);
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 async function gpAddAllVisibleToBox() {
@@ -488,7 +488,7 @@ async function editGamePlanBoxNote(boxId) {
     if (!next || !next.trim()) delete b.notes[boxId];
     else b.notes[boxId] = next.trim();
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 function setGamePlanBoxSort(boxId, mode) {
@@ -498,7 +498,7 @@ function setGamePlanBoxSort(boxId, mode) {
     if (!mode || mode === "manual") delete b.sort[boxId];
     else b.sort[boxId] = mode;
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -526,7 +526,7 @@ function _gpNudgeBoxPlay(combined, delta) {
     if (!board.sort) board.sort = {};
     board.sort[ref.boxId] = "manual";
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 /* -------------------------------------------------------------------------
    Right-click / long-press context menu on a box play
@@ -645,12 +645,12 @@ async function openGamePlanReorderBoxes() {
     onSave: (newOrder) => {
       const newIds = newOrder.map((lab) => idsByLabel.get(lab)).filter(Boolean);
       _gpUpdateBoard((b) => { b.boxOrder = newIds; });
-      renderGamePlan();
+      requestRenderGamePlan();
       showToast("Box order saved", { type: "success" });
     },
     onClear: () => {
       _gpUpdateBoard((b) => { b.boxOrder = []; });
-      renderGamePlan();
+      requestRenderGamePlan();
       showToast("Reset to default order", { type: "info" });
     },
   });
@@ -680,7 +680,7 @@ function _gpNudgeBoxOrder(boxId, delta) {
   if (next < 0 || next >= current.length) return;
   current.splice(next, 0, current.splice(idx, 1)[0]);
   _gpUpdateBoard((b) => { b.boxOrder = current; });
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 async function hideGamePlanBox(boxId) {
@@ -689,7 +689,7 @@ async function hideGamePlanBox(boxId) {
     b.hiddenBoxes = b.hiddenBoxes || [];
     if (!b.hiddenBoxes.includes(boxId)) b.hiddenBoxes.push(boxId);
   });
-  renderGamePlan();
+  requestRenderGamePlan();
   showToast(`Hidden. Click 👁️ Manage Boxes to restore.`, { type: "info" });
 }
 
@@ -755,7 +755,7 @@ async function openGamePlanManageBoxes() {
       });
       _gpUpdateBoard((b) => { b.hiddenBoxes = newHidden; });
       close(true);
-      renderGamePlan();
+      requestRenderGamePlan();
       showToast("Box visibility saved", { type: "success" });
     });
     overlay.addEventListener("click", (e) => {
@@ -782,5 +782,5 @@ async function renameAnyGamePlanBox(boxId) {
       b.boxLabels[boxId] = trimmed;
     }
   });
-  renderGamePlan();
+  requestRenderGamePlan();
 }

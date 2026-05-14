@@ -1324,12 +1324,20 @@ function debounce(fn, wait = 150) {
  */
 function createRAFRenderer(renderFn) {
   let scheduled = false;
+  let lastArgs = null;
+  let lastThis = null;
   return function (...args) {
+    lastArgs = args;
+    lastThis = this;
     if (scheduled) return;
     scheduled = true;
     requestAnimationFrame(() => {
       scheduled = false;
-      renderFn.apply(this, args);
+      const callArgs = lastArgs || [];
+      const callThis = lastThis;
+      lastArgs = null;
+      lastThis = null;
+      renderFn.apply(callThis, callArgs);
     });
   };
 }
@@ -1573,6 +1581,68 @@ function getPlayIdentityKey(play, mode = "core", options = {}) {
   return fields
     .map((field) => normalizePlayIdentityValue(play[field], options))
     .join("|");
+}
+
+function createPlayId(prefix = "play") {
+  const rand = Math.random().toString(36).slice(2, 10);
+  const time = Date.now().toString(36);
+  return `${prefix}_${time}_${rand}`;
+}
+
+function ensurePlaybookPlayIds(list) {
+  if (!Array.isArray(list)) return 0;
+  const used = new Set();
+  let changed = 0;
+  list.forEach((play) => {
+    if (!play || typeof play !== "object") return;
+    const current = play.id == null ? "" : String(play.id).trim();
+    if (current && !used.has(current)) {
+      play.id = current;
+      used.add(current);
+      return;
+    }
+    let next = createPlayId();
+    while (used.has(next)) next = createPlayId();
+    play.id = next;
+    used.add(next);
+    changed += 1;
+  });
+  return changed;
+}
+
+let _playbookRuntimeIndex = null;
+let _playbookRuntimeIndexSource = null;
+
+function invalidatePlaybookRuntimeIndex() {
+  _playbookRuntimeIndex = null;
+  _playbookRuntimeIndexSource = null;
+}
+
+function getPlaybookRuntimeIndex() {
+  const list = Array.isArray(plays) ? plays : [];
+  if (_playbookRuntimeIndex && _playbookRuntimeIndexSource === list) {
+    return _playbookRuntimeIndex;
+  }
+  const byId = new Map();
+  const byGamePlanSig = new Map();
+  const byTagSig = new Map();
+  list.forEach((play, index) => {
+    if (!play) return;
+    if (play.id) byId.set(String(play.id), { play, index });
+    const gpSig = getPlayIdentityKey(play, "gameplan", { trim: false });
+    if (gpSig && !byGamePlanSig.has(gpSig)) byGamePlanSig.set(gpSig, { play, index });
+    const tagSig = playSignature(play);
+    if (tagSig && !byTagSig.has(tagSig)) byTagSig.set(tagSig, { play, index });
+  });
+  _playbookRuntimeIndex = { byId, byGamePlanSig, byTagSig, size: list.length };
+  _playbookRuntimeIndexSource = list;
+  return _playbookRuntimeIndex;
+}
+
+function findPlayByGamePlanSignature(sig) {
+  if (!sig) return null;
+  const hit = getPlaybookRuntimeIndex().byGamePlanSig.get(sig);
+  return hit ? hit.play : null;
 }
 
 function playsHaveSameIdentity(p1, p2, mode = "core", options = {}) {

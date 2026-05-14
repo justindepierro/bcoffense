@@ -1,5 +1,10 @@
 function restoreStoredPlaybookSession(storedPlaybook) {
   plays = storedPlaybook;
+  if (typeof ensurePlaybookPlayIds === "function") {
+    const changed = ensurePlaybookPlayIds(plays);
+    if (changed > 0) storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  }
+  if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
   filteredPlays = [...plays];
   document.getElementById("uploadSection").classList.add("hidden");
   document.getElementById("mainApp").classList.remove("hidden");

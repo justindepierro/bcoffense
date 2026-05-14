@@ -56,7 +56,7 @@ function discardDraftData(storageKey, timerId = null) {
   return null;
 }
 
-const STORAGE_VERSION = 2;
+const STORAGE_VERSION = 3;
 
 const STORAGE_KEYS = {
   PLAYBOOK: "playbook",
@@ -109,6 +109,15 @@ const STORAGE_KEYS = {
 const MIGRATIONS = {
   // Example: version 1 → 2 migration (no-op, initial schema)
   // 2: () => { /* transform data from v1 → v2 */ },
+  3: () => {
+    const raw = localStorage.getItem(STORAGE_KEYS.PLAYBOOK);
+    const stored = safeJSONParse(raw, null);
+    if (!Array.isArray(stored)) return;
+    const changed = ensurePlaybookPlayIds(stored);
+    if (changed > 0) {
+      localStorage.setItem(STORAGE_KEYS.PLAYBOOK, JSON.stringify(stored));
+    }
+  },
 };
 
 function runMigrations() {
@@ -286,6 +295,11 @@ function reloadAppFromStorage() {
   const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
   if (storedPlaybook) {
     plays = storedPlaybook;
+    if (typeof ensurePlaybookPlayIds === "function") {
+      const changed = ensurePlaybookPlayIds(plays);
+      if (changed > 0) storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    }
+    if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
     filteredPlays = [...plays];
   }
 

@@ -26,18 +26,34 @@ function renderPlaybook() {
     if (currentPage < 0) currentPage = 0;
     const start = currentPage * PLAYS_PER_PAGE;
     const pageSlice = filteredPlays.slice(start, start + PLAYS_PER_PAGE);
+    const gw = typeof getGameWeek === "function" ? getGameWeek() : { opponentName: null };
+    const activeOpponent = gw && gw.opponentName ? gw.opponentName : "";
+    const activeTags = activeOpponent && typeof getGamePlanTags === "function"
+      ? new Set((getGamePlanTags()[activeOpponent] || []))
+      : null;
+    const jvFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("jv") : new Set();
+    const wbFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("wb") : new Set();
+    const gamePlanSigFor = (play) =>
+      (typeof _gpPlaySignature === "function")
+        ? _gpPlaySignature(play)
+        : "";
+    const tagSigFor = (play) =>
+      (typeof playSignature === "function") ? playSignature(play) : "";
+    const isTaggedForActiveOpponent = (play) =>
+      !!(activeTags && activeTags.has(tagSigFor(play)));
+    const hasImageFor = (sig) =>
+      !!(sig && typeof window !== "undefined" && window.playImages && window.playImages.has(sig));
 
     tbody.innerHTML = pageSlice
       .map((play, localIdx) => {
         const idx = start + localIdx;
         const onWristband = isPlayOnHighlightedWristband(play);
         const wbClass = onWristband ? " on-wristband" : "";
-        const gpClass = isPlayInGamePlan(play) ? " in-gameplan" : "";        const isJvFlagged =
-          typeof isPlayFlaggedInGamePlan === "function" &&
-          isPlayFlaggedInGamePlan(play, "jv");
-        const isWbFlagged =
-          typeof isPlayFlaggedInGamePlan === "function" &&
-          isPlayFlaggedInGamePlan(play, "wb");
+        const gpActive = isTaggedForActiveOpponent(play);
+        const gpClass = gpActive ? " in-gameplan" : "";
+        const gpSig = gamePlanSigFor(play);
+        const isJvFlagged = jvFlagged.has(gpSig);
+        const isWbFlagged = wbFlagged.has(gpSig);
         const jvBadge = isJvFlagged
           ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
           : "";
@@ -51,14 +67,11 @@ function renderPlaybook() {
         const _imgSig =
           typeof playSignature === "function" ? playSignature(play) : "";
         const imgBadge =
-          _imgSig &&
-          typeof window.playImages !== "undefined" &&
-          window.playImages.has(_imgSig)
+          hasImageFor(_imgSig)
             ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_imgSig)}" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
 
-        const gpActive = isPlayInGamePlan(play);
-        const gpToggle = getGameWeek().opponentName
+        const gpToggle = activeOpponent
           ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
 
@@ -95,27 +108,22 @@ function renderPlaybook() {
         const idx = start + localIdx;
         const onWristband = isPlayOnHighlightedWristband(play);
         const wbClass = onWristband ? " on-wristband" : "";
-        const gpClass = isPlayInGamePlan(play) ? " in-gameplan" : "";
-        const cardJv =
-          typeof isPlayFlaggedInGamePlan === "function" &&
-          isPlayFlaggedInGamePlan(play, "jv")
-            ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
-            : "";
-        const cardWbFlag =
-          typeof isPlayFlaggedInGamePlan === "function" &&
-          isPlayFlaggedInGamePlan(play, "wb")
-            ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
-            : "";
+        const gpCardActive = isTaggedForActiveOpponent(play);
+        const gpClass = gpCardActive ? " in-gameplan" : "";
+        const cardGpSig = gamePlanSigFor(play);
+        const cardJv = jvFlagged.has(cardGpSig)
+          ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
+          : "";
+        const cardWbFlag = wbFlagged.has(cardGpSig)
+          ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
+          : "";
         const _cardImgSig =
           typeof playSignature === "function" ? playSignature(play) : "";
         const cardImgBadge =
-          _cardImgSig &&
-          typeof window.playImages !== "undefined" &&
-          window.playImages.has(_cardImgSig)
+          hasImageFor(_cardImgSig)
             ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_cardImgSig)}" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
-        const gpCardActive = isPlayInGamePlan(play);
-        const gpCardToggle = getGameWeek().opponentName
+        const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
         const installBadge =

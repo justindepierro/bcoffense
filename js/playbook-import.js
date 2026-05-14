@@ -634,6 +634,7 @@ function handleFileUpload(event) {
         const csvResult = parseCSV(text);
         const parsed = csvResult.plays || csvResult;
         const skippedRows = csvResult.skipped || [];
+        if (typeof ensurePlaybookPlayIds === "function") ensurePlaybookPlayIds(parsed);
 
         if (parsed.length === 0) {
           hideLoadingOverlay();
@@ -681,6 +682,7 @@ function handleFileUpload(event) {
           if (choice === "merge") {
             const preMerge = plays.map((play) => ({ ...play }));
             const { merged, report } = _smartMerge(preMerge, parsed);
+            if (typeof ensurePlaybookPlayIds === "function") ensurePlaybookPlayIds(merged);
             const refCounts = _mergeUpdateRefs(preMerge, parsed, report);
 
             plays = merged;
@@ -742,6 +744,7 @@ function handleFileUpload(event) {
         }
 
         plays = parsed;
+        if (typeof ensurePlaybookPlayIds === "function") ensurePlaybookPlayIds(plays);
         filteredPlays = [...plays];
         storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
         invalidateFilterCache();

@@ -294,9 +294,12 @@ async function openGamePlanPrintModal() {
   });
 }
 
-function _gpRenderPrintViewAndPrint() {
+async function _gpRenderPrintViewAndPrint() {
   const board = _gpEnsureBoard();
   const o = _gpPrintOptions;
+  if (o.imageAppendix && window.playImages && typeof window.playImages.prefetchAll === "function") {
+    try { await window.playImages.prefetchAll(); } catch (_e) { /* keep printing without appendix images */ }
+  }
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw && gw.opponentName ? gw.opponentName : "";
   const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";

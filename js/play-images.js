@@ -12,7 +12,9 @@
      await playImages.exportAll()                → { sig: dataURL, ... }  (for backup)
      await playImages.importAll(map, opts)       → restore from backup
      playImages.urlFor(sig)                      → cached object URL or null (sync)
-     playImages.has(sig)                         → bool (from cache)
+     playImages.ensureUrl(sig)                   → load one object URL on demand
+     playImages.has(sig)                         → bool (from key cache)
+     playImages.loadKeys()                       → load image keys without blobs
      playImages.prefetchAll()                    → load every blob into URL cache
      playImages.compress(file, opts)             → Blob (resize + JPEG re-encode)
 */
@@ -24,6 +26,8 @@
 
   let _dbPromise = null;
   const _urlCache = new Map(); // sig → object URL
+  const _knownKeys = new Set();
+  let _keysPromise = null;
 
   function _openDB() {
     if (_dbPromise) return _dbPromise;
@@ -86,6 +90,21 @@
     });
   }
 
+  async function loadKeys() {
+    if (_keysPromise) return _keysPromise;
+    _keysPromise = _keys()
+      .then((allKeys) => {
+        _knownKeys.clear();
+        allKeys.forEach((sig) => _knownKeys.add(String(sig)));
+        return allKeys;
+      })
+      .catch((err) => {
+        _keysPromise = null;
+        throw err;
+      });
+    return _keysPromise;
+  }
+
   function _revoke(sig) {
     const url = _urlCache.get(sig);
     if (url) {
@@ -98,6 +117,7 @@
     if (!sig || !blob) return false;
     await _put(sig, blob);
     _revoke(sig);
+    _knownKeys.add(String(sig));
     _urlCache.set(sig, URL.createObjectURL(blob));
     _emitChange(sig);
     return true;
@@ -107,6 +127,7 @@
     if (!sig) return false;
     await _del(sig);
     _revoke(sig);
+    _knownKeys.delete(String(sig));
     _emitChange(sig);
     return true;
   }
@@ -121,8 +142,23 @@
     return _urlCache.get(sig) || null;
   }
 
+  async function ensureUrl(sig) {
+    if (!sig) return null;
+    const existing = urlFor(sig);
+    if (existing) return existing;
+    const blob = await _get(sig);
+    if (!blob) {
+      _knownKeys.delete(String(sig));
+      return null;
+    }
+    _knownKeys.add(String(sig));
+    const url = URL.createObjectURL(blob);
+    _urlCache.set(sig, url);
+    return url;
+  }
+
   function has(sig) {
-    return !!sig && _urlCache.has(sig);
+    return !!sig && (_urlCache.has(sig) || _knownKeys.has(String(sig)));
   }
 
   async function keys() {
@@ -130,7 +166,7 @@
   }
 
   async function prefetchAll() {
-    const allKeys = await _keys();
+    const allKeys = await loadKeys();
     for (const sig of allKeys) {
       if (_urlCache.has(sig)) continue;
       const blob = await _get(sig);
@@ -216,6 +252,8 @@
       for (const sig of existing) await _del(sig);
       _urlCache.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_e) { /* ignore */ } });
       _urlCache.clear();
+      _knownKeys.clear();
+      _keysPromise = null;
     }
     let n = 0;
     for (const sig of Object.keys(map)) {
@@ -225,6 +263,7 @@
       if (blob) {
         await _put(sig, blob);
         _revoke(sig);
+        _knownKeys.add(String(sig));
         _urlCache.set(sig, URL.createObjectURL(blob));
         n++;
       }
@@ -259,6 +298,8 @@
     keys,
     has,
     urlFor,
+    ensureUrl,
+    loadKeys,
     prefetchAll,
     compress,
     exportAll,
@@ -270,24 +311,29 @@
     if (!play || typeof playSignature !== "function") return null;
     return urlFor(playSignature(play));
   };
+  window.ensurePlayImageUrl = function (play) {
+    if (!play || typeof playSignature !== "function") return Promise.resolve(null);
+    return ensureUrl(playSignature(play));
+  };
   window.hasPlayImage = function (play) {
     if (!play || typeof playSignature !== "function") return false;
     return has(playSignature(play));
   };
 
-  // Auto-prefetch once the DB is open so render paths can use urlFor() synchronously.
+  // Load only keys on startup so render paths can show badges without turning
+  // every stored image into an object URL. Actual blobs load on hover/print/edit.
   if (typeof window !== "undefined") {
     window.addEventListener("DOMContentLoaded", () => {
-      prefetchAll()
+      loadKeys()
         .then(() => {
-          // Re-render any visible playbook now that URLs are warm.
+          // Re-render any visible playbook now that badge keys are warm.
           if (typeof renderPlaybook === "function") {
             try { renderPlaybook(); } catch (_e) { /* ignore */ }
           }
         })
         .catch((err) => {
           // eslint-disable-next-line no-console
-          console.warn("playImages prefetch failed:", err);
+          console.warn("playImages key load failed:", err);
         });
       _installHoverPreview();
     });
@@ -309,15 +355,16 @@
       return popover;
     }
 
-    function _show(el) {
+    async function _show(el) {
       const sig = el.getAttribute("data-img-sig");
       if (!sig) return;
-      const url = urlFor(sig);
+      activeEl = el;
+      const url = urlFor(sig) || await ensureUrl(sig);
+      if (activeEl !== el) return;
       if (!url) return;
       const pop = _ensurePopover();
       pop.innerHTML = `<img src="${url}" alt="Play diagram" />`;
       pop.style.display = "block";
-      activeEl = el;
       _position(el);
     }
 

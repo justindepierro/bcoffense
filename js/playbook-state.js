@@ -54,6 +54,9 @@ function getFilterCache() {
 
 function invalidateFilterCache() {
   _filterCache = null;
+  if (typeof invalidatePlaybookRuntimeIndex === "function") {
+    invalidatePlaybookRuntimeIndex();
+  }
 }
 
 function restorePlaybookState() {
