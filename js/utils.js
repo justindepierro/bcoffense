@@ -1613,6 +1613,51 @@ function ensurePlaybookPlayIds(list) {
 let _playbookRuntimeIndex = null;
 let _playbookRuntimeIndexSource = null;
 
+const PLAYBOOK_RUNTIME_SEARCH_FIELDS = [
+  "type",
+  "personnel",
+  "formation",
+  "formTag1",
+  "formTag2",
+  "under",
+  "back",
+  "shift",
+  "motion",
+  "protection",
+  "lineCall",
+  "play",
+  "playTag1",
+  "playTag2",
+  "basePlay",
+  "oneWord",
+  "tempo",
+  "preferredDown",
+  "preferredDistance",
+  "preferredSituation",
+  "preferredFieldPosition",
+  "preferredHash",
+  "practiceFront",
+  "practiceDefense",
+  "practiceCoverage",
+  "practiceBlitz",
+  "practiceStunt",
+  "keyPlayer1",
+  "keyPlayer2",
+  "keyPlayer3",
+  "keyPlayerName1",
+  "keyPlayerName2",
+  "keyPlayerName3",
+  "constraint1",
+  "constraint2",
+  "constraint3",
+  "hitChart1",
+  "hitChart2",
+  "hitChart3",
+  "deadVs",
+  "opponent",
+  "notes",
+];
+
 function invalidatePlaybookRuntimeIndex() {
   _playbookRuntimeIndex = null;
   _playbookRuntimeIndexSource = null;
@@ -1626,15 +1671,23 @@ function getPlaybookRuntimeIndex() {
   const byId = new Map();
   const byGamePlanSig = new Map();
   const byTagSig = new Map();
+  const byPlay = new WeakMap();
   list.forEach((play, index) => {
     if (!play) return;
-    if (play.id) byId.set(String(play.id), { play, index });
     const gpSig = getPlayIdentityKey(play, "gameplan", { trim: false });
-    if (gpSig && !byGamePlanSig.has(gpSig)) byGamePlanSig.set(gpSig, { play, index });
     const tagSig = playSignature(play);
-    if (tagSig && !byTagSig.has(tagSig)) byTagSig.set(tagSig, { play, index });
+    const searchText = PLAYBOOK_RUNTIME_SEARCH_FIELDS
+      .map((field) => play[field])
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+    const entry = { play, index, gpSig, tagSig, searchText };
+    byPlay.set(play, entry);
+    if (play.id) byId.set(String(play.id), entry);
+    if (gpSig && !byGamePlanSig.has(gpSig)) byGamePlanSig.set(gpSig, entry);
+    if (tagSig && !byTagSig.has(tagSig)) byTagSig.set(tagSig, entry);
   });
-  _playbookRuntimeIndex = { byId, byGamePlanSig, byTagSig, size: list.length };
+  _playbookRuntimeIndex = { byId, byGamePlanSig, byTagSig, byPlay, size: list.length };
   _playbookRuntimeIndexSource = list;
   return _playbookRuntimeIndex;
 }

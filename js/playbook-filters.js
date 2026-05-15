@@ -1,4 +1,5 @@
 let highlightedWristbandPlays = [];
+let highlightedWristbandPlayKeys = new Set();
 
 const PB_PICTURE_FILTER_LABELS = {
   wideZone: "Wide Zone",
@@ -21,6 +22,7 @@ function highlightWristbandPlays() {
 
   if (wbIdx === "") {
     highlightedWristbandPlays = [];
+    highlightedWristbandPlayKeys = new Set();
     requestRenderPlaybook();
     return;
   }
@@ -30,15 +32,18 @@ function highlightWristbandPlays() {
 
   if (!wb || !wb.cards) {
     highlightedWristbandPlays = [];
+    highlightedWristbandPlayKeys = new Set();
     requestRenderPlaybook();
     return;
   }
 
   highlightedWristbandPlays = [];
+  highlightedWristbandPlayKeys = new Set();
   wb.cards.forEach((card) => {
     card.data.forEach((play) => {
       if (play !== null) {
         highlightedWristbandPlays.push(play);
+        _addHighlightedWristbandKeys(play);
       }
     });
   });
@@ -46,8 +51,28 @@ function highlightWristbandPlays() {
   requestRenderPlaybook();
 }
 
+function _addHighlightedWristbandKeys(play) {
+  if (!play || typeof getPlayIdentityKey !== "function") return;
+  highlightedWristbandPlayKeys.add(
+    `core:${getPlayIdentityKey(play, "core", { trim: false })}`,
+  );
+  highlightedWristbandPlayKeys.add(
+    `name:${getPlayIdentityKey(play, "name", { trim: false })}`,
+  );
+  highlightedWristbandPlayKeys.add(
+    `iname:${getPlayIdentityKey(play, "name", { normalizeCase: true })}`,
+  );
+}
+
 function isPlayOnHighlightedWristband(play) {
   if (highlightedWristbandPlays.length === 0) return false;
+  if (highlightedWristbandPlayKeys.size > 0 && typeof getPlayIdentityKey === "function") {
+    return (
+      highlightedWristbandPlayKeys.has(`core:${getPlayIdentityKey(play, "core", { trim: false })}`) ||
+      highlightedWristbandPlayKeys.has(`name:${getPlayIdentityKey(play, "name", { trim: false })}`) ||
+      highlightedWristbandPlayKeys.has(`iname:${getPlayIdentityKey(play, "name", { normalizeCase: true })}`)
+    );
+  }
 
   return highlightedWristbandPlays.some((wbPlay) => playsMatch(play, wbPlay));
 }
@@ -69,7 +94,9 @@ function filterPlays() {
   const protection = document.getElementById("pbFilterProtection")?.value || "";
   const tempo = document.getElementById("pbFilterTempo")?.value || "";
   const search =
-    document.getElementById("searchPlay")?.value?.toLowerCase() || "";
+    document.getElementById("searchPlay")?.value?.trim().toLowerCase() || "";
+  const runtimeIndex =
+    typeof getPlaybookRuntimeIndex === "function" ? getPlaybookRuntimeIndex() : null;
 
   const gamePlanOnly =
     document.getElementById("pbGamePlanFilter")?.checked || false;
@@ -85,12 +112,15 @@ function filterPlays() {
   _updateGamePlanFilterBar();
 
   filteredPlays = plays.filter((play) => {
+    const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(play) : null;
     if (taggedForOpponent) {
-      if (!taggedForOpponent.has(playSignature(play))) return false;
+      const tagSig = meta ? meta.tagSig : playSignature(play);
+      if (!taggedForOpponent.has(tagSig)) return false;
     }
     if (jvOnly) {
       if (!jvFlagged || typeof _gpPlaySignature !== "function") return false;
-      if (!jvFlagged.has(_gpPlaySignature(play))) return false;
+      const gpSig = meta ? meta.gpSig : _gpPlaySignature(play);
+      if (!jvFlagged.has(gpSig)) return false;
     }
     if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;
     if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
@@ -113,7 +143,7 @@ function filterPlays() {
     if (protection && play.protection !== protection) return false;
     if (tempo && play.tempo !== tempo) return false;
     if (search) {
-      const searchFields = [
+      const searchText = meta ? meta.searchText : [
         play.play,
         play.formation,
         play.protection,
@@ -124,10 +154,8 @@ function filterPlays() {
         play.personnel,
         play.type,
         play.tempo,
-      ]
-        .join(" ")
-        .toLowerCase();
-      if (!searchFields.includes(search)) return false;
+      ].filter(Boolean).join(" ").toLowerCase();
+      if (!searchText.includes(search)) return false;
     }
     return true;
   });

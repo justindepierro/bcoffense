@@ -1338,6 +1338,10 @@ function renderCallSheet() {
 
   // Hoist display options once — avoids re-reading DOM per play
   const displayOptions = getCallSheetDisplayOptions();
+  Object.defineProperty(displayOptions, "_playTextMemo", {
+    value: new WeakMap(),
+    enumerable: false,
+  });
 
   // Build duplicate map for this render
   const dupeMap = buildDuplicateMap();
@@ -1366,18 +1370,6 @@ function renderCallSheet() {
 
   // Update stats panel if visible
   updateStatsPanel();
-
-  // Attach long-press for mobile context menus on callsheet plays
-  if (typeof addLongPress === "function") {
-    container.querySelectorAll(".callsheet-play").forEach((el) => {
-      const catId = el.dataset.category;
-      const hash = el.dataset.hash;
-      const idx = parseInt(el.dataset.index, 10);
-      if (catId && hash && !isNaN(idx)) {
-        addLongPress(el, (ev) => showPlayContextMenu(ev, catId, hash, idx));
-      }
-    });
-  }
 
   // Update undo/redo button state
   historyManager.updateButtons("callsheet");
@@ -1726,8 +1718,37 @@ function getPlayBorderColor(play, options) {
  */
 function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   if (!options) options = getCallSheetDisplayOptions();
-  const displayOptions = getCallSheetPlayDisplayOptions(play, options);
-  const displaySummary = getCallSheetCellDisplaySummary(play);
+  const textMemo = options._playTextMemo;
+  let textMeta = textMemo && play && typeof play === "object" ? textMemo.get(play) : null;
+  let displayOptions;
+  let displaySummary;
+  let visiblePlayText;
+  if (textMeta) {
+    displayOptions = textMeta.displayOptions;
+    displaySummary = textMeta.displaySummary;
+    visiblePlayText = textMeta.visiblePlayText;
+  } else {
+    displayOptions = getCallSheetPlayDisplayOptions(play, options);
+    displaySummary = getCallSheetCellDisplaySummary(play);
+    const playParts = buildCallSheetPlayParts(play, displayOptions);
+    if (displayOptions.showNumbers && play.wristbandNumber) {
+      const idx = playParts.findIndex(
+        (p) => p === `<b>${play.wristbandNumber}</b>`,
+      );
+      if (idx !== -1)
+        playParts[idx] =
+          `<span class="wristband-num">${play.wristbandNumber}</span>`;
+    }
+    const playText = playParts.join(" ");
+    const fallbackPlayText = escapeHtml(
+      [play.formation, play.protection, play.play].filter(Boolean).join(" ").trim() ||
+      play.type ||
+      "Play",
+    );
+    visiblePlayText = playText.trim() || fallbackPlayText;
+    textMeta = { displayOptions, displaySummary, visiblePlayText };
+    if (textMemo && play && typeof play === "object") textMemo.set(play, textMeta);
+  }
   const code = getPersonnelCode(play.personnel);
   const bgColor = getPersonnelBgColor(play.personnel);
   const textColor = getPersonnelTextColor(play.personnel);
@@ -1743,24 +1764,6 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
   else if (options.highlightCandy && tempo === "candy")
     tempoClass = "tempo-candy";
 
-  // Use shared play text builder
-  const playParts = buildCallSheetPlayParts(play, displayOptions);
-  if (displayOptions.showNumbers && play.wristbandNumber) {
-    const idx = playParts.findIndex(
-      (p) => p === `<b>${play.wristbandNumber}</b>`,
-    );
-    if (idx !== -1)
-      playParts[idx] =
-        `<span class="wristband-num">${play.wristbandNumber}</span>`;
-  }
-
-  const playText = playParts.join(" ");
-  const fallbackPlayText = escapeHtml(
-    [play.formation, play.protection, play.play].filter(Boolean).join(" ").trim() ||
-    play.type ||
-    "Play",
-  );
-  const visiblePlayText = playText.trim() || fallbackPlayText;
   const highlightClass = isHighlighted ? "highlighted" : "";
 
   // Build per-cell inline styles

@@ -333,9 +333,13 @@
   }
 
   /* Backup helpers — base64 data URLs so they survive a JSON backup file. */
-  async function exportAll() {
+  async function exportAll(opts = {}) {
     const out = {};
     const allKeys = await loadKeys();
+    const total = allKeys.length;
+    let done = 0;
+    const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : null;
+    if (onProgress) onProgress(0, total);
     await _withConcurrency(allKeys, EXPORT_CONCURRENCY, async (sig) => {
       const blob = await _get(sig);
       if (blob) {
@@ -343,6 +347,8 @@
       } else {
         _knownKeys.delete(sig);
       }
+      done += 1;
+      if (onProgress) onProgress(done, total);
     });
     return out;
   }
@@ -358,16 +364,25 @@
     }
     let n = 0;
     const entries = Object.entries(map);
+    const total = entries.length;
+    let done = 0;
+    const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : null;
+    if (onProgress) onProgress(0, total);
     await _withConcurrency(entries, IMPORT_CONCURRENCY, async ([rawSig, dataURL]) => {
       const sig = _normalizeSig(rawSig);
-      if (!sig || typeof dataURL !== "string") return;
-      const blob = await _dataURLToBlob(dataURL);
-      if (blob) {
-        await _put(sig, blob);
-        _revoke(sig);
-        _knownKeys.add(sig);
-        _keysPromise = null;
-        n++;
+      try {
+        if (!sig || typeof dataURL !== "string") return;
+        const blob = await _dataURLToBlob(dataURL);
+        if (blob) {
+          await _put(sig, blob);
+          _revoke(sig);
+          _knownKeys.add(sig);
+          _keysPromise = null;
+          n++;
+        }
+      } finally {
+        done += 1;
+        if (onProgress) onProgress(done, total);
       }
     });
     _keysPromise = null;

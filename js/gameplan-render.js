@@ -159,6 +159,8 @@ function renderGamePlan() {
   const hidden = new Set((board.hiddenBoxes || []).filter((id) => id !== GP_HOLDING_ID));
   const allBoxes = orderedBoxes.filter((b) => !hidden.has(b.id));
   const assignedSigs = _gpAllAssignedSigs(board);
+  const draftedPlays = _gpAllDraftedPlays(board);
+  const renderCtx = _gpCreateRenderContext();
   const totalAssigned = assignedSigs.size;
 
   const headerHtml = `
@@ -174,7 +176,7 @@ function renderGamePlan() {
         <div class="gp-header-week">${totalAssigned} plays drafted across ${allBoxes.length} boxes</div>
       </div>
       <div class="gp-header-actions">
-        ${_gpRenderHealthGauge(board)}
+        ${_gpRenderHealthGauge(board, draftedPlays)}
         <div class="gp-header-group gp-header-group-primary">
           <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the game plan">
             🖨️ Print
@@ -368,13 +370,13 @@ function renderGamePlan() {
       <div class="gp-library-list" id="gpLibraryList">
         ${filtered.length === 0
       ? `<div class="gp-box-empty">No plays match the current filters.</div>`
-      : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs)).join("")}
+      : filtered.map((p) => _gpRenderLibraryRow(p, assignedSigs, renderCtx)).join("")}
       </div>
     </div>`;
 
   const boxesHtml = `
     <div class="gp-boxes gp-density-${escapeHtml(_gpFilters.density)}" id="gpBoxes">
-      ${allBoxes.map((b) => _gpRenderBox(b, board)).join("")}
+      ${allBoxes.map((b) => _gpRenderBox(b, board, renderCtx)).join("")}
     </div>`;
 
   setInnerHTML(root, "");
@@ -383,9 +385,9 @@ function renderGamePlan() {
   // sanitizeHTML strips. Build them directly via innerHTML — every
   // user-derived value above already passes through escapeHtml().
   const wrapper = document.createElement("div");
-  const distHtml = _gpRenderDistributionStrip(board);
-  const scoreboardHtml = _gpRenderScoreboard(board);
-  const touchHtml = _gpRenderTouchTracker(board);
+  const distHtml = _gpRenderDistributionStrip(board, draftedPlays);
+  const scoreboardHtml = _gpRenderScoreboard(board, draftedPlays);
+  const touchHtml = _gpRenderTouchTracker(board, draftedPlays);
   const chipsHtml = _gpRenderFilterChips();
   const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
   const trashZoneHtml = `<div class="gp-trash-zone" id="gpTrashZone" data-trash="1">📥 Drag here to send to Holding · 🗑️ Drag to remove</div>`;
@@ -415,13 +417,44 @@ function renderGamePlan() {
   _gpAttachTrashZoneHandlers();
 }
 
-function _gpRenderLibraryRow(play, assignedSigs) {
-  const sig = _gpPlaySignature(play);
-  const checked = _gpSelected.has(sig);
-  const assigned = assignedSigs.has(sig);
-  const callHtml = typeof getFullCall === "function"
+function _gpCreateRenderContext() {
+  return {
+    runtimeIndex: typeof getPlaybookRuntimeIndex === "function"
+      ? getPlaybookRuntimeIndex()
+      : null,
+    sigCache: new WeakMap(),
+    callHtmlCache: new WeakMap(),
+  };
+}
+
+function _gpRenderSig(play, ctx) {
+  if (!play || typeof play !== "object") return _gpPlaySignature(play);
+  if (ctx && ctx.sigCache && ctx.sigCache.has(play)) return ctx.sigCache.get(play);
+  const meta = ctx && ctx.runtimeIndex && ctx.runtimeIndex.byPlay
+    ? ctx.runtimeIndex.byPlay.get(play)
+    : null;
+  const sig = meta && meta.gpSig ? meta.gpSig : _gpPlaySignature(play);
+  if (ctx && ctx.sigCache) ctx.sigCache.set(play, sig);
+  return sig;
+}
+
+function _gpRenderCallHtml(play, ctx) {
+  if (!play || typeof play !== "object") return escapeHtml(play?.play || "");
+  if (ctx && ctx.callHtmlCache && ctx.callHtmlCache.has(play)) {
+    return ctx.callHtmlCache.get(play);
+  }
+  const html = typeof getFullCall === "function"
     ? getFullCall(play, { showLineCall: false })
     : escapeHtml(play.play || "");
+  if (ctx && ctx.callHtmlCache) ctx.callHtmlCache.set(play, html);
+  return html;
+}
+
+function _gpRenderLibraryRow(play, assignedSigs, renderCtx) {
+  const sig = _gpRenderSig(play, renderCtx);
+  const checked = _gpSelected.has(sig);
+  const assigned = assignedSigs.has(sig);
+  const callHtml = _gpRenderCallHtml(play, renderCtx);
   const meta = [play.type, play.personnel, play.formation].filter(Boolean).join(" • ");
   return `
     <div class="gp-play-row ${checked ? "is-selected" : ""} ${assigned ? "is-assigned" : ""}"
@@ -631,7 +664,7 @@ function showGamePlanBoxInfo(boxId) {
   });
 }
 
-function _gpRenderBox(box, board) {
+function _gpRenderBox(box, board, renderCtx) {
   const list = (board.assignments[box.id] || []).slice();
   const visibleList = _gpFilterBoxList(list, board);
   const boxFilterActive = _gpShouldFilterBoxes();
@@ -813,6 +846,7 @@ function _gpRenderBox(box, board) {
         idx,
         sortMode === "manual",
         rawIndexByPlay.get(p),
+        renderCtx,
       )).join("")}
       </div>`;
 
@@ -835,13 +869,11 @@ function _gpRenderBox(box, board) {
     </div>`;
 }
 
-function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx) {
-  const sig = _gpPlaySignature(play);
+function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
+  const sig = _gpRenderSig(play, renderCtx);
   const stableRawIdx = _gpNormalizeBoxPlayIndex(rawIdx);
   const actionArg = _gpBuildBoxPlayArg(boxId, sig, stableRawIdx);
-  const callHtml = typeof getFullCall === "function"
-    ? getFullCall(play, { showLineCall: false })
-    : escapeHtml(play.play || "");
+  const callHtml = _gpRenderCallHtml(play, renderCtx);
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
   const matchupBadges = _gpMatchupBadges(play);
   const isSpotlit = _gpPlayMatchesSpotlight(play);
@@ -954,7 +986,7 @@ function _gpAdvancedFilterCount() {
 
 function toggleGamePlanAdvancedFilters() {
   _gpFilters.showAdvanced = !_gpFilters.showAdvanced;
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -1040,7 +1072,7 @@ function clearGamePlanFilterField(field) {
   if (typeof _gpFilters[field] === "boolean") _gpFilters[field] = false;
   else if (Array.isArray(_gpFilters[field])) _gpFilters[field] = [];
   else _gpFilters[field] = "";
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------
@@ -1056,8 +1088,10 @@ function _gpAllDraftedPlays(board) {
   return out;
 }
 
-function _gpRenderDistributionStrip(board) {
-  const drafted = _gpAllDraftedPlays(board);
+function _gpRenderDistributionStrip(board, draftedPlays) {
+  const drafted = Array.isArray(draftedPlays)
+    ? draftedPlays
+    : _gpAllDraftedPlays(board);
   if (drafted.length === 0) return "";
   const buckets = {
     Run: 0, Pass: 0, Screen: 0, Quick: 0, "Play Action": 0,
@@ -1083,8 +1117,10 @@ function _gpRenderDistributionStrip(board) {
   return `<div class="gp-dist-strip" title="Distribution across drafted plays (excludes Holding)">${segs.join("")}</div>`;
 }
 
-function _gpRenderScoreboard(board) {
-  const drafted = _gpAllDraftedPlays(board);
+function _gpRenderScoreboard(board, draftedPlays) {
+  const drafted = Array.isArray(draftedPlays)
+    ? draftedPlays
+    : _gpAllDraftedPlays(board);
   const spot = _gpFilters.spotlight;
   const tiles = GP_COVERAGE_SCENARIOS.map((s) => {
     const count = drafted.filter(s.match).length;
@@ -1130,7 +1166,7 @@ function applyGamePlanScenario(id) {
     _gpFilters.showAdvanced = true;
     _gpFilters.spotlight = { kind: "scenario", id };
   }
-  renderGamePlan();
+  requestRenderGamePlan();
 }
 
 /* -------------------------------------------------------------------------

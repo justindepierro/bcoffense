@@ -682,6 +682,16 @@ document.addEventListener("DOMContentLoaded", () => {
         showPlayContextMenu(event, category, hash, parseInt(index, 10));
       }
     });
+    if (typeof addLongPress === "function") {
+      addLongPress(grid, (event) => {
+        const play = event.target?.closest && event.target.closest(".callsheet-play");
+        if (!play) return;
+        const { category, hash, index } = play.dataset;
+        if (category && hash && index !== undefined) {
+          showPlayContextMenu(event, category, hash, parseInt(index, 10));
+        }
+      });
+    }
 
     grid.addEventListener("dragstart", (event) => {
       const catDrag = event.target.closest("[data-drag='catDrag']");

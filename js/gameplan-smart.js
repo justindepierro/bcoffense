@@ -545,8 +545,10 @@ function _gpPlayMatchesTemplateCriteria(play, templateId, criteria) {
    Plan Health Score
    ------------------------------------------------------------------------- */
 
-function _gpComputePlanHealth(board) {
-  const drafted = _gpAllDraftedPlays(board);
+function _gpComputePlanHealth(board, draftedPlays) {
+  const drafted = Array.isArray(draftedPlays)
+    ? draftedPlays
+    : _gpAllDraftedPlays(board);
   if (drafted.length === 0) {
     return { score: 0, label: "No plan yet", parts: [] };
   }
@@ -612,8 +614,8 @@ function _gpComputePlanHealth(board) {
   return { score, label, parts };
 }
 
-function _gpRenderHealthGauge(board) {
-  const h = _gpComputePlanHealth(board);
+function _gpRenderHealthGauge(board, draftedPlays) {
+  const h = _gpComputePlanHealth(board, draftedPlays);
   const status = h.score >= 85 ? "ok" : h.score >= 65 ? "good" : h.score >= 40 ? "warn" : "low";
   // SVG circular progress
   const r = 22;
@@ -671,8 +673,10 @@ function openGamePlanHealthDetail() {
    Player Touch Tracker
    ------------------------------------------------------------------------- */
 
-function _gpComputeTouchCounts(board) {
-  const drafted = _gpAllDraftedPlays(board);
+function _gpComputeTouchCounts(board, draftedPlays) {
+  const drafted = Array.isArray(draftedPlays)
+    ? draftedPlays
+    : _gpAllDraftedPlays(board);
   const counts = {}; // { displayName: { count, positions: Set } }
   drafted.forEach((p) => {
     [1, 2, 3].forEach((i) => {
@@ -688,8 +692,8 @@ function _gpComputeTouchCounts(board) {
   return counts;
 }
 
-function _gpRenderTouchTracker(board) {
-  const counts = _gpComputeTouchCounts(board);
+function _gpRenderTouchTracker(board, draftedPlays) {
+  const counts = _gpComputeTouchCounts(board, draftedPlays);
   const entries = Object.entries(counts);
   if (entries.length === 0) return "";
   entries.sort((a, b) => b[1].count - a[1].count);

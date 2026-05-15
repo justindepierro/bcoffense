@@ -1,3 +1,16 @@
+function createStorageProgressReporter(label) {
+  let lastUpdate = 0;
+  return (done, total) => {
+    if (!total) return;
+    const now = Date.now();
+    if (done < total && now - lastUpdate < 600) return;
+    lastUpdate = now;
+    showToast(`${label}: ${done}/${total}`, {
+      duration: done >= total ? 1200 : 1800,
+    });
+  };
+}
+
 async function exportCompleteBackup() {
   const backup = storageManager.getAllData();
   let imageCount = 0;
@@ -6,7 +19,9 @@ async function exportCompleteBackup() {
   if (window.playImages && typeof window.playImages.exportAll === "function") {
     try {
       showToast("Preparing complete backup...", { duration: 1200 });
-      const imageMap = await window.playImages.exportAll();
+      const imageMap = await window.playImages.exportAll({
+        onProgress: createStorageProgressReporter("Exporting play images"),
+      });
       backup.playImages = imageMap;
       imageCount = Object.keys(imageMap).length;
     } catch (err) {
@@ -56,6 +71,7 @@ function importCompleteBackup(event) {
             try {
               restoredImages = await window.playImages.importAll(backup.playImages || {}, {
                 replace: true,
+                onProgress: createStorageProgressReporter("Restoring play images"),
               });
             } catch (err) {
               console.warn("Image backup import failed:", err);

@@ -818,8 +818,12 @@ function getGamePlanFlaggedCount(flag) {
 
 function _gpFilteredLibrary(board) {
   if (!Array.isArray(plays)) return [];
+  const assignedSigs = _gpAllAssignedSigs(board);
+  const search = (_gpFilters.search || "").trim().toLowerCase();
   return plays.filter((p) => _gpPlayMatchesCurrentFilters(p, board, {
     includeHideAssigned: true,
+    assignedSigs,
+    search,
   }));
 }
 
@@ -885,8 +889,10 @@ function _gpHasActivePlayFilters(options = {}) {
 
 function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
   const includeHideAssigned = options.includeHideAssigned !== false;
-  const search = (_gpFilters.search || "").trim().toLowerCase();
-  const assignedSigs = _gpAllAssignedSigs(board);
+  const search = options.search !== undefined
+    ? options.search
+    : (_gpFilters.search || "").trim().toLowerCase();
+  const assignedSigs = options.assignedSigs || _gpAllAssignedSigs(board);
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
 
@@ -920,7 +926,10 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
   }
   if (includeHideAssigned && _gpFilters.hideAssigned && assignedSigs.has(_gpPlaySignature(p))) return false;
   if (search) {
-    const hay = [
+    const runtimeIndex =
+      typeof getPlaybookRuntimeIndex === "function" ? getPlaybookRuntimeIndex() : null;
+    const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(p) : null;
+    const hay = meta ? meta.searchText : [
       p.type, p.personnel, p.formation, p.formTag1, p.formTag2,
       p.under, p.back, p.shift, p.motion, p.protection, p.lineCall,
       p.play, p.playTag1, p.playTag2, p.basePlay, p.oneWord, p.notes,

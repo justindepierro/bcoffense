@@ -537,6 +537,15 @@ document.addEventListener("DOMContentLoaded", () => {
       e.preventDefault();
       _showPlaybookRowContextMenu(e, filteredIdx);
     });
+    if (typeof addLongPress === "function") {
+      addLongPress(pbBody, (ev) => {
+        const row = ev.target?.closest && ev.target.closest("tr[data-idx]");
+        if (!row) return;
+        const filteredIdx = parseInt(row.dataset.idx, 10);
+        if (isNaN(filteredIdx)) return;
+        _showPlaybookRowContextMenu(ev, filteredIdx);
+      });
+    }
   }
 
   document.body.addEventListener("dragstart", (e) => {

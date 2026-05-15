@@ -2,7 +2,10 @@ function renderPlaybook() {
   try {
     const tbody = document.querySelector("#playbookTable tbody");
     const searchTerm =
-      document.getElementById("searchPlay")?.value?.toLowerCase() || "";
+      document.getElementById("searchPlay")?.value?.trim().toLowerCase() || "";
+    const highlight = createSearchHighlighter(searchTerm);
+    const runtimeIndex =
+      typeof getPlaybookRuntimeIndex === "function" ? getPlaybookRuntimeIndex() : null;
 
     // Vision Mode: small picture pill next to play name. Hidden when off.
     const visionOn = typeof isVisionMode === "function" && isVisionMode();
@@ -33,25 +36,34 @@ function renderPlaybook() {
       : null;
     const jvFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("jv") : new Set();
     const wbFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("wb") : new Set();
-    const gamePlanSigFor = (play) =>
-      (typeof _gpPlaySignature === "function")
-        ? _gpPlaySignature(play)
-        : "";
-    const tagSigFor = (play) =>
-      (typeof playSignature === "function") ? playSignature(play) : "";
-    const isTaggedForActiveOpponent = (play) =>
-      !!(activeTags && activeTags.has(tagSigFor(play)));
     const hasImageFor = (sig) =>
       !!(sig && typeof window !== "undefined" && window.playImages && window.playImages.has(sig));
+    const pageItems = pageSlice.map((play, localIdx) => {
+      const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(play) : null;
+      const tagSig = meta
+        ? meta.tagSig
+        : (typeof playSignature === "function" ? playSignature(play) : "");
+      const gpSig = meta
+        ? meta.gpSig
+        : ((typeof _gpPlaySignature === "function") ? _gpPlaySignature(play) : "");
+      const onWristband = isPlayOnHighlightedWristband(play);
+      return {
+        play,
+        idx: start + localIdx,
+        tagSig,
+        gpSig,
+        onWristband,
+        gpActive: !!(activeTags && activeTags.has(tagSig)),
+        installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
+        picturePill: picturePillFor(play),
+      };
+    });
 
-    tbody.innerHTML = pageSlice
-      .map((play, localIdx) => {
-        const idx = start + localIdx;
-        const onWristband = isPlayOnHighlightedWristband(play);
+    tbody.innerHTML = pageItems
+      .map((item) => {
+        const { play, idx, tagSig, gpSig, onWristband, gpActive } = item;
         const wbClass = onWristband ? " on-wristband" : "";
-        const gpActive = isTaggedForActiveOpponent(play);
         const gpClass = gpActive ? " in-gameplan" : "";
-        const gpSig = gamePlanSigFor(play);
         const isJvFlagged = jvFlagged.has(gpSig);
         const isWbFlagged = wbFlagged.has(gpSig);
         const jvBadge = isJvFlagged
@@ -63,13 +75,9 @@ function renderPlaybook() {
         const wbIndicator = onWristband
           ? '<span class="wb-indicator" title="On wristband">🏈</span>'
           : "";
-        const installBadge =
-          typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "";
-        const _imgSig =
-          typeof playSignature === "function" ? playSignature(play) : "";
         const imgBadge =
-          hasImageFor(_imgSig)
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_imgSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+          hasImageFor(tagSig)
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(tagSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
 
         const gpToggle = activeOpponent
@@ -81,14 +89,14 @@ function renderPlaybook() {
                 data-preview="${idx}"
                 title="Click to select, double-click to edit">
                 <td class="col-gameplan">${gpToggle}</td>
-                <td class="col-install">${installBadge}</td>
-                <td class="col-type">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${highlightSearch(play.type, searchTerm)}</td>
-                <td class="col-formation">${highlightSearch(play.formation, searchTerm)}</td>
+                <td class="col-install">${item.installBadge}</td>
+                <td class="col-type">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${highlight(play.type)}</td>
+                <td class="col-formation">${highlight(play.formation)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
-                <td class="col-back">${highlightSearch(play.back || "-", searchTerm)}</td>
-                <td class="col-motion">${highlightSearch(play.motion || "-", searchTerm)}</td>
-                <td class="col-protection">${highlightSearch(play.protection || "-", searchTerm)}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlightSearch(play.play, searchTerm)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${picturePillFor(play)}</td>
+                <td class="col-back">${highlight(play.back || "-")}</td>
+                <td class="col-motion">${highlight(play.motion || "-")}</td>
+                <td class="col-protection">${highlight(play.protection || "-")}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -104,31 +112,25 @@ function renderPlaybook() {
       const container = document.getElementById("playbookContainer");
       if (container) container.insertBefore(cardsEl, container.firstChild);
     }
-    cardsEl.innerHTML = pageSlice
-      .map((play, localIdx) => {
-        const idx = start + localIdx;
-        const onWristband = isPlayOnHighlightedWristband(play);
+    cardsEl.innerHTML = pageItems
+      .map((item) => {
+        const { play, idx, tagSig, gpSig, onWristband } = item;
         const wbClass = onWristband ? " on-wristband" : "";
-        const gpCardActive = isTaggedForActiveOpponent(play);
+        const gpCardActive = item.gpActive;
         const gpClass = gpCardActive ? " in-gameplan" : "";
-        const cardGpSig = gamePlanSigFor(play);
-        const cardJv = jvFlagged.has(cardGpSig)
+        const cardJv = jvFlagged.has(gpSig)
           ? '<span class="pb-jv-badge" title="Marked JV in Game Plan">\ud83d\udfe1</span>'
           : "";
-        const cardWbFlag = wbFlagged.has(cardGpSig)
+        const cardWbFlag = wbFlagged.has(gpSig)
           ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
           : "";
-        const _cardImgSig =
-          typeof playSignature === "function" ? playSignature(play) : "";
         const cardImgBadge =
-          hasImageFor(_cardImgSig)
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_cardImgSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+          hasImageFor(tagSig)
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(tagSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
-        const installBadge =
-          typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "";
         const pills = [play.type, play.back, play.motion, play.tempo]
           .filter(Boolean)
           .map((value) => `<span class="pb-card-pill">${escapeHtml(value)}</span>`)
@@ -137,8 +139,8 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
-            <div class="pb-card-play">${gpCardToggle}${installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlightSearch(play.formation, searchTerm)} ${highlightSearch(play.protection || "", searchTerm)} ${highlightSearch(play.play, searchTerm)}${picturePillFor(play)}</div>
-            <div class="pb-card-sub">${highlightSearch(play.type, searchTerm)}${play.motion ? " · " + highlightSearch(play.motion, searchTerm) : ""}${play.back ? " · " + highlightSearch(play.back, searchTerm) : ""}</div>
+            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}</div>
+            <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             <div class="pb-card-pills">${pills}</div>
           </div>
         `;
@@ -201,15 +203,6 @@ function renderPlaybook() {
         tableWrap.scrollWidth > tableWrap.clientWidth,
       );
     }
-
-    if (typeof _showPlaybookRowContextMenu === "function") {
-      tbody.querySelectorAll("tr[data-idx]").forEach((row) => {
-        const idx = parseInt(row.dataset.idx, 10);
-        if (!isNaN(idx)) {
-          addLongPress(row, (ev) => _showPlaybookRowContextMenu(ev, idx));
-        }
-      });
-    }
   } catch (err) {
     console.error("renderPlaybook error:", err);
     showToast("❌ Error rendering playbook.", {
@@ -217,6 +210,16 @@ function renderPlaybook() {
       type: "error",
     });
   }
+}
+
+function createSearchHighlighter(searchTerm) {
+  if (!searchTerm) return (text) => escapeHtml(text);
+  const escaped = escapeHtml(searchTerm).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const regex = new RegExp(`(${escaped})`, "gi");
+  return (text) => {
+    if (!text || text === "-") return escapeHtml(text);
+    return escapeHtml(String(text)).replace(regex, '<span class="search-highlight">$1</span>');
+  };
 }
 
 const _scheduleRenderPlaybook = createRAFRenderer(renderPlaybook);
@@ -296,12 +299,7 @@ function initPlaybookKeyboard() {
 }
 
 function highlightSearch(text, searchTerm) {
-  if (!searchTerm || !text || text === "-") return escapeHtml(text);
-  const safeText = escapeHtml(String(text));
-  const escaped = searchTerm.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-  const safeEscaped = escapeHtml(escaped);
-  const regex = new RegExp(`(${safeEscaped})`, "gi");
-  return safeText.replace(regex, '<span class="search-highlight">$1</span>');
+  return createSearchHighlighter(searchTerm)(text);
 }
 
 function updateStatsBar() {
