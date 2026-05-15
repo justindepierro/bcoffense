@@ -33,6 +33,7 @@ let _gpPrintOptions = {
   showWristbandNumber: true,
   jvOnly: false,
   imageAppendix: false,
+  useCurrentFilters: false,
   personnelFilter: "",
   sortMode: "perBox", // primary tier; "perBox" honors each box's own setting
   sortMode2: "",       // secondary tier (ignored when sortMode is perBox)
@@ -58,6 +59,7 @@ function _gpApplySmartPrintDefaults() {
     showDetail: false,
     playerHandout: false,
     showWristbandNumber: true,
+    useCurrentFilters: _gpPrintOptions.useCurrentFilters,
   };
 }
 
@@ -85,8 +87,33 @@ function _gpGetPrintPersonnelFilter() {
   return String(_gpPrintOptions.personnelFilter || "").trim();
 }
 
-function _gpMatchesPrintFilters(play) {
+function _gpHasPrintableCurrentFilters() {
+  return Boolean(
+    _gpPrintOptions.useCurrentFilters &&
+    typeof _gpHasActivePlayFilters === "function" &&
+    _gpHasActivePlayFilters({
+      includeHideAssigned: false,
+      includeBoxToggle: false,
+    })
+  );
+}
+
+function _gpGetModalUseCurrentFilters(options = _gpPrintOptions) {
+  return Boolean(
+    options.useCurrentFilters ||
+    (typeof _gpShouldFilterBoxes === "function" && _gpShouldFilterBoxes())
+  );
+}
+
+function _gpMatchesPrintFilters(play, board) {
   const o = _gpPrintOptions;
+  if (
+    _gpHasPrintableCurrentFilters() &&
+    typeof _gpPlayMatchesCurrentFilters === "function" &&
+    !_gpPlayMatchesCurrentFilters(play, board, { includeHideAssigned: false })
+  ) {
+    return false;
+  }
   if (o.jvOnly && !(typeof _gpHasFlag === "function" && _gpHasFlag(play, "jv"))) {
     return false;
   }
@@ -99,7 +126,7 @@ function _gpMatchesPrintFilters(play) {
 
 function _gpPrintBoxList(board, boxId) {
   return ((board.assignments && board.assignments[boxId]) || [])
-    .filter((play) => _gpMatchesPrintFilters(play));
+    .filter((play) => _gpMatchesPrintFilters(play, board));
 }
 
 function _gpPrintAssignedSigs(board) {
@@ -115,6 +142,7 @@ async function openGamePlanPrintModal() {
   const board = _gpEnsureBoard();
   const personnelChoices = _gpGetPrintPersonnelChoices(board);
   const selectedPersonnelFilter = _gpGetModalPrintPersonnelFilter(o);
+  const useCurrentFilters = _gpGetModalUseCurrentFilters(o);
   if (selectedPersonnelFilter && !personnelChoices.includes(selectedPersonnelFilter)) {
     personnelChoices.push(selectedPersonnelFilter);
     personnelChoices.sort((left, right) =>
@@ -216,6 +244,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintNotes" ${o.showNotes ? "checked" : ""}> Show notes</label>
               <label><input type="checkbox" id="gpPrintHolding" ${o.showHolding ? "checked" : ""}> Include Holding box</label>
               <label><input type="checkbox" id="gpPrintEmpty" ${o.showEmpty ? "checked" : ""}> Include empty boxes</label>
+              <label><input type="checkbox" id="gpPrintCurrentFilters" ${useCurrentFilters ? "checked" : ""}> Print current filtered bucket plays</label>
               <label><input type="checkbox" id="gpPrintWBNum" ${o.showWristbandNumber ? "checked" : ""}> Show wristband number (when loaded)</label>
               <label><input type="checkbox" id="gpPrintBucketPerPage" ${o.bucketPerPage ? "checked" : ""}> One bucket per page</label>
               <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
@@ -281,6 +310,7 @@ async function openGamePlanPrintModal() {
         playerHandout: overlay.querySelector("#gpPrintHandout").checked,
         jvOnly: overlay.querySelector("#gpPrintJvOnly").checked,
         imageAppendix: overlay.querySelector("#gpPrintImgAppendix").checked,
+        useCurrentFilters: overlay.querySelector("#gpPrintCurrentFilters").checked,
       };
       close(true);
       _gpRenderPrintViewAndPrint();
@@ -307,7 +337,8 @@ async function _gpRenderPrintViewAndPrint() {
   let allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
   if (o.showHolding) allBoxes = [GP_HOLDING_BOX, ...allBoxes];
   const personnelFilter = _gpGetPrintPersonnelFilter();
-  if (!o.showEmpty || o.jvOnly || personnelFilter) {
+  const currentFilterActive = _gpHasPrintableCurrentFilters();
+  if (!o.showEmpty || o.jvOnly || personnelFilter || currentFilterActive) {
     allBoxes = allBoxes.filter((b) => _gpPrintBoxList(board, b.id).length > 0);
   }
 
@@ -322,6 +353,7 @@ async function _gpRenderPrintViewAndPrint() {
       <div class="gp-print-meta">
         ${weekLabel ? `<span>${escapeHtml(weekLabel)}</span>` : ""}
         <span>${totalAssigned} plays drafted</span>
+        ${currentFilterActive ? "<span>Filtered bucket plays</span>" : ""}
         ${personnelFilter ? `<span>Personnel: ${escapeHtml(personnelFilter)}</span>` : ""}
         ${o.jvOnly ? "<span>JV only</span>" : ""}
         ${board.loadedWristband && o.showWristbandNumber ? `<span>📋 ${escapeHtml(board.loadedWristband.name || "")}</span>` : ""}
