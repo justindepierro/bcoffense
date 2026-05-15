@@ -2,6 +2,7 @@ function savePlaybookState() {
   const state = {
     activeTypes: [...activeTypeChips],
     activePersonnel: [...activePersonnelChips],
+    activePictures: [...activePictureChips],
     filterFormation: document.getElementById("filterFormation")?.value || "",
     filterBasePlay: document.getElementById("filterBasePlay")?.value || "",
     filterBack: document.getElementById("pbFilterBack")?.value || "",
@@ -69,6 +70,9 @@ function restorePlaybookState() {
     }
     if (state.activePersonnel) {
       activePersonnelChips = new Set(state.activePersonnel);
+    }
+    if (state.activePictures) {
+      activePictureChips = new Set(state.activePictures);
     }
 
     if (state.filterFormation) _setVal("filterFormation", state.filterFormation);

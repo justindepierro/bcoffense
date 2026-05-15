@@ -1,5 +1,20 @@
 let highlightedWristbandPlays = [];
 
+const PB_PICTURE_FILTER_LABELS = {
+  wideZone: "Wide Zone",
+  pullers: "Pullers/Counter",
+  downhill: "Downhill/ISO",
+  antiFront: "Anti-front",
+};
+
+function _setPbChipActive(containerId, value, active) {
+  const container = document.getElementById(containerId);
+  if (!container) return;
+  container.querySelectorAll(".pb-chip").forEach((chip) => {
+    if (chip.dataset.value === value) chip.classList.toggle("active", active);
+  });
+}
+
 function highlightWristbandPlays() {
   const select = document.getElementById("playbookWristbandHighlight");
   const wbIdx = select.value;
@@ -142,6 +157,7 @@ function _updateGamePlanFilterBar() {
 function clearFilters() {
   activeTypeChips.clear();
   activePersonnelChips.clear();
+  activePictureChips.clear();
   document
     .querySelectorAll(".pb-chip.active")
     .forEach((chip) => chip.classList.remove("active"));
@@ -219,6 +235,20 @@ function updateActiveFilterBar() {
   activePersonnelChips.forEach((value) => {
     parts.push({ label: `Personnel: ${value}`, layer: "personnel", value });
   });
+  if (
+    typeof activePictureChips !== "undefined" &&
+    activePictureChips.size > 0 &&
+    typeof isVisionMode === "function" &&
+    isVisionMode()
+  ) {
+    activePictureChips.forEach((value) => {
+      parts.push({
+        label: `Picture: ${PB_PICTURE_FILTER_LABELS[value] || value}`,
+        layer: "picture",
+        value,
+      });
+    });
+  }
 
   [
     { id: "filterFormation", prefix: "Formation" },
@@ -257,16 +287,13 @@ function updateActiveFilterBar() {
 function removeFilter(layer, value) {
   if (layer === "type") {
     activeTypeChips.delete(value);
-    const chip = document.querySelector(
-      `#pbChipsType .pb-chip[data-value="${value}"]`,
-    );
-    if (chip) chip.classList.remove("active");
+    _setPbChipActive("pbChipsType", value, false);
   } else if (layer === "personnel") {
     activePersonnelChips.delete(value);
-    const chip = document.querySelector(
-      `#pbChipsPersonnel .pb-chip[data-value="${value}"]`,
-    );
-    if (chip) chip.classList.remove("active");
+    _setPbChipActive("pbChipsPersonnel", value, false);
+  } else if (layer === "picture") {
+    activePictureChips.delete(value);
+    _setPbChipActive("pbChipsPicture", value, false);
   } else if (layer === "search") {
     const el = document.getElementById("searchPlay");
     if (el) el.value = "";

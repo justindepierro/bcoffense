@@ -114,6 +114,9 @@ function clearAllScriptFilters() {
 
 function updateActiveFilterCount() {
   const { formation, basePlay, search } = getScriptPlayFilterState();
+  const gamePlanOnly =
+    document.getElementById("scriptGamePlanFilter")?.checked || false;
+  const jvOnly = document.getElementById("scriptJvFilter")?.checked || false;
   const count =
     scriptSelectedTypes.length +
     scriptSelectedSituation.length +
@@ -124,7 +127,9 @@ function updateActiveFilterCount() {
     scriptSelectedPersonnel.length +
     (formation ? 1 : 0) +
     (basePlay ? 1 : 0) +
-    (search ? 1 : 0);
+    (search ? 1 : 0) +
+    (gamePlanOnly ? 1 : 0) +
+    (jvOnly ? 1 : 0);
 
   const badge = document.getElementById("activeFilterCount");
   if (badge) {

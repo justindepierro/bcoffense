@@ -54,6 +54,7 @@ function _captureFilterState() {
   return {
     activeTypes: [...activeTypeChips],
     activePersonnel: [...activePersonnelChips],
+    activePictures: [...activePictureChips],
     filterFormation: document.getElementById("filterFormation")?.value || "",
     filterBasePlay: document.getElementById("filterBasePlay")?.value || "",
     filterBack: document.getElementById("pbFilterBack")?.value || "",
@@ -74,6 +75,7 @@ function loadCollection(index) {
     const state = coll.filterState;
     activeTypeChips = new Set(state.activeTypes || []);
     activePersonnelChips = new Set(state.activePersonnel || []);
+    activePictureChips = new Set(state.activePictures || []);
     buildFilterChips();
 
     _setVal("filterFormation", state.filterFormation || "");
@@ -110,6 +112,7 @@ function loadCollection(index) {
 function _loadCollectionByKeys(coll) {
   activeTypeChips.clear();
   activePersonnelChips.clear();
+  activePictureChips.clear();
   buildFilterChips();
   [
     "filterFormation",
