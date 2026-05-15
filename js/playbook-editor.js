@@ -616,6 +616,13 @@ function _wirePlayEditorImage(play, isNew) {
   if (!sig) return;
 
   const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
+  const requestPlaybookRefresh = () => {
+    if (typeof requestRenderPlaybook === "function") {
+      requestRenderPlaybook();
+    } else if (typeof renderPlaybook === "function") {
+      renderPlaybook();
+    }
+  };
   const _refreshPreview = async () => {
     const url = (typeof ensurePlayImageUrl === "function")
       ? await ensurePlayImageUrl(play)
@@ -643,7 +650,7 @@ function _wirePlayEditorImage(play, isNew) {
       showToast(`🖼️ Image added (${Math.round(blob.size / 1024)} KB)`, {
         duration: 2200, type: "success",
       });
-      if (typeof renderPlaybook === "function") renderPlaybook();
+      requestPlaybookRefresh();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn("Image attach failed:", err);
@@ -660,7 +667,7 @@ function _wirePlayEditorImage(play, isNew) {
       await window.playImages.delete(sig);
       await _refreshPreview();
       showToast("Image removed", { duration: 2000 });
-      if (typeof renderPlaybook === "function") renderPlaybook();
+      requestPlaybookRefresh();
     });
   }
 }

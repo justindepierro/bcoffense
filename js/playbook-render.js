@@ -59,7 +59,8 @@ function renderPlaybook() {
           : "";
         const wbFlagBadge = isWbFlagged
           ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
-          : "";        const wbIndicator = onWristband
+          : "";
+        const wbIndicator = onWristband
           ? '<span class="wb-indicator" title="On wristband">🏈</span>'
           : "";
         const installBadge =
@@ -68,7 +69,7 @@ function renderPlaybook() {
           typeof playSignature === "function" ? playSignature(play) : "";
         const imgBadge =
           hasImageFor(_imgSig)
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_imgSig)}" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_imgSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
 
         const gpToggle = activeOpponent
@@ -121,7 +122,7 @@ function renderPlaybook() {
           typeof playSignature === "function" ? playSignature(play) : "";
         const cardImgBadge =
           hasImageFor(_cardImgSig)
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_cardImgSig)}" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(_cardImgSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`

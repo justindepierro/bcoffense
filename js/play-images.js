@@ -23,15 +23,29 @@
   const DB_NAME = "bcoffense-images";
   const DB_VERSION = 1;
   const STORE = "playImages";
+  const PREFETCH_CONCURRENCY = 4;
+  const EXPORT_CONCURRENCY = 3;
+  const IMPORT_CONCURRENCY = 3;
 
   let _dbPromise = null;
   const _urlCache = new Map(); // sig → object URL
+  const _urlPromiseCache = new Map(); // sig → pending object URL Promise
+  const _urlVersions = new Map(); // sig → invalidation counter
   const _knownKeys = new Set();
   let _keysPromise = null;
+  let _hoverPreviewInstalled = false;
+
+  function _normalizeSig(sig) {
+    return sig === null || sig === undefined ? "" : String(sig);
+  }
 
   function _openDB() {
     if (_dbPromise) return _dbPromise;
     _dbPromise = new Promise((resolve, reject) => {
+      if (typeof indexedDB === "undefined") {
+        reject(new Error("IndexedDB is not available"));
+        return;
+      }
       const req = indexedDB.open(DB_NAME, DB_VERSION);
       req.onupgradeneeded = (e) => {
         const db = e.target.result;
@@ -81,6 +95,15 @@
     });
   }
 
+  async function _clear() {
+    const store = await _tx("readwrite");
+    return new Promise((resolve, reject) => {
+      const req = store.clear();
+      req.onsuccess = () => resolve(true);
+      req.onerror = () => reject(req.error);
+    });
+  }
+
   async function _keys() {
     const store = await _tx("readonly");
     return new Promise((resolve, reject) => {
@@ -94,9 +117,10 @@
     if (_keysPromise) return _keysPromise;
     _keysPromise = _keys()
       .then((allKeys) => {
+        const normalized = allKeys.map(_normalizeSig).filter(Boolean);
         _knownKeys.clear();
-        allKeys.forEach((sig) => _knownKeys.add(String(sig)));
-        return allKeys;
+        normalized.forEach((sig) => _knownKeys.add(sig));
+        return normalized;
       })
       .catch((err) => {
         _keysPromise = null;
@@ -105,73 +129,133 @@
     return _keysPromise;
   }
 
+  function _bumpUrlVersion(sig) {
+    const key = _normalizeSig(sig);
+    if (!key) return;
+    _urlVersions.set(key, (_urlVersions.get(key) || 0) + 1);
+  }
+
   function _revoke(sig) {
-    const url = _urlCache.get(sig);
+    const key = _normalizeSig(sig);
+    if (!key) return;
+    const url = _urlCache.get(key);
     if (url) {
       try { URL.revokeObjectURL(url); } catch (_e) { /* ignore */ }
-      _urlCache.delete(sig);
     }
+    _urlCache.delete(key);
+    _urlPromiseCache.delete(key);
+    _bumpUrlVersion(key);
+  }
+
+  function _revokeAll() {
+    const touched = new Set([
+      ..._knownKeys,
+      ..._urlCache.keys(),
+      ..._urlPromiseCache.keys(),
+    ]);
+    _urlCache.forEach((url) => {
+      try { URL.revokeObjectURL(url); } catch (_e) { /* ignore */ }
+    });
+    _urlCache.clear();
+    _urlPromiseCache.clear();
+    touched.forEach(_bumpUrlVersion);
+  }
+
+  async function _withConcurrency(items, limit, worker) {
+    const list = Array.from(items || []);
+    if (!list.length) return;
+    let index = 0;
+    const workers = Array.from(
+      { length: Math.max(1, Math.min(limit || 1, list.length)) },
+      async () => {
+        while (index < list.length) {
+          const item = list[index++];
+          await worker(item);
+        }
+      },
+    );
+    await Promise.all(workers);
   }
 
   async function set(sig, blob) {
-    if (!sig || !blob) return false;
-    await _put(sig, blob);
-    _revoke(sig);
-    _knownKeys.add(String(sig));
-    _urlCache.set(sig, URL.createObjectURL(blob));
-    _emitChange(sig);
+    const key = _normalizeSig(sig);
+    if (!key || !blob) return false;
+    await _put(key, blob);
+    _revoke(key);
+    _knownKeys.add(key);
+    _keysPromise = null;
+    _urlCache.set(key, URL.createObjectURL(blob));
+    _emitChange(key);
     return true;
   }
 
   async function del(sig) {
-    if (!sig) return false;
-    await _del(sig);
-    _revoke(sig);
-    _knownKeys.delete(String(sig));
-    _emitChange(sig);
+    const key = _normalizeSig(sig);
+    if (!key) return false;
+    await _del(key);
+    _revoke(key);
+    _knownKeys.delete(key);
+    _keysPromise = null;
+    _emitChange(key);
     return true;
   }
 
   async function get(sig) {
-    if (!sig) return null;
-    return _get(sig);
+    const key = _normalizeSig(sig);
+    if (!key) return null;
+    return _get(key);
   }
 
   function urlFor(sig) {
-    if (!sig) return null;
-    return _urlCache.get(sig) || null;
+    const key = _normalizeSig(sig);
+    if (!key) return null;
+    return _urlCache.get(key) || null;
   }
 
   async function ensureUrl(sig) {
-    if (!sig) return null;
-    const existing = urlFor(sig);
+    const key = _normalizeSig(sig);
+    if (!key) return null;
+    const existing = urlFor(key);
     if (existing) return existing;
-    const blob = await _get(sig);
-    if (!blob) {
-      _knownKeys.delete(String(sig));
-      return null;
-    }
-    _knownKeys.add(String(sig));
-    const url = URL.createObjectURL(blob);
-    _urlCache.set(sig, url);
-    return url;
+    const pending = _urlPromiseCache.get(key);
+    if (pending) return pending;
+
+    const version = _urlVersions.get(key) || 0;
+    const promise = _get(key)
+      .then((blob) => {
+        if ((_urlVersions.get(key) || 0) !== version) {
+          return _urlCache.get(key) || null;
+        }
+        if (!blob) {
+          _knownKeys.delete(key);
+          _keysPromise = null;
+          return null;
+        }
+        _knownKeys.add(key);
+        const url = URL.createObjectURL(blob);
+        _urlCache.set(key, url);
+        return url;
+      })
+      .finally(() => {
+        if (_urlPromiseCache.get(key) === promise) _urlPromiseCache.delete(key);
+      });
+    _urlPromiseCache.set(key, promise);
+    return promise;
   }
 
   function has(sig) {
-    return !!sig && (_urlCache.has(sig) || _knownKeys.has(String(sig)));
+    const key = _normalizeSig(sig);
+    return !!key && (_urlCache.has(key) || _knownKeys.has(key));
   }
 
   async function keys() {
-    return _keys();
+    return loadKeys();
   }
 
   async function prefetchAll() {
     const allKeys = await loadKeys();
-    for (const sig of allKeys) {
-      if (_urlCache.has(sig)) continue;
-      const blob = await _get(sig);
-      if (blob) _urlCache.set(sig, URL.createObjectURL(blob));
-    }
+    const missing = allKeys.filter((sig) => !_urlCache.has(sig));
+    await _withConcurrency(missing, PREFETCH_CONCURRENCY, ensureUrl);
     _emitChange(null);
     return allKeys.length;
   }
@@ -185,23 +269,39 @@
   /* Compression: resize to max dimension and re-encode as JPEG.
      Defaults aim for ~60–120KB per image at 900px max edge. */
   async function compress(file, opts = {}) {
+    if (!file) throw new Error("No image file selected");
+    if (file.type && !file.type.startsWith("image/")) {
+      throw new Error("Only image files can be attached");
+    }
     const maxDim = Math.max(200, Math.min(2000, opts.maxDim || 900));
     const quality = Math.min(0.95, Math.max(0.5, opts.quality || 0.82));
     const mime = opts.mime || "image/jpeg";
 
     // Decode
     const bitmap = await _decodeImage(file);
-    const { width: w0, height: h0 } = bitmap;
+    const w0 = bitmap.width || bitmap.naturalWidth || 0;
+    const h0 = bitmap.height || bitmap.naturalHeight || 0;
+    if (!w0 || !h0) {
+      if (typeof bitmap.close === "function") bitmap.close();
+      throw new Error("Image dimensions could not be read");
+    }
     const scale = Math.min(1, maxDim / Math.max(w0, h0));
-    const w = Math.round(w0 * scale);
-    const h = Math.round(h0 * scale);
+    const w = Math.max(1, Math.round(w0 * scale));
+    const h = Math.max(1, Math.round(h0 * scale));
 
     const canvas = document.createElement("canvas");
     canvas.width = w;
     canvas.height = h;
     const ctx = canvas.getContext("2d");
-    ctx.drawImage(bitmap, 0, 0, w, h);
-    if (typeof bitmap.close === "function") bitmap.close();
+    if (!ctx) {
+      if (typeof bitmap.close === "function") bitmap.close();
+      throw new Error("Image canvas could not be created");
+    }
+    try {
+      ctx.drawImage(bitmap, 0, 0, w, h);
+    } finally {
+      if (typeof bitmap.close === "function") bitmap.close();
+    }
 
     return new Promise((resolve, reject) => {
       canvas.toBlob(
@@ -232,15 +332,18 @@
     });
   }
 
-  /* Backup helpers — base64 data URLs so they survive a JSON backup file.
-     Caller decides whether to include in `getAllData()` (large!). */
+  /* Backup helpers — base64 data URLs so they survive a JSON backup file. */
   async function exportAll() {
     const out = {};
-    const allKeys = await _keys();
-    for (const sig of allKeys) {
+    const allKeys = await loadKeys();
+    await _withConcurrency(allKeys, EXPORT_CONCURRENCY, async (sig) => {
       const blob = await _get(sig);
-      if (blob) out[sig] = await _blobToDataURL(blob);
-    }
+      if (blob) {
+        out[sig] = await _blobToDataURL(blob);
+      } else {
+        _knownKeys.delete(sig);
+      }
+    });
     return out;
   }
 
@@ -248,26 +351,26 @@
     if (!map || typeof map !== "object") return 0;
     const replace = opts && opts.replace === true;
     if (replace) {
-      const existing = await _keys();
-      for (const sig of existing) await _del(sig);
-      _urlCache.forEach((url) => { try { URL.revokeObjectURL(url); } catch (_e) { /* ignore */ } });
-      _urlCache.clear();
+      await _clear();
+      _revokeAll();
       _knownKeys.clear();
       _keysPromise = null;
     }
     let n = 0;
-    for (const sig of Object.keys(map)) {
-      const dataURL = map[sig];
-      if (typeof dataURL !== "string") continue;
+    const entries = Object.entries(map);
+    await _withConcurrency(entries, IMPORT_CONCURRENCY, async ([rawSig, dataURL]) => {
+      const sig = _normalizeSig(rawSig);
+      if (!sig || typeof dataURL !== "string") return;
       const blob = await _dataURLToBlob(dataURL);
       if (blob) {
         await _put(sig, blob);
         _revoke(sig);
-        _knownKeys.add(String(sig));
-        _urlCache.set(sig, URL.createObjectURL(blob));
+        _knownKeys.add(sig);
+        _keysPromise = null;
         n++;
       }
-    }
+    });
+    _keysPromise = null;
     _emitChange(null);
     return n;
   }
@@ -283,6 +386,9 @@
 
   async function _dataURLToBlob(dataURL) {
     try {
+      if (typeof dataURL !== "string" || !dataURL.startsWith("data:image/")) {
+        return null;
+      }
       const res = await fetch(dataURL);
       return await res.blob();
     } catch (_e) {
@@ -339,11 +445,16 @@
         });
       _installHoverPreview();
     });
+    window.addEventListener("pagehide", (event) => {
+      if (!event.persisted) _revokeAll();
+    });
   }
 
   /* Global hover preview — any element with [data-img-sig] gets a floating
      popover with the image while hovered. Touch devices: tap to toggle. */
   function _installHoverPreview() {
+    if (_hoverPreviewInstalled) return;
+    _hoverPreviewInstalled = true;
     let popover = null;
     let activeEl = null;
 
@@ -365,7 +476,14 @@
       if (activeEl !== el) return;
       if (!url) return;
       const pop = _ensurePopover();
-      pop.innerHTML = `<img src="${url}" alt="Play diagram" />`;
+      pop.textContent = "";
+      const img = document.createElement("img");
+      img.alt = "Play diagram";
+      img.src = url;
+      img.addEventListener("load", () => {
+        if (activeEl === el) _position(el);
+      }, { once: true });
+      pop.appendChild(img);
       pop.style.display = "block";
       _position(el);
     }
@@ -399,24 +517,42 @@
       const target = e.target.closest && e.target.closest("[data-img-sig]");
       if (!target) return;
       _show(target);
-    });
+    }, { passive: true });
     document.addEventListener("mouseout", (e) => {
       const target = e.target.closest && e.target.closest("[data-img-sig]");
       if (!target) return;
       if (activeEl === target) _hide();
-    });
-    document.addEventListener("scroll", _hide, true);
-    window.addEventListener("resize", _hide);
+    }, { passive: true });
+    document.addEventListener("scroll", _hide, { capture: true, passive: true });
+    window.addEventListener("resize", _hide, { passive: true });
 
     // Touch / click toggle for mobile
     document.addEventListener("click", (e) => {
       const target = e.target.closest && e.target.closest("[data-img-sig]");
-      if (!target) return;
+      if (!target) {
+        if (popover && popover.style.display === "block") _hide();
+        return;
+      }
       if (popover && popover.style.display === "block" && activeEl === target) {
         e.preventDefault();
         _hide();
       } else {
         e.preventDefault();
+        _show(target);
+      }
+    });
+    document.addEventListener("keydown", (e) => {
+      if (e.key === "Escape") {
+        _hide();
+        return;
+      }
+      if (e.key !== "Enter" && e.key !== " ") return;
+      const target = e.target.closest && e.target.closest("[data-img-sig]");
+      if (!target) return;
+      e.preventDefault();
+      if (popover && popover.style.display === "block" && activeEl === target) {
+        _hide();
+      } else {
         _show(target);
       }
     });

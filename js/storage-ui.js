@@ -1,5 +1,19 @@
-function exportCompleteBackup() {
+async function exportCompleteBackup() {
   const backup = storageManager.getAllData();
+  let imageCount = 0;
+  let imageWarning = "";
+
+  if (window.playImages && typeof window.playImages.exportAll === "function") {
+    try {
+      showToast("Preparing complete backup...", { duration: 1200 });
+      const imageMap = await window.playImages.exportAll();
+      backup.playImages = imageMap;
+      imageCount = Object.keys(imageMap).length;
+    } catch (err) {
+      console.warn("Image backup export failed:", err);
+      imageWarning = "\nImages could not be included in this backup.";
+    }
+  }
 
   const blob = new Blob([JSON.stringify(backup, null, 2)], {
     type: "application/json",
@@ -17,8 +31,9 @@ function exportCompleteBackup() {
   URL.revokeObjectURL(url);
 
   const info = storageManager.getStorageInfo();
+  const backupSize = storageManager.formatBytes(blob.size);
   showModal(
-    `Complete backup exported!\n\nBackup size: ${info.totalSizeFormatted}\nItems saved: ${info.itemCount}`,
+    `Complete backup exported!\n\nBackup size: ${backupSize}\nItems saved: ${info.itemCount}${imageCount ? `\nImages saved: ${imageCount}` : ""}${imageWarning}`,
     { title: "Backup Complete", icon: "✅" },
   );
 }
@@ -34,8 +49,24 @@ function importCompleteBackup(event) {
       if (!backup) throw new Error("Invalid JSON");
 
       if (await storageManager.restoreAllData(backup)) {
+        let restoredImages = 0;
+        let imageWarning = "";
+        if (Object.prototype.hasOwnProperty.call(backup, "playImages")) {
+          if (window.playImages && typeof window.playImages.importAll === "function") {
+            try {
+              restoredImages = await window.playImages.importAll(backup.playImages || {}, {
+                replace: true,
+              });
+            } catch (err) {
+              console.warn("Image backup import failed:", err);
+              imageWarning = "\nPlay images could not be restored.";
+            }
+          } else {
+            imageWarning = "\nPlay image storage is not available in this browser.";
+          }
+        }
         reloadAppFromStorage();
-        await showModal("Backup restored successfully! Refreshing...", {
+        await showModal(`Backup restored successfully!${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nRefreshing...`, {
           title: "Restored",
           icon: "✅",
         });
