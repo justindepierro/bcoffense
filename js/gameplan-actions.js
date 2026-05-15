@@ -155,9 +155,38 @@ function updateGamePlanFilter(field, valueOrEvent) {
   requestRenderGamePlan({ debounceMs: debouncedFields.has(field) ? 90 : 0 });
 }
 
+function updateGamePlanMultiFilter(field, valueOrEvent) {
+  if (!field || !valueOrEvent || !valueOrEvent.target) return;
+  const value = String(valueOrEvent.target.dataset.value || "").trim();
+  if (!value) return;
+  const selected = new Set(
+    typeof _gpFilterValueList === "function"
+      ? _gpFilterValueList(_gpFilters[field])
+      : [],
+  );
+  if (valueOrEvent.target.checked) selected.add(value);
+  else selected.delete(value);
+  _gpFilters[field] = [...selected];
+  _gpOpenMultiFilter = field;
+  requestRenderGamePlan();
+}
+
+function clearGamePlanMultiFilter(field) {
+  if (!field || !(field in _gpFilters)) return;
+  _gpFilters[field] = [];
+  _gpOpenMultiFilter = field;
+  requestRenderGamePlan();
+}
+
+function toggleGamePlanMultiFilterMenu(field) {
+  if (!field) return;
+  _gpOpenMultiFilter = _gpOpenMultiFilter === field ? "" : field;
+  requestRenderGamePlan();
+}
+
 function clearGamePlanFilters() {
   _gpFilters = {
-    search: "", type: "", formation: "", personnel: "",
+    search: "", type: [], formation: "", personnel: [],
     basePlay: "", tempo: "",
     preferredDown: "", preferredDistance: "",
     preferredSituation: "", preferredFieldPosition: "", preferredHash: "",
@@ -174,6 +203,7 @@ function clearGamePlanFilters() {
     showAdvanced: _gpFilters.showAdvanced || false,
     spotlight: null,
   };
+  _gpOpenMultiFilter = "";
   _gpSelected.clear();
   requestRenderGamePlan();
 }

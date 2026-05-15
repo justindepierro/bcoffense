@@ -72,15 +72,22 @@ function _gpGetPrintPersonnelChoices(board = null) {
       if (personnel) values.add(personnel);
     });
   });
-  const activePersonnel = String(_gpFilters?.personnel || "").trim();
-  if (activePersonnel) values.add(activePersonnel);
+  const activePersonnel = typeof _gpFilterValueList === "function"
+    ? _gpFilterValueList(_gpFilters?.personnel)
+    : [String(_gpFilters?.personnel || "").trim()].filter(Boolean);
+  activePersonnel.forEach((value) => values.add(value));
   return [...values].sort((left, right) =>
     left.localeCompare(right, undefined, { numeric: true }),
   );
 }
 
 function _gpGetModalPrintPersonnelFilter(options = _gpPrintOptions) {
-  return String(_gpFilters?.personnel || options.personnelFilter || "").trim();
+  const activePersonnel = typeof _gpFilterValueList === "function"
+    ? _gpFilterValueList(_gpFilters?.personnel)
+    : [String(_gpFilters?.personnel || "").trim()].filter(Boolean);
+  if (activePersonnel.length === 1) return activePersonnel[0];
+  if (activePersonnel.length > 1) return "";
+  return String(options.personnelFilter || "").trim();
 }
 
 function _gpGetPrintPersonnelFilter() {

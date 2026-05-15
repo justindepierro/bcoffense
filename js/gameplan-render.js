@@ -56,6 +56,59 @@ function _gpRenderAdvancedGroup(title, controls) {
     </section>`;
 }
 
+function _gpMultiFilterValues(field) {
+  return typeof _gpFilterValueList === "function"
+    ? _gpFilterValueList(_gpFilters[field])
+    : [];
+}
+
+function _gpFormatMultiFilterLabel(label, selected) {
+  if (!selected || selected.length === 0) return `All ${label}`;
+  if (selected.length === 1) return selected[0];
+  return `${selected.length} ${label}`;
+}
+
+function _gpFormatChipMultiLabel(field) {
+  const selected = _gpMultiFilterValues(field);
+  if (selected.length <= 2) return selected.join(", ");
+  return `${selected.slice(0, 2).join(", ")} +${selected.length - 2}`;
+}
+
+function _gpRenderMultiFilterDropdown(field, label, values) {
+  const selected = _gpMultiFilterValues(field);
+  const selectedSet = new Set(selected);
+  const isOpen = _gpOpenMultiFilter === field;
+  const countText = selected.length ? `${selected.length} selected` : "All";
+  return `
+    <div class="gp-multi-filter ${isOpen ? "is-open" : ""}">
+      <button class="gp-multi-filter-btn" type="button"
+        data-action="toggleGamePlanMultiFilterMenu" data-arg="${escapeHtml(field)}"
+        aria-expanded="${isOpen ? "true" : "false"}">
+        <span>${escapeHtml(_gpFormatMultiFilterLabel(label, selected))}</span>
+        <span class="gp-multi-filter-count">${escapeHtml(countText)}</span>
+      </button>
+      ${isOpen ? `
+        <div class="gp-multi-filter-menu">
+          <div class="gp-multi-filter-menu-head">
+            <span>${escapeHtml(label)}</span>
+            <button class="gp-multi-filter-clear" type="button"
+              data-action="clearGamePlanMultiFilter" data-arg="${escapeHtml(field)}"
+              ${selected.length === 0 ? "disabled" : ""}>Clear</button>
+          </div>
+          <div class="gp-multi-filter-options">
+            ${values.map((value) => `
+              <label class="gp-multi-filter-option">
+                <input type="checkbox"
+                  data-onchange="updateGamePlanMultiFilter" data-arg="${escapeHtml(field)}" data-pass="event"
+                  data-value="${escapeHtml(value)}"
+                  ${selectedSet.has(value) ? "checked" : ""} />
+                <span>${escapeHtml(value)}</span>
+              </label>`).join("")}
+          </div>
+        </div>` : ""}
+    </div>`;
+}
+
 
 function renderGamePlan() {
   const root = document.getElementById("gameplan");
@@ -264,18 +317,12 @@ function renderGamePlan() {
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
         data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
-      <select id="gpFilterType" data-onchange="updateGamePlanFilter" data-arg="type" data-pass="value">
-        <option value="">All Types</option>
-        ${types.map((t) => `<option value="${escapeHtml(t)}" ${t === _gpFilters.type ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}
-      </select>
+      ${_gpRenderMultiFilterDropdown("type", "Types", types)}
       <select id="gpFilterFormation" data-onchange="updateGamePlanFilter" data-arg="formation" data-pass="value">
         <option value="">All Formations</option>
         ${formations.map((f) => `<option value="${escapeHtml(f)}" ${f === _gpFilters.formation ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}
       </select>
-      <select id="gpFilterPersonnel" data-onchange="updateGamePlanFilter" data-arg="personnel" data-pass="value">
-        <option value="">All Personnel</option>
-        ${personnel.map((p) => `<option value="${escapeHtml(p)}" ${p === _gpFilters.personnel ? "selected" : ""}>${escapeHtml(p)}</option>`).join("")}
-      </select>
+      ${_gpRenderMultiFilterDropdown("personnel", "Personnel", personnel)}
       <button class="btn btn-sm btn-secondary" data-action="toggleGamePlanAdvancedFilters"
         title="Toggle advanced filters">
         ⚙️ Advanced${advBadge > 0 ? ` <span class="gp-adv-badge">${advBadge}</span>` : ""}
@@ -915,9 +962,9 @@ function toggleGamePlanAdvancedFilters() {
 
 const _GP_CHIP_LABELS = {
   search: { icon: "🔎", label: (v) => `“${v}”` },
-  type: { icon: "🏷️", label: (v) => v },
+  type: { icon: "🏷️", label: () => _gpFormatChipMultiLabel("type") },
   formation: { icon: "📐", label: (v) => v },
-  personnel: { icon: "🧮", label: (v) => v },
+  personnel: { icon: "🧮", label: () => _gpFormatChipMultiLabel("personnel") },
   basePlay: { icon: "🌳", label: (v) => v },
   tempo: { icon: "⏱️", label: (v) => v },
   preferredDown: { icon: "🔢", label: (v) => `Down ${v}` },
@@ -962,7 +1009,10 @@ function _gpRenderFilterChips() {
   const chips = [];
   Object.keys(_GP_CHIP_LABELS).forEach((k) => {
     const v = f[k];
-    if (!v) return;
+    const hasValue = typeof _gpFilterHasValue === "function"
+      ? _gpFilterHasValue(v)
+      : Boolean(v);
+    if (!hasValue) return;
     const cfg = _GP_CHIP_LABELS[k];
     chips.push(`
       <button class="gp-chip" data-action="clearGamePlanFilterField" data-arg="${escapeHtml(k)}"
@@ -987,6 +1037,7 @@ function clearGamePlanFilterField(field) {
   if (!field) return;
   if (!(field in _gpFilters)) return;
   if (typeof _gpFilters[field] === "boolean") _gpFilters[field] = false;
+  else if (Array.isArray(_gpFilters[field])) _gpFilters[field] = [];
   else _gpFilters[field] = "";
   renderGamePlan();
 }

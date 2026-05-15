@@ -47,9 +47,9 @@ const GP_BOX_TO_CALLSHEET = {
 // In-memory state
 let _gpFilters = {
   search: "",
-  type: "",
+  type: [],
   formation: "",
-  personnel: "",
+  personnel: [],
   basePlay: "",
   tempo: "",
   preferredDown: "",
@@ -99,6 +99,7 @@ let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
 let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → library
 let _gpRenderQueued = false;
 let _gpRenderDebounceTimer = null;
+let _gpOpenMultiFilter = "";
 
 const GP_ADVANCED_FILTER_KEYS = [
   "basePlay",
@@ -826,10 +827,28 @@ function _gpFilterNorm(value) {
   return String(value || "").trim().toLowerCase();
 }
 
+function _gpFilterValueList(value) {
+  if (Array.isArray(value)) {
+    return value.map((item) => String(item || "").trim()).filter(Boolean);
+  }
+  const single = String(value || "").trim();
+  return single ? [single] : [];
+}
+
+function _gpFilterHasValue(value) {
+  return _gpFilterValueList(value).length > 0;
+}
+
 function _gpFilterValueMatches(value, target) {
   const wanted = _gpFilterNorm(target);
   if (!wanted) return true;
   return _gpFilterNorm(value) === wanted;
+}
+
+function _gpFilterMatchesAny(value, filterValue) {
+  const selected = _gpFilterValueList(filterValue);
+  if (selected.length === 0) return true;
+  return selected.some((target) => _gpFilterValueMatches(value, target));
 }
 
 function _gpFilterAnyFieldMatches(play, fields, target) {
@@ -858,7 +877,7 @@ function _gpHasActivePlayFilters(options = {}) {
   const includeBoxToggle = options.includeBoxToggle !== false;
   const f = _gpFilters || {};
   return Boolean(
-    GP_PLAY_FILTER_KEYS.some((key) => Boolean(f[key])) ||
+    GP_PLAY_FILTER_KEYS.some((key) => _gpFilterHasValue(f[key])) ||
     (includeHideAssigned && f.hideAssigned) ||
     (includeBoxToggle && f.filterBoxes)
   );
@@ -871,9 +890,9 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
 
-  if (_gpFilters.type && p.type !== _gpFilters.type) return false;
+  if (!_gpFilterMatchesAny(p.type, _gpFilters.type)) return false;
   if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
-  if (_gpFilters.personnel && p.personnel !== _gpFilters.personnel) return false;
+  if (!_gpFilterMatchesAny(p.personnel, _gpFilters.personnel)) return false;
   if (_gpFilters.basePlay && p.basePlay !== _gpFilters.basePlay) return false;
   if (_gpFilters.tempo && p.tempo !== _gpFilters.tempo) return false;
   if (_gpFilters.preferredDown && p.preferredDown !== _gpFilters.preferredDown) return false;
