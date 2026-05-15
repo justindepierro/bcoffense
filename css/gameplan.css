@@ -653,22 +653,49 @@
 
 /* Advanced filters bar (toggled via ⚙️ Advanced) */
 .gp-toolbar-advanced {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-md);
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
   margin-bottom: var(--space-md);
   background: var(--color-bg-lighter);
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-md);
-  align-items: center;
+  align-items: stretch;
 }
-.gp-toolbar-advanced select {
+.gp-filter-group {
+  min-width: 0;
+}
+.gp-filter-group-title {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0;
+  margin-bottom: var(--space-xxs, 2px);
+  text-transform: uppercase;
+}
+.gp-filter-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(118px, 1fr));
+  gap: var(--space-xs);
+}
+.gp-toolbar-advanced select,
+.gp-toolbar-advanced .gp-filter-input {
+  min-width: 0;
+  width: 100%;
   padding: 4px 8px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
   background: var(--color-bg-input);
+}
+.gp-filter-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 30px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
 }
 .gp-adv-badge {
   display: inline-block;

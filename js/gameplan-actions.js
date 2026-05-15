@@ -137,7 +137,10 @@ function toggleGamePlanLibrarySelect(sig) {
 
 function updateGamePlanFilter(field, valueOrEvent) {
   if (!field) return;
-  if (field === "hideAssigned" || field === "onlyOpponentTagged" || field === "filterBoxes") {
+  const booleanFields = typeof GP_BOOLEAN_FILTER_FIELDS !== "undefined"
+    ? GP_BOOLEAN_FILTER_FIELDS
+    : new Set(["hideAssigned", "onlyOpponentTagged", "filterBoxes"]);
+  if (booleanFields.has(field)) {
     if (valueOrEvent && valueOrEvent.target) {
       _gpFilters[field] = !!valueOrEvent.target.checked;
     } else {
@@ -146,7 +149,10 @@ function updateGamePlanFilter(field, valueOrEvent) {
   } else {
     _gpFilters[field] = valueOrEvent || "";
   }
-  requestRenderGamePlan({ debounceMs: field === "search" ? 90 : 0 });
+  const debouncedFields = typeof GP_DEBOUNCED_FILTER_FIELDS !== "undefined"
+    ? GP_DEBOUNCED_FILTER_FIELDS
+    : new Set(["search"]);
+  requestRenderGamePlan({ debounceMs: debouncedFields.has(field) ? 90 : 0 });
 }
 
 function clearGamePlanFilters() {
@@ -154,7 +160,14 @@ function clearGamePlanFilters() {
     search: "", type: "", formation: "", personnel: "",
     basePlay: "", tempo: "",
     preferredDown: "", preferredDistance: "",
-    preferredSituation: "", preferredFieldPosition: "",
+    preferredSituation: "", preferredFieldPosition: "", preferredHash: "",
+    formTag1: "", formTag2: "", under: "", back: "",
+    shift: "", motion: "", protection: "", lineCall: "",
+    playName: "", playTag1: "", playTag2: "", oneWord: "",
+    practiceFront: "", practiceDefense: "", practiceCoverage: "",
+    practiceBlitz: "", practiceStunt: "",
+    keyPlayer: "", keyPlayerName: "", constraint: "", hitChart: "",
+    deadVs: "", opponent: "", notes: "",
     onlyOpponentTagged: false, hideAssigned: false, filterBoxes: false,
     density: _gpFilters.density || "comfortable", showProgress: true,
     goodVsMan: false, goodVsBear: false, goodVsOkie: false,

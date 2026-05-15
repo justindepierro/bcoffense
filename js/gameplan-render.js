@@ -3,6 +3,59 @@
    Split out of gameplan.js — see AGENTS.md for ownership map.
    ========================================================================= */
 
+function _gpUniqueFilterValues(fields) {
+  const sourceFields = Array.isArray(fields) ? fields : [fields];
+  const values = new Set();
+  if (!Array.isArray(plays)) return [];
+  plays.forEach((play) => {
+    sourceFields.forEach((field) => {
+      const value = String(play?.[field] || "").trim();
+      if (value) values.add(value);
+    });
+  });
+  return [...values].sort((left, right) =>
+    left.localeCompare(right, undefined, { numeric: true }),
+  );
+}
+
+function _gpRenderAdvancedSelect(field, label, opts = {}) {
+  const values = Array.isArray(opts.values)
+    ? opts.values
+    : _gpUniqueFilterValues(opts.sourceFields || field);
+  const current = String(_gpFilters[field] || "");
+  const title = opts.title || label;
+  return `
+    <select data-onchange="updateGamePlanFilter" data-arg="${escapeHtml(field)}" data-pass="value" title="${escapeHtml(title)}">
+      <option value="">${escapeHtml(label)}</option>
+      ${values.map((value) => `<option value="${escapeHtml(value)}" ${value === current ? "selected" : ""}>${escapeHtml(value)}</option>`).join("")}
+    </select>`;
+}
+
+function _gpRenderAdvancedText(field, label, title) {
+  return `
+    <input type="search" class="gp-filter-input" placeholder="${escapeHtml(label)}"
+      value="${escapeHtml(_gpFilters[field] || "")}"
+      data-oninput="updateGamePlanFilter" data-arg="${escapeHtml(field)}" data-pass="value"
+      title="${escapeHtml(title || label)}" />`;
+}
+
+function _gpRenderAdvancedToggle(field, label, title) {
+  return `
+    <label class="gp-filter-toggle" title="${escapeHtml(title || label)}">
+      <input type="checkbox" ${_gpFilters[field] ? "checked" : ""}
+        data-onchange="updateGamePlanFilter" data-arg="${escapeHtml(field)}" data-pass="event" />
+      ${label}
+    </label>`;
+}
+
+function _gpRenderAdvancedGroup(title, controls) {
+  return `
+    <section class="gp-filter-group">
+      <div class="gp-filter-group-title">${escapeHtml(title)}</div>
+      <div class="gp-filter-grid">${controls.join("")}</div>
+    </section>`;
+}
+
 
 function renderGamePlan() {
   const root = document.getElementById("gameplan");
@@ -146,48 +199,64 @@ function renderGamePlan() {
   const types = [...new Set(plays.map((p) => p.type).filter(Boolean))].sort();
   const formations = [...new Set(plays.map((p) => p.formation).filter(Boolean))].sort();
   const personnel = [...new Set(plays.map((p) => p.personnel).filter(Boolean))].sort();
-  const basePlays = [...new Set(plays.map((p) => p.basePlay).filter(Boolean))].sort();
-  const tempos = [...new Set(plays.map((p) => p.tempo).filter(Boolean))].sort();
-  const situations = [...new Set(plays.map((p) => p.preferredSituation).filter(Boolean))].sort();
-  const fieldPositions = [...new Set(plays.map((p) => p.preferredFieldPosition).filter(Boolean))].sort();
-
   const advBadge = _gpAdvancedFilterCount();
   const advancedHtml = _gpFilters.showAdvanced ? `
     <div class="gp-toolbar-advanced">
-      <select data-onchange="updateGamePlanFilter" data-arg="basePlay" data-pass="value" title="Base play">
-        <option value="">Base Play</option>
-        ${basePlays.map((b) => `<option value="${escapeHtml(b)}" ${b === _gpFilters.basePlay ? "selected" : ""}>${escapeHtml(b)}</option>`).join("")}
-      </select>
-      <select data-onchange="updateGamePlanFilter" data-arg="tempo" data-pass="value" title="Tempo">
-        <option value="">Tempo</option>
-        ${tempos.map((t) => `<option value="${escapeHtml(t)}" ${t === _gpFilters.tempo ? "selected" : ""}>${escapeHtml(t)}</option>`).join("")}
-      </select>
-      <select data-onchange="updateGamePlanFilter" data-arg="preferredDown" data-pass="value" title="Down">
-        <option value="">Down</option>
-        ${["1", "2", "3", "4"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDown ? "selected" : ""}>${d}</option>`).join("")}
-      </select>
-      <select data-onchange="updateGamePlanFilter" data-arg="preferredDistance" data-pass="value" title="Distance">
-        <option value="">Distance</option>
-        ${["Short", "Medium", "Long"].map((d) => `<option value="${d}" ${d === _gpFilters.preferredDistance ? "selected" : ""}>${d}</option>`).join("")}
-      </select>
-      <select data-onchange="updateGamePlanFilter" data-arg="preferredSituation" data-pass="value" title="Situation">
-        <option value="">Situation</option>
-        ${situations.map((s) => `<option value="${escapeHtml(s)}" ${s === _gpFilters.preferredSituation ? "selected" : ""}>${escapeHtml(s)}</option>`).join("")}
-      </select>
-      <select data-onchange="updateGamePlanFilter" data-arg="preferredFieldPosition" data-pass="value" title="Field Position">
-        <option value="">Field Pos</option>
-        ${fieldPositions.map((f) => `<option value="${escapeHtml(f)}" ${f === _gpFilters.preferredFieldPosition ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}
-      </select>
-      <label style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-sm);">
-        <input type="checkbox" ${_gpFilters.onlyOpponentTagged ? "checked" : ""}
-          data-onchange="updateGamePlanFilter" data-arg="onlyOpponentTagged" data-pass="event" />
-        Only ${opponent ? `tagged for ${escapeHtml(opponent)}` : "opponent-tagged"}
-      </label>
-      <label style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-sm);">
-        <input type="checkbox" ${_gpFilters.filterBoxes ? "checked" : ""}
-          data-onchange="updateGamePlanFilter" data-arg="filterBoxes" data-pass="event" />
-        Filter bucket plays
-      </label>
+      ${_gpRenderAdvancedGroup("Situation", [
+        _gpRenderAdvancedSelect("basePlay", "Base Play", { title: "Base play family" }),
+        _gpRenderAdvancedSelect("tempo", "Tempo"),
+        _gpRenderAdvancedSelect("preferredDown", "Down", { values: ["1", "2", "3", "4"] }),
+        _gpRenderAdvancedSelect("preferredDistance", "Distance", { values: ["Short", "Medium", "Long"] }),
+        _gpRenderAdvancedSelect("preferredSituation", "Situation"),
+        _gpRenderAdvancedSelect("preferredFieldPosition", "Field Pos", { title: "Field position" }),
+        _gpRenderAdvancedSelect("preferredHash", "Hash", { values: ["Left", "Middle", "Right"], title: "Preferred hash" }),
+      ])}
+      ${_gpRenderAdvancedGroup("Formation & Call", [
+        _gpRenderAdvancedSelect("formTag1", "Form Tag 1"),
+        _gpRenderAdvancedSelect("formTag2", "Form Tag 2"),
+        _gpRenderAdvancedSelect("under", "Under"),
+        _gpRenderAdvancedSelect("back", "Back"),
+        _gpRenderAdvancedSelect("shift", "Shift"),
+        _gpRenderAdvancedSelect("motion", "Motion"),
+        _gpRenderAdvancedSelect("protection", "Protection"),
+        _gpRenderAdvancedSelect("lineCall", "Line Call"),
+      ])}
+      ${_gpRenderAdvancedGroup("Tags & Players", [
+        _gpRenderAdvancedText("playName", "Play name contains", "Filter by text in the play name only"),
+        _gpRenderAdvancedSelect("playTag1", "Play Tag 1"),
+        _gpRenderAdvancedSelect("playTag2", "Play Tag 2"),
+        _gpRenderAdvancedSelect("oneWord", "One Word"),
+        _gpRenderAdvancedSelect("keyPlayer", "Key Pos", {
+          sourceFields: ["keyPlayer1", "keyPlayer2", "keyPlayer3"],
+          title: "Key player position",
+        }),
+        _gpRenderAdvancedSelect("keyPlayerName", "Key Player", {
+          sourceFields: ["keyPlayerName1", "keyPlayerName2", "keyPlayerName3"],
+          title: "Key player name",
+        }),
+        _gpRenderAdvancedSelect("constraint", "Constraint", {
+          sourceFields: ["constraint1", "constraint2", "constraint3"],
+          title: "Constraint or complement",
+        }),
+        _gpRenderAdvancedSelect("hitChart", "Hit Chart", {
+          sourceFields: ["hitChart1", "hitChart2", "hitChart3"],
+          title: "Hit chart target",
+        }),
+      ])}
+      ${_gpRenderAdvancedGroup("Defense & Notes", [
+        _gpRenderAdvancedSelect("practiceFront", "Front"),
+        _gpRenderAdvancedSelect("practiceDefense", "Defense"),
+        _gpRenderAdvancedSelect("practiceCoverage", "Coverage"),
+        _gpRenderAdvancedSelect("practiceBlitz", "Blitz"),
+        _gpRenderAdvancedSelect("practiceStunt", "Stunt"),
+        _gpRenderAdvancedSelect("opponent", "Opponent"),
+        _gpRenderAdvancedText("deadVs", "Dead vs contains", "Filter by text in Dead Vs"),
+        _gpRenderAdvancedText("notes", "Notes contain", "Filter by text in notes"),
+      ])}
+      ${_gpRenderAdvancedGroup("Output", [
+        _gpRenderAdvancedToggle("onlyOpponentTagged", opponent ? `Only tagged for ${escapeHtml(opponent)}` : "Only opponent-tagged", "Only show plays tagged for the current opponent"),
+        _gpRenderAdvancedToggle("filterBoxes", "Filter bucket plays", "Apply active filters to plays already drafted in buckets"),
+      ])}
     </div>` : "";
 
   const toolbarHtml = `
@@ -825,16 +894,14 @@ function _gpSortedBoxList(list, mode) {
 
 function _gpAdvancedFilterCount() {
   const f = _gpFilters;
-  let n = 0;
-  if (f.basePlay) n += 1;
-  if (f.tempo) n += 1;
-  if (f.preferredDown) n += 1;
-  if (f.preferredDistance) n += 1;
-  if (f.preferredSituation) n += 1;
-  if (f.preferredFieldPosition) n += 1;
-  if (f.onlyOpponentTagged) n += 1;
-  if (f.filterBoxes) n += 1;
-  return n;
+  const keys = typeof GP_ADVANCED_FILTER_KEYS !== "undefined"
+    ? GP_ADVANCED_FILTER_KEYS
+    : [
+        "basePlay", "tempo", "preferredDown", "preferredDistance",
+        "preferredSituation", "preferredFieldPosition",
+        "onlyOpponentTagged", "filterBoxes",
+      ];
+  return keys.reduce((total, key) => total + (f[key] ? 1 : 0), 0);
 }
 
 function toggleGamePlanAdvancedFilters() {
@@ -857,6 +924,31 @@ const _GP_CHIP_LABELS = {
   preferredDistance: { icon: "📏", label: (v) => v },
   preferredSituation: { icon: "🕒", label: (v) => v },
   preferredFieldPosition: { icon: "🟩", label: (v) => v },
+  preferredHash: { icon: "#", label: (v) => `Hash ${v}` },
+  formTag1: { icon: "F1", label: (v) => v },
+  formTag2: { icon: "F2", label: (v) => v },
+  under: { icon: "UC", label: (v) => v },
+  back: { icon: "B", label: (v) => v },
+  shift: { icon: "↔", label: (v) => v },
+  motion: { icon: "→", label: (v) => v },
+  protection: { icon: "P", label: (v) => v },
+  lineCall: { icon: "OL", label: (v) => v },
+  playName: { icon: "▶", label: (v) => `Play: ${v}` },
+  playTag1: { icon: "T1", label: (v) => v },
+  playTag2: { icon: "T2", label: (v) => v },
+  oneWord: { icon: "1W", label: (v) => v },
+  practiceFront: { icon: "FR", label: (v) => v },
+  practiceDefense: { icon: "D", label: (v) => v },
+  practiceCoverage: { icon: "CV", label: (v) => v },
+  practiceBlitz: { icon: "BL", label: (v) => v },
+  practiceStunt: { icon: "ST", label: (v) => v },
+  keyPlayer: { icon: "KP", label: (v) => v },
+  keyPlayerName: { icon: "👤", label: (v) => v },
+  constraint: { icon: "⛓", label: (v) => v },
+  hitChart: { icon: "🎯", label: (v) => v },
+  deadVs: { icon: "🚫", label: (v) => `Dead vs: ${v}` },
+  opponent: { icon: "OP", label: (v) => v },
+  notes: { icon: "📝", label: (v) => `Notes: ${v}` },
   onlyOpponentTagged: { icon: "🎯", label: () => "Opponent-tagged" },
   hideAssigned: { icon: "🙈", label: () => "Hide drafted" },
   filterBoxes: { icon: "🧺", label: () => "Filter buckets" },

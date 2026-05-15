@@ -56,6 +56,31 @@ let _gpFilters = {
   preferredDistance: "",
   preferredSituation: "",
   preferredFieldPosition: "",
+  preferredHash: "",
+  formTag1: "",
+  formTag2: "",
+  under: "",
+  back: "",
+  shift: "",
+  motion: "",
+  protection: "",
+  lineCall: "",
+  playName: "",
+  playTag1: "",
+  playTag2: "",
+  oneWord: "",
+  practiceFront: "",
+  practiceDefense: "",
+  practiceCoverage: "",
+  practiceBlitz: "",
+  practiceStunt: "",
+  keyPlayer: "",
+  keyPlayerName: "",
+  constraint: "",
+  hitChart: "",
+  deadVs: "",
+  opponent: "",
+  notes: "",
   onlyOpponentTagged: false,
   hideAssigned: false,
   filterBoxes: false,
@@ -74,6 +99,99 @@ let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
 let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → library
 let _gpRenderQueued = false;
 let _gpRenderDebounceTimer = null;
+
+const GP_ADVANCED_FILTER_KEYS = [
+  "basePlay",
+  "tempo",
+  "preferredDown",
+  "preferredDistance",
+  "preferredSituation",
+  "preferredFieldPosition",
+  "preferredHash",
+  "formTag1",
+  "formTag2",
+  "under",
+  "back",
+  "shift",
+  "motion",
+  "protection",
+  "lineCall",
+  "playName",
+  "playTag1",
+  "playTag2",
+  "oneWord",
+  "practiceFront",
+  "practiceDefense",
+  "practiceCoverage",
+  "practiceBlitz",
+  "practiceStunt",
+  "keyPlayer",
+  "keyPlayerName",
+  "constraint",
+  "hitChart",
+  "deadVs",
+  "opponent",
+  "notes",
+  "onlyOpponentTagged",
+  "filterBoxes",
+];
+
+const GP_PLAY_FILTER_KEYS = [
+  "search",
+  "type",
+  "formation",
+  "personnel",
+  ...GP_ADVANCED_FILTER_KEYS.filter((key) => key !== "filterBoxes"),
+  "goodVsMan",
+  "goodVsBear",
+  "goodVsOkie",
+];
+
+const GP_BOOLEAN_FILTER_FIELDS = new Set([
+  "hideAssigned",
+  "onlyOpponentTagged",
+  "filterBoxes",
+]);
+
+const GP_DEBOUNCED_FILTER_FIELDS = new Set([
+  "search",
+  "playName",
+  "deadVs",
+  "notes",
+]);
+
+const GP_EXACT_FILTER_FIELDS = {
+  formTag1: ["formTag1"],
+  formTag2: ["formTag2"],
+  under: ["under"],
+  back: ["back"],
+  shift: ["shift"],
+  motion: ["motion"],
+  protection: ["protection"],
+  lineCall: ["lineCall"],
+  playTag1: ["playTag1"],
+  playTag2: ["playTag2"],
+  oneWord: ["oneWord"],
+  practiceFront: ["practiceFront"],
+  practiceDefense: ["practiceDefense"],
+  practiceCoverage: ["practiceCoverage"],
+  practiceBlitz: ["practiceBlitz"],
+  practiceStunt: ["practiceStunt"],
+  opponent: ["opponent"],
+};
+
+const GP_COMBINED_EXACT_FILTER_FIELDS = {
+  keyPlayer: ["keyPlayer1", "keyPlayer2", "keyPlayer3"],
+  keyPlayerName: ["keyPlayerName1", "keyPlayerName2", "keyPlayerName3"],
+  constraint: ["constraint1", "constraint2", "constraint3"],
+  hitChart: ["hitChart1", "hitChart2", "hitChart3"],
+};
+
+const GP_TEXT_FILTER_FIELDS = {
+  playName: ["play"],
+  deadVs: ["deadVs"],
+  notes: ["notes"],
+};
 
 function requestRenderGamePlan(opts = {}) {
   const debounceMs = Math.max(0, Number(opts.debounceMs) || 0);
@@ -704,25 +822,43 @@ function _gpFilteredLibrary(board) {
   }));
 }
 
+function _gpFilterNorm(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function _gpFilterValueMatches(value, target) {
+  const wanted = _gpFilterNorm(target);
+  if (!wanted) return true;
+  return _gpFilterNorm(value) === wanted;
+}
+
+function _gpFilterAnyFieldMatches(play, fields, target) {
+  const wanted = _gpFilterNorm(target);
+  if (!wanted) return true;
+  return fields.some((field) => _gpFilterValueMatches(play?.[field], wanted));
+}
+
+function _gpFilterAnyFieldIncludes(play, fields, needle) {
+  const wanted = _gpFilterNorm(needle);
+  if (!wanted) return true;
+  return fields.some((field) => _gpFilterNorm(play?.[field]).includes(wanted));
+}
+
+function _gpNormalizeHashFilterValue(value) {
+  const raw = _gpFilterNorm(value);
+  if (!raw) return "";
+  if (raw === "l" || raw === "left") return "Left";
+  if (raw === "m" || raw === "middle" || raw === "mid" || raw === "center") return "Middle";
+  if (raw === "r" || raw === "right") return "Right";
+  return String(value || "").trim();
+}
+
 function _gpHasActivePlayFilters(options = {}) {
   const includeHideAssigned = options.includeHideAssigned !== false;
   const includeBoxToggle = options.includeBoxToggle !== false;
   const f = _gpFilters || {};
   return Boolean(
-    f.search ||
-    f.type ||
-    f.formation ||
-    f.personnel ||
-    f.basePlay ||
-    f.tempo ||
-    f.preferredDown ||
-    f.preferredDistance ||
-    f.preferredSituation ||
-    f.preferredFieldPosition ||
-    f.onlyOpponentTagged ||
-    f.goodVsMan ||
-    f.goodVsBear ||
-    f.goodVsOkie ||
+    GP_PLAY_FILTER_KEYS.some((key) => Boolean(f[key])) ||
     (includeHideAssigned && f.hideAssigned) ||
     (includeBoxToggle && f.filterBoxes)
   );
@@ -744,6 +880,18 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
   if (_gpFilters.preferredDistance && p.preferredDistance !== _gpFilters.preferredDistance) return false;
   if (_gpFilters.preferredSituation && p.preferredSituation !== _gpFilters.preferredSituation) return false;
   if (_gpFilters.preferredFieldPosition && p.preferredFieldPosition !== _gpFilters.preferredFieldPosition) return false;
+  if (_gpFilters.preferredHash) {
+    if (_gpNormalizeHashFilterValue(p.preferredHash) !== _gpFilters.preferredHash) return false;
+  }
+  for (const [filterKey, fields] of Object.entries(GP_EXACT_FILTER_FIELDS)) {
+    if (_gpFilters[filterKey] && !_gpFilterAnyFieldMatches(p, fields, _gpFilters[filterKey])) return false;
+  }
+  for (const [filterKey, fields] of Object.entries(GP_COMBINED_EXACT_FILTER_FIELDS)) {
+    if (_gpFilters[filterKey] && !_gpFilterAnyFieldMatches(p, fields, _gpFilters[filterKey])) return false;
+  }
+  for (const [filterKey, fields] of Object.entries(GP_TEXT_FILTER_FIELDS)) {
+    if (_gpFilters[filterKey] && !_gpFilterAnyFieldIncludes(p, fields, _gpFilters[filterKey])) return false;
+  }
   if (_gpFilters.goodVsMan && !p.goodVsMan) return false;
   if (_gpFilters.goodVsBear && !p.goodVsBear) return false;
   if (_gpFilters.goodVsOkie && !p.goodVsOkie) return false;
@@ -755,9 +903,17 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
   if (search) {
     const hay = [
       p.type, p.personnel, p.formation, p.formTag1, p.formTag2,
-      p.back, p.shift, p.motion, p.protection, p.lineCall,
+      p.under, p.back, p.shift, p.motion, p.protection, p.lineCall,
       p.play, p.playTag1, p.playTag2, p.basePlay, p.oneWord, p.notes,
+      p.tempo, p.preferredDown, p.preferredDistance, p.preferredSituation,
+      p.preferredFieldPosition, p.preferredHash,
+      p.practiceFront, p.practiceDefense, p.practiceCoverage,
+      p.practiceBlitz, p.practiceStunt,
+      p.keyPlayer1, p.keyPlayer2, p.keyPlayer3,
       p.keyPlayerName1, p.keyPlayerName2, p.keyPlayerName3,
+      p.constraint1, p.constraint2, p.constraint3,
+      p.hitChart1, p.hitChart2, p.hitChart3,
+      p.deadVs, p.opponent,
     ].filter(Boolean).join(" ").toLowerCase();
     if (!hay.includes(search)) return false;
   }
