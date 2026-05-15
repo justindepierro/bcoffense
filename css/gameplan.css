@@ -303,6 +303,15 @@
   font-weight: 400;
 }
 
+.gp-box-filter-note {
+  padding: 3px var(--space-sm);
+  background: var(--color-info-light);
+  color: var(--color-info);
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
 .gp-box-actions {
   display: flex;
   flex-wrap: wrap;

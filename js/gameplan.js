@@ -58,6 +58,7 @@ let _gpFilters = {
   preferredFieldPosition: "",
   onlyOpponentTagged: false,
   hideAssigned: false,
+  filterBoxes: false,
   density: "comfortable", // "comfortable" | "compact" | "detail"
   showProgress: true,
   goodVsMan: false,
@@ -698,40 +699,86 @@ function getGamePlanFlaggedCount(flag) {
 
 function _gpFilteredLibrary(board) {
   if (!Array.isArray(plays)) return [];
+  return plays.filter((p) => _gpPlayMatchesCurrentFilters(p, board, {
+    includeHideAssigned: true,
+  }));
+}
+
+function _gpHasActivePlayFilters(options = {}) {
+  const includeHideAssigned = options.includeHideAssigned !== false;
+  const includeBoxToggle = options.includeBoxToggle !== false;
+  const f = _gpFilters || {};
+  return Boolean(
+    f.search ||
+    f.type ||
+    f.formation ||
+    f.personnel ||
+    f.basePlay ||
+    f.tempo ||
+    f.preferredDown ||
+    f.preferredDistance ||
+    f.preferredSituation ||
+    f.preferredFieldPosition ||
+    f.onlyOpponentTagged ||
+    f.goodVsMan ||
+    f.goodVsBear ||
+    f.goodVsOkie ||
+    (includeHideAssigned && f.hideAssigned) ||
+    (includeBoxToggle && f.filterBoxes)
+  );
+}
+
+function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
+  const includeHideAssigned = options.includeHideAssigned !== false;
   const search = (_gpFilters.search || "").trim().toLowerCase();
   const assignedSigs = _gpAllAssignedSigs(board);
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
 
-  return plays.filter((p) => {
-    if (_gpFilters.type && p.type !== _gpFilters.type) return false;
-    if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
-    if (_gpFilters.personnel && p.personnel !== _gpFilters.personnel) return false;
-    if (_gpFilters.basePlay && p.basePlay !== _gpFilters.basePlay) return false;
-    if (_gpFilters.tempo && p.tempo !== _gpFilters.tempo) return false;
-    if (_gpFilters.preferredDown && p.preferredDown !== _gpFilters.preferredDown) return false;
-    if (_gpFilters.preferredDistance && p.preferredDistance !== _gpFilters.preferredDistance) return false;
-    if (_gpFilters.preferredSituation && p.preferredSituation !== _gpFilters.preferredSituation) return false;
-    if (_gpFilters.preferredFieldPosition && p.preferredFieldPosition !== _gpFilters.preferredFieldPosition) return false;
-    if (_gpFilters.goodVsMan && !p.goodVsMan) return false;
-    if (_gpFilters.goodVsBear && !p.goodVsBear) return false;
-    if (_gpFilters.goodVsOkie && !p.goodVsOkie) return false;
-    if (_gpFilters.onlyOpponentTagged) {
-      if (!opponent) return false;
-      if (typeof isPlayTaggedForOpponent === "function" && !isPlayTaggedForOpponent(p, opponent)) return false;
-    }
-    if (_gpFilters.hideAssigned && assignedSigs.has(_gpPlaySignature(p))) return false;
-    if (search) {
-      const hay = [
-        p.type, p.personnel, p.formation, p.formTag1, p.formTag2,
-        p.back, p.shift, p.motion, p.protection, p.lineCall,
-        p.play, p.playTag1, p.playTag2, p.basePlay, p.oneWord, p.notes,
-        p.keyPlayerName1, p.keyPlayerName2, p.keyPlayerName3,
-      ].filter(Boolean).join(" ").toLowerCase();
-      if (!hay.includes(search)) return false;
-    }
-    return true;
-  });
+  if (_gpFilters.type && p.type !== _gpFilters.type) return false;
+  if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
+  if (_gpFilters.personnel && p.personnel !== _gpFilters.personnel) return false;
+  if (_gpFilters.basePlay && p.basePlay !== _gpFilters.basePlay) return false;
+  if (_gpFilters.tempo && p.tempo !== _gpFilters.tempo) return false;
+  if (_gpFilters.preferredDown && p.preferredDown !== _gpFilters.preferredDown) return false;
+  if (_gpFilters.preferredDistance && p.preferredDistance !== _gpFilters.preferredDistance) return false;
+  if (_gpFilters.preferredSituation && p.preferredSituation !== _gpFilters.preferredSituation) return false;
+  if (_gpFilters.preferredFieldPosition && p.preferredFieldPosition !== _gpFilters.preferredFieldPosition) return false;
+  if (_gpFilters.goodVsMan && !p.goodVsMan) return false;
+  if (_gpFilters.goodVsBear && !p.goodVsBear) return false;
+  if (_gpFilters.goodVsOkie && !p.goodVsOkie) return false;
+  if (_gpFilters.onlyOpponentTagged) {
+    if (!opponent) return false;
+    if (typeof isPlayTaggedForOpponent === "function" && !isPlayTaggedForOpponent(p, opponent)) return false;
+  }
+  if (includeHideAssigned && _gpFilters.hideAssigned && assignedSigs.has(_gpPlaySignature(p))) return false;
+  if (search) {
+    const hay = [
+      p.type, p.personnel, p.formation, p.formTag1, p.formTag2,
+      p.back, p.shift, p.motion, p.protection, p.lineCall,
+      p.play, p.playTag1, p.playTag2, p.basePlay, p.oneWord, p.notes,
+      p.keyPlayerName1, p.keyPlayerName2, p.keyPlayerName3,
+    ].filter(Boolean).join(" ").toLowerCase();
+    if (!hay.includes(search)) return false;
+  }
+  return true;
+}
+
+function _gpShouldFilterBoxes() {
+  return Boolean(
+    _gpFilters.filterBoxes &&
+    _gpHasActivePlayFilters({
+      includeHideAssigned: false,
+      includeBoxToggle: false,
+    })
+  );
+}
+
+function _gpFilterBoxList(list, board) {
+  if (!_gpShouldFilterBoxes()) return list;
+  return list.filter((play) => _gpPlayMatchesCurrentFilters(play, board, {
+    includeHideAssigned: false,
+  }));
 }
 
 /* -------------------------------------------------------------------------

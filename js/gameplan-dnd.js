@@ -229,7 +229,7 @@ function _gpWireDnd() {
     if (dragSource) {
       if (dragSource.boxId === boxId) {
         const targetIdx = dropZone
-          ? _gpComputeDropIndex(dropZone, dropY)
+          ? _gpComputeRawDropIndex(dropZone, dropY)
           : Infinity;
         _gpReorderInBox(boxId, dragSource.sig, targetIdx, dragSource.rawIdx);
       } else {
@@ -318,6 +318,20 @@ function _gpComputeDropIndex(dropZone, clientY) {
     if (clientY < r.top + r.height / 2) return i;
   }
   return rows.length;
+}
+
+function _gpComputeRawDropIndex(dropZone, clientY) {
+  const rows = Array.from(dropZone.querySelectorAll(".gp-box-play"));
+  for (let i = 0; i < rows.length; i += 1) {
+    const r = rows[i].getBoundingClientRect();
+    if (clientY < r.top + r.height / 2) {
+      const rawIdx = _gpNormalizeBoxPlayIndex(rows[i].dataset.rawIdx);
+      return rawIdx === null ? i : rawIdx;
+    }
+  }
+  if (rows.length === 0) return Infinity;
+  const lastRawIdx = _gpNormalizeBoxPlayIndex(rows[rows.length - 1].dataset.rawIdx);
+  return lastRawIdx === null ? rows.length : lastRawIdx + 1;
 }
 
 function _gpUpdateDropIndicator(dropZone, clientY) {

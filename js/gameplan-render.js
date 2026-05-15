@@ -183,6 +183,11 @@ function renderGamePlan() {
           data-onchange="updateGamePlanFilter" data-arg="onlyOpponentTagged" data-pass="event" />
         Only ${opponent ? `tagged for ${escapeHtml(opponent)}` : "opponent-tagged"}
       </label>
+      <label style="display:inline-flex;align-items:center;gap:4px;font-size:var(--font-size-sm);">
+        <input type="checkbox" ${_gpFilters.filterBoxes ? "checked" : ""}
+          data-onchange="updateGamePlanFilter" data-arg="filterBoxes" data-pass="event" />
+        Filter bucket plays
+      </label>
     </div>` : "";
 
   const toolbarHtml = `
@@ -511,6 +516,8 @@ function showGamePlanBoxInfo(boxId) {
 
 function _gpRenderBox(box, board) {
   const list = (board.assignments[box.id] || []).slice();
+  const visibleList = _gpFilterBoxList(list, board);
+  const boxFilterActive = _gpShouldFilterBoxes();
   const isCustom = (board.customBoxes || []).some((cb) => cb.id === box.id);
   const isHolding = box.id === GP_HOLDING_ID;
   const target = Number(board.targets && board.targets[box.id]) || 0;
@@ -520,16 +527,16 @@ function _gpRenderBox(box, board) {
   const sortMode = (board.sort && board.sort[box.id]) || "manual";
   const rawIndexByPlay = new Map();
   list.forEach((play, idx) => rawIndexByPlay.set(play, idx));
-  const displayList = _gpSortedBoxList(list, sortMode);
+  const displayList = _gpSortedBoxList(visibleList, sortMode);
 
   // Per-box variety (unique formations + personnel)
   const uniqForms = new Set();
   const uniqPers = new Set();
-  list.forEach((p) => {
+  visibleList.forEach((p) => {
     if (p.formation) uniqForms.add(p.formation);
     if (p.personnel) uniqPers.add(p.personnel);
   });
-  const varietyHtml = list.length > 0
+  const varietyHtml = visibleList.length > 0
     ? `<span class="gp-box-variety">${uniqForms.size} form • ${uniqPers.size} pers</span>`
     : "";
 
@@ -548,7 +555,8 @@ function _gpRenderBox(box, board) {
 
   // Hash distribution bar (Left / Middle / Right) — only renders when at
   // least one play in this box declares a preferred hash.
-  const hashHtml = _gpRenderBoxHashBar(list);
+  const visibleOrFullList = boxFilterActive ? visibleList : list;
+  const hashHtml = _gpRenderBoxHashBar(visibleOrFullList);
 
   // Vision Mode: surface variation/directional warnings inline so the
   // staff sees "earned shot" + handedness reminders right in the box.
@@ -556,15 +564,15 @@ function _gpRenderBox(box, board) {
   if (
     typeof isVisionMode === "function" &&
     isVisionMode() &&
-    list.length > 0
+    visibleOrFullList.length > 0
   ) {
     const warnings = [];
     try {
       if (typeof _visionVariationWarnings === "function") {
-        _visionVariationWarnings(list).forEach((w) => warnings.push(w));
+        _visionVariationWarnings(visibleOrFullList).forEach((w) => warnings.push(w));
       }
       if (typeof _visionDirectionalWarnings === "function") {
-        _visionDirectionalWarnings(list).forEach((w) => warnings.push(w));
+        _visionDirectionalWarnings(visibleOrFullList).forEach((w) => warnings.push(w));
       }
     } catch (_e) {
       /* ignore */
@@ -603,13 +611,22 @@ function _gpRenderBox(box, board) {
       <option value="field" ${sortMode === "field" ? "selected" : ""}>Field Position</option>
       <option value="play" ${sortMode === "play" ? "selected" : ""}>Play Name</option>
     </select>`;
+  const countTitle = boxFilterActive
+    ? `${visibleList.length} visible of ${list.length} total plays`
+    : `${list.length} play${list.length === 1 ? "" : "s"}`;
+  const countText = boxFilterActive
+    ? `${visibleList.length}/${list.length}`
+    : `${list.length}${target > 0 ? `/${target}` : ""}`;
+  const filterNote = boxFilterActive && list.length > 0
+    ? `<div class="gp-box-filter-note">${visibleList.length} of ${list.length} shown by filters</div>`
+    : "";
 
   const headerHtml = `
     <div class="gp-box-header" data-action="toggleGamePlanBoxCollapse" data-arg="${escapeHtml(box.id)}">
       <div class="gp-box-title">
         <span class="gp-box-chevron">${collapsed ? "▶" : "▼"}</span>
         <span>${escapeHtml(box.label)}</span>
-        <span class="gp-box-count">${list.length}${target > 0 ? `/${target}` : ""}</span>
+        <span class="gp-box-count" title="${escapeHtml(countTitle)}">${countText}</span>
         ${varietyHtml}
       </div>
       <div class="gp-box-actions" data-stop-toggle="1">
@@ -661,15 +678,18 @@ function _gpRenderBox(box, board) {
     ${progressHtml}
     ${hashHtml}
     ${visionWarnHtml}
+    ${filterNote}
     ${note ? `<div class="gp-box-note" title="Edit note"
       data-action="editGamePlanBoxNote" data-arg="${escapeHtml(box.id)}">${escapeHtml(note)}</div>` : ""}`;
 
   const bodyHtml = collapsed ? "" : `
       <div class="gp-box-body" data-box-drop="${escapeHtml(box.id)}">
         ${displayList.length === 0
-      ? `<div class="gp-box-empty">${isHolding
-        ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
-        : "Drop plays here, or click ➕ Add Play."}</div>`
+      ? `<div class="gp-box-empty">${boxFilterActive && list.length > 0
+        ? "No plays in this bucket match the current filters."
+        : isHolding
+          ? "Untyped tagged plays land here. Drag them out to any box, or click 🚀 Auto-route."
+          : "Drop plays here, or click ➕ Add Play."}</div>`
       : displayList.map((p, idx) => _gpRenderBoxPlay(
         box.id,
         p,
@@ -813,6 +833,7 @@ function _gpAdvancedFilterCount() {
   if (f.preferredSituation) n += 1;
   if (f.preferredFieldPosition) n += 1;
   if (f.onlyOpponentTagged) n += 1;
+  if (f.filterBoxes) n += 1;
   return n;
 }
 
@@ -838,6 +859,7 @@ const _GP_CHIP_LABELS = {
   preferredFieldPosition: { icon: "🟩", label: (v) => v },
   onlyOpponentTagged: { icon: "🎯", label: () => "Opponent-tagged" },
   hideAssigned: { icon: "🙈", label: () => "Hide drafted" },
+  filterBoxes: { icon: "🧺", label: () => "Filter buckets" },
   goodVsMan: { icon: "✅", label: () => "vs. Man" },
   goodVsBear: { icon: "🐻", label: () => "vs. Bear" },
   goodVsOkie: { icon: "🤠", label: () => "vs. Okie" },

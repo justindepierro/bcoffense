@@ -137,7 +137,7 @@ function toggleGamePlanLibrarySelect(sig) {
 
 function updateGamePlanFilter(field, valueOrEvent) {
   if (!field) return;
-  if (field === "hideAssigned" || field === "onlyOpponentTagged") {
+  if (field === "hideAssigned" || field === "onlyOpponentTagged" || field === "filterBoxes") {
     if (valueOrEvent && valueOrEvent.target) {
       _gpFilters[field] = !!valueOrEvent.target.checked;
     } else {
@@ -155,7 +155,7 @@ function clearGamePlanFilters() {
     basePlay: "", tempo: "",
     preferredDown: "", preferredDistance: "",
     preferredSituation: "", preferredFieldPosition: "",
-    onlyOpponentTagged: false, hideAssigned: false,
+    onlyOpponentTagged: false, hideAssigned: false, filterBoxes: false,
     density: _gpFilters.density || "comfortable", showProgress: true,
     goodVsMan: false, goodVsBear: false, goodVsOkie: false,
     showAdvanced: _gpFilters.showAdvanced || false,
