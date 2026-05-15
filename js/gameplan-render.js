@@ -63,9 +63,9 @@ function _gpMultiFilterValues(field) {
 }
 
 function _gpFormatMultiFilterLabel(label, selected) {
-  if (!selected || selected.length === 0) return `All ${label}`;
+  if (!selected || selected.length === 0) return `Any ${label}`;
   if (selected.length === 1) return selected[0];
-  return `${selected.length} ${label}`;
+  return `${selected.length} ${label} selected`;
 }
 
 function _gpFormatChipMultiLabel(field) {
@@ -78,11 +78,12 @@ function _gpRenderMultiFilterDropdown(field, label, values) {
   const selected = _gpMultiFilterValues(field);
   const selectedSet = new Set(selected);
   const isOpen = _gpOpenMultiFilter === field;
-  const countText = selected.length ? `${selected.length} selected` : "All";
+  const countText = selected.length ? `${selected.length}` : "multi";
   return `
     <div class="gp-multi-filter ${isOpen ? "is-open" : ""}">
       <button class="gp-multi-filter-btn" type="button"
         data-action="toggleGamePlanMultiFilterMenu" data-arg="${escapeHtml(field)}"
+        title="Choose one or more ${escapeHtml(label.toLowerCase())}"
         aria-expanded="${isOpen ? "true" : "false"}">
         <span>${escapeHtml(_gpFormatMultiFilterLabel(label, selected))}</span>
         <span class="gp-multi-filter-count">${escapeHtml(countText)}</span>
@@ -317,12 +318,12 @@ function renderGamePlan() {
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
         data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
-      ${_gpRenderMultiFilterDropdown("type", "Types", types)}
+      ${_gpRenderMultiFilterDropdown("type", "Play Types", types)}
       <select id="gpFilterFormation" data-onchange="updateGamePlanFilter" data-arg="formation" data-pass="value">
         <option value="">All Formations</option>
         ${formations.map((f) => `<option value="${escapeHtml(f)}" ${f === _gpFilters.formation ? "selected" : ""}>${escapeHtml(f)}</option>`).join("")}
       </select>
-      ${_gpRenderMultiFilterDropdown("personnel", "Personnel", personnel)}
+      ${_gpRenderMultiFilterDropdown("personnel", "Personnel Groups", personnel)}
       <button class="btn btn-sm btn-secondary" data-action="toggleGamePlanAdvancedFilters"
         title="Toggle advanced filters">
         ⚙️ Advanced${advBadge > 0 ? ` <span class="gp-adv-badge">${advBadge}</span>` : ""}
