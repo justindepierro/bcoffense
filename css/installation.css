@@ -17,7 +17,7 @@
   background: var(--gradient-dark);
   border-radius: var(--radius-lg);
   padding: 24px 28px;
-  color: white;
+  color: var(--color-text-inverse);
   margin-bottom: 20px;
   flex-wrap: wrap;
   gap: var(--space-md);
@@ -64,7 +64,7 @@
   z-index: var(--z-base);
   font-size: var(--font-size-lg);
   font-weight: 700;
-  color: white;
+  color: var(--color-text-inverse);
 }
 .install-overall-label {
   font-size: var(--font-size-xs);
@@ -1115,7 +1115,7 @@
 .sirp-title {
   font-size: var(--font-size-h1);
   font-weight: 700;
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 }
 .sirp-date {
   font-size: var(--font-size-xs);

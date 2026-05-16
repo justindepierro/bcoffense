@@ -26,14 +26,14 @@
   border: 2px solid var(--color-text);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--color-white);
+  background: var(--color-surface);
   box-shadow: var(--shadow-xs);
 }
 
 .category-header {
   padding: 8px 12px;
   font-weight: 700;
-  color: white;
+  color: var(--color-text-inverse);
   text-align: center;
   font-size: var(--font-size-sm);
 }
@@ -141,7 +141,7 @@
 .callsheet-play .remove-play {
   opacity: 0;
   background: var(--color-danger);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-round);
   width: 18px;
@@ -180,7 +180,7 @@
 /* Wristband number badge in call sheet */
 .wristband-num {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
   padding: 1px 5px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-2xs);
@@ -190,7 +190,7 @@
 
 .wristband-badge {
   background: var(--color-info);
-  color: white;
+  color: var(--color-text-inverse);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-2xs);
@@ -341,7 +341,7 @@
 }
 .cs-toggle-group.page-toggle .cs-toggle.active {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 .cs-toggle-group.orientation-toggle .cs-toggle {
   background: var(--color-white);
@@ -349,7 +349,7 @@
 }
 .cs-toggle-group.orientation-toggle .cs-toggle.active {
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 /* Call Sheet Display Panel (legacy, kept for script/wristband panels) */
@@ -371,11 +371,7 @@
   gap: 12px;
   padding: 10px 12px;
   margin-bottom: 8px;
-  background: linear-gradient(
-    180deg,
-    var(--color-white) 0%,
-    var(--color-bg-light) 100%
-  );
+  background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
@@ -411,7 +407,7 @@
   padding: 8px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  background: var(--color-white);
+  background: var(--color-surface-raised);
 }
 
 .cs-tool-group-label {
@@ -434,11 +430,7 @@
   font-weight: 600;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    180deg,
-    var(--color-white) 0%,
-    var(--color-bg-light) 100%
-  );
+  background: var(--color-surface);
   color: var(--color-text-muted);
   cursor: pointer;
   white-space: nowrap;
@@ -451,11 +443,7 @@
 }
 @media (hover: hover) {
   .cs-tool-btn:hover {
-    background: linear-gradient(
-      180deg,
-      var(--color-primary-light) 0%,
-      var(--color-white) 100%
-    );
+    background: var(--color-primary-light);
     border-color: var(--color-primary);
     color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-light);
@@ -485,11 +473,7 @@
   margin-bottom: 8px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: linear-gradient(
-    180deg,
-    var(--color-white) 0%,
-    var(--color-bg-light) 100%
-  );
+  background: var(--color-surface);
   box-shadow: var(--shadow-xs);
   overflow: hidden;
 }
@@ -552,8 +536,8 @@
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   overflow: hidden;
-  background: var(--color-white);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.06);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
 }
 .cs-unified-header {
   display: flex;
@@ -561,7 +545,7 @@
   align-items: center;
   padding: 8px 12px;
   background: var(--gradient-dark);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   cursor: pointer;
   user-select: none;
   font-size: var(--font-size-sm);
@@ -580,11 +564,7 @@
 }
 @media (hover: hover) {
   .cs-unified-header:hover {
-    background: linear-gradient(
-      135deg,
-      var(--color-primary) 0%,
-      var(--color-primary-dark) 100%
-    );
+    background: var(--color-primary-dark);
   }
 }
 
@@ -600,7 +580,7 @@
   padding: 3px 5px;
   border: 1px solid var(--color-white-alpha-20);
   border-radius: var(--radius-sm);
-  background: rgba(255, 255, 255, 0.08);
+  background: var(--color-white-alpha-10);
 }
 
 .cs-preset-label {
@@ -616,8 +596,8 @@
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   border: 1px solid var(--color-white-alpha-20);
-  background: rgba(255, 255, 255, 0.12);
-  color: var(--color-white);
+  background: var(--color-white-alpha-15);
+  color: var(--color-text-inverse);
   cursor: pointer;
   min-width: 156px;
 }
@@ -627,7 +607,7 @@
   background: var(--color-white-alpha-20);
 }
 .cs-preset-select option {
-  background: var(--color-white);
+  background: var(--color-surface);
   color: var(--color-text);
 }
 .cs-preset-save-btn {
@@ -638,7 +618,7 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   line-height: 1;
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   transition: background var(--transition-fast);
 }
 @media (hover: hover) {
@@ -649,11 +629,7 @@
 
 .cs-unified-content {
   padding: 10px 12px;
-  background: linear-gradient(
-    180deg,
-    var(--color-bg-light) 0%,
-    var(--color-white) 100%
-  );
+  background: var(--color-surface);
 }
 .cs-unified-content.collapsed {
   display: none;
@@ -747,11 +723,7 @@
   padding: 5px 8px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  background: linear-gradient(
-    180deg,
-    var(--color-white) 0%,
-    var(--color-bg-light) 100%
-  );
+  background: var(--color-surface);
   color: var(--color-text);
   font-size: var(--font-size-2xs);
   font-weight: 600;
@@ -787,11 +759,7 @@
     var(--color-primary) 55%,
     var(--color-border-light)
   );
-  background: linear-gradient(
-    180deg,
-    var(--color-primary-light) 0%,
-    var(--color-white) 100%
-  );
+  background: var(--color-primary-light);
   box-shadow: 0 0 0 1px
     color-mix(in srgb, var(--color-primary) 25%, transparent);
 }
@@ -807,11 +775,7 @@
   padding: 8px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: linear-gradient(
-    180deg,
-    var(--color-bg-light) 0%,
-    var(--color-white) 100%
-  );
+  background: var(--color-surface-raised);
 }
 
 .cs-border-panel-head {
@@ -1237,7 +1201,7 @@
   align-items: center;
   gap: 4px;
   background: var(--color-info);
-  color: white;
+  color: var(--color-text-inverse);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
   font-size: var(--font-size-xs);
@@ -1245,7 +1209,7 @@
 .cs-loaded-wb-clear {
   background: none;
   border: none;
-  color: white;
+  color: var(--color-text-inverse);
   cursor: pointer;
   margin-left: 4px;
   font-size: var(--font-size-base);
@@ -2559,7 +2523,7 @@
 
 .pat-btn-import-cs {
   background: var(--color-info) !important;
-  color: white !important;
+  color: var(--color-text-inverse) !important;
   border-color: var(--color-info) !important;
 }
 @media (hover: hover) {
@@ -2574,17 +2538,13 @@
 }
 .cs-scouting-btn.cs-scouting-active {
   background: var(--color-danger) !important;
-  color: white !important;
-  box-shadow: 0 0 0 2px rgba(220, 53, 69, 0.3);
+  color: var(--color-text-inverse) !important;
+  box-shadow: 0 0 0 2px var(--color-danger-alpha-30);
 }
 
 /* Scouting badge per category */
 .cs-scouting-badge {
-  background: linear-gradient(
-    135deg,
-    var(--color-warning-light),
-    var(--color-accent-light)
-  );
+  background: var(--color-warning-light);
   padding: 5px 10px;
   font-size: var(--font-size-xs);
   display: flex;
@@ -2863,19 +2823,19 @@
   justify-content: space-between;
   padding: 14px 18px;
   background: var(--color-primary, #667eea);
-  color: white;
+  color: var(--color-text-inverse);
   flex-shrink: 0;
 }
 .constraint-panel-header h3 {
   margin: 0;
   font-size: 1rem;
   font-weight: 700;
-  color: white;
+  color: var(--color-text-inverse);
 }
 .cr-close-btn {
   background: none;
   border: none;
-  color: white;
+  color: var(--color-text-inverse);
   font-size: 1.5rem;
   cursor: pointer;
   line-height: 1;
@@ -3172,14 +3132,7 @@
   width: var(--fill-width, 0%);
   height: 100%;
   border-radius: 7px;
-  background: var(
-    --fill-color,
-    linear-gradient(
-      90deg,
-      var(--color-primary, #667eea),
-      var(--color-accent, #764ba2)
-    )
-  );
+  background: var(--fill-color, var(--color-primary));
   transition: width var(--transition-normal, 0.25s) ease;
   min-width: 2px;
 }
@@ -3547,7 +3500,7 @@
 .gp-scope-btn.gp-scope-active {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .gp-drawer-filter-toggle {
   display: inline-flex;
@@ -3675,7 +3628,7 @@
 .gp-chip.gp-chip-active {
   background: var(--color-accent);
   border-color: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .gp-chip.gp-chip-dim {
   opacity: 0.45;
@@ -3809,7 +3762,7 @@
   font-weight: 600;
   line-height: 1.4;
   background: var(--gp-chip-bg, var(--color-bg-light));
-  color: #fff;
+  color: var(--color-text-inverse);
   text-shadow: 0 1px 0 rgba(0, 0, 0, 0.25);
   max-width: 100%;
   white-space: nowrap;
@@ -3847,12 +3800,12 @@
 body.gp-drag-active .hash-column {
   outline: 2px dashed var(--color-accent);
   outline-offset: -3px;
-  background: rgba(255, 200, 0, 0.06);
+  background: var(--color-warning-alpha-06);
 }
 body.gp-drag-active .hash-column.gp-drag-over {
   outline-color: var(--color-success);
   outline-style: solid;
-  background: rgba(40, 200, 100, 0.12);
+  background: var(--color-success-alpha-15);
 }
 
 /* =============================================================================
@@ -3872,7 +3825,7 @@ body.gp-drag-active .hash-column.gp-drag-over {
   border-right: none;
   border-radius: var(--radius-md) 0 0 var(--radius-md);
   background: var(--color-accent);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-family: var(--font-sans);
   font-size: var(--font-size-xs);
   font-weight: 600;
@@ -3935,7 +3888,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .gp-drawer-toggle-active.btn {
   background: var(--color-accent) !important;
   border-color: var(--color-accent) !important;
-  color: #fff !important;
+  color: var(--color-text-inverse) !important;
 }
 
 @media (max-width: 600px) {

@@ -375,7 +375,7 @@
 }
 .ob-plays-table th {
   background: var(--color-dark);
-  color: white;
+  color: var(--color-text-inverse);
   padding: 6px 8px;
   text-align: left;
   position: sticky;

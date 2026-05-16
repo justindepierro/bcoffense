@@ -580,7 +580,7 @@
     font-family:
       "Arial Narrow", "Liberation Sans Narrow", var(--font-sans) !important;
     font-stretch: condensed;
-    letter-spacing: -0.015em;
+    letter-spacing: 0;
     white-space: nowrap;
     overflow: hidden;
     max-width: 100%;
@@ -614,21 +614,21 @@
 
   .print-play--compact {
     font-size: 7px;
-    letter-spacing: -0.018em;
+    letter-spacing: 0;
   }
 
   .print-play--dense {
     font-size: 6.7px;
-    letter-spacing: -0.022em;
+    letter-spacing: 0;
   }
 
   .print-play--micro {
     font-size: 6.35px;
-    letter-spacing: -0.028em;
+    letter-spacing: 0;
   }
 
   .print-play--micro .print-play-text {
-    letter-spacing: -0.03em;
+    letter-spacing: 0;
   }
 
   .print-play .cs-line-call {
@@ -649,7 +649,7 @@
   }
 
   .print-play .cs-one-word-call {
-    letter-spacing: -0.02em;
+    letter-spacing: 0;
   }
 
   .print-play.tempo-huddle {
@@ -710,7 +710,7 @@
   }
   .print-cs-cols-2 .print-play {
     font-size: 10px;
-    letter-spacing: -0.01em;
+    letter-spacing: 0;
     line-height: 1.08;
     padding: 1px 1.5px;
   }
@@ -745,7 +745,7 @@
   }
   .print-cs-cols-4 .print-play {
     font-size: 6.5px;
-    letter-spacing: -0.025em;
+    letter-spacing: 0;
   }
   .print-cs-cols-4 .print-play--compact {
     font-size: 6.2px;

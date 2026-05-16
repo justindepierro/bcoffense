@@ -31,10 +31,11 @@
   justify-content: space-between;
   gap: var(--space-md);
   padding: var(--space-md);
-  background: var(--color-bg-light);
-  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
+  box-shadow: var(--shadow-xs);
 }
 
 .gp-header-meta {
@@ -99,7 +100,7 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-lighter);
+  background: var(--color-surface-raised);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   margin-bottom: var(--space-md);
@@ -273,7 +274,7 @@
   align-items: center;
   gap: var(--space-xs);
   padding: var(--space-xs) var(--space-sm);
-  background: var(--color-bg-input);
+  background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
   cursor: grab;
@@ -293,7 +294,7 @@
 }
 
 .gp-play-row.is-selected {
-  background: var(--color-primary-light, rgba(59, 130, 246, 0.12));
+  background: var(--color-primary-light);
   border-color: var(--color-primary);
 }
 
@@ -345,8 +346,8 @@
 }
 
 .gp-box {
-  background: var(--color-bg-light);
-  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   display: flex;
   flex-direction: column;
@@ -357,20 +358,20 @@
 .gp-box.is-drop-target {
   outline: 2px dashed var(--color-primary);
   outline-offset: -4px;
-  background: var(--color-primary-light, rgba(59, 130, 246, 0.08));
+  background: var(--color-primary-light);
 }
 
 /* Holding box — special always-on-top container for untyped tagged plays */
 .gp-box-holding {
   grid-column: 1 / -1;
-  background: var(--color-warning-light, #fff8e1);
-  border: 1px dashed var(--color-warning, #f59e0b);
+  background: var(--color-warning-light);
+  border: 1px dashed var(--color-warning);
 }
 .gp-box-holding .gp-box-header {
   background: transparent;
 }
 .gp-box-holding .gp-box-title span:first-child {
-  color: var(--color-warning, #b45309);
+  color: var(--color-warning);
 }
 
 .gp-box-header {
@@ -587,10 +588,10 @@
   transition: width var(--transition-fast);
 }
 .gp-box-progress.is-met .gp-box-progress-bar {
-  background: var(--color-success, #16a34a);
+  background: var(--color-success);
 }
 .gp-box-progress.is-over .gp-box-progress-bar {
-  background: var(--color-warning, #f59e0b);
+  background: var(--color-warning);
 }
 .gp-box-progress-label {
   position: absolute;
@@ -705,7 +706,7 @@
 
 /* Holding accent override (warning color) */
 .gp-box-holding {
-  --gp-box-accent: var(--color-warning, #f59e0b);
+  --gp-box-accent: var(--color-warning);
 }
 
 /* Defensive match-up filter chips in gameplan toolbar */
@@ -733,7 +734,7 @@
 .gp-matchup-chip.is-on {
   background: var(--color-primary);
   border-color: var(--color-primary);
-  color: var(--color-white, #fff);
+  color: var(--color-text-inverse);
 }
 
 /* Inline matchup badges next to play call */
@@ -798,7 +799,7 @@
 .gp-adv-badge {
   display: inline-block;
   background: var(--color-primary);
-  color: var(--color-white, #fff);
+  color: var(--color-text-inverse);
   border-radius: var(--radius-pill);
   font-size: 10px;
   padding: 1px 6px;
@@ -832,7 +833,7 @@
 /* Per-box note */
 .gp-box-note {
   padding: 6px 12px;
-  background: var(--color-warning-light, rgba(245, 158, 11, 0.08));
+  background: var(--color-warning-alpha-06);
   border-bottom: 1px solid var(--color-border-light);
   font-size: var(--font-size-sm);
   color: var(--color-text);
@@ -841,7 +842,7 @@
   transition: background var(--transition-fast);
 }
 .gp-box-note:hover {
-  background: var(--color-warning-light, rgba(245, 158, 11, 0.15));
+  background: var(--color-warning-alpha-12);
 }
 
 /* Reorder up/down buttons */
@@ -883,7 +884,7 @@
   align-items: center;
   justify-content: center;
   min-width: 0;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: var(--font-size-micro);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -1046,7 +1047,7 @@
 }
 .gp-chip-clear:hover {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .gp-chip-clear .gp-chip-x {
   color: inherit;
@@ -1143,7 +1144,7 @@ body.gp-dragging-from-box .gp-trash-zone {
 }
 .gp-trash-zone.is-active {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
   transform: scale(1.02);
 }
 
@@ -1177,7 +1178,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   align-items: center;
   justify-content: center;
   min-width: 0;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: 8px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -1187,13 +1188,13 @@ body.gp-dragging-from-box .gp-trash-zone {
   padding: 0 3px;
 }
 .gp-hash-left {
-  background: var(--color-info, #2563eb);
+  background: var(--color-info);
 }
 .gp-hash-middle {
   background: var(--color-text-muted);
 }
 .gp-hash-right {
-  background: var(--color-success, #16a34a);
+  background: var(--color-success);
 }
 .gp-hash-bar-unset {
   flex: 0 0 auto;
@@ -1238,7 +1239,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   stroke: var(--color-success);
 }
 .gp-health-good {
-  stroke: var(--color-info, #2563eb);
+  stroke: var(--color-info);
 }
 .gp-health-warn {
   stroke: var(--color-warning);
@@ -1282,7 +1283,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   border-left-color: var(--color-success);
 }
 .gp-health-detail-summary.gp-health-good {
-  border-left-color: var(--color-info, #2563eb);
+  border-left-color: var(--color-info);
 }
 .gp-health-detail-summary.gp-health-warn {
   border-left-color: var(--color-warning);
@@ -1333,7 +1334,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   background: var(--color-success);
 }
 .gp-health-row-fill.gp-health-good {
-  background: var(--color-info, #2563eb);
+  background: var(--color-info);
 }
 .gp-health-row-fill.gp-health-warn {
   background: var(--color-warning);
@@ -2008,15 +2009,15 @@ body.gp-dragging-from-box .gp-trash-zone {
   color: var(--color-text-muted);
 }
 .gp-cmx-cool {
-  background: rgba(37, 99, 235, 0.15);
-  color: var(--color-info, #2563eb);
+  background: var(--color-info-alpha-12);
+  color: var(--color-info);
 }
 .gp-cmx-warm {
-  background: rgba(245, 158, 11, 0.25);
+  background: var(--color-warning-alpha-25);
   color: var(--color-warning);
 }
 .gp-cmx-hot {
-  background: rgba(220, 38, 38, 0.3);
+  background: var(--color-danger-alpha-30);
   color: var(--color-danger);
 }
 .gp-cmx-total {
@@ -2076,13 +2077,13 @@ body.gp-dragging-from-box .gp-trash-zone {
   font-size: var(--font-size-xs);
 }
 .gp-tm-ok {
-  background: rgba(22, 163, 74, 0.08);
+  background: var(--color-success-alpha-15);
 }
 .gp-tm-warn {
-  background: rgba(245, 158, 11, 0.12);
+  background: var(--color-warning-alpha-12);
 }
 .gp-tm-low {
-  background: rgba(220, 38, 38, 0.12);
+  background: var(--color-danger-light);
 }
 .gp-tm-label {
   font-weight: 600;
@@ -2150,7 +2151,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   background: var(--color-bg-input);
 }
 .gp-tm-dd-blitz.gp-tm-warn {
-  background: rgba(245, 158, 11, 0.25);
+  background: var(--color-warning-alpha-25);
   color: var(--color-warning);
   font-weight: 700;
 }
@@ -2165,7 +2166,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-md);
   margin: 0 0 var(--space-sm);
-  background: var(--color-primary-light, rgba(59, 130, 246, 0.12));
+  background: var(--color-primary-light);
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-md);
   color: var(--color-text);
@@ -2198,7 +2199,7 @@ body.gp-dragging-from-box .gp-trash-zone {
 }
 .gp-spotlight-clear:hover {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* When a box matches the spotlight: glow ring + lift */
@@ -2206,7 +2207,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
   box-shadow:
-    0 0 0 4px rgba(59, 130, 246, 0.15),
+    0 0 0 4px var(--color-navy-alpha-12),
     var(--shadow-md);
   position: relative;
   z-index: 2;
@@ -2226,16 +2227,16 @@ body.gp-dragging-from-box .gp-trash-zone {
 
 /* Individual play that matches the spotlight inside a matching box */
 .gp-box-play.is-spotlit {
-  background: var(--color-primary-light, rgba(59, 130, 246, 0.12)) !important;
+  background: var(--color-primary-light) !important;
   border-left: 3px solid var(--color-primary);
   animation: gp-spotlight-pulse 1.5s ease-out 1;
 }
 @keyframes gp-spotlight-pulse {
   0% {
-    background: rgba(59, 130, 246, 0.45);
+    background: var(--color-navy-alpha-20);
   }
   100% {
-    background: var(--color-primary-light, rgba(59, 130, 246, 0.12));
+    background: var(--color-primary-light);
   }
 }
 @media (prefers-reduced-motion: reduce) {
@@ -2290,7 +2291,7 @@ body.gp-dragging-from-box .gp-trash-zone {
 }
 .gp-info-note {
   padding: var(--space-xs) var(--space-md);
-  background: var(--color-warning-light, rgba(245, 158, 11, 0.12));
+  background: var(--color-warning-alpha-12);
   border-radius: var(--radius-sm);
   margin-bottom: var(--space-sm);
   font-size: var(--font-size-sm);
@@ -2349,7 +2350,7 @@ body.gp-dragging-from-box .gp-trash-zone {
 }
 .gp-info-chip-count {
   background: var(--gp-info-accent, var(--color-primary));
-  color: #fff;
+  color: var(--color-text-inverse);
   font-weight: 700;
   padding: 0 6px;
   border-radius: var(--radius-pill);

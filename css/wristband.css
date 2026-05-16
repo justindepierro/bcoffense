@@ -313,7 +313,7 @@
 }
 .checkbox-group label.checked {
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
 }
 @media (hover: hover) {
   .checkbox-group label.checked:hover {
@@ -399,8 +399,8 @@
 }
 
 .card-tab.active {
-  background: var(--color-white);
-  border-bottom-color: white;
+  background: var(--color-surface);
+  border-bottom-color: var(--color-surface);
   color: var(--color-primary);
 }
 .card-tab .card-count {
@@ -414,7 +414,7 @@
 .add-card-btn {
   padding: 8px 12px;
   background: var(--color-success);
-  color: white;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;
@@ -443,7 +443,7 @@
   gap: 8px;
   margin-bottom: 12px;
   padding: 8px 12px;
-  background: var(--gradient-stats);
+  background: var(--color-primary);
   border-radius: var(--radius-md);
   flex-wrap: wrap;
   align-items: center;
@@ -458,7 +458,7 @@
   min-width: 50px;
 }
 .wb-stats-bar .stat-item.run {
-  background: rgba(40, 167, 69, 0.3);
+  background: var(--color-success-alpha-25);
 }
 .wb-stats-bar .stat-item.pass {
   background: var(--color-navy-alpha-35);
@@ -472,7 +472,7 @@
 .wb-stats-bar .stat-value {
   font-size: var(--font-size-md);
   font-weight: bold;
-  color: white;
+  color: var(--color-text-inverse);
 }
 
 /* Wristband Toolbar */
@@ -519,18 +519,14 @@
   justify-content: space-between;
   align-items: center;
   padding: 10px 12px;
-  background: var(--gradient-stats);
-  color: white;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
   cursor: pointer;
   user-select: none;
 }
 @media (hover: hover) {
   .wb-sort-header:hover {
-    background: linear-gradient(
-      135deg,
-      var(--color-primary) 0%,
-      var(--color-secondary) 100%
-    );
+    background: var(--color-primary-hover);
   }
 }
 
@@ -965,7 +961,7 @@
   height: 20px;
   border-radius: 50%;
   background: var(--color-primary);
-  color: white;
+  color: var(--color-text-inverse);
   font-size: var(--font-size-2xs);
   font-weight: 700;
   flex-shrink: 0;
