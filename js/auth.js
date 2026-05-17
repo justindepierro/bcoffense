@@ -24,13 +24,13 @@
       "offensebuilder",
       "dashboard",
     ],
-    player: ["dashboard", "script", "wristband", "callsheet"],
+    player: ["playbook", "dashboard", "script", "wristband", "callsheet"],
   };
 
   const AUTH_ROLE_DEFAULT_TAB = {
     admin: "playbook",
     coach: "playbook",
-    player: "dashboard",
+    player: "playbook",
   };
 
   const READ_ONLY_ALLOWED_ACTIONS = new Set([
@@ -62,6 +62,7 @@
     "pullCloudBackup",
     "testCloudSyncConnection",
     "clearPbSearch",
+    "clearFilters",
     "clearAllFilters",
     "clearAllScriptFilters",
     "clearCsPickerFilters",
@@ -93,6 +94,8 @@
     "runConstraintCheck",
     "selectTendenciesOpponent",
     "selectPlaybookRow",
+    "sortPlaybook",
+    "toggleSortDir",
     "copyPlayName",
     "dashOpenCallSheetCategory",
     "showGamePlanBoxInfo",
@@ -246,6 +249,7 @@
     if (isAdminUser()) return true;
     if (el.closest("#authLoginOverlay")) return true;
     if (el.dataset.authAllowInput === "true") return true;
+    if (el.closest(".pb-chip-group")) return true;
     if (el.type === "hidden") return true;
     if (el.type === "file") return false;
     if (el.dataset.field || el.dataset.authEditInput === "true") return false;
@@ -282,7 +286,7 @@
 
     if (currentAuthUser.role === "player") {
       if (el.dataset.authPlayerHide === "true") return true;
-      if (el.closest(".pb-controls-row.pb-chip-row, .pb-print-panel, .cr-panel")) return true;
+      if (el.closest(".pb-print-panel, .cr-panel")) return true;
     }
 
     return false;

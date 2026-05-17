@@ -518,6 +518,11 @@ document.addEventListener("DOMContentLoaded", () => {
       const row = e.target.closest("tr[data-idx]");
       if (!row) return;
       const rowIdx = parseInt(row.dataset.idx, 10);
+      if (typeof isAdminUser === "function" && !isAdminUser()) {
+        selectPlaybookRow(rowIdx);
+        e.stopPropagation();
+        return;
+      }
       if (typeof openPlayEditor === "function") {
         openPlayEditor(rowIdx);
       }
@@ -717,11 +722,14 @@ function _showPlaybookRowContextMenu(e, filteredIdx) {
   const play = filteredPlays[filteredIdx];
   if (!play) return;
   const masterIdx = plays.indexOf(play);
-  const menu = [
-    { label: "✏️ Edit Play", action: () => openPlayEditor(filteredIdx) },
-    { label: "📋 Copy Play Name", action: () => copyPlayName(play.play) },
-  ];
-  if (typeof addToScript === "function") {
+  const canEditPlaybook = typeof isAdminUser !== "function" || isAdminUser();
+  const menu = [{ label: "📋 Copy Play Name", action: () => copyPlayName(play.play) }];
+
+  if (canEditPlaybook && typeof openPlayEditor === "function") {
+    menu.unshift({ label: "✏️ Edit Play", action: () => openPlayEditor(filteredIdx) });
+  }
+
+  if (canEditPlaybook && typeof addToScript === "function") {
     menu.push({
       label: "📝 Add to Script",
       action: () => {
@@ -732,10 +740,12 @@ function _showPlaybookRowContextMenu(e, filteredIdx) {
       },
     });
   }
-  menu.push({
-    label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan",
-    action: () => togglePlaybookGamePlan(filteredIdx),
-  });
+  if (canEditPlaybook && typeof togglePlaybookGamePlan === "function") {
+    menu.push({
+      label: play.opponent ? "⭐ Remove from Game Plan" : "⭐ Add to Game Plan",
+      action: () => togglePlaybookGamePlan(filteredIdx),
+    });
+  }
   showContextMenu(e, menu);
 }
 
