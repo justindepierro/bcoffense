@@ -1,0 +1,4 @@
+AUTH_SESSION_SECRET=replace-with-a-long-random-string
+AUTH_ADMIN_PASSWORD_SHA256=sha256-of-admin-colon-password
+AUTH_COACH_PASSWORD_SHA256=sha256-of-coach-colon-password
+AUTH_PLAYER_PASSWORD_SHA256=sha256-of-player-colon-password

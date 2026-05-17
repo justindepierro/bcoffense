@@ -1,11 +1,4 @@
 (function () {
-  const AUTH_SESSION_KEY = "_bcAuthSession";
-  const AUTH_USERS = {
-    admin: { password: "goeagles2026", role: "admin", label: "Admin" },
-    coach: { password: "eaglescoach2026", role: "coach", label: "Coach" },
-    player: { password: "eaglesplayer2026", role: "player", label: "Player" },
-  };
-
   const AUTH_ROLE_TABS = {
     admin: [
       "playbook",
@@ -164,44 +157,40 @@
     /sort/i,
   ];
 
-  let currentAuthUser = readAuthSession();
+  let currentAuthUser = null;
+  let authReady = false;
   let authApplyTimer = null;
   let lastBlockedAt = 0;
 
-  if (!currentAuthUser && document.body) {
+  if (document.body) {
     document.body.classList.add("auth-locked");
   }
 
-  function readAuthSession() {
+  function normalizeAuthUser(user) {
+    if (!user || typeof user !== "object") return null;
+    const role = String(user.role || "").toLowerCase();
+    if (!AUTH_ROLE_TABS[role]) return null;
+    return {
+      username: String(user.username || role),
+      role,
+      label: user.label || role.charAt(0).toUpperCase() + role.slice(1),
+      loginAt: user.loginAt || "",
+      expiresAt: user.expiresAt || "",
+    };
+  }
+
+  async function fetchAuthSession() {
     try {
-      const raw = localStorage.getItem(AUTH_SESSION_KEY);
-      const session = raw ? JSON.parse(raw) : null;
-      if (!session || !AUTH_USERS[session.username]) return null;
-      const user = AUTH_USERS[session.username];
-      if (user.role !== session.role) return null;
-      return {
-        username: session.username,
-        role: user.role,
-        label: user.label,
-        loginAt: session.loginAt || new Date().toISOString(),
-      };
+      const response = await fetch("/auth/me", {
+        credentials: "same-origin",
+        headers: { Accept: "application/json" },
+      });
+      if (!response.ok) return null;
+      const data = await response.json();
+      return normalizeAuthUser(data.user);
     } catch (_err) {
       return null;
     }
-  }
-
-  function writeAuthSession(username) {
-    const user = AUTH_USERS[username];
-    const session = {
-      username,
-      role: user.role,
-      loginAt: new Date().toISOString(),
-    };
-    localStorage.setItem(AUTH_SESSION_KEY, JSON.stringify(session));
-    currentAuthUser = {
-      ...session,
-      label: user.label,
-    };
   }
 
   function isAdminUser() {
@@ -388,36 +377,66 @@
     const usernameEl = overlay.querySelector("#authUsername");
     const passwordEl = overlay.querySelector("#authPassword");
     const errorEl = overlay.querySelector("#authLoginError");
-    overlay.querySelector("#authLoginForm").addEventListener("submit", (e) => {
+    overlay.querySelector("#authLoginForm").addEventListener("submit", async (e) => {
       e.preventDefault();
-      const username = usernameEl.value.trim().toLowerCase();
-      const password = passwordEl.value;
-      const user = AUTH_USERS[username];
-      if (!user || user.password !== password) {
-        errorEl.textContent = "Invalid username or password.";
+      errorEl.textContent = "Checking login...";
+      try {
+        const response = await fetch("/auth/login", {
+          method: "POST",
+          credentials: "same-origin",
+          headers: {
+            "Accept": "application/json",
+            "Content-Type": "application/json",
+            "X-BC-Auth-Mode": "json",
+          },
+          body: JSON.stringify({
+            username: usernameEl.value.trim().toLowerCase(),
+            password: passwordEl.value,
+          }),
+        });
+        const data = await response.json().catch(() => ({}));
+        if (!response.ok || !data.user) {
+          throw new Error(data.error || "Invalid username or password.");
+        }
+        currentAuthUser = normalizeAuthUser(data.user);
+        authReady = true;
+        overlay.remove();
+        applyRoleUi();
+        showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+        if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
+      } catch (err) {
+        errorEl.textContent = err.message || "Login failed.";
         passwordEl.value = "";
         passwordEl.focus();
-        return;
       }
-      writeAuthSession(username);
-      overlay.remove();
-      document.body.classList.remove("auth-locked");
-      applyRoleUi();
-      showToast(`Logged in as ${user.label}`, { type: "success" });
-      if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
     });
     requestAnimationFrame(() => usernameEl.focus());
   }
 
-  function logoutAuth() {
-    localStorage.removeItem(AUTH_SESSION_KEY);
+  async function logoutAuth() {
+    try {
+      await fetch("/auth/logout", {
+        method: "POST",
+        credentials: "same-origin",
+        headers: { "X-BC-Auth-Mode": "json" },
+      });
+    } catch (_err) {
+      // Continue with local lockout even if the network is unavailable.
+    }
     currentAuthUser = null;
+    authReady = true;
     applyRoleUi();
-    showLoginOverlay();
+    showLoginOverlay("Logged out.");
   }
 
   function handleBlockedInteraction(e) {
     if (e.target.closest("#authLoginOverlay")) return;
+
+    if (!authReady) {
+      e.preventDefault();
+      e.stopImmediatePropagation();
+      return;
+    }
 
     if (!currentAuthUser) {
       e.preventDefault();
@@ -445,14 +464,22 @@
     }
   }
 
+  async function initServerAuth() {
+    currentAuthUser = await fetchAuthSession();
+    authReady = true;
+    if (!currentAuthUser) {
+      showLoginOverlay("Secure login required.");
+    }
+    applyRoleUi();
+  }
+
   document.addEventListener("click", handleBlockedInteraction, true);
   document.addEventListener("change", handleBlockedInteraction, true);
   document.addEventListener("input", handleBlockedInteraction, true);
   document.addEventListener("submit", handleBlockedInteraction, true);
 
   document.addEventListener("DOMContentLoaded", () => {
-    if (!currentAuthUser) showLoginOverlay();
-    applyRoleUi();
+    initServerAuth();
     const observer = new MutationObserver(scheduleApplyRoleUi);
     observer.observe(document.body, { childList: true, subtree: true });
   });

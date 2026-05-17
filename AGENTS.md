@@ -7,11 +7,11 @@
 
 ## Project Overview
 
-**BCOffense** is a football practice management PWA (Progressive Web App) for building practice scripts, wristbands, call sheets, defensive tendency reports, and game plans. It runs entirely client-side with no backend — data lives in `localStorage`, playbook data is imported via CSV, and the app is served from GitHub Pages.
+**BCOffense** is a football practice management PWA (Progressive Web App) for building practice scripts, wristbands, call sheets, defensive tendency reports, and game plans. The core app runs client-side — data lives in `localStorage`, playbook data is imported via CSV, and Cloudflare Pages Functions provide a lightweight username/password auth gate for the deployed site.
 
 - **Repo:** `justindepierro/bcoffense` on GitHub
 - **Stack:** Vanilla HTML / CSS / JS — zero build tools, no bundler, no npm, no TypeScript
-- **Hosting:** GitHub Pages (static)
+- **Hosting:** Cloudflare Pages (static app + Pages Functions auth); GitHub Pages can still serve static builds but is not the secure entry point
 - **Offline:** Service Worker (`sw.js`) with stale-while-revalidate caching
 - **Entry point:** `index.html` (single-page app, all tabs exist in the DOM)
 
@@ -105,6 +105,9 @@ js/
   app.js                ← Shared global state only
 
 icons/                  ← PWA icons (192px, 512px)
+functions/              ← Cloudflare Pages Functions auth middleware and endpoints
+_routes.json            ← Cloudflare Pages Function route config protecting every route
+CLOUDFLARE_AUTH.md      ← Cloudflare deployment and secret setup notes
 ```
 
 ---
@@ -594,7 +597,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v421)
+**Cache name:** `bcoffense-vN` (currently v422)
 
 **Strategy:**
 
@@ -665,7 +668,8 @@ refactor: Code restructuring, no behavior change
 - `storage.js` owns storage keys, migrations, backup/restore state, storage info data, and draft persistence helpers.
 - `storage-ui.js` owns backup export/import UI and the storage info modal.
 - `cloud-sync.js` owns optional GitHub-backed complete backup push/pull sync.
-- `auth.js` owns simple local login and role-based UI restrictions.
+- `auth.js` owns client-side role UI after Cloudflare `/auth/me` confirms the server session.
+- `functions/` owns Cloudflare Pages server-side login, signed session cookies, and route protection.
 - `playbook-collections.js` owns collection CRUD and collection-related UI.
 - `playbook-print.js` owns playbook print workflows.
 - `playbook-editor.js` owns play edit/create modal behavior.

@@ -1,3 +1,5 @@
 *.backup
 .DS_Store
 .tmp_*.py
+.dev.vars
+.wrangler/
