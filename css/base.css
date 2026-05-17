@@ -395,4 +395,7 @@ textarea:focus {
   .custom-modal-overlay {
     backdrop-filter: none;
   }
+  .startup-loader__spinner {
+    animation: none !important;
+  }
 }

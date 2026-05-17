@@ -10,12 +10,72 @@ body {
   line-height: 1.5;
   min-height: 100vh;
 }
+body.app-booting {
+  overflow: hidden;
+}
+body.app-booting .skip-link,
+body.app-booting .app-header,
+body.app-booting #uploadSection,
+body.app-booting #mainApp {
+  visibility: hidden;
+}
 h1 {
   text-align: center;
   margin-bottom: 0;
   color: var(--color-text);
   font-weight: 700;
   letter-spacing: 0;
+}
+
+/* Initial startup cover. Present in HTML so saved-session restore does not flash. */
+.startup-loader {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-skip-link);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--space-lg);
+  background: var(--color-primary-dark);
+  color: var(--color-text-inverse);
+  opacity: 1;
+  transition:
+    opacity var(--transition-normal),
+    visibility var(--transition-normal);
+}
+.startup-loader.is-hiding {
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+}
+.startup-loader__content {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-md);
+  text-align: center;
+}
+.startup-loader__brand {
+  font-size: var(--font-size-h1);
+  font-weight: 800;
+  letter-spacing: 0;
+}
+.startup-loader__status {
+  color: var(--color-white-alpha-80);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+.startup-loader__spinner {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-round);
+  border: 3px solid var(--color-white-alpha-20);
+  border-top-color: var(--color-accent);
+  animation: startupLoaderSpin 0.8s linear infinite;
+}
+@keyframes startupLoaderSpin {
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 /* ============ App Header ============ */

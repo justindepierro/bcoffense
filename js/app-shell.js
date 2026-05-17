@@ -1,5 +1,42 @@
 // App shell runtime helpers: theme, chrome, global shortcuts, and page-level listeners.
 
+// ── Startup loading cover ──
+function setStartupLoadingMessage(message) {
+  const el = document.getElementById("startupLoaderStatus");
+  if (el && message) el.textContent = message;
+}
+
+function finishStartupLoading(opts = {}) {
+  if (window.__startupLoaderFinished) return;
+  window.__startupLoaderFinished = true;
+
+  const loader = document.getElementById("startupLoader");
+  const reveal = () => {
+    document.body.classList.remove("app-booting");
+    document.body.classList.add("app-ready");
+    if (!loader) return;
+    if (opts.error) {
+      setStartupLoadingMessage("Startup hit an error. Showing the app anyway.");
+    }
+    loader.classList.add("is-hiding");
+    loader.setAttribute("aria-hidden", "true");
+    setTimeout(() => loader.remove(), 300);
+  };
+
+  const delay = Number.isFinite(opts.delay) ? opts.delay : 80;
+  setTimeout(() => {
+    requestAnimationFrame(() => requestAnimationFrame(reveal));
+  }, Math.max(0, delay));
+}
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    if (document.body.classList.contains("app-booting")) {
+      finishStartupLoading({ delay: 0 });
+    }
+  }, 6000);
+});
+
 // ── Dark mode toggle ──
 function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
