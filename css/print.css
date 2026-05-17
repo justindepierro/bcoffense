@@ -518,6 +518,24 @@
     background: var(--color-white);
   }
 
+  .cs-print-page {
+    width: 100%;
+    box-sizing: border-box;
+    break-after: page;
+    page-break-after: always;
+  }
+
+  .cs-print-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body[data-print-mode="callsheet"] .callsheet-print .cs-print-title {
+    display: block !important;
+    height: auto !important;
+    overflow: visible !important;
+  }
+
   .print-callsheet-grid {
     display: flex;
     width: 100%;

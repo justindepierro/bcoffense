@@ -2399,6 +2399,7 @@ async function printCallSheet() {
 const CS_PRINT_DEFAULTS = {
   paperSize: "letter",       // "letter" | "legal" | "tabloid"
   orientation: "portrait",   // "portrait" | "landscape"
+  pages: "both",             // "both" | "current" | "front" | "back"
   columns: 3,                // 2 | 3 | 4
   margin: "normal",          // "tight" | "normal" | "wide"
 };
@@ -2418,9 +2419,22 @@ function _csApplyPrintSmartDefaults() {
   return setCallSheetPrintOptions({
     paperSize: "letter",
     orientation: "portrait",
+    pages: "both",
     columns: 2,
     margin: "normal",
   });
+}
+
+function _csNormalizePrintPages(pages) {
+  if (pages === "both" || pages === "front" || pages === "back") return pages;
+  return "current";
+}
+
+function _csGetPrintPages(pages) {
+  const mode = _csNormalizePrintPages(pages);
+  if (mode === "both") return ["front", "back"];
+  if (mode === "front" || mode === "back") return [mode];
+  return [normalizeCallSheetPage(callSheetSettings.currentPage)];
 }
 
 function _csPrintMarginValue(orientation, margin) {
@@ -2464,6 +2478,15 @@ async function openCallSheetPrintModal() {
               </select>
             </div>
             <div class="gp-print-row">
+              <label>Pages</label>
+              <select id="csPrintPages" title="Front first, then back for two-sided printing">
+                <option value="both" ${_csNormalizePrintPages(o.pages) === "both" ? "selected" : ""}>Front + Back (2-sided)</option>
+                <option value="current" ${_csNormalizePrintPages(o.pages) === "current" ? "selected" : ""}>Current page only</option>
+                <option value="front" ${_csNormalizePrintPages(o.pages) === "front" ? "selected" : ""}>Front only</option>
+                <option value="back" ${_csNormalizePrintPages(o.pages) === "back" ? "selected" : ""}>Back only</option>
+              </select>
+            </div>
+            <div class="gp-print-row">
               <label>Columns</label>
               <select id="csPrintColumns" title="Fewer columns = larger, more legible text">
                 <option value="2" ${o.columns === 2 ? "selected" : ""}>2 columns (largest text)</option>
@@ -2480,7 +2503,7 @@ async function openCallSheetPrintModal() {
               </select>
             </div>
             <p class="cs-print-hint" style="margin:10px 0 0;font-size:12px;color:var(--color-text-muted);">
-              💡 <strong>2 columns + portrait</strong> gives the most legible plays. Use 4 columns + landscape if you need everything on one page.
+              💡 <strong>Front + Back</strong> prints two pages in order. Turn on two-sided printing in the print dialog to laminate one sheet.
             </p>
           </div>
         </div>
@@ -2509,6 +2532,7 @@ async function openCallSheetPrintModal() {
       const opts = setCallSheetPrintOptions({
         paperSize: overlay.querySelector("#csPrintPaper").value,
         orientation: overlay.querySelector("#csPrintOrientation").value,
+        pages: overlay.querySelector("#csPrintPages").value,
         columns: parseInt(overlay.querySelector("#csPrintColumns").value, 10) || 3,
         margin: overlay.querySelector("#csPrintMargin").value,
       });
@@ -2529,38 +2553,28 @@ function _csRunPrint(opts) {
     const container = document.getElementById("callSheetPrint");
     const content = document.getElementById("callSheetPrintContent");
 
-    // Get current page categories (respect custom order)
-    const page = callSheetSettings.currentPage;
-    const categories = getCallSheetCategoriesForPage(page);
-    const pageTitle =
-      page === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
-
     const orientation = opts.orientation === "landscape" ? "landscape" : "portrait";
     const columns = [2, 3, 4].includes(opts.columns) ? opts.columns : 3;
     const orientClass = orientation === "landscape" ? "print-landscape" : "print-portrait";
     const colsClass = `print-cs-cols-${columns}`;
+    const pagesToPrint = _csGetPrintPages(opts.pages);
 
     // Hoist display options once — avoids re-reading checkboxes per play
     const printOptions = getCallSheetDisplayOptions();
 
     // Build print HTML
-    let html = `<div class="${orientClass} ${colsClass}">`;
     const teamName = getTeamName() + " " + new Date().getFullYear();
-    html += `<h1 class="cs-print-title">${escapeHtml(teamName)} - ${pageTitle}</h1>`;
-    html += '<div class="print-callsheet-grid">';
-
-    const columnGroups = buildCallSheetColumns(categories, columns);
-
-    columnGroups.forEach((column) => {
-      html += '<div class="print-column">';
-      column.forEach((cat) => {
-        const data = callSheet[cat.id] || { left: [], right: [] };
-        html += renderPrintCategory(cat, data, printOptions);
-      });
-      html += "</div>";
-    });
-
-    html += "</div></div>";
+    const html = pagesToPrint
+      .map((page) =>
+        renderCallSheetPrintPage(page, {
+          teamName,
+          columns,
+          orientClass,
+          colsClass,
+          printOptions,
+        }),
+      )
+      .join("");
 
     content.innerHTML = html;
     container.classList.remove("hidden");
@@ -2573,7 +2587,12 @@ function _csRunPrint(opts) {
     );
 
     setTimeout(() => {
-      const pageLabel = page === "front" ? "Front" : "Back";
+      const pageLabel =
+        pagesToPrint.length > 1
+          ? "Front-Back"
+          : pagesToPrint[0] === "front"
+            ? "Front"
+            : "Back";
       const restoreTitle = setPrintTitle("Call Sheet", pageLabel);
       let cleaned = false;
       const cleanup = () => {
@@ -2606,6 +2625,30 @@ function _csRunPrint(opts) {
       type: "error",
     });
   }
+}
+
+function renderCallSheetPrintPage(page, opts) {
+  const safePage = normalizeCallSheetPage(page);
+  const categories = getCallSheetCategoriesForPage(safePage);
+  const pageTitle =
+    safePage === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
+  const columnGroups = buildCallSheetColumns(categories, opts.columns);
+  let html = `<section class="cs-print-page ${opts.orientClass} ${opts.colsClass}" data-cs-print-page="${safePage}">`;
+
+  html += `<h1 class="cs-print-title">${escapeHtml(opts.teamName)} - ${pageTitle}</h1>`;
+  html += '<div class="print-callsheet-grid">';
+
+  columnGroups.forEach((column) => {
+    html += '<div class="print-column">';
+    column.forEach((cat) => {
+      const data = callSheet[cat.id] || { left: [], right: [] };
+      html += renderPrintCategory(cat, data, opts.printOptions);
+    });
+    html += "</div>";
+  });
+
+  html += "</div></section>";
+  return html;
 }
 
 /**
