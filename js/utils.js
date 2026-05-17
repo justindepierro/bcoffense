@@ -1315,6 +1315,105 @@ function debounce(fn, wait = 150) {
   };
 }
 
+// ============ Lightweight Performance Instrumentation ============
+const perfMonitor = (() => {
+  const samples = [];
+  const MAX_SAMPLES = 120;
+  const SLOW_MS = 32;
+
+  function enabled() {
+    try {
+      return (
+        localStorage.getItem("bcoPerf") === "1" ||
+        new URLSearchParams(window.location.search).has("perf")
+      );
+    } catch (_e) {
+      return false;
+    }
+  }
+
+  function record(name, durationMs, meta = {}) {
+    if (!enabled() || typeof performance === "undefined") return null;
+    const sample = {
+      name,
+      durationMs: Math.round(durationMs * 100) / 100,
+      at: new Date().toISOString(),
+      ...meta,
+    };
+    samples.push(sample);
+    if (samples.length > MAX_SAMPLES) samples.shift();
+    if (sample.durationMs >= SLOW_MS) {
+      console.debug("[perf]", sample.name, sample.durationMs + "ms", meta);
+    }
+    return sample;
+  }
+
+  function measure(name, fn, meta = {}) {
+    if (!enabled() || typeof performance === "undefined") return fn();
+    const startedAt = performance.now();
+    try {
+      const result = fn();
+      if (result && typeof result.then === "function") {
+        return result.finally(() => {
+          record(name, performance.now() - startedAt, meta);
+        });
+      }
+      record(name, performance.now() - startedAt, meta);
+      return result;
+    } catch (err) {
+      record(name, performance.now() - startedAt, { ...meta, error: true });
+      throw err;
+    }
+  }
+
+  function getSamples(name = "") {
+    return name ? samples.filter((sample) => sample.name === name) : [...samples];
+  }
+
+  function clear() {
+    samples.length = 0;
+  }
+
+  function report() {
+    const grouped = getSamples().reduce((acc, sample) => {
+      const row = acc[sample.name] || {
+        name: sample.name,
+        count: 0,
+        totalMs: 0,
+        maxMs: 0,
+      };
+      row.count += 1;
+      row.totalMs += sample.durationMs;
+      row.maxMs = Math.max(row.maxMs, sample.durationMs);
+      acc[sample.name] = row;
+      return acc;
+    }, {});
+    const rows = Object.values(grouped).map((row) => ({
+      name: row.name,
+      count: row.count,
+      avgMs: Math.round((row.totalMs / row.count) * 100) / 100,
+      maxMs: Math.round(row.maxMs * 100) / 100,
+    }));
+    console.table(rows);
+    return rows;
+  }
+
+  return {
+    get enabled() {
+      return enabled();
+    },
+    record,
+    measure,
+    getSamples,
+    clear,
+    report,
+  };
+})();
+
+if (typeof window !== "undefined") {
+  window.perfMonitor = perfMonitor;
+}
+
 // ============ RAF Render Coalescing ============
 /**
  * Create a render function that coalesces multiple calls within the same frame
@@ -1337,7 +1436,10 @@ function createRAFRenderer(renderFn) {
       const callThis = lastThis;
       lastArgs = null;
       lastThis = null;
-      renderFn.apply(callThis, callArgs);
+      const label = `render:${renderFn.name || "anonymous"}`;
+      perfMonitor.measure(label, () => renderFn.apply(callThis, callArgs), {
+        args: callArgs.length,
+      });
     });
   };
 }

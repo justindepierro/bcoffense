@@ -156,6 +156,14 @@ table.sortable th {
   align-items: center;
   justify-content: center;
   overflow: hidden;
+  text-align: center;
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+}
+.pb-editor-image-preview.is-loading {
+  background: var(--color-primary-light);
+  border-color: var(--color-primary);
 }
 .pb-editor-image-preview img {
   max-width: 100%;
@@ -165,6 +173,13 @@ table.sortable th {
 .pb-editor-image-placeholder {
   color: var(--color-text-muted);
   font-size: var(--font-size-sm);
+  padding: var(--space-sm);
+  line-height: 1.35;
+}
+.pb-editor-image-placeholder strong {
+  display: block;
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
 }
 .pb-editor-image-actions {
   flex: 1;

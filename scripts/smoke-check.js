@@ -67,9 +67,98 @@ function checkIndexReferences() {
   console.log(`index references ok (${refs.length} assets)`);
 }
 
+function checkCssGuardrails() {
+  const files = walk("css").filter((file) => file.endsWith(".css"));
+  files.forEach((file) => {
+    const source = read(file);
+    const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "");
+    let depth = 0;
+    let minDepth = 0;
+    for (const ch of withoutComments) {
+      if (ch === "{") depth += 1;
+      else if (ch === "}") depth -= 1;
+      minDepth = Math.min(minDepth, depth);
+    }
+    if (depth !== 0 || minDepth < 0) {
+      fail(`${file} has unbalanced CSS braces`);
+    }
+    if (/letter-spacing:\s*-\d/i.test(source)) {
+      fail(`${file} uses negative letter spacing`);
+    }
+    if (/font-size:\s*(?:clamp\(|[^;]*vw)/i.test(source)) {
+      fail(`${file} scales font size with viewport width`);
+    }
+  });
+  console.log(`css guardrails ok (${files.length} files)`);
+}
+
+function attrValue(tag, name) {
+  const match = tag.match(new RegExp(`\\s${name}=(["'])(.*?)\\1`, "i"));
+  return match ? match[2].trim() : "";
+}
+
+function stripTags(html) {
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, "")
+    .replace(/<style[\s\S]*?<\/style>/gi, "")
+    .replace(/<[^>]+>/g, "")
+    .replace(/&nbsp;/g, " ")
+    .trim();
+}
+
+function checkAccessibilityBasics() {
+  const html = read("index.html");
+  if (/\son[a-z]+=/i.test(html)) {
+    fail("inline event handler attributes found in index.html");
+  }
+
+  const ids = [...html.matchAll(/\sid=(["'])(.*?)\1/g)].map((match) => match[2]);
+  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+  if (duplicateIds.length) {
+    fail(`duplicate ids in index.html: ${[...new Set(duplicateIds)].join(", ")}`);
+  }
+
+  const unnamedButtons = [];
+  [...html.matchAll(/<button\b([\s\S]*?)>([\s\S]*?)<\/button>/gi)].forEach((match) => {
+    const tag = `<button${match[1]}>`;
+    const name =
+      stripTags(match[2]) ||
+      attrValue(tag, "aria-label") ||
+      attrValue(tag, "title");
+    if (!name) unnamedButtons.push(tag.replace(/\s+/g, " ").slice(0, 120));
+  });
+  if (unnamedButtons.length) {
+    fail(`buttons without accessible names: ${unnamedButtons.join(" | ")}`);
+  }
+
+  const imagesWithoutAlt = [...html.matchAll(/<img\b[^>]*>/gi)]
+    .map((match) => match[0])
+    .filter((tag) => !/\salt=(["']).*?\1/i.test(tag));
+  if (imagesWithoutAlt.length) {
+    fail(`images without alt text: ${imagesWithoutAlt.map((tag) => tag.slice(0, 120)).join(" | ")}`);
+  }
+
+  console.log("accessibility basics ok");
+}
+
+function checkCacheBusters() {
+  const html = read("index.html");
+  const stamps = [
+    ...html.matchAll(/(?:src|href)="(?:js|css)\/[^"?]+\.(?:js|css)\?v=(\d+)"/g),
+  ].map((match) => match[1]);
+  const unique = [...new Set(stamps)];
+  if (unique.length !== 1) {
+    fail(`index.html has inconsistent asset cache busters: ${unique.join(", ")}`);
+  }
+  console.log(`cache busters ok (v${unique[0] || "unknown"})`);
+}
+
 checkJsSyntax();
 checkServiceWorkerAssets();
 checkIndexReferences();
+checkCssGuardrails();
+checkAccessibilityBasics();
+checkCacheBusters();
 
 if (process.exitCode) process.exit(process.exitCode);
 console.log("smoke-check passed");

@@ -62,6 +62,10 @@ function importCompleteBackup(event) {
     try {
       const backup = safeJSONParse(e.target.result, null);
       if (!backup) throw new Error("Invalid JSON");
+      const validation = storageManager.validateBackup(backup);
+      if (!validation.valid) {
+        throw new Error(validation.errors.join(" "));
+      }
 
       if (await storageManager.restoreAllData(backup)) {
         let restoredImages = 0;
@@ -100,8 +104,16 @@ function importCompleteBackup(event) {
   event.target.value = "";
 }
 
-function showStorageInfo() {
+async function showStorageInfo() {
   const info = storageManager.getStorageInfo();
+  let imageStats = null;
+  if (window.playImages && typeof window.playImages.stats === "function") {
+    try {
+      imageStats = await window.playImages.stats();
+    } catch (err) {
+      console.warn("Image storage stats failed:", err);
+    }
+  }
 
   const friendlyNames = {
     playbook: "Playbook",
@@ -148,11 +160,28 @@ function showStorageInfo() {
     const countStr = counts[key] !== undefined ? ` (${counts[key]} items)` : "";
     itemsHtml += `<tr><td class="si-td">${escapeHtml(name)}${escapeHtml(countStr)}</td><td class="si-td si-td-right">${escapeHtml(sizeStr)}</td></tr>`;
   });
+  if (imageStats && imageStats.count > 0) {
+    itemsHtml += `<tr><td class="si-td">Play Images (${imageStats.count} images)</td><td class="si-td si-td-right">${escapeHtml(imageStats.totalSizeFormatted)}</td></tr>`;
+  }
+
+  const pressureClass =
+    info.warningLevel === "danger"
+      ? "si-pressure-danger"
+      : info.warningLevel === "warning"
+        ? "si-pressure-warning"
+        : "si-pressure-ok";
+  const pressureText =
+    info.warningLevel === "danger"
+      ? "Storage is almost full. Export a backup and clear old data soon."
+      : info.warningLevel === "warning"
+        ? "Storage is getting full. Export a backup before adding more data."
+        : "Storage pressure looks normal.";
 
   const body = `
     <div class="si-summary">
       <strong>Total Storage Used:</strong> ${escapeHtml(info.totalSizeFormatted)}
-      <div class="si-hint">localStorage limit is typically 5-10 MB per domain</div>
+      <div class="si-hint">Estimated localStorage budget: ${escapeHtml(info.estimatedQuotaFormatted)}</div>
+      <div class="si-pressure ${pressureClass}">${escapeHtml(pressureText)}</div>
     </div>
     <table class="si-table">
       <thead><tr class="si-thead-row"><th class="si-th">Data Type</th><th class="si-th si-th-right">Size</th></tr></thead>

@@ -1858,6 +1858,44 @@ body.fab-idle .script-display-fab:focus-visible {
   text-decoration: underline;
 }
 
+/* ============ Shared Surface Utilities ============ */
+.surface-panel {
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-xs);
+}
+
+.surface-panel-raised {
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+}
+
+.toolbar-surface {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface-raised);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.control-cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.touch-target {
+  min-width: 40px;
+  min-height: 40px;
+}
+
 /* Cell Popup Extracted Styles */
 .cell-popup-container {
   min-width: 350px;

@@ -120,6 +120,78 @@ const MIGRATIONS = {
   },
 };
 
+function validateBackupPayload(backup) {
+  const result = {
+    valid: true,
+    errors: [],
+    warnings: [],
+    itemCount: 0,
+    imageCount: 0,
+    exportDate: backup && backup.exportDate ? backup.exportDate : "",
+  };
+
+  if (!backup || typeof backup !== "object" || Array.isArray(backup)) {
+    result.valid = false;
+    result.errors.push("Backup must be a JSON object.");
+    return result;
+  }
+
+  const knownKeys = Object.values(STORAGE_KEYS);
+  knownKeys.forEach((key) => {
+    if (!Object.prototype.hasOwnProperty.call(backup, key)) return;
+    const value = backup[key];
+    if (value === undefined) return;
+    result.itemCount += 1;
+    if (typeof value === "string") {
+      try {
+        JSON.parse(value);
+      } catch (_err) {
+        result.valid = false;
+        result.errors.push(`${key} is not valid JSON.`);
+      }
+      return;
+    }
+    try {
+      JSON.stringify(value);
+    } catch (_err) {
+      result.valid = false;
+      result.errors.push(`${key} cannot be serialized.`);
+    }
+  });
+
+  if (Object.prototype.hasOwnProperty.call(backup, "playImages")) {
+    const imageMap = backup.playImages;
+    if (!imageMap || typeof imageMap !== "object" || Array.isArray(imageMap)) {
+      result.valid = false;
+      result.errors.push("playImages must be an object.");
+    } else {
+      const imageEntries = Object.entries(imageMap);
+      result.imageCount = imageEntries.length;
+      const invalidImage = imageEntries
+        .slice(0, 50)
+        .find(([, value]) => typeof value !== "string" || !value.startsWith("data:image/"));
+      if (invalidImage) {
+        result.valid = false;
+        result.errors.push("playImages contains a non-image data URL.");
+      }
+    }
+  }
+
+  if (result.itemCount === 0 && result.imageCount === 0) {
+    result.valid = false;
+    result.errors.push("No BCOffense data was found in the backup.");
+  }
+
+  if (!backup.version) {
+    result.warnings.push("Backup does not include a storage version.");
+  }
+  if (backup.exportDate && Number.isNaN(new Date(backup.exportDate).getTime())) {
+    result.warnings.push("Backup export date could not be read.");
+  }
+
+  return result;
+}
+
 function runMigrations() {
   const saved = parseInt(localStorage.getItem("_storageVersion") || "0", 10);
   if (saved >= STORAGE_VERSION) return;
@@ -138,6 +210,8 @@ function runMigrations() {
 }
 
 const storageManager = {
+  _lastPressureWarningAt: 0,
+
   get(key, defaultValue = null) {
     try {
       const value = localStorage.getItem(key);
@@ -152,6 +226,7 @@ const storageManager = {
   set(key, value) {
     try {
       localStorage.setItem(key, JSON.stringify(value));
+      this.maybeWarnStoragePressure();
       return true;
     } catch (e) {
       console.error(`Error writing ${key} to localStorage:`, e);
@@ -171,6 +246,7 @@ const storageManager = {
 
   getAllData() {
     const data = {
+      app: "BCOffense",
       version: STORAGE_VERSION,
       exportDate: new Date().toISOString(),
     };
@@ -185,22 +261,24 @@ const storageManager = {
     return data;
   },
 
-  async restoreAllData(backup, options = { confirmOverwrite: true }) {
-    if (!backup || typeof backup !== "object") {
-      throw new Error("Invalid backup format");
-    }
+  validateBackup(backup) {
+    return validateBackupPayload(backup);
+  },
 
-    const hasData =
-      backup.playbook || backup.savedScripts || backup.savedWristbands;
-    if (!hasData) {
-      throw new Error("No data found in backup");
+  async restoreAllData(backup, options = { confirmOverwrite: true }) {
+    const validation = this.validateBackup(backup);
+    if (!validation.valid) {
+      throw new Error(validation.errors.join(" "));
     }
 
     if (options.confirmOverwrite) {
+      const warningText = validation.warnings.length
+        ? `\n\nWarnings:\n- ${validation.warnings.join("\n- ")}`
+        : "";
       const msg = `This will replace your current data with the backup from ${backup.exportDate
         ? new Date(backup.exportDate).toLocaleDateString()
         : "unknown date"
-        }. Continue?`;
+        }.\n\nItems: ${validation.itemCount}${validation.imageCount ? `\nImages: ${validation.imageCount}` : ""}${warningText}\n\nContinue?`;
       const ok = await showConfirm(msg, {
         title: "Restore Backup",
         icon: "📥",
@@ -235,12 +313,32 @@ const storageManager = {
       }
     });
 
+    const estimatedQuotaBytes = 5 * 1024 * 1024;
+    const usageRatio = totalSize / estimatedQuotaBytes;
     return {
       totalSize,
       totalSizeFormatted: this.formatBytes(totalSize),
       itemSizes,
       itemCount: Object.keys(itemSizes).length,
+      estimatedQuotaBytes,
+      estimatedQuotaFormatted: this.formatBytes(estimatedQuotaBytes),
+      usageRatio,
+      warningLevel:
+        usageRatio >= 0.9 ? "danger" : usageRatio >= 0.75 ? "warning" : "ok",
     };
+  },
+
+  maybeWarnStoragePressure() {
+    const now = Date.now();
+    if (now - this._lastPressureWarningAt < 10 * 60 * 1000) return;
+    const info = this.getStorageInfo();
+    if (info.warningLevel === "ok") return;
+    this._lastPressureWarningAt = now;
+    const message =
+      info.warningLevel === "danger"
+        ? "Storage is almost full. Export a backup and clear old data soon."
+        : "Storage is getting full. Consider exporting a backup.";
+    showToast(message, { type: "warning", duration: 6000 });
   },
 
   formatBytes(bytes) {

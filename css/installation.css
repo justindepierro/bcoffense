@@ -607,6 +607,25 @@
   text-align: center;
   color: var(--color-text-secondary);
 }
+.si-pressure {
+  margin-top: var(--space-xs);
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.si-pressure-ok {
+  background: var(--color-status-ok-bg);
+  color: var(--color-status-ok-text);
+}
+.si-pressure-warning {
+  background: var(--color-status-warn-bg);
+  color: var(--color-status-warn-text);
+}
+.si-pressure-danger {
+  background: var(--color-status-error-bg);
+  color: var(--color-status-error-text);
+}
 .si-actions {
   margin-top: 20px;
   display: flex;

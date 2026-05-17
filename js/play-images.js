@@ -26,6 +26,7 @@
   const PREFETCH_CONCURRENCY = 4;
   const EXPORT_CONCURRENCY = 3;
   const IMPORT_CONCURRENCY = 3;
+  const MAX_SOURCE_BYTES = 14 * 1024 * 1024;
 
   let _dbPromise = null;
   const _urlCache = new Map(); // sig → object URL
@@ -255,7 +256,9 @@
   async function prefetchAll() {
     const allKeys = await loadKeys();
     const missing = allKeys.filter((sig) => !_urlCache.has(sig));
-    await _withConcurrency(missing, PREFETCH_CONCURRENCY, ensureUrl);
+    await _measure("playImages.prefetchAll", () =>
+      _withConcurrency(missing, PREFETCH_CONCURRENCY, ensureUrl),
+    );
     _emitChange(null);
     return allKeys.length;
   }
@@ -273,43 +276,52 @@
     if (file.type && !file.type.startsWith("image/")) {
       throw new Error("Only image files can be attached");
     }
+    if (file.size > MAX_SOURCE_BYTES) {
+      throw new Error(`Image is too large (${_formatBytes(file.size)}). Use an image under ${_formatBytes(MAX_SOURCE_BYTES)}.`);
+    }
     const maxDim = Math.max(200, Math.min(2000, opts.maxDim || 900));
     const quality = Math.min(0.95, Math.max(0.5, opts.quality || 0.82));
     const mime = opts.mime || "image/jpeg";
 
-    // Decode
-    const bitmap = await _decodeImage(file);
-    const w0 = bitmap.width || bitmap.naturalWidth || 0;
-    const h0 = bitmap.height || bitmap.naturalHeight || 0;
-    if (!w0 || !h0) {
-      if (typeof bitmap.close === "function") bitmap.close();
-      throw new Error("Image dimensions could not be read");
-    }
-    const scale = Math.min(1, maxDim / Math.max(w0, h0));
-    const w = Math.max(1, Math.round(w0 * scale));
-    const h = Math.max(1, Math.round(h0 * scale));
+    return _measure("playImages.compress", async () => {
+      const bitmap = await _decodeImage(file);
+      const w0 = bitmap.width || bitmap.naturalWidth || 0;
+      const h0 = bitmap.height || bitmap.naturalHeight || 0;
+      if (!w0 || !h0) {
+        if (typeof bitmap.close === "function") bitmap.close();
+        throw new Error("Image dimensions could not be read");
+      }
+      const scale = Math.min(1, maxDim / Math.max(w0, h0));
+      const w = Math.max(1, Math.round(w0 * scale));
+      const h = Math.max(1, Math.round(h0 * scale));
 
-    const canvas = document.createElement("canvas");
-    canvas.width = w;
-    canvas.height = h;
-    const ctx = canvas.getContext("2d");
-    if (!ctx) {
-      if (typeof bitmap.close === "function") bitmap.close();
-      throw new Error("Image canvas could not be created");
-    }
-    try {
-      ctx.drawImage(bitmap, 0, 0, w, h);
-    } finally {
-      if (typeof bitmap.close === "function") bitmap.close();
-    }
+      const canvas = document.createElement("canvas");
+      canvas.width = w;
+      canvas.height = h;
+      const ctx = canvas.getContext("2d");
+      if (!ctx) {
+        if (typeof bitmap.close === "function") bitmap.close();
+        throw new Error("Image canvas could not be created");
+      }
+      try {
+        ctx.drawImage(bitmap, 0, 0, w, h);
+      } finally {
+        if (typeof bitmap.close === "function") bitmap.close();
+      }
 
-    return new Promise((resolve, reject) => {
-      canvas.toBlob(
-        (blob) => (blob ? resolve(blob) : reject(new Error("Image encode failed"))),
-        mime,
-        quality,
-      );
-    });
+      const blob = await new Promise((resolve, reject) => {
+        canvas.toBlob(
+          (encoded) => (encoded ? resolve(encoded) : reject(new Error("Image encode failed"))),
+          mime,
+          quality,
+        );
+      });
+      blob.originalSize = file.size || 0;
+      blob.originalName = file.name || "";
+      blob.outputWidth = w;
+      blob.outputHeight = h;
+      return blob;
+    }, { sourceBytes: file.size || 0 });
   }
 
   async function _decodeImage(file) {
@@ -340,16 +352,19 @@
     let done = 0;
     const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : null;
     if (onProgress) onProgress(0, total);
-    await _withConcurrency(allKeys, EXPORT_CONCURRENCY, async (sig) => {
-      const blob = await _get(sig);
-      if (blob) {
-        out[sig] = await _blobToDataURL(blob);
-      } else {
-        _knownKeys.delete(sig);
-      }
-      done += 1;
-      if (onProgress) onProgress(done, total);
-    });
+    await _measure("playImages.exportAll", () =>
+      _withConcurrency(allKeys, EXPORT_CONCURRENCY, async (sig) => {
+        const blob = await _get(sig);
+        if (blob) {
+          out[sig] = await _blobToDataURL(blob);
+        } else {
+          _knownKeys.delete(sig);
+        }
+        done += 1;
+        if (onProgress) onProgress(done, total);
+      }),
+      { count: total },
+    );
     return out;
   }
 
@@ -368,26 +383,90 @@
     let done = 0;
     const onProgress = typeof opts.onProgress === "function" ? opts.onProgress : null;
     if (onProgress) onProgress(0, total);
-    await _withConcurrency(entries, IMPORT_CONCURRENCY, async ([rawSig, dataURL]) => {
-      const sig = _normalizeSig(rawSig);
-      try {
-        if (!sig || typeof dataURL !== "string") return;
-        const blob = await _dataURLToBlob(dataURL);
-        if (blob) {
-          await _put(sig, blob);
-          _revoke(sig);
-          _knownKeys.add(sig);
-          _keysPromise = null;
-          n++;
+    await _measure("playImages.importAll", () =>
+      _withConcurrency(entries, IMPORT_CONCURRENCY, async ([rawSig, dataURL]) => {
+        const sig = _normalizeSig(rawSig);
+        try {
+          if (!sig || typeof dataURL !== "string") return;
+          const blob = await _dataURLToBlob(dataURL);
+          if (blob) {
+            await _put(sig, blob);
+            _revoke(sig);
+            _knownKeys.add(sig);
+            _keysPromise = null;
+            n++;
+          }
+        } finally {
+          done += 1;
+          if (onProgress) onProgress(done, total);
         }
-      } finally {
-        done += 1;
-        if (onProgress) onProgress(done, total);
-      }
-    });
+      }),
+      { count: total },
+    );
     _keysPromise = null;
     _emitChange(null);
     return n;
+  }
+
+  async function stats() {
+    const allKeys = await loadKeys();
+    let totalBytes = 0;
+    let count = 0;
+    await _withConcurrency(allKeys, EXPORT_CONCURRENCY, async (sig) => {
+      const blob = await _get(sig);
+      if (!blob) return;
+      count += 1;
+      totalBytes += blob.size || 0;
+    });
+    return {
+      count,
+      totalBytes,
+      totalSizeFormatted: _formatBytes(totalBytes),
+    };
+  }
+
+  function describeCompression(sourceFile, blob) {
+    const sourceBytes = (sourceFile && sourceFile.size) || blob?.originalSize || 0;
+    const outputBytes = (blob && blob.size) || 0;
+    const savedBytes = Math.max(0, sourceBytes - outputBytes);
+    const savedPct = sourceBytes ? Math.round((savedBytes / sourceBytes) * 100) : 0;
+    return {
+      sourceBytes,
+      outputBytes,
+      savedBytes,
+      savedPct,
+      sourceFormatted: _formatBytes(sourceBytes),
+      outputFormatted: _formatBytes(outputBytes),
+      savedFormatted: _formatBytes(savedBytes),
+      dimensions:
+        blob && blob.outputWidth && blob.outputHeight
+          ? `${blob.outputWidth}×${blob.outputHeight}`
+          : "",
+    };
+  }
+
+  function _formatBytes(bytes) {
+    const value = Number(bytes) || 0;
+    if (value < 1024) return `${value} B`;
+    const units = ["KB", "MB", "GB"];
+    let size = value / 1024;
+    let unitIndex = 0;
+    while (size >= 1024 && unitIndex < units.length - 1) {
+      size /= 1024;
+      unitIndex += 1;
+    }
+    return `${size.toFixed(size >= 10 ? 1 : 2)} ${units[unitIndex]}`;
+  }
+
+  function _measure(name, fn, meta = {}) {
+    if (
+      typeof window !== "undefined" &&
+      window.perfMonitor &&
+      typeof window.perfMonitor.measure === "function"
+    ) {
+      return window.perfMonitor.measure(name, fn, meta);
+    }
+    return fn();
   }
 
   function _blobToDataURL(blob) {
@@ -423,6 +502,8 @@
     loadKeys,
     prefetchAll,
     compress,
+    describeCompression,
+    stats,
     exportAll,
     importAll,
   };

@@ -616,6 +616,19 @@ function _wirePlayEditorImage(play, isNew) {
   if (!sig) return;
 
   const trigger = previewEl.parentElement.querySelector('button[data-target="peImageFile"]');
+  const setImageBusy = (message) => {
+    previewEl.classList.add("is-loading");
+    previewEl.setAttribute("aria-busy", "true");
+    previewEl.innerHTML = `<div class="pb-editor-image-placeholder"><strong>${escapeHtml(message)}</strong></div>`;
+    if (trigger) trigger.disabled = true;
+    if (removeBtn) removeBtn.disabled = true;
+  };
+  const clearImageBusy = () => {
+    previewEl.classList.remove("is-loading");
+    previewEl.removeAttribute("aria-busy");
+    if (trigger) trigger.disabled = false;
+    if (removeBtn) removeBtn.disabled = false;
+  };
   const requestPlaybookRefresh = () => {
     if (typeof requestRenderPlaybook === "function") {
       requestRenderPlaybook();
@@ -644,17 +657,31 @@ function _wirePlayEditorImage(play, isNew) {
     fileInput.value = "";
     if (!file) return;
     try {
+      setImageBusy(`Optimizing ${Math.round((file.size || 0) / 1024)} KB image...`);
       const blob = await window.playImages.compress(file, { maxDim: 900, quality: 0.82 });
       await window.playImages.set(sig, blob);
       await _refreshPreview();
-      showToast(`🖼️ Image added (${Math.round(blob.size / 1024)} KB)`, {
+      clearImageBusy();
+      const summary =
+        typeof window.playImages.describeCompression === "function"
+          ? window.playImages.describeCompression(file, blob)
+          : null;
+      const suffix = summary
+        ? `${summary.outputFormatted}${summary.savedPct ? `, ${summary.savedPct}% smaller` : ""}`
+        : `${Math.round(blob.size / 1024)} KB`;
+      showToast(`Image added (${suffix})`, {
         duration: 2200, type: "success",
       });
       requestPlaybookRefresh();
     } catch (err) {
       // eslint-disable-next-line no-console
       console.warn("Image attach failed:", err);
-      showToast("Could not attach that image.", { type: "error", duration: 3000 });
+      clearImageBusy();
+      await _refreshPreview();
+      showToast(err && err.message ? err.message : "Could not attach that image.", {
+        type: "error",
+        duration: 4000,
+      });
     }
   });
 

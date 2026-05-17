@@ -70,6 +70,17 @@
     display: none !important;
   }
 
+  .print-avoid-break,
+  .surface-panel,
+  .surface-panel-raised,
+  .callsheet-category,
+  .gp-box,
+  .script-item,
+  .pb-card {
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+  }
+
   body[data-print-mode="wristband"] #wristbandPrint {
     display: block !important;
     visibility: visible !important;

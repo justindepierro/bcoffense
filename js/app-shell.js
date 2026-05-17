@@ -327,6 +327,52 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   });
 });
+
+// Runtime accessibility guardrails for generated controls.
+function enhanceRuntimeA11y(root = document) {
+  const scope = root || document;
+  scope
+    .querySelectorAll("[data-action]:not(button):not(a):not(input):not(select):not(textarea)")
+    .forEach((el) => {
+      const action = el.getAttribute("data-action") || "";
+      if (!action || action.endsWith("Overlay") || el.matches("label")) return;
+      if (!el.hasAttribute("role")) el.setAttribute("role", "button");
+      if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+    });
+
+  scope.querySelectorAll("button").forEach((button) => {
+    const name = button.textContent.trim() || button.getAttribute("aria-label") || "";
+    if (name) return;
+    const title = button.getAttribute("title");
+    const action = button.getAttribute("data-action");
+    const label = title || (action ? action.replace(/([A-Z])/g, " $1").trim() : "");
+    if (label) button.setAttribute("aria-label", label);
+  });
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  enhanceRuntimeA11y();
+  let queued = false;
+  const observer = new MutationObserver(() => {
+    if (queued) return;
+    queued = true;
+    requestAnimationFrame(() => {
+      queued = false;
+      enhanceRuntimeA11y();
+    });
+  });
+  observer.observe(document.body, { childList: true, subtree: true });
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const el = e.target.closest && e.target.closest("[data-action]");
+  if (!el || el.matches("button,a,input,select,textarea,label")) return;
+  const action = el.getAttribute("data-action") || "";
+  if (!action || action.endsWith("Overlay")) return;
+  e.preventDefault();
+  el.click();
+});
 // Auto-fade floating action buttons (help / script-display) after idle
 document.addEventListener("DOMContentLoaded", () => {
   const fabs = document.querySelectorAll(".help-fab, .script-display-fab");

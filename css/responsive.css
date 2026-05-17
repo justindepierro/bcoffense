@@ -57,6 +57,41 @@
   }
 }
 
+@media (pointer: coarse) {
+  .btn,
+  .header-action-btn,
+  .cs-tool-btn,
+  .pat-btn,
+  .pb-chip,
+  .pb-coll-btn,
+  .gp-matchup-chip,
+  .cat-cleanup-chip,
+  .card-tab,
+  .add-card-btn,
+  .touch-target {
+    min-height: 44px;
+  }
+
+  .btn-icon {
+    width: 44px;
+    min-width: 44px;
+    height: 44px;
+  }
+
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+  select,
+  textarea {
+    min-height: 44px;
+  }
+
+  .pb-img-badge,
+  .gp-toggle-btn,
+  .callsheet-play .remove-play {
+    min-width: 32px;
+    min-height: 32px;
+  }
+}
+
 /* ============ Responsive Design ============ */
 @media (max-width: 1024px) {
   .script-builder {
@@ -167,6 +202,13 @@
   }
   .pb-print-options-grid {
     grid-template-columns: 1fr 1fr;
+  }
+  .pb-editor-image-row {
+    flex-direction: column;
+  }
+  .pb-editor-image-preview {
+    width: 100%;
+    max-width: 260px;
   }
   .script-actions {
     flex-wrap: wrap;
