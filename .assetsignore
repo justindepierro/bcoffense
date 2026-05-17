@@ -1,0 +1,14 @@
+.dev.vars
+.dev.vars.*
+.git
+.gitignore
+.wrangler
+.DS_Store
+node_modules
+npm-debug.log*
+wrangler.toml
+AGENTS.md
+CLOUDFLARE_AUTH.md
+REFACTOR_ROADMAP.md
+SCRIPT_*.md
+bump-version.sh

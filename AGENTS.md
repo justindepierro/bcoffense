@@ -47,7 +47,7 @@ js/
   storage.js            ← Storage keys, migrations, backup/restore, and draft persistence
   storage-ui.js         ← Storage-facing backup, restore, and storage info UI
   play-images.js        ← IndexedDB play-image storage and backup image import/export
-  cloud-sync.js         ← Optional GitHub-backed complete backup push/pull sync
+  cloud-sync.js         ← Cloudflare-backed complete backup push/pull sync
   auth.js               ← Simple local login and role-based UI restrictions
   vision.js             ← Vision mode UI state
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
@@ -123,7 +123,7 @@ All scripts use `defer` and load in this exact order from index.html:
 4. js/storage.js        ← Storage keys, migrations, backup/restore state, draft persistence
 5. js/storage-ui.js     ← Backup/restore UI and storage info overlays
 6. js/play-images.js    ← IndexedDB play-image storage and backup image import/export
-7. js/cloud-sync.js     ← GitHub-backed complete backup push/pull sync
+7. js/cloud-sync.js     ← Cloudflare-backed complete backup push/pull sync
 8. js/auth.js           ← Simple local login and role-based UI restrictions
 9. js/vision.js
 10. js/team-settings.js
@@ -597,7 +597,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v422)
+**Cache name:** `bcoffense-vN` (currently v423)
 
 **Strategy:**
 
@@ -667,7 +667,7 @@ refactor: Code restructuring, no behavior change
 - `dom-helpers.js` owns shared DOM sanitization, long-press, context menu, and reorder modal helpers.
 - `storage.js` owns storage keys, migrations, backup/restore state, storage info data, and draft persistence helpers.
 - `storage-ui.js` owns backup export/import UI and the storage info modal.
-- `cloud-sync.js` owns optional GitHub-backed complete backup push/pull sync.
+- `cloud-sync.js` owns Cloudflare-backed complete backup push/pull sync.
 - `auth.js` owns client-side role UI after Cloudflare `/auth/me` confirms the server session.
 - `functions/` owns Cloudflare Pages server-side login, signed session cookies, and route protection.
 - `playbook-collections.js` owns collection CRUD and collection-related UI.

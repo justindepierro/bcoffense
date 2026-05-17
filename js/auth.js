@@ -58,6 +58,9 @@
     "closeLoadWristbandModal",
     "closeLoadWbToScriptModal",
     "closeCloudSyncModal",
+    "openCloudSyncModal",
+    "pullCloudBackup",
+    "testCloudSyncConnection",
     "clearPbSearch",
     "clearAllFilters",
     "clearAllScriptFilters",
@@ -123,12 +126,8 @@
     "importBackup",
     "exportCompleteBackup",
     "importCompleteBackup",
-    "openCloudSyncModal",
     "saveCloudSyncSettings",
-    "testCloudSyncConnection",
     "pushCloudBackup",
-    "pullCloudBackup",
-    "clearCloudSyncToken",
     "handleFileUpload",
   ]);
 

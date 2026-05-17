@@ -1,0 +1,7 @@
+name = "bcoffense"
+pages_build_output_dir = "."
+compatibility_date = "2026-05-17"
+
+[[kv_namespaces]]
+binding = "SYNC_KV"
+id = "aa7a47d6139544bc9bb2aef6622c8bb2"
