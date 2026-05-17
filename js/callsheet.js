@@ -365,6 +365,36 @@ function rebuildCallSheetCategoryRegistry() {
   );
 }
 
+function normalizeCallSheetPage(page) {
+  return page === "back" ? "back" : "front";
+}
+
+function normalizeCallSheetSettings(settings = {}) {
+  const defaults = getDefaultCallSheetSettings();
+  const merged = { ...defaults, ...(settings || {}) };
+  const customCategories = merged.customCategories || {};
+
+  return {
+    ...merged,
+    orientation: merged.orientation === "portrait" ? "portrait" : "landscape",
+    currentPage: normalizeCallSheetPage(merged.currentPage),
+    customNames: merged.customNames && typeof merged.customNames === "object"
+      ? merged.customNames
+      : {},
+    customColors: merged.customColors && typeof merged.customColors === "object"
+      ? merged.customColors
+      : {},
+    customCategories: {
+      front: Array.isArray(customCategories.front) ? customCategories.front : [],
+      back: Array.isArray(customCategories.back) ? customCategories.back : [],
+    },
+    loadedWristbandName: merged.loadedWristbandName || "",
+    loadedWristbandPlays: Array.isArray(merged.loadedWristbandPlays)
+      ? merged.loadedWristbandPlays
+      : [],
+  };
+}
+
 function normalizeCallSheetCategoryOrder(order) {
   const defaults = getDefaultCallSheetCategoryOrder();
   const validIds = new Set(CALLSHEET_CATEGORIES.map((cat) => cat.id));
@@ -704,10 +734,20 @@ function initCallSheet() {
       null,
     );
     if (savedSettings) {
-      callSheetSettings = { ...getDefaultCallSheetSettings(), ...savedSettings };
+      callSheetSettings = normalizeCallSheetSettings(savedSettings);
+    } else {
+      callSheetSettings = normalizeCallSheetSettings(callSheetSettings);
     }
+    let settingsRepaired = Boolean(
+      savedSettings &&
+      (savedSettings.currentPage !== callSheetSettings.currentPage ||
+        savedSettings.orientation !== callSheetSettings.orientation),
+    );
     if (callSheetSettings.orientation !== "landscape") {
       callSheetSettings.orientation = "landscape";
+      settingsRepaired = true;
+    }
+    if (settingsRepaired) {
       saveCallSheetSettings();
     }
 
@@ -733,6 +773,12 @@ function initCallSheet() {
     );
     if (savedOrder) {
       csCategoryOrder = normalizeCallSheetCategoryOrder(savedOrder);
+      if (JSON.stringify(savedOrder) !== JSON.stringify(csCategoryOrder)) {
+        storageManager.set(
+          STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER,
+          csCategoryOrder,
+        );
+      }
     }
 
     // Load notes
@@ -1293,8 +1339,11 @@ function getCategoryHeaderTextColor(color) {
 }
 
 function getCallSheetCategoriesForPage(page) {
+  const safePage = normalizeCallSheetPage(page);
   const normalizedOrder = normalizeCallSheetCategoryOrder(csCategoryOrder);
-  return normalizedOrder[page]
+  csCategoryOrder = normalizedOrder;
+
+  return (normalizedOrder[safePage] || [])
     .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
     .filter(Boolean);
 }
@@ -1348,16 +1397,26 @@ function renderCallSheet() {
 
   // Build category columns
   let html = "";
-  const columns = buildCallSheetColumns(categories, 3);
-  html += '<div class="callsheet-columns">';
-  columns.forEach((col) => {
-    html += '<div class="callsheet-column">';
-    col.forEach((cat) => {
-      html += renderCategory(cat, callSheet[cat.id], dupeMap, displayOptions);
+  if (categories.length === 0) {
+    html += `
+      <div class="callsheet-empty-state">
+        <strong>No call sheet categories found.</strong>
+        <span>Reset the layout to restore the default front and back boards.</span>
+        <button class="btn btn-sm btn-primary" data-action="resetCategoryOrder">Reset Layout</button>
+      </div>
+    `;
+  } else {
+    const columns = buildCallSheetColumns(categories, 3);
+    html += '<div class="callsheet-columns">';
+    columns.forEach((col) => {
+      html += '<div class="callsheet-column">';
+      col.forEach((cat) => {
+        html += renderCategory(cat, callSheet[cat.id], dupeMap, displayOptions);
+      });
+      html += '</div>';
     });
     html += '</div>';
-  });
-  html += '</div>';
+  }
 
   // Insert into grid container
   container.innerHTML = html;
@@ -1448,7 +1507,7 @@ function applyCallSheetDisplayState(opts) {
  * Switch between front and back page
  */
 function switchCallSheetPage(page) {
-  callSheetSettings.currentPage = page;
+  callSheetSettings.currentPage = normalizeCallSheetPage(page);
   saveCallSheetSettings();
   renderCallSheet();
 }
@@ -1457,7 +1516,8 @@ function switchCallSheetPage(page) {
  * Toggle orientation
  */
 function setCallSheetOrientation(orient) {
-  callSheetSettings.orientation = orient;
+  callSheetSettings.orientation =
+    orient === "portrait" ? "portrait" : "landscape";
   saveCallSheetSettings();
   renderCallSheet();
 }

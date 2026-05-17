@@ -7,6 +7,23 @@
   padding-bottom: var(--space-xs);
 }
 
+.callsheet-empty-state {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-lg);
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  text-align: center;
+}
+
+.callsheet-empty-state strong {
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+}
+
 .callsheet-columns {
   display: flex;
   gap: 12px;

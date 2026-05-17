@@ -256,6 +256,16 @@ document.addEventListener("click", (e) => {
   }
 });
 
+document.addEventListener("keydown", (e) => {
+  if (e.key !== "Enter" && e.key !== " ") return;
+  const el = e.target.closest(
+    "[data-action='toggleCollapsiblePanel'][role='button']",
+  );
+  if (!el) return;
+  e.preventDefault();
+  toggleCollapsiblePanel(el);
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   const scriptEl = document.getElementById("scriptPlays");
   if (scriptEl) {
