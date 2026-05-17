@@ -60,6 +60,16 @@ When creating the Pages project:
 
 The committed `_routes.json` makes Pages Functions run on every route so static assets stay protected.
 
+## Deploying
+
+Use the safe deploy script:
+
+```bash
+./scripts/deploy-cloudflare.sh
+```
+
+Do not deploy the repo root with `wrangler pages deploy .`. The repo root includes local-only files that should never be uploaded as public static assets.
+
 ## Cloud Sync Storage
 
 The app expects a KV binding named:
