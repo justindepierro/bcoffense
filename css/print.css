@@ -521,6 +521,7 @@
   .cs-print-page {
     width: 100%;
     box-sizing: border-box;
+    padding-top: 0.05in;
     break-after: page;
     page-break-after: always;
   }
@@ -528,12 +529,6 @@
   .cs-print-page:last-child {
     break-after: auto;
     page-break-after: auto;
-  }
-
-  body[data-print-mode="callsheet"] .callsheet-print .cs-print-title {
-    display: block !important;
-    height: auto !important;
-    overflow: visible !important;
   }
 
   .print-callsheet-grid {
@@ -733,6 +728,16 @@
      scale fonts up for legibility. Defaults above are tuned for 3 columns. */
   .print-cs-cols-2 .print-callsheet-grid {
     gap: 7px;
+  }
+  .print-portrait.print-cs-cols-2 {
+    padding-left: 0.04in;
+    padding-right: 0.04in;
+  }
+  .print-portrait.print-cs-cols-2 .print-callsheet-grid {
+    gap: 10px;
+  }
+  .print-portrait.print-cs-cols-2 .print-column {
+    gap: 5px;
   }
   .print-cs-cols-2 .print-category-header {
     font-size: 11.5px;

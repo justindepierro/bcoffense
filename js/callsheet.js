@@ -2563,11 +2563,9 @@ function _csRunPrint(opts) {
     const printOptions = getCallSheetDisplayOptions();
 
     // Build print HTML
-    const teamName = getTeamName() + " " + new Date().getFullYear();
     const html = pagesToPrint
       .map((page) =>
         renderCallSheetPrintPage(page, {
-          teamName,
           columns,
           orientClass,
           colsClass,
@@ -2630,12 +2628,9 @@ function _csRunPrint(opts) {
 function renderCallSheetPrintPage(page, opts) {
   const safePage = normalizeCallSheetPage(page);
   const categories = getCallSheetCategoriesForPage(safePage);
-  const pageTitle =
-    safePage === "front" ? "Call Sheet - Front" : "Call Sheet - Back";
   const columnGroups = buildCallSheetColumns(categories, opts.columns);
   let html = `<section class="cs-print-page ${opts.orientClass} ${opts.colsClass}" data-cs-print-page="${safePage}">`;
 
-  html += `<h1 class="cs-print-title">${escapeHtml(opts.teamName)} - ${pageTitle}</h1>`;
   html += '<div class="print-callsheet-grid">';
 
   columnGroups.forEach((column) => {
