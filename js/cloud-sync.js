@@ -5,9 +5,9 @@
 
   const DEFAULT_SETTINGS = {
     provider: "github",
-    repoFullName: "",
+    repoFullName: "justindepierro/bcoffense-sync",
     branch: "main",
-    path: "bcoffense-sync/backup.json",
+    path: "backup.json",
     autoPullOnStartup: false,
     lastPushAt: "",
     lastPullAt: "",
@@ -19,7 +19,7 @@
     const stored = storageManager.get(STORAGE_KEYS.CLOUD_SYNC_SETTINGS, {});
     const next = { ...DEFAULT_SETTINGS, ...(stored && typeof stored === "object" ? stored : {}) };
     next.provider = "github";
-    next.repoFullName = String(next.repoFullName || "").trim();
+    next.repoFullName = String(next.repoFullName || DEFAULT_SETTINGS.repoFullName).trim();
     next.branch = String(next.branch || "main").trim() || "main";
     next.path = normalizeCloudPath(next.path || DEFAULT_SETTINGS.path);
     next.autoPullOnStartup = Boolean(next.autoPullOnStartup);
@@ -29,7 +29,7 @@
   function saveCloudSyncSettingsObject(settings) {
     const safeSettings = { ...getCloudSyncSettings(), ...(settings || {}) };
     safeSettings.provider = "github";
-    safeSettings.repoFullName = String(safeSettings.repoFullName || "").trim();
+    safeSettings.repoFullName = String(safeSettings.repoFullName || DEFAULT_SETTINGS.repoFullName).trim();
     safeSettings.branch = String(safeSettings.branch || "main").trim() || "main";
     safeSettings.path = normalizeCloudPath(safeSettings.path || DEFAULT_SETTINGS.path);
     safeSettings.autoPullOnStartup = Boolean(safeSettings.autoPullOnStartup);
