@@ -48,6 +48,7 @@ js/
   storage-ui.js         ← Storage-facing backup, restore, and storage info UI
   play-images.js        ← IndexedDB play-image storage and backup image import/export
   cloud-sync.js         ← Optional GitHub-backed complete backup push/pull sync
+  auth.js               ← Simple local login and role-based UI restrictions
   vision.js             ← Vision mode UI state
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
   playbook.js           ← Shared playbook helpers and compatibility surface
@@ -120,77 +121,78 @@ All scripts use `defer` and load in this exact order from index.html:
 5. js/storage-ui.js     ← Backup/restore UI and storage info overlays
 6. js/play-images.js    ← IndexedDB play-image storage and backup image import/export
 7. js/cloud-sync.js     ← GitHub-backed complete backup push/pull sync
-8. js/vision.js
-9. js/team-settings.js
-10. js/playbook.js
-11. js/playbook-collections.js
-12. js/playbook-print.js
-13. js/playbook-editor.js
-14. js/playbook-import.js
-15. js/playbook-export.js
-16. js/playbook-chrome.js
-17. js/playbook-state.js
-18. js/playbook-filters.js
-19. js/playbook-navigation.js
-20. js/playbook-actions.js
-21. js/playbook-render.js
-22. js/playbook-sanitize.js
-23. js/script-state.js
-24. js/script-shared.js
-25. js/script-players.js
-26. js/script-display-options.js
-27. js/script-add.js
-28. js/script-sort.js
-29. js/script-export.js
-30. js/script-available.js
-31. js/script-selection.js
-32. js/script-render.js
-33. js/script-periods.js
-34. js/script-period-sync.js
-35. js/script-smart.js
-36. js/script-storage.js
-37. js/wristband.js
-38. js/wristband-library.js
-39. js/wristband-render.js
-40. js/wristband-cards.js
-41. js/wristband-export.js
-42. js/wristband-search.js
-43. js/wristband-modals.js
-44. js/wristband-cell-popup.js
-45. js/wristband-cell-actions.js
-46. js/wristband-sort.js
-47. js/wristband-storage.js
-48. js/wristband-runtime.js
-49. js/callsheet.js
-50. js/callsheet-categories.js
-51. js/callsheet-metadata.js
-52. js/callsheet-layout.js
-53. js/callsheet-picker-runtime.js
-54. js/callsheet-gameplan-drawer.js
-55. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-56. js/script-vision.js
-57. js/tendencies.js
-58. js/installation.js
-59. js/identity.js
-60. js/offensebuilder.js
-61. js/help.js
-62. js/dashboard.js
-63. js/gameplan.js          ← Must load before all gameplan-* split files
-64. js/gameplan-render.js
-65. js/gameplan-dnd.js
-66. js/gameplan-actions.js
-67. js/gameplan-smart.js
-68. js/gameplan-print.js
-69. js/gameplan-integrations.js
-70. js/gameplan-snapshots.js
-71. js/app-events.js
-72. js/app-shell.js
-73. js/app-session.js
-74. js/app-navigation.js
-75. js/app-module-init.js
-76. js/app-bootstrap.js
-77. js/app-init.js
-78. js/app.js           ← Must be last; shared global state only
+8. js/auth.js           ← Simple local login and role-based UI restrictions
+9. js/vision.js
+10. js/team-settings.js
+11. js/playbook.js
+12. js/playbook-collections.js
+13. js/playbook-print.js
+14. js/playbook-editor.js
+15. js/playbook-import.js
+16. js/playbook-export.js
+17. js/playbook-chrome.js
+18. js/playbook-state.js
+19. js/playbook-filters.js
+20. js/playbook-navigation.js
+21. js/playbook-actions.js
+22. js/playbook-render.js
+23. js/playbook-sanitize.js
+24. js/script-state.js
+25. js/script-shared.js
+26. js/script-players.js
+27. js/script-display-options.js
+28. js/script-add.js
+29. js/script-sort.js
+30. js/script-export.js
+31. js/script-available.js
+32. js/script-selection.js
+33. js/script-render.js
+34. js/script-periods.js
+35. js/script-period-sync.js
+36. js/script-smart.js
+37. js/script-storage.js
+38. js/wristband.js
+39. js/wristband-library.js
+40. js/wristband-render.js
+41. js/wristband-cards.js
+42. js/wristband-export.js
+43. js/wristband-search.js
+44. js/wristband-modals.js
+45. js/wristband-cell-popup.js
+46. js/wristband-cell-actions.js
+47. js/wristband-sort.js
+48. js/wristband-storage.js
+49. js/wristband-runtime.js
+50. js/callsheet.js
+51. js/callsheet-categories.js
+52. js/callsheet-metadata.js
+53. js/callsheet-layout.js
+54. js/callsheet-picker-runtime.js
+55. js/callsheet-gameplan-drawer.js
+56. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+57. js/script-vision.js
+58. js/tendencies.js
+59. js/installation.js
+60. js/identity.js
+61. js/offensebuilder.js
+62. js/help.js
+63. js/dashboard.js
+64. js/gameplan.js          ← Must load before all gameplan-* split files
+65. js/gameplan-render.js
+66. js/gameplan-dnd.js
+67. js/gameplan-actions.js
+68. js/gameplan-smart.js
+69. js/gameplan-print.js
+70. js/gameplan-integrations.js
+71. js/gameplan-snapshots.js
+72. js/app-events.js
+73. js/app-shell.js
+74. js/app-session.js
+75. js/app-navigation.js
+76. js/app-module-init.js
+77. js/app-bootstrap.js
+78. js/app-init.js
+79. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -592,7 +594,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v419)
+**Cache name:** `bcoffense-vN` (currently v420)
 
 **Strategy:**
 
@@ -663,6 +665,7 @@ refactor: Code restructuring, no behavior change
 - `storage.js` owns storage keys, migrations, backup/restore state, storage info data, and draft persistence helpers.
 - `storage-ui.js` owns backup export/import UI and the storage info modal.
 - `cloud-sync.js` owns optional GitHub-backed complete backup push/pull sync.
+- `auth.js` owns simple local login and role-based UI restrictions.
 - `playbook-collections.js` owns collection CRUD and collection-related UI.
 - `playbook-print.js` owns playbook print workflows.
 - `playbook-editor.js` owns play edit/create modal behavior.

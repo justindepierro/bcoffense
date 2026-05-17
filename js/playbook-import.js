@@ -1,4 +1,12 @@
 function showUpload() {
+  if (typeof canManageSettings === "function" && !canManageSettings()) {
+    showToast("Admin access is required for settings and imports.", {
+      type: "warning",
+      duration: 3000,
+    });
+    return;
+  }
+
   document.getElementById("mainApp").classList.add("hidden");
   document.getElementById("uploadSection").classList.remove("hidden");
 

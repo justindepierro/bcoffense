@@ -12,6 +12,11 @@ const TAB_INDEX_MAP = {
 };
 
 function showTab(tabName) {
+  if (typeof canAccessTab === "function" && !canAccessTab(tabName)) {
+    tabName = typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
+    if (typeof canAccessTab === "function" && !canAccessTab(tabName)) return;
+  }
+
   currentActiveTab = tabName;
   if (document.body) document.body.dataset.activeTab = tabName;
 
