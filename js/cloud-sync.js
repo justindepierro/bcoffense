@@ -1,6 +1,8 @@
 (function () {
   const LEGACY_CLOUD_SYNC_TOKEN_KEY = "_bcCloudSyncToken";
   const LEGACY_CLOUD_SYNC_SESSION_TOKEN_KEY = "_bcCloudSyncSessionToken";
+  const CLOUD_SYNC_AUTO_PULL_SESSION_KEY = "_bcCloudSyncAutoPullChecked";
+  const CLOUD_SYNC_AUTO_PULL_APPLIED_KEY = "_bcCloudSyncAutoPullApplied";
   const MAX_KV_BACKUP_BYTES = 25 * 1024 * 1024;
 
   const DEFAULT_SETTINGS = {
@@ -54,6 +56,12 @@
     });
   }
 
+  function getCloudTime(value) {
+    if (!value) return NaN;
+    const timestamp = new Date(value).getTime();
+    return Number.isFinite(timestamp) ? timestamp : NaN;
+  }
+
   function getCurrentRoleLabel() {
     if (typeof getCurrentAuthUser !== "function") return "";
     return getCurrentAuthUser()?.label || "";
@@ -61,6 +69,14 @@
 
   function userCanPushCloudBackup() {
     return typeof isAdminUser !== "function" || isAdminUser();
+  }
+
+  function hasLocalTeamData() {
+    return Object.values(STORAGE_KEYS).some(
+      (key) =>
+        key !== STORAGE_KEYS.CLOUD_SYNC_SETTINGS &&
+        localStorage.getItem(key) !== null,
+    );
   }
 
   function getCloudBackupSummary(backup) {
@@ -283,17 +299,22 @@
     }
   }
 
-  async function restoreCloudBackup(remote) {
+  async function restoreCloudBackup(remote, opts = {}) {
+    const shouldConfirm = opts.confirm !== false;
+    const shouldReload = opts.reload !== false;
+    const shouldNotify = opts.notify !== false;
     const summary = remote.summary;
-    const ok = await showConfirm(
-      `This will replace the data on this device with the cloud backup from ${formatCloudDate(summary.exportDate)}.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nImages: ${summary.imageCount}` : ""}\n\nContinue?`,
-      {
-        title: "Pull Cloud Backup",
-        icon: "☁️",
-        confirmText: "Pull Backup",
-      },
-    );
-    if (!ok) return false;
+    if (shouldConfirm) {
+      const ok = await showConfirm(
+        `This will replace the data on this device with the cloud backup from ${formatCloudDate(summary.exportDate)}.\n\nItems: ${summary.itemCount}${summary.imageCount ? `\nImages: ${summary.imageCount}` : ""}\n\nContinue?`,
+        {
+          title: "Pull Cloud Backup",
+          icon: "☁️",
+          confirmText: "Pull Backup",
+        },
+      );
+      if (!ok) return false;
+    }
 
     if (!(await storageManager.restoreAllData(remote.backup, { confirmOverwrite: false }))) {
       return false;
@@ -324,11 +345,32 @@
       lastRemoteSize: remote.size,
     });
     reloadAppFromStorage();
-    await showModal(
-      `Cloud backup pulled successfully.${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nRefreshing...`,
-      { title: "Cloud Sync", icon: "✅" },
-    );
-    location.reload();
+
+    if (shouldReload) {
+      if (opts.auto) {
+        sessionStorage.setItem(
+          CLOUD_SYNC_AUTO_PULL_APPLIED_KEY,
+          summary.exportDate || remote.updatedAt || new Date().toISOString(),
+        );
+        location.reload();
+        return true;
+      }
+      if (shouldNotify) {
+        await showModal(
+          `Cloud backup pulled successfully.${restoredImages ? `\nImages restored: ${restoredImages}` : ""}${imageWarning}\nRefreshing...`,
+          { title: "Cloud Sync", icon: "✅" },
+        );
+      }
+      location.reload();
+      return true;
+    }
+
+    if (shouldNotify) {
+      showToast(
+        `Cloud backup pulled.${restoredImages ? ` Images restored: ${restoredImages}.` : ""}${imageWarning}`,
+        { type: "success", duration: 4000 },
+      );
+    }
     return true;
   }
 
@@ -359,6 +401,70 @@
           : "no sync yet";
     statusEl.textContent = `Cloudflare sync ready - ${lastText}`;
     statusEl.className = "cloud-sync-status cloud-sync-status-ready";
+  }
+
+  async function autoPullLatestCloudBackup() {
+    if (sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY) === "1") return false;
+    sessionStorage.setItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY, "1");
+
+    const currentUser =
+      typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    if (!currentUser) return false;
+
+    try {
+      const remote = await fetchCloudBackup({ allowMissing: true });
+      if (!remote) return false;
+
+      const settings = getCloudSyncSettings();
+      const remoteTime = getCloudTime(remote.summary.exportDate || remote.updatedAt);
+      const knownTime = getCloudTime(
+        settings.lastRemoteExportDate ||
+        settings.lastPullAt ||
+        settings.lastPushAt,
+      );
+
+      if (!Number.isFinite(remoteTime)) return false;
+      if (Number.isFinite(knownTime) && remoteTime <= knownTime + 500) {
+        saveCloudSyncSettingsObject({
+          lastRemoteExportDate: remote.summary.exportDate,
+          lastRemoteUpdatedAt: remote.updatedAt,
+          lastRemoteSize: remote.size,
+        });
+        return false;
+      }
+
+      if (
+        currentUser.role === "admin" &&
+        !Number.isFinite(knownTime) &&
+        hasLocalTeamData()
+      ) {
+        showToast("Cloud backup available. Open Cloud Sync to pull it onto this admin device.", {
+          type: "info",
+          duration: 5000,
+        });
+        return false;
+      }
+
+      showToast("Pulling latest cloud backup...", { type: "info", duration: 1500 });
+      return restoreCloudBackup(remote, {
+        auto: true,
+        confirm: false,
+        notify: false,
+      });
+    } catch (err) {
+      console.warn("Cloud auto-pull failed:", err);
+      if (err.status !== 401 && err.status !== 404) {
+        showToast(`Cloud auto-pull failed: ${err.message}`, {
+          type: "warning",
+          duration: 5000,
+        });
+      }
+      return false;
+    }
+  }
+
+  function resetCloudSyncAutoPull() {
+    sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_SESSION_KEY);
   }
 
   function openCloudSyncModal() {
@@ -416,6 +522,14 @@
   document.addEventListener("DOMContentLoaded", () => {
     clearLegacyCloudSyncTokens();
     renderCloudSyncStatus();
+    const applied = sessionStorage.getItem(CLOUD_SYNC_AUTO_PULL_APPLIED_KEY);
+    if (applied) {
+      sessionStorage.removeItem(CLOUD_SYNC_AUTO_PULL_APPLIED_KEY);
+      showToast(`Latest cloud backup pulled: ${formatCloudDate(applied)}`, {
+        type: "success",
+        duration: 4000,
+      });
+    }
   });
 
   window.openCloudSyncModal = openCloudSyncModal;
@@ -424,4 +538,6 @@
   window.testCloudSyncConnection = testCloudSyncConnection;
   window.pushCloudBackup = pushCloudBackup;
   window.pullCloudBackup = pullCloudBackup;
+  window.autoPullLatestCloudBackup = autoPullLatestCloudBackup;
+  window.resetCloudSyncAutoPull = resetCloudSyncAutoPull;
 })();

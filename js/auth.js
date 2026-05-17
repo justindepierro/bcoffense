@@ -352,6 +352,15 @@
     }, 50);
   }
 
+  function scheduleCloudAutoPull() {
+    if (!currentAuthUser) return;
+    setTimeout(() => {
+      if (typeof autoPullLatestCloudBackup === "function") {
+        autoPullLatestCloudBackup();
+      }
+    }, 700);
+  }
+
   function showLoginOverlay(message = "") {
     document.getElementById("authLoginOverlay")?.remove();
     document.body.classList.add("auth-locked");
@@ -407,6 +416,7 @@
         applyRoleUi();
         showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
         if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
+        scheduleCloudAutoPull();
       } catch (err) {
         errorEl.textContent = err.message || "Login failed.";
         passwordEl.value = "";
@@ -428,6 +438,9 @@
     }
     currentAuthUser = null;
     authReady = true;
+    if (typeof resetCloudSyncAutoPull === "function") {
+      resetCloudSyncAutoPull();
+    }
     applyRoleUi();
     showLoginOverlay("Logged out.");
   }
@@ -474,6 +487,7 @@
       showLoginOverlay("Secure login required.");
     }
     applyRoleUi();
+    scheduleCloudAutoPull();
   }
 
   document.addEventListener("click", handleBlockedInteraction, true);
