@@ -98,6 +98,7 @@ const STORAGE_KEYS = {
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
   WRISTBAND_FAVORITES: "wristbandFavorites",
   TEAM_ROSTER: "teamRoster",
+  TEAM_NAME: "teamName",
   TEAM_PERSONNEL_PACKAGES: "teamPersonnelPackages",
   TEAM_SWAP_GROUPS: "teamSwapGroups",
   TEAM_ASSIGNMENT_LABELS: "teamAssignmentLabels",
@@ -226,8 +227,17 @@ const storageManager = {
 
   set(key, value) {
     try {
-      localStorage.setItem(key, JSON.stringify(value));
+      const serialized = JSON.stringify(value);
+      const previous = localStorage.getItem(key);
+      localStorage.setItem(key, serialized);
       this.maybeWarnStoragePressure();
+      if (
+        previous !== serialized &&
+        typeof window !== "undefined" &&
+        typeof window.queueCloudAutoPush === "function"
+      ) {
+        window.queueCloudAutoPush(key, "set");
+      }
       return true;
     } catch (e) {
       console.error(`Error writing ${key} to localStorage:`, e);
@@ -242,7 +252,15 @@ const storageManager = {
   },
 
   remove(key) {
+    const hadValue = localStorage.getItem(key) !== null;
     localStorage.removeItem(key);
+    if (
+      hadValue &&
+      typeof window !== "undefined" &&
+      typeof window.queueCloudAutoPush === "function"
+    ) {
+      window.queueCloudAutoPush(key, "remove");
+    }
   },
 
   getAllData() {
