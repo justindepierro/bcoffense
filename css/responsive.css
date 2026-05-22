@@ -146,6 +146,7 @@
     );
   }
 
+  html.is-mobile-screen,
   body.is-mobile-screen {
     background: var(--color-surface);
     overflow-x: hidden;
