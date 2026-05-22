@@ -978,3 +978,135 @@
   border-color: var(--color-primary) !important;
   box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
 }
+
+@media (max-width: 640px) {
+  .wristband-container {
+    gap: 12px;
+  }
+
+  .wristband-plays,
+  .wristband-preview {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .wristband-preview {
+    overflow: visible;
+  }
+
+  .card-tabs {
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    padding-bottom: 6px;
+    scroll-padding-inline: 4px;
+    scroll-snap-type: x proximity;
+  }
+
+  .card-tab,
+  .add-card-btn {
+    flex: 0 0 auto;
+    min-height: 44px;
+    border-radius: var(--radius-md);
+    scroll-snap-align: start;
+  }
+
+  .wristband-card {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    border-width: 1px;
+    overflow: visible;
+  }
+
+  .wristband-grid {
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(42px, auto);
+    height: auto;
+  }
+
+  .wristband-cell {
+    min-height: 42px;
+    padding: 6px 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  .wristband-cell.num-cell {
+    font-size: var(--font-size-sm);
+  }
+
+  .wristband-cell .cell-play {
+    display: flex;
+    max-height: none;
+    white-space: normal;
+    -webkit-line-clamp: unset;
+  }
+
+  .cell-play-text {
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .wristband-cell .remove-cell {
+    display: block;
+    min-width: 24px;
+    min-height: 24px;
+    opacity: 0.8;
+  }
+
+  .wb-toolbar,
+  .wb-toolbar-left,
+  .wb-toolbar-right,
+  .wb-toolbar-group,
+  .wb-sort-toolbar,
+  .wb-sort-actions,
+  .wb-batch-controls,
+  .wb-batch-group {
+    align-items: stretch;
+  }
+
+  .wb-toolbar-left,
+  .wb-toolbar-right,
+  .wb-toolbar-group,
+  .wb-sort-toolbar,
+  .wb-sort-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .wb-toolbar-right .btn,
+  .wb-sort-toolbar .btn,
+  .wb-sort-actions .btn {
+    flex: 1 1 140px;
+  }
+
+  .wb-toolbar-sep {
+    display: none;
+  }
+
+  .wb-stats-bar .stat-item {
+    flex: 1 1 72px;
+  }
+
+  .color-picker,
+  .wb-batch-swatches {
+    flex-wrap: wrap;
+  }
+
+  .color-btn,
+  .wb-batch-swatch {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wb-batch-input,
+  .wb-batch-select {
+    width: 100%;
+    height: 44px;
+  }
+
+  .wb-available-plays {
+    max-height: 360px;
+  }
+}

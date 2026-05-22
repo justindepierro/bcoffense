@@ -3192,8 +3192,32 @@
 }
 
 @media (max-width: 640px) {
+  .script-header-panel {
+    margin-bottom: 12px;
+    padding: 12px;
+    border-radius: var(--radius-md);
+  }
+
+  .script-header-top {
+    display: grid;
+    grid-template-columns: 1fr;
+    gap: 10px;
+    align-items: stretch;
+  }
+
+  .script-title-group,
+  .script-date-group {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .script-date-input {
+    width: 100%;
+  }
+
   .script-builder {
     grid-template-columns: 1fr;
+    gap: 14px;
   }
 
   .play-list {
@@ -3213,6 +3237,18 @@
 
   .play-item {
     grid-template-columns: 34px minmax(0, 1fr);
+  }
+
+  .play-list h3,
+  .script-list h3 {
+    align-items: stretch;
+    gap: 10px;
+  }
+
+  .play-list h3 > span,
+  .script-list h3 > span,
+  #toggleFiltersBtn {
+    width: 100%;
   }
 
   .select-all-label {
@@ -3335,11 +3371,16 @@
 
   .script-actions {
     gap: 10px;
+    bottom: max(8px, env(safe-area-inset-bottom));
   }
 
   .script-actions > .btn,
   .script-actions > .more-tools-wrap {
     flex: 1 1 180px;
+  }
+
+  .script-container {
+    padding: 8px;
   }
 
   .more-tools-wrap {

@@ -58,7 +58,9 @@
   background: var(--gradient-dark);
 }
 .auth-login-card {
-  width: min(100%, 380px);
+  width: min(380px, calc(100vw - var(--space-xl) - var(--space-md)));
+  max-width: 100%;
+  box-sizing: border-box;
   display: grid;
   gap: var(--space-md);
   padding: var(--space-xl);
@@ -92,6 +94,7 @@
 }
 .auth-login-card input {
   width: 100%;
+  box-sizing: border-box;
   padding: 11px 14px;
   border: 2px solid var(--color-border-input);
   border-radius: var(--radius-md);
@@ -116,6 +119,22 @@
   font-size: var(--font-size-xs);
   font-weight: 700;
   white-space: nowrap;
+}
+
+@media (max-width: 480px) {
+  .auth-login-overlay {
+    align-items: stretch;
+    padding: max(16px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(16px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
+  .auth-login-card {
+    align-self: center;
+    width: 100%;
+    padding: var(--space-lg);
+  }
 }
 [data-auth-readonly="true"] [data-auth-hidden="true"],
 [data-auth-role="player"] [data-auth-player-hide="true"] {

@@ -9,6 +9,7 @@ body {
   color: var(--color-text);
   line-height: 1.5;
   min-height: 100vh;
+  min-height: calc(var(--app-vh, 1vh) * 100);
 }
 body.app-booting {
   overflow: hidden;
@@ -205,7 +206,7 @@ h1 {
   padding: 0 20px;
   border-bottom: 1px solid var(--color-border-light);
   position: sticky;
-  top: 52px;
+  top: var(--app-header-height, 52px);
   z-index: var(--z-tab-bar);
 }
 .tabs::after {

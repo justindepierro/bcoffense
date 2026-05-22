@@ -37,6 +37,63 @@ window.addEventListener("load", () => {
   }, 6000);
 });
 
+// Keep CSS in sync with the actual mobile viewport and sticky shell heights.
+// This avoids iOS URL-bar jumps and keeps the tab rail attached to the header.
+let _mobileShellFrame = 0;
+
+function syncMobileShellState() {
+  _mobileShellFrame = 0;
+  const width = window.innerWidth || document.documentElement.clientWidth || 0;
+  const height = window.innerHeight || document.documentElement.clientHeight || 0;
+  const root = document.documentElement;
+  const body = document.body;
+  if (!body) return;
+
+  root.style.setProperty("--app-vh", `${Math.max(height * 0.01, 1)}px`);
+
+  const header = document.querySelector(".app-header");
+  const tabs = document.querySelector(".tabs");
+  if (header) {
+    root.style.setProperty(
+      "--app-header-height",
+      `${Math.ceil(header.getBoundingClientRect().height)}px`,
+    );
+  }
+  if (tabs) {
+    root.style.setProperty(
+      "--app-tabs-height",
+      `${Math.ceil(tabs.getBoundingClientRect().height)}px`,
+    );
+  }
+
+  const isMobile = width <= 768;
+  const isPhone = width <= 560;
+  const isCompact = width <= 420;
+  const isShort = height <= 620;
+  const isTouch =
+    window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+
+  body.classList.toggle("is-mobile-screen", isMobile);
+  body.classList.toggle("is-phone-screen", isPhone);
+  body.classList.toggle("is-compact-screen", isCompact);
+  body.classList.toggle("is-short-screen", isShort);
+  body.classList.toggle("is-touch-screen", Boolean(isTouch));
+  body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
+}
+
+function queueMobileShellStateSync() {
+  if (_mobileShellFrame) return;
+  _mobileShellFrame = requestAnimationFrame(syncMobileShellState);
+}
+
+queueMobileShellStateSync();
+document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
+window.addEventListener("load", queueMobileShellStateSync);
+window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
+window.addEventListener("orientationchange", queueMobileShellStateSync, {
+  passive: true,
+});
+
 // ── Dark mode toggle ──
 function toggleDarkMode() {
   const isDark = document.documentElement.getAttribute("data-theme") === "dark";
@@ -396,6 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
     requestAnimationFrame(() => {
       queued = false;
       enhanceRuntimeA11y();
+      queueMobileShellStateSync();
     });
   });
   observer.observe(document.body, { childList: true, subtree: true });
