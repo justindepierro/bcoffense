@@ -37,7 +37,7 @@ Goal: Provide a simplified sideline/practice interface for fast use on phones.
 
 - [x] Bottom navigation for Script, Call Sheet, Wristband, Game Plan, and Notes
 - [x] Larger touch targets and condensed text
-- [ ] Current period/current call controls
+- [x] Current period/current call controls
 - [ ] Quick notes and opponent reminders
 - [ ] Optional "lock" view to prevent accidental edits
 
@@ -47,8 +47,9 @@ Definition of done:
 
 Status:
 
-- Phase 1 adds a mobile-only coach dock for the five sideline destinations.
-- Next slice should add current period/current call awareness inside Script.
+- Phase 1 added a mobile-only coach dock for the five sideline destinations.
+- Phase 2 added current period/current call controls inside Script on phones.
+- Next slice should add quick notes and opponent reminders.
 
 ## 3. Data Health Center
 

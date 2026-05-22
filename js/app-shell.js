@@ -1050,6 +1050,187 @@ function updateMobileCoachDock() {
 
 document.addEventListener("DOMContentLoaded", updateMobileCoachDock);
 
+let _mobileCoachScriptIndex = null;
+
+function _getMobileScriptPlayableIndices() {
+  if (!Array.isArray(script)) return [];
+  return script
+    .map((item, index) => ({ item, index }))
+    .filter(({ item }) => item && !item.isSeparator)
+    .map(({ index }) => index);
+}
+
+function _normalizeMobileCoachScriptIndex(preferredIndex = _mobileCoachScriptIndex) {
+  const playable = _getMobileScriptPlayableIndices();
+  if (!playable.length) return null;
+  if (Number.isInteger(preferredIndex) && playable.includes(preferredIndex)) {
+    return preferredIndex;
+  }
+  if (Number.isInteger(preferredIndex)) {
+    const next = playable.find((index) => index > preferredIndex);
+    if (next !== undefined) return next;
+  }
+  return playable[0];
+}
+
+function _getMobileScriptOrdinal(scriptIndex) {
+  const playable = _getMobileScriptPlayableIndices();
+  const ordinal = playable.indexOf(scriptIndex);
+  return {
+    current: ordinal >= 0 ? ordinal + 1 : 0,
+    total: playable.length,
+  };
+}
+
+function _getMobileScriptPeriodLabel(scriptIndex) {
+  if (typeof findOwningPeriodIndex === "function") {
+    const periodIndex = findOwningPeriodIndex(scriptIndex);
+    if (periodIndex >= 0 && script[periodIndex]) {
+      return script[periodIndex].label || `Period ${periodIndex + 1}`;
+    }
+  }
+
+  for (let index = scriptIndex - 1; index >= 0; index--) {
+    if (script[index]?.isSeparator) return script[index].label || `Period ${index + 1}`;
+  }
+  return "Script";
+}
+
+function _getMobileScriptCallTitle(play) {
+  if (!play) return "No call selected";
+  if (typeof getScriptPlaySummaryText === "function") {
+    return getScriptPlaySummaryText(play);
+  }
+  return [play.formation, play.play].filter(Boolean).join(" ") || "Unnamed play";
+}
+
+function _getMobileScriptCallDetail(play) {
+  if (!play) return "";
+  return [
+    play.type,
+    play.personnel ? `${play.personnel} pers` : "",
+    play.hash ? `Hash ${play.hash}` : play.preferredHash ? `Pref ${play.preferredHash}` : "",
+    play.reps ? `${play.reps} rep${Number(play.reps) === 1 ? "" : "s"}` : "",
+    play.practiceFront,
+    play.practiceCoverage,
+  ]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function _setMobileScriptCoachControlsDisabled(disabled) {
+  document
+    .querySelectorAll("#mobileScriptCoachNow button")
+    .forEach((button) => {
+      button.disabled = disabled;
+    });
+}
+
+function updateMobileCoachScriptNow() {
+  const panel = document.getElementById("mobileScriptCoachNow");
+  if (!panel) return;
+
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  _mobileCoachScriptIndex = currentIndex;
+
+  const periodEl = document.getElementById("mobileScriptCoachPeriod");
+  const progressEl = document.getElementById("mobileScriptCoachProgress");
+  const callEl = document.getElementById("mobileScriptCoachCall");
+  const detailEl = document.getElementById("mobileScriptCoachDetail");
+
+  document
+    .querySelectorAll("#scriptPlays .script-item.coach-current")
+    .forEach((item) => item.classList.remove("coach-current"));
+
+  if (currentIndex === null) {
+    if (periodEl) periodEl.textContent = "No period";
+    if (progressEl) progressEl.textContent = "0 / 0";
+    if (callEl) callEl.textContent = "Add plays to start coach mode.";
+    if (detailEl) detailEl.textContent = "";
+    _setMobileScriptCoachControlsDisabled(true);
+    return;
+  }
+
+  const play = script[currentIndex];
+  const ordinal = _getMobileScriptOrdinal(currentIndex);
+  if (periodEl) periodEl.textContent = _getMobileScriptPeriodLabel(currentIndex);
+  if (progressEl) progressEl.textContent = `${ordinal.current} / ${ordinal.total}`;
+  if (callEl) callEl.textContent = _getMobileScriptCallTitle(play);
+  if (detailEl) detailEl.textContent = _getMobileScriptCallDetail(play);
+  _setMobileScriptCoachControlsDisabled(false);
+
+  const row = document.querySelector(`#scriptPlays .script-item[data-idx="${currentIndex}"]`);
+  if (row) row.classList.add("coach-current");
+}
+
+function _focusMobileCoachScriptRow() {
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  if (currentIndex === null) {
+    updateMobileCoachScriptNow();
+    return;
+  }
+  _mobileCoachScriptIndex = currentIndex;
+
+  const periodIndex =
+    typeof findOwningPeriodIndex === "function"
+      ? findOwningPeriodIndex(currentIndex)
+      : -1;
+  const period = periodIndex >= 0 ? script[periodIndex] : null;
+  if (period?.id && typeof collapsedPeriods !== "undefined" && collapsedPeriods.has(period.id)) {
+    collapsedPeriods.delete(period.id);
+    if (typeof renderScript === "function") renderScript();
+  }
+
+  updateMobileCoachScriptNow();
+  requestAnimationFrame(() => {
+    const row = document.querySelector(`#scriptPlays .script-item[data-idx="${currentIndex}"]`);
+    row?.scrollIntoView({
+      block: "center",
+      behavior:
+        window.matchMedia("(prefers-reduced-motion: reduce)").matches
+          ? "auto"
+          : "smooth",
+    });
+  });
+}
+
+function coachFocusScriptCall() {
+  if (typeof showTab === "function") showTab("script");
+  requestAnimationFrame(_focusMobileCoachScriptRow);
+}
+
+function coachNextScriptCall() {
+  const playable = _getMobileScriptPlayableIndices();
+  if (!playable.length) {
+    updateMobileCoachScriptNow();
+    return;
+  }
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  const currentPosition = playable.indexOf(currentIndex);
+  const nextPosition =
+    currentPosition >= 0 && currentPosition < playable.length - 1
+      ? currentPosition + 1
+      : 0;
+  _mobileCoachScriptIndex = playable[nextPosition];
+  coachFocusScriptCall();
+}
+
+function coachPrevScriptCall() {
+  const playable = _getMobileScriptPlayableIndices();
+  if (!playable.length) {
+    updateMobileCoachScriptNow();
+    return;
+  }
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  const currentPosition = playable.indexOf(currentIndex);
+  const prevPosition =
+    currentPosition > 0
+      ? currentPosition - 1
+      : playable.length - 1;
+  _mobileCoachScriptIndex = playable[prevPosition];
+  coachFocusScriptCall();
+}
+
 // ── Tab badge counts ──
 function updateTabBadges() {
   const badges = {
@@ -1084,6 +1265,7 @@ function updateTabBadges() {
     }
   });
   updateMobileCoachDock();
+  updateMobileCoachScriptNow();
 }
 
 // ── Scroll-to-top FAB ──

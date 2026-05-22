@@ -624,6 +624,98 @@
   }
 }
 
+/* ============ Mobile Script Current Call ============ */
+.mobile-script-coach-now {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  body.is-mobile-screen #script.active .mobile-script-coach-now {
+    position: sticky;
+    top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 8px);
+    z-index: calc(var(--z-tab-bar) + 1);
+    display: grid;
+    gap: var(--space-xs);
+    margin: 0 0 var(--space-sm);
+    padding: 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  .mobile-script-coach-now__meta {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: var(--space-sm);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+  }
+
+  .mobile-script-coach-now__period,
+  .mobile-script-coach-now__progress {
+    min-width: 0;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-script-coach-now__call {
+    overflow: hidden;
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+    font-weight: 900;
+    line-height: 1.25;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-script-coach-now__detail {
+    overflow: hidden;
+    min-height: 18px;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-xs);
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-script-coach-now__actions {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+
+  .mobile-script-coach-now__btn {
+    min-width: 0;
+    min-height: 42px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-light);
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 900;
+  }
+
+  .mobile-script-coach-now__btn--primary {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+  .mobile-script-coach-now__btn:disabled {
+    cursor: not-allowed;
+    opacity: 0.45;
+  }
+
+  .script-item.coach-current {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+  }
+}
+
 .custom-modal-cancel {
   background: var(--color-bg-input);
   color: var(--color-text-muted);
