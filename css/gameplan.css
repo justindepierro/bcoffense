@@ -2377,6 +2377,137 @@ body.gp-dragging-from-box .gp-trash-zone {
   }
 }
 
+@media (max-width: 640px) {
+  #gameplan {
+    padding: 0;
+  }
+
+  #gameplan .gp-header {
+    position: static;
+  }
+
+  .gp-header,
+  .gp-toolbar,
+  .gp-toolbar-advanced,
+  .gp-library,
+  .gp-box {
+    border-radius: var(--radius-md);
+  }
+
+  .gp-header,
+  .gp-toolbar,
+  .gp-toolbar-advanced {
+    padding: var(--space-sm);
+  }
+
+  .gp-header-meta,
+  .gp-header-actions,
+  .gp-header-group,
+  .gp-toolbar input[type="search"],
+  .gp-toolbar select,
+  .gp-multi-filter {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .gp-header-actions,
+  .gp-header-group {
+    align-items: stretch;
+  }
+
+  .gp-header-group {
+    padding: 0;
+    border-right: 0;
+  }
+
+  .gp-header-actions .btn,
+  .gp-toolbar .btn,
+  .gp-library-bulk .btn-sm {
+    flex: 1 1 140px;
+    min-height: 42px;
+  }
+
+  .gp-toolbar-spacer {
+    display: none;
+  }
+
+  .gp-matchup-chip-row {
+    width: 100%;
+    overflow-x: auto;
+    padding-bottom: 2px;
+  }
+
+  .gp-library {
+    position: static;
+    max-height: 46vh;
+  }
+
+  .gp-boxes,
+  .gp-score-grid,
+  .gp-touch-grid,
+  .gp-stats-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .gp-box {
+    min-height: 0;
+  }
+
+  .gp-box-actions {
+    justify-content: stretch;
+  }
+
+  .gp-box-actions .btn-sm,
+  .gp-box-actions .gp-box-sort {
+    flex: 1 1 88px;
+    max-width: none;
+    min-height: 36px;
+  }
+
+  .gp-dist-strip {
+    height: auto;
+    min-height: 30px;
+    overflow-x: auto;
+    border-radius: var(--radius-md);
+  }
+
+  .gp-dist-seg {
+    min-width: 84px;
+  }
+
+  .gp-jump-bar {
+    top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px));
+    margin-right: calc(-1 * var(--space-sm));
+    margin-left: calc(-1 * var(--space-sm));
+    padding-right: var(--space-sm);
+    padding-left: var(--space-sm);
+  }
+
+  .gp-scoreboard > summary,
+  .gp-touch-tracker > summary {
+    padding: var(--space-sm);
+  }
+
+  .gp-score-hint,
+  .gp-touch-hint {
+    display: block;
+    margin-top: 2px;
+    margin-left: 0;
+  }
+
+  .gp-health-detail-summary {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .gp-health-row,
+  .gp-print-row,
+  .gp-compare-row,
+  .gp-coverage-row {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Print: per-bucket detail block (only renders when "Show bucket detail" is checked) */
 body.gp-printing .gp-print-detail {
   margin: 4px 0 6px;

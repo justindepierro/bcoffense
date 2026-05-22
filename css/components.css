@@ -41,6 +41,51 @@
   max-width: 480px;
 }
 
+@media (max-width: 640px) {
+  .custom-modal-overlay,
+  .modal-overlay,
+  .cell-popup-overlay {
+    align-items: stretch;
+    padding: max(12px, env(safe-area-inset-top))
+      max(10px, env(safe-area-inset-right))
+      max(12px, env(safe-area-inset-bottom))
+      max(10px, env(safe-area-inset-left));
+  }
+
+  .custom-modal,
+  .modal-content,
+  .cell-popup {
+    width: 100%;
+    min-width: 0;
+    max-width: 100%;
+    max-height: calc((var(--app-vh, 1vh) * 100) - 24px);
+    border-radius: var(--radius-md);
+  }
+
+  .custom-modal-header,
+  .custom-modal-body,
+  .custom-modal-input-wrap,
+  .custom-modal-actions {
+    padding-right: var(--space-md);
+    padding-left: var(--space-md);
+  }
+
+  .custom-modal-actions {
+    flex-wrap: wrap;
+    justify-content: stretch;
+  }
+
+  .custom-modal-actions .btn,
+  .custom-modal-actions .custom-modal-btn {
+    flex: 1 1 140px;
+  }
+
+  .modal-content,
+  .cell-popup {
+    padding: var(--space-md);
+  }
+}
+
 /* ============ Simple Role Login ============ */
 .auth-locked .app-header,
 .auth-locked #uploadSection,

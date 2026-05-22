@@ -27,6 +27,46 @@
 @media (max-width: 640px) {
   .dash-opponent-bar {
     position: static;
+    align-items: stretch;
+    padding: var(--space-md);
+    border-radius: var(--radius-md);
+  }
+
+  .dash-container {
+    padding: 0;
+  }
+
+  .dash-opponent-select-group,
+  .dash-opponent-select-group > *,
+  .dash-search-input,
+  .dash-select,
+  .dash-week-input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .dash-cards,
+  .dash-scout-grid {
+    gap: var(--space-sm);
+  }
+
+  .dash-card {
+    padding: 14px;
+    border-radius: var(--radius-md);
+  }
+
+  .dash-card-icon {
+    font-size: var(--font-size-2xl);
+  }
+
+  .dash-card-value {
+    font-size: var(--font-size-xl);
+  }
+
+  .dash-scout-row {
+    align-items: flex-start;
+    gap: var(--space-xs);
+    flex-direction: column;
   }
 }
 

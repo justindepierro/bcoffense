@@ -98,6 +98,72 @@
   }
 }
 
+@media (max-width: 640px) {
+  .ob-container {
+    padding: 0;
+  }
+
+  .ob-header,
+  .ob-toolbar {
+    align-items: stretch;
+  }
+
+  .ob-header-right {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: var(--space-sm);
+    width: 100%;
+  }
+
+  .ob-stat {
+    padding: var(--space-xs);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-light);
+  }
+
+  .ob-search,
+  .ob-filter-select,
+  .ob-toggle-label {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ob-toggle-label {
+    min-height: 42px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-bg-light);
+  }
+
+  .ob-play-list {
+    max-height: 42vh;
+    padding-right: 0;
+  }
+
+  .ob-card {
+    padding: 10px;
+  }
+
+  .ob-card-top,
+  .ob-detail-title,
+  .ob-detail-stats,
+  .ob-kp-row,
+  .ob-rec-row {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .ob-plays-table-wrap {
+    overflow-x: auto;
+  }
+
+  .ob-plays-table {
+    min-width: 520px;
+  }
+}
+
 /* Play list */
 .ob-play-list {
   display: flex;

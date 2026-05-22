@@ -33,18 +33,64 @@
   .td-toolbar {
     padding: 8px 10px;
   }
+  .td-home-header h2 {
+    font-size: var(--font-size-2xl);
+  }
+  .td-section-header,
+  .td-opponent-card,
+  .td-detail-actions,
+  .td-export-buttons,
+  .td-toolbar-left,
+  .td-toolbar-right {
+    align-items: stretch;
+    flex-direction: column;
+  }
+  .td-opponent-card-actions,
+  .td-detail-actions,
+  .td-export-buttons {
+    width: 100%;
+  }
+  .td-opponent-card-actions .btn,
+  .td-detail-actions .btn,
+  .td-export-buttons .btn,
+  .td-toolbar .btn {
+    flex: 1 1 auto;
+    min-height: 42px;
+  }
   .td-search-input {
-    width: 140px;
+    width: 100%;
   }
   .td-search-input:focus {
-    width: 180px;
+    width: 100%;
+  }
+  .td-search-box,
+  .td-toolbar-left,
+  .td-toolbar-right {
+    width: 100%;
   }
   .td-stats-grid {
     grid-template-columns: 1fr;
   }
+  .td-stats-card,
+  .td-rapid-section {
+    padding: 12px;
+  }
   .td-dist-label {
     width: 60px;
     font-size: var(--font-size-xs);
+  }
+  .td-dist-row {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+  .td-dist-label,
+  .td-dist-val {
+    width: 100%;
+    text-align: left;
+  }
+  .td-dist-bar-bg {
+    width: 100%;
   }
   .td-bulk-bar {
     flex-wrap: wrap;
@@ -102,6 +148,7 @@
 
   body.is-mobile-screen {
     background: var(--color-surface);
+    overflow-x: hidden;
   }
 
   body.is-mobile-screen .app-header {

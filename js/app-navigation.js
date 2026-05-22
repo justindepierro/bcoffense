@@ -35,6 +35,16 @@ function showTab(tabName) {
   if (index !== undefined && tabs[index]) {
     tabs[index].classList.add("active");
     tabs[index].setAttribute("aria-selected", "true");
+    requestAnimationFrame(() => {
+      tabs[index].scrollIntoView({
+        block: "nearest",
+        inline: "center",
+        behavior:
+          window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "auto"
+            : "smooth",
+      });
+    });
   }
 
   if (tabName === "installation") {
