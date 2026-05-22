@@ -47,6 +47,178 @@ function _dashBuildScoutCard(label, data, opts = {}) {
   </div>`;
 }
 
+function _dashFindGameWeekOpponent(gw, opponents) {
+  if (!gw || !Array.isArray(opponents)) return null;
+  if (gw.opponentIndex !== null && opponents[gw.opponentIndex]) {
+    return opponents[gw.opponentIndex];
+  }
+  if (!gw.opponentName) return null;
+  return opponents.find((opp) => opp && opp.name === gw.opponentName) || null;
+}
+
+function _dashCountCallSheetPlays() {
+  if (typeof callSheet === "undefined" || !callSheet) return 0;
+  return Object.values(callSheet).reduce(
+    (sum, data) =>
+      sum +
+      (Array.isArray(data?.left) ? data.left.length : 0) +
+      (Array.isArray(data?.right) ? data.right.length : 0),
+    0,
+  );
+}
+
+function _dashGetBoardGamePlanCount() {
+  try {
+    if (typeof getGamePlanBoardSignatures === "function") {
+      return getGamePlanBoardSignatures().size;
+    }
+  } catch (_err) {
+    return 0;
+  }
+  return 0;
+}
+
+function _dashBuildMobileCoachReminderAttrs(reminder) {
+  if (!reminder?.action) return "";
+  const action = escapeHtml(reminder.action);
+  const arg = reminder.arg !== undefined ? ` data-arg="${escapeHtml(reminder.arg)}"` : "";
+  return ` data-action="${action}"${arg}`;
+}
+
+function _dashBuildMobileCoachReminders(gw, metrics) {
+  const reminders = [];
+  if (!gw.opponentName) {
+    reminders.push({
+      label: "Select active opponent",
+      detail: "Game week setup",
+      action: "focusDashOpponentSelect",
+      level: "warn",
+    });
+  } else if (metrics.scoutCount === 0) {
+    reminders.push({
+      label: "Chart opponent tendencies",
+      detail: gw.opponentName,
+      action: "showTab",
+      arg: "tendencies",
+      level: "warn",
+    });
+  }
+
+  if (gw.opponentName && metrics.gamePlanCount === 0) {
+    reminders.push({
+      label: "Tag game-plan calls",
+      detail: "No calls tied to opponent",
+      action: "showTab",
+      arg: "gameplan",
+      level: "warn",
+    });
+  }
+
+  if (metrics.scriptCount === 0) {
+    reminders.push({
+      label: "Build practice script",
+      detail: "No calls loaded",
+      action: "showTab",
+      arg: "script",
+      level: "info",
+    });
+  }
+
+  if (metrics.callSheetCount === 0) {
+    reminders.push({
+      label: "Fill call sheet",
+      detail: "No calls slotted",
+      action: "showTab",
+      arg: "callsheet",
+      level: "info",
+    });
+  }
+
+  if (!String(gw.notes || "").trim()) {
+    reminders.push({
+      label: "Add game-week note",
+      detail: "Quick reminder",
+      action: "focusMobileCoachNotes",
+      level: "note",
+    });
+  }
+
+  if (reminders.length === 0) {
+    reminders.push({
+      label: "Ready for mobile review",
+      detail: "Notes and prep are in place",
+      action: "focusMobileCoachNotes",
+      level: "ok",
+    });
+  }
+  return reminders;
+}
+
+function renderMobileCoachNotesCard(gw, opponents) {
+  const card = document.getElementById("mobileCoachNotesCard");
+  if (!card) return;
+
+  const opponent = _dashFindGameWeekOpponent(gw, opponents);
+  const scoutCount = opponent?.plays?.length || 0;
+  const scriptCount = Array.isArray(script)
+    ? script.filter((play) => play && !play.isSeparator).length
+    : 0;
+  const callSheetCount = _dashCountCallSheetPlays();
+  const opponentGamePlanCount = gw.opponentName
+    ? _dashGetGamePlanPlaysForOpponent(gw.opponentName).length
+    : 0;
+  const boardGamePlanCount = _dashGetBoardGamePlanCount();
+  const gamePlanCount = gw.opponentName ? opponentGamePlanCount : boardGamePlanCount;
+  const metrics = { scoutCount, scriptCount, callSheetCount, gamePlanCount };
+  const reminders = _dashBuildMobileCoachReminders(gw, metrics);
+  const statusText = gw.opponentName
+    ? `${scoutCount} scout / ${gamePlanCount} plan`
+    : "Setup needed";
+  const title = gw.opponentName || "No opponent selected";
+  const subtitle = gw.weekLabel || "Game week";
+  const reminderHtml = reminders
+    .map(
+      (reminder) => `<button class="mobile-coach-notes-card__reminder is-${escapeHtml(
+        reminder.level,
+      )}" type="button"${_dashBuildMobileCoachReminderAttrs(reminder)}>
+        <span class="mobile-coach-notes-card__reminder-label">${escapeHtml(reminder.label)}</span>
+        <span class="mobile-coach-notes-card__reminder-detail">${escapeHtml(reminder.detail)}</span>
+      </button>`,
+    )
+    .join("");
+
+  card.innerHTML = `
+    <div class="mobile-coach-notes-card__header">
+      <div class="mobile-coach-notes-card__title-wrap">
+        <span class="mobile-coach-notes-card__eyebrow">Mobile Notes</span>
+        <h3 class="mobile-coach-notes-card__title">${escapeHtml(title)}</h3>
+        <span class="mobile-coach-notes-card__subtitle">${escapeHtml(subtitle)}</span>
+      </div>
+      <span class="mobile-coach-notes-card__status">${escapeHtml(statusText)}</span>
+    </div>
+    <div class="mobile-coach-notes-card__metrics" aria-label="Mobile coach prep counts">
+      <span><strong>${scoutCount}</strong> Scout</span>
+      <span><strong>${gamePlanCount}</strong> Plan</span>
+      <span><strong>${scriptCount}</strong> Script</span>
+      <span><strong>${callSheetCount}</strong> Sheet</span>
+    </div>
+    <label class="mobile-coach-notes-card__label" for="mobileCoachNotesArea">Quick Notes</label>
+    <textarea id="mobileCoachNotesArea" class="mobile-coach-notes-card__textarea"
+      placeholder="Key matchup, openers, halftime adjustments..."
+      data-oninput="onMobileCoachNotesChange" data-pass="value">${escapeHtml(gw.notes || "")}</textarea>
+    <div class="mobile-coach-notes-card__reminders" aria-label="Opponent reminders">
+      ${reminderHtml}
+    </div>`;
+}
+
+function _dashSyncNotesTextareas(value, sourceId) {
+  ["dashNotesArea", "mobileCoachNotesArea"].forEach((id) => {
+    if (id === sourceId) return;
+    const el = document.getElementById(id);
+    if (el && el !== document.activeElement) el.value = value || "";
+  });
+}
+
 /**
  * Render the Game Week Dashboard panel
  */
@@ -98,6 +270,8 @@ function renderDashboard() {
         ? `<span class="dash-opp-active">🏈 ${escapeHtml(gw.opponentName)}${gw.weekLabel ? " — " + escapeHtml(gw.weekLabel) : ""}</span>`
         : '<span class="dash-opp-none">No opponent selected</span>';
     }
+
+    renderMobileCoachNotesCard(gw, opponents);
 
     const cardsEl = document.getElementById("dashCards");
     if (cardsEl) {
@@ -248,13 +422,37 @@ function renderDashboard() {
 /**
  * Handle game week notes change
  */
-function onDashNotesChange(value) {
+function onDashNotesChange(value, sourceId = "dashNotesArea") {
+  _dashSyncNotesTextareas(value, sourceId);
   clearTimeout(_dashNotesTimer);
   _dashNotesTimer = setTimeout(() => {
     const gw = getGameWeek();
     gw.notes = value;
     storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   }, 400);
+}
+
+function onMobileCoachNotesChange(value) {
+  onDashNotesChange(value, "mobileCoachNotesArea");
+}
+
+function focusMobileCoachNotes() {
+  const el =
+    document.getElementById("mobileCoachNotesArea") ||
+    document.getElementById("dashNotesArea");
+  if (!el) return;
+  el.focus();
+  if (typeof el.setSelectionRange === "function") {
+    const len = el.value.length;
+    el.setSelectionRange(len, len);
+  }
+}
+
+function focusDashOpponentSelect() {
+  if (typeof showTab === "function") showTab("dashboard");
+  requestAnimationFrame(() => {
+    document.getElementById("dashOpponentSelect")?.focus();
+  });
 }
 
 function onDashSearchInput(value) {

@@ -347,6 +347,208 @@
   color: var(--color-text-placeholder);
 }
 
+.mobile-coach-notes-card {
+  display: none;
+}
+
+@media (max-width: 640px) {
+  body.is-mobile-screen #dashboard.active .mobile-coach-notes-card {
+    display: grid;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+    padding: var(--space-md);
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    box-shadow: var(--shadow-sm);
+  }
+
+  body.is-mobile-screen #dashboard.active .dash-notes-section {
+    display: none;
+  }
+
+  .mobile-coach-notes-card__header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-sm);
+  }
+
+  .mobile-coach-notes-card__title-wrap {
+    min-width: 0;
+    display: grid;
+    gap: 2px;
+  }
+
+  .mobile-coach-notes-card__eyebrow,
+  .mobile-coach-notes-card__subtitle,
+  .mobile-coach-notes-card__status,
+  .mobile-coach-notes-card__label {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+  }
+
+  .mobile-coach-notes-card__eyebrow,
+  .mobile-coach-notes-card__label {
+    text-transform: uppercase;
+    letter-spacing: 0;
+  }
+
+  .mobile-coach-notes-card__title {
+    overflow: hidden;
+    margin: 0;
+    color: var(--color-text);
+    font-size: var(--font-size-lg);
+    line-height: 1.2;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-coach-notes-card__subtitle {
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-coach-notes-card__status {
+    flex: 0 0 auto;
+    max-width: 42%;
+    padding: 5px 8px;
+    border: 1px solid var(--color-info-alpha-20);
+    border-radius: var(--radius-pill);
+    background: var(--color-info-alpha-06);
+    text-align: center;
+  }
+
+  .mobile-coach-notes-card__metrics {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    gap: var(--space-xs);
+  }
+
+  .mobile-coach-notes-card__metrics span {
+    display: grid;
+    min-width: 0;
+    gap: 1px;
+    padding: 8px 4px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-light);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-2xs);
+    font-weight: 800;
+    place-items: center;
+    text-align: center;
+  }
+
+  .mobile-coach-notes-card__metrics strong {
+    color: var(--color-text);
+    font-size: var(--font-size-md);
+    line-height: 1;
+  }
+
+  .mobile-coach-notes-card__textarea {
+    width: 100%;
+    min-height: 104px;
+    max-height: 220px;
+    padding: 12px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-md);
+    background: var(--color-surface);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-size-base);
+    line-height: 1.4;
+    resize: vertical;
+  }
+
+  .mobile-coach-notes-card__textarea:focus {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-focus);
+    outline: none;
+  }
+
+  .mobile-coach-notes-card__textarea::placeholder {
+    color: var(--color-text-placeholder);
+  }
+
+  .mobile-coach-notes-card__reminders {
+    display: grid;
+    gap: var(--space-xs);
+  }
+
+  .mobile-coach-notes-card__reminder {
+    display: grid;
+    min-width: 0;
+    min-height: 48px;
+    gap: 2px;
+    padding: 8px 10px;
+    border: 1px solid var(--color-border-light);
+    border-left-width: 4px;
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-light);
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    text-align: left;
+  }
+
+  .mobile-coach-notes-card__reminder-label,
+  .mobile-coach-notes-card__reminder-detail {
+    overflow: hidden;
+    max-width: 100%;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  .mobile-coach-notes-card__reminder-label {
+    font-size: var(--font-size-sm);
+    font-weight: 900;
+  }
+
+  .mobile-coach-notes-card__reminder-detail {
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+  }
+
+  .mobile-coach-notes-card__reminder.is-warn {
+    border-left-color: var(--color-warning);
+    background: var(--color-warning-alpha-06);
+  }
+
+  .mobile-coach-notes-card__reminder.is-info {
+    border-left-color: var(--color-info);
+    background: var(--color-info-alpha-06);
+  }
+
+  .mobile-coach-notes-card__reminder.is-note {
+    border-left-color: var(--color-primary);
+    background: var(--color-navy-alpha-06);
+  }
+
+  .mobile-coach-notes-card__reminder.is-ok {
+    border-left-color: var(--color-success);
+    background: var(--color-success-alpha-15);
+  }
+}
+
+@media (max-width: 420px) {
+  body.is-mobile-screen #dashboard.active .mobile-coach-notes-card__metrics {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.is-mobile-screen #dashboard.active .mobile-coach-notes-card__header {
+    display: grid;
+  }
+
+  body.is-mobile-screen #dashboard.active .mobile-coach-notes-card__status {
+    max-width: 100%;
+    justify-self: start;
+  }
+}
+
 /* ============ Dashboard Layout Polish ============ */
 .dash-opponent-left {
   flex: 1;
