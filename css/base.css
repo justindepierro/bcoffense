@@ -258,6 +258,15 @@
   outline: none;
 }
 
+button,
+[role="button"],
+[data-action],
+input[type="button"],
+input[type="submit"],
+input[type="reset"] {
+  touch-action: manipulation;
+}
+
 /* Global form element baseline */
 select,
 input[type="text"],

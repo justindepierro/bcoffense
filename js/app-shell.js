@@ -352,16 +352,26 @@ function updateTabBadges() {
 
 // ── Scroll-to-top FAB ──
 function scrollToTop() {
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({
+    top: 0,
+    behavior: window.matchMedia("(prefers-reduced-motion: reduce)").matches
+      ? "auto"
+      : "smooth",
+  });
 }
 
 const _scrollFab = document.getElementById("scrollTopFab");
 if (_scrollFab) {
-  window.addEventListener(
-    "scroll",
-    () => _scrollFab.classList.toggle("visible", window.scrollY > 400),
-    { passive: true },
-  );
+  let scrollFabQueued = false;
+  const updateScrollFab = () => {
+    scrollFabQueued = false;
+    _scrollFab.classList.toggle("visible", window.scrollY > 400);
+  };
+  window.addEventListener("scroll", () => {
+    if (scrollFabQueued) return;
+    scrollFabQueued = true;
+    requestAnimationFrame(updateScrollFab);
+  }, { passive: true });
 }
 
 // ── Tab bar scroll-fade indicator ──
@@ -423,18 +433,35 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 
 // Runtime accessibility guardrails for generated controls.
+function getRuntimeA11yNodes(scope, selector) {
+  const nodes = [];
+  if (
+    scope &&
+    scope.nodeType === Node.ELEMENT_NODE &&
+    typeof scope.matches === "function" &&
+    scope.matches(selector)
+  ) {
+    nodes.push(scope);
+  }
+  if (scope && typeof scope.querySelectorAll === "function") {
+    nodes.push(...scope.querySelectorAll(selector));
+  }
+  return nodes;
+}
+
 function enhanceRuntimeA11y(root = document) {
   const scope = root || document;
-  scope
-    .querySelectorAll("[data-action]:not(button):not(a):not(input):not(select):not(textarea)")
-    .forEach((el) => {
+  getRuntimeA11yNodes(
+    scope,
+    "[data-action]:not(button):not(a):not(input):not(select):not(textarea)",
+  ).forEach((el) => {
       const action = el.getAttribute("data-action") || "";
       if (!action || action.endsWith("Overlay") || el.matches("label")) return;
       if (!el.hasAttribute("role")) el.setAttribute("role", "button");
       if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
     });
 
-  scope.querySelectorAll("button").forEach((button) => {
+  getRuntimeA11yNodes(scope, "button").forEach((button) => {
     const name = button.textContent.trim() || button.getAttribute("aria-label") || "";
     if (name) return;
     const title = button.getAttribute("title");
@@ -447,12 +474,25 @@ function enhanceRuntimeA11y(root = document) {
 document.addEventListener("DOMContentLoaded", () => {
   enhanceRuntimeA11y();
   let queued = false;
-  const observer = new MutationObserver(() => {
+  const pendingRoots = new Set();
+  const observer = new MutationObserver((mutations) => {
+    mutations.forEach((mutation) => {
+      mutation.addedNodes.forEach((node) => {
+        if (
+          node.nodeType === Node.ELEMENT_NODE ||
+          node.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+        ) {
+          pendingRoots.add(node);
+        }
+      });
+    });
+    if (!pendingRoots.size) return;
     if (queued) return;
     queued = true;
     requestAnimationFrame(() => {
       queued = false;
-      enhanceRuntimeA11y();
+      pendingRoots.forEach((root) => enhanceRuntimeA11y(root));
+      pendingRoots.clear();
       queueMobileShellStateSync();
     });
   });

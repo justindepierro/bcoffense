@@ -309,8 +309,24 @@ h1 {
 
   .pb-card,
   .gp-box,
+  .callsheet-category,
+  .dash-card,
+  .dash-scout-card,
+  .ob-card,
+  .ob-recs,
+  .td-opponent-card,
+  .td-stats-card,
+  .td-rapid-section,
+  .team-settings-panel,
+  .team-package-card {
+    contain: layout style paint;
+    content-visibility: auto;
+    contain-intrinsic-size: auto 160px;
+  }
+
+  .gp-box,
   .callsheet-category {
-    contain: layout style;
+    contain-intrinsic-size: auto 220px;
   }
 }
 
