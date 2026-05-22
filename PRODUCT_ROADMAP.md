@@ -4,7 +4,7 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 
 ## Priority Order
 
-1. [ ] Universal Search and Command Palette
+1. [x] Universal Search and Command Palette
 2. [ ] Mobile Coach Mode
 3. [ ] Data Health Center
 4. [ ] Game Week Command Center
@@ -22,7 +22,7 @@ Goal: Let coaches move around the app and find work quickly from one keyboard/to
 - [x] Open from the header and with `Cmd/Ctrl+K`
 - [x] Jump to major tabs and high-value actions
 - [x] Search imported plays by call, formation, personnel, type, situation, and tags
-- [ ] Offer context actions such as send to script, open game plan, or open call sheet
+- [x] Offer context actions such as send to script, open game plan, or open call sheet
 - [x] Make the palette fully usable on mobile screens
 
 Definition of done:

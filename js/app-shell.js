@@ -135,6 +135,23 @@ window
 
 // ── Universal command palette ──
 const COMMAND_PALETTE_LIMIT = 12;
+const COMMAND_PLAY_ACTION_TOKENS = new Set([
+  "add",
+  "board",
+  "box",
+  "call",
+  "clipboard",
+  "copy",
+  "game",
+  "open",
+  "place",
+  "plan",
+  "playbook",
+  "practice",
+  "script",
+  "sheet",
+  "to",
+]);
 let _commandPaletteItems = [];
 let _commandPaletteActiveIndex = 0;
 let _commandPaletteReturnFocus = null;
@@ -160,6 +177,10 @@ function _normalizeCommandText(value) {
 
 function _canShowCommandTab(tabName) {
   return typeof canAccessTab !== "function" || canAccessTab(tabName);
+}
+
+function _canUseMutatingCommand() {
+  return typeof isAdminUser !== "function" || isAdminUser();
 }
 
 function _buildCommandBaseItems() {
@@ -345,35 +366,201 @@ function _scoreCommandItem(item, tokens) {
   return score;
 }
 
+function _getCommandPlayMasterIndex(play) {
+  if (!Array.isArray(plays) || !play) return -1;
+  const objectIndex = plays.indexOf(play);
+  if (objectIndex >= 0) return objectIndex;
+
+  if (typeof _gpPlaySignature === "function") {
+    const sig = _gpPlaySignature(play);
+    const sigIndex = plays.findIndex((candidate) => _gpPlaySignature(candidate) === sig);
+    if (sigIndex >= 0) return sigIndex;
+  }
+
+  return plays.findIndex(
+    (candidate) =>
+      candidate?.play === play.play &&
+      candidate?.formation === play.formation &&
+      candidate?.personnel === play.personnel,
+  );
+}
+
+function _getCommandGamePlanBoxId(play) {
+  if (typeof GP_DEFAULT_BOXES === "undefined") return "";
+  const mappedType =
+    typeof GP_TYPE_ALIASES !== "undefined"
+      ? GP_TYPE_ALIASES[play?.type] || play?.type
+      : play?.type;
+  const defaultIds = new Set(GP_DEFAULT_BOXES.map((box) => box.id));
+  if (mappedType && defaultIds.has(mappedType)) return mappedType;
+  return typeof GP_HOLDING_ID !== "undefined" ? GP_HOLDING_ID : "";
+}
+
+async function _commandAddPlayToScript(play) {
+  if (!_canUseMutatingCommand()) return;
+  if (typeof ensureScriptWorkspaceReady === "function") {
+    ensureScriptWorkspaceReady();
+  } else if (typeof initScriptWorkspace === "function") {
+    initScriptWorkspace();
+  }
+  if (typeof ensureFirstPeriod === "function") ensureFirstPeriod();
+
+  const playIndex = _getCommandPlayMasterIndex(play);
+  if (playIndex < 0 || typeof addToScript !== "function") {
+    showToast("Could not add that play to the script.", { type: "error" });
+    return;
+  }
+
+  const targetIndex =
+    typeof getPreferredTargetPeriodIndex === "function"
+      ? getPreferredTargetPeriodIndex()
+      : null;
+  await addToScript(playIndex, targetIndex);
+  if (typeof showTab === "function") showTab("script");
+}
+
+function _commandAddPlayToGamePlan(play) {
+  if (!_canUseMutatingCommand()) return;
+  if (typeof _gpPlaySignature !== "function" || typeof _gpAddSigsToBox !== "function") {
+    showToast("Game plan tools are not ready yet.", { type: "error" });
+    return;
+  }
+
+  const boxId = _getCommandGamePlanBoxId(play);
+  if (!boxId) {
+    showToast("Could not find a game plan box for that play.", { type: "error" });
+    return;
+  }
+  _gpAddSigsToBox([_gpPlaySignature(play)], boxId);
+  if (typeof showTab === "function") showTab("gameplan");
+}
+
+function _commandAddPlayToCallSheet(play) {
+  if (!_canUseMutatingCommand()) return;
+  if (typeof initCallSheet === "function" && (!callSheet || Object.keys(callSheet).length === 0)) {
+    initCallSheet();
+  }
+  if (typeof _addPlaysToCallSheet !== "function") {
+    showToast("Call sheet tools are not ready yet.", { type: "error" });
+    return;
+  }
+
+  const placed = _addPlaysToCallSheet([play]);
+  if (placed > 0) {
+    showToast(`Placed ${placed} call sheet entr${placed === 1 ? "y" : "ies"}`, {
+      type: "success",
+    });
+    if (typeof showTab === "function") showTab("callsheet");
+  } else {
+    showToast("No matching call sheet category found for that play.", {
+      type: "warning",
+    });
+  }
+}
+
+function _commandCopyPlayName(play) {
+  const title = _getCommandPlayTitle(play);
+  if (typeof copyPlayName === "function") copyPlayName(title);
+  else navigator.clipboard?.writeText(title);
+}
+
+function _buildCommandPlayActionItems(match, index) {
+  const play = match.play;
+  const title = match.title;
+  const actionItems = [
+    {
+      kind: "Play",
+      title: `Open ${title}`,
+      subtitle: match.subtitle || "Open in the playbook",
+      keywords: `open play playbook ${match.haystack}`,
+      priority: match.score,
+      run: () => _openCommandPlay(play),
+    },
+  ];
+
+  const actionPriority = match.score + 0.12;
+  if (_canUseMutatingCommand() && index < 2) {
+    actionItems.push(
+      {
+        kind: "Script",
+        title: `Add ${title} to Script`,
+        subtitle: "Adds to the preferred or first practice period",
+        keywords: `add script practice period ${match.haystack}`,
+        priority: actionPriority,
+        run: () => _commandAddPlayToScript(play),
+      },
+      {
+        kind: "Plan",
+        title: `Add ${title} to Game Plan`,
+        subtitle: `Routes to ${
+          typeof _gpBoxLabel === "function"
+            ? _gpBoxLabel(_getCommandGamePlanBoxId(play))
+            : "the matching"
+        } box`,
+        keywords: `add game plan board box ${match.haystack}`,
+        priority: actionPriority + 0.01,
+        run: () => _commandAddPlayToGamePlan(play),
+      },
+      {
+        kind: "Sheet",
+        title: `Place ${title} on Call Sheet`,
+        subtitle: "Uses preferred fields to choose matching categories",
+        keywords: `place add call sheet category situation ${match.haystack}`,
+        priority: actionPriority + 0.02,
+        run: () => _commandAddPlayToCallSheet(play),
+      },
+    );
+  }
+
+  if (index < 2) {
+    actionItems.push({
+      kind: "Copy",
+      title: `Copy ${title}`,
+      subtitle: "Copy the play name",
+      keywords: `copy clipboard name play ${match.haystack}`,
+      priority: actionPriority + 0.03,
+      run: () => _commandCopyPlayName(play),
+    });
+  }
+
+  return actionItems;
+}
+
 function _buildCommandPlayItems(query, tokens) {
   if (!Array.isArray(plays) || !plays.length || query.length < 2) return [];
+  const playTokens = tokens.filter((token) => !COMMAND_PLAY_ACTION_TOKENS.has(token));
+  if (!playTokens.length) return [];
 
   const matches = [];
   for (const play of plays) {
     const title = _getCommandPlayTitle(play);
     const subtitle = _getCommandPlaySubtitle(play);
     const haystack = _normalizeCommandText(`${title} ${subtitle} ${_getCommandPlaySearchText(play)}`);
-    if (!tokens.every((token) => haystack.includes(token))) continue;
+    if (!playTokens.every((token) => haystack.includes(token))) continue;
 
     let score = 70;
     const normalizedTitle = _normalizeCommandText(title);
-    tokens.forEach((token) => {
+    playTokens.forEach((token) => {
       if (normalizedTitle === token) score -= 35;
       else if (normalizedTitle.startsWith(token)) score -= 20;
       else if (normalizedTitle.includes(token)) score -= 10;
     });
     matches.push({
-      kind: "Play",
+      play,
       title,
       subtitle: subtitle || "Imported playbook play",
-      keywords: haystack,
-      priority: score,
-      run: () => _openCommandPlay(play),
+      haystack,
+      score,
     });
     if (matches.length >= 80) break;
   }
 
-  return matches.sort((a, b) => a.priority - b.priority).slice(0, COMMAND_PALETTE_LIMIT);
+  return matches
+    .sort((a, b) => a.score - b.score)
+    .slice(0, 8)
+    .flatMap((match, index) => _buildCommandPlayActionItems(match, index))
+    .sort((a, b) => a.priority - b.priority)
+    .slice(0, COMMAND_PALETTE_LIMIT);
 }
 
 function _buildCommandPaletteItems(rawQuery) {
