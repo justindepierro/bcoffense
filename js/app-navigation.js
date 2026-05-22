@@ -105,4 +105,7 @@ function showTab(tabName) {
   if (tabName !== "installation") {
     storageManager.set(STORAGE_KEYS.LAST_ACTIVE_TAB, tabName);
   }
+
+  if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
+  if (typeof queueMobileShellStateSync === "function") queueMobileShellStateSync();
 }

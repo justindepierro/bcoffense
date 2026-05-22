@@ -80,7 +80,17 @@ function syncMobileShellState() {
     el.classList.toggle("is-short-screen", isShort);
     el.classList.toggle("is-touch-screen", Boolean(isTouch));
   });
+  const coachDock = document.getElementById("mobileCoachDock");
+  const coachDockHeight = coachDock
+    ? Math.ceil(coachDock.getBoundingClientRect().height)
+    : 0;
+  if (coachDockHeight > 0) {
+    root.style.setProperty("--coach-dock-height", `${coachDockHeight + 12}px`);
+  } else {
+    root.style.removeProperty("--coach-dock-height");
+  }
   body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
+  if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
 }
 
 function queueMobileShellStateSync() {
@@ -968,6 +978,78 @@ function updateSaveStatus(state) {
   update();
 })();
 
+// ── Mobile Coach Mode dock ──
+function _setMobileCoachCount(id, count) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const safeCount = Math.max(0, Number(count) || 0);
+  el.textContent = safeCount > 0 ? (safeCount > 99 ? "99+" : String(safeCount)) : "";
+}
+
+function _getMobileCoachCounts() {
+  const scriptCount = Array.isArray(script)
+    ? script.filter((play) => play && !play.isSeparator).length
+    : 0;
+  const wristbandCount =
+    typeof wristbandCards !== "undefined" && Array.isArray(wristbandCards)
+      ? wristbandCards.reduce(
+        (sum, card) => sum + (Array.isArray(card.data) ? card.data.filter(Boolean).length : 0),
+        0,
+      )
+      : 0;
+  const callSheetCount =
+    typeof callSheet !== "undefined" && callSheet
+      ? Object.values(callSheet).reduce(
+        (sum, category) =>
+          sum +
+          (Array.isArray(category?.left) ? category.left.length : 0) +
+          (Array.isArray(category?.right) ? category.right.length : 0),
+        0,
+      )
+      : 0;
+  let gamePlanCount = 0;
+  try {
+    if (typeof getGamePlanBoardSignatures === "function") {
+      gamePlanCount = getGamePlanBoardSignatures().size;
+    }
+  } catch (_err) {
+    gamePlanCount = 0;
+  }
+
+  return { scriptCount, wristbandCount, callSheetCount, gamePlanCount };
+}
+
+function updateMobileCoachDock() {
+  const dock = document.getElementById("mobileCoachDock");
+  if (!dock) return;
+  const activeTab =
+    typeof currentActiveTab !== "undefined"
+      ? currentActiveTab
+      : document.body?.dataset.activeTab || "playbook";
+
+  dock.querySelectorAll("[data-coach-tab]").forEach((button) => {
+    if (typeof canAccessTab === "function" && !canAccessTab(button.dataset.coachTab)) {
+      button.hidden = true;
+      button.classList.remove("active");
+      button.removeAttribute("aria-current");
+      return;
+    }
+    button.hidden = false;
+    const isActive = button.dataset.coachTab === activeTab;
+    button.classList.toggle("active", isActive);
+    if (isActive) button.setAttribute("aria-current", "page");
+    else button.removeAttribute("aria-current");
+  });
+
+  const counts = _getMobileCoachCounts();
+  _setMobileCoachCount("coachDockScriptCount", counts.scriptCount);
+  _setMobileCoachCount("coachDockSheetCount", counts.callSheetCount);
+  _setMobileCoachCount("coachDockWristCount", counts.wristbandCount);
+  _setMobileCoachCount("coachDockPlanCount", counts.gamePlanCount);
+}
+
+document.addEventListener("DOMContentLoaded", updateMobileCoachDock);
+
 // ── Tab badge counts ──
 function updateTabBadges() {
   const badges = {
@@ -1001,6 +1083,7 @@ function updateTabBadges() {
       badge.remove();
     }
   });
+  updateMobileCoachDock();
 }
 
 // ── Scroll-to-top FAB ──

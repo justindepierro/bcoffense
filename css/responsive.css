@@ -144,6 +144,7 @@
       var(--app-header-height, 50px) + var(--app-tabs-height, 44px) +
         var(--space-sm)
     );
+    scroll-padding-bottom: calc(var(--coach-dock-height, 76px) + var(--space-md));
   }
 
   html.is-mobile-screen,
@@ -230,7 +231,7 @@
         var(--app-tabs-height, 44px)
     );
     margin: 0;
-    padding: 12px;
+    padding: 12px 12px calc(12px + var(--coach-dock-height, 76px));
     border-right: 0;
     border-left: 0;
     border-radius: 0;

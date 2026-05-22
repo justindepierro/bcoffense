@@ -35,8 +35,8 @@ Definition of done:
 
 Goal: Provide a simplified sideline/practice interface for fast use on phones.
 
-- [ ] Bottom navigation for Script, Call Sheet, Wristband, Game Plan, and Notes
-- [ ] Larger touch targets and condensed text
+- [x] Bottom navigation for Script, Call Sheet, Wristband, Game Plan, and Notes
+- [x] Larger touch targets and condensed text
 - [ ] Current period/current call controls
 - [ ] Quick notes and opponent reminders
 - [ ] Optional "lock" view to prevent accidental edits
@@ -44,6 +44,11 @@ Goal: Provide a simplified sideline/practice interface for fast use on phones.
 Definition of done:
 
 - Coaches can run practice or game-day reference from a phone without fighting desktop controls.
+
+Status:
+
+- Phase 1 adds a mobile-only coach dock for the five sideline destinations.
+- Next slice should add current period/current call awareness inside Script.
 
 ## 3. Data Health Center
 
