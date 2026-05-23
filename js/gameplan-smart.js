@@ -353,6 +353,385 @@ async function gpSuggestFillBox(boxId) {
   if (!choice) return;
   _gpAddSigsToBox([choice], boxId);
 }
+
+/* -------------------------------------------------------------------------
+   Smart Plan Builder — plan-level recommendations
+   ------------------------------------------------------------------------- */
+
+function _gpSmartPreferredHas(play, field, values) {
+  const wanted = values.map((value) => String(value || "").toLowerCase());
+  const actual = typeof splitPreferredValues === "function"
+    ? splitPreferredValues(play?.[field])
+    : String(play?.[field] || "").toLowerCase().split(/[,|;\/]+/).map((v) => v.trim());
+  return actual.some((value) => wanted.includes(value));
+}
+
+function _gpSmartTextHas(play, fields, needles) {
+  const haystack = fields.map((field) => String(play?.[field] || "")).join(" ").toLowerCase();
+  return needles.some((needle) => haystack.includes(String(needle).toLowerCase()));
+}
+
+function _gpSmartConstraintValues(play) {
+  return [play?.constraint1, play?.constraint2, play?.constraint3]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+}
+
+function _gpSmartPlayLabel(play) {
+  return [play?.type, play?.personnel, play?.formation, play?.play || play?.basePlay]
+    .filter(Boolean)
+    .join(" • ") || "Unnamed play";
+}
+
+function _gpSmartBaseScore(play, ctx) {
+  let score = 0;
+  if (ctx.opponent && typeof isPlayTaggedForOpponent === "function" && isPlayTaggedForOpponent(play, ctx.opponent)) {
+    score += 40;
+  }
+  if (play?.oneWord) score += 10;
+  if (play?.basePlay && (ctx.baseCounts.get(play.basePlay) || 0) >= 2) score += 8;
+  if (play?.keyPlayerName1 || play?.keyPlayerName2 || play?.keyPlayerName3) score += 6;
+  if (play?.preferredHash) score += 3;
+  return score;
+}
+
+const GP_SMART_PLAN_GROUPS = [
+  {
+    id: "openers",
+    icon: "🚀",
+    label: "Openers",
+    targetId: "Openers",
+    targetLabel: "Openers",
+    description: "Calls that can start the plan cleanly and reveal how the defense wants to play you.",
+    limit: 8,
+    evaluate(play, ctx) {
+      let score = _gpSmartBaseScore(play, ctx);
+      const reasons = [];
+      if (_gpSmartPreferredHas(play, "preferredSituation", ["opener"])) {
+        score += 45;
+        reasons.push("opener tag");
+      }
+      if (_gpSmartPreferredHas(play, "preferredDown", ["1"])) {
+        score += 28;
+        reasons.push("1st down");
+      }
+      if (["Run", "Quick", "RPO", "Play Action", "Movement"].includes(play?.type)) {
+        score += 12;
+        reasons.push(play.type);
+      }
+      if (!_gpSmartPreferredHas(play, "preferredFieldPosition", ["goal line", "backed up", "saigon"])) {
+        score += 6;
+      }
+      return score >= 36 ? { score, reason: reasons.slice(0, 2).join(" / ") || "clean early-down call" } : null;
+    },
+  },
+  {
+    id: "must-haves",
+    icon: "⭐",
+    label: "Must-Haves",
+    targetId: "Must Haves",
+    targetLabel: "Must Haves",
+    description: "Identity calls and opponent-tagged plays that should make the weekly menu.",
+    limit: 8,
+    evaluate(play, ctx) {
+      let score = _gpSmartBaseScore(play, ctx);
+      const reasons = [];
+      if (ctx.opponent && typeof isPlayTaggedForOpponent === "function" && isPlayTaggedForOpponent(play, ctx.opponent)) {
+        reasons.push("opponent tagged");
+      }
+      if (play?.oneWord) {
+        score += 22;
+        reasons.push("one-word");
+      }
+      if (play?.basePlay && (ctx.baseCounts.get(play.basePlay) || 0) >= 2) {
+        score += 18;
+        reasons.push(`${play.basePlay} family`);
+      }
+      if (_gpSmartPreferredHas(play, "preferredSituation", ["short yardage", "4 minute"])) {
+        score += 14;
+        reasons.push("situational staple");
+      }
+      return score >= 30 ? { score, reason: reasons.slice(0, 2).join(" / ") || "identity call" } : null;
+    },
+  },
+  {
+    id: "answers",
+    icon: "🧯",
+    label: "Answers",
+    targetId: "Answers",
+    targetLabel: "Answers",
+    description: "Pressure, coverage, leverage, and conflict answers to keep the call sheet flexible.",
+    limit: 8,
+    evaluate(play, ctx) {
+      let score = _gpSmartBaseScore(play, ctx);
+      const reasons = [];
+      if (["Screen", "Quick", "RPO", "Movement"].includes(play?.type)) {
+        score += 30;
+        reasons.push(play.type);
+      }
+      [["goodVsMan", "man"], ["goodVsBear", "bear"], ["goodVsOkie", "okie"]].forEach(([field, label]) => {
+        if (play?.[field]) {
+          score += 18;
+          reasons.push(`vs ${label}`);
+        }
+      });
+      if (_gpSmartTextHas(play, ["notes", "deadVs", "practiceBlitz"], ["pressure", "blitz", "zero", "hot", "man"])) {
+        score += 14;
+        reasons.push("pressure answer");
+      }
+      return score >= 34 ? { score, reason: reasons.slice(0, 2).join(" / ") || "defensive answer" } : null;
+    },
+  },
+  {
+    id: "constraints",
+    icon: "🔗",
+    label: "Constraints",
+    targetId: "Constraints",
+    targetLabel: "Constraints",
+    description: "Complements and constraint calls that protect your best concepts.",
+    limit: 8,
+    evaluate(play, ctx) {
+      const constraints = _gpSmartConstraintValues(play);
+      let score = _gpSmartBaseScore(play, ctx) + constraints.length * 22;
+      const referenced = ctx.constraintTargets.has(String(play?.play || "").trim())
+        || ctx.constraintTargets.has(String(play?.basePlay || "").trim());
+      if (referenced) score += 18;
+      if (constraints.length === 0 && !referenced) return null;
+      const reason = constraints.length
+        ? `links to ${constraints.slice(0, 2).join(" / ")}`
+        : "named as a complement";
+      return { score, reason };
+    },
+  },
+  {
+    id: "situational",
+    icon: "📍",
+    label: "Situational",
+    targetId: "Situational",
+    targetLabel: "Situational",
+    description: "Third down, red zone, backed-up, two-minute, four-minute, and finish-the-drive calls.",
+    limit: 10,
+    evaluate(play, ctx) {
+      let score = _gpSmartBaseScore(play, ctx);
+      const reasons = [];
+      if (_gpSmartPreferredHas(play, "preferredDown", ["3", "4"])) {
+        score += 24;
+        reasons.push(`${play.preferredDown} down`);
+      }
+      if (_gpSmartPreferredHas(play, "preferredDistance", ["short", "long"])) {
+        score += 12;
+        reasons.push(play.preferredDistance);
+      }
+      if (_gpSmartPreferredHas(play, "preferredFieldPosition", ["lo-rz", "hi-rz", "goal line", "backed up", "saigon"])) {
+        score += 22;
+        reasons.push(play.preferredFieldPosition);
+      }
+      if (_gpSmartPreferredHas(play, "preferredSituation", ["short yardage", "2 minute", "4 minute"])) {
+        score += 22;
+        reasons.push(play.preferredSituation);
+      }
+      return score >= 30 ? { score, reason: reasons.slice(0, 2).join(" / ") || "situational fit" } : null;
+    },
+  },
+];
+
+function _gpSmartRankCandidates(candidates, limit) {
+  const sorted = candidates.slice().sort((a, b) => {
+    if (b.score !== a.score) return b.score - a.score;
+    return _gpSmartPlayLabel(a.play).localeCompare(_gpSmartPlayLabel(b.play));
+  });
+  const selected = [];
+  const seenFamilies = new Set();
+  sorted.forEach((item) => {
+    if (selected.length >= limit) return;
+    const family = String(item.play?.basePlay || item.play?.play || "").toLowerCase();
+    if (family && seenFamilies.has(family) && selected.length < Math.ceil(limit / 2)) return;
+    selected.push(item);
+    if (family) seenFamilies.add(family);
+  });
+  sorted.forEach((item) => {
+    if (selected.length >= limit) return;
+    if (!selected.some((chosen) => chosen.sig === item.sig)) selected.push(item);
+  });
+  return selected;
+}
+
+function _gpBuildSmartPlanRecommendations() {
+  const board = _gpEnsureBoard();
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw?.opponentName || "";
+  const baseCounts = new Map();
+  const constraintTargets = new Set();
+  (plays || []).forEach((play) => {
+    if (play?.basePlay) baseCounts.set(play.basePlay, (baseCounts.get(play.basePlay) || 0) + 1);
+    _gpSmartConstraintValues(play).forEach((value) => constraintTargets.add(value));
+  });
+  const ctx = {
+    board,
+    opponent,
+    baseCounts,
+    constraintTargets,
+  };
+  const groups = GP_SMART_PLAN_GROUPS.map((group) => {
+    const candidates = [];
+    (plays || []).forEach((play) => {
+      const result = group.evaluate(play, ctx);
+      if (!result) return;
+      candidates.push({
+        play,
+        sig: _gpPlaySignature(play),
+        score: result.score,
+        reason: result.reason,
+      });
+    });
+    return {
+      ...group,
+      candidates: _gpSmartRankCandidates(candidates, group.limit),
+    };
+  });
+  return {
+    opponent,
+    totalPlays: Array.isArray(plays) ? plays.length : 0,
+    groups,
+  };
+}
+
+function _gpSmartArg(payload) {
+  return escapeAttr(JSON.stringify(payload));
+}
+
+function _gpRenderSmartRecommendationRow(group, item) {
+  const callHtml = typeof getFullCall === "function"
+    ? getFullCall(item.play, { showLineCall: false })
+    : escapeHtml(item.play?.play || item.play?.basePlay || "Unnamed play");
+  const meta = [item.play?.type, item.play?.personnel, item.play?.formation]
+    .filter(Boolean)
+    .join(" • ");
+  return `
+    <div class="gp-smart-builder-play">
+      <div class="gp-smart-builder-play-copy">
+        <div class="gp-smart-builder-call">${callHtml}</div>
+        <div class="gp-smart-builder-meta">${escapeHtml([meta, item.reason].filter(Boolean).join(" — "))}</div>
+      </div>
+      <button class="btn btn-sm" type="button" data-action="addSmartGamePlanRecommendation"
+        data-arg="${_gpSmartArg({ groupId: group.id, sig: item.sig })}">Add</button>
+    </div>`;
+}
+
+function _gpRenderSmartRecommendationGroup(group) {
+  const rows = group.candidates.length
+    ? group.candidates.map((item) => _gpRenderSmartRecommendationRow(group, item)).join("")
+    : `<div class="gp-smart-builder-empty">No matching plays found for this lane yet.</div>`;
+  return `
+    <section class="gp-smart-builder-group">
+      <div class="gp-smart-builder-group-head">
+        <div>
+          <h4>${escapeHtml(group.icon)} ${escapeHtml(group.label)}</h4>
+          <p>${escapeHtml(group.description)}</p>
+        </div>
+        <button class="btn btn-sm btn-primary" type="button" data-action="addSmartGamePlanRecommendationGroup"
+          data-arg="${escapeAttr(group.id)}" ${group.candidates.length === 0 ? "disabled" : ""}>
+          Add Top ${group.candidates.length}
+        </button>
+      </div>
+      <div class="gp-smart-builder-target">Target bucket: <strong>${escapeHtml(group.targetLabel)}</strong></div>
+      <div class="gp-smart-builder-list">${rows}</div>
+    </section>`;
+}
+
+function openSmartGamePlanBuilder() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook before building a smart game plan.", { type: "warning" });
+    return;
+  }
+  document.getElementById("gpSmartBuilderOverlay")?.remove();
+  const recs = _gpBuildSmartPlanRecommendations();
+  const totalCandidates = recs.groups.reduce((sum, group) => sum + group.candidates.length, 0);
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "gpSmartBuilderOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal custom-modal-wide gp-smart-builder-modal" role="dialog" aria-modal="true" aria-labelledby="gpSmartBuilderTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🧠</span>
+        <h3 class="custom-modal-title" id="gpSmartBuilderTitle">Smart Game Plan Builder</h3>
+      </div>
+      <div class="custom-modal-body">
+        <div class="gp-smart-builder-summary">
+          <strong>${totalCandidates}</strong>
+          <span>recommended calls from ${recs.totalPlays} playbook plays${recs.opponent ? ` for ${escapeHtml(recs.opponent)}` : ""}</span>
+        </div>
+        <div class="gp-smart-builder-groups">
+          ${recs.groups.map(_gpRenderSmartRecommendationGroup).join("")}
+        </div>
+      </div>
+      <div class="custom-modal-actions">
+        <button class="btn btn-sm" type="button" data-action="closeSmartGamePlanBuilder">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  overlay.addEventListener("click", (event) => {
+    if (event.target === overlay) closeSmartGamePlanBuilder();
+  });
+  overlay.addEventListener("keydown", (event) => {
+    if (event.key === "Escape") {
+      event.preventDefault();
+      closeSmartGamePlanBuilder();
+    }
+  });
+}
+
+function closeSmartGamePlanBuilder() {
+  const overlay = document.getElementById("gpSmartBuilderOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function _gpEnsureSmartRecommendationBox(group) {
+  if (!group?.targetId) return;
+  _gpUpdateBoard((board) => {
+    if (!board.assignments || typeof board.assignments !== "object") board.assignments = {};
+    if (!Array.isArray(board.assignments[group.targetId])) board.assignments[group.targetId] = [];
+    const isDefault = GP_DEFAULT_BOXES.some((box) => box.id === group.targetId);
+    const isCustom = Array.isArray(board.customBoxes)
+      && board.customBoxes.some((box) => box.id === group.targetId);
+    if (!isDefault && !isCustom) {
+      if (!Array.isArray(board.customBoxes)) board.customBoxes = [];
+      board.customBoxes.push({
+        id: group.targetId,
+        label: group.targetLabel || group.label || group.targetId,
+        template: "smart-builder",
+      });
+    }
+  });
+}
+
+function _gpAddSmartRecommendations(group, sigs) {
+  if (!group || !Array.isArray(sigs) || sigs.length === 0) return;
+  _gpEnsureSmartRecommendationBox(group);
+  _gpAddSigsToBox(sigs, group.targetId);
+}
+
+function addSmartGamePlanRecommendationGroup(groupId) {
+  const recs = _gpBuildSmartPlanRecommendations();
+  const group = recs.groups.find((item) => item.id === groupId);
+  if (!group || group.candidates.length === 0) {
+    showToast("No recommendations available for that lane.", { type: "warning" });
+    return;
+  }
+  _gpAddSmartRecommendations(group, group.candidates.map((item) => item.sig));
+}
+
+function addSmartGamePlanRecommendation(arg) {
+  const data = safeJSONParse(arg, null);
+  if (!data?.groupId || !data?.sig) return;
+  const recs = _gpBuildSmartPlanRecommendations();
+  const group = recs.groups.find((item) => item.id === data.groupId);
+  if (!group) return;
+  _gpAddSmartRecommendations(group, [data.sig]);
+}
 /* -------------------------------------------------------------------------
    Add Bucket — template-driven custom box creator
    ------------------------------------------------------------------------- */

@@ -104,7 +104,7 @@ Status:
 
 Goal: Help coaches assemble a plan from identity, opponent tendencies, and situation needs.
 
-- [ ] Recommend openers, must-haves, answers, constraints, and situational calls
+- [x] Recommend openers, must-haves, answers, constraints, and situational calls
 - [ ] Use opponent tendency data when available
 - [ ] Highlight missing complements and overloaded concepts
 - [ ] Push recommendations to call sheet, script, and wristband
@@ -112,6 +112,11 @@ Goal: Help coaches assemble a plan from identity, opponent tendencies, and situa
 Definition of done:
 
 - The app can suggest a usable first draft while keeping the coach in control.
+
+Status:
+
+- Phase 1 added a Smart Game Plan Builder modal with recommendation lanes for openers, must-haves, answers, constraints, and situational calls.
+- Next slice should use opponent tendency data directly in the recommendations.
 
 ## 6. Practice Script Timeline View
 

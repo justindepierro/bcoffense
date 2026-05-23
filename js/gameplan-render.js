@@ -210,6 +210,9 @@ function renderGamePlan() {
           </button>
         </div>
         <div class="gp-header-group">
+          <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
+            🧠 Build Plan
+          </button>
           <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
             📊 Variety
           </button>
