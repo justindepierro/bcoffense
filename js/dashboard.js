@@ -3,6 +3,7 @@
 let dashSearchTerm = "";
 let _dashNotesTimer = null;
 let _dashLastAnimatedValues = {}; // card key -> last animated value, prevents re-replay
+const DASH_STALE_ARTIFACT_MS = 14 * 24 * 60 * 60 * 1000;
 
 // Pick black/white text for a category background based on relative luminance.
 // Used for the call sheet category headers in the dashboard print view.
@@ -98,6 +99,90 @@ function _dashGetWristbandPlayCount() {
         : [];
     return sum + cells.filter((play) => play !== null && play !== undefined).length;
   }, 0);
+}
+
+function _dashGetTimestamp(value) {
+  if (!value) return 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function _dashFormatSavedAge(value) {
+  const timestamp = _dashGetTimestamp(value);
+  if (!timestamp) return "no saved date";
+  const ageMs = Date.now() - timestamp;
+  if (ageMs < 60 * 60 * 1000) return "saved this hour";
+  const days = Math.max(1, Math.round(ageMs / (24 * 60 * 60 * 1000)));
+  return `saved ${days} day${days === 1 ? "" : "s"} ago`;
+}
+
+function _dashIsStaleSavedAt(value) {
+  const timestamp = _dashGetTimestamp(value);
+  if (!timestamp) return true;
+  return Date.now() - timestamp > DASH_STALE_ARTIFACT_MS;
+}
+
+function _dashGetLatestSaved(items) {
+  if (!Array.isArray(items) || items.length === 0) return null;
+  return items.reduce((latest, item) => {
+    if (!latest) return item;
+    return _dashGetTimestamp(item?.savedAt) >= _dashGetTimestamp(latest?.savedAt)
+      ? item
+      : latest;
+  }, null);
+}
+
+function _dashCountSavedWristbandPlays(record) {
+  if (!record) return 0;
+  const cards = Array.isArray(record.cards)
+    ? record.cards
+    : Array.isArray(record.data)
+      ? [{ data: record.data }]
+      : [];
+  return cards.reduce((sum, card) => {
+    const cells = Array.isArray(card?.data) ? card.data : [];
+    return sum + cells.filter((play) => play !== null && play !== undefined).length;
+  }, 0);
+}
+
+function _dashCountGamePlanSnapshotPlays(snapshot) {
+  const assignments = snapshot?.board?.assignments || {};
+  return Object.values(assignments).reduce(
+    (sum, assigned) => sum + (Array.isArray(assigned) ? assigned.length : 0),
+    0,
+  );
+}
+
+function _dashCountDraftWristbandPlays(draft) {
+  if (!draft) return 0;
+  return _dashCountSavedWristbandPlays(draft);
+}
+
+function _dashCountDraftCallSheetPlays(draft) {
+  const sheet = draft?.callSheet || {};
+  return Object.values(sheet).reduce(
+    (sum, data) =>
+      sum +
+      (Array.isArray(data?.left) ? data.left.length : 0) +
+      (Array.isArray(data?.right) ? data.right.length : 0),
+    0,
+  );
+}
+
+function _dashGetFreshDraft(storageKey) {
+  const draft = storageManager.get(storageKey, null);
+  if (!draft || typeof draft !== "object") return null;
+  if (typeof isDraftExpired === "function" && isDraftExpired(draft)) return null;
+  return draft;
+}
+
+function _dashGetGamePlanSnapshotsForWeek(gw) {
+  const all = typeof _gpLoadAllSnapshots === "function"
+    ? _gpLoadAllSnapshots()
+    : storageManager.get("gamePlanSnapshots", {});
+  const key = gw?.opponentName || "__unassigned__";
+  return Array.isArray(all?.[key]) ? all[key] : [];
 }
 
 function _dashFindScheduleGame(gw, schedule) {
@@ -240,6 +325,154 @@ function _dashBuildPrepChecklistItem(item) {
   </button>`;
 }
 
+function _dashBuildActionQueue(metrics, gw) {
+  const items = [];
+  const scriptDraft = _dashGetFreshDraft(STORAGE_KEYS.SCRIPT_DRAFT);
+  const scriptDraftCount = Array.isArray(scriptDraft?.plays)
+    ? scriptDraft.plays.filter((item) => !item?.isSeparator).length
+    : 0;
+  if (scriptDraftCount > 0) {
+    items.push({
+      label: "Finish script draft",
+      detail: `${scriptDraft.name || "Untitled script"} • ${scriptDraftCount} calls • ${formatDraftSavedAt(scriptDraft)}`,
+      level: "open",
+      action: "showTab",
+      arg: "script",
+    });
+  }
+
+  const wristbandDraft = _dashGetFreshDraft(STORAGE_KEYS.WRISTBAND_DRAFT);
+  const wristbandDraftCount = _dashCountDraftWristbandPlays(wristbandDraft);
+  if (wristbandDraftCount > 0) {
+    items.push({
+      label: "Finish wristband draft",
+      detail: `${wristbandDraftCount} calls • ${formatDraftSavedAt(wristbandDraft)}`,
+      level: "open",
+      action: "showTab",
+      arg: "wristband",
+    });
+  }
+
+  const callSheetDraft = _dashGetFreshDraft(STORAGE_KEYS.CALLSHEET_DRAFT);
+  const callSheetDraftCount = _dashCountDraftCallSheetPlays(callSheetDraft);
+  if (callSheetDraftCount > 0) {
+    items.push({
+      label: "Review call sheet draft",
+      detail: `${callSheetDraftCount} calls • ${formatDraftSavedAt(callSheetDraft)}`,
+      level: "open",
+      action: "showTab",
+      arg: "callsheet",
+    });
+  }
+
+  const tendenciesDraft = _dashGetFreshDraft(STORAGE_KEYS.TENDENCIES_DRAFT);
+  const tendencyFieldCount = tendenciesDraft?.play
+    ? Object.values(tendenciesDraft.play).filter((value) => value && String(value).trim()).length
+    : 0;
+  if (tendencyFieldCount > 0) {
+    items.push({
+      label: "Finish scouting draft",
+      detail: `${tendencyFieldCount} fields started • ${formatDraftSavedAt(tendenciesDraft)}`,
+      level: "open",
+      action: "showTab",
+      arg: "tendencies",
+    });
+  }
+
+  if (typeof scriptDirty !== "undefined" && scriptDirty && metrics.scriptCount > 0) {
+    items.push({
+      label: "Save current script",
+      detail: `${metrics.scriptCount} calls have unsaved changes`,
+      level: "open",
+      action: "showTab",
+      arg: "script",
+    });
+  }
+
+  if (typeof wristbandDirty !== "undefined" && wristbandDirty && metrics.wristbandCount > 0) {
+    items.push({
+      label: "Save current wristband",
+      detail: `${metrics.wristbandCount} calls have unsaved changes`,
+      level: "open",
+      action: "showTab",
+      arg: "wristband",
+    });
+  }
+
+  const savedScripts = typeof getSavedScripts === "function"
+    ? getSavedScripts()
+    : storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const latestScript = _dashGetLatestSaved(savedScripts);
+  if (latestScript && _dashIsStaleSavedAt(latestScript.savedAt)) {
+    items.push({
+      label: "Old saved script",
+      detail: `${latestScript.name || "Saved script"} • ${_dashFormatSavedAge(latestScript.savedAt)}`,
+      level: "stale",
+      action: "showTab",
+      arg: "script",
+    });
+  }
+
+  const savedWristbands = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  const latestWristband = _dashGetLatestSaved(savedWristbands);
+  if (latestWristband && _dashIsStaleSavedAt(latestWristband.savedAt)) {
+    items.push({
+      label: "Old saved wristband",
+      detail: `${latestWristband.title || "Saved wristband"} • ${_dashCountSavedWristbandPlays(latestWristband)} calls • ${_dashFormatSavedAge(latestWristband.savedAt)}`,
+      level: "stale",
+      action: "showTab",
+      arg: "wristband",
+    });
+  }
+
+  const snapshots = _dashGetGamePlanSnapshotsForWeek(gw);
+  const latestSnapshot = _dashGetLatestSaved(snapshots);
+  if (latestSnapshot && _dashIsStaleSavedAt(latestSnapshot.savedAt)) {
+    items.push({
+      label: "Old saved game plan",
+      detail: `${latestSnapshot.name || "Saved plan"} • ${_dashCountGamePlanSnapshotPlays(latestSnapshot)} calls • ${_dashFormatSavedAge(latestSnapshot.savedAt)}`,
+      level: "stale",
+      action: "showTab",
+      arg: "gameplan",
+    });
+  }
+
+  const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+  const latestTemplate = _dashGetLatestSaved(templates);
+  if (latestTemplate && _dashIsStaleSavedAt(latestTemplate.savedAt)) {
+    items.push({
+      label: "Old call sheet template",
+      detail: `${latestTemplate.name || "Saved template"} • ${latestTemplate.playCount || 0} calls • ${_dashFormatSavedAge(latestTemplate.savedAt)}`,
+      level: "stale",
+      action: "showTab",
+      arg: "callsheet",
+    });
+  }
+
+  if (items.length === 0) {
+    items.push({
+      label: "No unfinished or stale artifacts",
+      detail: "Drafts and saved weekly materials look current",
+      level: "clean",
+      action: "showStorageInfo",
+    });
+  }
+  return items.slice(0, 6);
+}
+
+function _dashBuildActionQueueItem(item) {
+  const arg = item.arg !== undefined ? ` data-arg="${escapeHtml(item.arg)}"` : "";
+  const action = item.action ? ` data-action="${escapeHtml(item.action)}"${arg}` : "";
+  const marker = item.level === "clean" ? "✓" : item.level === "stale" ? "!" : "↗";
+  return `<button class="dash-action-item is-${escapeHtml(item.level)}" type="button"${action}>
+    <span class="dash-action-marker" aria-hidden="true">${marker}</span>
+    <span class="dash-action-copy">
+      <span class="dash-action-label">${escapeHtml(item.label)}</span>
+      <span class="dash-action-detail">${escapeHtml(item.detail)}</span>
+    </span>
+  </button>`;
+}
+
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");
   if (!section) return;
@@ -248,6 +481,9 @@ function renderGameWeekCommandCenter(gw, opponents) {
   const checklist = _dashBuildPrepChecklist(metrics, gw);
   const openItems = checklist.filter((item) => !item.done).length;
   const checklistHtml = checklist.map(_dashBuildPrepChecklistItem).join("");
+  const queue = _dashBuildActionQueue(metrics, gw);
+  const queueHtml = queue.map(_dashBuildActionQueueItem).join("");
+  const activeQueueCount = queue.filter((item) => item.level !== "clean").length;
   const opponentLabel = gw.opponentName || "No opponent selected";
   const weekLabel = gw.weekLabel || "Game week";
   const scheduleMeta = metrics.activeGame
@@ -318,6 +554,17 @@ function renderGameWeekCommandCenter(gw, opponents) {
       </div>
       <div class="dash-prep-grid">
         ${checklistHtml}
+      </div>
+    </div>
+    <div class="dash-action-queue" aria-label="Unfinished work and stale saved artifacts">
+      <div class="dash-action-header">
+        <div>
+          <span class="dash-command-eyebrow">Action Queue</span>
+          <h4>${activeQueueCount === 0 ? "Saved work is current" : `${activeQueueCount} item${activeQueueCount === 1 ? "" : "s"} to review`}</h4>
+        </div>
+      </div>
+      <div class="dash-action-list">
+        ${queueHtml}
       </div>
     </div>`;
 }
