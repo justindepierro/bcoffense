@@ -7,7 +7,7 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 1. [x] Universal Search and Command Palette
 2. [x] Mobile Coach Mode
 3. [x] Data Health Center
-4. [ ] Game Week Command Center
+4. [x] Game Week Command Center
 5. [ ] Smart Game Plan Builder
 6. [ ] Practice Script Timeline View
 7. [ ] Print and Export Studio
@@ -84,7 +84,7 @@ Goal: Turn the Dashboard into a true weekly operations hub.
 - [x] Prep checklist across playbook, script, wristband, call sheet, and game plan
 - [x] Links to unfinished work and stale saved artifacts
 - [x] Weekly notes and install priorities
-- [ ] Readiness score with actionable gaps
+- [x] Readiness score with actionable gaps
 
 Definition of done:
 
@@ -96,7 +96,9 @@ Status:
 - Phase 2 added a prep checklist across playbook, opponent scouting, game plan, script, wristband, call sheet, and notes.
 - Phase 3 added an Action Queue for unfinished drafts, dirty current work, and stale saved scripts, wristbands, game-plan snapshots, and call-sheet templates.
 - Phase 4 added a Weekly Focus block with a notes preview and top installation priorities from the Smart Install Report.
-- Next slice should add a readiness score with actionable gaps.
+- Phase 5 added a readiness score panel with completion count, progress bar, and clickable next gaps.
+- Game Week Command Center is now complete for the current roadmap scope.
+- Next slice should move into the Smart Game Plan Builder.
 
 ## 5. Smart Game Plan Builder
 

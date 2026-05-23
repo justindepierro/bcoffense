@@ -253,6 +253,12 @@ function _dashMetricStatus(value) {
   return value > 0 ? "is-good" : "is-empty";
 }
 
+function _dashBuildActionAttrs(action, arg) {
+  if (!action) return "";
+  const dataArg = arg !== undefined ? ` data-arg="${escapeHtml(arg)}"` : "";
+  return ` data-action="${escapeHtml(action)}"${dataArg}`;
+}
+
 function _dashBuildPrepChecklist(metrics, gw) {
   const gamePlanCount = metrics.taggedPlanCount || metrics.boardPlanCount;
   return [
@@ -314,8 +320,7 @@ function _dashBuildPrepChecklist(metrics, gw) {
 }
 
 function _dashBuildPrepChecklistItem(item) {
-  const arg = item.arg !== undefined ? ` data-arg="${escapeHtml(item.arg)}"` : "";
-  const action = item.action ? ` data-action="${escapeHtml(item.action)}"${arg}` : "";
+  const action = _dashBuildActionAttrs(item.action, item.arg);
   return `<button class="dash-prep-item ${item.done ? "is-done" : "is-open"}" type="button"${action}>
     <span class="dash-prep-status" aria-hidden="true">${item.done ? "✓" : "!"}</span>
     <span class="dash-prep-copy">
@@ -323,6 +328,31 @@ function _dashBuildPrepChecklistItem(item) {
       <span class="dash-prep-detail">${escapeHtml(item.detail)}</span>
     </span>
   </button>`;
+}
+
+function _dashBuildReadinessGapRows(gaps) {
+  if (!Array.isArray(gaps) || gaps.length === 0) {
+    return `<button class="dash-readiness-gap is-clean" type="button" data-action="showTab" data-arg="gameplan">
+      <span class="dash-readiness-gap-marker" aria-hidden="true">✓</span>
+      <span class="dash-readiness-gap-copy">
+        <span class="dash-readiness-gap-label">Core prep complete</span>
+        <span class="dash-readiness-gap-detail">Review the game plan or print staff materials.</span>
+      </span>
+    </button>`;
+  }
+  return gaps
+    .slice(0, 4)
+    .map((gap, idx) => {
+      const action = _dashBuildActionAttrs(gap.action, gap.arg);
+      return `<button class="dash-readiness-gap" type="button"${action}>
+        <span class="dash-readiness-gap-marker" aria-hidden="true">${idx + 1}</span>
+        <span class="dash-readiness-gap-copy">
+          <span class="dash-readiness-gap-label">${escapeHtml(gap.label)}</span>
+          <span class="dash-readiness-gap-detail">${escapeHtml(gap.detail)}</span>
+        </span>
+      </button>`;
+    })
+    .join("");
 }
 
 function _dashBuildActionQueue(metrics, gw) {
@@ -461,8 +491,7 @@ function _dashBuildActionQueue(metrics, gw) {
 }
 
 function _dashBuildActionQueueItem(item) {
-  const arg = item.arg !== undefined ? ` data-arg="${escapeHtml(item.arg)}"` : "";
-  const action = item.action ? ` data-action="${escapeHtml(item.action)}"${arg}` : "";
+  const action = _dashBuildActionAttrs(item.action, item.arg);
   const marker = item.level === "clean" ? "✓" : item.level === "stale" ? "!" : "↗";
   return `<button class="dash-action-item is-${escapeHtml(item.level)}" type="button"${action}>
     <span class="dash-action-marker" aria-hidden="true">${marker}</span>
@@ -550,6 +579,14 @@ function renderGameWeekCommandCenter(gw, opponents) {
   const checklist = _dashBuildPrepChecklist(metrics, gw);
   const openItems = checklist.filter((item) => !item.done).length;
   const checklistHtml = checklist.map(_dashBuildPrepChecklistItem).join("");
+  const readinessGaps = checklist.filter((item) => !item.done);
+  const readinessGapHtml = _dashBuildReadinessGapRows(readinessGaps);
+  const readinessDoneCount = checklist.length - openItems;
+  const readinessPct = Math.max(0, Math.min(100, metrics.readiness));
+  const readinessGapLabel =
+    openItems === 0
+      ? "No gaps open"
+      : `${openItems} gap${openItems === 1 ? "" : "s"} open`;
   const queue = _dashBuildActionQueue(metrics, gw);
   const queueHtml = queue.map(_dashBuildActionQueueItem).join("");
   const activeQueueCount = queue.filter((item) => item.level !== "clean").length;
@@ -579,6 +616,28 @@ function renderGameWeekCommandCenter(gw, opponents) {
       <div class="dash-command-readiness ${statusClass}">
         <strong>${metrics.readiness}%</strong>
         <span>${escapeHtml(metrics.status)}</span>
+      </div>
+    </div>
+    <div class="dash-readiness-panel" aria-label="Readiness score with actionable gaps">
+      <div class="dash-readiness-score">
+        <span class="dash-command-eyebrow">Readiness Score</span>
+        <div class="dash-readiness-score-row">
+          <strong>${metrics.readiness}%</strong>
+          <span>${readinessDoneCount}/${checklist.length} checks</span>
+        </div>
+        <div class="dash-readiness-track" aria-hidden="true">
+          <span style="--dash-readiness-pct:${readinessPct}%"></span>
+        </div>
+        <p>${openItems === 0 ? "All weekly readiness checks are complete." : "Close the next gaps to move this week toward game-ready."}</p>
+      </div>
+      <div class="dash-readiness-gaps">
+        <div class="dash-readiness-gaps-head">
+          <span class="dash-focus-title">Actionable Gaps</span>
+          <span class="dash-readiness-gap-count">${escapeHtml(readinessGapLabel)}</span>
+        </div>
+        <div class="dash-readiness-gap-list">
+          ${readinessGapHtml}
+        </div>
       </div>
     </div>
     <div class="dash-command-metrics" aria-label="Game week status metrics">
