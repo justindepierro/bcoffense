@@ -5,8 +5,8 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 ## Priority Order
 
 1. [x] Universal Search and Command Palette
-2. [ ] Mobile Coach Mode
-3. [ ] Data Health Center
+2. [x] Mobile Coach Mode
+3. [x] Data Health Center
 4. [ ] Game Week Command Center
 5. [ ] Smart Game Plan Builder
 6. [ ] Practice Script Timeline View
@@ -51,7 +51,7 @@ Status:
 - Phase 2 added current period/current call controls inside Script on phones.
 - Phase 3 added a mobile Notes card with game-week notes, opponent status, and prep reminders.
 - Phase 4 added a mobile coach lock that preserves navigation/current-call review while blocking accidental edits.
-- Next slice should move into the Data Health Center.
+- Mobile Coach Mode is complete for the current roadmap scope.
 
 ## 3. Data Health Center
 
@@ -74,12 +74,13 @@ Status:
 - Phase 3 added call sheet category coverage checks for unused, overloaded, and unrouted plays.
 - Phase 4 added source CSV cleanup recommendations for missing columns, invalid values, sparse routing data, duplicate rows, and template alignment.
 - Data Health Center is now complete for the current roadmap scope.
+- Next slice moved into the Game Week Command Center.
 
 ## 4. Game Week Command Center
 
 Goal: Turn the Dashboard into a true weekly operations hub.
 
-- [ ] Active opponent and game-week status summary
+- [x] Active opponent and game-week status summary
 - [ ] Prep checklist across playbook, script, wristband, call sheet, and game plan
 - [ ] Links to unfinished work and stale saved artifacts
 - [ ] Weekly notes and install priorities
@@ -88,6 +89,11 @@ Goal: Turn the Dashboard into a true weekly operations hub.
 Definition of done:
 
 - The dashboard answers "What do I still need to do this week?" in one view.
+
+Status:
+
+- Phase 1 added a dashboard Game Week Command Center summary with active opponent, schedule context, readiness status, and key prep counts.
+- Next slice should add a prep checklist across playbook, script, wristband, call sheet, and game plan.
 
 ## 5. Smart Game Plan Builder
 

@@ -78,6 +78,137 @@ function _dashGetBoardGamePlanCount() {
   return 0;
 }
 
+function _dashGetScriptPlayCount() {
+  return Array.isArray(script)
+    ? script.filter((play) => play && !play.isSeparator).length
+    : 0;
+}
+
+function _dashFindScheduleGame(gw, schedule) {
+  if (!gw?.opponentName || !Array.isArray(schedule)) return null;
+  const opp = String(gw.opponentName || "").toLowerCase().trim();
+  const week = String(gw.weekLabel || "").toLowerCase().trim();
+  return schedule.find((game) => {
+    const gameOpp = String(game?.opponent || "").toLowerCase().trim();
+    const gameWeek = String(game?.week || "").toLowerCase().trim();
+    if (week) return gameOpp === opp && gameWeek === week;
+    return gameOpp === opp;
+  }) || null;
+}
+
+function _dashBuildGameWeekMetrics(gw, opponents) {
+  const opponent = _dashFindGameWeekOpponent(gw, opponents);
+  const schedule = typeof getSchedule === "function" ? getSchedule() : [];
+  const activeGame = _dashFindScheduleGame(gw, schedule);
+  const scoutCount = opponent?.plays?.length || 0;
+  const taggedPlanCount = gw.opponentName
+    ? _dashGetGamePlanPlaysForOpponent(gw.opponentName).length
+    : 0;
+  const boardPlanCount = _dashGetBoardGamePlanCount();
+  const scriptCount = _dashGetScriptPlayCount();
+  const callSheetCount = _dashCountCallSheetPlays();
+  const notesReady = Boolean(String(gw.notes || "").trim());
+  const readinessChecks = [
+    Boolean(gw.opponentName),
+    scoutCount > 0,
+    taggedPlanCount > 0 || boardPlanCount > 0,
+    scriptCount > 0,
+    callSheetCount > 0,
+    notesReady,
+  ];
+  const readyCount = readinessChecks.filter(Boolean).length;
+  const readiness = Math.round((readyCount / readinessChecks.length) * 100);
+  let status = "Needs setup";
+  if (readiness >= 85) status = "Ready";
+  else if (readiness >= 50) status = "In progress";
+  return {
+    opponent,
+    schedule,
+    activeGame,
+    scoutCount,
+    taggedPlanCount,
+    boardPlanCount,
+    scriptCount,
+    callSheetCount,
+    notesReady,
+    readiness,
+    status,
+  };
+}
+
+function _dashStatusClass(readiness) {
+  if (readiness >= 85) return "is-ready";
+  if (readiness >= 50) return "is-progress";
+  return "is-setup";
+}
+
+function _dashMetricStatus(value) {
+  return value > 0 ? "is-good" : "is-empty";
+}
+
+function renderGameWeekCommandCenter(gw, opponents) {
+  const section = document.getElementById("dashCommandCenter");
+  if (!section) return;
+  const metrics = _dashBuildGameWeekMetrics(gw, opponents);
+  const statusClass = _dashStatusClass(metrics.readiness);
+  const opponentLabel = gw.opponentName || "No opponent selected";
+  const weekLabel = gw.weekLabel || "Game week";
+  const scheduleMeta = metrics.activeGame
+    ? [metrics.activeGame.date, metrics.activeGame.location].filter(Boolean).join(" • ")
+    : "No matching schedule entry";
+  const primaryAction = gw.opponentName
+    ? `<button class="btn btn-sm btn-primary" data-action="showTab" data-arg="gameplan">Open Game Plan</button>`
+    : `<button class="btn btn-sm btn-primary" data-action="focusDashOpponentSelect">Pick Opponent</button>`;
+
+  section.innerHTML = `
+    <div class="dash-command-main">
+      <div class="dash-command-title-group">
+        <span class="dash-command-eyebrow">Game Week Command Center</span>
+        <h3>${escapeHtml(opponentLabel)}</h3>
+        <div class="dash-command-meta">
+          <span>${escapeHtml(weekLabel)}</span>
+          <span>${escapeHtml(scheduleMeta)}</span>
+        </div>
+      </div>
+      <div class="dash-command-readiness ${statusClass}">
+        <strong>${metrics.readiness}%</strong>
+        <span>${escapeHtml(metrics.status)}</span>
+      </div>
+    </div>
+    <div class="dash-command-metrics" aria-label="Game week status metrics">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.scoutCount)}" type="button" data-action="showTab" data-arg="tendencies">
+        <strong>${metrics.scoutCount}</strong>
+        <span>Scout Plays</span>
+      </button>
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.taggedPlanCount)}" type="button" data-action="showTab" data-arg="gameplan">
+        <strong>${metrics.taggedPlanCount}</strong>
+        <span>Tagged Calls</span>
+      </button>
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.boardPlanCount)}" type="button" data-action="showTab" data-arg="gameplan">
+        <strong>${metrics.boardPlanCount}</strong>
+        <span>Board Calls</span>
+      </button>
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.scriptCount)}" type="button" data-action="showTab" data-arg="script">
+        <strong>${metrics.scriptCount}</strong>
+        <span>Script Calls</span>
+      </button>
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.callSheetCount)}" type="button" data-action="showTab" data-arg="callsheet">
+        <strong>${metrics.callSheetCount}</strong>
+        <span>Sheet Calls</span>
+      </button>
+      <button class="dash-command-metric ${metrics.notesReady ? "is-good" : "is-empty"}" type="button" data-action="focusMobileCoachNotes">
+        <strong>${metrics.notesReady ? "Yes" : "No"}</strong>
+        <span>Notes</span>
+      </button>
+    </div>
+    <div class="dash-command-actions">
+      ${primaryAction}
+      <button class="btn btn-sm" data-action="showTab" data-arg="tendencies">Scouting</button>
+      <button class="btn btn-sm" data-action="showTab" data-arg="callsheet">Call Sheet</button>
+      <button class="btn btn-sm" data-action="printFullGamePlan">Print</button>
+    </div>`;
+}
+
 function _dashBuildMobileCoachReminderAttrs(reminder) {
   if (!reminder?.action) return "";
   const action = escapeHtml(reminder.action);
@@ -272,11 +403,12 @@ function renderDashboard() {
     }
 
     renderMobileCoachNotesCard(gw, opponents);
+    renderGameWeekCommandCenter(gw, opponents);
 
     const cardsEl = document.getElementById("dashCards");
     if (cardsEl) {
       const playCount = typeof plays !== "undefined" ? plays.length : 0;
-      const scriptCount = script.filter((p) => !p.isSeparator).length;
+      const scriptCount = _dashGetScriptPlayCount();
       const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
       const savedScriptCount = Array.isArray(savedScripts)
         ? savedScripts.length
