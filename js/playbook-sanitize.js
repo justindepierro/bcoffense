@@ -722,6 +722,334 @@ function openPlayEditorFromSanitize(masterIdxStr) {
 }
 
 /* =========================================================================
+   Playbook Data Health Center
+   Review-only checks for duplicate calls and missing critical play fields.
+   ========================================================================= */
+
+const PLAYBOOK_HEALTH_CRITICAL_FIELDS = [
+  { key: "type", label: "Play Type" },
+  { key: "personnel", label: "Personnel" },
+  { key: "formation", label: "Formation" },
+  { key: "play", label: "Play Name" },
+  { key: "basePlay", label: "Base Play" },
+  { key: "preferredDown", label: "Preferred Down" },
+  { key: "preferredDistance", label: "Preferred Distance" },
+  { key: "preferredFieldPosition", label: "Field Position" },
+];
+
+function _pbHealthNorm(value) {
+  return String(value || "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
+}
+
+function _pbHealthExactKey(play) {
+  const hasIdentity = ["formation", "play", "personnel", "type"].some(
+    (key) => _pbHealthNorm(play?.[key]),
+  );
+  if (!hasIdentity) return "";
+  if (typeof getPlayIdentityKey === "function") {
+    return getPlayIdentityKey(play, "tag", { normalizeCase: true });
+  }
+  return ["formation", "play", "personnel", "type"]
+    .map((key) => _pbHealthNorm(play?.[key]))
+    .join("|");
+}
+
+function _pbHealthNearKey(play) {
+  const formation = _pbHealthNorm(play?.formation);
+  const playName = _pbHealthNorm(play?.play);
+  if (!formation || !playName) return "";
+  return `${formation}|${playName}`;
+}
+
+function _pbHealthGroupBy(entries, keyFn) {
+  const map = new Map();
+  entries.forEach((entry) => {
+    const key = keyFn(entry.play);
+    if (!key) return;
+    if (!map.has(key)) map.set(key, []);
+    map.get(key).push(entry);
+  });
+  return Array.from(map.values()).filter((group) => group.length > 1);
+}
+
+function _pbHealthAnalyze() {
+  const entries = Array.isArray(plays)
+    ? plays.map((play, index) => ({ play, index }))
+    : [];
+  const exactGroups = _pbHealthGroupBy(entries, _pbHealthExactKey);
+  const nearGroups = _pbHealthGroupBy(entries, _pbHealthNearKey).filter((group) => {
+    const exactKeys = new Set(group.map((entry) => _pbHealthExactKey(entry.play)));
+    return exactKeys.size > 1;
+  });
+  const missingByField = PLAYBOOK_HEALTH_CRITICAL_FIELDS.map((field) => {
+    const items = entries.filter(({ play }) => _sanitizeIsEmpty(play, field.key));
+    return { ...field, count: items.length, items };
+  });
+  const missingRows = entries
+    .map((entry) => ({
+      ...entry,
+      fields: PLAYBOOK_HEALTH_CRITICAL_FIELDS.filter((field) =>
+        _sanitizeIsEmpty(entry.play, field.key),
+      ),
+    }))
+    .filter((entry) => entry.fields.length > 0);
+  const exactDuplicateItems = exactGroups.reduce((sum, group) => sum + group.length, 0);
+  const nearDuplicateItems = nearGroups.reduce((sum, group) => sum + group.length, 0);
+  const score = Math.max(
+    0,
+    100 -
+      exactGroups.length * 10 -
+      nearGroups.length * 6 -
+      missingRows.length * 3,
+  );
+  return {
+    entries,
+    exactGroups,
+    nearGroups,
+    missingByField,
+    missingRows,
+    exactDuplicateItems,
+    nearDuplicateItems,
+    score,
+  };
+}
+
+function _pbHealthPlayTitle(play) {
+  const bits = [
+    play?.type,
+    play?.personnel ? `${play.personnel} pers` : "",
+    play?.formation,
+    play?.play,
+  ].filter(Boolean);
+  return bits.join(" • ") || "Unnamed play";
+}
+
+function _pbHealthPlayContext(play) {
+  return [
+    play?.basePlay ? `Base: ${play.basePlay}` : "",
+    play?.preferredDown ? `D${play.preferredDown}` : "",
+    play?.preferredDistance,
+    play?.preferredFieldPosition,
+    play?.oneWord ? `One word: ${play.oneWord}` : "",
+  ]
+    .filter(Boolean)
+    .join(" • ");
+}
+
+function _pbHealthRenderGroup(group) {
+  const names = group
+    .slice(0, 4)
+    .map(({ play, index }) => {
+      const title = _pbHealthPlayTitle(play);
+      const context = _pbHealthPlayContext(play);
+      return `<li>
+        <button type="button" class="pb-health-play-link" data-action="openPlaybookHealthEdit" data-arg="${index}">
+          #${index + 1} ${escapeHtml(title)}
+        </button>
+        ${context ? `<span>${escapeHtml(context)}</span>` : ""}
+      </li>`;
+    })
+    .join("");
+  const remaining = group.length > 4
+    ? `<li class="pb-health-more">+${group.length - 4} more matching rows</li>`
+    : "";
+  return `<div class="pb-health-group">
+    <div class="pb-health-group-head">
+      <strong>${group.length} related rows</strong>
+      <button type="button" class="btn btn-xs" data-action="openPlaybookHealthEdit" data-arg="${group[0].index}">Edit first</button>
+    </div>
+    <ul>${names}${remaining}</ul>
+  </div>`;
+}
+
+function _pbHealthRenderGroups(groups, emptyText) {
+  if (!groups.length) {
+    return `<div class="pb-health-empty">${escapeHtml(emptyText)}</div>`;
+  }
+  return groups.slice(0, 8).map(_pbHealthRenderGroup).join("") +
+    (groups.length > 8
+      ? `<div class="pb-health-more">Showing 8 of ${groups.length} groups.</div>`
+      : "");
+}
+
+function _pbHealthRenderMissing(analysis) {
+  const fieldHtml = analysis.missingByField
+    .filter((field) => field.count > 0)
+    .map(
+      (field) => `<button type="button" class="pb-health-field-chip" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(field.key)}">
+        <strong>${field.count}</strong>
+        <span>${escapeHtml(field.label)}</span>
+      </button>`,
+    )
+    .join("");
+  const rowsHtml = analysis.missingRows
+    .slice(0, 8)
+    .map(({ play, index, fields }) => {
+      const missing = fields.map((field) => field.label).join(", ");
+      return `<div class="pb-health-missing-row">
+        <div>
+          <button type="button" class="pb-health-play-link" data-action="openPlaybookHealthEdit" data-arg="${index}">
+            #${index + 1} ${escapeHtml(_pbHealthPlayTitle(play))}
+          </button>
+          <span>${escapeHtml(missing)}</span>
+        </div>
+        <button type="button" class="btn btn-xs" data-action="openPlaybookHealthEdit" data-arg="${index}">Edit</button>
+      </div>`;
+    })
+    .join("");
+
+  if (!analysis.missingRows.length) {
+    return `<div class="pb-health-empty">No critical fields are missing.</div>`;
+  }
+
+  return `
+    <div class="pb-health-field-grid">${fieldHtml}</div>
+    <div class="pb-health-missing-list">
+      ${rowsHtml}
+      ${analysis.missingRows.length > 8
+        ? `<div class="pb-health-more">Showing 8 of ${analysis.missingRows.length} plays with missing critical fields.</div>`
+        : ""}
+    </div>`;
+}
+
+function renderPlaybookDataHealth() {
+  const overlay = document.getElementById("playbookDataHealthOverlay");
+  if (!overlay) return;
+  const body = overlay.querySelector("#playbookDataHealthBody");
+  if (!body) return;
+  const analysis = _pbHealthAnalyze();
+  const total = analysis.entries.length;
+  const issueCount =
+    analysis.exactGroups.length + analysis.nearGroups.length + analysis.missingRows.length;
+  const scoreClass =
+    analysis.score >= 90 ? "is-good" : analysis.score >= 70 ? "is-warn" : "is-poor";
+
+  body.innerHTML = `
+    <div class="pb-health-summary">
+      <div class="pb-health-score ${scoreClass}">
+        <strong>${analysis.score}</strong>
+        <span>Health Score</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${total}</strong>
+        <span>Total plays</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${analysis.exactGroups.length}</strong>
+        <span>Exact duplicate groups</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${analysis.nearGroups.length}</strong>
+        <span>Near-duplicate groups</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${analysis.missingRows.length}</strong>
+        <span>Plays missing critical fields</span>
+      </div>
+    </div>
+    <div class="pb-health-guidance">
+      ${issueCount === 0
+        ? "No major playbook data issues found in this pass."
+        : "Review the groups below before building scripts, wristbands, call sheets, and game plans."}
+    </div>
+    <section class="pb-health-section">
+      <div class="pb-health-section-head">
+        <h4>Exact Duplicates</h4>
+        <span>${analysis.exactDuplicateItems} rows</span>
+      </div>
+      ${_pbHealthRenderGroups(analysis.exactGroups, "No exact duplicate play identities found.")}
+    </section>
+    <section class="pb-health-section">
+      <div class="pb-health-section-head">
+        <h4>Near Duplicates</h4>
+        <span>${analysis.nearDuplicateItems} rows</span>
+      </div>
+      ${_pbHealthRenderGroups(analysis.nearGroups, "No near-duplicate formation/play combinations found.")}
+    </section>
+    <section class="pb-health-section">
+      <div class="pb-health-section-head">
+        <h4>Missing Critical Fields</h4>
+        <span>${analysis.missingRows.length} plays</span>
+      </div>
+      ${_pbHealthRenderMissing(analysis)}
+    </section>`;
+}
+
+function openPlaybookDataHealth() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
+    return;
+  }
+  document.getElementById("playbookDataHealthOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "playbookDataHealthOverlay";
+  overlay.dataset.action = "closePlaybookDataHealthOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal pb-health-modal" role="dialog" aria-modal="true" aria-labelledby="playbookDataHealthTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🩺</span>
+        <h3 class="custom-modal-title" id="playbookDataHealthTitle">Playbook Data Health</h3>
+        <button class="modal-close" aria-label="Close" data-action="closePlaybookDataHealth">×</button>
+      </div>
+      <div class="custom-modal-body pb-health-body" id="playbookDataHealthBody"></div>
+      <div class="custom-modal-actions">
+        <button type="button" class="btn btn-sm" data-action="openPlaybookHealthCleanup">Open Cleanup Data</button>
+        <button type="button" class="btn btn-sm" data-action="closePlaybookDataHealth">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  renderPlaybookDataHealth();
+}
+
+function closePlaybookDataHealth() {
+  const overlay = document.getElementById("playbookDataHealthOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function openPlaybookHealthEdit(masterIdx) {
+  masterIdx = parseInt(masterIdx, 10);
+  if (!Array.isArray(plays) || !plays[masterIdx]) return;
+  closePlaybookDataHealth();
+  if (typeof showTab === "function") showTab("playbook");
+
+  const play = plays[masterIdx];
+  let filteredIdx = Array.isArray(filteredPlays) ? filteredPlays.indexOf(play) : -1;
+  if (filteredIdx < 0) {
+    filteredPlays = [...plays];
+    filteredIdx = masterIdx;
+    if (typeof PLAYS_PER_PAGE !== "undefined") {
+      currentPage = Math.floor(masterIdx / PLAYS_PER_PAGE);
+    }
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+  }
+
+  requestAnimationFrame(() => {
+    if (typeof openPlayEditor === "function") openPlayEditor(filteredIdx);
+  });
+}
+
+function openPlaybookSanitizeField(fieldKey) {
+  if (!_sanitizeFieldDef(fieldKey)) return;
+  closePlaybookDataHealth();
+  _sanitizeFieldKey = fieldKey;
+  openPlaybookSanitize();
+}
+
+function openPlaybookHealthCleanup() {
+  closePlaybookDataHealth();
+  openPlaybookSanitize();
+}
+
+/* =========================================================================
    Cleanup BY Call Sheet Category
    Pick a Call Sheet category → see plays in scope (full or filtered) with a
    single ✅ checkbox. Checking the box writes the right preferred fields so
@@ -1475,4 +1803,3 @@ function _onCatCleanupToggle(cb) {
     setTimeout(() => row.remove(), 180);
   }
 }
-

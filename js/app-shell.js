@@ -280,13 +280,27 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPlaybookDataHealth === "function") {
+    items.push({
+      kind: "Action",
+      title: "Playbook Data Health",
+      subtitle: "Review duplicate plays and missing critical fields",
+      keywords: "data health duplicate duplicates missing fields cleanup playbook quality",
+      priority: 34,
+      run: () => {
+        showTab("playbook");
+        requestAnimationFrame(() => openPlaybookDataHealth());
+      },
+    });
+  }
+
   if (typeof openWbQuickSearch === "function") {
     items.push({
       kind: "Action",
       title: "Wristband Quick Search",
       subtitle: "Open the wristband play finder",
       keywords: "wristband quick search find play",
-      priority: 34,
+      priority: 35,
       run: () => {
         showTab("wristband");
         requestAnimationFrame(() => openWbQuickSearch());
@@ -300,7 +314,7 @@ function _buildCommandBaseItems() {
       title: "Print Game Plan",
       subtitle: "Open the game plan print controls",
       keywords: "game plan print export",
-      priority: 35,
+      priority: 36,
       run: () => {
         showTab("gameplan");
         requestAnimationFrame(() => openGamePlanPrintModal());

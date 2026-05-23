@@ -57,8 +57,8 @@ Status:
 
 Goal: Improve playbook quality so every downstream feature gets better.
 
-- [ ] Detect duplicate plays and near-duplicates
-- [ ] Flag missing critical fields
+- [x] Detect duplicate plays and near-duplicates
+- [x] Flag missing critical fields
 - [ ] Find inconsistent casing/spelling in formation, personnel, tags, and base plays
 - [ ] Show unused or overloaded categories
 - [ ] Provide CSV import cleanup recommendations
@@ -66,6 +66,11 @@ Goal: Improve playbook quality so every downstream feature gets better.
 Definition of done:
 
 - A coach can trust the playbook data before building scripts, wristbands, and game plans.
+
+Status:
+
+- Phase 1 added a Playbook Data Health Center with exact duplicate, near-duplicate, and missing critical field review.
+- Next slice should add casing and spelling consistency checks across core playbook vocabulary.
 
 ## 4. Game Week Command Center
 

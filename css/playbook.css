@@ -1531,6 +1531,222 @@ table.sortable th {
   }
 }
 
+/* ============ Playbook Data Health ============ */
+.pb-health-modal {
+  width: 96vw;
+  max-width: 1040px;
+}
+
+.pb-health-body {
+  display: grid;
+  gap: var(--space-md);
+  max-height: min(72vh, 780px);
+  overflow: auto;
+}
+
+.pb-health-summary {
+  display: grid;
+  grid-template-columns: minmax(120px, 1.1fr) repeat(4, minmax(120px, 1fr));
+  gap: var(--space-sm);
+}
+
+.pb-health-score,
+.pb-health-card {
+  display: grid;
+  gap: 4px;
+  align-content: center;
+  min-height: 74px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+
+.pb-health-score {
+  color: var(--color-text-inverse);
+}
+
+.pb-health-score.is-good {
+  background: var(--color-success);
+}
+
+.pb-health-score.is-warn {
+  background: var(--color-warning);
+}
+
+.pb-health-score.is-poor {
+  background: var(--color-danger);
+}
+
+.pb-health-score strong,
+.pb-health-card strong {
+  font-size: var(--font-size-2xl);
+  line-height: 1;
+}
+
+.pb-health-score span,
+.pb-health-card span {
+  color: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.pb-health-card span {
+  color: var(--color-text-secondary);
+}
+
+.pb-health-guidance {
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-info-alpha-20);
+  border-radius: var(--radius-md);
+  background: var(--color-info-alpha-06);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.pb-health-section {
+  display: grid;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.pb-health-section-head,
+.pb-health-group-head,
+.pb-health-missing-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.pb-health-section-head h4 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+}
+
+.pb-health-section-head span,
+.pb-health-more,
+.pb-health-empty {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.pb-health-group {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+
+.pb-health-group ul {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pb-health-group li,
+.pb-health-missing-row > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pb-health-group li span,
+.pb-health-missing-row span {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-health-play-link {
+  overflow: hidden;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--color-primary);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  text-align: left;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-health-play-link:hover {
+  text-decoration: underline;
+}
+
+.pb-health-field-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: var(--space-xs);
+}
+
+.pb-health-field-chip {
+  display: grid;
+  gap: 2px;
+  min-height: 54px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+.pb-health-field-chip strong {
+  font-size: var(--font-size-lg);
+  line-height: 1;
+}
+
+.pb-health-field-chip span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.pb-health-missing-list {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.pb-health-missing-row {
+  min-width: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+
+@media (max-width: 760px) {
+  .pb-health-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .pb-health-section-head,
+  .pb-health-group-head,
+  .pb-health-missing-row {
+    align-items: stretch;
+    flex-direction: column;
+  }
+}
+
 /* Suggestion chips for sanitize tool fuzzy matching */
 .pb-sanitize-row-suggest {
   width: 100%;
