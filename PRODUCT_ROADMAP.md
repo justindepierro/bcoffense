@@ -81,7 +81,7 @@ Status:
 Goal: Turn the Dashboard into a true weekly operations hub.
 
 - [x] Active opponent and game-week status summary
-- [ ] Prep checklist across playbook, script, wristband, call sheet, and game plan
+- [x] Prep checklist across playbook, script, wristband, call sheet, and game plan
 - [ ] Links to unfinished work and stale saved artifacts
 - [ ] Weekly notes and install priorities
 - [ ] Readiness score with actionable gaps
@@ -93,7 +93,8 @@ Definition of done:
 Status:
 
 - Phase 1 added a dashboard Game Week Command Center summary with active opponent, schedule context, readiness status, and key prep counts.
-- Next slice should add a prep checklist across playbook, script, wristband, call sheet, and game plan.
+- Phase 2 added a prep checklist across playbook, opponent scouting, game plan, script, wristband, call sheet, and notes.
+- Next slice should add links to unfinished work and stale saved artifacts.
 
 ## 5. Smart Game Plan Builder
 

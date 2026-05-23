@@ -84,6 +84,22 @@ function _dashGetScriptPlayCount() {
     : 0;
 }
 
+function _dashGetPlaybookCount() {
+  return Array.isArray(plays) ? plays.length : 0;
+}
+
+function _dashGetWristbandPlayCount() {
+  if (!Array.isArray(wristbandCards)) return 0;
+  return wristbandCards.reduce((sum, card) => {
+    const cells = Array.isArray(card?.data)
+      ? card.data
+      : Array.isArray(card)
+        ? card
+        : [];
+    return sum + cells.filter((play) => play !== null && play !== undefined).length;
+  }, 0);
+}
+
 function _dashFindScheduleGame(gw, schedule) {
   if (!gw?.opponentName || !Array.isArray(schedule)) return null;
   const opp = String(gw.opponentName || "").toLowerCase().trim();
@@ -100,19 +116,23 @@ function _dashBuildGameWeekMetrics(gw, opponents) {
   const opponent = _dashFindGameWeekOpponent(gw, opponents);
   const schedule = typeof getSchedule === "function" ? getSchedule() : [];
   const activeGame = _dashFindScheduleGame(gw, schedule);
+  const playbookCount = _dashGetPlaybookCount();
   const scoutCount = opponent?.plays?.length || 0;
   const taggedPlanCount = gw.opponentName
     ? _dashGetGamePlanPlaysForOpponent(gw.opponentName).length
     : 0;
   const boardPlanCount = _dashGetBoardGamePlanCount();
   const scriptCount = _dashGetScriptPlayCount();
+  const wristbandCount = _dashGetWristbandPlayCount();
   const callSheetCount = _dashCountCallSheetPlays();
   const notesReady = Boolean(String(gw.notes || "").trim());
   const readinessChecks = [
+    playbookCount > 0,
     Boolean(gw.opponentName),
     scoutCount > 0,
     taggedPlanCount > 0 || boardPlanCount > 0,
     scriptCount > 0,
+    wristbandCount > 0,
     callSheetCount > 0,
     notesReady,
   ];
@@ -125,10 +145,12 @@ function _dashBuildGameWeekMetrics(gw, opponents) {
     opponent,
     schedule,
     activeGame,
+    playbookCount,
     scoutCount,
     taggedPlanCount,
     boardPlanCount,
     scriptCount,
+    wristbandCount,
     callSheetCount,
     notesReady,
     readiness,
@@ -146,11 +168,86 @@ function _dashMetricStatus(value) {
   return value > 0 ? "is-good" : "is-empty";
 }
 
+function _dashBuildPrepChecklist(metrics, gw) {
+  const gamePlanCount = metrics.taggedPlanCount || metrics.boardPlanCount;
+  return [
+    {
+      label: "Playbook loaded",
+      detail: `${metrics.playbookCount} play${metrics.playbookCount === 1 ? "" : "s"} available`,
+      done: metrics.playbookCount > 0,
+      action: metrics.playbookCount > 0 ? "showTab" : "showUpload",
+      arg: metrics.playbookCount > 0 ? "playbook" : undefined,
+    },
+    {
+      label: "Opponent selected",
+      detail: gw.opponentName || "Choose this week's opponent",
+      done: Boolean(gw.opponentName),
+      action: "focusDashOpponentSelect",
+    },
+    {
+      label: "Scouting charted",
+      detail: `${metrics.scoutCount} tendency play${metrics.scoutCount === 1 ? "" : "s"}`,
+      done: metrics.scoutCount > 0,
+      action: "showTab",
+      arg: "tendencies",
+    },
+    {
+      label: "Game plan built",
+      detail: `${metrics.taggedPlanCount} tagged / ${metrics.boardPlanCount} board call${metrics.boardPlanCount === 1 ? "" : "s"}`,
+      done: gamePlanCount > 0,
+      action: "showTab",
+      arg: "gameplan",
+    },
+    {
+      label: "Practice script ready",
+      detail: `${metrics.scriptCount} script call${metrics.scriptCount === 1 ? "" : "s"}`,
+      done: metrics.scriptCount > 0,
+      action: "showTab",
+      arg: "script",
+    },
+    {
+      label: "Wristband ready",
+      detail: `${metrics.wristbandCount} wristband call${metrics.wristbandCount === 1 ? "" : "s"}`,
+      done: metrics.wristbandCount > 0,
+      action: "showTab",
+      arg: "wristband",
+    },
+    {
+      label: "Call sheet filled",
+      detail: `${metrics.callSheetCount} sheet call${metrics.callSheetCount === 1 ? "" : "s"}`,
+      done: metrics.callSheetCount > 0,
+      action: "showTab",
+      arg: "callsheet",
+    },
+    {
+      label: "Notes captured",
+      detail: metrics.notesReady ? "Game-week notes added" : "Add matchup notes",
+      done: metrics.notesReady,
+      action: "focusMobileCoachNotes",
+    },
+  ];
+}
+
+function _dashBuildPrepChecklistItem(item) {
+  const arg = item.arg !== undefined ? ` data-arg="${escapeHtml(item.arg)}"` : "";
+  const action = item.action ? ` data-action="${escapeHtml(item.action)}"${arg}` : "";
+  return `<button class="dash-prep-item ${item.done ? "is-done" : "is-open"}" type="button"${action}>
+    <span class="dash-prep-status" aria-hidden="true">${item.done ? "✓" : "!"}</span>
+    <span class="dash-prep-copy">
+      <span class="dash-prep-label">${escapeHtml(item.label)}</span>
+      <span class="dash-prep-detail">${escapeHtml(item.detail)}</span>
+    </span>
+  </button>`;
+}
+
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");
   if (!section) return;
   const metrics = _dashBuildGameWeekMetrics(gw, opponents);
   const statusClass = _dashStatusClass(metrics.readiness);
+  const checklist = _dashBuildPrepChecklist(metrics, gw);
+  const openItems = checklist.filter((item) => !item.done).length;
+  const checklistHtml = checklist.map(_dashBuildPrepChecklistItem).join("");
   const opponentLabel = gw.opponentName || "No opponent selected";
   const weekLabel = gw.weekLabel || "Game week";
   const scheduleMeta = metrics.activeGame
@@ -192,6 +289,10 @@ function renderGameWeekCommandCenter(gw, opponents) {
         <strong>${metrics.scriptCount}</strong>
         <span>Script Calls</span>
       </button>
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.wristbandCount)}" type="button" data-action="showTab" data-arg="wristband">
+        <strong>${metrics.wristbandCount}</strong>
+        <span>Wristband</span>
+      </button>
       <button class="dash-command-metric ${_dashMetricStatus(metrics.callSheetCount)}" type="button" data-action="showTab" data-arg="callsheet">
         <strong>${metrics.callSheetCount}</strong>
         <span>Sheet Calls</span>
@@ -206,6 +307,18 @@ function renderGameWeekCommandCenter(gw, opponents) {
       <button class="btn btn-sm" data-action="showTab" data-arg="tendencies">Scouting</button>
       <button class="btn btn-sm" data-action="showTab" data-arg="callsheet">Call Sheet</button>
       <button class="btn btn-sm" data-action="printFullGamePlan">Print</button>
+    </div>
+    <div class="dash-prep-checklist" aria-label="Game week prep checklist">
+      <div class="dash-prep-header">
+        <div>
+          <span class="dash-command-eyebrow">Prep Checklist</span>
+          <h4>${openItems === 0 ? "All core prep is covered" : `${openItems} prep gap${openItems === 1 ? "" : "s"} open`}</h4>
+        </div>
+        <span class="dash-prep-count">${checklist.length - openItems}/${checklist.length}</span>
+      </div>
+      <div class="dash-prep-grid">
+        ${checklistHtml}
+      </div>
     </div>`;
 }
 
@@ -569,9 +682,10 @@ function onMobileCoachNotesChange(value) {
 }
 
 function focusMobileCoachNotes() {
-  const el =
-    document.getElementById("mobileCoachNotesArea") ||
-    document.getElementById("dashNotesArea");
+  const mobileEl = document.getElementById("mobileCoachNotesArea");
+  const desktopEl = document.getElementById("dashNotesArea");
+  const mobileVisible = mobileEl && mobileEl.offsetParent !== null;
+  const el = mobileVisible ? mobileEl : desktopEl || mobileEl;
   if (!el) return;
   el.focus();
   if (typeof el.setSelectionRange === "function") {

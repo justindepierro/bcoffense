@@ -283,6 +283,109 @@
   gap: var(--space-xs);
 }
 
+.dash-prep-checklist {
+  display: grid;
+  gap: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border-light);
+}
+
+.dash-prep-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.dash-prep-header h4 {
+  margin: 2px 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: 1.15;
+}
+
+.dash-prep-count {
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  white-space: nowrap;
+}
+
+.dash-prep-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-xs);
+}
+
+.dash-prep-item {
+  display: grid;
+  grid-template-columns: 28px minmax(0, 1fr);
+  gap: var(--space-xs);
+  align-items: center;
+  min-width: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+
+@media (hover: hover) {
+  .dash-prep-item:hover {
+    border-color: var(--color-border-med);
+    box-shadow: var(--shadow-xs);
+  }
+}
+
+.dash-prep-status {
+  display: inline-grid;
+  width: 28px;
+  height: 28px;
+  place-items: center;
+  border-radius: var(--radius-round);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+}
+
+.dash-prep-item.is-done .dash-prep-status {
+  background: var(--color-success);
+  color: var(--color-text-inverse);
+}
+
+.dash-prep-item.is-open .dash-prep-status {
+  background: var(--color-warning);
+  color: var(--color-dark);
+}
+
+.dash-prep-copy {
+  display: grid;
+  gap: 1px;
+  min-width: 0;
+}
+
+.dash-prep-label {
+  overflow: hidden;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.dash-prep-detail {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 @media (max-width: 640px) {
   .dash-command-center {
     border-radius: var(--radius-md);
@@ -308,6 +411,14 @@
 
   .dash-command-actions .btn {
     flex: 1 1 calc(50% - var(--space-xs));
+  }
+
+  .dash-prep-header {
+    align-items: flex-start;
+  }
+
+  .dash-prep-grid {
+    grid-template-columns: 1fr;
   }
 }
 
