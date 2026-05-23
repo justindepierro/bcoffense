@@ -737,6 +737,24 @@ const PLAYBOOK_HEALTH_CRITICAL_FIELDS = [
   { key: "preferredFieldPosition", label: "Field Position" },
 ];
 
+const PLAYBOOK_HEALTH_VOCAB_FIELDS = [
+  { key: "formation", label: "Formation", keys: ["formation"] },
+  { key: "personnel", label: "Personnel", keys: ["personnel"], spelling: "textOnly" },
+  { key: "basePlay", label: "Base Play", keys: ["basePlay"] },
+  {
+    key: "formationTags",
+    label: "Formation Tags",
+    keys: ["formTag1", "formTag2"],
+    sanitizeKey: "formTag1",
+  },
+  {
+    key: "playTags",
+    label: "Play Tags",
+    keys: ["playTag1", "playTag2"],
+    sanitizeKey: "playTag1",
+  },
+];
+
 function _pbHealthNorm(value) {
   return String(value || "")
     .normalize("NFKD")
@@ -777,6 +795,144 @@ function _pbHealthGroupBy(entries, keyFn) {
   return Array.from(map.values()).filter((group) => group.length > 1);
 }
 
+function _pbHealthDisplayValue(value) {
+  return String(value ?? "").replace(/\s+/g, " ").trim();
+}
+
+function _pbHealthFieldLabel(key) {
+  const def = SANITIZE_FIELDS.find((field) => field.key === key);
+  return def?.label || key;
+}
+
+function _pbHealthVocabEntries(entries, field) {
+  const values = [];
+  entries.forEach(({ play, index }) => {
+    field.keys.forEach((key) => {
+      const value = _pbHealthDisplayValue(play?.[key]);
+      const norm = _pbHealthNorm(value);
+      if (!norm) return;
+      values.push({ field, key, value, norm, play, index });
+    });
+  });
+  return values;
+}
+
+function _pbHealthDetectCasing(entries) {
+  const issues = [];
+  PLAYBOOK_HEALTH_VOCAB_FIELDS.forEach((field) => {
+    const byNorm = new Map();
+    _pbHealthVocabEntries(entries, field).forEach((entry) => {
+      if (!byNorm.has(entry.norm)) byNorm.set(entry.norm, []);
+      byNorm.get(entry.norm).push(entry);
+    });
+    byNorm.forEach((items, norm) => {
+      const byValue = new Map();
+      items.forEach((item) => {
+        if (!byValue.has(item.value)) byValue.set(item.value, []);
+        byValue.get(item.value).push(item);
+      });
+      if (byValue.size < 2) return;
+      const variants = Array.from(byValue.entries())
+        .map(([value, variantItems]) => ({
+          value,
+          count: variantItems.length,
+          items: variantItems,
+        }))
+        .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value));
+      issues.push({
+        type: "casing",
+        field,
+        norm,
+        count: items.length,
+        variants,
+      });
+    });
+  });
+  return issues
+    .sort((a, b) => b.variants.length - a.variants.length || b.count - a.count)
+    .slice(0, 24);
+}
+
+function _pbHealthSpellThreshold(value) {
+  const len = String(value || "").length;
+  if (len <= 4) return 1;
+  if (len <= 7) return 2;
+  return 3;
+}
+
+function _pbHealthUniqueVocabulary(entries, field) {
+  const byNorm = new Map();
+  _pbHealthVocabEntries(entries, field).forEach((entry) => {
+    if (!byNorm.has(entry.norm)) {
+      byNorm.set(entry.norm, {
+        norm: entry.norm,
+        value: entry.value,
+        count: 0,
+        items: [],
+      });
+    }
+    const bucket = byNorm.get(entry.norm);
+    bucket.count += 1;
+    bucket.items.push(entry);
+    if (entry.value.length < bucket.value.length) bucket.value = entry.value;
+  });
+  return Array.from(byNorm.values())
+    .filter((item) => item.norm.length >= 4)
+    .sort((a, b) => a.norm.localeCompare(b.norm));
+}
+
+function _pbHealthDetectSpelling(entries) {
+  const issues = [];
+  PLAYBOOK_HEALTH_VOCAB_FIELDS.forEach((field) => {
+    if (field.spelling === false) return;
+    const values = _pbHealthUniqueVocabulary(entries, field).filter(
+      (item) => field.spelling !== "textOnly" || !/\d/.test(item.norm),
+    );
+    const byFirst = new Map();
+    values.forEach((item) => {
+      const first = item.norm.charAt(0);
+      if (!byFirst.has(first)) byFirst.set(first, []);
+      byFirst.get(first).push(item);
+    });
+
+    const fieldIssues = [];
+    byFirst.forEach((bucket) => {
+      for (let i = 0; i < bucket.length; i += 1) {
+        for (let j = i + 1; j < bucket.length; j += 1) {
+          const a = bucket[i];
+          const b = bucket[j];
+          const threshold = Math.min(
+            _pbHealthSpellThreshold(a.norm),
+            _pbHealthSpellThreshold(b.norm),
+          );
+          if (Math.abs(a.norm.length - b.norm.length) > threshold) continue;
+          if (a.norm.startsWith(b.norm) || b.norm.startsWith(a.norm)) continue;
+          const distance = _sanitizeLevenshtein(a.norm, b.norm, threshold);
+          if (distance <= 0 || distance > threshold) continue;
+          fieldIssues.push({
+            type: "spelling",
+            field,
+            distance,
+            count: a.count + b.count,
+            values: [a, b],
+          });
+          if (fieldIssues.length >= 80) break;
+        }
+        if (fieldIssues.length >= 80) break;
+      }
+    });
+
+    fieldIssues.sort(
+      (a, b) =>
+        a.distance - b.distance ||
+        b.count - a.count ||
+        a.values[0].norm.localeCompare(b.values[0].norm),
+    );
+    issues.push(...fieldIssues.slice(0, 8));
+  });
+  return issues.slice(0, 24);
+}
+
 function _pbHealthAnalyze() {
   const entries = Array.isArray(plays)
     ? plays.map((play, index) => ({ play, index }))
@@ -798,6 +954,9 @@ function _pbHealthAnalyze() {
       ),
     }))
     .filter((entry) => entry.fields.length > 0);
+  const casingGroups = _pbHealthDetectCasing(entries);
+  const spellingGroups = _pbHealthDetectSpelling(entries);
+  const vocabularyIssues = casingGroups.length + spellingGroups.length;
   const exactDuplicateItems = exactGroups.reduce((sum, group) => sum + group.length, 0);
   const nearDuplicateItems = nearGroups.reduce((sum, group) => sum + group.length, 0);
   const score = Math.max(
@@ -805,7 +964,8 @@ function _pbHealthAnalyze() {
     100 -
       exactGroups.length * 10 -
       nearGroups.length * 6 -
-      missingRows.length * 3,
+      missingRows.length * 3 -
+      vocabularyIssues * 4,
   );
   return {
     entries,
@@ -813,6 +973,9 @@ function _pbHealthAnalyze() {
     nearGroups,
     missingByField,
     missingRows,
+    casingGroups,
+    spellingGroups,
+    vocabularyIssues,
     exactDuplicateItems,
     nearDuplicateItems,
     score,
@@ -917,6 +1080,89 @@ function _pbHealthRenderMissing(analysis) {
     </div>`;
 }
 
+function _pbHealthRenderVocabSamples(items) {
+  const seen = new Set();
+  const rows = items
+    .filter((item) => {
+      const id = `${item.index}:${item.key}:${item.value}`;
+      if (seen.has(id)) return false;
+      seen.add(id);
+      return true;
+    })
+    .slice(0, 4)
+    .map((item) => {
+      const context = _pbHealthPlayContext(item.play);
+      const fieldLabel = _pbHealthFieldLabel(item.key);
+      return `<li>
+        <button type="button" class="pb-health-play-link" data-action="openPlaybookHealthEdit" data-arg="${item.index}">
+          #${item.index + 1} ${escapeHtml(_pbHealthPlayTitle(item.play))}
+        </button>
+        <span>${escapeHtml(fieldLabel)}: ${escapeHtml(item.value)}${context ? ` • ${escapeHtml(context)}` : ""}</span>
+      </li>`;
+    })
+    .join("");
+  return rows ? `<ul>${rows}</ul>` : "";
+}
+
+function _pbHealthRenderCasingIssue(issue) {
+  const sanitizeKey = issue.field.sanitizeKey || issue.field.keys[0];
+  const valueHtml = issue.variants
+    .map(
+      (variant) => `<span class="pb-health-vocab-chip">
+        <span class="pb-health-vocab-label">${escapeHtml(variant.value)}</span>
+        <em>${variant.count}</em>
+      </span>`,
+    )
+    .join("");
+  const samples = issue.variants.flatMap((variant) => variant.items.slice(0, 2));
+  return `<div class="pb-health-vocab-card">
+    <div class="pb-health-vocab-head">
+      <div>
+        <strong>Casing / spacing</strong>
+        <span>${escapeHtml(issue.field.label)} has ${issue.variants.length} variants</span>
+      </div>
+      <button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(sanitizeKey)}">Cleanup</button>
+    </div>
+    <div class="pb-health-vocab-values">${valueHtml}</div>
+    ${_pbHealthRenderVocabSamples(samples)}
+  </div>`;
+}
+
+function _pbHealthRenderSpellingIssue(issue) {
+  const sanitizeKey = issue.field.sanitizeKey || issue.field.keys[0];
+  const valueHtml = issue.values
+    .map(
+      (value) => `<span class="pb-health-vocab-chip">
+        <span class="pb-health-vocab-label">${escapeHtml(value.value)}</span>
+        <em>${value.count}</em>
+      </span>`,
+    )
+    .join('<span class="pb-health-vocab-vs">vs</span>');
+  const samples = issue.values.flatMap((value) => value.items.slice(0, 2));
+  return `<div class="pb-health-vocab-card">
+    <div class="pb-health-vocab-head">
+      <div>
+        <strong>Possible spelling mismatch</strong>
+        <span>${escapeHtml(issue.field.label)} values are ${issue.distance} edit${issue.distance === 1 ? "" : "s"} apart</span>
+      </div>
+      <button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(sanitizeKey)}">Cleanup</button>
+    </div>
+    <div class="pb-health-vocab-values">${valueHtml}</div>
+    ${_pbHealthRenderVocabSamples(samples)}
+  </div>`;
+}
+
+function _pbHealthRenderVocabulary(analysis) {
+  if (!analysis.vocabularyIssues) {
+    return `<div class="pb-health-empty">No casing or spelling consistency issues found.</div>`;
+  }
+  const cards = [
+    ...analysis.casingGroups.map(_pbHealthRenderCasingIssue),
+    ...analysis.spellingGroups.map(_pbHealthRenderSpellingIssue),
+  ];
+  return `<div class="pb-health-vocab-grid">${cards.join("")}</div>`;
+}
+
 function renderPlaybookDataHealth() {
   const overlay = document.getElementById("playbookDataHealthOverlay");
   if (!overlay) return;
@@ -925,7 +1171,10 @@ function renderPlaybookDataHealth() {
   const analysis = _pbHealthAnalyze();
   const total = analysis.entries.length;
   const issueCount =
-    analysis.exactGroups.length + analysis.nearGroups.length + analysis.missingRows.length;
+    analysis.exactGroups.length +
+    analysis.nearGroups.length +
+    analysis.missingRows.length +
+    analysis.vocabularyIssues;
   const scoreClass =
     analysis.score >= 90 ? "is-good" : analysis.score >= 70 ? "is-warn" : "is-poor";
 
@@ -950,6 +1199,10 @@ function renderPlaybookDataHealth() {
       <div class="pb-health-card">
         <strong>${analysis.missingRows.length}</strong>
         <span>Plays missing critical fields</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${analysis.vocabularyIssues}</strong>
+        <span>Vocabulary consistency issues</span>
       </div>
     </div>
     <div class="pb-health-guidance">
@@ -977,6 +1230,13 @@ function renderPlaybookDataHealth() {
         <span>${analysis.missingRows.length} plays</span>
       </div>
       ${_pbHealthRenderMissing(analysis)}
+    </section>
+    <section class="pb-health-section">
+      <div class="pb-health-section-head">
+        <h4>Vocabulary Consistency</h4>
+        <span>${analysis.vocabularyIssues} issues</span>
+      </div>
+      ${_pbHealthRenderVocabulary(analysis)}
     </section>`;
 }
 
