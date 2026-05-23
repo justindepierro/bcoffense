@@ -91,6 +91,7 @@ function syncMobileShellState() {
   }
   body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
+  if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
 }
 
 function queueMobileShellStateSync() {
@@ -190,6 +191,9 @@ function _canShowCommandTab(tabName) {
 }
 
 function _canUseMutatingCommand() {
+  if (typeof isMobileCoachLockActive === "function" && isMobileCoachLockActive()) {
+    return false;
+  }
   return typeof isAdminUser !== "function" || isAdminUser();
 }
 
@@ -250,7 +254,11 @@ function _buildCommandBaseItems() {
     },
   );
 
-  if (typeof showUpload === "function" && (typeof canManageSettings !== "function" || canManageSettings())) {
+  if (
+    typeof showUpload === "function" &&
+    _canUseMutatingCommand() &&
+    (typeof canManageSettings !== "function" || canManageSettings())
+  ) {
     items.push({
       kind: "Action",
       title: "Import, Export, and Settings",
@@ -261,7 +269,7 @@ function _buildCommandBaseItems() {
     });
   }
 
-  if (typeof openCloudSyncModal === "function") {
+  if (typeof openCloudSyncModal === "function" && _canUseMutatingCommand()) {
     items.push({
       kind: "Action",
       title: "Cloud Sync",
@@ -979,6 +987,206 @@ function updateSaveStatus(state) {
 })();
 
 // ── Mobile Coach Mode dock ──
+const MOBILE_COACH_LOCK_ALLOWED_ACTIONS = new Set([
+  "showTab",
+  "dashGoToTab",
+  "toggleMobileCoachLock",
+  "coachFocusScriptCall",
+  "coachNextScriptCall",
+  "coachPrevScriptCall",
+  "openCommandPalette",
+  "closeCommandPalette",
+  "toggleDarkMode",
+  "logoutAuth",
+]);
+const MOBILE_COACH_LOCK_SAFE_INPUT_RE =
+  /search|filter|sort|highlight|commandpalette/i;
+let _mobileCoachLockToastAt = 0;
+
+function isMobileCoachLockEnabled() {
+  if (typeof storageManager === "undefined" || typeof STORAGE_KEYS === "undefined") {
+    return false;
+  }
+  return storageManager.get(STORAGE_KEYS.MOBILE_COACH_LOCK, false) === true;
+}
+
+function isMobileCoachLockActive() {
+  const body = document.body;
+  return Boolean(
+    body &&
+      body.classList.contains("is-mobile-screen") &&
+      body.classList.contains("mobile-coach-locked"),
+  );
+}
+
+function _isMobileCoachLockSafeInput(el) {
+  if (!el || !el.matches?.("input, select, textarea")) return false;
+  if (el.closest(".command-palette-overlay")) return true;
+  if (el.type === "hidden") return true;
+  if (el.type === "search") return true;
+  const haystack = [
+    el.id,
+    el.name,
+    el.className,
+    el.placeholder,
+    el.dataset?.oninput,
+    el.dataset?.onchange,
+    el.dataset?.action,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return MOBILE_COACH_LOCK_SAFE_INPUT_RE.test(haystack);
+}
+
+function _isMobileCoachLockAllowedControl(el) {
+  if (!el) return false;
+  if (
+    el.closest(
+      "#mobileCoachDock, #mobileScriptCoachNow, #authLoginOverlay, .command-palette-overlay, [data-mobile-lock-allow='true']",
+    )
+  ) {
+    return true;
+  }
+  if (el.classList?.contains("tab") || el.closest?.(".tab")) return true;
+  if (_isMobileCoachLockSafeInput(el)) return true;
+
+  const actionEl = el.closest?.("[data-action]");
+  const action = actionEl?.dataset?.action || "";
+  if (!action) return false;
+  return (
+    MOBILE_COACH_LOCK_ALLOWED_ACTIONS.has(action) ||
+    action.endsWith("Overlay") ||
+    action.startsWith("close")
+  );
+}
+
+function _showMobileCoachLockToast() {
+  const now = Date.now();
+  if (now - _mobileCoachLockToastAt < 1200) return;
+  _mobileCoachLockToastAt = now;
+  showToast("Mobile coach lock is on. Unlock to edit.", {
+    type: "warning",
+    duration: 2500,
+  });
+}
+
+function _shouldBlockMobileCoachLockedEvent(e) {
+  if (!isMobileCoachLockActive()) return false;
+  const target = e.target instanceof Element ? e.target : null;
+  if (!target || _isMobileCoachLockAllowedControl(target)) return false;
+
+  if (e.type === "beforeinput" || e.type === "input" || e.type === "change") {
+    return Boolean(
+      target.matches("input, select, textarea") &&
+        target.closest("#mainApp, .custom-modal-overlay, .modal-overlay"),
+    );
+  }
+
+  if (e.type === "submit" || e.type === "dragstart" || e.type === "drop") {
+    return Boolean(target.closest("#mainApp, .custom-modal-overlay, .modal-overlay"));
+  }
+
+  if (e.type === "click") {
+    const control = target.closest(
+      "button, a, input, select, textarea, label, [role='button'], [data-action], [draggable='true']",
+    );
+    if (!control || _isMobileCoachLockAllowedControl(control)) return false;
+    return Boolean(control.closest("#mainApp, .custom-modal-overlay, .modal-overlay"));
+  }
+
+  return false;
+}
+
+function handleMobileCoachLockedInteraction(e) {
+  if (!_shouldBlockMobileCoachLockedEvent(e)) return;
+  e.preventDefault();
+  e.stopImmediatePropagation();
+  _showMobileCoachLockToast();
+}
+
+function _setMobileCoachLockDisabled(control, locked) {
+  if (!control || !("disabled" in control)) return;
+
+  if (locked && !_isMobileCoachLockAllowedControl(control)) {
+    if (control.dataset.mobileLockDisabled !== "true") {
+      control.dataset.mobileLockWasDisabled = control.disabled ? "true" : "false";
+    }
+    control.disabled = true;
+    control.dataset.mobileLockDisabled = "true";
+    control.setAttribute("aria-disabled", "true");
+    return;
+  }
+
+  if (control.dataset.mobileLockDisabled === "true") {
+    if (control.dataset.mobileLockWasDisabled !== "true") {
+      control.disabled = false;
+    }
+    delete control.dataset.mobileLockDisabled;
+    delete control.dataset.mobileLockWasDisabled;
+    control.removeAttribute("aria-disabled");
+  }
+}
+
+function applyMobileCoachLockUi() {
+  const body = document.body;
+  if (!body) return;
+
+  const locked = isMobileCoachLockEnabled();
+  const activeOnMobile = locked && body.classList.contains("is-mobile-screen");
+  body.classList.toggle("mobile-coach-locked", locked);
+  body.dataset.mobileCoachLocked = locked ? "true" : "false";
+
+  const toggle = document.getElementById("mobileCoachLockToggle");
+  const icon = document.getElementById("coachDockLockIcon");
+  const label = document.getElementById("coachDockLockLabel");
+  if (toggle) {
+    toggle.setAttribute("aria-pressed", locked ? "true" : "false");
+    toggle.title = locked ? "Unlock mobile coach mode" : "Lock mobile coach mode";
+    toggle.setAttribute(
+      "aria-label",
+      locked ? "Unlock mobile coach mode" : "Lock mobile coach mode",
+    );
+  }
+  if (icon) icon.textContent = locked ? "🔒" : "🔓";
+  if (label) label.textContent = locked ? "Locked" : "Lock";
+
+  const banner = document.getElementById("mobileCoachLockBanner");
+  if (banner) banner.hidden = !activeOnMobile;
+
+  document
+    .querySelectorAll(
+      "#mainApp .panel.active input, #mainApp .panel.active select, #mainApp .panel.active textarea, #mainApp .panel.active button, .custom-modal-overlay input, .custom-modal-overlay select, .custom-modal-overlay textarea, .custom-modal-overlay button, .modal-overlay input, .modal-overlay select, .modal-overlay textarea, .modal-overlay button",
+    )
+    .forEach((control) => _setMobileCoachLockDisabled(control, activeOnMobile));
+}
+
+function setMobileCoachLock(locked, options = {}) {
+  if (typeof storageManager !== "undefined" && typeof STORAGE_KEYS !== "undefined") {
+    storageManager.set(STORAGE_KEYS.MOBILE_COACH_LOCK, Boolean(locked));
+  }
+  if (locked && typeof closeCommandPalette === "function") {
+    closeCommandPalette({ restoreFocus: false });
+  }
+  applyMobileCoachLockUi();
+  if (!options.silent) {
+    showToast(locked ? "Mobile coach lock on." : "Mobile coach lock off.", {
+      type: locked ? "warning" : "success",
+      duration: 2200,
+    });
+  }
+}
+
+function toggleMobileCoachLock() {
+  setMobileCoachLock(!isMobileCoachLockEnabled());
+}
+
+["beforeinput", "input", "change", "click", "submit", "dragstart", "drop"].forEach(
+  (eventName) => {
+    document.addEventListener(eventName, handleMobileCoachLockedInteraction, true);
+  },
+);
+document.addEventListener("DOMContentLoaded", applyMobileCoachLockUi);
+
 function _setMobileCoachCount(id, count) {
   const el = document.getElementById(id);
   if (!el) return;
@@ -1412,6 +1620,7 @@ document.addEventListener("DOMContentLoaded", () => {
       pendingRoots.forEach((root) => enhanceRuntimeA11y(root));
       pendingRoots.clear();
       queueMobileShellStateSync();
+      if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
     });
   });
   observer.observe(document.body, { childList: true, subtree: true });

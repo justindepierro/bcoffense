@@ -85,6 +85,7 @@ const STORAGE_KEYS = {
   TENDENCIES_DRAFT: "tendenciesDraft",
   TENDENCIES_SETTINGS: "tendenciesSettings",
   GAME_WEEK: "gameWeek",
+  MOBILE_COACH_LOCK: "mobileCoachLock",
   INSTALLATION: "installationData",
   CS_SCOUTING_OVERLAY: "csScoutingOverlay",
   PLAY_COLLECTIONS: "playCollections",
