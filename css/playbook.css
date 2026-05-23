@@ -1546,7 +1546,7 @@ table.sortable th {
 
 .pb-health-summary {
   display: grid;
-  grid-template-columns: minmax(120px, 1.1fr) repeat(5, minmax(120px, 1fr));
+  grid-template-columns: minmax(120px, 1.1fr) repeat(6, minmax(120px, 1fr));
   gap: var(--space-sm);
 }
 
@@ -1835,6 +1835,96 @@ table.sortable th {
   min-width: 0;
 }
 
+.pb-health-category-grid {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.pb-health-category-card {
+  display: grid;
+  gap: var(--space-xs);
+  min-width: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-left: 4px solid var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+
+.pb-health-category-card.is-overloaded {
+  border-left-color: var(--color-danger);
+}
+
+.pb-health-category-card.is-unused {
+  border-left-color: var(--color-warning);
+}
+
+.pb-health-category-card.is-unmatched {
+  border-left-color: var(--color-info);
+}
+
+.pb-health-category-head,
+.pb-health-category-row {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.pb-health-category-head > div,
+.pb-health-category-row > div {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pb-health-category-head strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+}
+
+.pb-health-category-head span,
+.pb-health-category-row span,
+.pb-health-category-card li span {
+  overflow: hidden;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-health-category-meter {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-xs);
+  min-width: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.pb-health-category-meter strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+
+.pb-health-category-card ul,
+.pb-health-category-list {
+  display: grid;
+  gap: 6px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.pb-health-category-card li {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
 @media (max-width: 760px) {
   .pb-health-summary {
     grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -1843,7 +1933,9 @@ table.sortable th {
   .pb-health-section-head,
   .pb-health-group-head,
   .pb-health-missing-row,
-  .pb-health-vocab-head {
+  .pb-health-vocab-head,
+  .pb-health-category-head,
+  .pb-health-category-row {
     align-items: stretch;
     flex-direction: column;
   }

@@ -755,6 +755,8 @@ const PLAYBOOK_HEALTH_VOCAB_FIELDS = [
   },
 ];
 
+const PLAYBOOK_HEALTH_CATEGORY_DEFAULT_MAX = 10;
+
 function _pbHealthNorm(value) {
   return String(value || "")
     .normalize("NFKD")
@@ -933,6 +935,157 @@ function _pbHealthDetectSpelling(entries) {
   return issues.slice(0, 24);
 }
 
+function _pbHealthCategoryName(cat) {
+  if (!cat) return "";
+  if (typeof getCategoryDisplayName === "function") return getCategoryDisplayName(cat);
+  return cat.name || cat.id || "";
+}
+
+function _pbHealthCategoryPage(cat) {
+  if (typeof CALLSHEET_FRONT !== "undefined" && CALLSHEET_FRONT.some((item) => item.id === cat.id)) {
+    return "Front";
+  }
+  if (typeof CALLSHEET_BACK !== "undefined" && CALLSHEET_BACK.some((item) => item.id === cat.id)) {
+    return "Back";
+  }
+  return "Call Sheet";
+}
+
+function _pbHealthCategoryIsAuto(cat) {
+  if (!cat || cat.custom) return false;
+  if (cat.playerSpecific) return true;
+  return !cat.manual && Boolean(
+    cat.playType ||
+    cat.down ||
+    cat.distance ||
+    cat.position ||
+    cat.situation,
+  );
+}
+
+function _pbHealthCategoryCleanupKey(cat) {
+  if (cat?.playerSpecific) return "keyPlayerName1";
+  if (cat?.playType) return "type";
+  if (cat?.position) return "preferredFieldPosition";
+  if (cat?.situation) return "preferredSituation";
+  if (cat?.distance) return "preferredDistance";
+  if (cat?.down) return "preferredDown";
+  return "preferredDown";
+}
+
+function _pbHealthCategoryLimit(cat) {
+  const savedTarget =
+    typeof csTargets !== "undefined" && csTargets && csTargets[cat.id] !== undefined
+      ? Number(csTargets[cat.id])
+      : 0;
+  if (Number.isFinite(savedTarget) && savedTarget > 0) return Math.floor(savedTarget);
+  const visionMax =
+    typeof VISION_2026 !== "undefined" &&
+    VISION_2026?.bucketTargets &&
+    Number.isFinite(Number(VISION_2026.bucketTargets.targetMax))
+      ? Number(VISION_2026.bucketTargets.targetMax)
+      : PLAYBOOK_HEALTH_CATEGORY_DEFAULT_MAX;
+  return Math.max(1, Math.floor(visionMax));
+}
+
+function _pbHealthCategoryPlayKey(play, index) {
+  if (typeof csPlayKey === "function") {
+    try {
+      const key = csPlayKey(play);
+      if (key) return key;
+    } catch (_err) {
+      // Fall through to the local identity key.
+    }
+  }
+  return _pbHealthExactKey(play) || `row-${index}`;
+}
+
+function _pbHealthAnalyzeCategories(entries) {
+  const categories =
+    typeof CALLSHEET_CATEGORIES !== "undefined" && Array.isArray(CALLSHEET_CATEGORIES)
+      ? CALLSHEET_CATEGORIES.filter(_pbHealthCategoryIsAuto)
+      : [];
+  if (!categories.length) {
+    return {
+      available: false,
+      categories: [],
+      coverage: [],
+      unused: [],
+      overloaded: [],
+      unmatchedRows: [],
+      issueCount: 0,
+      totalPlaced: 0,
+    };
+  }
+
+  const categoryIds = new Set(categories.map((cat) => cat.id));
+  const byCategory = new Map(categories.map((cat) => [cat.id, new Map()]));
+  const playerTargets =
+    typeof buildPlayerCategoryAutoFillTargets === "function"
+      ? buildPlayerCategoryAutoFillTargets(entries, { getPlay: (entry) => entry.play })
+      : [];
+  const unmatchedRows = [];
+
+  entries.forEach((entry, index) => {
+    const targets = new Set();
+    if (typeof findMatchingCategories === "function") {
+      try {
+        findMatchingCategories(entry.play).forEach((id) => targets.add(id));
+      } catch (_err) {
+        // Ignore a single bad row so the rest of the health report can render.
+      }
+    }
+    (playerTargets[index] || new Set()).forEach((id) => targets.add(id));
+
+    const autoTargets = Array.from(targets).filter((id) => categoryIds.has(id));
+    if (!autoTargets.length) {
+      unmatchedRows.push(entry);
+      return;
+    }
+    autoTargets.forEach((id) => {
+      const bucket = byCategory.get(id);
+      if (!bucket) return;
+      const key = _pbHealthCategoryPlayKey(entry.play, entry.index);
+      if (!bucket.has(key)) bucket.set(key, entry);
+    });
+  });
+
+  const coverage = categories
+    .map((cat) => {
+      const items = Array.from((byCategory.get(cat.id) || new Map()).values());
+      const limit = _pbHealthCategoryLimit(cat);
+      return {
+        cat,
+        id: cat.id,
+        name: _pbHealthCategoryName(cat),
+        page: _pbHealthCategoryPage(cat),
+        cleanupKey: _pbHealthCategoryCleanupKey(cat),
+        items,
+        count: items.length,
+        limit,
+      };
+    })
+    .sort((a, b) => b.count - a.count || a.name.localeCompare(b.name));
+  const unused = coverage
+    .filter((item) => item.count === 0 && !item.cat.playerSpecific)
+    .sort((a, b) => a.page.localeCompare(b.page) || a.name.localeCompare(b.name));
+  const overloaded = coverage
+    .filter((item) => item.count > item.limit)
+    .sort((a, b) => (b.count - b.limit) - (a.count - a.limit) || b.count - a.count);
+  const totalPlaced = coverage.reduce((sum, item) => sum + item.count, 0);
+
+  return {
+    available: true,
+    categories,
+    coverage,
+    unused,
+    overloaded,
+    unmatchedRows,
+    issueCount: unused.length + overloaded.length + unmatchedRows.length,
+    totalPlaced,
+  };
+}
+
 function _pbHealthAnalyze() {
   const entries = Array.isArray(plays)
     ? plays.map((play, index) => ({ play, index }))
@@ -957,6 +1110,7 @@ function _pbHealthAnalyze() {
   const casingGroups = _pbHealthDetectCasing(entries);
   const spellingGroups = _pbHealthDetectSpelling(entries);
   const vocabularyIssues = casingGroups.length + spellingGroups.length;
+  const categoryAnalysis = _pbHealthAnalyzeCategories(entries);
   const exactDuplicateItems = exactGroups.reduce((sum, group) => sum + group.length, 0);
   const nearDuplicateItems = nearGroups.reduce((sum, group) => sum + group.length, 0);
   const score = Math.max(
@@ -965,7 +1119,8 @@ function _pbHealthAnalyze() {
       exactGroups.length * 10 -
       nearGroups.length * 6 -
       missingRows.length * 3 -
-      vocabularyIssues * 4,
+      vocabularyIssues * 4 -
+      categoryAnalysis.issueCount * 2,
   );
   return {
     entries,
@@ -976,6 +1131,7 @@ function _pbHealthAnalyze() {
     casingGroups,
     spellingGroups,
     vocabularyIssues,
+    categoryAnalysis,
     exactDuplicateItems,
     nearDuplicateItems,
     score,
@@ -1163,6 +1319,106 @@ function _pbHealthRenderVocabulary(analysis) {
   return `<div class="pb-health-vocab-grid">${cards.join("")}</div>`;
 }
 
+function _pbHealthRenderCategorySamples(items) {
+  const rows = items
+    .slice(0, 4)
+    .map(({ play, index }) => {
+      const context = _pbHealthPlayContext(play);
+      return `<li>
+        <button type="button" class="pb-health-play-link" data-action="openPlaybookHealthEdit" data-arg="${index}">
+          #${index + 1} ${escapeHtml(_pbHealthPlayTitle(play))}
+        </button>
+        ${context ? `<span>${escapeHtml(context)}</span>` : ""}
+      </li>`;
+    })
+    .join("");
+  const more = items.length > 4
+    ? `<li class="pb-health-more">+${items.length - 4} more matching plays</li>`
+    : "";
+  return rows ? `<ul>${rows}${more}</ul>` : "";
+}
+
+function _pbHealthRenderCategoryCard(item, status) {
+  const isOverloaded = status === "overloaded";
+  const title = isOverloaded ? "Over target" : "Unused auto category";
+  const detail = isOverloaded
+    ? `${item.count} matched plays / target ${item.limit}`
+    : "No imported plays currently route here";
+  const actionText = isOverloaded ? "Review Field" : "Fill Field";
+  return `<div class="pb-health-category-card ${isOverloaded ? "is-overloaded" : "is-unused"}">
+    <div class="pb-health-category-head">
+      <div>
+        <strong>${escapeHtml(title)}</strong>
+        <span>${escapeHtml(item.page)} • ${escapeHtml(item.name)}</span>
+      </div>
+      <button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(item.cleanupKey)}">${escapeHtml(actionText)}</button>
+    </div>
+    <div class="pb-health-category-meter">
+      <strong>${item.count}</strong>
+      <span>${escapeHtml(detail)}</span>
+    </div>
+    ${isOverloaded ? _pbHealthRenderCategorySamples(item.items) : ""}
+  </div>`;
+}
+
+function _pbHealthRenderUnmatchedCategories(analysis) {
+  const rows = analysis.categoryAnalysis.unmatchedRows
+    .slice(0, 6)
+    .map(({ play, index }) => {
+      const context = _pbHealthPlayContext(play);
+      return `<div class="pb-health-category-row">
+        <div>
+          <button type="button" class="pb-health-play-link" data-action="openPlaybookHealthEdit" data-arg="${index}">
+            #${index + 1} ${escapeHtml(_pbHealthPlayTitle(play))}
+          </button>
+          <span>${context ? escapeHtml(context) : "Missing preferred fields or play type routing"}</span>
+        </div>
+        <button type="button" class="btn btn-xs" data-action="openPlaybookHealthEdit" data-arg="${index}">Edit</button>
+      </div>`;
+    })
+    .join("");
+  const more = analysis.categoryAnalysis.unmatchedRows.length > 6
+    ? `<div class="pb-health-more">Showing 6 of ${analysis.categoryAnalysis.unmatchedRows.length} unrouted plays.</div>`
+    : "";
+  if (!rows) return "";
+  return `<div class="pb-health-category-card is-unmatched">
+    <div class="pb-health-category-head">
+      <div>
+        <strong>Unrouted plays</strong>
+        <span>These plays do not currently land in any auto call sheet category</span>
+      </div>
+      <button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="preferredDown">Cleanup</button>
+    </div>
+    <div class="pb-health-category-list">${rows}${more}</div>
+  </div>`;
+}
+
+function _pbHealthRenderCategories(analysis) {
+  const categoryAnalysis = analysis.categoryAnalysis;
+  if (!categoryAnalysis.available) {
+    return `<div class="pb-health-empty">Call sheet categories are not ready yet.</div>`;
+  }
+  if (!categoryAnalysis.issueCount) {
+    return `<div class="pb-health-empty">No unused, overloaded, or unrouted category issues found.</div>`;
+  }
+  const cards = [
+    ...categoryAnalysis.overloaded.slice(0, 8).map((item) =>
+      _pbHealthRenderCategoryCard(item, "overloaded"),
+    ),
+    ...categoryAnalysis.unused.slice(0, 8).map((item) =>
+      _pbHealthRenderCategoryCard(item, "unused"),
+    ),
+    _pbHealthRenderUnmatchedCategories(analysis),
+  ].filter(Boolean);
+  const moreUnused = categoryAnalysis.unused.length > 8
+    ? `<div class="pb-health-more">Showing 8 of ${categoryAnalysis.unused.length} unused auto categories.</div>`
+    : "";
+  const moreOverloaded = categoryAnalysis.overloaded.length > 8
+    ? `<div class="pb-health-more">Showing 8 of ${categoryAnalysis.overloaded.length} overloaded categories.</div>`
+    : "";
+  return `<div class="pb-health-category-grid">${cards.join("")}${moreOverloaded}${moreUnused}</div>`;
+}
+
 function renderPlaybookDataHealth() {
   const overlay = document.getElementById("playbookDataHealthOverlay");
   if (!overlay) return;
@@ -1174,7 +1430,8 @@ function renderPlaybookDataHealth() {
     analysis.exactGroups.length +
     analysis.nearGroups.length +
     analysis.missingRows.length +
-    analysis.vocabularyIssues;
+    analysis.vocabularyIssues +
+    analysis.categoryAnalysis.issueCount;
   const scoreClass =
     analysis.score >= 90 ? "is-good" : analysis.score >= 70 ? "is-warn" : "is-poor";
 
@@ -1203,6 +1460,10 @@ function renderPlaybookDataHealth() {
       <div class="pb-health-card">
         <strong>${analysis.vocabularyIssues}</strong>
         <span>Vocabulary consistency issues</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${analysis.categoryAnalysis.issueCount}</strong>
+        <span>Category coverage issues</span>
       </div>
     </div>
     <div class="pb-health-guidance">
@@ -1237,6 +1498,13 @@ function renderPlaybookDataHealth() {
         <span>${analysis.vocabularyIssues} issues</span>
       </div>
       ${_pbHealthRenderVocabulary(analysis)}
+    </section>
+    <section class="pb-health-section">
+      <div class="pb-health-section-head">
+        <h4>Category Coverage</h4>
+        <span>${analysis.categoryAnalysis.unused.length} unused • ${analysis.categoryAnalysis.overloaded.length} overloaded • ${analysis.categoryAnalysis.unmatchedRows.length} unrouted</span>
+      </div>
+      ${_pbHealthRenderCategories(analysis)}
     </section>`;
 }
 

@@ -60,7 +60,7 @@ Goal: Improve playbook quality so every downstream feature gets better.
 - [x] Detect duplicate plays and near-duplicates
 - [x] Flag missing critical fields
 - [x] Find inconsistent casing/spelling in formation, personnel, tags, and base plays
-- [ ] Show unused or overloaded categories
+- [x] Show unused or overloaded categories
 - [ ] Provide CSV import cleanup recommendations
 
 Definition of done:
@@ -71,7 +71,8 @@ Status:
 
 - Phase 1 added a Playbook Data Health Center with exact duplicate, near-duplicate, and missing critical field review.
 - Phase 2 added casing, spacing, and likely spelling checks across formation, personnel, tags, and base plays.
-- Next slice should identify unused or overloaded categories.
+- Phase 3 added call sheet category coverage checks for unused, overloaded, and unrouted plays.
+- Next slice should provide CSV import cleanup recommendations.
 
 ## 4. Game Week Command Center
 
