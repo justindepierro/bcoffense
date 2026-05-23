@@ -473,6 +473,75 @@ function _dashBuildActionQueueItem(item) {
   </button>`;
 }
 
+function _dashTruncateText(value, maxLength = 140) {
+  const text = String(value || "").trim().replace(/\s+/g, " ");
+  if (text.length <= maxLength) return text;
+  return `${text.slice(0, maxLength - 3).trim()}...`;
+}
+
+function _dashBuildInstallPriorities() {
+  const report = typeof generateSmartInstallReport === "function"
+    ? generateSmartInstallReport()
+    : null;
+  if (!report) {
+    return {
+      summary: "No playbook loaded",
+      priorities: [],
+      readyCount: 0,
+      nearCount: 0,
+    };
+  }
+  return {
+    summary: `${report.totalGameReady || 0} ready / ${report.totalNearReady || 0} near-ready`,
+    priorities: (report.topInstalls || []).slice(0, 3),
+    readyCount: report.totalGameReady || 0,
+    nearCount: report.totalNearReady || 0,
+  };
+}
+
+function _dashBuildWeeklyFocus(gw) {
+  const notes = String(gw?.notes || "").trim();
+  const install = _dashBuildInstallPriorities();
+  return {
+    notes,
+    notesPreview: notes ? _dashTruncateText(notes, 180) : "No weekly notes yet.",
+    install,
+  };
+}
+
+function _dashBuildInstallPriorityRows(priorities) {
+  if (!Array.isArray(priorities) || priorities.length === 0) {
+    return `<button class="dash-focus-priority is-empty" type="button" data-action="showTab" data-arg="installation">
+      <span class="dash-focus-rank">-</span>
+      <span class="dash-focus-priority-copy">
+        <span class="dash-focus-priority-name">No install priorities</span>
+        <span class="dash-focus-priority-detail">Open Installation after loading a playbook.</span>
+      </span>
+    </button>`;
+  }
+  return priorities
+    .map((priority, idx) => {
+      const impact = [];
+      if (priority.wouldUnlock > 0) {
+        impact.push(`${priority.wouldUnlock} unlock`);
+      }
+      if (priority.clusterPlays > 0) {
+        impact.push(`${priority.clusterPlays} near-ready`);
+      }
+      if (priority.breadth > 0) {
+        impact.push(`${priority.breadth} plays`);
+      }
+      return `<button class="dash-focus-priority" type="button" data-action="showTab" data-arg="installation">
+        <span class="dash-focus-rank">${idx + 1}</span>
+        <span class="dash-focus-priority-copy">
+          <span class="dash-focus-priority-name">${escapeHtml(priority.value)}</span>
+          <span class="dash-focus-priority-detail">${escapeHtml(priority.categoryLabel)}${impact.length ? ` - ${escapeHtml(impact.join(" / "))}` : ""}</span>
+        </span>
+      </button>`;
+    })
+    .join("");
+}
+
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");
   if (!section) return;
@@ -484,6 +553,10 @@ function renderGameWeekCommandCenter(gw, opponents) {
   const queue = _dashBuildActionQueue(metrics, gw);
   const queueHtml = queue.map(_dashBuildActionQueueItem).join("");
   const activeQueueCount = queue.filter((item) => item.level !== "clean").length;
+  const weeklyFocus = _dashBuildWeeklyFocus(gw);
+  const installPriorityHtml = _dashBuildInstallPriorityRows(
+    weeklyFocus.install.priorities,
+  );
   const opponentLabel = gw.opponentName || "No opponent selected";
   const weekLabel = gw.weekLabel || "Game week";
   const scheduleMeta = metrics.activeGame
@@ -565,6 +638,31 @@ function renderGameWeekCommandCenter(gw, opponents) {
       </div>
       <div class="dash-action-list">
         ${queueHtml}
+      </div>
+    </div>
+    <div class="dash-weekly-focus" aria-label="Weekly notes and install priorities">
+      <div class="dash-focus-header">
+        <div>
+          <span class="dash-command-eyebrow">Weekly Focus</span>
+          <h4>Notes and install priorities</h4>
+        </div>
+        <span class="dash-focus-badge">${escapeHtml(weeklyFocus.install.summary)}</span>
+      </div>
+      <div class="dash-focus-grid">
+        <button class="dash-focus-notes ${weeklyFocus.notes ? "is-filled" : "is-empty"}" type="button" data-action="focusMobileCoachNotes">
+          <span class="dash-focus-title">Weekly Notes</span>
+          <span class="dash-focus-note-text">${escapeHtml(weeklyFocus.notesPreview)}</span>
+          <span class="dash-focus-link">${weeklyFocus.notes ? "Edit notes" : "Add notes"}</span>
+        </button>
+        <div class="dash-focus-installs">
+          <div class="dash-focus-installs-head">
+            <span class="dash-focus-title">Install Priorities</span>
+            <button class="btn btn-sm" data-action="showSmartInstallReport" type="button">Smart Report</button>
+          </div>
+          <div class="dash-focus-priority-list">
+            ${installPriorityHtml}
+          </div>
+        </div>
       </div>
     </div>`;
 }
