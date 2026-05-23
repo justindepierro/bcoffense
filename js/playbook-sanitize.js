@@ -757,6 +757,102 @@ const PLAYBOOK_HEALTH_VOCAB_FIELDS = [
 
 const PLAYBOOK_HEALTH_CATEGORY_DEFAULT_MAX = 10;
 
+const PLAYBOOK_HEALTH_CSV_GROUPS = [
+  {
+    key: "identity",
+    title: "Required identity columns",
+    priority: "High",
+    fields: ["type", "personnel", "formation", "play"],
+    actionKey: "formation",
+    threshold: 1,
+  },
+  {
+    key: "routing",
+    title: "Call sheet routing columns",
+    priority: "High",
+    fields: [
+      "preferredDown",
+      "preferredDistance",
+      "preferredFieldPosition",
+      "preferredSituation",
+      "preferredHash",
+    ],
+    actionKey: "preferredDown",
+    threshold: 0.7,
+  },
+  {
+    key: "concepts",
+    title: "Concept and tag columns",
+    priority: "Medium",
+    fields: ["basePlay", "formTag1", "formTag2", "playTag1", "playTag2"],
+    actionKey: "basePlay",
+    threshold: 0.45,
+  },
+  {
+    key: "practiceLooks",
+    title: "Practice look columns",
+    priority: "Low",
+    fields: [
+      "practiceFront",
+      "practiceDefense",
+      "practiceCoverage",
+      "practiceBlitz",
+      "practiceStunt",
+    ],
+    actionKey: "practiceFront",
+    threshold: 0.3,
+  },
+];
+
+const PLAYBOOK_HEALTH_CSV_VALUE_RULES = [
+  {
+    key: "preferredDown",
+    label: "PreferredDown",
+    allowed: ["1", "2", "3", "4"],
+    expected: "1, 2, 3, or 4",
+  },
+  {
+    key: "preferredDistance",
+    label: "PreferredDistance",
+    allowed: ["short", "medium", "long"],
+    expected: "Short, Medium, or Long",
+  },
+  {
+    key: "preferredHash",
+    label: "PreferredHash",
+    allowed: ["left", "middle", "right", "any", "l", "m", "r"],
+    expected: "Left, Middle, Right, Any, L, M, or R",
+  },
+  {
+    key: "preferredFieldPosition",
+    label: "PreferredFieldPosition",
+    allowed: [
+      "green",
+      "fringe",
+      "lo-rz",
+      "low red zone",
+      "low rz",
+      "hi-rz",
+      "high red zone",
+      "high rz",
+      "red zone",
+      "goal line",
+      "goalline",
+      "backed up",
+      "backedup",
+      "own territory",
+      "saigon",
+    ],
+    expected: "Green, Lo-RZ, Hi-RZ, Goal Line, Backed Up, or Saigon",
+  },
+  {
+    key: "preferredSituation",
+    label: "PreferredSituation",
+    allowed: ["short yardage", "2 minute", "4 minute", "opener", "openers"],
+    expected: "Short Yardage, 2 Minute, 4 Minute, or Openers",
+  },
+];
+
 function _pbHealthNorm(value) {
   return String(value || "")
     .normalize("NFKD")
@@ -1086,6 +1182,209 @@ function _pbHealthAnalyzeCategories(entries) {
   };
 }
 
+function _pbHealthCsvSplitValues(value) {
+  if (typeof splitPreferredValues === "function") return splitPreferredValues(value);
+  return String(value || "")
+    .split(/[,|;\/]+/)
+    .map((item) => item.trim().toLowerCase())
+    .filter(Boolean);
+}
+
+function _pbHealthFieldStats(entries, key) {
+  const samples = [];
+  let filled = 0;
+  entries.forEach((entry) => {
+    const value = _pbHealthDisplayValue(entry.play?.[key]);
+    if (value) {
+      filled += 1;
+      if (samples.length < 4) samples.push({ ...entry, value });
+    }
+  });
+  const total = entries.length;
+  const missing = Math.max(0, total - filled);
+  return {
+    key,
+    label: _pbHealthFieldLabel(key),
+    filled,
+    missing,
+    total,
+    coverage: total ? filled / total : 0,
+    samples,
+  };
+}
+
+function _pbHealthBuildFieldStats(entries) {
+  const keys = new Set([
+    ...PLAYBOOK_HEALTH_CRITICAL_FIELDS.map((field) => field.key),
+    ...PLAYBOOK_HEALTH_CSV_GROUPS.flatMap((group) => group.fields),
+    ...PLAYBOOK_HEALTH_CSV_VALUE_RULES.map((rule) => rule.key),
+  ]);
+  const stats = {};
+  keys.forEach((key) => {
+    stats[key] = _pbHealthFieldStats(entries, key);
+  });
+  return stats;
+}
+
+function _pbHealthCsvFormatFieldList(fields, stats) {
+  return fields
+    .map((key) => {
+      const stat = stats[key] || { label: _pbHealthFieldLabel(key), missing: 0, total: 0 };
+      return `${stat.label} (${stat.missing}/${stat.total} missing)`;
+    })
+    .join(", ");
+}
+
+function _pbHealthCsvInvalidValues(entries) {
+  const issues = [];
+  PLAYBOOK_HEALTH_CSV_VALUE_RULES.forEach((rule) => {
+    const allowed = new Set(rule.allowed);
+    const byValue = new Map();
+    entries.forEach((entry) => {
+      _pbHealthCsvSplitValues(entry.play?.[rule.key]).forEach((value) => {
+        if (allowed.has(value)) return;
+        if (!byValue.has(value)) {
+          byValue.set(value, {
+            value,
+            count: 0,
+            items: [],
+          });
+        }
+        const bucket = byValue.get(value);
+        bucket.count += 1;
+        if (bucket.items.length < 4) bucket.items.push(entry);
+      });
+    });
+    const values = Array.from(byValue.values())
+      .sort((a, b) => b.count - a.count || a.value.localeCompare(b.value))
+      .slice(0, 5);
+    if (values.length) {
+      issues.push({
+        rule,
+        fieldKey: rule.key,
+        label: rule.label,
+        expected: rule.expected,
+        values,
+        count: values.reduce((sum, item) => sum + item.count, 0),
+      });
+    }
+  });
+  return issues;
+}
+
+function _pbHealthAnalyzeCsvRecommendations(analysis) {
+  const entries = analysis.entries;
+  const stats = _pbHealthBuildFieldStats(entries);
+  const recommendations = [];
+  const addRecommendation = (rec) => {
+    recommendations.push({
+      priority: "Medium",
+      actionType: "field",
+      actionKey: "preferredDown",
+      actionLabel: "Clean Field",
+      fields: [],
+      samples: [],
+      ...rec,
+    });
+  };
+
+  const identityMissing = PLAYBOOK_HEALTH_CSV_GROUPS[0].fields.filter(
+    (key) => (stats[key]?.missing || 0) > 0,
+  );
+  if (identityMissing.length) {
+    addRecommendation({
+      priority: "High",
+      title: "Fix required identity columns in the source CSV",
+      detail: _pbHealthCsvFormatFieldList(identityMissing, stats),
+      actionKey: identityMissing[0],
+      actionLabel: "Fix Identity",
+      fields: identityMissing,
+    });
+  }
+
+  PLAYBOOK_HEALTH_CSV_GROUPS.slice(1).forEach((group) => {
+    const groupStats = group.fields.map((key) => stats[key]).filter(Boolean);
+    const averageCoverage = groupStats.length
+      ? groupStats.reduce((sum, stat) => sum + stat.coverage, 0) / groupStats.length
+      : 0;
+    const emptyFields = groupStats.filter((stat) => stat.filled === 0);
+    if (averageCoverage >= group.threshold && emptyFields.length === 0) return;
+    const actionLabel = emptyFields.length ? "Add Columns" : "Fill Values";
+    const detail = emptyFields.length
+      ? `These columns look empty or absent: ${emptyFields.map((stat) => stat.label).join(", ")}.`
+      : `${Math.round(averageCoverage * 100)}% average coverage across ${group.fields.length} columns.`;
+    addRecommendation({
+      priority: group.priority,
+      title: `${group.title} need cleanup`,
+      detail,
+      actionKey: group.actionKey,
+      actionLabel,
+      fields: group.fields,
+    });
+  });
+
+  const invalidValueIssues = _pbHealthCsvInvalidValues(entries);
+  invalidValueIssues.forEach((issue) => {
+    addRecommendation({
+      priority: "High",
+      title: `Normalize ${issue.label} values`,
+      detail: `Expected ${issue.expected}. Found ${issue.count} value${issue.count === 1 ? "" : "s"} that will not route cleanly.`,
+      actionKey: issue.fieldKey,
+      actionLabel: "Normalize",
+      fields: [issue.fieldKey],
+      invalidValues: issue.values,
+      samples: issue.values.flatMap((value) => value.items).slice(0, 4),
+    });
+  });
+
+  if (analysis.exactGroups.length) {
+    addRecommendation({
+      priority: "Medium",
+      title: "Remove duplicate rows from the source CSV",
+      detail: `${analysis.exactGroups.length} exact duplicate group${analysis.exactGroups.length === 1 ? "" : "s"} found after import.`,
+      actionType: "edit",
+      actionKey: String(analysis.exactGroups[0][0].index),
+      actionLabel: "Review Rows",
+      samples: analysis.exactGroups[0].slice(0, 4),
+    });
+  }
+
+  if (analysis.categoryAnalysis?.unmatchedRows?.length) {
+    addRecommendation({
+      priority: "High",
+      title: "Add routing fields for unrouted plays",
+      detail: `${analysis.categoryAnalysis.unmatchedRows.length} play${analysis.categoryAnalysis.unmatchedRows.length === 1 ? "" : "s"} do not land in any auto call sheet category.`,
+      actionKey: "preferredDown",
+      actionLabel: "Add Routing",
+      fields: ["preferredDown", "preferredDistance", "preferredFieldPosition", "type"],
+      samples: analysis.categoryAnalysis.unmatchedRows.slice(0, 4),
+    });
+  }
+
+  if (recommendations.length) {
+    addRecommendation({
+      priority: "Low",
+      title: "Re-export from the BCOffense template after cleanup",
+      detail: "Use the offensive template headers so future imports map every column predictably.",
+      actionType: "download",
+      actionKey: "offense",
+      actionLabel: "Template",
+    });
+  }
+
+  recommendations.sort((a, b) => {
+    const rank = { High: 0, Medium: 1, Low: 2 };
+    return (rank[a.priority] ?? 9) - (rank[b.priority] ?? 9);
+  });
+
+  return {
+    stats,
+    invalidValueIssues,
+    recommendations,
+    issueCount: recommendations.filter((rec) => rec.priority !== "Low").length,
+  };
+}
+
 function _pbHealthAnalyze() {
   const entries = Array.isArray(plays)
     ? plays.map((play, index) => ({ play, index }))
@@ -1111,18 +1410,7 @@ function _pbHealthAnalyze() {
   const spellingGroups = _pbHealthDetectSpelling(entries);
   const vocabularyIssues = casingGroups.length + spellingGroups.length;
   const categoryAnalysis = _pbHealthAnalyzeCategories(entries);
-  const exactDuplicateItems = exactGroups.reduce((sum, group) => sum + group.length, 0);
-  const nearDuplicateItems = nearGroups.reduce((sum, group) => sum + group.length, 0);
-  const score = Math.max(
-    0,
-    100 -
-      exactGroups.length * 10 -
-      nearGroups.length * 6 -
-      missingRows.length * 3 -
-      vocabularyIssues * 4 -
-      categoryAnalysis.issueCount * 2,
-  );
-  return {
+  const analysis = {
     entries,
     exactGroups,
     nearGroups,
@@ -1132,6 +1420,23 @@ function _pbHealthAnalyze() {
     spellingGroups,
     vocabularyIssues,
     categoryAnalysis,
+  };
+  const csvAnalysis = _pbHealthAnalyzeCsvRecommendations(analysis);
+  const exactDuplicateItems = exactGroups.reduce((sum, group) => sum + group.length, 0);
+  const nearDuplicateItems = nearGroups.reduce((sum, group) => sum + group.length, 0);
+  const score = Math.max(
+    0,
+    100 -
+      exactGroups.length * 10 -
+      nearGroups.length * 6 -
+      missingRows.length * 3 -
+      vocabularyIssues * 4 -
+      categoryAnalysis.issueCount * 2 -
+      csvAnalysis.issueCount * 2,
+  );
+  return {
+    ...analysis,
+    csvAnalysis,
     exactDuplicateItems,
     nearDuplicateItems,
     score,
@@ -1419,6 +1724,82 @@ function _pbHealthRenderCategories(analysis) {
   return `<div class="pb-health-category-grid">${cards.join("")}${moreOverloaded}${moreUnused}</div>`;
 }
 
+function _pbHealthRenderCsvAction(rec) {
+  if (rec.actionType === "download") {
+    return `<button type="button" class="btn btn-xs" data-action="downloadCSVTemplate" data-arg="${escapeHtml(rec.actionKey)}">${escapeHtml(rec.actionLabel)}</button>`;
+  }
+  if (rec.actionType === "edit") {
+    return `<button type="button" class="btn btn-xs" data-action="openPlaybookHealthEdit" data-arg="${escapeHtml(rec.actionKey)}">${escapeHtml(rec.actionLabel)}</button>`;
+  }
+  return `<button type="button" class="btn btn-xs" data-action="openPlaybookSanitizeField" data-arg="${escapeHtml(rec.actionKey)}">${escapeHtml(rec.actionLabel)}</button>`;
+}
+
+function _pbHealthRenderCsvFields(rec, analysis) {
+  if (rec.invalidValues?.length) {
+    return `<div class="pb-health-csv-values">
+      ${rec.invalidValues
+        .map(
+          (item) => `<span class="pb-health-csv-chip">
+            <span class="pb-health-vocab-label">${escapeHtml(item.value)}</span>
+            <em>${item.count}</em>
+          </span>`,
+        )
+        .join("")}
+    </div>`;
+  }
+  if (!rec.fields?.length) return "";
+  return `<div class="pb-health-csv-values">
+    ${rec.fields
+      .slice(0, 6)
+      .map((key) => {
+        const stat = analysis.csvAnalysis.stats[key];
+        const label = stat?.label || _pbHealthFieldLabel(key);
+        const filled = stat ? `${stat.filled}/${stat.total}` : "";
+        return `<span class="pb-health-csv-chip">
+          <span class="pb-health-vocab-label">${escapeHtml(label)}</span>
+          ${filled ? `<em>${escapeHtml(filled)}</em>` : ""}
+        </span>`;
+      })
+      .join("")}
+  </div>`;
+}
+
+function _pbHealthRenderCsvRecommendation(rec, analysis) {
+  const samples = rec.samples?.length
+    ? `<div class="pb-health-csv-samples">${_pbHealthRenderCategorySamples(rec.samples)}</div>`
+    : "";
+  const priorityClass = rec.priority.toLowerCase();
+  return `<div class="pb-health-csv-card is-${escapeHtml(priorityClass)}">
+    <div class="pb-health-csv-head">
+      <div>
+        <strong>${escapeHtml(rec.title)}</strong>
+        <span>${escapeHtml(rec.detail)}</span>
+      </div>
+      <div class="pb-health-csv-actions">
+        <span class="pb-health-csv-priority">${escapeHtml(rec.priority)}</span>
+        ${_pbHealthRenderCsvAction(rec)}
+      </div>
+    </div>
+    ${_pbHealthRenderCsvFields(rec, analysis)}
+    ${samples}
+  </div>`;
+}
+
+function _pbHealthRenderCsvRecommendations(analysis) {
+  if (!analysis.csvAnalysis.recommendations.length) {
+    return `<div class="pb-health-empty">No CSV source cleanup recommendations found.</div>`;
+  }
+  return `<div class="pb-health-csv-grid">
+    ${analysis.csvAnalysis.recommendations
+      .slice(0, 10)
+      .map((rec) => _pbHealthRenderCsvRecommendation(rec, analysis))
+      .join("")}
+    ${analysis.csvAnalysis.recommendations.length > 10
+      ? `<div class="pb-health-more">Showing 10 of ${analysis.csvAnalysis.recommendations.length} CSV recommendations.</div>`
+      : ""}
+  </div>`;
+}
+
 function renderPlaybookDataHealth() {
   const overlay = document.getElementById("playbookDataHealthOverlay");
   if (!overlay) return;
@@ -1431,7 +1812,8 @@ function renderPlaybookDataHealth() {
     analysis.nearGroups.length +
     analysis.missingRows.length +
     analysis.vocabularyIssues +
-    analysis.categoryAnalysis.issueCount;
+    analysis.categoryAnalysis.issueCount +
+    analysis.csvAnalysis.issueCount;
   const scoreClass =
     analysis.score >= 90 ? "is-good" : analysis.score >= 70 ? "is-warn" : "is-poor";
 
@@ -1464,6 +1846,10 @@ function renderPlaybookDataHealth() {
       <div class="pb-health-card">
         <strong>${analysis.categoryAnalysis.issueCount}</strong>
         <span>Category coverage issues</span>
+      </div>
+      <div class="pb-health-card">
+        <strong>${analysis.csvAnalysis.issueCount}</strong>
+        <span>CSV cleanup recommendations</span>
       </div>
     </div>
     <div class="pb-health-guidance">
@@ -1505,6 +1891,13 @@ function renderPlaybookDataHealth() {
         <span>${analysis.categoryAnalysis.unused.length} unused • ${analysis.categoryAnalysis.overloaded.length} overloaded • ${analysis.categoryAnalysis.unmatchedRows.length} unrouted</span>
       </div>
       ${_pbHealthRenderCategories(analysis)}
+    </section>
+    <section class="pb-health-section">
+      <div class="pb-health-section-head">
+        <h4>CSV Import Cleanup</h4>
+        <span>${analysis.csvAnalysis.issueCount} source fixes</span>
+      </div>
+      ${_pbHealthRenderCsvRecommendations(analysis)}
     </section>`;
 }
 

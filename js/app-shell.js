@@ -284,8 +284,8 @@ function _buildCommandBaseItems() {
     items.push({
       kind: "Action",
       title: "Playbook Data Health",
-      subtitle: "Review duplicate plays, missing fields, vocabulary, and category coverage",
-      keywords: "data health duplicate duplicates missing fields vocabulary casing spelling category coverage unused overloaded cleanup playbook quality",
+      subtitle: "Review duplicate plays, missing fields, vocabulary, categories, and CSV cleanup",
+      keywords: "data health duplicate duplicates missing fields vocabulary casing spelling category coverage unused overloaded csv import cleanup playbook quality template",
       priority: 34,
       run: () => {
         showTab("playbook");
