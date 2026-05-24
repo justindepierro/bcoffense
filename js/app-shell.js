@@ -322,6 +322,17 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPrintStudio === "function") {
+    items.push({
+      kind: "Action",
+      title: "Print and Export Studio",
+      subtitle: "Preview, check, name, print, and export all game-week materials",
+      keywords: "print export studio preview script call sheet wristband game plan scouting report pdf csv filename",
+      priority: 37,
+      run: () => openPrintStudio(),
+    });
+  }
+
   return items;
 }
 

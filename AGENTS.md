@@ -95,6 +95,7 @@ js/
   gameplan-print.js     ← Game plan print modal + print render
   gameplan-integrations.js ← Game plan push to call sheet/script, dashboard send, plan compare
   gameplan-snapshots.js ← Game plan named snapshots (save/load/delete/menu)
+  print-studio.js       ← Unified print/export hub, naming conventions, and print-safe checks
   app-events.js         ← Central delegated event routing and DOM listeners
   app-shell.js          ← Theme, chrome, keyboard shortcuts, page-level runtime
   app-session.js        ← Dirty-state and draft-restore session helpers
@@ -188,14 +189,15 @@ All scripts use `defer` and load in this exact order from index.html:
 69. js/gameplan-print.js
 70. js/gameplan-integrations.js
 71. js/gameplan-snapshots.js
-72. js/app-events.js
-73. js/app-shell.js
-74. js/app-session.js
-75. js/app-navigation.js
-76. js/app-module-init.js
-77. js/app-bootstrap.js
-78. js/app-init.js
-79. js/app.js           ← Must be last; shared global state only
+72. js/print-studio.js  ← Unified print/export hub after module print functions
+73. js/app-events.js
+74. js/app-shell.js
+75. js/app-session.js
+76. js/app-navigation.js
+77. js/app-module-init.js
+78. js/app-bootstrap.js
+79. js/app-init.js
+80. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -318,6 +320,7 @@ CS_SCOUTING_OVERLAY        → "csScoutingOverlay"
 PLAY_COLLECTIONS           → "playCollections"
 CALLSHEET_CONSTRAINTS      → "callSheetConstraints"
 CLOUD_SYNC_SETTINGS        → "cloudSyncSettings"
+PRINT_STUDIO_SETTINGS      → "printStudioSettings"
 ```
 
 ### Autosave / Draft Pattern

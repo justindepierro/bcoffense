@@ -2649,6 +2649,13 @@ function setupPrintPageStyle(cssText) {
 function setPrintTitle(type, customName) {
   const originalTitle = document.title;
 
+  if (typeof buildPrintStudioFilename === "function") {
+    document.title = buildPrintStudioFilename(type, customName);
+    return function restoreTitle() {
+      document.title = originalTitle;
+    };
+  }
+
   // Build date/time stamp
   const now = new Date();
   const datePart = now

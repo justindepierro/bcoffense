@@ -4909,7 +4909,9 @@ function exportCallSheetCSV() {
   const url = URL.createObjectURL(blob);
   const a = document.createElement("a");
   a.href = url;
-  a.download = `call_sheet_${dateStr}.csv`;
+  a.download = typeof getPrintStudioExportName === "function"
+    ? getPrintStudioExportName("Call-Sheet", "", "csv")
+    : `call_sheet_${dateStr}.csv`;
   a.click();
   URL.revokeObjectURL(url);
   showToast(`📥 Exported call sheet to CSV`, {

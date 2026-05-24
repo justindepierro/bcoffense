@@ -496,7 +496,9 @@ function exportScriptCSV() {
   const scriptName =
     document.getElementById("scriptName")?.value || "Practice Script";
   const dateStr = new Date().toISOString().slice(0, 10);
-  const filename = `${scriptName.replace(/\s+/g, "_")}_${dateStr}.csv`;
+  const filename = typeof getPrintStudioExportName === "function"
+    ? getPrintStudioExportName("Practice-Script", scriptName, "csv")
+    : `${scriptName.replace(/\s+/g, "_")}_${dateStr}.csv`;
 
   const blob = new Blob([csv], { type: "text/csv" });
   const url = URL.createObjectURL(blob);
@@ -556,12 +558,92 @@ function exportScriptAsText() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `${scriptName.replace(/\s+/g, "_")}_${dateStr}.txt`;
+  link.download = typeof getPrintStudioExportName === "function"
+    ? getPrintStudioExportName("Practice-Script", scriptName, "txt")
+    : `${scriptName.replace(/\s+/g, "_")}_${dateStr}.txt`;
   document.body.appendChild(link);
   link.click();
   document.body.removeChild(link);
   URL.revokeObjectURL(url);
   showToast("✅ Script exported as text file", { type: "success" });
+}
+
+function printPeriod(separatorIndex) {
+  separatorIndex = parseInt(separatorIndex, 10);
+  const separator = script[separatorIndex];
+  if (Number.isNaN(separatorIndex) || !separator?.isSeparator) return;
+
+  try {
+    const name = document.getElementById("scriptName")?.value || "Practice Script";
+    const date = document.getElementById("scriptDate")?.value;
+    const teamName = getTeamName();
+    const periodLabel = separator.label || "Period";
+    const periodItems = [separator, ...getPeriodPlays(separatorIndex)];
+    const periodPlayCount = Math.max(0, periodItems.length - 1);
+    const displayOpts = getScriptDisplayOptions();
+    const dateStr = date
+      ? new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+        weekday: "long",
+        month: "long",
+        day: "numeric",
+        year: "numeric",
+      })
+      : "";
+
+    document.getElementById("previewTeamName").textContent = teamName || "";
+    document.getElementById("previewTitle").textContent = `${name} - ${periodLabel}`;
+    document.getElementById("previewMeta").textContent = dateStr;
+    document.getElementById("previewPeriodSummary").innerHTML = `
+      <div class="preview-summary-bar">
+        <span><strong>${periodPlayCount}</strong> plays</span>
+        ${separator.minutes ? `<span><strong>${separator.minutes}</strong> min</span>` : ""}
+        ${separator.notes ? `<span>${escapeHtml(separator.notes)}</span>` : ""}
+      </div>
+    `;
+
+    renderScriptPrintTable(
+      displayOpts,
+      buildScriptPrintBodyMarkup(periodItems, displayOpts),
+    );
+
+    document.getElementById("previewContainer").classList.remove("hidden");
+    document.getElementById("wristbandPrint").classList.add("hidden");
+    document.body.classList.add("print-script");
+
+    setupPrintPageStyle(
+      "@media print { @page { size: letter; margin: 0.25in; } }",
+    );
+
+    setTimeout(() => {
+      const previewEl = document.getElementById("previewContainer");
+      const cleanupScript = () => {
+        previewEl.classList.add("hidden");
+        document.body.classList.remove("print-script");
+      };
+      const printNow = () => {
+        try {
+          const restoreTitle = setPrintTitle("Practice Script", `${name} ${periodLabel}`);
+          window.print();
+          restoreTitle();
+        } finally {
+          cleanupScript();
+        }
+      };
+      if (typeof showPrintPreview === "function") {
+        showPrintPreview(previewEl, printNow, cleanupScript);
+      } else {
+        printNow();
+      }
+    }, 100);
+  } catch (err) {
+    console.error("printPeriod error:", err);
+    document.getElementById("previewContainer")?.classList?.add("hidden");
+    document.body.classList.remove("print-script");
+    showToast("❌ Error printing period.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
 }
 
 function generatePDF() {

@@ -225,6 +225,7 @@ function buildScriptTimelinePeriods(renderContext) {
       reps: stats.periodReps,
       runCount: stats.runCount,
       passCount: stats.passCount,
+      hideProtection: Boolean(item.hideProtection),
       ...balance,
       tempoLoad: getTopScriptTimelineBuckets(periodPlays, "tempo", "No tempo"),
       personnelLoad: getTopScriptTimelineBuckets(periodPlays, "personnel", "No personnel"),
@@ -264,6 +265,38 @@ function renderScriptTimelineBalance(period) {
         <span class="script-timeline-balance-pass" style="width: ${period.passPct}%"></span>
         <span class="script-timeline-balance-other" style="width: ${period.otherPct}%"></span>
       </span>
+    </span>`;
+}
+
+function renderScriptTimelineActions(period) {
+  const label = period.label || "Period";
+  const protectionLabel = period.hideProtection ? "Prot Off" : "Prot On";
+  const protectionTitle = period.hideProtection
+    ? `Show protection for ${label}`
+    : `Hide protection for ${label}`;
+
+  const actions = [
+    ["duplicatePeriod", "Dup", `Duplicate ${label}`],
+    ["savePeriodAsTemplate", "Save", `Save ${label} as a template`],
+    [
+      "togglePeriodProtection",
+      protectionLabel,
+      protectionTitle,
+      period.hideProtection ? " is-active" : "",
+    ],
+    ["printPeriod", "Print", `Print ${label}`],
+  ];
+
+  return `
+    <span class="script-timeline-actions" aria-label="${escapeHtml(label)} timeline actions">
+      ${actions
+    .map(
+      ([action, actionLabel, title, activeClass = ""]) => `
+        <button type="button" class="script-timeline-action${activeClass}" data-action="${action}" data-arg="${period.index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
+          ${escapeHtml(actionLabel)}
+        </button>`,
+    )
+    .join("")}
     </span>`;
 }
 
@@ -313,12 +346,15 @@ function renderScriptTimeline(renderContext) {
       const periodId = escapeHtml(String(period.id));
 
       return `
-        <button type="button" class="script-timeline-card" data-action="jumpToPeriod" data-arg="${periodId}" draggable="true" data-drag="periodStart" data-idx="${period.index}" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="--period-color: ${period.color}; --period-load: ${loadPct}%;" aria-label="${escapeHtml(ariaLabel)}">
+        <article class="script-timeline-card" draggable="true" data-drag="periodStart" data-idx="${period.index}" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="--period-color: ${period.color}; --period-load: ${loadPct}%;" aria-label="${escapeHtml(ariaLabel)}">
           <span class="script-timeline-color" aria-hidden="true"></span>
           <span class="script-timeline-card-main">
-            <span class="script-timeline-title">${escapeHtml(period.label)}</span>
+            <button type="button" class="script-timeline-jump" data-action="jumpToPeriod" data-arg="${periodId}" title="Jump to ${escapeHtml(period.label)}">
+              <span class="script-timeline-title">${escapeHtml(period.label)}</span>
+            </button>
             <span class="script-timeline-meta">${period.playCount} plays • ${period.reps} reps • ${period.minutes || 0} min</span>
           </span>
+          ${renderScriptTimelineActions(period)}
           <span class="script-timeline-split">
             <span><strong>${period.runCount}</strong> Run</span>
             <span><strong>${period.passCount}</strong> Pass</span>
@@ -337,7 +373,7 @@ function renderScriptTimeline(renderContext) {
           : '<span class="script-timeline-chip script-timeline-chip--muted">No plays yet</span>'}
           </span>
           ${noteHtml}
-        </button>`;
+        </article>`;
     })
     .join("")}
     </div>

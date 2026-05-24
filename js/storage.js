@@ -96,6 +96,7 @@ const STORAGE_KEYS = {
   VISION_MODE: "visionMode",
   SCHEDULE: "schedule",
   GAME_PLAN_TAGS: "gamePlanTags",
+  PRINT_STUDIO_SETTINGS: "printStudioSettings",
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
   WRISTBAND_FAVORITES: "wristbandFavorites",
   TEAM_ROSTER: "teamRoster",

@@ -253,7 +253,9 @@ function exportWristbandCSV() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = `wristband-${new Date().toISOString().slice(0, 10)}.csv`;
+  link.download = typeof getPrintStudioExportName === "function"
+    ? getPrintStudioExportName("Wristband", "", "csv")
+    : `wristband-${new Date().toISOString().slice(0, 10)}.csv`;
   link.click();
   URL.revokeObjectURL(url);
   showToast("📥 CSV exported");

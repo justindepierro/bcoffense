@@ -9,8 +9,8 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 3. [x] Data Health Center
 4. [x] Game Week Command Center
 5. [ ] Smart Game Plan Builder
-6. [ ] Practice Script Timeline View
-7. [ ] Print and Export Studio
+6. [x] Practice Script Timeline View
+7. [x] Print and Export Studio
 8. [ ] Saved Templates Everywhere
 9. [ ] Playbook Intelligence
 10. [ ] Large Playbook Performance Track
@@ -129,7 +129,7 @@ Goal: Make script building feel like planning a practice, not editing a long tab
 - [x] Period blocks with rep counts, duration, tempo, and personnel load
 - [x] Drag/drop period ordering
 - [x] Per-period run/pass and situation summaries
-- [ ] Quick duplicate, protect, template, and print controls
+- [x] Quick duplicate, protect, template, and print controls
 
 Definition of done:
 
@@ -141,20 +141,31 @@ Status:
 - Timeline cards jump directly to the matching period and stay in sync when period labels, colors, minutes, notes, or reps change.
 - Phase 2 added drag/drop period ordering from period headers and timeline cards, moving the full period block with its plays.
 - Phase 3 added rep-weighted run/pass balance meters plus top situation chips from preferred situation, down/distance, and field-position metadata.
-- Next slice should add quick duplicate, protect, template, and print controls.
+- Phase 4 added direct timeline controls for duplicate, template save, protection visibility, and period-only printing.
+- Practice Script Timeline View is now complete for the current roadmap scope.
+- Next slice moved into the Print and Export Studio.
 
 ## 7. Print and Export Studio
 
 Goal: Make printed and exported materials look consistent, branded, and game-ready.
 
-- [ ] Unified preview shell for scripts, call sheets, wristbands, game plans, and scouting reports
-- [ ] Team branding, density, and column presets
-- [ ] Print-safe overflow checks
-- [ ] Export naming conventions tied to game week/opponent
+- [x] Unified preview shell for scripts, call sheets, wristbands, game plans, and scouting reports
+- [x] Team branding, density, and column presets
+- [x] Print-safe overflow checks
+- [x] Export naming conventions tied to game week/opponent
 
 Definition of done:
 
 - Coaches can produce professional staff/player handouts without trial-and-error printing.
+
+Status:
+
+- Phase 1 added a Print and Export Studio with shared material cards for scripts, call sheets, wristbands, game plans, and scouting reports.
+- Phase 2 added shared team branding, density, and column presets that apply to existing script, call-sheet, and game-plan print settings.
+- Phase 3 added print-safe warnings for empty materials, dense scripts, overloaded call-sheet buckets, large game plans, and scouting reports.
+- Phase 4 added game-week/opponent-aware filename conventions for print titles and CSV/text exports.
+- Print and Export Studio is now complete for the current roadmap scope.
+- Next slice should move into Saved Templates Everywhere.
 
 ## 8. Saved Templates Everywhere
 

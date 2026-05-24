@@ -117,7 +117,9 @@ function exportPlaybookCSV() {
   const url = URL.createObjectURL(blob);
   const link = document.createElement("a");
   link.href = url;
-  link.download = "playbook_export.csv";
+  link.download = typeof getPrintStudioExportName === "function"
+    ? getPrintStudioExportName("Playbook", "Export", "csv")
+    : "playbook_export.csv";
   link.click();
   URL.revokeObjectURL(url);
   showToast(`📥 Exported ${plays.length} plays to CSV`, {

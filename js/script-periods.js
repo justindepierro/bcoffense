@@ -399,6 +399,9 @@ function handlePeriodDragEnd() {
 }
 
 function duplicatePeriod(separatorIndex) {
+  separatorIndex = parseInt(separatorIndex, 10);
+  if (Number.isNaN(separatorIndex) || !script[separatorIndex]?.isSeparator) return;
+
   saveScriptState();
   const separator = script[separatorIndex];
   const plays = getPeriodPlays(separatorIndex);
@@ -454,6 +457,9 @@ function movePeriod(separatorIndex, direction) {
 }
 
 async function savePeriodAsTemplate(separatorIndex) {
+  separatorIndex = parseInt(separatorIndex, 10);
+  if (Number.isNaN(separatorIndex) || !script[separatorIndex]?.isSeparator) return;
+
   const separator = script[separatorIndex];
   const plays = getPeriodPlays(separatorIndex);
 
