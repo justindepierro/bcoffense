@@ -242,6 +242,162 @@ function getPeriodPlays(separatorIndex) {
   return plays;
 }
 
+let scriptPeriodDragId = null;
+
+function getPeriodBlockBounds(separatorIndex) {
+  if (!script[separatorIndex]?.isSeparator) return null;
+
+  let endIndex = separatorIndex + 1;
+  while (endIndex < script.length && !script[endIndex]?.isSeparator) {
+    endIndex++;
+  }
+
+  return {
+    startIndex: separatorIndex,
+    endIndex,
+    length: endIndex - separatorIndex,
+    separator: script[separatorIndex],
+  };
+}
+
+function findPeriodIndexById(periodId) {
+  const normalizedId = String(periodId);
+  return script.findIndex((item) => item?.isSeparator && String(item.id) === normalizedId);
+}
+
+function getPeriodSelectorId(periodId) {
+  const normalizedId = String(periodId || "");
+  if (typeof CSS !== "undefined" && typeof CSS.escape === "function") {
+    return CSS.escape(normalizedId);
+  }
+  return normalizedId.replace(/["\\]/g, "\\$&");
+}
+
+function clearPeriodDropIndicators() {
+  document
+    .querySelectorAll(".period-drop-before, .period-drop-after, .period-dragging")
+    .forEach((el) => {
+      el.classList.remove("period-drop-before", "period-drop-after", "period-dragging");
+    });
+}
+
+function getPeriodDropPosition(event, targetEl) {
+  const rect = targetEl.getBoundingClientRect();
+  if (targetEl.closest(".script-timeline-track")) {
+    const track = targetEl.closest(".script-timeline-track");
+    const columns = getComputedStyle(track).gridTemplateColumns
+      .split(" ")
+      .filter(Boolean).length;
+    if (columns > 1) {
+      return event.clientX < rect.left + rect.width / 2 ? "before" : "after";
+    }
+  }
+  return event.clientY < rect.top + rect.height / 2 ? "before" : "after";
+}
+
+function setPeriodDropIndicator(event, targetEl) {
+  if (!targetEl || !scriptPeriodDragId) return;
+  const targetPeriodId = targetEl.dataset.periodDropId || targetEl.dataset.periodId;
+  if (!targetPeriodId || String(targetPeriodId) === scriptPeriodDragId) {
+    clearPeriodDropIndicators();
+    document
+      .querySelectorAll(`[data-period-drop-id="${getPeriodSelectorId(targetPeriodId)}"]`)
+      .forEach((el) => el.classList.add("period-dragging"));
+    return;
+  }
+
+  const position = getPeriodDropPosition(event, targetEl);
+  clearPeriodDropIndicators();
+  targetEl.classList.add(position === "before" ? "period-drop-before" : "period-drop-after");
+  document
+    .querySelectorAll(`[data-period-drop-id="${getPeriodSelectorId(scriptPeriodDragId)}"]`)
+    .forEach((el) => el.classList.add("period-dragging"));
+}
+
+function reorderPeriodById(sourcePeriodId, targetPeriodId, position = "before") {
+  const sourceIndex = findPeriodIndexById(sourcePeriodId);
+  const targetIndex = findPeriodIndexById(targetPeriodId);
+  if (sourceIndex < 0 || targetIndex < 0 || sourceIndex === targetIndex) return false;
+
+  const sourceBounds = getPeriodBlockBounds(sourceIndex);
+  const targetBounds = getPeriodBlockBounds(targetIndex);
+  if (!sourceBounds || !targetBounds) return false;
+
+  const periodItems = script.slice(sourceBounds.startIndex, sourceBounds.endIndex);
+  let insertIndex = position === "after"
+    ? targetBounds.endIndex
+    : targetBounds.startIndex;
+
+  if (sourceBounds.startIndex < insertIndex) {
+    insertIndex -= sourceBounds.length;
+  }
+
+  if (insertIndex === sourceBounds.startIndex) return false;
+
+  const sourceLabel = sourceBounds.separator.label || "Period";
+  const targetLabel = targetBounds.separator.label || "period";
+  saveScriptState();
+  script.splice(sourceBounds.startIndex, sourceBounds.length);
+  script.splice(insertIndex, 0, ...periodItems);
+  renderScript();
+
+  const directionLabel = position === "after" ? "after" : "before";
+  setScriptToolbarStatus(
+    `Moved ${sourceLabel} ${directionLabel} ${targetLabel}`,
+    "success",
+    AUTOSAVE_DEBOUNCE_MS,
+  );
+  announceScriptA11y(`Moved ${sourceLabel} ${directionLabel} ${targetLabel}`);
+  return true;
+}
+
+function handlePeriodDragStart(event, periodId) {
+  if (typeof isAdminUser === "function" && !isAdminUser()) {
+    event.preventDefault();
+    return;
+  }
+
+  const separatorIndex = findPeriodIndexById(periodId);
+  const separator = script[separatorIndex];
+  if (!separator) return;
+
+  scriptPeriodDragId = String(separator.id);
+  event.dataTransfer.effectAllowed = "move";
+  event.dataTransfer.setData("source", "scriptPeriod");
+  event.dataTransfer.setData("periodId", scriptPeriodDragId);
+  document.body?.classList.add("script-period-drag-active");
+  document
+    .querySelectorAll(`[data-period-drop-id="${getPeriodSelectorId(scriptPeriodDragId)}"]`)
+    .forEach((el) => el.classList.add("period-dragging"));
+  announceScriptA11y(`Dragging period ${separator.label || "Period"}`);
+}
+
+function handlePeriodDragOver(event, targetEl) {
+  if (!scriptPeriodDragId || !targetEl) return;
+  event.preventDefault();
+  event.dataTransfer.dropEffect = "move";
+  setPeriodDropIndicator(event, targetEl);
+}
+
+function handlePeriodDrop(event, targetEl) {
+  const source = event.dataTransfer.getData("source");
+  if (source !== "scriptPeriod" || !targetEl) return false;
+
+  event.preventDefault();
+  const sourcePeriodId = event.dataTransfer.getData("periodId") || scriptPeriodDragId;
+  const targetPeriodId = targetEl.dataset.periodDropId || targetEl.dataset.periodId;
+  const position = getPeriodDropPosition(event, targetEl);
+  const moved = reorderPeriodById(sourcePeriodId, targetPeriodId, position);
+  handlePeriodDragEnd();
+  return moved;
+}
+
+function handlePeriodDragEnd() {
+  scriptPeriodDragId = null;
+  document.body?.classList.remove("script-period-drag-active");
+  clearPeriodDropIndicators();
+}
+
 function duplicatePeriod(separatorIndex) {
   saveScriptState();
   const separator = script[separatorIndex];

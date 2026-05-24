@@ -266,6 +266,35 @@ document.addEventListener("keydown", (e) => {
   toggleCollapsiblePanel(el);
 });
 
+function _wireScriptPeriodDrag(container) {
+  if (!container) return;
+
+  container.addEventListener("dragstart", (e) => {
+    const el = e.target.closest("[data-drag]");
+    if (!el || el.dataset.drag !== "periodStart") return;
+    handlePeriodDragStart(e, el.dataset.periodId);
+  });
+
+  container.addEventListener("dragover", (e) => {
+    const target = e.target.closest("[data-period-drop-id]");
+    if (!target || !container.contains(target)) return;
+    handlePeriodDragOver(e, target);
+  });
+
+  container.addEventListener("drop", (e) => {
+    const target = e.target.closest("[data-period-drop-id]");
+    if (!target || !container.contains(target)) return;
+    if (handlePeriodDrop(e, target)) {
+      e.stopImmediatePropagation();
+    }
+  });
+
+  container.addEventListener("dragend", (e) => {
+    const el = e.target.closest("[data-drag]");
+    if (el?.dataset.drag === "periodStart") handlePeriodDragEnd();
+  });
+}
+
 document.addEventListener("DOMContentLoaded", () => {
   const scriptEl = document.getElementById("scriptPlays");
   if (scriptEl) {
@@ -447,12 +476,29 @@ document.addEventListener("DOMContentLoaded", () => {
     scriptEl.addEventListener("dragstart", (e) => {
       const el = e.target.closest("[data-drag]");
       if (!el) return;
-      if (el.dataset.drag === "scriptStart") {
+      if (el.dataset.drag === "periodStart") {
+        handlePeriodDragStart(e, el.dataset.periodId);
+      } else if (el.dataset.drag === "scriptStart") {
         handleScriptDragStart(e, parseInt(el.dataset.idx, 10));
       }
     });
     scriptEl.addEventListener("dragend", (e) => {
-      if (e.target.closest("[data-drag]")) handleDragEnd(e);
+      const el = e.target.closest("[data-drag]");
+      if (!el) return;
+      if (el.dataset.drag === "periodStart") handlePeriodDragEnd();
+      else handleDragEnd(e);
+    });
+    scriptEl.addEventListener("dragover", (e) => {
+      const target = e.target.closest("[data-period-drop-id]");
+      if (!target || !scriptEl.contains(target)) return;
+      handlePeriodDragOver(e, target);
+    });
+    scriptEl.addEventListener("drop", (e) => {
+      const target = e.target.closest("[data-period-drop-id]");
+      if (!target || !scriptEl.contains(target)) return;
+      if (handlePeriodDrop(e, target)) {
+        e.stopImmediatePropagation();
+      }
     });
 
     scriptEl.addEventListener("contextmenu", (e) => {
@@ -464,6 +510,8 @@ document.addEventListener("DOMContentLoaded", () => {
       _showScriptPlayContextMenu(e, idx);
     });
   }
+
+  _wireScriptPeriodDrag(document.getElementById("scriptTimeline"));
 
   const availEl = document.getElementById("availablePlays");
   if (availEl) {

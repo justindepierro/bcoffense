@@ -196,13 +196,14 @@ function renderScriptTimeline(renderContext) {
         : 0;
       const ariaLabel =
         `${period.label}, ${period.playCount} plays, ${period.reps} reps, ` +
-        `${period.minutes || 0} minutes, ${period.runCount} run and ${period.passCount} pass. Jump to period.`;
+        `${period.minutes || 0} minutes, ${period.runCount} run and ${period.passCount} pass. Jump to period or drag to reorder.`;
       const noteHtml = period.notes
         ? `<span class="script-timeline-note">${escapeHtml(period.notes)}</span>`
         : "";
+      const periodId = escapeHtml(String(period.id));
 
       return `
-        <button type="button" class="script-timeline-card" data-action="jumpToPeriod" data-arg="${escapeHtml(String(period.id))}" style="--period-color: ${period.color}; --period-load: ${loadPct}%;" aria-label="${escapeHtml(ariaLabel)}">
+        <button type="button" class="script-timeline-card" data-action="jumpToPeriod" data-arg="${periodId}" draggable="true" data-drag="periodStart" data-idx="${period.index}" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="--period-color: ${period.color}; --period-load: ${loadPct}%;" aria-label="${escapeHtml(ariaLabel)}">
           <span class="script-timeline-color" aria-hidden="true"></span>
           <span class="script-timeline-card-main">
             <span class="script-timeline-title">${escapeHtml(period.label)}</span>
@@ -369,6 +370,7 @@ function updatePeriodHeaderLabelDisplay(index) {
   }
 
   const buttons = [
+    ["[data-drag=\"periodStart\"]", `Drag ${periodLabel} to reorder`],
     ["[data-action=\"movePeriod\"][data-dir=\"-1\"]", `Move ${periodLabel} up`],
     ["[data-action=\"movePeriod\"][data-dir=\"1\"]", `Move ${periodLabel} down`],
     ["[data-action=\"duplicatePeriod\"]", `Duplicate ${periodLabel}`],
@@ -393,17 +395,19 @@ function renderScriptEmptyPeriodHeaders() {
     const periodColor = period.color || UI_COLORS.periodDefault;
     const periodLabel = period.label || "Period";
     const periodNotes = period.notes || "";
+    const periodId = escapeHtml(String(period.id));
     const protectionButtonLabel = period.hideProtection ? "Prot Off" : "Prot On";
     const protectionButtonTitle = period.hideProtection
       ? `Show protection for ${periodLabel}`
       : `Hide protection for ${periodLabel}`;
     periodHeaders += `
-      <div class="script-item period-header" style="background: ${periodColor}; color: white;" role="group" aria-label="${escapeHtml(periodLabel)} period header">
+      <div class="script-item period-header" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="background: ${periodColor}; color: white;" role="group" aria-label="${escapeHtml(periodLabel)} period header">
         <div class="ph-top">
           <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
         <div class="ph-main">
           <div class="ph-left">
+            <button type="button" class="ph-drag-handle" draggable="true" data-drag="periodStart" data-period-id="${periodId}" data-idx="${index}" title="Drag to reorder period" aria-label="Drag ${escapeHtml(periodLabel)} to reorder">☰</button>
             <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
             <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" placeholder="Period name" aria-label="Name for ${escapeHtml(periodLabel)}">
             <input type="number" class="ph-minutes-input" value="${period.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
@@ -461,16 +465,18 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
   const protectionButtonTitle = separator.hideProtection
     ? `Show protection for ${periodLabel}`
     : `Hide protection for ${periodLabel}`;
+  const periodId = escapeHtml(String(separator.id));
 
   return `
-    <div class="period-header-wrapper" data-separator-id="${separator.id}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
+    <div class="period-header-wrapper" data-separator-id="${periodId}" data-period-id="${periodId}" data-period-drop-id="${periodId}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
       <div class="script-item period-header" style="background: ${periodColor}; color: white;">
         <div class="ph-top">
           <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
         <div class="ph-main">
           <div class="ph-left">
-            <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${separator.id}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
+            <button type="button" class="ph-drag-handle" draggable="true" data-drag="periodStart" data-period-id="${periodId}" data-idx="${index}" title="Drag to reorder period" aria-label="Drag ${escapeHtml(periodLabel)} to reorder">☰</button>
+            <button class="ph-collapse-btn" data-action="togglePeriodCollapse" data-period-id="${periodId}" title="${isCollapsed ? "Expand" : "Collapse"}" aria-label="${isCollapsed ? "Expand" : "Collapse"} ${escapeHtml(periodLabel)}" aria-expanded="${isCollapsed ? "false" : "true"}">${collapseIcon}</button>
             <input type="color" class="ph-color-input" value="${periodColor}" data-field="periodColor" data-idx="${index}" title="Period color" aria-label="Color for ${escapeHtml(periodLabel)}">
             <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" aria-label="Name for ${escapeHtml(periodLabel)}">
             <input type="number" class="ph-minutes-input" value="${separator.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
