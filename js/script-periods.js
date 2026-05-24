@@ -123,6 +123,7 @@ function updatePeriodColor(index, el) {
   if (header) header.style.background = el.value;
   const wrapper = el.closest(".period-header-wrapper");
   if (wrapper) wrapper.style.borderLeftColor = el.value;
+  if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
   saveScriptState();
   announceScriptA11y(`Updated color for ${script[index]?.label || "period"}`);
 }
@@ -132,6 +133,7 @@ function updatePeriodLabel(index, label, live = false) {
   script[index].label = label;
   updatePeriodHeaderLabelDisplay(index);
   updateJumpToPeriodOptions();
+  if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
   if (live) {
     debouncedSaveScriptState();
   } else {
@@ -144,11 +146,13 @@ function updatePeriodMinutes(index, el) {
   updatePeriodMetaDisplay(index);
   saveScriptState();
   updateScriptStats();
+  if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
 }
 
 function updatePeriodNotes(index, notes, live = false) {
   if (!script[index] || !script[index].isSeparator) return;
   script[index].notes = notes;
+  if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
   if (live) {
     debouncedSaveScriptState();
   } else {

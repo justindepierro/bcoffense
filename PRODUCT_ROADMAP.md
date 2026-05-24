@@ -126,7 +126,7 @@ Status:
 
 Goal: Make script building feel like planning a practice, not editing a long table.
 
-- [ ] Period blocks with rep counts, duration, tempo, and personnel load
+- [x] Period blocks with rep counts, duration, tempo, and personnel load
 - [ ] Drag/drop period ordering
 - [ ] Per-period run/pass and situation summaries
 - [ ] Quick duplicate, protect, template, and print controls
@@ -134,6 +134,12 @@ Goal: Make script building feel like planning a practice, not editing a long tab
 Definition of done:
 
 - A full practice script is scannable at a glance and easy to reorganize.
+
+Status:
+
+- Phase 1 added a responsive Practice Timeline band that summarizes each period by plays, reps, duration, run/pass split, tempo load, personnel load, and notes.
+- Timeline cards jump directly to the matching period and stay in sync when period labels, colors, minutes, notes, or reps change.
+- Next slice should add drag/drop period ordering.
 
 ## 7. Print and Export Studio
 

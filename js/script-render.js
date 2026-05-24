@@ -90,6 +90,151 @@ function formatPeriodMetaText(playCount, periodReps, minutes, runCount, passCoun
   return `${playCount} plays • ${periodReps} reps${timeDisplay ? ` • ${timeDisplay}` : ""}${runPass}`;
 }
 
+function getScriptTimelinePeriodColor(separator) {
+  const color = (separator?.color || "").trim();
+  return /^#[0-9a-f]{6}$/i.test(color) ? color : UI_COLORS.periodDefault;
+}
+
+function getScriptTimelinePeriodPlays(separatorIndex) {
+  const periodPlays = [];
+  for (let index = separatorIndex + 1; index < script.length; index++) {
+    const item = script[index];
+    if (item?.isSeparator) break;
+    if (item) periodPlays.push(item);
+  }
+  return periodPlays;
+}
+
+function getTopScriptTimelineBuckets(periodPlays, field, fallbackLabel, maxItems = 2) {
+  const counts = new Map();
+  periodPlays.forEach((play) => {
+    const value = String(play?.[field] || "").trim() || fallbackLabel;
+    counts.set(value, (counts.get(value) || 0) + (parseInt(play?.reps, 10) || 1));
+  });
+
+  return Array.from(counts, ([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, maxItems);
+}
+
+function buildScriptTimelinePeriods(renderContext) {
+  const periodStatsMap = renderContext?.periodStatsBySeparatorIndex || buildPeriodStatsMap(script);
+  const periods = [];
+
+  script.forEach((item, index) => {
+    if (!item?.isSeparator) return;
+
+    const periodPlays = getScriptTimelinePeriodPlays(index);
+    const stats = getPeriodStats(index, periodStatsMap);
+    periods.push({
+      id: item.id,
+      index,
+      label: item.label || "Period",
+      notes: item.notes || "",
+      color: getScriptTimelinePeriodColor(item),
+      minutes: parseInt(item.minutes, 10) || 0,
+      playCount: stats.playCount,
+      reps: stats.periodReps,
+      runCount: stats.runCount,
+      passCount: stats.passCount,
+      tempoLoad: getTopScriptTimelineBuckets(periodPlays, "tempo", "No tempo"),
+      personnelLoad: getTopScriptTimelineBuckets(periodPlays, "personnel", "No personnel"),
+    });
+  });
+
+  return periods;
+}
+
+function renderScriptTimelineLoadChips(label, buckets, emptyLabel) {
+  if (!buckets.length) {
+    return `<span class="script-timeline-chip script-timeline-chip--muted">${escapeHtml(emptyLabel)}</span>`;
+  }
+
+  return buckets
+    .map(
+      (bucket) =>
+        `<span class="script-timeline-chip"><span>${escapeHtml(label)}</span> ${escapeHtml(bucket.label)} <strong>${bucket.count}</strong></span>`,
+    )
+    .join("");
+}
+
+function renderScriptTimeline(renderContext) {
+  const timelineEl = document.getElementById("scriptTimeline");
+  if (!timelineEl) return;
+
+  const periods = buildScriptTimelinePeriods(renderContext);
+  if (!periods.length) {
+    timelineEl.hidden = true;
+    timelineEl.innerHTML = "";
+    return;
+  }
+
+  const summary = renderContext?.renderSummary || buildScriptRenderSummary(script);
+  const totalTime = summary.totalTime || periods.reduce((sum, period) => sum + period.minutes, 0);
+  const totalReps = summary.totalReps || periods.reduce((sum, period) => sum + period.reps, 0);
+  const hasTimedPlan = totalTime > 0;
+  const periodLabel = periods.length === 1 ? "period" : "periods";
+  const timeLabel = totalTime ? `${totalTime} min` : "No time set";
+  const repLabel = `${totalReps} reps`;
+
+  timelineEl.hidden = false;
+  timelineEl.innerHTML = `
+    <div class="script-timeline-head">
+      <div>
+        <h4>Practice Timeline</h4>
+        <p>${periods.length} ${periodLabel} • ${repLabel} • ${timeLabel}</p>
+      </div>
+      <span class="script-timeline-hint">Tap a period to jump</span>
+    </div>
+    <div class="script-timeline-track">
+      ${periods
+    .map((period) => {
+      const loadTotal = hasTimedPlan ? totalTime : totalReps;
+      const loadBasis = hasTimedPlan ? period.minutes : period.reps;
+      const loadPct = loadTotal > 0 && loadBasis > 0
+        ? Math.min(100, Math.max(5, Math.round((loadBasis / loadTotal) * 100)))
+        : 0;
+      const ariaLabel =
+        `${period.label}, ${period.playCount} plays, ${period.reps} reps, ` +
+        `${period.minutes || 0} minutes, ${period.runCount} run and ${period.passCount} pass. Jump to period.`;
+      const noteHtml = period.notes
+        ? `<span class="script-timeline-note">${escapeHtml(period.notes)}</span>`
+        : "";
+
+      return `
+        <button type="button" class="script-timeline-card" data-action="jumpToPeriod" data-arg="${escapeHtml(String(period.id))}" style="--period-color: ${period.color}; --period-load: ${loadPct}%;" aria-label="${escapeHtml(ariaLabel)}">
+          <span class="script-timeline-color" aria-hidden="true"></span>
+          <span class="script-timeline-card-main">
+            <span class="script-timeline-title">${escapeHtml(period.label)}</span>
+            <span class="script-timeline-meta">${period.playCount} plays • ${period.reps} reps • ${period.minutes || 0} min</span>
+          </span>
+          <span class="script-timeline-split">
+            <span><strong>${period.runCount}</strong> Run</span>
+            <span><strong>${period.passCount}</strong> Pass</span>
+          </span>
+          <span class="script-timeline-load" aria-hidden="true"><span></span></span>
+          <span class="script-timeline-chips">
+            ${period.playCount
+          ? renderScriptTimelineLoadChips("Tempo", period.tempoLoad, "Tempo not set") +
+          renderScriptTimelineLoadChips("Personnel", period.personnelLoad, "Personnel not set")
+          : '<span class="script-timeline-chip script-timeline-chip--muted">No plays yet</span>'}
+          </span>
+          ${noteHtml}
+        </button>`;
+    })
+    .join("")}
+    </div>
+  `;
+}
+
+function refreshScriptTimeline() {
+  if (!document.getElementById("scriptTimeline")) return;
+  renderScriptTimeline({
+    periodStatsBySeparatorIndex: buildPeriodStatsMap(script),
+    renderSummary: buildScriptRenderSummary(script),
+  });
+}
+
 function getScriptPlayDom(index) {
   const row = document.querySelector(`.script-item[data-idx="${index}"]`);
   const previewRow = row?.nextElementSibling?.classList.contains("print-preview-row")
@@ -1048,6 +1193,12 @@ function renderScript() {
       stageStart = performance.now();
     }
 
+    renderScriptTimeline(renderContext);
+    if (profile) {
+      profile.timelineMs = performance.now() - stageStart;
+      stageStart = performance.now();
+    }
+
     updateBulkSelectUI();
     if (profile) {
       profile.bulkUiMs = performance.now() - stageStart;
@@ -1124,6 +1275,7 @@ function updateReps(index, reps) {
   if (typeof findOwningPeriodIndex === "function") {
     updatePeriodMetaDisplay(findOwningPeriodIndex(index));
   }
+  refreshScriptTimeline();
   updateScriptStats();
   saveScriptState();
 }
