@@ -412,7 +412,7 @@ async function pushGamePlanBoxToCallSheet(boxId) {
    ------------------------------------------------------------------------- */
 
 async function pushGamePlanToScript() {
-  if (!Array.isArray(window.script)) {
+  if (typeof script === "undefined" || !Array.isArray(script)) {
     showToast("Script tab isn't ready yet.", { type: "error" });
     return;
   }

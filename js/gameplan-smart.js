@@ -358,6 +358,8 @@ async function gpSuggestFillBox(boxId) {
    Smart Plan Builder — plan-level recommendations
    ------------------------------------------------------------------------- */
 
+const GP_SMART_PUSH_LIMIT_PER_GROUP = 5;
+
 function _gpSmartPreferredHas(play, field, values) {
   const wanted = values.map((value) => String(value || "").toLowerCase());
   const actual = typeof splitPreferredValues === "function"
@@ -794,6 +796,51 @@ function _gpBuildSmartPlanRecommendations() {
   };
 }
 
+function _gpSmartCollectPushItems(recs, opts = {}) {
+  const source = recs || _gpBuildSmartPlanRecommendations();
+  const limit = Math.max(1, Number(opts.limitPerGroup) || GP_SMART_PUSH_LIMIT_PER_GROUP);
+  const seen = new Set();
+  const items = [];
+  (source.groups || []).forEach((group) => {
+    (group.candidates || []).slice(0, limit).forEach((item) => {
+      if (!item?.sig || seen.has(item.sig)) return;
+      seen.add(item.sig);
+      items.push({
+        group,
+        play: item.play,
+        sig: item.sig,
+        reason: item.reason,
+      });
+    });
+  });
+  return items;
+}
+
+function _gpSmartGroupPushItems(items) {
+  const groups = [];
+  const byId = new Map();
+  items.forEach((entry) => {
+    const id = entry.group?.id || "smart";
+    if (!byId.has(id)) {
+      const bucket = { group: entry.group, entries: [] };
+      byId.set(id, bucket);
+      groups.push(bucket);
+    }
+    byId.get(id).entries.push(entry);
+  });
+  return groups;
+}
+
+function _gpSmartEnsureCallSheetBuckets() {
+  if (typeof callSheet !== "object" || !callSheet) return;
+  if (typeof CALLSHEET_CATEGORIES === "undefined" || !Array.isArray(CALLSHEET_CATEGORIES)) return;
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    if (!callSheet[cat.id]) callSheet[cat.id] = { left: [], right: [] };
+    if (!Array.isArray(callSheet[cat.id].left)) callSheet[cat.id].left = [];
+    if (!Array.isArray(callSheet[cat.id].right)) callSheet[cat.id].right = [];
+  });
+}
+
 function _gpSmartArg(payload) {
   return escapeAttr(JSON.stringify(payload));
 }
@@ -915,6 +962,24 @@ function _gpRenderSmartBalanceInsights(balance) {
     </section>`;
 }
 
+function _gpRenderSmartPushActions(recs) {
+  const items = _gpSmartCollectPushItems(recs);
+  const disabled = items.length === 0 ? "disabled" : "";
+  return `
+    <section class="gp-smart-builder-push">
+      <div class="gp-smart-builder-push-copy">
+        <h4>Use Top Picks</h4>
+        <span>${items.length} unique call${items.length === 1 ? "" : "s"} selected from the top ${GP_SMART_PUSH_LIMIT_PER_GROUP} in each lane.</span>
+      </div>
+      <div class="gp-smart-builder-push-actions">
+        <button class="btn btn-sm btn-primary" type="button" data-action="addSmartGamePlanTopPicks" ${disabled}>🎯 Board</button>
+        <button class="btn btn-sm" type="button" data-action="pushSmartGamePlanRecommendationsToCallSheet" ${disabled}>➡️ Call Sheet</button>
+        <button class="btn btn-sm" type="button" data-action="pushSmartGamePlanRecommendationsToScript" ${disabled}>📋 Script</button>
+        <button class="btn btn-sm" type="button" data-action="pushSmartGamePlanRecommendationsToWristband" ${disabled}>🃏 Wristband</button>
+      </div>
+    </section>`;
+}
+
 function openSmartGamePlanBuilder() {
   if (!Array.isArray(plays) || plays.length === 0) {
     showToast("Import a playbook before building a smart game plan.", { type: "warning" });
@@ -939,6 +1004,7 @@ function openSmartGamePlanBuilder() {
         </div>
         ${_gpRenderSmartTendencySummary(recs.tendency)}
         ${_gpRenderSmartBalanceInsights(recs.balance)}
+        ${_gpRenderSmartPushActions(recs)}
         <div class="gp-smart-builder-groups">
           ${recs.groups.map(_gpRenderSmartRecommendationGroup).join("")}
         </div>
@@ -967,23 +1033,26 @@ function closeSmartGamePlanBuilder() {
   setTimeout(() => overlay.remove(), 180);
 }
 
+function _gpEnsureSmartRecommendationBoxInBoard(board, group) {
+  if (!board || !group?.targetId) return;
+  if (!board.assignments || typeof board.assignments !== "object") board.assignments = {};
+  if (!Array.isArray(board.assignments[group.targetId])) board.assignments[group.targetId] = [];
+  const isDefault = GP_DEFAULT_BOXES.some((box) => box.id === group.targetId);
+  const isCustom = Array.isArray(board.customBoxes)
+    && board.customBoxes.some((box) => box.id === group.targetId);
+  if (!isDefault && !isCustom) {
+    if (!Array.isArray(board.customBoxes)) board.customBoxes = [];
+    board.customBoxes.push({
+      id: group.targetId,
+      label: group.targetLabel || group.label || group.targetId,
+      template: "smart-builder",
+    });
+  }
+}
+
 function _gpEnsureSmartRecommendationBox(group) {
   if (!group?.targetId) return;
-  _gpUpdateBoard((board) => {
-    if (!board.assignments || typeof board.assignments !== "object") board.assignments = {};
-    if (!Array.isArray(board.assignments[group.targetId])) board.assignments[group.targetId] = [];
-    const isDefault = GP_DEFAULT_BOXES.some((box) => box.id === group.targetId);
-    const isCustom = Array.isArray(board.customBoxes)
-      && board.customBoxes.some((box) => box.id === group.targetId);
-    if (!isDefault && !isCustom) {
-      if (!Array.isArray(board.customBoxes)) board.customBoxes = [];
-      board.customBoxes.push({
-        id: group.targetId,
-        label: group.targetLabel || group.label || group.targetId,
-        template: "smart-builder",
-      });
-    }
-  });
+  _gpUpdateBoard((board) => _gpEnsureSmartRecommendationBoxInBoard(board, group));
 }
 
 function _gpAddSmartRecommendations(group, sigs) {
@@ -1017,6 +1086,214 @@ function addSmartGamePlanBalanceComplement(arg) {
   const group = GP_SMART_PLAN_GROUPS.find((item) => item.id === "constraints");
   if (!group) return;
   _gpAddSmartRecommendations(group, [data.sig]);
+}
+
+function addSmartGamePlanTopPicks() {
+  const entries = _gpSmartCollectPushItems();
+  if (entries.length === 0) {
+    showToast("No smart recommendations available yet.", { type: "warning" });
+    return;
+  }
+  let added = 0;
+  let skipped = 0;
+  _gpUpdateBoard((board) => {
+    entries.forEach((entry) => {
+      const group = entry.group;
+      if (!group?.targetId) return;
+      _gpEnsureSmartRecommendationBoxInBoard(board, group);
+      const list = board.assignments[group.targetId];
+      const existing = new Set(list.map((play) => _gpPlaySignature(play)));
+      if (existing.has(entry.sig)) {
+        skipped += 1;
+        return;
+      }
+      const play = _gpFindPlayBySig(entry.sig);
+      if (!play) {
+        skipped += 1;
+        return;
+      }
+      list.push({ ...play });
+      existing.add(entry.sig);
+      added += 1;
+    });
+  });
+  requestRenderGamePlan();
+  showToast(
+    added > 0
+      ? `Added ${added} top pick${added === 1 ? "" : "s"} to the board${skipped > 0 ? ` (${skipped} skipped)` : ""}.`
+      : "No top picks added; they may already be on the board.",
+    { type: added > 0 ? "success" : "warning", duration: 3500 },
+  );
+}
+
+async function pushSmartGamePlanRecommendationsToCallSheet() {
+  if (typeof callSheet !== "object" || !callSheet) {
+    showToast("Call sheet isn't ready yet.", { type: "error" });
+    return;
+  }
+  const entries = _gpSmartCollectPushItems();
+  if (entries.length === 0) {
+    showToast("No smart recommendations available yet.", { type: "warning" });
+    return;
+  }
+  if (typeof _gpComputeCallSheetTargets !== "function" || typeof _gpPushPlayIntoCategory !== "function") {
+    showToast("Call sheet push tools are not ready yet.", { type: "error" });
+    return;
+  }
+
+  const playerTargets = typeof buildPlayerCategoryAutoFillTargets === "function"
+    ? buildPlayerCategoryAutoFillTargets(entries, { getPlay: (entry) => entry.play })
+    : [];
+  const fanOut = entries.map((entry, index) => {
+    const targets = _gpComputeCallSheetTargets(entry.play, entry.group?.targetId);
+    (playerTargets[index] || new Set()).forEach((catId) => targets.add(catId));
+    return { ...entry, targets };
+  });
+  const byCat = {};
+  fanOut.forEach(({ targets }) => {
+    targets.forEach((id) => {
+      byCat[id] = (byCat[id] || 0) + 1;
+    });
+  });
+  const filledCatIds = Object.keys(byCat);
+  if (filledCatIds.length === 0) {
+    showToast("Top picks do not match any call sheet categories yet.", { type: "warning" });
+    return;
+  }
+
+  const orderIds = Array.isArray(CALLSHEET_CATEGORIES) ? CALLSHEET_CATEGORIES.map((cat) => cat.id) : filledCatIds;
+  const summaryItems = orderIds
+    .filter((id) => byCat[id])
+    .map((id) => {
+      const cat = Array.isArray(CALLSHEET_CATEGORIES) ? CALLSHEET_CATEGORIES.find((item) => item.id === id) : null;
+      const label = cat
+        ? (typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name)
+        : id;
+      return `<li>${escapeHtml(label)}: <strong>${byCat[id]}</strong></li>`;
+    })
+    .join("");
+
+  const ok = await showConfirm(
+    `<p>Append <strong>${entries.length}</strong> top smart pick${entries.length === 1 ? "" : "s"} into <strong>${filledCatIds.length}</strong> call sheet categor${filledCatIds.length === 1 ? "y" : "ies"}?</p>
+     <details style="font-size:var(--font-size-sm);"><summary style="cursor:pointer;color:var(--color-text-muted);">Show breakdown</summary><ul style="margin:var(--space-xs) 0 0 var(--space-md);">${summaryItems}</ul></details>`,
+    { title: "Push Smart Picks to Call Sheet", icon: "➡️", confirmText: "Push" },
+  );
+  if (!ok) return;
+
+  _gpSmartEnsureCallSheetBuckets();
+  let pushed = 0;
+  fanOut.forEach(({ play, targets }) => {
+    targets.forEach((id) => {
+      if (_gpPushPlayIntoCategory(play, id)) pushed += 1;
+    });
+  });
+  if (typeof saveCallSheet === "function") saveCallSheet();
+  if (typeof scheduleRenderCallSheet === "function") {
+    scheduleRenderCallSheet();
+  } else if (typeof renderCallSheet === "function") {
+    renderCallSheet();
+  }
+  showToast(`Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} from Smart Builder to Call Sheet`, {
+    type: "success",
+    duration: 3500,
+  });
+}
+
+async function pushSmartGamePlanRecommendationsToScript() {
+  if (typeof script === "undefined" || !Array.isArray(script)) {
+    showToast("Script tab isn't ready yet.", { type: "error" });
+    return;
+  }
+  const entries = _gpSmartCollectPushItems();
+  if (entries.length === 0) {
+    showToast("No smart recommendations available yet.", { type: "warning" });
+    return;
+  }
+  const grouped = _gpSmartGroupPushItems(entries);
+  const ok = await showConfirm(
+    `Add ${entries.length} top smart pick${entries.length === 1 ? "" : "s"} to the practice script as ${grouped.length} labeled period${grouped.length === 1 ? "" : "s"}?`,
+    { title: "Push Smart Picks to Script", icon: "📋", confirmText: "Push" },
+  );
+  if (!ok) return;
+
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opp = gw?.opponentName || "";
+  let pushed = 0;
+  grouped.forEach(({ group, entries: groupEntries }) => {
+    if (!groupEntries.length) return;
+    const label = `Smart ${group?.label || "Picks"}${opp ? ` — vs ${opp}` : ""}`;
+    script.push({
+      isSeparator: true,
+      label,
+      id: Date.now() + Math.random(),
+    });
+    groupEntries.forEach((entry) => {
+      script.push({ ...entry.play, id: Date.now() + Math.random() });
+      pushed += 1;
+    });
+  });
+
+  if (typeof markScriptDirty === "function") markScriptDirty();
+  if (typeof scheduleScriptAutosave === "function") scheduleScriptAutosave();
+  if (typeof renderScript === "function") renderScript();
+  showToast(`Pushed ${pushed} Smart Builder play${pushed === 1 ? "" : "s"} to the script`, {
+    type: "success",
+    duration: 3500,
+  });
+}
+
+async function pushSmartGamePlanRecommendationsToWristband() {
+  if (typeof wristbandCards === "undefined" || !Array.isArray(wristbandCards)) {
+    showToast("Wristband module not ready yet.", { type: "error" });
+    return;
+  }
+  if (typeof MAX_CARDS === "number" && wristbandCards.length >= MAX_CARDS) {
+    showToast(`Maximum ${MAX_CARDS} wristband cards reached. Remove one first.`, {
+      duration: 3500,
+      type: "error",
+    });
+    return;
+  }
+  const entries = _gpSmartCollectPushItems();
+  if (entries.length === 0) {
+    showToast("No smart recommendations available yet.", { type: "warning" });
+    return;
+  }
+  const cellsPerCard = typeof CELLS_PER_CARD === "number" ? CELLS_PER_CARD : 40;
+  const toAdd = entries.slice(0, cellsPerCard);
+  const trimText = entries.length > cellsPerCard ? ` Only the first ${cellsPerCard} will fit on one card.` : "";
+  const ok = await showConfirm(
+    `Build a new wristband card from ${toAdd.length} top smart pick${toAdd.length === 1 ? "" : "s"}?${trimText}`,
+    { title: "Build Smart Wristband", icon: "🃏", confirmText: "Build Card" },
+  );
+  if (!ok) return;
+
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opp = gw?.opponentName || "";
+  const cardName = opp ? `Smart Plan vs ${opp}` : "Smart Plan";
+  const data = Array(cellsPerCard).fill(null);
+  toAdd.forEach((entry, index) => {
+    const copy = { ...entry.play };
+    delete copy._gpFlags;
+    data[index] = copy;
+  });
+  if (typeof mutateWristbandState === "function") {
+    mutateWristbandState(() => {
+      wristbandCards.push({ name: cardName, data, cardColor: "#dff3e3" });
+      currentCardIndex = wristbandCards.length - 1;
+    }, { updateCardColorPicker: true });
+  } else {
+    wristbandCards.push({ name: cardName, data, cardColor: "#dff3e3" });
+    currentCardIndex = wristbandCards.length - 1;
+    if (typeof markWristbandDirty === "function") markWristbandDirty();
+    if (typeof scheduleWristbandAutosave === "function") scheduleWristbandAutosave();
+    if (typeof refreshWristbandCardView === "function") refreshWristbandCardView({ updateCardColorPicker: true });
+  }
+  showToast(`Created wristband card "${cardName}" with ${toAdd.length} play${toAdd.length === 1 ? "" : "s"}.`, {
+    type: "success",
+    duration: 3500,
+  });
+  if (typeof showTab === "function") showTab("wristband");
 }
 /* -------------------------------------------------------------------------
    Add Bucket — template-driven custom box creator
