@@ -313,7 +313,7 @@ function _psArtifacts() {
       stats: _psGamePlanStats(),
       actions: [
         ["gameplan-print", "Print", true],
-        ["dashboard-gameplan-print", "Week Pack", false],
+        ["dashboard-gameplan-print", "Print Game Plan", false],
         ["go-gameplan", "Open", false],
       ],
     },
