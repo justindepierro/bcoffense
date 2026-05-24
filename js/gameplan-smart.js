@@ -652,6 +652,103 @@ function _gpSmartRankCandidates(candidates, limit) {
   return selected;
 }
 
+function _gpSmartConceptKey(value) {
+  return _gpSmartNorm(value).replace(/\s+/g, " ");
+}
+
+function _gpSmartConceptLabel(play) {
+  return String(play?.basePlay || play?.play || "").trim();
+}
+
+function _gpSmartConceptMatchesValue(value, target) {
+  const actual = _gpSmartConceptKey(value);
+  const wanted = _gpSmartConceptKey(target);
+  if (!actual || !wanted) return false;
+  if (actual === wanted) return true;
+  return actual.length >= 4 && wanted.length >= 4 && (actual.includes(wanted) || wanted.includes(actual));
+}
+
+function _gpSmartPlayMatchesConcept(play, target) {
+  return ["play", "basePlay", "oneWord"].some((field) => _gpSmartConceptMatchesValue(play?.[field], target));
+}
+
+function _gpSmartFindComplementCandidates(target, ctx) {
+  const candidates = [];
+  const seen = new Set();
+  (plays || []).forEach((play) => {
+    if (!_gpSmartPlayMatchesConcept(play, target)) return;
+    const sig = _gpPlaySignature(play);
+    if (seen.has(sig)) return;
+    seen.add(sig);
+    candidates.push({
+      play,
+      sig,
+      score: _gpSmartBaseScore(play, ctx) + 30,
+      reason: "fills missing complement",
+    });
+  });
+  return _gpSmartRankCandidates(candidates, 3);
+}
+
+function _gpSmartBuildBalanceInsights(board, ctx) {
+  const drafted = typeof _gpAllDraftedPlays === "function" ? _gpAllDraftedPlays(board) : [];
+  const missingMap = new Map();
+  const conceptCounts = new Map();
+
+  drafted.forEach((play) => {
+    const concept = _gpSmartConceptLabel(play);
+    if (concept) {
+      const key = _gpSmartConceptKey(concept);
+      if (!conceptCounts.has(key)) conceptCounts.set(key, { label: concept, count: 0 });
+      conceptCounts.get(key).count += 1;
+    }
+
+    _gpSmartConstraintValues(play).forEach((target) => {
+      const key = _gpSmartConceptKey(target);
+      if (!key) return;
+      const isDrafted = drafted.some((draftedPlay) => _gpSmartPlayMatchesConcept(draftedPlay, target));
+      if (isDrafted) return;
+      if (!missingMap.has(key)) {
+        missingMap.set(key, {
+          target,
+          sources: [],
+          candidates: _gpSmartFindComplementCandidates(target, ctx),
+        });
+      }
+      const source = _gpSmartPlayLabel(play);
+      const item = missingMap.get(key);
+      if (!item.sources.includes(source)) item.sources.push(source);
+    });
+  });
+
+  const missingComplements = Array.from(missingMap.values())
+    .sort((a, b) => {
+      if (b.candidates.length !== a.candidates.length) return b.candidates.length - a.candidates.length;
+      if (b.sources.length !== a.sources.length) return b.sources.length - a.sources.length;
+      return a.target.localeCompare(b.target);
+    })
+    .slice(0, 5);
+
+  const overloadThreshold = drafted.length > 0 ? Math.max(3, Math.ceil(drafted.length * 0.35)) : 0;
+  const overloadedConcepts = Array.from(conceptCounts.values())
+    .filter((item) => item.count >= overloadThreshold && item.count > 1)
+    .map((item) => ({
+      ...item,
+      pct: drafted.length > 0 ? Math.round((item.count / drafted.length) * 100) : 0,
+    }))
+    .sort((a, b) => {
+      if (b.count !== a.count) return b.count - a.count;
+      return a.label.localeCompare(b.label);
+    })
+    .slice(0, 4);
+
+  return {
+    draftedCount: drafted.length,
+    missingComplements,
+    overloadedConcepts,
+  };
+}
+
 function _gpBuildSmartPlanRecommendations() {
   const board = _gpEnsureBoard();
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
@@ -687,9 +784,11 @@ function _gpBuildSmartPlanRecommendations() {
       candidates: _gpSmartRankCandidates(candidates, group.limit),
     };
   });
+  const balance = _gpSmartBuildBalanceInsights(board, ctx);
   return {
     opponent,
     tendency,
+    balance,
     totalPlays: Array.isArray(plays) ? plays.length : 0,
     groups,
   };
@@ -760,6 +859,62 @@ function _gpRenderSmartTendencySummary(tendency) {
     </div>`;
 }
 
+function _gpRenderSmartBalanceComplement(item) {
+  const sourceText = item.sources.length > 0
+    ? `Requested by ${item.sources.slice(0, 2).join(" / ")}${item.sources.length > 2 ? ` +${item.sources.length - 2} more` : ""}`
+    : "Referenced by drafted plays";
+  const candidateButtons = item.candidates.length
+    ? item.candidates.map((candidate) => `
+        <button class="btn btn-sm" type="button" data-action="addSmartGamePlanBalanceComplement"
+          data-arg="${_gpSmartArg({ sig: candidate.sig, target: item.target })}">
+          Add ${escapeHtml(candidate.play?.play || candidate.play?.basePlay || item.target)}
+        </button>`).join("")
+    : `<span class="gp-smart-builder-balance-empty">No matching playbook play yet.</span>`;
+  return `
+    <div class="gp-smart-builder-balance-card">
+      <span class="gp-smart-builder-balance-kicker">Missing complement</span>
+      <strong>${escapeHtml(item.target)}</strong>
+      <span>${escapeHtml(sourceText)}</span>
+      <div class="gp-smart-builder-balance-actions">${candidateButtons}</div>
+    </div>`;
+}
+
+function _gpRenderSmartBalanceOverload(item) {
+  return `
+    <div class="gp-smart-builder-balance-card is-overload">
+      <span class="gp-smart-builder-balance-kicker">Overloaded concept</span>
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${item.count} drafted placement${item.count === 1 ? "" : "s"} · ${item.pct}% of the plan</span>
+    </div>`;
+}
+
+function _gpRenderSmartBalanceInsights(balance) {
+  if (!balance || balance.draftedCount === 0) {
+    return `
+      <section class="gp-smart-builder-balance is-empty">
+        <div class="gp-smart-builder-balance-head">
+          <h4>Plan Balance</h4>
+          <span>Add recommendations to unlock complement and overload checks.</span>
+        </div>
+      </section>`;
+  }
+  const issueCount = balance.missingComplements.length + balance.overloadedConcepts.length;
+  const cards = [
+    ...balance.missingComplements.map(_gpRenderSmartBalanceComplement),
+    ...balance.overloadedConcepts.map(_gpRenderSmartBalanceOverload),
+  ].join("");
+  return `
+    <section class="gp-smart-builder-balance ${issueCount === 0 ? "is-clean" : ""}">
+      <div class="gp-smart-builder-balance-head">
+        <h4>Plan Balance</h4>
+        <span>${issueCount === 0
+    ? `No missing complements or overloaded concepts in ${balance.draftedCount} drafted play${balance.draftedCount === 1 ? "" : "s"}.`
+    : `${issueCount} balance alert${issueCount === 1 ? "" : "s"} across ${balance.draftedCount} drafted play${balance.draftedCount === 1 ? "" : "s"}.`}</span>
+      </div>
+      ${cards ? `<div class="gp-smart-builder-balance-grid">${cards}</div>` : ""}
+    </section>`;
+}
+
 function openSmartGamePlanBuilder() {
   if (!Array.isArray(plays) || plays.length === 0) {
     showToast("Import a playbook before building a smart game plan.", { type: "warning" });
@@ -783,6 +938,7 @@ function openSmartGamePlanBuilder() {
           <span>recommended calls from ${recs.totalPlays} playbook plays${recs.opponent ? ` for ${escapeHtml(recs.opponent)}` : ""}</span>
         </div>
         ${_gpRenderSmartTendencySummary(recs.tendency)}
+        ${_gpRenderSmartBalanceInsights(recs.balance)}
         <div class="gp-smart-builder-groups">
           ${recs.groups.map(_gpRenderSmartRecommendationGroup).join("")}
         </div>
@@ -851,6 +1007,14 @@ function addSmartGamePlanRecommendation(arg) {
   if (!data?.groupId || !data?.sig) return;
   const recs = _gpBuildSmartPlanRecommendations();
   const group = recs.groups.find((item) => item.id === data.groupId);
+  if (!group) return;
+  _gpAddSmartRecommendations(group, [data.sig]);
+}
+
+function addSmartGamePlanBalanceComplement(arg) {
+  const data = safeJSONParse(arg, null);
+  if (!data?.sig) return;
+  const group = GP_SMART_PLAN_GROUPS.find((item) => item.id === "constraints");
   if (!group) return;
   _gpAddSmartRecommendations(group, [data.sig]);
 }

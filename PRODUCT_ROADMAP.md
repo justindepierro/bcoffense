@@ -106,7 +106,7 @@ Goal: Help coaches assemble a plan from identity, opponent tendencies, and situa
 
 - [x] Recommend openers, must-haves, answers, constraints, and situational calls
 - [x] Use opponent tendency data when available
-- [ ] Highlight missing complements and overloaded concepts
+- [x] Highlight missing complements and overloaded concepts
 - [ ] Push recommendations to call sheet, script, and wristband
 
 Definition of done:
@@ -117,7 +117,8 @@ Status:
 
 - Phase 1 added a Smart Game Plan Builder modal with recommendation lanes for openers, must-haves, answers, constraints, and situational calls.
 - Phase 2 uses active opponent tendency data to boost and label recommendations by top fronts, coverages, blitzes, and pressure rate.
-- Next slice should highlight missing complements and overloaded concepts.
+- Phase 3 added Plan Balance alerts for missing complements and overloaded base-play concepts, with one-click adds for available complements.
+- Next slice should push recommendations to call sheet, script, and wristband.
 
 ## 6. Practice Script Timeline View
 
