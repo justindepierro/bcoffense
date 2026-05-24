@@ -117,6 +117,93 @@ function getTopScriptTimelineBuckets(periodPlays, field, fallbackLabel, maxItems
     .slice(0, maxItems);
 }
 
+function splitScriptTimelineValues(value) {
+  return String(value || "")
+    .split(/[;,/|]+/)
+    .map((part) => part.trim())
+    .filter(Boolean);
+}
+
+function formatScriptTimelineDown(down) {
+  const normalized = String(down || "").trim();
+  const suffixMap = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th" };
+  return suffixMap[normalized] || normalized;
+}
+
+function getScriptTimelineSituationLabels(play) {
+  const labels = [];
+  const situations = splitScriptTimelineValues(play?.preferredSituation);
+  const downs = splitScriptTimelineValues(play?.preferredDown);
+  const distances = splitScriptTimelineValues(play?.preferredDistance);
+  const fieldPositions = splitScriptTimelineValues(play?.preferredFieldPosition);
+
+  situations.forEach((situation) => labels.push(situation));
+
+  if (downs.length && distances.length) {
+    downs.forEach((down) => {
+      distances.forEach((distance) => {
+        labels.push(`${formatScriptTimelineDown(down)} ${distance}`);
+      });
+    });
+  } else if (downs.length) {
+    downs.forEach((down) => labels.push(`${formatScriptTimelineDown(down)} Down`));
+  } else if (distances.length) {
+    distances.forEach((distance) => labels.push(distance));
+  }
+
+  fieldPositions.forEach((fieldPosition) => labels.push(fieldPosition));
+
+  return labels.length ? Array.from(new Set(labels)) : ["No situation"];
+}
+
+function getTopScriptTimelineSituations(periodPlays, maxItems = 3) {
+  const counts = new Map();
+  periodPlays.forEach((play) => {
+    const reps = parseInt(play?.reps, 10) || 1;
+    getScriptTimelineSituationLabels(play).forEach((label) => {
+      counts.set(label, (counts.get(label) || 0) + reps);
+    });
+  });
+
+  return Array.from(counts, ([label, count]) => ({ label, count }))
+    .sort((a, b) => b.count - a.count || a.label.localeCompare(b.label))
+    .slice(0, maxItems);
+}
+
+function getScriptTimelinePlayFamily(play) {
+  const type = String(play?.type || "").trim().toLowerCase();
+  if (type.includes("run")) return "run";
+  if (["pass", "quick", "screen", "play action"].some((token) => type.includes(token))) {
+    return "pass";
+  }
+  return "other";
+}
+
+function buildScriptTimelineBalance(periodPlays) {
+  const balance = { runReps: 0, passReps: 0, otherReps: 0, totalReps: 0 };
+
+  periodPlays.forEach((play) => {
+    const reps = parseInt(play?.reps, 10) || 1;
+    const family = getScriptTimelinePlayFamily(play);
+    balance.totalReps += reps;
+    if (family === "run") balance.runReps += reps;
+    else if (family === "pass") balance.passReps += reps;
+    else balance.otherReps += reps;
+  });
+
+  if (balance.totalReps > 0) {
+    balance.runPct = Math.round((balance.runReps / balance.totalReps) * 100);
+    balance.passPct = Math.round((balance.passReps / balance.totalReps) * 100);
+    balance.otherPct = Math.max(0, 100 - balance.runPct - balance.passPct);
+  } else {
+    balance.runPct = 0;
+    balance.passPct = 0;
+    balance.otherPct = 0;
+  }
+
+  return balance;
+}
+
 function buildScriptTimelinePeriods(renderContext) {
   const periodStatsMap = renderContext?.periodStatsBySeparatorIndex || buildPeriodStatsMap(script);
   const periods = [];
@@ -126,6 +213,7 @@ function buildScriptTimelinePeriods(renderContext) {
 
     const periodPlays = getScriptTimelinePeriodPlays(index);
     const stats = getPeriodStats(index, periodStatsMap);
+    const balance = buildScriptTimelineBalance(periodPlays);
     periods.push({
       id: item.id,
       index,
@@ -137,8 +225,10 @@ function buildScriptTimelinePeriods(renderContext) {
       reps: stats.periodReps,
       runCount: stats.runCount,
       passCount: stats.passCount,
+      ...balance,
       tempoLoad: getTopScriptTimelineBuckets(periodPlays, "tempo", "No tempo"),
       personnelLoad: getTopScriptTimelineBuckets(periodPlays, "personnel", "No personnel"),
+      situationLoad: getTopScriptTimelineSituations(periodPlays),
     });
   });
 
@@ -156,6 +246,25 @@ function renderScriptTimelineLoadChips(label, buckets, emptyLabel) {
         `<span class="script-timeline-chip"><span>${escapeHtml(label)}</span> ${escapeHtml(bucket.label)} <strong>${bucket.count}</strong></span>`,
     )
     .join("");
+}
+
+function renderScriptTimelineBalance(period) {
+  if (!period.totalReps) {
+    return '<span class="script-timeline-balance script-timeline-balance--empty">No run/pass balance yet</span>';
+  }
+
+  return `
+    <span class="script-timeline-balance" aria-label="Run pass balance by reps">
+      <span class="script-timeline-balance-row">
+        <span><strong>Run ${period.runPct}%</strong> ${period.runReps} reps</span>
+        <span><strong>Pass ${period.passPct}%</strong> ${period.passReps} reps</span>
+      </span>
+      <span class="script-timeline-balance-meter" aria-hidden="true">
+        <span class="script-timeline-balance-run" style="width: ${period.runPct}%"></span>
+        <span class="script-timeline-balance-pass" style="width: ${period.passPct}%"></span>
+        <span class="script-timeline-balance-other" style="width: ${period.otherPct}%"></span>
+      </span>
+    </span>`;
 }
 
 function renderScriptTimeline(renderContext) {
@@ -196,7 +305,8 @@ function renderScriptTimeline(renderContext) {
         : 0;
       const ariaLabel =
         `${period.label}, ${period.playCount} plays, ${period.reps} reps, ` +
-        `${period.minutes || 0} minutes, ${period.runCount} run and ${period.passCount} pass. Jump to period or drag to reorder.`;
+        `${period.minutes || 0} minutes, ${period.runPct}% run and ${period.passPct}% pass by reps. ` +
+        `Top situations: ${period.situationLoad.map((bucket) => bucket.label).join(", ")}. Jump to period or drag to reorder.`;
       const noteHtml = period.notes
         ? `<span class="script-timeline-note">${escapeHtml(period.notes)}</span>`
         : "";
@@ -213,7 +323,13 @@ function renderScriptTimeline(renderContext) {
             <span><strong>${period.runCount}</strong> Run</span>
             <span><strong>${period.passCount}</strong> Pass</span>
           </span>
+          ${renderScriptTimelineBalance(period)}
           <span class="script-timeline-load" aria-hidden="true"><span></span></span>
+          <span class="script-timeline-situations">
+            ${period.playCount
+          ? renderScriptTimelineLoadChips("Situation", period.situationLoad, "Situation not set")
+          : '<span class="script-timeline-chip script-timeline-chip--muted">Situation not set</span>'}
+          </span>
           <span class="script-timeline-chips">
             ${period.playCount
           ? renderScriptTimelineLoadChips("Tempo", period.tempoLoad, "Tempo not set") +
