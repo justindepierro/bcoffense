@@ -371,6 +371,10 @@ function _gpSmartTextHas(play, fields, needles) {
   return needles.some((needle) => haystack.includes(String(needle).toLowerCase()));
 }
 
+function _gpSmartNorm(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
 function _gpSmartConstraintValues(play) {
   return [play?.constraint1, play?.constraint2, play?.constraint3]
     .map((value) => String(value || "").trim())
@@ -383,6 +387,91 @@ function _gpSmartPlayLabel(play) {
     .join(" • ") || "Unnamed play";
 }
 
+function _gpSmartBuildTendencyContext(opponentName) {
+  const opponent = typeof _gpResolveOpponentTendencies === "function"
+    ? _gpResolveOpponentTendencies()
+    : null;
+  if (!opponent || !Array.isArray(opponent.plays) || opponent.plays.length === 0) return null;
+  if (typeof queryTendencies !== "function") return null;
+  const intel = queryTendencies(opponent, {});
+  const snapCount = intel?.total || intel?.plays?.length || opponent.plays.length || 0;
+  if (!snapCount) return null;
+  return {
+    opponentName: opponent.name || opponentName || "",
+    snapCount,
+    summary: intel.summary || "",
+    topFront: (intel.topFront || []).slice(0, 3),
+    topCoverage: (intel.topCoverage || []).slice(0, 3),
+    topBlitz: (intel.topBlitz || []).slice(0, 3),
+    blitzRate: intel.blitzRate || 0,
+  };
+}
+
+function _gpSmartDefenseItemFamily(item, category) {
+  if (item?.family?.family) return item.family.family;
+  if (typeof item?.family === "string") return item.family;
+  if (typeof normalizeDefense !== "function") return "";
+  return normalizeDefense(item?.term || item, category)?.family || "";
+}
+
+function _gpSmartMatchesDefenseTerm(value, items, category) {
+  const actual = _gpSmartNorm(value);
+  if (!actual || !Array.isArray(items) || items.length === 0) return null;
+  const actualFamily = typeof normalizeDefense === "function"
+    ? normalizeDefense(value, category)?.family || ""
+    : "";
+  return items.find((item) => {
+    const term = _gpSmartNorm(item?.term || item);
+    if (!term) return false;
+    if (actual === term) return true;
+    if (actual.length >= 3 && term.length >= 3 && (actual.includes(term) || term.includes(actual))) return true;
+    const itemFamily = _gpSmartDefenseItemFamily(item, category);
+    return actualFamily && itemFamily && actualFamily === itemFamily;
+  }) || null;
+}
+
+function _gpSmartTendencyBoost(play, ctx) {
+  const tendency = ctx?.tendency;
+  if (!tendency) return { score: 0, reasons: [] };
+  let score = 0;
+  const reasons = [];
+  const add = (points, reason) => {
+    score += points;
+    if (reason && !reasons.includes(reason)) reasons.push(reason);
+  };
+
+  const front = _gpSmartMatchesDefenseTerm(play?.practiceFront, tendency.topFront, "front");
+  if (front) add(16, `vs ${front.term || front} front`);
+
+  const coverage = _gpSmartMatchesDefenseTerm(play?.practiceCoverage, tendency.topCoverage, "coverage");
+  if (coverage) add(18, `matches ${coverage.term || coverage}`);
+
+  if (tendency.blitzRate >= 35) {
+    const isAnswerType = ["Screen", "Quick", "RPO", "Movement"].includes(play?.type);
+    const tagsPressure = _gpSmartTextHas(play, ["notes", "deadVs", "practiceBlitz", "play", "basePlay"], [
+      "pressure",
+      "blitz",
+      "zero",
+      "hot",
+      "sight",
+    ]);
+    if (isAnswerType || tagsPressure) add(16, `${tendency.blitzRate}% blitz answer`);
+  }
+
+  const blitz = _gpSmartMatchesDefenseTerm(play?.practiceBlitz, tendency.topBlitz, "blitz");
+  if (blitz) add(14, `preps ${blitz.term || blitz}`);
+
+  if (typeof checkDeadVs === "function" && (tendency.topCoverage[0]?.term || tendency.topFront[0]?.term)) {
+    const dead = checkDeadVs(play, tendency.topCoverage[0]?.term || "", tendency.topFront[0]?.term || "");
+    if (dead?.isDead) {
+      score -= 35;
+      reasons.push(dead.reasons[0] || "dead vs top look");
+    }
+  }
+
+  return { score, reasons };
+}
+
 function _gpSmartBaseScore(play, ctx) {
   let score = 0;
   if (ctx.opponent && typeof isPlayTaggedForOpponent === "function" && isPlayTaggedForOpponent(play, ctx.opponent)) {
@@ -392,6 +481,7 @@ function _gpSmartBaseScore(play, ctx) {
   if (play?.basePlay && (ctx.baseCounts.get(play.basePlay) || 0) >= 2) score += 8;
   if (play?.keyPlayerName1 || play?.keyPlayerName2 || play?.keyPlayerName3) score += 6;
   if (play?.preferredHash) score += 3;
+  score += _gpSmartTendencyBoost(play, ctx).score;
   return score;
 }
 
@@ -407,6 +497,7 @@ const GP_SMART_PLAN_GROUPS = [
     evaluate(play, ctx) {
       let score = _gpSmartBaseScore(play, ctx);
       const reasons = [];
+      reasons.push(..._gpSmartTendencyBoost(play, ctx).reasons);
       if (_gpSmartPreferredHas(play, "preferredSituation", ["opener"])) {
         score += 45;
         reasons.push("opener tag");
@@ -422,7 +513,7 @@ const GP_SMART_PLAN_GROUPS = [
       if (!_gpSmartPreferredHas(play, "preferredFieldPosition", ["goal line", "backed up", "saigon"])) {
         score += 6;
       }
-      return score >= 36 ? { score, reason: reasons.slice(0, 2).join(" / ") || "clean early-down call" } : null;
+      return score >= 36 ? { score, reason: reasons.slice(0, 3).join(" / ") || "clean early-down call" } : null;
     },
   },
   {
@@ -436,6 +527,7 @@ const GP_SMART_PLAN_GROUPS = [
     evaluate(play, ctx) {
       let score = _gpSmartBaseScore(play, ctx);
       const reasons = [];
+      reasons.push(..._gpSmartTendencyBoost(play, ctx).reasons);
       if (ctx.opponent && typeof isPlayTaggedForOpponent === "function" && isPlayTaggedForOpponent(play, ctx.opponent)) {
         reasons.push("opponent tagged");
       }
@@ -451,7 +543,7 @@ const GP_SMART_PLAN_GROUPS = [
         score += 14;
         reasons.push("situational staple");
       }
-      return score >= 30 ? { score, reason: reasons.slice(0, 2).join(" / ") || "identity call" } : null;
+      return score >= 30 ? { score, reason: reasons.slice(0, 3).join(" / ") || "identity call" } : null;
     },
   },
   {
@@ -465,6 +557,7 @@ const GP_SMART_PLAN_GROUPS = [
     evaluate(play, ctx) {
       let score = _gpSmartBaseScore(play, ctx);
       const reasons = [];
+      reasons.push(..._gpSmartTendencyBoost(play, ctx).reasons);
       if (["Screen", "Quick", "RPO", "Movement"].includes(play?.type)) {
         score += 30;
         reasons.push(play.type);
@@ -479,7 +572,7 @@ const GP_SMART_PLAN_GROUPS = [
         score += 14;
         reasons.push("pressure answer");
       }
-      return score >= 34 ? { score, reason: reasons.slice(0, 2).join(" / ") || "defensive answer" } : null;
+      return score >= 34 ? { score, reason: reasons.slice(0, 3).join(" / ") || "defensive answer" } : null;
     },
   },
   {
@@ -493,14 +586,16 @@ const GP_SMART_PLAN_GROUPS = [
     evaluate(play, ctx) {
       const constraints = _gpSmartConstraintValues(play);
       let score = _gpSmartBaseScore(play, ctx) + constraints.length * 22;
+      const tendency = _gpSmartTendencyBoost(play, ctx);
       const referenced = ctx.constraintTargets.has(String(play?.play || "").trim())
         || ctx.constraintTargets.has(String(play?.basePlay || "").trim());
       if (referenced) score += 18;
       if (constraints.length === 0 && !referenced) return null;
-      const reason = constraints.length
+      const reasons = [constraints.length
         ? `links to ${constraints.slice(0, 2).join(" / ")}`
-        : "named as a complement";
-      return { score, reason };
+        : "named as a complement"];
+      reasons.push(...tendency.reasons);
+      return { score, reason: reasons.slice(0, 3).join(" / ") };
     },
   },
   {
@@ -514,6 +609,7 @@ const GP_SMART_PLAN_GROUPS = [
     evaluate(play, ctx) {
       let score = _gpSmartBaseScore(play, ctx);
       const reasons = [];
+      reasons.push(..._gpSmartTendencyBoost(play, ctx).reasons);
       if (_gpSmartPreferredHas(play, "preferredDown", ["3", "4"])) {
         score += 24;
         reasons.push(`${play.preferredDown} down`);
@@ -530,7 +626,7 @@ const GP_SMART_PLAN_GROUPS = [
         score += 22;
         reasons.push(play.preferredSituation);
       }
-      return score >= 30 ? { score, reason: reasons.slice(0, 2).join(" / ") || "situational fit" } : null;
+      return score >= 30 ? { score, reason: reasons.slice(0, 3).join(" / ") || "situational fit" } : null;
     },
   },
 ];
@@ -560,6 +656,7 @@ function _gpBuildSmartPlanRecommendations() {
   const board = _gpEnsureBoard();
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw?.opponentName || "";
+  const tendency = _gpSmartBuildTendencyContext(opponent);
   const baseCounts = new Map();
   const constraintTargets = new Set();
   (plays || []).forEach((play) => {
@@ -569,6 +666,7 @@ function _gpBuildSmartPlanRecommendations() {
   const ctx = {
     board,
     opponent,
+    tendency,
     baseCounts,
     constraintTargets,
   };
@@ -591,6 +689,7 @@ function _gpBuildSmartPlanRecommendations() {
   });
   return {
     opponent,
+    tendency,
     totalPlays: Array.isArray(plays) ? plays.length : 0,
     groups,
   };
@@ -639,6 +738,28 @@ function _gpRenderSmartRecommendationGroup(group) {
     </section>`;
 }
 
+function _gpRenderSmartTendencySummary(tendency) {
+  if (!tendency) {
+    return `
+      <div class="gp-smart-builder-tendency is-empty">
+        <span class="gp-smart-builder-tendency-label">No opponent tendency data connected yet.</span>
+      </div>`;
+  }
+  const chips = [];
+  if (tendency.topFront[0]) chips.push(`<span class="gp-smart-builder-tendency-chip">${escapeHtml(tendency.topFront[0].term)} front · ${tendency.topFront[0].pct}%</span>`);
+  if (tendency.topCoverage[0]) chips.push(`<span class="gp-smart-builder-tendency-chip">${escapeHtml(tendency.topCoverage[0].term)} · ${tendency.topCoverage[0].pct}%</span>`);
+  if (tendency.topBlitz[0]) chips.push(`<span class="gp-smart-builder-tendency-chip">${escapeHtml(tendency.topBlitz[0].term)} · ${tendency.topBlitz[0].pct}%</span>`);
+  if (tendency.blitzRate > 0) chips.push(`<span class="gp-smart-builder-tendency-chip">${tendency.blitzRate}% blitz</span>`);
+  return `
+    <div class="gp-smart-builder-tendency">
+      <span class="gp-smart-builder-tendency-label">Tendency boost: ${escapeHtml(tendency.opponentName || "Opponent")}</span>
+      <div class="gp-smart-builder-tendency-items">
+        ${chips.join("") || `<span class="gp-smart-builder-tendency-chip">${escapeHtml(tendency.summary || `${tendency.snapCount} charted snaps`)}</span>`}
+      </div>
+      <span class="gp-smart-builder-tendency-note">${tendency.snapCount} charted snap${tendency.snapCount === 1 ? "" : "s"} factored into the rankings.</span>
+    </div>`;
+}
+
 function openSmartGamePlanBuilder() {
   if (!Array.isArray(plays) || plays.length === 0) {
     showToast("Import a playbook before building a smart game plan.", { type: "warning" });
@@ -661,6 +782,7 @@ function openSmartGamePlanBuilder() {
           <strong>${totalCandidates}</strong>
           <span>recommended calls from ${recs.totalPlays} playbook plays${recs.opponent ? ` for ${escapeHtml(recs.opponent)}` : ""}</span>
         </div>
+        ${_gpRenderSmartTendencySummary(recs.tendency)}
         <div class="gp-smart-builder-groups">
           ${recs.groups.map(_gpRenderSmartRecommendationGroup).join("")}
         </div>
@@ -1199,18 +1321,27 @@ function openGamePlanCoverageMatrix() {
    ------------------------------------------------------------------------- */
 
 function _gpResolveOpponentTendencies() {
-  if (!Array.isArray(window.tendenciesOpponents) || window.tendenciesOpponents.length === 0) return null;
+  let opponents = Array.isArray(window.tendenciesOpponents)
+    ? window.tendenciesOpponents
+    : (typeof tendenciesOpponents !== "undefined" && Array.isArray(tendenciesOpponents) ? tendenciesOpponents : []);
+  if (opponents.length === 0 && typeof storageManager !== "undefined" && typeof STORAGE_KEYS !== "undefined") {
+    opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+  }
+  if (opponents.length === 0) return null;
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const oppName = gw && gw.opponentName ? gw.opponentName : null;
   if (oppName) {
-    const exact = window.tendenciesOpponents.find((o) => o.name && o.name.toLowerCase() === oppName.toLowerCase());
+    const exact = opponents.find((o) => o.name && o.name.toLowerCase() === oppName.toLowerCase());
     if (exact) return exact;
   }
   // Fallback: current opponent index
-  if (typeof window.tendenciesCurrentOpponent === "number" && window.tendenciesOpponents[window.tendenciesCurrentOpponent]) {
-    return window.tendenciesOpponents[window.tendenciesCurrentOpponent];
+  const currentIndex = typeof window.tendenciesCurrentOpponent === "number"
+    ? window.tendenciesCurrentOpponent
+    : (typeof tendenciesCurrentOpponent === "number" ? tendenciesCurrentOpponent : null);
+  if (currentIndex !== null && opponents[currentIndex]) {
+    return opponents[currentIndex];
   }
-  return window.tendenciesOpponents[0];
+  return opponents[0];
 }
 
 function openGamePlanTendencyMirror() {
