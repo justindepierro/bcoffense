@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v474";
+const CACHE_NAME = "bcoffense-v475";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,

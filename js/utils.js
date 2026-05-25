@@ -2186,6 +2186,9 @@ function saveSchedule(schedule) {
  * Generate a stable signature for a play (used as key for game plan tags)
  */
 function playSignature(play) {
+  // Use stable unique play ID if available (ensured by ensurePlaybookPlayIds on every load/import).
+  // Fall back to field-based key only for plays that somehow lack an ID.
+  if (play && play.id) return play.id;
   return getPlayIdentityKey(play, "tag");
 }
 
