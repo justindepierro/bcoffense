@@ -1343,7 +1343,27 @@ function getCallSheetCategoriesForPage(page) {
   const normalizedOrder = normalizeCallSheetCategoryOrder(csCategoryOrder);
   csCategoryOrder = normalizedOrder;
 
-  return (normalizedOrder[safePage] || [])
+  const orderedCategories = (normalizedOrder[safePage] || [])
+    .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
+    .filter(Boolean);
+
+  if (orderedCategories.length > 0) return orderedCategories;
+
+  // Guardrail: if persisted ordering is corrupted and resolves to an empty
+  // page, fall back to base categories so the call sheet never renders blank.
+  const baseIds = (safePage === "back" ? BASE_CALLSHEET_BACK : BASE_CALLSHEET_FRONT)
+    .map((cat) => cat.id)
+    .filter((id) => CALLSHEET_CATEGORIES.some((cat) => cat.id === id));
+
+  if (!baseIds.length) return [];
+
+  const rebuiltOrder = {
+    ...normalizedOrder,
+    [safePage]: baseIds,
+  };
+  csCategoryOrder = normalizeCallSheetCategoryOrder(rebuiltOrder);
+
+  return (csCategoryOrder[safePage] || [])
     .map((id) => CALLSHEET_CATEGORIES.find((cat) => cat.id === id))
     .filter(Boolean);
 }
