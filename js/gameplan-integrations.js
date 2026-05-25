@@ -599,3 +599,92 @@ function _gpRenderCompareModal(idA, idB) {
     </div>`.replace(/\n\s+/g, " ");
   showModal(html, { title: "🔄 Plan Comparison", icon: "🔄" });
 }
+
+/* -------------------------------------------------------------------------
+   Load saved game plan snapshot → Playbook tag filter
+   Lets coaches pick a named saved plan and apply it as game plan tags so
+   the Playbook "Game Plan Only" filter shows exactly those plays.
+   ------------------------------------------------------------------------- */
+
+async function loadGamePlanSnapshotToPlaybook() {
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : {};
+  const opponentKey = (gw && gw.opponentName) ? gw.opponentName : "__unassigned__";
+
+  if (!gw.opponentName) {
+    const ok = await showConfirm(
+      "No active opponent is set. Set one in the Dashboard (Game Week) to link this plan to an opponent.\n\nContinue loading anyway?",
+      { title: "No Opponent Set", icon: "⚠️" }
+    );
+    if (!ok) return;
+  }
+
+  const all = typeof _gpLoadAllSnapshots === "function" ? _gpLoadAllSnapshots() : {};
+  const snaps = Array.isArray(all[opponentKey]) ? all[opponentKey] : [];
+
+  if (snaps.length === 0) {
+    showToast("No saved plans for this opponent. Save one from the Game Plan tab first.", { duration: 4000, type: "info" });
+    return;
+  }
+
+  const items = snaps.slice().reverse().map((s) => {
+    const when = new Date(s.savedAt).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" });
+    const total = Object.values(s.board?.assignments || {}).reduce((n, a) => n + (Array.isArray(a) ? a.length : 0), 0);
+    return { value: s.id, label: `${s.name} \u2022 ${total} plays \u2022 ${when}` };
+  });
+
+  const snapId = await showListPicker(
+    "Pick a saved plan to load into the Playbook filter:",
+    items,
+    { title: "📂 Load Plan into Playbook", icon: "📂" }
+  );
+  if (!snapId) return;
+
+  const snap = snaps.find((s) => s.id === snapId);
+  if (!snap) return;
+
+  const oppLabel = escapeHtml(opponentKey === "__unassigned__" ? "this session" : opponentKey);
+  const action = await showChoice(
+    `Load \u201c${escapeHtml(snap.name)}\u201d into the Playbook Game Plan filter?`,
+    {
+      title: "Load Plan",
+      icon: "📂",
+      option1: `Replace \u2014 clear existing ${oppLabel} tags and use this plan`,
+      option2: `Append \u2014 add this plan\u2019s plays to existing tags`,
+    }
+  );
+  if (!action) return;
+
+  // Collect all play signatures from every box in the snapshot
+  const assignments = snap.board?.assignments || {};
+  const snapSigs = new Set();
+  Object.values(assignments).forEach((playList) => {
+    if (!Array.isArray(playList)) return;
+    playList.forEach((play) => {
+      if (play) snapSigs.add(playSignature(play));
+    });
+  });
+
+  if (snapSigs.size === 0) {
+    showToast("That plan has no plays assigned to boxes yet.", { type: "info" });
+    return;
+  }
+
+  const tags = getGamePlanTags();
+  if (action === "option1") {
+    tags[opponentKey] = [...snapSigs];
+  } else {
+    const existing = new Set(Array.isArray(tags[opponentKey]) ? tags[opponentKey] : []);
+    snapSigs.forEach((sig) => existing.add(sig));
+    tags[opponentKey] = [...existing];
+  }
+  storageManager.set(STORAGE_KEYS.GAME_PLAN_TAGS, tags);
+
+  // Enable the game plan filter so the user sees the result immediately
+  const gpFilter = document.getElementById("pbGamePlanFilter");
+  if (gpFilter && !gpFilter.checked) gpFilter.checked = true;
+  if (typeof filterPlays === "function") filterPlays();
+  if (typeof savePlaybookState === "function") savePlaybookState();
+
+  const verb = action === "option1" ? "Loaded" : "Appended";
+  showToast(`${verb} ${snapSigs.size} plays from \u201c${snap.name}\u201d`, { type: "success", duration: 3000 });
+}
