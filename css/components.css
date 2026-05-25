@@ -3631,9 +3631,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 }
 .tool-menu {
   display: none;
-  position: absolute;
-  top: calc(100% + 4px);
-  right: 0;
+  position: fixed;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -3645,10 +3643,6 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 }
 .tool-menu-wrap.open .tool-menu {
   display: block;
-}
-.tool-menu-wrap.tool-menu-up .tool-menu {
-  top: auto;
-  bottom: calc(100% + 4px);
 }
 .tool-menu button {
   display: block;
