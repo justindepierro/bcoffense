@@ -1879,6 +1879,111 @@ table.sortable th {
   color: var(--color-text);
 }
 
+.pb-constraint-layout {
+  display: grid;
+  grid-template-columns: minmax(0, 1.2fr) minmax(280px, 0.8fr);
+  gap: var(--space-md);
+  align-items: start;
+}
+
+.pb-constraint-layout .pb-constraint-section:first-child {
+  grid-row: span 2;
+}
+
+.pb-constraint-card-grid {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.pb-constraint-card,
+.pb-constraint-complement-row,
+.pb-constraint-gap-row {
+  display: grid;
+  gap: 8px;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+}
+
+.pb-constraint-card.is-gap {
+  border-color: var(--color-warning);
+  background: var(--color-warning-alpha-06);
+}
+
+.pb-constraint-card-head {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.pb-constraint-card-head > div:first-child {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+}
+
+.pb-constraint-card-head strong,
+.pb-constraint-gap-row strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pb-constraint-card-head span,
+.pb-constraint-gap-row span,
+.pb-constraint-examples {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.pb-constraint-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+}
+
+.pb-constraint-chip,
+.pb-constraint-empty-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.pb-constraint-chip-muted {
+  color: var(--color-text-secondary);
+}
+
+.pb-constraint-empty-chip {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
+
+.pb-constraint-complement-row + .pb-constraint-complement-row,
+.pb-constraint-gap-row + .pb-constraint-gap-row {
+  margin-top: var(--space-sm);
+}
+
+@media (max-width: 900px) {
+  .pb-constraint-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pb-constraint-layout .pb-constraint-section:first-child {
+    grid-row: auto;
+  }
+}
+
 .pb-health-modal {
   width: 96vw;
   max-width: 1040px;

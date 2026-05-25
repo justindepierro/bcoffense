@@ -198,7 +198,7 @@ Goal: Show what the offense actually looks like from the imported data.
 - [x] Personnel, formation, and concept balance
 - [x] Situation coverage by down, distance, field zone, and tempo
 - [x] Player touch/opportunity summaries
-- [ ] Constraint/complement map
+- [x] Constraint/complement map
 - [ ] Identity alignment score
 
 Definition of done:
@@ -211,6 +211,7 @@ Status:
 - Phase 2 added a Playbook Balance report for personnel, formation, concept, and play-type distribution in the current playbook view.
 - Phase 3 added a Situation Coverage report for down/distance, field-zone, and tempo tagging gaps in the current playbook view.
 - Phase 4 added a Player Touches report with weighted opportunity share, KP1/KP2/KP3 breakdowns, and metadata gap guidance.
+- Phase 5 added a Constraint & Complement Map that connects base concepts to tagged answers and highlights thin complement families.
 
 ## 10. Large Playbook Performance Track
 

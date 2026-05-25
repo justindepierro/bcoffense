@@ -102,6 +102,8 @@
     "clearPlaybookSituationFilters",
     "openPlaybookTouchReport",
     "clearPlaybookTouchFilters",
+    "openPlaybookConstraintMap",
+    "clearPlaybookConstraintFilters",
     "runConstraintCheck",
     "selectTendenciesOpponent",
     "selectPlaybookRow",

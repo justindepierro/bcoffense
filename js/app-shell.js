@@ -336,6 +336,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPlaybookConstraintMap === "function") {
+    items.push({
+      kind: "Action",
+      title: "Playbook Complements",
+      subtitle: "Review concept constraint and complement coverage",
+      keywords: "playbook intelligence constraints complements constraint complement map concept answers base play",
+      priority: 34.8,
+      run: () => {
+        showTab("playbook");
+        requestAnimationFrame(() => openPlaybookConstraintMap());
+      },
+    });
+  }
+
   if (typeof openWbQuickSearch === "function") {
     items.push({
       kind: "Action",
@@ -1832,24 +1846,4 @@ document.addEventListener("keydown", (e) => {
   if (!action || action.endsWith("Overlay")) return;
   e.preventDefault();
   el.click();
-});
-// Auto-fade the floating quick tools launcher after idle
-document.addEventListener("DOMContentLoaded", () => {
-  const fabs = document.querySelectorAll(".quick-tools-fab");
-  if (!fabs.length) return;
-
-  const IDLE_MS = 2500;
-  let idleTimer = null;
-
-  const setIdle = () => document.body.classList.add("fab-idle");
-  const setActive = () => {
-    document.body.classList.remove("fab-idle");
-    if (idleTimer) clearTimeout(idleTimer);
-    idleTimer = setTimeout(setIdle, IDLE_MS);
-  };
-
-  ["mousemove", "touchstart", "keydown", "scroll", "click"].forEach((evt) => {
-    window.addEventListener(evt, setActive, { passive: true });
-  });
-  setActive();
 });

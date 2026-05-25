@@ -983,3 +983,311 @@ function clearPlaybookTouchFilters() {
   closePlaybookTouchReport();
   requestAnimationFrame(() => openPlaybookTouchReport());
 }
+
+function _pbConstraintTerms(play) {
+  const terms = [play?.constraint1, play?.constraint2, play?.constraint3]
+    .map(_pbSituationClean)
+    .filter(Boolean);
+  return [...new Set(terms)];
+}
+
+function _pbConstraintConcept(play) {
+  return (
+    _pbSituationClean(play?.basePlay) ||
+    _pbSituationClean(play?.play) ||
+    _pbSituationClean(play?.type) ||
+    "No Concept"
+  );
+}
+
+function _pbConstraintAddFamily(row, play) {
+  const family = _pbBalanceTypeFamily(play);
+  row.families[family] = (row.families[family] || 0) + 1;
+}
+
+function _pbConstraintAnalyze(source) {
+  const conceptMap = new Map();
+  const complementMap = new Map();
+  let taggedPlays = 0;
+  let totalLinks = 0;
+
+  source.forEach((play) => {
+    const concept = _pbConstraintConcept(play);
+    const terms = _pbConstraintTerms(play);
+    if (terms.length) taggedPlays += 1;
+
+    if (!conceptMap.has(concept)) {
+      conceptMap.set(concept, {
+        name: concept,
+        count: 0,
+        constraints: new Map(),
+        families: { Run: 0, Pass: 0, RPO: 0, Other: 0 },
+        examples: [],
+      });
+    }
+    const conceptRow = conceptMap.get(concept);
+    conceptRow.count += 1;
+    _pbConstraintAddFamily(conceptRow, play);
+    if (conceptRow.examples.length < 4 && play?.play) {
+      conceptRow.examples.push(play.play);
+    }
+
+    terms.forEach((term) => {
+      totalLinks += 1;
+      conceptRow.constraints.set(
+        term,
+        (conceptRow.constraints.get(term) || 0) + 1,
+      );
+
+      if (!complementMap.has(term)) {
+        complementMap.set(term, {
+          name: term,
+          count: 0,
+          concepts: new Map(),
+          families: { Run: 0, Pass: 0, RPO: 0, Other: 0 },
+        });
+      }
+      const complementRow = complementMap.get(term);
+      complementRow.count += 1;
+      complementRow.concepts.set(
+        concept,
+        (complementRow.concepts.get(concept) || 0) + 1,
+      );
+      _pbConstraintAddFamily(complementRow, play);
+    });
+  });
+
+  const conceptRows = Array.from(conceptMap.values()).sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+  );
+  const complementRows = Array.from(complementMap.values()).sort(
+    (a, b) => b.count - a.count || a.name.localeCompare(b.name),
+  );
+  const complementedConcepts = conceptRows.filter((row) => row.constraints.size > 0);
+  const gapRows = conceptRows.filter((row) => row.count >= 2 && row.constraints.size === 0);
+  const thinRows = conceptRows.filter((row) => row.count >= 4 && row.constraints.size === 1);
+
+  return {
+    total: source.length,
+    taggedPlays,
+    totalLinks,
+    conceptRows,
+    complementRows,
+    complementedConcepts,
+    gapRows,
+    thinRows,
+  };
+}
+
+function _pbConstraintSignals(analysis) {
+  const signals = [];
+  if (!analysis.total) {
+    return ["No plays in this scope. Clear filters or import plays to review complements."];
+  }
+  if (!analysis.totalLinks) {
+    return ["No constraint/complement tags found in this scope. Add Constraint 1/2/3 values to map answers."];
+  }
+
+  const missing = analysis.total - analysis.taggedPlays;
+  if (missing > 0) {
+    signals.push(`${missing} play${missing === 1 ? "" : "s"} have no constraint/complement tags.`);
+  }
+  if (analysis.gapRows.length) {
+    const names = analysis.gapRows.slice(0, 3).map((row) => row.name).join(", ");
+    signals.push(`${names} need complement tags before they can be checked as families.`);
+  }
+  if (analysis.thinRows.length) {
+    const names = analysis.thinRows.slice(0, 3).map((row) => row.name).join(", ");
+    signals.push(`${names} have volume but only one complement answer tagged.`);
+  }
+  const top = analysis.complementRows[0];
+  if (top && _pbBalancePct(top.count, analysis.totalLinks) >= 35) {
+    signals.push(`${top.name} accounts for ${_pbBalancePct(top.count, analysis.totalLinks)}% of complement links.`);
+  }
+  if (!signals.length) {
+    signals.push("Constraint tags give the major concepts multiple visible complement answers in this scope.");
+  }
+  return signals.slice(0, 8);
+}
+
+function _pbConstraintChipList(map, className = "pb-constraint-chip") {
+  const rows = Array.from(map.entries()).sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0]));
+  if (!rows.length) return '<span class="pb-constraint-empty-chip">No complements tagged</span>';
+  return rows
+    .slice(0, 8)
+    .map(([name, count]) => `<span class="${className}">${escapeHtml(name)} <b>${count}</b></span>`)
+    .join("");
+}
+
+function _pbConstraintRenderConcepts(analysis) {
+  if (!analysis.conceptRows.length) {
+    return '<div class="pb-balance-empty">No concepts in this scope.</div>';
+  }
+  return analysis.conceptRows
+    .slice(0, 12)
+    .map((row) => {
+      const pct = _pbBalancePct(row.count, analysis.total);
+      const exampleText = row.examples.length
+        ? row.examples.map(escapeHtml).join(", ")
+        : "No example plays";
+      return `
+        <div class="pb-constraint-card${row.constraints.size ? "" : " is-gap"}">
+          <div class="pb-constraint-card-head">
+            <div>
+              <strong>${escapeHtml(row.name)}</strong>
+              <span>${row.count} play${row.count === 1 ? "" : "s"} • ${pct}%</span>
+            </div>
+            <div class="pb-balance-tags">${_pbBalanceFamilyTags(row)}</div>
+          </div>
+          <div class="pb-constraint-chips">
+            ${_pbConstraintChipList(row.constraints)}
+          </div>
+          <div class="pb-constraint-examples">${exampleText}</div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function _pbConstraintRenderComplements(analysis) {
+  if (!analysis.complementRows.length) {
+    return '<div class="pb-balance-empty">No complement tags in this scope.</div>';
+  }
+  return analysis.complementRows
+    .slice(0, 12)
+    .map((row) => {
+      const pct = _pbBalancePct(row.count, analysis.totalLinks);
+      return `
+        <div class="pb-constraint-complement-row">
+          <div class="pb-balance-row-main">
+            <strong>${escapeHtml(row.name)}</strong>
+            <span>${row.count} link${row.count === 1 ? "" : "s"} • ${pct}%</span>
+          </div>
+          <div class="pb-balance-meter" style="--bar-width:${pct}%"><i></i></div>
+          <div class="pb-constraint-chips">
+            ${_pbConstraintChipList(row.concepts, "pb-constraint-chip pb-constraint-chip-muted")}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function _pbConstraintRenderGaps(analysis) {
+  const rows = [...analysis.gapRows, ...analysis.thinRows]
+    .filter((row, index, arr) => arr.findIndex((item) => item.name === row.name) === index)
+    .slice(0, 10);
+  if (!rows.length) {
+    return '<div class="pb-balance-empty">No high-volume concept complement gaps found.</div>';
+  }
+  return rows
+    .map((row) => {
+      const label = row.constraints.size === 0 ? "No complements" : "Thin complement menu";
+      return `
+        <div class="pb-constraint-gap-row">
+          <strong>${escapeHtml(row.name)}</strong>
+          <span>${escapeHtml(label)} • ${row.count} plays</span>
+        </div>
+      `;
+    })
+    .join("");
+}
+
+function openPlaybookConstraintMap() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
+    return;
+  }
+
+  const scope = _pbBalanceScope();
+  const analysis = _pbConstraintAnalyze(scope.plays);
+  const signals = _pbConstraintSignals(analysis);
+  const taggedPct = _pbBalancePct(analysis.taggedPlays, analysis.total);
+  const conceptPct = _pbBalancePct(
+    analysis.complementedConcepts.length,
+    analysis.conceptRows.length,
+  );
+
+  document.getElementById("playbookConstraintOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "playbookConstraintOverlay";
+  overlay.dataset.action = "closePlaybookConstraintMapOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal pb-balance-modal pb-constraint-modal" role="dialog" aria-modal="true" aria-labelledby="playbookConstraintTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🧩</span>
+        <h3 class="custom-modal-title" id="playbookConstraintTitle">Constraint & Complement Map</h3>
+        <button class="modal-close" aria-label="Close" data-action="closePlaybookConstraintMap">×</button>
+      </div>
+      <div class="custom-modal-body pb-balance-body">
+        <div class="pb-balance-summary">
+          <div class="pb-balance-card">
+            <strong>${escapeHtml(scope.label)}</strong>
+            <span>${escapeHtml(scope.detail)}</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${taggedPct}%</strong>
+            <span>Plays Tagged</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${conceptPct}%</strong>
+            <span>Concepts Covered</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${analysis.complementRows.length}</strong>
+            <span>Complements</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${analysis.gapRows.length + analysis.thinRows.length}</strong>
+            <span>Concept Gaps</span>
+          </div>
+        </div>
+        <div class="pb-balance-guidance">
+          ${signals.map((signal) => `<div>${escapeHtml(signal)}</div>`).join("")}
+        </div>
+        <div class="pb-constraint-layout">
+          <section class="pb-balance-section pb-constraint-section">
+            <div class="pb-balance-section-head">
+              <h4>Concept Map</h4>
+              <span>Base play to tagged complement answers</span>
+            </div>
+            <div class="pb-constraint-card-grid">${_pbConstraintRenderConcepts(analysis)}</div>
+          </section>
+          <section class="pb-balance-section pb-constraint-section">
+            <div class="pb-balance-section-head">
+              <h4>Complement Usage</h4>
+              <span>Where each answer shows up</span>
+            </div>
+            ${_pbConstraintRenderComplements(analysis)}
+          </section>
+          <section class="pb-balance-section pb-constraint-section">
+            <div class="pb-balance-section-head">
+              <h4>Gaps</h4>
+              <span>Concepts with no or thin complement tags</span>
+            </div>
+            ${_pbConstraintRenderGaps(analysis)}
+          </section>
+        </div>
+      </div>
+      <div class="custom-modal-actions">
+        ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookConstraintFilters">Clear Playbook Filters</button>' : ""}
+        <button type="button" class="btn btn-sm" data-action="closePlaybookConstraintMap">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function closePlaybookConstraintMap() {
+  const overlay = document.getElementById("playbookConstraintOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function clearPlaybookConstraintFilters() {
+  if (typeof clearFilters === "function") clearFilters();
+  closePlaybookConstraintMap();
+  requestAnimationFrame(() => openPlaybookConstraintMap());
+}

@@ -54,6 +54,10 @@ function getHelpDataForTab(tab) {
               key: "👥 Touches",
               desc: "Review weighted player touch and opportunity distribution",
             },
+            {
+              key: "🧩 Complements",
+              desc: "Map concepts to tagged constraint and complement answers",
+            },
             { key: "🖨️ Print Plays", desc: "Print the current filtered playbook view" },
             { key: "📥 Export", desc: "Export all data as JSON backup" },
             { key: "📤 Import", desc: "Import a JSON backup file" },

@@ -1985,13 +1985,9 @@ kbd {
   box-shadow: 0 4px 16px rgba(25, 42, 81, 0.4);
 }
 
-/* Idle fade - dim the FAB when the user hasn't moved/clicked recently */
-body.fab-idle .quick-tools:not(.open) .quick-tools-fab {
-  opacity: 0.25;
-}
-body.fab-idle .quick-tools:hover .quick-tools-fab,
-body.fab-idle .quick-tools:focus-within .quick-tools-fab {
-  opacity: 1;
+/* Dim the launcher until the coach intentionally targets it. */
+.quick-tools:not(.open):not(:hover):not(:focus-within) .quick-tools-fab {
+  opacity: 0.38;
 }
 
 /* Help Overlay */
