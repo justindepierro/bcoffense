@@ -165,7 +165,7 @@ function filterPlays() {
   savePlaybookState();
   updateActiveFilterBar();
   const clearBtn = document.getElementById("clearPbSearch");
-  if (clearBtn) clearBtn.style.display = search ? "flex" : "none";
+  if (clearBtn) clearBtn.classList.toggle("hidden", !search);
 }
 
 function _updateGamePlanFilterBar() {
@@ -210,7 +210,7 @@ function clearFilters() {
   const search = document.getElementById("searchPlay");
   if (search) search.value = "";
   const clearBtn = document.getElementById("clearPbSearch");
-  if (clearBtn) clearBtn.style.display = "none";
+  if (clearBtn) clearBtn.classList.add("hidden");
 
   currentSortColumn = null;
   currentSortDirection = "asc";
@@ -234,7 +234,7 @@ function clearPbSearch() {
   const input = document.getElementById("searchPlay");
   if (input) input.value = "";
   const clearBtn = document.getElementById("clearPbSearch");
-  if (clearBtn) clearBtn.style.display = "none";
+  if (clearBtn) clearBtn.classList.add("hidden");
   filterPlays();
 }
 
