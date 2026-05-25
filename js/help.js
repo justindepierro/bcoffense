@@ -42,6 +42,10 @@ function getHelpDataForTab(tab) {
               key: "🏈 Highlight",
               desc: "Highlight plays on a saved wristband",
             },
+            {
+              key: "📊 Balance",
+              desc: "Review personnel, formation, and concept mix",
+            },
             { key: "📥 Export", desc: "Export all data as JSON backup" },
             { key: "📤 Import", desc: "Import a JSON backup file" },
             {

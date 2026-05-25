@@ -294,6 +294,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPlaybookBalanceReport === "function") {
+    items.push({
+      kind: "Action",
+      title: "Playbook Balance",
+      subtitle: "Review personnel, formation, concept, and play-type balance",
+      keywords: "playbook intelligence balance personnel formation concept base play type tendency",
+      priority: 34.5,
+      run: () => {
+        showTab("playbook");
+        requestAnimationFrame(() => openPlaybookBalanceReport());
+      },
+    });
+  }
+
   if (typeof openWbQuickSearch === "function") {
     items.push({
       kind: "Action",
