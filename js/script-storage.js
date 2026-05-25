@@ -852,6 +852,115 @@ async function _deleteScriptTemplate(templateId) {
   showToast("Template deleted", { type: "success" });
 }
 
+function _parseScriptUsageDate(value) {
+  if (!value) return null;
+  const date = new Date(`${value}T00:00:00`);
+  return Number.isNaN(date.getTime()) ? null : date;
+}
+
+function _getScriptUsageWeekRange(anchorDate) {
+  const date = anchorDate instanceof Date && !Number.isNaN(anchorDate.getTime())
+    ? new Date(anchorDate)
+    : new Date();
+  date.setHours(0, 0, 0, 0);
+  const day = date.getDay();
+  const mondayOffset = (day + 6) % 7;
+  const start = new Date(date);
+  start.setDate(date.getDate() - mondayOffset);
+  const end = new Date(start);
+  end.setDate(start.getDate() + 6);
+  return { start, end };
+}
+
+function _scriptUsageWeekLabel(range) {
+  if (!range?.start || !range?.end) return "current week";
+  const opts = { month: "short", day: "numeric" };
+  return `${range.start.toLocaleDateString("en-US", opts)}-${range.end.toLocaleDateString("en-US", opts)}`;
+}
+
+function _scriptUsageKeys(play) {
+  if (!play || play.isSeparator) return [];
+  const keys = [];
+  if (play.id) keys.push(`id:${String(play.id)}`);
+  if (typeof getPlayIdentityKey === "function") {
+    const core = getPlayIdentityKey(play, "core", { trim: false });
+    if (core) keys.push(`core:${core}`);
+    const name = getPlayIdentityKey(play, "name", { normalizeCase: true });
+    if (name) keys.push(`name:${name}`);
+  } else if (play.play || play.formation) {
+    keys.push(`name:${String(play.formation || "").toLowerCase()}|${String(play.play || "").toLowerCase()}`);
+  }
+  return [...new Set(keys)];
+}
+
+function _scriptUsageRepCount(play) {
+  const reps = Number(play?.reps);
+  return Number.isFinite(reps) && reps > 0 ? reps : 1;
+}
+
+function _addScriptUsageCounts(map, play, amount) {
+  _scriptUsageKeys(play).forEach((key) => {
+    map.set(key, (map.get(key) || 0) + amount);
+  });
+}
+
+function _getScriptUsageScopeMax(map, play) {
+  return _scriptUsageKeys(play).reduce(
+    (max, key) => Math.max(max, map.get(key) || 0),
+    0,
+  );
+}
+
+function getPlayUsageIndex() {
+  const scriptMap = new Map();
+  const weekMap = new Map();
+  const seasonMap = new Map();
+  const currentDateValue = document.getElementById("scriptDate")?.value || new Date().toISOString().slice(0, 10);
+  const currentDate = _parseScriptUsageDate(currentDateValue) || new Date();
+  const weekRange = _getScriptUsageWeekRange(currentDate);
+  const currentName = document.getElementById("scriptName")?.value || "";
+
+  const addRows = (rows, map) => {
+    if (!Array.isArray(rows)) return;
+    rows.forEach((play) => {
+      if (!play || play.isSeparator) return;
+      _addScriptUsageCounts(map, play, _scriptUsageRepCount(play));
+    });
+  };
+
+  addRows(script, scriptMap);
+  addRows(script, weekMap);
+  addRows(script, seasonMap);
+
+  getSavedScripts().forEach((savedScript) => {
+    const sameCurrentDraft =
+      currentName &&
+      savedScript.name === currentName &&
+      savedScript.date === currentDateValue;
+    if (sameCurrentDraft) return;
+
+    const savedDate = _parseScriptUsageDate(savedScript.date);
+    const inCurrentWeek =
+      savedDate &&
+      savedDate >= weekRange.start &&
+      savedDate <= weekRange.end;
+
+    if (inCurrentWeek) addRows(savedScript.plays, weekMap);
+    addRows(savedScript.plays, seasonMap);
+  });
+
+  return {
+    weekLabel: _scriptUsageWeekLabel(weekRange),
+    get(play) {
+      return {
+        script: _getScriptUsageScopeMax(scriptMap, play),
+        week: _getScriptUsageScopeMax(weekMap, play),
+        season: _getScriptUsageScopeMax(seasonMap, play),
+      };
+    },
+  };
+}
+
 function populateScriptWristbandSelect() {
   const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
   const select = document.getElementById("scriptWristbandSelect");

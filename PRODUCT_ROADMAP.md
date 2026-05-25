@@ -190,6 +190,7 @@ Status:
 
 Goal: Show what the offense actually looks like from the imported data.
 
+- [x] Play usage counters by current script, current week, and season
 - [ ] Personnel, formation, and concept balance
 - [ ] Situation coverage by down, distance, field zone, and tempo
 - [ ] Player touch/opportunity summaries
@@ -199,6 +200,10 @@ Goal: Show what the offense actually looks like from the imported data.
 Definition of done:
 
 - Coaches can spot gaps and tendencies in their own offense before opponents do.
+
+Status:
+
+- Phase 1 added rep-weighted usage counters on Playbook rows/cards for the current script, current week, and season from saved scripts.
 
 ## 10. Large Playbook Performance Track
 

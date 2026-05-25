@@ -36,6 +36,8 @@ function renderPlaybook() {
       : null;
     const jvFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("jv") : new Set();
     const wbFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("wb") : new Set();
+    const usageIndex =
+      typeof getPlayUsageIndex === "function" ? getPlayUsageIndex() : null;
     const hasImageFor = (sig) =>
       !!(sig && typeof window !== "undefined" && window.playImages && window.playImages.has(sig));
     const pageItems = pageSlice.map((play, localIdx) => {
@@ -56,6 +58,7 @@ function renderPlaybook() {
         gpActive: !!(activeTags && activeTags.has(tagSig)),
         installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
         picturePill: picturePillFor(play),
+        usage: usageIndex ? usageIndex.get(play) : null,
       };
     });
 
@@ -96,7 +99,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -141,6 +144,7 @@ function renderPlaybook() {
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}</div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
+            ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
             <div class="pb-card-pills">${pills}</div>
           </div>
         `;
@@ -210,6 +214,21 @@ function renderPlaybook() {
       type: "error",
     });
   }
+}
+
+function _renderPlayUsagePills(usage, weekLabel) {
+  if (!usage) return "";
+  const scriptCount = Number(usage.script || 0);
+  const weekCount = Number(usage.week || 0);
+  const seasonCount = Number(usage.season || 0);
+  if (scriptCount <= 0 && weekCount <= 0 && seasonCount <= 0) return "";
+  const label = weekLabel || "current week";
+  return `
+    <span class="pb-usage" title="Rep-weighted usage: current script ${scriptCount}, ${label} ${weekCount}, season ${seasonCount}">
+      <span class="pb-usage-pill">Script ${scriptCount}</span>
+      <span class="pb-usage-pill">Week ${weekCount}</span>
+      <span class="pb-usage-pill">Season ${seasonCount}</span>
+    </span>`;
 }
 
 function createSearchHighlighter(searchTerm) {
