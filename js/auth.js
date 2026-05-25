@@ -104,6 +104,8 @@
     "clearPlaybookTouchFilters",
     "openPlaybookConstraintMap",
     "clearPlaybookConstraintFilters",
+    "openPlaybookIdentityAlignment",
+    "clearPlaybookIdentityFilters",
     "runConstraintCheck",
     "selectTendenciesOpponent",
     "selectPlaybookRow",

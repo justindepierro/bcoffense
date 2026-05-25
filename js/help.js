@@ -58,6 +58,10 @@ function getHelpDataForTab(tab) {
               key: "🧩 Complements",
               desc: "Map concepts to tagged constraint and complement answers",
             },
+            {
+              key: "🎯 Identity",
+              desc: "Score playbook alignment to the offensive identity",
+            },
             { key: "🖨️ Print Plays", desc: "Print the current filtered playbook view" },
             { key: "📥 Export", desc: "Export all data as JSON backup" },
             { key: "📤 Import", desc: "Import a JSON backup file" },

@@ -350,6 +350,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPlaybookIdentityAlignment === "function") {
+    items.push({
+      kind: "Action",
+      title: "Playbook Identity Alignment",
+      subtitle: "Score the playbook view against the offensive identity",
+      keywords: "playbook intelligence identity alignment score vision pictures wide zone pullers downhill anti front staples constraints install",
+      priority: 34.9,
+      run: () => {
+        showTab("playbook");
+        requestAnimationFrame(() => openPlaybookIdentityAlignment());
+      },
+    });
+  }
+
   if (typeof openWbQuickSearch === "function") {
     items.push({
       kind: "Action",

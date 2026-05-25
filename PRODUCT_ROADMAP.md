@@ -12,7 +12,7 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 6. [x] Practice Script Timeline View
 7. [x] Print and Export Studio
 8. [x] Saved Templates Everywhere
-9. [ ] Playbook Intelligence
+9. [x] Playbook Intelligence
 10. [ ] Large Playbook Performance Track
 
 ## 1. Universal Search and Command Palette
@@ -165,7 +165,7 @@ Status:
 - Phase 3 added print-safe warnings for empty materials, dense scripts, overloaded call-sheet buckets, large game plans, and scouting reports.
 - Phase 4 added game-week/opponent-aware filename conventions for print titles and CSV/text exports.
 - Print and Export Studio is now complete for the current roadmap scope.
-- Next slice should move into Playbook Intelligence.
+- Next slice should move into Large Playbook Performance Track.
 
 ## 8. Saved Templates Everywhere
 
@@ -199,7 +199,7 @@ Goal: Show what the offense actually looks like from the imported data.
 - [x] Situation coverage by down, distance, field zone, and tempo
 - [x] Player touch/opportunity summaries
 - [x] Constraint/complement map
-- [ ] Identity alignment score
+- [x] Identity alignment score
 
 Definition of done:
 
@@ -212,6 +212,9 @@ Status:
 - Phase 3 added a Situation Coverage report for down/distance, field-zone, and tempo tagging gaps in the current playbook view.
 - Phase 4 added a Player Touches report with weighted opportunity share, KP1/KP2/KP3 breakdowns, and metadata gap guidance.
 - Phase 5 added a Constraint & Complement Map that connects base concepts to tagged answers and highlights thin complement families.
+- Phase 6 added an Identity Alignment score that compares the current playbook view against the four-picture offensive identity, staple concepts, complement tagging, situation metadata, and installation readiness.
+- Playbook Intelligence is now complete for the current roadmap scope.
+- Next slice should move into Large Playbook Performance Track.
 
 ## 10. Large Playbook Performance Track
 
