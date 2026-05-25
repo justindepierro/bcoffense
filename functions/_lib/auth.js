@@ -121,8 +121,14 @@ function wantsJson(request) {
   );
 }
 
+const PUBLIC_PATHS = new Set(["/manifest.json", "/sw.js", "/offline.html"]);
+
 export function isAuthRoute(pathname) {
-  return pathname === "/auth/login" || pathname === "/auth/logout" || pathname === "/auth/me";
+  if (pathname === "/auth/login" || pathname === "/auth/logout" || pathname === "/auth/me") return true;
+  if (PUBLIC_PATHS.has(pathname)) return true;
+  // PWA icons and any other static assets under /icons/
+  if (pathname.startsWith("/icons/")) return true;
+  return false;
 }
 
 export function authJson(data, init = {}) {
