@@ -322,6 +322,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPlaybookTouchReport === "function") {
+    items.push({
+      kind: "Action",
+      title: "Playbook Player Touches",
+      subtitle: "Review weighted player touch and opportunity distribution",
+      keywords: "playbook intelligence player touch touches opportunity opportunities key player kp1 kp2 kp3 distribution",
+      priority: 34.7,
+      run: () => {
+        showTab("playbook");
+        requestAnimationFrame(() => openPlaybookTouchReport());
+      },
+    });
+  }
+
   if (typeof openWbQuickSearch === "function") {
     items.push({
       kind: "Action",

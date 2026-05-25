@@ -100,6 +100,8 @@
     "openPrintStudio",
     "openPlaybookSituationCoverage",
     "clearPlaybookSituationFilters",
+    "openPlaybookTouchReport",
+    "clearPlaybookTouchFilters",
     "runConstraintCheck",
     "selectTendenciesOpponent",
     "selectPlaybookRow",

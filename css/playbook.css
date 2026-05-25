@@ -1826,6 +1826,59 @@ table.sortable th {
   }
 }
 
+.pb-touch-section .ta-panel {
+  margin: 0;
+  background: var(--color-bg-light);
+}
+
+.pb-touch-table-wrap {
+  overflow-x: auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-body);
+}
+
+.pb-touch-table {
+  width: 100%;
+  min-width: 680px;
+  border-collapse: collapse;
+}
+
+.pb-touch-table th,
+.pb-touch-table td {
+  padding: 8px 10px;
+  border-bottom: 1px solid var(--color-border-light);
+  text-align: right;
+  white-space: nowrap;
+}
+
+.pb-touch-table th {
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.pb-touch-table th:first-child,
+.pb-touch-table td:first-child {
+  text-align: left;
+}
+
+.pb-touch-table tbody tr:last-child td {
+  border-bottom: 0;
+}
+
+.pb-touch-table td {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+
+.pb-touch-table td strong {
+  color: var(--color-text);
+}
+
 .pb-health-modal {
   width: 96vw;
   max-width: 1040px;

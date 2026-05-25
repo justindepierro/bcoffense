@@ -765,3 +765,221 @@ function clearPlaybookSituationFilters() {
   closePlaybookSituationCoverage();
   requestAnimationFrame(() => openPlaybookSituationCoverage());
 }
+
+function _pbTouchSlotName(slotIndex) {
+  return `keyPlayerName${slotIndex}`;
+}
+
+function _pbTouchSlotPosition(slotIndex) {
+  return `keyPlayer${slotIndex}`;
+}
+
+function _pbTouchPlayHasTarget(play) {
+  return [1, 2, 3].some((slot) => (
+    _pbSituationClean(play?.[_pbTouchSlotName(slot)]) ||
+    _pbSituationClean(play?.[_pbTouchSlotPosition(slot)])
+  ));
+}
+
+function _pbTouchAnalyze(source) {
+  const touchEngineReady = typeof computeTouchAnalysis === "function";
+  const analysis = touchEngineReady
+    ? computeTouchAnalysis(source)
+    : {
+      players: {},
+      totalPlays: source.length,
+      totalWeightedPts: 0,
+    };
+  const players = analysis?.players ? Object.values(analysis.players) : [];
+  const taggedPlays = source.filter(_pbTouchPlayHasTarget).length;
+  const missingPlays = Math.max(0, source.length - taggedPlays);
+  const topPlayer = players[0] || null;
+  const lowPrimaryPlayers = players.filter((player) => player.primaryRate < 25);
+  return {
+    analysis,
+    players,
+    total: source.length,
+    taggedPlays,
+    missingPlays,
+    topPlayer,
+    lowPrimaryPlayers,
+    touchEngineReady,
+  };
+}
+
+function _pbTouchSignals(report) {
+  const signals = [];
+  if (!report.total) {
+    return ["No plays in this scope. Clear filters or import plays to review player opportunities."];
+  }
+  if (!report.touchEngineReady) {
+    signals.push("Touch analysis engine is not ready yet. Reload the app if this persists.");
+  }
+  if (!report.players.length) {
+    signals.push("No key-player tags found in this scope. Add Key Player 1/2/3 names or positions to see opportunities.");
+    return signals;
+  }
+  if (report.missingPlays > 0) {
+    signals.push(`${report.missingPlays} play${report.missingPlays === 1 ? "" : "s"} missing key-player opportunity tags.`);
+  }
+  if (report.topPlayer && report.topPlayer.pct >= 35) {
+    signals.push(`${report.topPlayer.name} owns ${report.topPlayer.pct.toFixed(0)}% of weighted opportunities in this scope.`);
+  }
+  if (report.players.length < 4 && report.total >= 12) {
+    signals.push(`Only ${report.players.length} player${report.players.length === 1 ? "" : "s"} tagged across ${report.total} plays.`);
+  }
+  if (report.lowPrimaryPlayers.length) {
+    const names = report.lowPrimaryPlayers.slice(0, 3).map((player) => player.name).join(", ");
+    signals.push(`${names} mostly appear as secondary/tertiary options. Check if that matches the weekly plan.`);
+  }
+  if (!signals.length) {
+    signals.push("Player opportunities are tagged and distributed without an obvious overload in this scope.");
+  }
+  return signals.slice(0, 8);
+}
+
+function _pbTouchPct(part, total) {
+  return _pbBalancePct(part || 0, total || 0);
+}
+
+function _pbTouchRenderTable(report) {
+  if (!report.players.length) {
+    return '<div class="pb-balance-empty">No player opportunity data in this scope.</div>';
+  }
+  const rows = report.players
+    .slice(0, 12)
+    .map((player) => `
+      <tr>
+        <td><strong>${escapeHtml(player.name)}</strong></td>
+        <td>${player.pct.toFixed(0)}%</td>
+        <td>${Number.isInteger(player.weightedPts) ? player.weightedPts : player.weightedPts.toFixed(1)}</td>
+        <td>${player.flatCount}</td>
+        <td>${player.slots?.kp1 || 0}</td>
+        <td>${player.slots?.kp2 || 0}</td>
+        <td>${player.slots?.kp3 || 0}</td>
+        <td>${(player.primaryRate || 0).toFixed(0)}%</td>
+      </tr>
+    `)
+    .join("");
+  return `
+    <div class="pb-touch-table-wrap">
+      <table class="pb-touch-table">
+        <thead>
+          <tr>
+            <th>Player</th>
+            <th>Weighted</th>
+            <th>Pts</th>
+            <th>Plays</th>
+            <th>KP1</th>
+            <th>KP2</th>
+            <th>KP3</th>
+            <th>Primary</th>
+          </tr>
+        </thead>
+        <tbody>${rows}</tbody>
+      </table>
+    </div>
+  `;
+}
+
+function _pbTouchRenderAnalysis(report) {
+  if (
+    typeof renderTouchAnalysis === "function" &&
+    report.analysis &&
+    report.players.length
+  ) {
+    return renderTouchAnalysis(report.analysis, {
+      title: "Weighted Opportunity Distribution",
+      idPrefix: "pb-touch-ta",
+    });
+  }
+  return _pbTouchRenderTable(report);
+}
+
+function openPlaybookTouchReport() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
+    return;
+  }
+
+  const scope = _pbBalanceScope();
+  const report = _pbTouchAnalyze(scope.plays);
+  const signals = _pbTouchSignals(report);
+  const taggedPct = _pbTouchPct(report.taggedPlays, report.total);
+  const topName = report.topPlayer?.name || "None";
+  const topPct = report.topPlayer ? `${report.topPlayer.pct.toFixed(0)}%` : "0%";
+
+  document.getElementById("playbookTouchOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "playbookTouchOverlay";
+  overlay.dataset.action = "closePlaybookTouchReportOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal pb-balance-modal pb-touch-modal" role="dialog" aria-modal="true" aria-labelledby="playbookTouchTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">👥</span>
+        <h3 class="custom-modal-title" id="playbookTouchTitle">Player Touches & Opportunities</h3>
+        <button class="modal-close" aria-label="Close" data-action="closePlaybookTouchReport">×</button>
+      </div>
+      <div class="custom-modal-body pb-balance-body">
+        <div class="pb-balance-summary">
+          <div class="pb-balance-card">
+            <strong>${escapeHtml(scope.label)}</strong>
+            <span>${escapeHtml(scope.detail)}</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${taggedPct}%</strong>
+            <span>Plays Tagged</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${report.players.length}</strong>
+            <span>Players</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${escapeHtml(topName)} ${escapeHtml(topPct)}</strong>
+            <span>Top Share</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${report.analysis?.totalWeightedPts || 0}</strong>
+            <span>Weighted Pts</span>
+          </div>
+        </div>
+        <div class="pb-balance-guidance">
+          ${signals.map((signal) => `<div>${escapeHtml(signal)}</div>`).join("")}
+        </div>
+        <section class="pb-balance-section pb-touch-section">
+          <div class="pb-balance-section-head">
+            <h4>Opportunity Summary</h4>
+            <span>KP1 = 3 pts • KP2 = 2 pts • KP3 = 1 pt</span>
+          </div>
+          ${_pbTouchRenderAnalysis(report)}
+        </section>
+        <section class="pb-balance-section pb-touch-section">
+          <div class="pb-balance-section-head">
+            <h4>Top Player Table</h4>
+            <span>Weighted share, play count, and priority-slot split</span>
+          </div>
+          ${_pbTouchRenderTable(report)}
+        </section>
+      </div>
+      <div class="custom-modal-actions">
+        ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookTouchFilters">Clear Playbook Filters</button>' : ""}
+        <button type="button" class="btn btn-sm" data-action="closePlaybookTouchReport">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function closePlaybookTouchReport() {
+  const overlay = document.getElementById("playbookTouchOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function clearPlaybookTouchFilters() {
+  if (typeof clearFilters === "function") clearFilters();
+  closePlaybookTouchReport();
+  requestAnimationFrame(() => openPlaybookTouchReport());
+}
