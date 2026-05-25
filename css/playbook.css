@@ -294,6 +294,9 @@ table.sortable th {
 .pb-gp-send-btn {
   margin-left: auto;
 }
+.pb-gp-reset-btn {
+  white-space: nowrap;
+}
 .pb-gp-filter-toggle {
   display: flex;
   align-items: center;

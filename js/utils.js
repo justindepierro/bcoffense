@@ -2236,6 +2236,17 @@ function getGamePlanCount(opponentName) {
   return (tags[opponentName] || []).length;
 }
 
+function clearGamePlanTagsForOpponent(opponentName) {
+  if (!opponentName) return 0;
+  const tags = getGamePlanTags();
+  const existing = Array.isArray(tags[opponentName]) ? tags[opponentName] : [];
+  const count = existing.length;
+  if (!(opponentName in tags)) return 0;
+  delete tags[opponentName];
+  storageManager.set(STORAGE_KEYS.GAME_PLAN_TAGS, tags);
+  return count;
+}
+
 /**
  * Check if a play is tagged for the active game week opponent
  */

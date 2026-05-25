@@ -123,6 +123,96 @@ async function clearGamePlanBoard() {
   showToast("Game plan cleared", { type: "success" });
 }
 
+function _gpBoardHasResettableSetup(board) {
+  if (!board || typeof board !== "object") return false;
+  return (
+    (Array.isArray(board.customBoxes) && board.customBoxes.length > 0) ||
+    (board.targets && Object.keys(board.targets).length > 0) ||
+    (board.notes && Object.keys(board.notes).length > 0) ||
+    (board.sort && Object.keys(board.sort).length > 0) ||
+    (Array.isArray(board.hiddenBoxes) && board.hiddenBoxes.length > 0) ||
+    (Array.isArray(board.boxOrder) && board.boxOrder.length > 0) ||
+    (board.boxLabels && Object.keys(board.boxLabels).length > 0) ||
+    (board.boxMeta && Object.keys(board.boxMeta).length > 0) ||
+    Boolean(board.loadedWristband)
+  );
+}
+
+async function resetCurrentGamePlan() {
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opponent = gw?.opponentName || "";
+  const key = _gpActiveOpponentKey();
+  const boards = _gpLoadBoards();
+  const existingBoard = boards[key] || null;
+  const draftedCount = existingBoard ? _gpAllAssignedSigs(existingBoard).size : 0;
+  const hasBoardSetup = _gpBoardHasResettableSetup(existingBoard);
+  const taggedCount =
+    opponent && typeof getGamePlanCount === "function"
+      ? getGamePlanCount(opponent)
+      : 0;
+
+  if (!opponent && draftedCount === 0 && !hasBoardSetup) {
+    showToast("Select an opponent on the Dashboard first.", {
+      duration: 3000,
+      type: "warning",
+    });
+    return;
+  }
+  if (opponent && draftedCount === 0 && taggedCount === 0 && !hasBoardSetup) {
+    showToast(`No current game plan selections for ${opponent}.`, {
+      duration: 3000,
+      type: "info",
+    });
+    return;
+  }
+
+  const label = opponent ? `vs ${opponent}` : "the unassigned board";
+  const message =
+    `Start from scratch for <strong>${escapeHtml(label)}</strong>? ` +
+    `This removes ${taggedCount} Playbook selection${taggedCount === 1 ? "" : "s"} ` +
+    `and resets ${draftedCount} drafted board play${draftedCount === 1 ? "" : "s"}, ` +
+    "custom boxes, notes, targets, and flags.";
+  const ok = await showConfirm(
+    message,
+    {
+      title: "Reset Game Plan",
+      icon: "🗑️",
+      confirmText: "Reset",
+      danger: true,
+    },
+  );
+  if (!ok) return;
+
+  const latestBoards = _gpLoadBoards();
+  delete latestBoards[key];
+  _gpSaveBoards(latestBoards);
+  if (opponent && typeof clearGamePlanTagsForOpponent === "function") {
+    clearGamePlanTagsForOpponent(opponent);
+  }
+  _gpSelected.clear();
+
+  [
+    "pbGamePlanFilter",
+    "pbJvFilter",
+    "scriptGamePlanFilter",
+    "scriptJvFilter",
+    "csPickerGamePlanFilter",
+    "csPickerJvFilter",
+  ].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+
+  requestRenderGamePlan();
+  if (typeof filterPlays === "function") filterPlays();
+  else if (typeof renderPlaybook === "function") renderPlaybook();
+  if (typeof renderAvailablePlays === "function") renderAvailablePlays();
+  if (typeof populateCallSheetPlayList === "function") populateCallSheetPlayList();
+  if (typeof renderDashboard === "function") renderDashboard();
+
+  showToast(`Reset game plan ${label}`, { type: "success" });
+}
+
 /* -------------------------------------------------------------------------
    Library selection + filters
    ------------------------------------------------------------------------- */

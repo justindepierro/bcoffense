@@ -44,6 +44,10 @@ function getHelpDataForTab(tab) {
             },
             { key: "📥 Export", desc: "Export all data as JSON backup" },
             { key: "📤 Import", desc: "Import a JSON backup file" },
+            {
+              key: "🗑 Reset Plan",
+              desc: "Clear current opponent game-plan selections and board",
+            },
             { key: "💾 Storage", desc: "View localStorage usage" },
           ],
         },

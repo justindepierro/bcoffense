@@ -389,6 +389,17 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof resetCurrentGamePlan === "function") {
+    items.push({
+      kind: "Action",
+      title: "Reset Current Game Plan",
+      subtitle: "Clear Playbook selections and start the active opponent board from scratch",
+      keywords: "game plan reset clear current opponent playbook selections tags board scratch",
+      priority: 38.5,
+      run: () => resetCurrentGamePlan(),
+    });
+  }
+
   if (typeof openInstallationTemplatesMenu === "function") {
     items.push({
       kind: "Action",
