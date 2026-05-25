@@ -66,6 +66,7 @@ const STORAGE_KEYS = {
   CUSTOM_SORT_ORDERS: "customSortOrders",
   SCRIPT_CUSTOM_SORT_ORDERS: "scriptCustomSortOrders",
   PERIOD_TEMPLATES: "periodTemplates",
+  SCRIPT_TEMPLATES: "scriptTemplates",
   CALL_SHEET: "callSheet",
   CALL_SHEET_SETTINGS: "callSheetSettings",
   COLUMN_VISIBILITY: "columnVisibility",

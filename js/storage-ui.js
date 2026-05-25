@@ -123,6 +123,7 @@ async function showStorageInfo() {
     customSortOrders: "Custom Sort Orders",
     scriptCustomSortOrders: "Script Sort Orders",
     periodTemplates: "Period Templates",
+    scriptTemplates: "Script Templates",
     callSheet: "Call Sheet",
     callSheetSettings: "Call Sheet Settings",
     columnVisibility: "Column Visibility",
@@ -152,6 +153,11 @@ async function showStorageInfo() {
 
     const templates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
     counts.periodTemplates = Array.isArray(templates) ? templates.length : 0;
+
+    const scriptTemplates = storageManager.get(STORAGE_KEYS.SCRIPT_TEMPLATES, []);
+    counts.scriptTemplates = Array.isArray(scriptTemplates)
+      ? scriptTemplates.length
+      : 0;
 
     const gamePlanTemplates = storageManager.get(STORAGE_KEYS.GAME_PLAN_TEMPLATES, []);
     counts.gamePlanTemplates = Array.isArray(gamePlanTemplates)

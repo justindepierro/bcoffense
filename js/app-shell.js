@@ -333,6 +333,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openScriptTemplatesMenu === "function") {
+    items.push({
+      kind: "Action",
+      title: "Script Day Templates",
+      subtitle: "Load reusable full-script period and play templates",
+      keywords: "script practice day week template templates period structure plays install",
+      priority: 39,
+      run: () => {
+        showTab("script");
+        requestAnimationFrame(() => openScriptTemplatesMenu());
+      },
+    });
+  }
+
   if (typeof openGamePlanTemplatesMenu === "function") {
     items.push({
       kind: "Action",

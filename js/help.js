@@ -132,6 +132,10 @@ function getHelpDataForTab(tab) {
               desc: "Fill fronts/coverages from scouting data",
             },
             {
+              key: "📁 Day Templates",
+              desc: "Save or load reusable full-script practice templates",
+            },
+            {
               key: "📋 → Call Sheet",
               desc: "Push period plays to matching call sheet categories",
             },
