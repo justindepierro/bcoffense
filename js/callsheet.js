@@ -212,7 +212,7 @@ const CALLSHEET_BACK = [
     color: CS_COLORS.yellow,
     situation: null,
     position: null,
-    manual: true,
+    manual: false,
   },
   {
     id: "2-point",
@@ -1053,6 +1053,27 @@ function findMatchingCategories(play) {
   CALLSHEET_CATEGORIES.forEach((cat) => {
     if (cat.manual) return; // Skip manual-only categories
 
+    // ─── SPECIAL: P and 10 ─────────────────────────────────────────────────
+    // Auto-fill with 1st-down plays from neutral field position.
+    // Plays in the red zone, backed-up, saigon, or short-distance situations
+    // have their own buckets and should not bleed into P&10.
+    if (cat.id === "p-and-10") {
+      const isFirstDown = downs.includes("1");
+      if (isFirstDown) {
+        const inRedZone = positions.some((p) =>
+          ["lo-rz", "hi-rz", "goal line", "goalline"].includes(p)
+        );
+        const inSpecial = positions.some((p) =>
+          ["backed up", "backedup", "saigon"].includes(p)
+        );
+        const isShortDistance = distances.includes("short");
+        if (!inRedZone && !inSpecial && !isShortDistance) {
+          matches.push(cat.id);
+        }
+      }
+      return;
+    }
+
     // ─── BACK PAGE: Play-type matching ───
     if (cat.playType) {
       const catType = cat.playType.toLowerCase();
@@ -1084,12 +1105,25 @@ function findMatchingCategories(play) {
         return;
       }
 
-      // Special: "Opener" — check both playType and preferredSituation
+      // Special: "Opener" — check playType, preferredSituation, and motion/shift
+      // Plays with motion or shift in a neutral 1st-down situation (P&10) are
+      // routed to Openers to give the offense defensive-indicator value.
       if (catType === "opener") {
+        const hasMotionOrShift =
+          !!(play.motion && play.motion.trim()) ||
+          !!(play.shift && play.shift.trim());
+        const isNeutralFirstDown =
+          downs.includes("1") &&
+          !distances.includes("short") &&
+          !positions.some((p) =>
+            ["lo-rz", "hi-rz", "goal line", "goalline",
+             "backed up", "backedup", "saigon"].includes(p)
+          );
         if (
           playType.includes("opener") ||
           situations.includes("opener") ||
-          situations.includes("openers")
+          situations.includes("openers") ||
+          (hasMotionOrShift && isNeutralFirstDown)
         ) {
           matches.push(cat.id);
         }
