@@ -49,6 +49,345 @@ function saveInstallationData(data) {
   storageManager.set(STORAGE_KEYS.INSTALLATION, data);
 }
 
+const INSTALLATION_TEMPLATES_KEY =
+  STORAGE_KEYS.INSTALLATION_TEMPLATES || "installationTemplates";
+
+function _normalizeInstallValueList(values) {
+  return Array.from(
+    new Set(
+      (Array.isArray(values) ? values : [])
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    ),
+  );
+}
+
+function normalizeInstallationDataRecord(data) {
+  const source = data && typeof data === "object" ? data : {};
+  const installed = {};
+  const order = {};
+
+  INSTALL_CATEGORIES.forEach((cat) => {
+    installed[cat.id] = _normalizeInstallValueList(
+      source.installed?.[cat.id],
+    );
+    const orderedValues = _normalizeInstallValueList(source.order?.[cat.id]);
+    if (orderedValues.length > 0) {
+      order[cat.id] = orderedValues;
+    }
+  });
+
+  return { installed, order };
+}
+
+function _countInstalledComponents(installed) {
+  return Object.values(installed || {}).reduce(
+    (sum, values) => sum + (Array.isArray(values) ? values.length : 0),
+    0,
+  );
+}
+
+function _countInstalledCategories(installed) {
+  return Object.values(installed || {}).filter(
+    (values) => Array.isArray(values) && values.length > 0,
+  ).length;
+}
+
+function normalizeInstallationTemplateRecord(record, index = 0) {
+  const source = record && typeof record === "object" ? record : {};
+  const data = normalizeInstallationDataRecord(source);
+  const componentCount = _countInstalledComponents(data.installed);
+  const categoryCount = _countInstalledCategories(data.installed);
+
+  return {
+    id: source.id ?? `install-template-${Date.now()}-${index}`,
+    name: String(source.name || `Installation Template ${index + 1}`),
+    savedAt: source.savedAt || "",
+    templateKind: "installation",
+    componentCount: Number(source.componentCount || componentCount) || componentCount,
+    categoryCount: Number(source.categoryCount || categoryCount) || categoryCount,
+    installed: data.installed,
+    order: data.order,
+    smartBasePlays: Boolean(source.smartBasePlays),
+  };
+}
+
+function getInstallationTemplates() {
+  const stored = storageManager.get(INSTALLATION_TEMPLATES_KEY, []);
+  const rawTemplates = Array.isArray(stored)
+    ? stored
+    : stored && typeof stored === "object"
+      ? Object.values(stored)
+      : [];
+  const templates = rawTemplates.map((record, index) =>
+    normalizeInstallationTemplateRecord(record, index),
+  );
+  const needsRepair =
+    !Array.isArray(stored) ||
+    rawTemplates.some(
+      (record) =>
+        !record ||
+        typeof record !== "object" ||
+        !record.id ||
+        !record.name ||
+        !record.installed,
+    );
+
+  if (needsRepair) {
+    storageManager.set(INSTALLATION_TEMPLATES_KEY, templates);
+  }
+
+  return templates;
+}
+
+function _saveInstallationTemplates(templates) {
+  storageManager.set(
+    INSTALLATION_TEMPLATES_KEY,
+    Array.isArray(templates) ? templates : [],
+  );
+}
+
+function _buildInstallationTemplate(name) {
+  const data = normalizeInstallationDataRecord(getInstallationData());
+  return {
+    id: `install-template-${Date.now()}`,
+    name: name.trim(),
+    savedAt: new Date().toISOString(),
+    templateKind: "installation",
+    componentCount: _countInstalledComponents(data.installed),
+    categoryCount: _countInstalledCategories(data.installed),
+    installed: safeDeepClone(data.installed),
+    order: safeDeepClone(data.order),
+    smartBasePlays: Boolean(installSmartBasePlays),
+  };
+}
+
+function _installationTemplateMeta(template) {
+  const savedTime = template.savedAt
+    ? new Date(template.savedAt).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+    : "Unknown date";
+
+  return {
+    savedTime,
+    componentText: `${template.componentCount || 0} installed component${(template.componentCount || 0) === 1 ? "" : "s"}`,
+    categoryText: `${template.categoryCount || 0} categor${(template.categoryCount || 0) === 1 ? "y" : "ies"}`,
+  };
+}
+
+async function saveInstallationTemplate() {
+  try {
+    const current = normalizeInstallationDataRecord(getInstallationData());
+    const componentCount = _countInstalledComponents(current.installed);
+    if (componentCount === 0) {
+      const ok = await showConfirm(
+        "No components are currently marked installed. Save an empty installation template?",
+        {
+          title: "Empty Installation Template",
+          icon: "📦",
+          confirmText: "Save Empty",
+        },
+      );
+      if (!ok) return;
+    }
+
+    const name = await showPrompt(
+      "Name this installation template:",
+      `Installation Template ${new Date().toLocaleDateString()}`,
+      {
+        title: "Save Installation Template",
+        icon: "📦",
+        placeholder: "e.g. Week 1 base install, Spring install",
+      },
+    );
+    if (!name || !name.trim()) return;
+
+    const templates = getInstallationTemplates();
+    const nextTemplate = _buildInstallationTemplate(name);
+    const existingIdx = templates.findIndex(
+      (template) =>
+        String(template.name || "").toLowerCase() ===
+        nextTemplate.name.toLowerCase(),
+    );
+
+    if (existingIdx >= 0) {
+      const ok = await showConfirm(
+        `Replace existing template <strong>${escapeHtml(templates[existingIdx].name)}</strong>?`,
+        {
+          title: "Replace Template",
+          icon: "📦",
+          confirmText: "Replace",
+          danger: true,
+        },
+      );
+      if (!ok) return;
+      nextTemplate.id = templates[existingIdx].id || nextTemplate.id;
+      templates.splice(existingIdx, 1, nextTemplate);
+    } else {
+      templates.unshift(nextTemplate);
+    }
+
+    _saveInstallationTemplates(templates);
+    showToast(`Saved installation template "${nextTemplate.name}"`, {
+      type: "success",
+    });
+  } catch (err) {
+    console.error("saveInstallationTemplate error:", err);
+    showToast("❌ Error saving installation template.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
+}
+
+async function openInstallationTemplatesMenu() {
+  const templates = getInstallationTemplates();
+  if (templates.length === 0) {
+    showToast("No installation templates yet. Use Template to save one.", {
+      type: "info",
+      duration: 3500,
+    });
+    return;
+  }
+
+  const choice = await showListPicker(
+    "Pick a reusable installation template:",
+    templates.map((template) => {
+      const meta = _installationTemplateMeta(template);
+      return {
+        value: String(template.id),
+        label: template.name || "Untitled Template",
+        sublabel: `${meta.componentText} • ${meta.categoryText}`,
+        meta: meta.savedTime,
+        badge: "Install",
+      };
+    }),
+    { title: "📦 Installation Templates", icon: "📦" },
+  );
+  if (!choice) return;
+
+  const action = await showListPicker(
+    "Choose what to do with this template:",
+    [
+      {
+        value: "merge",
+        label: "Apply to current tracker",
+        sublabel: "Adds installed components and keeps current progress",
+        badge: "Merge",
+      },
+      {
+        value: "replace",
+        label: "Replace current tracker",
+        sublabel: "Uses the template as the full installation state",
+        badge: "Replace",
+      },
+      {
+        value: "delete",
+        label: "Delete template",
+        sublabel: "Removes this saved installation template",
+        badge: "Delete",
+      },
+    ],
+    { title: "Installation Template", icon: "📦" },
+  );
+  if (!action) return;
+
+  if (action === "delete") await _deleteInstallationTemplate(choice);
+  else await _loadInstallationTemplate(choice, action);
+}
+
+function _mergeInstallationTemplateData(template) {
+  const current = normalizeInstallationDataRecord(getInstallationData());
+  const incoming = normalizeInstallationDataRecord(template);
+  const next = normalizeInstallationDataRecord(current);
+
+  INSTALL_CATEGORIES.forEach((cat) => {
+    next.installed[cat.id] = Array.from(
+      new Set([
+        ...(next.installed[cat.id] || []),
+        ...(incoming.installed[cat.id] || []),
+      ]),
+    );
+    const mergedOrder = Array.from(
+      new Set([
+        ...(incoming.order[cat.id] || []),
+        ...(next.order[cat.id] || []),
+      ]),
+    );
+    if (mergedOrder.length > 0) next.order[cat.id] = mergedOrder;
+  });
+
+  return next;
+}
+
+function _refreshInstallationTemplateViews() {
+  renderInstallation();
+  if (typeof renderPlaybook === "function") {
+    renderPlaybook();
+  }
+}
+
+async function _loadInstallationTemplate(templateId, mode = "merge") {
+  const templates = getInstallationTemplates();
+  const template = templates.find(
+    (item) => String(item.id) === String(templateId),
+  );
+  if (!template) return;
+
+  const isReplace = mode === "replace";
+  const actionText = isReplace ? "replace the current tracker" : "apply to the current tracker";
+  const ok = await showConfirm(
+    `Load <strong>${escapeHtml(template.name)}</strong> and ${actionText}?`,
+    {
+      title: "Load Installation Template",
+      icon: "📦",
+      confirmText: isReplace ? "Replace" : "Apply",
+      danger: isReplace,
+    },
+  );
+  if (!ok) return;
+
+  const nextData = isReplace
+    ? normalizeInstallationDataRecord(template)
+    : _mergeInstallationTemplateData(template);
+  saveInstallationData(nextData);
+  if (isReplace) {
+    installSmartBasePlays = Boolean(template.smartBasePlays);
+  }
+  _refreshInstallationTemplateViews();
+  showToast(
+    `${isReplace ? "Loaded" : "Applied"} installation template "${template.name}"`,
+    { type: "success" },
+  );
+}
+
+async function _deleteInstallationTemplate(templateId) {
+  const templates = getInstallationTemplates();
+  const template = templates.find(
+    (item) => String(item.id) === String(templateId),
+  );
+  if (!template) return;
+  const ok = await showConfirm(
+    `Delete template <strong>${escapeHtml(template.name)}</strong>?`,
+    {
+      title: "Delete Template",
+      icon: "🗑️",
+      confirmText: "Delete",
+      danger: true,
+    },
+  );
+  if (!ok) return;
+
+  _saveInstallationTemplates(
+    templates.filter((item) => String(item.id) !== String(templateId)),
+  );
+  showToast("Template deleted", { type: "success" });
+}
+
 /**
  * Extract unique values for each component category from the playbook
  * @returns {Object<string, string[]>} - Map of categoryId to sorted unique values
@@ -433,7 +772,11 @@ function renderInstallation() {
           <p class="install-subtitle">Track what you've taught — see what's game-ready</p>
         </div>
         <div class="install-header-right">
-          <button class="btn btn-primary sir-btn" data-action="showSmartInstallReport" title="Smart Installation Report">🧠 Smart Report</button>
+          <div class="install-header-actions">
+            <button class="btn btn-sm" data-action="saveInstallationTemplate" title="Save current installation progress as a reusable template">💾 Template</button>
+            <button class="btn btn-sm" data-action="openInstallationTemplatesMenu" title="Load or delete saved installation templates">📁 Templates</button>
+            <button class="btn btn-primary sir-btn" data-action="showSmartInstallReport" title="Smart Installation Report">🧠 Smart Report</button>
+          </div>
           <div class="install-overall-progress">
             <div class="install-overall-ring" style="--pct:${overallPct}">
               <span class="install-overall-pct">${overallPct}%</span>

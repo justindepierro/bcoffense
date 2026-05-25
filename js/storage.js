@@ -89,6 +89,7 @@ const STORAGE_KEYS = {
   GAME_WEEK: "gameWeek",
   MOBILE_COACH_LOCK: "mobileCoachLock",
   INSTALLATION: "installationData",
+  INSTALLATION_TEMPLATES: "installationTemplates",
   CS_SCOUTING_OVERLAY: "csScoutingOverlay",
   PLAY_COLLECTIONS: "playCollections",
   CALLSHEET_CONSTRAINTS: "callSheetConstraints",

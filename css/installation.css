@@ -32,6 +32,20 @@
   font-size: var(--font-size-sm);
   opacity: 0.7;
 }
+.install-header-right {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+.install-header-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
 
 /* Overall Progress Ring */
 .install-overall-progress {

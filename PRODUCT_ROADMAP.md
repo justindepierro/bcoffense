@@ -11,7 +11,7 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 5. [ ] Smart Game Plan Builder
 6. [x] Practice Script Timeline View
 7. [x] Print and Export Studio
-8. [ ] Saved Templates Everywhere
+8. [x] Saved Templates Everywhere
 9. [ ] Playbook Intelligence
 10. [ ] Large Playbook Performance Track
 
@@ -165,7 +165,7 @@ Status:
 - Phase 3 added print-safe warnings for empty materials, dense scripts, overloaded call-sheet buckets, large game plans, and scouting reports.
 - Phase 4 added game-week/opponent-aware filename conventions for print titles and CSV/text exports.
 - Print and Export Studio is now complete for the current roadmap scope.
-- Next slice should move into Saved Templates Everywhere.
+- Next slice should move into Playbook Intelligence.
 
 ## 8. Saved Templates Everywhere
 
@@ -175,7 +175,7 @@ Goal: Reduce repetitive weekly setup.
 - [x] Script week/day templates
 - [x] Call sheet structure templates
 - [x] Wristband templates by position/group
-- [ ] Installation templates
+- [x] Installation templates
 
 Definition of done:
 
@@ -187,6 +187,8 @@ Status:
 - Phase 2 added reusable Script day/week templates that can save period structure only or include drafted plays, then load/delete them as new drafts.
 - Phase 3 added Call Sheet structure templates alongside full-sheet saves, preserving layout, custom categories, notes, targets, and display setup without carrying plays.
 - Phase 4 added reusable Wristband templates tagged by position/group, with structure-only saves or optional filled-play copies.
+- Phase 5 added Installation templates that save installed component progress and can merge into or replace the current tracker.
+- Saved Templates Everywhere is now complete for the current roadmap scope.
 
 ## 9. Playbook Intelligence
 

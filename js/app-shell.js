@@ -389,6 +389,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openInstallationTemplatesMenu === "function") {
+    items.push({
+      kind: "Action",
+      title: "Installation Templates",
+      subtitle: "Apply, replace, or delete reusable installation progress templates",
+      keywords: "installation install template templates teaching progress week merge replace",
+      priority: 41,
+      run: () => {
+        showTab("installation");
+        requestAnimationFrame(() => openInstallationTemplatesMenu());
+      },
+    });
+  }
+
   return items;
 }
 

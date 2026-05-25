@@ -134,6 +134,7 @@ async function showStorageInfo() {
     scriptDraft: "Script Autosave Draft",
     wristbandDraft: "Wristband Autosave Draft",
     gamePlanTemplates: "Game Plan Templates",
+    installationTemplates: "Installation Templates",
   };
 
   const counts = {};
@@ -174,6 +175,14 @@ async function showStorageInfo() {
     const gamePlanTemplates = storageManager.get(STORAGE_KEYS.GAME_PLAN_TEMPLATES, []);
     counts.gamePlanTemplates = Array.isArray(gamePlanTemplates)
       ? gamePlanTemplates.length
+      : 0;
+
+    const installationTemplates = storageManager.get(
+      STORAGE_KEYS.INSTALLATION_TEMPLATES,
+      [],
+    );
+    counts.installationTemplates = Array.isArray(installationTemplates)
+      ? installationTemplates.length
       : 0;
   } catch (e) { }
 

@@ -473,6 +473,10 @@ function getHelpDataForTab(tab) {
             desc: "\u2018\u2705 All\u2019 to install all, \u2018\u2715 Clear\u2019 to reset a category",
           },
           {
+            key: "📁 Templates",
+            desc: "Save or apply reusable installation progress templates",
+          },
+          {
             key: "Play Counts",
             desc: "See how many plays each component appears in",
           },
