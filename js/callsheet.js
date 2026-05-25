@@ -3870,7 +3870,7 @@ function updateNotOnSheetPanel() {
   panel.innerHTML = html;
 }
 
-// ============ Game Plan Templates ============
+// ============ Call Sheet Templates ============
 
 function getCallSheetPlayCount() {
   let playCount = 0;

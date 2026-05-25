@@ -178,7 +178,7 @@ function renderGamePlan() {
       <div class="gp-header-actions">
         ${_gpRenderHealthGauge(board, draftedPlays)}
         <div class="gp-header-group gp-header-group-primary">
-          <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the game plan">
+          <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
             🖨️ Print
           </button>
           <button class="btn btn-sm btn-success" data-action="pushGamePlanToCallSheet" title="Copy drafted plays into the call sheet">
@@ -204,6 +204,12 @@ function renderGamePlan() {
           </button>
           <button class="btn btn-sm" data-action="openGamePlanSnapshotsMenu" title="Load or delete a saved plan">
             📂 Plans
+          </button>
+          <button class="btn btn-sm" data-action="saveGamePlanTemplate" title="Save this board as a reusable template">
+            💾 Template
+          </button>
+          <button class="btn btn-sm" data-action="openGamePlanTemplatesMenu" title="Load or delete reusable game plan templates">
+            📁 Templates
           </button>
           <button class="btn btn-sm" data-action="openGamePlanCompare" title="Compare two saved plans">
             🔄 Compare

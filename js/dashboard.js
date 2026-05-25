@@ -674,7 +674,7 @@ function renderGameWeekCommandCenter(gw, opponents) {
       ${primaryAction}
       <button class="btn btn-sm" data-action="showTab" data-arg="tendencies">Scouting</button>
       <button class="btn btn-sm" data-action="showTab" data-arg="callsheet">Call Sheet</button>
-      <button class="btn btn-sm" data-action="printFullGamePlan">Print</button>
+      <button class="btn btn-sm" data-action="printFullGamePlan">Print Packet</button>
     </div>
     <div class="dash-prep-checklist" aria-label="Game week prep checklist">
       <div class="dash-prep-header">
@@ -1053,7 +1053,7 @@ function renderDashboard() {
         <button class="dash-link-btn" data-action="dashGoToTab" data-arg="installation">📦 Installation</button>
         <button class="dash-link-btn" data-action="dashGoToTab" data-arg="tendencies">🎯 Chart Tendencies</button>
         <button class="dash-link-btn" data-action="dashGoToTab" data-arg="wristband">⌚ Wristband Maker</button>
-        <button class="dash-link-btn dash-link-print" data-action="printFullGamePlan">🖨️ Print Game Plan</button>
+        <button class="dash-link-btn dash-link-print" data-action="printFullGamePlan">🖨️ Print Game Plan Packet</button>
         <button class="dash-link-btn" data-action="showStorageInfo">💾 Storage Info</button>
       </div>
     `;

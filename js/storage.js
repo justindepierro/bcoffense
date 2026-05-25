@@ -106,6 +106,7 @@ const STORAGE_KEYS = {
   TEAM_ASSIGNMENT_LABELS: "teamAssignmentLabels",
   TEAM_SETTINGS_COLLAPSED: "teamSettingsCollapsed",
   GAME_PLAN_BOARDS: "gamePlanBoards",
+  GAME_PLAN_TEMPLATES: "gamePlanTemplates",
   CALLSHEET_PRINT_OPTIONS: "callSheetPrintOptions",
   CLOUD_SYNC_SETTINGS: "cloudSyncSettings",
 };

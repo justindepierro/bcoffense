@@ -111,3 +111,246 @@ async function _gpDeleteSnapshot(snapId) {
   _gpSaveAllSnapshots(all);
   showToast("Plan deleted", { type: "success" });
 }
+
+/* -------------------------------------------------------------------------
+   Templates — reusable game-plan board starters (cross-opponent)
+   ------------------------------------------------------------------------- */
+
+const GP_TEMPLATES_KEY = STORAGE_KEYS.GAME_PLAN_TEMPLATES || "gamePlanTemplates";
+
+function _gpLoadTemplates() {
+  const stored = storageManager.get(GP_TEMPLATES_KEY, []);
+  return Array.isArray(stored) ? stored : [];
+}
+
+function _gpSaveTemplates(templates) {
+  storageManager.set(GP_TEMPLATES_KEY, Array.isArray(templates) ? templates : []);
+}
+
+function _gpTemplateBoxIds(board) {
+  const customIds = Array.isArray(board?.customBoxes)
+    ? board.customBoxes.map((box) => box.id).filter(Boolean)
+    : [];
+  return [
+    GP_HOLDING_ID,
+    ...GP_DEFAULT_BOXES.map((box) => box.id),
+    ...customIds,
+  ];
+}
+
+function _gpTemplatePlayCount(templateOrBoard) {
+  const assignments = templateOrBoard?.assignments || {};
+  return Object.values(assignments).reduce(
+    (sum, list) => sum + (Array.isArray(list) ? list.length : 0),
+    0,
+  );
+}
+
+function _gpBuildTemplate(name, includePlays) {
+  const board = _gpEnsureBoard();
+  const assignments = {};
+  _gpTemplateBoxIds(board).forEach((boxId) => {
+    assignments[boxId] = includePlays
+      ? safeDeepClone(board.assignments?.[boxId] || [])
+      : [];
+  });
+
+  return {
+    id: `gpt-${Date.now()}`,
+    name: name.trim(),
+    savedAt: new Date().toISOString(),
+    includePlays: Boolean(includePlays),
+    playCount: includePlays ? _gpTemplatePlayCount({ assignments }) : 0,
+    boxCount: GP_DEFAULT_BOXES.length + (Array.isArray(board.customBoxes) ? board.customBoxes.length : 0),
+    customBoxes: safeDeepClone(board.customBoxes || []),
+    targets: safeDeepClone(board.targets || {}),
+    collapsed: safeDeepClone(board.collapsed || []),
+    notes: safeDeepClone(board.notes || {}),
+    sort: safeDeepClone(board.sort || {}),
+    hiddenBoxes: safeDeepClone(board.hiddenBoxes || []),
+    boxOrder: safeDeepClone(board.boxOrder || []),
+    boxLabels: safeDeepClone(board.boxLabels || {}),
+    boxMeta: safeDeepClone(board.boxMeta || {}),
+    assignments,
+  };
+}
+
+function _gpBoardFromTemplate(template) {
+  const customBoxes = safeDeepClone(template.customBoxes || []);
+  const customIds = customBoxes.map((box) => box.id).filter(Boolean);
+  const boxIds = [
+    GP_HOLDING_ID,
+    ...GP_DEFAULT_BOXES.map((box) => box.id),
+    ...customIds,
+  ];
+  const assignments = {};
+  boxIds.forEach((boxId) => {
+    assignments[boxId] = template.includePlays
+      ? safeDeepClone(template.assignments?.[boxId] || [])
+      : [];
+  });
+
+  return {
+    assignments,
+    customBoxes,
+    targets: safeDeepClone(template.targets || {}),
+    collapsed: safeDeepClone(template.collapsed || []),
+    notes: safeDeepClone(template.notes || {}),
+    sort: safeDeepClone(template.sort || {}),
+    hiddenBoxes: safeDeepClone(template.hiddenBoxes || []),
+    boxOrder: safeDeepClone(template.boxOrder || []),
+    boxLabels: safeDeepClone(template.boxLabels || {}),
+    boxMeta: safeDeepClone(template.boxMeta || {}),
+  };
+}
+
+function _gpTemplateLabel(template) {
+  const when = template.savedAt
+    ? new Date(template.savedAt).toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+    : "Unknown date";
+  const boxCount = template.boxCount || GP_DEFAULT_BOXES.length;
+  const playPart = template.includePlays
+    ? ` • ${template.playCount || _gpTemplatePlayCount(template)} plays`
+    : " • structure only";
+  return `${template.name || "Untitled Template"} • ${boxCount} boxes${playPart} • ${when}`;
+}
+
+async function saveGamePlanTemplate() {
+  const board = _gpEnsureBoard();
+  const draftedCount = _gpTemplatePlayCount(board);
+  const defaultName = (() => {
+    const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+    return gw?.weekLabel ? `${gw.weekLabel} Game Plan` : "Weekly Game Plan";
+  })();
+  const name = await showPrompt("Name this game plan template:", defaultName, {
+    title: "Save Game Plan Template",
+    icon: "📁",
+    placeholder: "e.g. Weekly offensive board",
+  });
+  if (!name || !name.trim()) return;
+
+  let includePlays = false;
+  if (draftedCount > 0) {
+    const choice = await showChoice(
+      "Save only the bucket structure, or include the drafted plays too?",
+      {
+        title: "Template Contents",
+        icon: "📁",
+        option1: "Structure only",
+        option2: `Include ${draftedCount} plays`,
+      },
+    );
+    if (!choice) return;
+    includePlays = choice === "option2";
+  }
+
+  const templates = _gpLoadTemplates();
+  const existingIdx = templates.findIndex(
+    (template) => String(template.name || "").toLowerCase() === name.trim().toLowerCase(),
+  );
+  const nextTemplate = _gpBuildTemplate(name, includePlays);
+  if (existingIdx >= 0) {
+    const ok = await showConfirm(
+      `Replace existing template <strong>${escapeHtml(templates[existingIdx].name)}</strong>?`,
+      {
+        title: "Replace Template",
+        icon: "📁",
+        confirmText: "Replace",
+        danger: true,
+      },
+    );
+    if (!ok) return;
+    nextTemplate.id = templates[existingIdx].id || nextTemplate.id;
+    templates.splice(existingIdx, 1, nextTemplate);
+  } else {
+    templates.unshift(nextTemplate);
+  }
+
+  _gpSaveTemplates(templates);
+  showToast(`Saved template "${nextTemplate.name}"`, { type: "success" });
+}
+
+async function openGamePlanTemplatesMenu() {
+  const templates = _gpLoadTemplates();
+  if (templates.length === 0) {
+    showToast("No game plan templates yet. Use Template to save one.", {
+      type: "info",
+      duration: 3500,
+    });
+    return;
+  }
+
+  const choice = await showListPicker(
+    "Pick a reusable game plan template:",
+    templates.map((template) => ({
+      value: template.id,
+      label: _gpTemplateLabel(template),
+    })),
+    { title: "📁 Game Plan Templates", icon: "📁" },
+  );
+  if (!choice) return;
+
+  const action = await showChoice(
+    "What do you want to do with this template?",
+    {
+      title: "Game Plan Template",
+      icon: "📁",
+      option1: "Load into current opponent",
+      option2: "Delete",
+    },
+  );
+  if (!action) return;
+  if (action === "option1") await _gpLoadTemplate(choice);
+  else if (action === "option2") await _gpDeleteTemplate(choice);
+}
+
+async function _gpLoadTemplate(templateId) {
+  const templates = _gpLoadTemplates();
+  const template = templates.find((item) => item.id === templateId);
+  if (!template) return;
+
+  const key = _gpActiveOpponentKey();
+  const opponentLabel = key === "__unassigned__" ? "the current board" : key;
+  const playCopy = template.includePlays
+    ? ` This also loads ${template.playCount || _gpTemplatePlayCount(template)} saved play${(template.playCount || _gpTemplatePlayCount(template)) === 1 ? "" : "s"}.`
+    : " Drafted plays will start empty.";
+  const ok = await showConfirm(
+    `Load <strong>${escapeHtml(template.name)}</strong> into ${escapeHtml(opponentLabel)}? This replaces the current game plan board.${playCopy}`,
+    {
+      title: "Load Template",
+      icon: "📁",
+      confirmText: "Load",
+      danger: true,
+    },
+  );
+  if (!ok) return;
+
+  const all = _gpLoadBoards();
+  all[key] = _gpBoardFromTemplate(template);
+  _gpSaveBoards(all);
+  requestRenderGamePlan();
+  showToast(`Loaded template "${template.name}"`, { type: "success" });
+}
+
+async function _gpDeleteTemplate(templateId) {
+  const templates = _gpLoadTemplates();
+  const template = templates.find((item) => item.id === templateId);
+  if (!template) return;
+  const ok = await showConfirm(
+    `Delete template <strong>${escapeHtml(template.name)}</strong>?`,
+    {
+      title: "Delete Template",
+      icon: "🗑️",
+      confirmText: "Delete",
+      danger: true,
+    },
+  );
+  if (!ok) return;
+  _gpSaveTemplates(templates.filter((item) => item.id !== templateId));
+  showToast("Template deleted", { type: "success" });
+}

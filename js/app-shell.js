@@ -311,9 +311,9 @@ function _buildCommandBaseItems() {
   if (typeof openGamePlanPrintModal === "function") {
     items.push({
       kind: "Action",
-      title: "Print Game Plan",
-      subtitle: "Open the game plan print controls",
-      keywords: "game plan print export",
+      title: "Print Game Plan Board",
+      subtitle: "Open the board-only game plan print controls",
+      keywords: "game plan board print export",
       priority: 36,
       run: () => {
         showTab("gameplan");
@@ -330,6 +330,20 @@ function _buildCommandBaseItems() {
       keywords: "print export studio preview script call sheet wristband game plan scouting report pdf csv filename",
       priority: 37,
       run: () => openPrintStudio(),
+    });
+  }
+
+  if (typeof openGamePlanTemplatesMenu === "function") {
+    items.push({
+      kind: "Action",
+      title: "Game Plan Templates",
+      subtitle: "Load or delete reusable game plan board templates",
+      keywords: "game plan template templates weekly board saved starter",
+      priority: 38,
+      run: () => {
+        showTab("gameplan");
+        requestAnimationFrame(() => openGamePlanTemplatesMenu());
+      },
     });
   }
 

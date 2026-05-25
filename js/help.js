@@ -618,8 +618,8 @@ function getHelpDataForTab(tab) {
             desc: "Free-form notes area on the Dashboard — auto-saved, prints with game plan",
           },
           {
-            key: "🖨️ Print Game Plan",
-            desc: "Consolidated print: notes + scouting report + call sheet summary",
+            key: "🖨️ Print Game Plan Packet",
+            desc: "Consolidated packet: notes + scouting report + call sheet summary",
           },
         ],
       },

@@ -130,6 +130,7 @@ async function showStorageInfo() {
     scriptDisplayOptions: "Script Display Options",
     scriptDraft: "Script Autosave Draft",
     wristbandDraft: "Wristband Autosave Draft",
+    gamePlanTemplates: "Game Plan Templates",
   };
 
   const counts = {};
@@ -151,6 +152,11 @@ async function showStorageInfo() {
 
     const templates = storageManager.get(STORAGE_KEYS.PERIOD_TEMPLATES, []);
     counts.periodTemplates = Array.isArray(templates) ? templates.length : 0;
+
+    const gamePlanTemplates = storageManager.get(STORAGE_KEYS.GAME_PLAN_TEMPLATES, []);
+    counts.gamePlanTemplates = Array.isArray(gamePlanTemplates)
+      ? gamePlanTemplates.length
+      : 0;
   } catch (e) { }
 
   let itemsHtml = "";

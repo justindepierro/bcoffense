@@ -312,8 +312,8 @@ function _psArtifacts() {
       kind: "Staff",
       stats: _psGamePlanStats(),
       actions: [
-        ["gameplan-print", "Print", true],
-        ["dashboard-gameplan-print", "Print Game Plan", false],
+        ["gameplan-print", "Board Print", true],
+        ["dashboard-gameplan-print", "Full Packet", false],
         ["go-gameplan", "Open", false],
       ],
     },
@@ -360,7 +360,8 @@ function _psRenderActions(artifact) {
   const actionButtons = artifact.actions
     .map(([action, label, needsContent]) => {
       const disabled = needsContent && artifact.stats.disabled ? "disabled" : "";
-      return `<button class="btn btn-sm ${label === "Print" ? "btn-primary" : ""}" data-action="runPrintStudioAction" data-arg="${escapeHtml(action)}" ${disabled}>${escapeHtml(label)}</button>`;
+      const primary = action.endsWith("-print") ? "btn-primary" : "";
+      return `<button class="btn btn-sm ${primary}" data-action="runPrintStudioAction" data-arg="${escapeHtml(action)}" ${disabled}>${escapeHtml(label)}</button>`;
     })
     .join("");
   return `
