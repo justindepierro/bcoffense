@@ -62,6 +62,7 @@ const STORAGE_KEYS = {
   PLAYBOOK: "playbook",
   SAVED_SCRIPTS: "savedScripts",
   SAVED_WRISTBANDS: "savedWristbands",
+  WRISTBAND_TEMPLATES: "wristbandTemplates",
   SORT_PRESETS: "sortPresets",
   CUSTOM_SORT_ORDERS: "customSortOrders",
   SCRIPT_CUSTOM_SORT_ORDERS: "scriptCustomSortOrders",

@@ -308,6 +308,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openWristbandTemplatesMenu === "function") {
+    items.push({
+      kind: "Action",
+      title: "Wristband Templates",
+      subtitle: "Load or delete reusable position and group card templates",
+      keywords: "wristband template templates position group card cards structure plays",
+      priority: 36.5,
+      run: () => {
+        showTab("wristband");
+        requestAnimationFrame(() => openWristbandTemplatesMenu());
+      },
+    });
+  }
+
   if (typeof openGamePlanPrintModal === "function") {
     items.push({
       kind: "Action",

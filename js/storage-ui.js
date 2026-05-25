@@ -119,6 +119,7 @@ async function showStorageInfo() {
     playbook: "Playbook",
     savedScripts: "Saved Scripts",
     savedWristbands: "Saved Wristbands",
+    wristbandTemplates: "Wristband Templates",
     sortPresets: "Sort Presets",
     customSortOrders: "Custom Sort Orders",
     scriptCustomSortOrders: "Script Sort Orders",
@@ -147,6 +148,11 @@ async function showStorageInfo() {
 
     const wristbands = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
     counts.savedWristbands = Array.isArray(wristbands) ? wristbands.length : 0;
+
+    const wristbandTemplates = storageManager.get(STORAGE_KEYS.WRISTBAND_TEMPLATES, []);
+    counts.wristbandTemplates = Array.isArray(wristbandTemplates)
+      ? wristbandTemplates.length
+      : 0;
 
     const presets = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
     counts.sortPresets =

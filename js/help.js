@@ -187,6 +187,10 @@ function getHelpDataForTab(tab) {
             { key: "↩️ / ↪️", desc: "Undo / Redo" },
             { key: "🖨️ Print", desc: "Print wristband" },
             { key: "💾 Save", desc: "Save wristband" },
+            {
+              key: "📁 Templates",
+              desc: "Save/load reusable position or group templates",
+            },
             { key: "🗑 Clear", desc: "Clear current card" },
             {
               key: "⚡ Auto-Fill",
