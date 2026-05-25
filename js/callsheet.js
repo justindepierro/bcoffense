@@ -39,6 +39,7 @@ const CALLSHEET_FRONT = [
     color: CS_COLORS.yellow,
     down: "3",
     distance: "Short",
+    situation: "Short Yardage",
     position: null,
   },
 
@@ -64,6 +65,7 @@ const CALLSHEET_FRONT = [
     color: CS_COLORS.yellow,
     down: "3",
     distance: "Short",
+    situation: "Short Yardage",
     position: null,
   },
 

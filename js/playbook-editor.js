@@ -132,7 +132,7 @@ const _EDITOR_SECTIONS = [
         key: "preferredDown",
         label: "Down",
         type: "select",
-        options: ["", "1", "2", "3", "4"],
+        options: ["", "1", "2", "3", "4", "1,2", "2,3", "3,4", "1,2,3", "2,3,4"],
       },
       {
         key: "preferredDistance",
