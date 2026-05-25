@@ -126,6 +126,7 @@ async function showStorageInfo() {
     scriptTemplates: "Script Templates",
     callSheet: "Call Sheet",
     callSheetSettings: "Call Sheet Settings",
+    callSheetTemplates: "Call Sheet Templates",
     columnVisibility: "Column Visibility",
     playbookState: "Playbook Filter State",
     scriptDisplayOptions: "Script Display Options",
@@ -157,6 +158,11 @@ async function showStorageInfo() {
     const scriptTemplates = storageManager.get(STORAGE_KEYS.SCRIPT_TEMPLATES, []);
     counts.scriptTemplates = Array.isArray(scriptTemplates)
       ? scriptTemplates.length
+      : 0;
+
+    const callSheetTemplates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
+    counts.callSheetTemplates = Array.isArray(callSheetTemplates)
+      ? callSheetTemplates.length
       : 0;
 
     const gamePlanTemplates = storageManager.get(STORAGE_KEYS.GAME_PLAN_TEMPLATES, []);

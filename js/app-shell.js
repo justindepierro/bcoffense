@@ -347,6 +347,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openTemplatesModal === "function") {
+    items.push({
+      kind: "Action",
+      title: "Call Sheet Templates",
+      subtitle: "Save or load full sheets and reusable call sheet structures",
+      keywords: "call sheet callsheet template templates structure layout saved buckets categories",
+      priority: 40,
+      run: () => {
+        showTab("callsheet");
+        requestAnimationFrame(() => openTemplatesModal("manage"));
+      },
+    });
+  }
+
   if (typeof openGamePlanTemplatesMenu === "function") {
     items.push({
       kind: "Action",

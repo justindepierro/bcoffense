@@ -285,7 +285,7 @@ function getHelpDataForTab(tab) {
           items: [
             { key: "📊 Stats", desc: "Quick stats panel" },
             { key: "🔍 Not On Sheet", desc: "Find plays not on sheet" },
-            { key: "📁 Templates", desc: "Save/load call sheet templates" },
+            { key: "📁 Templates", desc: "Save/load full sheets or structure-only templates" },
             { key: "🧩 Smart Layout", desc: "Auto-arrange for print" },
             {
               key: "🎯 Scouting Intel",

@@ -173,7 +173,7 @@ Goal: Reduce repetitive weekly setup.
 
 - [x] Game plan templates
 - [x] Script week/day templates
-- [ ] Call sheet structure templates
+- [x] Call sheet structure templates
 - [ ] Wristband templates by position/group
 - [ ] Installation templates
 
@@ -185,6 +185,7 @@ Status:
 
 - Phase 1 added reusable Game Plan templates that can save bucket structure only or include drafted plays, then load/delete those templates across opponents.
 - Phase 2 added reusable Script day/week templates that can save period structure only or include drafted plays, then load/delete them as new drafts.
+- Phase 3 added Call Sheet structure templates alongside full-sheet saves, preserving layout, custom categories, notes, targets, and display setup without carrying plays.
 
 ## 9. Playbook Intelligence
 

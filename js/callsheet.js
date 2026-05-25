@@ -3882,12 +3882,29 @@ function getCallSheetPlayCount() {
   return playCount;
 }
 
-function buildCallSheetTemplate(name) {
+function buildCallSheetPayload(includePlays = true) {
+  if (includePlays) return safeDeepClone(callSheet);
+  const structure = {};
+  CALLSHEET_CATEGORIES.forEach((cat) => {
+    const current = callSheet[cat.id] || {};
+    structure[cat.id] = {
+      left: [],
+      right: [],
+      ...(current.customName ? { customName: current.customName } : {}),
+    };
+  });
+  return structure;
+}
+
+function buildCallSheetTemplate(name, options = {}) {
+  const includePlays = options.includePlays !== false;
   return {
     name,
+    includePlays,
+    templateKind: includePlays ? "full" : "structure",
     savedAt: new Date().toISOString(),
-    playCount: getCallSheetPlayCount(),
-    callSheet: safeDeepClone(callSheet),
+    playCount: includePlays ? getCallSheetPlayCount() : 0,
+    callSheet: buildCallSheetPayload(includePlays),
     settings: safeDeepClone(callSheetSettings),
     notes: safeDeepClone(csNotes),
     targets: safeDeepClone(csTargets),
@@ -3900,13 +3917,27 @@ function buildCallSheetTemplate(name) {
 async function saveCallSheetTemplate() {
   try {
     const totalPlays = getCallSheetPlayCount();
-    if (totalPlays === 0) {
+    let includePlays = true;
+    if (totalPlays > 0) {
+      const contentChoice = await showChoice(
+        "Save the full call sheet with plays, or save only the reusable structure?",
+        {
+          title: "Template Contents",
+          icon: "📁",
+          option1: "Full sheet",
+          option2: "Structure only",
+        },
+      );
+      if (!contentChoice) return;
+      includePlays = contentChoice === "option1";
+    } else {
       const proceed = await showConfirm("The call sheet is empty. Save anyway?", {
         title: "Empty Call Sheet",
         icon: "⚠️",
-        confirmText: "Save Empty",
+        confirmText: "Save Structure",
       });
       if (!proceed) return;
+      includePlays = false;
     }
 
     const nameInput = document.getElementById("csTemplateName");
@@ -3945,7 +3976,7 @@ async function saveCallSheetTemplate() {
       );
 
       if (choice === "option1") {
-        Object.assign(existing, buildCallSheetTemplate(name));
+        Object.assign(existing, buildCallSheetTemplate(name, { includePlays }));
         storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
         if (document.getElementById("csTemplateOverlay")) {
           closeTemplateModal();
@@ -3960,7 +3991,7 @@ async function saveCallSheetTemplate() {
       }
     }
 
-    templates.unshift(buildCallSheetTemplate(name));
+    templates.unshift(buildCallSheetTemplate(name, { includePlays }));
     storageManager.set(STORAGE_KEYS.CALLSHEET_TEMPLATES, templates);
 
     if (document.getElementById("csTemplateOverlay")) {
@@ -3968,7 +3999,7 @@ async function saveCallSheetTemplate() {
       openTemplatesModal(csTemplateModalMode);
     }
 
-    showToast(`✅ "${name}" saved!`);
+    showToast(`✅ "${name}" saved as ${includePlays ? "full sheet" : "structure"}!`);
   } catch (err) {
     console.error("saveCallSheetTemplate error:", err);
     showToast("❌ Error saving call sheet.", {
@@ -3991,8 +4022,8 @@ function openTemplatesModal(mode = "manage") {
   const isLoadMode = csTemplateModalMode === "load";
   const title = isLoadMode ? "📂 Load Call Sheet" : "📁 Saved Call Sheets";
   const modalCopy = isLoadMode
-    ? "Choose a saved call sheet to replace the current one. Saved call sheets restore plays, layout, notes, targets, and display settings."
-    : "Save the current call sheet or load one of your saved call sheets below.";
+    ? "Choose a saved call sheet or structure template to replace the current one."
+    : "Save the current call sheet as a full sheet or reusable structure template, then load it later.";
 
   const listHtml =
     saved.length === 0
@@ -4000,13 +4031,15 @@ function openTemplatesModal(mode = "manage") {
       : saved
         .map((t, idx) => {
           const date = new Date(t.savedAt).toLocaleDateString();
+          const isStructure = t.includePlays === false || t.templateKind === "structure";
+          const kind = isStructure ? "Structure only" : "Full sheet";
           return `<div class="cs-template-item">
           <div class="cs-template-info">
             <strong>${escapeHtml(t.name)}</strong>
-            <span class="cs-template-date">${date} · ${t.playCount || 0} plays</span>
+            <span class="cs-template-date">${date} · ${escapeHtml(kind)} · ${t.playCount || 0} plays</span>
           </div>
           <div class="cs-template-actions">
-            <button class="btn btn-sm btn-primary" data-action="loadTemplate" data-idx="${idx}">${isLoadMode ? "Load Call Sheet" : "Load"}</button>
+            <button class="btn btn-sm btn-primary" data-action="loadTemplate" data-idx="${idx}">${isLoadMode ? `Load ${isStructure ? "Structure" : "Call Sheet"}` : "Load"}</button>
             <button class="btn btn-sm btn-danger" data-action="deleteTemplate" data-idx="${idx}">Delete</button>
           </div>
         </div>`;
@@ -4036,7 +4069,7 @@ function openTemplatesModal(mode = "manage") {
             <div class="cs-template-section-head">
               <div>
                 <h4>Save Current Call Sheet</h4>
-                <p>Create a reusable saved call sheet with the current plays, layout, notes, and display setup.</p>
+                <p>Create a full saved sheet or a structure-only template with layout, notes, targets, and display setup.</p>
               </div>
             </div>
             <div class="cs-template-save-row">
@@ -4080,10 +4113,11 @@ async function loadTemplate(idx) {
     const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
     const template = templates[idx];
     if (!template) return;
+    const isStructure = template.includePlays === false || template.templateKind === "structure";
 
     const ok = await showConfirm(
-      `Load "${template.name}"? This will replace your current call sheet.`,
-      { title: "Load Template", icon: "📁", confirmText: "Load" },
+      `Load "${template.name}"? This will replace your current call sheet${isStructure ? " with an empty structure template." : "."}`,
+      { title: "Load Template", icon: "📁", confirmText: isStructure ? "Load Structure" : "Load" },
     );
     if (!ok) return;
 
@@ -4095,8 +4129,8 @@ async function loadTemplate(idx) {
       };
     rebuildCallSheetCategoryRegistry();
     syncCallSheetCategoryData();
-    if (template.notes) csNotes = template.notes;
-    if (template.targets) csTargets = template.targets;
+    csNotes = template.notes && typeof template.notes === "object" ? template.notes : {};
+    csTargets = template.targets && typeof template.targets === "object" ? template.targets : {};
     csCategoryOrder = normalizeCallSheetCategoryOrder(template.categoryOrder);
     csCollapsed = new Set(Array.isArray(template.collapsed) ? template.collapsed : []);
 
@@ -4119,7 +4153,7 @@ async function loadTemplate(idx) {
 
     renderCallSheet();
     closeTemplateModal();
-    showToast(`📁 Loaded "${template.name}"`);
+    showToast(`📁 Loaded ${isStructure ? "structure" : "call sheet"} "${template.name}"`);
   } catch (err) {
     console.error("loadTemplate error:", err);
     showToast("❌ Error loading template.", { duration: 4000, type: "error" });
