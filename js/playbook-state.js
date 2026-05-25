@@ -1,5 +1,7 @@
 function savePlaybookState() {
   const state = {
+    gamePlanOnly: document.getElementById("pbGamePlanFilter")?.checked || false,
+    jvOnly: document.getElementById("pbJvFilter")?.checked || false,
     sortColumn: currentSortColumn,
     sortDirection: currentSortDirection,
     secondarySortColumn: secondarySortColumn,
@@ -61,6 +63,11 @@ function restorePlaybookState() {
       secondarySortColumn = state.secondarySortColumn;
       secondarySortDirection = state.secondarySortDirection || "asc";
     }
+
+    const gpFilter = document.getElementById("pbGamePlanFilter");
+    if (gpFilter && state.gamePlanOnly) gpFilter.checked = true;
+    const jvFilter = document.getElementById("pbJvFilter");
+    if (jvFilter && state.jvOnly) jvFilter.checked = true;
 
     _syncSortUI();
   } catch (err) {
