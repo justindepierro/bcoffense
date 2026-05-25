@@ -98,6 +98,8 @@
     "quickToolScriptDisplay",
     "quickToolScrollTop",
     "openPrintStudio",
+    "openPlaybookSituationCoverage",
+    "clearPlaybookSituationFilters",
     "runConstraintCheck",
     "selectTendenciesOpponent",
     "selectPlaybookRow",

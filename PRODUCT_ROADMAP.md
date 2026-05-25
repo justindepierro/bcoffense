@@ -8,7 +8,7 @@ This roadmap tracks high-impact product work for BCOffense: features that make t
 2. [x] Mobile Coach Mode
 3. [x] Data Health Center
 4. [x] Game Week Command Center
-5. [ ] Smart Game Plan Builder
+5. [x] Smart Game Plan Builder
 6. [x] Practice Script Timeline View
 7. [x] Print and Export Studio
 8. [x] Saved Templates Everywhere
@@ -196,7 +196,7 @@ Goal: Show what the offense actually looks like from the imported data.
 
 - [x] Play usage counters by current script, current week, and season
 - [x] Personnel, formation, and concept balance
-- [ ] Situation coverage by down, distance, field zone, and tempo
+- [x] Situation coverage by down, distance, field zone, and tempo
 - [ ] Player touch/opportunity summaries
 - [ ] Constraint/complement map
 - [ ] Identity alignment score
@@ -209,6 +209,7 @@ Status:
 
 - Phase 1 added rep-weighted usage counters on Playbook rows/cards for the current script, current week, and season from saved scripts.
 - Phase 2 added a Playbook Balance report for personnel, formation, concept, and play-type distribution in the current playbook view.
+- Phase 3 added a Situation Coverage report for down/distance, field-zone, and tempo tagging gaps in the current playbook view.
 
 ## 10. Large Playbook Performance Track
 

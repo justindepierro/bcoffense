@@ -308,6 +308,20 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof openPlaybookSituationCoverage === "function") {
+    items.push({
+      kind: "Action",
+      title: "Playbook Situation Coverage",
+      subtitle: "Review down, distance, field zone, and tempo coverage",
+      keywords: "playbook intelligence situation coverage down distance field zone tempo tendency",
+      priority: 34.6,
+      run: () => {
+        showTab("playbook");
+        requestAnimationFrame(() => openPlaybookSituationCoverage());
+      },
+    });
+  }
+
   if (typeof openWbQuickSearch === "function") {
     items.push({
       kind: "Action",

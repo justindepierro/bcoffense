@@ -410,3 +410,358 @@ function clearPlaybookBalanceFilters() {
   closePlaybookBalanceReport();
   requestAnimationFrame(() => openPlaybookBalanceReport());
 }
+
+const PB_SITUATION_DOWNS = ["1", "2", "3", "4"];
+const PB_SITUATION_DISTANCES = ["Short", "Medium", "Long"];
+const PB_SITUATION_FIELD_ZONES = [
+  "Green",
+  "Lo-RZ",
+  "Hi-RZ",
+  "Goal Line",
+  "Backed Up",
+  "Saigon",
+];
+
+function _pbSituationClean(value) {
+  return String(value || "").trim();
+}
+
+function _pbSituationNormalizeDown(value) {
+  const raw = _pbSituationClean(value);
+  const lower = raw.toLowerCase();
+  if (!raw) return "No Down";
+  if (/^(1|1st|first)\b/.test(lower)) return "1";
+  if (/^(2|2nd|second)\b/.test(lower)) return "2";
+  if (/^(3|3rd|third)\b/.test(lower)) return "3";
+  if (/^(4|4th|fourth)\b/.test(lower)) return "4";
+  return raw;
+}
+
+function _pbSituationNormalizeDistance(value) {
+  const raw = _pbSituationClean(value);
+  const lower = raw.toLowerCase();
+  if (!raw) return "No Distance";
+  if (lower.includes("short") || lower === "s" || lower === "1-3") return "Short";
+  if (lower.includes("medium") || lower === "m" || lower === "4-6") return "Medium";
+  if (lower.includes("long") || lower === "l" || lower === "7+") return "Long";
+  return raw;
+}
+
+function _pbSituationNormalizeField(value) {
+  const raw = _pbSituationClean(value);
+  const lower = raw.toLowerCase().replace(/[\s_-]+/g, " ");
+  if (!raw) return "No Field Zone";
+  if (lower === "lo rz" || lower === "low rz" || lower === "low red zone") return "Lo-RZ";
+  if (lower === "hi rz" || lower === "high rz" || lower === "high red zone") return "Hi-RZ";
+  if (lower === "goal line" || lower === "goalline") return "Goal Line";
+  if (lower === "backed up" || lower === "backedup") return "Backed Up";
+  const known = PB_SITUATION_FIELD_ZONES.find((zone) => zone.toLowerCase() === lower);
+  return known || raw;
+}
+
+function _pbSituationNormalizeTempo(value) {
+  return _pbSituationClean(value) || "No Tempo";
+}
+
+function _pbSituationFieldFilled(label) {
+  return !String(label || "").startsWith("No ");
+}
+
+function _pbSituationAddCount(map, key, play) {
+  if (!map.has(key)) {
+    map.set(key, {
+      name: key,
+      count: 0,
+      families: { Run: 0, Pass: 0, RPO: 0, Other: 0 },
+    });
+  }
+  const row = map.get(key);
+  row.count += 1;
+  const family = _pbBalanceTypeFamily(play);
+  row.families[family] = (row.families[family] || 0) + 1;
+  return row;
+}
+
+function _pbSituationRowsFromMap(map, preferredOrder = []) {
+  const orderIndex = new Map(preferredOrder.map((value, index) => [value, index]));
+  return Array.from(map.values()).sort((a, b) => {
+    const aOrder = orderIndex.has(a.name) ? orderIndex.get(a.name) : 999;
+    const bOrder = orderIndex.has(b.name) ? orderIndex.get(b.name) : 999;
+    return aOrder - bOrder || b.count - a.count || a.name.localeCompare(b.name);
+  });
+}
+
+function _pbSituationAnalyze(source) {
+  const total = source.length;
+  const downMap = new Map();
+  const distanceMap = new Map();
+  const fieldMap = new Map();
+  const tempoMap = new Map();
+  const ddMap = new Map();
+  const fieldDownMap = new Map();
+  const fillCounts = { down: 0, distance: 0, field: 0, tempo: 0 };
+
+  source.forEach((play) => {
+    const down = _pbSituationNormalizeDown(play.preferredDown);
+    const distance = _pbSituationNormalizeDistance(play.preferredDistance);
+    const field = _pbSituationNormalizeField(play.preferredFieldPosition);
+    const tempo = _pbSituationNormalizeTempo(play.tempo);
+
+    if (_pbSituationFieldFilled(down)) fillCounts.down += 1;
+    if (_pbSituationFieldFilled(distance)) fillCounts.distance += 1;
+    if (_pbSituationFieldFilled(field)) fillCounts.field += 1;
+    if (_pbSituationFieldFilled(tempo)) fillCounts.tempo += 1;
+
+    _pbSituationAddCount(downMap, down, play);
+    _pbSituationAddCount(distanceMap, distance, play);
+    _pbSituationAddCount(fieldMap, field, play);
+    _pbSituationAddCount(tempoMap, tempo, play);
+    _pbSituationAddCount(ddMap, `${down}|${distance}`, play);
+    _pbSituationAddCount(fieldDownMap, `${field}|${down}`, play);
+  });
+
+  const downRows = _pbSituationRowsFromMap(downMap, [...PB_SITUATION_DOWNS, "No Down"]);
+  const distanceRows = _pbSituationRowsFromMap(distanceMap, [...PB_SITUATION_DISTANCES, "No Distance"]);
+  const fieldRows = _pbSituationRowsFromMap(fieldMap, [...PB_SITUATION_FIELD_ZONES, "No Field Zone"]);
+  const tempoRows = _pbSituationRowsFromMap(tempoMap);
+
+  const expectedDdCells = PB_SITUATION_DOWNS.length * PB_SITUATION_DISTANCES.length;
+  const coveredDdCells = PB_SITUATION_DOWNS.reduce((sum, down) => (
+    sum + PB_SITUATION_DISTANCES.filter((distance) => ddMap.has(`${down}|${distance}`)).length
+  ), 0);
+  const coveredFieldZones = PB_SITUATION_FIELD_ZONES.filter((field) => fieldMap.has(field)).length;
+
+  return {
+    total,
+    fillCounts,
+    downRows,
+    distanceRows,
+    fieldRows,
+    tempoRows,
+    ddMap,
+    fieldDownMap,
+    expectedDdCells,
+    coveredDdCells,
+    coveredFieldZones,
+  };
+}
+
+function _pbSituationSignals(analysis) {
+  const signals = [];
+  if (!analysis.total) {
+    return ["No plays in this scope. Clear filters or import plays to review situation coverage."];
+  }
+
+  const missing = [
+    ["down", "preferred down"],
+    ["distance", "preferred distance"],
+    ["field", "field zone"],
+    ["tempo", "tempo"],
+  ].filter(([key]) => analysis.total && analysis.fillCounts[key] < analysis.total);
+
+  missing.forEach(([key, label]) => {
+    const count = analysis.total - analysis.fillCounts[key];
+    signals.push(`${count} play${count === 1 ? "" : "s"} missing ${label} data.`);
+  });
+
+  const criticalPairs = [
+    ["1", "Short", "1st and short"],
+    ["1", "Medium", "1st and medium"],
+    ["2", "Long", "2nd and long"],
+    ["3", "Short", "3rd and short"],
+    ["3", "Medium", "3rd and medium"],
+    ["3", "Long", "3rd and long"],
+    ["4", "Short", "4th and short"],
+  ];
+  criticalPairs.forEach(([down, distance, label]) => {
+    if (!analysis.ddMap.has(`${down}|${distance}`)) {
+      signals.push(`No ${label} calls tagged in this scope.`);
+    }
+  });
+
+  ["Goal Line", "Backed Up", "Lo-RZ", "Hi-RZ"].forEach((field) => {
+    if (!analysis.fieldRows.some((row) => row.name === field && row.count > 0)) {
+      signals.push(`No ${field.toLowerCase()} field-zone calls tagged in this scope.`);
+    }
+  });
+
+  const topCombo = Array.from(analysis.ddMap.values())
+    .filter((item) => !item.name.includes("No "))
+    .sort((a, b) => b.count - a.count)[0];
+  if (topCombo && _pbBalancePct(topCombo.count, analysis.total) >= 25) {
+    const [down, distance] = topCombo.name.split("|");
+    signals.push(`${down} and ${distance} is ${_pbBalancePct(topCombo.count, analysis.total)}% of this scope.`);
+  }
+
+  if (signals.length === 0) {
+    signals.push("Situation tags cover the major down, distance, field-zone, and tempo buckets in this scope.");
+  }
+  return signals.slice(0, 10);
+}
+
+function _pbSituationFillPct(analysis, key) {
+  return _pbBalancePct(analysis.fillCounts[key] || 0, analysis.total);
+}
+
+function _pbSituationMatrixCell(rowKey, colKey, map, total) {
+  const item = map.get(`${rowKey}|${colKey}`);
+  const count = item?.count || 0;
+  const pct = _pbBalancePct(count, total);
+  const className = count === 0 ? "is-empty" : count < 3 ? "is-light" : "is-covered";
+  const title = count
+    ? `${count} play${count === 1 ? "" : "s"} (${pct}%)`
+    : "No tagged plays";
+  return `<td class="pb-situation-cell ${className}" title="${escapeHtml(title)}">
+    <strong>${count}</strong>
+    <span>${pct}%</span>
+  </td>`;
+}
+
+function _pbSituationRenderDownDistance(analysis) {
+  const header = PB_SITUATION_DISTANCES
+    .map((distance) => `<th>${escapeHtml(distance)}</th>`)
+    .join("");
+  const rows = PB_SITUATION_DOWNS
+    .map((down) => `
+      <tr>
+        <th>${escapeHtml(down)}</th>
+        ${PB_SITUATION_DISTANCES.map((distance) => _pbSituationMatrixCell(down, distance, analysis.ddMap, analysis.total)).join("")}
+      </tr>
+    `)
+    .join("");
+  return `
+    <section class="pb-balance-section pb-situation-section">
+      <div class="pb-balance-section-head">
+        <h4>Down / Distance</h4>
+        <span>${analysis.coveredDdCells} of ${analysis.expectedDdCells} cells covered</span>
+      </div>
+      <div class="pb-situation-table-wrap">
+        <table class="pb-situation-table">
+          <thead><tr><th>Down</th>${header}</tr></thead>
+          <tbody>${rows}</tbody>
+        </table>
+      </div>
+    </section>
+  `;
+}
+
+function _pbSituationRenderFieldZones(analysis) {
+  const rows = analysis.fieldRows
+    .slice(0, 10)
+    .map((row) => {
+      const pct = _pbBalancePct(row.count, analysis.total);
+      return `
+        <div class="pb-situation-zone">
+          <div class="pb-balance-row-main">
+            <strong>${escapeHtml(row.name)}</strong>
+            <span>${row.count} play${row.count === 1 ? "" : "s"} • ${pct}%</span>
+          </div>
+          <div class="pb-situation-mini-cells">
+            ${PB_SITUATION_DOWNS.map((down) => {
+        const item = analysis.fieldDownMap.get(`${row.name}|${down}`);
+        const count = item?.count || 0;
+        return `<span class="${count ? "is-covered" : "is-empty"}">${escapeHtml(down)}: ${count}</span>`;
+      }).join("")}
+          </div>
+        </div>
+      `;
+    })
+    .join("");
+  return `
+    <section class="pb-balance-section pb-situation-section">
+      <div class="pb-balance-section-head">
+        <h4>Field Zones</h4>
+        <span>${analysis.coveredFieldZones} of ${PB_SITUATION_FIELD_ZONES.length} core zones covered</span>
+      </div>
+      ${rows || '<div class="pb-balance-empty">No field-zone data in this scope.</div>'}
+    </section>
+  `;
+}
+
+function _pbSituationRenderTempo(analysis) {
+  return `
+    <section class="pb-balance-section pb-situation-section">
+      <div class="pb-balance-section-head">
+        <h4>Tempo</h4>
+        <span>${analysis.tempoRows.length} values</span>
+      </div>
+      ${_pbBalanceRenderRows({ rows: analysis.tempoRows }, analysis.total)}
+    </section>
+  `;
+}
+
+function openPlaybookSituationCoverage() {
+  if (!Array.isArray(plays) || plays.length === 0) {
+    showToast("Import a playbook CSV first", { duration: 2500, type: "error" });
+    return;
+  }
+
+  const scope = _pbBalanceScope();
+  const analysis = _pbSituationAnalyze(scope.plays);
+  const signals = _pbSituationSignals(analysis);
+
+  document.getElementById("playbookSituationOverlay")?.remove();
+  const overlay = document.createElement("div");
+  overlay.className = "custom-modal-overlay visible";
+  overlay.id = "playbookSituationOverlay";
+  overlay.dataset.action = "closePlaybookSituationCoverageOverlay";
+  overlay.innerHTML = `
+    <div class="custom-modal pb-balance-modal pb-situation-modal" role="dialog" aria-modal="true" aria-labelledby="playbookSituationTitle">
+      <div class="custom-modal-header">
+        <span class="custom-modal-icon">🧭</span>
+        <h3 class="custom-modal-title" id="playbookSituationTitle">Situation Coverage</h3>
+        <button class="modal-close" aria-label="Close" data-action="closePlaybookSituationCoverage">×</button>
+      </div>
+      <div class="custom-modal-body pb-balance-body">
+        <div class="pb-balance-summary">
+          <div class="pb-balance-card">
+            <strong>${escapeHtml(scope.label)}</strong>
+            <span>${escapeHtml(scope.detail)}</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${_pbSituationFillPct(analysis, "down")}%</strong>
+            <span>Down Tagged</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${_pbSituationFillPct(analysis, "distance")}%</strong>
+            <span>Distance Tagged</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${_pbSituationFillPct(analysis, "field")}%</strong>
+            <span>Field Zone Tagged</span>
+          </div>
+          <div class="pb-balance-card">
+            <strong>${_pbSituationFillPct(analysis, "tempo")}%</strong>
+            <span>Tempo Tagged</span>
+          </div>
+        </div>
+        <div class="pb-balance-guidance">
+          ${signals.map((signal) => `<div>${escapeHtml(signal)}</div>`).join("")}
+        </div>
+        <div class="pb-situation-grid">
+          ${_pbSituationRenderDownDistance(analysis)}
+          ${_pbSituationRenderFieldZones(analysis)}
+          ${_pbSituationRenderTempo(analysis)}
+        </div>
+      </div>
+      <div class="custom-modal-actions">
+        ${scope.hasFilters ? '<button type="button" class="btn btn-sm" data-action="clearPlaybookSituationFilters">Clear Playbook Filters</button>' : ""}
+        <button type="button" class="btn btn-sm" data-action="closePlaybookSituationCoverage">Done</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function closePlaybookSituationCoverage() {
+  const overlay = document.getElementById("playbookSituationOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 180);
+}
+
+function clearPlaybookSituationFilters() {
+  if (typeof clearFilters === "function") clearFilters();
+  closePlaybookSituationCoverage();
+  requestAnimationFrame(() => openPlaybookSituationCoverage());
+}

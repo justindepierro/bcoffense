@@ -46,6 +46,10 @@ function getHelpDataForTab(tab) {
               key: "📊 Balance",
               desc: "Review personnel, formation, and concept mix",
             },
+            {
+              key: "🧭 Situations",
+              desc: "Review down, distance, field-zone, and tempo coverage",
+            },
             { key: "🖨️ Print Plays", desc: "Print the current filtered playbook view" },
             { key: "📥 Export", desc: "Export all data as JSON backup" },
             { key: "📤 Import", desc: "Import a JSON backup file" },
