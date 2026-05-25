@@ -25,6 +25,7 @@ let _gpPrintOptions = {
   showPageNumbers: true,
   showFooter: true,
   showDetail: false,
+  showOneWord: false,
   playerHandout: false,
   showWristbandNumber: true,
   jvOnly: false,
@@ -53,6 +54,7 @@ function _gpApplySmartPrintDefaults() {
     showPageNumbers: true,
     showFooter: true,
     showDetail: false,
+    showOneWord: false,
     playerHandout: false,
     showWristbandNumber: true,
     useCurrentFilters: _gpPrintOptions.useCurrentFilters,
@@ -253,6 +255,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
               <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
               <label><input type="checkbox" id="gpPrintDetail" ${o.showDetail ? "checked" : ""}> Show bucket detail (touches, type, D&D)</label>
+              <label><input type="checkbox" id="gpPrintOneWord" ${o.showOneWord ? "checked" : ""}> Show one-word tags in blue (PLAY NAME <span class="gp-print-modal-preview-oneword">(ONE WORD)</span>)</label>
               <label><input type="checkbox" id="gpPrintHandout" ${o.playerHandout ? "checked" : ""}> 👦 <strong>Player handout</strong> (key players · complements · hit chart · notes)</label>
               <label><input type="checkbox" id="gpPrintJvOnly" ${o.jvOnly ? "checked" : ""}> 🟡 <strong>JV only</strong> (only plays marked JV)</label>
               <label><input type="checkbox" id="gpPrintImgAppendix" ${o.imageAppendix ? "checked" : ""}> 🖼️ <strong>Image appendix</strong> (extra pages with attached play diagrams)</label>
@@ -310,6 +313,7 @@ async function openGamePlanPrintModal() {
         showPageNumbers: overlay.querySelector("#gpPrintPageNumbers").checked,
         showFooter: overlay.querySelector("#gpPrintFooter").checked,
         showDetail: overlay.querySelector("#gpPrintDetail").checked,
+        showOneWord: overlay.querySelector("#gpPrintOneWord").checked,
         playerHandout: overlay.querySelector("#gpPrintHandout").checked,
         jvOnly: overlay.querySelector("#gpPrintJvOnly").checked,
         imageAppendix: overlay.querySelector("#gpPrintImgAppendix").checked,
@@ -472,6 +476,10 @@ function _gpRenderPrintPlay(play) {
   const callHtml = typeof getFullCall === "function"
     ? getFullCall(play, { showLineCall: false, showEmoji: o.showMeta, useSquares: true })
     : escapeHtml(play.play || "");
+  const oneWordRaw = String(play?.oneWord || "").trim();
+  const oneWordHtml = o.showOneWord && oneWordRaw
+    ? `<span class="gp-print-oneword">(${escapeHtml(oneWordRaw.toUpperCase())})</span>`
+    : "";
   let wbNumHtml = "";
   if (o.showWristbandNumber) {
     const num = _gpWristbandNumberFor(play);
@@ -539,7 +547,7 @@ function _gpRenderPrintPlay(play) {
     if (rows.length) handoutHtml = `<div class="gp-handout-detail">${rows.join("")}</div>`;
   }
 
-  return `<li class="gp-print-play">${wbNumHtml}${callHtml}${metaHtml}${handoutHtml}</li>`;
+  return `<li class="gp-print-play">${wbNumHtml}${callHtml}${oneWordHtml}${metaHtml}${handoutHtml}</li>`;
 }
 
 /* Image appendix: extra pages grouped by box, showing each play's attached
