@@ -2801,21 +2801,36 @@
   <!-- Play Preview Tooltip -->
   <div class="play-preview-tooltip" id="playPreviewTooltip"></div>
 
-  <!-- Scroll-to-Top FAB -->
-  <button class="scroll-top-fab" id="scrollTopFab" data-action="scrollToTop" aria-label="Scroll to top">
-    &uarr;
-  </button>
-
-  <!-- Floating Help Button -->
-  <button class="help-fab" id="helpFab" data-action="toggleHelpPanel" title="Shortcuts & Features">
-    ?
-  </button>
-
-  <!-- Floating Script Display Button (script tab only) -->
-  <button class="script-display-fab" id="scriptDisplayFab" data-action="toggleScriptDisplayPanel"
-    title="Script Display options" aria-label="Script Display options">
-    🖨️
-  </button>
+  <!-- Floating Quick Tools -->
+  <div class="quick-tools" id="quickTools">
+    <div class="quick-tools-menu" id="quickToolsMenu" aria-hidden="true" inert>
+      <button class="quick-tool-btn quick-tool-print" id="quickPrintFab" data-action="quickToolPrint"
+        title="Print and Export Studio" aria-label="Open Print and Export Studio">
+        <span class="quick-tool-icon" aria-hidden="true">🖨️</span>
+        <span class="quick-tool-label">Print Studio</span>
+      </button>
+      <button class="quick-tool-btn help-fab" id="helpFab" data-action="quickToolHelp" title="Shortcuts & Features"
+        aria-label="Open help and tips">
+        <span class="quick-tool-icon" aria-hidden="true">?</span>
+        <span class="quick-tool-label">Help & Tips</span>
+      </button>
+      <button class="quick-tool-btn script-display-fab" id="scriptDisplayFab" data-action="quickToolScriptDisplay"
+        title="Script Display options" aria-label="Open Script Display options">
+        <span class="quick-tool-icon" aria-hidden="true">📄</span>
+        <span class="quick-tool-label">Script Display</span>
+      </button>
+      <button class="quick-tool-btn scroll-top-fab" id="scrollTopFab" data-action="quickToolScrollTop"
+        aria-label="Scroll to top">
+        <span class="quick-tool-icon" aria-hidden="true">&uarr;</span>
+        <span class="quick-tool-label">Back to Top</span>
+      </button>
+    </div>
+    <button class="quick-tools-fab" id="quickToolsFab" data-action="toggleQuickToolsMenu" aria-expanded="false"
+      aria-controls="quickToolsMenu" title="Quick tools" aria-label="Open quick tools">
+      <span aria-hidden="true">⚡</span>
+      <span class="quick-tools-fab-label">Tools</span>
+    </button>
+  </div>
 
   <!-- Help Panel Overlay -->
   <div class="help-overlay" id="helpOverlay" data-action="closeHelpPanelOverlay" role="dialog" aria-modal="true"

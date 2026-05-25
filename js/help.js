@@ -46,6 +46,7 @@ function getHelpDataForTab(tab) {
               key: "📊 Balance",
               desc: "Review personnel, formation, and concept mix",
             },
+            { key: "🖨️ Print Plays", desc: "Print the current filtered playbook view" },
             { key: "📥 Export", desc: "Export all data as JSON backup" },
             { key: "📤 Import", desc: "Import a JSON backup file" },
             {
@@ -306,6 +307,10 @@ function getHelpDataForTab(tab) {
             {
               key: "💡 Suggest",
               desc: "Smart play suggestions per category (when scouting is on)",
+            },
+            {
+              key: "🎯 Game Plan Plays",
+              desc: "Open the right-side drawer to pull current plan plays into the sheet",
             },
             {
               key: "⚠️ Dead Vs badges",
@@ -645,6 +650,115 @@ function getHelpDataForTab(tab) {
       },
     ],
   };
+  data.gameplan = {
+    title: "🎯 Game Plan — Shortcuts & Features",
+    sections: [
+      {
+        icon: "🏈",
+        name: "Board Setup",
+        items: [
+          {
+            key: "Active Opponent",
+            desc: "Uses the selected game-week opponent for saved plan boards",
+          },
+          {
+            key: "+ Box",
+            desc: "Add a new plan bucket for a situation, concept family, or must-have list",
+          },
+          { key: "Rename / Hide", desc: "Clean up buckets without losing the plan" },
+          {
+            key: "Snapshots",
+            desc: "Save named versions of a plan so you can compare or roll back",
+          },
+          {
+            key: "Reset Plan",
+            desc: "Start the current opponent plan from scratch and clear selected plays",
+          },
+        ],
+      },
+      {
+        icon: "📚",
+        name: "Library & Selection",
+        items: [
+          { key: "Search / Filters", desc: "Narrow the play library before adding plays" },
+          { key: "Drag play", desc: "Drop a play into any game-plan bucket" },
+          {
+            key: "Play flags",
+            desc: "Mark priorities, openers, explosives, constraints, or watch-list plays",
+          },
+          {
+            key: "Coverage Matrix",
+            desc: "Check whether selected plays cover the opponent's top looks",
+          },
+        ],
+      },
+      {
+        icon: "🧠",
+        name: "Intelligence",
+        items: [
+          {
+            key: "Suggest Fill",
+            desc: "Let the app recommend plays for empty or thin buckets",
+          },
+          {
+            key: "Health",
+            desc: "Review balance, duplicate calls, and missing situations",
+          },
+          {
+            key: "Tendency Mirror",
+            desc: "Compare the plan against opponent scouting patterns",
+          },
+          {
+            key: "Touch Counts",
+            desc: "Track how often key players are featured in the plan",
+          },
+        ],
+      },
+      {
+        icon: "🖨️",
+        name: "Output",
+        items: [
+          { key: "Print", desc: "Print the board-only game plan view" },
+          {
+            key: "Full Packet",
+            desc: "Use the Dashboard packet for notes, scouting, and call-sheet context",
+          },
+          {
+            key: "Push to Script / Sheet",
+            desc: "Send selected plan plays into practice or call-sheet workflows",
+          },
+        ],
+      },
+    ],
+  };
+
+  const commonQuickToolsSection = () => ({
+    icon: "⚡",
+    name: "Floating Tools",
+    items: [
+      {
+        key: "Tools",
+        desc: "Open the bottom-right tray for Help, Print Studio, Script Display, and Back to Top",
+      },
+      {
+        key: "Help & Tips",
+        desc: "Shows context-specific tips for the current tab",
+      },
+      {
+        key: "Print Studio",
+        desc: "Preview, check, name, print, and export game-week materials from one place",
+      },
+      {
+        key: "Script Display",
+        desc: "Appears on the Script tab for print-style rows, columns, and display presets",
+      },
+    ],
+  });
+
+  Object.values(data).forEach((tabData) => {
+    tabData.sections.push(commonQuickToolsSection());
+  });
+
   return data[tab] || data.playbook;
 }
 

@@ -806,9 +806,11 @@
 
   .help-fab,
   .help-overlay,
+  .quick-tools,
   .script-display-fab,
   .script-display-overlay,
   .scroll-top-fab,
+  #quickTools,
   #helpFab,
   #scriptDisplayFab,
   #scrollTopFab {

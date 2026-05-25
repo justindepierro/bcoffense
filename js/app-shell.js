@@ -1620,6 +1620,56 @@ if (_scrollFab) {
   }, { passive: true });
 }
 
+// ── Floating Quick Tools tray ──
+function setQuickToolsOpen(isOpen) {
+  const tray = document.getElementById("quickTools");
+  const menu = document.getElementById("quickToolsMenu");
+  const trigger = document.getElementById("quickToolsFab");
+  if (!tray) return;
+  tray.classList.toggle("open", Boolean(isOpen));
+  menu?.setAttribute("aria-hidden", isOpen ? "false" : "true");
+  menu?.toggleAttribute("inert", !isOpen);
+  trigger?.setAttribute("aria-expanded", isOpen ? "true" : "false");
+}
+
+function toggleQuickToolsMenu() {
+  const tray = document.getElementById("quickTools");
+  setQuickToolsOpen(!tray?.classList.contains("open"));
+}
+
+function closeQuickToolsMenu() {
+  setQuickToolsOpen(false);
+}
+
+function quickToolHelp() {
+  closeQuickToolsMenu();
+  if (typeof toggleHelpPanel === "function") toggleHelpPanel();
+}
+
+function quickToolPrint() {
+  closeQuickToolsMenu();
+  if (typeof openPrintStudio === "function") openPrintStudio();
+}
+
+function quickToolScriptDisplay() {
+  closeQuickToolsMenu();
+  if (typeof toggleScriptDisplayPanel === "function") toggleScriptDisplayPanel();
+}
+
+function quickToolScrollTop() {
+  closeQuickToolsMenu();
+  scrollToTop();
+}
+
+document.addEventListener("click", (e) => {
+  if (e.target.closest?.("#quickTools")) return;
+  closeQuickToolsMenu();
+});
+
+document.addEventListener("keydown", (e) => {
+  if (e.key === "Escape") closeQuickToolsMenu();
+});
+
 // ── Tab bar scroll-fade indicator ──
 const _tabBar = document.querySelector(".tabs");
 if (_tabBar) {
@@ -1755,9 +1805,9 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   el.click();
 });
-// Auto-fade floating action buttons (help / script-display) after idle
+// Auto-fade the floating quick tools launcher after idle
 document.addEventListener("DOMContentLoaded", () => {
-  const fabs = document.querySelectorAll(".help-fab, .script-display-fab");
+  const fabs = document.querySelectorAll(".quick-tools-fab");
   if (!fabs.length) return;
 
   const IDLE_MS = 2500;

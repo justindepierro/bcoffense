@@ -1986,14 +1986,11 @@ kbd {
 }
 
 /* Idle fade - dim the FAB when the user hasn't moved/clicked recently */
-body.fab-idle .help-fab:not(.help-fab-active),
-body.fab-idle .script-display-fab:not(.active) {
+body.fab-idle .quick-tools:not(.open) .quick-tools-fab {
   opacity: 0.25;
 }
-body.fab-idle .help-fab:hover,
-body.fab-idle .help-fab:focus-visible,
-body.fab-idle .script-display-fab:hover,
-body.fab-idle .script-display-fab:focus-visible {
+body.fab-idle .quick-tools:hover .quick-tools-fab,
+body.fab-idle .quick-tools:focus-within .quick-tools-fab {
   opacity: 1;
 }
 
@@ -2860,6 +2857,202 @@ body.fab-idle .script-display-fab:focus-visible {
   .scroll-top-fab:hover {
     background: var(--color-primary-dark);
     box-shadow: var(--shadow-lg);
+  }
+}
+
+/* ── Floating Quick Tools Tray ── */
+.quick-tools {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: var(--z-fab);
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+}
+
+.quick-tools-menu {
+  position: absolute;
+  right: 0;
+  bottom: calc(100% + 8px);
+  display: grid;
+  justify-items: end;
+  gap: 8px;
+  opacity: 0;
+  transform: translateY(8px) scale(0.98);
+  transform-origin: bottom right;
+  transition:
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+  pointer-events: none;
+}
+
+.quick-tools.open .quick-tools-menu {
+  opacity: 1;
+  transform: translateY(0) scale(1);
+  pointer-events: auto;
+}
+
+.quick-tools-fab,
+.quick-tool-btn {
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+  font-family: var(--font-sans);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    color var(--transition-fast),
+    opacity var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.quick-tools-fab {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-width: 84px;
+  min-height: 46px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.quick-tools.open .quick-tools-fab,
+.quick-tools-fab:focus-visible {
+  border-color: var(--color-primary-dark);
+  background: var(--color-primary-dark);
+  box-shadow: var(--shadow-lg);
+}
+
+.quick-tool-btn,
+.quick-tools .help-fab,
+.quick-tools .script-display-fab,
+.quick-tools .scroll-top-fab {
+  position: static;
+  inset: auto;
+  display: flex;
+  width: auto;
+  min-width: 164px;
+  height: 42px;
+  min-height: 42px;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 10px;
+  padding: 0 14px 0 10px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-surface);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  line-height: 1;
+  box-shadow: var(--shadow-md);
+  opacity: 1;
+  transform: none;
+  pointer-events: auto;
+}
+
+.quick-tools .script-display-fab {
+  display: none;
+}
+
+body[data-active-tab="script"] .quick-tools .script-display-fab {
+  display: flex;
+}
+
+.quick-tools .scroll-top-fab:not(.visible) {
+  display: none;
+}
+
+.quick-tool-icon {
+  display: inline-grid;
+  width: 24px;
+  height: 24px;
+  flex: 0 0 24px;
+  place-items: center;
+  border-radius: var(--radius-round);
+  background: var(--color-bg-blue-tint);
+  color: var(--color-primary);
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.quick-tool-label {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+@media (hover: hover) {
+  .quick-tools-fab:hover {
+    border-color: var(--color-primary-dark);
+    background: var(--color-primary-dark);
+    box-shadow: var(--shadow-lg);
+    transform: translateY(-1px);
+  }
+
+  .quick-tool-btn:hover,
+  .quick-tools .help-fab:hover,
+  .quick-tools .script-display-fab:hover,
+  .quick-tools .scroll-top-fab:hover {
+    border-color: var(--color-primary);
+    background: var(--color-bg-blue-tint);
+    color: var(--color-primary);
+    box-shadow: var(--shadow-lg);
+    transform: translateX(-2px);
+  }
+}
+
+.quick-tools .help-fab.help-fab-active,
+.quick-tools .script-display-fab.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+}
+
+.quick-tools .help-fab.help-fab-active .quick-tool-icon,
+.quick-tools .script-display-fab.active .quick-tool-icon {
+  background: var(--color-white);
+  color: var(--color-primary);
+}
+
+@media (max-width: 640px) {
+  .quick-tools {
+    right: max(12px, env(safe-area-inset-right));
+    bottom: calc(env(safe-area-inset-bottom) + 82px);
+  }
+
+  body.auth-locked .quick-tools {
+    bottom: calc(env(safe-area-inset-bottom) + 16px);
+  }
+
+  .quick-tools-menu {
+    width: min(210px, calc(100vw - 24px));
+  }
+
+  .quick-tools-fab {
+    min-width: 72px;
+    min-height: 42px;
+    padding: 0 12px;
+  }
+
+  .quick-tools .help-fab,
+  .quick-tools .script-display-fab,
+  .quick-tools .scroll-top-fab,
+  .quick-tool-btn {
+    width: 100%;
+    min-width: 0;
+    height: 40px;
+    min-height: 40px;
+    font-size: var(--font-size-xs);
   }
 }
 

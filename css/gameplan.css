@@ -2094,6 +2094,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   body[data-active-tab="gameplan"] .panel:not(#gameplan),
   body[data-active-tab="gameplan"] .tabs,
   body[data-active-tab="gameplan"] header,
+  body[data-active-tab="gameplan"] .quick-tools,
   body[data-active-tab="gameplan"] #helpFab,
   body[data-active-tab="gameplan"] .gp-toolbar,
   body[data-active-tab="gameplan"] .gp-library,
