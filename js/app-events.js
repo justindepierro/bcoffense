@@ -4,6 +4,16 @@ document.addEventListener("click", (e) => {
       .querySelectorAll(".more-tools-wrap.open")
       .forEach((el) => el.classList.remove("open"));
   }
+  // Close generic tool-menu dropdowns
+  if (!e.target.closest(".tool-menu-wrap")) {
+    document
+      .querySelectorAll(".tool-menu-wrap.open")
+      .forEach((el) => el.classList.remove("open"));
+  } else if (e.target.closest(".tool-menu")) {
+    // Clicking an action inside a tool-menu closes that specific dropdown
+    const wrap = e.target.closest(".tool-menu-wrap");
+    if (wrap) wrap.classList.remove("open");
+  }
 });
 
 /* ── Delegated click handler ─────────────────────────────────────

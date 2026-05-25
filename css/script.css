@@ -2567,7 +2567,7 @@
 /* Script Actions - single tight row, sticky to bottom of viewport */
 .script-actions {
   display: flex;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
   align-items: center;
   gap: 6px;
   margin-top: 0;
@@ -2580,6 +2580,8 @@
   bottom: 8px;
   z-index: 6;
   padding-top: 18px;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 .script-actions > .btn,

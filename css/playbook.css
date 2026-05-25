@@ -443,7 +443,9 @@ table.sortable th {
 .pb-top-row {
   background: var(--color-bg-light);
   border-bottom: 1px solid var(--color-border-light);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 
 /* Search */
@@ -546,9 +548,10 @@ table.sortable th {
 .pb-utility-group {
   display: flex;
   align-items: center;
-  gap: 5px;
+  gap: 6px;
   margin-left: auto;
   flex-shrink: 0;
+  flex-wrap: nowrap;
 }
 .pb-utility-group select {
   padding: 5px 8px;

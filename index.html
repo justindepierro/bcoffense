@@ -434,8 +434,9 @@
           </div>
 
           <div class="pb-utility-group">
+            <!-- Columns visibility toggle -->
             <div class="column-toggle">
-              <button class="btn btn-sm" data-action="toggleColumnMenu" title="Toggle Columns">
+              <button class="btn btn-sm" data-action="toggleColumnMenu" title="Show/hide table columns">
                 &#9881; Columns
               </button>
               <div class="column-menu" id="columnMenu">
@@ -461,69 +462,91 @@
                   Tempo</label>
               </div>
             </div>
+            <!-- Wristband highlight selector -->
             <select id="playbookWristbandHighlight" data-onchange="highlightWristbandPlays"
               title="Highlight plays on wristband">
               <option value="">&#127944; Wristband</option>
             </select>
-            <button class="btn btn-sm" data-action="openPlaybookDataHealth"
-              title="Review duplicate plays, missing fields, vocabulary, category coverage, and CSV cleanup recommendations">
-              🩺 Data Health
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookBalanceReport"
-              title="Review personnel, formation, and concept balance for the current playbook view">
-              📊 Balance
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookSituationCoverage"
-              title="Review down, distance, field zone, and tempo coverage for the current playbook view">
-              🧭 Situations
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookTouchReport"
-              title="Review player touch and opportunity distribution for the current playbook view">
-              👥 Touches
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookConstraintMap"
-              title="Review concept constraints and complement coverage for the current playbook view">
-              🧩 Complements
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookIdentityAlignment"
-              title="Score the current playbook view against the offensive identity">
-              🎯 Identity
-            </button>
-            <button class="btn btn-sm" data-action="exportBackup" title="Export all data">
-              &#128229; Export
-            </button>
-            <button class="btn btn-sm" data-action="triggerClick" data-target="importBackupFile" title="Import backup">
-              &#128228; Import
-            </button>
-            <input type="file" id="importBackupFile" accept=".json" aria-label="Import backup file"
-              data-onchange="importBackup" data-pass="event" class="hidden" />
-            <button class="btn btn-sm" data-action="showStorageInfo" title="View storage usage">
-              &#128190;
-            </button>
-            <button class="btn btn-sm" data-action="openCloudSyncModal" title="Cloud sync backup">
-              ☁️ Sync
-            </button>
-            <button class="btn btn-sm" data-action="showKeyboardShortcuts" title="Keyboard shortcuts">
-              &#9000;
-            </button>
+            <!-- Analytics reports dropdown -->
+            <div class="tool-menu-wrap">
+              <button class="btn btn-sm" data-action="toggleParentOpen"
+                title="Playbook analytics — data health, balance, coverage, touches, identity">
+                📊 Analytics ▾
+              </button>
+              <div class="tool-menu" data-action="removeParentOpen">
+                <button data-action="openPlaybookDataHealth"
+                  title="Review duplicate plays, missing fields, vocabulary, category coverage, and CSV cleanup recommendations">
+                  🩺 Data Health
+                </button>
+                <button data-action="openPlaybookBalanceReport"
+                  title="Review personnel, formation, and concept balance for the current playbook view">
+                  📊 Balance
+                </button>
+                <button data-action="openPlaybookSituationCoverage"
+                  title="Review down, distance, field zone, and tempo coverage for the current playbook view">
+                  🧭 Situations
+                </button>
+                <button data-action="openPlaybookTouchReport"
+                  title="Review player touch and opportunity distribution for the current playbook view">
+                  👥 Touches
+                </button>
+                <button data-action="openPlaybookConstraintMap"
+                  title="Review concept constraints and complement coverage for the current playbook view">
+                  🧩 Complements
+                </button>
+                <button data-action="openPlaybookIdentityAlignment"
+                  title="Score the current playbook view against the offensive identity">
+                  🎯 Identity
+                </button>
+              </div>
+            </div>
+            <!-- Data management dropdown -->
+            <div class="tool-menu-wrap">
+              <button class="btn btn-sm" data-action="toggleParentOpen"
+                title="Data tools — export, import, cleanup, sync, storage">
+                📁 Data ▾
+              </button>
+              <div class="tool-menu" data-action="removeParentOpen">
+                <button data-action="exportPlaybookCSV"
+                  title="Export playbook as CSV for Excel / Sheets">
+                  &#128229; Export CSV
+                </button>
+                <button data-action="exportBackup" title="Export all app data as a backup file">
+                  &#128229; Export Backup
+                </button>
+                <button data-action="triggerClick" data-target="importBackupFile" title="Import a backup file">
+                  &#128228; Import Backup
+                </button>
+                <input type="file" id="importBackupFile" accept=".json" aria-label="Import backup file"
+                  data-onchange="importBackup" data-pass="event" class="hidden" />
+                <div class="tool-divider"></div>
+                <button data-action="openPlaybookSanitize"
+                  title="Find plays missing data for a field and fill them in fast">
+                  🧹 Cleanup Data
+                </button>
+                <button data-action="openPlaybookSanitizeFiltered"
+                  title="Cleanup Data — only the plays currently shown by your filters">
+                  🧹 Cleanup Filtered
+                </button>
+                <button data-action="openPlaybookCategoryCleanup"
+                  title="Pick a Call Sheet category and check off plays that belong — writes the right preferred fields automatically">
+                  🗂️ Cleanup by Category
+                </button>
+                <div class="tool-divider"></div>
+                <button data-action="showStorageInfo" title="View storage usage and item sizes">
+                  &#128190; Storage Info
+                </button>
+                <button data-action="openCloudSyncModal" title="Push or pull a full cloud backup">
+                  ☁️ Cloud Sync
+                </button>
+                <button data-action="showKeyboardShortcuts" title="Keyboard shortcuts reference">
+                  &#9000; Shortcuts
+                </button>
+              </div>
+            </div>
+            <!-- Primary action — always visible -->
             <button class="btn btn-sm btn-success" data-action="addNewPlay" title="Add a new play to the playbook">
               &#10010; Add Play
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookSanitize"
-              title="Find plays missing data for a field and fill them in fast">
-              🧹 Cleanup Data
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookSanitizeFiltered"
-              title="Cleanup Data, but only the plays currently shown by your filters">
-              🧹 Cleanup Filtered
-            </button>
-            <button class="btn btn-sm" data-action="openPlaybookCategoryCleanup"
-              title="Pick a Call Sheet category and check off plays that belong — writes the right preferred fields automatically">
-              🗂️ Cleanup by Category
-            </button>
-            <button class="btn btn-sm btn-primary" data-action="exportPlaybookCSV"
-              title="Export playbook as CSV for Excel / Sheets">
-              &#128229; Export CSV
             </button>
           </div>
         </div>
@@ -1103,26 +1126,12 @@
             <button id="scriptRedoBtn" class="btn btn-redo" data-action="redoScript" disabled title="Nothing to redo">
               ↪️ Redo
             </button>
-            <button class="btn btn-sm" data-action="exportScriptAsText" title="Download script as plain-text file">
-              📄 Export Text
-            </button>
-            <button class="btn btn-sm btn-smart-script" data-action="openSmartScript"
-              title="Intelligently reorder all periods for realistic game flow">
-              🧠 Smart Script All
-            </button>
-            <button class="btn btn-sm btn-scouting-fill" data-action="autoFillDefenseFromTendencies"
-              title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data">
-              🎯 Auto-Fill Defense
-            </button>
             <button class="btn btn-success" data-action="generatePDF" data-testid="generate-pdf">
               📄 Print Script
             </button>
             <button class="btn btn-sm btn-primary" data-action="openPrintStudio"
               title="Open unified print and export controls">
               🖨️ Print Studio
-            </button>
-            <button class="btn btn-secondary" data-action="exportScriptCSV" title="Export current script to CSV">
-              📥 Export CSV
             </button>
             <span class="script-actions-spacer" aria-hidden="true"></span>
             <button class="btn btn-primary" data-action="saveScript" data-testid="save-script">
@@ -1146,6 +1155,15 @@
                   🔀 Shuffle
                 </button>
                 <div class="tool-divider"></div>
+                <button data-action="openSmartScript"
+                  title="Intelligently reorder all periods for realistic game flow">
+                  🧠 Smart Script All
+                </button>
+                <button data-action="autoFillDefenseFromTendencies"
+                  title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data">
+                  🎯 Auto-Fill Defense
+                </button>
+                <div class="tool-divider"></div>
                 <button data-action="compareScripts" title="Compare two saved scripts">
                   📊 Compare Scripts
                 </button>
@@ -1163,6 +1181,12 @@
                   📁 Day Templates
                 </button>
                 <div class="tool-divider"></div>
+                <button data-action="exportScriptAsText" title="Download script as plain-text file">
+                  📄 Export Text
+                </button>
+                <button data-action="exportScriptCSV" title="Export current script to CSV">
+                  📥 Export CSV
+                </button>
                 <button data-action="showScriptShortcutsModal" title="Show keyboard shortcuts (?)">
                   ⌨️ Keyboard Shortcuts
                 </button>
@@ -1405,33 +1429,48 @@
               <button class="btn btn-sm" data-action="smartFillBySituation" title="Fill by down/distance/situation">
                 🧠 Smart Fill
               </button>
-              <button class="btn btn-sm" data-action="openWbFindReplaceModal"
-                title="Find & replace plays across all cards">
-                🔍 Find/Replace
-              </button>
               <button class="btn btn-success btn-sm" data-action="printWristband">
                 🖨️ Print
-              </button>
-              <button class="btn btn-sm" data-action="exportWristbandCSV" title="Export current card to CSV">
-                📊 Export
               </button>
               <button class="btn btn-primary btn-sm" data-action="saveWristband" data-testid="save-wristband">
                 💾 Save
               </button>
-              <button class="btn btn-sm" data-action="saveWristbandTemplate"
-                title="Save current cards as a reusable position/group template">
-                💾 Template
-              </button>
-              <button class="btn btn-sm" data-action="openWristbandTemplatesMenu"
-                title="Load or delete reusable wristband templates">
-                📁 Templates
-              </button>
               <button class="btn btn-danger btn-sm" data-action="clearWristband" data-testid="clear-wristband">
                 🗑 Clear
               </button>
-              <button class="btn btn-sm" data-action="showWbShortcutHelp" title="Keyboard shortcuts & tips">
-                ❓ Help
-              </button>
+              <!-- Templates dropdown -->
+              <div class="tool-menu-wrap">
+                <button class="btn btn-sm" data-action="toggleParentOpen" title="Save or load wristband templates">
+                  📁 Templates ▾
+                </button>
+                <div class="tool-menu" data-action="removeParentOpen">
+                  <button data-action="saveWristbandTemplate"
+                    title="Save current cards as a reusable position/group template">
+                    💾 Save Template
+                  </button>
+                  <button data-action="openWristbandTemplatesMenu"
+                    title="Load or delete reusable wristband templates">
+                    📂 Load Templates
+                  </button>
+                </div>
+              </div>
+              <!-- More dropdown -->
+              <div class="tool-menu-wrap">
+                <button class="btn btn-sm" data-action="toggleParentOpen" title="More wristband tools">
+                  ⋯
+                </button>
+                <div class="tool-menu" data-action="removeParentOpen">
+                  <button data-action="openWbFindReplaceModal" title="Find &amp; replace plays across all cards">
+                    🔍 Find/Replace
+                  </button>
+                  <button data-action="exportWristbandCSV" title="Export current card to CSV">
+                    📊 Export CSV
+                  </button>
+                  <button data-action="showWbShortcutHelp" title="Keyboard shortcuts &amp; tips">
+                    ❓ Help
+                  </button>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -1727,29 +1766,38 @@
           <button class="btn btn-primary btn-sm" data-action="autoPopulateCallSheet">
             ⚡ Auto-Populate
           </button>
-          <button class="btn btn-secondary btn-sm" data-action="openLoadWristbandModal">
-            📋 Load Wristband
-          </button>
-          <span id="loadedWristbandDisplay" class="cs-wb-display"></span>
           <button class="btn btn-success btn-sm" data-action="printCallSheet" data-testid="print-callsheet">
             🖨️ Print
           </button>
           <button class="btn btn-secondary btn-sm" data-action="openLoadCallSheetModal" data-testid="load-callsheet">
-            📂 Load Call Sheet
+            📂 Load
           </button>
           <button class="btn btn-primary btn-sm" data-action="saveCallSheetTemplate" data-testid="save-callsheet">
             💾 Save
           </button>
-          <button class="btn btn-secondary btn-sm" data-action="exportCallSheetCSV" title="Export call sheet to CSV">
-            📄 CSV
-          </button>
-          <button class="btn btn-warning btn-sm" data-action="runConstraintCheck"
-            title="Check call sheet buckets against game plan constraints">
-            🛡️ Check Constraints
-          </button>
           <button class="btn btn-danger btn-sm" data-action="clearCallSheet" data-testid="clear-callsheet">
             🗑️ Clear
           </button>
+          <!-- More dropdown -->
+          <div class="tool-menu-wrap">
+            <button class="btn btn-sm" data-action="toggleParentOpen" title="More call sheet tools">
+              ⋯ More ▾
+            </button>
+            <div class="tool-menu" data-action="removeParentOpen">
+              <button data-action="openLoadWristbandModal">
+                📋 Load Wristband
+              </button>
+              <span id="loadedWristbandDisplay" class="cs-wb-display" style="display:block;padding:4px 14px;font-size:var(--font-size-xs);color:var(--color-text-muted);"></span>
+              <div class="tool-divider"></div>
+              <button data-action="exportCallSheetCSV" title="Export call sheet to CSV">
+                📄 Export CSV
+              </button>
+              <button data-action="runConstraintCheck"
+                title="Check call sheet buckets against game plan constraints">
+                🛡️ Check Constraints
+              </button>
+            </div>
+          </div>
         </div>
       </div>
 

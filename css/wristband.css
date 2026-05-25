@@ -486,7 +486,9 @@
   margin-bottom: 10px;
   gap: 15px;
   border: 1px solid var(--color-border-light);
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  scrollbar-width: thin;
 }
 .wb-toolbar-left {
   display: flex;
@@ -504,7 +506,7 @@
   display: flex;
   align-items: center;
   gap: 6px;
-  flex-wrap: wrap;
+  flex-wrap: nowrap;
 }
 
 /* Wristband Sort Panel */

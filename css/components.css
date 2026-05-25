@@ -3617,3 +3617,69 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   transform: translateY(0) scale(0.98);
   transition-duration: 0.05s;
 }
+
+/* ── Generic Tool Menu Dropdown ──────────────────────────────────
+   Usage: wrap a trigger button + .tool-menu div inside .tool-menu-wrap.
+   toggleParentOpen on the button adds .open to the wrap; removeParentOpen
+   on the menu div removes it when any menu item is clicked.
+   Add .tool-menu-up to .tool-menu-wrap to open the menu upward (for
+   toolbars near the bottom of the viewport, e.g. script-actions).
+──────────────────────────────────────────────────────────────── */
+.tool-menu-wrap {
+  position: relative;
+  display: inline-flex;
+}
+.tool-menu {
+  display: none;
+  position: absolute;
+  top: calc(100% + 4px);
+  right: 0;
+  background: var(--color-white);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-dropdown);
+  min-width: 200px;
+  padding: 4px 0;
+  white-space: nowrap;
+}
+.tool-menu-wrap.open .tool-menu {
+  display: block;
+}
+.tool-menu-wrap.tool-menu-up .tool-menu {
+  top: auto;
+  bottom: calc(100% + 4px);
+}
+.tool-menu button {
+  display: block;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
+  padding: 8px 14px;
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  cursor: pointer;
+  color: var(--color-text);
+  transition: background var(--transition-fast);
+}
+@media (hover: hover) {
+  .tool-menu button:hover {
+    background: var(--color-bg-hover-row);
+  }
+}
+.tool-menu .tool-divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 4px 0;
+}
+.tool-menu-section-label {
+  display: block;
+  padding: 6px 14px 2px;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--color-text-muted);
+  pointer-events: none;
+}
