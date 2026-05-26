@@ -1467,7 +1467,7 @@ function renderCallSheet() {
     columns.forEach((col) => {
       html += '<div class="callsheet-column">';
       col.forEach((cat) => {
-        html += renderCategory(cat, callSheet[cat.id], dupeMap, displayOptions);
+        html += renderCategory(cat, callSheet[cat.id] || {}, dupeMap, displayOptions);
       });
       html += '</div>';
     });
