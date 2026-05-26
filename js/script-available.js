@@ -264,7 +264,20 @@ function devowelScriptSearchText(value) {
     .replace(/\s+/g, "");
 }
 
+// WeakMap cache for haystack objects — keyed by play object reference.
+// Stores { hash, result } where hash is a quick content fingerprint so
+// in-place edits (same object, changed fields) are detected and refreshed.
+const _scriptHaystackCache = new WeakMap();
+
+function _scriptPlayHash(play) {
+  return `${play.play || ""}|${play.basePlay || ""}|${play.formation || ""}|${play.protection || ""}|${play.motion || ""}|${play.shift || ""}|${play.back || ""}|${play.personnel || ""}|${play.oneWord || ""}|${play.playTag1 || ""}|${play.playTag2 || ""}`;
+}
+
 function buildScriptSearchHaystack(play) {
+  const currentHash = _scriptPlayHash(play);
+  const cached = _scriptHaystackCache.get(play);
+  if (cached && cached.hash === currentHash) return cached.result;
+
   const raw = [
     play.play,
     play.basePlay,
@@ -282,12 +295,15 @@ function buildScriptSearchHaystack(play) {
     .join(" ");
 
   const normalized = normalizeScriptSearchText(raw);
-  return {
+  const result = {
     normalized,
     condensed: normalized.replace(/\s+/g, ""),
     devoweled: devowelScriptSearchText(normalized),
     tokens: normalized.split(/\s+/).filter(Boolean),
   };
+
+  _scriptHaystackCache.set(play, { hash: currentHash, result });
+  return result;
 }
 
 function playMatchesScriptSearch(play, search) {

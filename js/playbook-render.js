@@ -321,9 +321,20 @@ function highlightSearch(text, searchTerm) {
   return createSearchHighlighter(searchTerm)(text);
 }
 
+let _statsBarCache = null;
+
+function invalidateStatsBarCache() {
+  _statsBarCache = null;
+}
+
 function updateStatsBar() {
   const statsBar = document.getElementById("statsBar");
   if (!statsBar) return;
+
+  if (_statsBarCache) {
+    statsBar.innerHTML = _statsBarCache;
+    return;
+  }
 
   const typeCounts = {};
   plays.forEach((play) => {
@@ -333,10 +344,12 @@ function updateStatsBar() {
 
   const sorted = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
 
-  statsBar.innerHTML = sorted
+  _statsBarCache = sorted
     .map(
       ([type, count]) =>
         `<div class="stat-item"><span class="stat-count">${count}</span> ${escapeHtml(type)}</div>`,
     )
     .join("");
+
+  statsBar.innerHTML = _statsBarCache;
 }

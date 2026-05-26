@@ -265,31 +265,15 @@ function toggleMoreFilters() {
  */
 function populateFilters() {
   try {
-    const types = [...new Set(plays.map((p) => p.type))].filter(Boolean).sort();
-    const formations = [...new Set(plays.map((p) => p.formation))]
-      .filter(Boolean)
-      .sort();
-    const basePlays = [...new Set(plays.map((p) => p.basePlay))]
-      .filter(Boolean)
-      .sort();
-    const backs = [...new Set(plays.map((p) => p.back))].filter(Boolean).sort();
-    const motions = [...new Set(plays.map((p) => p.motion))]
-      .filter(Boolean)
-      .sort();
-    const protections = [...new Set(plays.map((p) => p.protection))]
-      .filter(Boolean)
-      .sort();
-    const tempos = [...new Set(plays.map((p) => p.tempo))]
-      .filter(Boolean)
-      .sort();
+    const cache = getFilterCache();
 
     // Playbook dropdown filters
-    _fillSelect("filterFormation", "All Formations", formations);
-    _fillSelect("filterBasePlay", "All Base Plays", basePlays);
-    _fillSelect("pbFilterBack", "All Backs", backs);
-    _fillSelect("pbFilterMotion", "All Motions", motions);
-    _fillSelect("pbFilterProtection", "All Protections", protections);
-    _fillSelect("pbFilterTempo", "All Tempos", tempos);
+    _fillSelect("filterFormation", "All Formations", cache.formations);
+    _fillSelect("filterBasePlay", "All Base Plays", cache.basePlays);
+    _fillSelect("pbFilterBack", "All Backs", cache.backs);
+    _fillSelect("pbFilterMotion", "All Motions", cache.motions);
+    _fillSelect("pbFilterProtection", "All Protections", cache.protections);
+    _fillSelect("pbFilterTempo", "All Tempos", cache.tempos);
 
     // Build chip groups
     buildFilterChips();
@@ -299,7 +283,7 @@ function populateFilters() {
     if (scriptFormFilter) {
       scriptFormFilter.innerHTML =
         '<option value="">All Formations</option>' +
-        formations
+        cache.formations
           .map(
             (f) => `<option value="${escapeHtml(f)}">${escapeHtml(f)}</option>`,
           )
@@ -309,7 +293,7 @@ function populateFilters() {
     if (scriptBaseFilter) {
       scriptBaseFilter.innerHTML =
         '<option value="">All Base Plays</option>' +
-        basePlays
+        cache.basePlays
           .map(
             (b) => `<option value="${escapeHtml(b)}">${escapeHtml(b)}</option>`,
           )
@@ -324,7 +308,7 @@ function populateFilters() {
     if (wbTypeFilter) {
       wbTypeFilter.innerHTML =
         '<option value="">All Play Types</option>' +
-        types
+        cache.types
           .map(
             (t) => `<option value="${escapeHtml(t)}">${escapeHtml(t)}</option>`,
           )

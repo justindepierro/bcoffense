@@ -39,6 +39,10 @@ function getFilterCache() {
     basePlays: [
       ...new Set(plays.map((play) => play.basePlay).filter(Boolean)),
     ].sort(),
+    backs: [...new Set(plays.map((play) => play.back).filter(Boolean))].sort(),
+    motions: [...new Set(plays.map((play) => play.motion).filter(Boolean))].sort(),
+    protections: [...new Set(plays.map((play) => play.protection).filter(Boolean))].sort(),
+    tempos: [...new Set(plays.map((play) => play.tempo).filter(Boolean))].sort(),
   };
   return _filterCache;
 }
@@ -47,6 +51,9 @@ function invalidateFilterCache() {
   _filterCache = null;
   if (typeof invalidatePlaybookRuntimeIndex === "function") {
     invalidatePlaybookRuntimeIndex();
+  }
+  if (typeof invalidateStatsBarCache === "function") {
+    invalidateStatsBarCache();
   }
 }
 
