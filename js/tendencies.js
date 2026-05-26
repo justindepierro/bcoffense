@@ -534,16 +534,20 @@ function saveTendenciesSettings() {
 // ============ Autosave Draft ============
 
 function scheduleTendenciesAutosave() {
-  tendenciesAutosaveTimer = queueAutosave(tendenciesAutosaveTimer, () => {
-    if (!tendenciesCurrentPlay) return;
-    persistDraftData(STORAGE_KEYS.TENDENCIES_DRAFT, {
-      opponentIndex: tendenciesCurrentOpponent,
-      play: { ...tendenciesCurrentPlay },
-      editIndex: tendenciesEditIndex,
-      wizardStep: tendenciesWizardStep,
-      rapidMode: tendenciesRapidMode,
-    }, { timestampField: "timestamp" });
-  }, AUTOSAVE_DEBOUNCE_MS);
+  tendenciesAutosaveTimer = queueAutosave(
+    tendenciesAutosaveTimer,
+    () => {
+      if (!tendenciesCurrentPlay) return;
+      persistDraftData(STORAGE_KEYS.TENDENCIES_DRAFT, {
+        opponentIndex: tendenciesCurrentOpponent,
+        play: { ...tendenciesCurrentPlay },
+        editIndex: tendenciesEditIndex,
+        wizardStep: tendenciesWizardStep,
+        rapidMode: tendenciesRapidMode,
+      }, { timestampField: "timestamp" });
+    },
+    { delay: AUTOSAVE_DEBOUNCE_MS },
+  );
 }
 
 async function checkTendenciesDraft() {

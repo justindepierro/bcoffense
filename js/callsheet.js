@@ -2387,6 +2387,7 @@ function saveCallSheetState() {
 function saveCallSheet() {
   saveCallSheetState();
   storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
+  if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
   scheduleCallSheetAutosave();
   // Persist constraints snapshot alongside call sheet
   if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
