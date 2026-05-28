@@ -402,24 +402,37 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
  */
 function _applyScriptColorPreset(previewEl) {
   var preset = typeof getActiveColorPreset === "function" ? getActiveColorPreset() : null;
+  // Always clear previously applied inline colors first
+  previewEl.querySelectorAll(".script-table th").forEach(function (th) {
+    th.style.removeProperty("color");
+    th.style.removeProperty("border-bottom-color");
+  });
+  var teamNameEl = previewEl.querySelector(".preview-team-name");
+  if (teamNameEl) teamNameEl.style.removeProperty("color");
+  previewEl.style.removeProperty("--cp-hdr");
+
   if (preset) {
+    // Set --cp-hdr on the container (used by the screen-preview CSS rule in components.css)
     previewEl.style.setProperty("--cp-hdr", preset.primary);
-    // Override the CSS custom properties defined on .script-preview (no !important in
-    // print.css so our later-injected style wins by cascade order at same specificity).
-    // This lets all existing `color: var(--script-print-ink) !important` rules in
-    // print.css automatically resolve to the team color without fighting !important.
+    // Apply inline !important directly to each th — this beats any stylesheet
+    // `!important` rule (inline important outranks author-stylesheet important in
+    // the CSS cascade). It also survives cloneNode(true) in showPrintPreview, so
+    // the preview modal shows the team color without needing ID-based CSS.
+    previewEl.querySelectorAll(".script-table th").forEach(function (th) {
+      th.style.setProperty("color", preset.primary, "important");
+      th.style.setProperty("border-bottom-color", preset.primary, "important");
+    });
+    if (teamNameEl) teamNameEl.style.setProperty("color", preset.primary, "important");
+    // Also override the CSS custom properties as a belt-and-suspenders fallback for print
     return (
       "@media print {" +
       " body.print-script .script-preview {" +
       " --script-print-ink: " + preset.primary + ";" +
       " --script-print-grid: " + preset.primary + ";" +
       " }" +
-      " body.print-script .preview-team-name {" +
-      " color: " + preset.primary + " !important; }" +
       "}"
     );
   }
-  previewEl.style.removeProperty("--cp-hdr");
   return "";
 }
 
