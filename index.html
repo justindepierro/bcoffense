@@ -1130,6 +1130,21 @@
             <button id="scriptRedoBtn" class="btn btn-redo" data-action="redoScript" disabled title="Nothing to redo">
               ↪️ Redo
             </button>
+            <select id="scriptColorSchemeSelect" class="wb-preset-select" data-onchange="setScriptColorScheme" data-pass="value" title="Color scheme for printed script header">
+              <option value="">🎨 Scheme</option>
+              <option value="subway-alumni">Subway Alumni</option>
+              <option value="iron-tide">Iron Tide</option>
+              <option value="war-eagles">War Eagles</option>
+              <option value="canes-unit">Canes Unit</option>
+              <option value="skull-session">Skull Session</option>
+              <option value="big-house">Big House</option>
+              <option value="dawg-pound">Dawg Pound</option>
+              <option value="forty-acres">Forty Acres</option>
+              <option value="duck-hunt">Duck Hunt</option>
+              <option value="happy-valley">Happy Valley</option>
+              <option value="death-valley">Death Valley</option>
+              <option value="sooner-magic">Sooner Magic</option>
+            </select>
             <button class="btn btn-success" data-action="generatePDF" data-testid="generate-pdf">
               📄 Print Script
             </button>
@@ -1405,6 +1420,21 @@
                   aria-label="Purple"></button>
                 <button class="color-btn" data-action="setHeaderColor" data-arg="#fd7e14" title="Orange"
                   aria-label="Orange"></button>
+                <select id="wbColorSchemeSelect" class="wb-preset-select" data-onchange="applyWristbandColorScheme" data-pass="value" title="Apply a college-inspired team color scheme">
+                  <option value="">🎨 Scheme</option>
+                  <option value="subway-alumni">Subway Alumni</option>
+                  <option value="iron-tide">Iron Tide</option>
+                  <option value="war-eagles">War Eagles</option>
+                  <option value="canes-unit">Canes Unit</option>
+                  <option value="skull-session">Skull Session</option>
+                  <option value="big-house">Big House</option>
+                  <option value="dawg-pound">Dawg Pound</option>
+                  <option value="forty-acres">Forty Acres</option>
+                  <option value="duck-hunt">Duck Hunt</option>
+                  <option value="happy-valley">Happy Valley</option>
+                  <option value="death-valley">Death Valley</option>
+                  <option value="sooner-magic">Sooner Magic</option>
+                </select>
               </div>
               <span class="wb-toolbar-sep"></span>
               <div class="color-picker" id="cardColorPicker">

@@ -237,4 +237,11 @@ document.addEventListener("DOMContentLoaded", () => {
       }
     });
   }
+
+  // Restore color scheme selects from storage
+  const _savedPresetId = storageManager.get(STORAGE_KEYS.COLOR_PRESET, "");
+  const _wbSel = document.getElementById("wbColorSchemeSelect");
+  if (_wbSel) _wbSel.value = _savedPresetId;
+  const _scriptSel = document.getElementById("scriptColorSchemeSelect");
+  if (_scriptSel) _scriptSel.value = _savedPresetId;
 });

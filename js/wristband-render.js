@@ -3,10 +3,21 @@ function setHeaderColor(color, btn) {
   document
     .querySelectorAll(".color-picker:not(#cardColorPicker) .color-btn")
     .forEach((button) => button.classList.remove("active"));
-  btn.classList.add("active");
+  if (btn) btn.classList.add("active");
   markWristbandDirty();
   scheduleWristbandAutosave();
   renderWristbandGrid();
+}
+
+function applyWristbandColorScheme(presetId) {
+  setActiveColorPreset(presetId || "");
+  const preset = presetId
+    ? TEAM_COLOR_PRESETS.find(function (p) { return p.id === presetId; })
+    : null;
+  setHeaderColor(preset ? preset.primary : "transparent");
+  // Sync the scheme select to reflect the active preset
+  const sel = document.getElementById("wbColorSchemeSelect");
+  if (sel) sel.value = presetId || "";
 }
 
 function setCardColor(color, btn) {

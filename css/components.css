@@ -1416,7 +1416,24 @@
   font-weight: 800;
   letter-spacing: 0.04em;
   text-transform: uppercase;
+  color: var(--cp-hdr, var(--color-text));
+}
+/* On-screen preview: inherit team color scheme set via --cp-hdr / --cp-txt */
+#previewContainer .script-table th {
+  background: var(--cp-hdr, white);
+  color: var(--cp-txt, var(--color-text));
+}
+/* Compact team-color-scheme select (wristband toolbar + script actions) */
+.wb-preset-select {
+  height: 26px;
+  padding: 0 4px;
+  font-size: var(--font-size-xs);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
   color: var(--color-text);
+  cursor: pointer;
+  max-width: 130px;
 }
 .script-table {
   width: 100%;

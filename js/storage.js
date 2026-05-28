@@ -112,6 +112,7 @@ const STORAGE_KEYS = {
   GAME_PLAN_TEMPLATES: "gamePlanTemplates",
   CALLSHEET_PRINT_OPTIONS: "callSheetPrintOptions",
   CLOUD_SYNC_SETTINGS: "cloudSyncSettings",
+  COLOR_PRESET: "colorPreset",
 };
 
 const MIGRATIONS = {

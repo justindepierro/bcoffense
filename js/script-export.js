@@ -391,6 +391,43 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
   return bodyHtml;
 }
 
+/**
+ * Apply the active team color preset to the preview container (screen + print).
+ * Sets CSS custom properties for the on-screen preview and returns extra
+ * @media print CSS to append to setupPrintPageStyle so the header row
+ * gets the right background when printed.
+ *
+ * @param {HTMLElement} previewEl - #previewContainer element
+ * @returns {string} CSS text (may be empty string if no preset is active)
+ */
+function _applyScriptColorPreset(previewEl) {
+  var preset = typeof getActiveColorPreset === "function" ? getActiveColorPreset() : null;
+  if (preset) {
+    previewEl.style.setProperty("--cp-hdr", preset.primary);
+    previewEl.style.setProperty("--cp-txt", preset.text);
+    return (
+      "@media print {" +
+      " body.print-script .script-table th {" +
+      " background: " + preset.primary + " !important;" +
+      " color: " + preset.text + " !important; }" +
+      " body.print-script .preview-team-name {" +
+      " color: " + preset.primary + " !important; }" +
+      "}"
+    );
+  }
+  previewEl.style.removeProperty("--cp-hdr");
+  previewEl.style.removeProperty("--cp-txt");
+  return "";
+}
+
+function setScriptColorScheme(presetId) {
+  setActiveColorPreset(presetId || "");
+  var preset = presetId
+    ? TEAM_COLOR_PRESETS.find(function (p) { return p.id === presetId; })
+    : null;
+  showToast(preset ? "\uD83C\uDFA8 Scheme: " + preset.label : "Color scheme cleared.", 2000);
+}
+
 function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   const table = document.getElementById("previewTable");
   if (!table) return;
@@ -610,8 +647,9 @@ function printPeriod(separatorIndex) {
     document.getElementById("wristbandPrint").classList.add("hidden");
     document.body.classList.add("print-script");
 
+    const _periodColorCSS = _applyScriptColorPreset(document.getElementById("previewContainer"));
     setupPrintPageStyle(
-      "@media print { @page { size: letter; margin: 0.25in; } }",
+      "@media print { @page { size: letter; margin: 0.25in; } }" + _periodColorCSS,
     );
 
     setTimeout(() => {
@@ -694,8 +732,9 @@ function generatePDF() {
     document.getElementById("wristbandPrint").classList.add("hidden");
     document.body.classList.add("print-script");
 
+    const _pdfColorCSS = _applyScriptColorPreset(document.getElementById("previewContainer"));
     setupPrintPageStyle(
-      "@media print { @page { size: letter; margin: 0.25in; } }",
+      "@media print { @page { size: letter; margin: 0.25in; } }" + _pdfColorCSS,
     );
 
     setTimeout(() => {
@@ -864,8 +903,9 @@ async function printFullDay() {
     document.getElementById("wristbandPrint").classList.add("hidden");
     document.body.classList.add("print-script");
 
+    const _dayColorCSS = _applyScriptColorPreset(document.getElementById("previewContainer"));
     setupPrintPageStyle(
-      "@media print { @page { size: letter; margin: 0.25in; } }",
+      "@media print { @page { size: letter; margin: 0.25in; } }" + _dayColorCSS,
     );
 
     setTimeout(() => {
