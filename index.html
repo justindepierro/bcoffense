@@ -1130,8 +1130,8 @@
             <button id="scriptRedoBtn" class="btn btn-redo" data-action="redoScript" disabled title="Nothing to redo">
               ↪️ Redo
             </button>
-            <select id="scriptColorSchemeSelect" class="wb-preset-select" data-onchange="setScriptColorScheme" data-pass="value" title="Color scheme for printed script header">
-              <option value="">🎨 Scheme</option>
+            <select id="scriptColorSchemeSelect" class="wb-preset-select" data-onchange="setScriptColorScheme" data-pass="value" title="Print color scheme — colors the script header row and team name">
+              <option value="">🎨 Print Scheme</option>
               <option value="subway-alumni">Subway Alumni</option>
               <option value="iron-tide">Iron Tide</option>
               <option value="war-eagles">War Eagles</option>
@@ -1420,8 +1420,12 @@
                   aria-label="Purple"></button>
                 <button class="color-btn" data-action="setHeaderColor" data-arg="#fd7e14" title="Orange"
                   aria-label="Orange"></button>
+              </div>
+              <span class="wb-toolbar-sep"></span>
+              <div class="color-picker">
+                <span>Scheme:</span>
                 <select id="wbColorSchemeSelect" class="wb-preset-select" data-onchange="applyWristbandColorScheme" data-pass="value" title="Apply a college-inspired team color scheme">
-                  <option value="">🎨 Scheme</option>
+                  <option value="">— None —</option>
                   <option value="subway-alumni">Subway Alumni</option>
                   <option value="iron-tide">Iron Tide</option>
                   <option value="war-eagles">War Eagles</option>

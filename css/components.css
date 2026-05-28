@@ -1429,15 +1429,16 @@
 }
 /* Compact team-color-scheme select (wristband toolbar + script actions) */
 .wb-preset-select {
-  height: 26px;
-  padding: 0 4px;
+  height: 32px;
+  padding: 0 6px;
   font-size: var(--font-size-xs);
   border: 1px solid var(--color-border-input);
   border-radius: var(--radius-sm);
   background: var(--color-bg-input);
   color: var(--color-text);
   cursor: pointer;
-  max-width: 130px;
+  max-width: 150px;
+  flex: 0 0 auto;
 }
 .script-table {
   width: 100%;
