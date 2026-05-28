@@ -404,12 +404,16 @@ function _applyScriptColorPreset(previewEl) {
   var preset = typeof getActiveColorPreset === "function" ? getActiveColorPreset() : null;
   if (preset) {
     previewEl.style.setProperty("--cp-hdr", preset.primary);
+    // Override the CSS custom properties defined on .script-preview (no !important in
+    // print.css so our later-injected style wins by cascade order at same specificity).
+    // This lets all existing `color: var(--script-print-ink) !important` rules in
+    // print.css automatically resolve to the team color without fighting !important.
     return (
       "@media print {" +
-      " body.print-script .script-table th {" +
-      " background: white !important;" +
-      " color: " + preset.primary + " !important;" +
-      " border-bottom: 1.5px solid " + preset.primary + " !important; }" +
+      " body.print-script .script-preview {" +
+      " --script-print-ink: " + preset.primary + ";" +
+      " --script-print-grid: " + preset.primary + ";" +
+      " }" +
       " body.print-script .preview-team-name {" +
       " color: " + preset.primary + " !important; }" +
       "}"
