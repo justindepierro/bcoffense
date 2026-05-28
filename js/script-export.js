@@ -404,19 +404,18 @@ function _applyScriptColorPreset(previewEl) {
   var preset = typeof getActiveColorPreset === "function" ? getActiveColorPreset() : null;
   if (preset) {
     previewEl.style.setProperty("--cp-hdr", preset.primary);
-    previewEl.style.setProperty("--cp-txt", preset.text);
     return (
       "@media print {" +
       " body.print-script .script-table th {" +
-      " background: " + preset.primary + " !important;" +
-      " color: " + preset.text + " !important; }" +
+      " background: white !important;" +
+      " color: " + preset.primary + " !important;" +
+      " border-bottom: 1.5px solid " + preset.primary + " !important; }" +
       " body.print-script .preview-team-name {" +
       " color: " + preset.primary + " !important; }" +
       "}"
     );
   }
   previewEl.style.removeProperty("--cp-hdr");
-  previewEl.style.removeProperty("--cp-txt");
   return "";
 }
 

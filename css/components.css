@@ -1418,10 +1418,14 @@
   text-transform: uppercase;
   color: var(--cp-hdr, var(--color-text));
 }
-/* On-screen preview: inherit team color scheme set via --cp-hdr / --cp-txt */
+/* On-screen preview: inherit team color scheme set via --cp-hdr */
 #previewContainer .script-table th {
-  background: var(--cp-hdr, white);
-  color: var(--cp-txt, var(--color-text));
+  background: white;
+  color: var(--cp-hdr, var(--color-text));
+  border-bottom: 2px solid var(--cp-hdr, var(--color-border));
+}
+#previewContainer .preview-team-name {
+  color: var(--cp-hdr, var(--color-text));
 }
 /* Compact team-color-scheme select (wristband toolbar + script actions) */
 .wb-preset-select {
