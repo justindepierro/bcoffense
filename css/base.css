@@ -372,6 +372,8 @@ textarea:focus {
   --color-navy-alpha-06: rgba(200, 210, 230, 0.06);
   --color-navy-alpha-08: rgba(200, 210, 230, 0.08);
   --color-navy-alpha-12: rgba(200, 210, 230, 0.12);
+  --color-navy-alpha-20: rgba(200, 210, 230, 0.2);
+  --color-navy-alpha-35: rgba(200, 210, 230, 0.35);
   --color-warning-alpha-06: rgba(230, 180, 90, 0.08);
   --color-warning-alpha-12: rgba(230, 180, 90, 0.14);
   --color-warning-alpha-20: rgba(230, 180, 90, 0.24);

@@ -13,6 +13,14 @@
   <title>Practice Script & Playbook</title>
   <link rel="icon"
     href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🏈</text></svg>" />
+  <!-- Restore dark mode before first paint to prevent flash of unstyled content -->
+  <script>
+    try {
+      var _t = localStorage.getItem('theme');
+      var _d = !_t && window.matchMedia('(prefers-color-scheme: dark)').matches;
+      if (_t === 'dark' || _d) document.documentElement.setAttribute('data-theme', 'dark');
+    } catch (e) {}
+  </script>
   <link rel="manifest" href="manifest.json" />
   <!-- Google Fonts: Inter (UI) + IBM Plex Mono (playbook data) -->
   <link rel="preconnect" href="https://fonts.googleapis.com" />

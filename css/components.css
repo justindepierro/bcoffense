@@ -1420,7 +1420,7 @@
 }
 /* On-screen preview: inherit team color scheme set via --cp-hdr */
 #previewContainer .script-table th {
-  background: white;
+  background: var(--color-surface);
   color: var(--cp-hdr, var(--color-text));
   border-bottom: 2px solid var(--cp-hdr, var(--color-border));
 }
@@ -1980,7 +1980,7 @@ kbd {
   border-radius: var(--radius-round);
   border: none;
   background: var(--color-navy-alpha-20);
-  color: rgba(25, 42, 81, 0.5);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-h1);
   font-weight: 700;
   cursor: pointer;
