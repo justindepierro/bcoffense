@@ -441,6 +441,16 @@ function setScriptColorScheme(presetId) {
   var preset = presetId
     ? TEAM_COLOR_PRESETS.find(function (p) { return p.id === presetId; })
     : null;
+
+  // Sync all period separators to the preset's primary color
+  if (preset) {
+    var changed = false;
+    script.forEach(function (item) {
+      if (item.isSeparator) { item.color = preset.primary; changed = true; }
+    });
+    if (changed) { saveScriptState(); requestRenderScript(); }
+  }
+
   showToast(preset ? "\uD83C\uDFA8 Scheme: " + preset.label : "Color scheme cleared.", 2000);
 }
 

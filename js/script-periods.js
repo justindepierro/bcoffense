@@ -123,6 +123,10 @@ function updatePeriodColor(index, el) {
   if (header) header.style.background = el.value;
   const wrapper = el.closest(".period-header-wrapper");
   if (wrapper) wrapper.style.borderLeftColor = el.value;
+  // Clear the color scheme preset — user has set a custom period color
+  setActiveColorPreset("");
+  const schemeSelect = document.getElementById("scriptColorSchemeSelect");
+  if (schemeSelect) schemeSelect.value = "";
   if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
   saveScriptState();
   announceScriptA11y(`Updated color for ${script[index]?.label || "period"}`);
