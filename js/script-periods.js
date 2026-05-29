@@ -8,11 +8,12 @@ function ensureFirstPeriod() {
   const hasSeparator = script.some((item) => item?.isSeparator);
   if (hasSeparator) return;
 
+  var _presetColor = (typeof getActiveColorPreset === "function" && getActiveColorPreset()?.primary) || UI_COLORS.periodDefault;
   script.push({
     isSeparator: true,
     label: "Period 1",
     minutes: 10,
-    color: UI_COLORS.periodDefault,
+    color: _presetColor,
     id: Date.now() + Math.random(),
   });
 }
@@ -34,7 +35,7 @@ function addSeparator() {
         </div>
         <div class="pcf-row">
           <label>Color</label>
-          <input type="color" id="newPeriodColor" value="#333333" />
+          <input type="color" id="newPeriodColor" value="${(typeof getActiveColorPreset === 'function' && getActiveColorPreset()?.primary) || UI_COLORS.periodDefault}" />
         </div>
       </div>
       <div class="period-create-presets">

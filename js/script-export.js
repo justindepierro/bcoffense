@@ -441,15 +441,26 @@ function setScriptColorScheme(presetId) {
   var preset = presetId
     ? TEAM_COLOR_PRESETS.find(function (p) { return p.id === presetId; })
     : null;
+  var newColor = preset ? preset.primary : UI_COLORS.periodDefault;
 
-  // Sync all period separators to the preset's primary color
-  if (preset) {
-    var changed = false;
-    script.forEach(function (item) {
-      if (item.isSeparator) { item.color = preset.primary; changed = true; }
-    });
-    if (changed) { saveScriptState(); requestRenderScript(); }
-  }
+  // Sync all period separators to the new color (or default when clearing)
+  var changed = false;
+  script.forEach(function (item) {
+    if (item.isSeparator) { item.color = newColor; changed = true; }
+  });
+
+  // Directly update DOM for instant visual feedback (no RAF delay)
+  document.querySelectorAll("#scriptPlays .period-header").forEach(function (el) {
+    el.style.background = newColor;
+  });
+  document.querySelectorAll("#scriptPlays .period-header-wrapper").forEach(function (el) {
+    el.style.borderLeftColor = newColor;
+  });
+  document.querySelectorAll("#scriptPlays .ph-color-input").forEach(function (el) {
+    el.value = newColor;
+  });
+
+  if (changed) { saveScriptState(); requestRenderScript(); }
 
   showToast(preset ? "\uD83C\uDFA8 Scheme: " + preset.label : "Color scheme cleared.", 2000);
 }
