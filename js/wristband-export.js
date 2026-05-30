@@ -327,41 +327,58 @@ function renderPlayerCardGrid() {
   const lineCallOnly = lineOnlyChk ? lineOnlyChk.checked : false;
   const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
 
-  // 20 rows × 2 columns — each cell: [num | call | notes textarea]
-  let html = '<div class="pc-inline-grid">';
-  for (let row = 0; row < WB_ROWS; row++) {
-    for (let col = 0; col < 2; col++) {
-      const cellIdx = row * 2 + col;
-      const play = card.data[cellIdx];
-      const playNum = row * 2 + (col === 0 ? 11 : 12) + cardOffset;
-      const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${cellIdx}`;
-      const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[cellIdx])
-        ?? (play?.[wbPlayerCardPos] || "");
-      const callHtml = play ? getFullCall(play, opts) : "";
+  // 2-column format: full-width table [# | play call | assignment]
+  // All 40 plays in a single vertical list — one play per row
+  let rows = "";
+  for (let i = 0; i < CELLS_PER_CARD; i++) {
+    const play = card.data[i];
+    const playNum = i + 11 + cardOffset;
+    const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${i}`;
+    const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i])
+      ?? (play?.[wbPlayerCardPos] || "");
+    const callHtml = play
+      ? (lineCallOnly && typeof getLineCallOnlyDisplay === "function"
+          ? getLineCallOnlyDisplay(play, opts, cellCustomizations[`${currentCardIndex}-${i}`] || {})
+          : getFullCall(play, opts))
+      : "";
 
-      html += `<div class="pc-inline-cell${!play ? " pc-inline-empty" : ""}">
-        <span class="pc-inline-num">${playNum}</span>
-        <div class="pc-inline-call">${callHtml}</div>
-        <textarea class="pc-inline-resp" data-override-key="${escapeHtml(overrideKey)}"
-          placeholder="—" rows="2">${escapeHtml(respText)}</textarea>
-      </div>`;
-    }
+    rows += `<tr class="pc-row${!play ? " pc-row-empty" : ""}">
+      <td class="pc-td-num">${playNum}</td>
+      <td class="pc-td-call">${callHtml}</td>
+      <td class="pc-td-resp"><textarea class="pc-resp-input"
+        data-override-key="${escapeHtml(overrideKey)}"
+        placeholder="—">${escapeHtml(respText)}</textarea></td>
+    </tr>`;
   }
-  html += "</div>";
+
+  const html = `<div class="pc-card-view">
+    <table class="pc-table">
+      <colgroup>
+        <col class="pc-col-num">
+        <col class="pc-col-call">
+        <col class="pc-col-resp">
+      </colgroup>
+      <thead><tr>
+        <th class="pc-th-num">#</th>
+        <th class="pc-th-call">Play</th>
+        <th class="pc-th-resp">Assignment</th>
+      </tr></thead>
+      <tbody>${rows}</tbody>
+    </table>
+  </div>`;
 
   // Activate classes so CSS overrides the 4-column wristband grid layout
   grid.classList.add("pc-grid-active");
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
-
   grid.style.gridTemplateRows = "";
   grid.innerHTML = html;
 
-  // Wire resp textarea change events — only once per grid element lifetime
+  // Wire assignment textarea change events — only once per grid element lifetime
   if (!grid._pcListenerWired) {
     grid._pcListenerWired = true;
     grid.addEventListener("change", function(e) {
       if (!wbPlayerCardMode) return;
-      if (!e.target.classList.contains("pc-inline-resp")) return;
+      if (!e.target.classList.contains("pc-resp-input")) return;
       const parts = e.target.dataset.overrideKey.split("|");
       const pKey = parts[0];
       const cIdx = parseInt(parts[1]);
@@ -392,8 +409,6 @@ function printPlayerCards() {
   if (!printContainer || !printContent) return;
 
   const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
-  const PC_CARD_W = "5.5in";
-  const PC_CARD_H = "4.25in";
 
   let allHtml = "";
 
@@ -401,37 +416,45 @@ function printPlayerCards() {
     const cardName = card.name || `Card ${cardIdx + 1}`;
     const cardOffset = cardIdx * 40;
 
-    allHtml += `<div class="pc-print-page">`;
-    allHtml += `<div class="pc-print-header">
-      <span class="pc-print-pos">${escapeHtml(posLabel)}</span>
-      <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
-    </div>`;
-    allHtml += `<div class="pc-print-grid">`;
-
-    for (let row = 0; row < WB_ROWS; row++) {
-      for (let col = 0; col < 2; col++) {
-        const cellIdx = row * 2 + col;
-        const play = card.data[cellIdx];
-        const playNum = row * 2 + (col === 0 ? 11 : 12) + cardOffset;
-        const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[cellIdx])
-          ?? (play?.[posKey] || "");
+    // Split 40 plays into two halves: left (0–19) and right (20–39)
+    // Each half is a 3-col table: [#] [call] [assignment]
+    const buildHalf = (startIdx, endIdx) => {
+      let rows = "";
+      for (let i = startIdx; i < endIdx; i++) {
+        const play = card.data[i];
+        const playNum = i + 11 + cardOffset;
+        const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
         const callHtml = play
-          ? (lineCallOnly
-            ? (typeof getLineCallOnlyDisplay === "function"
-              ? getLineCallOnlyDisplay(play, opts, cellCustomizations[`${cardIdx}-${cellIdx}`] || {})
-              : escapeHtml(play.lineCall || play.play || ""))
-            : getFullCall(play, opts))
+          ? (lineCallOnly && typeof getLineCallOnlyDisplay === "function"
+              ? getLineCallOnlyDisplay(play, opts, cellCustomizations[`${cardIdx}-${i}`] || {})
+              : getFullCall(play, opts))
           : "";
-
-        allHtml += `<div class="pc-print-cell${!play ? " pc-print-cell-empty" : ""}">
-          <span class="pc-num">${playNum}</span>
-          <span class="pc-call">${callHtml}</span>
-          <span class="pc-resp">${escapeHtml(respText)}</span>
-        </div>`;
+        rows += `<tr class="pc-print-row${!play ? " pc-print-row-empty" : ""}">
+          <td class="pc-print-num">${playNum}</td>
+          <td class="pc-print-call">${callHtml}</td>
+          <td class="pc-print-resp">${escapeHtml(respText)}</td>
+        </tr>`;
       }
-    }
+      return `<table class="pc-print-table">
+        <thead><tr>
+          <th class="pc-print-th-num">#</th>
+          <th class="pc-print-th-call">Play</th>
+          <th class="pc-print-th-resp">${escapeHtml(posLabel)}</th>
+        </tr></thead>
+        <tbody>${rows}</tbody>
+      </table>`;
+    };
 
-    allHtml += `</div></div>`;
+    allHtml += `<div class="pc-print-page">
+      <div class="pc-print-page-header">
+        <span class="pc-print-pos-label">${escapeHtml(posLabel)}</span>
+        <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
+      </div>
+      <div class="pc-print-columns">
+        <div class="pc-print-col">${buildHalf(0, 20)}</div>
+        <div class="pc-print-col">${buildHalf(20, 40)}</div>
+      </div>
+    </div>`;
   });
 
   printContent.innerHTML = allHtml;
@@ -440,8 +463,7 @@ function printPlayerCards() {
 
   setupPrintPageStyle(`
     @media print {
-      @page { size: ${PC_CARD_W} ${PC_CARD_H} landscape; margin: 0.15in; }
-      html, body { width: ${PC_CARD_H}; height: ${PC_CARD_W}; }
+      @page { size: letter landscape; margin: 0.35in; }
     }
   `);
 
