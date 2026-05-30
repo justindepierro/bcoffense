@@ -1286,6 +1286,8 @@
 .player-card-print:not(.hidden) {
   z-index: var(--z-overlay, 9000);
   visibility: visible;
+  background: white;
+  overflow-y: auto;
 }
 
 @media print {
