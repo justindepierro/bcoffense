@@ -261,6 +261,66 @@ function exportWristbandCSV() {
   showToast("📥 CSV exported");
 }
 
+// ─── Wristband Type Choice ────────────────────────────────────────────────
+
+/** "classic" | "player" | "" (unset = show landing) */
+let wristbandType = "";
+
+/**
+ * Show the landing overlay if the wristband is completely empty
+ * and no type has been chosen. Called on tab switch and after clear-all.
+ */
+function checkShowWbLanding() {
+  if (wristbandType) return; // type already chosen
+  const isEmpty = wristbandCards.every((c) => !c.data?.some(Boolean));
+  if (isEmpty) showWbTypeChoice();
+}
+
+function showWbTypeChoice() {
+  wristbandType = "";
+  // Deactivate player mode if it was on
+  if (wbPlayerCardMode) {
+    wbPlayerCardMode = false;
+    document.getElementById("pcModeBar")?.classList.remove("visible");
+    const grid = document.getElementById("wristbandGrid");
+    if (grid) grid.classList.remove("pc-grid-active");
+    document.getElementById("wristbandCard")?.classList.remove("pc-card-active");
+  }
+  // Toggle visibility
+  document.getElementById("wbTypeChoice")?.classList.remove("hidden");
+  document.getElementById("pcModeBar")?.classList.remove("visible");
+  document.querySelector(".wb-toolbar")?.classList.add("wb-toolbar-hidden");
+  document.querySelector(".card-tabs")?.classList.add("wb-hidden");
+  document.getElementById("wristbandCard")?.classList.add("wb-hidden");
+}
+
+function startClassicWristband() {
+  wristbandType = "classic";
+  document.getElementById("wbTypeChoice")?.classList.add("hidden");
+  document.querySelector(".wb-toolbar")?.classList.remove("wb-toolbar-hidden");
+  document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
+  document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
+  document.getElementById("pcModeBar")?.classList.remove("visible");
+  renderCardTabs();
+  renderWristbandGrid();
+}
+
+function startPlayerWristband() {
+  wristbandType = "player";
+  document.getElementById("wbTypeChoice")?.classList.add("hidden");
+  document.querySelector(".wb-toolbar")?.classList.add("wb-toolbar-hidden");
+  document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
+  document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
+  // Activate player card mode
+  playerCardOverrides = {};
+  wbPlayerCardMode = true;
+  const posSelect = document.getElementById("pcPosSelect");
+  wbPlayerCardPos = posSelect ? posSelect.value || "respQ" : "respQ";
+  document.getElementById("pcModeBar")?.classList.add("visible");
+  renderCardTabs();
+  renderPlayerCardGrid();
+}
+
 // ─── Player Card Print ─────────────────────────────────────────────────────
 
 /** Session-only responsibility overrides: {posKey: {cardIdx: {cellIdx: text}}} */
@@ -287,25 +347,13 @@ const PC_POSITIONS = [
 ];
 
 function openPlayerCardPrint() {
-  if (!wristbandCards.length || !wristbandCards.some((c) => c.data?.some(Boolean))) {
-    showToast("Fill the wristband first, then open Player Cards.", { type: "warning" });
-    return;
-  }
-  playerCardOverrides = {};
-  wbPlayerCardMode = true;
-  const posSelect = document.getElementById("pcPosSelect");
-  wbPlayerCardPos = posSelect ? posSelect.value || "respQ" : "respQ";
-  document.getElementById("pcModeBar")?.classList.add("visible");
-  renderPlayerCardGrid();
+  // Legacy entry — redirect through the new type choice flow
+  startPlayerWristband();
 }
 
 function closePlayerCardPrint() {
-  wbPlayerCardMode = false;
-  document.getElementById("pcModeBar")?.classList.remove("visible");
-  // Restore grid/card element classes before re-rendering
-  const grid = document.getElementById("wristbandGrid");
-  if (grid) grid.classList.remove("pc-grid-active");
-  document.getElementById("wristbandCard")?.classList.remove("pc-card-active");
+  // Go back to the type choice landing
+  showWbTypeChoice();
   renderWristbandGrid();
 }
 
@@ -399,8 +447,172 @@ function renderPlayerCardGrid() {
   }
 }
 
-function printPlayerCards() {
+// ─── Player Wristband Print Helpers ────────────────────────────────────────
+
+/**
+ * Build a single player mini-card block (one wristband-card with 3-col grid).
+ * Left mini-card covers plays startIdx–startIdx+19; right covers +20 to +39.
+ * Returns the outer HTML string for that player's card (both halves side by side).
+ */
+function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
+  const { highlightHuddle, highlightCandy, lineCallOnly } = opts;
+  const cardOffset = cardIdx * 40;
+  const pCardColor = card.cardColor || "";
+
+  const buildHalf = (start) => {
+    let cells = "";
+    for (let i = start; i < start + 20; i++) {
+      const play = card.data[i];
+      const playNum = i + 11 + cardOffset;
+      const custom = cellCustomizations[`${cardIdx}-${i}`] || {};
+      const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
+
+      const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
+      const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
+      const bg = getCellBgColor(custom, isHuddle, isCandy, Math.floor(i / 2), pCardColor);
+      const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+      const numFg = bg
+        ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
+        : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+
+      cells += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
+
+      if (play) {
+        let cellStyle = bg ? `background:${bg};` : "";
+        cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
+        const prefix = getCadencePrefix(custom, opts)
+          + getCustomPersonnelPrefix(custom, opts, play)
+          + getCustomPreShiftPrefix(custom);
+        const postfix = getCadencePostfix(custom, opts);
+        const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
+          ? getLineCallOnlyDisplay(play, opts, custom)
+          : getFullCall(getCustomDisplayPlay(play, custom), opts);
+        const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
+        const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
+        cells += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
+      } else {
+        cells += `<div class="wristband-cell"></div>`;
+      }
+
+      cells += `<div class="wristband-cell pc-print-assignment">${escapeHtml(respText)}</div>`;
+    }
+    return `<div class="pc-print-col">
+      <div class="wristband-card">
+        <div class="wristband-grid" style="grid-template-columns:22px 1fr 1fr;grid-template-rows:repeat(20,1fr);">
+          ${cells}
+        </div>
+      </div>
+    </div>`;
+  };
+
+  return `<div class="pc-print-columns">${buildHalf(0)}${buildHalf(20)}</div>`;
+}
+
+/**
+ * "Print 1" — 3 identical copies of the current position's card on one portrait page.
+ */
+function printOnePlayerCard() {
+  if (!wristbandCards.some((c) => c.data?.some(Boolean))) {
+    showToast("No plays on the wristband to print.", { type: "warning" });
+    return;
+  }
   const posSelect = document.getElementById("pcPosSelect");
+  const posKey = wbPlayerCardPos || "respQ";
+  const posLabel = posSelect
+    ? (posSelect.options[posSelect.selectedIndex]?.text || posKey.replace("resp", ""))
+    : posKey.replace("resp", "");
+  const lineCallOnly = document.getElementById("pcLineCallOnly")?.checked || false;
+  const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
+
+  const printContainer = document.getElementById("playerCardPrint");
+  const printContent = document.getElementById("playerCardPrintContent");
+  if (!printContainer || !printContent) return;
+
+  let allHtml = "";
+  wristbandCards.forEach((card, cardIdx) => {
+    const cardName = card.name || `Card ${cardIdx + 1}`;
+    const cardBlock = _buildPlayerPrintCard(card, cardIdx, posKey, opts);
+    allHtml += `<div class="pc-print-page">
+      <div class="pc-print-page-header">
+        <span class="pc-print-pos-label">${escapeHtml(posLabel)}</span>
+        <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
+      </div>
+      ${cardBlock}${cardBlock}${cardBlock}
+    </div>`;
+  });
+
+  _triggerPlayerPrint(printContainer, printContent, allHtml, `Player Card \u2014 ${posLabel}`, "portrait");
+}
+
+/**
+ * "Print All" — all positions, 3 per portrait page.
+ * Each page stacks 3 position cards with their assignments.
+ */
+function printAllPlayerCards() {
+  if (!wristbandCards.some((c) => c.data?.some(Boolean))) {
+    showToast("No plays on the wristband to print.", { type: "warning" });
+    return;
+  }
+  const lineCallOnly = document.getElementById("pcLineCallOnly")?.checked || false;
+  const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
+
+  const printContainer = document.getElementById("playerCardPrint");
+  const printContent = document.getElementById("playerCardPrintContent");
+  if (!printContainer || !printContent) return;
+
+  let allHtml = "";
+
+  // For each wristband card, print all positions 3 per page
+  wristbandCards.forEach((card, cardIdx) => {
+    const cardName = card.name || `Card ${cardIdx + 1}`;
+    for (let p = 0; p < PC_POSITIONS.length; p += 3) {
+      const group = PC_POSITIONS.slice(p, p + 3);
+      let pageBlocks = "";
+      group.forEach((pos) => {
+        const posBlock = _buildPlayerPrintCard(card, cardIdx, pos.key, opts);
+        pageBlocks += `<div class="pc-print-stack-item">
+          <div class="pc-print-page-header">
+            <span class="pc-print-pos-label">${escapeHtml(pos.label)}</span>
+            <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
+          </div>
+          ${posBlock}
+        </div>`;
+      });
+      allHtml += `<div class="pc-print-page pc-print-stacked">${pageBlocks}</div>`;
+    }
+  });
+
+  _triggerPlayerPrint(printContainer, printContent, allHtml, "Player Cards \u2014 All Positions", "portrait");
+}
+
+function _triggerPlayerPrint(printContainer, printContent, html, title, orientation) {
+  printContent.innerHTML = html;
+  document.body.dataset.printMode = "playerCards";
+  printContainer.classList.remove("hidden");
+
+  setupPrintPageStyle(`
+    @media print {
+      @page { size: letter ${orientation}; margin: 0.3in; }
+    }
+  `);
+
+  setTimeout(() => {
+    try {
+      const restoreTitle = typeof setPrintTitle === "function" ? setPrintTitle(title) : () => {};
+      window.print();
+      if (typeof restoreTitle === "function") restoreTitle();
+    } finally {
+      printContainer.classList.add("hidden");
+      delete document.body.dataset.printMode;
+    }
+  }, 100);
+}
+
+function printPlayerCards() {
+  // Now routes to printOnePlayerCard for backward compat
+  printOnePlayerCard();
+}
+
   const lineOnlyChk = document.getElementById("pcLineCallOnly");
   const posKey = wbPlayerCardPos || "respQ";
   const posLabel = posSelect

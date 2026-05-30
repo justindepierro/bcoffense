@@ -1397,6 +1397,25 @@
             </div>
           </div>
 
+          <!-- Wristband Type Choice Landing -->
+          <div id="wbTypeChoice" class="wb-type-choice-overlay hidden">
+            <div class="wb-type-choice-dialog">
+              <h2 class="wb-type-choice-title">Start a New Wristband</h2>
+              <div class="wb-type-choice-options">
+                <button class="wb-type-card" data-action="startClassicWristband">
+                  <div class="wb-type-card-icon">📋</div>
+                  <div class="wb-type-card-title">Classic Wristband</div>
+                  <div class="wb-type-card-desc">40-play card with two-column paired layout</div>
+                </button>
+                <button class="wb-type-card" data-action="startPlayerWristband">
+                  <div class="wb-type-card-icon">🃏</div>
+                  <div class="wb-type-card-title">Player Wristband</div>
+                  <div class="wb-type-card-desc">One play per row with player assignment column</div>
+                </button>
+              </div>
+            </div>
+          </div>
+
           <!-- Wristband Toolbar -->
           <div class="wb-toolbar">
             <div class="wb-toolbar-left">
@@ -1478,10 +1497,7 @@
               <button class="btn btn-success btn-sm" data-action="printWristband">
                 🖨️ Print
               </button>
-              <button class="btn btn-sm btn-secondary" data-action="openPlayerCardPrint"
-                title="Print individual player responsibility cards">
-                🃏 Player Cards
-              </button>
+
               <button class="btn btn-primary btn-sm" data-action="saveWristband" data-testid="save-wristband">
                 💾 Save
               </button>
@@ -1523,9 +1539,9 @@
             </div>
           </div>
 
-          <!-- Player Card Mode Bar (shown in-place when Player Cards is active) -->
-          <div id="pcModeBar" class="pc-mode-bar" aria-label="Player Card mode controls" aria-hidden="true">
-            <span class="pc-mode-label">🃏 Player Cards</span>
+          <!-- Player Wristband Toolbar (shown when Player Wristband type is active) -->
+          <div id="pcModeBar" class="pc-mode-bar" aria-label="Player Wristband controls" aria-hidden="true">
+            <span class="pc-mode-label">🃏 Player Wristband</span>
             <label class="pc-mode-control-label" for="pcPosSelect">Position</label>
             <select id="pcPosSelect" class="wb-preset-select" data-onchange="updatePlayerCardPreview">
               <option value="respQ">Q</option>
@@ -1544,8 +1560,11 @@
               <input type="checkbox" id="pcLineCallOnly" data-onchange="updatePlayerCardPreview" />
               Line Only
             </label>
-            <button class="btn btn-success btn-sm" data-action="printPlayerCards">🖨️ Print Cards</button>
-            <button class="btn btn-sm btn-danger" data-action="closePlayerCardPrint">✕ Exit</button>
+            <button class="btn btn-success btn-sm" data-action="printAllPlayerCards" title="Print all positions — 3 per page, portrait">🖨️ Print All</button>
+            <button class="btn btn-sm btn-secondary" data-action="printOnePlayerCard" title="Print 3 copies of this position on one sheet">📋 Print 1</button>
+            <button class="btn btn-primary btn-sm" data-action="saveWristband">💾 Save</button>
+            <button class="btn btn-danger btn-sm" data-action="clearWristband">🗑 Clear</button>
+            <button class="btn btn-sm" data-action="showWbTypeChoice" title="Start a different wristband type">⟵ New</button>
           </div>
           <div class="card-tabs" id="cardTabs"></div>
           <div class="wristband-card" id="wristbandCard">

@@ -65,6 +65,8 @@ function showTab(tabName) {
       renderWristbandPlays();
       renderCardTabs();
     }
+    // Show type-choice landing if wristband is empty and no type chosen yet
+    if (typeof checkShowWbLanding === "function") checkShowWbLanding();
   } else if (tabName === "tendencies") {
     initTendencies();
   } else if (tabName === "gameplan") {
