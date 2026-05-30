@@ -64,6 +64,11 @@ function getWristbandDisplayOptions() {
 }
 
 function renderWristbandGrid() {
+  // If player card mode is active, delegate to the player card renderer instead
+  if (typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode) {
+    if (typeof renderPlayerCardGrid === "function") renderPlayerCardGrid();
+    return;
+  }
   const grid = document.getElementById("wristbandGrid");
   grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   const cardData = getCurrentCardData();

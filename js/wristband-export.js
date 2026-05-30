@@ -266,6 +266,11 @@ function exportWristbandCSV() {
 /** Session-only responsibility overrides: {posKey: {cardIdx: {cellIdx: text}}} */
 let playerCardOverrides = {};
 
+/** True when the wristband grid is displaying player card mode in-place */
+let wbPlayerCardMode = false;
+/** Currently selected position key for player card mode */
+let wbPlayerCardPos = "respQ";
+
 /** Positions available in player card print (must stay in sync with RESP_POSITIONS in playbook-editor.js) */
 const PC_POSITIONS = [
   { key: "respQ",  label: "Q"  },
@@ -282,102 +287,84 @@ const PC_POSITIONS = [
 ];
 
 function openPlayerCardPrint() {
-  const overlay = document.getElementById("playerCardOverlay");
-  if (!overlay) return;
-
-  // Reset session overrides
-  playerCardOverrides = {};
-
-  // Re-populate the position dropdown (in case it needs reset)
-  const posSelect = document.getElementById("playerCardPositionSelect");
-  if (posSelect && !posSelect.value) posSelect.value = "respQ";
-
-  overlay.classList.add("visible");
-  trapFocus(overlay);
-
-  // Wire override change events once on the preview body
-  const previewBody = document.getElementById("playerCardPreviewBody");
-  if (previewBody && !previewBody.dataset.wired) {
-    previewBody.dataset.wired = "1";
-    previewBody.addEventListener("change", function (e) {
-      const el = e.target;
-      if (!el.classList.contains("pc-resp-input")) return;
-      const parts = el.dataset.overrideKey.split("|");
-      const pKey = parts[0], cIdx = parseInt(parts[1]), cellI = parseInt(parts[2]);
-      if (!playerCardOverrides[pKey]) playerCardOverrides[pKey] = {};
-      if (!playerCardOverrides[pKey][cIdx]) playerCardOverrides[pKey][cIdx] = {};
-      playerCardOverrides[pKey][cIdx][cellI] = el.value;
-    });
+  if (!wristbandCards.length || !wristbandCards.some((c) => c.data?.some(Boolean))) {
+    showToast("Fill the wristband first, then open Player Cards.", { type: "warning" });
+    return;
   }
-
-  _renderPlayerCardPreview();
+  playerCardOverrides = {};
+  wbPlayerCardMode = true;
+  const posSelect = document.getElementById("pcPosSelect");
+  wbPlayerCardPos = posSelect ? posSelect.value || "respQ" : "respQ";
+  document.getElementById("pcModeBar")?.classList.add("visible");
+  renderPlayerCardGrid();
 }
 
 function closePlayerCardPrint() {
-  document.getElementById("playerCardOverlay")?.classList.remove("visible");
+  wbPlayerCardMode = false;
+  document.getElementById("pcModeBar")?.classList.remove("visible");
+  renderWristbandGrid();
 }
 
 function updatePlayerCardPreview() {
-  _renderPlayerCardPreview();
+  const posSelect = document.getElementById("pcPosSelect");
+  if (posSelect) wbPlayerCardPos = posSelect.value || "respQ";
+  if (wbPlayerCardMode) renderPlayerCardGrid();
 }
 
-function _renderPlayerCardPreview() {
-  const preview = document.getElementById("playerCardPreviewBody");
-  if (!preview) return;
+function renderPlayerCardGrid() {
+  const grid = document.getElementById("wristbandGrid");
+  if (!grid) return;
 
-  if (!wristbandCards.length || !wristbandCards.some((c) => c.data?.some(Boolean))) {
-    preview.innerHTML = `<p class="pc-empty">No plays on the wristband yet. Fill the wristband first, then open Player Cards.</p>`;
-    return;
-  }
+  const card = wristbandCards[currentCardIndex];
+  if (!card) { grid.innerHTML = ""; return; }
 
-  const posSelect = document.getElementById("playerCardPositionSelect");
-  const lineOnlyChk = document.getElementById("playerCardLineCallOnly");
-  const posKey = posSelect ? posSelect.value : "respQ";
+  const cardOffset = currentCardIndex * 40;
+  const lineOnlyChk = document.getElementById("pcLineCallOnly");
   const lineCallOnly = lineOnlyChk ? lineOnlyChk.checked : false;
-
   const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
-  let html = "";
 
-  wristbandCards.forEach((card, cardIdx) => {
-    const cardName = card.name || `Card ${cardIdx + 1}`;
-    html += `<div class="pc-preview-card">`;
-    html += `<div class="pc-preview-card-header">${escapeHtml(cardName)}</div>`;
-    html += `<div class="pc-preview-grid">`;
+  // 20 rows × 2 columns — each cell: [num | call | notes textarea]
+  let html = '<div class="pc-inline-grid">';
+  for (let row = 0; row < WB_ROWS; row++) {
+    for (let col = 0; col < 2; col++) {
+      const cellIdx = row * 2 + col;
+      const play = card.data[cellIdx];
+      const playNum = row * 2 + (col === 0 ? 11 : 12) + cardOffset;
+      const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${cellIdx}`;
+      const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[cellIdx])
+        ?? (play?.[wbPlayerCardPos] || "");
+      const callHtml = play ? getFullCall(play, opts) : "";
 
-    for (let row = 0; row < WB_ROWS; row++) {
-      for (let col = 0; col < 2; col++) {
-        const cellIdx = row * 2 + col;
-        const cardOffset = cardIdx * 40;
-        const play = card.data[cellIdx];
-        const playNum = row * 2 + (col === 0 ? 11 : 12) + cardOffset;
-        const overrideKey = `${posKey}|${cardIdx}|${cellIdx}`;
-        const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[cellIdx]) ?? (play?.[posKey] || "");
-        const callHtml = play
-          ? (lineCallOnly
-              ? (typeof getLineCallOnlyDisplay === "function" ? getLineCallOnlyDisplay(play, opts, cellCustomizations[`${cardIdx}-${cellIdx}`] || {}) : escapeHtml(play.lineCall || play.play || ""))
-              : getFullCall(play, opts))
-          : "";
-
-        html += `<div class="pc-preview-cell${!play ? " pc-preview-cell-empty" : ""}">
-          <span class="pc-num">${playNum}</span>
-          <span class="pc-call">${callHtml}</span>
-          <textarea class="pc-resp-input" rows="2"
-            data-override-key="${escapeHtml(overrideKey)}"
-            placeholder="—">${escapeHtml(respText)}</textarea>
-        </div>`;
-      }
+      html += `<div class="pc-inline-cell${!play ? " pc-inline-empty" : ""}">
+        <span class="pc-inline-num">${playNum}</span>
+        <div class="pc-inline-call">${callHtml}</div>
+        <textarea class="pc-inline-resp" data-override-key="${escapeHtml(overrideKey)}"
+          placeholder="—" rows="2">${escapeHtml(respText)}</textarea>
+      </div>`;
     }
+  }
+  html += "</div>";
 
-    html += `</div></div>`;
-  });
+  grid.style.gridTemplateRows = "";
+  grid.innerHTML = html;
 
-  preview.innerHTML = html;
+  // Wire resp textarea change events
+  grid.addEventListener("change", function pcRespChange(e) {
+    if (!e.target.classList.contains("pc-inline-resp")) return;
+    const parts = e.target.dataset.overrideKey.split("|");
+    const pKey = parts[0];
+    const cIdx = parseInt(parts[1]);
+    const cellI = parseInt(parts[2]);
+    if (!playerCardOverrides[pKey]) playerCardOverrides[pKey] = {};
+    if (!playerCardOverrides[pKey][cIdx]) playerCardOverrides[pKey][cIdx] = {};
+    playerCardOverrides[pKey][cIdx][cellI] = e.target.value;
+  }, { once: false });
 }
 
 function printPlayerCards() {
-  const posSelect = document.getElementById("playerCardPositionSelect");
-  const lineOnlyChk = document.getElementById("playerCardLineCallOnly");
-  const posKey = posSelect ? posSelect.value : "respQ";
+  const posSelect = document.getElementById("pcPosSelect");
+  const lineOnlyChk = document.getElementById("pcLineCallOnly");
+  const posKey = wbPlayerCardPos || "respQ";
   const posLabel = posSelect
     ? (posSelect.options[posSelect.selectedIndex]?.text || posKey.replace("resp", ""))
     : posKey.replace("resp", "");
@@ -414,11 +401,14 @@ function printPlayerCards() {
         const cellIdx = row * 2 + col;
         const play = card.data[cellIdx];
         const playNum = row * 2 + (col === 0 ? 11 : 12) + cardOffset;
-        const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[cellIdx]) ?? (play?.[posKey] || "");
+        const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[cellIdx])
+          ?? (play?.[posKey] || "");
         const callHtml = play
           ? (lineCallOnly
-              ? (typeof getLineCallOnlyDisplay === "function" ? getLineCallOnlyDisplay(play, opts, cellCustomizations[`${cardIdx}-${cellIdx}`] || {}) : escapeHtml(play.lineCall || play.play || ""))
-              : getFullCall(play, opts))
+            ? (typeof getLineCallOnlyDisplay === "function"
+              ? getLineCallOnlyDisplay(play, opts, cellCustomizations[`${cardIdx}-${cellIdx}`] || {})
+              : escapeHtml(play.lineCall || play.play || ""))
+            : getFullCall(play, opts))
           : "";
 
         allHtml += `<div class="pc-print-cell${!play ? " pc-print-cell-empty" : ""}">
@@ -433,7 +423,6 @@ function printPlayerCards() {
   });
 
   printContent.innerHTML = allHtml;
-
   document.body.dataset.printMode = "playerCards";
   printContainer.classList.remove("hidden");
 
@@ -457,3 +446,15 @@ function printPlayerCards() {
     }
   }, 100);
 }
+  { key: "respQ", label: "Q" },
+  { key: "respT", label: "T" },
+  { key: "respH", label: "H" },
+  { key: "respZ", label: "Z" },
+  { key: "respX", label: "X" },
+  { key: "respY", label: "Y" },
+  { key: "respLT", label: "LT" },
+  { key: "respLG", label: "LG" },
+  { key: "respC", label: "C" },
+  { key: "respRG", label: "RG" },
+  { key: "respRT", label: "RT" },
+];

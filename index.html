@@ -19,7 +19,7 @@
       var _t = localStorage.getItem('theme');
       var _d = !_t && window.matchMedia('(prefers-color-scheme: dark)').matches;
       if (_t === 'dark' || _d) document.documentElement.setAttribute('data-theme', 'dark');
-    } catch (e) {}
+    } catch (e) { }
   </script>
   <link rel="manifest" href="manifest.json" />
   <!-- Google Fonts: Inter (UI) + IBM Plex Mono (playbook data) -->
@@ -148,8 +148,7 @@
         </button>
       </div>
       <div id="commandPaletteMeta" class="command-palette-meta" role="status" aria-live="polite"></div>
-      <div id="commandPaletteResults" class="command-palette-results" role="listbox"
-        aria-label="Search results"></div>
+      <div id="commandPaletteResults" class="command-palette-results" role="listbox" aria-label="Search results"></div>
     </section>
   </div>
 
@@ -515,8 +514,7 @@
                 📁 Data ▾
               </button>
               <div class="tool-menu" data-action="removeParentOpen">
-                <button data-action="exportPlaybookCSV"
-                  title="Export playbook as CSV for Excel / Sheets">
+                <button data-action="exportPlaybookCSV" title="Export playbook as CSV for Excel / Sheets">
                   &#128229; Export CSV
                 </button>
                 <button data-action="exportBackup" title="Export all app data as a backup file">
@@ -1121,7 +1119,8 @@
               <select id="jumpToPeriod" class="toolbar-sort-select hidden" data-onchange="jumpToPeriod"
                 data-pass="value" title="Jump to period"></select>
               <span class="script-toolbar-label">🎨 Print Color:</span>
-              <select id="scriptColorSchemeSelect" class="wb-preset-select" data-onchange="setScriptColorScheme" data-pass="value" title="Color scheme for printed script header">
+              <select id="scriptColorSchemeSelect" class="wb-preset-select" data-onchange="setScriptColorScheme"
+                data-pass="value" title="Color scheme for printed script header">
                 <option value="">— None —</option>
                 <option value="subway-alumni">Subway Alumni</option>
                 <option value="iron-tide">Iron Tide</option>
@@ -1183,8 +1182,7 @@
                   🔀 Shuffle
                 </button>
                 <div class="tool-divider"></div>
-                <button data-action="openSmartScript"
-                  title="Intelligently reorder all periods for realistic game flow">
+                <button data-action="openSmartScript" title="Intelligently reorder all periods for realistic game flow">
                   🧠 Smart Script All
                 </button>
                 <button data-action="autoFillDefenseFromTendencies"
@@ -1433,7 +1431,8 @@
               <span class="wb-toolbar-sep"></span>
               <div class="color-picker">
                 <span>Scheme:</span>
-                <select id="wbColorSchemeSelect" class="wb-preset-select" data-onchange="applyWristbandColorScheme" data-pass="value" title="Apply a college-inspired team color scheme">
+                <select id="wbColorSchemeSelect" class="wb-preset-select" data-onchange="applyWristbandColorScheme"
+                  data-pass="value" title="Apply a college-inspired team color scheme">
                   <option value="">— None —</option>
                   <option value="subway-alumni">Subway Alumni</option>
                   <option value="iron-tide">Iron Tide</option>
@@ -1479,7 +1478,8 @@
               <button class="btn btn-success btn-sm" data-action="printWristband">
                 🖨️ Print
               </button>
-              <button class="btn btn-sm btn-secondary" data-action="openPlayerCardPrint" title="Print individual player responsibility cards">
+              <button class="btn btn-sm btn-secondary" data-action="openPlayerCardPrint"
+                title="Print individual player responsibility cards">
                 🃏 Player Cards
               </button>
               <button class="btn btn-primary btn-sm" data-action="saveWristband" data-testid="save-wristband">
@@ -1498,8 +1498,7 @@
                     title="Save current cards as a reusable position/group template">
                     💾 Save Template
                   </button>
-                  <button data-action="openWristbandTemplatesMenu"
-                    title="Load or delete reusable wristband templates">
+                  <button data-action="openWristbandTemplatesMenu" title="Load or delete reusable wristband templates">
                     📂 Load Templates
                   </button>
                 </div>
@@ -1524,6 +1523,30 @@
             </div>
           </div>
 
+          <!-- Player Card Mode Bar (shown in-place when Player Cards is active) -->
+          <div id="pcModeBar" class="pc-mode-bar" aria-label="Player Card mode controls" aria-hidden="true">
+            <span class="pc-mode-label">🃏 Player Cards</span>
+            <label class="pc-mode-control-label" for="pcPosSelect">Position</label>
+            <select id="pcPosSelect" class="wb-preset-select" data-onchange="updatePlayerCardPreview">
+              <option value="respQ">Q</option>
+              <option value="respT">T</option>
+              <option value="respH">H</option>
+              <option value="respZ">Z</option>
+              <option value="respX">X</option>
+              <option value="respY">Y</option>
+              <option value="respLT">LT</option>
+              <option value="respLG">LG</option>
+              <option value="respC">C</option>
+              <option value="respRG">RG</option>
+              <option value="respRT">RT</option>
+            </select>
+            <label class="player-card-toggle">
+              <input type="checkbox" id="pcLineCallOnly" data-onchange="updatePlayerCardPreview" />
+              Line Only
+            </label>
+            <button class="btn btn-success btn-sm" data-action="printPlayerCards">🖨️ Print Cards</button>
+            <button class="btn btn-sm btn-danger" data-action="closePlayerCardPrint">✕ Exit</button>
+          </div>
           <div class="card-tabs" id="cardTabs"></div>
           <div class="wristband-card" id="wristbandCard">
             <div id="wristbandGrid" class="wristband-grid" role="grid" aria-label="Wristband card grid"
@@ -1738,7 +1761,8 @@
           </div>
         </div>
 
-        <section id="mobileCoachNotesCard" class="mobile-coach-notes-card" aria-label="Mobile coach notes and reminders">
+        <section id="mobileCoachNotesCard" class="mobile-coach-notes-card"
+          aria-label="Mobile coach notes and reminders">
         </section>
 
         <section id="dashCommandCenter" class="dash-command-center" aria-label="Game week command center summary">
@@ -1837,13 +1861,13 @@
               <button data-action="openLoadWristbandModal">
                 📋 Load Wristband
               </button>
-              <span id="loadedWristbandDisplay" class="cs-wb-display" style="display:block;padding:4px 14px;font-size:var(--font-size-xs);color:var(--color-text-muted);"></span>
+              <span id="loadedWristbandDisplay" class="cs-wb-display"
+                style="display:block;padding:4px 14px;font-size:var(--font-size-xs);color:var(--color-text-muted);"></span>
               <div class="tool-divider"></div>
               <button data-action="exportCallSheetCSV" title="Export call sheet to CSV">
                 📄 Export CSV
               </button>
-              <button data-action="runConstraintCheck"
-                title="Check call sheet buckets against game plan constraints">
+              <button data-action="runConstraintCheck" title="Check call sheet buckets against game plan constraints">
                 🛡️ Check Constraints
               </button>
             </div>
@@ -2403,41 +2427,6 @@
   <!-- Wristband Print Container - Outside mainApp for printing -->
   <div id="wristbandPrint" class="wristband-print hidden">
     <div id="wristbandPrintCards"></div>
-  </div>
-
-  <!-- Player Card Print Overlay -->
-  <div id="playerCardOverlay" class="player-card-overlay" role="dialog" aria-modal="true" aria-label="Player Card Print">
-    <div class="player-card-panel">
-      <div class="player-card-panel-header">
-        <h3 class="player-card-panel-title">🃏 Player Cards</h3>
-        <div class="player-card-controls">
-          <label class="player-card-control-label">Position</label>
-          <select id="playerCardPositionSelect" class="wb-preset-select"
-            data-onchange="updatePlayerCardPreview">
-            <option value="respQ">Q</option>
-            <option value="respT">T</option>
-            <option value="respH">H</option>
-            <option value="respZ">Z</option>
-            <option value="respX">X</option>
-            <option value="respY">Y</option>
-            <option value="respLT">LT</option>
-            <option value="respLG">LG</option>
-            <option value="respC">C</option>
-            <option value="respRG">RG</option>
-            <option value="respRT">RT</option>
-          </select>
-          <label class="player-card-toggle">
-            <input type="checkbox" id="playerCardLineCallOnly"
-              data-onchange="updatePlayerCardPreview" />
-            Line Call Only
-          </label>
-          <button class="btn btn-success btn-sm" data-action="printPlayerCards">🖨️ Print Cards</button>
-          <button class="btn btn-sm" data-action="closePlayerCardPrint">✕ Close</button>
-        </div>
-      </div>
-      <p class="player-card-hint">Edit responsibilities inline — changes apply to print only and don't overwrite play data.</p>
-      <div id="playerCardPreviewBody" class="player-card-preview-body"></div>
-    </div>
   </div>
 
   <!-- Player Card Print Container - Outside mainApp for printing -->
