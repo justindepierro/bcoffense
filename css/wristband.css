@@ -1151,15 +1151,16 @@
   user-select: none;
 }
 
-/* ── Player Card Inline Grid ─────────────────────────────────────────────── */
+/* ── Player Card Inline View ─────────────────────────────────────────────── */
 
-/* When PC mode is active, override the 4-column wristband grid container */
+/* Override wristband grid to 3-col layout: [num | call | assignment] × 40 rows */
 .wristband-grid.pc-grid-active {
-  display: block;
-  height: auto;
+  display: grid !important;
+  grid-template-columns: 32px 1fr 1fr !important;
+  height: auto !important;
 }
 
-/* Wristband card becomes fluid in PC mode */
+/* Wristband card becomes fluid and scrollable in PC mode */
 .wristband-card.pc-card-active {
   width: 100%;
   height: auto;
@@ -1169,87 +1170,26 @@
   overflow-x: hidden;
 }
 
-/* ── Player Card Inline View (table-based 2-column format) ─────────────────── */
-
-/* Scroll wrapper rendered inside #wristbandGrid when pc mode is active */
-.pc-card-view {
-  width: 100%;
-  box-sizing: border-box;
-}
-
-/* Clean 3-column table: [#] | [play call] | [assignment] */
-.pc-table {
-  width: 100%;
-  border-collapse: collapse;
-  table-layout: fixed;
-  font-size: var(--font-size-2xs);
-  font-family: var(--font-mono);
-}
-
-.pc-col-num  { width: 36px; }
-.pc-col-call { width: auto; }
-.pc-col-resp { width: 38%; }
-
-.pc-table thead th {
-  background: var(--color-bg-light);
-  border: 1px solid var(--color-border);
-  padding: 4px 6px;
-  font-size: var(--font-size-xs);
-  font-weight: 700;
-  color: var(--color-text-secondary);
-  text-align: left;
-  position: sticky;
-  top: 0;
-  z-index: 1;
-}
-
-.pc-th-num  { text-align: center; }
-
-.pc-row td {
-  border: 1px solid var(--color-border-light);
-  vertical-align: top;
-}
-
-.pc-row-empty td {
-  opacity: 0.3;
-}
-
-.pc-td-num {
-  text-align: center;
-  font-weight: 700;
-  color: var(--color-text-muted);
-  padding: 3px 4px;
-  background: var(--color-bg-light);
-  border-right: 1px solid var(--color-border);
-  vertical-align: middle;
-  white-space: nowrap;
-}
-
-.pc-td-call {
-  padding: 3px 6px;
-  line-height: 1.4;
-  word-break: break-word;
-  vertical-align: middle;
-}
-
-.pc-td-resp {
-  padding: 0;
-  border-left: 1px solid var(--color-border);
+/* Assignment cell — 3rd column in the player card grid */
+.pc-assignment-cell {
+  border-left: 1px solid var(--color-border-med) !important;
+  padding: 0 !important;
+  background: var(--color-bg-input);
 }
 
 .pc-resp-input {
   display: block;
   width: 100%;
   height: 100%;
-  min-height: 28px;
+  min-height: 26px;
   resize: none;
   border: none;
   outline: none;
-  padding: 3px 6px;
+  padding: 2px 5px;
   font-size: var(--font-size-2xs);
   font-family: var(--font-sans);
   line-height: 1.4;
-  background: var(--color-bg-input);
+  background: transparent;
   color: var(--color-text);
   box-sizing: border-box;
 }
@@ -1298,7 +1238,7 @@
     break-after: auto;
   }
 
-  /* Header row: position label + card name */
+  /* Header: position label + card name */
   .pc-print-page-header {
     display: flex;
     justify-content: space-between;
@@ -1312,7 +1252,6 @@
   .pc-print-pos-label {
     font-size: 12pt;
     font-weight: 900;
-    letter-spacing: 0.02em;
   }
 
   .pc-print-card-name {
@@ -1320,64 +1259,71 @@
     color: #555;
   }
 
-  /* Two tables side by side: plays 1–20 left, 21–40 right */
+  /* Two wristband-style mini-cards side by side */
   .pc-print-columns {
     display: flex;
-    gap: 0.25in;
+    gap: 0.2in;
     flex: 1;
-    align-items: flex-start;
+    align-items: stretch;
   }
 
   .pc-print-col {
     flex: 1;
     min-width: 0;
+    display: flex;
+    flex-direction: column;
   }
 
-  .pc-print-table {
-    width: 100%;
-    border-collapse: collapse;
-    table-layout: fixed;
-    font-size: 7pt;
-    font-family: "Courier New", monospace;
-    line-height: 1.25;
+  /* Mini wristband card in print — 3-col grid: num | call | assignment */
+  .pc-print-col .wristband-card {
+    width: 100% !important;
+    height: 100% !important;
+    flex: 1;
+    margin: 0 !important;
+    border: 0.5px solid #000 !important;
+    overflow: hidden !important;
+    box-sizing: border-box !important;
   }
 
-  .pc-print-table thead th {
-    background: #eee;
-    border: 0.75pt solid #999;
-    padding: 2pt 3pt;
-    font-size: 6.5pt;
-    font-weight: 700;
-    text-align: left;
+  .pc-print-col .wristband-grid {
+    width: 100% !important;
+    height: 100% !important;
+    display: grid !important;
+    grid-template-columns: 22px 1fr 1fr !important;
   }
 
-  .pc-print-th-num  { width: 20pt; text-align: center; }
-  .pc-print-th-resp { width: 35%; }
-
-  .pc-print-row td {
-    border: 0.5pt solid #ccc;
-    padding: 1.5pt 3pt;
-    vertical-align: top;
+  .pc-print-col .wristband-cell {
+    font-size: 8px !important;
+    padding: 0 2px !important;
+    border: 0.3px solid #bbb !important;
+    display: flex !important;
+    align-items: center !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
   }
 
-  .pc-print-row-empty td {
-    opacity: 0.2;
+  .pc-print-col .wristband-cell.num-cell {
+    font-size: 8px !important;
+    justify-content: center !important;
   }
 
-  .pc-print-num {
-    text-align: center;
-    font-weight: 700;
-    color: #555;
-    white-space: nowrap;
+  .pc-print-col .cell-play {
+    font-size: 8px !important;
+    white-space: nowrap !important;
+    overflow: hidden !important;
+    text-overflow: clip !important;
   }
 
-  .pc-print-call {
-    word-break: break-word;
-  }
-
-  .pc-print-resp {
-    font-style: italic;
-    color: #222;
-    word-break: break-word;
+  /* Assignment column in print */
+  .pc-print-assignment {
+    font-size: 7px !important;
+    color: #333 !important;
+    font-style: italic !important;
+    white-space: normal !important;
+    word-break: break-word !important;
+    line-height: 1.3 !important;
+    align-items: flex-start !important;
+    padding: 1px 3px !important;
+    border-left: 0.5px solid #888 !important;
   }
 }
