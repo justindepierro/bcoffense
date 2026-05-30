@@ -9,7 +9,7 @@
  *   - Stale-while-revalidate: serve cached, then update cache in background
  */
 
-const CACHE_NAME = "bcoffense-v497";
+const CACHE_NAME = "bcoffense-v498";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -170,6 +170,9 @@ self.addEventListener("fetch", (event) => {
 
   // Only handle GET requests
   if (event.request.method !== "GET") return;
+
+  // Skip non-http(s) schemes (e.g. chrome-extension://) — can't be cached
+  if (!event.request.url.startsWith("http")) return;
 
   // External resources (fonts, CDNs): network-first with cache fallback
   if (url.origin !== location.origin) {

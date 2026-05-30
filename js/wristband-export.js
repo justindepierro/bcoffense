@@ -458,15 +458,3 @@ function printPlayerCards() {
     }
   }, 100);
 }
-  { key: "respQ", label: "Q" },
-  { key: "respT", label: "T" },
-  { key: "respH", label: "H" },
-  { key: "respZ", label: "Z" },
-  { key: "respX", label: "X" },
-  { key: "respY", label: "Y" },
-  { key: "respLT", label: "LT" },
-  { key: "respLG", label: "LG" },
-  { key: "respC", label: "C" },
-  { key: "respRG", label: "RG" },
-  { key: "respRT", label: "RT" },
-];
