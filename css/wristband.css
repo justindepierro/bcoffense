@@ -1290,6 +1290,11 @@
   overflow-y: auto;
 }
 
+/* Hide app content on-screen while Chrome print dialog is open */
+body[data-print-mode="playerCards"] > *:not(.player-card-print) {
+  visibility: hidden !important;
+}
+
 @media print {
   body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     display: none !important;
