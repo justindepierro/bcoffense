@@ -480,15 +480,14 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 12px;
+  padding: 8px 12px;
   background: var(--color-bg-light);
   border-radius: var(--radius-md);
-  margin-bottom: 10px;
-  gap: 15px;
+  margin-bottom: 8px;
+  gap: 8px;
   border: 1px solid var(--color-border-light);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  flex-wrap: wrap;
+  overflow: visible;
 }
 .wb-toolbar-left {
   display: flex;
@@ -505,8 +504,8 @@
 .wb-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 6px;
-  flex-wrap: nowrap;
+  gap: 5px;
+  flex-wrap: wrap;
 }
 
 /* Wristband Sort Panel */
@@ -1122,6 +1121,8 @@
   padding: var(--space-xs) var(--space-md);
   background: var(--color-bg-light);
   border-bottom: 2px solid var(--color-primary);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  margin-bottom: -1px;
 }
 
 .pc-mode-bar.visible {
@@ -1131,6 +1132,7 @@
 .pc-mode-label {
   font-weight: 700;
   font-size: var(--font-size-sm);
+  color: var(--color-primary);
   flex: 0 0 auto;
 }
 
@@ -1150,34 +1152,40 @@
 }
 
 /* ── Player Card Inline Grid ─────────────────────────────────────────────── */
+
+/* When PC mode is active, override the 4-column wristband grid container */
+.wristband-grid.pc-grid-active {
+  display: block;
+  height: auto;
+}
+
+/* Wristband card becomes fluid in PC mode */
+.wristband-card.pc-card-active {
+  width: 100%;
+  height: auto;
+  min-height: 200px;
+  max-height: 65vh;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
 .pc-inline-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
   width: 100%;
+  border-top: 1px solid var(--color-border);
+  border-left: 1px solid var(--color-border);
 }
 
 .pc-inline-cell {
   display: grid;
   grid-template-columns: 28px 1fr 1fr;
   align-items: stretch;
-  border: 1px solid var(--color-border);
-  border-collapse: collapse;
-  min-height: 32px;
+  border-right: 1px solid var(--color-border);
+  border-bottom: 1px solid var(--color-border);
+  min-height: 34px;
   font-size: var(--font-size-2xs);
   font-family: var(--font-mono);
-}
-
-.pc-inline-cell + .pc-inline-cell {
-  border-left: none;
-}
-
-.pc-inline-cell:nth-child(2n+1) {
-  border-right: 1px solid var(--color-border-med);
-}
-
-/* Clear duplicate left border for cells in right column */
-.pc-inline-cell:nth-child(even) {
-  border-left: none;
 }
 
 .pc-inline-empty {
@@ -1195,6 +1203,7 @@
   color: var(--color-text-muted);
   padding: 2px 4px;
   flex-shrink: 0;
+  user-select: none;
 }
 
 .pc-inline-call {
@@ -1205,6 +1214,8 @@
   align-self: stretch;
   display: flex;
   align-items: center;
+  min-width: 0;
+  overflow: hidden;
 }
 
 .pc-inline-resp {
@@ -1220,12 +1231,13 @@
   width: 100%;
   box-sizing: border-box;
   align-self: stretch;
-  min-height: 32px;
+  min-height: 34px;
 }
 
 .pc-inline-resp:focus {
   background: var(--color-bg-hover-row);
   outline: 1px solid var(--color-primary);
+  outline-offset: -1px;
 }
 
 /* Print Container */

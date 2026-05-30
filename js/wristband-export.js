@@ -302,6 +302,10 @@ function openPlayerCardPrint() {
 function closePlayerCardPrint() {
   wbPlayerCardMode = false;
   document.getElementById("pcModeBar")?.classList.remove("visible");
+  // Restore grid/card element classes before re-rendering
+  const grid = document.getElementById("wristbandGrid");
+  if (grid) grid.classList.remove("pc-grid-active");
+  document.getElementById("wristbandCard")?.classList.remove("pc-card-active");
   renderWristbandGrid();
 }
 
@@ -345,20 +349,28 @@ function renderPlayerCardGrid() {
   }
   html += "</div>";
 
+  // Activate classes so CSS overrides the 4-column wristband grid layout
+  grid.classList.add("pc-grid-active");
+  document.getElementById("wristbandCard")?.classList.add("pc-card-active");
+
   grid.style.gridTemplateRows = "";
   grid.innerHTML = html;
 
-  // Wire resp textarea change events
-  grid.addEventListener("change", function pcRespChange(e) {
-    if (!e.target.classList.contains("pc-inline-resp")) return;
-    const parts = e.target.dataset.overrideKey.split("|");
-    const pKey = parts[0];
-    const cIdx = parseInt(parts[1]);
-    const cellI = parseInt(parts[2]);
-    if (!playerCardOverrides[pKey]) playerCardOverrides[pKey] = {};
-    if (!playerCardOverrides[pKey][cIdx]) playerCardOverrides[pKey][cIdx] = {};
-    playerCardOverrides[pKey][cIdx][cellI] = e.target.value;
-  }, { once: false });
+  // Wire resp textarea change events — only once per grid element lifetime
+  if (!grid._pcListenerWired) {
+    grid._pcListenerWired = true;
+    grid.addEventListener("change", function(e) {
+      if (!wbPlayerCardMode) return;
+      if (!e.target.classList.contains("pc-inline-resp")) return;
+      const parts = e.target.dataset.overrideKey.split("|");
+      const pKey = parts[0];
+      const cIdx = parseInt(parts[1]);
+      const cellI = parseInt(parts[2]);
+      if (!playerCardOverrides[pKey]) playerCardOverrides[pKey] = {};
+      if (!playerCardOverrides[pKey][cIdx]) playerCardOverrides[pKey][cIdx] = {};
+      playerCardOverrides[pKey][cIdx][cellI] = e.target.value;
+    });
+  }
 }
 
 function printPlayerCards() {
