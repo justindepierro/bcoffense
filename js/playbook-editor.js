@@ -3,15 +3,15 @@ let _editingMasterIdx = -1;
 
 /** Responsibility position columns for player card printing */
 const RESP_POSITIONS = [
-  { key: "respQ",  label: "Q"  },
-  { key: "respT",  label: "T"  },
-  { key: "respH",  label: "H"  },
-  { key: "respZ",  label: "Z"  },
-  { key: "respX",  label: "X"  },
-  { key: "respY",  label: "Y"  },
+  { key: "respQ", label: "Q" },
+  { key: "respT", label: "T" },
+  { key: "respH", label: "H" },
+  { key: "respZ", label: "Z" },
+  { key: "respX", label: "X" },
+  { key: "respY", label: "Y" },
   { key: "respLT", label: "LT" },
   { key: "respLG", label: "LG" },
-  { key: "respC",  label: "C"  },
+  { key: "respC", label: "C" },
   { key: "respRG", label: "RG" },
   { key: "respRT", label: "RT" },
 ];
@@ -242,6 +242,9 @@ const _EDITOR_SECTIONS = [
 ];
 
 function _buildPlayEditorResponsibilitiesSection(play) {
+  const hasAnyResp = RESP_POSITIONS.some((pos) => play?.[pos.key]);
+  const startOpen = hasAnyResp;
+
   const posHtml = RESP_POSITIONS.map((pos) => `
     <div class="pb-resp-cell">
       <label for="pe-${pos.key}">${escapeHtml(pos.label)}</label>
@@ -250,12 +253,19 @@ function _buildPlayEditorResponsibilitiesSection(play) {
 
   return `
     <div class="pb-editor-section">
-      <div class="pb-editor-section-title">Player Responsibilities</div>
-      <p class="pb-editor-lineup-hint">Fill in each player's assignment for this play — used when printing Player Cards from the Wristband.</p>
-      <div class="pb-resp-grid">${posHtml}</div>
-      <div class="pb-editor-field pb-editor-field-wide pb-resp-notes">
-        <label for="pe-respNotes">Resp. Notes</label>
-        <textarea id="pe-respNotes" data-field="respNotes" rows="2">${escapeHtml(play?.respNotes || "")}</textarea>
+      <div class="pb-editor-section-title pb-resp-toggle"
+           data-action="toggleCollapsiblePanel"
+           aria-expanded="${startOpen ? "true" : "false"}"
+           title="Click to expand/collapse">
+        Player Responsibilities <span class="toggle-icon">${startOpen ? "▼" : "▶"}</span>
+      </div>
+      <div class="pb-resp-body${startOpen ? "" : " collapsed"}">
+        <p class="pb-editor-lineup-hint">Fill in each player's assignment — used when printing Player Cards from the Wristband.</p>
+        <div class="pb-resp-grid">${posHtml}</div>
+        <div class="pb-editor-field pb-editor-field-wide pb-resp-notes">
+          <label for="pe-respNotes">Resp. Notes</label>
+          <textarea id="pe-respNotes" data-field="respNotes" rows="2">${escapeHtml(play?.respNotes || "")}</textarea>
+        </div>
       </div>
     </div>`;
 }
@@ -403,8 +413,8 @@ function _populateEditorForm(play, isNew) {
     <div class="pb-editor-image-row">
       <div class="pb-editor-image-preview" id="peImagePreview">
         ${_peImgUrl
-          ? `<img src="${_peImgUrl}" alt="Play diagram preview" />`
-          : `<div class="pb-editor-image-placeholder">No image</div>`}
+      ? `<img src="${_peImgUrl}" alt="Play diagram preview" />`
+      : `<div class="pb-editor-image-placeholder">No image</div>`}
       </div>
       <div class="pb-editor-image-actions">
         <input type="file" id="peImageFile" accept="image/*" style="display:none" />

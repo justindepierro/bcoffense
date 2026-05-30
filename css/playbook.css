@@ -3023,6 +3023,23 @@ table.sortable th {
   box-shadow: var(--shadow-focus);
 }
 
+.pb-resp-body.collapsed {
+  display: none;
+}
+
+.pb-resp-toggle {
+  cursor: pointer;
+  user-select: none;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+}
+
+.pb-resp-toggle:hover {
+  color: var(--color-primary);
+}
+
 .pb-resp-notes {
   margin-top: var(--space-xs);
 }
