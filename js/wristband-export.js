@@ -377,57 +377,64 @@ function renderPlayerCardGrid() {
   const { highlightHuddle, highlightCandy } = opts;
   const pCardColor = card.cardColor || "";
 
-  // Mirror exact wristband rendering: [num-cell] [play-cell] [assignment-cell] × 40 rows
+  // Match classic layout exactly: 20 rows × 6 columns
+  // [num | call | assign | num | call | assign]
+  // Left half: plays 0,2,4,…,38 (even indices = "odd" plays in classic)
+  // Right half: plays 1,3,5,…,39 (odd indices = "even" plays in classic)
   let html = "";
-  for (let i = 0; i < CELLS_PER_CARD; i++) {
-    const play = card.data[i];
-    const playNum = i + 11 + cardOffset;
-    const custom = cellCustomizations[`${currentCardIndex}-${i}`] || {};
-    const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${i}`;
-    const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i])
-      ?? (play?.[wbPlayerCardPos] || "");
+  for (let row = 0; row < WB_ROWS; row++) {
+    const leftIdx  = row * 2;
+    const rightIdx = row * 2 + 1;
 
-    // Cell background — same logic as wristband-render.js
-    const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
-    const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
-    const bg = getCellBgColor(custom, isHuddle, isCandy, Math.floor(i / 2), pCardColor);
-    const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
-    const numFg = bg
-      ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
-      : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+    for (const idx of [leftIdx, rightIdx]) {
+      const play = card.data[idx];
+      const playNum = idx + 11 + cardOffset;
+      const custom = cellCustomizations[`${currentCardIndex}-${idx}`] || {};
+      const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${idx}`;
+      const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[idx])
+        ?? (play?.[wbPlayerCardPos] || "");
 
-    // Number cell — identical to normal wristband
-    html += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
+      const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
+      const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
+      const bg = getCellBgColor(custom, isHuddle, isCandy, row, pCardColor);
+      const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+      const numFg = bg
+        ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
+        : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
 
-    // Play call cell — identical to normal wristband
-    if (play) {
-      let cellStyle = bg ? `background:${bg};` : "";
-      cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
-      const prefix = getCadencePrefix(custom, opts)
-        + getCustomPersonnelPrefix(custom, opts, play)
-        + getCustomPreShiftPrefix(custom);
-      const postfix = getCadencePostfix(custom, opts);
-      const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
-        ? getLineCallOnlyDisplay(play, opts, custom)
-        : getFullCall(getCustomDisplayPlay(play, custom), opts);
-      const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
-      const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
-      html += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
-    } else {
-      html += `<div class="wristband-cell"></div>`;
+      // Number cell — identical to classic
+      html += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
+
+      // Play call cell — identical to classic
+      if (play) {
+        let cellStyle = bg ? `background:${bg};` : "";
+        cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
+        const prefix = getCadencePrefix(custom, opts)
+          + getCustomPersonnelPrefix(custom, opts, play)
+          + getCustomPreShiftPrefix(custom);
+        const postfix = getCadencePostfix(custom, opts);
+        const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
+          ? getLineCallOnlyDisplay(play, opts, custom)
+          : getFullCall(getCustomDisplayPlay(play, custom), opts);
+        const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
+        const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
+        html += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
+      } else {
+        html += `<div class="wristband-cell"></div>`;
+      }
+
+      // Assignment textarea cell — replaces right-side num+call pair
+      html += `<div class="wristband-cell pc-assignment-cell">
+        <textarea class="pc-resp-input" data-override-key="${escapeHtml(overrideKey)}"
+          placeholder="—">${escapeHtml(respText)}</textarea>
+      </div>`;
     }
-
-    // Assignment textarea cell
-    html += `<div class="wristband-cell pc-assignment-cell">
-      <textarea class="pc-resp-input" data-override-key="${escapeHtml(overrideKey)}"
-        placeholder="—">${escapeHtml(respText)}</textarea>
-    </div>`;
   }
 
-  // Activate classes so CSS overrides to 3-col grid layout
+  // Activate classes — CSS now applies 6-col layout matching classic card dimensions
   grid.classList.add("pc-grid-active");
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
-  grid.style.gridTemplateRows = `repeat(${CELLS_PER_CARD}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   grid.innerHTML = html;
 
   // Wire assignment change events — only once per grid element lifetime

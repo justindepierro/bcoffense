@@ -1230,21 +1230,19 @@
 
 /* ── Player Card Inline View ─────────────────────────────────────────────── */
 
-/* Override wristband grid to 3-col layout: [num | call | assignment] × 40 rows */
+/* Player card grid: 6-col paired layout matching classic card structure
+   [num | call | assign | num | call | assign] × 20 rows */
 .wristband-grid.pc-grid-active {
   display: grid !important;
-  grid-template-columns: 32px 1fr 1fr !important;
-  height: auto !important;
+  grid-template-columns: 32px 1fr 90px 32px 1fr 90px !important;
+  height: 100% !important;
 }
 
-/* Wristband card becomes fluid and scrollable in PC mode */
+/* Player card matches classic card dimensions exactly */
 .wristband-card.pc-card-active {
-  width: 100%;
-  height: auto;
-  min-height: 200px;
-  max-height: 65vh;
-  overflow-y: auto;
-  overflow-x: hidden;
+  width: 7in;
+  height: 4.2in;
+  overflow: hidden;
 }
 
 /* Assignment cell — 3rd column in the player card grid */
