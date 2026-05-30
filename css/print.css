@@ -32,6 +32,9 @@
   body[data-print-mode="wristband"] {
     width: 4.7in !important;
   }
+  body[data-print-mode="playerCards"] {
+    width: 4.7in !important;
+  }
   body[data-print-mode="wristband"].wb-tripled {
     width: 8.5in !important;
   }
