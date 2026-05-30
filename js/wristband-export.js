@@ -593,7 +593,7 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
 
   setupPrintPageStyle(`
     @media print {
-      @page { size: letter ${orientation}; margin: 0.3in; }
+      @page { size: letter ${orientation}; margin: 0; }
     }
   `);
 

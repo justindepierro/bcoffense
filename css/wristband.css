@@ -1304,6 +1304,8 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
     width: 100%;
     height: 100vh;
   }
@@ -1313,7 +1315,7 @@
     break-after: auto;
   }
 
-  /* Header: position label + card name */
+  /* Position header in Print All — match card width */
   .pc-print-page-header {
     display: flex;
     justify-content: space-between;
@@ -1322,6 +1324,7 @@
     padding-bottom: 3pt;
     margin-bottom: 4pt;
     flex-shrink: 0;
+    width: 4.7in;
   }
 
   .pc-print-pos-label {
@@ -1336,16 +1339,16 @@
 
   /* Single player card in print — 3-col grid: num | play | responsibility */
   .pc-print-card-wrap {
-    flex: 1;
+    flex: 0 0 auto;
     display: flex;
     flex-direction: column;
     overflow: hidden;
   }
 
   .pc-print-card-wrap .wristband-card {
-    width: 100% !important;
-    height: 100% !important;
-    flex: 1;
+    width: 4.7in !important;
+    height: 2.8in !important;
+    flex: 0 0 2.8in !important;
     margin: 0 !important;
     border: 0.5px solid #000 !important;
     overflow: hidden !important;
@@ -1398,30 +1401,28 @@
   .pc-print-stacked {
     display: flex;
     flex-direction: column;
+    align-items: center;
+    justify-content: space-evenly;
     height: 100vh;
   }
 
   .pc-print-stack-item {
-    flex: 1;
+    flex: 0 0 auto;
+    width: 4.7in;
     display: flex;
     flex-direction: column;
-    overflow: hidden;
   }
 
   .pc-print-stack-item .pc-print-card-wrap {
-    flex: 1;
+    flex: 0 0 auto;
   }
 
   .pc-print-stack-item + .pc-print-stack-item {
-    border-top: 1.5pt solid #000;
-    padding-top: 4pt;
-    margin-top: 4pt;
+    /* space-evenly on parent handles distribution */
   }
 
   /* "Print 1" — 3 identical copies stacked */
   .pc-print-page:not(.pc-print-stacked) .pc-print-card-wrap + .pc-print-card-wrap {
-    border-top: 1pt solid #aaa;
-    padding-top: 4pt;
-    margin-top: 4pt;
+    /* space-evenly on parent handles distribution */
   }
 }
