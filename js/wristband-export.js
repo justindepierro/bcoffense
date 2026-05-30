@@ -370,75 +370,69 @@ function renderPlayerCardGrid() {
   const card = wristbandCards[currentCardIndex];
   if (!card) { grid.innerHTML = ""; return; }
 
-  const cardOffset = currentCardIndex * 40;
+  // Player cards hold 20 plays each (half of classic's 40)
+  const PC_PLAYS_PER_CARD = 20;
+  const cardOffset = currentCardIndex * PC_PLAYS_PER_CARD;
   const lineOnlyChk = document.getElementById("pcLineCallOnly");
   const lineCallOnly = lineOnlyChk ? lineOnlyChk.checked : false;
   const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
   const { highlightHuddle, highlightCandy } = opts;
   const pCardColor = card.cardColor || "";
 
-  // Match classic layout exactly: 20 rows × 6 columns
-  // [num | call | assign | num | call | assign]
-  // Left half: plays 0,2,4,…,38 (even indices = "odd" plays in classic)
-  // Right half: plays 1,3,5,…,39 (odd indices = "even" plays in classic)
+  // 3 columns: [num (32px) | play name (1fr) | responsibility (1fr)] × 20 rows
+  // Same card dimensions as classic (7in × 4.2in), half the plays, full info per play
   let html = "";
-  for (let row = 0; row < WB_ROWS; row++) {
-    const leftIdx  = row * 2;
-    const rightIdx = row * 2 + 1;
+  for (let i = 0; i < PC_PLAYS_PER_CARD; i++) {
+    const play = card.data[i];
+    const playNum = i + 11 + cardOffset;
+    const custom = cellCustomizations[`${currentCardIndex}-${i}`] || {};
+    const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${i}`;
+    const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i])
+      ?? (play?.[wbPlayerCardPos] || "");
 
-    for (const idx of [leftIdx, rightIdx]) {
-      const play = card.data[idx];
-      const playNum = idx + 11 + cardOffset;
-      const custom = cellCustomizations[`${currentCardIndex}-${idx}`] || {};
-      const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${idx}`;
-      const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[idx])
-        ?? (play?.[wbPlayerCardPos] || "");
+    const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
+    const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
+    const bg = getCellBgColor(custom, isHuddle, isCandy, i, pCardColor);
+    const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+    const numFg = bg
+      ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
+      : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
 
-      const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
-      const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
-      const bg = getCellBgColor(custom, isHuddle, isCandy, row, pCardColor);
-      const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
-      const numFg = bg
-        ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
-        : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+    // Number cell
+    html += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
 
-      // Number cell — identical to classic
-      html += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
-
-      // Play call cell — identical to classic (data-drag/data-cell-idx required for click/drag handlers)
-      if (play) {
-        let cellStyle = bg ? `background:${bg};` : "";
-        cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
-        const prefix = getCadencePrefix(custom, opts)
-          + getCustomPersonnelPrefix(custom, opts, play)
-          + getCustomPreShiftPrefix(custom);
-        const postfix = getCadencePostfix(custom, opts);
-        const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
-          ? getLineCallOnlyDisplay(play, opts, custom)
-          : getFullCall(getCustomDisplayPlay(play, custom), opts);
-        const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
-        const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
-        html += `<div class="wristband-cell filled" style="${cellStyle}"
-          draggable="true" data-drag="wbCell" data-cell-idx="${idx}" data-card="${currentCardIndex}">
-          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${cellInner}</span></span>
-        </div>`;
-      } else {
-        html += `<div class="wristband-cell" tabindex="0"
-          data-drag="wbCell" data-cell-idx="${idx}" data-card="${currentCardIndex}"></div>`;
-      }
-
-      // Assignment textarea cell — replaces right-side num+call pair
-      html += `<div class="wristband-cell pc-assignment-cell">
-        <textarea class="pc-resp-input" data-override-key="${escapeHtml(overrideKey)}"
-          placeholder="—">${escapeHtml(respText)}</textarea>
+    // Play call cell — data-drag attrs required for click/drag handlers
+    if (play) {
+      let cellStyle = bg ? `background:${bg};` : "";
+      cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
+      const prefix = getCadencePrefix(custom, opts)
+        + getCustomPersonnelPrefix(custom, opts, play)
+        + getCustomPreShiftPrefix(custom);
+      const postfix = getCadencePostfix(custom, opts);
+      const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
+        ? getLineCallOnlyDisplay(play, opts, custom)
+        : getFullCall(getCustomDisplayPlay(play, custom), opts);
+      const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
+      const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
+      html += `<div class="wristband-cell filled" style="${cellStyle}"
+        draggable="true" data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}">
+        <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${cellInner}</span></span>
       </div>`;
+    } else {
+      html += `<div class="wristband-cell" tabindex="0"
+        data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}"></div>`;
     }
+
+    // Responsibility textarea
+    html += `<div class="wristband-cell pc-assignment-cell">
+      <textarea class="pc-resp-input" data-override-key="${escapeHtml(overrideKey)}"
+        placeholder="—">${escapeHtml(respText)}</textarea>
+    </div>`;
   }
 
-  // Activate classes — CSS now applies 6-col layout matching classic card dimensions
   grid.classList.add("pc-grid-active");
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
-  grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${PC_PLAYS_PER_CARD}, 1fr)`;
   grid.innerHTML = html;
 
   // Wire assignment change events — only once per grid element lifetime
@@ -461,62 +455,58 @@ function renderPlayerCardGrid() {
 // ─── Player Wristband Print Helpers ────────────────────────────────────────
 
 /**
- * Build a single player mini-card block (one wristband-card with 3-col grid).
- * Left mini-card covers plays startIdx–startIdx+19; right covers +20 to +39.
- * Returns the outer HTML string for that player's card (both halves side by side).
+ * Build a single player card block for print.
+ * 3-column grid: [num | play | responsibility] × 20 rows.
+ * Returns a .pc-print-card-wrap div (one card, not two columns).
  */
 function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
   const { highlightHuddle, highlightCandy, lineCallOnly } = opts;
-  const cardOffset = cardIdx * 40;
+  const PC_PLAYS_PER_CARD = 20;
+  const cardOffset = cardIdx * PC_PLAYS_PER_CARD;
   const pCardColor = card.cardColor || "";
 
-  const buildHalf = (start) => {
-    let cells = "";
-    for (let i = start; i < start + 20; i++) {
-      const play = card.data[i];
-      const playNum = i + 11 + cardOffset;
-      const custom = cellCustomizations[`${cardIdx}-${i}`] || {};
-      const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
+  let cells = "";
+  for (let i = 0; i < PC_PLAYS_PER_CARD; i++) {
+    const play = card.data[i];
+    const playNum = i + 11 + cardOffset;
+    const custom = cellCustomizations[`${cardIdx}-${i}`] || {};
+    const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
 
-      const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
-      const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
-      const bg = getCellBgColor(custom, isHuddle, isCandy, Math.floor(i / 2), pCardColor);
-      const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
-      const numFg = bg
-        ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
-        : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+    const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
+    const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
+    const bg = getCellBgColor(custom, isHuddle, isCandy, i, pCardColor);
+    const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+    const numFg = bg
+      ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
+      : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
 
-      cells += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
+    cells += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
 
-      if (play) {
-        let cellStyle = bg ? `background:${bg};` : "";
-        cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
-        const prefix = getCadencePrefix(custom, opts)
-          + getCustomPersonnelPrefix(custom, opts, play)
-          + getCustomPreShiftPrefix(custom);
-        const postfix = getCadencePostfix(custom, opts);
-        const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
-          ? getLineCallOnlyDisplay(play, opts, custom)
-          : getFullCall(getCustomDisplayPlay(play, custom), opts);
-        const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
-        const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
-        cells += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
-      } else {
-        cells += `<div class="wristband-cell"></div>`;
-      }
-
-      cells += `<div class="wristband-cell pc-print-assignment">${escapeHtml(respText)}</div>`;
+    if (play) {
+      let cellStyle = bg ? `background:${bg};` : "";
+      cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
+      const prefix = getCadencePrefix(custom, opts) + getCustomPersonnelPrefix(custom, opts, play) + getCustomPreShiftPrefix(custom);
+      const postfix = getCadencePostfix(custom, opts);
+      const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
+        ? getLineCallOnlyDisplay(play, opts, custom)
+        : getFullCall(getCustomDisplayPlay(play, custom), opts);
+      const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
+      const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
+      cells += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
+    } else {
+      cells += `<div class="wristband-cell"></div>`;
     }
-    return `<div class="pc-print-col">
-      <div class="wristband-card">
-        <div class="wristband-grid" style="grid-template-columns:22px 1fr 1fr;grid-template-rows:repeat(20,1fr);">
-          ${cells}
-        </div>
-      </div>
-    </div>`;
-  };
 
-  return `<div class="pc-print-columns">${buildHalf(0)}${buildHalf(20)}</div>`;
+    cells += `<div class="wristband-cell pc-print-assignment">${escapeHtml(respText)}</div>`;
+  }
+
+  return `<div class="pc-print-card-wrap">
+    <div class="wristband-card">
+      <div class="wristband-grid" style="grid-template-columns:22px 1fr 1fr;grid-template-rows:repeat(20,1fr);">
+        ${cells}
+      </div>
+    </div>
+  </div>`;
 }
 
 /**
