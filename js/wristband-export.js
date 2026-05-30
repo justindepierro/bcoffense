@@ -591,9 +591,13 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
   document.body.dataset.printMode = "playerCards";
   printContainer.classList.remove("hidden");
 
+  // Directly hide all other body children so they don't show through Chrome's print dialog
+  const _ghostEls = Array.from(document.body.children).filter(el => el !== printContainer);
+  _ghostEls.forEach(el => { el.style.visibility = "hidden"; });
+
   setupPrintPageStyle(`
     @media print {
-      @page { size: letter ${orientation}; margin: 0 0 0 0.2in; }
+      @page { size: letter ${orientation}; margin: 0; }
     }
   `);
 
@@ -603,6 +607,7 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
       window.print();
       if (typeof restoreTitle === "function") restoreTitle();
     } finally {
+      _ghostEls.forEach(el => { el.style.visibility = ""; });
       printContainer.classList.add("hidden");
       delete document.body.dataset.printMode;
     }
