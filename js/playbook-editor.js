@@ -1,5 +1,20 @@
 /** Index into master `plays` array of the play being edited, or -1 for new */
 let _editingMasterIdx = -1;
+
+/** Responsibility position columns for player card printing */
+const RESP_POSITIONS = [
+  { key: "respQ",  label: "Q"  },
+  { key: "respT",  label: "T"  },
+  { key: "respH",  label: "H"  },
+  { key: "respZ",  label: "Z"  },
+  { key: "respX",  label: "X"  },
+  { key: "respY",  label: "Y"  },
+  { key: "respLT", label: "LT" },
+  { key: "respLG", label: "LG" },
+  { key: "respC",  label: "C"  },
+  { key: "respRG", label: "RG" },
+  { key: "respRT", label: "RT" },
+];
 /** Index into `filteredPlays` of the play being edited, for prev/next nav */
 let _editingFilteredIdx = -1;
 
@@ -226,6 +241,25 @@ const _EDITOR_SECTIONS = [
   },
 ];
 
+function _buildPlayEditorResponsibilitiesSection(play) {
+  const posHtml = RESP_POSITIONS.map((pos) => `
+    <div class="pb-resp-cell">
+      <label for="pe-${pos.key}">${escapeHtml(pos.label)}</label>
+      <textarea id="pe-${pos.key}" data-field="${pos.key}" rows="2">${escapeHtml(play?.[pos.key] || "")}</textarea>
+    </div>`).join("");
+
+  return `
+    <div class="pb-editor-section">
+      <div class="pb-editor-section-title">Player Responsibilities</div>
+      <p class="pb-editor-lineup-hint">Fill in each player's assignment for this play — used when printing Player Cards from the Wristband.</p>
+      <div class="pb-resp-grid">${posHtml}</div>
+      <div class="pb-editor-field pb-editor-field-wide pb-resp-notes">
+        <label for="pe-respNotes">Resp. Notes</label>
+        <textarea id="pe-respNotes" data-field="respNotes" rows="2">${escapeHtml(play?.respNotes || "")}</textarea>
+      </div>
+    </div>`;
+}
+
 function _buildPlayEditorLineupSection(play) {
   const directAssignments = normalizePlayerAssignments(play?.playerAssignments);
   const rowOne = getTeamAssignmentSlots(play?.personnel).filter(
@@ -418,6 +452,7 @@ function _populateEditorForm(play, isNew) {
   });
 
   html += _buildPlayEditorLineupSection(play);
+  html += _buildPlayEditorResponsibilitiesSection(play);
 
   body.innerHTML = html;
   overlay.removeAttribute("inert");
@@ -503,6 +538,9 @@ function savePlayEditor(opts = {}) {
         newPlay[field.key] = data[field.key] || "";
       }),
     );
+    // Copy responsibility fields
+    RESP_POSITIONS.forEach((pos) => { newPlay[pos.key] = data[pos.key] || ""; });
+    newPlay.respNotes = data.respNotes || "";
     if (typeof createPlayId === "function") newPlay.id = createPlayId();
     if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);

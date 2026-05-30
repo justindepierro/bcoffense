@@ -1479,6 +1479,9 @@
               <button class="btn btn-success btn-sm" data-action="printWristband">
                 🖨️ Print
               </button>
+              <button class="btn btn-sm btn-secondary" data-action="openPlayerCardPrint" title="Print individual player responsibility cards">
+                🃏 Player Cards
+              </button>
               <button class="btn btn-primary btn-sm" data-action="saveWristband" data-testid="save-wristband">
                 💾 Save
               </button>
@@ -2400,6 +2403,46 @@
   <!-- Wristband Print Container - Outside mainApp for printing -->
   <div id="wristbandPrint" class="wristband-print hidden">
     <div id="wristbandPrintCards"></div>
+  </div>
+
+  <!-- Player Card Print Overlay -->
+  <div id="playerCardOverlay" class="player-card-overlay" role="dialog" aria-modal="true" aria-label="Player Card Print">
+    <div class="player-card-panel">
+      <div class="player-card-panel-header">
+        <h3 class="player-card-panel-title">🃏 Player Cards</h3>
+        <div class="player-card-controls">
+          <label class="player-card-control-label">Position</label>
+          <select id="playerCardPositionSelect" class="wb-preset-select"
+            data-onchange="updatePlayerCardPreview">
+            <option value="respQ">Q</option>
+            <option value="respT">T</option>
+            <option value="respH">H</option>
+            <option value="respZ">Z</option>
+            <option value="respX">X</option>
+            <option value="respY">Y</option>
+            <option value="respLT">LT</option>
+            <option value="respLG">LG</option>
+            <option value="respC">C</option>
+            <option value="respRG">RG</option>
+            <option value="respRT">RT</option>
+          </select>
+          <label class="player-card-toggle">
+            <input type="checkbox" id="playerCardLineCallOnly"
+              data-onchange="updatePlayerCardPreview" />
+            Line Call Only
+          </label>
+          <button class="btn btn-success btn-sm" data-action="printPlayerCards">🖨️ Print Cards</button>
+          <button class="btn btn-sm" data-action="closePlayerCardPrint">✕ Close</button>
+        </div>
+      </div>
+      <p class="player-card-hint">Edit responsibilities inline — changes apply to print only and don't overwrite play data.</p>
+      <div id="playerCardPreviewBody" class="player-card-preview-body"></div>
+    </div>
+  </div>
+
+  <!-- Player Card Print Container - Outside mainApp for printing -->
+  <div id="playerCardPrint" class="player-card-print hidden">
+    <div id="playerCardPrintContent"></div>
   </div>
 
   <!-- Playbook Print Container - Outside mainApp for printing -->
