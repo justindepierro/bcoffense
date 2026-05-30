@@ -405,7 +405,7 @@ function renderPlayerCardGrid() {
       // Number cell — identical to classic
       html += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
 
-      // Play call cell — identical to classic
+      // Play call cell — identical to classic (data-drag/data-cell-idx required for click/drag handlers)
       if (play) {
         let cellStyle = bg ? `background:${bg};` : "";
         cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
@@ -418,9 +418,13 @@ function renderPlayerCardGrid() {
           : getFullCall(getCustomDisplayPlay(play, custom), opts);
         const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
         const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
-        html += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
+        html += `<div class="wristband-cell filled" style="${cellStyle}"
+          draggable="true" data-drag="wbCell" data-cell-idx="${idx}" data-card="${currentCardIndex}">
+          <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${cellInner}</span></span>
+        </div>`;
       } else {
-        html += `<div class="wristband-cell"></div>`;
+        html += `<div class="wristband-cell" tabindex="0"
+          data-drag="wbCell" data-cell-idx="${idx}" data-card="${currentCardIndex}"></div>`;
       }
 
       // Assignment textarea cell — replaces right-side num+call pair
