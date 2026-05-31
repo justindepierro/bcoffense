@@ -1377,13 +1377,18 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     align-items: center !important;
     white-space: nowrap !important;
     overflow: hidden !important;
+  }
+
+  /* Default white background for cells without an explicit inline color */
+  .pc-print-card-wrap .wristband-cell:not([style*="background"]) {
     background: white !important;
   }
 
-  /* Alternating row shading — even rows (every 2nd group of 3 cells in a 3-col grid) */
-  .pc-print-card-wrap .wristband-cell:nth-child(6n+4),
-  .pc-print-card-wrap .wristband-cell:nth-child(6n+5),
-  .pc-print-card-wrap .wristband-cell:nth-child(6n) {
+  /* Alternating row shading — even rows (every 2nd group of 3 cells in a 3-col grid)
+     Only applies to cells without an inline background (candy/huddle/custom colors show through) */
+  .pc-print-card-wrap .wristband-cell:nth-child(6n+4):not([style*="background"]),
+  .pc-print-card-wrap .wristband-cell:nth-child(6n+5):not([style*="background"]),
+  .pc-print-card-wrap .wristband-cell:nth-child(6n):not([style*="background"]) {
     background: #f0f2f4 !important;
   }
 
