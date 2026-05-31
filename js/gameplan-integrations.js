@@ -688,3 +688,111 @@ async function loadGamePlanSnapshotToPlaybook() {
   const verb = action === "option1" ? "Loaded" : "Appended";
   showToast(`${verb} ${snapSigs.size} plays from \u201c${snap.name}\u201d`, { type: "success", duration: 3000 });
 }
+
+/* -------------------------------------------------------------------------
+   Send active wristband card → game plan boxes
+   Reverse direction of sendGamePlanToWristbandCard() in gameplan-actions.js.
+   Reads all non-null plays from the current wristband card and lets the
+   user auto-route by play type or choose a specific game plan box.
+   ------------------------------------------------------------------------- */
+
+async function sendWristbandToGamePlan() {
+  if (typeof wristbandCards === "undefined" || !Array.isArray(wristbandCards) || wristbandCards.length === 0) {
+    showToast("No wristband card loaded.", { type: "warning" });
+    return;
+  }
+  const cardIdx = typeof currentCardIndex !== "undefined" ? currentCardIndex : 0;
+  const card = wristbandCards[cardIdx];
+  if (!card) {
+    showToast("No active wristband card.", { type: "warning" });
+    return;
+  }
+  const wbPlays = (card.data || []).filter(Boolean);
+  if (wbPlays.length === 0) {
+    showToast("No plays on this wristband card.", { type: "warning" });
+    return;
+  }
+
+  const routeChoice = await showChoice(
+    `<p>Send <strong>${wbPlays.length}</strong> play${wbPlays.length === 1 ? "" : "s"} from <strong>${escapeHtml(card.name || "Card")}</strong> to the game plan?</p>`,
+    {
+      title: "📋 Send to Game Plan",
+      icon: "📋",
+      option1: "Auto-route by play type",
+      option2: "Pick a box",
+    }
+  );
+  if (!routeChoice) return;
+
+  let added = 0;
+  let skipped = 0;
+
+  if (routeChoice === "option1") {
+    // Group plays by type → matching default box; unrecognized types → Holding
+    const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
+    const typeMap = {};
+    wbPlays.forEach((p) => {
+      const mappedType =
+        (typeof GP_TYPE_ALIASES !== "undefined" && GP_TYPE_ALIASES[p.type]) || p.type;
+      const boxId = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
+      if (!typeMap[boxId]) typeMap[boxId] = [];
+      typeMap[boxId].push(p);
+    });
+
+    _gpUpdateBoard((board) => {
+      Object.entries(typeMap).forEach(([boxId, plays]) => {
+        if (!Array.isArray(board.assignments[boxId])) board.assignments[boxId] = [];
+        const existing = new Set(board.assignments[boxId].map((p) => _gpPlaySignature(p)));
+        plays.forEach((p) => {
+          const sig = _gpPlaySignature(p);
+          if (existing.has(sig)) { skipped++; return; }
+          board.assignments[boxId].push({ ...p });
+          existing.add(sig);
+          added++;
+        });
+      });
+    });
+  } else {
+    // Pick a specific box
+    const board = _gpEnsureBoard();
+    const defaultItems = GP_DEFAULT_BOXES.map((b) => ({
+      value: b.id,
+      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(b.id) : b.id,
+    }));
+    const customItems = (board.customBoxes || []).map((b) => ({
+      value: b.id,
+      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(b.id) : b.id,
+    }));
+    const items = [
+      ...defaultItems,
+      ...customItems,
+      { value: GP_HOLDING_ID, label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(GP_HOLDING_ID) : "📥 Holding" },
+    ];
+    const choice = await showListPicker("Choose a game plan box:", items, {
+      title: "📋 Send to Box",
+      icon: "📋",
+    });
+    if (!choice) return;
+
+    _gpUpdateBoard((board) => {
+      if (!Array.isArray(board.assignments[choice])) board.assignments[choice] = [];
+      const existing = new Set(board.assignments[choice].map((p) => _gpPlaySignature(p)));
+      wbPlays.forEach((p) => {
+        const sig = _gpPlaySignature(p);
+        if (existing.has(sig)) { skipped++; return; }
+        board.assignments[choice].push({ ...p });
+        existing.add(sig);
+        added++;
+      });
+    });
+  }
+
+  if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+  else if (typeof renderGamePlan === "function") renderGamePlan();
+
+  const msg = added > 0
+    ? `Sent ${added} play${added === 1 ? "" : "s"} to game plan${skipped ? ` (${skipped} already there)` : ""}.`
+    : `No plays added \u2014 ${skipped} already on the board.`;
+  showToast(msg, { duration: 3000, type: added > 0 ? "success" : "warning" });
+  if (added > 0 && typeof showTab === "function") showTab("gameplan");
+}
