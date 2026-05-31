@@ -423,10 +423,12 @@ function renderPlayerCardGrid() {
         data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}"></div>`;
     }
 
-    // Responsibility textarea
+    // Responsibility textarea — show reset button when a custom override is active
+    const hasOverride = playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i] !== undefined;
     html += `<div class="wristband-cell pc-assignment-cell">
       <textarea class="pc-resp-input" data-override-key="${escapeHtml(overrideKey)}"
         placeholder="—">${escapeHtml(respText)}</textarea>
+      ${hasOverride ? `<button class="pc-resp-reset" data-override-key="${escapeHtml(overrideKey)}" title="Reset to playbook value">↺</button>` : ""}
     </div>`;
   }
 
@@ -435,7 +437,7 @@ function renderPlayerCardGrid() {
   grid.style.gridTemplateRows = `repeat(${PC_PLAYS_PER_CARD}, 1fr)`;
   grid.innerHTML = html;
 
-  // Wire assignment change events — only once per grid element lifetime
+  // Wire assignment change + reset click events — only once per grid element lifetime
   if (!grid._pcListenerWired) {
     grid._pcListenerWired = true;
     grid.addEventListener("change", function(e) {
@@ -448,6 +450,21 @@ function renderPlayerCardGrid() {
       if (!playerCardOverrides[pKey]) playerCardOverrides[pKey] = {};
       if (!playerCardOverrides[pKey][cIdx]) playerCardOverrides[pKey][cIdx] = {};
       playerCardOverrides[pKey][cIdx][cellI] = e.target.value;
+      renderPlayerCardGrid();
+    });
+    grid.addEventListener("click", function(e) {
+      if (!wbPlayerCardMode) return;
+      const btn = e.target.closest(".pc-resp-reset");
+      if (!btn) return;
+      e.preventDefault();
+      const parts = btn.dataset.overrideKey.split("|");
+      const pKey = parts[0];
+      const cIdx = parseInt(parts[1]);
+      const cellI = parseInt(parts[2]);
+      if (playerCardOverrides[pKey]?.[cIdx]) {
+        delete playerCardOverrides[pKey][cIdx][cellI];
+      }
+      renderPlayerCardGrid();
     });
   }
 }

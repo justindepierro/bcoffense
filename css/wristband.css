@@ -1247,10 +1247,33 @@
 
 /* Assignment cell — 3rd column in the player card grid */
 .pc-assignment-cell {
+  position: relative;
   border-left: 1px solid var(--color-border-med) !important;
   padding: 0 !important;
   background: var(--color-bg-input);
 }
+
+.pc-resp-reset {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  width: 14px;
+  height: 14px;
+  font-size: 9px;
+  line-height: 1;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-sm);
+  background: var(--color-warning);
+  color: white;
+  cursor: pointer;
+  opacity: 0.75;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1;
+}
+.pc-resp-reset:hover { opacity: 1; }
 
 .pc-resp-input {
   display: block;
