@@ -1380,16 +1380,16 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     background: white !important;
   }
 
-  /* Alternating column contrast — notes col (3rd of 3) gets subtle gray */
-  .pc-print-card-wrap .wristband-cell:nth-child(3n) {
+  /* Alternating row shading — even rows (every 2nd group of 3 cells in a 3-col grid) */
+  .pc-print-card-wrap .wristband-cell:nth-child(6n+4),
+  .pc-print-card-wrap .wristband-cell:nth-child(6n+5),
+  .pc-print-card-wrap .wristband-cell:nth-child(6n) {
     background: #f0f2f4 !important;
   }
 
-  /* Number column stays neutral */
   .pc-print-card-wrap .wristband-cell.num-cell {
     font-size: 7px !important;
     justify-content: center !important;
-    background: #ebebeb !important;
   }
 
   .pc-print-card-wrap .cell-play {
