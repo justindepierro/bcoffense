@@ -75,6 +75,7 @@ function buildWristbandSaveRecord(title, opts = {}) {
   return {
     id: opts.id ?? Date.now(),
     title,
+    wristbandType: (typeof wristbandType !== "undefined" && wristbandType) ? wristbandType : "classic",
     headerColor: wristbandHeaderColor,
     cards: safeDeepClone(wristbandCards),
     cellStyles: safeDeepClone(cellCustomizations),
@@ -527,6 +528,7 @@ function loadSavedWristbandsList() {
           <div class="saved-card-main">
             <div class="saved-card-title">${escapeHtml(s.title)}</div>
             <div class="saved-card-meta">
+              <span>${s.wristbandType === "player" ? "🃏 Player" : "📋 Classic"}</span>
               <span>🃏 ${cardCount(s)} card(s)</span>
               <span>📝 ${totalPlays(s)} plays</span>
               ${favoriteCount(s) > 0 ? `<span>⭐ ${favoriteCount(s)} pinned</span>` : ""}
@@ -564,6 +566,15 @@ function loadWristband(id) {
     if (!wb) return;
 
     hydrateWristbandState(wb, { discardDraft: true });
+
+    // Dismiss the type-choice overlay and activate the correct wristband mode.
+    // Without this, loading from the landing screen leaves the overlay visible.
+    if (wb.wristbandType === "player") {
+      startPlayerWristband();
+    } else {
+      startClassicWristband();
+    }
+
     showToast(`Loaded "${wb.title}"`);
   } catch (err) {
     console.error("loadWristband error:", err);
