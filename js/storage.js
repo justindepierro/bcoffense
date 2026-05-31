@@ -218,13 +218,40 @@ function runMigrations() {
   localStorage.setItem("_storageVersion", String(STORAGE_VERSION));
 }
 
+// ── LZ-String compression helpers ─────────────────────────────────────────
+// Values written to localStorage are LZ-compressed and prefixed with "LZS:"
+// so that existing uncompressed values can still be read without errors.
+const _LZS_PREFIX = "LZS:";
+
+function _lzsCompress(jsonString) {
+  if (typeof LZString === "undefined") return jsonString;
+  try {
+    return _LZS_PREFIX + LZString.compressToUTF16(jsonString);
+  } catch (e) {
+    return jsonString;
+  }
+}
+
+function _lzsDecompress(raw) {
+  if (!raw) return raw;
+  if (typeof LZString === "undefined") return raw;
+  if (!raw.startsWith(_LZS_PREFIX)) return raw; // legacy uncompressed value
+  try {
+    return LZString.decompressFromUTF16(raw.slice(_LZS_PREFIX.length));
+  } catch (e) {
+    return raw; // graceful fallback — parse will fail safely downstream
+  }
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 const storageManager = {
   _lastPressureWarningAt: 0,
 
   get(key, defaultValue = null) {
     try {
-      const value = localStorage.getItem(key);
-      if (value === null) return defaultValue;
+      const raw = localStorage.getItem(key);
+      if (raw === null) return defaultValue;
+      const value = _lzsDecompress(raw);
       return JSON.parse(value);
     } catch (e) {
       console.error(`Error reading ${key} from localStorage:`, e);
@@ -234,7 +261,7 @@ const storageManager = {
 
   set(key, value) {
     try {
-      const serialized = JSON.stringify(value);
+      const serialized = _lzsCompress(JSON.stringify(value));
       const previous = localStorage.getItem(key);
       localStorage.setItem(key, serialized);
       this.maybeWarnStoragePressure();
@@ -278,9 +305,11 @@ const storageManager = {
     };
 
     Object.values(STORAGE_KEYS).forEach((key) => {
-      const value = localStorage.getItem(key);
-      if (value !== null) {
-        data[key] = value;
+      const raw = localStorage.getItem(key);
+      if (raw !== null) {
+        // Always store decompressed JSON strings in backups for portability.
+        // This ensures backups are readable and restorable on older app versions.
+        data[key] = _lzsDecompress(raw);
       }
     });
 
