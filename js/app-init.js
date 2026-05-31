@@ -1,4 +1,4 @@
-function initApp() {
+async function initApp() {
   let startupFailed = false;
   const runOptionalInit = (label, callback) => {
     try {
@@ -14,7 +14,7 @@ function initApp() {
     }
     runMigrations();
 
-    const storedPlaybook = storageManager.get(STORAGE_KEYS.PLAYBOOK, null);
+    const storedPlaybook = await storageManager.getPlaybook();
     if (storedPlaybook) {
       if (typeof setStartupLoadingMessage === "function") {
         setStartupLoadingMessage("Restoring playbook...");

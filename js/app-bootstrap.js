@@ -2,7 +2,7 @@ function restoreStoredPlaybookSession(storedPlaybook) {
   plays = storedPlaybook;
   if (typeof ensurePlaybookPlayIds === "function") {
     const changed = ensurePlaybookPlayIds(plays);
-    if (changed > 0) storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    if (changed > 0) storageManager.setPlaybook(plays);
   }
   if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
   filteredPlays = [...plays];

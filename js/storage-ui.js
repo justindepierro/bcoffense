@@ -12,7 +12,7 @@ function createStorageProgressReporter(label) {
 }
 
 async function exportCompleteBackup() {
-  const backup = storageManager.getAllData();
+  const backup = await storageManager.getAllData();
   let imageCount = 0;
   let imageWarning = "";
 
@@ -139,7 +139,7 @@ async function showStorageInfo() {
 
   const counts = {};
   try {
-    const playbook = storageManager.get(STORAGE_KEYS.PLAYBOOK, []);
+    const playbook = await storageManager.getPlaybook();
     counts.playbook = Array.isArray(playbook) ? playbook.length : 0;
 
     const scripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);

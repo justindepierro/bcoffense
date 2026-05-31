@@ -18,7 +18,7 @@ function startInlineEdit(td, playIndex, field) {
     const masterIdx = plays.indexOf(play);
     play[field] = newVal;
     if (masterIdx >= 0) plays[masterIdx][field] = newVal;
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    storageManager.setPlaybook(plays);
     invalidateFilterCache();
     requestRenderPlaybook();
     if (newVal !== original) showToast("✏️ Updated");

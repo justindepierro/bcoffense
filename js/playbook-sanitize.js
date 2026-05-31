@@ -467,7 +467,7 @@ function _commitSanitizeInput(el) {
 
     clearTimeout(_sanitizeAutosaveTimer);
     _sanitizeAutosaveTimer = setTimeout(() => {
-      storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+      storageManager.setPlaybook(plays);
       if (typeof invalidateFilterCache === "function") invalidateFilterCache();
       if (typeof filterPlays === "function") filterPlays();
       _renderSanitizePicker();
@@ -515,7 +515,7 @@ function _commitSanitizeInput(el) {
   // Debounced persist + filter cache invalidation
   clearTimeout(_sanitizeAutosaveTimer);
   _sanitizeAutosaveTimer = setTimeout(() => {
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    storageManager.setPlaybook(plays);
     if (typeof invalidateFilterCache === "function") invalidateFilterCache();
     if (typeof filterPlays === "function") filterPlays();
     _renderSanitizePicker();
@@ -619,7 +619,7 @@ function applySanitizeSuggestion(arg) {
   const slot = document.getElementById(`pbSanitizeSuggest-${masterIdx}`);
   if (slot) { slot.hidden = true; slot.innerHTML = ""; }
   // Persist immediately on explicit suggestion accept.
-  storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  storageManager.setPlaybook(plays);
   if (typeof invalidateFilterCache === "function") invalidateFilterCache();
   if (typeof filterPlays === "function") filterPlays();
   _renderSanitizePicker();
@@ -2502,7 +2502,7 @@ function catCleanupCheckAllVisible() {
     if (!isNaN(idx) && plays[idx] && _catApplyMetadata(plays[idx], cat)) mutated++;
   });
   if (mutated) {
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    storageManager.setPlaybook(plays);
     if (typeof invalidateFilterCache === "function") invalidateFilterCache();
     if (typeof filterPlays === "function") filterPlays();
     if (typeof renderPlaybook === "function") renderPlaybook();
@@ -2523,7 +2523,7 @@ function catCleanupUncheckAllVisible() {
     if (!isNaN(idx) && plays[idx] && _catRemoveMetadata(plays[idx], cat)) mutated++;
   });
   if (mutated) {
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    storageManager.setPlaybook(plays);
     if (typeof invalidateFilterCache === "function") invalidateFilterCache();
     if (typeof filterPlays === "function") filterPlays();
     if (typeof renderPlaybook === "function") renderPlaybook();
@@ -2675,7 +2675,7 @@ function _onCatCleanupToggle(cb) {
     mutated = _catRemoveMetadata(play, cat);
   }
   if (mutated) {
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    storageManager.setPlaybook(plays);
     if (typeof invalidateFilterCache === "function") invalidateFilterCache();
     if (typeof filterPlays === "function") filterPlays();
     if (typeof renderPlaybook === "function") renderPlaybook();

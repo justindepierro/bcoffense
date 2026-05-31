@@ -558,7 +558,7 @@ function savePlayEditor(opts = {}) {
     showToast("➕ Play added to playbook", { duration: 2000, type: "success" });
   }
 
-  storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  storageManager.setPlaybook(plays);
   invalidateFilterCache();
   filteredPlays = [...plays];
   filterPlays();
@@ -589,7 +589,7 @@ async function deletePlayFromEditor() {
   if (!ok) return;
 
   plays.splice(_editingMasterIdx, 1);
-  storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+  storageManager.setPlaybook(plays);
   invalidateFilterCache();
   filteredPlays = [...plays];
   filterPlays();
@@ -789,7 +789,7 @@ function _autoSaveCurrentEditorFields() {
     changed = true;
   }
   if (changed) {
-    storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+    storageManager.setPlaybook(plays);
     invalidateFilterCache();
   }
   _syncGamePlanCheckbox(existing);

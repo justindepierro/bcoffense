@@ -157,7 +157,7 @@
 
   async function buildCloudBackupPayload(opts = {}) {
     const interactive = opts.interactive !== false;
-    const backup = storageManager.getAllData();
+    const backup = await storageManager.getAllData();
 
     if (window.playImages && typeof window.playImages.exportAll === "function") {
       try {

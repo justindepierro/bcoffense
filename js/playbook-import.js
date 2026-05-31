@@ -695,7 +695,7 @@ function handleFileUpload(event) {
 
             plays = merged;
             filteredPlays = [...plays];
-            storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+            storageManager.setPlaybook(plays);
             invalidateFilterCache();
             if (typeof renderTeamSettings === "function") renderTeamSettings();
 
@@ -754,7 +754,7 @@ function handleFileUpload(event) {
         plays = parsed;
         if (typeof ensurePlaybookPlayIds === "function") ensurePlaybookPlayIds(plays);
         filteredPlays = [...plays];
-        storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+        storageManager.setPlaybook(plays);
         invalidateFilterCache();
         if (typeof renderTeamSettings === "function") renderTeamSettings();
 

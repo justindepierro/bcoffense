@@ -244,6 +244,81 @@ function _lzsDecompress(raw) {
 }
 // ──────────────────────────────────────────────────────────────────────────
 
+// ── IndexedDB Playbook Storage ─────────────────────────────────────────────
+// The playbook array is the single largest localStorage consumer (~1-2 MB).
+// Moving it to IndexedDB removes it from the 5 MB quota entirely, with a
+// transparent localStorage fallback for private browsing or IDB errors.
+
+const _PB_DB_NAME = "bcoffense-playbook";
+const _PB_DB_VERSION = 1;
+const _PB_STORE = "playbook";
+const _PB_KEY = "current";
+let _pbDbPromise = null;
+let _pbEstimatedBytes = 0; // cached byte size for getStorageInfo()
+
+function _openPlaybookDB() {
+  if (_pbDbPromise) return _pbDbPromise;
+  _pbDbPromise = new Promise((resolve, reject) => {
+    if (typeof indexedDB === "undefined") {
+      reject(new Error("IndexedDB not available"));
+      return;
+    }
+    const req = indexedDB.open(_PB_DB_NAME, _PB_DB_VERSION);
+    req.onupgradeneeded = (e) => {
+      const db = e.target.result;
+      if (!db.objectStoreNames.contains(_PB_STORE)) {
+        db.createObjectStore(_PB_STORE);
+      }
+    };
+    req.onsuccess = () => resolve(req.result);
+    req.onerror = () => reject(req.error || new Error("IndexedDB open failed"));
+  });
+  return _pbDbPromise;
+}
+
+function _idbGetPlaybook() {
+  return _openPlaybookDB().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const req = db
+          .transaction(_PB_STORE, "readonly")
+          .objectStore(_PB_STORE)
+          .get(_PB_KEY);
+        req.onsuccess = () => resolve(req.result ?? null);
+        req.onerror = () => reject(req.error);
+      }),
+  );
+}
+
+function _idbSetPlaybook(data) {
+  return _openPlaybookDB().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const req = db
+          .transaction(_PB_STORE, "readwrite")
+          .objectStore(_PB_STORE)
+          .put(data, _PB_KEY);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      }),
+  );
+}
+
+function _idbClearPlaybook() {
+  return _openPlaybookDB().then(
+    (db) =>
+      new Promise((resolve, reject) => {
+        const req = db
+          .transaction(_PB_STORE, "readwrite")
+          .objectStore(_PB_STORE)
+          .delete(_PB_KEY);
+        req.onsuccess = () => resolve();
+        req.onerror = () => reject(req.error);
+      }),
+  );
+}
+// ──────────────────────────────────────────────────────────────────────────
+
 const storageManager = {
   _lastPressureWarningAt: 0,
 
@@ -297,7 +372,60 @@ const storageManager = {
     }
   },
 
-  getAllData() {
+  // ── Playbook (IndexedDB) ────────────────────────────────────────────────
+  // Reads the stored playbook. On first call after v517→v518 upgrade, auto-
+  // migrates data from localStorage to IDB and removes the localStorage copy.
+  async getPlaybook() {
+    try {
+      let data = await _idbGetPlaybook();
+      if (data === null) {
+        // First run or IDB empty — migrate from localStorage if data exists there.
+        const raw = localStorage.getItem(STORAGE_KEYS.PLAYBOOK);
+        if (raw !== null) {
+          const json = _lzsDecompress(raw);
+          const parsed = safeJSONParse(json, null);
+          if (Array.isArray(parsed)) {
+            data = parsed;
+            await _idbSetPlaybook(data);
+            localStorage.removeItem(STORAGE_KEYS.PLAYBOOK);
+            _pbEstimatedBytes = new Blob([JSON.stringify(data)]).size;
+            console.debug(
+              `Playbook migrated to IndexedDB (${this.formatBytes(_pbEstimatedBytes)})`,
+            );
+          }
+        }
+      } else {
+        _pbEstimatedBytes = new Blob([JSON.stringify(data)]).size;
+      }
+      return Array.isArray(data) ? data : null;
+    } catch (err) {
+      console.error("getPlaybook IDB error, falling back to localStorage:", err);
+      return this.get(STORAGE_KEYS.PLAYBOOK, null);
+    }
+  },
+
+  // Writes the playbook to IndexedDB asynchronously (fire-and-forget).
+  // Falls back to localStorage if IDB fails.
+  setPlaybook(data) {
+    _pbEstimatedBytes = new Blob([JSON.stringify(data)]).size;
+    _idbSetPlaybook(data)
+      .then(() => {
+        // Remove legacy localStorage copy if still present.
+        if (localStorage.getItem(STORAGE_KEYS.PLAYBOOK) !== null) {
+          localStorage.removeItem(STORAGE_KEYS.PLAYBOOK);
+        }
+        if (typeof window.queueCloudAutoPush === "function") {
+          window.queueCloudAutoPush(STORAGE_KEYS.PLAYBOOK, "set");
+        }
+      })
+      .catch((err) => {
+        console.error("setPlaybook IDB error, falling back to localStorage:", err);
+        this.set(STORAGE_KEYS.PLAYBOOK, data);
+      });
+  },
+  // ──────────────────────────────────────────────────────────────────────────
+
+  async getAllData() {
     const data = {
       app: "BCOffense",
       version: STORAGE_VERSION,
@@ -312,6 +440,16 @@ const storageManager = {
         data[key] = _lzsDecompress(raw);
       }
     });
+
+    // Playbook lives in IndexedDB — include it in the backup payload.
+    try {
+      const pb = await _idbGetPlaybook();
+      if (Array.isArray(pb)) {
+        data[STORAGE_KEYS.PLAYBOOK] = JSON.stringify(pb);
+      }
+    } catch (err) {
+      console.warn("getAllData: could not read playbook from IDB:", err);
+    }
 
     return data;
   },
@@ -343,6 +481,7 @@ const storageManager = {
     }
 
     Object.values(STORAGE_KEYS).forEach((key) => {
+      if (key === STORAGE_KEYS.PLAYBOOK) return; // stored in IDB below
       if (backup[key] !== undefined) {
         const value =
           typeof backup[key] === "string"
@@ -352,6 +491,21 @@ const storageManager = {
       }
     });
 
+    // Restore playbook to IndexedDB.
+    if (backup[STORAGE_KEYS.PLAYBOOK] !== undefined) {
+      try {
+        const raw = backup[STORAGE_KEYS.PLAYBOOK];
+        const parsed = typeof raw === "string" ? safeJSONParse(raw, null) : raw;
+        if (Array.isArray(parsed)) {
+          await _idbSetPlaybook(parsed);
+          _pbEstimatedBytes = new Blob([JSON.stringify(parsed)]).size;
+          localStorage.removeItem(STORAGE_KEYS.PLAYBOOK);
+        }
+      } catch (err) {
+        console.error("restoreAllData: IDB playbook write failed:", err);
+      }
+    }
+
     return true;
   },
 
@@ -360,6 +514,7 @@ const storageManager = {
     const itemSizes = {};
 
     Object.values(STORAGE_KEYS).forEach((key) => {
+      if (key === STORAGE_KEYS.PLAYBOOK) return; // stored in IDB, not localStorage
       const value = localStorage.getItem(key);
       if (value) {
         const size = new Blob([value]).size;
@@ -380,6 +535,8 @@ const storageManager = {
       usageRatio,
       warningLevel:
         usageRatio >= 0.9 ? "danger" : usageRatio >= 0.75 ? "warning" : "ok",
+      playbookIDBBytes: _pbEstimatedBytes,
+      playbookIDBFormatted: this.formatBytes(_pbEstimatedBytes),
     };
   },
 
@@ -424,6 +581,14 @@ const storageManager = {
       localStorage.removeItem(key);
     });
 
+    // Also clear the playbook from IndexedDB.
+    try {
+      await _idbClearPlaybook();
+      _pbEstimatedBytes = 0;
+    } catch (err) {
+      console.error("clearAll: IDB playbook clear failed:", err);
+    }
+
     return true;
   },
 };
@@ -450,7 +615,7 @@ function reloadAppFromStorage() {
     plays = storedPlaybook;
     if (typeof ensurePlaybookPlayIds === "function") {
       const changed = ensurePlaybookPlayIds(plays);
-      if (changed > 0) storageManager.set(STORAGE_KEYS.PLAYBOOK, plays);
+      if (changed > 0) storageManager.setPlaybook(plays);
     }
     if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
     filteredPlays = [...plays];
