@@ -63,7 +63,7 @@ js/
   playbook-navigation.js ← Pagination and table navigation
   playbook-actions.js   ← Row actions and play mutations
   playbook-render.js    ← Playbook table rendering
-  script-*.js           ← Practice script runtime split by concern (state, add, render, storage, etc.)
+  script-*.js           ← Practice script runtime split by concern (state, add, render, storage, integrations, etc.)
   wristband.js          ← Wristband core state, display helpers, and history helpers
   wristband-library.js  ← Wristband library filters, counts, and available plays
   wristband-render.js   ← Wristband grid rendering, colors, clear, auto-fill
@@ -155,49 +155,50 @@ All scripts use `defer` and load in this exact order from index.html:
 35. js/script-period-sync.js
 36. js/script-smart.js
 37. js/script-storage.js
-38. js/wristband.js
-39. js/wristband-library.js
-40. js/wristband-render.js
-41. js/wristband-cards.js
-42. js/wristband-export.js
-43. js/wristband-search.js
-44. js/wristband-modals.js
-45. js/wristband-cell-popup.js
-46. js/wristband-cell-actions.js
-47. js/wristband-sort.js
-48. js/wristband-storage.js
-49. js/wristband-runtime.js
-50. js/callsheet.js
-51. js/callsheet-categories.js
-52. js/callsheet-metadata.js
-53. js/callsheet-layout.js
-54. js/callsheet-picker-runtime.js
-55. js/callsheet-gameplan-drawer.js
-56. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-57. js/script-vision.js
-58. js/tendencies.js
-59. js/installation.js
-60. js/identity.js
-61. js/offensebuilder.js
-62. js/help.js
-63. js/dashboard.js
-64. js/gameplan.js          ← Must load before all gameplan-* split files
-65. js/gameplan-render.js
-66. js/gameplan-dnd.js
-67. js/gameplan-actions.js
-68. js/gameplan-smart.js
-69. js/gameplan-print.js
-70. js/gameplan-integrations.js
-71. js/gameplan-snapshots.js
-72. js/print-studio.js  ← Unified print/export hub after module print functions
-73. js/app-events.js
-74. js/app-shell.js
-75. js/app-session.js
-76. js/app-navigation.js
-77. js/app-module-init.js
-78. js/app-bootstrap.js
-79. js/app-init.js
-80. js/app.js           ← Must be last; shared global state only
+38. js/script-integrations.js
+39. js/wristband.js
+40. js/wristband-library.js
+41. js/wristband-render.js
+42. js/wristband-cards.js
+43. js/wristband-export.js
+44. js/wristband-search.js
+45. js/wristband-modals.js
+46. js/wristband-cell-popup.js
+47. js/wristband-cell-actions.js
+48. js/wristband-sort.js
+49. js/wristband-storage.js
+50. js/wristband-runtime.js
+51. js/callsheet.js
+52. js/callsheet-categories.js
+53. js/callsheet-metadata.js
+54. js/callsheet-layout.js
+55. js/callsheet-picker-runtime.js
+56. js/callsheet-gameplan-drawer.js
+57. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+58. js/script-vision.js
+59. js/tendencies.js
+60. js/installation.js
+61. js/identity.js
+62. js/offensebuilder.js
+63. js/help.js
+64. js/dashboard.js
+65. js/gameplan.js          ← Must load before all gameplan-* split files
+66. js/gameplan-render.js
+67. js/gameplan-dnd.js
+68. js/gameplan-actions.js
+69. js/gameplan-smart.js
+70. js/gameplan-print.js
+71. js/gameplan-integrations.js
+72. js/gameplan-snapshots.js
+73. js/print-studio.js  ← Unified print/export hub after module print functions
+74. js/app-events.js
+75. js/app-shell.js
+76. js/app-session.js
+77. js/app-navigation.js
+78. js/app-module-init.js
+79. js/app-bootstrap.js
+80. js/app-init.js
+81. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.

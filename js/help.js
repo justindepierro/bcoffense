@@ -169,6 +169,14 @@ function getHelpDataForTab(tab) {
               key: "🗂️ Print Packet",
               desc: "Print detailed scripts plus attached play diagrams in an 8-up layout",
             },
+            {
+              key: "🎯 Game Plan",
+              desc: "Send selected plays, or the full script, into Game Plan boxes",
+            },
+            {
+              key: "🃏 Wristband",
+              desc: "Build Wristband cards or fill empty cells from the script",
+            },
             { key: "💾 Save", desc: "Save script" },
             { key: "★ Preferred", desc: "Apply preferred fields to all" },
             { key: "🔀 Shuffle", desc: "Randomize play order" },
