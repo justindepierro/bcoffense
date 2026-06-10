@@ -327,7 +327,13 @@ function buildScriptPrintBodyMarkup(playsToRender, opts = {}, options = {}) {
   const columns = getScriptPrintColumns(opts);
   let bodyHtml = "";
   if (options.scriptHeaderMarkup) {
-    bodyHtml += `<tbody class="print-script-header-group">${options.scriptHeaderMarkup}</tbody>`;
+    const headerGroupClass = [
+      "print-script-header-group",
+      options.scriptHeaderGroupClass || "",
+    ]
+      .filter(Boolean)
+      .join(" ");
+    bodyHtml += `<tbody class="${headerGroupClass}">${options.scriptHeaderMarkup}</tbody>`;
   }
 
   // Group plays by period so each group lives in its own <tbody>. The CSS
@@ -815,63 +821,179 @@ function generatePDF() {
   }
 }
 
-function loadFullDayScriptList() {
+function _getCurrentScriptPacketRecord() {
+  return {
+    sourceKey: "current",
+    name: document.getElementById("scriptName")?.value || "Current Script",
+    date: document.getElementById("scriptDate")?.value || "",
+    plays: Array.isArray(script) ? script : [],
+    isCurrent: true,
+  };
+}
+
+function _getScriptPacketRecords() {
   const savedScripts = getSavedScripts();
+  return [
+    _getCurrentScriptPacketRecord(),
+    ...savedScripts.map((savedScript) => ({
+      ...savedScript,
+      sourceKey: `saved:${String(savedScript.id)}`,
+      isCurrent: false,
+    })),
+  ];
+}
+
+function _getScriptPacketRecordStats(record) {
+  const rows = Array.isArray(record?.plays) ? record.plays : [];
+  const playCount = rows.filter((play) => play && !play.isSeparator).length;
+  const periodRows = rows.filter((play) => play?.isSeparator);
+  return {
+    playCount,
+    periodCount: periodRows.length,
+    totalMinutes: periodRows.reduce(
+      (sum, period) => sum + (Number(period.minutes) || 0),
+      0,
+    ),
+    periods: periodRows
+      .map((period) => String(period.label || "").trim())
+      .filter(Boolean),
+  };
+}
+
+function updateScriptPacketSummary() {
+  const checked = Array.from(
+    document.querySelectorAll(".day-script-checkbox:checked:not(:disabled)"),
+  );
+  const scriptCount = checked.length;
+  const playCount = checked.reduce(
+    (sum, checkbox) => sum + (Number(checkbox.dataset.playCount) || 0),
+    0,
+  );
+  const periodCount = checked.reduce(
+    (sum, checkbox) => sum + (Number(checkbox.dataset.periodCount) || 0),
+    0,
+  );
+  const summary = document.getElementById("scriptPacketSelectionSummary");
+  if (summary) {
+    summary.textContent = scriptCount
+      ? `${scriptCount} script${scriptCount === 1 ? "" : "s"} • ${playCount} plays • ${periodCount} periods`
+      : "Select at least one script";
+  }
+  const printButton = document.getElementById("printScriptPacketBtn");
+  if (printButton) printButton.disabled = scriptCount === 0;
+}
+
+function loadFullDayScriptList(forceShow = false) {
+  const records = _getScriptPacketRecords();
   const container = document.getElementById("fullDayScriptList");
   const section = document.getElementById("fullDaySection");
   if (!container || !section) return;
 
-  if (savedScripts.length < 2) {
+  const existingTitle = document.getElementById("scriptPacketTitle")?.value || "";
+  const selectedKeys = new Set(
+    Array.from(document.querySelectorAll(".day-script-checkbox:checked")).map(
+      (checkbox) => checkbox.value,
+    ),
+  );
+  const printableRecords = records.filter(
+    (record) => _getScriptPacketRecordStats(record).playCount > 0,
+  );
+
+  if (printableRecords.length === 0 && !forceShow) {
     section.classList.add("hidden");
     return;
   }
 
   section.classList.remove("hidden");
-  container.innerHTML = savedScripts
-    .map((savedScript, index) => {
-      const playCount = savedScript.plays.filter((play) => !play.isSeparator)
-        .length;
-      const periodCount = savedScript.plays.filter((play) => play.isSeparator)
-        .length;
-      const periodsStr = savedScript.plays
-        .filter((play) => play.isSeparator)
-        .map((play) => play.label)
-        .join(", ");
+  const hasPreviousSelection = selectedKeys.size > 0;
+  const defaultKey = printableRecords.some((record) => record.isCurrent)
+    ? "current"
+    : printableRecords[0]?.sourceKey || "";
+
+  container.innerHTML = records
+    .map((record) => {
+      const stats = _getScriptPacketRecordStats(record);
+      const disabled = stats.playCount === 0;
+      const checked =
+        !disabled &&
+        (selectedKeys.has(record.sourceKey) ||
+          (!hasPreviousSelection && record.sourceKey === defaultKey));
+      const dateStr = record.date
+        ? new Date(record.date + "T00:00:00").toLocaleDateString("en-US", {
+          month: "short",
+          day: "numeric",
+        })
+        : "";
+      const periodsStr = stats.periods.join(", ");
       return `
       <label class="full-day-item">
-        <input type="checkbox" class="day-script-checkbox" value="${savedScript.id}" data-order="${index}">
+        <input type="checkbox" class="day-script-checkbox" value="${escapeHtml(record.sourceKey)}"
+          data-play-count="${stats.playCount}" data-period-count="${stats.periodCount}"
+          data-onchange="updateScriptPacketSummary" ${checked ? "checked" : ""} ${disabled ? "disabled" : ""}>
         <div class="full-day-item-info">
-          <span class="full-day-item-name">${escapeHtml(savedScript.name)}</span>
-          <span class="full-day-item-meta">${playCount} plays${periodCount > 0 ? " • " + periodCount + " periods" : ""}${periodsStr ? " (" + escapeHtml(periodsStr) + ")" : ""}</span>
+          <span class="full-day-item-name">
+            ${escapeHtml(record.name)}
+            ${record.isCurrent ? '<span class="script-packet-current-badge">Current draft</span>' : ""}
+          </span>
+          <span class="full-day-item-meta">
+            ${stats.playCount} plays${stats.periodCount ? ` • ${stats.periodCount} periods` : ""}${stats.totalMinutes ? ` • ${stats.totalMinutes} min` : ""}${dateStr ? ` • ${dateStr}` : ""}
+            ${periodsStr ? ` (${escapeHtml(periodsStr)})` : ""}
+            ${disabled ? " • Empty" : ""}
+          </span>
         </div>
       </label>
     `;
     })
     .join("");
+
+  const titleInput = document.getElementById("scriptPacketTitle");
+  if (titleInput && existingTitle) titleInput.value = existingTitle;
+  updateScriptPacketSummary();
+}
+
+function openScriptPacketBuilder() {
+  loadFullDayScriptList(true);
+  const section = document.getElementById("fullDaySection");
+  if (!section) return;
+  section.classList.remove("hidden");
+  requestAnimationFrame(() => {
+    section.scrollIntoView({ behavior: "smooth", block: "center" });
+    document.getElementById("scriptPacketTitle")?.focus({ preventScroll: true });
+  });
 }
 
 function selectAllDayScripts() {
   document
-    .querySelectorAll(".day-script-checkbox")
+    .querySelectorAll(".day-script-checkbox:not(:disabled)")
     .forEach((checkbox) => (checkbox.checked = true));
+  updateScriptPacketSummary();
 }
 
 function clearDayScripts() {
   document
     .querySelectorAll(".day-script-checkbox")
     .forEach((checkbox) => (checkbox.checked = false));
+  updateScriptPacketSummary();
 }
 
-async function printFullDay() {
-  try {
-    const savedScripts = getSavedScripts();
-    const selectedIds = Array.from(
-      document.querySelectorAll(".day-script-checkbox:checked"),
-    ).map((checkbox) => parseInt(checkbox.value, 10));
+function _getSelectedScriptPacketRecords() {
+  const recordsByKey = new Map(
+    _getScriptPacketRecords().map((record) => [record.sourceKey, record]),
+  );
+  return Array.from(
+    document.querySelectorAll(".day-script-checkbox:checked:not(:disabled)"),
+  )
+    .map((checkbox) => recordsByKey.get(checkbox.value))
+    .filter(Boolean);
+}
 
-    if (selectedIds.length === 0) {
+async function printScriptPacket() {
+  try {
+    const selectedScripts = _getSelectedScriptPacketRecords();
+
+    if (selectedScripts.length === 0) {
       await showModal("Please select at least one script to print.", {
-        title: "Print",
+        title: "Practice Script Packet",
         icon: "🖨️",
       });
       return;
@@ -880,18 +1002,20 @@ async function printFullDay() {
     const displayOpts = getScriptDisplayOptions();
     const printColumnCount = getScriptPrintColumns(displayOpts).length;
     const teamName = getTeamName();
+    const packetTitle =
+      document.getElementById("scriptPacketTitle")?.value.trim() ||
+      "Practice Script Packet";
 
     let globalPlayNum = 0;
+    let globalPeriodCount = 0;
+    let globalMinutes = 0;
     const bodySections = [];
 
-    selectedIds.forEach((id) => {
-      const scriptData = savedScripts.find((savedScript) => savedScript.id === id);
-      if (!scriptData) return;
-
-      const scriptPlayCount = scriptData.plays.filter(
-        (play) => !play.isSeparator,
-      ).length;
-      globalPlayNum += scriptPlayCount;
+    selectedScripts.forEach((scriptData, index) => {
+      const stats = _getScriptPacketRecordStats(scriptData);
+      globalPlayNum += stats.playCount;
+      globalPeriodCount += stats.periodCount;
+      globalMinutes += stats.totalMinutes;
 
       const dateStr = scriptData.date
         ? new Date(scriptData.date + "T00:00:00").toLocaleDateString("en-US", {
@@ -902,15 +1026,18 @@ async function printFullDay() {
         : "";
       const scriptHeaderMarkup = `
       <tr class="script-section-header">
-        <td colspan="${printColumnCount}" style="background: ${UI_COLORS.bgDarkNav}; color: white; font-weight: bold; padding: 10px; text-align: center; font-size: 13px; letter-spacing: 0.5px; border-top: 3px solid ${UI_COLORS.accentBlue};">
-          📋 ${escapeHtml(scriptData.name.toUpperCase())} ${dateStr ? "&nbsp;•&nbsp; " + dateStr : ""} <span style="opacity:0.6;font-weight:normal;font-size:11px;">(${scriptPlayCount} plays)</span>
+        <td colspan="${printColumnCount}">
+          <div class="script-packet-section-heading">
+            <strong>${escapeHtml(scriptData.name)}</strong>
+            <span>${dateStr ? `${escapeHtml(dateStr)} • ` : ""}${stats.playCount} plays${stats.periodCount ? ` • ${stats.periodCount} periods` : ""}${stats.totalMinutes ? ` • ${stats.totalMinutes} min` : ""}</span>
+          </div>
         </td>
       </tr>
     `;
       bodySections.push(
         buildScriptPrintBodyMarkup(scriptData.plays, displayOpts, {
           scriptHeaderMarkup,
-          isFullDay: true,
+          scriptHeaderGroupClass: index > 0 ? "script-packet-page-break" : "",
         }),
       );
     });
@@ -923,14 +1050,16 @@ async function printFullDay() {
     });
 
     document.getElementById("previewTeamName").textContent = teamName || "";
-    document.getElementById("previewTitle").textContent = "Full Practice Day";
+    document.getElementById("previewTitle").textContent = packetTitle;
     document.getElementById("previewMeta").textContent = today;
 
     const summaryEl = document.getElementById("previewPeriodSummary");
     summaryEl.innerHTML = `
     <div class="preview-summary-bar">
-      <span><strong>${selectedIds.length}</strong> scripts</span>
+      <span><strong>${selectedScripts.length}</strong> scripts</span>
       <span><strong>${globalPlayNum}</strong> total plays</span>
+      <span><strong>${globalPeriodCount}</strong> periods</span>
+      ${globalMinutes ? `<span><strong>${globalMinutes}</strong> min</span>` : ""}
     </div>
   `;
 
@@ -946,22 +1075,37 @@ async function printFullDay() {
     );
 
     setTimeout(() => {
-      try {
-        const restoreTitle = setPrintTitle("Full Practice Day");
-        window.print();
-        restoreTitle();
-      } finally {
-        document.getElementById("previewContainer").classList.add("hidden");
+      const previewEl = document.getElementById("previewContainer");
+      const cleanupPacket = () => {
+        previewEl.classList.add("hidden");
         document.body.classList.remove("print-script");
+      };
+      const printNow = () => {
+        try {
+          const restoreTitle = setPrintTitle("Practice Script Packet", packetTitle);
+          window.print();
+          restoreTitle();
+        } finally {
+          cleanupPacket();
+        }
+      };
+      if (typeof showPrintPreview === "function") {
+        showPrintPreview(previewEl, printNow, cleanupPacket);
+      } else {
+        printNow();
       }
     }, 100);
   } catch (err) {
-    console.error("printFullDay error:", err);
+    console.error("printScriptPacket error:", err);
     document.getElementById("previewContainer")?.classList?.add("hidden");
     document.body.classList.remove("print-script");
-    showToast("❌ Error printing full day.", {
+    showToast("❌ Error printing script packet.", {
       duration: 4000,
       type: "error",
     });
   }
+}
+
+function printFullDay() {
+  return printScriptPacket();
 }

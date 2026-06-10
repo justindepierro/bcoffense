@@ -2911,6 +2911,32 @@
   color: var(--color-text-secondary);
   margin: 0 0 10px 0;
 }
+.script-packet-settings {
+  display: grid;
+  grid-template-columns: auto minmax(180px, 1fr) auto;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.script-packet-settings label {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+.script-packet-settings input {
+  width: 100%;
+  min-width: 0;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
+.script-packet-selection-summary {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+}
 .full-day-list {
   max-height: 200px;
   overflow-y: auto;
@@ -2940,8 +2966,22 @@
   flex: 1;
 }
 .full-day-item-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
   font-weight: 600;
   font-size: var(--font-size-sm);
+}
+.script-packet-current-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-blue-tint);
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
 }
 .full-day-item-meta {
   font-size: var(--font-size-xs);

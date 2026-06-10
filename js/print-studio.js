@@ -279,6 +279,7 @@ function _psArtifacts() {
       stats: _psScriptStats(),
       actions: [
         ["script-print", "Print", true],
+        ["script-packet", "Packet", false],
         ["script-text", "Text", true],
         ["script-csv", "CSV", true],
         ["go-script", "Open", false],
@@ -550,6 +551,11 @@ function runPrintStudioAction(action) {
   switch (action) {
     case "script-print":
       _psCloseAndRun(() => generatePDF());
+      return;
+    case "script-packet":
+      closePrintStudio();
+      showTab("script");
+      setTimeout(() => openScriptPacketBuilder(), 100);
       return;
     case "script-text":
       exportScriptAsText();

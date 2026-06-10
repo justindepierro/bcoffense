@@ -790,3 +790,12 @@
   content: " ▼";
   font-size: 0.75em;
 }
+@media (max-width: 720px) {
+  .script-packet-settings {
+    grid-template-columns: 1fr;
+  }
+
+  .script-packet-selection-summary {
+    white-space: normal;
+  }
+}

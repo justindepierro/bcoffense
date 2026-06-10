@@ -417,7 +417,7 @@ function loadSavedScriptsList() {
 
   if (savedScripts.length === 0) {
     section.classList.add("hidden");
-    document.getElementById("fullDaySection").classList.add("hidden");
+    loadFullDayScriptList();
     return;
   }
 

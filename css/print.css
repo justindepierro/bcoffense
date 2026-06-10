@@ -408,6 +408,41 @@
     break-inside: auto !important;
     page-break-inside: auto !important;
   }
+  body.print-script .script-table tbody.script-packet-page-break,
+  body.print-script .script-table tbody.script-packet-page-break .script-section-header {
+    break-before: page !important;
+    page-break-before: always !important;
+  }
+  body.print-script .script-table .script-section-header {
+    break-after: avoid-page !important;
+    page-break-after: avoid !important;
+  }
+  body.print-script .script-table .script-section-header td {
+    padding: 6px 8px !important;
+    background: var(--color-dark) !important;
+    color: var(--color-text-inverse) !important;
+    border: 0.6px solid var(--script-print-grid) !important;
+    border-top: 2px solid var(--color-primary) !important;
+    -webkit-print-color-adjust: exact !important;
+    print-color-adjust: exact !important;
+  }
+  body.print-script .script-table .script-packet-section-heading {
+    display: flex !important;
+    align-items: baseline !important;
+    justify-content: space-between !important;
+    gap: 10px !important;
+    text-align: left !important;
+  }
+  body.print-script .script-table .script-packet-section-heading strong {
+    color: var(--color-text-inverse) !important;
+    font-size: 10px !important;
+  }
+  body.print-script .script-table .script-packet-section-heading span {
+    color: var(--color-text-inverse) !important;
+    font-size: 7.5px !important;
+    font-weight: 500 !important;
+    opacity: 0.78 !important;
+  }
   body.print-script .script-table td.script-table-cell--call {
     text-align: left !important;
     white-space: normal !important;

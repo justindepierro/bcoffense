@@ -164,7 +164,11 @@ function getHelpDataForTab(tab) {
               key: "📋 → Call Sheet",
               desc: "Push period plays to matching call sheet categories",
             },
-            { key: "📄 Print", desc: "Print script" },
+            { key: "📄 Print Script", desc: "Preview and print the current script" },
+            {
+              key: "🗂️ Print Packet",
+              desc: "Combine the current draft and saved scripts into one packet",
+            },
             { key: "💾 Save", desc: "Save script" },
             { key: "★ Preferred", desc: "Apply preferred fields to all" },
             { key: "🔀 Shuffle", desc: "Randomize play order" },

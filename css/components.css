@@ -1462,6 +1462,25 @@
 }
 .script-table .script-section-header td {
   font-size: var(--font-size-xs) !important;
+  padding: 8px 10px;
+  background: var(--color-dark);
+  color: var(--color-text-inverse);
+  border-top: 3px solid var(--color-primary);
+}
+.script-packet-section-heading {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 12px;
+  text-align: left;
+}
+.script-packet-section-heading strong {
+  font-size: var(--font-size-sm);
+}
+.script-packet-section-heading span {
+  font-size: var(--font-size-2xs);
+  font-weight: 500;
+  opacity: 0.75;
 }
 
 /* Full Day Section */

@@ -1156,6 +1156,10 @@
             <button class="btn btn-success" data-action="generatePDF" data-testid="generate-pdf">
               📄 Print Script
             </button>
+            <button class="btn btn-primary" data-action="openScriptPacketBuilder"
+              title="Combine the current draft and saved scripts into one printable packet">
+              🗂️ Print Packet
+            </button>
             <button class="btn btn-sm btn-primary" data-action="openPrintStudio"
               title="Open unified print and export controls">
               🖨️ Print Studio
@@ -1257,11 +1261,17 @@
 
           <div class="full-day-section hidden" id="fullDaySection">
             <div class="full-day-header">
-              <h4>📅 Full Practice Day</h4>
+              <h4>🗂️ Practice Script Packet</h4>
               <p class="full-day-desc">
-                Combine multiple saved scripts into one printable document.
-                Check the scripts you want to include:
+                Combine the current draft and saved scripts into one print-ready packet.
               </p>
+            </div>
+            <div class="script-packet-settings">
+              <label for="scriptPacketTitle">Packet title</label>
+              <input type="text" id="scriptPacketTitle" value="Practice Script Packet"
+                placeholder="Practice Script Packet" />
+              <span id="scriptPacketSelectionSummary" class="script-packet-selection-summary"
+                role="status" aria-live="polite"></span>
             </div>
             <div id="fullDayScriptList" class="full-day-list"></div>
             <div class="full-day-actions">
@@ -1271,8 +1281,8 @@
               <button class="btn btn-secondary btn-sm" data-action="clearDayScripts">
                 Clear
               </button>
-              <button class="btn btn-success btn-sm" data-action="printFullDay">
-                🖨️ Print Full Day
+              <button id="printScriptPacketBtn" class="btn btn-success btn-sm" data-action="printScriptPacket">
+                🖨️ Preview Packet
               </button>
             </div>
           </div>
