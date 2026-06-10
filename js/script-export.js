@@ -471,15 +471,8 @@ function setScriptColorScheme(presetId) {
   showToast(preset ? "\uD83C\uDFA8 Scheme: " + preset.label : "Color scheme cleared.", 2000);
 }
 
-function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
-  const table = document.getElementById("previewTable");
-  if (!table) return;
-
+function buildScriptPrintTableMarkup(opts = {}, bodyMarkup = "") {
   const columns = getScriptPrintColumns(opts);
-  // Rebuild the entire table so we can emit multiple <tbody> groups (one per
-  // period). Direct innerHTML is safe — getFullCall/escapeHtml already
-  // escape user content. setInnerHTML would drop orphan <tr>/<tbody> nodes
-  // because DOMParser strips them outside a <table> context.
   const colgroupMarkup = `<colgroup>${columns
     .map((column) => `<col class="script-col-${column.key}" style="width: ${column.width || "auto"};">`)
     .join("")}</colgroup>`;
@@ -492,7 +485,16 @@ function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
   const tbodyMarkup = bodyMarkup.includes("<tbody")
     ? bodyMarkup
     : `<tbody id="previewBody">${bodyMarkup}</tbody>`;
-  table.innerHTML = colgroupMarkup + theadMarkup + tbodyMarkup;
+  return colgroupMarkup + theadMarkup + tbodyMarkup;
+}
+
+function renderScriptPrintTable(opts = {}, bodyMarkup = "") {
+  const table = document.getElementById("previewTable");
+  if (!table) return;
+
+  // Direct innerHTML is safe — getFullCall/escapeHtml already escape user
+  // content. setInnerHTML would drop orphan table nodes outside table context.
+  table.innerHTML = buildScriptPrintTableMarkup(opts, bodyMarkup);
 }
 
 function exportScriptCSV() {
@@ -987,123 +989,430 @@ function _getSelectedScriptPacketRecords() {
     .filter(Boolean);
 }
 
-async function printScriptPacket() {
-  try {
-    const selectedScripts = _getSelectedScriptPacketRecords();
+let _scriptPacketPrintOptions = {
+  paperSize: "letter",
+  orientation: "portrait",
+  includeScriptTables: true,
+  includeDiagrams: true,
+  includeMissingImages: false,
+  showMeta: true,
+  showDefense: true,
+  showNotes: true,
+  startScriptOnNewPage: true,
+  showFooter: true,
+};
 
-    if (selectedScripts.length === 0) {
-      await showModal("Please select at least one script to print.", {
-        title: "Practice Script Packet",
-        icon: "🖨️",
-      });
+function _scriptPacketOptionSummary(selectedScripts) {
+  const totals = selectedScripts.reduce(
+    (summary, record) => {
+      const stats = _getScriptPacketRecordStats(record);
+      summary.plays += stats.playCount;
+      summary.periods += stats.periodCount;
+      summary.minutes += stats.totalMinutes;
+      return summary;
+    },
+    { plays: 0, periods: 0, minutes: 0 },
+  );
+  return `${selectedScripts.length} script${selectedScripts.length === 1 ? "" : "s"} • ${totals.plays} plays • ${totals.periods} periods${totals.minutes ? ` • ${totals.minutes} min` : ""}`;
+}
+
+function _scriptPacketCountLabel(count, singular, plural = `${singular}s`) {
+  return `${count} ${count === 1 ? singular : plural}`;
+}
+
+function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRecords()) {
+  if (!selectedScripts.length) return Promise.resolve(false);
+  const o = _scriptPacketPrintOptions;
+
+  return new Promise((resolve) => {
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="scriptPacketPrintTitle">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">🗂️</span>
+          <h3 class="custom-modal-title" id="scriptPacketPrintTitle">Print Practice Script Packet</h3>
+        </div>
+        <div class="custom-modal-body">
+          <p class="script-packet-print-summary">${escapeHtml(_scriptPacketOptionSummary(selectedScripts))}</p>
+          <div class="script-packet-print-form">
+            <div class="script-packet-print-row">
+              <label for="scriptPacketPaper">Paper</label>
+              <select id="scriptPacketPaper">
+                <option value="letter" ${o.paperSize === "letter" ? "selected" : ""}>Letter (8.5×11)</option>
+                <option value="legal" ${o.paperSize === "legal" ? "selected" : ""}>Legal (8.5×14)</option>
+                <option value="tabloid" ${o.paperSize === "tabloid" ? "selected" : ""}>Tabloid (11×17)</option>
+              </select>
+            </div>
+            <div class="script-packet-print-row">
+              <label for="scriptPacketOrientation">Orientation</label>
+              <select id="scriptPacketOrientation">
+                <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait — 2 × 4 diagrams</option>
+                <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape — 4 × 2 diagrams</option>
+              </select>
+            </div>
+            <div class="script-packet-print-row script-packet-print-toggles">
+              <label><input type="checkbox" id="scriptPacketIncludeTables" ${o.includeScriptTables ? "checked" : ""}> Include detailed script tables</label>
+              <label><input type="checkbox" id="scriptPacketIncludeDiagrams" ${o.includeDiagrams ? "checked" : ""}> Include 8-up play diagram pages</label>
+              <label><input type="checkbox" id="scriptPacketMissingImages" ${o.includeMissingImages ? "checked" : ""}> Include placeholder cards for plays without images</label>
+              <label><input type="checkbox" id="scriptPacketShowMeta" ${o.showMeta ? "checked" : ""}> Show formation, personnel, type, hash, and tempo</label>
+              <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Show front, coverage, stunt, blitz, and reps</label>
+              <label><input type="checkbox" id="scriptPacketShowNotes" ${o.showNotes ? "checked" : ""}> Show play notes</label>
+              <label><input type="checkbox" id="scriptPacketNewPage" ${o.startScriptOnNewPage ? "checked" : ""}> Start each selected script on a new page</label>
+              <label><input type="checkbox" id="scriptPacketFooter" ${o.showFooter ? "checked" : ""}> Show team, script, and page footer</label>
+            </div>
+          </div>
+          <p class="script-packet-print-hint">Diagram pages always contain up to eight plays. Only images attached in the Playbook can be printed.</p>
+        </div>
+        <div class="custom-modal-actions">
+          <button class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
+          <button class="btn btn-primary custom-modal-btn" id="scriptPacketPrintConfirm">Build Preview</button>
+        </div>
+      </div>`;
+    document.body.appendChild(overlay);
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+
+    const close = (confirmed) => {
+      overlay.classList.remove("visible");
+      setTimeout(() => overlay.remove(), 200);
+      resolve(confirmed);
+    };
+
+    overlay.querySelector("#scriptPacketPrintCancel").addEventListener("click", () => close(false));
+    overlay.querySelector("#scriptPacketPrintConfirm").addEventListener("click", () => {
+      _scriptPacketPrintOptions = {
+        paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
+        orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
+        includeScriptTables: overlay.querySelector("#scriptPacketIncludeTables").checked,
+        includeDiagrams: overlay.querySelector("#scriptPacketIncludeDiagrams").checked,
+        includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,
+        showMeta: overlay.querySelector("#scriptPacketShowMeta").checked,
+        showDefense: overlay.querySelector("#scriptPacketShowDefense").checked,
+        showNotes: overlay.querySelector("#scriptPacketShowNotes").checked,
+        startScriptOnNewPage: overlay.querySelector("#scriptPacketNewPage").checked,
+        showFooter: overlay.querySelector("#scriptPacketFooter").checked,
+      };
+      close(true);
+    });
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) close(false);
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(false);
+      }
+    });
+  });
+}
+
+function _scriptPacketPlayEntries(scriptData) {
+  const entries = [];
+  let period = "Unassigned";
+  let periodPlayNumber = 0;
+
+  (Array.isArray(scriptData?.plays) ? scriptData.plays : []).forEach((item) => {
+    if (item?.isSeparator) {
+      period = item.label || "Period";
+      periodPlayNumber = 0;
       return;
     }
+    if (!item) return;
+    periodPlayNumber += 1;
+    const signature = typeof playSignature === "function" ? playSignature(item) : "";
+    const imageUrl =
+      signature && window.playImages && typeof window.playImages.urlFor === "function"
+        ? window.playImages.urlFor(signature)
+        : null;
+    entries.push({
+      play: item,
+      period,
+      periodPlayNumber,
+      imageUrl,
+    });
+  });
 
+  return entries;
+}
+
+function _scriptPacketMetaLine(play) {
+  const parts = [
+    play.personnel,
+    play.formation,
+    play.type,
+    play.hash || play.preferredHash,
+    play.tempo,
+  ]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean);
+  return parts.map(escapeHtml).join(" • ");
+}
+
+function _scriptPacketDefenseMarkup(play) {
+  const fields = [
+    ["Front", play.defFront || play.practiceFront],
+    ["Cov", play.defCoverage || play.practiceCoverage],
+    ["Stunt", play.defStunt || play.practiceStunt],
+    ["Blitz", play.defBlitz || play.practiceBlitz],
+    ["Reps", play.reps || 1],
+  ].filter(([, value]) => String(value ?? "").trim());
+  if (!fields.length) return "";
+  return `<div class="script-packet-diagram-defense">
+    ${fields
+      .map(
+        ([label, value]) =>
+          `<span><strong>${escapeHtml(label)}</strong> ${escapeHtml(String(value))}</span>`,
+      )
+      .join("")}
+  </div>`;
+}
+
+function _scriptPacketDiagramCard(entry, options) {
+  const play = entry.play;
+  const displayOpts =
+    typeof getScriptDisplayOptions === "function" ? getScriptDisplayOptions() : {};
+  const callHtml =
+    typeof getScriptFullCall === "function"
+      ? getScriptFullCall(play, displayOpts)
+      : typeof getFullCall === "function"
+        ? getFullCall(play, { showLineCall: true })
+        : escapeHtml(play.play || "");
+  const imageHtml = entry.imageUrl
+    ? `<img src="${escapeAttr(entry.imageUrl)}" alt="Play diagram for ${escapeAttr(play.play || "play")}" />`
+    : `<div class="script-packet-diagram-missing">No attached diagram</div>`;
+  const metaHtml = options.showMeta
+    ? `<div class="script-packet-diagram-meta">${_scriptPacketMetaLine(play) || "No play metadata"}</div>`
+    : "";
+  const defenseHtml = options.showDefense ? _scriptPacketDefenseMarkup(play) : "";
+  const notes = String(play.notes || "").trim();
+  const notesHtml =
+    options.showNotes && notes
+      ? `<div class="script-packet-diagram-notes"><strong>Note</strong> ${escapeHtml(notes)}</div>`
+      : "";
+
+  return `<article class="script-packet-diagram-card">
+    <div class="script-packet-diagram-kicker">
+      <span>${escapeHtml(entry.period)}</span>
+      <span>Play ${entry.periodPlayNumber}</span>
+    </div>
+    <div class="script-packet-diagram-image">${imageHtml}</div>
+    <div class="script-packet-diagram-call">${callHtml}</div>
+    ${metaHtml}
+    ${defenseHtml}
+    ${notesHtml}
+  </article>`;
+}
+
+function _scriptPacketPageHeader(packetTitle, scriptData, pageLabel) {
+  const teamName = typeof getTeamName === "function" ? getTeamName() : "";
+  const dateStr = scriptData.date
+    ? new Date(scriptData.date + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric",
+    })
+    : "";
+  return `<header class="script-packet-page-header">
+    <div>
+      <span class="script-packet-page-team">${escapeHtml(teamName || "Practice Script")}</span>
+      <strong>${escapeHtml(packetTitle)}</strong>
+    </div>
+    <div class="script-packet-page-context">
+      <strong>${escapeHtml(scriptData.name)}</strong>
+      <span>${[dateStr, pageLabel].filter(Boolean).map(escapeHtml).join(" • ")}</span>
+    </div>
+  </header>`;
+}
+
+function _scriptPacketPageFooter(scriptData, pageNumber, pageCount, options) {
+  if (!options.showFooter) return "";
+  const teamName = typeof getTeamName === "function" ? getTeamName() : "";
+  return `<footer class="script-packet-page-footer">
+    <span>${escapeHtml(teamName || "")}</span>
+    <span>${escapeHtml(scriptData.name)}</span>
+    <span>${pageNumber} / ${pageCount}</span>
+  </footer>`;
+}
+
+function _scriptPacketDiagramPages(scriptData, packetTitle, options) {
+  const allEntries = _scriptPacketPlayEntries(scriptData);
+  const entries = options.includeMissingImages
+    ? allEntries
+    : allEntries.filter((entry) => entry.imageUrl);
+  if (!entries.length) return "";
+
+  const chunks = [];
+  for (let index = 0; index < entries.length; index += 8) {
+    chunks.push(entries.slice(index, index + 8));
+  }
+  return chunks
+    .map((chunk, pageIndex) => {
+      const pageNumber = pageIndex + 1;
+      return `<section class="script-packet-page script-packet-diagram-page">
+        ${_scriptPacketPageHeader(packetTitle, scriptData, `Diagrams ${pageNumber}/${chunks.length}`)}
+        <div class="script-packet-diagram-grid">
+          ${chunk.map((entry) => _scriptPacketDiagramCard(entry, options)).join("")}
+        </div>
+        ${_scriptPacketPageFooter(scriptData, pageNumber, chunks.length, options)}
+      </section>`;
+    })
+    .join("");
+}
+
+function _scriptPacketTableSection(scriptData, packetTitle, displayOpts, index, options) {
+  const stats = _getScriptPacketRecordStats(scriptData);
+  const bodyMarkup = buildScriptPrintBodyMarkup(scriptData.plays, displayOpts);
+  const tableMarkup = buildScriptPrintTableMarkup(displayOpts, bodyMarkup);
+  const breakClass =
+    index > 0 && options.startScriptOnNewPage ? "script-packet-break-before" : "";
+  return `<section class="script-packet-table-section ${breakClass}">
+    ${_scriptPacketPageHeader(
+    packetTitle,
+    scriptData,
+    `${_scriptPacketCountLabel(stats.playCount, "play")}${stats.periodCount ? ` • ${_scriptPacketCountLabel(stats.periodCount, "period")}` : ""}${stats.totalMinutes ? ` • ${stats.totalMinutes} min` : ""}`,
+  )}
+    <table class="script-table">${tableMarkup}</table>
+  </section>`;
+}
+
+function _scriptPacketPaperDimensions(options) {
+  const sizes = {
+    letter: [8.5, 11],
+    legal: [8.5, 14],
+    tabloid: [11, 17],
+  };
+  const selected = sizes[options.paperSize] || sizes.letter;
+  return options.orientation === "landscape"
+    ? { width: selected[1], height: selected[0] }
+    : { width: selected[0], height: selected[1] };
+}
+
+async function _waitForScriptPacketImages(host) {
+  const images = Array.from(host.querySelectorAll("img"));
+  await Promise.all(
+    images.map((image) => {
+      if (image.complete) return Promise.resolve();
+      if (typeof image.decode === "function") return image.decode().catch(() => {});
+      return new Promise((resolve) => {
+        image.addEventListener("load", resolve, { once: true });
+        image.addEventListener("error", resolve, { once: true });
+      });
+    }),
+  );
+}
+
+async function _renderScriptPacketAndPrint(selectedScripts) {
+  try {
+    const options = _scriptPacketPrintOptions;
     const displayOpts = getScriptDisplayOptions();
-    const printColumnCount = getScriptPrintColumns(displayOpts).length;
-    const teamName = getTeamName();
     const packetTitle =
       document.getElementById("scriptPacketTitle")?.value.trim() ||
       "Practice Script Packet";
+    if (options.includeDiagrams && window.playImages) {
+      try {
+        await window.playImages.prefetchAll();
+      } catch (_error) {
+        showToast("Some play diagrams could not be loaded.", { type: "warning" });
+      }
+    }
 
-    let globalPlayNum = 0;
-    let globalPeriodCount = 0;
-    let globalMinutes = 0;
-    const bodySections = [];
+    let host = document.getElementById("scriptPacketPrintRoot");
+    if (!host) {
+      host = document.createElement("div");
+      host.id = "scriptPacketPrintRoot";
+      document.body.appendChild(host);
+    }
 
-    selectedScripts.forEach((scriptData, index) => {
-      const stats = _getScriptPacketRecordStats(scriptData);
-      globalPlayNum += stats.playCount;
-      globalPeriodCount += stats.periodCount;
-      globalMinutes += stats.totalMinutes;
+    const dimensions = _scriptPacketPaperDimensions(options);
+    host.className = [
+      "script-packet-print-root",
+      `script-packet-${options.paperSize}`,
+      `script-packet-${options.orientation}`,
+    ].join(" ");
+    host.style.setProperty("--script-packet-page-width", `${dimensions.width - 0.6}in`);
+    host.style.setProperty("--script-packet-page-height", `${dimensions.height - 0.6}in`);
+    host.style.setProperty("--script-packet-diagram-cols", options.orientation === "landscape" ? "4" : "2");
+    host.style.setProperty("--script-packet-diagram-rows", options.orientation === "landscape" ? "2" : "4");
 
-      const dateStr = scriptData.date
-        ? new Date(scriptData.date + "T00:00:00").toLocaleDateString("en-US", {
-          weekday: "short",
-          month: "short",
-          day: "numeric",
-        })
-        : "";
-      const scriptHeaderMarkup = `
-      <tr class="script-section-header">
-        <td colspan="${printColumnCount}">
-          <div class="script-packet-section-heading">
-            <strong>${escapeHtml(scriptData.name)}</strong>
-            <span>${dateStr ? `${escapeHtml(dateStr)} • ` : ""}${stats.playCount} plays${stats.periodCount ? ` • ${stats.periodCount} periods` : ""}${stats.totalMinutes ? ` • ${stats.totalMinutes} min` : ""}</span>
-          </div>
-        </td>
-      </tr>
-    `;
-      bodySections.push(
-        buildScriptPrintBodyMarkup(scriptData.plays, displayOpts, {
-          scriptHeaderMarkup,
-          scriptHeaderGroupClass: index > 0 ? "script-packet-page-break" : "",
-        }),
+    const tableHtml = options.includeScriptTables
+      ? selectedScripts
+        .map((record, index) =>
+          _scriptPacketTableSection(record, packetTitle, displayOpts, index, options),
+        )
+        .join("")
+      : "";
+    const diagramHtml = options.includeDiagrams
+      ? selectedScripts
+        .map((record) => _scriptPacketDiagramPages(record, packetTitle, options))
+        .join("")
+      : "";
+    if (options.includeDiagrams && !diagramHtml && tableHtml) {
+      showToast(
+        options.includeMissingImages
+          ? "No script plays were available for diagram pages."
+          : "No attached play diagrams found. Printing the detailed script tables only.",
+        { type: "warning", duration: 4000 },
       );
-    });
+    }
 
-    const today = new Date().toLocaleDateString("en-US", {
-      weekday: "long",
-      month: "long",
-      day: "numeric",
-      year: "numeric",
-    });
+    if (!tableHtml && !diagramHtml) {
+      await showModal(
+        "This packet has no printable content. Include script tables, diagrams, or missing-image placeholders.",
+        { title: "Practice Script Packet", icon: "🗂️" },
+      );
+      return;
+    }
 
-    document.getElementById("previewTeamName").textContent = teamName || "";
-    document.getElementById("previewTitle").textContent = packetTitle;
-    document.getElementById("previewMeta").textContent = today;
+    host.innerHTML = tableHtml + diagramHtml;
+    await _waitForScriptPacketImages(host);
 
-    const summaryEl = document.getElementById("previewPeriodSummary");
-    summaryEl.innerHTML = `
-    <div class="preview-summary-bar">
-      <span><strong>${selectedScripts.length}</strong> scripts</span>
-      <span><strong>${globalPlayNum}</strong> total plays</span>
-      <span><strong>${globalPeriodCount}</strong> periods</span>
-      ${globalMinutes ? `<span><strong>${globalMinutes}</strong> min</span>` : ""}
-    </div>
-  `;
-
-    renderScriptPrintTable(displayOpts, bodySections.join(""));
-
-    document.getElementById("previewContainer").classList.remove("hidden");
-    document.getElementById("wristbandPrint").classList.add("hidden");
-    document.body.classList.add("print-script");
-
-    const _dayColorCSS = _applyScriptColorPreset(document.getElementById("previewContainer"));
+    const pageColorCSS = _applyScriptColorPreset(host);
     setupPrintPageStyle(
-      "@media print { @page { size: letter; margin: 0.25in; } }" + _dayColorCSS,
+      `@media print { @page { size: ${options.paperSize} ${options.orientation}; margin: 0.3in; } }${pageColorCSS}`,
     );
 
-    setTimeout(() => {
-      const previewEl = document.getElementById("previewContainer");
-      const cleanupPacket = () => {
-        previewEl.classList.add("hidden");
-        document.body.classList.remove("print-script");
-      };
-      const printNow = () => {
-        try {
-          const restoreTitle = setPrintTitle("Practice Script Packet", packetTitle);
-          window.print();
-          restoreTitle();
-        } finally {
-          cleanupPacket();
-        }
-      };
-      if (typeof showPrintPreview === "function") {
-        showPrintPreview(previewEl, printNow, cleanupPacket);
-      } else {
-        printNow();
+    const cleanupPacket = () => {
+      document.body.classList.remove("print-script", "script-packet-printing");
+    };
+    const printNow = () => {
+      document.body.classList.add("print-script", "script-packet-printing");
+      try {
+        const restoreTitle = setPrintTitle("Practice Script Packet", packetTitle);
+        window.print();
+        restoreTitle();
+      } finally {
+        cleanupPacket();
       }
-    }, 100);
+    };
+
+    if (typeof showPrintPreview === "function") {
+      showPrintPreview(host, printNow, cleanupPacket);
+    } else {
+      printNow();
+    }
   } catch (err) {
-    console.error("printScriptPacket error:", err);
-    document.getElementById("previewContainer")?.classList?.add("hidden");
-    document.body.classList.remove("print-script");
+    console.error("_renderScriptPacketAndPrint error:", err);
+    document.body.classList.remove("print-script", "script-packet-printing");
     showToast("❌ Error printing script packet.", {
       duration: 4000,
       type: "error",
     });
   }
+}
+
+async function printScriptPacket() {
+  const selectedScripts = _getSelectedScriptPacketRecords();
+  if (!selectedScripts.length) {
+    await showModal("Please select at least one script to print.", {
+      title: "Practice Script Packet",
+      icon: "🖨️",
+    });
+    return;
+  }
+  const confirmed = await openScriptPacketPrintModal(selectedScripts);
+  if (!confirmed) return;
+  return _renderScriptPacketAndPrint(selectedScripts);
 }
 
 function printFullDay() {

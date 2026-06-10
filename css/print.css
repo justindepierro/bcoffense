@@ -531,6 +531,191 @@
 }
 
 @media print {
+  body.script-packet-printing > * {
+    display: none !important;
+  }
+
+  body.script-packet-printing > #scriptPacketPrintRoot {
+    display: block !important;
+    width: auto !important;
+    margin: 0 !important;
+    color: #111 !important;
+    background: #fff !important;
+  }
+
+  body.script-packet-printing #scriptPacketPrintRoot,
+  body.script-packet-printing #scriptPacketPrintRoot * {
+    visibility: visible !important;
+  }
+
+  body.script-packet-printing .script-packet-table-section {
+    width: 100%;
+    box-sizing: border-box;
+  }
+
+  body.script-packet-printing .script-packet-break-before {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  body.script-packet-printing .script-packet-table-section + .script-packet-diagram-page,
+  body.script-packet-printing .script-packet-diagram-page {
+    break-before: page;
+    page-break-before: always;
+  }
+
+  body.script-packet-printing .script-packet-page {
+    display: flex !important;
+    flex-direction: column;
+    width: var(--script-packet-page-width, 7.9in);
+    height: var(--script-packet-page-height, 10.4in);
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+    break-after: page;
+    page-break-after: always;
+    overflow: hidden;
+    background: #fff !important;
+  }
+
+  body.script-packet-printing .script-packet-page:last-child {
+    break-after: auto;
+    page-break-after: auto;
+  }
+
+  body.script-packet-printing .script-packet-page-header {
+    display: flex !important;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 12pt;
+    padding-bottom: 4pt;
+    margin-bottom: 5pt;
+    border-bottom: 1.5pt solid #111;
+  }
+
+  body.script-packet-printing .script-packet-page-header > div {
+    display: flex !important;
+    flex-direction: column;
+  }
+
+  body.script-packet-printing .script-packet-page-team {
+    font-size: 6.5pt;
+    font-weight: 800;
+    text-transform: uppercase;
+    color: #555 !important;
+  }
+
+  body.script-packet-printing .script-packet-page-header strong {
+    color: #111 !important;
+    font-size: 9pt;
+  }
+
+  body.script-packet-printing .script-packet-page-context {
+    align-items: flex-end;
+    color: #555 !important;
+    font-size: 6.5pt;
+    text-align: right;
+  }
+
+  body.script-packet-printing .script-packet-diagram-grid {
+    display: grid !important;
+    grid-template-columns: repeat(var(--script-packet-diagram-cols, 2), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--script-packet-diagram-rows, 4), minmax(0, 1fr));
+    gap: 5pt;
+    flex: 1;
+    min-height: 0;
+  }
+
+  body.script-packet-printing .script-packet-diagram-card {
+    display: flex !important;
+    flex-direction: column;
+    min-width: 0;
+    min-height: 0;
+    padding: 3.5pt;
+    overflow: hidden;
+    border: 0.6pt solid #aaa;
+    border-radius: 2pt;
+    background: #fff !important;
+    break-inside: avoid;
+    page-break-inside: avoid;
+  }
+
+  body.script-packet-printing .script-packet-diagram-kicker {
+    display: flex !important;
+    justify-content: space-between;
+    gap: 4pt;
+    color: #555 !important;
+    font-size: 5.5pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  body.script-packet-printing .script-packet-diagram-image {
+    display: flex !important;
+    align-items: center;
+    justify-content: center;
+    flex: 1 1 auto;
+    min-height: 0;
+    margin: 2.5pt 0;
+    overflow: hidden;
+    background: #f7f7f7 !important;
+  }
+
+  body.script-packet-printing .script-packet-diagram-image img {
+    display: block !important;
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+  }
+
+  body.script-packet-printing .script-packet-diagram-missing {
+    color: #999 !important;
+    font-size: 6pt;
+    font-weight: 700;
+    text-transform: uppercase;
+  }
+
+  body.script-packet-printing .script-packet-diagram-call {
+    overflow: hidden;
+    color: #111 !important;
+    font-size: 7.5pt;
+    font-weight: 800;
+    line-height: 1.1;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  body.script-packet-printing .script-packet-diagram-meta,
+  body.script-packet-printing .script-packet-diagram-defense,
+  body.script-packet-printing .script-packet-diagram-notes {
+    overflow: hidden;
+    color: #555 !important;
+    font-size: 5.5pt;
+    line-height: 1.12;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+
+  body.script-packet-printing .script-packet-diagram-defense {
+    display: flex !important;
+    gap: 4pt;
+  }
+
+  body.script-packet-printing .script-packet-diagram-notes {
+    color: #444 !important;
+  }
+
+  body.script-packet-printing .script-packet-page-footer {
+    display: flex !important;
+    justify-content: space-between;
+    gap: 6pt;
+    padding-top: 3pt;
+    margin-top: 4pt;
+    border-top: 0.5pt solid #aaa;
+    color: #555 !important;
+    font-size: 5.5pt;
+  }
+
   body[data-print-mode="callsheet"] > *,
   body[data-print-mode="gameplan"] > * {
     visibility: hidden;

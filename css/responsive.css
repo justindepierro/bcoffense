@@ -798,4 +798,8 @@
   .script-packet-selection-summary {
     white-space: normal;
   }
+
+  .script-packet-print-row {
+    grid-template-columns: 1fr;
+  }
 }

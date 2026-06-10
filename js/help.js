@@ -167,7 +167,7 @@ function getHelpDataForTab(tab) {
             { key: "📄 Print Script", desc: "Preview and print the current script" },
             {
               key: "🗂️ Print Packet",
-              desc: "Combine the current draft and saved scripts into one packet",
+              desc: "Print detailed scripts plus attached play diagrams in an 8-up layout",
             },
             { key: "💾 Save", desc: "Save script" },
             { key: "★ Preferred", desc: "Apply preferred fields to all" },
