@@ -997,6 +997,7 @@ let _scriptPacketPrintOptions = {
   includeMissingImages: false,
   showMeta: true,
   showDefense: true,
+  showCoaching: true,
   showNotes: true,
   startScriptOnNewPage: true,
   showFooter: true,
@@ -1057,6 +1058,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
               <label><input type="checkbox" id="scriptPacketMissingImages" ${o.includeMissingImages ? "checked" : ""}> Include placeholder cards for plays without images</label>
               <label><input type="checkbox" id="scriptPacketShowMeta" ${o.showMeta ? "checked" : ""}> Show formation, personnel, type, hash, and tempo</label>
               <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Show front, coverage, stunt, blitz, and reps</label>
+              <label><input type="checkbox" id="scriptPacketShowCoaching" ${o.showCoaching ? "checked" : ""}> Show game-plan details (situation, key players, answers, hit chart, tags, and dead vs)</label>
               <label><input type="checkbox" id="scriptPacketShowNotes" ${o.showNotes ? "checked" : ""}> Show play notes</label>
               <label><input type="checkbox" id="scriptPacketNewPage" ${o.startScriptOnNewPage ? "checked" : ""}> Start each selected script on a new page</label>
               <label><input type="checkbox" id="scriptPacketFooter" ${o.showFooter ? "checked" : ""}> Show team, script, and page footer</label>
@@ -1089,6 +1091,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
         includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,
         showMeta: overlay.querySelector("#scriptPacketShowMeta").checked,
         showDefense: overlay.querySelector("#scriptPacketShowDefense").checked,
+        showCoaching: overlay.querySelector("#scriptPacketShowCoaching").checked,
         showNotes: overlay.querySelector("#scriptPacketShowNotes").checked,
         startScriptOnNewPage: overlay.querySelector("#scriptPacketNewPage").checked,
         showFooter: overlay.querySelector("#scriptPacketFooter").checked,
@@ -1136,36 +1139,77 @@ function _scriptPacketPlayEntries(scriptData) {
   return entries;
 }
 
-function _scriptPacketMetaLine(play) {
-  const parts = [
-    play.personnel,
-    play.formation,
-    play.type,
-    play.hash || play.preferredHash,
-    play.tempo,
-  ]
-    .map((value) => String(value || "").trim())
+function _scriptPacketCompactValues(values) {
+  return values
+    .map((value) => String(value ?? "").trim())
     .filter(Boolean);
-  return parts.map(escapeHtml).join(" • ");
+}
+
+function _scriptPacketDetailRow(label, values, className = "") {
+  const parts = _scriptPacketCompactValues(Array.isArray(values) ? values : [values]);
+  if (!parts.length) return "";
+  return `<div class="script-packet-diagram-detail ${className}">
+    <strong>${escapeHtml(label)}</strong>
+    <span>${parts.map(escapeHtml).join(" • ")}</span>
+  </div>`;
+}
+
+function _scriptPacketMetaMarkup(play) {
+  return [
+    _scriptPacketDetailRow("Set", [play.personnel, play.formation, play.type]),
+    _scriptPacketDetailRow("Ops", [
+      play.hash || play.preferredHash,
+      play.tempo,
+      play.reps ? `${play.reps} rep${Number(play.reps) === 1 ? "" : "s"}` : "",
+    ]),
+  ].join("");
 }
 
 function _scriptPacketDefenseMarkup(play) {
-  const fields = [
-    ["Front", play.defFront || play.practiceFront],
-    ["Cov", play.defCoverage || play.practiceCoverage],
-    ["Stunt", play.defStunt || play.practiceStunt],
-    ["Blitz", play.defBlitz || play.practiceBlitz],
-    ["Reps", play.reps || 1],
-  ].filter(([, value]) => String(value ?? "").trim());
-  if (!fields.length) return "";
-  return `<div class="script-packet-diagram-defense">
-    ${fields
-      .map(
-        ([label, value]) =>
-          `<span><strong>${escapeHtml(label)}</strong> ${escapeHtml(String(value))}</span>`,
-      )
-      .join("")}
-  </div>`;
+  const front = play.defFront || play.practiceFront;
+  const coverage = play.defCoverage || play.practiceCoverage;
+  const stunt = play.defStunt || play.practiceStunt;
+  const blitz = play.defBlitz || play.practiceBlitz;
+  return _scriptPacketDetailRow("Defense", [
+    front ? `Front ${front}` : "",
+    coverage ? `Cov ${coverage}` : "",
+    stunt ? `Stunt ${stunt}` : "",
+    blitz ? `Blitz ${blitz}` : "",
+  ]);
+}
+
+function _scriptPacketCoachingMarkup(play) {
+  const keyPlayers = [1, 2, 3].map((number) => {
+    const position = String(play[`keyPlayer${number}`] || "").trim();
+    const name = String(play[`keyPlayerName${number}`] || "").trim();
+    return [position, name].filter(Boolean).join(" ");
+  });
+  return [
+    _scriptPacketDetailRow("Situation", [
+      play.preferredSituation,
+      play.preferredDown ? `${play.preferredDown} Down` : "",
+      play.preferredDistance,
+      play.preferredFieldPosition,
+    ]),
+    _scriptPacketDetailRow("Key", keyPlayers),
+    _scriptPacketDetailRow("Answers", [
+      play.constraint1,
+      play.constraint2,
+      play.constraint3,
+    ]),
+    _scriptPacketDetailRow("Hit", [play.hitChart1, play.hitChart2, play.hitChart3]),
+    _scriptPacketDetailRow("Tags", [
+      play.oneWord,
+      play.basePlay,
+      play.playTag1,
+      play.playTag2,
+    ]),
+    _scriptPacketDetailRow(
+      "Dead vs",
+      play.deadVs,
+      "script-packet-diagram-detail--warning",
+    ),
+  ].join("");
 }
 
 function _scriptPacketDiagramCard(entry, options) {
@@ -1181,14 +1225,17 @@ function _scriptPacketDiagramCard(entry, options) {
   const imageHtml = entry.imageUrl
     ? `<img src="${escapeAttr(entry.imageUrl)}" alt="Play diagram for ${escapeAttr(play.play || "play")}" />`
     : `<div class="script-packet-diagram-missing">No attached diagram</div>`;
-  const metaHtml = options.showMeta
-    ? `<div class="script-packet-diagram-meta">${_scriptPacketMetaLine(play) || "No play metadata"}</div>`
-    : "";
+  const metaHtml = options.showMeta ? _scriptPacketMetaMarkup(play) : "";
   const defenseHtml = options.showDefense ? _scriptPacketDefenseMarkup(play) : "";
+  const coachingHtml = options.showCoaching ? _scriptPacketCoachingMarkup(play) : "";
   const notes = String(play.notes || "").trim();
   const notesHtml =
     options.showNotes && notes
-      ? `<div class="script-packet-diagram-notes"><strong>Note</strong> ${escapeHtml(notes)}</div>`
+      ? _scriptPacketDetailRow(
+        "Note",
+        notes,
+        "script-packet-diagram-detail--notes",
+      )
       : "";
 
   return `<article class="script-packet-diagram-card">
@@ -1197,10 +1244,13 @@ function _scriptPacketDiagramCard(entry, options) {
       <span>Play ${entry.periodPlayNumber}</span>
     </div>
     <div class="script-packet-diagram-image">${imageHtml}</div>
-    <div class="script-packet-diagram-call">${callHtml}</div>
-    ${metaHtml}
-    ${defenseHtml}
-    ${notesHtml}
+    <div class="script-packet-diagram-info">
+      <div class="script-packet-diagram-call">${callHtml}</div>
+      ${metaHtml}
+      ${defenseHtml}
+      ${coachingHtml}
+      ${notesHtml}
+    </div>
   </article>`;
 }
 
