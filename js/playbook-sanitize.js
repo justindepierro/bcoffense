@@ -1077,8 +1077,8 @@ function _pbHealthCategoryLimit(cat) {
   if (Number.isFinite(savedTarget) && savedTarget > 0) return Math.floor(savedTarget);
   const visionMax =
     typeof VISION_2026 !== "undefined" &&
-    VISION_2026?.bucketTargets &&
-    Number.isFinite(Number(VISION_2026.bucketTargets.targetMax))
+      VISION_2026?.bucketTargets &&
+      Number.isFinite(Number(VISION_2026.bucketTargets.targetMax))
       ? Number(VISION_2026.bucketTargets.targetMax)
       : PLAYBOOK_HEALTH_CATEGORY_DEFAULT_MAX;
   return Math.max(1, Math.floor(visionMax));
@@ -1427,12 +1427,12 @@ function _pbHealthAnalyze() {
   const score = Math.max(
     0,
     100 -
-      exactGroups.length * 10 -
-      nearGroups.length * 6 -
-      missingRows.length * 3 -
-      vocabularyIssues * 4 -
-      categoryAnalysis.issueCount * 2 -
-      csvAnalysis.issueCount * 2,
+    exactGroups.length * 10 -
+    nearGroups.length * 6 -
+    missingRows.length * 3 -
+    vocabularyIssues * 4 -
+    categoryAnalysis.issueCount * 2 -
+    csvAnalysis.issueCount * 2,
   );
   return {
     ...analysis,
@@ -1536,8 +1536,8 @@ function _pbHealthRenderMissing(analysis) {
     <div class="pb-health-missing-list">
       ${rowsHtml}
       ${analysis.missingRows.length > 8
-        ? `<div class="pb-health-more">Showing 8 of ${analysis.missingRows.length} plays with missing critical fields.</div>`
-        : ""}
+      ? `<div class="pb-health-more">Showing 8 of ${analysis.missingRows.length} plays with missing critical fields.</div>`
+      : ""}
     </div>`;
 }
 
@@ -1854,8 +1854,8 @@ function renderPlaybookDataHealth() {
     </div>
     <div class="pb-health-guidance">
       ${issueCount === 0
-        ? "No major playbook data issues found in this pass."
-        : "Review the groups below before building scripts, wristbands, call sheets, and game plans."}
+      ? "No major playbook data issues found in this pass."
+      : "Review the groups below before building scripts, wristbands, call sheets, and game plans."}
     </div>
     <section class="pb-health-section">
       <div class="pb-health-section-head">

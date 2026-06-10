@@ -1119,7 +1119,7 @@ function findMatchingCategories(play) {
           !distances.includes("short") &&
           !positions.some((p) =>
             ["lo-rz", "hi-rz", "goal line", "goalline",
-             "backed up", "backedup", "saigon"].includes(p)
+              "backed up", "backedup", "saigon"].includes(p)
           );
         if (
           playType.includes("opener") ||

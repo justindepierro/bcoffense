@@ -333,15 +333,15 @@ let wbPlayerCardPos = "respQ";
 
 /** Positions available in player card print (must stay in sync with RESP_POSITIONS in playbook-editor.js) */
 const PC_POSITIONS = [
-  { key: "respQ",  label: "Q"  },
-  { key: "respT",  label: "T"  },
-  { key: "respH",  label: "H"  },
-  { key: "respZ",  label: "Z"  },
-  { key: "respX",  label: "X"  },
-  { key: "respY",  label: "Y"  },
+  { key: "respQ", label: "Q" },
+  { key: "respT", label: "T" },
+  { key: "respH", label: "H" },
+  { key: "respZ", label: "Z" },
+  { key: "respX", label: "X" },
+  { key: "respY", label: "Y" },
   { key: "respLT", label: "LT" },
   { key: "respLG", label: "LG" },
-  { key: "respC",  label: "C"  },
+  { key: "respC", label: "C" },
   { key: "respRG", label: "RG" },
   { key: "respRT", label: "RT" },
 ];
@@ -391,7 +391,7 @@ function renderPlayerCardGrid() {
       ?? (play?.[wbPlayerCardPos] || "");
 
     const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
-    const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
+    const isCandy = highlightCandy && play && play.tempo && play.tempo.toLowerCase() === "candy";
     const bg = getCellBgColor(custom, isHuddle, isCandy, i, pCardColor);
     const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
     const numFg = bg
@@ -440,7 +440,7 @@ function renderPlayerCardGrid() {
   // Wire assignment change + reset click events — only once per grid element lifetime
   if (!grid._pcListenerWired) {
     grid._pcListenerWired = true;
-    grid.addEventListener("change", function(e) {
+    grid.addEventListener("change", function (e) {
       if (!wbPlayerCardMode) return;
       if (!e.target.classList.contains("pc-resp-input")) return;
       const parts = e.target.dataset.overrideKey.split("|");
@@ -452,7 +452,7 @@ function renderPlayerCardGrid() {
       playerCardOverrides[pKey][cIdx][cellI] = e.target.value;
       renderPlayerCardGrid();
     });
-    grid.addEventListener("click", function(e) {
+    grid.addEventListener("click", function (e) {
       if (!wbPlayerCardMode) return;
       const btn = e.target.closest(".pc-resp-reset");
       if (!btn) return;
@@ -490,7 +490,7 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
     const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
 
     const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
-    const isCandy  = highlightCandy  && play && play.tempo && play.tempo.toLowerCase() === "candy";
+    const isCandy = highlightCandy && play && play.tempo && play.tempo.toLowerCase() === "candy";
     const bg = getCellBgColor(custom, isHuddle, isCandy, i, pCardColor);
     const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
     const numFg = bg
@@ -620,7 +620,7 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
 
   setTimeout(() => {
     try {
-      const restoreTitle = typeof setPrintTitle === "function" ? setPrintTitle(title) : () => {};
+      const restoreTitle = typeof setPrintTitle === "function" ? setPrintTitle(title) : () => { };
       window.print();
       if (typeof restoreTitle === "function") restoreTitle();
     } finally {

@@ -735,6 +735,7 @@ function buildWristbandCellCustomization(custom = {}) {
         (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
       )
       : [],
+    customWriteIn: String(custom.customWriteIn || "").trim(),
   };
 
   const hasValue =
@@ -745,7 +746,8 @@ function buildWristbandCellCustomization(custom = {}) {
     normalized.preShift ||
     normalized.formationTags.length > 0 ||
     normalized.backTags.length > 0 ||
-    normalized.componentOrder.length > 0;
+    normalized.componentOrder.length > 0 ||
+    normalized.customWriteIn;
 
   return hasValue ? normalized : null;
 }

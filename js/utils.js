@@ -2745,18 +2745,18 @@ function escapeAttr(str) {
 // primary = header/accent bg; text = text on primary; accent = secondary stripe color.
 
 const TEAM_COLOR_PRESETS = [
-  { id: "subway-alumni",  label: "Subway Alumni",  primary: "#0C2340", text: "#FFFFFF", accent: "#C99700" },
-  { id: "iron-tide",      label: "Iron Tide",       primary: "#9E1B32", text: "#FFFFFF", accent: "#BBBCBC" },
-  { id: "war-eagles",     label: "War Eagles",      primary: "#03244D", text: "#FFFFFF", accent: "#E87722" },
-  { id: "canes-unit",     label: "Canes Unit",      primary: "#005030", text: "#FFFFFF", accent: "#F47321" },
-  { id: "skull-session",  label: "Skull Session",   primary: "#BB0000", text: "#FFFFFF", accent: "#808080" },
-  { id: "big-house",      label: "Big House",       primary: "#00274C", text: "#FFFFFF", accent: "#FFCB05" },
-  { id: "dawg-pound",     label: "Dawg Pound",      primary: "#BA0C2F", text: "#FFFFFF", accent: "#000000" },
-  { id: "forty-acres",    label: "Forty Acres",     primary: "#BF5700", text: "#FFFFFF", accent: "#FFFFFF" },
-  { id: "duck-hunt",      label: "Duck Hunt",       primary: "#154733", text: "#FFFFFF", accent: "#FEE123" },
-  { id: "happy-valley",   label: "Happy Valley",    primary: "#041E42", text: "#FFFFFF", accent: "#FFFFFF" },
-  { id: "death-valley",   label: "Death Valley",    primary: "#461D7C", text: "#FFFFFF", accent: "#FDD023" },
-  { id: "sooner-magic",   label: "Sooner Magic",    primary: "#841617", text: "#FFFFFF", accent: "#FDF9D0" },
+  { id: "subway-alumni", label: "Subway Alumni", primary: "#0C2340", text: "#FFFFFF", accent: "#C99700" },
+  { id: "iron-tide", label: "Iron Tide", primary: "#9E1B32", text: "#FFFFFF", accent: "#BBBCBC" },
+  { id: "war-eagles", label: "War Eagles", primary: "#03244D", text: "#FFFFFF", accent: "#E87722" },
+  { id: "canes-unit", label: "Canes Unit", primary: "#005030", text: "#FFFFFF", accent: "#F47321" },
+  { id: "skull-session", label: "Skull Session", primary: "#BB0000", text: "#FFFFFF", accent: "#808080" },
+  { id: "big-house", label: "Big House", primary: "#00274C", text: "#FFFFFF", accent: "#FFCB05" },
+  { id: "dawg-pound", label: "Dawg Pound", primary: "#BA0C2F", text: "#FFFFFF", accent: "#000000" },
+  { id: "forty-acres", label: "Forty Acres", primary: "#BF5700", text: "#FFFFFF", accent: "#FFFFFF" },
+  { id: "duck-hunt", label: "Duck Hunt", primary: "#154733", text: "#FFFFFF", accent: "#FEE123" },
+  { id: "happy-valley", label: "Happy Valley", primary: "#041E42", text: "#FFFFFF", accent: "#FFFFFF" },
+  { id: "death-valley", label: "Death Valley", primary: "#461D7C", text: "#FFFFFF", accent: "#FDD023" },
+  { id: "sooner-magic", label: "Sooner Magic", primary: "#841617", text: "#FFFFFF", accent: "#FDF9D0" },
 ];
 
 function getActiveColorPreset() {

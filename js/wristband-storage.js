@@ -49,7 +49,7 @@ function hydrateWristbandState(source, opts = {}) {
     opts.preserveFavorites
       ? storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, [])
       : source?.favorites ||
-          storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
+      storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
   );
   storageManager.set(STORAGE_KEYS.WRISTBAND_FAVORITES, wbFavorites);
   currentCardIndex = Number.isInteger(source?.currentCardIndex)
@@ -367,7 +367,7 @@ async function saveWristbandTemplate() {
       (template) =>
         template.name.toLowerCase() === nextTemplate.name.toLowerCase() &&
         _normalizeWristbandTemplateGroup(template.group).toLowerCase() ===
-          nextTemplate.group.toLowerCase(),
+        nextTemplate.group.toLowerCase(),
     );
 
     if (existingIdx >= 0) {

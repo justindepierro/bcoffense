@@ -180,12 +180,16 @@ function renderWristbandGrid() {
       const oddCellHtml = oddHasCustomOrder
         ? oddDisplay
         : composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix);
+      const oddWriteInHtml = oddCustom.customWriteIn
+        ? `<span class="cell-write-in">${escapeHtml(oddCustom.customWriteIn)}</span>`
+        : "";
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddCellHtml}</span></span>
+          ${oddWriteInHtml}
         </div>
       `;
     } else {
@@ -203,12 +207,16 @@ function renderWristbandGrid() {
       const evenCellHtml = evenHasCustomOrder
         ? evenDisplay
         : composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix);
+      const evenWriteInHtml = evenCustom.customWriteIn
+        ? `<span class="cell-write-in">${escapeHtml(evenCustom.customWriteIn)}</span>`
+        : "";
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenCellHtml}</span></span>
+          ${evenWriteInHtml}
         </div>
       `;
     } else {

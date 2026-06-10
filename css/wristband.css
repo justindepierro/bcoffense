@@ -130,6 +130,20 @@
   }
 }
 
+/* ── Custom Write-In Text ── */
+.cell-write-in {
+  display: block;
+  font-size: var(--font-size-xs);
+  font-weight: normal;
+  font-style: italic;
+  color: var(--color-text-muted);
+  line-height: 1.2;
+  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 .wristband-cell.filled:active {
   cursor: grabbing;
 }
@@ -1115,8 +1129,12 @@
 /* ── Wristband Type Choice Landing ───────────────────────────────────────── */
 
 /* Utility: hidden/shown by wristband mode */
-.wb-toolbar-hidden { display: none !important; }
-.wb-hidden { display: none !important; }
+.wb-toolbar-hidden {
+  display: none !important;
+}
+.wb-hidden {
+  display: none !important;
+}
 
 .wb-type-choice-overlay {
   display: flex;
@@ -1159,7 +1177,10 @@
   border: 2px solid var(--color-border);
   border-radius: var(--radius-lg);
   cursor: pointer;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast), transform var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
   min-width: 200px;
   text-align: center;
   font-family: inherit;
@@ -1273,7 +1294,9 @@
   justify-content: center;
   z-index: 1;
 }
-.pc-resp-reset:hover { opacity: 1; }
+.pc-resp-reset:hover {
+  opacity: 1;
+}
 
 .pc-resp-input {
   display: block;
@@ -1409,8 +1432,10 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   /* Alternating row shading — even rows (every 2nd group of 3 cells in a 3-col grid)
      Only applies to cells without an inline background (candy/huddle/custom colors show through) */
-  .pc-print-card-wrap .wristband-cell:nth-child(6n+4):not([style*="background"]),
-  .pc-print-card-wrap .wristband-cell:nth-child(6n+5):not([style*="background"]),
+  .pc-print-card-wrap
+    .wristband-cell:nth-child(6n + 4):not([style*="background"]),
+  .pc-print-card-wrap
+    .wristband-cell:nth-child(6n + 5):not([style*="background"]),
   .pc-print-card-wrap .wristband-cell:nth-child(6n):not([style*="background"]) {
     background: #f0f2f4 !important;
   }
@@ -1465,7 +1490,9 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 
   /* "Print 1" — 3 identical copies stacked */
-  .pc-print-page:not(.pc-print-stacked) .pc-print-card-wrap + .pc-print-card-wrap {
+  .pc-print-page:not(.pc-print-stacked)
+    .pc-print-card-wrap
+    + .pc-print-card-wrap {
     /* space-evenly on parent handles distribution */
   }
 }

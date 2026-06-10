@@ -370,8 +370,9 @@
   display: flex;
   align-items: flex-start;
   justify-content: center;
-  padding: max(18px, env(safe-area-inset-top)) max(14px, env(safe-area-inset-right))
-    max(18px, env(safe-area-inset-bottom)) max(14px, env(safe-area-inset-left));
+  padding: max(18px, env(safe-area-inset-top))
+    max(14px, env(safe-area-inset-right)) max(18px, env(safe-area-inset-bottom))
+    max(14px, env(safe-area-inset-left));
   background: var(--color-overlay);
   backdrop-filter: blur(4px);
   opacity: 0;
@@ -639,10 +640,13 @@
     opacity: 0.55;
   }
 
-  body.is-mobile-screen.mobile-coach-locked .mobile-coach-lock-banner:not([hidden]) {
+  body.is-mobile-screen.mobile-coach-locked
+    .mobile-coach-lock-banner:not([hidden]) {
     position: fixed;
     right: max(12px, env(safe-area-inset-right));
-    bottom: calc(var(--coach-dock-height, 76px) + max(10px, env(safe-area-inset-bottom)));
+    bottom: calc(
+      var(--coach-dock-height, 76px) + max(10px, env(safe-area-inset-bottom))
+    );
     left: max(12px, env(safe-area-inset-left));
     z-index: calc(var(--z-tab-bar) + 1);
     display: flex;
@@ -669,7 +673,9 @@
 @media (max-width: 640px) {
   body.is-mobile-screen #script.active .mobile-script-coach-now {
     position: sticky;
-    top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 8px);
+    top: calc(
+      var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 8px
+    );
     z-index: calc(var(--z-tab-bar) + 1);
     display: grid;
     gap: var(--space-xs);
@@ -3373,7 +3379,10 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 
 .print-studio-controls {
   display: grid;
-  grid-template-columns: minmax(220px, 1.5fr) repeat(2, minmax(150px, 0.8fr)) auto;
+  grid-template-columns: minmax(220px, 1.5fr) repeat(
+      2,
+      minmax(150px, 0.8fr)
+    ) auto;
   gap: 10px;
   align-items: end;
 }

@@ -1525,7 +1525,8 @@
                   ⋯
                 </button>
                 <div class="tool-menu" data-action="removeParentOpen">
-                  <button data-action="startPlayerWristband" title="Switch to player wristband mode — shows assignment column per play">
+                  <button data-action="startPlayerWristband"
+                    title="Switch to player wristband mode — shows assignment column per play">
                     🃏 Switch to Player Wristband
                   </button>
                   <button data-action="sendWristbandToGamePlan" title="Send plays from this card to the game plan">
@@ -1566,12 +1567,16 @@
               <input type="checkbox" id="pcLineCallOnly" data-onchange="updatePlayerCardPreview" />
               Line Only
             </label>
-            <button class="btn btn-success btn-sm" data-action="printAllPlayerCards" title="Print all positions — 3 per page, portrait">🖨️ Print All</button>
-            <button class="btn btn-sm btn-secondary" data-action="printOnePlayerCard" title="Print 3 copies of this position on one sheet">📋 Print 1</button>
-            <button class="btn btn-sm" data-action="sendWristbandToGamePlan" title="Send plays from this card to the game plan">📋 Game Plan</button>
+            <button class="btn btn-success btn-sm" data-action="printAllPlayerCards"
+              title="Print all positions — 3 per page, portrait">🖨️ Print All</button>
+            <button class="btn btn-sm btn-secondary" data-action="printOnePlayerCard"
+              title="Print 3 copies of this position on one sheet">📋 Print 1</button>
+            <button class="btn btn-sm" data-action="sendWristbandToGamePlan"
+              title="Send plays from this card to the game plan">📋 Game Plan</button>
             <button class="btn btn-primary btn-sm" data-action="saveWristband">💾 Save</button>
             <button class="btn btn-danger btn-sm" data-action="clearWristband">🗑 Clear</button>
-            <button class="btn btn-sm" data-action="showWbTypeChoice" title="Start a different wristband type">⟵ New</button>
+            <button class="btn btn-sm" data-action="showWbTypeChoice" title="Start a different wristband type">⟵
+              New</button>
           </div>
           <div class="card-tabs" id="cardTabs"></div>
           <div class="wristband-card" id="wristbandCard">
@@ -2587,6 +2592,12 @@
               Drag to rearrange how this cell renders.
             </span>
           </div>
+        </div>
+
+        <div class="cell-popup-row">
+          <label for="cellCustomWriteIn">Custom Write-In:</label>
+          <input type="text" id="cellCustomWriteIn" class="cell-popup-input"
+            placeholder="Add custom text to this cell" autocomplete="off" />
         </div>
 
         <div class="cell-popup-row">

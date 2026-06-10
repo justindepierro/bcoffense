@@ -9,6 +9,7 @@ let pendingPreShift = [];
 let pendingFormationTags = [];
 let pendingBackTags = [];
 let pendingComponentOrder = [];
+let pendingCustomWriteIn = "";
 
 function renderPendingPreShiftList() {
   const input = document.getElementById("cellPreShiftInput");
@@ -194,6 +195,7 @@ function resetWristbandCellPopupPendingState() {
   pendingFormationTags = [];
   pendingBackTags = [];
   pendingComponentOrder = [];
+  pendingCustomWriteIn = "";
 }
 
 function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
@@ -214,6 +216,7 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
         (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
       )
     : [];
+  pendingCustomWriteIn = existing.customWriteIn || "";
   pendingPlaySelection = currentPlay || null;
 }
 
@@ -229,6 +232,7 @@ function getWristbandPendingCellCustomization() {
       formationTags: pendingFormationTags,
       backTags: pendingBackTags,
       componentOrder: pendingComponentOrder,
+      customWriteIn: pendingCustomWriteIn,
     }) || {}
   );
 }
@@ -293,6 +297,7 @@ function openCellPopup(cardIdx, cellIdx, event) {
   updateSwatchSelection("textColorSwatches", pendingTextColor);
   updateCellMarkerSelection(pendingMarkers);
   updateCellMarkerPlacementSelection(pendingMarkerPlacement);
+  document.getElementById("cellCustomWriteIn").value = pendingCustomWriteIn;
   document.getElementById("cellExtraPersonnel").value = pendingExtraPersonnel;
   document.getElementById("cellPreShiftInput").value = "";
   document.getElementById("cellFormationTagInput").value = "";
@@ -580,6 +585,9 @@ function applyCellStyle() {
   const extraPersonnel = document
     .getElementById("cellExtraPersonnel")
     .value.trim();
+  const customWriteIn = document
+    .getElementById("cellCustomWriteIn")
+    .value.trim();
   const preShift = pendingPreShift.join("; ");
   const formationTags = pendingFormationTags
     .map((entry) => normalizeCustomTagEntry(entry))
@@ -599,6 +607,7 @@ function applyCellStyle() {
       formationTags,
       backTags,
       componentOrder: pendingComponentOrder,
+      customWriteIn,
     });
   }, { refreshCardView: true });
 
