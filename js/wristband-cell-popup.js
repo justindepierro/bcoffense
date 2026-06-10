@@ -252,7 +252,7 @@ function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
 
   if (hasPlay) {
     document.getElementById("cellPopupPlayName").innerHTML =
-      `<strong>Current Play:</strong> ${getFullCall(getCustomDisplayPlay(play, custom), getWristbandDisplayOptions())}`;
+      `<strong>Current Play:</strong> ${renderWristbandCellCall(play, custom, getWristbandDisplayOptions())}`;
   }
 }
 

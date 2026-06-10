@@ -560,7 +560,7 @@ function getCellBgColor(custom, isHuddle, isCandy, row, cardColor) {
   return row % 2 === 1 ? "#f4f4f4" : "";
 }
 
-/** Build line-call-only display: emoji prefix + cadence + bold line call (no brackets) */
+/** Build line-call-only display: optional visual cues + the line call, without the full play call. */
 function getLineCallOnlyDisplay(play, opts, custom = null) {
   let prefix = "";
   if (opts.showEmoji && play.personnel) {
@@ -573,13 +573,33 @@ function getLineCallOnlyDisplay(play, opts, custom = null) {
   if (opts.underEmoji && hasUnder) {
     prefix += "🍑 ";
   }
-  // Cadence / marker — honor placement (prefix / suffix / both)
   const cadencePre = custom ? getCadencePrefix(custom, opts) : "";
   const cadencePost = custom ? getCadencePostfix(custom, opts) : "";
-  const lineCall = play.lineCall ? escapeHtml(play.lineCall) : "";
-  const body = lineCall ? `<b>${lineCall}</b>` : "";
+  const rawLineCall = String(play.lineCall || "").trim();
+  const displayLineCall =
+    opts.noVowels && rawLineCall ? removeVowels(rawLineCall) : rawLineCall;
+  const body = displayLineCall
+    ? `<span class="line-call line-call-only">${escapeHtml(displayLineCall)}</span>`
+    : '<span class="line-call line-call-only line-call-empty">NO LINE CALL</span>';
   const out = `${prefix}${cadencePre}${body}${cadencePost}`.trim();
   return out;
+}
+
+function renderWristbandCellCall(play, custom = {}, opts = {}) {
+  if (!play) return "";
+  if (opts.lineCallOnly) {
+    return getLineCallOnlyDisplay(play, opts, custom);
+  }
+  if (Array.isArray(custom.componentOrder) && custom.componentOrder.length > 0) {
+    return composeWristbandCellHtml(play, custom, opts);
+  }
+  const prefix =
+    getCadencePrefix(custom, opts) +
+    getCustomPersonnelPrefix(custom, opts, play) +
+    getCustomPreShiftPrefix(custom);
+  const display = getFullCall(getCustomDisplayPlay(play, custom), opts);
+  const postfix = getCadencePostfix(custom, opts);
+  return composeWristbandCellDisplay(prefix, display, postfix);
 }
 
 // Arrow key highlight index in cell popup
@@ -946,34 +966,8 @@ function getWbDisplayOptionIds() {
   ];
 }
 
-/**
- * Select all display options for wristband
- */
-function selectAllWbOptions() {
-  getWbDisplayOptionIds().forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.checked = true;
-  });
-  refreshWristbandEditorView();
-}
-
-/**
- * Clear all display options for wristband
- */
-function clearAllWbOptions() {
-  getWbDisplayOptionIds().forEach((id) => {
-    const el = document.getElementById(id);
-    if (el) el.checked = false;
-  });
-  refreshWristbandEditorView();
-}
-
-/**
- * Apply display preset (Minimal/Standard/Full)
- */
-function applyWbDisplayPreset(preset) {
-  // Minimal: only Show Line Call
-  const minimal = {
+const WB_DISPLAY_PRESETS = {
+  minimal: {
     wbShowEmoji: false,
     wbUseSquares: false,
     wbUnderEmoji: false,
@@ -987,10 +981,8 @@ function applyWbDisplayPreset(preset) {
     wbCadenceReminder: false,
     wbHighlightHuddle: false,
     wbHighlightCandy: false,
-  };
-
-  // Standard: emoji + show line call (good for most users)
-  const standard = {
+  },
+  standard: {
     wbShowEmoji: true,
     wbUseSquares: false,
     wbUnderEmoji: false,
@@ -1004,10 +996,8 @@ function applyWbDisplayPreset(preset) {
     wbCadenceReminder: false,
     wbHighlightHuddle: false,
     wbHighlightCandy: false,
-  };
-
-  // Full: all options on
-  const full = {
+  },
+  full: {
     wbShowEmoji: true,
     wbUseSquares: true,
     wbUnderEmoji: true,
@@ -1021,18 +1011,89 @@ function applyWbDisplayPreset(preset) {
     wbCadenceReminder: true,
     wbHighlightHuddle: true,
     wbHighlightCandy: true,
-  };
+  },
+};
 
-  const presets = { minimal, standard, full };
-  const config = presets[preset] || standard;
+function syncWristbandLineCallOnlyControls(source = "classic") {
+  const classic = document.getElementById("wbLineCallOnly");
+  const player = document.getElementById("pcLineCallOnly");
+  if (!classic || !player) return;
+  if (source === "player") {
+    classic.checked = player.checked;
+  } else {
+    player.checked = classic.checked;
+  }
+}
+
+function syncWbDisplayPresetSelection() {
+  const matchingPreset = Object.entries(WB_DISPLAY_PRESETS).find(
+    ([, config]) =>
+      Object.entries(config).every(
+        ([id, checked]) =>
+          document.getElementById(id)?.checked === checked,
+      ),
+  )?.[0];
+  document
+    .querySelectorAll('input[name="wbDisplayPreset"]')
+    .forEach((radio) => {
+      radio.checked = radio.value === matchingPreset;
+    });
+}
+
+function commitWristbandDisplayOptions() {
+  syncWbDisplayPresetSelection();
+  refreshWristbandEditorView();
+  markWristbandDirty();
+  scheduleWristbandAutosave();
+}
+
+function handleWristbandDisplayOptionsChange() {
+  syncWristbandLineCallOnlyControls("classic");
+  commitWristbandDisplayOptions();
+}
+
+function handlePlayerLineCallOnlyChange() {
+  syncWristbandLineCallOnlyControls("player");
+  commitWristbandDisplayOptions();
+}
+
+/**
+ * Select all display options for wristband
+ */
+function selectAllWbOptions() {
+  getWbDisplayOptionIds().forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = id !== "wbLineCallOnly";
+  });
+  syncWristbandLineCallOnlyControls("classic");
+  commitWristbandDisplayOptions();
+}
+
+/**
+ * Clear all display options for wristband
+ */
+function clearAllWbOptions() {
+  getWbDisplayOptionIds().forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
+  syncWristbandLineCallOnlyControls("classic");
+  commitWristbandDisplayOptions();
+}
+
+/**
+ * Apply display preset (Minimal/Standard/Full)
+ */
+function applyWbDisplayPreset(preset) {
+  const config = WB_DISPLAY_PRESETS[preset] || WB_DISPLAY_PRESETS.standard;
 
   // Apply all checkboxes from preset
   Object.entries(config).forEach(([id, checked]) => {
     const el = document.getElementById(id);
     if (el) el.checked = checked;
   });
-
-  refreshWristbandEditorView();
+  syncWristbandLineCallOnlyControls("classic");
+  commitWristbandDisplayOptions();
 }
 
 /* toggleWbDisplayOptions and toggleWbSortPanel merged into shared toggleCollapsiblePanel() in utils.js */

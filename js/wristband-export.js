@@ -10,10 +10,6 @@ function printWristband() {
     const printDisplayCache = new Map();
     const getPrintDisplay = (play, custom) => {
       if (!play) return "";
-      if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts, custom);
-      if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
-        return composeWristbandCellHtml(play, custom, opts);
-      }
       let variants = printDisplayCache.get(play);
       if (!variants) {
         variants = new Map();
@@ -22,12 +18,14 @@ function printWristband() {
       const variantKey = JSON.stringify({
         formationTags: getCustomFormationTagEntries(custom),
         backTags: getCustomBackTagEntries(custom),
+        markers: getCellMarkerValues(custom),
+        markerPlacement: getCellMarkerPlacement(custom, opts),
+        extraPersonnel: custom?.extraPersonnel || "",
+        preShift: getCustomPreShiftValues(custom),
+        componentOrder: custom?.componentOrder || [],
       });
       if (variants.has(variantKey)) return variants.get(variantKey);
-      const displayPlay = getCustomDisplayPlay(play, custom);
-      const rendered = opts.lineCallOnly
-        ? getLineCallOnlyDisplay(play, opts, custom)
-        : getFullCall(displayPlay, opts);
+      const rendered = renderWristbandCellCall(play, custom, opts);
       variants.set(variantKey, rendered);
       return rendered;
     };
@@ -87,34 +85,17 @@ function printWristband() {
           ? `color:${evenCustom.textColor};`
           : "";
 
-        const oddPrefix =
-          getCadencePrefix(oddCustom, opts) +
-          getCustomPersonnelPrefix(oddCustom, opts, oddPlay) +
-          getCustomPreShiftPrefix(oddCustom);
-        const evenPrefix =
-          getCadencePrefix(evenCustom, opts) +
-          getCustomPersonnelPrefix(evenCustom, opts, evenPlay) +
-          getCustomPreShiftPrefix(evenCustom);
-        const oddPostfix = getCadencePostfix(oddCustom, opts);
-        const evenPostfix = getCadencePostfix(evenCustom, opts);
-
         const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const oddNumFg = oddBg ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         const oddDisplay = oddPlay ? getPrintDisplay(oddPlay, oddCustom) : "";
-        const oddHasOrder = oddPlay && Array.isArray(oddCustom?.componentOrder) && oddCustom.componentOrder.length > 0;
-        const oddCellInner = oddPlay
-          ? (oddHasOrder ? oddDisplay : composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix))
-          : "";
+        const oddCellInner = oddPlay ? oddDisplay : "";
         cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddCellInner}</span></div>`;
         cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         const evenDisplay = evenPlay ? getPrintDisplay(evenPlay, evenCustom) : "";
-        const evenHasOrder = evenPlay && Array.isArray(evenCustom?.componentOrder) && evenCustom.componentOrder.length > 0;
-        const evenCellInner = evenPlay
-          ? (evenHasOrder ? evenDisplay : composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix))
-          : "";
+        const evenCellInner = evenPlay ? evenDisplay : "";
         cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenCellInner}</span></div>`;
       }
 
@@ -316,6 +297,7 @@ function startPlayerWristband() {
   wbPlayerCardMode = true;
   const posSelect = document.getElementById("pcPosSelect");
   wbPlayerCardPos = posSelect ? posSelect.value || "respQ" : "respQ";
+  syncWristbandLineCallOnlyControls("classic");
   document.getElementById("pcModeBar")?.classList.add("visible");
   renderCardTabs();
   renderPlayerCardGrid();
@@ -373,9 +355,7 @@ function renderPlayerCardGrid() {
   // Player cards hold 20 plays each (half of classic's 40)
   const PC_PLAYS_PER_CARD = 20;
   const cardOffset = currentCardIndex * PC_PLAYS_PER_CARD;
-  const lineOnlyChk = document.getElementById("pcLineCallOnly");
-  const lineCallOnly = lineOnlyChk ? lineOnlyChk.checked : false;
-  const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
+  const opts = getWristbandDisplayOptions();
   const { highlightHuddle, highlightCandy } = opts;
   const pCardColor = card.cardColor || "";
 
@@ -405,15 +385,7 @@ function renderPlayerCardGrid() {
     if (play) {
       let cellStyle = bg ? `background:${bg};` : "";
       cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
-      const prefix = getCadencePrefix(custom, opts)
-        + getCustomPersonnelPrefix(custom, opts, play)
-        + getCustomPreShiftPrefix(custom);
-      const postfix = getCadencePostfix(custom, opts);
-      const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
-        ? getLineCallOnlyDisplay(play, opts, custom)
-        : getFullCall(getCustomDisplayPlay(play, custom), opts);
-      const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
-      const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
+      const cellInner = renderWristbandCellCall(play, custom, opts);
       html += `<div class="wristband-cell filled" style="${cellStyle}"
         draggable="true" data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}">
         <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${cellInner}</span></span>
@@ -477,7 +449,7 @@ function renderPlayerCardGrid() {
  * Returns a .pc-print-card-wrap div (one card, not two columns).
  */
 function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
-  const { highlightHuddle, highlightCandy, lineCallOnly } = opts;
+  const { highlightHuddle, highlightCandy } = opts;
   const PC_PLAYS_PER_CARD = 20;
   const cardOffset = cardIdx * PC_PLAYS_PER_CARD;
   const pCardColor = card.cardColor || "";
@@ -502,13 +474,7 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
     if (play) {
       let cellStyle = bg ? `background:${bg};` : "";
       cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
-      const prefix = getCadencePrefix(custom, opts) + getCustomPersonnelPrefix(custom, opts, play) + getCustomPreShiftPrefix(custom);
-      const postfix = getCadencePostfix(custom, opts);
-      const display = lineCallOnly && typeof getLineCallOnlyDisplay === "function"
-        ? getLineCallOnlyDisplay(play, opts, custom)
-        : getFullCall(getCustomDisplayPlay(play, custom), opts);
-      const hasOrder = Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0;
-      const cellInner = hasOrder ? display : composeWristbandCellDisplay(prefix, display, postfix);
+      const cellInner = renderWristbandCellCall(play, custom, opts);
       cells += `<div class="wristband-cell filled" style="${cellStyle}"><span class="cell-play">${cellInner}</span></div>`;
     } else {
       cells += `<div class="wristband-cell"></div>`;
@@ -539,8 +505,7 @@ function printOnePlayerCard() {
   const posLabel = posSelect
     ? (posSelect.options[posSelect.selectedIndex]?.text || posKey.replace("resp", ""))
     : posKey.replace("resp", "");
-  const lineCallOnly = document.getElementById("pcLineCallOnly")?.checked || false;
-  const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
+  const opts = getWristbandDisplayOptions();
 
   const printContainer = document.getElementById("playerCardPrint");
   const printContent = document.getElementById("playerCardPrintContent");
@@ -571,8 +536,7 @@ function printAllPlayerCards() {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
-  const lineCallOnly = document.getElementById("pcLineCallOnly")?.checked || false;
-  const opts = Object.assign({}, getWristbandDisplayOptions(), { lineCallOnly });
+  const opts = getWristbandDisplayOptions();
 
   const printContainer = document.getElementById("playerCardPrint");
   const printContent = document.getElementById("playerCardPrintContent");
@@ -635,4 +599,3 @@ function printPlayerCards() {
   // Now routes to printOnePlayerCard for backward compat
   printOnePlayerCard();
 }
-

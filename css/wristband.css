@@ -341,6 +341,16 @@
   font-weight: normal;
   font-size: var(--font-size-sm);
 }
+.line-call-only {
+  color: inherit;
+  font-style: normal;
+  font-weight: 800;
+}
+.line-call-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+}
 .personnel-emoji {
   margin-right: 3px;
 }

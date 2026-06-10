@@ -77,14 +77,6 @@ function renderWristbandGrid() {
   const displayCache = new Map();
   const getCachedDisplay = (play, custom) => {
     if (!play) return "";
-    // Line Call Only short-circuits everything else (including per-cell
-    // custom component orders) so the toggle behaves consistently.
-    if (opts.lineCallOnly) return getLineCallOnlyDisplay(play, opts, custom);
-    // If the user reordered components for this cell, bypass the canonical
-    // getFullCall pipeline and compose tokens directly in their order.
-    if (Array.isArray(custom?.componentOrder) && custom.componentOrder.length > 0) {
-      return composeWristbandCellHtml(play, custom, opts);
-    }
     let variants = displayCache.get(play);
     if (!variants) {
       variants = new Map();
@@ -93,12 +85,14 @@ function renderWristbandGrid() {
     const variantKey = JSON.stringify({
       formationTags: getCustomFormationTagEntries(custom),
       backTags: getCustomBackTagEntries(custom),
+      markers: getCellMarkerValues(custom),
+      markerPlacement: getCellMarkerPlacement(custom, opts),
+      extraPersonnel: custom?.extraPersonnel || "",
+      preShift: getCustomPreShiftValues(custom),
+      componentOrder: custom?.componentOrder || [],
     });
     if (variants.has(variantKey)) return variants.get(variantKey);
-    const displayPlay = getCustomDisplayPlay(play, custom);
-    const rendered = opts.lineCallOnly
-      ? getLineCallOnlyDisplay(play, opts, custom)
-      : getFullCall(displayPlay, opts);
+    const rendered = renderWristbandCellCall(play, custom, opts);
     variants.set(variantKey, rendered);
     return rendered;
   };
@@ -151,17 +145,6 @@ function renderWristbandGrid() {
     let evenStyle = evenBg ? `background:${evenBg};` : "";
     evenStyle += evenCustom.textColor ? `color:${evenCustom.textColor};` : "";
 
-    const oddPrefix =
-      getCadencePrefix(oddCustom, opts) +
-      getCustomPersonnelPrefix(oddCustom, opts, oddPlay) +
-      getCustomPreShiftPrefix(oddCustom);
-    const evenPrefix =
-      getCadencePrefix(evenCustom, opts) +
-      getCustomPersonnelPrefix(evenCustom, opts, evenPlay) +
-      getCustomPreShiftPrefix(evenCustom);
-    const oddPostfix = getCadencePostfix(oddCustom, opts);
-    const evenPostfix = getCadencePostfix(evenCustom, opts);
-
     const oddNumBg = oddBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
     const oddNumFg = oddBg
       ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark)
@@ -174,12 +157,7 @@ function renderWristbandGrid() {
     html += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
 
     if (oddPlay) {
-      const oddDisplay = getCachedDisplay(oddPlay, oddCustom);
-      const oddHasCustomOrder =
-        Array.isArray(oddCustom?.componentOrder) && oddCustom.componentOrder.length > 0;
-      const oddCellHtml = oddHasCustomOrder
-        ? oddDisplay
-        : composeWristbandCellDisplay(oddPrefix, oddDisplay, oddPostfix);
+      const oddCellHtml = getCachedDisplay(oddPlay, oddCustom);
       const oddWriteInHtml = oddCustom.customWriteIn
         ? `<span class="cell-write-in">${escapeHtml(oddCustom.customWriteIn)}</span>`
         : "";
@@ -201,12 +179,7 @@ function renderWristbandGrid() {
     html += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
 
     if (evenPlay) {
-      const evenDisplay = getCachedDisplay(evenPlay, evenCustom);
-      const evenHasCustomOrder =
-        Array.isArray(evenCustom?.componentOrder) && evenCustom.componentOrder.length > 0;
-      const evenCellHtml = evenHasCustomOrder
-        ? evenDisplay
-        : composeWristbandCellDisplay(evenPrefix, evenDisplay, evenPostfix);
+      const evenCellHtml = getCachedDisplay(evenPlay, evenCustom);
       const evenWriteInHtml = evenCustom.customWriteIn
         ? `<span class="cell-write-in">${escapeHtml(evenCustom.customWriteIn)}</span>`
         : "";

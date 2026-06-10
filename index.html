@@ -1582,7 +1582,7 @@
               <option value="respRT">RT</option>
             </select>
             <label class="player-card-toggle">
-              <input type="checkbox" id="pcLineCallOnly" data-onchange="updatePlayerCardPreview" />
+              <input type="checkbox" id="pcLineCallOnly" data-onchange="handlePlayerLineCallOnlyChange" />
               Line Only
             </label>
             <button class="btn btn-success btn-sm" data-action="printAllPlayerCards"
@@ -1658,16 +1658,18 @@
               <div class="wb-preset-bar">
                 <span class="wb-preset-title">Presets:</span>
                 <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset" />
+                  <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset"
+                    data-pass="value" />
                   Minimal
                 </label>
                 <label class="wb-preset-option">
                   <input type="radio" name="wbDisplayPreset" value="standard" checked
-                    data-onchange="applyWbDisplayPreset" />
+                    data-onchange="applyWbDisplayPreset" data-pass="value" />
                   Standard
                 </label>
                 <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset" />
+                  <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset"
+                    data-pass="value" />
                   Full
                 </label>
               </div>
@@ -1680,43 +1682,44 @@
                 </button>
               </div>
               <div class="display-options-grid">
-                <label><input type="checkbox" id="wbShowEmoji"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                <label><input type="checkbox" id="wbShowEmoji" checked
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   🔵 Personnel Color</label>
                 <label><input type="checkbox" id="wbUseSquares"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   🟦 Use Squares</label>
                 <label><input type="checkbox" id="wbUnderEmoji"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   🍑 Under = Peach</label>
                 <label><input type="checkbox" id="wbBoldShifts"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   <b>Bold</b> Shifts</label>
                 <label><input type="checkbox" id="wbRedShifts"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   <span class="red">Red</span> Shifts</label>
                 <label><input type="checkbox" id="wbItalicMotions"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   <i>Italic</i> Motions</label>
                 <label><input type="checkbox" id="wbRedMotions"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   <span class="red">Red</span> Motions</label>
                 <label><input type="checkbox" id="wbRemoveVowels"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   Remove Vowels</label>
                 <label><input type="checkbox" id="wbShowLineCall" checked
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   Show [Line Call]</label>
                 <label><input type="checkbox" id="wbLineCallOnly"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   Line Call Only</label>
                 <label><input type="checkbox" id="wbCadenceReminder"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   🏷️ Marker Reminder (postfix)</label>
-                <label data-onchange="renderWristbandGrid;renderWristbandPlays" />
-                🟡 Highlight Huddle</label>
+                <label><input type="checkbox" id="wbHighlightHuddle"
+                    data-onchange="handleWristbandDisplayOptionsChange" />
+                  🟡 Highlight Huddle</label>
                 <label><input type="checkbox" id="wbHighlightCandy"
-                    data-onchange="renderWristbandGrid;renderWristbandPlays" />
+                    data-onchange="handleWristbandDisplayOptionsChange" />
                   🩷 Highlight Candy</label>
               </div>
             </div>

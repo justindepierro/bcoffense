@@ -19,6 +19,12 @@ function applyWristbandDisplaySettings(displaySettings) {
   setCheckbox("wbCadenceReminder", displaySettings.cadenceReminder);
   setCheckbox("wbHighlightHuddle", displaySettings.highlightHuddle);
   setCheckbox("wbHighlightCandy", displaySettings.highlightCandy);
+  if (typeof syncWristbandLineCallOnlyControls === "function") {
+    syncWristbandLineCallOnlyControls("classic");
+  }
+  if (typeof syncWbDisplayPresetSelection === "function") {
+    syncWbDisplayPresetSelection();
+  }
 }
 
 function syncWristbandHeaderColorPicker() {

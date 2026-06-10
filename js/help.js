@@ -217,6 +217,24 @@ function getHelpDataForTab(tab) {
           ],
         },
         {
+          icon: "🖨️",
+          name: "Display Options",
+          items: [
+            {
+              key: "Minimal / Standard / Full",
+              desc: "Apply a complete display preset",
+            },
+            {
+              key: "Line Call Only",
+              desc: "Show only the line call plus enabled personnel and marker cues",
+            },
+            {
+              key: "Huddle / Candy",
+              desc: "Highlight matching tempo calls on screen and in print",
+            },
+          ],
+        },
+        {
           icon: "🔧",
           name: "Toolbar",
           items: [
