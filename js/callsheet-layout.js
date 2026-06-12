@@ -387,7 +387,9 @@ function setCallSheetLayoutDraftColor(categoryId, color) {
 }
 
 function resetCallSheetLayoutModal() {
-  csLayoutDraft = getDefaultCallSheetCategoryOrder();
+  csLayoutDraft = normalizeCallSheetCategoryOrder(
+    getDefaultCallSheetCategoryOrder(),
+  );
   csLayoutColorDraft = { ...(callSheetSettings.customColors || {}) };
   csLayoutPickedCategoryId = null;
   renderCallSheetLayoutModal();

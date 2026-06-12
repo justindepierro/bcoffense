@@ -434,6 +434,8 @@ function checkSevenOnSevenTemplate() {
   const print = read("js/gameplan-print.js");
   const gameplan = read("js/gameplan.js");
   const smart = read("js/gameplan-smart.js");
+  const callsheet = read("js/callsheet.js");
+  const callsheetPicker = read("js/callsheet-picker-runtime.js");
   const css = read("css/gameplan.css");
   const boxes = snapshots.match(
     /const GP_SEVEN_ON_SEVEN_BOXES\s*=\s*\[([\s\S]*?)\n\];/,
@@ -492,7 +494,64 @@ function checkSevenOnSevenTemplate() {
   if (!/if \(changed\) _gpSaveBoards\(all\)/.test(gameplan)) {
     fail("game plan reads still rewrite unchanged board storage");
   }
-  console.log("7-on-7 template and game plan contracts ok");
+
+  const callSheetCategories = callsheet.match(
+    /const CS_SEVEN_ON_SEVEN_CATEGORIES\s*=\s*\[([\s\S]*?)\n\];/,
+  )?.[1] || "";
+  const callSheetCategoryCount = [
+    ...callSheetCategories.matchAll(/\bid:\s*"cs-7on7-/g),
+  ].length;
+  if (callSheetCategoryCount !== 19) {
+    fail(
+      `7-on-7 call sheet template must define 19 tournament buckets; found ${callSheetCategoryCount}`,
+    );
+  }
+  [
+    "Openers",
+    "3rd & Long",
+    "Marco",
+    "Skro Bros",
+    "Cov 0/1 Beaters",
+    "Man 2 Beaters",
+    "Pass Plays on Wristband",
+    "Two-Point Conversion",
+  ].forEach((label) => {
+    if (!callSheetCategories.includes(`name: "${label}"`)) {
+      fail(`7-on-7 call sheet template is missing the ${label} bucket`);
+    }
+  });
+  if (
+    !callsheet.includes(
+      'wristbandAutoCategoryId: "cs-7on7-wristband-passes"',
+    ) ||
+    !/function syncLoadedWristbandToCallSheetCategory\(/.test(callsheetPicker)
+  ) {
+    fail("7-on-7 call sheet wristband passing-play auto-sync is incomplete");
+  }
+  if (
+    !/hiddenCategoryIds:\s*\[[\s\S]*BASE_CALLSHEET_FRONT[\s\S]*BASE_CALLSHEET_BACK/.test(
+      callsheet,
+    ) ||
+    !/allowedPlayTypes:\s*\[\.\.\.CS_PASSING_PLAY_TYPES\]/.test(callsheet)
+  ) {
+    fail("7-on-7 call sheet template does not isolate its passing-only categories");
+  }
+  if (
+    !/function callSheetPlayMatchesCriteria\(/.test(callsheet) ||
+    !/function callSheetCoverageMatches\(/.test(callsheet) ||
+    !/function callSheetKeywordMatches\(/.test(callsheet)
+  ) {
+    fail("7-on-7 call sheet criteria matching is incomplete");
+  }
+  if (
+    !/pages:\s*"front"/.test(callsheet) ||
+    !/columns:\s*4/.test(callsheet) ||
+    !/data-action="loadBuiltInCallSheetTemplate"/.test(callsheet) ||
+    !callsheet.includes('id: "builtin-standard-callsheet"')
+  ) {
+    fail("7-on-7 call sheet template is missing print, reset, or template-library integration");
+  }
+  console.log("7-on-7 game plan and call sheet contracts ok");
 }
 
 function checkCacheBusters() {

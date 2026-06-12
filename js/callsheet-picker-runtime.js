@@ -423,6 +423,49 @@ function closeLoadWristbandModal(event) {
   setCallSheetOverlayVisibility("loadWristbandModal", false);
 }
 
+function syncLoadedWristbandToCallSheetCategory(
+  wristbandPlays = callSheetSettings.loadedWristbandPlays,
+) {
+  const categoryId = String(
+    callSheetSettings.wristbandAutoCategoryId || "",
+  ).trim();
+  if (!categoryId || !CALLSHEET_CATEGORIES.some((cat) => cat.id === categoryId)) {
+    return 0;
+  }
+
+  const seen = new Set();
+  const passingPlays = (Array.isArray(wristbandPlays) ? wristbandPlays : [])
+    .filter(
+      (play) =>
+        isCallSheetPassingPlay(play) &&
+        isCallSheetPlayAllowed(play),
+    )
+    .filter((play) => {
+      const key = csPlayKey(play);
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+
+  callSheet[categoryId] = { left: [], right: [] };
+  passingPlays.forEach((play) => {
+    const hash = String(play.preferredHash || "").trim().toLowerCase();
+    if (hash === "left" || hash === "l") {
+      callSheet[categoryId].left.push({ ...play });
+    } else if (hash === "right" || hash === "r") {
+      callSheet[categoryId].right.push({ ...play });
+    } else {
+      const side =
+        callSheet[categoryId].left.length <= callSheet[categoryId].right.length
+          ? "left"
+          : "right";
+      callSheet[categoryId][side].push({ ...play });
+    }
+  });
+
+  return passingPlays.length;
+}
+
 function loadWristbandToCallSheet() {
   const wristbandIdx = document.getElementById("loadWristbandSelect").value;
   if (wristbandIdx === "") {
@@ -454,13 +497,17 @@ function loadWristbandToCallSheet() {
 
   callSheetSettings.loadedWristbandName = wristbandData.title;
   callSheetSettings.loadedWristbandPlays = wristbandPlays;
+  const syncedCount = syncLoadedWristbandToCallSheetCategory(wristbandPlays);
   saveCallSheetSettings();
 
   refreshWristbandNumbers();
   updateLoadedWristbandDisplay();
 
   closeLoadWristbandModal();
-  showToast(`📋 Loaded "${wristbandData.title}" (${wristbandPlays.length} plays)`);
+  showToast(
+    `📋 Loaded "${wristbandData.title}" (${wristbandPlays.length} plays)` +
+      (syncedCount > 0 ? ` · synced ${syncedCount} passing plays` : ""),
+  );
 }
 
 function refreshWristbandNumbers() {
@@ -495,9 +542,16 @@ function updateLoadedWristbandDisplay() {
 }
 
 function clearLoadedWristband() {
+  const autoCategoryId = String(
+    callSheetSettings.wristbandAutoCategoryId || "",
+  ).trim();
   callSheetSettings.loadedWristbandName = "";
   callSheetSettings.loadedWristbandPlays = [];
+  if (autoCategoryId && callSheet[autoCategoryId]) {
+    callSheet[autoCategoryId] = { left: [], right: [] };
+  }
   saveCallSheetSettings();
+  refreshWristbandNumbers();
   updateLoadedWristbandDisplay();
   showToast("🗑️ Wristband unloaded");
 }

@@ -320,6 +320,194 @@ const CALLSHEET_CATEGORIES = [...CALLSHEET_FRONT, ...CALLSHEET_BACK];
 const BASE_CALLSHEET_FRONT = CALLSHEET_FRONT.map((cat) => ({ ...cat }));
 const BASE_CALLSHEET_BACK = CALLSHEET_BACK.map((cat) => ({ ...cat }));
 
+const CS_SEVEN_ON_SEVEN_TEMPLATE_ID = "builtin-7on7-passing";
+const CS_PASSING_PLAY_TYPES = [
+  "Pass",
+  "Quick",
+  "Screen",
+  "Play Action",
+  "Movement",
+];
+const CS_PLAY_TYPE_ALIASES = {
+  "base pass": "Pass",
+  "drop": "Pass",
+  "drop back": "Pass",
+  "play pass": "Play Action",
+  "play-action": "Play Action",
+};
+const CS_SEVEN_ON_SEVEN_CATEGORIES = [
+  {
+    id: "cs-7on7-openers",
+    name: "Openers",
+    color: CS_COLORS.green,
+    manual: false,
+    target: 5,
+    note: "First calls for the tournament script.",
+    criteria: { situation: ["opener"] },
+  },
+  {
+    id: "cs-7on7-first-down",
+    name: "1st Down",
+    color: CS_COLORS.yellow,
+    manual: false,
+    target: 5,
+    note: "Early-down calls that keep the full menu open.",
+    criteria: { down: ["1"] },
+  },
+  {
+    id: "cs-7on7-second-down",
+    name: "2nd Down",
+    color: CS_COLORS.red,
+    manual: false,
+    target: 5,
+    note: "Best calls for staying on schedule.",
+    criteria: { down: ["2"] },
+  },
+  {
+    id: "cs-7on7-third-down",
+    name: "3rd Down",
+    color: CS_COLORS.yellow,
+    manual: false,
+    target: 5,
+    note: "Short and medium conversion calls.",
+    criteria: { down: ["3"], distance: ["short", "medium"] },
+  },
+  {
+    id: "cs-7on7-third-long",
+    name: "3rd & Long",
+    color: CS_COLORS.orange,
+    manual: false,
+    target: 4,
+    note: "Long-yardage conversion calls.",
+    criteria: { down: ["3"], distance: ["long"] },
+  },
+  {
+    id: "cs-7on7-marco",
+    name: "Marco",
+    color: CS_COLORS.green,
+    manual: false,
+    target: 3,
+    note: "Designed touches and matchup calls for Marco.",
+    criteria: { keyPlayer: "Marco" },
+  },
+  {
+    id: "cs-7on7-diego",
+    name: "Diego",
+    color: CS_COLORS.orange,
+    manual: false,
+    target: 3,
+    note: "Designed touches and matchup calls for Diego.",
+    criteria: { keyPlayer: "Diego" },
+  },
+  {
+    id: "cs-7on7-jayce",
+    name: "Jayce",
+    color: CS_COLORS.teal,
+    manual: false,
+    target: 3,
+    note: "Designed touches and matchup calls for Jayce.",
+    criteria: { keyPlayer: "Jayce" },
+  },
+  {
+    id: "cs-7on7-jake",
+    name: "Jake",
+    color: CS_COLORS.purple,
+    manual: false,
+    target: 3,
+    note: "Designed touches and matchup calls for Jake.",
+    criteria: { keyPlayer: "Jake" },
+  },
+  {
+    id: "cs-7on7-skro-bros",
+    name: "Skro Bros",
+    color: CS_COLORS.blue,
+    manual: false,
+    target: 3,
+    note: "Designed touches and matchup calls for the Skro Bros.",
+    criteria: { keyPlayer: "Skro Bros" },
+  },
+  {
+    id: "cs-7on7-running-back",
+    name: "Running Back",
+    color: CS_COLORS.gray,
+    manual: false,
+    target: 3,
+    note: "Backfield releases, checkdowns, swings, and matchups.",
+    criteria: { keyPlayer: "Running Back" },
+  },
+  {
+    id: "cs-7on7-cover-01",
+    name: "Cov 0/1 Beaters",
+    color: CS_COLORS.red,
+    manual: false,
+    target: 4,
+    note: "Pressure-man and single-high man answers.",
+    criteria: { coverage: ["cover 0", "cover 1"] },
+  },
+  {
+    id: "cs-7on7-cover-2",
+    name: "Cov 2 Beaters",
+    color: CS_COLORS.blue,
+    manual: false,
+    target: 4,
+    note: "Two-high and Cover 2 answers.",
+    criteria: { coverage: ["cover 2"] },
+  },
+  {
+    id: "cs-7on7-cover-3",
+    name: "Cov 3 Beaters",
+    color: CS_COLORS.teal,
+    manual: false,
+    target: 4,
+    note: "Three-deep and Cover 3 answers.",
+    criteria: { coverage: ["cover 3"] },
+  },
+  {
+    id: "cs-7on7-man-2",
+    name: "Man 2 Beaters",
+    color: CS_COLORS.purple,
+    manual: false,
+    target: 4,
+    note: "Two-man and man-under answers.",
+    criteria: { coverage: ["2-man"] },
+  },
+  {
+    id: "cs-7on7-shots",
+    name: "Shot Plays",
+    color: CS_COLORS.red,
+    manual: false,
+    target: 4,
+    note: "Explosives and deliberate downfield calls.",
+    criteria: { keyword: "shot | explosive" },
+  },
+  {
+    id: "cs-7on7-wristband-passes",
+    name: "Pass Plays on Wristband",
+    color: CS_COLORS.teal,
+    manual: true,
+    target: 0,
+    note: "Auto-syncs passing calls whenever a wristband is loaded.",
+  },
+  {
+    id: "cs-7on7-goal-line",
+    name: "Goal Line",
+    color: CS_COLORS.orange,
+    manual: false,
+    target: 4,
+    note: "Calls for the goal line and compressed field.",
+    criteria: { fieldPosition: ["goal line"] },
+  },
+  {
+    id: "cs-7on7-two-point",
+    name: "Two-Point Conversion",
+    color: CS_COLORS.green,
+    manual: false,
+    target: 4,
+    note: "Must-have two-point calls.",
+    criteria: { keyword: "2 point | 2-point | two point | two-point" },
+  },
+];
+
 const CS_HEADER_COLOR_OPTIONS = [
   { name: "Red", value: CS_COLORS.red },
   { name: "Yellow", value: CS_COLORS.yellow },
@@ -346,15 +534,31 @@ function getCustomCallSheetCategoriesFromSettings(settings = callSheetSettings) 
   };
 }
 
+function getHiddenCallSheetCategoryIds(settings = callSheetSettings) {
+  return new Set(
+    Array.isArray(settings?.hiddenCategoryIds)
+      ? settings.hiddenCategoryIds.filter((id) => typeof id === "string")
+      : [],
+  );
+}
+
 function rebuildCallSheetCategoryRegistry() {
   const customCategories = getCustomCallSheetCategoriesFromSettings();
   const nextFront = [
     ...BASE_CALLSHEET_FRONT.map((cat) => ({ ...cat })),
-    ...customCategories.front.map((cat) => ({ ...cat, custom: true, manual: true })),
+    ...customCategories.front.map((cat) => ({
+      ...cat,
+      custom: true,
+      manual: cat.manual !== false,
+    })),
   ];
   const nextBack = [
     ...BASE_CALLSHEET_BACK.map((cat) => ({ ...cat })),
-    ...customCategories.back.map((cat) => ({ ...cat, custom: true, manual: true })),
+    ...customCategories.back.map((cat) => ({
+      ...cat,
+      custom: true,
+      manual: cat.manual !== false,
+    })),
   ];
 
   CALLSHEET_FRONT.splice(0, CALLSHEET_FRONT.length, ...nextFront);
@@ -394,12 +598,27 @@ function normalizeCallSheetSettings(settings = {}) {
     loadedWristbandPlays: Array.isArray(merged.loadedWristbandPlays)
       ? merged.loadedWristbandPlays
       : [],
+    hiddenCategoryIds: Array.isArray(merged.hiddenCategoryIds)
+      ? merged.hiddenCategoryIds.filter((id) => typeof id === "string")
+      : [],
+    allowedPlayTypes: Array.isArray(merged.allowedPlayTypes)
+      ? merged.allowedPlayTypes.filter((type) => typeof type === "string")
+      : [],
+    wristbandAutoCategoryId:
+      typeof merged.wristbandAutoCategoryId === "string"
+        ? merged.wristbandAutoCategoryId
+        : "",
   };
 }
 
 function normalizeCallSheetCategoryOrder(order) {
   const defaults = getDefaultCallSheetCategoryOrder();
-  const validIds = new Set(CALLSHEET_CATEGORIES.map((cat) => cat.id));
+  const hiddenIds = getHiddenCallSheetCategoryIds();
+  const validIds = new Set(
+    CALLSHEET_CATEGORIES
+      .filter((cat) => !hiddenIds.has(cat.id))
+      .map((cat) => cat.id),
+  );
   const normalized = { front: [], back: [] };
   const placed = new Set();
 
@@ -413,7 +632,7 @@ function normalizeCallSheetCategoryOrder(order) {
   });
 
   CALLSHEET_CATEGORIES.forEach((cat) => {
-    if (placed.has(cat.id)) return;
+    if (placed.has(cat.id) || hiddenIds.has(cat.id)) return;
     const defaultPage = defaults.front.includes(cat.id) ? "front" : "back";
     normalized[defaultPage].push(cat.id);
     placed.add(cat.id);
@@ -435,6 +654,9 @@ function getDefaultCallSheetSettings() {
     customCategories: { front: [], back: [] },
     loadedWristbandName: "", // Name of loaded wristband
     loadedWristbandPlays: [], // Plays from loaded wristband with numbers
+    hiddenCategoryIds: [],
+    allowedPlayTypes: [],
+    wristbandAutoCategoryId: "",
   };
 }
 
@@ -844,6 +1066,7 @@ async function autoPopulateCallSheet() {
     const seen = {}; // { catId: Set of play keys }
     let totalPlaced = 0;
     let unmatched = 0;
+    let excluded = 0;
 
     // Build a unique key for a play (formation + play name + personnel)
     const playKey = (p) => csPlayKey(p);
@@ -852,6 +1075,10 @@ async function autoPopulateCallSheet() {
 
     // Go through each play and categorize
     plays.forEach((play, playIndex) => {
+      if (!isCallSheetPlayAllowed(play)) {
+        excluded++;
+        return;
+      }
       const categories = new Set(findMatchingCategories(play));
       (playerTargets[playIndex] || new Set()).forEach((catId) => categories.add(catId));
 
@@ -891,12 +1118,25 @@ async function autoPopulateCallSheet() {
       });
     });
 
+    const wristbandSynced =
+      typeof syncLoadedWristbandToCallSheetCategory === "function"
+        ? syncLoadedWristbandToCallSheetCategory()
+        : 0;
+    totalPlaced += wristbandSynced;
+
     renderCallSheet();
     saveCallSheet();
 
-    let msg = `⚡ Placed ${totalPlaced} entries from ${plays.length} plays`;
+    const eligibleCount = plays.length - excluded;
+    let msg = `⚡ Placed ${totalPlaced} entries from ${eligibleCount} eligible plays`;
     if (unmatched > 0) {
       msg += ` (${unmatched} unmatched)`;
+    }
+    if (excluded > 0) {
+      msg += ` (${excluded} excluded by template)`;
+    }
+    if (wristbandSynced > 0) {
+      msg += ` • ${wristbandSynced} wristband passes synced`;
     }
     // Vision Mode: re-sort each bucket so Picture-tagged families lead
     // (Wide Zone first, then Pullers, Downhill, Anti-front, then untagged)
@@ -1007,6 +1247,192 @@ function splitPreferredValues(value) {
     .filter(Boolean);
 }
 
+function getCanonicalCallSheetPlayType(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  if (!normalized) return "";
+  if (CS_PLAY_TYPE_ALIASES[normalized]) {
+    return CS_PLAY_TYPE_ALIASES[normalized];
+  }
+  return CS_PASSING_PLAY_TYPES.find(
+    (type) => type.toLowerCase() === normalized,
+  ) || String(value || "").trim();
+}
+
+function isCallSheetPlayAllowed(play, settings = callSheetSettings) {
+  const allowed = Array.isArray(settings?.allowedPlayTypes)
+    ? settings.allowedPlayTypes
+    : [];
+  if (allowed.length === 0) return true;
+  const playType = getCanonicalCallSheetPlayType(play?.type);
+  return allowed.some(
+    (type) =>
+      getCanonicalCallSheetPlayType(type).toLowerCase() ===
+      playType.toLowerCase(),
+  );
+}
+
+function isCallSheetPassingPlay(play) {
+  const playType = getCanonicalCallSheetPlayType(play?.type);
+  return CS_PASSING_PLAY_TYPES.includes(playType);
+}
+
+function getCallSheetCoverageAliases(target) {
+  const aliases = {
+    "cover 0": ["cover 0", "cov 0", "c0", "zero"],
+    "cover 1": ["cover 1", "cov 1", "c1", "man free"],
+    "cover 2": [
+      "cover 2",
+      "cov 2",
+      "c2",
+      "tampa 2",
+      "tampa two",
+      "2-read",
+      "2 read",
+      "palms",
+    ],
+    "cover 3": [
+      "cover 3",
+      "cov 3",
+      "c3",
+      "3-deep",
+      "3 deep",
+      "buzz",
+      "cloud",
+    ],
+    "2-man": [
+      "2-man",
+      "2 man",
+      "man 2",
+      "man two",
+      "2-man under",
+      "2 man under",
+      "man under",
+    ],
+  };
+  const normalized = String(target || "").trim().toLowerCase();
+  return aliases[normalized] || [normalized];
+}
+
+function callSheetCoverageMatches(value, target) {
+  const actual = String(value || "").trim().toLowerCase();
+  if (!actual) return false;
+  return getCallSheetCoverageAliases(target).some(
+    (alias) => actual === alias || actual.includes(alias),
+  );
+}
+
+function callSheetKeywordMatches(play, rawKeyword) {
+  const keywords = String(rawKeyword || "")
+    .split(/[|,;]+/)
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (keywords.length === 0) return true;
+  const haystack = [
+    play?.play,
+    play?.basePlay,
+    play?.playTag1,
+    play?.playTag2,
+    play?.oneWord,
+    play?.preferredSituation,
+    play?.preferredFieldPosition,
+    play?.notes,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return keywords.some((keyword) => haystack.includes(keyword));
+}
+
+function callSheetKeyPlayerMatches(play, rawTarget) {
+  const target = String(rawTarget || "").trim().toLowerCase();
+  if (!target) return true;
+  const aliases =
+    target === "running back"
+      ? ["running back", "rb"]
+      : target === "skro bros"
+        ? ["skro bros", "skro brothers"]
+        : [target];
+  const values = [
+    play?.keyPlayerName1,
+    play?.keyPlayerName2,
+    play?.keyPlayerName3,
+    play?.keyPlayer1,
+    play?.keyPlayer2,
+    play?.keyPlayer3,
+  ]
+    .map((value) => String(value || "").trim().toLowerCase())
+    .filter(Boolean);
+  return values.some((value) =>
+    aliases.some((alias) => value === alias || value.includes(alias)),
+  );
+}
+
+function callSheetPlayMatchesCriteria(play, criteria) {
+  if (!play || !criteria || typeof criteria !== "object") return false;
+  let hasCriteria = false;
+  const requireListMatch = (rawValues, playValue) => {
+    const values = Array.isArray(rawValues)
+      ? rawValues.map((value) => String(value).trim().toLowerCase()).filter(Boolean)
+      : [];
+    if (values.length === 0) return true;
+    hasCriteria = true;
+    const playValues = splitPreferredValues(playValue);
+    return values.some((value) => playValues.includes(value));
+  };
+
+  if (!requireListMatch(criteria.down, play.preferredDown)) return false;
+  if (!requireListMatch(criteria.distance, play.preferredDistance)) return false;
+  if (!requireListMatch(criteria.situation, play.preferredSituation)) return false;
+
+  const fieldPositions = Array.isArray(criteria.fieldPosition)
+    ? criteria.fieldPosition
+    : [];
+  if (fieldPositions.length > 0) {
+    hasCriteria = true;
+    const playPositions = splitPreferredValues(play.preferredFieldPosition);
+    const aliases = {
+      green: ["green", "fringe"],
+      "lo-rz": ["lo-rz", "low red zone", "low rz"],
+      "hi-rz": ["hi-rz", "high red zone", "high rz", "red zone", "rz", "rz-20"],
+      "goal line": ["goal line", "goalline"],
+      "backed up": ["backed up", "backedup", "own territory"],
+      saigon: ["saigon"],
+    };
+    const matches = fieldPositions.some((value) => {
+      const normalized = String(value || "").trim().toLowerCase();
+      const group = aliases[normalized] || [normalized];
+      return playPositions.some((position) => group.includes(position));
+    });
+    if (!matches) return false;
+  }
+
+  const coverages = Array.isArray(criteria.coverage) ? criteria.coverage : [];
+  if (coverages.length > 0) {
+    hasCriteria = true;
+    const playCoverages = splitPreferredValues(play.practiceCoverage);
+    if (
+      !coverages.some((target) =>
+        playCoverages.some((coverage) =>
+          callSheetCoverageMatches(coverage, target),
+        ),
+      )
+    ) {
+      return false;
+    }
+  }
+
+  if (criteria.keyPlayer && String(criteria.keyPlayer).trim()) {
+    hasCriteria = true;
+    if (!callSheetKeyPlayerMatches(play, criteria.keyPlayer)) return false;
+  }
+  if (criteria.keyword && String(criteria.keyword).trim()) {
+    hasCriteria = true;
+    if (!callSheetKeywordMatches(play, criteria.keyword)) return false;
+  }
+
+  return hasCriteria;
+}
+
 /**
  * Find which categories a play belongs to (FRONT page: situational; BACK page: play-type).
  *
@@ -1024,6 +1450,8 @@ function splitPreferredValues(value) {
  */
 function findMatchingCategories(play) {
   const matches = [];
+  if (!isCallSheetPlayAllowed(play)) return matches;
+  const hiddenIds = getHiddenCallSheetCategoryIds();
 
   // Normalize play fields — support multi-value preferred fields
   const situations = splitPreferredValues(play.preferredSituation);
@@ -1056,6 +1484,13 @@ function findMatchingCategories(play) {
   }
 
   CALLSHEET_CATEGORIES.forEach((cat) => {
+    if (hiddenIds.has(cat.id)) return;
+    if (cat.criteria) {
+      if (callSheetPlayMatchesCriteria(play, cat.criteria)) {
+        matches.push(cat.id);
+      }
+      return;
+    }
     if (cat.manual) return; // Skip manual-only categories
 
     // ─── SPECIAL: P and 10 ─────────────────────────────────────────────────
@@ -1269,8 +1704,11 @@ function buildPlayerCategoryAutoFillTargets(items, options = {}) {
     ? Math.max(0, Math.floor(options.minCount))
     : CALLSHEET_PLAYER_AUTOFILL_MIN;
   const targetSets = source.map(() => new Set());
+  const hiddenIds = getHiddenCallSheetCategoryIds();
   const playerCats = Array.isArray(CALLSHEET_CATEGORIES)
-    ? CALLSHEET_CATEGORIES.filter((cat) => cat.playerSpecific)
+    ? CALLSHEET_CATEGORIES.filter(
+        (cat) => cat.playerSpecific && !hiddenIds.has(cat.id),
+      )
     : [];
 
   playerCats.forEach((cat) => {
@@ -1392,7 +1830,11 @@ function getCallSheetCategoriesForPage(page) {
   // page, fall back to base categories so the call sheet never renders blank.
   const baseIds = (safePage === "back" ? BASE_CALLSHEET_BACK : BASE_CALLSHEET_FRONT)
     .map((cat) => cat.id)
-    .filter((id) => CALLSHEET_CATEGORIES.some((cat) => cat.id === id));
+    .filter(
+      (id) =>
+        !getHiddenCallSheetCategoryIds().has(id) &&
+        CALLSHEET_CATEGORIES.some((cat) => cat.id === id),
+    );
 
   if (!baseIds.length) return [];
 
@@ -3961,6 +4403,90 @@ function updateNotOnSheetPanel() {
 
 // ============ Call Sheet Templates ============
 
+function getBuiltInCallSheetTemplates() {
+  const categories = safeDeepClone(CS_SEVEN_ON_SEVEN_CATEGORIES);
+  const categoryIds = categories.map((cat) => cat.id);
+  const callSheetData = Object.fromEntries(
+    categoryIds.map((id) => [id, { left: [], right: [] }]),
+  );
+  const standardCategoryIds = [
+    ...BASE_CALLSHEET_FRONT.map((cat) => cat.id),
+    ...BASE_CALLSHEET_BACK.map((cat) => cat.id),
+  ];
+  const standardCallSheetData = Object.fromEntries(
+    standardCategoryIds.map((id) => [id, { left: [], right: [] }]),
+  );
+
+  return [
+    {
+      id: CS_SEVEN_ON_SEVEN_TEMPLATE_ID,
+      name: "7-on-7 Passing Sheet",
+      builtIn: true,
+      description:
+        "Tournament downs, player touches, coverage beaters, wristband passes, and conversion calls.",
+      includePlays: false,
+      templateKind: "structure",
+      playCount: 0,
+      categoryCount: categories.length,
+      callSheet: callSheetData,
+      settings: {
+        ...getDefaultCallSheetSettings(),
+        orientation: "landscape",
+        currentPage: "front",
+        customCategories: { front: categories, back: [] },
+        hiddenCategoryIds: [
+          ...BASE_CALLSHEET_FRONT.map((cat) => cat.id),
+          ...BASE_CALLSHEET_BACK.map((cat) => cat.id),
+        ],
+        allowedPlayTypes: [...CS_PASSING_PLAY_TYPES],
+        wristbandAutoCategoryId: "cs-7on7-wristband-passes",
+      },
+      notes: Object.fromEntries(
+        categories.map((cat) => [cat.id, cat.note || ""]),
+      ),
+      targets: Object.fromEntries(
+        categories.map((cat) => [cat.id, cat.target || 0]),
+      ),
+      categoryOrder: { front: categoryIds, back: [] },
+      collapsed: [],
+      printOptions: {
+        paperSize: "letter",
+        orientation: "landscape",
+        pages: "front",
+        columns: 4,
+        margin: "tight",
+      },
+    },
+    {
+      id: "builtin-standard-callsheet",
+      name: "Standard Call Sheet",
+      builtIn: true,
+      description:
+        "Restore the normal front-and-back situational and play-type buckets.",
+      includePlays: false,
+      templateKind: "structure",
+      playCount: 0,
+      categoryCount: standardCategoryIds.length,
+      callSheet: standardCallSheetData,
+      settings: getDefaultCallSheetSettings(),
+      notes: {},
+      targets: {},
+      categoryOrder: {
+        front: BASE_CALLSHEET_FRONT.map((cat) => cat.id),
+        back: BASE_CALLSHEET_BACK.map((cat) => cat.id),
+      },
+      collapsed: [],
+      printOptions: {
+        paperSize: "letter",
+        orientation: "portrait",
+        pages: "both",
+        columns: 3,
+        margin: "normal",
+      },
+    },
+  ];
+}
+
 function getCallSheetPlayCount() {
   let playCount = 0;
   CALLSHEET_CATEGORIES.forEach((cat) => {
@@ -4000,6 +4526,7 @@ function buildCallSheetTemplate(name, options = {}) {
     categoryOrder: safeDeepClone(csCategoryOrder),
     displayState: captureCallSheetDisplayState(),
     collapsed: [...csCollapsed],
+    printOptions: getCallSheetPrintOptions(),
   };
 }
 
@@ -4107,12 +4634,28 @@ function openLoadCallSheetModal() {
 function openTemplatesModal(mode = "manage") {
   csTemplateModalMode =
     mode === "load" ? "load" : mode === "save" ? "save" : "manage";
+  const builtIn = getBuiltInCallSheetTemplates();
   const saved = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
   const isLoadMode = csTemplateModalMode === "load";
   const title = isLoadMode ? "📂 Load Call Sheet" : "📁 Saved Call Sheets";
   const modalCopy = isLoadMode
-    ? "Choose a saved call sheet or structure template to replace the current one."
-    : "Save the current call sheet as a full sheet or reusable structure template, then load it later.";
+    ? "Choose a built-in or saved call sheet template to replace the current one."
+    : "Start from a built-in template, or save the current call sheet as a reusable template.";
+
+  const builtInHtml = builtIn
+    .map(
+      (template) => `<div class="cs-template-item">
+        <div class="cs-template-info">
+          <strong>${escapeHtml(template.name)}</strong>
+          <span class="cs-template-date">Built-in · Structure only · ${template.categoryCount || 0} buckets</span>
+          <span class="cs-template-copy">${escapeHtml(template.description || "")}</span>
+        </div>
+        <div class="cs-template-actions">
+          <button class="btn btn-sm btn-primary" data-action="loadBuiltInCallSheetTemplate" data-arg="${escapeHtml(template.id)}">Load Template</button>
+        </div>
+      </div>`,
+    )
+    .join("");
 
   const listHtml =
     saved.length === 0
@@ -4146,6 +4689,13 @@ function openTemplatesModal(mode = "manage") {
           <button class="cs-sort-close" data-action="closeTemplateModal">&times;</button>
         </div>
         <div class="cs-sort-body">
+          <div class="cs-template-section-head">
+            <div>
+              <h4>Built-In Templates</h4>
+              <p>Ready-made structures with matching and print defaults.</p>
+            </div>
+          </div>
+          <div class="cs-template-list">${builtInHtml}</div>
           <div class="cs-template-section-head">
             <div>
               <h4>Saved Call Sheets</h4>
@@ -4202,24 +4752,65 @@ async function loadTemplate(idx) {
     const templates = storageManager.get(STORAGE_KEYS.CALLSHEET_TEMPLATES, []);
     const template = templates[idx];
     if (!template) return;
-    const isStructure = template.includePlays === false || template.templateKind === "structure";
+    await applyCallSheetTemplate(template);
+  } catch (err) {
+    console.error("loadTemplate error:", err);
+    showToast("❌ Error loading template.", { duration: 4000, type: "error" });
+  }
+}
 
+async function loadBuiltInCallSheetTemplate(templateId) {
+  try {
+    const template = getBuiltInCallSheetTemplates().find(
+      (item) => item.id === templateId,
+    );
+    if (!template) return;
+    await applyCallSheetTemplate(template);
+  } catch (err) {
+    console.error("loadBuiltInCallSheetTemplate error:", err);
+    showToast("❌ Error loading built-in template.", {
+      duration: 4000,
+      type: "error",
+    });
+  }
+}
+
+async function applyCallSheetTemplate(template) {
+  const isStructure =
+    template.includePlays === false || template.templateKind === "structure";
+  const preservedWristband = template.builtIn
+    ? {
+        name: callSheetSettings.loadedWristbandName || "",
+        plays: safeDeepClone(callSheetSettings.loadedWristbandPlays || []),
+      }
+    : null;
+
+  try {
     const ok = await showConfirm(
       `Load "${template.name}"? This will replace your current call sheet${isStructure ? " with an empty structure template." : "."}`,
       { title: "Load Template", icon: "📁", confirmText: isStructure ? "Load Structure" : "Load" },
     );
     if (!ok) return;
 
-    callSheet = template.callSheet || {};
-    if (template.settings)
-      callSheetSettings = {
-        ...getDefaultCallSheetSettings(),
-        ...template.settings,
-      };
+    callSheet = safeDeepClone(template.callSheet || {});
+    callSheetSettings = normalizeCallSheetSettings({
+      ...getDefaultCallSheetSettings(),
+      ...safeDeepClone(template.settings || {}),
+    });
+    if (preservedWristband?.plays.length) {
+      callSheetSettings.loadedWristbandName = preservedWristband.name;
+      callSheetSettings.loadedWristbandPlays = preservedWristband.plays;
+    }
     rebuildCallSheetCategoryRegistry();
     syncCallSheetCategoryData();
-    csNotes = template.notes && typeof template.notes === "object" ? template.notes : {};
-    csTargets = template.targets && typeof template.targets === "object" ? template.targets : {};
+    csNotes =
+      template.notes && typeof template.notes === "object"
+        ? safeDeepClone(template.notes)
+        : {};
+    csTargets =
+      template.targets && typeof template.targets === "object"
+        ? safeDeepClone(template.targets)
+        : {};
     csCategoryOrder = normalizeCallSheetCategoryOrder(template.categoryOrder);
     csCollapsed = new Set(Array.isArray(template.collapsed) ? template.collapsed : []);
 
@@ -4232,7 +4823,16 @@ async function loadTemplate(idx) {
     } else {
       saveCallSheetDisplayOptions();
     }
+    if (template.printOptions) {
+      setCallSheetPrintOptions(template.printOptions);
+    }
 
+    const wristbandSynced =
+      typeof syncLoadedWristbandToCallSheetCategory === "function"
+        ? syncLoadedWristbandToCallSheetCategory()
+        : 0;
+
+    resetCallSheetHistoryBaseline();
     saveCallSheet();
     saveCallSheetSettings();
     storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
@@ -4241,11 +4841,17 @@ async function loadTemplate(idx) {
     storageManager.set(STORAGE_KEYS.CALLSHEET_COLLAPSED, [...csCollapsed]);
 
     renderCallSheet();
+    if (typeof updateLoadedWristbandDisplay === "function") {
+      updateLoadedWristbandDisplay();
+    }
     closeTemplateModal();
-    showToast(`📁 Loaded ${isStructure ? "structure" : "call sheet"} "${template.name}"`);
+    showToast(
+      `📁 Loaded ${isStructure ? "structure" : "call sheet"} "${template.name}"` +
+        (wristbandSynced > 0 ? ` · synced ${wristbandSynced} wristband passes` : ""),
+    );
   } catch (err) {
-    console.error("loadTemplate error:", err);
-    showToast("❌ Error loading template.", { duration: 4000, type: "error" });
+    console.error("applyCallSheetTemplate error:", err);
+    throw err;
   }
 }
 
