@@ -28,7 +28,7 @@
     height: auto !important;
     min-height: 0 !important;
   }
-  /* Wristband print sheets are letter-sized; each card remains exactly 4.7 x 2.8 inches. */
+  /* Wristband print sheets are letter-sized; each card remains exactly 4.5 x 2.6 inches. */
   body[data-print-mode="wristband"] {
     --wristband-print-ink: #111827;
     --wristband-print-grid: #64748b;
@@ -126,9 +126,9 @@
     page-break-after: auto;
   }
   .wristband-print .wristband-card {
-    width: var(--wristband-print-width, 4.7in) !important;
-    height: var(--wristband-print-height, 2.8in) !important;
-    flex: 0 0 var(--wristband-print-height, 2.8in) !important;
+    width: var(--wristband-print-width, 4.5in) !important;
+    height: var(--wristband-print-height, 2.6in) !important;
+    flex: 0 0 var(--wristband-print-height, 2.6in) !important;
     margin: 0 !important;
     padding: 0 !important;
     border: 0.5pt solid var(--wristband-print-ink) !important;

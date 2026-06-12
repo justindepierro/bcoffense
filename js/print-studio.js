@@ -212,7 +212,7 @@ function _psWristbandStats() {
         "Print Size",
         typeof WRISTBAND_PRINT_SIZE_LABEL !== "undefined"
           ? WRISTBAND_PRINT_SIZE_LABEL
-          : "4.7 x 2.8 in",
+          : "4.5 x 2.6 in",
       ),
     ],
     warnings,

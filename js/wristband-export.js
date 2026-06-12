@@ -1,6 +1,6 @@
-const WRISTBAND_PRINT_WIDTH = "4.7in";
-const WRISTBAND_PRINT_HEIGHT = "2.8in";
-const WRISTBAND_PRINT_SIZE_LABEL = "4.7 x 2.8 in";
+const WRISTBAND_PRINT_WIDTH = "4.5in";
+const WRISTBAND_PRINT_HEIGHT = "2.6in";
+const WRISTBAND_PRINT_SIZE_LABEL = "4.5 x 2.6 in";
 const WRISTBAND_PRINT_CARDS_PER_SHEET = 3;
 
 function _applyWristbandPrintDimensions() {

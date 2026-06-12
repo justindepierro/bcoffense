@@ -252,6 +252,7 @@ function updateWbStats() {
   const emptyEl = document.getElementById("wbStatEmpty");
   const runEl = document.getElementById("wbStatRun");
   const passEl = document.getElementById("wbStatPass");
+  const formatEl = document.getElementById("wbStatFormat");
 
   if (!cardsEl) return;
 
@@ -281,4 +282,5 @@ function updateWbStats() {
   emptyEl.textContent = totalEmpty;
   runEl.textContent = runCount;
   passEl.textContent = passCount;
+  if (formatEl) formatEl.textContent = WRISTBAND_PRINT_SIZE_LABEL;
 }

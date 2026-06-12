@@ -1404,7 +1404,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     padding-bottom: 3pt;
     margin-bottom: 4pt;
     flex-shrink: 0;
-    width: var(--wristband-print-width, 4.7in);
+    width: var(--wristband-print-width, 4.5in);
   }
 
   .pc-print-pos-label {
@@ -1426,9 +1426,9 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 
   .pc-print-card-wrap .wristband-card {
-    width: var(--wristband-print-width, 4.7in) !important;
-    height: var(--wristband-print-height, 2.8in) !important;
-    flex: 0 0 var(--wristband-print-height, 2.8in) !important;
+    width: var(--wristband-print-width, 4.5in) !important;
+    height: var(--wristband-print-height, 2.6in) !important;
+    flex: 0 0 var(--wristband-print-height, 2.6in) !important;
     margin: 0 !important;
     border: 0.5pt solid var(--wristband-print-ink) !important;
     overflow: hidden !important;
@@ -1518,7 +1518,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   .pc-print-stack-item {
     flex: 0 0 auto;
-    width: var(--wristband-print-width, 4.7in);
+    width: var(--wristband-print-width, 4.5in);
     display: flex;
     flex-direction: column;
   }
