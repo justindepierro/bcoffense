@@ -1,8 +1,55 @@
+const WRISTBAND_PRINT_WIDTH = "4.7in";
+const WRISTBAND_PRINT_HEIGHT = "2.8in";
+const WRISTBAND_PRINT_SIZE_LABEL = "4.7 x 2.8 in";
+const WRISTBAND_PRINT_CARDS_PER_SHEET = 3;
+
+function _applyWristbandPrintDimensions() {
+  const previousWidth = document.body.style.getPropertyValue("--wristband-print-width");
+  const previousHeight = document.body.style.getPropertyValue("--wristband-print-height");
+
+  document.body.style.setProperty("--wristband-print-width", WRISTBAND_PRINT_WIDTH);
+  document.body.style.setProperty("--wristband-print-height", WRISTBAND_PRINT_HEIGHT);
+
+  return function restoreWristbandPrintDimensions() {
+    if (previousWidth) {
+      document.body.style.setProperty("--wristband-print-width", previousWidth);
+    } else {
+      document.body.style.removeProperty("--wristband-print-width");
+    }
+    if (previousHeight) {
+      document.body.style.setProperty("--wristband-print-height", previousHeight);
+    } else {
+      document.body.style.removeProperty("--wristband-print-height");
+    }
+  };
+}
+
+function _buildWristbandPrintSheets(cardHtml, repeatSingleCard = false) {
+  const cards = repeatSingleCard ? [cardHtml[0], cardHtml[0], cardHtml[0]] : cardHtml;
+  const sheets = [];
+
+  for (let i = 0; i < cards.length; i += WRISTBAND_PRINT_CARDS_PER_SHEET) {
+    sheets.push(
+      `<section class="wristband-print-sheet">${cards
+        .slice(i, i + WRISTBAND_PRINT_CARDS_PER_SHEET)
+        .join("")}</section>`,
+    );
+  }
+
+  return sheets.join("");
+}
+
 function printWristband() {
   try {
-    const WRISTBAND_PRINT_WIDTH = "4.7in";
-    const WRISTBAND_PRINT_HEIGHT = "3in";
-    showToast("🖨️ Preparing wristband…", 2500);
+    if (!wristbandCards.some((card) => card.data?.some(Boolean))) {
+      showToast("No plays on the wristband to print.", { type: "warning" });
+      return;
+    }
+
+    showToast(`Print at 100% or Actual Size for a ${WRISTBAND_PRINT_SIZE_LABEL} wristband.`, {
+      duration: 4000,
+      type: "info",
+    });
     const container = document.getElementById("wristbandPrintCards");
     const numCards = wristbandCards.length;
     const opts = getWristbandDisplayOptions();
@@ -30,12 +77,10 @@ function printWristband() {
       return rendered;
     };
 
-    const useMultiCardLayout = numCards > 1 && numCards <= 5;
-
-    let allHtml = "";
+    const cardHtml = [];
 
     wristbandCards.forEach((card, cardIdx) => {
-      let cardHtml = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${WB_ROWS}, 1fr);">`;
+      let html = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${WB_ROWS}, 1fr);">`;
 
       const cardOffset = cardIdx * 40;
       const pCardColor = card.cardColor || "";
@@ -89,92 +134,44 @@ function printWristband() {
         const oddNumFg = oddBg ? (isColorDark(oddBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
         const evenNumBg = evenBg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
         const evenNumFg = evenBg ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark) : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
-        cardHtml += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
+        html += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
         const oddDisplay = oddPlay ? getPrintDisplay(oddPlay, oddCustom) : "";
         const oddCellInner = oddPlay ? oddDisplay : "";
-        cardHtml += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddCellInner}</span></div>`;
-        cardHtml += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
+        html += `<div class="wristband-cell${oddPlay ? " filled" : ""}" style="${oddStyle}"><span class="cell-play">${oddCellInner}</span></div>`;
+        html += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
         const evenDisplay = evenPlay ? getPrintDisplay(evenPlay, evenCustom) : "";
         const evenCellInner = evenPlay ? evenDisplay : "";
-        cardHtml += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenCellInner}</span></div>`;
+        html += `<div class="wristband-cell${evenPlay ? " filled" : ""}" style="${evenStyle}"><span class="cell-play">${evenCellInner}</span></div>`;
       }
 
-      cardHtml += "</div></div>";
-      allHtml += cardHtml;
+      html += "</div></div>";
+      cardHtml.push(html);
     });
 
-    if (numCards === 1) {
-      allHtml = allHtml + allHtml + allHtml;
-    }
-
-    container.innerHTML = allHtml;
-    container.className =
-      numCards === 1
-        ? "single-card-tripled"
-        : useMultiCardLayout
-          ? "multi-card-layout"
-          : "";
+    container.innerHTML = _buildWristbandPrintSheets(cardHtml, numCards === 1);
+    container.className = numCards === 1
+      ? "wristband-print-sheets single-card-tripled"
+      : "wristband-print-sheets multi-card-layout";
 
     document.getElementById("wristbandPrint").classList.remove("hidden");
     document.body.dataset.printMode = "wristband";
-    document.body.classList.toggle("wb-tripled", numCards === 1);
-
-    if (numCards === 1) {
-      setupPrintPageStyle(`
+    const restorePrintDimensions = _applyWristbandPrintDimensions();
+    setupPrintPageStyle(`
       @media print {
-        @page { size: letter portrait; margin: 0.25in; }
-        html, body { width: 8.5in !important; height: 11in !important; }
-        #wristbandPrintCards.single-card-tripled {
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          justify-content: center !important;
-          height: 11in !important;
-          gap: 0.25in !important;
-        }
-        #wristbandPrintCards.single-card-tripled .wristband-card {
-          width: ${WRISTBAND_PRINT_WIDTH} !important;
-          height: ${WRISTBAND_PRINT_HEIGHT} !important;
-          page-break-after: avoid !important;
-          flex-shrink: 0 !important;
-        }
+        @page { size: letter portrait; margin: 0; }
+        html, body { width: 8.5in !important; }
       }
     `);
-    } else if (useMultiCardLayout) {
-      setupPrintPageStyle(`
-      @media print { 
-        @page { size: letter portrait; margin: 0.25in; }
-        html, body { width: 8.5in !important; height: 11in !important; }
-        #wristbandPrintCards.multi-card-layout {
-          display: flex !important;
-          flex-direction: column !important;
-          align-items: center !important;
-          gap: 0.15in !important;
-          padding-top: 0.1in !important;
-        }
-        #wristbandPrintCards.multi-card-layout .wristband-card {
-          width: ${WRISTBAND_PRINT_WIDTH} !important;
-          height: ${WRISTBAND_PRINT_HEIGHT} !important;
-          page-break-after: avoid !important;
-          flex-shrink: 0 !important;
-        }
-      }
-    `);
-    } else {
-      setupPrintPageStyle(
-        `@media print { @page { size: ${WRISTBAND_PRINT_WIDTH} ${WRISTBAND_PRINT_HEIGHT}; margin: 0; } }`,
-      );
-    }
 
     setTimeout(() => {
+      const restoreTitle = setPrintTitle("Wristband");
       try {
-        const restoreTitle = setPrintTitle("Wristband");
         window.print();
-        restoreTitle();
       } finally {
+        restoreTitle();
+        restorePrintDimensions();
         document.getElementById("wristbandPrint").classList.add("hidden");
         delete document.body.dataset.printMode;
-        document.body.classList.remove("wb-tripled");
       }
     }, 100);
   } catch (err) {
@@ -571,6 +568,7 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
   printContent.innerHTML = html;
   document.body.dataset.printMode = "playerCards";
   printContainer.classList.remove("hidden");
+  const restorePrintDimensions = _applyWristbandPrintDimensions();
 
   // Directly hide all other body children so they don't show through Chrome's print dialog
   const _ghostEls = Array.from(document.body.children).filter(el => el !== printContainer);
@@ -589,6 +587,7 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
       if (typeof restoreTitle === "function") restoreTitle();
     } finally {
       _ghostEls.forEach(el => { el.style.visibility = ""; });
+      restorePrintDimensions();
       printContainer.classList.add("hidden");
       delete document.body.dataset.printMode;
     }

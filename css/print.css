@@ -28,12 +28,13 @@
     height: auto !important;
     min-height: 0 !important;
   }
-  /* Wristband-specific body width */
+  /* Wristband print sheets are letter-sized; each card remains exactly 4.7 x 2.8 inches. */
   body[data-print-mode="wristband"] {
-    width: 4.7in !important;
-  }
-  body[data-print-mode="wristband"].wb-tripled {
+    --wristband-print-ink: #111827;
+    --wristband-print-grid: #64748b;
+    --wristband-print-paper: #ffffff;
     width: 8.5in !important;
+    color: var(--wristband-print-ink) !important;
   }
   body:not(.print-script) .tabs,
   body:not(.print-script) .filters,
@@ -84,13 +85,12 @@
   body[data-print-mode="wristband"] #wristbandPrint {
     display: block !important;
     visibility: visible !important;
-    position: absolute !important;
-    top: 0 !important;
-    left: 0 !important;
+    position: static !important;
+    width: 8.5in !important;
     padding: 0 !important;
     margin: 0 !important;
     z-index: var(--z-modal) !important;
-    background: white !important;
+    background: var(--wristband-print-paper) !important;
   }
   body[data-print-mode="wristband"] #wristbandPrint *,
   body[data-print-mode="wristband"] #wristbandPrintCards,
@@ -100,64 +100,84 @@
   body:not(.print-script) .script-preview {
     display: none !important;
   }
-  .wristband-print .wristband-card {
-    width: 4.7in !important;
-    height: 2.7in !important;
+  #wristbandPrintCards.wristband-print-sheets {
+    display: block !important;
+    width: 8.5in !important;
     margin: 0 !important;
     padding: 0 !important;
-    border: 0.5px solid var(--color-text) !important;
-    page-break-after: always;
-    page-break-inside: avoid;
-    box-sizing: border-box !important;
-    overflow: hidden !important;
   }
-  .wristband-print .wristband-card:last-child {
-    page-break-after: avoid;
-  }
-  /* Single card tripled: 3 copies on portrait letter */
-  #wristbandPrintCards.single-card-tripled {
+  .wristband-print-sheet {
     display: flex !important;
     flex-direction: column !important;
     align-items: center !important;
     justify-content: center !important;
+    gap: 0.25in !important;
+    width: 8.5in !important;
     height: 11in !important;
-    gap: 0 !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    box-sizing: border-box !important;
+    break-after: page;
+    page-break-after: always;
+    overflow: hidden !important;
   }
-  #wristbandPrintCards.single-card-tripled .wristband-card {
-    page-break-after: avoid !important;
-    page-break-before: avoid !important;
-    break-after: avoid !important;
-    break-before: avoid !important;
-    margin: 0 0 0.25in 0 !important;
-    flex-shrink: 0 !important;
+  .wristband-print-sheet:last-child {
+    break-after: auto;
+    page-break-after: auto;
   }
-  #wristbandPrintCards.single-card-tripled .wristband-card:last-child {
-    margin-bottom: 0 !important;
+  .wristband-print .wristband-card {
+    width: var(--wristband-print-width, 4.7in) !important;
+    height: var(--wristband-print-height, 2.8in) !important;
+    flex: 0 0 var(--wristband-print-height, 2.8in) !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    border: 0.5pt solid var(--wristband-print-ink) !important;
+    break-inside: avoid !important;
+    page-break-inside: avoid !important;
+    box-sizing: border-box !important;
+    overflow: hidden !important;
   }
   .wristband-print .wristband-grid {
     width: 100% !important;
     height: 100% !important;
     display: grid !important;
-    grid-template-columns: 22px 1fr 22px 1fr !important;
+    grid-template-columns: 0.24in minmax(0, 1fr) 0.24in minmax(0, 1fr) !important;
   }
   .wristband-print .wristband-cell {
-    font-size: 9px !important;
-    padding: 0 2px !important;
-    border: 0.3px solid var(--color-text-muted) !important;
+    min-width: 0 !important;
+    font-family: var(--font-mono) !important;
+    font-size: 7pt !important;
+    line-height: 1 !important;
+    padding: 0 0.03in !important;
+    border: 0.25pt solid var(--wristband-print-grid) !important;
     display: flex !important;
     align-items: center !important;
     white-space: nowrap !important;
     overflow: hidden !important;
   }
   .wristband-print .wristband-cell.num-cell {
-    font-size: 9px !important;
+    font-size: 7pt !important;
+    font-weight: 800 !important;
+    padding: 0 !important;
     justify-content: center !important;
   }
   .wristband-print .cell-play {
-    font-size: 9px !important;
+    min-width: 0 !important;
+    max-width: 100% !important;
+    font-size: 7pt !important;
+    line-height: 1 !important;
+    gap: 0.02in !important;
     white-space: nowrap !important;
     overflow: hidden !important;
-    text-overflow: clip !important;
+    text-overflow: ellipsis !important;
+  }
+  .wristband-print .wristband-cell:not([style*="background"]) {
+    background: var(--wristband-print-paper) !important;
+    color: var(--wristband-print-ink) !important;
+  }
+  .wristband-print .line-call,
+  .wristband-print .cell-write-in {
+    color: inherit !important;
   }
 
   /* Playbook print mode — numbered list */

@@ -204,6 +204,12 @@ function _psWristbandStats() {
       _psMetric("Cards", cards.length),
       _psMetric("Filled", filled),
       _psMetric("Open", Math.max(capacity - filled, 0)),
+      _psMetric(
+        "Print Size",
+        typeof WRISTBAND_PRINT_SIZE_LABEL !== "undefined"
+          ? WRISTBAND_PRINT_SIZE_LABEL
+          : "4.7 x 2.8 in",
+      ),
     ],
     warnings,
     filename: buildPrintStudioFilename("Wristband", "", "pdf"),
