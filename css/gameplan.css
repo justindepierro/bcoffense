@@ -1889,6 +1889,51 @@ body.gp-dragging-from-box .gp-trash-zone {
   body.gp-printing .gp-print-one-page .gp-print-wb-num {
     font-size: calc(var(--gp-one-page-play-size, 7.6pt) - 0.8pt);
   }
+  body.gp-printing .gp-print-many-boxes .gp-print-header {
+    margin-bottom: 3px;
+    padding-bottom: 2px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-title {
+    font-size: 11pt;
+    gap: 7px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-sheet-title {
+    font-size: 9pt;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-meta {
+    font-size: 6.5pt;
+    gap: 5px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-grid {
+    gap: 3px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-box {
+    padding: 1px 3px;
+    border-left-width: 2px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-box-wide {
+    grid-column: span 2;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-box-wide .gp-print-plays {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    column-gap: 5px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-box-head {
+    padding-bottom: 1px;
+    margin-bottom: 1px;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-box-label {
+    font-size: 7pt;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-target,
+  body.gp-printing .gp-print-many-boxes .gp-print-empty {
+    font-size: 5.5pt;
+  }
+  body.gp-printing .gp-print-many-boxes .gp-print-play {
+    line-height: 1.06;
+    padding: 0;
+  }
   body.gp-printing .gp-print-box {
     border: 1px solid #000;
     border-left: 4px solid var(--gp-box-accent, #000);

@@ -71,7 +71,7 @@ function _gpApplySevenOnSevenPrintDefaults() {
     preset: "sevenOnSeven",
     paperSize: "letter",
     orientation: "landscape",
-    columns: 3,
+    columns: 4,
     onePage: true,
     showMeta: false,
     showHash: false,
@@ -311,7 +311,7 @@ async function openGamePlanPrintModal() {
         </div>
         <div class="custom-modal-actions">
           <button class="btn custom-modal-btn custom-modal-cancel" id="gpPrintCancel">Cancel</button>
-          <button class="btn btn-secondary custom-modal-btn" id="gpPrintSevenOnSeven" type="button" title="Letter landscape, six compact passing buckets, one page">🏈 7-on-7 preset</button>
+          <button class="btn btn-secondary custom-modal-btn" id="gpPrintSevenOnSeven" type="button" title="Letter landscape, compact tournament buckets, one page">🏈 7-on-7 preset</button>
           <button class="btn btn-secondary custom-modal-btn" id="gpPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns, no bucket overflow">✨ Smart defaults</button>
           <button class="btn btn-primary custom-modal-btn" id="gpPrintConfirm">Print</button>
         </div>
@@ -462,6 +462,7 @@ async function _gpRenderPrintViewAndPrint() {
     `gp-print-${o.paperSize}`,
     `gp-print-${o.orientation}`,
     o.onePage ? "gp-print-one-page" : "",
+    o.onePage && allBoxes.length > 12 ? "gp-print-many-boxes" : "",
     o.bucketPerPage ? "gp-print-bucket-per-page" : "",
     o.showFooter ? "gp-print-with-footer" : "",
     o.playerHandout ? "gp-print-handout" : "",
@@ -472,10 +473,16 @@ async function _gpRenderPrintViewAndPrint() {
     "--gp-print-rows",
     String(Math.max(1, Math.ceil(allBoxes.length / Math.max(1, o.columns)))),
   );
-  const onePageFontSize =
-    printPlayCount <= 30 ? "8.4pt" :
-      printPlayCount <= 42 ? "7.6pt" :
-        printPlayCount <= 54 ? "6.8pt" : "6.1pt";
+  const onePageFontSize = allBoxes.length > 12
+    ? (
+      printPlayCount <= 38 ? "6.2pt" :
+        printPlayCount <= 60 ? "5.6pt" : "5.1pt"
+    )
+    : (
+      printPlayCount <= 30 ? "8.4pt" :
+        printPlayCount <= 42 ? "7.6pt" :
+          printPlayCount <= 54 ? "6.8pt" : "6.1pt"
+    );
   host.style.setProperty("--gp-one-page-play-size", onePageFontSize);
   const footerHtml = o.showFooter ? `
     <div class="gp-print-footer">
@@ -525,11 +532,15 @@ function _gpRenderPrintBox(box, board) {
   const noteHtml = o.showNotes && note ? `<div class="gp-print-note">${escapeHtml(note)}</div>` : "";
   const hashHtml = o.showHash ? _gpRenderBoxHashBar(list) : "";
   const detailHtml = o.showDetail && list.length > 0 ? _gpRenderPrintBoxDetail(box, list) : "";
+  const wideClass =
+    o.onePage && board.wristbandAutoBoxId === box.id
+      ? " gp-print-box-wide"
+      : "";
   const playsHtml = list.length === 0
     ? `<div class="gp-print-empty">— empty —</div>`
     : list.map((p) => _gpRenderPrintPlay(p, board)).join("");
   return `
-    <div class="gp-print-box" ${accentStyle}>
+    <div class="gp-print-box${wideClass}" ${accentStyle}>
       <div class="gp-print-box-head">
         <span class="gp-print-box-label">${escapeHtml(box.label)}</span>
         ${targetLabel}

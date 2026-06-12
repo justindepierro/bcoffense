@@ -433,13 +433,34 @@ function checkSevenOnSevenTemplate() {
   const snapshots = read("js/gameplan-snapshots.js");
   const print = read("js/gameplan-print.js");
   const gameplan = read("js/gameplan.js");
+  const smart = read("js/gameplan-smart.js");
   const css = read("css/gameplan.css");
   const boxes = snapshots.match(
     /const GP_SEVEN_ON_SEVEN_BOXES\s*=\s*\[([\s\S]*?)\n\];/,
   )?.[1] || "";
   const boxCount = [...boxes.matchAll(/\bid:\s*"7on7-/g)].length;
-  if (boxCount !== 6) {
-    fail(`7-on-7 template must define 6 one-page buckets; found ${boxCount}`);
+  if (boxCount !== 19) {
+    fail(`7-on-7 template must define 19 tournament buckets; found ${boxCount}`);
+  }
+  [
+    "1st Down",
+    "3rd & Long",
+    "Marco",
+    "Skro Bros",
+    "Cov 0/1 Beaters",
+    "Man 2 Beaters",
+    "Pass Plays on Wristband",
+    "Two-Point Conversion",
+  ].forEach((label) => {
+    if (!boxes.includes(`label: "${label}"`)) {
+      fail(`7-on-7 template is missing the ${label} bucket`);
+    }
+  });
+  if (
+    !snapshots.includes('wristbandAutoBoxId: "7on7-wristband-passes"') ||
+    !/function _gpSyncLoadedWristbandBox\(/.test(gameplan)
+  ) {
+    fail("7-on-7 wristband passing-play auto-sync is incomplete");
   }
   if (
     !snapshots.includes('printPreset: "sevenOnSeven"') ||
@@ -450,9 +471,17 @@ function checkSevenOnSevenTemplate() {
   if (
     !/function _gpApplySevenOnSevenPrintDefaults\(/.test(print) ||
     !/onePage:\s*true/.test(print) ||
+    !/columns:\s*4/.test(print) ||
     !/gp-print-one-page/.test(css)
   ) {
     fail("7-on-7 one-page print preset is incomplete");
+  }
+  if (
+    !/const GP_COVERAGE_CHOICES/.test(gameplan) ||
+    !/function _gpKeywordMatchesPlay\(/.test(gameplan) ||
+    !/_gpPlayMatchesCriteria\(play, meta\.criteria\)/.test(smart)
+  ) {
+    fail("7-on-7 coverage, keyword, or smart-suggestion matching is incomplete");
   }
   if (
     !/function _gpGetBoardBoxes\(/.test(gameplan) ||

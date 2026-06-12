@@ -26,6 +26,15 @@ const GP_PASSING_PLAY_TYPES = [
   "Play Action",
   "Movement",
 ];
+const GP_PASSING_FILTER_TYPES = [
+  "Pass",
+  "Drop",
+  "Quick",
+  "Screen",
+  "Play Action",
+  "Play Pass",
+  "Movement",
+];
 
 // Special holding box — always present, shown first, excluded from Push to Call Sheet
 const GP_HOLDING_ID = "__holding";
@@ -228,21 +237,49 @@ const GP_TYPE_ALIASES = {
 //     situation:   ["short yardage", "2 minute", "4 minute", "opener"]
 //     fieldPosition: ["green", "lo-rz", "hi-rz", "goal line", "backed up", "saigon"]
 //     type:        ["Run", "Pass", ...]            // play.type values
-//     keyPlayer:   "Marco"                         // case-insensitive
+//     coverage:    ["cover 0", "cover 2", ...]     // Practice Coverage aliases
+//     keyPlayer:   "Marco"                         // name or position
+//     keyword:     "shot | explosive"              // any matching phrase
 //   }
 //   callSheetCategoryId: "rz-20" | null            // explicit Push-to-Call-Sheet target
-const GP_CRITERIA_FIELDS = ["down", "distance", "situation", "fieldPosition", "type", "keyPlayer"];
+const GP_CRITERIA_FIELDS = [
+  "down",
+  "distance",
+  "situation",
+  "fieldPosition",
+  "type",
+  "coverage",
+  "keyPlayer",
+  "keyword",
+];
 
 const GP_DOWN_CHOICES = ["1", "2", "3", "4"];
 const GP_DISTANCE_CHOICES = ["short", "medium", "long"];
 const GP_SITUATION_CHOICES = ["short yardage", "2 minute", "4 minute", "opener"];
 const GP_FIELD_POSITION_CHOICES = ["green", "lo-rz", "hi-rz", "goal line", "backed up", "saigon"];
 const GP_TYPE_CHOICES = [
-  "Run", "Pass", "Screen", "Quick", "Play Action", "RPO", "Run Option", "Movement",
+  "Run", "Pass", "Drop", "Screen", "Quick", "Play Action", "Play Pass",
+  "RPO", "Run Option", "Movement",
+];
+const GP_COVERAGE_CHOICES = [
+  "cover 0",
+  "cover 1",
+  "cover 2",
+  "cover 3",
+  "2-man",
 ];
 
 function _gpEmptyCriteria() {
-  return { down: [], distance: [], situation: [], fieldPosition: [], type: [], keyPlayer: "" };
+  return {
+    down: [],
+    distance: [],
+    situation: [],
+    fieldPosition: [],
+    type: [],
+    coverage: [],
+    keyPlayer: "",
+    keyword: "",
+  };
 }
 
 function _gpGetBoxMeta(board, boxId) {
@@ -250,10 +287,11 @@ function _gpGetBoxMeta(board, boxId) {
   const raw = (board.boxMeta && board.boxMeta[boxId]) || {};
   const criteria = { ..._gpEmptyCriteria(), ...(raw.criteria || {}) };
   GP_CRITERIA_FIELDS.forEach((f) => {
-    if (f === "keyPlayer") return;
+    if (f === "keyPlayer" || f === "keyword") return;
     if (!Array.isArray(criteria[f])) criteria[f] = [];
   });
   if (typeof criteria.keyPlayer !== "string") criteria.keyPlayer = "";
+  if (typeof criteria.keyword !== "string") criteria.keyword = "";
   return {
     criteria,
     callSheetCategoryId: raw.callSheetCategoryId || null,
@@ -263,9 +301,82 @@ function _gpGetBoxMeta(board, boxId) {
 function _gpHasCriteria(criteria) {
   if (!criteria) return false;
   if (criteria.keyPlayer && criteria.keyPlayer.trim()) return true;
-  return ["down", "distance", "situation", "fieldPosition", "type"].some(
+  if (criteria.keyword && criteria.keyword.trim()) return true;
+  return ["down", "distance", "situation", "fieldPosition", "type", "coverage"].some(
     (f) => Array.isArray(criteria[f]) && criteria[f].length > 0,
   );
+}
+
+function _gpCoverageAliases(target) {
+  const aliases = {
+    "cover 0": ["cover 0", "cov 0", "c0", "zero"],
+    "cover 1": ["cover 1", "cov 1", "c1", "man free"],
+    "cover 2": [
+      "cover 2",
+      "cov 2",
+      "c2",
+      "tampa 2",
+      "tampa two",
+      "2-read",
+      "2 read",
+      "palms",
+    ],
+    "cover 3": [
+      "cover 3",
+      "cov 3",
+      "c3",
+      "3-deep",
+      "3 deep",
+      "buzz",
+      "cloud",
+    ],
+    "2-man": [
+      "2-man",
+      "2 man",
+      "man 2",
+      "man two",
+      "2-man under",
+      "2 man under",
+      "man under",
+    ],
+  };
+  return aliases[target] || [target];
+}
+
+function _gpCoverageMatchesTarget(value, target) {
+  const actual = String(value || "").trim().toLowerCase();
+  if (!actual) return false;
+  return _gpCoverageAliases(String(target || "").trim().toLowerCase())
+    .some((alias) => actual === alias || actual.includes(alias));
+}
+
+function _gpCanonicalCoverage(value) {
+  const normalized = String(value || "").trim().toLowerCase();
+  return GP_COVERAGE_CHOICES.find(
+    (target) => _gpCoverageMatchesTarget(normalized, target),
+  ) || normalized;
+}
+
+function _gpKeywordMatchesPlay(play, rawKeyword) {
+  const keywords = String(rawKeyword || "")
+    .split(/[|,;]+/)
+    .map((value) => value.trim().toLowerCase())
+    .filter(Boolean);
+  if (keywords.length === 0) return true;
+  const haystack = [
+    play?.play,
+    play?.basePlay,
+    play?.playTag1,
+    play?.playTag2,
+    play?.oneWord,
+    play?.preferredSituation,
+    play?.preferredFieldPosition,
+    play?.notes,
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  return keywords.some((keyword) => haystack.includes(keyword));
 }
 
 /**
@@ -314,17 +425,47 @@ function _gpPlayMatchesCriteria(play, criteria) {
   }
   // play type (exact, case-insensitive)
   if (criteria.type.length > 0) {
-    const t = (play.type || "").toLowerCase();
-    if (!criteria.type.some((c) => c.toLowerCase() === t)) return false;
+    const type = GP_TYPE_ALIASES[play.type] || play.type || "";
+    if (
+      !criteria.type.some((candidate) => {
+        const wanted = GP_TYPE_ALIASES[candidate] || candidate || "";
+        return wanted.toLowerCase() === type.toLowerCase();
+      })
+    ) {
+      return false;
+    }
   }
-  // key player (single name, case-insensitive, matches any of keyPlayerName1/2/3)
+  if (criteria.coverage.length > 0) {
+    const coverages = splitPV(play.practiceCoverage);
+    if (
+      !criteria.coverage.some((target) =>
+        coverages.some((coverage) => _gpCoverageMatchesTarget(coverage, target)),
+      )
+    ) {
+      return false;
+    }
+  }
+  // Key player matches names or position labels. "Running Back" also accepts RB.
   if (criteria.keyPlayer && criteria.keyPlayer.trim()) {
     const target = criteria.keyPlayer.trim().toLowerCase();
     const names = [play.keyPlayerName1, play.keyPlayerName2, play.keyPlayerName3]
       .map((n) => (typeof n === "string" ? n.toLowerCase().trim() : ""))
       .filter(Boolean);
-    if (!names.includes(target)) return false;
+    const positions = [play.keyPlayer1, play.keyPlayer2, play.keyPlayer3]
+      .map((position) =>
+        typeof position === "string" ? position.toLowerCase().trim() : "",
+      )
+      .filter(Boolean);
+    const targetAliases =
+      target === "running back" ? ["running back", "rb"] : [target];
+    if (
+      !names.some((name) => targetAliases.includes(name)) &&
+      !positions.some((position) => targetAliases.includes(position))
+    ) {
+      return false;
+    }
   }
+  if (!_gpKeywordMatchesPlay(play, criteria.keyword)) return false;
   return true;
 }
 
@@ -480,6 +621,7 @@ function _gpCreateEmptyBoard() {
     allowedPlayTypes: [],
     sheetTitle: "",
     printPreset: "",
+    wristbandAutoBoxId: "",
   };
 }
 
@@ -551,6 +693,10 @@ function _gpEnsureBoard() {
     }
     if (typeof all[key].printPreset !== "string") {
       all[key].printPreset = "";
+      changed = true;
+    }
+    if (typeof all[key].wristbandAutoBoxId !== "string") {
+      all[key].wristbandAutoBoxId = "";
       changed = true;
     }
     all[key].customBoxes.forEach((cb) => {
@@ -636,6 +782,34 @@ function _gpPlayAllowedOnBoard(play, board) {
   return allowed.includes(type);
 }
 
+function _gpIsPassingPlay(play) {
+  const type = GP_TYPE_ALIASES[play?.type] || play?.type || "";
+  return GP_PASSING_PLAY_TYPES.includes(type);
+}
+
+function _gpSyncLoadedWristbandBox(board, wristbandPlays) {
+  const boxId = String(board?.wristbandAutoBoxId || "").trim();
+  if (!boxId) return 0;
+  if (!board.assignments || typeof board.assignments !== "object") {
+    board.assignments = {};
+  }
+  const seen = new Set();
+  board.assignments[boxId] = (Array.isArray(wristbandPlays) ? wristbandPlays : [])
+    .filter(
+      (play) =>
+        _gpIsPassingPlay(play) &&
+        _gpPlayAllowedOnBoard(play, board),
+    )
+    .filter((play) => {
+      const signature = _gpPlaySignature(play);
+      if (!signature || seen.has(signature)) return false;
+      seen.add(signature);
+      return true;
+    })
+    .map((play) => ({ ...play }));
+  return board.assignments[boxId].length;
+}
+
 /* -------------------------------------------------------------------------
    Loaded wristband (per opponent board) — used to display wristband numbers
    next to plays in the on-screen render and printed output. Mirrors the
@@ -677,15 +851,24 @@ async function loadGamePlanWristband() {
       }
     });
   });
+  let syncedPassPlays = 0;
   _gpUpdateBoard((b) => {
     b.loadedWristband = { name: wb.title || "Untitled", plays: wristbandPlays };
+    syncedPassPlays = _gpSyncLoadedWristbandBox(b, wristbandPlays);
   });
-  showToast(`📋 Loaded “${wb.title}” (${wristbandPlays.length} plays)`);
+  showToast(
+    syncedPassPlays > 0
+      ? `📋 Loaded “${wb.title}” and synced ${syncedPassPlays} passing play${syncedPassPlays === 1 ? "" : "s"}`
+      : `📋 Loaded “${wb.title}” (${wristbandPlays.length} plays)`,
+  );
   requestRenderGamePlan();
 }
 
 function clearGamePlanWristband() {
-  _gpUpdateBoard((b) => { b.loadedWristband = null; });
+  _gpUpdateBoard((b) => {
+    b.loadedWristband = null;
+    _gpSyncLoadedWristbandBox(b, []);
+  });
   showToast("🗑️ Wristband unloaded");
   requestRenderGamePlan();
 }
@@ -1015,7 +1198,10 @@ function _gpPlayMatchesCurrentFilters(p, board, options = {}) {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
 
-  if (!_gpFilterMatchesAny(p.type, _gpFilters.type)) return false;
+  const canonicalType = GP_TYPE_ALIASES[p.type] || p.type;
+  const canonicalTypeFilters = _gpFilterValueList(_gpFilters.type)
+    .map((type) => GP_TYPE_ALIASES[type] || type);
+  if (!_gpFilterMatchesAny(canonicalType, canonicalTypeFilters)) return false;
   if (_gpFilters.formation && p.formation !== _gpFilters.formation) return false;
   if (!_gpFilterMatchesAny(p.personnel, _gpFilters.personnel)) return false;
   if (_gpFilters.basePlay && p.basePlay !== _gpFilters.basePlay) return false;

@@ -501,8 +501,15 @@ by built-in templates:
   allowedPlayTypes: ["Pass", "Quick", "Screen", "Play Action", "Movement"],
   sheetTitle: "7-on-7 Passing Plan",
   printPreset: "sevenOnSeven",
+  wristbandAutoBoxId: "7on7-wristband-passes",
 }
 ```
+
+Game plan box criteria can match down, distance, situation, field position,
+play type, practice coverage, key player name/position, and keyword
+alternatives. Keyword alternatives use `|` separators. A board with
+`wristbandAutoBoxId` replaces that bucket with unique passing calls whenever a
+wristband is loaded and clears it when the wristband is unloaded.
 
 ---
 

@@ -61,7 +61,14 @@ function _gpSmartDetectCriteriaFromBox(boxId, threshold = 0.5) {
   if (list.length === 0) return null;
   const splitPV = (v) =>
     typeof splitPreferredValues === "function" ? splitPreferredValues(v) : [];
-  const counts = { down: {}, distance: {}, situation: {}, fieldPosition: {}, type: {} };
+  const counts = {
+    down: {},
+    distance: {},
+    situation: {},
+    fieldPosition: {},
+    type: {},
+    coverage: {},
+  };
   list.forEach((p) => {
     const tally = (key, arr) => {
       const seen = new Set();
@@ -75,7 +82,14 @@ function _gpSmartDetectCriteriaFromBox(boxId, threshold = 0.5) {
     tally("distance", splitPV(p.preferredDistance));
     tally("situation", splitPV(p.preferredSituation));
     tally("fieldPosition", splitPV(p.preferredFieldPosition));
-    tally("type", p.type ? [p.type] : []);
+    tally(
+      "type",
+      p.type ? [GP_TYPE_ALIASES[p.type] || p.type] : [],
+    );
+    tally(
+      "coverage",
+      splitPV(p.practiceCoverage).map(_gpCanonicalCoverage),
+    );
   });
   const out = _gpEmptyCriteria();
   const minHits = Math.max(1, Math.ceil(list.length * threshold));
@@ -84,8 +98,10 @@ function _gpSmartDetectCriteriaFromBox(boxId, threshold = 0.5) {
       if (n >= minHits) {
         // Restore canonical case for type
         if (k === "type") {
-          const canonical = list.find((p) => (p.type || "").toLowerCase() === val);
-          out.type.push(canonical ? canonical.type : val);
+          const canonical = GP_TYPE_CHOICES.find(
+            (type) => type.toLowerCase() === val,
+          );
+          out.type.push(canonical || val);
         } else {
           out[k].push(val);
         }
@@ -165,9 +181,19 @@ async function editGamePlanBoxMatching(boxId) {
             <div class="gp-meta-row">${checks("type", GP_TYPE_CHOICES, meta.criteria.type)}</div>
           </div>
           <div>
+            <strong>Coverage</strong>
+            <div class="gp-meta-row">${checks("coverage", GP_COVERAGE_CHOICES, meta.criteria.coverage, (s) => s.replace(/\b\w/g, (m) => m.toUpperCase()))}</div>
+            <small style="color:var(--color-text-muted);">Matches the play's Practice Coverage field, including common Cov/Cover aliases.</small>
+          </div>
+          <div>
             <strong>Key Player</strong>
             <input type="text" id="gpMetaKeyPlayer" placeholder="e.g. Marco" value="${escapeHtml(meta.criteria.keyPlayer || "")}" style="width:100%;padding:var(--space-xs);border:1px solid var(--color-border-input);border-radius:var(--radius-sm);background:var(--color-bg-input);" />
-            <small style="color:var(--color-text-muted);">Matches against keyPlayerName1/2/3 on each play (case-insensitive).</small>
+            <small style="color:var(--color-text-muted);">Matches key player names or positions. Running Back also accepts RB.</small>
+          </div>
+          <div>
+            <strong>Tag / Text Contains</strong>
+            <input type="text" id="gpMetaKeyword" placeholder="e.g. shot | explosive" value="${escapeHtml(meta.criteria.keyword || "")}" style="width:100%;padding:var(--space-xs);border:1px solid var(--color-border-input);border-radius:var(--radius-sm);background:var(--color-bg-input);" />
+            <small style="color:var(--color-text-muted);">Use | between alternatives. Matches play name, tags, one-word call, situation, field position, and notes.</small>
           </div>
           <div>
             <strong>Push to Call Sheet target</strong>
@@ -213,6 +239,7 @@ async function editGamePlanBoxMatching(boxId) {
       if (el.checked) out[el.dataset.metaField].push(el.value);
     });
     out.keyPlayer = (overlay.querySelector("#gpMetaKeyPlayer").value || "").trim();
+    out.keyword = (overlay.querySelector("#gpMetaKeyword").value || "").trim();
     return out;
   };
 
@@ -223,6 +250,7 @@ async function editGamePlanBoxMatching(boxId) {
   overlay.querySelector("#gpMetaClearBtn").addEventListener("click", () => {
     overlay.querySelectorAll("input[type=checkbox][data-meta-field]").forEach((el) => { el.checked = false; });
     overlay.querySelector("#gpMetaKeyPlayer").value = "";
+    overlay.querySelector("#gpMetaKeyword").value = "";
     overlay.querySelector("#gpMetaCsCategory").value = "";
   });
 
@@ -297,8 +325,18 @@ async function gpSuggestFillBox(boxId) {
   const board = _gpEnsureBoard();
   const inBoxSigs = new Set((board.assignments[boxId] || []).map(_gpPlaySignature));
   const intent = GP_BOX_INTENT_TYPES[boxId];
-  let candidates = plays.filter((p) => !inBoxSigs.has(_gpPlaySignature(p)));
-  if (Array.isArray(intent) && intent.length > 0) {
+  const meta = _gpGetBoxMeta(board, boxId);
+  const hasCriteria = _gpHasCriteria(meta.criteria);
+  let candidates = plays.filter(
+    (play) =>
+      _gpPlayAllowedOnBoard(play, board) &&
+      !inBoxSigs.has(_gpPlaySignature(play)),
+  );
+  if (hasCriteria) {
+    candidates = candidates.filter((play) =>
+      _gpPlayMatchesCriteria(play, meta.criteria),
+    );
+  } else if (Array.isArray(intent) && intent.length > 0) {
     candidates = candidates.filter((p) => intent.includes(p.type));
   }
   // Rank: opponent-tagged first, then by base play group, then alphabetical
@@ -326,7 +364,17 @@ async function gpSuggestFillBox(boxId) {
     return (a.play || "").localeCompare(b.play || "");
   });
   if (candidates.length === 0) {
-    showToast(intent ? `No more ${intent.join("/")} plays available.` : "No more plays available.", { type: "warning" });
+    const criteriaLabel = hasCriteria && typeof _gpFormatBoxMetaSummary === "function"
+      ? _gpFormatBoxMetaSummary(meta)
+      : "";
+    showToast(
+      criteriaLabel
+        ? `No more plays match ${criteriaLabel}.`
+        : intent
+          ? `No more ${intent.join("/")} plays available.`
+          : "No more plays available.",
+      { type: "warning" },
+    );
     return;
   }
   const assignedSigs = _gpAllAssignedSigs(board);

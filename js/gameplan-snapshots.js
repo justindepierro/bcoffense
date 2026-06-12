@@ -123,37 +123,133 @@ const GP_SEVEN_ON_SEVEN_BOXES = [
     id: "7on7-openers",
     label: "Openers",
     target: 5,
-    note: "First five calls. Start with answers for man and zone.",
+    note: "First calls for the tournament script.",
+    criteria: { situation: ["opener"] },
   },
   {
-    id: "7on7-quick-pressure",
-    label: "Quick / Pressure",
-    target: 6,
-    note: "Fast rhythm, screens, and pressure answers.",
-  },
-  {
-    id: "7on7-man",
-    label: "Man Answers",
+    id: "7on7-first-down",
+    label: "1st Down",
     target: 5,
-    note: "Bunch, rub, leverage, and matchup calls.",
+    note: "Early-down calls that keep the full menu open.",
+    criteria: { down: ["1"] },
   },
   {
-    id: "7on7-zone",
-    label: "Zone Answers",
+    id: "7on7-second-down",
+    label: "2nd Down",
     target: 5,
-    note: "Spacing, flood, seams, and high-low concepts.",
+    note: "Best calls for staying on schedule.",
+    criteria: { down: ["2"] },
   },
   {
-    id: "7on7-movement-shots",
-    label: "Movement / Shots",
+    id: "7on7-third-down",
+    label: "3rd Down",
     target: 5,
-    note: "Sprint-out, movement throws, and explosives.",
+    note: "Short and medium conversion calls.",
+    criteria: { down: ["3"], distance: ["short", "medium"] },
   },
   {
-    id: "7on7-redzone",
-    label: "Red Zone / Conversions",
-    target: 5,
-    note: "Low red zone, goal line, and must-have conversions.",
+    id: "7on7-third-long",
+    label: "3rd & Long",
+    target: 4,
+    note: "Long-yardage conversion calls.",
+    criteria: { down: ["3"], distance: ["long"] },
+  },
+  {
+    id: "7on7-marco",
+    label: "Marco",
+    target: 3,
+    note: "Designed touches and matchup calls for Marco.",
+    criteria: { keyPlayer: "Marco" },
+  },
+  {
+    id: "7on7-diego",
+    label: "Diego",
+    target: 3,
+    note: "Designed touches and matchup calls for Diego.",
+    criteria: { keyPlayer: "Diego" },
+  },
+  {
+    id: "7on7-jayce",
+    label: "Jayce",
+    target: 3,
+    note: "Designed touches and matchup calls for Jayce.",
+    criteria: { keyPlayer: "Jayce" },
+  },
+  {
+    id: "7on7-jake",
+    label: "Jake",
+    target: 3,
+    note: "Designed touches and matchup calls for Jake.",
+    criteria: { keyPlayer: "Jake" },
+  },
+  {
+    id: "7on7-skro-bros",
+    label: "Skro Bros",
+    target: 3,
+    note: "Designed touches and matchup calls for the Skro Bros.",
+    criteria: { keyPlayer: "Skro Bros" },
+  },
+  {
+    id: "7on7-running-back",
+    label: "Running Back",
+    target: 3,
+    note: "Backfield releases, checkdowns, swings, and matchups.",
+    criteria: { keyPlayer: "Running Back" },
+  },
+  {
+    id: "7on7-cover-01",
+    label: "Cov 0/1 Beaters",
+    target: 4,
+    note: "Pressure-man and single-high man answers.",
+    criteria: { coverage: ["cover 0", "cover 1"] },
+  },
+  {
+    id: "7on7-cover-2",
+    label: "Cov 2 Beaters",
+    target: 4,
+    note: "Two-high and Cover 2 answers.",
+    criteria: { coverage: ["cover 2"] },
+  },
+  {
+    id: "7on7-cover-3",
+    label: "Cov 3 Beaters",
+    target: 4,
+    note: "Three-deep and Cover 3 answers.",
+    criteria: { coverage: ["cover 3"] },
+  },
+  {
+    id: "7on7-man-2",
+    label: "Man 2 Beaters",
+    target: 4,
+    note: "Two-man and man-under answers.",
+    criteria: { coverage: ["2-man"] },
+  },
+  {
+    id: "7on7-shots",
+    label: "Shot Plays",
+    target: 4,
+    note: "Explosives and deliberate downfield calls.",
+    criteria: { keyword: "shot | explosive" },
+  },
+  {
+    id: "7on7-wristband-passes",
+    label: "Pass Plays on Wristband",
+    target: 0,
+    note: "Auto-syncs passing calls whenever a wristband is loaded.",
+  },
+  {
+    id: "7on7-goal-line",
+    label: "Goal Line",
+    target: 4,
+    note: "Calls for the goal line and compressed field.",
+    criteria: { fieldPosition: ["goal line"] },
+  },
+  {
+    id: "7on7-two-point",
+    label: "Two-Point Conversion",
+    target: 4,
+    note: "Must-have two-point calls.",
+    criteria: { keyword: "2 point | 2-point | two point | two-point" },
   },
 ];
 
@@ -171,7 +267,7 @@ function _gpBuiltInTemplates() {
     name: "7-on-7 Passing Sheet",
     sheetTitle: "7-on-7 Passing Plan",
     builtIn: true,
-    description: "Six passing-only tournament buckets sized for one letter-landscape page.",
+    description: "Tournament situations, player touches, coverage beaters, wristband passes, and conversion calls.",
     includePlays: false,
     playCount: 0,
     boxCount: GP_SEVEN_ON_SEVEN_BOXES.length,
@@ -187,32 +283,26 @@ function _gpBuiltInTemplates() {
     hiddenBoxes: GP_DEFAULT_BOXES.map((box) => box.id),
     boxOrder: GP_SEVEN_ON_SEVEN_BOXES.map((box) => box.id),
     boxLabels: {},
-    boxMeta: {
-      "7on7-quick-pressure": {
-        criteria: {
-          ..._gpEmptyCriteria(),
-          type: ["Quick", "Screen"],
-        },
-      },
-      "7on7-movement-shots": {
-        criteria: {
-          ..._gpEmptyCriteria(),
-          type: ["Movement", "Play Action"],
-        },
-      },
-      "7on7-redzone": {
-        criteria: {
-          ..._gpEmptyCriteria(),
-          fieldPosition: ["hi-rz", "lo-rz", "goal line"],
-        },
-      },
-    },
+    boxMeta: Object.fromEntries(
+      GP_SEVEN_ON_SEVEN_BOXES
+        .filter((box) => box.criteria)
+        .map((box) => [
+          box.id,
+          {
+            criteria: {
+              ..._gpEmptyCriteria(),
+              ...safeDeepClone(box.criteria),
+            },
+          },
+        ]),
+    ),
     allowedPlayTypes: [...GP_PASSING_PLAY_TYPES],
     filterPreset: {
-      type: [...GP_PASSING_PLAY_TYPES],
+      type: [...GP_PASSING_FILTER_TYPES],
       density: "compact",
     },
     printPreset: "sevenOnSeven",
+    wristbandAutoBoxId: "7on7-wristband-passes",
     assignments,
   }];
 }
@@ -277,6 +367,7 @@ function _gpBuildTemplate(name, includePlays) {
     allowedPlayTypes: safeDeepClone(board.allowedPlayTypes || []),
     sheetTitle: board.sheetTitle || "",
     printPreset: board.printPreset || "",
+    wristbandAutoBoxId: board.wristbandAutoBoxId || "",
     assignments,
   };
 }
@@ -310,6 +401,7 @@ function _gpBoardFromTemplate(template) {
     allowedPlayTypes: safeDeepClone(template.allowedPlayTypes || []),
     sheetTitle: template.sheetTitle || "",
     printPreset: template.printPreset || "",
+    wristbandAutoBoxId: template.wristbandAutoBoxId || "",
   };
 }
 

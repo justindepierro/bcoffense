@@ -137,6 +137,7 @@ function _gpBoardHasResettableSetup(board) {
     (Array.isArray(board.boxOrder) && board.boxOrder.length > 0) ||
     (board.boxLabels && Object.keys(board.boxLabels).length > 0) ||
     (board.boxMeta && Object.keys(board.boxMeta).length > 0) ||
+    Boolean(board.wristbandAutoBoxId) ||
     Boolean(board.loadedWristband)
   );
 }
@@ -593,7 +594,9 @@ function _gpFormatBoxMetaSummary(meta) {
   if (c.situation.length) parts.push(c.situation.join("/"));
   if (c.fieldPosition.length) parts.push(c.fieldPosition.join("/"));
   if (c.type.length) parts.push(c.type.join("/"));
+  if (c.coverage.length) parts.push(c.coverage.join("/"));
   if (c.keyPlayer && c.keyPlayer.trim()) parts.push(`KP: ${c.keyPlayer.trim()}`);
+  if (c.keyword && c.keyword.trim()) parts.push(`Text: ${c.keyword.trim()}`);
   if (meta.callSheetCategoryId) {
     const cat = (typeof CALLSHEET_CATEGORIES !== "undefined")
       ? CALLSHEET_CATEGORIES.find((x) => x.id === meta.callSheetCategoryId) : null;
