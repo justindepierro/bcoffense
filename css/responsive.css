@@ -388,7 +388,7 @@
     aspect-ratio: 7 / 4.2;
   }
   .wristband-cell .cell-play {
-    font-size: var(--font-size-3xs);
+    font-size: var(--font-size-xs);
   }
   .callsheet-columns {
     flex-direction: column;

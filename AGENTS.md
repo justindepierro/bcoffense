@@ -98,9 +98,9 @@ js/
   gameplan-dnd.js       ← Game plan drag & drop wiring
   gameplan-actions.js   ← Game plan box CRUD, per-play flags, selection, density, manage/reorder/hide/rename
   gameplan-smart.js     ← Game plan smart features (criteria detect, suggest fill, templates, health, touches, spotlight, coverage matrix, tendency mirror)
-  gameplan-print.js     ← Game plan print modal + print render
+  gameplan-print.js     ← Game plan print modal, print render, and one-page presets
   gameplan-integrations.js ← Game plan push to call sheet/script, dashboard send, plan compare
-  gameplan-snapshots.js ← Game plan named snapshots (save/load/delete/menu)
+  gameplan-snapshots.js ← Game plan named snapshots and built-in/reusable templates
   print-studio.js       ← Unified print/export hub, naming conventions, and print-safe checks
   app-events.js         ← Central delegated event routing and DOM listeners
   app-shell.js          ← Theme, chrome, keyboard shortcuts, page-level runtime
@@ -482,6 +482,25 @@ callSheet = {
   "1st-down": { left: [play, play, ...], right: [play, ...], customName: "..." },
   "rz-20":    { left: [...], right: [...] },
   // ...one entry per populated category
+}
+```
+
+### Game Plan Board
+
+Game plan boards may restrict valid play types and carry a print identity used
+by built-in templates:
+
+```js
+{
+  id: "board-id",
+  name: "Tournament",
+  assignments: { "box-id": [play, play] },
+  customBoxes: [{ id, name, target, notes }],
+  boxOrder: ["box-id"],
+  hiddenBoxes: ["box-id"],
+  allowedPlayTypes: ["Pass", "Quick", "Screen", "Play Action", "Movement"],
+  sheetTitle: "7-on-7 Passing Plan",
+  printPreset: "sevenOnSeven",
 }
 ```
 

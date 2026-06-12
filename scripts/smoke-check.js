@@ -250,6 +250,42 @@ function checkDeclarativeHandlers() {
     });
   });
 
+  const combinedSource = sourceFiles.map((file) => read(file)).join("\n");
+  ["dblaction", "drag", "drop"].forEach((attribute) => {
+    const values = new Set();
+    const valuePattern = new RegExp(
+      `\\bdata-${attribute}=(["'])([A-Za-z_$][\\w$-]*)\\1`,
+      "g",
+    );
+    sourceFiles.forEach((file) => {
+      [...read(file).matchAll(valuePattern)]
+        .forEach((match) => values.add(match[2]));
+    });
+
+    const handled = new Set();
+    const datasetPattern = new RegExp(
+      `dataset\\.${attribute}\\s*(?:===|!==)\\s*["']([^"']+)["']`,
+      "g",
+    );
+    const selectorPattern = new RegExp(
+      `\\[data-${attribute}=["']([^"']+)["']\\]`,
+      "g",
+    );
+    [...combinedSource.matchAll(datasetPattern)]
+      .forEach((match) => handled.add(match[1]));
+    [...combinedSource.matchAll(selectorPattern)]
+      .forEach((match) => handled.add(match[1]));
+    if (attribute === "dblaction") {
+      handledActions.forEach((action) => handled.add(action));
+    }
+
+    [...values].forEach((value) => {
+      if (!handled.has(value)) {
+        missing.push(`data-${attribute}="${value}" has no delegated handler`);
+      }
+    });
+  });
+
   if (missing.length) {
     fail(`declarative handlers missing global dispatch targets: ${unique(missing).join(" | ")}`);
   }
@@ -362,6 +398,72 @@ function checkHistoryContracts() {
     fail("call sheet history does not preserve the pre-mutation baseline");
   }
   console.log("history contracts ok");
+}
+
+function checkWristbandTypography() {
+  const css = read("css/wristband.css");
+  const printCss = read("css/print.css");
+  const responsiveCss = read("css/responsive.css");
+  const cellPlay = css.match(
+    /\.wristband-cell \.cell-play\s*\{([\s\S]*?)\n\}/,
+  )?.[1] || "";
+  if (!/font-weight:\s*500/.test(cellPlay)) {
+    fail("wristband play calls still use blanket bold typography");
+  }
+  if (!/font-size:\s*var\(--font-size-xs\)/.test(cellPlay)) {
+    fail("wristband play calls do not use the larger readable screen size");
+  }
+  if (!/\.wristband-play-name\s*\{[\s\S]*?font-weight:\s*600/.test(css)) {
+    fail("wristband play names do not have restrained semantic emphasis");
+  }
+  if (!/\.wristband-print \.wristband-cell[\s\S]*?font-family:\s*var\(--font-sans\)/.test(printCss)) {
+    fail("printed wristbands do not use the readable sans-serif font");
+  }
+  if (
+    /\.wristband-cell \.cell-play\s*\{[\s\S]*?font-size:\s*var\(--font-size-3xs\)/.test(
+      responsiveCss,
+    )
+  ) {
+    fail("responsive wristband styles shrink play calls below the readable size");
+  }
+  console.log("wristband typography ok");
+}
+
+function checkSevenOnSevenTemplate() {
+  const snapshots = read("js/gameplan-snapshots.js");
+  const print = read("js/gameplan-print.js");
+  const gameplan = read("js/gameplan.js");
+  const css = read("css/gameplan.css");
+  const boxes = snapshots.match(
+    /const GP_SEVEN_ON_SEVEN_BOXES\s*=\s*\[([\s\S]*?)\n\];/,
+  )?.[1] || "";
+  const boxCount = [...boxes.matchAll(/\bid:\s*"7on7-/g)].length;
+  if (boxCount !== 6) {
+    fail(`7-on-7 template must define 6 one-page buckets; found ${boxCount}`);
+  }
+  if (
+    !snapshots.includes('printPreset: "sevenOnSeven"') ||
+    !snapshots.includes("allowedPlayTypes: [...GP_PASSING_PLAY_TYPES]")
+  ) {
+    fail("7-on-7 template is missing passing-only or print-preset metadata");
+  }
+  if (
+    !/function _gpApplySevenOnSevenPrintDefaults\(/.test(print) ||
+    !/onePage:\s*true/.test(print) ||
+    !/gp-print-one-page/.test(css)
+  ) {
+    fail("7-on-7 one-page print preset is incomplete");
+  }
+  if (
+    !/function _gpGetBoardBoxes\(/.test(gameplan) ||
+    !/_gpGetBoardBoxes\(board/.test(print)
+  ) {
+    fail("game plan print does not share screen box visibility/order rules");
+  }
+  if (!/if \(changed\) _gpSaveBoards\(all\)/.test(gameplan)) {
+    fail("game plan reads still rewrite unchanged board storage");
+  }
+  console.log("7-on-7 template and game plan contracts ok");
 }
 
 function checkCacheBusters() {
@@ -614,6 +716,8 @@ checkStorageKeyUsage();
 checkMigrationRetry();
 checkSafeUiRendering();
 checkHistoryContracts();
+checkWristbandTypography();
+checkSevenOnSevenTemplate();
 checkCacheBusters();
 checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();

@@ -117,10 +117,113 @@ async function _gpDeleteSnapshot(snapId) {
    ------------------------------------------------------------------------- */
 
 const GP_TEMPLATES_KEY = STORAGE_KEYS.GAME_PLAN_TEMPLATES;
+const GP_SEVEN_ON_SEVEN_TEMPLATE_ID = "builtin-7on7-passing";
+const GP_SEVEN_ON_SEVEN_BOXES = [
+  {
+    id: "7on7-openers",
+    label: "Openers",
+    target: 5,
+    note: "First five calls. Start with answers for man and zone.",
+  },
+  {
+    id: "7on7-quick-pressure",
+    label: "Quick / Pressure",
+    target: 6,
+    note: "Fast rhythm, screens, and pressure answers.",
+  },
+  {
+    id: "7on7-man",
+    label: "Man Answers",
+    target: 5,
+    note: "Bunch, rub, leverage, and matchup calls.",
+  },
+  {
+    id: "7on7-zone",
+    label: "Zone Answers",
+    target: 5,
+    note: "Spacing, flood, seams, and high-low concepts.",
+  },
+  {
+    id: "7on7-movement-shots",
+    label: "Movement / Shots",
+    target: 5,
+    note: "Sprint-out, movement throws, and explosives.",
+  },
+  {
+    id: "7on7-redzone",
+    label: "Red Zone / Conversions",
+    target: 5,
+    note: "Low red zone, goal line, and must-have conversions.",
+  },
+];
+
+function _gpBuiltInTemplates() {
+  const assignments = { [GP_HOLDING_ID]: [] };
+  GP_DEFAULT_BOXES.forEach((box) => {
+    assignments[box.id] = [];
+  });
+  GP_SEVEN_ON_SEVEN_BOXES.forEach((box) => {
+    assignments[box.id] = [];
+  });
+
+  return [{
+    id: GP_SEVEN_ON_SEVEN_TEMPLATE_ID,
+    name: "7-on-7 Passing Sheet",
+    sheetTitle: "7-on-7 Passing Plan",
+    builtIn: true,
+    description: "Six passing-only tournament buckets sized for one letter-landscape page.",
+    includePlays: false,
+    playCount: 0,
+    boxCount: GP_SEVEN_ON_SEVEN_BOXES.length,
+    customBoxes: GP_SEVEN_ON_SEVEN_BOXES.map(({ id, label }) => ({ id, label })),
+    targets: Object.fromEntries(
+      GP_SEVEN_ON_SEVEN_BOXES.map((box) => [box.id, box.target]),
+    ),
+    collapsed: [],
+    notes: Object.fromEntries(
+      GP_SEVEN_ON_SEVEN_BOXES.map((box) => [box.id, box.note]),
+    ),
+    sort: {},
+    hiddenBoxes: GP_DEFAULT_BOXES.map((box) => box.id),
+    boxOrder: GP_SEVEN_ON_SEVEN_BOXES.map((box) => box.id),
+    boxLabels: {},
+    boxMeta: {
+      "7on7-quick-pressure": {
+        criteria: {
+          ..._gpEmptyCriteria(),
+          type: ["Quick", "Screen"],
+        },
+      },
+      "7on7-movement-shots": {
+        criteria: {
+          ..._gpEmptyCriteria(),
+          type: ["Movement", "Play Action"],
+        },
+      },
+      "7on7-redzone": {
+        criteria: {
+          ..._gpEmptyCriteria(),
+          fieldPosition: ["hi-rz", "lo-rz", "goal line"],
+        },
+      },
+    },
+    allowedPlayTypes: [...GP_PASSING_PLAY_TYPES],
+    filterPreset: {
+      type: [...GP_PASSING_PLAY_TYPES],
+      density: "compact",
+    },
+    printPreset: "sevenOnSeven",
+    assignments,
+  }];
+}
 
 function _gpLoadTemplates() {
   const stored = storageManager.get(GP_TEMPLATES_KEY, []);
   return Array.isArray(stored) ? stored : [];
+}
+
+function _gpAvailableTemplates() {
+  return [..._gpBuiltInTemplates(), ..._gpLoadTemplates()];
 }
 
 function _gpSaveTemplates(templates) {
@@ -171,6 +274,9 @@ function _gpBuildTemplate(name, includePlays) {
     boxOrder: safeDeepClone(board.boxOrder || []),
     boxLabels: safeDeepClone(board.boxLabels || {}),
     boxMeta: safeDeepClone(board.boxMeta || {}),
+    allowedPlayTypes: safeDeepClone(board.allowedPlayTypes || []),
+    sheetTitle: board.sheetTitle || "",
+    printPreset: board.printPreset || "",
     assignments,
   };
 }
@@ -201,10 +307,16 @@ function _gpBoardFromTemplate(template) {
     boxOrder: safeDeepClone(template.boxOrder || []),
     boxLabels: safeDeepClone(template.boxLabels || {}),
     boxMeta: safeDeepClone(template.boxMeta || {}),
+    allowedPlayTypes: safeDeepClone(template.allowedPlayTypes || []),
+    sheetTitle: template.sheetTitle || "",
+    printPreset: template.printPreset || "",
   };
 }
 
 function _gpTemplateLabel(template) {
+  if (template.builtIn) {
+    return `${template.name} • built in • ${template.boxCount || 0} boxes • one-page preset`;
+  }
   const when = template.savedAt
     ? new Date(template.savedAt).toLocaleString("en-US", {
       month: "short",
@@ -276,14 +388,7 @@ async function saveGamePlanTemplate() {
 }
 
 async function openGamePlanTemplatesMenu() {
-  const templates = _gpLoadTemplates();
-  if (templates.length === 0) {
-    showToast("No game plan templates yet. Use Template to save one.", {
-      type: "info",
-      duration: 3500,
-    });
-    return;
-  }
+  const templates = _gpAvailableTemplates();
 
   const choice = await showListPicker(
     "Pick a reusable game plan template:",
@@ -294,6 +399,11 @@ async function openGamePlanTemplatesMenu() {
     { title: "📁 Game Plan Templates", icon: "📁" },
   );
   if (!choice) return;
+  const selected = templates.find((template) => template.id === choice);
+  if (selected?.builtIn) {
+    await _gpLoadTemplate(choice);
+    return;
+  }
 
   const action = await showChoice(
     "What do you want to do with this template?",
@@ -310,7 +420,7 @@ async function openGamePlanTemplatesMenu() {
 }
 
 async function _gpLoadTemplate(templateId) {
-  const templates = _gpLoadTemplates();
+  const templates = _gpAvailableTemplates();
   const template = templates.find((item) => item.id === templateId);
   if (!template) return;
 
@@ -333,14 +443,31 @@ async function _gpLoadTemplate(templateId) {
   const all = _gpLoadBoards();
   all[key] = _gpBoardFromTemplate(template);
   _gpSaveBoards(all);
+  if (template.filterPreset) {
+    clearGamePlanFilters();
+    _gpFilters.type = safeDeepClone(template.filterPreset.type || []);
+    _gpFilters.density = template.filterPreset.density || "compact";
+  }
+  if (
+    template.printPreset === "sevenOnSeven" &&
+    typeof _gpApplySevenOnSevenPrintDefaults === "function"
+  ) {
+    _gpApplySevenOnSevenPrintDefaults();
+  }
   requestRenderGamePlan();
-  showToast(`Loaded template "${template.name}"`, { type: "success" });
+  showToast(
+    template.builtIn
+      ? `Loaded "${template.name}" with passing-only filters and one-page print settings`
+      : `Loaded template "${template.name}"`,
+    { type: "success", duration: template.builtIn ? 4000 : 2000 },
+  );
 }
 
 async function _gpDeleteTemplate(templateId) {
   const templates = _gpLoadTemplates();
   const template = templates.find((item) => item.id === templateId);
   if (!template) return;
+  if (template.builtIn) return;
   const ok = await showConfirm(
     `Delete template <strong>${escapeHtml(template.name)}</strong>?`,
     {

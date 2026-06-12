@@ -145,7 +145,7 @@
   }
   .wristband-print .wristband-cell {
     min-width: 0 !important;
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-sans) !important;
     font-size: 7pt !important;
     line-height: 1 !important;
     padding: 0 0.03in !important;
@@ -170,6 +170,7 @@
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    font-weight: 500 !important;
   }
   .wristband-print .wristband-cell:not([style*="background"]) {
     background: var(--wristband-print-paper) !important;

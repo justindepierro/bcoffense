@@ -64,6 +64,16 @@
   color: var(--color-text-muted);
 }
 
+.gp-header-template {
+  padding: 2px 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+
 .gp-header-empty {
   font-size: var(--font-size-sm);
   color: var(--color-warning);
@@ -1819,6 +1829,11 @@ body.gp-dragging-from-box .gp-trash-zone {
     color: #444;
     font-weight: 600;
   }
+  body.gp-printing .gp-print-sheet-title {
+    color: #111;
+    font-size: 12pt;
+    font-weight: 600;
+  }
   body.gp-printing .gp-print-meta {
     font-size: 9pt;
     color: #555;
@@ -1831,6 +1846,48 @@ body.gp-dragging-from-box .gp-trash-zone {
     column-count: var(--gp-print-cols, 2);
     column-gap: 10px;
     column-fill: balance;
+  }
+  body.gp-printing .gp-print-one-page {
+    width: 100%;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-header {
+    margin-bottom: 5px;
+    padding-bottom: 3px;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-title {
+    font-size: 14pt;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-meta {
+    font-size: 7.5pt;
+    gap: 7px;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-grid {
+    column-count: auto;
+    display: grid;
+    grid-template-columns: repeat(var(--gp-print-cols, 3), minmax(0, 1fr));
+    grid-template-rows: repeat(var(--gp-print-rows, 2), minmax(0, 1fr));
+    gap: 6px;
+    height: 6.65in;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-box {
+    min-width: 0;
+    min-height: 0;
+    margin: 0;
+    padding: 3px 5px;
+    overflow: hidden;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-box-label {
+    font-size: 9pt;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-play {
+    font-size: var(--gp-one-page-play-size, 7.6pt);
+    line-height: 1.16;
+    padding: 0.5px 0;
+  }
+  body.gp-printing .gp-print-one-page .gp-print-play-meta,
+  body.gp-printing .gp-print-one-page .gp-print-oneword,
+  body.gp-printing .gp-print-one-page .gp-print-wb-num {
+    font-size: calc(var(--gp-one-page-play-size, 7.6pt) - 0.8pt);
   }
   body.gp-printing .gp-print-box {
     border: 1px solid #000;

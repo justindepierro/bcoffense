@@ -12,9 +12,11 @@
    ------------------------------------------------------------------------- */
 
 let _gpPrintOptions = {
+  preset: "",
   paperSize: "letter",
   orientation: "portrait",
   columns: 2,
+  onePage: false,
   showHash: true,
   showNotes: true,
   showProgress: true,
@@ -41,9 +43,11 @@ let _gpPrintOptions = {
 function _gpApplySmartPrintDefaults() {
   _gpPrintOptions = {
     ..._gpPrintOptions,
+    preset: "smart",
     paperSize: "letter",
     orientation: "portrait",
     columns: 2,
+    onePage: false,
     showMeta: true,
     showHash: true,
     showProgress: true,
@@ -58,6 +62,37 @@ function _gpApplySmartPrintDefaults() {
     playerHandout: false,
     showWristbandNumber: true,
     useCurrentFilters: _gpPrintOptions.useCurrentFilters,
+  };
+}
+
+function _gpApplySevenOnSevenPrintDefaults() {
+  _gpPrintOptions = {
+    ..._gpPrintOptions,
+    preset: "sevenOnSeven",
+    paperSize: "letter",
+    orientation: "landscape",
+    columns: 3,
+    onePage: true,
+    showMeta: false,
+    showHash: false,
+    showProgress: true,
+    showNotes: false,
+    showHolding: false,
+    showEmpty: true,
+    bucketPerPage: false,
+    showPageNumbers: false,
+    showFooter: false,
+    showDetail: false,
+    showOneWord: true,
+    playerHandout: false,
+    showWristbandNumber: true,
+    jvOnly: false,
+    imageAppendix: false,
+    useCurrentFilters: false,
+    personnelFilter: "",
+    sortMode: "manual",
+    sortMode2: "",
+    sortMode3: "",
   };
 }
 
@@ -112,6 +147,7 @@ function _gpGetModalUseCurrentFilters(options = _gpPrintOptions) {
 
 function _gpMatchesPrintFilters(play, board) {
   const o = _gpPrintOptions;
+  if (!_gpPlayAllowedOnBoard(play, board)) return false;
   if (
     _gpHasPrintableCurrentFilters() &&
     typeof _gpPlayMatchesCurrentFilters === "function" &&
@@ -134,17 +170,27 @@ function _gpPrintBoxList(board, boxId) {
     .filter((play) => _gpMatchesPrintFilters(play, board));
 }
 
-function _gpPrintAssignedSigs(board) {
+function _gpPrintAssignedSigs(board, boxes = null) {
   const set = new Set();
-  Object.keys(board.assignments || {}).forEach((boxId) => {
+  const boxIds = Array.isArray(boxes)
+    ? boxes.map((box) => box.id)
+    : Object.keys(board.assignments || {});
+  boxIds.forEach((boxId) => {
     _gpPrintBoxList(board, boxId).forEach((play) => set.add(_gpPlaySignature(play)));
   });
   return set;
 }
 
 async function openGamePlanPrintModal() {
-  const o = _gpPrintOptions;
   const board = _gpEnsureBoard();
+  if (
+    board.printPreset === "sevenOnSeven" &&
+    _gpPrintOptions.preset !== "sevenOnSeven" &&
+    _gpPrintOptions.preset !== "custom"
+  ) {
+    _gpApplySevenOnSevenPrintDefaults();
+  }
+  const o = _gpPrintOptions;
   const personnelChoices = _gpGetPrintPersonnelChoices(board);
   const selectedPersonnelFilter = _gpGetModalPrintPersonnelFilter(o);
   const useCurrentFilters = _gpGetModalUseCurrentFilters(o);
@@ -252,6 +298,7 @@ async function openGamePlanPrintModal() {
               <label><input type="checkbox" id="gpPrintCurrentFilters" ${useCurrentFilters ? "checked" : ""}> Print current filtered bucket plays</label>
               <label><input type="checkbox" id="gpPrintWBNum" ${o.showWristbandNumber ? "checked" : ""}> Show wristband number (when loaded)</label>
               <label><input type="checkbox" id="gpPrintBucketPerPage" ${o.bucketPerPage ? "checked" : ""}> One bucket per page</label>
+              <label><input type="checkbox" id="gpPrintOnePage" ${o.onePage ? "checked" : ""}> Fit the board on one page</label>
               <label><input type="checkbox" id="gpPrintPageNumbers" ${o.showPageNumbers ? "checked" : ""}> Page numbers</label>
               <label><input type="checkbox" id="gpPrintFooter" ${o.showFooter ? "checked" : ""}> Footer (team · opponent · date)</label>
               <label><input type="checkbox" id="gpPrintDetail" ${o.showDetail ? "checked" : ""}> Show bucket detail (touches, type, D&D)</label>
@@ -264,6 +311,7 @@ async function openGamePlanPrintModal() {
         </div>
         <div class="custom-modal-actions">
           <button class="btn custom-modal-btn custom-modal-cancel" id="gpPrintCancel">Cancel</button>
+          <button class="btn btn-secondary custom-modal-btn" id="gpPrintSevenOnSeven" type="button" title="Letter landscape, six compact passing buckets, one page">🏈 7-on-7 preset</button>
           <button class="btn btn-secondary custom-modal-btn" id="gpPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns, no bucket overflow">✨ Smart defaults</button>
           <button class="btn btn-primary custom-modal-btn" id="gpPrintConfirm">Print</button>
         </div>
@@ -284,6 +332,11 @@ async function openGamePlanPrintModal() {
       // Re-open the modal so the user sees the new values applied.
       setTimeout(() => openGamePlanPrintModal(), 50);
     });
+    overlay.querySelector("#gpPrintSevenOnSeven").addEventListener("click", () => {
+      _gpApplySevenOnSevenPrintDefaults();
+      close(false);
+      setTimeout(() => openGamePlanPrintModal(), 50);
+    });
     // Show/hide tier row based on primary selection
     const tierRow = overlay.querySelector("#gpPrintSortTierRow");
     const primarySel = overlay.querySelector("#gpPrintSort");
@@ -294,10 +347,13 @@ async function openGamePlanPrintModal() {
     syncTierVis();
     primarySel.addEventListener("change", syncTierVis);
     overlay.querySelector("#gpPrintConfirm").addEventListener("click", () => {
+      const onePage = overlay.querySelector("#gpPrintOnePage").checked;
       _gpPrintOptions = {
+        preset: "custom",
         paperSize: overlay.querySelector("#gpPrintPaper").value,
         orientation: overlay.querySelector("#gpPrintOrientation").value,
         columns: parseInt(overlay.querySelector("#gpPrintColumns").value, 10) || 3,
+        onePage,
         personnelFilter: overlay.querySelector("#gpPrintPersonnelFilter").value || "",
         sortMode: overlay.querySelector("#gpPrintSort").value || "perBox",
         sortMode2: overlay.querySelector("#gpPrintSort2").value || "",
@@ -309,14 +365,16 @@ async function openGamePlanPrintModal() {
         showHolding: overlay.querySelector("#gpPrintHolding").checked,
         showEmpty: overlay.querySelector("#gpPrintEmpty").checked,
         showWristbandNumber: overlay.querySelector("#gpPrintWBNum").checked,
-        bucketPerPage: overlay.querySelector("#gpPrintBucketPerPage").checked,
+        bucketPerPage:
+          !onePage && overlay.querySelector("#gpPrintBucketPerPage").checked,
         showPageNumbers: overlay.querySelector("#gpPrintPageNumbers").checked,
         showFooter: overlay.querySelector("#gpPrintFooter").checked,
         showDetail: overlay.querySelector("#gpPrintDetail").checked,
         showOneWord: overlay.querySelector("#gpPrintOneWord").checked,
         playerHandout: overlay.querySelector("#gpPrintHandout").checked,
         jvOnly: overlay.querySelector("#gpPrintJvOnly").checked,
-        imageAppendix: overlay.querySelector("#gpPrintImgAppendix").checked,
+        imageAppendix:
+          !onePage && overlay.querySelector("#gpPrintImgAppendix").checked,
         useCurrentFilters: overlay.querySelector("#gpPrintCurrentFilters").checked,
       };
       close(true);
@@ -341,20 +399,44 @@ async function _gpRenderPrintViewAndPrint() {
   const opponent = gw && gw.opponentName ? gw.opponentName : "";
   const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";
 
-  let allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
-  if (o.showHolding) allBoxes = [GP_HOLDING_BOX, ...allBoxes];
+  let allBoxes = _gpGetBoardBoxes(board, {
+    includeHolding: o.showHolding,
+  });
   const personnelFilter = _gpGetPrintPersonnelFilter();
   const currentFilterActive = _gpHasPrintableCurrentFilters();
   if (!o.showEmpty || o.jvOnly || personnelFilter || currentFilterActive) {
     allBoxes = allBoxes.filter((b) => _gpPrintBoxList(board, b.id).length > 0);
   }
 
+  const printPlayCounts = allBoxes.map(
+    (box) => _gpPrintBoxList(board, box.id).length,
+  );
+  const printPlayCount = printPlayCounts.reduce(
+    (sum, count) => sum + count,
+    0,
+  );
+  const maxBoxPlayCount = Math.max(0, ...printPlayCounts);
+  if (o.onePage && (printPlayCount > 54 || maxBoxPlayCount > 10)) {
+    const proceed = await showConfirm(
+      `This board has ${printPlayCount} printable plays, including a box with ${maxBoxPlayCount}. Some content may be clipped by the one-page layout. Continue?`,
+      {
+        title: "One-page fit warning",
+        icon: "⚠️",
+        confirmText: "Print anyway",
+        cancelText: "Review board",
+      },
+    );
+    if (!proceed) return;
+  }
+
   const boxesHtml = allBoxes.map((b) => _gpRenderPrintBox(b, board)).join("");
-  const totalAssigned = _gpPrintAssignedSigs(board).size;
+  const totalAssigned = _gpPrintAssignedSigs(board, allBoxes).size;
+  const sheetTitle = board.sheetTitle || "Game Plan";
   const headerHtml = `
     <div class="gp-print-header">
       <div class="gp-print-title">
         <span class="gp-print-team">${typeof getTeamName === "function" ? escapeHtml(getTeamName() || "Game Plan") : "Game Plan"}</span>
+        ${sheetTitle !== "Game Plan" ? `<span class="gp-print-sheet-title">${escapeHtml(sheetTitle)}</span>` : ""}
         ${opponent ? `<span class="gp-print-opp">vs ${escapeHtml(opponent)}</span>` : ""}
       </div>
       <div class="gp-print-meta">
@@ -379,12 +461,22 @@ async function _gpRenderPrintViewAndPrint() {
     "gp-print-root",
     `gp-print-${o.paperSize}`,
     `gp-print-${o.orientation}`,
+    o.onePage ? "gp-print-one-page" : "",
     o.bucketPerPage ? "gp-print-bucket-per-page" : "",
     o.showFooter ? "gp-print-with-footer" : "",
     o.playerHandout ? "gp-print-handout" : "",
   ].filter(Boolean).join(" ");
   host.className = rootClasses;
   host.style.setProperty("--gp-print-cols", String(o.columns));
+  host.style.setProperty(
+    "--gp-print-rows",
+    String(Math.max(1, Math.ceil(allBoxes.length / Math.max(1, o.columns)))),
+  );
+  const onePageFontSize =
+    printPlayCount <= 30 ? "8.4pt" :
+      printPlayCount <= 42 ? "7.6pt" :
+        printPlayCount <= 54 ? "6.8pt" : "6.1pt";
+  host.style.setProperty("--gp-one-page-play-size", onePageFontSize);
   const footerHtml = o.showFooter ? `
     <div class="gp-print-footer">
       <span>${typeof getTeamName === "function" ? escapeHtml(getTeamName() || "") : ""}</span>
@@ -404,7 +496,8 @@ async function _gpRenderPrintViewAndPrint() {
   const pageNumRule = o.showPageNumbers
     ? `@page { @bottom-right { content: counter(page) " / " counter(pages); font-family: ${"'Inter', sans-serif"}; font-size: 8pt; color: #555; } }`
     : "";
-  pageStyle.textContent = `@page { size: ${o.paperSize} ${o.orientation}; margin: 0.45in 0.4in 0.5in; } ${pageNumRule}`;
+  const pageMargin = o.onePage ? "0.28in 0.3in" : "0.45in 0.4in 0.5in";
+  pageStyle.textContent = `@page { size: ${o.paperSize} ${o.orientation}; margin: ${pageMargin}; } ${pageNumRule}`;
   // Print, then clean up
   setTimeout(() => {
     window.print();
@@ -434,7 +527,7 @@ function _gpRenderPrintBox(box, board) {
   const detailHtml = o.showDetail && list.length > 0 ? _gpRenderPrintBoxDetail(box, list) : "";
   const playsHtml = list.length === 0
     ? `<div class="gp-print-empty">— empty —</div>`
-    : list.map((p) => _gpRenderPrintPlay(p)).join("");
+    : list.map((p) => _gpRenderPrintPlay(p, board)).join("");
   return `
     <div class="gp-print-box" ${accentStyle}>
       <div class="gp-print-box-head">
@@ -471,7 +564,7 @@ function _gpRenderPrintBoxDetail(box, list) {
     </div>`;
 }
 
-function _gpRenderPrintPlay(play) {
+function _gpRenderPrintPlay(play, board = null) {
   const o = _gpPrintOptions;
   const callHtml = typeof getFullCall === "function"
     ? getFullCall(play, { showLineCall: false, showEmoji: o.showMeta, useSquares: true })
@@ -482,7 +575,7 @@ function _gpRenderPrintPlay(play) {
     : "";
   let wbNumHtml = "";
   if (o.showWristbandNumber) {
-    const num = _gpWristbandNumberFor(play);
+    const num = _gpWristbandNumberFor(play, board);
     if (num != null) {
       wbNumHtml = `<span class="gp-print-wb-num">${escapeHtml(String(num))}</span>`;
     }

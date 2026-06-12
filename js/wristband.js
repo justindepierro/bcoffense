@@ -304,7 +304,9 @@ function buildWristbandCellTokens(play, custom = {}, opts = {}) {
     "shift": shiftHtml,
     "motion": motionHtml,
     "protection": !hideProtection && play?.protection ? txt(play.protection) : "",
-    "play": txt(play?.play),
+    "play": play?.play
+      ? `<span class="wristband-play-name">${txt(play.play)}</span>`
+      : "",
     "play-tag-1": txt(play?.playTag1),
     "play-tag-2": txt(play?.playTag2),
     "cadence-post": cadencePostText,
@@ -603,7 +605,10 @@ function renderWristbandCellCall(play, custom = {}, opts = {}) {
     getCadencePrefix(custom, opts) +
     getCustomPersonnelPrefix(custom, opts, play) +
     getCustomPreShiftPrefix(custom);
-  const display = getFullCall(getCustomDisplayPlay(play, custom), opts);
+  const display = getFullCall(getCustomDisplayPlay(play, custom), {
+    ...opts,
+    wrapPlayName: true,
+  });
   const postfix = getCadencePostfix(custom, opts);
   return composeWristbandCellDisplay(prefix, display, postfix);
 }

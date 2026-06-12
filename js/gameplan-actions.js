@@ -456,11 +456,7 @@ async function moveGamePlanPlay(combined) {
   if (!ref || !ref.boxId || !ref.sig) return;
   const fromBoxId = ref.boxId;
   const board = _gpEnsureBoard();
-  const choices = [
-    GP_HOLDING_BOX,
-    ...GP_DEFAULT_BOXES,
-    ...(board.customBoxes || []),
-  ]
+  const choices = _gpGetBoardBoxes(board, { includeHolding: true })
     .filter((b) => b.id !== fromBoxId)
     .map((b) => ({ value: b.id, label: b.label }));
   if (choices.length === 0) return;
@@ -479,18 +475,20 @@ function autoRouteHoldingBox() {
     showToast("Holding is empty.", { duration: 1500 });
     return;
   }
-  const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
   let routed = 0;
   let leftBehind = 0;
   _gpUpdateBoard((b) => {
     const stillHolding = [];
     holding.forEach((play) => {
-      const mapped = GP_TYPE_ALIASES[play.type] || play.type;
-      if (defaultIds.has(mapped)) {
-        if (!Array.isArray(b.assignments[mapped])) b.assignments[mapped] = [];
+      const destination = _gpAutoDestinationForPlay(play, b);
+      if (destination !== GP_HOLDING_ID) {
+        if (!Array.isArray(b.assignments[destination])) {
+          b.assignments[destination] = [];
+        }
         const sig = _gpPlaySignature(play);
-        const exists = b.assignments[mapped].some((p) => _gpPlaySignature(p) === sig);
-        if (!exists) b.assignments[mapped].push(play);
+        const exists = b.assignments[destination]
+          .some((p) => _gpPlaySignature(p) === sig);
+        if (!exists) b.assignments[destination].push(play);
         routed += 1;
       } else {
         stillHolding.push(play);

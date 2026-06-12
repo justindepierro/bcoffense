@@ -1568,6 +1568,7 @@ function getFullCall(play, options = {}) {
     hideProtection = false,
     highlightHuddle = false,
     highlightCandy = false,
+    wrapPlayName = false,
   } = options;
 
   // Check if play has "Under" - check the under column or legacy formTag locations
@@ -1606,7 +1607,14 @@ function getFullCall(play, options = {}) {
   }
 
   if (!hideProtection && play.protection) parts.push(escapeHtml(play.protection));
-  if (play.play) parts.push(escapeHtml(play.play));
+  if (play.play) {
+    const playName = escapeHtml(play.play);
+    parts.push(
+      wrapPlayName
+        ? `<span class="wristband-play-name">${playName}</span>`
+        : playName,
+    );
+  }
   if (play.playTag1) parts.push(escapeHtml(play.playTag1));
   if (play.playTag2) parts.push(escapeHtml(play.playTag2));
 

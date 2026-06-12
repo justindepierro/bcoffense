@@ -19,6 +19,14 @@ const GP_DEFAULT_BOXES = [
   { id: "Movement", label: "Movement" },
 ];
 
+const GP_PASSING_PLAY_TYPES = [
+  "Pass",
+  "Quick",
+  "Screen",
+  "Play Action",
+  "Movement",
+];
+
 // Special holding box — always present, shown first, excluded from Push to Call Sheet
 const GP_HOLDING_ID = "__holding";
 const GP_HOLDING_BOX = { id: GP_HOLDING_ID, label: "📥 Holding" };
@@ -453,52 +461,106 @@ function _gpActiveOpponentKey() {
   return (gw && gw.opponentName) ? gw.opponentName : "__unassigned__";
 }
 
+function _gpCreateEmptyBoard() {
+  const assignments = { [GP_HOLDING_ID]: [] };
+  GP_DEFAULT_BOXES.forEach((box) => {
+    assignments[box.id] = [];
+  });
+  return {
+    assignments,
+    customBoxes: [],
+    targets: {},
+    collapsed: [],
+    notes: {},
+    sort: {},
+    hiddenBoxes: [],
+    boxOrder: [],
+    boxLabels: {},
+    boxMeta: {},
+    allowedPlayTypes: [],
+    sheetTitle: "",
+    printPreset: "",
+  };
+}
+
 function _gpEnsureBoard() {
   const all = _gpLoadBoards();
   const key = _gpActiveOpponentKey();
+  let changed = false;
   if (!all[key]) {
-    all[key] = {
-      assignments: {},   // boxId → array of play snapshots
-      customBoxes: [],   // [{ id, label }]
-      targets: {},       // boxId → number target (per-box)
-      collapsed: [],     // [boxId, ...] collapsed box ids
-      notes: {},         // boxId → string note
-      sort: {},          // boxId → "manual" | "type" | "formation" | "personnel" | "basePlay"
-      hiddenBoxes: [],   // [boxId, ...] boxes hidden from view
-      boxOrder: [],      // [boxId, ...] custom display order (subset; missing ids fall back to default)
-      boxLabels: {},     // boxId → custom rename for default boxes
-      boxMeta: {},       // boxId → { criteria: {...}, callSheetCategoryId: "..." }
-    };
-    GP_DEFAULT_BOXES.forEach((b) => {
-      all[key].assignments[b.id] = [];
-    });
-    all[key].assignments[GP_HOLDING_ID] = [];
-    _gpSaveBoards(all);
+    all[key] = _gpCreateEmptyBoard();
+    changed = true;
   } else {
+    if (!all[key].assignments || typeof all[key].assignments !== "object") {
+      all[key].assignments = {};
+      changed = true;
+    }
     GP_DEFAULT_BOXES.forEach((b) => {
       if (!Array.isArray(all[key].assignments[b.id])) {
         all[key].assignments[b.id] = [];
+        changed = true;
       }
     });
     if (!Array.isArray(all[key].assignments[GP_HOLDING_ID])) {
       all[key].assignments[GP_HOLDING_ID] = [];
+      changed = true;
     }
-    if (!Array.isArray(all[key].customBoxes)) all[key].customBoxes = [];
-    if (!all[key].targets || typeof all[key].targets !== "object") all[key].targets = {};
-    if (!Array.isArray(all[key].collapsed)) all[key].collapsed = [];
-    if (!all[key].notes || typeof all[key].notes !== "object") all[key].notes = {};
-    if (!all[key].sort || typeof all[key].sort !== "object") all[key].sort = {};
-    if (!Array.isArray(all[key].hiddenBoxes)) all[key].hiddenBoxes = [];
-    if (!Array.isArray(all[key].boxOrder)) all[key].boxOrder = [];
-    if (!all[key].boxLabels || typeof all[key].boxLabels !== "object") all[key].boxLabels = {};
-    if (!all[key].boxMeta || typeof all[key].boxMeta !== "object") all[key].boxMeta = {};
+    if (!Array.isArray(all[key].customBoxes)) {
+      all[key].customBoxes = [];
+      changed = true;
+    }
+    if (!all[key].targets || typeof all[key].targets !== "object") {
+      all[key].targets = {};
+      changed = true;
+    }
+    if (!Array.isArray(all[key].collapsed)) {
+      all[key].collapsed = [];
+      changed = true;
+    }
+    if (!all[key].notes || typeof all[key].notes !== "object") {
+      all[key].notes = {};
+      changed = true;
+    }
+    if (!all[key].sort || typeof all[key].sort !== "object") {
+      all[key].sort = {};
+      changed = true;
+    }
+    if (!Array.isArray(all[key].hiddenBoxes)) {
+      all[key].hiddenBoxes = [];
+      changed = true;
+    }
+    if (!Array.isArray(all[key].boxOrder)) {
+      all[key].boxOrder = [];
+      changed = true;
+    }
+    if (!all[key].boxLabels || typeof all[key].boxLabels !== "object") {
+      all[key].boxLabels = {};
+      changed = true;
+    }
+    if (!all[key].boxMeta || typeof all[key].boxMeta !== "object") {
+      all[key].boxMeta = {};
+      changed = true;
+    }
+    if (!Array.isArray(all[key].allowedPlayTypes)) {
+      all[key].allowedPlayTypes = [];
+      changed = true;
+    }
+    if (typeof all[key].sheetTitle !== "string") {
+      all[key].sheetTitle = "";
+      changed = true;
+    }
+    if (typeof all[key].printPreset !== "string") {
+      all[key].printPreset = "";
+      changed = true;
+    }
     all[key].customBoxes.forEach((cb) => {
       if (!Array.isArray(all[key].assignments[cb.id])) {
         all[key].assignments[cb.id] = [];
+        changed = true;
       }
     });
-    _gpSaveBoards(all);
   }
+  if (changed) _gpSaveBoards(all);
   return all[key];
 }
 
@@ -506,12 +568,72 @@ function _gpUpdateBoard(mutator) {
   const all = _gpLoadBoards();
   const key = _gpActiveOpponentKey();
   if (!all[key]) {
-    all[key] = { assignments: {}, customBoxes: [] };
-    GP_DEFAULT_BOXES.forEach((b) => { all[key].assignments[b.id] = []; });
-    all[key].assignments[GP_HOLDING_ID] = [];
+    all[key] = _gpCreateEmptyBoard();
   }
   mutator(all[key]);
   _gpSaveBoards(all);
+}
+
+function _gpGetBoardBoxes(board, options = {}) {
+  const includeHolding = options.includeHolding !== false;
+  const includeHidden = options.includeHidden === true;
+  const source = [
+    ...(includeHolding ? [GP_HOLDING_BOX] : []),
+    ...GP_DEFAULT_BOXES,
+    ...(board?.customBoxes || []),
+  ];
+  const customIds = new Set((board?.customBoxes || []).map((box) => box.id));
+  const labeled = source.map((box) => {
+    if (box.id === GP_HOLDING_ID || customIds.has(box.id)) return box;
+    const label = board?.boxLabels?.[box.id];
+    return label ? { ...box, label } : box;
+  });
+  const order = Array.isArray(board?.boxOrder) ? board.boxOrder : [];
+  const ordered = labeled.slice().sort((left, right) => {
+    if (left.id === GP_HOLDING_ID) return -1;
+    if (right.id === GP_HOLDING_ID) return 1;
+    const leftIndex = order.indexOf(left.id);
+    const rightIndex = order.indexOf(right.id);
+    const leftRank = leftIndex >= 0 ? leftIndex : Number.MAX_SAFE_INTEGER;
+    const rightRank = rightIndex >= 0 ? rightIndex : Number.MAX_SAFE_INTEGER;
+    return leftRank - rightRank || labeled.indexOf(left) - labeled.indexOf(right);
+  });
+  if (includeHidden) return ordered;
+  const hidden = new Set(board?.hiddenBoxes || []);
+  return ordered.filter(
+    (box) => box.id === GP_HOLDING_ID || !hidden.has(box.id),
+  );
+}
+
+function _gpMatchingBoardBoxForPlay(play, board) {
+  const boxes = _gpGetBoardBoxes(board, { includeHolding: false });
+  return boxes.find((box) => {
+    const meta = _gpGetBoxMeta(board, box.id);
+    return (
+      _gpHasCriteria(meta.criteria) &&
+      _gpPlayMatchesCriteria(play, meta.criteria)
+    );
+  })?.id || null;
+}
+
+function _gpAutoDestinationForPlay(play, board) {
+  const criteriaMatch = _gpMatchingBoardBoxForPlay(play, board);
+  if (criteriaMatch) return criteriaMatch;
+
+  const visibleIds = new Set(
+    _gpGetBoardBoxes(board, { includeHolding: false }).map((box) => box.id),
+  );
+  const mappedType = GP_TYPE_ALIASES[play?.type] || play?.type;
+  return visibleIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
+}
+
+function _gpPlayAllowedOnBoard(play, board) {
+  const allowed = Array.isArray(board?.allowedPlayTypes)
+    ? board.allowedPlayTypes
+    : [];
+  if (allowed.length === 0) return true;
+  const type = GP_TYPE_ALIASES[play?.type] || play?.type || "";
+  return allowed.includes(type);
 }
 
 /* -------------------------------------------------------------------------
@@ -568,9 +690,9 @@ function clearGamePlanWristband() {
   requestRenderGamePlan();
 }
 
-function _gpWristbandNumberFor(play) {
-  const board = _gpEnsureBoard();
-  const lw = board.loadedWristband;
+function _gpWristbandNumberFor(play, board = null) {
+  const sourceBoard = board || _gpEnsureBoard();
+  const lw = sourceBoard.loadedWristband;
   if (!lw || !Array.isArray(lw.plays) || lw.plays.length === 0) return null;
   const list = lw.plays;
   let m = list.find((wp) =>
@@ -813,11 +935,15 @@ function _gpFilteredLibrary(board) {
   if (!Array.isArray(plays)) return [];
   const assignedSigs = _gpAllAssignedSigs(board);
   const search = (_gpFilters.search || "").trim().toLowerCase();
-  return plays.filter((p) => _gpPlayMatchesCurrentFilters(p, board, {
-    includeHideAssigned: true,
-    assignedSigs,
-    search,
-  }));
+  return plays.filter(
+    (play) =>
+      _gpPlayAllowedOnBoard(play, board) &&
+      _gpPlayMatchesCurrentFilters(play, board, {
+        includeHideAssigned: true,
+        assignedSigs,
+        search,
+      }),
+  );
 }
 
 function _gpFilterNorm(value) {
@@ -952,8 +1078,9 @@ function _gpShouldFilterBoxes() {
 }
 
 function _gpFilterBoxList(list, board) {
-  if (!_gpShouldFilterBoxes()) return list;
-  return list.filter((play) => _gpPlayMatchesCurrentFilters(play, board, {
+  const allowed = list.filter((play) => _gpPlayAllowedOnBoard(play, board));
+  if (!_gpShouldFilterBoxes()) return allowed;
+  return allowed.filter((play) => _gpPlayMatchesCurrentFilters(play, board, {
     includeHideAssigned: false,
   }));
 }

@@ -84,43 +84,6 @@ function _uniqueScriptIntegrationPlays(sourcePlays, keyForPlay) {
   return unique;
 }
 
-function _scriptGamePlanOrderedBoxIds(board) {
-  const defaultAndCustom = [
-    ...GP_DEFAULT_BOXES.map((box) => box.id),
-    ...(board.customBoxes || []).map((box) => box.id),
-  ];
-  if (!Array.isArray(board.boxOrder) || board.boxOrder.length === 0) {
-    return defaultAndCustom;
-  }
-  const ordered = [];
-  const seen = new Set();
-  board.boxOrder.forEach((boxId) => {
-    if (defaultAndCustom.includes(boxId) && !seen.has(boxId)) {
-      ordered.push(boxId);
-      seen.add(boxId);
-    }
-  });
-  defaultAndCustom.forEach((boxId) => {
-    if (!seen.has(boxId)) ordered.push(boxId);
-  });
-  return ordered;
-}
-
-function _scriptGamePlanAutoDestination(play, board, orderedBoxIds) {
-  for (const boxId of orderedBoxIds) {
-    const meta = _gpGetBoxMeta(board, boxId);
-    if (
-      _gpHasCriteria(meta.criteria) &&
-      _gpPlayMatchesCriteria(play, meta.criteria)
-    ) {
-      return boxId;
-    }
-  }
-  const defaultIds = new Set(GP_DEFAULT_BOXES.map((box) => box.id));
-  const mappedType = GP_TYPE_ALIASES[play.type] || play.type;
-  return defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
-}
-
 async function sendScriptToGamePlan() {
   if (
     typeof _gpEnsureBoard !== "function" ||
@@ -148,20 +111,11 @@ async function sendScriptToGamePlan() {
   if (!routeChoice) return;
 
   const board = _gpEnsureBoard();
-  const allBoxItems = [
-    ...GP_DEFAULT_BOXES.map((box) => ({
+  const allBoxItems = _gpGetBoardBoxes(board, { includeHolding: true })
+    .map((box) => ({
       value: box.id,
-      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(box.id) : box.label,
-    })),
-    ...(board.customBoxes || []).map((box) => ({
-      value: box.id,
-      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(box.id) : box.label,
-    })),
-    {
-      value: GP_HOLDING_ID,
-      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(GP_HOLDING_ID) : "Holding",
-    },
-  ];
+      label: box.label,
+    }));
   let selectedBoxId = null;
   if (routeChoice === "option2") {
     selectedBoxId = await showListPicker("Choose a Game Plan box:", allBoxItems, {
@@ -181,23 +135,30 @@ async function sendScriptToGamePlan() {
       .filter(Boolean)
       .map(_scriptIntegrationCallIdentity),
   );
-  const candidates = uniqueSource.filter(
+  const eligibleSource = uniqueSource.filter(
+    (play) => _gpPlayAllowedOnBoard(play, board),
+  );
+  const restricted = uniqueSource.length - eligibleSource.length;
+  const candidates = eligibleSource.filter(
     (play) => !assigned.has(_scriptIntegrationCallIdentity(play)),
   );
   const skipped = source.plays.length - candidates.length;
   if (!candidates.length) {
-    showToast("Those Script plays are already on the Game Plan.", {
-      type: "info",
-    });
+    showToast(
+      restricted > 0
+        ? "This game plan template accepts passing play types only."
+        : "Those Script plays are already on the Game Plan.",
+      {
+        type: restricted > 0 ? "warning" : "info",
+      },
+    );
     return;
   }
 
-  const orderedBoxIds = _scriptGamePlanOrderedBoxIds(board);
   const byBox = {};
   candidates.forEach((play) => {
     const boxId =
-      selectedBoxId ||
-      _scriptGamePlanAutoDestination(play, board, orderedBoxIds);
+      selectedBoxId || _gpAutoDestinationForPlay(play, board);
     if (!byBox[boxId]) byBox[boxId] = [];
     byBox[boxId].push(play);
   });
@@ -211,7 +172,7 @@ async function sendScriptToGamePlan() {
   const confirmed = await showConfirm(
     `<p>Send <strong>${candidates.length}</strong> play${candidates.length === 1 ? "" : "s"} from the Script?</p>
      <ul>${breakdown}</ul>
-     ${skipped ? `<p>${skipped} repeated or already assigned play${skipped === 1 ? "" : "s"} will be skipped.</p>` : ""}`,
+     ${skipped ? `<p>${skipped} repeated, restricted, or already assigned play${skipped === 1 ? "" : "s"} will be skipped.</p>` : ""}`,
     {
       title: "Send Script to Game Plan",
       icon: "🎯",
@@ -234,7 +195,12 @@ async function sendScriptToGamePlan() {
       }
       boxPlays.forEach((play) => {
         const signature = _scriptIntegrationCallIdentity(play);
-        if (existing.has(signature)) return;
+        if (
+          existing.has(signature) ||
+          !_gpPlayAllowedOnBoard(play, latestBoard)
+        ) {
+          return;
+        }
         latestBoard.assignments[boxId].push({ ...play });
         existing.add(signature);
         added += 1;

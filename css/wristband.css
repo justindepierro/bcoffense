@@ -32,7 +32,7 @@
   border: 1px solid var(--color-text);
   padding: 2px 4px;
   text-align: left;
-  font-family: var(--font-mono);
+  font-family: var(--font-sans);
   font-size: var(--font-size-2xs);
   display: flex;
   align-items: center;
@@ -68,15 +68,18 @@
   user-select: none;
 }
 .wristband-cell .cell-play {
-  font-weight: bold;
-  font-size: var(--font-size-2xs);
-  line-height: 1.2;
+  font-weight: 500;
+  font-size: var(--font-size-xs);
+  line-height: 1.08;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
   display: flex;
   align-items: center;
   gap: 2px;
+}
+.wristband-play-name {
+  font-weight: 600;
 }
 
 /* ── Drag Handle ── */
@@ -1444,7 +1447,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   .pc-print-card-wrap .wristband-cell {
     min-width: 0 !important;
-    font-family: var(--font-mono) !important;
+    font-family: var(--font-sans) !important;
     font-size: 5.6pt !important;
     line-height: 1 !important;
     padding: 0 0.03in !important;
@@ -1486,6 +1489,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     white-space: nowrap !important;
     overflow: hidden !important;
     text-overflow: ellipsis !important;
+    font-weight: 500 !important;
   }
 
   /* Assignment column in print */

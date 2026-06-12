@@ -130,34 +130,7 @@ function renderGamePlan() {
   const opponent = gw && gw.opponentName ? gw.opponentName : null;
   const weekLabel = gw && gw.weekLabel ? gw.weekLabel : "";
 
-  const rawAllBoxes = [
-    GP_HOLDING_BOX,
-    ...GP_DEFAULT_BOXES,
-    ...(board.customBoxes || []),
-  ];
-  // Apply custom labels (default boxes only — custom already store their own)
-  const labeledBoxes = rawAllBoxes.map((b) => {
-    if (b.id === GP_HOLDING_ID) return b;
-    const isCustom = (board.customBoxes || []).some((cb) => cb.id === b.id);
-    if (isCustom) return b;
-    const customLabel = board.boxLabels && board.boxLabels[b.id];
-    return customLabel ? { ...b, label: customLabel } : b;
-  });
-  // Apply custom order (boxOrder is a subset of ids; ids not in boxOrder fall to defaultIndex order, holding always first)
-  const orderIdx = (id) => {
-    if (id === GP_HOLDING_ID) return -1;
-    const i = (board.boxOrder || []).indexOf(id);
-    return i >= 0 ? i : 9999;
-  };
-  const orderedBoxes = labeledBoxes.slice().sort((a, b) => {
-    const da = orderIdx(a.id);
-    const db = orderIdx(b.id);
-    if (da !== db) return da - db;
-    return labeledBoxes.indexOf(a) - labeledBoxes.indexOf(b);
-  });
-  // Hide hidden boxes (Holding never hides)
-  const hidden = new Set((board.hiddenBoxes || []).filter((id) => id !== GP_HOLDING_ID));
-  const allBoxes = orderedBoxes.filter((b) => !hidden.has(b.id));
+  const allBoxes = _gpGetBoardBoxes(board);
   const assignedSigs = _gpAllAssignedSigs(board);
   const draftedPlays = _gpAllDraftedPlays(board);
   const renderCtx = _gpCreateRenderContext();
@@ -172,6 +145,7 @@ function renderGamePlan() {
       ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
       : `<span class="gp-header-empty">No opponent set — pick one in the Dashboard to keep boards per opponent</span>`}
           ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
+          ${board.sheetTitle ? `<span class="gp-header-template">${escapeHtml(board.sheetTitle)}</span>` : ""}
         </div>
         <div class="gp-header-week">${totalAssigned} plays drafted across ${allBoxes.length} boxes</div>
       </div>

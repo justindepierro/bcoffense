@@ -376,6 +376,7 @@ function _gpAddSigsToBox(sigs, boxId) {
   if (!Array.isArray(sigs) || sigs.length === 0 || !boxId) return;
   let added = 0;
   let skipped = 0;
+  let restricted = 0;
   _gpUpdateBoard((board) => {
     if (!Array.isArray(board.assignments[boxId])) board.assignments[boxId] = [];
     const existingSigs = new Set(board.assignments[boxId].map((p) => _gpPlaySignature(p)));
@@ -383,6 +384,10 @@ function _gpAddSigsToBox(sigs, boxId) {
       if (existingSigs.has(sig)) { skipped += 1; return; }
       const play = _gpFindPlayBySig(sig);
       if (!play) { skipped += 1; return; }
+      if (!_gpPlayAllowedOnBoard(play, board)) {
+        restricted += 1;
+        return;
+      }
       board.assignments[boxId].push({ ...play });
       existingSigs.add(sig);
       added += 1;
@@ -392,8 +397,14 @@ function _gpAddSigsToBox(sigs, boxId) {
   requestRenderGamePlan();
   if (added > 0) {
     const label = _gpBoxLabel(boxId);
-    showToast(`Added ${added} play${added === 1 ? "" : "s"} to ${label}${skipped > 0 ? ` (${skipped} skipped)` : ""}`,
+    const skippedCount = skipped + restricted;
+    showToast(`Added ${added} play${added === 1 ? "" : "s"} to ${label}${skippedCount > 0 ? ` (${skippedCount} skipped)` : ""}`,
       { type: "success" });
+  } else if (restricted > 0) {
+    showToast("This template accepts passing play types only.", {
+      type: "warning",
+      duration: 3000,
+    });
   } else if (skipped > 0) {
     showToast(`No plays added — ${skipped} were already in the box.`, { type: "warning" });
   }

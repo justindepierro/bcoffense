@@ -215,53 +215,22 @@ async function sendDashboardGamePlanToBoxes() {
 
   const board = _gpEnsureBoard();
   const assignedSigs = _gpAllAssignedSigs(board);
-  const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
-
-  // Build the list of candidate boxes (default + custom, excluding Holding)
-  // in display order. The first box whose criteria matches a play wins.
-  const orderedBoxIds = [
-    ...GP_DEFAULT_BOXES.map((b) => b.id),
-    ...((board.customBoxes || []).map((b) => b.id)),
-  ];
-  // Honor user's saved boxOrder when present (subset; missing ids appended).
-  if (Array.isArray(board.boxOrder) && board.boxOrder.length > 0) {
-    const seen = new Set();
-    const ordered = [];
-    board.boxOrder.forEach((id) => {
-      if (orderedBoxIds.includes(id) && !seen.has(id)) {
-        ordered.push(id);
-        seen.add(id);
-      }
-    });
-    orderedBoxIds.forEach((id) => {
-      if (!seen.has(id)) ordered.push(id);
-    });
-    orderedBoxIds.length = 0;
-    orderedBoxIds.push(...ordered);
-  }
 
   // Group tagged plays by destination box id
   const byBox = {};
   let alreadyAssigned = 0;
+  let restricted = 0;
   let routedByCriteria = 0;
   tagged.forEach((play) => {
+    if (!_gpPlayAllowedOnBoard(play, board)) {
+      restricted += 1;
+      return;
+    }
     const sig = _gpPlaySignature(play);
     if (assignedSigs.has(sig)) { alreadyAssigned += 1; return; }
-    // 1) Try criteria match — first box wins
-    let dest = null;
-    for (const boxId of orderedBoxIds) {
-      const meta = _gpGetBoxMeta(board, boxId);
-      if (_gpHasCriteria(meta.criteria) && _gpPlayMatchesCriteria(play, meta.criteria)) {
-        dest = boxId;
-        routedByCriteria += 1;
-        break;
-      }
-    }
-    // 2) Fallback: type-alias → default box → Holding
-    if (!dest) {
-      const mappedType = GP_TYPE_ALIASES[play.type] || play.type;
-      dest = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
-    }
+    const criteriaDestination = _gpMatchingBoardBoxForPlay(play, board);
+    const dest = criteriaDestination || _gpAutoDestinationForPlay(play, board);
+    if (criteriaDestination) routedByCriteria += 1;
     if (!byBox[dest]) byBox[dest] = [];
     byBox[dest].push(sig);
   });
@@ -269,20 +238,22 @@ async function sendDashboardGamePlanToBoxes() {
   const totalToAdd = Object.values(byBox).reduce((n, arr) => n + arr.length, 0);
   if (totalToAdd === 0) {
     showToast(
-      `All ${tagged.length} tagged play${tagged.length === 1 ? "" : "s"} already on the board.`,
-      { type: "info" },
+      restricted > 0
+        ? "This game plan template accepts passing play types only."
+        : `All ${tagged.length} tagged play${tagged.length === 1 ? "" : "s"} already on the board.`,
+      { type: restricted > 0 ? "warning" : "info" },
     );
     return;
   }
 
   const summaryLines = Object.entries(byBox)
     .map(([boxId, sigs]) => {
-      const label = boxId === GP_HOLDING_ID ? "📥 Holding" : boxId;
+      const label = _gpBoxLabel(boxId);
       return `• ${label}: ${sigs.length}`;
     })
     .join("\n");
   const ok = await showConfirm(
-    `Send ${totalToAdd} tagged play${totalToAdd === 1 ? "" : "s"} for ${opponent} into the boxes?\n\n${summaryLines}${routedByCriteria > 0 ? `\n\n🧩 ${routedByCriteria} routed by box matching rules.` : ""}${alreadyAssigned > 0 ? `\n\n(${alreadyAssigned} already on the board, will be skipped.)` : ""}`,
+    `Send ${totalToAdd} tagged play${totalToAdd === 1 ? "" : "s"} for ${opponent} into the boxes?\n\n${summaryLines}${routedByCriteria > 0 ? `\n\n🧩 ${routedByCriteria} routed by box matching rules.` : ""}${alreadyAssigned > 0 ? `\n\n(${alreadyAssigned} already on the board, will be skipped.)` : ""}${restricted > 0 ? `\n\n(${restricted} non-passing play${restricted === 1 ? "" : "s"} will be skipped.)` : ""}`,
     { title: "Send to Game Plan", icon: "🎯", confirmText: "Send" },
   );
   if (!ok) return;
@@ -295,7 +266,7 @@ async function sendDashboardGamePlanToBoxes() {
       sigs.forEach((sig) => {
         if (existing.has(sig)) return;
         const play = _gpFindPlayBySig(sig);
-        if (!play) return;
+        if (!play || !_gpPlayAllowedOnBoard(play, b)) return;
         b.assignments[boxId].push({ ...play });
         existing.add(sig);
         added += 1;
@@ -712,9 +683,20 @@ async function sendWristbandToGamePlan() {
     showToast("No plays on this wristband card.", { type: "warning" });
     return;
   }
+  const board = _gpEnsureBoard();
+  const eligiblePlays = wbPlays.filter(
+    (play) => _gpPlayAllowedOnBoard(play, board),
+  );
+  const restricted = wbPlays.length - eligiblePlays.length;
+  if (eligiblePlays.length === 0) {
+    showToast("This game plan template accepts passing play types only.", {
+      type: "warning",
+    });
+    return;
+  }
 
   const routeChoice = await showChoice(
-    `<p>Send <strong>${wbPlays.length}</strong> play${wbPlays.length === 1 ? "" : "s"} from <strong>${escapeHtml(card.name || "Card")}</strong> to the game plan?</p>`,
+    `<p>Send <strong>${eligiblePlays.length}</strong> play${eligiblePlays.length === 1 ? "" : "s"} from <strong>${escapeHtml(card.name || "Card")}</strong> to the game plan?</p>${restricted ? `<p>${restricted} non-passing play${restricted === 1 ? "" : "s"} will be skipped.</p>` : ""}`,
     {
       title: "📋 Send to Game Plan",
       icon: "📋",
@@ -725,16 +707,12 @@ async function sendWristbandToGamePlan() {
   if (!routeChoice) return;
 
   let added = 0;
-  let skipped = 0;
+  let skipped = restricted;
 
   if (routeChoice === "option1") {
-    // Group plays by type → matching default box; unrecognized types → Holding
-    const defaultIds = new Set(GP_DEFAULT_BOXES.map((b) => b.id));
     const typeMap = {};
-    wbPlays.forEach((p) => {
-      const mappedType =
-        (typeof GP_TYPE_ALIASES !== "undefined" && GP_TYPE_ALIASES[p.type]) || p.type;
-      const boxId = defaultIds.has(mappedType) ? mappedType : GP_HOLDING_ID;
+    eligiblePlays.forEach((p) => {
+      const boxId = _gpAutoDestinationForPlay(p, board);
       if (!typeMap[boxId]) typeMap[boxId] = [];
       typeMap[boxId].push(p);
     });
@@ -745,7 +723,13 @@ async function sendWristbandToGamePlan() {
         const existing = new Set(board.assignments[boxId].map((p) => _gpPlaySignature(p)));
         plays.forEach((p) => {
           const sig = _gpPlaySignature(p);
-          if (existing.has(sig)) { skipped++; return; }
+          if (
+            existing.has(sig) ||
+            !_gpPlayAllowedOnBoard(p, board)
+          ) {
+            skipped++;
+            return;
+          }
           board.assignments[boxId].push({ ...p });
           existing.add(sig);
           added++;
@@ -754,20 +738,10 @@ async function sendWristbandToGamePlan() {
     });
   } else {
     // Pick a specific box
-    const board = _gpEnsureBoard();
-    const defaultItems = GP_DEFAULT_BOXES.map((b) => ({
+    const items = _gpGetBoardBoxes(board, { includeHolding: true }).map((b) => ({
       value: b.id,
-      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(b.id) : b.id,
+      label: b.label,
     }));
-    const customItems = (board.customBoxes || []).map((b) => ({
-      value: b.id,
-      label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(b.id) : b.id,
-    }));
-    const items = [
-      ...defaultItems,
-      ...customItems,
-      { value: GP_HOLDING_ID, label: typeof _gpBoxLabel === "function" ? _gpBoxLabel(GP_HOLDING_ID) : "📥 Holding" },
-    ];
     const choice = await showListPicker("Choose a game plan box:", items, {
       title: "📋 Send to Box",
       icon: "📋",
@@ -777,9 +751,15 @@ async function sendWristbandToGamePlan() {
     _gpUpdateBoard((board) => {
       if (!Array.isArray(board.assignments[choice])) board.assignments[choice] = [];
       const existing = new Set(board.assignments[choice].map((p) => _gpPlaySignature(p)));
-      wbPlays.forEach((p) => {
+      eligiblePlays.forEach((p) => {
         const sig = _gpPlaySignature(p);
-        if (existing.has(sig)) { skipped++; return; }
+        if (
+          existing.has(sig) ||
+          !_gpPlayAllowedOnBoard(p, board)
+        ) {
+          skipped++;
+          return;
+        }
         board.assignments[choice].push({ ...p });
         existing.add(sig);
         added++;
@@ -791,8 +771,8 @@ async function sendWristbandToGamePlan() {
   else if (typeof renderGamePlan === "function") renderGamePlan();
 
   const msg = added > 0
-    ? `Sent ${added} play${added === 1 ? "" : "s"} to game plan${skipped ? ` (${skipped} already there)` : ""}.`
-    : `No plays added \u2014 ${skipped} already on the board.`;
+    ? `Sent ${added} play${added === 1 ? "" : "s"} to game plan${skipped ? ` (${skipped} skipped)` : ""}.`
+    : `No plays added \u2014 ${skipped} skipped.`;
   showToast(msg, { duration: 3000, type: added > 0 ? "success" : "warning" });
   if (added > 0 && typeof showTab === "function") showTab("gameplan");
 }
