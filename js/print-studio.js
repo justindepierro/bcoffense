@@ -181,15 +181,19 @@ function _psCallSheetStats() {
 
 function _psWristbandStats() {
   const cards = Array.isArray(wristbandCards) ? wristbandCards : [];
+  const cellsPerCard =
+    typeof getActiveWristbandCellCount === "function"
+      ? getActiveWristbandCellCount()
+      : CELLS_PER_CARD;
   const filled = cards.reduce((sum, card) => {
     const cells = Array.isArray(card?.data)
       ? card.data
       : Array.isArray(card)
         ? card
         : [];
-    return sum + cells.filter(Boolean).length;
+    return sum + cells.slice(0, cellsPerCard).filter(Boolean).length;
   }, 0);
-  const capacity = cards.length * (typeof CELLS_PER_CARD !== "undefined" ? CELLS_PER_CARD : 40);
+  const capacity = cards.length * cellsPerCard;
   const warnings = [];
 
   if (!filled) {

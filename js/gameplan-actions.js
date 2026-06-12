@@ -24,6 +24,9 @@ function toggleGamePlanPlayFlag(arg) {
   const ok = _gpToggleFlag(ref.boxId, ref.sig, ref.flag, ref.rawIdx);
   if (!ok) return;
   requestRenderGamePlan();
+  showToast(ref.flag === "wb" ? "Wristband flag toggled" : "JV flag toggled", {
+    duration: 1200,
+  });
 }
 
 async function sendGamePlanToWristbandCard() {
@@ -39,13 +42,13 @@ async function sendGamePlanToWristbandCard() {
     showToast("Wristband module not ready yet.", { type: "error" });
     return;
   }
-  if (typeof MAX_CARDS === "number" && wristbandCards.length >= MAX_CARDS) {
+  if (wristbandCards.length >= MAX_CARDS) {
     showToast(`Maximum ${MAX_CARDS} wristband cards reached. Remove one first.`, {
       duration: 3500, type: "error",
     });
     return;
   }
-  const cellsPerCard = (typeof CELLS_PER_CARD === "number") ? CELLS_PER_CARD : 40;
+  const cellsPerCard = getActiveWristbandCellCount();
   if (flagged.length > cellsPerCard) {
     const ok = await showConfirm(
       `You marked ${flagged.length} plays but a wristband card holds ${cellsPerCard}. ` +
@@ -57,7 +60,7 @@ async function sendGamePlanToWristbandCard() {
   const gw = (typeof getGameWeek === "function") ? getGameWeek() : null;
   const opp = gw && gw.opponentName ? gw.opponentName : "";
   const cardName = opp ? `vs ${opp} (Game Plan)` : "Game Plan";
-  const data = Array(cellsPerCard).fill(null);
+  const data = Array(CELLS_PER_CARD).fill(null);
   flagged.slice(0, cellsPerCard).forEach((p, i) => {
     const copy = { ...p };
     delete copy._gpFlags;

@@ -41,7 +41,17 @@ function _buildWristbandPrintSheets(cardHtml, repeatSingleCard = false) {
 
 function printWristband() {
   try {
-    if (!wristbandCards.some((card) => card.data?.some(Boolean))) {
+    if (wbPlayerCardMode) {
+      printAllPlayerCards();
+      return;
+    }
+
+    const cellsPerCard = getActiveWristbandCellCount();
+    if (
+      !wristbandCards.some((card) =>
+        card.data?.slice(0, cellsPerCard).some(Boolean),
+      )
+    ) {
       showToast("No plays on the wristband to print.", { type: "warning" });
       return;
     }
@@ -82,12 +92,12 @@ function printWristband() {
     wristbandCards.forEach((card, cardIdx) => {
       let html = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${WB_ROWS}, 1fr);">`;
 
-      const cardOffset = cardIdx * 40;
+      const cardOffset = cardIdx * CELLS_PER_CARD;
       const pCardColor = card.cardColor || "";
 
       for (let row = 0; row < WB_ROWS; row++) {
-        const oddNum = row * 2 + 11 + cardOffset;
-        const evenNum = row * 2 + 12 + cardOffset;
+        const oddNum = row * 2 + WRISTBAND_OFFSET + cardOffset;
+        const evenNum = row * 2 + WRISTBAND_OFFSET + 1 + cardOffset;
         const oddIndex = row * 2;
         const evenIndex = row * 2 + 1;
 
@@ -199,10 +209,11 @@ function exportWristbandCSV() {
     ],
   ];
 
+  const cellsPerCard = getActiveWristbandCellCount();
   wristbandCards.forEach((card, cardIdx) => {
-    const cardOffset = cardIdx * 40;
-    card.data.forEach((play, cellIdx) => {
-      const cellNum = cellIdx + 11 + cardOffset;
+    const cardOffset = cardIdx * cellsPerCard;
+    card.data.slice(0, cellsPerCard).forEach((play, cellIdx) => {
+      const cellNum = cellIdx + WRISTBAND_OFFSET + cardOffset;
       const key = `${cardIdx}-${cellIdx}`;
       const custom = cellCustomizations[key] || {};
       if (play) {
@@ -241,9 +252,6 @@ function exportWristbandCSV() {
 
 // ─── Wristband Type Choice ────────────────────────────────────────────────
 
-/** "classic" | "player" | "" (unset = show landing) */
-let wristbandType = "";
-
 /**
  * Show the landing overlay if the wristband is completely empty
  * and no type has been chosen. Called on tab switch and after clear-all.
@@ -274,11 +282,14 @@ function showWbTypeChoice() {
 
 function startClassicWristband() {
   wristbandType = "classic";
+  wbPlayerCardMode = false;
   document.getElementById("wbTypeChoice")?.classList.add("hidden");
   document.querySelector(".wb-toolbar")?.classList.remove("wb-toolbar-hidden");
   document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
   document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
   document.getElementById("pcModeBar")?.classList.remove("visible");
+  document.getElementById("wristbandGrid")?.classList.remove("pc-grid-active");
+  document.getElementById("wristbandCard")?.classList.remove("pc-card-active");
   renderCardTabs();
   renderWristbandGrid();
 }
@@ -289,7 +300,7 @@ function startPlayerWristband() {
   document.querySelector(".wb-toolbar")?.classList.add("wb-toolbar-hidden");
   document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
   document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
-  // Activate player card mode
+  // Activate player wristband mode
   playerCardOverrides = {};
   wbPlayerCardMode = true;
   const posSelect = document.getElementById("pcPosSelect");
@@ -300,17 +311,9 @@ function startPlayerWristband() {
   renderPlayerCardGrid();
 }
 
-// ─── Player Card Print ─────────────────────────────────────────────────────
+// ─── Player Wristband Print ────────────────────────────────────────────────
 
-/** Session-only responsibility overrides: {posKey: {cardIdx: {cellIdx: text}}} */
-let playerCardOverrides = {};
-
-/** True when the wristband grid is displaying player card mode in-place */
-let wbPlayerCardMode = false;
-/** Currently selected position key for player card mode */
-let wbPlayerCardPos = "respQ";
-
-/** Positions available in player card print (must stay in sync with RESP_POSITIONS in playbook-editor.js) */
+/** Positions available in player wristband print (must stay in sync with RESP_POSITIONS). */
 const PC_POSITIONS = [
   { key: "respQ", label: "Q" },
   { key: "respT", label: "T" },
@@ -349,19 +352,18 @@ function renderPlayerCardGrid() {
   const card = wristbandCards[currentCardIndex];
   if (!card) { grid.innerHTML = ""; return; }
 
-  // Player cards hold 20 plays each (half of classic's 40)
-  const PC_PLAYS_PER_CARD = 20;
-  const cardOffset = currentCardIndex * PC_PLAYS_PER_CARD;
+  // Player wristbands use one play per row, half the classic card capacity.
+  const cardOffset = currentCardIndex * WB_ROWS;
   const opts = getWristbandDisplayOptions();
   const { highlightHuddle, highlightCandy } = opts;
   const pCardColor = card.cardColor || "";
 
   // 3 columns: [num (32px) | play name (1fr) | responsibility (1fr)] × 20 rows
-  // Same card dimensions as classic (7in × 4.2in), half the plays, full info per play
+  // Same on-screen dimensions as classic, with one play and assignment per row.
   let html = "";
-  for (let i = 0; i < PC_PLAYS_PER_CARD; i++) {
+  for (let i = 0; i < WB_ROWS; i++) {
     const play = card.data[i];
-    const playNum = i + 11 + cardOffset;
+    const playNum = i + WRISTBAND_OFFSET + cardOffset;
     const custom = cellCustomizations[`${currentCardIndex}-${i}`] || {};
     const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${i}`;
     const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i])
@@ -403,7 +405,7 @@ function renderPlayerCardGrid() {
 
   grid.classList.add("pc-grid-active");
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
-  grid.style.gridTemplateRows = `repeat(${PC_PLAYS_PER_CARD}, 1fr)`;
+  grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   grid.innerHTML = html;
 
   // Wire assignment change + reset click events — only once per grid element lifetime
@@ -441,20 +443,19 @@ function renderPlayerCardGrid() {
 // ─── Player Wristband Print Helpers ────────────────────────────────────────
 
 /**
- * Build a single player card block for print.
+ * Build a single player wristband block for print.
  * 3-column grid: [num | play | responsibility] × 20 rows.
- * Returns a .pc-print-card-wrap div (one card, not two columns).
+ * Returns a .pc-print-card-wrap div.
  */
 function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
   const { highlightHuddle, highlightCandy } = opts;
-  const PC_PLAYS_PER_CARD = 20;
-  const cardOffset = cardIdx * PC_PLAYS_PER_CARD;
+  const cardOffset = cardIdx * WB_ROWS;
   const pCardColor = card.cardColor || "";
 
   let cells = "";
-  for (let i = 0; i < PC_PLAYS_PER_CARD; i++) {
+  for (let i = 0; i < WB_ROWS; i++) {
     const play = card.data[i];
-    const playNum = i + 11 + cardOffset;
+    const playNum = i + WRISTBAND_OFFSET + cardOffset;
     const custom = cellCustomizations[`${cardIdx}-${i}`] || {};
     const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
 
@@ -482,7 +483,7 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
 
   return `<div class="pc-print-card-wrap">
     <div class="wristband-card">
-      <div class="wristband-grid" style="grid-template-columns:22px 1fr 1fr;grid-template-rows:repeat(20,1fr);">
+      <div class="wristband-grid" style="grid-template-columns:22px 1fr 1fr;grid-template-rows:repeat(${WB_ROWS},1fr);">
         ${cells}
       </div>
     </div>
@@ -493,7 +494,7 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
  * "Print 1" — 3 identical copies of the current position's card on one portrait page.
  */
 function printOnePlayerCard() {
-  if (!wristbandCards.some((c) => c.data?.some(Boolean))) {
+  if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
@@ -521,7 +522,13 @@ function printOnePlayerCard() {
     </div>`;
   });
 
-  _triggerPlayerPrint(printContainer, printContent, allHtml, `Player Card \u2014 ${posLabel}`, "portrait");
+  _triggerPlayerPrint(
+    printContainer,
+    printContent,
+    allHtml,
+    `Player Wristband \u2014 ${posLabel}`,
+    "portrait",
+  );
 }
 
 /**
@@ -529,7 +536,7 @@ function printOnePlayerCard() {
  * Each page stacks 3 position cards with their assignments.
  */
 function printAllPlayerCards() {
-  if (!wristbandCards.some((c) => c.data?.some(Boolean))) {
+  if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
@@ -561,7 +568,13 @@ function printAllPlayerCards() {
     }
   });
 
-  _triggerPlayerPrint(printContainer, printContent, allHtml, "Player Cards \u2014 All Positions", "portrait");
+  _triggerPlayerPrint(
+    printContainer,
+    printContent,
+    allHtml,
+    "Player Wristbands \u2014 All Positions",
+    "portrait",
+  );
 }
 
 function _triggerPlayerPrint(printContainer, printContent, html, title, orientation) {

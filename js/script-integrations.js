@@ -317,9 +317,8 @@ async function sendScriptToWristband() {
   );
   if (!mode) return;
 
-  const cellsPerCard =
-    typeof CELLS_PER_CARD === "number" ? CELLS_PER_CARD : 40;
-  const maxCards = typeof MAX_CARDS === "number" ? MAX_CARDS : 5;
+  const cellsPerCard = getActiveWristbandCellCount();
+  const maxCards = MAX_CARDS;
   const scriptName =
     document.getElementById("scriptName")?.value || "Practice Script";
   let added = 0;
@@ -350,7 +349,7 @@ async function sendScriptToWristband() {
       let playOffset = 0;
       let lastCardIndex = currentCardIndex;
       for (let cardNumber = 1; cardNumber <= cardCount; cardNumber += 1) {
-        const data = Array(cellsPerCard).fill(null);
+        const data = Array(CELLS_PER_CARD).fill(null);
         playsToAdd
           .slice(playOffset, playOffset + cellsPerCard)
           .forEach((play, index) => {
@@ -382,9 +381,9 @@ async function sendScriptToWristband() {
       ? cardOrder.reduce(
         (total, cardIndex) =>
           total +
-          (wristbandCards[cardIndex]?.data || []).filter(
-            (play) => play === null,
-          ).length,
+          (wristbandCards[cardIndex]?.data || [])
+            .slice(0, cellsPerCard)
+            .filter((play) => play === null).length,
         0,
       )
       : cellsPerCard;
@@ -405,7 +404,7 @@ async function sendScriptToWristband() {
       if (wristbandCards.length === 0) {
         wristbandCards.push({
           name: _scriptWristbandCardName(scriptName, 1, 1),
-          data: Array(cellsPerCard).fill(null),
+          data: Array(CELLS_PER_CARD).fill(null),
         });
         currentCardIndex = 0;
       }
@@ -418,7 +417,8 @@ async function sendScriptToWristband() {
         const cardData = wristbandCards[cardIndex].data;
         for (
           let cellIndex = 0;
-          cellIndex < cardData.length && playIndex < playsToAdd.length;
+          cellIndex < Math.min(cardData.length, cellsPerCard) &&
+          playIndex < playsToAdd.length;
           cellIndex += 1
         ) {
           if (cardData[cellIndex] !== null) continue;

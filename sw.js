@@ -1,15 +1,15 @@
 /**
- * Service Worker — Cache-first for offline PWA support
+ * Service Worker — offline PWA support with freshness-aware caching
  * Practice Script & Playbook (bcoffense)
  *
  * Strategy:
  *   - Pre-cache all local assets on install
- *   - Cache-first for local files (fast + offline)
+ *   - Network-first for navigations and app-shell HTML/CSS/JS
  *   - Network-first for external resources (Google Fonts)
- *   - Stale-while-revalidate: serve cached, then update cache in background
+ *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v526";
+const CACHE_NAME = "bcoffense-v527";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -166,7 +166,7 @@ self.addEventListener("activate", (event) => {
   self.clients.claim();
 });
 
-// Fetch: stale-while-revalidate for local, network-first for external
+// Fetch: network-first for app-shell/external resources, SWR for other local assets
 self.addEventListener("fetch", (event) => {
   const url = new URL(event.request.url);
 

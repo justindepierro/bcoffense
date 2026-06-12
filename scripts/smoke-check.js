@@ -11,6 +11,7 @@ const fail = (message) => {
 };
 
 const read = (file) => fs.readFileSync(path.join(root, file), "utf8");
+const unique = (values) => [...new Set(values)];
 
 function walk(dir, out = []) {
   fs.readdirSync(path.join(root, dir), { withFileTypes: true }).forEach((entry) => {
@@ -47,6 +48,20 @@ function checkServiceWorkerAssets() {
     .filter(Boolean);
   const missing = assets.filter((asset) => asset !== "" && !fs.existsSync(path.join(root, asset)));
   if (missing.length) fail(`missing LOCAL_ASSETS entries: ${missing.join(", ")}`);
+
+  const html = read("index.html");
+  const indexAssets = [
+    ...html.matchAll(/<(?:script|link)\b[^>]+(?:src|href)="((?:js|css)\/[^"]+)"/g),
+  ].map((match) => match[1].split("?")[0]);
+  const cachedCodeAssets = assets.filter((asset) => /^(?:js|css)\//.test(asset));
+  const missingFromCache = indexAssets.filter((asset) => !cachedCodeAssets.includes(asset));
+  const missingFromIndex = cachedCodeAssets.filter((asset) => !indexAssets.includes(asset));
+  if (missingFromCache.length || missingFromIndex.length) {
+    fail(
+      `index/sw code asset mismatch; missing from cache: ${missingFromCache.join(", ") || "none"}; ` +
+      `missing from index: ${missingFromIndex.join(", ") || "none"}`,
+    );
+  }
   console.log(`service worker assets ok (${assets.length} entries)`);
 }
 
@@ -143,14 +158,158 @@ function checkAccessibilityBasics() {
 
 function checkCacheBusters() {
   const html = read("index.html");
-  const stamps = [
-    ...html.matchAll(/(?:src|href)="(?:js|css)\/[^"?]+\.(?:js|css)\?v=(\d+)"/g),
-  ].map((match) => match[1]);
-  const unique = [...new Set(stamps)];
-  if (unique.length !== 1) {
-    fail(`index.html has inconsistent asset cache busters: ${unique.join(", ")}`);
+  const refs = [
+    ...html.matchAll(/(?:src|href)="((?:js|css)\/[^"]+\.(?:js|css)(?:\?v=(\d+))?)"/g),
+  ];
+  const unversioned = refs.filter((match) => !match[2]).map((match) => match[1]);
+  if (unversioned.length) {
+    fail(`index.html has unversioned code assets: ${unversioned.join(", ")}`);
   }
-  console.log(`cache busters ok (v${unique[0] || "unknown"})`);
+
+  const stamps = refs.map((match) => match[2]).filter(Boolean);
+  const versions = unique(stamps);
+  if (versions.length !== 1) {
+    fail(`index.html has inconsistent asset cache busters: ${versions.join(", ")}`);
+  }
+
+  const sw = read("sw.js");
+  const swVersion = sw.match(/const CACHE_NAME = "bcoffense-v(\d+)"/)?.[1];
+  if (!swVersion) {
+    fail("service worker cache version not found");
+  } else if (versions[0] !== swVersion) {
+    fail(`asset cache buster v${versions[0] || "unknown"} does not match SW v${swVersion}`);
+  }
+  console.log(`cache busters ok (v${versions[0] || "unknown"})`);
+}
+
+function checkTopLevelSymbolOwnership() {
+  const locations = new Map();
+  walk("js")
+    .filter((file) => file.endsWith(".js") && !file.endsWith(".min.js"))
+    .forEach((file) => {
+      const source = read(file);
+      const declarations = [
+        ...source.matchAll(/^function\s+([A-Za-z_$][\w$]*)\s*\(/gm),
+        ...source.matchAll(/^(?:const|let|var|class)\s+([A-Za-z_$][\w$]*)\b/gm),
+      ];
+      declarations.forEach((match) => {
+        const line = source.slice(0, match.index).split("\n").length;
+        const entries = locations.get(match[1]) || [];
+        entries.push({ file, location: `${file}:${line}` });
+        locations.set(match[1], entries);
+      });
+    });
+
+  const duplicates = [...locations.entries()].filter(
+    ([, entries]) => unique(entries.map((entry) => entry.file)).length > 1,
+  );
+  if (duplicates.length) {
+    fail(
+      `duplicate cross-file top-level symbols: ${duplicates
+        .map(([name, entries]) =>
+          `${name} (${entries.map((entry) => entry.location).join(", ")})`,
+        )
+        .join(" | ")}`,
+    );
+  }
+  console.log(`top-level symbol ownership ok (${locations.size} symbols)`);
+}
+
+function checkWristbandConstantUsage() {
+  const files = [
+    ...walk("js").filter((file) => /^js\/wristband.*\.js$/.test(file)),
+    "js/callsheet-picker-runtime.js",
+    "js/gameplan.js",
+    "js/script-storage.js",
+  ];
+  const violations = [];
+
+  files.forEach((file) => {
+    const source = read(file).replace(/\/\*[\s\S]*?\*\/|\/\/.*$/gm, "");
+    const patterns = [
+      /Array\(\s*40\s*\)/g,
+      /\b(?:cardIdx|currentCardIndex)\s*\*\s*40\b/g,
+      /\bcellIdx\s*<\s*40\b/g,
+      /\bcellIdx\s*\+\s*11\b/g,
+    ];
+    patterns.forEach((pattern) => {
+      [...source.matchAll(pattern)].forEach((match) => {
+        const line = source.slice(0, match.index).split("\n").length;
+        violations.push(`${file}:${line} (${match[0]})`);
+      });
+    });
+  });
+
+  if (violations.length) {
+    fail(`wristband capacity/offset literals found: ${violations.join(", ")}`);
+  }
+  console.log("wristband constant usage ok");
+}
+
+function checkGuideContracts() {
+  const html = read("index.html");
+  const guide = read("AGENTS.md");
+  const scripts = [...html.matchAll(/<script\b[^>]+src="(js\/[^"]+)"/g)]
+    .map((match) => match[1].split("?")[0]);
+  const loadOrderBlock = guide.match(
+    /All scripts use `defer`[\s\S]*?```\n([\s\S]*?)```/,
+  );
+  const documentedScripts = loadOrderBlock
+    ? [...loadOrderBlock[1].matchAll(/^\d+\.\s+(js\/[^\s]+)/gm)].map((match) => match[1])
+    : [];
+  if (scripts.join("\n") !== documentedScripts.join("\n")) {
+    fail("AGENTS.md script load order does not match index.html");
+  }
+
+  const storage = read("js/storage.js");
+  const storageObject = storage.match(/const STORAGE_KEYS\s*=\s*\{([\s\S]*?)\n\};/);
+  const runtimeKeys = storageObject
+    ? [...storageObject[1].matchAll(/^\s*([A-Z0-9_]+):/gm)].map((match) => match[1])
+    : [];
+  const storageGuideBlock = guide.match(
+    /### STORAGE_KEYS \(complete list\)[\s\S]*?```js\n([\s\S]*?)```/,
+  );
+  const documentedKeys = storageGuideBlock
+    ? [...storageGuideBlock[1].matchAll(/^([A-Z0-9_]+)\s+/gm)].map((match) => match[1])
+    : [];
+  if (runtimeKeys.join("\n") !== documentedKeys.join("\n")) {
+    fail("AGENTS.md STORAGE_KEYS list does not match js/storage.js");
+  }
+
+  const callsheet = read("js/callsheet.js");
+  const countCategoryIds = (name) => {
+    const block = callsheet.match(
+      new RegExp(`const ${name}\\s*=\\s*\\[([\\s\\S]*?)\\n\\];`),
+    );
+    return block ? (block[1].match(/\bid\s*:/g) || []).length : 0;
+  };
+  const frontCount = countCategoryIds("CALLSHEET_FRONT");
+  const backCount = countCategoryIds("CALLSHEET_BACK");
+  const documentedFront = Number(
+    guide.match(/\*\*CALLSHEET_FRONT\*\*\s+—\s+(\d+)/)?.[1],
+  );
+  const documentedBack = Number(
+    guide.match(/\*\*CALLSHEET_BACK\*\*\s+—\s+(\d+)/)?.[1],
+  );
+  const documentedTotal = Number(
+    guide.match(/CALLSHEET_CATEGORIES = \[\]; \/\/ All (\d+) base category definitions/)?.[1],
+  );
+  if (
+    frontCount !== documentedFront ||
+    backCount !== documentedBack ||
+    frontCount + backCount !== documentedTotal
+  ) {
+    fail(
+      `AGENTS.md call sheet counts do not match runtime ` +
+      `(runtime ${frontCount}/${backCount}/${frontCount + backCount}, ` +
+      `guide ${documentedFront}/${documentedBack}/${documentedTotal})`,
+    );
+  }
+
+  console.log(
+    `guide contracts ok (${scripts.length} scripts, ${runtimeKeys.length} storage keys, ` +
+    `${frontCount + backCount} call sheet categories)`,
+  );
 }
 
 checkJsSyntax();
@@ -159,6 +318,9 @@ checkIndexReferences();
 checkCssGuardrails();
 checkAccessibilityBasics();
 checkCacheBusters();
+checkTopLevelSymbolOwnership();
+checkWristbandConstantUsage();
+checkGuideContracts();
 
 if (process.exitCode) process.exit(process.exitCode);
 console.log("smoke-check passed");

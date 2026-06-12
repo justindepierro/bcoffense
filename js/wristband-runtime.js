@@ -168,9 +168,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const play = wristbandCards[sourceCardIdx].data[draggedCellIndex];
       if (!play) return;
 
-      const emptyIdx = wristbandCards[targetCardIdx].data.findIndex(
-        (c) => c === null,
-      );
+      const emptyIdx = wristbandCards[targetCardIdx].data
+        .slice(0, getActiveWristbandCellCount())
+        .findIndex((c) => c === null);
       if (emptyIdx === -1) {
         showToast("No empty cells on that card");
         return;

@@ -64,7 +64,7 @@ function getWristbandDisplayOptions() {
 }
 
 function renderWristbandGrid() {
-  // If player card mode is active, delegate to the player card renderer instead
+  // If player wristband mode is active, delegate to its renderer.
   if (typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode) {
     if (typeof renderPlayerCardGrid === "function") renderPlayerCardGrid();
     return;
@@ -100,11 +100,11 @@ function renderWristbandGrid() {
   let html = "";
   const cardColor =
     (wristbandCards[currentCardIndex] && wristbandCards[currentCardIndex].cardColor) || "";
-  const cardOffset = currentCardIndex * 40;
+  const cardOffset = currentCardIndex * CELLS_PER_CARD;
 
   for (let row = 0; row < WB_ROWS; row += 1) {
-    const oddNum = row * 2 + 11 + cardOffset;
-    const evenNum = row * 2 + 12 + cardOffset;
+    const oddNum = row * 2 + WRISTBAND_OFFSET + cardOffset;
+    const evenNum = row * 2 + WRISTBAND_OFFSET + 1 + cardOffset;
     const oddIndex = row * 2;
     const evenIndex = row * 2 + 1;
 
@@ -272,7 +272,7 @@ async function clearWristband() {
   const cardIdx = currentCardIndex;
 
   saveWristbandState();
-  wristbandCards[currentCardIndex].data = Array(40).fill(null);
+  wristbandCards[currentCardIndex].data = Array(CELLS_PER_CARD).fill(null);
   Object.keys(cellCustomizations).forEach((key) => {
     if (key.startsWith(`${currentCardIndex}-`)) {
       delete cellCustomizations[key];
@@ -305,22 +305,25 @@ async function autoFillWristband() {
     return;
   }
 
+  const cellsPerCard = getActiveWristbandCellCount();
   let totalEmpty = 0;
   for (let cardIdx = currentCardIndex; cardIdx < wristbandCards.length; cardIdx += 1) {
-    totalEmpty += wristbandCards[cardIdx].data.filter((cell) => cell === null).length;
+    totalEmpty += wristbandCards[cardIdx].data
+      .slice(0, cellsPerCard)
+      .filter((cell) => cell === null).length;
   }
 
   let extraCardsNeeded = 0;
   if (filtered.length > totalEmpty) {
     const extraPlays = filtered.length - totalEmpty;
-    extraCardsNeeded = Math.ceil(extraPlays / 40);
+    extraCardsNeeded = Math.ceil(extraPlays / cellsPerCard);
     const totalCardsNeeded = wristbandCards.length + extraCardsNeeded;
     if (totalCardsNeeded > MAX_CARDS) {
       extraCardsNeeded = MAX_CARDS - wristbandCards.length;
     }
   }
 
-  const totalAvailable = totalEmpty + extraCardsNeeded * 40;
+  const totalAvailable = totalEmpty + extraCardsNeeded * cellsPerCard;
   const toFill = Math.min(filtered.length, totalAvailable);
   const cardsAffected =
     extraCardsNeeded > 0
@@ -342,7 +345,7 @@ async function autoFillWristband() {
     for (let i = 0; i < extraCardsNeeded && wristbandCards.length < MAX_CARDS; i += 1) {
       wristbandCards.push({
         name: `Card ${wristbandCards.length + 1}`,
-        data: Array(40).fill(null),
+        data: Array(CELLS_PER_CARD).fill(null),
       });
     }
   }
@@ -352,7 +355,11 @@ async function autoFillWristband() {
   let playIndex = 0;
   let filledCount = 0;
   for (let cardIdx = currentCardIndex; cardIdx < wristbandCards.length && playIndex < filtered.length; cardIdx += 1) {
-    for (let cellIdx = 0; cellIdx < 40 && playIndex < filtered.length; cellIdx += 1) {
+    for (
+      let cellIdx = 0;
+      cellIdx < cellsPerCard && playIndex < filtered.length;
+      cellIdx += 1
+    ) {
       if (wristbandCards[cardIdx].data[cellIdx] === null) {
         wristbandCards[cardIdx].data[cellIdx] = filtered[playIndex];
         playIndex += 1;

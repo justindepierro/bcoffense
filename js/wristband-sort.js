@@ -243,7 +243,7 @@ function moveSortCriteria(direction, element) {
 function getUniqueValuesForField(field) {
   const values = new Set();
   wristbandCards.forEach((card) => {
-    card.data.forEach((play) => {
+    card.data.slice(0, getActiveWristbandCellCount()).forEach((play) => {
       if (play && play[field]) {
         values.add(String(play[field]).trim());
       }
@@ -339,8 +339,10 @@ function applyWristbandSort() {
 }
 
 function applyWristbandSortPerCard() {
+  const cellsPerCard = getActiveWristbandCellCount();
   wristbandCards.forEach((card, cardIdx) => {
     const playsWithIdx = card.data
+      .slice(0, cellsPerCard)
       .map((play, idx) => ({ play, idx, cardIdx }))
       .filter((item) => item.play !== null);
 
@@ -361,7 +363,8 @@ function applyWristbandSortPerCard() {
     });
 
     const customizationMappings = [];
-    const newData = Array(40).fill(null);
+    const newData = [...card.data];
+    newData.fill(null, 0, cellsPerCard);
     playsWithIdx.forEach((item, newIdx) => {
       newData[newIdx] = item.play;
       customizationMappings.push({
@@ -380,10 +383,11 @@ function applyWristbandSortPerCard() {
 }
 
 function applyWristbandSortAcrossCards() {
+  const cellsPerCard = getActiveWristbandCellCount();
   const allPlays = [];
   const sourceCustomizations = { ...cellCustomizations };
   wristbandCards.forEach((card, cardIdx) => {
-    card.data.forEach((play, cellIdx) => {
+    card.data.slice(0, cellsPerCard).forEach((play, cellIdx) => {
       if (play !== null) {
         allPlays.push({
           play,
@@ -413,14 +417,14 @@ function applyWristbandSortAcrossCards() {
   const customizationMappings = [];
 
   wristbandCards.forEach((card) => {
-    card.data = Array(40).fill(null);
+    card.data.fill(null, 0, cellsPerCard);
   });
 
   let currentCardIdx = 0;
   let currentCellIdx = 0;
 
   allPlays.forEach((item) => {
-    if (currentCellIdx >= 40) {
+    if (currentCellIdx >= cellsPerCard) {
       currentCardIdx++;
       currentCellIdx = 0;
 
@@ -430,7 +434,7 @@ function applyWristbandSortAcrossCards() {
       ) {
         wristbandCards.push({
           name: `Card ${currentCardIdx + 1}`,
-          data: Array(40).fill(null),
+          data: Array(CELLS_PER_CARD).fill(null),
           settings: { ...wristbandCards[0].settings },
         });
       }

@@ -40,6 +40,10 @@ function syncWristbandHeaderColorPicker() {
 }
 
 function hydrateWristbandState(source, opts = {}) {
+  if (source?.wristbandType === "player" || source?.wristbandType === "classic") {
+    wristbandType = source.wristbandType;
+    wbPlayerCardMode = wristbandType === "player";
+  }
   wristbandHeaderColor = source?.headerColor || "transparent";
 
   if (Array.isArray(source?.cards) && source.cards.length > 0) {
@@ -47,7 +51,7 @@ function hydrateWristbandState(source, opts = {}) {
   } else if (Array.isArray(source?.data)) {
     wristbandCards = [{ name: "Card 1", data: safeDeepClone(source.data) }];
   } else {
-    wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
+    wristbandCards = [{ name: "Card 1", data: Array(CELLS_PER_CARD).fill(null) }];
   }
 
   cellCustomizations = source?.cellStyles ? safeDeepClone(source.cellStyles) : {};
@@ -81,7 +85,7 @@ function buildWristbandSaveRecord(title, opts = {}) {
   return {
     id: opts.id ?? Date.now(),
     title,
-    wristbandType: (typeof wristbandType !== "undefined" && wristbandType) ? wristbandType : "classic",
+    wristbandType: wristbandType || "classic",
     headerColor: wristbandHeaderColor,
     cards: safeDeepClone(wristbandCards),
     cellStyles: safeDeepClone(cellCustomizations),
@@ -99,8 +103,10 @@ function finalizeWristbandSave() {
 
 async function saveWristband() {
   try {
+    const cellsPerCard = getActiveWristbandCellCount();
     const totalPlays = wristbandCards.reduce(
-      (sum, c) => sum + c.data.filter((p) => p !== null).length,
+      (sum, c) =>
+        sum + c.data.slice(0, cellsPerCard).filter((p) => p !== null).length,
       0,
     );
     if (totalPlays === 0) {
@@ -162,22 +168,23 @@ const WRISTBAND_TEMPLATES_KEY =
   STORAGE_KEYS.WRISTBAND_TEMPLATES || "wristbandTemplates";
 
 function _emptyWristbandCardData() {
-  return Array(typeof CELLS_PER_CARD === "number" ? CELLS_PER_CARD : 40).fill(null);
+  return Array(CELLS_PER_CARD).fill(null);
 }
 
 function _countWristbandRecordPlays(record) {
+  const cellsPerCard = getWristbandRecordCellCount(record);
   if (Array.isArray(record?.cards)) {
     return record.cards.reduce(
       (sum, card) =>
         sum +
         (Array.isArray(card?.data)
-          ? card.data.filter((play) => play !== null).length
+          ? card.data.slice(0, cellsPerCard).filter((play) => play !== null).length
           : 0),
       0,
     );
   }
   if (Array.isArray(record?.data)) {
-    return record.data.filter((play) => play !== null).length;
+    return record.data.slice(0, cellsPerCard).filter((play) => play !== null).length;
   }
   return 0;
 }
@@ -213,13 +220,17 @@ function _cloneWristbandTemplateCards(includePlays) {
 
 function normalizeWristbandTemplateRecord(record, index = 0) {
   const source = record && typeof record === "object" ? record : {};
+  const normalizedType = source.wristbandType === "player" ? "player" : "classic";
   const cards =
     Array.isArray(source.cards) && source.cards.length
       ? safeDeepClone(source.cards)
       : Array.isArray(source.data)
         ? [{ name: "Card 1", data: safeDeepClone(source.data) }]
         : [{ name: "Card 1", data: _emptyWristbandCardData() }];
-  const countedPlays = _countWristbandRecordPlays({ cards });
+  const countedPlays = _countWristbandRecordPlays({
+    cards,
+    wristbandType: normalizedType,
+  });
   const includePlays =
     source.includePlays !== undefined
       ? Boolean(source.includePlays)
@@ -232,6 +243,7 @@ function normalizeWristbandTemplateRecord(record, index = 0) {
     ),
     group: _normalizeWristbandTemplateGroup(source.group || source.positionGroup),
     savedAt: source.savedAt || "",
+    wristbandType: normalizedType,
     includePlays,
     cardCount: Number(source.cardCount || cards.length) || cards.length,
     playCount: includePlays
@@ -273,7 +285,8 @@ function getWristbandTemplates() {
         !record.id ||
         !record.name ||
         !Array.isArray(record.cards) ||
-        record.group === undefined,
+        record.group === undefined ||
+        record.wristbandType === undefined,
     );
 
   if (needsRepair) {
@@ -292,14 +305,18 @@ function _saveWristbandTemplates(templates) {
 
 function _buildWristbandTemplate(name, group, includePlays) {
   const cards = _cloneWristbandTemplateCards(includePlays);
+  const templateType = wristbandType || "classic";
   return {
     id: `wbt-${Date.now()}`,
     name: name.trim(),
     group: _normalizeWristbandTemplateGroup(group),
     savedAt: new Date().toISOString(),
+    wristbandType: templateType,
     includePlays: Boolean(includePlays),
     cardCount: cards.length,
-    playCount: includePlays ? _countWristbandRecordPlays({ cards }) : 0,
+    playCount: includePlays
+      ? _countWristbandRecordPlays({ cards, wristbandType: templateType })
+      : 0,
     headerColor: wristbandHeaderColor,
     cards,
     cellStyles: safeDeepClone(cellCustomizations),
@@ -330,7 +347,10 @@ function _wristbandTemplateMeta(template) {
 
 async function saveWristbandTemplate() {
   try {
-    const totalPlays = _countWristbandRecordPlays({ cards: wristbandCards });
+    const totalPlays = _countWristbandRecordPlays({
+      cards: wristbandCards,
+      wristbandType: wristbandType || "classic",
+    });
     const defaultName = wristbandCards[currentCardIndex]?.name
       ? `${wristbandCards[currentCardIndex].name} Template`
       : "Wristband Template";
@@ -467,6 +487,11 @@ async function _loadWristbandTemplate(templateId) {
 
   saveWristbandState();
   hydrateWristbandState(template, { markDirty: true, preserveFavorites: true });
+  if (template.wristbandType === "player") {
+    startPlayerWristband();
+  } else {
+    startClassicWristband();
+  }
   scheduleWristbandAutosave();
   showToast(`Loaded template "${template.name}"`, { type: "success" });
 }
@@ -506,16 +531,7 @@ function loadSavedWristbandsList() {
   if (!container) return;
 
   setWristbandSavedSectionVisibility(section, true);
-  const totalPlays = (wb) => {
-    if (wb.cards) {
-      return wb.cards.reduce(
-        (sum, c) => sum + (Array.isArray(c.data) ? c.data.filter((p) => p !== null).length : 0),
-        0,
-      );
-    }
-    if (wb.data) return wb.data.filter((p) => p !== null).length;
-    return 0;
-  };
+  const totalPlays = (wb) => _countWristbandRecordPlays(wb);
   const cardCount = (wb) => (wb.cards ? wb.cards.length : 1);
   const favoriteCount = (wb) =>
     Array.isArray(wb.favorites) ? normalizeWbFavorites(wb.favorites).length : 0;

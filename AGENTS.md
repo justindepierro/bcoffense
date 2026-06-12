@@ -7,12 +7,12 @@
 
 ## Project Overview
 
-**BCOffense** is a football practice management PWA (Progressive Web App) for building practice scripts, wristbands, call sheets, defensive tendency reports, and game plans. The core app runs client-side — data lives in `localStorage`, playbook data is imported via CSV, and Cloudflare Pages Functions provide a lightweight username/password auth gate for the deployed site.
+**BCOffense** is a football practice management PWA (Progressive Web App) for building practice scripts, wristbands, call sheets, defensive tendency reports, and game plans. The core app runs client-side: most data lives in compressed `localStorage`, the playbook and play images use IndexedDB with fallbacks, playbook data is imported via CSV, and Cloudflare Pages Functions provide a lightweight username/password auth gate for the deployed site.
 
 - **Repo:** `justindepierro/bcoffense` on GitHub
 - **Stack:** Vanilla HTML / CSS / JS — zero build tools, no bundler, no npm, no TypeScript
 - **Hosting:** Cloudflare Pages (static app + Pages Functions auth); GitHub Pages can still serve static builds but is not the secure entry point
-- **Offline:** Service Worker (`sw.js`) with stale-while-revalidate caching
+- **Offline:** Service Worker (`sw.js`) with network-first app-shell caching and stale-while-revalidate for other local assets
 - **Entry point:** `index.html` (single-page app, all tabs exist in the DOM)
 
 ---
@@ -36,7 +36,9 @@ css/
   tendencies.css        ← Defensive tendencies analysis
   offense-builder.css   ← Offense builder module
   dashboard.css         ← Dashboard, stats, game plan
+  gameplan.css          ← Game plan board and print controls
   installation.css      ← Installation guide
+  identity.css          ← Offensive identity screens
   print.css             ← All @media print blocks
   responsive.css        ← Global breakpoints
 
@@ -44,6 +46,7 @@ js/
   utils.js              ← Shared utilities, constants, modals, and CSV parser
   history.js            ← Shared undo/redo history manager
   dom-helpers.js        ← Shared DOM sanitization, context menu, long-press, and reorder helpers
+  lz-string.min.js      ← Local LZ compression library used by storage.js
   storage.js            ← Storage keys, migrations, backup/restore, and draft persistence
   storage-ui.js         ← Storage-facing backup, restore, and storage info UI
   play-images.js        ← IndexedDB play-image storage and backup image import/export
@@ -81,16 +84,19 @@ js/
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   callsheet-layout.js   ← Call sheet layout/order modal state and drag-drop helpers
   callsheet-picker-runtime.js ← Call sheet picker flows, wristband loading, and runtime bindings
+  callsheet-gameplan-drawer.js ← Game plan drawer inside the call sheet
   constraints.js        ← Game plan constraints evaluation engine
+  script-vision.js      ← Script vision-mode rendering and controls
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
   installation.js       ← Installation/help guide
+  identity.js           ← Offensive identity runtime
   offensebuilder.js     ← Offense builder tool
   help.js               ← Context-sensitive help content and panel runtime
   dashboard.js          ← Dashboard and game-week runtime
   gameplan.js           ← Game plan core: state, storage, filtering, signatures, init
   gameplan-render.js    ← Game plan rendering (header, library, boxes, chips, scoreboard)
   gameplan-dnd.js       ← Game plan drag & drop wiring
-  gameplan-actions.js   ← Game plan box CRUD, selection, density, manage/reorder/hide/rename
+  gameplan-actions.js   ← Game plan box CRUD, per-play flags, selection, density, manage/reorder/hide/rename
   gameplan-smart.js     ← Game plan smart features (criteria detect, suggest fill, templates, health, touches, spotlight, coverage matrix, tendency mirror)
   gameplan-print.js     ← Game plan print modal + print render
   gameplan-integrations.js ← Game plan push to call sheet/script, dashboard send, plan compare
@@ -121,84 +127,85 @@ All scripts use `defer` and load in this exact order from index.html:
 1. js/utils.js          ← Must stay before shared helper consumers (constants, modals, escapeHtml)
 2. js/history.js        ← Shared undo/redo history manager; depends on safeDeepClone from utils.js
 3. js/dom-helpers.js    ← Shared DOM sanitization, context menu, and reorder helpers
-4. js/storage.js        ← Storage keys, migrations, backup/restore state, draft persistence
-5. js/storage-ui.js     ← Backup/restore UI and storage info overlays
-6. js/play-images.js    ← IndexedDB play-image storage and backup image import/export
-7. js/cloud-sync.js     ← Cloudflare-backed complete backup push/pull sync
-8. js/auth.js           ← Simple local login and role-based UI restrictions
-9. js/vision.js
-10. js/team-settings.js
-11. js/playbook.js
-12. js/playbook-collections.js
-13. js/playbook-print.js
-14. js/playbook-editor.js
-15. js/playbook-import.js
-16. js/playbook-export.js
-17. js/playbook-chrome.js
-18. js/playbook-state.js
-19. js/playbook-filters.js
-20. js/playbook-navigation.js
-21. js/playbook-actions.js
-22. js/playbook-render.js
-23. js/playbook-sanitize.js
-24. js/script-state.js
-25. js/script-shared.js
-26. js/script-players.js
-27. js/script-display-options.js
-28. js/script-add.js
-29. js/script-sort.js
-30. js/script-export.js
-31. js/script-available.js
-32. js/script-selection.js
-33. js/script-render.js
-34. js/script-periods.js
-35. js/script-period-sync.js
-36. js/script-smart.js
-37. js/script-storage.js
-38. js/script-integrations.js
-39. js/wristband.js
-40. js/wristband-library.js
-41. js/wristband-render.js
-42. js/wristband-cards.js
-43. js/wristband-export.js
-44. js/wristband-search.js
-45. js/wristband-modals.js
-46. js/wristband-cell-popup.js
-47. js/wristband-cell-actions.js
-48. js/wristband-sort.js
-49. js/wristband-storage.js
-50. js/wristband-runtime.js
-51. js/callsheet.js
-52. js/callsheet-categories.js
-53. js/callsheet-metadata.js
-54. js/callsheet-layout.js
-55. js/callsheet-picker-runtime.js
-56. js/callsheet-gameplan-drawer.js
-57. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-58. js/script-vision.js
-59. js/tendencies.js
-60. js/installation.js
-61. js/identity.js
-62. js/offensebuilder.js
-63. js/help.js
-64. js/dashboard.js
-65. js/gameplan.js          ← Must load before all gameplan-* split files
-66. js/gameplan-render.js
-67. js/gameplan-dnd.js
-68. js/gameplan-actions.js
-69. js/gameplan-smart.js
-70. js/gameplan-print.js
-71. js/gameplan-integrations.js
-72. js/gameplan-snapshots.js
-73. js/print-studio.js  ← Unified print/export hub after module print functions
-74. js/app-events.js
-75. js/app-shell.js
-76. js/app-session.js
-77. js/app-navigation.js
-78. js/app-module-init.js
-79. js/app-bootstrap.js
-80. js/app-init.js
-81. js/app.js           ← Must be last; shared global state only
+4. js/lz-string.min.js  ← Local compression library used by storage.js
+5. js/storage.js        ← Storage keys, migrations, backup/restore state, draft persistence
+6. js/storage-ui.js     ← Backup/restore UI and storage info overlays
+7. js/play-images.js    ← IndexedDB play-image storage and backup image import/export
+8. js/cloud-sync.js     ← Cloudflare-backed complete backup push/pull sync
+9. js/auth.js           ← Simple local login and role-based UI restrictions
+10. js/vision.js
+11. js/team-settings.js
+12. js/playbook.js
+13. js/playbook-collections.js
+14. js/playbook-print.js
+15. js/playbook-editor.js
+16. js/playbook-import.js
+17. js/playbook-export.js
+18. js/playbook-chrome.js
+19. js/playbook-state.js
+20. js/playbook-filters.js
+21. js/playbook-navigation.js
+22. js/playbook-actions.js
+23. js/playbook-render.js
+24. js/playbook-sanitize.js
+25. js/script-state.js
+26. js/script-shared.js
+27. js/script-players.js
+28. js/script-display-options.js
+29. js/script-add.js
+30. js/script-sort.js
+31. js/script-export.js
+32. js/script-available.js
+33. js/script-selection.js
+34. js/script-render.js
+35. js/script-periods.js
+36. js/script-period-sync.js
+37. js/script-smart.js
+38. js/script-storage.js
+39. js/script-integrations.js
+40. js/wristband.js
+41. js/wristband-library.js
+42. js/wristband-render.js
+43. js/wristband-cards.js
+44. js/wristband-export.js
+45. js/wristband-search.js
+46. js/wristband-modals.js
+47. js/wristband-cell-popup.js
+48. js/wristband-cell-actions.js
+49. js/wristband-sort.js
+50. js/wristband-storage.js
+51. js/wristband-runtime.js
+52. js/callsheet.js
+53. js/callsheet-categories.js
+54. js/callsheet-metadata.js
+55. js/callsheet-layout.js
+56. js/callsheet-picker-runtime.js
+57. js/callsheet-gameplan-drawer.js
+58. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+59. js/script-vision.js
+60. js/tendencies.js
+61. js/installation.js
+62. js/identity.js
+63. js/offensebuilder.js
+64. js/help.js
+65. js/dashboard.js
+66. js/gameplan.js          ← Must load before all gameplan-* split files
+67. js/gameplan-render.js
+68. js/gameplan-dnd.js
+69. js/gameplan-actions.js
+70. js/gameplan-smart.js
+71. js/gameplan-print.js
+72. js/gameplan-integrations.js
+73. js/gameplan-snapshots.js
+74. js/print-studio.js  ← Unified print/export hub after module print functions
+75. js/app-events.js
+76. js/app-shell.js
+77. js/app-session.js
+78. js/app-navigation.js
+79. js/app-module-init.js
+80. js/app-bootstrap.js
+81. js/app-init.js
+82. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -273,7 +280,7 @@ Some containers (`#scriptPlays`, `#availablePlays`, `#playbookTable tbody`) have
 
 ## Storage System
 
-All persistent data uses `localStorage` via the `storageManager` singleton.
+Persistent data uses the `storageManager` singleton. Most records are LZ-compressed in `localStorage`; the playbook uses IndexedDB with a transparent `localStorage` fallback.
 
 ### storageManager API
 
@@ -281,6 +288,8 @@ All persistent data uses `localStorage` via the `storageManager` singleton.
 storageManager.get(key, (defaultValue = null)); // JSON.parse; returns default on miss/error
 storageManager.set(key, value); // JSON.stringify; shows quota modal on overflow
 storageManager.remove(key); // localStorage.removeItem
+await storageManager.getPlaybook(); // Read playbook from IndexedDB; migrates/falls back as needed
+storageManager.setPlaybook(plays); // Async IndexedDB write with localStorage fallback
 storageManager.getAllData(); // Full backup object for export
 storageManager.restoreAllData(backup, options); // Restore from backup (async)
 storageManager.getStorageInfo(); // { totalSize, totalSizeFormatted, itemSizes, itemCount }
@@ -293,10 +302,12 @@ storageManager.clearAll((confirmFirst = true)); // Wipe all keys (async)
 PLAYBOOK                   → "playbook"
 SAVED_SCRIPTS              → "savedScripts"
 SAVED_WRISTBANDS           → "savedWristbands"
+WRISTBAND_TEMPLATES        → "wristbandTemplates"
 SORT_PRESETS               → "sortPresets"
 CUSTOM_SORT_ORDERS         → "customSortOrders"
 SCRIPT_CUSTOM_SORT_ORDERS  → "scriptCustomSortOrders"
 PERIOD_TEMPLATES           → "periodTemplates"
+SCRIPT_TEMPLATES           → "scriptTemplates"
 CALL_SHEET                 → "callSheet"
 CALL_SHEET_SETTINGS        → "callSheetSettings"
 COLUMN_VISIBILITY          → "columnVisibility"
@@ -316,12 +327,32 @@ DEFENSIVE_TENDENCIES       → "defensiveTendencies"
 TENDENCIES_DRAFT           → "tendenciesDraft"
 TENDENCIES_SETTINGS        → "tendenciesSettings"
 GAME_WEEK                  → "gameWeek"
+MOBILE_COACH_LOCK          → "mobileCoachLock"
 INSTALLATION               → "installationData"
+INSTALLATION_TEMPLATES     → "installationTemplates"
 CS_SCOUTING_OVERLAY        → "csScoutingOverlay"
 PLAY_COLLECTIONS           → "playCollections"
 CALLSHEET_CONSTRAINTS      → "callSheetConstraints"
-CLOUD_SYNC_SETTINGS        → "cloudSyncSettings"
+OB_PLAY_RATINGS            → "ob_playRatings"
+LAST_ACTIVE_TAB            → "lastActiveTab"
+THEME                      → "theme"
+VISION_MODE                → "visionMode"
+SCHEDULE                   → "schedule"
+GAME_PLAN_TAGS             → "gamePlanTags"
 PRINT_STUDIO_SETTINGS      → "printStudioSettings"
+WRISTBAND_SORT_CRITERIA    → "wristbandSortCriteria"
+WRISTBAND_FAVORITES        → "wristbandFavorites"
+TEAM_ROSTER                → "teamRoster"
+TEAM_NAME                  → "teamName"
+TEAM_PERSONNEL_PACKAGES    → "teamPersonnelPackages"
+TEAM_SWAP_GROUPS           → "teamSwapGroups"
+TEAM_ASSIGNMENT_LABELS     → "teamAssignmentLabels"
+TEAM_SETTINGS_COLLAPSED    → "teamSettingsCollapsed"
+GAME_PLAN_BOARDS           → "gamePlanBoards"
+GAME_PLAN_TEMPLATES        → "gamePlanTemplates"
+CALLSHEET_PRINT_OPTIONS    → "callSheetPrintOptions"
+CLOUD_SYNC_SETTINGS        → "cloudSyncSettings"
+COLOR_PRESET               → "colorPreset"
 ```
 
 ### Autosave / Draft Pattern
@@ -423,7 +454,7 @@ Imported from CSV via `parseCSV()`. This is the core data shape used everywhere:
 }
 ```
 
-**CALLSHEET_FRONT** — 21 situation/down-based buckets (front page):
+**CALLSHEET_FRONT** — 19 situation/down-based buckets (front page):
 `2nd-medium`, `2nd-long`, `3rd-short-1-3`, `short-yardage`, `gbot`, `3rd-short-2down`, `rz-20`, `4th-down`, `3rd-medium`, `rz-10`, `4-minute`, `3rd-long`, `rz-5`, `2-minute`, `backed-up`, `goal-line`, `last-plays`, `saigon`, `must-haves`
 
 **CALLSHEET_BACK** — 18 type/player-based buckets (back page):
@@ -463,7 +494,7 @@ let currentActiveTab = "playbook"; // Active UI tab name for help + navigation s
 ```js
 let callSheet = {}; // The call sheet data (see structure above)
 let callSheetSettings = {}; // Orientation, current page, custom names
-const CALLSHEET_CATEGORIES = []; // All 39 category definitions
+const CALLSHEET_CATEGORIES = []; // All 37 base category definitions
 ```
 
 ### script runtime (script-\*.js)
@@ -475,7 +506,7 @@ let bulkSelectedIndices = []; // Multi-selected play indices
 let selectedAvailablePlays = []; // Checked available plays
 ```
 
-### wristband runtime (wristband\*.js)
+### wristband runtime (utils.js + wristband\*.js)
 
 ```js
 let wristbandCards = []; // Array of card objects
@@ -601,12 +632,13 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ## Service Worker
 
-**Cache name:** `bcoffense-vN` (currently v428)
+**Cache name:** `bcoffense-vN` in `sw.js`
 
 **Strategy:**
 
 - **Install:** Pre-cache all local assets listed in `LOCAL_ASSETS` array
-- **Local files:** Stale-while-revalidate (serve cached, then update cache in background)
+- **Navigations and app-shell HTML/CSS/JS:** Network-first with cache fallback
+- **Other same-origin assets:** Stale-while-revalidate
 - **External resources:** Network-first with cache fallback (Google Fonts, CDNs)
 - **Offline:** Navigation requests fall back to `offline.html`
 
@@ -689,7 +721,7 @@ refactor: Code restructuring, no behavior change
 
 ### Wristband runtime
 
-- `wristband.js` is the foundation layer: globals, custom display/tag helpers, and undo/history helpers.
+- `wristband.js` is the foundation layer: globals, mode state, capacity helpers, custom display/tag helpers, and undo/history helpers.
 - `wristband-library.js` owns available-play filtering, search state, counts, and stats.
 - `wristband-render.js` owns card rendering, color controls, clear, and auto-fill.
 - `wristband-cards.js` owns card tabs, duplicate/remove/rename, and active card switching.

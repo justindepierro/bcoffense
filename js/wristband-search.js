@@ -192,7 +192,8 @@ async function smartFillBySituation() {
   }
 
   const cardData = getCurrentCardData();
-  const emptyCount = cardData.filter((c) => c === null).length;
+  const cellsPerCard = getActiveWristbandCellCount();
+  const emptyCount = cardData.slice(0, cellsPerCard).filter((c) => c === null).length;
   const toFill = Math.min(filtered.length, emptyCount);
 
   if (toFill === 0) {
@@ -209,7 +210,11 @@ async function smartFillBySituation() {
 
   saveWristbandState();
   let fillIdx = 0;
-  for (let cellIdx = 0; cellIdx < 40 && fillIdx < filtered.length; cellIdx++) {
+  for (
+    let cellIdx = 0;
+    cellIdx < cellsPerCard && fillIdx < filtered.length;
+    cellIdx++
+  ) {
     if (wristbandCards[currentCardIndex].data[cellIdx] === null) {
       wristbandCards[currentCardIndex].data[cellIdx] = filtered[fillIdx];
       fillIdx++;

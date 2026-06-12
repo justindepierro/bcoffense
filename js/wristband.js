@@ -1,12 +1,18 @@
 // Wristband Maker functionality
 
 // Wristband constants and state
-const WB_ROWS = 20;
-const MAX_CARDS = 5;
 let wristbandCards = [];
 let currentCardIndex = 0;
+let wristbandType = "";
+let wbPlayerCardMode = false;
+let wbPlayerCardPos = "respQ";
+let playerCardOverrides = {};
 let selectedWristbandPlay = null;
 let wristbandHeaderColor = "transparent";
+
+function getActiveWristbandCellCount() {
+  return wbPlayerCardMode ? WB_ROWS : CELLS_PER_CARD;
+}
 let wbSelectedTempos = [];
 let wbSelectedPersonnel = [];
 let wbFiltersCollapsed = true;
@@ -612,8 +618,13 @@ function scheduleWristbandAutosave() {
   wristbandAutosaveTimer = queueAutosave(
     wristbandAutosaveTimer,
     () => {
+      const cellsPerCard = getActiveWristbandCellCount();
       const totalPlays = wristbandCards.reduce(
-        (sum, card) => sum + (card.data ? card.data.filter((play) => play !== null).length : 0),
+        (sum, card) =>
+          sum +
+          (card.data
+            ? card.data.slice(0, cellsPerCard).filter((play) => play !== null).length
+            : 0),
         0,
       );
 
@@ -624,6 +635,7 @@ function scheduleWristbandAutosave() {
       }
 
       persistDraftData(STORAGE_KEYS.WRISTBAND_DRAFT, {
+        wristbandType: wristbandType || "classic",
         headerColor: wristbandHeaderColor,
         cards: safeDeepClone(wristbandCards),
         cellStyles: safeDeepClone(cellCustomizations),
@@ -655,15 +667,25 @@ async function checkWristbandDraft() {
       return;
     }
 
+    const draftCellsPerCard = getWristbandRecordCellCount(draft);
     const draftPlays = draft.cards.reduce(
-      (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
+      (sum, c) =>
+        sum +
+        (c.data
+          ? c.data.slice(0, draftCellsPerCard).filter((p) => p !== null).length
+          : 0),
       0,
     );
     if (draftPlays === 0) return;
 
     // Only offer if current wristband is empty
+    const currentCellsPerCard = getActiveWristbandCellCount();
     const currentPlays = wristbandCards.reduce(
-      (sum, c) => sum + (c.data ? c.data.filter((p) => p !== null).length : 0),
+      (sum, c) =>
+        sum +
+        (c.data
+          ? c.data.slice(0, currentCellsPerCard).filter((p) => p !== null).length
+          : 0),
       0,
     );
     if (currentPlays > 0) return;
@@ -681,6 +703,11 @@ async function checkWristbandDraft() {
     );
     if (doRestore) {
       hydrateWristbandState(draft, { markDirty: true });
+      if (draft.wristbandType === "player") {
+        startPlayerWristband();
+      } else {
+        startClassicWristband();
+      }
       showToast("🃏 Draft restored");
     } else {
       discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
@@ -701,6 +728,7 @@ async function checkWristbandDraft() {
  */
 function getWristbandState() {
   return {
+    wristbandType,
     cards: safeDeepClone(wristbandCards),
     customizations: safeDeepClone(cellCustomizations),
     currentCardIndex: currentCardIndex,
@@ -902,7 +930,7 @@ function rebuildWristbandCellCustomizations(mappings, opts = {}) {
   if (Array.isArray(opts.clearCardIndices)) {
     opts.clearCardIndices.forEach((cardIdx) => {
       if (!Number.isInteger(cardIdx)) return;
-      for (let cellIdx = 0; cellIdx < 40; cellIdx++) {
+      for (let cellIdx = 0; cellIdx < CELLS_PER_CARD; cellIdx++) {
         delete nextCustomizations[getWristbandCellCustomizationKey(cardIdx, cellIdx)];
       }
     });
@@ -926,11 +954,16 @@ function refreshWristbandEditorView(opts = {}) {
 function undoWristband() {
   const previousState = historyManager.undo("wristband", getWristbandState());
   if (previousState) {
+    wristbandType = previousState.wristbandType || wristbandType || "classic";
+    wbPlayerCardMode = wristbandType === "player";
     wristbandCards = previousState.cards;
     cellCustomizations = previousState.customizations;
     currentCardIndex = previousState.currentCardIndex;
-    renderCardTabs();
-    renderWristbandGrid();
+    if (wristbandType === "player") {
+      startPlayerWristband();
+    } else {
+      startClassicWristband();
+    }
   }
 }
 
@@ -940,11 +973,16 @@ function undoWristband() {
 function redoWristband() {
   const futureState = historyManager.redo("wristband", getWristbandState());
   if (futureState) {
+    wristbandType = futureState.wristbandType || wristbandType || "classic";
+    wbPlayerCardMode = wristbandType === "player";
     wristbandCards = futureState.cards;
     cellCustomizations = futureState.customizations;
     currentCardIndex = futureState.currentCardIndex;
-    renderCardTabs();
-    renderWristbandGrid();
+    if (wristbandType === "player") {
+      startPlayerWristband();
+    } else {
+      startClassicWristband();
+    }
   }
 }
 

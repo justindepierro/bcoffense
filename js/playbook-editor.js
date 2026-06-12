@@ -1,7 +1,7 @@
 /** Index into master `plays` array of the play being edited, or -1 for new */
 let _editingMasterIdx = -1;
 
-/** Responsibility position columns for player card printing */
+/** Responsibility position columns for player wristband printing. */
 const RESP_POSITIONS = [
   { key: "respQ", label: "Q" },
   { key: "respT", label: "T" },
@@ -260,7 +260,7 @@ function _buildPlayEditorResponsibilitiesSection(play) {
         Player Responsibilities <span class="toggle-icon">${startOpen ? "▼" : "▶"}</span>
       </div>
       <div class="pb-resp-body${startOpen ? "" : " collapsed"}">
-        <p class="pb-editor-lineup-hint">Fill in each player's assignment — used when printing Player Cards from the Wristband.</p>
+        <p class="pb-editor-lineup-hint">Fill in each player's assignment — used when printing Player Wristbands.</p>
         <div class="pb-resp-grid">${posHtml}</div>
         <div class="pb-editor-field pb-editor-field-wide pb-resp-notes">
           <label for="pe-respNotes">Resp. Notes</label>

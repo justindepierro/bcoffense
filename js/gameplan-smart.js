@@ -1247,7 +1247,7 @@ async function pushSmartGamePlanRecommendationsToWristband() {
     showToast("Wristband module not ready yet.", { type: "error" });
     return;
   }
-  if (typeof MAX_CARDS === "number" && wristbandCards.length >= MAX_CARDS) {
+  if (wristbandCards.length >= MAX_CARDS) {
     showToast(`Maximum ${MAX_CARDS} wristband cards reached. Remove one first.`, {
       duration: 3500,
       type: "error",
@@ -1259,7 +1259,7 @@ async function pushSmartGamePlanRecommendationsToWristband() {
     showToast("No smart recommendations available yet.", { type: "warning" });
     return;
   }
-  const cellsPerCard = typeof CELLS_PER_CARD === "number" ? CELLS_PER_CARD : 40;
+  const cellsPerCard = getActiveWristbandCellCount();
   const toAdd = entries.slice(0, cellsPerCard);
   const trimText = entries.length > cellsPerCard ? ` Only the first ${cellsPerCard} will fit on one card.` : "";
   const ok = await showConfirm(
@@ -1271,7 +1271,7 @@ async function pushSmartGamePlanRecommendationsToWristband() {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opp = gw?.opponentName || "";
   const cardName = opp ? `Smart Plan vs ${opp}` : "Smart Plan";
-  const data = Array(cellsPerCard).fill(null);
+  const data = Array(CELLS_PER_CARD).fill(null);
   toAdd.forEach((entry, index) => {
     const copy = { ...entry.play };
     delete copy._gpFlags;

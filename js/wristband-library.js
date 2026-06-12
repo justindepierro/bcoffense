@@ -1,7 +1,7 @@
 function initWristband() {
   try {
     if (wristbandCards.length === 0) {
-      wristbandCards = [{ name: "Card 1", data: Array(40).fill(null) }];
+      wristbandCards = [{ name: "Card 1", data: Array(CELLS_PER_CARD).fill(null) }];
     }
     currentCardIndex = 0;
     initCellMarkerPalette();
@@ -193,7 +193,9 @@ function addPlayToNextEmpty(playIndex) {
   if (!play) return;
 
   const cardData = getCurrentCardData();
-  const emptyIdx = cardData.findIndex((cell) => cell === null);
+  const emptyIdx = cardData
+    .slice(0, getActiveWristbandCellCount())
+    .findIndex((cell) => cell === null);
 
   if (emptyIdx === -1) {
     showToast("⚠️ No empty cells! Clear some or switch to another card", {
@@ -259,7 +261,7 @@ function updateWbStats() {
   let passCount = 0;
 
   wristbandCards.forEach((card) => {
-    const cells = card.data || card || [];
+    const cells = (card.data || card || []).slice(0, getActiveWristbandCellCount());
     cells.forEach((cell) => {
       if (cell) {
         totalPlays += 1;

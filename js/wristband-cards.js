@@ -3,8 +3,8 @@ function renderCardTabs() {
   if (!container) return;
   let html = wristbandCards
     .map((card, i) => {
-      const count = card.data.filter((p) => p !== null).length;
-      const total = card.data.length;
+      const total = Math.min(getActiveWristbandCellCount(), card.data.length);
+      const count = card.data.slice(0, total).filter((p) => p !== null).length;
       const descHtml = card.description
         ? `<span class="card-tab-desc" title="${escapeHtml(card.description)}">${escapeHtml(card.description)}</span>`
         : "";
@@ -51,7 +51,7 @@ function addNewCard() {
   mutateWristbandState(() => {
     wristbandCards.push({
       name: `Card ${wristbandCards.length + 1}`,
-      data: Array(40).fill(null),
+      data: Array(CELLS_PER_CARD).fill(null),
     });
     currentCardIndex = wristbandCards.length - 1;
   });
@@ -86,7 +86,7 @@ function duplicateCard() {
   mutateWristbandState(() => {
     wristbandCards.splice(newIdx, 0, clone);
     shiftWristbandCardCustomizationIndices(newIdx, 1);
-    for (let si = 0; si < 40; si++) {
+    for (let si = 0; si < CELLS_PER_CARD; si++) {
       moveWristbandCellCustomization(
         currentCardIndex,
         si,

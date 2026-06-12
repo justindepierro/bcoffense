@@ -1220,7 +1220,7 @@
   line-height: 1.4;
 }
 
-/* ── Player Card Mode Bar ────────────────────────────────────────────────── */
+/* ── Player Wristband Mode Bar ───────────────────────────────────────────── */
 .pc-mode-bar {
   display: none;
   align-items: center;
@@ -1259,9 +1259,9 @@
   user-select: none;
 }
 
-/* ── Player Card Inline View ─────────────────────────────────────────────── */
+/* ── Player Wristband Inline View ────────────────────────────────────────── */
 
-/* Player card grid: 3-col [num | play | responsibility] × 20 rows
+/* Player wristband grid: 3-col [num | play | responsibility] × 20 rows
    Same physical card dimensions as classic — half the plays, full info per row */
 .wristband-grid.pc-grid-active {
   display: grid !important;
@@ -1269,14 +1269,14 @@
   height: 100% !important;
 }
 
-/* Player card matches classic card dimensions exactly */
+/* Player wristband matches classic on-screen dimensions exactly */
 .wristband-card.pc-card-active {
   width: 7in;
   height: 4.2in;
   overflow: hidden;
 }
 
-/* Assignment cell — 3rd column in the player card grid */
+/* Assignment cell — 3rd column in the player wristband grid */
 .pc-assignment-cell {
   position: relative;
   border-left: 1px solid var(--color-border-med) !important;
@@ -1417,7 +1417,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     color: var(--wristband-print-grid);
   }
 
-  /* Single player card in print — 3-col grid: num | play | responsibility */
+  /* Single player wristband in print — 3-col grid: num | play | responsibility */
   .pc-print-card-wrap {
     flex: 0 0 auto;
     display: flex;

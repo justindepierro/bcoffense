@@ -439,12 +439,14 @@ function loadWristbandToCallSheet() {
   }
 
   const wristbandPlays = [];
+  const cellsPerCard = getWristbandRecordCellCount(wristbandData);
   wristbandData.cards.forEach((card, cardIdx) => {
     const cellData = card.data || card;
     if (!Array.isArray(cellData)) return;
-    cellData.forEach((play, cellIdx) => {
+    cellData.slice(0, cellsPerCard).forEach((play, cellIdx) => {
       if (play && (play.formation || play.play)) {
-        const wristbandNum = cardIdx * 40 + cellIdx + 11;
+        const wristbandNum =
+          cardIdx * cellsPerCard + cellIdx + WRISTBAND_OFFSET;
         wristbandPlays.push({ ...play, wristbandNumber: wristbandNum });
       }
     });

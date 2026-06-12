@@ -1,12 +1,3 @@
-// Global handler for JV/wristband flag toggles (called by data-action)
-function toggleGamePlanPlayFlag(arg) {
-  const ref = _gpParseBoxPlayArg(arg);
-  if (!ref || !ref.flag) return;
-  if (_gpToggleFlag(ref.boxId, ref.sig, ref.flag, ref.rawIdx)) {
-    requestRenderGamePlan();
-    showToast(ref.flag === "wb" ? "Wristband flag toggled" : "JV flag toggled", { duration: 1200 });
-  }
-}
 /* =========================================================================
    Game Plan tab — drafting board for assigning plays into theoretical buckets
    - Source: full playbook, user-filtered
@@ -552,12 +543,14 @@ async function loadGamePlanWristband() {
     return;
   }
   const wristbandPlays = [];
+  const cellsPerCard = getWristbandRecordCellCount(wb);
   wb.cards.forEach((card, cardIdx) => {
     const cellData = card.data || card;
     if (!Array.isArray(cellData)) return;
-    cellData.forEach((play, cellIdx) => {
+    cellData.slice(0, cellsPerCard).forEach((play, cellIdx) => {
       if (play && (play.formation || play.play)) {
-        const wristbandNumber = cardIdx * 40 + cellIdx + 11;
+        const wristbandNumber =
+          cardIdx * cellsPerCard + cellIdx + WRISTBAND_OFFSET;
         wristbandPlays.push({ ...play, wristbandNumber });
       }
     });

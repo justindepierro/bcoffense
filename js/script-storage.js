@@ -1002,13 +1002,18 @@ function loadWristbandForScript() {
 function findPlayOnWristband(play) {
   if (!scriptWristband || !scriptWristband.cards) return null;
 
+  const cellsPerCard = getWristbandRecordCellCount(scriptWristband);
   for (let cardIdx = 0; cardIdx < scriptWristband.cards.length; cardIdx++) {
     const card = scriptWristband.cards[cardIdx];
-    const cardOffset = cardIdx * 40;
-    for (let cellIdx = 0; cellIdx < card.data.length; cellIdx++) {
+    const cardOffset = cardIdx * cellsPerCard;
+    for (
+      let cellIdx = 0;
+      cellIdx < Math.min(card.data.length, cellsPerCard);
+      cellIdx++
+    ) {
       const wristbandPlay = card.data[cellIdx];
       if (wristbandPlay && playsMatch(play, wristbandPlay)) {
-        return cellIdx + 11 + cardOffset;
+        return cellIdx + WRISTBAND_OFFSET + cardOffset;
       }
     }
   }

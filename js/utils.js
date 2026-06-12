@@ -3,10 +3,16 @@
 // ============ Global Constants ============
 const AUTOSAVE_DEBOUNCE_MS = 3000;
 const DRAFT_EXPIRY_MS = 86400000; // 24 hours
+const WB_ROWS = 20;
 const CELLS_PER_CARD = 40;
+const MAX_CARDS = 5;
 const WRISTBAND_OFFSET = 11;
 const PICKER_LIMIT = 150;
 const TOOLTIP_DELAY_MS = 200;
+
+function getWristbandRecordCellCount(record) {
+  return record?.wristbandType === "player" ? WB_ROWS : CELLS_PER_CARD;
+}
 
 // ============ Shared Color Tokens ============
 // Mirrors CSS custom properties for use in JS-generated inline styles

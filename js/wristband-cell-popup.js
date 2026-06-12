@@ -239,8 +239,8 @@ function getWristbandPendingCellCustomization() {
 
 function syncCellPopupForSelection(cardIdx, cellIdx, play, custom = {}) {
   const hasPlay = play !== null;
-  const cardOffset = cardIdx * 40;
-  const displayNum = cellIdx + 11 + cardOffset;
+  const cardOffset = cardIdx * getActiveWristbandCellCount();
+  const displayNum = cellIdx + WRISTBAND_OFFSET + cardOffset;
 
   document.getElementById("cellPopupTitle").textContent = hasPlay
     ? `📝 Edit Cell #${displayNum}`
@@ -533,7 +533,8 @@ async function applyWbComponentOrderToAll() {
     ? wristbandCards.map((_, idx) => idx)
     : [currentCardIndex];
 
-  const cellCount = targetCards.length * CELLS_PER_CARD;
+  const cellsPerCard = getActiveWristbandCellCount();
+  const cellCount = targetCards.length * cellsPerCard;
   const ok = await showConfirm(
     isClearing
       ? `Reset component order to default on <strong>${cellCount}</strong> cells?`
@@ -548,7 +549,7 @@ async function applyWbComponentOrderToAll() {
 
   mutateWristbandState(() => {
     targetCards.forEach((cardIdx) => {
-      for (let cellIdx = 0; cellIdx < CELLS_PER_CARD; cellIdx += 1) {
+      for (let cellIdx = 0; cellIdx < cellsPerCard; cellIdx += 1) {
         const key = getWristbandCellCustomizationKey(cardIdx, cellIdx);
         const existing = cellCustomizations[key] || {};
         const next = {

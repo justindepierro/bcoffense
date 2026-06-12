@@ -55,10 +55,15 @@ async function executeWbFindReplace() {
   let matchCount = 0;
   let cellsAffected = 0;
   const findLower = findStr.toLowerCase();
+  const cellsPerCard = getActiveWristbandCellCount();
 
   for (let cardIdx = 0; cardIdx < wristbandCards.length; cardIdx++) {
     const cardData = wristbandCards[cardIdx].data;
-    for (let cellIdx = 0; cellIdx < cardData.length; cellIdx++) {
+    for (
+      let cellIdx = 0;
+      cellIdx < Math.min(cardData.length, cellsPerCard);
+      cellIdx++
+    ) {
       const play = cardData[cellIdx];
       if (play && play.play && play.play.toLowerCase().includes(findLower)) {
         matchCount++;
@@ -87,7 +92,11 @@ async function executeWbFindReplace() {
 
   for (let cardIdx = 0; cardIdx < wristbandCards.length; cardIdx++) {
     const cardData = wristbandCards[cardIdx].data;
-    for (let cellIdx = 0; cellIdx < cardData.length; cellIdx++) {
+    for (
+      let cellIdx = 0;
+      cellIdx < Math.min(cardData.length, cellsPerCard);
+      cellIdx++
+    ) {
       const play = cardData[cellIdx];
       if (play && play.play && play.play.toLowerCase().includes(findLower)) {
         const newPlay = safeDeepClone(play);
