@@ -639,6 +639,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 **Strategy:**
 
 - **Install:** Pre-cache all local assets listed in `LOCAL_ASSETS` array
+- **Update activation:** Let a new worker wait until existing app tabs close; never force-reload an active workspace
 - **Navigations and app-shell HTML/CSS/JS:** Network-first with cache fallback
 - **Other same-origin assets:** Stale-while-revalidate
 - **External resources:** Network-first with cache fallback (Google Fonts, CDNs)
@@ -649,6 +650,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 - Any time you modify CSS, JS, or HTML files
 - Increment the number in `const CACHE_NAME = "bcoffense-vN"` in `sw.js`
 - If you add a new file, also add it to the `LOCAL_ASSETS` array
+- Never call `skipWaiting()` from the install handler or reload on `controllerchange`; background update checks must not reset in-progress work
 
 ---
 

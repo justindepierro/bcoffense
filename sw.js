@@ -4,12 +4,13 @@
  *
  * Strategy:
  *   - Pre-cache all local assets on install
+ *   - Let updates activate after existing app tabs close
  *   - Network-first for navigations and app-shell HTML/CSS/JS
  *   - Network-first for external resources (Google Fonts)
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v529";
+const CACHE_NAME = "bcoffense-v530";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -147,7 +148,6 @@ self.addEventListener("install", (event) => {
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) => cache.addAll(LOCAL_ASSETS)),
   );
-  self.skipWaiting();
 });
 
 // Activate: clean up old caches

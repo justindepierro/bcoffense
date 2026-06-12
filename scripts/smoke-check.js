@@ -182,6 +182,29 @@ function checkCacheBusters() {
   console.log(`cache busters ok (v${versions[0] || "unknown"})`);
 }
 
+function checkServiceWorkerLifecycle() {
+  const html = read("index.html");
+  const sw = read("sw.js");
+  const registrationBlock = html.match(
+    /<!-- Service Worker Registration -->([\s\S]*?)<\/script>/,
+  )?.[1] || "";
+  const installBlock = sw.match(
+    /self\.addEventListener\("install"[\s\S]*?\n\}\);/,
+  )?.[0] || "";
+
+  if (/postMessage\(\s*["']skipWaiting["']/.test(registrationBlock)) {
+    fail("service worker registration automatically activates waiting updates");
+  }
+  if (/controllerchange[\s\S]*?location\.reload/.test(registrationBlock)) {
+    fail("service worker controller changes force a page reload");
+  }
+  if (/skipWaiting\(\)/.test(installBlock)) {
+    fail("service worker install forces takeover of active app tabs");
+  }
+
+  console.log("service worker lifecycle preserves active work");
+}
+
 function checkTopLevelSymbolOwnership() {
   const locations = new Map();
   walk("js")
@@ -318,6 +341,7 @@ checkIndexReferences();
 checkCssGuardrails();
 checkAccessibilityBasics();
 checkCacheBusters();
+checkServiceWorkerLifecycle();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
 checkGuideContracts();
