@@ -28,3 +28,35 @@ npx wrangler pages deploy "$tmpdir/public" \
   --branch main \
   --commit-hash "$commit_hash" \
   --commit-message "$commit_message"
+
+expected_source="${commit_hash:0:7}"
+deployed_source=""
+
+for attempt in {1..12}; do
+  deployments="$(
+    npx wrangler pages deployment list \
+      --project-name bcoffense \
+      --environment production \
+      --json
+  )"
+  deployed_source="$(
+    node -e '
+      const deployments = JSON.parse(process.argv[1]);
+      process.stdout.write(deployments[0]?.Source || "");
+    ' "$deployments"
+  )"
+
+  if [[ "$deployed_source" == "$expected_source" ]]; then
+    printf 'Verified Cloudflare production source: %s\n' "$deployed_source"
+    exit 0
+  fi
+
+  if (( attempt < 12 )); then
+    sleep 5
+  fi
+done
+
+printf 'Cloudflare production source is %s; expected %s\n' \
+  "${deployed_source:-unknown}" \
+  "$expected_source" >&2
+exit 1

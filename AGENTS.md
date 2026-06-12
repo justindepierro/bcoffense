@@ -113,6 +113,8 @@ js/
 
 icons/                  ← PWA icons (192px, 512px)
 functions/              ← Cloudflare Pages Functions auth middleware and endpoints
+scripts/
+  deploy-cloudflare.sh  ← Safe Pages deploy; verifies production matches the current commit
 _routes.json            ← Cloudflare Pages Function route config protecting every route
 CLOUDFLARE_AUTH.md      ← Cloudflare deployment and secret setup notes
 ```
@@ -674,9 +676,11 @@ refactor: Code restructuring, no behavior change
 
 - Single branch: `main`
 - No PRs, no CI — direct commit and push
-- After completing and validating a requested code change, commit and push to `main` unless the user explicitly asks to keep changes local.
+- After completing and validating a requested change, commit and push to `main` unless the user explicitly asks to keep changes local.
+- After every successful commit and push, run `./scripts/deploy-cloudflare.sh`. This applies to code, documentation, configuration, and agent-instruction commits.
+- Do not report the task complete until the deploy script confirms Cloudflare production points to the current commit.
 - Always bump SW version when changing cached assets
-- For Cloudflare Pages deploys, use `./scripts/deploy-cloudflare.sh`; do not deploy the repo root.
+- Always use `./scripts/deploy-cloudflare.sh`; never deploy the repo root or call `wrangler pages deploy` directly.
 
 ---
 
@@ -692,6 +696,9 @@ refactor: Code restructuring, no behavior change
 8. **Bump `CACHE_NAME`** version in sw.js
 9. **Test offline** — ensure Service Worker caches necessary assets
 10. **Commit** with conventional commit message including `(SW vN)`
+11. **Push** the commit to `main`
+12. **Deploy** with `./scripts/deploy-cloudflare.sh`
+13. **Verify production** — the deploy script must confirm Cloudflare's source matches `HEAD`
 
 ---
 
