@@ -63,6 +63,30 @@ function getWristbandDisplayOptions() {
   };
 }
 
+function syncWristbandGridEmptyState(cardData, cellsPerCard) {
+  const cardEl = document.getElementById("wristbandCard");
+  if (!cardEl) return;
+
+  let emptyOverlay = cardEl.querySelector(".wb-grid-empty-state");
+  const visibleCells = Array.isArray(cardData)
+    ? cardData.slice(0, cellsPerCard)
+    : [];
+  const isEmpty = !visibleCells.some(Boolean);
+
+  if (!emptyOverlay && isEmpty) {
+    emptyOverlay = document.createElement("div");
+    emptyOverlay.className = "wb-grid-empty-state";
+    emptyOverlay.innerHTML = `
+      <div class="wb-empty-icon">📋</div>
+      <div class="wb-empty-title">Empty Card</div>
+      <div class="wb-empty-hint">Click any cell to add a play, or use <strong>⚡ Auto-Fill</strong> to populate from your playbook</div>
+    `;
+    cardEl.appendChild(emptyOverlay);
+  }
+
+  emptyOverlay?.classList.toggle("visible", isEmpty);
+}
+
 function renderWristbandGrid() {
   // If player wristband mode is active, delegate to its renderer.
   if (typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode) {
@@ -200,25 +224,7 @@ function renderWristbandGrid() {
   }
 
   grid.innerHTML = html;
-
-  const cardEl = document.getElementById("wristbandCard");
-  let emptyOverlay = cardEl.querySelector(".wb-grid-empty-state");
-  const hasPlays = cardData.some((play) => play !== null);
-  if (!hasPlays) {
-    if (!emptyOverlay) {
-      emptyOverlay = document.createElement("div");
-      emptyOverlay.className = "wb-grid-empty-state";
-      emptyOverlay.innerHTML = `
-        <div class="wb-empty-icon">📋</div>
-        <div class="wb-empty-title">Empty Card</div>
-        <div class="wb-empty-hint">Click any cell to add a play, or use <strong>⚡ Auto-Fill</strong> to populate from your playbook</div>
-      `;
-      cardEl.appendChild(emptyOverlay);
-    }
-    emptyOverlay.classList.add("visible");
-  } else if (emptyOverlay) {
-    emptyOverlay.classList.remove("visible");
-  }
+  syncWristbandGridEmptyState(cardData, CELLS_PER_CARD);
 
   historyManager.updateButtons("wristband");
 

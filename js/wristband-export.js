@@ -350,7 +350,11 @@ function renderPlayerCardGrid() {
   if (!grid) return;
 
   const card = wristbandCards[currentCardIndex];
-  if (!card) { grid.innerHTML = ""; return; }
+  if (!card) {
+    grid.innerHTML = "";
+    syncWristbandGridEmptyState([], WB_ROWS);
+    return;
+  }
 
   // Player wristbands use one play per row, half the classic card capacity.
   const cardOffset = currentCardIndex * WB_ROWS;
@@ -407,6 +411,7 @@ function renderPlayerCardGrid() {
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
   grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   grid.innerHTML = html;
+  syncWristbandGridEmptyState(card.data, WB_ROWS);
 
   // Wire assignment change + reset click events — only once per grid element lifetime
   if (!grid._pcListenerWired) {
