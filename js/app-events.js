@@ -897,7 +897,7 @@ function _dispatchDataHandler(e, attr) {
   const el = e.target;
   const raw = el.dataset[attr];
   if (!raw) return;
-  const fns = raw.split(";");
+  const fns = raw.split(";").map((name) => name.trim()).filter(Boolean);
   const pass = el.dataset.pass;
   const arg = el.dataset.arg;
   const key = el.dataset.key;

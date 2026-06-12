@@ -180,7 +180,7 @@ function _dashGetFreshDraft(storageKey) {
 function _dashGetGamePlanSnapshotsForWeek(gw) {
   const all = typeof _gpLoadAllSnapshots === "function"
     ? _gpLoadAllSnapshots()
-    : storageManager.get("gamePlanSnapshots", {});
+    : storageManager.get(STORAGE_KEYS.GAME_PLAN_SNAPSHOTS, {});
   const key = gw?.opponentName || "__unassigned__";
   return Array.isArray(all?.[key]) ? all[key] : [];
 }
@@ -1112,6 +1112,7 @@ function onDashSearchInput(value) {
 
 const debouncedOnDashSearchInput =
   typeof debounce === "function" ? debounce(onDashSearchInput, 120) : onDashSearchInput;
+window.debouncedOnDashSearchInput = debouncedOnDashSearchInput;
 
 /**
  * Render the schedule table in the dashboard

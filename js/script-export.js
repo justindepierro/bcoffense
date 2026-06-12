@@ -450,9 +450,12 @@ function setScriptColorScheme(presetId) {
   var newColor = preset ? preset.primary : UI_COLORS.periodDefault;
 
   // Sync all period separators to the new color (or default when clearing)
-  var changed = false;
+  var changed = script.some(function (item) {
+    return item.isSeparator && item.color !== newColor;
+  });
+  if (changed) saveScriptState();
   script.forEach(function (item) {
-    if (item.isSeparator) { item.color = newColor; changed = true; }
+    if (item.isSeparator) item.color = newColor;
   });
 
   // Directly update DOM for instant visual feedback (no RAF delay)
@@ -466,7 +469,7 @@ function setScriptColorScheme(presetId) {
     el.value = newColor;
   });
 
-  if (changed) { saveScriptState(); requestRenderScript(); }
+  if (changed) requestRenderScript();
 
   showToast(preset ? "\uD83C\uDFA8 Scheme: " + preset.label : "Color scheme cleared.", 2000);
 }

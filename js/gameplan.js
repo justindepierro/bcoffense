@@ -430,14 +430,14 @@ const GP_COVERAGE_SCENARIOS = [
 ];
 
 // Snapshots (saved named plans) storage
-const GP_SNAPSHOTS_KEY = "gamePlanSnapshots";
+const GP_SNAPSHOTS_KEY = STORAGE_KEYS.GAME_PLAN_SNAPSHOTS;
 
 /* -------------------------------------------------------------------------
    Storage helpers
    ------------------------------------------------------------------------- */
 
 function _gpStorageKey() {
-  return "gamePlanBoards";
+  return STORAGE_KEYS.GAME_PLAN_BOARDS;
 }
 
 function _gpLoadBoards() {

@@ -964,6 +964,8 @@ function undoWristband() {
     } else {
       startClassicWristband();
     }
+    markWristbandDirty();
+    scheduleWristbandAutosave();
   }
 }
 
@@ -983,6 +985,8 @@ function redoWristband() {
     } else {
       startClassicWristband();
     }
+    markWristbandDirty();
+    scheduleWristbandAutosave();
   }
 }
 

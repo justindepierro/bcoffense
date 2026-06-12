@@ -831,7 +831,7 @@ function initTeamSettings() {
     const select = event.target.closest('[data-field="teamPackageSlot"]');
     if (!select) {
       renderTeamSettings();
-      if (typeof renderPlaybookTable === "function") renderPlaybookTable();
+      if (typeof renderPlaybook === "function") renderPlaybook();
       return;
     }
     const packageIndex = parseInt(select.dataset.itemIndex, 10);

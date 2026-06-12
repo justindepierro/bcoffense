@@ -27,6 +27,7 @@ function summarizeBackup(backup) {
     "defensiveTendencies",
     "gameWeek",
     "gamePlanBoards",
+    "gamePlanSnapshots",
   ];
   const itemCount = storageKeys.filter((key) =>
     Object.prototype.hasOwnProperty.call(backup, key),

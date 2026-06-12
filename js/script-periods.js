@@ -119,6 +119,8 @@ function expandAllPeriods() {
 }
 
 function updatePeriodColor(index, el) {
+  if (!script[index] || script[index].color === el.value) return;
+  saveScriptState();
   script[index].color = el.value;
   const header = el.closest(".period-header");
   if (header) header.style.background = el.value;
@@ -129,40 +131,37 @@ function updatePeriodColor(index, el) {
   const schemeSelect = document.getElementById("scriptColorSchemeSelect");
   if (schemeSelect) schemeSelect.value = "";
   if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
-  saveScriptState();
   announceScriptA11y(`Updated color for ${script[index]?.label || "period"}`);
 }
 
 function updatePeriodLabel(index, label, live = false) {
   if (!script[index] || !script[index].isSeparator) return;
+  if (script[index].label === label) return;
+  if (live) beginScriptEdit();
+  else saveScriptState();
   script[index].label = label;
   updatePeriodHeaderLabelDisplay(index);
   updateJumpToPeriodOptions();
   if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
-  if (live) {
-    debouncedSaveScriptState();
-  } else {
-    saveScriptState();
-  }
 }
 
 function updatePeriodMinutes(index, el) {
-  script[index].minutes = parseInt(el.value, 10) || 0;
-  updatePeriodMetaDisplay(index);
+  const minutes = parseInt(el.value, 10) || 0;
+  if (!script[index] || script[index].minutes === minutes) return;
   saveScriptState();
+  script[index].minutes = minutes;
+  updatePeriodMetaDisplay(index);
   updateScriptStats();
   if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
 }
 
 function updatePeriodNotes(index, notes, live = false) {
   if (!script[index] || !script[index].isSeparator) return;
+  if ((script[index].notes || "") === notes) return;
+  if (live) beginScriptEdit();
+  else saveScriptState();
   script[index].notes = notes;
   if (typeof refreshScriptTimeline === "function") refreshScriptTimeline();
-  if (live) {
-    debouncedSaveScriptState();
-  } else {
-    saveScriptState();
-  }
 }
 
 function togglePeriodProtection(idx) {

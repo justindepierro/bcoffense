@@ -175,7 +175,7 @@
         Your saved scripts, playbook, and wristbands are safe in local storage.
         Reconnect to the internet and this page will reload automatically.
       </p>
-      <button class="retry-btn" id="retryBtn" onclick="handleRetry()">
+      <button class="retry-btn" id="retryBtn" type="button">
         <span class="retry-spinner" id="retrySpinner"></span>
         <span class="retry-label">Try Again</span>
       </button>
@@ -201,6 +201,8 @@
           }
         }, 900);
       }
+
+      document.getElementById("retryBtn").addEventListener("click", handleRetry);
     </script>
   </body>
 </html>

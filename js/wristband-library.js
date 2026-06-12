@@ -173,7 +173,9 @@ function renderWristbandPlays() {
         showEmoji && play.personnel
           ? `${getPersonnelEmoji(play.personnel, useSquares)} `
           : "";
-      const lineCallDisplay = play.lineCall ? ` [${play.lineCall}]` : "";
+      const lineCallDisplay = play.lineCall
+        ? ` [${escapeHtml(play.lineCall)}]`
+        : "";
       return `
         <div class="play-item wb-play-item" data-play-idx="${idx}" title="Double-click to add to next empty cell">
           <button class="wb-pin-btn${isFav ? " active" : ""}" data-action="toggleWbFavorite" data-idx="${idx}" title="${isFav ? "Unpin" : "Pin"} play" aria-label="${isFav ? "Unpin" : "Pin"} play">★</button>

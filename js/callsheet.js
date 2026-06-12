@@ -446,6 +446,8 @@ let editingHash = null;
 
 // Autosave timer
 let callSheetAutosaveTimer = null;
+let callSheetHistoryBaseline = null;
+let callSheetHistoryBaselineJson = "";
 
 // Custom category ordering (array of category IDs per page)
 let csCategoryOrder = getDefaultCallSheetCategoryOrder();
@@ -806,6 +808,7 @@ function initCallSheet() {
     // before first render (mirrors the gameplan v358 fix).
     refreshCallSheetFromPlaybook();
 
+    resetCallSheetHistoryBaseline();
     renderCallSheet();
 
   } catch (err) {
@@ -2379,9 +2382,30 @@ function togglePlayHighlight(categoryId, hash, index) {
  */
 let _csUndoInProgress = false;
 
+function resetCallSheetHistoryBaseline() {
+  callSheetHistoryBaseline = safeDeepClone(callSheet);
+  callSheetHistoryBaselineJson = JSON.stringify(callSheetHistoryBaseline);
+  historyManager.clear("callsheet");
+}
+
 function saveCallSheetState() {
-  if (_csUndoInProgress) return;
-  historyManager.saveState("callsheet", safeDeepClone(callSheet));
+  const currentState = safeDeepClone(callSheet);
+  const currentJson = JSON.stringify(currentState);
+  if (_csUndoInProgress) {
+    callSheetHistoryBaseline = currentState;
+    callSheetHistoryBaselineJson = currentJson;
+    return;
+  }
+  if (callSheetHistoryBaseline === null) {
+    callSheetHistoryBaseline = currentState;
+    callSheetHistoryBaselineJson = currentJson;
+    return;
+  }
+  if (currentJson === callSheetHistoryBaselineJson) return;
+
+  historyManager.saveState("callsheet", callSheetHistoryBaseline);
+  callSheetHistoryBaseline = currentState;
+  callSheetHistoryBaselineJson = currentJson;
 }
 
 function saveCallSheet() {
@@ -2398,7 +2422,11 @@ function undoCallSheet() {
   if (prev) {
     _csUndoInProgress = true;
     callSheet = prev;
+    callSheetHistoryBaseline = safeDeepClone(callSheet);
+    callSheetHistoryBaselineJson = JSON.stringify(callSheetHistoryBaseline);
     storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
+    scheduleCallSheetAutosave();
+    if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
     renderCallSheet();
     _csUndoInProgress = false;
   }
@@ -2409,7 +2437,11 @@ function redoCallSheet() {
   if (next) {
     _csUndoInProgress = true;
     callSheet = next;
+    callSheetHistoryBaseline = safeDeepClone(callSheet);
+    callSheetHistoryBaselineJson = JSON.stringify(callSheetHistoryBaseline);
     storageManager.set(STORAGE_KEYS.CALL_SHEET, callSheet);
+    scheduleCallSheetAutosave();
+    if (typeof saveConstraintsSnapshot === "function") saveConstraintsSnapshot();
     renderCallSheet();
     _csUndoInProgress = false;
   }

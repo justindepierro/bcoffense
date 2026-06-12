@@ -1020,6 +1020,7 @@ function filterScriptItems() {
 
 const debouncedFilterScriptItems =
   typeof debounce === "function" ? debounce(filterScriptItems, 80) : filterScriptItems;
+window.debouncedFilterScriptItems = debouncedFilterScriptItems;
 
 function updateScriptStats(renderSummary) {
   const summary = renderSummary || buildScriptRenderSummary(script);
@@ -1428,14 +1429,16 @@ function updateReps(index, reps) {
     applyBulkEdit("reps", parseInt(reps, 10) || 1);
     return;
   }
-  script[index].reps = parseInt(reps, 10) || 1;
+  const nextReps = parseInt(reps, 10) || 1;
+  if ((script[index].reps || 1) === nextReps) return;
+  saveScriptState();
+  script[index].reps = nextReps;
   updateScriptPreviewReps(index, script[index].reps);
   if (typeof findOwningPeriodIndex === "function") {
     updatePeriodMetaDisplay(findOwningPeriodIndex(index));
   }
   refreshScriptTimeline();
   updateScriptStats();
-  saveScriptState();
 }
 
 function updateNotes(index, notes) {
@@ -1444,8 +1447,9 @@ function updateNotes(index, notes) {
     applyBulkEdit("notes", notes);
     return;
   }
+  if ((script[index].notes || "") === notes) return;
+  beginScriptEdit();
   script[index].notes = notes;
-  debouncedSaveScriptState();
 }
 
 function updateScriptCallDisplay(index) {
@@ -1475,9 +1479,10 @@ function updateScriptCallField(index, field, value) {
     applyBulkEdit(field, value);
     return;
   }
+  if ((script[index][field] || "") === value) return;
+  beginScriptEdit();
   script[index][field] = value;
   updateScriptCallDisplay(index);
-  debouncedSaveScriptState();
 }
 
 function updateHash(index, value) {
@@ -1486,9 +1491,10 @@ function updateHash(index, value) {
     applyBulkEdit("hash", value);
     return;
   }
+  if ((script[index].hash || "") === value) return;
+  beginScriptEdit();
   script[index].hash = value;
   updateScriptPreviewField(index, "hash", value);
-  debouncedSaveScriptState();
 }
 
 function updateDefField(index, field, value) {
@@ -1497,6 +1503,8 @@ function updateDefField(index, field, value) {
     applyBulkEdit(field, value);
     return;
   }
+  if ((script[index][field] || "") === value) return;
+  beginScriptEdit();
   script[index][field] = value;
   const previewClassMap = {
     defFront: "front",
@@ -1505,5 +1513,4 @@ function updateDefField(index, field, value) {
     defBlitz: "blitz",
   };
   updateScriptPreviewField(index, previewClassMap[field], value);
-  debouncedSaveScriptState();
 }

@@ -132,6 +132,9 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
 
   const baselineAssignments = getPlayerAssignmentBaseline(play);
   const assignments = normalizePlayerAssignments(play.playerAssignments);
+  const previousPlayerId = assignments[slotKey] || "";
+  if (previousPlayerId === (playerId || "")) return;
+  beginScriptEdit();
   if (playerId) assignments[slotKey] = playerId;
   else delete assignments[slotKey];
 
@@ -140,7 +143,6 @@ function updateScriptPlayerAssignment(index, slotKey, playerId) {
   }
 
   play.playerAssignments = Object.keys(assignments).length ? assignments : undefined;
-  debouncedSaveScriptState();
 }
 
 function rerenderScriptPreservingScroll(anchorIndex) {
@@ -193,10 +195,11 @@ function promoteScriptDepthPlayer(index, slotKey, playerId) {
 function resetScriptPlayerOverrides(index) {
   const play = script[index];
   if (!play || play.isSeparator) return;
+  if (!play.playerAssignments && !play.playerSubPackageId && !play.subPackageId) return;
+  beginScriptEdit();
   delete play.playerAssignments;
   delete play.playerSubPackageId;
   delete play.subPackageId;
-  debouncedSaveScriptState();
   rerenderScriptPreservingScroll(index);
 }
 
@@ -216,6 +219,12 @@ function applyScriptSubPackage(index, groupId) {
       type: "warning",
     });
     rerenderScriptPreservingScroll(index);
+    return;
+  }
+  if (
+    getPlaySubPackageId(play) === normalizedGroupId &&
+    !play.subPackageId
+  ) {
     return;
   }
 
@@ -239,6 +248,7 @@ function applyScriptSubPackage(index, groupId) {
     },
   );
 
+  beginScriptEdit();
   if (normalizedGroupId) {
     play.playerSubPackageId = normalizedGroupId;
   } else {
@@ -250,7 +260,6 @@ function applyScriptSubPackage(index, groupId) {
     ? nextManualAssignments
     : undefined;
 
-  debouncedSaveScriptState();
   rerenderScriptPreservingScroll(index);
 }
 

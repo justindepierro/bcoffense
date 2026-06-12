@@ -368,6 +368,12 @@ function _gpDrawerClearDragState() {
   if (tab) tab.classList.remove("gp-drawer-drag-hide");
 }
 
+function _gpClearHighlights() {
+  document
+    .querySelectorAll(".hash-column.gp-drag-over")
+    .forEach((el) => el.classList.remove("gp-drag-over"));
+}
+
 function _gpDrawerOnDragStart(event) {
   // Defense-in-depth: clear stale state from any previous gesture whose
   // dragend was missed.
@@ -566,12 +572,6 @@ document.addEventListener("DOMContentLoaded", () => {
       if (el !== col) el.classList.remove("gp-drag-over");
     });
     if (col) col.classList.add("gp-drag-over");
-  }
-
-  function _gpClearHighlights() {
-    document
-      .querySelectorAll(".hash-column.gp-drag-over")
-      .forEach((el) => el.classList.remove("gp-drag-over"));
   }
 
   // Allow drops anywhere inside the grid while a drawer drag is in flight.

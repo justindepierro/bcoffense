@@ -8,6 +8,7 @@ function getScriptWorkspaceCheckboxState() {
 }
 
 let scriptAutosaveTimer = null;
+let scriptEditHistoryTimer = null;
 
 function getScriptWorkspaceState() {
   const wbSelect = document.getElementById("scriptWristbandSelect");
@@ -174,14 +175,34 @@ function scheduleScriptAutosave() {
 }
 
 function saveScriptState() {
+  endScriptEditHistoryWindow();
   historyManager.saveState("script", script);
   markScriptDirty();
   scheduleScriptAutosave();
 }
 
-const debouncedSaveScriptState = debounce(saveScriptState, 400);
+function endScriptEditHistoryWindow() {
+  if (!scriptEditHistoryTimer) return;
+  clearTimeout(scriptEditHistoryTimer);
+  scriptEditHistoryTimer = null;
+}
+
+function beginScriptEdit() {
+  if (!scriptEditHistoryTimer) {
+    historyManager.saveState("script", script);
+  } else {
+    clearTimeout(scriptEditHistoryTimer);
+  }
+  scriptEditHistoryTimer = setTimeout(() => {
+    scriptEditHistoryTimer = null;
+  }, 400);
+  markScriptDirty();
+  scheduleScriptAutosave();
+}
 
 function resetScriptForNewDraft() {
+  endScriptEditHistoryWindow();
+  historyManager.clear("script");
   script = [];
   bulkSelectedIndices = [];
   selectedAvailablePlays = [];
@@ -517,6 +538,8 @@ function loadScript(id) {
     }
 
     restoreSavedScriptWorkspace(scriptData.workspace);
+    endScriptEditHistoryWindow();
+    historyManager.clear("script");
     renderScript();
     renderAvailablePlays();
     markScriptClean();

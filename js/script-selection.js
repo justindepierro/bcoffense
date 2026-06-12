@@ -214,18 +214,24 @@ async function openScriptReorderModal() {
 }
 
 function undoScript() {
+  endScriptEditHistoryWindow();
   const previousState = historyManager.undo("script", script);
   if (!previousState) return;
 
   script = previousState;
+  markScriptDirty();
+  scheduleScriptAutosave();
   requestRenderScript();
 }
 
 function redoScript() {
+  endScriptEditHistoryWindow();
   const futureState = historyManager.redo("script", script);
   if (!futureState) return;
 
   script = futureState;
+  markScriptDirty();
+  scheduleScriptAutosave();
   requestRenderScript();
 }
 

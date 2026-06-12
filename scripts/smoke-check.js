@@ -23,7 +23,11 @@ function walk(dir, out = []) {
 }
 
 function checkJsSyntax() {
-  const files = [...walk("js"), "sw.js"];
+  const files = [
+    ...walk("js"),
+    ...walk("functions").filter((file) => file.endsWith(".js")),
+    "sw.js",
+  ];
   files.forEach((file) => {
     const result = spawnSync(process.execPath, ["--check", file], {
       cwd: root,
@@ -46,8 +50,32 @@ function checkServiceWorkerAssets() {
   const assets = [...assetsMatch[1].matchAll(/"(\.\/[^"]+)"/g)]
     .map((match) => match[1].replace(/^\.\//, ""))
     .filter(Boolean);
+  const duplicateAssets = assets.filter(
+    (asset, index) => assets.indexOf(asset) !== index,
+  );
+  if (duplicateAssets.length) {
+    fail(`duplicate LOCAL_ASSETS entries: ${unique(duplicateAssets).join(", ")}`);
+  }
+  if (!assets.includes("offline.html")) {
+    fail("offline.html is not pre-cached for navigation fallback");
+  }
   const missing = assets.filter((asset) => asset !== "" && !fs.existsSync(path.join(root, asset)));
   if (missing.length) fail(`missing LOCAL_ASSETS entries: ${missing.join(", ")}`);
+
+  const deployScript = read("scripts/deploy-cloudflare.sh");
+  const deploySourceLine = deployScript.match(
+    /rsync -a ([^\n]+) "\$tmpdir\/public\/"/,
+  )?.[1] || "";
+  const deploySources = deploySourceLine.split(/\s+/).filter(Boolean);
+  const missingFromDeploy = assets.filter((asset) => {
+    if (!asset) return false;
+    return !deploySources.some(
+      (source) => asset === source || asset.startsWith(`${source}/`),
+    );
+  });
+  if (missingFromDeploy.length) {
+    fail(`LOCAL_ASSETS omitted from Cloudflare deploy: ${missingFromDeploy.join(", ")}`);
+  }
 
   const html = read("index.html");
   const indexAssets = [
@@ -122,38 +150,218 @@ function stripTags(html) {
 }
 
 function checkAccessibilityBasics() {
-  const html = read("index.html");
-  if (/\son[a-z]+=/i.test(html)) {
-    fail("inline event handler attributes found in index.html");
-  }
+  ["index.html", "offline.html"].forEach((file) => {
+    const html = read(file);
+    if (/\son[a-z]+=/i.test(html)) {
+      fail(`inline event handler attributes found in ${file}`);
+    }
 
-  const ids = [...html.matchAll(/\sid=(["'])(.*?)\1/g)].map((match) => match[2]);
-  const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
-  if (duplicateIds.length) {
-    fail(`duplicate ids in index.html: ${[...new Set(duplicateIds)].join(", ")}`);
-  }
+    const ids = [...html.matchAll(/\sid=(["'])(.*?)\1/g)].map((match) => match[2]);
+    const duplicateIds = ids.filter((id, index) => ids.indexOf(id) !== index);
+    if (duplicateIds.length) {
+      fail(`duplicate ids in ${file}: ${[...new Set(duplicateIds)].join(", ")}`);
+    }
 
-  const unnamedButtons = [];
-  [...html.matchAll(/<button\b([\s\S]*?)>([\s\S]*?)<\/button>/gi)].forEach((match) => {
-    const tag = `<button${match[1]}>`;
-    const name =
-      stripTags(match[2]) ||
-      attrValue(tag, "aria-label") ||
-      attrValue(tag, "title");
-    if (!name) unnamedButtons.push(tag.replace(/\s+/g, " ").slice(0, 120));
+    const unnamedButtons = [];
+    [...html.matchAll(/<button\b([\s\S]*?)>([\s\S]*?)<\/button>/gi)].forEach((match) => {
+      const tag = `<button${match[1]}>`;
+      const name =
+        stripTags(match[2]) ||
+        attrValue(tag, "aria-label") ||
+        attrValue(tag, "title");
+      if (!name) unnamedButtons.push(tag.replace(/\s+/g, " ").slice(0, 120));
+    });
+    if (unnamedButtons.length) {
+      fail(`${file} buttons without accessible names: ${unnamedButtons.join(" | ")}`);
+    }
+
+    const imagesWithoutAlt = [...html.matchAll(/<img\b[^>]*>/gi)]
+      .map((match) => match[0])
+      .filter((tag) => !/\salt=(["']).*?\1/i.test(tag));
+    if (imagesWithoutAlt.length) {
+      fail(
+        `${file} images without alt text: ` +
+        imagesWithoutAlt.map((tag) => tag.slice(0, 120)).join(" | "),
+      );
+    }
   });
-  if (unnamedButtons.length) {
-    fail(`buttons without accessible names: ${unnamedButtons.join(" | ")}`);
-  }
-
-  const imagesWithoutAlt = [...html.matchAll(/<img\b[^>]*>/gi)]
-    .map((match) => match[0])
-    .filter((tag) => !/\salt=(["']).*?\1/i.test(tag));
-  if (imagesWithoutAlt.length) {
-    fail(`images without alt text: ${imagesWithoutAlt.map((tag) => tag.slice(0, 120)).join(" | ")}`);
-  }
 
   console.log("accessibility basics ok");
+}
+
+function collectGlobalCallables() {
+  const callables = new Set();
+  walk("js")
+    .filter((file) => file.endsWith(".js") && !file.endsWith(".min.js"))
+    .forEach((file) => {
+      const source = read(file);
+      [...source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)]
+        .forEach((match) => callables.add(match[1]));
+      [...source.matchAll(/\bwindow\.([A-Za-z_$][\w$]*)\s*=/g)]
+        .forEach((match) => callables.add(match[1]));
+    });
+  return callables;
+}
+
+function checkDeclarativeHandlers() {
+  const callables = collectGlobalCallables();
+  const sourceFiles = [
+    ...walk("js").filter(
+      (file) => file.endsWith(".js") && !file.endsWith(".min.js"),
+    ),
+    "index.html",
+  ];
+  const handledActions = new Set();
+  sourceFiles.forEach((file) => {
+    const source = read(file);
+    [...source.matchAll(/case\s+["']([^"']+)["']/g)]
+      .forEach((match) => handledActions.add(match[1]));
+    [...source.matchAll(/action\s*===\s*["']([^"']+)["']/g)]
+      .forEach((match) => handledActions.add(match[1]));
+    [...source.matchAll(/closest\(\s*["']\[data-action=["']([^"']+)["']\]["']\s*\)/g)]
+      .forEach((match) => handledActions.add(match[1]));
+  });
+  const missing = [];
+  const handlerPattern =
+    /\bdata-(onchange|oninput)=(["'])((?:[A-Za-z_$][\w$]*)(?:\s*;\s*[A-Za-z_$][\w$]*)*)\2/g;
+  const actionPattern = /\bdata-action=(["'])([A-Za-z_$][\w$]*)\1/g;
+
+  sourceFiles.forEach((file) => {
+    const source = read(file);
+    [...source.matchAll(handlerPattern)].forEach((match) => {
+      match[3].split(";").map((name) => name.trim()).forEach((name) => {
+        if (!callables.has(name)) missing.push(`${file}: data-${match[1]}="${name}"`);
+      });
+    });
+
+    [...source.matchAll(actionPattern)].forEach((match) => {
+      const action = match[2];
+      if (action === "fnName") return;
+      const overlayAction = action.endsWith("Overlay")
+        ? action.slice(0, -"Overlay".length)
+        : "";
+      if (
+        !callables.has(action) &&
+        !handledActions.has(action) &&
+        !(overlayAction && callables.has(overlayAction))
+      ) {
+        missing.push(`${file}: data-action="${action}"`);
+      }
+    });
+  });
+
+  if (missing.length) {
+    fail(`declarative handlers missing global dispatch targets: ${unique(missing).join(" | ")}`);
+  }
+  console.log("declarative handlers ok");
+}
+
+function checkStorageKeyUsage() {
+  const violations = [];
+  walk("js")
+    .filter((file) => file.endsWith(".js") && !file.endsWith(".min.js"))
+    .forEach((file) => {
+      const source = read(file);
+      [...source.matchAll(/storageManager\.(?:get|set|remove)\(\s*(["'])([^"']+)\1/g)]
+        .forEach((match) => {
+          const line = source.slice(0, match.index).split("\n").length;
+          violations.push(`${file}:${line} (${match[2]})`);
+        });
+    });
+  if (violations.length) {
+    fail(`literal storageManager keys bypass STORAGE_KEYS: ${violations.join(", ")}`);
+  }
+
+  const cloudSync = read("js/cloud-sync.js");
+  if (!cloudSync.includes("STORAGE_KEYS.GAME_PLAN_SNAPSHOTS")) {
+    fail("cloud sync omits saved game plan snapshots");
+  }
+  console.log("storage key usage ok");
+}
+
+function extractFunctionSource(source, functionName) {
+  const start = source.indexOf(`function ${functionName}(`);
+  if (start < 0) return "";
+  const bodyStart = source.indexOf("{", start);
+  if (bodyStart < 0) return "";
+  let depth = 0;
+  for (let index = bodyStart; index < source.length; index += 1) {
+    if (source[index] === "{") depth += 1;
+    else if (source[index] === "}") {
+      depth -= 1;
+      if (depth === 0) return source.slice(start, index + 1);
+    }
+  }
+  return "";
+}
+
+function checkMigrationRetry() {
+  const source = extractFunctionSource(read("js/storage.js"), "runMigrations");
+  if (!source) {
+    fail("runMigrations function not found");
+    return;
+  }
+
+  const values = new Map([["_storageVersion", "0"]]);
+  const localStorage = {
+    getItem: (key) => values.get(key) ?? null,
+    setItem: (key, value) => values.set(key, String(value)),
+  };
+  let shouldFail = true;
+  const migrations = {
+    2: () => {
+      if (shouldFail) throw new Error("expected migration failure");
+    },
+  };
+  const build = new Function(
+    "localStorage",
+    "MIGRATIONS",
+    "STORAGE_VERSION",
+    `${source}; return runMigrations;`,
+  );
+  const run = build(localStorage, migrations, 3);
+  const originalConsoleError = console.error;
+  console.error = () => {};
+  const failed = run();
+  console.error = originalConsoleError;
+  if (failed !== false || values.get("_storageVersion") !== "1") {
+    fail("failed migrations advance the stored schema version");
+    return;
+  }
+
+  shouldFail = false;
+  const retried = run();
+  if (retried !== true || values.get("_storageVersion") !== "3") {
+    fail("failed migrations are not retried from the last successful version");
+    return;
+  }
+  console.log("migration retry behavior ok");
+}
+
+function checkSafeUiRendering() {
+  const utils = read("js/utils.js");
+  if (/toast\.innerHTML\s*=\s*message/.test(utils)) {
+    fail("showToast renders caller messages as raw HTML");
+  }
+  const formatter = utils.match(
+    /function formatModalMessage\([^)]*\)\s*\{([\s\S]*?)\n\}/,
+  )?.[1] || "";
+  if (!/sanitizeHTML\(/.test(formatter)) {
+    fail("modal message rendering does not sanitize rich text");
+  }
+  console.log("shared UI rendering safety ok");
+}
+
+function checkHistoryContracts() {
+  const scriptStorage = read("js/script-storage.js");
+  const callsheet = read("js/callsheet.js");
+  if (/debouncedSaveScriptState/.test(scriptStorage + read("js/script-render.js"))) {
+    fail("script edits still save history after mutation through debouncedSaveScriptState");
+  }
+  if (!/historyManager\.saveState\("callsheet",\s*callSheetHistoryBaseline\)/.test(callsheet)) {
+    fail("call sheet history does not preserve the pre-mutation baseline");
+  }
+  console.log("history contracts ok");
 }
 
 function checkCacheBusters() {
@@ -201,8 +409,52 @@ function checkServiceWorkerLifecycle() {
   if (/skipWaiting\(\)/.test(installBlock)) {
     fail("service worker install forces takeover of active app tabs");
   }
+  if (!/function isCacheableResponse\(/.test(sw)) {
+    fail("service worker does not guard cache writes by response status/policy");
+  }
+  if (/return undefined;/.test(sw)) {
+    fail("service worker fetch fallback can resolve without a Response");
+  }
 
   console.log("service worker lifecycle preserves active work");
+}
+
+function checkServiceWorkerCachePolicy() {
+  const source = extractFunctionSource(read("sw.js"), "isCacheableResponse");
+  if (!source) {
+    fail("isCacheableResponse function not found");
+    return;
+  }
+
+  const isCacheable = new Function(
+    `${source}; return isCacheableResponse;`,
+  )();
+  const response = (ok, cacheControl = "", type = "basic") => ({
+    ok,
+    type,
+    headers: {
+      get: (name) =>
+        name.toLowerCase() === "cache-control" ? cacheControl : null,
+    },
+  });
+
+  if (!isCacheable(response(true))) {
+    fail("service worker rejects successful cacheable responses");
+  }
+  if (isCacheable(response(false))) {
+    fail("service worker caches unsuccessful responses");
+  }
+  if (isCacheable(response(true, "private, no-store"))) {
+    fail("service worker caches no-store responses");
+  }
+  if (!isCacheable(response(false, "", "opaque"), true)) {
+    fail("service worker rejects allowed opaque external responses");
+  }
+  if (isCacheable(response(false, "", "opaque"))) {
+    fail("service worker caches opaque responses without explicit permission");
+  }
+
+  console.log("service worker cache policy ok");
 }
 
 function checkTopLevelSymbolOwnership() {
@@ -284,6 +536,23 @@ function checkGuideContracts() {
     fail("AGENTS.md script load order does not match index.html");
   }
 
+  const appEvents = read("js/app-events.js");
+  const readSetValues = (source, setName) => {
+    const block = source.match(
+      new RegExp(`const ${setName}\\s*=\\s*new Set\\(\\[([\\s\\S]*?)\\]\\)`),
+    );
+    return block
+      ? [...block[1].matchAll(/["']([^"']+)["']/g)].map((match) => match[1])
+      : [];
+  };
+  ["_ELEMENT_FNS", "_BOOL_FNS"].forEach((setName) => {
+    const runtimeValues = readSetValues(appEvents, setName);
+    const documentedValues = readSetValues(guide, setName);
+    if (runtimeValues.join("\n") !== documentedValues.join("\n")) {
+      fail(`AGENTS.md ${setName} does not match js/app-events.js`);
+    }
+  });
+
   const storage = read("js/storage.js");
   const storageObject = storage.match(/const STORAGE_KEYS\s*=\s*\{([\s\S]*?)\n\};/);
   const runtimeKeys = storageObject
@@ -340,8 +609,14 @@ checkServiceWorkerAssets();
 checkIndexReferences();
 checkCssGuardrails();
 checkAccessibilityBasics();
+checkDeclarativeHandlers();
+checkStorageKeyUsage();
+checkMigrationRetry();
+checkSafeUiRendering();
+checkHistoryContracts();
 checkCacheBusters();
 checkServiceWorkerLifecycle();
+checkServiceWorkerCachePolicy();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
 checkGuideContracts();

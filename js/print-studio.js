@@ -9,7 +9,7 @@ const PRINT_STUDIO_DEFAULTS = {
 };
 
 function getPrintStudioStorageKey() {
-  return STORAGE_KEYS.PRINT_STUDIO_SETTINGS || "printStudioSettings";
+  return STORAGE_KEYS.PRINT_STUDIO_SETTINGS;
 }
 
 function getPrintStudioSettings() {

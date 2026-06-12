@@ -39,8 +39,8 @@ css/
   gameplan.css          ← Game plan board and print controls
   installation.css      ← Installation guide
   identity.css          ← Offensive identity screens
-  print.css             ← All @media print blocks
-  responsive.css        ← Global breakpoints
+  print.css             ← Shared/global print rules and cross-module print modes
+  responsive.css        ← Shared/global breakpoints
 
 js/
   utils.js              ← Shared utilities, constants, modals, and CSV parser
@@ -254,7 +254,14 @@ const _ELEMENT_FNS = new Set([
   "toggleFilterSection",
   "toggleCollapsiblePanel",
   "setHeaderColor",
-  "switchDisplayTab",
+  "setCardColor",
+  "csPickerAddPlay",
+  "toggleSirCollapse",
+  "toggleScriptCheckbox",
+  "toggleWbCheckbox",
+  "moveSortCriteria",
+  "removeScheduleGame",
+  "setScheduleActive",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 ```
@@ -277,6 +284,7 @@ Some containers (`#scriptPlays`, `#availablePlays`, `#playbookTable tbody`) have
 - `data-pass="event"` → passes the event object
 - `data-arg="x"` → passes string `"x"`
 - No modifier → calls `fn()` with no arguments
+- Declarative handlers resolve through `window`; use a top-level function declaration or explicitly export callable `const` handlers
 
 ---
 
@@ -297,6 +305,8 @@ storageManager.restoreAllData(backup, options); // Restore from backup (async)
 storageManager.getStorageInfo(); // { totalSize, totalSizeFormatted, itemSizes, itemCount }
 storageManager.clearAll((confirmFirst = true)); // Wipe all keys (async)
 ```
+
+Always use `STORAGE_KEYS`; literal keys passed to `storageManager.get/set/remove` bypass backup, cross-tab, and documentation contracts.
 
 ### STORAGE_KEYS (complete list)
 
@@ -325,6 +335,7 @@ CALLSHEET_CATEGORY_ORDER   → "callSheetCategoryOrder"
 CALLSHEET_NOTES            → "callSheetNotes"
 CALLSHEET_TARGETS          → "callSheetTargets"
 CALLSHEET_COLLAPSED        → "callSheetCollapsed"
+CALLSHEET_QUICK_ACTIONS_OPEN → "csQuickActionsOpen"
 DEFENSIVE_TENDENCIES       → "defensiveTendencies"
 TENDENCIES_DRAFT           → "tendenciesDraft"
 TENDENCIES_SETTINGS        → "tendenciesSettings"
@@ -351,6 +362,7 @@ TEAM_SWAP_GROUPS           → "teamSwapGroups"
 TEAM_ASSIGNMENT_LABELS     → "teamAssignmentLabels"
 TEAM_SETTINGS_COLLAPSED    → "teamSettingsCollapsed"
 GAME_PLAN_BOARDS           → "gamePlanBoards"
+GAME_PLAN_SNAPSHOTS        → "gamePlanSnapshots"
 GAME_PLAN_TEMPLATES        → "gamePlanTemplates"
 CALLSHEET_PRINT_OPTIONS    → "callSheetPrintOptions"
 CLOUD_SYNC_SETTINGS        → "cloudSyncSettings"
@@ -368,7 +380,7 @@ COLOR_PRESET               → "colorPreset"
 ### Undo/Redo (historyManager)
 
 ```js
-historyManager.saveState(type, state); // type: "script" | "wristband" | "tendencies"
+historyManager.saveState(type, state); // type: "script" | "wristband" | "tendencies" | "callsheet"
 historyManager.undo(type, currentState); // Returns previous state or null
 historyManager.redo(type, currentState); // Returns next state or null
 historyManager.clear(type);
@@ -382,6 +394,7 @@ historyManager.updateButtons(type); // Enable/disable #<type>UndoBtn / #<type>Re
 
 - `STORAGE_VERSION = 3` stored in `localStorage._storageVersion`
 - `runMigrations()` applies version-keyed transforms on app init
+- The stored version advances after each successful step so failed migrations retry on the next load
 
 ---
 
@@ -556,9 +569,11 @@ showListPicker(message, items, { title, icon }); // → Promise<value|null>
 ### Notifications
 
 ```js
-showToast(message, durationOrOpts); // durationOrOpts: number | { duration, type }
+showToast(message, durationOrOpts); // number | { duration, type, actionLabel, action }
 showUndoToast(message, undoCallback, duration); // Toast with undo button (default 5s)
 ```
+
+`showToast()` treats messages as text. Use `{ actionLabel, action }` for interactive toasts instead of embedding HTML.
 
 ### Other Important Utils
 
@@ -618,8 +633,8 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 | `base.css`       | Tokens, reset, form elements, selections                        |
 | `layout.css`     | Page structure, header, tab bar, panels                         |
 | `components.css` | Reusable: `.btn-*`, `.modal-*`, `.toast`, `.badge-*`, utilities |
-| `print.css`      | All `@media print` rules (centralized)                          |
-| `responsive.css` | All `@media` breakpoints (centralized)                          |
+| `print.css`      | Shared/global print rules; module-only print rules may stay with their module |
+| `responsive.css` | Shared/global breakpoints; module-only responsive rules may stay with their module |
 | `[module].css`   | Module-specific styles (callsheet.css, script.css, etc.)        |
 
 ### Naming Conventions
@@ -644,6 +659,7 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 - **Other same-origin assets:** Stale-while-revalidate
 - **External resources:** Network-first with cache fallback (Google Fonts, CDNs)
 - **Offline:** Navigation requests fall back to `offline.html`
+- Cache only successful responses without `Cache-Control: no-store`; auth/login responses must not replace app-shell assets
 
 **When to bump the version:**
 

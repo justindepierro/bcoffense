@@ -83,6 +83,7 @@ const STORAGE_KEYS = {
   CALLSHEET_NOTES: "callSheetNotes",
   CALLSHEET_TARGETS: "callSheetTargets",
   CALLSHEET_COLLAPSED: "callSheetCollapsed",
+  CALLSHEET_QUICK_ACTIONS_OPEN: "csQuickActionsOpen",
   DEFENSIVE_TENDENCIES: "defensiveTendencies",
   TENDENCIES_DRAFT: "tendenciesDraft",
   TENDENCIES_SETTINGS: "tendenciesSettings",
@@ -109,6 +110,7 @@ const STORAGE_KEYS = {
   TEAM_ASSIGNMENT_LABELS: "teamAssignmentLabels",
   TEAM_SETTINGS_COLLAPSED: "teamSettingsCollapsed",
   GAME_PLAN_BOARDS: "gamePlanBoards",
+  GAME_PLAN_SNAPSHOTS: "gamePlanSnapshots",
   GAME_PLAN_TEMPLATES: "gamePlanTemplates",
   CALLSHEET_PRINT_OPTIONS: "callSheetPrintOptions",
   CLOUD_SYNC_SETTINGS: "cloudSyncSettings",
@@ -203,19 +205,20 @@ function validateBackupPayload(backup) {
 
 function runMigrations() {
   const saved = parseInt(localStorage.getItem("_storageVersion") || "0", 10);
-  if (saved >= STORAGE_VERSION) return;
+  if (saved >= STORAGE_VERSION) return true;
   for (let v = saved + 1; v <= STORAGE_VERSION; v++) {
-    if (typeof MIGRATIONS[v] === "function") {
-      try {
+    try {
+      if (typeof MIGRATIONS[v] === "function") {
         MIGRATIONS[v]();
         console.debug(`Storage migration v${v} applied`);
-      } catch (e) {
-        console.error(`Storage migration v${v} failed:`, e);
-        break;
       }
+      localStorage.setItem("_storageVersion", String(v));
+    } catch (e) {
+      console.error(`Storage migration v${v} failed:`, e);
+      return false;
     }
   }
-  localStorage.setItem("_storageVersion", String(STORAGE_VERSION));
+  return true;
 }
 
 // ── LZ-String compression helpers ─────────────────────────────────────────
@@ -599,10 +602,11 @@ const storageManager = {
     if (!e.key || !Object.values(STORAGE_KEYS).includes(e.key)) return;
     if (_crossTabToastShown) return;
     _crossTabToastShown = true;
-    showToast(
-      '⚠️ Data changed in another tab. <button data-action="reloadPage" class="btn btn-sm btn-ghost-current btn-inline-offset-sm">Reload</button>',
-      8000,
-    );
+    showToast("⚠️ Data changed in another tab.", {
+      duration: 8000,
+      actionLabel: "Reload",
+      action: "reloadPage",
+    });
     setTimeout(() => {
       _crossTabToastShown = false;
     }, 9000);
@@ -669,6 +673,9 @@ function reloadAppFromStorage() {
 
   if (typeof restoreCallSheetDisplayOptions === "function") {
     restoreCallSheetDisplayOptions();
+  }
+  if (typeof resetCallSheetHistoryBaseline === "function") {
+    resetCallSheetHistoryBaseline();
   }
 
   if (typeof restoreScriptDisplayOptions === "function") {

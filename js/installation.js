@@ -49,8 +49,7 @@ function saveInstallationData(data) {
   storageManager.set(STORAGE_KEYS.INSTALLATION, data);
 }
 
-const INSTALLATION_TEMPLATES_KEY =
-  STORAGE_KEYS.INSTALLATION_TEMPLATES || "installationTemplates";
+const INSTALLATION_TEMPLATES_KEY = STORAGE_KEYS.INSTALLATION_TEMPLATES;
 
 function _normalizeInstallValueList(values) {
   return Array.from(

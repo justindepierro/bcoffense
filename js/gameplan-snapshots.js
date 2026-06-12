@@ -116,7 +116,7 @@ async function _gpDeleteSnapshot(snapId) {
    Templates — reusable game-plan board starters (cross-opponent)
    ------------------------------------------------------------------------- */
 
-const GP_TEMPLATES_KEY = STORAGE_KEYS.GAME_PLAN_TEMPLATES || "gamePlanTemplates";
+const GP_TEMPLATES_KEY = STORAGE_KEYS.GAME_PLAN_TEMPLATES;
 
 function _gpLoadTemplates() {
   const stored = storageManager.get(GP_TEMPLATES_KEY, []);

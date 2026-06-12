@@ -139,8 +139,8 @@ function showModal(message, opts = {}) {
     overlay.innerHTML = `
       <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+          <span class="custom-modal-icon">${escapeHtml(icon)}</span>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions">
@@ -184,15 +184,24 @@ function showModal(message, opts = {}) {
  * Show a toast notification
  * @param {string} message - Text to display
  * @param {number|object} durationOrOpts - Duration in ms, or options object
- *   Options: { duration: 2000, type: 'success'|'error'|'warning'|'info' }
+ *   Options: {
+ *     duration: 2000,
+ *     type: 'success'|'error'|'warning'|'info',
+ *     actionLabel: 'Reload',
+ *     action: 'reloadPage'
+ *   }
  */
 function showToast(message, durationOrOpts = 2000) {
   let duration = 2000;
   let type = null;
+  let actionLabel = "";
+  let action = "";
 
   if (typeof durationOrOpts === "object") {
     duration = durationOrOpts.duration || 2000;
     type = durationOrOpts.type || null;
+    actionLabel = String(durationOrOpts.actionLabel || "");
+    action = String(durationOrOpts.action || "");
   } else {
     duration = durationOrOpts;
   }
@@ -205,18 +214,21 @@ function showToast(message, durationOrOpts = 2000) {
   toast.className = "toast";
   if (type) toast.classList.add("toast-" + type);
 
-  // Support HTML content (e.g. inline buttons)
-  if (/<[a-z][\s\S]*>/i.test(message)) {
-    toast.innerHTML = message;
-  } else {
-    toast.textContent = message;
+  toast.textContent = String(message || "");
+  if (actionLabel && action) {
+    const actionButton = document.createElement("button");
+    actionButton.type = "button";
+    actionButton.className = "btn btn-sm btn-ghost-current btn-inline-offset-sm";
+    actionButton.dataset.action = action;
+    actionButton.textContent = actionLabel;
+    toast.append(" ", actionButton);
   }
   document.body.appendChild(toast);
 
   // Announce to screen readers via live region
   const announcer = document.getElementById("liveAnnouncer");
   if (announcer) {
-    announcer.textContent = message.replace(/<[^>]*>/g, "");
+    announcer.textContent = String(message || "");
   }
 
   // Trigger animation
@@ -259,13 +271,13 @@ function showConfirm(message, opts = {}) {
     overlay.innerHTML = `
       <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+          <span class="custom-modal-icon">${escapeHtml(icon)}</span>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn${mid}">${cancelText}</button>
-          <button class="btn ${danger ? "btn-danger" : "btn-primary"} custom-modal-btn" id="modalConfirmBtn${mid}">${confirmText}</button>
+          <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn${mid}">${escapeHtml(cancelText)}</button>
+          <button class="btn ${danger ? "btn-danger" : "btn-primary"} custom-modal-btn" id="modalConfirmBtn${mid}">${escapeHtml(confirmText)}</button>
         </div>
       </div>
     `;
@@ -324,17 +336,17 @@ function showPrompt(message, defaultValue = "", opts = {}) {
     overlay.innerHTML = `
       <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+          <span class="custom-modal-icon">${escapeHtml(icon)}</span>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-input-wrap">
           <input type="text" class="custom-modal-input" id="modalInput${mid}"
-                 value="${defaultValue.replace(/"/g, "&quot;")}" placeholder="${placeholder}">
+                 value="${escapeAttr(defaultValue)}" placeholder="${escapeAttr(placeholder)}">
         </div>
         <div class="custom-modal-actions">
           <button class="btn custom-modal-btn custom-modal-cancel" id="modalCancelBtn${mid}">Cancel</button>
-          <button class="btn btn-primary custom-modal-btn" id="modalConfirmBtn${mid}">${confirmText}</button>
+          <button class="btn btn-primary custom-modal-btn" id="modalConfirmBtn${mid}">${escapeHtml(confirmText)}</button>
         </div>
       </div>
     `;
@@ -412,16 +424,16 @@ function showChoice(message, opts = {}) {
               : c.value === "cancel"
                 ? "custom-modal-cancel"
                 : "btn-secondary";
-          const iconStr = c.icon ? c.icon + " " : "";
-          return `<button class="btn ${btnClass} custom-modal-btn custom-modal-btn-full" data-choice-value="${c.value}">${iconStr}${c.label}</button>`;
+          const iconStr = c.icon ? `${escapeHtml(c.icon)} ` : "";
+          return `<button class="btn ${btnClass} custom-modal-btn custom-modal-btn-full" data-choice-value="${escapeAttr(c.value)}">${iconStr}${escapeHtml(c.label)}</button>`;
         })
         .join("");
     } else {
       const option1 = opts.option1 || "Option 1";
       const option2 = opts.option2 || "Option 2";
       buttonsHtml = `
-        <button class="btn btn-primary custom-modal-btn custom-modal-btn-full" data-choice-value="option1">${option1}</button>
-        <button class="btn btn-secondary custom-modal-btn custom-modal-btn-full" data-choice-value="option2">${option2}</button>
+        <button class="btn btn-primary custom-modal-btn custom-modal-btn-full" data-choice-value="option1">${escapeHtml(option1)}</button>
+        <button class="btn btn-secondary custom-modal-btn custom-modal-btn-full" data-choice-value="option2">${escapeHtml(option2)}</button>
       `;
     }
 
@@ -431,8 +443,8 @@ function showChoice(message, opts = {}) {
     overlay.innerHTML = `
       <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}" aria-describedby="modalBody${mid}">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+          <span class="custom-modal-icon">${escapeHtml(icon)}</span>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         <div class="custom-modal-body" id="modalBody${mid}">${formatModalMessage(message)}</div>
         <div class="custom-modal-actions custom-modal-actions-stacked">
@@ -525,7 +537,7 @@ function showListPicker(message, items, opts = {}) {
     overlay.innerHTML = `
       <div class="custom-modal custom-modal-wide${modalClass}" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">${icon}</span>
+          <span class="custom-modal-icon">${escapeHtml(icon)}</span>
           <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         ${message ? `<div class="custom-modal-body">${formatModalMessage(message)}</div>` : ""}
@@ -646,8 +658,8 @@ function showCustomTagEditorModal(opts = {}) {
     overlay.innerHTML = `
       <div class="custom-modal custom-modal-wide custom-tag-editor-modal" role="dialog" aria-modal="true" aria-labelledby="modalTitle${mid}">
         <div class="custom-modal-header">
-          <span class="custom-modal-icon">${icon}</span>
-          <h3 class="custom-modal-title" id="modalTitle${mid}">${title}</h3>
+          <span class="custom-modal-icon">${escapeHtml(icon)}</span>
+          <h3 class="custom-modal-title" id="modalTitle${mid}">${escapeHtml(title)}</h3>
         </div>
         ${message ? `<div class="custom-modal-body">${formatModalMessage(message)}</div>` : ""}
         <div class="custom-tag-editor-input-row">
@@ -756,12 +768,15 @@ function showCustomTagEditorModal(opts = {}) {
  */
 function formatModalMessage(msg) {
   if (!msg) return "";
-  return msg
+  const html = String(msg)
     .split("\n")
     .map((line) => line.trim())
     .filter((line) => line.length > 0)
     .map((line) => `<p>${line}</p>`)
     .join("");
+  return typeof sanitizeHTML === "function"
+    ? sanitizeHTML(html)
+    : `<p>${escapeHtml(msg).replace(/\n+/g, "</p><p>")}</p>`;
 }
 
 const TEAM_ASSIGNMENT_SLOTS = [
@@ -2715,7 +2730,7 @@ function setPrintTitle(type, customName) {
  * @returns {string}
  */
 function getTeamName() {
-  return storageManager.get("teamName", "My Team Football");
+  return storageManager.get(STORAGE_KEYS.TEAM_NAME, "My Team Football");
 }
 
 /**
@@ -2723,7 +2738,7 @@ function getTeamName() {
  * @param {string} name
  */
 function setTeamName(name) {
-  storageManager.set("teamName", name);
+  storageManager.set(STORAGE_KEYS.TEAM_NAME, name);
   updateTeamSettingsAutosaveStatus();
   // Update header subtitle
   const teamSub = document.getElementById("teamSubtitle");

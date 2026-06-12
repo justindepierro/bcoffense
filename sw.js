@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v530";
+const CACHE_NAME = "bcoffense-v531";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -25,6 +25,13 @@ function shouldUseNetworkFirst(request, url) {
   return NETWORK_FIRST_PATTERNS.some((pattern) => pattern.test(url.pathname));
 }
 
+function isCacheableResponse(response, allowOpaque = false) {
+  if (!response) return false;
+  if (!response.ok && !(allowOpaque && response.type === "opaque")) return false;
+  const cacheControl = response.headers.get("Cache-Control") || "";
+  return !/\bno-store\b/i.test(cacheControl);
+}
+
 // Allow the app to trigger a cache refresh
 self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") {
@@ -36,7 +43,6 @@ const LOCAL_ASSETS = [
   "./",
   "./index.html",
   "./manifest.json",
-  "./PRODUCT_ROADMAP.md",
   // CSS
   "./css/base.css",
   "./css/layout.css",
@@ -181,10 +187,12 @@ self.addEventListener("fetch", (event) => {
     event.respondWith(
       fetch(event.request)
         .then((response) => {
-          const clone = response.clone();
-          caches
-            .open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, clone));
+          if (isCacheableResponse(response, true)) {
+            const clone = response.clone();
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, clone));
+          }
           return response;
         })
         .catch(() => caches.match(event.request, { ignoreSearch: true })),
@@ -197,10 +205,12 @@ self.addEventListener("fetch", (event) => {
     (shouldUseNetworkFirst(event.request, url)
       ? fetch(event.request)
         .then((response) => {
-          const clone = response.clone();
-          caches
-            .open(CACHE_NAME)
-            .then((cache) => cache.put(event.request, clone));
+          if (isCacheableResponse(response)) {
+            const clone = response.clone();
+            caches
+              .open(CACHE_NAME)
+              .then((cache) => cache.put(event.request, clone));
+          }
           return response;
         })
         .catch(async () => {
@@ -209,15 +219,20 @@ self.addEventListener("fetch", (event) => {
           if (event.request.mode === "navigate") {
             return caches.match("./offline.html");
           }
-          return undefined;
+          return new Response("Offline", {
+            status: 503,
+            headers: { "Content-Type": "text/plain; charset=utf-8" },
+          });
         })
       : caches.match(event.request, { ignoreSearch: true }).then((cached) => {
         const networkFetch = fetch(event.request)
           .then((response) => {
-            const clone = response.clone();
-            caches
-              .open(CACHE_NAME)
-              .then((cache) => cache.put(event.request, clone));
+            if (isCacheableResponse(response)) {
+              const clone = response.clone();
+              caches
+                .open(CACHE_NAME)
+                .then((cache) => cache.put(event.request, clone));
+            }
             return response;
           })
           .catch(() => cached);

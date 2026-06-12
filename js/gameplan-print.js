@@ -492,7 +492,7 @@ function _gpRenderPrintPlay(play) {
     if (play.formation) meta.push(escapeHtml(play.formation));
     if (play.personnel) meta.push(escapeHtml(play.personnel));
     if (play.preferredHash) {
-      const norm = (typeof _gpNormalizeHash === "function" ? _gpNormalizeHash(play.preferredHash) : play.preferredHash) || "";
+      const norm = _gpNormalizeHashLabel(play.preferredHash) || "";
       const letter = norm === "Left" ? "L" : norm === "Right" ? "R" : norm === "Middle" ? "M" : String(play.preferredHash).trim().charAt(0).toUpperCase();
       const cls = letter === "L" ? "gp-hash-chip-l" : letter === "R" ? "gp-hash-chip-r" : letter === "M" ? "gp-hash-chip-m" : "";
       meta.push(`<span class="gp-print-hash-chip ${cls}">${escapeHtml(letter)}</span>`);

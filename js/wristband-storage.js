@@ -164,8 +164,7 @@ async function saveWristband() {
   }
 }
 
-const WRISTBAND_TEMPLATES_KEY =
-  STORAGE_KEYS.WRISTBAND_TEMPLATES || "wristbandTemplates";
+const WRISTBAND_TEMPLATES_KEY = STORAGE_KEYS.WRISTBAND_TEMPLATES;
 
 function _emptyWristbandCardData() {
   return Array(CELLS_PER_CARD).fill(null);
@@ -588,6 +587,7 @@ function loadWristband(id) {
     if (!wb) return;
 
     hydrateWristbandState(wb, { discardDraft: true });
+    historyManager.clear("wristband");
 
     // Dismiss the type-choice overlay and activate the correct wristband mode.
     // Without this, loading from the landing screen leaves the overlay visible.

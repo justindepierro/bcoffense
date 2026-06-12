@@ -944,7 +944,7 @@ function _gpSortedBoxList(list, mode) {
     : (mode && mode !== "manual" ? [mode] : []);
   if (tiers.length === 0) return list;
   const hashRank = (h) => {
-    const n = (typeof _gpNormalizeHash === "function" ? _gpNormalizeHash(h) : (h || "")).toString();
+    const n = (_gpNormalizeHashLabel(h) || "").toString();
     if (n === "Left") return "1";
     if (n === "Middle") return "2";
     if (n === "Right") return "3";
