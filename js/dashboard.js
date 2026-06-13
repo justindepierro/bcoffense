@@ -50,11 +50,7 @@ function _dashBuildScoutCard(label, data, opts = {}) {
 
 function _dashFindGameWeekOpponent(gw, opponents) {
   if (!gw || !Array.isArray(opponents)) return null;
-  if (gw.opponentIndex !== null && opponents[gw.opponentIndex]) {
-    return opponents[gw.opponentIndex];
-  }
-  if (!gw.opponentName) return null;
-  return opponents.find((opp) => opp && opp.name === gw.opponentName) || null;
+  return resolveGameWeekOpponent(opponents, gw).opponent;
 }
 
 function _dashCountCallSheetPlays() {
@@ -882,6 +878,7 @@ function renderDashboard() {
 
     const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
     const gw = getGameWeek();
+    const activeOpponent = resolveGameWeekOpponent(opponents, gw);
     const normalizedSearch = dashSearchTerm.trim().toLowerCase();
 
     if (searchInput && searchInput !== document.activeElement) {
@@ -901,7 +898,7 @@ function renderDashboard() {
 
     let optHtml = '<option value="">— Select Opponent —</option>';
     filteredOpponents.forEach(({ opp, idx }) => {
-      const sel = gw.opponentIndex === idx ? "selected" : "";
+      const sel = activeOpponent.index === idx ? "selected" : "";
       optHtml += `<option value="${idx}" ${sel}>${escapeHtml(opp.name)} (${opp.plays?.length ?? 0} plays)</option>`;
     });
     select.innerHTML = optHtml;
@@ -949,9 +946,7 @@ function renderDashboard() {
         });
       }
 
-      const oppPlays = gw.opponentName
-        ? opponents[gw.opponentIndex]?.plays?.length || 0
-        : 0;
+      const oppPlays = activeOpponent.opponent?.plays?.length || 0;
 
       const activeScriptName =
         document.getElementById("scriptName")?.value?.trim() ||
@@ -1241,16 +1236,11 @@ function setScheduleActive(element) {
   if (idx < 0 || idx >= schedule.length) return;
   const game = schedule[idx];
 
-  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
-  let oppIdx = opponents.findIndex(
-    (o) => o.name.toLowerCase().trim() === game.opponent.toLowerCase().trim(),
-  );
-
-  if (oppIdx < 0) {
-    opponents.push({ name: game.opponent.trim(), plays: [] });
-    storageManager.set(STORAGE_KEYS.DEFENSIVE_TENDENCIES, opponents);
-    oppIdx = opponents.length - 1;
-  }
+  const oppIdx =
+    typeof ensureTendenciesOpponent === "function"
+      ? ensureTendenciesOpponent(game.opponent)
+      : -1;
+  if (oppIdx < 0) return;
 
   setGameWeek(oppIdx, game.week);
   renderDashboard();

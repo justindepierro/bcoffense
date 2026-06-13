@@ -1810,9 +1810,11 @@ function openGamePlanCoverageMatrix() {
    ------------------------------------------------------------------------- */
 
 function _gpResolveOpponentTendencies() {
-  let opponents = Array.isArray(window.tendenciesOpponents)
-    ? window.tendenciesOpponents
-    : (typeof tendenciesOpponents !== "undefined" && Array.isArray(tendenciesOpponents) ? tendenciesOpponents : []);
+  let opponents =
+    typeof tendenciesOpponents !== "undefined" &&
+    Array.isArray(tendenciesOpponents)
+      ? tendenciesOpponents
+      : [];
   if (opponents.length === 0 && typeof storageManager !== "undefined" && typeof STORAGE_KEYS !== "undefined") {
     opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
   }
@@ -1824,9 +1826,10 @@ function _gpResolveOpponentTendencies() {
     if (exact) return exact;
   }
   // Fallback: current opponent index
-  const currentIndex = typeof window.tendenciesCurrentOpponent === "number"
-    ? window.tendenciesCurrentOpponent
-    : (typeof tendenciesCurrentOpponent === "number" ? tendenciesCurrentOpponent : null);
+  const currentIndex =
+    typeof tendenciesCurrentOpponent === "number"
+      ? tendenciesCurrentOpponent
+      : null;
   if (currentIndex !== null && opponents[currentIndex]) {
     return opponents[currentIndex];
   }

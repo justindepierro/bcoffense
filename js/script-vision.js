@@ -50,7 +50,8 @@ function renderScriptVisionPanel() {
     panel.innerHTML = "";
     return;
   }
-  const list = Array.isArray(window.script) ? window.script : [];
+  const list =
+    typeof script !== "undefined" && Array.isArray(script) ? script : [];
   const total = list.length;
   if (total === 0) {
     panel.classList.remove("hidden");
@@ -120,22 +121,8 @@ function renderScriptVisionPanel() {
     </div>`;
 }
 
-// Hook into script renders + vision toggle + tab show
+// Refresh when Vision Mode changes and once after the initial DOM is ready.
 document.addEventListener("visionmodechange", renderScriptVisionPanel);
 document.addEventListener("DOMContentLoaded", () => {
-  // Patch renderScript to also refresh the panel after each render
-  if (typeof window.renderScript === "function" && !window._renderScriptVisionWrapped) {
-    const _orig = window.renderScript;
-    window.renderScript = function _renderScriptWithVision() {
-      const out = _orig.apply(this, arguments);
-      try {
-        renderScriptVisionPanel();
-      } catch (_e) {
-        /* no-op */
-      }
-      return out;
-    };
-    window._renderScriptVisionWrapped = true;
-  }
   renderScriptVisionPanel();
 });

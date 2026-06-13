@@ -524,6 +524,27 @@ function saveTendencies() {
   storageManager.set(STORAGE_KEYS.DEFENSIVE_TENDENCIES, tendenciesOpponents);
 }
 
+function ensureTendenciesOpponent(name) {
+  const normalizedName = String(name || "").trim();
+  if (!normalizedName) return -1;
+  const storedOpponents = storageManager.get(
+    STORAGE_KEYS.DEFENSIVE_TENDENCIES,
+    [],
+  );
+  if (Array.isArray(storedOpponents)) {
+    tendenciesOpponents = storedOpponents;
+  }
+  const existingIndex = tendenciesOpponents.findIndex(
+    (opponent) =>
+      String(opponent?.name || "").trim().toLowerCase() ===
+      normalizedName.toLowerCase(),
+  );
+  if (existingIndex >= 0) return existingIndex;
+  tendenciesOpponents.push({ name: normalizedName, plays: [] });
+  saveTendencies();
+  return tendenciesOpponents.length - 1;
+}
+
 function saveTendenciesSettings() {
   storageManager.set(STORAGE_KEYS.TENDENCIES_SETTINGS, {
     visibleColumns: tdVisibleColumns,
@@ -1107,6 +1128,11 @@ async function addTendenciesOpponent() {
 async function renameTendenciesOpponent(idx) {
   const opp = tendenciesOpponents[idx];
   if (!opp) return;
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const activeOpponent =
+    gw && typeof resolveGameWeekOpponent === "function"
+      ? resolveGameWeekOpponent(tendenciesOpponents, gw).opponent
+      : null;
   const name = await showPrompt("Rename opponent:", opp.name, {
     title: "Rename",
     icon: "✏️",
@@ -1114,6 +1140,9 @@ async function renameTendenciesOpponent(idx) {
   if (!name || !name.trim()) return;
   opp.name = name.trim();
   saveTendencies();
+  if (activeOpponent === opp && typeof setGameWeek === "function") {
+    setGameWeek(idx, gw.weekLabel || "");
+  }
   renderTendenciesHome();
 }
 
@@ -1130,6 +1159,11 @@ async function deleteTendenciesOpponent(idx) {
     },
   );
   if (!ok) return;
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const activeOpponent =
+    gw && typeof resolveGameWeekOpponent === "function"
+      ? resolveGameWeekOpponent(tendenciesOpponents, gw).opponent
+      : null;
   tendenciesOpponents.splice(idx, 1);
   if (tendenciesCurrentOpponent === idx) {
     tendenciesCurrentOpponent = null;
@@ -1140,6 +1174,10 @@ async function deleteTendenciesOpponent(idx) {
     tendenciesCurrentOpponent--;
   }
   saveTendencies();
+  if (activeOpponent && typeof setGameWeek === "function") {
+    const nextActiveIndex = tendenciesOpponents.indexOf(activeOpponent);
+    setGameWeek(nextActiveIndex >= 0 ? nextActiveIndex : null, gw.weekLabel || "");
+  }
   renderTendenciesHome();
 }
 
@@ -2473,7 +2511,8 @@ document.addEventListener("DOMContentLoaded", () => {
  */
 function isActiveGameWeekOpponent(opponentIndex) {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
-  return gw && gw.opponentIndex === opponentIndex;
+  if (!gw || typeof resolveGameWeekOpponent !== "function") return false;
+  return resolveGameWeekOpponent(tendenciesOpponents, gw).index === opponentIndex;
 }
 
 /**

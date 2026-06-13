@@ -1398,6 +1398,13 @@ function renderScript() {
     }
 
     if (typeof updateTabBadges === "function") updateTabBadges();
+    if (typeof renderScriptVisionPanel === "function") {
+      try {
+        renderScriptVisionPanel();
+      } catch (err) {
+        console.error("renderScriptVisionPanel error:", err);
+      }
+    }
     if (profile) {
       profile.badgeMs = performance.now() - stageStart;
       profile.totalMs = performance.now() - profile.startedAt;

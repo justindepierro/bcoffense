@@ -329,52 +329,6 @@ async function assignSelectedToGamePlanBox() {
   _gpAddSigsToBox(Array.from(_gpSelected), choice);
 }
 
-/* -------------------------------------------------------------------------
-   Custom boxes
-   ------------------------------------------------------------------------- */
-
-async function addGamePlanCustomBox() {
-  const name = await showPrompt(
-    "Name your custom drafting box (e.g. “4-Min Closers”, “Trick Plays”):",
-    "",
-    { title: "New Custom Box", icon: "➕", placeholder: "Box name" },
-  );
-  if (!name || !name.trim()) return;
-  const trimmed = name.trim();
-  // Avoid id collisions with default boxes
-  let id = trimmed;
-  let n = 2;
-  const board = _gpEnsureBoard();
-  const taken = new Set([
-    ...GP_DEFAULT_BOXES.map((b) => b.id),
-    ...(board.customBoxes || []).map((b) => b.id),
-  ]);
-  while (taken.has(id)) {
-    id = `${trimmed} ${n++}`;
-  }
-  _gpUpdateBoard((b) => {
-    b.customBoxes = b.customBoxes || [];
-    b.customBoxes.push({ id, label: trimmed });
-    b.assignments[id] = [];
-  });
-  requestRenderGamePlan();
-  showToast(`Added box “${trimmed}”`, { type: "success" });
-}
-
-async function renameGamePlanBox(boxId) {
-  if (!boxId) return;
-  const board = _gpEnsureBoard();
-  const cb = (board.customBoxes || []).find((b) => b.id === boxId);
-  if (!cb) return;
-  const next = await showPrompt("Rename this box:", cb.label, { title: "Rename Box", icon: "✏️" });
-  if (!next || !next.trim() || next.trim() === cb.label) return;
-  _gpUpdateBoard((b) => {
-    const target = (b.customBoxes || []).find((x) => x.id === boxId);
-    if (target) target.label = next.trim();
-  });
-  requestRenderGamePlan();
-}
-
 async function deleteGamePlanBox(boxId) {
   if (!boxId) return;
   const ok = await showConfirm(

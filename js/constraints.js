@@ -1342,48 +1342,6 @@ function computeTouchAnalysis(playsArr) {
 // ─────────────────────────────────────────────────────────────────────────────
 
 /**
- * Build HTML for a horizontal bar chart showing weighted touch distribution.
- * Sorted descending by weight. Each bar shows player name, filled portion
- * proportional to weight share, percentage, and raw points.
- *
- * @param {Object} weightedTouches - { playerName: totalWeight }
- * @param {Object} [flatTouches]   - { playerName: count } (optional, shown alongside)
- * @param {string} [title]         - Section title (falsy → no header)
- * @returns {string} HTML string
- */
-function _renderTouchDistribution(weightedTouches, flatTouches, title) {
-  if (!weightedTouches || Object.keys(weightedTouches).length === 0) return "";
-
-  const entries = Object.entries(weightedTouches).sort((a, b) => b[1] - a[1]);
-  const totalWeight = entries.reduce((sum, e) => sum + e[1], 0);
-
-  const bars = entries
-    .map(([player, w]) => {
-      const pct = totalWeight > 0 ? (w / totalWeight) * 100 : 0;
-      const flat = flatTouches ? flatTouches[player] || 0 : null;
-      const flatLabel =
-        flat !== null ? `<span class="cr-dist-flat">${flat} plays</span>` : "";
-      return `
-      <div class="cr-dist-row">
-        <span class="cr-dist-name">${escapeHtml(player)}</span>
-        <div class="cr-dist-bar-track">
-          <div class="cr-dist-bar-fill" style="--fill-width:${pct.toFixed(1)}%"></div>
-        </div>
-        <span class="cr-dist-pct">${pct.toFixed(0)}%</span>
-        <span class="cr-dist-pts">${Number.isInteger(w) ? w : w.toFixed(1)} pts</span>
-        ${flatLabel}
-      </div>`;
-    })
-    .join("");
-
-  const titleHtml = title
-    ? `<div class="cr-dist-title">🏈 ${escapeHtml(title)}</div>`
-    : "";
-
-  return `<div class="cr-distribution">${titleHtml}${bars}</div>`;
-}
-
-/**
  * Build a rich, expandable touch analysis panel from a computeTouchAnalysis result.
  * Shows overview bars + expandable per-player breakdown with slot, type, and hit zone detail.
  *

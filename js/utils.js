@@ -1548,6 +1548,26 @@ function removeVowels(str) {
   return str[0] + str.slice(1).replace(/[aeiouAEIOU]/g, "");
 }
 
+function splitCoverageValues(value) {
+  if (!value) return [];
+  const values = [];
+  String(value)
+    .toLowerCase()
+    .split(/[,|;]+/)
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .forEach((entry) => {
+      values.push(entry);
+      const combined = entry.match(
+        /\b(?:cover|cov|c)?\s*([0-9])\s*\/\s*(?:cover|cov|c)?\s*([0-9])\b/,
+      );
+      if (combined) {
+        values.push(`cover ${combined[1]}`, `cover ${combined[2]}`);
+      }
+    });
+  return [...new Set(values)];
+}
+
 /**
  * Get the full play call string with optional formatting
  * @param {Object} play - Play object
@@ -2155,12 +2175,40 @@ function checkDeadVs(play, defCoverage, defFront) {
  * @returns {{ opponentName: string|null, opponentIndex: number|null, weekLabel: string, notes: string }}
  */
 function getGameWeek() {
-  return storageManager.get(STORAGE_KEYS.GAME_WEEK, {
+  const defaults = {
     opponentName: null,
     opponentIndex: null,
     weekLabel: "",
     notes: "",
-  });
+  };
+  const stored = storageManager.get(STORAGE_KEYS.GAME_WEEK, defaults);
+  return stored && typeof stored === "object"
+    ? { ...defaults, ...stored }
+    : defaults;
+}
+
+function resolveGameWeekOpponent(opponents, gameWeek = getGameWeek()) {
+  const source = Array.isArray(opponents) ? opponents : [];
+  const normalizedName = String(gameWeek?.opponentName || "")
+    .trim()
+    .toLowerCase();
+  if (normalizedName) {
+    const nameIndex = source.findIndex(
+      (opponent) =>
+        String(opponent?.name || "").trim().toLowerCase() === normalizedName,
+    );
+    if (nameIndex >= 0) {
+      return { opponent: source[nameIndex], index: nameIndex };
+    }
+  }
+
+  const index = Number.isInteger(gameWeek?.opponentIndex)
+    ? gameWeek.opponentIndex
+    : null;
+  if (index !== null && source[index]) {
+    return { opponent: source[index], index };
+  }
+  return { opponent: null, index: null };
 }
 
 /**
@@ -2186,9 +2234,8 @@ function setGameWeek(opponentIndex, weekLabel) {
  */
 function getActiveOpponent() {
   const gw = getGameWeek();
-  if (gw.opponentIndex === null) return null;
   const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
-  return opponents[gw.opponentIndex] || null;
+  return resolveGameWeekOpponent(opponents, gw).opponent;
 }
 
 // ============ Schedule Manager ============

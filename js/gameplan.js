@@ -436,7 +436,10 @@ function _gpPlayMatchesCriteria(play, criteria) {
     }
   }
   if (criteria.coverage.length > 0) {
-    const coverages = splitPV(play.practiceCoverage);
+    const coverages =
+      typeof splitCoverageValues === "function"
+        ? splitCoverageValues(play.practiceCoverage)
+        : splitPV(play.practiceCoverage);
     if (
       !criteria.coverage.some((target) =>
         coverages.some((coverage) => _gpCoverageMatchesTarget(coverage, target)),

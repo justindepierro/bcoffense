@@ -400,6 +400,121 @@ function checkHistoryContracts() {
   console.log("history contracts ok");
 }
 
+function checkConflictContracts() {
+  const utils = read("js/utils.js");
+  const scriptRender = read("js/script-render.js");
+  const scriptVision = read("js/script-vision.js");
+  const callSheet = read("js/callsheet.js");
+  const callSheetDrawer = read("js/callsheet-gameplan-drawer.js");
+  const gameplan = read("js/gameplan.js");
+  const dashboard = read("js/dashboard.js");
+  const tendencies = read("js/tendencies.js");
+  const printStudio = read("js/print-studio.js");
+  const storage = read("js/storage.js");
+  const appEvents = read("js/app-events.js");
+  const gameplanActions = read("js/gameplan-actions.js");
+  const playbookActions = read("js/playbook-actions.js");
+  const constraints = read("js/constraints.js");
+
+  if (
+    /window\.script\b/.test(scriptVision) ||
+    /window\.renderScript\s*=/.test(scriptVision)
+  ) {
+    fail("script vision reads lexical state through window or replaces renderScript");
+  }
+  if (!/renderScriptVisionPanel\(\)/.test(scriptRender)) {
+    fail("script rendering does not explicitly refresh the Vision panel");
+  }
+  if (
+    /window\.renderCallSheet\s*=/.test(callSheetDrawer) ||
+    !/refreshCallSheetGamePlanDrawer\(\)/.test(callSheet)
+  ) {
+    fail("call sheet drawer still replaces the shared render function");
+  }
+  if (
+    !/addEventListener\("dragend"[\s\S]*?_pbSortDragEnd\(e\)/.test(
+      appEvents,
+    )
+  ) {
+    fail("playbook print sorting does not clean up canceled drags");
+  }
+  if (
+    /function (?:addGamePlanCustomBox|renameGamePlanBox)\(/.test(
+      gameplanActions,
+    ) ||
+    /function startInlineEdit\(/.test(playbookActions) ||
+    /function _renderTouchDistribution\(/.test(constraints) ||
+    /function saveTemplate\(/.test(callSheet)
+  ) {
+    fail("superseded call sheet, game plan, playbook, or constraint handlers remain");
+  }
+
+  const splitCoverageSource = extractFunctionSource(
+    utils,
+    "splitCoverageValues",
+  );
+  if (!splitCoverageSource) {
+    fail("shared coverage splitting helper is missing");
+  } else {
+    const splitCoverageValues = new Function(
+      `${splitCoverageSource}; return splitCoverageValues;`,
+    )();
+    const values = splitCoverageValues("Cov 0/1, Tampa 2");
+    if (
+      !values.includes("cover 0") ||
+      !values.includes("cover 1") ||
+      !values.includes("tampa 2")
+    ) {
+      fail("combined coverage labels do not expand consistently");
+    }
+  }
+  if (
+    !/splitCoverageValues\(play\.practiceCoverage\)/.test(callSheet) ||
+    !/splitCoverageValues\(play\.practiceCoverage\)/.test(gameplan)
+  ) {
+    fail("game plan and call sheet do not share coverage splitting");
+  }
+
+  const resolveSource = extractFunctionSource(
+    utils,
+    "resolveGameWeekOpponent",
+  );
+  if (!resolveSource) {
+    fail("game-week opponent resolver is missing");
+  } else {
+    const resolveGameWeekOpponent = new Function(
+      `${resolveSource}; return resolveGameWeekOpponent;`,
+    )();
+    const opponents = [{ name: "Alpha" }, { name: "Bravo" }];
+    const resolved = resolveGameWeekOpponent(opponents, {
+      opponentName: "Bravo",
+      opponentIndex: 0,
+    });
+    if (resolved.index !== 1 || resolved.opponent !== opponents[1]) {
+      fail("game-week resolution trusts a stale opponent index over its name");
+    }
+  }
+  if (
+    !/ensureTendenciesOpponent\(game\.opponent\)/.test(dashboard) ||
+    !/function ensureTendenciesOpponent\(/.test(tendencies) ||
+    !/function ensureTendenciesOpponent\([\s\S]*?STORAGE_KEYS\.DEFENSIVE_TENDENCIES/.test(
+      tendencies,
+    ) ||
+    !/resolveGameWeekOpponent\(tendenciesOpponents, gw\)/.test(printStudio)
+  ) {
+    fail("opponent creation or consumers bypass the shared live-state resolver");
+  }
+  if (
+    !/normalizeCallSheetSettings\(css\)/.test(storage) ||
+    !/rebuildCallSheetCategoryRegistry\(\)/.test(storage) ||
+    !/normalizeCallSheetCategoryOrder\(/.test(storage)
+  ) {
+    fail("storage reload does not rebuild normalized call sheet runtime state");
+  }
+
+  console.log("cross-module conflict contracts ok");
+}
+
 function checkWristbandTypography() {
   const css = read("css/wristband.css");
   const printCss = read("css/print.css");
@@ -804,6 +919,7 @@ checkStorageKeyUsage();
 checkMigrationRetry();
 checkSafeUiRendering();
 checkHistoryContracts();
+checkConflictContracts();
 checkWristbandTypography();
 checkSevenOnSevenTemplate();
 checkCacheBusters();

@@ -708,17 +708,13 @@ document.addEventListener("DOMContentLoaded", () => {
     _gpClearHighlights();
   }, true);
 
-  // When the call sheet re-renders, refresh the drawer's usage chips so they
-  // reflect the latest bucket contents.
-  if (typeof window.renderCallSheet === "function" && !window._gpDrawerHookedRender) {
-    const _origRender = window.renderCallSheet;
-    window.renderCallSheet = function _gpHookedRenderCallSheet() {
-      const out = _origRender.apply(this, arguments);
-      if (_gpDrawerState.open) {
-        try { _gpDrawerRender(); } catch (_e) { }
-      }
-      return out;
-    };
-    window._gpDrawerHookedRender = true;
-  }
 });
+
+function refreshCallSheetGamePlanDrawer() {
+  if (!_gpDrawerState.open) return;
+  try {
+    _gpDrawerRender();
+  } catch (err) {
+    console.error("refreshCallSheetGamePlanDrawer error:", err);
+  }
+}

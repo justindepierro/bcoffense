@@ -1098,18 +1098,6 @@ table.sortable th {
   font-variant-numeric: tabular-nums;
 }
 
-/* ── Inline playbook cell editing ── */
-.pb-inline-edit {
-  width: 100%;
-  padding: 4px 6px;
-  border: 2px solid var(--color-primary);
-  border-radius: var(--radius-sm);
-  font-family: var(--font-mono);
-  font-size: var(--font-size-sm);
-  box-shadow: var(--shadow-focus);
-  background: var(--color-white);
-}
-
 /* ── Mobile Card View ── */
 .pb-cards {
   display: none;

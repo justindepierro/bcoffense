@@ -647,7 +647,40 @@ function reloadAppFromStorage() {
 
   if (typeof callSheetSettings !== "undefined") {
     const css = storageManager.get(STORAGE_KEYS.CALL_SHEET_SETTINGS, null);
-    if (css) callSheetSettings = css;
+    if (css) {
+      callSheetSettings =
+        typeof normalizeCallSheetSettings === "function"
+          ? normalizeCallSheetSettings(css)
+          : css;
+    }
+  }
+
+  if (typeof rebuildCallSheetCategoryRegistry === "function") {
+    rebuildCallSheetCategoryRegistry();
+  }
+  if (typeof syncCallSheetCategoryData === "function") {
+    syncCallSheetCategoryData();
+  }
+  if (typeof csCategoryOrder !== "undefined") {
+    csCategoryOrder =
+      typeof normalizeCallSheetCategoryOrder === "function"
+        ? normalizeCallSheetCategoryOrder(
+          storageManager.get(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, null),
+        )
+        : storageManager.get(STORAGE_KEYS.CALLSHEET_CATEGORY_ORDER, {});
+  }
+  if (typeof csNotes !== "undefined") {
+    csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
+  }
+  if (typeof csTargets !== "undefined") {
+    csTargets = storageManager.get(STORAGE_KEYS.CALLSHEET_TARGETS, {});
+  }
+  if (typeof csCollapsed !== "undefined") {
+    const collapsed = storageManager.get(
+      STORAGE_KEYS.CALLSHEET_COLLAPSED,
+      [],
+    );
+    csCollapsed = new Set(Array.isArray(collapsed) ? collapsed : []);
   }
 
   if (typeof scriptCustomSortOrders !== "undefined") {

@@ -184,7 +184,9 @@ async function showStorageInfo() {
     counts.installationTemplates = Array.isArray(installationTemplates)
       ? installationTemplates.length
       : 0;
-  } catch (e) { }
+  } catch (err) {
+    console.warn("Storage item counts could not be loaded:", err);
+  }
 
   let itemsHtml = "";
   Object.entries(info.itemSizes).forEach(([key, size]) => {

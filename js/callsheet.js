@@ -1409,7 +1409,10 @@ function callSheetPlayMatchesCriteria(play, criteria) {
   const coverages = Array.isArray(criteria.coverage) ? criteria.coverage : [];
   if (coverages.length > 0) {
     hasCriteria = true;
-    const playCoverages = splitPreferredValues(play.practiceCoverage);
+    const playCoverages =
+      typeof splitCoverageValues === "function"
+        ? splitCoverageValues(play.practiceCoverage)
+        : splitPreferredValues(play.practiceCoverage);
     if (
       !coverages.some((target) =>
         playCoverages.some((coverage) =>
@@ -1933,6 +1936,10 @@ function renderCallSheet() {
 
   // Update undo/redo button state
   historyManager.updateButtons("callsheet");
+
+  if (typeof refreshCallSheetGamePlanDrawer === "function") {
+    refreshCallSheetGamePlanDrawer();
+  }
 }
 
 /**
@@ -4741,10 +4748,6 @@ function openTemplatesModal(mode = "manage") {
 function closeTemplateModal() {
   const overlay = document.getElementById("csTemplateOverlay");
   if (overlay) overlay.remove();
-}
-
-function saveTemplate() {
-  saveCallSheetTemplate();
 }
 
 async function loadTemplate(idx) {

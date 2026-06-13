@@ -243,10 +243,6 @@ function createSearchHighlighter(searchTerm) {
 
 const _scheduleRenderPlaybook = createRAFRenderer(renderPlaybook);
 
-function scheduleRenderPlaybook() {
-  _scheduleRenderPlaybook();
-}
-
 function requestRenderPlaybook() {
   _scheduleRenderPlaybook();
 }
@@ -315,10 +311,6 @@ function initPlaybookKeyboard() {
 
   document.removeEventListener("keydown", _playbookDocKeydown);
   document.addEventListener("keydown", _playbookDocKeydown);
-}
-
-function highlightSearch(text, searchTerm) {
-  return createSearchHighlighter(searchTerm)(text);
 }
 
 let _statsBarCache = null;

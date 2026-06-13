@@ -666,6 +666,12 @@ document.addEventListener("DOMContentLoaded", () => {
       _pbSortDrop(e, parseInt(el.dataset.idx, 10));
     }
   });
+  document.body.addEventListener("dragend", (e) => {
+    const el = e.target.closest("[data-drag='pbSort']");
+    if (el && typeof _pbSortDragEnd === "function") {
+      _pbSortDragEnd(e);
+    }
+  });
 
   const tdContent = document.getElementById("tendenciesContent");
   if (tdContent) {

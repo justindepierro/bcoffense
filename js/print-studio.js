@@ -544,12 +544,20 @@ function _psCloseAndRun(fn) {
 
 function _psSelectActiveTendenciesOpponent() {
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
-  if (!gw || gw.opponentIndex === null) return false;
-  if (!Array.isArray(tendenciesOpponents) || !tendenciesOpponents[gw.opponentIndex]) {
+  if (!gw) return false;
+  let resolved =
+    typeof resolveGameWeekOpponent === "function"
+      ? resolveGameWeekOpponent(tendenciesOpponents, gw)
+      : { opponent: null, index: null };
+  if (!resolved.opponent) {
     tendenciesOpponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+    resolved =
+      typeof resolveGameWeekOpponent === "function"
+        ? resolveGameWeekOpponent(tendenciesOpponents, gw)
+        : { opponent: null, index: null };
   }
-  if (!tendenciesOpponents[gw.opponentIndex]) return false;
-  tendenciesCurrentOpponent = gw.opponentIndex;
+  if (!resolved.opponent) return false;
+  tendenciesCurrentOpponent = resolved.index;
   tdFilters = {};
   tdSearchText = "";
   tdSortColumn = null;
