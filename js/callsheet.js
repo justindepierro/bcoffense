@@ -1754,7 +1754,7 @@ function buildPlayerCategoryAutoFillTargets(items, options = {}) {
 }
 
 /**
- * Get personnel abbreviation code
+ * Get personnel abbreviation code or compact marker
  */
 function getPersonnelCode(personnel) {
   if (!personnel) return "";
@@ -1768,7 +1768,7 @@ function getPersonnelCode(personnel) {
     purple: "PU",
     red: "RD",
     white: "WH",
-    navy: "NV",
+    navy: "⚓",
     star: "ST",
   };
   return codes[p] || personnel.substring(0, 2).toUpperCase();
@@ -3916,7 +3916,17 @@ function buildCallSheetPlayParts(play, options) {
 
   // Add personnel emoji if enabled
   if (options.showEmoji && play.personnel) {
-    playParts.push(getPersonnelEmoji(play.personnel, options.useSquares));
+    const personnelMarker = getPersonnelEmoji(
+      play.personnel,
+      options.useSquares,
+    );
+    const markerAlreadyInBadge =
+      options.showPersonnel &&
+      personnelMarker &&
+      getPersonnelCode(play.personnel) === personnelMarker;
+    if (personnelMarker && !markerAlreadyInBadge) {
+      playParts.push(personnelMarker);
+    }
   }
   if (options.underEmoji && hasUnder) {
     playParts.push("🍑");

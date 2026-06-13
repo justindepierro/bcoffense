@@ -366,6 +366,10 @@ function getHelpDataForTab(tab) {
               key: "Presets dropdown",
               desc: "Show All, Minimal, Game Day, Print Friendly",
             },
+            {
+              key: "🔵 / ⚓ Personnel Marker",
+              desc: "Show personnel shorthand in each play call; Navy uses the anchor",
+            },
             { key: "💾", desc: "Save current display as custom preset" },
           ],
         },
