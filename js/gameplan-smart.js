@@ -895,7 +895,7 @@ function _gpSmartArg(payload) {
 
 function _gpRenderSmartRecommendationRow(group, item) {
   const callHtml = typeof getFullCall === "function"
-    ? getFullCall(item.play, { showLineCall: false })
+    ? getFullCall(item.play, { showLineCall: false, showEmoji: true })
     : escapeHtml(item.play?.play || item.play?.basePlay || "Unnamed play");
   const meta = [item.play?.type, item.play?.personnel, item.play?.formation]
     .filter(Boolean)

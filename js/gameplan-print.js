@@ -669,7 +669,7 @@ function _gpRenderPrintImageAppendix(allBoxes, board) {
       const url = window.playImages.urlFor(sig);
       if (!url) continue;
       const callHtml = (typeof getFullCall === "function")
-        ? getFullCall(play, { showLineCall: false })
+        ? getFullCall(play, { showLineCall: false, showEmoji: true, useSquares: true })
         : escapeHtml(play.play || "");
       items.push(`<figure class="gp-print-img-card">
           <img src="${url}" alt="Play diagram" />

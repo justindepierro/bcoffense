@@ -531,7 +531,9 @@ function _gpRenderCompareModal(idA, idB) {
   const sigToShort = (sig) => {
     const p = _gpFindPlayBySig(sig);
     if (!p) return escapeHtml(sig);
-    return typeof getFullCall === "function" ? getFullCall(p, { showLineCall: false }) : escapeHtml(p.play || sig);
+    return typeof getFullCall === "function"
+      ? getFullCall(p, { showLineCall: false, showEmoji: true })
+      : escapeHtml(p.play || sig);
   };
 
   const rowsHtml = rows.map((r) => {

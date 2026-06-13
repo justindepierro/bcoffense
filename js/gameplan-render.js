@@ -427,7 +427,7 @@ function _gpRenderCallHtml(play, ctx) {
     return ctx.callHtmlCache.get(play);
   }
   const html = typeof getFullCall === "function"
-    ? getFullCall(play, { showLineCall: false })
+    ? getFullCall(play, { showLineCall: false, showEmoji: true })
     : escapeHtml(play.play || "");
   if (ctx && ctx.callHtmlCache) ctx.callHtmlCache.set(play, html);
   return html;
