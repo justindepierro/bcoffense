@@ -1,19 +1,20 @@
 function renderCardTabs() {
   const container = document.getElementById("cardTabs");
   if (!container) return;
+  const activeCellCount = getActiveWristbandCellCount();
   let html = wristbandCards
     .map((card, i) => {
-      const total = Math.min(getActiveWristbandCellCount(), card.data.length);
+      const total = Math.min(activeCellCount, card.data.length);
       const count = card.data.slice(0, total).filter((p) => p !== null).length;
       const descHtml = card.description
         ? `<span class="card-tab-desc" title="${escapeHtml(card.description)}">${escapeHtml(card.description)}</span>`
         : "";
       return `
-        <div class="card-tab ${i === currentCardIndex ? "active" : ""}" data-action="switchCard" data-idx="${i}" title="Double-click to rename">
+        <button type="button" role="tab" aria-selected="${i === currentCardIndex}" class="card-tab ${i === currentCardIndex ? "active" : ""}" data-action="switchCard" data-idx="${i}" title="Double-click to rename">
           <span class="card-tab-name">${escapeHtml(card.name)}</span>
           ${descHtml}
           <span class="card-count">${count}/${total}</span>
-        </div>
+        </button>
       `;
     })
     .join("");

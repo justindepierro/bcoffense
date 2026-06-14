@@ -262,8 +262,21 @@ function checkShowWbLanding() {
   if (isEmpty) showWbTypeChoice();
 }
 
+function updateWristbandModeChrome(mode) {
+  const badge = document.getElementById("wbModeBadge");
+  if (!badge) return;
+  if (mode === "classic") {
+    badge.textContent = "Classic · 40 plays/card";
+  } else if (mode === "player") {
+    badge.textContent = "Player · 20 plays/card";
+  } else {
+    badge.textContent = "Choose a format";
+  }
+}
+
 function showWbTypeChoice() {
   wristbandType = "";
+  updateWristbandModeChrome("");
   // Deactivate player mode if it was on
   if (wbPlayerCardMode) {
     wbPlayerCardMode = false;
@@ -282,6 +295,7 @@ function showWbTypeChoice() {
 
 function startClassicWristband() {
   wristbandType = "classic";
+  updateWristbandModeChrome("classic");
   wbPlayerCardMode = false;
   document.getElementById("wbTypeChoice")?.classList.add("hidden");
   document.querySelector(".wb-toolbar")?.classList.remove("wb-toolbar-hidden");
@@ -296,6 +310,7 @@ function startClassicWristband() {
 
 function startPlayerWristband() {
   wristbandType = "player";
+  updateWristbandModeChrome("player");
   document.getElementById("wbTypeChoice")?.classList.add("hidden");
   document.querySelector(".wb-toolbar")?.classList.add("wb-toolbar-hidden");
   document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
@@ -437,7 +452,7 @@ function renderPlayerCardGrid() {
   document.getElementById("wristbandCard")?.classList.add("pc-card-active");
   grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   grid.innerHTML = html;
-  syncWristbandGridEmptyState(card.data, WB_ROWS);
+  finalizeWristbandGridRender(grid, card.data, WB_ROWS);
 
   // Wire assignment change + reset click events — only once per grid element lifetime
   if (!grid._pcListenerWired) {

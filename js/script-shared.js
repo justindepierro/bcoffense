@@ -148,8 +148,10 @@ function toggleFilterSection(titleEl) {
   section.classList.toggle("expanded");
   if (section.classList.contains("expanded")) {
     titleEl.textContent = titleEl.textContent.replace("▶", "▼");
+    titleEl.setAttribute("aria-expanded", "true");
   } else {
     titleEl.textContent = titleEl.textContent.replace("▼", "▶");
+    titleEl.setAttribute("aria-expanded", "false");
   }
 }
 

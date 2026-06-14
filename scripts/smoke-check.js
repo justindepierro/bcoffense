@@ -544,6 +544,44 @@ function checkWristbandTypography() {
   console.log("wristband typography ok");
 }
 
+function checkWristbandWorkspaceContracts() {
+  const html = read("index.html");
+  const library = read("js/wristband-library.js");
+  const render = read("js/wristband-render.js");
+  const playerRuntime = read("js/wristband-export.js");
+  const responsiveCss = read("css/responsive.css");
+
+  if (
+    !/class="wb-page-header"/.test(html) ||
+    !/id="wbLibraryStatus"/.test(html) ||
+    !/class="wb-appearance-panel"/.test(html) ||
+    !/data-oninput="scheduleWristbandPlayFilter"/.test(html)
+  ) {
+    fail("wristband workspace hierarchy or progressive controls are incomplete");
+  }
+  if (
+    !/const favoriteSet = new Set\(wbFavorites\)/.test(library) ||
+    !/\.map\(\(play, index\) => \(\{ play, index \}\)\)/.test(library) ||
+    !/data-action="addPlayToNextEmpty"/.test(library)
+  ) {
+    fail("wristband play library bypasses indexed rendering or explicit add actions");
+  }
+  if (
+    !/function finalizeWristbandGridRender\(/.test(render) ||
+    !/finalizeWristbandGridRender\(grid, cardData, CELLS_PER_CARD\)/.test(render) ||
+    !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime)
+  ) {
+    fail("classic and player wristbands do not share render finalization");
+  }
+  if (
+    /\.wristband-(?:container|card|grid|cell)|\.wb-stats-bar/.test(responsiveCss)
+  ) {
+    fail("wristband responsive layout has leaked back into shared responsive.css");
+  }
+
+  console.log("wristband workspace contracts ok");
+}
+
 function checkPlayerWristbandRuleOverrides() {
   const wristband = read("js/wristband.js");
   const playerRuntime = read("js/wristband-export.js");
@@ -964,6 +1002,7 @@ checkSafeUiRendering();
 checkHistoryContracts();
 checkConflictContracts();
 checkWristbandTypography();
+checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();
 checkCacheBusters();

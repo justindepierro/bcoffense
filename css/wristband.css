@@ -1,22 +1,139 @@
 /* ============ Wristband: Maker, Cards, Grid ============ */
 
-.wristband-container {
+.wb-page-header {
   display: flex;
-  gap: 20px;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+  margin-bottom: var(--space-lg);
+  padding: var(--space-lg);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, var(--color-primary-light), transparent 70%),
+    var(--color-surface);
+}
+
+.wb-page-header h2,
+.wb-library-header h3,
+.wb-preview-header h3 {
+  margin: 0;
+}
+
+.wb-page-header h2 {
+  margin-top: 2px;
+  font-size: var(--font-size-2xl);
+  color: var(--color-text);
+}
+
+.wb-page-header p {
+  max-width: 700px;
+  margin: var(--space-xs) 0 0;
+  color: var(--color-text-secondary);
+  line-height: 1.5;
+}
+
+.wb-page-kicker,
+.wb-section-kicker {
+  display: block;
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.wb-page-status {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+.wb-mode-badge,
+.wb-size-badge {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 4px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.wb-mode-badge {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+}
+
+.wb-size-badge {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
+}
+
+.wristband-container {
+  display: grid;
+  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-lg);
 }
 .wristband-plays {
-  flex: 1;
-  max-width: 350px;
-  min-width: 280px;
+  position: sticky;
+  top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 12px);
+  min-width: 0;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
 }
 .wristband-preview {
-  flex: 2;
+  min-width: 0;
+}
+
+.wb-library-header,
+.wb-preview-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.wb-library-header h3,
+.wb-preview-header h3 {
+  margin-top: 2px;
+  font-size: var(--font-size-lg);
+}
+
+.wb-library-search {
+  margin-bottom: var(--space-sm);
+}
+
+.wb-library-status {
+  min-height: 18px;
+  margin: var(--space-xs) 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.wb-preview-header .text-hint {
+  max-width: 420px;
+  text-align: right;
+  line-height: 1.35;
 }
 .wristband-card {
+  max-width: 100%;
+  margin-inline: auto;
   width: 7in;
   height: 4.2in;
-  border: 2px solid var(--color-text);
-  background: var(--color-white);
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-sm);
   overflow: hidden;
   box-sizing: border-box;
   transform-origin: top left;
@@ -196,6 +313,13 @@
   line-height: 1.5;
 }
 
+.wb-empty-actions {
+  display: flex;
+  gap: var(--space-xs);
+  margin-top: var(--space-md);
+  pointer-events: auto;
+}
+
 /* ── Color Picker ── */
 .color-picker {
   display: flex;
@@ -296,6 +420,12 @@
   margin-bottom: 10px;
 }
 .checkbox-filters-title {
+  width: 100%;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  font-family: inherit;
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-text-muted);
@@ -406,18 +536,26 @@
 /* Card Tabs */
 .card-tabs {
   display: flex;
-  gap: 5px;
-  margin-bottom: 15px;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
   align-items: center;
+  overflow-x: auto;
+  padding: 2px 1px var(--space-xs);
+  scrollbar-width: thin;
 }
 .card-tab {
-  padding: 8px 16px;
-  border: 2px solid var(--color-border);
-  background: var(--color-bg-lighter);
-  border-radius: 8px 8px 0 0;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 6px 12px;
+  border: 1px solid var(--color-border);
+  background: var(--color-surface);
+  border-radius: var(--radius-md);
   cursor: pointer;
-  font-weight: bold;
+  font-family: inherit;
+  font-weight: 700;
   font-size: var(--font-size-sm);
+  color: var(--color-text);
+  text-align: left;
 }
 @media (hover: hover) {
   .card-tab:hover {
@@ -426,9 +564,10 @@
 }
 
 .card-tab.active {
-  background: var(--color-surface);
-  border-bottom-color: var(--color-surface);
-  color: var(--color-primary);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: var(--shadow-xs);
 }
 .card-tab .card-count {
   font-size: var(--font-size-2xs);
@@ -436,10 +575,12 @@
   font-weight: normal;
 }
 .card-tab.active .card-count {
-  color: var(--color-primary);
+  color: var(--color-white-alpha-80);
 }
 .add-card-btn {
-  padding: 8px 12px;
+  flex: 0 0 auto;
+  min-height: 36px;
+  padding: 6px 12px;
   background: var(--color-success);
   color: var(--color-text-inverse);
   border: none;
@@ -466,40 +607,42 @@
 
 /* Wristband Stats Bar */
 .wb-stats-bar {
-  display: flex;
-  gap: 8px;
-  margin-bottom: 12px;
-  padding: 8px 12px;
-  background: var(--color-primary);
+  display: grid;
+  grid-template-columns: repeat(6, minmax(64px, 1fr));
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  padding: var(--space-xs);
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  flex-wrap: wrap;
-  align-items: center;
 }
 .wb-stats-bar .stat-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  padding: 6px 12px;
-  background: var(--color-white-alpha-15);
-  border-radius: var(--radius-md);
-  min-width: 50px;
+  justify-content: center;
+  min-width: 0;
+  padding: 6px 8px;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
 }
 .wb-stats-bar .stat-item.run {
-  background: var(--color-success-alpha-25);
+  background: var(--color-success-light);
 }
 .wb-stats-bar .stat-item.pass {
-  background: var(--color-navy-alpha-35);
+  background: var(--color-primary-light);
 }
 .wb-stats-bar .stat-label {
   font-size: var(--font-size-2xs);
-  color: var(--color-white-alpha-80);
+  color: var(--color-text-muted);
   text-transform: uppercase;
   letter-spacing: 0.5px;
 }
 .wb-stats-bar .stat-value {
   font-size: var(--font-size-md);
   font-weight: bold;
-  color: var(--color-text-inverse);
+  color: var(--color-text);
 }
 
 /* Wristband Toolbar */
@@ -507,8 +650,8 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 12px;
-  background: var(--color-bg-light);
+  padding: var(--space-sm);
+  background: var(--color-surface);
   border-radius: var(--radius-md);
   margin-bottom: 8px;
   gap: 8px;
@@ -519,20 +662,71 @@
 .wb-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
-}
-.wb-toolbar-left .color-picker {
-  font-size: var(--font-size-sm);
-}
-.wb-toolbar-left .color-picker span {
-  font-weight: 600;
-  font-size: var(--font-size-sm);
+  gap: var(--space-xs);
+  flex-wrap: wrap;
 }
 .wb-toolbar-right {
   display: flex;
   align-items: center;
   gap: 5px;
   flex-wrap: wrap;
+}
+
+.wb-appearance-panel {
+  position: relative;
+}
+
+.wb-appearance-panel summary {
+  list-style: none;
+  cursor: pointer;
+}
+
+.wb-appearance-panel summary::-webkit-details-marker {
+  display: none;
+}
+
+.wb-appearance-panel[open] summary {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.wb-appearance-popover {
+  position: absolute;
+  top: calc(100% + var(--space-xs));
+  right: 0;
+  z-index: var(--z-dropdown);
+  display: grid;
+  gap: var(--space-sm);
+  min-width: 320px;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+}
+
+.wb-appearance-popover .color-picker {
+  flex-wrap: wrap;
+}
+
+.wb-appearance-popover .color-picker > span,
+.wb-appearance-field > span {
+  min-width: 52px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.wb-appearance-field {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.wb-appearance-field select {
+  min-width: 0;
+  flex: 1;
 }
 
 /* Wristband Sort Panel */
@@ -543,6 +737,7 @@
   overflow: hidden;
 }
 .wb-sort-header {
+  width: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
@@ -551,6 +746,9 @@
   color: var(--color-text-inverse);
   cursor: pointer;
   user-select: none;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
 }
 @media (hover: hover) {
   .wb-sort-header:hover {
@@ -602,6 +800,13 @@
 /* Wristband Display Panel Override */
 .wb-display-panel {
   margin-top: 15px;
+}
+
+.wb-display-panel .display-options-header {
+  width: 100%;
+  border: 0;
+  font-family: inherit;
+  text-align: left;
 }
 
 /* ── Display Preset Radio Buttons ── */
@@ -685,8 +890,38 @@
 
 /* ── Available Play Items ── */
 .wb-play-item {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-width: 0;
   cursor: pointer;
   transition: background var(--transition-fast);
+}
+
+.wb-play-item .play-info {
+  min-width: 0;
+  flex: 1;
+}
+
+.wb-add-play-btn {
+  flex: 0 0 auto;
+  min-height: 30px;
+  padding: 4px 9px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  color: var(--color-primary);
+  background: transparent;
+  font-family: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+@media (hover: hover) {
+  .wb-add-play-btn:hover {
+    color: var(--color-text-inverse);
+    background: var(--color-primary);
+  }
 }
 
 /* ── Sort Preset Select ── */
@@ -839,7 +1074,9 @@
 }
 
 .wb-available-plays {
-  max-height: 350px;
+  max-height: min(58vh, 620px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
 }
 
 .color-swatch[data-color=""] {
@@ -1005,138 +1242,6 @@
   background: var(--color-primary-light) !important;
   border-color: var(--color-primary) !important;
   box-shadow: 0 0 6px rgba(0, 123, 255, 0.4);
-}
-
-@media (max-width: 640px) {
-  .wristband-container {
-    gap: 12px;
-  }
-
-  .wristband-plays,
-  .wristband-preview {
-    width: 100%;
-    min-width: 0;
-  }
-
-  .wristband-preview {
-    overflow: visible;
-  }
-
-  .card-tabs {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 6px;
-    scroll-padding-inline: 4px;
-    scroll-snap-type: x proximity;
-  }
-
-  .card-tab,
-  .add-card-btn {
-    flex: 0 0 auto;
-    min-height: 44px;
-    border-radius: var(--radius-md);
-    scroll-snap-align: start;
-  }
-
-  .wristband-card {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    aspect-ratio: auto;
-    border-width: 1px;
-    overflow: visible;
-  }
-
-  .wristband-grid {
-    grid-template-columns: 42px minmax(0, 1fr) !important;
-    grid-template-rows: none !important;
-    grid-auto-rows: minmax(42px, auto);
-    height: auto;
-  }
-
-  .wristband-cell {
-    min-height: 42px;
-    padding: 6px 8px;
-    font-size: var(--font-size-xs);
-  }
-
-  .wristband-cell.num-cell {
-    font-size: var(--font-size-sm);
-  }
-
-  .wristband-cell .cell-play {
-    display: flex;
-    max-height: none;
-    white-space: normal;
-    -webkit-line-clamp: unset;
-  }
-
-  .cell-play-text {
-    line-height: 1.25;
-    white-space: normal;
-  }
-
-  .wristband-cell .remove-cell {
-    display: block;
-    min-width: 24px;
-    min-height: 24px;
-    opacity: 0.8;
-  }
-
-  .wb-toolbar,
-  .wb-toolbar-left,
-  .wb-toolbar-right,
-  .wb-toolbar-group,
-  .wb-sort-toolbar,
-  .wb-sort-actions,
-  .wb-batch-controls,
-  .wb-batch-group {
-    align-items: stretch;
-  }
-
-  .wb-toolbar-left,
-  .wb-toolbar-right,
-  .wb-toolbar-group,
-  .wb-sort-toolbar,
-  .wb-sort-actions {
-    width: 100%;
-    flex-wrap: wrap;
-  }
-
-  .wb-toolbar-right .btn,
-  .wb-sort-toolbar .btn,
-  .wb-sort-actions .btn {
-    flex: 1 1 140px;
-  }
-
-  .wb-toolbar-sep {
-    display: none;
-  }
-
-  .wb-stats-bar .stat-item {
-    flex: 1 1 72px;
-  }
-
-  .color-picker,
-  .wb-batch-swatches {
-    flex-wrap: wrap;
-  }
-
-  .color-btn,
-  .wb-batch-swatch {
-    width: 32px;
-    height: 32px;
-  }
-
-  .wb-batch-input,
-  .wb-batch-select {
-    width: 100%;
-    height: 44px;
-  }
-
-  .wb-available-plays {
-    max-height: 360px;
-  }
 }
 
 /* ── Wristband Type Choice Landing ───────────────────────────────────────── */
@@ -1586,5 +1691,219 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     .pc-print-card-wrap
     + .pc-print-card-wrap {
     /* space-evenly on parent handles distribution */
+  }
+}
+
+/* Wristband responsive layout is kept here so module rules remain authoritative. */
+@media screen and (max-width: 1024px) {
+  .wristband-container {
+    grid-template-columns: 1fr;
+  }
+
+  .wristband-plays {
+    position: static;
+  }
+
+  .wristband-card {
+    width: 100%;
+    height: auto;
+    aspect-ratio: 7 / 4.2;
+  }
+}
+
+@media screen and (max-width: 768px) {
+  .wb-page-header {
+    flex-direction: column;
+    gap: var(--space-md);
+    padding: var(--space-md);
+  }
+
+  .wb-page-header h2 {
+    font-size: var(--font-size-xl);
+  }
+
+  .wb-page-status {
+    justify-content: flex-start;
+  }
+
+  .wb-preview-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .wb-preview-header .text-hint {
+    max-width: none;
+    text-align: left;
+  }
+
+  .wb-stats-bar {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}
+
+@media screen and (max-width: 640px) {
+  .wristband-container {
+    gap: var(--space-md);
+  }
+
+  .wristband-plays {
+    width: 100%;
+    padding: var(--space-sm);
+  }
+
+  .wristband-preview {
+    width: 100%;
+    min-width: 0;
+    overflow: visible;
+  }
+
+  .card-tabs {
+    scroll-padding-inline: var(--space-xs);
+    scroll-snap-type: x proximity;
+  }
+
+  .card-tab,
+  .add-card-btn {
+    min-height: 44px;
+    scroll-snap-align: start;
+  }
+
+  .wristband-card,
+  .wristband-card.pc-card-active {
+    width: 100%;
+    height: auto;
+    min-height: 0;
+    aspect-ratio: auto;
+    overflow: visible;
+  }
+
+  .wristband-grid {
+    grid-template-columns: 42px minmax(0, 1fr) !important;
+    grid-template-rows: none !important;
+    grid-auto-rows: minmax(42px, auto);
+    height: auto !important;
+  }
+
+  .wristband-grid.pc-grid-active {
+    grid-template-columns: 36px minmax(120px, 1.2fr) minmax(120px, 1fr) !important;
+    grid-auto-rows: minmax(48px, auto);
+  }
+
+  .wristband-cell {
+    min-height: 42px;
+    padding: 6px 8px;
+    font-size: var(--font-size-xs);
+  }
+
+  .wristband-cell.num-cell {
+    font-size: var(--font-size-sm);
+  }
+
+  .wristband-cell .cell-play {
+    display: flex;
+    max-height: none;
+    white-space: normal;
+    -webkit-line-clamp: unset;
+  }
+
+  .cell-play-text {
+    line-height: 1.25;
+    white-space: normal;
+  }
+
+  .wristband-cell .remove-cell {
+    display: block;
+    min-width: 24px;
+    min-height: 24px;
+    opacity: 0.8;
+  }
+
+  .wb-toolbar,
+  .wb-toolbar-left,
+  .wb-toolbar-right,
+  .wb-toolbar-group,
+  .wb-sort-toolbar,
+  .wb-sort-actions,
+  .wb-batch-controls,
+  .wb-batch-group {
+    align-items: stretch;
+  }
+
+  .wb-toolbar-left,
+  .wb-toolbar-right,
+  .wb-toolbar-group,
+  .wb-sort-toolbar,
+  .wb-sort-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+
+  .wb-toolbar-left > .btn,
+  .wb-toolbar-right > .btn,
+  .wb-toolbar-right > .tool-menu-wrap,
+  .wb-sort-toolbar .btn,
+  .wb-sort-actions .btn {
+    flex: 1 1 140px;
+  }
+
+  .wb-toolbar-right > .tool-menu-wrap > .btn {
+    width: 100%;
+  }
+
+  .wb-appearance-panel {
+    flex: 1 1 100%;
+  }
+
+  .wb-appearance-panel summary {
+    width: 100%;
+    text-align: center;
+  }
+
+  .wb-appearance-popover {
+    position: static;
+    min-width: 0;
+    margin-top: var(--space-xs);
+    box-shadow: none;
+  }
+
+  .wb-toolbar-sep {
+    display: none;
+  }
+
+  .color-picker,
+  .wb-batch-swatches {
+    flex-wrap: wrap;
+  }
+
+  .color-btn,
+  .wb-batch-swatch {
+    width: 32px;
+    height: 32px;
+  }
+
+  .wb-batch-input,
+  .wb-batch-select {
+    width: 100%;
+    height: 44px;
+  }
+
+  .wb-available-plays {
+    max-height: 45vh;
+  }
+
+  .pc-mode-bar {
+    align-items: stretch;
+  }
+
+  .pc-mode-label {
+    width: 100%;
+  }
+
+  .pc-mode-bar .btn {
+    flex: 1 1 140px;
+  }
+
+  .pc-rule-select {
+    flex-basis: 44px;
   }
 }

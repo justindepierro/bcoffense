@@ -137,6 +137,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const wbAvailEl = document.getElementById("wbAvailablePlays");
   if (wbAvailEl) {
     wbAvailEl.addEventListener("dblclick", (e) => {
+      if (e.target.closest("button")) return;
       const item = e.target.closest("[data-play-idx]");
       if (item) addPlayToNextEmpty(parseInt(item.dataset.playIdx, 10));
     });

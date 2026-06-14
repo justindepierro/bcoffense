@@ -252,20 +252,6 @@
   .play-list {
     max-width: 100%;
   }
-  .wristband-container {
-    flex-direction: column;
-  }
-  .wristband-plays {
-    max-width: 100%;
-  }
-  .wb-toolbar {
-    gap: 8px;
-  }
-  .wristband-card {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 7 / 4.2;
-  }
   /* Tendencies: stack toolbar items */
   .td-toolbar {
     flex-direction: column;
@@ -367,28 +353,6 @@
   }
   .upload-box {
     padding: 30px 20px;
-  }
-  .wb-stats-bar {
-    gap: 5px;
-    padding: 6px 8px;
-  }
-  .wb-stats-bar .stat-item {
-    padding: 4px 8px;
-    min-width: 42px;
-  }
-  .wb-stats-bar .stat-value {
-    font-size: var(--font-size-sm);
-  }
-  .card-tabs {
-    flex-wrap: wrap;
-  }
-  .wristband-card {
-    width: 100%;
-    height: auto;
-    aspect-ratio: 7 / 4.2;
-  }
-  .wristband-cell .cell-play {
-    font-size: var(--font-size-xs);
   }
   .callsheet-columns {
     flex-direction: column;
@@ -728,41 +692,6 @@
   /* Available plays pagination nav */
   .avail-pager {
     padding: 6px 0;
-  }
-}
-
-@media (max-width: 640px) {
-  body.is-mobile-screen .wristband-card {
-    width: 100%;
-    height: auto;
-    min-height: 0;
-    aspect-ratio: auto;
-    border-width: 1px;
-    overflow: visible;
-  }
-
-  body.is-mobile-screen .wristband-grid {
-    grid-template-columns: 42px minmax(0, 1fr) !important;
-    grid-template-rows: none !important;
-    grid-auto-rows: minmax(42px, auto);
-    height: auto;
-  }
-
-  body.is-mobile-screen .wristband-cell {
-    min-height: 42px;
-    padding: 6px 8px;
-    font-size: var(--font-size-xs);
-  }
-
-  body.is-mobile-screen .wristband-cell.num-cell {
-    font-size: var(--font-size-sm);
-  }
-
-  body.is-mobile-screen .wristband-cell .cell-play {
-    display: flex;
-    max-height: none;
-    white-space: normal;
-    -webkit-line-clamp: unset;
   }
 }
 

@@ -79,12 +79,47 @@ function syncWristbandGridEmptyState(cardData, cellsPerCard) {
     emptyOverlay.innerHTML = `
       <div class="wb-empty-icon">📋</div>
       <div class="wb-empty-title">Empty Card</div>
-      <div class="wb-empty-hint">Click any cell to add a play, or use <strong>⚡ Auto-Fill</strong> to populate from your playbook</div>
+      <div class="wb-empty-hint">Add from the play library, choose a cell manually, or fill the card from the current filters.</div>
+      <div class="wb-empty-actions">
+        <button class="btn btn-sm btn-primary" data-action="openFirstEmptyWristbandCell">Choose a Play</button>
+        <button class="btn btn-sm" data-action="autoFillWristband">Auto-Fill</button>
+      </div>
     `;
     cardEl.appendChild(emptyOverlay);
   }
 
   emptyOverlay?.classList.toggle("visible", isEmpty);
+}
+
+function openFirstEmptyWristbandCell() {
+  const cardData = getCurrentCardData();
+  const cellIdx = cardData
+    .slice(0, getActiveWristbandCellCount())
+    .findIndex((cell) => cell === null);
+  if (cellIdx < 0) {
+    showToast("No empty cells on this card", { type: "warning" });
+    return;
+  }
+  openCellPopup(currentCardIndex, cellIdx);
+}
+
+function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
+  syncWristbandGridEmptyState(cardData, cellsPerCard);
+  historyManager.updateButtons("wristband");
+
+  grid.querySelectorAll("[data-drag='wbCell']").forEach((cell) => {
+    const cardIdx = parseInt(cell.dataset.card, 10);
+    const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+    if (Number.isInteger(cardIdx) && Number.isInteger(cellIdx)) {
+      addLongPress(cell, (event) =>
+        _showWbCellContextMenu(event, cardIdx, cellIdx),
+      );
+    }
+  });
+
+  syncWbSelectedCellVisuals(grid);
+  updateWbStats();
+  if (typeof updateTabBadges === "function") updateTabBadges();
 }
 
 function renderWristbandGrid() {
@@ -224,22 +259,7 @@ function renderWristbandGrid() {
   }
 
   grid.innerHTML = html;
-  syncWristbandGridEmptyState(cardData, CELLS_PER_CARD);
-
-  historyManager.updateButtons("wristband");
-
-  grid.querySelectorAll("[data-drag='wbCell']").forEach((cell) => {
-    const cardIdx = parseInt(cell.dataset.card, 10);
-    const cellIdx = parseInt(cell.dataset.cellIdx, 10);
-    if (!isNaN(cardIdx) && !isNaN(cellIdx)) {
-      addLongPress(cell, (ev) => _showWbCellContextMenu(ev, cardIdx, cellIdx));
-    }
-  });
-
-  syncWbSelectedCellVisuals(grid);
-  updateWbStats();
-
-  if (typeof updateTabBadges === "function") updateTabBadges();
+  finalizeWristbandGridRender(grid, cardData, CELLS_PER_CARD);
 }
 
 function setWristbandOverlayVisibility(target, isOpen, opts = {}) {
