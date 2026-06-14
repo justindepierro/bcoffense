@@ -544,6 +544,49 @@ function checkWristbandTypography() {
   console.log("wristband typography ok");
 }
 
+function checkPlayerWristbandRuleOverrides() {
+  const wristband = read("js/wristband.js");
+  const playerRuntime = read("js/wristband-export.js");
+  const popup = read("js/wristband-cell-popup.js");
+  const html = read("index.html");
+  const css = read("css/wristband.css");
+
+  if (
+    !/playerRuleSources:\s*normalizePlayerRuleSources/.test(wristband) ||
+    !/playerAssignmentOverrides:\s*normalizePlayerAssignmentOverrides/.test(
+      wristband,
+    ) ||
+    !/getPlayerAssignmentText\(play,\s*custom,\s*posKey\)/.test(playerRuntime)
+  ) {
+    fail("player wristband rule overrides are not stored and printed through cell customizations");
+  }
+  if (
+    !/class="pc-rule-select/.test(playerRuntime) ||
+    !/delete custom\.playerRuleSources\[basePosition\]/.test(playerRuntime) ||
+    !/delete custom\.playerAssignmentOverrides\[basePosition\]/.test(
+      playerRuntime,
+    )
+  ) {
+    fail("player wristband rule source selection or reset behavior is incomplete");
+  }
+  if (
+    !/pendingPlayerRuleSources/.test(popup) ||
+    !/pendingPlayerAssignmentOverrides/.test(popup)
+  ) {
+    fail("cell popup edits can discard player wristband rule overrides");
+  }
+  if (
+    !/data-action="printOnePlayerCard"/.test(html) ||
+    !/data-action="printThreePlayerCardCopies"/.test(html) ||
+    !/pc-print-page pc-print-single/.test(playerRuntime) ||
+    !/\.pc-print-single\s*\{[\s\S]*?justify-content:\s*center/.test(css)
+  ) {
+    fail("player wristband one-per-page and three-copy print modes are incomplete");
+  }
+
+  console.log("player wristband rule override and print contracts ok");
+}
+
 function checkSevenOnSevenTemplate() {
   const snapshots = read("js/gameplan-snapshots.js");
   const print = read("js/gameplan-print.js");
@@ -921,6 +964,7 @@ checkSafeUiRendering();
 checkHistoryContracts();
 checkConflictContracts();
 checkWristbandTypography();
+checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();
 checkCacheBusters();
 checkServiceWorkerLifecycle();

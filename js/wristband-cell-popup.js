@@ -10,6 +10,8 @@ let pendingFormationTags = [];
 let pendingBackTags = [];
 let pendingComponentOrder = [];
 let pendingCustomWriteIn = "";
+let pendingPlayerRuleSources = {};
+let pendingPlayerAssignmentOverrides = {};
 
 function renderPendingPreShiftList() {
   const input = document.getElementById("cellPreShiftInput");
@@ -196,6 +198,8 @@ function resetWristbandCellPopupPendingState() {
   pendingBackTags = [];
   pendingComponentOrder = [];
   pendingCustomWriteIn = "";
+  pendingPlayerRuleSources = {};
+  pendingPlayerAssignmentOverrides = {};
 }
 
 function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
@@ -217,6 +221,12 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
       )
     : [];
   pendingCustomWriteIn = existing.customWriteIn || "";
+  pendingPlayerRuleSources = normalizePlayerRuleSources(
+    existing.playerRuleSources,
+  );
+  pendingPlayerAssignmentOverrides = normalizePlayerAssignmentOverrides(
+    existing.playerAssignmentOverrides,
+  );
   pendingPlaySelection = currentPlay || null;
 }
 
@@ -233,6 +243,8 @@ function getWristbandPendingCellCustomization() {
       backTags: pendingBackTags,
       componentOrder: pendingComponentOrder,
       customWriteIn: pendingCustomWriteIn,
+      playerRuleSources: pendingPlayerRuleSources,
+      playerAssignmentOverrides: pendingPlayerAssignmentOverrides,
     }) || {}
   );
 }
@@ -562,6 +574,12 @@ async function applyWbComponentOrderToAll() {
           formationTags: Array.isArray(existing.formationTags) ? [...existing.formationTags] : [],
           backTags: Array.isArray(existing.backTags) ? [...existing.backTags] : [],
           componentOrder: isClearing ? [] : [...order],
+          playerRuleSources: normalizePlayerRuleSources(
+            existing.playerRuleSources,
+          ),
+          playerAssignmentOverrides: normalizePlayerAssignmentOverrides(
+            existing.playerAssignmentOverrides,
+          ),
         };
         setWristbandCellCustomization(key, next);
       }
@@ -609,6 +627,8 @@ function applyCellStyle() {
       backTags,
       componentOrder: pendingComponentOrder,
       customWriteIn,
+      playerRuleSources: pendingPlayerRuleSources,
+      playerAssignmentOverrides: pendingPlayerAssignmentOverrides,
     });
   }, { refreshCardView: true });
 

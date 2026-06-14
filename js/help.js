@@ -204,6 +204,28 @@ function getHelpDataForTab(tab) {
           ],
         },
         {
+          icon: "🃏",
+          name: "Player Wristband",
+          items: [
+            {
+              key: "Rule dropdown",
+              desc: "Use another position's rule for one play without changing the playbook",
+            },
+            {
+              key: "↺ Reset",
+              desc: "Restore that row to the wristband position's original rule",
+            },
+            {
+              key: "📄 1 / Page",
+              desc: "Print one exact-size player wristband per letter page",
+            },
+            {
+              key: "📋 3 Copies",
+              desc: "Print three copies of the current position on each sheet",
+            },
+          ],
+        },
+        {
           icon: "🎨",
           name: "Cell Edit Popup",
           items: [

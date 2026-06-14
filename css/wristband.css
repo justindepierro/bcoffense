@@ -1285,6 +1285,41 @@
   border-left: 1px solid var(--color-border-med) !important;
   padding: 0 !important;
   background: var(--color-bg-input);
+  display: flex !important;
+  align-items: stretch !important;
+}
+
+.pc-rule-select {
+  flex: 0 0 50px;
+  min-width: 0;
+  height: 100%;
+  border: none;
+  border-right: 1px solid var(--color-border-light);
+  border-radius: 0;
+  padding: 0 2px;
+  font-family: var(--font-sans);
+  font-size: var(--font-size-micro);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-lighter);
+  cursor: pointer;
+}
+
+.pc-rule-select.is-overridden {
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.pc-rule-select:focus-visible {
+  position: relative;
+  z-index: 2;
+  outline: 2px solid var(--color-primary);
+  outline-offset: -2px;
+}
+
+.pc-rule-select:disabled {
+  cursor: default;
+  opacity: 0.45;
 }
 
 .pc-resp-reset {
@@ -1313,7 +1348,9 @@
 
 .pc-resp-input {
   display: block;
-  width: 100%;
+  flex: 1 1 auto;
+  width: auto;
+  min-width: 0;
   height: 100%;
   min-height: 26px;
   resize: none;
@@ -1326,6 +1363,10 @@
   background: transparent;
   color: var(--color-text);
   box-sizing: border-box;
+}
+
+.pc-assignment-cell:has(.pc-resp-reset) .pc-resp-input {
+  padding-right: 18px;
 }
 
 .pc-resp-input:focus {
@@ -1396,6 +1437,11 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .pc-print-page:last-child {
     page-break-after: auto;
     break-after: auto;
+  }
+
+  .pc-print-single {
+    justify-content: center;
+    gap: 0.25in;
   }
 
   /* Position header in Print All — match card width */

@@ -301,7 +301,6 @@ function startPlayerWristband() {
   document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
   document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
   // Activate player wristband mode
-  playerCardOverrides = {};
   wbPlayerCardMode = true;
   const posSelect = document.getElementById("pcPosSelect");
   wbPlayerCardPos = posSelect ? posSelect.value || "respQ" : "respQ";
@@ -312,21 +311,6 @@ function startPlayerWristband() {
 }
 
 // ─── Player Wristband Print ────────────────────────────────────────────────
-
-/** Positions available in player wristband print (must stay in sync with RESP_POSITIONS). */
-const PC_POSITIONS = [
-  { key: "respQ", label: "Q" },
-  { key: "respT", label: "T" },
-  { key: "respH", label: "H" },
-  { key: "respZ", label: "Z" },
-  { key: "respX", label: "X" },
-  { key: "respY", label: "Y" },
-  { key: "respLT", label: "LT" },
-  { key: "respLG", label: "LG" },
-  { key: "respC", label: "C" },
-  { key: "respRG", label: "RG" },
-  { key: "respRT", label: "RT" },
-];
 
 function openPlayerCardPrint() {
   // Legacy entry — redirect through the new type choice flow
@@ -343,6 +327,38 @@ function updatePlayerCardPreview() {
   const posSelect = document.getElementById("pcPosSelect");
   if (posSelect) wbPlayerCardPos = posSelect.value || "respQ";
   if (wbPlayerCardMode) renderPlayerCardGrid();
+}
+
+function _playerPositionLabel(positionKey) {
+  return (
+    PLAYER_WRISTBAND_POSITIONS.find(
+      (position) => position.key === positionKey,
+    )?.label || String(positionKey || "").replace("resp", "")
+  );
+}
+
+function _buildPlayerRuleSourceOptions(basePosition, selectedPosition) {
+  const baseLabel = _playerPositionLabel(basePosition);
+  const options = [
+    `<option value=""${selectedPosition === basePosition ? " selected" : ""}>${escapeHtml(baseLabel)} Rule</option>`,
+  ];
+  PLAYER_WRISTBAND_POSITIONS.forEach((position) => {
+    if (position.key === basePosition) return;
+    options.push(
+      `<option value="${escapeHtml(position.key)}"${selectedPosition === position.key ? " selected" : ""}>${escapeHtml(position.label)} Rule</option>`,
+    );
+  });
+  return options.join("");
+}
+
+function _updatePlayerCellCustomization(cardIdx, cellIdx, update) {
+  if (typeof update !== "function") return;
+  const key = getWristbandCellCustomizationKey(cardIdx, cellIdx);
+  saveWristbandState();
+  const custom = safeDeepClone(cellCustomizations[key] || {});
+  update(custom);
+  setWristbandCellCustomization(key, custom);
+  renderPlayerCardGrid();
 }
 
 function renderPlayerCardGrid() {
@@ -369,9 +385,8 @@ function renderPlayerCardGrid() {
     const play = card.data[i];
     const playNum = i + WRISTBAND_OFFSET + cardOffset;
     const custom = cellCustomizations[`${currentCardIndex}-${i}`] || {};
-    const overrideKey = `${wbPlayerCardPos}|${currentCardIndex}|${i}`;
-    const respText = (playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i])
-      ?? (play?.[wbPlayerCardPos] || "");
+    const ruleSource = getPlayerRuleSource(custom, wbPlayerCardPos);
+    const respText = getPlayerAssignmentText(play, custom, wbPlayerCardPos);
 
     const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
     const isCandy = highlightCandy && play && play.tempo && play.tempo.toLowerCase() === "candy";
@@ -398,12 +413,23 @@ function renderPlayerCardGrid() {
         data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}"></div>`;
     }
 
-    // Responsibility textarea — show reset button when a custom override is active
-    const hasOverride = playerCardOverrides[wbPlayerCardPos]?.[currentCardIndex]?.[i] !== undefined;
+    // Rule source + responsibility text. Both are wristband-only customizations.
+    const hasOverride = hasPlayerAssignmentCustomization(
+      custom,
+      wbPlayerCardPos,
+    );
     html += `<div class="wristband-cell pc-assignment-cell">
-      <textarea class="pc-resp-input" data-override-key="${escapeHtml(overrideKey)}"
-        placeholder="—">${escapeHtml(respText)}</textarea>
-      ${hasOverride ? `<button class="pc-resp-reset" data-override-key="${escapeHtml(overrideKey)}" title="Reset to playbook value">↺</button>` : ""}
+      <select class="pc-rule-select${ruleSource !== wbPlayerCardPos ? " is-overridden" : ""}"
+        data-base-position="${escapeHtml(wbPlayerCardPos)}"
+        data-card="${currentCardIndex}" data-cell="${i}"
+        aria-label="Rule source for wristband number ${playNum}" ${play ? "" : "disabled"}>
+        ${_buildPlayerRuleSourceOptions(wbPlayerCardPos, ruleSource)}
+      </select>
+      <textarea class="pc-resp-input" data-base-position="${escapeHtml(wbPlayerCardPos)}"
+        data-card="${currentCardIndex}" data-cell="${i}"
+        aria-label="Assignment for wristband number ${playNum}"
+        placeholder="—" ${play ? "" : "disabled"}>${escapeHtml(respText)}</textarea>
+      ${hasOverride ? `<button class="pc-resp-reset" data-base-position="${escapeHtml(wbPlayerCardPos)}" data-card="${currentCardIndex}" data-cell="${i}" title="Reset to ${escapeHtml(_playerPositionLabel(wbPlayerCardPos))} rule" aria-label="Reset wristband number ${playNum} to ${escapeHtml(_playerPositionLabel(wbPlayerCardPos))} rule">↺</button>` : ""}
     </div>`;
   }
 
@@ -418,29 +444,67 @@ function renderPlayerCardGrid() {
     grid._pcListenerWired = true;
     grid.addEventListener("change", function (e) {
       if (!wbPlayerCardMode) return;
-      if (!e.target.classList.contains("pc-resp-input")) return;
-      const parts = e.target.dataset.overrideKey.split("|");
-      const pKey = parts[0];
-      const cIdx = parseInt(parts[1]);
-      const cellI = parseInt(parts[2]);
-      if (!playerCardOverrides[pKey]) playerCardOverrides[pKey] = {};
-      if (!playerCardOverrides[pKey][cIdx]) playerCardOverrides[pKey][cIdx] = {};
-      playerCardOverrides[pKey][cIdx][cellI] = e.target.value;
-      renderPlayerCardGrid();
+      const control = e.target;
+      if (
+        !control.classList.contains("pc-rule-select") &&
+        !control.classList.contains("pc-resp-input")
+      ) {
+        return;
+      }
+      const basePosition = control.dataset.basePosition;
+      const cardIdx = parseInt(control.dataset.card, 10);
+      const cellIdx = parseInt(control.dataset.cell, 10);
+      if (
+        !PLAYER_WRISTBAND_POSITION_KEYS.has(basePosition) ||
+        !Number.isInteger(cardIdx) ||
+        !Number.isInteger(cellIdx)
+      ) {
+        return;
+      }
+      _updatePlayerCellCustomization(cardIdx, cellIdx, (custom) => {
+        if (control.classList.contains("pc-rule-select")) {
+          const sourcePosition = control.value;
+          custom.playerRuleSources = normalizePlayerRuleSources(
+            custom.playerRuleSources,
+          );
+          if (
+            PLAYER_WRISTBAND_POSITION_KEYS.has(sourcePosition) &&
+            sourcePosition !== basePosition
+          ) {
+            custom.playerRuleSources[basePosition] = sourcePosition;
+          } else {
+            delete custom.playerRuleSources[basePosition];
+          }
+          custom.playerAssignmentOverrides =
+            normalizePlayerAssignmentOverrides(
+              custom.playerAssignmentOverrides,
+            );
+          delete custom.playerAssignmentOverrides[basePosition];
+        } else {
+          custom.playerAssignmentOverrides =
+            normalizePlayerAssignmentOverrides(
+              custom.playerAssignmentOverrides,
+            );
+          custom.playerAssignmentOverrides[basePosition] = control.value;
+        }
+      });
     });
     grid.addEventListener("click", function (e) {
       if (!wbPlayerCardMode) return;
       const btn = e.target.closest(".pc-resp-reset");
       if (!btn) return;
       e.preventDefault();
-      const parts = btn.dataset.overrideKey.split("|");
-      const pKey = parts[0];
-      const cIdx = parseInt(parts[1]);
-      const cellI = parseInt(parts[2]);
-      if (playerCardOverrides[pKey]?.[cIdx]) {
-        delete playerCardOverrides[pKey][cIdx][cellI];
-      }
-      renderPlayerCardGrid();
+      const basePosition = btn.dataset.basePosition;
+      const cardIdx = parseInt(btn.dataset.card, 10);
+      const cellIdx = parseInt(btn.dataset.cell, 10);
+      _updatePlayerCellCustomization(cardIdx, cellIdx, (custom) => {
+        if (custom.playerRuleSources) {
+          delete custom.playerRuleSources[basePosition];
+        }
+        if (custom.playerAssignmentOverrides) {
+          delete custom.playerAssignmentOverrides[basePosition];
+        }
+      });
     });
   }
 }
@@ -462,7 +526,7 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
     const play = card.data[i];
     const playNum = i + WRISTBAND_OFFSET + cardOffset;
     const custom = cellCustomizations[`${cardIdx}-${i}`] || {};
-    const respText = (playerCardOverrides[posKey]?.[cardIdx]?.[i]) ?? (play?.[posKey] || "");
+    const respText = getPlayerAssignmentText(play, custom, posKey);
 
     const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
     const isCandy = highlightCandy && play && play.tempo && play.tempo.toLowerCase() === "candy";
@@ -495,9 +559,7 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
   </div>`;
 }
 
-/**
- * "Print 1" — 3 identical copies of the current position's card on one portrait page.
- */
+/** Print one copy of each card for the current position, one wristband per page. */
 function printOnePlayerCard() {
   if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
     showToast("No plays on the wristband to print.", { type: "warning" });
@@ -518,12 +580,12 @@ function printOnePlayerCard() {
   wristbandCards.forEach((card, cardIdx) => {
     const cardName = card.name || `Card ${cardIdx + 1}`;
     const cardBlock = _buildPlayerPrintCard(card, cardIdx, posKey, opts);
-    allHtml += `<div class="pc-print-page">
+    allHtml += `<div class="pc-print-page pc-print-single">
       <div class="pc-print-page-header">
         <span class="pc-print-pos-label">${escapeHtml(posLabel)}</span>
         <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
       </div>
-      ${cardBlock}${cardBlock}${cardBlock}
+      ${cardBlock}
     </div>`;
   });
 
@@ -532,6 +594,42 @@ function printOnePlayerCard() {
     printContent,
     allHtml,
     `Player Wristband \u2014 ${posLabel}`,
+    "portrait",
+  );
+}
+
+/** Print three identical copies of each card for the current position. */
+function printThreePlayerCardCopies() {
+  if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
+    showToast("No plays on the wristband to print.", { type: "warning" });
+    return;
+  }
+  const posKey = wbPlayerCardPos || "respQ";
+  const posLabel = _playerPositionLabel(posKey);
+  const opts = getWristbandDisplayOptions();
+  const printContainer = document.getElementById("playerCardPrint");
+  const printContent = document.getElementById("playerCardPrintContent");
+  if (!printContainer || !printContent) return;
+
+  const allHtml = wristbandCards
+    .map((card, cardIdx) => {
+      const cardName = card.name || `Card ${cardIdx + 1}`;
+      const cardBlock = _buildPlayerPrintCard(card, cardIdx, posKey, opts);
+      return `<div class="pc-print-page">
+        <div class="pc-print-page-header">
+          <span class="pc-print-pos-label">${escapeHtml(posLabel)}</span>
+          <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
+        </div>
+        ${cardBlock}${cardBlock}${cardBlock}
+      </div>`;
+    })
+    .join("");
+
+  _triggerPlayerPrint(
+    printContainer,
+    printContent,
+    allHtml,
+    `Player Wristband \u2014 ${posLabel} \u2014 3 Copies`,
     "portrait",
   );
 }
@@ -556,8 +654,8 @@ function printAllPlayerCards() {
   // For each wristband card, print all positions 3 per page
   wristbandCards.forEach((card, cardIdx) => {
     const cardName = card.name || `Card ${cardIdx + 1}`;
-    for (let p = 0; p < PC_POSITIONS.length; p += 3) {
-      const group = PC_POSITIONS.slice(p, p + 3);
+    for (let p = 0; p < PLAYER_WRISTBAND_POSITIONS.length; p += 3) {
+      const group = PLAYER_WRISTBAND_POSITIONS.slice(p, p + 3);
       let pageBlocks = "";
       group.forEach((pos) => {
         const posBlock = _buildPlayerPrintCard(card, cardIdx, pos.key, opts);

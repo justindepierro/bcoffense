@@ -6,9 +6,16 @@ let currentCardIndex = 0;
 let wristbandType = "";
 let wbPlayerCardMode = false;
 let wbPlayerCardPos = "respQ";
-let playerCardOverrides = {};
 let selectedWristbandPlay = null;
 let wristbandHeaderColor = "transparent";
+
+const PLAYER_WRISTBAND_POSITIONS = RESP_POSITIONS.map((position) => ({
+  key: position.key,
+  label: position.label,
+}));
+const PLAYER_WRISTBAND_POSITION_KEYS = new Set(
+  PLAYER_WRISTBAND_POSITIONS.map((position) => position.key),
+);
 
 function getActiveWristbandCellCount() {
   return wbPlayerCardMode ? WB_ROWS : CELLS_PER_CARD;
@@ -20,7 +27,7 @@ let wbFavorites = normalizeWbFavorites(
   storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
 );
 
-// Cell customization storage: { "cardIdx-cellIdx": { bgColor, textColor, markers, markerPlacement, cadence, extraPersonnel, preShift, formationTags, backTags } }
+// Cell customization storage: { "cardIdx-cellIdx": { colors, markers, tags, playerRuleSources, playerAssignmentOverrides } }
 let cellCustomizations = {};
 
 const WB_CUSTOM_TAG_DISPLAY_MODES = {
@@ -71,6 +78,61 @@ function normalizeWbFavorites(favorites) {
 
 function getCellMarkerValue(custom) {
   return custom.cadence || (custom.onTwo ? "$" : "");
+}
+
+function normalizePlayerRuleSources(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const normalized = {};
+  Object.entries(value).forEach(([basePosition, sourcePosition]) => {
+    if (
+      PLAYER_WRISTBAND_POSITION_KEYS.has(basePosition) &&
+      PLAYER_WRISTBAND_POSITION_KEYS.has(sourcePosition) &&
+      sourcePosition !== basePosition
+    ) {
+      normalized[basePosition] = sourcePosition;
+    }
+  });
+  return normalized;
+}
+
+function normalizePlayerAssignmentOverrides(value) {
+  if (!value || typeof value !== "object" || Array.isArray(value)) return {};
+  const normalized = {};
+  Object.entries(value).forEach(([position, assignment]) => {
+    if (!PLAYER_WRISTBAND_POSITION_KEYS.has(position)) return;
+    normalized[position] =
+      assignment === null || assignment === undefined ? "" : String(assignment);
+  });
+  return normalized;
+}
+
+function getPlayerRuleSource(custom, basePosition) {
+  if (!PLAYER_WRISTBAND_POSITION_KEYS.has(basePosition)) return basePosition;
+  const source = custom?.playerRuleSources?.[basePosition];
+  return PLAYER_WRISTBAND_POSITION_KEYS.has(source) ? source : basePosition;
+}
+
+function getPlayerAssignmentText(play, custom, basePosition) {
+  const overrides = custom?.playerAssignmentOverrides;
+  if (
+    overrides &&
+    Object.prototype.hasOwnProperty.call(overrides, basePosition)
+  ) {
+    return String(overrides[basePosition] ?? "");
+  }
+  const sourcePosition = getPlayerRuleSource(custom, basePosition);
+  return String(play?.[sourcePosition] || "");
+}
+
+function hasPlayerAssignmentCustomization(custom, basePosition) {
+  return Boolean(
+    custom?.playerRuleSources?.[basePosition] ||
+      (custom?.playerAssignmentOverrides &&
+        Object.prototype.hasOwnProperty.call(
+          custom.playerAssignmentOverrides,
+          basePosition,
+        )),
+  );
 }
 
 function getCellMarkerValues(custom) {
@@ -789,6 +851,10 @@ function buildWristbandCellCustomization(custom = {}) {
       )
       : [],
     customWriteIn: String(custom.customWriteIn || "").trim(),
+    playerRuleSources: normalizePlayerRuleSources(custom.playerRuleSources),
+    playerAssignmentOverrides: normalizePlayerAssignmentOverrides(
+      custom.playerAssignmentOverrides,
+    ),
   };
 
   const hasValue =
@@ -800,7 +866,9 @@ function buildWristbandCellCustomization(custom = {}) {
     normalized.formationTags.length > 0 ||
     normalized.backTags.length > 0 ||
     normalized.componentOrder.length > 0 ||
-    normalized.customWriteIn;
+    normalized.customWriteIn ||
+    Object.keys(normalized.playerRuleSources).length > 0 ||
+    Object.keys(normalized.playerAssignmentOverrides).length > 0;
 
   return hasValue ? normalized : null;
 }
