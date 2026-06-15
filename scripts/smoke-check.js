@@ -546,32 +546,87 @@ function checkWristbandTypography() {
 
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
+  const wristband = read("js/wristband.js");
   const library = read("js/wristband-library.js");
   const render = read("js/wristband-render.js");
+  const actions = read("js/wristband-cell-actions.js");
+  const runtime = read("js/wristband-runtime.js");
+  const storage = read("js/wristband-storage.js");
   const playerRuntime = read("js/wristband-export.js");
+  const css = read("css/wristband.css");
   const responsiveCss = read("css/responsive.css");
 
   if (
     !/class="wb-page-header"/.test(html) ||
     !/id="wbLibraryStatus"/.test(html) ||
     !/class="wb-appearance-panel"/.test(html) ||
-    !/data-oninput="scheduleWristbandPlayFilter"/.test(html)
+    !/data-oninput="scheduleWristbandPlayFilter"/.test(html) ||
+    !/data-wb-mobile-view="library"/.test(html) ||
+    !/id="wbLoadMore"/.test(html) ||
+    !/id="wbActiveSaveTitle"/.test(html) ||
+    !/id="wbCardViewport"/.test(html) ||
+    !/id="wbSavedManagerOverlay"/.test(html) ||
+    !/id="wbPrintPreviewOverlay"/.test(html)
   ) {
     fail("wristband workspace hierarchy or progressive controls are incomplete");
   }
   if (
     !/const favoriteSet = new Set\(wbFavorites\)/.test(library) ||
     !/\.map\(\(play, index\) => \(\{ play, index \}\)\)/.test(library) ||
-    !/data-action="addPlayToNextEmpty"/.test(library)
+    !/data-action="addPlayToNextEmpty"/.test(library) ||
+    !/function getWristbandPlayUsageMap\(/.test(library) ||
+    !/function loadMoreWristbandPlays\(/.test(library) ||
+    !/wbPreventDuplicates && isDuplicate/.test(library) ||
+    !/WRISTBAND_RECENT_PLAYS/.test(wristband)
   ) {
-    fail("wristband play library bypasses indexed rendering or explicit add actions");
+    fail("wristband play library pagination, recent plays, or duplicate protection is incomplete");
   }
   if (
     !/function finalizeWristbandGridRender\(/.test(render) ||
     !/finalizeWristbandGridRender\(grid, cardData, CELLS_PER_CARD\)/.test(render) ||
-    !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime)
+    !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime) ||
+    !/role="gridcell" tabindex="0"/.test(render) ||
+    !/e\.key === "ArrowDown"/.test(runtime) ||
+    !/e\.key === "Delete"/.test(runtime)
   ) {
-    fail("classic and player wristbands do not share render finalization");
+    fail("wristband shared rendering or keyboard navigation is incomplete");
+  }
+  if (
+    !/function toggleWbSelectionMode\(/.test(actions) ||
+    !/function moveSelectedWbCellsToCard\(/.test(actions) ||
+    !/function clearSelectedWbCells\(/.test(actions) ||
+    !/function setWristbandZoom\(/.test(render) ||
+    !/function toggleWristbandFullscreen\(/.test(render)
+  ) {
+    fail("wristband selection mode, batch movement, or zoom controls are incomplete");
+  }
+  if (
+    !/function updateWristbandSaveChrome\(/.test(storage) ||
+    !/function saveWristbandAs\(/.test(storage) ||
+    !/function openSavedWristbandManager\(/.test(storage) ||
+    !/function duplicateSavedWristband\(/.test(storage) ||
+    !/activeSaveId:\s*activeWristbandSaveId/.test(wristband)
+  ) {
+    fail("wristband active-save workflow or saved manager is incomplete");
+  }
+  if (
+    !/function openWristbandPrintPreview\(/.test(playerRuntime) ||
+    !/function executeWristbandPrintPreview\(/.test(playerRuntime) ||
+    !/_executeClassicWristbandPrint\(cardIndexes, "one-per-page"\)/.test(
+      playerRuntime,
+    ) ||
+    !/_executePrintAllPlayerCards\(cardIndexes, positionKeys\)/.test(
+      playerRuntime,
+    )
+  ) {
+    fail("wristband print preview or one-per-page execution is incomplete");
+  }
+  if (
+    !/#wristband\.wb-mobile-view-builder \.wristband-plays/.test(css) ||
+    !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
+    !/\.wb-print-preview-layout/.test(css)
+  ) {
+    fail("wristband mobile view or print preview styling is incomplete");
   }
   if (
     /\.wristband-(?:container|card|grid|cell)|\.wb-stats-bar/.test(responsiveCss)

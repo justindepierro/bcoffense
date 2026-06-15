@@ -16,15 +16,7 @@ function _showWbCellContextMenu(e, cardIdx, cellIdx) {
   if (hasPlay) {
     menuItems.push({
       label: "🗑️ Clear Cell",
-      action: () => {
-        saveWristbandState();
-        wristbandCards[cardIdx].data[cellIdx] = null;
-        delete cellCustomizations[`${cardIdx}-${cellIdx}`];
-        renderCardTabs();
-        renderWristbandGrid();
-        markWristbandDirty();
-        scheduleWristbandAutosave();
-      },
+      action: () => clearWristbandCell(cardIdx, cellIdx),
     });
   }
   if (menuItems.length > 0) {
@@ -43,7 +35,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const cardIdx = parseInt(cell.dataset.card, 10);
       const cellIdx = parseInt(cell.dataset.cellIdx, 10);
 
-      if (e.shiftKey) {
+      if (e.shiftKey || wbSelectionMode) {
         e.preventDefault();
         toggleBatchSelect(cardIdx, cellIdx);
         return;
@@ -219,6 +211,53 @@ document.addEventListener("DOMContentLoaded", () => {
         e.preventDefault();
         e.stopPropagation();
         pasteWbCell(cardIdx, cellIdx);
+        return;
+      }
+
+      if (e.target.matches("select, textarea, input, button")) return;
+
+      const activeCount = getActiveWristbandCellCount();
+      let nextCellIdx = null;
+      if (e.key === "ArrowLeft") {
+        nextCellIdx = wbPlayerCardMode ? cellIdx - 1 : cellIdx - 1;
+      } else if (e.key === "ArrowRight") {
+        nextCellIdx = wbPlayerCardMode ? cellIdx + 1 : cellIdx + 1;
+      } else if (e.key === "ArrowUp") {
+        nextCellIdx = cellIdx - (wbPlayerCardMode ? 1 : 2);
+      } else if (e.key === "ArrowDown") {
+        nextCellIdx = cellIdx + (wbPlayerCardMode ? 1 : 2);
+      } else if (e.key === "Home") {
+        nextCellIdx = 0;
+      } else if (e.key === "End") {
+        nextCellIdx = activeCount - 1;
+      }
+
+      if (nextCellIdx !== null) {
+        e.preventDefault();
+        const boundedIdx = Math.max(0, Math.min(activeCount - 1, nextCellIdx));
+        grid.querySelector(`[data-cell-idx="${boundedIdx}"]`)?.focus();
+        return;
+      }
+
+      if (e.key === "Enter" || e.key === " ") {
+        e.preventDefault();
+        if (wbSelectionMode) {
+          toggleBatchSelect(cardIdx, cellIdx);
+        } else {
+          openCellPopup(cardIdx, cellIdx, e);
+        }
+        return;
+      }
+
+      if (e.key === "Delete" || e.key === "Backspace") {
+        e.preventDefault();
+        clearWristbandCell(cardIdx, cellIdx);
+        return;
+      }
+
+      if (e.key.toLowerCase() === "s" && !e.ctrlKey && !e.metaKey && !e.altKey) {
+        e.preventDefault();
+        toggleBatchSelect(cardIdx, cellIdx);
         return;
       }
 

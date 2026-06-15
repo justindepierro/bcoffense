@@ -74,6 +74,29 @@
   border: 1px solid var(--color-border-light);
 }
 
+.wb-mobile-view-toggle {
+  display: none;
+  gap: var(--space-xs);
+  margin-bottom: var(--space-sm);
+  padding: 3px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-lighter);
+}
+
+.wb-mobile-view-toggle .btn {
+  flex: 1;
+}
+
+.wb-mobile-view-toggle .active,
+.wb-library-chip.active,
+.wb-zoom-controls .active,
+[data-action="toggleWbSelectionMode"].active {
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+  background: var(--color-primary);
+}
+
 .wristband-container {
   display: grid;
   grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
@@ -113,6 +136,60 @@
   margin-bottom: var(--space-sm);
 }
 
+.wb-library-quick-row {
+  display: grid;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+
+.wb-library-chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.wb-library-chip {
+  min-height: 28px;
+  padding: 3px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.wb-duplicate-toggle {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.wb-on-card-badge {
+  display: inline-flex;
+  margin-left: var(--space-xs);
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  color: var(--color-success);
+  background: var(--color-success-light);
+  font-size: var(--font-size-micro);
+  font-weight: 800;
+}
+
+.wb-add-play-btn.duplicate-blocked {
+  color: var(--color-text-muted);
+  border-color: var(--color-border-light);
+  background: var(--color-bg-lighter);
+}
+
+.wb-load-more {
+  width: 100%;
+  margin-top: var(--space-sm);
+}
+
 .wb-library-status {
   min-height: 18px;
   margin: var(--space-xs) 0;
@@ -125,6 +202,253 @@
   text-align: right;
   line-height: 1.35;
 }
+
+.wb-document-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.wb-document-identity {
+  display: grid;
+  min-width: 0;
+}
+
+.wb-document-identity strong,
+.wb-document-identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.wb-document-actions,
+.wb-card-controls,
+.wb-zoom-controls {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+}
+
+.wb-card-controls {
+  justify-content: space-between;
+  margin-bottom: var(--space-sm);
+}
+
+.wb-card-controls .card-tabs {
+  flex: 1;
+  min-width: 0;
+}
+
+.wb-card-viewport {
+  max-width: 100%;
+  overflow: auto;
+  border-radius: var(--radius-sm);
+}
+
+.wb-card-viewport.wb-zoomed {
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-lighter);
+}
+
+.wristband-preview:fullscreen,
+.wristband-preview.wb-preview-fullscreen {
+  padding: var(--space-lg);
+  overflow: auto;
+  background: var(--color-bg-body);
+}
+
+.wb-selection-mode .wristband-cell[data-drag="wbCell"] {
+  cursor: crosshair;
+}
+
+.wb-selection-mode .wristband-cell[data-drag="wbCell"]:not(.wb-selected) {
+  outline: 1px dashed var(--color-primary);
+  outline-offset: -3px;
+}
+
+.wb-save-dirty {
+  color: var(--color-warning-hover);
+  font-weight: 700;
+}
+
+.wb-saved-manager {
+  display: grid;
+  gap: var(--space-md);
+  width: min(760px, calc(100vw - 32px));
+  max-height: min(760px, calc(100vh - 32px));
+}
+
+.wb-saved-manager h3 {
+  margin: 2px 0 0;
+}
+
+.wb-saved-manager-tools {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(160px, auto);
+  gap: var(--space-sm);
+}
+
+.wb-saved-manager-list {
+  display: grid;
+  gap: var(--space-sm);
+  overflow: auto;
+}
+
+.wb-saved-manager .saved-script-card {
+  margin: 0;
+}
+
+.wb-saved-active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 1px var(--color-primary);
+}
+
+.wb-active-save-badge {
+  display: inline-flex;
+  margin-left: var(--space-xs);
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  font-size: var(--font-size-micro);
+  vertical-align: middle;
+}
+
+.wb-saved-empty {
+  padding: var(--space-xl);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-muted);
+  text-align: center;
+}
+
+.wb-print-preview-modal {
+  display: grid;
+  gap: var(--space-md);
+  width: min(940px, calc(100vw - 32px));
+  max-height: min(820px, calc(100vh - 32px));
+}
+
+.wb-print-preview-modal h3 {
+  margin: 2px 0 0;
+}
+
+.wb-print-preview-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+  gap: var(--space-lg);
+  min-height: 0;
+}
+
+.wb-print-preview-controls,
+.wb-print-preview-stage {
+  display: grid;
+  align-content: start;
+  gap: var(--space-sm);
+  min-height: 0;
+}
+
+.wb-print-field {
+  display: grid;
+  gap: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.wb-print-fieldset {
+  display: grid;
+  gap: var(--space-xs);
+  margin: 0;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+}
+
+.wb-print-fieldset legend {
+  padding: 0 var(--space-xs);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.wb-print-check-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+}
+
+.wb-print-check-list {
+  display: grid;
+  gap: var(--space-xs);
+  max-height: 170px;
+  overflow: auto;
+}
+
+.wb-print-position-list {
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+}
+
+.wb-print-check-list label {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 30px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+}
+
+.wb-print-preview-canvas {
+  display: grid;
+  place-items: center;
+  min-height: 310px;
+  overflow: hidden;
+  padding: var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-lighter);
+}
+
+.wb-print-preview-canvas .wristband-card {
+  width: 7in;
+  height: 4.2in;
+  max-width: none;
+  margin: 0;
+  transform: scale(0.58);
+  transform-origin: center;
+  pointer-events: none;
+}
+
+.wb-print-preview-summary {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.wb-print-preview-warnings {
+  display: grid;
+  gap: var(--space-xs);
+  color: var(--color-warning-hover);
+  font-size: var(--font-size-xs);
+}
+
+.wb-print-preview-warnings > div {
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-warning-light);
+}
+
+.wb-print-preview-warnings .wb-print-ready {
+  color: var(--color-success);
+  background: var(--color-success-light);
+}
+
 .wristband-card {
   max-width: 100%;
   margin-inline: auto;
@@ -1742,6 +2066,18 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 }
 
 @media screen and (max-width: 640px) {
+  .wb-mobile-view-toggle {
+    display: flex;
+    position: sticky;
+    top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 6px);
+    z-index: var(--z-sticky);
+  }
+
+  #wristband.wb-mobile-view-builder .wristband-plays,
+  #wristband.wb-mobile-view-library .wristband-preview {
+    display: none;
+  }
+
   .wristband-container {
     gap: var(--space-md);
   }
@@ -1755,6 +2091,40 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     width: 100%;
     min-width: 0;
     overflow: visible;
+  }
+
+  .wb-document-bar,
+  .wb-card-controls {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .wb-document-actions,
+  .wb-zoom-controls {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .wb-document-actions .btn,
+  .wb-zoom-controls .btn {
+    min-height: 40px;
+  }
+
+  .wb-saved-manager-tools {
+    grid-template-columns: 1fr;
+  }
+
+  .wb-print-preview-layout {
+    grid-template-columns: 1fr;
+    overflow: auto;
+  }
+
+  .wb-print-preview-canvas {
+    min-height: 220px;
+  }
+
+  .wb-print-preview-canvas .wristband-card {
+    transform: scale(0.38);
   }
 
   .card-tabs {

@@ -103,6 +103,7 @@ const STORAGE_KEYS = {
   PRINT_STUDIO_SETTINGS: "printStudioSettings",
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
   WRISTBAND_FAVORITES: "wristbandFavorites",
+  WRISTBAND_RECENT_PLAYS: "wristbandRecentPlays",
   TEAM_ROSTER: "teamRoster",
   TEAM_NAME: "teamName",
   TEAM_PERSONNEL_PACKAGES: "teamPersonnelPackages",

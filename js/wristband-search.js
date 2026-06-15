@@ -152,6 +152,7 @@ async function smartFillBySituation() {
   });
   if (!picked) return;
 
+  const usageMap = getWristbandPlayUsageMap();
   const filtered = plays.filter((p) => {
     switch (picked) {
       case "1":
@@ -184,7 +185,10 @@ async function smartFillBySituation() {
       default:
         return false;
     }
-  });
+  }).filter(
+    (play) =>
+      !wbPreventDuplicates || !usageMap.has(playSignature(play)),
+  );
 
   if (filtered.length === 0) {
     showToast("No plays found for that situation");
@@ -223,5 +227,6 @@ async function smartFillBySituation() {
 
   renderCardTabs();
   renderWristbandGrid();
+  renderWristbandPlays();
   showToast(`✅ Added ${fillIdx} "${sitLabel}" plays`);
 }

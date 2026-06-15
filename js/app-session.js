@@ -47,11 +47,17 @@ function markScriptClean() {
 function markWristbandDirty() {
   wristbandDirty = true;
   updateSaveStatus("unsaved");
+  if (typeof updateWristbandSaveChrome === "function") {
+    updateWristbandSaveChrome();
+  }
 }
 
 function markWristbandClean() {
   wristbandDirty = false;
   updateSaveStatus("saved");
+  if (typeof updateWristbandSaveChrome === "function") {
+    updateWristbandSaveChrome();
+  }
 }
 
 window.addEventListener("beforeunload", (e) => {

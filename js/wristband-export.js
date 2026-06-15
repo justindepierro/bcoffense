@@ -40,18 +40,16 @@ function _buildWristbandPrintSheets(cardHtml, repeatSingleCard = false) {
 }
 
 function printWristband() {
-  try {
-    if (wbPlayerCardMode) {
-      printAllPlayerCards();
-      return;
-    }
+  openWristbandPrintPreview(wbPlayerCardMode ? "player-all" : "classic");
+}
 
+function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet") {
+  try {
     const cellsPerCard = getActiveWristbandCellCount();
-    if (
-      !wristbandCards.some((card) =>
-        card.data?.slice(0, cellsPerCard).some(Boolean),
-      )
-    ) {
+    const selectedCards = (Array.isArray(cardIndexes) ? cardIndexes : [])
+      .map((cardIdx) => ({ cardIdx, card: wristbandCards[cardIdx] }))
+      .filter(({ card }) => card?.data?.slice(0, cellsPerCard).some(Boolean));
+    if (selectedCards.length === 0) {
       showToast("No plays on the wristband to print.", { type: "warning" });
       return;
     }
@@ -61,7 +59,6 @@ function printWristband() {
       type: "info",
     });
     const container = document.getElementById("wristbandPrintCards");
-    const numCards = wristbandCards.length;
     const opts = getWristbandDisplayOptions();
     const { highlightHuddle, highlightCandy } = opts;
     const printDisplayCache = new Map();
@@ -89,7 +86,7 @@ function printWristband() {
 
     const cardHtml = [];
 
-    wristbandCards.forEach((card, cardIdx) => {
+    selectedCards.forEach(({ card, cardIdx }) => {
       let html = `<div class="wristband-card"><div class="wristband-grid" style="grid-template-rows: repeat(${WB_ROWS}, 1fr);">`;
 
       const cardOffset = cardIdx * CELLS_PER_CARD;
@@ -158,10 +155,23 @@ function printWristband() {
       cardHtml.push(html);
     });
 
-    container.innerHTML = _buildWristbandPrintSheets(cardHtml, numCards === 1);
-    container.className = numCards === 1
-      ? "wristband-print-sheets single-card-tripled"
-      : "wristband-print-sheets multi-card-layout";
+    if (layoutMode === "one-per-page") {
+      container.innerHTML = cardHtml
+        .map((html) => `<section class="wristband-print-sheet">${html}</section>`)
+        .join("");
+      container.className = "wristband-print-sheets single-card-layout";
+    } else if (layoutMode === "three-copies") {
+      container.innerHTML = cardHtml
+        .map(
+          (html) =>
+            `<section class="wristband-print-sheet">${html}${html}${html}</section>`,
+        )
+        .join("");
+      container.className = "wristband-print-sheets single-card-tripled";
+    } else {
+      container.innerHTML = _buildWristbandPrintSheets(cardHtml, false);
+      container.className = "wristband-print-sheets multi-card-layout";
+    }
 
     document.getElementById("wristbandPrint").classList.remove("hidden");
     document.body.dataset.printMode = "wristband";
@@ -275,6 +285,7 @@ function updateWristbandModeChrome(mode) {
 }
 
 function showWbTypeChoice() {
+  resetActiveWristbandIdentity();
   wristbandType = "";
   updateWristbandModeChrome("");
   // Deactivate player mode if it was on
@@ -293,6 +304,37 @@ function showWbTypeChoice() {
   document.getElementById("wristbandCard")?.classList.add("wb-hidden");
 }
 
+async function startNewWristband() {
+  const hasPlays = wristbandCards.some((card) => card.data?.some(Boolean));
+  if (hasPlays) {
+    const confirmed = await showConfirm(
+      "Start a new wristband? The current workspace will be cleared.",
+      {
+        title: "New Wristband",
+        icon: "📋",
+        confirmText: "Start New",
+        danger: true,
+      },
+    );
+    if (!confirmed) return;
+  }
+
+  wristbandCards = [
+    { name: "Card 1", data: Array(CELLS_PER_CARD).fill(null) },
+  ];
+  cellCustomizations = {};
+  currentCardIndex = 0;
+  clearBatchSelect();
+  wbSelectionMode = false;
+  document.getElementById("wristband")?.classList.remove("wb-selection-mode");
+  historyManager.clear("wristband");
+  discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+  markWristbandClean();
+  showWbTypeChoice();
+  renderCardTabs();
+  renderWristbandGrid();
+}
+
 function startClassicWristband() {
   wristbandType = "classic";
   updateWristbandModeChrome("classic");
@@ -309,6 +351,17 @@ function startClassicWristband() {
 }
 
 function startPlayerWristband() {
+  const hiddenPlayCount = wristbandCards.reduce(
+    (sum, card) =>
+      sum + (card.data || []).slice(WB_ROWS, CELLS_PER_CARD).filter(Boolean).length,
+    0,
+  );
+  if (hiddenPlayCount > 0) {
+    showToast(
+      `${hiddenPlayCount} play${hiddenPlayCount === 1 ? "" : "s"} in cells 21-40 will be hidden in Player mode but remain saved.`,
+      { type: "warning", duration: 6000 },
+    );
+  }
   wristbandType = "player";
   updateWristbandModeChrome("player");
   document.getElementById("wbTypeChoice")?.classList.add("hidden");
@@ -412,7 +465,7 @@ function renderPlayerCardGrid() {
       : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
 
     // Number cell
-    html += `<div class="wristband-cell num-cell" style="background:${numBg};color:${numFg};">${playNum}</div>`;
+    html += `<div class="wristband-cell num-cell" role="rowheader" style="background:${numBg};color:${numFg};">${playNum}</div>`;
 
     // Play call cell — data-drag attrs required for click/drag handlers
     if (play) {
@@ -420,11 +473,14 @@ function renderPlayerCardGrid() {
       cellStyle += custom.textColor ? `color:${custom.textColor};` : "";
       const cellInner = renderWristbandCellCall(play, custom, opts);
       html += `<div class="wristband-cell filled" style="${cellStyle}"
-        draggable="true" data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}">
+        draggable="true" role="gridcell" tabindex="0"
+        aria-label="${escapeHtml(getWristbandCellAriaLabel(play, playNum))}"
+        data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}">
         <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${cellInner}</span></span>
       </div>`;
     } else {
-      html += `<div class="wristband-cell" tabindex="0"
+      html += `<div class="wristband-cell" role="gridcell" tabindex="0"
+        aria-label="${escapeHtml(getWristbandCellAriaLabel(null, playNum))}"
         data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}"></div>`;
     }
 
@@ -574,17 +630,281 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts) {
   </div>`;
 }
 
-/** Print one copy of each card for the current position, one wristband per page. */
+let wbPrintPreviewMode = "classic-sheet";
+
+function openWristbandPrintPreview(requestedMode = "classic") {
+  const hasPlays = wristbandCards.some((card) =>
+    card.data?.slice(0, getActiveWristbandCellCount()).some(Boolean),
+  );
+  if (!hasPlays) {
+    showToast("No plays on the wristband to print.", { type: "warning" });
+    return;
+  }
+
+  const isPlayer = String(requestedMode).startsWith("player");
+  const layoutSelect = document.getElementById("wbPrintLayoutMode");
+  if (!layoutSelect) return;
+  layoutSelect.innerHTML = isPlayer
+    ? `
+      <option value="player-one">One wristband per page</option>
+      <option value="player-three">Three copies per page</option>
+      <option value="player-all">Selected positions, three per page</option>
+    `
+    : `
+      <option value="classic-one">One wristband per page</option>
+      <option value="classic-sheet">Up to three cards per page</option>
+      <option value="classic-three">Three copies of each card per page</option>
+    `;
+  wbPrintPreviewMode = isPlayer
+    ? (requestedMode === "player" ? "player-all" : requestedMode)
+    : "classic-sheet";
+  layoutSelect.value = wbPrintPreviewMode;
+
+  const cardChoices = document.getElementById("wbPrintCardChoices");
+  if (cardChoices) {
+    cardChoices.innerHTML = wristbandCards
+      .map((card, cardIdx) => {
+        const count = card.data
+          .slice(0, getActiveWristbandCellCount())
+          .filter(Boolean).length;
+        return `<label>
+          <input type="checkbox" class="wb-print-card-choice" value="${cardIdx}" ${count > 0 ? "checked" : "disabled"}
+            data-onchange="renderWristbandPrintPreview" />
+          <span>${escapeHtml(card.name || `Card ${cardIdx + 1}`)} (${count})</span>
+        </label>`;
+      })
+      .join("");
+  }
+
+  const positionChoices = document.getElementById("wbPrintPositionChoices");
+  if (positionChoices) {
+    positionChoices.innerHTML = PLAYER_WRISTBAND_POSITIONS.map(
+      (position) => `<label>
+        <input type="checkbox" class="wb-print-position-choice" value="${escapeHtml(position.key)}"
+          ${wbPrintPreviewMode === "player-all" || position.key === wbPlayerCardPos ? "checked" : ""}
+          data-onchange="renderWristbandPrintPreview" />
+        <span>${escapeHtml(position.label)}</span>
+      </label>`,
+    ).join("");
+  }
+
+  renderWristbandPrintPreview();
+  const overlay = setWristbandOverlayVisibility(
+    "wbPrintPreviewOverlay",
+    true,
+    { visibilityClass: "show", openClass: true },
+  );
+  if (overlay) trapFocus(overlay);
+}
+
+function closeWristbandPrintPreview() {
+  setWristbandOverlayVisibility(
+    "wbPrintPreviewOverlay",
+    false,
+    { visibilityClass: "show", openClass: true },
+  );
+}
+
+function _getSelectedWbPrintCards() {
+  return Array.from(document.querySelectorAll(".wb-print-card-choice:checked"))
+    .map((input) => parseInt(input.value, 10))
+    .filter(Number.isInteger);
+}
+
+function _getSelectedWbPrintPositions() {
+  return Array.from(
+    document.querySelectorAll(".wb-print-position-choice:checked"),
+  ).map((input) => input.value);
+}
+
+function _setWbPrintChoices(selector, checked) {
+  document.querySelectorAll(selector).forEach((input) => {
+    if (!input.disabled) input.checked = checked;
+  });
+  renderWristbandPrintPreview();
+}
+
+function selectAllWbPrintCards() {
+  _setWbPrintChoices(".wb-print-card-choice", true);
+}
+
+function clearAllWbPrintCards() {
+  _setWbPrintChoices(".wb-print-card-choice", false);
+}
+
+function selectAllWbPrintPositions() {
+  _setWbPrintChoices(".wb-print-position-choice", true);
+}
+
+function clearAllWbPrintPositions() {
+  _setWbPrintChoices(".wb-print-position-choice", false);
+}
+
+function _getWristbandPrintWarnings(cardIndexes, positionKeys, isPlayer) {
+  const warnings = [];
+  const signatures = new Map();
+  let longCalls = 0;
+  let longAssignments = 0;
+  cardIndexes.forEach((cardIdx) => {
+    const card = wristbandCards[cardIdx];
+    if (!card) return;
+    card.data.slice(0, isPlayer ? WB_ROWS : CELLS_PER_CARD).forEach((play, cellIdx) => {
+      if (!play) return;
+      const signature = playSignature(play);
+      signatures.set(signature, (signatures.get(signature) || 0) + 1);
+      const callLength = [
+        play.personnel,
+        play.formation,
+        play.protection,
+        play.play,
+        play.lineCall,
+      ].filter(Boolean).join(" ").length;
+      if (callLength > 70) longCalls += 1;
+      if (isPlayer) {
+        const custom = cellCustomizations[`${cardIdx}-${cellIdx}`] || {};
+        positionKeys.forEach((positionKey) => {
+          if (getPlayerAssignmentText(play, custom, positionKey).length > 70) {
+            longAssignments += 1;
+          }
+        });
+      }
+    });
+    if (isPlayer && card.data.slice(WB_ROWS, CELLS_PER_CARD).some(Boolean)) {
+      warnings.push(`${card.name || `Card ${cardIdx + 1}`} has plays 21-40 that player mode will not print.`);
+    }
+  });
+  const duplicateCount = Array.from(signatures.values()).filter((count) => count > 1).length;
+  if (duplicateCount > 0) {
+    warnings.push(`${duplicateCount} repeated play${duplicateCount === 1 ? "" : "s"} found in the selected cards.`);
+  }
+  if (longCalls > 0) {
+    warnings.push(`${longCalls} long play call${longCalls === 1 ? "" : "s"} may print tightly.`);
+  }
+  if (longAssignments > 0) {
+    warnings.push(`${longAssignments} long assignment${longAssignments === 1 ? "" : "s"} may wrap.`);
+  }
+  return warnings;
+}
+
+function renderWristbandPrintPreview() {
+  const layoutSelect = document.getElementById("wbPrintLayoutMode");
+  if (!layoutSelect) return;
+  wbPrintPreviewMode = layoutSelect.value || wbPrintPreviewMode;
+  const isPlayer = wbPrintPreviewMode.startsWith("player");
+  const cardIndexes = _getSelectedWbPrintCards();
+  const positionKeys = _getSelectedWbPrintPositions();
+  const positionFieldset = document.getElementById("wbPrintPositionFieldset");
+  positionFieldset?.classList.toggle("hidden", !isPlayer);
+
+  let pageCount = 0;
+  if (wbPrintPreviewMode === "classic-sheet") {
+    pageCount = Math.ceil(cardIndexes.length / WRISTBAND_PRINT_CARDS_PER_SHEET);
+  } else if (wbPrintPreviewMode.startsWith("classic")) {
+    pageCount = cardIndexes.length;
+  } else if (wbPrintPreviewMode === "player-all") {
+    pageCount = cardIndexes.length * Math.ceil(positionKeys.length / 3);
+  } else {
+    pageCount = cardIndexes.length;
+  }
+
+  const summary = document.getElementById("wbPrintPreviewSummary");
+  if (summary) {
+    summary.textContent = `${cardIndexes.length} card${cardIndexes.length === 1 ? "" : "s"} · ${pageCount} page${pageCount === 1 ? "" : "s"} · ${WRISTBAND_PRINT_SIZE_LABEL}`;
+  }
+
+  const warnings = [];
+  if (cardIndexes.length === 0) warnings.push("Select at least one card.");
+  if (isPlayer && positionKeys.length === 0) warnings.push("Select at least one position.");
+  if (isPlayer && wbPrintPreviewMode !== "player-all" && positionKeys.length > 1) {
+    warnings.push("One-position layouts print the first selected position only.");
+  }
+  warnings.push(
+    ..._getWristbandPrintWarnings(cardIndexes, positionKeys, isPlayer),
+  );
+  const warningContainer = document.getElementById("wbPrintPreviewWarnings");
+  if (warningContainer) {
+    warningContainer.innerHTML = warnings.length
+      ? warnings.map((warning) => `<div>${escapeHtml(warning)}</div>`).join("")
+      : "<div class=\"wb-print-ready\">Ready to print at Actual Size / 100%.</div>";
+  }
+
+  const canvas = document.getElementById("wbPrintPreviewCanvas");
+  if (canvas) {
+    canvas.innerHTML = "";
+    const previewCardIdx = cardIndexes[0];
+    const previewPositionKey = positionKeys[0] || wbPlayerCardPos || "respQ";
+    if (isPlayer && wristbandCards[previewCardIdx]) {
+      canvas.innerHTML = _buildPlayerPrintCard(
+        wristbandCards[previewCardIdx],
+        previewCardIdx,
+        previewPositionKey,
+        getWristbandDisplayOptions(),
+      );
+    } else {
+      const sourceCard = document.getElementById("wristbandCard");
+      if (sourceCard) {
+        const clone = sourceCard.cloneNode(true);
+        clone.removeAttribute("id");
+        clone.style.removeProperty("transform");
+        clone.style.removeProperty("transform-origin");
+        clone.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
+        clone.querySelectorAll("button, select, textarea, input").forEach((control) => {
+          control.setAttribute("disabled", "");
+          control.setAttribute("tabindex", "-1");
+        });
+        canvas.appendChild(clone);
+      }
+    }
+  }
+
+  const executeButton = document.getElementById("wbExecutePrintBtn");
+  if (executeButton) {
+    executeButton.disabled =
+      cardIndexes.length === 0 || (isPlayer && positionKeys.length === 0);
+  }
+}
+
+function executeWristbandPrintPreview() {
+  const cardIndexes = _getSelectedWbPrintCards();
+  const positionKeys = _getSelectedWbPrintPositions();
+  if (cardIndexes.length === 0) return;
+  closeWristbandPrintPreview();
+
+  if (wbPrintPreviewMode === "classic-one") {
+    _executeClassicWristbandPrint(cardIndexes, "one-per-page");
+  } else if (wbPrintPreviewMode === "classic-three") {
+    _executeClassicWristbandPrint(cardIndexes, "three-copies");
+  } else if (wbPrintPreviewMode === "classic-sheet") {
+    _executeClassicWristbandPrint(cardIndexes, "sheet");
+  } else if (wbPrintPreviewMode === "player-one") {
+    _executePrintOnePlayerCard(cardIndexes, positionKeys[0]);
+  } else if (wbPrintPreviewMode === "player-three") {
+    _executePrintThreePlayerCardCopies(cardIndexes, positionKeys[0]);
+  } else {
+    _executePrintAllPlayerCards(cardIndexes, positionKeys);
+  }
+}
+
 function printOnePlayerCard() {
+  openWristbandPrintPreview("player-one");
+}
+
+function printThreePlayerCardCopies() {
+  openWristbandPrintPreview("player-three");
+}
+
+function printAllPlayerCards() {
+  openWristbandPrintPreview("player-all");
+}
+
+/** Print one copy of each card for the current position, one wristband per page. */
+function _executePrintOnePlayerCard(cardIndexes, positionKey) {
   if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
-  const posSelect = document.getElementById("pcPosSelect");
-  const posKey = wbPlayerCardPos || "respQ";
-  const posLabel = posSelect
-    ? (posSelect.options[posSelect.selectedIndex]?.text || posKey.replace("resp", ""))
-    : posKey.replace("resp", "");
+  const posKey = positionKey || wbPlayerCardPos || "respQ";
+  const posLabel = _playerPositionLabel(posKey);
   const opts = getWristbandDisplayOptions();
 
   const printContainer = document.getElementById("playerCardPrint");
@@ -592,7 +912,9 @@ function printOnePlayerCard() {
   if (!printContainer || !printContent) return;
 
   let allHtml = "";
-  wristbandCards.forEach((card, cardIdx) => {
+  (cardIndexes || []).forEach((cardIdx) => {
+    const card = wristbandCards[cardIdx];
+    if (!card?.data?.slice(0, WB_ROWS).some(Boolean)) return;
     const cardName = card.name || `Card ${cardIdx + 1}`;
     const cardBlock = _buildPlayerPrintCard(card, cardIdx, posKey, opts);
     allHtml += `<div class="pc-print-page pc-print-single">
@@ -614,20 +936,22 @@ function printOnePlayerCard() {
 }
 
 /** Print three identical copies of each card for the current position. */
-function printThreePlayerCardCopies() {
+function _executePrintThreePlayerCardCopies(cardIndexes, positionKey) {
   if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
-  const posKey = wbPlayerCardPos || "respQ";
+  const posKey = positionKey || wbPlayerCardPos || "respQ";
   const posLabel = _playerPositionLabel(posKey);
   const opts = getWristbandDisplayOptions();
   const printContainer = document.getElementById("playerCardPrint");
   const printContent = document.getElementById("playerCardPrintContent");
   if (!printContainer || !printContent) return;
 
-  const allHtml = wristbandCards
-    .map((card, cardIdx) => {
+  const allHtml = (cardIndexes || [])
+    .map((cardIdx) => {
+      const card = wristbandCards[cardIdx];
+      if (!card?.data?.slice(0, WB_ROWS).some(Boolean)) return "";
       const cardName = card.name || `Card ${cardIdx + 1}`;
       const cardBlock = _buildPlayerPrintCard(card, cardIdx, posKey, opts);
       return `<div class="pc-print-page">
@@ -653,7 +977,7 @@ function printThreePlayerCardCopies() {
  * "Print All" — all positions, 3 per portrait page.
  * Each page stacks 3 position cards with their assignments.
  */
-function printAllPlayerCards() {
+function _executePrintAllPlayerCards(cardIndexes, positionKeys) {
   if (!wristbandCards.some((c) => c.data?.slice(0, WB_ROWS).some(Boolean))) {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
@@ -667,10 +991,15 @@ function printAllPlayerCards() {
   let allHtml = "";
 
   // For each wristband card, print all positions 3 per page
-  wristbandCards.forEach((card, cardIdx) => {
+  const positions = PLAYER_WRISTBAND_POSITIONS.filter((position) =>
+    (positionKeys || []).includes(position.key),
+  );
+  (cardIndexes || []).forEach((cardIdx) => {
+    const card = wristbandCards[cardIdx];
+    if (!card?.data?.slice(0, WB_ROWS).some(Boolean)) return;
     const cardName = card.name || `Card ${cardIdx + 1}`;
-    for (let p = 0; p < PLAYER_WRISTBAND_POSITIONS.length; p += 3) {
-      const group = PLAYER_WRISTBAND_POSITIONS.slice(p, p + 3);
+    for (let p = 0; p < positions.length; p += 3) {
+      const group = positions.slice(p, p + 3);
       let pageBlocks = "";
       group.forEach((pos) => {
         const posBlock = _buildPlayerPrintCard(card, cardIdx, pos.key, opts);

@@ -26,6 +26,19 @@ let wbFiltersCollapsed = true;
 let wbFavorites = normalizeWbFavorites(
   storageManager.get(STORAGE_KEYS.WRISTBAND_FAVORITES, []),
 );
+const WB_LIBRARY_PAGE_SIZE = 60;
+const WB_RECENT_PLAY_LIMIT = 40;
+let wbLibraryLimit = WB_LIBRARY_PAGE_SIZE;
+let wbLibraryQuickFilter = "all";
+let wbPreventDuplicates = true;
+let wbRecentPlayIndexes = normalizeWbFavorites(
+  storageManager.get(STORAGE_KEYS.WRISTBAND_RECENT_PLAYS, []),
+).slice(0, WB_RECENT_PLAY_LIMIT);
+let wbMobileView = "builder";
+let wbZoomLevel = "fit";
+let activeWristbandSaveId = null;
+let activeWristbandTitle = "Untitled Wristband";
+let activeWristbandSavedAt = "";
 
 // Cell customization storage: { "cardIdx-cellIdx": { colors, markers, tags, playerRuleSources, playerAssignmentOverrides } }
 let cellCustomizations = {};
@@ -74,6 +87,29 @@ function normalizeWbFavorites(favorites) {
         .filter((value) => Number.isInteger(value) && value >= 0),
     ),
   );
+}
+
+function resetWristbandLibraryLimit() {
+  wbLibraryLimit = WB_LIBRARY_PAGE_SIZE;
+}
+
+function recordRecentWristbandPlay(playIndex) {
+  const parsedIndex = parseInt(playIndex, 10);
+  if (!Number.isInteger(parsedIndex) || parsedIndex < 0) return;
+  wbRecentPlayIndexes = [
+    parsedIndex,
+    ...wbRecentPlayIndexes.filter((index) => index !== parsedIndex),
+  ].slice(0, WB_RECENT_PLAY_LIMIT);
+  storageManager.set(STORAGE_KEYS.WRISTBAND_RECENT_PLAYS, wbRecentPlayIndexes);
+}
+
+function resetActiveWristbandIdentity() {
+  activeWristbandSaveId = null;
+  activeWristbandTitle = "Untitled Wristband";
+  activeWristbandSavedAt = "";
+  if (typeof updateWristbandSaveChrome === "function") {
+    updateWristbandSaveChrome();
+  }
 }
 
 function getCellMarkerValue(custom) {
@@ -709,6 +745,9 @@ function scheduleWristbandAutosave() {
         favorites: safeDeepClone(wbFavorites),
         displaySettings: getWristbandDisplayOptions(),
         currentCardIndex,
+        activeSaveId: activeWristbandSaveId,
+        activeTitle: activeWristbandTitle,
+        activeSavedAt: activeWristbandSavedAt,
       });
       if (typeof updateSaveStatus === "function") updateSaveStatus("saved");
     },

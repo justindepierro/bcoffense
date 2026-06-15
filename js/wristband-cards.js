@@ -32,6 +32,9 @@ function renderCardTabs() {
   }
 
   container.innerHTML = html;
+  if (typeof syncWbBatchMoveTargets === "function") {
+    syncWbBatchMoveTargets();
+  }
 }
 
 function refreshWristbandCardView(opts = {}) {

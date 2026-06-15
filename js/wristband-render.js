@@ -103,6 +103,71 @@ function openFirstEmptyWristbandCell() {
   openCellPopup(currentCardIndex, cellIdx);
 }
 
+function getWristbandCellAriaLabel(play, playNumber) {
+  if (!play) {
+    return `Wristband number ${playNumber}, empty. Press Enter to add a play.`;
+  }
+  const call = [
+    play.personnel,
+    play.formation,
+    play.protection,
+    play.play,
+    play.lineCall,
+  ]
+    .filter(Boolean)
+    .join(" ");
+  return `Wristband number ${playNumber}, ${call || "assigned play"}. Press Enter to edit.`;
+}
+
+function syncWristbandZoom() {
+  setWristbandZoom(wbZoomLevel, { silent: true });
+}
+
+function setWristbandZoom(level, opts = {}) {
+  const allowed = new Set(["fit", "75", "100"]);
+  wbZoomLevel = allowed.has(String(level)) ? String(level) : "fit";
+  const viewport = document.getElementById("wbCardViewport");
+  const card = document.getElementById("wristbandCard");
+  if (!viewport || !card) return;
+
+  document.querySelectorAll("[data-wb-zoom]").forEach((button) => {
+    const active = button.dataset.wbZoom === wbZoomLevel;
+    button.classList.toggle("active", active);
+    button.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+
+  if (wbZoomLevel === "fit") {
+    card.style.removeProperty("transform");
+    card.style.removeProperty("transform-origin");
+    viewport.style.removeProperty("height");
+    viewport.classList.remove("wb-zoomed");
+    return;
+  }
+
+  const scale = wbZoomLevel === "75" ? 0.75 : 1;
+  card.style.transform = `scale(${scale})`;
+  card.style.transformOrigin = "top left";
+  viewport.style.height = `${Math.ceil(card.offsetHeight * scale) + 20}px`;
+  viewport.classList.add("wb-zoomed");
+  if (!opts.silent) {
+    showToast(`Preview zoom set to ${wbZoomLevel}%`, { type: "info" });
+  }
+}
+
+function toggleWristbandFullscreen() {
+  const preview = document.querySelector(".wristband-preview");
+  if (!preview) return;
+  if (document.fullscreenElement) {
+    document.exitFullscreen?.();
+    return;
+  }
+  if (preview.requestFullscreen) {
+    preview.requestFullscreen();
+  } else {
+    preview.classList.toggle("wb-preview-fullscreen");
+  }
+}
+
 function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
   syncWristbandGridEmptyState(cardData, cellsPerCard);
   historyManager.updateButtons("wristband");
@@ -119,6 +184,13 @@ function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
 
   syncWbSelectedCellVisuals(grid);
   updateWbStats();
+  syncWristbandZoom();
+  if (typeof updateWristbandSaveChrome === "function") {
+    updateWristbandSaveChrome();
+  }
+  if (typeof renderWristbandPlays === "function") {
+    renderWristbandPlays();
+  }
   if (typeof updateTabBadges === "function") updateTabBadges();
 }
 
@@ -213,7 +285,7 @@ function renderWristbandGrid() {
       ? (isColorDark(evenBg) ? "white" : UI_COLORS.textDark)
       : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
 
-    html += `<div class="wristband-cell num-cell" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
+    html += `<div class="wristband-cell num-cell" role="rowheader" style="background: ${oddNumBg}; color: ${oddNumFg};">${oddNum}</div>`;
 
     if (oddPlay) {
       const oddCellHtml = getCachedDisplay(oddPlay, oddCustom);
@@ -223,6 +295,8 @@ function renderWristbandGrid() {
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
+             role="gridcell" tabindex="0"
+             aria-label="${escapeHtml(getWristbandCellAriaLabel(oddPlay, oddNum))}"
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddCellHtml}</span></span>
@@ -230,12 +304,13 @@ function renderWristbandGrid() {
         </div>
       `;
     } else {
-      html += `<div class="wristband-cell" style="${oddStyle}" tabindex="0"
+      html += `<div class="wristband-cell" style="${oddStyle}" role="gridcell" tabindex="0"
+                    aria-label="${escapeHtml(getWristbandCellAriaLabel(null, oddNum))}"
                     data-drag="wbCell" data-cell-idx="${oddIndex}"
                     data-card="${currentCardIndex}"></div>`;
     }
 
-    html += `<div class="wristband-cell num-cell" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
+    html += `<div class="wristband-cell num-cell" role="rowheader" style="background: ${evenNumBg}; color: ${evenNumFg};">${evenNum}</div>`;
 
     if (evenPlay) {
       const evenCellHtml = getCachedDisplay(evenPlay, evenCustom);
@@ -245,6 +320,8 @@ function renderWristbandGrid() {
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
+             role="gridcell" tabindex="0"
+             aria-label="${escapeHtml(getWristbandCellAriaLabel(evenPlay, evenNum))}"
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenCellHtml}</span></span>
@@ -252,7 +329,8 @@ function renderWristbandGrid() {
         </div>
       `;
     } else {
-      html += `<div class="wristband-cell" style="${evenStyle}" tabindex="0"
+      html += `<div class="wristband-cell" style="${evenStyle}" role="gridcell" tabindex="0"
+                    aria-label="${escapeHtml(getWristbandCellAriaLabel(null, evenNum))}"
                     data-drag="wbCell" data-cell-idx="${evenIndex}"
                     data-card="${currentCardIndex}"></div>`;
     }
@@ -322,8 +400,11 @@ async function clearWristband() {
 
 async function autoFillWristband() {
   const filterState = getWristbandFilterState();
-  const filtered = plays.filter((play) =>
-    matchesWristbandPlayFilters(play, filterState),
+  const usageMap = getWristbandPlayUsageMap();
+  const filtered = plays.filter(
+    (play) =>
+      matchesWristbandPlayFilters(play, filterState) &&
+      (!wbPreventDuplicates || !usageMap.has(playSignature(play))),
   );
 
   if (filtered.length === 0) {
@@ -403,6 +484,7 @@ async function autoFillWristband() {
 
   renderCardTabs();
   renderWristbandGrid();
+  renderWristbandPlays();
   markWristbandDirty();
   scheduleWristbandAutosave();
   showToast(`✅ Added ${filledCount} play${filledCount !== 1 ? "s" : ""}`);

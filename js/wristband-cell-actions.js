@@ -2,6 +2,7 @@ let draggedCellIndex = null;
 let draggedCellCardIdx = null;
 let copiedCell = null;
 let wbSelectedCells = [];
+let wbSelectionMode = false;
 
 function handleCellDragStart(event, cellIdx, cardIdx) {
   draggedCellIndex = cellIdx;
@@ -96,7 +97,9 @@ function syncWbSelectedCellVisuals(root = document) {
   const selectedKeys = new Set(wbSelectedCells.map((key) => String(key)));
   root.querySelectorAll("[data-drag='wbCell']").forEach((cell) => {
     const cellKey = getWbSelectedCellKey(cell.dataset.card, cell.dataset.cellIdx);
-    cell.classList.toggle("wb-selected", selectedKeys.has(cellKey));
+    const selected = selectedKeys.has(cellKey);
+    cell.classList.toggle("wb-selected", selected);
+    cell.setAttribute("aria-selected", selected ? "true" : "false");
   });
 }
 
@@ -125,6 +128,37 @@ function toggleBatchSelect(cardIdx, cellIdx) {
   setWbSelectedCells(nextSelection);
 }
 
+function toggleWbSelectionMode() {
+  wbSelectionMode = !wbSelectionMode;
+  document.getElementById("wristband")?.classList.toggle(
+    "wb-selection-mode",
+    wbSelectionMode,
+  );
+  document.querySelectorAll("[data-action='toggleWbSelectionMode']").forEach((button) => {
+    button.classList.toggle("active", wbSelectionMode);
+    button.setAttribute("aria-pressed", wbSelectionMode ? "true" : "false");
+    button.textContent = wbSelectionMode ? "Done Selecting" : "Select Cells";
+  });
+  if (!wbSelectionMode) clearBatchSelect();
+}
+
+function clearWristbandCell(cardIdx, cellIdx) {
+  const card = wristbandCards[cardIdx];
+  if (!card || !card.data?.[cellIdx]) return;
+  mutateWristbandState(
+    () => {
+      card.data[cellIdx] = null;
+      delete cellCustomizations[getWbSelectedCellKey(cardIdx, cellIdx)];
+      setWbSelectedCells(
+        wbSelectedCells.filter(
+          (key) => key !== getWbSelectedCellKey(cardIdx, cellIdx),
+        ),
+      );
+    },
+    { renderPlays: true },
+  );
+}
+
 function updateWbBatchBar() {
   const bar = document.getElementById("wbBatchBar");
   const countEl = document.getElementById("wbBatchCount");
@@ -142,6 +176,92 @@ function updateWbBatchBar() {
       .querySelectorAll("#wbBatchSwatches .wb-batch-swatch.active")
       .forEach((swatch) => swatch.classList.remove("active"));
   }
+}
+
+function syncWbBatchMoveTargets() {
+  const select = document.getElementById("wbBatchMoveCard");
+  if (!select) return;
+  const previousValue = select.value;
+  select.innerHTML = wristbandCards
+    .map(
+      (card, index) =>
+        `<option value="${index}">${escapeHtml(card.name)}</option>`,
+    )
+    .join("");
+  select.value = wristbandCards[previousValue] ? previousValue : String(currentCardIndex);
+}
+
+function clearSelectedWbCells() {
+  if (wbSelectedCells.length === 0) return;
+  const selected = [...wbSelectedCells];
+  mutateWristbandState(
+    () => {
+      selected.forEach((key) => {
+        const [cardIdx, cellIdx] = key.split("-").map(Number);
+        if (!wristbandCards[cardIdx]) return;
+        wristbandCards[cardIdx].data[cellIdx] = null;
+        delete cellCustomizations[key];
+      });
+      setWbSelectedCells([]);
+    },
+    { renderPlays: true },
+  );
+  showToast(`Cleared ${selected.length} selected cell${selected.length === 1 ? "" : "s"}`);
+}
+
+function moveSelectedWbCellsToCard() {
+  if (wbSelectedCells.length === 0) return;
+  const targetCardIdx = parseInt(
+    document.getElementById("wbBatchMoveCard")?.value,
+    10,
+  );
+  const targetCard = wristbandCards[targetCardIdx];
+  if (!targetCard) return;
+
+  const selected = wbSelectedCells
+    .map((key) => {
+      const [cardIdx, cellIdx] = key.split("-").map(Number);
+      return { key, cardIdx, cellIdx, play: wristbandCards[cardIdx]?.data[cellIdx] };
+    })
+    .filter((entry) => entry.play && entry.cardIdx !== targetCardIdx);
+  if (selected.length === 0) {
+    showToast("Selected plays are already on that card", { type: "info" });
+    return;
+  }
+
+  const emptyTargets = [];
+  targetCard.data
+    .slice(0, getActiveWristbandCellCount())
+    .forEach((play, cellIdx) => {
+      if (play === null) emptyTargets.push(cellIdx);
+    });
+  if (emptyTargets.length < selected.length) {
+    showToast(
+      `${targetCard.name} needs ${selected.length - emptyTargets.length} more empty cell${selected.length - emptyTargets.length === 1 ? "" : "s"}`,
+      { type: "warning" },
+    );
+    return;
+  }
+
+  mutateWristbandState(
+    () => {
+      selected.forEach((entry, index) => {
+        const targetCellIdx = emptyTargets[index];
+        targetCard.data[targetCellIdx] = entry.play;
+        wristbandCards[entry.cardIdx].data[entry.cellIdx] = null;
+        moveWristbandCellCustomization(
+          entry.cardIdx,
+          entry.cellIdx,
+          targetCardIdx,
+          targetCellIdx,
+        );
+      });
+      currentCardIndex = targetCardIdx;
+      setWbSelectedCells([]);
+    },
+    { renderPlays: true },
+  );
+  showToast(`Moved ${selected.length} play${selected.length === 1 ? "" : "s"} to ${targetCard.name}`);
 }
 
 function initWbBatchBarSwatches() {
