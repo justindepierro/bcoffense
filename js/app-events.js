@@ -345,6 +345,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const rawDir = el.dataset.dir;
       const dir = parseInt(rawDir, 10);
       switch (action) {
+        case "openScriptPresentation":
+          openScriptPresentation(idx);
+          break;
         case "openScriptMoveMenu":
           openScriptMoveMenu(e, idx);
           break;
@@ -583,6 +586,14 @@ document.addEventListener("DOMContentLoaded", () => {
   const pbBody = document.querySelector("#playbookTable tbody");
   if (pbBody) {
     pbBody.addEventListener("click", (e) => {
+      const presentBtn = e.target.closest(
+        "[data-action='openPlaybookPresentation']",
+      );
+      if (presentBtn) {
+        e.stopPropagation();
+        openPlaybookPresentation(parseInt(presentBtn.dataset.idx, 10));
+        return;
+      }
       const gpBtn = e.target.closest("[data-action='togglePlaybookGamePlan']");
       if (gpBtn) {
         e.stopPropagation();
@@ -715,6 +726,10 @@ function _showScriptPlayContextMenu(e, idx) {
     getSharedCustomTagEntries(play.scriptFormationTags).length > 0 ||
     getSharedCustomTagEntries(play.scriptBackTags).length > 0;
   const menuItems = [
+    {
+      label: "▶ Present Play",
+      action: () => openScriptPresentation(idx),
+    },
     { label: "📋 Duplicate Play", action: () => duplicatePlay(idx) },
     {
       label: "⬆️ Move Up",
@@ -816,7 +831,13 @@ function _showPlaybookRowContextMenu(e, filteredIdx) {
   if (!play) return;
   const masterIdx = plays.indexOf(play);
   const canEditPlaybook = typeof isAdminUser !== "function" || isAdminUser();
-  const menu = [{ label: "📋 Copy Play Name", action: () => copyPlayName(play.play) }];
+  const menu = [
+    {
+      label: "▶ Present Play",
+      action: () => openPlaybookPresentation(filteredIdx),
+    },
+    { label: "📋 Copy Play Name", action: () => copyPlayName(play.play) },
+  ];
 
   if (canEditPlaybook && typeof openPlayEditor === "function") {
     menu.unshift({ label: "✏️ Edit Play", action: () => openPlayEditor(filteredIdx) });

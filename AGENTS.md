@@ -31,6 +31,7 @@ css/
   components.css        ← Buttons, modals, toast, badges, utilities
   playbook.css          ← Playbook table, collections, print panel
   script.css            ← Practice script builder
+  play-presentation.css ← Shared landscape play presenter for Playbook and Script
   wristband.css         ← Wristband maker, cards, grid
   callsheet.css         ← Call sheet grid, columns, constraints panel
   tendencies.css        ← Defensive tendencies analysis
@@ -67,6 +68,7 @@ js/
   playbook-actions.js   ← Row actions and play mutations
   playbook-render.js    ← Playbook table rendering
   script-*.js           ← Practice script runtime split by concern (state, add, render, storage, integrations, etc.)
+  play-presentation.js  ← Shared landscape play presentation viewer
   wristband.js          ← Wristband core state, display helpers, and history helpers
   wristband-library.js  ← Wristband library filters, counts, and available plays
   wristband-render.js   ← Wristband grid rendering, colors, clear, auto-fill
@@ -165,49 +167,50 @@ All scripts use `defer` and load in this exact order from index.html:
 37. js/script-smart.js
 38. js/script-storage.js
 39. js/script-integrations.js
-40. js/wristband.js
-41. js/wristband-library.js
-42. js/wristband-render.js
-43. js/wristband-cards.js
-44. js/wristband-export.js
-45. js/wristband-search.js
-46. js/wristband-modals.js
-47. js/wristband-cell-popup.js
-48. js/wristband-cell-actions.js
-49. js/wristband-sort.js
-50. js/wristband-storage.js
-51. js/wristband-runtime.js
-52. js/callsheet.js
-53. js/callsheet-categories.js
-54. js/callsheet-metadata.js
-55. js/callsheet-layout.js
-56. js/callsheet-picker-runtime.js
-57. js/callsheet-gameplan-drawer.js
-58. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-59. js/script-vision.js
-60. js/tendencies.js
-61. js/installation.js
-62. js/identity.js
-63. js/offensebuilder.js
-64. js/help.js
-65. js/dashboard.js
-66. js/gameplan.js          ← Must load before all gameplan-* split files
-67. js/gameplan-render.js
-68. js/gameplan-dnd.js
-69. js/gameplan-actions.js
-70. js/gameplan-smart.js
-71. js/gameplan-print.js
-72. js/gameplan-integrations.js
-73. js/gameplan-snapshots.js
-74. js/print-studio.js  ← Unified print/export hub after module print functions
-75. js/app-events.js
-76. js/app-shell.js
-77. js/app-session.js
-78. js/app-navigation.js
-79. js/app-module-init.js
-80. js/app-bootstrap.js
-81. js/app-init.js
-82. js/app.js           ← Must be last; shared global state only
+40. js/play-presentation.js
+41. js/wristband.js
+42. js/wristband-library.js
+43. js/wristband-render.js
+44. js/wristband-cards.js
+45. js/wristband-export.js
+46. js/wristband-search.js
+47. js/wristband-modals.js
+48. js/wristband-cell-popup.js
+49. js/wristband-cell-actions.js
+50. js/wristband-sort.js
+51. js/wristband-storage.js
+52. js/wristband-runtime.js
+53. js/callsheet.js
+54. js/callsheet-categories.js
+55. js/callsheet-metadata.js
+56. js/callsheet-layout.js
+57. js/callsheet-picker-runtime.js
+58. js/callsheet-gameplan-drawer.js
+59. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+60. js/script-vision.js
+61. js/tendencies.js
+62. js/installation.js
+63. js/identity.js
+64. js/offensebuilder.js
+65. js/help.js
+66. js/dashboard.js
+67. js/gameplan.js          ← Must load before all gameplan-* split files
+68. js/gameplan-render.js
+69. js/gameplan-dnd.js
+70. js/gameplan-actions.js
+71. js/gameplan-smart.js
+72. js/gameplan-print.js
+73. js/gameplan-integrations.js
+74. js/gameplan-snapshots.js
+75. js/print-studio.js  ← Unified print/export hub after module print functions
+76. js/app-events.js
+77. js/app-shell.js
+78. js/app-session.js
+79. js/app-navigation.js
+80. js/app-module-init.js
+81. js/app-bootstrap.js
+82. js/app-init.js
+83. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.

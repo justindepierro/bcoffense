@@ -99,7 +99,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}</td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -142,7 +142,7 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
-            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}</div>
+            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
             <div class="pb-card-pills">${pills}</div>

@@ -544,6 +544,84 @@ function checkWristbandTypography() {
   console.log("wristband typography ok");
 }
 
+function checkPlayPresentationContracts() {
+  const html = read("index.html");
+  const presenter = read("js/play-presentation.js");
+  const playbookRender = read("js/playbook-render.js");
+  const scriptRender = read("js/script-render.js");
+  const appEvents = read("js/app-events.js");
+  const auth = read("js/auth.js");
+  const css = read("css/play-presentation.css");
+  const sw = read("sw.js");
+
+  if (
+    !/id="playPresentationOverlay"/.test(html) ||
+    !/data-presentation-mode="minimum"/.test(html) ||
+    !/data-presentation-mode="player"/.test(html) ||
+    !/data-presentation-mode="coaches"/.test(html) ||
+    !/data-action="openSelectedPlaybookPresentation"/.test(html) ||
+    !/data-action="openScriptPresentation"/.test(html)
+  ) {
+    fail("shared play presentation shell or launch controls are incomplete");
+  }
+  if (
+    !/function getPlayPresentationItemsFromPlaybook\(/.test(presenter) ||
+    !/function getPlayPresentationItemsFromScript\(/.test(presenter) ||
+    !/function openPlaybookPresentation\(/.test(presenter) ||
+    !/function openScriptPresentation\(/.test(presenter) ||
+    !/function renderPlayPresentation\(/.test(presenter)
+  ) {
+    fail("play presentation source adapters or shared renderer are incomplete");
+  }
+  if (
+    /window\.script\b/.test(presenter) ||
+    !/window\.playImages\.ensureUrl\(signature\)/.test(presenter) ||
+    !/requestFullscreen/.test(presenter) ||
+    !/screen\.orientation\.lock\("landscape"\)/.test(presenter) ||
+    !/setInnerHTML\(body, markup\)/.test(presenter)
+  ) {
+    fail("play presentation image, landscape, safety, or lexical-state contracts are incomplete");
+  }
+  if (
+    !/data-action="openPlaybookPresentation"/.test(playbookRender) ||
+    !/data-action="openScriptPresentation"/.test(scriptRender) ||
+    !/case "openScriptPresentation"/.test(appEvents) ||
+    !/openPlaybookPresentation\(parseInt\(presentBtn\.dataset\.idx/.test(
+      appEvents,
+    )
+  ) {
+    fail("playbook or script presentation row actions are not delegated correctly");
+  }
+  [
+    "openSelectedPlaybookPresentation",
+    "openPlaybookPresentation",
+    "openScriptPresentation",
+    "setPlayPresentationMode",
+    "setPlayPresentationPosition",
+    "movePlayPresentation",
+  ].forEach((action) => {
+    if (!new RegExp(`["']${action}["']`).test(auth)) {
+      fail(`read-only roles cannot use play presentation action ${action}`);
+    }
+  });
+  if (
+    !/\.play-presentation-overlay:fullscreen/.test(css) ||
+    !/@media \(orientation: portrait\)/.test(css) ||
+    !/\.pp-layout-player/.test(css) ||
+    !/\.pp-layout-coaches/.test(css)
+  ) {
+    fail("play presentation landscape and information-mode styling is incomplete");
+  }
+  if (
+    !/"\.\/css\/play-presentation\.css"/.test(sw) ||
+    !/"\.\/js\/play-presentation\.js"/.test(sw)
+  ) {
+    fail("play presentation assets are missing from the service worker");
+  }
+
+  console.log("play presentation contracts ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -1057,6 +1135,7 @@ checkSafeUiRendering();
 checkHistoryContracts();
 checkConflictContracts();
 checkWristbandTypography();
+checkPlayPresentationContracts();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

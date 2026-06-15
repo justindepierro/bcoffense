@@ -672,6 +672,7 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
           <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         </div>
         <div class="play-control-actions">
+          <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
           <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
           <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
         </div>
