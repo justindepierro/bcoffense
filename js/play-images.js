@@ -417,8 +417,8 @@
     } catch (_e) { /* ignore */ }
   }
 
-  /* Compression: resize to max dimension and re-encode as JPEG.
-     Defaults aim for ~60–120KB per image at 900px max edge. */
+  /* Adaptive optimization: retain presentation-grade dimensions and preserve
+     lossless PNG line art when its source size is reasonable. */
   async function compress(file, opts = {}) {
     if (!file) throw new Error("No image file selected");
     if (file.type && !file.type.startsWith("image/")) {
@@ -427,9 +427,8 @@
     if (file.size > MAX_SOURCE_BYTES) {
       throw new Error(`Image is too large (${_formatBytes(file.size)}). Use an image under ${_formatBytes(MAX_SOURCE_BYTES)}.`);
     }
-    const maxDim = Math.max(200, Math.min(2000, opts.maxDim || 900));
-    const quality = Math.min(0.95, Math.max(0.5, opts.quality || 0.82));
-    const mime = opts.mime || "image/jpeg";
+    const maxDim = Math.max(400, Math.min(3200, opts.maxDim || 2400));
+    const quality = Math.min(0.96, Math.max(0.7, opts.quality || 0.9));
 
     return _measure("playImages.compress", async () => {
       const bitmap = await _decodeImage(file);
@@ -442,6 +441,11 @@
       const scale = Math.min(1, maxDim / Math.max(w0, h0));
       const w = Math.max(1, Math.round(w0 * scale));
       const h = Math.max(1, Math.round(h0 * scale));
+      const mime =
+        opts.mime ||
+        (file.type === "image/png" && file.size <= 4 * 1024 * 1024
+          ? "image/png"
+          : "image/webp");
 
       const canvas = document.createElement("canvas");
       canvas.width = w;
@@ -452,6 +456,8 @@
         throw new Error("Image canvas could not be created");
       }
       try {
+        ctx.imageSmoothingEnabled = true;
+        ctx.imageSmoothingQuality = "high";
         ctx.drawImage(bitmap, 0, 0, w, h);
       } finally {
         if (typeof bitmap.close === "function") bitmap.close();
@@ -468,6 +474,7 @@
       blob.originalName = file.name || "";
       blob.outputWidth = w;
       blob.outputHeight = h;
+      blob.outputMime = blob.type || mime;
       return blob;
     }, { sourceBytes: file.size || 0 });
   }
@@ -590,6 +597,7 @@
         blob && blob.outputWidth && blob.outputHeight
           ? `${blob.outputWidth}×${blob.outputHeight}`
           : "",
+      mime: blob?.outputMime || blob?.type || "",
     };
   }
 

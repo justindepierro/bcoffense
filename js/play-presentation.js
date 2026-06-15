@@ -1,6 +1,9 @@
 // Shared landscape play presenter for the Playbook and Practice Script.
 
 const PLAY_PRESENTATION_MODES = new Set(["minimum", "player", "coaches"]);
+const PLAY_PRESENTATION_SAMPLE_MAX = 480;
+const PLAY_PRESENTATION_MAX_RENDER_PIXELS = 10_000_000;
+const PLAY_PRESENTATION_MAX_RENDER_EDGE = 4096;
 
 let playPresentationState = {
   source: "playbook",
@@ -11,6 +14,9 @@ let playPresentationState = {
   imageToken: 0,
   returnFocus: null,
 };
+
+let playPresentationDiagramResizeObserver = null;
+let playPresentationDiagramResizeFrame = 0;
 
 function getPlayPresentationPositions() {
   if (typeof RESP_POSITIONS !== "undefined" && Array.isArray(RESP_POSITIONS)) {
@@ -161,6 +167,7 @@ function closePlayPresentation() {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay) return;
   playPresentationState.imageToken += 1;
+  cleanupPlayPresentationDiagramRenderer();
   overlay.classList.remove("show");
   overlay.setAttribute("aria-hidden", "true");
   overlay.setAttribute("inert", "");
@@ -238,9 +245,310 @@ function setPlayPresentationDiagramMessage(frame, message) {
   frame.replaceChildren(emptyState);
 }
 
+function cleanupPlayPresentationDiagramRenderer() {
+  if (playPresentationDiagramResizeObserver) {
+    playPresentationDiagramResizeObserver.disconnect();
+    playPresentationDiagramResizeObserver = null;
+  }
+  if (playPresentationDiagramResizeFrame) {
+    cancelAnimationFrame(playPresentationDiagramResizeFrame);
+    playPresentationDiagramResizeFrame = 0;
+  }
+}
+
+function loadPlayPresentationImage(imageUrl, play) {
+  return new Promise((resolve, reject) => {
+    const image = new Image();
+    image.alt = `${getPlayPresentationPlayLabel(play)} diagram`;
+    image.decoding = "async";
+    image.onload = () => resolve(image);
+    image.onerror = () => reject(new Error("Play diagram could not be decoded"));
+    image.src = imageUrl;
+    if (image.complete && image.naturalWidth) resolve(image);
+  });
+}
+
+function getPlayPresentationBackgroundColor(data, width, height) {
+  const bins = new Map();
+  const edgeStep = Math.max(1, Math.floor(Math.min(width, height) / 80));
+  const addPixel = (x, y) => {
+    const index = (y * width + x) * 4;
+    const alpha = data[index + 3];
+    if (alpha < 24) return;
+    const red = data[index];
+    const green = data[index + 1];
+    const blue = data[index + 2];
+    const key = `${red >> 5}|${green >> 5}|${blue >> 5}`;
+    const bin = bins.get(key) || { count: 0, red: 0, green: 0, blue: 0 };
+    bin.count += 1;
+    bin.red += red;
+    bin.green += green;
+    bin.blue += blue;
+    bins.set(key, bin);
+  };
+
+  for (let x = 0; x < width; x += edgeStep) {
+    addPixel(x, 0);
+    addPixel(x, height - 1);
+  }
+  for (let y = 0; y < height; y += edgeStep) {
+    addPixel(0, y);
+    addPixel(width - 1, y);
+  }
+
+  const background = [...bins.values()].sort((a, b) => b.count - a.count)[0];
+  if (!background?.count) return { red: 255, green: 255, blue: 255 };
+  return {
+    red: background.red / background.count,
+    green: background.green / background.count,
+    blue: background.blue / background.count,
+  };
+}
+
+function getPlayPresentationContentBounds(image) {
+  const sourceWidth = image.naturalWidth || image.width || 0;
+  const sourceHeight = image.naturalHeight || image.height || 0;
+  if (!sourceWidth || !sourceHeight) return null;
+
+  const sampleScale = Math.min(
+    1,
+    PLAY_PRESENTATION_SAMPLE_MAX / Math.max(sourceWidth, sourceHeight),
+  );
+  const sampleWidth = Math.max(1, Math.round(sourceWidth * sampleScale));
+  const sampleHeight = Math.max(1, Math.round(sourceHeight * sampleScale));
+  const sample = document.createElement("canvas");
+  sample.width = sampleWidth;
+  sample.height = sampleHeight;
+  const context = sample.getContext("2d", { willReadFrequently: true });
+  if (!context) return null;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.drawImage(image, 0, 0, sampleWidth, sampleHeight);
+
+  let pixels;
+  try {
+    pixels = context.getImageData(0, 0, sampleWidth, sampleHeight).data;
+  } catch (_err) {
+    return null;
+  }
+  const background = getPlayPresentationBackgroundColor(
+    pixels,
+    sampleWidth,
+    sampleHeight,
+  );
+  const rowCounts = new Uint32Array(sampleHeight);
+  const columnCounts = new Uint32Array(sampleWidth);
+
+  for (let y = 0; y < sampleHeight; y++) {
+    for (let x = 0; x < sampleWidth; x++) {
+      const index = (y * sampleWidth + x) * 4;
+      const alpha = pixels[index + 3];
+      if (alpha < 24) continue;
+      const distance = Math.max(
+        Math.abs(pixels[index] - background.red),
+        Math.abs(pixels[index + 1] - background.green),
+        Math.abs(pixels[index + 2] - background.blue),
+      );
+      if (distance < 28) continue;
+      rowCounts[y] += 1;
+      columnCounts[x] += 1;
+    }
+  }
+
+  const minimumRowPixels = Math.max(3, Math.round(sampleWidth * 0.006));
+  const minimumColumnPixels = Math.max(3, Math.round(sampleHeight * 0.006));
+  let top = rowCounts.findIndex((count) => count >= minimumRowPixels);
+  let bottom = sampleHeight - 1;
+  while (bottom >= 0 && rowCounts[bottom] < minimumRowPixels) bottom -= 1;
+  let left = columnCounts.findIndex((count) => count >= minimumColumnPixels);
+  let right = sampleWidth - 1;
+  while (right >= 0 && columnCounts[right] < minimumColumnPixels) right -= 1;
+
+  if (top < 0 || left < 0 || bottom <= top || right <= left) return null;
+  const scaleX = sourceWidth / sampleWidth;
+  const scaleY = sourceHeight / sampleHeight;
+  const paddingX = sourceWidth * 0.018;
+  const paddingY = sourceHeight * 0.018;
+  const bounds = {
+    x: Math.max(0, left * scaleX - paddingX),
+    y: Math.max(0, top * scaleY - paddingY),
+    width: Math.min(sourceWidth, (right + 1) * scaleX + paddingX),
+    height: Math.min(sourceHeight, (bottom + 1) * scaleY + paddingY),
+  };
+  bounds.width -= bounds.x;
+  bounds.height -= bounds.y;
+
+  if (
+    bounds.width < sourceWidth * 0.2 ||
+    bounds.height < sourceHeight * 0.2
+  ) {
+    return null;
+  }
+  return bounds;
+}
+
+function getPlayPresentationAspectCrop(image, contentBounds, targetAspect) {
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const full = { x: 0, y: 0, width: sourceWidth, height: sourceHeight };
+  if (!contentBounds || !targetAspect) return { ...full, smartFit: false };
+
+  const crop = { ...contentBounds };
+  const contentAspect = crop.width / crop.height;
+  if (contentAspect < targetAspect) {
+    const desiredWidth = crop.height * targetAspect;
+    if (desiredWidth > sourceWidth) {
+      return { ...crop, smartFit: false, whitespaceTrimmed: true };
+    }
+    crop.x = Math.max(
+      0,
+      Math.min(
+        sourceWidth - desiredWidth,
+        crop.x + crop.width / 2 - desiredWidth / 2,
+      ),
+    );
+    crop.width = desiredWidth;
+  } else if (contentAspect > targetAspect) {
+    const desiredHeight = crop.width / targetAspect;
+    if (desiredHeight > sourceHeight) {
+      return { ...crop, smartFit: false, whitespaceTrimmed: true };
+    }
+    crop.y = Math.max(
+      0,
+      Math.min(
+        sourceHeight - desiredHeight,
+        crop.y + crop.height / 2 - desiredHeight / 2,
+      ),
+    );
+    crop.height = desiredHeight;
+  }
+  return { ...crop, smartFit: true };
+}
+
+function getPlayPresentationCanvasSize(frame) {
+  const cssWidth = Math.max(1, frame.clientWidth);
+  const cssHeight = Math.max(1, frame.clientHeight);
+  let scale = Math.min(2, Math.max(1, window.devicePixelRatio || 1));
+  scale = Math.min(
+    scale,
+    PLAY_PRESENTATION_MAX_RENDER_EDGE / cssWidth,
+    PLAY_PRESENTATION_MAX_RENDER_EDGE / cssHeight,
+    Math.sqrt(
+      PLAY_PRESENTATION_MAX_RENDER_PIXELS / (cssWidth * cssHeight),
+    ),
+  );
+  return {
+    cssWidth,
+    cssHeight,
+    pixelWidth: Math.max(1, Math.round(cssWidth * scale)),
+    pixelHeight: Math.max(1, Math.round(cssHeight * scale)),
+    pixelRatio: scale,
+  };
+}
+
+function drawPlayPresentationDiagram(canvas, frame, image, contentBounds) {
+  if (!canvas.isConnected || !frame.isConnected) return;
+  const size = getPlayPresentationCanvasSize(frame);
+  if (
+    canvas.width !== size.pixelWidth ||
+    canvas.height !== size.pixelHeight
+  ) {
+    canvas.width = size.pixelWidth;
+    canvas.height = size.pixelHeight;
+  }
+  const context = canvas.getContext("2d");
+  if (!context) throw new Error("Presentation canvas could not be created");
+  context.clearRect(0, 0, canvas.width, canvas.height);
+  context.fillStyle = "#ffffff";
+  context.fillRect(0, 0, canvas.width, canvas.height);
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = "high";
+  context.filter = "contrast(1.055) saturate(1.02)";
+
+  const targetAspect = size.cssWidth / size.cssHeight;
+  const crop = getPlayPresentationAspectCrop(
+    image,
+    contentBounds,
+    targetAspect,
+  );
+  const cropAspect = crop.width / crop.height;
+  let drawWidth = canvas.width;
+  let drawHeight = canvas.height;
+  let drawX = 0;
+  let drawY = 0;
+  if (!crop.smartFit && Math.abs(cropAspect - targetAspect) > 0.01) {
+    const containScale = Math.min(
+      canvas.width / crop.width,
+      canvas.height / crop.height,
+    );
+    drawWidth = crop.width * containScale;
+    drawHeight = crop.height * containScale;
+    drawX = (canvas.width - drawWidth) / 2;
+    drawY = (canvas.height - drawHeight) / 2;
+  }
+  context.drawImage(
+    image,
+    crop.x,
+    crop.y,
+    crop.width,
+    crop.height,
+    drawX,
+    drawY,
+    drawWidth,
+    drawHeight,
+  );
+  context.filter = "none";
+  canvas.dataset.smartFit = crop.smartFit
+    ? "fill"
+    : crop.whitespaceTrimmed
+      ? "trimmed-contain"
+      : "contain";
+  canvas.dataset.sourceSize = `${image.naturalWidth}x${image.naturalHeight}`;
+  canvas.dataset.renderSize = `${canvas.width}x${canvas.height}`;
+  canvas.dataset.pixelRatio = size.pixelRatio.toFixed(2);
+}
+
+function installPlayPresentationDiagramRenderer(frame, image, play, token) {
+  cleanupPlayPresentationDiagramRenderer();
+  const canvas = document.createElement("canvas");
+  canvas.className = "pp-diagram-image pp-diagram-canvas";
+  canvas.setAttribute("role", "img");
+  canvas.setAttribute(
+    "aria-label",
+    `${getPlayPresentationPlayLabel(play)} diagram`,
+  );
+  const contentBounds = getPlayPresentationContentBounds(image);
+  frame.replaceChildren(canvas);
+
+  const draw = () => {
+    if (
+      token !== playPresentationState.imageToken ||
+      document.getElementById("playPresentationDiagram") !== frame
+    ) {
+      return;
+    }
+    drawPlayPresentationDiagram(canvas, frame, image, contentBounds);
+  };
+  draw();
+
+  if (typeof ResizeObserver === "function") {
+    playPresentationDiagramResizeObserver = new ResizeObserver(() => {
+      if (playPresentationDiagramResizeFrame) {
+        cancelAnimationFrame(playPresentationDiagramResizeFrame);
+      }
+      playPresentationDiagramResizeFrame = requestAnimationFrame(() => {
+        playPresentationDiagramResizeFrame = 0;
+        draw();
+      });
+    });
+    playPresentationDiagramResizeObserver.observe(frame);
+  }
+}
+
 async function loadPlayPresentationDiagram(play, token) {
   const frame = document.getElementById("playPresentationDiagram");
   if (!frame) return;
+  cleanupPlayPresentationDiagramRenderer();
   if (!window.playImages) {
     setPlayPresentationDiagramMessage(frame, "No play diagram attached");
     return;
@@ -261,11 +569,20 @@ async function loadPlayPresentationDiagram(play, token) {
       );
       return;
     }
-    const image = document.createElement("img");
-    image.src = imageUrl;
-    image.alt = `${getPlayPresentationPlayLabel(play)} diagram`;
-    image.className = "pp-diagram-image";
-    currentFrame.replaceChildren(image);
+    const image = await loadPlayPresentationImage(imageUrl, play);
+    if (token !== playPresentationState.imageToken) return;
+    try {
+      installPlayPresentationDiagramRenderer(
+        currentFrame,
+        image,
+        play,
+        token,
+      );
+    } catch (renderError) {
+      console.warn("smart diagram rendering failed:", renderError);
+      image.className = "pp-diagram-image";
+      currentFrame.replaceChildren(image);
+    }
   } catch (err) {
     console.warn("play presentation image load failed:", err);
     if (token !== playPresentationState.imageToken) return;

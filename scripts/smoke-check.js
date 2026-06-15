@@ -581,6 +581,12 @@ function checkPlayPresentationContracts() {
   if (
     /window\.script\b/.test(presenter) ||
     !/await window\.ensurePlayImageUrl\(play\)/.test(presenter) ||
+    !/function getPlayPresentationContentBounds\(image\)/.test(presenter) ||
+    !/function getPlayPresentationAspectCrop\(/.test(presenter) ||
+    !/PLAY_PRESENTATION_MAX_RENDER_PIXELS/.test(presenter) ||
+    !/context\.imageSmoothingQuality = "high"/.test(presenter) ||
+    !/new ResizeObserver\(/.test(presenter) ||
+    !/canvas\.dataset\.smartFit/.test(presenter) ||
     !/requestFullscreen/.test(presenter) ||
     !/screen\.orientation\.lock\("landscape"\)/.test(presenter) ||
     !/setInnerHTML\(body, markup\)/.test(presenter)
@@ -627,6 +633,17 @@ function checkPlayPresentationContracts() {
     !/getPlayImageUrl\(play\)/.test(gameplanPrint)
   ) {
     fail("play image compatibility resolution is incomplete across presentation surfaces");
+  }
+  if (
+    !/opts\.maxDim \|\| 2400/.test(playImages) ||
+    !/file\.type === "image\/png"/.test(playImages) ||
+    !/"image\/webp"/.test(playImages) ||
+    !/ctx\.imageSmoothingQuality = "high"/.test(playImages) ||
+    !/maxDim: 2400/.test(playbookEditor) ||
+    !/quality: 0\.92/.test(playbookEditor) ||
+    /900px JPEG/.test(playbookEditor)
+  ) {
+    fail("presentation-grade play image optimization contracts are incomplete");
   }
   if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||

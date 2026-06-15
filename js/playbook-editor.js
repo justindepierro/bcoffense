@@ -420,7 +420,7 @@ function _populateEditorForm(play, isNew) {
         <input type="file" id="peImageFile" accept="image/*" style="display:none" />
         <button type="button" class="btn btn-sm btn-secondary" data-action="triggerClick" data-target="peImageFile">${_peImgUrl ? "Replace" : "Add"} Image…</button>
         <button type="button" class="btn btn-sm btn-danger" id="peImageRemoveBtn" ${_peImgUrl ? "" : "style=\"display:none\""}>Remove</button>
-        <p class="pb-editor-hint">Pick a PNG/JPG. Auto-resized to ~900px JPEG. Stored in IndexedDB so it survives offline.</p>
+        <p class="pb-editor-hint">Pick a PNG, JPG, or WebP. Optimized up to 2400px with a line-art-friendly format and stored offline.</p>
       </div>
     </div>
   </div>`;
@@ -706,7 +706,10 @@ function _wirePlayEditorImage(play, isNew) {
     if (!file) return;
     try {
       setImageBusy(`Optimizing ${Math.round((file.size || 0) / 1024)} KB image...`);
-      const blob = await window.playImages.compress(file, { maxDim: 900, quality: 0.82 });
+      const blob = await window.playImages.compress(file, {
+        maxDim: 2400,
+        quality: 0.92,
+      });
       await window.playImages.set(sig, blob);
       await _refreshPreview();
       clearImageBusy();
@@ -715,7 +718,7 @@ function _wirePlayEditorImage(play, isNew) {
           ? window.playImages.describeCompression(file, blob)
           : null;
       const suffix = summary
-        ? `${summary.outputFormatted}${summary.savedPct ? `, ${summary.savedPct}% smaller` : ""}`
+        ? `${summary.dimensions ? `${summary.dimensions} • ` : ""}${summary.outputFormatted}${summary.savedPct ? `, ${summary.savedPct}% smaller` : ""}`
         : `${Math.round(blob.size / 1024)} KB`;
       showToast(`Image added (${suffix})`, {
         duration: 2200, type: "success",

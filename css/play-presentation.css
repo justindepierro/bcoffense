@@ -262,6 +262,11 @@ body.play-presentation-open {
   object-fit: contain;
 }
 
+.pp-diagram-canvas {
+  display: block;
+  image-rendering: auto;
+}
+
 .pp-diagram-loading,
 .pp-diagram-empty {
   display: grid;
