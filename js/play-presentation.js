@@ -11,6 +11,8 @@ let playPresentationState = {
   index: 0,
   mode: "minimum",
   position: "respQ",
+  positionLocked: false,
+  autoPositionItemKey: "",
   imageToken: 0,
   returnFocus: null,
 };
@@ -192,7 +194,48 @@ function closePlayPresentation() {
 function setPlayPresentationMode(mode) {
   if (!PLAY_PRESENTATION_MODES.has(mode)) return;
   playPresentationState.mode = mode;
+  if (mode === "player" && !playPresentationState.positionLocked) {
+    playPresentationState.autoPositionItemKey = "";
+  }
   renderPlayPresentation();
+}
+
+function getPlayPresentationItemKey(item) {
+  if (!item) return "";
+  return [
+    playPresentationState.source,
+    item.sourceIndex,
+    typeof playSignature === "function" ? playSignature(item.play) : "",
+    item.number,
+  ].join(":");
+}
+
+function getPreferredPlayPresentationPosition(play) {
+  const positions = getPlayPresentationPositions();
+  const current = positions.find(
+    (position) => position.key === playPresentationState.position,
+  );
+  if (current && String(play?.[current.key] || "").trim()) return current.key;
+  const withRule = positions.find(
+    (position) => String(play?.[position.key] || "").trim(),
+  );
+  return (withRule || current || positions[0])?.key || "respQ";
+}
+
+function syncPlayPresentationPlayerPosition(item) {
+  if (
+    !item ||
+    playPresentationState.mode !== "player" ||
+    playPresentationState.positionLocked
+  ) {
+    return;
+  }
+  const itemKey = getPlayPresentationItemKey(item);
+  if (playPresentationState.autoPositionItemKey === itemKey) return;
+  playPresentationState.position = getPreferredPlayPresentationPosition(
+    item.play,
+  );
+  playPresentationState.autoPositionItemKey = itemKey;
 }
 
 function setPlayPresentationPosition(positionKey) {
@@ -204,6 +247,16 @@ function setPlayPresentationPosition(positionKey) {
     return;
   }
   playPresentationState.position = positionKey;
+  const item = playPresentationState.items[playPresentationState.index];
+  playPresentationState.autoPositionItemKey = getPlayPresentationItemKey(item);
+  renderPlayPresentation();
+}
+
+function togglePlayPresentationPositionLock() {
+  playPresentationState.positionLocked = !playPresentationState.positionLocked;
+  if (!playPresentationState.positionLocked) {
+    playPresentationState.autoPositionItemKey = "";
+  }
   renderPlayPresentation();
 }
 
@@ -636,26 +689,75 @@ function getPlayPresentationPlayerName(play, positionKey) {
   return playerId ? getTeamPlayerSelectionDisplay(playerId) : "";
 }
 
-function getPlayPresentationPlayerMarkup(item) {
-  const play = item.play;
+function getPlayPresentationSelectedPosition() {
   const positions = getPlayPresentationPositions();
-  const selected =
+  return (
     positions.find(
       (position) => position.key === playPresentationState.position,
-    ) || positions[0];
+    ) || positions[0]
+  );
+}
+
+function getPlayPresentationPositionLockCopy(selected) {
+  const locked = playPresentationState.positionLocked;
+  const label = selected?.label || "position";
+  return {
+    locked,
+    label: locked ? `Locked to ${label}` : `Lock ${label}`,
+    hint: locked
+      ? `Next and previous plays will keep showing the ${label} rule.`
+      : `Unlocked: each new play can auto-pick its first entered rule. Lock ${label} to keep this position.`,
+  };
+}
+
+function hydratePlayPresentationPlayerControls() {
+  const picker = document.getElementById("playPresentationPositionPicker");
+  const lockMount = document.getElementById(
+    "playPresentationPositionLockMount",
+  );
+  const lockStatus = document.getElementById(
+    "playPresentationPositionLockStatus",
+  );
+  if (!picker || !lockMount || !lockStatus) return;
+
+  const selected = getPlayPresentationSelectedPosition();
+  const lockCopy = getPlayPresentationPositionLockCopy(selected);
+
+  picker.replaceChildren();
+  getPlayPresentationPositions().forEach((position) => {
+    const button = document.createElement("button");
+    button.type = "button";
+    button.className = `pp-position-btn${
+      position.key === selected.key ? " active" : ""
+    }`;
+    button.dataset.action = "setPlayPresentationPosition";
+    button.dataset.arg = position.key;
+    button.setAttribute(
+      "aria-pressed",
+      position.key === selected.key ? "true" : "false",
+    );
+    button.textContent = position.label;
+    picker.appendChild(button);
+  });
+
+  const lockButton = document.createElement("button");
+  lockButton.type = "button";
+  lockButton.className = `pp-position-lock-btn${
+    lockCopy.locked ? " active" : ""
+  }`;
+  lockButton.dataset.action = "togglePlayPresentationPositionLock";
+  lockButton.setAttribute("aria-pressed", lockCopy.locked ? "true" : "false");
+  lockButton.title = lockCopy.hint;
+  lockButton.textContent = `${lockCopy.locked ? "🔒" : "🔓"} ${lockCopy.label}`;
+  lockMount.replaceChildren(lockButton);
+  lockStatus.textContent = lockCopy.hint;
+}
+
+function getPlayPresentationPlayerMarkup(item) {
+  const play = item.play;
+  const selected = getPlayPresentationSelectedPosition();
   const assignment = String(play[selected.key] || "").trim();
   const playerName = getPlayPresentationPlayerName(play, selected.key);
-  const positionButtons = positions
-    .map(
-      (position) => `
-        <button class="pp-position-btn${position.key === selected.key ? " active" : ""}"
-          data-action="setPlayPresentationPosition" data-arg="${escapeHtml(position.key)}"
-          aria-pressed="${position.key === selected.key}">
-          ${escapeHtml(position.label)}
-        </button>
-      `,
-    )
-    .join("");
 
   return `
     <div class="pp-layout pp-layout-player">
@@ -669,8 +771,12 @@ function getPlayPresentationPlayerMarkup(item) {
           boldShifts: true,
           italicMotions: true,
         })}</div>
-        <div class="pp-position-picker" role="group" aria-label="Choose player position">
-          ${positionButtons}
+        <div class="pp-position-picker" id="playPresentationPositionPicker"
+          role="group" aria-label="Choose player position"></div>
+        <div class="pp-position-lock-row">
+          <span id="playPresentationPositionLockMount"></span>
+          <span class="pp-position-lock-status"
+            id="playPresentationPositionLockStatus"></span>
         </div>
         <div class="pp-player-rule">
           <div class="pp-player-rule-head">
@@ -856,6 +962,8 @@ function renderPlayPresentation() {
     button.setAttribute("aria-pressed", active ? "true" : "false");
   });
 
+  syncPlayPresentationPlayerPosition(item);
+
   let markup = "";
   if (playPresentationState.mode === "player") {
     markup = getPlayPresentationPlayerMarkup(item);
@@ -866,6 +974,9 @@ function renderPlayPresentation() {
   }
 
   setInnerHTML(body, markup);
+  if (playPresentationState.mode === "player") {
+    hydratePlayPresentationPlayerControls();
+  }
   const token = ++playPresentationState.imageToken;
   loadPlayPresentationDiagram(item.play, token);
 
@@ -894,6 +1005,11 @@ function handlePlayPresentationKeydown(event) {
     setPlayPresentationMode("player");
   } else if (event.key === "3") {
     setPlayPresentationMode("coaches");
+  } else if (
+    event.key.toLowerCase() === "l" &&
+    playPresentationState.mode === "player"
+  ) {
+    togglePlayPresentationPositionLock();
   }
 }
 

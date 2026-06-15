@@ -609,6 +609,7 @@ function checkPlayPresentationContracts() {
     "openScriptPresentation",
     "setPlayPresentationMode",
     "setPlayPresentationPosition",
+    "togglePlayPresentationPositionLock",
     "movePlayPresentation",
   ].forEach((action) => {
     if (!new RegExp(`["']${action}["']`).test(auth)) {
@@ -644,6 +645,25 @@ function checkPlayPresentationContracts() {
     /900px JPEG/.test(playbookEditor)
   ) {
     fail("presentation-grade play image optimization contracts are incomplete");
+  }
+  if (
+    !/positionLocked:\s*false/.test(presenter) ||
+    !/function togglePlayPresentationPositionLock\(\)/.test(presenter) ||
+    !/function syncPlayPresentationPlayerPosition\(item\)/.test(presenter) ||
+    !/function getPreferredPlayPresentationPosition\(play\)/.test(presenter) ||
+    !/function hydratePlayPresentationPlayerControls\(\)/.test(presenter) ||
+    !/document\.createElement\("button"\)/.test(presenter) ||
+    !/button\.dataset\.action = "setPlayPresentationPosition"/.test(
+      presenter,
+    ) ||
+    !/lockButton\.dataset\.action = "togglePlayPresentationPositionLock"/.test(
+      presenter,
+    ) ||
+    !/event\.key\.toLowerCase\(\) === "l"/.test(presenter) ||
+    !/\.pp-position-lock-btn/.test(css) ||
+    !/["']togglePlayPresentationPositionLock["']/.test(auth)
+  ) {
+    fail("player presentation position-lock contracts are incomplete");
   }
   if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||

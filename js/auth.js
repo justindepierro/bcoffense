@@ -104,6 +104,7 @@
     "closePlayPresentation",
     "setPlayPresentationMode",
     "setPlayPresentationPosition",
+    "togglePlayPresentationPositionLock",
     "movePlayPresentation",
     "openPlaybookSituationCoverage",
     "clearPlaybookSituationFilters",

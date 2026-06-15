@@ -123,7 +123,8 @@ body.play-presentation-open {
 .pp-mode-btn:focus-visible,
 .pp-nav-btn:focus-visible,
 .pp-close-btn:focus-visible,
-.pp-position-btn:focus-visible {
+.pp-position-btn:focus-visible,
+.pp-position-lock-btn:focus-visible {
   outline: 3px solid var(--color-warning);
   outline-offset: 2px;
 }
@@ -388,6 +389,44 @@ body.play-presentation-open {
   background: var(--color-primary);
 }
 
+.pp-position-lock-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.pp-position-lock-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  min-height: 38px;
+  padding: 7px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-secondary);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.pp-position-lock-btn.active {
+  color: var(--color-text-inverse);
+  border-color: var(--color-success);
+  background: var(--color-success);
+}
+
+.pp-position-lock-status {
+  min-width: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.25;
+}
+
 .pp-player-rule {
   display: grid;
   align-content: center;
@@ -575,10 +614,17 @@ body.play-presentation-open {
   }
 
   .pp-position-btn:hover,
+  .pp-position-lock-btn:hover,
   .pb-present-btn:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
     background: var(--color-primary-light);
+  }
+
+  .pp-position-lock-btn.active:hover {
+    border-color: var(--color-success);
+    color: var(--color-text-inverse);
+    background: var(--color-success);
   }
 }
 
@@ -687,6 +733,10 @@ body.play-presentation-open {
 
   .pp-position-picker {
     grid-template-columns: repeat(4, minmax(38px, 1fr));
+  }
+
+  .pp-position-lock-row {
+    grid-template-columns: 1fr;
   }
 
   .pp-call {
