@@ -281,23 +281,25 @@ function getPlayPresentationMinimumMarkup(item) {
   const play = item.play;
   return `
     <div class="pp-layout pp-layout-minimum">
-      <section class="pp-diagram-panel">
-        ${getPlayPresentationDiagramMarkup(play)}
-      </section>
-      <section class="pp-call-panel">
+      <section class="pp-minimum-top">
         <div class="pp-eyebrow">${escapeHtml(item.context || "")}</div>
-        <div class="pp-call">${getFullCall(play, {
+        <div class="pp-call pp-minimum-call">${getFullCall(play, {
           showEmoji: true,
           showLineCall: true,
           boldShifts: true,
           italicMotions: true,
         })}</div>
-        <div class="pp-chips">${getPlayPresentationChipMarkup(play)}</div>
         ${
           play.oneWord
-            ? `<div class="pp-one-word"><span>One Word</span>${escapeHtml(play.oneWord)}</div>`
-            : ""
+            ? `<div class="pp-minimum-one-word"><span>One Word</span>${escapeHtml(play.oneWord)}</div>`
+            : '<div class="pp-minimum-one-word is-empty" aria-hidden="true"></div>'
         }
+      </section>
+      <section class="pp-diagram-panel pp-minimum-diagram">
+        ${getPlayPresentationDiagramMarkup(play)}
+      </section>
+      <section class="pp-minimum-bottom" aria-label="Play details">
+        <div class="pp-chips pp-minimum-chips">${getPlayPresentationChipMarkup(play)}</div>
       </section>
     </div>
   `;

@@ -631,6 +631,12 @@ function checkPlayPresentationContracts() {
   if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
     !/@media \(orientation: portrait\)/.test(css) ||
+    !/\.pp-layout-minimum\s*\{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/s.test(
+      css,
+    ) ||
+    !/class="pp-minimum-top"/.test(presenter) ||
+    !/class="pp-diagram-panel pp-minimum-diagram"/.test(presenter) ||
+    !/class="pp-minimum-bottom"/.test(presenter) ||
     !/\.pp-layout-player/.test(css) ||
     !/\.pp-layout-coaches/.test(css)
   ) {
