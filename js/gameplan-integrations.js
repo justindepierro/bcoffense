@@ -435,7 +435,11 @@ async function pushGamePlanToScript() {
       });
     }
     list.forEach((p) => {
-      script.push({ ...p, id: Date.now() + Math.random() });
+      script.push({
+        ...p,
+        playbookId: p.playbookId || p.sourcePlayId || p.id || null,
+        id: Date.now() + Math.random(),
+      });
       pushed += 1;
     });
   });

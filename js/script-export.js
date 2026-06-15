@@ -1126,10 +1126,9 @@ function _scriptPacketPlayEntries(scriptData) {
     }
     if (!item) return;
     periodPlayNumber += 1;
-    const signature = typeof playSignature === "function" ? playSignature(item) : "";
     const imageUrl =
-      signature && window.playImages && typeof window.playImages.urlFor === "function"
-        ? window.playImages.urlFor(signature)
+      typeof getPlayImageUrl === "function"
+        ? getPlayImageUrl(item)
         : null;
     entries.push({
       play: item,

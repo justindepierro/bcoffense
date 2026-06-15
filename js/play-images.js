@@ -14,6 +14,9 @@
      playImages.urlFor(sig)                      → cached object URL or null (sync)
      playImages.ensureUrl(sig)                   → load one object URL on demand
      playImages.has(sig)                         → bool (from key cache)
+     playImages.signaturesForPlay(play)           → current/source/legacy keys
+     playImages.storedSignatureForPlay(play)      → first stored compatible key
+     playImages.ensureUrlForPlay(play)            → resolve + load compatible image
      playImages.loadKeys()                       → load image keys without blobs
      playImages.prefetchAll()                    → load every blob into URL cache
      playImages.compress(file, opts)             → Blob (resize + JPEG re-encode)
@@ -27,6 +30,49 @@
   const EXPORT_CONCURRENCY = 3;
   const IMPORT_CONCURRENCY = 3;
   const MAX_SOURCE_BYTES = 14 * 1024 * 1024;
+  const PLAY_IMAGE_SOURCE_FIELDS = [
+    "type",
+    "personnel",
+    "formation",
+    "formTag1",
+    "formTag2",
+    "under",
+    "back",
+    "shift",
+    "motion",
+    "protection",
+    "lineCall",
+    "play",
+    "playTag1",
+    "playTag2",
+    "basePlay",
+    "oneWord",
+    "preferredSituation",
+    "preferredDown",
+    "preferredDistance",
+    "preferredHash",
+    "preferredFieldPosition",
+    "tempo",
+    "practiceFront",
+    "practiceDefense",
+    "practiceCoverage",
+    "practiceBlitz",
+    "practiceStunt",
+    "keyPlayer1",
+    "keyPlayer2",
+    "keyPlayer3",
+    "keyPlayerName1",
+    "keyPlayerName2",
+    "keyPlayerName3",
+    "constraint1",
+    "constraint2",
+    "constraint3",
+    "hitChart1",
+    "hitChart2",
+    "hitChart3",
+    "deadVs",
+    "opponent",
+  ];
 
   let _dbPromise = null;
   const _urlCache = new Map(); // sig → object URL
@@ -247,6 +293,108 @@
   function has(sig) {
     const key = _normalizeSig(sig);
     return !!key && (_urlCache.has(key) || _knownKeys.has(key));
+  }
+
+  function _findSourcePlay(play) {
+    if (!play || typeof play !== "object") return null;
+    const runtimeIndex =
+      typeof getPlaybookRuntimeIndex === "function"
+        ? getPlaybookRuntimeIndex()
+        : null;
+
+    if (runtimeIndex?.byPlay?.has(play)) return play;
+
+    const sourceIds = [
+      play.playbookId,
+      play.sourcePlayId,
+      play.originalPlayId,
+      play.id,
+    ]
+      .map(_normalizeSig)
+      .filter(Boolean);
+    for (const sourceId of sourceIds) {
+      const indexed = runtimeIndex?.byId?.get(sourceId);
+      if (indexed?.play) return indexed.play;
+    }
+
+    const playbook = typeof plays !== "undefined" && Array.isArray(plays)
+      ? plays
+      : [];
+    if (!playbook.length) return null;
+
+    if (typeof getPlayIdentityKey === "function") {
+      const sourceKey = getPlayIdentityKey(
+        play,
+        PLAY_IMAGE_SOURCE_FIELDS,
+        { trim: false },
+      );
+      if (sourceKey) {
+        const exact = playbook.find(
+          (candidate) =>
+            getPlayIdentityKey(candidate, PLAY_IMAGE_SOURCE_FIELDS, {
+              trim: false,
+            }) === sourceKey,
+        );
+        if (exact) return exact;
+      }
+    }
+
+    if (typeof playsMatch === "function") {
+      return playbook.find((candidate) => playsMatch(candidate, play)) || null;
+    }
+    return null;
+  }
+
+  function signaturesForPlay(play) {
+    if (!play || typeof playSignature !== "function") return [];
+    const sourcePlay = _findSourcePlay(play);
+    const candidates = [
+      play.playbookId,
+      play.sourcePlayId,
+      play.originalPlayId,
+      sourcePlay ? playSignature(sourcePlay) : "",
+      playSignature(play),
+      sourcePlay && typeof getPlayIdentityKey === "function"
+        ? getPlayIdentityKey(sourcePlay, "tag")
+        : "",
+      typeof getPlayIdentityKey === "function"
+        ? getPlayIdentityKey(play, "tag")
+        : "",
+    ]
+      .map(_normalizeSig)
+      .filter(Boolean);
+    return [...new Set(candidates)];
+  }
+
+  function urlForPlay(play) {
+    for (const signature of signaturesForPlay(play)) {
+      const url = urlFor(signature);
+      if (url) return url;
+    }
+    return null;
+  }
+
+  async function ensureUrlForPlay(play) {
+    for (const signature of signaturesForPlay(play)) {
+      const url = await ensureUrl(signature);
+      if (url) return url;
+    }
+    return null;
+  }
+
+  function hasForPlay(play) {
+    return signaturesForPlay(play).some(has);
+  }
+
+  function storedSignatureForPlay(play) {
+    return signaturesForPlay(play).find(has) || "";
+  }
+
+  async function deleteForPlay(play) {
+    const signatures = signaturesForPlay(play);
+    if (!signatures.length) return false;
+    await Promise.all(signatures.map((signature) => del(signature)));
+    return true;
   }
 
   async function keys() {
@@ -499,6 +647,12 @@
     has,
     urlFor,
     ensureUrl,
+    signaturesForPlay,
+    urlForPlay,
+    ensureUrlForPlay,
+    hasForPlay,
+    storedSignatureForPlay,
+    deleteForPlay,
     loadKeys,
     prefetchAll,
     compress,
@@ -510,16 +664,16 @@
 
   // Convenience helpers that take a Play object directly
   window.getPlayImageUrl = function (play) {
-    if (!play || typeof playSignature !== "function") return null;
-    return urlFor(playSignature(play));
+    return urlForPlay(play);
   };
   window.ensurePlayImageUrl = function (play) {
-    if (!play || typeof playSignature !== "function") return Promise.resolve(null);
-    return ensureUrl(playSignature(play));
+    return ensureUrlForPlay(play);
   };
   window.hasPlayImage = function (play) {
-    if (!play || typeof playSignature !== "function") return false;
-    return has(playSignature(play));
+    return hasForPlay(play);
+  };
+  window.deletePlayImage = function (play) {
+    return deleteForPlay(play);
   };
 
   // Load only keys on startup so render paths can show badges without turning

@@ -38,8 +38,18 @@ function renderPlaybook() {
     const wbFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("wb") : new Set();
     const usageIndex =
       typeof getPlayUsageIndex === "function" ? getPlayUsageIndex() : null;
-    const hasImageFor = (sig) =>
-      !!(sig && typeof window !== "undefined" && window.playImages && window.playImages.has(sig));
+    const imageSignatureFor = (play, fallbackSig) => {
+      if (
+        typeof window !== "undefined" &&
+        window.playImages &&
+        typeof window.playImages.storedSignatureForPlay === "function"
+      ) {
+        return window.playImages.storedSignatureForPlay(play);
+      }
+      return fallbackSig && window.playImages?.has(fallbackSig)
+        ? fallbackSig
+        : "";
+    };
     const pageItems = pageSlice.map((play, localIdx) => {
       const meta = runtimeIndex && runtimeIndex.byPlay ? runtimeIndex.byPlay.get(play) : null;
       const tagSig = meta
@@ -58,13 +68,14 @@ function renderPlaybook() {
         gpActive: !!(activeTags && activeTags.has(tagSig)),
         installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
         picturePill: picturePillFor(play),
+        imageSig: imageSignatureFor(play, tagSig),
         usage: usageIndex ? usageIndex.get(play) : null,
       };
     });
 
     tbody.innerHTML = pageItems
       .map((item) => {
-        const { play, idx, tagSig, gpSig, onWristband, gpActive } = item;
+        const { play, idx, gpSig, onWristband, gpActive, imageSig } = item;
         const wbClass = onWristband ? " on-wristband" : "";
         const gpClass = gpActive ? " in-gameplan" : "";
         const isJvFlagged = jvFlagged.has(gpSig);
@@ -79,8 +90,8 @@ function renderPlaybook() {
           ? '<span class="wb-indicator" title="On wristband">🏈</span>'
           : "";
         const imgBadge =
-          hasImageFor(tagSig)
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(tagSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+          imageSig
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
 
         const gpToggle = activeOpponent
@@ -117,7 +128,7 @@ function renderPlaybook() {
     }
     cardsEl.innerHTML = pageItems
       .map((item) => {
-        const { play, idx, tagSig, gpSig, onWristband } = item;
+        const { play, idx, gpSig, onWristband, imageSig } = item;
         const wbClass = onWristband ? " on-wristband" : "";
         const gpCardActive = item.gpActive;
         const gpClass = gpCardActive ? " in-gameplan" : "";
@@ -128,8 +139,8 @@ function renderPlaybook() {
           ? '<span class="pb-wbflag-badge" title="Marked for wristband in Game Plan">\ud83d\udccb</span>'
           : "";
         const cardImgBadge =
-          hasImageFor(tagSig)
-            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(tagSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
+          imageSig
+            ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`

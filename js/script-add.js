@@ -1,6 +1,7 @@
 function createScriptPlayFromPlaybook(play) {
   return {
     ...play,
+    playbookId: play.playbookId || play.sourcePlayId || play.id || null,
     reps: 1,
     notes: "",
     hash: "",

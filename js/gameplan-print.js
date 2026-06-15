@@ -658,15 +658,19 @@ function _gpRenderPrintPlay(play, board = null) {
    image (when one exists). Renders nothing if no plays in the included
    boxes have images. */
 function _gpRenderPrintImageAppendix(allBoxes, board) {
-  if (typeof window.playImages === "undefined" || typeof playSignature !== "function") return "";
+  if (
+    typeof window.playImages === "undefined" ||
+    typeof getPlayImageUrl !== "function"
+  ) {
+    return "";
+  }
   const sections = [];
   let totalImages = 0;
   for (const box of allBoxes) {
     const list = _gpPrintBoxList(board, box.id);
     const items = [];
     for (const play of list) {
-      const sig = playSignature(play);
-      const url = window.playImages.urlFor(sig);
+      const url = getPlayImageUrl(play);
       if (!url) continue;
       const callHtml = (typeof getFullCall === "function")
         ? getFullCall(play, { showLineCall: false, showEmoji: true, useSquares: true })

@@ -241,17 +241,16 @@ function setPlayPresentationDiagramMessage(frame, message) {
 async function loadPlayPresentationDiagram(play, token) {
   const frame = document.getElementById("playPresentationDiagram");
   if (!frame) return;
-  const signature =
-    typeof playSignature === "function" ? playSignature(play) : "";
-  if (!signature || !window.playImages) {
+  if (!window.playImages) {
     setPlayPresentationDiagramMessage(frame, "No play diagram attached");
     return;
   }
 
   try {
     const imageUrl =
-      window.playImages.urlFor(signature) ||
-      (await window.playImages.ensureUrl(signature));
+      typeof window.ensurePlayImageUrl === "function"
+        ? await window.ensurePlayImageUrl(play)
+        : null;
     if (token !== playPresentationState.imageToken) return;
     const currentFrame = document.getElementById("playPresentationDiagram");
     if (!currentFrame) return;

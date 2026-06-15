@@ -547,8 +547,13 @@ function checkWristbandTypography() {
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const presenter = read("js/play-presentation.js");
+  const playImages = read("js/play-images.js");
   const playbookRender = read("js/playbook-render.js");
+  const playbookEditor = read("js/playbook-editor.js");
   const scriptRender = read("js/script-render.js");
+  const scriptAdd = read("js/script-add.js");
+  const scriptExport = read("js/script-export.js");
+  const gameplanPrint = read("js/gameplan-print.js");
   const appEvents = read("js/app-events.js");
   const auth = read("js/auth.js");
   const css = read("css/play-presentation.css");
@@ -575,7 +580,7 @@ function checkPlayPresentationContracts() {
   }
   if (
     /window\.script\b/.test(presenter) ||
-    !/window\.playImages\.ensureUrl\(signature\)/.test(presenter) ||
+    !/await window\.ensurePlayImageUrl\(play\)/.test(presenter) ||
     !/requestFullscreen/.test(presenter) ||
     !/screen\.orientation\.lock\("landscape"\)/.test(presenter) ||
     !/setInnerHTML\(body, markup\)/.test(presenter)
@@ -604,6 +609,25 @@ function checkPlayPresentationContracts() {
       fail(`read-only roles cannot use play presentation action ${action}`);
     }
   });
+  if (
+    !/function signaturesForPlay\(play\)/.test(playImages) ||
+    !/play\.playbookId/.test(playImages) ||
+    !/getPlayIdentityKey\(sourcePlay, "tag"\)/.test(playImages) ||
+    !/async function ensureUrlForPlay\(play\)/.test(playImages) ||
+    !/function storedSignatureForPlay\(play\)/.test(playImages) ||
+    !/return ensureUrlForPlay\(play\)/.test(playImages) ||
+    !/playbookId: play\.playbookId \|\| play\.sourcePlayId \|\| play\.id/.test(
+      scriptAdd,
+    ) ||
+    !/window\.playImages\.storedSignatureForPlay\(play\)/.test(
+      playbookRender,
+    ) ||
+    !/window\.deletePlayImage\(play\)/.test(playbookEditor) ||
+    !/getPlayImageUrl\(item\)/.test(scriptExport) ||
+    !/getPlayImageUrl\(play\)/.test(gameplanPrint)
+  ) {
+    fail("play image compatibility resolution is incomplete across presentation surfaces");
+  }
   if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
     !/@media \(orientation: portrait\)/.test(css) ||

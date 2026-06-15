@@ -739,7 +739,11 @@ function _wirePlayEditorImage(play, isNew) {
         title: "Remove Image", icon: "🗑️", confirmText: "Remove", danger: true,
       });
       if (!ok) return;
-      await window.playImages.delete(sig);
+      if (typeof window.deletePlayImage === "function") {
+        await window.deletePlayImage(play);
+      } else {
+        await window.playImages.delete(sig);
+      }
       await _refreshPreview();
       showToast("Image removed", { duration: 2000 });
       requestPlaybookRefresh();
