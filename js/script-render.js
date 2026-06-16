@@ -542,8 +542,16 @@ function updatePeriodHeaderLabelDisplay(index) {
 
 function renderScriptEmptyPeriodHeaders() {
   let periodHeaders = "";
+  const playerRole = isPlayerScriptRole();
+  const periodStatsBySeparatorIndex = playerRole ? buildPeriodStatsMap(script) : null;
   script.forEach((period, index) => {
     if (!period.isSeparator) return;
+    if (playerRole) {
+      periodHeaders += renderPlayerScriptPeriodHeader(period, index, {
+        periodStatsBySeparatorIndex,
+      });
+      return;
+    }
     const periodColor = period.color || UI_COLORS.periodDefault;
     const periodLabel = period.label || "Period";
     const periodNotes = period.notes || "";
@@ -602,7 +610,67 @@ function renderPeriodActionsToolbar(index, periodLabel) {
         </div>`;
 }
 
+function isPlayerScriptRole() {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return currentUser?.role === "player";
+}
+
+function getPlayerScriptMetaItems(play, reps) {
+  const items = [
+    play.type,
+    play.tempo,
+    play.hash || play.preferredHash
+      ? `${play.hash || play.preferredHash} hash`
+      : "",
+    reps > 1 ? `${reps} reps` : "1 rep",
+  ];
+  if (play.oneWord) items.push(`One Word ${play.oneWord}`);
+  return items.filter(Boolean);
+}
+
+function renderPlayerScriptPeriodHeader(separator, index, renderContext) {
+  const { playCount, periodReps, runCount, passCount } = getPeriodStats(
+    index,
+    renderContext?.periodStatsBySeparatorIndex,
+  );
+  const periodColor = separator.color || UI_COLORS.periodDefault;
+  const periodLabel = separator.label || "Period";
+  const periodNotes = separator.notes || "";
+  const metaText = formatPeriodMetaText(
+    playCount,
+    periodReps,
+    separator.minutes,
+    runCount,
+    passCount,
+  );
+  const periodId = escapeHtml(String(separator.id));
+
+  return `
+    <div class="period-header-wrapper period-header-wrapper--player" data-separator-id="${periodId}"
+      data-period-id="${periodId}" data-period-index="${index}" role="region"
+      aria-label="${escapeHtml(periodLabel)} period">
+      <div class="script-item period-header period-header--player"
+        style="border-left: 4px solid ${periodColor};">
+        <div class="period-header-player__eyebrow">Practice Block</div>
+        <div class="period-header-player__title-row">
+          <div class="period-header-player__title">${escapeHtml(periodLabel)}</div>
+          <div class="period-header-player__meta">${escapeHtml(metaText)}</div>
+        </div>
+        ${
+          periodNotes
+            ? `<div class="period-header-player__notes">${escapeHtml(periodNotes)}</div>`
+            : ""
+        }
+      </div>
+    </div>
+  `;
+}
+
 function renderScriptPeriodHeader(separator, index, renderContext) {
+  if (isPlayerScriptRole()) {
+    return renderPlayerScriptPeriodHeader(separator, index, renderContext);
+  }
   const isCollapsed = collapsedPeriods.has(separator.id);
   const collapseIcon = isCollapsed ? "▶" : "▼";
   const { playCount, periodReps, runCount, passCount } = getPeriodStats(
@@ -748,6 +816,47 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     }
   }
 
+  if (isPlayerScriptRole()) {
+    const metaItems = getPlayerScriptMetaItems(play, reps);
+    const focusText = String(play.respNotes || play.notes || "").trim();
+    const playerItemClasses = [
+      "script-item",
+      "script-item--player",
+      opts.printStyle ? "script-item--printlike" : "",
+    ].filter(Boolean).join(" ");
+
+    return `
+      <article class="${playerItemClasses}" data-idx="${index}" role="group"
+        aria-label="Play ${playNumber}: ${escapeHtml(playLabel)}">
+        <div class="script-player-card-head">
+          <div class="script-player-card-badge">Play ${playNumber}${wbBadge}</div>
+          <button class="script-player-open-btn" data-action="openScriptPresentation"
+            data-idx="${index}" title="Open ${escapeHtml(playLabel)} in swipe view"
+            aria-label="Open ${escapeHtml(playLabel)} in swipe view">
+            Open Rules
+          </button>
+        </div>
+        <div class="script-player-card-call">${fullCall}</div>
+        ${
+          metaItems.length
+            ? `<div class="script-player-card-meta">${metaItems
+              .map((item) => `<span class="script-player-card-chip">${escapeHtml(item)}</span>`)
+              .join("")}</div>`
+            : ""
+        }
+        ${
+          focusText
+            ? `<div class="script-player-card-note">
+                <strong>Focus</strong>
+                <span>${escapeHtml(focusText)}</span>
+              </div>`
+            : ""
+        }
+      </article>
+      ${showPrintPreview ? renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) : ""}
+    `;
+  }
+
   return `
     <div class="${itemClasses}" draggable="true" data-drag="scriptStart" data-idx="${index}" role="group" aria-label="Draggable play ${playNumber}: ${escapeHtml(playLabel)}">
       <div class="script-select-tools">
@@ -814,6 +923,15 @@ function renderScriptColumnHeaders() {
 }
 
 function renderScriptGuidedEmptyState() {
+  if (isPlayerScriptRole()) {
+    return `
+      <div class="script-empty-guide script-empty-guide--player">
+        <div class="seg-icon">📲</div>
+        <div class="seg-text">Choose a published practice script above to start your day.</div>
+        <div class="seg-hint">Once it loads, use <strong>Swipe View</strong> to move play-to-play and see your rule.</div>
+      </div>
+    `;
+  }
   return `
       <div class="script-empty-guide">
         <div class="seg-icon">📋</div>
@@ -901,6 +1019,7 @@ function createScriptRenderContext(opts, showPrintPreview) {
 
 function renderScriptContent(container, renderContext) {
   const hasPlays = renderContext.renderSummary.hasPlays;
+  const playerRole = isPlayerScriptRole();
 
   if (script.length === 0) {
     container.innerHTML = "";
@@ -918,8 +1037,8 @@ function renderScriptContent(container, renderContext) {
 
   container.classList.remove("empty");
   container.innerHTML =
-    renderContext.defenseDatalistState.html +
-    renderScriptColumnHeaders() +
+    (playerRole ? "" : renderContext.defenseDatalistState.html) +
+    (playerRole ? "" : renderScriptColumnHeaders()) +
     renderScriptRows(renderContext);
 }
 
@@ -1338,7 +1457,8 @@ function renderScript() {
       : null;
     const opts = getScriptDisplayOptions();
     const showPrintPreview =
-      document.getElementById("scriptShowPrintPreview")?.checked || false;
+      !isPlayerScriptRole() &&
+      (document.getElementById("scriptShowPrintPreview")?.checked || false);
 
     let stageStart = profile ? performance.now() : 0;
     const renderContext = createScriptRenderContext(opts, showPrintPreview);
@@ -1366,6 +1486,9 @@ function renderScript() {
     }
 
     updateScriptStats(renderContext.renderSummary);
+    if (typeof renderPlayerLoadedScriptBar === "function") {
+      renderPlayerLoadedScriptBar();
+    }
     if (profile) {
       profile.statsMs = performance.now() - stageStart;
       stageStart = performance.now();
@@ -1383,7 +1506,7 @@ function renderScript() {
       stageStart = performance.now();
     }
 
-    if (typeof _showScriptPlayContextMenu === "function") {
+    if (typeof _showScriptPlayContextMenu === "function" && !isPlayerScriptRole()) {
       container
         .querySelectorAll(".script-item:not(.period-header)")
         .forEach((el) => {

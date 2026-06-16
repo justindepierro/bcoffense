@@ -720,12 +720,16 @@ function checkPlayPresentationContracts() {
 function checkScriptPlayerPublishingContracts() {
   const html = read("index.html");
   const scriptStorage = read("js/script-storage.js");
+  const scriptRender = read("js/script-render.js");
+  const scriptDisplay = read("js/script-display-options.js");
+  const appEvents = read("js/app-events.js");
   const auth = read("js/auth.js");
   const css = read("css/script.css");
 
   if (
     !/playerVisible:\s*false/.test(scriptStorage) ||
     !/function renderPlayerScriptLauncher\(\)/.test(scriptStorage) ||
+    !/function renderPlayerLoadedScriptBar\(\)/.test(scriptStorage) ||
     !/function loadPublishedPlayerScript\(id,\s*opts = \{\}\)/.test(
       scriptStorage,
     ) ||
@@ -740,11 +744,27 @@ function checkScriptPlayerPublishingContracts() {
   if (
     !/id="playerScriptLauncherSection"/.test(html) ||
     !/id="playerScriptLauncherList"/.test(html) ||
+    !/id="playerScriptNowBar"/.test(html) ||
     !/class="play-list" data-auth-player-hide="true"/.test(html) ||
     !/id="mobileScriptCoachNow"[^>]*data-auth-player-hide="true"/.test(html) ||
-    !/id="savedScriptsSection"[^>]*data-auth-player-hide="true"/.test(html)
+    !/id="savedScriptsSection"[^>]*data-auth-player-hide="true"/.test(html) ||
+    !/Open Swipe View/.test(html)
   ) {
     fail("player script launcher markup is incomplete");
+  }
+  if (
+    !/currentUser\?\.role !== "player"/.test(scriptDisplay) ||
+    !/hidePersonnel:\s*true/.test(scriptDisplay) ||
+    !/layoutMode:\s*"detail"/.test(scriptDisplay) ||
+    !/function renderPlayerScriptPeriodHeader\(/.test(scriptRender) ||
+    !/script-item--player/.test(scriptRender) ||
+    !/Open Rules/.test(scriptRender) ||
+    !/renderPlayerLoadedScriptBar\(\)/.test(scriptRender) ||
+    !/typeof getCurrentAuthUser === "function"[\s\S]*getCurrentAuthUser\(\)\?\.role === "player"[\s\S]*return;/.test(
+      appEvents,
+    )
+  ) {
+    fail("player script role rendering is incomplete");
   }
   [
     "loadPublishedPlayerScript",
@@ -756,6 +776,9 @@ function checkScriptPlayerPublishingContracts() {
   });
   if (
     !/\.player-script-launcher/.test(css) ||
+    !/\.player-script-now/.test(css) ||
+    !/\.script-item--player/.test(css) ||
+    !/\.period-header--player/.test(css) ||
     !/body\[data-auth-role="player"\] \.script-builder/.test(css) ||
     !/\.saved-player-toggle/.test(css)
   ) {

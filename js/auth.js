@@ -371,6 +371,9 @@
     if (typeof renderPlayerScriptLauncher === "function") {
       renderPlayerScriptLauncher();
     }
+    if (typeof requestRenderScript === "function") {
+      requestRenderScript();
+    }
     if (typeof syncPlayPresentationRoleUi === "function") {
       syncPlayPresentationRoleUi();
     }

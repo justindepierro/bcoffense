@@ -522,6 +522,7 @@ function renderPlayerScriptLauncher() {
   const publishedScripts = getPlayerPublishedScripts();
   const currentName = document.getElementById("scriptName")?.value || "";
   const currentDate = document.getElementById("scriptDate")?.value || "";
+  const todayValue = new Date().toISOString().slice(0, 10);
   section.hidden = false;
 
   if (publishedScripts.length === 0) {
@@ -539,11 +540,12 @@ function renderPlayerScriptLauncher() {
       const isCurrent =
         currentName === savedScript.name &&
         currentDate === (savedScript.date || "");
+      const eyebrow = savedScript.date === todayValue ? "Today" : "Published Script";
 
       return `
         <article class="player-script-card${isCurrent ? " is-current" : ""}">
           <div class="player-script-card__body">
-            <div class="player-script-card__eyebrow">Published Script</div>
+            <div class="player-script-card__eyebrow">${escapeHtml(eyebrow)}</div>
             <div class="player-script-card__title-row">
               <div class="player-script-card__title">${escapeHtml(savedScript.name)}</div>
               ${isCurrent ? '<span class="player-script-card__badge">Loaded</span>' : ""}
@@ -558,17 +560,56 @@ function renderPlayerScriptLauncher() {
           <div class="player-script-card__actions">
             <button class="btn btn-sm" data-action="loadPublishedPlayerScript"
               data-arg="${savedScript.id}" title="Load this published script into the script tab">
-              Load Script
+              Open Script
             </button>
             <button class="btn btn-primary btn-sm" data-action="presentPublishedPlayerScript"
-              data-arg="${savedScript.id}" title="Open this published script in player view">
-              Player View
+              data-arg="${savedScript.id}" title="Open this published script in swipe view">
+              Swipe View
             </button>
           </div>
         </article>
       `;
     })
     .join("");
+}
+
+function renderPlayerLoadedScriptBar() {
+  const section = document.getElementById("playerScriptNowBar");
+  const title = document.getElementById("playerScriptNowTitle");
+  const meta = document.getElementById("playerScriptNowMeta");
+  const hint = document.getElementById("playerScriptNowHint");
+  if (!section || !title || !meta || !hint) return;
+
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  const isPlayer = currentUser?.role === "player";
+  const playsForDay = Array.isArray(script) ? script.filter((item) => !item?.isSeparator) : [];
+  if (!isPlayer || playsForDay.length === 0) {
+    section.hidden = true;
+    title.textContent = "";
+    meta.textContent = "";
+    hint.textContent = "";
+    return;
+  }
+
+  const stats = getSavedScriptStats({
+    plays: script,
+    date: document.getElementById("scriptDate")?.value || "",
+    savedAt: "",
+  });
+  section.hidden = false;
+  title.textContent = document.getElementById("scriptName")?.value || "Practice Script";
+  meta.innerHTML = [
+    stats.dateStr,
+    `${stats.playCount} plays`,
+    `${stats.totalReps} reps`,
+    stats.periodCount > 0 ? `${stats.periodCount} periods` : "",
+  ]
+    .filter(Boolean)
+    .map((value) => `<span>${escapeHtml(value)}</span>`)
+    .join("");
+  hint.textContent =
+    "Use Swipe View to move play-to-play and see the rule for your position without coach-only details.";
 }
 
 function loadSavedScriptsList() {
@@ -581,6 +622,7 @@ function loadSavedScriptsList() {
     section.classList.add("hidden");
     loadFullDayScriptList();
     renderPlayerScriptLauncher();
+    renderPlayerLoadedScriptBar();
     return;
   }
 
@@ -634,6 +676,7 @@ function loadSavedScriptsList() {
 
   loadFullDayScriptList();
   renderPlayerScriptLauncher();
+  renderPlayerLoadedScriptBar();
 }
 
 function loadSavedScriptRecord(scriptData, opts = {}) {
@@ -656,11 +699,15 @@ function loadSavedScriptRecord(scriptData, opts = {}) {
     }
 
     restoreSavedScriptWorkspace(scriptData.workspace);
+    if (typeof getCurrentAuthUser === "function" && getCurrentAuthUser()?.role === "player") {
+      collapsedPeriods = new Set();
+    }
     endScriptEditHistoryWindow();
     historyManager.clear("script");
     renderScript();
     renderAvailablePlays();
     renderPlayerScriptLauncher();
+    renderPlayerLoadedScriptBar();
     markScriptClean();
     discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
     if (!opts.skipToast) {
@@ -723,7 +770,7 @@ function presentPublishedPlayerScript(id) {
     setPlayPresentationMode("player");
   }
   openScriptPresentation();
-  showToast(`Opened "${scriptData.name}" in player view`);
+  showToast(`Opened "${scriptData.name}" in swipe view`);
   return true;
 }
 

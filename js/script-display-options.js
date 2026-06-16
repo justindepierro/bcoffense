@@ -48,7 +48,7 @@ function restoreScriptDisplayOptions() {
 }
 
 function getScriptDisplayOptions() {
-  return {
+  const opts = {
     showEmoji: document.getElementById("scriptShowEmoji")?.checked || false,
     useSquares: document.getElementById("scriptUseSquares")?.checked || false,
     underEmoji: document.getElementById("scriptUnderEmoji")?.checked || false,
@@ -79,6 +79,20 @@ function getScriptDisplayOptions() {
     layoutMode:
       document.querySelector('input[name="scriptLayoutMode"]:checked')?.value ||
       "detail",
+  };
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (currentUser?.role !== "player") return opts;
+
+  return {
+    ...opts,
+    showLineCall: true,
+    showOneWordOnly: false,
+    showWbNum: true,
+    hidePersonnel: true,
+    hideLinemen: false,
+    printStyle: false,
+    layoutMode: "detail",
   };
 }
 

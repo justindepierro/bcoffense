@@ -721,6 +721,12 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function _showScriptPlayContextMenu(e, idx) {
   if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
+  if (
+    typeof getCurrentAuthUser === "function" &&
+    getCurrentAuthUser()?.role === "player"
+  ) {
+    return;
+  }
   const play = script[idx];
   const hasCustomTags =
     getSharedCustomTagEntries(play.scriptFormationTags).length > 0 ||
