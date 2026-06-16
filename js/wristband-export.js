@@ -1195,13 +1195,25 @@ function _getWbLogoCardSettings() {
       ? storageManager.get(STORAGE_KEYS.WRISTBAND_LOGO_CARD, {})
       : {};
   const source = stored && typeof stored === "object" ? stored : {};
+  const dataUrl =
+    typeof source.dataUrl === "string" && source.dataUrl.startsWith("data:image/")
+      ? source.dataUrl
+      : "";
+  const originalDataUrl =
+    typeof source.originalDataUrl === "string" && source.originalDataUrl.startsWith("data:image/")
+      ? source.originalDataUrl
+      : dataUrl;
+  const smartDataUrl =
+    typeof source.smartDataUrl === "string" && source.smartDataUrl.startsWith("data:image/")
+      ? source.smartDataUrl
+      : "";
   return {
-    dataUrl:
-      typeof source.dataUrl === "string" && source.dataUrl.startsWith("data:image/")
-        ? source.dataUrl
-        : "",
+    dataUrl,
+    originalDataUrl,
+    smartDataUrl,
     name: String(source.name || "").trim(),
     fit: source.fit === "cover" ? "cover" : "contain",
+    smartCenter: source.smartCenter !== false,
     updatedAt: source.updatedAt || "",
   };
 }
@@ -1213,6 +1225,8 @@ function _saveWbLogoCardSettings(settings) {
     ...current,
     ...settings,
     fit: settings?.fit === "cover" ? "cover" : settings?.fit === "contain" ? "contain" : current.fit,
+    smartCenter:
+      typeof settings?.smartCenter === "boolean" ? settings.smartCenter : current.smartCenter,
     updatedAt: new Date().toISOString(),
   };
   return storageManager.set(STORAGE_KEYS.WRISTBAND_LOGO_CARD, next);
@@ -1261,17 +1275,167 @@ async function _prepareWbLogoDataUrl(file) {
     : canvas.toDataURL(outputType);
 }
 
+function _getWbLogoBackgroundColor(data, width, height) {
+  const samples = [
+    [0, 0],
+    [Math.max(0, width - 1), 0],
+    [0, Math.max(0, height - 1)],
+    [Math.max(0, width - 1), Math.max(0, height - 1)],
+  ];
+  const totals = samples.reduce(
+    (acc, [x, y]) => {
+      const idx = (y * width + x) * 4;
+      const alpha = data[idx + 3] / 255;
+      if (alpha < 0.05) return acc;
+      acc.r += data[idx] * alpha;
+      acc.g += data[idx + 1] * alpha;
+      acc.b += data[idx + 2] * alpha;
+      acc.weight += alpha;
+      return acc;
+    },
+    { r: 0, g: 0, b: 0, weight: 0 },
+  );
+  if (totals.weight <= 0) return { r: 255, g: 255, b: 255 };
+  return {
+    r: totals.r / totals.weight,
+    g: totals.g / totals.weight,
+    b: totals.b / totals.weight,
+  };
+}
+
+function _isWbLogoInkPixel(data, idx, bg) {
+  const alpha = data[idx + 3];
+  if (alpha < 14) return false;
+  if (alpha < 245) return true;
+  const dr = data[idx] - bg.r;
+  const dg = data[idx + 1] - bg.g;
+  const db = data[idx + 2] - bg.b;
+  return Math.sqrt(dr * dr + dg * dg + db * db) > 42;
+}
+
+function _findWbLogoInkBounds(imageData) {
+  const { data, width, height } = imageData;
+  const bg = _getWbLogoBackgroundColor(data, width, height);
+  let minX = width;
+  let minY = height;
+  let maxX = -1;
+  let maxY = -1;
+
+  for (let y = 0; y < height; y += 1) {
+    for (let x = 0; x < width; x += 1) {
+      const idx = (y * width + x) * 4;
+      if (!_isWbLogoInkPixel(data, idx, bg)) continue;
+      minX = Math.min(minX, x);
+      minY = Math.min(minY, y);
+      maxX = Math.max(maxX, x);
+      maxY = Math.max(maxY, y);
+    }
+  }
+
+  if (maxX < minX || maxY < minY) {
+    return { x: 0, y: 0, width, height };
+  }
+  return {
+    x: minX,
+    y: minY,
+    width: maxX - minX + 1,
+    height: maxY - minY + 1,
+  };
+}
+
+async function _createWbSmartCenteredLogoDataUrl(dataUrl) {
+  const image = await _loadWbLogoImage(dataUrl);
+  const sourceWidth = image.naturalWidth || image.width;
+  const sourceHeight = image.naturalHeight || image.height;
+  const sourceCanvas = document.createElement("canvas");
+  sourceCanvas.width = sourceWidth;
+  sourceCanvas.height = sourceHeight;
+  const sourceCtx = sourceCanvas.getContext("2d", { willReadFrequently: true });
+  sourceCtx.clearRect(0, 0, sourceWidth, sourceHeight);
+  sourceCtx.drawImage(image, 0, 0, sourceWidth, sourceHeight);
+
+  const bounds = _findWbLogoInkBounds(
+    sourceCtx.getImageData(0, 0, sourceWidth, sourceHeight),
+  );
+  const targetWidth = 1500;
+  const targetHeight = Math.round(targetWidth * 2.6 / 4.5);
+  const targetCanvas = document.createElement("canvas");
+  targetCanvas.width = targetWidth;
+  targetCanvas.height = targetHeight;
+  const targetCtx = targetCanvas.getContext("2d");
+  targetCtx.clearRect(0, 0, targetWidth, targetHeight);
+
+  const margin = 0.08;
+  const availableWidth = targetWidth * (1 - margin * 2);
+  const availableHeight = targetHeight * (1 - margin * 2);
+  const scale = Math.min(
+    availableWidth / Math.max(1, bounds.width),
+    availableHeight / Math.max(1, bounds.height),
+  );
+  const drawWidth = bounds.width * scale;
+  const drawHeight = bounds.height * scale;
+  const drawX = (targetWidth - drawWidth) / 2;
+  const drawY = (targetHeight - drawHeight) / 2;
+
+  targetCtx.imageSmoothingEnabled = true;
+  targetCtx.imageSmoothingQuality = "high";
+  targetCtx.drawImage(
+    sourceCanvas,
+    bounds.x,
+    bounds.y,
+    bounds.width,
+    bounds.height,
+    drawX,
+    drawY,
+    drawWidth,
+    drawHeight,
+  );
+  return targetCanvas.toDataURL("image/png");
+}
+
+function _getWbLogoDisplayDataUrl(settings) {
+  if (settings.smartCenter && settings.smartDataUrl) return settings.smartDataUrl;
+  return settings.dataUrl || settings.originalDataUrl || "";
+}
+
 function _buildWbLogoPrintCard(settings = _getWbLogoCardSettings()) {
-  if (!settings.dataUrl) {
+  const logoDataUrl = _getWbLogoDisplayDataUrl(settings);
+  if (!logoDataUrl) {
     return `<div class="wb-logo-print-card wb-logo-empty-card">
       <span>Upload Logo</span>
     </div>`;
   }
   const fit = settings.fit === "cover" ? "cover" : "contain";
   const name = settings.name || "School logo";
-  return `<div class="wb-logo-print-card wb-logo-fit-${fit}">
-    <img src="${escapeHtml(settings.dataUrl)}" alt="${escapeHtml(name)}" />
+  const smartClass = settings.smartCenter ? " wb-logo-smart-centered" : "";
+  return `<div class="wb-logo-print-card wb-logo-fit-${fit}${smartClass}">
+    <img src="${escapeHtml(logoDataUrl)}" alt="${escapeHtml(name)}" />
   </div>`;
+}
+
+async function _refreshWbLogoSmartDataUrl(opts = {}) {
+  const settings = _getWbLogoCardSettings();
+  const sourceDataUrl = settings.originalDataUrl || settings.dataUrl;
+  if (!settings.smartCenter || !sourceDataUrl) return false;
+  if (!opts.force && settings.smartDataUrl) return true;
+  try {
+    const smartDataUrl = await _createWbSmartCenteredLogoDataUrl(sourceDataUrl);
+    const saved = _saveWbLogoCardSettings({
+      smartDataUrl,
+      dataUrl: sourceDataUrl,
+      originalDataUrl: sourceDataUrl,
+    });
+    if (saved) renderWbLogoCardModal();
+    return saved;
+  } catch (err) {
+    console.warn("Could not smart-center logo:", err);
+    if (opts.showToast) {
+      showToast("Could not auto-center that logo. Printing the original image.", {
+        type: "warning",
+      });
+    }
+    return false;
+  }
 }
 
 function renderWbLogoCardModal() {
@@ -1289,7 +1453,9 @@ function renderWbLogoCardModal() {
   document.querySelectorAll('input[name="wbLogoCardFit"]').forEach((input) => {
     input.checked = input.value === settings.fit;
   });
-  const hasLogo = Boolean(settings.dataUrl);
+  const smartToggle = document.getElementById("wbLogoSmartCenter");
+  if (smartToggle) smartToggle.checked = settings.smartCenter;
+  const hasLogo = Boolean(_getWbLogoDisplayDataUrl(settings));
   ["wbLogoPrintOneBtn", "wbLogoPrintThreeBtn"].forEach((id) => {
     const btn = document.getElementById(id);
     if (btn) btn.disabled = !hasLogo;
@@ -1298,6 +1464,9 @@ function renderWbLogoCardModal() {
 
 function openWbLogoCardModal() {
   renderWbLogoCardModal();
+  _refreshWbLogoSmartDataUrl().catch((err) => {
+    console.warn("openWbLogoCardModal smart-center refresh failed:", err);
+  });
   const overlay = setWristbandOverlayVisibility(
     "wbLogoCardOverlay",
     true,
@@ -1328,13 +1497,17 @@ async function handleWbLogoCardUpload(event) {
     const dataUrl = await _prepareWbLogoDataUrl(file);
     const saved = _saveWbLogoCardSettings({
       dataUrl,
+      originalDataUrl: dataUrl,
+      smartDataUrl: "",
       name: file.name || "School logo",
+      smartCenter: true,
     });
     if (!saved) {
       showToast("Logo could not be saved. Try a smaller image.", { type: "error" });
       return;
     }
     renderWbLogoCardModal();
+    await _refreshWbLogoSmartDataUrl({ force: true, showToast: true });
     showToast("Logo saved for wristband printing.", { type: "success" });
   } catch (err) {
     console.error("handleWbLogoCardUpload error:", err);
@@ -1347,6 +1520,17 @@ async function handleWbLogoCardUpload(event) {
 function setWbLogoCardFit(value) {
   _saveWbLogoCardSettings({ fit: value === "cover" ? "cover" : "contain" });
   renderWbLogoCardModal();
+}
+
+function setWbLogoSmartCenter() {
+  const smartCenter = Boolean(document.getElementById("wbLogoSmartCenter")?.checked);
+  _saveWbLogoCardSettings({ smartCenter });
+  renderWbLogoCardModal();
+  if (smartCenter) {
+    _refreshWbLogoSmartDataUrl({ showToast: true }).catch((err) => {
+      console.warn("setWbLogoSmartCenter refresh failed:", err);
+    });
+  }
 }
 
 async function clearWbLogoCard() {

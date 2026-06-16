@@ -683,6 +683,7 @@
   box-sizing: border-box;
   width: 100%;
   height: 100%;
+  object-position: center center;
 }
 
 .wb-logo-fit-contain img {
@@ -693,6 +694,10 @@
 .wb-logo-fit-cover img {
   padding: 0;
   object-fit: cover;
+}
+
+.wb-logo-print-card.wb-logo-smart-centered img {
+  padding: 0;
 }
 
 .wb-logo-empty-card {
@@ -2319,6 +2324,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .wb-logo-print-page .wb-logo-print-card img {
     width: 100% !important;
     height: 100% !important;
+    object-position: center center !important;
   }
 
   /* "Print 1" — 3 identical copies stacked */

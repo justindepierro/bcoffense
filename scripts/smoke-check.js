@@ -933,6 +933,8 @@ function checkWristbandWorkspaceContracts() {
     !/function _getWbPrintScriptPageMeta\(/.test(playerRuntime) ||
     !/function openWbLogoCardModal\(/.test(playerRuntime) ||
     !/function handleWbLogoCardUpload\(/.test(playerRuntime) ||
+    !/function setWbLogoSmartCenter\(/.test(playerRuntime) ||
+    !/function _createWbSmartCenteredLogoDataUrl\(/.test(playerRuntime) ||
     !/function printWbLogoCardThree\(/.test(playerRuntime) ||
     !/STORAGE_KEYS\.WRISTBAND_LOGO_CARD/.test(playerRuntime) ||
     !/WRISTBAND_LOGO_CARD:\s*"wristbandLogoCard"/.test(appStorage) ||
@@ -956,6 +958,7 @@ function checkWristbandWorkspaceContracts() {
     !/\.wb-print-preview-canvas \.pc-print-card-wrap/.test(css) ||
     !/\.wb-logo-card-modal/.test(css) ||
     !/\.wb-logo-print-card/.test(css) ||
+    !/\.wb-logo-print-card\.wb-logo-smart-centered img/.test(css) ||
     !/\.wb-logo-print-page \.wb-logo-print-card/.test(css)
   ) {
     fail("wristband mobile view or print preview styling is incomplete");
