@@ -104,6 +104,7 @@ const STORAGE_KEYS = {
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
   WRISTBAND_FAVORITES: "wristbandFavorites",
   WRISTBAND_RECENT_PLAYS: "wristbandRecentPlays",
+  WRISTBAND_LOGO_CARD: "wristbandLogoCard",
   TEAM_ROSTER: "teamRoster",
   TEAM_NAME: "teamName",
   TEAM_PERSONNEL_PACKAGES: "teamPersonnelPackages",

@@ -1189,6 +1189,214 @@ function _triggerPlayerPrint(printContainer, printContent, html, title, orientat
   }, 100);
 }
 
+function _getWbLogoCardSettings() {
+  const stored =
+    typeof storageManager !== "undefined" && typeof STORAGE_KEYS !== "undefined"
+      ? storageManager.get(STORAGE_KEYS.WRISTBAND_LOGO_CARD, {})
+      : {};
+  const source = stored && typeof stored === "object" ? stored : {};
+  return {
+    dataUrl:
+      typeof source.dataUrl === "string" && source.dataUrl.startsWith("data:image/")
+        ? source.dataUrl
+        : "",
+    name: String(source.name || "").trim(),
+    fit: source.fit === "cover" ? "cover" : "contain",
+    updatedAt: source.updatedAt || "",
+  };
+}
+
+function _saveWbLogoCardSettings(settings) {
+  if (typeof storageManager === "undefined" || typeof STORAGE_KEYS === "undefined") return false;
+  const current = _getWbLogoCardSettings();
+  const next = {
+    ...current,
+    ...settings,
+    fit: settings?.fit === "cover" ? "cover" : settings?.fit === "contain" ? "contain" : current.fit,
+    updatedAt: new Date().toISOString(),
+  };
+  return storageManager.set(STORAGE_KEYS.WRISTBAND_LOGO_CARD, next);
+}
+
+function _readWbLogoFileAsDataUrl(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(String(reader.result || ""));
+    reader.onerror = () => reject(reader.error || new Error("Could not read logo file."));
+    reader.readAsDataURL(file);
+  });
+}
+
+function _loadWbLogoImage(dataUrl) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = () => reject(new Error("Could not load logo image."));
+    img.src = dataUrl;
+  });
+}
+
+async function _prepareWbLogoDataUrl(file) {
+  const dataUrl = await _readWbLogoFileAsDataUrl(file);
+  const image = await _loadWbLogoImage(dataUrl);
+  const maxSide = 2200;
+  const largestSide = Math.max(image.naturalWidth || image.width, image.naturalHeight || image.height);
+  if (file.size <= 1500000 && largestSide <= maxSide) {
+    return dataUrl;
+  }
+
+  const scale = Math.min(1, maxSide / Math.max(1, largestSide));
+  const width = Math.max(1, Math.round((image.naturalWidth || image.width) * scale));
+  const height = Math.max(1, Math.round((image.naturalHeight || image.height) * scale));
+  const canvas = document.createElement("canvas");
+  canvas.width = width;
+  canvas.height = height;
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0, 0, width, height);
+  ctx.drawImage(image, 0, 0, width, height);
+
+  const outputType = file.type === "image/jpeg" ? "image/jpeg" : "image/png";
+  return outputType === "image/jpeg"
+    ? canvas.toDataURL(outputType, 0.88)
+    : canvas.toDataURL(outputType);
+}
+
+function _buildWbLogoPrintCard(settings = _getWbLogoCardSettings()) {
+  if (!settings.dataUrl) {
+    return `<div class="wb-logo-print-card wb-logo-empty-card">
+      <span>Upload Logo</span>
+    </div>`;
+  }
+  const fit = settings.fit === "cover" ? "cover" : "contain";
+  const name = settings.name || "School logo";
+  return `<div class="wb-logo-print-card wb-logo-fit-${fit}">
+    <img src="${escapeHtml(settings.dataUrl)}" alt="${escapeHtml(name)}" />
+  </div>`;
+}
+
+function renderWbLogoCardModal() {
+  const settings = _getWbLogoCardSettings();
+  const preview = document.getElementById("wbLogoCardPreview");
+  const meta = document.getElementById("wbLogoCardMeta");
+  if (preview) {
+    preview.innerHTML = _buildWbLogoPrintCard(settings);
+  }
+  if (meta) {
+    meta.textContent = settings.dataUrl
+      ? `${settings.name || "Saved logo"} ready to print at ${WRISTBAND_PRINT_SIZE_LABEL}.`
+      : "No logo uploaded yet.";
+  }
+  document.querySelectorAll('input[name="wbLogoCardFit"]').forEach((input) => {
+    input.checked = input.value === settings.fit;
+  });
+  const hasLogo = Boolean(settings.dataUrl);
+  ["wbLogoPrintOneBtn", "wbLogoPrintThreeBtn"].forEach((id) => {
+    const btn = document.getElementById(id);
+    if (btn) btn.disabled = !hasLogo;
+  });
+}
+
+function openWbLogoCardModal() {
+  renderWbLogoCardModal();
+  const overlay = setWristbandOverlayVisibility(
+    "wbLogoCardOverlay",
+    true,
+    { visibilityClass: "show", openClass: true },
+  );
+  if (overlay) trapFocus(overlay);
+}
+
+function closeWbLogoCardModal() {
+  setWristbandOverlayVisibility(
+    "wbLogoCardOverlay",
+    false,
+    { visibilityClass: "show", openClass: true },
+  );
+}
+
+async function handleWbLogoCardUpload(event) {
+  const input = event?.target;
+  const file = input?.files?.[0];
+  if (!file) return;
+  if (!file.type || !file.type.startsWith("image/")) {
+    showToast("Choose a PNG, JPG, or other image file.", { type: "warning" });
+    input.value = "";
+    return;
+  }
+
+  try {
+    const dataUrl = await _prepareWbLogoDataUrl(file);
+    const saved = _saveWbLogoCardSettings({
+      dataUrl,
+      name: file.name || "School logo",
+    });
+    if (!saved) {
+      showToast("Logo could not be saved. Try a smaller image.", { type: "error" });
+      return;
+    }
+    renderWbLogoCardModal();
+    showToast("Logo saved for wristband printing.", { type: "success" });
+  } catch (err) {
+    console.error("handleWbLogoCardUpload error:", err);
+    showToast("Could not load that logo image.", { type: "error" });
+  } finally {
+    input.value = "";
+  }
+}
+
+function setWbLogoCardFit(value) {
+  _saveWbLogoCardSettings({ fit: value === "cover" ? "cover" : "contain" });
+  renderWbLogoCardModal();
+}
+
+async function clearWbLogoCard() {
+  const settings = _getWbLogoCardSettings();
+  if (!settings.dataUrl) return;
+  const ok = await showConfirm("Remove the saved logo card image?", {
+    title: "Remove Logo Card",
+    icon: "🖼️",
+    confirmText: "Remove",
+    danger: true,
+  });
+  if (!ok) return;
+  storageManager.remove(STORAGE_KEYS.WRISTBAND_LOGO_CARD);
+  renderWbLogoCardModal();
+}
+
+function _printWbLogoCard(copyMode = "one") {
+  const settings = _getWbLogoCardSettings();
+  if (!settings.dataUrl) {
+    showToast("Upload a logo before printing a logo card.", { type: "warning" });
+    openWbLogoCardModal();
+    return;
+  }
+
+  const printContainer = document.getElementById("playerCardPrint");
+  const printContent = document.getElementById("playerCardPrintContent");
+  if (!printContainer || !printContent) return;
+  const cardHtml = _buildWbLogoPrintCard(settings);
+  const pageClass = copyMode === "three" ? "wb-logo-print-page" : "pc-print-single wb-logo-print-page";
+  const pageBody =
+    copyMode === "three"
+      ? `${cardHtml}${cardHtml}${cardHtml}`
+      : cardHtml;
+  _triggerPlayerPrint(
+    printContainer,
+    printContent,
+    `<div class="pc-print-page ${pageClass}">${pageBody}</div>`,
+    "Wristband Logo Card",
+    "portrait",
+  );
+}
+
+function printWbLogoCardOne() {
+  _printWbLogoCard("one");
+}
+
+function printWbLogoCardThree() {
+  _printWbLogoCard("three");
+}
+
 function printPlayerCards() {
   // Now routes to printOnePlayerCard for backward compat
   printOnePlayerCard();

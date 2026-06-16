@@ -868,6 +868,8 @@ function checkWristbandWorkspaceContracts() {
   const playerRuntime = read("js/wristband-export.js");
   const css = read("css/wristband.css");
   const responsiveCss = read("css/responsive.css");
+  const appStorage = read("js/storage.js");
+  const cloudSync = read("js/cloud-sync.js");
 
   if (
     !/class="wb-page-header"/.test(html) ||
@@ -879,7 +881,9 @@ function checkWristbandWorkspaceContracts() {
     !/id="wbActiveSaveTitle"/.test(html) ||
     !/id="wbCardViewport"/.test(html) ||
     !/id="wbSavedManagerOverlay"/.test(html) ||
-    !/id="wbPrintPreviewOverlay"/.test(html)
+    !/id="wbPrintPreviewOverlay"/.test(html) ||
+    !/id="wbLogoCardOverlay"/.test(html) ||
+    !/data-action="openWbLogoCardModal"/.test(html)
   ) {
     fail("wristband workspace hierarchy or progressive controls are incomplete");
   }
@@ -927,6 +931,12 @@ function checkWristbandWorkspaceContracts() {
     !/function executeWristbandPrintPreview\(/.test(playerRuntime) ||
     !/function _getWbDefaultPrintCardIndexes\(/.test(playerRuntime) ||
     !/function _getWbPrintScriptPageMeta\(/.test(playerRuntime) ||
+    !/function openWbLogoCardModal\(/.test(playerRuntime) ||
+    !/function handleWbLogoCardUpload\(/.test(playerRuntime) ||
+    !/function printWbLogoCardThree\(/.test(playerRuntime) ||
+    !/STORAGE_KEYS\.WRISTBAND_LOGO_CARD/.test(playerRuntime) ||
+    !/WRISTBAND_LOGO_CARD:\s*"wristbandLogoCard"/.test(appStorage) ||
+    !/STORAGE_KEYS\.WRISTBAND_LOGO_CARD/.test(cloudSync) ||
     !/id="wbPrintCardLegend"/.test(html) ||
     !/data-action="selectCurrentWbPrintCard"/.test(html) ||
     !/_executeClassicWristbandPrint\(cardIndexes, "one-per-page"\)/.test(
@@ -943,7 +953,10 @@ function checkWristbandWorkspaceContracts() {
     !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
     !/\.wb-print-preview-layout/.test(css) ||
     !/\.wb-print-preview-modal\s*\{[\s\S]*?max-width:\s*min\(1120px/.test(css) ||
-    !/\.wb-print-preview-canvas \.pc-print-card-wrap/.test(css)
+    !/\.wb-print-preview-canvas \.pc-print-card-wrap/.test(css) ||
+    !/\.wb-logo-card-modal/.test(css) ||
+    !/\.wb-logo-print-card/.test(css) ||
+    !/\.wb-logo-print-page \.wb-logo-print-card/.test(css)
   ) {
     fail("wristband mobile view or print preview styling is incomplete");
   }
