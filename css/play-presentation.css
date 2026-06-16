@@ -14,6 +14,10 @@ body.play-presentation-open {
   min-height: 100vh;
   color: var(--color-text);
   background: var(--color-bg-body);
+  font-family: var(--font-sans);
+  font-variant-numeric: tabular-nums;
+  text-rendering: optimizeLegibility;
+  -webkit-font-smoothing: antialiased;
   overflow: hidden;
 }
 
@@ -59,6 +63,7 @@ body.play-presentation-open {
   overflow: hidden;
   font-size: var(--font-size-sm);
   font-weight: 900;
+  letter-spacing: 0.01em;
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -71,6 +76,7 @@ body.play-presentation-open {
   background: var(--color-text-inverse);
   font-size: var(--font-size-xs);
   font-weight: 900;
+  line-height: 1.1;
 }
 
 .pp-mode-switcher {
@@ -92,6 +98,7 @@ body.play-presentation-open {
   font: inherit;
   font-size: var(--font-size-xs);
   font-weight: 900;
+  letter-spacing: 0.01em;
   cursor: pointer;
 }
 
@@ -141,6 +148,9 @@ body.play-presentation-open {
   height: 100%;
   min-height: 0;
   padding: clamp(12px, 2vw, 28px);
+  background:
+    radial-gradient(circle at top left, rgb(255 255 255 / 72%), transparent 28rem),
+    var(--color-bg-body);
   box-sizing: border-box;
 }
 
@@ -307,6 +317,7 @@ body.play-presentation-open {
   color: var(--color-text);
   font-size: 3.5rem;
   font-weight: 900;
+  letter-spacing: 0;
   line-height: 1.06;
   overflow-wrap: anywhere;
 }
@@ -325,6 +336,7 @@ body.play-presentation-open {
   background: var(--color-surface);
   font-size: var(--font-size-base);
   font-weight: 800;
+  line-height: 1.1;
 }
 
 .pp-one-word {
@@ -338,6 +350,7 @@ body.play-presentation-open {
   background: var(--color-primary-light);
   font-size: 2rem;
   font-weight: 900;
+  letter-spacing: 0;
 }
 
 .pp-one-word span {
@@ -349,7 +362,7 @@ body.play-presentation-open {
 
 .pp-player-panel {
   display: grid;
-  grid-template-rows: auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
   gap: clamp(10px, 1.5vh, 18px);
   overflow: hidden;
 }
@@ -360,6 +373,7 @@ body.play-presentation-open {
   color: var(--color-text);
   font-size: 2rem;
   font-weight: 900;
+  letter-spacing: 0;
   line-height: 1.08;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -467,8 +481,7 @@ body.play-presentation-open {
   overflow-wrap: anywhere;
 }
 
-.pp-resp-notes,
-.pp-coach-notes {
+.pp-resp-notes {
   padding: 10px 14px;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
@@ -482,33 +495,155 @@ body.play-presentation-open {
 }
 
 .pp-layout-coaches {
-  grid-template-columns: minmax(320px, 0.8fr) minmax(0, 1.2fr);
-  gap: clamp(14px, 2vw, 28px);
+  grid-template-columns: minmax(340px, 0.78fr) minmax(0, 1.22fr);
+  gap: clamp(16px, 2vw, 30px);
 }
 
 .pp-coach-visual {
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
-  gap: var(--space-md);
+  gap: clamp(10px, 1.6vh, 18px);
 }
 
 .pp-coach-info {
   display: grid;
   align-content: start;
-  gap: var(--space-md);
+  gap: clamp(10px, 1.5vh, 16px);
   overflow: auto;
-  padding-right: var(--space-xs);
+  padding-right: var(--space-sm);
+  scrollbar-gutter: stable;
+}
+
+.pp-coach-section {
+  display: grid;
+  gap: var(--space-sm);
+  padding: clamp(10px, 1.4vw, 16px);
+  border: 1px solid var(--color-border-light);
+  border-left: 5px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.pp-coach-section-situation {
+  border-left-color: var(--color-info);
+}
+
+.pp-coach-section-defense {
+  border-left-color: var(--color-warning);
+}
+
+.pp-coach-section-tools {
+  border-left-color: var(--color-accent);
+}
+
+.pp-coach-section-rules {
+  border-left-color: var(--color-success);
+}
+
+.pp-coach-section-notes {
+  border-left-color: var(--color-warning);
+  background: linear-gradient(180deg, var(--color-warning-light), var(--color-surface));
+}
+
+.pp-coach-section-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.pp-coach-section-head h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: 950;
+  letter-spacing: 0;
+  line-height: 1.1;
+}
+
+.pp-coach-section-head span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  line-height: 1.2;
+  text-align: right;
+  text-transform: uppercase;
 }
 
 .pp-detail-grid,
 .pp-assignment-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-sm);
+  grid-template-columns: repeat(2, minmax(150px, 1fr));
+  gap: 8px;
 }
 
 .pp-detail-card,
 .pp-assignment-card {
+  display: grid;
+  gap: 5px;
+  min-width: 0;
+  padding: 9px 11px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+}
+
+.pp-detail-label {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  letter-spacing: 0.09em;
+  line-height: 1.15;
+  text-transform: uppercase;
+}
+
+.pp-detail-value {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  letter-spacing: 0;
+  line-height: 1.28;
+}
+
+.pp-assignment-card {
+  grid-template-columns: 36px minmax(0, 1fr);
+  align-items: start;
+  min-height: 58px;
+}
+
+.pp-assignment-card strong {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  color: var(--color-primary);
+  background: var(--color-primary-light);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  letter-spacing: 0;
+}
+
+.pp-assignment-card span {
+  min-width: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  line-height: 1.28;
+  overflow-wrap: anywhere;
+}
+
+.pp-coach-note-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.pp-coach-note-card {
   display: grid;
   gap: 4px;
   padding: 10px 12px;
@@ -517,47 +652,20 @@ body.play-presentation-open {
   background: var(--color-surface);
 }
 
-.pp-detail-label {
-  color: var(--color-primary);
+.pp-coach-note-card strong {
+  color: var(--color-text);
   font-size: var(--font-size-xs);
-  font-weight: 900;
-  letter-spacing: 0.06em;
+  font-weight: 950;
+  letter-spacing: 0.04em;
   text-transform: uppercase;
 }
 
-.pp-detail-value {
-  color: var(--color-text);
-  font-size: var(--font-size-base);
-  font-weight: 750;
-  line-height: 1.25;
-}
-
-.pp-assignment-section h3 {
-  margin: 0 0 var(--space-xs);
-  font-size: var(--font-size-base);
-}
-
-.pp-assignment-card {
-  grid-template-columns: 40px minmax(0, 1fr);
-  align-items: start;
-}
-
-.pp-assignment-card strong {
-  color: var(--color-primary);
-  font-size: var(--font-size-sm);
-}
-
-.pp-assignment-card span,
-.pp-coach-notes {
-  line-height: 1.3;
-}
-
-.pp-coach-notes p {
+.pp-coach-note-card p {
   margin: 0;
-}
-
-.pp-coach-notes p + p {
-  margin-top: var(--space-xs);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.38;
 }
 
 .pp-footer {
@@ -737,6 +845,31 @@ body.play-presentation-open {
 
   .pp-position-lock-row {
     grid-template-columns: 1fr;
+  }
+
+  .pp-coach-info {
+    gap: var(--space-xs);
+    padding-right: 0;
+  }
+
+  .pp-coach-call {
+    white-space: normal;
+  }
+
+  .pp-coach-section {
+    gap: var(--space-xs);
+    padding: var(--space-sm);
+    border-left-width: 4px;
+  }
+
+  .pp-coach-section-head {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 2px;
+  }
+
+  .pp-coach-section-head span {
+    text-align: left;
   }
 
   .pp-call {

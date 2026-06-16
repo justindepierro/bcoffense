@@ -666,6 +666,23 @@ function checkPlayPresentationContracts() {
     fail("player presentation position-lock contracts are incomplete");
   }
   if (
+    !/function getPlayPresentationCoachSection\(title, subtitle, rows, className\)/.test(
+      presenter,
+    ) ||
+    !/function getPlayPresentationCoachNotesMarkup\(play\)/.test(presenter) ||
+    !/pp-coach-section-call/.test(presenter) ||
+    !/pp-coach-section-situation/.test(presenter) ||
+    !/pp-coach-section-defense/.test(presenter) ||
+    !/pp-coach-section-tools/.test(presenter) ||
+    !/pp-coach-section-rules/.test(presenter) ||
+    !/pp-coach-note-list/.test(presenter) ||
+    !/\.pp-coach-section\b/.test(css) ||
+    !/\.pp-coach-section-head/.test(css) ||
+    !/\.pp-coach-note-card/.test(css)
+  ) {
+    fail("coach presentation sections are not separated into digestible panels");
+  }
+  if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
     !/@media \(orientation: portrait\)/.test(css) ||
     !/\.pp-layout-minimum\s*\{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/s.test(

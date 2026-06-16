@@ -816,6 +816,52 @@ function getPlayPresentationDetailRows(rows) {
     .join("");
 }
 
+function getPlayPresentationCoachSection(title, subtitle, rows, className) {
+  const detailMarkup = getPlayPresentationDetailRows(rows);
+  if (!detailMarkup) return "";
+  const sectionClass = className ? ` ${className}` : "";
+
+  return `
+    <section class="pp-coach-section${sectionClass}" aria-label="${escapeHtml(title)}">
+      <div class="pp-coach-section-head">
+        <h3>${escapeHtml(title)}</h3>
+        ${subtitle ? `<span>${escapeHtml(subtitle)}</span>` : ""}
+      </div>
+      <div class="pp-detail-grid">${detailMarkup}</div>
+    </section>
+  `;
+}
+
+function getPlayPresentationCoachNotesMarkup(play) {
+  const notes = [
+    { label: "Responsibility Notes", value: play.respNotes },
+    { label: "General Notes", value: play.notes },
+  ].filter((note) => String(note.value || "").trim());
+
+  if (notes.length === 0) return "";
+
+  return `
+    <section class="pp-coach-section pp-coach-section-notes" aria-label="Coach notes">
+      <div class="pp-coach-section-head">
+        <h3>Coach Notes</h3>
+        <span>Reminders and teaching points</span>
+      </div>
+      <div class="pp-coach-note-list">
+        ${notes
+          .map(
+            (note) => `
+              <div class="pp-coach-note-card">
+                <strong>${escapeHtml(note.label)}</strong>
+                <p>${escapeHtml(note.value)}</p>
+              </div>
+            `,
+          )
+          .join("")}
+      </div>
+    </section>
+  `;
+}
+
 function getPlayPresentationCoachMarkup(item) {
   const play = item.play;
   const responsibilityMarkup = getPlayPresentationPositions()
@@ -829,12 +875,17 @@ function getPlayPresentationCoachMarkup(item) {
       `,
     )
     .join("");
-  const detailRows = [
+  const callRows = [
     {
-      label: "Structure",
+      label: "Personnel / Type",
       values: [
         play.personnel,
         play.type,
+      ],
+    },
+    {
+      label: "Formation",
+      values: [
         play.formation,
         [play.formTag1, play.formTag2].filter(Boolean).join(", "),
       ],
@@ -844,36 +895,62 @@ function getPlayPresentationCoachMarkup(item) {
       values: [play.under, play.back, play.shift, play.motion],
     },
     {
-      label: "Call",
+      label: "Protection",
+      values: [play.protection, play.lineCall],
+    },
+    {
+      label: "Play Call",
       values: [
-        play.protection,
-        play.lineCall,
         play.play,
         [play.playTag1, play.playTag2].filter(Boolean).join(", "),
         play.basePlay,
       ],
     },
+  ];
+  const situationRows = [
     {
-      label: "Situation",
+      label: "Down / Distance",
+      values: [play.preferredDown, play.preferredDistance],
+    },
+    {
+      label: "Field / Hash",
       values: [
         play.hash || play.preferredHash,
-        play.preferredDown,
-        play.preferredDistance,
         play.preferredSituation,
         play.preferredFieldPosition,
-        play.tempo,
       ],
     },
     {
-      label: "Defense",
+      label: "Tempo / Word",
+      values: [
+        play.tempo,
+        play.oneWord,
+      ],
+    },
+  ];
+  const defenseRows = [
+    {
+      label: "Front / Structure",
       values: [
         play.defFront || play.practiceFront,
         play.practiceDefense,
+      ],
+    },
+    {
+      label: "Coverage",
+      values: [
         play.defCoverage || play.practiceCoverage,
+      ],
+    },
+    {
+      label: "Pressure",
+      values: [
         play.defBlitz || play.practiceBlitz,
         play.defStunt || play.practiceStunt,
       ],
     },
+  ];
+  const coachingRows = [
     {
       label: "Key Players",
       values: [
@@ -895,6 +972,32 @@ function getPlayPresentationCoachMarkup(item) {
       values: [play.deadVs, play.opponent],
     },
   ];
+  const coachSections = [
+    getPlayPresentationCoachSection(
+      "Call Structure",
+      "Formation, motion, and call mechanics",
+      callRows,
+      "pp-coach-section-call",
+    ),
+    getPlayPresentationCoachSection(
+      "Situation",
+      "When and where this fits",
+      situationRows,
+      "pp-coach-section-situation",
+    ),
+    getPlayPresentationCoachSection(
+      "Defensive Look",
+      "Practice picture and defensive answers",
+      defenseRows,
+      "pp-coach-section-defense",
+    ),
+    getPlayPresentationCoachSection(
+      "Coaching Points",
+      "Keys, complements, alerts, and targets",
+      coachingRows,
+      "pp-coach-section-tools",
+    ),
+  ].join("");
 
   return `
     <div class="pp-layout pp-layout-coaches">
@@ -908,24 +1011,20 @@ function getPlayPresentationCoachMarkup(item) {
         ${getPlayPresentationDiagramMarkup(play)}
       </section>
       <section class="pp-coach-info">
-        <div class="pp-detail-grid">${getPlayPresentationDetailRows(detailRows)}</div>
-        <div class="pp-assignment-section">
-          <h3>Player Rules</h3>
+        ${coachSections}
+        <section class="pp-coach-section pp-coach-section-rules" aria-label="Player rules">
+          <div class="pp-coach-section-head">
+            <h3>Player Rules</h3>
+            <span>Position-by-position assignments</span>
+          </div>
           <div class="pp-assignment-grid">
             ${
               responsibilityMarkup ||
               '<div class="pp-empty-copy">No player rules entered.</div>'
             }
           </div>
-        </div>
-        ${
-          play.respNotes || play.notes
-            ? `<div class="pp-coach-notes">
-                ${play.respNotes ? `<p><strong>Responsibility Notes:</strong> ${escapeHtml(play.respNotes)}</p>` : ""}
-                ${play.notes ? `<p><strong>Notes:</strong> ${escapeHtml(play.notes)}</p>` : ""}
-              </div>`
-            : ""
-        }
+        </section>
+        ${getPlayPresentationCoachNotesMarkup(play)}
       </section>
     </div>
   `;
