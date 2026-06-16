@@ -683,6 +683,17 @@ function checkPlayPresentationContracts() {
     fail("coach presentation sections are not separated into digestible panels");
   }
   if (
+    !/function getAllowedPlayPresentationModes\(\)/.test(presenter) ||
+    !/function syncPlayPresentationRoleUi\(\)/.test(presenter) ||
+    !/1 Minimum · 2 Plays/.test(presenter) ||
+    !/data-presentation-mode="coaches"[^>]*data-auth-player-hide="true"/.test(
+      html,
+    ) ||
+    !/id="playPresentationFooterHint"/.test(html)
+  ) {
+    fail("player presentation role limits are incomplete");
+  }
+  if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
     !/@media \(orientation: portrait\)/.test(css) ||
     !/\.pp-layout-minimum\s*\{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/s.test(
@@ -704,6 +715,54 @@ function checkPlayPresentationContracts() {
   }
 
   console.log("play presentation contracts ok");
+}
+
+function checkScriptPlayerPublishingContracts() {
+  const html = read("index.html");
+  const scriptStorage = read("js/script-storage.js");
+  const auth = read("js/auth.js");
+  const css = read("css/script.css");
+
+  if (
+    !/playerVisible:\s*false/.test(scriptStorage) ||
+    !/function renderPlayerScriptLauncher\(\)/.test(scriptStorage) ||
+    !/function loadPublishedPlayerScript\(id,\s*opts = \{\}\)/.test(
+      scriptStorage,
+    ) ||
+    !/function presentPublishedPlayerScript\(id\)/.test(scriptStorage) ||
+    !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptStorage) ||
+    !/data-onchange="togglePlayerScriptAccess"/.test(scriptStorage) ||
+    !/data-action="loadPublishedPlayerScript"/.test(scriptStorage) ||
+    !/data-action="presentPublishedPlayerScript"/.test(scriptStorage)
+  ) {
+    fail("player script publishing runtime is incomplete");
+  }
+  if (
+    !/id="playerScriptLauncherSection"/.test(html) ||
+    !/id="playerScriptLauncherList"/.test(html) ||
+    !/class="play-list" data-auth-player-hide="true"/.test(html) ||
+    !/id="mobileScriptCoachNow"[^>]*data-auth-player-hide="true"/.test(html) ||
+    !/id="savedScriptsSection"[^>]*data-auth-player-hide="true"/.test(html)
+  ) {
+    fail("player script launcher markup is incomplete");
+  }
+  [
+    "loadPublishedPlayerScript",
+    "presentPublishedPlayerScript",
+  ].forEach((action) => {
+    if (!new RegExp(`["']${action}["']`).test(auth)) {
+      fail(`read-only roles cannot use player script action ${action}`);
+    }
+  });
+  if (
+    !/\.player-script-launcher/.test(css) ||
+    !/body\[data-auth-role="player"\] \.script-builder/.test(css) ||
+    !/\.saved-player-toggle/.test(css)
+  ) {
+    fail("player script launcher styles are incomplete");
+  }
+
+  console.log("player script publishing contracts ok");
 }
 
 function checkWristbandWorkspaceContracts() {
@@ -1220,6 +1279,7 @@ checkHistoryContracts();
 checkConflictContracts();
 checkWristbandTypography();
 checkPlayPresentationContracts();
+checkScriptPlayerPublishingContracts();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

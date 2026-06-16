@@ -20,6 +20,55 @@ let playPresentationState = {
 let playPresentationDiagramResizeObserver = null;
 let playPresentationDiagramResizeFrame = 0;
 
+function isPlayerPresentationRole() {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return currentUser?.role === "player";
+}
+
+function getAllowedPlayPresentationModes() {
+  return isPlayerPresentationRole()
+    ? ["minimum", "player"]
+    : ["minimum", "player", "coaches"];
+}
+
+function getDefaultPlayPresentationMode(source = playPresentationState.source) {
+  if (isPlayerPresentationRole()) {
+    return source === "script" ? "player" : "minimum";
+  }
+  return "minimum";
+}
+
+function ensurePlayPresentationModeAllowed(preferredMode) {
+  const allowedModes = getAllowedPlayPresentationModes();
+  if (allowedModes.includes(preferredMode)) return preferredMode;
+  return getDefaultPlayPresentationMode();
+}
+
+function getPlayPresentationFooterText() {
+  if (isPlayerPresentationRole()) {
+    return "Arrow keys change plays · 1 Minimum · 2 Plays · L Lock Position · Esc closes";
+  }
+  return "Arrow keys change plays · 1 Minimum · 2 Player · 3 Coaches · L Lock Position · Esc closes";
+}
+
+function syncPlayPresentationRoleUi() {
+  const allowedModes = new Set(getAllowedPlayPresentationModes());
+  const playerToggleLabel = isPlayerPresentationRole() ? "Plays" : "Player";
+  const footer = document.getElementById("playPresentationFooterHint");
+  if (footer) footer.textContent = getPlayPresentationFooterText();
+
+  document.querySelectorAll("[data-presentation-mode]").forEach((button) => {
+    const mode = button.dataset.presentationMode;
+    const allowed = allowedModes.has(mode);
+    button.hidden = !allowed;
+    button.setAttribute("aria-hidden", allowed ? "false" : "true");
+    if (mode === "player") {
+      button.textContent = playerToggleLabel;
+    }
+  });
+}
+
 function getPlayPresentationPositions() {
   if (typeof RESP_POSITIONS !== "undefined" && Array.isArray(RESP_POSITIONS)) {
     return RESP_POSITIONS;
@@ -136,6 +185,12 @@ function openPlayPresentation(items, startIndex, source) {
     Math.min(parseInt(startIndex, 10) || 0, items.length - 1),
   );
   playPresentationState.source = source === "script" ? "script" : "playbook";
+  playPresentationState.mode = ensurePlayPresentationModeAllowed(
+    playPresentationState.mode,
+  );
+  if (isPlayerPresentationRole() && playPresentationState.source === "script") {
+    playPresentationState.mode = "player";
+  }
   playPresentationState.imageToken += 1;
 
   overlay.classList.add("show");
@@ -193,6 +248,7 @@ function closePlayPresentation() {
 
 function setPlayPresentationMode(mode) {
   if (!PLAY_PRESENTATION_MODES.has(mode)) return;
+  if (!getAllowedPlayPresentationModes().includes(mode)) return;
   playPresentationState.mode = mode;
   if (mode === "player" && !playPresentationState.positionLocked) {
     playPresentationState.autoPositionItemKey = "";
@@ -1034,6 +1090,10 @@ function renderPlayPresentation() {
   const item = playPresentationState.items[playPresentationState.index];
   const body = document.getElementById("playPresentationBody");
   if (!item || !body) return;
+  playPresentationState.mode = ensurePlayPresentationModeAllowed(
+    playPresentationState.mode,
+  );
+  syncPlayPresentationRoleUi();
 
   const sourceLabel = document.getElementById("playPresentationSource");
   const counter = document.getElementById("playPresentationCounter");
@@ -1055,6 +1115,7 @@ function renderPlayPresentation() {
   }
 
   document.querySelectorAll("[data-presentation-mode]").forEach((button) => {
+    if (button.hidden) return;
     const active =
       button.dataset.presentationMode === playPresentationState.mode;
     button.classList.toggle("active", active);

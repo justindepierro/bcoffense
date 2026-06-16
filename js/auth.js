@@ -101,6 +101,8 @@
     "openSelectedPlaybookPresentation",
     "openPlaybookPresentation",
     "openScriptPresentation",
+    "loadPublishedPlayerScript",
+    "presentPublishedPlayerScript",
     "closePlayPresentation",
     "setPlayPresentationMode",
     "setPlayPresentationPosition",
@@ -364,6 +366,13 @@
 
     if (currentAuthUser && typeof currentActiveTab !== "undefined" && !canAccessTab(currentActiveTab)) {
       showTab(getDefaultAuthTab());
+    }
+
+    if (typeof renderPlayerScriptLauncher === "function") {
+      renderPlayerScriptLauncher();
+    }
+    if (typeof syncPlayPresentationRoleUi === "function") {
+      syncPlayPresentationRoleUi();
     }
   }
 

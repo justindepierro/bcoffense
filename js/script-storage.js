@@ -362,6 +362,7 @@ async function saveScript() {
       date,
       period: "",
       tempo: "",
+      playerVisible: false,
       plays: safeDeepClone(script),
       workspace: getScriptWorkspaceState(),
       savedAt: new Date().toISOString(),
@@ -381,6 +382,15 @@ async function saveScript() {
   }
 }
 
+function isSavedScriptPlayerVisible(record) {
+  return (
+    record?.playerVisible === true ||
+    record?.playerVisible === "true" ||
+    record?.playerVisible === 1 ||
+    record?.playerVisible === "1"
+  );
+}
+
 function normalizeSavedScriptRecord(record, index = 0) {
   const normalized = record && typeof record === "object" ? record : {};
   return {
@@ -389,6 +399,7 @@ function normalizeSavedScriptRecord(record, index = 0) {
     date: String(normalized.date || ""),
     period: String(normalized.period || ""),
     tempo: String(normalized.tempo || ""),
+    playerVisible: isSavedScriptPlayerVisible(normalized),
     plays: Array.isArray(normalized.plays) ? normalized.plays : [],
     workspace:
       normalized.workspace && typeof normalized.workspace === "object"
@@ -418,6 +429,7 @@ function getSavedScripts() {
         normalized.date !== (record?.date || "") ||
         normalized.period !== (record?.period || "") ||
         normalized.tempo !== (record?.tempo || "") ||
+        normalized.playerVisible !== isSavedScriptPlayerVisible(record) ||
         normalized.plays !== record?.plays ||
         normalized.workspace !== record?.workspace ||
         normalized.savedAt !== (record?.savedAt || "")
@@ -431,50 +443,151 @@ function getSavedScripts() {
   return normalizedScripts;
 }
 
+function getSavedScriptStats(savedScript) {
+  const plays = Array.isArray(savedScript?.plays) ? savedScript.plays : [];
+  const playCount = plays.filter((play) => !play.isSeparator).length;
+  const periodCount = plays.filter((play) => play.isSeparator).length;
+  const totalReps = plays.reduce(
+    (sum, play) => sum + (!play.isSeparator ? play.reps || 1 : 0),
+    0,
+  );
+  const runCount = plays.filter(
+    (play) => !play.isSeparator && play.type === "Run",
+  ).length;
+  const passCount = plays.filter(
+    (play) => !play.isSeparator && play.type === "Pass",
+  ).length;
+  const periods = plays
+    .filter((play) => play.isSeparator)
+    .map((play) => play.label)
+    .join(", ");
+  const dateStr = savedScript.date
+    ? new Date(savedScript.date + "T00:00:00").toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+    })
+    : "No date";
+  const savedTime = savedScript.savedAt
+    ? new Date(savedScript.savedAt).toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "numeric",
+      minute: "2-digit",
+    })
+    : "";
+
+  return {
+    playCount,
+    periodCount,
+    totalReps,
+    runCount,
+    passCount,
+    periods,
+    dateStr,
+    savedTime,
+  };
+}
+
+function getPlayerPublishedScripts() {
+  return getSavedScripts()
+    .filter((savedScript) => savedScript.playerVisible)
+    .sort((a, b) => {
+      const aStamp = Math.max(
+        Date.parse(`${a.date || ""}T00:00:00`) || 0,
+        Date.parse(a.savedAt || "") || 0,
+      );
+      const bStamp = Math.max(
+        Date.parse(`${b.date || ""}T00:00:00`) || 0,
+        Date.parse(b.savedAt || "") || 0,
+      );
+      if (bStamp !== aStamp) return bStamp - aStamp;
+      return String(a.name).localeCompare(String(b.name));
+    });
+}
+
+function renderPlayerScriptLauncher() {
+  const section = document.getElementById("playerScriptLauncherSection");
+  const list = document.getElementById("playerScriptLauncherList");
+  if (!section || !list) return;
+
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  const isPlayer = currentUser?.role === "player";
+  if (!isPlayer) {
+    section.hidden = true;
+    list.innerHTML = "";
+    return;
+  }
+
+  const publishedScripts = getPlayerPublishedScripts();
+  const currentName = document.getElementById("scriptName")?.value || "";
+  const currentDate = document.getElementById("scriptDate")?.value || "";
+  section.hidden = false;
+
+  if (publishedScripts.length === 0) {
+    list.innerHTML = `
+      <div class="player-script-empty">
+        No practice script has been published for player logins yet.
+      </div>
+    `;
+    return;
+  }
+
+  list.innerHTML = publishedScripts
+    .map((savedScript) => {
+      const stats = getSavedScriptStats(savedScript);
+      const isCurrent =
+        currentName === savedScript.name &&
+        currentDate === (savedScript.date || "");
+
+      return `
+        <article class="player-script-card${isCurrent ? " is-current" : ""}">
+          <div class="player-script-card__body">
+            <div class="player-script-card__eyebrow">Published Script</div>
+            <div class="player-script-card__title-row">
+              <div class="player-script-card__title">${escapeHtml(savedScript.name)}</div>
+              ${isCurrent ? '<span class="player-script-card__badge">Loaded</span>' : ""}
+            </div>
+            <div class="player-script-card__meta">
+              <span>${escapeHtml(stats.dateStr)}</span>
+              <span>${stats.playCount} plays</span>
+              <span>${stats.totalReps} reps</span>
+              ${stats.periodCount > 0 ? `<span>${stats.periodCount} periods</span>` : ""}
+            </div>
+          </div>
+          <div class="player-script-card__actions">
+            <button class="btn btn-sm" data-action="loadPublishedPlayerScript"
+              data-arg="${savedScript.id}" title="Load this published script into the script tab">
+              Load Script
+            </button>
+            <button class="btn btn-primary btn-sm" data-action="presentPublishedPlayerScript"
+              data-arg="${savedScript.id}" title="Open this published script in player view">
+              Player View
+            </button>
+          </div>
+        </article>
+      `;
+    })
+    .join("");
+}
+
 function loadSavedScriptsList() {
   const savedScripts = getSavedScripts();
   const container = document.getElementById("savedScriptsList");
   const section = document.getElementById("savedScriptsSection");
+  if (!container || !section) return;
 
   if (savedScripts.length === 0) {
     section.classList.add("hidden");
     loadFullDayScriptList();
+    renderPlayerScriptLauncher();
     return;
   }
 
   section.classList.remove("hidden");
   container.innerHTML = savedScripts
     .map((savedScript) => {
-      const playCount = savedScript.plays.filter((play) => !play.isSeparator).length;
-      const periodCount = savedScript.plays.filter((play) => play.isSeparator).length;
-      const totalReps = savedScript.plays.reduce(
-        (sum, play) => sum + (!play.isSeparator ? play.reps || 1 : 0),
-        0,
-      );
-      const runCount = savedScript.plays.filter(
-        (play) => !play.isSeparator && play.type === "Run",
-      ).length;
-      const passCount = savedScript.plays.filter(
-        (play) => !play.isSeparator && play.type === "Pass",
-      ).length;
-      const periods = savedScript.plays
-        .filter((play) => play.isSeparator)
-        .map((play) => play.label)
-        .join(", ");
-      const dateStr = savedScript.date
-        ? new Date(savedScript.date + "T00:00:00").toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-        })
-        : "No date";
-      const savedTime = savedScript.savedAt
-        ? new Date(savedScript.savedAt).toLocaleDateString("en-US", {
-          month: "short",
-          day: "numeric",
-          hour: "numeric",
-          minute: "2-digit",
-        })
-        : "";
+      const stats = getSavedScriptStats(savedScript);
       const restoresWorkspace = Boolean(savedScript.workspace);
       const isCurrent =
         (document.getElementById("scriptName")?.value || "") === savedScript.name &&
@@ -483,47 +596,52 @@ function loadSavedScriptsList() {
       return `
             <div class="saved-script-card">
                 <div class="saved-card-main">
-                  <div class="saved-card-title-row">
-                    <div class="saved-card-title">${escapeHtml(savedScript.name)}</div>
-                    ${isCurrent ? '<span class="saved-card-badge">Current</span>' : ""}
-                  </div>
-                  <div class="saved-card-meta">
-                    <span>📅 ${dateStr}</span>
-                    <span>📝 ${playCount} plays</span>
-                    <span>🔁 ${totalReps} reps</span>
-                    ${periodCount > 0 ? `<span>📂 ${periodCount} periods</span>` : ""}
-                  </div>
-                  <div class="saved-card-meta saved-card-meta-secondary">
-                    <span>🏃 ${runCount} run</span>
-                    <span>🎯 ${passCount} pass</span>
-                    ${restoresWorkspace ? '<span>🧭 Restores workspace</span>' : ""}
-                    ${savedTime ? `<span>💾 ${savedTime}</span>` : ""}
-                  </div>
-                  ${periods ? `<div class="saved-card-periods">${escapeHtml(periods)}</div>` : ""}
-                </div>
-                <div class="saved-card-actions">
-                    <button class="saved-load-btn" data-action="loadScript" data-sid="${savedScript.id}" title="Load this script">Load</button>
-                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${savedScript.id}" title="Rename script">✏️</button>
-                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${savedScript.id}" title="Overwrite with current script">Update</button>
-                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${savedScript.id}" title="Delete script">✕</button>
-                </div>
+	                  <div class="saved-card-title-row">
+	                    <div class="saved-card-title">${escapeHtml(savedScript.name)}</div>
+	                    ${isCurrent ? '<span class="saved-card-badge">Current</span>' : ""}
+                      ${savedScript.playerVisible ? '<span class="saved-card-badge saved-card-badge-player">Player Login</span>' : ""}
+	                  </div>
+	                  <div class="saved-card-meta">
+	                    <span>📅 ${stats.dateStr}</span>
+	                    <span>📝 ${stats.playCount} plays</span>
+	                    <span>🔁 ${stats.totalReps} reps</span>
+	                    ${stats.periodCount > 0 ? `<span>📂 ${stats.periodCount} periods</span>` : ""}
+	                  </div>
+	                  <div class="saved-card-meta saved-card-meta-secondary">
+	                    <span>🏃 ${stats.runCount} run</span>
+	                    <span>🎯 ${stats.passCount} pass</span>
+	                    ${restoresWorkspace ? '<span>🧭 Restores workspace</span>' : ""}
+	                    ${stats.savedTime ? `<span>💾 ${stats.savedTime}</span>` : ""}
+	                  </div>
+	                  ${stats.periods ? `<div class="saved-card-periods">${escapeHtml(stats.periods)}</div>` : ""}
+	                </div>
+	                <div class="saved-card-actions">
+                      <label class="saved-player-toggle" data-auth-edit-only="true"
+                        title="Show this script on player logins">
+                        <input type="checkbox" data-onchange="togglePlayerScriptAccess"
+                          data-arg="${savedScript.id}" data-pass="event" ${savedScript.playerVisible ? "checked" : ""} />
+                        <span>Player login</span>
+                      </label>
+	                    <button class="saved-load-btn" data-action="loadScript" data-sid="${savedScript.id}" title="Load this script">Load</button>
+	                    <button class="saved-rename-btn" data-action="renameSavedScript" data-sid="${savedScript.id}" title="Rename script">✏️</button>
+	                    <button class="saved-overwrite-btn" data-action="overwriteSavedScript" data-sid="${savedScript.id}" title="Overwrite with current script">Update</button>
+	                    <button class="saved-del-btn" data-action="deleteSavedScript" data-sid="${savedScript.id}" title="Delete script">✕</button>
+	                </div>
             </div>
         `;
     })
     .join("");
 
   loadFullDayScriptList();
+  renderPlayerScriptLauncher();
 }
 
-function loadScript(id) {
+function loadSavedScriptRecord(scriptData, opts = {}) {
+  if (!scriptData) return false;
   try {
-    const savedScripts = getSavedScripts();
-    const scriptData = savedScripts.find((savedScript) => savedScript.id === id);
-    if (!scriptData) return;
-
     document.getElementById("scriptName").value = scriptData.name;
     document.getElementById("scriptDate").value = scriptData.date;
-    script = scriptData.plays;
+    script = safeDeepClone(scriptData.plays);
 
     const hasPlays = script.some((play) => !play.isSeparator);
     const hasSeparator = script.some((play) => play.isSeparator);
@@ -542,13 +660,88 @@ function loadScript(id) {
     historyManager.clear("script");
     renderScript();
     renderAvailablePlays();
+    renderPlayerScriptLauncher();
     markScriptClean();
     discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
-    showToast(`Loaded "${scriptData.name}"`);
+    if (!opts.skipToast) {
+      showToast(opts.toastMessage || `Loaded "${scriptData.name}"`);
+    }
+    return true;
+  } catch (err) {
+    console.error("loadSavedScriptRecord error:", err);
+    showToast(
+      opts.errorMessage || "❌ Error loading script.",
+      { duration: 4000, type: "error" },
+    );
+    return false;
+  }
+}
+
+function loadScript(id) {
+  try {
+    const savedScripts = getSavedScripts();
+    const scriptData = savedScripts.find((savedScript) => savedScript.id === id);
+    if (!scriptData) return;
+    loadSavedScriptRecord(scriptData);
   } catch (err) {
     console.error("loadScript error:", err);
     showToast("❌ Error loading script.", { duration: 4000, type: "error" });
   }
+}
+
+function getPlayerPublishedScriptById(id) {
+  const normalizedId = String(id);
+  return getPlayerPublishedScripts().find(
+    (savedScript) => String(savedScript.id) === normalizedId,
+  ) || null;
+}
+
+function loadPublishedPlayerScript(id, opts = {}) {
+  const scriptData = getPlayerPublishedScriptById(id);
+  if (!scriptData) {
+    if (!opts.skipToast) {
+      showToast("⚠️ That script is not published for player logins.", {
+        type: "warning",
+      });
+    }
+    return null;
+  }
+
+  if (typeof showTab === "function") showTab("script");
+  const loaded = loadSavedScriptRecord(scriptData, {
+    skipToast: opts.skipToast,
+    toastMessage: opts.toastMessage || `Loaded "${scriptData.name}"`,
+    errorMessage: "❌ Error loading published player script.",
+  });
+  return loaded ? scriptData : null;
+}
+
+function presentPublishedPlayerScript(id) {
+  const scriptData = loadPublishedPlayerScript(id, { skipToast: true });
+  if (!scriptData) return false;
+  if (typeof setPlayPresentationMode === "function") {
+    setPlayPresentationMode("player");
+  }
+  openScriptPresentation();
+  showToast(`Opened "${scriptData.name}" in player view`);
+  return true;
+}
+
+function togglePlayerScriptAccess(id, event) {
+  const savedScripts = getSavedScripts();
+  const savedScript = savedScripts.find(
+    (candidate) => String(candidate.id) === String(id),
+  );
+  if (!savedScript) return;
+
+  savedScript.playerVisible = Boolean(event?.target?.checked);
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, savedScripts);
+  loadSavedScriptsList();
+  showToast(
+    savedScript.playerVisible
+      ? `Players can now load "${savedScript.name}".`
+      : `Removed "${savedScript.name}" from player logins.`,
+  );
 }
 
 async function deleteSavedScript(id) {
