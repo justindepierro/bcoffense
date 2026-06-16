@@ -821,22 +821,38 @@ function getPlayPresentationPlayerMarkup(item) {
         ${getPlayPresentationDiagramMarkup(play)}
       </section>
       <section class="pp-player-panel">
+        <div class="pp-player-overview">
+          <div>
+            <div class="pp-player-kicker">Player View</div>
+            <div class="pp-player-context">${escapeHtml(item.context || "Practice Script")} • Play ${item.number}</div>
+          </div>
+          <span class="pp-player-mode-chip">${playPresentationState.positionLocked ? "Position Locked" : "Auto Position"}</span>
+        </div>
         <div class="pp-player-call">${getFullCall(play, {
           showEmoji: true,
           showLineCall: true,
           boldShifts: true,
           italicMotions: true,
         })}</div>
-        <div class="pp-position-picker" id="playPresentationPositionPicker"
-          role="group" aria-label="Choose player position"></div>
-        <div class="pp-position-lock-row">
-          <span id="playPresentationPositionLockMount"></span>
-          <span class="pp-position-lock-status"
-            id="playPresentationPositionLockStatus"></span>
+        <div class="pp-player-controls-card">
+          <div class="pp-player-controls-head">
+            <strong>Choose your position</strong>
+            <span>Tap your spot, then lock it if you want the same rule on every play.</span>
+          </div>
+          <div class="pp-position-picker" id="playPresentationPositionPicker"
+            role="group" aria-label="Choose player position"></div>
+          <div class="pp-position-lock-row">
+            <span id="playPresentationPositionLockMount"></span>
+            <span class="pp-position-lock-status"
+              id="playPresentationPositionLockStatus"></span>
+          </div>
         </div>
         <div class="pp-player-rule">
           <div class="pp-player-rule-head">
-            <span class="pp-player-position">${escapeHtml(selected.label)}</span>
+            <div class="pp-player-rule-title">
+              <span class="pp-player-rule-eyebrow">Your Rule</span>
+              <span class="pp-player-position">${escapeHtml(selected.label)}</span>
+            </div>
             ${playerName ? `<span class="pp-player-name">${escapeHtml(playerName)}</span>` : ""}
           </div>
           <div class="pp-player-rule-text">${

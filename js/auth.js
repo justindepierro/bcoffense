@@ -24,13 +24,13 @@
       "offensebuilder",
       "dashboard",
     ],
-    player: ["playbook", "dashboard", "script", "wristband", "callsheet"],
+    player: ["dashboard", "script"],
   };
 
   const AUTH_ROLE_DEFAULT_TAB = {
     admin: "playbook",
     coach: "playbook",
-    player: "playbook",
+    player: "dashboard",
   };
 
   const READ_ONLY_ALLOWED_ACTIONS = new Set([
@@ -238,6 +238,22 @@
     return isAdminUser();
   }
 
+  function syncPlayerPortalChrome() {
+    const isPlayer = currentAuthUser?.role === "player";
+    document.body?.classList.toggle("player-portal", isPlayer);
+    [
+      ["tab-dashboard", "📊 Dashboard", "Home"],
+      ["tab-script", "Practice Script Builder", "Practice"],
+    ].forEach(([id, defaultLabel, playerLabel]) => {
+      const tab = document.getElementById(id);
+      if (!tab) return;
+      tab.dataset.defaultLabel = tab.dataset.defaultLabel || defaultLabel;
+      tab.dataset.playerLabel = tab.dataset.playerLabel || playerLabel;
+      const nextLabel = isPlayer ? tab.dataset.playerLabel : tab.dataset.defaultLabel;
+      if (tab.textContent.trim() !== nextLabel) tab.textContent = nextLabel;
+    });
+  }
+
   function isReadOnlyRole() {
     return Boolean(currentAuthUser && !isAdminUser());
   }
@@ -348,6 +364,7 @@
     document.body.dataset.authRole = currentAuthUser?.role || "locked";
     document.body.dataset.authCanEdit = isAdminUser() ? "true" : "false";
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
+    syncPlayerPortalChrome();
 
     document
       .querySelectorAll("[data-action], .tab, input, select, textarea, button, [data-auth-admin-only], [data-auth-edit-only]")
@@ -366,6 +383,9 @@
 
     if (currentAuthUser && typeof currentActiveTab !== "undefined" && !canAccessTab(currentActiveTab)) {
       showTab(getDefaultAuthTab());
+    }
+    if (typeof renderDashboard === "function" && currentActiveTab === "dashboard") {
+      renderDashboard();
     }
 
     if (typeof renderPlayerScriptLauncher === "function") {
@@ -404,29 +424,85 @@
     overlay.id = "authLoginOverlay";
     overlay.className = "auth-login-overlay";
     overlay.innerHTML = `
-      <form class="auth-login-card" id="authLoginForm" autocomplete="off">
-        <div class="auth-login-brand">BCOffense</div>
-        <h2>Team Login</h2>
-        <p>Sign in to view your role-specific workspace.</p>
-        <label>
-          <span>Username</span>
-          <input id="authUsername" type="text" autocomplete="username" data-auth-allow-input="true" required />
-        </label>
-        <label>
-          <span>Password</span>
-          <input id="authPassword" type="password" autocomplete="current-password" data-auth-allow-input="true" required />
-        </label>
-        <div id="authLoginError" class="auth-login-error" aria-live="polite">${escapeHtml(message)}</div>
-        <button type="submit" class="btn btn-primary">Log In</button>
-      </form>
+      <div class="auth-login-shell">
+        <section class="auth-login-hero" aria-label="Portal overview">
+          <div class="auth-login-brand">BCOffense</div>
+          <h2>One clean portal for practice, rules, and responsibilities.</h2>
+          <p>Log in to open today&apos;s plan, swipe through plays, and stay on the same page as your staff.</p>
+          <div class="auth-login-role-strip" aria-label="Portal roles">
+            <span class="auth-login-role-chip">Player</span>
+            <span class="auth-login-role-chip">Coach</span>
+            <span class="auth-login-role-chip">Admin</span>
+          </div>
+          <div class="auth-login-highlight-list">
+            <div class="auth-login-highlight">
+              <strong>Today&apos;s Practice</strong>
+              <span>Open the published script without digging through staff tools.</span>
+            </div>
+            <div class="auth-login-highlight">
+              <strong>Swipe View</strong>
+              <span>Move play to play on a phone or tablet and keep the diagram in view.</span>
+            </div>
+            <div class="auth-login-highlight">
+              <strong>Position Lock</strong>
+              <span>Keep your rule pinned to your spot while the staff flips through the script.</span>
+            </div>
+          </div>
+        </section>
+        <form class="auth-login-card" id="authLoginForm" autocomplete="off">
+          <div class="auth-login-form-header">
+            <div class="auth-login-kicker">Team Login</div>
+            <h3>Enter your team credentials</h3>
+            <p>Use the username and password shared by your staff.</p>
+          </div>
+          <label>
+            <span>Username</span>
+            <input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
+              data-auth-allow-input="true" required />
+          </label>
+          <label>
+            <span>Password</span>
+            <div class="auth-login-password-row">
+              <input id="authPassword" type="password" autocomplete="current-password" data-auth-allow-input="true"
+                required />
+              <button type="button" class="auth-password-toggle" id="authPasswordToggle"
+                aria-label="Show password" aria-pressed="false">Show</button>
+            </div>
+          </label>
+          <div id="authLoginError" class="auth-login-error${message ? " is-status" : ""}" aria-live="polite">${escapeHtml(message)}</div>
+          <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">Enter Portal</button>
+          <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
+        </form>
+      </div>
     `;
     document.body.appendChild(overlay);
     const usernameEl = overlay.querySelector("#authUsername");
     const passwordEl = overlay.querySelector("#authPassword");
     const errorEl = overlay.querySelector("#authLoginError");
-    overlay.querySelector("#authLoginForm").addEventListener("submit", async (e) => {
+    const toggleEl = overlay.querySelector("#authPasswordToggle");
+    const submitEl = overlay.querySelector("#authLoginSubmit");
+    const formEl = overlay.querySelector("#authLoginForm");
+    const setAuthLoginMessage = (text, isStatus = false) => {
+      errorEl.textContent = text;
+      errorEl.classList.toggle("is-status", isStatus);
+    };
+
+    toggleEl?.addEventListener("click", () => {
+      const shouldShow = passwordEl.type === "password";
+      passwordEl.type = shouldShow ? "text" : "password";
+      toggleEl.textContent = shouldShow ? "Hide" : "Show";
+      toggleEl.setAttribute("aria-pressed", shouldShow ? "true" : "false");
+      toggleEl.setAttribute(
+        "aria-label",
+        shouldShow ? "Hide password" : "Show password",
+      );
+      passwordEl.focus();
+    });
+
+    formEl.addEventListener("submit", async (e) => {
       e.preventDefault();
-      errorEl.textContent = "Checking login...";
+      setAuthLoginMessage("Checking login...", true);
+      if (submitEl) submitEl.disabled = true;
       try {
         const response = await fetch("/auth/login", {
           method: "POST",
@@ -453,7 +529,8 @@
         if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
         scheduleCloudAutoPull();
       } catch (err) {
-        errorEl.textContent = err.message || "Login failed.";
+        setAuthLoginMessage(err.message || "Login failed.");
+        if (submitEl) submitEl.disabled = false;
         passwordEl.value = "";
         passwordEl.focus();
       }

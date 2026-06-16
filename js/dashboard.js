@@ -567,6 +567,199 @@ function _dashBuildInstallPriorityRows(priorities) {
     .join("");
 }
 
+function isPlayerDashboardRole() {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return currentUser?.role === "player";
+}
+
+function getPlayerDashboardFeaturedScript(publishedScripts = []) {
+  const scripts = Array.isArray(publishedScripts) ? publishedScripts : [];
+  if (scripts.length === 0) return null;
+  const todayValue = new Date().toISOString().slice(0, 10);
+  const currentName = document.getElementById("scriptName")?.value || "";
+  const currentDate = document.getElementById("scriptDate")?.value || "";
+  return scripts.find(
+    (savedScript) =>
+      savedScript.date === todayValue ||
+      (savedScript.name === currentName &&
+        (savedScript.date || "") === currentDate),
+  ) || scripts[0];
+}
+
+function getPlayerDashboardLoadedScriptSummary() {
+  const playCount = Array.isArray(script)
+    ? script.filter((entry) => entry && !entry.isSeparator).length
+    : 0;
+  if (playCount === 0) return null;
+  return {
+    name: document.getElementById("scriptName")?.value || "Practice Script",
+    stats: typeof getSavedScriptStats === "function"
+      ? getSavedScriptStats({
+        plays: script,
+        date: document.getElementById("scriptDate")?.value || "",
+        savedAt: "",
+      })
+      : null,
+  };
+}
+
+function renderPlayerDashboardHome() {
+  const section = document.getElementById("playerDashboardHome");
+  if (!section) return;
+  if (!isPlayerDashboardRole()) {
+    section.hidden = true;
+    section.innerHTML = "";
+    return;
+  }
+
+  const publishedScripts =
+    typeof getPlayerPublishedScripts === "function" ? getPlayerPublishedScripts() : [];
+  const featuredScript = getPlayerDashboardFeaturedScript(publishedScripts);
+  const featuredStats =
+    featuredScript && typeof getSavedScriptStats === "function"
+      ? getSavedScriptStats(featuredScript)
+      : null;
+  const loadedScript = getPlayerDashboardLoadedScriptSummary();
+  const todayValue = new Date().toISOString().slice(0, 10);
+  const todayLabel = new Intl.DateTimeFormat("en-US", {
+    weekday: "long",
+    month: "short",
+    day: "numeric",
+  }).format(new Date());
+  const teamName =
+    (storageManager.get(STORAGE_KEYS.TEAM_NAME, "") || "").trim() ||
+    "Player Practice Portal";
+  const recentScriptsMarkup = publishedScripts.length
+    ? publishedScripts
+      .slice(0, 4)
+      .map((savedScript) => {
+        const stats =
+          typeof getSavedScriptStats === "function"
+            ? getSavedScriptStats(savedScript)
+            : null;
+        const eyebrow =
+          savedScript.date === todayValue ? "Today" : "Published";
+        return `
+          <button class="player-home-script-item" type="button" data-action="loadPublishedPlayerScript"
+            data-arg="${savedScript.id}">
+            <span class="player-home-script-item__eyebrow">${escapeHtml(eyebrow)}</span>
+            <span class="player-home-script-item__title">${escapeHtml(savedScript.name)}</span>
+            <span class="player-home-script-item__meta">${escapeHtml(
+          stats
+            ? `${stats.playCount} plays • ${stats.totalReps} reps`
+            : "Open practice",
+        )}</span>
+          </button>
+        `;
+      })
+      .join("")
+    : `<div class="player-home-list-empty">No practice script has been published yet. Check back with your coach.</div>`;
+  const featuredActions = featuredScript
+    ? `
+      <button class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+        Open Practice
+      </button>
+      <button class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
+        Open Swipe View
+      </button>
+    `
+    : `
+      <button class="btn btn-primary" data-action="showTab" data-arg="script">
+        Go to Practice
+      </button>
+    `;
+
+  section.hidden = false;
+  section.innerHTML = `
+    <section class="player-home-hero">
+      <div class="player-home-hero__copy">
+        <span class="player-home-eyebrow">Player Portal</span>
+        <h2>${escapeHtml(teamName)}</h2>
+        <p>${escapeHtml(todayLabel)} • Open the plan, swipe the script, and lock your position when the tempo picks up.</p>
+      </div>
+      <div class="player-home-hero__actions">
+        ${featuredActions}
+      </div>
+    </section>
+    <div class="player-home-grid">
+      <article class="player-home-card player-home-card--feature">
+        <span class="player-home-card__eyebrow">${escapeHtml(
+    featuredScript?.date === todayValue ? "Today's Practice" : "Published Practice",
+  )}</span>
+        <h3>${escapeHtml(featuredScript?.name || "Waiting on a published practice")}</h3>
+        <p>${escapeHtml(
+    featuredStats
+      ? `${featuredStats.playCount} plays, ${featuredStats.totalReps} reps, and ${featuredStats.periodCount} periods are ready to review.`
+      : "When your coach publishes a practice script, it will show up here first.",
+  )}</p>
+        ${
+          featuredStats
+            ? `<div class="player-home-stat-row">
+                <span>${featuredStats.playCount} plays</span>
+                <span>${featuredStats.totalReps} reps</span>
+                <span>${featuredStats.periodCount} periods</span>
+              </div>`
+            : ""
+        }
+        <div class="player-home-card__actions">
+          ${featuredActions}
+        </div>
+      </article>
+      <article class="player-home-card">
+        <span class="player-home-card__eyebrow">How To Use It</span>
+        <h3>Three simple steps</h3>
+        <ol class="player-home-step-list">
+          <li><strong>Open Practice</strong><span>Load the published script for the day.</span></li>
+          <li><strong>Swipe Plays</strong><span>Flip play to play with the diagram and call together.</span></li>
+          <li><strong>Lock Your Spot</strong><span>Pin your position so your rule stays visible on every play.</span></li>
+        </ol>
+      </article>
+      <article class="player-home-card">
+        <span class="player-home-card__eyebrow">Recent Practices</span>
+        <h3>Jump back in fast</h3>
+        <div class="player-home-script-list">
+          ${recentScriptsMarkup}
+        </div>
+      </article>
+      <article class="player-home-card">
+        <span class="player-home-card__eyebrow">Current View</span>
+        <h3>${escapeHtml(loadedScript?.name || "No practice loaded yet")}</h3>
+        <p>${escapeHtml(
+    loadedScript?.stats
+      ? `${loadedScript.stats.playCount} plays are already loaded in the Practice tab.`
+      : "Once you load a practice, this card becomes your quick way back into Swipe View.",
+  )}</p>
+        ${
+          loadedScript?.stats
+            ? `<div class="player-home-stat-row">
+                <span>${loadedScript.stats.playCount} plays</span>
+                <span>${loadedScript.stats.totalReps} reps</span>
+                <span>${loadedScript.stats.periodCount} periods</span>
+              </div>`
+            : ""
+        }
+        <div class="player-home-card__actions">
+          <button class="btn btn-secondary" data-action="showTab" data-arg="script">
+            Open Practice Tab
+          </button>
+          ${
+            loadedScript
+              ? `<button class="btn btn-primary" data-action="openScriptPresentation">
+                  Resume Swipe View
+                </button>`
+              : featuredScript
+                ? `<button class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+                    Load Today's Script
+                </button>`
+                : ""
+          }
+        </div>
+      </article>
+    </div>
+  `;
+}
+
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");
   if (!section) return;
@@ -868,6 +1061,17 @@ function _dashSyncNotesTextareas(value, sourceId) {
  */
 function renderDashboard() {
   try {
+    if (isPlayerDashboardRole()) {
+      renderPlayerDashboardHome();
+      return;
+    }
+
+    const playerHome = document.getElementById("playerDashboardHome");
+    if (playerHome) {
+      playerHome.hidden = true;
+      playerHome.innerHTML = "";
+    }
+
     // Populate opponent dropdown
     const select = document.getElementById("dashOpponentSelect");
     const searchInput = document.getElementById("dashSearchInput");

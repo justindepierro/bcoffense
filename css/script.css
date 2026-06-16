@@ -3627,6 +3627,38 @@ body[data-auth-role="player"] .script-builder {
   border-color: var(--color-accent);
 }
 
+body[data-auth-role="player"] .script-header-panel {
+  padding: 18px 20px;
+  border: 1px solid var(--color-border-light);
+  background:
+    linear-gradient(160deg, rgb(255 255 255 / 0.1), transparent 60%),
+    var(--gradient-dark);
+  box-shadow: var(--shadow-sm);
+}
+
+body[data-auth-role="player"] .script-name-input,
+body[data-auth-role="player"] .script-date-input {
+  padding: 0;
+  border: 0;
+  background: transparent;
+  box-shadow: none;
+  pointer-events: none;
+}
+
+body[data-auth-role="player"] .script-name-input {
+  font-size: 2.2rem;
+  font-weight: 800;
+}
+
+body[data-auth-role="player"] .script-date-input {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+
+body[data-auth-role="player"] .period-buttons {
+  display: none;
+}
+
 /* Add Period button */
 .btn-add-period {
   background: var(--color-accent);
