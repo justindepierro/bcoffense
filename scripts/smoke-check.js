@@ -928,7 +928,7 @@ function checkWristbandWorkspaceContracts() {
     !/_executeClassicWristbandPrint\(cardIndexes, "one-per-page"\)/.test(
       playerRuntime,
     ) ||
-    !/_executePrintAllPlayerCards\(cardIndexes, positionKeys\)/.test(
+    !/_executePrintAllPlayerCards\(cardIndexes, positionKeys,\s*\{\s*blankRules\s*\}\)/.test(
       playerRuntime,
     )
   ) {
@@ -984,7 +984,12 @@ function checkPlayerWristbandRuleOverrides() {
   if (
     !/data-action="printOnePlayerCard"/.test(html) ||
     !/data-action="printThreePlayerCardCopies"/.test(html) ||
+    !/id="wbPrintBlankRules"/.test(html) ||
     !/pc-print-page pc-print-single/.test(playerRuntime) ||
+    !/_getWbPrintBlankRules/.test(playerRuntime) ||
+    !/pc-print-assignment-blank/.test(playerRuntime) ||
+    !/blankRules/.test(playerRuntime) ||
+    !/\.pc-print-assignment-blank/.test(css) ||
     !/\.pc-print-single\s*\{[\s\S]*?justify-content:\s*center/.test(css)
   ) {
     fail("player wristband one-per-page and three-copy print modes are incomplete");

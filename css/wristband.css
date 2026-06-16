@@ -404,6 +404,16 @@
   font-size: var(--font-size-xs);
 }
 
+.wb-print-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  min-height: 30px;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
 .wb-print-preview-canvas {
   display: grid;
   place-items: center;
@@ -1978,6 +1988,18 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     align-items: flex-start !important;
     padding: 0 0.03in !important;
     border-left: 0.5pt solid var(--wristband-print-grid) !important;
+  }
+
+  .pc-print-assignment-blank {
+    align-items: center !important;
+    padding: 0 0.05in !important;
+  }
+
+  .pc-print-assignment-blank span {
+    display: block !important;
+    width: 100% !important;
+    height: 0.12in !important;
+    border-bottom: 0.5pt solid var(--wristband-print-grid) !important;
   }
 
   .pc-print-card-wrap .line-call,
