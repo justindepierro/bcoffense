@@ -1114,6 +1114,7 @@ function getWbDisplayOptionIds() {
     "wbRemoveVowels",
     "wbShowLineCall",
     "wbLineCallOnly",
+    "wbBlankPlayerRules",
     "wbCadenceReminder",
     "wbHighlightHuddle",
     "wbHighlightCandy",
@@ -1132,6 +1133,7 @@ const WB_DISPLAY_PRESETS = {
     wbRemoveVowels: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
+    wbBlankPlayerRules: false,
     wbCadenceReminder: false,
     wbHighlightHuddle: false,
     wbHighlightCandy: false,
@@ -1147,6 +1149,7 @@ const WB_DISPLAY_PRESETS = {
     wbRemoveVowels: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
+    wbBlankPlayerRules: false,
     wbCadenceReminder: false,
     wbHighlightHuddle: false,
     wbHighlightCandy: false,
@@ -1162,6 +1165,7 @@ const WB_DISPLAY_PRESETS = {
     wbRemoveVowels: false,
     wbShowLineCall: true,
     wbLineCallOnly: false,
+    wbBlankPlayerRules: false,
     wbCadenceReminder: true,
     wbHighlightHuddle: true,
     wbHighlightCandy: true,
@@ -1176,6 +1180,17 @@ function syncWristbandLineCallOnlyControls(source = "classic") {
     classic.checked = player.checked;
   } else {
     player.checked = classic.checked;
+  }
+}
+
+function syncWristbandBlankPlayerRulesControls(source = "classic") {
+  const display = document.getElementById("wbBlankPlayerRules");
+  const player = document.getElementById("pcBlankPlayerRules");
+  if (!display || !player) return;
+  if (source === "player") {
+    display.checked = player.checked;
+  } else {
+    player.checked = display.checked;
   }
 }
 
@@ -1203,11 +1218,17 @@ function commitWristbandDisplayOptions() {
 
 function handleWristbandDisplayOptionsChange() {
   syncWristbandLineCallOnlyControls("classic");
+  syncWristbandBlankPlayerRulesControls("classic");
   commitWristbandDisplayOptions();
 }
 
 function handlePlayerLineCallOnlyChange() {
   syncWristbandLineCallOnlyControls("player");
+  commitWristbandDisplayOptions();
+}
+
+function handlePlayerBlankRulesChange() {
+  syncWristbandBlankPlayerRulesControls("player");
   commitWristbandDisplayOptions();
 }
 
@@ -1217,9 +1238,10 @@ function handlePlayerLineCallOnlyChange() {
 function selectAllWbOptions() {
   getWbDisplayOptionIds().forEach((id) => {
     const el = document.getElementById(id);
-    if (el) el.checked = id !== "wbLineCallOnly";
+    if (el) el.checked = id !== "wbLineCallOnly" && id !== "wbBlankPlayerRules";
   });
   syncWristbandLineCallOnlyControls("classic");
+  syncWristbandBlankPlayerRulesControls("classic");
   commitWristbandDisplayOptions();
 }
 
@@ -1232,6 +1254,7 @@ function clearAllWbOptions() {
     if (el) el.checked = false;
   });
   syncWristbandLineCallOnlyControls("classic");
+  syncWristbandBlankPlayerRulesControls("classic");
   commitWristbandDisplayOptions();
 }
 
@@ -1247,6 +1270,7 @@ function applyWbDisplayPreset(preset) {
     if (el) el.checked = checked;
   });
   syncWristbandLineCallOnlyControls("classic");
+  syncWristbandBlankPlayerRulesControls("classic");
   commitWristbandDisplayOptions();
 }
 

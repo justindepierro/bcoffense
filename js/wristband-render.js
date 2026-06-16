@@ -57,6 +57,7 @@ function getWristbandDisplayOptions() {
     noVowels: document.getElementById("wbRemoveVowels")?.checked || false,
     showLineCall: document.getElementById("wbShowLineCall")?.checked || false,
     lineCallOnly: document.getElementById("wbLineCallOnly")?.checked || false,
+    blankPlayerRules: document.getElementById("wbBlankPlayerRules")?.checked || false,
     cadenceReminder: document.getElementById("wbCadenceReminder")?.checked || false,
     highlightHuddle: document.getElementById("wbHighlightHuddle")?.checked || false,
     highlightCandy: document.getElementById("wbHighlightCandy")?.checked || false,

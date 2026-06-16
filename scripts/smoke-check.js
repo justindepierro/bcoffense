@@ -984,11 +984,18 @@ function checkPlayerWristbandRuleOverrides() {
   if (
     !/data-action="printOnePlayerCard"/.test(html) ||
     !/data-action="printThreePlayerCardCopies"/.test(html) ||
+    !/id="wbBlankPlayerRules"/.test(html) ||
+    !/id="pcBlankPlayerRules"/.test(html) ||
     !/id="wbPrintBlankRules"/.test(html) ||
+    !/wbBlankPlayerRules/.test(wristband) ||
+    !/handlePlayerBlankRulesChange/.test(wristband) ||
+    !/blankPlayerRules/.test(read("js/wristband-render.js")) ||
     !/pc-print-page pc-print-single/.test(playerRuntime) ||
     !/_getWbPrintBlankRules/.test(playerRuntime) ||
+    !/pc-assignment-blank/.test(playerRuntime) ||
     !/pc-print-assignment-blank/.test(playerRuntime) ||
     !/blankRules/.test(playerRuntime) ||
+    !/\.pc-assignment-cell\.pc-assignment-blank/.test(css) ||
     !/\.pc-print-assignment-blank/.test(css) ||
     !/\.pc-print-single\s*\{[\s\S]*?justify-content:\s*center/.test(css)
   ) {

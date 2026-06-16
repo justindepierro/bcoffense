@@ -16,11 +16,15 @@ function applyWristbandDisplaySettings(displaySettings) {
   setCheckbox("wbRemoveVowels", displaySettings.noVowels || displaySettings.removeVowels);
   setCheckbox("wbShowLineCall", displaySettings.showLineCall);
   setCheckbox("wbLineCallOnly", displaySettings.lineCallOnly);
+  setCheckbox("wbBlankPlayerRules", displaySettings.blankPlayerRules);
   setCheckbox("wbCadenceReminder", displaySettings.cadenceReminder);
   setCheckbox("wbHighlightHuddle", displaySettings.highlightHuddle);
   setCheckbox("wbHighlightCandy", displaySettings.highlightCandy);
   if (typeof syncWristbandLineCallOnlyControls === "function") {
     syncWristbandLineCallOnlyControls("classic");
+  }
+  if (typeof syncWristbandBlankPlayerRulesControls === "function") {
+    syncWristbandBlankPlayerRulesControls("classic");
   }
   if (typeof syncWbDisplayPresetSelection === "function") {
     syncWbDisplayPresetSelection();

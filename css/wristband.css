@@ -1814,6 +1814,26 @@
   outline-offset: -2px;
 }
 
+.pc-assignment-cell.pc-assignment-blank {
+  align-items: center !important;
+  justify-content: center;
+  padding: 0 8px !important;
+  background:
+    linear-gradient(
+      180deg,
+      var(--color-bg-input) 0%,
+      var(--color-bg-lighter) 100%
+    );
+}
+
+.pc-write-in-line {
+  display: block;
+  width: 100%;
+  max-width: 92%;
+  height: 0.6em;
+  border-bottom: 1.5px solid var(--color-border-med);
+}
+
 /* Print Container */
 .player-card-print {
   position: fixed;

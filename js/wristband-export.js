@@ -443,7 +443,7 @@ function renderPlayerCardGrid() {
   // Player wristbands use one play per row, half the classic card capacity.
   const cardOffset = currentCardIndex * WB_ROWS;
   const opts = getWristbandDisplayOptions();
-  const { highlightHuddle, highlightCandy } = opts;
+  const { highlightHuddle, highlightCandy, blankPlayerRules } = opts;
   const pCardColor = card.cardColor || "";
 
   // 3 columns: [num (32px) | play name (1fr) | responsibility (1fr)] × 20 rows
@@ -454,7 +454,9 @@ function renderPlayerCardGrid() {
     const playNum = i + WRISTBAND_OFFSET + cardOffset;
     const custom = cellCustomizations[`${currentCardIndex}-${i}`] || {};
     const ruleSource = getPlayerRuleSource(custom, wbPlayerCardPos);
-    const respText = getPlayerAssignmentText(play, custom, wbPlayerCardPos);
+    const respText = blankPlayerRules
+      ? ""
+      : getPlayerAssignmentText(play, custom, wbPlayerCardPos);
 
     const isHuddle = highlightHuddle && play && play.tempo && play.tempo.toLowerCase() === "huddle";
     const isCandy = highlightCandy && play && play.tempo && play.tempo.toLowerCase() === "candy";
@@ -482,6 +484,14 @@ function renderPlayerCardGrid() {
       html += `<div class="wristband-cell" role="gridcell" tabindex="0"
         aria-label="${escapeHtml(getWristbandCellAriaLabel(null, playNum))}"
         data-drag="wbCell" data-cell-idx="${i}" data-card="${currentCardIndex}"></div>`;
+    }
+
+    if (blankPlayerRules) {
+      html += `<div class="wristband-cell pc-assignment-cell pc-assignment-blank"
+        aria-label="Blank write-in rule line for wristband number ${playNum}">
+        <span class="pc-write-in-line" aria-hidden="true"></span>
+      </div>`;
+      continue;
     }
 
     // Rule source + responsibility text. Both are wristband-only customizations.
@@ -689,6 +699,13 @@ function openWristbandPrintPreview(requestedMode = "classic") {
         <span>${escapeHtml(position.label)}</span>
       </label>`,
     ).join("");
+  }
+
+  const blankRulesToggle = document.getElementById("wbPrintBlankRules");
+  if (blankRulesToggle) {
+    blankRulesToggle.checked = Boolean(
+      isPlayer && getWristbandDisplayOptions().blankPlayerRules,
+    );
   }
 
   renderWristbandPrintPreview();
