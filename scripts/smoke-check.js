@@ -867,6 +867,7 @@ function checkWristbandWorkspaceContracts() {
   const storage = read("js/wristband-storage.js");
   const playerRuntime = read("js/wristband-export.js");
   const css = read("css/wristband.css");
+  const printCss = read("css/print.css");
   const responsiveCss = read("css/responsive.css");
   const appStorage = read("js/storage.js");
   const cloudSync = read("js/cloud-sync.js");
@@ -931,6 +932,11 @@ function checkWristbandWorkspaceContracts() {
     !/function executeWristbandPrintPreview\(/.test(playerRuntime) ||
     !/function _getWbDefaultPrintCardIndexes\(/.test(playerRuntime) ||
     !/function _getWbPrintScriptPageMeta\(/.test(playerRuntime) ||
+    !/const WRISTBAND_PRINT_PROFILES = Object\.freeze/.test(playerRuntime) ||
+    !/flag:\s*Object\.freeze\(\{[\s\S]*?width:\s*"2\.1in"[\s\S]*?height:\s*"4\.4in"[\s\S]*?cardsPerSheet:\s*2/.test(
+      playerRuntime,
+    ) ||
+    !/function _getSelectedWbPrintProfile\(/.test(playerRuntime) ||
     !/function openWbLogoCardModal\(/.test(playerRuntime) ||
     !/function handleWbLogoCardUpload\(/.test(playerRuntime) ||
     !/function setWbLogoSmartCenter\(/.test(playerRuntime) ||
@@ -940,11 +946,12 @@ function checkWristbandWorkspaceContracts() {
     !/WRISTBAND_LOGO_CARD:\s*"wristbandLogoCard"/.test(appStorage) ||
     !/STORAGE_KEYS\.WRISTBAND_LOGO_CARD/.test(cloudSync) ||
     !/id="wbPrintCardLegend"/.test(html) ||
+    !/id="wbPrintSizeMode"/.test(html) ||
     !/data-action="selectCurrentWbPrintCard"/.test(html) ||
-    !/_executeClassicWristbandPrint\(cardIndexes, "one-per-page"\)/.test(
+    !/_executeClassicWristbandPrint\(cardIndexes, "one-per-page", printProfile\.id\)/.test(
       playerRuntime,
     ) ||
-    !/_executePrintAllPlayerCards\(cardIndexes, positionKeys,\s*\{\s*blankRules\s*\}\)/.test(
+    !/_executePrintAllPlayerCards\(cardIndexes, positionKeys,\s*\{[\s\S]*?blankRules,[\s\S]*?printSize:\s*printProfile\.id/.test(
       playerRuntime,
     )
   ) {
@@ -956,6 +963,9 @@ function checkWristbandWorkspaceContracts() {
     !/\.wb-print-preview-layout/.test(css) ||
     !/\.wb-print-preview-modal\s*\{[\s\S]*?max-width:\s*min\(1120px/.test(css) ||
     !/\.wb-print-preview-canvas \.pc-print-card-wrap/.test(css) ||
+    !/\.wb-print-preview-canvas\[data-wb-print-size="flag"\] \.pc-print-card-wrap/.test(css) ||
+    !/body\[data-wb-print-size="flag"\] \.pc-print-card-wrap \.wristband-grid/.test(css) ||
+    !/body\[data-wb-print-size="flag"\] \.wristband-print \.wristband-grid/.test(printCss) ||
     !/\.wb-logo-card-modal/.test(css) ||
     !/\.wb-logo-print-card/.test(css) ||
     !/\.wb-logo-print-card\.wb-logo-smart-centered img/.test(css) ||

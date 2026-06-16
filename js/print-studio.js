@@ -202,18 +202,21 @@ function _psWristbandStats() {
   if (capacity > 0 && capacity - filled > 20) {
     warnings.push({ level: "warn", text: "Several wristband cells are empty." });
   }
+  const printSizeLabel =
+    typeof WRISTBAND_PRINT_PROFILES !== "undefined"
+      ? Object.values(WRISTBAND_PRINT_PROFILES)
+        .map((profile) => profile.sizeLabel)
+        .join(" / ")
+      : typeof WRISTBAND_PRINT_SIZE_LABEL !== "undefined"
+        ? WRISTBAND_PRINT_SIZE_LABEL
+        : "4.5 x 2.6 in";
 
   return {
     metrics: [
       _psMetric("Cards", cards.length),
       _psMetric("Filled", filled),
       _psMetric("Open", Math.max(capacity - filled, 0)),
-      _psMetric(
-        "Print Size",
-        typeof WRISTBAND_PRINT_SIZE_LABEL !== "undefined"
-          ? WRISTBAND_PRINT_SIZE_LABEL
-          : "4.5 x 2.6 in",
-      ),
+      _psMetric("Print Size", printSizeLabel),
     ],
     warnings,
     filename: buildPrintStudioFilename("Wristband", "", "pdf"),

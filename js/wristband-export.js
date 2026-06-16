@@ -1,14 +1,53 @@
-const WRISTBAND_PRINT_WIDTH = "4.5in";
-const WRISTBAND_PRINT_HEIGHT = "2.6in";
-const WRISTBAND_PRINT_SIZE_LABEL = "4.5 x 2.6 in";
-const WRISTBAND_PRINT_CARDS_PER_SHEET = 3;
+const WRISTBAND_DEFAULT_PRINT_PROFILE = "standard";
+const WRISTBAND_PRINT_PROFILES = Object.freeze({
+  standard: Object.freeze({
+    id: "standard",
+    label: "Standard wristband",
+    width: "4.5in",
+    height: "2.6in",
+    sizeLabel: "4.5 x 2.6 in",
+    cardsPerSheet: 3,
+    copiesPerPage: 3,
+    positionsPerPage: 3,
+  }),
+  flag: Object.freeze({
+    id: "flag",
+    label: "Flag wristband note card",
+    width: "2.1in",
+    height: "4.4in",
+    sizeLabel: "2.1 x 4.4 in",
+    cardsPerSheet: 2,
+    copiesPerPage: 2,
+    positionsPerPage: 2,
+  }),
+});
+const WRISTBAND_PRINT_WIDTH = WRISTBAND_PRINT_PROFILES.standard.width;
+const WRISTBAND_PRINT_HEIGHT = WRISTBAND_PRINT_PROFILES.standard.height;
+const WRISTBAND_PRINT_SIZE_LABEL = WRISTBAND_PRINT_PROFILES.standard.sizeLabel;
+const WRISTBAND_PRINT_CARDS_PER_SHEET = WRISTBAND_PRINT_PROFILES.standard.cardsPerSheet;
 
-function _applyWristbandPrintDimensions() {
+function _getWbPrintProfile(profileId) {
+  const key = String(profileId || "").trim();
+  return WRISTBAND_PRINT_PROFILES[key] || WRISTBAND_PRINT_PROFILES[WRISTBAND_DEFAULT_PRINT_PROFILE];
+}
+
+function _getSelectedWbPrintProfile() {
+  return _getWbPrintProfile(document.getElementById("wbPrintSizeMode")?.value);
+}
+
+function _applyWristbandPrintDimensions(profileId = null) {
+  const profile = _getWbPrintProfile(profileId);
   const previousWidth = document.body.style.getPropertyValue("--wristband-print-width");
   const previousHeight = document.body.style.getPropertyValue("--wristband-print-height");
+  const hadPreviousSize = Object.prototype.hasOwnProperty.call(
+    document.body.dataset,
+    "wbPrintSize",
+  );
+  const previousSize = document.body.dataset.wbPrintSize;
 
-  document.body.style.setProperty("--wristband-print-width", WRISTBAND_PRINT_WIDTH);
-  document.body.style.setProperty("--wristband-print-height", WRISTBAND_PRINT_HEIGHT);
+  document.body.style.setProperty("--wristband-print-width", profile.width);
+  document.body.style.setProperty("--wristband-print-height", profile.height);
+  document.body.dataset.wbPrintSize = profile.id;
 
   return function restoreWristbandPrintDimensions() {
     if (previousWidth) {
@@ -21,17 +60,26 @@ function _applyWristbandPrintDimensions() {
     } else {
       document.body.style.removeProperty("--wristband-print-height");
     }
+    if (hadPreviousSize) {
+      document.body.dataset.wbPrintSize = previousSize;
+    } else {
+      delete document.body.dataset.wbPrintSize;
+    }
   };
 }
 
-function _buildWristbandPrintSheets(cardHtml, repeatSingleCard = false) {
-  const cards = repeatSingleCard ? [cardHtml[0], cardHtml[0], cardHtml[0]] : cardHtml;
+function _buildWristbandPrintSheets(cardHtml, repeatSingleCard = false, profileId = null) {
+  const profile = _getWbPrintProfile(profileId);
+  const cardsPerSheet = Math.max(1, profile.cardsPerSheet || WRISTBAND_PRINT_CARDS_PER_SHEET);
+  const cards = repeatSingleCard
+    ? Array.from({ length: cardsPerSheet }, () => cardHtml[0])
+    : cardHtml;
   const sheets = [];
 
-  for (let i = 0; i < cards.length; i += WRISTBAND_PRINT_CARDS_PER_SHEET) {
+  for (let i = 0; i < cards.length; i += cardsPerSheet) {
     sheets.push(
       `<section class="wristband-print-sheet">${cards
-        .slice(i, i + WRISTBAND_PRINT_CARDS_PER_SHEET)
+        .slice(i, i + cardsPerSheet)
         .join("")}</section>`,
     );
   }
@@ -43,8 +91,9 @@ function printWristband() {
   openWristbandPrintPreview(wbPlayerCardMode ? "player-all" : "classic");
 }
 
-function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet") {
+function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet", profileId = null) {
   try {
+    const profile = _getWbPrintProfile(profileId);
     const cellsPerCard = getActiveWristbandCellCount();
     const selectedCards = (Array.isArray(cardIndexes) ? cardIndexes : [])
       .map((cardIdx) => ({ cardIdx, card: wristbandCards[cardIdx] }))
@@ -54,7 +103,7 @@ function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet") {
       return;
     }
 
-    showToast(`Print at 100% or Actual Size for a ${WRISTBAND_PRINT_SIZE_LABEL} wristband.`, {
+    showToast(`Print at 100% or Actual Size for a ${profile.sizeLabel} wristband.`, {
       duration: 4000,
       type: "info",
     });
@@ -161,21 +210,24 @@ function _executeClassicWristbandPrint(cardIndexes, layoutMode = "sheet") {
         .join("");
       container.className = "wristband-print-sheets single-card-layout";
     } else if (layoutMode === "three-copies") {
+      const copyCount = Math.max(1, profile.copiesPerPage || profile.cardsPerSheet || 1);
       container.innerHTML = cardHtml
         .map(
-          (html) =>
-            `<section class="wristband-print-sheet">${html}${html}${html}</section>`,
+          (html) => {
+            const copies = Array.from({ length: copyCount }, () => html).join("");
+            return `<section class="wristband-print-sheet">${copies}</section>`;
+          },
         )
         .join("");
       container.className = "wristband-print-sheets single-card-tripled";
     } else {
-      container.innerHTML = _buildWristbandPrintSheets(cardHtml, false);
+      container.innerHTML = _buildWristbandPrintSheets(cardHtml, false, profile.id);
       container.className = "wristband-print-sheets multi-card-layout";
     }
 
     document.getElementById("wristbandPrint").classList.remove("hidden");
     document.body.dataset.printMode = "wristband";
-    const restorePrintDimensions = _applyWristbandPrintDimensions();
+    const restorePrintDimensions = _applyWristbandPrintDimensions(profile.id);
     setupPrintPageStyle(`
       @media print {
         @page { size: letter portrait; margin: 0; }
@@ -730,16 +782,27 @@ function openWristbandPrintPreview(requestedMode = "classic") {
   const isPlayer = String(requestedMode).startsWith("player");
   const layoutSelect = document.getElementById("wbPrintLayoutMode");
   if (!layoutSelect) return;
+  const sizeSelect = document.getElementById("wbPrintSizeMode");
+  if (sizeSelect) {
+    const previousSize = _getWbPrintProfile(sizeSelect.value).id;
+    sizeSelect.innerHTML = Object.values(WRISTBAND_PRINT_PROFILES)
+      .map(
+        (profile) =>
+          `<option value="${escapeHtml(profile.id)}">${escapeHtml(profile.label)} (${escapeHtml(profile.sizeLabel)})</option>`,
+      )
+      .join("");
+    sizeSelect.value = previousSize;
+  }
   layoutSelect.innerHTML = isPlayer
     ? `
       <option value="player-one">One wristband per page</option>
-      <option value="player-three">Three copies per page</option>
-      <option value="player-all">Selected positions, three per page</option>
+      <option value="player-three">Copies per page</option>
+      <option value="player-all">Selected positions per page</option>
     `
     : `
       <option value="classic-one">One wristband per page</option>
-      <option value="classic-sheet">Up to three cards per page</option>
-      <option value="classic-three">Three copies of each card per page</option>
+      <option value="classic-sheet">Cards per page</option>
+      <option value="classic-three">Copies of each card per page</option>
     `;
   wbPrintPreviewMode = isPlayer
     ? (requestedMode === "player" ? "player-all" : requestedMode)
@@ -916,6 +979,7 @@ function renderWristbandPrintPreview() {
   if (!layoutSelect) return;
   wbPrintPreviewMode = layoutSelect.value || wbPrintPreviewMode;
   const isPlayer = wbPrintPreviewMode.startsWith("player");
+  const printProfile = _getSelectedWbPrintProfile();
   const cardIndexes = _getSelectedWbPrintCards();
   const positionKeys = _getSelectedWbPrintPositions();
   const blankRules = isPlayer && _getWbPrintBlankRules();
@@ -926,11 +990,13 @@ function renderWristbandPrintPreview() {
 
   let pageCount = 0;
   if (wbPrintPreviewMode === "classic-sheet") {
-    pageCount = Math.ceil(cardIndexes.length / WRISTBAND_PRINT_CARDS_PER_SHEET);
+    pageCount = Math.ceil(cardIndexes.length / Math.max(1, printProfile.cardsPerSheet));
   } else if (wbPrintPreviewMode.startsWith("classic")) {
     pageCount = cardIndexes.length;
   } else if (wbPrintPreviewMode === "player-all") {
-    pageCount = cardIndexes.length * Math.ceil(positionKeys.length / 3);
+    pageCount =
+      cardIndexes.length *
+      Math.ceil(positionKeys.length / Math.max(1, printProfile.positionsPerPage));
   } else {
     pageCount = cardIndexes.length;
   }
@@ -942,7 +1008,15 @@ function renderWristbandPrintPreview() {
     )
       ? "script page"
       : "card";
-    summary.textContent = `${cardIndexes.length} ${cardNoun}${cardIndexes.length === 1 ? "" : "s"} · ${pageCount} print page${pageCount === 1 ? "" : "s"} · ${WRISTBAND_PRINT_SIZE_LABEL}${blankRules ? " · blank rules" : ""}`;
+    let pageDetail = "1 / page";
+    if (wbPrintPreviewMode === "classic-sheet") {
+      pageDetail = `${printProfile.cardsPerSheet} card${printProfile.cardsPerSheet === 1 ? "" : "s"} / page`;
+    } else if (wbPrintPreviewMode === "classic-three" || wbPrintPreviewMode === "player-three") {
+      pageDetail = `${printProfile.copiesPerPage} cop${printProfile.copiesPerPage === 1 ? "y" : "ies"} / page`;
+    } else if (wbPrintPreviewMode === "player-all") {
+      pageDetail = `${printProfile.positionsPerPage} position${printProfile.positionsPerPage === 1 ? "" : "s"} / page`;
+    }
+    summary.textContent = `${cardIndexes.length} ${cardNoun}${cardIndexes.length === 1 ? "" : "s"} · ${pageCount} print page${pageCount === 1 ? "" : "s"} · ${printProfile.sizeLabel} · ${pageDetail}${blankRules ? " · blank rules" : ""}`;
   }
 
   const warnings = [];
@@ -950,6 +1024,9 @@ function renderWristbandPrintPreview() {
   if (isPlayer && positionKeys.length === 0) warnings.push("Select at least one position.");
   if (isPlayer && wbPrintPreviewMode !== "player-all" && positionKeys.length > 1) {
     warnings.push("One-position layouts print the first selected position only.");
+  }
+  if (!isPlayer && printProfile.id === "flag") {
+    warnings.push("Flag note cards are narrow; player wristband layouts keep rules more readable.");
   }
   warnings.push(
     ..._getWristbandPrintWarnings(cardIndexes, positionKeys, isPlayer, blankRules),
@@ -964,6 +1041,9 @@ function renderWristbandPrintPreview() {
   const canvas = document.getElementById("wbPrintPreviewCanvas");
   if (canvas) {
     canvas.innerHTML = "";
+    canvas.style.setProperty("--wristband-print-width", printProfile.width);
+    canvas.style.setProperty("--wristband-print-height", printProfile.height);
+    canvas.dataset.wbPrintSize = printProfile.id;
     const previewCardIdx = cardIndexes[0];
     const previewPositionKey = positionKeys[0] || wbPlayerCardPos || "respQ";
     if (isPlayer && wristbandCards[previewCardIdx]) {
@@ -979,6 +1059,9 @@ function renderWristbandPrintPreview() {
       if (sourceCard) {
         const clone = sourceCard.cloneNode(true);
         clone.removeAttribute("id");
+        clone.classList.add("wb-print-preview-classic-card");
+        clone.style.width = printProfile.width;
+        clone.style.height = printProfile.height;
         clone.style.removeProperty("transform");
         clone.style.removeProperty("transform-origin");
         clone.querySelectorAll("[id]").forEach((element) => element.removeAttribute("id"));
@@ -1002,21 +1085,31 @@ function executeWristbandPrintPreview() {
   const cardIndexes = _getSelectedWbPrintCards();
   const positionKeys = _getSelectedWbPrintPositions();
   const blankRules = _getWbPrintBlankRules();
+  const printProfile = _getSelectedWbPrintProfile();
   if (cardIndexes.length === 0) return;
   closeWristbandPrintPreview();
 
   if (wbPrintPreviewMode === "classic-one") {
-    _executeClassicWristbandPrint(cardIndexes, "one-per-page");
+    _executeClassicWristbandPrint(cardIndexes, "one-per-page", printProfile.id);
   } else if (wbPrintPreviewMode === "classic-three") {
-    _executeClassicWristbandPrint(cardIndexes, "three-copies");
+    _executeClassicWristbandPrint(cardIndexes, "three-copies", printProfile.id);
   } else if (wbPrintPreviewMode === "classic-sheet") {
-    _executeClassicWristbandPrint(cardIndexes, "sheet");
+    _executeClassicWristbandPrint(cardIndexes, "sheet", printProfile.id);
   } else if (wbPrintPreviewMode === "player-one") {
-    _executePrintOnePlayerCard(cardIndexes, positionKeys[0], { blankRules });
+    _executePrintOnePlayerCard(cardIndexes, positionKeys[0], {
+      blankRules,
+      printSize: printProfile.id,
+    });
   } else if (wbPrintPreviewMode === "player-three") {
-    _executePrintThreePlayerCardCopies(cardIndexes, positionKeys[0], { blankRules });
+    _executePrintThreePlayerCardCopies(cardIndexes, positionKeys[0], {
+      blankRules,
+      printSize: printProfile.id,
+    });
   } else {
-    _executePrintAllPlayerCards(cardIndexes, positionKeys, { blankRules });
+    _executePrintAllPlayerCards(cardIndexes, positionKeys, {
+      blankRules,
+      printSize: printProfile.id,
+    });
   }
 }
 
@@ -1038,6 +1131,7 @@ function _executePrintOnePlayerCard(cardIndexes, positionKey, printOpts = {}) {
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
+  const printProfile = _getWbPrintProfile(printOpts.printSize);
   const posKey = positionKey || wbPlayerCardPos || "respQ";
   const posLabel = _playerPositionLabel(posKey);
   const opts = getWristbandDisplayOptions();
@@ -1067,6 +1161,7 @@ function _executePrintOnePlayerCard(cardIndexes, positionKey, printOpts = {}) {
     allHtml,
     `Player Wristband \u2014 ${posLabel}`,
     "portrait",
+    printProfile.id,
   );
 }
 
@@ -1076,6 +1171,8 @@ function _executePrintThreePlayerCardCopies(cardIndexes, positionKey, printOpts 
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
+  const printProfile = _getWbPrintProfile(printOpts.printSize);
+  const copyCount = Math.max(1, printProfile.copiesPerPage || 1);
   const posKey = positionKey || wbPlayerCardPos || "respQ";
   const posLabel = _playerPositionLabel(posKey);
   const opts = getWristbandDisplayOptions();
@@ -1089,12 +1186,13 @@ function _executePrintThreePlayerCardCopies(cardIndexes, positionKey, printOpts 
       if (!card?.data?.slice(0, WB_ROWS).some(Boolean)) return "";
       const cardName = card.name || `Card ${cardIdx + 1}`;
       const cardBlock = _buildPlayerPrintCard(card, cardIdx, posKey, opts, printOpts);
+      const cardCopies = Array.from({ length: copyCount }, () => cardBlock).join("");
       return `<div class="pc-print-page">
         <div class="pc-print-page-header">
           <span class="pc-print-pos-label">${escapeHtml(posLabel)}</span>
           <span class="pc-print-card-name">${escapeHtml(cardName)}</span>
         </div>
-        ${cardBlock}${cardBlock}${cardBlock}
+        ${cardCopies}
       </div>`;
     })
     .join("");
@@ -1103,8 +1201,9 @@ function _executePrintThreePlayerCardCopies(cardIndexes, positionKey, printOpts 
     printContainer,
     printContent,
     allHtml,
-    `Player Wristband \u2014 ${posLabel} \u2014 3 Copies`,
+    `Player Wristband \u2014 ${posLabel} \u2014 ${copyCount} Copies`,
     "portrait",
+    printProfile.id,
   );
 }
 
@@ -1117,6 +1216,8 @@ function _executePrintAllPlayerCards(cardIndexes, positionKeys, printOpts = {}) 
     showToast("No plays on the wristband to print.", { type: "warning" });
     return;
   }
+  const printProfile = _getWbPrintProfile(printOpts.printSize);
+  const positionsPerPage = Math.max(1, printProfile.positionsPerPage || 1);
   const opts = getWristbandDisplayOptions();
 
   const printContainer = document.getElementById("playerCardPrint");
@@ -1125,7 +1226,7 @@ function _executePrintAllPlayerCards(cardIndexes, positionKeys, printOpts = {}) 
 
   let allHtml = "";
 
-  // For each wristband card, print all positions 3 per page
+  // For each wristband card, print positions in groups sized to the selected card profile.
   const positions = PLAYER_WRISTBAND_POSITIONS.filter((position) =>
     (positionKeys || []).includes(position.key),
   );
@@ -1133,8 +1234,8 @@ function _executePrintAllPlayerCards(cardIndexes, positionKeys, printOpts = {}) 
     const card = wristbandCards[cardIdx];
     if (!card?.data?.slice(0, WB_ROWS).some(Boolean)) return;
     const cardName = card.name || `Card ${cardIdx + 1}`;
-    for (let p = 0; p < positions.length; p += 3) {
-      const group = positions.slice(p, p + 3);
+    for (let p = 0; p < positions.length; p += positionsPerPage) {
+      const group = positions.slice(p, p + positionsPerPage);
       let pageBlocks = "";
       group.forEach((pos) => {
         const posBlock = _buildPlayerPrintCard(card, cardIdx, pos.key, opts, printOpts);
@@ -1156,14 +1257,22 @@ function _executePrintAllPlayerCards(cardIndexes, positionKeys, printOpts = {}) 
     allHtml,
     "Player Wristbands \u2014 All Positions",
     "portrait",
+    printProfile.id,
   );
 }
 
-function _triggerPlayerPrint(printContainer, printContent, html, title, orientation) {
+function _triggerPlayerPrint(
+  printContainer,
+  printContent,
+  html,
+  title,
+  orientation,
+  printSizeId = null,
+) {
   printContent.innerHTML = html;
   document.body.dataset.printMode = "playerCards";
   printContainer.classList.remove("hidden");
-  const restorePrintDimensions = _applyWristbandPrintDimensions();
+  const restorePrintDimensions = _applyWristbandPrintDimensions(printSizeId);
 
   // Directly hide all other body children so they don't show through Chrome's print dialog
   const _ghostEls = Array.from(document.body.children).filter(el => el !== printContainer);

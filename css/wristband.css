@@ -482,6 +482,16 @@
   pointer-events: none;
 }
 
+.wb-print-preview-canvas .wristband-card.wb-print-preview-classic-card {
+  width: var(--wristband-print-width, 4.5in);
+  height: var(--wristband-print-height, 2.6in);
+  transform: scale(0.78);
+}
+
+.wb-print-preview-canvas[data-wb-print-size="flag"] .wristband-card.wb-print-preview-classic-card {
+  transform: scale(0.82);
+}
+
 .wb-print-preview-canvas .pc-print-card-wrap {
   --wristband-print-ink: #0f172a;
   --wristband-print-grid: #64748b;
@@ -547,6 +557,26 @@
   width: 100%;
   height: 0.75em;
   border-bottom: 1px solid var(--wristband-print-grid);
+}
+
+.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap {
+  transform: scale(0.92);
+  transform-origin: center;
+}
+
+.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-grid {
+  grid-template-columns: 0.17in minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
+}
+
+.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell,
+.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .cell-play {
+  font-size: 6.5px;
+  padding-inline: 2px;
+}
+
+.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-assignment {
+  font-size: 6px;
+  line-height: 1.05;
 }
 
 .wb-print-preview-summary {
@@ -2269,6 +2299,58 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     width: 100% !important;
     height: 0.12in !important;
     border-bottom: 0.5pt solid var(--wristband-print-grid) !important;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-page {
+    justify-content: center;
+    gap: 0.18in;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-single {
+    gap: 0.2in;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-page-header {
+    padding-bottom: 2pt;
+    margin-bottom: 3pt;
+    border-bottom-width: 1pt;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-pos-label {
+    font-size: 9pt;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-card-name {
+    font-size: 6pt;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-grid {
+    grid-template-columns: 0.17in minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell {
+    font-size: 4.65pt !important;
+    line-height: 1.02 !important;
+    padding: 0 0.018in !important;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell.num-cell {
+    font-size: 4.8pt !important;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-card-wrap .cell-play {
+    font-size: 4.65pt !important;
+    line-height: 1.02 !important;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-assignment {
+    font-size: 4.1pt !important;
+    line-height: 1 !important;
+    padding: 0 0.018in !important;
+  }
+
+  body[data-wb-print-size="flag"] .pc-print-assignment-blank span {
+    height: 0.14in !important;
   }
 
   .pc-print-card-wrap .line-call,
