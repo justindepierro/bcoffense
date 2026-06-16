@@ -173,20 +173,20 @@
     font-weight: 500 !important;
   }
   body[data-wb-print-size="flag"] .wristband-print-sheet {
-    gap: 0.2in !important;
+    gap: 0.18in !important;
   }
   body[data-wb-print-size="flag"] .wristband-print .wristband-grid {
-    grid-template-columns: 0.16in minmax(0, 1fr) 0.16in minmax(0, 1fr) !important;
+    grid-template-columns: 0.22in minmax(0, 1fr) 0.22in minmax(0, 1fr) !important;
   }
   body[data-wb-print-size="flag"] .wristband-print .wristband-cell {
-    font-size: 5.2pt !important;
-    padding: 0 0.018in !important;
+    font-size: 6pt !important;
+    padding: 0 0.022in !important;
   }
   body[data-wb-print-size="flag"] .wristband-print .wristband-cell.num-cell {
-    font-size: 5.1pt !important;
+    font-size: 5.8pt !important;
   }
   body[data-wb-print-size="flag"] .wristband-print .cell-play {
-    font-size: 5.2pt !important;
+    font-size: 6pt !important;
     gap: 0.01in !important;
   }
   .wristband-print .wristband-cell:not([style*="background"]) {

@@ -13,12 +13,12 @@ const WRISTBAND_PRINT_PROFILES = Object.freeze({
   flag: Object.freeze({
     id: "flag",
     label: "Flag wristband note card",
-    width: "2.1in",
-    height: "4.4in",
-    sizeLabel: "2.1 x 4.4 in",
-    cardsPerSheet: 2,
-    copiesPerPage: 2,
-    positionsPerPage: 2,
+    width: "4.4in",
+    height: "2.1in",
+    sizeLabel: "4.4 x 2.1 in",
+    cardsPerSheet: 4,
+    copiesPerPage: 4,
+    positionsPerPage: 4,
   }),
 });
 const WRISTBAND_PRINT_WIDTH = WRISTBAND_PRINT_PROFILES.standard.width;
@@ -1025,8 +1025,8 @@ function renderWristbandPrintPreview() {
   if (isPlayer && wbPrintPreviewMode !== "player-all" && positionKeys.length > 1) {
     warnings.push("One-position layouts print the first selected position only.");
   }
-  if (!isPlayer && printProfile.id === "flag") {
-    warnings.push("Flag note cards are narrow; player wristband layouts keep rules more readable.");
+  if (printProfile.id === "flag") {
+    warnings.push("Flag note cards are shorter than standard wristbands; long calls and rules may print tighter.");
   }
   warnings.push(
     ..._getWristbandPrintWarnings(cardIndexes, positionKeys, isPlayer, blankRules),

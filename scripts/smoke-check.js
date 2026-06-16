@@ -933,7 +933,7 @@ function checkWristbandWorkspaceContracts() {
     !/function _getWbDefaultPrintCardIndexes\(/.test(playerRuntime) ||
     !/function _getWbPrintScriptPageMeta\(/.test(playerRuntime) ||
     !/const WRISTBAND_PRINT_PROFILES = Object\.freeze/.test(playerRuntime) ||
-    !/flag:\s*Object\.freeze\(\{[\s\S]*?width:\s*"2\.1in"[\s\S]*?height:\s*"4\.4in"[\s\S]*?cardsPerSheet:\s*2/.test(
+    !/flag:\s*Object\.freeze\(\{[\s\S]*?width:\s*"4\.4in"[\s\S]*?height:\s*"2\.1in"[\s\S]*?cardsPerSheet:\s*4/.test(
       playerRuntime,
     ) ||
     !/function _getSelectedWbPrintProfile\(/.test(playerRuntime) ||

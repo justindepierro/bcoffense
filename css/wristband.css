@@ -560,22 +560,22 @@
 }
 
 .wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap {
-  transform: scale(0.92);
+  transform: scale(0.82);
   transform-origin: center;
 }
 
 .wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-grid {
-  grid-template-columns: 0.17in minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
+  grid-template-columns: 0.22in minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
 }
 
 .wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell,
 .wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .cell-play {
-  font-size: 6.5px;
+  font-size: 7px;
   padding-inline: 2px;
 }
 
 .wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-assignment {
-  font-size: 6px;
+  font-size: 6.2px;
   line-height: 1.05;
 }
 
@@ -2303,11 +2303,11 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   body[data-wb-print-size="flag"] .pc-print-page {
     justify-content: center;
-    gap: 0.18in;
+    gap: 0.13in;
   }
 
   body[data-wb-print-size="flag"] .pc-print-single {
-    gap: 0.2in;
+    gap: 0.18in;
   }
 
   body[data-wb-print-size="flag"] .pc-print-page-header {
@@ -2325,32 +2325,32 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 
   body[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-grid {
-    grid-template-columns: 0.17in minmax(0, 0.92fr) minmax(0, 1.08fr) !important;
+    grid-template-columns: 0.22in minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
   }
 
   body[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell {
-    font-size: 4.65pt !important;
+    font-size: 5pt !important;
     line-height: 1.02 !important;
-    padding: 0 0.018in !important;
+    padding: 0 0.022in !important;
   }
 
   body[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell.num-cell {
-    font-size: 4.8pt !important;
+    font-size: 5pt !important;
   }
 
   body[data-wb-print-size="flag"] .pc-print-card-wrap .cell-play {
-    font-size: 4.65pt !important;
+    font-size: 5pt !important;
     line-height: 1.02 !important;
   }
 
   body[data-wb-print-size="flag"] .pc-print-assignment {
-    font-size: 4.1pt !important;
+    font-size: 4.3pt !important;
     line-height: 1 !important;
-    padding: 0 0.018in !important;
+    padding: 0 0.022in !important;
   }
 
   body[data-wb-print-size="flag"] .pc-print-assignment-blank span {
-    height: 0.14in !important;
+    height: 0.1in !important;
   }
 
   .pc-print-card-wrap .line-call,
