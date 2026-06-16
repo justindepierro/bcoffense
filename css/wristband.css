@@ -332,8 +332,11 @@
 .wb-print-preview-modal {
   display: grid;
   gap: var(--space-md);
-  width: min(940px, calc(100vw - 32px));
-  max-height: min(820px, calc(100vh - 32px));
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  width: min(1120px, calc(100vw - 32px));
+  max-width: min(1120px, calc(100vw - 32px));
+  max-height: min(860px, calc(100vh - 32px));
+  overflow: hidden;
 }
 
 .wb-print-preview-modal h3 {
@@ -342,7 +345,7 @@
 
 .wb-print-preview-layout {
   display: grid;
-  grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+  grid-template-columns: minmax(300px, 360px) minmax(520px, 1fr);
   gap: var(--space-lg);
   min-height: 0;
 }
@@ -353,6 +356,13 @@
   align-content: start;
   gap: var(--space-sm);
   min-height: 0;
+  min-width: 0;
+}
+
+.wb-print-preview-controls {
+  max-height: 100%;
+  overflow: auto;
+  padding-right: 2px;
 }
 
 .wb-print-field {
@@ -378,8 +388,16 @@
   font-weight: 800;
 }
 
+.wb-print-help {
+  margin: calc(-1 * var(--space-xs)) 0 var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  line-height: 1.35;
+}
+
 .wb-print-check-actions {
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--space-xs);
 }
@@ -399,9 +417,38 @@
   display: flex;
   align-items: center;
   gap: var(--space-xs);
-  min-height: 30px;
+  min-height: 34px;
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
+}
+
+.wb-print-card-choice-row {
+  padding: 4px 6px;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.wb-print-card-choice-row:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+}
+
+.wb-print-choice-copy {
+  display: grid;
+  min-width: 0;
+  gap: 1px;
+}
+
+.wb-print-choice-title {
+  color: var(--color-text);
+  font-weight: 800;
+}
+
+.wb-print-choice-copy small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-3xs);
+  font-weight: 700;
+  line-height: 1.2;
 }
 
 .wb-print-toggle {
@@ -417,8 +464,8 @@
 .wb-print-preview-canvas {
   display: grid;
   place-items: center;
-  min-height: 310px;
-  overflow: hidden;
+  min-height: 350px;
+  overflow: auto;
   padding: var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -433,6 +480,73 @@
   transform: scale(0.58);
   transform-origin: center;
   pointer-events: none;
+}
+
+.wb-print-preview-canvas .pc-print-card-wrap {
+  --wristband-print-ink: #0f172a;
+  --wristband-print-grid: #64748b;
+  --wristband-print-grid-soft: #cbd5e1;
+  --wristband-print-row-alt: #f1f5f9;
+  --wristband-print-paper: #ffffff;
+  width: var(--wristband-print-width, 4.5in);
+  max-width: 100%;
+  pointer-events: none;
+}
+
+.wb-print-preview-canvas .pc-print-card-wrap .wristband-card {
+  width: var(--wristband-print-width, 4.5in) !important;
+  height: var(--wristband-print-height, 2.6in) !important;
+  max-width: none;
+  transform: none;
+  border: 1px solid var(--wristband-print-ink);
+  box-shadow: var(--shadow-xs);
+  overflow: hidden;
+}
+
+.wb-print-preview-canvas .pc-print-card-wrap .wristband-grid {
+  width: 100%;
+  height: 100%;
+  display: grid !important;
+  grid-template-columns: 0.24in minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
+}
+
+.wb-print-preview-canvas .pc-print-card-wrap .wristband-cell {
+  min-width: 0;
+  padding: 0 3px;
+  border: 1px solid var(--wristband-print-grid-soft);
+  font-size: var(--font-size-micro);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+}
+
+.wb-print-preview-canvas .pc-print-card-wrap .cell-play {
+  min-width: 0;
+  max-width: 100%;
+  font-size: var(--font-size-micro);
+  line-height: 1;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.wb-print-preview-canvas .pc-print-assignment {
+  border-left: 1px solid var(--wristband-print-grid);
+  font-size: var(--font-size-micro);
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+
+.wb-print-preview-canvas .pc-print-assignment-blank {
+  align-items: center;
+  padding-inline: 6px;
+}
+
+.wb-print-preview-canvas .pc-print-assignment-blank span {
+  display: block;
+  width: 100%;
+  height: 0.75em;
+  border-bottom: 1px solid var(--wristband-print-grid);
 }
 
 .wb-print-preview-summary {
@@ -2167,6 +2281,15 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 
   .wb-print-preview-canvas .wristband-card {
     transform: scale(0.38);
+  }
+
+  .wb-print-preview-canvas .pc-print-card-wrap {
+    transform: scale(0.72);
+    transform-origin: center;
+  }
+
+  .wb-print-preview-canvas .pc-print-card-wrap .wristband-card {
+    transform: none;
   }
 
   .card-tabs {

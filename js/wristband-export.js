@@ -645,6 +645,79 @@ function _buildPlayerPrintCard(card, cardIdx, posKey, opts, printOpts = {}) {
 
 let wbPrintPreviewMode = "classic-sheet";
 
+function _getWbPrintScriptPageMeta(card) {
+  const name = String(card?.name || "").trim();
+  const match = name.match(/^(.+?)\s+(\d+)\/(\d+)$/);
+  if (!match) return null;
+  const page = parseInt(match[2], 10);
+  const total = parseInt(match[3], 10);
+  if (!Number.isInteger(page) || !Number.isInteger(total) || page < 1 || total < page) {
+    return null;
+  }
+  return {
+    title: match[1].trim(),
+    page,
+    total,
+  };
+}
+
+function _getWbPrintCardPlayCount(card) {
+  return (card?.data || [])
+    .slice(0, getActiveWristbandCellCount())
+    .filter(Boolean).length;
+}
+
+function _getWbDefaultPrintCardIndexes(isPlayer) {
+  const playableIndexes = wristbandCards
+    .map((card, cardIdx) => ({ card, cardIdx, count: _getWbPrintCardPlayCount(card) }))
+    .filter((entry) => entry.count > 0);
+  if (playableIndexes.length === 0) return [];
+
+  if (isPlayer) {
+    const scriptGroups = new Map();
+    playableIndexes.forEach(({ card, cardIdx }) => {
+      const meta = _getWbPrintScriptPageMeta(card);
+      if (!meta) return;
+      const key = `${meta.title}::${meta.total}`;
+      if (!scriptGroups.has(key)) {
+        scriptGroups.set(key, { title: meta.title, total: meta.total, entries: [] });
+      }
+      scriptGroups.get(key).entries.push({ cardIdx, page: meta.page });
+    });
+
+    if (scriptGroups.size > 0) {
+      const activeGroup = Array.from(scriptGroups.values()).find((group) =>
+        group.entries.some((entry) => entry.cardIdx === currentCardIndex),
+      );
+      const groups = Array.from(scriptGroups.values());
+      const group = activeGroup || groups[groups.length - 1];
+      return group.entries
+        .slice()
+        .sort((left, right) => left.page - right.page)
+        .map((entry) => entry.cardIdx);
+    }
+  }
+
+  const activeEntry = playableIndexes.find((entry) => entry.cardIdx === currentCardIndex);
+  return [activeEntry?.cardIdx ?? playableIndexes[0].cardIdx];
+}
+
+function _getWbPrintCardLabel(card, cardIdx, count) {
+  const meta = _getWbPrintScriptPageMeta(card);
+  if (meta) {
+    return {
+      primary: `Page ${meta.page} of ${meta.total}`,
+      secondary: `${meta.title} · ${count} play${count === 1 ? "" : "s"}`,
+      isScriptPage: true,
+    };
+  }
+  return {
+    primary: card?.name || `Card ${cardIdx + 1}`,
+    secondary: `${count} play${count === 1 ? "" : "s"}`,
+    isScriptPage: false,
+  };
+}
+
 function openWristbandPrintPreview(requestedMode = "classic") {
   const hasPlays = wristbandCards.some((card) =>
     card.data?.slice(0, getActiveWristbandCellCount()).some(Boolean),
@@ -673,17 +746,33 @@ function openWristbandPrintPreview(requestedMode = "classic") {
     : "classic-sheet";
   layoutSelect.value = wbPrintPreviewMode;
 
+  const defaultCardIndexes = new Set(_getWbDefaultPrintCardIndexes(isPlayer));
+  const hasScriptPages = wristbandCards.some((card) => _getWbPrintScriptPageMeta(card));
+  const cardLegend = document.getElementById("wbPrintCardLegend");
+  const cardHelp = document.getElementById("wbPrintCardHelp");
+  if (cardLegend) {
+    cardLegend.textContent = isPlayer && hasScriptPages ? "Script Pages" : "Cards";
+  }
+  if (cardHelp) {
+    cardHelp.textContent =
+      isPlayer && hasScriptPages
+        ? "Defaults to the active script page group. Use Default, All, or Clear to change the print target."
+        : "Defaults to the current card. Select more cards only when you want a multi-card print.";
+  }
+
   const cardChoices = document.getElementById("wbPrintCardChoices");
   if (cardChoices) {
     cardChoices.innerHTML = wristbandCards
       .map((card, cardIdx) => {
-        const count = card.data
-          .slice(0, getActiveWristbandCellCount())
-          .filter(Boolean).length;
-        return `<label>
-          <input type="checkbox" class="wb-print-card-choice" value="${cardIdx}" ${count > 0 ? "checked" : "disabled"}
+        const count = _getWbPrintCardPlayCount(card);
+        const label = _getWbPrintCardLabel(card, cardIdx, count);
+        return `<label class="wb-print-card-choice-row${label.isScriptPage ? " is-script-page" : ""}">
+          <input type="checkbox" class="wb-print-card-choice" value="${cardIdx}" ${defaultCardIndexes.has(cardIdx) ? "checked" : ""} ${count > 0 ? "" : "disabled"}
             data-onchange="renderWristbandPrintPreview" />
-          <span>${escapeHtml(card.name || `Card ${cardIdx + 1}`)} (${count})</span>
+          <span class="wb-print-choice-copy">
+            <span class="wb-print-choice-title">${escapeHtml(label.primary)}</span>
+            <small>${escapeHtml(label.secondary)}</small>
+          </span>
         </label>`;
       })
       .join("");
@@ -754,6 +843,18 @@ function selectAllWbPrintCards() {
 
 function clearAllWbPrintCards() {
   _setWbPrintChoices(".wb-print-card-choice", false);
+}
+
+function selectCurrentWbPrintCard() {
+  const current = _getWbDefaultPrintCardIndexes(
+    String(wbPrintPreviewMode).startsWith("player"),
+  );
+  const currentSet = new Set(current);
+  document.querySelectorAll(".wb-print-card-choice").forEach((input) => {
+    const cardIdx = parseInt(input.value, 10);
+    input.checked = currentSet.has(cardIdx) && !input.disabled;
+  });
+  renderWristbandPrintPreview();
 }
 
 function selectAllWbPrintPositions() {
@@ -836,7 +937,12 @@ function renderWristbandPrintPreview() {
 
   const summary = document.getElementById("wbPrintPreviewSummary");
   if (summary) {
-    summary.textContent = `${cardIndexes.length} card${cardIndexes.length === 1 ? "" : "s"} · ${pageCount} page${pageCount === 1 ? "" : "s"} · ${WRISTBAND_PRINT_SIZE_LABEL}${blankRules ? " · blank rules" : ""}`;
+    const cardNoun = isPlayer && cardIndexes.some((cardIdx) =>
+      _getWbPrintScriptPageMeta(wristbandCards[cardIdx]),
+    )
+      ? "script page"
+      : "card";
+    summary.textContent = `${cardIndexes.length} ${cardNoun}${cardIndexes.length === 1 ? "" : "s"} · ${pageCount} print page${pageCount === 1 ? "" : "s"} · ${WRISTBAND_PRINT_SIZE_LABEL}${blankRules ? " · blank rules" : ""}`;
   }
 
   const warnings = [];

@@ -925,6 +925,10 @@ function checkWristbandWorkspaceContracts() {
   if (
     !/function openWristbandPrintPreview\(/.test(playerRuntime) ||
     !/function executeWristbandPrintPreview\(/.test(playerRuntime) ||
+    !/function _getWbDefaultPrintCardIndexes\(/.test(playerRuntime) ||
+    !/function _getWbPrintScriptPageMeta\(/.test(playerRuntime) ||
+    !/id="wbPrintCardLegend"/.test(html) ||
+    !/data-action="selectCurrentWbPrintCard"/.test(html) ||
     !/_executeClassicWristbandPrint\(cardIndexes, "one-per-page"\)/.test(
       playerRuntime,
     ) ||
@@ -937,7 +941,9 @@ function checkWristbandWorkspaceContracts() {
   if (
     !/#wristband\.wb-mobile-view-builder \.wristband-plays/.test(css) ||
     !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
-    !/\.wb-print-preview-layout/.test(css)
+    !/\.wb-print-preview-layout/.test(css) ||
+    !/\.wb-print-preview-modal\s*\{[\s\S]*?max-width:\s*min\(1120px/.test(css) ||
+    !/\.wb-print-preview-canvas \.pc-print-card-wrap/.test(css)
   ) {
     fail("wristband mobile view or print preview styling is incomplete");
   }
