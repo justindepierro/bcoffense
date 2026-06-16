@@ -3,6 +3,12 @@ function renderPlaybook() {
     const tbody = document.querySelector("#playbookTable tbody");
     const searchTerm =
       document.getElementById("searchPlay")?.value?.trim().toLowerCase() || "";
+    const currentUser =
+      typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+    const isReadOnlyViewer = Boolean(
+      currentUser &&
+      !(typeof isAdminUser === "function" ? isAdminUser() : false),
+    );
     const highlight = createSearchHighlighter(searchTerm);
     const runtimeIndex =
       typeof getPlaybookRuntimeIndex === "function" ? getPlaybookRuntimeIndex() : null;
@@ -72,6 +78,11 @@ function renderPlaybook() {
         usage: usageIndex ? usageIndex.get(play) : null,
       };
     });
+    renderPlayerPlaybookSummary({
+      searchTerm,
+      filteredCount: totalFiltered,
+      currentUser,
+    });
 
     tbody.innerHTML = pageItems
       .map((item) => {
@@ -97,11 +108,14 @@ function renderPlaybook() {
         const gpToggle = activeOpponent
           ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
+        const rowTitle = isReadOnlyViewer
+          ? "Click to select and use Present to study this play"
+          : "Click to select, double-click to edit";
 
         return `
             <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
                 data-preview="${idx}"
-                title="Click to select, double-click to edit">
+                title="${rowTitle}">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${item.installBadge}</td>
                 <td class="col-type">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${highlight(play.type)}</td>
@@ -242,6 +256,94 @@ function _renderPlayUsagePills(usage, weekLabel) {
     </span>`;
 }
 
+function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, currentUser = null } = {}) {
+  const section = document.getElementById("playerPlaybookSummary");
+  if (!section) return;
+
+  const isPlayer = currentUser?.role === "player";
+  if (!isPlayer) {
+    section.hidden = true;
+    section.innerHTML = "";
+    return;
+  }
+
+  const publishedScripts =
+    typeof getPlayerPublishedScripts === "function" ? getPlayerPublishedScripts() : [];
+  const featuredScript = publishedScripts[0] || null;
+  const loadedScriptStats = Array.isArray(script) && script.some((item) => item && !item.isSeparator)
+    && typeof getSavedScriptStats === "function"
+    ? getSavedScriptStats({
+      plays: script,
+      date: document.getElementById("scriptDate")?.value || "",
+      savedAt: "",
+    })
+    : null;
+  const hasFilters =
+    Boolean(searchTerm) ||
+    activeTypeChips.size > 0 ||
+    activePersonnelChips.size > 0 ||
+    activePictureChips.size > 0 ||
+    [
+      "filterFormation",
+      "filterBasePlay",
+      "pbFilterBack",
+      "pbFilterMotion",
+      "pbFilterProtection",
+      "pbFilterTempo",
+    ].some((id) => Boolean(document.getElementById(id)?.value)) ||
+    Boolean(document.getElementById("pbGamePlanFilter")?.checked) ||
+    Boolean(document.getElementById("pbJvFilter")?.checked);
+
+  const stats = [
+    `${plays.length} total plays`,
+    `${filteredCount} showing`,
+    loadedScriptStats
+      ? `${loadedScriptStats.playCount} practice plays loaded`
+      : `${publishedScripts.length} published practice${publishedScripts.length === 1 ? "" : "s"}`,
+  ];
+  const featuredScriptId = featuredScript ? escapeHtml(String(featuredScript.id)) : "";
+  const primaryAction = loadedScriptStats
+    ? '<button class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice</button>'
+    : featuredScript
+      ? `<button class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">Load Latest Practice</button>`
+      : '<button class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice Tab</button>';
+  const secondaryAction = loadedScriptStats
+    ? '<button class="btn btn-secondary" data-action="openScriptPresentation">Swipe Loaded Script</button>'
+    : featuredScript
+      ? `<button class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}">Open Swipe View</button>`
+      : '<button class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
+  const tertiaryAction = hasFilters
+    ? '<button class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>'
+    : "";
+
+  section.hidden = false;
+  section.innerHTML = `
+    <div class="pb-player-summary__main">
+      <div class="pb-player-summary__copy">
+        <span class="pb-player-summary__eyebrow">Player Playbook</span>
+        <h2>Study the full menu without the staff clutter.</h2>
+        <p>Search by play name, personnel, formation, motion, protection, and tempo. Use Present on any play to see the diagram full screen.</p>
+      </div>
+      <div class="pb-player-summary__actions">
+        ${primaryAction}
+        ${secondaryAction}
+        ${tertiaryAction}
+      </div>
+    </div>
+    <div class="pb-player-summary__stats">
+      ${stats.map((value) => `<span>${escapeHtml(value)}</span>`).join("")}
+    </div>
+    <div class="pb-player-summary__filters" aria-label="Suggested player filters">
+      <span class="pb-player-summary__filter-pill">Personnel</span>
+      <span class="pb-player-summary__filter-pill">Formation</span>
+      <span class="pb-player-summary__filter-pill">Base Play</span>
+      <span class="pb-player-summary__filter-pill">Motion</span>
+      <span class="pb-player-summary__filter-pill">Protection</span>
+      <span class="pb-player-summary__filter-pill">Tempo</span>
+    </div>
+  `;
+}
+
 function createSearchHighlighter(searchTerm) {
   if (!searchTerm) return (text) => escapeHtml(text);
   const escaped = escapeHtml(searchTerm).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
@@ -304,7 +406,11 @@ function initPlaybookKeyboard() {
         case "Enter":
           e.preventDefault();
           if (selectedRowIndex >= 0) {
-            addPlayFromPlaybook(selectedRowIndex);
+            if (typeof isAdminUser === "function" && !isAdminUser()) {
+              openPlaybookPresentation(selectedRowIndex);
+            } else {
+              addPlayFromPlaybook(selectedRowIndex);
+            }
           }
           break;
         case "c":

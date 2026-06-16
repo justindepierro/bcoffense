@@ -360,6 +360,7 @@ body[data-auth-role="player"] .tab.active {
 }
 
 body[data-auth-role="player"] #dashboard.panel,
+body[data-auth-role="player"] #playbook.panel,
 body[data-auth-role="player"] #script.panel {
   margin-top: 12px;
   border: 0;

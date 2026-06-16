@@ -663,10 +663,16 @@ function renderPlayerDashboardHome() {
       <button class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
         Open Swipe View
       </button>
+      <button class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+        Open Playbook
+      </button>
     `
     : `
       <button class="btn btn-primary" data-action="showTab" data-arg="script">
         Go to Practice
+      </button>
+      <button class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+        Open Playbook
       </button>
     `;
 
@@ -676,7 +682,7 @@ function renderPlayerDashboardHome() {
       <div class="player-home-hero__copy">
         <span class="player-home-eyebrow">Player Portal</span>
         <h2>${escapeHtml(teamName)}</h2>
-        <p>${escapeHtml(todayLabel)} • Open the plan, swipe the script, and lock your position when the tempo picks up.</p>
+        <p>${escapeHtml(todayLabel)} • Open the plan, study the playbook, swipe the script, and lock your position when the tempo picks up.</p>
       </div>
       <div class="player-home-hero__actions">
         ${featuredActions}
@@ -742,6 +748,9 @@ function renderPlayerDashboardHome() {
         <div class="player-home-card__actions">
           <button class="btn btn-secondary" data-action="showTab" data-arg="script">
             Open Practice Tab
+          </button>
+          <button class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+            Open Playbook
           </button>
           ${
             loadedScript

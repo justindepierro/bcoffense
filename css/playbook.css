@@ -420,6 +420,97 @@ table.sortable th {
   font-size: var(--font-size-md);
 }
 
+.pb-player-summary {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  margin-bottom: var(--space-md);
+  padding: 20px 22px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, rgb(10 18 42 / 0.03), rgb(25 42 81 / 0.08)),
+    var(--color-surface);
+  box-shadow: var(--shadow-sm);
+}
+
+.pb-player-summary__main {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-lg);
+}
+
+.pb-player-summary__copy {
+  max-width: 720px;
+}
+
+.pb-player-summary__eyebrow {
+  display: inline-flex;
+  align-items: center;
+  margin-bottom: var(--space-xs);
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+
+.pb-player-summary h2 {
+  margin: 0;
+  color: var(--color-dark);
+  font-size: var(--font-size-3xl);
+  line-height: 1.05;
+  letter-spacing: 0.01em;
+}
+
+.pb-player-summary p {
+  margin: var(--space-sm) 0 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-lg);
+  line-height: 1.55;
+}
+
+.pb-player-summary__actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-sm);
+  min-width: 260px;
+}
+
+.pb-player-summary__stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+}
+
+.pb-player-summary__stats span,
+.pb-player-summary__filter-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 36px;
+  padding: 0 14px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border-light);
+  background: rgb(255 255 255 / 0.88);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+.pb-player-summary__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+body[data-auth-role="player"] #playbookTable .col-gameplan,
+body[data-auth-role="player"] .gp-card-btn {
+  display: none;
+}
+
 /* ═══════════════ Playbook Controls ═══════════════ */
 
 .pb-controls {
@@ -1297,6 +1388,34 @@ table.sortable th {
 }
 
 @media (max-width: 640px) {
+  .pb-player-summary {
+    padding: 16px;
+  }
+
+  .pb-player-summary__main {
+    flex-direction: column;
+    gap: var(--space-md);
+  }
+
+  .pb-player-summary h2 {
+    font-size: var(--font-size-2xl);
+  }
+
+  .pb-player-summary p {
+    font-size: var(--font-size-base);
+  }
+
+  .pb-player-summary__actions {
+    width: 100%;
+    justify-content: stretch;
+    min-width: 0;
+  }
+
+  .pb-player-summary__actions .btn {
+    flex: 1 1 180px;
+    justify-content: center;
+  }
+
   .pb-controls-row,
   .pb-actions-row,
   .pb-actions-left,

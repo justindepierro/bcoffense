@@ -800,7 +800,7 @@ function checkPlayerPortalContracts() {
   const presentationCss = read("css/play-presentation.css");
 
   if (
-    !/player:\s*\["dashboard",\s*"script"\]/.test(auth) ||
+    !/player:\s*\["dashboard",\s*"playbook",\s*"script"\]/.test(auth) ||
     !/player:\s*"dashboard"/.test(auth) ||
     !/function syncPlayerPortalChrome\(\)/.test(auth) ||
     !/auth-login-shell/.test(auth) ||
@@ -809,8 +809,10 @@ function checkPlayerPortalContracts() {
     fail("player auth shell or tab permissions are incomplete");
   }
   if (
+    !/data-player-label="Playbook"/.test(html) ||
     !/data-player-label="Practice"/.test(html) ||
     !/data-player-label="Home"/.test(html) ||
+    !/id="playerPlaybookSummary"/.test(html) ||
     !/id="playerDashboardHome"/.test(html) ||
     !/id="commandPaletteBtn"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/id="quickTools"[^>]*data-auth-player-hide="true"/.test(html)
@@ -821,7 +823,8 @@ function checkPlayerPortalContracts() {
     !/function renderPlayerDashboardHome\(\)/.test(dashboard) ||
     !/Player Portal/.test(dashboard) ||
     !/loadPublishedPlayerScript/.test(dashboard) ||
-    !/presentPublishedPlayerScript/.test(dashboard)
+    !/presentPublishedPlayerScript/.test(dashboard) ||
+    !/Open Playbook/.test(dashboard)
   ) {
     fail("player dashboard home is incomplete");
   }
@@ -833,8 +836,10 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\[data-auth-role="player"\] \.tabs/.test(
       responsiveCss,
     ) ||
+    !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
-    !/\.player-home-grid/.test(dashboardCss)
+    !/\.player-home-grid/.test(dashboardCss) ||
+    !/\.pb-player-summary/.test(read("css/playbook.css"))
   ) {
     fail("player portal styling is incomplete");
   }

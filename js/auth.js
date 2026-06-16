@@ -24,7 +24,7 @@
       "offensebuilder",
       "dashboard",
     ],
-    player: ["dashboard", "script"],
+    player: ["dashboard", "playbook", "script"],
   };
 
   const AUTH_ROLE_DEFAULT_TAB = {
@@ -242,6 +242,7 @@
     const isPlayer = currentAuthUser?.role === "player";
     document.body?.classList.toggle("player-portal", isPlayer);
     [
+      ["tab-playbook", "Playbook", "Playbook"],
       ["tab-dashboard", "📊 Dashboard", "Home"],
       ["tab-script", "Practice Script Builder", "Practice"],
     ].forEach(([id, defaultLabel, playerLabel]) => {

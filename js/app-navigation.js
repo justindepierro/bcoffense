@@ -49,6 +49,8 @@ function showTab(tabName) {
 
   if (tabName === "installation") {
     initInstallation();
+  } else if (tabName === "playbook") {
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
   } else if (tabName === "identity") {
     if (typeof renderIdentity === "function") renderIdentity();
   } else if (tabName === "script") {

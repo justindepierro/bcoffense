@@ -617,7 +617,7 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!row) return;
       const rowIdx = parseInt(row.dataset.idx, 10);
       if (typeof isAdminUser === "function" && !isAdminUser()) {
-        selectPlaybookRow(rowIdx);
+        openPlaybookPresentation(rowIdx);
         e.stopPropagation();
         return;
       }
