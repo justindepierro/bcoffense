@@ -737,7 +737,9 @@ function checkScriptPlayerPublishingContracts() {
     !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptStorage) ||
     !/data-onchange="togglePlayerScriptAccess"/.test(scriptStorage) ||
     !/data-action="loadPublishedPlayerScript"/.test(scriptStorage) ||
-    !/data-action="presentPublishedPlayerScript"/.test(scriptStorage)
+    !/data-action="presentPublishedPlayerScript"/.test(scriptStorage) ||
+    !/case "loadPublishedPlayerScript"/.test(appEvents) ||
+    !/case "presentPublishedPlayerScript"/.test(appEvents)
   ) {
     fail("player script publishing runtime is incomplete");
   }

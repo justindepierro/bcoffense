@@ -303,17 +303,17 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
   ];
   const featuredScriptId = featuredScript ? escapeHtml(String(featuredScript.id)) : "";
   const primaryAction = loadedScriptStats
-    ? '<button class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice</button>'
+    ? '<button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice</button>'
     : featuredScript
-      ? `<button class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">Load Latest Practice</button>`
-      : '<button class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice Tab</button>';
+      ? `<button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">Load Latest Practice</button>`
+      : '<button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice Tab</button>';
   const secondaryAction = loadedScriptStats
-    ? '<button class="btn btn-secondary" data-action="openScriptPresentation">Swipe Loaded Script</button>'
+    ? '<button type="button" class="btn btn-secondary" data-action="openScriptPresentation">Swipe Loaded Script</button>'
     : featuredScript
-      ? `<button class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}">Open Swipe View</button>`
-      : '<button class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
+      ? `<button type="button" class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}">Open Swipe View</button>`
+      : '<button type="button" class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
   const tertiaryAction = hasFilters
-    ? '<button class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>'
+    ? '<button type="button" class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>'
     : "";
 
   section.hidden = false;

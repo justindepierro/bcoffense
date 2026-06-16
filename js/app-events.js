@@ -140,6 +140,12 @@ document.addEventListener("click", (e) => {
     case "loadScript":
       loadScript(parseInt(el.dataset.sid, 10));
       return;
+    case "loadPublishedPlayerScript":
+      loadPublishedPlayerScript(el.dataset.arg);
+      return;
+    case "presentPublishedPlayerScript":
+      presentPublishedPlayerScript(el.dataset.arg);
+      return;
     case "renameSavedScript":
       renameSavedScript(parseInt(el.dataset.sid, 10));
       return;

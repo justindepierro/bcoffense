@@ -657,21 +657,21 @@ function renderPlayerDashboardHome() {
     : `<div class="player-home-list-empty">No practice script has been published yet. Check back with your coach.</div>`;
   const featuredActions = featuredScript
     ? `
-      <button class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+      <button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
         Open Practice
       </button>
-      <button class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
+      <button type="button" class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
         Open Swipe View
       </button>
-      <button class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+      <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="playbook">
         Open Playbook
       </button>
     `
     : `
-      <button class="btn btn-primary" data-action="showTab" data-arg="script">
+      <button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">
         Go to Practice
       </button>
-      <button class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+      <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="playbook">
         Open Playbook
       </button>
     `;
@@ -746,19 +746,19 @@ function renderPlayerDashboardHome() {
             : ""
         }
         <div class="player-home-card__actions">
-          <button class="btn btn-secondary" data-action="showTab" data-arg="script">
+          <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="script">
             Open Practice Tab
           </button>
-          <button class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+          <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="playbook">
             Open Playbook
           </button>
           ${
             loadedScript
-              ? `<button class="btn btn-primary" data-action="openScriptPresentation">
+              ? `<button type="button" class="btn btn-primary" data-action="openScriptPresentation">
                   Resume Swipe View
                 </button>`
               : featuredScript
-                ? `<button class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+                ? `<button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
                     Load Today's Script
                 </button>`
                 : ""

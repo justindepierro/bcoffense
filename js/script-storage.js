@@ -558,11 +558,11 @@ function renderPlayerScriptLauncher() {
             </div>
           </div>
           <div class="player-script-card__actions">
-            <button class="btn btn-sm" data-action="loadPublishedPlayerScript"
+            <button type="button" class="btn btn-sm" data-action="loadPublishedPlayerScript"
               data-arg="${savedScript.id}" title="Load this published script into the script tab">
               Open Script
             </button>
-            <button class="btn btn-primary btn-sm" data-action="presentPublishedPlayerScript"
+            <button type="button" class="btn btn-primary btn-sm" data-action="presentPublishedPlayerScript"
               data-arg="${savedScript.id}" title="Open this published script in swipe view">
               Swipe View
             </button>
