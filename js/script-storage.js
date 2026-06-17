@@ -791,6 +791,23 @@ function getPlayerPublishedScriptById(id) {
   return scriptData;
 }
 
+function getDefaultPlayerPublishedScript(id = "") {
+  if (id !== "" && id !== undefined && id !== null) {
+    return getPlayerPublishedScriptById(id);
+  }
+  const publishedScripts = getPlayerPublishedScripts();
+  if (publishedScripts.length === 0) return null;
+  const todayValue = new Date().toISOString().slice(0, 10);
+  const currentName = document.getElementById("scriptName")?.value || "";
+  const currentDate = document.getElementById("scriptDate")?.value || "";
+  return publishedScripts.find(
+    (savedScript) =>
+      savedScript.date === todayValue ||
+      (savedScript.name === currentName &&
+        (savedScript.date || "") === currentDate),
+  ) || publishedScripts[0];
+}
+
 function loadPublishedPlayerScript(id, opts = {}) {
   tracePlayerScriptAction("load start", { id: String(id) });
   const scriptData = getPlayerPublishedScriptById(id);
@@ -878,6 +895,65 @@ function presentPublishedPlayerScript(id) {
   }
   showToast(`Opened "${scriptData.name}" in swipe view`);
   return true;
+}
+
+function openPlayerCurrentScriptPresentation(id = "") {
+  const loadedPlayCount = Array.isArray(script)
+    ? script.filter((entry) => entry && !entry.isSeparator).length
+    : 0;
+  tracePlayerScriptAction("current presentation start", {
+    action: "openPlayerCurrentScriptPresentation",
+    id: id !== undefined && id !== null ? String(id) : "",
+    loadedPlayCount,
+  });
+
+  if (loadedPlayCount > 0) {
+    if (typeof setPlayPresentationMode === "function") {
+      setPlayPresentationMode("player");
+    }
+    const opened =
+      typeof openScriptPresentation === "function"
+        ? openScriptPresentation()
+        : false;
+    tracePlayerScriptAction(
+      opened ? "current presentation opened" : "current presentation failed",
+      {
+        action: "openPlayerCurrentScriptPresentation",
+        loadedPlayCount,
+        opened,
+        reason: opened ? "" : "loaded-script-open-failed",
+      },
+      opened ? "info" : "warn",
+    );
+    if (opened) return true;
+  }
+
+  const fallbackScript = getDefaultPlayerPublishedScript(id);
+  if (!fallbackScript) {
+    tracePlayerScriptAction(
+      "current presentation failed",
+      {
+        action: "openPlayerCurrentScriptPresentation",
+        id: id !== undefined && id !== null ? String(id) : "",
+        loadedPlayCount,
+        reason: "no-loaded-or-published-script",
+      },
+      "warn",
+    );
+    showToast("Open a published practice before using Swipe View.", {
+      type: "warning",
+    });
+    if (typeof showTab === "function") showTab("script");
+    return false;
+  }
+
+  tracePlayerScriptAction("current presentation fallback", {
+    action: "openPlayerCurrentScriptPresentation",
+    id: String(fallbackScript.id),
+    name: fallbackScript.name,
+    reason: loadedPlayCount > 0 ? "loaded-open-failed" : "no-loaded-script",
+  });
+  return presentPublishedPlayerScript(fallbackScript.id);
 }
 
 function togglePlayerScriptAccess(id, event) {

@@ -744,14 +744,19 @@ function checkScriptPlayerPublishingContracts() {
     !/function renderPlayerScriptLauncher\(\)/.test(scriptStorage) ||
     !/function renderPlayerLoadedScriptBar\(\)/.test(scriptStorage) ||
     !/function tracePlayerScriptAction\(/.test(scriptStorage) ||
+    !/function getDefaultPlayerPublishedScript\(/.test(scriptStorage) ||
     !/function loadPublishedPlayerScript\(id,\s*opts = \{\}\)/.test(
       scriptStorage,
     ) ||
     !/function presentPublishedPlayerScript\(id\)/.test(scriptStorage) ||
+    !/function openPlayerCurrentScriptPresentation\(id = ""\)/.test(
+      scriptStorage,
+    ) ||
     !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptStorage) ||
     !/data-onchange="togglePlayerScriptAccess"/.test(scriptStorage) ||
     !/data-action="loadPublishedPlayerScript"/.test(scriptStorage) ||
     !/data-action="presentPublishedPlayerScript"/.test(scriptStorage) ||
+    !/data-action="openPlayerCurrentScriptPresentation"/.test(html) ||
     !/case "loadPublishedPlayerScript"/.test(appEvents) ||
     !/case "presentPublishedPlayerScript"/.test(appEvents)
   ) {
@@ -766,6 +771,7 @@ function checkScriptPlayerPublishingContracts() {
     !/auth blocked interaction/.test(auth) ||
     !/lookup miss/.test(scriptStorage) ||
     !/load start/.test(scriptStorage) ||
+    !/current presentation fallback/.test(scriptStorage) ||
     !/openScriptPresentation-returned-false/.test(scriptStorage)
   ) {
     fail("player action diagnostics are incomplete");
@@ -798,6 +804,7 @@ function checkScriptPlayerPublishingContracts() {
   [
     "loadPublishedPlayerScript",
     "presentPublishedPlayerScript",
+    "openPlayerCurrentScriptPresentation",
   ].forEach((action) => {
     if (!new RegExp(`["']${action}["']`).test(auth)) {
       fail(`read-only roles cannot use player script action ${action}`);
@@ -966,7 +973,7 @@ function checkPlayerPortalContracts() {
     !/function renderPlayerDashboardHome\(\)/.test(dashboard) ||
     !/Player Portal/.test(dashboard) ||
     !/loadPublishedPlayerScript/.test(dashboard) ||
-    !/presentPublishedPlayerScript/.test(dashboard) ||
+    !/openPlayerCurrentScriptPresentation/.test(dashboard) ||
     !/Open Playbook/.test(dashboard) ||
     !/player-home-quick-actions/.test(dashboard) ||
     !/player-home-today-card/.test(dashboard) ||

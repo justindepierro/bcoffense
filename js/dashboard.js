@@ -635,9 +635,9 @@ function renderPlayerDashboardHome() {
     ? `data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}"`
     : 'data-action="showTab" data-arg="script"';
   const swipeAction = loadedScript
-    ? 'data-action="openScriptPresentation"'
+    ? 'data-action="openPlayerCurrentScriptPresentation"'
     : featuredScript
-      ? `data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}"`
+      ? `data-action="openPlayerCurrentScriptPresentation" data-arg="${featuredScriptId}"`
       : 'data-action="showTab" data-arg="script"';
   const playbookAction = 'data-action="showTab" data-arg="playbook"';
   const statusTitle =
@@ -776,7 +776,7 @@ function renderPlayerDashboardHome() {
           </button>
           ${
             loadedScript
-              ? `<button type="button" class="btn btn-primary player-home-action" data-action="openScriptPresentation">
+              ? `<button type="button" class="btn btn-primary player-home-action" data-action="openPlayerCurrentScriptPresentation">
                   Resume Swipe View
                 </button>`
               : featuredScript

@@ -41,6 +41,7 @@ const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 const ACTION_TRACE_ACTIONS = new Set([
   "loadPublishedPlayerScript",
   "presentPublishedPlayerScript",
+  "openPlayerCurrentScriptPresentation",
   "openScriptPresentation",
   "openPlaybookPresentation",
   "openSelectedPlaybookPresentation",

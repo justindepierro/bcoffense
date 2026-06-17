@@ -117,6 +117,7 @@
     "seedPlayReadinessSampleData",
     "loadPublishedPlayerScript",
     "presentPublishedPlayerScript",
+    "openPlayerCurrentScriptPresentation",
     "closePlayPresentation",
     "setPlayPresentationMode",
     "setPlayPresentationPosition",
