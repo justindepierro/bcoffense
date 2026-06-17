@@ -162,6 +162,20 @@
     min-height: calc(var(--app-vh, 1vh) * 100);
   }
 
+  body.is-mobile-screen #mainApp,
+  body.is-mobile-screen .app-header,
+  body.is-mobile-screen .tabs,
+  body.is-mobile-screen .panel {
+    box-sizing: border-box;
+    width: 100%;
+    max-width: 100%;
+  }
+
+  body.is-mobile-screen #mainApp {
+    min-width: 0;
+    overflow-x: hidden;
+  }
+
   body.is-mobile-screen .app-header {
     gap: var(--space-sm);
     padding-top: max(8px, env(safe-area-inset-top));
@@ -347,8 +361,31 @@
   body.is-mobile-screen button,
   body.is-mobile-screen [role="button"],
   body.is-mobile-screen .btn,
-  body.is-mobile-screen a[data-action] {
+  body.is-mobile-screen a[data-action],
+  body.is-mobile-screen [data-action] {
     touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  body.is-mobile-screen button,
+  body.is-mobile-screen .btn,
+  body.is-mobile-screen [role="button"],
+  body.is-mobile-screen [data-action] {
+    min-width: 0;
+  }
+
+  body.is-mobile-screen [data-action]:active {
+    filter: brightness(0.98);
+  }
+
+  body.is-mobile-screen [data-action][aria-disabled="true"],
+  body.is-mobile-screen button:disabled {
+    cursor: not-allowed;
+    filter: none;
+  }
+
+  body.is-mobile-screen .panel > * {
+    max-width: 100%;
   }
 
   body.is-mobile-screen input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),

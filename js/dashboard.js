@@ -657,9 +657,10 @@ function renderPlayerDashboardHome() {
             : null;
         const eyebrow =
           savedScript.date === todayValue ? "Today" : "Published";
+        const savedScriptId = escapeHtml(String(savedScript.id));
         return `
           <button class="player-home-script-item" type="button" data-action="loadPublishedPlayerScript"
-            data-arg="${savedScript.id}">
+            data-arg="${savedScriptId}">
             <span class="player-home-script-item__eyebrow">${escapeHtml(eyebrow)}</span>
             <span class="player-home-script-item__title">${escapeHtml(savedScript.name)}</span>
             <span class="player-home-script-item__meta">${escapeHtml(
@@ -780,7 +781,7 @@ function renderPlayerDashboardHome() {
                   Resume Swipe View
                 </button>`
               : featuredScript
-                ? `<button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+                ? `<button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">
                     Load Today's Script
                 </button>`
                 : ""

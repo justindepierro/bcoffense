@@ -1447,7 +1447,7 @@ body.play-presentation-force-landscape.is-phone-screen .pp-minimum-one-word {
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-bottom {
-  grid-template-columns: minmax(0, 1fr) minmax(238px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
   gap: 4px;
   padding: 2px 4px;
 }
@@ -1462,8 +1462,8 @@ body.play-presentation-force-landscape.is-phone-screen .pp-minimum-chips .pp-chi
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-readiness-dock {
-  grid-template-columns: auto minmax(170px, 1fr);
-  min-width: 238px;
+  grid-template-columns: auto minmax(158px, 1fr);
+  min-width: 220px;
   padding: 2px;
 }
 
@@ -1483,15 +1483,25 @@ body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-label s
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-grid {
-  grid-template-columns: repeat(5, minmax(28px, 1fr));
+  grid-template-columns: repeat(5, minmax(26px, 1fr));
   gap: 3px;
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-grid .play-readiness-score-btn {
-  min-width: 28px;
+  min-width: 26px;
   min-height: 28px;
   padding: 2px 6px;
   font-size: 0.7rem;
+}
+
+body.play-presentation-force-landscape.is-compact-screen .pp-minimum-bottom {
+  grid-template-columns: minmax(0, 1fr);
+}
+
+body.play-presentation-force-landscape.is-compact-screen .pp-minimum-readiness-dock {
+  grid-template-columns: auto minmax(0, 1fr);
+  width: 100%;
+  min-width: 0;
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-player-panel {

@@ -13,7 +13,8 @@
   gap: var(--space-lg);
   width: 100%;
   max-width: 100%;
-  overflow: hidden;
+  min-width: 0;
+  overflow: visible;
 }
 
 .player-home-hero {
@@ -165,6 +166,7 @@
   font-weight: 950;
   line-height: 1.1;
   overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .player-home-quick-action small {
@@ -176,6 +178,7 @@
   line-height: 1.25;
   opacity: 0.74;
   overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 @media (hover: hover) {
@@ -204,6 +207,7 @@
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
   box-sizing: border-box;
+  overflow: clip;
 }
 
 .player-home-card--feature {
@@ -307,6 +311,7 @@
   cursor: pointer;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  user-select: none;
   transition:
     border-color var(--transition-fast),
     transform var(--transition-fast),
@@ -333,6 +338,7 @@
   font-size: var(--font-size-sm);
   font-weight: 800;
   overflow-wrap: anywhere;
+  hyphens: auto;
 }
 
 .player-home-script-item__meta,
@@ -378,6 +384,7 @@
 
   body.is-mobile-screen[data-auth-role="player"] .player-dashboard-home {
     gap: 12px;
+    overflow: visible;
   }
 
   .player-home-hero,
@@ -437,6 +444,8 @@
     width: 100%;
     min-height: 48px;
     justify-content: center;
+    white-space: normal;
+    line-height: 1.15;
     touch-action: manipulation;
   }
 
@@ -458,6 +467,16 @@
 
   body.is-phone-screen[data-auth-role="player"] .player-home-hero p {
     font-size: var(--font-size-xs);
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-quick-action {
+    grid-template-columns: 34px minmax(0, 1fr);
+    min-height: 54px;
+    padding: 10px 12px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-quick-action strong {
+    font-size: var(--font-size-sm);
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-today-card {
@@ -484,6 +503,11 @@
     width: 36px;
     height: 36px;
     border-radius: var(--radius-md);
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-study-list div {
+    grid-template-columns: 30px minmax(0, 1fr);
+    padding: 8px;
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-stat-row span {

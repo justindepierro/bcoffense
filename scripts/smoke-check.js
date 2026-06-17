@@ -940,6 +940,9 @@ function checkPlayReadinessContracts() {
     !/play-presentation-force-landscape\.is-phone-screen \.pp-minimum-readiness-dock/.test(
       presentationCss,
     ) ||
+    !/play-presentation-force-landscape\.is-compact-screen \.pp-minimum-readiness-dock/.test(
+      presentationCss,
+    ) ||
     !/pp-coach-section-readiness \.play-readiness-rollup/.test(presentationCss)
   ) {
     fail("play readiness script styling is incomplete");
@@ -999,11 +1002,19 @@ function checkPlayerPortalContracts() {
     !/#authLoginOverlay button/.test(appEvents) ||
     !/\.player-dashboard-home \[data-action\]/.test(appEvents) ||
     !/\.play-presentation-overlay\.show \[data-action\]/.test(appEvents) ||
+    !/function getAppActionHitDiagnostics\(element\)/.test(appEvents) ||
+    !/function isAppActionFullTraceEnabled\(\)/.test(appEvents) ||
+    !/document\.elementFromPoint\(centerX, centerY\)/.test(appEvents) ||
     !/function getMobileTapActionTarget\(target\)/.test(appEvents) ||
     !/function isNativeMobileClickElement\(el\)/.test(appEvents) ||
     !/isNativeMobileClickElement\(actionEl\)/.test(appEvents) ||
     !/navigator\.maxTouchPoints > 0/.test(appEvents) ||
-    !/function isMobileTapInteractiveElement\(el\)/.test(appEvents)
+    !/function isMobileTapInteractiveElement\(el\)/.test(appEvents) ||
+    !/const savedScriptId = escapeHtml\(String\(savedScript\.id\)\)/.test(
+      dashboard,
+    ) ||
+    !/data-arg="\$\{savedScriptId\}"/.test(dashboard) ||
+    !/data-arg="\$\{featuredScriptId\}"/.test(dashboard)
   ) {
     fail("player dashboard home is incomplete");
   }
@@ -1051,6 +1062,9 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\[data-auth-role="player"\] \.auth-user-badge/.test(
       responsiveCss,
     ) ||
+    !/body\.is-mobile-screen #mainApp/.test(responsiveCss) ||
+    !/body\.is-mobile-screen \[data-action\]/.test(responsiveCss) ||
+    !/body\.is-mobile-screen \.panel > \*/.test(responsiveCss) ||
     !/body\.is-mobile-screen input:not/.test(responsiveCss) ||
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
@@ -1062,6 +1076,11 @@ function checkPlayerPortalContracts() {
     !/\.player-home-quick-actions/.test(dashboardCss) ||
     !/player-home-card--study/.test(dashboard) ||
     !/\.player-home-today-card/.test(dashboardCss) ||
+    !/\.player-dashboard-home[\s\S]*overflow:\s*visible/.test(dashboardCss) ||
+    !/\.player-home-card[\s\S]*overflow:\s*clip/.test(dashboardCss) ||
+    !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-quick-action/.test(
+      dashboardCss,
+    ) ||
     !/-webkit-tap-highlight-color:\s*transparent/.test(dashboardCss) ||
     !/touch-action:\s*manipulation/.test(dashboardCss) ||
     !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-hero/.test(
@@ -1069,7 +1088,11 @@ function checkPlayerPortalContracts() {
     ) ||
     !/\.player-home-grid/.test(dashboardCss) ||
     !/\.pb-player-summary/.test(read("css/playbook.css")) ||
-    !/\.player-script-now__actions \.btn/.test(scriptCss)
+    !/\.player-script-now__actions \.btn/.test(scriptCss) ||
+    !/\.player-script-card__actions \.btn,\s*\.player-script-now__actions \.btn[\s\S]*min-height:\s*44px/.test(
+      scriptCss,
+    ) ||
+    !/\.player-script-card__actions[\s\S]*display:\s*grid/.test(scriptCss)
   ) {
     fail("player portal styling is incomplete");
   }

@@ -49,8 +49,56 @@ const ACTION_TRACE_ACTIONS = new Set([
   "showTab",
 ]);
 
+function isAppActionFullTraceEnabled() {
+  try {
+    return window.BC_ACTION_TRACE === true || localStorage.getItem("bcActionTrace") === "1";
+  } catch (_err) {
+    return window.BC_ACTION_TRACE === true;
+  }
+}
+
+function getAppActionHitDiagnostics(element) {
+  if (!(element instanceof Element)) return {};
+  const rect = element.getBoundingClientRect();
+  const width = window.innerWidth || document.documentElement.clientWidth || 0;
+  const height = window.innerHeight || document.documentElement.clientHeight || 0;
+  const centerX = Math.max(0, Math.min(width - 1, rect.left + rect.width / 2));
+  const centerY = Math.max(0, Math.min(height - 1, rect.top + rect.height / 2));
+  const topElement =
+    width > 0 && height > 0 ? document.elementFromPoint(centerX, centerY) : null;
+  const computed = window.getComputedStyle(element);
+  return {
+    actionRect: {
+      x: Math.round(rect.x),
+      y: Math.round(rect.y),
+      width: Math.round(rect.width),
+      height: Math.round(rect.height),
+    },
+    actionStyle: {
+      display: computed.display,
+      visibility: computed.visibility,
+      pointerEvents: computed.pointerEvents,
+      opacity: computed.opacity,
+    },
+    topElement: topElement
+      ? {
+          tag: topElement.tagName.toLowerCase(),
+          id: topElement.id || "",
+          action: topElement.closest("[data-action]")?.dataset.action || "",
+          className: String(topElement.className || "").slice(0, 120),
+          receivesPoint:
+            topElement === element ||
+            element.contains(topElement) ||
+            topElement.closest("[data-action]") === element,
+        }
+      : null,
+  };
+}
+
 function getAppActionTracePayload(el, extra = {}) {
   const element = el instanceof Element ? el : null;
+  const includeHitDiagnostics =
+    extra.includeHitDiagnostics || isAppActionFullTraceEnabled();
   return {
     action: element?.dataset?.action || "",
     arg: element?.dataset?.arg,
@@ -66,6 +114,7 @@ function getAppActionTracePayload(el, extra = {}) {
       typeof currentActiveTab !== "undefined"
         ? currentActiveTab
         : document.body?.dataset.activeTab || "",
+    ...(includeHitDiagnostics ? getAppActionHitDiagnostics(element) : {}),
     ...extra,
   };
 }
@@ -73,8 +122,7 @@ function getAppActionTracePayload(el, extra = {}) {
 function shouldTraceAppAction(action) {
   return Boolean(
     ACTION_TRACE_ACTIONS.has(action) ||
-      window.BC_ACTION_TRACE === true ||
-      localStorage.getItem("bcActionTrace") === "1",
+      isAppActionFullTraceEnabled(),
   );
 }
 
@@ -277,6 +325,7 @@ document.addEventListener("click", (e) => {
   traceAppAction("click received", el, {
     nativeEvent: e.type,
     syntheticMobileTap: mobileTapSyntheticClick,
+    includeHitDiagnostics: window.BC_ACTION_TRACE === true,
   });
 
   if (action.endsWith("Overlay")) {

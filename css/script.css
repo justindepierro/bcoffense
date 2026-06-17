@@ -222,7 +222,9 @@
 .player-script-card__actions .btn,
 .player-script-now__actions .btn {
   pointer-events: auto;
+  min-height: 44px;
   touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .player-script-card__loaded-label {
@@ -5056,11 +5058,15 @@ body[data-auth-role="player"] .period-buttons {
   }
 
   .player-script-card__actions {
+    display: grid;
+    grid-template-columns: 1fr;
     justify-content: stretch;
   }
 
   .player-script-card__actions .btn {
     width: 100%;
+    white-space: normal;
+    line-height: 1.15;
   }
 
   .script-item--detail,
