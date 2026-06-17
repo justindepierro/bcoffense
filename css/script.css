@@ -974,6 +974,41 @@
   color: var(--color-text);
 }
 
+.play-readiness-report-score-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  margin-top: 4px;
+}
+
+.play-readiness-report-score-controls .play-readiness-score-btn {
+  min-width: 34px;
+  min-height: 32px;
+  font-size: var(--font-size-xs);
+}
+
+.play-readiness-report-delete {
+  min-height: 32px;
+  padding: 5px 9px;
+  border: 1px solid var(--color-danger-light);
+  border-radius: var(--radius-md);
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  touch-action: manipulation;
+}
+
+@media (hover: hover) {
+  .play-readiness-report-delete:hover {
+    border-color: var(--color-danger);
+    background: var(--color-danger);
+    color: var(--color-text-inverse);
+  }
+}
+
 .play-readiness-history-row em,
 .play-readiness-empty {
   color: var(--color-text-muted);
@@ -4916,6 +4951,16 @@ body[data-auth-role="player"] .period-buttons {
 
   .play-readiness-btn {
     min-height: 44px;
+  }
+
+  .play-readiness-report-score-controls {
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+
+  .play-readiness-report-score-controls .play-readiness-score-btn,
+  .play-readiness-report-delete {
+    min-height: 42px;
   }
 
   .script-item--detail .defense-inputs,

@@ -111,6 +111,8 @@
     "showPlayReadinessPresentationHistory",
     "quickPlayReadinessPlaybookScore",
     "quickPlayReadinessPresentationScore",
+    "updatePlayReadinessReportScore",
+    "deletePlayReadinessReport",
     "closePlayReadinessModal",
     "seedPlayReadinessSampleData",
     "loadPublishedPlayerScript",

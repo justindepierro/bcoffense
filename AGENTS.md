@@ -264,6 +264,8 @@ const _ELEMENT_FNS = new Set([
   "toggleSirCollapse",
   "toggleScriptCheckbox",
   "toggleWbCheckbox",
+  "updatePlayReadinessReportScore",
+  "deletePlayReadinessReport",
   "moveSortCriteria",
   "removeScheduleGame",
   "setScheduleActive",

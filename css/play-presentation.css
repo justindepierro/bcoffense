@@ -1263,6 +1263,150 @@ body.play-presentation-force-landscape .pp-readiness-actions .play-readiness-btn
   min-height: 32px;
 }
 
+body.play-presentation-force-landscape.is-phone-screen .pp-header {
+  grid-template-columns: minmax(92px, 0.6fr) minmax(170px, auto) minmax(108px, 0.55fr);
+  min-height: 42px;
+  padding: 4px 6px;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-source {
+  max-width: 92px;
+  font-size: 0.64rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-counter {
+  padding: 2px 6px;
+  font-size: 0.62rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-mode-switcher {
+  gap: 2px;
+  padding: 2px;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-mode-btn {
+  min-height: 30px;
+  padding: 4px 7px;
+  font-size: 0.62rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-nav-btn,
+body.play-presentation-force-landscape.is-phone-screen .pp-close-btn {
+  min-width: 32px;
+  min-height: 30px;
+  padding: 3px 6px;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-layout-player {
+  grid-template-columns: minmax(0, 1fr) minmax(188px, 0.58fr);
+  gap: 6px;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-diagram-frame {
+  min-height: 0;
+  border-width: 1px;
+  border-radius: var(--radius-md);
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-panel {
+  grid-template-rows: auto auto minmax(0, 1fr);
+  gap: 6px;
+  overflow: hidden;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-overview {
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-context,
+body.play-presentation-force-landscape.is-phone-screen .pp-player-mode-chip,
+body.play-presentation-force-landscape.is-phone-screen .pp-player-controls-head span,
+body.play-presentation-force-landscape.is-phone-screen .pp-position-lock-status,
+body.play-presentation-force-landscape.is-phone-screen .pp-resp-notes {
+  display: none;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-call {
+  max-height: 42px;
+  padding: 7px 8px;
+  border-radius: var(--radius-md);
+  font-size: 0.85rem;
+  line-height: 1.15;
+  overflow: hidden;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-controls-card {
+  gap: 5px;
+  padding: 7px;
+  border-radius: var(--radius-md);
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-controls-head strong {
+  font-size: 0.68rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-position-picker {
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 4px;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-position-btn {
+  min-height: 30px;
+  border-radius: var(--radius-sm);
+  font-size: 0.66rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-position-lock-row {
+  grid-template-columns: 1fr;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-position-lock-btn {
+  width: 100%;
+  min-height: 30px;
+  padding: 4px 7px;
+  font-size: 0.66rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-rule {
+  align-content: start;
+  gap: 5px;
+  min-height: 0;
+  padding: 8px;
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-rule-head {
+  align-items: center;
+  flex-direction: row;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-rule-eyebrow {
+  font-size: 0.56rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-position {
+  font-size: 1.5rem;
+  line-height: 0.95;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-name {
+  max-width: 86px;
+  font-size: 0.72rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-player-rule-text {
+  max-height: 74px;
+  overflow: auto;
+  font-size: 0.96rem;
+  line-height: 1.15;
+  -webkit-overflow-scrolling: touch;
+}
+
 @media (prefers-reduced-motion: reduce) {
   .play-presentation-overlay,
   .play-presentation-overlay * {

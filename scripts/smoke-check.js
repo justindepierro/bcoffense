@@ -846,6 +846,9 @@ function checkPlayReadinessContracts() {
     !/function renderSelectedPlaybookReadinessPanel\(index = selectedRowIndex\)/.test(readiness) ||
     !/function quickPlayReadinessPlaybookScore\(score\)/.test(readiness) ||
     !/function quickPlayReadinessPresentationScore\(score\)/.test(readiness) ||
+    !/function updatePlayReadinessReportScore\(score, element\)/.test(readiness) ||
+    !/async function deletePlayReadinessReport\(element\)/.test(readiness) ||
+    !/play-readiness-report-score-controls/.test(readiness) ||
     !/function openPlayReadinessPresentationActionModal\(\)/.test(readiness) ||
     !/function showPlayReadinessHistory\(index\)/.test(readiness) ||
     !/function seedPlayReadinessSampleData\(\)/.test(readiness) ||
@@ -867,6 +870,8 @@ function checkPlayReadinessContracts() {
     !/"openPlayReadinessActionModal"/.test(auth) ||
     !/"quickPlayReadinessPlaybookScore"/.test(auth) ||
     !/"quickPlayReadinessPresentationScore"/.test(auth) ||
+    !/"updatePlayReadinessReportScore"/.test(auth) ||
+    !/"deletePlayReadinessReport"/.test(auth) ||
     !/"seedPlayReadinessSampleData"/.test(auth)
   ) {
     fail("play readiness script integration or coach permissions are incomplete");
@@ -877,6 +882,8 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-modal/.test(css) ||
     !/\.script-item--printlike \.play-readiness-widget/.test(css) ||
     !/\.play-readiness-history-summary/.test(css) ||
+    !/\.play-readiness-report-score-controls/.test(css) ||
+    !/\.play-readiness-report-delete/.test(css) ||
     !/\.pb-readiness-card/.test(playbookCss) ||
     !/\.play-readiness-score-btn/.test(playbookCss) ||
     !/\.pp-coach-section-readiness/.test(presentationCss)
@@ -933,6 +940,7 @@ function checkPlayerPortalContracts() {
     !/player-home-today-card/.test(dashboard) ||
     !/class="btn btn-primary player-home-action"/.test(dashboard) ||
     !/const MOBILE_TAP_ACTION_SELECTOR = \[/.test(appEvents) ||
+    !/#authLoginOverlay button/.test(appEvents) ||
     !/\.player-dashboard-home \[data-action\]/.test(appEvents) ||
     !/\.play-presentation-overlay\.show \[data-action\]/.test(appEvents) ||
     !/function getMobileTapActionTarget\(target\)/.test(appEvents)
@@ -994,7 +1002,13 @@ function checkPlayerPortalContracts() {
     !/pp-player-overview/.test(presentation) ||
     !/pp-player-controls-card/.test(presentation) ||
     !/\.pp-player-overview/.test(presentationCss) ||
-    !/\.pp-player-controls-card/.test(presentationCss)
+    !/\.pp-player-controls-card/.test(presentationCss) ||
+    !/body\.play-presentation-force-landscape\.is-phone-screen \.pp-layout-player/.test(
+      presentationCss,
+    ) ||
+    !/body\.play-presentation-force-landscape\.is-phone-screen \.pp-player-controls-head span/.test(
+      presentationCss,
+    )
   ) {
     fail("player presentation polish is incomplete");
   }

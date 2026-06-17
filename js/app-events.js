@@ -30,6 +30,8 @@ const _ELEMENT_FNS = new Set([
   "toggleSirCollapse",
   "toggleScriptCheckbox",
   "toggleWbCheckbox",
+  "updatePlayReadinessReportScore",
+  "deletePlayReadinessReport",
   "moveSortCriteria",
   "removeScheduleGame",
   "setScheduleActive",
@@ -37,6 +39,7 @@ const _ELEMENT_FNS = new Set([
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
 const MOBILE_TAP_ACTION_SELECTOR = [
+  "#authLoginOverlay button",
   ".player-dashboard-home [data-action]",
   ".pb-player-summary [data-action]",
   ".pb-controls [data-action]",

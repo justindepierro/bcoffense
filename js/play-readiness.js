@@ -87,6 +87,8 @@ const PLAY_READINESS_SAMPLE_SEEDS = [
   { play: "Screen", status: "Base Play", complexity: "Medium", reps: 31, reports: [2, 3, 4] },
 ];
 
+let playReadinessHistoryContext = null;
+
 function isPlayReadinessCoachRole() {
   const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
   return !user || user.role !== "player";
@@ -227,6 +229,17 @@ function upsertPlayReadinessRecord(play, updater) {
   updater(record);
   record.installStatus = normalizePlayReadinessInstallStatus(record.installStatus);
   record.complexity = normalizePlayReadinessComplexity(record.complexity);
+  record.updatedAt = new Date().toISOString();
+  store.records[key] = record;
+  savePlayReadinessStore(store);
+  return record;
+}
+
+function updatePlayReadinessRecordByKey(key, updater) {
+  const store = getPlayReadinessStore();
+  const record = store.records?.[key];
+  if (!record) return null;
+  updater(record);
   record.updatedAt = new Date().toISOString();
   store.records[key] = record;
   savePlayReadinessStore(store);
@@ -608,6 +621,7 @@ function getPlayReadinessDefaultRepCount(play) {
 }
 
 function closePlayReadinessModal() {
+  playReadinessHistoryContext = null;
   document.getElementById("playReadinessModalOverlay")?.remove();
 }
 
@@ -868,6 +882,7 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
   const date = new Date().toISOString().slice(0, 10);
   const repType = getPlayReadinessRepType("team_scout");
   const yards = getPlayReadinessQuickYards(score);
+  const repId = createPlayId("quick_rep");
   const sourceLabel = context.source === "playbook"
     ? "Playbook"
     : context.source === "presentation"
@@ -878,7 +893,7 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
     record.reps = Array.isArray(record.reps) ? record.reps : [];
     record.actionReports = Array.isArray(record.actionReports) ? record.actionReports : [];
     record.reps.push({
-      id: createPlayId("quick_rep"),
+      id: repId,
       date,
       repType: repType.id,
       repLabel: repType.label,
@@ -892,6 +907,8 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
       id: createPlayId("quick_action"),
       date,
       label: sourceLabel,
+      quickScore: true,
+      linkedRepId: repId,
       defensiveLook: [play.defFront || play.practiceFront, play.defCoverage || play.practiceCoverage]
         .filter(Boolean)
         .join(" / "),
@@ -930,9 +947,104 @@ function quickPlayReadinessPresentationScore(score) {
   });
 }
 
+function getPlayReadinessScoreConfidence(score) {
+  return score >= 4 ? "High" : score <= 2 ? "Low" : "Medium";
+}
+
+function renderPlayReadinessReportScoreControls(playKey, report) {
+  const reportId = report?.id || "";
+  const activeScore = parseInt(report?.score, 10) || 0;
+  return `
+    <div class="play-readiness-report-score-controls" role="group"
+      aria-label="Update score for ${escapeHtml(report?.label || "action report")}">
+      ${[1, 2, 3, 4, 5]
+        .map((score) => {
+          const active = activeScore === score ? " active" : "";
+          return `<button type="button" class="play-readiness-score-btn${active}"
+            data-action="updatePlayReadinessReportScore"
+            data-arg="${score}"
+            data-play-key="${escapeHtml(playKey)}"
+            data-report-id="${escapeHtml(reportId)}"
+            aria-label="Update this report to ${score} out of 5">${score}</button>`;
+        })
+        .join("")}
+      <button type="button" class="play-readiness-report-delete"
+        data-action="deletePlayReadinessReport"
+        data-play-key="${escapeHtml(playKey)}"
+        data-report-id="${escapeHtml(reportId)}"
+        aria-label="Delete this action report">Delete</button>
+    </div>
+  `;
+}
+
+function rerenderPlayReadinessHistoryModal(playKey) {
+  if (playReadinessHistoryContext?.key !== playKey) return;
+  const play = playReadinessHistoryContext.play;
+  if (play) showPlayReadinessHistoryForPlay(play);
+}
+
+function updatePlayReadinessReportScore(score, element) {
+  const button = element instanceof Element ? element : null;
+  const playKey = button?.dataset.playKey || "";
+  const reportId = button?.dataset.reportId || "";
+  const nextScore = Math.max(1, Math.min(5, parseInt(score, 10) || 3));
+  if (!playKey || !reportId || !isPlayReadinessCoachRole()) return;
+
+  const record = updatePlayReadinessRecordByKey(playKey, (draft) => {
+    const report = (draft.actionReports || []).find((item) => item.id === reportId);
+    if (!report) return;
+    report.score = nextScore;
+    report.coachConfidence = getPlayReadinessScoreConfidence(nextScore);
+    report.updatedAt = new Date().toISOString();
+    if (report.quickScore) {
+      report.yards = getPlayReadinessQuickYards(nextScore);
+      report.explosive = nextScore >= 5;
+      report.turnover = nextScore <= 1;
+      report.sackTfl = nextScore <= 2;
+      report.missedAssignment = nextScore <= 2;
+    }
+  });
+  if (!record) return;
+  refreshPlayReadinessSurfaces();
+  rerenderPlayReadinessHistoryModal(playKey);
+  showToast(`Score updated to ${nextScore}/5.`, { type: "success", duration: 1600 });
+}
+
+async function deletePlayReadinessReport(element) {
+  const button = element instanceof Element ? element : null;
+  const playKey = button?.dataset.playKey || "";
+  const reportId = button?.dataset.reportId || "";
+  if (!playKey || !reportId || !isPlayReadinessCoachRole()) return;
+  const ok = await showConfirm("Delete this action report score?", {
+    title: "Delete Score",
+    icon: "🗑️",
+    confirmText: "Delete",
+    cancelText: "Keep",
+    danger: true,
+  });
+  if (!ok) return;
+
+  const record = updatePlayReadinessRecordByKey(playKey, (draft) => {
+    const reports = Array.isArray(draft.actionReports) ? draft.actionReports : [];
+    const report = reports.find((item) => item.id === reportId);
+    draft.actionReports = reports.filter((item) => item.id !== reportId);
+    if (report?.linkedRepId && Array.isArray(draft.reps)) {
+      draft.reps = draft.reps.filter((rep) => rep.id !== report.linkedRepId);
+    }
+  });
+  if (!record) return;
+  refreshPlayReadinessSurfaces();
+  rerenderPlayReadinessHistoryModal(playKey);
+  showToast("Score deleted.", { type: "success", duration: 1600 });
+}
+
 function showPlayReadinessHistoryForPlay(play) {
   if (!play || !isPlayReadinessCoachRole()) return;
   const summary = getPlayReadinessSummary(play);
+  playReadinessHistoryContext = {
+    key: summary.key,
+    play,
+  };
   const repRows = (summary.record.reps || [])
     .slice()
     .reverse()
@@ -956,6 +1068,7 @@ function showPlayReadinessHistoryForPlay(play) {
         <span>${escapeHtml(report.label || report.situation || "Action report")}</span>
         <span>Score ${parseInt(report.score, 10) || "-"} / ${parseInt(report.yards, 10) || 0} yd / ${escapeHtml(report.coachConfidence || "Medium")}</span>
         <em>${escapeHtml(report.notes || report.defensiveLook || "")}</em>
+        ${renderPlayReadinessReportScoreControls(summary.key, report)}
       </div>`,
     )
     .join("") || `<div class="play-readiness-empty">No action reports logged yet.</div>`;
