@@ -563,6 +563,7 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
   const hasAnyRecords =
     Object.keys(getPlayReadinessStore().records || {}).length > 0;
+  const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
 
   return `
     <section class="play-readiness-widget play-readiness-widget--${escapeHtml(summary.sweet.tone)}"
@@ -592,6 +593,16 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
         <span><strong>${summary.confidenceScore}</strong> confidence</span>
         <span class="play-readiness-call-label">${escapeHtml(summary.confidenceLabel)}</span>
       </div>
+      <div class="play-readiness-quick-score">
+        <span>Score this rep</span>
+        <div class="play-readiness-score-grid" role="group" aria-label="Quick score this script play">
+          ${renderPlayReadinessScoreButtons(
+    "quickPlayReadinessScriptScore",
+    lastReport?.score || 0,
+    `data-idx="${index}"`,
+  )}
+        </div>
+      </div>
       <div class="play-readiness-actions">
         <button type="button" class="play-readiness-btn" data-action="openPlayReadinessRepModal" data-arg="${index}">
           Add Rep
@@ -613,12 +624,12 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
     </section>`;
 }
 
-function renderPlayReadinessScoreButtons(action, activeScore = 0) {
+function renderPlayReadinessScoreButtons(action, activeScore = 0, extraAttrs = "") {
   return [1, 2, 3, 4, 5]
     .map((score) => {
       const active = parseInt(activeScore, 10) === score ? " active" : "";
       return `<button type="button" class="play-readiness-score-btn${active}"
-        data-action="${escapeHtml(action)}" data-arg="${score}"
+        data-action="${escapeHtml(action)}" data-arg="${score}" ${extraAttrs}
         aria-label="Score this play ${score} out of 5">${score}</button>`;
     })
     .join("");
@@ -1119,6 +1130,14 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
 function quickPlayReadinessPlaybookScore(score) {
   quickScorePlayReadiness(getPlayReadinessPlaybookPlay(selectedRowIndex), score, {
     source: "playbook",
+  });
+}
+
+function quickPlayReadinessScriptScore(score, element) {
+  const idx = parseInt(element?.dataset?.idx, 10);
+  quickScorePlayReadiness(getPlayReadinessScriptPlay(idx), score, {
+    source: "script",
+    index: idx,
   });
 }
 

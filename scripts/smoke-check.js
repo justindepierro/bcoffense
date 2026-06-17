@@ -878,6 +878,7 @@ function checkPlayReadinessContracts() {
     !/function renderPlayReadinessPresentationCoachCard\(play\)/.test(readiness) ||
     !/function renderSelectedPlaybookReadinessPanel\(index = selectedRowIndex\)/.test(readiness) ||
     !/function quickPlayReadinessPlaybookScore\(score\)/.test(readiness) ||
+    !/function quickPlayReadinessScriptScore\(score, element\)/.test(readiness) ||
     !/function quickPlayReadinessPresentationScore\(score\)/.test(readiness) ||
     !/function updatePlayReadinessReportScore\(score, element\)/.test(readiness) ||
     !/async function deletePlayReadinessReport\(element\)/.test(readiness) ||
@@ -898,11 +899,14 @@ function checkPlayReadinessContracts() {
     !/renderPlayReadinessCompactBadgeFromSummary\(readinessSummary, \{/.test(scriptRender) ||
     !/readinessBadge/.test(playbookRender) ||
     !/\$\{readinessMarkup\}/.test(scriptRender) ||
+    !/quickPlayReadinessScriptScore/.test(readiness) ||
+    !/play-readiness-quick-score/.test(readiness) ||
     !/renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
     !/renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
     !/renderPlayReadinessPresentationCoachCard\(play\)/.test(presentation) ||
     !/"openPlayReadinessRepModal"/.test(auth) ||
     !/"openPlayReadinessActionModal"/.test(auth) ||
+    !/"quickPlayReadinessScriptScore"/.test(auth) ||
     !/"quickPlayReadinessPlaybookScore"/.test(auth) ||
     !/"quickPlayReadinessPresentationScore"/.test(auth) ||
     !/"updatePlayReadinessReportScore"/.test(auth) ||
@@ -919,6 +923,8 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-history-summary/.test(css) ||
     !/\.play-readiness-badge/.test(css) ||
     !/\.play-readiness-rollup/.test(css) ||
+    !/\.play-readiness-quick-score/.test(css) ||
+    !/\.play-readiness-score-grid/.test(css) ||
     !/\.play-readiness-report-score-controls/.test(css) ||
     !/\.play-readiness-report-delete/.test(css) ||
     !/\.pb-readiness-card/.test(playbookCss) ||
@@ -987,6 +993,8 @@ function checkPlayerPortalContracts() {
     !/\.player-dashboard-home \[data-action\]/.test(appEvents) ||
     !/\.play-presentation-overlay\.show \[data-action\]/.test(appEvents) ||
     !/function getMobileTapActionTarget\(target\)/.test(appEvents) ||
+    !/function isNativeMobileClickElement\(el\)/.test(appEvents) ||
+    !/isNativeMobileClickElement\(actionEl\)/.test(appEvents) ||
     !/navigator\.maxTouchPoints > 0/.test(appEvents) ||
     !/function isMobileTapInteractiveElement\(el\)/.test(appEvents)
   ) {
@@ -1004,6 +1012,17 @@ function checkPlayerPortalContracts() {
     )
   ) {
     fail("mobile screen recognition does not account for touch viewports");
+  }
+  if (
+    !/function isMobileCoachLockRole\(\)/.test(appShell) ||
+    !/body\.classList\.toggle\("mobile-coach-locked", activeOnMobile\)/.test(
+      appShell,
+    ) ||
+    !/quickPlayReadinessScriptScore/.test(appShell) ||
+    !/quickPlayReadinessPresentationScore/.test(appShell) ||
+    !/openPlayerCurrentScriptPresentation/.test(appShell)
+  ) {
+    fail("mobile coach lock does not preserve player taps and scoring actions");
   }
   if (
     !/\.auth-login-shell/.test(componentsCss) ||

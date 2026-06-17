@@ -30,6 +30,7 @@ const _ELEMENT_FNS = new Set([
   "toggleSirCollapse",
   "toggleScriptCheckbox",
   "toggleWbCheckbox",
+  "quickPlayReadinessScriptScore",
   "updatePlayReadinessReportScore",
   "deletePlayReadinessReport",
   "moveSortCriteria",
@@ -154,6 +155,11 @@ function isMobileTapInteractiveElement(el) {
   );
 }
 
+function isNativeMobileClickElement(el) {
+  if (!(el instanceof Element)) return false;
+  return el.matches("button, a[href], input, select, textarea, label, summary");
+}
+
 function getMobileTapActionTarget(target) {
   if (!isMobileTapBridgeEnabled()) return null;
   const element = target instanceof Element ? target : null;
@@ -161,6 +167,7 @@ function getMobileTapActionTarget(target) {
   const actionEl = element.closest(MOBILE_TAP_ACTION_SELECTOR);
   if (!actionEl) return null;
   if (!isMobileTapInteractiveElement(actionEl)) return null;
+  if (isNativeMobileClickElement(actionEl)) return null;
   if (actionEl.disabled || actionEl.getAttribute("aria-disabled") === "true") {
     return null;
   }

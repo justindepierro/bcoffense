@@ -109,6 +109,7 @@
     "showPlayReadinessHistory",
     "showPlayReadinessPlaybookHistory",
     "showPlayReadinessPresentationHistory",
+    "quickPlayReadinessScriptScore",
     "quickPlayReadinessPlaybookScore",
     "quickPlayReadinessPresentationScore",
     "updatePlayReadinessReportScore",

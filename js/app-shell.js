@@ -1184,6 +1184,29 @@ const MOBILE_COACH_LOCK_ALLOWED_ACTIONS = new Set([
   "coachFocusScriptCall",
   "coachNextScriptCall",
   "coachPrevScriptCall",
+  "openScriptPresentation",
+  "openPlaybookPresentation",
+  "openSelectedPlaybookPresentation",
+  "openPlayerCurrentScriptPresentation",
+  "loadPublishedPlayerScript",
+  "presentPublishedPlayerScript",
+  "setPlayPresentationMode",
+  "setPlayPresentationPosition",
+  "togglePlayPresentationPositionLock",
+  "movePlayPresentation",
+  "quickPlayReadinessScriptScore",
+  "quickPlayReadinessPlaybookScore",
+  "quickPlayReadinessPresentationScore",
+  "openPlayReadinessRepModal",
+  "openPlayReadinessActionModal",
+  "openPlayReadinessPlaybookRepModal",
+  "openPlayReadinessPlaybookActionModal",
+  "openPlayReadinessPresentationActionModal",
+  "showPlayReadinessHistory",
+  "showPlayReadinessPlaybookHistory",
+  "showPlayReadinessPresentationHistory",
+  "updatePlayReadinessReportScore",
+  "deletePlayReadinessReport",
   "openCommandPalette",
   "closeCommandPalette",
   "toggleDarkMode",
@@ -1200,12 +1223,20 @@ function isMobileCoachLockEnabled() {
   return storageManager.get(STORAGE_KEYS.MOBILE_COACH_LOCK, false) === true;
 }
 
+function isMobileCoachLockRole() {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  const role = currentUser?.role || document.body?.dataset.authRole || "";
+  return role === "admin" || role === "coach";
+}
+
 function isMobileCoachLockActive() {
   const body = document.body;
   return Boolean(
     body &&
       body.classList.contains("is-mobile-screen") &&
-      body.classList.contains("mobile-coach-locked"),
+      body.classList.contains("mobile-coach-locked") &&
+      isMobileCoachLockRole(),
   );
 }
 
@@ -1322,23 +1353,26 @@ function applyMobileCoachLockUi() {
   if (!body) return;
 
   const locked = isMobileCoachLockEnabled();
-  const activeOnMobile = locked && body.classList.contains("is-mobile-screen");
-  body.classList.toggle("mobile-coach-locked", locked);
-  body.dataset.mobileCoachLocked = locked ? "true" : "false";
+  const canUseCoachLock = isMobileCoachLockRole();
+  const activeOnMobile =
+    canUseCoachLock && locked && body.classList.contains("is-mobile-screen");
+  body.classList.toggle("mobile-coach-locked", activeOnMobile);
+  body.dataset.mobileCoachLocked = activeOnMobile ? "true" : "false";
 
   const toggle = document.getElementById("mobileCoachLockToggle");
   const icon = document.getElementById("coachDockLockIcon");
   const label = document.getElementById("coachDockLockLabel");
   if (toggle) {
-    toggle.setAttribute("aria-pressed", locked ? "true" : "false");
-    toggle.title = locked ? "Unlock mobile coach mode" : "Lock mobile coach mode";
+    toggle.hidden = !canUseCoachLock;
+    toggle.setAttribute("aria-pressed", activeOnMobile ? "true" : "false");
+    toggle.title = activeOnMobile ? "Unlock mobile coach mode" : "Lock mobile coach mode";
     toggle.setAttribute(
       "aria-label",
-      locked ? "Unlock mobile coach mode" : "Lock mobile coach mode",
+      activeOnMobile ? "Unlock mobile coach mode" : "Lock mobile coach mode",
     );
   }
-  if (icon) icon.textContent = locked ? "🔒" : "🔓";
-  if (label) label.textContent = locked ? "Locked" : "Lock";
+  if (icon) icon.textContent = activeOnMobile ? "🔒" : "🔓";
+  if (label) label.textContent = activeOnMobile ? "Locked" : "Lock";
 
   const banner = document.getElementById("mobileCoachLockBanner");
   if (banner) banner.hidden = !activeOnMobile;

@@ -979,6 +979,31 @@
   border-color: var(--color-primary-light);
 }
 
+.play-readiness-quick-score {
+  display: grid;
+  grid-template-columns: minmax(92px, auto) minmax(180px, 1fr);
+  align-items: center;
+  gap: 8px;
+  padding: 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+}
+
+.play-readiness-quick-score > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+}
+
+.play-readiness-score-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(34px, 1fr));
+  gap: 5px;
+}
+
 .play-readiness-actions {
   display: grid;
   grid-template-columns: repeat(2, minmax(92px, 1fr));
@@ -5107,6 +5132,7 @@ body[data-auth-role="player"] .period-buttons {
   .play-readiness-checks,
   .play-readiness-history-summary,
   .play-readiness-history-grid,
+  .play-readiness-quick-score,
   .play-readiness-rollup,
   .play-readiness-rate-grid {
     grid-template-columns: 1fr;
