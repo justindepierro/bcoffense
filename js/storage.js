@@ -73,6 +73,7 @@ const STORAGE_KEYS = {
   COLUMN_VISIBILITY: "columnVisibility",
   PLAYBOOK_STATE: "playbookState",
   SCRIPT_DISPLAY_OPTIONS: "scriptDisplayOptions",
+  PLAY_READINESS: "playReadiness",
   SCRIPT_DRAFT: "scriptDraft",
   WRISTBAND_DRAFT: "wristbandDraft",
   CALLSHEET_DISPLAY_OPTIONS: "callSheetDisplayOptions",

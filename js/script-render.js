@@ -800,6 +800,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const playerPersonnelMarkup = shouldRenderAssignmentGrid
     ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts)
     : "";
+  const readinessMarkup =
+    typeof renderPlayReadinessScriptWidget === "function"
+      ? renderPlayReadinessScriptWidget(play, index, opts)
+      : "";
   const reps = play.reps ?? 1;
   const itemClasses = [
     "script-item",
@@ -876,6 +880,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       </div>
       ${renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)}
       ${renderScriptPlayControls(play, index, playLabel, reps)}
+      ${readinessMarkup}
       ${playerPersonnelMarkup}
     </div>
     ${showPrintPreview ? renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) : ""}

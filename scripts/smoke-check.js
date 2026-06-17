@@ -799,6 +799,75 @@ function checkScriptPlayerPublishingContracts() {
   console.log("player script publishing contracts ok");
 }
 
+function checkPlayReadinessContracts() {
+  const html = read("index.html");
+  const sw = read("sw.js");
+  const storage = read("js/storage.js");
+  const auth = read("js/auth.js");
+  const scriptRender = read("js/script-render.js");
+  const readiness = read("js/play-readiness.js");
+  const css = read("css/script.css");
+
+  if (
+    !/PLAY_READINESS:\s*"playReadiness"/.test(storage) ||
+    !/"\.\/js\/play-readiness\.js"/.test(sw) ||
+    !/src="js\/play-readiness\.js\?v=/.test(html)
+  ) {
+    fail("play readiness storage or asset wiring is incomplete");
+  }
+  if (
+    !/const PLAY_READINESS_REP_TYPES = \[/.test(readiness) ||
+    !/weight:\s*0\.25/.test(readiness) ||
+    !/weight:\s*1\.25/.test(readiness) ||
+    !/weight:\s*2/.test(readiness) ||
+    !/const PLAY_READINESS_THRESHOLDS = \{/.test(readiness) ||
+    !/"Identity Play":/.test(readiness) ||
+    !/function getPlayReadinessSummary\(play\)/.test(readiness) ||
+    !/readinessPercent \* 0\.6 \+ liveScore \* 0\.3 \+ mistakeScore \* 0\.1/.test(
+      readiness,
+    )
+  ) {
+    fail("play readiness scoring model is incomplete");
+  }
+  if (
+    !/function renderPlayReadinessScriptWidget\(play, index, opts = \{\}\)/.test(
+      readiness,
+    ) ||
+    !/data-auth-player-hide="true"/.test(readiness) ||
+    !/function openPlayReadinessRepModal\(index\)/.test(readiness) ||
+    !/function openPlayReadinessActionModal\(index\)/.test(readiness) ||
+    !/function showPlayReadinessHistory\(index\)/.test(readiness) ||
+    !/function seedPlayReadinessSampleData\(\)/.test(readiness) ||
+    !/Power/.test(readiness) ||
+    !/Counter/.test(readiness) ||
+    !/Inside Zone/.test(readiness) ||
+    !/Play Action Shot/.test(readiness) ||
+    !/Screen/.test(readiness)
+  ) {
+    fail("play readiness coach workflow is incomplete");
+  }
+  if (
+    !/renderPlayReadinessScriptWidget\(play, index, opts\)/.test(scriptRender) ||
+    !/\$\{readinessMarkup\}/.test(scriptRender) ||
+    !/"openPlayReadinessRepModal"/.test(auth) ||
+    !/"openPlayReadinessActionModal"/.test(auth) ||
+    !/"seedPlayReadinessSampleData"/.test(auth)
+  ) {
+    fail("play readiness script integration or coach permissions are incomplete");
+  }
+  if (
+    !/\.play-readiness-widget/.test(css) ||
+    !/\.play-readiness-track/.test(css) ||
+    !/\.play-readiness-modal/.test(css) ||
+    !/\.script-item--printlike \.play-readiness-widget/.test(css) ||
+    !/\.play-readiness-history-summary/.test(css)
+  ) {
+    fail("play readiness script styling is incomplete");
+  }
+
+  console.log("play readiness contracts ok");
+}
+
 function checkPlayerPortalContracts() {
   const html = read("index.html");
   const auth = read("js/auth.js");
@@ -1469,6 +1538,7 @@ checkConflictContracts();
 checkWristbandTypography();
 checkPlayPresentationContracts();
 checkScriptPlayerPublishingContracts();
+checkPlayReadinessContracts();
 checkPlayerPortalContracts();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();

@@ -1,0 +1,793 @@
+/*
+ * Play Readiness / Rep Scoring
+ * Step 1: coach-only script workflow integration.
+ *
+ * Data is keyed by playSignature(play) so the same readiness record can be reused
+ * later by playbook, game plan, call sheet, and dashboard surfaces.
+ */
+
+const PLAY_READINESS_INSTALL_STATUSES = [
+  "New Play",
+  "Tag/Variation",
+  "Base Play",
+  "Identity Play",
+];
+
+const PLAY_READINESS_COMPLEXITIES = ["Low", "Medium", "High"];
+
+// Rep weights are intentionally centralized so the model can be tuned later.
+const PLAY_READINESS_REP_TYPES = [
+  { id: "mental", label: "Film / whiteboard mental rep", weight: 0.25 },
+  { id: "walkthrough", label: "Walkthrough rep", weight: 0.5 },
+  { id: "indy_low", label: "Indy drill with play emphasis", weight: 0.5 },
+  { id: "indy_high", label: "Indy drill high-emphasis rep", weight: 0.75 },
+  { id: "position_group", label: "Position group rep", weight: 0.75 },
+  { id: "air", label: "Reps on air", weight: 0.75 },
+  { id: "half_line", label: "Half-line / inside run / skelly", weight: 1 },
+  { id: "team_scout", label: "Team vs scout", weight: 1 },
+  { id: "pressure", label: "Team vs pressure / movement / bad look", weight: 1.25 },
+  { id: "live", label: "Live opponent / scrimmage / game-like rep", weight: 1.5 },
+  { id: "game", label: "Actual game rep", weight: 2 },
+];
+
+const PLAY_READINESS_THRESHOLDS = {
+  "New Play": {
+    target: 45,
+    sweet: [30, 45],
+    bands: [
+      { min: 0, label: "Not Installed" },
+      { min: 10, label: "Installed" },
+      { min: 20, label: "Usable" },
+      { min: 30, label: "Game Ready" },
+      { min: 45, label: "Confident" },
+    ],
+  },
+  "Tag/Variation": {
+    target: 25,
+    sweet: [15, 25],
+    bands: [
+      { min: 0, label: "Not Installed" },
+      { min: 5, label: "Installed" },
+      { min: 10, label: "Usable" },
+      { min: 15, label: "Game Ready" },
+      { min: 25, label: "Confident" },
+    ],
+  },
+  "Base Play": {
+    target: 100,
+    sweet: [20, 40],
+    useWeeklySweetSpot: true,
+    bands: [
+      { min: 0, label: "Installed" },
+      { min: 20, label: "Usable" },
+      { min: 50, label: "Confident" },
+      { min: 75, label: "Mastered" },
+      { min: 100, label: "Identity-Level" },
+    ],
+  },
+  "Identity Play": {
+    target: 200,
+    sweet: [20, 40],
+    useWeeklySweetSpot: true,
+    bands: [
+      { min: 0, label: "Needs Work" },
+      { min: 50, label: "Strong" },
+      { min: 100, label: "Mastered" },
+      { min: 150, label: "Program Identity" },
+      { min: 200, label: "Automatic / Can Teach It" },
+    ],
+  },
+};
+
+const PLAY_READINESS_SAMPLE_SEEDS = [
+  { play: "Power", status: "Identity Play", complexity: "Medium", reps: 82, reports: [4, 5, 4] },
+  { play: "Counter", status: "Base Play", complexity: "Medium", reps: 46, reports: [3, 4] },
+  { play: "Inside Zone", status: "Identity Play", complexity: "Low", reps: 118, reports: [4, 4, 5] },
+  { play: "Play Action Shot", status: "Tag/Variation", complexity: "High", reps: 18, reports: [3, 4] },
+  { play: "Screen", status: "Base Play", complexity: "Medium", reps: 31, reports: [2, 3, 4] },
+];
+
+function isPlayReadinessCoachRole() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return !user || user.role !== "player";
+}
+
+function getPlayReadinessStore() {
+  const stored = storageManager.get(STORAGE_KEYS.PLAY_READINESS, null);
+  if (!stored || typeof stored !== "object" || Array.isArray(stored)) {
+    return { version: 1, records: {} };
+  }
+  if (!stored.records || typeof stored.records !== "object" || Array.isArray(stored.records)) {
+    stored.records = {};
+  }
+  stored.version = stored.version || 1;
+  return stored;
+}
+
+function savePlayReadinessStore(store) {
+  storageManager.set(STORAGE_KEYS.PLAY_READINESS, store);
+}
+
+function getPlayReadinessRepType(repTypeId) {
+  return (
+    PLAY_READINESS_REP_TYPES.find((type) => type.id === repTypeId) ||
+    PLAY_READINESS_REP_TYPES[0]
+  );
+}
+
+function normalizePlayReadinessInstallStatus(value) {
+  const found = PLAY_READINESS_INSTALL_STATUSES.find((status) => status === value);
+  return found || "Base Play";
+}
+
+function normalizePlayReadinessComplexity(value) {
+  const found = PLAY_READINESS_COMPLEXITIES.find((complexity) => complexity === value);
+  return found || "Medium";
+}
+
+function inferPlayReadinessInstallStatus(play) {
+  const playText = String(play?.play || "").toLowerCase();
+  const tagText = [play?.playTag1, play?.playTag2, play?.formTag1, play?.formTag2]
+    .map((value) => String(value || "").trim())
+    .filter(Boolean)
+    .join(" ");
+
+  if (/trick|special|gadget/.test(playText)) return "New Play";
+  if (tagText) return "Tag/Variation";
+  if (play?.basePlay && String(play.basePlay).trim()) return "Base Play";
+  return "Base Play";
+}
+
+function inferPlayReadinessComplexity(play) {
+  const text = [
+    play?.motion,
+    play?.shift,
+    play?.protection,
+    play?.play,
+    play?.playTag1,
+    play?.playTag2,
+  ].join(" ").toLowerCase();
+  if (/trick|double|reverse|screen|shot|rpo|option|motion/.test(text)) return "High";
+  if (/tag|counter|pull|play action|pa /.test(text)) return "Medium";
+  return "Low";
+}
+
+function getPlayReadinessFamily(play) {
+  const base = String(play?.basePlay || "").trim();
+  if (base) return base;
+  const name = String(play?.play || "").trim();
+  if (/power/i.test(name)) return "Power";
+  if (/counter/i.test(name)) return "Counter";
+  if (/zone/i.test(name)) return "Zone";
+  if (/screen/i.test(name)) return "Screen";
+  if (/rpo/i.test(name)) return "RPO";
+  if (/quick/i.test(name)) return "Quick Game";
+  if (/play action|pa /i.test(name)) return "Play Action";
+  return String(play?.type || "").trim() || "Unclassified";
+}
+
+function getPlayReadinessKey(play) {
+  if (!play) return "";
+  if (typeof playSignature === "function") return playSignature(play);
+  return getPlayIdentityKey(play, "tag", { trim: false });
+}
+
+function getPlayReadinessSnapshot(play) {
+  return {
+    play: play?.play || "",
+    formation: play?.formation || "",
+    personnel: play?.personnel || "",
+    family: getPlayReadinessFamily(play),
+  };
+}
+
+function createPlayReadinessRecord(play) {
+  return {
+    installStatus: inferPlayReadinessInstallStatus(play),
+    complexity: inferPlayReadinessComplexity(play),
+    notes: "",
+    playSnapshot: getPlayReadinessSnapshot(play),
+    reps: [],
+    actionReports: [],
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+function getPlayReadinessRecord(play, opts = {}) {
+  const key = getPlayReadinessKey(play);
+  if (!key) return null;
+  const store = getPlayReadinessStore();
+  let record = store.records[key];
+  if (!record && opts.create) {
+    record = createPlayReadinessRecord(play);
+    store.records[key] = record;
+    savePlayReadinessStore(store);
+  }
+  return record || createPlayReadinessRecord(play);
+}
+
+function upsertPlayReadinessRecord(play, updater) {
+  const key = getPlayReadinessKey(play);
+  if (!key) return null;
+  const store = getPlayReadinessStore();
+  const record = store.records[key] || createPlayReadinessRecord(play);
+  record.playSnapshot = { ...getPlayReadinessSnapshot(play), ...(record.playSnapshot || {}) };
+  updater(record);
+  record.installStatus = normalizePlayReadinessInstallStatus(record.installStatus);
+  record.complexity = normalizePlayReadinessComplexity(record.complexity);
+  record.updatedAt = new Date().toISOString();
+  store.records[key] = record;
+  savePlayReadinessStore(store);
+  return record;
+}
+
+function getPlayReadinessBand(config, weightedReps) {
+  return config.bands.reduce((best, band) => (weightedReps >= band.min ? band : best), config.bands[0]);
+}
+
+function getPlayReadinessNextThreshold(config, weightedReps) {
+  const next = config.bands.find((band) => weightedReps < band.min);
+  return next ? next.min : config.target;
+}
+
+function getPlayReadinessWeeklyWeighted(record) {
+  const cutoff = Date.now() - 7 * 24 * 60 * 60 * 1000;
+  return (record.reps || []).reduce((sum, rep) => {
+    const time = new Date(rep.date || rep.createdAt || "").getTime();
+    if (!Number.isFinite(time) || time < cutoff) return sum;
+    return sum + (parseFloat(rep.weightedValue) || 0);
+  }, 0);
+}
+
+function getPlayReadinessSweetSpot(record, config, weightedReps) {
+  const [low, high] = config.sweet || [0, config.target];
+  const sweetBasis = config.useWeeklySweetSpot
+    ? getPlayReadinessWeeklyWeighted(record)
+    : weightedReps;
+  if (sweetBasis < low) return { label: "Needs More Reps", tone: "needs", basis: sweetBasis, low, high };
+  if (sweetBasis <= high) return { label: "Ready Zone", tone: "ready", basis: sweetBasis, low, high };
+  return {
+    label: "Possible Over-Repped - Consider Maintenance Only",
+    tone: "over",
+    basis: sweetBasis,
+    low,
+    high,
+  };
+}
+
+function getPlayReadinessActionMetrics(record) {
+  const reports = Array.isArray(record.actionReports) ? record.actionReports : [];
+  const liveReps = reports.length;
+  const scores = reports.map((report) => parseFloat(report.score) || 0).filter(Boolean);
+  const avgScore = scores.length
+    ? scores.reduce((sum, score) => sum + score, 0) / scores.length
+    : 0;
+  const rate = (field) =>
+    liveReps ? Math.round((reports.filter((report) => Boolean(report[field])).length / liveReps) * 100) : 0;
+  const confidenceValues = reports
+    .map((report) => ({ Low: 1, Medium: 2, High: 3 }[report.coachConfidence] || 0))
+    .filter(Boolean);
+  let confidenceTrend = "No trend";
+  if (confidenceValues.length >= 2) {
+    const delta = confidenceValues[confidenceValues.length - 1] - confidenceValues[0];
+    confidenceTrend = delta > 0 ? "Rising" : delta < 0 ? "Falling" : "Stable";
+  }
+
+  return {
+    averageScore: avgScore,
+    bestScore: scores.length ? Math.max(...scores) : 0,
+    worstScore: scores.length ? Math.min(...scores) : 0,
+    liveReps,
+    explosiveRate: rate("explosive"),
+    touchdownRate: rate("touchdown"),
+    turnoverRate: rate("turnover"),
+    missedAssignmentRate: rate("missedAssignment"),
+    penaltyRate: rate("penalty"),
+    sackTflRate: rate("sackTfl"),
+    negativePlayRate: liveReps
+      ? Math.round(
+        (reports.filter((report) => Boolean(report.sackTfl) || (parseFloat(report.yards) || 0) < 0).length /
+          liveReps) *
+          100,
+      )
+      : 0,
+    confidenceTrend,
+  };
+}
+
+function getPlayReadinessConfidenceLabel(score) {
+  if (score <= 25) return "Do Not Call";
+  if (score <= 50) return "Practice Only";
+  if (score <= 70) return "Safe Call Only";
+  if (score <= 85) return "Game Ready";
+  return "Trusted Call";
+}
+
+function getPlayReadinessSummary(play) {
+  const record = getPlayReadinessRecord(play);
+  const installStatus = normalizePlayReadinessInstallStatus(record.installStatus);
+  const config = PLAY_READINESS_THRESHOLDS[installStatus] || PLAY_READINESS_THRESHOLDS["Base Play"];
+  const weightedReps = (record.reps || []).reduce(
+    (sum, rep) => sum + (parseFloat(rep.weightedValue) || 0),
+    0,
+  );
+  const actualReps = (record.reps || []).reduce(
+    (sum, rep) => sum + (parseInt(rep.actualReps, 10) || 0),
+    0,
+  );
+  const readinessPercent = Math.min(100, Math.round((weightedReps / config.target) * 100));
+  const band = getPlayReadinessBand(config, weightedReps);
+  const nextThreshold = getPlayReadinessNextThreshold(config, weightedReps);
+  const barMax = Math.max(nextThreshold, config.sweet?.[1] || 0, weightedReps, 1);
+  const progressPct = Math.min(100, Math.round((weightedReps / barMax) * 100));
+  const sweet = getPlayReadinessSweetSpot(record, config, weightedReps);
+  const metrics = getPlayReadinessActionMetrics(record);
+  const liveScore = metrics.liveReps ? (metrics.averageScore / 5) * 100 : 50;
+
+  // Confidence formula: 60% weighted-rep readiness, 30% live grade, 10% mistake adjustment.
+  // Mistakes pull the final score down; explosive/TD plays can recover a small amount.
+  const penalty =
+    metrics.turnoverRate * 0.55 +
+    metrics.penaltyRate * 0.2 +
+    metrics.missedAssignmentRate * 0.25 +
+    metrics.negativePlayRate * 0.2;
+  const bonus = metrics.explosiveRate * 0.08 + metrics.touchdownRate * 0.08;
+  const mistakeScore = Math.max(0, Math.min(100, 100 - penalty + bonus));
+  const confidenceScore = Math.round(
+    readinessPercent * 0.6 + liveScore * 0.3 + mistakeScore * 0.1,
+  );
+
+  return {
+    key: getPlayReadinessKey(play),
+    record,
+    installStatus,
+    complexity: normalizePlayReadinessComplexity(record.complexity),
+    family: record.playSnapshot?.family || getPlayReadinessFamily(play),
+    weightedReps,
+    weeklyWeightedReps: getPlayReadinessWeeklyWeighted(record),
+    actualReps,
+    readinessPercent,
+    readinessLabel: band.label,
+    nextThreshold,
+    progressPct,
+    sweet,
+    sweetStartPct: Math.min(100, Math.round(((sweet.low || 0) / barMax) * 100)),
+    sweetWidthPct: Math.min(
+      100,
+      Math.max(0, Math.round((((sweet.high || 0) - (sweet.low || 0)) / barMax) * 100)),
+    ),
+    metrics,
+    confidenceScore,
+    confidenceLabel: getPlayReadinessConfidenceLabel(confidenceScore),
+  };
+}
+
+function formatPlayReadinessNumber(value, digits = 1) {
+  const num = parseFloat(value) || 0;
+  return Number.isInteger(num) ? String(num) : num.toFixed(digits);
+}
+
+function renderPlayReadinessScriptWidget(play, index, opts = {}) {
+  if (!isPlayReadinessCoachRole() || opts.printStyle) return "";
+  const summary = getPlayReadinessSummary(play);
+  const liveAverage = summary.metrics.liveReps
+    ? summary.metrics.averageScore.toFixed(1)
+    : "-";
+  const weightedText = formatPlayReadinessNumber(summary.weightedReps);
+  const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
+  const hasAnyRecords =
+    Object.keys(getPlayReadinessStore().records || {}).length > 0;
+
+  return `
+    <section class="play-readiness-widget play-readiness-widget--${escapeHtml(summary.sweet.tone)}"
+      data-auth-player-hide="true" aria-label="Play readiness for ${escapeHtml(getScriptPlaySummaryText(play))}">
+      <div class="play-readiness-main">
+        <div class="play-readiness-head">
+          <span class="play-readiness-kicker">Play Readiness</span>
+          <strong>${escapeHtml(summary.readinessLabel)}</strong>
+          <span>${summary.readinessPercent}%</span>
+        </div>
+        <div class="play-readiness-track"
+          style="--pr-progress:${summary.progressPct}%; --pr-sweet-start:${summary.sweetStartPct}%; --pr-sweet-width:${summary.sweetWidthPct}%"
+          aria-label="${summary.readinessPercent}% readiness">
+          <span class="play-readiness-sweet" aria-hidden="true"></span>
+          <span class="play-readiness-fill" aria-hidden="true"></span>
+        </div>
+        <div class="play-readiness-sweet-label">${escapeHtml(summary.sweet.label)}</div>
+      </div>
+      <div class="play-readiness-metrics">
+        <span><strong>${escapeHtml(summary.installStatus)}</strong> status</span>
+        <span><strong>${escapeHtml(weightedText)}</strong> weighted</span>
+        <span><strong>${summary.actualReps}</strong> actual</span>
+        <span><strong>${escapeHtml(weeklyText)}</strong> 7-day</span>
+        <span><strong>${escapeHtml(liveAverage)}</strong> live avg</span>
+        <span><strong>${summary.confidenceScore}</strong> confidence</span>
+        <span class="play-readiness-call-label">${escapeHtml(summary.confidenceLabel)}</span>
+      </div>
+      <div class="play-readiness-actions">
+        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessRepModal" data-arg="${index}">
+          Add Rep
+        </button>
+        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessActionModal" data-arg="${index}">
+          Action Report
+        </button>
+        <button type="button" class="play-readiness-btn" data-action="showPlayReadinessHistory" data-arg="${index}">
+          History
+        </button>
+        ${
+          hasAnyRecords
+            ? ""
+            : `<button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="seedPlayReadinessSampleData">
+                Seed Samples
+              </button>`
+        }
+      </div>
+    </section>`;
+}
+
+function getPlayReadinessScriptPlay(index) {
+  const idx = parseInt(index, 10);
+  if (Number.isNaN(idx) || !script[idx] || script[idx].isSeparator) return null;
+  return script[idx];
+}
+
+function getPlayReadinessDefaultRepCount(play) {
+  return Math.max(1, parseInt(play?.reps, 10) || 1);
+}
+
+function closePlayReadinessModal() {
+  document.getElementById("playReadinessModalOverlay")?.remove();
+}
+
+function openPlayReadinessRepModal(index) {
+  const play = getPlayReadinessScriptPlay(index);
+  if (!play || !isPlayReadinessCoachRole()) return;
+  const summary = getPlayReadinessSummary(play);
+  const defaultType = PLAY_READINESS_REP_TYPES[7];
+  const playLabel = getScriptPlaySummaryText(play);
+  const options = PLAY_READINESS_REP_TYPES.map(
+    (type) =>
+      `<option value="${escapeHtml(type.id)}" ${type.id === defaultType.id ? "selected" : ""}>${escapeHtml(type.label)} (${type.weight})</option>`,
+  ).join("");
+  const statusOptions = PLAY_READINESS_INSTALL_STATUSES.map(
+    (status) =>
+      `<option value="${escapeHtml(status)}" ${summary.installStatus === status ? "selected" : ""}>${escapeHtml(status)}</option>`,
+  ).join("");
+  const complexityOptions = PLAY_READINESS_COMPLEXITIES.map(
+    (complexity) =>
+      `<option value="${escapeHtml(complexity)}" ${summary.complexity === complexity ? "selected" : ""}>${escapeHtml(complexity)}</option>`,
+  ).join("");
+
+  closePlayReadinessModal();
+  const overlay = document.createElement("div");
+  overlay.id = "playReadinessModalOverlay";
+  overlay.className = "modal-overlay show play-readiness-modal-overlay";
+  overlay.dataset.action = "closePlayReadinessModalOverlay";
+  overlay.innerHTML = `
+    <div class="modal-content play-readiness-modal" role="dialog" aria-modal="true" aria-labelledby="playReadinessRepTitle">
+      <div class="modal-header">
+        <h3 id="playReadinessRepTitle">Add Weighted Rep</h3>
+        <button type="button" class="modal-close-btn" data-action="closePlayReadinessModal" aria-label="Close">x</button>
+      </div>
+      <form id="playReadinessRepForm" class="play-readiness-form">
+        <p class="play-readiness-modal-sub">${escapeHtml(playLabel)}</p>
+        <div class="play-readiness-form-grid">
+          <label>Rep Type
+            <select data-auth-allow-input="true" name="repType">${options}</select>
+          </label>
+          <label>Actual Reps
+            <input data-auth-allow-input="true" name="actualReps" type="number" min="1" step="1" value="${getPlayReadinessDefaultRepCount(play)}" />
+          </label>
+          <label>Date
+            <input data-auth-allow-input="true" name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" />
+          </label>
+          <label>Install Status
+            <select data-auth-allow-input="true" name="installStatus">${statusOptions}</select>
+          </label>
+          <label>Complexity
+            <select data-auth-allow-input="true" name="complexity">${complexityOptions}</select>
+          </label>
+          <label class="play-readiness-form-wide">Notes
+            <input data-auth-allow-input="true" name="notes" type="text" placeholder="What did you get done?" />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-action="closePlayReadinessModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Rep</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(overlay);
+  wireScriptOverlayDismiss(overlay);
+  overlay.querySelector("#playReadinessRepForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    savePlayReadinessRep(index, event.currentTarget);
+  });
+  overlay.querySelector("select[name='repType']")?.focus();
+}
+
+function savePlayReadinessRep(index, form) {
+  const play = getPlayReadinessScriptPlay(index);
+  if (!play || !form || !isPlayReadinessCoachRole()) return;
+  const data = new FormData(form);
+  const repType = getPlayReadinessRepType(data.get("repType"));
+  const actualReps = Math.max(1, parseInt(data.get("actualReps"), 10) || 1);
+  const weightedValue = repType.weight * actualReps;
+  upsertPlayReadinessRecord(play, (record) => {
+    record.installStatus = normalizePlayReadinessInstallStatus(data.get("installStatus"));
+    record.complexity = normalizePlayReadinessComplexity(data.get("complexity"));
+    record.reps = Array.isArray(record.reps) ? record.reps : [];
+    record.reps.push({
+      id: createPlayId("rep"),
+      date: String(data.get("date") || new Date().toISOString().slice(0, 10)),
+      repType: repType.id,
+      repLabel: repType.label,
+      weight: repType.weight,
+      actualReps,
+      weightedValue,
+      notes: String(data.get("notes") || "").trim(),
+      createdAt: new Date().toISOString(),
+    });
+  });
+  closePlayReadinessModal();
+  if (typeof requestRenderScript === "function") requestRenderScript();
+  showToast(`Added ${formatPlayReadinessNumber(weightedValue)} weighted reps.`, {
+    type: "success",
+    duration: 2200,
+  });
+}
+
+function openPlayReadinessActionModal(index) {
+  const play = getPlayReadinessScriptPlay(index);
+  if (!play || !isPlayReadinessCoachRole()) return;
+  const playLabel = getScriptPlaySummaryText(play);
+  closePlayReadinessModal();
+  const overlay = document.createElement("div");
+  overlay.id = "playReadinessModalOverlay";
+  overlay.className = "modal-overlay show play-readiness-modal-overlay";
+  overlay.dataset.action = "closePlayReadinessModalOverlay";
+  overlay.innerHTML = `
+    <div class="modal-content play-readiness-modal" role="dialog" aria-modal="true" aria-labelledby="playReadinessActionTitle">
+      <div class="modal-header">
+        <h3 id="playReadinessActionTitle">Add Action Report</h3>
+        <button type="button" class="modal-close-btn" data-action="closePlayReadinessModal" aria-label="Close">x</button>
+      </div>
+      <form id="playReadinessActionForm" class="play-readiness-form">
+        <p class="play-readiness-modal-sub">${escapeHtml(playLabel)}</p>
+        <div class="play-readiness-form-grid">
+          <label>Date
+            <input data-auth-allow-input="true" name="date" type="date" value="${new Date().toISOString().slice(0, 10)}" />
+          </label>
+          <label>Practice / Game Label
+            <input data-auth-allow-input="true" name="label" type="text" placeholder="Team, scout, scrimmage..." />
+          </label>
+          <label>Defensive Look
+            <input data-auth-allow-input="true" name="defensiveLook" type="text" placeholder="Front / pressure / coverage" />
+          </label>
+          <label>Situation
+            <input data-auth-allow-input="true" name="situation" type="text" placeholder="3rd short, red zone..." />
+          </label>
+          <label>Result Score
+            <select data-auth-allow-input="true" name="score">
+              <option value="3">3 - Functional</option>
+              <option value="1">1 - Disaster</option>
+              <option value="2">2 - Poor</option>
+              <option value="4">4 - Good</option>
+              <option value="5">5 - Excellent / Explosive</option>
+            </select>
+          </label>
+          <label>Yards
+            <input data-auth-allow-input="true" name="yards" type="number" step="1" value="0" />
+          </label>
+          <label>Coach Confidence
+            <select data-auth-allow-input="true" name="coachConfidence">
+              <option>Medium</option>
+              <option>Low</option>
+              <option>High</option>
+            </select>
+          </label>
+          <div class="play-readiness-checks play-readiness-form-wide">
+            ${[
+    ["explosive", "Explosive"],
+    ["touchdown", "TD"],
+    ["turnover", "Turnover"],
+    ["sackTfl", "Sack/TFL"],
+    ["missedAssignment", "Missed assignment"],
+    ["penalty", "Penalty"],
+  ].map(([name, label]) => `<label><input data-auth-allow-input="true" type="checkbox" name="${name}" /> ${label}</label>`).join("")}
+          </div>
+          <label class="play-readiness-form-wide">Notes
+            <input data-auth-allow-input="true" name="notes" type="text" placeholder="Result, correction, coaching point..." />
+          </label>
+        </div>
+        <div class="modal-actions">
+          <button type="button" class="btn" data-action="closePlayReadinessModal">Cancel</button>
+          <button type="submit" class="btn btn-primary">Save Report</button>
+        </div>
+      </form>
+    </div>`;
+  document.body.appendChild(overlay);
+  wireScriptOverlayDismiss(overlay);
+  overlay.querySelector("#playReadinessActionForm")?.addEventListener("submit", (event) => {
+    event.preventDefault();
+    savePlayReadinessActionReport(index, event.currentTarget);
+  });
+  overlay.querySelector("select[name='score']")?.focus();
+}
+
+function savePlayReadinessActionReport(index, form) {
+  const play = getPlayReadinessScriptPlay(index);
+  if (!play || !form || !isPlayReadinessCoachRole()) return;
+  const data = new FormData(form);
+  upsertPlayReadinessRecord(play, (record) => {
+    record.actionReports = Array.isArray(record.actionReports) ? record.actionReports : [];
+    record.actionReports.push({
+      id: createPlayId("action"),
+      date: String(data.get("date") || new Date().toISOString().slice(0, 10)),
+      label: String(data.get("label") || "").trim(),
+      defensiveLook: String(data.get("defensiveLook") || "").trim(),
+      situation: String(data.get("situation") || "").trim(),
+      score: Math.max(1, Math.min(5, parseInt(data.get("score"), 10) || 3)),
+      yards: parseInt(data.get("yards"), 10) || 0,
+      explosive: data.has("explosive"),
+      touchdown: data.has("touchdown"),
+      turnover: data.has("turnover"),
+      sackTfl: data.has("sackTfl"),
+      missedAssignment: data.has("missedAssignment"),
+      penalty: data.has("penalty"),
+      notes: String(data.get("notes") || "").trim(),
+      coachConfidence: String(data.get("coachConfidence") || "Medium"),
+      createdAt: new Date().toISOString(),
+    });
+  });
+  closePlayReadinessModal();
+  if (typeof requestRenderScript === "function") requestRenderScript();
+  showToast("Action report saved.", { type: "success", duration: 2200 });
+}
+
+function showPlayReadinessHistory(index) {
+  const play = getPlayReadinessScriptPlay(index);
+  if (!play || !isPlayReadinessCoachRole()) return;
+  const summary = getPlayReadinessSummary(play);
+  const repRows = (summary.record.reps || [])
+    .slice()
+    .reverse()
+    .slice(0, 12)
+    .map(
+      (rep) => `<div class="play-readiness-history-row">
+        <strong>${escapeHtml(rep.date || "")}</strong>
+        <span>${escapeHtml(rep.repLabel || rep.repType || "Rep")}</span>
+        <span>${escapeHtml(formatPlayReadinessNumber(rep.weightedValue))} weighted / ${parseInt(rep.actualReps, 10) || 0} actual</span>
+        <em>${escapeHtml(rep.notes || "")}</em>
+      </div>`,
+    )
+    .join("") || `<div class="play-readiness-empty">No weighted reps logged yet.</div>`;
+  const reportRows = (summary.record.actionReports || [])
+    .slice()
+    .reverse()
+    .slice(0, 12)
+    .map(
+      (report) => `<div class="play-readiness-history-row">
+        <strong>${escapeHtml(report.date || "")}</strong>
+        <span>${escapeHtml(report.label || report.situation || "Action report")}</span>
+        <span>Score ${parseInt(report.score, 10) || "-"} / ${parseInt(report.yards, 10) || 0} yd / ${escapeHtml(report.coachConfidence || "Medium")}</span>
+        <em>${escapeHtml(report.notes || report.defensiveLook || "")}</em>
+      </div>`,
+    )
+    .join("") || `<div class="play-readiness-empty">No action reports logged yet.</div>`;
+
+  closePlayReadinessModal();
+  const overlay = document.createElement("div");
+  overlay.id = "playReadinessModalOverlay";
+  overlay.className = "modal-overlay show play-readiness-modal-overlay";
+  overlay.dataset.action = "closePlayReadinessModalOverlay";
+  overlay.innerHTML = `
+    <div class="modal-content play-readiness-modal play-readiness-history-modal" role="dialog" aria-modal="true" aria-labelledby="playReadinessHistoryTitle">
+      <div class="modal-header">
+        <h3 id="playReadinessHistoryTitle">Readiness History</h3>
+        <button type="button" class="modal-close-btn" data-action="closePlayReadinessModal" aria-label="Close">x</button>
+      </div>
+      <div class="play-readiness-history-summary">
+        <div><strong>${summary.readinessPercent}%</strong><span>${escapeHtml(summary.readinessLabel)}</span></div>
+        <div><strong>${escapeHtml(formatPlayReadinessNumber(summary.weightedReps))}</strong><span>Weighted reps</span></div>
+        <div><strong>${summary.metrics.liveReps ? summary.metrics.averageScore.toFixed(1) : "-"}</strong><span>Live avg</span></div>
+        <div><strong>${summary.confidenceScore}</strong><span>${escapeHtml(summary.confidenceLabel)}</span></div>
+      </div>
+      <div class="play-readiness-history-grid">
+        <section>
+          <h4>Weighted Rep Log</h4>
+          ${repRows}
+        </section>
+        <section>
+          <h4>Action Reports</h4>
+          <div class="play-readiness-rate-grid">
+            <span>Best ${summary.metrics.bestScore || "-"}</span>
+            <span>Worst ${summary.metrics.worstScore || "-"}</span>
+            <span>Explosive ${summary.metrics.explosiveRate}%</span>
+            <span>TD ${summary.metrics.touchdownRate}%</span>
+            <span>Negative ${summary.metrics.negativePlayRate}%</span>
+            <span>MA ${summary.metrics.missedAssignmentRate}%</span>
+            <span>Penalty ${summary.metrics.penaltyRate}%</span>
+            <span>Turnover ${summary.metrics.turnoverRate}%</span>
+            <span>Trend ${escapeHtml(summary.metrics.confidenceTrend)}</span>
+          </div>
+          ${reportRows}
+        </section>
+      </div>
+      <div class="modal-actions">
+        <button type="button" class="btn" data-action="closePlayReadinessModal">Close</button>
+      </div>
+    </div>`;
+  document.body.appendChild(overlay);
+  wireScriptOverlayDismiss(overlay);
+  overlay.querySelector(".modal-close-btn")?.focus();
+}
+
+function findPlayReadinessSeedPlay(seed) {
+  const all = [...(Array.isArray(script) ? script.filter((item) => item && !item.isSeparator) : []), ...(Array.isArray(plays) ? plays : [])];
+  const needle = seed.play.toLowerCase();
+  return all.find((play) => String(play.play || play.basePlay || "").toLowerCase().includes(needle));
+}
+
+function seedPlayReadinessSampleData() {
+  if (!isPlayReadinessCoachRole()) return;
+  const store = getPlayReadinessStore();
+  PLAY_READINESS_SAMPLE_SEEDS.forEach((seed, seedIndex) => {
+    const play = findPlayReadinessSeedPlay(seed) || {
+      id: `sample_readiness_${seed.play.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`,
+      play: seed.play,
+      formation: "Sample",
+      personnel: "11",
+      basePlay: seed.play,
+      type: seed.play.includes("Screen") || seed.play.includes("Shot") ? "Pass" : "Run",
+    };
+    const key = getPlayReadinessKey(play);
+    const date = new Date(Date.now() - seedIndex * 24 * 60 * 60 * 1000)
+      .toISOString()
+      .slice(0, 10);
+    store.records[key] = {
+      installStatus: seed.status,
+      complexity: seed.complexity,
+      notes: "Sample readiness seed",
+      playSnapshot: getPlayReadinessSnapshot(play),
+      reps: [
+        {
+          id: createPlayId("seed_rep"),
+          date,
+          repType: "team_scout",
+          repLabel: "Team vs scout",
+          weight: 1,
+          actualReps: seed.reps,
+          weightedValue: seed.reps,
+          notes: "Sample weighted reps",
+          createdAt: new Date().toISOString(),
+        },
+      ],
+      actionReports: seed.reports.map((score, reportIndex) => ({
+        id: createPlayId("seed_action"),
+        date,
+        label: reportIndex === 0 ? "Sample scrimmage" : "Sample team period",
+        defensiveLook: "Sample look",
+        situation: reportIndex % 2 ? "3rd down" : "1st and 10",
+        score,
+        yards: score >= 4 ? 8 : score === 3 ? 4 : -2,
+        explosive: score >= 5,
+        touchdown: score >= 5 && seed.play !== "Screen",
+        turnover: score <= 1,
+        sackTfl: score <= 2,
+        missedAssignment: score <= 2,
+        penalty: false,
+        notes: "Sample action report",
+        coachConfidence: score >= 4 ? "High" : score <= 2 ? "Low" : "Medium",
+        createdAt: new Date().toISOString(),
+      })),
+      updatedAt: new Date().toISOString(),
+    };
+  });
+  savePlayReadinessStore(store);
+  if (typeof requestRenderScript === "function") requestRenderScript();
+  showToast("Seeded five sample play readiness records.", {
+    type: "success",
+    duration: 2600,
+  });
+}
