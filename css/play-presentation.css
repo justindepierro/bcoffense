@@ -4,6 +4,15 @@ body.play-presentation-open {
   overflow: hidden;
 }
 
+body.play-presentation-force-landscape {
+  position: fixed;
+  inset: 0;
+  width: 100vw;
+  height: 100vh;
+  overscroll-behavior: none;
+  touch-action: none;
+}
+
 .play-presentation-overlay {
   position: fixed;
   inset: 0;
@@ -19,6 +28,7 @@ body.play-presentation-open {
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;
   overflow: hidden;
+  touch-action: none;
 }
 
 .play-presentation-overlay.show {
@@ -993,6 +1003,110 @@ body.play-presentation-open {
   .pp-footer {
     display: none;
   }
+}
+
+body.play-presentation-force-landscape .play-presentation-overlay.pp-force-landscape {
+  inset: auto;
+  top: 50%;
+  left: 50%;
+  width: var(--pp-forced-landscape-width, 100dvh);
+  height: var(--pp-forced-landscape-height, 100dvw);
+  min-width: var(--pp-forced-landscape-width, 100dvh);
+  min-height: var(--pp-forced-landscape-height, 100dvw);
+  max-width: none;
+  max-height: none;
+  transform: translate(-50%, -50%) rotate(90deg);
+  transform-origin: center center;
+}
+
+body.play-presentation-force-landscape .pp-header {
+  grid-template-columns: minmax(130px, 0.65fr) auto minmax(170px, 0.8fr);
+  gap: var(--space-xs);
+  min-height: 52px;
+  padding: 6px 8px;
+}
+
+body.play-presentation-force-landscape .pp-mode-switcher {
+  grid-column: auto;
+  grid-row: auto;
+}
+
+body.play-presentation-force-landscape .pp-mode-btn {
+  padding: 5px 9px;
+  font-size: var(--font-size-xs);
+}
+
+body.play-presentation-force-landscape .pp-nav-btn,
+body.play-presentation-force-landscape .pp-close-btn {
+  min-width: 38px;
+  min-height: 36px;
+}
+
+body.play-presentation-force-landscape .pp-layout {
+  padding: var(--space-xs);
+}
+
+body.play-presentation-force-landscape .pp-layout-player {
+  grid-template-columns: minmax(0, 1.16fr) minmax(280px, 0.84fr);
+  grid-template-rows: none;
+  gap: var(--space-sm);
+}
+
+body.play-presentation-force-landscape .pp-layout-coaches {
+  grid-template-columns: minmax(290px, 0.8fr) minmax(0, 1.2fr);
+  grid-template-rows: none;
+  gap: var(--space-sm);
+}
+
+body.play-presentation-force-landscape .pp-layout-minimum {
+  grid-template-columns: 1fr;
+  grid-template-rows: auto minmax(0, 1fr) auto;
+  gap: var(--space-xs);
+}
+
+body.play-presentation-force-landscape .pp-minimum-top {
+  grid-template-columns: minmax(100px, 0.55fr) minmax(0, 2.6fr) minmax(100px, 0.55fr);
+  gap: var(--space-sm);
+  min-height: 48px;
+  padding: 4px var(--space-sm);
+}
+
+body.play-presentation-force-landscape .pp-minimum-call {
+  grid-column: auto;
+  grid-row: auto;
+  font-size: 1.75rem;
+  text-align: center;
+}
+
+body.play-presentation-force-landscape .pp-minimum-one-word {
+  grid-column: auto;
+  grid-row: auto;
+  font-size: 1.45rem;
+}
+
+body.play-presentation-force-landscape .pp-minimum-bottom {
+  min-height: 34px;
+}
+
+body.play-presentation-force-landscape .pp-diagram-frame {
+  min-height: 170px;
+}
+
+body.play-presentation-force-landscape .pp-player-panel,
+body.play-presentation-force-landscape .pp-coach-info {
+  overflow: auto;
+}
+
+body.play-presentation-force-landscape .pp-player-overview,
+body.play-presentation-force-landscape .pp-player-rule-head,
+body.play-presentation-force-landscape .pp-coach-section-head {
+  align-items: center;
+  flex-direction: row;
+}
+
+body.play-presentation-force-landscape .pp-detail-grid,
+body.play-presentation-force-landscape .pp-assignment-grid {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
 @media (prefers-reduced-motion: reduce) {

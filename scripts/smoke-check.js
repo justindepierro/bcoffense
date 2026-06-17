@@ -589,6 +589,13 @@ function checkPlayPresentationContracts() {
     !/canvas\.dataset\.smartFit/.test(presenter) ||
     !/requestFullscreen/.test(presenter) ||
     !/screen\.orientation\.lock\("landscape"\)/.test(presenter) ||
+    !/function syncPlayPresentationMobileLandscape\(/.test(presenter) ||
+    !/function handlePlayPresentationTouchStart\(/.test(presenter) ||
+    !/function handlePlayPresentationTouchEnd\(/.test(presenter) ||
+    !/PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/.test(presenter) ||
+    !/window\.visualViewport\?\.addEventListener\("resize", queuePlayPresentationViewportSync\)/.test(
+      presenter,
+    ) ||
     !/setInnerHTML\(body, markup\)/.test(presenter)
   ) {
     fail("play presentation image, landscape, safety, or lexical-state contracts are incomplete");
@@ -695,6 +702,8 @@ function checkPlayPresentationContracts() {
   }
   if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
+    !/body\.play-presentation-force-landscape/.test(css) ||
+    !/\.play-presentation-overlay\.pp-force-landscape/.test(css) ||
     !/@media \(orientation: portrait\)/.test(css) ||
     !/\.pp-layout-minimum\s*\{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/s.test(
       css,
