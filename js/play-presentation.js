@@ -874,6 +874,11 @@ function getPlayPresentationMinimumMarkup(item) {
       </section>
       <section class="pp-minimum-bottom" aria-label="Play details">
         <div class="pp-chips pp-minimum-chips">${getPlayPresentationChipMarkup(play)}</div>
+        ${
+          typeof renderPlayReadinessPresentationMinimumDock === "function"
+            ? renderPlayReadinessPresentationMinimumDock(play)
+            : ""
+        }
       </section>
     </div>
   `;

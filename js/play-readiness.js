@@ -692,6 +692,27 @@ function renderPlayReadinessPresentationCoachCard(play) {
   `;
 }
 
+function renderPlayReadinessPresentationMinimumDock(play) {
+  if (!isPlayReadinessCoachRole() || !play) return "";
+  const summary = getPlayReadinessSummary(play);
+  const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
+  return `
+    <div class="pp-minimum-readiness-dock" data-auth-player-hide="true" aria-label="Quick score this rep">
+      <div class="pp-minimum-score-label">
+        <span>Score Rep</span>
+        <strong>${summary.confidenceScore}</strong>
+        <small>${escapeHtml(summary.confidenceLabel)}</small>
+      </div>
+      <div class="pp-minimum-score-grid" role="group" aria-label="Score this play 1 to 5">
+        ${renderPlayReadinessScoreButtons(
+    "quickPlayReadinessPresentationScore",
+    lastReport?.score || 0,
+  )}
+      </div>
+    </div>
+  `;
+}
+
 function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
   if (!isPlayReadinessCoachRole() || !play) return "";
   const summary = getPlayReadinessSummary(play);

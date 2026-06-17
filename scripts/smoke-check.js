@@ -715,6 +715,7 @@ function checkPlayPresentationContracts() {
     !/class="pp-minimum-top"/.test(presenter) ||
     !/class="pp-diagram-panel pp-minimum-diagram"/.test(presenter) ||
     !/class="pp-minimum-bottom"/.test(presenter) ||
+    !/renderPlayReadinessPresentationMinimumDock\(play\)/.test(presenter) ||
     !/\.pp-layout-player/.test(css) ||
     !/\.pp-layout-coaches/.test(css)
   ) {
@@ -876,6 +877,7 @@ function checkPlayReadinessContracts() {
     !/function openPlayReadinessRepModal\(index\)/.test(readiness) ||
     !/function openPlayReadinessActionModal\(index\)/.test(readiness) ||
     !/function renderPlayReadinessPresentationCoachCard\(play\)/.test(readiness) ||
+    !/function renderPlayReadinessPresentationMinimumDock\(play\)/.test(readiness) ||
     !/function renderSelectedPlaybookReadinessPanel\(index = selectedRowIndex\)/.test(readiness) ||
     !/function quickPlayReadinessPlaybookScore\(score\)/.test(readiness) ||
     !/function quickPlayReadinessScriptScore\(score, element\)/.test(readiness) ||
@@ -933,6 +935,11 @@ function checkPlayReadinessContracts() {
     !/play-readiness-badge--playbook-table/.test(playbookCss) ||
     !/\.play-readiness-score-btn/.test(playbookCss) ||
     !/\.pp-coach-section-readiness/.test(presentationCss) ||
+    !/\.pp-minimum-readiness-dock/.test(presentationCss) ||
+    !/\.pp-minimum-score-grid/.test(presentationCss) ||
+    !/play-presentation-force-landscape\.is-phone-screen \.pp-minimum-readiness-dock/.test(
+      presentationCss,
+    ) ||
     !/pp-coach-section-readiness \.play-readiness-rollup/.test(presentationCss)
   ) {
     fail("play readiness script styling is incomplete");
