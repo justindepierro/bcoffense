@@ -802,11 +802,13 @@ function checkScriptPlayerPublishingContracts() {
 function checkPlayerPortalContracts() {
   const html = read("index.html");
   const auth = read("js/auth.js");
+  const appShell = read("js/app-shell.js");
   const dashboard = read("js/dashboard.js");
   const componentsCss = read("css/components.css");
   const layoutCss = read("css/layout.css");
   const responsiveCss = read("css/responsive.css");
   const dashboardCss = read("css/dashboard.css");
+  const scriptCss = read("css/script.css");
   const presentation = read("js/play-presentation.js");
   const presentationCss = read("css/play-presentation.css");
 
@@ -835,22 +837,44 @@ function checkPlayerPortalContracts() {
     !/Player Portal/.test(dashboard) ||
     !/loadPublishedPlayerScript/.test(dashboard) ||
     !/presentPublishedPlayerScript/.test(dashboard) ||
-    !/Open Playbook/.test(dashboard)
+    !/Open Playbook/.test(dashboard) ||
+    !/playerHomeTouchStart/.test(dashboard) ||
+    !/function runPlayerHomeAction\(button\)/.test(dashboard) ||
+    !/class="btn btn-primary player-home-action"/.test(dashboard)
   ) {
     fail("player dashboard home is incomplete");
+  }
+  if (
+    !/window\.visualViewport/.test(appShell) ||
+    !/shortSide/.test(appShell) ||
+    !/is-landscape-screen/.test(appShell) ||
+    !/window\.visualViewport\?\.addEventListener\("resize", queueMobileShellStateSync\)/.test(
+      appShell,
+    )
+  ) {
+    fail("mobile screen recognition does not account for touch viewports");
   }
   if (
     !/\.auth-login-shell/.test(componentsCss) ||
     !/\.auth-login-hero/.test(componentsCss) ||
     !/body\[data-auth-role="player"\] \.auth-user-badge/.test(componentsCss) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #mainApp:not\(\.hidden\) \+ \.mobile-coach-dock/.test(
+      componentsCss,
+    ) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #script\.active \.mobile-script-coach-now/.test(
+      componentsCss,
+    ) ||
     !/body\[data-auth-role="player"\] \.tabs/.test(layoutCss) ||
     !/body\.is-mobile-screen\[data-auth-role="player"\] \.tabs/.test(
       responsiveCss,
     ) ||
+    !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
+    !/touch-action:\s*manipulation/.test(dashboardCss) ||
     !/\.player-home-grid/.test(dashboardCss) ||
-    !/\.pb-player-summary/.test(read("css/playbook.css"))
+    !/\.pb-player-summary/.test(read("css/playbook.css")) ||
+    !/\.player-script-now__actions \.btn/.test(scriptCss)
   ) {
     fail("player portal styling is incomplete");
   }

@@ -432,6 +432,10 @@ table.sortable th {
     linear-gradient(135deg, rgb(10 18 42 / 0.03), rgb(25 42 81 / 0.08)),
     var(--color-surface);
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .pb-player-summary__main {
@@ -442,6 +446,7 @@ table.sortable th {
 }
 
 .pb-player-summary__copy {
+  min-width: 0;
   max-width: 720px;
 }
 
@@ -462,6 +467,7 @@ table.sortable th {
   font-size: var(--font-size-3xl);
   line-height: 1.05;
   letter-spacing: 0.01em;
+  overflow-wrap: anywhere;
 }
 
 .pb-player-summary p {
@@ -469,6 +475,7 @@ table.sortable th {
   color: var(--color-text-secondary);
   font-size: var(--font-size-lg);
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .pb-player-summary__actions {
@@ -1195,13 +1202,18 @@ body[data-auth-role="player"] .gp-card-btn {
   flex-direction: column;
   gap: 10px;
   margin-top: 8px;
+  width: 100%;
+  max-width: 100%;
 }
 .pb-card {
+  min-width: 0;
+  max-width: 100%;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   padding: 12px 14px;
   cursor: pointer;
+  touch-action: manipulation;
   transition:
     box-shadow 0.15s,
     transform 0.1s;
@@ -1220,11 +1232,13 @@ body[data-auth-role="player"] .gp-card-btn {
   font-size: var(--font-size-base);
   color: var(--color-primary);
   margin-bottom: 4px;
+  overflow-wrap: anywhere;
 }
 .pb-card-sub {
   font-size: var(--font-size-sm);
   color: var(--color-text-secondary);
   margin-bottom: 6px;
+  overflow-wrap: anywhere;
 }
 .pb-card .pb-usage {
   margin: 0 0 6px;
@@ -1387,7 +1401,7 @@ body[data-auth-role="player"] .gp-card-btn {
   }
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   .pb-player-summary {
     padding: 16px;
   }
@@ -1412,8 +1426,10 @@ body[data-auth-role="player"] .gp-card-btn {
   }
 
   .pb-player-summary__actions .btn {
-    flex: 1 1 180px;
+    flex: 1 1 100%;
+    min-height: 48px;
     justify-content: center;
+    touch-action: manipulation;
   }
 
   .pb-controls-row,

@@ -657,21 +657,21 @@ function renderPlayerDashboardHome() {
     : `<div class="player-home-list-empty">No practice script has been published yet. Check back with your coach.</div>`;
   const featuredActions = featuredScript
     ? `
-      <button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+      <button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
         Open Practice
       </button>
-      <button type="button" class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
+      <button type="button" class="btn btn-secondary player-home-action" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
         Open Swipe View
       </button>
-      <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+      <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
         Open Playbook
       </button>
     `
     : `
-      <button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">
+      <button type="button" class="btn btn-primary player-home-action" data-action="showTab" data-arg="script">
         Go to Practice
       </button>
-      <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+      <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
         Open Playbook
       </button>
     `;
@@ -746,19 +746,19 @@ function renderPlayerDashboardHome() {
             : ""
         }
         <div class="player-home-card__actions">
-          <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="script">
+          <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="script">
             Open Practice Tab
           </button>
-          <button type="button" class="btn btn-secondary" data-action="showTab" data-arg="playbook">
+          <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
             Open Playbook
           </button>
           ${
             loadedScript
-              ? `<button type="button" class="btn btn-primary" data-action="openScriptPresentation">
+              ? `<button type="button" class="btn btn-primary player-home-action" data-action="openScriptPresentation">
                   Resume Swipe View
                 </button>`
               : featuredScript
-                ? `<button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
+                ? `<button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
                     Load Today's Script
                 </button>`
                 : ""
@@ -768,6 +768,71 @@ function renderPlayerDashboardHome() {
     </div>
   `;
 }
+
+let playerHomeTouchStart = null;
+
+function runPlayerHomeAction(button) {
+  if (!button || button.disabled) return false;
+  const action = button.dataset.action;
+  const arg = button.dataset.arg;
+  if (action === "loadPublishedPlayerScript") {
+    loadPublishedPlayerScript(arg);
+    return true;
+  }
+  if (action === "presentPublishedPlayerScript") {
+    presentPublishedPlayerScript(arg);
+    return true;
+  }
+  if (action === "showTab") {
+    showTab(arg);
+    return true;
+  }
+  if (action === "openScriptPresentation") {
+    openScriptPresentation();
+    return true;
+  }
+  return false;
+}
+
+document.addEventListener(
+  "touchstart",
+  (event) => {
+    const button = event.target.closest?.(".player-dashboard-home .player-home-action");
+    if (!button || event.touches?.length !== 1) {
+      playerHomeTouchStart = null;
+      return;
+    }
+    const touch = event.touches[0];
+    playerHomeTouchStart = {
+      button,
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    };
+  },
+  { passive: true },
+);
+
+document.addEventListener(
+  "touchend",
+  (event) => {
+    const button = event.target.closest?.(".player-dashboard-home .player-home-action");
+    const start = playerHomeTouchStart;
+    playerHomeTouchStart = null;
+    if (!button || !start || start.button !== button) return;
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+    const moved = Math.hypot(touch.clientX - start.x, touch.clientY - start.y);
+    if (moved > 12 || Date.now() - start.time > 900) return;
+    event.preventDefault();
+    event.stopPropagation();
+    runPlayerHomeAction(button);
+  },
+  { passive: false },
+);
+document.addEventListener("touchcancel", () => {
+  playerHomeTouchStart = null;
+}, { passive: true });
 
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");

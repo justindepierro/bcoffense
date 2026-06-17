@@ -43,13 +43,19 @@ let _mobileShellFrame = 0;
 
 function syncMobileShellState() {
   _mobileShellFrame = 0;
-  const width = window.innerWidth || document.documentElement.clientWidth || 0;
-  const height = window.innerHeight || document.documentElement.clientHeight || 0;
+  const viewport = window.visualViewport;
+  const width =
+    Math.round(viewport?.width || window.innerWidth || document.documentElement.clientWidth || 0);
+  const height =
+    Math.round(viewport?.height || window.innerHeight || document.documentElement.clientHeight || 0);
+  const shortSide = Math.min(width, height);
+  const longSide = Math.max(width, height);
   const root = document.documentElement;
   const body = document.body;
   if (!body) return;
 
   root.style.setProperty("--app-vh", `${Math.max(height * 0.01, 1)}px`);
+  root.style.setProperty("--app-vw", `${Math.max(width * 0.01, 1)}px`);
 
   const header = document.querySelector(".app-header");
   const tabs = document.querySelector(".tabs");
@@ -66,18 +72,23 @@ function syncMobileShellState() {
     );
   }
 
-  const isMobile = width <= 768;
-  const isPhone = width <= 560;
-  const isCompact = width <= 420;
-  const isShort = height <= 620;
   const isTouch =
     window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const isMobile =
+    width <= 768 ||
+    (isTouch && shortSide <= 820 && longSide <= 1180);
+  const isPhone = shortSide <= 560;
+  const isCompact = shortSide <= 420;
+  const isShort = height <= 620;
+  const isLandscape = width > height;
 
   [root, body].forEach((el) => {
     el.classList.toggle("is-mobile-screen", isMobile);
     el.classList.toggle("is-phone-screen", isPhone);
     el.classList.toggle("is-compact-screen", isCompact);
     el.classList.toggle("is-short-screen", isShort);
+    el.classList.toggle("is-landscape-screen", isLandscape);
+    el.classList.toggle("is-portrait-screen", !isLandscape);
     el.classList.toggle("is-touch-screen", Boolean(isTouch));
   });
   const coachDock = document.getElementById("mobileCoachDock");
@@ -90,6 +101,7 @@ function syncMobileShellState() {
     root.style.removeProperty("--coach-dock-height");
   }
   body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
+  body.dataset.screenOrientation = isLandscape ? "landscape" : "portrait";
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
 }
@@ -103,6 +115,7 @@ queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
 window.addEventListener("load", queueMobileShellStateSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
+window.visualViewport?.addEventListener("resize", queueMobileShellStateSync);
 window.addEventListener("orientationchange", queueMobileShellStateSync, {
   passive: true,
 });

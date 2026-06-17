@@ -11,6 +11,9 @@
 .player-dashboard-home {
   display: grid;
   gap: var(--space-lg);
+  width: 100%;
+  max-width: 100%;
+  overflow: hidden;
 }
 
 .player-home-hero {
@@ -25,6 +28,9 @@
     radial-gradient(circle at top left, rgb(255 255 255 / 0.82), transparent 24rem),
     linear-gradient(160deg, var(--color-bg-blue-tint), var(--color-surface));
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .player-home-hero__copy {
@@ -51,6 +57,7 @@
 .player-home-hero h2 {
   font-size: 2.75rem;
   line-height: 1.02;
+  overflow-wrap: anywhere;
 }
 
 .player-home-hero p,
@@ -58,6 +65,7 @@
   margin: 0;
   color: var(--color-text-secondary);
   line-height: 1.55;
+  overflow-wrap: anywhere;
 }
 
 .player-home-hero__actions,
@@ -65,6 +73,7 @@
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-sm);
+  min-width: 0;
 }
 
 .player-home-grid {
@@ -78,11 +87,13 @@
   align-content: start;
   gap: var(--space-sm);
   min-width: 0;
+  max-width: 100%;
   padding: 20px;
   border: 1px solid var(--color-border-light);
   border-radius: 22px;
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
+  box-sizing: border-box;
 }
 
 .player-home-card--feature {
@@ -142,6 +153,7 @@
   gap: 3px;
   justify-items: start;
   width: 100%;
+  min-width: 0;
   padding: 12px 14px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
@@ -150,6 +162,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
+  touch-action: manipulation;
   transition:
     border-color var(--transition-fast),
     transform var(--transition-fast),
@@ -175,6 +188,7 @@
 .player-home-script-item__title {
   font-size: var(--font-size-sm);
   font-weight: 800;
+  overflow-wrap: anywhere;
 }
 
 .player-home-script-item__meta,
@@ -200,7 +214,7 @@
   z-index: 6;
   box-shadow: var(--shadow-md);
 }
-@media (max-width: 640px) {
+@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   .dash-opponent-bar {
     position: static;
     align-items: stretch;
@@ -212,6 +226,16 @@
     padding: 0;
   }
 
+  body.is-mobile-screen[data-auth-role="player"] #dashboard.panel {
+    overflow-x: hidden;
+    padding-right: max(12px, env(safe-area-inset-right));
+    padding-left: max(12px, env(safe-area-inset-left));
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .player-dashboard-home {
+    gap: var(--space-md);
+  }
+
   .player-home-hero,
   .player-home-card {
     padding: 16px;
@@ -221,20 +245,33 @@
   .player-home-hero {
     align-items: stretch;
     flex-direction: column;
+    gap: var(--space-md);
   }
 
   .player-home-hero h2 {
-    font-size: var(--font-size-3xl);
+    font-size: 2rem;
+    line-height: 1.05;
+  }
+
+  .player-home-hero p,
+  .player-home-card p {
+    font-size: var(--font-size-sm);
+    line-height: 1.45;
   }
 
   .player-home-hero__actions,
   .player-home-card__actions {
+    display: grid;
+    grid-template-columns: 1fr;
     width: 100%;
   }
 
   .player-home-hero__actions .btn,
   .player-home-card__actions .btn {
-    flex: 1 1 100%;
+    width: 100%;
+    min-height: 48px;
+    justify-content: center;
+    touch-action: manipulation;
   }
 
   .player-home-grid {
@@ -998,7 +1035,7 @@
   white-space: nowrap;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   .dash-command-center {
     border-radius: var(--radius-md);
     padding: var(--space-md);
@@ -1254,7 +1291,7 @@
   display: none;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   body.is-mobile-screen #dashboard.active .mobile-coach-notes-card {
     display: grid;
     gap: var(--space-sm);

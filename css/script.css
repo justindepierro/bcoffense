@@ -55,6 +55,10 @@
     linear-gradient(135deg, var(--color-primary-light), transparent 65%),
     var(--color-surface-muted);
   box-shadow: var(--shadow-xs);
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  box-sizing: border-box;
 }
 
 .player-script-launcher-header h4 {
@@ -68,6 +72,7 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.45;
+  overflow-wrap: anywhere;
 }
 
 .player-script-launcher-list {
@@ -87,6 +92,9 @@
     linear-gradient(135deg, var(--color-bg-blue-tint), transparent 72%),
     var(--color-surface);
   box-shadow: var(--shadow-sm);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .player-script-now__body {
@@ -108,6 +116,7 @@
   font-size: var(--font-size-xl);
   font-weight: 800;
   line-height: 1.15;
+  overflow-wrap: anywhere;
 }
 
 .player-script-now__meta {
@@ -142,6 +151,9 @@
   border-radius: var(--radius-lg);
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
+  min-width: 0;
+  max-width: 100%;
+  box-sizing: border-box;
 }
 
 .player-script-card.is-current {
@@ -174,6 +186,7 @@
   color: var(--color-text);
   font-size: var(--font-size-base);
   font-weight: 700;
+  overflow-wrap: anywhere;
 }
 
 .player-script-card__badge {
@@ -202,6 +215,11 @@
   flex-wrap: wrap;
   justify-content: flex-end;
   flex-shrink: 0;
+}
+
+.player-script-card__actions .btn,
+.player-script-now__actions .btn {
+  touch-action: manipulation;
 }
 
 .player-script-empty {
@@ -4490,7 +4508,7 @@ body[data-auth-role="player"] .period-buttons {
   }
 }
 
-@media (max-width: 560px) {
+@media (max-width: 560px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   .play-list,
   .script-list {
     padding: 12px;
