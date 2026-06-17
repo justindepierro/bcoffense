@@ -497,6 +497,7 @@
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex-wrap: wrap;
   max-width: 100%;
   font-size: var(--font-size-2xs);
   color: var(--color-text-secondary);
@@ -507,6 +508,145 @@
   border: 1px solid var(--color-border-light);
   letter-spacing: 0.04em;
   text-transform: uppercase;
+}
+
+.play-readiness-badge {
+  --prb-bg: var(--color-bg-lighter);
+  --prb-border: var(--color-border-light);
+  --prb-accent: var(--color-text-muted);
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  max-width: 100%;
+  min-height: 28px;
+  padding: 4px 9px;
+  border: 1px solid var(--prb-border);
+  border-radius: var(--radius-pill);
+  background: var(--prb-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--font-size-2xs);
+  font-weight: 850;
+  letter-spacing: normal;
+  line-height: 1.15;
+  text-transform: none;
+  vertical-align: middle;
+}
+
+.play-readiness-badge--trusted {
+  --prb-bg: var(--color-success-light);
+  --prb-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
+  --prb-accent: var(--color-success-hover);
+}
+
+.play-readiness-badge--ready {
+  --prb-bg: var(--color-primary-light);
+  --prb-border: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  --prb-accent: var(--color-primary);
+}
+
+.play-readiness-badge--needs {
+  --prb-bg: var(--color-warning-light);
+  --prb-border: color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  --prb-accent: var(--color-warning-hover);
+}
+
+.play-readiness-badge--risk {
+  --prb-bg: var(--color-danger-light);
+  --prb-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border-light));
+  --prb-accent: var(--color-danger);
+}
+
+.play-readiness-badge-dot {
+  flex: 0 0 9px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--prb-accent);
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--prb-accent) 16%, transparent);
+}
+
+.play-readiness-badge-main {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 5px;
+  min-width: 0;
+}
+
+.play-readiness-badge-main strong,
+.play-readiness-badge-main small,
+.play-readiness-badge-detail span {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.play-readiness-badge-main strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+}
+
+.play-readiness-badge-main small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 850;
+}
+
+.play-readiness-badge-detail {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  color: var(--color-text-secondary);
+}
+
+.play-readiness-badge-detail span {
+  position: relative;
+}
+
+.play-readiness-badge-detail span + span::before {
+  content: "•";
+  margin-right: 6px;
+  color: var(--color-text-muted);
+}
+
+.play-readiness-rollup {
+  grid-column: 1 / -1;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 6px;
+  min-width: 0;
+}
+
+.play-readiness-rollup-chip {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  min-height: 42px;
+  padding: 7px 9px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.play-readiness-rollup-chip small {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.07em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.play-readiness-rollup-chip strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  line-height: 1.15;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .script-item--player {
@@ -4694,6 +4834,10 @@ body[data-auth-role="player"] .period-buttons {
     grid-template-columns: 1fr;
   }
 
+  .play-readiness-rollup {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
   .play-readiness-actions {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -4945,8 +5089,28 @@ body[data-auth-role="player"] .period-buttons {
   .play-readiness-checks,
   .play-readiness-history-summary,
   .play-readiness-history-grid,
+  .play-readiness-rollup,
   .play-readiness-rate-grid {
     grid-template-columns: 1fr;
+  }
+
+  .script-item .play-call .call-meta {
+    display: flex;
+    width: 100%;
+    border-radius: var(--radius-md);
+  }
+
+  .script-item .play-call .call-meta .play-readiness-badge {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .play-readiness-badge {
+    border-radius: var(--radius-md);
+  }
+
+  .play-readiness-badge-detail {
+    margin-left: auto;
   }
 
   .play-readiness-btn {

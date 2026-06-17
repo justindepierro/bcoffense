@@ -829,6 +829,8 @@ function checkPlayReadinessContracts() {
     !/const PLAY_READINESS_THRESHOLDS = \{/.test(readiness) ||
     !/"Identity Play":/.test(readiness) ||
     !/function getPlayReadinessSummary\(play\)/.test(readiness) ||
+    !/function getPlayReadinessCompactSummary\(summary\)/.test(readiness) ||
+    !/function getPlayReadinessScoreTrend\(summary\)/.test(readiness) ||
     !/readinessPercent \* 0\.6 \+ liveScore \* 0\.3 \+ mistakeScore \* 0\.1/.test(
       readiness,
     )
@@ -839,6 +841,9 @@ function checkPlayReadinessContracts() {
     !/function renderPlayReadinessScriptWidget\(play, index, opts = \{\}\)/.test(
       readiness,
     ) ||
+    !/function renderPlayReadinessCompactBadge\(play, opts = \{\}\)/.test(readiness) ||
+    !/function renderPlayReadinessCompactBadgeFromSummary\(summary, opts = \{\}\)/.test(readiness) ||
+    !/function renderPlayReadinessRollup\(summary, opts = \{\}\)/.test(readiness) ||
     !/data-auth-player-hide="true"/.test(readiness) ||
     !/function openPlayReadinessRepModal\(index\)/.test(readiness) ||
     !/function openPlayReadinessActionModal\(index\)/.test(readiness) ||
@@ -861,7 +866,9 @@ function checkPlayReadinessContracts() {
     fail("play readiness coach workflow is incomplete");
   }
   if (
-    !/renderPlayReadinessScriptWidget\(play, index, opts\)/.test(scriptRender) ||
+    !/renderPlayReadinessScriptWidget\(play, index, \{/.test(scriptRender) ||
+    !/renderPlayReadinessCompactBadgeFromSummary\(readinessSummary, \{/.test(scriptRender) ||
+    !/readinessBadge/.test(playbookRender) ||
     !/\$\{readinessMarkup\}/.test(scriptRender) ||
     !/renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
     !/renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
@@ -882,11 +889,15 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-modal/.test(css) ||
     !/\.script-item--printlike \.play-readiness-widget/.test(css) ||
     !/\.play-readiness-history-summary/.test(css) ||
+    !/\.play-readiness-badge/.test(css) ||
+    !/\.play-readiness-rollup/.test(css) ||
     !/\.play-readiness-report-score-controls/.test(css) ||
     !/\.play-readiness-report-delete/.test(css) ||
     !/\.pb-readiness-card/.test(playbookCss) ||
+    !/play-readiness-badge--playbook-table/.test(playbookCss) ||
     !/\.play-readiness-score-btn/.test(playbookCss) ||
-    !/\.pp-coach-section-readiness/.test(presentationCss)
+    !/\.pp-coach-section-readiness/.test(presentationCss) ||
+    !/pp-coach-section-readiness \.play-readiness-rollup/.test(presentationCss)
   ) {
     fail("play readiness script styling is incomplete");
   }

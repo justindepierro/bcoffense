@@ -65,6 +65,26 @@ function renderPlaybook() {
         ? meta.gpSig
         : ((typeof _gpPlaySignature === "function") ? _gpPlaySignature(play) : "");
       const onWristband = isPlayOnHighlightedWristband(play);
+      const readinessSummary =
+        typeof getPlayReadinessSummary === "function" &&
+          typeof isPlayReadinessCoachRole === "function" &&
+          isPlayReadinessCoachRole()
+          ? getPlayReadinessSummary(play)
+          : null;
+      const readinessBadge =
+        typeof renderPlayReadinessCompactBadgeFromSummary === "function" && readinessSummary
+          ? renderPlayReadinessCompactBadgeFromSummary(readinessSummary, {
+            variant: "playbook-table",
+            detail: false,
+          })
+          : "";
+      const readinessCardBadge =
+        typeof renderPlayReadinessCompactBadgeFromSummary === "function" && readinessSummary
+          ? renderPlayReadinessCompactBadgeFromSummary(readinessSummary, {
+            variant: "playbook-card",
+            detail: true,
+          })
+          : "";
       return {
         play,
         idx: start + localIdx,
@@ -76,6 +96,8 @@ function renderPlaybook() {
         picturePill: picturePillFor(play),
         imageSig: imageSignatureFor(play, tagSig),
         usage: usageIndex ? usageIndex.get(play) : null,
+        readinessBadge,
+        readinessCardBadge,
       };
     });
     renderPlayerPlaybookSummary({
@@ -124,7 +146,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -170,6 +192,7 @@ function renderPlaybook() {
             <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
+            ${item.readinessCardBadge}
             <div class="pb-card-pills">${pills}</div>
           </div>
         `;

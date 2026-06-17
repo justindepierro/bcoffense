@@ -142,6 +142,29 @@ table.sortable th {
   line-height: 1;
   white-space: nowrap;
 }
+
+.play-cell .play-readiness-badge--playbook-table {
+  margin-left: var(--space-xs);
+  max-width: 210px;
+  padding-block: 2px;
+  vertical-align: middle;
+}
+
+.play-cell .play-readiness-badge--playbook-table .play-readiness-badge-main small {
+  display: none;
+}
+
+.pb-card .play-readiness-badge--playbook-card {
+  display: flex;
+  width: 100%;
+  margin: 0 0 8px;
+  justify-content: flex-start;
+  border-radius: var(--radius-md);
+}
+
+.pb-card .play-readiness-badge-detail {
+  margin-left: auto;
+}
 .pb-img-popover {
   position: fixed;
   z-index: var(--z-toast);
@@ -570,6 +593,11 @@ body[data-auth-role="player"] .gp-card-btn {
   line-height: 1.12;
 }
 
+.pb-readiness-main .play-readiness-badge {
+  justify-self: start;
+  max-width: 100%;
+}
+
 .pb-readiness-meta,
 .pb-readiness-stats {
   display: flex;
@@ -635,6 +663,12 @@ body[data-auth-role="player"] .gp-card-btn {
   display: grid;
   align-content: center;
   gap: 8px;
+}
+
+.pb-readiness-card .play-readiness-rollup {
+  grid-column: 1 / -1;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  margin-top: 2px;
 }
 
 .pb-readiness-score > span {
@@ -717,6 +751,10 @@ body[data-auth-role="player"] .gp-card-btn {
 
   .pb-readiness-score {
     grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .pb-readiness-card .play-readiness-rollup {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .pb-readiness-score > span {

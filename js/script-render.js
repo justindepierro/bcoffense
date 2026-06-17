@@ -800,9 +800,26 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const playerPersonnelMarkup = shouldRenderAssignmentGrid
     ? buildScriptPlayerAssignmentGrid(play, index, playLabel, opts)
     : "";
+  const readinessSummary =
+    typeof getPlayReadinessSummary === "function" &&
+      typeof isPlayReadinessCoachRole === "function" &&
+      isPlayReadinessCoachRole() &&
+      !opts.printStyle
+      ? getPlayReadinessSummary(play)
+      : null;
   const readinessMarkup =
     typeof renderPlayReadinessScriptWidget === "function"
-      ? renderPlayReadinessScriptWidget(play, index, opts)
+      ? renderPlayReadinessScriptWidget(play, index, {
+        ...opts,
+        readinessSummary,
+      })
+      : "";
+  const readinessBadge =
+    typeof renderPlayReadinessCompactBadgeFromSummary === "function" && readinessSummary
+      ? renderPlayReadinessCompactBadgeFromSummary(readinessSummary, {
+        variant: "script",
+        detail: true,
+      })
       : "";
   const reps = play.reps ?? 1;
   const itemClasses = [
@@ -870,7 +887,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       <div class="play-num" aria-hidden="true">${playNumber}${wbBadge}</div>
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
-        <div class="call-meta">${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</div>
+        <div class="call-meta">
+          <span>${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</span>
+          ${readinessBadge}
+        </div>
         ${renderScriptInlineCallEdits(play, index, playLabel)}
       </div>
       <div class="hash-input">

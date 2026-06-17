@@ -398,6 +398,135 @@ function getPlayReadinessLiveAverageText(summary) {
     : "-";
 }
 
+function getPlayReadinessLastReport(summary) {
+  const reports = Array.isArray(summary?.record?.actionReports)
+    ? summary.record.actionReports
+    : [];
+  return reports.length ? reports[reports.length - 1] : null;
+}
+
+function getPlayReadinessScoreTrend(summary) {
+  const reports = Array.isArray(summary?.record?.actionReports)
+    ? summary.record.actionReports
+    : [];
+  const scores = reports
+    .map((report) => parseFloat(report.score) || 0)
+    .filter(Boolean);
+  if (!scores.length) {
+    return { label: "No score yet", short: "Unscored", tone: "empty" };
+  }
+  if (scores.length === 1) {
+    return { label: "First score logged", short: "First score", tone: "stable" };
+  }
+
+  const recent = scores.slice(-3);
+  const earlier = scores.length > 3 ? scores.slice(0, -3) : scores.slice(0, -1);
+  const avg = (values) => values.reduce((sum, value) => sum + value, 0) / values.length;
+  const delta = avg(recent) - avg(earlier);
+  if (delta >= 0.35) {
+    return { label: "Trending up", short: "Up", tone: "up" };
+  }
+  if (delta <= -0.35) {
+    return { label: "Trending down", short: "Down", tone: "down" };
+  }
+  return { label: "Stable trend", short: "Stable", tone: "stable" };
+}
+
+function getPlayReadinessBadgeTone(summary) {
+  if (!summary?.metrics?.liveReps && !summary?.weightedReps) return "empty";
+  if (summary.confidenceScore >= 85) return "trusted";
+  if (summary.confidenceScore >= 70) return "ready";
+  if (summary.confidenceScore >= 50) return "needs";
+  return "risk";
+}
+
+function getPlayReadinessCompactSummary(summary) {
+  const lastReport = getPlayReadinessLastReport(summary);
+  const lastScore = parseInt(lastReport?.score, 10) || 0;
+  const trend = getPlayReadinessScoreTrend(summary);
+  const scoreCount = summary.metrics.liveReps || 0;
+  const averageScoreText = getPlayReadinessLiveAverageText(summary);
+  const lastScoreText = lastScore ? `${lastScore}/5` : "-";
+  const scoreCountText = `${scoreCount} scored ${scoreCount === 1 ? "rep" : "reps"}`;
+  const repCountText = summary.actualReps
+    ? `${summary.actualReps} total ${summary.actualReps === 1 ? "rep" : "reps"}`
+    : scoreCountText;
+
+  return {
+    averageScoreText,
+    lastScore,
+    lastScoreText,
+    scoreCount,
+    scoreCountText,
+    repCountText,
+    trend,
+    tone: getPlayReadinessBadgeTone(summary),
+    label: scoreCount ? `Readiness ${averageScoreText}` : "Readiness --",
+  };
+}
+
+function renderPlayReadinessCompactBadgeFromSummary(summary, opts = {}) {
+  const compact = getPlayReadinessCompactSummary(summary);
+  const variant = opts.variant ? ` play-readiness-badge--${escapeHtml(opts.variant)}` : "";
+  const detail = opts.detail === false
+    ? ""
+    : `<span class="play-readiness-badge-detail">
+        <span>Last ${escapeHtml(compact.lastScoreText)}</span>
+        <span>${escapeHtml(compact.repCountText)}</span>
+        <span>${escapeHtml(compact.trend.short)}</span>
+      </span>`;
+  const title = [
+    compact.label,
+    `Last ${compact.lastScoreText}`,
+    compact.scoreCountText,
+    compact.trend.label,
+    `${summary.confidenceScore} confidence`,
+  ].join(" • ");
+
+  return `
+    <span class="play-readiness-badge play-readiness-badge--${escapeHtml(compact.tone)} play-readiness-badge-trend--${escapeHtml(compact.trend.tone)}${variant}"
+      data-auth-player-hide="true" title="${escapeHtml(title)}"
+      aria-label="${escapeHtml(title)}">
+      <span class="play-readiness-badge-dot" aria-hidden="true"></span>
+      <span class="play-readiness-badge-main">
+        <strong>${escapeHtml(compact.label)}</strong>
+        <small>${escapeHtml(summary.confidenceLabel)}</small>
+      </span>
+      ${detail}
+    </span>`;
+}
+
+function renderPlayReadinessCompactBadge(play, opts = {}) {
+  if (!isPlayReadinessCoachRole() || opts.printStyle || !play) return "";
+  return renderPlayReadinessCompactBadgeFromSummary(
+    getPlayReadinessSummary(play),
+    opts,
+  );
+}
+
+function renderPlayReadinessRollup(summary, opts = {}) {
+  const compact = getPlayReadinessCompactSummary(summary);
+  const variant = opts.variant ? ` play-readiness-rollup--${escapeHtml(opts.variant)}` : "";
+  const items = [
+    ["Avg", compact.averageScoreText],
+    ["Last", compact.lastScoreText],
+    ["Reps", compact.repCountText],
+    ["Trend", compact.trend.label],
+  ];
+
+  return `
+    <div class="play-readiness-rollup play-readiness-rollup--${escapeHtml(compact.tone)}${variant}"
+      aria-label="Readiness rollup">
+      ${items
+        .map(([label, value]) => `
+          <span class="play-readiness-rollup-chip">
+            <small>${escapeHtml(label)}</small>
+            <strong>${escapeHtml(value)}</strong>
+          </span>`)
+        .join("")}
+    </div>`;
+}
+
 function refreshPlayReadinessSurfaces(source = "") {
   if (typeof requestRenderScript === "function") requestRenderScript();
   if (typeof requestRenderPlaybook === "function") {
@@ -427,7 +556,8 @@ function getPlayReadinessPlaybookPlay(index) {
 
 function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   if (!isPlayReadinessCoachRole() || opts.printStyle) return "";
-  const summary = getPlayReadinessSummary(play);
+  const summary = opts.readinessSummary || getPlayReadinessSummary(play);
+  const compact = getPlayReadinessCompactSummary(summary);
   const liveAverage = getPlayReadinessLiveAverageText(summary);
   const weightedText = formatPlayReadinessNumber(summary.weightedReps);
   const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
@@ -457,6 +587,8 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
         <span><strong>${summary.actualReps}</strong> actual</span>
         <span><strong>${escapeHtml(weeklyText)}</strong> 7-day</span>
         <span><strong>${escapeHtml(liveAverage)}</strong> live avg</span>
+        <span><strong>${escapeHtml(compact.lastScoreText)}</strong> last</span>
+        <span><strong>${escapeHtml(compact.trend.short)}</strong> trend</span>
         <span><strong>${summary.confidenceScore}</strong> confidence</span>
         <span class="play-readiness-call-label">${escapeHtml(summary.confidenceLabel)}</span>
       </div>
@@ -495,6 +627,10 @@ function renderPlayReadinessScoreButtons(action, activeScore = 0) {
 function renderPlayReadinessPresentationCoachCard(play) {
   if (!isPlayReadinessCoachRole()) return "";
   const summary = getPlayReadinessSummary(play);
+  const compactBadge = renderPlayReadinessCompactBadgeFromSummary(summary, {
+    variant: "presentation",
+    detail: false,
+  });
   const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
   const weightedText = formatPlayReadinessNumber(summary.weightedReps);
   const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
@@ -506,6 +642,7 @@ function renderPlayReadinessPresentationCoachCard(play) {
         <h3>Rep Score</h3>
         <span>Coach table</span>
       </div>
+      ${compactBadge}
       <div class="pp-readiness-summary">
         <div class="pp-readiness-status">
           <span class="pp-readiness-label">${escapeHtml(summary.readinessLabel)}</span>
@@ -525,6 +662,7 @@ function renderPlayReadinessPresentationCoachCard(play) {
           <span><strong>${escapeHtml(getPlayReadinessLiveAverageText(summary))}</strong> live avg</span>
         </div>
       </div>
+      ${renderPlayReadinessRollup(summary, { variant: "presentation" })}
       <div class="pp-readiness-score-row">
         <span>Score the rep</span>
         <div class="pp-readiness-score-grid" role="group" aria-label="Quick score this rep">
@@ -546,6 +684,10 @@ function renderPlayReadinessPresentationCoachCard(play) {
 function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
   if (!isPlayReadinessCoachRole() || !play) return "";
   const summary = getPlayReadinessSummary(play);
+  const compactBadge = renderPlayReadinessCompactBadgeFromSummary(summary, {
+    variant: "playbook-selected",
+    detail: true,
+  });
   const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
   const weightedText = formatPlayReadinessNumber(summary.weightedReps);
   const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
@@ -560,6 +702,7 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
           <span>${escapeHtml(summary.complexity)} complexity</span>
           <span>${escapeHtml(summary.family)}</span>
         </div>
+        ${compactBadge}
       </div>
       <div class="pb-readiness-status">
         <strong>${summary.confidenceScore}</strong>
@@ -579,6 +722,7 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
           <span><strong>${escapeHtml(getPlayReadinessLiveAverageText(summary))}</strong> live avg</span>
         </div>
       </div>
+      ${renderPlayReadinessRollup(summary, { variant: "playbook" })}
       <div class="pb-readiness-score" role="group" aria-label="Quick score selected play">
         <span>Quick score</span>
         ${renderPlayReadinessScoreButtons("quickPlayReadinessPlaybookScore", lastReport?.score || 0)}
