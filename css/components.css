@@ -41,7 +41,7 @@
   max-width: 480px;
 }
 
-@media (max-width: 640px) {
+@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   .custom-modal-overlay,
   .modal-overlay,
   .cell-popup-overlay {
@@ -302,6 +302,30 @@ body[data-auth-role="player"] .auth-user-badge {
   border-color: transparent;
   color: var(--color-primary-dark);
   background: var(--color-white);
+}
+
+@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+  .auth-login-overlay {
+    align-items: flex-start;
+    min-height: calc(var(--app-vh, 1vh) * 100);
+    overflow-y: auto;
+    padding: max(14px, env(safe-area-inset-top))
+      max(12px, env(safe-area-inset-right))
+      max(18px, env(safe-area-inset-bottom))
+      max(12px, env(safe-area-inset-left));
+  }
+
+  .auth-login-shell {
+    width: min(100%, 540px);
+    max-height: none;
+  }
+
+  .auth-login-card input,
+  .auth-password-toggle,
+  .auth-login-submit {
+    min-height: 48px;
+    touch-action: manipulation;
+  }
 }
 
 @media (max-width: 480px) {

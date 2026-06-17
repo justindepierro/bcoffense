@@ -116,6 +116,7 @@ document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
 window.addEventListener("load", queueMobileShellStateSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
 window.visualViewport?.addEventListener("resize", queueMobileShellStateSync);
+window.visualViewport?.addEventListener("scroll", queueMobileShellStateSync);
 window.addEventListener("orientationchange", queueMobileShellStateSync, {
   passive: true,
 });

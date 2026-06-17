@@ -797,7 +797,9 @@ function runPlayerHomeAction(button) {
 document.addEventListener(
   "touchstart",
   (event) => {
-    const button = event.target.closest?.(".player-dashboard-home .player-home-action");
+    const button = event.target.closest?.(
+      ".player-dashboard-home .player-home-action, .player-dashboard-home .player-home-script-item",
+    );
     if (!button || event.touches?.length !== 1) {
       playerHomeTouchStart = null;
       return;
@@ -816,7 +818,9 @@ document.addEventListener(
 document.addEventListener(
   "touchend",
   (event) => {
-    const button = event.target.closest?.(".player-dashboard-home .player-home-action");
+    const button = event.target.closest?.(
+      ".player-dashboard-home .player-home-action, .player-dashboard-home .player-home-script-item",
+    );
     const start = playerHomeTouchStart;
     playerHomeTouchStart = null;
     if (!button || !start || start.button !== button) return;

@@ -828,7 +828,9 @@ function checkPlayerPortalContracts() {
     !/id="playerPlaybookSummary"/.test(html) ||
     !/id="playerDashboardHome"/.test(html) ||
     !/id="commandPaletteBtn"[^>]*data-auth-player-hide="true"/.test(html) ||
-    !/id="quickTools"[^>]*data-auth-player-hide="true"/.test(html)
+    !/id="quickTools"[^>]*data-auth-player-hide="true"/.test(html) ||
+    !/viewport-fit=cover/.test(html) ||
+    !/interactive-widget=resizes-content/.test(html)
   ) {
     fail("player portal markup is incomplete");
   }
@@ -840,7 +842,10 @@ function checkPlayerPortalContracts() {
     !/Open Playbook/.test(dashboard) ||
     !/playerHomeTouchStart/.test(dashboard) ||
     !/function runPlayerHomeAction\(button\)/.test(dashboard) ||
-    !/class="btn btn-primary player-home-action"/.test(dashboard)
+    !/class="btn btn-primary player-home-action"/.test(dashboard) ||
+    !/\.player-dashboard-home \.player-home-action,\s*\.player-dashboard-home \.player-home-script-item/.test(
+      dashboard,
+    )
   ) {
     fail("player dashboard home is incomplete");
   }
@@ -849,6 +854,9 @@ function checkPlayerPortalContracts() {
     !/shortSide/.test(appShell) ||
     !/is-landscape-screen/.test(appShell) ||
     !/window\.visualViewport\?\.addEventListener\("resize", queueMobileShellStateSync\)/.test(
+      appShell,
+    ) ||
+    !/window\.visualViewport\?\.addEventListener\("scroll", queueMobileShellStateSync\)/.test(
       appShell,
     )
   ) {
@@ -868,10 +876,22 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\[data-auth-role="player"\] \.tabs/.test(
       responsiveCss,
     ) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #tab-dashboard::before/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] \.auth-user-badge/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-mobile-screen input:not/.test(responsiveCss) ||
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
+    !/\.auth-login-overlay/.test(componentsCss) ||
+    !/auth-login-submit[\s\S]*touch-action:\s*manipulation/.test(componentsCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
     !/touch-action:\s*manipulation/.test(dashboardCss) ||
+    !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-hero/.test(
+      dashboardCss,
+    ) ||
     !/\.player-home-grid/.test(dashboardCss) ||
     !/\.pb-player-summary/.test(read("css/playbook.css")) ||
     !/\.player-script-now__actions \.btn/.test(scriptCss)

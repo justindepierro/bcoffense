@@ -151,8 +151,15 @@
   body.is-mobile-screen {
     background: var(--color-surface);
     overflow-x: hidden;
+    overscroll-behavior-y: contain;
+    -webkit-text-size-adjust: 100%;
     width: 100%;
     max-width: 100%;
+  }
+
+  body.is-mobile-screen {
+    min-width: 0;
+    min-height: calc(var(--app-vh, 1vh) * 100);
   }
 
   body.is-mobile-screen .app-header {
@@ -176,6 +183,7 @@
   body.is-mobile-screen .app-header-actions {
     flex: 0 0 auto;
     gap: 4px;
+    min-width: 0;
   }
 
   body.is-mobile-screen .app-title {
@@ -211,6 +219,46 @@
     border-radius: var(--radius-pill);
   }
 
+  body.is-mobile-screen[data-auth-role="player"] .app-header {
+    min-height: calc(58px + env(safe-area-inset-top));
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .app-logo {
+    font-size: var(--font-size-xl);
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .app-title {
+    max-width: min(44vw, 220px);
+    font-size: var(--font-size-sm);
+    line-height: 1.15;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .app-subtitle {
+    max-width: min(44vw, 220px);
+    font-size: var(--font-size-2xs);
+    line-height: 1.15;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .app-title-group::after {
+    font-size: var(--font-size-micro);
+    line-height: 1.1;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .app-header-actions {
+    max-width: 49vw;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .auth-user-badge:not([hidden]) {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 34px;
+    max-width: 124px;
+    overflow: hidden;
+    padding: 0 10px;
+    text-overflow: ellipsis;
+  }
+
   body.is-mobile-screen .tabs {
     top: var(--app-header-height, 50px);
     min-height: 44px;
@@ -234,12 +282,12 @@
     right: 0;
     bottom: 0;
     left: 0;
-    min-height: calc(64px + env(safe-area-inset-bottom));
+    min-height: calc(72px + env(safe-area-inset-bottom));
     padding:
-      10px max(12px, env(safe-area-inset-right))
-      calc(10px + env(safe-area-inset-bottom))
+      8px max(10px, env(safe-area-inset-right))
+      calc(8px + env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
-    gap: 10px;
+    gap: 8px;
     justify-content: space-between;
     background: rgb(255 255 255 / 0.92);
     border-top: 1px solid var(--color-border-light);
@@ -250,10 +298,34 @@
 
   body.is-mobile-screen[data-auth-role="player"] .tab {
     flex: 1 1 0;
+    flex-direction: column;
+    gap: 3px;
     justify-content: center;
-    padding: 10px 12px;
+    min-height: 56px;
+    padding: 7px 8px;
     border-radius: var(--radius-lg);
+    font-size: var(--font-size-2xs);
+    line-height: 1.05;
     scroll-snap-align: none;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .tab::before {
+    display: block;
+    color: inherit;
+    font-size: 1.15rem;
+    line-height: 1;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] #tab-dashboard::before {
+    content: "⌂";
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] #tab-playbook::before {
+    content: "□";
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] #tab-script::before {
+    content: "▶";
   }
 
   body.is-mobile-screen .panel {
@@ -279,8 +351,48 @@
     touch-action: manipulation;
   }
 
+  body.is-mobile-screen input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+  body.is-mobile-screen select,
+  body.is-mobile-screen textarea {
+    font-size: 16px;
+  }
+
   body.is-mobile-screen[data-auth-role="player"] .panel {
-    padding-bottom: calc(96px + env(safe-area-inset-bottom));
+    padding-bottom: calc(
+      var(--app-tabs-height, 76px) + 24px + env(safe-area-inset-bottom)
+    );
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .app-header {
+    gap: 6px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .app-header-brand {
+    gap: 6px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .app-header-actions {
+    gap: 3px;
+    max-width: 48vw;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .header-action-btn {
+    width: 36px;
+    min-width: 36px;
+    height: 36px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .auth-user-badge {
+    max-width: 104px;
+    min-height: 32px;
+    padding: 0 8px;
+    font-size: var(--font-size-2xs);
+  }
+
+  body.is-phone-screen[data-auth-role="player"] #dashboard.panel,
+  body.is-phone-screen[data-auth-role="player"] #playbook.panel,
+  body.is-phone-screen[data-auth-role="player"] #script.panel {
+    padding-top: 10px;
   }
 
   body.is-mobile-screen .upload-section {

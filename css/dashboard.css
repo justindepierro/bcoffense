@@ -279,6 +279,32 @@
     gap: var(--space-sm);
   }
 
+  body.is-phone-screen[data-auth-role="player"] .player-home-hero,
+  body.is-phone-screen[data-auth-role="player"] .player-home-card {
+    padding: 14px;
+    border-radius: var(--radius-lg);
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-hero h2 {
+    font-size: 1.75rem;
+    line-height: 1.08;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-eyebrow,
+  body.is-phone-screen[data-auth-role="player"] .player-home-card__eyebrow {
+    font-size: var(--font-size-2xs);
+    letter-spacing: 0.06em;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-script-item {
+    min-height: 56px;
+    padding: 13px 14px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-stat-row span {
+    padding: 7px 10px;
+  }
+
   .dash-opponent-select-group,
   .dash-opponent-select-group > *,
   .dash-search-input,
