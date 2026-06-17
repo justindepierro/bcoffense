@@ -844,6 +844,7 @@ function checkPlayReadinessContracts() {
     !/function renderPlayReadinessCompactBadge\(play, opts = \{\}\)/.test(readiness) ||
     !/function renderPlayReadinessCompactBadgeFromSummary\(summary, opts = \{\}\)/.test(readiness) ||
     !/function renderPlayReadinessRollup\(summary, opts = \{\}\)/.test(readiness) ||
+    !/function renderPlayReadinessEmptyPlaybookPanel\(\)/.test(readiness) ||
     !/data-auth-player-hide="true"/.test(readiness) ||
     !/function openPlayReadinessRepModal\(index\)/.test(readiness) ||
     !/function openPlayReadinessActionModal\(index\)/.test(readiness) ||
@@ -894,6 +895,8 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-report-score-controls/.test(css) ||
     !/\.play-readiness-report-delete/.test(css) ||
     !/\.pb-readiness-card/.test(playbookCss) ||
+    !/\.pb-readiness-card--empty/.test(playbookCss) ||
+    !/\.pb-readiness-empty-steps/.test(playbookCss) ||
     !/play-readiness-badge--playbook-table/.test(playbookCss) ||
     !/\.play-readiness-score-btn/.test(playbookCss) ||
     !/\.pp-coach-section-readiness/.test(presentationCss) ||
@@ -951,10 +954,14 @@ function checkPlayerPortalContracts() {
     !/player-home-today-card/.test(dashboard) ||
     !/class="btn btn-primary player-home-action"/.test(dashboard) ||
     !/const MOBILE_TAP_ACTION_SELECTOR = \[/.test(appEvents) ||
+    !/"button"/.test(appEvents) ||
+    !/\[data-action\]/.test(appEvents) ||
     !/#authLoginOverlay button/.test(appEvents) ||
     !/\.player-dashboard-home \[data-action\]/.test(appEvents) ||
     !/\.play-presentation-overlay\.show \[data-action\]/.test(appEvents) ||
-    !/function getMobileTapActionTarget\(target\)/.test(appEvents)
+    !/function getMobileTapActionTarget\(target\)/.test(appEvents) ||
+    !/navigator\.maxTouchPoints > 0/.test(appEvents) ||
+    !/function isMobileTapInteractiveElement\(el\)/.test(appEvents)
   ) {
     fail("player dashboard home is incomplete");
   }
@@ -996,9 +1003,13 @@ function checkPlayerPortalContracts() {
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.auth-login-overlay/.test(componentsCss) ||
     !/auth-login-submit[\s\S]*touch-action:\s*manipulation/.test(componentsCss) ||
+    !/\.auth-login-card\s*\{\s*order:\s*1;/.test(componentsCss) ||
+    !/\.auth-login-hero\s*\{\s*order:\s*2;/.test(componentsCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
     !/\.player-home-quick-actions/.test(dashboardCss) ||
+    !/player-home-card--study/.test(dashboard) ||
     !/\.player-home-today-card/.test(dashboardCss) ||
+    !/-webkit-tap-highlight-color:\s*transparent/.test(dashboardCss) ||
     !/touch-action:\s*manipulation/.test(dashboardCss) ||
     !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-hero/.test(
       dashboardCss,

@@ -734,7 +734,7 @@ function renderPlayerDashboardHome() {
           </button>
         </div>
       </article>
-      <article class="player-home-card">
+      <article class="player-home-card player-home-card--study">
         <span class="player-home-card__eyebrow">Study Flow</span>
         <h3>What to do first</h3>
         <div class="player-home-study-list">
@@ -743,14 +743,14 @@ function renderPlayerDashboardHome() {
           <div><strong>3</strong><span>Use Playbook filters when you need more reps on a family.</span></div>
         </div>
       </article>
-      <article class="player-home-card">
+      <article class="player-home-card player-home-card--recent">
         <span class="player-home-card__eyebrow">Recent Practices</span>
         <h3>Jump back in fast</h3>
         <div class="player-home-script-list">
           ${recentScriptsMarkup}
         </div>
       </article>
-      <article class="player-home-card">
+      <article class="player-home-card player-home-card--current">
         <span class="player-home-card__eyebrow">Current Work</span>
         <h3>${escapeHtml(loadedScript?.name || "Load a practice to begin")}</h3>
         <p>${escapeHtml(

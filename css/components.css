@@ -306,7 +306,7 @@ body[data-auth-role="player"] .auth-user-badge {
 
 @media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
   .auth-login-overlay {
-    align-items: flex-start;
+    align-items: center;
     min-height: calc(var(--app-vh, 1vh) * 100);
     overflow-y: auto;
     padding: max(14px, env(safe-area-inset-top))
@@ -318,19 +318,25 @@ body[data-auth-role="player"] .auth-user-badge {
   .auth-login-shell {
     width: min(100%, 540px);
     max-height: none;
+    border-radius: 24px;
   }
 
   .auth-login-card input,
   .auth-password-toggle,
   .auth-login-submit {
-    min-height: 48px;
+    min-height: 52px;
     touch-action: manipulation;
+  }
+
+  .auth-login-submit,
+  .auth-password-toggle {
+    -webkit-tap-highlight-color: transparent;
   }
 }
 
 @media (max-width: 480px) {
   .auth-login-overlay {
-    align-items: flex-start;
+    align-items: stretch;
     padding: max(16px, env(safe-area-inset-top))
       max(12px, env(safe-area-inset-right))
       max(16px, env(safe-area-inset-bottom))
@@ -339,24 +345,64 @@ body[data-auth-role="player"] .auth-user-badge {
 
   .auth-login-shell {
     grid-template-columns: 1fr;
+    align-self: center;
+    max-height: calc((var(--app-vh, 1vh) * 100) - 32px);
+    overflow-y: auto;
     border-radius: 22px;
   }
 
   .auth-login-hero {
+    order: 2;
+    gap: var(--space-sm);
+    padding: 16px var(--space-lg) var(--space-lg);
+    background: linear-gradient(160deg, rgb(8 22 56 / 94%), rgb(13 34 74 / 86%));
+  }
+
+  .auth-login-hero h2 {
+    font-size: var(--font-size-xl);
+    line-height: 1.15;
+  }
+
+  .auth-login-hero p {
+    max-width: none;
+    font-size: var(--font-size-xs);
+    line-height: 1.45;
+  }
+
+  .auth-login-role-strip,
+  .auth-login-highlight-list {
+    display: none;
+  }
+
+  .auth-login-card {
+    order: 1;
     gap: var(--space-sm);
     padding: var(--space-lg);
   }
 
-  .auth-login-hero h2 {
-    font-size: var(--font-size-4xl);
+  .auth-login-form-header {
+    gap: 4px;
   }
 
-  .auth-login-card {
-    padding: var(--space-lg);
+  .auth-login-card h3 {
+    font-size: var(--font-size-xl);
+    line-height: 1.12;
   }
 
-  .auth-login-highlight-list {
-    gap: var(--space-xs);
+  .auth-login-card p {
+    font-size: var(--font-size-xs);
+  }
+
+  .auth-login-card label {
+    gap: 5px;
+  }
+
+  .auth-login-password-row {
+    grid-template-columns: minmax(0, 1fr) 74px;
+  }
+
+  .auth-login-help {
+    margin-top: -2px;
   }
 }
 

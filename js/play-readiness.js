@@ -741,17 +741,54 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
   `;
 }
 
+function renderPlayReadinessEmptyPlaybookPanel() {
+  const hasPlays = Array.isArray(filteredPlays) && filteredPlays.length > 0;
+  const firstPlayAction = hasPlays
+    ? `<button type="button" class="play-readiness-btn" data-action="openPlaybookPresentation" data-arg="0">
+        Present First Play
+      </button>`
+    : "";
+
+  return `
+    <div class="pb-readiness-card pb-readiness-card--empty" data-auth-player-hide="true">
+      <div class="pb-readiness-main">
+        <span class="pb-readiness-eyebrow">Coach/Admin Scoring</span>
+        <h3>Play Readiness Scoring</h3>
+        <p class="pb-readiness-empty-copy">
+          Select any play to quick-score it here. In Script rows, use Add Rep, Action Report, or History.
+          In presentation, switch to Coaches mode and score the rep from the coach table.
+        </p>
+      </div>
+      <div class="pb-readiness-empty-steps" aria-label="Where to score plays">
+        <span><strong>1</strong> Select a play</span>
+        <span><strong>2</strong> Quick score 1-5</span>
+        <span><strong>3</strong> Review badges and trends</span>
+      </div>
+      <div class="pb-readiness-actions pb-readiness-empty-actions">
+        <button type="button" class="play-readiness-btn" data-action="showTab" data-arg="script">
+          Open Script Scoring
+        </button>
+        ${firstPlayAction}
+      </div>
+    </div>`;
+}
+
 function renderSelectedPlaybookReadinessPanel(index = selectedRowIndex) {
   const panel = document.getElementById("playbookReadinessPanel");
   if (!panel) return;
   const play = getPlayReadinessPlaybookPlay(index);
-  if (!play || !isPlayReadinessCoachRole()) {
+  if (!isPlayReadinessCoachRole()) {
     panel.hidden = true;
     panel.innerHTML = "";
     return;
   }
   panel.hidden = false;
-  setInnerHTML(panel, renderPlayReadinessPlaybookPanel(play, parseInt(index, 10)));
+  setInnerHTML(
+    panel,
+    play
+      ? renderPlayReadinessPlaybookPanel(play, parseInt(index, 10))
+      : renderPlayReadinessEmptyPlaybookPanel(),
+  );
 }
 
 function getPlayReadinessScriptPlay(index) {

@@ -39,6 +39,10 @@ const _ELEMENT_FNS = new Set([
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
 const MOBILE_TAP_ACTION_SELECTOR = [
+  "button",
+  "a[data-action]",
+  "[role='button']",
+  "[data-action]",
   "#authLoginOverlay button",
   ".player-dashboard-home [data-action]",
   ".pb-player-summary [data-action]",
@@ -66,10 +70,27 @@ let mobileTapNativeSuppression = null;
 
 function isMobileTapBridgeEnabled() {
   const body = document.body;
+  const width =
+    window.visualViewport?.width ||
+    window.innerWidth ||
+    document.documentElement.clientWidth ||
+    0;
   return Boolean(
     body?.classList.contains("is-touch-screen") ||
       body?.classList.contains("is-mobile-screen") ||
-      window.matchMedia?.("(pointer: coarse)")?.matches,
+      window.matchMedia?.("(pointer: coarse)")?.matches ||
+      navigator.maxTouchPoints > 0 ||
+      "ontouchstart" in window ||
+      width <= 820,
+  );
+}
+
+function isMobileTapInteractiveElement(el) {
+  if (!(el instanceof Element)) return false;
+  return Boolean(
+    el.matches(
+      "button, a[href], a[data-action], [role='button'], .tab, [data-action]",
+    ),
   );
 }
 
@@ -79,13 +100,18 @@ function getMobileTapActionTarget(target) {
   if (!element) return null;
   const actionEl = element.closest(MOBILE_TAP_ACTION_SELECTOR);
   if (!actionEl) return null;
+  if (!isMobileTapInteractiveElement(actionEl)) return null;
   if (actionEl.disabled || actionEl.getAttribute("aria-disabled") === "true") {
     return null;
   }
+  if (actionEl.closest("[inert]")) return null;
   if (
-    element.closest("input, select, textarea, label") &&
+    element.closest("input, select, textarea") &&
     !actionEl.matches("button, [role='button'], .tab")
   ) {
+    return null;
+  }
+  if (element.closest("label") && !actionEl.matches("button, [role='button'], .tab")) {
     return null;
   }
   return actionEl;
