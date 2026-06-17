@@ -505,6 +505,40 @@ function getPlayerPublishedScripts() {
     });
 }
 
+function tracePlayerScriptAction(phase, payload = {}, level = "info") {
+  const publishedScripts =
+    typeof getPlayerPublishedScripts === "function"
+      ? getPlayerPublishedScripts()
+      : [];
+  const data = {
+    phaseAction: payload.action || "loadPublishedPlayerScript",
+    role:
+      typeof getCurrentAuthUser === "function"
+        ? getCurrentAuthUser()?.role || ""
+        : "",
+    activeTab:
+      typeof currentActiveTab !== "undefined"
+        ? currentActiveTab
+        : document.body?.dataset.activeTab || "",
+    publishedCount: publishedScripts.length,
+    currentScriptPlays: Array.isArray(script)
+      ? script.filter((entry) => entry && !entry.isSeparator).length
+      : 0,
+    ...payload,
+  };
+  if (typeof traceAppAction === "function") {
+    traceAppAction(`player script ${phase}`, data, {}, level);
+    return;
+  }
+  const logger =
+    level === "error"
+      ? console.error
+      : level === "warn"
+        ? console.warn
+        : console.info;
+  logger.call(console, `[BC player script trace] ${phase}`, data);
+}
+
 function renderPlayerScriptLauncher() {
   const section = document.getElementById("playerScriptLauncherSection");
   const list = document.getElementById("playerScriptLauncherList");
@@ -738,14 +772,34 @@ function loadScript(id) {
 
 function getPlayerPublishedScriptById(id) {
   const normalizedId = String(id);
-  return getPlayerPublishedScripts().find(
+  const publishedScripts = getPlayerPublishedScripts();
+  const scriptData = publishedScripts.find(
     (savedScript) => String(savedScript.id) === normalizedId,
   ) || null;
+  if (!scriptData) {
+    tracePlayerScriptAction(
+      "lookup miss",
+      {
+        id: normalizedId,
+        availableIds: publishedScripts.map((savedScript) =>
+          String(savedScript.id),
+        ),
+      },
+      "warn",
+    );
+  }
+  return scriptData;
 }
 
 function loadPublishedPlayerScript(id, opts = {}) {
+  tracePlayerScriptAction("load start", { id: String(id) });
   const scriptData = getPlayerPublishedScriptById(id);
   if (!scriptData) {
+    tracePlayerScriptAction(
+      "load failed",
+      { id: String(id), reason: "not-published-or-missing" },
+      "warn",
+    );
     if (!opts.skipToast) {
       showToast("⚠️ That script is not published for player logins.", {
         type: "warning",
@@ -754,22 +808,74 @@ function loadPublishedPlayerScript(id, opts = {}) {
     return null;
   }
 
-  if (typeof showTab === "function") showTab("script");
+  if (typeof showTab === "function") {
+    showTab("script");
+    tracePlayerScriptAction("show tab", {
+      id: String(scriptData.id),
+      name: scriptData.name,
+    });
+  } else {
+    tracePlayerScriptAction(
+      "show tab skipped",
+      { id: String(scriptData.id), reason: "showTab-missing" },
+      "warn",
+    );
+  }
   const loaded = loadSavedScriptRecord(scriptData, {
     skipToast: opts.skipToast,
     toastMessage: opts.toastMessage || `Loaded "${scriptData.name}"`,
     errorMessage: "❌ Error loading published player script.",
   });
+  tracePlayerScriptAction(loaded ? "load complete" : "load failed", {
+    id: String(scriptData.id),
+    name: scriptData.name,
+    loaded,
+    loadedPlays: Array.isArray(script)
+      ? script.filter((entry) => entry && !entry.isSeparator).length
+      : 0,
+    reason: loaded ? "" : "loadSavedScriptRecord-returned-false",
+  }, loaded ? "info" : "warn");
   return loaded ? scriptData : null;
 }
 
 function presentPublishedPlayerScript(id) {
+  tracePlayerScriptAction("present start", {
+    action: "presentPublishedPlayerScript",
+    id: String(id),
+  });
   const scriptData = loadPublishedPlayerScript(id, { skipToast: true });
-  if (!scriptData) return false;
+  if (!scriptData) {
+    tracePlayerScriptAction(
+      "present failed",
+      {
+        action: "presentPublishedPlayerScript",
+        id: String(id),
+        reason: "script-load-failed",
+      },
+      "warn",
+    );
+    return false;
+  }
   if (typeof setPlayPresentationMode === "function") {
     setPlayPresentationMode("player");
   }
-  openScriptPresentation();
+  const opened =
+    typeof openScriptPresentation === "function"
+      ? openScriptPresentation()
+      : false;
+  tracePlayerScriptAction(opened ? "present opened" : "present failed", {
+    action: "presentPublishedPlayerScript",
+    id: String(scriptData.id),
+    name: scriptData.name,
+    opened,
+    reason: opened ? "" : "openScriptPresentation-returned-false",
+  }, opened ? "info" : "warn");
+  if (!opened) {
+    showToast("Script loaded, but no plays were available to present.", {
+      type: "warning",
+    });
+    return false;
+  }
   showToast(`Opened "${scriptData.name}" in swipe view`);
   return true;
 }

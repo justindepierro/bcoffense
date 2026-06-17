@@ -284,6 +284,28 @@
     });
   }
 
+  function traceAuthBlocked(reason, el, extra = {}) {
+    const actionEl = el instanceof Element ? el.closest("[data-action]") : null;
+    const payload = {
+      reason,
+      action: actionEl?.dataset?.action || "",
+      arg: actionEl?.dataset?.arg,
+      text: String(actionEl?.textContent || "").trim().slice(0, 80),
+      role: currentAuthUser?.role || "none",
+      authReady,
+      activeTab:
+        typeof currentActiveTab !== "undefined"
+          ? currentActiveTab
+          : document.body?.dataset.activeTab || "",
+      ...extra,
+    };
+    if (typeof traceAppAction === "function") {
+      traceAppAction("auth blocked interaction", payload, {}, "warn");
+    } else {
+      console.warn("[BC auth trace] blocked interaction", payload);
+    }
+  }
+
   function actionLooksMutating(action) {
     if (!action) return false;
     if (ADMIN_ONLY_ACTIONS.has(action)) return true;
@@ -576,12 +598,14 @@
     if (e.target.closest("#authLoginOverlay")) return;
 
     if (!authReady) {
+      traceAuthBlocked("auth-not-ready", e.target);
       e.preventDefault();
       e.stopImmediatePropagation();
       return;
     }
 
     if (!currentAuthUser) {
+      traceAuthBlocked("no-auth-user", e.target);
       e.preventDefault();
       e.stopImmediatePropagation();
       showLoginOverlay();
@@ -590,6 +614,9 @@
 
     const actionEl = e.target.closest("[data-action]");
     if (actionEl && !isActionAllowedForRole(actionEl.dataset.action)) {
+      traceAuthBlocked("action-not-allowed", actionEl, {
+        actionLooksMutating: actionLooksMutating(actionEl.dataset.action),
+      });
       e.preventDefault();
       e.stopImmediatePropagation();
       showBlockedToast();
@@ -601,6 +628,10 @@
       e.target.matches("input, select, textarea") &&
       !isInputAllowedForRole(e.target)
     ) {
+      traceAuthBlocked("input-not-allowed", e.target, {
+        inputId: e.target.id || "",
+        inputName: e.target.name || "",
+      });
       e.preventDefault();
       e.stopImmediatePropagation();
       showBlockedToast();

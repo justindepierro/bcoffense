@@ -23,6 +23,36 @@ let playPresentationDiagramResizeObserver = null;
 let playPresentationDiagramResizeFrame = 0;
 let playPresentationSwipeStart = null;
 
+function tracePlayPresentationAction(phase, payload = {}, level = "info") {
+  const data = {
+    phaseAction: payload.action || "openScriptPresentation",
+    source: playPresentationState.source,
+    mode: playPresentationState.mode,
+    index: playPresentationState.index,
+    itemCount: playPresentationState.items.length,
+    role:
+      typeof getCurrentAuthUser === "function"
+        ? getCurrentAuthUser()?.role || ""
+        : "",
+    activeTab:
+      typeof currentActiveTab !== "undefined"
+        ? currentActiveTab
+        : document.body?.dataset.activeTab || "",
+    ...payload,
+  };
+  if (typeof traceAppAction === "function") {
+    traceAppAction(`presentation ${phase}`, data, {}, level);
+    return;
+  }
+  const logger =
+    level === "error"
+      ? console.error
+      : level === "warn"
+        ? console.warn
+        : console.info;
+  logger.call(console, `[BC presentation trace] ${phase}`, data);
+}
+
 function isPlayerPresentationRole() {
   const currentUser =
     typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
@@ -133,33 +163,61 @@ function getPlayPresentationItemsFromScript() {
 function openSelectedPlaybookPresentation() {
   const items = getPlayPresentationItemsFromPlaybook();
   if (items.length === 0) {
+    tracePlayPresentationAction(
+      "open failed",
+      {
+        action: "openSelectedPlaybookPresentation",
+        reason: "no-filtered-playbook-items",
+      },
+      "warn",
+    );
     showToast("No filtered plays are available to present.", { type: "warning" });
-    return;
+    return false;
   }
   const startIndex = Math.max(
     0,
     items.findIndex((item) => item.sourceIndex === selectedRowIndex),
   );
-  openPlayPresentation(items, startIndex, "playbook");
+  return openPlayPresentation(items, startIndex, "playbook");
 }
 
 function openPlaybookPresentation(filteredIndex) {
   const targetIndex = parseInt(filteredIndex, 10);
   const items = getPlayPresentationItemsFromPlaybook();
   const startIndex = items.findIndex((item) => item.sourceIndex === targetIndex);
-  if (startIndex < 0) return;
+  if (startIndex < 0) {
+    tracePlayPresentationAction(
+      "open failed",
+      {
+        action: "openPlaybookPresentation",
+        filteredIndex,
+        reason: "playbook-index-not-found",
+      },
+      "warn",
+    );
+    return false;
+  }
   selectPlaybookRow(targetIndex);
-  openPlayPresentation(items, startIndex, "playbook");
+  return openPlayPresentation(items, startIndex, "playbook");
 }
 
 function openScriptPresentation(scriptIndex) {
   const targetIndex = parseInt(scriptIndex, 10);
   const items = getPlayPresentationItemsFromScript();
   if (items.length === 0) {
+    tracePlayPresentationAction(
+      "open failed",
+      {
+        action: "openScriptPresentation",
+        scriptIndex,
+        reason: "no-script-items",
+      },
+      "warn",
+    );
     showToast("Add a play to the script before presenting.", {
       type: "warning",
     });
-    return;
+    return false;
   }
   const requestedIndex = Number.isInteger(targetIndex)
     ? items.findIndex((item) => item.sourceIndex === targetIndex)
@@ -167,7 +225,7 @@ function openScriptPresentation(scriptIndex) {
   const selectedIndex = Array.isArray(bulkSelectedIndices)
     ? items.findIndex((item) => bulkSelectedIndices.includes(item.sourceIndex))
     : -1;
-  openPlayPresentation(
+  return openPlayPresentation(
     items,
     requestedIndex >= 0 ? requestedIndex : Math.max(0, selectedIndex),
     "script",
@@ -228,7 +286,23 @@ function queuePlayPresentationViewportSync() {
 
 function openPlayPresentation(items, startIndex, source) {
   const overlay = document.getElementById("playPresentationOverlay");
-  if (!overlay || !Array.isArray(items) || items.length === 0) return;
+  if (!overlay || !Array.isArray(items) || items.length === 0) {
+    tracePlayPresentationAction(
+      "open failed",
+      {
+        action:
+          source === "playbook"
+            ? "openPlaybookPresentation"
+            : "openScriptPresentation",
+        reason: !overlay ? "overlay-missing" : "no-items",
+        requestedStartIndex: startIndex,
+        requestedSource: source,
+        requestedItemCount: Array.isArray(items) ? items.length : -1,
+      },
+      "warn",
+    );
+    return false;
+  }
 
   playPresentationState.returnFocus =
     document.activeElement instanceof HTMLElement
@@ -281,6 +355,16 @@ function openPlayPresentation(items, startIndex, source) {
       // Full Screen is best-effort and may require a direct user gesture.
     }
   }
+  tracePlayPresentationAction("opened", {
+    action:
+      playPresentationState.source === "playbook"
+        ? "openPlaybookPresentation"
+        : "openScriptPresentation",
+    requestedStartIndex: startIndex,
+    requestedSource: source,
+    itemCount: items.length,
+  });
+  return true;
 }
 
 function closePlayPresentation() {

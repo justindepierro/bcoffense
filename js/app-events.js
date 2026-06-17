@@ -38,6 +38,65 @@ const _ELEMENT_FNS = new Set([
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
+const ACTION_TRACE_ACTIONS = new Set([
+  "loadPublishedPlayerScript",
+  "presentPublishedPlayerScript",
+  "openScriptPresentation",
+  "openPlaybookPresentation",
+  "openSelectedPlaybookPresentation",
+  "showTab",
+]);
+
+function getAppActionTracePayload(el, extra = {}) {
+  const element = el instanceof Element ? el : null;
+  return {
+    action: element?.dataset?.action || "",
+    arg: element?.dataset?.arg,
+    idx: element?.dataset?.idx,
+    sid: element?.dataset?.sid,
+    id: element?.id || "",
+    className: element?.className || "",
+    text: String(element?.textContent || "").trim().slice(0, 80),
+    disabled: Boolean(element?.disabled),
+    hidden: Boolean(element?.hidden),
+    authRole: document.body?.dataset.authRole || "",
+    activeTab:
+      typeof currentActiveTab !== "undefined"
+        ? currentActiveTab
+        : document.body?.dataset.activeTab || "",
+    ...extra,
+  };
+}
+
+function shouldTraceAppAction(action) {
+  return Boolean(
+    ACTION_TRACE_ACTIONS.has(action) ||
+      window.BC_ACTION_TRACE === true ||
+      localStorage.getItem("bcActionTrace") === "1",
+  );
+}
+
+function traceAppAction(phase, elOrPayload, extra = {}, level = "info") {
+  const payload =
+    elOrPayload instanceof Element
+      ? getAppActionTracePayload(elOrPayload, extra)
+      : { ...(elOrPayload || {}), ...extra };
+  const action = payload.action || payload.phaseAction || "";
+  if (!shouldTraceAppAction(action) && level === "info") return;
+  const logger =
+    level === "error"
+      ? console.error
+      : level === "warn"
+        ? console.warn
+        : console.info;
+  logger.call(console, `[BC action trace] ${phase}`, payload);
+  window.__bcLastActionTrace = {
+    phase,
+    payload,
+    timestamp: new Date().toISOString(),
+  };
+}
+
 const MOBILE_TAP_ACTION_SELECTOR = [
   "button",
   "a[data-action]",
@@ -149,6 +208,10 @@ document.addEventListener(
     if (moved > 14 || Date.now() - start.time > 900) return;
     event.preventDefault();
     event.stopPropagation();
+    traceAppAction("mobile synthetic tap", target, {
+      moved: Math.round(moved),
+      ageMs: Date.now() - start.time,
+    });
     mobileTapSyntheticClick = true;
     target.click();
     mobileTapSyntheticClick = false;
@@ -186,6 +249,10 @@ document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-action]");
   if (!el) return;
   const action = el.dataset.action;
+  traceAppAction("click received", el, {
+    nativeEvent: e.type,
+    syntheticMobileTap: mobileTapSyntheticClick,
+  });
 
   if (action.endsWith("Overlay")) {
     if (e.target !== el) return;
@@ -287,9 +354,11 @@ document.addEventListener("click", (e) => {
       loadScript(parseInt(el.dataset.sid, 10));
       return;
     case "loadPublishedPlayerScript":
+      traceAppAction("dispatch loadPublishedPlayerScript", el);
       loadPublishedPlayerScript(el.dataset.arg);
       return;
     case "presentPublishedPlayerScript":
+      traceAppAction("dispatch presentPublishedPlayerScript", el);
       presentPublishedPlayerScript(el.dataset.arg);
       return;
     case "renameSavedScript":
@@ -427,19 +496,39 @@ document.addEventListener("click", (e) => {
   }
 
   const fn = window[action];
-  if (typeof fn !== "function") return;
+  if (typeof fn !== "function") {
+    traceAppAction(
+      "missing action handler",
+      getAppActionTracePayload(el, { handlerType: typeof fn }),
+      {},
+      "warn",
+    );
+    return;
+  }
 
   const arg = el.dataset.arg;
+  let result;
   if (arg !== undefined && _ELEMENT_FNS.has(action)) {
-    fn(arg, el);
+    result = fn(arg, el);
   } else if (arg !== undefined && _BOOL_FNS.has(action)) {
-    fn(arg === "true");
+    result = fn(arg === "true");
   } else if (arg !== undefined) {
-    fn(arg);
+    result = fn(arg);
   } else if (_ELEMENT_FNS.has(action)) {
-    fn(el);
+    result = fn(el);
   } else {
-    fn();
+    result = fn();
+  }
+
+  if (result === false || result === null) {
+    traceAppAction(
+      "action returned no-op",
+      el,
+      { result },
+      "warn",
+    );
+  } else {
+    traceAppAction("action dispatched", el, { result });
   }
 
   if (el.dataset.ctxClose) {
@@ -498,6 +587,7 @@ document.addEventListener("DOMContentLoaded", () => {
       const dir = parseInt(rawDir, 10);
       switch (action) {
         case "openScriptPresentation":
+          traceAppAction("script row open presentation", el, { idx });
           openScriptPresentation(idx);
           break;
         case "openScriptMoveMenu":

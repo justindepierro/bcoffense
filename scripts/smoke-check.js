@@ -574,6 +574,7 @@ function checkPlayPresentationContracts() {
     !/function getPlayPresentationItemsFromScript\(/.test(presenter) ||
     !/function openPlaybookPresentation\(/.test(presenter) ||
     !/function openScriptPresentation\(/.test(presenter) ||
+    !/function tracePlayPresentationAction\(/.test(presenter) ||
     !/function renderPlayPresentation\(/.test(presenter)
   ) {
     fail("play presentation source adapters or shared renderer are incomplete");
@@ -593,6 +594,9 @@ function checkPlayPresentationContracts() {
     !/function handlePlayPresentationTouchStart\(/.test(presenter) ||
     !/function handlePlayPresentationTouchEnd\(/.test(presenter) ||
     !/PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/.test(presenter) ||
+    !/reason: "no-script-items"/.test(presenter) ||
+    !/reason: !overlay \? "overlay-missing" : "no-items"/.test(presenter) ||
+    !/return true;/.test(presenter) ||
     !/window\.visualViewport\?\.addEventListener\("resize", queuePlayPresentationViewportSync\)/.test(
       presenter,
     ) ||
@@ -739,6 +743,7 @@ function checkScriptPlayerPublishingContracts() {
     !/playerVisible:\s*false/.test(scriptStorage) ||
     !/function renderPlayerScriptLauncher\(\)/.test(scriptStorage) ||
     !/function renderPlayerLoadedScriptBar\(\)/.test(scriptStorage) ||
+    !/function tracePlayerScriptAction\(/.test(scriptStorage) ||
     !/function loadPublishedPlayerScript\(id,\s*opts = \{\}\)/.test(
       scriptStorage,
     ) ||
@@ -751,6 +756,19 @@ function checkScriptPlayerPublishingContracts() {
     !/case "presentPublishedPlayerScript"/.test(appEvents)
   ) {
     fail("player script publishing runtime is incomplete");
+  }
+  if (
+    !/const ACTION_TRACE_ACTIONS = new Set/.test(appEvents) ||
+    !/function traceAppAction\(phase/.test(appEvents) ||
+    !/missing action handler/.test(appEvents) ||
+    !/action returned no-op/.test(appEvents) ||
+    !/mobile synthetic tap/.test(appEvents) ||
+    !/auth blocked interaction/.test(auth) ||
+    !/lookup miss/.test(scriptStorage) ||
+    !/load start/.test(scriptStorage) ||
+    !/openScriptPresentation-returned-false/.test(scriptStorage)
+  ) {
+    fail("player action diagnostics are incomplete");
   }
   if (
     !/id="playerScriptLauncherSection"/.test(html) ||
