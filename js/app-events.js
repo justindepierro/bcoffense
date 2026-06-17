@@ -36,6 +36,123 @@ const _ELEMENT_FNS = new Set([
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
+const MOBILE_TAP_ACTION_SELECTOR = [
+  ".player-dashboard-home [data-action]",
+  ".pb-player-summary [data-action]",
+  ".pb-controls [data-action]",
+  ".pb-active-bar [data-action]",
+  "#playbookContainer .pb-card[data-action]",
+  "#playbookContainer .pb-present-btn[data-action]",
+  "#playbookReadinessPanel [data-action]",
+  ".player-script-launcher [data-action]",
+  ".player-script-card [data-action]",
+  ".script-toolbar [data-action]",
+  ".script-actions [data-action]",
+  ".script-item--player [data-action]",
+  ".script-player-open-btn[data-action]",
+  ".play-readiness-widget [data-action]",
+  ".play-presentation-overlay.show [data-action]",
+  ".mobile-coach-dock [data-action]",
+  ".mobile-script-coach-now [data-action]",
+  ".tab[data-action]",
+].join(",");
+
+let mobileTapStart = null;
+let mobileTapSyntheticClick = false;
+let mobileTapNativeSuppression = null;
+
+function isMobileTapBridgeEnabled() {
+  const body = document.body;
+  return Boolean(
+    body?.classList.contains("is-touch-screen") ||
+      body?.classList.contains("is-mobile-screen") ||
+      window.matchMedia?.("(pointer: coarse)")?.matches,
+  );
+}
+
+function getMobileTapActionTarget(target) {
+  if (!isMobileTapBridgeEnabled()) return null;
+  const element = target instanceof Element ? target : null;
+  if (!element) return null;
+  const actionEl = element.closest(MOBILE_TAP_ACTION_SELECTOR);
+  if (!actionEl) return null;
+  if (actionEl.disabled || actionEl.getAttribute("aria-disabled") === "true") {
+    return null;
+  }
+  if (
+    element.closest("input, select, textarea, label") &&
+    !actionEl.matches("button, [role='button'], .tab")
+  ) {
+    return null;
+  }
+  return actionEl;
+}
+
+document.addEventListener(
+  "touchstart",
+  (event) => {
+    const target = getMobileTapActionTarget(event.target);
+    if (!target || event.touches?.length !== 1) {
+      mobileTapStart = null;
+      return;
+    }
+    const touch = event.touches[0];
+    mobileTapStart = {
+      target,
+      x: touch.clientX,
+      y: touch.clientY,
+      time: Date.now(),
+    };
+  },
+  { passive: true },
+);
+
+document.addEventListener(
+  "touchend",
+  (event) => {
+    const start = mobileTapStart;
+    mobileTapStart = null;
+    const target = getMobileTapActionTarget(event.target);
+    if (!start || !target || start.target !== target) return;
+    const touch = event.changedTouches?.[0];
+    if (!touch) return;
+    const moved = Math.hypot(touch.clientX - start.x, touch.clientY - start.y);
+    if (moved > 14 || Date.now() - start.time > 900) return;
+    event.preventDefault();
+    event.stopPropagation();
+    mobileTapSyntheticClick = true;
+    target.click();
+    mobileTapSyntheticClick = false;
+    mobileTapNativeSuppression = { target, time: Date.now() };
+  },
+  { passive: false },
+);
+
+document.addEventListener(
+  "touchcancel",
+  () => {
+    mobileTapStart = null;
+  },
+  { passive: true },
+);
+
+document.addEventListener(
+  "click",
+  (event) => {
+    if (mobileTapSyntheticClick || !mobileTapNativeSuppression) return;
+    if (Date.now() - mobileTapNativeSuppression.time > 650) {
+      mobileTapNativeSuppression = null;
+      return;
+    }
+    const target = getMobileTapActionTarget(event.target);
+    if (target !== mobileTapNativeSuppression.target) return;
+    event.preventDefault();
+    event.stopImmediatePropagation();
+    mobileTapNativeSuppression = null;
+  },
+  true,
+);
+
 document.addEventListener("click", (e) => {
   const el = e.target.closest("[data-action]");
   if (!el) return;

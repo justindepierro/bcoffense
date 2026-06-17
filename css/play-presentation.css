@@ -110,6 +110,8 @@ body.play-presentation-force-landscape {
   font-weight: 900;
   letter-spacing: 0.01em;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pp-mode-btn {
@@ -482,6 +484,8 @@ body.play-presentation-force-landscape {
   font-size: var(--font-size-sm);
   font-weight: 900;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pp-position-btn.active {
@@ -512,6 +516,8 @@ body.play-presentation-force-landscape {
   font-size: var(--font-size-sm);
   font-weight: 900;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pp-position-lock-btn.active {
@@ -645,6 +651,104 @@ body.play-presentation-force-landscape {
 .pp-coach-section-notes {
   border-left-color: var(--color-warning);
   background: linear-gradient(180deg, var(--color-warning-light), var(--color-surface));
+}
+
+.pp-coach-section-readiness {
+  border-left-color: var(--color-primary);
+  background:
+    linear-gradient(135deg, var(--color-bg-blue-tint), transparent 66%),
+    var(--color-surface);
+}
+
+.pp-readiness-summary {
+  display: grid;
+  grid-template-columns: minmax(120px, 0.42fr) minmax(0, 1fr);
+  gap: 8px 10px;
+  align-items: center;
+}
+
+.pp-readiness-status {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  grid-row: span 2;
+  padding: 10px;
+  border-radius: var(--radius-md);
+  color: var(--color-text-inverse);
+  background: var(--color-primary-dark);
+  text-align: center;
+}
+
+.pp-readiness-status strong {
+  font-size: 2rem;
+  line-height: 0.95;
+}
+
+.pp-readiness-status span {
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+.pp-readiness-label {
+  color: rgb(255 255 255 / 0.76);
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pp-readiness-track {
+  align-self: end;
+}
+
+.pp-readiness-metrics,
+.pp-readiness-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pp-readiness-metrics span {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 26px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 850;
+}
+
+.pp-readiness-metrics strong {
+  color: var(--color-text);
+}
+
+.pp-readiness-score-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-sm);
+  align-items: center;
+}
+
+.pp-readiness-score-row > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pp-readiness-score-grid {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(34px, 1fr));
+  gap: 6px;
+}
+
+.pp-readiness-actions .play-readiness-btn {
+  min-height: 36px;
+  flex: 1 1 120px;
 }
 
 .pp-coach-section-head {
@@ -798,6 +902,8 @@ body.play-presentation-force-landscape {
   font: inherit;
   font-weight: 900;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .pb-present-btn {
@@ -963,6 +1069,11 @@ body.play-presentation-force-landscape {
     padding-right: 0;
   }
 
+  .pp-readiness-summary,
+  .pp-readiness-score-row {
+    grid-template-columns: 1fr;
+  }
+
   .pp-coach-call {
     white-space: normal;
   }
@@ -1107,6 +1218,49 @@ body.play-presentation-force-landscape .pp-coach-section-head {
 body.play-presentation-force-landscape .pp-detail-grid,
 body.play-presentation-force-landscape .pp-assignment-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+body.play-presentation-force-landscape .pp-footer {
+  display: none;
+}
+
+body.play-presentation-force-landscape .pp-body,
+body.play-presentation-force-landscape .pp-mode-btn,
+body.play-presentation-force-landscape .pp-nav-btn,
+body.play-presentation-force-landscape .pp-close-btn,
+body.play-presentation-force-landscape .pp-position-btn,
+body.play-presentation-force-landscape .pp-position-lock-btn,
+body.play-presentation-force-landscape .play-readiness-score-btn,
+body.play-presentation-force-landscape .play-readiness-btn {
+  touch-action: manipulation;
+}
+
+body.play-presentation-force-landscape .pp-coach-section-readiness {
+  gap: 6px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-summary {
+  grid-template-columns: minmax(94px, 0.34fr) minmax(0, 1fr);
+}
+
+body.play-presentation-force-landscape .pp-readiness-status {
+  padding: 7px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-status strong {
+  font-size: 1.55rem;
+}
+
+body.play-presentation-force-landscape .pp-readiness-score-grid {
+  grid-template-columns: repeat(5, minmax(32px, 1fr));
+}
+
+body.play-presentation-force-landscape .play-readiness-score-btn {
+  min-height: 34px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-actions .play-readiness-btn {
+  min-height: 32px;
 }
 
 @media (prefers-reduced-motion: reduce) {

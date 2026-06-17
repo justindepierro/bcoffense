@@ -518,6 +518,220 @@ body[data-auth-role="player"] .gp-card-btn {
   display: none;
 }
 
+.pb-readiness-panel {
+  margin: 0 0 var(--space-md);
+}
+
+.pb-readiness-panel[hidden] {
+  display: none;
+}
+
+.pb-readiness-card {
+  display: grid;
+  grid-template-columns: minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(260px, 1fr) minmax(260px, 1fr);
+  gap: var(--space-sm);
+  align-items: stretch;
+  padding: 14px;
+  border: 1px solid var(--color-border-light);
+  border-left: 5px solid var(--color-primary);
+  border-radius: var(--radius-lg);
+  background:
+    linear-gradient(135deg, var(--color-bg-blue-tint), transparent 64%),
+    var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.pb-readiness-main,
+.pb-readiness-status,
+.pb-readiness-progress,
+.pb-readiness-score,
+.pb-readiness-actions {
+  min-width: 0;
+}
+
+.pb-readiness-main {
+  display: grid;
+  align-content: center;
+  gap: 5px;
+}
+
+.pb-readiness-eyebrow {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.pb-readiness-main h3 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: 1.12;
+}
+
+.pb-readiness-meta,
+.pb-readiness-stats {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.pb-readiness-meta span,
+.pb-readiness-stats span {
+  display: inline-flex;
+  align-items: center;
+  min-height: 24px;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 850;
+}
+
+.pb-readiness-stats strong {
+  margin-right: 3px;
+  color: var(--color-text);
+}
+
+.pb-readiness-status {
+  display: grid;
+  place-items: center;
+  gap: 2px;
+  padding: 10px;
+  border-radius: var(--radius-lg);
+  background: var(--color-primary-dark);
+  color: var(--color-text-inverse);
+  text-align: center;
+}
+
+.pb-readiness-status strong {
+  font-size: 2.2rem;
+  line-height: 0.95;
+}
+
+.pb-readiness-status span {
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.pb-readiness-status em {
+  color: rgb(255 255 255 / 0.78);
+  font-size: var(--font-size-2xs);
+  font-style: normal;
+  font-weight: 800;
+}
+
+.pb-readiness-progress {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.pb-readiness-score {
+  display: grid;
+  align-content: center;
+  gap: 8px;
+}
+
+.pb-readiness-score > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pb-readiness-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 6px;
+  align-content: center;
+}
+
+.play-readiness-score-btn {
+  min-width: 38px;
+  min-height: 38px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  touch-action: manipulation;
+}
+
+.play-readiness-score-btn.active,
+.play-readiness-score-btn:focus-visible {
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+}
+
+@media (hover: hover) {
+  .play-readiness-score-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+  .play-readiness-score-btn.active:hover {
+    color: var(--color-text-inverse);
+    background: var(--color-primary);
+  }
+}
+
+@media (max-width: 900px), (pointer: coarse) and (max-width: 1180px) {
+  .pb-readiness-card {
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .pb-readiness-progress,
+  .pb-readiness-score,
+  .pb-readiness-actions {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 560px), (pointer: coarse) and (max-width: 820px) {
+  .pb-readiness-card {
+    grid-template-columns: 1fr;
+    padding: 12px;
+    border-radius: var(--radius-lg);
+  }
+
+  .pb-readiness-status {
+    grid-template-columns: auto minmax(0, 1fr);
+    justify-items: start;
+    text-align: left;
+  }
+
+  .pb-readiness-status em {
+    grid-column: 1 / -1;
+  }
+
+  .pb-readiness-score {
+    grid-template-columns: repeat(5, minmax(0, 1fr));
+  }
+
+  .pb-readiness-score > span {
+    grid-column: 1 / -1;
+  }
+
+  .play-readiness-score-btn {
+    min-height: 46px;
+  }
+
+  .pb-readiness-actions {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* ═══════════════ Playbook Controls ═══════════════ */
 
 .pb-controls {

@@ -76,6 +76,113 @@
   min-width: 0;
 }
 
+.player-home-today-card {
+  display: grid;
+  gap: 6px;
+  flex: 0 1 360px;
+  min-width: min(320px, 100%);
+  padding: 18px;
+  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border-light));
+  border-radius: 22px;
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.74)),
+    var(--color-surface);
+  box-shadow: var(--shadow-xs);
+}
+
+.player-home-today-card span,
+.player-home-study-list strong {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+}
+
+.player-home-today-card strong {
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: 1.15;
+}
+
+.player-home-quick-actions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.player-home-quick-action {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  grid-template-areas:
+    "icon title"
+    "icon detail";
+  align-items: center;
+  gap: 2px var(--space-sm);
+  min-width: 0;
+  min-height: 78px;
+  padding: 15px 16px;
+  border: 1px solid var(--color-border-light);
+  border-radius: 20px;
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-xs);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+  touch-action: manipulation;
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast),
+    transform var(--transition-fast);
+}
+
+.player-home-quick-action--primary {
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  color: var(--color-text-inverse);
+}
+
+.player-home-quick-icon {
+  grid-area: icon;
+  display: inline-grid;
+  place-items: center;
+  width: 42px;
+  height: 42px;
+  border-radius: 16px;
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  font-size: var(--font-size-lg);
+  font-weight: 950;
+  line-height: 1;
+}
+
+.player-home-quick-action strong {
+  grid-area: title;
+  min-width: 0;
+  font-size: var(--font-size-base);
+  font-weight: 950;
+  line-height: 1.1;
+}
+
+.player-home-quick-action small {
+  grid-area: detail;
+  min-width: 0;
+  color: currentColor;
+  font-size: var(--font-size-xs);
+  font-weight: 750;
+  line-height: 1.25;
+  opacity: 0.74;
+}
+
+@media (hover: hover) {
+  .player-home-quick-action:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-1px);
+  }
+}
+
 .player-home-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -141,6 +248,39 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   line-height: 1.45;
+}
+
+.player-home-study-list {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.player-home-study-list div {
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-sm);
+  padding: 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-light);
+}
+
+.player-home-study-list strong {
+  display: inline-grid;
+  place-items: center;
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary-light);
+  letter-spacing: 0;
+}
+
+.player-home-study-list span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  line-height: 1.35;
 }
 
 .player-home-script-list {
@@ -248,6 +388,24 @@
     gap: var(--space-md);
   }
 
+  .player-home-today-card {
+    width: 100%;
+    min-width: 0;
+    padding: 14px;
+    border-radius: var(--radius-lg);
+  }
+
+  .player-home-quick-actions {
+    grid-template-columns: 1fr;
+    gap: 10px;
+  }
+
+  .player-home-quick-action {
+    min-height: 64px;
+    padding: 13px 14px;
+    border-radius: var(--radius-lg);
+  }
+
   .player-home-hero h2 {
     font-size: 2rem;
     line-height: 1.05;
@@ -299,6 +457,12 @@
   body.is-phone-screen[data-auth-role="player"] .player-home-script-item {
     min-height: 56px;
     padding: 13px 14px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-quick-icon {
+    width: 38px;
+    height: 38px;
+    border-radius: var(--radius-md);
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-stat-row span {

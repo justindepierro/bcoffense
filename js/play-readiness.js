@@ -181,6 +181,18 @@ function getPlayReadinessSnapshot(play) {
   };
 }
 
+function getPlayReadinessPlayLabel(play) {
+  if (typeof getScriptPlaySummaryText === "function") {
+    return getScriptPlaySummaryText(play);
+  }
+  if (typeof getPlayPresentationPlayLabel === "function") {
+    return getPlayPresentationPlayLabel(play);
+  }
+  return [play?.formation, play?.protection, play?.play]
+    .filter(Boolean)
+    .join(" ") || "Untitled Play";
+}
+
 function createPlayReadinessRecord(play) {
   return {
     installStatus: inferPlayReadinessInstallStatus(play),
@@ -367,12 +379,43 @@ function formatPlayReadinessNumber(value, digits = 1) {
   return Number.isInteger(num) ? String(num) : num.toFixed(digits);
 }
 
+function getPlayReadinessLiveAverageText(summary) {
+  return summary.metrics.liveReps
+    ? summary.metrics.averageScore.toFixed(1)
+    : "-";
+}
+
+function refreshPlayReadinessSurfaces(source = "") {
+  if (typeof requestRenderScript === "function") requestRenderScript();
+  if (typeof requestRenderPlaybook === "function") {
+    requestRenderPlaybook();
+  } else if (typeof renderSelectedPlaybookReadinessPanel === "function") {
+    renderSelectedPlaybookReadinessPanel(selectedRowIndex);
+  }
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (
+    overlay?.classList.contains("show") &&
+    typeof renderPlayPresentation === "function"
+  ) {
+    renderPlayPresentation();
+  }
+  if (source === "playbook" && typeof renderSelectedPlaybookReadinessPanel === "function") {
+    renderSelectedPlaybookReadinessPanel(selectedRowIndex);
+  }
+}
+
+function getPlayReadinessPlaybookPlay(index) {
+  const idx = parseInt(index, 10);
+  if (Number.isNaN(idx)) return null;
+  if (Array.isArray(filteredPlays) && filteredPlays[idx]) return filteredPlays[idx];
+  if (Array.isArray(plays) && plays[idx]) return plays[idx];
+  return null;
+}
+
 function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   if (!isPlayReadinessCoachRole() || opts.printStyle) return "";
   const summary = getPlayReadinessSummary(play);
-  const liveAverage = summary.metrics.liveReps
-    ? summary.metrics.averageScore.toFixed(1)
-    : "-";
+  const liveAverage = getPlayReadinessLiveAverageText(summary);
   const weightedText = formatPlayReadinessNumber(summary.weightedReps);
   const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
   const hasAnyRecords =
@@ -425,6 +468,135 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
     </section>`;
 }
 
+function renderPlayReadinessScoreButtons(action, activeScore = 0) {
+  return [1, 2, 3, 4, 5]
+    .map((score) => {
+      const active = parseInt(activeScore, 10) === score ? " active" : "";
+      return `<button type="button" class="play-readiness-score-btn${active}"
+        data-action="${escapeHtml(action)}" data-arg="${score}"
+        aria-label="Score this play ${score} out of 5">${score}</button>`;
+    })
+    .join("");
+}
+
+function renderPlayReadinessPresentationCoachCard(play) {
+  if (!isPlayReadinessCoachRole()) return "";
+  const summary = getPlayReadinessSummary(play);
+  const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
+  const weightedText = formatPlayReadinessNumber(summary.weightedReps);
+  const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
+
+  return `
+    <section class="pp-coach-section pp-coach-section-readiness"
+      data-auth-player-hide="true" aria-label="Play readiness scoring">
+      <div class="pp-coach-section-head">
+        <h3>Rep Score</h3>
+        <span>Coach table</span>
+      </div>
+      <div class="pp-readiness-summary">
+        <div class="pp-readiness-status">
+          <span class="pp-readiness-label">${escapeHtml(summary.readinessLabel)}</span>
+          <strong>${summary.confidenceScore}</strong>
+          <span>${escapeHtml(summary.confidenceLabel)}</span>
+        </div>
+        <div class="play-readiness-track pp-readiness-track"
+          style="--pr-progress:${summary.progressPct}%; --pr-sweet-start:${summary.sweetStartPct}%; --pr-sweet-width:${summary.sweetWidthPct}%"
+          aria-label="${summary.readinessPercent}% readiness">
+          <span class="play-readiness-sweet" aria-hidden="true"></span>
+          <span class="play-readiness-fill" aria-hidden="true"></span>
+        </div>
+        <div class="pp-readiness-metrics">
+          <span><strong>${summary.readinessPercent}%</strong> ready</span>
+          <span><strong>${escapeHtml(weightedText)}</strong> weighted</span>
+          <span><strong>${escapeHtml(weeklyText)}</strong> week</span>
+          <span><strong>${escapeHtml(getPlayReadinessLiveAverageText(summary))}</strong> live avg</span>
+        </div>
+      </div>
+      <div class="pp-readiness-score-row">
+        <span>Score the rep</span>
+        <div class="pp-readiness-score-grid" role="group" aria-label="Quick score this rep">
+          ${renderPlayReadinessScoreButtons("quickPlayReadinessPresentationScore", lastReport?.score || 0)}
+        </div>
+      </div>
+      <div class="pp-readiness-actions">
+        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPresentationActionModal">
+          Full Report
+        </button>
+        <button type="button" class="play-readiness-btn" data-action="showPlayReadinessPresentationHistory">
+          History
+        </button>
+      </div>
+    </section>
+  `;
+}
+
+function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
+  if (!isPlayReadinessCoachRole() || !play) return "";
+  const summary = getPlayReadinessSummary(play);
+  const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
+  const weightedText = formatPlayReadinessNumber(summary.weightedReps);
+  const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
+
+  return `
+    <div class="pb-readiness-card" data-auth-player-hide="true">
+      <div class="pb-readiness-main">
+        <span class="pb-readiness-eyebrow">Selected Play Score</span>
+        <h3>${escapeHtml(getPlayReadinessPlayLabel(play))}</h3>
+        <div class="pb-readiness-meta">
+          <span>${escapeHtml(summary.installStatus)}</span>
+          <span>${escapeHtml(summary.complexity)} complexity</span>
+          <span>${escapeHtml(summary.family)}</span>
+        </div>
+      </div>
+      <div class="pb-readiness-status">
+        <strong>${summary.confidenceScore}</strong>
+        <span>${escapeHtml(summary.confidenceLabel)}</span>
+        <em>${summary.readinessPercent}% ${escapeHtml(summary.readinessLabel)}</em>
+      </div>
+      <div class="pb-readiness-progress">
+        <div class="play-readiness-track"
+          style="--pr-progress:${summary.progressPct}%; --pr-sweet-start:${summary.sweetStartPct}%; --pr-sweet-width:${summary.sweetWidthPct}%">
+          <span class="play-readiness-sweet" aria-hidden="true"></span>
+          <span class="play-readiness-fill" aria-hidden="true"></span>
+        </div>
+        <div class="pb-readiness-stats">
+          <span><strong>${escapeHtml(weightedText)}</strong> weighted</span>
+          <span><strong>${summary.actualReps}</strong> reps</span>
+          <span><strong>${escapeHtml(weeklyText)}</strong> 7-day</span>
+          <span><strong>${escapeHtml(getPlayReadinessLiveAverageText(summary))}</strong> live avg</span>
+        </div>
+      </div>
+      <div class="pb-readiness-score" role="group" aria-label="Quick score selected play">
+        <span>Quick score</span>
+        ${renderPlayReadinessScoreButtons("quickPlayReadinessPlaybookScore", lastReport?.score || 0)}
+      </div>
+      <div class="pb-readiness-actions">
+        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPlaybookRepModal"
+          data-arg="${filteredIndex}">Add Rep</button>
+        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPlaybookActionModal"
+          data-arg="${filteredIndex}">Action Report</button>
+        <button type="button" class="play-readiness-btn" data-action="showPlayReadinessPlaybookHistory"
+          data-arg="${filteredIndex}">History</button>
+        <button type="button" class="play-readiness-btn play-readiness-btn--ghost"
+          data-action="openPlaybookPresentation" data-arg="${filteredIndex}">Present</button>
+      </div>
+    </div>
+  `;
+}
+
+function renderSelectedPlaybookReadinessPanel(index = selectedRowIndex) {
+  const panel = document.getElementById("playbookReadinessPanel");
+  if (!panel) return;
+  const play = getPlayReadinessPlaybookPlay(index);
+  if (!play || !isPlayReadinessCoachRole()) {
+    panel.hidden = true;
+    panel.innerHTML = "";
+    return;
+  }
+  panel.hidden = false;
+  setInnerHTML(panel, renderPlayReadinessPlaybookPanel(play, parseInt(index, 10)));
+}
+
 function getPlayReadinessScriptPlay(index) {
   const idx = parseInt(index, 10);
   if (Number.isNaN(idx) || !script[idx] || script[idx].isSeparator) return null;
@@ -439,12 +611,11 @@ function closePlayReadinessModal() {
   document.getElementById("playReadinessModalOverlay")?.remove();
 }
 
-function openPlayReadinessRepModal(index) {
-  const play = getPlayReadinessScriptPlay(index);
+function openPlayReadinessRepModalForPlay(play, context = {}) {
   if (!play || !isPlayReadinessCoachRole()) return;
   const summary = getPlayReadinessSummary(play);
   const defaultType = PLAY_READINESS_REP_TYPES[7];
-  const playLabel = getScriptPlaySummaryText(play);
+  const playLabel = getPlayReadinessPlayLabel(play);
   const options = PLAY_READINESS_REP_TYPES.map(
     (type) =>
       `<option value="${escapeHtml(type.id)}" ${type.id === defaultType.id ? "selected" : ""}>${escapeHtml(type.label)} (${type.weight})</option>`,
@@ -501,13 +672,22 @@ function openPlayReadinessRepModal(index) {
   wireScriptOverlayDismiss(overlay);
   overlay.querySelector("#playReadinessRepForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    savePlayReadinessRep(index, event.currentTarget);
+    savePlayReadinessRepForPlay(play, event.currentTarget, context);
   });
   overlay.querySelector("select[name='repType']")?.focus();
 }
 
-function savePlayReadinessRep(index, form) {
+function openPlayReadinessRepModal(index) {
   const play = getPlayReadinessScriptPlay(index);
+  openPlayReadinessRepModalForPlay(play, { source: "script", index });
+}
+
+function openPlayReadinessPlaybookRepModal(index) {
+  const play = getPlayReadinessPlaybookPlay(index);
+  openPlayReadinessRepModalForPlay(play, { source: "playbook", index });
+}
+
+function savePlayReadinessRepForPlay(play, form, context = {}) {
   if (!play || !form || !isPlayReadinessCoachRole()) return;
   const data = new FormData(form);
   const repType = getPlayReadinessRepType(data.get("repType"));
@@ -530,17 +710,21 @@ function savePlayReadinessRep(index, form) {
     });
   });
   closePlayReadinessModal();
-  if (typeof requestRenderScript === "function") requestRenderScript();
+  refreshPlayReadinessSurfaces(context.source);
   showToast(`Added ${formatPlayReadinessNumber(weightedValue)} weighted reps.`, {
     type: "success",
     duration: 2200,
   });
 }
 
-function openPlayReadinessActionModal(index) {
+function savePlayReadinessRep(index, form) {
   const play = getPlayReadinessScriptPlay(index);
+  savePlayReadinessRepForPlay(play, form, { source: "script", index });
+}
+
+function openPlayReadinessActionModalForPlay(play, context = {}) {
   if (!play || !isPlayReadinessCoachRole()) return;
-  const playLabel = getScriptPlaySummaryText(play);
+  const playLabel = getPlayReadinessPlayLabel(play);
   closePlayReadinessModal();
   const overlay = document.createElement("div");
   overlay.id = "playReadinessModalOverlay";
@@ -610,13 +794,33 @@ function openPlayReadinessActionModal(index) {
   wireScriptOverlayDismiss(overlay);
   overlay.querySelector("#playReadinessActionForm")?.addEventListener("submit", (event) => {
     event.preventDefault();
-    savePlayReadinessActionReport(index, event.currentTarget);
+    savePlayReadinessActionReportForPlay(play, event.currentTarget, context);
   });
   overlay.querySelector("select[name='score']")?.focus();
 }
 
-function savePlayReadinessActionReport(index, form) {
+function openPlayReadinessActionModal(index) {
   const play = getPlayReadinessScriptPlay(index);
+  openPlayReadinessActionModalForPlay(play, { source: "script", index });
+}
+
+function openPlayReadinessPlaybookActionModal(index) {
+  const play = getPlayReadinessPlaybookPlay(index);
+  openPlayReadinessActionModalForPlay(play, { source: "playbook", index });
+}
+
+function getPlayReadinessCurrentPresentationPlay() {
+  if (typeof playPresentationState === "undefined") return null;
+  const item = playPresentationState?.items?.[playPresentationState.index];
+  return item?.play || null;
+}
+
+function openPlayReadinessPresentationActionModal() {
+  const play = getPlayReadinessCurrentPresentationPlay();
+  openPlayReadinessActionModalForPlay(play, { source: "presentation" });
+}
+
+function savePlayReadinessActionReportForPlay(play, form, context = {}) {
   if (!play || !form || !isPlayReadinessCoachRole()) return;
   const data = new FormData(form);
   upsertPlayReadinessRecord(play, (record) => {
@@ -641,12 +845,92 @@ function savePlayReadinessActionReport(index, form) {
     });
   });
   closePlayReadinessModal();
-  if (typeof requestRenderScript === "function") requestRenderScript();
+  refreshPlayReadinessSurfaces(context.source);
   showToast("Action report saved.", { type: "success", duration: 2200 });
 }
 
-function showPlayReadinessHistory(index) {
+function savePlayReadinessActionReport(index, form) {
   const play = getPlayReadinessScriptPlay(index);
+  savePlayReadinessActionReportForPlay(play, form, { source: "script", index });
+}
+
+function getPlayReadinessQuickYards(score) {
+  if (score >= 5) return 12;
+  if (score >= 4) return 6;
+  if (score >= 3) return 3;
+  if (score >= 2) return -1;
+  return -4;
+}
+
+function quickScorePlayReadiness(play, rawScore, context = {}) {
+  if (!play || !isPlayReadinessCoachRole()) return;
+  const score = Math.max(1, Math.min(5, parseInt(rawScore, 10) || 3));
+  const date = new Date().toISOString().slice(0, 10);
+  const repType = getPlayReadinessRepType("team_scout");
+  const yards = getPlayReadinessQuickYards(score);
+  const sourceLabel = context.source === "playbook"
+    ? "Playbook"
+    : context.source === "presentation"
+      ? "Coach presentation"
+      : "Script";
+
+  upsertPlayReadinessRecord(play, (record) => {
+    record.reps = Array.isArray(record.reps) ? record.reps : [];
+    record.actionReports = Array.isArray(record.actionReports) ? record.actionReports : [];
+    record.reps.push({
+      id: createPlayId("quick_rep"),
+      date,
+      repType: repType.id,
+      repLabel: repType.label,
+      weight: repType.weight,
+      actualReps: 1,
+      weightedValue: repType.weight,
+      notes: `Quick score from ${sourceLabel}`,
+      createdAt: new Date().toISOString(),
+    });
+    record.actionReports.push({
+      id: createPlayId("quick_action"),
+      date,
+      label: sourceLabel,
+      defensiveLook: [play.defFront || play.practiceFront, play.defCoverage || play.practiceCoverage]
+        .filter(Boolean)
+        .join(" / "),
+      situation: [play.preferredDown ? `${play.preferredDown} down` : "", play.preferredDistance]
+        .filter(Boolean)
+        .join(" "),
+      score,
+      yards,
+      explosive: score >= 5,
+      touchdown: false,
+      turnover: score <= 1,
+      sackTfl: score <= 2,
+      missedAssignment: score <= 2,
+      penalty: false,
+      notes: "",
+      coachConfidence: score >= 4 ? "High" : score <= 2 ? "Low" : "Medium",
+      createdAt: new Date().toISOString(),
+    });
+  });
+  refreshPlayReadinessSurfaces(context.source);
+  showToast(`Scored ${score}/5 for ${getPlayReadinessPlayLabel(play)}.`, {
+    type: "success",
+    duration: 1800,
+  });
+}
+
+function quickPlayReadinessPlaybookScore(score) {
+  quickScorePlayReadiness(getPlayReadinessPlaybookPlay(selectedRowIndex), score, {
+    source: "playbook",
+  });
+}
+
+function quickPlayReadinessPresentationScore(score) {
+  quickScorePlayReadiness(getPlayReadinessCurrentPresentationPlay(), score, {
+    source: "presentation",
+  });
+}
+
+function showPlayReadinessHistoryForPlay(play) {
   if (!play || !isPlayReadinessCoachRole()) return;
   const summary = getPlayReadinessSummary(play);
   const repRows = (summary.record.reps || [])
@@ -721,6 +1005,18 @@ function showPlayReadinessHistory(index) {
   document.body.appendChild(overlay);
   wireScriptOverlayDismiss(overlay);
   overlay.querySelector(".modal-close-btn")?.focus();
+}
+
+function showPlayReadinessHistory(index) {
+  showPlayReadinessHistoryForPlay(getPlayReadinessScriptPlay(index));
+}
+
+function showPlayReadinessPlaybookHistory(index) {
+  showPlayReadinessHistoryForPlay(getPlayReadinessPlaybookPlay(index));
+}
+
+function showPlayReadinessPresentationHistory() {
+  showPlayReadinessHistoryForPlay(getPlayReadinessCurrentPresentationPlay());
 }
 
 function findPlayReadinessSeedPlay(seed) {

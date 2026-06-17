@@ -630,6 +630,23 @@ function renderPlayerDashboardHome() {
   const teamName =
     (storageManager.get(STORAGE_KEYS.TEAM_NAME, "") || "").trim() ||
     "Player Practice Portal";
+  const featuredScriptId = featuredScript ? escapeHtml(String(featuredScript.id)) : "";
+  const practiceAction = featuredScript
+    ? `data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}"`
+    : 'data-action="showTab" data-arg="script"';
+  const swipeAction = loadedScript
+    ? 'data-action="openScriptPresentation"'
+    : featuredScript
+      ? `data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}"`
+      : 'data-action="showTab" data-arg="script"';
+  const playbookAction = 'data-action="showTab" data-arg="playbook"';
+  const statusTitle =
+    featuredScript?.name || loadedScript?.name || "No practice published yet";
+  const statusCopy = featuredStats
+    ? `${featuredStats.playCount} plays • ${featuredStats.totalReps} reps • ${featuredStats.periodCount} periods`
+    : loadedScript?.stats
+      ? `${loadedScript.stats.playCount} loaded plays are ready in the Practice tab`
+      : "Practice will appear here when your coach publishes it.";
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -655,38 +672,38 @@ function renderPlayerDashboardHome() {
       })
       .join("")
     : `<div class="player-home-list-empty">No practice script has been published yet. Check back with your coach.</div>`;
-  const featuredActions = featuredScript
-    ? `
-      <button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScript.id}">
-        Open Practice
-      </button>
-      <button type="button" class="btn btn-secondary player-home-action" data-action="presentPublishedPlayerScript" data-arg="${featuredScript.id}">
-        Open Swipe View
-      </button>
-      <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
-        Open Playbook
-      </button>
-    `
-    : `
-      <button type="button" class="btn btn-primary player-home-action" data-action="showTab" data-arg="script">
-        Go to Practice
-      </button>
-      <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
-        Open Playbook
-      </button>
-    `;
 
   section.hidden = false;
   section.innerHTML = `
-    <section class="player-home-hero">
+    <section class="player-home-hero player-home-hero--pro">
       <div class="player-home-hero__copy">
         <span class="player-home-eyebrow">Player Portal</span>
         <h2>${escapeHtml(teamName)}</h2>
-        <p>${escapeHtml(todayLabel)} • Open the plan, study the playbook, swipe the script, and lock your position when the tempo picks up.</p>
+        <p>${escapeHtml(todayLabel)} • Open today's work, swipe play to play, and lock your position when you study rules.</p>
       </div>
-      <div class="player-home-hero__actions">
-        ${featuredActions}
+      <div class="player-home-today-card" aria-label="Today status">
+        <span>Today</span>
+        <strong>${escapeHtml(statusTitle)}</strong>
+        <p>${escapeHtml(statusCopy)}</p>
       </div>
+    </section>
+    <section class="player-home-quick-actions" aria-label="Player quick actions">
+      <button type="button" class="player-home-quick-action player-home-quick-action--primary"
+        ${practiceAction}>
+        <span class="player-home-quick-icon">▶</span>
+        <strong>Open Practice</strong>
+        <small>Script, periods, and calls</small>
+      </button>
+      <button type="button" class="player-home-quick-action" ${swipeAction}>
+        <span class="player-home-quick-icon">▣</span>
+        <strong>Swipe View</strong>
+        <small>Diagram plus your rules</small>
+      </button>
+      <button type="button" class="player-home-quick-action" ${playbookAction}>
+        <span class="player-home-quick-icon">⌕</span>
+        <strong>Playbook</strong>
+        <small>Search, filter, and study</small>
+      </button>
     </section>
     <div class="player-home-grid">
       <article class="player-home-card player-home-card--feature">
@@ -709,17 +726,22 @@ function renderPlayerDashboardHome() {
             : ""
         }
         <div class="player-home-card__actions">
-          ${featuredActions}
+          <button type="button" class="btn btn-primary player-home-action" ${practiceAction}>
+            Open Practice
+          </button>
+          <button type="button" class="btn btn-secondary player-home-action" ${swipeAction}>
+            Open Swipe View
+          </button>
         </div>
       </article>
       <article class="player-home-card">
-        <span class="player-home-card__eyebrow">How To Use It</span>
-        <h3>Three simple steps</h3>
-        <ol class="player-home-step-list">
-          <li><strong>Open Practice</strong><span>Load the published script for the day.</span></li>
-          <li><strong>Swipe Plays</strong><span>Flip play to play with the diagram and call together.</span></li>
-          <li><strong>Lock Your Spot</strong><span>Pin your position so your rule stays visible on every play.</span></li>
-        </ol>
+        <span class="player-home-card__eyebrow">Study Flow</span>
+        <h3>What to do first</h3>
+        <div class="player-home-study-list">
+          <div><strong>1</strong><span>Load the practice so the day's script is ready.</span></div>
+          <div><strong>2</strong><span>Use Swipe View and lock your position for rules.</span></div>
+          <div><strong>3</strong><span>Use Playbook filters when you need more reps on a family.</span></div>
+        </div>
       </article>
       <article class="player-home-card">
         <span class="player-home-card__eyebrow">Recent Practices</span>
@@ -729,12 +751,12 @@ function renderPlayerDashboardHome() {
         </div>
       </article>
       <article class="player-home-card">
-        <span class="player-home-card__eyebrow">Current View</span>
-        <h3>${escapeHtml(loadedScript?.name || "No practice loaded yet")}</h3>
+        <span class="player-home-card__eyebrow">Current Work</span>
+        <h3>${escapeHtml(loadedScript?.name || "Load a practice to begin")}</h3>
         <p>${escapeHtml(
     loadedScript?.stats
       ? `${loadedScript.stats.playCount} plays are already loaded in the Practice tab.`
-      : "Once you load a practice, this card becomes your quick way back into Swipe View.",
+      : "Once loaded, this becomes your quick way back into the day's rules.",
   )}</p>
         ${
           loadedScript?.stats
@@ -768,75 +790,6 @@ function renderPlayerDashboardHome() {
     </div>
   `;
 }
-
-let playerHomeTouchStart = null;
-
-function runPlayerHomeAction(button) {
-  if (!button || button.disabled) return false;
-  const action = button.dataset.action;
-  const arg = button.dataset.arg;
-  if (action === "loadPublishedPlayerScript") {
-    loadPublishedPlayerScript(arg);
-    return true;
-  }
-  if (action === "presentPublishedPlayerScript") {
-    presentPublishedPlayerScript(arg);
-    return true;
-  }
-  if (action === "showTab") {
-    showTab(arg);
-    return true;
-  }
-  if (action === "openScriptPresentation") {
-    openScriptPresentation();
-    return true;
-  }
-  return false;
-}
-
-document.addEventListener(
-  "touchstart",
-  (event) => {
-    const button = event.target.closest?.(
-      ".player-dashboard-home .player-home-action, .player-dashboard-home .player-home-script-item",
-    );
-    if (!button || event.touches?.length !== 1) {
-      playerHomeTouchStart = null;
-      return;
-    }
-    const touch = event.touches[0];
-    playerHomeTouchStart = {
-      button,
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    };
-  },
-  { passive: true },
-);
-
-document.addEventListener(
-  "touchend",
-  (event) => {
-    const button = event.target.closest?.(
-      ".player-dashboard-home .player-home-action, .player-dashboard-home .player-home-script-item",
-    );
-    const start = playerHomeTouchStart;
-    playerHomeTouchStart = null;
-    if (!button || !start || start.button !== button) return;
-    const touch = event.changedTouches?.[0];
-    if (!touch) return;
-    const moved = Math.hypot(touch.clientX - start.x, touch.clientY - start.y);
-    if (moved > 12 || Date.now() - start.time > 900) return;
-    event.preventDefault();
-    event.stopPropagation();
-    runPlayerHomeAction(button);
-  },
-  { passive: false },
-);
-document.addEventListener("touchcancel", () => {
-  playerHomeTouchStart = null;
-}, { passive: true });
 
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");

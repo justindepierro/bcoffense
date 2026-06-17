@@ -54,6 +54,9 @@ function selectPlaybookRow(index) {
   }
 
   selectedRowIndex = index;
+  if (typeof renderSelectedPlaybookReadinessPanel === "function") {
+    renderSelectedPlaybookReadinessPanel(index);
+  }
 }
 
 function copyPlayName(playName) {

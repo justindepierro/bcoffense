@@ -805,13 +805,19 @@ function checkPlayReadinessContracts() {
   const storage = read("js/storage.js");
   const auth = read("js/auth.js");
   const scriptRender = read("js/script-render.js");
+  const playbookNavigation = read("js/playbook-navigation.js");
+  const playbookRender = read("js/playbook-render.js");
+  const presentation = read("js/play-presentation.js");
   const readiness = read("js/play-readiness.js");
   const css = read("css/script.css");
+  const playbookCss = read("css/playbook.css");
+  const presentationCss = read("css/play-presentation.css");
 
   if (
     !/PLAY_READINESS:\s*"playReadiness"/.test(storage) ||
     !/"\.\/js\/play-readiness\.js"/.test(sw) ||
-    !/src="js\/play-readiness\.js\?v=/.test(html)
+    !/src="js\/play-readiness\.js\?v=/.test(html) ||
+    !/id="playbookReadinessPanel"/.test(html)
   ) {
     fail("play readiness storage or asset wiring is incomplete");
   }
@@ -836,6 +842,11 @@ function checkPlayReadinessContracts() {
     !/data-auth-player-hide="true"/.test(readiness) ||
     !/function openPlayReadinessRepModal\(index\)/.test(readiness) ||
     !/function openPlayReadinessActionModal\(index\)/.test(readiness) ||
+    !/function renderPlayReadinessPresentationCoachCard\(play\)/.test(readiness) ||
+    !/function renderSelectedPlaybookReadinessPanel\(index = selectedRowIndex\)/.test(readiness) ||
+    !/function quickPlayReadinessPlaybookScore\(score\)/.test(readiness) ||
+    !/function quickPlayReadinessPresentationScore\(score\)/.test(readiness) ||
+    !/function openPlayReadinessPresentationActionModal\(\)/.test(readiness) ||
     !/function showPlayReadinessHistory\(index\)/.test(readiness) ||
     !/function seedPlayReadinessSampleData\(\)/.test(readiness) ||
     !/Power/.test(readiness) ||
@@ -849,8 +860,13 @@ function checkPlayReadinessContracts() {
   if (
     !/renderPlayReadinessScriptWidget\(play, index, opts\)/.test(scriptRender) ||
     !/\$\{readinessMarkup\}/.test(scriptRender) ||
+    !/renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
+    !/renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
+    !/renderPlayReadinessPresentationCoachCard\(play\)/.test(presentation) ||
     !/"openPlayReadinessRepModal"/.test(auth) ||
     !/"openPlayReadinessActionModal"/.test(auth) ||
+    !/"quickPlayReadinessPlaybookScore"/.test(auth) ||
+    !/"quickPlayReadinessPresentationScore"/.test(auth) ||
     !/"seedPlayReadinessSampleData"/.test(auth)
   ) {
     fail("play readiness script integration or coach permissions are incomplete");
@@ -860,7 +876,10 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-track/.test(css) ||
     !/\.play-readiness-modal/.test(css) ||
     !/\.script-item--printlike \.play-readiness-widget/.test(css) ||
-    !/\.play-readiness-history-summary/.test(css)
+    !/\.play-readiness-history-summary/.test(css) ||
+    !/\.pb-readiness-card/.test(playbookCss) ||
+    !/\.play-readiness-score-btn/.test(playbookCss) ||
+    !/\.pp-coach-section-readiness/.test(presentationCss)
   ) {
     fail("play readiness script styling is incomplete");
   }
@@ -872,6 +891,7 @@ function checkPlayerPortalContracts() {
   const html = read("index.html");
   const auth = read("js/auth.js");
   const appShell = read("js/app-shell.js");
+  const appEvents = read("js/app-events.js");
   const dashboard = read("js/dashboard.js");
   const componentsCss = read("css/components.css");
   const layoutCss = read("css/layout.css");
@@ -909,12 +929,13 @@ function checkPlayerPortalContracts() {
     !/loadPublishedPlayerScript/.test(dashboard) ||
     !/presentPublishedPlayerScript/.test(dashboard) ||
     !/Open Playbook/.test(dashboard) ||
-    !/playerHomeTouchStart/.test(dashboard) ||
-    !/function runPlayerHomeAction\(button\)/.test(dashboard) ||
+    !/player-home-quick-actions/.test(dashboard) ||
+    !/player-home-today-card/.test(dashboard) ||
     !/class="btn btn-primary player-home-action"/.test(dashboard) ||
-    !/\.player-dashboard-home \.player-home-action,\s*\.player-dashboard-home \.player-home-script-item/.test(
-      dashboard,
-    )
+    !/const MOBILE_TAP_ACTION_SELECTOR = \[/.test(appEvents) ||
+    !/\.player-dashboard-home \[data-action\]/.test(appEvents) ||
+    !/\.play-presentation-overlay\.show \[data-action\]/.test(appEvents) ||
+    !/function getMobileTapActionTarget\(target\)/.test(appEvents)
   ) {
     fail("player dashboard home is incomplete");
   }
@@ -957,6 +978,8 @@ function checkPlayerPortalContracts() {
     !/\.auth-login-overlay/.test(componentsCss) ||
     !/auth-login-submit[\s\S]*touch-action:\s*manipulation/.test(componentsCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||
+    !/\.player-home-quick-actions/.test(dashboardCss) ||
+    !/\.player-home-today-card/.test(dashboardCss) ||
     !/touch-action:\s*manipulation/.test(dashboardCss) ||
     !/body\.is-phone-screen\[data-auth-role="player"\] \.player-home-hero/.test(
       dashboardCss,

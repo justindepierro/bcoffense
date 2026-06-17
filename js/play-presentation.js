@@ -245,6 +245,12 @@ function openPlayPresentation(items, startIndex, source) {
   );
   if (isPlayerPresentationRole() && playPresentationState.source === "script") {
     playPresentationState.mode = "player";
+  } else if (
+    playPresentationState.source === "script" &&
+    playPresentationState.mode === "minimum" &&
+    getAllowedPlayPresentationModes().includes("coaches")
+  ) {
+    playPresentationState.mode = "coaches";
   }
   playPresentationState.imageToken += 1;
 
@@ -1141,6 +1147,11 @@ function getPlayPresentationCoachMarkup(item) {
         ${getPlayPresentationDiagramMarkup(play)}
       </section>
       <section class="pp-coach-info">
+        ${
+          typeof renderPlayReadinessPresentationCoachCard === "function"
+            ? renderPlayReadinessPresentationCoachCard(play)
+            : ""
+        }
         ${coachSections}
         <section class="pp-coach-section pp-coach-section-rules" aria-label="Player rules">
           <div class="pp-coach-section-head">

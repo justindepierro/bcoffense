@@ -224,6 +224,9 @@ function renderPlaybook() {
     }
 
     applyColumnVisibility();
+    if (typeof renderSelectedPlaybookReadinessPanel === "function") {
+      renderSelectedPlaybookReadinessPanel(selectedRowIndex);
+    }
 
     const tableWrap = document.querySelector(".table-container");
     if (tableWrap) {
