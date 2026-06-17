@@ -230,6 +230,23 @@ document.addEventListener(
 );
 
 document.addEventListener(
+  "pointerdown",
+  (event) => {
+    const target = event.target.closest(
+      ".player-script-card__actions [data-action]",
+    );
+    if (!target) return;
+    traceAppAction("player script card pointerdown", target, {
+      pointerType: event.pointerType || "",
+      clientX: Math.round(event.clientX || 0),
+      clientY: Math.round(event.clientY || 0),
+      targetTag: event.target?.tagName?.toLowerCase?.() || "",
+    });
+  },
+  true,
+);
+
+document.addEventListener(
   "click",
   (event) => {
     if (mobileTapSyntheticClick || !mobileTapNativeSuppression) return;

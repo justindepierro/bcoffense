@@ -211,6 +211,8 @@
 
 .player-script-card__actions {
   display: flex;
+  position: relative;
+  z-index: 2;
   gap: 8px;
   flex-wrap: wrap;
   justify-content: flex-end;
@@ -219,7 +221,23 @@
 
 .player-script-card__actions .btn,
 .player-script-now__actions .btn {
+  pointer-events: auto;
   touch-action: manipulation;
+}
+
+.player-script-card__loaded-label {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 32px;
+  padding: 5px 10px;
+  border: 1px solid var(--color-success-light);
+  border-radius: var(--radius-pill);
+  color: var(--color-success-hover);
+  background: var(--color-success-light);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  white-space: nowrap;
 }
 
 .player-script-empty {

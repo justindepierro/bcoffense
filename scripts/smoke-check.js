@@ -755,7 +755,7 @@ function checkScriptPlayerPublishingContracts() {
     !/function togglePlayerScriptAccess\(id,\s*event\)/.test(scriptStorage) ||
     !/data-onchange="togglePlayerScriptAccess"/.test(scriptStorage) ||
     !/data-action="loadPublishedPlayerScript"/.test(scriptStorage) ||
-    !/data-action="presentPublishedPlayerScript"/.test(scriptStorage) ||
+    !/data-action="openPlayerCurrentScriptPresentation"/.test(scriptStorage) ||
     !/data-action="openPlayerCurrentScriptPresentation"/.test(html) ||
     !/case "loadPublishedPlayerScript"/.test(appEvents) ||
     !/case "presentPublishedPlayerScript"/.test(appEvents)
@@ -768,6 +768,7 @@ function checkScriptPlayerPublishingContracts() {
     !/missing action handler/.test(appEvents) ||
     !/action returned no-op/.test(appEvents) ||
     !/mobile synthetic tap/.test(appEvents) ||
+    !/player script card pointerdown/.test(appEvents) ||
     !/auth blocked interaction/.test(auth) ||
     !/lookup miss/.test(scriptStorage) ||
     !/load start/.test(scriptStorage) ||
@@ -813,6 +814,7 @@ function checkScriptPlayerPublishingContracts() {
   if (
     !/\.player-script-launcher/.test(css) ||
     !/\.player-script-now/.test(css) ||
+    !/\.player-script-card__loaded-label/.test(css) ||
     !/\.script-item--player/.test(css) ||
     !/\.period-header--player/.test(css) ||
     !/body\[data-auth-role="player"\] \.script-builder/.test(css) ||

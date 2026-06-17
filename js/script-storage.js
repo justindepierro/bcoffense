@@ -575,6 +575,7 @@ function renderPlayerScriptLauncher() {
         currentName === savedScript.name &&
         currentDate === (savedScript.date || "");
       const eyebrow = savedScript.date === todayValue ? "Today" : "Published Script";
+      const scriptId = escapeHtml(String(savedScript.id));
 
       return `
         <article class="player-script-card${isCurrent ? " is-current" : ""}">
@@ -592,12 +593,14 @@ function renderPlayerScriptLauncher() {
             </div>
           </div>
           <div class="player-script-card__actions">
-            <button type="button" class="btn btn-sm" data-action="loadPublishedPlayerScript"
-              data-arg="${savedScript.id}" title="Load this published script into the script tab">
-              Open Script
-            </button>
-            <button type="button" class="btn btn-primary btn-sm" data-action="presentPublishedPlayerScript"
-              data-arg="${savedScript.id}" title="Open this published script in swipe view">
+            ${isCurrent
+              ? '<span class="player-script-card__loaded-label">Script Loaded</span>'
+              : `<button type="button" class="btn btn-sm" data-action="loadPublishedPlayerScript"
+                  data-arg="${scriptId}" title="Load this published script into the script tab">
+                  Open Script
+                </button>`}
+            <button type="button" class="btn btn-primary btn-sm" data-action="openPlayerCurrentScriptPresentation"
+              data-arg="${scriptId}" title="Open this published script in swipe view">
               Swipe View
             </button>
           </div>
