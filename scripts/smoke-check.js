@@ -648,12 +648,20 @@ function checkPlayPresentationContracts() {
     !/requestFullscreen/.test(presenter) ||
     !/screen\.orientation\.lock\("landscape"\)/.test(presenter) ||
     !/function syncPlayPresentationMobileLandscape\(/.test(presenter) ||
+    !/let playPresentationViewportSyncFrame = 0/.test(presenter) ||
+    !/let playPresentationForcedLandscapeKey = ""/.test(presenter) ||
     !/function handlePlayPresentationTouchStart\(/.test(presenter) ||
     !/function handlePlayPresentationTouchEnd\(/.test(presenter) ||
     !/PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/.test(presenter) ||
     !/reason: "no-script-items"/.test(presenter) ||
     !/reason: !overlay \? "overlay-missing" : "no-items"/.test(presenter) ||
     !/return true;/.test(presenter) ||
+    !/requestAnimationFrame\(\s*syncPlayPresentationMobileLandscape/.test(
+      presenter,
+    ) ||
+    !/cancelAnimationFrame\(playPresentationViewportSyncFrame\)/.test(
+      presenter,
+    ) ||
     !/window\.visualViewport\?\.addEventListener\("resize", queuePlayPresentationViewportSync\)/.test(
       presenter,
     ) ||
@@ -825,7 +833,8 @@ function checkScriptPlayerPublishingContracts() {
     !/data-action="openPlayerCurrentScriptPresentation"/.test(scriptStorage) ||
     !/data-action="openPlayerCurrentScriptPresentation"/.test(html) ||
     !/case "loadPublishedPlayerScript"/.test(appEvents) ||
-    !/case "presentPublishedPlayerScript"/.test(appEvents)
+    !/case "presentPublishedPlayerScript"/.test(appEvents) ||
+    !/case "openPlayerCurrentScriptPresentation"/.test(appEvents)
   ) {
     fail("player script publishing runtime is incomplete");
   }
@@ -1082,7 +1091,11 @@ function checkPlayerPortalContracts() {
     !/document\.elementFromPoint\(centerX, centerY\)/.test(appEvents) ||
     !/function getMobileTapActionTarget\(target\)/.test(appEvents) ||
     !/function isNativeMobileClickElement\(el\)/.test(appEvents) ||
+    !/function shouldBridgeNativeMobileAction\(el\)/.test(appEvents) ||
     !/isNativeMobileClickElement\(actionEl\)/.test(appEvents) ||
+    !/shouldBridgeNativeMobileAction\(actionEl\)/.test(appEvents) ||
+    !/\.player-script-card/.test(appEvents) ||
+    !/\.script-item--player/.test(appEvents) ||
     !/navigator\.maxTouchPoints > 0/.test(appEvents) ||
     !/function isMobileTapInteractiveElement\(el\)/.test(appEvents) ||
     !/function scrollTabStripToTab\(tab\)/.test(appNavigation) ||
@@ -1102,9 +1115,18 @@ function checkPlayerPortalContracts() {
     !/window\.visualViewport\?\.addEventListener\("resize", queueMobileShellStateSync\)/.test(
       appShell,
     ) ||
-    !/window\.visualViewport\?\.addEventListener\("scroll", queueMobileShellStateSync\)/.test(
+    !/function queueMobileShellSettledSync\(\)/.test(appShell) ||
+    !/window\.visualViewport\?\.addEventListener\("scroll", queueMobileShellSettledSync/.test(
       appShell,
-    )
+    ) ||
+    !/window\.setTimeout\(queueMobileShellStateSync,\s*180\)/.test(
+      appShell,
+    ) ||
+    !/function setMobileShellCssVar\(root, name, value\)/.test(appShell) ||
+    !/is-player-mobile-shell/.test(appShell) ||
+    !/is-staff-mobile-shell/.test(appShell) ||
+    !/queueMobileShellSettledSync\(\);[\s\S]*\} else \{[\s\S]*queueMobileShellStateSync\(\);/.test(appShell) ||
+    !/queueMobileShellStateSync/.test(auth)
   ) {
     fail("mobile screen recognition does not account for touch viewports");
   }
@@ -1133,10 +1155,33 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\[data-auth-role="player"\] \.tabs/.test(
       responsiveCss,
     ) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #mainApp[\s\S]*overflow:\s*visible/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-mobile-screen\[data-auth-role="player"\] #dashboard\.panel,[\s\S]*body\.is-mobile-screen\[data-auth-role="player"\] #script\.panel[\s\S]*overflow:\s*visible/.test(
+      responsiveCss,
+    ) ||
     !/body\.is-mobile-screen\[data-auth-role="player"\] #tab-dashboard::before/.test(
       responsiveCss,
     ) ||
     !/body\.is-mobile-screen\[data-auth-role="player"\] \.auth-user-badge/.test(
+      responsiveCss,
+    ) ||
+    !/overflow-x:\s*clip/.test(responsiveCss) ||
+    !/touch-action:\s*pan-y/.test(responsiveCss) ||
+    !/body\.is-mobile-screen #script \.script-item,[\s\S]*content-visibility:\s*visible/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.script-player-grid[\s\S]*display:\s*none/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-phone-screen\.is-staff-mobile-shell #script \.defense-inputs,[\s\S]*body\.is-phone-screen\.is-staff-mobile-shell #script \.play-readiness-actions[\s\S]*display:\s*none/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-phone-screen\.is-staff-mobile-shell #script \.script-list[\s\S]*order:\s*1/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-phone-screen\.is-staff-mobile-shell #script \.play-list[\s\S]*order:\s*2/.test(
       responsiveCss,
     ) ||
     !/body\.is-mobile-screen #mainApp/.test(responsiveCss) ||

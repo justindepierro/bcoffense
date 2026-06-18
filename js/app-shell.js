@@ -39,7 +39,20 @@ window.addEventListener("load", () => {
 
 // Keep CSS in sync with the actual mobile viewport and sticky shell heights.
 // This avoids iOS URL-bar jumps and keeps the tab rail attached to the header.
+// Visual viewport scroll fires constantly while mobile browser chrome animates;
+// don't rewrite layout-critical vars on every one of those events.
 let _mobileShellFrame = 0;
+let _mobileShellScrollTimer = 0;
+
+function setMobileShellCssVar(root, name, value) {
+  if (root.style.getPropertyValue(name) === value) return;
+  root.style.setProperty(name, value);
+}
+
+function removeMobileShellCssVar(root, name) {
+  if (!root.style.getPropertyValue(name)) return;
+  root.style.removeProperty(name);
+}
 
 function syncMobileShellState() {
   _mobileShellFrame = 0;
@@ -54,19 +67,21 @@ function syncMobileShellState() {
   const body = document.body;
   if (!body) return;
 
-  root.style.setProperty("--app-vh", `${Math.max(height * 0.01, 1)}px`);
-  root.style.setProperty("--app-vw", `${Math.max(width * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-vh", `${Math.max(height * 0.01, 1)}px`);
+  setMobileShellCssVar(root, "--app-vw", `${Math.max(width * 0.01, 1)}px`);
 
   const header = document.querySelector(".app-header");
   const tabs = document.querySelector(".tabs");
   if (header) {
-    root.style.setProperty(
+    setMobileShellCssVar(
+      root,
       "--app-header-height",
       `${Math.ceil(header.getBoundingClientRect().height)}px`,
     );
   }
   if (tabs) {
-    root.style.setProperty(
+    setMobileShellCssVar(
+      root,
       "--app-tabs-height",
       `${Math.ceil(tabs.getBoundingClientRect().height)}px`,
     );
@@ -91,14 +106,20 @@ function syncMobileShellState() {
     el.classList.toggle("is-portrait-screen", !isLandscape);
     el.classList.toggle("is-touch-screen", Boolean(isTouch));
   });
+  const authRole = body.dataset.authRole || "";
+  body.classList.toggle("is-player-mobile-shell", isMobile && authRole === "player");
+  body.classList.toggle(
+    "is-staff-mobile-shell",
+    isMobile && Boolean(authRole) && authRole !== "player" && authRole !== "locked",
+  );
   const coachDock = document.getElementById("mobileCoachDock");
   const coachDockHeight = coachDock
     ? Math.ceil(coachDock.getBoundingClientRect().height)
     : 0;
   if (coachDockHeight > 0) {
-    root.style.setProperty("--coach-dock-height", `${coachDockHeight + 12}px`);
+    setMobileShellCssVar(root, "--coach-dock-height", `${coachDockHeight + 12}px`);
   } else {
-    root.style.removeProperty("--coach-dock-height");
+    removeMobileShellCssVar(root, "--coach-dock-height");
   }
   body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
   body.dataset.screenOrientation = isLandscape ? "landscape" : "portrait";
@@ -111,12 +132,19 @@ function queueMobileShellStateSync() {
   _mobileShellFrame = requestAnimationFrame(syncMobileShellState);
 }
 
+function queueMobileShellSettledSync() {
+  window.clearTimeout(_mobileShellScrollTimer);
+  _mobileShellScrollTimer = window.setTimeout(queueMobileShellStateSync, 180);
+}
+
 queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
 window.addEventListener("load", queueMobileShellStateSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
 window.visualViewport?.addEventListener("resize", queueMobileShellStateSync);
-window.visualViewport?.addEventListener("scroll", queueMobileShellStateSync);
+window.visualViewport?.addEventListener("scroll", queueMobileShellSettledSync, {
+  passive: true,
+});
 window.addEventListener("orientationchange", queueMobileShellStateSync, {
   passive: true,
 });
@@ -1893,7 +1921,11 @@ document.addEventListener("DOMContentLoaded", () => {
       queued = false;
       pendingRoots.forEach((root) => enhanceRuntimeA11y(root));
       pendingRoots.clear();
-      queueMobileShellStateSync();
+      if (document.body?.classList.contains("is-mobile-screen")) {
+        queueMobileShellSettledSync();
+      } else {
+        queueMobileShellStateSync();
+      }
       if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
     });
   });

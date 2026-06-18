@@ -208,6 +208,30 @@ function isNativeMobileClickElement(el) {
   return el.matches("button, a[href], input, select, textarea, label, summary");
 }
 
+function shouldBridgeNativeMobileAction(el) {
+  if (!(el instanceof Element)) return false;
+  if (!el.matches("button[data-action], a[data-action], [role='button'][data-action], .tab[data-action]")) {
+    return false;
+  }
+  return Boolean(
+    el.matches(".tab[data-action]") ||
+      el.closest(
+        [
+          ".player-dashboard-home",
+          ".pb-player-summary",
+          ".player-script-launcher",
+          ".player-script-card",
+          ".player-script-now",
+          ".script-item--player",
+          ".script-player-open-btn",
+          ".play-presentation-overlay.show",
+          ".mobile-coach-dock",
+          ".mobile-script-coach-now",
+        ].join(","),
+      ),
+  );
+}
+
 function getMobileTapActionTarget(target) {
   if (!isMobileTapBridgeEnabled()) return null;
   const element = target instanceof Element ? target : null;
@@ -215,7 +239,9 @@ function getMobileTapActionTarget(target) {
   const actionEl = element.closest(MOBILE_TAP_ACTION_SELECTOR);
   if (!actionEl) return null;
   if (!isMobileTapInteractiveElement(actionEl)) return null;
-  if (isNativeMobileClickElement(actionEl)) return null;
+  if (isNativeMobileClickElement(actionEl) && !shouldBridgeNativeMobileAction(actionEl)) {
+    return null;
+  }
   if (actionEl.disabled || actionEl.getAttribute("aria-disabled") === "true") {
     return null;
   }
@@ -435,6 +461,16 @@ document.addEventListener("click", (e) => {
       traceAppAction("dispatch presentPublishedPlayerScript", el);
       presentPublishedPlayerScript(el.dataset.arg);
       return;
+    case "openPlayerCurrentScriptPresentation":
+      traceAppAction("dispatch openPlayerCurrentScriptPresentation", el);
+      openPlayerCurrentScriptPresentation(el.dataset.arg || "");
+      return;
+    case "openScriptPresentation": {
+      const idx = parseInt(el.dataset.idx, 10);
+      traceAppAction("dispatch openScriptPresentation", el, { idx });
+      openScriptPresentation(Number.isNaN(idx) ? undefined : idx);
+      return;
+    }
     case "renameSavedScript":
       renameSavedScript(parseInt(el.dataset.sid, 10));
       return;

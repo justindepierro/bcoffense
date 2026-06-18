@@ -150,8 +150,10 @@
   html.is-mobile-screen,
   body.is-mobile-screen {
     background: var(--color-surface);
-    overflow-x: hidden;
-    overscroll-behavior-y: contain;
+    overflow-x: clip;
+    overflow-y: auto;
+    overscroll-behavior-y: auto;
+    touch-action: pan-y;
     -webkit-text-size-adjust: 100%;
     width: 100%;
     max-width: 100%;
@@ -173,7 +175,12 @@
 
   body.is-mobile-screen #mainApp {
     min-width: 0;
-    overflow-x: hidden;
+    overflow: visible;
+    overflow-x: clip;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] #mainApp {
+    overflow: visible;
   }
 
   body.is-mobile-screen .app-header {
@@ -349,7 +356,8 @@
     );
     width: 100%;
     max-width: 100%;
-    overflow-x: hidden;
+    overflow: visible;
+    overflow-x: clip;
     margin: 0;
     padding: 12px 12px calc(12px + var(--coach-dock-height, 76px));
     border-right: 0;
@@ -388,6 +396,65 @@
     max-width: 100%;
   }
 
+  /* Script rows vary too much on mobile for content-visibility estimates.
+     Keep desktop virtualization, but use real row heights on phones/tablets so
+     scrolling does not jump as offscreen cards enter the viewport. */
+  body.is-mobile-screen #script .script-item,
+  body.is-mobile-screen #script .period-header-wrapper,
+  body.is-mobile-screen #script .available-plays-container {
+    contain: none;
+    content-visibility: visible;
+    contain-intrinsic-size: none;
+  }
+
+  body.is-mobile-screen.is-staff-mobile-shell #script .script-player-grid {
+    display: none;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .script-item--detail,
+  body.is-phone-screen.is-staff-mobile-shell #script .script-item--compact {
+    grid-template-columns: 34px minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .script-list {
+    order: 1;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .play-list {
+    order: 2;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .script-select-tools {
+    grid-row: span 2;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .play-num {
+    display: none;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .hash-input,
+  body.is-phone-screen.is-staff-mobile-shell #script .defense-inputs,
+  body.is-phone-screen.is-staff-mobile-shell #script .play-controls,
+  body.is-phone-screen.is-staff-mobile-shell #script .script-player-grid,
+  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-main,
+  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-metrics,
+  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-actions {
+    display: none;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-widget {
+    grid-column: 1 / -1;
+    display: block;
+    margin-top: 6px;
+    padding: 8px;
+  }
+
+  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-quick-score {
+    margin: 0;
+  }
+
   body.is-mobile-screen input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
   body.is-mobile-screen select,
   body.is-mobile-screen textarea {
@@ -398,6 +465,12 @@
     padding-bottom: calc(
       var(--app-tabs-height, 76px) + 24px + env(safe-area-inset-bottom)
     );
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] #dashboard.panel,
+  body.is-mobile-screen[data-auth-role="player"] #playbook.panel,
+  body.is-mobile-screen[data-auth-role="player"] #script.panel {
+    overflow: visible;
   }
 
   body.is-phone-screen[data-auth-role="player"] .app-header {

@@ -452,6 +452,9 @@
     if (typeof syncPlayPresentationRoleUi === "function") {
       syncPlayPresentationRoleUi();
     }
+    if (typeof queueMobileShellStateSync === "function") {
+      queueMobileShellStateSync();
+    }
   }
 
   function scheduleApplyRoleUi() {

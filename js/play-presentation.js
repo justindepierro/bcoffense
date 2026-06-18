@@ -22,6 +22,8 @@ let playPresentationState = {
 let playPresentationDiagramResizeObserver = null;
 let playPresentationDiagramResizeFrame = 0;
 let playPresentationSwipeStart = null;
+let playPresentationViewportSyncFrame = 0;
+let playPresentationForcedLandscapeKey = "";
 
 function tracePlayPresentationAction(phase, payload = {}, level = "info") {
   const data = {
@@ -249,13 +251,23 @@ function isPlayPresentationMobileViewport() {
 }
 
 function syncPlayPresentationMobileLandscape() {
+  playPresentationViewportSyncFrame = 0;
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay?.classList.contains("show")) return;
 
   const { width, height } = getPlayPresentationViewportSize();
   const shouldForce = isPlayPresentationMobileViewport() && height > width;
-  overlay.style.setProperty("--pp-forced-landscape-width", `${height}px`);
-  overlay.style.setProperty("--pp-forced-landscape-height", `${width}px`);
+  const sizeKey = shouldForce ? `${height}x${width}` : "natural";
+  if (sizeKey !== playPresentationForcedLandscapeKey) {
+    playPresentationForcedLandscapeKey = sizeKey;
+    if (shouldForce) {
+      overlay.style.setProperty("--pp-forced-landscape-width", `${height}px`);
+      overlay.style.setProperty("--pp-forced-landscape-height", `${width}px`);
+    } else {
+      overlay.style.removeProperty("--pp-forced-landscape-width");
+      overlay.style.removeProperty("--pp-forced-landscape-height");
+    }
+  }
   overlay.classList.toggle("pp-force-landscape", shouldForce);
   document.body.classList.toggle("play-presentation-force-landscape", shouldForce);
   document.body.classList.toggle(
@@ -269,6 +281,11 @@ function cleanupPlayPresentationMobileLandscape() {
   overlay?.classList.remove("pp-force-landscape");
   overlay?.style.removeProperty("--pp-forced-landscape-width");
   overlay?.style.removeProperty("--pp-forced-landscape-height");
+  playPresentationForcedLandscapeKey = "";
+  if (playPresentationViewportSyncFrame) {
+    cancelAnimationFrame(playPresentationViewportSyncFrame);
+    playPresentationViewportSyncFrame = 0;
+  }
   document.body.classList.remove(
     "play-presentation-force-landscape",
     "play-presentation-mobile",
@@ -279,9 +296,10 @@ function cleanupPlayPresentationMobileLandscape() {
 function queuePlayPresentationViewportSync() {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay?.classList.contains("show")) return;
-  requestAnimationFrame(() => {
-    syncPlayPresentationMobileLandscape();
-  });
+  if (playPresentationViewportSyncFrame) return;
+  playPresentationViewportSyncFrame = requestAnimationFrame(
+    syncPlayPresentationMobileLandscape,
+  );
 }
 
 function setPlayPresentationOverlayOpen(overlay, open) {
