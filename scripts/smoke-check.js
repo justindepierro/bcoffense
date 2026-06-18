@@ -554,6 +554,49 @@ function checkWristbandTypography() {
   console.log("wristband typography ok");
 }
 
+function checkPersonnelMarkerContracts() {
+  const utils = read("js/utils.js");
+  const callsheet = read("js/callsheet.js");
+  const wristband = read("js/wristband.js");
+  const scriptShared = read("js/script-shared.js");
+  const gameplanRender = read("js/gameplan-render.js");
+  const gameplanPrint = read("js/gameplan-print.js");
+  const html = read("index.html");
+  const help = read("js/help.js");
+
+  if (
+    !/meat:\s*"🥩"/.test(utils) ||
+    !/function getPersonnelEmoji\(personnel, useSquares = false\)/.test(utils)
+  ) {
+    fail("shared personnel emoji markers do not include Meat steak");
+  }
+  if (
+    !/meat:\s*"🥩"/.test(callsheet) ||
+    !/meat:\s*"#7f1d1d"/.test(callsheet)
+  ) {
+    fail("call sheet personnel code/color helpers do not include Meat steak");
+  }
+  if (
+    !/getPersonnelEmoji\(play\.personnel, useSquares\)/.test(wristband) ||
+    !/getPersonnelEmoji\(displayPlay\.personnel, options\.useSquares\)/.test(
+      scriptShared,
+    ) ||
+    !/getFullCall\(play, \{ showLineCall: false, showEmoji: true \}\)/.test(
+      gameplanRender,
+    ) ||
+    !/getFullCall\(play, \{ showLineCall: false, showEmoji: o\.showMeta, useSquares: true \}\)/.test(
+      gameplanPrint,
+    )
+  ) {
+    fail("Meat personnel marker is not wired through wristband, script, and game plan calls");
+  }
+  if (!/Meat uses 🥩/.test(html) || !/Meat uses steak/.test(help)) {
+    fail("personnel marker help copy does not document Meat steak");
+  }
+
+  console.log("personnel marker contracts ok");
+}
+
 function checkPlayPresentationContracts() {
   const html = read("index.html");
   const presenter = read("js/play-presentation.js");
@@ -1747,6 +1790,7 @@ checkSafeUiRendering();
 checkHistoryContracts();
 checkConflictContracts();
 checkWristbandTypography();
+checkPersonnelMarkerContracts();
 checkPlayPresentationContracts();
 checkScriptPlayerPublishingContracts();
 checkPlayReadinessContracts();

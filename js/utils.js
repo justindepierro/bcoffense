@@ -1518,6 +1518,7 @@ function getPersonnelEmoji(personnel, useSquares = false) {
     white: "⚪",
     black: "⚫",
     navy: "⚓",
+    meat: "🥩",
     star: "⭐",
   };
 
@@ -1532,6 +1533,7 @@ function getPersonnelEmoji(personnel, useSquares = false) {
     white: "⬜",
     black: "⬛",
     navy: "⚓",
+    meat: "🥩",
     star: "⭐",
   };
 

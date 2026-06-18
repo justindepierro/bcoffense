@@ -389,8 +389,8 @@ function getHelpDataForTab(tab) {
               desc: "Show All, Minimal, Game Day, Print Friendly",
             },
             {
-              key: "🔵 / ⚓ Personnel Marker",
-              desc: "Show personnel shorthand in each play call; Navy uses the anchor",
+              key: "🔵 / ⚓ / 🥩 Personnel Marker",
+              desc: "Show personnel shorthand in each play call; Navy uses the anchor and Meat uses steak",
             },
             { key: "💾", desc: "Save current display as custom preset" },
           ],

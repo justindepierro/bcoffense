@@ -1769,6 +1769,7 @@ function getPersonnelCode(personnel) {
     red: "RD",
     white: "WH",
     navy: "⚓",
+    meat: "🥩",
     star: "ST",
   };
   return codes[p] || personnel.substring(0, 2).toUpperCase();
@@ -1790,6 +1791,7 @@ function getPersonnelBgColor(personnel) {
     red: CS_COLORS.red,
     white: "#f8f9fa",
     navy: "#192a51",
+    meat: "#7f1d1d",
     star: CS_COLORS.yellow,
   };
   return colors[p] || UI_COLORS.textMuted;
