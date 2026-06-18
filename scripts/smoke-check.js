@@ -584,6 +584,10 @@ function checkPlayPresentationContracts() {
     !/function getPlayPresentationItemsFromScript\(/.test(presenter) ||
     !/function openPlaybookPresentation\(/.test(presenter) ||
     !/function openScriptPresentation\(/.test(presenter) ||
+    !/function setPlayPresentationOverlayOpen\(overlay, open\)/.test(presenter) ||
+    !/function ensurePlayPresentationOverlayDisplayed\(overlay, phase = "open"\)/.test(
+      presenter,
+    ) ||
     !/function tracePlayPresentationAction\(/.test(presenter) ||
     !/function renderPlayPresentation\(/.test(presenter)
   ) {
@@ -608,6 +612,12 @@ function checkPlayPresentationContracts() {
     !/reason: !overlay \? "overlay-missing" : "no-items"/.test(presenter) ||
     !/return true;/.test(presenter) ||
     !/window\.visualViewport\?\.addEventListener\("resize", queuePlayPresentationViewportSync\)/.test(
+      presenter,
+    ) ||
+    !/overlay\.style\.setProperty\("display", "flex", "important"\)/.test(
+      presenter,
+    ) ||
+    !/overlay\.dataset\.presentationOpen = open \? "true" : "false"/.test(
       presenter,
     ) ||
     !/setInnerHTML\(body, markup\)/.test(presenter)
@@ -716,6 +726,9 @@ function checkPlayPresentationContracts() {
   }
   if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
+    !/\.play-presentation-overlay\.show,\s*\.play-presentation-overlay\[data-presentation-open="true"\]/.test(
+      css,
+    ) ||
     !/body\.play-presentation-force-landscape/.test(css) ||
     !/\.play-presentation-overlay\.pp-force-landscape/.test(css) ||
     !/@media \(orientation: portrait\)/.test(css) ||

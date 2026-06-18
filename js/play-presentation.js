@@ -284,6 +284,52 @@ function queuePlayPresentationViewportSync() {
   });
 }
 
+function setPlayPresentationOverlayOpen(overlay, open) {
+  if (!overlay) return;
+  overlay.classList.toggle("show", open);
+  overlay.dataset.presentationOpen = open ? "true" : "false";
+  overlay.setAttribute("aria-hidden", open ? "false" : "true");
+  if (open) {
+    overlay.removeAttribute("hidden");
+    overlay.removeAttribute("inert");
+    overlay.style.setProperty("display", "flex", "important");
+    overlay.style.setProperty("visibility", "visible");
+    overlay.style.setProperty("opacity", "1");
+    overlay.style.setProperty("pointer-events", "auto");
+    overlay.style.setProperty("z-index", "var(--z-skip-link)");
+  } else {
+    overlay.setAttribute("inert", "");
+    overlay.style.removeProperty("display");
+    overlay.style.removeProperty("visibility");
+    overlay.style.removeProperty("opacity");
+    overlay.style.removeProperty("pointer-events");
+    overlay.style.removeProperty("z-index");
+  }
+}
+
+function ensurePlayPresentationOverlayDisplayed(overlay, phase = "open") {
+  if (!overlay?.classList.contains("show")) return;
+  const computed = window.getComputedStyle(overlay);
+  if (computed.display !== "none") return;
+  overlay.style.setProperty("display", "flex", "important");
+  overlay.style.setProperty("visibility", "visible");
+  overlay.style.setProperty("opacity", "1");
+  overlay.style.setProperty("pointer-events", "auto");
+  tracePlayPresentationAction(
+    "display repaired",
+    {
+      action: "openScriptPresentation",
+      phase,
+      className: overlay.className,
+      computedDisplay: computed.display,
+      computedVisibility: computed.visibility,
+      computedOpacity: computed.opacity,
+      computedPointerEvents: computed.pointerEvents,
+    },
+    "warn",
+  );
+}
+
 function openPlayPresentation(items, startIndex, source) {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay || !Array.isArray(items) || items.length === 0) {
@@ -328,12 +374,11 @@ function openPlayPresentation(items, startIndex, source) {
   }
   playPresentationState.imageToken += 1;
 
-  overlay.classList.add("show");
-  overlay.setAttribute("aria-hidden", "false");
-  overlay.removeAttribute("inert");
+  setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
   syncPlayPresentationMobileLandscape();
   renderPlayPresentation();
+  ensurePlayPresentationOverlayDisplayed(overlay, "after-render");
   if (!overlay.dataset.focusTrapReady) {
     trapFocus(overlay);
     overlay.dataset.focusTrapReady = "true";
@@ -345,6 +390,7 @@ function openPlayPresentation(items, startIndex, source) {
       Promise.resolve(overlay.requestFullscreen({ navigationUI: "hide" }))
         .then(() => {
           syncPlayPresentationMobileLandscape();
+          ensurePlayPresentationOverlayDisplayed(overlay, "fullscreen");
           if (screen.orientation?.lock) {
             return screen.orientation.lock("landscape").catch(() => {});
           }
@@ -373,9 +419,7 @@ function closePlayPresentation() {
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
-  overlay.classList.remove("show");
-  overlay.setAttribute("aria-hidden", "true");
-  overlay.setAttribute("inert", "");
+  setPlayPresentationOverlayOpen(overlay, false);
   document.body.classList.remove("play-presentation-open");
 
   if (screen.orientation?.unlock) {
@@ -1434,6 +1478,7 @@ document.addEventListener("fullscreenchange", () => {
     document.body.classList.contains("play-presentation-open")
   ) {
     // Keep the in-app landscape overlay open if a browser exits Full Screen.
-    overlay.classList.add("show");
+    setPlayPresentationOverlayOpen(overlay, true);
+    ensurePlayPresentationOverlayDisplayed(overlay, "fullscreenchange");
   }
 });

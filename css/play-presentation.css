@@ -31,7 +31,8 @@ body.play-presentation-force-landscape {
   touch-action: none;
 }
 
-.play-presentation-overlay.show {
+.play-presentation-overlay.show,
+.play-presentation-overlay[data-presentation-open="true"] {
   display: flex;
 }
 
