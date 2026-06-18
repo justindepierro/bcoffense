@@ -12,7 +12,6 @@ function sanitizeHTML(html) {
     "input",
     "textarea",
     "select",
-    "button",
     "style",
   ]);
   const ALLOWED_ATTR_PREFIX = ["data-", "aria-"];

@@ -376,6 +376,7 @@ function checkMigrationRetry() {
 
 function checkSafeUiRendering() {
   const utils = read("js/utils.js");
+  const domHelpers = read("js/dom-helpers.js");
   if (/toast\.innerHTML\s*=\s*message/.test(utils)) {
     fail("showToast renders caller messages as raw HTML");
   }
@@ -384,6 +385,15 @@ function checkSafeUiRendering() {
   )?.[1] || "";
   if (!/sanitizeHTML\(/.test(formatter)) {
     fail("modal message rendering does not sanitize rich text");
+  }
+  const dangerousTags = domHelpers.match(
+    /const DANGEROUS_TAGS\s*=\s*new Set\(\[([\s\S]*?)\]\)/,
+  )?.[1] || "";
+  if (/"button"/.test(dangerousTags)) {
+    fail("sanitized internal templates strip delegated buttons");
+  }
+  if (!/name\.startsWith\("on"\)/.test(domHelpers)) {
+    fail("sanitized internal templates do not strip inline handlers");
   }
   console.log("shared UI rendering safety ok");
 }
@@ -878,6 +888,7 @@ function checkPlayReadinessContracts() {
     !/function openPlayReadinessActionModal\(index\)/.test(readiness) ||
     !/function renderPlayReadinessPresentationCoachCard\(play\)/.test(readiness) ||
     !/function renderPlayReadinessPresentationMinimumDock\(play\)/.test(readiness) ||
+    !/function renderPlayReadinessPresentationScoreRail\(play\)/.test(readiness) ||
     !/function renderSelectedPlaybookReadinessPanel\(index = selectedRowIndex\)/.test(readiness) ||
     !/function quickPlayReadinessPlaybookScore\(score\)/.test(readiness) ||
     !/function quickPlayReadinessScriptScore\(score, element\)/.test(readiness) ||
@@ -906,6 +917,7 @@ function checkPlayReadinessContracts() {
     !/renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
     !/renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
     !/renderPlayReadinessPresentationCoachCard\(play\)/.test(presentation) ||
+    !/renderPlayReadinessPresentationScoreRail\(play\)/.test(presentation) ||
     !/"openPlayReadinessRepModal"/.test(auth) ||
     !/"openPlayReadinessActionModal"/.test(auth) ||
     !/"quickPlayReadinessScriptScore"/.test(auth) ||
@@ -936,6 +948,8 @@ function checkPlayReadinessContracts() {
     !/\.play-readiness-score-btn/.test(playbookCss) ||
     !/\.pp-coach-section-readiness/.test(presentationCss) ||
     !/\.pp-minimum-readiness-dock/.test(presentationCss) ||
+    !/\.pp-readiness-score-rail/.test(presentationCss) ||
+    !/\.pp-readiness-rail-buttons/.test(presentationCss) ||
     !/\.pp-minimum-score-grid/.test(presentationCss) ||
     !/play-presentation-force-landscape\.is-phone-screen \.pp-minimum-readiness-dock/.test(
       presentationCss,
@@ -956,6 +970,7 @@ function checkPlayerPortalContracts() {
   const auth = read("js/auth.js");
   const appShell = read("js/app-shell.js");
   const appEvents = read("js/app-events.js");
+  const appNavigation = read("js/app-navigation.js");
   const dashboard = read("js/dashboard.js");
   const componentsCss = read("css/components.css");
   const layoutCss = read("css/layout.css");
@@ -969,6 +984,10 @@ function checkPlayerPortalContracts() {
     !/player:\s*\["dashboard",\s*"playbook",\s*"script"\]/.test(auth) ||
     !/player:\s*"dashboard"/.test(auth) ||
     !/function syncPlayerPortalChrome\(\)/.test(auth) ||
+    !/function canEditUser\(\)/.test(auth) ||
+    !/ADMIN_ONLY_ACTIONS\.has\(action\)\) return isAdminUser\(\)/.test(auth) ||
+    !/document\.body\.dataset\.authCanEdit = canEditUser\(\) \? "true" : "false"/.test(auth) ||
+    !/window\.canEditUser = canEditUser/.test(auth) ||
     !/auth-login-shell/.test(auth) ||
     !/authPasswordToggle/.test(auth)
   ) {
@@ -1010,6 +1029,8 @@ function checkPlayerPortalContracts() {
     !/isNativeMobileClickElement\(actionEl\)/.test(appEvents) ||
     !/navigator\.maxTouchPoints > 0/.test(appEvents) ||
     !/function isMobileTapInteractiveElement\(el\)/.test(appEvents) ||
+    !/function scrollTabStripToTab\(tab\)/.test(appNavigation) ||
+    !/strip\.scrollTo\(\{/.test(appNavigation) ||
     !/const savedScriptId = escapeHtml\(String\(savedScript\.id\)\)/.test(
       dashboard,
     ) ||
@@ -1109,6 +1130,13 @@ function checkPlayerPortalContracts() {
     )
   ) {
     fail("player presentation polish is incomplete");
+  }
+  if (
+    !/grid-auto-flow:\s*column/.test(scriptCss) ||
+    !/scroll-snap-type:\s*x proximity/.test(scriptCss) ||
+    !/\.script-timeline-note[\s\S]*-webkit-line-clamp:\s*2/.test(scriptCss)
+  ) {
+    fail("mobile script timeline does not preserve dense period context");
   }
 
   console.log("player portal contracts ok");
@@ -1576,6 +1604,41 @@ function checkWristbandConstantUsage() {
   console.log("wristband constant usage ok");
 }
 
+function checkScriptPacketPrintContracts() {
+  const scriptExport = read("js/script-export.js");
+  const scriptCss = read("css/script.css");
+  const printCss = read("css/print.css");
+
+  if (
+    !/diagramDensity:\s*"large"/.test(scriptExport) ||
+    !/id="scriptPacketDiagramDensity"/.test(scriptExport) ||
+    !/function _scriptPacketDiagramLayout\(options\)/.test(scriptExport) ||
+    !/density === "full"[\s\S]*perPage:\s*1/.test(scriptExport) ||
+    !/density === "compact"[\s\S]*perPage:\s*8/.test(scriptExport) ||
+    !/perPage:\s*4/.test(scriptExport) ||
+    !/script-packet-diagrams-\$\{options\.diagramDensity \|\| "large"\}/.test(
+      scriptExport,
+    )
+  ) {
+    fail("script packet diagram density print options are incomplete");
+  }
+  if (
+    !/\.script-packet-diagrams-large \.script-packet-diagram-image/.test(scriptCss) ||
+    !/\.script-packet-diagrams-full \.script-packet-diagram-image/.test(scriptCss) ||
+    !/object-position:\s*center center/.test(scriptCss) ||
+    !/body\.script-packet-printing \.script-packet-diagrams-large \.script-packet-diagram-image/.test(
+      printCss,
+    ) ||
+    !/body\.script-packet-printing \.script-packet-diagrams-full \.script-packet-diagram-image/.test(
+      printCss,
+    )
+  ) {
+    fail("script packet diagram print styling is incomplete");
+  }
+
+  console.log("script packet print contracts ok");
+}
+
 function checkGuideContracts() {
   const html = read("index.html");
   const guide = read("AGENTS.md");
@@ -1683,6 +1746,7 @@ checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
+checkScriptPacketPrintContracts();
 checkGuideContracts();
 
 if (process.exitCode) process.exit(process.exitCode);

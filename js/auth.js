@@ -240,6 +240,10 @@
     return currentAuthUser?.role === "admin";
   }
 
+  function canEditUser() {
+    return currentAuthUser?.role === "admin" || currentAuthUser?.role === "coach";
+  }
+
   function canAccessTab(tabName) {
     if (!currentAuthUser) return false;
     return (AUTH_ROLE_TABS[currentAuthUser.role] || []).includes(tabName);
@@ -272,7 +276,7 @@
   }
 
   function isReadOnlyRole() {
-    return Boolean(currentAuthUser && !isAdminUser());
+    return Boolean(currentAuthUser && !canEditUser());
   }
 
   function showBlockedToast() {
@@ -280,7 +284,7 @@
     if (now - lastBlockedAt < 1200) return;
     lastBlockedAt = now;
     const label = currentAuthUser?.label || "This role";
-    showToast(`${label} access is view-only. Log in as admin to make changes.`, {
+    showToast(`${label} access is view-only. Log in as coach or admin to make changes.`, {
       type: "warning",
       duration: 3000,
     });
@@ -318,15 +322,25 @@
     return MUTATING_ACTION_PATTERNS.some((pattern) => pattern.test(action));
   }
 
+  function elementUsesAdminOnlyHandler(el) {
+    if (!el?.dataset) return false;
+    const handlers = `${el.dataset.action || ""};${el.dataset.oninput || ""};${el.dataset.onchange || ""}`;
+    return Array.from(ADMIN_ONLY_ACTIONS).some((action) =>
+      new RegExp(`(^|;)\\s*${action}\\s*(;|$)`).test(handlers),
+    );
+  }
+
   function isActionAllowedForRole(action) {
     if (!currentAuthUser) return false;
-    if (isAdminUser()) return true;
+    if (ADMIN_ONLY_ACTIONS.has(action)) return isAdminUser();
+    if (canEditUser()) return true;
     return !actionLooksMutating(action);
   }
 
   function isInputAllowedForRole(el) {
     if (!currentAuthUser) return false;
-    if (isAdminUser()) return true;
+    if (elementUsesAdminOnlyHandler(el) && !isAdminUser()) return false;
+    if (canEditUser()) return true;
     if (el.closest("#authLoginOverlay")) return true;
     if (el.dataset.authAllowInput === "true") return true;
     if (el.closest(".pb-chip-group")) return true;
@@ -346,11 +360,11 @@
 
   function shouldHideElementForRole(el) {
     if (!currentAuthUser) return false;
-    if (isAdminUser()) return false;
 
-    if (el.dataset.authAdminOnly === "true") return true;
-    if (el.dataset.authEditOnly === "true") return true;
-    if (el.matches("[type='file']")) return true;
+    if (el.dataset.authAdminOnly === "true" && !isAdminUser()) return true;
+    if (el.dataset.authEditOnly === "true" && !canEditUser()) return true;
+    if (elementUsesAdminOnlyHandler(el) && !isAdminUser()) return true;
+    if (el.matches("[type='file']") && !canEditUser()) return true;
 
     const tabName = el.dataset.arg || el.getAttribute("aria-controls");
     if (el.classList.contains("tab") && tabName && !canAccessTab(tabName)) {
@@ -361,7 +375,9 @@
     if (action && !isActionAllowedForRole(action)) return true;
     if (action === "triggerClick" && el.dataset.target) {
       const target = document.getElementById(el.dataset.target);
-      if (target?.matches("input[type='file'], [data-auth-admin-only='true']")) return true;
+      if (target?.matches("[data-auth-admin-only='true']") && !isAdminUser()) return true;
+      if (elementUsesAdminOnlyHandler(target) && !isAdminUser()) return true;
+      if (target?.matches("input[type='file']") && !canEditUser()) return true;
     }
 
     if (currentAuthUser.role === "player") {
@@ -401,7 +417,7 @@
     if (!document.body) return;
     document.body.classList.toggle("auth-locked", !currentAuthUser);
     document.body.dataset.authRole = currentAuthUser?.role || "locked";
-    document.body.dataset.authCanEdit = isAdminUser() ? "true" : "false";
+    document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
     syncPlayerPortalChrome();
 
@@ -663,6 +679,7 @@
 
   window.getCurrentAuthUser = () => currentAuthUser;
   window.isAdminUser = isAdminUser;
+  window.canEditUser = canEditUser;
   window.canAccessTab = canAccessTab;
   window.getDefaultAuthTab = getDefaultAuthTab;
   window.canManageSettings = canManageSettings;

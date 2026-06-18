@@ -1092,7 +1092,7 @@ function jumpToPeriod(periodId) {
 
   const periodHeader = document.querySelector(`[data-separator-id="${periodId}"]`);
   if (periodHeader) {
-    periodHeader.scrollIntoView({ behavior: "smooth", block: "start" });
+    periodHeader.scrollIntoView({ behavior: "smooth", block: "nearest" });
   }
 
   const jumpSelect = document.getElementById("jumpToPeriod");

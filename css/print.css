@@ -692,9 +692,9 @@
     display: flex !important;
     align-items: center;
     justify-content: center;
-    flex: 1 1 52%;
+    flex: 1 1 68%;
     min-height: 0;
-    margin: 2.5pt 0;
+    margin: 1.5pt 0;
     overflow: hidden;
     background: #f7f7f7 !important;
   }
@@ -704,6 +704,20 @@
     width: 100%;
     height: 100%;
     object-fit: contain;
+    object-position: center center;
+    image-rendering: auto;
+  }
+
+  body.script-packet-printing .script-packet-diagrams-large .script-packet-diagram-image {
+    flex-basis: 76%;
+  }
+
+  body.script-packet-printing .script-packet-diagrams-full .script-packet-diagram-image {
+    flex-basis: 84%;
+  }
+
+  body.script-packet-printing .script-packet-diagrams-full .script-packet-diagram-card {
+    padding: 5pt;
   }
 
   body.script-packet-printing .script-packet-diagram-missing {

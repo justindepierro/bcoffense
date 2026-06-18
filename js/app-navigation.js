@@ -11,6 +11,26 @@ const TAB_INDEX_MAP = {
   dashboard: 9,
 };
 
+function scrollTabStripToTab(tab) {
+  if (!(tab instanceof HTMLElement)) return;
+  const strip = tab.closest(".tabs");
+  if (!(strip instanceof HTMLElement)) return;
+  const stripRect = strip.getBoundingClientRect();
+  const tabRect = tab.getBoundingClientRect();
+  const left =
+    strip.scrollLeft +
+    tabRect.left -
+    stripRect.left -
+    (strip.clientWidth - tabRect.width) / 2;
+  strip.scrollTo({
+    left: Math.max(0, left),
+    behavior:
+      window.matchMedia("(prefers-reduced-motion: reduce)").matches
+        ? "auto"
+        : "smooth",
+  });
+}
+
 function showTab(tabName) {
   if (typeof canAccessTab === "function" && !canAccessTab(tabName)) {
     tabName = typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
@@ -35,16 +55,7 @@ function showTab(tabName) {
   if (index !== undefined && tabs[index]) {
     tabs[index].classList.add("active");
     tabs[index].setAttribute("aria-selected", "true");
-    requestAnimationFrame(() => {
-      tabs[index].scrollIntoView({
-        block: "nearest",
-        inline: "center",
-        behavior:
-          window.matchMedia("(prefers-reduced-motion: reduce)").matches
-            ? "auto"
-            : "smooth",
-      });
-    });
+    requestAnimationFrame(() => scrollTabStripToTab(tabs[index]));
   }
 
   if (tabName === "installation") {

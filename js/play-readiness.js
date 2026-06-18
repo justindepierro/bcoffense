@@ -713,6 +713,30 @@ function renderPlayReadinessPresentationMinimumDock(play) {
   `;
 }
 
+function renderPlayReadinessPresentationScoreRail(play) {
+  if (!isPlayReadinessCoachRole() || !play) return "";
+  const summary = getPlayReadinessSummary(play);
+  const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
+  return `
+    <aside class="pp-readiness-score-rail" data-auth-player-hide="true" aria-label="Coach quick score">
+      <div class="pp-readiness-rail-copy">
+        <span>Coach Score</span>
+        <strong>${summary.confidenceScore}</strong>
+        <small>${escapeHtml(summary.confidenceLabel)} · ${summary.readinessPercent}% ready</small>
+      </div>
+      <div class="pp-readiness-rail-buttons" role="group" aria-label="Score this rep 1 to 5">
+        ${renderPlayReadinessScoreButtons(
+    "quickPlayReadinessPresentationScore",
+    lastReport?.score || 0,
+  )}
+      </div>
+      <button type="button" class="pp-readiness-rail-report" data-action="openPlayReadinessPresentationActionModal">
+        Full Report
+      </button>
+    </aside>
+  `;
+}
+
 function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
   if (!isPlayReadinessCoachRole() || !play) return "";
   const summary = getPlayReadinessSummary(play);

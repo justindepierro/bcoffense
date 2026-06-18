@@ -494,6 +494,16 @@ function getPlayPresentationDiagramMarkup(play) {
   `;
 }
 
+function getPlayPresentationScoreRailMarkup(play) {
+  if (
+    playPresentationState.mode === "minimum" ||
+    typeof renderPlayReadinessPresentationScoreRail !== "function"
+  ) {
+    return "";
+  }
+  return renderPlayReadinessPresentationScoreRail(play);
+}
+
 function setPlayPresentationDiagramMessage(frame, message) {
   if (!frame) return;
   const emptyState = document.createElement("div");
@@ -624,8 +634,8 @@ function getPlayPresentationContentBounds(image) {
   if (top < 0 || left < 0 || bottom <= top || right <= left) return null;
   const scaleX = sourceWidth / sampleWidth;
   const scaleY = sourceHeight / sampleHeight;
-  const paddingX = sourceWidth * 0.018;
-  const paddingY = sourceHeight * 0.018;
+  const paddingX = sourceWidth * 0.032;
+  const paddingY = sourceHeight * 0.032;
   const bounds = {
     x: Math.max(0, left * scaleX - paddingX),
     y: Math.max(0, top * scaleY - paddingY),
@@ -1306,6 +1316,7 @@ function renderPlayPresentation() {
   } else {
     markup = getPlayPresentationMinimumMarkup(item);
   }
+  markup += getPlayPresentationScoreRailMarkup(item.play);
 
   setInnerHTML(body, markup);
   if (playPresentationState.mode === "player") {
@@ -1323,7 +1334,7 @@ function renderPlayPresentation() {
 function isPlayPresentationInteractiveSwipeTarget(target) {
   return Boolean(
     target?.closest?.(
-      "button, input, select, textarea, a, [role='button'], .pp-mode-switcher, .pp-nav, .pp-position-picker, .pp-position-lock-row",
+      "button, input, select, textarea, a, [role='button'], .pp-mode-switcher, .pp-nav, .pp-position-picker, .pp-position-lock-row, .pp-readiness-score-rail",
     ),
   );
 }

@@ -149,6 +149,7 @@ body.play-presentation-force-landscape {
 }
 
 .pp-body {
+  position: relative;
   flex: 1;
   min-height: 0;
   overflow: hidden;
@@ -272,13 +273,16 @@ body.play-presentation-force-landscape {
   display: grid;
   grid-template-columns: auto auto;
   align-items: center;
-  gap: 8px;
-  min-width: min(420px, 46vw);
-  padding: 5px;
-  border: 1px solid var(--color-border-light);
+  gap: 10px;
+  min-width: min(500px, 52vw);
+  padding: 6px;
+  border: 1px solid var(--color-primary);
   border-radius: var(--radius-pill);
-  background: var(--color-bg-light);
-  box-shadow: inset 0 0 0 1px rgb(255 255 255 / 60%);
+  background:
+    linear-gradient(135deg, var(--color-bg-blue-tint), var(--color-surface));
+  box-shadow:
+    inset 0 0 0 1px rgb(255 255 255 / 70%),
+    var(--shadow-xs);
 }
 
 .pp-minimum-score-label {
@@ -316,15 +320,96 @@ body.play-presentation-force-landscape {
 
 .pp-minimum-score-grid {
   display: grid;
-  grid-template-columns: repeat(5, minmax(38px, 1fr));
-  gap: 5px;
+  grid-template-columns: repeat(5, minmax(44px, 1fr));
+  gap: 6px;
 }
 
 .pp-minimum-score-grid .play-readiness-score-btn {
-  min-width: 38px;
-  min-height: 34px;
-  padding: 5px 8px;
+  min-width: 44px;
+  min-height: 40px;
+  padding: 7px 10px;
   border-radius: var(--radius-pill);
+  touch-action: manipulation;
+}
+
+.pp-readiness-score-rail {
+  position: absolute;
+  right: clamp(12px, 2vw, 24px);
+  bottom: clamp(12px, 2vw, 24px);
+  z-index: 3;
+  display: grid;
+  grid-template-columns: auto minmax(230px, auto) auto;
+  align-items: center;
+  gap: 10px;
+  max-width: min(720px, calc(100% - 32px));
+  padding: 8px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  background:
+    linear-gradient(135deg, var(--color-bg-blue-tint), var(--color-surface));
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+}
+
+.pp-readiness-rail-copy {
+  display: grid;
+  grid-template-columns: auto auto;
+  align-items: baseline;
+  gap: 2px 8px;
+  min-width: 136px;
+  padding-left: 10px;
+  color: var(--color-text-secondary);
+  line-height: 1;
+}
+
+.pp-readiness-rail-copy span {
+  grid-column: 1 / -1;
+  font-size: var(--font-size-2xs);
+  font-weight: 950;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pp-readiness-rail-copy strong {
+  color: var(--color-primary);
+  font-size: 1.4rem;
+  font-weight: 950;
+}
+
+.pp-readiness-rail-copy small {
+  overflow: hidden;
+  font-size: var(--font-size-2xs);
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pp-readiness-rail-buttons {
+  display: grid;
+  grid-template-columns: repeat(5, minmax(46px, 1fr));
+  gap: 6px;
+}
+
+.pp-readiness-rail-buttons .play-readiness-score-btn {
+  min-width: 46px;
+  min-height: 42px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+  touch-action: manipulation;
+}
+
+.pp-readiness-rail-report {
+  min-height: 42px;
+  padding: 8px 12px;
+  border: 1px solid var(--color-primary);
+  border-radius: var(--radius-pill);
+  color: var(--color-primary);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  cursor: pointer;
   touch-action: manipulation;
 }
 
@@ -1281,14 +1366,14 @@ body.play-presentation-force-landscape .pp-minimum-one-word {
 }
 
 body.play-presentation-force-landscape .pp-minimum-bottom {
-  grid-template-columns: minmax(0, 1fr) minmax(300px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(360px, auto);
   min-height: 34px;
   padding: 3px var(--space-xs);
 }
 
 body.play-presentation-force-landscape .pp-minimum-readiness-dock {
-  min-width: 300px;
-  padding: 3px;
+  min-width: 360px;
+  padding: 4px;
 }
 
 body.play-presentation-force-landscape .pp-minimum-score-label {
@@ -1301,14 +1386,38 @@ body.play-presentation-force-landscape .pp-minimum-score-label strong {
 }
 
 body.play-presentation-force-landscape .pp-minimum-score-grid {
-  grid-template-columns: repeat(5, minmax(32px, 1fr));
+  grid-template-columns: repeat(5, minmax(38px, 1fr));
   gap: 4px;
 }
 
 body.play-presentation-force-landscape .pp-minimum-score-grid .play-readiness-score-btn {
-  min-width: 32px;
-  min-height: 30px;
-  padding: 3px 7px;
+  min-width: 38px;
+  min-height: 34px;
+  padding: 4px 8px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-score-rail {
+  right: 8px;
+  bottom: 8px;
+  grid-template-columns: auto minmax(210px, auto) auto;
+  max-width: calc(100% - 16px);
+  padding: 5px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-rail-copy {
+  min-width: 104px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-rail-buttons {
+  grid-template-columns: repeat(5, minmax(38px, 1fr));
+  gap: 4px;
+}
+
+body.play-presentation-force-landscape .pp-readiness-rail-buttons .play-readiness-score-btn,
+body.play-presentation-force-landscape .pp-readiness-rail-report {
+  min-width: 38px;
+  min-height: 34px;
+  padding: 4px 8px;
 }
 
 body.play-presentation-force-landscape .pp-diagram-frame {
@@ -1447,7 +1556,7 @@ body.play-presentation-force-landscape.is-phone-screen .pp-minimum-one-word {
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-bottom {
-  grid-template-columns: minmax(0, 1fr) minmax(220px, auto);
+  grid-template-columns: minmax(0, 1fr) minmax(284px, auto);
   gap: 4px;
   padding: 2px 4px;
 }
@@ -1462,8 +1571,8 @@ body.play-presentation-force-landscape.is-phone-screen .pp-minimum-chips .pp-chi
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-readiness-dock {
-  grid-template-columns: auto minmax(158px, 1fr);
-  min-width: 220px;
+  grid-template-columns: auto minmax(200px, 1fr);
+  min-width: 284px;
   padding: 2px;
 }
 
@@ -1483,15 +1592,46 @@ body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-label s
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-grid {
-  grid-template-columns: repeat(5, minmax(26px, 1fr));
+  grid-template-columns: repeat(5, minmax(34px, 1fr));
   gap: 3px;
 }
 
 body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-grid .play-readiness-score-btn {
-  min-width: 26px;
-  min-height: 28px;
-  padding: 2px 6px;
-  font-size: 0.7rem;
+  min-width: 34px;
+  min-height: 32px;
+  padding: 3px 7px;
+  font-size: 0.76rem;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-score-rail {
+  grid-template-columns: auto minmax(180px, 1fr);
+  gap: 5px;
+  border-radius: var(--radius-lg);
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-report {
+  display: none;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-copy {
+  min-width: 54px;
+  padding-left: 5px;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-copy span,
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-copy small {
+  display: none;
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-buttons {
+  grid-template-columns: repeat(5, minmax(34px, 1fr));
+}
+
+body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-buttons .play-readiness-score-btn {
+  min-width: 34px;
+  min-height: 32px;
+  padding: 3px 7px;
+  font-size: 0.76rem;
 }
 
 body.play-presentation-force-landscape.is-compact-screen .pp-minimum-bottom {

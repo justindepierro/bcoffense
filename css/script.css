@@ -3999,7 +3999,7 @@ body[data-auth-role="player"] .script-builder {
   display: flex;
   align-items: center;
   justify-content: center;
-  flex: 1 1 52%;
+  flex: 1 1 68%;
   min-height: 0;
   margin: 3px 0;
   overflow: hidden;
@@ -4010,6 +4010,20 @@ body[data-auth-role="player"] .script-builder {
   width: 100%;
   height: 100%;
   object-fit: contain;
+  object-position: center center;
+  image-rendering: auto;
+}
+
+.script-packet-diagrams-large .script-packet-diagram-image {
+  flex-basis: 76%;
+}
+
+.script-packet-diagrams-full .script-packet-diagram-image {
+  flex-basis: 84%;
+}
+
+.script-packet-diagrams-full .script-packet-diagram-card {
+  padding: 8px;
 }
 .script-packet-diagram-missing {
   color: var(--color-text-placeholder);
@@ -4843,11 +4857,48 @@ body[data-auth-role="player"] .period-buttons {
   }
 
   .script-timeline-track {
-    grid-template-columns: 1fr;
+    display: grid;
+    grid-auto-flow: column;
+    grid-auto-columns: minmax(232px, 84vw);
+    grid-template-columns: none;
+    gap: 8px;
+    overflow-x: auto;
+    overscroll-behavior-inline: contain;
+    scroll-snap-type: x proximity;
+    -webkit-overflow-scrolling: touch;
   }
 
   .script-timeline-card {
-    min-height: 116px;
+    min-height: 0;
+    padding: 9px;
+    scroll-snap-align: start;
+  }
+
+  .script-timeline-actions {
+    grid-template-columns: repeat(4, minmax(38px, 1fr));
+  }
+
+  .script-timeline-action {
+    min-height: 36px;
+    padding: 5px;
+  }
+
+  .script-timeline-situations,
+  .script-timeline-chips {
+    max-height: 40px;
+    overflow: hidden;
+  }
+
+  .script-timeline-chip {
+    padding: 3px 6px;
+    font-size: 0.68rem;
+  }
+
+  .script-timeline-note {
+    display: -webkit-box;
+    overflow: hidden;
+    -webkit-box-orient: vertical;
+    -webkit-line-clamp: 2;
   }
 
   .script-item--detail,

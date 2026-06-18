@@ -995,6 +995,7 @@ function _getSelectedScriptPacketRecords() {
 let _scriptPacketPrintOptions = {
   paperSize: "letter",
   orientation: "portrait",
+  diagramDensity: "large",
   includeScriptTables: true,
   includeDiagrams: true,
   includeMissingImages: false,
@@ -1051,13 +1052,21 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
             <div class="script-packet-print-row">
               <label for="scriptPacketOrientation">Orientation</label>
               <select id="scriptPacketOrientation">
-                <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait — 2 × 4 diagrams</option>
-                <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape — 4 × 2 diagrams</option>
+                <option value="portrait" ${o.orientation === "portrait" ? "selected" : ""}>Portrait</option>
+                <option value="landscape" ${o.orientation === "landscape" ? "selected" : ""}>Landscape</option>
+              </select>
+            </div>
+            <div class="script-packet-print-row">
+              <label for="scriptPacketDiagramDensity">Diagram size</label>
+              <select id="scriptPacketDiagramDensity">
+                <option value="large" ${o.diagramDensity === "large" ? "selected" : ""}>Large — 4 diagrams per page</option>
+                <option value="compact" ${o.diagramDensity === "compact" ? "selected" : ""}>Compact — 8 diagrams per page</option>
+                <option value="full" ${o.diagramDensity === "full" ? "selected" : ""}>Full page — 1 diagram per page</option>
               </select>
             </div>
             <div class="script-packet-print-row script-packet-print-toggles">
               <label><input type="checkbox" id="scriptPacketIncludeTables" ${o.includeScriptTables ? "checked" : ""}> Include detailed script tables</label>
-              <label><input type="checkbox" id="scriptPacketIncludeDiagrams" ${o.includeDiagrams ? "checked" : ""}> Include 8-up play diagram pages</label>
+              <label><input type="checkbox" id="scriptPacketIncludeDiagrams" ${o.includeDiagrams ? "checked" : ""}> Include play diagram pages</label>
               <label><input type="checkbox" id="scriptPacketMissingImages" ${o.includeMissingImages ? "checked" : ""}> Include placeholder cards for plays without images</label>
               <label><input type="checkbox" id="scriptPacketShowMeta" ${o.showMeta ? "checked" : ""}> Show formation, personnel, type, hash, and tempo</label>
               <label><input type="checkbox" id="scriptPacketShowDefense" ${o.showDefense ? "checked" : ""}> Show front, coverage, stunt, blitz, and reps</label>
@@ -1067,7 +1076,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
               <label><input type="checkbox" id="scriptPacketFooter" ${o.showFooter ? "checked" : ""}> Show team, script, and page footer</label>
             </div>
           </div>
-          <p class="script-packet-print-hint">Diagram pages always contain up to eight plays. Only images attached in the Playbook can be printed.</p>
+          <p class="script-packet-print-hint">Use Large or Full Page diagrams when Chalk exports or clipped screenshots need more space. Only images attached in the Playbook can be printed.</p>
         </div>
         <div class="custom-modal-actions">
           <button class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
@@ -1089,6 +1098,7 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
       _scriptPacketPrintOptions = {
         paperSize: overlay.querySelector("#scriptPacketPaper").value || "letter",
         orientation: overlay.querySelector("#scriptPacketOrientation").value || "portrait",
+        diagramDensity: overlay.querySelector("#scriptPacketDiagramDensity").value || "large",
         includeScriptTables: overlay.querySelector("#scriptPacketIncludeTables").checked,
         includeDiagrams: overlay.querySelector("#scriptPacketIncludeDiagrams").checked,
         includeMissingImages: overlay.querySelector("#scriptPacketMissingImages").checked,
@@ -1294,9 +1304,10 @@ function _scriptPacketDiagramPages(scriptData, packetTitle, options) {
     : allEntries.filter((entry) => entry.imageUrl);
   if (!entries.length) return "";
 
+  const layout = _scriptPacketDiagramLayout(options);
   const chunks = [];
-  for (let index = 0; index < entries.length; index += 8) {
-    chunks.push(entries.slice(index, index + 8));
+  for (let index = 0; index < entries.length; index += layout.perPage) {
+    chunks.push(entries.slice(index, index + layout.perPage));
   }
   return chunks
     .map((chunk, pageIndex) => {
@@ -1310,6 +1321,17 @@ function _scriptPacketDiagramPages(scriptData, packetTitle, options) {
       </section>`;
     })
     .join("");
+}
+
+function _scriptPacketDiagramLayout(options) {
+  const density = options.diagramDensity || "large";
+  if (density === "full") return { perPage: 1, cols: 1, rows: 1 };
+  if (density === "compact") {
+    return options.orientation === "landscape"
+      ? { perPage: 8, cols: 4, rows: 2 }
+      : { perPage: 8, cols: 2, rows: 4 };
+  }
+  return { perPage: 4, cols: 2, rows: 2 };
 }
 
 function _scriptPacketTableSection(scriptData, packetTitle, displayOpts, index, options) {
@@ -1381,11 +1403,13 @@ async function _renderScriptPacketAndPrint(selectedScripts) {
       "script-packet-print-root",
       `script-packet-${options.paperSize}`,
       `script-packet-${options.orientation}`,
+      `script-packet-diagrams-${options.diagramDensity || "large"}`,
     ].join(" ");
     host.style.setProperty("--script-packet-page-width", `${dimensions.width - 0.6}in`);
     host.style.setProperty("--script-packet-page-height", `${dimensions.height - 0.6}in`);
-    host.style.setProperty("--script-packet-diagram-cols", options.orientation === "landscape" ? "4" : "2");
-    host.style.setProperty("--script-packet-diagram-rows", options.orientation === "landscape" ? "2" : "4");
+    const diagramLayout = _scriptPacketDiagramLayout(options);
+    host.style.setProperty("--script-packet-diagram-cols", diagramLayout.cols);
+    host.style.setProperty("--script-packet-diagram-rows", diagramLayout.rows);
 
     const tableHtml = options.includeScriptTables
       ? selectedScripts
