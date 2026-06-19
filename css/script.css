@@ -3262,17 +3262,42 @@
 
 .script-toolbar-right {
   min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: flex-start;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: start;
+  justify-content: stretch;
   gap: 6px;
-  flex-wrap: wrap;
   background: var(--color-bg-light);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   padding: 16px 8px 6px;
   min-height: 44px;
   position: relative;
+}
+
+.script-toolbar-cluster {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+.script-toolbar-cluster--ops {
+  margin-bottom: 2px;
+}
+
+.script-toolbar-cluster--appearance {
+  margin-bottom: 2px;
+}
+
+.script-toolbar-cluster--search {
+  width: 100%;
+}
+
+.script-toolbar-cluster--search .script-search-input {
+  flex: 1 1 220px;
+  min-width: 160px;
 }
 
 .script-toolbar-left::before,
@@ -3361,6 +3386,10 @@
   align-self: center;
 }
 
+.script-toolbar-cluster--search .script-search-count {
+  margin-left: 0;
+}
+
 .script-sort-status:empty {
   display: none;
 }
@@ -3441,10 +3470,8 @@
 
 /* Script Actions - single tight row, sticky to bottom of viewport */
 .script-actions {
-  display: flex;
-  flex-wrap: nowrap;
-  align-items: center;
-  gap: 6px;
+  display: grid;
+  gap: 8px;
   margin-top: 0;
   padding: 6px 8px;
   background: color-mix(in srgb, var(--color-surface) 94%, transparent);
@@ -3454,39 +3481,71 @@
   position: sticky;
   bottom: 8px;
   z-index: 6;
-  padding-top: 18px;
-  overflow-x: auto;
+  padding-top: 8px;
+  overflow: visible;
   scrollbar-width: thin;
   backdrop-filter: blur(6px);
 }
 
-.script-actions > .btn,
-.script-actions > .more-tools-wrap {
-  min-height: 32px;
-  width: auto;
-  flex: 0 0 auto;
+.script-actions-primary,
+.script-actions-secondary,
+.script-actions-advanced {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+  min-width: 0;
+  padding: 14px 8px 6px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  position: relative;
 }
 
-.script-actions > .btn {
-  padding: 6px 10px;
-  font-size: var(--font-size-xs);
-}
-
-.script-actions::before {
-  content: "Output & Tools";
+.script-actions-primary::before,
+.script-actions-secondary::before,
+.script-actions-advanced::before {
   position: absolute;
   top: 4px;
   left: 8px;
-  font-size: 9px;
+  font-size: var(--font-size-3xs);
   font-weight: 700;
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--color-text-secondary);
 }
 
+.script-actions-primary::before {
+  content: "Primary";
+}
+
+.script-actions-secondary::before {
+  content: "Output & Share";
+}
+
+.script-actions-advanced::before {
+  content: "Advanced";
+}
+
+.script-actions::before {
+  content: none;
+}
+
 .script-actions .script-actions-spacer {
   flex: 1 1 0;
   min-width: 4px;
+}
+
+.script-actions .btn,
+.script-actions .more-tools-wrap {
+  min-height: 32px;
+  width: auto;
+  flex: 0 0 auto;
+}
+
+.script-actions .btn {
+  padding: 6px 10px;
+  font-size: var(--font-size-xs);
 }
 
 /* Desktop Script workspace: keep page chrome stable and give each pane one scroll owner. */
@@ -5147,8 +5206,9 @@ body[data-auth-role="player"] .period-buttons {
     bottom: max(8px, env(safe-area-inset-bottom));
   }
 
-  .script-actions > .btn,
-  .script-actions > .more-tools-wrap {
+  .script-actions-primary .btn,
+  .script-actions-secondary .btn,
+  .script-actions-advanced .more-tools-wrap {
     flex: 1 1 180px;
   }
 
@@ -5403,8 +5463,9 @@ body[data-auth-role="player"] .period-buttons {
   .display-options-btns .btn,
   .wristband-actions-row .btn,
   .period-buttons .btn,
-  .script-actions > .btn,
-  .script-actions > .more-tools-wrap,
+  .script-actions-primary .btn,
+  .script-actions-secondary .btn,
+  .script-actions-advanced .more-tools-wrap,
   .wristband-loader-row select,
   .toolbar-sort-select,
   .script-search-input {
