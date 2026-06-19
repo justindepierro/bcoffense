@@ -3533,6 +3533,18 @@
   }
 
   body:not(.is-mobile-screen) #script .play-list {
+    position: relative;
+    top: auto;
+    height: 100%;
+    max-height: none;
+  }
+
+  body:not(.is-mobile-screen) #script .script-stats-bar {
+    position: relative;
+    top: auto;
+  }
+
+  body:not(.is-mobile-screen) #script .play-list {
     display: grid;
     grid-template-rows: auto auto minmax(0, 1fr);
     gap: 20px;
@@ -3560,10 +3572,12 @@
     overflow-x: hidden;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
+    padding-bottom: 12px;
   }
 
   body:not(.is-mobile-screen) #script .script-actions,
   body:not(.is-mobile-screen) #script .script-toolbar,
+  body:not(.is-mobile-screen) #script .script-stats-bar,
   body:not(.is-mobile-screen) #script .script-header-panel {
     position: relative;
   }

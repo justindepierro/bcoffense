@@ -121,10 +121,15 @@ function getAppActionTracePayload(el, extra = {}) {
 }
 
 function shouldTraceAppAction(action) {
-  return Boolean(
-    ACTION_TRACE_ACTIONS.has(action) ||
-      isAppActionFullTraceEnabled(),
-  );
+  if (isAppActionFullTraceEnabled()) return true;
+  try {
+    const targeted = Array.isArray(window.BC_ACTION_TRACE_ACTIONS)
+      ? window.BC_ACTION_TRACE_ACTIONS
+      : [];
+    return targeted.includes(action);
+  } catch (_err) {
+    return false;
+  }
 }
 
 function traceAppAction(phase, elOrPayload, extra = {}, level = "info") {

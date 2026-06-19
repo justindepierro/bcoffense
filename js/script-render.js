@@ -1134,6 +1134,7 @@ function filterScriptItems() {
   const items = document.querySelectorAll(
     "#scriptPlays .script-item:not(.period-header)",
   );
+  let visible = 0;
 
   items.forEach((item) => {
     let haystack = item._cachedSearchHaystack;
@@ -1141,18 +1142,23 @@ function filterScriptItems() {
       haystack = (item.textContent || "").toLowerCase();
       item._cachedSearchHaystack = haystack;
     }
-    if (searchTerm === "" || haystack.includes(searchTerm)) {
+    const showItem = searchTerm === "" || haystack.includes(searchTerm);
+    if (showItem) {
       item.classList.remove("hidden");
       item.classList.remove("search-hidden");
+      visible += 1;
     } else {
       item.classList.add("hidden");
       item.classList.add("search-hidden");
     }
+
+    const previewRow = item.nextElementSibling;
+    if (previewRow && previewRow.classList.contains("print-preview-row")) {
+      previewRow.classList.toggle("hidden", !showItem);
+      previewRow.classList.toggle("search-hidden", !showItem);
+    }
   });
 
-  const visible = document.querySelectorAll(
-    "#scriptPlays .script-item:not(.period-header):not(.search-hidden)",
-  ).length;
   const total = items.length;
   const countEl = document.getElementById("scriptSearchCount");
   if (!countEl) return;
@@ -1534,16 +1540,7 @@ function renderScript() {
       stageStart = performance.now();
     }
 
-    if (typeof _showScriptPlayContextMenu === "function" && !isPlayerScriptRole()) {
-      container
-        .querySelectorAll(".script-item:not(.period-header)")
-        .forEach((el) => {
-          const idx = parseInt(el.dataset.idx, 10);
-          if (!isNaN(idx) && script[idx] && !script[idx].isSeparator) {
-            addLongPress(el, (ev) => _showScriptPlayContextMenu(ev, idx));
-          }
-        });
-    }
+    wireScriptLongPressMenus(container);
     if (profile) {
       profile.longPressMs = performance.now() - stageStart;
       stageStart = performance.now();
@@ -1567,6 +1564,26 @@ function renderScript() {
     console.error("renderScript error:", err);
     showToast("❌ Error rendering script.", { duration: 3000, type: "error" });
   }
+}
+
+function wireScriptLongPressMenus(container) {
+  if (
+    !container ||
+    typeof _showScriptPlayContextMenu !== "function" ||
+    isPlayerScriptRole()
+  ) {
+    return;
+  }
+
+  container.querySelectorAll(".script-item:not(.period-header)").forEach((el) => {
+    if (el.dataset.longPressBound === "true") return;
+
+    const idx = parseInt(el.dataset.idx, 10);
+    if (isNaN(idx) || !script[idx] || script[idx].isSeparator) return;
+
+    addLongPress(el, (ev) => _showScriptPlayContextMenu(ev, idx));
+    el.dataset.longPressBound = "true";
+  });
 }
 
 const _scheduleRenderScript = createRAFRenderer(renderScript);
