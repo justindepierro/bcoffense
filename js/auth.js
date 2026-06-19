@@ -222,6 +222,32 @@
     };
   }
 
+  function isLocalDevHost() {
+    const host = String(window.location.hostname || "").toLowerCase();
+    return (
+      host === "localhost" ||
+      host === "127.0.0.1" ||
+      host === "0.0.0.0" ||
+      host === "::1"
+    );
+  }
+
+  function tryLocalDevLogin(username, password) {
+    if (!isLocalDevHost()) return null;
+    const role = String(username || "").trim().toLowerCase();
+    if (!AUTH_ROLE_TABS[role]) return null;
+    if (!String(password || "").trim()) {
+      throw new Error("Enter a password.");
+    }
+    return normalizeAuthUser({
+      username: role,
+      role,
+      label: role.charAt(0).toUpperCase() + role.slice(1),
+      loginAt: new Date().toISOString(),
+      expiresAt: "",
+    });
+  }
+
   async function fetchAuthSession() {
     try {
       const response = await fetch("/auth/me", {
@@ -563,6 +589,8 @@
       setAuthLoginMessage("Checking login...", true);
       if (submitEl) submitEl.disabled = true;
       try {
+        const username = usernameEl.value.trim().toLowerCase();
+        const password = passwordEl.value;
         const response = await fetch("/auth/login", {
           method: "POST",
           credentials: "same-origin",
@@ -572,15 +600,29 @@
             "X-BC-Auth-Mode": "json",
           },
           body: JSON.stringify({
-            username: usernameEl.value.trim().toLowerCase(),
-            password: passwordEl.value,
+            username,
+            password,
           }),
         });
         const data = await response.json().catch(() => ({}));
-        if (!response.ok || !data.user) {
-          throw new Error(data.error || "Invalid username or password.");
+        let resolvedUser = null;
+
+        if (response.ok && data.user) {
+          resolvedUser = normalizeAuthUser(data.user);
+        } else {
+          resolvedUser = tryLocalDevLogin(username, password);
+          if (!resolvedUser) {
+            const endpointHint =
+              response.status === 404 && isLocalDevHost()
+                ? " Start local auth with `npx wrangler pages dev . --kv=SYNC_KV` or use username admin, coach, or player in localhost fallback mode."
+                : "";
+            throw new Error(
+              (data.error || "Invalid username or password.") + endpointHint,
+            );
+          }
         }
-        currentAuthUser = normalizeAuthUser(data.user);
+
+        currentAuthUser = resolvedUser;
         authReady = true;
         overlay.remove();
         applyRoleUi();

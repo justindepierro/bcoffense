@@ -100,6 +100,8 @@
   align-items: center;
   justify-content: center;
   padding: var(--space-lg);
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
   background:
     radial-gradient(circle at top left, rgb(255 255 255 / 12%), transparent 28rem),
     linear-gradient(135deg, rgb(5 14 38 / 96%), rgb(17 39 85 / 94%));
