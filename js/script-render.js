@@ -1,5 +1,6 @@
 let scriptRenderProfilingEnabled = false;
 let scriptRenderProfileHistory = [];
+let scriptDerivedUiSignature = "";
 
 const SCRIPT_RENDER_PROFILE_HISTORY_LIMIT = 12;
 const SCRIPT_PERIOD_ACTION_SHORTCUTS = {
@@ -61,6 +62,40 @@ function buildScriptRenderSummary(scriptItems) {
   });
 
   return summary;
+}
+
+function buildScriptDerivedUiSignature(scriptItems) {
+  if (!Array.isArray(scriptItems) || scriptItems.length === 0) return "empty";
+
+  return scriptItems
+    .map((item) => {
+      if (!item) return "x";
+      if (item.isSeparator) {
+        return [
+          "s",
+          item.id || "",
+          item.label || "",
+          item.minutes || 0,
+          item.color || "",
+          item.notes || "",
+          item.hideProtection ? "1" : "0",
+        ].join("~");
+      }
+
+      return [
+        "p",
+        item.id || "",
+        item.reps || 1,
+        item.type || "",
+        item.tempo || "",
+        item.personnel || "",
+        item.preferredSituation || "",
+        item.preferredDown || "",
+        item.preferredDistance || "",
+        item.preferredFieldPosition || "",
+      ].join("~");
+    })
+    .join("|");
 }
 
 function getPeriodStats(separatorIndex, periodStatsMap) {
@@ -290,13 +325,13 @@ function renderScriptTimelineActions(period) {
   return `
     <span class="script-timeline-actions" aria-label="${escapeHtml(label)} timeline actions">
       ${actions
-    .map(
-      ([action, actionLabel, title, activeClass = ""]) => `
+      .map(
+        ([action, actionLabel, title, activeClass = ""]) => `
         <button type="button" class="script-timeline-action${activeClass}" data-action="${action}" data-arg="${period.index}" title="${escapeHtml(title)}" aria-label="${escapeHtml(title)}">
           ${escapeHtml(actionLabel)}
         </button>`,
-    )
-    .join("")}
+      )
+      .join("")}
     </span>`;
 }
 
@@ -330,22 +365,22 @@ function renderScriptTimeline(renderContext) {
     </div>
     <div class="script-timeline-track">
       ${periods
-    .map((period) => {
-      const loadTotal = hasTimedPlan ? totalTime : totalReps;
-      const loadBasis = hasTimedPlan ? period.minutes : period.reps;
-      const loadPct = loadTotal > 0 && loadBasis > 0
-        ? Math.min(100, Math.max(5, Math.round((loadBasis / loadTotal) * 100)))
-        : 0;
-      const ariaLabel =
-        `${period.label}, ${period.playCount} plays, ${period.reps} reps, ` +
-        `${period.minutes || 0} minutes, ${period.runPct}% run and ${period.passPct}% pass by reps. ` +
-        `Top situations: ${period.situationLoad.map((bucket) => bucket.label).join(", ")}. Jump to period or drag to reorder.`;
-      const noteHtml = period.notes
-        ? `<span class="script-timeline-note">${escapeHtml(period.notes)}</span>`
-        : "";
-      const periodId = escapeHtml(String(period.id));
+      .map((period) => {
+        const loadTotal = hasTimedPlan ? totalTime : totalReps;
+        const loadBasis = hasTimedPlan ? period.minutes : period.reps;
+        const loadPct = loadTotal > 0 && loadBasis > 0
+          ? Math.min(100, Math.max(5, Math.round((loadBasis / loadTotal) * 100)))
+          : 0;
+        const ariaLabel =
+          `${period.label}, ${period.playCount} plays, ${period.reps} reps, ` +
+          `${period.minutes || 0} minutes, ${period.runPct}% run and ${period.passPct}% pass by reps. ` +
+          `Top situations: ${period.situationLoad.map((bucket) => bucket.label).join(", ")}. Jump to period or drag to reorder.`;
+        const noteHtml = period.notes
+          ? `<span class="script-timeline-note">${escapeHtml(period.notes)}</span>`
+          : "";
+        const periodId = escapeHtml(String(period.id));
 
-      return `
+        return `
         <article class="script-timeline-card" draggable="true" data-drag="periodStart" data-idx="${period.index}" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="--period-color: ${period.color}; --period-load: ${loadPct}%;" aria-label="${escapeHtml(ariaLabel)}">
           <span class="script-timeline-color" aria-hidden="true"></span>
           <span class="script-timeline-card-main">
@@ -363,25 +398,26 @@ function renderScriptTimeline(renderContext) {
           <span class="script-timeline-load" aria-hidden="true"><span></span></span>
           <span class="script-timeline-situations">
             ${period.playCount
-          ? renderScriptTimelineLoadChips("Situation", period.situationLoad, "Situation not set")
-          : '<span class="script-timeline-chip script-timeline-chip--muted">Situation not set</span>'}
+            ? renderScriptTimelineLoadChips("Situation", period.situationLoad, "Situation not set")
+            : '<span class="script-timeline-chip script-timeline-chip--muted">Situation not set</span>'}
           </span>
           <span class="script-timeline-chips">
             ${period.playCount
-          ? renderScriptTimelineLoadChips("Tempo", period.tempoLoad, "Tempo not set") +
-          renderScriptTimelineLoadChips("Personnel", period.personnelLoad, "Personnel not set")
-          : '<span class="script-timeline-chip script-timeline-chip--muted">No plays yet</span>'}
+            ? renderScriptTimelineLoadChips("Tempo", period.tempoLoad, "Tempo not set") +
+            renderScriptTimelineLoadChips("Personnel", period.personnelLoad, "Personnel not set")
+            : '<span class="script-timeline-chip script-timeline-chip--muted">No plays yet</span>'}
           </span>
           ${noteHtml}
         </article>`;
-    })
-    .join("")}
+      })
+      .join("")}
     </div>
   `;
 }
 
 function refreshScriptTimeline() {
   if (!document.getElementById("scriptTimeline")) return;
+  scriptDerivedUiSignature = buildScriptDerivedUiSignature(script);
   renderScriptTimeline({
     periodStatsBySeparatorIndex: buildPeriodStatsMap(script),
     renderSummary: buildScriptRenderSummary(script),
@@ -657,11 +693,10 @@ function renderPlayerScriptPeriodHeader(separator, index, renderContext) {
           <div class="period-header-player__title">${escapeHtml(periodLabel)}</div>
           <div class="period-header-player__meta">${escapeHtml(metaText)}</div>
         </div>
-        ${
-          periodNotes
-            ? `<div class="period-header-player__notes">${escapeHtml(periodNotes)}</div>`
-            : ""
-        }
+        ${periodNotes
+      ? `<div class="period-header-player__notes">${escapeHtml(periodNotes)}</div>`
+      : ""
+    }
       </div>
     </div>
   `;
@@ -859,21 +894,19 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
           </button>
         </div>
         <div class="script-player-card-call">${fullCall}</div>
-        ${
-          metaItems.length
-            ? `<div class="script-player-card-meta">${metaItems
-              .map((item) => `<span class="script-player-card-chip">${escapeHtml(item)}</span>`)
-              .join("")}</div>`
-            : ""
-        }
-        ${
-          focusText
-            ? `<div class="script-player-card-note">
+        ${metaItems.length
+        ? `<div class="script-player-card-meta">${metaItems
+          .map((item) => `<span class="script-player-card-chip">${escapeHtml(item)}</span>`)
+          .join("")}</div>`
+        : ""
+      }
+        ${focusText
+        ? `<div class="script-player-card-note">
                 <strong>Focus</strong>
                 <span>${escapeHtml(focusText)}</span>
               </div>`
-            : ""
-        }
+        : ""
+      }
       </article>
       ${showPrintPreview ? renderScriptPrintPreviewRow(play, playNumber, fullCall, playerSummary, reps) : ""}
     `;
@@ -1507,30 +1540,52 @@ function renderScript() {
       stageStart = performance.now();
     }
 
-    renderScriptTimeline(renderContext);
+    const nextDerivedUiSignature = buildScriptDerivedUiSignature(script);
+    const shouldRefreshDerivedUi =
+      nextDerivedUiSignature !== scriptDerivedUiSignature;
+
+    if (shouldRefreshDerivedUi) {
+      renderScriptTimeline(renderContext);
+      if (profile) {
+        profile.timelineMs = performance.now() - stageStart;
+        stageStart = performance.now();
+      }
+
+      updateScriptStats(renderContext.renderSummary);
+      if (typeof renderPlayerLoadedScriptBar === "function") {
+        renderPlayerLoadedScriptBar();
+      }
+      if (profile) {
+        profile.statsMs = performance.now() - stageStart;
+        stageStart = performance.now();
+      }
+
+      updateJumpToPeriodOptions(renderContext.renderSummary);
+      if (profile) {
+        profile.jumpMenuMs = performance.now() - stageStart;
+        stageStart = performance.now();
+      }
+
+      scriptDerivedUiSignature = nextDerivedUiSignature;
+    } else if (profile) {
+      profile.timelineMs = 0;
+      profile.statsMs = 0;
+      profile.jumpMenuMs = 0;
+    }
+
+    if (!shouldRefreshDerivedUi && typeof renderPlayerLoadedScriptBar === "function") {
+      renderPlayerLoadedScriptBar();
+    }
+
     if (profile) {
-      profile.timelineMs = performance.now() - stageStart;
+      // If derived UI was skipped, stageStart still points to the prior stage.
+      // Reset it so profiling around later stages remains accurate.
       stageStart = performance.now();
     }
 
     updateBulkSelectUI();
     if (profile) {
       profile.bulkUiMs = performance.now() - stageStart;
-      stageStart = performance.now();
-    }
-
-    updateScriptStats(renderContext.renderSummary);
-    if (typeof renderPlayerLoadedScriptBar === "function") {
-      renderPlayerLoadedScriptBar();
-    }
-    if (profile) {
-      profile.statsMs = performance.now() - stageStart;
-      stageStart = performance.now();
-    }
-
-    updateJumpToPeriodOptions(renderContext.renderSummary);
-    if (profile) {
-      profile.jumpMenuMs = performance.now() - stageStart;
       stageStart = performance.now();
     }
 
