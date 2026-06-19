@@ -472,6 +472,10 @@ function closePlayPresentation() {
   playPresentationState.returnFocus = null;
 }
 
+function closePlayPresentationOverlay() {
+  closePlayPresentation();
+}
+
 function setPlayPresentationMode(mode) {
   if (!PLAY_PRESENTATION_MODES.has(mode)) return;
   if (!getAllowedPlayPresentationModes().includes(mode)) return;

@@ -849,8 +849,10 @@ function checkScriptPlayerPublishingContracts() {
     !/function traceAppAction\(phase/.test(appEvents) ||
     !/missing action handler/.test(appEvents) ||
     !/action returned no-op/.test(appEvents) ||
-    !/mobile synthetic tap/.test(appEvents) ||
-    !/player script card pointerdown/.test(appEvents) ||
+    !/function getAppElementsFromPointDiagnostics\(x, y\)/.test(appEvents) ||
+    !/function traceAppInputEvent\(phase, event\)/.test(appEvents) ||
+    !/window\.bcDebugHitTest/.test(appEvents) ||
+    !/window\.bcDebugScrollAncestry/.test(appEvents) ||
     !/auth blocked interaction/.test(auth) ||
     !/lookup miss/.test(scriptStorage) ||
     !/load start/.test(scriptStorage) ||
@@ -1084,23 +1086,22 @@ function checkPlayerPortalContracts() {
     !/openPlayerCurrentScriptPresentation/.test(dashboard) ||
     !/Open Playbook/.test(dashboard) ||
     !/player-home-quick-actions/.test(dashboard) ||
-      !/player-home-today-card/.test(dashboard) ||
-      !/class="btn btn-primary player-home-action"/.test(dashboard) ||
-      !/const MOBILE_TAP_ACTION_SELECTOR = \[/.test(appEvents) ||
-      !/\[data-action\]:not\(button\):not\(a\):not\(input\):not\(select\):not\(textarea\):not\(label\):not\(summary\)/.test(appEvents) ||
-      !/\[role='button'\]:not\(button\):not\(a\):not\(input\):not\(select\):not\(textarea\):not\(label\):not\(summary\)/.test(appEvents) ||
-      !/function getAppActionHitDiagnostics\(element\)/.test(appEvents) ||
-      !/function isAppActionFullTraceEnabled\(\)/.test(appEvents) ||
-      !/document\.elementFromPoint\(centerX, centerY\)/.test(appEvents) ||
-      !/function getMobileTapActionTarget\(target\)/.test(appEvents) ||
-      !/function isNativeMobileClickElement\(el\)/.test(appEvents) ||
-      !/isNativeMobileClickElement\(actionEl\)/.test(appEvents) ||
-      !/if \(isNativeMobileClickElement\(actionEl\)\) return null;/.test(appEvents) ||
-      /function shouldBridgeNativeMobileAction\(el\)/.test(appEvents) ||
-      /shouldBridgeNativeMobileAction\(actionEl\)/.test(appEvents) ||
-      !/\.player-script-card/.test(appEvents) ||
-    !/navigator\.maxTouchPoints > 0/.test(appEvents) ||
-    !/function isMobileTapInteractiveElement\(el\)/.test(appEvents) ||
+    !/player-home-today-card/.test(dashboard) ||
+    !/class="btn btn-primary player-home-action"/.test(dashboard) ||
+    !/function getAppActionHitDiagnostics\(element\)/.test(appEvents) ||
+    !/function isAppActionFullTraceEnabled\(\)/.test(appEvents) ||
+    !/document\.elementFromPoint\(centerX, centerY\)/.test(appEvents) ||
+    !/function getAppElementsFromPointDiagnostics\(x, y\)/.test(appEvents) ||
+    !/function traceAppInputEvent\(phase, event\)/.test(appEvents) ||
+    !/window\.bcDebugHitTest/.test(appEvents) ||
+    !/window\.bcDebugScrollAncestry/.test(appEvents) ||
+    !/\["pointerdown", "pointerup", "touchstart", "touchend", "click"\]\.forEach/.test(appEvents) ||
+    /mobileTapSyntheticClick/.test(appEvents) ||
+    /mobileTapNativeSuppression/.test(appEvents) ||
+    /MOBILE_TAP_ACTION_SELECTOR/.test(appEvents) ||
+    /target\.click\(\)/.test(appEvents) ||
+    /function shouldBridgeNativeMobileAction\(el\)/.test(appEvents) ||
+    /shouldBridgeNativeMobileAction\(actionEl\)/.test(appEvents) ||
     !/function scrollTabStripToTab\(tab\)/.test(appNavigation) ||
     !/strip\.scrollTo\(\{/.test(appNavigation) ||
     !/const savedScriptId = escapeHtml\(String\(savedScript\.id\)\)/.test(
@@ -1230,16 +1231,36 @@ function checkPlayerPortalContracts() {
     fail("player portal styling is incomplete");
   }
   if (
+    !/Desktop Script workspace: keep page chrome stable/.test(scriptCss) ||
+    !/body:not\(\.is-mobile-screen\) #script\.panel\.active[\s\S]*display:\s*flex[\s\S]*overflow:\s*hidden/.test(
+      scriptCss,
+    ) ||
+    !/body:not\(\.is-mobile-screen\) #script \.script-builder[\s\S]*min-height:\s*0[\s\S]*overflow:\s*hidden/.test(
+      scriptCss,
+    ) ||
+    !/body:not\(\.is-mobile-screen\) #script \.play-list[\s\S]*position:\s*static[\s\S]*overflow:\s*hidden/.test(
+      scriptCss,
+    ) ||
+    !/body:not\(\.is-mobile-screen\) #script \.available-plays-container[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/.test(
+      scriptCss,
+    ) ||
+    !/body:not\(\.is-mobile-screen\) #script \.script-list[\s\S]*overflow-y:\s*auto/.test(
+      scriptCss,
+    )
+  ) {
+    fail("desktop script workspace scroll ownership is incomplete");
+  }
+  if (
     !/pp-player-overview/.test(presentation) ||
-      !/pp-player-controls-card/.test(presentation) ||
-      !/\.pp-player-overview/.test(presentationCss) ||
-      !/\.pp-player-controls-card/.test(presentationCss) ||
-      !/body\.play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-layout-player/.test(
-        presentationCss,
-      ) ||
-      !/body\.play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-player-controls-head span/.test(
-        presentationCss,
-      )
+    !/pp-player-controls-card/.test(presentation) ||
+    !/\.pp-player-overview/.test(presentationCss) ||
+    !/\.pp-player-controls-card/.test(presentationCss) ||
+    !/body\.play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-layout-player/.test(
+      presentationCss,
+    ) ||
+    !/body\.play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-player-controls-head span/.test(
+      presentationCss,
+    )
   ) {
     fail("player presentation polish is incomplete");
   }

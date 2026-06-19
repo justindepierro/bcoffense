@@ -92,6 +92,7 @@ function getAppActionHitDiagnostics(element) {
             topElement.closest("[data-action]") === element,
         }
       : null,
+    hitStack: getAppElementsFromPointDiagnostics(centerX, centerY),
   };
 }
 
@@ -147,154 +148,128 @@ function traceAppAction(phase, elOrPayload, extra = {}, level = "info") {
   };
 }
 
-const MOBILE_TAP_ACTION_SELECTOR = [
-  "[data-action]:not(button):not(a):not(input):not(select):not(textarea):not(label):not(summary)",
-  "[role='button']:not(button):not(a):not(input):not(select):not(textarea):not(label):not(summary)",
-].join(",");
-
-let mobileTapStart = null;
-let mobileTapSyntheticClick = false;
-let mobileTapNativeSuppression = null;
-
-function isMobileTapBridgeEnabled() {
-  const body = document.body;
-  const width =
-    window.visualViewport?.width ||
-    window.innerWidth ||
-    document.documentElement.clientWidth ||
-    0;
-  return Boolean(
-    body?.classList.contains("is-touch-screen") ||
-      body?.classList.contains("is-mobile-screen") ||
-      window.matchMedia?.("(pointer: coarse)")?.matches ||
-      navigator.maxTouchPoints > 0 ||
-      "ontouchstart" in window ||
-      width <= 820,
-  );
+function getAppElementDescriptor(element) {
+  if (!(element instanceof Element)) return null;
+  const computed = window.getComputedStyle(element);
+  return {
+    tag: element.tagName.toLowerCase(),
+    id: element.id || "",
+    action: element.closest("[data-action]")?.dataset.action || "",
+    className: String(element.className || "").slice(0, 140),
+    display: computed.display,
+    visibility: computed.visibility,
+    pointerEvents: computed.pointerEvents,
+    opacity: computed.opacity,
+    position: computed.position,
+    zIndex: computed.zIndex,
+  };
 }
 
-function isMobileTapInteractiveElement(el) {
-  if (!(el instanceof Element)) return false;
-  return Boolean(
-    el.matches(
-      "button, a[href], a[data-action], [role='button'], .tab, [data-action]",
-    ),
-  );
+function getAppElementsFromPointDiagnostics(x, y) {
+  if (!document.elementsFromPoint) return [];
+  const width = window.innerWidth || document.documentElement.clientWidth || 0;
+  const height = window.innerHeight || document.documentElement.clientHeight || 0;
+  const safeX = Math.max(0, Math.min(width - 1, Math.round(Number(x) || 0)));
+  const safeY = Math.max(0, Math.min(height - 1, Math.round(Number(y) || 0)));
+  return document
+    .elementsFromPoint(safeX, safeY)
+    .slice(0, 10)
+    .map(getAppElementDescriptor)
+    .filter(Boolean);
 }
 
-function isNativeMobileClickElement(el) {
-  if (!(el instanceof Element)) return false;
-  return el.matches("button, a[href], input, select, textarea, label, summary");
+function getAppEventClientPoint(event) {
+  const touch = event.touches?.[0] || event.changedTouches?.[0];
+  return {
+    x: Math.round(touch?.clientX ?? event.clientX ?? 0),
+    y: Math.round(touch?.clientY ?? event.clientY ?? 0),
+  };
 }
 
-function getMobileTapActionTarget(target) {
-  if (!isMobileTapBridgeEnabled()) return null;
-  const element = target instanceof Element ? target : null;
-  if (!element) return null;
-  const actionEl = element.closest(MOBILE_TAP_ACTION_SELECTOR);
-  if (!actionEl) return null;
-  if (!isMobileTapInteractiveElement(actionEl)) return null;
-  if (isNativeMobileClickElement(actionEl)) return null;
-  if (actionEl.disabled || actionEl.getAttribute("aria-disabled") === "true") {
-    return null;
-  }
-  if (actionEl.closest("[inert]")) return null;
-  if (
-    element.closest("input, select, textarea") &&
-    !actionEl.matches("button, [role='button'], .tab")
-  ) {
-    return null;
-  }
-  if (element.closest("label") && !actionEl.matches("button, [role='button'], .tab")) {
-    return null;
-  }
-  return actionEl;
+function traceAppInputEvent(phase, event) {
+  if (!isAppActionFullTraceEnabled()) return;
+  const target =
+    event.target instanceof Element ? event.target.closest("[data-action]") : null;
+  const point = getAppEventClientPoint(event);
+  const payload = target
+    ? getAppActionTracePayload(target, {
+        eventType: event.type,
+        eventPhase: event.eventPhase,
+        pointerType: event.pointerType || "",
+        isTrusted: event.isTrusted,
+        defaultPrevented: event.defaultPrevented,
+        clientX: point.x,
+        clientY: point.y,
+        includeHitDiagnostics: true,
+      })
+    : {
+        action: "",
+        eventType: event.type,
+        eventPhase: event.eventPhase,
+        pointerType: event.pointerType || "",
+        isTrusted: event.isTrusted,
+        defaultPrevented: event.defaultPrevented,
+        clientX: point.x,
+        clientY: point.y,
+        hitStack: getAppElementsFromPointDiagnostics(point.x, point.y),
+      };
+  traceAppAction(phase, payload);
 }
 
-document.addEventListener(
-  "touchstart",
-  (event) => {
-    const target = getMobileTapActionTarget(event.target);
-    if (!target || event.touches?.length !== 1) {
-      mobileTapStart = null;
-      return;
-    }
-    const touch = event.touches[0];
-    mobileTapStart = {
-      target,
-      x: touch.clientX,
-      y: touch.clientY,
-      time: Date.now(),
-    };
-  },
-  { passive: true },
-);
-
-document.addEventListener(
-  "touchend",
-  (event) => {
-    const start = mobileTapStart;
-    mobileTapStart = null;
-    const target = getMobileTapActionTarget(event.target);
-    if (!start || !target || start.target !== target) return;
-    const touch = event.changedTouches?.[0];
-    if (!touch) return;
-    const moved = Math.hypot(touch.clientX - start.x, touch.clientY - start.y);
-    if (moved > 14 || Date.now() - start.time > 900) return;
-    event.preventDefault();
-    event.stopPropagation();
-    traceAppAction("mobile synthetic tap", target, {
-      moved: Math.round(moved),
-      ageMs: Date.now() - start.time,
+function getAppScrollAncestry(targetOrSelector = "#script") {
+  const start =
+    typeof targetOrSelector === "string"
+      ? document.querySelector(targetOrSelector)
+      : targetOrSelector;
+  const rows = [];
+  let element = start instanceof Element ? start : null;
+  while (element) {
+    const computed = window.getComputedStyle(element);
+    rows.push({
+      tag: element.tagName.toLowerCase(),
+      id: element.id || "",
+      className: String(element.className || "").slice(0, 120),
+      overflowX: computed.overflowX,
+      overflowY: computed.overflowY,
+      position: computed.position,
+      height: Math.round(element.getBoundingClientRect().height),
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      scrollTop: element.scrollTop,
     });
-    mobileTapSyntheticClick = true;
-    target.click();
-    mobileTapSyntheticClick = false;
-    mobileTapNativeSuppression = { target, time: Date.now() };
-  },
-  { passive: false },
-);
+    element = element.parentElement;
+  }
+  return rows;
+}
 
-document.addEventListener(
-  "touchcancel",
-  () => {
-    mobileTapStart = null;
-  },
-  { passive: true },
-);
+if (typeof window !== "undefined") {
+  window.bcDebugHitTest = function bcDebugHitTest(x, y) {
+    const point =
+      Number.isFinite(Number(x)) && Number.isFinite(Number(y))
+        ? { x: Number(x), y: Number(y) }
+        : {
+            x: Math.round((window.innerWidth || 0) / 2),
+            y: Math.round((window.innerHeight || 0) / 2),
+          };
+    const rows = getAppElementsFromPointDiagnostics(point.x, point.y);
+    console.table(rows);
+    return rows;
+  };
+  window.bcDebugScrollAncestry = function bcDebugScrollAncestry(targetOrSelector) {
+    const rows = getAppScrollAncestry(targetOrSelector || "#script");
+    console.table(rows);
+    return rows;
+  };
+}
 
-document.addEventListener(
-  "pointerdown",
-  (event) => {
-    const target = event.target.closest(
-      ".player-script-card__actions [data-action]",
+["pointerdown", "pointerup", "touchstart", "touchend", "click"].forEach(
+  (eventName) => {
+    document.addEventListener(
+      eventName,
+      (event) => traceAppInputEvent(`${eventName} capture`, event),
+      { capture: true, passive: true },
     );
-    if (!target) return;
-    traceAppAction("player script card pointerdown", target, {
-      pointerType: event.pointerType || "",
-      clientX: Math.round(event.clientX || 0),
-      clientY: Math.round(event.clientY || 0),
-      targetTag: event.target?.tagName?.toLowerCase?.() || "",
-    });
   },
-  true,
-);
-
-document.addEventListener(
-  "click",
-  (event) => {
-    if (mobileTapSyntheticClick || !mobileTapNativeSuppression) return;
-    if (Date.now() - mobileTapNativeSuppression.time > 650) {
-      mobileTapNativeSuppression = null;
-      return;
-    }
-    const target = getMobileTapActionTarget(event.target);
-    if (target !== mobileTapNativeSuppression.target) return;
-    event.preventDefault();
-    event.stopImmediatePropagation();
-    mobileTapNativeSuppression = null;
-  },
-  true,
 );
 
 document.addEventListener("click", (e) => {
@@ -303,7 +278,8 @@ document.addEventListener("click", (e) => {
   const action = el.dataset.action;
   traceAppAction("click received", el, {
     nativeEvent: e.type,
-    syntheticMobileTap: mobileTapSyntheticClick,
+    isTrusted: e.isTrusted,
+    defaultPrevented: e.defaultPrevented,
     includeHitDiagnostics: window.BC_ACTION_TRACE === true,
   });
 

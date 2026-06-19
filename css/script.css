@@ -3482,6 +3482,73 @@
   min-width: 4px;
 }
 
+/* Desktop Script workspace: keep page chrome stable and give each pane one scroll owner. */
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen) #script.panel.active {
+    display: flex;
+    flex-direction: column;
+    gap: 0;
+    height: calc(
+      (var(--app-vh, 1vh) * 100) - var(--app-header-height, 52px) -
+        var(--app-tabs-height, 44px)
+    );
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen) #script .script-header-panel {
+    flex: 0 0 auto;
+  }
+
+  body:not(.is-mobile-screen) #script .script-builder {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen) #script .play-list,
+  body:not(.is-mobile-screen) #script .script-list {
+    min-height: 0;
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen) #script .play-list {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
+    gap: 20px;
+    height: 100%;
+  }
+
+  body:not(.is-mobile-screen) #script .script-list {
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 20px;
+    height: 100%;
+  }
+
+  body:not(.is-mobile-screen) #script .available-plays-container {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  body:not(.is-mobile-screen) #script .script-container {
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
+  }
+
+  body:not(.is-mobile-screen) #script .script-actions,
+  body:not(.is-mobile-screen) #script .script-toolbar,
+  body:not(.is-mobile-screen) #script .script-header-panel {
+    position: relative;
+  }
+}
+
 .display-options-btns {
   display: flex;
   gap: 5px;
