@@ -3585,14 +3585,20 @@
 
 /* Desktop Script workspace: keep page chrome stable and give each pane one scroll owner. */
 @media (min-width: 821px) {
+  body[data-active-tab="script"]:not(.is-mobile-screen) {
+    overflow: hidden;
+  }
+
   body:not(.is-mobile-screen) #script.panel.active {
     display: flex;
     flex-direction: column;
     gap: 0;
     height: calc(
       (var(--app-vh, 1vh) * 100) - var(--app-header-height, 52px) -
-        var(--app-tabs-height, 44px)
+        var(--app-tabs-height, 44px) - 40px
     );
+    margin: 20px;
+    padding: 16px;
     min-height: 0;
     overflow: hidden;
   }
