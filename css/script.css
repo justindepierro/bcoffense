@@ -3724,10 +3724,40 @@
 /* Saved Scripts */
 .saved-scripts {
   margin-top: 20px;
-  padding: 15px;
+  padding: 0;
   background: var(--color-bg-light);
   border-radius: var(--radius-md);
+  border: 1px solid var(--color-border-light);
+  overflow: hidden;
 }
+.script-collapsible-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 9px 12px;
+  background: var(--color-surface-raised);
+  color: var(--color-text);
+  border-bottom: 1px solid var(--color-border-light);
+  cursor: pointer;
+  user-select: none;
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+}
+@media (hover: hover) {
+  .script-collapsible-header:hover {
+    background: var(--color-bg-blue-light);
+  }
+}
+
+.script-collapsible-content {
+  padding: 12px 14px;
+  background: var(--color-white);
+}
+
+.script-collapsible-content.collapsed {
+  display: none;
+}
+
 .saved-scripts-header {
   display: flex;
   justify-content: space-between;
@@ -3879,10 +3909,11 @@ body[data-auth-role="player"] .script-builder {
 /* Full Day Section */
 .full-day-section {
   margin-top: 15px;
-  padding: 15px;
+  padding: 0;
   background: var(--color-bg-lighter);
   border-radius: var(--radius-md);
   border: 1px solid var(--color-border-light);
+  overflow: hidden;
 }
 .full-day-header h4 {
   margin: 0 0 4px 0;
