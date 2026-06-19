@@ -150,7 +150,10 @@ table.sortable th {
   vertical-align: middle;
 }
 
-.play-cell .play-readiness-badge--playbook-table .play-readiness-badge-main small {
+.play-cell
+  .play-readiness-badge--playbook-table
+  .play-readiness-badge-main
+  small {
   display: none;
 }
 
@@ -551,7 +554,10 @@ body[data-auth-role="player"] .gp-card-btn {
 
 .pb-readiness-card {
   display: grid;
-  grid-template-columns: minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(260px, 1fr) minmax(260px, 1fr);
+  grid-template-columns: minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(
+      260px,
+      1fr
+    ) minmax(260px, 1fr);
   gap: var(--space-sm);
   align-items: stretch;
   padding: 14px;
@@ -565,7 +571,10 @@ body[data-auth-role="player"] .gp-card-btn {
 }
 
 .pb-readiness-card--empty {
-  grid-template-columns: minmax(260px, 1.2fr) minmax(260px, 0.9fr) minmax(220px, 0.55fr);
+  grid-template-columns: minmax(260px, 1.2fr) minmax(260px, 0.9fr) minmax(
+      220px,
+      0.55fr
+    );
   align-items: center;
   border-left-color: var(--color-accent);
 }
@@ -1718,7 +1727,9 @@ body[data-auth-role="player"] .gp-card-btn {
   }
 }
 
-@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
   .pb-player-summary {
     padding: 16px;
   }
