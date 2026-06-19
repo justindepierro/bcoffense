@@ -2848,3 +2848,51 @@ function getActiveColorPreset() {
 function setActiveColorPreset(id) {
   storageManager.set(STORAGE_KEYS.COLOR_PRESET, id || "");
 }
+
+// ============ Overlay & Modal Helpers ============
+// Consolidate duplicate overlay creation patterns
+
+/**
+ * Create a reusable overlay element with common accessibility attributes.
+ * Reduces boilerplate for modal/overlay creation across 20+ instances.
+ * @param {string} className - CSS class for the overlay container
+ * @param {string} ariaLabel - Aria label for accessibility
+ * @param {boolean} closeOnBackdrop - If true, overlay closes on backdrop click
+ * @returns {HTMLElement} Configured overlay element
+ */
+function createOverlay(className = "", ariaLabel = "Dialog", closeOnBackdrop = false) {
+  const overlay = document.createElement("div");
+  overlay.className = className;
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", ariaLabel);
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("inert", "");
+
+  // Backdrop close support
+  if (closeOnBackdrop) {
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+      }
+    });
+  }
+
+  return overlay;
+}
+
+/**
+ * Batch multiple sanitized innerHTML updates.
+ * Keeps generated markup updates going through the same sanitizer path.
+ * Usage: Instead of: el1.innerHTML = h1; el2.innerHTML = h2; el3.innerHTML = h3;
+ * Use: batchSetInnerHTML([{el: el1, html: h1}, {el: el2, html: h2}, {el: el3, html: h3}]);
+ * @param {Array} updates - Array of {el: HTMLElement, html: string} objects
+ */
+function batchSetInnerHTML(updates) {
+  if (!Array.isArray(updates)) return;
+  updates.forEach(({ el, html }) => {
+    if (el && typeof html === "string") {
+      el.innerHTML = sanitizeHTML(html);
+    }
+  });
+}
