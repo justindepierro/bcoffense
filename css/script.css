@@ -3586,17 +3586,29 @@
 /* Desktop Script workspace: keep page chrome stable and give each pane one scroll owner. */
 @media (min-width: 821px) {
   body[data-active-tab="script"]:not(.is-mobile-screen) {
+    height: 100vh;
+    height: calc(var(--app-vh, 1vh) * 100);
+    display: flex;
+    flex-direction: column;
     overflow: hidden;
+  }
+
+  body[data-active-tab="script"]:not(.is-mobile-screen) #mainApp {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  body[data-active-tab="script"]:not(.is-mobile-screen) #mainApp .tabs {
+    flex: 0 0 auto;
   }
 
   body:not(.is-mobile-screen) #script.panel.active {
     display: flex;
     flex-direction: column;
+    flex: 1 1 auto;
     gap: 0;
-    height: calc(
-      (var(--app-vh, 1vh) * 100) - var(--app-header-height, 52px) -
-        var(--app-tabs-height, 44px) - 40px
-    );
     margin: 20px;
     padding: 16px;
     min-height: 0;
