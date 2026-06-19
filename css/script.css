@@ -26,8 +26,11 @@
   max-height: calc(100dvh - 92px);
   overflow-x: hidden;
   overflow-y: auto;
-  background:
-    linear-gradient(180deg, var(--color-surface-raised), var(--color-surface));
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-raised),
+    var(--color-surface)
+  );
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -39,8 +42,11 @@
   flex-direction: column;
   gap: 14px;
   overflow: visible;
-  background:
-    linear-gradient(180deg, var(--color-surface-raised), var(--color-surface));
+  background: linear-gradient(
+    180deg,
+    var(--color-surface-raised),
+    var(--color-surface)
+  );
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-xl);
   box-shadow: var(--shadow-md);
@@ -3552,10 +3558,14 @@
   }
 
   body:not(.is-mobile-screen) #script .script-list {
-    display: grid;
-    grid-template-rows: auto auto minmax(0, 1fr) auto;
-    gap: 20px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
     height: 100%;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
   }
 
   body:not(.is-mobile-screen) #script .available-plays-container {
@@ -3567,11 +3577,8 @@
   }
 
   body:not(.is-mobile-screen) #script .script-container {
-    min-height: 0;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    min-height: 220px;
+    overflow: visible;
     padding-bottom: 12px;
   }
 
