@@ -1681,6 +1681,15 @@ function updateNotes(index, notes) {
   if ((script[index].notes || "") === notes) return;
   beginScriptEdit();
   script[index].notes = notes;
+  const { row, previewRow } = getScriptPlayDom(index);
+  const notesInput = row?.querySelector('[data-field="notes"]');
+  if (notesInput && notesInput.value !== notes) {
+    notesInput.value = notes;
+  }
+  const previewNotes = previewRow?.querySelector(".preview-field.notes");
+  if (previewNotes) {
+    previewNotes.textContent = notes || "-";
+  }
 }
 
 function updateScriptCallDisplay(index) {

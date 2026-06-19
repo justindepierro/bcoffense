@@ -17,6 +17,40 @@ function announceScriptA11y(message) {
   });
 }
 
+function getScriptControlsMode() {
+  return storageManager.get(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, "advanced");
+}
+
+function setScriptControlsMode(mode) {
+  const normalized = mode === "basic" ? "basic" : "advanced";
+  storageManager.set(STORAGE_KEYS.SCRIPT_CONTROLS_MODE, normalized);
+  applyScriptControlsMode(normalized);
+}
+
+function applyScriptControlsMode(mode = getScriptControlsMode()) {
+  const normalized = mode === "basic" ? "basic" : "advanced";
+  const scriptPanel = document.getElementById("script");
+  if (!scriptPanel) return;
+
+  scriptPanel.dataset.controlsMode = normalized;
+
+  const modeSelect = document.getElementById("scriptControlsMode");
+  if (modeSelect && modeSelect.value !== normalized) {
+    modeSelect.value = normalized;
+  }
+}
+
+function initScriptControlsMode() {
+  const modeSelect = document.getElementById("scriptControlsMode");
+  if (modeSelect && modeSelect.dataset.bound !== "true") {
+    modeSelect.addEventListener("change", (event) => {
+      setScriptControlsMode(event.target.value);
+    });
+    modeSelect.dataset.bound = "true";
+  }
+  applyScriptControlsMode();
+}
+
 function buildSharedPreferredDatalistMarkup(prefix, values, sharedOptionsHtml) {
   const idsByValue = new Map();
   let html = "";

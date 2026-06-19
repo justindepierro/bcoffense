@@ -1433,6 +1433,9 @@ function initScriptWorkspace() {
   renderAvailablePlays();
   loadSavedScriptsList();
   populateScriptWristbandSelect();
+  if (typeof initScriptControlsMode === "function") {
+    initScriptControlsMode();
+  }
   restoreScriptDisplayOptions();
   ensureFirstPeriod();
   if (typeof refreshPeriodTemplateQuickPick === "function") {

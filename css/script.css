@@ -3334,6 +3334,47 @@
   }
 }
 
+.script-controls-mode {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+
+.script-controls-mode select {
+  min-height: 30px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  padding: 2px 10px;
+  background: var(--color-surface);
+  color: var(--color-text);
+}
+
+#script[data-controls-mode="basic"] .script-toolbar-center,
+#script[data-controls-mode="basic"] .script-toolbar-cluster--appearance,
+#script[data-controls-mode="basic"] .script-actions-advanced {
+  display: none;
+}
+
+#script[data-controls-mode="basic"] .script-toolbar {
+  grid-template-columns: minmax(180px, auto) minmax(0, 1fr);
+}
+
+#script[data-controls-mode="basic"] .script-toolbar-right {
+  display: flex;
+  align-items: center;
+}
+
+#script[data-controls-mode="basic"] .script-actions {
+  gap: 6px;
+}
+
+#script[data-controls-mode="basic"] .script-actions-secondary {
+  display: none;
+}
+
 .bulk-indicator {
   display: none;
   color: var(--color-primary);

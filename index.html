@@ -1091,6 +1091,13 @@
           <!-- Script Toolbar -->
           <div class="script-toolbar" data-auth-player-hide="true">
             <div class="script-toolbar-left">
+              <label class="script-controls-mode">
+                <span>Mode</span>
+                <select id="scriptControlsMode" aria-label="Script controls mode">
+                  <option value="advanced">Advanced</option>
+                  <option value="basic">Basic</option>
+                </select>
+              </label>
               <label class="bulk-select-label">
                 <input type="checkbox" id="bulkSelectAll" data-onchange="selectAllScriptItems" />
                 <span>Select All</span>
@@ -3596,6 +3603,7 @@
   <script defer src="js/gameplan-integrations.js?v=599"></script>
   <script defer src="js/gameplan-snapshots.js?v=599"></script>
   <script defer src="js/print-studio.js?v=599"></script>
+  <script defer src="js/script-events.js?v=599"></script>
   <script defer src="js/app-events.js?v=599"></script>
   <script defer src="js/app-shell.js?v=599"></script>
   <script defer src="js/app-session.js?v=599"></script>
