@@ -62,11 +62,12 @@ Evidence:
 - Large switch logic and repeated field mapping previously increased cognitive overhead.
 
 Improvement applied:
-- Script field update logic has been refactored into handler maps in js/app-events.js.
+- Script field update logic has been refactored into handler maps.
 - High-frequency input paths are debounced to reduce churn.
+- Script-specific listener wiring is now extracted into js/script-events.js.
 
 Remaining simplification target:
-- Split script event registration into a dedicated script-events.js module and keep app-events.js as global shell router.
+- Add focused per-area tracing to script-events handlers for faster incident triage.
 
 ### B) Render Layer Complexity
 
@@ -118,35 +119,45 @@ Recommended simplification:
 
 ## What Was Refactored In This Pass
 
-1. Script input/change handling simplified in js/app-events.js
-- Added scriptChangeFieldHandlers map
-- Added scriptLiveFieldHandlers map
-- Preserved behavior while reducing duplication
+1. Script event ownership split
+- Added js/script-events.js for Script-only listeners and drag wiring
+- Removed Script-heavy listener block from js/app-events.js
+- Preserved delegated action behavior while reducing global router complexity
 
 2. Input pressure reduction
-- Debounced high-frequency script input updates already in place and retained
+- Debounced high-frequency script input updates retained in extracted Script event module
 
-3. Cache rollout
-- Service worker bumped to bcoffense-v605
+3. First partial patch-render path
+- Notes updates now patch row/preview directly in js/script-render.js without requiring full structural rerender
+
+4. Controls simplification
+- Added Basic vs Advanced controls mode toggle and persistence (STORAGE_KEYS.SCRIPT_CONTROLS_MODE)
+- Basic mode now hides dense toolbar/action clusters to reduce cognitive load
+
+5. Runtime performance guardrail
+- Added slow full-render warning threshold in js/script-render.js
+
+6. Cache rollout
+- Service worker bumped to bcoffense-v606
 
 ---
 
 ## Refactor Plan (Safe Order)
 
 Phase 1 (Low risk, high clarity)
-1. Extract script event registration into dedicated module
-2. Keep map-driven handlers and remove remaining duplicate field wiring
-3. Add small event tracing utility for script actions
+1. DONE - Extract script event registration into dedicated module
+2. DONE - Keep map-driven handlers and remove remaining duplicate field wiring
+3. NEXT - Add small event tracing utility for script actions
 
 Phase 2 (Performance + parseability)
-1. Introduce row/period patch updates in script-render
-2. Keep full rerender only for structural changes
-3. Add render timing metrics and warn when threshold exceeded
+1. IN PROGRESS - Introduce row/period patch updates in script-render (notes path shipped)
+2. NEXT - Keep full rerender only for structural changes
+3. DONE - Added render timing warning threshold for slow full renders
 
 Phase 3 (UI simplification)
-1. Basic/Advanced toolbar mode
-2. Reduce always-visible buttons on mobile
-3. Normalize sticky behavior and spacing between toolbar/actions/content
+1. DONE - Basic/Advanced toolbar mode
+2. IN PROGRESS - Reduce always-visible buttons on mobile
+3. NEXT - Normalize sticky behavior and spacing between toolbar/actions/content
 
 Phase 4 (File structure cleanup)
 1. Split oversized script-render into focused files:
@@ -159,14 +170,14 @@ Phase 4 (File structure cleanup)
 
 ## Immediate Next Targets
 
-1. Extract script-specific event wiring out of app-events.js
-2. Introduce first patch-render path for non-structural row edits
-3. Add a compact mobile “core controls” mode
+1. Expand patch-render coverage for defFront/defCoverage/defStunt/defBlitz and call fields
+2. Convert one more non-structural update path to zero-full-rerender behavior
+3. Add mobile-focused Basic mode tightening for action density
 
 ---
 
 ## Verification Notes
 
-- Current service worker cache: bcoffense-v605
+- Current service worker cache: bcoffense-v606
 - This document supersedes prior audit summaries
 - This audit is intended to guide active refactor work, not just describe status

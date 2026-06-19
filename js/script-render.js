@@ -3,6 +3,9 @@ let scriptRenderProfileHistory = [];
 let scriptDerivedUiSignature = "";
 
 const SCRIPT_RENDER_PROFILE_HISTORY_LIMIT = 12;
+const SCRIPT_RENDER_WARN_TOTAL_MS = 45;
+const SCRIPT_RENDER_WARN_COOLDOWN_MS = 15000;
+let scriptRenderWarnLastAt = 0;
 const SCRIPT_PERIOD_ACTION_SHORTCUTS = {
   selectPeriodPlays: { aria: "Alt+Shift+S", hint: "Alt+Shift+S" },
   openPeriodReorderModal: { aria: "Alt+Shift+M", hint: "Alt+Shift+M" },
@@ -1415,6 +1418,17 @@ function recordScriptRenderProfileSample(sample) {
   }
 }
 
+function maybeWarnSlowScriptRender(totalMs, playCount, periodCount) {
+  const now = Date.now();
+  if (totalMs < SCRIPT_RENDER_WARN_TOTAL_MS) return;
+  if (now - scriptRenderWarnLastAt < SCRIPT_RENDER_WARN_COOLDOWN_MS) return;
+
+  scriptRenderWarnLastAt = now;
+  console.warn(
+    `Slow script render detected: ${totalMs.toFixed(1)}ms (plays: ${playCount}, periods: ${periodCount}).`,
+  );
+}
+
 function summarizeScriptRenderProfileSamples(samples) {
   if (!Array.isArray(samples) || samples.length === 0) return null;
 
@@ -1514,12 +1528,15 @@ function runScriptRenderProfileBenchmark(iterations = 20) {
 
 function renderScript() {
   try {
+    const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");
+    const playCount = script.filter((item) => !item.isSeparator).length;
+    const periodCount = script.filter((item) => item.isSeparator).length;
     const profile = scriptRenderProfilingEnabled
       ? {
         startedAt: performance.now(),
-        playCount: script.filter((item) => !item.isSeparator).length,
-        periodCount: script.filter((item) => item.isSeparator).length,
+        playCount,
+        periodCount,
       }
       : null;
     const opts = getScriptDisplayOptions();
@@ -1615,6 +1632,9 @@ function renderScript() {
       delete profile.startedAt;
       recordScriptRenderProfileSample(profile);
     }
+
+    const totalRenderMs = performance.now() - renderStartedAt;
+    maybeWarnSlowScriptRender(totalRenderMs, playCount, periodCount);
   } catch (err) {
     console.error("renderScript error:", err);
     showToast("❌ Error rendering script.", { duration: 3000, type: "error" });
