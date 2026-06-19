@@ -348,9 +348,17 @@ body[data-auth-role="player"] .tab.active {
 
 /* Main app container — flex column with tabs + panels */
 #mainApp {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
 }
 
 #uploadSection {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 /* Tabs bar — header sticky nav */
@@ -367,9 +375,13 @@ body[data-auth-role="player"] .tab.active {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-md);
   border: 1px solid var(--color-border-light);
+  overflow: auto;
 }
 .panel.active {
-  display: block;
+  display: flex;
+  flex: 1 1 auto;
+  min-height: 0;
+  flex-direction: column;
   animation: panelFadeIn 0.25s ease both;
 }
 
