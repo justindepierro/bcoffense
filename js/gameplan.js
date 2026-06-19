@@ -1381,6 +1381,10 @@ function initGamePlan() {
 // renamed play — staff can clean it up manually).
 function refreshGamePlanFromPlaybook() {
   if (!Array.isArray(plays) || plays.length === 0) return 0;
+  // Build signature→play map once (O(n)) to avoid O(n²) lookups in nested loop
+  const playBySignature = new Map(
+    plays.map((p) => [_gpPlaySignature(p), p])
+  );
   let updated = 0;
   _gpUpdateBoard((board) => {
     if (!board || !board.assignments) return;
@@ -1388,7 +1392,7 @@ function refreshGamePlanFromPlaybook() {
       const arr = board.assignments[boxId];
       if (!Array.isArray(arr)) return;
       arr.forEach((snap, i) => {
-        const fresh = _gpFindPlayBySig(_gpPlaySignature(snap));
+        const fresh = playBySignature.get(_gpPlaySignature(snap)); // O(1) lookup
         if (fresh) {
           // Preserve assignment metadata (flags, etc.)
           const preserved = {};
