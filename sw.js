@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v582";
+const CACHE_NAME = "bcoffense-v583";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -114,6 +114,7 @@ const LOCAL_ASSETS = [
   "./js/wristband-sort.js",
   "./js/wristband-storage.js",
   "./js/wristband-runtime.js",
+  "./js/callsheet-render.js",
   "./js/callsheet.js",
   "./js/callsheet-categories.js",
   "./js/callsheet-metadata.js",

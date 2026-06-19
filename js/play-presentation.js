@@ -324,9 +324,9 @@ function isPlayPresentationOverlayVisible(overlay) {
   const computed = window.getComputedStyle(overlay);
   return Boolean(
     computed.display !== "none" &&
-      computed.visibility !== "hidden" &&
-      computed.opacity !== "0" &&
-      computed.pointerEvents !== "none",
+    computed.visibility !== "hidden" &&
+    computed.opacity !== "0" &&
+    computed.pointerEvents !== "none",
   );
 }
 
@@ -424,7 +424,7 @@ function openPlayPresentation(items, startIndex, source) {
           ensurePlayPresentationOverlayDisplayed(overlay, "fullscreen");
           return null;
         })
-        .catch(() => {});
+        .catch(() => { });
     } catch (_err) {
       // Full Screen is best-effort and may require a direct user gesture.
     }
@@ -464,7 +464,7 @@ function closePlayPresentation() {
   document.body.classList.remove("play-presentation-open");
 
   if (document.fullscreenElement === overlay && document.exitFullscreen) {
-    document.exitFullscreen().catch(() => {});
+    document.exitFullscreen().catch(() => { });
   }
   if (playPresentationState.returnFocus?.isConnected) {
     playPresentationState.returnFocus.focus();
@@ -960,27 +960,25 @@ function getPlayPresentationMinimumMarkup(item) {
       <section class="pp-minimum-top">
         <div class="pp-eyebrow">${escapeHtml(item.context || "")}</div>
         <div class="pp-call pp-minimum-call">${getFullCall(play, {
-          showEmoji: true,
-          showLineCall: true,
-          boldShifts: true,
-          italicMotions: true,
-        })}</div>
-        ${
-          play.oneWord
-            ? `<div class="pp-minimum-one-word"><span>One Word</span>${escapeHtml(play.oneWord)}</div>`
-            : '<div class="pp-minimum-one-word is-empty" aria-hidden="true"></div>'
-        }
+    showEmoji: true,
+    showLineCall: true,
+    boldShifts: true,
+    italicMotions: true,
+  })}</div>
+        ${play.oneWord
+      ? `<div class="pp-minimum-one-word"><span>One Word</span>${escapeHtml(play.oneWord)}</div>`
+      : '<div class="pp-minimum-one-word is-empty" aria-hidden="true"></div>'
+    }
       </section>
       <section class="pp-diagram-panel pp-minimum-diagram">
         ${getPlayPresentationDiagramMarkup(play)}
       </section>
       <section class="pp-minimum-bottom" aria-label="Play details">
         <div class="pp-chips pp-minimum-chips">${getPlayPresentationChipMarkup(play)}</div>
-        ${
-          typeof renderPlayReadinessPresentationMinimumDock === "function"
-            ? renderPlayReadinessPresentationMinimumDock(play)
-            : ""
-        }
+        ${typeof renderPlayReadinessPresentationMinimumDock === "function"
+      ? renderPlayReadinessPresentationMinimumDock(play)
+      : ""
+    }
       </section>
     </div>
   `;
@@ -1038,9 +1036,8 @@ function hydratePlayPresentationPlayerControls() {
   getPlayPresentationPositions().forEach((position) => {
     const button = document.createElement("button");
     button.type = "button";
-    button.className = `pp-position-btn${
-      position.key === selected.key ? " active" : ""
-    }`;
+    button.className = `pp-position-btn${position.key === selected.key ? " active" : ""
+      }`;
     button.dataset.action = "setPlayPresentationPosition";
     button.dataset.arg = position.key;
     button.setAttribute(
@@ -1053,9 +1050,8 @@ function hydratePlayPresentationPlayerControls() {
 
   const lockButton = document.createElement("button");
   lockButton.type = "button";
-  lockButton.className = `pp-position-lock-btn${
-    lockCopy.locked ? " active" : ""
-  }`;
+  lockButton.className = `pp-position-lock-btn${lockCopy.locked ? " active" : ""
+    }`;
   lockButton.dataset.action = "togglePlayPresentationPositionLock";
   lockButton.setAttribute("aria-pressed", lockCopy.locked ? "true" : "false");
   lockButton.title = lockCopy.hint;
@@ -1084,11 +1080,11 @@ function getPlayPresentationPlayerMarkup(item) {
           <span class="pp-player-mode-chip">${playPresentationState.positionLocked ? "Position Locked" : "Auto Position"}</span>
         </div>
         <div class="pp-player-call">${getFullCall(play, {
-          showEmoji: true,
-          showLineCall: true,
-          boldShifts: true,
-          italicMotions: true,
-        })}</div>
+    showEmoji: true,
+    showLineCall: true,
+    boldShifts: true,
+    italicMotions: true,
+  })}</div>
         <div class="pp-player-controls-card">
           <div class="pp-player-controls-head">
             <strong>Choose your position</strong>
@@ -1110,17 +1106,15 @@ function getPlayPresentationPlayerMarkup(item) {
             </div>
             ${playerName ? `<span class="pp-player-name">${escapeHtml(playerName)}</span>` : ""}
           </div>
-          <div class="pp-player-rule-text">${
-            assignment
-              ? escapeHtml(assignment)
-              : "No player rule entered for this position."
-          }</div>
+          <div class="pp-player-rule-text">${assignment
+      ? escapeHtml(assignment)
+      : "No player rule entered for this position."
+    }</div>
         </div>
-        ${
-          play.respNotes
-            ? `<div class="pp-resp-notes"><strong>Responsibility Notes</strong>${escapeHtml(play.respNotes)}</div>`
-            : ""
-        }
+        ${play.respNotes
+      ? `<div class="pp-resp-notes"><strong>Responsibility Notes</strong>${escapeHtml(play.respNotes)}</div>`
+      : ""
+    }
       </section>
     </div>
   `;
@@ -1134,9 +1128,9 @@ function getPlayPresentationDetailRows(rows) {
         <div class="pp-detail-card">
           <div class="pp-detail-label">${escapeHtml(row.label)}</div>
           <div class="pp-detail-value">${row.values
-            .filter(Boolean)
-            .map((value) => escapeHtml(value))
-            .join(" / ")}</div>
+          .filter(Boolean)
+          .map((value) => escapeHtml(value))
+          .join(" / ")}</div>
         </div>
       `,
     )
@@ -1175,15 +1169,15 @@ function getPlayPresentationCoachNotesMarkup(play) {
       </div>
       <div class="pp-coach-note-list">
         ${notes
-          .map(
-            (note) => `
+      .map(
+        (note) => `
               <div class="pp-coach-note-card">
                 <strong>${escapeHtml(note.label)}</strong>
                 <p>${escapeHtml(note.value)}</p>
               </div>
             `,
-          )
-          .join("")}
+      )
+      .join("")}
       </div>
     </section>
   `;
@@ -1330,19 +1324,18 @@ function getPlayPresentationCoachMarkup(item) {
     <div class="pp-layout pp-layout-coaches">
       <section class="pp-coach-visual">
         <div class="pp-coach-call">${getFullCall(play, {
-          showEmoji: true,
-          showLineCall: true,
-          boldShifts: true,
-          italicMotions: true,
-        })}</div>
+    showEmoji: true,
+    showLineCall: true,
+    boldShifts: true,
+    italicMotions: true,
+  })}</div>
         ${getPlayPresentationDiagramMarkup(play)}
       </section>
       <section class="pp-coach-info">
-        ${
-          typeof renderPlayReadinessPresentationCoachCard === "function"
-            ? renderPlayReadinessPresentationCoachCard(play)
-            : ""
-        }
+        ${typeof renderPlayReadinessPresentationCoachCard === "function"
+      ? renderPlayReadinessPresentationCoachCard(play)
+      : ""
+    }
         ${coachSections}
         <section class="pp-coach-section pp-coach-section-rules" aria-label="Player rules">
           <div class="pp-coach-section-head">
@@ -1350,10 +1343,9 @@ function getPlayPresentationCoachMarkup(item) {
             <span>Position-by-position assignments</span>
           </div>
           <div class="pp-assignment-grid">
-            ${
-              responsibilityMarkup ||
-              '<div class="pp-empty-copy">No player rules entered.</div>'
-            }
+            ${responsibilityMarkup ||
+    '<div class="pp-empty-copy">No player rules entered.</div>'
+    }
           </div>
         </section>
         ${getPlayPresentationCoachNotesMarkup(play)}
@@ -1366,10 +1358,10 @@ function renderPlayPresentation() {
   const item = playPresentationState.items[playPresentationState.index];
   const body = document.getElementById("playPresentationBody");
   if (!item || !body) return;
-  
+
   // Ensure viewport state is synchronized before render
   syncPlayPresentationMobileLandscape();
-  
+
   playPresentationState.mode = ensurePlayPresentationModeAllowed(
     playPresentationState.mode,
   );

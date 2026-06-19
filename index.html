@@ -3,7 +3,8 @@
 
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
+  <meta name="viewport"
+    content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content" />
   <meta name="description"
     content="Football practice script builder, wristband maker, call sheet creator, and defensive tendencies tracker." />
   <meta name="theme-color" content="#0A122A" />
@@ -29,22 +30,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=582" />
-  <link rel="stylesheet" href="css/layout.css?v=582" />
-  <link rel="stylesheet" href="css/components.css?v=582" />
-  <link rel="stylesheet" href="css/playbook.css?v=582" />
-  <link rel="stylesheet" href="css/script.css?v=582" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=582" />
-  <link rel="stylesheet" href="css/wristband.css?v=582" />
-  <link rel="stylesheet" href="css/callsheet.css?v=582" />
-  <link rel="stylesheet" href="css/tendencies.css?v=582" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=582" />
-  <link rel="stylesheet" href="css/dashboard.css?v=582" />
-  <link rel="stylesheet" href="css/gameplan.css?v=582" />
-  <link rel="stylesheet" href="css/installation.css?v=582" />
-  <link rel="stylesheet" href="css/identity.css?v=582" />
-  <link rel="stylesheet" href="css/print.css?v=582" />
-  <link rel="stylesheet" href="css/responsive.css?v=582" />
+  <link rel="stylesheet" href="css/base.css?v=583" />
+  <link rel="stylesheet" href="css/layout.css?v=583" />
+  <link rel="stylesheet" href="css/components.css?v=583" />
+  <link rel="stylesheet" href="css/playbook.css?v=583" />
+  <link rel="stylesheet" href="css/script.css?v=583" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=583" />
+  <link rel="stylesheet" href="css/wristband.css?v=583" />
+  <link rel="stylesheet" href="css/callsheet.css?v=583" />
+  <link rel="stylesheet" href="css/tendencies.css?v=583" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=583" />
+  <link rel="stylesheet" href="css/dashboard.css?v=583" />
+  <link rel="stylesheet" href="css/gameplan.css?v=583" />
+  <link rel="stylesheet" href="css/installation.css?v=583" />
+  <link rel="stylesheet" href="css/identity.css?v=583" />
+  <link rel="stylesheet" href="css/print.css?v=583" />
+  <link rel="stylesheet" href="css/responsive.css?v=583" />
 </head>
 
 <body class="app-booting">
@@ -107,8 +108,8 @@
     <div class="app-header-actions">
       <span id="saveStatus" class="save-status" aria-live="polite"></span>
       <button id="commandPaletteBtn" class="header-action-btn" data-action="openCommandPalette"
-        data-auth-player-hide="true"
-        title="Search app and commands" aria-haspopup="dialog" aria-controls="commandPaletteOverlay">
+        data-auth-player-hide="true" title="Search app and commands" aria-haspopup="dialog"
+        aria-controls="commandPaletteOverlay">
         <span aria-hidden="true">🔎</span>
         <span class="header-action-label">Search</span>
       </button>
@@ -118,8 +119,7 @@
         <span class="header-action-label">Print</span>
       </button>
       <button id="visionModeBtn" class="header-action-btn vision-toggle" data-action="toggleVisionMode"
-        data-auth-player-hide="true"
-        title="Vision Mode: OFF — current iteration" aria-pressed="false">
+        data-auth-player-hide="true" title="Vision Mode: OFF — current iteration" aria-pressed="false">
         <span id="visionModeIcon">🧭</span>
         <span class="header-action-label">Vision</span>
       </button>
@@ -637,8 +637,7 @@
             <span class="pb-gp-filter-label">🟡 JV Only</span>
           </label>
           <button class="btn btn-sm btn-success pb-gp-send-btn" data-action="sendDashboardGamePlanToBoxes"
-            data-auth-player-hide="true"
-            title="Send tagged plays to the Game Plan boxes (skips duplicates)">
+            data-auth-player-hide="true" title="Send tagged plays to the Game Plan boxes (skips duplicates)">
             🎯 Send to Game Plan
           </button>
           <button class="btn btn-sm pb-gp-load-btn" data-action="loadGamePlanSnapshotToPlaybook"
@@ -749,8 +748,8 @@
 
       <!-- Quick Stats Bar -->
       <div class="stats-bar" id="statsBar"></div>
-      <section id="playbookReadinessPanel" class="pb-readiness-panel"
-        data-auth-player-hide="true" aria-label="Selected play readiness scoring" hidden></section>
+      <section id="playbookReadinessPanel" class="pb-readiness-panel" data-auth-player-hide="true"
+        aria-label="Selected play readiness scoring" hidden></section>
       <div class="table-container" tabindex="0" id="playbookContainer">
         <table id="playbookTable" class="sortable" data-testid="playbook-table">
           <thead>
@@ -1165,7 +1164,8 @@
             <div class="player-script-launcher-header">
               <div>
                 <h4>Player Practice Scripts</h4>
-                <p>Open the practice plan for the day, then jump into swipe view for your rules and responsibilities.</p>
+                <p>Open the practice plan for the day, then jump into swipe view for your rules and responsibilities.
+                </p>
               </div>
             </div>
             <div id="playerScriptLauncherList" class="player-script-launcher-list"></div>
@@ -1327,8 +1327,8 @@
               <label for="scriptPacketTitle">Packet title</label>
               <input type="text" id="scriptPacketTitle" value="Practice Script Packet"
                 placeholder="Practice Script Packet" />
-              <span id="scriptPacketSelectionSummary" class="script-packet-selection-summary"
-                role="status" aria-live="polite"></span>
+              <span id="scriptPacketSelectionSummary" class="script-packet-selection-summary" role="status"
+                aria-live="polite"></span>
             </div>
             <div id="fullDayScriptList" class="full-day-list"></div>
             <div class="full-day-actions">
@@ -1388,8 +1388,8 @@
         </div>
       </header>
       <div class="wb-mobile-view-toggle" role="group" aria-label="Wristband mobile view">
-        <button class="btn btn-sm" data-action="setWristbandMobileView" data-arg="library"
-          data-wb-mobile-view="library" aria-pressed="false">Library</button>
+        <button class="btn btn-sm" data-action="setWristbandMobileView" data-arg="library" data-wb-mobile-view="library"
+          aria-pressed="false">Library</button>
         <button class="btn btn-sm active" data-action="setWristbandMobileView" data-arg="builder"
           data-wb-mobile-view="builder" aria-pressed="true">Builder</button>
       </div>
@@ -1430,8 +1430,7 @@
                 data-wb-library-filter="not-on-card" aria-pressed="false">Not On Card</button>
             </div>
             <label class="wb-duplicate-toggle">
-              <input type="checkbox" id="wbPreventDuplicates" checked
-                data-onchange="handleWbPreventDuplicatesChange" />
+              <input type="checkbox" id="wbPreventDuplicates" checked data-onchange="handleWbPreventDuplicatesChange" />
               Prevent duplicates
             </label>
           </div>
@@ -1721,12 +1720,12 @@
           <div class="wb-card-controls">
             <div class="card-tabs" id="cardTabs" role="tablist" aria-label="Wristband cards"></div>
             <div class="wb-zoom-controls" role="group" aria-label="Card preview zoom">
-              <button class="btn btn-xs active" data-action="setWristbandZoom" data-arg="fit"
-                data-wb-zoom="fit" aria-pressed="true">Fit</button>
-              <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="75"
-                data-wb-zoom="75" aria-pressed="false">75%</button>
-              <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="100"
-                data-wb-zoom="100" aria-pressed="false">100%</button>
+              <button class="btn btn-xs active" data-action="setWristbandZoom" data-arg="fit" data-wb-zoom="fit"
+                aria-pressed="true">Fit</button>
+              <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="75" data-wb-zoom="75"
+                aria-pressed="false">75%</button>
+              <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="100" data-wb-zoom="100"
+                aria-pressed="false">100%</button>
               <button class="btn btn-xs" data-action="toggleWristbandFullscreen"
                 title="Open the card builder full screen">Full Screen</button>
             </div>
@@ -1828,32 +1827,25 @@
                 <label><input type="checkbox" id="wbShowEmoji" checked
                     data-onchange="handleWristbandDisplayOptionsChange" />
                   🔵 Personnel Color</label>
-                <label><input type="checkbox" id="wbUseSquares"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbUseSquares" data-onchange="handleWristbandDisplayOptionsChange" />
                   🟦 Use Squares</label>
-                <label><input type="checkbox" id="wbUnderEmoji"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbUnderEmoji" data-onchange="handleWristbandDisplayOptionsChange" />
                   🍑 Under = Peach</label>
-                <label><input type="checkbox" id="wbBoldShifts"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbBoldShifts" data-onchange="handleWristbandDisplayOptionsChange" />
                   <b>Bold</b> Shifts</label>
-                <label><input type="checkbox" id="wbRedShifts"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbRedShifts" data-onchange="handleWristbandDisplayOptionsChange" />
                   <span class="red">Red</span> Shifts</label>
                 <label><input type="checkbox" id="wbItalicMotions"
                     data-onchange="handleWristbandDisplayOptionsChange" />
                   <i>Italic</i> Motions</label>
-                <label><input type="checkbox" id="wbRedMotions"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbRedMotions" data-onchange="handleWristbandDisplayOptionsChange" />
                   <span class="red">Red</span> Motions</label>
-                <label><input type="checkbox" id="wbRemoveVowels"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbRemoveVowels" data-onchange="handleWristbandDisplayOptionsChange" />
                   Remove Vowels</label>
                 <label><input type="checkbox" id="wbShowLineCall" checked
                     data-onchange="handleWristbandDisplayOptionsChange" />
                   Show [Line Call]</label>
-                <label><input type="checkbox" id="wbLineCallOnly"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
+                <label><input type="checkbox" id="wbLineCallOnly" data-onchange="handleWristbandDisplayOptionsChange" />
                   Line Call Only</label>
                 <label><input type="checkbox" id="wbBlankPlayerRules"
                     data-onchange="handleWristbandDisplayOptionsChange" />
@@ -1873,8 +1865,7 @@
 
           <!-- Sort Panel (collapsible) -->
           <div class="wb-sort-panel">
-            <button type="button" class="wb-sort-header" data-action="toggleCollapsiblePanel"
-              aria-expanded="false">
+            <button type="button" class="wb-sort-header" data-action="toggleCollapsiblePanel" aria-expanded="false">
               <strong>🔄 Sort & Organize</strong>
               <span class="toggle-icon">▶</span>
             </button>
@@ -2250,7 +2241,8 @@
               <div class="cs-settings-subgroup">
                 <div class="cs-settings-subtitle-row">
                   <div class="cs-settings-subtitle">Formatting &amp; Emphasis</div>
-                  <span class="cs-settings-note">Visual cues that accelerate scanning; Navy uses ⚓ and Meat uses 🥩</span>
+                  <span class="cs-settings-note">Visual cues that accelerate scanning; Navy uses ⚓ and Meat uses
+                    🥩</span>
                 </div>
                 <div class="display-options-grid cs-settings-grid">
                   <label class="cs-option-tile"><input type="checkbox" id="callsheetShowEmoji"
@@ -2762,8 +2754,8 @@
 
         <div class="cell-popup-row">
           <label for="cellCustomWriteIn">Custom Write-In:</label>
-          <input type="text" id="cellCustomWriteIn" class="cell-popup-input"
-            placeholder="Add custom text to this cell" autocomplete="off" />
+          <input type="text" id="cellCustomWriteIn" class="cell-popup-input" placeholder="Add custom text to this cell"
+            autocomplete="off" />
         </div>
 
         <div class="cell-popup-row">
@@ -2913,8 +2905,8 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="wbSavedManagerOverlay" data-action="closeSavedWristbandManagerOverlay"
-    role="dialog" aria-modal="true" aria-labelledby="wbSavedManagerTitle" aria-hidden="true" inert>
+  <div class="modal-overlay" id="wbSavedManagerOverlay" data-action="closeSavedWristbandManagerOverlay" role="dialog"
+    aria-modal="true" aria-labelledby="wbSavedManagerTitle" aria-hidden="true" inert>
     <div class="modal-content modal-content-md wb-saved-manager">
       <div class="modal-header-row">
         <div>
@@ -2927,8 +2919,7 @@
       <div class="wb-saved-manager-tools">
         <input id="wbSavedManagerSearch" type="search" placeholder="Search saved wristbands"
           data-oninput="renderSavedWristbandManager" aria-label="Search saved wristbands" />
-        <select id="wbSavedManagerSort" data-onchange="renderSavedWristbandManager"
-          aria-label="Sort saved wristbands">
+        <select id="wbSavedManagerSort" data-onchange="renderSavedWristbandManager" aria-label="Sort saved wristbands">
           <option value="modified">Recently modified</option>
           <option value="name">Name</option>
           <option value="plays">Most plays</option>
@@ -2938,8 +2929,8 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="wbPrintPreviewOverlay" data-action="closeWristbandPrintPreviewOverlay"
-    role="dialog" aria-modal="true" aria-labelledby="wbPrintPreviewTitle" aria-hidden="true" inert>
+  <div class="modal-overlay" id="wbPrintPreviewOverlay" data-action="closeWristbandPrintPreviewOverlay" role="dialog"
+    aria-modal="true" aria-labelledby="wbPrintPreviewTitle" aria-hidden="true" inert>
     <div class="modal-content modal-content-md wb-print-preview-modal">
       <div class="modal-header-row">
         <div>
@@ -3000,8 +2991,8 @@
     </div>
   </div>
 
-  <div class="modal-overlay" id="wbLogoCardOverlay" data-action="closeWbLogoCardModalOverlay"
-    role="dialog" aria-modal="true" aria-labelledby="wbLogoCardTitle" aria-hidden="true" inert>
+  <div class="modal-overlay" id="wbLogoCardOverlay" data-action="closeWbLogoCardModalOverlay" role="dialog"
+    aria-modal="true" aria-labelledby="wbLogoCardTitle" aria-hidden="true" inert>
     <div class="modal-content modal-content-md wb-logo-card-modal">
       <div class="modal-header-row">
         <div>
@@ -3031,16 +3022,16 @@
           <section class="wb-logo-card-panel">
             <h4>Layout</h4>
             <label class="wb-logo-card-radio">
-              <input type="radio" name="wbLogoCardFit" value="contain" checked
-                data-onchange="setWbLogoCardFit" data-pass="value" />
+              <input type="radio" name="wbLogoCardFit" value="contain" checked data-onchange="setWbLogoCardFit"
+                data-pass="value" />
               <span>
                 <strong>Fit whole logo</strong>
                 <small>Keeps the full logo visible with clean margins.</small>
               </span>
             </label>
             <label class="wb-logo-card-radio">
-              <input type="radio" name="wbLogoCardFit" value="cover"
-                data-onchange="setWbLogoCardFit" data-pass="value" />
+              <input type="radio" name="wbLogoCardFit" value="cover" data-onchange="setWbLogoCardFit"
+                data-pass="value" />
               <span>
                 <strong>Fill the card</strong>
                 <small>Crops edges if needed to cover the full wristband card.</small>
@@ -3467,9 +3458,8 @@
     </div>
   </div>
 
-  <div id="playPresentationOverlay" class="play-presentation-overlay"
-    data-action="closePlayPresentationOverlay" role="dialog" aria-modal="true"
-    aria-label="Landscape play presentation" aria-hidden="true" inert>
+  <div id="playPresentationOverlay" class="play-presentation-overlay" data-action="closePlayPresentationOverlay"
+    role="dialog" aria-modal="true" aria-label="Landscape play presentation" aria-hidden="true" inert>
     <header class="pp-header">
       <div class="pp-header-context">
         <span id="playPresentationSource" class="pp-source">Playbook</span>
@@ -3485,10 +3475,10 @@
       </div>
       <div class="pp-header-actions">
         <div class="pp-nav" role="group" aria-label="Presentation navigation">
-          <button id="playPresentationPrev" class="pp-nav-btn" data-action="movePlayPresentation"
-            data-arg="-1" aria-label="Previous play" title="Previous play">◀</button>
-          <button id="playPresentationNext" class="pp-nav-btn" data-action="movePlayPresentation"
-            data-arg="1" aria-label="Next play" title="Next play">▶</button>
+          <button id="playPresentationPrev" class="pp-nav-btn" data-action="movePlayPresentation" data-arg="-1"
+            aria-label="Previous play" title="Previous play">◀</button>
+          <button id="playPresentationNext" class="pp-nav-btn" data-action="movePlayPresentation" data-arg="1"
+            aria-label="Next play" title="Next play">▶</button>
         </div>
         <button id="playPresentationClose" class="pp-close-btn" data-action="closePlayPresentation"
           aria-label="Close presentation" title="Close presentation">✕</button>
@@ -3501,92 +3491,93 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=582"></script>
-  <script defer src="js/history.js?v=582"></script>
-  <script defer src="js/dom-helpers.js?v=582"></script>
-  <script defer src="js/lz-string.min.js?v=582"></script>
-  <script defer src="js/storage.js?v=582"></script>
-  <script defer src="js/storage-ui.js?v=582"></script>
-  <script defer src="js/play-images.js?v=582"></script>
-  <script defer src="js/cloud-sync.js?v=582"></script>
-  <script defer src="js/auth.js?v=582"></script>
-  <script defer src="js/vision.js?v=582"></script>
-  <script defer src="js/team-settings.js?v=582"></script>
-  <script defer src="js/playbook.js?v=582"></script>
-  <script defer src="js/playbook-collections.js?v=582"></script>
-  <script defer src="js/playbook-print.js?v=582"></script>
-  <script defer src="js/playbook-editor.js?v=582"></script>
-  <script defer src="js/playbook-import.js?v=582"></script>
-  <script defer src="js/playbook-export.js?v=582"></script>
-  <script defer src="js/playbook-chrome.js?v=582"></script>
-  <script defer src="js/playbook-state.js?v=582"></script>
-  <script defer src="js/playbook-filters.js?v=582"></script>
-  <script defer src="js/playbook-navigation.js?v=582"></script>
-  <script defer src="js/playbook-actions.js?v=582"></script>
-  <script defer src="js/playbook-render.js?v=582"></script>
-  <script defer src="js/playbook-sanitize.js?v=582"></script>
-  <script defer src="js/script-state.js?v=582"></script>
-  <script defer src="js/script-shared.js?v=582"></script>
-  <script defer src="js/script-players.js?v=582"></script>
-  <script defer src="js/script-display-options.js?v=582"></script>
-  <script defer src="js/play-readiness.js?v=582"></script>
-  <script defer src="js/script-add.js?v=582"></script>
-  <script defer src="js/script-sort.js?v=582"></script>
-  <script defer src="js/script-export.js?v=582"></script>
-  <script defer src="js/script-available.js?v=582"></script>
-  <script defer src="js/script-selection.js?v=582"></script>
-  <script defer src="js/script-render.js?v=582"></script>
-  <script defer src="js/script-periods.js?v=582"></script>
-  <script defer src="js/script-period-sync.js?v=582"></script>
-  <script defer src="js/script-smart.js?v=582"></script>
-  <script defer src="js/script-storage.js?v=582"></script>
-  <script defer src="js/script-integrations.js?v=582"></script>
-  <script defer src="js/play-presentation.js?v=582"></script>
-  <script defer src="js/wristband.js?v=582"></script>
-  <script defer src="js/wristband-library.js?v=582"></script>
-  <script defer src="js/wristband-render.js?v=582"></script>
-  <script defer src="js/wristband-cards.js?v=582"></script>
-  <script defer src="js/wristband-export.js?v=582"></script>
-  <script defer src="js/wristband-search.js?v=582"></script>
-  <script defer src="js/wristband-modals.js?v=582"></script>
-  <script defer src="js/wristband-cell-popup.js?v=582"></script>
-  <script defer src="js/wristband-cell-actions.js?v=582"></script>
-  <script defer src="js/wristband-sort.js?v=582"></script>
-  <script defer src="js/wristband-storage.js?v=582"></script>
-  <script defer src="js/wristband-runtime.js?v=582"></script>
-  <script defer src="js/callsheet.js?v=582"></script>
-  <script defer src="js/callsheet-categories.js?v=582"></script>
-  <script defer src="js/callsheet-metadata.js?v=582"></script>
-  <script defer src="js/callsheet-layout.js?v=582"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=582"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=582"></script>
-  <script defer src="js/constraints.js?v=582"></script>
-  <script defer src="js/script-vision.js?v=582"></script>
-  <script defer src="js/tendencies-render.js?v=582"></script>
-  <script defer src="js/tendencies.js?v=582"></script>
-  <script defer src="js/installation-render.js?v=582"></script>
-  <script defer src="js/installation.js?v=582"></script>
-  <script defer src="js/identity.js?v=582"></script>
-  <script defer src="js/offensebuilder.js?v=582"></script>
-  <script defer src="js/help.js?v=582"></script>
-  <script defer src="js/dashboard.js?v=582"></script>
-  <script defer src="js/gameplan.js?v=582"></script>
-  <script defer src="js/gameplan-render.js?v=582"></script>
-  <script defer src="js/gameplan-dnd.js?v=582"></script>
-  <script defer src="js/gameplan-actions.js?v=582"></script>
-  <script defer src="js/gameplan-smart.js?v=582"></script>
-  <script defer src="js/gameplan-print.js?v=582"></script>
-  <script defer src="js/gameplan-integrations.js?v=582"></script>
-  <script defer src="js/gameplan-snapshots.js?v=582"></script>
-  <script defer src="js/print-studio.js?v=582"></script>
-  <script defer src="js/app-events.js?v=582"></script>
-  <script defer src="js/app-shell.js?v=582"></script>
-  <script defer src="js/app-session.js?v=582"></script>
-  <script defer src="js/app-navigation.js?v=582"></script>
-  <script defer src="js/app-module-init.js?v=582"></script>
-  <script defer src="js/app-bootstrap.js?v=582"></script>
-  <script defer src="js/app-init.js?v=582"></script>
-  <script defer src="js/app.js?v=582"></script>
+  <script defer src="js/utils.js?v=583"></script>
+  <script defer src="js/history.js?v=583"></script>
+  <script defer src="js/dom-helpers.js?v=583"></script>
+  <script defer src="js/lz-string.min.js?v=583"></script>
+  <script defer src="js/storage.js?v=583"></script>
+  <script defer src="js/storage-ui.js?v=583"></script>
+  <script defer src="js/play-images.js?v=583"></script>
+  <script defer src="js/cloud-sync.js?v=583"></script>
+  <script defer src="js/auth.js?v=583"></script>
+  <script defer src="js/vision.js?v=583"></script>
+  <script defer src="js/team-settings.js?v=583"></script>
+  <script defer src="js/playbook.js?v=583"></script>
+  <script defer src="js/playbook-collections.js?v=583"></script>
+  <script defer src="js/playbook-print.js?v=583"></script>
+  <script defer src="js/playbook-editor.js?v=583"></script>
+  <script defer src="js/playbook-import.js?v=583"></script>
+  <script defer src="js/playbook-export.js?v=583"></script>
+  <script defer src="js/playbook-chrome.js?v=583"></script>
+  <script defer src="js/playbook-state.js?v=583"></script>
+  <script defer src="js/playbook-filters.js?v=583"></script>
+  <script defer src="js/playbook-navigation.js?v=583"></script>
+  <script defer src="js/playbook-actions.js?v=583"></script>
+  <script defer src="js/playbook-render.js?v=583"></script>
+  <script defer src="js/playbook-sanitize.js?v=583"></script>
+  <script defer src="js/script-state.js?v=583"></script>
+  <script defer src="js/script-shared.js?v=583"></script>
+  <script defer src="js/script-players.js?v=583"></script>
+  <script defer src="js/script-display-options.js?v=583"></script>
+  <script defer src="js/play-readiness.js?v=583"></script>
+  <script defer src="js/script-add.js?v=583"></script>
+  <script defer src="js/script-sort.js?v=583"></script>
+  <script defer src="js/script-export.js?v=583"></script>
+  <script defer src="js/script-available.js?v=583"></script>
+  <script defer src="js/script-selection.js?v=583"></script>
+  <script defer src="js/script-render.js?v=583"></script>
+  <script defer src="js/script-periods.js?v=583"></script>
+  <script defer src="js/script-period-sync.js?v=583"></script>
+  <script defer src="js/script-smart.js?v=583"></script>
+  <script defer src="js/script-storage.js?v=583"></script>
+  <script defer src="js/script-integrations.js?v=583"></script>
+  <script defer src="js/play-presentation.js?v=583"></script>
+  <script defer src="js/wristband.js?v=583"></script>
+  <script defer src="js/wristband-library.js?v=583"></script>
+  <script defer src="js/wristband-render.js?v=583"></script>
+  <script defer src="js/wristband-cards.js?v=583"></script>
+  <script defer src="js/wristband-export.js?v=583"></script>
+  <script defer src="js/wristband-search.js?v=583"></script>
+  <script defer src="js/wristband-modals.js?v=583"></script>
+  <script defer src="js/wristband-cell-popup.js?v=583"></script>
+  <script defer src="js/wristband-cell-actions.js?v=583"></script>
+  <script defer src="js/wristband-sort.js?v=583"></script>
+  <script defer src="js/wristband-storage.js?v=583"></script>
+  <script defer src="js/wristband-runtime.js?v=583"></script>
+  <script defer src="js/callsheet-render.js?v=583"></script>
+  <script defer src="js/callsheet.js?v=583"></script>
+  <script defer src="js/callsheet-categories.js?v=583"></script>
+  <script defer src="js/callsheet-metadata.js?v=583"></script>
+  <script defer src="js/callsheet-layout.js?v=583"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=583"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=583"></script>
+  <script defer src="js/constraints.js?v=583"></script>
+  <script defer src="js/script-vision.js?v=583"></script>
+  <script defer src="js/tendencies-render.js?v=583"></script>
+  <script defer src="js/tendencies.js?v=583"></script>
+  <script defer src="js/installation-render.js?v=583"></script>
+  <script defer src="js/installation.js?v=583"></script>
+  <script defer src="js/identity.js?v=583"></script>
+  <script defer src="js/offensebuilder.js?v=583"></script>
+  <script defer src="js/help.js?v=583"></script>
+  <script defer src="js/dashboard.js?v=583"></script>
+  <script defer src="js/gameplan.js?v=583"></script>
+  <script defer src="js/gameplan-render.js?v=583"></script>
+  <script defer src="js/gameplan-dnd.js?v=583"></script>
+  <script defer src="js/gameplan-actions.js?v=583"></script>
+  <script defer src="js/gameplan-smart.js?v=583"></script>
+  <script defer src="js/gameplan-print.js?v=583"></script>
+  <script defer src="js/gameplan-integrations.js?v=583"></script>
+  <script defer src="js/gameplan-snapshots.js?v=583"></script>
+  <script defer src="js/print-studio.js?v=583"></script>
+  <script defer src="js/app-events.js?v=583"></script>
+  <script defer src="js/app-shell.js?v=583"></script>
+  <script defer src="js/app-session.js?v=583"></script>
+  <script defer src="js/app-navigation.js?v=583"></script>
+  <script defer src="js/app-module-init.js?v=583"></script>
+  <script defer src="js/app-bootstrap.js?v=583"></script>
+  <script defer src="js/app-init.js?v=583"></script>
+  <script defer src="js/app.js?v=583"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

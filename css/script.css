@@ -555,25 +555,41 @@
 
 .play-readiness-badge--trusted {
   --prb-bg: var(--color-success-light);
-  --prb-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-success-hover);
 }
 
 .play-readiness-badge--ready {
   --prb-bg: var(--color-primary-light);
-  --prb-border: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-primary) 42%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-primary);
 }
 
 .play-readiness-badge--needs {
   --prb-bg: var(--color-warning-light);
-  --prb-border: color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-warning) 45%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-warning-hover);
 }
 
 .play-readiness-badge--risk {
   --prb-bg: var(--color-danger-light);
-  --prb-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-danger) 42%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-danger);
 }
 
@@ -675,8 +691,11 @@
   padding: 16px;
   margin-bottom: 12px;
   border-radius: var(--radius-xl);
-  background:
-    linear-gradient(180deg, var(--color-white), var(--color-bg-light));
+  background: linear-gradient(
+    180deg,
+    var(--color-white),
+    var(--color-bg-light)
+  );
   cursor: default;
   box-shadow: var(--shadow-sm);
 }
@@ -4035,8 +4054,14 @@ body[data-auth-role="player"] .script-builder {
 }
 .script-packet-diagram-grid {
   display: grid;
-  grid-template-columns: repeat(var(--script-packet-diagram-cols, 2), minmax(0, 1fr));
-  grid-template-rows: repeat(var(--script-packet-diagram-rows, 4), minmax(0, 1fr));
+  grid-template-columns: repeat(
+    var(--script-packet-diagram-cols, 2),
+    minmax(0, 1fr)
+  );
+  grid-template-rows: repeat(
+    var(--script-packet-diagram-rows, 4),
+    minmax(0, 1fr)
+  );
   gap: 7px;
   flex: 1;
   min-height: 0;
@@ -5140,7 +5165,9 @@ body[data-auth-role="player"] .period-buttons {
   }
 }
 
-@media (max-width: 560px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+@media (max-width: 560px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
   .play-list,
   .script-list {
     padding: 12px;
