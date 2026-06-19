@@ -416,6 +416,7 @@
   function applyRoleUi() {
     if (!document.body) return;
     document.body.classList.toggle("auth-locked", !currentAuthUser);
+    ensureLoginOverlayVisible();
     document.body.dataset.authRole = currentAuthUser?.role || "locked";
     document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
@@ -594,6 +595,12 @@
       }
     });
     requestAnimationFrame(() => usernameEl.focus());
+  }
+
+  function ensureLoginOverlayVisible() {
+    if (currentAuthUser || !document.body) return;
+    if (document.getElementById("authLoginOverlay")) return;
+    showLoginOverlay("Secure login required.");
   }
 
   async function logoutAuth() {
