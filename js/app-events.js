@@ -82,15 +82,15 @@ function getAppActionHitDiagnostics(element) {
     },
     topElement: topElement
       ? {
-          tag: topElement.tagName.toLowerCase(),
-          id: topElement.id || "",
-          action: topElement.closest("[data-action]")?.dataset.action || "",
-          className: String(topElement.className || "").slice(0, 120),
-          receivesPoint:
-            topElement === element ||
-            element.contains(topElement) ||
-            topElement.closest("[data-action]") === element,
-        }
+        tag: topElement.tagName.toLowerCase(),
+        id: topElement.id || "",
+        action: topElement.closest("[data-action]")?.dataset.action || "",
+        className: String(topElement.className || "").slice(0, 120),
+        receivesPoint:
+          topElement === element ||
+          element.contains(topElement) ||
+          topElement.closest("[data-action]") === element,
+      }
       : null,
     hitStack: getAppElementsFromPointDiagnostics(centerX, centerY),
   };
@@ -198,26 +198,26 @@ function traceAppInputEvent(phase, event) {
   const point = getAppEventClientPoint(event);
   const payload = target
     ? getAppActionTracePayload(target, {
-        eventType: event.type,
-        eventPhase: event.eventPhase,
-        pointerType: event.pointerType || "",
-        isTrusted: event.isTrusted,
-        defaultPrevented: event.defaultPrevented,
-        clientX: point.x,
-        clientY: point.y,
-        includeHitDiagnostics: true,
-      })
+      eventType: event.type,
+      eventPhase: event.eventPhase,
+      pointerType: event.pointerType || "",
+      isTrusted: event.isTrusted,
+      defaultPrevented: event.defaultPrevented,
+      clientX: point.x,
+      clientY: point.y,
+      includeHitDiagnostics: true,
+    })
     : {
-        action: "",
-        eventType: event.type,
-        eventPhase: event.eventPhase,
-        pointerType: event.pointerType || "",
-        isTrusted: event.isTrusted,
-        defaultPrevented: event.defaultPrevented,
-        clientX: point.x,
-        clientY: point.y,
-        hitStack: getAppElementsFromPointDiagnostics(point.x, point.y),
-      };
+      action: "",
+      eventType: event.type,
+      eventPhase: event.eventPhase,
+      pointerType: event.pointerType || "",
+      isTrusted: event.isTrusted,
+      defaultPrevented: event.defaultPrevented,
+      clientX: point.x,
+      clientY: point.y,
+      hitStack: getAppElementsFromPointDiagnostics(point.x, point.y),
+    };
   traceAppAction(phase, payload);
 }
 
@@ -253,9 +253,9 @@ if (typeof window !== "undefined") {
       Number.isFinite(Number(x)) && Number.isFinite(Number(y))
         ? { x: Number(x), y: Number(y) }
         : {
-            x: Math.round((window.innerWidth || 0) / 2),
-            y: Math.round((window.innerHeight || 0) / 2),
-          };
+          x: Math.round((window.innerWidth || 0) / 2),
+          y: Math.round((window.innerHeight || 0) / 2),
+        };
     const rows = getAppElementsFromPointDiagnostics(point.x, point.y);
     console.table(rows);
     return rows;

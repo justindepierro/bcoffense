@@ -124,7 +124,9 @@
     height: 44px;
   }
 
-  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+  input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(
+      [type="file"]
+    ),
   select,
   textarea {
     min-height: 44px;
@@ -138,13 +140,17 @@
   }
 }
 
-@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
   html {
     scroll-padding-top: calc(
       var(--app-header-height, 50px) + var(--app-tabs-height, 44px) +
         var(--space-sm)
     );
-    scroll-padding-bottom: calc(var(--coach-dock-height, 76px) + var(--space-md));
+    scroll-padding-bottom: calc(
+      var(--coach-dock-height, 76px) + var(--space-md)
+    );
   }
 
   html.is-mobile-screen,
@@ -269,7 +275,8 @@
     max-width: 49vw;
   }
 
-  body.is-mobile-screen[data-auth-role="player"] .auth-user-badge:not([hidden]) {
+  body.is-mobile-screen[data-auth-role="player"]
+    .auth-user-badge:not([hidden]) {
     display: inline-flex;
     align-items: center;
     justify-content: center;
@@ -304,8 +311,7 @@
     bottom: 0;
     left: 0;
     min-height: calc(72px + env(safe-area-inset-bottom));
-    padding:
-      8px max(10px, env(safe-area-inset-right))
+    padding: 8px max(10px, env(safe-area-inset-right))
       calc(8px + env(safe-area-inset-bottom))
       max(12px, env(safe-area-inset-left));
     gap: 8px;
@@ -407,6 +413,7 @@
     contain-intrinsic-size: none;
   }
 
+  /* Mobile Coach: Stack panes vertically, script first */
   body.is-mobile-screen.is-staff-mobile-shell #script .script-builder {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
@@ -414,15 +421,14 @@
 
   body.is-mobile-screen.is-staff-mobile-shell #script .script-list {
     order: 1;
+    overflow: visible;
   }
 
   body.is-mobile-screen.is-staff-mobile-shell #script .play-list {
-    position: static;
-    top: auto;
     order: 2;
+    overflow: visible;
     height: auto;
     max-height: none;
-    overflow: visible;
   }
 
   body.is-mobile-screen.is-staff-mobile-shell #script .script-player-grid {
@@ -469,11 +475,16 @@
     padding: 8px;
   }
 
-  body.is-phone-screen.is-staff-mobile-shell #script .play-readiness-quick-score {
+  body.is-phone-screen.is-staff-mobile-shell
+    #script
+    .play-readiness-quick-score {
     margin: 0;
   }
 
-  body.is-mobile-screen input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not([type="file"]),
+  body.is-mobile-screen
+    input:not([type="checkbox"]):not([type="radio"]):not([type="color"]):not(
+      [type="file"]
+    ),
   body.is-mobile-screen select,
   body.is-mobile-screen textarea {
     font-size: 16px;

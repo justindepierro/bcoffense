@@ -1085,8 +1085,8 @@ function buildPlayerCategoryAutoFillTargets(items, options = {}) {
   const hiddenIds = getHiddenCallSheetCategoryIds();
   const playerCats = Array.isArray(CALLSHEET_CATEGORIES)
     ? CALLSHEET_CATEGORIES.filter(
-        (cat) => cat.playerSpecific && !hiddenIds.has(cat.id),
-      )
+      (cat) => cat.playerSpecific && !hiddenIds.has(cat.id),
+    )
     : [];
 
   playerCats.forEach((cat) => {
@@ -4172,9 +4172,9 @@ async function applyCallSheetTemplate(template) {
     template.includePlays === false || template.templateKind === "structure";
   const preservedWristband = template.builtIn
     ? {
-        name: callSheetSettings.loadedWristbandName || "",
-        plays: safeDeepClone(callSheetSettings.loadedWristbandPlays || []),
-      }
+      name: callSheetSettings.loadedWristbandName || "",
+      plays: safeDeepClone(callSheetSettings.loadedWristbandPlays || []),
+    }
     : null;
 
   try {
@@ -4239,7 +4239,7 @@ async function applyCallSheetTemplate(template) {
     closeTemplateModal();
     showToast(
       `📁 Loaded ${isStructure ? "structure" : "call sheet"} "${template.name}"` +
-        (wristbandSynced > 0 ? ` · synced ${wristbandSynced} wristband passes` : ""),
+      (wristbandSynced > 0 ? ` · synced ${wristbandSynced} wristband passes` : ""),
     );
   } catch (err) {
     console.error("applyCallSheetTemplate error:", err);

@@ -20,12 +20,6 @@
   min-width: 0;
   display: flex;
   flex-direction: column;
-  position: sticky;
-  top: 78px;
-  height: calc(100dvh - 92px);
-  max-height: calc(100dvh - 92px);
-  overflow-x: hidden;
-  overflow-y: auto;
   background: linear-gradient(
     180deg,
     var(--color-surface-raised),

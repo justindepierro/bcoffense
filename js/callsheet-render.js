@@ -667,7 +667,7 @@ function getCallSheetCategoriesForPage(page) {
   const normalized = normalizeCallSheetPage(page);
   const source = normalized === "back" ? CALLSHEET_BACK : CALLSHEET_FRONT;
   const order = csCategoryOrder[normalized] || source.map((cat) => cat.id);
-  
+
   return order
     .map((id) => source.find((cat) => cat.id === id))
     .filter(Boolean);
@@ -1107,7 +1107,7 @@ function renderCsSortCriteria() {
 function updatePageToggle() {
   const frontBtn = document.getElementById("csPageFrontBtn");
   const backBtn = document.getElementById("csPageBackBtn");
-  
+
   if (frontBtn) {
     frontBtn.classList.toggle("active", callSheetSettings.currentPage === "front");
   }
@@ -1117,7 +1117,7 @@ function updatePageToggle() {
 
   const orientLandscape = document.getElementById("csOrientLandscape");
   const orientPortrait = document.getElementById("csOrientPortrait");
-  
+
   if (orientLandscape) {
     orientLandscape.classList.toggle("active", callSheetSettings.orientation === "landscape");
   }
