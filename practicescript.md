@@ -1,111 +1,172 @@
-## Practice Script Deep Audit — Round 2 (2026-06-19)
+## Practice Script Nuts-to-Bolts Deep Scan (2026-06-19)
 
-This is a full redo of the 23-point audit with current-source verification after recent fixes (auth persistence, container sizing, mobile blur reduction, input debouncing).
+This is a full architectural audit of the Practice Script page focused on simplification, clutter reduction, parseability, and performance.
+
+## Complexity Baseline
+
+- Script runtime JS footprint (script-* files only): 10k+ lines
+- Largest runtime modules:
+  - js/script-render.js: 1747 lines
+  - js/script-export.js: 1496 lines
+  - js/script-storage.js: 1469 lines
+  - js/script-add.js: 820 lines
+  - js/script-periods.js: 807 lines
+  - js/script-selection.js: 709 lines
+  - js/script-smart.js: 691 lines
+- CSS footprint:
+  - css/script.css: 5771 lines
+- Markup footprint:
+  - index.html: 3624 lines
+  - Script panel spans roughly line 876 to before call sheet panel
+
+Interpretation: page complexity is functional but too concentrated in a few very large files, making it harder to reason about regressions.
+
+---
+
+## 23-Point Re-Audit (Deep)
 
 Status key: PASS, PARTIAL, FAIL
 
-1. PASS — Script DOM structure and pane ancestry are correct (`#script` -> `.script-builder` -> `.play-list` + `.script-list` -> `#scriptPlays`).
-2. PASS — Desktop scroll architecture is clear and stable.
-3. PASS — Right-pane scroll owner is `#scriptPlays.script-container`.
-4. PASS — CSS cascade debt from old base scroll assumptions is largely cleaned.
-5. PASS — Desktop/mobile contracts are separated and selector-scoped.
-6. PARTIAL — Toolbar/action hierarchy works, but sticky chrome remains visually dense on small screens.
-7. PASS — Event path is traceable and deterministic via delegated `data-action` handlers.
-8. PASS — Action ownership is centralized enough for maintainability.
-9. PASS — No broad mobile interception layer remains.
-10. PASS — No critical invisible click interceptors found.
-11. PASS — Overlay/modal state model is coherent.
+1. PASS — Script DOM ancestry and core panel structure are coherent.
+2. PASS — Desktop two-column scroll architecture is present.
+3. PASS — Right scroll owner remains #scriptPlays.
+4. PARTIAL — CSS contract is correct but duplicated across broad media blocks.
+5. PASS — Desktop/mobile contracts are separated by selector strategy.
+6. PARTIAL — Toolbar/action hierarchy is functional but visually dense.
+7. PASS — Event path is deterministic and mostly delegated.
+8. PARTIAL — Action ownership exists but script listeners still contain large switch-style branches.
+9. PASS — No broad mobile interception layer blocking taps.
+10. PASS — No major invisible click interceptors found.
+11. PASS — Modal/overlay state model is coherent.
 12. PASS — Presentation orientation behavior is stable.
-13. PARTIAL — Presentation/canvas lifecycle is mostly stable; still needs stress testing under rapid open/close loops.
-14. PARTIAL — Render strategy is mixed: optimized in places, still full-list rendering in core path.
-15. PARTIAL — MutationObserver usage is scoped, but auth and a11y observers remain broad at body subtree level.
-16. PASS — Mobile content-visibility override is in place for script rows and available plays container.
-17. PARTIAL — Idle CPU is improved, but large scripts still create visible main-thread spikes during full rerenders.
-18. PASS — Service worker cache behavior is correct and versioned (`bcoffense-v603`).
-19. PASS — Contrast/hierarchy and token usage are consistent.
-20. PASS — Ownership boundaries are mostly clear across split runtime files.
-21. PASS — Testing criteria for layout contract are met.
-22. PARTIAL — Acceptance criteria pass for layout/event routing; performance criteria need numeric thresholds.
-23. PARTIAL — Final report quality was improved, but prior report contained stale claims and is now superseded by this document.
+13. PARTIAL — Presentation lifecycle is mostly stable but needs stress-loop testing.
+14. PARTIAL — Render strategy mixes efficient row updates with full container innerHTML refresh paths.
+15. PARTIAL — Observer scope is better but still broad in app-shell/auth for large subtree changes.
+16. PASS — Mobile content-visibility overrides are in place for script rows/available plays.
+17. PARTIAL — Idle CPU improved, but large script rerenders still spike main thread.
+18. PASS — Service worker versioning and cache behavior are correct.
+19. PASS — Design token usage is consistent.
+20. PASS — Ownership boundaries exist but render-related concerns are still concentrated.
+21. PASS — Scroll container contract and layout checks pass.
+22. PARTIAL — Acceptance quality for layout is strong; measurable perf thresholds are still missing.
+23. PARTIAL — Previous reports had drift; this file is now authoritative for current state.
 
 ---
 
-## Deep Findings (Current)
+## Core Simplification Findings
 
-### Critical
+### A) Event Layer Complexity
 
-1. Full script list rerender remains the dominant cost
-- Location: `js/script-render.js` (`renderScriptContent`, `renderScriptRows`)
-- Issue: Major operations still rebuild entire script HTML string and reassign `innerHTML`.
-- Impact: Large scripts spike render/parse/layout costs.
+Evidence:
+- app-events script block contains dense click/change/input handling for many fields/actions.
+- Large switch logic and repeated field mapping previously increased cognitive overhead.
 
-2. High-frequency input updates were previously too chatty
-- Location: `js/app-events.js` script input listener
-- Fix applied now: debounced updates for notes, defense fields, shift/motion, period label/notes.
-- Impact reduced: fewer rerenders while typing.
+Improvement applied:
+- Script field update logic has been refactored into handler maps in js/app-events.js.
+- High-frequency input paths are debounced to reduce churn.
 
-### High
+Remaining simplification target:
+- Split script event registration into a dedicated script-events.js module and keep app-events.js as global shell router.
 
-3. Sticky script chrome still competes for vertical space
-- Location: `css/script.css` (`.script-toolbar`, `.script-actions`)
-- Issue: Necessary but heavy visual chrome in constrained mobile heights.
+### B) Render Layer Complexity
 
-4. Wide delegated listeners can still process high event volume
-- Location: `js/app-events.js`, `js/auth.js`, `js/app-shell.js`
-- Issue: delegation is correct, but large dynamic DOM and broad selectors increase work under frequent DOM churn.
+Evidence:
+- script-render.js still uses full container innerHTML assignment in core content path.
+- Multiple querySelectorAll and innerHTML hot paths across render/export/storage flows.
 
-5. Auth role application can be expensive on large subtree mutations
-- Location: `js/auth.js`
-- Improvement already applied: incremental subtree auth application + persisted session fallback.
+Risk:
+- Large script sizes trigger parse/reflow spikes.
 
-### Medium
+Recommended simplification:
+1. Create a small script-dom-patch helper that updates only changed row blocks and period headers.
+2. Keep full rerender only for structural operations (insert/remove/reorder periods).
+3. Add render reason codes (e.g., row-edit, period-edit, structure-change) to route patching behavior.
 
-6. Practicescript report drift
-- Location: this file’s previous content
-- Issue: prior “complete” claims did not reflect runtime truth at time of complaint.
-- Resolution: this document replaces old claims.
+### C) CSS Clutter
 
-7. Search/filter UX in very large scripts
-- Location: `js/script-render.js` search + list filtering
-- Issue: acceptable for normal sizes, can feel laggy in very large datasets.
+Evidence:
+- script-toolbar/script-actions/script-list/play-list rules appear in multiple regions and breakpoints.
+- Broad media ranges create overlap that is hard to audit quickly.
+
+Recommended simplification:
+1. Extract explicit “Desktop Contract” block and “Mobile Contract” block near file end.
+2. Move duplicated toolbar/action responsive overrides into grouped utility sections.
+3. Keep sticky behavior flags scoped to desktop only with one canonical selector set.
+
+### D) Markup Density
+
+Evidence:
+- Script panel in index.html includes many control clusters and tool menus inline.
+
+Recommended simplification:
+1. Move large repeated button groups to template-builder functions in JS.
+2. Keep index.html focused on structural containers and anchor elements.
+3. Add lightweight section comments that mirror runtime ownership files.
+
+### E) Reliability/UX
+
+Evidence:
+- Heavy tool surface in one viewport can feel cluttered on mobile.
+- Many controls are visible at once before intent narrowing.
+
+Recommended simplification:
+1. Introduce “Basic vs Advanced” mode toggles for script toolbar/actions.
+2. Collapse advanced actions into one predictable drawer by default.
+3. Keep search/sort/undo-save always visible; move infrequent tools behind one menu.
 
 ---
 
-## Improvements Implemented In This Pass
+## What Was Refactored In This Pass
 
-1. Persistent auth session behavior for refresh reliability
-- `js/auth.js`
-- `js/storage.js`
+1. Script input/change handling simplified in js/app-events.js
+- Added scriptChangeFieldHandlers map
+- Added scriptLiveFieldHandlers map
+- Preserved behavior while reducing duplication
 
-2. Local dev login fallback hardening
-- `js/auth.js`
+2. Input pressure reduction
+- Debounced high-frequency script input updates already in place and retained
 
-3. Incremental auth UI application for dynamic DOM updates
-- `js/auth.js`
-
-4. Mobile/touch GPU optimization by removing heavy blur in script sticky chrome
-- `css/script.css`
-
-5. Debounced high-frequency script input updates
-- `js/app-events.js`
-
-6. Service worker cache bump for immediate asset refresh
-- `sw.js` (`bcoffense-v603`)
+3. Cache rollout
+- Service worker bumped to bcoffense-v605
 
 ---
 
-## Next Deep Optimization Queue
+## Refactor Plan (Safe Order)
 
-1. Introduce partial DOM patching for script rows (avoid full-list `innerHTML` replacements for common operations).
-2. Add perf instrumentation around `renderScriptPlays` with sampled timings and threshold alerts.
-3. Add virtualized rendering mode for very large scripts (feature-flagged).
-4. Add role-specific smoke tests (admin/coach/player) covering login persistence, tab access, and refresh behavior.
-5. Add mobile stress test suite (rapid period expand/collapse, drag/drop, open/close presentation).
+Phase 1 (Low risk, high clarity)
+1. Extract script event registration into dedicated module
+2. Keep map-driven handlers and remove remaining duplicate field wiring
+3. Add small event tracing utility for script actions
+
+Phase 2 (Performance + parseability)
+1. Introduce row/period patch updates in script-render
+2. Keep full rerender only for structural changes
+3. Add render timing metrics and warn when threshold exceeded
+
+Phase 3 (UI simplification)
+1. Basic/Advanced toolbar mode
+2. Reduce always-visible buttons on mobile
+3. Normalize sticky behavior and spacing between toolbar/actions/content
+
+Phase 4 (File structure cleanup)
+1. Split oversized script-render into focused files:
+   - script-render-timeline.js
+   - script-render-rows.js
+   - script-render-health.js
+2. Keep one shared facade export to avoid load-order breakage
+
+---
+
+## Immediate Next Targets
+
+1. Extract script-specific event wiring out of app-events.js
+2. Introduce first patch-render path for non-structural row edits
+3. Add a compact mobile “core controls” mode
 
 ---
 
 ## Verification Notes
 
-- Current cache version: `bcoffense-v603`
-- Audit reflects current source as of this pass.
-- This file supersedes earlier “all complete” reporting.
+- Current service worker cache: bcoffense-v605
+- This document supersedes prior audit summaries
+- This audit is intended to guide active refactor work, not just describe status

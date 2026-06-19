@@ -641,6 +641,38 @@ document.addEventListener("DOMContentLoaded", () => {
       scriptInputTimers.delete(key);
     };
 
+    const scriptChangeFieldHandlers = {
+      hash: ({ idx, el }) => updateHash(idx, el.value),
+      defFront: ({ idx, el }) => updateDefField(idx, "defFront", el.value),
+      defCoverage: ({ idx, el }) => updateDefField(idx, "defCoverage", el.value),
+      defStunt: ({ idx, el }) => updateDefField(idx, "defStunt", el.value),
+      defBlitz: ({ idx, el }) => updateDefField(idx, "defBlitz", el.value),
+      shift: ({ idx, el }) => updateScriptCallField(idx, "shift", el.value),
+      motion: ({ idx, el }) => updateScriptCallField(idx, "motion", el.value),
+      reps: ({ idx, el }) => updateReps(idx, el.value),
+      notes: ({ idx, el }) => updateNotes(idx, el.value),
+      playerAssignment: ({ idx, el }) =>
+        updateScriptPlayerAssignment(idx, el.dataset.slot, el.value),
+      scriptSubPackage: ({ idx, el }) => applyScriptSubPackage(idx, el.value),
+      bulkSelect: ({ idx }) => toggleBulkSelect(idx),
+      periodColor: ({ idx, el }) => updatePeriodColor(idx, el),
+      periodLabel: ({ idx, el }) => updatePeriodLabel(idx, el.value, false),
+      periodNotes: ({ idx, el }) => updatePeriodNotes(idx, el.value, false),
+      periodMinutes: ({ idx, el }) => updatePeriodMinutes(idx, el),
+    };
+
+    const scriptLiveFieldHandlers = {
+      notes: ({ idx, el }) => updateNotes(idx, el.value),
+      defFront: ({ idx, el }) => updateDefField(idx, "defFront", el.value),
+      defCoverage: ({ idx, el }) => updateDefField(idx, "defCoverage", el.value),
+      defStunt: ({ idx, el }) => updateDefField(idx, "defStunt", el.value),
+      defBlitz: ({ idx, el }) => updateDefField(idx, "defBlitz", el.value),
+      shift: ({ idx, el }) => updateScriptCallField(idx, "shift", el.value),
+      motion: ({ idx, el }) => updateScriptCallField(idx, "motion", el.value),
+      periodLabel: ({ idx, el }) => updatePeriodLabel(idx, el.value, true),
+      periodNotes: ({ idx, el }) => updatePeriodNotes(idx, el.value, true),
+    };
+
     scriptEl.addEventListener("click", (e) => {
       const el = e.target.closest("[data-action]");
       if (!el) return;
@@ -727,59 +759,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const field = el.dataset.field;
       if (!field) return;
       const idx = parseInt(el.dataset.idx, 10);
+      if (Number.isNaN(idx)) return;
       if (!Number.isNaN(idx)) {
         flushScriptFieldUpdate(idx, field);
       }
-      switch (field) {
-        case "hash":
-          updateHash(idx, el.value);
-          break;
-        case "defFront":
-          updateDefField(idx, "defFront", el.value);
-          break;
-        case "defCoverage":
-          updateDefField(idx, "defCoverage", el.value);
-          break;
-        case "defStunt":
-          updateDefField(idx, "defStunt", el.value);
-          break;
-        case "defBlitz":
-          updateDefField(idx, "defBlitz", el.value);
-          break;
-        case "shift":
-          updateScriptCallField(idx, "shift", el.value);
-          break;
-        case "motion":
-          updateScriptCallField(idx, "motion", el.value);
-          break;
-        case "reps":
-          updateReps(idx, el.value);
-          break;
-        case "notes":
-          updateNotes(idx, el.value);
-          break;
-        case "playerAssignment":
-          updateScriptPlayerAssignment(idx, el.dataset.slot, el.value);
-          break;
-        case "scriptSubPackage":
-          applyScriptSubPackage(idx, el.value);
-          break;
-        case "bulkSelect":
-          toggleBulkSelect(idx);
-          break;
-        case "periodColor":
-          updatePeriodColor(idx, el);
-          break;
-        case "periodLabel":
-          updatePeriodLabel(idx, el.value, false);
-          break;
-        case "periodNotes":
-          updatePeriodNotes(idx, el.value, false);
-          break;
-        case "periodMinutes":
-          updatePeriodMinutes(idx, el);
-          break;
-      }
+      const handler = scriptChangeFieldHandlers[field];
+      if (!handler) return;
+      handler({ idx, el });
     });
 
     scriptEl.addEventListener("input", (e) => {
@@ -792,65 +778,13 @@ document.addEventListener("DOMContentLoaded", () => {
       const isBulkContext =
         bulkSelectedIndices.length > 1 && bulkSelectedIndices.includes(idx);
 
-      switch (field) {
-        case "notes":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () => updateNotes(idx, el.value));
-          }
-          break;
-        case "defFront":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () =>
-              updateDefField(idx, "defFront", el.value),
-            );
-          }
-          break;
-        case "defCoverage":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () =>
-              updateDefField(idx, "defCoverage", el.value),
-            );
-          }
-          break;
-        case "defStunt":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () =>
-              updateDefField(idx, "defStunt", el.value),
-            );
-          }
-          break;
-        case "defBlitz":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () =>
-              updateDefField(idx, "defBlitz", el.value),
-            );
-          }
-          break;
-        case "shift":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () =>
-              updateScriptCallField(idx, "shift", el.value),
-            );
-          }
-          break;
-        case "motion":
-          if (!isBulkContext) {
-            queueScriptFieldUpdate(idx, field, () =>
-              updateScriptCallField(idx, "motion", el.value),
-            );
-          }
-          break;
-        case "periodLabel":
-          queueScriptFieldUpdate(idx, field, () =>
-            updatePeriodLabel(idx, el.value, true),
-          );
-          break;
-        case "periodNotes":
-          queueScriptFieldUpdate(idx, field, () =>
-            updatePeriodNotes(idx, el.value, true),
-          );
-          break;
+      if (isBulkContext && ["notes", "defFront", "defCoverage", "defStunt", "defBlitz", "shift", "motion"].includes(field)) {
+        return;
       }
+
+      const handler = scriptLiveFieldHandlers[field];
+      if (!handler) return;
+      queueScriptFieldUpdate(idx, field, () => handler({ idx, el }));
     });
 
     scriptEl.addEventListener("dragstart", (e) => {
