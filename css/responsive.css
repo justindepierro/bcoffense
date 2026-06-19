@@ -532,7 +532,7 @@
 /* ============ Responsive Design ============ */
 @media (max-width: 1024px) {
   .script-builder {
-    flex-direction: column;
+    grid-template-columns: 1fr;
   }
   .play-list {
     max-width: 100%;

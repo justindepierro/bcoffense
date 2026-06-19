@@ -3569,12 +3569,16 @@
   body:not(.is-mobile-screen) #script .script-builder {
     flex: 1 1 auto;
     min-height: 0;
+    min-width: 0;
+    display: grid;
+    grid-template-columns: minmax(280px, 360px) minmax(0, 1fr);
     overflow: hidden;
   }
 
   body:not(.is-mobile-screen) #script .play-list,
   body:not(.is-mobile-screen) #script .script-list {
     min-height: 0;
+    min-width: 0;
     overflow: hidden;
   }
 
@@ -3602,10 +3606,7 @@
     flex-direction: column;
     gap: 16px;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior: contain;
-    scrollbar-gutter: stable;
+    overflow: hidden;
   }
 
   body:not(.is-mobile-screen) #script .available-plays-container {
@@ -3616,9 +3617,13 @@
     scrollbar-gutter: stable;
   }
 
-  body:not(.is-mobile-screen) #script .script-container {
-    min-height: 220px;
-    overflow: visible;
+  body:not(.is-mobile-screen) #script #scriptPlays.script-container {
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow-y: auto;
+    overflow-x: hidden;
+    overscroll-behavior: contain;
+    scrollbar-gutter: stable;
     padding-bottom: 12px;
   }
 
