@@ -37,6 +37,14 @@ function showTab(tabName) {
     if (typeof canAccessTab === "function" && !canAccessTab(tabName)) return;
   }
 
+  // Close presentation overlay when switching tabs
+  if (typeof closePlayPresentation === "function") {
+    const overlay = document.getElementById("playPresentationOverlay");
+    if (overlay?.classList.contains("is-open")) {
+      closePlayPresentation();
+    }
+  }
+
   currentActiveTab = tabName;
   if (document.body) document.body.dataset.activeTab = tabName;
 

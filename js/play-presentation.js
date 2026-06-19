@@ -1366,6 +1366,10 @@ function renderPlayPresentation() {
   const item = playPresentationState.items[playPresentationState.index];
   const body = document.getElementById("playPresentationBody");
   if (!item || !body) return;
+  
+  // Ensure viewport state is synchronized before render
+  syncPlayPresentationMobileLandscape();
+  
   playPresentationState.mode = ensurePlayPresentationModeAllowed(
     playPresentationState.mode,
   );
