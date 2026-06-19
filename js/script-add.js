@@ -72,11 +72,11 @@ function buildAvailableTargetPeriodSelectMarkup(playIndex) {
 
 function getAvailableAddSelection(playIndex) {
   normalizeSelectedAvailablePlays();
-  if (
-    selectedAvailablePlays.length > 1 &&
-    selectedAvailablePlays.includes(playIndex)
-  ) {
-    return [...selectedAvailablePlays].sort((a, b) => a - b);
+  if (selectedAvailablePlays.length > 1) {
+    const selectedSet = new Set(selectedAvailablePlays);
+    if (selectedSet.has(playIndex)) {
+      return [...selectedAvailablePlays].sort((a, b) => a - b);
+    }
   }
   return Number.isInteger(playIndex) ? [playIndex] : [];
 }

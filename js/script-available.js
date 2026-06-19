@@ -431,10 +431,12 @@ function renderAvailablePlays() {
       .map((item) => `${item.formation}||${item.protection}||${item.play}`),
   );
 
+  const selectedSet = new Set(selectedAvailablePlays);
+
   container.innerHTML = pageFiltered
     .map((play) => {
       const playIdx = playIndexMap.get(play);
-      const isSelected = selectedAvailablePlays.includes(playIdx);
+      const isSelected = selectedSet.has(playIdx);
       const alreadyIn = inScriptSet.has(
         `${play.formation}||${play.protection}||${play.play}`,
       );
@@ -498,10 +500,11 @@ function toggleSelectAllAvailable() {
   );
   if (pageIndices.length === 0) return;
   const selectedSet = new Set(selectedAvailablePlays);
+  const pageSet = new Set(pageIndices);
   const allSelected = pageIndices.every((idx) => selectedSet.has(idx));
   if (allSelected) {
     selectedAvailablePlays = selectedAvailablePlays.filter(
-      (idx) => !pageIndices.includes(idx),
+      (idx) => !pageSet.has(idx),
     );
   } else {
     pageIndices.forEach((idx) => {
