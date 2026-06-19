@@ -3528,35 +3528,26 @@
 
   body:not(.is-mobile-screen) #script .play-list,
   body:not(.is-mobile-screen) #script .script-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
+    min-height: 0;
+    overflow: hidden;
   }
 
   body:not(.is-mobile-screen) #script .play-list {
-    display: flex;
-    flex-direction: column;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr);
     gap: 20px;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
   }
 
   body:not(.is-mobile-screen) #script .script-list {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
+    display: grid;
+    grid-template-rows: auto auto minmax(0, 1fr) auto;
+    gap: 20px;
     height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
   }
 
   body:not(.is-mobile-screen) #script .available-plays-container {
-    flex: 1 1 auto;
-    min-height: 300px;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -3564,13 +3555,11 @@
   }
 
   body:not(.is-mobile-screen) #script .script-container {
-    flex: 1 1 auto !important;
-    min-height: 300px;
+    min-height: 0;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
     scrollbar-gutter: stable;
-    padding-bottom: 12px;
   }
 
   body:not(.is-mobile-screen) #script .script-actions,
