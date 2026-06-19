@@ -790,9 +790,10 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     getCachedWristbandNumber,
     getCachedPlayerSummary,
     defenseDatalistState,
+    selectedIndexSet,
   } = renderContext;
   const fullCall = getCachedFullCall(play, Boolean(callOptions?.hideProtection));
-  const isSelected = bulkSelectedIndices.includes(index);
+  const isSelected = selectedIndexSet.has(index);
   const hashOptions = getCachedHashOptions(play);
   const playLabel = getCachedSummaryText(play);
   const shouldRenderAssignmentGrid = !opts.hidePersonnel;
@@ -980,10 +981,12 @@ function createScriptRenderContext(opts, showPrintPreview) {
   const defenseDatalistState = buildScriptDefenseDatalistState(script);
   const periodStatsBySeparatorIndex = buildPeriodStatsMap(script);
   const renderSummary = buildScriptRenderSummary(script);
+  const selectedIndexSet = new Set(bulkSelectedIndices);
 
   return {
     opts,
     showPrintPreview,
+    selectedIndexSet,
     defenseDatalistState,
     periodStatsBySeparatorIndex,
     renderSummary,

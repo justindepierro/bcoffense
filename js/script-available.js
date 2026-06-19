@@ -363,38 +363,40 @@ function renderAvailablePlays() {
     return selectedArr.includes(normalized);
   };
 
-  const filtered = plays.filter((play) => {
-    if (!matchesFilter(play.type, scriptSelectedTypes)) return false;
+  const filtered = [];
+  const filteredIndices = [];
+  for (let playIdx = 0; playIdx < plays.length; playIdx += 1) {
+    const play = plays[playIdx];
+    if (!matchesFilter(play.type, scriptSelectedTypes)) continue;
     if (!matchesFilter(play.preferredSituation, scriptSelectedSituation)) {
-      return false;
+      continue;
     }
-    if (!matchesFilter(play.preferredDown, scriptSelectedDown)) return false;
+    if (!matchesFilter(play.preferredDown, scriptSelectedDown)) continue;
     if (!matchesFilter(play.preferredDistance, scriptSelectedDistance)) {
-      return false;
+      continue;
     }
-    if (!matchesFilter(play.preferredHash, scriptSelectedHash)) return false;
+    if (!matchesFilter(play.preferredHash, scriptSelectedHash)) continue;
     if (!matchesFilter(play.preferredFieldPosition, scriptSelectedFieldPos)) {
-      return false;
+      continue;
     }
-    if (!matchesFilter(play.personnel, scriptSelectedPersonnel)) return false;
-    if (formation && play.formation !== formation) return false;
-    if (basePlay && play.basePlay !== basePlay) return false;
-    if (!playMatchesScriptSearch(play, search)) return false;
+    if (!matchesFilter(play.personnel, scriptSelectedPersonnel)) continue;
+    if (formation && play.formation !== formation) continue;
+    if (basePlay && play.basePlay !== basePlay) continue;
+    if (!playMatchesScriptSearch(play, search)) continue;
     if (gamePlanOnly) {
-      if (typeof isPlayInGamePlanBoard !== "function") return false;
-      if (!isPlayInGamePlanBoard(play)) return false;
+      if (typeof isPlayInGamePlanBoard !== "function") continue;
+      if (!isPlayInGamePlanBoard(play)) continue;
     }
     if (jvOnly) {
-      if (typeof isPlayFlaggedInGamePlan !== "function") return false;
-      if (!isPlayFlaggedInGamePlan(play, "jv")) return false;
+      if (typeof isPlayFlaggedInGamePlan !== "function") continue;
+      if (!isPlayFlaggedInGamePlan(play, "jv")) continue;
     }
-    return true;
-  });
+    filtered.push(play);
+    filteredIndices.push(playIdx);
+  }
 
   const container = document.getElementById("availablePlays");
-  const playIndexMap = new Map(plays.map((play, idx) => [play, idx]));
-
-  currentFilteredPlayIndices = filtered.map((play) => playIndexMap.get(play));
+  currentFilteredPlayIndices = filteredIndices;
 
   const totalAvail = filtered.length;
   const totalAvailPages = Math.max(1, Math.ceil(totalAvail / AVAIL_PER_PAGE));
@@ -402,6 +404,7 @@ function renderAvailablePlays() {
   if (scriptAvailPage < 0) scriptAvailPage = 0;
   const availStart = scriptAvailPage * AVAIL_PER_PAGE;
   const pageFiltered = filtered.slice(availStart, availStart + AVAIL_PER_PAGE);
+  const pageIndices = filteredIndices.slice(availStart, availStart + AVAIL_PER_PAGE);
   updateAvailableActionsUI(totalAvail, pageFiltered.length);
 
   if (pageFiltered.length === 0) {
@@ -434,8 +437,8 @@ function renderAvailablePlays() {
   const selectedSet = new Set(selectedAvailablePlays);
 
   container.innerHTML = pageFiltered
-    .map((play) => {
-      const playIdx = playIndexMap.get(play);
+    .map((play, idx) => {
+      const playIdx = pageIndices[idx];
       const isSelected = selectedSet.has(playIdx);
       const alreadyIn = inScriptSet.has(
         `${play.formation}||${play.protection}||${play.play}`,
@@ -480,11 +483,9 @@ function renderAvailablePlays() {
   if (selectAllCb) {
     const selectedSet = new Set(selectedAvailablePlays);
     const allSelected =
-      pageFiltered.length > 0 &&
-      pageFiltered.every((play) => selectedSet.has(playIndexMap.get(play)));
-    const someSelected = pageFiltered.some((play) =>
-      selectedSet.has(playIndexMap.get(play)),
-    );
+      pageIndices.length > 0 &&
+      pageIndices.every((idx) => selectedSet.has(idx));
+    const someSelected = pageIndices.some((idx) => selectedSet.has(idx));
     selectAllCb.checked = allSelected;
     selectAllCb.indeterminate = someSelected && !allSelected;
   }
