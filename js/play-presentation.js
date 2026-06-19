@@ -21,9 +21,10 @@ let playPresentationState = {
 
 let playPresentationDiagramResizeObserver = null;
 let playPresentationDiagramResizeFrame = 0;
+let playPresentationDiagramSizeKey = "";
 let playPresentationSwipeStart = null;
 let playPresentationViewportSyncFrame = 0;
-let playPresentationForcedLandscapeKey = "";
+let playPresentationViewportKey = "";
 
 function tracePlayPresentationAction(phase, payload = {}, level = "info") {
   const data = {
@@ -253,49 +254,40 @@ function isPlayPresentationMobileViewport() {
 function syncPlayPresentationMobileLandscape() {
   playPresentationViewportSyncFrame = 0;
   const overlay = document.getElementById("playPresentationOverlay");
-  if (!overlay?.classList.contains("show")) return;
+  if (!overlay?.classList.contains("is-open")) return;
 
   const { width, height } = getPlayPresentationViewportSize();
-  const shouldForce = isPlayPresentationMobileViewport() && height > width;
-  const sizeKey = shouldForce ? `${height}x${width}` : "natural";
-  if (sizeKey !== playPresentationForcedLandscapeKey) {
-    playPresentationForcedLandscapeKey = sizeKey;
-    if (shouldForce) {
-      overlay.style.setProperty("--pp-forced-landscape-width", `${height}px`);
-      overlay.style.setProperty("--pp-forced-landscape-height", `${width}px`);
-    } else {
-      overlay.style.removeProperty("--pp-forced-landscape-width");
-      overlay.style.removeProperty("--pp-forced-landscape-height");
-    }
-  }
-  overlay.classList.toggle("pp-force-landscape", shouldForce);
-  document.body.classList.toggle("play-presentation-force-landscape", shouldForce);
-  document.body.classList.toggle(
-    "play-presentation-mobile",
-    isPlayPresentationMobileViewport(),
-  );
+  const isMobile = isPlayPresentationMobileViewport();
+  const isLandscape = width > height;
+  const sizeKey = `${width}x${height}:${isMobile ? "mobile" : "desktop"}:${isLandscape ? "landscape" : "portrait"}`;
+  if (sizeKey === playPresentationViewportKey) return;
+
+  playPresentationViewportKey = sizeKey;
+  overlay.classList.toggle("pp-mobile", isMobile);
+  overlay.classList.toggle("pp-natural-landscape", isMobile && isLandscape);
+  overlay.classList.toggle("pp-natural-portrait", isMobile && !isLandscape);
+  document.body.classList.toggle("play-presentation-mobile", isMobile);
 }
 
 function cleanupPlayPresentationMobileLandscape() {
   const overlay = document.getElementById("playPresentationOverlay");
-  overlay?.classList.remove("pp-force-landscape");
-  overlay?.style.removeProperty("--pp-forced-landscape-width");
-  overlay?.style.removeProperty("--pp-forced-landscape-height");
-  playPresentationForcedLandscapeKey = "";
+  overlay?.classList.remove(
+    "pp-mobile",
+    "pp-natural-landscape",
+    "pp-natural-portrait",
+  );
+  playPresentationViewportKey = "";
   if (playPresentationViewportSyncFrame) {
     cancelAnimationFrame(playPresentationViewportSyncFrame);
     playPresentationViewportSyncFrame = 0;
   }
-  document.body.classList.remove(
-    "play-presentation-force-landscape",
-    "play-presentation-mobile",
-  );
+  document.body.classList.remove("play-presentation-mobile");
   playPresentationSwipeStart = null;
 }
 
 function queuePlayPresentationViewportSync() {
   const overlay = document.getElementById("playPresentationOverlay");
-  if (!overlay?.classList.contains("show")) return;
+  if (!overlay?.classList.contains("is-open")) return;
   if (playPresentationViewportSyncFrame) return;
   playPresentationViewportSyncFrame = requestAnimationFrame(
     syncPlayPresentationMobileLandscape,
@@ -305,6 +297,7 @@ function queuePlayPresentationViewportSync() {
 function setPlayPresentationOverlayOpen(overlay, open) {
   if (!overlay) return;
   overlay.classList.toggle("show", open);
+  overlay.classList.toggle("is-open", open);
   overlay.dataset.presentationOpen = open ? "true" : "false";
   overlay.setAttribute("aria-hidden", open ? "false" : "true");
   if (open) {
@@ -316,6 +309,7 @@ function setPlayPresentationOverlayOpen(overlay, open) {
     overlay.style.setProperty("pointer-events", "auto");
     overlay.style.setProperty("z-index", "var(--z-skip-link)");
   } else {
+    overlay.setAttribute("hidden", "");
     overlay.setAttribute("inert", "");
     overlay.style.removeProperty("display");
     overlay.style.removeProperty("visibility");
@@ -325,10 +319,21 @@ function setPlayPresentationOverlayOpen(overlay, open) {
   }
 }
 
-function ensurePlayPresentationOverlayDisplayed(overlay, phase = "open") {
-  if (!overlay?.classList.contains("show")) return;
+function isPlayPresentationOverlayVisible(overlay) {
+  if (!overlay?.classList.contains("is-open")) return false;
   const computed = window.getComputedStyle(overlay);
-  if (computed.display !== "none") return;
+  return Boolean(
+    computed.display !== "none" &&
+      computed.visibility !== "hidden" &&
+      computed.opacity !== "0" &&
+      computed.pointerEvents !== "none",
+  );
+}
+
+function ensurePlayPresentationOverlayDisplayed(overlay, phase = "open") {
+  if (!overlay?.classList.contains("is-open")) return false;
+  const computed = window.getComputedStyle(overlay);
+  if (isPlayPresentationOverlayVisible(overlay)) return true;
   overlay.style.setProperty("display", "flex", "important");
   overlay.style.setProperty("visibility", "visible");
   overlay.style.setProperty("opacity", "1");
@@ -346,6 +351,7 @@ function ensurePlayPresentationOverlayDisplayed(overlay, phase = "open") {
     },
     "warn",
   );
+  return isPlayPresentationOverlayVisible(overlay);
 }
 
 function openPlayPresentation(items, startIndex, source) {
@@ -396,22 +402,26 @@ function openPlayPresentation(items, startIndex, source) {
   document.body.classList.add("play-presentation-open");
   syncPlayPresentationMobileLandscape();
   renderPlayPresentation();
-  ensurePlayPresentationOverlayDisplayed(overlay, "after-render");
+  const overlayVisible = ensurePlayPresentationOverlayDisplayed(
+    overlay,
+    "after-render",
+  );
   if (!overlay.dataset.focusTrapReady) {
     trapFocus(overlay);
     overlay.dataset.focusTrapReady = "true";
   }
   document.getElementById("playPresentationClose")?.focus();
 
-  if (overlay.requestFullscreen && !document.fullscreenElement) {
+  if (
+    !isPlayPresentationMobileViewport() &&
+    overlay.requestFullscreen &&
+    !document.fullscreenElement
+  ) {
     try {
       Promise.resolve(overlay.requestFullscreen({ navigationUI: "hide" }))
         .then(() => {
           syncPlayPresentationMobileLandscape();
           ensurePlayPresentationOverlayDisplayed(overlay, "fullscreen");
-          if (screen.orientation?.lock) {
-            return screen.orientation.lock("landscape").catch(() => {});
-          }
           return null;
         })
         .catch(() => {});
@@ -419,7 +429,7 @@ function openPlayPresentation(items, startIndex, source) {
       // Full Screen is best-effort and may require a direct user gesture.
     }
   }
-  tracePlayPresentationAction("opened", {
+  const openTracePayload = {
     action:
       playPresentationState.source === "playbook"
         ? "openPlaybookPresentation"
@@ -427,8 +437,21 @@ function openPlayPresentation(items, startIndex, source) {
     requestedStartIndex: startIndex,
     requestedSource: source,
     itemCount: items.length,
-  });
-  return true;
+  };
+  if (overlayVisible) {
+    tracePlayPresentationAction("opened", openTracePayload);
+  } else {
+    tracePlayPresentationAction(
+      "opened but hidden",
+      {
+        ...openTracePayload,
+        className: overlay.className,
+        computedDisplay: window.getComputedStyle(overlay).display,
+      },
+      "warn",
+    );
+  }
+  return overlayVisible;
 }
 
 function closePlayPresentation() {
@@ -440,13 +463,6 @@ function closePlayPresentation() {
   setPlayPresentationOverlayOpen(overlay, false);
   document.body.classList.remove("play-presentation-open");
 
-  if (screen.orientation?.unlock) {
-    try {
-      screen.orientation.unlock();
-    } catch (_err) {
-      // Orientation locking is best-effort across tablet browsers.
-    }
-  }
   if (document.fullscreenElement === overlay && document.exitFullscreen) {
     document.exitFullscreen().catch(() => {});
   }
@@ -583,6 +599,7 @@ function cleanupPlayPresentationDiagramRenderer() {
     cancelAnimationFrame(playPresentationDiagramResizeFrame);
     playPresentationDiagramResizeFrame = 0;
   }
+  playPresentationDiagramSizeKey = "";
 }
 
 function loadPlayPresentationImage(imageUrl, play) {
@@ -849,19 +866,28 @@ function installPlayPresentationDiagramRenderer(frame, image, play, token) {
   const contentBounds = getPlayPresentationContentBounds(image);
   frame.replaceChildren(canvas);
 
-  const draw = () => {
+  const getFrameSizeKey = () => {
+    const rect = frame.getBoundingClientRect();
+    return `${Math.round(rect.width)}x${Math.round(rect.height)}`;
+  };
+
+  const draw = (force = false) => {
     if (
       token !== playPresentationState.imageToken ||
       document.getElementById("playPresentationDiagram") !== frame
     ) {
       return;
     }
+    const nextSizeKey = getFrameSizeKey();
+    if (!force && nextSizeKey === playPresentationDiagramSizeKey) return;
+    playPresentationDiagramSizeKey = nextSizeKey;
     drawPlayPresentationDiagram(canvas, frame, image, contentBounds);
   };
-  draw();
+  draw(true);
 
   if (typeof ResizeObserver === "function") {
     playPresentationDiagramResizeObserver = new ResizeObserver(() => {
+      if (getFrameSizeKey() === playPresentationDiagramSizeKey) return;
       if (playPresentationDiagramResizeFrame) {
         cancelAnimationFrame(playPresentationDiagramResizeFrame);
       }
@@ -1403,7 +1429,7 @@ function isPlayPresentationInteractiveSwipeTarget(target) {
 
 function handlePlayPresentationTouchStart(event) {
   const overlay = document.getElementById("playPresentationOverlay");
-  if (!overlay?.classList.contains("show")) return;
+  if (!overlay?.classList.contains("is-open")) return;
   if (event.touches?.length !== 1) return;
   if (isPlayPresentationInteractiveSwipeTarget(event.target)) return;
 
@@ -1412,7 +1438,6 @@ function handlePlayPresentationTouchStart(event) {
     x: touch.clientX,
     y: touch.clientY,
     time: Date.now(),
-    forcedLandscape: overlay.classList.contains("pp-force-landscape"),
   };
 }
 
@@ -1420,7 +1445,7 @@ function handlePlayPresentationTouchEnd(event) {
   const start = playPresentationSwipeStart;
   playPresentationSwipeStart = null;
   const overlay = document.getElementById("playPresentationOverlay");
-  if (!start || !overlay?.classList.contains("show")) return;
+  if (!start || !overlay?.classList.contains("is-open")) return;
   const touch = event.changedTouches?.[0];
   if (!touch) return;
 
@@ -1434,12 +1459,6 @@ function handlePlayPresentationTouchEnd(event) {
   let direction = 0;
   if (absX >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absX >= absY * 1.1) {
     direction = dx < 0 ? 1 : -1;
-  } else if (
-    start.forcedLandscape &&
-    absY >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE &&
-    absY >= absX * 1.1
-  ) {
-    direction = dy < 0 ? 1 : -1;
   }
   if (!direction) return;
 
@@ -1449,7 +1468,7 @@ function handlePlayPresentationTouchEnd(event) {
 
 function handlePlayPresentationKeydown(event) {
   const overlay = document.getElementById("playPresentationOverlay");
-  if (!overlay?.classList.contains("show")) return;
+  if (!overlay?.classList.contains("is-open")) return;
 
   if (event.key === "Escape") {
     event.preventDefault();
@@ -1484,14 +1503,22 @@ document.addEventListener("touchend", handlePlayPresentationTouchEnd, {
 document.addEventListener("touchcancel", () => {
   playPresentationSwipeStart = null;
 }, { passive: true });
-window.addEventListener("resize", queuePlayPresentationViewportSync);
-window.addEventListener("orientationchange", queuePlayPresentationViewportSync);
-window.visualViewport?.addEventListener("resize", queuePlayPresentationViewportSync);
+window.addEventListener("resize", queuePlayPresentationViewportSync, {
+  passive: true,
+});
+window.addEventListener("orientationchange", queuePlayPresentationViewportSync, {
+  passive: true,
+});
+window.visualViewport?.addEventListener(
+  "resize",
+  queuePlayPresentationViewportSync,
+  { passive: true },
+);
 document.addEventListener("fullscreenchange", () => {
   const overlay = document.getElementById("playPresentationOverlay");
   queuePlayPresentationViewportSync();
   if (
-    overlay?.classList.contains("show") &&
+    overlay?.classList.contains("is-open") &&
     !document.fullscreenElement &&
     document.body.classList.contains("play-presentation-open")
   ) {

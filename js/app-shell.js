@@ -43,6 +43,7 @@ window.addEventListener("load", () => {
 // don't rewrite layout-critical vars on every one of those events.
 let _mobileShellFrame = 0;
 let _mobileShellScrollTimer = 0;
+let _mobileShellLastStateKey = "";
 
 function setMobileShellCssVar(root, name, value) {
   if (root.style.getPropertyValue(name) === value) return;
@@ -67,6 +68,31 @@ function syncMobileShellState() {
   const body = document.body;
   if (!body) return;
 
+  const isTouch =
+    window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const isMobile =
+    width <= 768 ||
+    (isTouch && shortSide <= 820 && longSide <= 1180);
+  const isPhone = shortSide <= 560;
+  const isCompact = shortSide <= 420;
+  const isShort = height <= 620;
+  const isLandscape = width > height;
+  const authRole = body.dataset.authRole || "";
+  const activeTab =
+    body.dataset.activeTab ||
+    (typeof currentActiveTab !== "undefined" ? currentActiveTab : "");
+  const stateKey = [
+    width,
+    height,
+    isTouch ? "touch" : "pointer",
+    authRole,
+    activeTab,
+    isMobile ? "mobile" : "desktop",
+    isLandscape ? "landscape" : "portrait",
+  ].join(":");
+  if (stateKey === _mobileShellLastStateKey) return;
+  _mobileShellLastStateKey = stateKey;
+
   setMobileShellCssVar(root, "--app-vh", `${Math.max(height * 0.01, 1)}px`);
   setMobileShellCssVar(root, "--app-vw", `${Math.max(width * 0.01, 1)}px`);
 
@@ -87,16 +113,6 @@ function syncMobileShellState() {
     );
   }
 
-  const isTouch =
-    window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-  const isMobile =
-    width <= 768 ||
-    (isTouch && shortSide <= 820 && longSide <= 1180);
-  const isPhone = shortSide <= 560;
-  const isCompact = shortSide <= 420;
-  const isShort = height <= 620;
-  const isLandscape = width > height;
-
   [root, body].forEach((el) => {
     el.classList.toggle("is-mobile-screen", isMobile);
     el.classList.toggle("is-phone-screen", isPhone);
@@ -106,7 +122,6 @@ function syncMobileShellState() {
     el.classList.toggle("is-portrait-screen", !isLandscape);
     el.classList.toggle("is-touch-screen", Boolean(isTouch));
   });
-  const authRole = body.dataset.authRole || "";
   body.classList.toggle("is-player-mobile-shell", isMobile && authRole === "player");
   body.classList.toggle(
     "is-staff-mobile-shell",
@@ -134,14 +149,16 @@ function queueMobileShellStateSync() {
 
 function queueMobileShellSettledSync() {
   window.clearTimeout(_mobileShellScrollTimer);
-  _mobileShellScrollTimer = window.setTimeout(queueMobileShellStateSync, 180);
+  _mobileShellScrollTimer = window.setTimeout(queueMobileShellStateSync, 240);
 }
 
 queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
 window.addEventListener("load", queueMobileShellStateSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
-window.visualViewport?.addEventListener("resize", queueMobileShellStateSync);
+window.visualViewport?.addEventListener("resize", queueMobileShellStateSync, {
+  passive: true,
+});
 window.visualViewport?.addEventListener("scroll", queueMobileShellSettledSync, {
   passive: true,
 });

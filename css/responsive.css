@@ -407,6 +407,24 @@
     contain-intrinsic-size: none;
   }
 
+  body.is-mobile-screen.is-staff-mobile-shell #script .script-builder {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 14px;
+  }
+
+  body.is-mobile-screen.is-staff-mobile-shell #script .script-list {
+    order: 1;
+  }
+
+  body.is-mobile-screen.is-staff-mobile-shell #script .play-list {
+    position: static;
+    top: auto;
+    order: 2;
+    height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
   body.is-mobile-screen.is-staff-mobile-shell #script .script-player-grid {
     display: none;
   }

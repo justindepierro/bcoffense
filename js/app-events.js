@@ -148,29 +148,8 @@ function traceAppAction(phase, elOrPayload, extra = {}, level = "info") {
 }
 
 const MOBILE_TAP_ACTION_SELECTOR = [
-  "button",
-  "a[data-action]",
-  "[role='button']",
-  "[data-action]",
-  "#authLoginOverlay button",
-  ".player-dashboard-home [data-action]",
-  ".pb-player-summary [data-action]",
-  ".pb-controls [data-action]",
-  ".pb-active-bar [data-action]",
-  "#playbookContainer .pb-card[data-action]",
-  "#playbookContainer .pb-present-btn[data-action]",
-  "#playbookReadinessPanel [data-action]",
-  ".player-script-launcher [data-action]",
-  ".player-script-card [data-action]",
-  ".script-toolbar [data-action]",
-  ".script-actions [data-action]",
-  ".script-item--player [data-action]",
-  ".script-player-open-btn[data-action]",
-  ".play-readiness-widget [data-action]",
-  ".play-presentation-overlay.show [data-action]",
-  ".mobile-coach-dock [data-action]",
-  ".mobile-script-coach-now [data-action]",
-  ".tab[data-action]",
+  "[data-action]:not(button):not(a):not(input):not(select):not(textarea):not(label):not(summary)",
+  "[role='button']:not(button):not(a):not(input):not(select):not(textarea):not(label):not(summary)",
 ].join(",");
 
 let mobileTapStart = null;
@@ -208,30 +187,6 @@ function isNativeMobileClickElement(el) {
   return el.matches("button, a[href], input, select, textarea, label, summary");
 }
 
-function shouldBridgeNativeMobileAction(el) {
-  if (!(el instanceof Element)) return false;
-  if (!el.matches("button[data-action], a[data-action], [role='button'][data-action], .tab[data-action]")) {
-    return false;
-  }
-  return Boolean(
-    el.matches(".tab[data-action]") ||
-      el.closest(
-        [
-          ".player-dashboard-home",
-          ".pb-player-summary",
-          ".player-script-launcher",
-          ".player-script-card",
-          ".player-script-now",
-          ".script-item--player",
-          ".script-player-open-btn",
-          ".play-presentation-overlay.show",
-          ".mobile-coach-dock",
-          ".mobile-script-coach-now",
-        ].join(","),
-      ),
-  );
-}
-
 function getMobileTapActionTarget(target) {
   if (!isMobileTapBridgeEnabled()) return null;
   const element = target instanceof Element ? target : null;
@@ -239,9 +194,7 @@ function getMobileTapActionTarget(target) {
   const actionEl = element.closest(MOBILE_TAP_ACTION_SELECTOR);
   if (!actionEl) return null;
   if (!isMobileTapInteractiveElement(actionEl)) return null;
-  if (isNativeMobileClickElement(actionEl) && !shouldBridgeNativeMobileAction(actionEl)) {
-    return null;
-  }
+  if (isNativeMobileClickElement(actionEl)) return null;
   if (actionEl.disabled || actionEl.getAttribute("aria-disabled") === "true") {
     return null;
   }

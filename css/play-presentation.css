@@ -4,15 +4,6 @@ body.play-presentation-open {
   overflow: hidden;
 }
 
-body.play-presentation-force-landscape {
-  position: fixed;
-  inset: 0;
-  width: 100vw;
-  height: 100vh;
-  overscroll-behavior: none;
-  touch-action: none;
-}
-
 .play-presentation-overlay {
   position: fixed;
   inset: 0;
@@ -32,6 +23,7 @@ body.play-presentation-force-landscape {
 }
 
 .play-presentation-overlay.show,
+.play-presentation-overlay.is-open,
 .play-presentation-overlay[data-presentation-open="true"] {
   display: flex;
 }
@@ -1287,117 +1279,103 @@ body.play-presentation-force-landscape {
   }
 }
 
-body.play-presentation-force-landscape .play-presentation-overlay.pp-force-landscape {
-  inset: auto;
-  top: 50%;
-  left: 50%;
-  width: var(--pp-forced-landscape-width, 100dvh);
-  height: var(--pp-forced-landscape-height, 100dvw);
-  min-width: var(--pp-forced-landscape-width, 100dvh);
-  min-height: var(--pp-forced-landscape-height, 100dvw);
-  max-width: none;
-  max-height: none;
-  transform: translate(-50%, -50%) rotate(90deg);
-  transform-origin: center center;
-}
-
-body.play-presentation-force-landscape .pp-header {
+body.play-presentation-mobile.is-landscape-screen .pp-header {
   grid-template-columns: minmax(130px, 0.65fr) auto minmax(170px, 0.8fr);
   gap: var(--space-xs);
   min-height: 52px;
   padding: 6px 8px;
 }
 
-body.play-presentation-force-landscape .pp-mode-switcher {
+body.play-presentation-mobile.is-landscape-screen .pp-mode-switcher {
   grid-column: auto;
   grid-row: auto;
 }
 
-body.play-presentation-force-landscape .pp-mode-btn {
+body.play-presentation-mobile.is-landscape-screen .pp-mode-btn {
   padding: 5px 9px;
   font-size: var(--font-size-xs);
 }
 
-body.play-presentation-force-landscape .pp-nav-btn,
-body.play-presentation-force-landscape .pp-close-btn {
+body.play-presentation-mobile.is-landscape-screen .pp-nav-btn,
+body.play-presentation-mobile.is-landscape-screen .pp-close-btn {
   min-width: 38px;
   min-height: 36px;
 }
 
-body.play-presentation-force-landscape .pp-layout {
+body.play-presentation-mobile.is-landscape-screen .pp-layout {
   padding: var(--space-xs);
 }
 
-body.play-presentation-force-landscape .pp-layout-player {
+body.play-presentation-mobile.is-landscape-screen .pp-layout-player {
   grid-template-columns: minmax(0, 1.16fr) minmax(280px, 0.84fr);
   grid-template-rows: none;
   gap: var(--space-sm);
 }
 
-body.play-presentation-force-landscape .pp-layout-coaches {
+body.play-presentation-mobile.is-landscape-screen .pp-layout-coaches {
   grid-template-columns: minmax(290px, 0.8fr) minmax(0, 1.2fr);
   grid-template-rows: none;
   gap: var(--space-sm);
 }
 
-body.play-presentation-force-landscape .pp-layout-minimum {
+body.play-presentation-mobile.is-landscape-screen .pp-layout-minimum {
   grid-template-columns: 1fr;
   grid-template-rows: auto minmax(0, 1fr) auto;
   gap: var(--space-xs);
 }
 
-body.play-presentation-force-landscape .pp-minimum-top {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-top {
   grid-template-columns: minmax(100px, 0.55fr) minmax(0, 2.6fr) minmax(100px, 0.55fr);
   gap: var(--space-sm);
   min-height: 48px;
   padding: 4px var(--space-sm);
 }
 
-body.play-presentation-force-landscape .pp-minimum-call {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-call {
   grid-column: auto;
   grid-row: auto;
   font-size: 1.75rem;
   text-align: center;
 }
 
-body.play-presentation-force-landscape .pp-minimum-one-word {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-one-word {
   grid-column: auto;
   grid-row: auto;
   font-size: 1.45rem;
 }
 
-body.play-presentation-force-landscape .pp-minimum-bottom {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-bottom {
   grid-template-columns: minmax(0, 1fr) minmax(360px, auto);
   min-height: 34px;
   padding: 3px var(--space-xs);
 }
 
-body.play-presentation-force-landscape .pp-minimum-readiness-dock {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-readiness-dock {
   min-width: 360px;
   padding: 4px;
 }
 
-body.play-presentation-force-landscape .pp-minimum-score-label {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-label {
   min-width: 86px;
   padding-left: 5px;
 }
 
-body.play-presentation-force-landscape .pp-minimum-score-label strong {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-label strong {
   font-size: var(--font-size-base);
 }
 
-body.play-presentation-force-landscape .pp-minimum-score-grid {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-grid {
   grid-template-columns: repeat(5, minmax(38px, 1fr));
   gap: 4px;
 }
 
-body.play-presentation-force-landscape .pp-minimum-score-grid .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-grid .play-readiness-score-btn {
   min-width: 38px;
   min-height: 34px;
   padding: 4px 8px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-score-rail {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-score-rail {
   right: 8px;
   bottom: 8px;
   grid-template-columns: auto minmax(210px, auto) auto;
@@ -1405,266 +1383,266 @@ body.play-presentation-force-landscape .pp-readiness-score-rail {
   padding: 5px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-rail-copy {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-copy {
   min-width: 104px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-rail-buttons {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-buttons {
   grid-template-columns: repeat(5, minmax(38px, 1fr));
   gap: 4px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-rail-buttons .play-readiness-score-btn,
-body.play-presentation-force-landscape .pp-readiness-rail-report {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-buttons .play-readiness-score-btn,
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-report {
   min-width: 38px;
   min-height: 34px;
   padding: 4px 8px;
 }
 
-body.play-presentation-force-landscape .pp-diagram-frame {
+body.play-presentation-mobile.is-landscape-screen .pp-diagram-frame {
   min-height: 170px;
 }
 
-body.play-presentation-force-landscape .pp-player-panel,
-body.play-presentation-force-landscape .pp-coach-info {
+body.play-presentation-mobile.is-landscape-screen .pp-player-panel,
+body.play-presentation-mobile.is-landscape-screen .pp-coach-info {
   overflow: auto;
 }
 
-body.play-presentation-force-landscape .pp-player-overview,
-body.play-presentation-force-landscape .pp-player-rule-head,
-body.play-presentation-force-landscape .pp-coach-section-head {
+body.play-presentation-mobile.is-landscape-screen .pp-player-overview,
+body.play-presentation-mobile.is-landscape-screen .pp-player-rule-head,
+body.play-presentation-mobile.is-landscape-screen .pp-coach-section-head {
   align-items: center;
   flex-direction: row;
 }
 
-body.play-presentation-force-landscape .pp-detail-grid,
-body.play-presentation-force-landscape .pp-assignment-grid {
+body.play-presentation-mobile.is-landscape-screen .pp-detail-grid,
+body.play-presentation-mobile.is-landscape-screen .pp-assignment-grid {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body.play-presentation-force-landscape .pp-footer {
+body.play-presentation-mobile.is-landscape-screen .pp-footer {
   display: none;
 }
 
-body.play-presentation-force-landscape .pp-body,
-body.play-presentation-force-landscape .pp-mode-btn,
-body.play-presentation-force-landscape .pp-nav-btn,
-body.play-presentation-force-landscape .pp-close-btn,
-body.play-presentation-force-landscape .pp-position-btn,
-body.play-presentation-force-landscape .pp-position-lock-btn,
-body.play-presentation-force-landscape .play-readiness-score-btn,
-body.play-presentation-force-landscape .play-readiness-btn {
+body.play-presentation-mobile.is-landscape-screen .pp-body,
+body.play-presentation-mobile.is-landscape-screen .pp-mode-btn,
+body.play-presentation-mobile.is-landscape-screen .pp-nav-btn,
+body.play-presentation-mobile.is-landscape-screen .pp-close-btn,
+body.play-presentation-mobile.is-landscape-screen .pp-position-btn,
+body.play-presentation-mobile.is-landscape-screen .pp-position-lock-btn,
+body.play-presentation-mobile.is-landscape-screen .play-readiness-score-btn,
+body.play-presentation-mobile.is-landscape-screen .play-readiness-btn {
   touch-action: manipulation;
 }
 
-body.play-presentation-force-landscape .pp-coach-section-readiness {
+body.play-presentation-mobile.is-landscape-screen .pp-coach-section-readiness {
   gap: 6px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-summary {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-summary {
   grid-template-columns: minmax(94px, 0.34fr) minmax(0, 1fr);
 }
 
-body.play-presentation-force-landscape .pp-readiness-status {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-status {
   padding: 7px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-status strong {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-status strong {
   font-size: 1.55rem;
 }
 
-body.play-presentation-force-landscape .pp-readiness-score-grid {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-score-grid {
   grid-template-columns: repeat(5, minmax(32px, 1fr));
 }
 
-body.play-presentation-force-landscape .pp-coach-section-readiness .play-readiness-rollup {
+body.play-presentation-mobile.is-landscape-screen .pp-coach-section-readiness .play-readiness-rollup {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body.play-presentation-force-landscape .pp-coach-section-readiness .play-readiness-rollup-chip {
+body.play-presentation-mobile.is-landscape-screen .pp-coach-section-readiness .play-readiness-rollup-chip {
   min-height: 32px;
   padding: 4px 6px;
 }
 
-body.play-presentation-force-landscape .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen .play-readiness-score-btn {
   min-height: 34px;
 }
 
-body.play-presentation-force-landscape .pp-readiness-actions .play-readiness-btn {
+body.play-presentation-mobile.is-landscape-screen .pp-readiness-actions .play-readiness-btn {
   min-height: 32px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-header {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-header {
   grid-template-columns: minmax(92px, 0.6fr) minmax(170px, auto) minmax(108px, 0.55fr);
   min-height: 42px;
   padding: 4px 6px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-source {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-source {
   max-width: 92px;
   font-size: 0.64rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-counter {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-counter {
   padding: 2px 6px;
   font-size: 0.62rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-mode-switcher {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-mode-switcher {
   gap: 2px;
   padding: 2px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-mode-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-mode-btn {
   min-height: 30px;
   padding: 4px 7px;
   font-size: 0.62rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-nav-btn,
-body.play-presentation-force-landscape.is-phone-screen .pp-close-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-nav-btn,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-close-btn {
   min-width: 32px;
   min-height: 30px;
   padding: 3px 6px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-layout-player {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-layout-player {
   grid-template-columns: minmax(0, 1fr) minmax(188px, 0.58fr);
   gap: 6px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-diagram-frame {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-diagram-frame {
   min-height: 0;
   border-width: 1px;
   border-radius: var(--radius-md);
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-layout-minimum {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-layout-minimum {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-top {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-top {
   min-height: 36px;
   padding: 2px 6px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-call {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-call {
   font-size: 1.12rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-one-word {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-one-word {
   font-size: 0.95rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-bottom {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-bottom {
   grid-template-columns: minmax(0, 1fr) minmax(284px, auto);
   gap: 4px;
   padding: 2px 4px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-chips {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-chips {
   justify-content: flex-start;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-chips .pp-chip {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-chips .pp-chip {
   padding: 2px 6px;
   font-size: 0.62rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-readiness-dock {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-readiness-dock {
   grid-template-columns: auto minmax(200px, 1fr);
   min-width: 284px;
   padding: 2px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-label {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label {
   min-width: 58px;
   gap: 1px 4px;
   padding-left: 4px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-label span,
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-label small {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label span,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label small {
   display: none;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-label strong {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label strong {
   font-size: 1rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-grid {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-grid {
   grid-template-columns: repeat(5, minmax(34px, 1fr));
   gap: 3px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-minimum-score-grid .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-grid .play-readiness-score-btn {
   min-width: 34px;
   min-height: 32px;
   padding: 3px 7px;
   font-size: 0.76rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-score-rail {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-score-rail {
   grid-template-columns: auto minmax(180px, 1fr);
   gap: 5px;
   border-radius: var(--radius-lg);
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-report {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-report {
   display: none;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-copy {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-copy {
   min-width: 54px;
   padding-left: 5px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-copy span,
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-copy small {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-copy span,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-copy small {
   display: none;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-buttons {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-buttons {
   grid-template-columns: repeat(5, minmax(34px, 1fr));
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-readiness-rail-buttons .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-buttons .play-readiness-score-btn {
   min-width: 34px;
   min-height: 32px;
   padding: 3px 7px;
   font-size: 0.76rem;
 }
 
-body.play-presentation-force-landscape.is-compact-screen .pp-minimum-bottom {
+body.play-presentation-mobile.is-landscape-screen.is-compact-screen .pp-minimum-bottom {
   grid-template-columns: minmax(0, 1fr);
 }
 
-body.play-presentation-force-landscape.is-compact-screen .pp-minimum-readiness-dock {
+body.play-presentation-mobile.is-landscape-screen.is-compact-screen .pp-minimum-readiness-dock {
   grid-template-columns: auto minmax(0, 1fr);
   width: 100%;
   min-width: 0;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-panel {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-panel {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 6px;
   overflow: hidden;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-overview {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-overview {
   padding: 6px 8px;
   border-radius: var(--radius-md);
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-context,
-body.play-presentation-force-landscape.is-phone-screen .pp-player-mode-chip,
-body.play-presentation-force-landscape.is-phone-screen .pp-player-controls-head span,
-body.play-presentation-force-landscape.is-phone-screen .pp-position-lock-status,
-body.play-presentation-force-landscape.is-phone-screen .pp-resp-notes {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-context,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-mode-chip,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-head span,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-lock-status,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-resp-notes {
   display: none;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-call {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-call {
   max-height: 42px;
   padding: 7px 8px;
   border-radius: var(--radius-md);
@@ -1673,39 +1651,39 @@ body.play-presentation-force-landscape.is-phone-screen .pp-player-call {
   overflow: hidden;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-controls-card {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-card {
   gap: 5px;
   padding: 7px;
   border-radius: var(--radius-md);
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-controls-head strong {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-head strong {
   font-size: 0.68rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-position-picker {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-picker {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-position-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-btn {
   min-height: 30px;
   border-radius: var(--radius-sm);
   font-size: 0.66rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-position-lock-row {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-lock-row {
   grid-template-columns: 1fr;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-position-lock-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-lock-btn {
   width: 100%;
   min-height: 30px;
   padding: 4px 7px;
   font-size: 0.66rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-rule {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule {
   align-content: start;
   gap: 5px;
   min-height: 0;
@@ -1714,21 +1692,21 @@ body.play-presentation-force-landscape.is-phone-screen .pp-player-rule {
   overflow: hidden;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-rule-head {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-head {
   align-items: center;
   flex-direction: row;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-rule-eyebrow {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-eyebrow {
   font-size: 0.56rem;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-position {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-position {
   font-size: 1.5rem;
   line-height: 0.95;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-name {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-name {
   max-width: 86px;
   font-size: 0.72rem;
   overflow: hidden;
@@ -1736,7 +1714,7 @@ body.play-presentation-force-landscape.is-phone-screen .pp-player-name {
   white-space: nowrap;
 }
 
-body.play-presentation-force-landscape.is-phone-screen .pp-player-rule-text {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-text {
   max-height: 74px;
   overflow: auto;
   font-size: 0.96rem;
