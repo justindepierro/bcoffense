@@ -118,6 +118,7 @@ const STORAGE_KEYS = {
   CALLSHEET_PRINT_OPTIONS: "callSheetPrintOptions",
   CLOUD_SYNC_SETTINGS: "cloudSyncSettings",
   COLOR_PRESET: "colorPreset",
+  AUTH_SESSION: "authSession",
 };
 
 const MIGRATIONS = {

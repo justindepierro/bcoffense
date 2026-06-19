@@ -5299,6 +5299,11 @@ body[data-auth-role="player"] .period-buttons {
 @media (max-width: 560px),
   (pointer: coarse) and (max-width: 820px),
   (pointer: coarse) and (max-height: 640px) {
+  .script-toolbar,
+  .script-actions {
+    backdrop-filter: none;
+  }
+
   .play-list,
   .script-list {
     padding: 12px;

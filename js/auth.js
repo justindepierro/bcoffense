@@ -202,8 +202,12 @@
 
   let currentAuthUser = null;
   let authReady = false;
-  let authApplyTimer = null;
   let lastBlockedAt = 0;
+  const AUTH_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
+  const AUTH_SCAN_SELECTOR =
+    "[data-action], .tab, input, select, textarea, button, [data-auth-admin-only], [data-auth-edit-only]";
+  let authMutationFrame = 0;
+  const pendingAuthRoots = new Set();
 
   if (document.body) {
     document.body.classList.add("auth-locked");
@@ -248,17 +252,65 @@
     });
   }
 
+  function getAuthSessionStorageKey() {
+    if (typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.AUTH_SESSION) {
+      return STORAGE_KEYS.AUTH_SESSION;
+    }
+    return "authSession";
+  }
+
+  function saveStoredAuthUser(user, source = "session") {
+    const normalized = normalizeAuthUser(user);
+    if (!normalized || !storageManager || typeof storageManager.set !== "function") {
+      return;
+    }
+    storageManager.set(getAuthSessionStorageKey(), {
+      user: normalized,
+      source,
+      savedAt: Date.now(),
+    });
+  }
+
+  function clearStoredAuthUser() {
+    if (!storageManager || typeof storageManager.remove !== "function") return;
+    storageManager.remove(getAuthSessionStorageKey());
+  }
+
+  function loadStoredAuthUser() {
+    if (!storageManager || typeof storageManager.get !== "function") return null;
+    const stored = storageManager.get(getAuthSessionStorageKey(), null);
+    if (!stored || typeof stored !== "object") return null;
+    const normalized = normalizeAuthUser(stored.user);
+    if (!normalized) return null;
+
+    // Keep local-dev sessions sticky across refreshes to avoid repeated logins.
+    if (isLocalDevHost()) return normalized;
+
+    const savedAt = Number(stored.savedAt || 0);
+    if (!Number.isFinite(savedAt) || savedAt <= 0) {
+      clearStoredAuthUser();
+      return null;
+    }
+    if (Date.now() - savedAt > AUTH_SESSION_MAX_AGE_MS) {
+      clearStoredAuthUser();
+      return null;
+    }
+    return normalized;
+  }
+
   async function fetchAuthSession() {
     try {
       const response = await fetch("/auth/me", {
         credentials: "same-origin",
         headers: { Accept: "application/json" },
       });
-      if (!response.ok) return null;
+      if (!response.ok) {
+        return { user: null, denied: true, offline: false };
+      }
       const data = await response.json();
-      return normalizeAuthUser(data.user);
+      return { user: normalizeAuthUser(data.user), denied: false, offline: false };
     } catch (_err) {
-      return null;
+      return { user: null, denied: false, offline: true };
     }
   }
 
@@ -448,9 +500,7 @@
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
     syncPlayerPortalChrome();
 
-    document
-      .querySelectorAll("[data-action], .tab, input, select, textarea, button, [data-auth-admin-only], [data-auth-edit-only]")
-      .forEach((el) => applyAuthToElement(el));
+    applyAuthToTree(document);
 
     const userBadge = document.getElementById("authUserBadge");
     if (userBadge) {
@@ -484,12 +534,26 @@
     }
   }
 
-  function scheduleApplyRoleUi() {
-    if (authApplyTimer) return;
-    authApplyTimer = setTimeout(() => {
-      authApplyTimer = null;
-      applyRoleUi();
-    }, 50);
+  function applyAuthToTree(root) {
+    if (!root) return;
+    if (
+      root.nodeType === Node.ELEMENT_NODE &&
+      typeof root.matches === "function" &&
+      root.matches(AUTH_SCAN_SELECTOR)
+    ) {
+      applyAuthToElement(root);
+    }
+    if (typeof root.querySelectorAll !== "function") return;
+    root.querySelectorAll(AUTH_SCAN_SELECTOR).forEach((el) => applyAuthToElement(el));
+  }
+
+  function queueApplyAuthToPendingRoots() {
+    if (authMutationFrame) return;
+    authMutationFrame = requestAnimationFrame(() => {
+      authMutationFrame = 0;
+      pendingAuthRoots.forEach((root) => applyAuthToTree(root));
+      pendingAuthRoots.clear();
+    });
   }
 
   function scheduleCloudAutoPull() {
@@ -623,6 +687,10 @@
         }
 
         currentAuthUser = resolvedUser;
+        saveStoredAuthUser(
+          resolvedUser,
+          isLocalDevHost() && (!response.ok || !data.user) ? "local-dev" : "server-login",
+        );
         authReady = true;
         overlay.remove();
         applyRoleUi();
@@ -630,6 +698,25 @@
         if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
         scheduleCloudAutoPull();
       } catch (err) {
+        try {
+          const fallbackUser = tryLocalDevLogin(
+            usernameEl.value.trim().toLowerCase(),
+            passwordEl.value,
+          );
+          if (fallbackUser) {
+            currentAuthUser = fallbackUser;
+            saveStoredAuthUser(fallbackUser, "local-dev");
+            authReady = true;
+            overlay.remove();
+            applyRoleUi();
+            showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+            if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
+            scheduleCloudAutoPull();
+            return;
+          }
+        } catch (_fallbackErr) {
+          // Fall through to normal error messaging.
+        }
         setAuthLoginMessage(err.message || "Login failed.");
         if (submitEl) submitEl.disabled = false;
         passwordEl.value = "";
@@ -656,6 +743,7 @@
       // Continue with local lockout even if the network is unavailable.
     }
     currentAuthUser = null;
+    clearStoredAuthUser();
     authReady = true;
     if (typeof resetCloudSyncAutoPull === "function") {
       resetCloudSyncAutoPull();
@@ -709,7 +797,20 @@
   }
 
   async function initServerAuth() {
-    currentAuthUser = await fetchAuthSession();
+    const session = await fetchAuthSession();
+    if (session.user) {
+      currentAuthUser = session.user;
+      saveStoredAuthUser(session.user, "server-session");
+    } else {
+      const storedUser = loadStoredAuthUser();
+      const canUseStored = Boolean(storedUser && (isLocalDevHost() || session.offline));
+      if (canUseStored) {
+        currentAuthUser = storedUser;
+      } else {
+        clearStoredAuthUser();
+      }
+    }
+
     authReady = true;
     if (!currentAuthUser) {
       showLoginOverlay("Secure login required.");
@@ -725,7 +826,20 @@
 
   document.addEventListener("DOMContentLoaded", () => {
     initServerAuth();
-    const observer = new MutationObserver(scheduleApplyRoleUi);
+    const observer = new MutationObserver((mutations) => {
+      mutations.forEach((mutation) => {
+        mutation.addedNodes.forEach((node) => {
+          if (
+            node.nodeType === Node.ELEMENT_NODE ||
+            node.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+          ) {
+            pendingAuthRoots.add(node);
+          }
+        });
+      });
+      if (!pendingAuthRoots.size) return;
+      queueApplyAuthToPendingRoots();
+    });
     observer.observe(document.body, { childList: true, subtree: true });
   });
 
