@@ -1,6 +1,11 @@
 /* ============ Layout: Header, Tabs, Panels, Upload ============ */
 /* Auto-split from styles.css */
 
+html,
+body {
+  height: 100%;
+}
+
 body {
   font-family: var(--font-sans);
   font-size: var(--font-size-base);
@@ -10,8 +15,10 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   min-height: calc(var(--app-vh, 1vh) * 100);
+  height: calc(var(--app-vh, 1vh) * 100);
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 body.app-booting {
   overflow: hidden;
@@ -355,6 +362,12 @@ body[data-auth-role="player"] .tab.active {
   flex: 1 1 auto;
   min-height: 0;
   overflow: hidden;
+}
+
+#uploadSection {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
 }
 
 /* Tabs bar — header sticky nav */
