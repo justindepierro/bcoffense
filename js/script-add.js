@@ -14,6 +14,25 @@ function createScriptPlayFromPlaybook(play) {
   };
 }
 
+function renderScriptSoon(afterPaint) {
+  if (typeof requestRenderScript === "function") {
+    requestRenderScript();
+    if (typeof afterPaint === "function") {
+      requestAnimationFrame(() => {
+        try {
+          afterPaint();
+        } catch (err) {
+          console.error("renderScriptSoon callback error:", err);
+        }
+      });
+    }
+    return;
+  }
+
+  renderScript();
+  if (typeof afterPaint === "function") afterPaint();
+}
+
 function getScriptPeriodChoices(excludeSeparatorIndex = null) {
   return script
     .map((item, index) => ({ item, index }))
@@ -116,9 +135,10 @@ function addAvailableSelectionToScript(playIndices, targetSeparatorIndex) {
     );
   }
 
-  renderScript();
+  renderScriptSoon(() => {
+    if (insertedIndices.length) flashScriptPlayAtIndex(insertedIndices[0]);
+  });
   renderAvailablePlays();
-  if (insertedIndices.length) flashScriptPlayAtIndex(insertedIndices[0]);
   return insertedIndices;
 }
 
@@ -186,7 +206,7 @@ function handleDrop(event) {
   const moved = script.splice(fromIndex, 1)[0];
   if (toIndex > fromIndex) toIndex--;
   script.splice(toIndex, 0, moved);
-  renderScript();
+  renderScriptSoon();
   const movedTo = script.indexOf(moved) + 1;
   announceScriptA11y(`Moved ${getScriptPlaySummaryText(moved)} to position ${movedTo}`);
 }
@@ -197,7 +217,7 @@ function openAvailableAddMenu(event, playIndex) {
 
   const hadPeriod = script.some((item) => item?.isSeparator);
   ensureFirstPeriod();
-  if (!hadPeriod) renderScript();
+  if (!hadPeriod) renderScriptSoon();
 
   const periodChoices = getScriptPeriodChoices();
   if (!periodChoices.length) return;
@@ -314,8 +334,7 @@ async function addToScript(playIndex, targetSeparatorIndex = null) {
   const insertedIndices = insertPlaysIntoPeriod(resolvedTargetIndex, [
     createScriptPlayFromPlaybook(play),
   ]);
-  renderScript();
-  flashScriptPlayAtIndex(insertedIndices[0]);
+  renderScriptSoon(() => flashScriptPlayAtIndex(insertedIndices[0]));
   setScriptToolbarStatus(
     `Added play to ${script[resolvedTargetIndex]?.label || "selected period"}`,
     "success",
@@ -351,7 +370,7 @@ async function addAllFilteredToScript() {
       .filter(Boolean)
       .map((play) => createScriptPlayFromPlaybook(play)),
   );
-  renderScript();
+  renderScriptSoon();
   setScriptToolbarStatus(
     `Added ${filteredIndices.length} play${filteredIndices.length === 1 ? "" : "s"} to ${script[targetSeparatorIndex]?.label || "selected period"}`,
     "success",
@@ -383,7 +402,7 @@ async function addSelectedToScript() {
   const addedCount = selectedAvailablePlays.length;
   selectedAvailablePlays = [];
   renderAvailablePlays();
-  renderScript();
+  renderScriptSoon();
   setScriptToolbarStatus(
     `Added ${addedCount} play${addedCount === 1 ? "" : "s"} to ${script[targetSeparatorIndex]?.label || "selected period"}`,
     "success",
@@ -414,7 +433,7 @@ async function _addGamePlanPlaysToScriptFlow(label, sourcePlays) {
     targetSeparatorIndex,
     sourcePlays.map((play) => createScriptPlayFromPlaybook(play)),
   );
-  renderScript();
+  renderScriptSoon();
   setScriptToolbarStatus(
     `Added ${sourcePlays.length} ${label} play${sourcePlays.length === 1 ? "" : "s"} to ${script[targetSeparatorIndex]?.label || "selected period"}`,
     "success",
@@ -650,7 +669,7 @@ async function mergeFromScript() {
     });
   });
 
-  renderScript();
+  renderScriptSoon();
   showToast(`Merged ${playsToAdd.length} plays from "${sourceScript.name}"`);
 }
 
@@ -681,7 +700,7 @@ async function removeFromScript(index) {
     script.splice(index, 1);
   }
 
-  renderScript();
+  renderScriptSoon();
 }
 
 function duplicatePlay(index) {
@@ -693,7 +712,7 @@ function duplicatePlay(index) {
     ...play,
     id: Date.now() + Math.random(),
   });
-  renderScript();
+  renderScriptSoon();
 }
 
 function findOwningPeriodIndex(scriptIndex) {
@@ -736,7 +755,7 @@ function movePlayToPeriodIndex(index, targetSeparatorIndex) {
   while (insertAt < script.length && !script[insertAt].isSeparator) insertAt++;
 
   script.splice(insertAt, 0, movedPlay);
-  renderScript();
+  renderScriptSoon();
   return true;
 }
 
@@ -766,7 +785,7 @@ function movePlay(index, direction) {
   saveScriptState();
   script.splice(index, 1);
   script.splice(targetIndex, 0, play);
-  renderScript();
+  renderScriptSoon();
 }
 
 async function movePlayToPeriod(index) {
