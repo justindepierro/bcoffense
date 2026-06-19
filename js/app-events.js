@@ -622,6 +622,25 @@ function _wireScriptPeriodDrag(container) {
 document.addEventListener("DOMContentLoaded", () => {
   const scriptEl = document.getElementById("scriptPlays");
   if (scriptEl) {
+    const SCRIPT_FIELD_DEBOUNCE_MS = 120;
+    const scriptInputTimers = new Map();
+    const queueScriptFieldUpdate = (idx, field, fn) => {
+      const key = `${idx}:${field}`;
+      clearTimeout(scriptInputTimers.get(key));
+      scriptInputTimers.set(
+        key,
+        setTimeout(() => {
+          scriptInputTimers.delete(key);
+          fn();
+        }, SCRIPT_FIELD_DEBOUNCE_MS),
+      );
+    };
+    const flushScriptFieldUpdate = (idx, field) => {
+      const key = `${idx}:${field}`;
+      clearTimeout(scriptInputTimers.get(key));
+      scriptInputTimers.delete(key);
+    };
+
     scriptEl.addEventListener("click", (e) => {
       const el = e.target.closest("[data-action]");
       if (!el) return;
@@ -708,6 +727,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const field = el.dataset.field;
       if (!field) return;
       const idx = parseInt(el.dataset.idx, 10);
+      if (!Number.isNaN(idx)) {
+        flushScriptFieldUpdate(idx, field);
+      }
       switch (field) {
         case "hash":
           updateHash(idx, el.value);
@@ -772,31 +794,61 @@ document.addEventListener("DOMContentLoaded", () => {
 
       switch (field) {
         case "notes":
-          if (!isBulkContext) updateNotes(idx, el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () => updateNotes(idx, el.value));
+          }
           break;
         case "defFront":
-          if (!isBulkContext) updateDefField(idx, "defFront", el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () =>
+              updateDefField(idx, "defFront", el.value),
+            );
+          }
           break;
         case "defCoverage":
-          if (!isBulkContext) updateDefField(idx, "defCoverage", el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () =>
+              updateDefField(idx, "defCoverage", el.value),
+            );
+          }
           break;
         case "defStunt":
-          if (!isBulkContext) updateDefField(idx, "defStunt", el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () =>
+              updateDefField(idx, "defStunt", el.value),
+            );
+          }
           break;
         case "defBlitz":
-          if (!isBulkContext) updateDefField(idx, "defBlitz", el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () =>
+              updateDefField(idx, "defBlitz", el.value),
+            );
+          }
           break;
         case "shift":
-          if (!isBulkContext) updateScriptCallField(idx, "shift", el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () =>
+              updateScriptCallField(idx, "shift", el.value),
+            );
+          }
           break;
         case "motion":
-          if (!isBulkContext) updateScriptCallField(idx, "motion", el.value);
+          if (!isBulkContext) {
+            queueScriptFieldUpdate(idx, field, () =>
+              updateScriptCallField(idx, "motion", el.value),
+            );
+          }
           break;
         case "periodLabel":
-          updatePeriodLabel(idx, el.value, true);
+          queueScriptFieldUpdate(idx, field, () =>
+            updatePeriodLabel(idx, el.value, true),
+          );
           break;
         case "periodNotes":
-          updatePeriodNotes(idx, el.value, true);
+          queueScriptFieldUpdate(idx, field, () =>
+            updatePeriodNotes(idx, el.value, true),
+          );
           break;
       }
     });
