@@ -2516,29 +2516,6 @@
   }
 }
 
-@media (max-width: 640px) {
-  .script-toolbar,
-  .script-stats-bar,
-  .script-actions {
-    position: static;
-    top: auto;
-    bottom: auto;
-  }
-
-  .play-list {
-    position: static;
-    top: auto;
-    height: auto;
-    max-height: none;
-    overflow: visible;
-  }
-
-  .available-plays-container {
-    min-height: 0;
-    max-height: 420px;
-  }
-}
-
 /* Script Stats Bar - Single horizontal pill */
 .script-stats-bar {
   display: flex;
@@ -3070,6 +3047,10 @@
   margin-bottom: 4px;
 }
 .collapsible-section .checkbox-filters-title {
+  display: block;
+  width: 100%;
+  text-align: left;
+  appearance: none;
   cursor: pointer;
   user-select: none;
   padding: 5px 8px;
@@ -4866,6 +4847,14 @@ body[data-auth-role="player"] .period-buttons {
 }
 
 @media (max-width: 640px) {
+  .script-toolbar,
+  .script-stats-bar,
+  .script-actions {
+    position: static;
+    top: auto;
+    bottom: auto;
+  }
+
   .script-header-panel {
     margin-bottom: 12px;
     padding: 12px;
@@ -4898,6 +4887,13 @@ body[data-auth-role="player"] .period-buttons {
     position: static;
     top: auto;
     height: auto;
+    max-height: none;
+    overflow: visible;
+  }
+
+  .available-plays-container {
+    min-height: 0;
+    max-height: 420px;
   }
 
   .available-plays-actions {
@@ -5185,6 +5181,28 @@ body[data-auth-role="player"] .period-buttons {
   .template-picker-toolbar {
     flex-direction: column;
     align-items: stretch;
+  }
+}
+
+@media (min-width: 821px) {
+  body:not(.is-mobile-screen) #script #savedScriptsList {
+    max-height: min(34vh, 360px);
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-gutter: stable;
+  }
+
+  body:not(.is-mobile-screen) #script #fullDayScriptList {
+    max-height: min(30vh, 320px);
+    overflow-y: auto;
+    padding-right: 4px;
+    scrollbar-gutter: stable;
+  }
+
+  body:not(.is-mobile-screen) #script .wristband-integration-panel,
+  body:not(.is-mobile-screen) #script .saved-scripts,
+  body:not(.is-mobile-screen) #script .full-day-section {
+    scroll-margin-top: 112px;
   }
 }
 
