@@ -10,6 +10,8 @@ body {
   line-height: 1.5;
   min-height: 100vh;
   min-height: calc(var(--app-vh, 1vh) * 100);
+  display: flex;
+  flex-direction: column;
 }
 body.app-booting {
   overflow: hidden;
@@ -82,6 +84,7 @@ h1 {
 /* ============ App Header ============ */
 .app-header {
   display: flex;
+  flex: 0 0 auto;
   align-items: center;
   justify-content: space-between;
   padding: 12px 24px;
@@ -344,6 +347,23 @@ body[data-auth-role="player"] .tab.active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
 }
+
+/* Main app container — flex column with tabs + panels */
+#mainApp {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: hidden;
+}
+
+/* Tabs bar — header sticky nav */
+#mainApp .tabs {
+  flex: 0 0 auto;
+  overflow-x: auto;
+  overflow-y: hidden;
+}
+
 .panel {
   display: none;
   background: var(--color-surface);
