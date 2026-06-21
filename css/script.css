@@ -4966,13 +4966,36 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 .script-workbench-controls {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 10px;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(260px, 1.1fr) minmax(220px, auto) minmax(160px, auto);
+  align-items: stretch;
+  gap: 8px;
   padding-top: 8px;
   border-top: 1px solid var(--color-white-alpha-20);
+}
+
+.script-workbench-control-block {
+  display: grid;
+  align-content: start;
+  gap: 5px;
+  min-width: 0;
+  padding: 7px;
+  border: 1px solid var(--color-white-alpha-20);
+  border-radius: var(--radius-md);
+  background: var(--color-white-alpha-10);
+}
+
+.script-workbench-control-block--mode {
+  justify-content: stretch;
+}
+
+.script-workbench-group-label {
+  color: var(--color-white-alpha-70);
+  font-size: var(--font-size-3xs);
+  font-weight: 900;
+  letter-spacing: 0;
+  line-height: 1;
+  text-transform: uppercase;
 }
 
 .script-workbench-toggle-group {
@@ -5009,7 +5032,7 @@ body[data-active-tab="script"] .script-display-fab {
 
 .script-workbench-pill {
   padding: 6px 12px;
-  background: var(--color-white-alpha-10);
+  background: rgb(255 255 255 / 0.08);
   color: var(--color-text-inverse);
   border-color: var(--color-white-alpha-20);
   cursor: pointer;
@@ -5029,7 +5052,8 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 .script-controls-mode-label {
-  display: inline-flex;
+  display: grid;
+  grid-template-columns: auto minmax(132px, 1fr);
   align-items: center;
   gap: 7px;
   color: var(--color-white-alpha-70);
@@ -5039,9 +5063,9 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 .script-controls-mode-select {
-  min-width: 142px;
+  min-width: 0;
   padding: 6px 30px 6px 12px;
-  background: var(--color-white-alpha-10);
+  background: rgb(255 255 255 / 0.08);
   color: var(--color-text-inverse);
   border-color: var(--color-white-alpha-20);
   color-scheme: dark;
@@ -5660,6 +5684,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 @media (max-width: 980px) {
+  #script .script-workbench-controls {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  #script .script-workbench-control-block--mode {
+    grid-column: 1 / -1;
+  }
+
   #script .script-builder {
     grid-template-columns: minmax(0, 1fr);
     grid-template-rows: minmax(180px, 260px) minmax(0, 1fr);
@@ -5691,7 +5723,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     grid-template-rows: none;
   }
 
-  #script .script-workbench-controls,
+  #script .script-workbench-controls {
+    grid-template-columns: 1fr;
+  }
+
   #script .script-workbench-toggle-group,
   #script .script-workbench-primary-actions,
   #script .script-controls-mode-label {

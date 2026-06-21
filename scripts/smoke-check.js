@@ -1253,7 +1253,9 @@ function checkPlayerPortalContracts() {
     ) ||
     !/body:not\(\.is-mobile-screen\) #script \.script-container[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/.test(
       scriptCss,
-    )
+    ) ||
+    !/\.script-workbench-control-block/.test(scriptCss) ||
+    !/class="script-workbench-control-block"/.test(html)
   ) {
     fail("desktop script workspace scroll ownership is incomplete");
   }
