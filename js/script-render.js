@@ -343,7 +343,7 @@ function renderScriptTimeline(renderContext) {
   if (!timelineEl) return;
 
   const periods = buildScriptTimelinePeriods(renderContext);
-  if (!periods.length) {
+  if (periods.length <= 1) {
     timelineEl.hidden = true;
     timelineEl.innerHTML = "";
     return;

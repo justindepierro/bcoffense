@@ -15,3 +15,5 @@ let lastScriptTargetPeriodId = null;
 let currentFilteredPlayIndices = [];
 
 let filtersCollapsed = false;
+let scriptPlayRailCollapsed = false;
+let scriptToolsDrawerOpen = false;

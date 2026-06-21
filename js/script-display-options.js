@@ -28,12 +28,17 @@ function saveScriptDisplayOptions() {
     document.querySelector('input[name="scriptLayoutMode"]:checked')?.value ||
     "detail";
   opts.filtersCollapsed = filtersCollapsed;
+  opts.playRailCollapsed = scriptPlayRailCollapsed;
   storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
 }
 
 function restoreScriptDisplayOptions() {
   const opts = storageManager.get(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, null);
-  if (!opts) return;
+  if (!opts) {
+    applyScriptPlayRailState();
+    closeScriptToolsDrawer();
+    return;
+  }
   SCRIPT_DISPLAY_CHECKBOX_IDS.forEach((id) => {
     const el = document.getElementById(id);
     if (el && opts[id] !== undefined) el.checked = opts[id];
@@ -44,7 +49,10 @@ function restoreScriptDisplayOptions() {
   );
   if (modeEl) modeEl.checked = true;
   filtersCollapsed = Boolean(opts.filtersCollapsed);
+  scriptPlayRailCollapsed = Boolean(opts.playRailCollapsed);
   applyScriptFiltersCollapsedState();
+  applyScriptPlayRailState();
+  closeScriptToolsDrawer();
 }
 
 function getScriptDisplayOptions() {
@@ -165,31 +173,40 @@ function applyScriptDisplayPreset(presetName = "coach") {
   requestRenderScript();
   showToast(`Script preset: ${presetName}`);
 }
+
+function setScriptDisplayPanelTriggerState(isOpen) {
+  ["scriptDisplayFab", "scriptDisplayToggle"].forEach((id) => {
+    const trigger = document.getElementById(id);
+    if (!trigger) return;
+    trigger.classList.toggle("active", isOpen);
+    trigger.classList.toggle("is-active", isOpen);
+    trigger.setAttribute("aria-expanded", isOpen ? "true" : "false");
+  });
+}
+
 function toggleScriptDisplayPanel() {
   const overlay = document.getElementById("scriptDisplayOverlay");
-  const trigger = document.getElementById("scriptDisplayFab");
   if (!overlay) return;
   const isOpen = overlay.classList.contains("visible");
   if (isOpen) {
     overlay.classList.remove("visible");
     overlay.setAttribute("aria-hidden", "true");
     overlay.setAttribute("inert", "");
-    trigger?.classList.remove("active");
+    setScriptDisplayPanelTriggerState(false);
     return;
   }
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
-  trigger?.classList.add("active");
+  setScriptDisplayPanelTriggerState(true);
 }
 
 function closeScriptDisplayPanel(event) {
   if (event && event.target !== event.currentTarget) return;
   const overlay = document.getElementById("scriptDisplayOverlay");
-  const trigger = document.getElementById("scriptDisplayFab");
   if (!overlay) return;
   overlay.classList.remove("visible");
   overlay.setAttribute("aria-hidden", "true");
   overlay.setAttribute("inert", "");
-  trigger?.classList.remove("active");
+  setScriptDisplayPanelTriggerState(false);
 }

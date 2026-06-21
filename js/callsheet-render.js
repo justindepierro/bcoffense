@@ -947,20 +947,20 @@ function openCallSheetPrintModal() {
       <div class="custom-modal-body">
         <div class="cs-print-options">
           <label>Paper Size: 
-            <select id="csPrintPaperSize" data-onchange="updateCsPrintOption" data-pass="value" data-key="paperSize">
+            <select id="csPrintPaperSize" data-onchange="updateCsPrintOption" data-pass="event" data-key="paperSize">
               <option value="letter" ${options.paperSize === "letter" ? "selected" : ""}>Letter (8.5" × 11")</option>
               <option value="legal" ${options.paperSize === "legal" ? "selected" : ""}>Legal (8.5" × 14")</option>
               <option value="a4" ${options.paperSize === "a4" ? "selected" : ""}>A4 (210mm × 297mm)</option>
             </select>
           </label>
           <label>Orientation: 
-            <select id="csPrintOrientation" data-onchange="updateCsPrintOption" data-pass="value" data-key="orientation">
+            <select id="csPrintOrientation" data-onchange="updateCsPrintOption" data-pass="event" data-key="orientation">
               <option value="portrait" ${options.orientation === "portrait" ? "selected" : ""}>Portrait</option>
               <option value="landscape" ${options.orientation === "landscape" ? "selected" : ""}>Landscape</option>
             </select>
           </label>
           <label>Pages: 
-            <select id="csPrintPages" data-onchange="updateCsPrintOption" data-pass="value" data-key="pages">
+            <select id="csPrintPages" data-onchange="updateCsPrintOption" data-pass="event" data-key="pages">
               <option value="both" ${options.pages === "both" ? "selected" : ""}>Front & Back</option>
               <option value="front" ${options.pages === "front" ? "selected" : ""}>Front Only</option>
               <option value="back" ${options.pages === "back" ? "selected" : ""}>Back Only</option>
@@ -968,7 +968,7 @@ function openCallSheetPrintModal() {
             </select>
           </label>
           <label>Margin: 
-            <input type="number" id="csPrintMargin" min="0" max="2" step="0.25" value="${options.margin}" data-oninput="updateCsPrintOption" data-key="margin" data-pass="value" />
+            <input type="number" id="csPrintMargin" min="0" max="2" step="0.25" value="${options.margin}" data-oninput="updateCsPrintOption" data-key="margin" data-pass="event" />
           </label>
         </div>
       </div>
@@ -982,6 +982,26 @@ function openCallSheetPrintModal() {
   modal.innerHTML = html;
   document.body.appendChild(modal);
   trapFocus(modal);
+}
+
+function updateCsPrintOption(event) {
+  const target = event?.target;
+  if (!target?.dataset?.key) return;
+  const options = getCallSheetPrintOptions();
+  setCallSheetPrintOptions({
+    ...options,
+    [target.dataset.key]: target.value,
+  });
+}
+
+function closeCsPrintModal() {
+  document.getElementById("csPrintModal")?.remove();
+}
+
+function executeCsPrintModal() {
+  const options = getCallSheetPrintOptions();
+  _csRunPrint(options);
+  closeCsPrintModal();
 }
 
 function _csRunPrint(options) {
@@ -1125,4 +1145,3 @@ function updatePageToggle() {
     orientPortrait.classList.toggle("active", callSheetSettings.orientation === "portrait");
   }
 }
-

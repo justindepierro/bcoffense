@@ -49,7 +49,65 @@ function initScriptControlsMode() {
     modeSelect.dataset.bound = "true";
   }
   applyScriptControlsMode();
+  applyScriptPlayRailState();
+  closeScriptToolsDrawer();
 }
+
+function applyScriptPlayRailState() {
+  const scriptPanel = document.getElementById("script");
+  const rail = document.getElementById("scriptPlayRail");
+  const trigger = document.getElementById("scriptPlayRailToggle");
+  if (!scriptPanel) return;
+
+  scriptPanel.classList.toggle("script-rail-collapsed", scriptPlayRailCollapsed);
+  if (rail) {
+    rail.hidden = scriptPlayRailCollapsed;
+    rail.toggleAttribute("inert", scriptPlayRailCollapsed);
+  }
+  trigger?.classList.toggle("is-active", !scriptPlayRailCollapsed);
+  trigger?.setAttribute("aria-pressed", scriptPlayRailCollapsed ? "false" : "true");
+}
+
+function toggleScriptPlayRail() {
+  scriptPlayRailCollapsed = !scriptPlayRailCollapsed;
+  applyScriptPlayRailState();
+  saveScriptDisplayOptions();
+}
+
+function setScriptToolsDrawerOpen(isOpen) {
+  const nextOpen = Boolean(isOpen);
+  const scriptPanel = document.getElementById("script");
+  const drawer = document.getElementById("scriptToolsDrawer");
+  const backdrop = document.getElementById("scriptToolsBackdrop");
+  const trigger = document.getElementById("scriptToolsDrawerToggle");
+
+  scriptToolsDrawerOpen = nextOpen;
+  scriptPanel?.classList.toggle("script-tools-open", nextOpen);
+  drawer?.classList.toggle("open", nextOpen);
+  drawer?.setAttribute("aria-hidden", nextOpen ? "false" : "true");
+  drawer?.toggleAttribute("inert", !nextOpen);
+  if (backdrop) backdrop.hidden = !nextOpen;
+  trigger?.classList.toggle("is-active", nextOpen);
+  trigger?.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+}
+
+function openScriptToolsDrawer() {
+  setScriptToolsDrawerOpen(true);
+}
+
+function closeScriptToolsDrawer() {
+  setScriptToolsDrawerOpen(false);
+}
+
+function toggleScriptToolsDrawer() {
+  setScriptToolsDrawerOpen(!scriptToolsDrawerOpen);
+}
+
+document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape" && scriptToolsDrawerOpen) {
+    closeScriptToolsDrawer();
+  }
+});
 
 function buildSharedPreferredDatalistMarkup(prefix, values, sharedOptionsHtml) {
   const idsByValue = new Map();

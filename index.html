@@ -30,22 +30,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=599" />
-  <link rel="stylesheet" href="css/layout.css?v=599" />
-  <link rel="stylesheet" href="css/components.css?v=599" />
-  <link rel="stylesheet" href="css/playbook.css?v=599" />
-  <link rel="stylesheet" href="css/script.css?v=599" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=599" />
-  <link rel="stylesheet" href="css/wristband.css?v=599" />
-  <link rel="stylesheet" href="css/callsheet.css?v=599" />
-  <link rel="stylesheet" href="css/tendencies.css?v=599" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=599" />
-  <link rel="stylesheet" href="css/dashboard.css?v=599" />
-  <link rel="stylesheet" href="css/gameplan.css?v=599" />
-  <link rel="stylesheet" href="css/installation.css?v=599" />
-  <link rel="stylesheet" href="css/identity.css?v=599" />
-  <link rel="stylesheet" href="css/print.css?v=599" />
-  <link rel="stylesheet" href="css/responsive.css?v=599" />
+  <link rel="stylesheet" href="css/base.css?v=629" />
+  <link rel="stylesheet" href="css/layout.css?v=629" />
+  <link rel="stylesheet" href="css/components.css?v=629" />
+  <link rel="stylesheet" href="css/playbook.css?v=629" />
+  <link rel="stylesheet" href="css/script.css?v=629" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=629" />
+  <link rel="stylesheet" href="css/wristband.css?v=629" />
+  <link rel="stylesheet" href="css/callsheet.css?v=629" />
+  <link rel="stylesheet" href="css/tendencies.css?v=629" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=629" />
+  <link rel="stylesheet" href="css/dashboard.css?v=629" />
+  <link rel="stylesheet" href="css/gameplan.css?v=629" />
+  <link rel="stylesheet" href="css/installation.css?v=629" />
+  <link rel="stylesheet" href="css/identity.css?v=629" />
+  <link rel="stylesheet" href="css/print.css?v=629" />
+  <link rel="stylesheet" href="css/responsive.css?v=629" />
 </head>
 
 <body class="app-booting">
@@ -886,10 +886,33 @@
             <input type="date" id="scriptDate" class="script-date-input" />
           </div>
         </div>
+        <div class="script-workbench-controls" data-auth-player-hide="true">
+          <div class="script-workbench-toggle-group" role="group" aria-label="Practice script workspace panels">
+            <button type="button" id="scriptPlayRailToggle" class="script-workbench-pill is-active"
+              data-action="toggleScriptPlayRail" aria-controls="scriptPlayRail" aria-pressed="true">
+              Library
+            </button>
+            <button type="button" id="scriptToolsDrawerToggle" class="script-workbench-pill"
+              data-action="toggleScriptToolsDrawer" aria-controls="scriptToolsDrawer" aria-expanded="false">
+              Tools
+            </button>
+            <button type="button" id="scriptDisplayToggle" class="script-workbench-pill"
+              data-action="toggleScriptDisplayPanel" aria-controls="scriptDisplayOverlay" aria-expanded="false">
+              Display
+            </button>
+          </div>
+          <label class="script-controls-mode-label" for="scriptControlsMode">
+            <span>View</span>
+            <select id="scriptControlsMode" class="script-controls-mode-select">
+              <option value="basic">Focus</option>
+              <option value="advanced">Full Controls</option>
+            </select>
+          </label>
+        </div>
       </div>
 
       <div class="script-builder">
-        <div class="play-list" data-auth-player-hide="true">
+        <div class="play-list script-play-rail" id="scriptPlayRail" data-auth-player-hide="true">
           <h3>
             <span>Available Plays
               <span id="availablePlayCount" class="badge badge-primary play-count">0</span></span>
@@ -1190,98 +1213,121 @@
 
           <div class="script-container" id="scriptPlays" data-testid="script-plays"></div>
 
+          <aside class="script-tools-drawer" id="scriptToolsDrawer" aria-hidden="true" inert data-auth-player-hide="true">
+            <div class="script-tools-drawer-header">
+              <div>
+                <span class="script-tools-drawer-kicker">Script Workspace</span>
+                <h3>Tools</h3>
+              </div>
+              <button type="button" class="script-tools-drawer-close" data-action="closeScriptToolsDrawer"
+                aria-label="Close script tools">×</button>
+            </div>
+            <div class="script-tools-drawer-body">
           <!-- Script Actions -->
-          <div class="script-actions" data-auth-player-hide="true">
-            <button id="scriptUndoBtn" class="btn btn-undo" data-action="undoScript" disabled title="Nothing to undo">
-              ↩️ Undo
-            </button>
-            <button id="scriptRedoBtn" class="btn btn-redo" data-action="redoScript" disabled title="Nothing to redo">
-              ↪️ Redo
-            </button>
-            <button class="btn btn-success" data-action="generatePDF" data-testid="generate-pdf">
-              📄 Print Script
-            </button>
-            <button class="btn btn-primary" data-action="openScriptPacketBuilder"
-              title="Print detailed scripts with attached play diagrams in an 8-up packet">
-              🗂️ Print Packet
-            </button>
-            <button class="btn btn-primary" data-action="openScriptPresentation"
-              title="Present this script in landscape mode with play diagrams and player rules">
-              Present Script
-            </button>
-            <button class="btn btn-sm btn-success" data-action="sendScriptToGamePlan"
-              title="Send selected Script plays, or the full Script, to the Game Plan">
-              🎯 Game Plan
-            </button>
-            <button class="btn btn-sm btn-success" data-action="sendScriptToWristband"
-              title="Send selected Script plays, or the full Script, to Wristband cards">
-              🃏 Wristband
-            </button>
-            <button class="btn btn-sm btn-primary" data-action="openPrintStudio"
-              title="Open unified print and export controls">
-              🖨️ Print Studio
-            </button>
-            <span class="script-actions-spacer" aria-hidden="true"></span>
-            <button class="btn btn-primary" data-action="saveScript" data-testid="save-script">
-              💾 Save Script
-            </button>
-            <button class="btn btn-danger" data-action="clearScript" data-testid="clear-script"
-              title="Start a new script">
-              ✨ New Script
-            </button>
+          <div class="script-actions">
+              <details class="script-drawer-section" open>
+                <summary>History</summary>
+                <div class="script-action-cluster" data-cluster="history">
+                <button id="scriptUndoBtn" class="btn btn-sm btn-undo" data-action="undoScript" disabled title="Nothing to undo">
+                  ↩️ Undo
+                </button>
+                <button id="scriptRedoBtn" class="btn btn-sm btn-redo" data-action="redoScript" disabled title="Nothing to redo">
+                  ↪️ Redo
+                </button>
+                </div>
+              </details>
 
-            <div class="more-tools-wrap">
-              <button class="more-tools-btn" data-action="toggleParentOpen" title="More tools">
-                ⋯ More Tools
-              </button>
-              <div class="more-tools-menu" data-action="removeParentOpen">
-                <button data-action="applyPreferredFields"
-                  title="Apply preferred metadata to selected plays (or all if none selected)">
-                  ★ Apply Preferred Fields
+              <details class="script-drawer-section" open>
+                <summary>Manage</summary>
+                <div class="script-action-cluster" data-cluster="manage">
+                <button class="btn btn-sm btn-primary" data-action="saveScript" data-testid="save-script">
+                  💾 Save Script
                 </button>
-                <button data-action="shuffleScript" title="Randomly shuffle play order within periods">
-                  🔀 Shuffle
+                <button class="btn btn-sm btn-danger" data-action="clearScript" data-testid="clear-script" title="Start a new script">
+                  ✨ New Script
                 </button>
-                <div class="tool-divider"></div>
-                <button data-action="openSmartScript" title="Intelligently reorder all periods for realistic game flow">
-                  🧠 Smart Script All
+                </div>
+              </details>
+
+              <details class="script-drawer-section" open>
+                <summary>Print &amp; Present</summary>
+                <div class="script-action-cluster" data-cluster="output">
+                <button class="btn btn-sm btn-success" data-action="generatePDF" data-testid="generate-pdf">
+                  📄 Print Script
                 </button>
-                <button data-action="autoFillDefenseFromTendencies"
-                  title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data">
-                  🎯 Auto-Fill Defense
+                <button class="btn btn-sm btn-primary" data-action="openScriptPacketBuilder" title="Print detailed scripts with attached play diagrams in an 8-up packet">
+                  🗂️ Print Packet
                 </button>
-                <div class="tool-divider"></div>
-                <button data-action="compareScripts" title="Compare two saved scripts">
-                  📊 Compare Scripts
+                <button class="btn btn-sm btn-primary" data-action="openScriptPresentation" title="Present this script in landscape mode with play diagrams and player rules">
+                  Present Script
                 </button>
-                <button data-action="mergeFromScript" title="Merge plays from another script">
-                  ➕ Merge From Script
+                </div>
+              </details>
+
+              <details class="script-drawer-section" open>
+                <summary>Send To</summary>
+                <div class="script-action-cluster" data-cluster="integrations">
+                <button class="btn btn-sm btn-success" data-action="sendScriptToGamePlan" title="Send selected Script plays, or the full Script, to the Game Plan">
+                  🎯 Game Plan
                 </button>
-                <button data-action="copyPeriodToClipboard" title="Copy a period to clipboard">
-                  📋 Copy Period
+                <button class="btn btn-sm btn-success" data-action="sendScriptToWristband" title="Send selected Script plays, or the full Script, to Wristband cards">
+                  🃏 Wristband
                 </button>
-                <div class="tool-divider"></div>
-                <button data-action="saveScriptTemplate" title="Save this script as a reusable week or day template">
-                  💾 Save Day Template
+                <button class="btn btn-sm btn-primary" data-action="openPrintStudio" title="Open unified print and export controls">
+                  🖨️ Print Studio
                 </button>
-                <button data-action="openScriptTemplatesMenu" title="Load or delete script templates">
-                  📁 Day Templates
+                </div>
+              </details>
+
+              <div class="more-tools-wrap">
+                <button class="more-tools-btn" data-action="toggleParentOpen" title="More tools">
+                  ⋯ More Tools
                 </button>
-                <div class="tool-divider"></div>
-                <button data-action="exportScriptAsText" title="Download script as plain-text file">
-                  📄 Export Text
-                </button>
-                <button data-action="exportScriptCSV" title="Export current script to CSV">
-                  📥 Export CSV
-                </button>
-                <button data-action="showScriptShortcutsModal" title="Show keyboard shortcuts (?)">
-                  ⌨️ Keyboard Shortcuts
-                </button>
+                <div class="more-tools-menu" data-action="removeParentOpen">
+                  <button data-action="applyPreferredFields" title="Apply preferred metadata to selected plays (or all if none selected)">
+                    ★ Apply Preferred Fields
+                  </button>
+                  <button data-action="shuffleScript" title="Randomly shuffle play order within periods">
+                    🔀 Shuffle
+                  </button>
+                  <div class="tool-divider"></div>
+                  <button data-action="openSmartScript" title="Intelligently reorder all periods for realistic game flow">
+                    🧠 Smart Script All
+                  </button>
+                  <button data-action="autoFillDefenseFromTendencies" title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data">
+                    🎯 Auto-Fill Defense
+                  </button>
+                  <div class="tool-divider"></div>
+                  <button data-action="compareScripts" title="Compare two saved scripts">
+                    📊 Compare Scripts
+                  </button>
+                  <button data-action="mergeFromScript" title="Merge plays from another script">
+                    ➕ Merge From Script
+                  </button>
+                  <button data-action="copyPeriodToClipboard" title="Copy a period to clipboard">
+                    📋 Copy Period
+                  </button>
+                  <div class="tool-divider"></div>
+                  <button data-action="saveScriptTemplate" title="Save this script as a reusable week or day template">
+                    💾 Save Day Template
+                  </button>
+                  <button data-action="openScriptTemplatesMenu" title="Load or delete script templates">
+                    📁 Day Templates
+                  </button>
+                  <div class="tool-divider"></div>
+                  <button data-action="exportScriptAsText" title="Download script as plain-text file">
+                    📄 Export Text
+                  </button>
+                  <button data-action="exportScriptCSV" title="Export current script to CSV">
+                    📥 Export CSV
+                  </button>
+                  <button data-action="showScriptShortcutsModal" title="Show keyboard shortcuts (?)">
+                    ⌨️ Keyboard Shortcuts
+                  </button>
+                </div>
               </div>
             </div>
-          </div>
-
-          <div class="wristband-integration-panel" data-auth-player-hide="true">
+            <div class="wristband-integration-panel" data-auth-player-hide="true">
             <div class="integration-header" data-action="toggleCollapsiblePanel">
               <strong>🏈 Wristband Integration</strong>
               <span class="toggle-icon">▼</span>
@@ -1343,6 +1389,10 @@
               </button>
             </div>
           </div>
+            </div>
+          </aside>
+          <div class="script-tools-backdrop" id="scriptToolsBackdrop" data-action="closeScriptToolsDrawer" hidden
+            data-auth-player-hide="true"></div>
         </div>
       </div>
 
@@ -3491,94 +3541,94 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=599"></script>
-  <script defer src="js/history.js?v=599"></script>
-  <script defer src="js/dom-helpers.js?v=599"></script>
-  <script defer src="js/lz-string.min.js?v=599"></script>
-  <script defer src="js/storage.js?v=599"></script>
-  <script defer src="js/storage-ui.js?v=599"></script>
-  <script defer src="js/play-images.js?v=599"></script>
-  <script defer src="js/cloud-sync.js?v=599"></script>
-  <script defer src="js/auth.js?v=599"></script>
-  <script defer src="js/vision.js?v=599"></script>
-  <script defer src="js/team-settings.js?v=599"></script>
-  <script defer src="js/playbook.js?v=599"></script>
-  <script defer src="js/playbook-collections.js?v=599"></script>
-  <script defer src="js/playbook-print.js?v=599"></script>
-  <script defer src="js/playbook-editor.js?v=599"></script>
-  <script defer src="js/playbook-import.js?v=599"></script>
-  <script defer src="js/playbook-export.js?v=599"></script>
-  <script defer src="js/playbook-chrome.js?v=599"></script>
-  <script defer src="js/playbook-state.js?v=599"></script>
-  <script defer src="js/playbook-filters.js?v=599"></script>
-  <script defer src="js/playbook-navigation.js?v=599"></script>
-  <script defer src="js/playbook-actions.js?v=599"></script>
-  <script defer src="js/playbook-render.js?v=599"></script>
-  <script defer src="js/playbook-sanitize.js?v=599"></script>
-  <script defer src="js/script-state.js?v=599"></script>
-  <script defer src="js/script-shared.js?v=599"></script>
-  <script defer src="js/script-players.js?v=599"></script>
-  <script defer src="js/script-display-options.js?v=599"></script>
-  <script defer src="js/play-readiness.js?v=599"></script>
-  <script defer src="js/script-add.js?v=599"></script>
-  <script defer src="js/script-sort.js?v=599"></script>
-  <script defer src="js/script-export.js?v=599"></script>
-  <script defer src="js/script-available.js?v=599"></script>
-  <script defer src="js/script-selection.js?v=599"></script>
-  <script defer src="js/script-render.js?v=599"></script>
-  <script defer src="js/script-periods.js?v=599"></script>
-  <script defer src="js/script-period-sync.js?v=599"></script>
-  <script defer src="js/script-smart.js?v=599"></script>
-  <script defer src="js/script-storage.js?v=599"></script>
-  <script defer src="js/script-integrations.js?v=599"></script>
-  <script defer src="js/play-presentation.js?v=599"></script>
-  <script defer src="js/wristband.js?v=599"></script>
-  <script defer src="js/wristband-library.js?v=599"></script>
-  <script defer src="js/wristband-render.js?v=599"></script>
-  <script defer src="js/wristband-cards.js?v=599"></script>
-  <script defer src="js/wristband-export.js?v=599"></script>
-  <script defer src="js/wristband-search.js?v=599"></script>
-  <script defer src="js/wristband-modals.js?v=599"></script>
-  <script defer src="js/wristband-cell-popup.js?v=599"></script>
-  <script defer src="js/wristband-cell-actions.js?v=599"></script>
-  <script defer src="js/wristband-sort.js?v=599"></script>
-  <script defer src="js/wristband-storage.js?v=599"></script>
-  <script defer src="js/wristband-runtime.js?v=599"></script>
-  <script defer src="js/callsheet-render.js?v=599"></script>
-  <script defer src="js/callsheet.js?v=599"></script>
-  <script defer src="js/callsheet-categories.js?v=599"></script>
-  <script defer src="js/callsheet-metadata.js?v=599"></script>
-  <script defer src="js/callsheet-layout.js?v=599"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=599"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=599"></script>
-  <script defer src="js/constraints.js?v=599"></script>
-  <script defer src="js/script-vision.js?v=599"></script>
-  <script defer src="js/tendencies-render.js?v=599"></script>
-  <script defer src="js/tendencies.js?v=599"></script>
-  <script defer src="js/installation-render.js?v=599"></script>
-  <script defer src="js/installation.js?v=599"></script>
-  <script defer src="js/identity.js?v=599"></script>
-  <script defer src="js/offensebuilder.js?v=599"></script>
-  <script defer src="js/help.js?v=599"></script>
-  <script defer src="js/dashboard.js?v=599"></script>
-  <script defer src="js/gameplan.js?v=599"></script>
-  <script defer src="js/gameplan-render.js?v=599"></script>
-  <script defer src="js/gameplan-dnd.js?v=599"></script>
-  <script defer src="js/gameplan-actions.js?v=599"></script>
-  <script defer src="js/gameplan-smart.js?v=599"></script>
-  <script defer src="js/gameplan-print.js?v=599"></script>
-  <script defer src="js/gameplan-integrations.js?v=599"></script>
-  <script defer src="js/gameplan-snapshots.js?v=599"></script>
-  <script defer src="js/print-studio.js?v=599"></script>
-  <script defer src="js/script-events.js?v=599"></script>
-  <script defer src="js/app-events.js?v=599"></script>
-  <script defer src="js/app-shell.js?v=599"></script>
-  <script defer src="js/app-session.js?v=599"></script>
-  <script defer src="js/app-navigation.js?v=599"></script>
-  <script defer src="js/app-module-init.js?v=599"></script>
-  <script defer src="js/app-bootstrap.js?v=599"></script>
-  <script defer src="js/app-init.js?v=599"></script>
-  <script defer src="js/app.js?v=599"></script>
+  <script defer src="js/utils.js?v=629"></script>
+  <script defer src="js/history.js?v=629"></script>
+  <script defer src="js/dom-helpers.js?v=629"></script>
+  <script defer src="js/lz-string.min.js?v=629"></script>
+  <script defer src="js/storage.js?v=629"></script>
+  <script defer src="js/storage-ui.js?v=629"></script>
+  <script defer src="js/play-images.js?v=629"></script>
+  <script defer src="js/cloud-sync.js?v=629"></script>
+  <script defer src="js/auth.js?v=629"></script>
+  <script defer src="js/vision.js?v=629"></script>
+  <script defer src="js/team-settings.js?v=629"></script>
+  <script defer src="js/playbook.js?v=629"></script>
+  <script defer src="js/playbook-collections.js?v=629"></script>
+  <script defer src="js/playbook-print.js?v=629"></script>
+  <script defer src="js/playbook-editor.js?v=629"></script>
+  <script defer src="js/playbook-import.js?v=629"></script>
+  <script defer src="js/playbook-export.js?v=629"></script>
+  <script defer src="js/playbook-chrome.js?v=629"></script>
+  <script defer src="js/playbook-state.js?v=629"></script>
+  <script defer src="js/playbook-filters.js?v=629"></script>
+  <script defer src="js/playbook-navigation.js?v=629"></script>
+  <script defer src="js/playbook-actions.js?v=629"></script>
+  <script defer src="js/playbook-render.js?v=629"></script>
+  <script defer src="js/playbook-sanitize.js?v=629"></script>
+  <script defer src="js/script-state.js?v=629"></script>
+  <script defer src="js/script-shared.js?v=629"></script>
+  <script defer src="js/script-players.js?v=629"></script>
+  <script defer src="js/script-display-options.js?v=629"></script>
+  <script defer src="js/play-readiness.js?v=629"></script>
+  <script defer src="js/script-add.js?v=629"></script>
+  <script defer src="js/script-sort.js?v=629"></script>
+  <script defer src="js/script-export.js?v=629"></script>
+  <script defer src="js/script-available.js?v=629"></script>
+  <script defer src="js/script-selection.js?v=629"></script>
+  <script defer src="js/script-render.js?v=629"></script>
+  <script defer src="js/script-periods.js?v=629"></script>
+  <script defer src="js/script-period-sync.js?v=629"></script>
+  <script defer src="js/script-smart.js?v=629"></script>
+  <script defer src="js/script-storage.js?v=629"></script>
+  <script defer src="js/script-integrations.js?v=629"></script>
+  <script defer src="js/play-presentation.js?v=629"></script>
+  <script defer src="js/wristband.js?v=629"></script>
+  <script defer src="js/wristband-library.js?v=629"></script>
+  <script defer src="js/wristband-render.js?v=629"></script>
+  <script defer src="js/wristband-cards.js?v=629"></script>
+  <script defer src="js/wristband-export.js?v=629"></script>
+  <script defer src="js/wristband-search.js?v=629"></script>
+  <script defer src="js/wristband-modals.js?v=629"></script>
+  <script defer src="js/wristband-cell-popup.js?v=629"></script>
+  <script defer src="js/wristband-cell-actions.js?v=629"></script>
+  <script defer src="js/wristband-sort.js?v=629"></script>
+  <script defer src="js/wristband-storage.js?v=629"></script>
+  <script defer src="js/wristband-runtime.js?v=629"></script>
+  <script defer src="js/callsheet-render.js?v=629"></script>
+  <script defer src="js/callsheet.js?v=629"></script>
+  <script defer src="js/callsheet-categories.js?v=629"></script>
+  <script defer src="js/callsheet-metadata.js?v=629"></script>
+  <script defer src="js/callsheet-layout.js?v=629"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=629"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=629"></script>
+  <script defer src="js/constraints.js?v=629"></script>
+  <script defer src="js/script-vision.js?v=629"></script>
+  <script defer src="js/tendencies-render.js?v=629"></script>
+  <script defer src="js/tendencies.js?v=629"></script>
+  <script defer src="js/installation-render.js?v=629"></script>
+  <script defer src="js/installation.js?v=629"></script>
+  <script defer src="js/identity.js?v=629"></script>
+  <script defer src="js/offensebuilder.js?v=629"></script>
+  <script defer src="js/help.js?v=629"></script>
+  <script defer src="js/dashboard.js?v=629"></script>
+  <script defer src="js/gameplan.js?v=629"></script>
+  <script defer src="js/gameplan-render.js?v=629"></script>
+  <script defer src="js/gameplan-dnd.js?v=629"></script>
+  <script defer src="js/gameplan-actions.js?v=629"></script>
+  <script defer src="js/gameplan-smart.js?v=629"></script>
+  <script defer src="js/gameplan-print.js?v=629"></script>
+  <script defer src="js/gameplan-integrations.js?v=629"></script>
+  <script defer src="js/gameplan-snapshots.js?v=629"></script>
+  <script defer src="js/print-studio.js?v=629"></script>
+  <script defer src="js/script-events.js?v=629"></script>
+  <script defer src="js/app-events.js?v=629"></script>
+  <script defer src="js/app-shell.js?v=629"></script>
+  <script defer src="js/app-session.js?v=629"></script>
+  <script defer src="js/app-navigation.js?v=629"></script>
+  <script defer src="js/app-module-init.js?v=629"></script>
+  <script defer src="js/app-bootstrap.js?v=629"></script>
+  <script defer src="js/app-init.js?v=629"></script>
+  <script defer src="js/app.js?v=629"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

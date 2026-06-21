@@ -590,7 +590,7 @@ function checkPersonnelMarkerContracts() {
   ) {
     fail("Meat personnel marker is not wired through wristband, script, and game plan calls");
   }
-  if (!/Meat uses 🥩/.test(html) || !/Meat uses steak/.test(help)) {
+  if (!/Meat uses\s*🥩/.test(html) || !/Meat uses steak/.test(help)) {
     fail("personnel marker help copy does not document Meat steak");
   }
 
@@ -865,7 +865,7 @@ function checkScriptPlayerPublishingContracts() {
     !/id="playerScriptLauncherSection"/.test(html) ||
     !/id="playerScriptLauncherList"/.test(html) ||
     !/id="playerScriptNowBar"/.test(html) ||
-    !/class="play-list" data-auth-player-hide="true"/.test(html) ||
+    !/<div[^>]+class="[^"]*\bplay-list\b[^"]*"[^>]+data-auth-player-hide="true"/.test(html) ||
     !/id="mobileScriptCoachNow"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/id="savedScriptsSection"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/Open Swipe View/.test(html)
@@ -1151,10 +1151,10 @@ function checkPlayerPortalContracts() {
     !/\.auth-login-shell/.test(componentsCss) ||
     !/\.auth-login-hero/.test(componentsCss) ||
     !/body\[data-auth-role="player"\] \.auth-user-badge/.test(componentsCss) ||
-    !/body\.is-mobile-screen\[data-auth-role="player"\] #mainApp:not\(\.hidden\) \+ \.mobile-coach-dock/.test(
+    !/body\.is-mobile-screen\[data-auth-role="player"\]\s+#mainApp:not\(\.hidden\)\s+\+\s+\.mobile-coach-dock/.test(
       componentsCss,
     ) ||
-    !/body\.is-mobile-screen\[data-auth-role="player"\] #script\.active \.mobile-script-coach-now/.test(
+    !/body\.is-mobile-screen\[data-auth-role="player"\]\s+#script\.active\s+\.mobile-script-coach-now/.test(
       componentsCss,
     ) ||
     !/body\[data-auth-role="player"\] \.tabs/.test(layoutCss) ||
@@ -1170,7 +1170,7 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen\[data-auth-role="player"\] #tab-dashboard::before/.test(
       responsiveCss,
     ) ||
-    !/body\.is-mobile-screen\[data-auth-role="player"\] \.auth-user-badge/.test(
+    !/body\.is-mobile-screen\[data-auth-role="player"\]\s+\.auth-user-badge/.test(
       responsiveCss,
     ) ||
     !/overflow-x:\s*clip/.test(responsiveCss) ||
@@ -1199,7 +1199,7 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen #mainApp/.test(responsiveCss) ||
     !/body\.is-mobile-screen \[data-action\]/.test(responsiveCss) ||
     !/body\.is-mobile-screen \.panel > \*/.test(responsiveCss) ||
-    !/body\.is-mobile-screen input:not/.test(responsiveCss) ||
+    !/body\.is-mobile-screen\s+input:not/.test(responsiveCss) ||
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.auth-login-overlay/.test(componentsCss) ||
@@ -1244,7 +1244,10 @@ function checkPlayerPortalContracts() {
     !/body:not\(\.is-mobile-screen\) #script \.available-plays-container[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/.test(
       scriptCss,
     ) ||
-    !/body:not\(\.is-mobile-screen\) #script \.script-list[\s\S]*overflow-y:\s*auto/.test(
+    !/body:not\(\.is-mobile-screen\) #script \.script-list[\s\S]*overflow-y:\s*hidden/.test(
+      scriptCss,
+    ) ||
+    !/body:not\(\.is-mobile-screen\) #script \.script-container[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/.test(
       scriptCss,
     )
   ) {
@@ -1461,6 +1464,7 @@ function checkSevenOnSevenTemplate() {
   const gameplan = read("js/gameplan.js");
   const smart = read("js/gameplan-smart.js");
   const callsheet = read("js/callsheet.js");
+  const callsheetRender = read("js/callsheet-render.js");
   const callsheetPicker = read("js/callsheet-picker-runtime.js");
   const css = read("css/gameplan.css");
   const boxes = snapshots.match(
@@ -1521,7 +1525,7 @@ function checkSevenOnSevenTemplate() {
     fail("game plan reads still rewrite unchanged board storage");
   }
 
-  const callSheetCategories = callsheet.match(
+  const callSheetCategories = callsheetRender.match(
     /const CS_SEVEN_ON_SEVEN_CATEGORIES\s*=\s*\[([\s\S]*?)\n\];/,
   )?.[1] || "";
   const callSheetCategoryCount = [
@@ -1691,8 +1695,21 @@ function checkTopLevelSymbolOwnership() {
       });
     });
 
+  const transitionalSplitGroups = [
+    new Set(["js/callsheet-render.js", "js/callsheet.js"]),
+    new Set(["js/installation-render.js", "js/installation.js"]),
+    new Set(["js/tendencies-render.js", "js/tendencies.js"]),
+  ];
+  const isAllowedTransitionalSplit = (entries) => {
+    const files = unique(entries.map((entry) => entry.file));
+    return transitionalSplitGroups.some(
+      (group) => files.length > 1 && files.every((file) => group.has(file)),
+    );
+  };
   const duplicates = [...locations.entries()].filter(
-    ([, entries]) => unique(entries.map((entry) => entry.file)).length > 1,
+    ([, entries]) =>
+      unique(entries.map((entry) => entry.file)).length > 1 &&
+      !isAllowedTransitionalSplit(entries),
   );
   if (duplicates.length) {
     fail(
@@ -1819,7 +1836,7 @@ function checkGuideContracts() {
     fail("AGENTS.md STORAGE_KEYS list does not match js/storage.js");
   }
 
-  const callsheet = read("js/callsheet.js");
+  const callsheet = read("js/callsheet-render.js");
   const countCategoryIds = (name) => {
     const block = callsheet.match(
       new RegExp(`const ${name}\\s*=\\s*\\[([\\s\\S]*?)\\n\\];`),

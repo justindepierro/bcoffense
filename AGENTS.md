@@ -82,7 +82,8 @@ js/
   wristband-sort.js     ← Wristband sorting and reorder helpers
   wristband-storage.js  ← Save/load/draft hydration helpers
   wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
-  callsheet.js          ← Core call sheet state, rendering, and sort helpers
+  callsheet-render.js   ← Call sheet category constants, display helpers, and legacy render layer
+  callsheet.js          ← Core call sheet state, storage, print runtime, templates, and sort helpers
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   callsheet-layout.js   ← Call sheet layout/order modal state and drag-drop helpers
@@ -90,7 +91,9 @@ js/
   callsheet-gameplan-drawer.js ← Game plan drawer inside the call sheet
   constraints.js        ← Game plan constraints evaluation engine
   script-vision.js      ← Script vision-mode rendering and controls
+  tendencies-render.js  ← Defensive tendencies render helpers during split migration
   tendencies.js         ← Defensive tendencies (opponents, wizard, analysis)
+  installation-render.js ← Installation render helpers during split migration
   installation.js       ← Installation/help guide
   identity.js           ← Offensive identity runtime
   offensebuilder.js     ← Offense builder tool
@@ -182,37 +185,41 @@ All scripts use `defer` and load in this exact order from index.html:
 51. js/wristband-sort.js
 52. js/wristband-storage.js
 53. js/wristband-runtime.js
-54. js/callsheet.js
-55. js/callsheet-categories.js
-56. js/callsheet-metadata.js
-57. js/callsheet-layout.js
-58. js/callsheet-picker-runtime.js
-59. js/callsheet-gameplan-drawer.js
-60. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
-61. js/script-vision.js
-62. js/tendencies.js
-63. js/installation.js
-64. js/identity.js
-65. js/offensebuilder.js
-66. js/help.js
-67. js/dashboard.js
-68. js/gameplan.js          ← Must load before all gameplan-* split files
-69. js/gameplan-render.js
-70. js/gameplan-dnd.js
-71. js/gameplan-actions.js
-72. js/gameplan-smart.js
-73. js/gameplan-print.js
-74. js/gameplan-integrations.js
-75. js/gameplan-snapshots.js
-76. js/print-studio.js  ← Unified print/export hub after module print functions
-77. js/app-events.js
-78. js/app-shell.js
-79. js/app-session.js
-80. js/app-navigation.js
-81. js/app-module-init.js
-82. js/app-bootstrap.js
-83. js/app-init.js
-84. js/app.js           ← Must be last; shared global state only
+54. js/callsheet-render.js
+55. js/callsheet.js
+56. js/callsheet-categories.js
+57. js/callsheet-metadata.js
+58. js/callsheet-layout.js
+59. js/callsheet-picker-runtime.js
+60. js/callsheet-gameplan-drawer.js
+61. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+62. js/script-vision.js
+63. js/tendencies-render.js
+64. js/tendencies.js
+65. js/installation-render.js
+66. js/installation.js
+67. js/identity.js
+68. js/offensebuilder.js
+69. js/help.js
+70. js/dashboard.js
+71. js/gameplan.js          ← Must load before all gameplan-* split files
+72. js/gameplan-render.js
+73. js/gameplan-dnd.js
+74. js/gameplan-actions.js
+75. js/gameplan-smart.js
+76. js/gameplan-print.js
+77. js/gameplan-integrations.js
+78. js/gameplan-snapshots.js
+79. js/print-studio.js  ← Unified print/export hub after module print functions
+80. js/script-events.js
+81. js/app-events.js
+82. js/app-shell.js
+83. js/app-session.js
+84. js/app-navigation.js
+85. js/app-module-init.js
+86. js/app-bootstrap.js
+87. js/app-init.js
+88. js/app.js           ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.
@@ -333,6 +340,7 @@ CALL_SHEET_SETTINGS        → "callSheetSettings"
 COLUMN_VISIBILITY          → "columnVisibility"
 PLAYBOOK_STATE             → "playbookState"
 SCRIPT_DISPLAY_OPTIONS     → "scriptDisplayOptions"
+SCRIPT_CONTROLS_MODE       → "scriptControlsMode"
 PLAY_READINESS             → "playReadiness"
 SCRIPT_DRAFT               → "scriptDraft"
 WRISTBAND_DRAFT            → "wristbandDraft"
@@ -378,6 +386,7 @@ GAME_PLAN_TEMPLATES        → "gamePlanTemplates"
 CALLSHEET_PRINT_OPTIONS    → "callSheetPrintOptions"
 CLOUD_SYNC_SETTINGS        → "cloudSyncSettings"
 COLOR_PRESET               → "colorPreset"
+AUTH_SESSION               → "authSession"
 ```
 
 ### Autosave / Draft Pattern

@@ -426,9 +426,10 @@
 
   body.is-mobile-screen.is-staff-mobile-shell #script .play-list {
     order: 2;
-    overflow: visible;
+    position: static;
     height: auto;
     max-height: none;
+    overflow: visible;
   }
 
   body.is-mobile-screen.is-staff-mobile-shell #script .script-player-grid {
