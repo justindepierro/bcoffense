@@ -5099,13 +5099,42 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .play-list h3,
 #script .script-list > h3 {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
   margin: 0;
   padding-bottom: 8px;
   font-size: var(--font-size-lg);
 }
 
-#script .period-buttons {
+#script .script-section-head {
+  min-height: 42px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+#script .script-section-title {
+  display: inline-flex;
+  align-items: center;
   gap: 6px;
+  min-width: 0;
+  color: var(--color-text);
+  font-weight: 900;
+  line-height: 1.1;
+}
+
+#script .period-buttons {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  flex-wrap: wrap;
+  min-width: 0;
+}
+
+#script .period-buttons .btn,
+#script .period-template-quickpick {
+  min-height: 32px;
 }
 
 #script .script-stats-bar {
