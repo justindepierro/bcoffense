@@ -4982,6 +4982,20 @@ body[data-active-tab="script"] .script-display-fab {
   flex-wrap: wrap;
 }
 
+.script-workbench-primary-actions {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#script .script-workbench-primary-actions .btn {
+  min-height: 34px;
+  padding: 6px 12px;
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+}
+
 .script-workbench-pill,
 .script-controls-mode-select,
 .script-tools-drawer-close {
@@ -5679,11 +5693,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   #script .script-workbench-controls,
   #script .script-workbench-toggle-group,
+  #script .script-workbench-primary-actions,
   #script .script-controls-mode-label {
     width: 100%;
   }
 
   #script .script-workbench-pill,
+  #script .script-workbench-primary-actions .btn,
   #script .script-controls-mode-select {
     flex: 1 1 120px;
   }

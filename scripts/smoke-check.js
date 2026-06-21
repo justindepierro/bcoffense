@@ -1062,7 +1062,9 @@ function checkPlayerPortalContracts() {
     !/document\.body\.dataset\.authCanEdit = canEditUser\(\) \? "true" : "false"/.test(auth) ||
     !/window\.canEditUser = canEditUser/.test(auth) ||
     !/auth-login-shell/.test(auth) ||
-    !/authPasswordToggle/.test(auth)
+    !/authPasswordToggle/.test(auth) ||
+    !/AUTH_LOGIN_ROLE_DETAILS/.test(auth) ||
+    !/data-login-role/.test(auth)
   ) {
     fail("player auth shell or tab permissions are incomplete");
   }
@@ -1203,6 +1205,8 @@ function checkPlayerPortalContracts() {
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.auth-login-overlay/.test(componentsCss) ||
+    !/\.auth-login-role-picker/.test(componentsCss) ||
+    !/\.auth-login-role-option\.is-active/.test(componentsCss) ||
     !/auth-login-submit[\s\S]*touch-action:\s*manipulation/.test(componentsCss) ||
     !/\.auth-login-card\s*\{\s*order:\s*1;/.test(componentsCss) ||
     !/\.auth-login-hero\s*\{\s*order:\s*2;/.test(componentsCss) ||

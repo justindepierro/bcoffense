@@ -215,6 +215,13 @@
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }
+.auth-login-hero-kicker {
+  color: var(--color-accent);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
 .auth-login-form-header {
   display: grid;
   gap: 6px;
@@ -243,6 +250,43 @@
   color: var(--color-text-secondary);
   font-size: var(--font-size-sm);
   font-weight: 700;
+}
+.auth-login-role-picker {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+.auth-login-role-option {
+  display: grid;
+  gap: 2px;
+  min-height: 56px;
+  padding: 8px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
+  color: var(--color-text);
+  cursor: pointer;
+  font: inherit;
+  text-align: left;
+}
+.auth-login-role-option span {
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+}
+.auth-login-role-option small {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-3xs);
+  font-weight: 800;
+  text-transform: uppercase;
+}
+.auth-login-role-option.is-active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+.auth-login-role-option:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 .auth-login-card input {
   width: 100%;
@@ -396,6 +440,16 @@ body[data-auth-role="player"] .auth-user-badge {
 
   .auth-login-form-header {
     gap: 4px;
+  }
+
+  .auth-login-role-picker {
+    grid-template-columns: 1fr;
+  }
+
+  .auth-login-role-option {
+    grid-template-columns: minmax(0, 1fr) auto;
+    align-items: center;
+    min-height: 44px;
   }
 
   .auth-login-card h3 {

@@ -33,6 +33,30 @@
     player: "dashboard",
   };
 
+  const AUTH_LOGIN_ROLE_DETAILS = {
+    admin: {
+      label: "Admin",
+      eyebrow: "Full access",
+      title: "Admin workspace",
+      summary: "Manage playbook imports, cloud backups, staff tools, and every practice workflow.",
+      submit: "Enter Admin Workspace",
+    },
+    coach: {
+      label: "Coach",
+      eyebrow: "Practice tools",
+      title: "Coach workspace",
+      summary: "Build scripts, call sheets, wristbands, game plans, and player-ready practice views.",
+      submit: "Enter Coach Workspace",
+    },
+    player: {
+      label: "Player",
+      eyebrow: "View only",
+      title: "Player portal",
+      summary: "Open the published practice plan, playbook, wristband, and swipe view without staff controls.",
+      submit: "Enter Player Portal",
+    },
+  };
+
   const READ_ONLY_ALLOWED_ACTIONS = new Set([
     "showTab",
     "toggleDarkMode",
@@ -258,6 +282,10 @@
       loginAt: new Date().toISOString(),
       expiresAt: "",
     });
+  }
+
+  function getLoginRoleDetails(role) {
+    return AUTH_LOGIN_ROLE_DETAILS[role] || AUTH_LOGIN_ROLE_DETAILS.admin;
   }
 
   function getAuthSessionStorageKey() {
@@ -580,42 +608,53 @@
     const overlay = document.createElement("div");
     overlay.id = "authLoginOverlay";
     overlay.className = "auth-login-overlay";
+    const initialDetails = getLoginRoleDetails("admin");
     overlay.innerHTML = `
       <div class="auth-login-shell">
         <section class="auth-login-hero" aria-label="Portal overview">
           <div class="auth-login-brand">BCOffense</div>
-          <h2>One clean portal for practice, rules, and responsibilities.</h2>
-          <p>Log in to open today&apos;s plan, swipe through plays, and stay on the same page as your staff.</p>
+          <div class="auth-login-hero-kicker">Secure staff and player access</div>
+          <h2 id="authLoginHeroTitle">${escapeHtml(initialDetails.title)}</h2>
+          <p id="authLoginHeroSummary">${escapeHtml(initialDetails.summary)}</p>
           <div class="auth-login-role-strip" aria-label="Portal roles">
-            <span class="auth-login-role-chip">Player</span>
-            <span class="auth-login-role-chip">Coach</span>
             <span class="auth-login-role-chip">Admin</span>
+            <span class="auth-login-role-chip">Coach</span>
+            <span class="auth-login-role-chip">Player</span>
           </div>
           <div class="auth-login-highlight-list">
             <div class="auth-login-highlight">
-              <strong>Today&apos;s Practice</strong>
-              <span>Open the published script without digging through staff tools.</span>
+              <strong>Admin control</strong>
+              <span>Import data, push backups, and keep staff-only tools locked down.</span>
             </div>
             <div class="auth-login-highlight">
-              <strong>Swipe View</strong>
-              <span>Move play to play on a phone or tablet and keep the diagram in view.</span>
+              <strong>Practice operations</strong>
+              <span>Jump into scripts, wristbands, game plans, and call sheets after login.</span>
             </div>
             <div class="auth-login-highlight">
-              <strong>Position Lock</strong>
-              <span>Keep your rule pinned to your spot while the staff flips through the script.</span>
+              <strong>Player-safe mode</strong>
+              <span>Players see the published plan and swipe view without edit controls.</span>
             </div>
           </div>
         </section>
         <form class="auth-login-card" id="authLoginForm" autocomplete="off">
           <div class="auth-login-form-header">
-            <div class="auth-login-kicker">Team Login</div>
-            <h3>Enter your team credentials</h3>
-            <p>Use the username and password shared by your staff.</p>
+            <div class="auth-login-kicker" id="authLoginRoleEyebrow">${escapeHtml(initialDetails.eyebrow)}</div>
+            <h3>Sign in to BCOffense</h3>
+            <p id="authLoginRoleSummary">${escapeHtml(initialDetails.summary)}</p>
+          </div>
+          <div class="auth-login-role-picker" role="group" aria-label="Choose login role">
+            ${Object.entries(AUTH_LOGIN_ROLE_DETAILS).map(([role, details]) => `
+              <button type="button" class="auth-login-role-option${role === "admin" ? " is-active" : ""}"
+                data-login-role="${role}" aria-pressed="${role === "admin" ? "true" : "false"}">
+                <span>${escapeHtml(details.label)}</span>
+                <small>${escapeHtml(details.eyebrow)}</small>
+              </button>
+            `).join("")}
           </div>
           <label>
             <span>Username</span>
             <input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
-              data-auth-allow-input="true" required />
+              data-auth-allow-input="true" value="admin" required />
           </label>
           <label>
             <span>Password</span>
@@ -627,7 +666,7 @@
             </div>
           </label>
           <div id="authLoginError" class="auth-login-error${message ? " is-status" : ""}" aria-live="polite">${escapeHtml(message)}</div>
-          <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">Enter Portal</button>
+          <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">${escapeHtml(initialDetails.submit)}</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
         </form>
       </div>
@@ -639,10 +678,40 @@
     const toggleEl = overlay.querySelector("#authPasswordToggle");
     const submitEl = overlay.querySelector("#authLoginSubmit");
     const formEl = overlay.querySelector("#authLoginForm");
+    const roleSummaryEl = overlay.querySelector("#authLoginRoleSummary");
+    const roleEyebrowEl = overlay.querySelector("#authLoginRoleEyebrow");
+    const heroTitleEl = overlay.querySelector("#authLoginHeroTitle");
+    const heroSummaryEl = overlay.querySelector("#authLoginHeroSummary");
     const setAuthLoginMessage = (text, isStatus = false) => {
       errorEl.textContent = text;
       errorEl.classList.toggle("is-status", isStatus);
     };
+    const setSelectedLoginRole = (role, opts = {}) => {
+      const details = getLoginRoleDetails(role);
+      overlay.querySelectorAll("[data-login-role]").forEach((button) => {
+        const active = button.dataset.loginRole === role;
+        button.classList.toggle("is-active", active);
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+      });
+      if (roleEyebrowEl) roleEyebrowEl.textContent = details.eyebrow;
+      if (roleSummaryEl) roleSummaryEl.textContent = details.summary;
+      if (heroTitleEl) heroTitleEl.textContent = details.title;
+      if (heroSummaryEl) heroSummaryEl.textContent = details.summary;
+      if (submitEl) submitEl.textContent = details.submit;
+      if (opts.fillUsername && usernameEl) usernameEl.value = role;
+    };
+
+    overlay.querySelectorAll("[data-login-role]").forEach((button) => {
+      button.addEventListener("click", () => {
+        setSelectedLoginRole(button.dataset.loginRole, { fillUsername: true });
+        passwordEl.focus();
+      });
+    });
+
+    usernameEl.addEventListener("input", () => {
+      const role = usernameEl.value.trim().toLowerCase();
+      if (AUTH_LOGIN_ROLE_DETAILS[role]) setSelectedLoginRole(role);
+    });
 
     toggleEl?.addEventListener("click", () => {
       const shouldShow = passwordEl.type === "password";
