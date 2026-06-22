@@ -1260,7 +1260,18 @@ function checkPlayerPortalContracts() {
       scriptCss,
     ) ||
     !/\.script-workbench-control-block/.test(scriptCss) ||
-    !/class="script-workbench-control-block"/.test(html)
+    !/\.page-header-surface[\s\S]*display:\s*grid/.test(componentsCss) ||
+    !/\.app-workspace-pane[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column/.test(componentsCss) ||
+    !/\.app-scroll-region[\s\S]*overflow:\s*auto[\s\S]*overscroll-behavior:\s*contain/.test(
+      componentsCss,
+    ) ||
+    !/\.control-block[\s\S]*background:\s*var\(--color-surface-muted\)/.test(componentsCss) ||
+    !/\.segmented-control__item\.is-active/.test(componentsCss) ||
+    !/class="[^"]*script-header-panel[^"]*page-header-surface/.test(html) ||
+    !/class="[^"]*script-workbench-control-block[^"]*control-block/.test(html) ||
+    !/class="[^"]*script-builder[^"]*app-workspace-grid/.test(html) ||
+    !/class="[^"]*script-list[^"]*app-workspace-pane/.test(html) ||
+    !/class="[^"]*script-container[^"]*app-scroll-region[^"]*"[^>]*id="scriptPlays"/.test(html)
   ) {
     fail("desktop script workspace scroll ownership is incomplete");
   }

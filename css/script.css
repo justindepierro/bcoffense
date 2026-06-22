@@ -4957,17 +4957,11 @@ body[data-active-tab="script"] .script-display-fab {
 
 /* Modernized practice script workbench */
 #script .script-header-panel {
-  display: grid;
-  gap: 10px;
   margin-bottom: 10px;
-  padding: 10px 12px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background: var(--color-surface);
-  box-shadow: var(--shadow-sm);
 }
 
 #script .script-header-top {
+  align-items: flex-end;
   gap: 12px;
 }
 
@@ -4994,19 +4988,11 @@ body[data-active-tab="script"] .script-display-fab {
   grid-template-columns: minmax(260px, 1.1fr) minmax(220px, auto) minmax(160px, auto);
   align-items: stretch;
   gap: 8px;
-  padding-top: 8px;
-  border-top: 1px solid var(--color-white-alpha-20);
+  background: var(--color-surface-muted);
 }
 
 .script-workbench-control-block {
-  display: grid;
-  align-content: start;
-  gap: 5px;
   min-width: 0;
-  padding: 7px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-muted);
 }
 
 .script-workbench-control-block--mode {
@@ -5014,26 +5000,15 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 .script-workbench-group-label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-3xs);
-  font-weight: 900;
-  letter-spacing: 0;
-  line-height: 1;
-  text-transform: uppercase;
+  white-space: nowrap;
 }
 
 .script-workbench-toggle-group {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 .script-workbench-primary-actions {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  flex-wrap: wrap;
+  min-width: 0;
 }
 
 #script .script-workbench-primary-actions .btn {
@@ -5055,17 +5030,11 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 .script-workbench-pill {
-  padding: 6px 12px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  border-color: var(--color-border-light);
-  cursor: pointer;
+  white-space: nowrap;
 }
 
 .script-workbench-pill.is-active {
-  background: var(--color-accent-light);
-  color: var(--color-primary-dark);
-  border-color: var(--color-accent);
+  font-weight: 900;
 }
 
 .script-workbench-pill:focus-visible,
@@ -5117,8 +5086,6 @@ body[data-active-tab="script"] .script-display-fab {
 #script .script-list {
   gap: 8px;
   padding: 12px;
-  border-radius: var(--radius-lg);
-  box-shadow: var(--shadow-sm);
 }
 
 #script .play-list h3,
@@ -5488,11 +5455,7 @@ body[data-active-tab="script"] .script-display-fab {
   flex: 1 1 auto;
   min-height: 0;
   padding: 8px;
-  border-radius: var(--radius-lg);
   overflow-x: hidden;
-  overflow-y: auto;
-  overscroll-behavior: contain;
-  scrollbar-gutter: stable;
 }
 
 body:not(.is-mobile-screen) #script.panel.active {
