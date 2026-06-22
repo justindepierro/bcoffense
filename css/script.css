@@ -2763,16 +2763,24 @@
 
 /* Desktop Script workspace: keep page chrome stable and give each pane one scroll owner. */
 @media (min-width: 821px) {
+  body:not(.is-mobile-screen)[data-active-tab="script"] {
+    overflow: hidden;
+  }
+
   body:not(.is-mobile-screen) #script.panel.active {
+    --script-panel-margin-block: 20px;
     display: flex;
     flex-direction: column;
     gap: 0;
     height: calc(
       (var(--app-vh, 1vh) * 100) - var(--app-header-height, 52px) -
-        var(--app-tabs-height, 44px)
+        var(--app-tabs-height, 44px) - (var(--script-panel-margin-block) * 2)
     );
     min-height: 0;
+    margin-top: var(--script-panel-margin-block);
+    margin-bottom: var(--script-panel-margin-block);
     overflow: hidden;
+    overscroll-behavior: contain;
   }
 
   body:not(.is-mobile-screen) #script .script-header-panel {
@@ -2783,6 +2791,7 @@
     flex: 1 1 auto;
     min-height: 0;
     overflow: hidden;
+    overscroll-behavior: contain;
   }
 
   body:not(.is-mobile-screen) #script .play-list,
@@ -4952,7 +4961,9 @@ body[data-active-tab="script"] .script-display-fab {
   gap: 10px;
   margin-bottom: 10px;
   padding: 10px 12px;
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
+  background: var(--color-surface);
   box-shadow: var(--shadow-sm);
 }
 
@@ -4960,9 +4971,22 @@ body[data-active-tab="script"] .script-display-fab {
   gap: 12px;
 }
 
+#script .script-label {
+  color: var(--color-text-secondary);
+  letter-spacing: 0;
+}
+
 #script .script-name-input,
 #script .script-date-input {
   min-height: 36px;
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  border-color: var(--color-border-input);
+  color-scheme: light;
+}
+
+#script .script-name-input::placeholder {
+  color: var(--color-text-placeholder);
 }
 
 .script-workbench-controls {
@@ -4980,9 +5004,9 @@ body[data-active-tab="script"] .script-display-fab {
   gap: 5px;
   min-width: 0;
   padding: 7px;
-  border: 1px solid var(--color-white-alpha-20);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
-  background: var(--color-white-alpha-10);
+  background: var(--color-surface-muted);
 }
 
 .script-workbench-control-block--mode {
@@ -4990,7 +5014,7 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 .script-workbench-group-label {
-  color: var(--color-white-alpha-70);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-3xs);
   font-weight: 900;
   letter-spacing: 0;
@@ -5032,15 +5056,15 @@ body[data-active-tab="script"] .script-display-fab {
 
 .script-workbench-pill {
   padding: 6px 12px;
-  background: rgb(255 255 255 / 0.08);
-  color: var(--color-text-inverse);
-  border-color: var(--color-white-alpha-20);
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border-light);
   cursor: pointer;
 }
 
 .script-workbench-pill.is-active {
-  background: var(--color-accent);
-  color: var(--color-dark);
+  background: var(--color-accent-light);
+  color: var(--color-primary-dark);
   border-color: var(--color-accent);
 }
 
@@ -5056,7 +5080,7 @@ body[data-active-tab="script"] .script-display-fab {
   grid-template-columns: auto minmax(132px, 1fr);
   align-items: center;
   gap: 7px;
-  color: var(--color-white-alpha-70);
+  color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
   font-weight: 800;
   text-transform: uppercase;
@@ -5065,10 +5089,10 @@ body[data-active-tab="script"] .script-display-fab {
 .script-controls-mode-select {
   min-width: 0;
   padding: 6px 30px 6px 12px;
-  background: rgb(255 255 255 / 0.08);
-  color: var(--color-text-inverse);
-  border-color: var(--color-white-alpha-20);
-  color-scheme: dark;
+  background: var(--color-surface);
+  color: var(--color-text);
+  border-color: var(--color-border-light);
+  color-scheme: light;
 }
 
 #script .script-builder {

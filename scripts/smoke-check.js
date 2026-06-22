@@ -1236,9 +1236,14 @@ function checkPlayerPortalContracts() {
   }
   if (
     !/Desktop Script workspace: keep page chrome stable/.test(scriptCss) ||
+    !/body:not\(\.is-mobile-screen\)\[data-active-tab="script"\][\s\S]*overflow:\s*hidden/.test(
+      scriptCss,
+    ) ||
     !/body:not\(\.is-mobile-screen\) #script\.panel\.active[\s\S]*display:\s*flex[\s\S]*overflow:\s*hidden/.test(
       scriptCss,
     ) ||
+    !/--script-panel-margin-block:\s*20px/.test(scriptCss) ||
+    !/var\(--script-panel-margin-block\) \* 2/.test(scriptCss) ||
     !/body:not\(\.is-mobile-screen\) #script \.script-builder[\s\S]*min-height:\s*0[\s\S]*overflow:\s*hidden/.test(
       scriptCss,
     ) ||
