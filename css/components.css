@@ -134,7 +134,7 @@
   border-radius: 28px;
   background: rgb(255 255 255 / 7%);
   box-shadow: 0 24px 80px rgb(4 10 28 / 38%);
-  backdrop-filter: blur(18px);
+  backdrop-filter: blur(10px);
 }
 .auth-login-hero,
 .auth-login-card {
@@ -920,7 +920,7 @@ body[data-auth-role="player"] .auth-user-badge {
     border-radius: var(--radius-lg);
     background: var(--color-surface);
     box-shadow: var(--shadow-lg);
-    backdrop-filter: blur(12px);
+    backdrop-filter: blur(8px);
   }
 
   body.is-mobile-screen[data-auth-role="player"]

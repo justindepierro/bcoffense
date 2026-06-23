@@ -126,7 +126,6 @@
 .btn.td-new-play-btn {
   font-size: var(--font-size-md);
   padding: 10px 20px;
-  will-change: box-shadow;
   animation: td-pulse 2s ease-in-out infinite;
 }
 @keyframes td-pulse {
@@ -807,7 +806,6 @@
   width: var(--bar-width, 0%);
   height: 100%;
   border-radius: var(--radius-sm);
-  will-change: width;
   transition: width 0.3s ease;
   min-width: 2px;
 }

@@ -2320,7 +2320,6 @@
 .cs-stat-bar {
   height: 100%;
   border-radius: var(--radius-md);
-  will-change: width;
   transition: width 0.3s ease;
 }
 .cs-stat-val {

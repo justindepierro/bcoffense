@@ -2497,8 +2497,8 @@
   gap: 8px;
   border: 1px solid var(--color-border-light);
   box-shadow: var(--shadow-sm);
-  backdrop-filter: blur(12px);
-  -webkit-backdrop-filter: blur(12px);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
 }
 
 .script-toolbar-left {

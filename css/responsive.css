@@ -319,7 +319,7 @@
     background: rgb(255 255 255 / 0.92);
     border-top: 1px solid var(--color-border-light);
     box-shadow: 0 -12px 30px rgb(10 18 42 / 16%);
-    backdrop-filter: blur(16px);
+    backdrop-filter: blur(10px);
     scroll-snap-type: none;
   }
 
