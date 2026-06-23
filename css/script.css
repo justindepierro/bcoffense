@@ -404,9 +404,9 @@
   color: var(--color-text-placeholder);
 }
 .script-item {
-  padding: 9px 12px;
+  padding: 6px 10px;
   background: var(--color-white);
-  margin-bottom: 6px;
+  margin-bottom: 3px;
   border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-light);
   display: flex;
@@ -829,9 +829,9 @@
     54px 34px minmax(220px, 1.8fr) 52px minmax(272px, 1.45fr)
     minmax(196px, 1.1fr);
   align-items: start;
-  padding: 8px 10px;
-  margin-bottom: 4px;
-  gap: 8px;
+  padding: 5px 8px;
+  margin-bottom: 2px;
+  gap: 6px;
 }
 
 .script-item--compact .script-select-tools,
@@ -1714,8 +1714,8 @@
   display: flex;
   align-items: center;
   gap: 5px;
-  padding: 8px 10px;
-  margin-bottom: 8px;
+  padding: 4px 8px;
+  margin-bottom: 3px;
   background: var(--color-white);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
@@ -1731,7 +1731,7 @@
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   overflow: hidden;
-  margin-top: 12px;
+  margin-top: 6px;
   box-shadow: var(--shadow-sm);
   content-visibility: auto;
   contain: layout style paint;
@@ -1969,6 +1969,13 @@
 
 .ph-notes-input::placeholder {
   color: var(--color-white-alpha-70);
+}
+
+/* Compact period-notes textarea on desktop script view */
+#script .ph-notes-input {
+  height: 30px;
+  min-height: 0;
+  padding: 4px 8px;
 }
 
 .ph-minutes-input {
@@ -2788,7 +2795,7 @@
   }
 
   body:not(.is-mobile-screen) #script.panel.active {
-    --script-panel-margin-block: 20px;
+    --script-panel-margin-block: 10px;
     display: flex;
     flex-direction: column;
     gap: 0;
@@ -5239,8 +5246,8 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .play-list,
 #script .script-list {
-  gap: 8px;
-  padding: 12px;
+  gap: 4px;
+  padding: 8px 12px;
 }
 
 /* ── Drawer inner header: compact to save vertical space ── */
@@ -5258,7 +5265,7 @@ body[data-active-tab="script"] .script-display-fab {
   justify-content: space-between;
   gap: 8px;
   margin: 0;
-  padding-bottom: 8px;
+  padding-bottom: 4px;
   font-size: var(--font-size-lg);
   font-weight: 800;
 }
@@ -5284,7 +5291,8 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 #script .script-section-head {
-  min-height: 42px;
+  min-height: 32px;
+  padding-bottom: 4px;
   border-bottom: 1px solid var(--color-border-light);
 }
 
@@ -5542,12 +5550,12 @@ body[data-active-tab="script"] .script-display-fab {
 #script .script-stats-bar {
   display: grid;
   grid-template-columns: repeat(5, minmax(62px, auto)) minmax(150px, 1fr) minmax(82px, auto);
-  gap: 6px;
+  gap: 4px;
   flex: 0 0 auto;
   position: relative;
   top: auto;
   z-index: var(--z-base);
-  padding: 0 0 8px;
+  padding: 0 0 4px;
   border: 0;
   border-bottom: 1px solid var(--color-border-light);
   border-radius: 0;
@@ -5563,8 +5571,8 @@ body[data-active-tab="script"] .script-display-fab {
   justify-content: flex-start;
   gap: 5px;
   min-width: 0;
-  min-height: 32px;
-  padding: 4px 8px;
+  min-height: 24px;
+  padding: 2px 7px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);
   background: var(--color-surface-raised);
@@ -5592,7 +5600,7 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .script-stats-bar .stat-value {
   color: var(--color-text);
-  font-size: var(--font-size-base);
+  font-size: var(--font-size-sm);
   font-weight: 900;
   line-height: 1.05;
 }
@@ -5625,7 +5633,7 @@ body[data-active-tab="script"] .script-display-fab {
   align-items: center;
   gap: 8px;
   flex: 0 0 auto;
-  padding: 0 0 8px;
+  padding: 0 0 4px;
   margin: 0;
   border-bottom: 1px solid var(--color-border-light);
   border-radius: 0;
