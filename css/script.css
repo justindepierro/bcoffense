@@ -2825,7 +2825,14 @@
     overflow-x: hidden;
   }
 
-  body:not(.is-mobile-screen) #script .play-list {
+  /* Drawer: preserve absolute position and fill full builder height */
+  body:not(.is-mobile-screen) #script .script-play-rail.play-list {
+    position: absolute;
+    height: 100%;
+    overflow: hidden;
+  }
+
+  body:not(.is-mobile-screen) #script .play-list:not(.script-play-rail) {
     position: static;
     top: auto;
     max-height: none;
@@ -2847,7 +2854,7 @@
 
   body:not(.is-mobile-screen) #script .available-plays-container {
     flex: 2 1 0;
-    min-height: 90px;
+    min-height: 120px;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior: contain;
@@ -5129,21 +5136,55 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 #script .script-builder {
-  grid-template-columns: minmax(280px, 340px) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
+  position: relative;
+  overflow: hidden; /* clips the drawer when it is slid off-screen */
 }
 
-#script.script-rail-collapsed .script-builder {
-  grid-template-columns: minmax(0, 1fr);
+/* --- Available Plays Drawer --- */
+/* Slides in from the left edge of the builder area, overlaying the script. */
+#script .script-play-rail {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 100%;
+  width: 400px;
+  max-width: 88%;
+  z-index: 30;
+  transform: translateX(calc(-100% - 2px));
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--color-bg-body);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  /* Prevent the drawer itself from scrolling at root; children scroll */
+  overflow: hidden;
 }
 
-#script.script-rail-collapsed .script-play-rail {
+/* Rail open state */
+#script:not(.script-rail-collapsed) .script-play-rail {
+  transform: translateX(0);
+  box-shadow: 4px 0 24px rgba(0,0,0,0.18);
+}
+
+/* Backdrop — visible only when drawer is open */
+#script .script-rail-backdrop {
   display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+}
+#script:not(.script-rail-collapsed) .script-rail-backdrop {
+  display: block;
 }
 
+/* Safety net: if hidden attr is ever set, ensure it hides */
 #script .script-play-rail[hidden] {
-  display: none !important;
+  transform: translateX(calc(-100% - 2px)) !important;
 }
 
 #script .play-list,
@@ -5957,17 +5998,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     grid-column: 1 / -1;
   }
 
+  /* ≤980px: drawer still slides — builder stacks to single row */
   #script .script-builder {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: minmax(180px, 260px) minmax(0, 1fr);
+    grid-template-rows: minmax(0, 1fr);
   }
 
   #script .script-play-rail {
-    display: none;
-  }
-
-  #script:not(.script-rail-collapsed) .script-play-rail {
-    display: flex;
+    /* drawer stays absolute-positioned; inherit from base */
   }
 
   #script.script-rail-collapsed .script-builder {
@@ -6004,15 +6041,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     flex: 1 1 120px;
   }
 
+  /* Mobile drawer: slightly narrower, same slide mechanic */
   #script .script-play-rail {
-    display: flex;
-    position: static;
-    height: auto;
-    max-height: none;
-  }
-
-  #script.script-rail-collapsed .script-play-rail {
-    display: none;
+    width: 88%;
+    max-width: 360px;
   }
 
   #script .script-stats-bar {

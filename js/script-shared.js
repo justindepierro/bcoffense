@@ -61,7 +61,8 @@ function applyScriptPlayRailState() {
 
   scriptPanel.classList.toggle("script-rail-collapsed", scriptPlayRailCollapsed);
   if (rail) {
-    rail.hidden = scriptPlayRailCollapsed;
+    // Don't set rail.hidden — CSS transform handles slide-in/out animation.
+    // inert keeps keyboard focus inside the drawer when open.
     rail.toggleAttribute("inert", scriptPlayRailCollapsed);
   }
   trigger?.classList.toggle("is-active", !scriptPlayRailCollapsed);
