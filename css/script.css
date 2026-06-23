@@ -1724,9 +1724,6 @@
   color: var(--color-text-secondary);
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  position: sticky;
-  top: 0;
-  z-index: var(--z-sticky);
 }
 
 /* ── Period header wrapper ── */
@@ -2877,6 +2874,58 @@
     body:not(.is-mobile-screen) #script .script-header-panel {
       position: relative;
     }
+
+  /* ── Desktop: compact single-row script header ── */
+  body:not(.is-mobile-screen) #script .script-header-panel {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 10px;
+    padding: 5px 10px;
+  }
+  body:not(.is-mobile-screen) #script .script-header-top {
+    flex: 1 1 auto;
+    min-width: 0;
+    align-items: center;
+    flex-wrap: nowrap;
+    gap: 8px;
+  }
+  body:not(.is-mobile-screen) #script .script-label {
+    display: none;
+  }
+  body:not(.is-mobile-screen) #script .script-title-group {
+    flex: 1 1 180px;
+    gap: 0;
+  }
+  body:not(.is-mobile-screen) #script .script-date-group {
+    flex: 0 0 auto;
+    gap: 0;
+  }
+  body:not(.is-mobile-screen) #script .script-workbench-controls {
+    flex: 0 0 auto;
+    display: flex;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    align-items: center;
+    gap: 8px;
+    grid-template-columns: none;
+    background: transparent;
+    border: none;
+    border-radius: 0;
+    padding: 0;
+  }
+  body:not(.is-mobile-screen) #script .script-workbench-group-label {
+    display: none;
+  }
+  body:not(.is-mobile-screen) #script .script-workbench-control-block {
+    padding: 0;
+    border: none;
+    background: transparent;
+    box-shadow: none;
+    border-radius: 0;
+    gap: 6px;
+  }
 }
 
 .display-options-btns {
