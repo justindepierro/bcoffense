@@ -854,6 +854,37 @@
   display: none;
 }
 
+/* Mid-desktop reflow: the full 6-column detail/compact grid needs ~940px+ of pane
+   width, which laptops don't have once the Available Plays rail is showing. Below
+   1400px, collapse to a flexible 4-column layout where defense inputs + play
+   controls wrap onto a second row instead of overflowing or squishing. */
+@media (max-width: 1400px) {
+  .script-item--detail,
+  .script-item--compact {
+    grid-template-columns: 54px 34px minmax(0, 1fr) 52px;
+  }
+
+  .script-item--detail .defense-inputs,
+  .script-item--compact .defense-inputs,
+  .script-item--detail .play-controls,
+  .script-item--compact .play-controls {
+    grid-column: 3 / -1;
+  }
+
+  .script-item--detail .play-controls,
+  .script-item--compact .play-controls {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto;
+  }
+
+  .script-item--detail .script-player-grid,
+  .script-item--compact .script-player-grid,
+  .script-item--detail .play-readiness-widget,
+  .script-item--compact .play-readiness-widget {
+    grid-column: 1 / -1;
+  }
+}
+
 .script-player-grid {
   display: flex;
   flex-direction: column;
@@ -2301,13 +2332,6 @@
   background: var(--color-bg-body);
   min-width: 180px;
   flex: 1 1 220px;
-}
-
-.script-item:not(.script-item--detail):not(.script-item--compact)
-  .play-controls {
-  display: flex;
-  align-items: center;
-  gap: 5px;
 }
 
 .script-item--detail .play-controls {
