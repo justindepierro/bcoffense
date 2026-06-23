@@ -443,7 +443,11 @@ body[data-auth-role="player"] #script.panel {
 }
 
 #script.panel {
-  overflow: visible;
+  overflow: visible; /* mobile: body scrolls */
+}
+body.app-ready:not(.is-mobile-screen) #script.panel {
+  position: relative;
+  overflow: hidden; /* desktop: establishes containing block for slide-out drawer */
 }
 @keyframes panelFadeIn {
   from {

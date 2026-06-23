@@ -2825,10 +2825,11 @@
     overflow-x: hidden;
   }
 
-  /* Drawer: preserve absolute position and fill full builder height */
+  /* Drawer: preserve absolute position and fill full panel height */
   body:not(.is-mobile-screen) #script .script-play-rail.play-list {
     position: absolute;
-    height: 100%;
+    top: 0;
+    bottom: 0; /* was height:100% — now anchored to #script.panel */
     overflow: hidden;
   }
 
@@ -5139,8 +5140,8 @@ body[data-active-tab="script"] .script-display-fab {
   grid-template-columns: minmax(0, 1fr);
   gap: 12px;
   align-items: stretch;
-  position: relative;
-  overflow: hidden; /* clips the drawer when it is slid off-screen */
+  /* position:relative removed — #script.panel is now the drawer's containing block */
+  overflow: hidden;
 }
 
 /* --- Available Plays Drawer --- */
@@ -5149,7 +5150,7 @@ body[data-active-tab="script"] .script-display-fab {
   position: absolute;
   left: 0;
   top: 0;
-  height: 100%;
+  bottom: 0; /* fills full #script.panel height instead of height:100% */
   width: 400px;
   max-width: 88%;
   z-index: 30;
@@ -5193,6 +5194,14 @@ body[data-active-tab="script"] .script-display-fab {
   padding: 12px;
 }
 
+/* ── Drawer inner header: compact to save vertical space ── */
+/* Uses .play-list in selector to beat the general #script .play-list h3 rule */
+#script .script-play-rail.play-list h3 {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  padding-bottom: 6px;
+}
+
 #script .play-list h3,
 #script .script-list > h3 {
   display: flex;
@@ -5205,9 +5214,74 @@ body[data-active-tab="script"] .script-display-fab {
   font-weight: 800;
 }
 
+/* ── Library re-open toggle (always visible in script section header) ── */
+.script-library-toggle-btn {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  padding: 3px 8px;
+  height: auto;
+  border: 1px solid var(--color-border-med);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-sm);
+  white-space: nowrap;
+  flex-shrink: 0;
+  line-height: 1.5;
+}
+.script-library-toggle-btn:hover {
+  background: var(--color-bg-hover-row);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
 #script .script-section-head {
   min-height: 42px;
   border-bottom: 1px solid var(--color-border-light);
+}
+
+/* ── Drawer action buttons: smaller, two-per-row ── */
+#script .script-play-rail .available-plays-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  padding: 4px 0;
+  flex-shrink: 0;
+}
+#script .script-play-rail .available-plays-actions .btn {
+  font-size: var(--font-size-xs);
+  padding: 3px 8px;
+  flex: 1 1 calc(50% - 2px);
+  min-width: 0;
+  white-space: nowrap;
+}
+#script .script-play-rail .available-plays-actions .select-all-label {
+  font-size: var(--font-size-xs);
+  padding: 3px 8px;
+  min-height: auto;
+  flex: 1 1 calc(50% - 2px);
+  justify-content: center;
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+}
+#script .script-play-rail .available-selection-status {
+  font-size: var(--font-size-micro);
+  padding: 2px 0;
+  margin: 0;
+  flex-shrink: 0;
+}
+/* Compact filter accordion headers inside the drawer */
+#script .script-play-rail .checkbox-filters-title {
+  font-size: var(--font-size-xs);
+  padding: 4px 6px;
+}
+#script .script-play-rail .filter-actions-row {
+  padding: 4px 0;
+  gap: 6px;
+}
+#script .script-play-rail .filter-actions-row .btn {
+  font-size: var(--font-size-xs);
+  padding: 2px 7px;
 }
 
 #script .script-section-title {
