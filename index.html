@@ -30,22 +30,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=637" />
-  <link rel="stylesheet" href="css/layout.css?v=637" />
-  <link rel="stylesheet" href="css/components.css?v=637" />
-  <link rel="stylesheet" href="css/playbook.css?v=637" />
-  <link rel="stylesheet" href="css/script.css?v=637" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=637" />
-  <link rel="stylesheet" href="css/wristband.css?v=637" />
-  <link rel="stylesheet" href="css/callsheet.css?v=637" />
-  <link rel="stylesheet" href="css/tendencies.css?v=637" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=637" />
-  <link rel="stylesheet" href="css/dashboard.css?v=637" />
-  <link rel="stylesheet" href="css/gameplan.css?v=637" />
-  <link rel="stylesheet" href="css/installation.css?v=637" />
-  <link rel="stylesheet" href="css/identity.css?v=637" />
-  <link rel="stylesheet" href="css/print.css?v=637" />
-  <link rel="stylesheet" href="css/responsive.css?v=637" />
+  <link rel="stylesheet" href="css/base.css?v=638" />
+  <link rel="stylesheet" href="css/layout.css?v=638" />
+  <link rel="stylesheet" href="css/components.css?v=638" />
+  <link rel="stylesheet" href="css/playbook.css?v=638" />
+  <link rel="stylesheet" href="css/script.css?v=638" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=638" />
+  <link rel="stylesheet" href="css/wristband.css?v=638" />
+  <link rel="stylesheet" href="css/callsheet.css?v=638" />
+  <link rel="stylesheet" href="css/tendencies.css?v=638" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=638" />
+  <link rel="stylesheet" href="css/dashboard.css?v=638" />
+  <link rel="stylesheet" href="css/gameplan.css?v=638" />
+  <link rel="stylesheet" href="css/installation.css?v=638" />
+  <link rel="stylesheet" href="css/identity.css?v=638" />
+  <link rel="stylesheet" href="css/print.css?v=638" />
+  <link rel="stylesheet" href="css/responsive.css?v=638" />
 </head>
 
 <body class="app-booting">
@@ -679,71 +679,6 @@
           </button>
         </div>
 
-        <!-- Print Options Panel (collapsible) -->
-        <div class="pb-print-panel" id="pbPrintPanel">
-          <div class="pb-print-header">
-            <strong>🖨️ Print Options</strong>
-          </div>
-          <div class="pb-print-options-grid">
-            <label><input type="checkbox" id="pbShowEmoji" /> 🔵 Personnel
-              Color</label>
-            <label><input type="checkbox" id="pbUseSquares" /> 🟦 Use
-              Squares</label>
-            <label><input type="checkbox" id="pbUnderEmoji" /> 🍑 Under =
-              Peach</label>
-            <label><input type="checkbox" id="pbBoldShifts" />
-              <b>Bold</b> Shifts</label>
-            <label><input type="checkbox" id="pbRedShifts" />
-              <span class="red">Red</span> Shifts</label>
-            <label><input type="checkbox" id="pbItalicMotions" />
-              <i>Italic</i> Motions</label>
-            <label><input type="checkbox" id="pbRedMotions" />
-              <span class="red">Red</span> Motions</label>
-            <label><input type="checkbox" id="pbRemoveVowels" /> Remove
-              Vowels</label>
-            <label><input type="checkbox" id="pbShowLineCall" checked /> Show
-              [Line Call]</label>
-            <label><input type="checkbox" id="pbHighlightHuddle" /> 🟡 Highlight
-              Huddle</label>
-            <label><input type="checkbox" id="pbHighlightCandy" /> 🩷 Highlight
-              Candy</label>
-          </div>
-
-          <!-- Print Sort -->
-          <div class="pb-print-sort">
-            <div class="pb-print-sort-header">
-              <strong>🔄 Sort Order</strong>
-              <button class="btn btn-sm ml-auto" data-action="addPbPrintSortField">
-                + Add Field
-              </button>
-            </div>
-            <div class="pb-print-sort-hint">
-              Drag to reorder priority • Click ⚙️ for custom value order •
-              Click ↕ to toggle direction
-            </div>
-            <div id="pbPrintSortList" class="sort-criteria-list"></div>
-          </div>
-
-          <div class="pb-print-actions">
-            <button class="btn btn-sm" data-action="toggleAllPbPrintOptions" data-arg="true">
-              All
-            </button>
-            <button class="btn btn-sm" data-action="toggleAllPbPrintOptions" data-arg="false">
-              Clear
-            </button>
-            <button class="btn btn-sm" data-action="syncFromWristbandOptions">
-              Sync from Wristband
-            </button>
-            <button class="btn btn-sm btn-primary" data-action="printFilteredPlays">
-              🖨️ Print
-            </button>
-          </div>
-        </div>
-
-        <!-- Saved Collections panel (collapsible) -->
-        <div class="pb-collections-panel" id="pbCollectionsPanel">
-          <div class="pb-collections-list" id="pbCollectionsList"></div>
-        </div>
       </div>
 
       <!-- Quick Stats Bar -->
@@ -791,6 +726,89 @@
           <tbody></tbody>
         </table>
       </div>
+    </div>
+
+    <!-- Playbook Print Options drawer -->
+    <div class="pb-drawer-overlay" id="pbPrintPanel" data-action="togglePrintOptionsPanelOverlay" aria-hidden="true">
+      <aside class="pb-drawer" role="dialog" aria-modal="true" aria-label="Print options">
+        <div class="pb-drawer-header">
+          <strong>🖨️ Print Options</strong>
+          <button class="pb-drawer-close" data-action="togglePrintOptionsPanel" aria-label="Close print options">
+            ✕
+          </button>
+        </div>
+        <div class="pb-drawer-body">
+          <div class="pb-print-options-grid">
+            <label><input type="checkbox" id="pbShowEmoji" /> 🔵 Personnel
+              Color</label>
+            <label><input type="checkbox" id="pbUseSquares" /> 🟦 Use
+              Squares</label>
+            <label><input type="checkbox" id="pbUnderEmoji" /> 🍑 Under =
+              Peach</label>
+            <label><input type="checkbox" id="pbBoldShifts" />
+              <b>Bold</b> Shifts</label>
+            <label><input type="checkbox" id="pbRedShifts" />
+              <span class="red">Red</span> Shifts</label>
+            <label><input type="checkbox" id="pbItalicMotions" />
+              <i>Italic</i> Motions</label>
+            <label><input type="checkbox" id="pbRedMotions" />
+              <span class="red">Red</span> Motions</label>
+            <label><input type="checkbox" id="pbRemoveVowels" /> Remove
+              Vowels</label>
+            <label><input type="checkbox" id="pbShowLineCall" checked /> Show
+              [Line Call]</label>
+            <label><input type="checkbox" id="pbHighlightHuddle" /> 🟡 Highlight
+              Huddle</label>
+            <label><input type="checkbox" id="pbHighlightCandy" /> 🩷 Highlight
+              Candy</label>
+          </div>
+
+          <!-- Print Sort -->
+          <div class="pb-print-sort">
+            <div class="pb-print-sort-header">
+              <strong>🔄 Sort Order</strong>
+              <button class="btn btn-sm ml-auto" data-action="addPbPrintSortField">
+                + Add Field
+              </button>
+            </div>
+            <div class="pb-print-sort-hint">
+              Drag to reorder priority • Click ⚙️ for custom value order •
+              Click ↕ to toggle direction
+            </div>
+            <div id="pbPrintSortList" class="sort-criteria-list"></div>
+          </div>
+        </div>
+        <div class="pb-print-actions">
+          <button class="btn btn-sm" data-action="toggleAllPbPrintOptions" data-arg="true">
+            All
+          </button>
+          <button class="btn btn-sm" data-action="toggleAllPbPrintOptions" data-arg="false">
+            Clear
+          </button>
+          <button class="btn btn-sm" data-action="syncFromWristbandOptions">
+            Sync from Wristband
+          </button>
+          <button class="btn btn-sm btn-primary" data-action="printFilteredPlays">
+            🖨️ Print
+          </button>
+        </div>
+      </aside>
+    </div>
+
+    <!-- Saved Collections drawer -->
+    <div class="pb-drawer-overlay" id="pbCollectionsPanel" data-action="toggleCollectionsPanelOverlay"
+      aria-hidden="true">
+      <aside class="pb-drawer" role="dialog" aria-modal="true" aria-label="Saved collections">
+        <div class="pb-drawer-header">
+          <strong>📁 Saved Collections</strong>
+          <button class="pb-drawer-close" data-action="toggleCollectionsPanel" aria-label="Close collections">
+            ✕
+          </button>
+        </div>
+        <div class="pb-drawer-body">
+          <div class="pb-collections-list" id="pbCollectionsList"></div>
+        </div>
+      </aside>
     </div>
 
     <!-- Play Editor Overlay -->
@@ -3561,94 +3579,94 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=637"></script>
-  <script defer src="js/history.js?v=637"></script>
-  <script defer src="js/dom-helpers.js?v=637"></script>
-  <script defer src="js/lz-string.min.js?v=637"></script>
-  <script defer src="js/storage.js?v=637"></script>
-  <script defer src="js/storage-ui.js?v=637"></script>
-  <script defer src="js/play-images.js?v=637"></script>
-  <script defer src="js/cloud-sync.js?v=637"></script>
-  <script defer src="js/auth.js?v=637"></script>
-  <script defer src="js/vision.js?v=637"></script>
-  <script defer src="js/team-settings.js?v=637"></script>
-  <script defer src="js/playbook.js?v=637"></script>
-  <script defer src="js/playbook-collections.js?v=637"></script>
-  <script defer src="js/playbook-print.js?v=637"></script>
-  <script defer src="js/playbook-editor.js?v=637"></script>
-  <script defer src="js/playbook-import.js?v=637"></script>
-  <script defer src="js/playbook-export.js?v=637"></script>
-  <script defer src="js/playbook-chrome.js?v=637"></script>
-  <script defer src="js/playbook-state.js?v=637"></script>
-  <script defer src="js/playbook-filters.js?v=637"></script>
-  <script defer src="js/playbook-navigation.js?v=637"></script>
-  <script defer src="js/playbook-actions.js?v=637"></script>
-  <script defer src="js/playbook-render.js?v=637"></script>
-  <script defer src="js/playbook-sanitize.js?v=637"></script>
-  <script defer src="js/script-state.js?v=637"></script>
-  <script defer src="js/script-shared.js?v=637"></script>
-  <script defer src="js/script-players.js?v=637"></script>
-  <script defer src="js/script-display-options.js?v=637"></script>
-  <script defer src="js/play-readiness.js?v=637"></script>
-  <script defer src="js/script-add.js?v=637"></script>
-  <script defer src="js/script-sort.js?v=637"></script>
-  <script defer src="js/script-export.js?v=637"></script>
-  <script defer src="js/script-available.js?v=637"></script>
-  <script defer src="js/script-selection.js?v=637"></script>
-  <script defer src="js/script-render.js?v=637"></script>
-  <script defer src="js/script-periods.js?v=637"></script>
-  <script defer src="js/script-period-sync.js?v=637"></script>
-  <script defer src="js/script-smart.js?v=637"></script>
-  <script defer src="js/script-storage.js?v=637"></script>
-  <script defer src="js/script-integrations.js?v=637"></script>
-  <script defer src="js/play-presentation.js?v=637"></script>
-  <script defer src="js/wristband.js?v=637"></script>
-  <script defer src="js/wristband-library.js?v=637"></script>
-  <script defer src="js/wristband-render.js?v=637"></script>
-  <script defer src="js/wristband-cards.js?v=637"></script>
-  <script defer src="js/wristband-export.js?v=637"></script>
-  <script defer src="js/wristband-search.js?v=637"></script>
-  <script defer src="js/wristband-modals.js?v=637"></script>
-  <script defer src="js/wristband-cell-popup.js?v=637"></script>
-  <script defer src="js/wristband-cell-actions.js?v=637"></script>
-  <script defer src="js/wristband-sort.js?v=637"></script>
-  <script defer src="js/wristband-storage.js?v=637"></script>
-  <script defer src="js/wristband-runtime.js?v=637"></script>
-  <script defer src="js/callsheet-render.js?v=637"></script>
-  <script defer src="js/callsheet.js?v=637"></script>
-  <script defer src="js/callsheet-categories.js?v=637"></script>
-  <script defer src="js/callsheet-metadata.js?v=637"></script>
-  <script defer src="js/callsheet-layout.js?v=637"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=637"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=637"></script>
-  <script defer src="js/constraints.js?v=637"></script>
-  <script defer src="js/script-vision.js?v=637"></script>
-  <script defer src="js/tendencies-render.js?v=637"></script>
-  <script defer src="js/tendencies.js?v=637"></script>
-  <script defer src="js/installation-render.js?v=637"></script>
-  <script defer src="js/installation.js?v=637"></script>
-  <script defer src="js/identity.js?v=637"></script>
-  <script defer src="js/offensebuilder.js?v=637"></script>
-  <script defer src="js/help.js?v=637"></script>
-  <script defer src="js/dashboard.js?v=637"></script>
-  <script defer src="js/gameplan.js?v=637"></script>
-  <script defer src="js/gameplan-render.js?v=637"></script>
-  <script defer src="js/gameplan-dnd.js?v=637"></script>
-  <script defer src="js/gameplan-actions.js?v=637"></script>
-  <script defer src="js/gameplan-smart.js?v=637"></script>
-  <script defer src="js/gameplan-print.js?v=637"></script>
-  <script defer src="js/gameplan-integrations.js?v=637"></script>
-  <script defer src="js/gameplan-snapshots.js?v=637"></script>
-  <script defer src="js/print-studio.js?v=637"></script>
-  <script defer src="js/script-events.js?v=637"></script>
-  <script defer src="js/app-events.js?v=637"></script>
-  <script defer src="js/app-shell.js?v=637"></script>
-  <script defer src="js/app-session.js?v=637"></script>
-  <script defer src="js/app-navigation.js?v=637"></script>
-  <script defer src="js/app-module-init.js?v=637"></script>
-  <script defer src="js/app-bootstrap.js?v=637"></script>
-  <script defer src="js/app-init.js?v=637"></script>
-  <script defer src="js/app.js?v=637"></script>
+  <script defer src="js/utils.js?v=638"></script>
+  <script defer src="js/history.js?v=638"></script>
+  <script defer src="js/dom-helpers.js?v=638"></script>
+  <script defer src="js/lz-string.min.js?v=638"></script>
+  <script defer src="js/storage.js?v=638"></script>
+  <script defer src="js/storage-ui.js?v=638"></script>
+  <script defer src="js/play-images.js?v=638"></script>
+  <script defer src="js/cloud-sync.js?v=638"></script>
+  <script defer src="js/auth.js?v=638"></script>
+  <script defer src="js/vision.js?v=638"></script>
+  <script defer src="js/team-settings.js?v=638"></script>
+  <script defer src="js/playbook.js?v=638"></script>
+  <script defer src="js/playbook-collections.js?v=638"></script>
+  <script defer src="js/playbook-print.js?v=638"></script>
+  <script defer src="js/playbook-editor.js?v=638"></script>
+  <script defer src="js/playbook-import.js?v=638"></script>
+  <script defer src="js/playbook-export.js?v=638"></script>
+  <script defer src="js/playbook-chrome.js?v=638"></script>
+  <script defer src="js/playbook-state.js?v=638"></script>
+  <script defer src="js/playbook-filters.js?v=638"></script>
+  <script defer src="js/playbook-navigation.js?v=638"></script>
+  <script defer src="js/playbook-actions.js?v=638"></script>
+  <script defer src="js/playbook-render.js?v=638"></script>
+  <script defer src="js/playbook-sanitize.js?v=638"></script>
+  <script defer src="js/script-state.js?v=638"></script>
+  <script defer src="js/script-shared.js?v=638"></script>
+  <script defer src="js/script-players.js?v=638"></script>
+  <script defer src="js/script-display-options.js?v=638"></script>
+  <script defer src="js/play-readiness.js?v=638"></script>
+  <script defer src="js/script-add.js?v=638"></script>
+  <script defer src="js/script-sort.js?v=638"></script>
+  <script defer src="js/script-export.js?v=638"></script>
+  <script defer src="js/script-available.js?v=638"></script>
+  <script defer src="js/script-selection.js?v=638"></script>
+  <script defer src="js/script-render.js?v=638"></script>
+  <script defer src="js/script-periods.js?v=638"></script>
+  <script defer src="js/script-period-sync.js?v=638"></script>
+  <script defer src="js/script-smart.js?v=638"></script>
+  <script defer src="js/script-storage.js?v=638"></script>
+  <script defer src="js/script-integrations.js?v=638"></script>
+  <script defer src="js/play-presentation.js?v=638"></script>
+  <script defer src="js/wristband.js?v=638"></script>
+  <script defer src="js/wristband-library.js?v=638"></script>
+  <script defer src="js/wristband-render.js?v=638"></script>
+  <script defer src="js/wristband-cards.js?v=638"></script>
+  <script defer src="js/wristband-export.js?v=638"></script>
+  <script defer src="js/wristband-search.js?v=638"></script>
+  <script defer src="js/wristband-modals.js?v=638"></script>
+  <script defer src="js/wristband-cell-popup.js?v=638"></script>
+  <script defer src="js/wristband-cell-actions.js?v=638"></script>
+  <script defer src="js/wristband-sort.js?v=638"></script>
+  <script defer src="js/wristband-storage.js?v=638"></script>
+  <script defer src="js/wristband-runtime.js?v=638"></script>
+  <script defer src="js/callsheet-render.js?v=638"></script>
+  <script defer src="js/callsheet.js?v=638"></script>
+  <script defer src="js/callsheet-categories.js?v=638"></script>
+  <script defer src="js/callsheet-metadata.js?v=638"></script>
+  <script defer src="js/callsheet-layout.js?v=638"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=638"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=638"></script>
+  <script defer src="js/constraints.js?v=638"></script>
+  <script defer src="js/script-vision.js?v=638"></script>
+  <script defer src="js/tendencies-render.js?v=638"></script>
+  <script defer src="js/tendencies.js?v=638"></script>
+  <script defer src="js/installation-render.js?v=638"></script>
+  <script defer src="js/installation.js?v=638"></script>
+  <script defer src="js/identity.js?v=638"></script>
+  <script defer src="js/offensebuilder.js?v=638"></script>
+  <script defer src="js/help.js?v=638"></script>
+  <script defer src="js/dashboard.js?v=638"></script>
+  <script defer src="js/gameplan.js?v=638"></script>
+  <script defer src="js/gameplan-render.js?v=638"></script>
+  <script defer src="js/gameplan-dnd.js?v=638"></script>
+  <script defer src="js/gameplan-actions.js?v=638"></script>
+  <script defer src="js/gameplan-smart.js?v=638"></script>
+  <script defer src="js/gameplan-print.js?v=638"></script>
+  <script defer src="js/gameplan-integrations.js?v=638"></script>
+  <script defer src="js/gameplan-snapshots.js?v=638"></script>
+  <script defer src="js/print-studio.js?v=638"></script>
+  <script defer src="js/script-events.js?v=638"></script>
+  <script defer src="js/app-events.js?v=638"></script>
+  <script defer src="js/app-shell.js?v=638"></script>
+  <script defer src="js/app-session.js?v=638"></script>
+  <script defer src="js/app-navigation.js?v=638"></script>
+  <script defer src="js/app-module-init.js?v=638"></script>
+  <script defer src="js/app-bootstrap.js?v=638"></script>
+  <script defer src="js/app-init.js?v=638"></script>
+  <script defer src="js/app.js?v=638"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

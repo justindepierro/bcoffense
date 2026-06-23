@@ -135,6 +135,7 @@ function togglePrintOptionsPanel() {
   if (!panel) return;
   const wasOpen = panel.classList.contains("open");
   panel.classList.toggle("open");
+  panel.setAttribute("aria-hidden", wasOpen ? "true" : "false");
   if (!wasOpen) renderPbPrintSort();
 }
 

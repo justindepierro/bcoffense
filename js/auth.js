@@ -496,7 +496,7 @@
 
     if (currentAuthUser.role === "player") {
       if (el.dataset.authPlayerHide === "true") return true;
-      if (el.closest(".pb-print-panel, .cr-panel")) return true;
+      if (el.closest("#pbPrintPanel, .cr-panel")) return true;
     }
 
     return false;

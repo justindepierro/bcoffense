@@ -335,6 +335,7 @@ function toggleCollectionsPanel() {
   const panel = document.getElementById("pbCollectionsPanel");
   if (!panel) return;
   const isOpen = panel.classList.toggle("open");
+  panel.setAttribute("aria-hidden", isOpen ? "false" : "true");
   if (isOpen) renderCollectionsPanel();
 }
 
