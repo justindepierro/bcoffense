@@ -38,10 +38,10 @@
 - Keep `prefers-reduced-motion` honored.
 - **Outcome:** lower idle + modal-open GPU load with zero feature/visual loss.
 
-### Phase 2 — Drag + render performance
-- Memoize row rects at `dragstart` in `gameplan-dnd.js`; reuse during drag-over.
-- Audit `renderCallSheet` / `renderScript` for redundant full rebuilds; debounce field-input renders.
-- Throttle canvas redraws in `play-presentation.js` resize observer.
+### Phase 2 — Drag + render performance ✅ DONE (v637)
+- ✅ Memoized `.gp-box-play` row geometry per drag in `gameplan-dnd.js` (was `getBoundingClientRect()` for every row on every dragover ~60Hz; now built once, invalidated on scroll/dragend).
+- ✅ Audited render paths — already well-engineered: `createRAFRenderer` coalesces `renderCallSheet`; script field updates (`updateNotes`/`updateDefField`/etc.) do targeted DOM updates, not full re-renders; `play-presentation.js` resize observer already guards with size-key + rAF coalescing. No changes needed.
+- 🔎 Found (deferred to Phase 6): duplicate top-level `renderCallSheet` — `callsheet-render.js:603` is shadowed by `callsheet.js:1254` (later load wins). The render-layer copy is dead.
 
 ### Phase 3 — Playbook page modernization
 - Convert inline **print panel** + **collections panel** into proper side drawers (overlay + backdrop + close affordance + `max-height`), matching one modal pattern.
@@ -65,6 +65,7 @@
 
 ### Phase 6 — Dead CSS + bloat cull
 - Remove confirmed-dead selectors (`.player-script-*`, `.script-item--printlike`).
+- Remove the shadowed dead `renderCallSheet` (+ its helpers) in `callsheet-render.js` once confirmed nothing else in that file is uniquely used.
 - Consolidate duplicate responsive rules.
 - Re-run `scripts/smoke-check.js` after each phase.
 
