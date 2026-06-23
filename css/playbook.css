@@ -844,6 +844,92 @@ body[data-auth-role="player"] .gp-card-btn {
   }
 }
 
+/* ═══════════════ Playbook Filter Drawer ═══════════════ */
+
+/* Desktop: playbook panel becomes the positioning context for the drawer */
+body.app-ready:not(.is-mobile-screen) #playbook.panel {
+  position: relative;
+  overflow: hidden;
+}
+
+/* Backdrop — covers full panel when drawer is open */
+.pb-filter-backdrop {
+  display: none;
+  position: absolute;
+  inset: 0;
+  z-index: 29;
+  background: rgba(0, 0, 0, 0.22);
+  cursor: pointer;
+}
+#playbook.pb-filter-open .pb-filter-backdrop {
+  display: block;
+}
+
+/* Slide-out drawer (left edge, full panel height) */
+.pb-filter-drawer {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 380px;
+  max-width: 92%;
+  z-index: 30;
+  transform: translateX(calc(-100% - 2px));
+  transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
+  background: var(--color-bg-body);
+  border-right: 1px solid var(--color-border);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+#playbook.pb-filter-open .pb-filter-drawer {
+  transform: translateX(0);
+  box-shadow: 4px 0 24px rgba(0, 0, 0, 0.18);
+}
+
+/* Drawer header row */
+.pb-filter-drawer-head {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+  flex-shrink: 0;
+}
+.pb-filter-drawer-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text);
+  flex: 1;
+}
+
+/* Drawer inner content scrollable */
+.pb-filter-drawer-body {
+  flex: 1;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+
+.pb-filter-drawer-body .pb-controls-row,
+.pb-filter-drawer-body .pb-more-filters,
+.pb-filter-drawer-body .pb-active-bar,
+.pb-filter-drawer-body .pb-gameplan-bar,
+.pb-filter-drawer-body .pb-actions-row {
+  flex-shrink: 0;
+}
+
+/* Chip rows wrap inside the drawer */
+.pb-filter-drawer-body .pb-chip-group {
+  flex-wrap: wrap;
+}
+
+/* Open-Filters toggle button in the top controls bar */
+.pb-filter-toggle-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* ═══════════════ Playbook Controls ═══════════════ */
 
 .pb-controls {

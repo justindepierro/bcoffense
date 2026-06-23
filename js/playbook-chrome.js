@@ -81,6 +81,29 @@ function toggleColumnMenu() {
   menu.classList.toggle("show");
 }
 
+// ── Playbook filter drawer ──
+let _pbFilterDrawerOpen = false;
+
+function togglePbFilterDrawer() {
+  _pbFilterDrawerOpen = !_pbFilterDrawerOpen;
+  _applyPbFilterDrawerState();
+}
+
+function closePbFilterDrawer() {
+  _pbFilterDrawerOpen = false;
+  _applyPbFilterDrawerState();
+}
+
+function _applyPbFilterDrawerState() {
+  const panel = document.getElementById("playbook");
+  const drawer = document.getElementById("pbFilterDrawer");
+  const btn = document.getElementById("pbFilterToggleBtn");
+  if (!panel || !drawer) return;
+  panel.classList.toggle("pb-filter-open", _pbFilterDrawerOpen);
+  drawer.toggleAttribute("inert", !_pbFilterDrawerOpen);
+  if (btn) btn.setAttribute("aria-pressed", _pbFilterDrawerOpen ? "true" : "false");
+}
+
 function hideColumnMenu() {
   const menu = document.getElementById("columnMenu");
   if (menu) menu.classList.remove("show");
