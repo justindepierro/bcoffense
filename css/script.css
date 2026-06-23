@@ -5298,7 +5298,8 @@ body[data-active-tab="script"] .script-display-fab {
   top: auto;
   z-index: var(--z-base);
   display: grid;
-  grid-template-columns: minmax(160px, auto) minmax(260px, 1fr) minmax(300px, 1.4fr);
+  grid-template-columns: minmax(86px, auto) minmax(296px, auto) minmax(220px, 1fr);
+  align-items: center;
   gap: 8px;
   flex: 0 0 auto;
   padding: 0 0 8px;
@@ -5341,7 +5342,8 @@ body[data-active-tab="script"] .script-display-fab {
 }
 
 #script .script-search-input {
-  min-width: 180px;
+  flex: 1 1 0;
+  min-width: 150px;
 }
 
 #script .script-timeline {
