@@ -385,6 +385,26 @@ body[data-auth-role="player"] .tab.active {
   animation: panelFadeIn 0.25s ease both;
 }
 
+/* Desktop shell: header + tabs pinned to the top, each panel owns its own
+   scroll. The body becomes a fixed-height flex column so #mainApp can bound
+   its children instead of the tab bar floating away from the header.
+   Below 821px the mobile shell in responsive.css scrolls the body instead. */
+@media (min-width: 821px) {
+  body.app-ready:not(.is-mobile-screen) {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: calc(var(--app-vh, 1vh) * 100);
+    min-height: 0;
+    overflow: hidden;
+  }
+  body.app-ready:not(.is-mobile-screen) #mainApp .tabs {
+    position: relative;
+    top: 0;
+    flex: 0 0 auto;
+  }
+}
+
 body[data-auth-role="player"] #dashboard.panel,
 body[data-auth-role="player"] #playbook.panel,
 body[data-auth-role="player"] #script.panel {
