@@ -5,6 +5,14 @@
 
 let _gpDndWired = false;
 
+// Cache of drop-target row geometry, built once per drag instead of calling
+// getBoundingClientRect() for every row on every dragover (~60Hz). Box rows
+// don't reflow during a drag (drop indicators are box-shadow only), so the
+// cached midpoints stay valid until the pointer leaves the box or the page
+// scrolls. Invalidated on scroll and dragend.
+let _gpDropRowCache = null;
+let _gpDropRowCacheZone = null;
+
 // Cleanup function shared by dragend + drop. CRITICAL: must be called from
 // drop *before* any mutation that re-renders the source row, because once
 // the source element is detached from the DOM, dragend does NOT bubble to
@@ -21,11 +29,18 @@ function _gpClearDragState() {
   });
   const trash = document.getElementById("gpTrashZone");
   if (trash) trash.classList.remove("is-active");
+  _gpInvalidateDropRowCache();
 }
 
 function _gpWireDnd() {
   if (_gpDndWired) return;
   _gpDndWired = true;
+
+  // Cached drag row geometry is viewport-relative, so any scroll mid-drag
+  // invalidates it. Cheap no-op when not dragging (cache is empty).
+  window.addEventListener("scroll", () => {
+    if (_gpDropRowCacheZone) _gpInvalidateDropRowCache();
+  }, true);
 
   // Diagnostic toggle: append ?gpdebug to URL to enable console tracing.
   const _gpDbg = (() => {
@@ -311,36 +326,54 @@ function _gpAttachBoxHandlers() {
   }
 }
 
-function _gpComputeDropIndex(dropZone, clientY) {
+function _gpGetDropRows(dropZone) {
+  if (_gpDropRowCacheZone === dropZone && _gpDropRowCache) return _gpDropRowCache;
   const rows = Array.from(dropZone.querySelectorAll(".gp-box-play"));
+  _gpDropRowCache = rows.map((row) => {
+    const r = row.getBoundingClientRect();
+    return {
+      el: row,
+      mid: r.top + r.height / 2,
+      rawIdx: _gpNormalizeBoxPlayIndex(row.dataset.rawIdx),
+    };
+  });
+  _gpDropRowCacheZone = dropZone;
+  return _gpDropRowCache;
+}
+
+function _gpInvalidateDropRowCache() {
+  _gpDropRowCache = null;
+  _gpDropRowCacheZone = null;
+}
+
+function _gpComputeDropIndex(dropZone, clientY) {
+  const rows = _gpGetDropRows(dropZone);
   for (let i = 0; i < rows.length; i += 1) {
-    const r = rows[i].getBoundingClientRect();
-    if (clientY < r.top + r.height / 2) return i;
+    if (clientY < rows[i].mid) return i;
   }
   return rows.length;
 }
 
 function _gpComputeRawDropIndex(dropZone, clientY) {
-  const rows = Array.from(dropZone.querySelectorAll(".gp-box-play"));
+  const rows = _gpGetDropRows(dropZone);
   for (let i = 0; i < rows.length; i += 1) {
-    const r = rows[i].getBoundingClientRect();
-    if (clientY < r.top + r.height / 2) {
-      const rawIdx = _gpNormalizeBoxPlayIndex(rows[i].dataset.rawIdx);
+    if (clientY < rows[i].mid) {
+      const rawIdx = rows[i].rawIdx;
       return rawIdx === null ? i : rawIdx;
     }
   }
   if (rows.length === 0) return Infinity;
-  const lastRawIdx = _gpNormalizeBoxPlayIndex(rows[rows.length - 1].dataset.rawIdx);
+  const lastRawIdx = rows[rows.length - 1].rawIdx;
   return lastRawIdx === null ? rows.length : lastRawIdx + 1;
 }
 
 function _gpUpdateDropIndicator(dropZone, clientY) {
   _gpClearDropIndicators(dropZone);
-  const idx = _gpComputeDropIndex(dropZone, clientY);
-  const rows = Array.from(dropZone.querySelectorAll(".gp-box-play"));
+  const rows = _gpGetDropRows(dropZone);
   if (rows.length === 0) return;
-  if (idx >= rows.length) rows[rows.length - 1].classList.add("gp-drop-after");
-  else rows[idx].classList.add("gp-drop-before");
+  const idx = _gpComputeDropIndex(dropZone, clientY);
+  if (idx >= rows.length) rows[rows.length - 1].el.classList.add("gp-drop-after");
+  else rows[idx].el.classList.add("gp-drop-before");
 }
 
 function _gpClearDropIndicators(dropZone) {
