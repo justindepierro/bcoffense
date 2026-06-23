@@ -43,11 +43,12 @@
 - ✅ Audited render paths — already well-engineered: `createRAFRenderer` coalesces `renderCallSheet`; script field updates (`updateNotes`/`updateDefField`/etc.) do targeted DOM updates, not full re-renders; `play-presentation.js` resize observer already guards with size-key + rAF coalescing. No changes needed.
 - 🔎 Found (deferred to Phase 6): duplicate top-level `renderCallSheet` — `callsheet-render.js:603` is shadowed by `callsheet.js:1254` (later load wins). The render-layer copy is dead.
 
-### Phase 3 — Playbook page modernization
-- Convert inline **print panel** + **collections panel** into proper side drawers (overlay + backdrop + close affordance + `max-height`), matching one modal pattern.
-- Toolbar: group Analytics/Tools/Print/Collections into a single overflow menu; reflow on mobile.
-- Mobile: horizontal-scroll table with sticky header + hide low-priority columns < 768px.
-- Fix Play Editor ↔ Sanitize nesting (return path + correct z-index).
+### Phase 3 — Playbook page modernization ✅ DONE (v638)
+- ✅ Print options + Saved Collections converted from inline collapsible panels into proper right-side **drawers** (backdrop overlay + slide-in + close button + scrollable body + sticky footer). Drawers moved **outside** `.panel` because `.panel.active` keeps a `transform` (panelFadeIn fill `both`), which would otherwise trap `position: fixed`.
+- ✅ Reused existing toggle functions; `aria-hidden` now syncs with open state; backdrop-click closes via `*Overlay` data-action.
+- ✅ Mobile: drawer width `min(460px, 92vw)` → near-full-width on phones.
+- 🔎 **Floating FAB/toolbar audit:** the bottom-right FABs (help / script-display / scroll-top) are **already consolidated** into one "Tools" tray (`.quick-tools`) — individual buttons are `position: static` inside the expandable menu, so there is no FAB overlap. Sticky module bars (`.script-toolbar` z6, `.gp-header` z5, `.gp-library` z2, `.dash-opponent-bar` z6) are sticky **within their own scroll panel**, in separate stacking contexts from the global tab bar — no real conflict. Z-index token unification stays in Phase 5.
+- ⏭️ Forced mobile column-hiding deferred: it conflicts with the existing column-visibility menu (which already lets users trim columns) and the table already scrolls horizontally.
 
 ### Phase 4 — Practice Script page modernization
 - Split `script.css` (5,795 lines): move `.script-packet-*` print rules to `print.css`; delete dead `.player-script-*` block.
