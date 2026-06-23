@@ -422,28 +422,30 @@ table.sortable th {
 
 .stats-bar {
   display: flex;
-  gap: 15px;
-  padding: 10px 15px;
-  background: var(--color-primary);
-  border-radius: var(--radius-md);
-  margin-bottom: 15px;
+  gap: 5px;
+  padding: 0;
+  background: transparent;
+  margin-bottom: 0;
   flex-wrap: wrap;
+  align-items: center;
 }
 
 .stat-item {
   display: flex;
   align-items: center;
-  gap: 6px;
-  padding: 6px 12px;
-  background: var(--color-white-alpha-20);
+  gap: 4px;
+  padding: 2px 9px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);
-  color: var(--color-text-inverse);
-  font-size: var(--font-size-sm);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
 }
 
 .stat-item .stat-count {
-  font-weight: bold;
-  font-size: var(--font-size-md);
+  font-weight: 700;
+  font-size: var(--font-size-xs);
+  color: var(--color-text);
 }
 
 .pb-player-summary {
@@ -844,12 +846,108 @@ body[data-auth-role="player"] .gp-card-btn {
   }
 }
 
+/* ═══════════════ Meta Bar (Stats + Readiness combined row) ═══════════════ */
+
+.pb-meta-bar {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-bottom: 8px;
+  flex-wrap: nowrap;
+  min-height: 28px;
+}
+
+.pb-meta-bar #statsBar {
+  flex: 1 1 auto;
+}
+
+.pb-meta-bar .pb-readiness-panel {
+  flex: 0 1 auto;
+  margin: 0;
+}
+
+/* Compact empty-state readiness card: single horizontal row */
+#playbook .pb-readiness-card--empty {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 10px;
+  min-height: 32px;
+  grid-template-columns: unset;
+  flex-wrap: nowrap;
+  border-left-width: 3px;
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-main {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  flex-shrink: 0;
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-main h3 {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-eyebrow,
+#playbook .pb-readiness-card--empty .pb-readiness-empty-copy {
+  display: none;
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-empty-steps {
+  display: flex;
+  gap: 4px;
+  grid-template-columns: unset;
+  flex-shrink: 1;
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-empty-steps span {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  min-height: unset;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-2xs);
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-empty-steps strong {
+  width: 16px;
+  height: 16px;
+  font-size: 9px;
+  flex-shrink: 0;
+}
+
+#playbook .pb-readiness-card--empty .pb-readiness-actions.pb-readiness-empty-actions {
+  display: flex;
+  flex-direction: row;
+  gap: 6px;
+  margin-left: auto;
+  flex-shrink: 0;
+  grid-template-columns: unset;
+}
+
 /* ═══════════════ Playbook Filter Drawer ═══════════════ */
 
 /* Desktop: playbook panel becomes the positioning context for the drawer */
 body.app-ready:not(.is-mobile-screen) #playbook.panel {
   position: relative;
   overflow: hidden;
+  display: flex;
+  flex-direction: column;
+}
+
+/* Proper flex layout: chrome is fixed-height, table fills remaining space */
+body.app-ready:not(.is-mobile-screen) #playbook .pb-controls,
+body.app-ready:not(.is-mobile-screen) #playbook .pb-meta-bar {
+  flex: 0 0 auto;
+}
+
+body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
+  flex: 1 1 0;
+  min-height: 0;
 }
 
 /* Backdrop — covers full panel when drawer is open */
@@ -936,7 +1034,7 @@ body.app-ready:not(.is-mobile-screen) #playbook.panel {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-bottom: 12px;
+  margin-bottom: 6px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-white);
@@ -947,8 +1045,8 @@ body.app-ready:not(.is-mobile-screen) #playbook.panel {
 .pb-controls-row {
   display: flex;
   align-items: center;
-  gap: 10px;
-  padding: 10px 14px;
+  gap: 8px;
+  padding: 7px 12px;
 }
 .pb-top-row {
   background: var(--color-bg-light);
