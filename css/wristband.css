@@ -1051,6 +1051,15 @@
   flex-wrap: wrap;
   gap: 5px;
 }
+/* Collapsible filter accordions (shared: script + wristband rails).
+   Content is hidden until the section is toggled .expanded — keeps the
+   filter rail compact and prevents checkbox rows from clipping. */
+.collapsible-section .filter-content {
+  display: none;
+}
+.collapsible-section.expanded .filter-content {
+  display: flex;
+}
 .checkbox-group label {
   display: flex;
   align-items: center;

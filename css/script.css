@@ -2837,7 +2837,7 @@
 
   body:not(.is-mobile-screen) #script .filters-collapsible {
     flex: 1 1 0;
-    min-height: 56px;
+    min-height: 84px;
     max-height: 46%;
     overflow-y: auto;
     overflow-x: hidden;
