@@ -960,7 +960,7 @@
   justify-content: center;
   border-radius: var(--radius-round);
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   font-weight: 800;
   font-size: var(--font-size-sm);
   flex-shrink: 0;
@@ -975,7 +975,7 @@
 }
 .sir-priority-row:nth-child(3) .sir-priority-rank {
   background: var(--color-accent-dark);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
 }
 .sir-priority-info {
   flex: 1;
@@ -1290,7 +1290,7 @@
 }
 .sirp-table th {
   background: var(--color-dark);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   font-weight: 700;
   text-align: left;
   padding: 4px 6px;

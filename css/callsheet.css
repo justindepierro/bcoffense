@@ -1001,7 +1001,7 @@
 .cs-layout-pick-btn.is-active {
   border-color: var(--color-primary);
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
 }
 
 .cs-layout-nudge-btn {
@@ -1875,7 +1875,7 @@
   }
   .cs-hash-swap:hover {
     background: var(--color-primary);
-    color: var(--color-white);
+    color: var(--color-text-inverse);
   }
 }
 .cs-hash-swap:focus-visible {
@@ -2040,7 +2040,7 @@
 
 .cs-style-btn.active {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
 }
 
@@ -2079,7 +2079,7 @@
 
 .cs-size-btn.active {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
 }
 /* Note input */
@@ -2104,7 +2104,7 @@
   border: 1px solid var(--color-success);
   border-radius: var(--radius-sm);
   background: var(--color-success);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: bold;
@@ -2115,7 +2115,7 @@
   border: 1px solid var(--color-danger);
   border-radius: var(--radius-sm);
   background: var(--color-danger);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   cursor: pointer;
   font-size: var(--font-size-sm);
   font-weight: bold;

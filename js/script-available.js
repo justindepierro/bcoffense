@@ -346,6 +346,42 @@ function availPageNext() {
   renderAvailablePlays();
 }
 
+const _AVAIL_TYPE_SLUGS = {
+  run: "run",
+  "run option": "run",
+  pass: "pass",
+  "play action": "playaction",
+  rpo: "rpo",
+  screen: "screen",
+  quick: "quick",
+  movement: "movement",
+};
+
+function availTypeSlug(type) {
+  return _AVAIL_TYPE_SLUGS[String(type || "").trim().toLowerCase()] || "default";
+}
+
+const _AVAIL_DOWN_ORD = { 1: "1st", 2: "2nd", 3: "3rd", 4: "4th" };
+
+// Build the compact, info-dense metadata chips shown under each available play.
+// Every value is escaped at the source so the result is safe to inject.
+function buildAvailMetaChips(play) {
+  const chips = [];
+  if (play.personnel) chips.push({ t: escapeHtml(play.personnel), c: "pers" });
+  const dd = [];
+  if (play.preferredDown)
+    dd.push(_AVAIL_DOWN_ORD[String(play.preferredDown)] || escapeHtml(play.preferredDown));
+  if (play.preferredDistance) dd.push("&amp; " + escapeHtml(play.preferredDistance));
+  if (dd.length) chips.push({ t: dd.join(" "), c: "sit" });
+  else if (play.preferredSituation)
+    chips.push({ t: escapeHtml(play.preferredSituation), c: "sit" });
+  if (play.preferredFieldPosition)
+    chips.push({ t: escapeHtml(play.preferredFieldPosition), c: "field" });
+  if (play.keyPlayerName1) chips.push({ t: "★ " + escapeHtml(play.keyPlayerName1), c: "player" });
+  if (play.motion) chips.push({ t: "↗ " + escapeHtml(play.motion), c: "motion" });
+  return chips;
+}
+
 function renderAvailablePlays() {
   const { formation, basePlay, search } = getScriptPlayFilterState();
   const gamePlanOnly =
@@ -443,17 +479,31 @@ function renderAvailablePlays() {
       const alreadyIn = inScriptSet.has(
         `${play.formation}||${play.protection}||${play.play}`,
       );
+      const typeSlug = availTypeSlug(play.type);
+      const callName =
+        [play.formation, play.protection, play.play]
+          .filter(Boolean)
+          .map((p) => escapeHtml(p))
+          .join(" ") || "—";
+      const typeChip = play.type
+        ? `<span class="play-type-chip">${escapeHtml(play.type)}</span>`
+        : "";
+      const metaChips = buildAvailMetaChips(play)
+        .map((m) => `<span class="play-meta-tag play-meta-tag--${m.c}">${m.t}</span>`)
+        .join("");
       return `
-            <div class="play-item ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
+            <div class="play-item play-item--${typeSlug} ${isSelected ? "selected" : ""} ${alreadyIn ? "in-script" : ""}" draggable="true" data-drag="availStart" data-idx="${playIdx}">
                 <div class="play-item-controls">
-                  <input type="checkbox" class="available-play-cb" data-index="${playIdx}" 
-                         ${isSelected ? "checked" : ""} 
-                         data-field="availableSelect" data-idx="${playIdx}" />
-                  <button type="button" class="available-add-menu-btn" data-action="openAvailableAddMenu" data-idx="${playIdx}" title="Add to script" aria-label="Add ${escapeHtml(play.formation)} ${escapeHtml(play.protection)} ${escapeHtml(play.play)} to script">+</button>
+                  <input type="checkbox" class="available-play-cb" data-index="${playIdx}" ${isSelected ? "checked" : ""} data-field="availableSelect" data-idx="${playIdx}" />
+                  <button type="button" class="available-add-menu-btn" data-action="openAvailableAddMenu" data-idx="${playIdx}" title="Add to script" aria-label="Add ${callName} to script">+</button>
                 </div>
                 <div class="play-info">
-                    <div class="play-name">${escapeHtml(play.formation)} ${escapeHtml(play.protection)} ${escapeHtml(play.play)}${alreadyIn ? ' <span class="in-script-badge" title="Already on script">✓ On Script</span>' : ""}</div>
-                    <div class="play-details">${escapeHtml(play.type)} ${play.motion ? "• " + escapeHtml(play.motion) : ""}</div>
+                    <div class="play-name-row">
+                      <span class="play-name">${callName}</span>
+                      ${typeChip}
+                      ${alreadyIn ? '<span class="in-script-badge" title="Already on script">✓ On</span>' : ""}
+                    </div>
+                    ${metaChips ? `<div class="play-meta-row">${metaChips}</div>` : ""}
                 </div>
             </div>
         `;

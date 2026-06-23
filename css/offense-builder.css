@@ -496,7 +496,7 @@
 .ob-recs-count {
   font-size: var(--font-size-xs2);
   background: var(--color-danger);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   padding: 2px 7px;
   border-radius: var(--radius-pill);
 }

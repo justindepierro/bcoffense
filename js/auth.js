@@ -232,7 +232,7 @@
     /sort/i,
   ];
 
-  let currentAuthUser = { username: "admin", role: "admin" };
+  let currentAuthUser = { username: "admin", role: "admin", label: "Admin" };
   let authReady = false;
   let lastBlockedAt = 0;
   const AUTH_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
@@ -540,8 +540,14 @@
 
     const userBadge = document.getElementById("authUserBadge");
     if (userBadge) {
+      const badgeLabel =
+        currentAuthUser &&
+        (currentAuthUser.label ||
+          (currentAuthUser.role
+            ? currentAuthUser.role.charAt(0).toUpperCase() + currentAuthUser.role.slice(1)
+            : "User"));
       userBadge.textContent = currentAuthUser
-        ? `${currentAuthUser.label}: ${currentAuthUser.username}`
+        ? `${badgeLabel}: ${currentAuthUser.username}`
         : "";
       userBadge.hidden = !currentAuthUser;
     }

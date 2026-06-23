@@ -335,7 +335,7 @@
   height: 28px;
   padding: 0;
   background: var(--color-success);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-sm);
   cursor: pointer;
@@ -1520,7 +1520,7 @@
 
 .script-player-slot--promoted .script-player-slot-role {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
 }
 
@@ -4749,7 +4749,7 @@ body[data-auth-role="player"] .period-buttons {
   align-items: center;
   padding: 12px 16px;
   background: var(--gradient-dark);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
 }
 .script-display-panel-header h3 {
   margin: 0;
@@ -4792,14 +4792,14 @@ body[data-active-tab="script"] .script-display-fab {
 @media (hover: hover) {
   .script-display-fab:hover {
     background: var(--color-primary);
-    color: var(--color-white);
+    color: var(--color-text-inverse);
     box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
     transform: scale(1.1);
   }
 }
 .script-display-fab.active {
   background: var(--color-primary);
-  color: var(--color-white);
+  color: var(--color-text-inverse);
   box-shadow: 0 4px 16px rgba(25, 42, 81, 0.4);
 }
 
@@ -5181,9 +5181,158 @@ body[data-active-tab="script"] .script-display-fab {
 
 /* Density + scroll polish (script workspace) */
 #script .play-item {
-  padding: 8px 11px;
-  margin-bottom: 6px;
-  gap: 9px;
+  padding: 6px 9px 6px 8px;
+  margin-bottom: 5px;
+  gap: 8px;
+  grid-template-columns: 24px minmax(0, 1fr);
+  align-items: center;
+  border-left: 3px solid var(--color-border-med);
+}
+
+#script .play-item .play-item-controls {
+  gap: 5px;
+}
+
+#script .play-item .available-play-cb {
+  width: 16px;
+  height: 16px;
+  margin-top: 0;
+}
+
+#script .play-item .available-add-menu-btn {
+  width: 24px;
+  height: 24px;
+  font-size: 16px;
+}
+
+#script .play-item .play-name-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+}
+
+#script .play-item .play-name {
+  font-weight: 700;
+  font-size: var(--font-size-sm);
+  line-height: 1.2;
+  color: var(--color-text);
+  overflow-wrap: anywhere;
+}
+
+#script .play-item .in-script-badge {
+  font-size: var(--font-size-micro);
+  font-weight: 700;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-success-light);
+  color: var(--color-success);
+  white-space: nowrap;
+}
+
+#script .play-item .play-meta-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px;
+  margin-top: 4px;
+}
+
+#script .play-item .play-meta-tag {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  line-height: 1.35;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  white-space: nowrap;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+#script .play-item .play-meta-tag--pers {
+  background: var(--color-info-light);
+  color: var(--color-info);
+}
+
+#script .play-item .play-meta-tag--sit {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+#script .play-item .play-meta-tag--player {
+  background: var(--color-accent-light);
+  color: var(--color-primary);
+}
+
+#script .play-item .play-type-chip {
+  display: inline-flex;
+  align-items: center;
+  flex-shrink: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.02em;
+  line-height: 1.3;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+}
+
+/* Play-type accents: left stripe + matching type chip */
+#script .play-item--run {
+  border-left-color: var(--color-success);
+}
+#script .play-item--run .play-type-chip {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+#script .play-item--pass {
+  border-left-color: var(--color-primary);
+}
+#script .play-item--pass .play-type-chip {
+  background: var(--color-bg-blue-tint);
+  color: var(--color-primary);
+}
+#script .play-item--rpo {
+  border-left-color: var(--color-purple);
+}
+#script .play-item--rpo .play-type-chip {
+  background: var(--color-purple-light);
+  color: var(--color-purple);
+}
+#script .play-item--screen {
+  border-left-color: var(--color-info);
+}
+#script .play-item--screen .play-type-chip {
+  background: var(--color-info-light);
+  color: var(--color-info);
+}
+#script .play-item--quick {
+  border-left-color: var(--color-warning);
+}
+#script .play-item--quick .play-type-chip {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+#script .play-item--playaction {
+  border-left-color: var(--color-danger);
+}
+#script .play-item--playaction .play-type-chip {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+#script .play-item--movement {
+  border-left-color: var(--color-accent);
+}
+#script .play-item--movement .play-type-chip {
+  background: var(--color-accent-light);
+  color: var(--color-primary);
 }
 
 #script .app-scroll-region {
