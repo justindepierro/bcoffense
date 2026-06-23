@@ -81,6 +81,9 @@ function setScriptToolsDrawerOpen(isOpen) {
   const backdrop = document.getElementById("scriptToolsBackdrop");
   const trigger = document.getElementById("scriptToolsDrawerToggle");
 
+  if (nextOpen && typeof closeScriptDisplayPanel === "function") {
+    closeScriptDisplayPanel();
+  }
   scriptToolsDrawerOpen = nextOpen;
   scriptPanel?.classList.toggle("script-tools-open", nextOpen);
   drawer?.classList.toggle("open", nextOpen);

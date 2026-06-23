@@ -198,6 +198,7 @@ function toggleScriptDisplayPanel() {
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
+  if (typeof closeScriptToolsDrawer === "function") closeScriptToolsDrawer();
   setScriptDisplayPanelTriggerState(true);
 }
 

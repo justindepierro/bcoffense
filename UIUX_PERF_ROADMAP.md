@@ -50,12 +50,12 @@
 - 🔎 **Floating FAB/toolbar audit:** the bottom-right FABs (help / script-display / scroll-top) are **already consolidated** into one "Tools" tray (`.quick-tools`) — individual buttons are `position: static` inside the expandable menu, so there is no FAB overlap. Sticky module bars (`.script-toolbar` z6, `.gp-header` z5, `.gp-library` z2, `.dash-opponent-bar` z6) are sticky **within their own scroll panel**, in separate stacking contexts from the global tab bar — no real conflict. Z-index token unification stays in Phase 5.
 - ⏭️ Forced mobile column-hiding deferred: it conflicts with the existing column-visibility menu (which already lets users trim columns) and the table already scrolls horizontally.
 
-### Phase 4 — Practice Script page modernization
-- Split `script.css` (5,795 lines): move `.script-packet-*` print rules to `print.css`; delete dead `.player-script-*` block.
-- Toolbar reflow < 640px; bump touch targets to 44px (`available-add-menu-btn`, `script-move-menu-btn`, checkboxes).
-- Consolidate the repeated `.script-item--detail` grid redefinitions across 9 media blocks.
-- Convert period template picker from inline `<select>` to a floating overlay.
-- Add mutual-exclusion guard so the tools drawer and display panel can't stack.
+### Phase 4 — Practice Script page modernization ✅ DONE (v639)
+- ✅ **Fixed a real layout bug:** the entire `.script-toolbar` base layout (`-left`/`-center`/`-right`, search box, sort status, etc.) was trapped inside an `@media (max-width: 1280px)` block, so on any screen **wider than 1280px** the toolbar lost all flex layout and its controls stacked vertically. Un-wrapped it so the layout applies at every width (purely additive for ≤1280px).
+- ✅ **Mutual-exclusion guard:** opening the script Tools drawer now closes the Display panel and vice-versa, so the two overlays can't stack.
+- ✅ Mobile touch targets already handled (existing ≤640px block bumps toolbar buttons/selects/search to 42px and stacks the three sections full-width). No change needed.
+- ⚠️ **Roadmap correction:** `.player-script-*` is **NOT dead** — it's used by the player-role launcher + "now" bar in `index.html` (`#playerScriptLauncherSection`, `#playerScriptNowBar`). Removed from the Phase 6 cull list.
+- ⏭️ Deferred (lower value / higher risk): moving `.script-packet-*` print rules to `print.css` and consolidating the `.script-item--detail` grid redefinitions — mechanical CSS moves with little visible payoff; revisit in Phase 6.
 
 ### Phase 5 — Cross-app consistency
 - Unify modal system: one `.visible` state convention + one backdrop/blur rule; document in `components.css`.
@@ -65,10 +65,11 @@
 - Centralize breakpoints.
 
 ### Phase 6 — Dead CSS + bloat cull
-- Remove confirmed-dead selectors (`.player-script-*`, `.script-item--printlike`).
+- Remove confirmed-dead selectors (`.script-item--printlike` — verify first).
 - Remove the shadowed dead `renderCallSheet` (+ its helpers) in `callsheet-render.js` once confirmed nothing else in that file is uniquely used.
-- Consolidate duplicate responsive rules.
+- Consolidate duplicate responsive rules (incl. the `.script-item--detail` grid across ~9 media blocks).
 - Re-run `scripts/smoke-check.js` after each phase.
+- NOTE: `.player-script-*` is **live** (player launcher/now bar) — do NOT remove.
 
 ---
 
