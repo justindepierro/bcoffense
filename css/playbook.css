@@ -70,6 +70,21 @@ table.sortable th {
   }
 }
 
+/* Denser playbook table rows */
+#playbookTable td {
+  padding: 5px 10px;
+}
+
+#playbookTable th {
+  padding: 5px 10px;
+}
+
+/* Compact readiness badge inside playbook table cells */
+#playbookTable .play-readiness-badge {
+  min-height: 22px;
+  padding: 2px 6px;
+}
+
 #playbookTable tbody tr.selected {
   background: var(--color-primary-light);
   outline: 2px solid var(--color-primary);
@@ -853,8 +868,14 @@ body[data-auth-role="player"] .gp-card-btn {
   align-items: center;
   gap: 10px;
   margin-bottom: 8px;
-  flex-wrap: nowrap;
+  flex-wrap: wrap;
   min-height: 28px;
+}
+
+/* When a play is selected the full card is wide — let it break to its own row */
+.pb-meta-bar:has(.pb-readiness-card:not(.pb-readiness-card--empty)) .pb-readiness-panel {
+  flex: 1 0 100%;
+  min-width: 0;
 }
 
 .pb-meta-bar #statsBar {
@@ -897,27 +918,7 @@ body[data-auth-role="player"] .gp-card-btn {
 }
 
 #playbook .pb-readiness-card--empty .pb-readiness-empty-steps {
-  display: flex;
-  gap: 4px;
-  grid-template-columns: unset;
-  flex-shrink: 1;
-}
-
-#playbook .pb-readiness-card--empty .pb-readiness-empty-steps span {
-  display: inline-flex;
-  align-items: center;
-  gap: 3px;
-  padding: 2px 8px;
-  min-height: unset;
-  border-radius: var(--radius-pill);
-  font-size: var(--font-size-2xs);
-}
-
-#playbook .pb-readiness-card--empty .pb-readiness-empty-steps strong {
-  width: 16px;
-  height: 16px;
-  font-size: 9px;
-  flex-shrink: 0;
+  display: none;
 }
 
 #playbook .pb-readiness-card--empty .pb-readiness-actions.pb-readiness-empty-actions {
@@ -927,6 +928,13 @@ body[data-auth-role="player"] .gp-card-btn {
   margin-left: auto;
   flex-shrink: 0;
   grid-template-columns: unset;
+}
+
+/* Compact buttons inside the meta-bar empty-state card */
+#playbook .pb-readiness-card--empty .play-readiness-btn {
+  min-height: 26px;
+  padding: 3px 8px;
+  font-size: var(--font-size-2xs);
 }
 
 /* ═══════════════ Playbook Filter Drawer ═══════════════ */
@@ -1059,9 +1067,9 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 /* Search */
 .pb-search-wrap {
   position: relative;
-  flex: 1 1 200px;
-  min-width: 160px;
-  max-width: 320px;
+  flex: 1 1 180px;
+  min-width: 140px;
+  max-width: 260px;
 }
 .pb-search-icon {
   position: absolute;
@@ -1114,7 +1122,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   font-size: var(--font-size-sm);
   font-family: inherit;
   background: var(--color-white);
-  min-width: 100px;
+  min-width: 80px;
 }
 .pb-sort-group select:focus {
   border-color: var(--color-primary);
