@@ -397,7 +397,9 @@ function renderPlayReadinessCompactBadgeFromSummary(summary, opts = {}) {
   const variant = opts.variant ? ` play-readiness-badge--${escapeHtml(opts.variant)}` : "";
   const toggleAttrs = opts.scriptIdx !== undefined
     ? ` data-action="toggleScriptReadinessPanel" data-arg="${opts.scriptIdx}" role="button" tabindex="0"`
-    : "";
+    : opts.playbookIdx !== undefined
+      ? ` data-action="openPlayReadinessPlaybookLogModal" data-arg="${opts.playbookIdx}" role="button" tabindex="0" title="Log a rep for this play"`
+      : "";
   const detail = opts.detail === false
     ? ""
     : `<span class="play-readiness-badge-detail">
@@ -719,8 +721,8 @@ function renderPlayReadinessEmptyPlaybookPanel() {
         <span class="pb-readiness-eyebrow">Coach/Admin Scoring</span>
         <h3>Play Readiness Scoring</h3>
         <p class="pb-readiness-empty-copy">
-          Select any play to quick-score it here. In Script rows, use Add Rep, Action Report, or History.
-          In presentation, switch to Coaches mode and score the rep from the coach table.
+          Select any play row to score it here, or click the readiness badge on any row to log a rep directly.
+          You can also score plays from the Script tab or from Presentation coach mode.
         </p>
       </div>
       <div class="pb-readiness-empty-steps" aria-label="Where to score plays">

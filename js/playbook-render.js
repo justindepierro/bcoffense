@@ -76,6 +76,7 @@ function renderPlaybook() {
           ? renderPlayReadinessCompactBadgeFromSummary(readinessSummary, {
             variant: "playbook-table",
             detail: false,
+            playbookIdx: start + localIdx,
           })
           : "";
       const readinessCardBadge =

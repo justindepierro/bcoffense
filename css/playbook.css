@@ -265,6 +265,18 @@ table.sortable th {
   vertical-align: middle;
 }
 
+/* Badge is clickable when playbookIdx is wired */
+.play-cell .play-readiness-badge--playbook-table[data-action] {
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .play-cell .play-readiness-badge--playbook-table[data-action]:hover {
+    filter: brightness(1.08);
+    outline: 2px solid var(--prb-accent, var(--color-primary));
+    outline-offset: 1px;
+  }
+}
+
 .play-cell
   .play-readiness-badge--playbook-table
   .play-readiness-badge-main
