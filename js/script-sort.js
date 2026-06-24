@@ -86,6 +86,7 @@ function sortScript() {
     "success",
     AUTOSAVE_DEBOUNCE_MS,
   );
+  if (typeof saveScriptDisplayOptions === "function") saveScriptDisplayOptions();
 }
 
 function sortPeriod(separatorIndex) {

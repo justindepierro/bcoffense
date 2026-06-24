@@ -1760,6 +1760,7 @@ function ensurePlaybookPlayIds(list) {
     while (used.has(next)) next = createPlayId();
     play.id = next;
     used.add(next);
+    if (!play.createdAt) play.createdAt = Date.now();
     changed += 1;
   });
   return changed;

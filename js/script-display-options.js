@@ -29,6 +29,7 @@ function saveScriptDisplayOptions() {
     "detail";
   opts.filtersCollapsed = filtersCollapsed;
   opts.playRailCollapsed = scriptPlayRailCollapsed;
+  opts.lastSortField = document.getElementById("scriptSortField")?.value || "";
   storageManager.set(STORAGE_KEYS.SCRIPT_DISPLAY_OPTIONS, opts);
 }
 
@@ -50,6 +51,10 @@ function restoreScriptDisplayOptions() {
   if (modeEl) modeEl.checked = true;
   filtersCollapsed = Boolean(opts.filtersCollapsed);
   scriptPlayRailCollapsed = Boolean(opts.playRailCollapsed);
+  if (opts.lastSortField) {
+    const sortSel = document.getElementById("scriptSortField");
+    if (sortSel) sortSel.value = opts.lastSortField;
+  }
   applyScriptFiltersCollapsedState();
   applyScriptPlayRailState();
   closeScriptToolsDrawer();

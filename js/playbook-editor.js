@@ -539,6 +539,7 @@ function savePlayEditor(opts = {}) {
       existing[key] = data[key];
     });
     existing.playerAssignments = data.playerAssignments;
+    existing.updatedAt = Date.now();
     _syncGamePlanCheckbox(existing);
     showToast("✏️ Play updated", { duration: 2000, type: "success" });
   } else {
@@ -552,6 +553,7 @@ function savePlayEditor(opts = {}) {
     RESP_POSITIONS.forEach((pos) => { newPlay[pos.key] = data[pos.key] || ""; });
     newPlay.respNotes = data.respNotes || "";
     if (typeof createPlayId === "function") newPlay.id = createPlayId();
+    newPlay.createdAt = Date.now();
     if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);
     _syncGamePlanCheckbox(newPlay);

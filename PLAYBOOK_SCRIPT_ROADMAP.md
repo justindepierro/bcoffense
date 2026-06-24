@@ -72,7 +72,7 @@ The present button ▶ is already opacity-0-until-hover. The context menu `(•�
 
 ## Section 2 — Type Color System Cohesion
 
-### 6. 🔵 P2 M — Create `--color-type-*` token family
+### ✅ 6. 🔵 P2 M — Create `--color-type-*` token family
 **File:** `css/base.css`, `css/playbook.css`, `css/script.css`  
 Type chip colors are hardcoded per-module with no shared tokens. Both `playbook.css` and `script.css` duplicate the same 7 type-color rules. Extract into `base.css`:
 
@@ -105,7 +105,7 @@ Playbook chips use `font-size-2xs`; script chips use `font-size-xs`. Standardize
 
 ---
 
-### 8. 🔵 P2 S — Add type chip to `play-item` available-plays cards in wristband and callsheet picker
+### ✅ 8. 🔵 P2 S — Add type chip to `play-item` available-plays cards in wristband and callsheet picker
 **Files:** `css/wristband.css`, `css/callsheet.css`  
 Available-play cards in the wristband and call sheet picker show no type indicator. The script available-plays drawer already has the color chip system. Extend `.play-type-chip` color rules into the other two modules' available-play surfaces.
 
@@ -223,7 +223,7 @@ The Play data model has no `createdAt` or `updatedAt` field. Adding them unlocks
 
 ---
 
-### 24. 🔵 P3 M — Script ↔ Playbook breadcrumb integration
+### ✅ 24. 🔵 P3 M — Script ↔ Playbook breadcrumb integration
 **Files:** `js/script-render.js`, `js/playbook-render.js`  
 When a script item was sourced from the playbook, show a subtle "📖 In Playbook" link/chip on the script item that navigates and highlights the source play. Useful for coaches who want to edit the base play definition after scripting.
 
@@ -231,8 +231,8 @@ When a script item was sourced from the playbook, show a subtle "📖 In Playboo
 
 ## Section 6 — Dead Code & Architecture Cleanup
 
-### 25. 🟢 P2 S — Remove `#catCleanupSummary` dead block from `playbook.css`
-*(Listed again as an isolated fix — see item 3 for detail. Separate PR.)*
+### ✅ 25. 🟢 P2 S — Remove `#catCleanupSummary` dead block from `playbook.css`
+*(Done — see item 3)*
 
 ---
 
@@ -295,7 +295,9 @@ See `UIUX_PERF_ROADMAP.md` Phase 1 for full context.
 | 1 | Pass chip dark mode | ✅ Done | v666 |
 | 2 | RPO dark mode token | ✅ Done | v666 |
 | 3 | Dead CSS removed | ✅ Done | pre-session |
-| 5 | (•••) hover-only | N/A — no button | — |
+| 6 | Type token family | ✅ Done | v669 |
+| 8 | Wristband type chips | ✅ Done | v669 |
+| 24 | Script breadcrumb chip | ✅ Done | v669 |
 | 7 | Chip font size | ✅ Done | pre-session |
 | 9 | Type legend tooltip | ✅ Done | v668 |
 | 10 | Stats chips filter | ✅ Done | v667 |

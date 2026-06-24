@@ -622,8 +622,7 @@
 }
 
 .play-readiness-badge-main strong,
-.play-readiness-badge-main small,
-.play-readiness-badge-detail span {
+.play-readiness-badge-main small {
   min-width: 0;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -651,6 +650,10 @@
 
 .play-readiness-badge-detail span {
   position: relative;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .play-readiness-badge-detail span + span::before {
@@ -1122,8 +1125,7 @@
 }
 
 .play-readiness-main,
-.play-readiness-metrics,
-.play-readiness-actions {
+.play-readiness-metrics {
   min-width: 0;
 }
 
@@ -1166,10 +1168,10 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 0;
 }
 
 .play-readiness-fill {
+  left: 0;
   z-index: 2;
   width: var(--pr-progress, 0%);
   background: var(--color-primary);
@@ -1253,6 +1255,7 @@
 }
 
 .play-readiness-actions {
+  min-width: 0;
   display: grid;
   grid-template-columns: repeat(2, minmax(92px, 1fr));
   gap: 6px;
