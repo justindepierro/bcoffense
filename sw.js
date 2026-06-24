@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v698";
+const CACHE_NAME = "bcoffense-v699";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -105,6 +105,7 @@ const LOCAL_ASSETS = [
   "./js/script-period-sync.js",
   "./js/script-smart.js",
   "./js/script-storage.js",
+  "./js/script-player.js",
   "./js/script-integrations.js",
   "./js/play-presentation.js",
   "./js/wristband.js",
@@ -112,6 +113,8 @@ const LOCAL_ASSETS = [
   "./js/wristband-render.js",
   "./js/wristband-cards.js",
   "./js/wristband-export.js",
+  "./js/wristband-chrome.js",
+  "./js/wristband-logo.js",
   "./js/wristband-search.js",
   "./js/wristband-modals.js",
   "./js/wristband-cell-popup.js",
@@ -139,6 +142,7 @@ const LOCAL_ASSETS = [
   "./js/tendencies.js",
   "./js/installation-render.js",
   "./js/installation.js",
+  "./js/installation-print.js",
   "./js/identity.js",
   "./js/offensebuilder.js",
   "./js/help.js",
