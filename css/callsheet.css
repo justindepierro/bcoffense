@@ -366,29 +366,30 @@
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 10px 14px;
+  padding: 8px 12px;
   background: var(--color-bg-light);
   border-radius: var(--radius-md);
   margin-bottom: 10px;
-  gap: 12px;
+  gap: 8px;
+  row-gap: 6px;
   border: 1px solid var(--color-border-light);
-  flex-wrap: nowrap;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  flex-wrap: wrap;
   box-shadow: var(--shadow-xs);
 }
 .cs-toolbar-left {
   display: flex;
   align-items: center;
-  gap: 12px;
+  gap: 8px;
   flex-wrap: nowrap;
   flex-shrink: 0;
 }
 .cs-toolbar-right {
   display: flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-wrap: nowrap;
+  flex-shrink: 0;
+  margin-left: auto;
 }
 
 /* Call Sheet Toggle Groups */
@@ -405,7 +406,7 @@
   border: 1px solid var(--color-primary);
 }
 .cs-toggle {
-  padding: 6px 14px;
+  padding: 5px 12px;
   border: none;
   cursor: pointer;
   font-size: var(--font-size-sm);
