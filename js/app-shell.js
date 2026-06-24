@@ -1119,6 +1119,18 @@ document.addEventListener("keydown", (e) => {
     }
   }
 
+  // Close any open script readiness panels on Escape
+  if (e.key === "Escape" && !mod && !e.altKey) {
+    const openPanel = document.querySelector(".script-item--readiness-open");
+    if (openPanel) {
+      document.querySelectorAll(".script-item--readiness-open").forEach((el) =>
+        el.classList.remove("script-item--readiness-open")
+      );
+      e.preventDefault();
+      return;
+    }
+  }
+
   if (inInput) return;
 
   if (

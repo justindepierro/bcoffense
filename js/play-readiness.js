@@ -472,6 +472,10 @@ function getPlayReadinessCompactSummary(summary) {
 function renderPlayReadinessCompactBadgeFromSummary(summary, opts = {}) {
   const compact = getPlayReadinessCompactSummary(summary);
   const variant = opts.variant ? ` play-readiness-badge--${escapeHtml(opts.variant)}` : "";
+  // Clickable toggle when rendered inside a script row
+  const toggleAttrs = opts.scriptIdx !== undefined
+    ? ` data-action="toggleScriptReadinessPanel" data-arg="${opts.scriptIdx}" role="button" tabindex="0"`
+    : "";
   const detail = opts.detail === false
     ? ""
     : `<span class="play-readiness-badge-detail">
@@ -490,7 +494,7 @@ function renderPlayReadinessCompactBadgeFromSummary(summary, opts = {}) {
   return `
     <span class="play-readiness-badge play-readiness-badge--${escapeHtml(compact.tone)} play-readiness-badge-trend--${escapeHtml(compact.trend.tone)}${variant}"
       data-auth-player-hide="true" title="${escapeHtml(title)}"
-      aria-label="${escapeHtml(title)}">
+      aria-label="${escapeHtml(title)}"${toggleAttrs}>
       <span class="play-readiness-badge-dot" aria-hidden="true"></span>
       <span class="play-readiness-badge-main">
         <strong>${escapeHtml(compact.label)}</strong>
@@ -595,6 +599,7 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
         <div class="play-readiness-score-grid" role="group" aria-label="Quick score this script play">
           ${renderPlayReadinessScoreButtons("quickPlayReadinessScriptScore", lastReport?.score || 0, `data-idx="${index}"`)}
         </div>
+        <button type="button" class="pr-close-btn" data-action="toggleScriptReadinessPanel" data-arg="${index}" aria-label="Close readiness panel">&times;</button>
       </div>
 
       <div class="pr-details-row">
@@ -613,6 +618,7 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
           </div>
         </div>
         <div class="play-readiness-actions">
+          <button type="button" class="play-readiness-btn play-readiness-btn--edit" data-action="openPlayEditorFromScript" data-arg="${index}">&#9998; Edit Play</button>
           <button type="button" class="play-readiness-btn" data-action="openPlayReadinessRepModal" data-arg="${index}">+ Add Rep</button>
           <button type="button" class="play-readiness-btn" data-action="openPlayReadinessActionModal" data-arg="${index}">Action Report</button>
           <button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="showPlayReadinessHistory" data-arg="${index}">History</button>
@@ -1450,4 +1456,35 @@ function seedPlayReadinessSampleData() {
     type: "success",
     duration: 2600,
   });
+}
+
+// ── Readiness panel toggle (script inline widget) ──────────────────────────
+
+function toggleScriptReadinessPanel(idx) {
+  const idxNum = parseInt(idx, 10);
+  const item = document.querySelector(`.script-item[data-idx="${idxNum}"]`);
+  if (!item) return;
+  const wasOpen = item.classList.contains("script-item--readiness-open");
+  // Close all open panels first
+  document.querySelectorAll(".script-item--readiness-open").forEach((el) =>
+    el.classList.remove("script-item--readiness-open")
+  );
+  if (!wasOpen) {
+    item.classList.add("script-item--readiness-open");
+    item.querySelector(".play-readiness-score-btn")?.focus();
+  }
+}
+
+function closeAllScriptReadinessPanels() {
+  document.querySelectorAll(".script-item--readiness-open").forEach((el) =>
+    el.classList.remove("script-item--readiness-open")
+  );
+}
+
+function openPlayEditorFromScript(scriptIdx) {
+  const play = script[parseInt(scriptIdx, 10)];
+  if (!play || play.isSeparator) return;
+  if (typeof openPlayEditorForPlay === "function") {
+    openPlayEditorForPlay(play);
+  }
 }

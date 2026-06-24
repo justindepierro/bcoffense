@@ -608,6 +608,39 @@ function closePlayEditor() {
   _editingFilteredIdx = -1;
 }
 
+// Open editor directly from a play object (e.g. from script row)
+function openPlayEditorForPlay(play) {
+  if (!play) return;
+  const filteredIdx = filteredPlays.findIndex((p) => p === play || playsMatch(p, play));
+  _editingFilteredIdx = filteredIdx;
+  _editingMasterIdx = filteredIdx >= 0
+    ? plays.indexOf(filteredPlays[filteredIdx])
+    : plays.findIndex((p) => p === play || playsMatch(p, play));
+  _populateEditorForm(_editingMasterIdx >= 0 ? plays[_editingMasterIdx] : play, false);
+}
+
+// From inside the play editor — jump to script readiness panel for this play
+function openReadinessFromPlayEditor() {
+  const play = _editingMasterIdx >= 0 ? plays[_editingMasterIdx] : null;
+  if (!play) return;
+  const scriptIdx = Array.isArray(script)
+    ? script.findIndex((sp) => !sp.isSeparator && playsMatch(sp, play))
+    : -1;
+  closePlayEditor();
+  if (scriptIdx >= 0 && typeof toggleScriptReadinessPanel === "function") {
+    if (currentActiveTab !== "script" && typeof showTab === "function") showTab("script");
+    setTimeout(() => {
+      toggleScriptReadinessPanel(scriptIdx);
+      document.querySelector(`.script-item[data-idx="${scriptIdx}"]`)
+        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+    }, 150);
+  } else if (typeof openPlayReadinessRepModalForPlay === "function") {
+    openPlayReadinessRepModalForPlay(play, { source: "editor" });
+  } else {
+    showToast("This play isn\u2019t in the script yet", { duration: 2500 });
+  }
+}
+
 function togglePlaybookGamePlan(filteredIdx) {
   const play = filteredPlays[filteredIdx];
   if (!play) return;

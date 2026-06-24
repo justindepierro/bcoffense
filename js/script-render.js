@@ -779,6 +779,7 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
         </div>
         <div class="play-control-actions">
           <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
+          <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
           <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
           <button class="remove" data-action="removeFromScript" data-idx="${index}" aria-label="Remove ${escapeHtml(playLabel)}">✕</button>
         </div>
@@ -858,6 +859,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       ? renderPlayReadinessCompactBadgeFromSummary(readinessSummary, {
         variant: "script",
         detail: true,
+        scriptIdx: index,
       })
       : "";
   const reps = play.reps ?? 1;

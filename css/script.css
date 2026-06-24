@@ -919,7 +919,7 @@
 
 .play-readiness-widget {
   grid-column: 1 / -1;
-  display: flex;
+  display: none; /* hidden until toggled open via badge click */
   flex-direction: column;
   gap: 8px;
   margin-top: 8px;
@@ -930,6 +930,32 @@
     linear-gradient(135deg, var(--color-bg-blue-tint), transparent 70%),
     var(--color-surface-raised);
   box-shadow: inset 0 1px 0 var(--color-white-alpha-60);
+}
+
+/* Show the widget when the script item is toggled open */
+.script-item--readiness-open .play-readiness-widget {
+  display: flex;
+  animation: prWidgetReveal 0.14s ease-out;
+}
+
+@keyframes prWidgetReveal {
+  from { opacity: 0; transform: translateY(-3px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* Badge is clickable in script rows */
+.play-readiness-badge--script {
+  cursor: pointer;
+}
+@media (hover: hover) {
+  .play-readiness-badge--script:hover {
+    opacity: 0.82;
+  }
+}
+.play-readiness-badge--script:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
 }
 
 /* ── Score row (primary action — top of widget) ── */
@@ -1032,6 +1058,67 @@
 
 .script-item--printlike .play-readiness-widget {
   display: none;
+}
+
+/* X close button in widget header */
+.pr-close-btn {
+  flex-shrink: 0;
+  width: 26px;
+  height: 26px;
+  padding: 0;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+}
+@media (hover: hover) {
+  .pr-close-btn:hover {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    border-color: var(--color-danger-light);
+  }
+}
+
+/* Edit Play button — uses play-readiness-btn--edit modifier */
+.play-readiness-btn--edit {
+  background: var(--color-primary-light);
+  color: var(--color-primary);
+  border-color: var(--color-primary-light);
+}
+@media (hover: hover) {
+  .play-readiness-btn--edit:hover {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+}
+
+/* Pencil edit button in play-control-actions */
+.script-item .script-edit-play-btn {
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+  padding: 5px 8px;
+  border-radius: var(--radius-pill);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  opacity: 0;
+  transition: opacity var(--transition-fast), background var(--transition-fast);
+}
+.script-item:hover .script-edit-play-btn,
+.script-item:focus-within .script-edit-play-btn {
+  opacity: 1;
+}
+@media (hover: hover) {
+  .script-item .script-edit-play-btn:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
 }
 
 .play-readiness-main,
