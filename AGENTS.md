@@ -90,6 +90,9 @@ js/
   callsheet.js          ← Core call sheet state, storage, templates, and render helpers
   callsheet-print.js    ← Call sheet print modal, print rendering, and print option persistence
   callsheet-sort.js     ← Sort modal, multi-criteria sort state, custom value order, sort execution
+  callsheet-filters.js  ← Auto-populate helpers: play matching, coverage/keyword/key-player matching, player auto-fill targets
+  callsheet-smart.js    ← Scouting overlay, dead-vs badges, smart suggestions modal
+  callsheet-export.js   ← exportCallSheetCSV, isPlayOnCallSheet, getCallSheetPlayLocations
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   callsheet-layout.js   ← Call sheet layout/order modal state and drag-drop helpers
@@ -200,12 +203,15 @@ All scripts use `defer` and load in this exact order from index.html:
 55. js/callsheet.js
 56. js/callsheet-print.js
 57. js/callsheet-sort.js
-58. js/callsheet-categories.js
-59. js/callsheet-metadata.js
-60. js/callsheet-layout.js
-61. js/callsheet-picker-runtime.js
-62. js/callsheet-gameplan-drawer.js
-63. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+58. js/callsheet-filters.js
+59. js/callsheet-smart.js
+60. js/callsheet-export.js
+61. js/callsheet-categories.js
+62. js/callsheet-metadata.js
+63. js/callsheet-layout.js
+64. js/callsheet-picker-runtime.js
+65. js/callsheet-gameplan-drawer.js
+66. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
 62. js/script-vision.js
 63. js/tendencies-render.js
 64. js/tendencies.js
