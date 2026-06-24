@@ -218,7 +218,7 @@ function renderPlaybook() {
           '<p class="empty-state__text">🟡 No plays marked as JV in the Game Plan yet.</p><p class="empty-state__hint">Open the <strong>Game Plan</strong> tab and tap the 🟡 chip on any play to mark it for the JV / freshmen package.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
       } else {
         emptyEl.innerHTML =
-          '<p class="empty-state__text">No plays match your filters.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
+          '<p class="empty-state__text">No plays match your filters.</p><p class="empty-state__hint">Try removing a filter, broadening your search, or clearing the Type and Personnel chips above.</p><button class="btn btn-sm btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
       }
     }
     emptyEl.hidden = pageSlice.length > 0;
@@ -466,7 +466,7 @@ function updateStatsBar() {
   const statsBar = document.getElementById("statsBar");
   if (!statsBar) return;
 
-  if (_statsBarCache && !activeTypeChips?.size) {
+  if (_statsBarCache && !activeTypeChips?.size && !activePersonnelChips?.size && !activePictureChips?.size) {
     statsBar.innerHTML = _statsBarCache;
     return;
   }
@@ -486,6 +486,8 @@ function updateStatsBar() {
     })
     .join("");
 
-  if (!activeTypeChips?.size) _statsBarCache = html;
-  statsBar.innerHTML = html;
+  const totalChip = `<button type="button" class="stat-item stat-item--total${activeTypeChips?.size ? '' : ' stat-item--all-active'}" data-action="clearTypeFilters" title="Show all play types"><span class="stat-count">${plays.length}</span> Total</button>`;
+
+  if (!activeTypeChips?.size) _statsBarCache = totalChip + html;
+  statsBar.innerHTML = totalChip + html;
 }

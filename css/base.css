@@ -66,6 +66,12 @@
   --color-orange-deep: #bf6516;
   --color-accent-dark: #9e8a60;
 
+  /* Vision Mode picture-pill colors */
+  --pb-pic-wz-bg: #1d6fb8;    /* Wide Zone — blue */
+  --pb-pic-pull-bg: #b8541d;  /* Pullers — orange */
+  --pb-pic-dh-bg: #6b3fb8;    /* Downhill — purple */
+  --pb-pic-af-bg: #1d8a4a;    /* Anti-front — green */
+
   /* Play-type token family — used by type chips across all pages */
   --color-type-run-bg: var(--color-success-light);
   --color-type-run-fg: var(--color-success);
@@ -169,11 +175,14 @@
   --shadow-lg: 0 12px 40px rgba(10, 18, 42, 0.13);
   --shadow-focus: 0 0 0 3px rgba(25, 42, 81, 0.18);
   --shadow-focus-sm: 0 0 0 2px rgba(25, 42, 81, 0.22);
+  --shadow-drawer: 4px 0 24px rgba(0, 0, 0, 0.18);
 
   /* Alpha / Overlay tokens */
   --color-overlay: rgba(0, 0, 0, 0.5);
+  --color-overlay-md: rgba(0, 0, 0, 0.4);
   --color-overlay-sm: rgba(0, 0, 0, 0.35);
   --color-overlay-xs: rgba(0, 0, 0, 0.25);
+  --color-navy-alpha-03: rgba(25, 42, 81, 0.03);
   --color-navy-alpha-06: rgba(25, 42, 81, 0.06);
   --color-navy-alpha-08: rgba(25, 42, 81, 0.08);
   --color-navy-alpha-12: rgba(25, 42, 81, 0.12);
@@ -389,6 +398,7 @@ textarea:focus {
   --color-status-error-text: #f0847d;
   --color-status-info-bg: #1c2d40;
   --color-status-info-text: #6db3f0;
+  --color-navy-alpha-03: rgba(200, 210, 230, 0.03);
   --color-navy-alpha-06: rgba(200, 210, 230, 0.06);
   --color-navy-alpha-08: rgba(200, 210, 230, 0.08);
   --color-navy-alpha-12: rgba(200, 210, 230, 0.12);

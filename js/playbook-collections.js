@@ -372,6 +372,7 @@ function updateCollectionsBadge() {
   if (!badge) return;
   const collections = storageManager.get(STORAGE_KEYS.PLAY_COLLECTIONS, []);
   badge.textContent = collections.length;
+  badge.hidden = collections.length === 0;
 }
 
 function renderCollectionsPanel() {

@@ -304,6 +304,8 @@ document.addEventListener("click", (e) => {
   if (action === "toggleParentOpen") {
     const wrap = el.parentElement;
     wrap.classList.toggle("open");
+    const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
+    if (triggerBtn) triggerBtn.setAttribute("aria-expanded", wrap.classList.contains("open") ? "true" : "false");
     // Position fixed dropdowns to escape overflow-clipping toolbar containers
     if (wrap.classList.contains("open")) {
       const menu = wrap.querySelector(".tool-menu, .more-tools-menu");
@@ -335,7 +337,10 @@ document.addEventListener("click", (e) => {
     return;
   }
   if (action === "removeParentOpen") {
-    el.parentElement.classList.remove("open");
+    const wrap = el.parentElement;
+    wrap.classList.remove("open");
+    const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
+    if (triggerBtn) triggerBtn.setAttribute("aria-expanded", "false");
     return;
   }
   if (action === "reloadPage") {

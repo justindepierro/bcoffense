@@ -132,11 +132,13 @@ function _syncSortUI() {
     primaryDir.innerHTML =
       currentSortDirection === "asc" ? "&#9650;" : "&#9660;";
     primaryDir.classList.toggle("desc", currentSortDirection === "desc");
+    primaryDir.setAttribute("aria-label", `Sort primary field: ${currentSortDirection === "asc" ? "ascending" : "descending"}`);
   }
   if (secondaryDir) {
     secondaryDir.innerHTML =
       secondarySortDirection === "asc" ? "&#9650;" : "&#9660;";
     secondaryDir.classList.toggle("desc", secondarySortDirection === "desc");
+    secondaryDir.setAttribute("aria-label", `Sort secondary field: ${secondarySortDirection === "asc" ? "ascending" : "descending"}`);
   }
   document
     .querySelectorAll("#playbookTable th[data-action='sortPlaybook']")
@@ -179,7 +181,7 @@ function _buildPictureChips() {
   if (!row || !container) return;
   const on = typeof isVisionMode === "function" && isVisionMode();
   if (!on || typeof VISION_2026 === "undefined") {
-    row.style.display = "none";
+    row.hidden = true;
     container.innerHTML = "";
     return;
   }
@@ -189,7 +191,7 @@ function _buildPictureChips() {
     downhill: "Downhill/ISO",
     antiFront: "Anti-front",
   };
-  row.style.display = "";
+  row.hidden = false;
   container.innerHTML = Object.keys(labels)
     .map((key) => {
       const active = activePictureChips.has(key) ? " active" : "";

@@ -230,6 +230,15 @@ function clearAllFilters() {
   clearFilters();
 }
 
+function clearTypeFilters() {
+  activeTypeChips.clear();
+  document
+    .querySelectorAll("#pbChipsType .pb-chip.active")
+    .forEach((chip) => chip.classList.remove("active"));
+  if (typeof invalidateStatsBarCache === "function") invalidateStatsBarCache();
+  if (typeof filterPlays === "function") filterPlays();
+}
+
 function clearPbSearch() {
   const input = document.getElementById("searchPlay");
   if (input) input.value = "";
@@ -298,14 +307,14 @@ function updateActiveFilterBar() {
   }
 
   if (parts.length === 0) {
-    if (clearBtn) clearBtn.style.display = "none";
+    if (clearBtn) clearBtn.hidden = true;
     pills.innerHTML = "";
     const countBadge = document.getElementById("pbFilterCount");
     if (countBadge) countBadge.hidden = true;
     return;
   }
 
-  if (clearBtn) clearBtn.style.display = "";
+  if (clearBtn) clearBtn.hidden = false;
   pills.innerHTML = parts
     .map(
       (part) =>
@@ -317,6 +326,21 @@ function updateActiveFilterBar() {
   if (countBadge) {
     countBadge.textContent = parts.length;
     countBadge.hidden = false;
+  }
+
+  // Update "More Filters" toggle badge to show count of hidden active filters
+  const moreFilterIds = ["filterFormation", "filterBasePlay", "pbFilterBack", "pbFilterMotion", "pbFilterProtection", "pbFilterTempo"];
+  const moreCount = moreFilterIds.filter((id) => document.getElementById(id)?.value).length;
+  const moreToggle = document.getElementById("pbMoreToggle");
+  if (moreToggle) {
+    let moreBadge = moreToggle.querySelector(".pb-more-count");
+    if (!moreBadge) {
+      moreBadge = document.createElement("span");
+      moreBadge.className = "pb-more-count badge badge-primary";
+      moreToggle.appendChild(moreBadge);
+    }
+    moreBadge.textContent = moreCount;
+    moreBadge.hidden = moreCount === 0;
   }
 }
 

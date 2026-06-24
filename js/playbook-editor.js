@@ -464,7 +464,7 @@ function _populateEditorForm(play, isNew) {
   html += _buildPlayEditorLineupSection(play);
   html += _buildPlayEditorResponsibilitiesSection(play);
 
-  body.innerHTML = html;
+  setInnerHTML(body, html);
   overlay.removeAttribute("inert");
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
