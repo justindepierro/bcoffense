@@ -67,6 +67,9 @@ js/
   playbook-navigation.js ← Pagination and table navigation
   playbook-actions.js   ← Row actions and play mutations
   playbook-render.js    ← Playbook table rendering
+  playbook-sanitize.js  ← CSV field cleanup tool (field-by-field bulk edit)
+  playbook-analytics.js ← Playbook data health center (duplicates, missing fields, vocabulary, category coverage)
+  playbook-identity.js  ← Cleanup by call sheet category (identity alignment checker)
   script-*.js           ← Practice script runtime split by concern (state, add, render, storage, integrations, etc.)
   play-readiness.js     ← Coach-only play readiness scoring model, rep/action report storage, and script row widgets
   play-presentation.js  ← Shared landscape play presentation viewer
@@ -156,18 +159,22 @@ All scripts use `defer` and load in this exact order from index.html:
 22. js/playbook-actions.js
 23. js/playbook-render.js
 24. js/playbook-sanitize.js
-25. js/script-state.js
-26. js/script-shared.js
-27. js/script-players.js
-28. js/script-display-options.js
-29. js/play-readiness.js
-30. js/script-add.js
-31. js/script-sort.js
-32. js/script-export.js
-33. js/script-available.js
-34. js/script-selection.js
-35. js/script-render.js
-36. js/script-periods.js
+25. js/playbook-analytics.js
+26. js/playbook-identity.js
+27. js/script-state.js
+28. js/script-shared.js
+29. js/script-players.js
+30. js/script-display-options.js
+31. js/play-readiness.js
+32. js/script-add.js
+33. js/script-sort.js
+34. js/script-export.js
+35. js/script-available.js
+36. js/script-selection.js
+37. js/script-timeline.js
+38. js/script-render.js
+39. js/script-health.js
+40. js/script-periods.js
 37. js/script-period-sync.js
 38. js/script-smart.js
 39. js/script-storage.js

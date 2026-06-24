@@ -250,20 +250,15 @@ Merge each into one canonical rule, keeping all properties. No visual change; el
 
 ---
 
-### 27. 🟢 P3 L — Split `playbook-sanitize.js` (2,726 lines, 3 unrelated tools)
+### ✅ 27. 🟢 P3 L — Split `playbook-sanitize.js` (2,726 lines, 3 unrelated tools)
 **File:** `js/playbook-sanitize.js`  
-This file contains: CSV sanitizer, Balance/Analytics report, and Identity Alignment checker. These are independent tools with no shared state. Split into:  
-- `playbook-sanitize.js` — CSV cleanup tool only  
-- `playbook-analytics.js` — Balance report + Situation coverage  
-- `playbook-identity.js` — Identity alignment checker  
-
-Update `index.html` load order and `sw.js` `LOCAL_ASSETS`.
+Done — split into `playbook-sanitize.js` (CSV cleanup tool, 723 lines), `playbook-analytics.js` (data health center, 1249 lines), and `playbook-identity.js` (category cleanup / identity alignment, 754 lines). `index.html`, `sw.js`, and `AGENTS.md` updated.
 
 ---
 
-### 28. 🟢 P3 L — Split `script-render.js` (1,777 lines)
+### ✅ 28. 🟢 P3 L — Split `script-render.js` (1,777 lines)
 **File:** `js/script-render.js`  
-High-frequency render functions (item, period header, compact call) are mixed with widget modals and readiness sub-renders. The file renders as a monolith during every re-render call. Extract `script-readiness-widget.js` for all `play-readiness-*` widget render functions, reducing the critical-path file size.
+Done — extracted `script-timeline.js` (timeline build/render, 299 lines) and `script-health.js` (health badge, issues modal, shortcuts modal, 176 lines). `script-render.js` reduced from 1822 to 1347 lines (~26%). `index.html`, `sw.js`, and `AGENTS.md` updated.
 
 ---
 
