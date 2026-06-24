@@ -430,46 +430,91 @@ table.sortable th {
 
 /* Game Plan Filter Bar */
 .pb-gameplan-bar {
-  padding: 8px 14px;
+  padding: 8px 12px;
   background: var(--color-bg-lighter);
-  border-radius: var(--radius-md);
-  margin-bottom: 10px;
-  border: 1px solid var(--color-border-light);
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 1px solid var(--color-border-light);
   display: flex;
-  align-items: center;
-  gap: var(--space-md);
+  flex-direction: column;
+  gap: 6px;
+}
+.pb-gp-section-label {
+  font-size: 10px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+  color: var(--color-text-muted);
+}
+/* Toggle chips row */
+.pb-gp-toggles {
+  display: flex;
+  gap: 4px;
   flex-wrap: wrap;
 }
-.pb-gameplan-bar .pb-gp-filter-toggle {
-  flex: 1;
-  min-width: 0;
-}
-.pb-gp-send-btn {
-  margin-left: auto;
-}
-.pb-gp-reset-btn {
-  white-space: nowrap;
-}
-.pb-gp-filter-toggle {
-  display: flex;
+.pb-gp-toggle-chip {
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 4px;
+  padding: 3px 9px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-white);
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  color: var(--color-text);
   cursor: pointer;
-  font-size: var(--font-size-sm);
   user-select: none;
+  white-space: nowrap;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
-.pb-gp-filter-toggle input[type="checkbox"] {
-  width: 16px;
-  height: 16px;
-  accent-color: var(--color-accent);
-  cursor: pointer;
+.pb-gp-toggle-chip input[type="checkbox"] {
+  position: absolute;
+  opacity: 0;
+  width: 0;
+  height: 0;
+  pointer-events: none;
 }
-.pb-gp-filter-label {
-  font-weight: 600;
+.pb-gp-toggle-chip:has(input:checked) {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: var(--color-text-inverse);
+  box-shadow: 0 1px 4px var(--color-navy-alpha-35);
+}
+@media (hover: hover) {
+  .pb-gp-toggle-chip:hover {
+    border-color: var(--color-primary);
+    background: var(--color-navy-alpha-06);
+    color: var(--color-primary);
+  }
+  .pb-gp-toggle-chip:has(input:checked):hover {
+    background: var(--color-primary-dark);
+    border-color: var(--color-primary-dark);
+    color: var(--color-text-inverse);
+  }
 }
 .pb-gp-filter-opp {
   color: var(--color-text-secondary);
   font-style: italic;
+  font-size: 10px;
+}
+.pb-gp-toggle-chip:has(input:checked) .pb-gp-filter-opp {
+  color: rgba(255,255,255,0.8);
+}
+/* Three-column action buttons */
+.pb-gp-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 4px;
+}
+.pb-gp-actions .btn {
+  justify-content: center;
+  font-size: 10px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Play Editor Game Plan section */
@@ -1679,24 +1724,22 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 
 /* -- Actions row -- */
 .pb-actions-row {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 14px;
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 5px;
+  padding: 8px 12px;
   border-top: 1px solid var(--color-border-light);
   background: var(--color-bg-light);
-  flex-wrap: wrap;
 }
 .pb-actions-left {
-  display: flex;
-  gap: 6px;
-  flex-wrap: wrap;
+  display: contents; /* flatten into grid */
 }
 .pb-action-btn {
   display: inline-flex;
   align-items: center;
-  gap: 6px;
-  padding: 5px 14px;
+  justify-content: center;
+  gap: 5px;
+  padding: 5px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   background: var(--color-white);
@@ -1707,13 +1750,13 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   white-space: nowrap;
   transition: all var(--transition-fast);
   color: var(--color-text);
+  text-align: center;
 }
 @media (hover: hover) {
   .pb-action-btn:hover {
     border-color: var(--color-primary);
     color: var(--color-primary);
     background: var(--color-primary-light);
-    transform: translateY(-1px);
   }
 }
 
@@ -1762,7 +1805,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 }
 
 .pb-action-collections {
-  margin-left: auto;
+  grid-column: 1 / -1; /* spans full width */
 }
 .pb-badge {
   padding: 0 5px;
