@@ -1894,6 +1894,30 @@ function checkGuideContracts() {
   );
 }
 
+function checkFunctionShadows() {
+  const fileMap = {};
+  walk("js")
+    .filter((file) => file.endsWith(".js") && !file.endsWith(".min.js"))
+    .forEach((file) => {
+      const source = read(file);
+      [...source.matchAll(/^(?:async\s+)?function\s+([A-Za-z_$][\w$]*)\s*\(/gm)]
+        .forEach((match) => {
+          const name = match[1];
+          if (!fileMap[name]) fileMap[name] = [];
+          fileMap[name].push(file);
+        });
+    });
+
+  const shadows = Object.entries(fileMap)
+    .filter(([, files]) => files.length > 1)
+    .map(([name, files]) => `${name} (${files.join(", ")})`);
+
+  if (shadows.length) {
+    fail(`duplicate top-level function declarations (shadows): ${shadows.join(" | ")}`);
+  }
+  console.log("function shadows ok");
+}
+
 checkJsSyntax();
 checkServiceWorkerAssets();
 checkIndexReferences();
@@ -1921,6 +1945,7 @@ checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();
 checkGuideContracts();
+checkFunctionShadows();
 
 if (process.exitCode) process.exit(process.exitCode);
 console.log("smoke-check passed");

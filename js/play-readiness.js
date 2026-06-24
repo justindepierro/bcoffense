@@ -67,13 +67,6 @@ function savePlayReadinessStore(store) {
   storageManager.set(STORAGE_KEYS.PLAY_READINESS, store);
 }
 
-function getPlayReadinessRepType(repTypeId) {
-  return (
-    PLAY_READINESS_REP_TYPES.find((type) => type.id === repTypeId) ||
-    PLAY_READINESS_REP_TYPES[0]
-  );
-}
-
 function normalizePlayReadinessInstallStatus(value) {
   if (PLAY_READINESS_INSTALL_STATUSES.includes(value)) return value;
   // Map legacy strings → new tiers
