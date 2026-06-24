@@ -793,6 +793,8 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
         ${renderPlayReadinessScoreButtons("quickPlayReadinessPlaybookScore", lastReport?.score || 0)}
       </div>
       <div class="pb-readiness-actions">
+        <button type="button" class="play-readiness-btn play-readiness-btn--edit" data-action="openPlayEditor"
+          data-arg="${filteredIndex}">&#9998; Edit Play</button>
         <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPlaybookRepModal"
           data-arg="${filteredIndex}">Add Rep</button>
         <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPlaybookActionModal"
