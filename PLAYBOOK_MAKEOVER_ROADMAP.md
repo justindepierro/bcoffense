@@ -477,9 +477,9 @@ After the split, `playbook-chrome.js` should be ~200 lines and `playbook-reports
 | 11 | ✅ | S | `aria-label` + `aria-haspopup` on Analytics/Data dropdowns |
 | 12 | ✅ | S | `aria-expanded` on `toggleParentOpen` dropdowns |
 | 13 | ✅ | S | `scope="col"` + `<caption>` on playbook table |
-| 14 | ☐ | M | Move Sort group into filter drawer |
-| 15 | ☐ | S | Move Wristband highlight into filter drawer |
-| 16 | ☐ | M | Rebalance toolbar after sort + wristband removal |
+| 14 | ✅ | M | Move Sort group into filter drawer |
+| 15 | ✅ | S | Move Wristband highlight into filter drawer |
+| 16 | ✅ | M | Rebalance toolbar after sort + wristband removal |
 | 17 | ✅ | S | Move play count to meta bar (always visible) |
 | 18 | ✅ | S | Auto-hide Collections badge when count is 0 |
 | 19 | ✅ | S | Add "Total" chip to stats bar |
@@ -488,11 +488,11 @@ After the split, `playbook-chrome.js` should be ~200 lines and `playbook-reports
 | 22 | ✅ | S | `aria-label` with shortcut hint on search input |
 | 23 | ✅ | S | Add `?` shortcut hint button to toolbar |
 | 24 | ☐ | M | Sort preset save/load in filter drawer |
-| 25 | ☐ | S | `aria-label` on collection Load/Delete buttons |
-| 26 | ☐ | S | `<fieldset>/<legend>` for print option checkboxes |
+| 25 | ✅ | S | `aria-label` on collection Load/Delete buttons |
+| 26 | ✅ | S | `<fieldset>/<legend>` for print option checkboxes |
 | 27 | ✅ | S | Fix stats bar cache invalidation logic |
-| 28 | ☐ | L | Split analytics report engines into `playbook-reports.js` |
+| 28 | ✅ | L | Split analytics report engines into `playbook-reports.js` |
 
 ---
 
-*Audit completed 2026-06-24. All file references are current to SW v672 / commit `7d496ea`.*
+*Audit completed 2026-06-24. Items 1-23, 25-28 shipped. Item 24 (sort preset save/load) deferred. SW v674 / commit `ea937e5`.*
