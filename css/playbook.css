@@ -1256,9 +1256,9 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 /* Search */
 .pb-search-wrap {
   position: relative;
-  flex: 1 1 180px;
-  min-width: 140px;
-  max-width: 260px;
+  flex: 1 1 200px;
+  min-width: 150px;
+  max-width: 480px;
 }
 .pb-search-icon {
   position: absolute;
@@ -1286,12 +1286,16 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   outline: none;
 }
 
-/* Sort controls */
+/* Sort controls — inside filter drawer */
+.pb-drawer-sort-section {
+  padding: 8px 14px 6px;
+  border-bottom: 1px solid var(--color-border-light);
+}
 .pb-sort-group {
   display: flex;
   align-items: center;
   gap: 5px;
-  flex-shrink: 0;
+  flex-wrap: wrap;
 }
 .pb-sort-label {
   font-size: var(--font-size-xs);
@@ -1311,6 +1315,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   font-size: var(--font-size-sm);
   font-family: inherit;
   background: var(--color-white);
+  flex: 1 1 100px;
   min-width: 80px;
 }
 .pb-sort-group select:focus {
@@ -1349,7 +1354,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   transform: rotate(180deg);
 }
 
-/* Utility buttons */
+/* Utility buttons — toolbar right cluster */
 .pb-utility-group {
   display: flex;
   align-items: center;
@@ -1358,14 +1363,26 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   flex-shrink: 0;
   flex-wrap: nowrap;
 }
-.pb-utility-group select {
+
+/* Wristband highlight row — inside filter drawer */
+.pb-wristband-filter-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.pb-wristband-filter-row .pb-chip-label {
+  flex-shrink: 0;
+}
+.pb-wristband-filter-row select {
+  flex: 1 1 auto;
   padding: 5px 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   font-family: inherit;
   background: var(--color-white);
-  max-width: 140px;
 }
 
 /* -- Chip rows -- */
@@ -1810,6 +1827,11 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 }
 
 /* -- Print options (inside drawer) -- */
+.pb-print-options-fieldset {
+  border: none;
+  padding: 0;
+  margin: 0 0 4px;
+}
 .pb-print-options-grid {
   display: grid;
   grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
@@ -2194,7 +2216,6 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   .pb-controls-row,
   .pb-actions-row,
   .pb-actions-left,
-  .pb-sort-group,
   .pb-utility-group {
     align-items: stretch;
     width: 100%;
@@ -2205,17 +2226,18 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
     padding: 8px;
   }
 
-  .pb-search-wrap,
-  .pb-sort-group select,
-  .pb-utility-group select {
+  .pb-search-wrap {
     max-width: none;
     width: 100%;
   }
 
-  .pb-sort-group,
   .pb-utility-group {
     flex-wrap: wrap;
     margin-left: 0;
+  }
+
+  .pb-sort-group {
+    gap: 6px;
   }
 
   .pb-sort-label {

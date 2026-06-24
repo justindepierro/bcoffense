@@ -396,10 +396,10 @@ function renderCollectionsPanel() {
             <div class="pb-coll-meta">${coll.count} plays${date ? " &middot; " + date : ""}</div>
           </div>
           <div class="pb-coll-actions">
-            <button class="pb-coll-btn" data-action="loadCollection" data-idx="${idx}" title="Load filters">Load</button>
-            <button class="pb-coll-btn" data-action="sendCollectionToScript" data-idx="${idx}" title="Send to script">&#128203; Script</button>
-            <button class="pb-coll-btn" data-action="sendCollectionToCallSheet" data-idx="${idx}" title="Send to call sheet">&#128202; Sheet</button>
-            <button class="pb-coll-btn danger" data-action="deleteCollection" data-idx="${idx}" title="Delete">&times;</button>
+            <button class="pb-coll-btn" data-action="loadCollection" data-idx="${idx}" title="Load filters" aria-label="Load collection ${escapeHtml(coll.name)}">Load</button>
+            <button class="pb-coll-btn" data-action="sendCollectionToScript" data-idx="${idx}" title="Send to script" aria-label="Send ${escapeHtml(coll.name)} to script">&#128203; Script</button>
+            <button class="pb-coll-btn" data-action="sendCollectionToCallSheet" data-idx="${idx}" title="Send to call sheet" aria-label="Send ${escapeHtml(coll.name)} to call sheet">&#128202; Sheet</button>
+            <button class="pb-coll-btn danger" data-action="deleteCollection" data-idx="${idx}" title="Delete" aria-label="Delete collection ${escapeHtml(coll.name)}">&times;</button>
           </div>
         </div>`;
     })

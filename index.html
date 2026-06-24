@@ -30,22 +30,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=673" />
-  <link rel="stylesheet" href="css/layout.css?v=673" />
-  <link rel="stylesheet" href="css/components.css?v=673" />
-  <link rel="stylesheet" href="css/playbook.css?v=673" />
-  <link rel="stylesheet" href="css/script.css?v=673" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=673" />
-  <link rel="stylesheet" href="css/wristband.css?v=673" />
-  <link rel="stylesheet" href="css/callsheet.css?v=673" />
-  <link rel="stylesheet" href="css/tendencies.css?v=673" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=673" />
-  <link rel="stylesheet" href="css/dashboard.css?v=673" />
-  <link rel="stylesheet" href="css/gameplan.css?v=673" />
-  <link rel="stylesheet" href="css/installation.css?v=673" />
-  <link rel="stylesheet" href="css/identity.css?v=673" />
-  <link rel="stylesheet" href="css/print.css?v=673" />
-  <link rel="stylesheet" href="css/responsive.css?v=673" />
+  <link rel="stylesheet" href="css/base.css?v=674" />
+  <link rel="stylesheet" href="css/layout.css?v=674" />
+  <link rel="stylesheet" href="css/components.css?v=674" />
+  <link rel="stylesheet" href="css/playbook.css?v=674" />
+  <link rel="stylesheet" href="css/script.css?v=674" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=674" />
+  <link rel="stylesheet" href="css/wristband.css?v=674" />
+  <link rel="stylesheet" href="css/callsheet.css?v=674" />
+  <link rel="stylesheet" href="css/tendencies.css?v=674" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=674" />
+  <link rel="stylesheet" href="css/dashboard.css?v=674" />
+  <link rel="stylesheet" href="css/gameplan.css?v=674" />
+  <link rel="stylesheet" href="css/installation.css?v=674" />
+  <link rel="stylesheet" href="css/identity.css?v=674" />
+  <link rel="stylesheet" href="css/print.css?v=674" />
+  <link rel="stylesheet" href="css/responsive.css?v=674" />
 </head>
 
 <body class="app-booting">
@@ -399,10 +399,10 @@
       <div class="pb-filter-backdrop" id="pbFilterBackdrop" data-action="togglePbFilterDrawer" aria-hidden="true"></div>
       <!-- Playbook Controls -->
       <div class="pb-controls">
-        <!-- Row 1: Search + Sort + Utilities -->
+        <!-- Row 1: Search + Utilities -->
         <div class="pb-controls-row pb-top-row">
           <button class="btn btn-sm pb-filter-toggle-btn" id="pbFilterToggleBtn" data-action="togglePbFilterDrawer"
-            title="Filters, type chips &amp; actions">&#9776; Filters<span id="pbFilterCount" class="pb-filter-count-badge" hidden></span></button>
+            title="Filters, sort &amp; actions">&#9776; Filters<span id="pbFilterCount" class="pb-filter-count-badge" hidden></span></button>
           <div class="pb-search-wrap search-input-wrap">
             <span class="pb-search-icon">&#128269;</span>
             <input type="text" id="searchPlay" placeholder="Search plays…" aria-label="Search plays (press / to focus)"
@@ -410,45 +410,6 @@
             <button id="clearPbSearch" class="search-clear-btn hidden" data-action="clearPbSearch" title="Clear search"
               aria-label="Clear search">
               ✕
-            </button>
-          </div>
-
-          <div class="pb-sort-group">
-            <label class="pb-sort-label">Sort</label>
-            <select id="pbSortPrimary" data-onchange="applyAdvancedSort">
-              <option value="">--</option>
-              <option value="type">Type</option>
-              <option value="personnel">Personnel</option>
-              <option value="formation">Formation</option>
-              <option value="basePlay">Base Play</option>
-              <option value="back">Back</option>
-              <option value="motion">Motion</option>
-              <option value="protection">Protection</option>
-              <option value="play">Play Name</option>
-              <option value="tempo">Tempo</option>
-              <option value="install">&#9733; Install</option>
-            </select>
-            <button class="pb-sort-dir" id="pbSortPrimaryDir" data-action="toggleSortDir" data-arg="primary"
-              title="Toggle sort direction" aria-label="Sort primary field: ascending">
-              &#9650;
-            </button>
-            <label class="pb-sort-label pb-then">then</label>
-            <select id="pbSortSecondary" data-onchange="applyAdvancedSort">
-              <option value="">--</option>
-              <option value="type">Type</option>
-              <option value="personnel">Personnel</option>
-              <option value="formation">Formation</option>
-              <option value="basePlay">Base Play</option>
-              <option value="back">Back</option>
-              <option value="motion">Motion</option>
-              <option value="protection">Protection</option>
-              <option value="play">Play Name</option>
-              <option value="tempo">Tempo</option>
-              <option value="install">&#9733; Install</option>
-            </select>
-            <button class="pb-sort-dir" id="pbSortSecondaryDir" data-action="toggleSortDir" data-arg="secondary"
-              title="Toggle sort direction" aria-label="Sort secondary field: ascending">
-              &#9650;
             </button>
           </div>
 
@@ -482,11 +443,6 @@
                 <button type="button" class="btn btn-xs pb-col-reset-btn" data-action="resetColumnVisibility">Reset Columns</button>
               </div>
             </div>
-            <!-- Wristband highlight selector -->
-            <select id="playbookWristbandHighlight" data-onchange="highlightWristbandPlays" data-auth-player-hide="true"
-              title="Highlight plays on wristband">
-              <option value="">&#127944; Wristband</option>
-            </select>
             <!-- Analytics reports dropdown -->
             <div class="tool-menu-wrap">
               <button class="btn btn-sm" data-action="toggleParentOpen"
@@ -590,6 +546,49 @@
 
         <!-- Type chips -->
         <div class="pb-filter-drawer-body">
+
+          <!-- Sort controls -->
+          <div class="pb-drawer-sort-section">
+            <div class="pb-sort-group">
+              <label class="pb-sort-label">Sort by</label>
+              <select id="pbSortPrimary" data-onchange="applyAdvancedSort">
+                <option value="">--</option>
+                <option value="type">Type</option>
+                <option value="personnel">Personnel</option>
+                <option value="formation">Formation</option>
+                <option value="basePlay">Base Play</option>
+                <option value="back">Back</option>
+                <option value="motion">Motion</option>
+                <option value="protection">Protection</option>
+                <option value="play">Play Name</option>
+                <option value="tempo">Tempo</option>
+                <option value="install">&#9733; Install</option>
+              </select>
+              <button class="pb-sort-dir" id="pbSortPrimaryDir" data-action="toggleSortDir" data-arg="primary"
+                title="Toggle sort direction" aria-label="Sort primary field: ascending">
+                &#9650;
+              </button>
+              <label class="pb-sort-label pb-then">then</label>
+              <select id="pbSortSecondary" data-onchange="applyAdvancedSort">
+                <option value="">--</option>
+                <option value="type">Type</option>
+                <option value="personnel">Personnel</option>
+                <option value="formation">Formation</option>
+                <option value="basePlay">Base Play</option>
+                <option value="back">Back</option>
+                <option value="motion">Motion</option>
+                <option value="protection">Protection</option>
+                <option value="play">Play Name</option>
+                <option value="tempo">Tempo</option>
+                <option value="install">&#9733; Install</option>
+              </select>
+              <button class="pb-sort-dir" id="pbSortSecondaryDir" data-action="toggleSortDir" data-arg="secondary"
+                title="Toggle sort direction" aria-label="Sort secondary field: ascending">
+                &#9650;
+              </button>
+            </div>
+          </div>
+
           <div class="pb-controls-row pb-chip-row">
             <span class="pb-chip-label">Type</span>
             <div class="pb-chip-group" id="pbChipsType"></div>
@@ -640,6 +639,15 @@
             <button class="pb-clear-all" id="pbClearAll" data-action="clearAllFilters">
               &#10005; Clear All
             </button>
+          </div>
+
+          <!-- Wristband highlight -->
+          <div class="pb-wristband-filter-row" data-auth-player-hide="true">
+            <span class="pb-chip-label">&#127944; Wristband</span>
+            <select id="playbookWristbandHighlight" data-onchange="highlightWristbandPlays"
+              title="Highlight plays on wristband" aria-label="Highlight plays from selected wristband">
+              <option value="">None</option>
+            </select>
           </div>
 
           <!-- Game Plan Filter -->
@@ -760,30 +768,33 @@
           </button>
         </div>
         <div class="pb-drawer-body">
-          <div class="pb-print-options-grid">
-            <label><input type="checkbox" id="pbShowEmoji" /> 🔵 Personnel
-              Color</label>
-            <label><input type="checkbox" id="pbUseSquares" /> 🟦 Use
-              Squares</label>
-            <label><input type="checkbox" id="pbUnderEmoji" /> 🍑 Under =
-              Peach</label>
-            <label><input type="checkbox" id="pbBoldShifts" />
-              <b>Bold</b> Shifts</label>
-            <label><input type="checkbox" id="pbRedShifts" />
-              <span class="red">Red</span> Shifts</label>
-            <label><input type="checkbox" id="pbItalicMotions" />
-              <i>Italic</i> Motions</label>
-            <label><input type="checkbox" id="pbRedMotions" />
-              <span class="red">Red</span> Motions</label>
-            <label><input type="checkbox" id="pbRemoveVowels" /> Remove
-              Vowels</label>
-            <label><input type="checkbox" id="pbShowLineCall" checked /> Show
-              [Line Call]</label>
-            <label><input type="checkbox" id="pbHighlightHuddle" /> 🟡 Highlight
-              Huddle</label>
-            <label><input type="checkbox" id="pbHighlightCandy" /> 🩷 Highlight
-              Candy</label>
-          </div>
+          <fieldset class="pb-print-options-fieldset">
+            <legend class="sr-only">Print formatting options</legend>
+            <div class="pb-print-options-grid">
+              <label><input type="checkbox" id="pbShowEmoji" /> 🔵 Personnel
+                Color</label>
+              <label><input type="checkbox" id="pbUseSquares" /> 🟦 Use
+                Squares</label>
+              <label><input type="checkbox" id="pbUnderEmoji" /> 🍑 Under =
+                Peach</label>
+              <label><input type="checkbox" id="pbBoldShifts" />
+                <b>Bold</b> Shifts</label>
+              <label><input type="checkbox" id="pbRedShifts" />
+                <span class="red">Red</span> Shifts</label>
+              <label><input type="checkbox" id="pbItalicMotions" />
+                <i>Italic</i> Motions</label>
+              <label><input type="checkbox" id="pbRedMotions" />
+                <span class="red">Red</span> Motions</label>
+              <label><input type="checkbox" id="pbRemoveVowels" /> Remove
+                Vowels</label>
+              <label><input type="checkbox" id="pbShowLineCall" checked /> Show
+                [Line Call]</label>
+              <label><input type="checkbox" id="pbHighlightHuddle" /> 🟡 Highlight
+                Huddle</label>
+              <label><input type="checkbox" id="pbHighlightCandy" /> 🩷 Highlight
+                Candy</label>
+            </div>
+          </fieldset>
 
           <!-- Print Sort -->
           <div class="pb-print-sort">
@@ -3626,98 +3637,99 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=673"></script>
-  <script defer src="js/history.js?v=673"></script>
-  <script defer src="js/dom-helpers.js?v=673"></script>
-  <script defer src="js/lz-string.min.js?v=673"></script>
-  <script defer src="js/storage.js?v=673"></script>
-  <script defer src="js/storage-ui.js?v=673"></script>
-  <script defer src="js/play-images.js?v=673"></script>
-  <script defer src="js/cloud-sync.js?v=673"></script>
-  <script defer src="js/auth.js?v=673"></script>
-  <script defer src="js/vision.js?v=673"></script>
-  <script defer src="js/team-settings.js?v=673"></script>
-  <script defer src="js/playbook.js?v=673"></script>
-  <script defer src="js/playbook-collections.js?v=673"></script>
-  <script defer src="js/playbook-print.js?v=673"></script>
-  <script defer src="js/playbook-editor.js?v=673"></script>
-  <script defer src="js/playbook-import.js?v=673"></script>
-  <script defer src="js/playbook-export.js?v=673"></script>
-  <script defer src="js/playbook-chrome.js?v=673"></script>
-  <script defer src="js/playbook-state.js?v=673"></script>
-  <script defer src="js/playbook-filters.js?v=673"></script>
-  <script defer src="js/playbook-navigation.js?v=673"></script>
-  <script defer src="js/playbook-actions.js?v=673"></script>
-  <script defer src="js/playbook-render.js?v=673"></script>
-  <script defer src="js/playbook-sanitize.js?v=673"></script>
-  <script defer src="js/playbook-analytics.js?v=673"></script>
-  <script defer src="js/playbook-identity.js?v=673"></script>
-  <script defer src="js/script-state.js?v=673"></script>
-  <script defer src="js/script-shared.js?v=673"></script>
-  <script defer src="js/script-players.js?v=673"></script>
-  <script defer src="js/script-display-options.js?v=673"></script>
-  <script defer src="js/play-readiness.js?v=673"></script>
-  <script defer src="js/script-add.js?v=673"></script>
-  <script defer src="js/script-sort.js?v=673"></script>
-  <script defer src="js/script-export.js?v=673"></script>
-  <script defer src="js/script-available.js?v=673"></script>
-  <script defer src="js/script-selection.js?v=673"></script>
-  <script defer src="js/script-timeline.js?v=673"></script>
-  <script defer src="js/script-render.js?v=673"></script>
-  <script defer src="js/script-health.js?v=673"></script>
-  <script defer src="js/script-periods.js?v=673"></script>
-  <script defer src="js/script-period-sync.js?v=673"></script>
-  <script defer src="js/script-smart.js?v=673"></script>
-  <script defer src="js/script-storage.js?v=673"></script>
-  <script defer src="js/script-integrations.js?v=673"></script>
-  <script defer src="js/play-presentation.js?v=673"></script>
-  <script defer src="js/wristband.js?v=673"></script>
-  <script defer src="js/wristband-library.js?v=673"></script>
-  <script defer src="js/wristband-render.js?v=673"></script>
-  <script defer src="js/wristband-cards.js?v=673"></script>
-  <script defer src="js/wristband-export.js?v=673"></script>
-  <script defer src="js/wristband-search.js?v=673"></script>
-  <script defer src="js/wristband-modals.js?v=673"></script>
-  <script defer src="js/wristband-cell-popup.js?v=673"></script>
-  <script defer src="js/wristband-cell-actions.js?v=673"></script>
-  <script defer src="js/wristband-sort.js?v=673"></script>
-  <script defer src="js/wristband-storage.js?v=673"></script>
-  <script defer src="js/wristband-runtime.js?v=673"></script>
-  <script defer src="js/callsheet-render.js?v=673"></script>
-  <script defer src="js/callsheet.js?v=673"></script>
-  <script defer src="js/callsheet-categories.js?v=673"></script>
-  <script defer src="js/callsheet-metadata.js?v=673"></script>
-  <script defer src="js/callsheet-layout.js?v=673"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=673"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=673"></script>
-  <script defer src="js/constraints.js?v=673"></script>
-  <script defer src="js/script-vision.js?v=673"></script>
-  <script defer src="js/tendencies-render.js?v=673"></script>
-  <script defer src="js/tendencies.js?v=673"></script>
-  <script defer src="js/installation-render.js?v=673"></script>
-  <script defer src="js/installation.js?v=673"></script>
-  <script defer src="js/identity.js?v=673"></script>
-  <script defer src="js/offensebuilder.js?v=673"></script>
-  <script defer src="js/help.js?v=673"></script>
-  <script defer src="js/dashboard.js?v=673"></script>
-  <script defer src="js/gameplan.js?v=673"></script>
-  <script defer src="js/gameplan-render.js?v=673"></script>
-  <script defer src="js/gameplan-dnd.js?v=673"></script>
-  <script defer src="js/gameplan-actions.js?v=673"></script>
-  <script defer src="js/gameplan-smart.js?v=673"></script>
-  <script defer src="js/gameplan-print.js?v=673"></script>
-  <script defer src="js/gameplan-integrations.js?v=673"></script>
-  <script defer src="js/gameplan-snapshots.js?v=673"></script>
-  <script defer src="js/print-studio.js?v=673"></script>
-  <script defer src="js/script-events.js?v=673"></script>
-  <script defer src="js/app-events.js?v=673"></script>
-  <script defer src="js/app-shell.js?v=673"></script>
-  <script defer src="js/app-session.js?v=673"></script>
-  <script defer src="js/app-navigation.js?v=673"></script>
-  <script defer src="js/app-module-init.js?v=673"></script>
-  <script defer src="js/app-bootstrap.js?v=673"></script>
-  <script defer src="js/app-init.js?v=673"></script>
-  <script defer src="js/app.js?v=673"></script>
+  <script defer src="js/utils.js?v=674"></script>
+  <script defer src="js/history.js?v=674"></script>
+  <script defer src="js/dom-helpers.js?v=674"></script>
+  <script defer src="js/lz-string.min.js?v=674"></script>
+  <script defer src="js/storage.js?v=674"></script>
+  <script defer src="js/storage-ui.js?v=674"></script>
+  <script defer src="js/play-images.js?v=674"></script>
+  <script defer src="js/cloud-sync.js?v=674"></script>
+  <script defer src="js/auth.js?v=674"></script>
+  <script defer src="js/vision.js?v=674"></script>
+  <script defer src="js/team-settings.js?v=674"></script>
+  <script defer src="js/playbook.js?v=674"></script>
+  <script defer src="js/playbook-collections.js?v=674"></script>
+  <script defer src="js/playbook-print.js?v=674"></script>
+  <script defer src="js/playbook-editor.js?v=674"></script>
+  <script defer src="js/playbook-import.js?v=674"></script>
+  <script defer src="js/playbook-export.js?v=674"></script>
+  <script defer src="js/playbook-chrome.js?v=674"></script>
+  <script defer src="js/playbook-reports.js?v=674"></script>
+  <script defer src="js/playbook-state.js?v=674"></script>
+  <script defer src="js/playbook-filters.js?v=674"></script>
+  <script defer src="js/playbook-navigation.js?v=674"></script>
+  <script defer src="js/playbook-actions.js?v=674"></script>
+  <script defer src="js/playbook-render.js?v=674"></script>
+  <script defer src="js/playbook-sanitize.js?v=674"></script>
+  <script defer src="js/playbook-analytics.js?v=674"></script>
+  <script defer src="js/playbook-identity.js?v=674"></script>
+  <script defer src="js/script-state.js?v=674"></script>
+  <script defer src="js/script-shared.js?v=674"></script>
+  <script defer src="js/script-players.js?v=674"></script>
+  <script defer src="js/script-display-options.js?v=674"></script>
+  <script defer src="js/play-readiness.js?v=674"></script>
+  <script defer src="js/script-add.js?v=674"></script>
+  <script defer src="js/script-sort.js?v=674"></script>
+  <script defer src="js/script-export.js?v=674"></script>
+  <script defer src="js/script-available.js?v=674"></script>
+  <script defer src="js/script-selection.js?v=674"></script>
+  <script defer src="js/script-timeline.js?v=674"></script>
+  <script defer src="js/script-render.js?v=674"></script>
+  <script defer src="js/script-health.js?v=674"></script>
+  <script defer src="js/script-periods.js?v=674"></script>
+  <script defer src="js/script-period-sync.js?v=674"></script>
+  <script defer src="js/script-smart.js?v=674"></script>
+  <script defer src="js/script-storage.js?v=674"></script>
+  <script defer src="js/script-integrations.js?v=674"></script>
+  <script defer src="js/play-presentation.js?v=674"></script>
+  <script defer src="js/wristband.js?v=674"></script>
+  <script defer src="js/wristband-library.js?v=674"></script>
+  <script defer src="js/wristband-render.js?v=674"></script>
+  <script defer src="js/wristband-cards.js?v=674"></script>
+  <script defer src="js/wristband-export.js?v=674"></script>
+  <script defer src="js/wristband-search.js?v=674"></script>
+  <script defer src="js/wristband-modals.js?v=674"></script>
+  <script defer src="js/wristband-cell-popup.js?v=674"></script>
+  <script defer src="js/wristband-cell-actions.js?v=674"></script>
+  <script defer src="js/wristband-sort.js?v=674"></script>
+  <script defer src="js/wristband-storage.js?v=674"></script>
+  <script defer src="js/wristband-runtime.js?v=674"></script>
+  <script defer src="js/callsheet-render.js?v=674"></script>
+  <script defer src="js/callsheet.js?v=674"></script>
+  <script defer src="js/callsheet-categories.js?v=674"></script>
+  <script defer src="js/callsheet-metadata.js?v=674"></script>
+  <script defer src="js/callsheet-layout.js?v=674"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=674"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=674"></script>
+  <script defer src="js/constraints.js?v=674"></script>
+  <script defer src="js/script-vision.js?v=674"></script>
+  <script defer src="js/tendencies-render.js?v=674"></script>
+  <script defer src="js/tendencies.js?v=674"></script>
+  <script defer src="js/installation-render.js?v=674"></script>
+  <script defer src="js/installation.js?v=674"></script>
+  <script defer src="js/identity.js?v=674"></script>
+  <script defer src="js/offensebuilder.js?v=674"></script>
+  <script defer src="js/help.js?v=674"></script>
+  <script defer src="js/dashboard.js?v=674"></script>
+  <script defer src="js/gameplan.js?v=674"></script>
+  <script defer src="js/gameplan-render.js?v=674"></script>
+  <script defer src="js/gameplan-dnd.js?v=674"></script>
+  <script defer src="js/gameplan-actions.js?v=674"></script>
+  <script defer src="js/gameplan-smart.js?v=674"></script>
+  <script defer src="js/gameplan-print.js?v=674"></script>
+  <script defer src="js/gameplan-integrations.js?v=674"></script>
+  <script defer src="js/gameplan-snapshots.js?v=674"></script>
+  <script defer src="js/print-studio.js?v=674"></script>
+  <script defer src="js/script-events.js?v=674"></script>
+  <script defer src="js/app-events.js?v=674"></script>
+  <script defer src="js/app-shell.js?v=674"></script>
+  <script defer src="js/app-session.js?v=674"></script>
+  <script defer src="js/app-navigation.js?v=674"></script>
+  <script defer src="js/app-module-init.js?v=674"></script>
+  <script defer src="js/app-bootstrap.js?v=674"></script>
+  <script defer src="js/app-init.js?v=674"></script>
+  <script defer src="js/app.js?v=674"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

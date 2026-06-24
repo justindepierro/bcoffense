@@ -62,6 +62,7 @@ js/
   playbook-import.js    ← CSV import, hydration, parser, and import loading UI
   playbook-export.js    ← Playbook export helpers
   playbook-chrome.js    ← Playbook toolbar, badges, and chrome actions
+  playbook-reports.js   ← Analytics report engines (Balance, Situations, Touches, Complements, Identity)
   playbook-state.js     ← Shared playbook state helpers and filter cache
   playbook-filters.js   ← Playbook filter state and matching
   playbook-navigation.js ← Pagination and table navigation
@@ -153,7 +154,8 @@ All scripts use `defer` and load in this exact order from index.html:
 16. js/playbook-import.js
 17. js/playbook-export.js
 18. js/playbook-chrome.js
-19. js/playbook-state.js
+19. js/playbook-reports.js
+20. js/playbook-state.js
 20. js/playbook-filters.js
 21. js/playbook-navigation.js
 22. js/playbook-actions.js
@@ -791,6 +793,7 @@ refactor: Code restructuring, no behavior change
 - `playbook-import.js` owns CSV import, parser logic, imported state hydration, and import loading overlay UI.
 - `playbook-export.js` owns playbook export flows.
 - `playbook-chrome.js` owns toolbar-level playbook actions and status UI.
+- `playbook-reports.js` owns all five analytics report engines: Balance, Situations, Touches, Complements, and Identity.
 - `playbook-state.js` owns shared state helpers, reset logic, and playbook filter cache.
 - `playbook-filters.js` owns filter extraction and matching.
 - `playbook-navigation.js` owns pagination and table navigation.
