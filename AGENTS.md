@@ -86,8 +86,10 @@ js/
   wristband-sort.js     ← Wristband sorting and reorder helpers
   wristband-storage.js  ← Save/load/draft hydration helpers
   wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
-  callsheet-render.js   ← Call sheet category constants, display helpers, and legacy render layer
-  callsheet.js          ← Core call sheet state, storage, print runtime, templates, and sort helpers
+  callsheet-render.js   ← Call sheet category constants, display helpers, and legacy render layer (dead functions pending Phase 1 cleanup)
+  callsheet.js          ← Core call sheet state, storage, templates, and render helpers
+  callsheet-print.js    ← Call sheet print modal, print rendering, and print option persistence
+  callsheet-sort.js     ← Sort modal, multi-criteria sort state, custom value order, sort execution
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   callsheet-layout.js   ← Call sheet layout/order modal state and drag-drop helpers
@@ -196,12 +198,14 @@ All scripts use `defer` and load in this exact order from index.html:
 53. js/wristband-runtime.js
 54. js/callsheet-render.js
 55. js/callsheet.js
-56. js/callsheet-categories.js
-57. js/callsheet-metadata.js
-58. js/callsheet-layout.js
-59. js/callsheet-picker-runtime.js
-60. js/callsheet-gameplan-drawer.js
-61. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
+56. js/callsheet-print.js
+57. js/callsheet-sort.js
+58. js/callsheet-categories.js
+59. js/callsheet-metadata.js
+60. js/callsheet-layout.js
+61. js/callsheet-picker-runtime.js
+62. js/callsheet-gameplan-drawer.js
+63. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
 62. js/script-vision.js
 63. js/tendencies-render.js
 64. js/tendencies.js
