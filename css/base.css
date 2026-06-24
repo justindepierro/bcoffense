@@ -358,6 +358,8 @@ textarea:focus {
   --color-danger-light: #3a1c1c;
   --color-warning-light: #3a2e1a;
   --color-info-light: #1c2d40;
+  --color-purple-light: #2a1f3d;
+  --color-bg-blue-tint: #1e306a;
   --color-status-ok-border: #2d5e3e;
   --color-status-ok-bg: #1a3328;
   --color-status-ok-text: #6fcf8a;

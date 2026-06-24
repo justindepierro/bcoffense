@@ -105,7 +105,9 @@
 }
 .wristband-plays {
   position: sticky;
-  top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 12px);
+  top: calc(
+    var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 12px
+  );
   min-width: 0;
   padding: var(--space-md);
   border: 1px solid var(--color-border-light);
@@ -488,7 +490,8 @@
   transform: scale(0.78);
 }
 
-.wb-print-preview-canvas[data-wb-print-size="flag"] .wristband-card.wb-print-preview-classic-card {
+.wb-print-preview-canvas[data-wb-print-size="flag"]
+  .wristband-card.wb-print-preview-classic-card {
   transform: scale(0.82);
 }
 
@@ -564,12 +567,18 @@
   transform-origin: center;
 }
 
-.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-grid {
+.wb-print-preview-canvas[data-wb-print-size="flag"]
+  .pc-print-card-wrap
+  .wristband-grid {
   grid-template-columns: 0.22in minmax(0, 0.9fr) minmax(0, 1.1fr) !important;
 }
 
-.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .wristband-cell,
-.wb-print-preview-canvas[data-wb-print-size="flag"] .pc-print-card-wrap .cell-play {
+.wb-print-preview-canvas[data-wb-print-size="flag"]
+  .pc-print-card-wrap
+  .wristband-cell,
+.wb-print-preview-canvas[data-wb-print-size="flag"]
+  .pc-print-card-wrap
+  .cell-play {
   font-size: 7px;
   padding-inline: 2px;
 }
@@ -690,7 +699,11 @@
     linear-gradient(45deg, transparent 75%, rgba(148, 163, 184, 0.16) 75%),
     linear-gradient(-45deg, transparent 75%, rgba(148, 163, 184, 0.16) 75%);
   background-color: var(--color-bg-lighter);
-  background-position: 0 0, 0 10px, 10px -10px, -10px 0;
+  background-position:
+    0 0,
+    0 10px,
+    10px -10px,
+    -10px 0;
   background-size: 20px 20px;
 }
 
@@ -2106,12 +2119,11 @@
   align-items: center !important;
   justify-content: center;
   padding: 0 8px !important;
-  background:
-    linear-gradient(
-      180deg,
-      var(--color-bg-input) 0%,
-      var(--color-bg-lighter) 100%
-    );
+  background: linear-gradient(
+    180deg,
+    var(--color-bg-input) 0%,
+    var(--color-bg-lighter) 100%
+  );
 }
 
 .pc-write-in-line {
@@ -2477,7 +2489,9 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .wb-mobile-view-toggle {
     display: flex;
     position: sticky;
-    top: calc(var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 6px);
+    top: calc(
+      var(--app-header-height, 50px) + var(--app-tabs-height, 44px) + 6px
+    );
     z-index: var(--z-sticky);
   }
 

@@ -401,7 +401,8 @@
       <div class="pb-controls">
         <!-- Row 1: Search + Sort + Utilities -->
         <div class="pb-controls-row pb-top-row">
-          <button class="btn btn-sm pb-filter-toggle-btn" id="pbFilterToggleBtn" data-action="togglePbFilterDrawer" title="Filters, type chips &amp; actions">&#9776; Filters</button>
+          <button class="btn btn-sm pb-filter-toggle-btn" id="pbFilterToggleBtn" data-action="togglePbFilterDrawer"
+            title="Filters, type chips &amp; actions">&#9776; Filters</button>
           <div class="pb-search-wrap search-input-wrap">
             <span class="pb-search-icon">&#128269;</span>
             <input type="text" id="searchPlay" placeholder="Search plays..." aria-label="Search plays"
@@ -585,111 +586,111 @@
 
         <!-- Type chips -->
         <div class="pb-filter-drawer-body">
-        <div class="pb-controls-row pb-chip-row">
-          <span class="pb-chip-label">Type</span>
-          <div class="pb-chip-group" id="pbChipsType"></div>
-        </div>
+          <div class="pb-controls-row pb-chip-row">
+            <span class="pb-chip-label">Type</span>
+            <div class="pb-chip-group" id="pbChipsType"></div>
+          </div>
 
-        <!-- Personnel chips -->
-        <div class="pb-controls-row pb-chip-row">
-          <span class="pb-chip-label">Personnel</span>
-          <div class="pb-chip-group" id="pbChipsPersonnel"></div>
-        </div>
+          <!-- Personnel chips -->
+          <div class="pb-controls-row pb-chip-row">
+            <span class="pb-chip-label">Personnel</span>
+            <div class="pb-chip-group" id="pbChipsPersonnel"></div>
+          </div>
 
-        <!-- Picture chips (Vision Mode only) -->
-        <div class="pb-controls-row pb-chip-row pb-vision-only" id="pbChipsPictureRow" style="display:none">
-          <span class="pb-chip-label">🎯 Picture</span>
-          <div class="pb-chip-group" id="pbChipsPicture"></div>
-        </div>
+          <!-- Picture chips (Vision Mode only) -->
+          <div class="pb-controls-row pb-chip-row pb-vision-only" id="pbChipsPictureRow" style="display:none">
+            <span class="pb-chip-label">🎯 Picture</span>
+            <div class="pb-chip-group" id="pbChipsPicture"></div>
+          </div>
 
-        <!-- More filters (collapsible) -->
-        <div class="pb-controls-row pb-more-toggle-row">
-          <button class="pb-more-toggle" id="pbMoreToggle" data-action="toggleMoreFilters">
-            <span class="pb-more-arrow" id="pbMoreArrow">&#9654;</span> More Filters
-          </button>
-        </div>
-        <div class="pb-more-filters" id="pbMoreFilters">
-          <select id="filterFormation" data-onchange="filterPlays">
-            <option value="">All Formations</option>
-          </select>
-          <select id="filterBasePlay" data-onchange="filterPlays">
-            <option value="">All Base Plays</option>
-          </select>
-          <select id="pbFilterBack" data-onchange="filterPlays">
-            <option value="">All Backs</option>
-          </select>
-          <select id="pbFilterMotion" data-onchange="filterPlays">
-            <option value="">All Motions</option>
-          </select>
-          <select id="pbFilterProtection" data-onchange="filterPlays">
-            <option value="">All Protections</option>
-          </select>
-          <select id="pbFilterTempo" data-onchange="filterPlays">
-            <option value="">All Tempos</option>
-          </select>
-        </div>
-
-        <!-- Active filter pills -->
-        <div class="pb-active-bar" id="pbActiveBar">
-          <div class="pb-active-pills" id="pbActivePills"></div>
-          <button class="pb-clear-all" id="pbClearAll" data-action="clearFilters">
-            &#10005; Clear All
-          </button>
-        </div>
-
-        <!-- Game Plan Filter -->
-        <div class="pb-gameplan-bar" id="pbGamePlanBar">
-          <label class="pb-gp-filter-toggle" for="pbGamePlanFilter">
-            <input type="checkbox" id="pbGamePlanFilter" data-onchange="filterPlays" />
-            <span class="pb-gp-filter-label">🎯 Game Plan Only</span>
-            <span class="pb-gp-filter-opp" id="pbGamePlanOpp"></span>
-          </label>
-          <label class="pb-gp-filter-toggle" for="pbJvFilter" title="Show only plays marked JV in the game plan">
-            <input type="checkbox" id="pbJvFilter" data-onchange="filterPlays" />
-            <span class="pb-gp-filter-label">🟡 JV Only</span>
-          </label>
-          <button class="btn btn-sm btn-success pb-gp-send-btn" data-action="sendDashboardGamePlanToBoxes"
-            data-auth-player-hide="true" title="Send tagged plays to the Game Plan boxes (skips duplicates)">
-            🎯 Send to Game Plan
-          </button>
-          <button class="btn btn-sm pb-gp-load-btn" data-action="loadGamePlanSnapshotToPlaybook"
-            data-auth-player-hide="true"
-            title="Load a saved game plan snapshot and apply it as the playbook tag filter">
-            📂 Load Plan
-          </button>
-          <button class="btn btn-sm btn-danger pb-gp-reset-btn" data-action="resetCurrentGamePlan"
-            data-auth-player-hide="true"
-            title="Clear current opponent's Playbook selections and reset the Game Plan board">
-            🗑 Reset Plan
-          </button>
-        </div>
-
-        <!-- Actions row -->
-        <div class="pb-actions-row" id="pbActionsRow" data-auth-player-hide="true">
-          <div class="pb-actions-left">
-            <button class="pb-action-btn pb-action-save" data-action="savePlayCollection"
-              title="Save current filtered plays as a collection">
-              &#128278; Save Collection
-            </button>
-            <button class="pb-action-btn pb-action-script" data-action="sendFilteredToScript"
-              title="Add filtered plays to practice script">
-              &#128203; Send to Script
-            </button>
-            <button class="pb-action-btn pb-action-callsheet" data-action="sendFilteredToCallSheet"
-              title="Auto-place filtered plays on call sheet">
-              &#128202; Send to Call Sheet
-            </button>
-            <button class="pb-action-btn pb-action-print" data-action="togglePrintOptionsPanel"
-              title="Print filtered plays in wristband format">
-              &#128424; Print Plays
+          <!-- More filters (collapsible) -->
+          <div class="pb-controls-row pb-more-toggle-row">
+            <button class="pb-more-toggle" id="pbMoreToggle" data-action="toggleMoreFilters">
+              <span class="pb-more-arrow" id="pbMoreArrow">&#9654;</span> More Filters
             </button>
           </div>
-          <button class="pb-action-btn pb-action-collections" data-action="toggleCollectionsPanel"
-            title="View saved collections">
-            &#128193; Collections
-            <span id="pbCollectionCount" class="badge badge-neutral pb-badge">0</span>
-          </button>
-        </div>
+          <div class="pb-more-filters" id="pbMoreFilters">
+            <select id="filterFormation" data-onchange="filterPlays">
+              <option value="">All Formations</option>
+            </select>
+            <select id="filterBasePlay" data-onchange="filterPlays">
+              <option value="">All Base Plays</option>
+            </select>
+            <select id="pbFilterBack" data-onchange="filterPlays">
+              <option value="">All Backs</option>
+            </select>
+            <select id="pbFilterMotion" data-onchange="filterPlays">
+              <option value="">All Motions</option>
+            </select>
+            <select id="pbFilterProtection" data-onchange="filterPlays">
+              <option value="">All Protections</option>
+            </select>
+            <select id="pbFilterTempo" data-onchange="filterPlays">
+              <option value="">All Tempos</option>
+            </select>
+          </div>
+
+          <!-- Active filter pills -->
+          <div class="pb-active-bar" id="pbActiveBar">
+            <div class="pb-active-pills" id="pbActivePills"></div>
+            <button class="pb-clear-all" id="pbClearAll" data-action="clearFilters">
+              &#10005; Clear All
+            </button>
+          </div>
+
+          <!-- Game Plan Filter -->
+          <div class="pb-gameplan-bar" id="pbGamePlanBar">
+            <label class="pb-gp-filter-toggle" for="pbGamePlanFilter">
+              <input type="checkbox" id="pbGamePlanFilter" data-onchange="filterPlays" />
+              <span class="pb-gp-filter-label">🎯 Game Plan Only</span>
+              <span class="pb-gp-filter-opp" id="pbGamePlanOpp"></span>
+            </label>
+            <label class="pb-gp-filter-toggle" for="pbJvFilter" title="Show only plays marked JV in the game plan">
+              <input type="checkbox" id="pbJvFilter" data-onchange="filterPlays" />
+              <span class="pb-gp-filter-label">🟡 JV Only</span>
+            </label>
+            <button class="btn btn-sm btn-success pb-gp-send-btn" data-action="sendDashboardGamePlanToBoxes"
+              data-auth-player-hide="true" title="Send tagged plays to the Game Plan boxes (skips duplicates)">
+              🎯 Send to Game Plan
+            </button>
+            <button class="btn btn-sm pb-gp-load-btn" data-action="loadGamePlanSnapshotToPlaybook"
+              data-auth-player-hide="true"
+              title="Load a saved game plan snapshot and apply it as the playbook tag filter">
+              📂 Load Plan
+            </button>
+            <button class="btn btn-sm btn-danger pb-gp-reset-btn" data-action="resetCurrentGamePlan"
+              data-auth-player-hide="true"
+              title="Clear current opponent's Playbook selections and reset the Game Plan board">
+              🗑 Reset Plan
+            </button>
+          </div>
+
+          <!-- Actions row -->
+          <div class="pb-actions-row" id="pbActionsRow" data-auth-player-hide="true">
+            <div class="pb-actions-left">
+              <button class="pb-action-btn pb-action-save" data-action="savePlayCollection"
+                title="Save current filtered plays as a collection">
+                &#128278; Save Collection
+              </button>
+              <button class="pb-action-btn pb-action-script" data-action="sendFilteredToScript"
+                title="Add filtered plays to practice script">
+                &#128203; Send to Script
+              </button>
+              <button class="pb-action-btn pb-action-callsheet" data-action="sendFilteredToCallSheet"
+                title="Auto-place filtered plays on call sheet">
+                &#128202; Send to Call Sheet
+              </button>
+              <button class="pb-action-btn pb-action-print" data-action="togglePrintOptionsPanel"
+                title="Print filtered plays in wristband format">
+                &#128424; Print Plays
+              </button>
+            </div>
+            <button class="pb-action-btn pb-action-collections" data-action="toggleCollectionsPanel"
+              title="View saved collections">
+              &#128193; Collections
+              <span id="pbCollectionCount" class="badge badge-neutral pb-badge">0</span>
+            </button>
+          </div>
 
         </div><!-- /pb-filter-drawer-body -->
 
@@ -923,8 +924,9 @@
             <span class="script-workbench-group-label control-block__label">Workspace</span>
             <div class="script-workbench-toggle-group segmented-control" role="group"
               aria-label="Practice script workspace panels">
-              <button type="button" id="scriptPlayRailToggle" class="script-workbench-pill segmented-control__item is-active"
-                data-action="toggleScriptPlayRail" aria-controls="scriptPlayRail" aria-pressed="true">
+              <button type="button" id="scriptPlayRailToggle"
+                class="script-workbench-pill segmented-control__item is-active" data-action="toggleScriptPlayRail"
+                aria-controls="scriptPlayRail" aria-pressed="true">
                 Library
               </button>
               <button type="button" id="scriptToolsDrawerToggle" class="script-workbench-pill segmented-control__item"
@@ -939,7 +941,8 @@
           </div>
           <div class="script-workbench-control-block control-block">
             <span class="script-workbench-group-label control-block__label">Actions</span>
-            <div class="script-workbench-primary-actions control-cluster" role="group" aria-label="Primary script actions">
+            <div class="script-workbench-primary-actions control-cluster" role="group"
+              aria-label="Primary script actions">
               <button type="button" class="btn btn-sm btn-primary" data-action="saveScript">
                 Save
               </button>
@@ -964,7 +967,8 @@
       </div>
 
       <div class="script-builder app-workspace-grid">
-        <div class="script-rail-backdrop" id="scriptRailBackdrop" data-action="toggleScriptPlayRail" aria-hidden="true"></div>
+        <div class="script-rail-backdrop" id="scriptRailBackdrop" data-action="toggleScriptPlayRail" aria-hidden="true">
+        </div>
         <div class="play-list script-play-rail app-workspace-pane" id="scriptPlayRail" data-auth-player-hide="true">
           <h3>
             <span>Available Plays
@@ -1092,7 +1096,8 @@
         </div>
         <div class="script-list app-workspace-pane">
           <h3 class="script-section-head">
-            <button type="button" class="btn btn-xs script-library-toggle-btn" data-action="toggleScriptPlayRail" data-auth-player-hide="true" title="Open play library">&#9776; Library</button>
+            <button type="button" class="btn btn-xs script-library-toggle-btn" data-action="toggleScriptPlayRail"
+              data-auth-player-hide="true" title="Open play library">&#9776; Library</button>
             <span class="script-section-title">Script
               <span id="scriptCount" class="badge badge-primary play-count">0</span></span>
             <div class="period-buttons">
@@ -1250,7 +1255,8 @@
 
           <div class="script-container app-scroll-region" id="scriptPlays" data-testid="script-plays"></div>
 
-          <aside class="script-tools-drawer" id="scriptToolsDrawer" aria-hidden="true" inert data-auth-player-hide="true">
+          <aside class="script-tools-drawer" id="scriptToolsDrawer" aria-hidden="true" inert
+            data-auth-player-hide="true">
             <div class="script-tools-drawer-header">
               <div>
                 <span class="script-tools-drawer-kicker">Script Workspace</span>
@@ -1260,172 +1266,184 @@
                 aria-label="Close script tools">×</button>
             </div>
             <div class="script-tools-drawer-body">
-          <!-- Script Actions -->
-          <div class="script-actions">
-              <details class="script-drawer-section" open>
-                <summary>History</summary>
-                <div class="script-action-cluster" data-cluster="history">
-                <button id="scriptUndoBtn" class="btn btn-sm btn-undo" data-action="undoScript" disabled title="Nothing to undo">
-                  ↩️ Undo
-                </button>
-                <button id="scriptRedoBtn" class="btn btn-sm btn-redo" data-action="redoScript" disabled title="Nothing to redo">
-                  ↪️ Redo
-                </button>
-                </div>
-              </details>
+              <!-- Script Actions -->
+              <div class="script-actions">
+                <details class="script-drawer-section" open>
+                  <summary>History</summary>
+                  <div class="script-action-cluster" data-cluster="history">
+                    <button id="scriptUndoBtn" class="btn btn-sm btn-undo" data-action="undoScript" disabled
+                      title="Nothing to undo">
+                      ↩️ Undo
+                    </button>
+                    <button id="scriptRedoBtn" class="btn btn-sm btn-redo" data-action="redoScript" disabled
+                      title="Nothing to redo">
+                      ↪️ Redo
+                    </button>
+                  </div>
+                </details>
 
-              <details class="script-drawer-section" open>
-                <summary>Manage</summary>
-                <div class="script-action-cluster" data-cluster="manage">
-                <button class="btn btn-sm btn-primary" data-action="saveScript" data-testid="save-script">
-                  💾 Save Script
-                </button>
-                <button class="btn btn-sm btn-danger" data-action="clearScript" data-testid="clear-script" title="Start a new script">
-                  ✨ New Script
-                </button>
-                </div>
-              </details>
+                <details class="script-drawer-section" open>
+                  <summary>Manage</summary>
+                  <div class="script-action-cluster" data-cluster="manage">
+                    <button class="btn btn-sm btn-primary" data-action="saveScript" data-testid="save-script">
+                      💾 Save Script
+                    </button>
+                    <button class="btn btn-sm btn-danger" data-action="clearScript" data-testid="clear-script"
+                      title="Start a new script">
+                      ✨ New Script
+                    </button>
+                  </div>
+                </details>
 
-              <details class="script-drawer-section" open>
-                <summary>Print &amp; Present</summary>
-                <div class="script-action-cluster" data-cluster="output">
-                <button class="btn btn-sm btn-success" data-action="generatePDF" data-testid="generate-pdf">
-                  📄 Print Script
-                </button>
-                <button class="btn btn-sm btn-primary" data-action="openScriptPacketBuilder" title="Print detailed scripts with attached play diagrams in an 8-up packet">
-                  🗂️ Print Packet
-                </button>
-                <button class="btn btn-sm btn-primary" data-action="openScriptPresentation" title="Present this script in landscape mode with play diagrams and player rules">
-                  Present Script
-                </button>
-                </div>
-              </details>
+                <details class="script-drawer-section" open>
+                  <summary>Print &amp; Present</summary>
+                  <div class="script-action-cluster" data-cluster="output">
+                    <button class="btn btn-sm btn-success" data-action="generatePDF" data-testid="generate-pdf">
+                      📄 Print Script
+                    </button>
+                    <button class="btn btn-sm btn-primary" data-action="openScriptPacketBuilder"
+                      title="Print detailed scripts with attached play diagrams in an 8-up packet">
+                      🗂️ Print Packet
+                    </button>
+                    <button class="btn btn-sm btn-primary" data-action="openScriptPresentation"
+                      title="Present this script in landscape mode with play diagrams and player rules">
+                      Present Script
+                    </button>
+                  </div>
+                </details>
 
-              <details class="script-drawer-section" open>
-                <summary>Send To</summary>
-                <div class="script-action-cluster" data-cluster="integrations">
-                <button class="btn btn-sm btn-success" data-action="sendScriptToGamePlan" title="Send selected Script plays, or the full Script, to the Game Plan">
-                  🎯 Game Plan
-                </button>
-                <button class="btn btn-sm btn-success" data-action="sendScriptToWristband" title="Send selected Script plays, or the full Script, to Wristband cards">
-                  🃏 Wristband
-                </button>
-                <button class="btn btn-sm btn-primary" data-action="openPrintStudio" title="Open unified print and export controls">
-                  🖨️ Print Studio
-                </button>
-                </div>
-              </details>
+                <details class="script-drawer-section" open>
+                  <summary>Send To</summary>
+                  <div class="script-action-cluster" data-cluster="integrations">
+                    <button class="btn btn-sm btn-success" data-action="sendScriptToGamePlan"
+                      title="Send selected Script plays, or the full Script, to the Game Plan">
+                      🎯 Game Plan
+                    </button>
+                    <button class="btn btn-sm btn-success" data-action="sendScriptToWristband"
+                      title="Send selected Script plays, or the full Script, to Wristband cards">
+                      🃏 Wristband
+                    </button>
+                    <button class="btn btn-sm btn-primary" data-action="openPrintStudio"
+                      title="Open unified print and export controls">
+                      🖨️ Print Studio
+                    </button>
+                  </div>
+                </details>
 
-              <div class="more-tools-wrap">
-                <button class="more-tools-btn" data-action="toggleParentOpen" title="More tools">
-                  ⋯ More Tools
-                </button>
-                <div class="more-tools-menu" data-action="removeParentOpen">
-                  <button data-action="applyPreferredFields" title="Apply preferred metadata to selected plays (or all if none selected)">
-                    ★ Apply Preferred Fields
+                <div class="more-tools-wrap">
+                  <button class="more-tools-btn" data-action="toggleParentOpen" title="More tools">
+                    ⋯ More Tools
                   </button>
-                  <button data-action="shuffleScript" title="Randomly shuffle play order within periods">
-                    🔀 Shuffle
+                  <div class="more-tools-menu" data-action="removeParentOpen">
+                    <button data-action="applyPreferredFields"
+                      title="Apply preferred metadata to selected plays (or all if none selected)">
+                      ★ Apply Preferred Fields
+                    </button>
+                    <button data-action="shuffleScript" title="Randomly shuffle play order within periods">
+                      🔀 Shuffle
+                    </button>
+                    <div class="tool-divider"></div>
+                    <button data-action="openSmartScript"
+                      title="Intelligently reorder all periods for realistic game flow">
+                      🧠 Smart Script All
+                    </button>
+                    <button data-action="autoFillDefenseFromTendencies"
+                      title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data">
+                      🎯 Auto-Fill Defense
+                    </button>
+                    <div class="tool-divider"></div>
+                    <button data-action="compareScripts" title="Compare two saved scripts">
+                      📊 Compare Scripts
+                    </button>
+                    <button data-action="mergeFromScript" title="Merge plays from another script">
+                      ➕ Merge From Script
+                    </button>
+                    <button data-action="copyPeriodToClipboard" title="Copy a period to clipboard">
+                      📋 Copy Period
+                    </button>
+                    <div class="tool-divider"></div>
+                    <button data-action="saveScriptTemplate"
+                      title="Save this script as a reusable week or day template">
+                      💾 Save Day Template
+                    </button>
+                    <button data-action="openScriptTemplatesMenu" title="Load or delete script templates">
+                      📁 Day Templates
+                    </button>
+                    <div class="tool-divider"></div>
+                    <button data-action="exportScriptAsText" title="Download script as plain-text file">
+                      📄 Export Text
+                    </button>
+                    <button data-action="exportScriptCSV" title="Export current script to CSV">
+                      📥 Export CSV
+                    </button>
+                    <button data-action="showScriptShortcutsModal" title="Show keyboard shortcuts (?)">
+                      ⌨️ Keyboard Shortcuts
+                    </button>
+                  </div>
+                </div>
+              </div>
+              <div class="wristband-integration-panel" data-auth-player-hide="true">
+                <div class="integration-header" data-action="toggleCollapsiblePanel">
+                  <strong>🏈 Wristband Integration</strong>
+                  <span class="toggle-icon">▼</span>
+                </div>
+                <div class="integration-content">
+                  <div class="wristband-loader-row">
+                    <select id="scriptWristbandSelect" data-onchange="loadWristbandForScript">
+                      <option value="">-- No Wristband --</option>
+                    </select>
+                  </div>
+                  <div class="wristband-actions-row">
+                    <button class="btn btn-sm" data-action="openLoadWristbandToScriptModal"
+                      title="Add plays from a wristband to script">
+                      ➕ Load Plays
+                    </button>
+                    <button class="btn btn-sm" data-action="highlightPlaysNotOnWristband"
+                      title="Highlight plays not on selected wristband">
+                      🔍 Find Missing
+                    </button>
+                  </div>
+                  <div id="scriptWristbandInfo" class="wristband-info"></div>
+                </div>
+              </div>
+
+              <div class="saved-scripts hidden" id="savedScriptsSection" data-auth-player-hide="true">
+                <div class="saved-scripts-header">
+                  <h4>📁 Saved Scripts</h4>
+                  <button class="btn btn-sm text-xs" data-action="manageTemplates" title="Manage period templates">
+                    🗑 Templates
                   </button>
-                  <div class="tool-divider"></div>
-                  <button data-action="openSmartScript" title="Intelligently reorder all periods for realistic game flow">
-                    🧠 Smart Script All
+                </div>
+                <div id="savedScriptsList"></div>
+              </div>
+
+              <div class="full-day-section hidden" id="fullDaySection" data-auth-player-hide="true">
+                <div class="full-day-header">
+                  <h4>🗂️ Practice Script Packet</h4>
+                  <p class="full-day-desc">
+                    Combine detailed script pages with attached play diagrams in an 8-up appendix.
+                  </p>
+                </div>
+                <div class="script-packet-settings">
+                  <label for="scriptPacketTitle">Packet title</label>
+                  <input type="text" id="scriptPacketTitle" value="Practice Script Packet"
+                    placeholder="Practice Script Packet" />
+                  <span id="scriptPacketSelectionSummary" class="script-packet-selection-summary" role="status"
+                    aria-live="polite"></span>
+                </div>
+                <div id="fullDayScriptList" class="full-day-list"></div>
+                <div class="full-day-actions">
+                  <button class="btn btn-secondary btn-sm" data-action="selectAllDayScripts">
+                    ✅ Select All
                   </button>
-                  <button data-action="autoFillDefenseFromTendencies" title="Auto-fill defensive fronts, coverages, blitz, stunts from scouting data">
-                    🎯 Auto-Fill Defense
+                  <button class="btn btn-secondary btn-sm" data-action="clearDayScripts">
+                    Clear
                   </button>
-                  <div class="tool-divider"></div>
-                  <button data-action="compareScripts" title="Compare two saved scripts">
-                    📊 Compare Scripts
-                  </button>
-                  <button data-action="mergeFromScript" title="Merge plays from another script">
-                    ➕ Merge From Script
-                  </button>
-                  <button data-action="copyPeriodToClipboard" title="Copy a period to clipboard">
-                    📋 Copy Period
-                  </button>
-                  <div class="tool-divider"></div>
-                  <button data-action="saveScriptTemplate" title="Save this script as a reusable week or day template">
-                    💾 Save Day Template
-                  </button>
-                  <button data-action="openScriptTemplatesMenu" title="Load or delete script templates">
-                    📁 Day Templates
-                  </button>
-                  <div class="tool-divider"></div>
-                  <button data-action="exportScriptAsText" title="Download script as plain-text file">
-                    📄 Export Text
-                  </button>
-                  <button data-action="exportScriptCSV" title="Export current script to CSV">
-                    📥 Export CSV
-                  </button>
-                  <button data-action="showScriptShortcutsModal" title="Show keyboard shortcuts (?)">
-                    ⌨️ Keyboard Shortcuts
+                  <button id="printScriptPacketBtn" class="btn btn-success btn-sm" data-action="printScriptPacket">
+                    🖨️ Preview Packet
                   </button>
                 </div>
               </div>
-            </div>
-            <div class="wristband-integration-panel" data-auth-player-hide="true">
-            <div class="integration-header" data-action="toggleCollapsiblePanel">
-              <strong>🏈 Wristband Integration</strong>
-              <span class="toggle-icon">▼</span>
-            </div>
-            <div class="integration-content">
-              <div class="wristband-loader-row">
-                <select id="scriptWristbandSelect" data-onchange="loadWristbandForScript">
-                  <option value="">-- No Wristband --</option>
-                </select>
-              </div>
-              <div class="wristband-actions-row">
-                <button class="btn btn-sm" data-action="openLoadWristbandToScriptModal"
-                  title="Add plays from a wristband to script">
-                  ➕ Load Plays
-                </button>
-                <button class="btn btn-sm" data-action="highlightPlaysNotOnWristband"
-                  title="Highlight plays not on selected wristband">
-                  🔍 Find Missing
-                </button>
-              </div>
-              <div id="scriptWristbandInfo" class="wristband-info"></div>
-            </div>
-          </div>
-
-          <div class="saved-scripts hidden" id="savedScriptsSection" data-auth-player-hide="true">
-            <div class="saved-scripts-header">
-              <h4>📁 Saved Scripts</h4>
-              <button class="btn btn-sm text-xs" data-action="manageTemplates" title="Manage period templates">
-                🗑 Templates
-              </button>
-            </div>
-            <div id="savedScriptsList"></div>
-          </div>
-
-          <div class="full-day-section hidden" id="fullDaySection" data-auth-player-hide="true">
-            <div class="full-day-header">
-              <h4>🗂️ Practice Script Packet</h4>
-              <p class="full-day-desc">
-                Combine detailed script pages with attached play diagrams in an 8-up appendix.
-              </p>
-            </div>
-            <div class="script-packet-settings">
-              <label for="scriptPacketTitle">Packet title</label>
-              <input type="text" id="scriptPacketTitle" value="Practice Script Packet"
-                placeholder="Practice Script Packet" />
-              <span id="scriptPacketSelectionSummary" class="script-packet-selection-summary" role="status"
-                aria-live="polite"></span>
-            </div>
-            <div id="fullDayScriptList" class="full-day-list"></div>
-            <div class="full-day-actions">
-              <button class="btn btn-secondary btn-sm" data-action="selectAllDayScripts">
-                ✅ Select All
-              </button>
-              <button class="btn btn-secondary btn-sm" data-action="clearDayScripts">
-                Clear
-              </button>
-              <button id="printScriptPacketBtn" class="btn btn-success btn-sm" data-action="printScriptPacket">
-                🖨️ Preview Packet
-              </button>
-            </div>
-          </div>
             </div>
           </aside>
           <div class="script-tools-backdrop" id="scriptToolsBackdrop" data-action="closeScriptToolsDrawer" hidden

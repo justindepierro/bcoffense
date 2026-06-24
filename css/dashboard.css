@@ -26,7 +26,11 @@
   border: 1px solid var(--color-border-light);
   border-radius: 26px;
   background:
-    radial-gradient(circle at top left, rgb(255 255 255 / 0.82), transparent 24rem),
+    radial-gradient(
+      circle at top left,
+      rgb(255 255 255 / 0.82),
+      transparent 24rem
+    ),
     linear-gradient(160deg, var(--color-bg-blue-tint), var(--color-surface));
   box-shadow: var(--shadow-sm);
   min-width: 0;
@@ -83,7 +87,8 @@
   flex: 0 1 360px;
   min-width: min(320px, 100%);
   padding: 18px;
-  border: 1px solid color-mix(in srgb, var(--color-primary) 24%, var(--color-border-light));
+  border: 1px solid
+    color-mix(in srgb, var(--color-primary) 24%, var(--color-border-light));
   border-radius: 22px;
   background:
     linear-gradient(180deg, rgb(255 255 255 / 0.94), rgb(255 255 255 / 0.74)),
@@ -140,9 +145,16 @@
 }
 
 .player-home-quick-action--primary {
-  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
-  background:
-    linear-gradient(135deg, var(--color-primary), var(--color-primary-dark));
+  border-color: color-mix(
+    in srgb,
+    var(--color-primary) 42%,
+    var(--color-border-light)
+  );
+  background: linear-gradient(
+    135deg,
+    var(--color-primary),
+    var(--color-primary-dark)
+  );
   color: var(--color-text-inverse);
 }
 
@@ -211,8 +223,11 @@
 }
 
 .player-home-card--feature {
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.98), var(--color-bg-light));
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.98),
+    var(--color-bg-light)
+  );
 }
 
 .player-home-stat-row {
@@ -364,7 +379,9 @@
   z-index: 6;
   box-shadow: var(--shadow-md);
 }
-@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
   .dash-opponent-bar {
     position: static;
     align-items: stretch;
@@ -475,7 +492,9 @@
     padding: 10px 12px;
   }
 
-  body.is-phone-screen[data-auth-role="player"] .player-home-quick-action strong {
+  body.is-phone-screen[data-auth-role="player"]
+    .player-home-quick-action
+    strong {
     font-size: var(--font-size-sm);
   }
 
@@ -1270,7 +1289,9 @@
   white-space: nowrap;
 }
 
-@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
   .dash-command-center {
     border-radius: var(--radius-md);
     padding: var(--space-md);
@@ -1526,7 +1547,9 @@
   display: none;
 }
 
-@media (max-width: 640px), (pointer: coarse) and (max-width: 820px), (pointer: coarse) and (max-height: 640px) {
+@media (max-width: 640px),
+  (pointer: coarse) and (max-width: 820px),
+  (pointer: coarse) and (max-height: 640px) {
   body.is-mobile-screen #dashboard.active .mobile-coach-notes-card {
     display: grid;
     gap: var(--space-sm);

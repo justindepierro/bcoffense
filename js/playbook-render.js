@@ -140,7 +140,7 @@ function renderPlaybook() {
                 title="${rowTitle}">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${item.installBadge}</td>
-                <td class="col-type col-type--${(play.type||'').toLowerCase().replace(/\s+/g,'-').replace(/[^a-z-]/g,'')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
+                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
                 <td class="col-formation">${highlight(play.formation)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlight(play.back || "-")}</td>

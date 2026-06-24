@@ -444,7 +444,8 @@
     );
   }
 
-  function isActionAllowedForRole(action) { return true;
+  function isActionAllowedForRole(action) {
+    return true;
     if (!currentAuthUser) return false;
     if (ADMIN_ONLY_ACTIONS.has(action)) return isAdminUser();
     if (canEditUser()) return true;

@@ -648,10 +648,9 @@ body[data-auth-role="player"] .gp-card-btn {
 
 .pb-readiness-card {
   display: grid;
-  grid-template-columns: minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(
-      260px,
-      1fr
-    ) minmax(260px, 1fr);
+  grid-template-columns:
+    minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(260px, 1fr)
+    minmax(260px, 1fr);
   gap: var(--space-sm);
   align-items: stretch;
   padding: 14px;
@@ -950,7 +949,8 @@ body[data-auth-role="player"] .gp-card-btn {
 }
 
 /* When a play is selected the full card is wide — let it break to its own row */
-.pb-meta-bar:has(.pb-readiness-card:not(.pb-readiness-card--empty)) .pb-readiness-panel {
+.pb-meta-bar:has(.pb-readiness-card:not(.pb-readiness-card--empty))
+  .pb-readiness-panel {
   flex: 1 0 100%;
   min-width: 0;
 }
@@ -998,7 +998,9 @@ body[data-auth-role="player"] .gp-card-btn {
   display: none;
 }
 
-#playbook .pb-readiness-card--empty .pb-readiness-actions.pb-readiness-empty-actions {
+#playbook
+  .pb-readiness-card--empty
+  .pb-readiness-actions.pb-readiness-empty-actions {
   display: flex;
   flex-direction: row;
   gap: 6px;
@@ -3679,11 +3681,6 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
-}
-#catCleanupSummary {
-  flex: 1 1 auto;
-  font-size: var(--font-size-xs);
-  color: var(--color-text-muted);
 }
 .cat-cleanup-summary-meta {
   margin-left: var(--space-sm);
