@@ -722,18 +722,18 @@ document.addEventListener("DOMContentLoaded", () => {
   // Persist Quick Actions collapsible open/closed state
   const quickWrap = document.getElementById("csQuickActionsWrap");
   if (quickWrap) {
-    const stored = storageManager.get(
-      STORAGE_KEYS.CALLSHEET_QUICK_ACTIONS_OPEN,
-      null,
-    );
-    if (stored === true) quickWrap.setAttribute("open", "");
-    else if (stored === false) quickWrap.removeAttribute("open");
-    quickWrap.addEventListener("toggle", () => {
-      storageManager.set(
-        STORAGE_KEYS.CALLSHEET_QUICK_ACTIONS_OPEN,
-        quickWrap.open,
-      );
-    });
+    const qaBtn = quickWrap.querySelector(".cs-toolbar-secondary-summary");
+    const stored = storageManager.get(STORAGE_KEYS.CALLSHEET_QUICK_ACTIONS_OPEN, null);
+    if (stored === true && qaBtn) toggleCollapsiblePanel(qaBtn);
+    if (qaBtn) {
+      const obs = new MutationObserver(() => {
+        storageManager.set(
+          STORAGE_KEYS.CALLSHEET_QUICK_ACTIONS_OPEN,
+          qaBtn.getAttribute("aria-expanded") === "true",
+        );
+      });
+      obs.observe(qaBtn, { attributes: true, attributeFilter: ["aria-expanded"] });
+    }
   }
 
   const grid = document.getElementById("callSheetGrid");

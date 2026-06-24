@@ -566,7 +566,7 @@
   box-shadow: var(--shadow-xs);
   overflow: hidden;
 }
-.cs-toolbar-secondary-wrap > .cs-toolbar-secondary {
+.cs-toolbar-secondary-wrap .cs-toolbar-secondary {
   margin-bottom: 0;
   border: 0;
   border-radius: 0;
@@ -575,35 +575,42 @@
   box-shadow: none;
 }
 .cs-toolbar-secondary-summary {
-  list-style: none;
-  cursor: pointer;
   display: flex;
   align-items: center;
   justify-content: space-between;
   gap: var(--space-sm);
-  padding: 8px 14px;
+  padding: 9px 14px;
   font-size: var(--font-size-sm);
   user-select: none;
+  cursor: pointer;
+  width: 100%;
+  text-align: left;
+  background: none;
+  border: none;
   outline: none;
   transition: background var(--transition-fast);
-}
-.cs-toolbar-secondary-summary::-webkit-details-marker {
-  display: none;
 }
 .cs-toolbar-secondary-summary:hover {
   background: var(--color-bg-hover-row);
 }
 .cs-toolbar-secondary-summary:focus-visible {
-  box-shadow: 0 0 0 2px var(--color-primary-light);
+  outline: 2px solid var(--color-primary-light);
+  outline-offset: -2px;
 }
-.cs-toolbar-secondary-summary::after {
-  content: "▶";
+.cs-toolbar-secondary-summary .toggle-icon {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
-  transition: transform var(--transition-fast);
+  flex-shrink: 0;
 }
-.cs-toolbar-secondary-wrap[open] > .cs-toolbar-secondary-summary::after {
-  transform: rotate(90deg);
+
+/* Animated Quick Actions body */
+.cs-qa-body {
+  max-height: 500px;
+  overflow: hidden;
+  transition: max-height 0.28s ease-out;
+}
+.cs-qa-body.collapsed {
+  max-height: 0;
 }
 .cs-toolbar-secondary-summary-label {
   font-weight: 700;
@@ -719,9 +726,14 @@
 .cs-unified-content {
   padding: 10px 12px;
   background: var(--color-surface);
+  overflow: hidden;
+  max-height: 1500px;
+  transition: max-height 0.32s ease-out, padding-top 0.25s ease, padding-bottom 0.25s ease;
 }
 .cs-unified-content.collapsed {
-  display: none;
+  max-height: 0;
+  padding-top: 0;
+  padding-bottom: 0;
 }
 
 .cs-settings-layout {
