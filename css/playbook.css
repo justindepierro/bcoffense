@@ -657,8 +657,7 @@ body[data-auth-role="player"] .gp-card-btn {
   position: relative;
   display: grid;
   grid-template-columns:
-    minmax(180px, 1fr) minmax(80px, 0.35fr) minmax(200px, 1fr)
-    minmax(180px, 1fr);
+    minmax(180px, 1fr) minmax(80px, 0.35fr) minmax(200px, 1fr);
   gap: 6px;
   align-items: stretch;
   padding: 9px 10px;
@@ -682,9 +681,7 @@ body[data-auth-role="player"] .gp-card-btn {
 
 .pb-readiness-main,
 .pb-readiness-status,
-.pb-readiness-progress,
-.pb-readiness-score,
-.pb-readiness-actions {
+.pb-readiness-progress {
   min-width: 0;
 }
 
@@ -819,10 +816,27 @@ body[data-auth-role="player"] .gp-card-btn {
   gap: 8px;
 }
 
-.pb-readiness-score {
-  display: grid;
-  align-content: center;
-  gap: 8px;
+/* Score + actions combined into one horizontal row */
+.pb-readiness-action-row {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 5px;
+}
+
+.pb-readiness-score-inline {
+  display: flex;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.pb-readiness-action-sep {
+  width: 1px;
+  height: 20px;
+  background: var(--color-border-light);
+  flex-shrink: 0;
+  margin: 0 2px;
 }
 
 .pb-readiness-card .play-readiness-rollup {
@@ -849,18 +863,11 @@ body[data-auth-role="player"] .gp-card-btn {
 }
 
 .pb-readiness-score > span {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-2xs);
-  font-weight: 950;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
+  display: none;
 }
 
 .pb-readiness-actions {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 6px;
-  align-content: center;
+  display: none;
 }
 
 .play-readiness-score-btn {
@@ -907,8 +914,6 @@ body[data-auth-role="player"] .gp-card-btn {
   }
 
   .pb-readiness-progress,
-  .pb-readiness-score,
-  .pb-readiness-actions,
   .pb-readiness-empty-steps {
     grid-column: 1 / -1;
   }
@@ -941,24 +946,13 @@ body[data-auth-role="player"] .gp-card-btn {
     grid-column: 1 / -1;
   }
 
-  .pb-readiness-score {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-  }
-
   .pb-readiness-card .play-readiness-rollup {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
-  .pb-readiness-score > span {
-    grid-column: 1 / -1;
-  }
-
   .play-readiness-score-btn {
-    min-height: 46px;
-  }
-
-  .pb-readiness-actions {
-    grid-template-columns: 1fr;
+    min-height: 36px;
+    min-width: 36px;
   }
 }
 

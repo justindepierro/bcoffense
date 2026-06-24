@@ -789,17 +789,17 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
         </div>
       </div>
       ${renderPlayReadinessRollup(summary, { variant: "playbook" })}
-      <div class="pb-readiness-score" role="group" aria-label="Quick score selected play">
-        <span>Quick score</span>
-        ${renderPlayReadinessScoreButtons("quickPlayReadinessPlaybookScore", lastReport?.score || 0)}
-      </div>
-      <div class="pb-readiness-actions">
+      <div class="pb-readiness-action-row">
+        <div class="pb-readiness-score-inline" role="group" aria-label="Quick score selected play">
+          ${renderPlayReadinessScoreButtons("quickPlayReadinessPlaybookScore", lastReport?.score || 0)}
+        </div>
+        <span class="pb-readiness-action-sep" aria-hidden="true"></span>
         <button type="button" class="play-readiness-btn play-readiness-btn--edit" data-action="openPlayEditor"
-          data-arg="${filteredIndex}">&#9998; Edit Play</button>
+          data-arg="${filteredIndex}">&#9998; Edit</button>
         <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPlaybookRepModal"
           data-arg="${filteredIndex}">Add Rep</button>
         <button type="button" class="play-readiness-btn" data-action="openPlayReadinessPlaybookActionModal"
-          data-arg="${filteredIndex}">Action Report</button>
+          data-arg="${filteredIndex}">Action</button>
         <button type="button" class="play-readiness-btn" data-action="showPlayReadinessPlaybookHistory"
           data-arg="${filteredIndex}">History</button>
         <button type="button" class="play-readiness-btn play-readiness-btn--ghost"
