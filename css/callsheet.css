@@ -3967,3 +3967,152 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     max-width: 100vw;
   }
 }
+
+/* ========================================
+   Display & Format Side Drawer
+   ======================================== */
+.cs-display-panel-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  background: rgba(0, 0, 0, 0.35);
+  display: flex;
+  align-items: flex-start;
+  justify-content: flex-end;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.22s ease;
+}
+.cs-display-panel-overlay.visible {
+  opacity: 1;
+  pointer-events: all;
+}
+.cs-display-panel {
+  width: 540px;
+  max-width: 95vw;
+  height: 100dvh;
+  background: var(--color-surface);
+  display: flex;
+  flex-direction: column;
+  box-shadow: var(--shadow-lg);
+  transform: translateX(100%);
+  transition: transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+.cs-display-panel-overlay.visible .cs-display-panel {
+  transform: translateX(0);
+}
+.cs-display-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 11px 16px;
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  flex-shrink: 0;
+}
+.cs-display-panel-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+}
+.cs-display-panel-close {
+  background: none;
+  border: none;
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  cursor: pointer;
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  opacity: 0.75;
+  transition: opacity var(--transition-fast);
+}
+.cs-display-panel-close:hover { opacity: 1; }
+.cs-display-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+}
+
+/* Presets strip */
+.cs-display-panel-presets {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+  flex-wrap: wrap;
+}
+.cs-display-panel-presets .cs-preset-label { flex-shrink: 0; }
+.cs-display-panel-presets .cs-preset-select { flex: 1 1 140px; min-width: 0; }
+
+/* Section blocks */
+.cs-dp-section {
+  padding: 12px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.cs-dp-section:last-child { border-bottom: none; }
+.cs-dp-section-head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 8px;
+  margin-bottom: 10px;
+}
+.cs-dp-title {
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  color: var(--color-text);
+  margin: 0 0 2px;
+}
+.cs-dp-copy {
+  font-size: var(--font-size-3xs);
+  color: var(--color-text-muted);
+  margin: 0;
+}
+.cs-dp-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(110px, 1fr));
+  gap: 4px;
+}
+.cs-dp-section--borders .cs-border-panels {
+  flex-direction: column;
+  gap: 10px;
+}
+.cs-dp-section--borders .cs-border-panel { width: 100%; }
+.cs-dp-section--borders .cs-border-panel:last-child { border: none; }
+
+/* Toolbar tweaks */
+.cs-undo-redo-btn {
+  min-width: 34px;
+  padding: 5px 9px;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  border-color: var(--color-border);
+  background: var(--color-surface);
+}
+.cs-undo-redo-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.cs-toolbar-divider {
+  width: 1px;
+  height: 22px;
+  background: var(--color-border);
+  flex-shrink: 0;
+  align-self: center;
+}
+.cs-display-btn {
+  color: var(--color-primary);
+  border-color: var(--color-primary-light, var(--color-border));
+  background: var(--color-surface);
+  font-weight: 600;
+}
+@media (hover: hover) {
+  .cs-display-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+  }
+}
+.cs-display-btn.active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}

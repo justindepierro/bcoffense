@@ -4,10 +4,31 @@
 // Owns: csSelectAllFields, BUILTIN_PRESETS, loadDisplayPreset,
 // saveDisplayPreset, refreshPresetDropdown, manageDisplayPresets,
 // deleteDisplayPreset, saveCallSheetDisplayOptions,
-// restoreCallSheetDisplayOptions.
+// restoreCallSheetDisplayOptions, openDisplayPanel, closeDisplayPanel.
 //
 // Loaded after callsheet.js and callsheet-render.js.
 // ============================================================
+
+// ============ Display Panel (side drawer) ============
+
+function openDisplayPanel() {
+  const overlay = document.getElementById("csDisplayPanel");
+  if (!overlay) return;
+  overlay.classList.add("visible");
+  const btn = document.getElementById("csDisplayPanelBtn");
+  if (btn) btn.classList.add("active");
+  // Trap focus inside the panel
+  const closeBtn = overlay.querySelector(".cs-display-panel-close");
+  if (closeBtn) closeBtn.focus();
+}
+
+function closeDisplayPanel() {
+  const overlay = document.getElementById("csDisplayPanel");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  const btn = document.getElementById("csDisplayPanelBtn");
+  if (btn) btn.classList.remove("active");
+}
 
 // ============ Unified Display Bar Helpers ============
 
