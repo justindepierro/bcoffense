@@ -919,18 +919,115 @@
 
 .play-readiness-widget {
   grid-column: 1 / -1;
-  display: grid;
-  grid-template-columns: minmax(220px, 0.9fr) minmax(260px, 1.35fr) auto;
-  gap: 10px;
-  align-items: stretch;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
   margin-top: 8px;
-  padding: 10px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background:
     linear-gradient(135deg, var(--color-bg-blue-tint), transparent 70%),
     var(--color-surface-raised);
   box-shadow: inset 0 1px 0 var(--color-white-alpha-60);
+}
+
+/* ── Score row (primary action — top of widget) ── */
+.pr-score-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pr-score-label {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Color-coded by confidence tone */
+.pr-confidence {
+  font-size: var(--font-size-md);
+  font-weight: 900;
+  line-height: 1.2;
+  color: var(--color-text);
+}
+.pr-confidence--trusted { color: var(--color-success); }
+.pr-confidence--ready   { color: var(--color-primary); }
+.pr-confidence--needs   { color: var(--color-warning-hover); }
+.pr-confidence--risk    { color: var(--color-danger); }
+.pr-confidence--empty   { color: var(--color-text-secondary); }
+
+.pr-score-label small {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+
+/* Score buttons: larger in the widget context */
+.play-readiness-widget .play-readiness-score-grid {
+  grid-template-columns: repeat(5, minmax(42px, 1fr));
+  gap: 6px;
+}
+
+.play-readiness-widget .play-readiness-score-btn {
+  min-height: 44px;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  border-radius: var(--radius-md);
+}
+
+/* ── Details row (progress + actions — secondary, below score) ── */
+.pr-details-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pr-track-wrap {
+  flex: 1 1 160px;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.pr-rep-chips {
+  display: flex;
+  gap: 5px;
+  flex-wrap: wrap;
+}
+
+.pr-rep-chips span {
+  display: inline-flex;
+  align-items: center;
+  height: 22px;
+  padding: 0 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-surface);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+}
+
+.pr-band-chip {
+  background: var(--color-primary-light) !important;
+  color: var(--color-primary) !important;
+  border-color: transparent !important;
+}
+
+/* Actions inline */
+.play-readiness-widget .play-readiness-actions {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  align-items: center;
+  flex: 0 0 auto;
 }
 
 .script-item--printlike .play-readiness-widget {

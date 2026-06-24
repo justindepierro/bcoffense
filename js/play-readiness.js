@@ -461,7 +461,11 @@ function getPlayReadinessCompactSummary(summary) {
     repCountText,
     trend,
     tone: getPlayReadinessBadgeTone(summary),
-    label: scoreCount ? `Readiness ${averageScoreText}` : "Readiness --",
+    // Primary label: qualitative confidence label > opaque average score
+    label: scoreCount ? summary.confidenceLabel : "Rate Play",
+    sublabel: scoreCount
+      ? `${averageScoreText}/5 avg \u00b7 ${scoreCount} ${scoreCount === 1 ? "rep" : "reps"}`
+      : "No scores yet",
   };
 }
 
@@ -490,7 +494,7 @@ function renderPlayReadinessCompactBadgeFromSummary(summary, opts = {}) {
       <span class="play-readiness-badge-dot" aria-hidden="true"></span>
       <span class="play-readiness-badge-main">
         <strong>${escapeHtml(compact.label)}</strong>
-        <small>${escapeHtml(summary.confidenceLabel)}</small>
+        <small>${escapeHtml(compact.sublabel)}</small>
       </span>
       ${detail}
     </span>`;
@@ -554,6 +558,16 @@ function getPlayReadinessPlaybookPlay(index) {
   return null;
 }
 
+const _SIMPLE_REP_IDS = ["mental", "walkthrough", "air", "team_scout", "live", "game"];
+const _SIMPLE_REP_DISPLAY = {
+  mental: "Film / Mental Rep",
+  walkthrough: "Walkthrough",
+  air: "On Air / Positional",
+  team_scout: "Team vs Scout",
+  live: "Live / Scrimmage",
+  game: "Actual Game Rep",
+};
+
 function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   if (!isPlayReadinessCoachRole() || opts.printStyle) return "";
   const summary = opts.readinessSummary || getPlayReadinessSummary(play);
@@ -561,76 +575,65 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   const liveAverage = getPlayReadinessLiveAverageText(summary);
   const weightedText = formatPlayReadinessNumber(summary.weightedReps);
   const weeklyText = formatPlayReadinessNumber(summary.weeklyWeightedReps);
-  const hasAnyRecords =
-    Object.keys(getPlayReadinessStore().records || {}).length > 0;
+  const hasAnyRecords = Object.keys(getPlayReadinessStore().records || {}).length > 0;
   const lastReport = (summary.record.actionReports || []).slice(-1)[0] || null;
+  const hasData = summary.actualReps > 0 || summary.metrics.liveReps > 0;
+  const confidenceDisplay = compact.tone === "empty" ? "Not Yet Scored" : summary.confidenceLabel;
 
   return `
     <section class="play-readiness-widget play-readiness-widget--${escapeHtml(summary.sweet.tone)}"
       data-auth-player-hide="true" aria-label="Play readiness for ${escapeHtml(getScriptPlaySummaryText(play))}">
-      <div class="play-readiness-main">
-        <div class="play-readiness-head">
-          <span class="play-readiness-kicker">Play Readiness</span>
-          <strong>${escapeHtml(summary.readinessLabel)}</strong>
-          <span>${summary.readinessPercent}%</span>
+
+      <div class="pr-score-row">
+        <div class="pr-score-label">
+          <span class="play-readiness-kicker">Score This Rep</span>
+          <strong class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(confidenceDisplay)}</strong>
+          <small>${hasData
+            ? `${escapeHtml(liveAverage)}/5 avg \u00b7 ${summary.actualReps} reps \u00b7 ${escapeHtml(compact.trend.short)} trend`
+            : "Score 1\u20135 after each rep"}</small>
         </div>
-        <div class="play-readiness-track"
-          style="--pr-progress:${summary.progressPct}%; --pr-sweet-start:${summary.sweetStartPct}%; --pr-sweet-width:${summary.sweetWidthPct}%"
-          aria-label="${summary.readinessPercent}% readiness">
-          <span class="play-readiness-sweet" aria-hidden="true"></span>
-          <span class="play-readiness-fill" aria-hidden="true"></span>
-        </div>
-        <div class="play-readiness-sweet-label">${escapeHtml(summary.sweet.label)}</div>
-      </div>
-      <div class="play-readiness-metrics">
-        <span><strong>${escapeHtml(summary.installStatus)}</strong> status</span>
-        <span><strong>${escapeHtml(weightedText)}</strong> weighted</span>
-        <span><strong>${summary.actualReps}</strong> actual</span>
-        <span><strong>${escapeHtml(weeklyText)}</strong> 7-day</span>
-        <span><strong>${escapeHtml(liveAverage)}</strong> live avg</span>
-        <span><strong>${escapeHtml(compact.lastScoreText)}</strong> last</span>
-        <span><strong>${escapeHtml(compact.trend.short)}</strong> trend</span>
-        <span><strong>${summary.confidenceScore}</strong> confidence</span>
-        <span class="play-readiness-call-label">${escapeHtml(summary.confidenceLabel)}</span>
-      </div>
-      <div class="play-readiness-quick-score">
-        <span>Score this rep</span>
         <div class="play-readiness-score-grid" role="group" aria-label="Quick score this script play">
-          ${renderPlayReadinessScoreButtons(
-    "quickPlayReadinessScriptScore",
-    lastReport?.score || 0,
-    `data-idx="${index}"`,
-  )}
+          ${renderPlayReadinessScoreButtons("quickPlayReadinessScriptScore", lastReport?.score || 0, `data-idx="${index}"`)}
         </div>
       </div>
-      <div class="play-readiness-actions">
-        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessRepModal" data-arg="${index}">
-          Add Rep
-        </button>
-        <button type="button" class="play-readiness-btn" data-action="openPlayReadinessActionModal" data-arg="${index}">
-          Action Report
-        </button>
-        <button type="button" class="play-readiness-btn" data-action="showPlayReadinessHistory" data-arg="${index}">
-          History
-        </button>
-        ${
-          hasAnyRecords
-            ? ""
-            : `<button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="seedPlayReadinessSampleData">
-                Seed Samples
-              </button>`
-        }
+
+      <div class="pr-details-row">
+        <div class="pr-track-wrap">
+          <div class="play-readiness-track"
+            style="--pr-progress:${summary.progressPct}%; --pr-sweet-start:${summary.sweetStartPct}%; --pr-sweet-width:${summary.sweetWidthPct}%"
+            aria-label="${summary.readinessPercent}% readiness">
+            <span class="play-readiness-sweet" aria-hidden="true"></span>
+            <span class="play-readiness-fill" aria-hidden="true"></span>
+          </div>
+          <div class="pr-rep-chips">
+            <span title="Total practice reps">${summary.actualReps} reps</span>
+            <span title="Weighted rep score toward target">${escapeHtml(weightedText)} pts</span>
+            ${summary.weeklyWeightedReps > 0 ? `<span title="Weighted pts this week">${escapeHtml(weeklyText)} this wk</span>` : ""}
+            <span class="pr-band-chip" title="Readiness band: ${escapeHtml(summary.installStatus)} target">${escapeHtml(summary.readinessLabel)}</span>
+          </div>
+        </div>
+        <div class="play-readiness-actions">
+          <button type="button" class="play-readiness-btn" data-action="openPlayReadinessRepModal" data-arg="${index}">+ Add Rep</button>
+          <button type="button" class="play-readiness-btn" data-action="openPlayReadinessActionModal" data-arg="${index}">Action Report</button>
+          <button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="showPlayReadinessHistory" data-arg="${index}">History</button>
+          ${!hasAnyRecords ? `<button type="button" class="play-readiness-btn play-readiness-btn--ghost" data-action="seedPlayReadinessSampleData">Seed Samples</button>` : ""}
+        </div>
       </div>
+
     </section>`;
 }
+
+const _SCORE_LABELS = ["", "Needs Work", "Below Average", "Functional", "Good", "Excellent"];
 
 function renderPlayReadinessScoreButtons(action, activeScore = 0, extraAttrs = "") {
   return [1, 2, 3, 4, 5]
     .map((score) => {
       const active = parseInt(activeScore, 10) === score ? " active" : "";
+      const label = _SCORE_LABELS[score];
       return `<button type="button" class="play-readiness-score-btn${active}"
         data-action="${escapeHtml(action)}" data-arg="${score}" ${extraAttrs}
-        aria-label="Score this play ${score} out of 5">${score}</button>`;
+        title="${score} \u2014 ${label}"
+        aria-label="Score ${score}/5: ${label}">${score}</button>`;
     })
     .join("");
 }
@@ -865,12 +868,15 @@ function closePlayReadinessModal() {
 function openPlayReadinessRepModalForPlay(play, context = {}) {
   if (!play || !isPlayReadinessCoachRole()) return;
   const summary = getPlayReadinessSummary(play);
-  const defaultType = PLAY_READINESS_REP_TYPES[7];
+  const defaultType = PLAY_READINESS_REP_TYPES[7]; // team_scout
   const playLabel = getPlayReadinessPlayLabel(play);
-  const options = PLAY_READINESS_REP_TYPES.map(
-    (type) =>
-      `<option value="${escapeHtml(type.id)}" ${type.id === defaultType.id ? "selected" : ""}>${escapeHtml(type.label)} (${type.weight})</option>`,
-  ).join("");
+  // Show 6 clear hero options instead of all 11 granular types
+  const options = PLAY_READINESS_REP_TYPES
+    .filter((t) => _SIMPLE_REP_IDS.includes(t.id))
+    .sort((a, b) => _SIMPLE_REP_IDS.indexOf(a.id) - _SIMPLE_REP_IDS.indexOf(b.id))
+    .map((type) =>
+      `<option value="${escapeHtml(type.id)}" ${type.id === defaultType.id ? "selected" : ""}>${escapeHtml(_SIMPLE_REP_DISPLAY[type.id] || type.label)} (&times;${type.weight} weight)</option>`,
+    ).join("");
   const statusOptions = PLAY_READINESS_INSTALL_STATUSES.map(
     (status) =>
       `<option value="${escapeHtml(status)}" ${summary.installStatus === status ? "selected" : ""}>${escapeHtml(status)}</option>`,
@@ -1004,11 +1010,11 @@ function openPlayReadinessActionModalForPlay(play, context = {}) {
           </label>
           <label>Result Score
             <select data-auth-allow-input="true" name="score">
-              <option value="3">3 - Functional</option>
-              <option value="1">1 - Disaster</option>
-              <option value="2">2 - Poor</option>
-              <option value="4">4 - Good</option>
-              <option value="5">5 - Excellent / Explosive</option>
+              <option value="5">5 — Excellent / Explosive</option>
+              <option value="4">4 — Good</option>
+              <option value="3" selected>3 — Functional</option>
+              <option value="2">2 — Poor</option>
+              <option value="1">1 — Disaster</option>
             </select>
           </label>
           <label>Yards
