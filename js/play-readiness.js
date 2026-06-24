@@ -14,18 +14,18 @@ const _PR_TIER_DISPLAY = { new: "New", installed: "Installed", core: "Core" };
 
 // 5 practice intensity levels (down from 11)
 const PLAY_READINESS_REP_TYPES = [
-  { id: "mental",      label: "Film / Mental",        weight: 0.25 },
-  { id: "walkthrough", label: "Walkthrough / Indy",    weight: 0.5  },
-  { id: "air",         label: "On Air / Position",     weight: 0.75 },
-  { id: "scout",       label: "vs Scout / Team",       weight: 1.0  },
-  { id: "live",        label: "Live / Game Rep",        weight: 1.5  },
+  { id: "mental", label: "Film / Mental", weight: 0.25 },
+  { id: "walkthrough", label: "Walkthrough / Indy", weight: 0.5 },
+  { id: "air", label: "On Air / Position", weight: 0.75 },
+  { id: "scout", label: "vs Scout / Team", weight: 1.0 },
+  { id: "live", label: "Live / Game Rep", weight: 1.5 },
 ];
 
 // Rep volume targets per tier
 const PLAY_READINESS_THRESHOLDS = {
-  new:       { target: 15 },
+  new: { target: 15 },
   installed: { target: 40 },
-  core:      { target: 80 },
+  core: { target: 80 },
 };
 
 // Legacy rep type id → new id mapping (for migration)
@@ -37,11 +37,11 @@ const _PR_LEGACY_TYPE_MAP = {
 };
 
 const PLAY_READINESS_SAMPLE_SEEDS = [
-  { play: "Power",           tier: "core",      scores: [4, 5, 4, 4, 5], types: ["scout", "live", "scout", "scout", "live"] },
-  { play: "Counter",         tier: "installed", scores: [3, 4, 4],       types: ["scout", "scout", "live"] },
-  { play: "Inside Zone",     tier: "core",      scores: [4, 4, 5, 4],    types: ["live", "scout", "live", "scout"] },
-  { play: "Play Action Shot",tier: "installed", scores: [3, 4],          types: ["air", "scout"] },
-  { play: "Screen",          tier: "installed", scores: [2, 3, 4],       types: ["scout", "scout", "live"] },
+  { play: "Power", tier: "core", scores: [4, 5, 4, 4, 5], types: ["scout", "live", "scout", "scout", "live"] },
+  { play: "Counter", tier: "installed", scores: [3, 4, 4], types: ["scout", "scout", "live"] },
+  { play: "Inside Zone", tier: "core", scores: [4, 4, 5, 4], types: ["live", "scout", "live", "scout"] },
+  { play: "Play Action Shot", tier: "installed", scores: [3, 4], types: ["air", "scout"] },
+  { play: "Screen", tier: "installed", scores: [2, 3, 4], types: ["scout", "scout", "live"] },
 ];
 
 let playReadinessHistoryContext = null;
@@ -78,9 +78,9 @@ function normalizePlayReadinessInstallStatus(value) {
   if (PLAY_READINESS_INSTALL_STATUSES.includes(value)) return value;
   // Map legacy strings → new tiers
   if (value === "Identity Play") return "core";
-  if (value === "Base Play")     return "installed";
+  if (value === "Base Play") return "installed";
   if (value === "Tag/Variation") return "installed";
-  if (value === "New Play")      return "new";
+  if (value === "New Play") return "new";
   return "installed";
 }
 
@@ -287,10 +287,10 @@ function getPlayReadinessSummary(play) {
   }, 0);
   const avgScore = totalScoredWeight > 0
     ? scoredLogs.reduce((sum, log) => {
-        const type = getPlayReadinessRepType(log.type);
-        const w = (type?.weight || 1) * (parseInt(log.count, 10) || 1);
-        return sum + log.score * w;
-      }, 0) / totalScoredWeight
+      const type = getPlayReadinessRepType(log.type);
+      const w = (type?.weight || 1) * (parseInt(log.count, 10) || 1);
+      return sum + log.score * w;
+    }, 0) / totalScoredWeight
     : 0;
 
   // Volume progress toward tier target
@@ -326,9 +326,9 @@ function getPlayReadinessSummary(play) {
   let scoreTrend = { label: "No reps yet", short: "Unscored", tone: "empty" };
   if (recentScores.length >= 2) {
     const delta = recentScores[0] - recentScores[recentScores.length - 1];
-    if (delta >= 0.5)       scoreTrend = { label: "Trending up",   short: "Up",     tone: "up" };
-    else if (delta <= -0.5) scoreTrend = { label: "Trending down", short: "Down",   tone: "down" };
-    else                    scoreTrend = { label: "Stable trend",  short: "Stable", tone: "stable" };
+    if (delta >= 0.5) scoreTrend = { label: "Trending up", short: "Up", tone: "up" };
+    else if (delta <= -0.5) scoreTrend = { label: "Trending down", short: "Down", tone: "down" };
+    else scoreTrend = { label: "Stable trend", short: "Stable", tone: "stable" };
   } else if (recentScores.length === 1) {
     scoreTrend = { label: "First rep logged", short: "First", tone: "stable" };
   }
@@ -437,10 +437,10 @@ function renderPlayReadinessRollup(summary, opts = {}) {
   const compact = getPlayReadinessCompactSummary(summary);
   const variant = opts.variant ? ` play-readiness-rollup--${escapeHtml(opts.variant)}` : "";
   const items = [
-    ["Score",  `${summary.confidenceScore}`],
-    ["Avg",    `${compact.avgText}/5`],
-    ["Reps",   `${summary.repCount}`],
-    ["Trend",  compact.trend.short],
+    ["Score", `${summary.confidenceScore}`],
+    ["Avg", `${compact.avgText}/5`],
+    ["Reps", `${summary.repCount}`],
+    ["Trend", compact.trend.short],
   ];
   return `
     <div class="play-readiness-rollup play-readiness-rollup--${escapeHtml(compact.tone)}${variant}"
@@ -493,18 +493,6 @@ const _SIMPLE_REP_DISPLAY = {
 // ── Score button labels (item 29) ────────────────────────────────────────
 const _SCORE_LABELS = ["", "Not Ready", "Developing", "Functional", "Sharp", "Automatic"];
 
-function renderPlayReadinessScoreButtons(action, activeScore = 0, extraAttrs = "") {
-  return [1, 2, 3, 4, 5]
-    .map((score) => {
-      const active = parseInt(activeScore, 10) === score ? " active" : "";
-      const label = _SCORE_LABELS[score];
-      return `<button type="button" class="play-readiness-score-btn${active}"
-        data-action="${escapeHtml(action)}" data-arg="${score}" ${extraAttrs}
-        title="${score} \u2014 ${label}"
-        aria-label="Score ${score}/5: ${label}">${score}</button>`;
-    })
-    .join("");
-}
 
 // ── Script widget (items 13-16) ──────────────────────────────────────────
 
@@ -662,8 +650,8 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
     const typeLabel = getPlayReadinessRepType(log.type)?.label || log.type || "Rep";
     const flags = [
       log.explosive ? "&#128293;" : "",
-      log.turnover  ? "&#128308;" : "",
-      log.penalty   ? "&#129000;" : "",
+      log.turnover ? "&#128308;" : "",
+      log.penalty ? "&#129000;" : "",
     ].filter(Boolean).join(" ");
     return `<div class="pb-readiness-log-row">
       <span class="pb-readiness-log-date">${escapeHtml(log.date || "")}</span>
@@ -813,7 +801,7 @@ function openPlayReadinessLogModalForPlay(play, context = {}) {
           <div class="pr-log-score-section">
             <label class="pr-log-field-label">Score this rep</label>
             <div class="play-readiness-score-grid play-readiness-score-grid--large pr-log-score-grid" role="group" aria-label="Score 1 to 5">
-              ${[1,2,3,4,5].map((s) => `
+              ${[1, 2, 3, 4, 5].map((s) => `
                 <button type="button" class="play-readiness-score-btn${summary.lastLogScore === s ? " active" : ""}"
                   data-action="prLogSetScore" data-arg="${s}"
                   title="${s} \u2014 ${_SCORE_LABELS[s]}"
@@ -897,8 +885,8 @@ function _savePlayReadinessLog(play, form, context = {}) {
       situation: String(data.get("situation") || "").trim(),
       defense: String(data.get("defense") || "").trim(),
       explosive: data.has("explosive"),
-      turnover:  data.has("turnover"),
-      penalty:   data.has("penalty"),
+      turnover: data.has("turnover"),
+      penalty: data.has("penalty"),
       createdAt: new Date().toISOString(),
     });
   });
@@ -954,8 +942,8 @@ function quickScorePlayReadiness(play, rawScore, context = {}) {
       situation: "",
       defense: "",
       explosive: score >= 5,
-      turnover:  score <= 1,
-      penalty:   false,
+      turnover: score <= 1,
+      penalty: false,
       createdAt: new Date().toISOString(),
     });
   });
@@ -1003,14 +991,14 @@ function renderPlayReadinessReportScoreControls(playKey, log) {
     <div class="play-readiness-report-score-controls" role="group"
       aria-label="Update score for this rep">
       ${[1, 2, 3, 4, 5].map((score) => {
-        const active = activeScore === score ? " active" : "";
-        return `<button type="button" class="play-readiness-score-btn${active}"
+    const active = activeScore === score ? " active" : "";
+    return `<button type="button" class="play-readiness-score-btn${active}"
           data-action="updatePlayReadinessReportScore"
           data-arg="${score}"
           data-play-key="${escapeHtml(playKey)}"
           data-report-id="${escapeHtml(logId)}"
           aria-label="Update to ${score}/5">${score}</button>`;
-      }).join("")}
+  }).join("")}
       <button type="button" class="play-readiness-report-delete"
         data-action="deletePlayReadinessReport"
         data-play-key="${escapeHtml(playKey)}"
@@ -1075,8 +1063,8 @@ function showPlayReadinessHistoryForPlay(play) {
     const icon = _PR_TYPE_ICON(log.type);
     const flags = [
       log.explosive ? "&#128293;" : "",
-      log.turnover  ? "&#128308;" : "",
-      log.penalty   ? "&#129000;" : "",
+      log.turnover ? "&#128308;" : "",
+      log.penalty ? "&#129000;" : "",
     ].filter(Boolean).join(" ");
     const contextStr = [log.situation, log.defense].filter(Boolean).join(" / ");
     return `<div class="play-readiness-history-row">

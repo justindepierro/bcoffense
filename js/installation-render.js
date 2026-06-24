@@ -83,7 +83,7 @@ function getSmartBasePlayName(play) {
       "R",
     ]);
 
-    // Strip trailing tag-like tokens: short all-caps, digits, or known words
+    // Strip trailing tag‑like tokens: short all‑caps, digits, or known words
     const tailTagRe = /^[A-Z]{1,3}\d?$/;
     while (parts.length > 1) {
       const last = parts[parts.length - 1];
@@ -470,7 +470,7 @@ function renderInstallCategoryDetail(components, data) {
         <h3>${cat.icon} ${cat.label} <span class="install-detail-count">${installedCount}/${allItems.length}</span></h3>
         <div class="install-detail-actions">
           <input type="text" class="install-search" placeholder="Search ${cat.label.toLowerCase()}..."
-                 value="${escapeHtml(installSearchTerm)}" data-oninput="installSearch" data-pass="value">
+                 value="${installSearchTerm}" data-oninput="installSearch" data-pass="value">
           ${cat.id === "play"
       ? `<label class="install-smart-toggle" title="Group play variations by base concept">
                   <input type="checkbox" ${installSmartBasePlays ? "checked" : ""}
@@ -493,11 +493,11 @@ function renderInstallCategoryDetail(components, data) {
         return `
             <label class="install-item ${isInstalled ? "install-item-done" : ""}"
                    draggable="true"
-                   data-drag="installItem" data-cat="${cat.id}" data-val="${escapeHtml(value)}">
+                   data-drag="installItem" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
               <input type="checkbox" ${isInstalled ? "checked" : ""}
-                data-onchange="installToggleItem" data-pass="event" data-cat="${cat.id}" data-val="${escapeHtml(value)}">
+                data-onchange="installToggleItem" data-pass="event" data-cat="${cat.id}" data-val="${escapeAttr(value)}">
               <span class="install-item-check">${isInstalled ? "✅" : "⬜"}</span>
-              <span class="install-item-name">${escapeHtml(value)}</span>
+              <span class="install-item-name">${value}</span>
               <span class="install-item-count" title="${count} play${count !== 1 ? "s" : ""} use this">${count} play${count !== 1 ? "s" : ""}</span>
               <span class="install-item-drag" title="Drag to reorder">⠿</span>
             </label>`;
@@ -562,11 +562,11 @@ function showReadinessModal(type) {
 
       html += `<div class="readiness-modal-play ${level}">`;
       html += `  <div class="readiness-modal-play-header">`;
-      html += `    <div class="readiness-modal-play-name">${escapeHtml(playName)}</div>`;
+      html += `    <div class="readiness-modal-play-name">${playName}</div>`;
       html += `    <div class="readiness-modal-play-stars">${renderStarRating(rating.stars, rating.maxStars, "sm")}</div>`;
       html += `  </div>`;
       if (subtitle) {
-        html += `<div class="readiness-modal-play-sub">${escapeHtml(subtitle)}</div>`;
+        html += `<div class="readiness-modal-play-sub">${subtitle}</div>`;
       }
 
       // For partial and not-ready, show missing components
@@ -575,7 +575,7 @@ function showReadinessModal(type) {
         if (missing.length > 0) {
           html += `<div class="readiness-modal-missing">`;
           missing.forEach((d) => {
-            html += `<div class="readiness-modal-missing-row">❌ <span class="readiness-modal-cat">${d.icon} ${d.category}:</span> <span class="readiness-modal-val">${escapeHtml(d.value)}</span></div>`;
+            html += `<div class="readiness-modal-missing-row">❌ <span class="readiness-modal-cat">${d.icon} ${d.category}:</span> <span class="readiness-modal-val">${d.value}</span></div>`;
           });
           html += `</div>`;
         }
@@ -622,7 +622,7 @@ function getPlayInstallTooltip(play) {
     html += `<div class="install-tooltip-row ${d.installed ? "install-tooltip-done" : "install-tooltip-missing"}">
       <span>${d.installed ? "✅" : "❌"}</span>
       <span class="install-tooltip-cat">${d.icon} ${d.category}:</span>
-      <span class="install-tooltip-val">${escapeHtml(d.value)}</span>
+      <span class="install-tooltip-val">${d.value}</span>
     </div>`;
   });
 

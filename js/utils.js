@@ -10,9 +10,6 @@ const WRISTBAND_OFFSET = 11;
 const PICKER_LIMIT = 150;
 const TOOLTIP_DELAY_MS = 200;
 
-function getWristbandRecordCellCount(record) {
-  return record?.wristbandType === "player" ? WB_ROWS : CELLS_PER_CARD;
-}
 
 // ============ Shared Color Tokens ============
 // Mirrors CSS custom properties for use in JS-generated inline styles
@@ -792,8 +789,7 @@ const TEAM_ASSIGNMENT_SLOTS = [
   { key: "rg", defaultLabel: "RG", row: 1 },
   { key: "rt", defaultLabel: "RT", row: 1 },
 ];
-
-function normalizeTeamAssignmentLabelMap(labelMap = {}, fallbackMap = null) {
+, fallbackMap = null) {
   const normalized = {};
   TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
     const value = String(
@@ -806,78 +802,7 @@ function normalizeTeamAssignmentLabelMap(labelMap = {}, fallbackMap = null) {
   return normalized;
 }
 
-function getLegacyTeamAssignmentLabelMap() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
-  return normalizeTeamAssignmentLabelMap(stored);
-}
-
-function getTeamAssignmentLabelMap(personnel = "") {
-  const legacyLabels = getLegacyTeamAssignmentLabelMap();
-  const normalizedPersonnel = String(personnel || "").trim();
-  if (!normalizedPersonnel) return legacyLabels;
-
-  const storedPackages = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
-  if (!Array.isArray(storedPackages)) return legacyLabels;
-  const match = storedPackages.find(
-    (pkg) =>
-      String(pkg?.personnel || "").trim().toLowerCase() ===
-      normalizedPersonnel.toLowerCase(),
-  );
-  return match
-    ? normalizeTeamAssignmentLabelMap(match.labels, legacyLabels)
-    : legacyLabels;
-}
-
-function saveTeamAssignmentLabelMap(labelMap, personnel = "") {
-  const normalizedPersonnel = String(personnel || "").trim();
-  if (!normalizedPersonnel) {
-    const normalized = normalizeTeamAssignmentLabelMap(labelMap);
-    storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
-    updateTeamSettingsAutosaveStatus();
-    return normalized;
-  }
-
-  const packages = getTeamPersonnelPackages();
-  const packageIndex = packages.findIndex(
-    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
-  );
-  const nextLabels = normalizeTeamAssignmentLabelMap(
-    labelMap,
-    getTeamAssignmentLabelMap(normalizedPersonnel),
-  );
-  if (packageIndex >= 0) {
-    packages[packageIndex].labels = nextLabels;
-  } else {
-    packages.push(
-      normalizePersonnelPackage({
-        personnel: normalizedPersonnel,
-        assignments: {},
-        labels: nextLabels,
-      }),
-    );
-  }
-  saveTeamPersonnelPackages(packages);
-  return nextLabels;
-}
-
-function getTeamAssignmentSlots(personnel = "") {
-  const labelMap = getTeamAssignmentLabelMap(personnel);
-  return TEAM_ASSIGNMENT_SLOTS.map((slot) => ({
-    ...slot,
-    label: labelMap[slot.key] || slot.defaultLabel,
-  }));
-}
-
-function getPlaybookPersonnelValues() {
-  if (typeof plays === "undefined" || !Array.isArray(plays)) return [];
-  return [...new Set(
-    plays
-      .map((play) => String(play?.personnel || "").trim())
-      .filter(Boolean),
-  )].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
-}
-
-function normalizeTeamPlayer(player = {}) {
+) {
   const id = String(player.id || `player-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
   const name = String(player.name || "").trim();
   const number = String(player.number || "").trim();
@@ -899,23 +824,7 @@ function normalizeTeamPlayer(player = {}) {
   };
 }
 
-function getTeamRoster() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
-  return Array.isArray(stored)
-    ? stored.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
-    : [];
-}
-
-function saveTeamRoster(roster) {
-  const normalized = Array.isArray(roster)
-    ? roster.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
-    : [];
-  storageManager.set(STORAGE_KEYS.TEAM_ROSTER, normalized);
-  updateTeamSettingsAutosaveStatus();
-  return normalized;
-}
-
-function normalizeTeamDepthChart(depthChart = {}, fallbackAssignments = {}) {
+, fallbackAssignments = {}) {
   const normalized = {};
   TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
     const rawValue = depthChart?.[slot.key];
@@ -935,8 +844,7 @@ function normalizeTeamDepthChart(depthChart = {}, fallbackAssignments = {}) {
   });
   return normalized;
 }
-
-function getPrimaryAssignmentsFromDepthChart(depthChart = {}) {
+) {
   const normalized = {};
   TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
     const primary = Array.isArray(depthChart?.[slot.key])
@@ -946,16 +854,14 @@ function getPrimaryAssignmentsFromDepthChart(depthChart = {}) {
   });
   return normalized;
 }
-
-function getTeamDepthChartForSlot(depthChart = {}, slotKey = "") {
+, slotKey = "") {
   return Array.isArray(depthChart?.[slotKey])
     ? depthChart[slotKey]
       .map((value) => String(value || "").trim())
       .filter(Boolean)
     : [];
 }
-
-function normalizePersonnelPackage(pkg = {}) {
+) {
   const personnel = String(pkg.personnel || "").trim();
   const depthChart = normalizeTeamDepthChart(pkg.depthChart, pkg.assignments);
   const assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
@@ -971,8 +877,7 @@ function normalizePersonnelPackage(pkg = {}) {
     labels,
   };
 }
-
-function normalizeTeamSwapGroup(group = {}) {
+) {
   const id = String(
     group.id || `swap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
   );
@@ -989,88 +894,7 @@ function normalizeTeamSwapGroup(group = {}) {
   };
 }
 
-function getTeamPersonnelPackages() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
-  const playbookPersonnel = getPlaybookPersonnelValues();
-  const normalizedStored = Array.isArray(stored)
-    ? stored
-      .map((pkg) => normalizePersonnelPackage(pkg))
-      .filter((pkg) => pkg.personnel)
-    : [];
-  const byPersonnel = new Map(
-    normalizedStored.map((pkg) => [pkg.personnel.toLowerCase(), pkg]),
-  );
-  const autoPackages = playbookPersonnel.map((personnel) => {
-    const existing = byPersonnel.get(personnel.toLowerCase());
-    return existing
-      ? { ...existing, isAutoPrepared: false }
-      : {
-        ...normalizePersonnelPackage({
-          personnel,
-          assignments: {},
-          labels: getTeamAssignmentLabelMap(personnel),
-        }),
-        isAutoPrepared: true,
-      };
-  });
-  const extras = normalizedStored.filter(
-    (pkg) => !playbookPersonnel.some((personnel) => personnel.toLowerCase() === pkg.personnel.toLowerCase()),
-  ).map((pkg) => ({ ...pkg, isAutoPrepared: false }));
-  return [...autoPackages, ...extras];
-}
-
-function saveTeamPersonnelPackages(packages) {
-  const normalized = Array.isArray(packages)
-    ? packages
-      .map((pkg) => normalizePersonnelPackage(pkg))
-      .filter((pkg) => pkg.personnel)
-    : [];
-  storageManager.set(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, normalized);
-  updateTeamSettingsAutosaveStatus();
-  return normalized;
-}
-
-function getTeamSwapGroups() {
-  const stored = storageManager.get(STORAGE_KEYS.TEAM_SWAP_GROUPS, []);
-  return Array.isArray(stored)
-    ? stored
-      .map((group) => normalizeTeamSwapGroup(group))
-      .filter((group) => group.name)
-    : [];
-}
-
-function saveTeamSwapGroups(groups) {
-  const normalized = Array.isArray(groups)
-    ? groups
-      .map((group) => normalizeTeamSwapGroup(group))
-      .filter((group) => group.name)
-    : [];
-  storageManager.set(STORAGE_KEYS.TEAM_SWAP_GROUPS, normalized);
-  updateTeamSettingsAutosaveStatus();
-  return normalized;
-}
-
-function getPersonnelPackageAssignments(personnel) {
-  const normalizedPersonnel = String(personnel || "").trim();
-  if (!normalizedPersonnel) return {};
-  const match = getTeamPersonnelPackages().find(
-    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
-  );
-  return match
-    ? safeDeepClone(getPrimaryAssignmentsFromDepthChart(match.depthChart || match.assignments))
-    : {};
-}
-
-function getPersonnelPackageDepthChart(personnel) {
-  const normalizedPersonnel = String(personnel || "").trim();
-  if (!normalizedPersonnel) return {};
-  const match = getTeamPersonnelPackages().find(
-    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
-  );
-  return match ? safeDeepClone(match.depthChart || {}) : {};
-}
-
-function normalizePlayerAssignments(assignments = {}) {
+) {
   const normalized = {};
   getTeamAssignmentSlots().forEach((slot) => {
     const value = String(assignments?.[slot.key] || "").trim();
@@ -1079,172 +903,7 @@ function normalizePlayerAssignments(assignments = {}) {
   return normalized;
 }
 
-function getTeamSwapGroupAssignments(groupId, personnel) {
-  const normalizedGroupId = String(groupId || "").trim();
-  if (!normalizedGroupId) return {};
-
-  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
-  const match = getTeamSwapGroups().find((group) => {
-    if (group.id !== normalizedGroupId) return false;
-    if (!group.personnel) return true;
-    return group.personnel.toLowerCase() === normalizedPersonnel;
-  });
-
-  return match
-    ? safeDeepClone(getPrimaryAssignmentsFromDepthChart(match.depthChart || match.assignments))
-    : {};
-}
-
-function getTeamSwapGroupDepthChart(groupId, personnel) {
-  const normalizedGroupId = String(groupId || "").trim();
-  if (!normalizedGroupId) return {};
-
-  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
-  const match = getTeamSwapGroups().find((group) => {
-    if (group.id !== normalizedGroupId) return false;
-    if (!group.personnel) return true;
-    return group.personnel.toLowerCase() === normalizedPersonnel;
-  });
-
-  return match ? safeDeepClone(match.depthChart || {}) : {};
-}
-
-function getPlaySubPackageId(play) {
-  return String(play?.playerSubPackageId || play?.subPackageId || "").trim();
-}
-
-function getPlaySubPackageAssignments(play) {
-  const groupId = getPlaySubPackageId(play);
-  if (!groupId) return {};
-  return getTeamSwapGroupAssignments(groupId, play?.personnel);
-}
-
-function getPlaySubPackageDepthChart(play) {
-  const groupId = getPlaySubPackageId(play);
-  if (!groupId) return {};
-  return getTeamSwapGroupDepthChart(groupId, play?.personnel);
-}
-
-function getApplicableTeamSwapGroups(personnel) {
-  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
-  return getTeamSwapGroups().filter((group) => {
-    if (!group.personnel) return true;
-    return group.personnel.toLowerCase() === normalizedPersonnel;
-  });
-}
-
-function getBasePlayerAssignments(play) {
-  const packageAssignments = getPersonnelPackageAssignments(play?.personnel);
-  return normalizePlayerAssignments(packageAssignments);
-}
-
-function getBasePlayerDepthChart(play) {
-  const packageDepthChart = getPersonnelPackageDepthChart(play?.personnel);
-  return normalizeTeamDepthChart(packageDepthChart);
-}
-
-function getPlayerAssignmentBaseline(play) {
-  return normalizePlayerAssignments({
-    ...getBasePlayerAssignments(play),
-    ...getPlaySubPackageAssignments(play),
-  });
-}
-
-function getResolvedPlayerDepthChart(play) {
-  const baseDepthChart = getBasePlayerDepthChart(play);
-  const subPackageDepthChart = getPlaySubPackageDepthChart(play);
-  const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
-  const resolved = normalizeTeamDepthChart(baseDepthChart);
-
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const subDepth = getTeamDepthChartForSlot(subPackageDepthChart, slot.key);
-    if (!subDepth.length) return;
-    const baseDepth = getTeamDepthChartForSlot(resolved, slot.key);
-    const mergedDepth = [...new Set([...subDepth, ...baseDepth])];
-    if (mergedDepth.length) resolved[slot.key] = mergedDepth;
-  });
-
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const manualPlayerId = String(manualAssignments[slot.key] || "").trim();
-    if (!manualPlayerId) return;
-    const slotDepth = getTeamDepthChartForSlot(resolved, slot.key).filter(
-      (playerId) => playerId !== manualPlayerId,
-    );
-    resolved[slot.key] = [manualPlayerId, ...slotDepth];
-  });
-
-  return resolved;
-}
-
-function getResolvedPlayerAssignments(play) {
-  return {
-    ...getPlayerAssignmentBaseline(play),
-    ...normalizePlayerAssignments(play?.playerAssignments),
-  };
-}
-
-function formatTeamPlayerLabel(player) {
-  const bits = [];
-  if (player.number) bits.push(`#${player.number}`);
-  if (player.name) bits.push(player.name);
-  if (player.position) bits.push(`(${player.position})`);
-  if (player.positionGroup) bits.push(player.positionGroup === "linemen" ? "[Linemen]" : "[Skill]");
-  return bits.join(" ") || "Unnamed Player";
-}
-
-function getTeamPlayerById(playerId) {
-  if (!playerId) return null;
-  return getTeamRoster().find((player) => player.id === playerId) || null;
-}
-
-function getTeamPlayerSelectionDisplay(playerId) {
-  const player = getTeamPlayerById(playerId);
-  return player ? formatTeamPlayerLabel(player) : "Open slot";
-}
-
-function formatTeamDepthChartDisplay(playerIds = []) {
-  const ids = Array.isArray(playerIds)
-    ? playerIds.map((value) => String(value || "").trim()).filter(Boolean)
-    : [];
-  if (!ids.length) return "Open slot";
-  return ids
-    .map((playerId, index) => `${index === 0 ? "Starter" : `Sub ${index}`}: ${getTeamPlayerSelectionDisplay(playerId)}`)
-    .join(" | ");
-}
-
-function buildTeamPlayerOptionMarkup(selectedId = "", includeBlank = true) {
-  const roster = getTeamRoster();
-  const blankOption = includeBlank
-    ? `<option value="">${roster.length ? "Open" : "Add roster first"}</option>`
-    : "";
-  return blankOption + roster
-    .map((player) => {
-      const selected = player.id === selectedId ? " selected" : "";
-      return `<option value="${escapeAttr(player.id)}"${selected}>${escapeHtml(formatTeamPlayerLabel(player))}</option>`;
-    })
-    .join("");
-}
-
-function buildTeamSwapGroupOptionMarkup(
-  selectedId = "",
-  personnel = "",
-  includeBlank = true,
-) {
-  const groups = getApplicableTeamSwapGroups(personnel);
-  const blankOption = includeBlank
-    ? `<option value="">${groups.length ? "No sub package" : "Add sub packages first"}</option>`
-    : "";
-
-  return blankOption + groups
-    .map((group) => {
-      const selected = group.id === selectedId ? " selected" : "";
-      const suffix = group.personnel ? ` (${group.personnel})` : "";
-      return `<option value="${escapeAttr(group.id)}"${selected}>${escapeHtml(group.name + suffix)}</option>`;
-    })
-    .join("");
-}
-
-function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
+, options = {}) {
   const includeSlotLabels = options.includeSlotLabels !== false;
   const personnel = String(options.personnel || "").trim();
   const roster = getTeamRoster();
@@ -1502,44 +1161,6 @@ function safeDeepClone(obj) {
  * @param {boolean} useSquares - Use square emojis instead of circles
  * @returns {string} Emoji representation
  */
-function getPersonnelEmoji(personnel, useSquares = false) {
-  if (!personnel) return "";
-
-  const p = String(personnel).toLowerCase().trim();
-
-  const circleMap = {
-    red: "🔴",
-    blue: "🔵",
-    green: "🟢",
-    yellow: "🟡",
-    orange: "🟠",
-    purple: "🟣",
-    brown: "🟤",
-    white: "⚪",
-    black: "⚫",
-    navy: "⚓",
-    meat: "🥩",
-    star: "⭐",
-  };
-
-  const squareMap = {
-    red: "🟥",
-    blue: "🟦",
-    green: "🟩",
-    yellow: "🟨",
-    orange: "🟧",
-    purple: "🟪",
-    brown: "🟫",
-    white: "⬜",
-    black: "⬛",
-    navy: "⚓",
-    meat: "🥩",
-    star: "⭐",
-  };
-
-  const map = useSquares ? squareMap : circleMap;
-  return map[p] || "";
-}
 
 /**
  * Remove vowels from a string (for abbreviated display)
@@ -2395,133 +2016,12 @@ const SITUATION_TO_TENDENCIES = {
  * @param {Object} filters    – { down: ["3"], distRange: [7,99], situation: ["Red Zone"], etc. }
  * @returns {{ plays: Array, topFront: {term,count,pct}[], topCoverage: {term,count,pct}[], topBlitz: {term,count,pct}[], blitzRate: number, summary: string }}
  */
-function queryTendencies(opponent, filters) {
-  if (!opponent || !opponent.plays || opponent.plays.length === 0) {
-    return {
-      plays: [],
-      topFront: [],
-      topCoverage: [],
-      topBlitz: [],
-      topStunt: [],
-      blitzRate: 0,
-      summary: "No data",
-    };
-  }
-
-  let matched = opponent.plays.filter((p) => {
-    // Down filter
-    if (filters.down && filters.down.length > 0) {
-      if (!filters.down.includes(p.down)) return false;
-    }
-    // Distance range filter
-    if (filters.distRange) {
-      const dist = parseFloat(p.distance);
-      if (isNaN(dist)) return false;
-      if (dist < filters.distRange[0] || dist > filters.distRange[1])
-        return false;
-    }
-    // Situation filter
-    if (filters.situation && filters.situation.length > 0) {
-      if (!filters.situation.includes(p.situation)) return false;
-    }
-    // Field position
-    if (filters.fieldPos) {
-      const fp = (p.fieldPosition || "").toLowerCase();
-      if (fp !== filters.fieldPos) return false;
-    }
-    // Yard range
-    if (filters.yardRange) {
-      const yl = parseInt(p.yardLine, 10);
-      if (isNaN(yl)) return false;
-      if (yl < filters.yardRange[0] || yl > filters.yardRange[1]) return false;
-    }
-    // Offense formation filter (for smart suggestions)
-    if (filters.offenseFormation) {
-      if (
-        (p.offenseFormation || "").toLowerCase() !==
-        filters.offenseFormation.toLowerCase()
-      )
-        return false;
-    }
-    return true;
-  });
-
-  const total = matched.length;
-
-  // Count distributions
-  function topN(field, n) {
-    const counts = {};
-    matched.forEach((p) => {
-      const val = p[field];
-      if (val && val !== "None") counts[val] = (counts[val] || 0) + 1;
-    });
-    return Object.entries(counts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, n)
-      .map(([term, count]) => ({
-        term,
-        count,
-        pct: total > 0 ? Math.round((count / total) * 100) : 0,
-        family: normalizeDefense(
-          term,
-          field === "defFront"
-            ? "front"
-            : field === "defCoverage"
-              ? "coverage"
-              : field === "defBlitz"
-                ? "blitz"
-                : "stunt",
-        ),
-      }));
-  }
-
-  const topFront = topN("defFront", 5);
-  const topCoverage = topN("defCoverage", 5);
-  const topBlitz = topN("defBlitz", 5);
-  const topStunt = topN("defStunt", 5);
-  const blitzCount = matched.filter(
-    (p) => p.defBlitz && p.defBlitz !== "None",
-  ).length;
-  const blitzRate = total > 0 ? Math.round((blitzCount / total) * 100) : 0;
-
-  // Build human-readable summary
-  let summary = "";
-  if (total === 0) {
-    summary = "No data for this situation";
-  } else {
-    const parts = [];
-    if (topFront.length > 0)
-      parts.push(`Front: ${topFront[0].term} (${topFront[0].pct}%)`);
-    if (topCoverage.length > 0)
-      parts.push(`Cov: ${topCoverage[0].term} (${topCoverage[0].pct}%)`);
-    if (blitzRate > 0) parts.push(`Blitz: ${blitzRate}%`);
-    summary = `${total} plays — ${parts.join(" • ")}`;
-  }
-
-  return {
-    plays: matched,
-    topFront,
-    topCoverage,
-    topBlitz,
-    topStunt,
-    blitzRate,
-    summary,
-    total,
-  };
-}
 
 /**
  * Get tendencies intel for a specific call sheet category.
  * @param {string} categoryId – e.g. "3rd-long", "rz-10"
  * @returns {Object|null} queryTendencies result or null if no opponent
  */
-function getTendenciesForCategory(categoryId) {
-  const opp = getActiveOpponent();
-  if (!opp) return null;
-  const filters = SITUATION_TO_TENDENCIES[categoryId];
-  if (!filters) return null;
-  return queryTendencies(opp, filters);
-}
 
 /**
  * Get the best defensive look for a play context (used by Script auto-fill).
@@ -2592,94 +2092,6 @@ function getBestDefensiveLook(play) {
  * @param {Object|null} intel – queryTendencies result for the category
  * @returns {{ score: number, reasons: string[], warnings: string[] }}
  */
-function scorePlayForSituation(play, category, intel) {
-  let score = 0;
-  const reasons = [];
-  const warnings = [];
-
-  // 1. Preferred down match
-  if (category.down && play.preferredDown) {
-    const downs = play.preferredDown
-      .toString()
-      .split(/[,\/]/)
-      .map((s) => s.trim());
-    if (downs.includes(category.down)) {
-      score += 30;
-      reasons.push(
-        `Preferred for ${category.down}${category.down === "1" ? "st" : category.down === "2" ? "nd" : category.down === "3" ? "rd" : "th"} down`,
-      );
-    }
-  }
-
-  // 2. Preferred distance match
-  if (category.distance && play.preferredDistance) {
-    const dist = play.preferredDistance.toLowerCase().trim();
-    const catDist = category.distance.toLowerCase().trim();
-    if (dist === catDist) {
-      score += 20;
-      reasons.push(`Preferred for ${catDist} distance`);
-    }
-  }
-
-  // 3. Preferred situation match
-  if (category.situation && play.preferredSituation) {
-    const sits = play.preferredSituation
-      .split(/[,\/]/)
-      .map((s) => s.trim().toLowerCase());
-    if (sits.includes(category.situation.toLowerCase())) {
-      score += 25;
-      reasons.push(`Preferred for ${category.situation}`);
-    }
-  }
-
-  // 4. Preferred field position match
-  if (category.position && play.preferredFieldPosition) {
-    const positions = play.preferredFieldPosition
-      .split(/[,\/]/)
-      .map((s) => s.trim().toLowerCase());
-    const catPos = category.position.toLowerCase();
-    if (positions.includes(catPos)) {
-      score += 15;
-      reasons.push(`Preferred for ${category.position}`);
-    }
-  }
-
-  // 5. Dead-vs check — penalize if dead vs opponent's common look
-  if (intel && intel.total > 0 && play.deadVs) {
-    // Check against top coverage
-    if (intel.topCoverage.length > 0) {
-      const { isDead, reasons: deadReasons } = checkDeadVs(
-        play,
-        intel.topCoverage[0].term,
-        null,
-      );
-      if (isDead) {
-        const penalty = intel.topCoverage[0].pct >= 30 ? -40 : -20;
-        score += penalty;
-        deadReasons.forEach((r) =>
-          warnings.push(`⚠️ ${r} (${intel.topCoverage[0].pct}% of the time)`),
-        );
-      }
-    }
-    // Check against top front
-    if (intel.topFront.length > 0) {
-      const { isDead, reasons: deadReasons } = checkDeadVs(
-        play,
-        null,
-        intel.topFront[0].term,
-      );
-      if (isDead) {
-        const penalty = intel.topFront[0].pct >= 30 ? -30 : -15;
-        score += penalty;
-        deadReasons.forEach((r) =>
-          warnings.push(`⚠️ ${r} (${intel.topFront[0].pct}% of the time)`),
-        );
-      }
-    }
-  }
-
-  return { score, reasons, warnings };
-}
 
 /**
  * Get smart play suggestions for a call sheet category.
@@ -2789,23 +2201,11 @@ function setPrintTitle(type, customName) {
  * Get the configured team name (used in call sheet headers, game plan, etc.)
  * @returns {string}
  */
-function getTeamName() {
-  return storageManager.get(STORAGE_KEYS.TEAM_NAME, "My Team Football");
-}
 
 /**
  * Set the configured team name
  * @param {string} name
  */
-function setTeamName(name) {
-  storageManager.set(STORAGE_KEYS.TEAM_NAME, name);
-  updateTeamSettingsAutosaveStatus();
-  // Update header subtitle
-  const teamSub = document.getElementById("teamSubtitle");
-  if (teamSub) {
-    teamSub.textContent = name && name !== "My Team Football" ? name : "";
-  }
-}
 
 /**
  * Escape a string for safe use in HTML attribute values.

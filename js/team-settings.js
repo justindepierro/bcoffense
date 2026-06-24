@@ -923,3 +923,408 @@ function initTeamSettings() {
 
   renderTeamSettings();
 }
+
+// ── Moved from utils.js ──────────────────────────
+function normalizeTeamAssignmentLabelMap(labelMap = {}
+
+function getLegacyTeamAssignmentLabelMap() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
+  return normalizeTeamAssignmentLabelMap(stored);
+}
+
+function getTeamAssignmentLabelMap(personnel = "") {
+  const legacyLabels = getLegacyTeamAssignmentLabelMap();
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) return legacyLabels;
+
+  const storedPackages = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  if (!Array.isArray(storedPackages)) return legacyLabels;
+  const match = storedPackages.find(
+    (pkg) =>
+      String(pkg?.personnel || "").trim().toLowerCase() ===
+      normalizedPersonnel.toLowerCase(),
+  );
+  return match
+    ? normalizeTeamAssignmentLabelMap(match.labels, legacyLabels)
+    : legacyLabels;
+}
+
+function saveTeamAssignmentLabelMap(labelMap, personnel = "") {
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) {
+    const normalized = normalizeTeamAssignmentLabelMap(labelMap);
+    storageManager.set(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, normalized);
+    updateTeamSettingsAutosaveStatus();
+    return normalized;
+  }
+
+  const packages = getTeamPersonnelPackages();
+  const packageIndex = packages.findIndex(
+    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
+  );
+  const nextLabels = normalizeTeamAssignmentLabelMap(
+    labelMap,
+    getTeamAssignmentLabelMap(normalizedPersonnel),
+  );
+  if (packageIndex >= 0) {
+    packages[packageIndex].labels = nextLabels;
+  } else {
+    packages.push(
+      normalizePersonnelPackage({
+        personnel: normalizedPersonnel,
+        assignments: {},
+        labels: nextLabels,
+      }),
+    );
+  }
+  saveTeamPersonnelPackages(packages);
+  return nextLabels;
+}
+
+function getTeamAssignmentSlots(personnel = "") {
+  const labelMap = getTeamAssignmentLabelMap(personnel);
+  return TEAM_ASSIGNMENT_SLOTS.map((slot) => ({
+    ...slot,
+    label: labelMap[slot.key] || slot.defaultLabel,
+  }));
+}
+
+function getPlaybookPersonnelValues() {
+  if (typeof plays === "undefined" || !Array.isArray(plays)) return [];
+  return [...new Set(
+    plays
+      .map((play) => String(play?.personnel || "").trim())
+      .filter(Boolean),
+  )].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
+}
+
+function normalizeTeamPlayer(player = {}
+
+function getTeamRoster() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
+  return Array.isArray(stored)
+    ? stored.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
+    : [];
+}
+
+function saveTeamRoster(roster) {
+  const normalized = Array.isArray(roster)
+    ? roster.map((player) => normalizeTeamPlayer(player)).filter((player) => player.name)
+    : [];
+  storageManager.set(STORAGE_KEYS.TEAM_ROSTER, normalized);
+  updateTeamSettingsAutosaveStatus();
+  return normalized;
+}
+
+function normalizeTeamDepthChart(depthChart = {}
+
+function getPrimaryAssignmentsFromDepthChart(depthChart = {}
+
+function getTeamDepthChartForSlot(depthChart = {}
+
+function normalizePersonnelPackage(pkg = {}
+
+function normalizeTeamSwapGroup(group = {}
+
+function getTeamPersonnelPackages() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
+  const playbookPersonnel = getPlaybookPersonnelValues();
+  const normalizedStored = Array.isArray(stored)
+    ? stored
+      .map((pkg) => normalizePersonnelPackage(pkg))
+      .filter((pkg) => pkg.personnel)
+    : [];
+  const byPersonnel = new Map(
+    normalizedStored.map((pkg) => [pkg.personnel.toLowerCase(), pkg]),
+  );
+  const autoPackages = playbookPersonnel.map((personnel) => {
+    const existing = byPersonnel.get(personnel.toLowerCase());
+    return existing
+      ? { ...existing, isAutoPrepared: false }
+      : {
+        ...normalizePersonnelPackage({
+          personnel,
+          assignments: {},
+          labels: getTeamAssignmentLabelMap(personnel),
+        }),
+        isAutoPrepared: true,
+      };
+  });
+  const extras = normalizedStored.filter(
+    (pkg) => !playbookPersonnel.some((personnel) => personnel.toLowerCase() === pkg.personnel.toLowerCase()),
+  ).map((pkg) => ({ ...pkg, isAutoPrepared: false }));
+  return [...autoPackages, ...extras];
+}
+
+function saveTeamPersonnelPackages(packages) {
+  const normalized = Array.isArray(packages)
+    ? packages
+      .map((pkg) => normalizePersonnelPackage(pkg))
+      .filter((pkg) => pkg.personnel)
+    : [];
+  storageManager.set(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, normalized);
+  updateTeamSettingsAutosaveStatus();
+  return normalized;
+}
+
+function getTeamSwapGroups() {
+  const stored = storageManager.get(STORAGE_KEYS.TEAM_SWAP_GROUPS, []);
+  return Array.isArray(stored)
+    ? stored
+      .map((group) => normalizeTeamSwapGroup(group))
+      .filter((group) => group.name)
+    : [];
+}
+
+function saveTeamSwapGroups(groups) {
+  const normalized = Array.isArray(groups)
+    ? groups
+      .map((group) => normalizeTeamSwapGroup(group))
+      .filter((group) => group.name)
+    : [];
+  storageManager.set(STORAGE_KEYS.TEAM_SWAP_GROUPS, normalized);
+  updateTeamSettingsAutosaveStatus();
+  return normalized;
+}
+
+function getPersonnelPackageAssignments(personnel) {
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) return {};
+  const match = getTeamPersonnelPackages().find(
+    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
+  );
+  return match
+    ? safeDeepClone(getPrimaryAssignmentsFromDepthChart(match.depthChart || match.assignments))
+    : {};
+}
+
+function getPersonnelPackageDepthChart(personnel) {
+  const normalizedPersonnel = String(personnel || "").trim();
+  if (!normalizedPersonnel) return {};
+  const match = getTeamPersonnelPackages().find(
+    (pkg) => pkg.personnel.toLowerCase() === normalizedPersonnel.toLowerCase(),
+  );
+  return match ? safeDeepClone(match.depthChart || {}) : {};
+}
+
+function normalizePlayerAssignments(assignments = {}
+
+function getTeamSwapGroupAssignments(groupId, personnel) {
+  const normalizedGroupId = String(groupId || "").trim();
+  if (!normalizedGroupId) return {};
+
+  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
+  const match = getTeamSwapGroups().find((group) => {
+    if (group.id !== normalizedGroupId) return false;
+    if (!group.personnel) return true;
+    return group.personnel.toLowerCase() === normalizedPersonnel;
+  });
+
+  return match
+    ? safeDeepClone(getPrimaryAssignmentsFromDepthChart(match.depthChart || match.assignments))
+    : {};
+}
+
+function getTeamSwapGroupDepthChart(groupId, personnel) {
+  const normalizedGroupId = String(groupId || "").trim();
+  if (!normalizedGroupId) return {};
+
+  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
+  const match = getTeamSwapGroups().find((group) => {
+    if (group.id !== normalizedGroupId) return false;
+    if (!group.personnel) return true;
+    return group.personnel.toLowerCase() === normalizedPersonnel;
+  });
+
+  return match ? safeDeepClone(match.depthChart || {}) : {};
+}
+
+function getPlaySubPackageId(play) {
+  return String(play?.playerSubPackageId || play?.subPackageId || "").trim();
+}
+
+function getPlaySubPackageAssignments(play) {
+  const groupId = getPlaySubPackageId(play);
+  if (!groupId) return {};
+  return getTeamSwapGroupAssignments(groupId, play?.personnel);
+}
+
+function getPlaySubPackageDepthChart(play) {
+  const groupId = getPlaySubPackageId(play);
+  if (!groupId) return {};
+  return getTeamSwapGroupDepthChart(groupId, play?.personnel);
+}
+
+function getApplicableTeamSwapGroups(personnel) {
+  const normalizedPersonnel = String(personnel || "").trim().toLowerCase();
+  return getTeamSwapGroups().filter((group) => {
+    if (!group.personnel) return true;
+    return group.personnel.toLowerCase() === normalizedPersonnel;
+  });
+}
+
+function getBasePlayerAssignments(play) {
+  const packageAssignments = getPersonnelPackageAssignments(play?.personnel);
+  return normalizePlayerAssignments(packageAssignments);
+}
+
+function getBasePlayerDepthChart(play) {
+  const packageDepthChart = getPersonnelPackageDepthChart(play?.personnel);
+  return normalizeTeamDepthChart(packageDepthChart);
+}
+
+function getPlayerAssignmentBaseline(play) {
+  return normalizePlayerAssignments({
+    ...getBasePlayerAssignments(play),
+    ...getPlaySubPackageAssignments(play),
+  });
+}
+
+function getResolvedPlayerDepthChart(play) {
+  const baseDepthChart = getBasePlayerDepthChart(play);
+  const subPackageDepthChart = getPlaySubPackageDepthChart(play);
+  const manualAssignments = normalizePlayerAssignments(play?.playerAssignments);
+  const resolved = normalizeTeamDepthChart(baseDepthChart);
+
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const subDepth = getTeamDepthChartForSlot(subPackageDepthChart, slot.key);
+    if (!subDepth.length) return;
+    const baseDepth = getTeamDepthChartForSlot(resolved, slot.key);
+    const mergedDepth = [...new Set([...subDepth, ...baseDepth])];
+    if (mergedDepth.length) resolved[slot.key] = mergedDepth;
+  });
+
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const manualPlayerId = String(manualAssignments[slot.key] || "").trim();
+    if (!manualPlayerId) return;
+    const slotDepth = getTeamDepthChartForSlot(resolved, slot.key).filter(
+      (playerId) => playerId !== manualPlayerId,
+    );
+    resolved[slot.key] = [manualPlayerId, ...slotDepth];
+  });
+
+  return resolved;
+}
+
+function getResolvedPlayerAssignments(play) {
+  return {
+    ...getPlayerAssignmentBaseline(play),
+    ...normalizePlayerAssignments(play?.playerAssignments),
+  };
+}
+
+function formatTeamPlayerLabel(player) {
+  const bits = [];
+  if (player.number) bits.push(`#${player.number}`);
+  if (player.name) bits.push(player.name);
+  if (player.position) bits.push(`(${player.position})`);
+  if (player.positionGroup) bits.push(player.positionGroup === "linemen" ? "[Linemen]" : "[Skill]");
+  return bits.join(" ") || "Unnamed Player";
+}
+
+function getTeamPlayerById(playerId) {
+  if (!playerId) return null;
+  return getTeamRoster().find((player) => player.id === playerId) || null;
+}
+
+function getTeamPlayerSelectionDisplay(playerId) {
+  const player = getTeamPlayerById(playerId);
+  return player ? formatTeamPlayerLabel(player) : "Open slot";
+}
+
+function formatTeamDepthChartDisplay(playerIds = []) {
+  const ids = Array.isArray(playerIds)
+    ? playerIds.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+  if (!ids.length) return "Open slot";
+  return ids
+    .map((playerId, index) => `${index === 0 ? "Starter" : `Sub ${index}`}: ${getTeamPlayerSelectionDisplay(playerId)}`)
+    .join(" | ");
+}
+
+function buildTeamPlayerOptionMarkup(selectedId = "", includeBlank = true) {
+  const roster = getTeamRoster();
+  const blankOption = includeBlank
+    ? `<option value="">${roster.length ? "Open" : "Add roster first"}</option>`
+    : "";
+  return blankOption + roster
+    .map((player) => {
+      const selected = player.id === selectedId ? " selected" : "";
+      return `<option value="${escapeAttr(player.id)}"${selected}>${escapeHtml(formatTeamPlayerLabel(player))}</option>`;
+    })
+    .join("");
+}
+
+function buildTeamSwapGroupOptionMarkup(
+  selectedId = "",
+  personnel = "",
+  includeBlank = true,
+) {
+  const groups = getApplicableTeamSwapGroups(personnel);
+  const blankOption = includeBlank
+    ? `<option value="">${groups.length ? "No sub package" : "Add sub packages first"}</option>`
+    : "";
+
+  return blankOption + groups
+    .map((group) => {
+      const selected = group.id === selectedId ? " selected" : "";
+      const suffix = group.personnel ? ` (${group.personnel})` : "";
+      return `<option value="${escapeAttr(group.id)}"${selected}>${escapeHtml(group.name + suffix)}</option>`;
+    })
+    .join("");
+}
+
+function formatPlayerAssignmentSummary(assignments = {}
+
+function getPersonnelEmoji(personnel, useSquares = false) {
+  if (!personnel) return "";
+
+  const p = String(personnel).toLowerCase().trim();
+
+  const circleMap = {
+    red: "🔴",
+    blue: "🔵",
+    green: "🟢",
+    yellow: "🟡",
+    orange: "🟠",
+    purple: "🟣",
+    brown: "🟤",
+    white: "⚪",
+    black: "⚫",
+    navy: "⚓",
+    meat: "🥩",
+    star: "⭐",
+  };
+
+  const squareMap = {
+    red: "🟥",
+    blue: "🟦",
+    green: "🟩",
+    yellow: "🟨",
+    orange: "🟧",
+    purple: "🟪",
+    brown: "🟫",
+    white: "⬜",
+    black: "⬛",
+    navy: "⚓",
+    meat: "🥩",
+    star: "⭐",
+  };
+
+  const map = useSquares ? squareMap : circleMap;
+  return map[p] || "";
+}
+
+function getTeamName() {
+  return storageManager.get(STORAGE_KEYS.TEAM_NAME, "My Team Football");
+}
+
+function setTeamName(name) {
+  storageManager.set(STORAGE_KEYS.TEAM_NAME, name);
+  updateTeamSettingsAutosaveStatus();
+  // Update header subtitle
+  const teamSub = document.getElementById("teamSubtitle");
+  if (teamSub) {
+    teamSub.textContent = name && name !== "My Team Football" ? name : "";
+  }
+}

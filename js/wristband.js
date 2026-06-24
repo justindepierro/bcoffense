@@ -1282,3 +1282,8 @@ function applyWbDisplayPreset(preset) {
  * Open the quick search overlay (Cmd+K)
  */
 // ============ Container-Scoped Delegation ============
+
+// ── Moved from utils.js ──────────────────────────
+function getWristbandRecordCellCount(record) {
+  return record?.wristbandType === "player" ? WB_ROWS : CELLS_PER_CARD;
+}
