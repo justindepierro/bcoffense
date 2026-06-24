@@ -546,6 +546,13 @@
   vertical-align: middle;
 }
 
+.play-readiness-badge--automatic {
+  --prb-bg: var(--color-primary-light);
+  --prb-border: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  --prb-accent: var(--color-primary);
+}
+
+/* Legacy alias */
 .play-readiness-badge--trusted {
   --prb-bg: var(--color-success-light);
   --prb-border: color-mix(
@@ -556,6 +563,12 @@
   --prb-accent: var(--color-success-hover);
 }
 
+.play-readiness-badge--gameready {
+  --prb-bg: var(--color-success-light);
+  --prb-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
+  --prb-accent: var(--color-success-hover);
+}
+/* Legacy alias */
 .play-readiness-badge--ready {
   --prb-bg: var(--color-primary-light);
   --prb-border: color-mix(
@@ -566,6 +579,11 @@
   --prb-accent: var(--color-primary);
 }
 
+.play-readiness-badge--building {
+  --prb-bg: var(--color-warning-light);
+  --prb-border: color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  --prb-accent: var(--color-warning-hover);
+}
 .play-readiness-badge--needs {
   --prb-bg: var(--color-warning-light);
   --prb-border: color-mix(
@@ -576,6 +594,11 @@
   --prb-accent: var(--color-warning-hover);
 }
 
+.play-readiness-badge--notready {
+  --prb-bg: var(--color-danger-light);
+  --prb-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border-light));
+  --prb-accent: var(--color-danger-hover, var(--color-danger));
+}
 .play-readiness-badge--risk {
   --prb-bg: var(--color-danger-light);
   --prb-border: color-mix(
@@ -958,36 +981,67 @@
   min-width: 0;
 }
 
-/* Color-coded by confidence tone */
+/* Color-coded by confidence tone — new 4-tier names */
 .pr-confidence {
   font-size: var(--font-size-md);
   font-weight: 900;
   line-height: 1.2;
   color: var(--color-text);
 }
-.pr-confidence--trusted { color: var(--color-success); }
-.pr-confidence--ready   { color: var(--color-primary); }
+.pr-confidence--automatic { color: var(--color-primary); }
+.pr-confidence--gameready { color: var(--color-success); }
+.pr-confidence--building  { color: var(--color-warning-hover); }
+.pr-confidence--notready  { color: var(--color-danger); }
+.pr-confidence--empty     { color: var(--color-text-secondary); }
+/* Legacy aliases (migration compat) */
+.pr-confidence--trusted { color: var(--color-primary); }
+.pr-confidence--ready   { color: var(--color-success); }
 .pr-confidence--needs   { color: var(--color-warning-hover); }
 .pr-confidence--risk    { color: var(--color-danger); }
-.pr-confidence--empty   { color: var(--color-text-secondary); }
 
-.pr-score-label small {
-  font-size: var(--font-size-2xs);
-  color: var(--color-text-muted);
-  font-weight: 700;
-}
-
-/* Score buttons: larger in the widget context */
-.play-readiness-widget .play-readiness-score-grid {
-  grid-template-columns: repeat(5, minmax(42px, 1fr));
+/* Score grid — large variant for widget + modal */
+.play-readiness-score-grid--large {
+  grid-template-columns: repeat(5, minmax(48px, 1fr));
   gap: 6px;
 }
+.play-readiness-score-grid--large .play-readiness-score-btn {
+  min-height: 48px;
+  font-size: var(--font-size-base);
+  font-weight: 900;
+  border-radius: var(--radius-md);
+}
 
+/* Widget score row — score buttons span full width */
+.play-readiness-widget .play-readiness-score-grid,
+.play-readiness-widget .play-readiness-score-grid--large {
+  grid-template-columns: repeat(5, minmax(44px, 1fr));
+  gap: 6px;
+  width: 100%;
+}
 .play-readiness-widget .play-readiness-score-btn {
   min-height: 44px;
   font-size: var(--font-size-sm);
   font-weight: 900;
   border-radius: var(--radius-md);
+}
+
+/* Widget meta row */
+.pr-widget-meta {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-wrap: wrap;
+  padding: 4px 0;
+}
+.pr-widget-stats {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  font-weight: 700;
+}
+.pr-widget-last {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-secondary);
+  margin-left: auto;
 }
 
 /* ── Details row (progress + actions — secondary, below score) ── */
@@ -1158,26 +1212,19 @@
   background: var(--color-primary);
 }
 
-.play-readiness-sweet {
-  z-index: 1;
-  left: var(--pr-sweet-start, 0%);
-  width: var(--pr-sweet-width, 0%);
-  background: var(--color-success-light);
-}
+/* Sweet spot no longer rendered — keep rule to suppress any lingering elements */
+.play-readiness-sweet { display: none; }
 
-.play-readiness-sweet-label {
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 800;
-}
-
-.play-readiness-widget--ready .play-readiness-sweet-label {
-  color: var(--color-success-hover);
-}
-
-.play-readiness-widget--over .play-readiness-sweet-label {
-  color: var(--color-warning-hover);
-}
+/* Widget progress fill color by tone */
+.play-readiness-widget--automatic .play-readiness-fill { background: var(--color-primary); }
+.play-readiness-widget--gameready .play-readiness-fill { background: var(--color-success); }
+.play-readiness-widget--building  .play-readiness-fill { background: var(--color-warning); }
+.play-readiness-widget--notready  .play-readiness-fill { background: var(--color-danger); }
+/* Legacy aliases */
+.play-readiness-widget--trusted .play-readiness-fill { background: var(--color-primary); }
+.play-readiness-widget--ready   .play-readiness-fill { background: var(--color-success); }
+.play-readiness-widget--needs   .play-readiness-fill { background: var(--color-warning); }
+.play-readiness-widget--risk    .play-readiness-fill { background: var(--color-danger); }
 
 .play-readiness-metrics {
   display: flex;
@@ -1269,8 +1316,86 @@
 }
 
 .play-readiness-modal {
-  width: min(760px, calc(100vw - 24px));
-  max-width: 760px;
+  width: min(640px, calc(100vw - 24px));
+  max-width: 640px;
+}
+
+/* Log a Rep modal */
+.pr-log-modal .modal-content { padding: var(--space-md); }
+.pr-log-step1 {
+  display: grid;
+  gap: var(--space-sm);
+}
+.pr-log-score-section {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+.pr-log-field-label {
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+.pr-log-type-label,
+.pr-log-tier-label,
+.pr-log-notes-label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+.pr-log-type-label select,
+.pr-log-tier-label select {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+  background: var(--color-white);
+}
+.pr-log-details {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 0;
+  overflow: hidden;
+}
+.pr-log-details-toggle {
+  padding: 8px 12px;
+  cursor: pointer;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-lighter);
+  list-style: none;
+  user-select: none;
+}
+.pr-log-details-toggle::-webkit-details-marker { display: none; }
+.pr-log-step2 {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+}
+.pr-log-step2 label {
+  display: grid;
+  gap: 4px;
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  color: var(--color-text-secondary);
+}
+.pr-log-step2 input {
+  padding: 8px 10px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  font-family: inherit;
+}
+.pr-log-step2 .play-readiness-checks {
+  grid-column: 1 / -1;
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .play-readiness-modal-sub {
@@ -1365,21 +1490,25 @@
 }
 
 .play-readiness-history-grid {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: var(--space-md);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 380px;
+  overflow-y: auto;
 }
 
 .play-readiness-history-grid h4 {
-  margin: 0 0 var(--space-sm);
+  margin: 0 0 var(--space-xs);
   color: var(--color-text);
   font-size: var(--font-size-md);
 }
 
 .play-readiness-history-row {
-  display: grid;
-  gap: 3px;
-  padding: 9px 0;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 6px;
+  padding: 8px 0;
   border-bottom: 1px solid var(--color-border-light);
   color: var(--color-text-secondary);
   font-size: var(--font-size-xs);
@@ -1394,6 +1523,7 @@
   flex-wrap: wrap;
   gap: 5px;
   margin-top: 4px;
+  width: 100%;
 }
 
 .play-readiness-report-score-controls .play-readiness-score-btn {
@@ -1428,11 +1558,6 @@
 .play-readiness-empty {
   color: var(--color-text-muted);
   font-style: normal;
-}
-
-.play-readiness-rate-grid {
-  grid-template-columns: repeat(3, minmax(0, 1fr));
-  margin-bottom: var(--space-sm);
 }
 
 .script-player-grid--compact {
