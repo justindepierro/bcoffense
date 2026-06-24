@@ -487,7 +487,7 @@ After the split, `playbook-chrome.js` should be ~200 lines and `playbook-reports
 | 21 | ✅ | S | Show active filter count on "More Filters" toggle |
 | 22 | ✅ | S | `aria-label` with shortcut hint on search input |
 | 23 | ✅ | S | Add `?` shortcut hint button to toolbar |
-| 24 | ☐ | M | Sort preset save/load in filter drawer |
+| 24 | ✅ | M | Sort preset save/load in filter drawer |
 | 25 | ✅ | S | `aria-label` on collection Load/Delete buttons |
 | 26 | ✅ | S | `<fieldset>/<legend>` for print option checkboxes |
 | 27 | ✅ | S | Fix stats bar cache invalidation logic |
@@ -495,4 +495,4 @@ After the split, `playbook-chrome.js` should be ~200 lines and `playbook-reports
 
 ---
 
-*Audit completed 2026-06-24. Items 1-23, 25-28 shipped. Item 24 (sort preset save/load) deferred. SW v674 / commit `ea937e5`.*
+*Audit completed 2026-06-24. All 28 items shipped. SW v675 / commit `ab824fb`.*
