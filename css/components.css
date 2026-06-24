@@ -4139,6 +4139,14 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   background: var(--color-border-light);
   margin: 4px 0;
 }
+.tool-menu button.tool-menu-danger {
+  color: var(--color-danger);
+}
+@media (hover: hover) {
+  .tool-menu button.tool-menu-danger:hover {
+    background: var(--color-danger-light);
+  }
+}
 .tool-menu-section-label {
   display: block;
   padding: 6px 14px 2px;

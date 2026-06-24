@@ -668,18 +668,6 @@
   .cs-toolbar-right .btn {
     flex: 1 1 140px;
   }
-  .cs-unified-header {
-    flex-wrap: wrap;
-    align-items: flex-start;
-  }
-  .cs-unified-header-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-  .cs-preset-select {
-    flex: 1 1 auto;
-    min-width: 0;
-  }
   .cs-settings-section--display,
   .cs-border-panel,
   .cs-border-panel:last-child {
@@ -798,21 +786,6 @@
     flex-wrap: wrap;
   }
 
-  .cs-unified-header-right {
-    width: 100%;
-    justify-content: space-between;
-  }
-
-  .cs-preset-cluster {
-    flex: 1 1 320px;
-    min-width: 0;
-  }
-
-  .cs-preset-select {
-    min-width: 0;
-    flex: 1 1 auto;
-  }
-
   .cs-settings-note {
     white-space: normal;
   }
@@ -908,9 +881,7 @@
     grid-template-columns: 1fr;
   }
   .cs-settings-subtitle-row,
-  .cs-settings-section-head,
-  .cs-unified-header-right,
-  .cs-preset-cluster {
+  .cs-settings-section-head {
     flex-direction: column;
     align-items: stretch;
   }
