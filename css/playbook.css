@@ -646,7 +646,15 @@ body[data-auth-role="player"] .gp-card-btn {
   display: none;
 }
 
+.pb-readiness-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  z-index: 1;
+}
+
 .pb-readiness-card {
+  position: relative;
   display: grid;
   grid-template-columns:
     minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(260px, 1fr)

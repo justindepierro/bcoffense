@@ -759,6 +759,7 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
 
   return `
     <div class="pb-readiness-card" data-auth-player-hide="true">
+      <button type="button" class="pr-close-btn pb-readiness-close-btn" data-action="closePlaybookReadinessPanel" title="Close" aria-label="Close readiness panel">&times;</button>
       <div class="pb-readiness-main">
         <span class="pb-readiness-eyebrow">Selected Play Score</span>
         <h3>${escapeHtml(getPlayReadinessPlayLabel(play))}</h3>
@@ -838,6 +839,14 @@ function renderPlayReadinessEmptyPlaybookPanel() {
         ${firstPlayAction}
       </div>
     </div>`;
+}
+
+function closePlaybookReadinessPanel() {
+  const panel = document.getElementById("playbookReadinessPanel");
+  if (panel) {
+    panel.hidden = true;
+    panel.innerHTML = "";
+  }
 }
 
 function renderSelectedPlaybookReadinessPanel(index = selectedRowIndex) {

@@ -1129,6 +1129,13 @@ document.addEventListener("keydown", (e) => {
       e.preventDefault();
       return;
     }
+    // Close the playbook readiness panel on Escape
+    const pbPanel = document.getElementById("playbookReadinessPanel");
+    if (pbPanel && !pbPanel.hidden) {
+      if (typeof closePlaybookReadinessPanel === "function") closePlaybookReadinessPanel();
+      e.preventDefault();
+      return;
+    }
   }
 
   if (inInput) return;
