@@ -900,7 +900,7 @@
   .cs-toolbar-secondary-summary-hint {
     display: none;
   }
-  .cs-unified-content {
+  .cs-unified-content > .cs-settings-layout {
     padding: 10px;
   }
   .cs-settings-grid,

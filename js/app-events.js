@@ -544,6 +544,13 @@ document.addEventListener("click", (e) => {
       return;
   }
 
+  // Don't fire toggleCollapsiblePanel when the click originated inside a
+  // form control (e.g. the preset <select> inside .cs-unified-header).
+  if (action === "toggleCollapsiblePanel" && e.target !== el &&
+      e.target.closest("select, input, textarea")) {
+    return;
+  }
+
   const fn = window[action];
   if (typeof fn !== "function") {
     traceAppAction(

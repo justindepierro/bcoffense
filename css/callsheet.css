@@ -603,14 +603,18 @@
   flex-shrink: 0;
 }
 
-/* Animated Quick Actions body */
+/* Animated Quick Actions body — CSS Grid (reliable across all browsers/Safari) */
 .cs-qa-body {
-  max-height: 500px;
-  overflow: hidden;
-  transition: max-height 0.28s ease-out;
+  display: grid;
+  grid-template-rows: 1fr;
+  transition: grid-template-rows 0.3s ease;
 }
 .cs-qa-body.collapsed {
-  max-height: 0;
+  grid-template-rows: 0fr;
+}
+.cs-qa-body > .cs-toolbar-secondary {
+  min-height: 0;
+  overflow: hidden;
 }
 .cs-toolbar-secondary-summary-label {
   font-weight: 700;
@@ -724,16 +728,18 @@
 }
 
 .cs-unified-content {
-  padding: 10px 12px;
+  display: grid;
+  grid-template-rows: 1fr;
   background: var(--color-surface);
-  overflow: hidden;
-  max-height: 1500px;
-  transition: max-height 0.32s ease-out, padding-top 0.25s ease, padding-bottom 0.25s ease;
+  transition: grid-template-rows 0.3s ease;
 }
 .cs-unified-content.collapsed {
-  max-height: 0;
-  padding-top: 0;
-  padding-bottom: 0;
+  grid-template-rows: 0fr;
+}
+.cs-unified-content > .cs-settings-layout {
+  min-height: 0;
+  overflow: hidden;
+  padding: 10px 12px;
 }
 
 .cs-settings-layout {
