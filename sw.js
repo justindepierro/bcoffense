@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v684";
+const CACHE_NAME = "bcoffense-v685";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -126,6 +126,7 @@ const LOCAL_ASSETS = [
   "./js/callsheet-filters.js",
   "./js/callsheet-smart.js",
   "./js/callsheet-export.js",
+  "./js/callsheet-display.js",
   "./js/callsheet-categories.js",
   "./js/callsheet-metadata.js",
   "./js/callsheet-layout.js",

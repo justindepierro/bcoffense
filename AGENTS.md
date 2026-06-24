@@ -86,13 +86,14 @@ js/
   wristband-sort.js     ← Wristband sorting and reorder helpers
   wristband-storage.js  ← Save/load/draft hydration helpers
   wristband-runtime.js  ← DOMContentLoaded bindings and delegated runtime wiring
-  callsheet-render.js   ← Call sheet category constants, display helpers, and legacy render layer (dead functions pending Phase 1 cleanup)
-  callsheet.js          ← Core call sheet state, storage, templates, and render helpers
+  callsheet-render.js   ← Call sheet constants, personnel helpers, live render path (renderCallSheet, renderCategory, renderCallSheetPlay, buildCallSheetPlayParts), display option getters
+  callsheet.js          ← Core call sheet state, init, auto-populate orchestration, history, undo/redo, draft lifecycle
   callsheet-print.js    ← Call sheet print modal, print rendering, and print option persistence
   callsheet-sort.js     ← Sort modal, multi-criteria sort state, custom value order, sort execution
   callsheet-filters.js  ← Auto-populate helpers: play matching, coverage/keyword/key-player matching, player auto-fill targets
   callsheet-smart.js    ← Scouting overlay, dead-vs badges, smart suggestions modal
   callsheet-export.js   ← exportCallSheetCSV, isPlayOnCallSheet, getCallSheetPlayLocations
+  callsheet-display.js  ← Display options panel: BUILTIN_PRESETS, loadDisplayPreset, saveDisplayPreset, manageDisplayPresets, saveCallSheetDisplayOptions
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
   callsheet-layout.js   ← Call sheet layout/order modal state, drag-drop helpers, smart reorder, and category reset
@@ -207,7 +208,8 @@ All scripts use `defer` and load in this exact order from index.html:
 58. js/callsheet-filters.js
 59. js/callsheet-smart.js
 60. js/callsheet-export.js
-61. js/callsheet-categories.js
+61. js/callsheet-display.js
+62. js/callsheet-categories.js
 62. js/callsheet-metadata.js
 63. js/callsheet-layout.js
 64. js/callsheet-templates.js
