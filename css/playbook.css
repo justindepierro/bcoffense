@@ -639,7 +639,7 @@ body[data-auth-role="player"] .gp-card-btn {
 }
 
 .pb-readiness-panel {
-  margin: 0 0 var(--space-md);
+  margin: 0 0 var(--space-sm);
 }
 
 .pb-readiness-panel[hidden] {
@@ -657,14 +657,14 @@ body[data-auth-role="player"] .gp-card-btn {
   position: relative;
   display: grid;
   grid-template-columns:
-    minmax(240px, 1.1fr) minmax(120px, 0.45fr) minmax(260px, 1fr)
-    minmax(260px, 1fr);
-  gap: var(--space-sm);
+    minmax(180px, 1fr) minmax(80px, 0.35fr) minmax(200px, 1fr)
+    minmax(180px, 1fr);
+  gap: 6px;
   align-items: stretch;
-  padding: 14px;
+  padding: 9px 10px;
   border: 1px solid var(--color-border-light);
-  border-left: 5px solid var(--color-primary);
-  border-radius: var(--radius-lg);
+  border-left: 3px solid var(--color-primary);
+  border-radius: var(--radius-md);
   background:
     linear-gradient(135deg, var(--color-bg-blue-tint), transparent 64%),
     var(--color-surface);
@@ -705,8 +705,8 @@ body[data-auth-role="player"] .gp-card-btn {
 .pb-readiness-main h3 {
   margin: 0;
   color: var(--color-text);
-  font-size: var(--font-size-lg);
-  line-height: 1.12;
+  font-size: var(--font-size-sm);
+  line-height: 1.15;
 }
 
 .pb-readiness-empty-copy {
@@ -769,8 +769,8 @@ body[data-auth-role="player"] .gp-card-btn {
 .pb-readiness-stats span {
   display: inline-flex;
   align-items: center;
-  min-height: 24px;
-  padding: 3px 8px;
+  min-height: 20px;
+  padding: 2px 6px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-pill);
   background: var(--color-surface);
@@ -787,28 +787,28 @@ body[data-auth-role="player"] .gp-card-btn {
 .pb-readiness-status {
   display: grid;
   place-items: center;
-  gap: 2px;
-  padding: 10px;
-  border-radius: var(--radius-lg);
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: var(--radius-md);
   background: var(--color-primary-dark);
   color: var(--color-text-inverse);
   text-align: center;
 }
 
 .pb-readiness-status strong {
-  font-size: 2.2rem;
-  line-height: 0.95;
+  font-size: 1.5rem;
+  line-height: 1;
 }
 
 .pb-readiness-status span {
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-2xs);
   font-weight: 950;
   line-height: 1.1;
 }
 
 .pb-readiness-status em {
   color: rgb(255 255 255 / 0.78);
-  font-size: var(--font-size-2xs);
+  font-size: 9px;
   font-style: normal;
   font-weight: 800;
 }
@@ -828,7 +828,24 @@ body[data-auth-role="player"] .gp-card-btn {
 .pb-readiness-card .play-readiness-rollup {
   grid-column: 1 / -1;
   grid-template-columns: repeat(4, minmax(0, 1fr));
-  margin-top: 2px;
+  margin-top: 0;
+}
+
+.pb-readiness-card .play-readiness-rollup-chip {
+  min-height: 30px;
+  padding: 4px 7px;
+}
+
+.pb-readiness-card .play-readiness-score-btn {
+  min-width: 28px;
+  min-height: 28px;
+  font-size: var(--font-size-2xs);
+}
+
+.pb-readiness-card .play-readiness-btn {
+  min-height: 26px;
+  padding: 3px 7px;
+  font-size: var(--font-size-2xs);
 }
 
 .pb-readiness-score > span {
