@@ -843,6 +843,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
     getCachedPlayerSummary,
     defenseDatalistState,
     selectedIndexSet,
+    playbookSigSet,
   } = renderContext;
   const fullCall = getCachedFullCall(play, Boolean(callOptions?.hideProtection));
   const isSelected = selectedIndexSet.has(index);
@@ -941,7 +942,13 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       <div class="play-call">
         <div class="full-call">${fullCall}</div>
         <div class="call-meta">
-          <span>${escapeHtml(play.type)} ${play.tempo ? "• " + escapeHtml(play.tempo) : ""}</span>
+          <span>${(() => {
+            const typeKey = play.type ? play.type.trim().toLowerCase().replace(/\s+/g, "-").replace(/[^a-z-]/g, "") : "";
+            const typeChip = play.type ? `<span class="script-type-chip" data-type="${typeKey}">${escapeHtml(play.type)}</span>` : "";
+            const tempo = play.tempo ? `<span class="script-tempo-text">· ${escapeHtml(play.tempo)}</span>` : "";
+            return `${typeChip}${tempo}`;
+          })()}</span>
+          ${playbookSigSet && playbookSigSet.has(playSignature(play)) ? `<button type="button" class="script-pb-chip" data-action="jumpToPlayInPlaybook" data-arg="${index}" title="View this play in the Playbook" aria-label="View ${escapeHtml(playLabel)} in Playbook">📖</button>` : ""}
           ${readinessBadge}
         </div>
         ${renderScriptInlineCallEdits(play, index, playLabel)}
@@ -1034,11 +1041,13 @@ function createScriptRenderContext(opts, showPrintPreview) {
   const periodStatsBySeparatorIndex = buildPeriodStatsMap(script);
   const renderSummary = buildScriptRenderSummary(script);
   const selectedIndexSet = new Set(bulkSelectedIndices);
+  const playbookSigSet = plays.length ? new Set(plays.map(playSignature)) : new Set();
 
   return {
     opts,
     showPrintPreview,
     selectedIndexSet,
+    playbookSigSet,
     defenseDatalistState,
     periodStatsBySeparatorIndex,
     renderSummary,
@@ -1540,6 +1549,27 @@ function runScriptRenderProfileBenchmark(iterations = 20) {
     `Script render benchmark captured ${benchmarkSamples.length} sample(s). Use getScriptRenderProfileHistory() to inspect the rolling history buffer.`,
   );
   return summary;
+}
+
+function jumpToPlayInPlaybook(idxOrStr) {
+  const idx = parseInt(idxOrStr, 10);
+  const scriptPlay = script[idx];
+  if (!scriptPlay || scriptPlay.isSeparator) return;
+  let fIdx = filteredPlays.findIndex((p) => playsMatch(p, scriptPlay));
+  if (fIdx < 0 && typeof clearFilters === "function") {
+    clearFilters();
+    fIdx = filteredPlays.findIndex((p) => playsMatch(p, scriptPlay));
+  }
+  if (fIdx < 0) {
+    showToast("Play not found in playbook", { type: "warning" });
+    return;
+  }
+  if (typeof showTab === "function") showTab("playbook");
+  requestAnimationFrame(() => {
+    if (typeof selectPlaybookRow === "function") selectPlaybookRow(fIdx);
+    const row = document.querySelector(`#playbookTable tr[data-idx="${fIdx}"]`);
+    if (row) row.scrollIntoView({ block: "center", behavior: "smooth" });
+  });
 }
 
 function renderScript() {

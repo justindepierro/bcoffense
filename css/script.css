@@ -5662,55 +5662,110 @@ body[data-active-tab="script"] .script-display-fab {
   color: var(--color-text-secondary);
 }
 
+/* ── Script item call-meta type chip ── */
+#script .script-item .script-type-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  vertical-align: middle;
+}
+#script .script-item--run .script-type-chip       { background: var(--color-type-run-bg); color: var(--color-type-run-fg); }
+#script .script-item--pass .script-type-chip      { background: var(--color-type-pass-bg); color: var(--color-type-pass-fg); }
+#script .script-item--rpo .script-type-chip       { background: var(--color-type-rpo-bg); color: var(--color-type-rpo-fg); }
+#script .script-item--screen .script-type-chip    { background: var(--color-type-screen-bg); color: var(--color-type-screen-fg); }
+#script .script-item--quick .script-type-chip     { background: var(--color-type-quick-bg); color: var(--color-type-quick-fg); }
+#script .script-item--playaction .script-type-chip { background: var(--color-type-pa-bg); color: var(--color-type-pa-fg); }
+#script .script-item--movement .script-type-chip  { background: var(--color-type-movement-bg); color: var(--color-type-movement-fg); }
+
+#script .script-item .script-tempo-text {
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  margin-left: var(--space-xs);
+}
+
+/* ── "In Playbook" breadcrumb chip on script items ── */
+#script .script-pb-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 6px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  vertical-align: middle;
+}
+@media (hover: hover) {
+  #script .script-pb-chip:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+@media print {
+  #script .script-pb-chip { display: none; }
+}
+
 /* Play-type accents: left stripe + matching type chip */
 #script .play-item--run {
   border-left-color: var(--color-success);
 }
 #script .play-item--run .play-type-chip {
-  background: var(--color-success-light);
-  color: var(--color-success);
+  background: var(--color-type-run-bg);
+  color: var(--color-type-run-fg);
 }
 #script .play-item--pass {
   border-left-color: var(--color-primary);
 }
 #script .play-item--pass .play-type-chip {
-  background: var(--color-bg-blue-tint);
-  color: var(--color-primary);
+  background: var(--color-type-pass-bg);
+  color: var(--color-type-pass-fg);
 }
 #script .play-item--rpo {
   border-left-color: var(--color-purple);
 }
 #script .play-item--rpo .play-type-chip {
-  background: var(--color-purple-light);
-  color: var(--color-purple);
+  background: var(--color-type-rpo-bg);
+  color: var(--color-type-rpo-fg);
 }
 #script .play-item--screen {
   border-left-color: var(--color-info);
 }
 #script .play-item--screen .play-type-chip {
-  background: var(--color-info-light);
-  color: var(--color-info);
+  background: var(--color-type-screen-bg);
+  color: var(--color-type-screen-fg);
 }
 #script .play-item--quick {
   border-left-color: var(--color-warning);
 }
 #script .play-item--quick .play-type-chip {
-  background: var(--color-warning-light);
-  color: var(--color-warning);
+  background: var(--color-type-quick-bg);
+  color: var(--color-type-quick-fg);
 }
 #script .play-item--playaction {
   border-left-color: var(--color-danger);
 }
 #script .play-item--playaction .play-type-chip {
-  background: var(--color-danger-light);
-  color: var(--color-danger);
+  background: var(--color-type-pa-bg);
+  color: var(--color-type-pa-fg);
 }
 #script .play-item--movement {
   border-left-color: var(--color-accent);
 }
 #script .play-item--movement .play-type-chip {
-  background: var(--color-accent-light);
-  color: var(--color-primary);
+  background: var(--color-type-movement-bg);
+  color: var(--color-type-movement-fg);
 }
 
 /* Script item type accent left border (same colors as available plays) */

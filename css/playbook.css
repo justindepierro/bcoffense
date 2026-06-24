@@ -101,36 +101,36 @@ table.sortable th {
 }
 
 #playbookTable .col-type--run .play-type-chip {
-  background: var(--color-success-light);
-  color: var(--color-success);
+  background: var(--color-type-run-bg);
+  color: var(--color-type-run-fg);
 }
 #playbookTable .col-type--pass .play-type-chip {
-  background: var(--color-bg-blue-tint);
-  color: var(--color-primary);
+  background: var(--color-type-pass-bg);
+  color: var(--color-type-pass-fg);
 }
 #playbookTable .col-type--rpo .play-type-chip {
-  background: var(--color-purple-light);
-  color: var(--color-purple);
+  background: var(--color-type-rpo-bg);
+  color: var(--color-type-rpo-fg);
 }
 #playbookTable .col-type--screen .play-type-chip {
-  background: var(--color-info-light);
-  color: var(--color-info);
+  background: var(--color-type-screen-bg);
+  color: var(--color-type-screen-fg);
 }
 #playbookTable .col-type--quick .play-type-chip {
-  background: var(--color-warning-light);
-  color: var(--color-warning);
+  background: var(--color-type-quick-bg);
+  color: var(--color-type-quick-fg);
 }
 #playbookTable .col-type--play-action .play-type-chip {
-  background: var(--color-danger-light);
-  color: var(--color-danger);
+  background: var(--color-type-pa-bg);
+  color: var(--color-type-pa-fg);
 }
 #playbookTable .col-type--movement .play-type-chip {
-  background: var(--color-accent-light);
-  color: var(--color-primary);
+  background: var(--color-type-movement-bg);
+  color: var(--color-type-movement-fg);
 }
 #playbookTable .col-type--run-option .play-type-chip {
-  background: var(--color-success-light);
-  color: var(--color-success);
+  background: var(--color-type-runoption-bg);
+  color: var(--color-type-runoption-fg);
 }
 
 /* ── Empty readiness: show dot only, no "Readiness --" text ── */

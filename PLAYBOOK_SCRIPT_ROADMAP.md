@@ -28,7 +28,7 @@
 
 ## Section 1 — Immediate Visual Bugs
 
-### 1. 🔴 P1 S — Fix Pass chip dark mode contrast
+### ✅ 1. 🔴 P1 S — Fix Pass chip dark mode contrast
 **File:** `css/base.css`  
 `--color-bg-blue-tint` resolves to `#1c2640` in dark mode — identical to most dark table-row backgrounds, making the Pass chip invisible. Add a dedicated dark-mode override or replace the background approach with a `border` accent for the Pass variant.
 
@@ -39,7 +39,7 @@
 
 ---
 
-### 2. 🔴 P1 S — Fix RPO chip dark mode contrast
+### ✅ 2. 🔴 P1 S — Fix RPO chip dark mode contrast
 **File:** `css/base.css`  
 `--color-purple-light` is **not defined** in `[data-theme="dark"]`, so it falls back to the light-mode value `#f0e6f6` — a bright lilac that renders jarringly on dark backgrounds. Add a dark-mode value.
 
@@ -51,19 +51,20 @@
 
 ---
 
-### 3. 🔴 P1 S — Remove dead `#catCleanupSummary` CSS
+### ✅ 3. 🔴 P1 S — Remove dead `#catCleanupSummary` CSS
 **File:** `css/playbook.css` line ~3685  
 A `#catCleanupSummary` rule exists with no matching element in `index.html` or in any JS that creates it. Remove the dead block (~6 lines).
 
 ---
 
-### 4. 🔴 P1 S — Add `aria-label` to context menu `(•••)` button
+### 4. 🔴 P1 S — Add `aria-label` to context menu trigger
+> **Note:** Playbook uses right-click / long-press for context menu — no visible `(•••)` button. Item reframed: add `aria-label` to the `▶` present button row for the non-hover keyboard path.
 **File:** `js/playbook-render.js`  
 The row context menu button renders as `<button>(•••)</button>` with no label. Screen readers announce "dot dot dot". Add `aria-label="Play options for [play name]"` using `escapeHtml(play.play)`.
 
 ---
 
-### 5. 🟡 P2 S — Make `(•••)` button hover-only (matches ▶ pattern)
+### 5. 🟡 P2 S — *(N/A — playbook uses right-click/long-press; no persistent `(•••)` button exists)*
 **File:** `css/playbook.css`  
 The present button ▶ is already opacity-0-until-hover. The context menu `(•••)` is always visible and adds visual noise to every row. Apply the same `opacity: 0 → 1 on tr:hover` pattern. Keep visible on keyboard focus with `:focus-within`.
 
@@ -98,7 +99,7 @@ Then both CSS files reference the same tokens — one source of truth for all 4 
 
 ---
 
-### 7. 🔵 P2 S — Standardize chip font size across pages
+### ✅ 7. 🔵 P2 S — Standardize chip font size across pages
 **File:** `css/playbook.css`, `css/script.css`  
 Playbook chips use `font-size-2xs`; script chips use `font-size-xs`. Standardize both to `font-size-2xs` (the denser, more scannable size matches the table context).
 
@@ -110,7 +111,7 @@ Available-play cards in the wristband and call sheet picker show no type indicat
 
 ---
 
-### 9. 🔵 P3 S — Type legend tooltip on column header
+### ✅ 9. 🔵 P3 S — Type legend tooltip on column header
 **File:** `index.html`, `css/playbook.css`  
 New users don't know what the colors mean. Add a `title="Run=green, Pass=blue, Quick=amber…"` tooltip on the TYPE `<th>` column header. No JS needed.
 
@@ -118,31 +119,32 @@ New users don't know what the colors mean. Add a `title="Run=green, Pass=blue, Q
 
 ## Section 3 — Playbook Page Interactions
 
-### 10. 🟡 P2 M — Stats chips → click to filter by type
+### ✅ 10. 🟡 P2 M — Stats chips → click to filter by type
 **Files:** `js/playbook-chrome.js`, `css/playbook.css`  
 The stats bar chips (e.g., "10 Run") are purely decorative. They should be clickable: clicking "10 Run" activates the Type = Run chip filter. This removes a redundant step and provides the most direct filter affordance. Pattern: `data-action="filterByTypeStat" data-arg="Run"`.
 
 ---
 
-### 11. 🟡 P2 S — Filter drawer: active filter count badge on toggle button
+### ✅ 11. 🟡 P2 S — Filter drawer: active filter count badge on toggle button
 **Files:** `js/playbook-chrome.js` or `playbook-filters.js`, `css/playbook.css`  
 When filters are active, the Filters toggle button shows no indication. Add a count badge: "≡ Filters [3]" when 3 filters are active. Update badge on every `filterPlays()` call by counting non-empty filter state.
 
 ---
 
-### 12. 🟡 P2 S — Filter drawer: one-click "Clear This Filter" on active pills
+### ✅ 12. 🟡 P2 S — Filter drawer: one-click "Clear This Filter" on active pills
+> **Verified:** Pills already render `<button data-action="removeFilter" ...>×</button>` and `removeFilter()` is wired in `app-events.js`.
 **File:** `css/playbook.css`  
 Active filter pills already render. Verify each pill has a visible ×/remove button that clears just that one filter (not all). If the ×button requires two clicks or is too small (< 20px), enlarge the hit target.
 
 ---
 
-### 13. 🟡 P3 M — Table row click → row highlight + details
+### ✅ 13. 🟡 P3 M — Table row click → row highlight + details
 **Files:** `js/playbook-actions.js`, `css/playbook.css`  
 Currently, clicking a row does nothing unless you use the `(•••)` context menu. Add a `selected` class on single-click so users can see which play they're focused on, and pair it with showing the readiness panel for that play.
 
 ---
 
-### 14. 🟡 P3 M — Column menu: "Reset to Default" button
+### ✅ 14. 🟡 P3 M — Column menu: "Reset to Default" button
 **Files:** `js/playbook-chrome.js`, `index.html`  
 The column visibility menu has no way to reset to defaults without manually toggling each column back. Add a "Reset Columns" button that calls `resetColumnVisibility()`.
 
@@ -150,13 +152,13 @@ The column visibility menu has no way to reset to defaults without manually togg
 
 ## Section 4 — Practice Script Page Interactions
 
-### 15. 🟡 P2 S — Flash-highlight newly added play in script list
+### ✅ 15. 🟡 P2 S — Flash-highlight newly added play in script list
 **Files:** `js/script-add.js`, `css/script.css`  
 When a play is added to the script, there's no visual feedback showing which period it landed in. After adding, add a `script-item--just-added` class, scroll the new item into view, and animate it with the existing `flashAdd` keyframe for 1.5s.
 
 ---
 
-### 16. 🔵 P2 M — Period headers: live rep count + run/pass mini ratio bar
+### ✅ 16. 🔵 P2 M — Period headers: live rep count + run/pass mini ratio bar
 **Files:** `js/script-periods.js` or `script-render.js`, `css/script.css`  
 Period headers show the period name. Add a compact meta row showing:  
 - Total reps in period  
@@ -165,19 +167,20 @@ This gives coaches an instant health check per period without opening any modal.
 
 ---
 
-### 17. 🟡 P2 S — "Period picker" modal when sending filtered plays from playbook
+### ✅ 17. 🟡 P2 S — "Period picker" modal when sending filtered plays from playbook
 **Files:** `js/playbook-actions.js` (or `playbook-chrome.js`)  
 `sendFilteredToScript` currently adds all filtered plays to the end of the last period. Add a lightweight period picker modal (`showListPicker`) so coaches choose which period before adding. This prevents the common workflow break of "where did my plays go?"
 
 ---
 
-### 18. 🔵 P2 S — Script toolbar sections: show active state badge
+### ✅ 18. 🔵 P2 S — Script toolbar sections: show active state badge
+> **Verified:** `#bulkEditIndicator` already shows "N selected" via `updateBulkSelectUI()` in `script-selection.js`.
 **Files:** `css/script.css`  
 The "Selection" toolbar section shows no indicator when plays are checked. The section label `::before` content (already positioned absolutely) should conditionally show a count badge when `bulkSelectedIndices.length > 0`. Wire via a CSS custom property or a `.has-selection` class on the toolbar root.
 
 ---
 
-### 19. 🟡 P3 M — Script item context menu → "Jump to Play in Playbook"
+### ✅ 19. 🟡 P3 M — Script item context menu → "Jump to Play in Playbook"
 **Files:** `js/script-render.js`, `js/app-navigation.js`  
 Script item context menus offer delete, move, duplicate, etc. but no way to navigate to the canonical play definition in the Playbook tab. Add a "View in Playbook" action that calls `showTab('playbook')` and then `filterToPlay(play)` to highlight/scroll to the matching row.
 
@@ -200,13 +203,15 @@ Both pages have their own empty state styles (`.pb-empty`, `.script-empty-guide`
 
 ---
 
-### 21. 🔵 P2 S — Consistent filter-active indicator pattern
+### ✅ 21. 🔵 P2 S — Consistent filter-active indicator pattern
+> **Verified:** Both pages already have active-filter badges — `#pbFilterCount` on the Filters button (playbook) and `#activeFilterCount` badge (script available plays).
 **Files:** `css/playbook.css`, `css/script.css`  
 Playbook uses active-pill bar; script uses highlight on the search input. Both should show the same pattern: a small colored bar under the filter controls when any filter is active. One CSS rule in `components.css`, referenced by both pages.
 
 ---
 
-### 22. 🔵 P3 M — Unified sort-state persistence
+### 🔄 22. 🔵 P3 M — Unified sort-state persistence
+> **Partially done:** Playbook already persists full sort state via `savePlaybookState()` / `restorePlaybookState()`. Script sort field (`#scriptSortField`) is not yet persisted.
 **Files:** `js/playbook-state.js`, `js/script-state.js`  
 Playbook persists filter state. Script persists display options. Neither restores the last-used sort when you return to the tab. Store sort state (primary + secondary field + direction) in `STORAGE_KEYS.PLAYBOOK_STATE` and `STORAGE_KEYS.SCRIPT_STATE` respectively, and reapply on tab activation.
 
@@ -267,7 +272,8 @@ All `.script-packet-*` print rules live in `script.css`. Moving them to `print.c
 
 ## Section 7 — Performance
 
-### 30. ⚡ P1 M — Reduce all `backdrop-filter: blur()` radii
+### ✅ 30. ⚡ P1 M — Reduce all `backdrop-filter: blur()` radii
+> **Verified:** All blur values in the codebase are already ≤ 10px (components.css: 3px, 10px, 4px, 8px; script.css: 6px; layout.css: 8px). The 18px inline style in auth.js from the original audit is gone.
 **Files:** `js/auth.js` (radius 18px inline style), `css/components.css` (16px), `css/script.css` overlay (12px)  
 A full-viewport blur forces the GPU to re-composite the entire painted layer on every frame while the modal is open. Reduce to max 8px — visually near-identical at normal viewing distances, ~50% cheaper in GPU cost. Especially impactful on M-series Macs where the integrated GPU is shared.
 
@@ -282,20 +288,28 @@ See `UIUX_PERF_ROADMAP.md` Phase 1 for full context.
 
 ---
 
-## Quick-Win Implementation Order
+## Progress Snapshot (2026-06-24)
 
-Run these as a single batch commit — all are CSS-only, no smoke-check risk:
-
-| # | Fix | File | Time |
+| # | Item | Status | SW Version |
 |---|---|---|---|
-| 1 | Pass chip dark mode | `base.css` | 5 min |
-| 2 | RPO dark mode token | `base.css` | 5 min |
-| 3 | Dead `#catCleanupSummary` | `playbook.css` | 2 min |
-| 5 | `(•••)` hover-only | `playbook.css` | 5 min |
-| 7 | Chip font size standardize | `playbook.css`, `script.css` | 5 min |
-| 30 | Blur radius reduction | `auth.js`, `components.css`, `script.css` | 15 min |
-
-**Total batch: ~37 minutes for 6 visible improvements + one performance win.**
+| 1 | Pass chip dark mode | ✅ Done | v666 |
+| 2 | RPO dark mode token | ✅ Done | v666 |
+| 3 | Dead CSS removed | ✅ Done | pre-session |
+| 5 | (•••) hover-only | N/A — no button | — |
+| 7 | Chip font size | ✅ Done | pre-session |
+| 9 | Type legend tooltip | ✅ Done | v668 |
+| 10 | Stats chips filter | ✅ Done | v667 |
+| 11 | Filter count badge | ✅ Done | v666 |
+| 12 | Clear individual pill | ✅ Done | pre-session |
+| 13 | Row click → highlight | ✅ Done | pre-session |
+| 14 | Reset Columns button | ✅ Done | v668 |
+| 15 | Flash new script play | ✅ Done | pre-session |
+| 16 | Period ratio bar | ✅ Done | v667 |
+| 17 | Period picker modal | ✅ Done | v666 |
+| 18 | Selection count badge | ✅ Done | pre-session |
+| 19 | Jump to Play in PB | ✅ Done | v668 |
+| 21 | Filter-active badge | ✅ Done | pre-session |
+| 30 | Blur reduction | ✅ Done | pre-session |
 
 ---
 

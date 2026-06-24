@@ -66,6 +66,24 @@
   --color-orange-deep: #bf6516;
   --color-accent-dark: #9e8a60;
 
+  /* Play-type token family — used by type chips across all pages */
+  --color-type-run-bg: var(--color-success-light);
+  --color-type-run-fg: var(--color-success);
+  --color-type-pass-bg: var(--color-bg-blue-tint);
+  --color-type-pass-fg: var(--color-primary);
+  --color-type-rpo-bg: var(--color-purple-light);
+  --color-type-rpo-fg: var(--color-purple);
+  --color-type-screen-bg: var(--color-info-light);
+  --color-type-screen-fg: var(--color-info);
+  --color-type-quick-bg: var(--color-warning-light);
+  --color-type-quick-fg: var(--color-warning);
+  --color-type-pa-bg: var(--color-danger-light);
+  --color-type-pa-fg: var(--color-danger);
+  --color-type-movement-bg: var(--color-accent-light);
+  --color-type-movement-fg: var(--color-accent);
+  --color-type-runoption-bg: var(--color-success-light);
+  --color-type-runoption-fg: var(--color-success);
+
   /* UI swatches */
   --color-swatch-black: #333333;
   --color-swatch-blue: #007bff;

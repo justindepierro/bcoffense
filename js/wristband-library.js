@@ -277,7 +277,7 @@ function renderWristbandPlays() {
           <button class="wb-pin-btn${isFav ? " pinned" : ""}" data-action="toggleWbFavorite" data-idx="${index}" title="${isFav ? "Unpin" : "Pin"} play" aria-label="${isFav ? "Unpin" : "Pin"} play" aria-pressed="${isFav}">★</button>
           <div class="play-info">
             <div class="play-name">${emoji}${escapeHtml(play.formation)} ${escapeHtml(play.protection)} ${escapeHtml(play.play)}</div>
-            <div class="play-details">${escapeHtml([play.personnel, play.type].filter(Boolean).join(" · "))}${lineCallDisplay}
+            <div class="play-details">${play.type ? `<span class="wb-type-chip" data-type="${escapeHtml(play.type.trim().toLowerCase().replace(/\s+/g,"-").replace(/[^a-z-]/g,""))}">${escapeHtml(play.type)}</span> ` : ""}${escapeHtml([play.personnel].filter(Boolean).join(" · "))}${lineCallDisplay}
               ${onCardCount > 0 ? `<span class="wb-on-card-badge">On card${onCardCount > 1 ? ` ×${onCardCount}` : ""}</span>` : ""}
             </div>
           </div>
