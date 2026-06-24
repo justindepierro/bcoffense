@@ -76,6 +76,21 @@ function restoreColumnVisibility() {
   }
 }
 
+function resetColumnVisibility() {
+  PLAYBOOK_COLUMNS.forEach((col) => {
+    columnVisibility[col] = true;
+  });
+  storageManager.remove(STORAGE_KEYS.COLUMN_VISIBILITY);
+  applyColumnVisibility();
+  const menu = document.getElementById("columnMenu");
+  if (menu) {
+    menu.querySelectorAll('input[type="checkbox"]').forEach((cb) => {
+      cb.checked = true;
+    });
+  }
+  showToast("Columns reset to default");
+}
+
 function toggleColumnMenu() {
   const menu = document.getElementById("columnMenu");
   menu.classList.toggle("show");

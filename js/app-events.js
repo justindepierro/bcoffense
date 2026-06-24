@@ -815,6 +815,28 @@ function _showScriptPlayContextMenu(e, idx) {
       disabled: !hasCustomTags,
     },
     { separator: true },
+    {
+      label: "📖 View in Playbook",
+      action: () => {
+        const scriptPlay = script[idx];
+        if (!scriptPlay) return;
+        let fIdx = filteredPlays.findIndex((p) => playsMatch(p, scriptPlay));
+        if (fIdx < 0 && typeof clearFilters === "function") {
+          clearFilters();
+          fIdx = filteredPlays.findIndex((p) => playsMatch(p, scriptPlay));
+        }
+        if (fIdx < 0) {
+          showToast("Play not found in playbook", { type: "warning" });
+          return;
+        }
+        if (typeof showTab === "function") showTab("playbook");
+        requestAnimationFrame(() => {
+          if (typeof selectPlaybookRow === "function") selectPlaybookRow(fIdx);
+          const row = document.querySelector(`#playbookTable tr[data-idx="${fIdx}"]`);
+          if (row) row.scrollIntoView({ block: "center", behavior: "smooth" });
+        });
+      },
+    },
     { label: "🗑️ Remove", action: () => removeFromScript(idx), danger: true },
   ];
 
