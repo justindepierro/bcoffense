@@ -1010,18 +1010,18 @@ function renderScriptColumnHeaders() {
 function renderScriptGuidedEmptyState() {
   if (isPlayerScriptRole()) {
     return `
-      <div class="script-empty-guide script-empty-guide--player">
-        <div class="seg-icon">📲</div>
-        <div class="seg-text">Choose a published practice script above to start your day.</div>
-        <div class="seg-hint">Once it loads, use <strong>Swipe View</strong> to move play-to-play and see your rule.</div>
+      <div class="empty-state">
+        <span class="empty-state__icon">📲</span>
+        <p class="empty-state__text">Choose a published practice script above to start your day.</p>
+        <p class="empty-state__hint">Once it loads, use <strong>Swipe View</strong> to move play-to-play and see your rule.</p>
       </div>
     `;
   }
   return `
-      <div class="script-empty-guide">
-        <div class="seg-icon">📋</div>
-        <div class="seg-text">Add plays from the left panel to start building this period</div>
-        <div class="seg-hint">Click <strong>+ Add</strong> on any play, or check multiple and use <strong>Add Selected</strong></div>
+      <div class="empty-state">
+        <span class="empty-state__icon">📋</span>
+        <p class="empty-state__text">Add plays from the left panel to start building this period</p>
+        <p class="empty-state__hint">Click <strong>+ Add</strong> on any play, or check multiple and use <strong>Add Selected</strong></p>
       </div>
     `;
 }

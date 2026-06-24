@@ -57,8 +57,8 @@ A `#catCleanupSummary` rule exists with no matching element in `index.html` or i
 
 ---
 
-### 4. 🔴 P1 S — Add `aria-label` to context menu trigger
-> **Note:** Playbook uses right-click / long-press for context menu — no visible `(•••)` button. Item reframed: add `aria-label` to the `▶` present button row for the non-hover keyboard path.
+### ✅ 4. 🔴 P1 S — Add `aria-label` to context menu trigger
+> **Verified:** Both `▶` present buttons in `playbook-render.js` already carry `aria-label="Present [play name]"`. Item is complete.
 **File:** `js/playbook-render.js`  
 The row context menu button renders as `<button>(•••)</button>` with no label. Screen readers announce "dot dot dot". Add `aria-label="Play options for [play name]"` using `escapeHtml(play.play)`.
 
@@ -188,8 +188,11 @@ Script item context menus offer delete, move, duplicate, etc. but no way to navi
 
 ## Section 5 — Cross-Page Cohesion & Workflow
 
-### 20. 🔵 P2 M — Unified `.empty-state` component
+### ✅ 20. 🔵 P2 M — Unified `.empty-state` component
 **Files:** `css/components.css`, `css/playbook.css`, `css/script.css`  
+Done — `.empty-state`, `__icon`, `__text`, `__hint`, `--bordered`, `--spaced` defined in `components.css`. `playbook-render.js` already used it; `renderScriptGuidedEmptyState()` updated to use the shared classes. Old `.script-empty-guide` / `.seg-*` CSS removed from `script.css`.
+
+_(original spec below)_  
 Both pages have their own empty state styles (`.pb-empty`, `.script-empty-guide`, etc.) with different markup, icons, copy, and spacing. Define a single `.empty-state` pattern in `components.css`:
 
 ```html
@@ -210,14 +213,14 @@ Playbook uses active-pill bar; script uses highlight on the search input. Both s
 
 ---
 
-### 🔄 22. 🔵 P3 M — Unified sort-state persistence
+### ✅ 22. 🔵 P3 M — Unified sort-state persistence
 > **Partially done:** Playbook already persists full sort state via `savePlaybookState()` / `restorePlaybookState()`. Script sort field (`#scriptSortField`) is not yet persisted.
 **Files:** `js/playbook-state.js`, `js/script-state.js`  
 Playbook persists filter state. Script persists display options. Neither restores the last-used sort when you return to the tab. Store sort state (primary + secondary field + direction) in `STORAGE_KEYS.PLAYBOOK_STATE` and `STORAGE_KEYS.SCRIPT_STATE` respectively, and reapply on tab activation.
 
 ---
 
-### 23. 🔵 P3 S — Add "Last Modified" or "Added" timestamp to play objects
+### ✅ 23. 🔵 P3 S — Add "Last Modified" or "Added" timestamp to play objects
 **File:** `js/playbook-editor.js`, `js/playbook-import.js`  
 The Play data model has no `createdAt` or `updatedAt` field. Adding them unlocks: "Recently Added" sort key, "Edited Today" filter chip, and "New This Week" badge. Populate on save in the editor; set to `Date.now()` on CSV import if not present.
 
@@ -236,7 +239,7 @@ When a script item was sourced from the playbook, show a subtle "📖 In Playboo
 
 ---
 
-### 26. 🟢 P2 M — Consolidate `script.css` duplicate play-readiness base blocks
+### ✅ 26. 🟢 P2 M — Consolidate `script.css` duplicate play-readiness base blocks
 **File:** `css/script.css`  
 Three selector groups each appear as both a comma-grouped rule AND a standalone rule within the same non-media-query scope:  
 - `.play-readiness-actions` (lines 942 and 1071 context)  
@@ -264,7 +267,7 @@ High-frequency render functions (item, period header, compact call) are mixed wi
 
 ---
 
-### 29. 🟢 P3 M — Move `@media print` rules from `script.css` to `print.css`
+### ✅ 29. 🟢 P3 M — Move `@media print` rules from `script.css` to `print.css`
 **File:** `css/script.css`, `css/print.css`  
 All `.script-packet-*` print rules live in `script.css`. Moving them to `print.css` follows the established file responsibility contract (from `AGENTS.md`) and reduces the non-print parse surface of `script.css`.
 

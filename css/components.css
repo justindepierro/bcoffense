@@ -2859,6 +2859,11 @@ kbd {
   margin: 0;
   font-size: var(--font-size-base);
 }
+.empty-state__hint {
+  margin: 6px 0 0 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text-placeholder);
+}
 .empty-state a {
   color: var(--color-primary);
   text-decoration: underline;

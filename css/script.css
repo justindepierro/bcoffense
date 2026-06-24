@@ -391,25 +391,6 @@
   padding: 40px;
 }
 
-/* Empty guide state (period exists but no plays yet) */
-.script-empty-guide {
-  text-align: center;
-  padding: 30px 20px;
-  color: var(--color-text-placeholder);
-}
-.seg-icon {
-  font-size: var(--font-size-4xl);
-  margin-bottom: 8px;
-}
-.seg-text {
-  font-size: var(--font-size-base);
-  margin-bottom: 6px;
-  color: var(--color-text-light);
-}
-.seg-hint {
-  font-size: var(--font-size-sm);
-  color: var(--color-text-placeholder);
-}
 .script-item {
   padding: 6px 10px;
   background: var(--color-white);
@@ -5716,10 +5697,6 @@ body[data-active-tab="script"] .script-display-fab {
     border-color: var(--color-primary);
   }
 }
-@media print {
-  #script .script-pb-chip { display: none; }
-}
-
 /* Play-type accents: left stripe + matching type chip */
 #script .play-item--run {
   border-left-color: var(--color-success);

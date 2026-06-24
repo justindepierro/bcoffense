@@ -308,6 +308,7 @@
   body.print-script #uploadSection {
     display: none !important;
   }
+  #script .script-pb-chip { display: none; }
   body.print-script #script {
     display: block !important;
     padding: 0 !important;
