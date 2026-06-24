@@ -283,9 +283,9 @@
   scrollbar-color: var(--color-border-med) transparent;
 }
 .play-item {
-  padding: 13px 14px;
+  padding: 9px 12px;
   background: var(--color-surface-raised);
-  margin-bottom: 10px;
+  margin-bottom: 6px;
   border-radius: var(--radius-md);
   cursor: pointer;
   display: grid;
@@ -294,6 +294,7 @@
   gap: 10px;
   font-size: var(--font-size-sm);
   border: 1px solid var(--color-border-light);
+  border-left-width: 3px;
   box-shadow: var(--shadow-xs);
 }
 @media (hover: hover) {
@@ -5506,6 +5507,15 @@ body[data-active-tab="script"] .script-display-fab {
   background: var(--color-accent-light);
   color: var(--color-primary);
 }
+
+/* Script item type accent left border (same colors as available plays) */
+#script .script-item--run { border-left: 3px solid var(--color-success); }
+#script .script-item--pass { border-left: 3px solid var(--color-primary); }
+#script .script-item--rpo { border-left: 3px solid var(--color-purple); }
+#script .script-item--screen { border-left: 3px solid var(--color-info); }
+#script .script-item--quick { border-left: 3px solid var(--color-warning); }
+#script .script-item--playaction { border-left: 3px solid var(--color-danger); }
+#script .script-item--movement { border-left: 3px solid var(--color-accent); }
 
 #script .app-scroll-region {
   scrollbar-color: var(--color-border-med) transparent;

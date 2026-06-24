@@ -863,6 +863,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
   const reps = play.reps ?? 1;
   const itemClasses = [
     "script-item",
+    `script-item--${availTypeSlug(play.type)}`,
     isSelected ? "bulk-selected" : "",
     opts.layoutMode === "compact" ? "script-item--compact" : "script-item--detail",
     opts.printStyle ? "script-item--printlike" : "",
