@@ -30,22 +30,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=690" />
-  <link rel="stylesheet" href="css/layout.css?v=690" />
-  <link rel="stylesheet" href="css/components.css?v=690" />
-  <link rel="stylesheet" href="css/playbook.css?v=690" />
-  <link rel="stylesheet" href="css/script.css?v=690" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=690" />
-  <link rel="stylesheet" href="css/wristband.css?v=690" />
-  <link rel="stylesheet" href="css/callsheet.css?v=690" />
-  <link rel="stylesheet" href="css/tendencies.css?v=690" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=690" />
-  <link rel="stylesheet" href="css/dashboard.css?v=690" />
-  <link rel="stylesheet" href="css/gameplan.css?v=690" />
-  <link rel="stylesheet" href="css/installation.css?v=690" />
-  <link rel="stylesheet" href="css/identity.css?v=690" />
-  <link rel="stylesheet" href="css/print.css?v=690" />
-  <link rel="stylesheet" href="css/responsive.css?v=690" />
+  <link rel="stylesheet" href="css/base.css?v=691" />
+  <link rel="stylesheet" href="css/layout.css?v=691" />
+  <link rel="stylesheet" href="css/components.css?v=691" />
+  <link rel="stylesheet" href="css/playbook.css?v=691" />
+  <link rel="stylesheet" href="css/script.css?v=691" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=691" />
+  <link rel="stylesheet" href="css/wristband.css?v=691" />
+  <link rel="stylesheet" href="css/callsheet.css?v=691" />
+  <link rel="stylesheet" href="css/tendencies.css?v=691" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=691" />
+  <link rel="stylesheet" href="css/dashboard.css?v=691" />
+  <link rel="stylesheet" href="css/gameplan.css?v=691" />
+  <link rel="stylesheet" href="css/installation.css?v=691" />
+  <link rel="stylesheet" href="css/identity.css?v=691" />
+  <link rel="stylesheet" href="css/print.css?v=691" />
+  <link rel="stylesheet" href="css/responsive.css?v=691" />
 </head>
 
 <body class="app-booting">
@@ -2328,120 +2328,112 @@
                 💾 Save Preset
               </button>
             </div>
-            <section class="cs-settings-section cs-settings-section--display" aria-labelledby="csDisplayHeading">
+            <section class="cs-settings-section cs-settings-section--fields" aria-labelledby="csDisplayHeading">
               <div class="cs-settings-section-head">
                 <div>
-                  <h3 id="csDisplayHeading" class="cs-settings-title">Cell Display &amp; Emphasis</h3>
-                  <p class="cs-settings-copy">Control the play parts shown in each cell and the visual shorthand used to
-                    scan quickly.</p>
+                  <h3 id="csDisplayHeading" class="cs-settings-title">Cell Fields</h3>
+                  <p class="cs-settings-copy">Choose which play parts appear in each cell.</p>
                 </div>
                 <div class="cs-field-actions">
                   <button class="btn btn-xs" data-action="csSelectAllFields" data-arg="true">
-                    Select All
+                    All
                   </button>
                   <button class="btn btn-xs" data-action="csSelectAllFields" data-arg="false">
-                    Clear All
+                    Clear
                   </button>
                 </div>
               </div>
-              <div class="cs-settings-subgroup">
-                <div class="cs-settings-subtitle-row">
-                  <div class="cs-settings-subtitle">Show In Each Cell</div>
-                  <span class="cs-settings-note">Core text fields and shorthand</span>
-                </div>
-                <div class="display-options-grid cs-show-grid cs-settings-grid">
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowNumbers"
-                      data-onchange="requestRenderCallSheet" checked />
-                    <span>WB#</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowPersonnel"
-                      data-onchange="requestRenderCallSheet" checked />
-                    <span>Personnel</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowFormation"
-                      data-onchange="requestRenderCallSheet" checked />
-                    <span>Formation</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowFormationTags"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>Formation Tags</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowBack"
-                      data-onchange="requestRenderCallSheet" checked />
-                    <span>Back</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowOneWordOnly"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>One Word Only</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowProtection"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>Protection</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowPlayName"
-                      data-onchange="requestRenderCallSheet" checked />
-                    <span>Play</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowTags"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>Play Tags</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowMotion"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>Motion</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowLineCall"
-                      data-onchange="requestRenderCallSheet" checked />
-                    <span>[Line Call]</span></label>
+              <div class="display-options-grid cs-show-grid cs-settings-grid">
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowNumbers"
+                    data-onchange="requestRenderCallSheet" checked />
+                  <span>WB#</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowPersonnel"
+                    data-onchange="requestRenderCallSheet" checked />
+                  <span>Personnel</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowFormation"
+                    data-onchange="requestRenderCallSheet" checked />
+                  <span>Formation</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowFormationTags"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>Form Tags</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowBack"
+                    data-onchange="requestRenderCallSheet" checked />
+                  <span>Back</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowOneWordOnly"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>One Word</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowProtection"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>Protection</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowPlayName"
+                    data-onchange="requestRenderCallSheet" checked />
+                  <span>Play</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowTags"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>Play Tags</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowMotion"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>Motion</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowLineCall"
+                    data-onchange="requestRenderCallSheet" checked />
+                  <span>[Line Call]</span></label>
+              </div>
+            </section>
+
+            <section class="cs-settings-section cs-settings-section--format" aria-labelledby="csFormatHeading">
+              <div class="cs-settings-section-head">
+                <div>
+                  <h3 id="csFormatHeading" class="cs-settings-title">Style &amp; Emphasis</h3>
+                  <p class="cs-settings-copy">Visual cues that speed up sideline scanning.</p>
                 </div>
               </div>
-
-              <div class="cs-settings-subgroup">
-                <div class="cs-settings-subtitle-row">
-                  <div class="cs-settings-subtitle">Formatting &amp; Emphasis</div>
-                  <span class="cs-settings-note">Visual cues that accelerate scanning; Navy uses ⚓ and Meat uses
-                    🥩</span>
-                </div>
-                <div class="display-options-grid cs-settings-grid">
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetShowEmoji"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>🔵 / ⚓ / 🥩 Personnel Marker</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetUseSquares"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>🟦 Use Squares</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetUnderEmoji"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>🍑 Under = Peach</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetBoldShifts"
-                      data-onchange="requestRenderCallSheet" />
-                    <span><b>Bold</b> Shifts</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetRedShifts"
-                      data-onchange="requestRenderCallSheet" />
-                    <span><span class="red">Red</span> Shifts</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetItalicMotions"
-                      data-onchange="requestRenderCallSheet" />
-                    <span><i>Italic</i> Motions</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetRedMotions"
-                      data-onchange="requestRenderCallSheet" />
-                    <span><span class="red">Red</span> Motions</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetRemoveVowels"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>Remove Vowels</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetHighlightHuddle"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>🟡 Huddle</span></label>
-                  <label class="cs-option-tile"><input type="checkbox" id="callsheetHighlightCandy"
-                      data-onchange="requestRenderCallSheet" />
-                    <span>🩷 Candy</span></label>
-                </div>
+              <div class="display-options-grid cs-settings-grid">
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetShowEmoji"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>🔵 Personnel Marker</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetUseSquares"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>🟦 Use Squares</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetUnderEmoji"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>🍑 Under = Peach</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetBoldShifts"
+                    data-onchange="requestRenderCallSheet" />
+                  <span><b>Bold</b> Shifts</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetRedShifts"
+                    data-onchange="requestRenderCallSheet" />
+                  <span><span class="red">Red</span> Shifts</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetItalicMotions"
+                    data-onchange="requestRenderCallSheet" />
+                  <span><i>Italic</i> Motions</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetRedMotions"
+                    data-onchange="requestRenderCallSheet" />
+                  <span><span class="red">Red</span> Motions</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetRemoveVowels"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>No Vowels</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetHighlightHuddle"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>🟡 Huddle</span></label>
+                <label class="cs-option-tile"><input type="checkbox" id="callsheetHighlightCandy"
+                    data-onchange="requestRenderCallSheet" />
+                  <span>🩷 Candy</span></label>
               </div>
             </section>
 
             <section class="cs-settings-section cs-settings-section--borders" aria-labelledby="csBordersHeading">
               <div class="cs-settings-section-head">
                 <div>
-                  <h3 id="csBordersHeading" class="cs-settings-title">Border Highlights</h3>
-                  <p class="cs-settings-copy">Map colors to play types or personnel groups for faster scanning.</p>
+                  <h3 id="csBordersHeading" class="cs-settings-title">Border Colors</h3>
+                  <p class="cs-settings-copy">Color-code play types and personnel for faster scanning.</p>
                 </div>
               </div>
               <div class="cs-border-panels">
                 <div class="cs-border-panel">
                   <div class="cs-border-panel-head">
                     <div class="cs-border-panel-title">By Play Type</div>
-                    <span class="cs-border-panel-copy">Assign a scan color to the play families you care about
-                      most.</span>
                   </div>
-                  <div class="cs-border-selectors cs-border-selectors--grid">
+                  <div class="cs-border-selectors cs-border-selectors--list">
                     <label class="cs-border-label"><span class="cs-border-dot cs-border-dot--red">Red</span>
                       <select id="callsheetRedBorder" data-onchange="requestRenderCallSheet">
                         <option value="">None</option>
@@ -2502,8 +2494,6 @@
                 <div class="cs-border-panel">
                   <div class="cs-border-panel-head">
                     <div class="cs-border-panel-title">By Personnel</div>
-                    <span class="cs-border-panel-copy">Map one personnel family to a border color for instant
-                      recognition.</span>
                   </div>
                   <div class="cs-border-selectors">
                     <label class="cs-border-label cs-border-label--personnel">
@@ -3658,106 +3648,106 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=690"></script>
-  <script defer src="js/history.js?v=690"></script>
-  <script defer src="js/dom-helpers.js?v=690"></script>
-  <script defer src="js/lz-string.min.js?v=690"></script>
-  <script defer src="js/storage.js?v=690"></script>
-  <script defer src="js/storage-ui.js?v=690"></script>
-  <script defer src="js/play-images.js?v=690"></script>
-  <script defer src="js/cloud-sync.js?v=690"></script>
-  <script defer src="js/auth.js?v=690"></script>
-  <script defer src="js/vision.js?v=690"></script>
-  <script defer src="js/team-settings.js?v=690"></script>
-  <script defer src="js/playbook.js?v=690"></script>
-  <script defer src="js/playbook-collections.js?v=690"></script>
-  <script defer src="js/playbook-print.js?v=690"></script>
-  <script defer src="js/playbook-editor.js?v=690"></script>
-  <script defer src="js/playbook-import.js?v=690"></script>
-  <script defer src="js/playbook-export.js?v=690"></script>
-  <script defer src="js/playbook-chrome.js?v=690"></script>
-  <script defer src="js/playbook-reports.js?v=690"></script>
-  <script defer src="js/playbook-state.js?v=690"></script>
-  <script defer src="js/playbook-filters.js?v=690"></script>
-  <script defer src="js/playbook-navigation.js?v=690"></script>
-  <script defer src="js/playbook-actions.js?v=690"></script>
-  <script defer src="js/playbook-render.js?v=690"></script>
-  <script defer src="js/playbook-sanitize.js?v=690"></script>
-  <script defer src="js/playbook-analytics.js?v=690"></script>
-  <script defer src="js/playbook-identity.js?v=690"></script>
-  <script defer src="js/script-state.js?v=690"></script>
-  <script defer src="js/script-shared.js?v=690"></script>
-  <script defer src="js/script-players.js?v=690"></script>
-  <script defer src="js/script-display-options.js?v=690"></script>
-  <script defer src="js/play-readiness.js?v=690"></script>
-  <script defer src="js/script-add.js?v=690"></script>
-  <script defer src="js/script-sort.js?v=690"></script>
-  <script defer src="js/script-export.js?v=690"></script>
-  <script defer src="js/script-available.js?v=690"></script>
-  <script defer src="js/script-selection.js?v=690"></script>
-  <script defer src="js/script-timeline.js?v=690"></script>
-  <script defer src="js/script-render.js?v=690"></script>
-  <script defer src="js/script-health.js?v=690"></script>
-  <script defer src="js/script-periods.js?v=690"></script>
-  <script defer src="js/script-period-sync.js?v=690"></script>
-  <script defer src="js/script-smart.js?v=690"></script>
-  <script defer src="js/script-storage.js?v=690"></script>
-  <script defer src="js/script-integrations.js?v=690"></script>
-  <script defer src="js/play-presentation.js?v=690"></script>
-  <script defer src="js/wristband.js?v=690"></script>
-  <script defer src="js/wristband-library.js?v=690"></script>
-  <script defer src="js/wristband-render.js?v=690"></script>
-  <script defer src="js/wristband-cards.js?v=690"></script>
-  <script defer src="js/wristband-export.js?v=690"></script>
-  <script defer src="js/wristband-search.js?v=690"></script>
-  <script defer src="js/wristband-modals.js?v=690"></script>
-  <script defer src="js/wristband-cell-popup.js?v=690"></script>
-  <script defer src="js/wristband-cell-actions.js?v=690"></script>
-  <script defer src="js/wristband-sort.js?v=690"></script>
-  <script defer src="js/wristband-storage.js?v=690"></script>
-  <script defer src="js/wristband-runtime.js?v=690"></script>
-  <script defer src="js/callsheet-render.js?v=690"></script>
-  <script defer src="js/callsheet.js?v=690"></script>
-  <script defer src="js/callsheet-print.js?v=690"></script>
-  <script defer src="js/callsheet-sort.js?v=690"></script>
-  <script defer src="js/callsheet-filters.js?v=690"></script>
-  <script defer src="js/callsheet-smart.js?v=690"></script>
-  <script defer src="js/callsheet-export.js?v=690"></script>
-  <script defer src="js/callsheet-display.js?v=690"></script>
-  <script defer src="js/callsheet-categories.js?v=690"></script>
-  <script defer src="js/callsheet-metadata.js?v=690"></script>
-  <script defer src="js/callsheet-layout.js?v=690"></script>
-  <script defer src="js/callsheet-templates.js?v=690"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=690"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=690"></script>
-  <script defer src="js/constraints.js?v=690"></script>
-  <script defer src="js/script-vision.js?v=690"></script>
-  <script defer src="js/tendencies-render.js?v=690"></script>
-  <script defer src="js/tendencies.js?v=690"></script>
-  <script defer src="js/installation-render.js?v=690"></script>
-  <script defer src="js/installation.js?v=690"></script>
-  <script defer src="js/identity.js?v=690"></script>
-  <script defer src="js/offensebuilder.js?v=690"></script>
-  <script defer src="js/help.js?v=690"></script>
-  <script defer src="js/dashboard.js?v=690"></script>
-  <script defer src="js/gameplan.js?v=690"></script>
-  <script defer src="js/gameplan-render.js?v=690"></script>
-  <script defer src="js/gameplan-dnd.js?v=690"></script>
-  <script defer src="js/gameplan-actions.js?v=690"></script>
-  <script defer src="js/gameplan-smart.js?v=690"></script>
-  <script defer src="js/gameplan-print.js?v=690"></script>
-  <script defer src="js/gameplan-integrations.js?v=690"></script>
-  <script defer src="js/gameplan-snapshots.js?v=690"></script>
-  <script defer src="js/print-studio.js?v=690"></script>
-  <script defer src="js/script-events.js?v=690"></script>
-  <script defer src="js/app-events.js?v=690"></script>
-  <script defer src="js/app-shell.js?v=690"></script>
-  <script defer src="js/app-session.js?v=690"></script>
-  <script defer src="js/app-navigation.js?v=690"></script>
-  <script defer src="js/app-module-init.js?v=690"></script>
-  <script defer src="js/app-bootstrap.js?v=690"></script>
-  <script defer src="js/app-init.js?v=690"></script>
-  <script defer src="js/app.js?v=690"></script>
+  <script defer src="js/utils.js?v=691"></script>
+  <script defer src="js/history.js?v=691"></script>
+  <script defer src="js/dom-helpers.js?v=691"></script>
+  <script defer src="js/lz-string.min.js?v=691"></script>
+  <script defer src="js/storage.js?v=691"></script>
+  <script defer src="js/storage-ui.js?v=691"></script>
+  <script defer src="js/play-images.js?v=691"></script>
+  <script defer src="js/cloud-sync.js?v=691"></script>
+  <script defer src="js/auth.js?v=691"></script>
+  <script defer src="js/vision.js?v=691"></script>
+  <script defer src="js/team-settings.js?v=691"></script>
+  <script defer src="js/playbook.js?v=691"></script>
+  <script defer src="js/playbook-collections.js?v=691"></script>
+  <script defer src="js/playbook-print.js?v=691"></script>
+  <script defer src="js/playbook-editor.js?v=691"></script>
+  <script defer src="js/playbook-import.js?v=691"></script>
+  <script defer src="js/playbook-export.js?v=691"></script>
+  <script defer src="js/playbook-chrome.js?v=691"></script>
+  <script defer src="js/playbook-reports.js?v=691"></script>
+  <script defer src="js/playbook-state.js?v=691"></script>
+  <script defer src="js/playbook-filters.js?v=691"></script>
+  <script defer src="js/playbook-navigation.js?v=691"></script>
+  <script defer src="js/playbook-actions.js?v=691"></script>
+  <script defer src="js/playbook-render.js?v=691"></script>
+  <script defer src="js/playbook-sanitize.js?v=691"></script>
+  <script defer src="js/playbook-analytics.js?v=691"></script>
+  <script defer src="js/playbook-identity.js?v=691"></script>
+  <script defer src="js/script-state.js?v=691"></script>
+  <script defer src="js/script-shared.js?v=691"></script>
+  <script defer src="js/script-players.js?v=691"></script>
+  <script defer src="js/script-display-options.js?v=691"></script>
+  <script defer src="js/play-readiness.js?v=691"></script>
+  <script defer src="js/script-add.js?v=691"></script>
+  <script defer src="js/script-sort.js?v=691"></script>
+  <script defer src="js/script-export.js?v=691"></script>
+  <script defer src="js/script-available.js?v=691"></script>
+  <script defer src="js/script-selection.js?v=691"></script>
+  <script defer src="js/script-timeline.js?v=691"></script>
+  <script defer src="js/script-render.js?v=691"></script>
+  <script defer src="js/script-health.js?v=691"></script>
+  <script defer src="js/script-periods.js?v=691"></script>
+  <script defer src="js/script-period-sync.js?v=691"></script>
+  <script defer src="js/script-smart.js?v=691"></script>
+  <script defer src="js/script-storage.js?v=691"></script>
+  <script defer src="js/script-integrations.js?v=691"></script>
+  <script defer src="js/play-presentation.js?v=691"></script>
+  <script defer src="js/wristband.js?v=691"></script>
+  <script defer src="js/wristband-library.js?v=691"></script>
+  <script defer src="js/wristband-render.js?v=691"></script>
+  <script defer src="js/wristband-cards.js?v=691"></script>
+  <script defer src="js/wristband-export.js?v=691"></script>
+  <script defer src="js/wristband-search.js?v=691"></script>
+  <script defer src="js/wristband-modals.js?v=691"></script>
+  <script defer src="js/wristband-cell-popup.js?v=691"></script>
+  <script defer src="js/wristband-cell-actions.js?v=691"></script>
+  <script defer src="js/wristband-sort.js?v=691"></script>
+  <script defer src="js/wristband-storage.js?v=691"></script>
+  <script defer src="js/wristband-runtime.js?v=691"></script>
+  <script defer src="js/callsheet-render.js?v=691"></script>
+  <script defer src="js/callsheet.js?v=691"></script>
+  <script defer src="js/callsheet-print.js?v=691"></script>
+  <script defer src="js/callsheet-sort.js?v=691"></script>
+  <script defer src="js/callsheet-filters.js?v=691"></script>
+  <script defer src="js/callsheet-smart.js?v=691"></script>
+  <script defer src="js/callsheet-export.js?v=691"></script>
+  <script defer src="js/callsheet-display.js?v=691"></script>
+  <script defer src="js/callsheet-categories.js?v=691"></script>
+  <script defer src="js/callsheet-metadata.js?v=691"></script>
+  <script defer src="js/callsheet-layout.js?v=691"></script>
+  <script defer src="js/callsheet-templates.js?v=691"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=691"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=691"></script>
+  <script defer src="js/constraints.js?v=691"></script>
+  <script defer src="js/script-vision.js?v=691"></script>
+  <script defer src="js/tendencies-render.js?v=691"></script>
+  <script defer src="js/tendencies.js?v=691"></script>
+  <script defer src="js/installation-render.js?v=691"></script>
+  <script defer src="js/installation.js?v=691"></script>
+  <script defer src="js/identity.js?v=691"></script>
+  <script defer src="js/offensebuilder.js?v=691"></script>
+  <script defer src="js/help.js?v=691"></script>
+  <script defer src="js/dashboard.js?v=691"></script>
+  <script defer src="js/gameplan.js?v=691"></script>
+  <script defer src="js/gameplan-render.js?v=691"></script>
+  <script defer src="js/gameplan-dnd.js?v=691"></script>
+  <script defer src="js/gameplan-actions.js?v=691"></script>
+  <script defer src="js/gameplan-smart.js?v=691"></script>
+  <script defer src="js/gameplan-print.js?v=691"></script>
+  <script defer src="js/gameplan-integrations.js?v=691"></script>
+  <script defer src="js/gameplan-snapshots.js?v=691"></script>
+  <script defer src="js/print-studio.js?v=691"></script>
+  <script defer src="js/script-events.js?v=691"></script>
+  <script defer src="js/app-events.js?v=691"></script>
+  <script defer src="js/app-shell.js?v=691"></script>
+  <script defer src="js/app-session.js?v=691"></script>
+  <script defer src="js/app-navigation.js?v=691"></script>
+  <script defer src="js/app-module-init.js?v=691"></script>
+  <script defer src="js/app-bootstrap.js?v=691"></script>
+  <script defer src="js/app-init.js?v=691"></script>
+  <script defer src="js/app.js?v=691"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

@@ -668,6 +668,9 @@
   .cs-toolbar-right .btn {
     flex: 1 1 140px;
   }
+  .cs-settings-section--fields,
+  .cs-settings-section--format,
+  .cs-settings-section--borders,
   .cs-settings-section--display,
   .cs-border-panel,
   .cs-border-panel:last-child {
@@ -776,22 +779,15 @@
     grid-template-columns: 1fr;
   }
 
-  .cs-settings-section--display,
-  .cs-settings-section--borders {
+  .cs-settings-section--fields,
+  .cs-settings-section--format,
+  .cs-settings-section--borders,
+  .cs-settings-section--display {
     grid-column: span 12;
-  }
-
-  .cs-unified-header {
-    align-items: flex-start;
-    flex-wrap: wrap;
   }
 
   .cs-settings-note {
     white-space: normal;
-  }
-
-  .cs-border-selectors--grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 }
 

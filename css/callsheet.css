@@ -637,7 +637,8 @@
   margin-bottom: 8px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* overflow:hidden removed — same Safari BFC + fr-unit bug as .cs-toolbar-secondary-wrap.
+     .cs-unified-content handles its own clipping via overflow:hidden on the grid element. */
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
 }
@@ -727,6 +728,8 @@
   grid-template-rows: 1fr;
   background: var(--color-surface);
   transition: grid-template-rows 0.3s ease;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 .cs-unified-content.collapsed {
   grid-template-rows: 0fr;
@@ -752,12 +755,16 @@
   padding: 10px;
 }
 
-.cs-settings-section--display {
-  grid-column: span 7;
+.cs-settings-section--fields {
+  grid-column: span 4;
+}
+
+.cs-settings-section--format {
+  grid-column: span 4;
 }
 
 .cs-settings-section--borders {
-  grid-column: span 5;
+  grid-column: span 4;
 }
 
 .cs-settings-section-head {
@@ -899,10 +906,21 @@
   line-height: 1.2;
 }
 
-.cs-border-selectors--grid {
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  gap: 6px;
+.cs-border-selectors--list {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+.cs-border-selectors--list .cs-border-label {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  flex: unset;
+}
+.cs-border-selectors--list .cs-border-label select {
+  flex: 1 1 auto;
+  min-width: 0;
 }
 
 .cs-layout-modal {
