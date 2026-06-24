@@ -94,6 +94,21 @@ function closePbFilterDrawer() {
   _applyPbFilterDrawerState();
 }
 
+function filterByTypeStat(type) {
+  if (!type) return;
+  const isNowActive = !activeTypeChips.has(type);
+  if (isNowActive) {
+    activeTypeChips.add(type);
+  } else {
+    activeTypeChips.delete(type);
+  }
+  if (typeof _setPbChipActive === "function") {
+    _setPbChipActive("pbChipsType", type, isNowActive);
+  }
+  if (typeof invalidateStatsBarCache === "function") invalidateStatsBarCache();
+  if (typeof filterPlays === "function") filterPlays();
+}
+
 function _applyPbFilterDrawerState() {
   const panel = document.getElementById("playbook");
   const drawer = document.getElementById("pbFilterDrawer");

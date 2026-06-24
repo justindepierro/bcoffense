@@ -2188,6 +2188,12 @@
   background: var(--color-white-alpha-10);
 }
 
+.ph-ratio-bar {
+  min-width: 60px;
+  max-width: 80px;
+  flex-shrink: 0;
+}
+
 .ph-btn {
   background: var(--color-white-alpha-20);
   border: none;

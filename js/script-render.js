@@ -452,6 +452,18 @@ function updatePeriodMetaDisplay(separatorIndex) {
     runCount,
     passCount,
   );
+
+  const ratioBar = wrapper?.querySelector(".ph-ratio-bar");
+  if (ratioBar) {
+    const total = runCount + passCount;
+    if (total > 0) {
+      ratioBar.style.display = "";
+      const runEl = ratioBar.querySelector(".ratio-bar-run");
+      if (runEl) runEl.style.width = `${Math.round((runCount / total) * 100)}%`;
+    } else {
+      ratioBar.style.display = "none";
+    }
+  }
 }
 
 function updateScriptPreviewField(index, fieldClass, value) {
@@ -739,6 +751,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
             <input type="text" class="ph-label-input" value="${escapeHtml(periodLabel)}" data-field="periodLabel" data-idx="${index}" aria-label="Name for ${escapeHtml(periodLabel)}">
             <input type="number" class="ph-minutes-input" value="${separator.minutes || ""}" data-field="periodMinutes" data-idx="${index}" placeholder="min" title="Time in minutes" aria-label="Minutes for ${escapeHtml(periodLabel)}">
             <span class="ph-meta-span">${metaText}</span>
+            ${(runCount || passCount) ? `<div class="ph-ratio-bar ratio-bar-wrap" aria-hidden="true"><div class="ratio-bar-run" style="width:${runCount + passCount > 0 ? Math.round((runCount / (runCount + passCount)) * 100) : 50}%"></div><div class="ratio-bar-pass"></div></div>` : ""}
           </div>
           <div class="ph-right">
             <button class="ph-btn" data-action="movePeriod" data-idx="${index}" data-dir="-1" title="Move period up" aria-label="Move ${escapeHtml(periodLabel)} up">▲</button>

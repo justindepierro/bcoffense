@@ -466,7 +466,7 @@ function updateStatsBar() {
   const statsBar = document.getElementById("statsBar");
   if (!statsBar) return;
 
-  if (_statsBarCache) {
+  if (_statsBarCache && !activeTypeChips?.size) {
     statsBar.innerHTML = _statsBarCache;
     return;
   }
@@ -479,12 +479,13 @@ function updateStatsBar() {
 
   const sorted = Object.entries(typeCounts).sort((a, b) => b[1] - a[1]);
 
-  _statsBarCache = sorted
-    .map(
-      ([type, count]) =>
-        `<div class="stat-item"><span class="stat-count">${count}</span> ${escapeHtml(type)}</div>`,
-    )
+  const html = sorted
+    .map(([type, count]) => {
+      const isActive = activeTypeChips?.has(type);
+      return `<button type="button" class="stat-item${isActive ? " stat-item--active" : ""}" data-action="filterByTypeStat" data-arg="${escapeHtml(type)}"><span class="stat-count">${count}</span> ${escapeHtml(type)}</button>`;
+    })
     .join("");
 
-  statsBar.innerHTML = _statsBarCache;
+  if (!activeTypeChips?.size) _statsBarCache = html;
+  statsBar.innerHTML = html;
 }
