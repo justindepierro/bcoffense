@@ -1019,7 +1019,7 @@ body[data-auth-role="player"] .gp-card-btn {
 /* ═══════════════ Playbook Filter Drawer ═══════════════ */
 
 /* Desktop: playbook panel becomes the positioning context for the drawer */
-body.app-ready:not(.is-mobile-screen) #playbook.panel {
+body.app-ready:not(.is-mobile-screen) #playbook.panel.active {
   position: relative;
   overflow: hidden;
   display: flex;
