@@ -562,6 +562,17 @@ function removeCallSheetPlay(categoryId, hash, index) {
   saveCallSheet();
 }
 
+function addCsBlankRow(arg) {
+  const parts = String(arg || "").split(":");
+  const catId = parts[0];
+  const hash = parts[1];
+  if (!catId || !hash || !callSheet[catId]) return;
+  if (!Array.isArray(callSheet[catId][hash])) callSheet[catId][hash] = [];
+  callSheet[catId][hash].push({ _blank: true });
+  renderCallSheet();
+  saveCallSheet();
+}
+
 function handleCallSheetDragStart(event, categoryId, hash, index) {
   draggedCallSheetPlay = { categoryId, hash, index };
   event.dataTransfer.setData("source", "callsheet");

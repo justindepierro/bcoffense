@@ -1499,7 +1499,10 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
     if (leftPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
     }
-    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="left" role="button" aria-label="Add play to left hash">+ Add</div>`;
+    html += `<div class="cs-col-footer">
+      <div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="left" role="button" aria-label="Add play to left hash">+ Add</div>
+      <button class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${cat.id}:left" title="Insert blank spacer row" aria-label="Add blank spacer row">+ blank</button>
+    </div>`;
 
     html += `
         </div>
@@ -1518,7 +1521,10 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
     if (rightPlays.length === 0) {
       html += `<div class="cs-empty-cat">Drop plays here</div>`;
     }
-    html += `<div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="right" role="button" aria-label="Add play to right hash">+ Add</div>`;
+    html += `<div class="cs-col-footer">
+      <div class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${cat.id}" data-hash="right" role="button" aria-label="Add play to right hash">+ Add</div>
+      <button class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${cat.id}:right" title="Insert blank spacer row" aria-label="Add blank spacer row">+ blank</button>
+    </div>`;
 
     html += `
         </div>
@@ -1664,6 +1670,16 @@ function getPlayBorderColor(play, options) {
  * Render a single play in the call sheet
  */
 function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
+  // Blank spacer row
+  if (play && play._blank) {
+    return `<div class="cs-blank-row" role="row" aria-label="Blank spacer"
+         data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
+      <button class="remove-play cs-blank-remove" data-action="removeCallSheetPlay"
+        data-category="${categoryId}" data-hash="${hash}" data-index="${index}"
+        aria-label="Remove blank row" title="Remove blank spacer">×</button>
+    </div>`;
+  }
+
   if (!options) options = getCallSheetDisplayOptions();
   const textMemo = options._playTextMemo;
   let textMeta = textMemo && play && typeof play === "object" ? textMemo.get(play) : null;
@@ -3407,7 +3423,7 @@ function getCallSheetUsedPlayKeys() {
     ["left", "right"].forEach((side) => {
       const list = Array.isArray(bucket[side]) ? bucket[side] : [];
       list.forEach((play) => {
-        if (play) used.add(csPlayKey(play));
+        if (play && !play._blank) used.add(csPlayKey(play));
       });
     });
   });
@@ -3465,6 +3481,7 @@ function buildDuplicateMap() {
     const data = callSheet[cat.id];
     if (!data) return;
     [...(data.left || []), ...(data.right || [])].forEach((play) => {
+      if (!play || play._blank) return;
       const key = csPlayKey(play);
       if (!playCategories[key]) playCategories[key] = new Set();
       playCategories[key].add(cat.id);
@@ -5003,6 +5020,7 @@ function exportCallSheetCSV() {
     const catName = getCategoryDisplayName(cat);
     ["left", "right"].forEach((side) => {
       (bucket[side] || []).forEach((p) => {
+        if (!p || p._blank) return;
         rows.push(
           [
             esc(catName),

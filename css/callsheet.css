@@ -194,6 +194,75 @@
   }
 }
 
+/* Footer row holding +Add and +blank buttons */
+.cs-col-footer {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-top: 2px;
+}
+.cs-col-footer .callsheet-dropzone {
+  flex: 1;
+  margin-top: 0;
+}
+.cs-add-blank-btn {
+  padding: 3px 7px;
+  font-size: var(--font-size-2xs);
+  color: var(--color-text-muted);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  cursor: pointer;
+  white-space: nowrap;
+  font-family: inherit;
+  flex-shrink: 0;
+}
+@media (hover: hover) {
+  .cs-add-blank-btn:hover {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+    background: var(--color-bg-hover-row);
+  }
+}
+
+/* Blank spacer row */
+.cs-blank-row {
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;
+  min-height: 22px;
+  padding: 0 2px;
+  border-bottom: 1px dashed var(--color-border-light);
+  position: relative;
+}
+.cs-blank-remove {
+  opacity: 0;
+  transition: opacity var(--transition-fast);
+  width: 18px;
+  height: 18px;
+  font-size: 11px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-white);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  line-height: 1;
+}
+.cs-blank-row:hover .cs-blank-remove {
+  opacity: 1;
+}
+/* Hide blank rows in print */
+@media print {
+  .cs-blank-row,
+  .cs-add-blank-btn {
+    display: none;
+  }
+}
+
 /* Wristband number badge in call sheet */
 .wristband-num {
   background: var(--color-success);
@@ -1772,7 +1841,8 @@
 .cs-collapsed .category-subheader,
 .cs-collapsed .category-content,
 .cs-collapsed .cs-cat-note,
-.cs-collapsed .callsheet-dropzone {
+.cs-collapsed .callsheet-dropzone,
+.cs-collapsed .cs-col-footer {
   display: none !important;
 }
 
