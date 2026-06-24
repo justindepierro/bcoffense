@@ -451,6 +451,7 @@ function renderPlayReadinessRollup(summary, opts = {}) {
           <strong>${escapeHtml(value)}</strong>
         </span>`).join("")}
     </div>`;
+}
 
 function refreshPlayReadinessSurfaces(source = "") {
   if (typeof requestRenderScript === "function") requestRenderScript();
