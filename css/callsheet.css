@@ -564,7 +564,8 @@
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
-  overflow: hidden;
+  /* overflow:hidden removed — it creates a BFC that breaks CSS Grid fr-unit
+     resolution in Safari. The .cs-qa-body grid element handles its own clipping. */
 }
 .cs-toolbar-secondary-wrap .cs-toolbar-secondary {
   margin-bottom: 0;
@@ -608,13 +609,14 @@
   display: grid;
   grid-template-rows: 1fr;
   transition: grid-template-rows 0.3s ease;
+  overflow: hidden;
+  border-radius: 0 0 var(--radius-md) var(--radius-md);
 }
 .cs-qa-body.collapsed {
   grid-template-rows: 0fr;
 }
 .cs-qa-body > .cs-toolbar-secondary {
   min-height: 0;
-  overflow: hidden;
 }
 .cs-toolbar-secondary-summary-label {
   font-weight: 700;
