@@ -458,3 +458,68 @@ function handleCsLayoutDragEnd(event) {
   clearCsLayoutActiveDrop();
   csLayoutDragged = null;
 }
+
+// ============ Smart Reorder + Reset ============
+
+/**
+ * Smart reorder: arrange categories so the tallest ones are spread across columns
+ * to produce the most balanced, print-friendly layout.
+ */
+function smartReorderCategories() {
+  const page = callSheetSettings.currentPage;
+  const baseCats = getCallSheetCategoriesForPage(page);
+
+  // Calculate "height" of each category (header + plays)
+  const catHeights = baseCats.map((cat) => {
+    const data = callSheet[cat.id] || { left: [], right: [] };
+    const playCount = Math.max(
+      (data.left || []).length,
+      (data.right || []).length,
+    );
+    // Approximate: header=2, note=1, subheader=1, each play row=1, dropzone=1
+    const noteH = csNotes[cat.id] ? 1 : 0;
+    return { id: cat.id, height: 2 + noteH + 1 + Math.max(playCount, 1) + 1 };
+  });
+
+  // Sort by height descending (tallest first)
+  catHeights.sort((a, b) => b.height - a.height);
+
+  // Greedy assignment to 3 columns (like bin-packing)
+  const columns = [[], [], []];
+  const colHeights = [0, 0, 0];
+
+  catHeights.forEach((cat) => {
+    // Find the shortest column
+    let minIdx = 0;
+    if (colHeights[1] < colHeights[minIdx]) minIdx = 1;
+    if (colHeights[2] < colHeights[minIdx]) minIdx = 2;
+
+    columns[minIdx].push(cat.id);
+    colHeights[minIdx] += cat.height;
+  });
+
+  // Rebuild a flat order: col0[0], col1[0], col2[0], col0[1], col1[1], col2[1], ...
+  const maxLen = Math.max(
+    columns[0].length,
+    columns[1].length,
+    columns[2].length,
+  );
+  const newOrder = [];
+  for (let row = 0; row < maxLen; row++) {
+    if (columns[0][row]) newOrder.push(columns[0][row]);
+    if (columns[1][row]) newOrder.push(columns[1][row]);
+    if (columns[2][row]) newOrder.push(columns[2][row]);
+  }
+
+  csCategoryOrder[page] = newOrder;
+  persistCallSheetCategoryOrder();
+  renderCallSheet();
+  showToast("🧩 Categories reordered for best layout");
+}
+
+function resetCategoryOrder() {
+  csCategoryOrder = getDefaultCallSheetCategoryOrder();
+  persistCallSheetCategoryOrder();
+  renderCallSheet();
+  showToast("↩️ Call sheet layout reset to default");
+}

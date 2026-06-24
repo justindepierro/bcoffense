@@ -95,7 +95,8 @@ js/
   callsheet-export.js   ← exportCallSheetCSV, isPlayOnCallSheet, getCallSheetPlayLocations
   callsheet-categories.js ← Call sheet category names, colors, and custom-category CRUD
   callsheet-metadata.js ← Call sheet notes, targets, and category metadata menus
-  callsheet-layout.js   ← Call sheet layout/order modal state and drag-drop helpers
+  callsheet-layout.js   ← Call sheet layout/order modal state, drag-drop helpers, smart reorder, and category reset
+  callsheet-templates.js ← Call sheet template management: built-in templates, save/load/delete, apply template flow
   callsheet-picker-runtime.js ← Call sheet picker flows, wristband loading, and runtime bindings
   callsheet-gameplan-drawer.js ← Game plan drawer inside the call sheet
   constraints.js        ← Game plan constraints evaluation engine
@@ -209,7 +210,8 @@ All scripts use `defer` and load in this exact order from index.html:
 61. js/callsheet-categories.js
 62. js/callsheet-metadata.js
 63. js/callsheet-layout.js
-64. js/callsheet-picker-runtime.js
+64. js/callsheet-templates.js
+65. js/callsheet-picker-runtime.js
 65. js/callsheet-gameplan-drawer.js
 66. js/constraints.js    ← Depends on callsheet.js globals (callSheet, CALLSHEET_CATEGORIES)
 62. js/script-vision.js
@@ -830,7 +832,8 @@ refactor: Code restructuring, no behavior change
 - `callsheet.js` currently owns the core call sheet state, rendering, and sort helpers.
 - `callsheet-categories.js` owns category display names/colors and custom-category CRUD.
 - `callsheet-metadata.js` owns category notes, target counts, clear actions, and category metadata menus.
-- `callsheet-layout.js` owns category ordering persistence, layout modal draft state, and layout drag/drop helpers.
+- `callsheet-layout.js` owns category ordering persistence, layout modal draft state, drag-drop helpers, smart category reorder, and reset-to-default.
+- `callsheet-templates.js` owns built-in call sheet templates, template CRUD (save/load/delete), and template apply flow.
 - `callsheet-picker-runtime.js` owns picker search/filter flows, wristband loading, call sheet play drag/drop, and callsheet-specific runtime listeners.
 
 ## Refactor Guardrails
