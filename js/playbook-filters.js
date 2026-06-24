@@ -300,6 +300,8 @@ function updateActiveFilterBar() {
   if (parts.length === 0) {
     if (clearBtn) clearBtn.style.display = "none";
     pills.innerHTML = "";
+    const countBadge = document.getElementById("pbFilterCount");
+    if (countBadge) countBadge.hidden = true;
     return;
   }
 
@@ -310,6 +312,12 @@ function updateActiveFilterBar() {
         `<span class="pb-pill" data-layer="${part.layer}" data-value="${escapeHtml(part.value)}">${escapeHtml(part.label)} <button data-action="removeFilter" data-layer="${part.layer}" data-filter-value="${escapeHtml(part.value)}">&times;</button></span>`,
     )
     .join("");
+
+  const countBadge = document.getElementById("pbFilterCount");
+  if (countBadge) {
+    countBadge.textContent = parts.length;
+    countBadge.hidden = false;
+  }
 }
 
 function removeFilter(layer, value) {

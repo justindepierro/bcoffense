@@ -147,6 +147,29 @@ table.sortable th {
   display: none;
 }
 
+/* Active filter count badge on Filters toggle button */
+.pb-filter-count-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 18px;
+  height: 18px;
+  margin-left: 5px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  line-height: 1;
+  vertical-align: middle;
+}
+
+/* Active filter count badge on Filters toggle button */
+.pb-filter-count-badge[hidden] {
+  display: none;
+}
+
 /* ── Present button: invisible until row hover ── */
 #playbookTable .pb-present-btn {
   opacity: 0;

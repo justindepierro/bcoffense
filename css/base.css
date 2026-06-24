@@ -339,7 +339,7 @@ textarea:focus {
   --color-bg-lightest: #242a3a;
   --color-bg-input: #242a3a;
   --color-bg-blue-light: #1c2640;
-  --color-bg-blue-tint: #1c2640;
+  --color-bg-blue-tint: #1e306a;
   --color-bg-hover-row: #1e2a44;
   --color-white: #1e2434;
   --color-text: #e2e6ee;
@@ -359,7 +359,7 @@ textarea:focus {
   --color-warning-light: #3a2e1a;
   --color-info-light: #1c2d40;
   --color-purple-light: #2a1f3d;
-  --color-bg-blue-tint: #1e306a;
+  --color-purple: #9b72d0;
   --color-status-ok-border: #2d5e3e;
   --color-status-ok-bg: #1a3328;
   --color-status-ok-text: #6fcf8a;

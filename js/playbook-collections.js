@@ -222,7 +222,35 @@ async function sendFilteredToScript() {
   );
   if (!ok) return;
 
-  _addPlaysToScript(filteredPlays);
+  const targetSeparatorIndex = await pickTargetPeriodForAdd(filteredPlays.length);
+  if (targetSeparatorIndex === null) return;
+
+  if (typeof saveScriptState === "function") saveScriptState();
+  const playsToInsert = filteredPlays.map((play) => ({
+    ...play,
+    reps: 1,
+    notes: "",
+    hash: "",
+    defFront: "",
+    defCoverage: "",
+    defStunt: "",
+    defBlitz: "",
+    id: Date.now() + Math.random(),
+  }));
+  const inserted = typeof insertPlaysIntoPeriod === "function"
+    ? insertPlaysIntoPeriod(targetSeparatorIndex, playsToInsert)
+    : [];
+
+  if (typeof renderScriptSoon === "function") {
+    renderScriptSoon(() => {
+      if (inserted.length && typeof flashScriptPlayAtIndex === "function") {
+        flashScriptPlayAtIndex(inserted[0]);
+      }
+    });
+  } else if (typeof renderScript === "function") {
+    renderScript();
+  }
+
   showToast(`Added ${filteredPlays.length} plays to script`, {
     type: "success",
   });
