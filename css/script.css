@@ -5645,16 +5645,37 @@ body[data-active-tab="script"] .script-display-fab {
 }
 /* Compact filter accordion headers inside the drawer */
 #script .script-play-rail .checkbox-filters-title {
-  font-size: var(--font-size-xs);
-  padding: 4px 6px;
+  font-size: 10px;
+  padding: 3px 6px;
+  margin-bottom: 3px;
+}
+#script .script-play-rail .checkbox-filters {
+  margin-bottom: 6px;
+}
+#script .script-play-rail .checkbox-group {
+  gap: 3px;
+}
+#script .script-play-rail .checkbox-group label {
+  font-size: 10px;
+  padding: 2px 6px;
+  gap: 2px;
 }
 #script .script-play-rail .filter-actions-row {
-  padding: 4px 0;
-  gap: 6px;
+  padding: 3px 0;
+  gap: 5px;
 }
 #script .script-play-rail .filter-actions-row .btn {
   font-size: var(--font-size-xs);
   padding: 2px 7px;
+}
+/* Compact selects inside the rail filters */
+#script .script-play-rail .filters select,
+#script .script-play-rail .filters input {
+  padding: 4px 8px;
+  font-size: var(--font-size-sm);
+}
+#script .script-play-rail .filters.filters-compact {
+  margin-bottom: 6px;
 }
 
 #script .script-section-title {

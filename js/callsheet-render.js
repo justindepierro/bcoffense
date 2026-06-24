@@ -305,6 +305,10 @@ const CALLSHEET_BACK = [
 // Combined categories for reference
 const CALLSHEET_CATEGORIES = [...CALLSHEET_FRONT, ...CALLSHEET_BACK];
 
+// Immutable snapshots used by rebuildCallSheetCategoryRegistry as the base source
+const BASE_CALLSHEET_FRONT = CALLSHEET_FRONT.slice();
+const BASE_CALLSHEET_BACK = CALLSHEET_BACK.slice();
+
 const CS_SEVEN_ON_SEVEN_CATEGORIES = [
   {
     id: "cs-7on7-openers",

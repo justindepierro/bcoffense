@@ -1273,7 +1273,17 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   flex-shrink: 0;
 }
 
-/* Chip rows wrap inside the drawer */
+/* Chip rows inside the drawer: stack label above chips for full-width wrap */
+.pb-filter-drawer-body .pb-chip-row {
+  flex-direction: column;
+  align-items: flex-start;
+  overflow-x: visible;
+  gap: 4px;
+  padding-bottom: 6px;
+}
+.pb-filter-drawer-body .pb-chip-label {
+  min-width: unset;
+}
 .pb-filter-drawer-body .pb-chip-group {
   flex-wrap: wrap;
 }
@@ -1469,42 +1479,42 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 
 /* -- Chip rows -- */
 .pb-chip-row {
-  padding: 6px 14px;
+  padding: 5px 12px;
   border-bottom: 1px solid var(--color-border-light);
   flex-wrap: nowrap;
   overflow-x: auto;
   scrollbar-width: thin;
 }
 .pb-chip-row::-webkit-scrollbar {
-  height: 4px;
+  height: 3px;
 }
 .pb-chip-row::-webkit-scrollbar-thumb {
   background: var(--color-border);
   border-radius: 4px;
 }
 .pb-chip-label {
-  font-size: var(--font-size-xs);
+  font-size: 10px;
   font-weight: 700;
   text-transform: uppercase;
   letter-spacing: 0.5px;
   color: var(--color-text-muted);
   white-space: nowrap;
   flex-shrink: 0;
-  min-width: 64px;
+  min-width: 48px;
 }
 .pb-chip-group {
   display: flex;
-  gap: 5px;
+  gap: 4px;
   flex-wrap: nowrap;
 }
 .pb-chip {
   display: inline-flex;
   align-items: center;
-  padding: 4px 12px;
+  padding: 3px 9px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-pill);
   background: var(--color-white);
-  font-size: var(--font-size-xs2);
+  font-size: var(--font-size-xs);
   font-family: inherit;
   font-weight: 500;
   color: var(--color-text);
