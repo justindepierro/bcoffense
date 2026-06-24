@@ -306,34 +306,6 @@ document.addEventListener("click", (e) => {
     wrap.classList.toggle("open");
     const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
     if (triggerBtn) triggerBtn.setAttribute("aria-expanded", wrap.classList.contains("open") ? "true" : "false");
-    // Position fixed dropdowns to escape overflow-clipping toolbar containers
-    if (wrap.classList.contains("open")) {
-      const menu = wrap.querySelector(".tool-menu, .more-tools-menu");
-      if (menu) {
-        const rect = el.getBoundingClientRect();
-        const isUp =
-          wrap.classList.contains("tool-menu-up") ||
-          wrap.classList.contains("more-tools-wrap");
-        if (isUp) {
-          menu.style.top = "auto";
-          menu.style.bottom = window.innerHeight - rect.top + 4 + "px";
-        } else {
-          menu.style.top = rect.bottom + 4 + "px";
-          menu.style.bottom = "auto";
-        }
-        // Right-align tool menus; left-align more-tools menus
-        const menuW = menu.offsetWidth || 200;
-        let left;
-        if (wrap.classList.contains("tool-menu-wrap")) {
-          left = rect.right - menuW;
-        } else {
-          left = rect.left;
-        }
-        left = Math.max(8, Math.min(left, window.innerWidth - menuW - 8));
-        menu.style.left = left + "px";
-        menu.style.right = "auto";
-      }
-    }
     return;
   }
   if (action === "removeParentOpen") {

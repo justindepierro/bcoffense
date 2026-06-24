@@ -548,7 +548,11 @@
 
 .play-readiness-badge--automatic {
   --prb-bg: var(--color-primary-light);
-  --prb-border: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-primary) 42%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-primary);
 }
 
@@ -565,7 +569,11 @@
 
 .play-readiness-badge--gameready {
   --prb-bg: var(--color-success-light);
-  --prb-border: color-mix(in srgb, var(--color-success) 42%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-success) 42%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-success-hover);
 }
 /* Legacy alias */
@@ -581,7 +589,11 @@
 
 .play-readiness-badge--building {
   --prb-bg: var(--color-warning-light);
-  --prb-border: color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-warning) 45%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-warning-hover);
 }
 .play-readiness-badge--needs {
@@ -596,7 +608,11 @@
 
 .play-readiness-badge--notready {
   --prb-bg: var(--color-danger-light);
-  --prb-border: color-mix(in srgb, var(--color-danger) 42%, var(--color-border-light));
+  --prb-border: color-mix(
+    in srgb,
+    var(--color-danger) 42%,
+    var(--color-border-light)
+  );
   --prb-accent: var(--color-danger-hover, var(--color-danger));
 }
 .play-readiness-badge--risk {
@@ -946,8 +962,14 @@
 }
 
 @keyframes prWidgetReveal {
-  from { opacity: 0; transform: translateY(-3px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 /* Badge is clickable in script rows */
@@ -988,16 +1010,34 @@
   line-height: 1.2;
   color: var(--color-text);
 }
-.pr-confidence--automatic { color: var(--color-primary); }
-.pr-confidence--gameready { color: var(--color-success); }
-.pr-confidence--building  { color: var(--color-warning-hover); }
-.pr-confidence--notready  { color: var(--color-danger); }
-.pr-confidence--empty     { color: var(--color-text-secondary); }
+.pr-confidence--automatic {
+  color: var(--color-primary);
+}
+.pr-confidence--gameready {
+  color: var(--color-success);
+}
+.pr-confidence--building {
+  color: var(--color-warning-hover);
+}
+.pr-confidence--notready {
+  color: var(--color-danger);
+}
+.pr-confidence--empty {
+  color: var(--color-text-secondary);
+}
 /* Legacy aliases (migration compat) */
-.pr-confidence--trusted { color: var(--color-primary); }
-.pr-confidence--ready   { color: var(--color-success); }
-.pr-confidence--needs   { color: var(--color-warning-hover); }
-.pr-confidence--risk    { color: var(--color-danger); }
+.pr-confidence--trusted {
+  color: var(--color-primary);
+}
+.pr-confidence--ready {
+  color: var(--color-success);
+}
+.pr-confidence--needs {
+  color: var(--color-warning-hover);
+}
+.pr-confidence--risk {
+  color: var(--color-danger);
+}
 
 /* Score grid — large variant for widget + modal */
 .play-readiness-score-grid--large {
@@ -1146,7 +1186,9 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   opacity: 0;
-  transition: opacity var(--transition-fast), background var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    background var(--transition-fast);
 }
 .script-item:hover .script-edit-play-btn,
 .script-item:focus-within .script-edit-play-btn {
@@ -1213,18 +1255,36 @@
 }
 
 /* Sweet spot no longer rendered — keep rule to suppress any lingering elements */
-.play-readiness-sweet { display: none; }
+.play-readiness-sweet {
+  display: none;
+}
 
 /* Widget progress fill color by tone */
-.play-readiness-widget--automatic .play-readiness-fill { background: var(--color-primary); }
-.play-readiness-widget--gameready .play-readiness-fill { background: var(--color-success); }
-.play-readiness-widget--building  .play-readiness-fill { background: var(--color-warning); }
-.play-readiness-widget--notready  .play-readiness-fill { background: var(--color-danger); }
+.play-readiness-widget--automatic .play-readiness-fill {
+  background: var(--color-primary);
+}
+.play-readiness-widget--gameready .play-readiness-fill {
+  background: var(--color-success);
+}
+.play-readiness-widget--building .play-readiness-fill {
+  background: var(--color-warning);
+}
+.play-readiness-widget--notready .play-readiness-fill {
+  background: var(--color-danger);
+}
 /* Legacy aliases */
-.play-readiness-widget--trusted .play-readiness-fill { background: var(--color-primary); }
-.play-readiness-widget--ready   .play-readiness-fill { background: var(--color-success); }
-.play-readiness-widget--needs   .play-readiness-fill { background: var(--color-warning); }
-.play-readiness-widget--risk    .play-readiness-fill { background: var(--color-danger); }
+.play-readiness-widget--trusted .play-readiness-fill {
+  background: var(--color-primary);
+}
+.play-readiness-widget--ready .play-readiness-fill {
+  background: var(--color-success);
+}
+.play-readiness-widget--needs .play-readiness-fill {
+  background: var(--color-warning);
+}
+.play-readiness-widget--risk .play-readiness-fill {
+  background: var(--color-danger);
+}
 
 .play-readiness-metrics {
   display: flex;
@@ -1321,7 +1381,9 @@
 }
 
 /* Log a Rep modal */
-.pr-log-modal .modal-content { padding: var(--space-md); }
+.pr-log-modal .modal-content {
+  padding: var(--space-md);
+}
 .pr-log-step1 {
   display: grid;
   gap: var(--space-sm);
@@ -1370,7 +1432,9 @@
   list-style: none;
   user-select: none;
 }
-.pr-log-details-toggle::-webkit-details-marker { display: none; }
+.pr-log-details-toggle::-webkit-details-marker {
+  display: none;
+}
 .pr-log-step2 {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -2405,7 +2469,10 @@
 
 .more-tools-menu {
   display: none;
-  position: fixed;
+  position: absolute;
+  bottom: 100%;
+  left: 0;
+  top: auto;
   background: var(--color-white);
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -3060,8 +3127,7 @@
   bottom: 8px;
   z-index: 6;
   padding-top: 18px;
-  overflow-x: auto;
-  scrollbar-width: thin;
+  overflow: visible;
   backdrop-filter: blur(6px);
 }
 
@@ -5806,13 +5872,34 @@ body[data-active-tab="script"] .script-display-fab {
   color: var(--color-text-secondary);
   vertical-align: middle;
 }
-#script .script-item--run .script-type-chip       { background: var(--color-type-run-bg); color: var(--color-type-run-fg); }
-#script .script-item--pass .script-type-chip      { background: var(--color-type-pass-bg); color: var(--color-type-pass-fg); }
-#script .script-item--rpo .script-type-chip       { background: var(--color-type-rpo-bg); color: var(--color-type-rpo-fg); }
-#script .script-item--screen .script-type-chip    { background: var(--color-type-screen-bg); color: var(--color-type-screen-fg); }
-#script .script-item--quick .script-type-chip     { background: var(--color-type-quick-bg); color: var(--color-type-quick-fg); }
-#script .script-item--playaction .script-type-chip { background: var(--color-type-pa-bg); color: var(--color-type-pa-fg); }
-#script .script-item--movement .script-type-chip  { background: var(--color-type-movement-bg); color: var(--color-type-movement-fg); }
+#script .script-item--run .script-type-chip {
+  background: var(--color-type-run-bg);
+  color: var(--color-type-run-fg);
+}
+#script .script-item--pass .script-type-chip {
+  background: var(--color-type-pass-bg);
+  color: var(--color-type-pass-fg);
+}
+#script .script-item--rpo .script-type-chip {
+  background: var(--color-type-rpo-bg);
+  color: var(--color-type-rpo-fg);
+}
+#script .script-item--screen .script-type-chip {
+  background: var(--color-type-screen-bg);
+  color: var(--color-type-screen-fg);
+}
+#script .script-item--quick .script-type-chip {
+  background: var(--color-type-quick-bg);
+  color: var(--color-type-quick-fg);
+}
+#script .script-item--playaction .script-type-chip {
+  background: var(--color-type-pa-bg);
+  color: var(--color-type-pa-fg);
+}
+#script .script-item--movement .script-type-chip {
+  background: var(--color-type-movement-bg);
+  color: var(--color-type-movement-fg);
+}
 
 #script .script-item .script-tempo-text {
   font-size: var(--font-size-2xs);
@@ -5833,7 +5920,9 @@ body[data-active-tab="script"] .script-display-fab {
   font-size: var(--font-size-2xs);
   font-weight: 600;
   cursor: pointer;
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
   vertical-align: middle;
 }
 @media (hover: hover) {
@@ -5959,10 +6048,9 @@ body[data-active-tab="script"] .script-display-fab {
 
 #script .script-stats-bar {
   display: grid;
-  grid-template-columns: repeat(5, minmax(62px, auto)) minmax(
-      150px,
-      1fr
-    ) minmax(82px, auto);
+  grid-template-columns:
+    repeat(5, minmax(62px, auto)) minmax(150px, 1fr)
+    minmax(82px, auto);
   gap: 4px;
   flex: 0 0 auto;
   position: relative;
