@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v699";
+const CACHE_NAME = "bcoffense-v700";
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -140,6 +140,7 @@ const LOCAL_ASSETS = [
   "./js/script-vision.js",
   "./js/tendencies-render.js",
   "./js/tendencies.js",
+  "./js/tendencies-print.js",
   "./js/installation-render.js",
   "./js/installation.js",
   "./js/installation-print.js",
@@ -153,6 +154,7 @@ const LOCAL_ASSETS = [
   "./js/gameplan-dnd.js",
   "./js/gameplan-actions.js",
   "./js/gameplan-smart.js",
+  "./js/gameplan-health.js",
   "./js/gameplan-print.js",
   "./js/gameplan-integrations.js",
   "./js/gameplan-snapshots.js",
