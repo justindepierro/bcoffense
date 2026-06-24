@@ -303,13 +303,6 @@
   border-left-width: 3px;
   box-shadow: var(--shadow-xs);
 }
-@media (hover: hover) {
-  .play-item:hover {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary-light);
-    box-shadow: var(--shadow-sm);
-  }
-}
 
 .play-item .play-info {
   min-width: 0;
@@ -350,11 +343,6 @@
   font-weight: 700;
   line-height: 1;
   box-shadow: var(--shadow-xs);
-}
-@media (hover: hover) {
-  .play-item .available-add-menu-btn:hover {
-    background: var(--color-success-hover);
-  }
 }
 
 .play-item.selected {
@@ -407,13 +395,6 @@
     transform var(--transition-normal);
   content-visibility: auto;
   contain-intrinsic-size: auto 52px;
-}
-@media (hover: hover) {
-  .script-item:hover {
-    border-color: var(--color-primary);
-    box-shadow: var(--shadow-md);
-    transform: translateY(-1px);
-  }
 }
 
 .script-item.dragging {
@@ -976,11 +957,6 @@
 .play-readiness-badge--script {
   cursor: pointer;
 }
-@media (hover: hover) {
-  .play-readiness-badge--script:hover {
-    opacity: 0.82;
-  }
-}
 .play-readiness-badge--script:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 2px;
@@ -1155,25 +1131,12 @@
   align-items: center;
   justify-content: center;
 }
-@media (hover: hover) {
-  .pr-close-btn:hover {
-    background: var(--color-danger-light);
-    color: var(--color-danger);
-    border-color: var(--color-danger-light);
-  }
-}
 
 /* Edit Play button — uses play-readiness-btn--edit modifier */
 .play-readiness-btn--edit {
   background: var(--color-primary-light);
   color: var(--color-primary);
   border-color: var(--color-primary-light);
-}
-@media (hover: hover) {
-  .play-readiness-btn--edit:hover {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-  }
 }
 
 /* Pencil edit button in play-control-actions */
@@ -1193,12 +1156,6 @@
 .script-item:hover .script-edit-play-btn,
 .script-item:focus-within .script-edit-play-btn {
   opacity: 1;
-}
-@media (hover: hover) {
-  .script-item .script-edit-play-btn:hover {
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-  }
 }
 
 .play-readiness-main,
@@ -1366,13 +1323,6 @@
 .play-readiness-btn--ghost {
   color: var(--color-text-secondary);
   background: var(--color-bg-light);
-}
-
-@media (hover: hover) {
-  .play-readiness-btn:hover {
-    border-color: var(--color-primary);
-    background: var(--color-primary-light);
-  }
 }
 
 .play-readiness-modal {
@@ -1608,14 +1558,6 @@
   font-size: var(--font-size-xs);
   font-weight: 900;
   touch-action: manipulation;
-}
-
-@media (hover: hover) {
-  .play-readiness-report-delete:hover {
-    border-color: var(--color-danger);
-    background: var(--color-danger);
-    color: var(--color-text-inverse);
-  }
 }
 
 .play-readiness-history-row em,
@@ -2037,12 +1979,6 @@
   font-weight: 700;
   box-shadow: var(--shadow-xs);
 }
-@media (hover: hover) {
-  .script-item .script-move-menu-btn:hover {
-    background: var(--color-bg-input);
-    color: var(--color-text);
-  }
-}
 
 .script-item .bulk-select-cb:focus-visible,
 .script-item .script-move-menu-btn:focus-visible,
@@ -2237,13 +2173,6 @@
 .pat-btn-label {
   line-height: 1.1;
 }
-@media (hover: hover) {
-  .pat-btn:hover {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
-}
 .pat-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
@@ -2258,12 +2187,6 @@
   background: var(--color-accent);
   color: var(--color-dark);
   border-color: var(--color-accent-hover);
-}
-@media (hover: hover) {
-  .pat-btn-smart:hover {
-    filter: brightness(1.05);
-    border-color: var(--color-accent-hover);
-  }
 }
 .pat-btn-smart:focus-visible {
   outline: 2px solid var(--color-accent);
@@ -2288,12 +2211,6 @@
 
 .ph-drag-handle:active {
   cursor: grabbing;
-}
-
-@media (hover: hover) {
-  .ph-drag-handle:hover {
-    background: rgba(255, 255, 255, 0.35);
-  }
 }
 
 .ph-collapse-btn {
@@ -2376,11 +2293,6 @@
   cursor: pointer;
   transition: background var(--transition-fast);
 }
-@media (hover: hover) {
-  .ph-btn:hover {
-    background: rgba(255, 255, 255, 0.35);
-  }
-}
 .ph-btn:focus-visible {
   outline: 2px solid white;
   outline-offset: 1px;
@@ -2393,13 +2305,6 @@
 .ph-btn-active {
   background: var(--color-accent);
   color: var(--color-dark);
-}
-
-@media (hover: hover) {
-  .ph-btn-active:hover {
-    background: var(--color-accent-hover);
-    color: var(--color-dark);
-  }
 }
 
 .ph-left {
@@ -2457,11 +2362,6 @@
   cursor: pointer;
   transition: background var(--transition-fast);
 }
-@media (hover: hover) {
-  .more-tools-btn:hover {
-    background: var(--color-border-light);
-  }
-}
 .more-tools-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
@@ -2496,11 +2396,6 @@
   font-size: var(--font-size-sm);
   cursor: pointer;
   color: var(--color-text);
-}
-@media (hover: hover) {
-  .more-tools-menu button:hover {
-    background: var(--color-bg-input);
-  }
 }
 
 .more-tools-menu .tool-divider {
@@ -2799,11 +2694,6 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
-@media (hover: hover) {
-  .script-item .remove:hover {
-    background: var(--color-danger-hover);
-  }
-}
 
 .script-item .dup-btn {
   background: var(--color-secondary);
@@ -2813,11 +2703,6 @@
   border-radius: var(--radius-pill);
   cursor: pointer;
   font-size: var(--font-size-sm);
-}
-@media (hover: hover) {
-  .script-item .dup-btn:hover {
-    background: var(--color-text-muted);
-  }
 }
 
 .script-item--printlike {
@@ -2980,11 +2865,6 @@
   font-weight: 600;
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-}
-@media (hover: hover) {
-  .bulk-select-label:hover {
-    color: var(--color-primary);
-  }
 }
 
 .bulk-indicator {
@@ -3393,11 +3273,6 @@
   cursor: pointer;
   transition: background 0.2s;
 }
-@media (hover: hover) {
-  .display-options-group label:hover {
-    background: var(--color-bg-blue-tint);
-  }
-}
 
 .display-options-group .red {
   color: var(--color-danger);
@@ -3414,11 +3289,6 @@
   border-radius: var(--radius-pill);
   cursor: pointer;
   transition: background 0.2s;
-}
-@media (hover: hover) {
-  .display-options-grid label:hover {
-    background: var(--color-bg-blue-tint);
-  }
 }
 
 .display-options-grid .red {
@@ -3485,11 +3355,6 @@
   margin-bottom: 6px;
   border: 1px solid var(--color-border-light);
   transition: border-color var(--transition-fast);
-}
-@media (hover: hover) {
-  .saved-script-card:hover {
-    border-color: var(--color-primary);
-  }
 }
 
 .saved-card-main {
@@ -3582,11 +3447,6 @@
   border-radius: var(--radius-sm);
   cursor: pointer;
   transition: opacity var(--transition-fast);
-}
-@media (hover: hover) {
-  .saved-card-actions button:hover {
-    opacity: 0.85;
-  }
 }
 
 .saved-load-btn {
@@ -3707,11 +3567,6 @@ body[data-auth-role="player"] .script-builder {
   cursor: pointer;
   border: 1px solid var(--color-border-light);
   transition: border-color var(--transition-fast);
-}
-@media (hover: hover) {
-  .full-day-item:hover {
-    border-color: var(--color-primary);
-  }
 }
 
 .full-day-item-info {
@@ -3931,11 +3786,6 @@ body[data-auth-role="player"] .script-builder {
 }
 
 /* Buttons */
-@media (hover: hover) {
-  .full-day-section label:hover {
-    background: var(--color-bg-blue-tint) !important;
-  }
-}
 
 /* Wristband Maker - 4.5" x 2.6" print format */
 
@@ -4044,11 +3894,6 @@ body[data-auth-role="player"] .period-buttons {
   cursor: pointer;
   transition: opacity var(--transition-fast);
 }
-@media (hover: hover) {
-  .btn-add-period:hover {
-    opacity: 0.85;
-  }
-}
 
 /* Period Create Mini-Modal */
 .period-create-overlay {
@@ -4129,13 +3974,6 @@ body[data-auth-role="player"] .period-buttons {
   cursor: pointer;
   transition: all var(--transition-fast);
 }
-@media (hover: hover) {
-  .pcf-preset:hover {
-    background: var(--color-accent);
-    color: var(--color-text-inverse);
-    border-color: var(--color-accent);
-  }
-}
 
 .period-create-actions {
   display: flex;
@@ -4195,12 +4033,6 @@ body[data-auth-role="player"] .period-buttons {
   cursor: pointer;
   transition: all var(--transition-fast);
   text-align: left;
-}
-@media (hover: hover) {
-  .template-picker-item:hover {
-    background: var(--color-bg-blue-tint);
-    border-color: var(--color-accent);
-  }
 }
 
 .template-picker-item.is-selected {
@@ -4329,24 +4161,12 @@ body[data-auth-role="player"] .period-buttons {
   border: none !important;
   font-weight: 600;
 }
-@media (hover: hover) {
-  .btn-scouting-fill:hover {
-    background: var(--color-danger-hover) !important;
-    transform: translateY(-1px);
-  }
-}
 
 /* ============ Script Push to Call Sheet Button ============ */
 .pat-btn-callsheet {
   background: var(--color-purple) !important;
   color: var(--color-text-inverse) !important;
   border-color: var(--color-purple) !important;
-}
-@media (hover: hover) {
-  .pat-btn-callsheet:hover {
-    background: var(--color-purple) !important;
-    filter: brightness(0.85);
-  }
 }
 
 /* ============ Script Preview Table Column Widths ============ */
@@ -5225,14 +5045,6 @@ body[data-auth-role="player"] .period-buttons {
 body[data-active-tab="script"] .script-display-fab {
   display: flex;
 }
-@media (hover: hover) {
-  .script-display-fab:hover {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-    box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
-    transform: scale(1.1);
-  }
-}
 .script-display-fab.active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
@@ -5925,13 +5737,6 @@ body[data-active-tab="script"] .script-display-fab {
     color var(--transition-fast);
   vertical-align: middle;
 }
-@media (hover: hover) {
-  #script .script-pb-chip:hover {
-    background: var(--color-primary-light);
-    color: var(--color-primary);
-    border-color: var(--color-primary);
-  }
-}
 /* Play-type accents: left stripe + matching type chip */
 #script .play-item--run {
   border-left-color: var(--color-success);
@@ -6022,14 +5827,6 @@ body[data-active-tab="script"] .script-display-fab {
   border-radius: var(--radius-pill);
   border: 2px solid transparent;
   background-clip: padding-box;
-}
-
-@media (hover: hover) {
-  #script .app-scroll-region::-webkit-scrollbar-thumb:hover,
-  #script .script-tools-drawer-body::-webkit-scrollbar-thumb:hover {
-    background: var(--color-text-light);
-    background-clip: padding-box;
-  }
 }
 
 #script .period-buttons {
@@ -6720,5 +6517,173 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     right: 8px;
     bottom: 8px;
     width: calc(100% - 16px);
+  }
+}
+
+/* Consolidated hover styles */
+@media (hover: hover) {
+
+.play-item:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary-light);
+    box-shadow: var(--shadow-sm);
+  }
+
+.play-item .available-add-menu-btn:hover {
+    background: var(--color-success-hover);
+  }
+
+.script-item:hover {
+    border-color: var(--color-primary);
+    box-shadow: var(--shadow-md);
+    transform: translateY(-1px);
+  }
+
+.play-readiness-badge--script:hover {
+    opacity: 0.82;
+  }
+
+.pr-close-btn:hover {
+    background: var(--color-danger-light);
+    color: var(--color-danger);
+    border-color: var(--color-danger-light);
+  }
+
+.play-readiness-btn--edit:hover {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+.script-item .script-edit-play-btn:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+  }
+
+.play-readiness-btn:hover {
+    border-color: var(--color-primary);
+    background: var(--color-primary-light);
+  }
+
+.play-readiness-report-delete:hover {
+    border-color: var(--color-danger);
+    background: var(--color-danger);
+    color: var(--color-text-inverse);
+  }
+
+.script-item .script-move-menu-btn:hover {
+    background: var(--color-bg-input);
+    color: var(--color-text);
+  }
+
+.pat-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+.pat-btn-smart:hover {
+    filter: brightness(1.05);
+    border-color: var(--color-accent-hover);
+  }
+
+.ph-drag-handle:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+.ph-btn:hover {
+    background: rgba(255, 255, 255, 0.35);
+  }
+
+.ph-btn-active:hover {
+    background: var(--color-accent-hover);
+    color: var(--color-dark);
+  }
+
+.more-tools-btn:hover {
+    background: var(--color-border-light);
+  }
+
+.more-tools-menu button:hover {
+    background: var(--color-bg-input);
+  }
+
+.script-item .remove:hover {
+    background: var(--color-danger-hover);
+  }
+
+.script-item .dup-btn:hover {
+    background: var(--color-text-muted);
+  }
+
+.bulk-select-label:hover {
+    color: var(--color-primary);
+  }
+
+.display-options-group label:hover {
+    background: var(--color-bg-blue-tint);
+  }
+
+.display-options-grid label:hover {
+    background: var(--color-bg-blue-tint);
+  }
+
+.saved-script-card:hover {
+    border-color: var(--color-primary);
+  }
+
+.saved-card-actions button:hover {
+    opacity: 0.85;
+  }
+
+.full-day-item:hover {
+    border-color: var(--color-primary);
+  }
+
+.full-day-section label:hover {
+    background: var(--color-bg-blue-tint) !important;
+  }
+
+.btn-add-period:hover {
+    opacity: 0.85;
+  }
+
+.pcf-preset:hover {
+    background: var(--color-accent);
+    color: var(--color-text-inverse);
+    border-color: var(--color-accent);
+  }
+
+.template-picker-item:hover {
+    background: var(--color-bg-blue-tint);
+    border-color: var(--color-accent);
+  }
+
+.btn-scouting-fill:hover {
+    background: var(--color-danger-hover) !important;
+    transform: translateY(-1px);
+  }
+
+.pat-btn-callsheet:hover {
+    background: var(--color-purple) !important;
+    filter: brightness(0.85);
+  }
+
+.script-display-fab:hover {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
+    transform: scale(1.1);
+  }
+
+#script .script-pb-chip:hover {
+    background: var(--color-primary-light);
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+
+#script .app-scroll-region::-webkit-scrollbar-thumb:hover,
+  #script .script-tools-drawer-body::-webkit-scrollbar-thumb:hover {
+    background: var(--color-text-light);
+    background-clip: padding-box;
   }
 }

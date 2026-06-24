@@ -118,22 +118,28 @@ New JS files must be inserted in the correct position in `index.html`:
 ```
 utils.js → history.js → dom-helpers.js → storage.js → storage-ui.js → team-settings.js → playbook.js → playbook-collections.js
 → playbook-print.js → playbook-editor.js → playbook-import.js
-→ playbook-export.js → playbook-chrome.js → playbook-state.js
-→ playbook-filters.js → playbook-navigation.js → playbook-actions.js
-→ playbook-render.js → script-state.js → script-shared.js → script-players.js
-→ script-display-options.js → script-add.js → script-sort.js → script-export.js
-→ script-available.js → script-selection.js → script-render.js
-→ script-periods.js → script-period-sync.js → script-smart.js → script-storage.js
+→ playbook-export.js → playbook-chrome.js → playbook-reports.js → playbook-reports-identity.js
+→ playbook-state.js → playbook-filters.js → playbook-navigation.js → playbook-actions.js
+→ playbook-render.js → playbook-sanitize.js → playbook-analytics.js → playbook-analytics-render.js
+→ playbook-identity.js → script-state.js → script-shared.js → script-players.js
+→ script-display-options.js → play-readiness.js → script-add.js → script-sort.js → script-export.js
+→ script-available.js → script-selection.js → script-timeline.js → script-render.js → script-health.js
+→ script-periods.js → script-period-sync.js → script-smart.js → script-storage.js → script-player.js
+→ script-integrations.js → play-presentation.js
 → wristband.js → wristband-library.js → wristband-render.js → wristband-cards.js
-→ wristband-export.js → wristband-search.js → wristband-modals.js
+→ wristband-export.js → wristband-chrome.js → wristband-logo.js → wristband-search.js → wristband-modals.js
 → wristband-cell-popup.js → wristband-cell-actions.js → wristband-sort.js
-→ wristband-storage.js → wristband-runtime.js → callsheet.js → callsheet-categories.js
-→ callsheet-metadata.js → callsheet-layout.js → callsheet-picker-runtime.js → constraints.js
-→ tendencies.js → installation.js → offensebuilder.js → help.js → dashboard.js
+→ wristband-storage.js → wristband-runtime.js → callsheet-render.js → callsheet.js → callsheet-print.js
+→ callsheet-sort.js → callsheet-filters.js → callsheet-smart.js → callsheet-export.js → callsheet-display.js
+→ callsheet-categories.js → callsheet-metadata.js → callsheet-layout.js → callsheet-templates.js
+→ callsheet-picker-runtime.js → callsheet-gameplan-drawer.js → constraints.js → constraints-ui.js
+→ script-vision.js → tendencies-render.js → tendencies.js → tendencies-print.js
+→ installation-render.js → installation.js → installation-print.js
+→ identity.js → offensebuilder.js → help.js → dashboard-render.js → dashboard.js
 → gameplan.js → gameplan-render.js → gameplan-dnd.js → gameplan-actions.js
-→ gameplan-smart.js → gameplan-print.js → gameplan-integrations.js
-→ gameplan-snapshots.js
-→ app-events.js → app-shell.js → app-session.js → app-navigation.js
+→ gameplan-smart.js → gameplan-health.js → gameplan-print.js → gameplan-integrations.js
+→ gameplan-snapshots.js → print-studio.js → script-events.js
+→ app-events.js → app-command.js → app-shell.js → app-session.js → app-navigation.js
 → app-module-init.js → app-bootstrap.js → app-init.js → app.js (LAST)
 ```
 

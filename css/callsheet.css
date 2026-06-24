@@ -110,12 +110,6 @@
   min-height: 28px;
   line-height: 1.35;
 }
-@media (hover: hover) {
-  .callsheet-play:hover {
-    background: var(--color-bg-blue-light);
-    border-color: var(--color-primary);
-  }
-}
 .callsheet-play:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
@@ -170,11 +164,6 @@
   justify-content: center;
   flex-shrink: 0;
 }
-@media (hover: hover) {
-  .callsheet-play:hover .remove-play {
-    opacity: 1;
-  }
-}
 
 .callsheet-dropzone {
   padding: 4px 8px;
@@ -185,13 +174,6 @@
   border: 1px dashed var(--color-border);
   border-radius: var(--radius-sm);
   margin-top: 2px;
-}
-@media (hover: hover) {
-  .callsheet-dropzone:hover {
-    background: var(--color-bg-blue-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-  }
 }
 
 /* Footer row holding +Add and +blank buttons */
@@ -216,13 +198,6 @@
   white-space: nowrap;
   font-family: inherit;
   flex-shrink: 0;
-}
-@media (hover: hover) {
-  .cs-add-blank-btn:hover {
-    border-color: var(--color-text-muted);
-    color: var(--color-text);
-    background: var(--color-bg-hover-row);
-  }
 }
 
 /* Blank spacer row */
@@ -293,11 +268,6 @@
   align-items: center;
   gap: 8px;
 }
-@media (hover: hover) {
-  .picker-play:hover {
-    background: var(--color-bg-blue-light);
-  }
-}
 
 .picker-play .personnel-code {
   padding: 2px 6px;
@@ -349,11 +319,6 @@
 }
 
 /* Toast Notification */
-@media (hover: hover) {
-  .category-header:hover .edit-hint {
-    opacity: 1;
-  }
-}
 
 /* Quick Stats Bar */
 
@@ -531,15 +496,6 @@
     box-shadow var(--transition-fast),
     transform var(--transition-fast);
 }
-@media (hover: hover) {
-  .cs-tool-btn:hover {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-    color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
-    transform: translateY(-1px);
-  }
-}
 .cs-tool-btn:focus-visible {
   outline: 2px solid var(--color-primary);
   outline-offset: 1px;
@@ -666,11 +622,6 @@
   font-size: var(--font-size-3xs);
   line-height: 1.2;
 }
-@media (hover: hover) {
-  .cs-unified-header:hover {
-    background: var(--color-primary-dark);
-  }
-}
 
 /* cs-unified-header-right removed — preset moved to expanded content */
 
@@ -717,11 +668,6 @@
   cursor: pointer;
   transition: background var(--transition-fast);
   white-space: nowrap;
-}
-@media (hover: hover) {
-  .cs-preset-save-btn:hover {
-    background: var(--color-bg-hover-row);
-  }
 }
 
 .cs-unified-content {
@@ -853,14 +799,6 @@
 
 .cs-option-tile span {
   min-width: 0;
-}
-
-@media (hover: hover) {
-  .cs-option-tile:hover {
-    border-color: var(--color-primary);
-    box-shadow: 0 0 0 2px var(--color-primary-light);
-    transform: translateY(-1px);
-  }
 }
 
 .cs-option-tile:has(input:checked) {
@@ -1337,11 +1275,6 @@
   line-height: 1;
   padding: 0 2px;
 }
-@media (hover: hover) {
-  .cs-loaded-wb-clear:hover {
-    opacity: 0.7;
-  }
-}
 
 .cs-no-wb-loaded {
   color: var(--color-text-placeholder);
@@ -1439,12 +1372,6 @@
   padding: 4px 6px;
   border-radius: var(--radius-sm);
   transition: background var(--transition-fast);
-}
-@media (hover: hover) {
-  .cs-picker-popup .cs-border-swatch:hover {
-    background: var(--color-border-light);
-    transform: scale(1.2);
-  }
 }
 
 /* ===== Call Sheet Picker Modal (cleaned up) ===== */
@@ -1588,11 +1515,6 @@
   transition: opacity var(--transition-fast);
   font-weight: bold;
 }
-@media (hover: hover) {
-  .cs-sort-btn:hover {
-    opacity: 1;
-  }
-}
 .cs-sort-btn:focus-visible {
   opacity: 1;
   outline: 2px solid var(--color-focus);
@@ -1650,11 +1572,6 @@
   line-height: 1;
   padding: 0 4px;
 }
-@media (hover: hover) {
-  .cs-sort-close:hover {
-    color: var(--color-text);
-  }
-}
 
 .cs-sort-body {
   padding: 16px 20px;
@@ -1693,11 +1610,6 @@
     background var(--transition-fast),
     box-shadow var(--transition-fast);
 }
-@media (hover: hover) {
-  .cs-sort-criteria-item:hover {
-    background: var(--color-border-light);
-  }
-}
 
 .cs-sort-criteria-item.dragging {
   opacity: 0.5;
@@ -1725,17 +1637,6 @@
   padding: 2px 6px;
   font-size: var(--font-size-sm);
 }
-@media (hover: hover) {
-  .cs-sort-criteria-item .sort-dir-btn:hover,
-  .cs-sort-criteria-item .custom-order-btn:hover {
-    background: var(--color-border-light);
-  }
-  .cs-sort-criteria-item .remove-sort-btn:hover {
-    background: var(--color-danger-light);
-    border-color: var(--color-danger);
-    color: var(--color-danger);
-  }
-}
 
 /* Add sort field button */
 .cs-sort-add-btn {
@@ -1748,12 +1649,6 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   margin-bottom: 16px;
-}
-@media (hover: hover) {
-  .cs-sort-add-btn:hover {
-    background: var(--color-bg-input);
-    border-color: var(--color-text-muted);
-  }
 }
 
 /* Sort scope options */
@@ -1825,11 +1720,6 @@
 .cs-custom-order-item:last-child {
   border-bottom: none;
 }
-@media (hover: hover) {
-  .cs-custom-order-item:hover {
-    background: var(--color-bg-light);
-  }
-}
 
 .cs-custom-order-item.dragging {
   opacity: 0.5;
@@ -1857,11 +1747,6 @@
   opacity: 0.7;
   margin-right: 4px;
   user-select: none;
-}
-@media (hover: hover) {
-  .cs-collapse-btn:hover {
-    opacity: 1;
-  }
 }
 .cs-collapse-btn:focus-visible {
   opacity: 1;
@@ -1900,11 +1785,6 @@
   user-select: none;
   line-height: 1;
 }
-@media (hover: hover) {
-  .cs-cat-menu-btn:hover {
-    opacity: 1;
-  }
-}
 .cs-cat-menu-btn:focus-visible {
   opacity: 1;
   outline: 2px solid var(--color-focus);
@@ -1930,11 +1810,6 @@
   border-bottom: 1px solid var(--color-accent);
   cursor: pointer;
   font-style: italic;
-}
-@media (hover: hover) {
-  .cs-cat-note:hover {
-    background: var(--color-accent-light);
-  }
 }
 
 .cs-note-input {
@@ -1970,15 +1845,6 @@
   flex-shrink: 0;
   margin-left: 2px;
   line-height: 1.4;
-}
-@media (hover: hover) {
-  .callsheet-play:hover .cs-hash-swap {
-    display: inline-block;
-  }
-  .cs-hash-swap:hover {
-    background: var(--color-primary);
-    color: var(--color-text-inverse);
-  }
 }
 .cs-hash-swap:focus-visible {
   display: inline-block;
@@ -2027,20 +1893,10 @@
   font-size: var(--font-size-sm);
   white-space: nowrap;
 }
-@media (hover: hover) {
-  .cs-ctx-item:hover {
-    background: var(--color-bg-input);
-  }
-}
 
 .cs-ctx-item.cs-ctx-clear {
   color: var(--color-danger);
   font-size: var(--font-size-sm);
-}
-@media (hover: hover) {
-  .cs-ctx-item.cs-ctx-clear:hover {
-    background: var(--color-danger-light);
-  }
 }
 
 .cs-ctx-divider {
@@ -2074,12 +1930,6 @@
   line-height: 1;
   transition: transform 0.1s;
 }
-@media (hover: hover) {
-  .cs-ctx-colors .cs-border-swatch:hover {
-    background: var(--color-border-med);
-    transform: scale(1.15);
-  }
-}
 
 .cs-border-swatch.cs-swatch-active {
   border-color: var(--color-text);
@@ -2094,12 +1944,6 @@
   cursor: pointer;
   transition: transform 0.1s;
   padding: 0;
-}
-@media (hover: hover) {
-  .cs-color-swatch:hover {
-    transform: scale(1.15);
-    border-color: var(--color-text-light);
-  }
 }
 
 .cs-color-swatch.cs-swatch-active {
@@ -2133,12 +1977,6 @@
     border-color var(--transition-fast);
   color: var(--color-text-muted);
 }
-@media (hover: hover) {
-  .cs-style-btn:hover {
-    background: var(--color-border-light);
-    border-color: var(--color-text-placeholder);
-  }
-}
 
 .cs-style-btn.active {
   background: var(--color-primary);
@@ -2171,12 +2009,6 @@
     background var(--transition-fast),
     color var(--transition-fast),
     border-color var(--transition-fast);
-}
-@media (hover: hover) {
-  .cs-size-btn:hover {
-    background: var(--color-border-light);
-    border-color: var(--color-text-placeholder);
-  }
 }
 
 .cs-size-btn.active {
@@ -2223,14 +2055,6 @@
   font-weight: bold;
   line-height: 1;
 }
-@media (hover: hover) {
-  .cs-ctx-note-save:hover {
-    background: var(--color-success-hover);
-  }
-  .cs-ctx-note-clear:hover {
-    background: var(--color-danger-hover);
-  }
-}
 
 .cs-ctx-helper {
   margin-top: 4px;
@@ -2260,11 +2084,6 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
   border-radius: var(--radius-sm);
-}
-@media (hover: hover) {
-  .cs-ctx-cat-btn:hover {
-    background: var(--color-primary-light);
-  }
 }
 
 /* --- Per-Cell Indicators --- */
@@ -2305,11 +2124,6 @@
   cursor: default;
   margin-left: 1px;
   opacity: 0.8;
-}
-@media (hover: hover) {
-  .cs-cell-note-badge:hover {
-    opacity: 1;
-  }
 }
 
 /* Print cell note */
@@ -2613,11 +2427,6 @@
   transition: background 0.1s;
   font-size: var(--font-size-sm);
 }
-@media (hover: hover) {
-  .cs-import-cat-item:hover {
-    background: var(--color-bg-lighter);
-  }
-}
 
 .cs-import-cat-color {
   width: 12px;
@@ -2646,11 +2455,6 @@
   background: var(--color-info) !important;
   color: var(--color-text-inverse) !important;
   border-color: var(--color-info) !important;
-}
-@media (hover: hover) {
-  .pat-btn-import-cs:hover {
-    background: var(--color-info-hover) !important;
-  }
 }
 
 /* ============ Call Sheet Scouting Overlay ============ */
@@ -2700,12 +2504,6 @@
   transition:
     opacity var(--transition-fast),
     transform var(--transition-fast);
-}
-@media (hover: hover) {
-  .cs-suggest-btn:hover {
-    opacity: 1;
-    transform: scale(1.2);
-  }
 }
 .cs-suggest-btn:focus-visible {
   opacity: 1;
@@ -2781,11 +2579,6 @@
   padding: 10px 12px;
   border-bottom: 1px solid var(--color-bg-input);
   transition: background 0.1s;
-}
-@media (hover: hover) {
-  .cs-suggest-item:hover {
-    background: var(--color-bg-light);
-  }
 }
 
 .cs-suggest-on-sheet {
@@ -4122,14 +3915,188 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   background: var(--color-surface);
   font-weight: 600;
 }
-@media (hover: hover) {
-  .cs-display-btn:hover {
-    background: var(--color-primary-light);
-    border-color: var(--color-primary);
-  }
-}
 .cs-display-btn.active {
   background: var(--color-primary);
   color: var(--color-text-inverse);
   border-color: var(--color-primary);
+}
+
+/* Consolidated hover styles */
+@media (hover: hover) {
+
+.callsheet-play:hover {
+    background: var(--color-bg-blue-light);
+    border-color: var(--color-primary);
+  }
+
+.callsheet-play:hover .remove-play {
+    opacity: 1;
+  }
+
+.callsheet-dropzone:hover {
+    background: var(--color-bg-blue-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+  }
+
+.cs-add-blank-btn:hover {
+    border-color: var(--color-text-muted);
+    color: var(--color-text);
+    background: var(--color-bg-hover-row);
+  }
+
+.picker-play:hover {
+    background: var(--color-bg-blue-light);
+  }
+
+.category-header:hover .edit-hint {
+    opacity: 1;
+  }
+
+.cs-tool-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+    color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+    transform: translateY(-1px);
+  }
+
+.cs-unified-header:hover {
+    background: var(--color-primary-dark);
+  }
+
+.cs-preset-save-btn:hover {
+    background: var(--color-bg-hover-row);
+  }
+
+.cs-option-tile:hover {
+    border-color: var(--color-primary);
+    box-shadow: 0 0 0 2px var(--color-primary-light);
+    transform: translateY(-1px);
+  }
+
+.cs-loaded-wb-clear:hover {
+    opacity: 0.7;
+  }
+
+.cs-picker-popup .cs-border-swatch:hover {
+    background: var(--color-border-light);
+    transform: scale(1.2);
+  }
+
+.cs-sort-btn:hover {
+    opacity: 1;
+  }
+
+.cs-sort-close:hover {
+    color: var(--color-text);
+  }
+
+.cs-sort-criteria-item:hover {
+    background: var(--color-border-light);
+  }
+
+.cs-sort-criteria-item .sort-dir-btn:hover,
+  .cs-sort-criteria-item .custom-order-btn:hover {
+    background: var(--color-border-light);
+  }
+  .cs-sort-criteria-item .remove-sort-btn:hover {
+    background: var(--color-danger-light);
+    border-color: var(--color-danger);
+    color: var(--color-danger);
+  }
+
+.cs-sort-add-btn:hover {
+    background: var(--color-bg-input);
+    border-color: var(--color-text-muted);
+  }
+
+.cs-custom-order-item:hover {
+    background: var(--color-bg-light);
+  }
+
+.cs-collapse-btn:hover {
+    opacity: 1;
+  }
+
+.cs-cat-menu-btn:hover {
+    opacity: 1;
+  }
+
+.cs-cat-note:hover {
+    background: var(--color-accent-light);
+  }
+
+.callsheet-play:hover .cs-hash-swap {
+    display: inline-block;
+  }
+  .cs-hash-swap:hover {
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
+.cs-ctx-item:hover {
+    background: var(--color-bg-input);
+  }
+
+.cs-ctx-item.cs-ctx-clear:hover {
+    background: var(--color-danger-light);
+  }
+
+.cs-ctx-colors .cs-border-swatch:hover {
+    background: var(--color-border-med);
+    transform: scale(1.15);
+  }
+
+.cs-color-swatch:hover {
+    transform: scale(1.15);
+    border-color: var(--color-text-light);
+  }
+
+.cs-style-btn:hover {
+    background: var(--color-border-light);
+    border-color: var(--color-text-placeholder);
+  }
+
+.cs-size-btn:hover {
+    background: var(--color-border-light);
+    border-color: var(--color-text-placeholder);
+  }
+
+.cs-ctx-note-save:hover {
+    background: var(--color-success-hover);
+  }
+  .cs-ctx-note-clear:hover {
+    background: var(--color-danger-hover);
+  }
+
+.cs-ctx-cat-btn:hover {
+    background: var(--color-primary-light);
+  }
+
+.cs-cell-note-badge:hover {
+    opacity: 1;
+  }
+
+.cs-import-cat-item:hover {
+    background: var(--color-bg-lighter);
+  }
+
+.pat-btn-import-cs:hover {
+    background: var(--color-info-hover) !important;
+  }
+
+.cs-suggest-btn:hover {
+    opacity: 1;
+    transform: scale(1.2);
+  }
+
+.cs-suggest-item:hover {
+    background: var(--color-bg-light);
+  }
+
+.cs-display-btn:hover {
+    background: var(--color-primary-light);
+    border-color: var(--color-primary);
+  }
 }
