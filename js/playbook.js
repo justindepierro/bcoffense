@@ -162,6 +162,95 @@ function _syncSortUI() {
   }
 }
 
+// ── Sort Presets ──
+
+function _pbGetSortPresets() {
+  const all = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
+  return Object.fromEntries(
+    Object.entries(all).filter(([, v]) => v && v.type === "playbook")
+  );
+}
+
+function renderPbSortPresetDropdown() {
+  const dropdown = document.getElementById("pbSortPresetSelect");
+  if (!dropdown) return;
+  const presets = _pbGetSortPresets();
+  const names = Object.keys(presets);
+  dropdown.innerHTML =
+    '<option value="">-- Presets --</option>' +
+    names.map((n) => `<option value="${escapeHtml(n)}">${escapeHtml(n)}</option>`).join("");
+}
+
+async function pbSaveSortPreset() {
+  const name = await showPrompt("Name for this sort preset:", "", {
+    title: "Save Sort Preset",
+    icon: "💾",
+    placeholder: "e.g. By Formation",
+  });
+  if (!name || !name.trim()) return;
+  const key = name.trim();
+  const all = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
+  if (all[key] && all[key].type === "playbook") {
+    const ok = await showConfirm(`Overwrite preset "${key}"?`, {
+      title: "Overwrite Preset",
+      icon: "⚠️",
+      confirmText: "Overwrite",
+      danger: true,
+    });
+    if (!ok) return;
+  }
+  all[key] = {
+    type: "playbook",
+    primary: currentSortColumn || "",
+    primaryDir: currentSortDirection,
+    secondary: secondarySortColumn || "",
+    secondaryDir: secondarySortDirection,
+  };
+  storageManager.set(STORAGE_KEYS.SORT_PRESETS, all);
+  renderPbSortPresetDropdown();
+  const dropdown = document.getElementById("pbSortPresetSelect");
+  if (dropdown) dropdown.value = key;
+  showToast(`Sort preset "${key}" saved`);
+}
+
+function pbLoadSortPreset() {
+  const dropdown = document.getElementById("pbSortPresetSelect");
+  if (!dropdown || !dropdown.value) return;
+  const presets = _pbGetSortPresets();
+  const preset = presets[dropdown.value];
+  if (!preset) return;
+  currentSortColumn = preset.primary || null;
+  currentSortDirection = preset.primaryDir || "asc";
+  secondarySortColumn = preset.secondary || null;
+  secondarySortDirection = preset.secondaryDir || "asc";
+  _syncSortUI();
+  applyCurrentSort();
+  requestRenderPlaybook();
+  savePlaybookState();
+  showToast(`Loaded "${dropdown.value}"`);
+}
+
+async function pbDeleteSortPreset() {
+  const dropdown = document.getElementById("pbSortPresetSelect");
+  if (!dropdown || !dropdown.value) {
+    showToast("No preset selected", { type: "warning" });
+    return;
+  }
+  const key = dropdown.value;
+  const ok = await showConfirm(`Delete sort preset "${key}"?`, {
+    title: "Delete Preset",
+    icon: "🗑️",
+    confirmText: "Delete",
+    danger: true,
+  });
+  if (!ok) return;
+  const all = storageManager.get(STORAGE_KEYS.SORT_PRESETS, {});
+  delete all[key];
+  storageManager.set(STORAGE_KEYS.SORT_PRESETS, all);
+  renderPbSortPresetDropdown();
+  showToast(`Preset "${key}" deleted`);
+}
+
 // ── Chip Filters ──
 
 /**

@@ -77,6 +77,7 @@ function restorePlaybookState() {
     if (jvFilter && state.jvOnly) jvFilter.checked = true;
 
     _syncSortUI();
+    if (typeof renderPbSortPresetDropdown === "function") renderPbSortPresetDropdown();
   } catch (err) {
     console.error("restorePlaybookState error:", err);
     showToast("❌ Error restoring playbook state.", {
