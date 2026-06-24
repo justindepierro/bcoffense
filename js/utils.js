@@ -789,137 +789,7 @@ const TEAM_ASSIGNMENT_SLOTS = [
   { key: "rg", defaultLabel: "RG", row: 1 },
   { key: "rt", defaultLabel: "RT", row: 1 },
 ];
-, fallbackMap = null) {
-  const normalized = {};
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const value = String(
-      labelMap?.[slot.key] || fallbackMap?.[slot.key] || "",
-    )
-      .trim()
-      .toUpperCase();
-    normalized[slot.key] = value || slot.defaultLabel;
-  });
-  return normalized;
-}
 
-) {
-  const id = String(player.id || `player-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
-  const name = String(player.name || "").trim();
-  const number = String(player.number || "").trim();
-  const position = String(player.position || "").trim().toUpperCase();
-  const positionGroup = ["skill", "linemen"].includes(String(player.positionGroup || "").trim().toLowerCase())
-    ? String(player.positionGroup || "").trim().toLowerCase()
-    : "";
-  const personnel = Array.isArray(player.personnel)
-    ? player.personnel.map((value) => String(value || "").trim()).filter(Boolean)
-    : [];
-
-  return {
-    id,
-    name,
-    number,
-    position,
-    positionGroup,
-    personnel,
-  };
-}
-
-, fallbackAssignments = {}) {
-  const normalized = {};
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const rawValue = depthChart?.[slot.key];
-    const values = Array.isArray(rawValue)
-      ? rawValue
-      : rawValue
-        ? [rawValue]
-        : fallbackAssignments?.[slot.key]
-          ? [fallbackAssignments[slot.key]]
-          : [];
-    const cleaned = [...new Set(
-      values
-        .map((value) => String(value || "").trim())
-        .filter(Boolean),
-    )];
-    if (cleaned.length) normalized[slot.key] = cleaned;
-  });
-  return normalized;
-}
-) {
-  const normalized = {};
-  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
-    const primary = Array.isArray(depthChart?.[slot.key])
-      ? String(depthChart[slot.key][0] || "").trim()
-      : "";
-    if (primary) normalized[slot.key] = primary;
-  });
-  return normalized;
-}
-, slotKey = "") {
-  return Array.isArray(depthChart?.[slotKey])
-    ? depthChart[slotKey]
-      .map((value) => String(value || "").trim())
-      .filter(Boolean)
-    : [];
-}
-) {
-  const personnel = String(pkg.personnel || "").trim();
-  const depthChart = normalizeTeamDepthChart(pkg.depthChart, pkg.assignments);
-  const assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
-  const labels = normalizeTeamAssignmentLabelMap(
-    pkg.labels,
-    getTeamAssignmentLabelMap(personnel),
-  );
-
-  return {
-    personnel,
-    assignments,
-    depthChart,
-    labels,
-  };
-}
-) {
-  const id = String(
-    group.id || `swap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
-  );
-  const name = String(group.name || "").trim();
-  const personnel = String(group.personnel || "").trim();
-  const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
-
-  return {
-    id,
-    name,
-    personnel,
-    assignments: getPrimaryAssignmentsFromDepthChart(depthChart),
-    depthChart,
-  };
-}
-
-) {
-  const normalized = {};
-  getTeamAssignmentSlots().forEach((slot) => {
-    const value = String(assignments?.[slot.key] || "").trim();
-    if (value) normalized[slot.key] = value;
-  });
-  return normalized;
-}
-
-, options = {}) {
-  const includeSlotLabels = options.includeSlotLabels !== false;
-  const personnel = String(options.personnel || "").trim();
-  const roster = getTeamRoster();
-  const rosterMap = new Map(roster.map((player) => [player.id, player]));
-  const normalizedAssignments = normalizePlayerAssignments(assignments);
-
-  return getTeamAssignmentSlots(personnel).map((slot) => {
-    const playerId = normalizedAssignments[slot.key];
-    if (!playerId) return "";
-    const player = rosterMap.get(playerId);
-    const label = player ? formatTeamPlayerLabel(player) : playerId;
-    return includeSlotLabels ? `${slot.label}: ${label}` : label;
-  })
-    .filter(Boolean)
-    .join(", ");
-}
 
 /**
  * Toggle a collapsible panel section (display options, integration, etc.)
@@ -1161,6 +1031,7 @@ function safeDeepClone(obj) {
  * @param {boolean} useSquares - Use square emojis instead of circles
  * @returns {string} Emoji representation
  */
+
 
 /**
  * Remove vowels from a string (for abbreviated display)
@@ -2017,11 +1888,13 @@ const SITUATION_TO_TENDENCIES = {
  * @returns {{ plays: Array, topFront: {term,count,pct}[], topCoverage: {term,count,pct}[], topBlitz: {term,count,pct}[], blitzRate: number, summary: string }}
  */
 
+
 /**
  * Get tendencies intel for a specific call sheet category.
  * @param {string} categoryId – e.g. "3rd-long", "rz-10"
  * @returns {Object|null} queryTendencies result or null if no opponent
  */
+
 
 /**
  * Get the best defensive look for a play context (used by Script auto-fill).
@@ -2092,6 +1965,7 @@ function getBestDefensiveLook(play) {
  * @param {Object|null} intel – queryTendencies result for the category
  * @returns {{ score: number, reasons: string[], warnings: string[] }}
  */
+
 
 /**
  * Get smart play suggestions for a call sheet category.
@@ -2202,10 +2076,12 @@ function setPrintTitle(type, customName) {
  * @returns {string}
  */
 
+
 /**
  * Set the configured team name
  * @param {string} name
  */
+
 
 /**
  * Escape a string for safe use in HTML attribute values.

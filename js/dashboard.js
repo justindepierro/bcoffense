@@ -11,32 +11,6 @@ const DASH_STALE_ARTIFACT_MS = 14 * 24 * 60 * 60 * 1000;
 
 // Build a single scouting-card column. Used by both the dashboard scouting
 // summary and the printable game-plan scouting report.
-) {
-  const limitFront = opts.limitFront || 3;
-  const limitCov = opts.limitCov || 3;
-  const fronts = (data.topFront || [])
-    .slice(0, limitFront)
-    .map(
-      (f) =>
-        `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
-    )
-    .join("");
-  const covs = (data.topCoverage || [])
-    .slice(0, limitCov)
-    .map(
-      (c) =>
-        `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
-    )
-    .join("");
-  return `<div class="dash-scout-card">
-    <div class="dash-scout-card-title">${escapeHtml(label)} (${data.total} plays)</div>
-    <div class="dash-scout-items">
-      ${fronts}
-      ${covs}
-      <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${data.blitzRate}%</b></div>
-    </div>
-  </div>`;
-}
 
 
 /**

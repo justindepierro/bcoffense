@@ -925,7 +925,18 @@ function initTeamSettings() {
 }
 
 // ── Moved from utils.js ──────────────────────────
-function normalizeTeamAssignmentLabelMap(labelMap = {}
+function normalizeTeamAssignmentLabelMap(labelMap = {}, fallbackMap = null) {
+  const normalized = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const value = String(
+      labelMap?.[slot.key] || fallbackMap?.[slot.key] || "",
+    )
+      .trim()
+      .toUpperCase();
+    normalized[slot.key] = value || slot.defaultLabel;
+  });
+  return normalized;
+}
 
 function getLegacyTeamAssignmentLabelMap() {
   const stored = storageManager.get(STORAGE_KEYS.TEAM_ASSIGNMENT_LABELS, {});
@@ -998,7 +1009,27 @@ function getPlaybookPersonnelValues() {
   )].sort((left, right) => left.localeCompare(right, undefined, { numeric: true }));
 }
 
-function normalizeTeamPlayer(player = {}
+function normalizeTeamPlayer(player = {}) {
+  const id = String(player.id || `player-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`);
+  const name = String(player.name || "").trim();
+  const number = String(player.number || "").trim();
+  const position = String(player.position || "").trim().toUpperCase();
+  const positionGroup = ["skill", "linemen"].includes(String(player.positionGroup || "").trim().toLowerCase())
+    ? String(player.positionGroup || "").trim().toLowerCase()
+    : "";
+  const personnel = Array.isArray(player.personnel)
+    ? player.personnel.map((value) => String(value || "").trim()).filter(Boolean)
+    : [];
+
+  return {
+    id,
+    name,
+    number,
+    position,
+    positionGroup,
+    personnel,
+  };
+}
 
 function getTeamRoster() {
   const stored = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
@@ -1016,15 +1047,79 @@ function saveTeamRoster(roster) {
   return normalized;
 }
 
-function normalizeTeamDepthChart(depthChart = {}
+function normalizeTeamDepthChart(depthChart = {}, fallbackAssignments = {}) {
+  const normalized = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const rawValue = depthChart?.[slot.key];
+    const values = Array.isArray(rawValue)
+      ? rawValue
+      : rawValue
+        ? [rawValue]
+        : fallbackAssignments?.[slot.key]
+          ? [fallbackAssignments[slot.key]]
+          : [];
+    const cleaned = [...new Set(
+      values
+        .map((value) => String(value || "").trim())
+        .filter(Boolean),
+    )];
+    if (cleaned.length) normalized[slot.key] = cleaned;
+  });
+  return normalized;
+}
 
-function getPrimaryAssignmentsFromDepthChart(depthChart = {}
+function getPrimaryAssignmentsFromDepthChart(depthChart = {}) {
+  const normalized = {};
+  TEAM_ASSIGNMENT_SLOTS.forEach((slot) => {
+    const primary = Array.isArray(depthChart?.[slot.key])
+      ? String(depthChart[slot.key][0] || "").trim()
+      : "";
+    if (primary) normalized[slot.key] = primary;
+  });
+  return normalized;
+}
 
-function getTeamDepthChartForSlot(depthChart = {}
+function getTeamDepthChartForSlot(depthChart = {}, slotKey = "") {
+  return Array.isArray(depthChart?.[slotKey])
+    ? depthChart[slotKey]
+      .map((value) => String(value || "").trim())
+      .filter(Boolean)
+    : [];
+}
 
-function normalizePersonnelPackage(pkg = {}
+function normalizePersonnelPackage(pkg = {}) {
+  const personnel = String(pkg.personnel || "").trim();
+  const depthChart = normalizeTeamDepthChart(pkg.depthChart, pkg.assignments);
+  const assignments = getPrimaryAssignmentsFromDepthChart(depthChart);
+  const labels = normalizeTeamAssignmentLabelMap(
+    pkg.labels,
+    getTeamAssignmentLabelMap(personnel),
+  );
 
-function normalizeTeamSwapGroup(group = {}
+  return {
+    personnel,
+    assignments,
+    depthChart,
+    labels,
+  };
+}
+
+function normalizeTeamSwapGroup(group = {}) {
+  const id = String(
+    group.id || `swap-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+  );
+  const name = String(group.name || "").trim();
+  const personnel = String(group.personnel || "").trim();
+  const depthChart = normalizeTeamDepthChart(group.depthChart, group.assignments);
+
+  return {
+    id,
+    name,
+    personnel,
+    assignments: getPrimaryAssignmentsFromDepthChart(depthChart),
+    depthChart,
+  };
+}
 
 function getTeamPersonnelPackages() {
   const stored = storageManager.get(STORAGE_KEYS.TEAM_PERSONNEL_PACKAGES, []);
@@ -1107,7 +1202,14 @@ function getPersonnelPackageDepthChart(personnel) {
   return match ? safeDeepClone(match.depthChart || {}) : {};
 }
 
-function normalizePlayerAssignments(assignments = {}
+function normalizePlayerAssignments(assignments = {}) {
+  const normalized = {};
+  getTeamAssignmentSlots().forEach((slot) => {
+    const value = String(assignments?.[slot.key] || "").trim();
+    if (value) normalized[slot.key] = value;
+  });
+  return normalized;
+}
 
 function getTeamSwapGroupAssignments(groupId, personnel) {
   const normalizedGroupId = String(groupId || "").trim();
@@ -1274,7 +1376,23 @@ function buildTeamSwapGroupOptionMarkup(
     .join("");
 }
 
-function formatPlayerAssignmentSummary(assignments = {}
+function formatPlayerAssignmentSummary(assignments = {}, options = {}) {
+  const includeSlotLabels = options.includeSlotLabels !== false;
+  const personnel = String(options.personnel || "").trim();
+  const roster = getTeamRoster();
+  const rosterMap = new Map(roster.map((player) => [player.id, player]));
+  const normalizedAssignments = normalizePlayerAssignments(assignments);
+
+  return getTeamAssignmentSlots(personnel).map((slot) => {
+    const playerId = normalizedAssignments[slot.key];
+    if (!playerId) return "";
+    const player = rosterMap.get(playerId);
+    const label = player ? formatTeamPlayerLabel(player) : playerId;
+    return includeSlotLabels ? `${slot.label}: ${label}` : label;
+  })
+    .filter(Boolean)
+    .join(", ");
+}
 
 function getPersonnelEmoji(personnel, useSquares = false) {
   if (!personnel) return "";

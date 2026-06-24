@@ -67,10 +67,10 @@
   --color-accent-dark: #9e8a60;
 
   /* Vision Mode picture-pill colors */
-  --pb-pic-wz-bg: #1d6fb8;    /* Wide Zone — blue */
-  --pb-pic-pull-bg: #b8541d;  /* Pullers — orange */
-  --pb-pic-dh-bg: #6b3fb8;    /* Downhill — purple */
-  --pb-pic-af-bg: #1d8a4a;    /* Anti-front — green */
+  --pb-pic-wz-bg: #1d6fb8; /* Wide Zone — blue */
+  --pb-pic-pull-bg: #b8541d; /* Pullers — orange */
+  --pb-pic-dh-bg: #6b3fb8; /* Downhill — purple */
+  --pb-pic-af-bg: #1d8a4a; /* Anti-front — green */
 
   /* Play-type token family — used by type chips across all pages */
   --color-type-run-bg: var(--color-success-light);

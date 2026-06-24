@@ -4027,7 +4027,9 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   opacity: 0.75;
   transition: opacity var(--transition-fast);
 }
-.cs-display-panel-close:hover { opacity: 1; }
+.cs-display-panel-close:hover {
+  opacity: 1;
+}
 .cs-display-panel-body {
   flex: 1;
   overflow-y: auto;
@@ -4044,15 +4046,22 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   background: var(--color-bg-light);
   flex-wrap: wrap;
 }
-.cs-display-panel-presets .cs-preset-label { flex-shrink: 0; }
-.cs-display-panel-presets .cs-preset-select { flex: 1 1 140px; min-width: 0; }
+.cs-display-panel-presets .cs-preset-label {
+  flex-shrink: 0;
+}
+.cs-display-panel-presets .cs-preset-select {
+  flex: 1 1 140px;
+  min-width: 0;
+}
 
 /* Section blocks */
 .cs-dp-section {
   padding: 12px 14px;
   border-bottom: 1px solid var(--color-border-light);
 }
-.cs-dp-section:last-child { border-bottom: none; }
+.cs-dp-section:last-child {
+  border-bottom: none;
+}
 .cs-dp-section-head {
   display: flex;
   align-items: flex-start;
@@ -4080,8 +4089,12 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   flex-direction: column;
   gap: 10px;
 }
-.cs-dp-section--borders .cs-border-panel { width: 100%; }
-.cs-dp-section--borders .cs-border-panel:last-child { border: none; }
+.cs-dp-section--borders .cs-border-panel {
+  width: 100%;
+}
+.cs-dp-section--borders .cs-border-panel:last-child {
+  border: none;
+}
 
 /* Toolbar tweaks */
 .cs-undo-redo-btn {
@@ -4092,7 +4105,10 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   border-color: var(--color-border);
   background: var(--color-surface);
 }
-.cs-undo-redo-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+.cs-undo-redo-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
 .cs-toolbar-divider {
   width: 1px;
   height: 22px;

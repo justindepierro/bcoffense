@@ -697,14 +697,14 @@ Supported via `[data-theme="dark"]` selector overriding all token values. Never 
 
 ### File Responsibilities
 
-| File             | Scope                                                           |
-| ---------------- | --------------------------------------------------------------- |
-| `base.css`       | Tokens, reset, form elements, selections                        |
-| `layout.css`     | Page structure, header, tab bar, panels                         |
-| `components.css` | Reusable: `.btn-*`, `.modal-*`, `.toast`, `.badge-*`, utilities |
-| `print.css`      | Shared/global print rules; module-only print rules may stay with their module |
+| File             | Scope                                                                              |
+| ---------------- | ---------------------------------------------------------------------------------- |
+| `base.css`       | Tokens, reset, form elements, selections                                           |
+| `layout.css`     | Page structure, header, tab bar, panels                                            |
+| `components.css` | Reusable: `.btn-*`, `.modal-*`, `.toast`, `.badge-*`, utilities                    |
+| `print.css`      | Shared/global print rules; module-only print rules may stay with their module      |
 | `responsive.css` | Shared/global breakpoints; module-only responsive rules may stay with their module |
-| `[module].css`   | Module-specific styles (callsheet.css, script.css, etc.)        |
+| `[module].css`   | Module-specific styles (callsheet.css, script.css, etc.)                           |
 
 ### Naming Conventions
 

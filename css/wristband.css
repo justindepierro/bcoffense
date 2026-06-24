@@ -1553,14 +1553,38 @@
   color: var(--color-text-secondary);
   vertical-align: middle;
 }
-.wb-type-chip[data-type="run"] { background: var(--color-type-run-bg); color: var(--color-type-run-fg); }
-.wb-type-chip[data-type="pass"] { background: var(--color-type-pass-bg); color: var(--color-type-pass-fg); }
-.wb-type-chip[data-type="rpo"] { background: var(--color-type-rpo-bg); color: var(--color-type-rpo-fg); }
-.wb-type-chip[data-type="screen"] { background: var(--color-type-screen-bg); color: var(--color-type-screen-fg); }
-.wb-type-chip[data-type="quick"] { background: var(--color-type-quick-bg); color: var(--color-type-quick-fg); }
-.wb-type-chip[data-type="play-action"] { background: var(--color-type-pa-bg); color: var(--color-type-pa-fg); }
-.wb-type-chip[data-type="movement"] { background: var(--color-type-movement-bg); color: var(--color-type-movement-fg); }
-.wb-type-chip[data-type="run-option"] { background: var(--color-type-runoption-bg); color: var(--color-type-runoption-fg); }
+.wb-type-chip[data-type="run"] {
+  background: var(--color-type-run-bg);
+  color: var(--color-type-run-fg);
+}
+.wb-type-chip[data-type="pass"] {
+  background: var(--color-type-pass-bg);
+  color: var(--color-type-pass-fg);
+}
+.wb-type-chip[data-type="rpo"] {
+  background: var(--color-type-rpo-bg);
+  color: var(--color-type-rpo-fg);
+}
+.wb-type-chip[data-type="screen"] {
+  background: var(--color-type-screen-bg);
+  color: var(--color-type-screen-fg);
+}
+.wb-type-chip[data-type="quick"] {
+  background: var(--color-type-quick-bg);
+  color: var(--color-type-quick-fg);
+}
+.wb-type-chip[data-type="play-action"] {
+  background: var(--color-type-pa-bg);
+  color: var(--color-type-pa-fg);
+}
+.wb-type-chip[data-type="movement"] {
+  background: var(--color-type-movement-bg);
+  color: var(--color-type-movement-fg);
+}
+.wb-type-chip[data-type="run-option"] {
+  background: var(--color-type-runoption-bg);
+  color: var(--color-type-runoption-fg);
+}
 
 .wb-add-play-btn {
   flex: 0 0 auto;

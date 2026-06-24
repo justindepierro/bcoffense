@@ -13,7 +13,32 @@ function _dashCategoryTextColor(hex) {
   return lum > 0.6 ? UI_COLORS.textBlack : UI_COLORS.textWhite;
 }
 
-function _dashBuildScoutCard(label, data, opts = {}
+function _dashBuildScoutCard(label, data, opts = {}) {
+  const limitFront = opts.limitFront || 3;
+  const limitCov = opts.limitCov || 3;
+  const fronts = (data.topFront || [])
+    .slice(0, limitFront)
+    .map(
+      (f) =>
+        `<div class="dash-scout-row"><span>Front:</span> <b>${escapeHtml(f.term)}</b> <span class="dash-scout-pct">${f.pct}%</span></div>`,
+    )
+    .join("");
+  const covs = (data.topCoverage || [])
+    .slice(0, limitCov)
+    .map(
+      (c) =>
+        `<div class="dash-scout-row"><span>Cov:</span> <b>${escapeHtml(c.term)}</b> <span class="dash-scout-pct">${c.pct}%</span></div>`,
+    )
+    .join("");
+  return `<div class="dash-scout-card">
+    <div class="dash-scout-card-title">${escapeHtml(label)} (${data.total} plays)</div>
+    <div class="dash-scout-items">
+      ${fronts}
+      ${covs}
+      <div class="dash-scout-row"><span>Blitz Rate:</span> <b>${data.blitzRate}%</b></div>
+    </div>
+  </div>`;
+}
 
 function _dashFindGameWeekOpponent(gw, opponents) {
   if (!gw || !Array.isArray(opponents)) return null;

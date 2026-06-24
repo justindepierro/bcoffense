@@ -506,7 +506,7 @@ function loadWristbandToCallSheet() {
   closeLoadWristbandModal();
   showToast(
     `📋 Loaded "${wristbandData.title}" (${wristbandPlays.length} plays)` +
-      (syncedCount > 0 ? ` · synced ${syncedCount} passing plays` : ""),
+    (syncedCount > 0 ? ` · synced ${syncedCount} passing plays` : ""),
   );
 }
 

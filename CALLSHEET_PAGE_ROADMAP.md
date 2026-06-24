@@ -23,34 +23,34 @@ Use this file as the source of truth when planning follow-up work on the Call Sh
 
 A partial refactor has moved several concerns out of the original monolith:
 
-| File | Owns |
-|---|---|
-| `callsheet-render.js` | Category constants, display helpers, **legacy** render functions (see note below) |
-| `callsheet-categories.js` | Category display names, colors, custom-category CRUD |
-| `callsheet-metadata.js` | Category notes, target counts, clear actions, metadata menus |
-| `callsheet-layout.js` | Category ordering persistence, layout modal drag/drop |
-| `callsheet-picker-runtime.js` | Picker search/filter, wristband loading, drag/drop into sheet |
-| `callsheet-gameplan-drawer.js` | Game plan drawer inside the call sheet |
-| `callsheet.js` | **Everything else** — see below |
+| File                           | Owns                                                                              |
+| ------------------------------ | --------------------------------------------------------------------------------- |
+| `callsheet-render.js`          | Category constants, display helpers, **legacy** render functions (see note below) |
+| `callsheet-categories.js`      | Category display names, colors, custom-category CRUD                              |
+| `callsheet-metadata.js`        | Category notes, target counts, clear actions, metadata menus                      |
+| `callsheet-layout.js`          | Category ordering persistence, layout modal drag/drop                             |
+| `callsheet-picker-runtime.js`  | Picker search/filter, wristband loading, drag/drop into sheet                     |
+| `callsheet-gameplan-drawer.js` | Game plan drawer inside the call sheet                                            |
+| `callsheet.js`                 | **Everything else** — see below                                                   |
 
 ### What is still in `callsheet.js` (needs a home)
 
-| Responsibility | Approx. lines | Natural owner |
-|---|---|---|
-| State normalization + init | 1–580 | Keep in `callsheet.js` (core) |
-| Auto-populate matching + filtering | 580–1 053 | `callsheet-filters.js` (new) |
-| Personnel display helpers | 1 056–1 253 | `callsheet-render.js` |
-| **Live render path** (renderCallSheet, renderCategory, renderCallSheetPlay) | 1 254–1 820 | `callsheet-render.js` ← **DUPLICATED** (see below) |
-| Context menus + highlight + undo/redo | 1 818–2 297 | Mix; keep context menus in `callsheet-actions.js` (new) |
-| Print logic (save/print/modal/render) | 2 297–2 730 | `callsheet-print.js` (new) |
-| Display options panel + presets | 2 726–3 283 | `callsheet-display.js` (new) |
-| buildCallSheetPlayParts | 3 283 | `callsheet-render.js` ← **DUPLICATED** |
-| Template management (load/save/delete) | 4 171–4 267 | `callsheet-storage.js` (new) |
-| Smart category reorder + reset | 4 289–4 367 | `callsheet-layout.js` (already partial) |
-| Sort criteria modal + drag/drop | 4 368–4 727 | `callsheet-sort.js` (new) |
-| Scouting overlay + scouting badges | 4 727–4 816 | `callsheet-scouting.js` or `callsheet-render.js` |
-| Smart suggestions modal | 4 817–4 955 | `callsheet-smart.js` (new) |
-| Export CSV + play location helpers | 4 955–5 060 | `callsheet-export.js` (new) |
+| Responsibility                                                              | Approx. lines | Natural owner                                           |
+| --------------------------------------------------------------------------- | ------------- | ------------------------------------------------------- |
+| State normalization + init                                                  | 1–580         | Keep in `callsheet.js` (core)                           |
+| Auto-populate matching + filtering                                          | 580–1 053     | `callsheet-filters.js` (new)                            |
+| Personnel display helpers                                                   | 1 056–1 253   | `callsheet-render.js`                                   |
+| **Live render path** (renderCallSheet, renderCategory, renderCallSheetPlay) | 1 254–1 820   | `callsheet-render.js` ← **DUPLICATED** (see below)      |
+| Context menus + highlight + undo/redo                                       | 1 818–2 297   | Mix; keep context menus in `callsheet-actions.js` (new) |
+| Print logic (save/print/modal/render)                                       | 2 297–2 730   | `callsheet-print.js` (new)                              |
+| Display options panel + presets                                             | 2 726–3 283   | `callsheet-display.js` (new)                            |
+| buildCallSheetPlayParts                                                     | 3 283         | `callsheet-render.js` ← **DUPLICATED**                  |
+| Template management (load/save/delete)                                      | 4 171–4 267   | `callsheet-storage.js` (new)                            |
+| Smart category reorder + reset                                              | 4 289–4 367   | `callsheet-layout.js` (already partial)                 |
+| Sort criteria modal + drag/drop                                             | 4 368–4 727   | `callsheet-sort.js` (new)                               |
+| Scouting overlay + scouting badges                                          | 4 727–4 816   | `callsheet-scouting.js` or `callsheet-render.js`        |
+| Smart suggestions modal                                                     | 4 817–4 955   | `callsheet-smart.js` (new)                              |
+| Export CSV + play location helpers                                          | 4 955–5 060   | `callsheet-export.js` (new)                             |
 
 ### The Duplicate Render Path Problem
 
@@ -74,6 +74,7 @@ renderCallSheetPrintPage
 This is the full feature inventory. Every item must work after any refactor batch.
 
 ### Core Board
+
 - [x] Front page / Back page toggle (19 + 18 base categories)
 - [x] Portrait and Landscape orientation modes
 - [x] 3-column category grid layout with Left/Right hash columns per category
@@ -86,6 +87,7 @@ This is the full feature inventory. Every item must work after any refactor batc
 - [x] Category custom colors (override default category color)
 
 ### Picker
+
 - [x] Click `+ Add` on any hash column → opens play picker overlay
 - [x] Picker filters: type, personnel, formation, situation, down, distance, field position, coverage
 - [x] Picker search (live filter by text)
@@ -95,12 +97,14 @@ This is the full feature inventory. Every item must work after any refactor batc
 - [x] Game Plan drawer: slide-out panel showing Game Plan plays grouped and filtered; drag plays onto the sheet
 
 ### Wristband Integration
+
 - [x] Load a saved wristband onto the call sheet (syncs wristband numbers to plays)
 - [x] Wristband numbers display in cells when loaded
 - [x] Clear loaded wristband
 - [x] Refresh wristband numbers
 
 ### Cell Display
+
 - [x] Per-cell display options: formation, personnel, protection, motion, shift, under/back, play tags, line call, one word, tempo, key players, notes
 - [x] Display presets (save/load named display profiles)
 - [x] Personnel badge with color coding by personnel group
@@ -110,23 +114,27 @@ This is the full feature inventory. Every item must work after any refactor batc
 - [x] "Dead vs" badge (shows defensive looks to avoid)
 
 ### Sort
+
 - [x] Per-category multi-criteria sort (field + direction)
 - [x] Sort criteria drag-to-reorder
 - [x] Custom sort order lists per field
 
 ### Layout
+
 - [x] Drag-to-reorder categories within a page
 - [x] Hide/show individual categories
 - [x] Smart reorder (auto-arranges categories by down/distance logic)
 - [x] Reset to default category order
 
 ### Templates
+
 - [x] Save current sheet as a named template
 - [x] Load a saved template
 - [x] Delete templates
 - [x] Built-in templates (standard call sheet structures)
 
 ### Insights
+
 - [x] Scouting overlay (shows defensive tendency data per category)
 - [x] "Dead vs" badges per play
 - [x] Stats panel (quick play-count summary)
@@ -134,20 +142,24 @@ This is the full feature inventory. Every item must work after any refactor batc
 - [x] Smart suggestions modal (constraints-engine recommendations per category)
 
 ### History
+
 - [x] Undo / Redo (25-step history via historyManager)
 - [x] Autosave draft (3-second debounce, 24-hour expiry)
 - [x] Draft restore on return to the tab
 
 ### Save / Export
+
 - [x] Save as named template
 - [x] Print modal (pages, orientation, margin, density options)
 - [x] Export CSV (plays by category)
 
 ### Game Plan Integration
+
 - [x] "Send to Call Sheet" from the Game Plan tab pushes plays into matching categories
 - [x] Game plan drawer inside the call sheet for direct drag placement
 
 ### Constraints Panel
+
 - [x] Inline constraints evaluation per category (score, status, errors, warnings)
 - [x] Philosophy guidance for each bucket
 
@@ -197,6 +209,7 @@ renderPrintPlay
 Also move `renderCallSheetPrintPage` out of `callsheet-render.js` (its copy there is already dead; the live one is in `callsheet.js`).
 
 Steps:
+
 - [ ] Create `js/callsheet-print.js` with the extracted functions
 - [ ] Add to `LOCAL_ASSETS` in `sw.js` and `<script defer>` in `index.html` (after `callsheet.js`, before `callsheet-categories.js`)
 - [ ] Remove the extracted functions from `callsheet.js`
@@ -230,6 +243,7 @@ openCsCustomOrderModal, applyCsSort, sortPlaysByCriteria
 ```
 
 Steps:
+
 - [ ] Create `js/callsheet-sort.js`
 - [ ] Add to `LOCAL_ASSETS` and `index.html`
 - [ ] Remove from `callsheet.js`
@@ -258,6 +272,7 @@ buildPlayerCategoryAutoFillTargets, autoPopulateCallSheet (or keep as orchestrat
 ```
 
 Steps:
+
 - [ ] Create `js/callsheet-filters.js`
 - [ ] Add to `LOCAL_ASSETS` and `index.html` (before `callsheet.js`)
 - [ ] Remove from `callsheet.js`
@@ -290,26 +305,31 @@ Target: `callsheet-export.js` (new) for CSV/location helpers; `callsheet-smart.j
 These build on the existing feature set without breaking it.
 
 #### 6-A: Display Options Panel Refinement
+
 - [ ] Collapse the display-options unified bar by default on mobile (it takes significant vertical space)
 - [ ] Display preset quick-switch chip row (show saved presets as one-click chips above the board)
 - [ ] Persist last-active preset name as the board header subtitle
 
 #### 6-B: Category Health Indicators
+
 - [ ] Show a small count badge on each category header: `plays / target` (e.g. `8/10`)
 - [ ] Color the badge green/yellow/red based on fill percentage relative to the target count stored in `callsheet-metadata.js`
 - [ ] Render these badges in print so coaches see fill status at a glance
 
 #### 6-C: Picker UX
+
 - [ ] Remember last picker filter state (type/personnel) per session so re-opening picker doesn't reset
 - [ ] Add a "plays already on sheet" indicator in the picker list (dim or badge plays that are already placed)
 - [ ] Add keyboard shortcut to open the picker for the focused/last category
 
 #### 6-D: Print Modal Improvements
+
 - [ ] "Print what you see" mode: print only the currently-shown page (front or back) without switching
 - [ ] Front+Back combined single PDF flow (currently requires two separate prints)
 - [ ] Preview thumbnail of the layout before printing
 
 #### 6-E: Board Density and Readability
+
 - [ ] Evaluate whether a "compact" display density preset makes sense (tighter line height, smaller font)
 - [ ] Sticky category headers while scrolling through a long board
 - [ ] Better visual treatment for collapsed categories (show play count in the collapsed header)
