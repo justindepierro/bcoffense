@@ -134,10 +134,15 @@
   overflow: hidden;
   border: 1px solid rgb(255 255 255 / 12%);
   border-radius: 28px;
-  background: rgb(255 255 255 / 7%);
+  background: rgb(14 30 68 / 90%);
   box-shadow: 0 24px 80px rgb(4 10 28 / 38%);
-  backdrop-filter: blur(10px);
   animation: authShellIn 0.22s ease-out both;
+}
+@supports (backdrop-filter: blur(1px)) {
+  .auth-login-shell {
+    background: rgb(255 255 255 / 7%);
+    backdrop-filter: blur(10px);
+  }
 }
 @keyframes authShellIn {
   from {
@@ -148,6 +153,10 @@
     opacity: 1;
     transform: translateY(0) scale(1);
   }
+}
+@keyframes authShellOut {
+  from { opacity: 1; transform: translateY(0) scale(1); }
+  to { opacity: 0; transform: translateY(-10px) scale(0.98); }
 }
 .auth-login-hero,
 .auth-login-card {
@@ -219,7 +228,60 @@
   gap: var(--space-md);
   align-content: center;
   padding: 32px;
-  background: rgb(255 255 255 / 0.98);
+  background: var(--color-surface);
+}
+.auth-login-phone-brand {
+  display: none;
+  gap: 5px;
+  text-align: center;
+  padding-bottom: 2px;
+}
+.auth-login-logout-msg {
+  padding: 10px 14px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  text-align: center;
+}
+.auth-login-player-shortcut {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  color: var(--color-text-light);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  letter-spacing: 0.03em;
+  text-transform: uppercase;
+}
+.auth-login-player-shortcut::before,
+.auth-login-player-shortcut::after {
+  content: "";
+  flex: 1;
+  height: 1px;
+  background: var(--color-border-light);
+}
+.auth-login-player-btn {
+  width: 100%;
+  padding: 12px;
+  border: 1.5px solid var(--color-primary);
+  border-radius: var(--radius-md);
+  background: transparent;
+  color: var(--color-primary);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: background var(--transition-fast), color var(--transition-fast);
+  text-align: center;
+}
+.auth-login-player-btn:hover {
+  background: var(--color-primary-light);
+}
+.auth-login-player-btn:active {
+  transform: scale(0.98);
 }
 .auth-login-brand {
   color: var(--color-accent);
@@ -452,31 +514,16 @@ body[data-auth-role="player"] .auth-user-badge {
   .auth-login-shell {
     grid-template-columns: 1fr;
     align-self: center;
-    max-height: calc((var(--app-vh, 1vh) * 100) - 32px);
-    overflow-y: auto;
+    max-height: none;
     border-radius: 22px;
   }
 
   .auth-login-hero {
-    order: 2;
-    gap: var(--space-sm);
-    padding: 16px var(--space-lg) var(--space-lg);
-    background: linear-gradient(
-      160deg,
-      rgb(8 22 56 / 94%),
-      rgb(13 34 74 / 86%)
-    );
+    display: none;
   }
 
-  .auth-login-hero h2 {
-    font-size: var(--font-size-xl);
-    line-height: 1.15;
-  }
-
-  .auth-login-hero p {
-    max-width: none;
-    font-size: var(--font-size-xs);
-    line-height: 1.45;
+  .auth-login-phone-brand {
+    display: grid;
   }
 
   .auth-login-role-strip,
@@ -485,7 +532,6 @@ body[data-auth-role="player"] .auth-user-badge {
   }
 
   .auth-login-card {
-    order: 1;
     gap: var(--space-sm);
     padding: var(--space-lg);
   }

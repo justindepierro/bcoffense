@@ -24,16 +24,16 @@
 
 ## TIER 2 — Login UX / Consumer App Feel
 
-- [ ] **11. "Player Login" one-tap shortcut** — all 3 roles shown to everyone. Add a "I'm a Player →" button at the bottom that collapses the form to password-only and pre-selects player role. Players should never see "Admin" or "Coach" options first.
-- [ ] **12. Extend player session to 7 days** — `AUTH_SESSION_MAX_AGE_MS` is 12 hours. Players re-login every morning at camp. Player role: 7 days. Admin/Coach: keep at 12 hours.
-- [ ] **13. Fix "Logged out" shown in error slot** — `showLoginOverlay("Logged out.")` routes to the red error element. Show logout/status messages in a separate muted-color status slot.
-- [ ] **14. Replace hero pane with compact brand block on phone** — on 480px phones the hero is redundant and forces scroll. Replace with just team name + logo centered above the form card. Zero extra scroll.
-- [ ] **15. Add success animation on login** — `overlay.remove()` is a hard cut. Add scale-up + fade-out on `.auth-login-shell` (150ms) before removal. Confirms "that worked."
-- [ ] **16. Dark mode support on login card** — `.auth-login-card` is always `rgba(255,255,255,0.98)` regardless of `data-theme="dark"`. Apply dark theme tokens to the card form.
-- [ ] **17. `?role=player` URL parameter pre-selection** — support `?role=player` to pre-select player role and hide admin/coach buttons. Coaches send players a direct link.
-- [ ] **18. Show team name on login screen** — pulls `STORAGE_KEYS.TEAM_NAME` and shows "Welcome to [Team Name]" instead of the hardcoded "BCOffense" brand block.
-- [ ] **19. Focus management after login** — after `overlay.remove()`, focus floats. Move focus to the first tab button or main heading for keyboard/VoiceOver users.
-- [ ] **20. `@supports (backdrop-filter)` guard** — `backdrop-filter: blur(10px)` runs unconditionally. Wrap in `@supports` to prevent compositing cost on iPhone SE and older Android.
+- [x] **11. "Player Login" one-tap shortcut** — all 3 roles shown to everyone. Add a "I'm a Player →" button at the bottom that collapses the form to password-only and pre-selects player role. Players should never see "Admin" or "Coach" options first.
+- [x] **12. Extend player session to 7 days** — `AUTH_SESSION_MAX_AGE_MS` is 12 hours. Players re-login every morning at camp. Player role: 7 days. Admin/Coach: keep at 12 hours.
+- [x] **13. Fix "Logged out" shown in error slot** — `showLoginOverlay("Logged out.")` routes to the red error element. Show logout/status messages in a separate muted-color status slot.
+- [x] **14. Replace hero pane with compact brand block on phone** — on 480px phones the hero is redundant and forces scroll. Replace with just team name + logo centered above the form card. Zero extra scroll.
+- [x] **15. Add success animation on login** — `overlay.remove()` is a hard cut. Add scale-up + fade-out on `.auth-login-shell` (150ms) before removal. Confirms "that worked."
+- [x] **16. Dark mode support on login card** — `.auth-login-card` is always `rgba(255,255,255,0.98)` regardless of `data-theme="dark"`. Apply dark theme tokens to the card form.
+- [x] **17. `?role=player` URL parameter pre-selection** — support `?role=player` to pre-select player role and hide admin/coach buttons. Coaches send players a direct link.
+- [x] **18. Show team name on login screen** — pulls `STORAGE_KEYS.TEAM_NAME` and shows "Welcome to [Team Name]" instead of the hardcoded "BCOffense" brand block.
+- [x] **19. Focus management after login** — after `overlay.remove()`, focus floats. Move focus to the first tab button or main heading for keyboard/VoiceOver users.
+- [x] **20. `@supports (backdrop-filter)` guard** — `backdrop-filter: blur(10px)` runs unconditionally. Wrap in `@supports` to prevent compositing cost on iPhone SE and older Android.
 
 ---
 

@@ -327,12 +327,8 @@
       clearStoredAuthUser();
       return null;
     }
-    if (Date.now() - savedAt > AUTH_SESSION_MAX_AGE_MS) {
-      clearStoredAuthUser();
-      return null;
-    }
-    return normalized;
-  }
+    const _sessionMaxAge = normalized.role === "player" ? 7 * 24 * 60 * 60 * 1000 : AUTH_SESSION_MAX_AGE_MS;
+    if (Date.now() - savedAt > _sessionMaxAge) {
 
   async function fetchAuthSession() {
     try {
@@ -608,18 +604,30 @@
     }, 700);
   }
 
-  function showLoginOverlay(message = "") {
+  function showLoginOverlay(message = "", opts = {}) {
     document.getElementById("authLoginOverlay")?.remove();
     document.body.classList.add("auth-locked");
+
+    const teamName = (() => {
+      try {
+        const key = typeof STORAGE_KEYS !== "undefined" ? STORAGE_KEYS.TEAM_NAME : "teamName";
+        return (storageManager?.get?.(key, "") || "").trim() || "BCOffense";
+      } catch (_e) { return "BCOffense"; }
+    })();
+    const _urlRoleRaw = (() => {
+      try { return new URLSearchParams(window.location.search).get("role") || ""; } catch (_e) { return ""; }
+    })();
+    const _urlRole = AUTH_LOGIN_ROLE_DETAILS[_urlRoleRaw] ? _urlRoleRaw : null;
+    const _initialRoleName = _urlRole || "admin";
 
     const overlay = document.createElement("div");
     overlay.id = "authLoginOverlay";
     overlay.className = "auth-login-overlay";
-    const initialDetails = getLoginRoleDetails("admin");
+    const initialDetails = getLoginRoleDetails(_initialRoleName);
     overlay.innerHTML = `
       <div class="auth-login-shell">
         <section class="auth-login-hero" aria-label="Portal overview">
-          <div class="auth-login-brand">BCOffense</div>
+          <div class="auth-login-brand">${escapeHtml(teamName)}</div>
           <div class="auth-login-hero-kicker">Secure staff and player access</div>
           <h2 id="authLoginHeroTitle">${escapeHtml(initialDetails.title)}</h2>
           <p id="authLoginHeroSummary">${escapeHtml(initialDetails.summary)}</p>
@@ -644,6 +652,11 @@
           </div>
         </section>
         <form class="auth-login-card" id="authLoginForm" autocomplete="on">
+          <div class="auth-login-phone-brand">
+            <div class="auth-login-brand">${escapeHtml(teamName)}</div>
+            <div class="auth-login-kicker">Sign in to your portal</div>
+          </div>
+          ${opts.statusMsg ? `<div class="auth-login-logout-msg">${escapeHtml(opts.statusMsg)}</div>` : ""}
           <div class="auth-login-form-header">
             <div class="auth-login-kicker" id="authLoginRoleEyebrow">${escapeHtml(initialDetails.eyebrow)}</div>
             <h3>Sign in to BCOffense</h3>
@@ -675,10 +688,19 @@
           <div id="authLoginError" class="auth-login-error${message ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
           <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">${escapeHtml(initialDetails.submit)}</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
+          <div class="auth-login-player-shortcut" aria-hidden="true"><span>or</span></div>
+          <button type="button" class="auth-login-player-btn" id="authPlayerShortcut">I'm a Player &rarr;</button>
         </form>
       </div>
     `;
     document.body.appendChild(overlay);
+    const _animateOut = () => new Promise(r => {
+      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { r(); return; }
+      const shell = overlay.querySelector(".auth-login-shell");
+      if (!shell) { r(); return; }
+      shell.style.animation = "authShellOut 0.18s ease-in both";
+      setTimeout(r, 160);
+    });
     const usernameEl = overlay.querySelector("#authUsername");
     const passwordEl = overlay.querySelector("#authPassword");
     const errorEl = overlay.querySelector("#authLoginError");
@@ -793,8 +815,12 @@
           isLocalDevHost() && (!response.ok || !data.user) ? "local-dev" : "server-login",
         );
         authReady = true;
+        await _animateOut();
         overlay.remove();
         applyRoleUi();
+        requestAnimationFrame(() => {
+          document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
+        });
         showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
         if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
         scheduleCloudAutoPull();
@@ -808,8 +834,12 @@
             currentAuthUser = fallbackUser;
             saveStoredAuthUser(fallbackUser, "local-dev");
             authReady = true;
+            await _animateOut();
             overlay.remove();
             applyRoleUi();
+            requestAnimationFrame(() => {
+              document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
+            });
             showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
             if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
             scheduleCloudAutoPull();
@@ -827,7 +857,16 @@
         passwordEl.focus();
       }
     });
-    requestAnimationFrame(() => usernameEl.focus());
+    overlay.querySelector("#authPlayerShortcut")?.addEventListener("click", () => {
+      setSelectedLoginRole("player", { fillUsername: true });
+      passwordEl.focus();
+    });
+    if (_urlRole) {
+      setSelectedLoginRole(_urlRole, { fillUsername: true });
+      requestAnimationFrame(() => passwordEl.focus());
+    } else {
+      requestAnimationFrame(() => usernameEl.focus());
+    }
   }
 
   function ensureLoginOverlayVisible() {
@@ -853,7 +892,7 @@
       resetCloudSyncAutoPull();
     }
     applyRoleUi();
-    showLoginOverlay("Logged out.");
+    showLoginOverlay("", { statusMsg: "Signed out." });
   }
 
   function handleBlockedInteraction(e) {
