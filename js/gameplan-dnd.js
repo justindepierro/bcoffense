@@ -40,7 +40,7 @@ function _gpWireDnd() {
   // invalidates it. Cheap no-op when not dragging (cache is empty).
   window.addEventListener("scroll", () => {
     if (_gpDropRowCacheZone) _gpInvalidateDropRowCache();
-  }, true);
+  }, { passive: true, capture: true });
 
   // Diagnostic toggle: append ?gpdebug to URL to enable console tracing.
   const _gpDbg = (() => {

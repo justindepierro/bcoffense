@@ -357,7 +357,7 @@ function checkMigrationRetry() {
   );
   const run = build(localStorage, migrations, 3);
   const originalConsoleError = console.error;
-  console.error = () => {};
+  console.error = () => { };
   const failed = run();
   console.error = originalConsoleError;
   if (failed !== false || values.get("_storageVersion") !== "1") {
@@ -642,20 +642,20 @@ function checkPlayPresentationContracts() {
     !/function getPlayPresentationContentBounds\(image\)/.test(presenter) ||
     !/function getPlayPresentationAspectCrop\(/.test(presenter) ||
     !/PLAY_PRESENTATION_MAX_RENDER_PIXELS/.test(presenter) ||
-      !/context\.imageSmoothingQuality = "high"/.test(presenter) ||
-      !/new ResizeObserver\(/.test(presenter) ||
-      !/canvas\.dataset\.smartFit/.test(presenter) ||
-      !/playPresentationDiagramSizeKey/.test(presenter) ||
-      !/getFrameSizeKey\(\) === playPresentationDiagramSizeKey/.test(presenter) ||
-      !/requestFullscreen/.test(presenter) ||
-      /screen\.orientation\.(lock|unlock)/.test(presenter) ||
-      !/function syncPlayPresentationMobileLandscape\(/.test(presenter) ||
-      !/let playPresentationViewportSyncFrame = 0/.test(presenter) ||
-      !/let playPresentationViewportKey = ""/.test(presenter) ||
-      !/function isPlayPresentationOverlayVisible\(overlay\)/.test(presenter) ||
-      !/function handlePlayPresentationTouchStart\(/.test(presenter) ||
-      !/function handlePlayPresentationTouchEnd\(/.test(presenter) ||
-      !/PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/.test(presenter) ||
+    !/context\.imageSmoothingQuality = "high"/.test(presenter) ||
+    !/new ResizeObserver\(/.test(presenter) ||
+    !/canvas\.dataset\.smartFit/.test(presenter) ||
+    !/playPresentationDiagramSizeKey/.test(presenter) ||
+    !/getFrameSizeKey\(\) === playPresentationDiagramSizeKey/.test(presenter) ||
+    !/requestFullscreen/.test(presenter) ||
+    /screen\.orientation\.(lock|unlock)/.test(presenter) ||
+    !/function syncPlayPresentationMobileLandscape\(/.test(presenter) ||
+    !/let playPresentationViewportSyncFrame = 0/.test(presenter) ||
+    !/let playPresentationViewportKey = ""/.test(presenter) ||
+    !/function isPlayPresentationOverlayVisible\(overlay\)/.test(presenter) ||
+    !/function handlePlayPresentationTouchStart\(/.test(presenter) ||
+    !/function handlePlayPresentationTouchEnd\(/.test(presenter) ||
+    !/PLAY_PRESENTATION_SWIPE_MIN_DISTANCE/.test(presenter) ||
     !/reason: "no-script-items"/.test(presenter) ||
     !/reason: !overlay \? "overlay-missing" : "no-items"/.test(presenter) ||
     !/return true;/.test(presenter) ||
@@ -665,16 +665,16 @@ function checkPlayPresentationContracts() {
     !/cancelAnimationFrame\(playPresentationViewportSyncFrame\)/.test(
       presenter,
     ) ||
-      !/window\.visualViewport\?\.addEventListener\([\s\S]*"resize",[\s\S]*queuePlayPresentationViewportSync[\s\S]*\{\s*passive:\s*true\s*\}/.test(
-        presenter,
-      ) ||
-      !/overlay\.style\.setProperty\("display", "flex", "important"\)/.test(
-        presenter,
-      ) ||
-      !/overlay\.classList\.toggle\("is-open", open\)/.test(presenter) ||
-      !/overlay\.dataset\.presentationOpen = open \? "true" : "false"/.test(
-        presenter,
-      ) ||
+    !/window\.visualViewport\?\.addEventListener\([\s\S]*"resize",[\s\S]*queuePlayPresentationViewportSync[\s\S]*\{\s*passive:\s*true\s*\}/.test(
+      presenter,
+    ) ||
+    !/overlay\.style\.setProperty\("display", "flex", "important"\)/.test(
+      presenter,
+    ) ||
+    !/overlay\.classList\.toggle\("is-open", open\)/.test(presenter) ||
+    !/overlay\.dataset\.presentationOpen = open \? "true" : "false"/.test(
+      presenter,
+    ) ||
     !/setInnerHTML\(body, markup\)/.test(presenter)
   ) {
     fail("play presentation image, landscape, safety, or lexical-state contracts are incomplete");
@@ -779,18 +779,18 @@ function checkPlayPresentationContracts() {
   ) {
     fail("player presentation role limits are incomplete");
   }
-    if (
-      !/\.play-presentation-overlay:fullscreen/.test(css) ||
-      !/\.play-presentation-overlay\.show,\s*\.play-presentation-overlay\.is-open,\s*\.play-presentation-overlay\[data-presentation-open="true"\]/.test(
-        css,
-      ) ||
-      /body\.play-presentation-force-landscape/.test(css) ||
-      /\.play-presentation-overlay\.pp-force-landscape/.test(css) ||
-      /rotate\(90deg\)/.test(css) ||
-      !/body\.play-presentation-mobile\.is-landscape-screen \.pp-layout-minimum/.test(css) ||
-      !/@media \(orientation: portrait\)/.test(css) ||
-      !/\.pp-layout-minimum\s*\{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/s.test(
-        css,
+  if (
+    !/\.play-presentation-overlay:fullscreen/.test(css) ||
+    !/\.play-presentation-overlay\.show,\s*\.play-presentation-overlay\.is-open,\s*\.play-presentation-overlay\[data-presentation-open="true"\]/.test(
+      css,
+    ) ||
+    /body\.play-presentation-force-landscape/.test(css) ||
+    /\.play-presentation-overlay\.pp-force-landscape/.test(css) ||
+    /rotate\(90deg\)/.test(css) ||
+    !/body\.play-presentation-mobile\.is-landscape-screen \.pp-layout-minimum/.test(css) ||
+    !/@media \(orientation: portrait\)/.test(css) ||
+    !/\.pp-layout-minimum\s*\{[^}]*grid-template-rows:\s*auto minmax\(0,\s*1fr\) auto/s.test(
+      css,
     ) ||
     !/class="pp-minimum-top"/.test(presenter) ||
     !/class="pp-diagram-panel pp-minimum-diagram"/.test(presenter) ||
@@ -1022,15 +1022,15 @@ function checkPlayReadinessContracts() {
     !/\.pp-coach-section-readiness/.test(presentationCss) ||
     !/\.pp-minimum-readiness-dock/.test(presentationCss) ||
     !/\.pp-readiness-score-rail/.test(presentationCss) ||
-      !/\.pp-readiness-rail-buttons/.test(presentationCss) ||
-      !/\.pp-minimum-score-grid/.test(presentationCss) ||
-      !/play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-minimum-readiness-dock/.test(
-        presentationCss,
-      ) ||
-      !/play-presentation-mobile\.is-landscape-screen\.is-compact-screen \.pp-minimum-readiness-dock/.test(
-        presentationCss,
-      ) ||
-      !/pp-coach-section-readiness \.play-readiness-rollup/.test(presentationCss)
+    !/\.pp-readiness-rail-buttons/.test(presentationCss) ||
+    !/\.pp-minimum-score-grid/.test(presentationCss) ||
+    !/play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-minimum-readiness-dock/.test(
+      presentationCss,
+    ) ||
+    !/play-presentation-mobile\.is-landscape-screen\.is-compact-screen \.pp-minimum-readiness-dock/.test(
+      presentationCss,
+    ) ||
+    !/pp-coach-section-readiness \.play-readiness-rollup/.test(presentationCss)
   ) {
     fail("play readiness script styling is incomplete");
   }
@@ -1117,19 +1117,19 @@ function checkPlayerPortalContracts() {
   if (
     !/window\.visualViewport/.test(appShell) ||
     !/shortSide/.test(appShell) ||
-      !/is-landscape-screen/.test(appShell) ||
-      !/let _mobileShellLastStateKey = ""/.test(appShell) ||
-      !/stateKey === _mobileShellLastStateKey/.test(appShell) ||
-      !/window\.visualViewport\?\.addEventListener\([\s\S]*"resize",[\s\S]*queueMobileShellStateSync,[\s\S]*\{\s*passive:\s*true\s*\}/.test(
-        appShell,
-      ) ||
-      !/function queueMobileShellSettledSync\(\)/.test(appShell) ||
+    !/is-landscape-screen/.test(appShell) ||
+    !/let _mobileShellLastStateKey = ""/.test(appShell) ||
+    !/stateKey === _mobileShellLastStateKey/.test(appShell) ||
+    !/window\.visualViewport\?\.addEventListener\([\s\S]*"resize",[\s\S]*queueMobileShellStateSync,[\s\S]*\{\s*passive:\s*true\s*\}/.test(
+      appShell,
+    ) ||
+    !/function queueMobileShellSettledSync\(\)/.test(appShell) ||
     !/window\.visualViewport\?\.addEventListener\("scroll", queueMobileShellSettledSync/.test(
       appShell,
     ) ||
-      !/window\.setTimeout\(queueMobileShellStateSync,\s*240\)/.test(
-        appShell,
-      ) ||
+    !/window\.setTimeout\(queueMobileShellStateSync,\s*240\)/.test(
+      appShell,
+    ) ||
     !/function setMobileShellCssVar\(root, name, value\)/.test(appShell) ||
     !/is-player-mobile-shell/.test(appShell) ||
     !/is-staff-mobile-shell/.test(appShell) ||

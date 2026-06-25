@@ -17,6 +17,7 @@
   padding: clamp(16px, 4vh, 32px);
   overflow-y: auto;
   overscroll-behavior: contain;
+  will-change: opacity;
 }
 .custom-modal-overlay.visible {
   opacity: 1;
@@ -36,6 +37,7 @@
   box-sizing: border-box;
   transform: translateY(20px) scale(0.97);
   transition: transform 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  will-change: transform;
 }
 .custom-modal-wide {
   max-width: 480px;

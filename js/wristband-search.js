@@ -23,9 +23,9 @@ function openWbQuickSearch() {
 
     document
       .getElementById("wbQuickSearchInput")
-      .addEventListener("input", (e) => {
+      .addEventListener("input", debounce((e) => {
         renderQuickSearchResults(e.target.value);
-      });
+      }, 80));
 
     overlay.addEventListener("keydown", (e) => {
       if (e.key === "Escape") {

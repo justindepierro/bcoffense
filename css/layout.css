@@ -383,6 +383,7 @@ body[data-auth-role="player"] .tab.active {
   min-height: 0;
   flex-direction: column;
   animation: panelFadeIn 0.25s ease both;
+  will-change: opacity, transform;
 }
 
 /* Desktop shell: header + tabs pinned to the top, each panel owns its own

@@ -5412,6 +5412,7 @@ body[data-active-tab="script"] .script-display-fab {
   flex-direction: column;
   /* Prevent the drawer itself from scrolling at root; children scroll */
   overflow: hidden;
+  will-change: transform;
 }
 
 /* Rail open state */
