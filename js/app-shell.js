@@ -152,6 +152,9 @@ function queueMobileShellSettledSync() {
   _mobileShellScrollTimer = window.setTimeout(queueMobileShellStateSync, 240);
 }
 
+// Run synchronously at parse time so is-mobile-screen is set before first paint.
+// The rAF version below handles subsequent resize/orientation changes.
+syncMobileShellState();
 queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
 window.addEventListener("load", queueMobileShellStateSync);

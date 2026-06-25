@@ -143,9 +143,12 @@
   display: none;
 }
 
-/* Coach tab bar on mobile: scroll horizontally, show short labels */
+/* Coach tab bar on mobile: scroll horizontally, show short labels.
+   Intentionally does NOT require body.is-mobile-screen so it applies purely
+   from the media query before the JS class is set. Player portal is excluded
+   via :not(.player-portal) — it uses its own fixed bottom nav. */
 @media (max-width: 820px) {
-  body.is-mobile-screen:not(.player-portal) .tabs {
+  body:not(.player-portal) .tabs {
     gap: 0;
     padding: 0 4px;
     overflow-x: auto;
@@ -154,11 +157,11 @@
     flex-wrap: nowrap;
   }
 
-  body.is-mobile-screen:not(.player-portal) .tabs::-webkit-scrollbar {
+  body:not(.player-portal) .tabs::-webkit-scrollbar {
     display: none;
   }
 
-  body.is-mobile-screen:not(.player-portal) .tab {
+  body:not(.player-portal) .tab {
     padding: 0 12px;
     min-height: 44px;
     min-width: 0;
@@ -172,7 +175,7 @@
   }
 
   /* Show abbreviated label from data-short-label attribute */
-  body.is-mobile-screen:not(.player-portal) .tab[data-short-label]::after {
+  body:not(.player-portal) .tab[data-short-label]::after {
     content: attr(data-short-label);
     font-size: 11px;
     font-weight: 500;
@@ -181,8 +184,8 @@
     color: inherit;
   }
 
-  /* Tabs that have no data-short-label fall back to standard font-size */
-  body.is-mobile-screen:not(.player-portal) .tab:not([data-short-label]) {
+  /* Tabs without data-short-label (e.g. Load CSV) fall back to normal size */
+  body:not(.player-portal) .tab:not([data-short-label]) {
     font-size: var(--font-size-xs);
     padding: 0 10px;
   }
