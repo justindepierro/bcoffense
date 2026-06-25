@@ -121,6 +121,10 @@ const STORAGE_KEYS = {
   COLOR_PRESET: "colorPreset",
   AUTH_SESSION: "authSession",
   A2HS_DISMISSED: "a2hsDismissed",
+  // Tier 6 — coach-to-player features
+  MOTD: "motd",
+  PLAYER_READY: "playerReady",
+  PLAYER_PORTAL_BRANDING: "playerPortalBranding",
 };
 
 const MIGRATIONS = {

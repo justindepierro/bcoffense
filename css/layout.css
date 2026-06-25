@@ -722,6 +722,45 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   display: block;
 }
 
+/* ── Player Portal settings panel (items 46, 50) ── */
+.team-settings-panel--portal { grid-column: 1 / -1; }
+
+.team-settings-portal-field {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+  padding-bottom: var(--space-md);
+}
+
+.team-settings-portal-field label {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  color: var(--color-text);
+}
+
+.team-settings-portal-field .team-settings-hint {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin: 0;
+  line-height: 1.4;
+}
+
+.team-portal-accent-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+.team-portal-color-swatch {
+  width: 44px;
+  height: 36px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  padding: 2px;
+  background: var(--color-bg-input);
+}
+
 .team-settings-panel-header--toggle .toggle-icon {
   display: inline-flex;
   align-items: center;

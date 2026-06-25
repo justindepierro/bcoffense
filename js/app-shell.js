@@ -401,16 +401,23 @@ function updateSaveStatus(state) {
         : "● Unsaved";
 }
 
-// ── Offline connectivity banner ──
+// ── Offline connectivity banner (item 49: player-aware message) ──
 (function _initOfflineBanner() {
   const banner = document.createElement("div");
   banner.className = "offline-banner";
   banner.setAttribute("role", "status");
   banner.setAttribute("aria-live", "polite");
-  banner.textContent =
-    "📡 You’re offline — changes are saved locally and will sync when reconnected";
   document.body.prepend(banner);
-  const update = () => banner.classList.toggle("visible", !navigator.onLine);
+  const update = () => {
+    const isOffline = !navigator.onLine;
+    banner.classList.toggle("visible", isOffline);
+    if (isOffline) {
+      const role = document.body.dataset.authRole || "";
+      banner.textContent = role === "player"
+        ? "📱 You’re offline — your last loaded practice is still available in the Script tab."
+        : "📡 You’re offline — changes are saved locally and will sync when reconnected";
+    }
+  };
   window.addEventListener("online", update);
   window.addEventListener("offline", update);
   update();

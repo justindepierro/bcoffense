@@ -762,6 +762,28 @@ function renderPlayerDashboardHome() {
     (storageManager.get(STORAGE_KEYS.TEAM_NAME, "") || "").trim() ||
     "Player Practice Portal";
 
+  // Item 46: Coach message of the day
+  const _motd = (storageManager.get(STORAGE_KEYS.MOTD, "") || "").trim();
+  const motdMarkup = _motd
+    ? `<div class="player-motd-callout" role="status" aria-label="Message from your coach">
+        <span class="player-motd-callout__icon">&#x1F4AC;</span>
+        <span class="player-motd-callout__text">${escapeHtml(_motd)}</span>
+      </div>`
+    : "";
+
+  // Item 50: player portal branding
+  const _branding = typeof getPortalBranding === "function" ? getPortalBranding() : {};
+  const displayName = (_branding.welcomeMessage || "").trim() || teamName;
+  const _logoUrl = (_branding.logoUrl || "").trim();
+  const logoMarkup = _logoUrl
+    ? `<img class="player-home-hero-logo" src="${escapeAttr(_logoUrl)}" alt="Team logo" />`
+    : "";
+
+  // Item 48: I'm Ready — check prior confirmation for this script
+  const _readyData = storageManager.get(STORAGE_KEYS.PLAYER_READY, null);
+  const _isReady = featuredScript && _readyData &&
+    String(_readyData.scriptId) === String(featuredScript.id);
+
   // Item 21: time-of-day greeting
   const _hour = new Date().getHours();
   const greeting =
@@ -838,14 +860,16 @@ function renderPlayerDashboardHome() {
 
   section.hidden = false;
   section.innerHTML = `
+    ${motdMarkup}
     ${featuredScript ? `<div class="player-sticky-bar" id="playerStickyBar" aria-hidden="true">
       <span class="player-sticky-bar__title">${escapeHtml(featuredScript.name)}</span>
       <button type="button" class="btn btn-sm btn-primary player-sticky-bar__cta" ${practiceAction}>Open</button>
     </div>` : ""}
     <section class="player-home-hero player-home-hero--pro">
       <div class="player-home-hero__copy">
+        ${logoMarkup}
         <span class="player-home-eyebrow">${escapeHtml(greeting)}</span>
-        <h2>${escapeHtml(teamName)}</h2>
+        <h2>${escapeHtml(displayName)}</h2>
         <p>${escapeHtml(heroDesc)}</p>
       </div>
       <div class="player-home-today-card" aria-label="Today status">
@@ -872,6 +896,21 @@ function renderPlayerDashboardHome() {
         <small>Search, filter, and study</small>
       </button>
     </section>
+    ${featuredScript ? `<div class="player-ready-section">
+      ${_isReady
+        ? `<div class="player-ready-confirmed" role="status">
+            <span class="player-ready-icon">&#10003;</span>
+            <div>
+              <strong>You're confirmed ready</strong>
+              <span>Since ${escapeHtml(_getTimeAgo(_readyData.timestamp))}</span>
+            </div>
+          </div>`
+        : `<button type="button" class="player-ready-btn"
+            data-action="setPlayerReady" data-arg="${featuredScriptId}">
+            <span>I&#39;m Ready</span>
+            <small>Confirm today&#39;s practice</small>
+          </button>`}
+    </div>` : ""}
     <div class="player-home-grid">
       <article class="player-home-card player-home-card--feature">
         <span class="player-home-card__eyebrow">${escapeHtml(
@@ -954,6 +993,12 @@ function renderPlayerDashboardHome() {
           }
         </div>
       </article>
+    </div>
+    <div class="player-notify-row">
+      <button type="button" class="player-notify-btn" data-action="subscribeToPlayerNotifications">
+        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        Notify me when practice is posted
+      </button>
     </div>
   `;
 

@@ -406,6 +406,7 @@ function renderTeamSettings() {
     : '<div class="team-settings-empty">No sub packages yet. Add one to apply preset substitutions from the script.</div>';
 
   applyTeamSettingsCollapsedState();
+  _refreshPortalSettingsFields();
   restoreTeamSettingsViewState(teamSettingsViewState);
 }
 
@@ -1445,4 +1446,77 @@ function setTeamName(name) {
   if (teamSub) {
     teamSub.textContent = name && name !== "My Team Football" ? name : "";
   }
+}
+
+// ── Player Portal settings (items 46, 50) ──
+
+function getPortalBranding() {
+  return storageManager.get(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, {});
+}
+
+function _applyPortalAccentCssVar(accent) {
+  if (accent) {
+    document.documentElement.style.setProperty("--color-primary", accent);
+  } else {
+    document.documentElement.style.removeProperty("--color-primary");
+  }
+}
+
+function _refreshPortalSettingsFields() {
+  const branding = getPortalBranding();
+  const motd = storageManager.get(STORAGE_KEYS.MOTD, "");
+  const motdEl = document.getElementById("portalMotdInput");
+  const welcomeEl = document.getElementById("portalWelcomeMsgInput");
+  const accentEl = document.getElementById("portalAccentInput");
+  const accentHexEl = document.getElementById("portalAccentHex");
+  const logoEl = document.getElementById("portalLogoUrlInput");
+  if (motdEl && motdEl !== document.activeElement) motdEl.value = motd;
+  if (welcomeEl && welcomeEl !== document.activeElement) welcomeEl.value = branding.welcomeMessage || "";
+  if (accentEl && accentEl !== document.activeElement) accentEl.value = branding.accent || "#1d6cd9";
+  if (accentHexEl) accentHexEl.textContent = branding.accent || "#1d6cd9";
+  if (logoEl && logoEl !== document.activeElement) logoEl.value = branding.logoUrl || "";
+}
+
+function savePortalMotd(value) {
+  storageManager.set(STORAGE_KEYS.MOTD, String(value || "").trim());
+  updateTeamSettingsAutosaveStatus();
+}
+
+function savePortalWelcomeMessage(value) {
+  const branding = getPortalBranding();
+  branding.welcomeMessage = String(value || "").trim();
+  storageManager.set(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, branding);
+  updateTeamSettingsAutosaveStatus();
+}
+
+function savePortalAccent(value) {
+  const color = String(value || "").trim();
+  const branding = getPortalBranding();
+  branding.accent = color || "";
+  storageManager.set(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, branding);
+  const hexEl = document.getElementById("portalAccentHex");
+  if (hexEl) hexEl.textContent = color || "#1d6cd9";
+  // Apply live if currently in player role
+  if (document.body.dataset.authRole === "player") _applyPortalAccentCssVar(color);
+  updateTeamSettingsAutosaveStatus();
+}
+
+function savePortalLogoUrl(value) {
+  const branding = getPortalBranding();
+  branding.logoUrl = String(value || "").trim();
+  storageManager.set(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, branding);
+  updateTeamSettingsAutosaveStatus();
+}
+
+function clearPortalAccent() {
+  const branding = getPortalBranding();
+  delete branding.accent;
+  storageManager.set(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, branding);
+  const accentEl = document.getElementById("portalAccentInput");
+  const hexEl = document.getElementById("portalAccentHex");
+  if (accentEl) accentEl.value = "#1d6cd9";
+  if (hexEl) hexEl.textContent = "#1d6cd9";
+  _applyPortalAccentCssVar("");
+  showToast("Accent color reset to default");
+  updateTeamSettingsAutosaveStatus();
 }

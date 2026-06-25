@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v710";
+const CACHE_NAME = "bcoffense-v711";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -40,6 +40,36 @@ self.addEventListener("message", (event) => {
   if (event.data === "skipWaiting") {
     self.skipWaiting();
   }
+});
+
+// Item 47: Web Push scaffolding (Phase 2 — requires VAPID keys + server endpoint)
+self.addEventListener("push", (event) => {
+  if (!event.data) return;
+  let payload;
+  try { payload = event.data.json(); } catch { payload = { title: "BCOffense", body: event.data.text() }; }
+  const title = payload.title || "BCOffense";
+  const options = {
+    body: payload.body || "New practice update from your coach.",
+    icon: "./icons/icon-192.png",
+    badge: "./icons/icon-192.png",
+    tag: "practice-update",
+    renotify: true,
+    data: { url: payload.url || "/" },
+  };
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", (event) => {
+  event.notification.close();
+  const url = event.notification.data?.url || "/";
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((windowClients) => {
+      for (const client of windowClients) {
+        if (client.url.includes(url) && "focus" in client) return client.focus();
+      }
+      return clients.openWindow(url);
+    }),
+  );
 });
 
 const LOCAL_ASSETS = [

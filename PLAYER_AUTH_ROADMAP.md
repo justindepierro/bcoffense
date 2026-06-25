@@ -79,11 +79,11 @@
 
 ## TIER 6 — Coach-to-Player Features
 
-- [ ] **46. Coach "message of the day" field** — add a short message to the script save flow. Displayed in a styled callout at the top of the player dashboard. Like Remind / TeamSnap announcements.
-- [ ] **47. Web Push notifications when practice published** — SW `push` event + backend subscription endpoint. "New practice posted: [name] — 24 plays." Mark as Phase 2 (requires backend work).
-- [ ] **48. Player "I'm Ready" confirmation** — single-tap "Ready ✓" on player home stamps a `localStorage` timestamp. Coach dashboard shows who confirmed. Like Kahoot's join screen.
-- [ ] **49. Offline fallback indicator for players** — `navigator.onLine` + `'online'/'offline'` events. Show "You're offline — last loaded practice is still available" banner instead of blank/broken state.
-- [ ] **50. Team branding customization for player portal** — coach sets accent color, logo URL, and welcome message in team settings. Stored in 2 new `STORAGE_KEYS`. Player portal uses these for login screen, tab bar accent, and dashboard hero.
+- [x] **46. Coach "message of the day" field** — add a short message to the script save flow. Displayed in a styled callout at the top of the player dashboard. Like Remind / TeamSnap announcements.
+- [x] **47. Web Push notifications when practice published** — SW `push` event + backend subscription endpoint. "New practice posted: [name] — 24 plays." Mark as Phase 2 (requires backend work).
+- [x] **48. Player "I'm Ready" confirmation** — single-tap "Ready ✓" on player home stamps a `localStorage` timestamp. Coach dashboard shows who confirmed. Like Kahoot's join screen.
+- [x] **49. Offline fallback indicator for players** — `navigator.onLine` + `'online'/'offline'` events. Show "You're offline — last loaded practice is still available" banner instead of blank/broken state.
+- [x] **50. Team branding customization for player portal** — coach sets accent color, logo URL, and welcome message in team settings. Stored in 2 new `STORAGE_KEYS`. Player portal uses these for login screen, tab bar accent, and dashboard hero.
 
 ---
 

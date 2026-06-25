@@ -534,6 +534,18 @@
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
     syncPlayerPortalChrome();
 
+    // Item 50: apply (or clear) player portal accent color
+    if (currentAuthUser?.role === "player") {
+      const _branding = storageManager.get(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, {});
+      if (_branding?.accent) {
+        document.documentElement.style.setProperty("--color-primary", _branding.accent);
+      } else {
+        document.documentElement.style.removeProperty("--color-primary");
+      }
+    } else {
+      document.documentElement.style.removeProperty("--color-primary");
+    }
+
     // Item 41: defer expensive DOM scan to one rAF per state change
     if (_applyRoleUiRafId) cancelAnimationFrame(_applyRoleUiRafId);
     _applyRoleUiRafId = requestAnimationFrame(() => {

@@ -64,6 +64,31 @@ const debouncedOnDashSearchInput =
   typeof debounce === "function" ? debounce(onDashSearchInput, 120) : onDashSearchInput;
 window.debouncedOnDashSearchInput = debouncedOnDashSearchInput;
 
+// Item 48: Player "I'm Ready" confirmation
+function setPlayerReady(scriptId) {
+  const scripts = typeof getPlayerPublishedScripts === "function" ? getPlayerPublishedScripts() : [];
+  const target = scripts.find((s) => String(s.id) === String(scriptId));
+  storageManager.set(STORAGE_KEYS.PLAYER_READY, {
+    scriptId: String(scriptId || ""),
+    scriptName: target?.name || "Today's Practice",
+    timestamp: new Date().toISOString(),
+  });
+  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+  showToast("Ready confirmed \u2014 you\u2019re all set \u2713", { type: "success", duration: 3000 });
+  if (typeof vibrateHaptic === "function") vibrateHaptic("medium");
+}
+
+// Item 47: Push notification subscribe (Phase 2 scaffolding)
+function subscribeToPlayerNotifications() {
+  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
+    showToast("Push notifications aren\u2019t supported on this device", { duration: 3500, type: "info" });
+    return;
+  }
+  // Phase 2: requires a VAPID public key and server-side subscription endpoint
+  // When ready, call: navigator.serviceWorker.ready.then(sw => sw.pushManager.subscribe({...}))
+  showToast("Push notifications are coming soon \u2014 check back for updates", { duration: 4000, type: "info" });
+}
+
 /**
  * Render the schedule table in the dashboard
  */
