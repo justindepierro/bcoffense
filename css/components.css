@@ -137,6 +137,17 @@
   background: rgb(255 255 255 / 7%);
   box-shadow: 0 24px 80px rgb(4 10 28 / 38%);
   backdrop-filter: blur(10px);
+  animation: authShellIn 0.22s ease-out both;
+}
+@keyframes authShellIn {
+  from {
+    opacity: 0;
+    transform: translateY(14px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 .auth-login-hero,
 .auth-login-card {
@@ -270,6 +281,18 @@
   cursor: pointer;
   font: inherit;
   text-align: left;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  transition: border-color var(--transition-fast), background var(--transition-fast), transform 0.1s;
+}
+@media (hover: hover) {
+  .auth-login-role-option:not(.is-active):hover {
+    border-color: var(--color-border-med);
+    background: var(--color-bg-hover-row);
+  }
+}
+.auth-login-role-option:active {
+  transform: scale(0.97);
 }
 .auth-login-role-option span {
   font-size: var(--font-size-sm);
@@ -307,16 +330,21 @@
   align-items: center;
 }
 .auth-password-toggle {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
   min-height: 44px;
-  padding: 0 14px;
+  padding: 0;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface-muted);
   color: var(--color-text-secondary);
   font: inherit;
-  font-size: var(--font-size-sm);
-  font-weight: 800;
   cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+  flex-shrink: 0;
 }
 .auth-login-card input:focus {
   outline: none;
@@ -333,9 +361,31 @@
   color: var(--color-text-secondary);
 }
 .auth-login-submit {
+  position: relative;
   min-height: 48px;
   font-size: var(--font-size-base);
   font-weight: 800;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+.auth-login-submit.is-loading {
+  color: transparent;
+  pointer-events: none;
+}
+.auth-login-submit.is-loading::after {
+  content: "";
+  position: absolute;
+  inset: 50% auto auto 50%;
+  width: 18px;
+  height: 18px;
+  margin: -9px 0 0 -9px;
+  border: 2.5px solid rgb(255 255 255 / 35%);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: authSpinner 0.65s linear infinite;
+}
+@keyframes authSpinner {
+  to { transform: rotate(360deg); }
 }
 .auth-login-help {
   color: var(--color-text-light);

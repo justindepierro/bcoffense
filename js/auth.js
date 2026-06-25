@@ -643,7 +643,7 @@
             </div>
           </div>
         </section>
-        <form class="auth-login-card" id="authLoginForm" autocomplete="off">
+        <form class="auth-login-card" id="authLoginForm" autocomplete="on">
           <div class="auth-login-form-header">
             <div class="auth-login-kicker" id="authLoginRoleEyebrow">${escapeHtml(initialDetails.eyebrow)}</div>
             <h3>Sign in to BCOffense</h3>
@@ -661,18 +661,18 @@
           <label>
             <span>Username</span>
             <input id="authUsername" type="text" autocomplete="username" autocapitalize="none" spellcheck="false"
-              data-auth-allow-input="true" value="admin" required />
+              enterkeyhint="next" data-auth-allow-input="true" required />
           </label>
           <label>
             <span>Password</span>
             <div class="auth-login-password-row">
               <input id="authPassword" type="password" autocomplete="current-password" data-auth-allow-input="true"
-                required />
+                enterkeyhint="go" required />
               <button type="button" class="auth-password-toggle" id="authPasswordToggle"
-                aria-label="Show password" aria-pressed="false">Show</button>
+                aria-label="Show password" aria-pressed="false"><svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg></button>
             </div>
           </label>
-          <div id="authLoginError" class="auth-login-error${message ? " is-status" : ""}" aria-live="polite">${escapeHtml(message)}</div>
+          <div id="authLoginError" class="auth-login-error${message ? " is-status" : ""}" aria-live="assertive" role="alert">${escapeHtml(message)}</div>
           <button type="submit" class="btn btn-primary auth-login-submit" id="authLoginSubmit">${escapeHtml(initialDetails.submit)}</button>
           <p class="auth-login-help">Need help? Ask a coach or staff member for your login.</p>
         </form>
@@ -716,14 +716,28 @@
     });
 
     usernameEl.addEventListener("input", () => {
+      setAuthLoginMessage("");
       const role = usernameEl.value.trim().toLowerCase();
       if (AUTH_LOGIN_ROLE_DETAILS[role]) setSelectedLoginRole(role);
     });
 
+    passwordEl.addEventListener("input", () => {
+      setAuthLoginMessage("");
+    });
+
+    usernameEl.addEventListener("keydown", (e) => {
+      if (e.key === "Enter") {
+        e.preventDefault();
+        passwordEl.focus();
+      }
+    });
+
+    const _eyeOpen = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+    const _eyeOff = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
     toggleEl?.addEventListener("click", () => {
       const shouldShow = passwordEl.type === "password";
       passwordEl.type = shouldShow ? "text" : "password";
-      toggleEl.textContent = shouldShow ? "Hide" : "Show";
+      toggleEl.innerHTML = shouldShow ? _eyeOff : _eyeOpen;
       toggleEl.setAttribute("aria-pressed", shouldShow ? "true" : "false");
       toggleEl.setAttribute(
         "aria-label",
@@ -735,7 +749,10 @@
     formEl.addEventListener("submit", async (e) => {
       e.preventDefault();
       setAuthLoginMessage("Checking login...", true);
-      if (submitEl) submitEl.disabled = true;
+      if (submitEl) {
+        submitEl.disabled = true;
+        submitEl.classList.add("is-loading");
+      }
       try {
         const username = usernameEl.value.trim().toLowerCase();
         const password = passwordEl.value;
@@ -802,7 +819,10 @@
           // Fall through to normal error messaging.
         }
         setAuthLoginMessage(err.message || "Login failed.");
-        if (submitEl) submitEl.disabled = false;
+        if (submitEl) {
+          submitEl.disabled = false;
+          submitEl.classList.remove("is-loading");
+        }
         passwordEl.value = "";
         passwordEl.focus();
       }
