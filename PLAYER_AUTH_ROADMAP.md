@@ -54,14 +54,14 @@
 
 ## TIER 4 — Mobile-Native Interactions
 
-- [ ] **31. Swipe-to-navigate between player tabs** — add `touchstart/touchmove/touchend` on `#mainApp` that switches tabs on horizontal swipe above a velocity threshold.
-- [ ] **32. Haptic feedback via Vibration API** — `navigator.vibrate(5)` on tab switch, primary CTA tap, and errors. No-op on iOS, fires on Android/Chrome. Makes the app feel native.
-- [ ] **33. Refresh player data on Page Visibility resume** — `visibilitychange → document.visibilityState === 'visible'` triggers `renderPlayerDashboardHome()`. Prevents stale "Today's Practice."
-- [ ] **34. PWA "Add to Home Screen" prompt for players** — capture `beforeinstallprompt`, show a friendly banner after first successful player login. iOS shows manual "Share → Add" hint.
-- [ ] **35. `overscroll-behavior: none` on player body** — iOS rubber-band shows white page under the bottom tab bar. Set on `body.is-mobile-screen[data-auth-role="player"]`.
-- [ ] **36. Disable horizontal scroll on player panels** — players accidentally trigger horizontal scroll in the playbook table. Add `overflow-x: hidden` + `touch-action: pan-y` on player panels.
-- [ ] **37. Sticky "Today's Practice" mini banner** — hero scrolls away. Add a `position: sticky` compact banner (64px) that appears after the hero scrolls past, keeping "Open Practice" CTA always visible.
-- [ ] **38. Pull-to-refresh for script list** — detect downward pull from scroll top via touch events, call `renderPlayerDashboardHome()`. Matches Google Drive, Canvas, and every mobile app.
+- [x] **31. Swipe-to-navigate between player tabs** — add `touchstart/touchmove/touchend` on `#mainApp` that switches tabs on horizontal swipe above a velocity threshold.
+- [x] **32. Haptic feedback via Vibration API** — `navigator.vibrate(5)` on tab switch, primary CTA tap, and errors. No-op on iOS, fires on Android/Chrome. Makes the app feel native.
+- [x] **33. Refresh player data on Page Visibility resume** — `visibilitychange → document.visibilityState === 'visible'` triggers `renderPlayerDashboardHome()`. Prevents stale "Today's Practice."
+- [x] **34. PWA "Add to Home Screen" prompt for players** — capture `beforeinstallprompt`, show a friendly banner after first successful player login. iOS shows manual "Share → Add" hint.
+- [x] **35. `overscroll-behavior: none` on player body** — iOS rubber-band shows white page under the bottom tab bar. Set on `body.is-mobile-screen[data-auth-role="player"]`.
+- [x] **36. Disable horizontal scroll on player panels** — players accidentally trigger horizontal scroll in the playbook table. Add `overflow-x: hidden` + `touch-action: pan-y` on player panels.
+- [x] **37. Sticky "Today's Practice" mini banner** — hero scrolls away. Add a `position: sticky` compact banner (64px) that appears after the hero scrolls past, keeping "Open Practice" CTA always visible.
+- [x] **38. Pull-to-refresh for script list** — detect downward pull from scroll top via touch events, call `renderPlayerDashboardHome()`. Matches Google Drive, Canvas, and every mobile app.
 
 ---
 

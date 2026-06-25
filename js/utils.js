@@ -178,6 +178,16 @@ function showModal(message, opts = {}) {
 }
 
 /**
+ * Fire a short haptic vibration. No-op on iOS (vibrate not supported).
+ * @param {number|number[]} [pattern=5] - vibration ms or pattern array
+ */
+function vibrateHaptic(pattern) {
+  if (typeof navigator !== "undefined" && typeof navigator.vibrate === "function") {
+    navigator.vibrate(pattern ?? 5);
+  }
+}
+
+/**
  * Show a toast notification
  * @param {string} message - Text to display
  * @param {number|object} durationOrOpts - Duration in ms, or options object
@@ -210,6 +220,7 @@ function showToast(message, durationOrOpts = 2000) {
   const toast = document.createElement("div");
   toast.className = "toast";
   if (type) toast.classList.add("toast-" + type);
+  if (type === "error" && typeof vibrateHaptic === "function") vibrateHaptic([8, 40, 8]);
 
   toast.textContent = String(message || "");
   if (actionLabel && action) {

@@ -1153,3 +1153,122 @@ document.addEventListener("keydown", (e) => {
   e.preventDefault();
   el.click();
 });
+
+// ================================================================
+// PLAYER MOBILE INTERACTIONS (Tier 4)
+// ================================================================
+
+// Item 34: Capture beforeinstallprompt event for Add-to-Home-Screen
+let _a2hsPromptEvent = null;
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  _a2hsPromptEvent = e;
+});
+
+function showPlayerA2HSBannerIfNeeded() {
+  if (document.body?.getAttribute("data-auth-role") !== "player") return;
+  if (!document.body?.classList.contains("is-mobile-screen")) return;
+  const dismissed = storageManager.get(STORAGE_KEYS.A2HS_DISMISSED, 0);
+  if (dismissed && Date.now() - dismissed < 7 * 24 * 3600 * 1000) return;
+  const standalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    !!navigator.standalone;
+  if (standalone) return;
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent) && !window.MSStream;
+  if (!_a2hsPromptEvent && !isIOS) return;
+  let banner = document.getElementById("playerA2HSBanner");
+  if (!banner) {
+    banner = document.createElement("div");
+    banner.id = "playerA2HSBanner";
+    banner.className = "player-a2hs-banner";
+    banner.setAttribute("role", "region");
+    banner.setAttribute("aria-label", "Add to home screen");
+    const msg =
+      isIOS && !_a2hsPromptEvent
+        ? "Tap Share \u2192 Add to Home Screen for the best experience"
+        : "Add BCOffense to your home screen for the best experience";
+    const addBtn =
+      !isIOS || _a2hsPromptEvent
+        ? `<button type="button" class="btn btn-sm btn-primary" data-action="installPlayerA2HS">Add to Home Screen</button>`
+        : "";
+    banner.innerHTML = `
+      <p class="player-a2hs-banner__text">${escapeHtml(msg)}</p>
+      <div class="player-a2hs-banner__actions">
+        ${addBtn}
+        <button type="button" class="btn btn-sm btn-ghost" data-action="dismissPlayerA2HS">Not now</button>
+      </div>`;
+    document.body.appendChild(banner);
+  }
+  banner.hidden = false;
+}
+
+function installPlayerA2HS() {
+  if (_a2hsPromptEvent) {
+    _a2hsPromptEvent.prompt();
+    _a2hsPromptEvent.userChoice.then(() => {
+      _a2hsPromptEvent = null;
+      dismissPlayerA2HS();
+    });
+  } else {
+    dismissPlayerA2HS();
+  }
+}
+
+function dismissPlayerA2HS() {
+  const banner = document.getElementById("playerA2HSBanner");
+  if (banner) {
+    banner.classList.add("is-hiding");
+    setTimeout(() => banner.remove(), 300);
+  }
+  storageManager.set(STORAGE_KEYS.A2HS_DISMISSED, Date.now());
+}
+
+// Item 31: Swipe-to-navigate between player tabs
+(function _initPlayerSwipeNav() {
+  let _sx = 0, _sy = 0, _st = 0;
+  const PLAYER_TABS = ["dashboard", "playbook", "script"];
+  document.addEventListener("touchstart", (e) => {
+    _sx = e.touches[0].clientX;
+    _sy = e.touches[0].clientY;
+    _st = Date.now();
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (!document.body.classList.contains("is-mobile-screen")) return;
+    if (document.body.getAttribute("data-auth-role") !== "player") return;
+    if (document.activeElement?.matches("input,textarea,select")) return;
+    if (document.querySelector("#playPresentationOverlay.is-open, .auth-login-shell")) return;
+    const dx = e.changedTouches[0].clientX - _sx;
+    const dy = e.changedTouches[0].clientY - _sy;
+    if (Math.abs(dx) < 55) return;
+    if (Math.abs(dy) > Math.abs(dx) * 0.75) return;
+    if (Date.now() - _st > 380) return;
+    const cur = typeof currentActiveTab !== "undefined" ? currentActiveTab : "";
+    const idx = PLAYER_TABS.indexOf(cur);
+    if (idx === -1) return;
+    if (dx < 0 && idx < PLAYER_TABS.length - 1) showTab(PLAYER_TABS[idx + 1]);
+    else if (dx > 0 && idx > 0) showTab(PLAYER_TABS[idx - 1]);
+  }, { passive: true });
+}());
+
+// Item 38: Pull-to-refresh on player dashboard
+(function _initPlayerPullToRefresh() {
+  let _py = 0, _pa = false;
+  document.addEventListener("touchstart", (e) => {
+    if (document.body?.getAttribute("data-auth-role") !== "player") return;
+    const cur = typeof currentActiveTab !== "undefined" ? currentActiveTab : "";
+    if (cur !== "dashboard") return;
+    const panel = document.getElementById("dashboard");
+    if (!panel || panel.scrollTop > 2) return;
+    _py = e.touches[0].clientY;
+    _pa = true;
+  }, { passive: true });
+  document.addEventListener("touchend", (e) => {
+    if (!_pa) return;
+    _pa = false;
+    const dy = e.changedTouches[0].clientY - _py;
+    if (dy > 64 && typeof renderPlayerDashboardHome === "function") {
+      renderPlayerDashboardHome();
+      showToast("Refreshed", { duration: 1500, type: "success" });
+    }
+  }, { passive: true });
+}());

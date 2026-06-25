@@ -2209,6 +2209,75 @@
   background: var(--color-navy-alpha-08);
 }
 
+/* ======= Player Portal: sticky CTA banner (item 37) ======= */
+.player-sticky-bar {
+  position: sticky;
+  top: var(--app-header-height, 50px);
+  z-index: 5;
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 10px 16px;
+  background: var(--color-surface);
+  border-bottom: 1px solid var(--color-border-light);
+  box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
+  opacity: 0;
+  transform: translateY(-110%);
+  transition: opacity 0.2s ease, transform 0.22s ease;
+  pointer-events: none;
+}
+
+.player-sticky-bar.is-visible {
+  opacity: 1;
+  transform: translateY(0);
+  pointer-events: auto;
+}
+
+.player-sticky-bar__title {
+  flex: 1;
+  min-width: 0;
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--color-text);
+}
+
+/* ======= Player Portal: A2HS install banner (item 34) ======= */
+.player-a2hs-banner {
+  position: fixed;
+  left: max(12px, env(safe-area-inset-left, 12px));
+  right: max(12px, env(safe-area-inset-right, 12px));
+  bottom: calc(72px + env(safe-area-inset-bottom, 0px) + 10px);
+  z-index: var(--z-toast);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  padding: 14px 16px;
+  display: grid;
+  gap: var(--space-sm);
+  animation: authShellIn 0.22s ease-out both;
+}
+
+.player-a2hs-banner.is-hiding {
+  animation: authShellOut 0.25s ease-in both;
+}
+
+.player-a2hs-banner__text {
+  margin: 0;
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  line-height: 1.4;
+}
+
+.player-a2hs-banner__actions {
+  display: flex;
+  gap: var(--space-xs);
+  justify-content: flex-end;
+}
+
 /* ======= Player Portal: empty state (item 29) ======= */
 .player-home-empty-state {
   display: grid;

@@ -120,6 +120,7 @@ const STORAGE_KEYS = {
   CLOUD_SYNC_SETTINGS: "cloudSyncSettings",
   COLOR_PRESET: "colorPreset",
   AUTH_SESSION: "authSession",
+  A2HS_DISMISSED: "a2hsDismissed",
 };
 
 const MIGRATIONS = {

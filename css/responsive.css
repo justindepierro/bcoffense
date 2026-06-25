@@ -396,6 +396,16 @@
     transition: transform 0.1s;
   }
 
+  /* Item 35: prevent iOS rubber-band bounce revealing white below tab bar */
+  body.is-mobile-screen[data-auth-role="player"] {
+    overscroll-behavior: none;
+  }
+
+  /* Item 36: no accidental horizontal scroll in player panels */
+  body.is-mobile-screen[data-auth-role="player"] .panel {
+    overflow-x: hidden;
+  }
+
   body.is-mobile-screen .panel {
     min-height: calc(
       (var(--app-vh, 1vh) * 100) - var(--app-header-height, 50px) -

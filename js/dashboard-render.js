@@ -838,6 +838,10 @@ function renderPlayerDashboardHome() {
 
   section.hidden = false;
   section.innerHTML = `
+    ${featuredScript ? `<div class="player-sticky-bar" id="playerStickyBar" aria-hidden="true">
+      <span class="player-sticky-bar__title">${escapeHtml(featuredScript.name)}</span>
+      <button type="button" class="btn btn-sm btn-primary player-sticky-bar__cta" ${practiceAction}>Open</button>
+    </div>` : ""}
     <section class="player-home-hero player-home-hero--pro">
       <div class="player-home-hero__copy">
         <span class="player-home-eyebrow">${escapeHtml(greeting)}</span>
@@ -952,6 +956,23 @@ function renderPlayerDashboardHome() {
       </article>
     </div>
   `;
+
+  // Item 37: sticky "Today's Practice" banner — observe hero visibility
+  const _hero = section.querySelector(".player-home-hero");
+  const _stickyBar = document.getElementById("playerStickyBar");
+  if (_hero && _stickyBar) {
+    const _heroObs = new IntersectionObserver(
+      ([entry]) => {
+        _stickyBar.classList.toggle("is-visible", !entry.isIntersecting);
+        _stickyBar.setAttribute("aria-hidden", String(entry.isIntersecting));
+      },
+      { threshold: 0 },
+    );
+    _heroObs.observe(_hero);
+  }
+
+  // Item 34: A2HS install banner prompt
+  if (typeof showPlayerA2HSBannerIfNeeded === "function") showPlayerA2HSBannerIfNeeded();
 
   // Item 22: Show NEW badge on Practice tab when today's script is available and not yet loaded
   const _newBadge = document.getElementById("scriptTabNewBadge");

@@ -66,3 +66,10 @@ window.addEventListener("beforeunload", (e) => {
     e.returnValue = "";
   }
 });
+
+// Item 33: re-render player dashboard when the page returns to foreground
+document.addEventListener("visibilitychange", () => {
+  if (document.visibilityState !== "visible") return;
+  if (document.body?.getAttribute("data-auth-role") !== "player") return;
+  if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+});

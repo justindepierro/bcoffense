@@ -66,6 +66,15 @@ function showTab(tabName) {
     requestAnimationFrame(() => scrollTabStripToTab(tabs[index]));
   }
 
+  // Item 32: haptic feedback on player tab switch
+  if (
+    document.body?.classList.contains("is-mobile-screen") &&
+    document.body?.getAttribute("data-auth-role") === "player" &&
+    typeof vibrateHaptic === "function"
+  ) {
+    vibrateHaptic(5);
+  }
+
   if (tabName === "installation") {
     initInstallation();
   } else if (tabName === "playbook") {
