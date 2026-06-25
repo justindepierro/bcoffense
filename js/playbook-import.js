@@ -45,6 +45,105 @@ function hideLoadingOverlay() {
   if (el) el.remove();
 }
 
+const _CSV_COLUMN_MAP = {
+  playtype: "type",
+  type: "type",
+  personnel: "personnel",
+  formation: "formation",
+  formtag1: "formTag1",
+  formtag2: "formTag2",
+  under: "under",
+  back: "back",
+  shift: "shift",
+  motion: "motion",
+  protection: "protection",
+  linecall: "lineCall",
+  play: "play",
+  playtag1: "playTag1",
+  playtag2: "playTag2",
+  baseplay: "basePlay",
+  oneword: "oneWord",
+  preferredsituation: "preferredSituation",
+  preferreddown: "preferredDown",
+  preferreddistance: "preferredDistance",
+  preferredhash: "preferredHash",
+  preferredfieldposition: "preferredFieldPosition",
+  tempo: "tempo",
+  practicefront: "practiceFront",
+  practicedefense: "practiceDefense",
+  practicecoverage: "practiceCoverage",
+  practiceblitz: "practiceBlitz",
+  practicestunt: "practiceStunt",
+  keyplayer1: "keyPlayer1",
+  keyplayer2: "keyPlayer2",
+  keyplayer3: "keyPlayer3",
+  keyplayername1: "keyPlayerName1",
+  keyplayername2: "keyPlayerName2",
+  keyplayername3: "keyPlayerName3",
+  constraint1: "constraint1",
+  constraint2: "constraint2",
+  constraint3: "constraint3",
+  constrant1: "constraint1",
+  constrant2: "constraint2",
+  constrant3: "constraint3",
+  hitchart1: "hitChart1",
+  hitchart2: "hitChart2",
+  hitchart3: "hitChart3",
+  keyplayer1hitchart: "hitChart1",
+  keyplayer2hitchart: "hitChart2",
+  keyplayer3hitchart: "hitChart3",
+  preferredsitutation: "preferredSituation",
+  preferredsitution: "preferredSituation",
+  deadvs: "deadVs",
+  opponent: "opponent",
+  notes: "notes",
+};
+
+const _CSV_POS_KEYS = [
+  "type",
+  "personnel",
+  "formation",
+  "formTag1",
+  "formTag2",
+  "under",
+  "back",
+  "shift",
+  "motion",
+  "protection",
+  "lineCall",
+  "play",
+  "playTag1",
+  "playTag2",
+  "basePlay",
+  "oneWord",
+  "preferredSituation",
+  "preferredDown",
+  "preferredDistance",
+  "preferredHash",
+  "preferredFieldPosition",
+  "tempo",
+  "practiceFront",
+  "practiceDefense",
+  "practiceCoverage",
+  "practiceBlitz",
+  "practiceStunt",
+  "keyPlayer1",
+  "keyPlayer2",
+  "keyPlayer3",
+  "keyPlayerName1",
+  "keyPlayerName2",
+  "keyPlayerName3",
+  "constraint1",
+  "constraint2",
+  "constraint3",
+  "hitChart1",
+  "hitChart2",
+  "hitChart3",
+  "deadVs",
+  "opponent",
+  "notes",
+];
+
 function parseCSV(text) {
   const lines = text.trim().split("\n");
   if (lines.length < 2) return [];
@@ -68,110 +167,11 @@ function parseCSV(text) {
     return vals;
   }
 
-  const COLUMN_MAP = {
-    playtype: "type",
-    type: "type",
-    personnel: "personnel",
-    formation: "formation",
-    formtag1: "formTag1",
-    formtag2: "formTag2",
-    under: "under",
-    back: "back",
-    shift: "shift",
-    motion: "motion",
-    protection: "protection",
-    linecall: "lineCall",
-    play: "play",
-    playtag1: "playTag1",
-    playtag2: "playTag2",
-    baseplay: "basePlay",
-    oneword: "oneWord",
-    preferredsituation: "preferredSituation",
-    preferreddown: "preferredDown",
-    preferreddistance: "preferredDistance",
-    preferredhash: "preferredHash",
-    preferredfieldposition: "preferredFieldPosition",
-    tempo: "tempo",
-    practicefront: "practiceFront",
-    practicedefense: "practiceDefense",
-    practicecoverage: "practiceCoverage",
-    practiceblitz: "practiceBlitz",
-    practicestunt: "practiceStunt",
-    keyplayer1: "keyPlayer1",
-    keyplayer2: "keyPlayer2",
-    keyplayer3: "keyPlayer3",
-    keyplayername1: "keyPlayerName1",
-    keyplayername2: "keyPlayerName2",
-    keyplayername3: "keyPlayerName3",
-    constraint1: "constraint1",
-    constraint2: "constraint2",
-    constraint3: "constraint3",
-    constrant1: "constraint1",
-    constrant2: "constraint2",
-    constrant3: "constraint3",
-    hitchart1: "hitChart1",
-    hitchart2: "hitChart2",
-    hitchart3: "hitChart3",
-    keyplayer1hitchart: "hitChart1",
-    keyplayer2hitchart: "hitChart2",
-    keyplayer3hitchart: "hitChart3",
-    preferredsitutation: "preferredSituation",
-    preferredsitution: "preferredSituation",
-    deadvs: "deadVs",
-    opponent: "opponent",
-    notes: "notes",
-  };
-
-  const POS_KEYS = [
-    "type",
-    "personnel",
-    "formation",
-    "formTag1",
-    "formTag2",
-    "under",
-    "back",
-    "shift",
-    "motion",
-    "protection",
-    "lineCall",
-    "play",
-    "playTag1",
-    "playTag2",
-    "basePlay",
-    "oneWord",
-    "preferredSituation",
-    "preferredDown",
-    "preferredDistance",
-    "preferredHash",
-    "preferredFieldPosition",
-    "tempo",
-    "practiceFront",
-    "practiceDefense",
-    "practiceCoverage",
-    "practiceBlitz",
-    "practiceStunt",
-    "keyPlayer1",
-    "keyPlayer2",
-    "keyPlayer3",
-    "keyPlayerName1",
-    "keyPlayerName2",
-    "keyPlayerName3",
-    "constraint1",
-    "constraint2",
-    "constraint3",
-    "hitChart1",
-    "hitChart2",
-    "hitChart3",
-    "deadVs",
-    "opponent",
-    "notes",
-  ];
-
   const firstRow = parseLine(lines[0]);
   const norm = firstRow.map((header) =>
     header.toLowerCase().replace(/[^a-z0-9]/g, ""),
   );
-  const hits = norm.filter((header) => COLUMN_MAP[header]);
+  const hits = norm.filter((header) => _CSV_COLUMN_MAP[header]);
   const useHeaders = hits.length >= 3;
 
   let headerMap = null;
@@ -180,7 +180,7 @@ function parseCSV(text) {
   if (useHeaders) {
     headerMap = {};
     norm.forEach((header, index) => {
-      if (COLUMN_MAP[header]) headerMap[index] = COLUMN_MAP[header];
+      if (_CSV_COLUMN_MAP[header]) headerMap[index] = _CSV_COLUMN_MAP[header];
     });
   } else if (firstRow.length >= 10) {
     startLine = 0;
@@ -200,7 +200,7 @@ function parseCSV(text) {
 
     const play = {};
     if (headerMap) {
-      POS_KEYS.forEach((key) => {
+      _CSV_POS_KEYS.forEach((key) => {
         play[key] = "";
       });
       Object.entries(headerMap).forEach(([index, key]) => {
@@ -214,7 +214,7 @@ function parseCSV(text) {
         });
         continue;
       }
-      POS_KEYS.forEach((key, index) => {
+      _CSV_POS_KEYS.forEach((key, index) => {
         play[key] = values[index] || "";
       });
     }

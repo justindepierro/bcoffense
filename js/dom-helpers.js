@@ -1,41 +1,42 @@
+const DANGEROUS_TAGS = new Set([
+  "script",
+  "iframe",
+  "object",
+  "embed",
+  "link",
+  "base",
+  "meta",
+  "form",
+  "input",
+  "textarea",
+  "select",
+  "style",
+]);
+const ALLOWED_ATTR_PREFIX = ["data-", "aria-"];
+const SAFE_ATTRS = new Set([
+  "href",
+  "src",
+  "alt",
+  "title",
+  "class",
+  "id",
+  "width",
+  "height",
+  "colspan",
+  "rowspan",
+  "type",
+  "value",
+  "checked",
+  "disabled",
+  "placeholder",
+  "name",
+  "target",
+  "rel",
+  "download",
+]);
+
 function sanitizeHTML(html) {
   if (!html) return "";
-  const DANGEROUS_TAGS = new Set([
-    "script",
-    "iframe",
-    "object",
-    "embed",
-    "link",
-    "base",
-    "meta",
-    "form",
-    "input",
-    "textarea",
-    "select",
-    "style",
-  ]);
-  const ALLOWED_ATTR_PREFIX = ["data-", "aria-"];
-  const SAFE_ATTRS = new Set([
-    "href",
-    "src",
-    "alt",
-    "title",
-    "class",
-    "id",
-    "width",
-    "height",
-    "colspan",
-    "rowspan",
-    "type",
-    "value",
-    "checked",
-    "disabled",
-    "placeholder",
-    "name",
-    "target",
-    "rel",
-    "download",
-  ]);
 
   try {
     const parser = new DOMParser();
