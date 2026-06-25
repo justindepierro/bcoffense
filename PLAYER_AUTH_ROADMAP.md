@@ -67,13 +67,13 @@
 
 ## TIER 5 — Performance & Architecture
 
-- [ ] **39. Loading skeleton during `initServerAuth()`** — auth-locked body shows raw HTML for 500–2000ms during `/auth/me` fetch. Show a pulsing skeleton screen during this window.
-- [ ] **40. Cache `/auth/me` in SW for 30 seconds** — called on every page load, blocks app unlock over slow connections. SW should cache with a short `max-age` so PWA re-opens are instant.
-- [ ] **41. Debounce `applyRoleUi()` to one rAF per state change** — scans full DOM for `[data-auth-player-hide]` etc. on every auth state change. Gate with `requestAnimationFrame`.
-- [ ] **42. Defer player dashboard render to `requestIdleCallback`** — `renderPlayerDashboardHome()` runs during initial tab load. Defer it so tab transition animation isn't blocked.
-- [ ] **43. `content-visibility: auto` on player script cards** — `.player-home-script-item` cards extend below fold. Add `contain: layout style paint; content-visibility: auto` to the list items.
-- [ ] **44. Narrow the auth MutationObserver scope** — currently watches all of `document.body` with `subtree: true`. Narrow to `#mainApp` to avoid firing on every toast/modal insertion.
-- [ ] **45. `will-change: transform` on player quick-action hover** — these are primary CTAs with transform transitions but no `will-change`. Add it scoped to `@media (hover: hover)` only.
+- [x] **39. Loading skeleton during `initServerAuth()`** — auth-locked body shows raw HTML for 500–2000ms during `/auth/me` fetch. Show a pulsing skeleton screen during this window.
+- [x] **40. Cache `/auth/me` in SW for 30 seconds** — called on every page load, blocks app unlock over slow connections. SW should cache with a short `max-age` so PWA re-opens are instant.
+- [x] **41. Debounce `applyRoleUi()` to one rAF per state change** — scans full DOM for `[data-auth-player-hide]` etc. on every auth state change. Gate with `requestAnimationFrame`.
+- [x] **42. Defer player dashboard render to `requestIdleCallback`** — `renderPlayerDashboardHome()` runs during initial tab load. Defer it so tab transition animation isn't blocked.
+- [x] **43. `content-visibility: auto` on player script cards** — `.player-home-script-item` cards extend below fold. Add `contain: layout style paint; content-visibility: auto` to the list items.
+- [x] **44. Narrow the auth MutationObserver scope** — currently watches all of `document.body` with `subtree: true`. Narrow to `#mainApp` to avoid firing on every toast/modal insertion.
+- [x] **45. `will-change: transform` on player quick-action hover** — these are primary CTAs with transform transitions but no `will-change`. Add it scoped to `@media (hover: hover)` only.
 
 ---
 

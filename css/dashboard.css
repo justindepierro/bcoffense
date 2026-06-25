@@ -194,6 +194,10 @@
 }
 
 @media (hover: hover) {
+  .player-home-quick-action {
+    will-change: transform;
+  }
+
   .player-home-quick-action:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-sm);
@@ -314,6 +318,9 @@
   display: grid;
   gap: 3px;
   justify-items: start;
+  contain: layout style paint;
+  content-visibility: auto;
+  contain-intrinsic-size: 0 72px;
   width: 100%;
   min-width: 0;
   padding: 12px 14px;

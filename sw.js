@@ -10,7 +10,10 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v709";
+const CACHE_NAME = "bcoffense-v710";
+
+// Item 40: in-memory TTL tracker for /auth/me short-term cache
+let _authMeCacheTime = 0;
 
 const NETWORK_FIRST_PATTERNS = [
   /\/index\.html$/,
@@ -211,6 +214,33 @@ self.addEventListener("fetch", (event) => {
 
   // Skip non-http(s) schemes (e.g. chrome-extension://) — can't be cached
   if (!event.request.url.startsWith("http")) return;
+
+  // Item 40: serve /auth/me from cache for up to 30s to unblock slow-network PWA opens
+  if (url.pathname === "/auth/me") {
+    event.respondWith(
+      (async () => {
+        const cache = await caches.open(CACHE_NAME);
+        if (Date.now() - _authMeCacheTime < 30000) {
+          const cached = await cache.match(event.request);
+          if (cached) return cached;
+        }
+        try {
+          const response = await fetch(event.request);
+          if (response.ok) {
+            _authMeCacheTime = Date.now();
+            cache.put(event.request, response.clone());
+          }
+          return response;
+        } catch {
+          return (
+            (await cache.match(event.request)) ||
+            new Response("Offline", { status: 503, headers: { "Content-Type": "text/plain" } })
+          );
+        }
+      })()
+    );
+    return;
+  }
 
   // External resources (fonts, CDNs): network-first with cache fallback
   if (url.origin !== location.origin) {

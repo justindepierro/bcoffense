@@ -115,7 +115,12 @@ function showTab(tabName) {
   } else if (tabName === "offensebuilder") {
     initOffenseBuilder();
   } else if (tabName === "dashboard") {
-    renderDashboard();
+    // Item 42: defer player dashboard render so tab-switch animation completes first
+    if (typeof requestIdleCallback === "function") {
+      requestIdleCallback(() => renderDashboard(), { timeout: 250 });
+    } else {
+      setTimeout(renderDashboard, 0);
+    }
   }
 
   runDraftRestoreCheckForTab(tabName);

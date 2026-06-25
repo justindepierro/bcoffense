@@ -524,6 +524,7 @@
     }
   }
 
+  let _applyRoleUiRafId = null;
   function applyRoleUi() {
     if (!document.body) return;
     document.body.classList.toggle("auth-locked", !currentAuthUser);
@@ -533,7 +534,12 @@
     document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
     syncPlayerPortalChrome();
 
-    applyAuthToTree(document);
+    // Item 41: defer expensive DOM scan to one rAF per state change
+    if (_applyRoleUiRafId) cancelAnimationFrame(_applyRoleUiRafId);
+    _applyRoleUiRafId = requestAnimationFrame(() => {
+      _applyRoleUiRafId = null;
+      applyAuthToTree(document);
+    });
 
     const userBadge = document.getElementById("authUserBadge");
     if (userBadge) {
@@ -968,7 +974,14 @@
   document.addEventListener("submit", handleBlockedInteraction, true);
 
   document.addEventListener("DOMContentLoaded", () => {
-    initServerAuth();
+    // Item 39: hide auth loading skeleton once auth resolves
+    const _authSkeleton = document.getElementById("authLoadingSkeleton");
+    initServerAuth().finally(() => {
+      if (_authSkeleton) {
+        _authSkeleton.classList.add("is-done");
+        setTimeout(() => (_authSkeleton.hidden = true), 320);
+      }
+    });
     const observer = new MutationObserver((mutations) => {
       mutations.forEach((mutation) => {
         mutation.addedNodes.forEach((node) => {
@@ -983,7 +996,9 @@
       if (!pendingAuthRoots.size) return;
       queueApplyAuthToPendingRoots();
     });
-    observer.observe(document.body, { childList: true, subtree: true });
+    // Item 44: narrow MutationObserver to #mainApp to avoid firing on every toast/modal
+    const _observerRoot = document.getElementById("mainApp") || document.body;
+    observer.observe(_observerRoot, { childList: true, subtree: true });
   });
 
   window.getCurrentAuthUser = () => currentAuthUser;
