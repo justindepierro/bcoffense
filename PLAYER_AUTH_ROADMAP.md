@@ -39,16 +39,16 @@
 
 ## TIER 3 — Player Portal First Screen
 
-- [ ] **21. Personalized greeting on player dashboard** — hero shows "Player Portal" eyebrow with no name. Add time-of-day greeting: "Good morning — here's today's plan."
-- [ ] **22. "NEW" badge on Script tab when fresh practice published** — when `featuredScript.date === today` and player hasn't loaded it yet, show a red dot on the Script tab. Every social app does this.
-- [ ] **23. Replace Unicode tab icons with SVG** — `⌂` `□` `▶` render differently per platform. Replace with inline SVGs (house, clipboard/list, play) for consistency.
-- [ ] **24. Pressed/spring animation on player tab buttons** — add `transform: scale(0.92)` on `:active` with spring-back transition. No active state feedback currently.
-- [ ] **25. Active indicator pill on player tab bar** — current active tab only has background change. Add a 3px `::after` pill marker below the icon, like iOS native tab bar.
-- [ ] **26. Clamp team name font size in hero** — `font-size: 2.75rem` for team name overflows on phones. Change to `clamp(1.5rem, 5vw, 2.75rem)`.
-- [ ] **27. Single-column card grid on small phones** — `.player-home-grid` is 2-col at all sizes. Cards are ~163px wide on 375px phones. Go single-column at ≤480px.
-- [ ] **28. Increase quick-action button padding** — 3-column quick actions on phones are too narrow. Set `min-height: 82px` + more horizontal padding for comfortable thumb use.
-- [ ] **29. Empty state illustration when no script published** — plain text "Waiting on a published practice" looks broken. Add a styled empty-state block with a simple CSS illustration or icon.
-- [ ] **30. Show last-updated timestamp on script cards** — show "Updated 2h ago" using `savedAt` from the record. Players need to know if the coach changed the plan after they loaded it.
+- [x] **21. Personalized greeting on player dashboard** — hero shows "Player Portal" eyebrow with no name. Add time-of-day greeting: "Good morning — here's today's plan."
+- [x] **22. "NEW" badge on Script tab when fresh practice published** — when `featuredScript.date === today` and player hasn't loaded it yet, show a red dot on the Script tab. Every social app does this.
+- [x] **23. Replace Unicode tab icons with SVG** — `⌂` `□` `▶` render differently per platform. Replace with inline SVGs (house, clipboard/list, play) for consistency.
+- [x] **24. Pressed/spring animation on player tab buttons** — add `transform: scale(0.92)` on `:active` with spring-back transition. No active state feedback currently.
+- [x] **25. Active indicator pill on player tab bar** — current active tab only has background change. Add a 3px `::after` pill marker below the icon, like iOS native tab bar.
+- [x] **26. Clamp team name font size in hero** — `font-size: 2.75rem` for team name overflows on phones. Change to `clamp(1.5rem, 5vw, 2.75rem)`.
+- [x] **27. Single-column card grid on small phones** — `.player-home-grid` is 2-col at all sizes. Cards are ~163px wide on 375px phones. Go single-column at ≤480px.
+- [x] **28. Increase quick-action button padding** — 3-column quick actions on phones are too narrow. Set `min-height: 82px` + more horizontal padding for comfortable thumb use.
+- [x] **29. Empty state illustration when no script published** — plain text "Waiting on a published practice" looks broken. Add a styled empty-state block with a simple CSS illustration or icon.
+- [x] **30. Show last-updated timestamp on script cards** — show "Updated 2h ago" using `savedAt` from the record. Players need to know if the coach changed the plan after they loaded it.
 
 ---
 

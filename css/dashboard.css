@@ -60,7 +60,7 @@
 }
 
 .player-home-hero h2 {
-  font-size: 2.75rem;
+  font-size: clamp(1.5rem, 5vw, 2.75rem);
   line-height: 1.02;
   overflow-wrap: anywhere;
 }
@@ -126,8 +126,8 @@
   align-items: center;
   gap: 2px var(--space-sm);
   min-width: 0;
-  min-height: 78px;
-  padding: 15px 16px;
+  min-height: 82px;
+  padding: 18px 16px;
   border: 1px solid var(--color-border-light);
   border-radius: 20px;
   background: var(--color-surface);
@@ -2207,4 +2207,39 @@
 .dash-card-link:hover {
   opacity: 1;
   background: var(--color-navy-alpha-08);
+}
+
+/* ======= Player Portal: empty state (item 29) ======= */
+.player-home-empty-state {
+  display: grid;
+  gap: 5px;
+  justify-items: center;
+  padding: var(--space-md) var(--space-sm);
+  text-align: center;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-lighter);
+  color: var(--color-text-muted);
+}
+
+.player-home-empty-state svg {
+  color: var(--color-text-light);
+  margin-bottom: 2px;
+}
+
+.player-home-empty-state strong {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.player-home-empty-state span {
+  font-size: var(--font-size-xs);
+  line-height: 1.5;
+}
+
+/* Script item: last-updated timestamp (item 30) */
+.player-home-script-item__updated {
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 700;
 }

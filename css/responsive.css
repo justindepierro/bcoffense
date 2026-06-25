@@ -140,6 +140,23 @@
   }
 }
 
+/* Tab SVG icons: hidden by default; shown only in player mobile view */
+.tab-icon {
+  display: none;
+}
+
+/* Player portal: NEW-content badge on tab button */
+.tab-new-badge {
+  position: absolute;
+  top: 7px;
+  right: 7px;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-danger);
+  border: 2px solid var(--color-bg-body);
+}
+
 @media (max-width: 640px),
   (pointer: coarse) and (max-width: 820px),
   (pointer: coarse) and (max-height: 640px) {
@@ -324,6 +341,7 @@
   }
 
   body.is-mobile-screen[data-auth-role="player"] .tab {
+    position: relative;
     flex: 1 1 0;
     flex-direction: column;
     gap: 3px;
@@ -334,25 +352,48 @@
     font-size: var(--font-size-2xs);
     line-height: 1.05;
     scroll-snap-align: none;
+    transition:
+      background var(--transition-fast),
+      color var(--transition-fast),
+      transform 0.15s cubic-bezier(0.34, 1.56, 0.64, 1);
   }
 
+  /* SVG icons replace unicode pseudo-content */
   body.is-mobile-screen[data-auth-role="player"] .tab::before {
+    display: none;
+  }
+
+  body.is-mobile-screen[data-auth-role="player"] .tab .tab-icon {
     display: block;
-    color: inherit;
-    font-size: 1.15rem;
-    line-height: 1;
+    width: 22px;
+    height: 22px;
+    flex-shrink: 0;
+    pointer-events: none;
   }
 
-  body.is-mobile-screen[data-auth-role="player"] #tab-dashboard::before {
-    content: "⌂";
+  /* Active indicator pill (item 25) */
+  body.is-mobile-screen[data-auth-role="player"] .tab[aria-selected="true"]::after {
+    content: "";
+    position: absolute;
+    bottom: 5px;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 20px;
+    height: 3px;
+    border-radius: var(--radius-pill);
+    background: var(--color-primary);
+    animation: tabPillIn 0.2s ease-out both;
   }
 
-  body.is-mobile-screen[data-auth-role="player"] #tab-playbook::before {
-    content: "□";
+  @keyframes tabPillIn {
+    from { width: 4px; opacity: 0; }
+    to { width: 20px; opacity: 1; }
   }
 
-  body.is-mobile-screen[data-auth-role="player"] #tab-script::before {
-    content: "▶";
+  /* Press spring animation (item 24) */
+  body.is-mobile-screen[data-auth-role="player"] .tab:active {
+    transform: scale(0.92);
+    transition: transform 0.1s;
   }
 
   body.is-mobile-screen .panel {

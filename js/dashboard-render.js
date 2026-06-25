@@ -761,6 +761,32 @@ function renderPlayerDashboardHome() {
   const teamName =
     (storageManager.get(STORAGE_KEYS.TEAM_NAME, "") || "").trim() ||
     "Player Practice Portal";
+
+  // Item 21: time-of-day greeting
+  const _hour = new Date().getHours();
+  const greeting =
+    _hour < 12 ? "Good morning" : _hour < 17 ? "Good afternoon" : "Good evening";
+
+  // Contextual hero description
+  const heroDesc = featuredScript
+    ? featuredScript.date === todayValue
+      ? `${todayLabel} \u2022 Today\u2019s practice is ready. Open it, swipe through the calls, and lock your position.`
+      : `${todayLabel} \u2022 Here\u2019s the most recent practice. Open it to review calls.`
+    : `${todayLabel} \u2022 No practice published yet. Check back with your coach.`;
+
+  // Item 30: relative time helper for script card timestamps
+  const _getTimeAgo = (isoStr) => {
+    if (!isoStr) return "";
+    const ms = Date.now() - new Date(isoStr).getTime();
+    if (ms < 0) return "";
+    const mins = Math.floor(ms / 60000);
+    if (mins < 1) return "Just now";
+    if (mins < 60) return `${mins}m ago`;
+    const hrs = Math.floor(mins / 60);
+    if (hrs < 24) return `${hrs}h ago`;
+    const days = Math.floor(hrs / 24);
+    return `${days}d ago`;
+  };
   const featuredScriptId = featuredScript ? escapeHtml(String(featuredScript.id)) : "";
   const practiceAction = featuredScript
     ? `data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}"`
@@ -789,29 +815,34 @@ function renderPlayerDashboardHome() {
         const eyebrow =
           savedScript.date === todayValue ? "Today" : "Published";
         const savedScriptId = escapeHtml(String(savedScript.id));
+        const timeAgo = _getTimeAgo(savedScript.savedAt);
+        const metaText = stats
+          ? `${stats.playCount} plays \u2022 ${stats.totalReps} reps`
+          : "Open practice";
         return `
           <button class="player-home-script-item" type="button" data-action="loadPublishedPlayerScript"
             data-arg="${savedScriptId}">
             <span class="player-home-script-item__eyebrow">${escapeHtml(eyebrow)}</span>
             <span class="player-home-script-item__title">${escapeHtml(savedScript.name)}</span>
-            <span class="player-home-script-item__meta">${escapeHtml(
-          stats
-            ? `${stats.playCount} plays • ${stats.totalReps} reps`
-            : "Open practice",
-        )}</span>
+            <span class="player-home-script-item__meta">${escapeHtml(metaText)}</span>
+            ${timeAgo ? `<span class="player-home-script-item__updated">${escapeHtml("Updated " + timeAgo)}</span>` : ""}
           </button>
         `;
       })
       .join("")
-    : `<div class="player-home-list-empty">No practice script has been published yet. Check back with your coach.</div>`;
+    : `<div class="player-home-empty-state">
+        <svg aria-hidden="true" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="12" y1="18" x2="12" y2="12"/><line x1="9" y1="15" x2="15" y2="15"/></svg>
+        <strong>Nothing yet</strong>
+        <span>Your coach will publish a practice here. Check back before your next session.</span>
+      </div>`;
 
   section.hidden = false;
   section.innerHTML = `
     <section class="player-home-hero player-home-hero--pro">
       <div class="player-home-hero__copy">
-        <span class="player-home-eyebrow">Player Portal</span>
+        <span class="player-home-eyebrow">${escapeHtml(greeting)}</span>
         <h2>${escapeHtml(teamName)}</h2>
-        <p>${escapeHtml(todayLabel)} • Open today's work, swipe play to play, and lock your position when you study rules.</p>
+        <p>${escapeHtml(heroDesc)}</p>
       </div>
       <div class="player-home-today-card" aria-label="Today status">
         <span>Today</span>
@@ -822,17 +853,17 @@ function renderPlayerDashboardHome() {
     <section class="player-home-quick-actions" aria-label="Player quick actions">
       <button type="button" class="player-home-quick-action player-home-quick-action--primary"
         ${practiceAction}>
-        <span class="player-home-quick-icon">▶</span>
+        <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"/></svg></span>
         <strong>Open Practice</strong>
         <small>Script, periods, and calls</small>
       </button>
       <button type="button" class="player-home-quick-action" ${swipeAction}>
-        <span class="player-home-quick-icon">▣</span>
+        <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
         <strong>Swipe View</strong>
         <small>Diagram plus your rules</small>
       </button>
       <button type="button" class="player-home-quick-action" ${playbookAction}>
-        <span class="player-home-quick-icon">⌕</span>
+        <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
         <strong>Playbook</strong>
         <small>Search, filter, and study</small>
       </button>
@@ -921,6 +952,13 @@ function renderPlayerDashboardHome() {
       </article>
     </div>
   `;
+
+  // Item 22: Show NEW badge on Practice tab when today's script is available and not yet loaded
+  const _newBadge = document.getElementById("scriptTabNewBadge");
+  if (_newBadge) {
+    const _hasNew = featuredScript && featuredScript.date === todayValue && !loadedScript;
+    _newBadge.hidden = !_hasNew;
+  }
 }
 
 function renderGameWeekCommandCenter(gw, opponents) {
