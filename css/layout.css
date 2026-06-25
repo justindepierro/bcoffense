@@ -723,7 +723,9 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 }
 
 /* ── Player Portal settings panel (items 46, 50) ── */
-.team-settings-panel--portal { grid-column: 1 / -1; }
+.team-settings-panel--portal {
+  grid-column: 1 / -1;
+}
 
 .team-settings-portal-field {
   display: flex;

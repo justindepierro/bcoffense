@@ -6523,166 +6523,165 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 /* Consolidated hover styles */
 @media (hover: hover) {
-
-.play-item:hover {
+  .play-item:hover {
     background: var(--color-primary-light);
     border-color: var(--color-primary-light);
     box-shadow: var(--shadow-sm);
   }
 
-.play-item .available-add-menu-btn:hover {
+  .play-item .available-add-menu-btn:hover {
     background: var(--color-success-hover);
   }
 
-.script-item:hover {
+  .script-item:hover {
     border-color: var(--color-primary);
     box-shadow: var(--shadow-md);
     transform: translateY(-1px);
   }
 
-.play-readiness-badge--script:hover {
+  .play-readiness-badge--script:hover {
     opacity: 0.82;
   }
 
-.pr-close-btn:hover {
+  .pr-close-btn:hover {
     background: var(--color-danger-light);
     color: var(--color-danger);
     border-color: var(--color-danger-light);
   }
 
-.play-readiness-btn--edit:hover {
+  .play-readiness-btn--edit:hover {
     background: var(--color-primary);
     color: var(--color-text-inverse);
   }
 
-.script-item .script-edit-play-btn:hover {
+  .script-item .script-edit-play-btn:hover {
     background: var(--color-primary-light);
     color: var(--color-primary);
   }
 
-.play-readiness-btn:hover {
+  .play-readiness-btn:hover {
     border-color: var(--color-primary);
     background: var(--color-primary-light);
   }
 
-.play-readiness-report-delete:hover {
+  .play-readiness-report-delete:hover {
     border-color: var(--color-danger);
     background: var(--color-danger);
     color: var(--color-text-inverse);
   }
 
-.script-item .script-move-menu-btn:hover {
+  .script-item .script-move-menu-btn:hover {
     background: var(--color-bg-input);
     color: var(--color-text);
   }
 
-.pat-btn:hover {
+  .pat-btn:hover {
     background: var(--color-primary-light);
     border-color: var(--color-primary);
     color: var(--color-primary);
   }
 
-.pat-btn-smart:hover {
+  .pat-btn-smart:hover {
     filter: brightness(1.05);
     border-color: var(--color-accent-hover);
   }
 
-.ph-drag-handle:hover {
+  .ph-drag-handle:hover {
     background: rgba(255, 255, 255, 0.35);
   }
 
-.ph-btn:hover {
+  .ph-btn:hover {
     background: rgba(255, 255, 255, 0.35);
   }
 
-.ph-btn-active:hover {
+  .ph-btn-active:hover {
     background: var(--color-accent-hover);
     color: var(--color-dark);
   }
 
-.more-tools-btn:hover {
+  .more-tools-btn:hover {
     background: var(--color-border-light);
   }
 
-.more-tools-menu button:hover {
+  .more-tools-menu button:hover {
     background: var(--color-bg-input);
   }
 
-.script-item .remove:hover {
+  .script-item .remove:hover {
     background: var(--color-danger-hover);
   }
 
-.script-item .dup-btn:hover {
+  .script-item .dup-btn:hover {
     background: var(--color-text-muted);
   }
 
-.bulk-select-label:hover {
+  .bulk-select-label:hover {
     color: var(--color-primary);
   }
 
-.display-options-group label:hover {
+  .display-options-group label:hover {
     background: var(--color-bg-blue-tint);
   }
 
-.display-options-grid label:hover {
+  .display-options-grid label:hover {
     background: var(--color-bg-blue-tint);
   }
 
-.saved-script-card:hover {
+  .saved-script-card:hover {
     border-color: var(--color-primary);
   }
 
-.saved-card-actions button:hover {
+  .saved-card-actions button:hover {
     opacity: 0.85;
   }
 
-.full-day-item:hover {
+  .full-day-item:hover {
     border-color: var(--color-primary);
   }
 
-.full-day-section label:hover {
+  .full-day-section label:hover {
     background: var(--color-bg-blue-tint) !important;
   }
 
-.btn-add-period:hover {
+  .btn-add-period:hover {
     opacity: 0.85;
   }
 
-.pcf-preset:hover {
+  .pcf-preset:hover {
     background: var(--color-accent);
     color: var(--color-text-inverse);
     border-color: var(--color-accent);
   }
 
-.template-picker-item:hover {
+  .template-picker-item:hover {
     background: var(--color-bg-blue-tint);
     border-color: var(--color-accent);
   }
 
-.btn-scouting-fill:hover {
+  .btn-scouting-fill:hover {
     background: var(--color-danger-hover) !important;
     transform: translateY(-1px);
   }
 
-.pat-btn-callsheet:hover {
+  .pat-btn-callsheet:hover {
     background: var(--color-purple) !important;
     filter: brightness(0.85);
   }
 
-.script-display-fab:hover {
+  .script-display-fab:hover {
     background: var(--color-primary);
     color: var(--color-text-inverse);
     box-shadow: 0 4px 16px rgba(25, 42, 81, 0.35);
     transform: scale(1.1);
   }
 
-#script .script-pb-chip:hover {
+  #script .script-pb-chip:hover {
     background: var(--color-primary-light);
     color: var(--color-primary);
     border-color: var(--color-primary);
   }
 
-#script .app-scroll-region::-webkit-scrollbar-thumb:hover,
+  #script .app-scroll-region::-webkit-scrollbar-thumb:hover,
   #script .script-tools-drawer-body::-webkit-scrollbar-thumb:hover {
     background: var(--color-text-light);
     background-clip: padding-box;

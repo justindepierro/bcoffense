@@ -330,319 +330,319 @@
     const _sessionMaxAge = normalized.role === "player" ? 7 * 24 * 60 * 60 * 1000 : AUTH_SESSION_MAX_AGE_MS;
     if (Date.now() - savedAt > _sessionMaxAge) {
 
-  async function fetchAuthSession() {
-    try {
-      const response = await fetch("/auth/me", {
-        credentials: "same-origin",
-        headers: { Accept: "application/json" },
-      });
-      if (!response.ok) {
-        return { user: null, denied: true, offline: false };
+      async function fetchAuthSession() {
+        try {
+          const response = await fetch("/auth/me", {
+            credentials: "same-origin",
+            headers: { Accept: "application/json" },
+          });
+          if (!response.ok) {
+            return { user: null, denied: true, offline: false };
+          }
+          const data = await response.json();
+          return { user: normalizeAuthUser(data.user), denied: false, offline: false };
+        } catch (_err) {
+          return { user: null, denied: false, offline: true };
+        }
       }
-      const data = await response.json();
-      return { user: normalizeAuthUser(data.user), denied: false, offline: false };
-    } catch (_err) {
-      return { user: null, denied: false, offline: true };
-    }
-  }
 
-  function isAdminUser() {
-    return currentAuthUser?.role === "admin";
-  }
-
-  function canEditUser() {
-    return currentAuthUser?.role === "admin" || currentAuthUser?.role === "coach";
-  }
-
-  function canAccessTab(tabName) {
-    if (!currentAuthUser) return false;
-    return (AUTH_ROLE_TABS[currentAuthUser.role] || []).includes(tabName);
-  }
-
-  function getDefaultAuthTab() {
-    if (!currentAuthUser) return "playbook";
-    return AUTH_ROLE_DEFAULT_TAB[currentAuthUser.role] || "playbook";
-  }
-
-  function canManageSettings() {
-    return isAdminUser();
-  }
-
-  function syncPlayerPortalChrome() {
-    const isPlayer = currentAuthUser?.role === "player";
-    document.body?.classList.toggle("player-portal", isPlayer);
-    [
-      ["tab-playbook", "Playbook", "Playbook"],
-      ["tab-dashboard", "📊 Dashboard", "Home"],
-      ["tab-script", "Practice Script Builder", "Practice"],
-    ].forEach(([id, defaultLabel, playerLabel]) => {
-      const tab = document.getElementById(id);
-      if (!tab) return;
-      tab.dataset.defaultLabel = tab.dataset.defaultLabel || defaultLabel;
-      tab.dataset.playerLabel = tab.dataset.playerLabel || playerLabel;
-      const nextLabel = isPlayer ? tab.dataset.playerLabel : tab.dataset.defaultLabel;
-      if (tab.textContent.trim() !== nextLabel) tab.textContent = nextLabel;
-    });
-  }
-
-  function isReadOnlyRole() {
-    return Boolean(currentAuthUser && !canEditUser());
-  }
-
-  function showBlockedToast() {
-    const now = Date.now();
-    if (now - lastBlockedAt < 1200) return;
-    lastBlockedAt = now;
-    const label = currentAuthUser?.label || "This role";
-    showToast(`${label} access is view-only. Log in as coach or admin to make changes.`, {
-      type: "warning",
-      duration: 3000,
-    });
-  }
-
-  function traceAuthBlocked(reason, el, extra = {}) {
-    const actionEl = el instanceof Element ? el.closest("[data-action]") : null;
-    const payload = {
-      reason,
-      action: actionEl?.dataset?.action || "",
-      arg: actionEl?.dataset?.arg,
-      text: String(actionEl?.textContent || "").trim().slice(0, 80),
-      role: currentAuthUser?.role || "none",
-      authReady,
-      activeTab:
-        typeof currentActiveTab !== "undefined"
-          ? currentActiveTab
-          : document.body?.dataset.activeTab || "",
-      ...extra,
-    };
-    if (typeof traceAppAction === "function") {
-      traceAppAction("auth blocked interaction", payload, {}, "warn");
-    } else {
-      console.warn("[BC auth trace] blocked interaction", payload);
-    }
-  }
-
-  function actionLooksMutating(action) {
-    if (!action) return false;
-    if (ADMIN_ONLY_ACTIONS.has(action)) return true;
-    if (READ_ONLY_ALLOWED_ACTIONS.has(action)) return false;
-    if (READ_ONLY_ALLOWED_PREFIXES.some((prefix) => action.startsWith(prefix))) {
-      return false;
-    }
-    return MUTATING_ACTION_PATTERNS.some((pattern) => pattern.test(action));
-  }
-
-  function elementUsesAdminOnlyHandler(el) {
-    if (!el?.dataset) return false;
-    const handlers = `${el.dataset.action || ""};${el.dataset.oninput || ""};${el.dataset.onchange || ""}`;
-    return Array.from(ADMIN_ONLY_ACTIONS).some((action) =>
-      new RegExp(`(^|;)\\s*${action}\\s*(;|$)`).test(handlers),
-    );
-  }
-
-  function isActionAllowedForRole(action) {
-    return true;
-    if (!currentAuthUser) return false;
-    if (ADMIN_ONLY_ACTIONS.has(action)) return isAdminUser();
-    if (canEditUser()) return true;
-    return !actionLooksMutating(action);
-  }
-
-  function isInputAllowedForRole(el) {
-    if (!currentAuthUser) return false;
-    if (elementUsesAdminOnlyHandler(el) && !isAdminUser()) return false;
-    if (canEditUser()) return true;
-    if (el.closest("#authLoginOverlay")) return true;
-    if (el.dataset.authAllowInput === "true") return true;
-    if (el.closest(".pb-chip-group")) return true;
-    if (el.type === "hidden") return true;
-    if (el.type === "file") return false;
-    if (el.dataset.field || el.dataset.authEditInput === "true") return false;
-
-    const handlers = `${el.dataset.oninput || ""};${el.dataset.onchange || ""}`;
-    if (READ_ONLY_INPUT_ALLOW_PATTERNS.some((pattern) => pattern.test(handlers))) {
-      return true;
-    }
-
-    const id = el.id || "";
-    if (/search|filter|sort|highlight/i.test(id)) return true;
-    return !el.closest(".panel, #uploadSection, .custom-modal-overlay, .modal-overlay");
-  }
-
-  function shouldHideElementForRole(el) {
-    if (!currentAuthUser) return false;
-
-    if (el.dataset.authAdminOnly === "true" && !isAdminUser()) return true;
-    if (el.dataset.authEditOnly === "true" && !canEditUser()) return true;
-    if (elementUsesAdminOnlyHandler(el) && !isAdminUser()) return true;
-    if (el.matches("[type='file']") && !canEditUser()) return true;
-
-    const tabName = el.dataset.arg || el.getAttribute("aria-controls");
-    if (el.classList.contains("tab") && tabName && !canAccessTab(tabName)) {
-      return true;
-    }
-
-    const action = el.dataset.action;
-    if (action && !isActionAllowedForRole(action)) return true;
-    if (action === "triggerClick" && el.dataset.target) {
-      const target = document.getElementById(el.dataset.target);
-      if (target?.matches("[data-auth-admin-only='true']") && !isAdminUser()) return true;
-      if (elementUsesAdminOnlyHandler(target) && !isAdminUser()) return true;
-      if (target?.matches("input[type='file']") && !canEditUser()) return true;
-    }
-
-    if (currentAuthUser.role === "player") {
-      if (el.dataset.authPlayerHide === "true") return true;
-      if (el.closest("#pbPrintPanel, .cr-panel")) return true;
-    }
-
-    return false;
-  }
-
-  function applyAuthToElement(el) {
-    if (!(el instanceof HTMLElement)) return;
-
-    const hide = shouldHideElementForRole(el);
-    if (hide) {
-      el.dataset.authHidden = "true";
-      el.hidden = true;
-      el.setAttribute("aria-hidden", "true");
-    } else if (el.dataset.authHidden === "true") {
-      delete el.dataset.authHidden;
-      el.hidden = false;
-      el.removeAttribute("aria-hidden");
-    }
-
-    if (el.matches("input, select, textarea, button")) {
-      if (isReadOnlyRole() && !isInputAllowedForRole(el) && !isActionAllowedForRole(el.dataset.action)) {
-        el.disabled = true;
-        el.dataset.authDisabled = "true";
-      } else if (el.dataset.authDisabled === "true") {
-        el.disabled = false;
-        delete el.dataset.authDisabled;
+      function isAdminUser() {
+        return currentAuthUser?.role === "admin";
       }
-    }
-  }
 
-  let _applyRoleUiRafId = null;
-  function applyRoleUi() {
-    if (!document.body) return;
-    document.body.classList.toggle("auth-locked", !currentAuthUser);
-    ensureLoginOverlayVisible();
-    document.body.dataset.authRole = currentAuthUser?.role || "locked";
-    document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
-    document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
-    syncPlayerPortalChrome();
-
-    // Item 50: apply (or clear) player portal accent color
-    if (currentAuthUser?.role === "player") {
-      const _branding = storageManager.get(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, {});
-      if (_branding?.accent) {
-        document.documentElement.style.setProperty("--color-primary", _branding.accent);
-      } else {
-        document.documentElement.style.removeProperty("--color-primary");
+      function canEditUser() {
+        return currentAuthUser?.role === "admin" || currentAuthUser?.role === "coach";
       }
-    } else {
-      document.documentElement.style.removeProperty("--color-primary");
-    }
 
-    // Item 41: defer expensive DOM scan to one rAF per state change
-    if (_applyRoleUiRafId) cancelAnimationFrame(_applyRoleUiRafId);
-    _applyRoleUiRafId = requestAnimationFrame(() => {
-      _applyRoleUiRafId = null;
-      applyAuthToTree(document);
-    });
-
-    const userBadge = document.getElementById("authUserBadge");
-    if (userBadge) {
-      const badgeLabel =
-        currentAuthUser &&
-        (currentAuthUser.label ||
-          (currentAuthUser.role
-            ? currentAuthUser.role.charAt(0).toUpperCase() + currentAuthUser.role.slice(1)
-            : "User"));
-      userBadge.textContent = currentAuthUser
-        ? `${badgeLabel}: ${currentAuthUser.username}`
-        : "";
-      userBadge.hidden = !currentAuthUser;
-    }
-
-    const logoutBtn = document.getElementById("authLogoutBtn");
-    if (logoutBtn) logoutBtn.hidden = !currentAuthUser;
-
-    if (currentAuthUser && typeof currentActiveTab !== "undefined" && !canAccessTab(currentActiveTab)) {
-      showTab(getDefaultAuthTab());
-    }
-    if (typeof renderDashboard === "function" && currentActiveTab === "dashboard") {
-      renderDashboard();
-    }
-
-    if (typeof renderPlayerScriptLauncher === "function") {
-      renderPlayerScriptLauncher();
-    }
-    if (typeof requestRenderScript === "function") {
-      requestRenderScript();
-    }
-    if (typeof syncPlayPresentationRoleUi === "function") {
-      syncPlayPresentationRoleUi();
-    }
-    if (typeof queueMobileShellStateSync === "function") {
-      queueMobileShellStateSync();
-    }
-  }
-
-  function applyAuthToTree(root) {
-    if (!root) return;
-    if (
-      root.nodeType === Node.ELEMENT_NODE &&
-      typeof root.matches === "function" &&
-      root.matches(AUTH_SCAN_SELECTOR)
-    ) {
-      applyAuthToElement(root);
-    }
-    if (typeof root.querySelectorAll !== "function") return;
-    root.querySelectorAll(AUTH_SCAN_SELECTOR).forEach((el) => applyAuthToElement(el));
-  }
-
-  function queueApplyAuthToPendingRoots() {
-    if (authMutationFrame) return;
-    authMutationFrame = requestAnimationFrame(() => {
-      authMutationFrame = 0;
-      pendingAuthRoots.forEach((root) => applyAuthToTree(root));
-      pendingAuthRoots.clear();
-    });
-  }
-
-  function scheduleCloudAutoPull() {
-    if (!currentAuthUser) return;
-    setTimeout(() => {
-      if (typeof autoPullLatestCloudBackup === "function") {
-        autoPullLatestCloudBackup();
+      function canAccessTab(tabName) {
+        if (!currentAuthUser) return false;
+        return (AUTH_ROLE_TABS[currentAuthUser.role] || []).includes(tabName);
       }
-    }, 700);
-  }
 
-  function showLoginOverlay(message = "", opts = {}) {
-    document.getElementById("authLoginOverlay")?.remove();
-    document.body.classList.add("auth-locked");
+      function getDefaultAuthTab() {
+        if (!currentAuthUser) return "playbook";
+        return AUTH_ROLE_DEFAULT_TAB[currentAuthUser.role] || "playbook";
+      }
 
-    const teamName = (() => {
-      try {
-        const key = typeof STORAGE_KEYS !== "undefined" ? STORAGE_KEYS.TEAM_NAME : "teamName";
-        return (storageManager?.get?.(key, "") || "").trim() || "BCOffense";
-      } catch (_e) { return "BCOffense"; }
-    })();
-    const _urlRoleRaw = (() => {
-      try { return new URLSearchParams(window.location.search).get("role") || ""; } catch (_e) { return ""; }
-    })();
-    const _urlRole = AUTH_LOGIN_ROLE_DETAILS[_urlRoleRaw] ? _urlRoleRaw : null;
-    const _initialRoleName = _urlRole || "admin";
+      function canManageSettings() {
+        return isAdminUser();
+      }
 
-    const overlay = document.createElement("div");
-    overlay.id = "authLoginOverlay";
-    overlay.className = "auth-login-overlay";
-    const initialDetails = getLoginRoleDetails(_initialRoleName);
-    overlay.innerHTML = `
+      function syncPlayerPortalChrome() {
+        const isPlayer = currentAuthUser?.role === "player";
+        document.body?.classList.toggle("player-portal", isPlayer);
+        [
+          ["tab-playbook", "Playbook", "Playbook"],
+          ["tab-dashboard", "📊 Dashboard", "Home"],
+          ["tab-script", "Practice Script Builder", "Practice"],
+        ].forEach(([id, defaultLabel, playerLabel]) => {
+          const tab = document.getElementById(id);
+          if (!tab) return;
+          tab.dataset.defaultLabel = tab.dataset.defaultLabel || defaultLabel;
+          tab.dataset.playerLabel = tab.dataset.playerLabel || playerLabel;
+          const nextLabel = isPlayer ? tab.dataset.playerLabel : tab.dataset.defaultLabel;
+          if (tab.textContent.trim() !== nextLabel) tab.textContent = nextLabel;
+        });
+      }
+
+      function isReadOnlyRole() {
+        return Boolean(currentAuthUser && !canEditUser());
+      }
+
+      function showBlockedToast() {
+        const now = Date.now();
+        if (now - lastBlockedAt < 1200) return;
+        lastBlockedAt = now;
+        const label = currentAuthUser?.label || "This role";
+        showToast(`${label} access is view-only. Log in as coach or admin to make changes.`, {
+          type: "warning",
+          duration: 3000,
+        });
+      }
+
+      function traceAuthBlocked(reason, el, extra = {}) {
+        const actionEl = el instanceof Element ? el.closest("[data-action]") : null;
+        const payload = {
+          reason,
+          action: actionEl?.dataset?.action || "",
+          arg: actionEl?.dataset?.arg,
+          text: String(actionEl?.textContent || "").trim().slice(0, 80),
+          role: currentAuthUser?.role || "none",
+          authReady,
+          activeTab:
+            typeof currentActiveTab !== "undefined"
+              ? currentActiveTab
+              : document.body?.dataset.activeTab || "",
+          ...extra,
+        };
+        if (typeof traceAppAction === "function") {
+          traceAppAction("auth blocked interaction", payload, {}, "warn");
+        } else {
+          console.warn("[BC auth trace] blocked interaction", payload);
+        }
+      }
+
+      function actionLooksMutating(action) {
+        if (!action) return false;
+        if (ADMIN_ONLY_ACTIONS.has(action)) return true;
+        if (READ_ONLY_ALLOWED_ACTIONS.has(action)) return false;
+        if (READ_ONLY_ALLOWED_PREFIXES.some((prefix) => action.startsWith(prefix))) {
+          return false;
+        }
+        return MUTATING_ACTION_PATTERNS.some((pattern) => pattern.test(action));
+      }
+
+      function elementUsesAdminOnlyHandler(el) {
+        if (!el?.dataset) return false;
+        const handlers = `${el.dataset.action || ""};${el.dataset.oninput || ""};${el.dataset.onchange || ""}`;
+        return Array.from(ADMIN_ONLY_ACTIONS).some((action) =>
+          new RegExp(`(^|;)\\s*${action}\\s*(;|$)`).test(handlers),
+        );
+      }
+
+      function isActionAllowedForRole(action) {
+        return true;
+        if (!currentAuthUser) return false;
+        if (ADMIN_ONLY_ACTIONS.has(action)) return isAdminUser();
+        if (canEditUser()) return true;
+        return !actionLooksMutating(action);
+      }
+
+      function isInputAllowedForRole(el) {
+        if (!currentAuthUser) return false;
+        if (elementUsesAdminOnlyHandler(el) && !isAdminUser()) return false;
+        if (canEditUser()) return true;
+        if (el.closest("#authLoginOverlay")) return true;
+        if (el.dataset.authAllowInput === "true") return true;
+        if (el.closest(".pb-chip-group")) return true;
+        if (el.type === "hidden") return true;
+        if (el.type === "file") return false;
+        if (el.dataset.field || el.dataset.authEditInput === "true") return false;
+
+        const handlers = `${el.dataset.oninput || ""};${el.dataset.onchange || ""}`;
+        if (READ_ONLY_INPUT_ALLOW_PATTERNS.some((pattern) => pattern.test(handlers))) {
+          return true;
+        }
+
+        const id = el.id || "";
+        if (/search|filter|sort|highlight/i.test(id)) return true;
+        return !el.closest(".panel, #uploadSection, .custom-modal-overlay, .modal-overlay");
+      }
+
+      function shouldHideElementForRole(el) {
+        if (!currentAuthUser) return false;
+
+        if (el.dataset.authAdminOnly === "true" && !isAdminUser()) return true;
+        if (el.dataset.authEditOnly === "true" && !canEditUser()) return true;
+        if (elementUsesAdminOnlyHandler(el) && !isAdminUser()) return true;
+        if (el.matches("[type='file']") && !canEditUser()) return true;
+
+        const tabName = el.dataset.arg || el.getAttribute("aria-controls");
+        if (el.classList.contains("tab") && tabName && !canAccessTab(tabName)) {
+          return true;
+        }
+
+        const action = el.dataset.action;
+        if (action && !isActionAllowedForRole(action)) return true;
+        if (action === "triggerClick" && el.dataset.target) {
+          const target = document.getElementById(el.dataset.target);
+          if (target?.matches("[data-auth-admin-only='true']") && !isAdminUser()) return true;
+          if (elementUsesAdminOnlyHandler(target) && !isAdminUser()) return true;
+          if (target?.matches("input[type='file']") && !canEditUser()) return true;
+        }
+
+        if (currentAuthUser.role === "player") {
+          if (el.dataset.authPlayerHide === "true") return true;
+          if (el.closest("#pbPrintPanel, .cr-panel")) return true;
+        }
+
+        return false;
+      }
+
+      function applyAuthToElement(el) {
+        if (!(el instanceof HTMLElement)) return;
+
+        const hide = shouldHideElementForRole(el);
+        if (hide) {
+          el.dataset.authHidden = "true";
+          el.hidden = true;
+          el.setAttribute("aria-hidden", "true");
+        } else if (el.dataset.authHidden === "true") {
+          delete el.dataset.authHidden;
+          el.hidden = false;
+          el.removeAttribute("aria-hidden");
+        }
+
+        if (el.matches("input, select, textarea, button")) {
+          if (isReadOnlyRole() && !isInputAllowedForRole(el) && !isActionAllowedForRole(el.dataset.action)) {
+            el.disabled = true;
+            el.dataset.authDisabled = "true";
+          } else if (el.dataset.authDisabled === "true") {
+            el.disabled = false;
+            delete el.dataset.authDisabled;
+          }
+        }
+      }
+
+      let _applyRoleUiRafId = null;
+      function applyRoleUi() {
+        if (!document.body) return;
+        document.body.classList.toggle("auth-locked", !currentAuthUser);
+        ensureLoginOverlayVisible();
+        document.body.dataset.authRole = currentAuthUser?.role || "locked";
+        document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
+        document.body.dataset.authReadonly = isReadOnlyRole() ? "true" : "false";
+        syncPlayerPortalChrome();
+
+        // Item 50: apply (or clear) player portal accent color
+        if (currentAuthUser?.role === "player") {
+          const _branding = storageManager.get(STORAGE_KEYS.PLAYER_PORTAL_BRANDING, {});
+          if (_branding?.accent) {
+            document.documentElement.style.setProperty("--color-primary", _branding.accent);
+          } else {
+            document.documentElement.style.removeProperty("--color-primary");
+          }
+        } else {
+          document.documentElement.style.removeProperty("--color-primary");
+        }
+
+        // Item 41: defer expensive DOM scan to one rAF per state change
+        if (_applyRoleUiRafId) cancelAnimationFrame(_applyRoleUiRafId);
+        _applyRoleUiRafId = requestAnimationFrame(() => {
+          _applyRoleUiRafId = null;
+          applyAuthToTree(document);
+        });
+
+        const userBadge = document.getElementById("authUserBadge");
+        if (userBadge) {
+          const badgeLabel =
+            currentAuthUser &&
+            (currentAuthUser.label ||
+              (currentAuthUser.role
+                ? currentAuthUser.role.charAt(0).toUpperCase() + currentAuthUser.role.slice(1)
+                : "User"));
+          userBadge.textContent = currentAuthUser
+            ? `${badgeLabel}: ${currentAuthUser.username}`
+            : "";
+          userBadge.hidden = !currentAuthUser;
+        }
+
+        const logoutBtn = document.getElementById("authLogoutBtn");
+        if (logoutBtn) logoutBtn.hidden = !currentAuthUser;
+
+        if (currentAuthUser && typeof currentActiveTab !== "undefined" && !canAccessTab(currentActiveTab)) {
+          showTab(getDefaultAuthTab());
+        }
+        if (typeof renderDashboard === "function" && currentActiveTab === "dashboard") {
+          renderDashboard();
+        }
+
+        if (typeof renderPlayerScriptLauncher === "function") {
+          renderPlayerScriptLauncher();
+        }
+        if (typeof requestRenderScript === "function") {
+          requestRenderScript();
+        }
+        if (typeof syncPlayPresentationRoleUi === "function") {
+          syncPlayPresentationRoleUi();
+        }
+        if (typeof queueMobileShellStateSync === "function") {
+          queueMobileShellStateSync();
+        }
+      }
+
+      function applyAuthToTree(root) {
+        if (!root) return;
+        if (
+          root.nodeType === Node.ELEMENT_NODE &&
+          typeof root.matches === "function" &&
+          root.matches(AUTH_SCAN_SELECTOR)
+        ) {
+          applyAuthToElement(root);
+        }
+        if (typeof root.querySelectorAll !== "function") return;
+        root.querySelectorAll(AUTH_SCAN_SELECTOR).forEach((el) => applyAuthToElement(el));
+      }
+
+      function queueApplyAuthToPendingRoots() {
+        if (authMutationFrame) return;
+        authMutationFrame = requestAnimationFrame(() => {
+          authMutationFrame = 0;
+          pendingAuthRoots.forEach((root) => applyAuthToTree(root));
+          pendingAuthRoots.clear();
+        });
+      }
+
+      function scheduleCloudAutoPull() {
+        if (!currentAuthUser) return;
+        setTimeout(() => {
+          if (typeof autoPullLatestCloudBackup === "function") {
+            autoPullLatestCloudBackup();
+          }
+        }, 700);
+      }
+
+      function showLoginOverlay(message = "", opts = {}) {
+        document.getElementById("authLoginOverlay")?.remove();
+        document.body.classList.add("auth-locked");
+
+        const teamName = (() => {
+          try {
+            const key = typeof STORAGE_KEYS !== "undefined" ? STORAGE_KEYS.TEAM_NAME : "teamName";
+            return (storageManager?.get?.(key, "") || "").trim() || "BCOffense";
+          } catch (_e) { return "BCOffense"; }
+        })();
+        const _urlRoleRaw = (() => {
+          try { return new URLSearchParams(window.location.search).get("role") || ""; } catch (_e) { return ""; }
+        })();
+        const _urlRole = AUTH_LOGIN_ROLE_DETAILS[_urlRoleRaw] ? _urlRoleRaw : null;
+        const _initialRoleName = _urlRole || "admin";
+
+        const overlay = document.createElement("div");
+        overlay.id = "authLoginOverlay";
+        overlay.className = "auth-login-overlay";
+        const initialDetails = getLoginRoleDetails(_initialRoleName);
+        overlay.innerHTML = `
       <div class="auth-login-shell">
         <section class="auth-login-hero" aria-label="Portal overview">
           <div class="auth-login-brand">${escapeHtml(teamName)}</div>
@@ -711,146 +711,127 @@
         </form>
       </div>
     `;
-    document.body.appendChild(overlay);
-    const _animateOut = () => new Promise(r => {
-      if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { r(); return; }
-      const shell = overlay.querySelector(".auth-login-shell");
-      if (!shell) { r(); return; }
-      shell.style.animation = "authShellOut 0.18s ease-in both";
-      setTimeout(r, 160);
-    });
-    const usernameEl = overlay.querySelector("#authUsername");
-    const passwordEl = overlay.querySelector("#authPassword");
-    const errorEl = overlay.querySelector("#authLoginError");
-    const toggleEl = overlay.querySelector("#authPasswordToggle");
-    const submitEl = overlay.querySelector("#authLoginSubmit");
-    const formEl = overlay.querySelector("#authLoginForm");
-    const roleSummaryEl = overlay.querySelector("#authLoginRoleSummary");
-    const roleEyebrowEl = overlay.querySelector("#authLoginRoleEyebrow");
-    const heroTitleEl = overlay.querySelector("#authLoginHeroTitle");
-    const heroSummaryEl = overlay.querySelector("#authLoginHeroSummary");
-    const setAuthLoginMessage = (text, isStatus = false) => {
-      errorEl.textContent = text;
-      errorEl.classList.toggle("is-status", isStatus);
-    };
-    const setSelectedLoginRole = (role, opts = {}) => {
-      const details = getLoginRoleDetails(role);
-      overlay.querySelectorAll("[data-login-role]").forEach((button) => {
-        const active = button.dataset.loginRole === role;
-        button.classList.toggle("is-active", active);
-        button.setAttribute("aria-pressed", active ? "true" : "false");
-      });
-      if (roleEyebrowEl) roleEyebrowEl.textContent = details.eyebrow;
-      if (roleSummaryEl) roleSummaryEl.textContent = details.summary;
-      if (heroTitleEl) heroTitleEl.textContent = details.title;
-      if (heroSummaryEl) heroSummaryEl.textContent = details.summary;
-      if (submitEl) submitEl.textContent = details.submit;
-      if (opts.fillUsername && usernameEl) usernameEl.value = role;
-    };
-
-    overlay.querySelectorAll("[data-login-role]").forEach((button) => {
-      button.addEventListener("click", () => {
-        setSelectedLoginRole(button.dataset.loginRole, { fillUsername: true });
-        passwordEl.focus();
-      });
-    });
-
-    usernameEl.addEventListener("input", () => {
-      setAuthLoginMessage("");
-      const role = usernameEl.value.trim().toLowerCase();
-      if (AUTH_LOGIN_ROLE_DETAILS[role]) setSelectedLoginRole(role);
-    });
-
-    passwordEl.addEventListener("input", () => {
-      setAuthLoginMessage("");
-    });
-
-    usernameEl.addEventListener("keydown", (e) => {
-      if (e.key === "Enter") {
-        e.preventDefault();
-        passwordEl.focus();
-      }
-    });
-
-    const _eyeOpen = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
-    const _eyeOff = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
-    toggleEl?.addEventListener("click", () => {
-      const shouldShow = passwordEl.type === "password";
-      passwordEl.type = shouldShow ? "text" : "password";
-      toggleEl.innerHTML = shouldShow ? _eyeOff : _eyeOpen;
-      toggleEl.setAttribute("aria-pressed", shouldShow ? "true" : "false");
-      toggleEl.setAttribute(
-        "aria-label",
-        shouldShow ? "Hide password" : "Show password",
-      );
-      passwordEl.focus();
-    });
-
-    formEl.addEventListener("submit", async (e) => {
-      e.preventDefault();
-      setAuthLoginMessage("Checking login...", true);
-      if (submitEl) {
-        submitEl.disabled = true;
-        submitEl.classList.add("is-loading");
-      }
-      try {
-        const username = usernameEl.value.trim().toLowerCase();
-        const password = passwordEl.value;
-        const response = await fetch("/auth/login", {
-          method: "POST",
-          credentials: "same-origin",
-          headers: {
-            "Accept": "application/json",
-            "Content-Type": "application/json",
-            "X-BC-Auth-Mode": "json",
-          },
-          body: JSON.stringify({
-            username,
-            password,
-          }),
+        document.body.appendChild(overlay);
+        const _animateOut = () => new Promise(r => {
+          if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) { r(); return; }
+          const shell = overlay.querySelector(".auth-login-shell");
+          if (!shell) { r(); return; }
+          shell.style.animation = "authShellOut 0.18s ease-in both";
+          setTimeout(r, 160);
         });
-        const data = await response.json().catch(() => ({}));
-        let resolvedUser = null;
+        const usernameEl = overlay.querySelector("#authUsername");
+        const passwordEl = overlay.querySelector("#authPassword");
+        const errorEl = overlay.querySelector("#authLoginError");
+        const toggleEl = overlay.querySelector("#authPasswordToggle");
+        const submitEl = overlay.querySelector("#authLoginSubmit");
+        const formEl = overlay.querySelector("#authLoginForm");
+        const roleSummaryEl = overlay.querySelector("#authLoginRoleSummary");
+        const roleEyebrowEl = overlay.querySelector("#authLoginRoleEyebrow");
+        const heroTitleEl = overlay.querySelector("#authLoginHeroTitle");
+        const heroSummaryEl = overlay.querySelector("#authLoginHeroSummary");
+        const setAuthLoginMessage = (text, isStatus = false) => {
+          errorEl.textContent = text;
+          errorEl.classList.toggle("is-status", isStatus);
+        };
+        const setSelectedLoginRole = (role, opts = {}) => {
+          const details = getLoginRoleDetails(role);
+          overlay.querySelectorAll("[data-login-role]").forEach((button) => {
+            const active = button.dataset.loginRole === role;
+            button.classList.toggle("is-active", active);
+            button.setAttribute("aria-pressed", active ? "true" : "false");
+          });
+          if (roleEyebrowEl) roleEyebrowEl.textContent = details.eyebrow;
+          if (roleSummaryEl) roleSummaryEl.textContent = details.summary;
+          if (heroTitleEl) heroTitleEl.textContent = details.title;
+          if (heroSummaryEl) heroSummaryEl.textContent = details.summary;
+          if (submitEl) submitEl.textContent = details.submit;
+          if (opts.fillUsername && usernameEl) usernameEl.value = role;
+        };
 
-        if (response.ok && data.user) {
-          resolvedUser = normalizeAuthUser(data.user);
-        } else {
-          resolvedUser = tryLocalDevLogin(username, password);
-          if (!resolvedUser) {
-            const endpointHint =
-              response.status === 404 && isLocalDevHost()
-                ? " Start local auth with `npx wrangler pages dev . --kv=SYNC_KV` or use username admin, coach, or player in localhost fallback mode."
-                : "";
-            throw new Error(
-              (data.error || "Invalid username or password.") + endpointHint,
-            );
+        overlay.querySelectorAll("[data-login-role]").forEach((button) => {
+          button.addEventListener("click", () => {
+            setSelectedLoginRole(button.dataset.loginRole, { fillUsername: true });
+            passwordEl.focus();
+          });
+        });
+
+        usernameEl.addEventListener("input", () => {
+          setAuthLoginMessage("");
+          const role = usernameEl.value.trim().toLowerCase();
+          if (AUTH_LOGIN_ROLE_DETAILS[role]) setSelectedLoginRole(role);
+        });
+
+        passwordEl.addEventListener("input", () => {
+          setAuthLoginMessage("");
+        });
+
+        usernameEl.addEventListener("keydown", (e) => {
+          if (e.key === "Enter") {
+            e.preventDefault();
+            passwordEl.focus();
           }
-        }
-
-        currentAuthUser = resolvedUser;
-        saveStoredAuthUser(
-          resolvedUser,
-          isLocalDevHost() && (!response.ok || !data.user) ? "local-dev" : "server-login",
-        );
-        authReady = true;
-        await _animateOut();
-        overlay.remove();
-        applyRoleUi();
-        requestAnimationFrame(() => {
-          document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
         });
-        showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
-        if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
-        scheduleCloudAutoPull();
-      } catch (err) {
-        try {
-          const fallbackUser = tryLocalDevLogin(
-            usernameEl.value.trim().toLowerCase(),
-            passwordEl.value,
+
+        const _eyeOpen = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>';
+        const _eyeOff = '<svg aria-hidden="true" focusable="false" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>';
+        toggleEl?.addEventListener("click", () => {
+          const shouldShow = passwordEl.type === "password";
+          passwordEl.type = shouldShow ? "text" : "password";
+          toggleEl.innerHTML = shouldShow ? _eyeOff : _eyeOpen;
+          toggleEl.setAttribute("aria-pressed", shouldShow ? "true" : "false");
+          toggleEl.setAttribute(
+            "aria-label",
+            shouldShow ? "Hide password" : "Show password",
           );
-          if (fallbackUser) {
-            currentAuthUser = fallbackUser;
-            saveStoredAuthUser(fallbackUser, "local-dev");
+          passwordEl.focus();
+        });
+
+        formEl.addEventListener("submit", async (e) => {
+          e.preventDefault();
+          setAuthLoginMessage("Checking login...", true);
+          if (submitEl) {
+            submitEl.disabled = true;
+            submitEl.classList.add("is-loading");
+          }
+          try {
+            const username = usernameEl.value.trim().toLowerCase();
+            const password = passwordEl.value;
+            const response = await fetch("/auth/login", {
+              method: "POST",
+              credentials: "same-origin",
+              headers: {
+                "Accept": "application/json",
+                "Content-Type": "application/json",
+                "X-BC-Auth-Mode": "json",
+              },
+              body: JSON.stringify({
+                username,
+                password,
+              }),
+            });
+            const data = await response.json().catch(() => ({}));
+            let resolvedUser = null;
+
+            if (response.ok && data.user) {
+              resolvedUser = normalizeAuthUser(data.user);
+            } else {
+              resolvedUser = tryLocalDevLogin(username, password);
+              if (!resolvedUser) {
+                const endpointHint =
+                  response.status === 404 && isLocalDevHost()
+                    ? " Start local auth with `npx wrangler pages dev . --kv=SYNC_KV` or use username admin, coach, or player in localhost fallback mode."
+                    : "";
+                throw new Error(
+                  (data.error || "Invalid username or password.") + endpointHint,
+                );
+              }
+            }
+
+            currentAuthUser = resolvedUser;
+            saveStoredAuthUser(
+              resolvedUser,
+              isLocalDevHost() && (!response.ok || !data.user) ? "local-dev" : "server-login",
+            );
             authReady = true;
             await _animateOut();
             overlay.remove();
@@ -861,165 +842,184 @@
             showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
             if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
             scheduleCloudAutoPull();
-            return;
-          }
-        } catch (_fallbackErr) {
-          // Fall through to normal error messaging.
-        }
-        setAuthLoginMessage(err.message || "Login failed.");
-        if (submitEl) {
-          submitEl.disabled = false;
-          submitEl.classList.remove("is-loading");
-        }
-        passwordEl.value = "";
-        passwordEl.focus();
-      }
-    });
-    overlay.querySelector("#authPlayerShortcut")?.addEventListener("click", () => {
-      setSelectedLoginRole("player", { fillUsername: true });
-      passwordEl.focus();
-    });
-    if (_urlRole) {
-      setSelectedLoginRole(_urlRole, { fillUsername: true });
-      requestAnimationFrame(() => passwordEl.focus());
-    } else {
-      requestAnimationFrame(() => usernameEl.focus());
-    }
-  }
-
-  function ensureLoginOverlayVisible() {
-    if (currentAuthUser || !document.body) return;
-    if (document.getElementById("authLoginOverlay")) return;
-    showLoginOverlay("Secure login required.");
-  }
-
-  async function logoutAuth() {
-    try {
-      await fetch("/auth/logout", {
-        method: "POST",
-        credentials: "same-origin",
-        headers: { "X-BC-Auth-Mode": "json" },
-      });
-    } catch (_err) {
-      // Continue with local lockout even if the network is unavailable.
-    }
-    currentAuthUser = null;
-    clearStoredAuthUser();
-    authReady = true;
-    if (typeof resetCloudSyncAutoPull === "function") {
-      resetCloudSyncAutoPull();
-    }
-    applyRoleUi();
-    showLoginOverlay("", { statusMsg: "Signed out." });
-  }
-
-  function handleBlockedInteraction(e) {
-    if (e.target.closest("#authLoginOverlay")) return;
-
-    if (!authReady) {
-      traceAuthBlocked("auth-not-ready", e.target);
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      return;
-    }
-
-    if (!currentAuthUser) {
-      traceAuthBlocked("no-auth-user", e.target);
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      showLoginOverlay();
-      return;
-    }
-
-    const actionEl = e.target.closest("[data-action]");
-    if (actionEl && !isActionAllowedForRole(actionEl.dataset.action)) {
-      traceAuthBlocked("action-not-allowed", actionEl, {
-        actionLooksMutating: actionLooksMutating(actionEl.dataset.action),
-      });
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      showBlockedToast();
-      return;
-    }
-
-    if (
-      (e.type === "input" || e.type === "change") &&
-      e.target.matches("input, select, textarea") &&
-      !isInputAllowedForRole(e.target)
-    ) {
-      traceAuthBlocked("input-not-allowed", e.target, {
-        inputId: e.target.id || "",
-        inputName: e.target.name || "",
-      });
-      e.preventDefault();
-      e.stopImmediatePropagation();
-      showBlockedToast();
-    }
-  }
-
-  async function initServerAuth() {
-    const session = await fetchAuthSession();
-    if (session.user) {
-      currentAuthUser = session.user;
-      saveStoredAuthUser(session.user, "server-session");
-    } else {
-      const storedUser = loadStoredAuthUser();
-      const canUseStored = Boolean(storedUser && (isLocalDevHost() || session.offline));
-      if (canUseStored) {
-        currentAuthUser = storedUser;
-      } else {
-        clearStoredAuthUser();
-      }
-    }
-
-    authReady = true;
-    if (!currentAuthUser) {
-      showLoginOverlay("Secure login required.");
-    }
-    applyRoleUi();
-    scheduleCloudAutoPull();
-  }
-
-  document.addEventListener("click", handleBlockedInteraction, true);
-  document.addEventListener("change", handleBlockedInteraction, true);
-  document.addEventListener("input", handleBlockedInteraction, true);
-  document.addEventListener("submit", handleBlockedInteraction, true);
-
-  document.addEventListener("DOMContentLoaded", () => {
-    // Item 39: hide auth loading skeleton once auth resolves
-    const _authSkeleton = document.getElementById("authLoadingSkeleton");
-    initServerAuth().finally(() => {
-      if (_authSkeleton) {
-        _authSkeleton.classList.add("is-done");
-        setTimeout(() => (_authSkeleton.hidden = true), 320);
-      }
-    });
-    const observer = new MutationObserver((mutations) => {
-      mutations.forEach((mutation) => {
-        mutation.addedNodes.forEach((node) => {
-          if (
-            node.nodeType === Node.ELEMENT_NODE ||
-            node.nodeType === Node.DOCUMENT_FRAGMENT_NODE
-          ) {
-            pendingAuthRoots.add(node);
+          } catch (err) {
+            try {
+              const fallbackUser = tryLocalDevLogin(
+                usernameEl.value.trim().toLowerCase(),
+                passwordEl.value,
+              );
+              if (fallbackUser) {
+                currentAuthUser = fallbackUser;
+                saveStoredAuthUser(fallbackUser, "local-dev");
+                authReady = true;
+                await _animateOut();
+                overlay.remove();
+                applyRoleUi();
+                requestAnimationFrame(() => {
+                  document.querySelector(".tab[aria-selected='true'], .tab.active, .tabs .tab")?.focus({ preventScroll: true });
+                });
+                showToast(`Logged in as ${currentAuthUser.label}`, { type: "success" });
+                if (!canAccessTab(currentActiveTab)) showTab(getDefaultAuthTab());
+                scheduleCloudAutoPull();
+                return;
+              }
+            } catch (_fallbackErr) {
+              // Fall through to normal error messaging.
+            }
+            setAuthLoginMessage(err.message || "Login failed.");
+            if (submitEl) {
+              submitEl.disabled = false;
+              submitEl.classList.remove("is-loading");
+            }
+            passwordEl.value = "";
+            passwordEl.focus();
           }
         });
-      });
-      if (!pendingAuthRoots.size) return;
-      queueApplyAuthToPendingRoots();
-    });
-    // Item 44: narrow MutationObserver to #mainApp to avoid firing on every toast/modal
-    const _observerRoot = document.getElementById("mainApp") || document.body;
-    observer.observe(_observerRoot, { childList: true, subtree: true });
-  });
+        overlay.querySelector("#authPlayerShortcut")?.addEventListener("click", () => {
+          setSelectedLoginRole("player", { fillUsername: true });
+          passwordEl.focus();
+        });
+        if (_urlRole) {
+          setSelectedLoginRole(_urlRole, { fillUsername: true });
+          requestAnimationFrame(() => passwordEl.focus());
+        } else {
+          requestAnimationFrame(() => usernameEl.focus());
+        }
+      }
 
-  window.getCurrentAuthUser = () => currentAuthUser;
-  window.isAdminUser = isAdminUser;
-  window.canEditUser = canEditUser;
-  window.canAccessTab = canAccessTab;
-  window.getDefaultAuthTab = getDefaultAuthTab;
-  window.canManageSettings = canManageSettings;
-  window.isActionAllowedForRole = isActionAllowedForRole;
-  window.logoutAuth = logoutAuth;
-  window.applyRoleUi = applyRoleUi;
-})();
+      function ensureLoginOverlayVisible() {
+        if (currentAuthUser || !document.body) return;
+        if (document.getElementById("authLoginOverlay")) return;
+        showLoginOverlay("Secure login required.");
+      }
+
+      async function logoutAuth() {
+        try {
+          await fetch("/auth/logout", {
+            method: "POST",
+            credentials: "same-origin",
+            headers: { "X-BC-Auth-Mode": "json" },
+          });
+        } catch (_err) {
+          // Continue with local lockout even if the network is unavailable.
+        }
+        currentAuthUser = null;
+        clearStoredAuthUser();
+        authReady = true;
+        if (typeof resetCloudSyncAutoPull === "function") {
+          resetCloudSyncAutoPull();
+        }
+        applyRoleUi();
+        showLoginOverlay("", { statusMsg: "Signed out." });
+      }
+
+      function handleBlockedInteraction(e) {
+        if (e.target.closest("#authLoginOverlay")) return;
+
+        if (!authReady) {
+          traceAuthBlocked("auth-not-ready", e.target);
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          return;
+        }
+
+        if (!currentAuthUser) {
+          traceAuthBlocked("no-auth-user", e.target);
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          showLoginOverlay();
+          return;
+        }
+
+        const actionEl = e.target.closest("[data-action]");
+        if (actionEl && !isActionAllowedForRole(actionEl.dataset.action)) {
+          traceAuthBlocked("action-not-allowed", actionEl, {
+            actionLooksMutating: actionLooksMutating(actionEl.dataset.action),
+          });
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          showBlockedToast();
+          return;
+        }
+
+        if (
+          (e.type === "input" || e.type === "change") &&
+          e.target.matches("input, select, textarea") &&
+          !isInputAllowedForRole(e.target)
+        ) {
+          traceAuthBlocked("input-not-allowed", e.target, {
+            inputId: e.target.id || "",
+            inputName: e.target.name || "",
+          });
+          e.preventDefault();
+          e.stopImmediatePropagation();
+          showBlockedToast();
+        }
+      }
+
+      async function initServerAuth() {
+        const session = await fetchAuthSession();
+        if (session.user) {
+          currentAuthUser = session.user;
+          saveStoredAuthUser(session.user, "server-session");
+        } else {
+          const storedUser = loadStoredAuthUser();
+          const canUseStored = Boolean(storedUser && (isLocalDevHost() || session.offline));
+          if (canUseStored) {
+            currentAuthUser = storedUser;
+          } else {
+            clearStoredAuthUser();
+          }
+        }
+
+        authReady = true;
+        if (!currentAuthUser) {
+          showLoginOverlay("Secure login required.");
+        }
+        applyRoleUi();
+        scheduleCloudAutoPull();
+      }
+
+      document.addEventListener("click", handleBlockedInteraction, true);
+      document.addEventListener("change", handleBlockedInteraction, true);
+      document.addEventListener("input", handleBlockedInteraction, true);
+      document.addEventListener("submit", handleBlockedInteraction, true);
+
+      document.addEventListener("DOMContentLoaded", () => {
+        // Item 39: hide auth loading skeleton once auth resolves
+        const _authSkeleton = document.getElementById("authLoadingSkeleton");
+        initServerAuth().finally(() => {
+          if (_authSkeleton) {
+            _authSkeleton.classList.add("is-done");
+            setTimeout(() => (_authSkeleton.hidden = true), 320);
+          }
+        });
+        const observer = new MutationObserver((mutations) => {
+          mutations.forEach((mutation) => {
+            mutation.addedNodes.forEach((node) => {
+              if (
+                node.nodeType === Node.ELEMENT_NODE ||
+                node.nodeType === Node.DOCUMENT_FRAGMENT_NODE
+              ) {
+                pendingAuthRoots.add(node);
+              }
+            });
+          });
+          if (!pendingAuthRoots.size) return;
+          queueApplyAuthToPendingRoots();
+        });
+        // Item 44: narrow MutationObserver to #mainApp to avoid firing on every toast/modal
+        const _observerRoot = document.getElementById("mainApp") || document.body;
+        observer.observe(_observerRoot, { childList: true, subtree: true });
+      });
+
+      window.getCurrentAuthUser = () => currentAuthUser;
+      window.isAdminUser = isAdminUser;
+      window.canEditUser = canEditUser;
+      window.canAccessTab = canAccessTab;
+      window.getDefaultAuthTab = getDefaultAuthTab;
+      window.canManageSettings = canManageSettings;
+      window.isActionAllowedForRole = isActionAllowedForRole;
+      window.logoutAuth = logoutAuth;
+      window.applyRoleUi = applyRoleUi;
+    }) ();

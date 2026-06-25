@@ -481,9 +481,9 @@ function isMobileCoachLockActive() {
   const body = document.body;
   return Boolean(
     body &&
-      body.classList.contains("is-mobile-screen") &&
-      body.classList.contains("mobile-coach-locked") &&
-      isMobileCoachLockRole(),
+    body.classList.contains("is-mobile-screen") &&
+    body.classList.contains("mobile-coach-locked") &&
+    isMobileCoachLockRole(),
   );
 }
 
@@ -546,7 +546,7 @@ function _shouldBlockMobileCoachLockedEvent(e) {
   if (e.type === "beforeinput" || e.type === "input" || e.type === "change") {
     return Boolean(
       target.matches("input, select, textarea") &&
-        target.closest("#mainApp, .custom-modal-overlay, .modal-overlay"),
+      target.closest("#mainApp, .custom-modal-overlay, .modal-overlay"),
     );
   }
 
@@ -1102,11 +1102,11 @@ function enhanceRuntimeA11y(root = document) {
     scope,
     "[data-action]:not(button):not(a):not(input):not(select):not(textarea)",
   ).forEach((el) => {
-      const action = el.getAttribute("data-action") || "";
-      if (!action || action.endsWith("Overlay") || el.matches("label")) return;
-      if (!el.hasAttribute("role")) el.setAttribute("role", "button");
-      if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
-    });
+    const action = el.getAttribute("data-action") || "";
+    if (!action || action.endsWith("Overlay") || el.matches("label")) return;
+    if (!el.hasAttribute("role")) el.setAttribute("role", "button");
+    if (!el.hasAttribute("tabindex")) el.setAttribute("tabindex", "0");
+  });
 
   getRuntimeA11yNodes(scope, "button").forEach((button) => {
     const name = button.textContent.trim() || button.getAttribute("aria-label") || "";

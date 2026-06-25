@@ -45,12 +45,23 @@
   font-weight: 600;
   font-size: var(--font-size-sm);
   touch-action: manipulation;
-  transition: transform var(--transition-fast), opacity var(--transition-fast);
+  transition:
+    transform var(--transition-fast),
+    opacity var(--transition-fast);
 }
 
-.player-ready-btn > span { font-size: var(--font-size-base); }
-.player-ready-btn > small { font-weight: 400; opacity: 0.85; font-size: var(--font-size-xs); }
-.player-ready-btn:active { transform: scale(0.97); opacity: 0.92; }
+.player-ready-btn > span {
+  font-size: var(--font-size-base);
+}
+.player-ready-btn > small {
+  font-weight: 400;
+  opacity: 0.85;
+  font-size: var(--font-size-xs);
+}
+.player-ready-btn:active {
+  transform: scale(0.97);
+  opacity: 0.92;
+}
 
 .player-ready-confirmed {
   display: flex;
@@ -63,10 +74,23 @@
   color: var(--color-text);
 }
 
-.player-ready-icon { font-size: 1.3em; color: var(--color-success); flex-shrink: 0; }
-.player-ready-confirmed > div { display: flex; flex-direction: column; gap: 2px; }
-.player-ready-confirmed strong { font-size: var(--font-size-sm); }
-.player-ready-confirmed span { font-size: var(--font-size-xs); color: var(--color-text-muted); }
+.player-ready-icon {
+  font-size: 1.3em;
+  color: var(--color-success);
+  flex-shrink: 0;
+}
+.player-ready-confirmed > div {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.player-ready-confirmed strong {
+  font-size: var(--font-size-sm);
+}
+.player-ready-confirmed span {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
 
 /* ── Player push notify button (item 47) ── */
 .player-notify-row {
@@ -87,10 +111,15 @@
   padding: 6px var(--space-sm);
   cursor: pointer;
   touch-action: manipulation;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 
-.player-notify-btn:hover { border-color: var(--color-primary); color: var(--color-primary); }
+.player-notify-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
 
 /* ── Player portal hero logo (item 50) ── */
 .player-home-hero-logo {
@@ -2331,7 +2360,9 @@
   box-shadow: 0 2px 8px rgb(0 0 0 / 0.06);
   opacity: 0;
   transform: translateY(-110%);
-  transition: opacity 0.2s ease, transform 0.22s ease;
+  transition:
+    opacity 0.2s ease,
+    transform 0.22s ease;
   pointer-events: none;
 }
 

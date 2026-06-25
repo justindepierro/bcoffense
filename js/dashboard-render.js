@@ -914,23 +914,22 @@ function renderPlayerDashboardHome() {
     <div class="player-home-grid">
       <article class="player-home-card player-home-card--feature">
         <span class="player-home-card__eyebrow">${escapeHtml(
-    featuredScript?.date === todayValue ? "Today's Practice" : "Published Practice",
-  )}</span>
+          featuredScript?.date === todayValue ? "Today's Practice" : "Published Practice",
+        )}</span>
         <h3>${escapeHtml(featuredScript?.name || "Waiting on a published practice")}</h3>
         <p>${escapeHtml(
-    featuredStats
-      ? `${featuredStats.playCount} plays, ${featuredStats.totalReps} reps, and ${featuredStats.periodCount} periods are ready to review.`
-      : "When your coach publishes a practice script, it will show up here first.",
-  )}</p>
-        ${
           featuredStats
-            ? `<div class="player-home-stat-row">
+            ? `${featuredStats.playCount} plays, ${featuredStats.totalReps} reps, and ${featuredStats.periodCount} periods are ready to review.`
+            : "When your coach publishes a practice script, it will show up here first.",
+        )}</p>
+        ${featuredStats
+      ? `<div class="player-home-stat-row">
                 <span>${featuredStats.playCount} plays</span>
                 <span>${featuredStats.totalReps} reps</span>
                 <span>${featuredStats.periodCount} periods</span>
               </div>`
-            : ""
-        }
+      : ""
+    }
         <div class="player-home-card__actions">
           <button type="button" class="btn btn-primary player-home-action" ${practiceAction}>
             Open Practice
@@ -960,19 +959,18 @@ function renderPlayerDashboardHome() {
         <span class="player-home-card__eyebrow">Current Work</span>
         <h3>${escapeHtml(loadedScript?.name || "Load a practice to begin")}</h3>
         <p>${escapeHtml(
-    loadedScript?.stats
-      ? `${loadedScript.stats.playCount} plays are already loaded in the Practice tab.`
-      : "Once loaded, this becomes your quick way back into the day's rules.",
-  )}</p>
-        ${
-          loadedScript?.stats
-            ? `<div class="player-home-stat-row">
+      loadedScript?.stats
+        ? `${loadedScript.stats.playCount} plays are already loaded in the Practice tab.`
+        : "Once loaded, this becomes your quick way back into the day's rules.",
+    )}</p>
+        ${loadedScript?.stats
+      ? `<div class="player-home-stat-row">
                 <span>${loadedScript.stats.playCount} plays</span>
                 <span>${loadedScript.stats.totalReps} reps</span>
                 <span>${loadedScript.stats.periodCount} periods</span>
               </div>`
-            : ""
-        }
+      : ""
+    }
         <div class="player-home-card__actions">
           <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="script">
             Open Practice Tab
@@ -980,17 +978,16 @@ function renderPlayerDashboardHome() {
           <button type="button" class="btn btn-secondary player-home-action" data-action="showTab" data-arg="playbook">
             Open Playbook
           </button>
-          ${
-            loadedScript
-              ? `<button type="button" class="btn btn-primary player-home-action" data-action="openPlayerCurrentScriptPresentation">
+          ${loadedScript
+      ? `<button type="button" class="btn btn-primary player-home-action" data-action="openPlayerCurrentScriptPresentation">
                   Resume Swipe View
                 </button>`
-              : featuredScript
-                ? `<button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">
+      : featuredScript
+        ? `<button type="button" class="btn btn-primary player-home-action" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">
                     Load Today's Script
                 </button>`
-                : ""
-          }
+        : ""
+    }
         </div>
       </article>
     </div>
