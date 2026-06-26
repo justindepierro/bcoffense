@@ -1123,6 +1123,14 @@ function checkPlayerPortalContracts() {
     !/is-landscape-screen/.test(appShell) ||
     !/let _mobileShellLastStateKey = ""/.test(appShell) ||
     !/stateKey === _mobileShellLastStateKey/.test(appShell) ||
+    !/const shellPhone = isPhone/.test(appShell) ||
+    !/const shellCompact = isMobile/.test(appShell) ||
+    !/const shellTablet = isMobile/.test(appShell) ||
+    !/body\.dataset\.shellSize = shellSize/.test(appShell) ||
+    !/shell-phone/.test(appShell) ||
+    !/shell-compact/.test(appShell) ||
+    !/shell-tablet/.test(appShell) ||
+    !/shell-short/.test(appShell) ||
     !/window\.visualViewport\?\.addEventListener\([\s\S]*"resize",[\s\S]*queueMobileShellStateSync,[\s\S]*\{\s*passive:\s*true\s*\}/.test(
       appShell,
     ) ||

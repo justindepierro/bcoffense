@@ -78,6 +78,16 @@ function syncMobileShellState() {
   const isCompact = shortSide <= 420;
   const isShort = height <= 620;
   const isLandscape = width > height;
+  const shellPhone = isPhone;
+  const shellCompact = isMobile && (width <= 768 || shellPhone);
+  const shellTablet = isMobile && !shellPhone && (width <= 1024 || (isTouch && longSide <= 1180));
+  const shellSize = shellPhone
+    ? "phone"
+    : shellCompact
+      ? "compact"
+      : shellTablet
+        ? "tablet"
+        : "desktop";
   const authRole = body.dataset.authRole || "";
   const activeTab =
     body.dataset.activeTab ||
@@ -104,6 +114,8 @@ function syncMobileShellState() {
     authRole,
     activeTab,
     isMobile ? "mobile" : "desktop",
+    shellSize,
+    isShort ? "short" : "tall",
     isLandscape ? "landscape" : "portrait",
   ].join(":");
   if (stateKey === _mobileShellLastStateKey) return;
@@ -123,6 +135,14 @@ function syncMobileShellState() {
     el.classList.toggle("is-landscape-screen", isLandscape);
     el.classList.toggle("is-portrait-screen", !isLandscape);
     el.classList.toggle("is-touch-screen", Boolean(isTouch));
+    el.classList.toggle("shell-phone", shellPhone);
+    el.classList.toggle("shell-compact", shellCompact);
+    el.classList.toggle("shell-tablet", shellTablet);
+    el.classList.toggle("shell-desktop", shellSize === "desktop");
+    el.classList.toggle("shell-short", isShort);
+    el.classList.toggle("shell-landscape", isLandscape);
+    el.classList.toggle("shell-portrait", !isLandscape);
+    el.classList.toggle("shell-touch", Boolean(isTouch));
   });
   body.classList.toggle("is-player-mobile-shell", isMobile && authRole === "player");
   body.classList.toggle(
@@ -136,6 +156,12 @@ function syncMobileShellState() {
   }
   body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
   body.dataset.screenOrientation = isLandscape ? "landscape" : "portrait";
+  body.dataset.shellSize = shellSize;
+  body.dataset.shellWidth = String(width);
+  body.dataset.shellHeight = String(height);
+  body.dataset.shellShort = isShort ? "true" : "false";
+  body.dataset.shellOrientation = isLandscape ? "landscape" : "portrait";
+  body.dataset.shellPointer = isTouch ? "coarse" : "fine";
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
 }

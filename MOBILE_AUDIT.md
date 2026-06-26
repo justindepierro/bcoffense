@@ -105,26 +105,27 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-010 - Canonical responsive state contract
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P0
 - Files: `js/app-shell.js`, `css/responsive.css`, page CSS as needed
 - Work:
-  - Define canonical classes/data states:
+  - `[x]` Define canonical classes/data states:
     - `shell-phone`: usable width <= 560
     - `shell-compact`: usable width <= 768
     - `shell-tablet`: usable width <= 1024 or touch-tablet heuristic
     - `shell-short`: visual viewport height <= 620
     - orientation as a secondary modifier
-  - Expose state as both classes and `body.dataset` values.
-  - Audit current `is-mobile-screen`, `is-phone-screen`, `is-compact-screen`, and `is-short-screen` usage.
-  - Keep compatibility aliases until page CSS is migrated.
+  - `[x]` Expose state as both classes and `body.dataset` values.
+  - `[x]` Keep compatibility aliases until page CSS is migrated.
+  - `[~]` Audit current `is-mobile-screen`, `is-phone-screen`, `is-compact-screen`, and `is-short-screen` usage.
+  - `[ ]` Migrate page CSS to canonical shell classes in focused page batches.
 - Acceptance:
   - One function owns responsive classification.
   - Page CSS targets shell classes instead of recreating device logic where possible.
   - Split-screen tablet, landscape phone, and DevTools simulation produce predictable states.
 - Verification:
   - Static checks for canonical class generation.
-  - Viewport probes at 568x320, 768x1024, 820x1180, 1024x768.
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots`
 
 ### M-011 - Explicit scroll ownership model
 

@@ -299,7 +299,9 @@ async function inspectPage(page) {
       title: document.title,
       role: document.body?.dataset.authRole || "",
       screenSize: document.body?.dataset.screenSize || "",
+      shellSize: document.body?.dataset.shellSize || "",
       orientation: document.body?.dataset.screenOrientation || "",
+      shellOrientation: document.body?.dataset.shellOrientation || "",
       viewportWidth,
       viewportHeight: Math.round(viewportHeight),
       scrollWidth,
@@ -396,7 +398,8 @@ async function run() {
     ].filter(Boolean);
     console.log(
       `${result.failed ? "FAIL" : "OK"} ${result.role} ${result.viewport} ` +
-        `${result.screenSize}/${result.orientation}${flags.length ? ` - ${flags.join(", ")}` : ""}`,
+        `${result.screenSize}/${result.orientation} shell=${result.shellSize}/${result.shellOrientation}` +
+        `${flags.length ? ` - ${flags.join(", ")}` : ""}`,
     );
     if (result.screenshot) console.log(`  screenshot: ${result.screenshot}`);
   });
