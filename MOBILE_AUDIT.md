@@ -188,18 +188,19 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-014 - Development horizontal overflow detector
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
 - Files: `js/app-shell.js` or `js/dom-helpers.js`, `scripts/smoke-check.js`
 - Work:
-  - Add dev-only helper to scan visible elements whose rect exceeds viewport by more than 1px.
-  - Exclude approved wrappers such as table scrollers and intentionally scrollable rails.
-  - Run after navigation, resize, and role changes when debug flag is enabled.
+  - `[x]` Add dev-only helper to scan visible elements whose rect exceeds viewport by more than 1px.
+  - `[x]` Exclude approved wrappers such as table scrollers and intentionally scrollable rails.
+  - `[x]` Run after shell sync when `localStorage.bcMobileOverflowTrace = "1"` or `window.BC_MOBILE_OVERFLOW_TRACE = true`.
 - Acceptance:
   - `window.bcDebugMobileOverflow()` reports actionable selectors.
   - No false positives for approved horizontal-scroll wrappers.
 - Verification:
   - Static smoke assertion for helper and approved exclusion list.
+  - Manual debug command: `bcDebugMobileOverflow()`.
 
 ### M-015 - Reduced motion and safe-area pass
 

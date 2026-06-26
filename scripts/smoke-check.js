@@ -1131,6 +1131,10 @@ function checkPlayerPortalContracts() {
     !/shell-compact/.test(appShell) ||
     !/shell-tablet/.test(appShell) ||
     !/shell-short/.test(appShell) ||
+    !/MOBILE_OVERFLOW_APPROVED_SELECTORS/.test(appShell) ||
+    !/function collectMobileOverflowDiagnostics/.test(appShell) ||
+    !/window\.bcDebugMobileOverflow = bcDebugMobileOverflow/.test(appShell) ||
+    !/bcMobileOverflowTrace/.test(appShell) ||
     !/window\.visualViewport\?\.addEventListener\([\s\S]*"resize",[\s\S]*queueMobileShellStateSync,[\s\S]*\{\s*passive:\s*true\s*\}/.test(
       appShell,
     ) ||

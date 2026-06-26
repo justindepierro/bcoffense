@@ -45,6 +45,21 @@ let _mobileShellFrame = 0;
 let _mobileShellScrollTimer = 0;
 let _mobileShellLastStateKey = "";
 let _mobileShellResizeObserver = null;
+let _mobileOverflowTraceTimer = 0;
+
+const MOBILE_OVERFLOW_APPROVED_SELECTORS = [
+  ".table-wrapper",
+  ".table-scroll",
+  ".playbook-table-wrap",
+  ".playbook-table-container",
+  ".callsheet-table-wrapper",
+  ".wristband-grid",
+  ".wristband-grid-wrapper",
+  ".tabs",
+  ".tab-scroll",
+  ".script-play-rail",
+  ".available-plays-container",
+];
 
 function setMobileShellCssVar(root, name, value) {
   if (root.style.getPropertyValue(name) === value) return;
@@ -55,6 +70,81 @@ function removeMobileShellCssVar(root, name) {
   if (!root.style.getPropertyValue(name)) return;
   root.style.removeProperty(name);
 }
+
+function isMobileOverflowTraceEnabled() {
+  try {
+    return window.BC_MOBILE_OVERFLOW_TRACE === true ||
+      localStorage.getItem("bcMobileOverflowTrace") === "1";
+  } catch (_err) {
+    return window.BC_MOBILE_OVERFLOW_TRACE === true;
+  }
+}
+
+function describeMobileOverflowElement(el) {
+  if (!el) return "";
+  if (el.id) return `#${el.id}`;
+  const classes = Array.from(el.classList || []).slice(0, 3).join(".");
+  const action = el.getAttribute?.("data-action");
+  return `${el.tagName.toLowerCase()}${classes ? `.${classes}` : ""}${action ? `[${action}]` : ""}`;
+}
+
+function collectMobileOverflowDiagnostics(opts = {}) {
+  const viewport = window.visualViewport;
+  const viewportWidth = Math.round(viewport?.width || window.innerWidth || 0);
+  const viewportHeight = Math.round(viewport?.height || window.innerHeight || 0);
+  const tolerance = Number.isFinite(opts.tolerance) ? opts.tolerance : 1;
+  const approvedSelectors = opts.approvedSelectors || MOBILE_OVERFLOW_APPROVED_SELECTORS;
+  const results = [];
+  if (!viewportWidth || !viewportHeight || !document.body) return results;
+
+  document.querySelectorAll("body *").forEach((el) => {
+    if (approvedSelectors.some((selector) => el.closest(selector))) return;
+    const style = getComputedStyle(el);
+    if (
+      style.display === "none" ||
+      style.visibility === "hidden" ||
+      Number(style.opacity) === 0
+    ) {
+      return;
+    }
+    const rect = el.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    if (rect.bottom <= 0 || rect.top >= viewportHeight) return;
+    const leftOverflow = Math.max(0, -rect.left);
+    const rightOverflow = Math.max(0, rect.right - viewportWidth);
+    if (leftOverflow <= tolerance && rightOverflow <= tolerance) return;
+    results.push({
+      selector: describeMobileOverflowElement(el),
+      left: Math.round(rect.left),
+      right: Math.round(rect.right),
+      width: Math.round(rect.width),
+      leftOverflow: Math.round(leftOverflow),
+      rightOverflow: Math.round(rightOverflow),
+      text: (el.textContent || "").trim().replace(/\s+/g, " ").slice(0, 80),
+    });
+  });
+  return results;
+}
+
+function bcDebugMobileOverflow(opts = {}) {
+  const results = collectMobileOverflowDiagnostics(opts);
+  if (typeof console.table === "function") console.table(results);
+  else console.log(results);
+  return results;
+}
+
+function queueMobileOverflowTrace() {
+  if (!isMobileOverflowTraceEnabled()) return;
+  window.clearTimeout(_mobileOverflowTraceTimer);
+  _mobileOverflowTraceTimer = window.setTimeout(() => {
+    const results = collectMobileOverflowDiagnostics();
+    if (results.length) {
+      console.warn("[BC mobile overflow]", results);
+    }
+  }, 180);
+}
+
+window.bcDebugMobileOverflow = bcDebugMobileOverflow;
 
 function syncMobileShellState() {
   _mobileShellFrame = 0;
@@ -162,6 +252,7 @@ function syncMobileShellState() {
   body.dataset.shellShort = isShort ? "true" : "false";
   body.dataset.shellOrientation = isLandscape ? "landscape" : "portrait";
   body.dataset.shellPointer = isTouch ? "coarse" : "fine";
+  queueMobileOverflowTrace();
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
 }
