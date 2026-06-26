@@ -1063,6 +1063,9 @@ function checkPlayerPortalContracts() {
     !/window\.canEditUser = canEditUser/.test(auth) ||
     !/auth-login-shell/.test(auth) ||
     !/authPasswordToggle/.test(auth) ||
+    !/ensureAuthFocusedControlVisible/.test(auth) ||
+    !/is-keyboard-open/.test(auth) ||
+    !/scrollIntoView\(\{[\s\S]*block:\s*"center"/.test(auth) ||
     !/AUTH_LOGIN_ROLE_DETAILS/.test(auth) ||
     !/data-login-role/.test(auth)
   ) {
@@ -1124,6 +1127,12 @@ function checkPlayerPortalContracts() {
       appShell,
     ) ||
     !/function queueMobileShellSettledSync\(\)/.test(appShell) ||
+    !/let _mobileShellResizeObserver = null/.test(appShell) ||
+    !/function observeMobileShellChrome\(\)/.test(appShell) ||
+    !/new ResizeObserver\(queueMobileShellMeasuredSync\)/.test(appShell) ||
+    !/headerHeight/.test(appShell) ||
+    !/tabsHeight/.test(appShell) ||
+    !/coachDockHeight/.test(appShell) ||
     !/window\.visualViewport\?\.addEventListener\("scroll", queueMobileShellSettledSync/.test(
       appShell,
     ) ||
@@ -1205,9 +1214,20 @@ function checkPlayerPortalContracts() {
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.auth-login-overlay/.test(componentsCss) ||
+    !/body\.is-short-screen \.auth-login-overlay/.test(componentsCss) ||
+    !/\.auth-login-overlay\.is-keyboard-open/.test(componentsCss) ||
+    !/body\.is-short-screen \.auth-login-hero,[\s\S]*\.auth-login-overlay\.is-keyboard-open \.auth-login-hero[\s\S]*display:\s*none/.test(
+      componentsCss,
+    ) ||
     !/\.auth-login-role-picker/.test(componentsCss) ||
     !/\.auth-login-role-option\.is-active/.test(componentsCss) ||
     !/auth-login-submit[\s\S]*touch-action:\s*manipulation/.test(componentsCss) ||
+    !/body\.is-phone-screen\[data-auth-role="player"\] \.header-action-btn[\s\S]*width:\s*44px[\s\S]*min-width:\s*44px[\s\S]*height:\s*44px/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-phone-screen\[data-auth-role="player"\] \.auth-user-badge[\s\S]*min-height:\s*44px/.test(
+      responsiveCss,
+    ) ||
     !/\.auth-login-card\s*\{\s*order:\s*1;/.test(componentsCss) ||
     !/\.auth-login-hero\s*\{\s*order:\s*2;/.test(componentsCss) ||
     !/\.player-home-hero/.test(dashboardCss) ||

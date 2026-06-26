@@ -44,6 +44,7 @@ window.addEventListener("load", () => {
 let _mobileShellFrame = 0;
 let _mobileShellScrollTimer = 0;
 let _mobileShellLastStateKey = "";
+let _mobileShellResizeObserver = null;
 
 function setMobileShellCssVar(root, name, value) {
   if (root.style.getPropertyValue(name) === value) return;
@@ -81,9 +82,24 @@ function syncMobileShellState() {
   const activeTab =
     body.dataset.activeTab ||
     (typeof currentActiveTab !== "undefined" ? currentActiveTab : "");
+  const header = document.querySelector(".app-header");
+  const tabs = document.querySelector(".tabs");
+  const coachDock = document.getElementById("mobileCoachDock");
+  const headerHeight = header
+    ? Math.ceil(header.getBoundingClientRect().height)
+    : 0;
+  const tabsHeight = tabs
+    ? Math.ceil(tabs.getBoundingClientRect().height)
+    : 0;
+  const coachDockHeight = coachDock
+    ? Math.ceil(coachDock.getBoundingClientRect().height)
+    : 0;
   const stateKey = [
     width,
     height,
+    headerHeight,
+    tabsHeight,
+    coachDockHeight,
     isTouch ? "touch" : "pointer",
     authRole,
     activeTab,
@@ -96,22 +112,8 @@ function syncMobileShellState() {
   setMobileShellCssVar(root, "--app-vh", `${Math.max(height * 0.01, 1)}px`);
   setMobileShellCssVar(root, "--app-vw", `${Math.max(width * 0.01, 1)}px`);
 
-  const header = document.querySelector(".app-header");
-  const tabs = document.querySelector(".tabs");
-  if (header) {
-    setMobileShellCssVar(
-      root,
-      "--app-header-height",
-      `${Math.ceil(header.getBoundingClientRect().height)}px`,
-    );
-  }
-  if (tabs) {
-    setMobileShellCssVar(
-      root,
-      "--app-tabs-height",
-      `${Math.ceil(tabs.getBoundingClientRect().height)}px`,
-    );
-  }
+  if (header) setMobileShellCssVar(root, "--app-header-height", `${headerHeight}px`);
+  if (tabs) setMobileShellCssVar(root, "--app-tabs-height", `${tabsHeight}px`);
 
   [root, body].forEach((el) => {
     el.classList.toggle("is-mobile-screen", isMobile);
@@ -127,10 +129,6 @@ function syncMobileShellState() {
     "is-staff-mobile-shell",
     isMobile && Boolean(authRole) && authRole !== "player" && authRole !== "locked",
   );
-  const coachDock = document.getElementById("mobileCoachDock");
-  const coachDockHeight = coachDock
-    ? Math.ceil(coachDock.getBoundingClientRect().height)
-    : 0;
   if (coachDockHeight > 0) {
     setMobileShellCssVar(root, "--coach-dock-height", `${coachDockHeight + 12}px`);
   } else {
@@ -147,17 +145,37 @@ function queueMobileShellStateSync() {
   _mobileShellFrame = requestAnimationFrame(syncMobileShellState);
 }
 
+function queueMobileShellMeasuredSync() {
+  _mobileShellLastStateKey = "";
+  queueMobileShellStateSync();
+}
+
 function queueMobileShellSettledSync() {
   window.clearTimeout(_mobileShellScrollTimer);
   _mobileShellScrollTimer = window.setTimeout(queueMobileShellStateSync, 240);
+}
+
+function observeMobileShellChrome() {
+  if (_mobileShellResizeObserver || typeof ResizeObserver !== "function") return;
+  const targets = [
+    document.querySelector(".app-header"),
+    document.querySelector(".tabs"),
+    document.getElementById("mobileCoachDock"),
+  ].filter(Boolean);
+  if (!targets.length) return;
+  _mobileShellResizeObserver = new ResizeObserver(queueMobileShellMeasuredSync);
+  targets.forEach((target) => _mobileShellResizeObserver.observe(target));
 }
 
 // Run synchronously at parse time so is-mobile-screen is set before first paint.
 // The rAF version below handles subsequent resize/orientation changes.
 syncMobileShellState();
 queueMobileShellStateSync();
-document.addEventListener("DOMContentLoaded", queueMobileShellStateSync);
-window.addEventListener("load", queueMobileShellStateSync);
+document.addEventListener("DOMContentLoaded", () => {
+  observeMobileShellChrome();
+  queueMobileShellMeasuredSync();
+});
+window.addEventListener("load", queueMobileShellMeasuredSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
 window.visualViewport?.addEventListener("resize", queueMobileShellStateSync, {
   passive: true,

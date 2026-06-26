@@ -3,3 +3,4 @@
 .tmp_*.py
 .dev.vars
 .wrangler/
+.mobile-debug/

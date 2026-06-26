@@ -329,6 +329,11 @@
     }
     const _sessionMaxAge = normalized.role === "player" ? 7 * 24 * 60 * 60 * 1000 : AUTH_SESSION_MAX_AGE_MS;
     if (Date.now() - savedAt > _sessionMaxAge) {
+      clearStoredAuthUser();
+      return null;
+    }
+    return normalized;
+  }
 
       async function fetchAuthSession() {
         try {
@@ -729,9 +734,37 @@
         const roleEyebrowEl = overlay.querySelector("#authLoginRoleEyebrow");
         const heroTitleEl = overlay.querySelector("#authLoginHeroTitle");
         const heroSummaryEl = overlay.querySelector("#authLoginHeroSummary");
+        const focusController =
+          typeof AbortController === "function" ? new AbortController() : null;
+        const focusSignal = focusController ? { signal: focusController.signal } : {};
+        let focusScrollTimer = 0;
+        const cleanupLoginFocusTracking = () => focusController?.abort();
+        const ensureAuthFocusedControlVisible = () => {
+          const active = document.activeElement;
+          if (!overlay.isConnected || !overlay.contains(active)) return;
+          if (!active.matches?.("input, textarea, select")) return;
+          window.clearTimeout(focusScrollTimer);
+          focusScrollTimer = window.setTimeout(() => {
+            active.scrollIntoView({
+              block: "center",
+              inline: "nearest",
+              behavior: "smooth",
+            });
+          }, 90);
+        };
+        const syncAuthKeyboardState = () => {
+          const viewport = window.visualViewport;
+          const keyboardOpen =
+            Boolean(viewport) &&
+            window.innerHeight - viewport.height > 80 &&
+            viewport.width <= 900;
+          overlay.classList.toggle("is-keyboard-open", keyboardOpen);
+          ensureAuthFocusedControlVisible();
+        };
         const setAuthLoginMessage = (text, isStatus = false) => {
           errorEl.textContent = text;
           errorEl.classList.toggle("is-status", isStatus);
+          ensureAuthFocusedControlVisible();
         };
         const setSelectedLoginRole = (role, opts = {}) => {
           const details = getLoginRoleDetails(role);
@@ -834,6 +867,7 @@
             );
             authReady = true;
             await _animateOut();
+            cleanupLoginFocusTracking();
             overlay.remove();
             applyRoleUi();
             requestAnimationFrame(() => {
@@ -853,6 +887,7 @@
                 saveStoredAuthUser(fallbackUser, "local-dev");
                 authReady = true;
                 await _animateOut();
+                cleanupLoginFocusTracking();
                 overlay.remove();
                 applyRoleUi();
                 requestAnimationFrame(() => {
@@ -879,6 +914,16 @@
           setSelectedLoginRole("player", { fillUsername: true });
           passwordEl.focus();
         });
+        overlay.addEventListener("focusin", ensureAuthFocusedControlVisible, focusSignal);
+        window.visualViewport?.addEventListener("resize", syncAuthKeyboardState, {
+          passive: true,
+          ...focusSignal,
+        });
+        window.visualViewport?.addEventListener("scroll", syncAuthKeyboardState, {
+          passive: true,
+          ...focusSignal,
+        });
+        syncAuthKeyboardState();
         if (_urlRole) {
           setSelectedLoginRole(_urlRole, { fillUsername: true });
           requestAnimationFrame(() => passwordEl.focus());
@@ -1022,4 +1067,4 @@
       window.isActionAllowedForRole = isActionAllowedForRole;
       window.logoutAuth = logoutAuth;
       window.applyRoleUi = applyRoleUi;
-    }) ();
+    })();
