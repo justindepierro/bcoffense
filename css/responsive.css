@@ -560,18 +560,27 @@
     contain-intrinsic-size: none;
   }
 
-  /* Mobile Coach: Stack panes vertically, script first */
-  body.is-mobile-screen.is-staff-mobile-shell #script .script-builder {
+  /* Staff phone/compact coach mode: stack panes vertically, script first. */
+  body.shell-phone.is-staff-mobile-shell #script .script-builder,
+  body.shell-compact.is-staff-mobile-shell:not(.shell-tablet)
+    #script
+    .script-builder {
     grid-template-columns: minmax(0, 1fr);
     gap: 14px;
   }
 
-  body.is-mobile-screen.is-staff-mobile-shell #script .script-list {
+  body.shell-phone.is-staff-mobile-shell #script .script-list,
+  body.shell-compact.is-staff-mobile-shell:not(.shell-tablet)
+    #script
+    .script-list {
     order: 1;
     overflow: visible;
   }
 
-  body.is-mobile-screen.is-staff-mobile-shell #script .play-list {
+  body.shell-phone.is-staff-mobile-shell #script .play-list,
+  body.shell-compact.is-staff-mobile-shell:not(.shell-tablet)
+    #script
+    .play-list {
     order: 2;
     position: static;
     height: auto;
@@ -816,6 +825,43 @@
     min-height: calc(var(--app-vh, 1vh) * 100);
     padding: 12px;
   }
+}
+
+/* Staff tablets keep a near-full editing workspace instead of inheriting phone run mode. */
+body.shell-tablet.is-staff-mobile-shell #script .script-builder {
+  grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);
+  grid-template-rows: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 14px;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .script-play-rail.play-list {
+  position: relative;
+  inset: auto;
+  order: 1;
+  width: auto;
+  max-width: none;
+  height: auto;
+  min-height: 0;
+  max-height: calc(
+    (var(--app-vh, 1vh) * 100) - var(--app-header-height, 50px) -
+      var(--app-tabs-height, 44px) - 24px
+  );
+  overflow: auto;
+  transform: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .script-list {
+  order: 2;
+  min-width: 0;
+  overflow: visible;
+}
+
+body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
+  display: none !important;
 }
 
 /* ============ Responsive Design ============ */

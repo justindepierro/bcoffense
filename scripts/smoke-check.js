@@ -1145,6 +1145,7 @@ function checkPlayerPortalContracts() {
     !/stateKey === _mobileShellLastStateKey/.test(appShell) ||
     !/const shellPhone = isPhone/.test(appShell) ||
     !/const shellCompact = isMobile/.test(appShell) ||
+    !/const isTouchTablet = isTouch/.test(appShell) ||
     !/const shellTablet = isMobile/.test(appShell) ||
     !/body\.dataset\.shellSize = shellSize/.test(appShell) ||
     !/shell-phone/.test(appShell) ||
@@ -1241,10 +1242,16 @@ function checkPlayerPortalContracts() {
     !/body\.is-mobile-screen #script \.script-item,[\s\S]*content-visibility:\s*visible/.test(
       responsiveCss,
     ) ||
-    !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.script-builder[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(
+    !/body\.shell-phone\.is-staff-mobile-shell #script \.script-builder,[\s\S]*body\.shell-compact\.is-staff-mobile-shell:not\(\.shell-tablet\)[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(
       responsiveCss,
     ) ||
-    !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.play-list[\s\S]*position:\s*static[\s\S]*max-height:\s*none[\s\S]*overflow:\s*visible/.test(
+    !/body\.shell-phone\.is-staff-mobile-shell #script \.play-list,[\s\S]*body\.shell-compact\.is-staff-mobile-shell:not\(\.shell-tablet\)[\s\S]*position:\s*static[\s\S]*max-height:\s*none[\s\S]*overflow:\s*visible/.test(
+      responsiveCss,
+    ) ||
+    !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-builder[\s\S]*grid-template-columns:\s*minmax\(250px,\s*0\.72fr\) minmax\(0,\s*1\.28fr\)/.test(
+      responsiveCss,
+    ) ||
+    !/body\.shell-tablet\.is-staff-mobile-shell #script \.script-play-rail\.play-list[\s\S]*position:\s*relative[\s\S]*transform:\s*none[\s\S]*overflow:\s*auto/.test(
       responsiveCss,
     ) ||
     !/body\.is-mobile-screen\.is-staff-mobile-shell #script \.script-player-grid[\s\S]*display:\s*none/.test(

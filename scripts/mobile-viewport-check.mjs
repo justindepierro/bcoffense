@@ -33,6 +33,8 @@ const VIEWPORTS = {
   "1024x1366": { width: 1024, height: 1366 },
 };
 
+const IPAD_VIEWPORTS = ["768x1024", "820x1180", "834x1112", "1024x768", "1024x1366"];
+
 const MIME_TYPES = new Map([
   [".html", "text/html; charset=utf-8"],
   [".js", "text/javascript; charset=utf-8"],
@@ -51,7 +53,7 @@ function parseArgs(argv) {
   const args = {
     url: "",
     roles: ["admin", "coach", "player"],
-    viewports: ["320x568", "390x844", "568x320", "820x1180"],
+    viewports: ["320x568", "390x844", "568x320", ...IPAD_VIEWPORTS],
     screenshots: true,
     headed: false,
     warnOnly: false,
@@ -66,6 +68,7 @@ function parseArgs(argv) {
     } else if (arg.startsWith("--viewports=")) {
       args.viewports = arg.slice("--viewports=".length).split(",").map((v) => v.trim()).filter(Boolean);
     } else if (arg === "--all-viewports") args.viewports = Object.keys(VIEWPORTS);
+    else if (arg === "--ipad-viewports") args.viewports = IPAD_VIEWPORTS;
     else if (arg === "--no-screenshots") args.screenshots = false;
     else if (arg === "--headed") args.headed = true;
     else if (arg === "--warn-only") args.warnOnly = true;
@@ -411,16 +414,31 @@ async function run() {
           result.screenSize === "phone" &&
           Boolean(result.role) &&
           result.scrollOwner !== "document";
+        const badTabletShell =
+          IPAD_VIEWPORTS.includes(result.viewport) &&
+          Boolean(result.role) &&
+          result.shellSize !== "tablet";
+        const badSmallTargets =
+          result.screenSize === "phone" &&
+          result.smallTargetCount > 0;
         const failed =
           blankMobileStart ||
           badPhoneScrollOwner ||
+          badTabletShell ||
           result.overflow ||
           result.fixedOverlaps.length > 0 ||
-          result.smallTargetCount > 0 ||
+          badSmallTargets ||
           result.consoleErrors.length > 0 ||
           result.httpErrors.length > 0;
         if (failed) failureCount += 1;
-        results.push({ ...result, blankMobileStart, badPhoneScrollOwner, failed });
+        results.push({
+          ...result,
+          blankMobileStart,
+          badPhoneScrollOwner,
+          badTabletShell,
+          badSmallTargets,
+          failed,
+        });
       }
     }
   } finally {
@@ -435,6 +453,7 @@ async function run() {
     const flags = [
       result.blankMobileStart ? "blank mobile start" : "",
       result.badPhoneScrollOwner ? `phone scroll owner ${result.scrollOwner || "unset"}` : "",
+      result.badTabletShell ? `tablet shell ${result.shellSize || "unset"}` : "",
       result.overflow ? `overflow ${result.scrollWidth}>${result.viewportWidth}` : "",
       result.smallTargetCount ? `${result.smallTargetCount} small targets` : "",
       result.fixedOverlaps.length ? `${result.fixedOverlaps.length} fixed overlaps` : "",

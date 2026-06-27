@@ -1152,6 +1152,7 @@ body.is-short-screen .auth-login-player-shortcut,
     box-shadow: var(--shadow-sm);
   }
 
+  body.shell-tablet #script.active .mobile-script-coach-now,
   body.is-mobile-screen[data-auth-role="player"]
     #script.active
     .mobile-script-coach-now {

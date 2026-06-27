@@ -161,16 +161,17 @@ function syncMobileShellState() {
 
   const isTouch =
     window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
+  const isTouchTablet = isTouch && shortSide <= 1024 && longSide <= 1366;
   const isMobile =
     width <= 768 ||
-    (isTouch && shortSide <= 820 && longSide <= 1180);
+    isTouchTablet;
   const isPhone = shortSide <= 560;
   const isCompact = shortSide <= 420;
   const isShort = height <= 620;
   const isLandscape = width > height;
   const shellPhone = isPhone;
-  const shellCompact = isMobile && (width <= 768 || shellPhone);
-  const shellTablet = isMobile && !shellPhone && (width <= 1024 || (isTouch && longSide <= 1180));
+  const shellCompact = isMobile && (shellPhone || (!isTouchTablet && width <= 768));
+  const shellTablet = isMobile && !shellPhone && (width <= 1024 || isTouchTablet);
   const shellSize = shellPhone
     ? "phone"
     : shellCompact

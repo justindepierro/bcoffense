@@ -19,6 +19,17 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ---
 
+## Next Heavy Hitters
+
+1. `M-023` - iPad/tablet responsiveness pass: make tablet a near-full editing workspace, not a stretched phone or cramped desktop.
+2. `M-032` - Call Sheet phone situation-card view: replace the print-like dense sheet on phones.
+3. `M-033` - Wristband phone card editor: make cell editing/search workable without horizontal body scroll.
+4. `M-012` - Shared layer/body lock utility: fix modal/drawer scroll, focus return, safe-area footers, and background touch leaks.
+5. `M-031` - Practice Script touch reordering fallback: give touch users move/reorder controls that do not depend on drag.
+6. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
+
+---
+
 ## Phase 0 - Baseline From First Pass
 
 ### M-001 - Shell chrome measurement
@@ -287,6 +298,36 @@ This checklist converts the mobile audit into work items we can execute and veri
   - Full username is discoverable.
 - Verification:
   - Browser screenshot at 320px, 375px, 390px, and 200% text zoom.
+
+### M-023 - iPad and tablet responsiveness pass
+
+- Status: `[~]`
+- Priority: P0
+- Files: `js/app-shell.js`, `css/responsive.css`, page CSS, viewport harness
+- Work:
+  - Define the tablet contract separately from phone:
+    - Staff tablet: near-full editing with tablet-optimized two-pane layouts.
+    - Coach tablet: practice run controls plus editable supporting panes.
+    - Player tablet: study/presentation-first with roomy navigation.
+    - Split-screen iPad: follow `shell-compact` when width is constrained.
+  - Audit `shell-tablet`, `is-mobile-screen`, and `is-compact-screen` behavior at iPad sizes.
+  - Add iPad Mini, iPad Air/Pro portrait, iPad landscape, and split-screen widths to the routine verification pass.
+  - Keep phone-only run mode from taking over full tablet editing layouts.
+  - `[x]` Expand touch-tablet shell detection through common iPad Pro dimensions.
+  - `[x]` Restore staff tablet Practice Script to a two-pane editing workspace.
+  - `[x]` Keep the phone-only current-call coach card from taking over tablet Script.
+  - `[x]` Add routine iPad viewport coverage and tablet-shell assertions to the viewport harness.
+  - Verify header, tabs, coach dock, modals, and presentation controls around iPad safe areas.
+- Acceptance:
+  - iPad portrait does not look like a broken desktop or a stretched phone.
+  - iPad landscape preserves the desktop editing value while keeping touch targets reachable.
+  - Split-screen iPad behaves predictably and does not strand content below fixed chrome.
+  - Player iPad cannot see staff controls and can reach published script/presentation workflows.
+- Verification:
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=768x1024,820x1180,834x1112,1024x768,1024x1366 --warn-only --no-screenshots`
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --ipad-viewports --warn-only --no-screenshots`
+  - Browser screenshots for iPad Mini portrait/landscape and iPad Pro split-screen.
+  - Targeted Script, Call Sheet, Wristband, and Presentation tablet probes.
 
 ---
 
@@ -589,13 +630,34 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 
 ## Recommended Next 10 Items
 
-1. `[ ]` M-021 - Run visual QA for login changes once browser tooling is available.
-2. `[ ]` M-010 - Finish canonical responsive state contract.
-3. `[~]` M-011 - Define and enforce scroll ownership.
+1. `[~]` M-023 - Finish iPad/tablet QA across Call Sheet, Wristband, and Presentation.
+2. `[ ]` M-032 - Build Call Sheet phone situation-card view.
+3. `[ ]` M-033 - Build Wristband phone card editor.
 4. `[ ]` M-012 - Build shared layer/body lock utility.
-5. `[ ]` M-014 - Add development horizontal overflow detector.
-6. `[ ]` M-020 - Write role capability matrix.
-7. `[~]` M-030 - Build coach phone Practice Run Mode.
-8. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
-9. `[ ]` M-032 - Build Call Sheet phone situation-card view.
-10. `[ ]` M-033 - Build Wristband phone card editor.
+5. `[ ]` M-020 - Write role capability matrix.
+6. `[ ]` M-031 - Add Practice Script touch reordering fallback.
+7. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
+8. `[ ]` M-034 - Build Playbook phone action/filter sheets.
+9. `[ ]` M-021 - Run login visual QA matrix.
+10. `[~]` M-010 - Finish canonical responsive state migration.
+
+---
+
+## Running Completed List
+
+- `[x]` M-001 - Shell chrome measurement: measured header, tabs, and coach dock drive mobile CSS vars.
+- `[x]` M-002 - Login short-screen and keyboard behavior: login card and focused fields stay reachable on short/keyboard screens.
+- `[x]` M-003 - Player phone header touch targets: player header controls meet the 44px phone target.
+- `[x]` M-004 - Auth session syntax/expiry repair: expired sessions clear cleanly and `auth.js` parses.
+- `[x]` M-005 - Regression guards and cache bump: early mobile smoke guards and cache versioning were added.
+- `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states exist and mobile no-playbook startup opens the app shell.
+- `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
+- `[x]` M-013 partial - Touch-target guardrail: shared controls and phone viewport checks catch undersized standalone targets.
+- `[x]` M-014 - Development horizontal overflow detector: `bcDebugMobileOverflow()` reports visible overflow suspects.
+- `[x]` M-015 partial - Reduced motion: global reduced-motion guardrail is covered by smoke checks.
+- `[x]` M-023 partial - iPad/tablet responsiveness: touch-tablet shell detection covers iPad Pro, staff tablet Script keeps a two-pane editing layout, and the viewport harness has iPad assertions.
+- `[x]` M-030 partial - Practice Script phone run mode: staff phones get current-call controls, scoring, period jump, log/present actions, and an Edit Sheet toggle.
+- `[x]` M-031A - Player Script read-only portal: player logins see published/loaded scripts and cannot create/edit builder content.
+- `[x]` M-040 partial - Player presentation cut-off: portrait player presentation scrolls and clears bottom browser controls.
+- `[x]` M-050 partial - Viewport harness: `scripts/mobile-viewport-check.mjs` runs local auth/viewport checks for admin, coach, and player.
+- `[x]` M-051 partial - Automated assertions: horizontal overflow, phone startup, fixed overlap, touch target, and player-control assertions have initial coverage.
