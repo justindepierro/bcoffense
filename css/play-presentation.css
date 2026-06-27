@@ -713,13 +713,6 @@ body.play-presentation-open {
   font-weight: 950;
 }
 
-.pp-player-name {
-  color: var(--color-text-secondary);
-  font-size: 1.5rem;
-  font-weight: 800;
-  text-align: right;
-}
-
 .pp-player-rule-text {
   color: var(--color-text);
   font-size: 2.75rem;
@@ -1729,14 +1722,6 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rul
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-position {
   font-size: 1.5rem;
   line-height: 0.95;
-}
-
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-name {
-  max-width: 86px;
-  font-size: 0.72rem;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-text {

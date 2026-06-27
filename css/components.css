@@ -26,6 +26,24 @@
 .custom-modal-overlay.visible .custom-modal {
   transform: translateY(0) scale(1);
 }
+
+body.app-layer-locked {
+  position: fixed;
+  width: 100%;
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+.app-layer-active {
+  overscroll-behavior: contain;
+}
+
+.app-layer-safe-area {
+  padding-right: max(var(--space-md), env(safe-area-inset-right));
+  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+  padding-left: max(var(--space-md), env(safe-area-inset-left));
+}
+
 .custom-modal {
   background: var(--color-surface);
   border-radius: var(--radius-lg);

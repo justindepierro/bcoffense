@@ -616,9 +616,11 @@ function checkPlayPresentationContracts() {
   const scriptAdd = read("js/script-add.js");
   const scriptExport = read("js/script-export.js");
   const gameplanPrint = read("js/gameplan-print.js");
+  const domHelpers = read("js/dom-helpers.js");
   const appEvents = read("js/app-events.js");
   const auth = read("js/auth.js");
   const css = read("css/play-presentation.css");
+  const componentsCss = read("css/components.css");
   const sw = read("sw.js");
 
   if (
@@ -789,6 +791,24 @@ function checkPlayPresentationContracts() {
     fail("player presentation role limits are incomplete");
   }
   if (
+    !/function openLayer\(layer, options = \{\}\)/.test(domHelpers) ||
+    !/function closeLayer\(layer, options = \{\}\)/.test(domHelpers) ||
+    !/classList\.add\("app-layer-locked"\)/.test(domHelpers) ||
+    !/document\.addEventListener\("touchmove", appLayerTouchMoveHandler,[\s\S]*passive:\s*false/.test(
+      domHelpers,
+    ) ||
+    !/body\.app-layer-locked/.test(componentsCss) ||
+    !/\.app-layer-safe-area/.test(componentsCss) ||
+    !/openLayer\(overlay,[\s\S]*id:\s*"play-presentation"/.test(
+      presenter,
+    ) ||
+    !/closeLayer\("play-presentation",\s*\{\s*returnFocus:\s*false\s*\}\)/.test(
+      presenter,
+    )
+  ) {
+    fail("shared layer body-lock contract is incomplete");
+  }
+  if (
     !/\.play-presentation-overlay:fullscreen/.test(css) ||
     !/\.play-presentation-overlay\.show,\s*\.play-presentation-overlay\.is-open,\s*\.play-presentation-overlay\[data-presentation-open="true"\]/.test(
       css,
@@ -831,9 +851,19 @@ function checkScriptPlayerPublishingContracts() {
   const scriptStorage = read("js/script-storage.js");
   const scriptRender = read("js/script-render.js");
   const scriptDisplay = read("js/script-display-options.js");
+  const presentation = read("js/play-presentation.js");
+  const presentationCss = read("css/play-presentation.css");
   const appEvents = read("js/app-events.js");
   const auth = read("js/auth.js");
   const css = read("css/script.css");
+  const playerScriptMetaBlock =
+    scriptRender.match(
+      /function getPlayerScriptMetaItems\([\s\S]*?\nfunction renderPlayerScriptPeriodHeader\(/,
+    )?.[0] || "";
+  const playerPresentationBlock =
+    presentation.match(
+      /function getPlayPresentationPlayerMarkup\([\s\S]*?\nfunction getPlayPresentationDetailRows\(/,
+    )?.[0] || "";
 
   if (
     !/playerVisible:\s*false/.test(scriptStorage) ||
@@ -900,6 +930,19 @@ function checkScriptPlayerPublishingContracts() {
     )
   ) {
     fail("player script role rendering is incomplete");
+  }
+  if (
+    !playerScriptMetaBlock ||
+    /keyPlayer|keyPlayerName|Key Players|key player|key-player/i.test(
+      playerScriptMetaBlock,
+    ) ||
+    !playerPresentationBlock ||
+    /playerName|pp-player-name|keyPlayer|keyPlayerName|Key Players/i.test(
+      playerPresentationBlock,
+    ) ||
+    /\.pp-player-name/.test(presentationCss)
+  ) {
+    fail("player script views expose key-player or roster-name hints");
   }
   [
     "loadPublishedPlayerScript",

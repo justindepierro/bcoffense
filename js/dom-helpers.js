@@ -106,6 +106,129 @@ function trapFocus(overlay) {
   });
 }
 
+const activeAppLayers = new Map();
+let appLayerBodyLockState = null;
+let appLayerTouchMoveHandler = null;
+
+function getLayerElement(layer) {
+  if (typeof layer === "string") return document.getElementById(layer);
+  return layer instanceof HTMLElement ? layer : null;
+}
+
+function getLayerId(layer, options = {}) {
+  return (
+    options.id ||
+    layer?.id ||
+    layer?.dataset?.layerId ||
+    `app-layer-${activeAppLayers.size + 1}`
+  );
+}
+
+function getActiveLayerState() {
+  const states = Array.from(activeAppLayers.values());
+  return states[states.length - 1] || null;
+}
+
+function preventBackgroundLayerTouch(event) {
+  const activeLayer = getActiveLayerState();
+  if (!activeLayer) return;
+  const scrollElement = activeLayer.scrollElement || activeLayer.element;
+  if (scrollElement?.contains?.(event.target)) return;
+  event.preventDefault();
+}
+
+function lockBodyForLayer() {
+  if (appLayerBodyLockState) return;
+  appLayerBodyLockState = {
+    scrollX: window.scrollX || 0,
+    scrollY: window.scrollY || 0,
+    bodyTop: document.body.style.top,
+    bodyLeft: document.body.style.left,
+  };
+  document.documentElement.style.setProperty(
+    "--app-layer-scroll-y",
+    `${appLayerBodyLockState.scrollY}px`,
+  );
+  document.body.style.top = `-${appLayerBodyLockState.scrollY}px`;
+  document.body.style.left = `-${appLayerBodyLockState.scrollX}px`;
+  document.body.classList.add("app-layer-locked");
+  appLayerTouchMoveHandler = preventBackgroundLayerTouch;
+  document.addEventListener("touchmove", appLayerTouchMoveHandler, {
+    passive: false,
+  });
+}
+
+function unlockBodyForLayer() {
+  if (!appLayerBodyLockState || activeAppLayers.size > 0) return;
+  const { scrollX, scrollY, bodyTop, bodyLeft } = appLayerBodyLockState;
+  appLayerBodyLockState = null;
+  document.body.classList.remove("app-layer-locked");
+  document.body.style.top = bodyTop;
+  document.body.style.left = bodyLeft;
+  document.documentElement.style.removeProperty("--app-layer-scroll-y");
+  if (appLayerTouchMoveHandler) {
+    document.removeEventListener("touchmove", appLayerTouchMoveHandler);
+    appLayerTouchMoveHandler = null;
+  }
+  window.scrollTo(scrollX, scrollY);
+}
+
+function openLayer(layer, options = {}) {
+  const element = getLayerElement(layer);
+  if (!element) return false;
+  const id = getLayerId(element, options);
+  const blocking = options.blocking !== false;
+  const state = {
+    id,
+    element,
+    blocking,
+    scrollElement: getLayerElement(options.scrollElement) || null,
+    returnFocus:
+      options.returnFocus === false
+        ? null
+        : document.activeElement instanceof HTMLElement
+          ? document.activeElement
+          : null,
+  };
+
+  if (options.exclusive !== false) {
+    Array.from(activeAppLayers.keys()).forEach((activeId) => {
+      if (activeId !== id) closeLayer(activeId, { returnFocus: false });
+    });
+  }
+
+  activeAppLayers.set(id, state);
+  element.dataset.layerId = id;
+  element.dataset.layerOpen = "true";
+  element.classList.add("app-layer-active");
+  if (options.safeArea !== false) element.classList.add("app-layer-safe-area");
+  if (blocking) lockBodyForLayer();
+  if (options.trapFocus !== false && !element.dataset.focusTrapReady) {
+    trapFocus(element);
+    element.dataset.focusTrapReady = "true";
+  }
+  return true;
+}
+
+function closeLayer(layer, options = {}) {
+  const element = getLayerElement(layer);
+  const id =
+    typeof layer === "string"
+      ? layer
+      : element?.dataset?.layerId || element?.id || "";
+  const state = activeAppLayers.get(id);
+  if (!state) return false;
+
+  activeAppLayers.delete(id);
+  state.element.dataset.layerOpen = "false";
+  state.element.classList.remove("app-layer-active", "app-layer-safe-area");
+  if (options.returnFocus !== false && state.returnFocus?.isConnected) {
+    state.returnFocus.focus();
+  }
+  unlockBodyForLayer();
+  return true;
+}
+
 function addLongPress(element, callback, duration) {
   duration = duration || 500;
   let timer = null;

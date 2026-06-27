@@ -400,6 +400,15 @@ function openPlayPresentation(items, startIndex, source) {
 
   setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "play-presentation",
+      safeArea: false,
+      trapFocus: false,
+      returnFocus: false,
+      scrollElement: "playPresentationBody",
+    });
+  }
   syncPlayPresentationMobileLandscape();
   renderPlayPresentation();
   const overlayVisible = ensurePlayPresentationOverlayDisplayed(
@@ -460,6 +469,9 @@ function closePlayPresentation() {
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
+  if (typeof closeLayer === "function") {
+    closeLayer("play-presentation", { returnFocus: false });
+  }
   setPlayPresentationOverlayOpen(overlay, false);
   document.body.classList.remove("play-presentation-open");
 
@@ -984,20 +996,6 @@ function getPlayPresentationMinimumMarkup(item) {
   `;
 }
 
-function getPlayPresentationPlayerName(play, positionKey) {
-  if (playPresentationState.source !== "script") return "";
-  if (
-    typeof getScriptPlayerAssignments !== "function" ||
-    typeof getTeamPlayerSelectionDisplay !== "function"
-  ) {
-    return "";
-  }
-  const slotKey = String(positionKey || "").replace(/^resp/, "").toLowerCase();
-  const assignments = getScriptPlayerAssignments(play) || {};
-  const playerId = String(assignments[slotKey] || "").trim();
-  return playerId ? getTeamPlayerSelectionDisplay(playerId) : "";
-}
-
 function getPlayPresentationSelectedPosition() {
   const positions = getPlayPresentationPositions();
   return (
@@ -1064,7 +1062,6 @@ function getPlayPresentationPlayerMarkup(item) {
   const play = item.play;
   const selected = getPlayPresentationSelectedPosition();
   const assignment = String(play[selected.key] || "").trim();
-  const playerName = getPlayPresentationPlayerName(play, selected.key);
 
   return `
     <div class="pp-layout pp-layout-player">
@@ -1104,7 +1101,6 @@ function getPlayPresentationPlayerMarkup(item) {
               <span class="pp-player-rule-eyebrow">Your Rule</span>
               <span class="pp-player-position">${escapeHtml(selected.label)}</span>
             </div>
-            ${playerName ? `<span class="pp-player-name">${escapeHtml(playerName)}</span>` : ""}
           </div>
           <div class="pp-player-rule-text">${assignment
       ? escapeHtml(assignment)

@@ -168,23 +168,25 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-012 - Shared layer/body lock utility
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P0
 - Files: `js/dom-helpers.js` or new shared file, `js/app-events.js`, modal/drawer callers, `css/components.css`
 - Work:
-  - Create `openLayer()` / `closeLayer()` utility.
-  - Save body scroll Y and restore it on close.
-  - Apply a body lock class.
+  - `[x]` Create `openLayer()` / `closeLayer()` utility.
+  - `[x]` Save body scroll Y and restore it on close.
+  - `[x]` Apply a body lock class.
   - Trap focus and return focus.
-  - Prevent background `touchmove`.
-  - Account for safe-area padding.
-  - Enforce one active blocking layer at a time.
+  - `[x]` Prevent background `touchmove`.
+  - `[x]` Account for safe-area padding.
+  - `[x]` Enforce one active blocking layer at a time.
+  - `[x]` Move Play Presentation overlay onto shared body lock.
+  - `[ ]` Migrate Playbook, Call Sheet, Wristband, Script tools, command palette, and custom modal callers.
 - Acceptance:
   - Opening a blocking layer prevents background scroll.
   - Closing restores scroll and focus.
   - Layer footer/header respect safe areas.
 - Verification:
-  - Unit/static smoke checks for API existence and body lock class.
+  - Static smoke checks for API existence, body lock class, touch suppression, safe-area class, and presentation overlay hook.
   - Browser checks for login, command palette, call sheet drawer, wristband popup, script tools drawer.
 
 ### M-013 - Mobile touch-target guardrail
@@ -391,9 +393,11 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[x]` Include `data-auth-player-hide` containers in auth UI scanning.
   - `[x]` Restore read-only action filtering so player logins cannot invoke mutating builder actions.
   - `[x]` Keep published script launcher and player swipe view actions available.
+  - `[x]` Hide key-player and roster-name hints from player-facing Practice Script cards and swipe rules.
 - Acceptance:
   - Player Practice tab only exposes published/loaded scripts and player-facing script rows.
   - Player cannot create periods, edit practice title/date, or use builder controls.
+  - Player Practice cards and swipe rules do not imply that only named/key players must learn the play.
   - Coach/admin retain full Script builder access.
 - Verification:
   - `node --check js/auth.js`
@@ -641,7 +645,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 1. `[~]` M-023 - Finish iPad/tablet QA across Call Sheet, Wristband, and Presentation.
 2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
 3. `[~]` M-033 - Finish Wristband phone popup/body-lock and player-card QA.
-4. `[ ]` M-012 - Build shared layer/body lock utility.
+4. `[~]` M-012 - Continue shared layer/body lock utility migration.
 5. `[ ]` M-020 - Write role capability matrix.
 6. `[ ]` M-031 - Add Practice Script touch reordering fallback.
 7. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
@@ -660,12 +664,14 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-005 - Regression guards and cache bump: early mobile smoke guards and cache versioning were added.
 - `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states exist and mobile no-playbook startup opens the app shell.
 - `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
+- `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, and now wrap Play Presentation.
 - `[x]` M-013 partial - Touch-target guardrail: shared controls and phone viewport checks catch undersized standalone targets.
 - `[x]` M-014 - Development horizontal overflow detector: `bcDebugMobileOverflow()` reports visible overflow suspects.
 - `[x]` M-015 partial - Reduced motion: global reduced-motion guardrail is covered by smoke checks.
 - `[x]` M-023 partial - iPad/tablet responsiveness: touch-tablet shell detection covers iPad Pro, staff tablet Script keeps a two-pane editing layout, and the viewport harness has iPad assertions.
 - `[x]` M-030 partial - Practice Script phone run mode: staff phones get current-call controls, scoring, period jump, log/present actions, and an Edit Sheet toggle.
 - `[x]` M-031A - Player Script read-only portal: player logins see published/loaded scripts and cannot create/edit builder content.
+- `[x]` M-031A follow-up - Player Practice cards and swipe rules hide key-player/roster-name hints so every player treats each rep as required learning.
 - `[x]` M-032 partial - Call Sheet phone cards: phones render stacked situation cards with readable left/right hash call lists and reachable add/remove/swap/category actions.
 - `[x]` M-033 partial - Wristband phone editor: classic wristbands render as tappable row cards on phones while tablet/desktop keep the printed card grid.
 - `[x]` M-040 partial - Player presentation cut-off: portrait player presentation scrolls and clears bottom browser controls.
