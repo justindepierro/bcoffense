@@ -727,6 +727,10 @@ function buildCallSheetColumns(categories, columnCount = 3) {
   return columns;
 }
 
+function shouldRenderCallSheetPhoneCards() {
+  return Boolean(document.body?.classList.contains("shell-phone"));
+}
+
 /**
  * Render the call sheet
  */
@@ -741,8 +745,10 @@ function renderCallSheet() {
     "Call sheet " + (callSheetSettings.currentPage || "front") + " page",
   );
   const isLandscape = callSheetSettings.orientation === "landscape";
+  const usePhoneCards = shouldRenderCallSheetPhoneCards();
   container.classList.toggle("callsheet-landscape", isLandscape);
   container.classList.toggle("callsheet-portrait", !isLandscape);
+  container.classList.toggle("callsheet-phone-cards", usePhoneCards);
 
   const page = callSheetSettings.currentPage;
   const categories = getCallSheetCategoriesForPage(page);
@@ -767,6 +773,8 @@ function renderCallSheet() {
         <button class="btn btn-sm btn-primary" data-action="resetCategoryOrder">Reset Layout</button>
       </div>
     `;
+  } else if (usePhoneCards) {
+    html += renderCallSheetPhoneCards(categories, dupeMap, displayOptions);
   } else {
     const columns = buildCallSheetColumns(categories, 3);
     html += '<div class="callsheet-columns">';
@@ -798,6 +806,20 @@ function renderCallSheet() {
   if (typeof refreshCallSheetGamePlanDrawer === "function") {
     refreshCallSheetGamePlanDrawer();
   }
+}
+
+function renderCallSheetPhoneCards(categories, dupeMap, displayOptions) {
+  let html = '<div class="cs-mobile-situation-list">';
+  categories.forEach((cat) => {
+    html += renderCallSheetPhoneCategory(
+      cat,
+      callSheet[cat.id] || {},
+      dupeMap,
+      displayOptions,
+    );
+  });
+  html += "</div>";
+  return html;
 }
 
 /**
@@ -1011,6 +1033,102 @@ function renderCategory(cat, data, dupeMap, displayOptions) {
   }
 
   html += `</div>`;
+  return html;
+}
+
+function renderCallSheetPhoneCategory(cat, data, dupeMap, displayOptions) {
+  const leftPlays = data.left || [];
+  const rightPlays = data.right || [];
+  const displayName = getCategoryDisplayName(cat);
+  const isPlayerSpecific = cat.playerSpecific;
+  const isCollapsed = csCollapsed.has(cat.id);
+  const headerColor = getCategoryColor(cat);
+  const textColor = getCategoryHeaderTextColor(headerColor);
+  const playCount = leftPlays.length + rightPlays.length;
+  const target = csTargets[cat.id];
+  let countDisplay = "";
+  if (target) {
+    const pct = Math.min(playCount / target, 1);
+    const targetColor =
+      playCount >= target
+        ? CS_COLORS.green
+        : playCount >= target * 0.5
+          ? CS_COLORS.yellow
+          : CS_COLORS.red;
+    countDisplay = `<span class="badge cs-play-count" style="background: ${targetColor}; color: ${playCount >= target || pct < 0.5 ? UI_COLORS.textWhite : UI_COLORS.textBlack};">${playCount}/${target}</span>`;
+  } else {
+    countDisplay = `<span class="badge cs-play-count">${playCount}</span>`;
+  }
+  const sortBtn =
+    playCount > 1
+      ? `<button type="button" class="cs-mobile-card-btn cs-sort-btn" title="Sort plays" data-action="openCsSortModal" data-arg="${cat.id}">⇅</button>`
+      : "";
+  const collapseIcon = isCollapsed ? "▶" : "▼";
+  const note = csNotes[cat.id];
+
+  let html = `
+    <section class="cs-mobile-situation-card${isCollapsed ? " cs-collapsed" : ""}" data-category="${cat.id}"
+      aria-label="${escapeHtml(displayName)} — ${playCount} play${playCount !== 1 ? "s" : ""}">
+      <div class="cs-mobile-card-header" style="--cs-cat-color: ${headerColor}; --cs-cat-text: ${textColor};">
+        <button type="button" class="cs-mobile-card-btn cs-collapse-btn" data-action="toggleCategoryCollapse" data-arg="${cat.id}" title="Collapse/Expand" aria-expanded="${!isCollapsed}">${collapseIcon}</button>
+        <div class="cs-mobile-card-title">
+          <h3 data-dblaction="editCategoryName" data-cat="${cat.id}">${escapeHtml(displayName)}</h3>
+          ${note ? `<p data-dblaction="editCategoryNote" data-cat="${cat.id}">${escapeHtml(note)}</p>` : ""}
+        </div>
+        ${countDisplay}
+        <div class="cs-mobile-card-actions">
+          ${sortBtn}
+          ${csScoutingOverlayOn ? `<button type="button" class="cs-mobile-card-btn cs-suggest-btn" data-action="openSmartSuggestionsModal" data-arg="${cat.id}" title="Smart play suggestions">💡</button>` : ""}
+          <button type="button" class="cs-mobile-card-btn cs-cat-menu-btn" data-action="openCategoryMenu" data-arg="${cat.id}" title="Category options">⋯</button>
+        </div>
+      </div>`;
+
+  if (!isCollapsed) {
+    html += buildScoutingBadge(cat.id);
+    html += `
+      <div class="cs-mobile-card-body" role="list" aria-label="${escapeHtml(displayName)} calls">
+        ${renderCallSheetPhoneHashGroup(cat.id, "left", "Left Hash", leftPlays, dupeMap, displayOptions)}
+        ${renderCallSheetPhoneHashGroup(cat.id, "right", "Right Hash", rightPlays, dupeMap, displayOptions)}
+      </div>`;
+  } else if (isPlayerSpecific) {
+    html += '<span class="sr-only">Player specific category collapsed</span>';
+  }
+
+  html += "</section>";
+  return html;
+}
+
+function renderCallSheetPhoneHashGroup(categoryId, hash, label, plays, dupeMap, displayOptions) {
+  let html = `
+    <section class="cs-mobile-hash-group" data-drop="csHashDrop" data-cat="${categoryId}" data-hash="${hash}" aria-label="${label}">
+      <div class="cs-mobile-hash-head">
+        <span>${escapeHtml(label)}</span>
+        <span>${plays.length}</span>
+      </div>
+      <div class="cs-mobile-play-list">`;
+
+  plays.forEach((play, idx) => {
+    html += renderCallSheetPlay(
+      play,
+      categoryId,
+      hash,
+      idx,
+      dupeMap,
+      displayOptions,
+    );
+  });
+
+  if (plays.length === 0) {
+    html += `<div class="cs-empty-cat">No calls yet</div>`;
+  }
+
+  html += `
+      </div>
+      <div class="cs-mobile-hash-actions">
+        <button type="button" class="callsheet-dropzone" data-action="openCallSheetPlayPicker" data-cat="${categoryId}" data-hash="${hash}" aria-label="Add play to ${label}">+ Add Play</button>
+        <button type="button" class="cs-add-blank-btn" data-action="addCsBlankRow" data-arg="${categoryId}:${hash}" title="Insert blank spacer row" aria-label="Add blank spacer row">+ Blank</button>
+      </div>
+    </section>`;
   return html;
 }
 

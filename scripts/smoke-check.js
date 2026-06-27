@@ -1382,6 +1382,56 @@ function checkPlayerPortalContracts() {
   console.log("player portal contracts ok");
 }
 
+function checkCallSheetMobileContracts() {
+  const appShell = read("js/app-shell.js");
+  const callsheetRender = read("js/callsheet-render.js");
+  const callsheetCss = read("css/callsheet.css");
+
+  if (
+    !/function shouldRenderCallSheetPhoneCards\(\)/.test(callsheetRender) ||
+    !/document\.body\?\.classList\.contains\("shell-phone"\)/.test(callsheetRender) ||
+    !/container\.classList\.toggle\("callsheet-phone-cards", usePhoneCards\)/.test(
+      callsheetRender,
+    ) ||
+    !/renderCallSheetPhoneCards\(categories, dupeMap, displayOptions\)/.test(
+      callsheetRender,
+    ) ||
+    !/function renderCallSheetPhoneCategory\(/.test(callsheetRender) ||
+    !/function renderCallSheetPhoneHashGroup\(/.test(callsheetRender) ||
+    !/cs-mobile-situation-card/.test(callsheetRender)
+  ) {
+    fail("call sheet phone card render contract is incomplete");
+  }
+
+  if (
+    !/body\.shell-phone #callSheetGrid\.callsheet-phone-cards[\s\S]*overflow-x:\s*clip/.test(
+      callsheetCss,
+    ) ||
+    !/\.cs-mobile-situation-list[\s\S]*display:\s*grid/.test(callsheetCss) ||
+    !/\.cs-mobile-card-header[\s\S]*grid-template-columns:\s*44px minmax\(0,\s*1fr\) auto auto/.test(
+      callsheetCss,
+    ) ||
+    !/body\.shell-phone #callsheet \.callsheet-play[\s\S]*min-height:\s*44px/.test(
+      callsheetCss,
+    ) ||
+    !/body\.shell-phone #callsheet \.callsheet-play \.remove-play,[\s\S]*body\.shell-phone #callsheet \.callsheet-play \.cs-hash-swap[\s\S]*opacity:\s*1/.test(
+      callsheetCss,
+    )
+  ) {
+    fail("call sheet phone card styling is incomplete");
+  }
+
+  if (
+    !/activeTab === "callsheet"[\s\S]*previousShellSize !== shellSize[\s\S]*scheduleRenderCallSheet\(\)/.test(
+      appShell,
+    )
+  ) {
+    fail("call sheet does not rerender when shell size changes");
+  }
+
+  console.log("call sheet mobile contracts ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2017,6 +2067,7 @@ checkPlayPresentationContracts();
 checkScriptPlayerPublishingContracts();
 checkPlayReadinessContracts();
 checkPlayerPortalContracts();
+checkCallSheetMobileContracts();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

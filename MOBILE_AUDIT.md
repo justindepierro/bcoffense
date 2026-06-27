@@ -402,12 +402,16 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-032 - Call Sheet phone situation-card view
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P0
 - Files: `js/callsheet-render.js`, `js/callsheet.js`, `css/callsheet.css`, `css/responsive.css`
 - Work:
-  - Default phone to situation-card/call-list view instead of print-like layout.
+  - `[x]` Default phone to situation-card/call-list view instead of print-like layout.
   - Keep full sheet editing tablet/desktop focused.
+  - `[x]` Keep full sheet editing tablet/desktop focused.
+  - `[x]` Add phone card render path with stacked situation cards and left/right hash call lists.
+  - `[x]` Keep existing add, remove, swap, sort, collapse, and category menu actions reachable in phone cards.
+  - `[x]` Re-render Call Sheet when shell size changes so phone/tablet rotation does not keep stale markup.
   - Move display and game-plan drawers onto shared layer system.
 - Acceptance:
   - Phone call sheet is readable without horizontal body scroll.
@@ -415,6 +419,7 @@ This checklist converts the mobile audit into work items we can execute and veri
   - Drawer footer respects safe area.
 - Verification:
   - Phone screenshots and horizontal overflow assertion.
+  - Static smoke contract for phone card render path, phone styling, and shell-size rerender.
 
 ### M-033 - Wristband phone card editor
 
@@ -631,7 +636,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 ## Recommended Next 10 Items
 
 1. `[~]` M-023 - Finish iPad/tablet QA across Call Sheet, Wristband, and Presentation.
-2. `[ ]` M-032 - Build Call Sheet phone situation-card view.
+2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
 3. `[ ]` M-033 - Build Wristband phone card editor.
 4. `[ ]` M-012 - Build shared layer/body lock utility.
 5. `[ ]` M-020 - Write role capability matrix.
@@ -658,6 +663,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-023 partial - iPad/tablet responsiveness: touch-tablet shell detection covers iPad Pro, staff tablet Script keeps a two-pane editing layout, and the viewport harness has iPad assertions.
 - `[x]` M-030 partial - Practice Script phone run mode: staff phones get current-call controls, scoring, period jump, log/present actions, and an Edit Sheet toggle.
 - `[x]` M-031A - Player Script read-only portal: player logins see published/loaded scripts and cannot create/edit builder content.
+- `[x]` M-032 partial - Call Sheet phone cards: phones render stacked situation cards with readable left/right hash call lists and reachable add/remove/swap/category actions.
 - `[x]` M-040 partial - Player presentation cut-off: portrait player presentation scrolls and clears bottom browser controls.
 - `[x]` M-050 partial - Viewport harness: `scripts/mobile-viewport-check.mjs` runs local auth/viewport checks for admin, coach, and player.
 - `[x]` M-051 partial - Automated assertions: horizontal overflow, phone startup, fixed overlap, touch target, and player-control assertions have initial coverage.

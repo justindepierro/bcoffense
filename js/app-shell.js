@@ -183,6 +183,7 @@ function syncMobileShellState() {
   const activeTab =
     body.dataset.activeTab ||
     (typeof currentActiveTab !== "undefined" ? currentActiveTab : "");
+  const previousShellSize = body.dataset.shellSize || "";
   const header = document.querySelector(".app-header");
   const tabs = document.querySelector(".tabs");
   const coachDock = document.getElementById("mobileCoachDock");
@@ -268,6 +269,14 @@ function syncMobileShellState() {
     ? "edit"
     : "run";
   if (typeof syncMobileScriptEditMode === "function") syncMobileScriptEditMode();
+  if (
+    activeTab === "callsheet" &&
+    previousShellSize &&
+    previousShellSize !== shellSize &&
+    typeof scheduleRenderCallSheet === "function"
+  ) {
+    scheduleRenderCallSheet();
+  }
   queueMobileOverflowTrace();
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
