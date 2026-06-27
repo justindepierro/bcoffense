@@ -155,6 +155,13 @@ function setWristbandZoom(level, opts = {}) {
   }
 }
 
+function shouldRenderWristbandPhoneEditor() {
+  return Boolean(
+    document.body?.classList.contains("shell-phone") &&
+      !(typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode),
+  );
+}
+
 function toggleWristbandFullscreen() {
   const preview = document.querySelector(".wristband-preview");
   if (!preview) return;
@@ -196,13 +203,15 @@ function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
 }
 
 function renderWristbandGrid() {
+  const grid = document.getElementById("wristbandGrid");
+  const cardEl = document.getElementById("wristbandCard");
   // If player wristband mode is active, delegate to its renderer.
   if (typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode) {
+    grid?.classList.remove("wb-phone-editor-grid");
+    cardEl?.classList.remove("wb-phone-editor-card");
     if (typeof renderPlayerCardGrid === "function") renderPlayerCardGrid();
     return;
   }
-  const grid = document.getElementById("wristbandGrid");
-  grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   const cardData = getCurrentCardData();
   const opts = getWristbandDisplayOptions();
   const { highlightHuddle, highlightCandy } = opts;
@@ -233,6 +242,63 @@ function renderWristbandGrid() {
   const cardColor =
     (wristbandCards[currentCardIndex] && wristbandCards[currentCardIndex].cardColor) || "";
   const cardOffset = currentCardIndex * CELLS_PER_CARD;
+
+  const renderPhoneEditor = shouldRenderWristbandPhoneEditor();
+  grid.classList.toggle("wb-phone-editor-grid", renderPhoneEditor);
+  cardEl?.classList.toggle("wb-phone-editor-card", renderPhoneEditor);
+
+  if (renderPhoneEditor) {
+    grid.style.removeProperty("grid-template-rows");
+    for (let index = 0; index < CELLS_PER_CARD; index += 1) {
+      const playNum = index + WRISTBAND_OFFSET + cardOffset;
+      const play = cardData[index];
+      const key = `${currentCardIndex}-${index}`;
+      const custom = cellCustomizations[key] || {};
+      const rowIndex = Math.floor(index / 2);
+      const isHuddle =
+        highlightHuddle &&
+        play &&
+        play.tempo &&
+        play.tempo.toLowerCase() === "huddle";
+      const isCandy =
+        highlightCandy &&
+        play &&
+        play.tempo &&
+        play.tempo.toLowerCase() === "candy";
+      const bg = getCellBgColor(custom, isHuddle, isCandy, rowIndex, cardColor);
+      let style = bg ? `background:${bg};` : "";
+      style += custom.textColor ? `color:${custom.textColor};` : "";
+      const numBg = bg || (wristbandHeaderColor === "transparent" ? "transparent" : wristbandHeaderColor);
+      const numFg = bg
+        ? (isColorDark(bg) ? "white" : UI_COLORS.textDark)
+        : (wristbandHeaderColor === "transparent" ? UI_COLORS.textDark : "white");
+      const cellHtml = play ? getCachedDisplay(play, custom) : "";
+      const writeInHtml = custom.customWriteIn
+        ? `<span class="cell-write-in">${escapeHtml(custom.customWriteIn)}</span>`
+        : "";
+      const rowClass = play ? "filled" : "empty";
+      html += `
+        <div class="wristband-cell wb-phone-editor-row ${rowClass}" style="${style}"
+             draggable="${play ? "true" : "false"}"
+             role="gridcell" tabindex="0"
+             aria-label="${escapeHtml(getWristbandCellAriaLabel(play, playNum))}"
+             data-drag="wbCell" data-cell-idx="${index}"
+             data-card="${currentCardIndex}">
+          <span class="wb-phone-editor-num" style="background: ${numBg}; color: ${numFg};">${playNum}</span>
+          <span class="wb-phone-editor-main">
+            <span class="wb-phone-editor-call">${play ? cellHtml : "Empty cell"}</span>
+            ${writeInHtml}
+          </span>
+          <span class="wb-phone-editor-action">${play ? "Edit" : "Add"}</span>
+        </div>
+      `;
+    }
+    grid.innerHTML = html;
+    finalizeWristbandGridRender(grid, cardData, CELLS_PER_CARD);
+    return;
+  }
+
+  grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
 
   for (let row = 0; row < WB_ROWS; row += 1) {
     const oddNum = row * 2 + WRISTBAND_OFFSET + cardOffset;

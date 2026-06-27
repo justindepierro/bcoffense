@@ -277,6 +277,14 @@ function syncMobileShellState() {
   ) {
     scheduleRenderCallSheet();
   }
+  if (
+    activeTab === "wristband" &&
+    previousShellSize &&
+    previousShellSize !== shellSize &&
+    typeof renderWristbandGrid === "function"
+  ) {
+    renderWristbandGrid();
+  }
   queueMobileOverflowTrace();
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();

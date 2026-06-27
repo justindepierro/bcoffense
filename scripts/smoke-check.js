@@ -1477,6 +1477,9 @@ function checkWristbandWorkspaceContracts() {
   if (
     !/function finalizeWristbandGridRender\(/.test(render) ||
     !/finalizeWristbandGridRender\(grid, cardData, CELLS_PER_CARD\)/.test(render) ||
+    !/function shouldRenderWristbandPhoneEditor\(\)/.test(render) ||
+    !/wb-phone-editor-grid/.test(render) ||
+    !/wb-phone-editor-row/.test(render) ||
     !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime) ||
     !/role="gridcell" tabindex="0"/.test(render) ||
     !/e\.key === "ArrowDown"/.test(runtime) ||
@@ -1535,6 +1538,15 @@ function checkWristbandWorkspaceContracts() {
   if (
     !/#wristband\.wb-mobile-view-builder \.wristband-plays/.test(css) ||
     !/#wristband\.wb-mobile-view-library \.wristband-preview/.test(css) ||
+    !/body\.shell-phone #wristband \.wristband-grid\.wb-phone-editor-grid[\s\S]*grid-template-columns:\s*minmax\(0,\s*1fr\)/.test(
+      css,
+    ) ||
+    !/body\.shell-phone #wristband \.wb-phone-editor-row[\s\S]*min-height:\s*58px/.test(
+      css,
+    ) ||
+    !/body\.shell-phone #wristband \.wb-phone-editor-num,[\s\S]*body\.shell-phone #wristband \.wb-phone-editor-action[\s\S]*min-height:\s*44px/.test(
+      css,
+    ) ||
     !/\.wb-print-preview-layout/.test(css) ||
     !/\.wb-print-preview-modal\s*\{[\s\S]*?max-width:\s*min\(1120px/.test(css) ||
     !/\.wb-print-preview-canvas \.pc-print-card-wrap/.test(css) ||

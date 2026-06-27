@@ -423,18 +423,21 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-033 - Wristband phone card editor
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P0
 - Files: `js/wristband-render.js`, `js/wristband-cell-popup.js`, `js/wristband-runtime.js`, `css/wristband.css`
 - Work:
-  - Phone defaults to card-by-card cell editor and searchable library.
-  - Separate "edit data" from "preview printed card".
+  - `[x]` Phone defaults to card-by-card cell editor and searchable library.
+  - `[x]` Separate classic phone editing from the printed wristband grid by rendering row cards.
+  - `[x]` Reuse existing cell popup/search/edit flow from each phone row.
+  - `[x]` Re-render on phone/tablet shell changes so rotation does not leave stale grid markup.
   - Use explicit horizontal-scroll affordance only where unavoidable.
 - Acceptance:
   - Small phone width does not force body-level horizontal overflow.
   - Cell editing and search are reachable with keyboard open.
 - Verification:
   - 320px and 390px viewport checks.
+  - Static smoke contract for phone row editor render path and 44px row controls.
 
 ### M-034 - Playbook phone action/filter sheets
 
@@ -637,7 +640,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 
 1. `[~]` M-023 - Finish iPad/tablet QA across Call Sheet, Wristband, and Presentation.
 2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
-3. `[ ]` M-033 - Build Wristband phone card editor.
+3. `[~]` M-033 - Finish Wristband phone popup/body-lock and player-card QA.
 4. `[ ]` M-012 - Build shared layer/body lock utility.
 5. `[ ]` M-020 - Write role capability matrix.
 6. `[ ]` M-031 - Add Practice Script touch reordering fallback.
@@ -664,6 +667,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-030 partial - Practice Script phone run mode: staff phones get current-call controls, scoring, period jump, log/present actions, and an Edit Sheet toggle.
 - `[x]` M-031A - Player Script read-only portal: player logins see published/loaded scripts and cannot create/edit builder content.
 - `[x]` M-032 partial - Call Sheet phone cards: phones render stacked situation cards with readable left/right hash call lists and reachable add/remove/swap/category actions.
+- `[x]` M-033 partial - Wristband phone editor: classic wristbands render as tappable row cards on phones while tablet/desktop keep the printed card grid.
 - `[x]` M-040 partial - Player presentation cut-off: portrait player presentation scrolls and clears bottom browser controls.
 - `[x]` M-050 partial - Viewport harness: `scripts/mobile-viewport-check.mjs` runs local auth/viewport checks for admin, coach, and player.
 - `[x]` M-051 partial - Automated assertions: horizontal overflow, phone startup, fixed overlap, touch target, and player-control assertions have initial coverage.
