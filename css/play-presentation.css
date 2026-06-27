@@ -1279,6 +1279,31 @@ body.play-presentation-open {
   }
 }
 
+body.play-presentation-mobile.is-portrait-screen .play-presentation-overlay {
+  min-height: calc(var(--app-vh, 1vh) * 100);
+}
+
+body.play-presentation-mobile.is-portrait-screen .pp-body {
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.play-presentation-mobile.is-portrait-screen .pp-layout-player {
+  height: auto;
+  min-height: 100%;
+  grid-template-rows: minmax(210px, auto) auto;
+  padding-bottom: calc(var(--space-lg) + env(safe-area-inset-bottom) + 72px);
+}
+
+body.play-presentation-mobile.is-portrait-screen .pp-player-panel {
+  overflow: visible;
+}
+
+body.play-presentation-mobile.is-portrait-screen .pp-player-rule {
+  align-content: start;
+}
+
 body.play-presentation-mobile.is-landscape-screen .pp-header {
   grid-template-columns: minmax(130px, 0.65fr) auto minmax(170px, 0.8fr);
   gap: var(--space-xs);

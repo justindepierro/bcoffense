@@ -223,11 +223,37 @@ async function inspectPage(page) {
     const overflow = scrollWidth > viewportWidth + 1;
     const fixedOverlaps = [];
     const smallTargets = [];
+    const isVisible = (el) => {
+      if (!el) return false;
+      const style = getComputedStyle(el);
+      if (
+        style.visibility === "hidden" ||
+        style.display === "none" ||
+        Number(style.opacity) === 0 ||
+        el.hidden
+      ) {
+        return false;
+      }
+      const rect = el.getBoundingClientRect();
+      return rect.width > 0 && rect.height > 0;
+    };
+    const mainAppVisible = isVisible(document.getElementById("mainApp"));
+    const uploadVisible = isVisible(document.getElementById("uploadSection"));
+    const tabBarVisible = isVisible(document.querySelector("#mainApp .tabs"));
+    const activePanel = document.querySelector("#mainApp .panel.active");
+    const activePanelVisible = isVisible(activePanel);
 
     const bottomNav = document.querySelector(".tabs, #mobileCoachDock");
     const bottomNavRect = bottomNav?.getBoundingClientRect();
 
     document.querySelectorAll("body *").forEach((el) => {
+      if (
+        el.closest(
+          ".custom-modal-overlay:not(.visible), .modal-overlay:not(.show), .cell-popup-overlay.hidden, [inert]",
+        )
+      ) {
+        return;
+      }
       const style = getComputedStyle(el);
       if (
         style.visibility === "hidden" ||
@@ -302,6 +328,13 @@ async function inspectPage(page) {
       shellSize: document.body?.dataset.shellSize || "",
       orientation: document.body?.dataset.screenOrientation || "",
       shellOrientation: document.body?.dataset.shellOrientation || "",
+      scrollOwner: document.body?.dataset.scrollOwner || "",
+      workspaceSurface: document.body?.dataset.workspaceSurface || "",
+      mainAppVisible,
+      uploadVisible,
+      tabBarVisible,
+      activePanel: activePanel?.id || "",
+      activePanelVisible,
       viewportWidth,
       viewportHeight: Math.round(viewportHeight),
       scrollWidth,
@@ -370,14 +403,24 @@ async function run() {
           httpErrors,
           ...inspection,
         };
+        const blankMobileStart =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          (!result.mainAppVisible || !result.tabBarVisible || !result.activePanelVisible);
+        const badPhoneScrollOwner =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          result.scrollOwner !== "document";
         const failed =
+          blankMobileStart ||
+          badPhoneScrollOwner ||
           result.overflow ||
           result.fixedOverlaps.length > 0 ||
           result.smallTargetCount > 0 ||
           result.consoleErrors.length > 0 ||
           result.httpErrors.length > 0;
         if (failed) failureCount += 1;
-        results.push({ ...result, failed });
+        results.push({ ...result, blankMobileStart, badPhoneScrollOwner, failed });
       }
     }
   } finally {
@@ -390,6 +433,8 @@ async function run() {
 
   results.forEach((result) => {
     const flags = [
+      result.blankMobileStart ? "blank mobile start" : "",
+      result.badPhoneScrollOwner ? `phone scroll owner ${result.scrollOwner || "unset"}` : "",
       result.overflow ? `overflow ${result.scrollWidth}>${result.viewportWidth}` : "",
       result.smallTargetCount ? `${result.smallTargetCount} small targets` : "",
       result.fixedOverlaps.length ? `${result.fixedOverlaps.length} fixed overlaps` : "",

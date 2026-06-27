@@ -1192,6 +1192,66 @@ body.is-short-screen .auth-login-player-shortcut,
     overflow-wrap: anywhere;
   }
 
+  .mobile-script-coach-now__assignments {
+    min-height: 18px;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    line-height: 1.35;
+    overflow-wrap: anywhere;
+  }
+
+  .mobile-script-coach-now__jump {
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr);
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 900;
+  }
+
+  .mobile-script-coach-now__jump select {
+    min-width: 0;
+    min-height: 42px;
+    border: 1px solid var(--color-border);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-input);
+    color: var(--color-text);
+    font: inherit;
+    font-size: var(--font-size-xs);
+    font-weight: 800;
+  }
+
+  .mobile-script-coach-now__score {
+    display: grid;
+    grid-template-columns: auto repeat(5, minmax(0, 1fr));
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-xs);
+    font-weight: 900;
+  }
+
+  .mobile-script-coach-now__score button {
+    min-width: 0;
+    min-height: 42px;
+    border: 1px solid var(--color-border-light);
+    border-radius: var(--radius-sm);
+    background: var(--color-bg-light);
+    color: var(--color-text);
+    cursor: pointer;
+    font: inherit;
+    font-weight: 900;
+    touch-action: manipulation;
+  }
+
+  .mobile-script-coach-now__score button.is-active {
+    border-color: var(--color-primary);
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+  }
+
   .mobile-script-coach-now__actions {
     display: grid;
     grid-template-columns: repeat(3, minmax(0, 1fr));
@@ -1215,6 +1275,10 @@ body.is-short-screen .auth-login-player-shortcut,
   .mobile-script-coach-now__btn--primary {
     background: var(--color-primary);
     color: var(--color-text-inverse);
+  }
+
+  .mobile-script-coach-now__actions .mobile-script-coach-now__btn:nth-last-child(-n + 2) {
+    grid-column: span 1;
   }
 
   .mobile-script-coach-now__btn:disabled {
@@ -2256,6 +2320,15 @@ input.smart-input-sm[type="number"] {
 }
 .toast.toast-info {
   background: var(--color-info);
+}
+
+body.is-mobile-screen .toast {
+  bottom: calc(var(--coach-dock-height, 76px) + env(safe-area-inset-bottom) + 14px);
+  max-width: min(420px, calc(100vw - 32px));
+}
+
+body.is-mobile-screen[data-auth-role="player"] .toast {
+  bottom: calc(var(--app-tabs-height, 76px) + env(safe-area-inset-bottom) + 14px);
 }
 
 /* Clickable play cell */
@@ -3499,6 +3572,10 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 }
 
 @media (max-width: 640px) {
+  body.is-mobile-screen .toast {
+    max-width: min(320px, calc(100vw - 32px));
+  }
+
   .quick-tools {
     right: max(12px, env(safe-area-inset-right));
     bottom: calc(env(safe-area-inset-bottom) + 82px);

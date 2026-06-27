@@ -22,6 +22,9 @@ async function initApp() {
       restoreStoredPlaybookSession(storedPlaybook);
     } else if (typeof setStartupLoadingMessage === "function") {
       setStartupLoadingMessage("Preparing upload workspace...");
+      if (typeof ensureMobileStartupSurface === "function") {
+        ensureMobileStartupSurface();
+      }
     }
 
     if (typeof setStartupLoadingMessage === "function") {

@@ -7,17 +7,28 @@ function showUpload() {
     return;
   }
 
-  document.getElementById("mainApp").classList.add("hidden");
-  document.getElementById("uploadSection").classList.remove("hidden");
+  if (typeof setWorkspaceSurface === "function") {
+    setWorkspaceSurface("upload");
+  } else {
+    document.getElementById("mainApp").classList.add("hidden");
+    document.getElementById("uploadSection").classList.remove("hidden");
+  }
 
   const backBtn = document.getElementById("backToAppBtn");
-  if (backBtn && plays.length > 0) {
+  if (backBtn && (plays.length > 0 || typeof isMobileStartupShell === "function" && isMobileStartupShell())) {
     backBtn.classList.remove("hidden");
   }
 }
 
 function backToApp() {
-  if (plays.length > 0) {
+  if (plays.length > 0 || typeof isMobileStartupShell === "function" && isMobileStartupShell()) {
+    if (typeof setWorkspaceSurface === "function") {
+      setWorkspaceSurface("app", { initModules: plays.length === 0 });
+      if (plays.length === 0 && typeof ensureMobileStartupSurface === "function") {
+        ensureMobileStartupSurface();
+      }
+      return;
+    }
     document.getElementById("uploadSection").classList.add("hidden");
     document.getElementById("mainApp").classList.remove("hidden");
   }
@@ -699,8 +710,12 @@ function handleFileUpload(event) {
             invalidateFilterCache();
             if (typeof renderTeamSettings === "function") renderTeamSettings();
 
-            document.getElementById("uploadSection").classList.add("hidden");
-            document.getElementById("mainApp").classList.remove("hidden");
+            if (typeof setWorkspaceSurface === "function") {
+              setWorkspaceSurface("app");
+            } else {
+              document.getElementById("uploadSection").classList.add("hidden");
+              document.getElementById("mainApp").classList.remove("hidden");
+            }
             initAllModules();
             hideLoadingOverlay();
 
@@ -758,8 +773,12 @@ function handleFileUpload(event) {
         invalidateFilterCache();
         if (typeof renderTeamSettings === "function") renderTeamSettings();
 
-        document.getElementById("uploadSection").classList.add("hidden");
-        document.getElementById("mainApp").classList.remove("hidden");
+        if (typeof setWorkspaceSurface === "function") {
+          setWorkspaceSurface("app");
+        } else {
+          document.getElementById("uploadSection").classList.add("hidden");
+          document.getElementById("mainApp").classList.remove("hidden");
+        }
         initAllModules();
         hideLoadingOverlay();
 

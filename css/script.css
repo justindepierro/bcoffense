@@ -3882,6 +3882,14 @@ body[data-auth-role="player"] .period-buttons {
   display: none;
 }
 
+body[data-auth-role="player"] #script .script-header-panel,
+body[data-auth-role="player"] #script .period-buttons,
+body[data-auth-role="player"] #script .script-library-toggle-btn,
+body[data-auth-role="player"] #script .script-toolbar,
+body[data-auth-role="player"] #script .script-tools-drawer {
+  display: none !important;
+}
+
 /* Add Period button */
 .btn-add-period {
   background: var(--color-accent);

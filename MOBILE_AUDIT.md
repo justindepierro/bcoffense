@@ -117,6 +117,7 @@ This checklist converts the mobile audit into work items we can execute and veri
     - orientation as a secondary modifier
   - `[x]` Expose state as both classes and `body.dataset` values.
   - `[x]` Keep compatibility aliases until page CSS is migrated.
+  - `[x]` On mobile with no stored playbook, open the navigable app shell instead of stranding users on the upload/setup screen.
   - `[~]` Audit current `is-mobile-screen`, `is-phone-screen`, `is-compact-screen`, and `is-short-screen` usage.
   - `[ ]` Migrate page CSS to canonical shell classes in focused page batches.
 - Acceptance:
@@ -126,27 +127,33 @@ This checklist converts the mobile audit into work items we can execute and veri
 - Verification:
   - Static checks for canonical class generation.
   - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots`
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320 --warn-only`
 
 ### M-011 - Explicit scroll ownership model
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P0
 - Files: `css/responsive.css`, `css/script.css`, `css/components.css`, `css/callsheet.css`, `css/wristband.css`, `js/app-shell.js`
 - Work:
-  - Define scroll ownership per shell mode:
+  - `[x]` Expose active scroll ownership on `body.dataset.scrollOwner`.
+  - `[x]` Set mobile shells to document/body vertical scroll and desktop shells to panel/workbench scroll.
+  - `[x]` Add viewport harness assertion that phone roles report `scrollOwner="document"`.
+  - `[~]` Define scroll ownership per shell mode:
     - Phone normal pages: document/body owns vertical scroll.
     - Desktop workbench pages: panel/workbench owns scroll.
     - Blocking modal/drawer: layer owns scroll; body locked.
     - Tables: horizontal scroll only inside approved wrappers.
-  - Add shell classes or attributes for active scroll mode.
-  - Remove competing page/body/internal scroll rules where they fight.
+  - `[~]` Add shell classes or attributes for active scroll mode.
+  - `[ ]` Remove competing page/body/internal scroll rules where they fight.
 - Acceptance:
   - No page has two vertical scroll owners in the same mode.
   - Bottom content is not hidden behind player nav or coach dock.
   - Orientation change does not strand content out of reach.
 - Verification:
-  - Browser scroll ancestry probe for Script, Call Sheet, Wristband, and Playbook.
-  - Static smoke contract for approved scroll owners.
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots`
+  - Targeted Script phone probe verified `scrollOwner="document"` at 390x844.
+  - Still needs browser scroll ancestry probe for Script, Call Sheet, Wristband, and Playbook.
+  - Still needs static smoke contract for approved scroll owners.
 
 ### M-012 - Shared layer/body lock utility
 
@@ -177,7 +184,7 @@ This checklist converts the mobile audit into work items we can execute and veri
 - Work:
   - `[x]` Standardize primary standalone mobile controls at `44x44`.
   - `[x]` Expand shared quick-tool, help-close, header, and mobile `.btn-xs` hit areas.
-  - `[~]` Add runtime assertion for visible phone controls through `scripts/mobile-viewport-check.mjs`.
+  - `[x]` Add runtime assertion for visible phone controls through `scripts/mobile-viewport-check.mjs`.
   - `[ ]` Expand page-specific exceptions/fixes after full all-role/all-viewport run.
 - Acceptance:
   - Standalone buttons/icons are at least `44x44` on phone.
@@ -204,18 +211,19 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-015 - Reduced motion and safe-area pass
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P1
 - Files: `css/components.css`, `css/responsive.css`, page CSS
 - Work:
-  - Disable login, drawer, pulse, and active-tab animations under `prefers-reduced-motion: reduce`.
-  - Extend safe-area padding to full-screen drawers, modal footers, coach dock, and landscape presentation controls.
+  - `[x]` Disable login, drawer, pulse, and active-tab animations under `prefers-reduced-motion: reduce`.
+  - `[x]` Add smoke coverage for the global reduced-motion guardrail.
+  - `[ ]` Extend safe-area padding to full-screen drawers, modal footers, coach dock, and landscape presentation controls.
 - Acceptance:
   - Reduced-motion users do not get nonessential motion.
   - Close buttons and action footers are reachable around notches/home indicators.
 - Verification:
-  - Static CSS checks.
-  - Manual or browser screenshots on notched phone profiles.
+  - `node scripts/smoke-check.js` checks the global reduced-motion guardrail.
+  - Safe-area work still needs manual or browser screenshots on notched phone profiles.
 
 ---
 
@@ -286,27 +294,36 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-030 - Practice Script phone run mode
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P0
-- Files: `index.html`, `js/app-shell.js`, `js/script-render.js`, `js/script-events.js`, `css/script.css`, `css/responsive.css`
+- Files: `index.html`, `js/app-shell.js`, `css/components.css`, `css/responsive.css`
 - Work:
-  - Treat coach phone as Practice Run Mode:
-    - current period and current play
-    - previous/next play
-    - mark result 1-5
-    - quick note / issue tag
-    - personnel and assignment summary
-    - jump to period
-    - publish/lock status
-    - full edit sheet only when needed
-  - Keep full available-play browsing and bulk building tablet/desktop first.
+  - `[x]` Treat coach phone as Practice Run Mode:
+    - `[x]` current period and current play
+    - `[x]` previous/next play
+    - `[x]` mark result 1-5
+    - `[x]` quick rep log
+    - `[x]` personnel and assignment summary
+    - `[x]` jump to period
+    - `[ ]` publish/lock status
+    - `[x]` full edit sheet only when needed
+  - `[x]` Keep full available-play browsing and bulk building tablet/desktop first by hiding it only in phone run mode.
+  - `[x]` Add Edit Sheet / Run Mode toggle for staff phones.
+  - `[x]` Hide timeline, library, toolbar, period edit fields, column headers, and row readiness widgets in run mode.
 - Acceptance:
   - Coach can run practice from a phone without using the full builder.
   - Critical hidden phone controls have replacements.
   - Scoring and navigation remain reachable with the dock present.
 - Verification:
-  - Phone viewport interaction test.
-  - Smoke checks for run-mode markup and actions.
+  - `node --check js/app-shell.js`
+  - Targeted 390x844 staff phone browser probe:
+    - default run mode hides editor/timeline/readiness surfaces
+    - `Edit Sheet` reveals header, library, and toolbar
+    - `Run Mode` restores sideline view
+    - score `4` remains active
+    - `#mobileScriptCoachNow` controls meet touch target guardrail
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots`
+  - `node scripts/smoke-check.js` includes a static run-mode contract for markup, actions, mode state, and hidden run-mode surfaces.
 
 ### M-031 - Practice Script touch reordering fallback
 
@@ -321,6 +338,26 @@ This checklist converts the mobile audit into work items we can execute and veri
   - Period context stays visible during reorder.
 - Verification:
   - Touch and keyboard reorder test.
+
+### M-031A - Player Script read-only portal
+
+- Status: `[x]`
+- Priority: P0
+- Files: `index.html`, `js/auth.js`, `css/script.css`, `scripts/smoke-check.js`
+- Work:
+  - `[x]` Hide staff Script builder header controls from player logins.
+  - `[x]` Hide Add Period / From Template controls from player logins.
+  - `[x]` Include `data-auth-player-hide` containers in auth UI scanning.
+  - `[x]` Restore read-only action filtering so player logins cannot invoke mutating builder actions.
+  - `[x]` Keep published script launcher and player swipe view actions available.
+- Acceptance:
+  - Player Practice tab only exposes published/loaded scripts and player-facing script rows.
+  - Player cannot create periods, edit practice title/date, or use builder controls.
+  - Coach/admin retain full Script builder access.
+- Verification:
+  - `node --check js/auth.js`
+  - Static smoke contract for player Script builder chrome and read-only action filtering.
+  - Targeted player mobile DOM probe.
 
 ### M-032 - Call Sheet phone situation-card view
 
@@ -450,18 +487,23 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ### M-040 - Player presentation orientation stability
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P1
 - Files: `js/play-presentation.js`, `css/play-presentation.css`
 - Work:
+  - `[x]` Fix portrait player presentation cut-off by letting the presentation body scroll.
+  - `[x]` Add safe-area bottom padding so the rule section clears mobile browser controls.
   - Recalculate current card after orientation settles.
   - Preserve current play identity, not pixel scroll position.
   - Test notched landscape left and right orientation.
   - Show rotate recommendation only when current mode cannot fit.
 - Acceptance:
+  - Player rule text at the bottom of script presentation is reachable in portrait.
   - Orientation change preserves active play.
   - Landscape phone controls respect safe areas.
 - Verification:
+  - Static smoke contract for portrait player presentation scroll and bottom padding.
+  - Targeted player portrait presentation probe.
   - Landscape phone screenshots and orientation-change test.
 
 ---
@@ -480,7 +522,7 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[x]` Runner starts a no-cache static server when `--url` is not supplied.
   - `[x]` Runner stubs local auth and sync endpoints for static testing.
   - `[x]` Runner can save screenshots and `.mobile-debug/mobile-viewport-report.json`.
-  - `[~]` Cover Admin, Coach, and Player where possible.
+  - `[x]` Cover Admin, Coach, and Player where possible.
   - `[ ]` Decide whether to make this a required gate or a manual debug command.
 - Required viewports:
   - `[ ]` 320x568
@@ -513,6 +555,7 @@ This checklist converts the mobile audit into work items we can execute and veri
 - Assertions:
   - `[x]` `document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1` unless approved horizontal wrapper is active.
   - `[x]` No visible standalone phone control has hit box below `44x44`.
+  - `[x]` Phone startup must expose `#mainApp`, the tab bar, and an active panel after auth.
   - `[x]` No fixed element overlaps active bottom navigation or safe area.
   - `[ ]` Focused input remains inside `visualViewport` after keyboard resize.
   - `[ ]` Opening a blocking layer prevents background scrolling.
@@ -520,7 +563,7 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[ ]` Orientation change preserves active page and selected record/play.
   - `[ ]` No critical action is hidden solely because width is small.
   - `[ ]` Text at 200% zoom remains readable and controls remain operable.
-  - `[ ]` Player cannot see staff controls; coach/admin can reach promised mobile capabilities.
+  - `[~]` Player cannot see staff controls; coach/admin can reach promised mobile capabilities.
 
 ---
 
@@ -548,11 +591,11 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 
 1. `[ ]` M-021 - Run visual QA for login changes once browser tooling is available.
 2. `[ ]` M-010 - Finish canonical responsive state contract.
-3. `[ ]` M-011 - Define and enforce scroll ownership.
+3. `[~]` M-011 - Define and enforce scroll ownership.
 4. `[ ]` M-012 - Build shared layer/body lock utility.
 5. `[ ]` M-014 - Add development horizontal overflow detector.
 6. `[ ]` M-020 - Write role capability matrix.
-7. `[ ]` M-030 - Build coach phone Practice Run Mode.
-8. `[ ]` M-032 - Build Call Sheet phone situation-card view.
-9. `[ ]` M-033 - Build Wristband phone card editor.
-10. `[ ]` M-050 - Add viewport test harness.
+7. `[~]` M-030 - Build coach phone Practice Run Mode.
+8. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
+9. `[ ]` M-032 - Build Call Sheet phone situation-card view.
+10. `[ ]` M-033 - Build Wristband phone card editor.

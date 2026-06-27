@@ -112,6 +112,15 @@ function checkIndexReferences() {
 
 function checkCssGuardrails() {
   const files = walk("css").filter((file) => file.endsWith(".css"));
+  const baseCss = read("css/base.css");
+  if (
+    !/@media \(prefers-reduced-motion:\s*reduce\)/.test(baseCss) ||
+    !/animation-duration:\s*0\.01ms\s*!important/.test(baseCss) ||
+    !/transition-duration:\s*0\.01ms\s*!important/.test(baseCss) ||
+    !/scroll-behavior:\s*auto\s*!important/.test(baseCss)
+  ) {
+    fail("global reduced-motion guardrail is incomplete");
+  }
   files.forEach((file) => {
     const source = read(file);
     const withoutComments = source.replace(/\/\*[\s\S]*?\*\//g, "");
@@ -797,7 +806,13 @@ function checkPlayPresentationContracts() {
     !/class="pp-minimum-bottom"/.test(presenter) ||
     !/renderPlayReadinessPresentationMinimumDock\(play\)/.test(presenter) ||
     !/\.pp-layout-player/.test(css) ||
-    !/\.pp-layout-coaches/.test(css)
+    !/\.pp-layout-coaches/.test(css) ||
+    !/body\.play-presentation-mobile\.is-portrait-screen \.pp-body[\s\S]*overflow-y:\s*auto/.test(
+      css,
+    ) ||
+    !/body\.play-presentation-mobile\.is-portrait-screen \.pp-layout-player[\s\S]*padding-bottom:\s*calc\(/.test(
+      css,
+    )
   ) {
     fail("play presentation landscape and information-mode styling is incomplete");
   }
@@ -1059,6 +1074,9 @@ function checkPlayerPortalContracts() {
     !/function syncPlayerPortalChrome\(\)/.test(auth) ||
     !/function canEditUser\(\)/.test(auth) ||
     !/ADMIN_ONLY_ACTIONS\.has\(action\)\) return isAdminUser\(\)/.test(auth) ||
+    /function isActionAllowedForRole\(action\) \{\s*return true;/.test(auth) ||
+    /["']toggleScript["']/.test(auth) ||
+    !/data-auth-player-hide/.test(auth) ||
     !/document\.body\.dataset\.authCanEdit = canEditUser\(\) \? "true" : "false"/.test(auth) ||
     !/window\.canEditUser = canEditUser/.test(auth) ||
     !/auth-login-shell/.test(auth) ||
@@ -1079,6 +1097,8 @@ function checkPlayerPortalContracts() {
     !/id="playerDashboardHome"/.test(html) ||
     !/id="commandPaletteBtn"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/id="quickTools"[^>]*data-auth-player-hide="true"/.test(html) ||
+    !/class="script-header-panel[^"]*"[^>]*data-auth-player-hide="true"/.test(html) ||
+    !/class="period-buttons"[^>]*data-auth-player-hide="true"/.test(html) ||
     !/viewport-fit=cover/.test(html) ||
     !/interactive-widget=resizes-content/.test(html)
   ) {
@@ -1171,6 +1191,26 @@ function checkPlayerPortalContracts() {
     fail("mobile coach lock does not preserve player taps and scoring actions");
   }
   if (
+    !/id="mobileScriptEditToggle"[\s\S]*data-action="toggleMobileScriptEditMode"/.test(html) ||
+    !/function toggleMobileScriptEditMode\(\)/.test(appShell) ||
+    !/function mobileCoachJumpPeriod\(separatorIndex\)/.test(appShell) ||
+    !/function mobileCoachScoreScriptCall\(score\)/.test(appShell) ||
+    !/function mobileCoachLogScriptCall\(\)/.test(appShell) ||
+    !/function mobileCoachPresentScriptCall\(\)/.test(appShell) ||
+    !/body\.dataset\.mobileScriptMode/.test(appShell) ||
+    !/body\.is-phone-screen\.is-staff-mobile-shell:not\(\.mobile-script-editing\)[\s\S]*#script[\s\S]*\.script-header-panel/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-phone-screen\.is-staff-mobile-shell:not\(\.mobile-script-editing\)[\s\S]*#script[\s\S]*\.play-readiness-widget/.test(
+      responsiveCss,
+    ) ||
+    !/body\.is-phone-screen\.is-staff-mobile-shell:not\(\.mobile-script-editing\)[\s\S]*#script[\s\S]*\.script-column-headers/.test(
+      responsiveCss,
+    )
+  ) {
+    fail("mobile practice script run mode is incomplete");
+  }
+  if (
     !/\.auth-login-shell/.test(componentsCss) ||
     !/\.auth-login-hero/.test(componentsCss) ||
     !/body\[data-auth-role="player"\] \.auth-user-badge/.test(componentsCss) ||
@@ -1257,6 +1297,9 @@ function checkPlayerPortalContracts() {
       dashboardCss,
     ) ||
     !/\.player-home-grid/.test(dashboardCss) ||
+    !/body\[data-auth-role="player"\] #script \.script-header-panel,[\s\S]*body\[data-auth-role="player"\] #script \.period-buttons/.test(
+      scriptCss,
+    ) ||
     !/\.pb-player-summary/.test(read("css/playbook.css")) ||
     !/\.player-script-now__actions \.btn/.test(scriptCss) ||
     !/\.player-script-card__actions \.btn,\s*\.player-script-now__actions \.btn[\s\S]*min-height:\s*44px/.test(

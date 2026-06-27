@@ -252,6 +252,21 @@ function syncMobileShellState() {
   body.dataset.shellShort = isShort ? "true" : "false";
   body.dataset.shellOrientation = isLandscape ? "landscape" : "portrait";
   body.dataset.shellPointer = isTouch ? "coarse" : "fine";
+  body.dataset.scrollOwner = isMobile ? "document" : "panel";
+  const isStaffPhoneScript =
+    shellPhone &&
+    isMobile &&
+    activeTab === "script" &&
+    Boolean(authRole) &&
+    authRole !== "player" &&
+    authRole !== "locked";
+  if (!isStaffPhoneScript) {
+    body.classList.remove("mobile-script-editing");
+  }
+  body.dataset.mobileScriptMode = body.classList.contains("mobile-script-editing")
+    ? "edit"
+    : "run";
+  if (typeof syncMobileScriptEditMode === "function") syncMobileScriptEditMode();
   queueMobileOverflowTrace();
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof applyMobileCoachLockUi === "function") applyMobileCoachLockUi();
@@ -569,6 +584,11 @@ const MOBILE_COACH_LOCK_ALLOWED_ACTIONS = new Set([
   "coachFocusScriptCall",
   "coachNextScriptCall",
   "coachPrevScriptCall",
+  "toggleMobileScriptEditMode",
+  "mobileCoachJumpPeriod",
+  "mobileCoachScoreScriptCall",
+  "mobileCoachLogScriptCall",
+  "mobileCoachPresentScriptCall",
   "openScriptPresentation",
   "openPlaybookPresentation",
   "openSelectedPlaybookPresentation",
@@ -935,11 +955,117 @@ function _getMobileScriptCallDetail(play) {
     .join(" • ");
 }
 
+function _getMobileScriptAssignments(play) {
+  if (!play) return "";
+  try {
+    const opts =
+      typeof getScriptDisplayOptions === "function" ? getScriptDisplayOptions() : {};
+    if (typeof getScriptVisiblePlayerSummary === "function") {
+      return getScriptVisiblePlayerSummary(play, opts);
+    }
+  } catch (_err) {
+    return "";
+  }
+  return "";
+}
+
+function _getMobileScriptLastScore(play) {
+  if (
+    !play ||
+    typeof getPlayReadinessSummary !== "function" ||
+    typeof isPlayReadinessCoachRole !== "function" ||
+    !isPlayReadinessCoachRole()
+  ) {
+    return 0;
+  }
+  const summary = getPlayReadinessSummary(play);
+  return parseInt(summary?.lastLogScore, 10) || 0;
+}
+
+function _renderMobileScriptPeriodOptions(selectedIndex) {
+  const select = document.getElementById("mobileScriptCoachPeriodJump");
+  if (!select) return;
+
+  const periods = Array.isArray(script)
+    ? script
+      .map((item, index) => ({ item, index }))
+      .filter(({ item }) => item?.isSeparator)
+    : [];
+  if (!periods.length) {
+    select.innerHTML = '<option value="">No periods</option>';
+    select.value = "";
+    select.disabled = true;
+    return;
+  }
+
+  const selectedPeriodIndex =
+    typeof findOwningPeriodIndex === "function"
+      ? findOwningPeriodIndex(selectedIndex)
+      : -1;
+  select.innerHTML = periods
+    .map(({ item, index }, ordinal) => {
+      const label = item.label || `Period ${ordinal + 1}`;
+      return `<option value="${index}">${escapeHtml(label)}</option>`;
+    })
+    .join("");
+  select.value =
+    selectedPeriodIndex >= 0 ? String(selectedPeriodIndex) : String(periods[0].index);
+  select.disabled = false;
+}
+
+function _updateMobileScriptScoreButtons(activeScore) {
+  document
+    .querySelectorAll("#mobileScriptCoachNow .mobile-script-coach-now__score button")
+    .forEach((button) => {
+      const isActive = parseInt(button.dataset.arg, 10) === activeScore;
+      button.classList.toggle("is-active", isActive);
+      button.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+}
+
+function syncMobileScriptEditMode() {
+  const body = document.body;
+  const button = document.getElementById("mobileScriptEditToggle");
+  if (!body || !button) return;
+  const isEditing = body.classList.contains("mobile-script-editing");
+  button.textContent = isEditing ? "Run Mode" : "Edit Sheet";
+  button.setAttribute("aria-pressed", isEditing ? "true" : "false");
+  button.title = isEditing
+    ? "Return to the mobile run view"
+    : "Show the full script editor on this phone";
+  body.dataset.mobileScriptMode = isEditing ? "edit" : "run";
+}
+
+function setMobileScriptEditMode(enabled, opts = {}) {
+  const body = document.body;
+  if (!body) return;
+  const shouldEdit = Boolean(enabled);
+  body.classList.toggle("mobile-script-editing", shouldEdit);
+  syncMobileScriptEditMode();
+
+  if (!shouldEdit) {
+    if (typeof closeScriptToolsDrawer === "function") closeScriptToolsDrawer();
+    if (typeof closeScriptDisplayPanel === "function") closeScriptDisplayPanel();
+    if (opts.focusCurrent !== false) {
+      requestAnimationFrame(_focusMobileCoachScriptRow);
+    }
+  }
+}
+
+function toggleMobileScriptEditMode() {
+  const body = document.body;
+  if (!body) return;
+  const nextEditing = !body.classList.contains("mobile-script-editing");
+  setMobileScriptEditMode(nextEditing, { focusCurrent: !nextEditing });
+}
+
 function _setMobileScriptCoachControlsDisabled(disabled) {
   document
-    .querySelectorAll("#mobileScriptCoachNow button")
-    .forEach((button) => {
-      button.disabled = disabled;
+    .querySelectorAll(
+      "#mobileScriptCoachNow button:not(#mobileScriptEditToggle), #mobileScriptCoachNow select",
+    )
+    .forEach((control) => {
+      control.disabled = disabled;
     });
 }
 
@@ -954,6 +1080,7 @@ function updateMobileCoachScriptNow() {
   const progressEl = document.getElementById("mobileScriptCoachProgress");
   const callEl = document.getElementById("mobileScriptCoachCall");
   const detailEl = document.getElementById("mobileScriptCoachDetail");
+  const assignmentsEl = document.getElementById("mobileScriptCoachAssignments");
 
   document
     .querySelectorAll("#scriptPlays .script-item.coach-current")
@@ -964,6 +1091,9 @@ function updateMobileCoachScriptNow() {
     if (progressEl) progressEl.textContent = "0 / 0";
     if (callEl) callEl.textContent = "Add plays to start coach mode.";
     if (detailEl) detailEl.textContent = "";
+    if (assignmentsEl) assignmentsEl.textContent = "";
+    _renderMobileScriptPeriodOptions(-1);
+    _updateMobileScriptScoreButtons(0);
     _setMobileScriptCoachControlsDisabled(true);
     return;
   }
@@ -974,6 +1104,12 @@ function updateMobileCoachScriptNow() {
   if (progressEl) progressEl.textContent = `${ordinal.current} / ${ordinal.total}`;
   if (callEl) callEl.textContent = _getMobileScriptCallTitle(play);
   if (detailEl) detailEl.textContent = _getMobileScriptCallDetail(play);
+  const assignments = _getMobileScriptAssignments(play);
+  if (assignmentsEl) {
+    assignmentsEl.textContent = assignments ? `Personnel: ${assignments}` : "";
+  }
+  _renderMobileScriptPeriodOptions(currentIndex);
+  _updateMobileScriptScoreButtons(_getMobileScriptLastScore(play));
   _setMobileScriptCoachControlsDisabled(false);
 
   const row = document.querySelector(`#scriptPlays .script-item[data-idx="${currentIndex}"]`);
@@ -1046,6 +1182,68 @@ function coachPrevScriptCall() {
       : playable.length - 1;
   _mobileCoachScriptIndex = playable[prevPosition];
   coachFocusScriptCall();
+}
+
+function mobileCoachJumpPeriod(separatorIndex) {
+  const startIndex = parseInt(separatorIndex, 10);
+  if (!Number.isInteger(startIndex) || !Array.isArray(script)) return;
+  let nextPlayable = null;
+  for (let index = startIndex + 1; index < script.length; index++) {
+    if (script[index]?.isSeparator) break;
+    if (script[index]) {
+      nextPlayable = index;
+      break;
+    }
+  }
+  if (nextPlayable === null) {
+    showToast("That period has no plays yet.", {
+      type: "warning",
+      duration: 1800,
+    });
+    updateMobileCoachScriptNow();
+    return;
+  }
+  _mobileCoachScriptIndex = nextPlayable;
+  coachFocusScriptCall();
+}
+
+function mobileCoachScoreScriptCall(score) {
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  if (currentIndex === null) {
+    updateMobileCoachScriptNow();
+    return;
+  }
+  const play = script[currentIndex];
+  if (typeof quickScorePlayReadiness === "function") {
+    quickScorePlayReadiness(play, score, { source: "script", index: currentIndex });
+  } else if (typeof quickPlayReadinessScriptScore === "function") {
+    quickPlayReadinessScriptScore(score, { dataset: { idx: String(currentIndex) } });
+  }
+  updateMobileCoachScriptNow();
+}
+
+function mobileCoachLogScriptCall() {
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  if (currentIndex === null) {
+    updateMobileCoachScriptNow();
+    return;
+  }
+  if (typeof openPlayReadinessLogModal === "function") {
+    openPlayReadinessLogModal(currentIndex);
+  } else if (typeof openPlayReadinessRepModal === "function") {
+    openPlayReadinessRepModal(currentIndex);
+  }
+}
+
+function mobileCoachPresentScriptCall() {
+  const currentIndex = _normalizeMobileCoachScriptIndex();
+  if (currentIndex === null) {
+    updateMobileCoachScriptNow();
+    return;
+  }
+  if (typeof openScriptPresentation === "function") {
+    openScriptPresentation(currentIndex);
+  }
 }
 
 // ── Tab badge counts ──

@@ -1,3 +1,65 @@
+let mobileEmptyShellInitialized = false;
+
+function isMobileStartupShell() {
+  if (document.body?.classList.contains("is-mobile-screen")) return true;
+  const width = window.visualViewport?.width || window.innerWidth || 0;
+  return width > 0 && width <= 768;
+}
+
+function setWorkspaceSurface(surface, opts = {}) {
+  const uploadSection = document.getElementById("uploadSection");
+  const mainApp = document.getElementById("mainApp");
+  if (!uploadSection || !mainApp) return;
+
+  const showApp = surface === "app";
+  uploadSection.classList.toggle("hidden", showApp);
+  mainApp.classList.toggle("hidden", !showApp);
+  document.body.dataset.workspaceSurface = showApp ? "app" : "upload";
+
+  const backBtn = document.getElementById("backToAppBtn");
+  if (backBtn) {
+    const canBackToMobileShell = isMobileStartupShell() && showApp === false;
+    backBtn.classList.toggle("hidden", !(plays.length > 0 || canBackToMobileShell));
+  }
+
+  if (showApp && opts.initModules) {
+    if (plays.length > 0 || !mobileEmptyShellInitialized) {
+      initAllModules();
+      mobileEmptyShellInitialized = plays.length === 0;
+    }
+  }
+
+  if (typeof queueMobileShellMeasuredSync === "function") {
+    queueMobileShellMeasuredSync();
+  } else if (typeof queueMobileShellStateSync === "function") {
+    queueMobileShellStateSync();
+  }
+}
+
+function ensureMobileStartupSurface() {
+  if (!isMobileStartupShell() || plays.length > 0) return;
+  setWorkspaceSurface("app", { initModules: true });
+
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (!currentUser || typeof showTab !== "function") return;
+
+  const defaultTab =
+    typeof getDefaultAuthTab === "function" ? getDefaultAuthTab() : "playbook";
+  const targetTab = currentUser.role === "player" ? defaultTab : "playbook";
+  const canUseTarget =
+    typeof canAccessTab !== "function" || canAccessTab(targetTab);
+  if (!canUseTarget) return;
+
+  if (
+    typeof currentActiveTab === "undefined" ||
+    currentActiveTab === "playbook" ||
+    (typeof canAccessTab === "function" && !canAccessTab(currentActiveTab))
+  ) {
+    showTab(targetTab);
+  }
+}
+
 function restoreStoredPlaybookSession(storedPlaybook) {
   plays = storedPlaybook;
   if (typeof ensurePlaybookPlayIds === "function") {
@@ -6,8 +68,7 @@ function restoreStoredPlaybookSession(storedPlaybook) {
   }
   if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
   filteredPlays = [...plays];
-  document.getElementById("uploadSection").classList.add("hidden");
-  document.getElementById("mainApp").classList.remove("hidden");
+  setWorkspaceSurface("app");
 
   initAllModules();
   _syncSortUI();

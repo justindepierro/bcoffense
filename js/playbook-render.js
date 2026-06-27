@@ -214,7 +214,16 @@ function renderPlaybook() {
         typeof getGamePlanFlaggedCount === "function"
           ? getGamePlanFlaggedCount("jv")
           : 0;
-      if (jvOn && jvCount === 0) {
+      if (plays.length === 0) {
+        const currentUser =
+          typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+        const canImport =
+          !currentUser ||
+          (typeof canManageSettings === "function" && canManageSettings());
+        emptyEl.innerHTML = canImport
+          ? '<p class="empty-state__text">No playbook loaded yet.</p><p class="empty-state__hint">Import a CSV or restore a backup, then this mobile workspace will stay navigable.</p><button class="btn btn-primary" data-action="showUpload">Import or Restore</button>'
+          : '<p class="empty-state__text">No playbook loaded yet.</p><p class="empty-state__hint">You can still use the navigation below. Ask an admin to import or restore the team playbook.</p>';
+      } else if (jvOn && jvCount === 0) {
         emptyEl.innerHTML =
           '<p class="empty-state__text">🟡 No plays marked as JV in the Game Plan yet.</p><p class="empty-state__hint">Open the <strong>Game Plan</strong> tab and tap the 🟡 chip on any play to mark it for the JV / freshmen package.</p><button class="btn btn-secondary" data-action="clearAllFilters">✕ Clear All Filters</button>';
       } else {
