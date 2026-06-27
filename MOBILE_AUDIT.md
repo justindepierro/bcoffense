@@ -27,6 +27,32 @@ This checklist converts the mobile audit into work items we can execute and veri
 4. `M-012` - Shared layer/body lock utility: fix modal/drawer scroll, focus return, safe-area footers, and background touch leaks.
 5. `M-031` - Practice Script touch reordering fallback: give touch users move/reorder controls that do not depend on drag.
 6. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
+7. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
+
+---
+
+## Attached Comprehensive Audit Mapping
+
+The attached implementation brief is now mapped into this checklist as:
+
+- Already covered or partially covered:
+  - Responsive device contract: `M-010`, `M-023`.
+  - Scroll ownership: `M-011`.
+  - Shared layer/body lock: `M-012`.
+  - Touch targets/accessibility baseline: `M-013`, `M-015`, `M-051`.
+  - Practice Script phone run mode: `M-030`, `M-031`.
+  - Player read-only script portal: `M-031A`.
+  - Call Sheet phone cards: `M-032`.
+  - Wristband phone editor: `M-033`.
+  - Playbook phone sheets: `M-034`.
+  - Defensive tendencies mobile layout: `M-035`.
+  - Game Plan mobile hierarchy: `M-036`.
+  - Dashboard role layouts: `M-037`.
+  - Viewport harness: `M-050`, `M-051`.
+- Added from the attached brief:
+  - `M-041` true iPad presentation / PWA / fullscreen fallback.
+  - `M-042` presentation setup, projector clean view, Wake Lock, and optional telestrator.
+  - `M-052` expanded role/page/mobile regression matrix.
 
 ---
 
@@ -129,6 +155,13 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[x]` Expose state as both classes and `body.dataset` values.
   - `[x]` Keep compatibility aliases until page CSS is migrated.
   - `[x]` On mobile with no stored playbook, open the navigable app shell instead of stranding users on the upload/setup screen.
+  - `[x]` Add canonical display-mode state:
+    - `data-display-mode="browser|standalone|fullscreen|minimal-ui|window-controls-overlay"`
+    - `data-device="phone|tablet|desktop"`
+    - `data-orientation="portrait|landscape"`
+    - `data-presentation="true|false"`
+    - `data-fullscreen-api="true|false"`
+    - `data-ipados="true|false"`
   - `[~]` Audit current `is-mobile-screen`, `is-phone-screen`, `is-compact-screen`, and `is-short-screen` usage.
   - `[ ]` Migrate page CSS to canonical shell classes in focused page batches.
 - Acceptance:
@@ -559,6 +592,49 @@ This checklist converts the mobile audit into work items we can execute and veri
   - Targeted player portrait presentation probe.
   - Landscape phone screenshots and orientation-change test.
 
+### M-041 - True iPad presentation and PWA/fullscreen fallback
+
+- Status: `[~]`
+- Priority: P0
+- Files: `manifest.json`, `index.html`, `js/app-shell.js`, `js/play-presentation.js`, `css/play-presentation.css`, `scripts/smoke-check.js`
+- Work:
+  - `[x]` Verify manifest, viewport-fit, Apple web app metadata, maskable icons, and network-first app-shell service worker behavior exist.
+  - `[x]` Add canonical display-mode detection for browser, standalone, fullscreen, Fullscreen API state, iPadOS-style touch tablets, orientation, and presentation-active state.
+  - `[ ]` Add iPad Safari “Open Full Screen on iPad” instruction sheet with dismissal state and overflow-menu reopen action.
+  - `[ ]` Add presentation setup sheet for source, order, starting play, notes/personnel/assignment/defense visibility, auto-advance, and theme.
+  - `[ ]` Add app-level presentation chrome contract that hides app header, nav, coach dock, player nav, filters, debug UI, and noncritical toasts.
+  - `[ ]` Add explicit fullscreen enter/exit controls, `fullscreenchange`/`fullscreenerror` handling, and rejected-promise feedback.
+  - `[ ]` Restore originating page, selected play, focus, filters, and scroll position on exit.
+- Acceptance:
+  - iPad browser mode gets a clean app-level presentation even when Safari chrome cannot be hidden.
+  - Home Screen/PWA mode and Fullscreen API mode expose reliable state through shared dataset attributes.
+  - Presentation exit never leaves the app shell hidden, body locked, or focused on a removed element.
+- Verification:
+  - Static smoke for manifest/PWA metadata, display-mode dataset contract, and fullscreen event hooks.
+  - iPad portrait and landscape viewport probes.
+  - Manual Safari/Home Screen device check still required.
+
+### M-042 - Projector clean view, Wake Lock, detail panel, and telestrator
+
+- Status: `[ ]`
+- Priority: P1
+- Files: `js/play-presentation.js`, `css/play-presentation.css`, presentation setup/layer files as they split out
+- Work:
+  - Add Projector Clean View toggle that hides touch instructions, noncritical HUD, coach-only notes when selected, edit/account controls, and noncritical toasts.
+  - Add HUD auto-hide with tap/pointer reveal and controls that stay clear of diagram content.
+  - Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
+  - Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
+  - Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
+  - Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
+- Acceptance:
+  - Projected output avoids app/account/edit UI and preserves high contrast.
+  - Drawing and zoom gestures do not accidentally navigate plays or scroll the page.
+  - Wake Lock failure never blocks presentation.
+- Verification:
+  - Presentation portrait/landscape screenshot set.
+  - Pointer/touch drawing smoke or browser probe.
+  - Wake Lock unavailable fallback test.
+
 ---
 
 ## Phase 4 - Automated Mobile Test Harness
@@ -576,6 +652,7 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[x]` Runner stubs local auth and sync endpoints for static testing.
   - `[x]` Runner can save screenshots and `.mobile-debug/mobile-viewport-report.json`.
   - `[x]` Cover Admin, Coach, and Player where possible.
+  - `[x]` Report canonical `device`, `displayMode`, `standaloneDisplay`, `fullscreenApi`, `ipados`, and `presentation` state.
   - `[ ]` Decide whether to make this a required gate or a manual debug command.
 - Required viewports:
   - `[ ]` 320x568
@@ -610,6 +687,7 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[x]` No visible standalone phone control has hit box below `44x44`.
   - `[x]` Phone startup must expose `#mainApp`, the tab bar, and an active panel after auth.
   - `[x]` No fixed element overlaps active bottom navigation or safe area.
+  - `[x]` Canonical display-mode/device/presentation dataset fields are present and valid after auth.
   - `[ ]` Focused input remains inside `visualViewport` after keyboard resize.
   - `[ ]` Opening a blocking layer prevents background scrolling.
   - `[ ]` Closing a layer restores scroll and focus.
@@ -617,6 +695,25 @@ This checklist converts the mobile audit into work items we can execute and veri
   - `[ ]` No critical action is hidden solely because width is small.
   - `[ ]` Text at 200% zoom remains readable and controls remain operable.
   - `[~]` Player cannot see staff controls; coach/admin can reach promised mobile capabilities.
+
+### M-052 - Expanded role/page/mobile regression matrix
+
+- Status: `[ ]`
+- Priority: P1
+- Files: `scripts/mobile-viewport-check.mjs`, optional screenshot baselines under `.mobile-debug/`
+- Work:
+  - Expand automated coverage to the attached audit matrix:
+    - Phones: 320x568, 360x800, 375x667, 390x844, 393x852, 412x915, 430x932.
+    - Tablets/iPads: 768x1024, 810x1080, 820x1180, 1024x768, 1080x810, 1180x820, 1366x1024.
+    - Desktop smoke sizes: 1280x720, 1366x768, 1440x900, 1920x1080.
+  - Add state probes for login, role dashboards, Practice Script run/full views, Call Sheet launcher/situation, Wristband card/cell editor, Playbook/detail, Defensive Tendencies, Game Plan, presentation setup, portrait/landscape presentation, fullscreen fallback, bottom-sheet scroll lock, orientation restore, and role restrictions.
+  - Generate screenshot sets for major states when explicitly requested.
+- Acceptance:
+  - Harness can report per-role/per-viewport failures without stopping the whole run unless strict mode is enabled.
+  - Regression output identifies the active page, display mode, device class, scroll owner, presentation state, overflow, touch target failures, console errors, and fixed-element overlap.
+- Verification:
+  - `node --check scripts/mobile-viewport-check.mjs`
+  - Representative no-screenshot run across at least phone, tablet, and desktop sizes.
 
 ---
 
@@ -646,11 +743,11 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
 3. `[~]` M-033 - Finish Wristband phone popup/body-lock and player-card QA.
 4. `[~]` M-012 - Continue shared layer/body lock utility migration.
-5. `[ ]` M-020 - Write role capability matrix.
-6. `[ ]` M-031 - Add Practice Script touch reordering fallback.
-7. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
-8. `[ ]` M-034 - Build Playbook phone action/filter sheets.
-9. `[ ]` M-021 - Run login visual QA matrix.
+5. `[~]` M-041 - Continue true iPad presentation / PWA / fullscreen fallback.
+6. `[ ]` M-020 - Write role capability matrix.
+7. `[ ]` M-031 - Add Practice Script touch reordering fallback.
+8. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
+9. `[ ]` M-034 - Build Playbook phone action/filter sheets.
 10. `[~]` M-010 - Finish canonical responsive state migration.
 
 ---
@@ -662,7 +759,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-003 - Player phone header touch targets: player header controls meet the 44px phone target.
 - `[x]` M-004 - Auth session syntax/expiry repair: expired sessions clear cleanly and `auth.js` parses.
 - `[x]` M-005 - Regression guards and cache bump: early mobile smoke guards and cache versioning were added.
-- `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states exist and mobile no-playbook startup opens the app shell.
+- `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states, display-mode/device/orientation/presentation datasets, and mobile no-playbook startup open the app shell.
 - `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
 - `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, and now wrap Play Presentation.
 - `[x]` M-013 partial - Touch-target guardrail: shared controls and phone viewport checks catch undersized standalone targets.

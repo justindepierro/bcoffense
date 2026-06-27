@@ -329,6 +329,12 @@ async function inspectPage(page) {
       role: document.body?.dataset.authRole || "",
       screenSize: document.body?.dataset.screenSize || "",
       shellSize: document.body?.dataset.shellSize || "",
+      device: document.body?.dataset.device || "",
+      displayMode: document.body?.dataset.displayMode || "",
+      standaloneDisplay: document.body?.dataset.standaloneDisplay || "",
+      fullscreenApi: document.body?.dataset.fullscreenApi || "",
+      ipados: document.body?.dataset.ipados || "",
+      presentation: document.body?.dataset.presentation || "",
       orientation: document.body?.dataset.screenOrientation || "",
       shellOrientation: document.body?.dataset.shellOrientation || "",
       scrollOwner: document.body?.dataset.scrollOwner || "",
@@ -418,6 +424,16 @@ async function run() {
           IPAD_VIEWPORTS.includes(result.viewport) &&
           Boolean(result.role) &&
           result.shellSize !== "tablet";
+        const badDisplayState =
+          Boolean(result.role) &&
+          (
+            !["phone", "tablet", "desktop"].includes(result.device) ||
+            !["browser", "standalone", "fullscreen", "minimal-ui", "window-controls-overlay"].includes(result.displayMode) ||
+            !["true", "false"].includes(result.standaloneDisplay) ||
+            !["true", "false"].includes(result.fullscreenApi) ||
+            !["true", "false"].includes(result.ipados) ||
+            !["true", "false"].includes(result.presentation)
+          );
         const badSmallTargets =
           result.screenSize === "phone" &&
           result.smallTargetCount > 0;
@@ -425,6 +441,7 @@ async function run() {
           blankMobileStart ||
           badPhoneScrollOwner ||
           badTabletShell ||
+          badDisplayState ||
           result.overflow ||
           result.fixedOverlaps.length > 0 ||
           badSmallTargets ||
@@ -436,6 +453,7 @@ async function run() {
           blankMobileStart,
           badPhoneScrollOwner,
           badTabletShell,
+          badDisplayState,
           badSmallTargets,
           failed,
         });
@@ -454,6 +472,7 @@ async function run() {
       result.blankMobileStart ? "blank mobile start" : "",
       result.badPhoneScrollOwner ? `phone scroll owner ${result.scrollOwner || "unset"}` : "",
       result.badTabletShell ? `tablet shell ${result.shellSize || "unset"}` : "",
+      result.badDisplayState ? "bad display/device state" : "",
       result.overflow ? `overflow ${result.scrollWidth}>${result.viewportWidth}` : "",
       result.smallTargetCount ? `${result.smallTargetCount} small targets` : "",
       result.fixedOverlaps.length ? `${result.fixedOverlaps.length} fixed overlaps` : "",
@@ -463,6 +482,7 @@ async function run() {
     console.log(
       `${result.failed ? "FAIL" : "OK"} ${result.role} ${result.viewport} ` +
         `${result.screenSize}/${result.orientation} shell=${result.shellSize}/${result.shellOrientation}` +
+        ` device=${result.device || "unset"} display=${result.displayMode || "unset"}` +
         `${flags.length ? ` - ${flags.join(", ")}` : ""}`,
     );
     if (result.screenshot) console.log(`  screenshot: ${result.screenshot}`);

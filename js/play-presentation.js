@@ -409,6 +409,9 @@ function openPlayPresentation(items, startIndex, source) {
       scrollElement: "playPresentationBody",
     });
   }
+  if (typeof queueMobileShellMeasuredSync === "function") {
+    queueMobileShellMeasuredSync();
+  }
   syncPlayPresentationMobileLandscape();
   renderPlayPresentation();
   const overlayVisible = ensurePlayPresentationOverlayDisplayed(
@@ -474,6 +477,9 @@ function closePlayPresentation() {
   }
   setPlayPresentationOverlayOpen(overlay, false);
   document.body.classList.remove("play-presentation-open");
+  if (typeof queueMobileShellMeasuredSync === "function") {
+    queueMobileShellMeasuredSync();
+  }
 
   if (document.fullscreenElement === overlay && document.exitFullscreen) {
     document.exitFullscreen().catch(() => { });

@@ -46,6 +46,12 @@ let _mobileShellScrollTimer = 0;
 let _mobileShellLastStateKey = "";
 let _mobileShellResizeObserver = null;
 let _mobileOverflowTraceTimer = 0;
+const APP_DISPLAY_MODE_MEDIA_QUERIES = [
+  "(display-mode: standalone)",
+  "(display-mode: fullscreen)",
+  "(display-mode: minimal-ui)",
+  "(display-mode: window-controls-overlay)",
+];
 
 const MOBILE_OVERFLOW_APPROVED_SELECTORS = [
   ".table-wrapper",
@@ -146,6 +152,35 @@ function queueMobileOverflowTrace() {
 
 window.bcDebugMobileOverflow = bcDebugMobileOverflow;
 
+function getAppDisplayMode() {
+  if (document.fullscreenElement) return "fullscreen";
+  if (window.matchMedia?.("(display-mode: fullscreen)")?.matches) {
+    return "fullscreen";
+  }
+  if (
+    window.matchMedia?.("(display-mode: standalone)")?.matches ||
+    navigator.standalone === true
+  ) {
+    return "standalone";
+  }
+  if (window.matchMedia?.("(display-mode: minimal-ui)")?.matches) {
+    return "minimal-ui";
+  }
+  if (window.matchMedia?.("(display-mode: window-controls-overlay)")?.matches) {
+    return "window-controls-overlay";
+  }
+  return "browser";
+}
+
+function isLikelyIPadOSDevice() {
+  const platform = navigator.platform || "";
+  const ua = navigator.userAgent || "";
+  return (
+    /\biPad\b/.test(ua) ||
+    (platform === "MacIntel" && Number(navigator.maxTouchPoints || 0) > 1)
+  );
+}
+
 function syncMobileShellState() {
   _mobileShellFrame = 0;
   const viewport = window.visualViewport;
@@ -161,7 +196,9 @@ function syncMobileShellState() {
 
   const isTouch =
     window.matchMedia && window.matchMedia("(pointer: coarse)").matches;
-  const isTouchTablet = isTouch && shortSide <= 1024 && longSide <= 1366;
+  const isIPadOS = isLikelyIPadOSDevice();
+  const isTouchTablet =
+    (isTouch || isIPadOS) && shortSide <= 1024 && longSide <= 1366;
   const isMobile =
     width <= 768 ||
     isTouchTablet;
@@ -180,6 +217,14 @@ function syncMobileShellState() {
         ? "tablet"
         : "desktop";
   const authRole = body.dataset.authRole || "";
+  const displayMode = getAppDisplayMode();
+  const fullscreenApiActive = Boolean(document.fullscreenElement);
+  const isStandaloneDisplay =
+    displayMode === "standalone" ||
+    displayMode === "fullscreen" ||
+    displayMode === "window-controls-overlay";
+  const presentationActive = body.classList.contains("play-presentation-open");
+  const appDevice = shellPhone ? "phone" : shellTablet ? "tablet" : "desktop";
   const activeTab =
     body.dataset.activeTab ||
     (typeof currentActiveTab !== "undefined" ? currentActiveTab : "");
@@ -207,8 +252,14 @@ function syncMobileShellState() {
     activeTab,
     isMobile ? "mobile" : "desktop",
     shellSize,
+    appDevice,
     isShort ? "short" : "tall",
     isLandscape ? "landscape" : "portrait",
+    displayMode,
+    fullscreenApiActive ? "fullscreen-api" : "windowed",
+    isStandaloneDisplay ? "standalone" : "browser",
+    isIPadOS ? "ipados" : "not-ipados",
+    presentationActive ? "presentation" : "app",
   ].join(":");
   if (stateKey === _mobileShellLastStateKey) return;
   _mobileShellLastStateKey = stateKey;
@@ -235,6 +286,17 @@ function syncMobileShellState() {
     el.classList.toggle("shell-landscape", isLandscape);
     el.classList.toggle("shell-portrait", !isLandscape);
     el.classList.toggle("shell-touch", Boolean(isTouch));
+    el.classList.toggle("shell-ipados", isIPadOS);
+    el.classList.toggle("display-mode-browser", displayMode === "browser");
+    el.classList.toggle("display-mode-standalone", displayMode === "standalone");
+    el.classList.toggle("display-mode-fullscreen", displayMode === "fullscreen");
+    el.classList.toggle("display-mode-minimal-ui", displayMode === "minimal-ui");
+    el.classList.toggle(
+      "display-mode-window-controls-overlay",
+      displayMode === "window-controls-overlay",
+    );
+    el.classList.toggle("display-mode-installed", isStandaloneDisplay);
+    el.classList.toggle("app-presentation-active", presentationActive);
   });
   body.classList.toggle("is-player-mobile-shell", isMobile && authRole === "player");
   body.classList.toggle(
@@ -248,6 +310,15 @@ function syncMobileShellState() {
   }
   body.dataset.screenSize = isPhone ? "phone" : isMobile ? "mobile" : "desktop";
   body.dataset.screenOrientation = isLandscape ? "landscape" : "portrait";
+  [root, body].forEach((el) => {
+    el.dataset.device = appDevice;
+    el.dataset.orientation = isLandscape ? "landscape" : "portrait";
+    el.dataset.displayMode = displayMode;
+    el.dataset.standaloneDisplay = isStandaloneDisplay ? "true" : "false";
+    el.dataset.fullscreenApi = fullscreenApiActive ? "true" : "false";
+    el.dataset.ipados = isIPadOS ? "true" : "false";
+    el.dataset.presentation = presentationActive ? "true" : "false";
+  });
   body.dataset.shellSize = shellSize;
   body.dataset.shellWidth = String(width);
   body.dataset.shellHeight = String(height);
@@ -336,6 +407,12 @@ window.visualViewport?.addEventListener("scroll", queueMobileShellSettledSync, {
 window.addEventListener("orientationchange", queueMobileShellStateSync, {
   passive: true,
 });
+APP_DISPLAY_MODE_MEDIA_QUERIES.forEach((query) => {
+  const matcher = window.matchMedia?.(query);
+  matcher?.addEventListener?.("change", queueMobileShellMeasuredSync);
+});
+document.addEventListener("fullscreenchange", queueMobileShellMeasuredSync);
+document.addEventListener("fullscreenerror", queueMobileShellMeasuredSync);
 
 // ── Dark mode toggle ──
 function toggleDarkMode() {

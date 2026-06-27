@@ -802,6 +802,12 @@ function checkPlayPresentationContracts() {
     !/openLayer\(overlay,[\s\S]*id:\s*"play-presentation"/.test(
       presenter,
     ) ||
+    !/queueMobileShellMeasuredSync\(\);[\s\S]*syncPlayPresentationMobileLandscape\(\)/.test(
+      presenter,
+    ) ||
+    !/document\.body\.classList\.remove\("play-presentation-open"\);[\s\S]*queueMobileShellMeasuredSync\(\);/.test(
+      presenter,
+    ) ||
     !/closeLayer\("play-presentation",\s*\{\s*returnFocus:\s*false\s*\}\)/.test(
       presenter,
     )
@@ -1188,8 +1194,28 @@ function checkPlayerPortalContracts() {
     !/stateKey === _mobileShellLastStateKey/.test(appShell) ||
     !/const shellPhone = isPhone/.test(appShell) ||
     !/const shellCompact = isMobile/.test(appShell) ||
-    !/const isTouchTablet = isTouch/.test(appShell) ||
+    !/const isTouchTablet =[\s\S]*\(isTouch \|\| isIPadOS\)/.test(appShell) ||
     !/const shellTablet = isMobile/.test(appShell) ||
+    !/function getAppDisplayMode\(\)/.test(appShell) ||
+    !/function isLikelyIPadOSDevice\(\)/.test(appShell) ||
+    !/navigator\.standalone === true/.test(appShell) ||
+    !/MacIntel/.test(appShell) ||
+    !/APP_DISPLAY_MODE_MEDIA_QUERIES/.test(appShell) ||
+    !/document\.addEventListener\("fullscreenchange", queueMobileShellMeasuredSync\)/.test(
+      appShell,
+    ) ||
+    !/document\.addEventListener\("fullscreenerror", queueMobileShellMeasuredSync\)/.test(
+      appShell,
+    ) ||
+    !/el\.dataset\.displayMode = displayMode/.test(appShell) ||
+    !/el\.dataset\.device = appDevice/.test(appShell) ||
+    !/el\.dataset\.orientation = isLandscape \? "landscape" : "portrait"/.test(
+      appShell,
+    ) ||
+    !/el\.dataset\.presentation = presentationActive \? "true" : "false"/.test(
+      appShell,
+    ) ||
+    !/display-mode-installed/.test(appShell) ||
     !/body\.dataset\.shellSize = shellSize/.test(appShell) ||
     !/shell-phone/.test(appShell) ||
     !/shell-compact/.test(appShell) ||
