@@ -829,6 +829,16 @@
 .gp-library-bulk .btn-sm {
   font-size: var(--font-size-xs);
 }
+/* Bulk action sheet affordances — phone only (hidden on larger screens) */
+.gp-bulk-trigger {
+  display: none;
+}
+.gp-bulk-sheet-header {
+  display: none;
+}
+.gp-bulk-backdrop {
+  display: none;
+}
 
 /* Per-box sort dropdown */
 .gp-box-sort {
@@ -2857,6 +2867,70 @@ body.gp-dragging-from-box .gp-trash-zone {
   .gp-library {
     position: static;
     max-height: 46vh;
+  }
+
+  /* Bulk operations collapse into a secondary action sheet on phone */
+  .gp-bulk-trigger {
+    display: inline-flex;
+    align-items: center;
+    flex: 0 0 auto;
+    min-height: 32px;
+  }
+  .gp-library-bulk {
+    display: none;
+  }
+  .gp-library-bulk.gp-bulk-open {
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    position: fixed;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    margin: 0;
+    padding: var(--space-md);
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+    gap: var(--space-xs);
+    max-height: 70vh;
+    overflow-y: auto;
+    border-top: 1px solid var(--color-border-med);
+    border-bottom: none;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    background: var(--color-surface);
+    box-shadow: var(--shadow-lg);
+    z-index: var(--z-modal);
+    animation: gp-bulk-up 0.2s ease-out;
+  }
+  .gp-bulk-sheet-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    font-weight: 600;
+    font-size: var(--font-size-md);
+  }
+  .gp-library-bulk.gp-bulk-open .btn-sm:not(.gp-bulk-close) {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+  .gp-library-bulk.gp-bulk-open .gp-bulk-close {
+    flex: 0 0 auto;
+    min-width: 32px;
+    min-height: 32px;
+  }
+  .gp-bulk-backdrop {
+    display: block;
+    position: fixed;
+    inset: 0;
+    background: var(--color-overlay-md);
+    z-index: calc(var(--z-modal) - 1);
+  }
+  @keyframes gp-bulk-up {
+    from {
+      transform: translateY(100%);
+    }
+    to {
+      transform: translateY(0);
+    }
   }
 
   .gp-boxes,

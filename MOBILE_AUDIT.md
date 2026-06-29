@@ -550,18 +550,21 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-036 - Game Plan mobile action hierarchy
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
 - Files: `css/gameplan.css`, `js/gameplan-*.js`
 - Work:
-  - Keep search, active plan, and Add/Run primary.
-  - Collapse advanced filters by default.
-  - Move bulk operations to action sheet.
+  - [x] Keep search, active plan, and Add/Run primary.
+  - [x] Collapse advanced filters by default.
+  - [x] Move bulk operations to action sheet.
 - Acceptance:
   - Toolbar height stays reasonable on phone.
   - Bulk actions remain available but secondary.
 - Verification:
   - 390x844 and 844x390 screenshots.
+- Implementation notes (SW v733):
+  - Advanced filters already default-collapsed (`_gpFilters.showAdvanced: false`); search, formation, "Add Selected to…", and matchup chips stay primary in `.gp-toolbar`.
+  - Bulk operations (`☑ All visible` / `▢ None` / `⇄ Invert` / `➕ Add all visible`) move into a phone-only bottom action sheet: `.gp-library-bulk.gp-bulk-open` with `.gp-bulk-backdrop`, `.gp-bulk-sheet-header` + `.gp-bulk-close`, opened by the `.gp-bulk-trigger` (`⋯ Bulk`) in the library header via new `toggleGamePlanBulkSheet()` (`_gpShowBulkSheet` state). Inline on tablet/desktop.
 
 ### M-037 - Dashboard role layouts
 

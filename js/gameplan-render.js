@@ -343,8 +343,14 @@ function renderGamePlan() {
       <div class="gp-library-header">
         <span>Library</span>
         <span class="gp-library-count">${filtered.length} of ${plays.length}${_gpSelected.size > 0 ? ` • ${_gpSelected.size} selected` : ""}</span>
+        <button class="btn btn-sm btn-secondary gp-bulk-trigger" data-action="toggleGamePlanBulkSheet" title="Bulk selection actions" aria-haspopup="true">⋯ Bulk</button>
       </div>
-      <div class="gp-library-bulk">
+      ${_gpShowBulkSheet ? `<div class="gp-bulk-backdrop" data-action="toggleGamePlanBulkSheet" aria-hidden="true"></div>` : ""}
+      <div class="gp-library-bulk${_gpShowBulkSheet ? " gp-bulk-open" : ""}">
+        <div class="gp-bulk-sheet-header">
+          <span>Bulk Actions</span>
+          <button class="btn btn-sm gp-bulk-close" data-action="toggleGamePlanBulkSheet" aria-label="Close bulk actions" title="Close">✕</button>
+        </div>
         <button class="btn btn-sm btn-secondary" data-action="gpSelectAllVisible" title="Check every play matching current filters">☑ All visible</button>
         <button class="btn btn-sm btn-secondary" data-action="gpClearLibrarySelection" title="Uncheck all">▢ None</button>
         <button class="btn btn-sm btn-secondary" data-action="gpInvertVisibleSelection" title="Invert selection within visible">⇄ Invert</button>
@@ -969,6 +975,13 @@ function _gpAdvancedFilterCount() {
 
 function toggleGamePlanAdvancedFilters() {
   _gpFilters.showAdvanced = !_gpFilters.showAdvanced;
+  requestRenderGamePlan();
+}
+
+// Phone-only: toggle the bulk-operations action sheet. On larger screens the
+// bulk bar is always shown inline, so this only matters under shell-phone.
+function toggleGamePlanBulkSheet() {
+  _gpShowBulkSheet = !_gpShowBulkSheet;
   requestRenderGamePlan();
 }
 

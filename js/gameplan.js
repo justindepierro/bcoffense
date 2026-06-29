@@ -103,6 +103,7 @@ let _gpFilters = {
   spotlight: null,
 };
 let _gpSelected = new Set(); // play signatures currently checked in library
+let _gpShowBulkSheet = false; // phone-only: bulk-operations action sheet open state
 let _gpDragPayload = null; // { sigs: [...] } for native HTML5 dnd
 let _gpDragSource = null; // { boxId, sig, rawIdx } for box → box / box → library
 let _gpRenderQueued = false;
