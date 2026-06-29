@@ -687,7 +687,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[ ]` Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
   - `[x]` Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
   - `[ ]` Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
-  - `[ ]` Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
+  - `[x]` Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
 - Acceptance:
   - Projected output avoids app/account/edit UI and preserves high contrast.
   - Drawing and zoom gestures do not accidentally navigate plays or scroll the page.
@@ -706,7 +706,12 @@ The attached implementation brief is now mapped into this checklist as:
   - Requires an explicit tap; `requestPlayPresentationWakeLock()` acquires a screen sentinel, `releasePlayPresentationWakeLock()` releases it. Released on presentation close and `playPresentationWakeLockDesired` reset.
   - Auto-reacquires on `visibilitychange` when the tab returns to visible and the user still wants it (browser auto-releases on hide).
   - Graceful fallback: unsupported or rejected requests surface a non-blocking toast and never interrupt the presentation.
-  - Remaining: detail panel, telestrator, and zoom/pan still pending.
+- Implementation notes (SW v740):
+  - Added floating diagram zoom controls (`.pp-zoom-controls`: `zoomPlayPresentationOut`/`resetPlayPresentationZoom`/`zoomPlayPresentationIn`). Reset doubles as a percentage readout and zoom-to-fit.
+  - Zoom range 100%-400% (step 50%); the canvas gets a `translate/scale` transform with pan clamped to the frame bounds.
+  - Drag-to-pan via Pointer Events (`attachPlayPresentationPan`) engages only while zoomed (mouse/touch/Apple Pencil). The frame switches to `touch-action: none` so panning never scrolls the page.
+  - Swipe navigation is suppressed while zoomed (`playPresentationZoom.scale > 1`), so panning never changes plays. Zoom resets on every play change, open, and close.
+  - Remaining: detail panel and telestrator still pending.
 
 ---
 

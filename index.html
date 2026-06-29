@@ -33,22 +33,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=739" />
-  <link rel="stylesheet" href="css/layout.css?v=739" />
-  <link rel="stylesheet" href="css/components.css?v=739" />
-  <link rel="stylesheet" href="css/playbook.css?v=739" />
-  <link rel="stylesheet" href="css/script.css?v=739" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=739" />
-  <link rel="stylesheet" href="css/wristband.css?v=739" />
-  <link rel="stylesheet" href="css/callsheet.css?v=739" />
-  <link rel="stylesheet" href="css/tendencies.css?v=739" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=739" />
-  <link rel="stylesheet" href="css/dashboard.css?v=739" />
-  <link rel="stylesheet" href="css/gameplan.css?v=739" />
-  <link rel="stylesheet" href="css/installation.css?v=739" />
-  <link rel="stylesheet" href="css/identity.css?v=739" />
-  <link rel="stylesheet" href="css/print.css?v=739" />
-  <link rel="stylesheet" href="css/responsive.css?v=739" />
+  <link rel="stylesheet" href="css/base.css?v=740" />
+  <link rel="stylesheet" href="css/layout.css?v=740" />
+  <link rel="stylesheet" href="css/components.css?v=740" />
+  <link rel="stylesheet" href="css/playbook.css?v=740" />
+  <link rel="stylesheet" href="css/script.css?v=740" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=740" />
+  <link rel="stylesheet" href="css/wristband.css?v=740" />
+  <link rel="stylesheet" href="css/callsheet.css?v=740" />
+  <link rel="stylesheet" href="css/tendencies.css?v=740" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=740" />
+  <link rel="stylesheet" href="css/dashboard.css?v=740" />
+  <link rel="stylesheet" href="css/gameplan.css?v=740" />
+  <link rel="stylesheet" href="css/installation.css?v=740" />
+  <link rel="stylesheet" href="css/identity.css?v=740" />
+  <link rel="stylesheet" href="css/print.css?v=740" />
+  <link rel="stylesheet" href="css/responsive.css?v=740" />
 </head>
 
 <body class="app-booting">
@@ -3688,6 +3688,15 @@
       </div>
     </header>
     <main id="playPresentationBody" class="pp-body"></main>
+    <div class="pp-zoom-controls" role="group" aria-label="Diagram zoom">
+      <button type="button" id="playPresentationZoomOut" class="pp-zoom-btn" data-action="zoomPlayPresentationOut"
+        aria-label="Zoom out" title="Zoom out" disabled>−</button>
+      <button type="button" id="playPresentationZoomReset" class="pp-zoom-btn pp-zoom-reset"
+        data-action="resetPlayPresentationZoom" aria-label="Reset zoom to fit" title="Reset zoom to fit"
+        disabled>100%</button>
+      <button type="button" id="playPresentationZoomIn" class="pp-zoom-btn" data-action="zoomPlayPresentationIn"
+        aria-label="Zoom in" title="Zoom in">+</button>
+    </div>
     <div id="playPresentationRotateHint" class="pp-rotate-hint" role="status" aria-live="polite" hidden>
       <span class="pp-rotate-hint-icon" aria-hidden="true">⟳</span>
       <span class="pp-rotate-hint-text">Rotate to landscape for the full view</span>
@@ -3735,117 +3744,117 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=739"></script>
-  <script defer src="js/history.js?v=739"></script>
-  <script defer src="js/dom-helpers.js?v=739"></script>
-  <script defer src="js/lz-string.min.js?v=739"></script>
-  <script defer src="js/storage.js?v=739"></script>
-  <script defer src="js/storage-ui.js?v=739"></script>
-  <script defer src="js/play-images.js?v=739"></script>
-  <script defer src="js/cloud-sync.js?v=739"></script>
-  <script defer src="js/auth.js?v=739"></script>
-  <script defer src="js/vision.js?v=739"></script>
-  <script defer src="js/team-settings.js?v=739"></script>
-  <script defer src="js/playbook.js?v=739"></script>
-  <script defer src="js/playbook-collections.js?v=739"></script>
-  <script defer src="js/playbook-print.js?v=739"></script>
-  <script defer src="js/playbook-editor.js?v=739"></script>
-  <script defer src="js/playbook-import.js?v=739"></script>
-  <script defer src="js/playbook-export.js?v=739"></script>
-  <script defer src="js/playbook-chrome.js?v=739"></script>
-  <script defer src="js/playbook-reports.js?v=739"></script>
-  <script defer src="js/playbook-reports-identity.js?v=739"></script>
-  <script defer src="js/playbook-state.js?v=739"></script>
-  <script defer src="js/playbook-filters.js?v=739"></script>
-  <script defer src="js/playbook-navigation.js?v=739"></script>
-  <script defer src="js/playbook-actions.js?v=739"></script>
-  <script defer src="js/playbook-render.js?v=739"></script>
-  <script defer src="js/playbook-sanitize.js?v=739"></script>
-  <script defer src="js/playbook-analytics.js?v=739"></script>
-  <script defer src="js/playbook-analytics-render.js?v=739"></script>
-  <script defer src="js/playbook-identity.js?v=739"></script>
-  <script defer src="js/script-state.js?v=739"></script>
-  <script defer src="js/script-shared.js?v=739"></script>
-  <script defer src="js/script-players.js?v=739"></script>
-  <script defer src="js/script-display-options.js?v=739"></script>
-  <script defer src="js/play-readiness.js?v=739"></script>
-  <script defer src="js/script-add.js?v=739"></script>
-  <script defer src="js/script-sort.js?v=739"></script>
-  <script defer src="js/script-export.js?v=739"></script>
-  <script defer src="js/script-available.js?v=739"></script>
-  <script defer src="js/script-selection.js?v=739"></script>
-  <script defer src="js/script-timeline.js?v=739"></script>
-  <script defer src="js/script-render.js?v=739"></script>
-  <script defer src="js/script-health.js?v=739"></script>
-  <script defer src="js/script-periods.js?v=739"></script>
-  <script defer src="js/script-period-sync.js?v=739"></script>
-  <script defer src="js/script-smart.js?v=739"></script>
-  <script defer src="js/script-storage.js?v=739"></script>
-  <script defer src="js/script-player.js?v=739"></script>
-  <script defer src="js/script-integrations.js?v=739"></script>
-  <script defer src="js/play-presentation.js?v=739"></script>
-  <script defer src="js/wristband.js?v=739"></script>
-  <script defer src="js/wristband-library.js?v=739"></script>
-  <script defer src="js/wristband-render.js?v=739"></script>
-  <script defer src="js/wristband-cards.js?v=739"></script>
-  <script defer src="js/wristband-export.js?v=739"></script>
-  <script defer src="js/wristband-chrome.js?v=739"></script>
-  <script defer src="js/wristband-logo.js?v=739"></script>
-  <script defer src="js/wristband-search.js?v=739"></script>
-  <script defer src="js/wristband-modals.js?v=739"></script>
-  <script defer src="js/wristband-cell-popup.js?v=739"></script>
-  <script defer src="js/wristband-cell-actions.js?v=739"></script>
-  <script defer src="js/wristband-sort.js?v=739"></script>
-  <script defer src="js/wristband-storage.js?v=739"></script>
-  <script defer src="js/wristband-runtime.js?v=739"></script>
-  <script defer src="js/callsheet-render.js?v=739"></script>
-  <script defer src="js/callsheet.js?v=739"></script>
-  <script defer src="js/callsheet-print.js?v=739"></script>
-  <script defer src="js/callsheet-sort.js?v=739"></script>
-  <script defer src="js/callsheet-filters.js?v=739"></script>
-  <script defer src="js/callsheet-smart.js?v=739"></script>
-  <script defer src="js/callsheet-export.js?v=739"></script>
-  <script defer src="js/callsheet-display.js?v=739"></script>
-  <script defer src="js/callsheet-categories.js?v=739"></script>
-  <script defer src="js/callsheet-metadata.js?v=739"></script>
-  <script defer src="js/callsheet-layout.js?v=739"></script>
-  <script defer src="js/callsheet-templates.js?v=739"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=739"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=739"></script>
-  <script defer src="js/constraints.js?v=739"></script>
-  <script defer src="js/constraints-ui.js?v=739"></script>
-  <script defer src="js/script-vision.js?v=739"></script>
-  <script defer src="js/tendencies-render.js?v=739"></script>
-  <script defer src="js/tendencies.js?v=739"></script>
-  <script defer src="js/tendencies-print.js?v=739"></script>
-  <script defer src="js/installation-render.js?v=739"></script>
-  <script defer src="js/installation.js?v=739"></script>
-  <script defer src="js/installation-print.js?v=739"></script>
-  <script defer src="js/identity.js?v=739"></script>
-  <script defer src="js/offensebuilder.js?v=739"></script>
-  <script defer src="js/help.js?v=739"></script>
-  <script defer src="js/dashboard-render.js?v=739"></script>
-  <script defer src="js/dashboard.js?v=739"></script>
-  <script defer src="js/gameplan.js?v=739"></script>
-  <script defer src="js/gameplan-render.js?v=739"></script>
-  <script defer src="js/gameplan-dnd.js?v=739"></script>
-  <script defer src="js/gameplan-actions.js?v=739"></script>
-  <script defer src="js/gameplan-smart.js?v=739"></script>
-  <script defer src="js/gameplan-health.js?v=739"></script>
-  <script defer src="js/gameplan-print.js?v=739"></script>
-  <script defer src="js/gameplan-integrations.js?v=739"></script>
-  <script defer src="js/gameplan-snapshots.js?v=739"></script>
-  <script defer src="js/print-studio.js?v=739"></script>
-  <script defer src="js/script-events.js?v=739"></script>
-  <script defer src="js/app-events.js?v=739"></script>
-  <script defer src="js/app-command.js?v=739"></script>
-  <script defer src="js/app-shell.js?v=739"></script>
-  <script defer src="js/app-session.js?v=739"></script>
-  <script defer src="js/app-navigation.js?v=739"></script>
-  <script defer src="js/app-module-init.js?v=739"></script>
-  <script defer src="js/app-bootstrap.js?v=739"></script>
-  <script defer src="js/app-init.js?v=739"></script>
-  <script defer src="js/app.js?v=739"></script>
+  <script defer src="js/utils.js?v=740"></script>
+  <script defer src="js/history.js?v=740"></script>
+  <script defer src="js/dom-helpers.js?v=740"></script>
+  <script defer src="js/lz-string.min.js?v=740"></script>
+  <script defer src="js/storage.js?v=740"></script>
+  <script defer src="js/storage-ui.js?v=740"></script>
+  <script defer src="js/play-images.js?v=740"></script>
+  <script defer src="js/cloud-sync.js?v=740"></script>
+  <script defer src="js/auth.js?v=740"></script>
+  <script defer src="js/vision.js?v=740"></script>
+  <script defer src="js/team-settings.js?v=740"></script>
+  <script defer src="js/playbook.js?v=740"></script>
+  <script defer src="js/playbook-collections.js?v=740"></script>
+  <script defer src="js/playbook-print.js?v=740"></script>
+  <script defer src="js/playbook-editor.js?v=740"></script>
+  <script defer src="js/playbook-import.js?v=740"></script>
+  <script defer src="js/playbook-export.js?v=740"></script>
+  <script defer src="js/playbook-chrome.js?v=740"></script>
+  <script defer src="js/playbook-reports.js?v=740"></script>
+  <script defer src="js/playbook-reports-identity.js?v=740"></script>
+  <script defer src="js/playbook-state.js?v=740"></script>
+  <script defer src="js/playbook-filters.js?v=740"></script>
+  <script defer src="js/playbook-navigation.js?v=740"></script>
+  <script defer src="js/playbook-actions.js?v=740"></script>
+  <script defer src="js/playbook-render.js?v=740"></script>
+  <script defer src="js/playbook-sanitize.js?v=740"></script>
+  <script defer src="js/playbook-analytics.js?v=740"></script>
+  <script defer src="js/playbook-analytics-render.js?v=740"></script>
+  <script defer src="js/playbook-identity.js?v=740"></script>
+  <script defer src="js/script-state.js?v=740"></script>
+  <script defer src="js/script-shared.js?v=740"></script>
+  <script defer src="js/script-players.js?v=740"></script>
+  <script defer src="js/script-display-options.js?v=740"></script>
+  <script defer src="js/play-readiness.js?v=740"></script>
+  <script defer src="js/script-add.js?v=740"></script>
+  <script defer src="js/script-sort.js?v=740"></script>
+  <script defer src="js/script-export.js?v=740"></script>
+  <script defer src="js/script-available.js?v=740"></script>
+  <script defer src="js/script-selection.js?v=740"></script>
+  <script defer src="js/script-timeline.js?v=740"></script>
+  <script defer src="js/script-render.js?v=740"></script>
+  <script defer src="js/script-health.js?v=740"></script>
+  <script defer src="js/script-periods.js?v=740"></script>
+  <script defer src="js/script-period-sync.js?v=740"></script>
+  <script defer src="js/script-smart.js?v=740"></script>
+  <script defer src="js/script-storage.js?v=740"></script>
+  <script defer src="js/script-player.js?v=740"></script>
+  <script defer src="js/script-integrations.js?v=740"></script>
+  <script defer src="js/play-presentation.js?v=740"></script>
+  <script defer src="js/wristband.js?v=740"></script>
+  <script defer src="js/wristband-library.js?v=740"></script>
+  <script defer src="js/wristband-render.js?v=740"></script>
+  <script defer src="js/wristband-cards.js?v=740"></script>
+  <script defer src="js/wristband-export.js?v=740"></script>
+  <script defer src="js/wristband-chrome.js?v=740"></script>
+  <script defer src="js/wristband-logo.js?v=740"></script>
+  <script defer src="js/wristband-search.js?v=740"></script>
+  <script defer src="js/wristband-modals.js?v=740"></script>
+  <script defer src="js/wristband-cell-popup.js?v=740"></script>
+  <script defer src="js/wristband-cell-actions.js?v=740"></script>
+  <script defer src="js/wristband-sort.js?v=740"></script>
+  <script defer src="js/wristband-storage.js?v=740"></script>
+  <script defer src="js/wristband-runtime.js?v=740"></script>
+  <script defer src="js/callsheet-render.js?v=740"></script>
+  <script defer src="js/callsheet.js?v=740"></script>
+  <script defer src="js/callsheet-print.js?v=740"></script>
+  <script defer src="js/callsheet-sort.js?v=740"></script>
+  <script defer src="js/callsheet-filters.js?v=740"></script>
+  <script defer src="js/callsheet-smart.js?v=740"></script>
+  <script defer src="js/callsheet-export.js?v=740"></script>
+  <script defer src="js/callsheet-display.js?v=740"></script>
+  <script defer src="js/callsheet-categories.js?v=740"></script>
+  <script defer src="js/callsheet-metadata.js?v=740"></script>
+  <script defer src="js/callsheet-layout.js?v=740"></script>
+  <script defer src="js/callsheet-templates.js?v=740"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=740"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=740"></script>
+  <script defer src="js/constraints.js?v=740"></script>
+  <script defer src="js/constraints-ui.js?v=740"></script>
+  <script defer src="js/script-vision.js?v=740"></script>
+  <script defer src="js/tendencies-render.js?v=740"></script>
+  <script defer src="js/tendencies.js?v=740"></script>
+  <script defer src="js/tendencies-print.js?v=740"></script>
+  <script defer src="js/installation-render.js?v=740"></script>
+  <script defer src="js/installation.js?v=740"></script>
+  <script defer src="js/installation-print.js?v=740"></script>
+  <script defer src="js/identity.js?v=740"></script>
+  <script defer src="js/offensebuilder.js?v=740"></script>
+  <script defer src="js/help.js?v=740"></script>
+  <script defer src="js/dashboard-render.js?v=740"></script>
+  <script defer src="js/dashboard.js?v=740"></script>
+  <script defer src="js/gameplan.js?v=740"></script>
+  <script defer src="js/gameplan-render.js?v=740"></script>
+  <script defer src="js/gameplan-dnd.js?v=740"></script>
+  <script defer src="js/gameplan-actions.js?v=740"></script>
+  <script defer src="js/gameplan-smart.js?v=740"></script>
+  <script defer src="js/gameplan-health.js?v=740"></script>
+  <script defer src="js/gameplan-print.js?v=740"></script>
+  <script defer src="js/gameplan-integrations.js?v=740"></script>
+  <script defer src="js/gameplan-snapshots.js?v=740"></script>
+  <script defer src="js/print-studio.js?v=740"></script>
+  <script defer src="js/script-events.js?v=740"></script>
+  <script defer src="js/app-events.js?v=740"></script>
+  <script defer src="js/app-command.js?v=740"></script>
+  <script defer src="js/app-shell.js?v=740"></script>
+  <script defer src="js/app-session.js?v=740"></script>
+  <script defer src="js/app-navigation.js?v=740"></script>
+  <script defer src="js/app-module-init.js?v=740"></script>
+  <script defer src="js/app-bootstrap.js?v=740"></script>
+  <script defer src="js/app-init.js?v=740"></script>
+  <script defer src="js/app.js?v=740"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

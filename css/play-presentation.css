@@ -1156,6 +1156,76 @@ body.play-presentation-open {
   pointer-events: none;
 }
 
+/* ---- M-042 Diagram zoom / pan --------------------------------------------- */
+.pp-zoom-controls {
+  position: absolute;
+  right: max(var(--space-md), env(safe-area-inset-right, 0px));
+  bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+  z-index: var(--z-dropdown);
+  display: inline-flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: var(--radius-pill);
+  background: var(--color-white-alpha-15);
+  backdrop-filter: blur(6px);
+  transition: opacity var(--transition-normal) ease;
+}
+
+.pp-zoom-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 42px;
+  padding: 0 10px;
+  border: 1px solid var(--color-white-alpha-20);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-inverse);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pp-zoom-reset {
+  min-width: 54px;
+  font-variant-numeric: tabular-nums;
+}
+
+.pp-zoom-btn:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.pp-zoom-btn:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+/* Hide zoom controls alongside the HUD in Clean View auto-hide. */
+.play-presentation-overlay[data-pp-hud-hidden="1"] .pp-zoom-controls {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* While zoomed, the diagram pans instead of scrolling the page or swiping. */
+.pp-diagram-frame.pp-diagram-zoomed {
+  touch-action: none;
+  cursor: grab;
+  overflow: hidden;
+}
+
+.pp-diagram-frame.pp-diagram-panning {
+  cursor: grabbing;
+}
+
+.pp-diagram-frame .pp-diagram-canvas {
+  will-change: transform;
+}
+
 .pp-sheet {
   position: absolute;
   inset: 0;

@@ -38,6 +38,13 @@ let playPresentationHudTimer = 0;
 let playPresentationWakeLock = null;
 let playPresentationWakeLockDesired = false;
 
+// M-042 — Diagram zoom / pan (session-local, resets on play change)
+const PLAY_PRESENTATION_ZOOM_MIN = 1;
+const PLAY_PRESENTATION_ZOOM_MAX = 4;
+const PLAY_PRESENTATION_ZOOM_STEP = 0.5;
+let playPresentationZoom = { scale: 1, x: 0, y: 0 };
+let playPresentationPan = null;
+
 const PLAY_PRESENTATION_DEFAULT_OPTIONS = {
   order: "listed", // "listed" | "reverse"
   showPersonnel: true,
@@ -276,6 +283,125 @@ function handlePlayPresentationWakeVisibility() {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay?.classList.contains("is-open")) return;
   requestPlayPresentationWakeLock();
+}
+
+// ---- Diagram zoom / pan (M-042) --------------------------------------------
+// Manual zoom + drag-to-pan on the play diagram. Zoom-to-fit is the default
+// (the canvas already fits the frame at scale 1). Panning only engages while
+// zoomed in, so it never competes with swipe navigation at fit scale.
+function getPlayPresentationDiagramCanvas() {
+  return document.querySelector(
+    "#playPresentationDiagram .pp-diagram-canvas",
+  );
+}
+
+function updatePlayPresentationZoomControls() {
+  const out = document.getElementById("playPresentationZoomOut");
+  const inBtn = document.getElementById("playPresentationZoomIn");
+  const reset = document.getElementById("playPresentationZoomReset");
+  const z = playPresentationZoom;
+  if (out) out.disabled = z.scale <= PLAY_PRESENTATION_ZOOM_MIN + 0.001;
+  if (inBtn) inBtn.disabled = z.scale >= PLAY_PRESENTATION_ZOOM_MAX - 0.001;
+  if (reset) {
+    reset.disabled = z.scale <= 1.001 && z.x === 0 && z.y === 0;
+    reset.textContent = `${Math.round(z.scale * 100)}%`;
+  }
+}
+
+function applyPlayPresentationZoomTransform() {
+  const canvas = getPlayPresentationDiagramCanvas();
+  const frame = document.getElementById("playPresentationDiagram");
+  const z = playPresentationZoom;
+  if (canvas) {
+    canvas.style.transformOrigin = "center center";
+    canvas.style.transform = `translate(${z.x}px, ${z.y}px) scale(${z.scale})`;
+  }
+  if (frame) {
+    frame.classList.toggle("pp-diagram-zoomed", z.scale > 1.001);
+  }
+  updatePlayPresentationZoomControls();
+}
+
+function clampPlayPresentationPan() {
+  const frame = document.getElementById("playPresentationDiagram");
+  if (!frame) return;
+  const rect = frame.getBoundingClientRect();
+  const z = playPresentationZoom;
+  const maxX = ((z.scale - 1) * rect.width) / 2;
+  const maxY = ((z.scale - 1) * rect.height) / 2;
+  z.x = Math.max(-maxX, Math.min(maxX, z.x));
+  z.y = Math.max(-maxY, Math.min(maxY, z.y));
+}
+
+function setPlayPresentationZoomScale(scale) {
+  const z = playPresentationZoom;
+  z.scale = Math.max(
+    PLAY_PRESENTATION_ZOOM_MIN,
+    Math.min(PLAY_PRESENTATION_ZOOM_MAX, scale),
+  );
+  if (z.scale <= 1.001) {
+    z.scale = 1;
+    z.x = 0;
+    z.y = 0;
+  }
+  clampPlayPresentationPan();
+  applyPlayPresentationZoomTransform();
+}
+
+function zoomPlayPresentationIn() {
+  setPlayPresentationZoomScale(playPresentationZoom.scale + PLAY_PRESENTATION_ZOOM_STEP);
+}
+
+function zoomPlayPresentationOut() {
+  setPlayPresentationZoomScale(playPresentationZoom.scale - PLAY_PRESENTATION_ZOOM_STEP);
+}
+
+function resetPlayPresentationZoom() {
+  playPresentationZoom = { scale: 1, x: 0, y: 0 };
+  playPresentationPan = null;
+  applyPlayPresentationZoomTransform();
+}
+
+// Attaches drag-to-pan to a freshly rendered diagram frame. Pointer Events keep
+// mouse, touch, and Apple Pencil consistent; panning only runs while zoomed.
+function attachPlayPresentationPan(frame) {
+  if (!frame) return;
+  frame.addEventListener("pointerdown", (event) => {
+    if (playPresentationZoom.scale <= 1.001) return;
+    if (event.button && event.button !== 0) return;
+    playPresentationPan = {
+      pointerId: event.pointerId,
+      startX: event.clientX,
+      startY: event.clientY,
+      originX: playPresentationZoom.x,
+      originY: playPresentationZoom.y,
+    };
+    frame.setPointerCapture?.(event.pointerId);
+    frame.classList.add("pp-diagram-panning");
+    event.preventDefault();
+  });
+  frame.addEventListener("pointermove", (event) => {
+    if (!playPresentationPan || event.pointerId !== playPresentationPan.pointerId) {
+      return;
+    }
+    playPresentationZoom.x =
+      playPresentationPan.originX + (event.clientX - playPresentationPan.startX);
+    playPresentationZoom.y =
+      playPresentationPan.originY + (event.clientY - playPresentationPan.startY);
+    clampPlayPresentationPan();
+    applyPlayPresentationZoomTransform();
+    event.preventDefault();
+  });
+  const endPan = (event) => {
+    if (!playPresentationPan || event.pointerId !== playPresentationPan.pointerId) {
+      return;
+    }
+    frame.releasePointerCapture?.(event.pointerId);
+    frame.classList.remove("pp-diagram-panning");
+    playPresentationPan = null;
+  };
+  frame.addEventListener("pointerup", endPan);
+  frame.addEventListener("pointercancel", endPan);
 }
 
 // ---- Order ------------------------------------------------------------------
@@ -703,6 +829,7 @@ function openPlayPresentation(items, startIndex, source) {
   setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
   setPlayPresentationCleanView(false);
+  resetPlayPresentationZoom();
   if (typeof openLayer === "function") {
     openLayer(overlay, {
       id: "play-presentation",
@@ -783,6 +910,7 @@ function closePlayPresentation() {
   clearTimeout(playPresentationHudTimer);
   playPresentationWakeLockDesired = false;
   releasePlayPresentationWakeLock();
+  resetPlayPresentationZoom();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -884,6 +1012,7 @@ function movePlayPresentation(direction) {
   const nextIndex = playPresentationState.index + delta;
   if (nextIndex < 0 || nextIndex >= playPresentationState.items.length) return;
   playPresentationState.index = nextIndex;
+  resetPlayPresentationZoom();
   renderPlayPresentation();
 }
 
@@ -1201,6 +1330,8 @@ function installPlayPresentationDiagramRenderer(frame, image, play, token) {
   );
   const contentBounds = getPlayPresentationContentBounds(image);
   frame.replaceChildren(canvas);
+  attachPlayPresentationPan(frame);
+  applyPlayPresentationZoomTransform();
 
   const getFrameSizeKey = () => {
     const rect = frame.getBoundingClientRect();
@@ -1761,6 +1892,7 @@ function isPlayPresentationInteractiveSwipeTarget(target) {
 function handlePlayPresentationTouchStart(event) {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay?.classList.contains("is-open")) return;
+  if (playPresentationZoom.scale > 1.001) return;
   if (event.touches?.length !== 1) return;
   if (isPlayPresentationInteractiveSwipeTarget(event.target)) return;
 
@@ -1775,6 +1907,7 @@ function handlePlayPresentationTouchStart(event) {
 function handlePlayPresentationTouchEnd(event) {
   const start = playPresentationSwipeStart;
   playPresentationSwipeStart = null;
+  if (playPresentationZoom.scale > 1.001) return;
   const overlay = document.getElementById("playPresentationOverlay");
   if (!start || !overlay?.classList.contains("is-open")) return;
   const touch = event.changedTouches?.[0];
