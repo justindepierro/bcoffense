@@ -134,6 +134,50 @@ function _applyPbFilterDrawerState() {
   if (btn) btn.setAttribute("aria-pressed", _pbFilterDrawerOpen ? "true" : "false");
 }
 
+// ── Playbook phone action sheet ──
+let _pbActionSheetOpen = false;
+
+function togglePbActionSheet() {
+  if (_pbActionSheetOpen) closePbActionSheet();
+  else openPbActionSheet();
+}
+
+function openPbActionSheet() {
+  const sheet = document.getElementById("pbActionSheet");
+  const backdrop = document.getElementById("pbActionSheetBackdrop");
+  const toggle = document.getElementById("pbActionSheetToggle");
+  if (!sheet) return;
+  _pbActionSheetOpen = true;
+  sheet.removeAttribute("inert");
+  sheet.classList.add("open");
+  backdrop?.classList.add("visible");
+  toggle?.setAttribute("aria-expanded", "true");
+  if (!sheet.dataset.autoCloseBound) {
+    sheet.addEventListener("click", (event) => {
+      const btn = event.target.closest("[data-action]");
+      if (!btn || btn.dataset.action === "closePbActionSheet") return;
+      closePbActionSheet();
+    });
+    sheet.dataset.autoCloseBound = "true";
+  }
+  if (typeof openLayer === "function")
+    openLayer(sheet, { id: "pb-action-sheet", exclusive: false });
+}
+
+function closePbActionSheet() {
+  const sheet = document.getElementById("pbActionSheet");
+  const backdrop = document.getElementById("pbActionSheetBackdrop");
+  const toggle = document.getElementById("pbActionSheetToggle");
+  _pbActionSheetOpen = false;
+  if (sheet) {
+    sheet.classList.remove("open");
+    sheet.setAttribute("inert", "");
+  }
+  backdrop?.classList.remove("visible");
+  toggle?.setAttribute("aria-expanded", "false");
+  if (typeof closeLayer === "function") closeLayer("pb-action-sheet");
+}
+
 function hideColumnMenu() {
   const menu = document.getElementById("columnMenu");
   if (menu) menu.classList.remove("show");

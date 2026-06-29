@@ -22,11 +22,8 @@ This checklist converts the mobile audit into work items we can execute and veri
 ## Next Heavy Hitters
 
 1. `M-023` - iPad/tablet responsiveness pass: make tablet a near-full editing workspace, not a stretched phone or cramped desktop.
-2. `M-032` - Call Sheet phone situation-card view: replace the print-like dense sheet on phones.
-3. `M-033` - Wristband phone card editor: make cell editing/search workable without horizontal body scroll.
-4. `M-034` - Playbook phone action/filter sheets: consolidate the phone toolbar actions and filters into sheets (card view already shipped).
-5. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
-6. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
+2. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
+3. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
 
 ---
 
@@ -474,7 +471,7 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-032 - Call Sheet phone situation-card view
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
 - Files: `js/callsheet-render.js`, `js/callsheet.js`, `css/callsheet.css`, `css/responsive.css`
 - Work:
@@ -484,7 +481,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Add phone card render path with stacked situation cards and left/right hash call lists.
   - `[x]` Keep existing add, remove, swap, sort, collapse, and category menu actions reachable in phone cards.
   - `[x]` Re-render Call Sheet when shell size changes so phone/tablet rotation does not keep stale markup.
-  - Move display and game-plan drawers onto shared layer system.
+  - `[x]` Move display and game-plan drawers onto shared layer system.
 - Acceptance:
   - Phone call sheet is readable without horizontal body scroll.
   - Situation actions are reachable without dense table editing.
@@ -495,7 +492,7 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-033 - Wristband phone card editor
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
 - Files: `js/wristband-render.js`, `js/wristband-cell-popup.js`, `js/wristband-runtime.js`, `css/wristband.css`
 - Work:
@@ -503,7 +500,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Separate classic phone editing from the printed wristband grid by rendering row cards.
   - `[x]` Reuse existing cell popup/search/edit flow from each phone row.
   - `[x]` Re-render on phone/tablet shell changes so rotation does not leave stale grid markup.
-  - Use explicit horizontal-scroll affordance only where unavoidable.
+  - `[x]` Use explicit horizontal-scroll affordance only where unavoidable (single-column grid, soft-wrap calls, no body overflow).
 - Acceptance:
   - Small phone width does not force body-level horizontal overflow.
   - Cell editing and search are reachable with keyboard open.
@@ -513,19 +510,20 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-034 - Playbook phone action/filter sheets
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
-- Files: `js/playbook-*.js`, `css/playbook.css`, `css/responsive.css`
+- Files: `index.html`, `js/playbook-render.js`, `js/playbook-chrome.js`, `css/playbook.css`, `css/responsive.css`
 - Work:
-  - Use cards on phone; table on tablet/desktop.
-  - Consolidate primary actions into one phone action sheet.
-  - Consolidate filters into one filter sheet with active-filter count.
-  - Use disclosure for secondary metadata.
+  - `[x]` Use cards on phone; table on tablet/desktop (`#pbCards` / `.pb-card` render path).
+  - `[x]` Consolidate primary actions into one phone action sheet (`#pbActionSheet`): Add Play, Present, Analytics, and Data grouped in a bottom sheet on `body.shell-phone`; the desktop `.pb-utility-group` is hidden on phone.
+  - `[x]` Consolidate filters into one filter sheet with active-filter count (`#pbFilterDrawer` + `#pbFilterCount`).
+  - `[x]` Use disclosure for secondary metadata (More Filters disclosure + card pills).
 - Acceptance:
   - Phone toolbar is not a compressed desktop toolbar.
   - Filters are reachable and resettable.
   - No body-level horizontal scroll.
 - Verification:
+  - Action sheet routes through `openLayer()`/`closeLayer()` for body lock + safe-area; toggle is phone-only via `body.shell-phone`.
   - Phone screenshots and active-filter interaction test.
 
 ### M-035 - Defensive Tendencies dedicated mobile layout
