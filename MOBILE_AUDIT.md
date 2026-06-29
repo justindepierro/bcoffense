@@ -685,7 +685,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Add Projector Clean View toggle that hides touch instructions, noncritical HUD, coach-only notes when selected, edit/account controls, and noncritical toasts.
   - `[x]` Add HUD auto-hide with tap/pointer reveal and controls that stay clear of diagram content.
   - `[ ]` Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
-  - `[ ]` Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
+  - `[x]` Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
   - `[ ]` Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
   - `[ ]` Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
 - Acceptance:
@@ -701,7 +701,12 @@ The attached implementation brief is now mapped into this checklist as:
   - Clean View sets `data-pp-clean="1"` on the overlay; CSS hides the mode switcher, source label, footer touch hints, and `.pp-coach-section-notes` so projected output stays diagram + call.
   - HUD auto-hide: while Clean View is active the header fades out after `PLAY_PRESENTATION_HUD_IDLE_MS` (3.5s) via `data-pp-hud-hidden`; any `pointermove`/`pointerdown`/tap re-reveals it (`handlePlayPresentationPointerActivity` → `revealPlayPresentationHud`). Controls remain in the header/footer chrome, clear of the diagram.
   - Non-critical presentation toasts route through `playPresentationToast()`, which stays silent while Clean View is on (fullscreen-blocked fallback included).
-  - Remaining: detail panel, Wake Lock, telestrator, and zoom/pan still pending.
+- Implementation notes (SW v739):
+  - Added a `☀️` Wake Lock toggle (`#playPresentationWakeBtn`, `togglePlayPresentationWakeLock`). Hidden when `navigator.wakeLock` is unavailable.
+  - Requires an explicit tap; `requestPlayPresentationWakeLock()` acquires a screen sentinel, `releasePlayPresentationWakeLock()` releases it. Released on presentation close and `playPresentationWakeLockDesired` reset.
+  - Auto-reacquires on `visibilitychange` when the tab returns to visible and the user still wants it (browser auto-releases on hide).
+  - Graceful fallback: unsupported or rejected requests surface a non-blocking toast and never interrupt the presentation.
+  - Remaining: detail panel, telestrator, and zoom/pan still pending.
 
 ---
 

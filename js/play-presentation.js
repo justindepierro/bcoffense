@@ -34,6 +34,10 @@ const PLAY_PRESENTATION_HUD_IDLE_MS = 3500;
 let playPresentationCleanView = false;
 let playPresentationHudTimer = 0;
 
+// M-042 — Screen Wake Lock (session-local, explicit user action)
+let playPresentationWakeLock = null;
+let playPresentationWakeLockDesired = false;
+
 const PLAY_PRESENTATION_DEFAULT_OPTIONS = {
   order: "listed", // "listed" | "reverse"
   showPersonnel: true,
@@ -189,6 +193,89 @@ function playPresentationToast(message, opts) {
 function handlePlayPresentationPointerActivity() {
   if (!playPresentationCleanView) return;
   revealPlayPresentationHud(true);
+}
+
+// ---- Screen Wake Lock (M-042) ----------------------------------------------
+// Keeps the projector/iPad display awake while presenting. Requires an explicit
+// user tap, releases on exit or when the page is hidden, and falls back to a
+// toast (never blocking the presentation) when the API is unavailable.
+function isPlayPresentationWakeLockSupported() {
+  return typeof navigator !== "undefined" && "wakeLock" in navigator;
+}
+
+function updatePlayPresentationWakeButton() {
+  const btn = document.getElementById("playPresentationWakeBtn");
+  if (!btn) return;
+  if (!isPlayPresentationWakeLockSupported()) {
+    btn.hidden = true;
+    return;
+  }
+  btn.hidden = false;
+  const active = !!playPresentationWakeLock;
+  btn.classList.toggle("active", active);
+  btn.setAttribute("aria-pressed", active ? "true" : "false");
+  const label = active ? "Screen stays awake" : "Keep screen awake";
+  btn.title = label;
+  btn.setAttribute("aria-label", label);
+}
+
+async function requestPlayPresentationWakeLock() {
+  if (!isPlayPresentationWakeLockSupported()) {
+    playPresentationToast(
+      "This browser can't keep the screen awake. Adjust the device's auto-lock setting instead.",
+      { duration: 4000, type: "error" },
+    );
+    playPresentationWakeLockDesired = false;
+    updatePlayPresentationWakeButton();
+    return;
+  }
+  try {
+    playPresentationWakeLock = await navigator.wakeLock.request("screen");
+    playPresentationWakeLock.addEventListener("release", () => {
+      playPresentationWakeLock = null;
+      updatePlayPresentationWakeButton();
+    });
+  } catch (_err) {
+    playPresentationWakeLock = null;
+    playPresentationWakeLockDesired = false;
+    playPresentationToast(
+      "Couldn't keep the screen awake. Adjust the device's auto-lock setting instead.",
+      { duration: 4000, type: "error" },
+    );
+  }
+  updatePlayPresentationWakeButton();
+}
+
+async function releasePlayPresentationWakeLock() {
+  if (playPresentationWakeLock) {
+    try {
+      await playPresentationWakeLock.release();
+    } catch (_err) {
+      // Ignore release failures; the sentinel is being discarded anyway.
+    }
+  }
+  playPresentationWakeLock = null;
+  updatePlayPresentationWakeButton();
+}
+
+function togglePlayPresentationWakeLock() {
+  if (playPresentationWakeLockDesired || playPresentationWakeLock) {
+    playPresentationWakeLockDesired = false;
+    releasePlayPresentationWakeLock();
+  } else {
+    playPresentationWakeLockDesired = true;
+    requestPlayPresentationWakeLock();
+  }
+}
+
+// Wake Lock is auto-released by the browser when the tab is hidden; re-acquire
+// it when the presentation tab becomes visible again and the user still wants it.
+function handlePlayPresentationWakeVisibility() {
+  if (document.visibilityState !== "visible") return;
+  if (!playPresentationWakeLockDesired || playPresentationWakeLock) return;
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay?.classList.contains("is-open")) return;
+  requestPlayPresentationWakeLock();
 }
 
 // ---- Order ------------------------------------------------------------------
@@ -642,6 +729,7 @@ function openPlayPresentation(items, startIndex, source) {
   }
   document.getElementById("playPresentationClose")?.focus();
   updatePlayPresentationFullscreenButton();
+  updatePlayPresentationWakeButton();
   maybeShowPlayPresentationIpadHelp();
 
   if (
@@ -693,6 +781,8 @@ function closePlayPresentation() {
   closePlayPresentationSetup();
   setPlayPresentationCleanView(false);
   clearTimeout(playPresentationHudTimer);
+  playPresentationWakeLockDesired = false;
+  releasePlayPresentationWakeLock();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -1741,6 +1831,7 @@ document.addEventListener("pointermove", handlePlayPresentationPointerActivity, 
 document.addEventListener("pointerdown", handlePlayPresentationPointerActivity, {
   passive: true,
 });
+document.addEventListener("visibilitychange", handlePlayPresentationWakeVisibility);
 document.addEventListener("touchstart", handlePlayPresentationTouchStart, {
   passive: true,
 });
