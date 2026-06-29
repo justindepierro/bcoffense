@@ -512,7 +512,9 @@
   gap: var(--space-md);
   flex-wrap: wrap;
   position: sticky;
-  top: calc(var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px);
+  top: calc(
+    var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px
+  );
   z-index: 6;
   box-shadow: var(--shadow-md);
 }

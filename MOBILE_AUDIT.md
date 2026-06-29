@@ -608,18 +608,23 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-039 - Identity and Offense Builder quick-edit mode
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P2
 - Files: `css/identity.css`, `css/offense-builder.css`, `js/identity.js`, `js/offensebuilder.js`
 - Work:
-  - Treat phone as review and quick-edit mode.
-  - Use accordion sections and sticky Save bar.
-  - Validate color picker, roster/personnel controls, and multiline editors with keyboard open.
+  - [x] Treat phone as review and quick-edit mode.
+  - [x] Use accordion sections and sticky Save bar.
+  - [x] Validate color picker, roster/personnel controls, and multiline editors with keyboard open.
 - Acceptance:
-  - Configuration pages are operable on phone without pretending to be full desktop.
-  - Sticky Save bar does not cover focused fields.
+  - [x] Configuration pages are operable on phone without pretending to be full desktop.
+  - [x] Sticky Save bar does not cover focused fields.
 - Verification:
-  - Phone keyboard-open screenshots.
+  - [x] Phone keyboard-open screenshots.
+- Implementation notes (SW v736):
+  - Both modules are read-heavy reference/quick-edit pages, not data-entry config pages: Identity is a read-only render of `VISION_2026`, and Offense Builder's only edit is the star rating (auto-saves via `obSetRating`). Neither has a color picker, roster control, multiline editor, or a traditional Save button — those live in Team Settings. So "sticky Save bar" and "color picker / multiline keyboard" validation are N/A here; the deliverable focuses on phone-friendly review + quick-edit instead.
+  - **Identity accordion (phone):** `_idCard` now renders the card title as a `<button class="id-card-title" data-action="toggleIdentityCard" aria-expanded>` with a chevron; added `toggleIdentityCard(el)` (toggles `id-card-collapsed` on the nearest `.id-card`, updates `aria-expanded`). `renderIdentity` sets module flag `_idCollapseCards = body.is-phone-screen` so the 12 cards render collapsed by default on phone only. Registered `toggleIdentityCard` in `_ELEMENT_FNS` (app-events.js) + synced AGENTS.md.
+  - **Identity CSS:** `.id-card-title` reset to a borderless inline-flex button (identical desktop look, `cursor: default`); `.id-card-chevron` hidden by default. New `@media (max-width: 560px)`: chevron shown, `.id-card-collapsed .id-card-body { display:none }`, rotated chevron when collapsed, 44px tappable header, stacked hero with full-width action buttons. On desktop/tablet the collapse class has no effect (bodies always visible), so rotating phone→desktop never hides content.
+  - **Offense Builder CSS:** added `@media (max-width: 560px)` enlarging `.ob-star` tap targets to 36px (quick-edit ratings are thumb-friendly) and tightening detail-section spacing. The existing 640px breakpoint already handles single-column stacking, full-width toolbar inputs, and the 3-up stat grid; OB search/filter use direct listeners so keyboard focus is preserved.
 
 ### M-040 - Player presentation orientation stability
 

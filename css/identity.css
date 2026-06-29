@@ -69,9 +69,22 @@
   font-weight: 700;
   margin: 0 0 var(--space-sm) 0;
   color: var(--color-primary);
+  border: none;
   border-bottom: 2px solid var(--color-accent);
-  padding-bottom: 4px;
-  display: inline-block;
+  padding: 0 0 4px 0;
+  background: none;
+  font-family: inherit;
+  text-align: left;
+  cursor: default;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-sm);
+}
+
+#identity .id-card-chevron {
+  display: none;
+  color: var(--color-accent);
+  transition: transform var(--transition-fast);
 }
 
 #identity .id-card-body {
@@ -185,6 +198,45 @@
   #identity .id-pictures,
   #identity .id-install {
     grid-template-columns: 1fr;
+  }
+}
+
+/* Phone: collapse cards into a tappable accordion for review/quick-edit */
+@media (max-width: 560px) {
+  #identity .id-shell {
+    padding: var(--space-md) var(--space-sm);
+  }
+  #identity .id-hero {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  #identity .id-hero-actions {
+    flex-wrap: wrap;
+  }
+  #identity .id-hero-actions .btn {
+    flex: 1 1 auto;
+    min-height: 44px;
+  }
+  #identity .id-card {
+    padding: var(--space-sm) var(--space-md);
+  }
+  #identity .id-card-title {
+    display: flex;
+    width: 100%;
+    justify-content: space-between;
+    align-items: center;
+    margin: 0;
+    cursor: pointer;
+    min-height: 44px;
+  }
+  #identity .id-card-chevron {
+    display: inline-block;
+  }
+  #identity .id-card-collapsed .id-card-chevron {
+    transform: rotate(-90deg);
+  }
+  #identity .id-card-collapsed .id-card-body {
+    display: none;
   }
 }
 

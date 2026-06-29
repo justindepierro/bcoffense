@@ -39,10 +39,8 @@ body.play-presentation-open {
   align-items: center;
   gap: var(--space-md);
   min-height: 62px;
-  padding:
-    max(var(--space-sm), env(safe-area-inset-top))
-    max(var(--space-md), env(safe-area-inset-right))
-    var(--space-sm)
+  padding: max(var(--space-sm), env(safe-area-inset-top))
+    max(var(--space-md), env(safe-area-inset-right)) var(--space-sm)
     max(var(--space-md), env(safe-area-inset-left));
   color: var(--color-text-inverse);
   background: var(--color-primary-dark);
@@ -155,7 +153,11 @@ body.play-presentation-open {
   min-height: 0;
   padding: clamp(12px, 2vw, 28px);
   background:
-    radial-gradient(circle at top left, rgb(255 255 255 / 72%), transparent 28rem),
+    radial-gradient(
+      circle at top left,
+      rgb(255 255 255 / 72%),
+      transparent 28rem
+    ),
     var(--color-bg-body);
   box-sizing: border-box;
 }
@@ -187,7 +189,10 @@ body.play-presentation-open {
 
 .pp-minimum-top {
   display: grid;
-  grid-template-columns: minmax(120px, 0.55fr) minmax(0, 2.7fr) minmax(120px, 0.55fr);
+  grid-template-columns: minmax(120px, 0.55fr) minmax(0, 2.7fr) minmax(
+      120px,
+      0.55fr
+    );
   align-items: center;
   gap: var(--space-md);
   min-height: 58px;
@@ -271,8 +276,11 @@ body.play-presentation-open {
   padding: 6px;
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-pill);
-  background:
-    linear-gradient(135deg, var(--color-bg-blue-tint), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-blue-tint),
+    var(--color-surface)
+  );
   box-shadow:
     inset 0 0 0 1px rgb(255 255 255 / 70%),
     var(--shadow-xs);
@@ -338,8 +346,11 @@ body.play-presentation-open {
   padding: 8px;
   border: 1px solid var(--color-primary);
   border-radius: var(--radius-pill);
-  background:
-    linear-gradient(135deg, var(--color-bg-blue-tint), var(--color-surface));
+  background: linear-gradient(
+    135deg,
+    var(--color-bg-blue-tint),
+    var(--color-surface)
+  );
   box-shadow: var(--shadow-lg);
   pointer-events: auto;
 }
@@ -576,7 +587,11 @@ body.play-presentation-open {
   padding: clamp(14px, 2vw, 22px);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  background: linear-gradient(180deg, var(--color-surface), var(--color-bg-light));
+  background: linear-gradient(
+    180deg,
+    var(--color-surface),
+    var(--color-bg-light)
+  );
   box-shadow: var(--shadow-xs);
   white-space: normal;
 }
@@ -682,8 +697,11 @@ body.play-presentation-open {
   padding: clamp(18px, 3vw, 42px);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  background:
-    linear-gradient(180deg, rgb(255 255 255 / 0.98), var(--color-bg-light));
+  background: linear-gradient(
+    180deg,
+    rgb(255 255 255 / 0.98),
+    var(--color-bg-light)
+  );
   box-shadow: var(--shadow-md);
 }
 
@@ -783,7 +801,11 @@ body.play-presentation-open {
 
 .pp-coach-section-notes {
   border-left-color: var(--color-warning);
-  background: linear-gradient(180deg, var(--color-warning-light), var(--color-surface));
+  background: linear-gradient(
+    180deg,
+    var(--color-warning-light),
+    var(--color-surface)
+  );
 }
 
 .pp-coach-section-readiness {
@@ -1020,8 +1042,7 @@ body.play-presentation-open {
   align-items: center;
   justify-content: center;
   min-height: 28px;
-  padding:
-    4px max(var(--space-md), env(safe-area-inset-right))
+  padding: 4px max(var(--space-md), env(safe-area-inset-right))
     max(4px, env(safe-area-inset-bottom))
     max(var(--space-md), env(safe-area-inset-left));
   color: var(--color-text-muted);
@@ -1637,7 +1658,10 @@ body.play-presentation-mobile.is-landscape-screen .pp-layout-minimum {
 }
 
 body.play-presentation-mobile.is-landscape-screen .pp-minimum-top {
-  grid-template-columns: minmax(100px, 0.55fr) minmax(0, 2.6fr) minmax(100px, 0.55fr);
+  grid-template-columns: minmax(100px, 0.55fr) minmax(0, 2.6fr) minmax(
+      100px,
+      0.55fr
+    );
   gap: var(--space-sm);
   min-height: 48px;
   padding: 4px var(--space-sm);
@@ -1672,7 +1696,9 @@ body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-label {
   padding-left: 5px;
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-label strong {
+body.play-presentation-mobile.is-landscape-screen
+  .pp-minimum-score-label
+  strong {
   font-size: var(--font-size-base);
 }
 
@@ -1681,7 +1707,9 @@ body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-grid {
   gap: 4px;
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-minimum-score-grid .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen
+  .pp-minimum-score-grid
+  .play-readiness-score-btn {
   min-width: 38px;
   min-height: 34px;
   padding: 4px 8px;
@@ -1704,7 +1732,9 @@ body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-buttons {
   gap: 4px;
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-buttons .play-readiness-score-btn,
+body.play-presentation-mobile.is-landscape-screen
+  .pp-readiness-rail-buttons
+  .play-readiness-score-btn,
 body.play-presentation-mobile.is-landscape-screen .pp-readiness-rail-report {
   min-width: 38px;
   min-height: 34px;
@@ -1767,11 +1797,15 @@ body.play-presentation-mobile.is-landscape-screen .pp-readiness-score-grid {
   grid-template-columns: repeat(5, minmax(32px, 1fr));
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-coach-section-readiness .play-readiness-rollup {
+body.play-presentation-mobile.is-landscape-screen
+  .pp-coach-section-readiness
+  .play-readiness-rollup {
   grid-template-columns: repeat(2, minmax(0, 1fr));
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-coach-section-readiness .play-readiness-rollup-chip {
+body.play-presentation-mobile.is-landscape-screen
+  .pp-coach-section-readiness
+  .play-readiness-rollup-chip {
   min-height: 32px;
   padding: 4px 6px;
 }
@@ -1780,12 +1814,17 @@ body.play-presentation-mobile.is-landscape-screen .play-readiness-score-btn {
   min-height: 34px;
 }
 
-body.play-presentation-mobile.is-landscape-screen .pp-readiness-actions .play-readiness-btn {
+body.play-presentation-mobile.is-landscape-screen
+  .pp-readiness-actions
+  .play-readiness-btn {
   min-height: 32px;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-header {
-  grid-template-columns: minmax(92px, 0.6fr) minmax(170px, auto) minmax(108px, 0.55fr);
+  grid-template-columns: minmax(92px, 0.6fr) minmax(170px, auto) minmax(
+      108px,
+      0.55fr
+    );
   min-height: 42px;
   padding: 4px 6px;
 }
@@ -1800,7 +1839,8 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-counter {
   font-size: 0.62rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-mode-switcher {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-mode-switcher {
   gap: 2px;
   padding: 2px;
 }
@@ -1812,149 +1852,192 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-mode-btn {
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-nav-btn,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-close-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-close-btn {
   min-width: 32px;
   min-height: 30px;
   padding: 3px 6px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-layout-player {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-layout-player {
   grid-template-columns: minmax(0, 1fr) minmax(188px, 0.58fr);
   gap: 6px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-diagram-frame {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-diagram-frame {
   min-height: 0;
   border-width: 1px;
   border-radius: var(--radius-md);
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-layout-minimum {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-layout-minimum {
   grid-template-rows: auto minmax(0, 1fr) auto;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-top {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-top {
   min-height: 36px;
   padding: 2px 6px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-call {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-call {
   font-size: 1.12rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-one-word {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-one-word {
   font-size: 0.95rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-bottom {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-bottom {
   grid-template-columns: minmax(0, 1fr) minmax(284px, auto);
   gap: 4px;
   padding: 2px 4px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-chips {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-chips {
   justify-content: flex-start;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-chips .pp-chip {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-chips
+  .pp-chip {
   padding: 2px 6px;
   font-size: 0.62rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-readiness-dock {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-readiness-dock {
   grid-template-columns: auto minmax(200px, 1fr);
   min-width: 284px;
   padding: 2px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-score-label {
   min-width: 58px;
   gap: 1px 4px;
   padding-left: 4px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label span,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label small {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-score-label
+  span,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-score-label
+  small {
   display: none;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-label strong {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-score-label
+  strong {
   font-size: 1rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-grid {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-score-grid {
   grid-template-columns: repeat(5, minmax(34px, 1fr));
   gap: 3px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-minimum-score-grid .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-minimum-score-grid
+  .play-readiness-score-btn {
   min-width: 34px;
   min-height: 32px;
   padding: 3px 7px;
   font-size: 0.76rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-score-rail {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-score-rail {
   grid-template-columns: auto minmax(180px, 1fr);
   gap: 5px;
   border-radius: var(--radius-lg);
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-report {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-rail-report {
   display: none;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-copy {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-rail-copy {
   min-width: 54px;
   padding-left: 5px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-copy span,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-copy small {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-rail-copy
+  span,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-rail-copy
+  small {
   display: none;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-buttons {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-rail-buttons {
   grid-template-columns: repeat(5, minmax(34px, 1fr));
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-readiness-rail-buttons .play-readiness-score-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-readiness-rail-buttons
+  .play-readiness-score-btn {
   min-width: 34px;
   min-height: 32px;
   padding: 3px 7px;
   font-size: 0.76rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-compact-screen .pp-minimum-bottom {
+body.play-presentation-mobile.is-landscape-screen.is-compact-screen
+  .pp-minimum-bottom {
   grid-template-columns: minmax(0, 1fr);
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-compact-screen .pp-minimum-readiness-dock {
+body.play-presentation-mobile.is-landscape-screen.is-compact-screen
+  .pp-minimum-readiness-dock {
   grid-template-columns: auto minmax(0, 1fr);
   width: 100%;
   min-width: 0;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-panel {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-panel {
   grid-template-rows: auto auto minmax(0, 1fr);
   gap: 6px;
   overflow: hidden;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-overview {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-overview {
   padding: 6px 8px;
   border-radius: var(--radius-md);
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-context,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-mode-chip,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-head span,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-lock-status,
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-resp-notes {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-context,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-mode-chip,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-controls-head
+  span,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-position-lock-status,
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-resp-notes {
   display: none;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-call {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-call {
   max-height: 42px;
   padding: 7px 8px;
   border-radius: var(--radius-md);
@@ -1963,39 +2046,47 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-cal
   overflow: hidden;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-card {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-controls-card {
   gap: 5px;
   padding: 7px;
   border-radius: var(--radius-md);
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-controls-head strong {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-controls-head
+  strong {
   font-size: 0.68rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-picker {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-position-picker {
   grid-template-columns: repeat(4, minmax(0, 1fr));
   gap: 4px;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-position-btn {
   min-height: 30px;
   border-radius: var(--radius-sm);
   font-size: 0.66rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-lock-row {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-position-lock-row {
   grid-template-columns: 1fr;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-position-lock-btn {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-position-lock-btn {
   width: 100%;
   min-height: 30px;
   padding: 4px 7px;
   font-size: 0.66rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-rule {
   align-content: start;
   gap: 5px;
   min-height: 0;
@@ -2004,21 +2095,25 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rul
   overflow: hidden;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-head {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-rule-head {
   align-items: center;
   flex-direction: row;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-eyebrow {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-rule-eyebrow {
   font-size: 0.56rem;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-position {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-position {
   font-size: 1.5rem;
   line-height: 0.95;
 }
 
-body.play-presentation-mobile.is-landscape-screen.is-phone-screen .pp-player-rule-text {
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-rule-text {
   max-height: 74px;
   overflow: auto;
   font-size: 0.96rem;

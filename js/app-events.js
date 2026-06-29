@@ -39,6 +39,7 @@ const _ELEMENT_FNS = new Set([
   "openTendenciesPlayMenu",
   "moveInstallItemUp",
   "moveInstallItemDown",
+  "toggleIdentityCard",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 

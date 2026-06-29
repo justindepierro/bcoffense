@@ -19,14 +19,32 @@ function _idList(items) {
   );
 }
 
+// Cards collapse into an accordion on phone (review/quick-edit mode); on
+// desktop/tablet the collapse class has no visual effect (see identity.css).
+let _idCollapseCards = false;
+
 function _idCard(title, bodyHtml, opts = {}) {
-  const cls = ["id-card", opts.cls || ""].filter(Boolean).join(" ");
+  const collapsed = _idCollapseCards;
+  const cls = ["id-card", opts.cls || "", collapsed ? "id-card-collapsed" : ""]
+    .filter(Boolean)
+    .join(" ");
   return `
     <section class="${cls}">
-      <h3 class="id-card-title">${_idEsc(title)}</h3>
+      <button type="button" class="id-card-title" data-action="toggleIdentityCard" aria-expanded="${collapsed ? "false" : "true"}">
+        <span class="id-card-title-text">${_idEsc(title)}</span>
+        <span class="id-card-chevron" aria-hidden="true">▾</span>
+      </button>
       <div class="id-card-body">${bodyHtml}</div>
     </section>
   `;
+}
+
+// Toggle a single Identity card open/closed (phone accordion).
+function toggleIdentityCard(el) {
+  const card = el && el.closest ? el.closest(".id-card") : null;
+  if (!card) return;
+  const collapsed = card.classList.toggle("id-card-collapsed");
+  el.setAttribute("aria-expanded", collapsed ? "false" : "true");
 }
 
 function renderIdentity() {
@@ -40,6 +58,9 @@ function renderIdentity() {
   const v = VISION_2026;
   const visionOn =
     typeof isVisionMode === "function" && isVisionMode();
+  // Collapse cards by default only on phone so the long reference page is
+  // scannable; desktop/tablet always render expanded.
+  _idCollapseCards = document.body.classList.contains("is-phone-screen");
 
   const pictures = Object.values(v.pictures || {});
   const picturesHtml = pictures

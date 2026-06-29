@@ -164,6 +164,31 @@
   }
 }
 
+/* Phone: enlarge star tap targets for quick-edit ratings */
+@media (max-width: 560px) {
+  .ob-card-stars,
+  .ob-detail-stars {
+    gap: 2px;
+  }
+  .ob-card-stars .ob-star,
+  .ob-detail-stars .ob-star {
+    font-size: var(--font-size-2xl);
+    min-width: 36px;
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .ob-star-clear {
+    min-height: 36px;
+    display: inline-flex;
+    align-items: center;
+  }
+  .ob-detail-section {
+    padding-bottom: var(--space-sm);
+  }
+}
+
 /* Play list */
 .ob-play-list {
   display: flex;

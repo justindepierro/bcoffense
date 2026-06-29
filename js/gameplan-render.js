@@ -242,60 +242,60 @@ function renderGamePlan() {
   const advancedHtml = _gpFilters.showAdvanced ? `
     <div class="gp-toolbar-advanced">
       ${_gpRenderAdvancedGroup("Situation", [
-        _gpRenderAdvancedSelect("basePlay", "Base Play", { title: "Base play family" }),
-        _gpRenderAdvancedSelect("tempo", "Tempo"),
-        _gpRenderAdvancedSelect("preferredDown", "Down", { values: ["1", "2", "3", "4"] }),
-        _gpRenderAdvancedSelect("preferredDistance", "Distance", { values: ["Short", "Medium", "Long"] }),
-        _gpRenderAdvancedSelect("preferredSituation", "Situation"),
-        _gpRenderAdvancedSelect("preferredFieldPosition", "Field Pos", { title: "Field position" }),
-        _gpRenderAdvancedSelect("preferredHash", "Hash", { values: ["Left", "Middle", "Right"], title: "Preferred hash" }),
-      ])}
+    _gpRenderAdvancedSelect("basePlay", "Base Play", { title: "Base play family" }),
+    _gpRenderAdvancedSelect("tempo", "Tempo"),
+    _gpRenderAdvancedSelect("preferredDown", "Down", { values: ["1", "2", "3", "4"] }),
+    _gpRenderAdvancedSelect("preferredDistance", "Distance", { values: ["Short", "Medium", "Long"] }),
+    _gpRenderAdvancedSelect("preferredSituation", "Situation"),
+    _gpRenderAdvancedSelect("preferredFieldPosition", "Field Pos", { title: "Field position" }),
+    _gpRenderAdvancedSelect("preferredHash", "Hash", { values: ["Left", "Middle", "Right"], title: "Preferred hash" }),
+  ])}
       ${_gpRenderAdvancedGroup("Formation & Call", [
-        _gpRenderAdvancedSelect("formTag1", "Form Tag 1"),
-        _gpRenderAdvancedSelect("formTag2", "Form Tag 2"),
-        _gpRenderAdvancedSelect("under", "Under"),
-        _gpRenderAdvancedSelect("back", "Back"),
-        _gpRenderAdvancedSelect("shift", "Shift"),
-        _gpRenderAdvancedSelect("motion", "Motion"),
-        _gpRenderAdvancedSelect("protection", "Protection"),
-        _gpRenderAdvancedSelect("lineCall", "Line Call"),
-      ])}
+    _gpRenderAdvancedSelect("formTag1", "Form Tag 1"),
+    _gpRenderAdvancedSelect("formTag2", "Form Tag 2"),
+    _gpRenderAdvancedSelect("under", "Under"),
+    _gpRenderAdvancedSelect("back", "Back"),
+    _gpRenderAdvancedSelect("shift", "Shift"),
+    _gpRenderAdvancedSelect("motion", "Motion"),
+    _gpRenderAdvancedSelect("protection", "Protection"),
+    _gpRenderAdvancedSelect("lineCall", "Line Call"),
+  ])}
       ${_gpRenderAdvancedGroup("Tags & Players", [
-        _gpRenderAdvancedText("playName", "Play name contains", "Filter by text in the play name only"),
-        _gpRenderAdvancedSelect("playTag1", "Play Tag 1"),
-        _gpRenderAdvancedSelect("playTag2", "Play Tag 2"),
-        _gpRenderAdvancedSelect("oneWord", "One Word"),
-        _gpRenderAdvancedSelect("keyPlayer", "Key Pos", {
-          sourceFields: ["keyPlayer1", "keyPlayer2", "keyPlayer3"],
-          title: "Key player position",
-        }),
-        _gpRenderAdvancedSelect("keyPlayerName", "Key Player", {
-          sourceFields: ["keyPlayerName1", "keyPlayerName2", "keyPlayerName3"],
-          title: "Key player name",
-        }),
-        _gpRenderAdvancedSelect("constraint", "Constraint", {
-          sourceFields: ["constraint1", "constraint2", "constraint3"],
-          title: "Constraint or complement",
-        }),
-        _gpRenderAdvancedSelect("hitChart", "Hit Chart", {
-          sourceFields: ["hitChart1", "hitChart2", "hitChart3"],
-          title: "Hit chart target",
-        }),
-      ])}
+    _gpRenderAdvancedText("playName", "Play name contains", "Filter by text in the play name only"),
+    _gpRenderAdvancedSelect("playTag1", "Play Tag 1"),
+    _gpRenderAdvancedSelect("playTag2", "Play Tag 2"),
+    _gpRenderAdvancedSelect("oneWord", "One Word"),
+    _gpRenderAdvancedSelect("keyPlayer", "Key Pos", {
+      sourceFields: ["keyPlayer1", "keyPlayer2", "keyPlayer3"],
+      title: "Key player position",
+    }),
+    _gpRenderAdvancedSelect("keyPlayerName", "Key Player", {
+      sourceFields: ["keyPlayerName1", "keyPlayerName2", "keyPlayerName3"],
+      title: "Key player name",
+    }),
+    _gpRenderAdvancedSelect("constraint", "Constraint", {
+      sourceFields: ["constraint1", "constraint2", "constraint3"],
+      title: "Constraint or complement",
+    }),
+    _gpRenderAdvancedSelect("hitChart", "Hit Chart", {
+      sourceFields: ["hitChart1", "hitChart2", "hitChart3"],
+      title: "Hit chart target",
+    }),
+  ])}
       ${_gpRenderAdvancedGroup("Defense & Notes", [
-        _gpRenderAdvancedSelect("practiceFront", "Front"),
-        _gpRenderAdvancedSelect("practiceDefense", "Defense"),
-        _gpRenderAdvancedSelect("practiceCoverage", "Coverage"),
-        _gpRenderAdvancedSelect("practiceBlitz", "Blitz"),
-        _gpRenderAdvancedSelect("practiceStunt", "Stunt"),
-        _gpRenderAdvancedSelect("opponent", "Opponent"),
-        _gpRenderAdvancedText("deadVs", "Dead vs contains", "Filter by text in Dead Vs"),
-        _gpRenderAdvancedText("notes", "Notes contain", "Filter by text in notes"),
-      ])}
+    _gpRenderAdvancedSelect("practiceFront", "Front"),
+    _gpRenderAdvancedSelect("practiceDefense", "Defense"),
+    _gpRenderAdvancedSelect("practiceCoverage", "Coverage"),
+    _gpRenderAdvancedSelect("practiceBlitz", "Blitz"),
+    _gpRenderAdvancedSelect("practiceStunt", "Stunt"),
+    _gpRenderAdvancedSelect("opponent", "Opponent"),
+    _gpRenderAdvancedText("deadVs", "Dead vs contains", "Filter by text in Dead Vs"),
+    _gpRenderAdvancedText("notes", "Notes contain", "Filter by text in notes"),
+  ])}
       ${_gpRenderAdvancedGroup("Output", [
-        _gpRenderAdvancedToggle("onlyOpponentTagged", opponent ? `Only tagged for ${escapeHtml(opponent)}` : "Only opponent-tagged", "Only show plays tagged for the current opponent"),
-        _gpRenderAdvancedToggle("filterBoxes", "Filter bucket plays", "Apply active filters to plays already drafted in buckets"),
-      ])}
+    _gpRenderAdvancedToggle("onlyOpponentTagged", opponent ? `Only tagged for ${escapeHtml(opponent)}` : "Only opponent-tagged", "Only show plays tagged for the current opponent"),
+    _gpRenderAdvancedToggle("filterBoxes", "Filter bucket plays", "Apply active filters to plays already drafted in buckets"),
+  ])}
     </div>` : "";
 
   const toolbarHtml = `
@@ -966,10 +966,10 @@ function _gpAdvancedFilterCount() {
   const keys = typeof GP_ADVANCED_FILTER_KEYS !== "undefined"
     ? GP_ADVANCED_FILTER_KEYS
     : [
-        "basePlay", "tempo", "preferredDown", "preferredDistance",
-        "preferredSituation", "preferredFieldPosition",
-        "onlyOpponentTagged", "filterBoxes",
-      ];
+      "basePlay", "tempo", "preferredDown", "preferredDistance",
+      "preferredSituation", "preferredFieldPosition",
+      "onlyOpponentTagged", "filterBoxes",
+    ];
   return keys.reduce((total, key) => total + (f[key] ? 1 : 0), 0);
 }
 

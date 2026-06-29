@@ -21,12 +21,16 @@
   display: flex;
   flex-direction: column;
   position: sticky;
-  top: calc(var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px);
+  top: calc(
+    var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px
+  );
   height: calc(
-    100dvh - var(--app-header-height, 52px) - var(--app-tabs-height, 44px) - 24px
+    100dvh - var(--app-header-height, 52px) - var(--app-tabs-height, 44px) -
+      24px
   );
   max-height: calc(
-    100dvh - var(--app-header-height, 52px) - var(--app-tabs-height, 44px) - 24px
+    100dvh - var(--app-header-height, 52px) - var(--app-tabs-height, 44px) -
+      24px
   );
   overflow-x: hidden;
   overflow-y: auto;
@@ -2779,7 +2783,9 @@
   flex-wrap: wrap;
   align-items: stretch;
   position: sticky;
-  top: calc(var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px);
+  top: calc(
+    var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px
+  );
   z-index: 6;
   padding: 8px;
   background: color-mix(in srgb, var(--color-surface) 96%, transparent);

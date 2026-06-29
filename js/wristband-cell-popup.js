@@ -217,8 +217,8 @@ function setWristbandCellPopupPendingState(currentPlay, existing = {}) {
   pendingBackTags = getCustomBackTagEntries(existing);
   pendingComponentOrder = Array.isArray(existing.componentOrder)
     ? existing.componentOrder.filter(
-        (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
-      )
+      (id) => typeof id === "string" && WB_CELL_TOKEN_LABELS[id],
+    )
     : [];
   pendingCustomWriteIn = existing.customWriteIn || "";
   pendingPlayerRuleSources = normalizePlayerRuleSources(

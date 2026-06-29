@@ -526,7 +526,10 @@
     justify-content: center;
   }
 
-  body.is-mobile-screen #playbook .pb-readiness-card--empty .play-readiness-btn {
+  body.is-mobile-screen
+    #playbook
+    .pb-readiness-card--empty
+    .play-readiness-btn {
     min-height: 44px;
   }
 
