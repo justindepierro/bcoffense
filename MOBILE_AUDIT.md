@@ -568,18 +568,22 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-037 - Dashboard role layouts
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P2
 - Files: `css/dashboard.css`, `js/dashboard*.js`
 - Work:
-  - Split into phone summary, tablet command center, and desktop command center patterns.
-  - Use container behavior inside cards where practical.
-  - Remove viewport-width font scaling that violates CSS guardrail.
+  - [x] Split into phone summary, tablet command center, and desktop command center patterns.
+  - [x] Use container behavior inside cards where practical.
+  - [x] Remove viewport-width font scaling that violates CSS guardrail.
 - Acceptance:
   - Dashboard remains usable at phone sizes and split-screen tablet widths.
   - `css/dashboard.css` no longer scales font size with viewport width.
 - Verification:
   - `node scripts/smoke-check.js` no longer reports dashboard viewport font sizing.
+- Implementation notes (SW v734):
+  - Replaced `.player-home-hero h2` `clamp(1.5rem, 5vw, 2.75rem)` with token `--font-size-4xl`; `css guardrails ok` now passes (no viewport font scaling).
+  - Hero size hierarchy now token-based: desktop `--font-size-4xl` (32px) → tablet/mobile `--font-size-3xl` (28px) → narrow phone `--font-size-2xl` (24px).
+  - Phone summary / tablet command center / desktop layouts already split via existing role-based body classes (`is-phone-screen`, `is-mobile-screen`, `data-auth-role`) and the `(pointer: coarse) and (max-width: 820px)` split-screen breakpoint; cards collapse to single column on phone and split-screen tablet.
 
 ### M-038 - Installation phone cards
 

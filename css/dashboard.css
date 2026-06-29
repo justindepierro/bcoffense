@@ -190,7 +190,7 @@
 }
 
 .player-home-hero h2 {
-  font-size: clamp(1.5rem, 5vw, 2.75rem);
+  font-size: var(--font-size-4xl);
   line-height: 1.02;
   overflow-wrap: anywhere;
 }
@@ -576,7 +576,7 @@
   }
 
   .player-home-hero h2 {
-    font-size: 1.85rem;
+    font-size: var(--font-size-3xl);
     line-height: 1.05;
   }
 
@@ -615,7 +615,7 @@
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-hero h2 {
-    font-size: 1.55rem;
+    font-size: var(--font-size-2xl);
     line-height: 1.08;
   }
 
