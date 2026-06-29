@@ -155,6 +155,21 @@ The attached implementation brief is now mapped into this checklist as:
 
 ---
 
+### M-007 - Sticky toolbars float/overlap the global chrome
+
+- Status: `[x]`
+- Priority: P0
+- Files: `css/script.css`, `css/dashboard.css`
+- Work:
+  - Module sub-toolbars used hardcoded sticky offsets (`.play-list` `top: 78px`, `.script-toolbar` `top: 110px`, `.dash-opponent-bar` `top: 78px`) that did not match the measured `--app-header-height` + `--app-tabs-height`. On phones/tablets these bars tucked under or floated detached from the pinned tab bar.
+  - Switched all three to the canonical `calc(var(--app-header-height, 52px) + var(--app-tabs-height, 44px) + 8px)` pattern already used by wristband, gameplan, and the player sticky bar. Also tied the `.play-list` rail height to the same measured chrome.
+- Acceptance:
+  - Sticky module toolbars pin flush beneath the header + tab bar on all viewports — no gap, no overlap.
+- Verification:
+  - Sticky-top audit: only `.app-header` (top:0) and panel-internal `thead`/headers remain on fixed offsets; all viewport-pinned chrome derives from measured vars.
+
+---
+
 - Files: `js/app-shell.js`, `css/responsive.css`, page CSS as needed
 - Work:
   - `[x]` Define canonical classes/data states:
@@ -771,6 +786,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-004 - Auth session syntax/expiry repair: expired sessions clear cleanly and `auth.js` parses.
 - `[x]` M-005 - Regression guards and cache bump: early mobile smoke guards and cache versioning were added.
 - `[x]` M-006 - Editor form-field sanitizer regression: `sanitizeHTML()` no longer strips `input`/`select`/`textarea`, so the play editor and other `setInnerHTML()` panels render their fields and accept typing again.
+- `[x]` M-007 - Sticky toolbars float/overlap fix: script + dashboard sub-toolbars now pin to the measured `--app-header-height` + `--app-tabs-height` instead of hardcoded pixel offsets.
 - `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states, display-mode/device/orientation/presentation datasets, and mobile no-playbook startup open the app shell.
 - `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
 - `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, and now wrap Play Presentation.
