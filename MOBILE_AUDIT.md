@@ -678,16 +678,16 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-042 - Projector clean view, Wake Lock, detail panel, and telestrator
 
-- Status: `[ ]`
+- Status: `[~]`
 - Priority: P1
 - Files: `js/play-presentation.js`, `css/play-presentation.css`, presentation setup/layer files as they split out
 - Work:
-  - Add Projector Clean View toggle that hides touch instructions, noncritical HUD, coach-only notes when selected, edit/account controls, and noncritical toasts.
-  - Add HUD auto-hide with tap/pointer reveal and controls that stay clear of diagram content.
-  - Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
-  - Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
-  - Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
-  - Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
+  - `[x]` Add Projector Clean View toggle that hides touch instructions, noncritical HUD, coach-only notes when selected, edit/account controls, and noncritical toasts.
+  - `[x]` Add HUD auto-hide with tap/pointer reveal and controls that stay clear of diagram content.
+  - `[ ]` Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
+  - `[ ]` Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
+  - `[ ]` Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
+  - `[ ]` Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
 - Acceptance:
   - Projected output avoids app/account/edit UI and preserves high contrast.
   - Drawing and zoom gestures do not accidentally navigate plays or scroll the page.
@@ -696,6 +696,12 @@ The attached implementation brief is now mapped into this checklist as:
   - Presentation portrait/landscape screenshot set.
   - Pointer/touch drawing smoke or browser probe.
   - Wake Lock unavailable fallback test.
+- Implementation notes (SW v738):
+  - Added a `🎦` Projector Clean View toggle (`#playPresentationCleanBtn`, `togglePlayPresentationCleanView`) in the presentation header. Session-local (resets on every open/close).
+  - Clean View sets `data-pp-clean="1"` on the overlay; CSS hides the mode switcher, source label, footer touch hints, and `.pp-coach-section-notes` so projected output stays diagram + call.
+  - HUD auto-hide: while Clean View is active the header fades out after `PLAY_PRESENTATION_HUD_IDLE_MS` (3.5s) via `data-pp-hud-hidden`; any `pointermove`/`pointerdown`/tap re-reveals it (`handlePlayPresentationPointerActivity` → `revealPlayPresentationHud`). Controls remain in the header/footer chrome, clear of the diagram.
+  - Non-critical presentation toasts route through `playPresentationToast()`, which stays silent while Clean View is on (fullscreen-blocked fallback included).
+  - Remaining: detail panel, Wake Lock, telestrator, and zoom/pan still pending.
 
 ---
 

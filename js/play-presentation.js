@@ -29,6 +29,11 @@ let playPresentationViewportKey = "";
 let playPresentationRotateHintDismissed = false;
 let playPresentationAutoAdvanceTimer = 0;
 
+// M-042 — Projector Clean View + HUD auto-hide (session-local, reset on open)
+const PLAY_PRESENTATION_HUD_IDLE_MS = 3500;
+let playPresentationCleanView = false;
+let playPresentationHudTimer = 0;
+
 const PLAY_PRESENTATION_DEFAULT_OPTIONS = {
   order: "listed", // "listed" | "reverse"
   showPersonnel: true,
@@ -110,6 +115,80 @@ function startPlayPresentationAutoAdvance() {
 // full dwell time on the play they jumped to.
 function restartPlayPresentationAutoAdvanceIfRunning() {
   if (playPresentationAutoAdvanceTimer) startPlayPresentationAutoAdvance();
+}
+
+// ---- Projector Clean View + HUD auto-hide (M-042) ---------------------------
+// Clean View strips the projected output down to the diagram + call: it hides
+// the mode switcher, footer touch hints, source label, and coach-only notes,
+// suppresses non-critical toasts, and auto-hides the header after a short idle.
+// Any tap or pointer move re-reveals the HUD so controls stay reachable.
+function schedulePlayPresentationHudHide() {
+  clearTimeout(playPresentationHudTimer);
+  if (!playPresentationCleanView) return;
+  playPresentationHudTimer = setTimeout(() => {
+    const overlay = document.getElementById("playPresentationOverlay");
+    if (overlay && playPresentationCleanView) {
+      overlay.dataset.ppHudHidden = "1";
+    }
+  }, PLAY_PRESENTATION_HUD_IDLE_MS);
+}
+
+function revealPlayPresentationHud(autoHide = true) {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay) return;
+  overlay.removeAttribute("data-pp-hud-hidden");
+  if (autoHide && playPresentationCleanView) {
+    schedulePlayPresentationHudHide();
+  } else {
+    clearTimeout(playPresentationHudTimer);
+  }
+}
+
+function updatePlayPresentationCleanViewButton() {
+  const btn = document.getElementById("playPresentationCleanBtn");
+  if (!btn) return;
+  const on = playPresentationCleanView;
+  btn.classList.toggle("active", on);
+  btn.setAttribute("aria-pressed", on ? "true" : "false");
+  const label = on ? "Exit Projector Clean View" : "Projector Clean View";
+  btn.title = label;
+  btn.setAttribute("aria-label", label);
+}
+
+function setPlayPresentationCleanView(on) {
+  playPresentationCleanView = !!on;
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (overlay) {
+    if (playPresentationCleanView) {
+      overlay.dataset.ppClean = "1";
+      schedulePlayPresentationHudHide();
+    } else {
+      overlay.removeAttribute("data-pp-clean");
+      overlay.removeAttribute("data-pp-hud-hidden");
+      clearTimeout(playPresentationHudTimer);
+    }
+  }
+  updatePlayPresentationCleanViewButton();
+}
+
+function togglePlayPresentationCleanView() {
+  setPlayPresentationCleanView(!playPresentationCleanView);
+  if (typeof showToast === "function" && !playPresentationCleanView) {
+    // Confirm exit (suppressed while clean view is active).
+    showToast("Projector Clean View off", { duration: 1500 });
+  }
+}
+
+// Non-critical toasts emitted by the presentation route through this so they
+// stay silent while Clean View is projecting.
+function playPresentationToast(message, opts) {
+  if (playPresentationCleanView) return;
+  if (typeof showToast === "function") showToast(message, opts);
+}
+
+function handlePlayPresentationPointerActivity() {
+  if (!playPresentationCleanView) return;
+  revealPlayPresentationHud(true);
 }
 
 // ---- Order ------------------------------------------------------------------
@@ -536,6 +615,7 @@ function openPlayPresentation(items, startIndex, source) {
 
   setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
+  setPlayPresentationCleanView(false);
   if (typeof openLayer === "function") {
     openLayer(overlay, {
       id: "play-presentation",
@@ -611,6 +691,8 @@ function closePlayPresentation() {
   if (!overlay) return;
   stopPlayPresentationAutoAdvance();
   closePlayPresentationSetup();
+  setPlayPresentationCleanView(false);
+  clearTimeout(playPresentationHudTimer);
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -1653,6 +1735,12 @@ function handlePlayPresentationKeydown(event) {
 }
 
 document.addEventListener("keydown", handlePlayPresentationKeydown);
+document.addEventListener("pointermove", handlePlayPresentationPointerActivity, {
+  passive: true,
+});
+document.addEventListener("pointerdown", handlePlayPresentationPointerActivity, {
+  passive: true,
+});
 document.addEventListener("touchstart", handlePlayPresentationTouchStart, {
   passive: true,
 });
@@ -1725,12 +1813,10 @@ function notifyPlayPresentationFullscreenFallback() {
     openPlayPresentationIpadHelp();
     return;
   }
-  if (typeof showToast === "function") {
-    showToast(
-      "Full Screen was blocked by the browser. Try again from a tap, or hide the toolbar manually.",
-      { duration: 4000, type: "error" },
-    );
-  }
+  playPresentationToast(
+    "Full Screen was blocked by the browser. Try again from a tap, or hide the toolbar manually.",
+    { duration: 4000, type: "error" },
+  );
 }
 
 function enterPlayPresentationFullscreen() {

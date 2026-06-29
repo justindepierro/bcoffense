@@ -1137,6 +1137,25 @@ body.play-presentation-open {
   outline-offset: 2px;
 }
 
+/* ---- M-042 Projector Clean View + HUD auto-hide --------------------------- */
+.play-presentation-overlay .pp-header {
+  transition: opacity var(--transition-normal) ease;
+}
+
+/* Clean View strips the projected output to the diagram + call. */
+.play-presentation-overlay[data-pp-clean="1"] .pp-mode-switcher,
+.play-presentation-overlay[data-pp-clean="1"] .pp-source,
+.play-presentation-overlay[data-pp-clean="1"] .pp-footer,
+.play-presentation-overlay[data-pp-clean="1"] .pp-coach-section-notes {
+  display: none;
+}
+
+/* Auto-hide the header after idle (Clean View only); a tap reveals it. */
+.play-presentation-overlay[data-pp-hud-hidden="1"] .pp-header {
+  opacity: 0;
+  pointer-events: none;
+}
+
 .pp-sheet {
   position: absolute;
   inset: 0;
