@@ -686,7 +686,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Add HUD auto-hide with tap/pointer reveal and controls that stay clear of diagram content.
   - `[ ]` Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
   - `[x]` Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
-  - `[ ]` Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
+  - `[x]` Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
   - `[x]` Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
 - Acceptance:
   - Projected output avoids app/account/edit UI and preserves high contrast.
@@ -711,7 +711,13 @@ The attached implementation brief is now mapped into this checklist as:
   - Zoom range 100%-400% (step 50%); the canvas gets a `translate/scale` transform with pan clamped to the frame bounds.
   - Drag-to-pan via Pointer Events (`attachPlayPresentationPan`) engages only while zoomed (mouse/touch/Apple Pencil). The frame switches to `touch-action: none` so panning never scrolls the page.
   - Swipe navigation is suppressed while zoomed (`playPresentationZoom.scale > 1`), so panning never changes plays. Zoom resets on every play change, open, and close.
-  - Remaining: detail panel and telestrator still pending.
+  - Remaining: detail panel still pending.
+- Implementation notes (SW v741):
+  - Added a `✏️` telestrator toggle (`#playPresentationTeleBtn`, `togglePlayPresentationTelestrator`) plus a floating toolbar (`#playPresentationTeleBar`): pen/arrow/circle/eraser tools, five high-contrast color swatches, three line widths (S/M/L), and undo/clear actions.
+  - Session-local: strokes are stored as normalized `0..1` points and replayed in order on a per-frame overlay canvas (`.pp-telestrator-canvas`), so they stay aligned across resize/rotation. Undo pops the last stroke; clear empties the list.
+  - Drawing uses Pointer Events with `setPointerCapture` and `preventDefault` (mouse/touch/Apple Pencil); the overlay canvas captures pointers so drawing never pans or swipes. Eraser uses `destination-out` compositing.
+  - Telestrator disables and clears on every play change, open, and close. Toolbar hides alongside the HUD in Clean View auto-hide.
+  - Remaining: detail panel still pending.
 
 ---
 

@@ -418,6 +418,7 @@ body.play-presentation-open {
 }
 
 .pp-diagram-frame {
+  position: relative;
   display: grid;
   place-items: center;
   width: 100%;
@@ -1224,6 +1225,121 @@ body.play-presentation-open {
 
 .pp-diagram-frame .pp-diagram-canvas {
   will-change: transform;
+}
+
+/* ---- Telestrator (M-042) ---- */
+.pp-telestrator-bar {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: var(--z-dropdown);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-sm);
+  max-width: min(96vw, 720px);
+  padding: var(--space-xs) var(--space-sm);
+  border-radius: var(--radius-pill);
+  background: var(--color-white-alpha-15);
+  border: 1px solid var(--color-white-alpha-20);
+  box-shadow: var(--shadow-md);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  transition: opacity var(--transition-normal) ease;
+}
+
+.pp-telestrator-bar[hidden] {
+  display: none;
+}
+
+.play-presentation-overlay[data-pp-hud-hidden="1"] .pp-telestrator-bar {
+  opacity: 0;
+  pointer-events: none;
+}
+
+.pp-tele-group {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 0 var(--space-xs);
+  border-right: 1px solid var(--color-white-alpha-20);
+}
+
+.pp-tele-group:last-child {
+  border-right: none;
+}
+
+.pp-tele-btn,
+.pp-tele-width {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 38px;
+  min-height: 38px;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-md);
+  border: 1px solid var(--color-white-alpha-20);
+  background: var(--color-white-alpha-15);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+  cursor: pointer;
+  transition: background var(--transition-normal) ease;
+}
+
+.pp-tele-btn:hover,
+.pp-tele-width:hover {
+  background: var(--color-white-alpha-20);
+}
+
+.pp-tele-btn.active,
+.pp-tele-width.active {
+  background: var(--color-text-inverse);
+  color: var(--color-text);
+}
+
+.pp-tele-swatch {
+  width: 30px;
+  height: 30px;
+  border-radius: var(--radius-pill);
+  border: 2px solid var(--color-white-alpha-20);
+  cursor: pointer;
+  padding: 0;
+  transition: transform var(--transition-fast);
+}
+
+.pp-tele-swatch.active {
+  transform: scale(1.12);
+  box-shadow: 0 0 0 2px var(--color-text-inverse);
+}
+
+.pp-tele-swatch-light {
+  border-color: var(--color-border-med);
+}
+
+.pp-tele-btn:disabled,
+.pp-tele-width:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.pp-tele-btn:focus-visible,
+.pp-tele-width:focus-visible,
+.pp-tele-swatch:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+.pp-telestrator-canvas {
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  width: 100%;
+  height: 100%;
+  touch-action: none;
+  cursor: crosshair;
 }
 
 .pp-sheet {

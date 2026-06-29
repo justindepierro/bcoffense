@@ -45,6 +45,17 @@ const PLAY_PRESENTATION_ZOOM_STEP = 0.5;
 let playPresentationZoom = { scale: 1, x: 0, y: 0 };
 let playPresentationPan = null;
 
+// M-042 — Telestrator (session-local, drawings clear on play change)
+const PLAY_PRESENTATION_TELE_TOOLS = new Set(["pen", "arrow", "circle", "eraser"]);
+let playPresentationTeleEnabled = false;
+let playPresentationTeleTool = "pen";
+let playPresentationTeleColor = "#ffd400";
+let playPresentationTeleWidth = 5;
+let playPresentationTeleStrokes = [];
+let playPresentationTeleActive = null;
+let playPresentationTeleCanvas = null;
+let playPresentationTeleCtx = null;
+
 const PLAY_PRESENTATION_DEFAULT_OPTIONS = {
   order: "listed", // "listed" | "reverse"
   showPersonnel: true,
@@ -402,6 +413,265 @@ function attachPlayPresentationPan(frame) {
   };
   frame.addEventListener("pointerup", endPan);
   frame.addEventListener("pointercancel", endPan);
+}
+
+// ---- Telestrator (M-042) ----------------------------------------------------
+// Session-local drawing layer over the diagram. Strokes are stored as
+// normalized (0..1) points so they re-align after resize/rotation. Each stroke
+// (pen/arrow/circle/eraser) is replayed in order, so Undo just pops the last
+// stroke and Clear empties the list. Pointer Events cover mouse, touch, and
+// Apple Pencil; the canvas captures pointers so drawing never navigates plays.
+function getPlayPresentationTeleNormPoint(canvas, event) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: rect.width ? Math.max(0, Math.min(1, (event.clientX - rect.left) / rect.width)) : 0,
+    y: rect.height ? Math.max(0, Math.min(1, (event.clientY - rect.top) / rect.height)) : 0,
+  };
+}
+
+function drawPlayPresentationTeleStroke(ctx, stroke, w, h) {
+  const pts = stroke.points;
+  if (!pts || !pts.length) return;
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  ctx.globalCompositeOperation =
+    stroke.tool === "eraser" ? "destination-out" : "source-over";
+  ctx.strokeStyle = stroke.color;
+  ctx.fillStyle = stroke.color;
+  ctx.lineWidth =
+    stroke.tool === "eraser" ? stroke.width * dpr * 4 : stroke.width * dpr;
+  const toPx = (p) => ({ x: p.x * w, y: p.y * h });
+
+  if (stroke.tool === "arrow" && pts.length >= 2) {
+    const a = toPx(pts[0]);
+    const b = toPx(pts[pts.length - 1]);
+    ctx.beginPath();
+    ctx.moveTo(a.x, a.y);
+    ctx.lineTo(b.x, b.y);
+    ctx.stroke();
+    const angle = Math.atan2(b.y - a.y, b.x - a.x);
+    const head = Math.max(12 * dpr, ctx.lineWidth * 3);
+    ctx.beginPath();
+    ctx.moveTo(b.x, b.y);
+    ctx.lineTo(
+      b.x - head * Math.cos(angle - Math.PI / 6),
+      b.y - head * Math.sin(angle - Math.PI / 6),
+    );
+    ctx.lineTo(
+      b.x - head * Math.cos(angle + Math.PI / 6),
+      b.y - head * Math.sin(angle + Math.PI / 6),
+    );
+    ctx.closePath();
+    ctx.fill();
+  } else if (stroke.tool === "circle" && pts.length >= 2) {
+    const a = toPx(pts[0]);
+    const b = toPx(pts[pts.length - 1]);
+    ctx.beginPath();
+    ctx.ellipse(
+      (a.x + b.x) / 2,
+      (a.y + b.y) / 2,
+      Math.max(Math.abs(b.x - a.x) / 2, 2),
+      Math.max(Math.abs(b.y - a.y) / 2, 2),
+      0,
+      0,
+      Math.PI * 2,
+    );
+    ctx.stroke();
+  } else {
+    const first = toPx(pts[0]);
+    ctx.beginPath();
+    ctx.moveTo(first.x, first.y);
+    for (let i = 1; i < pts.length; i += 1) {
+      const p = toPx(pts[i]);
+      ctx.lineTo(p.x, p.y);
+    }
+    if (pts.length === 1) ctx.lineTo(first.x + 0.1, first.y + 0.1);
+    ctx.stroke();
+  }
+}
+
+function redrawPlayPresentationTele() {
+  const ctx = playPresentationTeleCtx;
+  const canvas = playPresentationTeleCanvas;
+  if (!ctx || !canvas) return;
+  ctx.setTransform(1, 0, 0, 1, 0, 0);
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
+  const strokes = playPresentationTeleActive
+    ? playPresentationTeleStrokes.concat([playPresentationTeleActive])
+    : playPresentationTeleStrokes;
+  for (const stroke of strokes) {
+    drawPlayPresentationTeleStroke(ctx, stroke, canvas.width, canvas.height);
+  }
+  ctx.globalCompositeOperation = "source-over";
+}
+
+function resizePlayPresentationTeleCanvas() {
+  const canvas = playPresentationTeleCanvas;
+  const frame = document.getElementById("playPresentationDiagram");
+  if (!canvas || !frame) return;
+  const rect = frame.getBoundingClientRect();
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  canvas.width = Math.max(1, Math.round(rect.width * dpr));
+  canvas.height = Math.max(1, Math.round(rect.height * dpr));
+  canvas.style.width = `${rect.width}px`;
+  canvas.style.height = `${rect.height}px`;
+  redrawPlayPresentationTele();
+}
+
+function attachPlayPresentationTelePointer(canvas) {
+  canvas.addEventListener("pointerdown", (event) => {
+    if (!playPresentationTeleEnabled) return;
+    if (event.button && event.button !== 0) return;
+    canvas.setPointerCapture?.(event.pointerId);
+    playPresentationTeleActive = {
+      tool: playPresentationTeleTool,
+      color: playPresentationTeleColor,
+      width: playPresentationTeleWidth,
+      pointerId: event.pointerId,
+      points: [getPlayPresentationTeleNormPoint(canvas, event)],
+    };
+    redrawPlayPresentationTele();
+    event.preventDefault();
+  });
+  canvas.addEventListener("pointermove", (event) => {
+    if (
+      !playPresentationTeleActive ||
+      event.pointerId !== playPresentationTeleActive.pointerId
+    ) {
+      return;
+    }
+    const pt = getPlayPresentationTeleNormPoint(canvas, event);
+    const tool = playPresentationTeleActive.tool;
+    if (tool === "arrow" || tool === "circle") {
+      playPresentationTeleActive.points = [
+        playPresentationTeleActive.points[0],
+        pt,
+      ];
+    } else {
+      playPresentationTeleActive.points.push(pt);
+    }
+    redrawPlayPresentationTele();
+    event.preventDefault();
+  });
+  const finishStroke = (event) => {
+    if (
+      !playPresentationTeleActive ||
+      event.pointerId !== playPresentationTeleActive.pointerId
+    ) {
+      return;
+    }
+    canvas.releasePointerCapture?.(event.pointerId);
+    const stroke = playPresentationTeleActive;
+    playPresentationTeleActive = null;
+    if (stroke.points.length) {
+      delete stroke.pointerId;
+      playPresentationTeleStrokes.push(stroke);
+    }
+    updatePlayPresentationTeleControls();
+    redrawPlayPresentationTele();
+  };
+  canvas.addEventListener("pointerup", finishStroke);
+  canvas.addEventListener("pointercancel", finishStroke);
+}
+
+function ensurePlayPresentationTeleCanvas() {
+  const frame = document.getElementById("playPresentationDiagram");
+  if (!frame) {
+    playPresentationTeleCanvas = null;
+    playPresentationTeleCtx = null;
+    return;
+  }
+  let canvas = frame.querySelector(".pp-telestrator-canvas");
+  if (!playPresentationTeleEnabled) {
+    if (canvas) canvas.remove();
+    playPresentationTeleCanvas = null;
+    playPresentationTeleCtx = null;
+    frame.classList.remove("pp-telestrator-on");
+    return;
+  }
+  if (!canvas) {
+    canvas = document.createElement("canvas");
+    canvas.className = "pp-telestrator-canvas";
+    canvas.setAttribute("aria-hidden", "true");
+    frame.appendChild(canvas);
+    attachPlayPresentationTelePointer(canvas);
+  }
+  playPresentationTeleCanvas = canvas;
+  playPresentationTeleCtx = canvas.getContext("2d");
+  frame.classList.add("pp-telestrator-on");
+  resizePlayPresentationTeleCanvas();
+}
+
+function updatePlayPresentationTeleControls() {
+  const undo = document.getElementById("playPresentationTeleUndo");
+  const clear = document.getElementById("playPresentationTeleClear");
+  const empty = playPresentationTeleStrokes.length === 0;
+  if (undo) undo.disabled = empty;
+  if (clear) clear.disabled = empty;
+}
+
+function updatePlayPresentationTeleButton() {
+  const btn = document.getElementById("playPresentationTeleBtn");
+  if (!btn) return;
+  btn.classList.toggle("active", playPresentationTeleEnabled);
+  btn.setAttribute("aria-pressed", playPresentationTeleEnabled ? "true" : "false");
+}
+
+function setPlayPresentationTeleTool(tool) {
+  if (!PLAY_PRESENTATION_TELE_TOOLS.has(tool)) return;
+  playPresentationTeleTool = tool;
+  document.querySelectorAll("[data-pp-tele-tool]").forEach((btn) => {
+    const on = btn.dataset.ppTeleTool === tool;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+
+function setPlayPresentationTeleColor(color) {
+  if (typeof color !== "string" || !color) return;
+  playPresentationTeleColor = color;
+  document.querySelectorAll("[data-pp-tele-color]").forEach((btn) => {
+    const on = btn.dataset.ppTeleColor === color;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+
+function setPlayPresentationTeleWidth(width) {
+  const value = parseInt(width, 10) || 5;
+  playPresentationTeleWidth = value;
+  document.querySelectorAll("[data-pp-tele-width]").forEach((btn) => {
+    const on = parseInt(btn.dataset.ppTeleWidth, 10) === value;
+    btn.classList.toggle("active", on);
+    btn.setAttribute("aria-pressed", on ? "true" : "false");
+  });
+}
+
+function undoPlayPresentationTele() {
+  playPresentationTeleStrokes.pop();
+  updatePlayPresentationTeleControls();
+  redrawPlayPresentationTele();
+}
+
+function clearPlayPresentationTele() {
+  playPresentationTeleStrokes = [];
+  playPresentationTeleActive = null;
+  updatePlayPresentationTeleControls();
+  redrawPlayPresentationTele();
+}
+
+function setPlayPresentationTelestrator(on) {
+  playPresentationTeleEnabled = !!on;
+  const bar = document.getElementById("playPresentationTeleBar");
+  if (bar) bar.hidden = !playPresentationTeleEnabled;
+  ensurePlayPresentationTeleCanvas();
+  updatePlayPresentationTeleButton();
+  updatePlayPresentationTeleControls();
+}
+
+function togglePlayPresentationTelestrator() {
+  setPlayPresentationTelestrator(!playPresentationTeleEnabled);
 }
 
 // ---- Order ------------------------------------------------------------------
@@ -830,6 +1100,8 @@ function openPlayPresentation(items, startIndex, source) {
   document.body.classList.add("play-presentation-open");
   setPlayPresentationCleanView(false);
   resetPlayPresentationZoom();
+  setPlayPresentationTelestrator(false);
+  clearPlayPresentationTele();
   if (typeof openLayer === "function") {
     openLayer(overlay, {
       id: "play-presentation",
@@ -911,6 +1183,8 @@ function closePlayPresentation() {
   playPresentationWakeLockDesired = false;
   releasePlayPresentationWakeLock();
   resetPlayPresentationZoom();
+  setPlayPresentationTelestrator(false);
+  clearPlayPresentationTele();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -1013,6 +1287,7 @@ function movePlayPresentation(direction) {
   if (nextIndex < 0 || nextIndex >= playPresentationState.items.length) return;
   playPresentationState.index = nextIndex;
   resetPlayPresentationZoom();
+  clearPlayPresentationTele();
   renderPlayPresentation();
 }
 
@@ -1332,6 +1607,7 @@ function installPlayPresentationDiagramRenderer(frame, image, play, token) {
   frame.replaceChildren(canvas);
   attachPlayPresentationPan(frame);
   applyPlayPresentationZoomTransform();
+  ensurePlayPresentationTeleCanvas();
 
   const getFrameSizeKey = () => {
     const rect = frame.getBoundingClientRect();
@@ -1361,6 +1637,7 @@ function installPlayPresentationDiagramRenderer(frame, image, play, token) {
       playPresentationDiagramResizeFrame = requestAnimationFrame(() => {
         playPresentationDiagramResizeFrame = 0;
         draw();
+        resizePlayPresentationTeleCanvas();
       });
     });
     playPresentationDiagramResizeObserver.observe(frame);
