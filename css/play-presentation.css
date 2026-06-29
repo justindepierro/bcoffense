@@ -1030,6 +1030,58 @@ body.play-presentation-open {
   text-align: center;
 }
 
+/* Rotate recommendation (M-040): only shown when the active mode overflows in
+   portrait. Anchored just above the footer, dismissible, safe-area aware. */
+.pp-rotate-hint {
+  position: absolute;
+  left: 50%;
+  bottom: calc(var(--space-md) + env(safe-area-inset-bottom, 0px));
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  max-width: min(92vw, 420px);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-inverse);
+  background: var(--color-primary-dark);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.pp-rotate-hint[hidden] {
+  display: none;
+}
+
+.pp-rotate-hint-icon {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.pp-rotate-hint-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  margin-left: var(--space-xs);
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-inverse);
+  background: var(--color-overlay-sm);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pp-rotate-hint-dismiss:hover {
+  background: var(--color-overlay-md);
+}
+
 .pb-present-btn,
 .script-present-btn {
   display: inline-flex;

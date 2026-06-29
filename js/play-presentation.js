@@ -6,6 +6,7 @@ const PLAY_PRESENTATION_MAX_RENDER_PIXELS = 10_000_000;
 const PLAY_PRESENTATION_MAX_RENDER_EDGE = 4096;
 const PLAY_PRESENTATION_SWIPE_MIN_DISTANCE = 44;
 const PLAY_PRESENTATION_SWIPE_MAX_MS = 900;
+const PLAY_PRESENTATION_ROTATE_OVERFLOW = 24;
 
 let playPresentationState = {
   source: "playbook",
@@ -25,6 +26,7 @@ let playPresentationDiagramSizeKey = "";
 let playPresentationSwipeStart = null;
 let playPresentationViewportSyncFrame = 0;
 let playPresentationViewportKey = "";
+let playPresentationRotateHintDismissed = false;
 
 function tracePlayPresentationAction(phase, payload = {}, level = "info") {
   const data = {
@@ -267,6 +269,39 @@ function syncPlayPresentationMobileLandscape() {
   overlay.classList.toggle("pp-natural-landscape", isMobile && isLandscape);
   overlay.classList.toggle("pp-natural-portrait", isMobile && !isLandscape);
   document.body.classList.toggle("play-presentation-mobile", isMobile);
+  updatePlayPresentationRotateHint();
+}
+
+// Show a rotate recommendation only when the active mode cannot fit the current
+// portrait viewport (the diagram-bearing body overflows). Hidden in landscape,
+// on desktop, or once dismissed for the session.
+function updatePlayPresentationRotateHint() {
+  const hint = document.getElementById("playPresentationRotateHint");
+  if (!hint) return;
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay?.classList.contains("is-open")) {
+    hint.hidden = true;
+    return;
+  }
+  const body = document.getElementById("playPresentationBody");
+  const { width, height } = getPlayPresentationViewportSize();
+  const isLandscape = width > height;
+  const overflow =
+    body
+      ? body.scrollHeight - body.clientHeight > PLAY_PRESENTATION_ROTATE_OVERFLOW
+      : false;
+  const shouldShow =
+    isPlayPresentationMobileViewport() &&
+    !isLandscape &&
+    !playPresentationRotateHintDismissed &&
+    overflow;
+  hint.hidden = !shouldShow;
+}
+
+function dismissPlayPresentationRotateHint() {
+  playPresentationRotateHintDismissed = true;
+  const hint = document.getElementById("playPresentationRotateHint");
+  if (hint) hint.hidden = true;
 }
 
 function cleanupPlayPresentationMobileLandscape() {
@@ -283,6 +318,8 @@ function cleanupPlayPresentationMobileLandscape() {
   }
   document.body.classList.remove("play-presentation-mobile");
   playPresentationSwipeStart = null;
+  const rotateHint = document.getElementById("playPresentationRotateHint");
+  if (rotateHint) rotateHint.hidden = true;
 }
 
 function queuePlayPresentationViewportSync() {
@@ -397,6 +434,7 @@ function openPlayPresentation(items, startIndex, source) {
     playPresentationState.mode = "coaches";
   }
   playPresentationState.imageToken += 1;
+  playPresentationRotateHintDismissed = false;
 
   setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
@@ -1419,6 +1457,7 @@ function renderPlayPresentation() {
   if (announcer) {
     announcer.textContent = `Showing ${getPlayPresentationPlayLabel(item.play)}, slide ${playPresentationState.index + 1} of ${playPresentationState.items.length}`;
   }
+  requestAnimationFrame(updatePlayPresentationRotateHint);
 }
 
 function isPlayPresentationInteractiveSwipeTarget(target) {

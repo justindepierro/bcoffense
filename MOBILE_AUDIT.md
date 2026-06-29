@@ -21,8 +21,7 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ## Next Heavy Hitters
 
-1. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
-2. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
+1. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
 
 ---
 
@@ -605,16 +604,16 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-040 - Player presentation orientation stability
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P1
 - Files: `js/play-presentation.js`, `css/play-presentation.css`
 - Work:
   - `[x]` Fix portrait player presentation cut-off by letting the presentation body scroll.
   - `[x]` Add safe-area bottom padding so the rule section clears mobile browser controls.
-  - Recalculate current card after orientation settles.
-  - Preserve current play identity, not pixel scroll position.
-  - Test notched landscape left and right orientation.
-  - Show rotate recommendation only when current mode cannot fit.
+  - `[x]` Recalculate current card after orientation settles (viewport sync runs on `resize`/`orientationchange`/`visualViewport` and the diagram re-renders via the ResizeObserver at the new size).
+  - `[x]` Preserve current play identity, not pixel scroll position (navigation is `playPresentationState.index`-based, so orientation changes never lose the active play).
+  - `[x]` Notched landscape left/right safe areas: `.pp-header`/`.pp-footer` use `env(safe-area-inset-left/right)` so controls clear the notch in both landscape orientations.
+  - `[x]` Show rotate recommendation only when current mode cannot fit: a dismissible `#playPresentationRotateHint` appears only on a mobile portrait viewport when the active mode overflows the body, and auto-hides in landscape, on fit, after dismissal, and on close.
 - Acceptance:
   - Player rule text at the bottom of script presentation is reachable in portrait.
   - Orientation change preserves active play.
@@ -622,7 +621,7 @@ The attached implementation brief is now mapped into this checklist as:
 - Verification:
   - Static smoke contract for portrait player presentation scroll and bottom padding.
   - Targeted player portrait presentation probe.
-  - Landscape phone screenshots and orientation-change test.
+  - Headless probe confirmed the rotate hint shows only on portrait overflow, hides in landscape, re-shows in portrait, persists dismissal, and clears on close with no page errors.
 
 ### M-041 - True iPad presentation and PWA/fullscreen fallback
 
