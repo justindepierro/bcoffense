@@ -191,6 +191,23 @@ body[data-auth-role="player"] .save-status {
   font-size: var(--font-size-xs2);
 }
 
+/* M-022: phone overflow ("more") menu — hidden until a mobile shell is active */
+.app-header .header-overflow {
+  display: none;
+}
+.header-overflow-account {
+  padding: 8px 14px;
+  font-size: var(--font-size-xs2);
+  font-weight: 700;
+  color: var(--color-text-muted);
+  border-bottom: 1px solid var(--color-border-light);
+  margin-bottom: 4px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 240px;
+}
+
 /* Vision Mode toggle — header button + page-level indicator */
 .header-action-btn.vision-toggle.vision-active {
   background: var(--color-accent);

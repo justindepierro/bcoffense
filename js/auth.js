@@ -570,6 +570,22 @@
           userBadge.hidden = !currentAuthUser;
         }
 
+        const overflowAccount = document.getElementById("headerOverflowAccount");
+        if (overflowAccount) {
+          const acctLabel =
+            currentAuthUser &&
+            (currentAuthUser.label ||
+              (currentAuthUser.role
+                ? currentAuthUser.role.charAt(0).toUpperCase() + currentAuthUser.role.slice(1)
+                : "User"));
+          overflowAccount.textContent = currentAuthUser
+            ? `${acctLabel}: ${currentAuthUser.username}`
+            : "";
+          overflowAccount.hidden = !currentAuthUser;
+        }
+        const overflowLogout = document.getElementById("headerOverflowLogout");
+        if (overflowLogout) overflowLogout.hidden = !currentAuthUser;
+
         const logoutBtn = document.getElementById("authLogoutBtn");
         if (logoutBtn) logoutBtn.hidden = !currentAuthUser;
 

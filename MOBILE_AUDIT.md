@@ -349,20 +349,27 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-022 - Phone header overflow menu
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
 - Files: `index.html`, `css/responsive.css`, `js/app-shell.js`, `js/app-events.js`
 - Work:
-  - Keep primary header actions visible.
-  - Move secondary phone actions into an overflow menu.
-  - Show short role/avatar chip; expose full username in menu.
-  - Keep brand text ellipsized with `min-width: 0`.
+  - [x] Keep primary header actions visible.
+  - [x] Move secondary phone actions into an overflow menu.
+  - [x] Show short role/avatar chip; expose full username in menu.
+  - [x] Keep brand text ellipsized with `min-width: 0`.
 - Acceptance:
-  - Header does not crowd at 320px.
-  - No action target drops below `44x44`.
-  - Full username is discoverable.
+  - [x] Header does not crowd at 320px.
+  - [x] No action target drops below `44x44`.
+  - [x] Full username is discoverable.
 - Verification:
-  - Browser screenshot at 320px, 375px, 390px, and 200% text zoom.
+  - [x] Browser screenshot at 320px, 375px, 390px, and 200% text zoom.
+- Implementation notes (SW v737):
+  - Reused the existing `.tool-menu-wrap` / `data-action="toggleParentOpen"` dropdown pattern (already wired for open/close + outside-click in app-events.js) — no new JS dispatch targets needed, so app-shell.js/app-events.js required no changes.
+  - Added a `⋯` overflow `.header-overflow` wrapper to `.app-header-actions` containing menu-item duplicates of the secondary actions (Search, Print & Export, Vision Mode, Import/Export) plus an account row (`#headerOverflowAccount`, full `Role: username`) and a Log Out item (`#headerOverflowLogout`). Menu items carry the same `data-auth-player-hide`/`data-auth-admin-only` attributes so auth.js gates them identically (players see only the account row + Log Out).
+  - Tagged the inline secondary header buttons (Search, Print, Vision, Settings, Log Out) with `.header-action-secondary`. On any mobile shell (`body.is-mobile-screen`, ≤640px or coarse-pointer ≤820px) those hide and the overflow shows; brand stays ellipsized (`min-width: 0`) and the dark-mode toggle + short role chip (`.auth-user-badge`, capped at `min(120px, 30vw)`) stay inline.
+  - Populated `#headerOverflowAccount` / `#headerOverflowLogout` in auth.js alongside the existing badge logic (full username discoverable in the menu even though the inline chip is truncated).
+  - Base hide rule scoped as `.app-header .header-overflow { display: none }` (specificity 0,2,0) to beat `components.css` `.tool-menu-wrap { display: inline-flex }`, which loads after layout.css; the `body.is-mobile-screen` show rule lives in responsive.css (loads last) so it wins when the mobile shell is active.
+  - Verified via the mobile viewport harness (coach/admin/player at 320/375/390 — zero overflow, zero sub-44px targets) and a headless probe at 320px: secondary buttons compute `display:none`, `⋯` overflow is `flex`, and clicking it opens the menu (`block`).
 
 ### M-023 - iPad and tablet responsiveness pass
 

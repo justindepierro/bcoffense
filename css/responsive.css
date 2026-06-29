@@ -303,6 +303,20 @@
     border-radius: var(--radius-round);
   }
 
+  /* M-022: collapse secondary header actions into the overflow menu on phone */
+  body.is-mobile-screen .header-action-secondary {
+    display: none;
+  }
+  body.is-mobile-screen .header-overflow {
+    display: inline-flex;
+  }
+  body.is-mobile-screen .auth-user-badge:not([hidden]) {
+    max-width: min(120px, 30vw);
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
   body.is-mobile-screen .btn-xs,
   body.is-mobile-screen .btn-mini {
     min-width: 44px;
