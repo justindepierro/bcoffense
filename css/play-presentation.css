@@ -1082,6 +1082,248 @@ body.play-presentation-open {
   background: var(--color-overlay-md);
 }
 
+/* ===== M-041 — Icon buttons, setup sheet, iPad help, theme override ===== */
+.pp-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 42px;
+  min-height: 38px;
+  padding: 6px 10px;
+  border: 1px solid rgb(255 255 255 / 30%);
+  border-radius: var(--radius-sm);
+  color: var(--color-text-inverse);
+  background: transparent;
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  cursor: pointer;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.pp-icon-btn[hidden] {
+  display: none;
+}
+
+.pp-icon-btn.active {
+  color: var(--color-primary-dark);
+  background: var(--color-text-inverse);
+}
+
+.pp-icon-btn:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+.pp-sheet {
+  position: absolute;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: stretch;
+  justify-content: flex-end;
+  background: var(--color-overlay-md);
+}
+
+.pp-sheet[hidden] {
+  display: none;
+}
+
+.pp-sheet-panel {
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 92vw);
+  max-height: 100%;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  background: var(--color-surface);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+}
+
+.pp-ipad-help-sheet {
+  align-items: center;
+  justify-content: center;
+}
+
+.pp-ipad-help-sheet .pp-sheet-panel {
+  width: min(480px, 92vw);
+  max-height: 90%;
+  border-radius: var(--radius-lg);
+}
+
+.pp-sheet-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pp-sheet-head h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 800;
+}
+
+.pp-sheet-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-bg-light);
+  font: inherit;
+  cursor: pointer;
+}
+
+.pp-sheet-close:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+.pp-sheet-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+.pp-setup-section {
+  margin-bottom: var(--space-lg);
+}
+
+.pp-setup-label {
+  display: block;
+  margin-bottom: var(--space-xs);
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+}
+
+.pp-setup-source {
+  font-size: var(--font-size-sm);
+  font-weight: 600;
+}
+
+.pp-setup-chip-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.pp-setup-chip {
+  padding: 6px 14px;
+  border: 1px solid var(--color-border-med);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-bg-light);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-setup-chip.active {
+  color: var(--color-text-inverse);
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+}
+
+.pp-setup-chip:focus-visible,
+.pp-setup-select:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+.pp-setup-select {
+  width: 100%;
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  font: inherit;
+  font-size: var(--font-size-sm);
+}
+
+.pp-setup-toggle {
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-sm);
+  padding: var(--space-sm) 0;
+  cursor: pointer;
+}
+
+.pp-setup-toggle input {
+  margin-top: 2px;
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+.pp-setup-toggle-text {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pp-setup-toggle-text strong {
+  font-size: var(--font-size-sm);
+}
+
+.pp-setup-toggle-text span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
+.pp-ipad-steps {
+  margin: var(--space-sm) 0;
+  padding-left: var(--space-lg);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  font-size: var(--font-size-sm);
+}
+
+.pp-sheet-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+}
+
+/* Scoped theme override — forces dark/light inside the overlay regardless of
+   the app theme so presentations stay legible on a projector. */
+.play-presentation-overlay[data-pp-theme="dark"] {
+  --color-bg-body: #0b1120;
+  --color-surface: #131c2e;
+  --color-bg-light: #1c2740;
+  --color-bg-input: #1c2740;
+  --color-text: #f4f7fb;
+  --color-text-muted: #aab6c9;
+  --color-border: #2a3550;
+  --color-border-med: #34406080;
+  --color-border-input: #34406080;
+}
+
+.play-presentation-overlay[data-pp-theme="light"] {
+  --color-bg-body: #f4f6fa;
+  --color-surface: #ffffff;
+  --color-bg-light: #eef1f6;
+  --color-bg-input: #ffffff;
+  --color-text: #16202e;
+  --color-text-muted: #5a6679;
+  --color-border: #d4dae3;
+  --color-border-med: #c0c8d4;
+  --color-border-input: #c0c8d4;
+}
+
 .pb-present-btn,
 .script-present-btn {
   display: inline-flex;

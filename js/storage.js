@@ -103,6 +103,8 @@ const STORAGE_KEYS = {
   SCHEDULE: "schedule",
   GAME_PLAN_TAGS: "gamePlanTags",
   PRINT_STUDIO_SETTINGS: "printStudioSettings",
+  PRESENTATION_SETUP: "presentationSetup",
+  PRESENTATION_IPAD_HELP_DISMISSED: "presentationIpadHelpDismissed",
   WRISTBAND_SORT_CRITERIA: "wristbandSortCriteria",
   WRISTBAND_FAVORITES: "wristbandFavorites",
   WRISTBAND_RECENT_PLAYS: "wristbandRecentPlays",

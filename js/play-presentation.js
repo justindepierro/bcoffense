@@ -27,6 +27,103 @@ let playPresentationSwipeStart = null;
 let playPresentationViewportSyncFrame = 0;
 let playPresentationViewportKey = "";
 let playPresentationRotateHintDismissed = false;
+let playPresentationAutoAdvanceTimer = 0;
+
+const PLAY_PRESENTATION_DEFAULT_OPTIONS = {
+  order: "listed", // "listed" | "reverse"
+  showPersonnel: true,
+  showDefense: true,
+  showAssignment: true,
+  showNotes: true,
+  autoAdvanceSeconds: 0, // 0 = off
+  theme: "auto", // "auto" | "dark" | "light"
+};
+
+let playPresentationOptions = { ...PLAY_PRESENTATION_DEFAULT_OPTIONS };
+
+function loadPlayPresentationOptions() {
+  if (typeof storageManager === "undefined") return;
+  const saved = storageManager.get(
+    STORAGE_KEYS.PRESENTATION_SETUP,
+    null,
+  );
+  if (saved && typeof saved === "object") {
+    playPresentationOptions = {
+      ...PLAY_PRESENTATION_DEFAULT_OPTIONS,
+      ...saved,
+    };
+  }
+}
+
+function savePlayPresentationOptions() {
+  if (typeof storageManager === "undefined") return;
+  storageManager.set(STORAGE_KEYS.PRESENTATION_SETUP, playPresentationOptions);
+}
+
+// ---- Theme override (scoped to the presentation overlay) --------------------
+function resolvePlayPresentationTheme() {
+  const choice = playPresentationOptions.theme;
+  if (choice === "dark" || choice === "light") return choice;
+  // "auto" follows the app theme.
+  return document.documentElement.getAttribute("data-theme") === "dark"
+    ? "dark"
+    : "light";
+}
+
+function applyPlayPresentationTheme() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay) return;
+  if (playPresentationOptions.theme === "auto") {
+    overlay.removeAttribute("data-pp-theme");
+  } else {
+    overlay.dataset.ppTheme = resolvePlayPresentationTheme();
+  }
+}
+
+// ---- Auto-advance -----------------------------------------------------------
+function stopPlayPresentationAutoAdvance() {
+  if (playPresentationAutoAdvanceTimer) {
+    clearInterval(playPresentationAutoAdvanceTimer);
+    playPresentationAutoAdvanceTimer = 0;
+  }
+}
+
+function startPlayPresentationAutoAdvance() {
+  stopPlayPresentationAutoAdvance();
+  const seconds = Number(playPresentationOptions.autoAdvanceSeconds) || 0;
+  if (seconds <= 0) return;
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay?.classList.contains("is-open")) return;
+  playPresentationAutoAdvanceTimer = setInterval(() => {
+    if (
+      playPresentationState.index >=
+      playPresentationState.items.length - 1
+    ) {
+      stopPlayPresentationAutoAdvance();
+      return;
+    }
+    movePlayPresentation(1);
+  }, seconds * 1000);
+}
+
+// Reset the running timer whenever the user navigates manually so they keep
+// full dwell time on the play they jumped to.
+function restartPlayPresentationAutoAdvanceIfRunning() {
+  if (playPresentationAutoAdvanceTimer) startPlayPresentationAutoAdvance();
+}
+
+// ---- Order ------------------------------------------------------------------
+function applyPlayPresentationOrder(items, startIndex) {
+  if (playPresentationOptions.order !== "reverse") {
+    return { items, startIndex };
+  }
+  const reversed = items.slice().reverse();
+  const newStart = items.length - 1 - startIndex;
+  return {
+    items: reversed,
+    startIndex: Math.max(0, Math.min(newStart, reversed.length - 1)),
+  };
+}
 
 function tracePlayPresentationAction(phase, payload = {}, level = "info") {
   const data = {
@@ -415,11 +512,12 @@ function openPlayPresentation(items, startIndex, source) {
     document.activeElement instanceof HTMLElement
       ? document.activeElement
       : null;
-  playPresentationState.items = items;
-  playPresentationState.index = Math.max(
-    0,
-    Math.min(parseInt(startIndex, 10) || 0, items.length - 1),
+  const ordered = applyPlayPresentationOrder(
+    items,
+    Math.max(0, Math.min(parseInt(startIndex, 10) || 0, items.length - 1)),
   );
+  playPresentationState.items = ordered.items;
+  playPresentationState.index = ordered.startIndex;
   playPresentationState.source = source === "script" ? "script" : "playbook";
   playPresentationState.mode = ensurePlayPresentationModeAllowed(
     playPresentationState.mode,
@@ -452,6 +550,8 @@ function openPlayPresentation(items, startIndex, source) {
   }
   syncPlayPresentationMobileLandscape();
   renderPlayPresentation();
+  applyPlayPresentationTheme();
+  startPlayPresentationAutoAdvance();
   const overlayVisible = ensurePlayPresentationOverlayDisplayed(
     overlay,
     "after-render",
@@ -461,6 +561,8 @@ function openPlayPresentation(items, startIndex, source) {
     overlay.dataset.focusTrapReady = "true";
   }
   document.getElementById("playPresentationClose")?.focus();
+  updatePlayPresentationFullscreenButton();
+  maybeShowPlayPresentationIpadHelp();
 
   if (
     !isPlayPresentationMobileViewport() &&
@@ -507,6 +609,8 @@ function openPlayPresentation(items, startIndex, source) {
 function closePlayPresentation() {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay) return;
+  stopPlayPresentationAutoAdvance();
+  closePlayPresentationSetup();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -1334,31 +1438,55 @@ function getPlayPresentationCoachMarkup(item) {
     },
   ];
   const coachSections = [
-    getPlayPresentationCoachSection(
-      "Call Structure",
-      "Formation, motion, and call mechanics",
-      callRows,
-      "pp-coach-section-call",
-    ),
+    playPresentationOptions.showPersonnel
+      ? getPlayPresentationCoachSection(
+        "Call Structure",
+        "Formation, motion, and call mechanics",
+        callRows,
+        "pp-coach-section-call",
+      )
+      : "",
     getPlayPresentationCoachSection(
       "Situation",
       "When and where this fits",
       situationRows,
       "pp-coach-section-situation",
     ),
-    getPlayPresentationCoachSection(
-      "Defensive Look",
-      "Practice picture and defensive answers",
-      defenseRows,
-      "pp-coach-section-defense",
-    ),
-    getPlayPresentationCoachSection(
-      "Coaching Points",
-      "Keys, complements, alerts, and targets",
-      coachingRows,
-      "pp-coach-section-tools",
-    ),
+    playPresentationOptions.showDefense
+      ? getPlayPresentationCoachSection(
+        "Defensive Look",
+        "Practice picture and defensive answers",
+        defenseRows,
+        "pp-coach-section-defense",
+      )
+      : "",
+    playPresentationOptions.showNotes
+      ? getPlayPresentationCoachSection(
+        "Coaching Points",
+        "Keys, complements, alerts, and targets",
+        coachingRows,
+        "pp-coach-section-tools",
+      )
+      : "",
   ].join("");
+
+  const playerRulesSection = playPresentationOptions.showAssignment
+    ? `
+        <section class="pp-coach-section pp-coach-section-rules" aria-label="Player rules">
+          <div class="pp-coach-section-head">
+            <h3>Player Rules</h3>
+            <span>Position-by-position assignments</span>
+          </div>
+          <div class="pp-assignment-grid">
+            ${responsibilityMarkup ||
+    '<div class="pp-empty-copy">No player rules entered.</div>'
+    }
+          </div>
+        </section>`
+    : "";
+  const coachNotesSection = playPresentationOptions.showNotes
+    ? getPlayPresentationCoachNotesMarkup(play)
+    : "";
 
   return `
     <div class="pp-layout pp-layout-coaches">
@@ -1377,18 +1505,8 @@ function getPlayPresentationCoachMarkup(item) {
       : ""
     }
         ${coachSections}
-        <section class="pp-coach-section pp-coach-section-rules" aria-label="Player rules">
-          <div class="pp-coach-section-head">
-            <h3>Player Rules</h3>
-            <span>Position-by-position assignments</span>
-          </div>
-          <div class="pp-assignment-grid">
-            ${responsibilityMarkup ||
-    '<div class="pp-empty-copy">No player rules entered.</div>'
-    }
-          </div>
-        </section>
-        ${getPlayPresentationCoachNotesMarkup(play)}
+        ${playerRulesSection}
+        ${coachNotesSection}
       </section>
     </div>
   `;
@@ -1558,6 +1676,9 @@ window.visualViewport?.addEventListener(
 document.addEventListener("fullscreenchange", () => {
   const overlay = document.getElementById("playPresentationOverlay");
   queuePlayPresentationViewportSync();
+  if (overlay?.classList.contains("is-open")) {
+    updatePlayPresentationFullscreenButton();
+  }
   if (
     overlay?.classList.contains("is-open") &&
     !document.fullscreenElement &&
@@ -1568,3 +1689,361 @@ document.addEventListener("fullscreenchange", () => {
     ensurePlayPresentationOverlayDisplayed(overlay, "fullscreenchange");
   }
 });
+
+document.addEventListener("fullscreenerror", () => {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay?.classList.contains("is-open")) return;
+  notifyPlayPresentationFullscreenFallback();
+  updatePlayPresentationFullscreenButton();
+});
+
+// ===========================================================================
+// M-041 — Fullscreen toggle, iPad Safari help, and presentation setup sheet
+// ===========================================================================
+
+function isPlayPresentationFullscreenSupported() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  return Boolean(
+    document.fullscreenEnabled && overlay && overlay.requestFullscreen,
+  );
+}
+
+function isPlayPresentationIPadOS() {
+  return document.body.classList.contains("shell-ipados");
+}
+
+function isPlayPresentationStandalone() {
+  return (
+    document.documentElement.classList.contains("display-mode-standalone") ||
+    document.documentElement.classList.contains("display-mode-fullscreen") ||
+    navigator.standalone === true
+  );
+}
+
+function notifyPlayPresentationFullscreenFallback() {
+  if (isPlayPresentationIPadOS() && !isPlayPresentationStandalone()) {
+    openPlayPresentationIpadHelp();
+    return;
+  }
+  if (typeof showToast === "function") {
+    showToast(
+      "Full Screen was blocked by the browser. Try again from a tap, or hide the toolbar manually.",
+      { duration: 4000, type: "error" },
+    );
+  }
+}
+
+function enterPlayPresentationFullscreen() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay) return;
+  if (!isPlayPresentationFullscreenSupported()) {
+    notifyPlayPresentationFullscreenFallback();
+    return;
+  }
+  try {
+    Promise.resolve(overlay.requestFullscreen({ navigationUI: "hide" }))
+      .then(() => {
+        syncPlayPresentationMobileLandscape();
+        ensurePlayPresentationOverlayDisplayed(overlay, "fullscreen");
+        updatePlayPresentationFullscreenButton();
+        return null;
+      })
+      .catch(() => {
+        notifyPlayPresentationFullscreenFallback();
+        updatePlayPresentationFullscreenButton();
+      });
+  } catch (_err) {
+    notifyPlayPresentationFullscreenFallback();
+  }
+}
+
+function exitPlayPresentationFullscreen() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (document.fullscreenElement === overlay && document.exitFullscreen) {
+    document.exitFullscreen().catch(() => { });
+  }
+  updatePlayPresentationFullscreenButton();
+}
+
+function togglePlayPresentationFullscreen() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (document.fullscreenElement === overlay) {
+    exitPlayPresentationFullscreen();
+  } else {
+    enterPlayPresentationFullscreen();
+  }
+}
+
+function updatePlayPresentationFullscreenButton() {
+  const button = document.getElementById("playPresentationFullscreenBtn");
+  if (!button) return;
+  const overlay = document.getElementById("playPresentationOverlay");
+  const supported = isPlayPresentationFullscreenSupported();
+  // On iPad Safari we keep the button to surface the "Full Screen on iPad"
+  // helper sheet rather than hiding the control entirely.
+  const showHelper = isPlayPresentationIPadOS() && !isPlayPresentationStandalone();
+  button.hidden = !supported && !showHelper;
+  const active = document.fullscreenElement === overlay;
+  button.classList.toggle("active", active);
+  button.setAttribute("aria-pressed", active ? "true" : "false");
+  button.title = supported
+    ? active
+      ? "Exit Full Screen"
+      : "Enter Full Screen"
+    : "Full Screen on iPad";
+  button.setAttribute(
+    "aria-label",
+    supported
+      ? active
+        ? "Exit Full Screen"
+        : "Enter Full Screen"
+      : "How to go Full Screen on iPad",
+  );
+}
+
+// ---- iPad Safari Full Screen help sheet -------------------------------------
+function isPlayPresentationIpadHelpDismissed() {
+  if (typeof storageManager === "undefined") return false;
+  return storageManager.get(
+    STORAGE_KEYS.PRESENTATION_IPAD_HELP_DISMISSED,
+    false,
+  ) === true;
+}
+
+function openPlayPresentationIpadHelp() {
+  const panel = document.getElementById("playPresentationIpadHelp");
+  if (!panel) return;
+  panel.hidden = false;
+  panel.classList.add("is-open");
+  if (typeof openLayer === "function") {
+    openLayer(panel, {
+      id: "play-presentation-ipad-help",
+      exclusive: false,
+      trapFocus: true,
+      returnFocus: true,
+      blocking: true,
+      safeArea: false,
+    });
+  }
+  panel.querySelector(".pp-sheet-close")?.focus();
+}
+
+function closePlayPresentationIpadHelp() {
+  const panel = document.getElementById("playPresentationIpadHelp");
+  if (!panel) return;
+  panel.classList.remove("is-open");
+  panel.hidden = true;
+  if (typeof closeLayer === "function") {
+    closeLayer("play-presentation-ipad-help");
+  }
+}
+
+function closePlayPresentationIpadHelpOverlay() {
+  closePlayPresentationIpadHelp();
+}
+
+function dismissPlayPresentationIpadHelp() {
+  if (typeof storageManager !== "undefined") {
+    storageManager.set(STORAGE_KEYS.PRESENTATION_IPAD_HELP_DISMISSED, true);
+  }
+  closePlayPresentationIpadHelp();
+}
+
+function maybeShowPlayPresentationIpadHelp() {
+  if (isPlayPresentationIpadHelpDismissed()) return;
+  if (!isPlayPresentationIPadOS() || isPlayPresentationStandalone()) return;
+  openPlayPresentationIpadHelp();
+}
+
+// ---- Presentation setup sheet ----------------------------------------------
+function togglePlayPresentationSetup() {
+  const panel = document.getElementById("playPresentationSetup");
+  if (panel?.classList.contains("is-open")) {
+    closePlayPresentationSetup();
+  } else {
+    openPlayPresentationSetup();
+  }
+}
+
+function openPlayPresentationSetup() {
+  const panel = document.getElementById("playPresentationSetup");
+  if (!panel) return;
+  renderPlayPresentationSetup();
+  panel.hidden = false;
+  panel.classList.add("is-open");
+  if (typeof openLayer === "function") {
+    openLayer(panel, {
+      id: "play-presentation-setup",
+      exclusive: false,
+      trapFocus: true,
+      returnFocus: true,
+      blocking: true,
+      safeArea: false,
+      scrollElement: "playPresentationSetupBody",
+    });
+  }
+  panel.querySelector(".pp-sheet-close")?.focus();
+}
+
+function closePlayPresentationSetup() {
+  const panel = document.getElementById("playPresentationSetup");
+  if (!panel || !panel.classList.contains("is-open")) return;
+  panel.classList.remove("is-open");
+  panel.hidden = true;
+  if (typeof closeLayer === "function") {
+    closeLayer("play-presentation-setup");
+  }
+}
+
+function closePlayPresentationSetupOverlay() {
+  closePlayPresentationSetup();
+}
+
+function getPlayPresentationItemLabel(item, index) {
+  const number = item?.number ? `${item.number}. ` : `${index + 1}. `;
+  const label =
+    typeof getPlayPresentationPlayLabel === "function"
+      ? getPlayPresentationPlayLabel(item?.play)
+      : item?.play?.play || "Play";
+  return `${number}${label}`;
+}
+
+function renderPlayPresentationSetup() {
+  const body = document.getElementById("playPresentationSetupBody");
+  if (!body) return;
+  const opts = playPresentationOptions;
+  const sourceLabel =
+    playPresentationState.source === "script" ? "Practice Script" : "Playbook";
+
+  const startOptions = playPresentationState.items
+    .map(
+      (item, index) =>
+        `<option value="${index}"${index === playPresentationState.index ? " selected" : ""
+        }>${escapeHtml(getPlayPresentationItemLabel(item, index))}</option>`,
+    )
+    .join("");
+
+  const toggleRow = (key, label, hint) => `
+    <label class="pp-setup-toggle">
+      <input type="checkbox" data-onchange="togglePlayPresentationOption"
+        data-arg="${key}"${opts[key] ? " checked" : ""} />
+      <span class="pp-setup-toggle-text">
+        <strong>${escapeHtml(label)}</strong>
+        <span>${escapeHtml(hint)}</span>
+      </span>
+    </label>
+  `;
+
+  const themeBtn = (value, label) => `
+    <button type="button"
+      class="pp-setup-chip${opts.theme === value ? " active" : ""}"
+      data-action="setPlayPresentationThemeOption" data-arg="${value}"
+      aria-pressed="${opts.theme === value ? "true" : "false"}">${escapeHtml(label)}</button>
+  `;
+
+  const orderBtn = (value, label) => `
+    <button type="button"
+      class="pp-setup-chip${opts.order === value ? " active" : ""}"
+      data-action="setPlayPresentationOrder" data-arg="${value}"
+      aria-pressed="${opts.order === value ? "true" : "false"}">${escapeHtml(label)}</button>
+  `;
+
+  setInnerHTML(
+    body,
+    `
+    <div class="pp-setup-section">
+      <div class="pp-setup-label">Source</div>
+      <div class="pp-setup-source">${escapeHtml(sourceLabel)} • ${playPresentationState.items.length} plays</div>
+    </div>
+    <div class="pp-setup-section">
+      <div class="pp-setup-label">Order</div>
+      <div class="pp-setup-chip-row">
+        ${orderBtn("listed", "As listed")}
+        ${orderBtn("reverse", "Reverse")}
+      </div>
+    </div>
+    <div class="pp-setup-section">
+      <label class="pp-setup-label" for="playPresentationStartSelect">Starting play</label>
+      <select id="playPresentationStartSelect" class="pp-setup-select"
+        data-onchange="setPlayPresentationStartPlay" data-pass="value">
+        ${startOptions}
+      </select>
+    </div>
+    <div class="pp-setup-section">
+      <div class="pp-setup-label">Coach view sections</div>
+      ${toggleRow("showPersonnel", "Call structure", "Personnel, formation, and call mechanics")}
+      ${toggleRow("showDefense", "Defensive look", "Practice picture and defensive answers")}
+      ${toggleRow("showAssignment", "Player rules", "Position-by-position assignments")}
+      ${toggleRow("showNotes", "Coaching points & notes", "Keys, complements, alerts, and notes")}
+    </div>
+    <div class="pp-setup-section">
+      <label class="pp-setup-label" for="playPresentationAutoAdvanceSelect">Auto-advance</label>
+      <select id="playPresentationAutoAdvanceSelect" class="pp-setup-select"
+        data-onchange="setPlayPresentationAutoAdvance" data-pass="value">
+        <option value="0"${opts.autoAdvanceSeconds === 0 ? " selected" : ""}>Off</option>
+        <option value="5"${opts.autoAdvanceSeconds === 5 ? " selected" : ""}>Every 5s</option>
+        <option value="10"${opts.autoAdvanceSeconds === 10 ? " selected" : ""}>Every 10s</option>
+        <option value="15"${opts.autoAdvanceSeconds === 15 ? " selected" : ""}>Every 15s</option>
+        <option value="30"${opts.autoAdvanceSeconds === 30 ? " selected" : ""}>Every 30s</option>
+      </select>
+    </div>
+    <div class="pp-setup-section">
+      <div class="pp-setup-label">Theme</div>
+      <div class="pp-setup-chip-row">
+        ${themeBtn("auto", "Auto")}
+        ${themeBtn("dark", "Dark")}
+        ${themeBtn("light", "Light")}
+      </div>
+    </div>
+  `,
+  );
+}
+
+function setPlayPresentationOrder(value) {
+  if (value !== "listed" && value !== "reverse") return;
+  if (playPresentationOptions.order === value) return;
+  // Re-apply order to the live item list, keeping the same play in view.
+  const current = playPresentationState.items[playPresentationState.index];
+  playPresentationOptions.order = value;
+  savePlayPresentationOptions();
+  playPresentationState.items = playPresentationState.items.slice().reverse();
+  const newIndex = playPresentationState.items.indexOf(current);
+  playPresentationState.index =
+    newIndex >= 0 ? newIndex : 0;
+  renderPlayPresentation();
+  renderPlayPresentationSetup();
+}
+
+function setPlayPresentationStartPlay(value) {
+  const index = parseInt(value, 10);
+  if (!Number.isInteger(index)) return;
+  if (index < 0 || index >= playPresentationState.items.length) return;
+  playPresentationState.index = index;
+  renderPlayPresentation();
+  restartPlayPresentationAutoAdvanceIfRunning();
+}
+
+function togglePlayPresentationOption(key) {
+  if (!(key in playPresentationOptions)) return;
+  playPresentationOptions[key] = !playPresentationOptions[key];
+  savePlayPresentationOptions();
+  renderPlayPresentation();
+}
+
+function setPlayPresentationAutoAdvance(value) {
+  const seconds = parseInt(value, 10) || 0;
+  playPresentationOptions.autoAdvanceSeconds = seconds;
+  savePlayPresentationOptions();
+  startPlayPresentationAutoAdvance();
+}
+
+function setPlayPresentationThemeOption(value) {
+  if (value !== "auto" && value !== "dark" && value !== "light") return;
+  playPresentationOptions.theme = value;
+  savePlayPresentationOptions();
+  applyPlayPresentationTheme();
+  renderPlayPresentationSetup();
+}
+
+loadPlayPresentationOptions();
+

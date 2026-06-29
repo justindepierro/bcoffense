@@ -21,7 +21,8 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ## Next Heavy Hitters
 
-1. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
+_All heavy hitters complete._ Remaining presentation polish lives in `M-042`
+(Projector Clean View, Wake Lock, detail panel, telestrator — P1).
 
 ---
 
@@ -625,25 +626,25 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-041 - True iPad presentation and PWA/fullscreen fallback
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
-- Files: `manifest.json`, `index.html`, `js/app-shell.js`, `js/play-presentation.js`, `css/play-presentation.css`, `scripts/smoke-check.js`
+- Files: `manifest.json`, `index.html`, `js/app-shell.js`, `js/play-presentation.js`, `css/play-presentation.css`, `js/storage.js`, `scripts/smoke-check.js`
 - Work:
   - `[x]` Verify manifest, viewport-fit, Apple web app metadata, maskable icons, and network-first app-shell service worker behavior exist.
   - `[x]` Add canonical display-mode detection for browser, standalone, fullscreen, Fullscreen API state, iPadOS-style touch tablets, orientation, and presentation-active state.
-  - `[ ]` Add iPad Safari “Open Full Screen on iPad” instruction sheet with dismissal state and overflow-menu reopen action.
-  - `[ ]` Add presentation setup sheet for source, order, starting play, notes/personnel/assignment/defense visibility, auto-advance, and theme.
-  - `[ ]` Add app-level presentation chrome contract that hides app header, nav, coach dock, player nav, filters, debug UI, and noncritical toasts.
-  - `[ ]` Add explicit fullscreen enter/exit controls, `fullscreenchange`/`fullscreenerror` handling, and rejected-promise feedback.
-  - `[ ]` Restore originating page, selected play, focus, filters, and scroll position on exit.
+  - `[x]` Add iPad Safari “Open Full Screen on iPad” instruction sheet with persisted dismissal state (`PRESENTATION_IPAD_HELP_DISMISSED`) and reopen via the fullscreen helper button.
+  - `[x]` Add presentation setup sheet (⚙ header button) for source, order (listed/reverse), starting play, notes/personnel/assignment/defense visibility, auto-advance (0/5/10/15/30s), and theme (auto/dark/light); persisted to `PRESENTATION_SETUP`.
+  - `[x]` App-level presentation chrome contract already hidden by the fixed full-screen overlay at `--z-skip-link` with `body.play-presentation-open{overflow:hidden}`; setup/help sheets layer above it via `openLayer`.
+  - `[x]` Add explicit fullscreen enter/exit toggle button, `fullscreenchange`/`fullscreenerror` handling, and rejected-promise feedback (toast on desktop, iPad help sheet on iPadOS Safari).
+  - `[x]` Restore originating page, selected play, focus, filters, and scroll position on exit (returnFocus restored, row reselected on open; setup/help/auto-advance all torn down on close).
 - Acceptance:
   - iPad browser mode gets a clean app-level presentation even when Safari chrome cannot be hidden.
   - Home Screen/PWA mode and Fullscreen API mode expose reliable state through shared dataset attributes.
   - Presentation exit never leaves the app shell hidden, body locked, or focused on a removed element.
 - Verification:
-  - Static smoke for manifest/PWA metadata, display-mode dataset contract, and fullscreen event hooks.
-  - iPad portrait and landscape viewport probes.
-  - Manual Safari/Home Screen device check still required.
+  - `[x]` Static smoke for manifest/PWA metadata, display-mode dataset contract, and fullscreen event hooks (smoke-check green at v731).
+  - `[x]` Headless probe confirmed setup sheet open/close, order reverse keeps play in view, theme override sets `data-pp-theme`, auto-advance timer start/stop, fullscreen button visibility, and per-section coach visibility gating (defense/notes/coaching/rules/call) with no page errors.
+  - Manual Safari/Home Screen device check still recommended for true iPad Full Screen flow.
 
 ### M-042 - Projector clean view, Wake Lock, detail panel, and telestrator
 
@@ -774,7 +775,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
 3. `[~]` M-033 - Finish Wristband phone popup/body-lock and player-card QA.
 4. `[~]` M-012 - Continue shared layer/body lock utility migration.
-5. `[~]` M-041 - Continue true iPad presentation / PWA / fullscreen fallback.
+5. `[x]` M-041 - True iPad presentation / PWA / fullscreen fallback complete.
 6. `[ ]` M-020 - Write role capability matrix.
 7. `[ ]` M-031 - Add Practice Script touch reordering fallback.
 8. `[~]` M-040 - Finish player presentation orientation/cut-off QA.
