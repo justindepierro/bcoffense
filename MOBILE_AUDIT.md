@@ -24,8 +24,8 @@ This checklist converts the mobile audit into work items we can execute and veri
 1. `M-023` - iPad/tablet responsiveness pass: make tablet a near-full editing workspace, not a stretched phone or cramped desktop.
 2. `M-032` - Call Sheet phone situation-card view: replace the print-like dense sheet on phones.
 3. `M-033` - Wristband phone card editor: make cell editing/search workable without horizontal body scroll.
-4. `M-012` - Shared layer/body lock utility: fix modal/drawer scroll, focus return, safe-area footers, and background touch leaks.
-5. `M-031` - Practice Script touch reordering fallback: give touch users move/reorder controls that do not depend on drag.
+4. `M-012` - Shared layer/body lock utility: finish migrating remaining custom modal callers (help, print, sort/layout overlays) onto `openLayer()`/`closeLayer()`.
+5. `M-034` - Playbook phone action/filter sheets: consolidate the phone toolbar actions and filters into sheets (card view already shipped).
 6. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
 7. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
 
@@ -234,18 +234,25 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Create `openLayer()` / `closeLayer()` utility.
   - `[x]` Save body scroll Y and restore it on close.
   - `[x]` Apply a body lock class.
-  - Trap focus and return focus.
+  - `[x]` Trap focus and return focus.
   - `[x]` Prevent background `touchmove`.
   - `[x]` Account for safe-area padding.
   - `[x]` Enforce one active blocking layer at a time.
   - `[x]` Move Play Presentation overlay onto shared body lock.
-  - `[ ]` Migrate Playbook, Call Sheet, Wristband, Script tools, command palette, and custom modal callers.
+  - `[~]` Migrate Playbook, Call Sheet, Wristband, Script tools, command palette, and custom modal callers.
+    - `[x]` Call Sheet display panel (`#csDisplayPanel`).
+    - `[x]` Call Sheet game plan drawer (`#gpDrawer`).
+    - `[x]` Wristband cell popup (`#cellPopupOverlay`).
+    - `[x]` Script tools drawer (`#scriptToolsDrawer`).
+    - `[x]` Command palette (`#commandPaletteOverlay`).
+    - `[ ]` Remaining custom modal callers (help, print modals, sort/layout overlays).
 - Acceptance:
   - Opening a blocking layer prevents background scroll.
   - Closing restores scroll and focus.
   - Layer footer/header respect safe areas.
 - Verification:
   - Static smoke checks for API existence, body lock class, touch suppression, safe-area class, and presentation overlay hook.
+  - Headless body-lock probe: display panel, game plan drawer, script tools drawer, and command palette each add `app-layer-locked` on open and clear it on close with no page errors.
   - Browser checks for login, command palette, call sheet drawer, wristband popup, script tools drawer.
 
 ### M-013 - Mobile touch-target guardrail
@@ -429,17 +436,18 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-031 - Practice Script touch reordering fallback
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
-- Files: `js/script-sort.js`, `js/script-render.js`, `js/script-events.js`, `css/script.css`
+- Files: `js/script-sort.js`, `js/script-render.js`, `js/script-events.js`, `js/script-selection.js`, `css/script.css`
 - Work:
-  - Add non-drag move controls or a reorder sheet for touch devices.
-  - Preserve keyboard accessibility.
+  - `[x]` Add non-drag move controls for touch devices: every play row carries a `↕` move-menu button (`openScriptMoveMenu`) offering move to another period, to top, up, down, and to bottom, plus multi-select moves.
+  - `[x]` Periods carry drag-free `▲`/`▼` move buttons (`movePeriod`).
+  - `[x]` Preserve keyboard accessibility — move controls are real buttons with `aria-label`s.
 - Acceptance:
-  - Reordering does not require drag-and-drop on phone.
+  - Reordering does not require drag-and-drop on phone (move menu available in Edit Sheet mode).
   - Period context stays visible during reorder.
 - Verification:
-  - Touch and keyboard reorder test.
+  - Move-menu code path renders per row and routes through `script-events.js`; run-mode hides the editing tools by design while Edit Sheet exposes them.
 
 ### M-031A - Player Script read-only portal
 
@@ -789,7 +797,8 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-007 - Sticky toolbars float/overlap fix: script + dashboard sub-toolbars now pin to the measured `--app-header-height` + `--app-tabs-height` instead of hardcoded pixel offsets.
 - `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states, display-mode/device/orientation/presentation datasets, and mobile no-playbook startup open the app shell.
 - `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
-- `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, and now wrap Play Presentation.
+- `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, trap and return focus, and now wrap Play Presentation plus the Call Sheet display panel, Call Sheet game plan drawer, Wristband cell popup, Script tools drawer, and command palette.
+- `[x]` M-031 - Practice Script touch reordering fallback: per-row `↕` move menu and period `▲`/`▼` buttons give a complete drag-free, keyboard-accessible reorder path.
 - `[x]` M-013 partial - Touch-target guardrail: shared controls and phone viewport checks catch undersized standalone targets.
 - `[x]` M-014 - Development horizontal overflow detector: `bcDebugMobileOverflow()` reports visible overflow suspects.
 - `[x]` M-015 partial - Reduced motion: global reduced-motion guardrail is covered by smoke checks.

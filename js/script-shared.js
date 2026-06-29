@@ -93,6 +93,13 @@ function setScriptToolsDrawerOpen(isOpen) {
   if (backdrop) backdrop.hidden = !nextOpen;
   trigger?.classList.toggle("is-active", nextOpen);
   trigger?.setAttribute("aria-expanded", nextOpen ? "true" : "false");
+  if (drawer) {
+    if (nextOpen && typeof openLayer === "function") {
+      openLayer(drawer, { id: "script-tools-drawer", exclusive: false });
+    } else if (!nextOpen && typeof closeLayer === "function") {
+      closeLayer("script-tools-drawer");
+    }
+  }
 }
 
 function openScriptToolsDrawer() {

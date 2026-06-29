@@ -326,6 +326,9 @@ function openCellPopup(cardIdx, cellIdx, event) {
   renderPendingBackTagList();
 
   setWristbandOverlayVisibility(overlay, true);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, { id: "wb-cell-popup", exclusive: false, trapFocus: false });
+  }
 
   if (!currentPlay) {
     setTimeout(() => document.getElementById("cellPlaySearch")?.focus(), 50);
@@ -403,6 +406,7 @@ function removeCellPlayFromPopup() {
 function closeCellPopup(event) {
   if (event && event.target !== event.currentTarget) return;
   setWristbandOverlayVisibility("cellPopupOverlay", false);
+  if (typeof closeLayer === "function") closeLayer("wb-cell-popup");
   currentEditingCell = { cardIdx: null, cellIdx: null };
   resetWristbandCellPopupPendingState();
 }

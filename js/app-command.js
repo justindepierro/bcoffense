@@ -757,6 +757,14 @@ function openCommandPalette(seed = "") {
       overlay.dataset.focusTrap = "true";
     }
   });
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "command-palette",
+      exclusive: false,
+      trapFocus: false,
+      returnFocus: false,
+    });
+  }
 }
 
 function closeCommandPalette(options = {}) {
@@ -765,6 +773,9 @@ function closeCommandPalette(options = {}) {
   if (!overlay || overlay.hidden) return;
 
   overlay.classList.remove("visible");
+  if (typeof closeLayer === "function") {
+    closeLayer("command-palette", { returnFocus: false });
+  }
   if (input) {
     input.value = "";
     input.removeAttribute("aria-activedescendant");

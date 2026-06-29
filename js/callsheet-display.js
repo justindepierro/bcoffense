@@ -17,6 +17,9 @@ function openDisplayPanel() {
   overlay.classList.add("visible");
   const btn = document.getElementById("csDisplayPanelBtn");
   if (btn) btn.classList.add("active");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, { id: "cs-display-panel", exclusive: false });
+  }
   // Trap focus inside the panel
   const closeBtn = overlay.querySelector(".cs-display-panel-close");
   if (closeBtn) closeBtn.focus();
@@ -26,6 +29,7 @@ function closeDisplayPanel() {
   const overlay = document.getElementById("csDisplayPanel");
   if (!overlay) return;
   overlay.classList.remove("visible");
+  if (typeof closeLayer === "function") closeLayer("cs-display-panel");
   const btn = document.getElementById("csDisplayPanelBtn");
   if (btn) btn.classList.remove("active");
 }

@@ -419,6 +419,9 @@ function openGameplanDrawer() {
     drawer.classList.add("gp-drawer-open");
     drawer.removeAttribute("inert");
     drawer.setAttribute("aria-hidden", "false");
+    if (typeof openLayer === "function") {
+      openLayer(drawer, { id: "gp-drawer", exclusive: false });
+    }
   }
   document.body.classList.add("gp-drawer-body-open");
   const btn = document.getElementById("gpDrawerToggleBtn");
@@ -441,6 +444,7 @@ function closeGameplanDrawer() {
     drawer.classList.remove("gp-drawer-open");
     drawer.setAttribute("inert", "");
     drawer.setAttribute("aria-hidden", "true");
+    if (typeof closeLayer === "function") closeLayer("gp-drawer");
   }
   document.body.classList.remove("gp-drawer-body-open");
   const btn = document.getElementById("gpDrawerToggleBtn");
