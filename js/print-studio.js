@@ -482,12 +482,19 @@ function openPrintStudio() {
   document.body.appendChild(overlay);
   renderPrintStudio();
   if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function")
+    openLayer(overlay, {
+      id: "print-studio",
+      exclusive: false,
+      trapFocus: false,
+    });
   requestAnimationFrame(() => overlay.classList.add("visible"));
 }
 
 function closePrintStudio() {
   const overlay = document.getElementById("printStudioOverlay");
   if (!overlay) return;
+  if (typeof closeLayer === "function") closeLayer("print-studio");
   overlay.classList.remove("visible");
   setTimeout(() => overlay.remove(), 180);
 }

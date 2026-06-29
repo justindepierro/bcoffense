@@ -276,10 +276,13 @@ function openCallSheetLayoutModal() {
     setCallSheetLayoutDraftColor(select.dataset.category, select.value);
   });
 
+  if (typeof openLayer === "function")
+    openLayer(overlay, { id: "cs-layout-modal", exclusive: false });
   renderCallSheetLayoutModal();
 }
 
 function closeCallSheetLayoutModal() {
+  if (typeof closeLayer === "function") closeLayer("cs-layout-modal");
   const overlay = document.getElementById("csLayoutOverlay");
   if (overlay) overlay.remove();
   csLayoutDraft = null;

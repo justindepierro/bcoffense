@@ -136,6 +136,12 @@ function openCsSortModal(categoryId) {
     if (e.target.id === "csSortOverlay") closeCsSortModal();
   });
   trapFocus(document.getElementById("csSortOverlay"));
+  if (typeof openLayer === "function")
+    openLayer(document.getElementById("csSortOverlay"), {
+      id: "cs-sort-modal",
+      exclusive: false,
+      trapFocus: false,
+    });
   renderCsSortCriteria();
 }
 
@@ -143,6 +149,7 @@ function openCsSortModal(categoryId) {
  * Close the sort modal
  */
 function closeCsSortModal() {
+  if (typeof closeLayer === "function") closeLayer("cs-sort-modal");
   const overlay = document.getElementById("csSortOverlay");
   if (overlay) overlay.remove();
 }

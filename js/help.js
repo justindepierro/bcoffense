@@ -844,6 +844,7 @@ function toggleHelpPanel() {
     overlay.setAttribute("aria-hidden", "true");
     overlay.setAttribute("inert", "");
     fab?.classList.remove("help-fab-active");
+    if (typeof closeLayer === "function") closeLayer("help-panel");
     return;
   }
 
@@ -852,6 +853,8 @@ function toggleHelpPanel() {
   overlay.setAttribute("aria-hidden", "false");
   overlay.classList.add("visible");
   fab?.classList.add("help-fab-active");
+  if (typeof openLayer === "function")
+    openLayer(overlay, { id: "help-panel", exclusive: false });
 }
 
 function closeHelpPanel(event) {
@@ -864,6 +867,7 @@ function closeHelpPanel(event) {
   overlay.setAttribute("aria-hidden", "true");
   overlay.setAttribute("inert", "");
   fab?.classList.remove("help-fab-active");
+  if (typeof closeLayer === "function") closeLayer("help-panel");
 }
 
 function renderHelpContent() {

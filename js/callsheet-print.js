@@ -140,9 +140,16 @@ async function openCallSheetPrintModal() {
       </div>`;
     document.body.appendChild(overlay);
     if (typeof trapFocus === "function") trapFocus(overlay);
+    if (typeof openLayer === "function")
+      openLayer(overlay, {
+        id: "cs-print-modal",
+        exclusive: false,
+        trapFocus: false,
+      });
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const close = (result) => {
+      if (typeof closeLayer === "function") closeLayer("cs-print-modal");
       overlay.classList.remove("visible");
       setTimeout(() => overlay.remove(), 200);
       resolve(result);

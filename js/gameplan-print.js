@@ -318,9 +318,16 @@ async function openGamePlanPrintModal() {
       </div>`;
     document.body.appendChild(overlay);
     if (typeof trapFocus === "function") trapFocus(overlay);
+    if (typeof openLayer === "function")
+      openLayer(overlay, {
+        id: "gp-print-modal",
+        exclusive: false,
+        trapFocus: false,
+      });
     requestAnimationFrame(() => overlay.classList.add("visible"));
 
     const close = (ok) => {
+      if (typeof closeLayer === "function") closeLayer("gp-print-modal");
       overlay.classList.remove("visible");
       setTimeout(() => overlay.remove(), 200);
       resolve(ok);

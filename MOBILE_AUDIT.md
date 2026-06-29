@@ -24,10 +24,9 @@ This checklist converts the mobile audit into work items we can execute and veri
 1. `M-023` - iPad/tablet responsiveness pass: make tablet a near-full editing workspace, not a stretched phone or cramped desktop.
 2. `M-032` - Call Sheet phone situation-card view: replace the print-like dense sheet on phones.
 3. `M-033` - Wristband phone card editor: make cell editing/search workable without horizontal body scroll.
-4. `M-012` - Shared layer/body lock utility: finish migrating remaining custom modal callers (help, print, sort/layout overlays) onto `openLayer()`/`closeLayer()`.
-5. `M-034` - Playbook phone action/filter sheets: consolidate the phone toolbar actions and filters into sheets (card view already shipped).
-6. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
-7. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
+4. `M-034` - Playbook phone action/filter sheets: consolidate the phone toolbar actions and filters into sheets (card view already shipped).
+5. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
+6. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
 
 ---
 
@@ -227,7 +226,7 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-012 - Shared layer/body lock utility
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
 - Files: `js/dom-helpers.js` or new shared file, `js/app-events.js`, modal/drawer callers, `css/components.css`
 - Work:
@@ -239,13 +238,15 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Account for safe-area padding.
   - `[x]` Enforce one active blocking layer at a time.
   - `[x]` Move Play Presentation overlay onto shared body lock.
-  - `[~]` Migrate Playbook, Call Sheet, Wristband, Script tools, command palette, and custom modal callers.
+  - `[x]` Migrate Playbook, Call Sheet, Wristband, Script tools, command palette, and custom modal callers.
     - `[x]` Call Sheet display panel (`#csDisplayPanel`).
     - `[x]` Call Sheet game plan drawer (`#gpDrawer`).
     - `[x]` Wristband cell popup (`#cellPopupOverlay`).
     - `[x]` Script tools drawer (`#scriptToolsDrawer`).
     - `[x]` Command palette (`#commandPaletteOverlay`).
-    - `[ ]` Remaining custom modal callers (help, print modals, sort/layout overlays).
+    - `[x]` Help panel (`#helpOverlay`).
+    - `[x]` Call Sheet sort modal (`#csSortOverlay`) and layout modal (`#csLayoutOverlay`).
+    - `[x]` Call Sheet print modal, Game Plan print modal, and Print Studio (`#printStudioOverlay`).
 - Acceptance:
   - Opening a blocking layer prevents background scroll.
   - Closing restores scroll and focus.
