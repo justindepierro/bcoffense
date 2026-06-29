@@ -864,6 +864,34 @@ body.shell-tablet.is-staff-mobile-shell #script .script-rail-backdrop {
   display: none !important;
 }
 
+/* Tablet touch targets (M-023): larger iPads (834px+ / 1024px) fall outside the
+   coarse-pointer <=820px media query, so keep the same reachable hit sizes here
+   gated by the JS-applied shell-tablet class regardless of width. */
+body.shell-tablet .pb-shortcuts-hint,
+body.shell-tablet .stat-item,
+body.shell-tablet .play-readiness-btn {
+  min-width: 44px;
+  min-height: 44px;
+  justify-content: center;
+}
+
+body.shell-tablet #playbook .pb-readiness-card--empty .play-readiness-btn {
+  min-height: 44px;
+}
+
+body.shell-tablet #playbookTable th[data-action] {
+  height: 44px;
+  min-height: 44px;
+}
+
+body.shell-tablet .tab {
+  min-height: 44px;
+}
+
+body.shell-tablet .player-notify-btn {
+  min-height: 44px;
+}
+
 /* ============ Responsive Design ============ */
 @media (max-width: 1024px) {
   .script-builder {

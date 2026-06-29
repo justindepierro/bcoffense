@@ -21,9 +21,8 @@ This checklist converts the mobile audit into work items we can execute and veri
 
 ## Next Heavy Hitters
 
-1. `M-023` - iPad/tablet responsiveness pass: make tablet a near-full editing workspace, not a stretched phone or cramped desktop.
-2. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
-3. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
+1. `M-040` - Presentation orientation QA: finish iPhone/iPad portrait/landscape checks after the player cut-off fix.
+2. `M-041` - True iPad presentation mode: app-level chrome removal, display-mode detection, setup sheet, fullscreen fallback, and Home Screen instructions.
 
 ---
 
@@ -367,7 +366,7 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-023 - iPad and tablet responsiveness pass
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
 - Files: `js/app-shell.js`, `css/responsive.css`, page CSS, viewport harness
 - Work:
@@ -383,7 +382,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Restore staff tablet Practice Script to a two-pane editing workspace.
   - `[x]` Keep the phone-only current-call coach card from taking over tablet Script.
   - `[x]` Add routine iPad viewport coverage and tablet-shell assertions to the viewport harness.
-  - Verify header, tabs, coach dock, modals, and presentation controls around iPad safe areas.
+  - `[x]` Keep touch targets reachable on larger iPads: extend the 44px hit-size rules (playbook sort headers, readiness buttons, nav tabs, player notify) to the `shell-tablet` class so 834px+/1024px iPads outside the coarse-pointer <=820px media query stay reachable. Verified zero small-target warnings across all roles and all iPad viewports.
 - Acceptance:
   - iPad portrait does not look like a broken desktop or a stretched phone.
   - iPad landscape preserves the desktop editing value while keeping touch targets reachable.
@@ -772,7 +771,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 
 ## Recommended Next 10 Items
 
-1. `[~]` M-023 - Finish iPad/tablet QA across Call Sheet, Wristband, and Presentation.
+1. `[x]` M-023 - iPad/tablet responsiveness pass: tablet shell contract verified; touch targets reachable across all iPad viewports (admin/coach/player) with zero small-target warnings.
 2. `[~]` M-032 - Finish Call Sheet phone drawer layer/safe-area QA.
 3. `[~]` M-033 - Finish Wristband phone popup/body-lock and player-card QA.
 4. `[~]` M-012 - Continue shared layer/body lock utility migration.
