@@ -265,9 +265,10 @@ function renderCellValue(col, play, idx) {
         ${tdBulkMode
           ? ""
           : `
-          <button class="btn btn-sm" data-action="editTendenciesPlay" data-idx="${play._origIndex}" title="Edit">✏️</button>
-          <button class="btn btn-sm" data-action="duplicateTendenciesPlay" data-idx="${play._origIndex}" title="Duplicate">⧉</button>
-          <button class="btn btn-sm btn-danger" data-action="deleteTendenciesPlay" data-idx="${play._origIndex}" title="Delete">✕</button>
+          <button class="btn btn-sm td-play-action-btn" data-action="editTendenciesPlay" data-idx="${play._origIndex}" title="Edit">✏️</button>
+          <button class="btn btn-sm td-play-action-btn" data-action="duplicateTendenciesPlay" data-idx="${play._origIndex}" title="Duplicate">⧉</button>
+          <button class="btn btn-sm btn-danger td-play-action-btn" data-action="deleteTendenciesPlay" data-idx="${play._origIndex}" title="Delete">✕</button>
+          <button class="btn btn-sm td-play-menu-btn" data-action="openTendenciesPlayMenu" data-arg="${play._origIndex}" aria-label="Play actions" title="Actions">⋯</button>
         `
         }
       </td>`;
@@ -307,13 +308,34 @@ function renderFilterPanel(opp) {
     .filter(Boolean)
     .join("");
 
-  return `<div class="td-filter-panel">
+  return `<div class="td-filter-backdrop" data-action="toggleTdFilters" aria-hidden="true"></div>
+  <div class="td-filter-panel" role="group" aria-label="Play filters">
     <div class="td-filter-panel-header">
       <span>🔽 Filters</span>
-      ${activeFilterCount() > 0 ? `<button class="btn btn-sm" data-action="clearTdFilters">Clear All</button>` : ""}
+      <div class="td-filter-panel-header-actions">
+        ${activeFilterCount() > 0 ? `<button class="btn btn-sm" data-action="clearTdFilters">Clear All</button>` : ""}
+        <button class="btn btn-sm td-filter-close" data-action="toggleTdFilters" aria-label="Close filters" title="Close">✕</button>
+      </div>
     </div>
     ${sections}
   </div>`;
+}
+
+// Mobile row-action menu: opens the same context menu as long-press, anchored
+// to the kebab button so touch users get the row actions without hover.
+function openTendenciesPlayMenu(idx, el) {
+  const origIdx = parseInt(idx, 10);
+  if (isNaN(origIdx)) return;
+  if (typeof _showTdPlayContextMenu !== "function") return;
+  const rect = el?.getBoundingClientRect?.() || { left: 12, bottom: 12 };
+  _showTdPlayContextMenu(
+    {
+      preventDefault() { },
+      clientX: rect.left,
+      clientY: rect.bottom + 4,
+    },
+    origIdx,
+  );
 }
 
 function renderStatsDashboard(opp) {

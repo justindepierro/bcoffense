@@ -527,15 +527,15 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-035 - Defensive Tendencies dedicated mobile layout
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
 - Files: `css/tendencies.css`, `js/tendencies*.js`
 - Work:
-  - Add explicit 760px and 560px mobile sections.
-  - Convert stats to two-column compact grid.
-  - Move row actions into a menu.
-  - Use bottom sheets for detail/filter surfaces.
-  - Clamp tooltip/popover width to `calc(100vw - 24px)` and both left/right bounds.
+  - [x] Add explicit 760px and 560px mobile sections.
+  - [x] Convert stats to two-column compact grid.
+  - [x] Move row actions into a menu.
+  - [x] Use bottom sheets for detail/filter surfaces.
+  - [x] Clamp tooltip/popover width to `calc(100vw - 24px)` and both left/right bounds.
 - Acceptance:
   - Opponent detail header and actions do not collide.
   - Tables do not force body-level horizontal overflow.
@@ -543,6 +543,10 @@ The attached implementation brief is now mapped into this checklist as:
 - Verification:
   - Phone and tablet screenshots.
   - Tooltip position test at 320px.
+- Implementation notes (SW v732):
+  - `.td-tooltip` width clamped to `min(320px, calc(100vw - 24px))`; `showPlayTooltip` now clamps `left` within both bounds using the measured tip width.
+  - 760px breakpoint: `.td-stats-grid`, `.td-stats-bar` two-column compact grids.
+  - 560px breakpoint: kebab `.td-play-menu-btn` replaces inline row buttons (`openTendenciesPlayMenu` reuses `_showTdPlayContextMenu` via a synthetic anchor event; registered in `_ELEMENT_FNS`); `.td-filter-panel` becomes a bottom sheet with `.td-filter-backdrop` + `.td-filter-close`.
 
 ### M-036 - Game Plan mobile action hierarchy
 

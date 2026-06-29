@@ -1163,10 +1163,12 @@ function showPlayTooltip(e, origIdx) {
   tip.innerHTML = `<div class="td-tip-title">Play #${origIdx + 1}</div>${fields}`;
   document.body.appendChild(tip);
 
-  // Position near the row
+  // Position near the row, clamped within both horizontal bounds.
   const rect = e.target.closest("tr").getBoundingClientRect();
+  const tipWidth = tip.getBoundingClientRect().width;
+  const maxLeft = window.innerWidth - tipWidth - 12;
   tip.style.top = rect.bottom + 4 + "px";
-  tip.style.left = Math.min(rect.left, window.innerWidth - 320) + "px";
+  tip.style.left = Math.max(12, Math.min(rect.left, maxLeft)) + "px";
   setTimeout(() => tip.classList.add("td-tip-visible"), 10);
 }
 

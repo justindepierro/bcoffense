@@ -311,6 +311,7 @@ const _ELEMENT_FNS = new Set([
   "moveSortCriteria",
   "removeScheduleGame",
   "setScheduleActive",
+  "openTendenciesPlayMenu",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 ```
