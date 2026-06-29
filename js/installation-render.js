@@ -450,7 +450,12 @@ function renderInstallCategoryDetail(components, data) {
     )
     : allItems;
 
-  // Sort: installed first, then alphabetical
+  // Sort: installed first, then custom order, then alphabetical
+  const order = !isSmartPlayMode ? data.order[cat.id] || [] : [];
+  const orderIndex = (v) => {
+    const i = order.indexOf(v);
+    return i === -1 ? Infinity : i;
+  };
   const sorted = [...filtered].sort((a, b) => {
     if (isSmartPlayMode) {
       const aInstalled = groupInstalledMap[a] ? 0 : 1;
@@ -461,6 +466,9 @@ function renderInstallCategoryDetail(components, data) {
     const aInstalled = installed.includes(a) ? 0 : 1;
     const bInstalled = installed.includes(b) ? 0 : 1;
     if (aInstalled !== bInstalled) return aInstalled - bInstalled;
+    const ao = orderIndex(a);
+    const bo = orderIndex(b);
+    if (ao !== bo) return ao - bo;
     return a.toLowerCase().localeCompare(b.toLowerCase());
   });
 
@@ -499,6 +507,13 @@ function renderInstallCategoryDetail(components, data) {
               <span class="install-item-check">${isInstalled ? "✅" : "⬜"}</span>
               <span class="install-item-name">${value}</span>
               <span class="install-item-count" title="${count} play${count !== 1 ? "s" : ""} use this">${count} play${count !== 1 ? "s" : ""}</span>
+              ${isSmartPlayMode
+            ? ""
+            : `<span class="install-item-move">
+              <button type="button" class="install-item-move-btn" data-action="moveInstallItemUp" data-cat="${cat.id}" data-val="${escapeAttr(value)}" aria-label="Move ${escapeAttr(value)} up" title="Move up">↑</button>
+              <button type="button" class="install-item-move-btn" data-action="moveInstallItemDown" data-cat="${cat.id}" data-val="${escapeAttr(value)}" aria-label="Move ${escapeAttr(value)} down" title="Move down">↓</button>
+            </span>`
+          }
               <span class="install-item-drag" title="Drag to reorder">⠿</span>
             </label>`;
       })

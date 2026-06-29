@@ -416,6 +416,29 @@
   }
 }
 
+/* Drag-free reorder buttons — phone only (drag handle stays on desktop) */
+.install-item-move {
+  display: none;
+  flex-shrink: 0;
+  gap: 4px;
+}
+.install-item-move-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0;
+  font-size: var(--font-size-md);
+  line-height: 1;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+  touch-action: manipulation;
+}
+
 .install-dragging {
   opacity: 0.5;
   background: var(--color-bg-blue-tint) !important;
@@ -579,6 +602,35 @@
   .install-header {
     flex-direction: column;
     text-align: center;
+  }
+}
+
+/* Phone: drag-free, touch-optimized checklist */
+@media (max-width: 560px) {
+  .install-detail-actions {
+    width: 100%;
+    flex-wrap: wrap;
+  }
+  .install-search {
+    width: 100%;
+    min-width: 0;
+  }
+  .install-checklist {
+    max-height: min(60vh, 520px);
+  }
+  .install-item {
+    gap: 6px;
+    padding: 12px 10px;
+  }
+  /* Swap hard-to-touch drag handle for explicit Move Up/Down buttons */
+  .install-item-drag {
+    display: none;
+  }
+  .install-item-move {
+    display: inline-flex;
+  }
+  .install-item-count {
+    display: none;
   }
 }
 

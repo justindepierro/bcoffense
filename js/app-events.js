@@ -37,6 +37,8 @@ const _ELEMENT_FNS = new Set([
   "removeScheduleGame",
   "setScheduleActive",
   "openTendenciesPlayMenu",
+  "moveInstallItemUp",
+  "moveInstallItemDown",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 

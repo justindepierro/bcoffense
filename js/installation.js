@@ -574,6 +574,70 @@ function installDragDrop(event, categoryId, targetValue) {
     .forEach((el) => el.classList.remove("install-dragging"));
 }
 
+// ============ Button-based Reorder (phone, drag-free) ============
+
+/**
+ * Compute a category's component values in display order:
+ * installed-first, then custom order (data.order), then alphabetical.
+ * Shared by the checklist render and the Move Up/Down buttons so the
+ * phone controls reorder exactly what the user sees.
+ */
+function getInstallDisplayOrder(categoryId) {
+  const cat = INSTALL_CATEGORIES.find((c) => c.id === categoryId);
+  if (!cat) return [];
+  const components = extractComponentsFromPlaybook();
+  const data = getInstallationData();
+  const allItems = components[categoryId] || [];
+  const installedArr = data.installed[categoryId] || [];
+  const order = data.order[categoryId] || [];
+  const orderIndex = (v) => {
+    const i = order.indexOf(v);
+    return i === -1 ? Infinity : i;
+  };
+  return [...allItems].sort((a, b) => {
+    const aIn = installedArr.includes(a) ? 0 : 1;
+    const bIn = installedArr.includes(b) ? 0 : 1;
+    if (aIn !== bIn) return aIn - bIn;
+    const ao = orderIndex(a);
+    const bo = orderIndex(b);
+    if (ao !== bo) return ao - bo;
+    return a.toLowerCase().localeCompare(b.toLowerCase());
+  });
+}
+
+/**
+ * Move an install item one slot up (delta -1) or down (delta +1) within its
+ * install-state group. Persists the full visible order so the move sticks.
+ */
+function moveInstallItem(categoryId, value, delta) {
+  if (!categoryId || value == null) return;
+  const display = getInstallDisplayOrder(categoryId);
+  const idx = display.indexOf(value);
+  if (idx < 0) return;
+  const target = idx + delta;
+  if (target < 0 || target >= display.length) return;
+
+  const data = getInstallationData();
+  const installedArr = data.installed[categoryId] || [];
+  // Keep installed-first grouping stable: only swap within the same group.
+  if (installedArr.includes(value) !== installedArr.includes(display[target])) {
+    return;
+  }
+
+  [display[idx], display[target]] = [display[target], display[idx]];
+  data.order[categoryId] = display;
+  saveInstallationData(data);
+  renderInstallation();
+}
+
+function moveInstallItemUp(el) {
+  if (el) moveInstallItem(el.dataset.cat, el.dataset.val, -1);
+}
+
+function moveInstallItemDown(el) {
+  if (el) moveInstallItem(el.dataset.cat, el.dataset.val, 1);
+}
+
 // ============ Readiness Modal ============
 
 /**

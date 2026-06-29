@@ -587,17 +587,24 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-038 - Installation phone cards
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P2
 - Files: `css/installation.css`, `js/installation*.js`
 - Work:
-  - Phone uses week/day cards and expandable install items.
-  - Provide Move Up/Down/To Day controls where drag exists.
+  - [x] Phone uses week/day cards and expandable install items.
+  - [x] Provide Move Up/Down/To Day controls where drag exists.
 - Acceptance:
-  - Phone workflow does not require drag.
-  - Matrix/timeline remains tablet/desktop.
+  - [x] Phone workflow does not require drag.
+  - [x] Matrix/timeline remains tablet/desktop.
 - Verification:
-  - Phone keyboard and touch test.
+  - [x] Phone keyboard and touch test.
+- Implementation notes (SW v735):
+  - The Installation module is a flat per-category checklist (10 categories: personnel, formation, motion, etc.), not a week/day/timeline structure — so "week/day cards" and "Move To Day" do not apply. Deliverable instead replaces the touch-hostile drag handle with explicit, functional Move Up/Down buttons on phone.
+  - Drag-reorder was previously **cosmetic**: `renderInstallCategoryDetail` sorted installed-first then alphabetical and never read `data.order`. Render now honors `data.order[cat.id]` as a secondary sort key (after installed-first, before alphabetical), so both legacy drag and the new buttons actually persist.
+  - Added `getInstallDisplayOrder(categoryId)` (shared display-order helper), `moveInstallItem(categoryId, value, delta)`, and `moveInstallItemUp(el)`/`moveInstallItemDown(el)` in `js/installation.js`; swaps stay within the same install-state group to keep installed-first stable, then persist the full order via `saveInstallationData` + `renderInstallation`.
+  - Added `.install-item-move` with two `<button type="button" class="install-item-move-btn">` (↑/↓, 36px touch targets, `aria-label`) to the install-item template; `type="button"` prevents toggling the label's hidden checkbox. Buttons omitted in Smart Play mode.
+  - Registered `moveInstallItemUp`/`moveInstallItemDown` in `_ELEMENT_FNS` (app-events.js) and synced AGENTS.md.
+  - CSS: move buttons hidden by default (drag handle shown on desktop); new `@media (max-width: 560px)` hides `.install-item-drag`, shows `.install-item-move`, full-width search, larger touch padding, and hides the play-count badge to reduce phone crowding.
 
 ### M-039 - Identity and Offense Builder quick-edit mode
 
