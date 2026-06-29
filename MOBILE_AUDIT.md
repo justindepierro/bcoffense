@@ -138,12 +138,23 @@ The attached implementation brief is now mapped into this checklist as:
 
 ---
 
-## Phase 1 - Stabilize Shared Mobile Foundations
+### M-006 - Editor form-field sanitizer regression
 
-### M-010 - Canonical responsive state contract
-
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
+- Files: `js/dom-helpers.js`
+- Work:
+  - `sanitizeHTML()` listed `input`, `select`, and `textarea` in `DANGEROUS_TAGS`, so every panel rendered through `setInnerHTML()` lost its form controls (Play editor, readiness panel, etc.). Symptom: new/edit play fields disappeared and could not be typed in.
+  - Removed those three tags from the strip list — they are not script-execution vectors. `script`, `style`, `iframe`, `object`, `embed`, `link`, `base`, `meta`, `form`, `on*` handlers, and `javascript:` URLs stay blocked.
+- Acceptance:
+  - Play editor renders all `#pe-*` inputs/selects/textareas and accepts typing.
+  - No new XSS surface: scripts/styles/frames and event-handler attributes remain stripped.
+- Verification:
+  - `node --check js/dom-helpers.js`
+  - Headless check: new-play editor renders fields and `#pe-play` accepts typed input.
+
+---
+
 - Files: `js/app-shell.js`, `css/responsive.css`, page CSS as needed
 - Work:
   - `[x]` Define canonical classes/data states:
@@ -759,6 +770,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-003 - Player phone header touch targets: player header controls meet the 44px phone target.
 - `[x]` M-004 - Auth session syntax/expiry repair: expired sessions clear cleanly and `auth.js` parses.
 - `[x]` M-005 - Regression guards and cache bump: early mobile smoke guards and cache versioning were added.
+- `[x]` M-006 - Editor form-field sanitizer regression: `sanitizeHTML()` no longer strips `input`/`select`/`textarea`, so the play editor and other `setInnerHTML()` panels render their fields and accept typing again.
 - `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states, display-mode/device/orientation/presentation datasets, and mobile no-playbook startup open the app shell.
 - `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
 - `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, and now wrap Play Presentation.

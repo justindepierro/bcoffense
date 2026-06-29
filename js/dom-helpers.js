@@ -7,11 +7,13 @@ const DANGEROUS_TAGS = new Set([
   "base",
   "meta",
   "form",
-  "input",
-  "textarea",
-  "select",
   "style",
 ]);
+// Note: input/select/textarea are intentionally NOT blocked. They are not
+// script-execution vectors, and several trusted app panels (play editor,
+// readiness panel, etc.) render their form fields through setInnerHTML().
+// Script execution is still prevented by stripping <script>/<style>/<iframe>/
+// on* handlers and javascript: URLs below.
 const ALLOWED_ATTR_PREFIX = ["data-", "aria-"];
 const SAFE_ATTRS = new Set([
   "href",
