@@ -33,9 +33,6 @@ let playPresentationAutoAdvanceTimer = 0;
 const PLAY_PRESENTATION_HUD_IDLE_MS = 3500;
 let playPresentationCleanView = false;
 let playPresentationHudTimer = 0;
-// Tracks whether the coach manually set Clean View this session. Once set, the
-// landscape auto-clean behavior stops overriding their explicit choice.
-let playPresentationCleanViewUserSet = false;
 // Session-only dismissal for the in-landscape projector install prompt.
 let playPresentationProjectorPromptDismissed = false;
 
@@ -204,23 +201,11 @@ function setPlayPresentationCleanView(on) {
 }
 
 function togglePlayPresentationCleanView() {
-  playPresentationCleanViewUserSet = true;
   setPlayPresentationCleanView(!playPresentationCleanView);
   if (typeof showToast === "function" && !playPresentationCleanView) {
     // Confirm exit (suppressed while clean view is active).
     showToast("Projector Clean View off", { duration: 1500 });
   }
-}
-
-// M-042 — Smarter landscape: on a mobile/tablet viewport, rotating to landscape
-// auto-engages Projector Clean View for a clean projected image; returning to
-// portrait restores the full HUD. A manual Clean View toggle opts out for the
-// rest of the session so the coach's explicit choice always wins.
-function autoApplyPlayPresentationLandscapeCleanView(isMobile, isLandscape) {
-  if (playPresentationCleanViewUserSet) return;
-  const wantClean = Boolean(isMobile && isLandscape);
-  if (wantClean === playPresentationCleanView) return;
-  setPlayPresentationCleanView(wantClean);
 }
 
 // M-042 — In-landscape projector install prompt. iPad/iOS Safari cannot hide
@@ -1089,7 +1074,6 @@ function syncPlayPresentationMobileLandscape() {
   overlay.classList.toggle("pp-natural-landscape", isMobile && isLandscape);
   overlay.classList.toggle("pp-natural-portrait", isMobile && !isLandscape);
   document.body.classList.toggle("play-presentation-mobile", isMobile);
-  autoApplyPlayPresentationLandscapeCleanView(isMobile, isLandscape);
   updatePlayPresentationProjectorPrompt();
   updatePlayPresentationRotateHint();
 }
@@ -1262,7 +1246,6 @@ function openPlayPresentation(items, startIndex, source) {
   setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
   setPlayPresentationCleanView(false);
-  playPresentationCleanViewUserSet = false;
   playPresentationProjectorPromptDismissed = false;
   resetPlayPresentationZoom();
   setPlayPresentationTelestrator(false);
@@ -1345,7 +1328,6 @@ function closePlayPresentation() {
   stopPlayPresentationAutoAdvance();
   closePlayPresentationSetup();
   setPlayPresentationCleanView(false);
-  playPresentationCleanViewUserSet = false;
   playPresentationProjectorPromptDismissed = false;
   clearTimeout(playPresentationHudTimer);
   playPresentationWakeLockDesired = false;
