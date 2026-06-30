@@ -718,6 +718,11 @@ The attached implementation brief is now mapped into this checklist as:
   - Drawing uses Pointer Events with `setPointerCapture` and `preventDefault` (mouse/touch/Apple Pencil); the overlay canvas captures pointers so drawing never pans or swipes. Eraser uses `destination-out` compositing.
   - Telestrator disables and clears on every play change, open, and close. Toolbar hides alongside the HUD in Clean View auto-hide.
   - Remaining: detail panel still pending.
+- Implementation notes (SW v742):
+  - Smarter landscape: on a mobile/tablet viewport, rotating to landscape now auto-engages Projector Clean View (`autoApplyPlayPresentationLandscapeCleanView`), and returning to portrait restores the full HUD. A manual `🎦` toggle sets `playPresentationCleanViewUserSet` so the coach's explicit choice wins for the rest of the session.
+  - Added an in-landscape projector install prompt (`#playPresentationProjectorPrompt`). iPad/iOS Safari cannot hide its address bar or tab bar from web code, so the only chrome-free projector view is the installed PWA. The prompt appears top-center on iPad Safari in landscape (non-standalone, help not dismissed) and its "Show me" button opens the existing Add-to-Home-Screen guide; dismissible for the session.
+  - Documented the platform limit: true full-screen on iPad = Add to Home Screen (manifest `display: standalone` + Apple meta tags already set). Desktop/Chrome still use the real Fullscreen API via the `⛶` button.
+  - Remaining: detail panel still pending.
 
 ---
 

@@ -33,6 +33,11 @@ let playPresentationAutoAdvanceTimer = 0;
 const PLAY_PRESENTATION_HUD_IDLE_MS = 3500;
 let playPresentationCleanView = false;
 let playPresentationHudTimer = 0;
+// Tracks whether the coach manually set Clean View this session. Once set, the
+// landscape auto-clean behavior stops overriding their explicit choice.
+let playPresentationCleanViewUserSet = false;
+// Session-only dismissal for the in-landscape projector install prompt.
+let playPresentationProjectorPromptDismissed = false;
 
 // M-042 — Screen Wake Lock (session-local, explicit user action)
 let playPresentationWakeLock = null;
@@ -194,11 +199,53 @@ function setPlayPresentationCleanView(on) {
 }
 
 function togglePlayPresentationCleanView() {
+  playPresentationCleanViewUserSet = true;
   setPlayPresentationCleanView(!playPresentationCleanView);
   if (typeof showToast === "function" && !playPresentationCleanView) {
     // Confirm exit (suppressed while clean view is active).
     showToast("Projector Clean View off", { duration: 1500 });
   }
+}
+
+// M-042 — Smarter landscape: on a mobile/tablet viewport, rotating to landscape
+// auto-engages Projector Clean View for a clean projected image; returning to
+// portrait restores the full HUD. A manual Clean View toggle opts out for the
+// rest of the session so the coach's explicit choice always wins.
+function autoApplyPlayPresentationLandscapeCleanView(isMobile, isLandscape) {
+  if (playPresentationCleanViewUserSet) return;
+  const wantClean = Boolean(isMobile && isLandscape);
+  if (wantClean === playPresentationCleanView) return;
+  setPlayPresentationCleanView(wantClean);
+}
+
+// M-042 — In-landscape projector install prompt. iPad/iOS Safari cannot hide
+// its address bar/tab bar from web code; the only chrome-free projector view is
+// the installed PWA. When a coach rotates to landscape in plain Safari we surface
+// a dismissible nudge that opens the Add-to-Home-Screen guide.
+function shouldShowPlayPresentationProjectorPrompt() {
+  if (playPresentationProjectorPromptDismissed) return false;
+  if (isPlayPresentationStandalone()) return false;
+  if (!isPlayPresentationIPadOS()) return false;
+  if (isPlayPresentationIpadHelpDismissed()) return false;
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay?.classList.contains("is-open")) return false;
+  const { width, height } = getPlayPresentationViewportSize();
+  return isPlayPresentationMobileViewport() && width > height;
+}
+
+function updatePlayPresentationProjectorPrompt() {
+  const prompt = document.getElementById("playPresentationProjectorPrompt");
+  if (!prompt) return;
+  prompt.hidden = !shouldShowPlayPresentationProjectorPrompt();
+}
+
+function openPlayPresentationProjectorGuide() {
+  openPlayPresentationIpadHelp();
+}
+
+function dismissPlayPresentationProjectorPrompt() {
+  playPresentationProjectorPromptDismissed = true;
+  updatePlayPresentationProjectorPrompt();
 }
 
 // Non-critical toasts emitted by the presentation route through this so they
@@ -928,6 +975,8 @@ function syncPlayPresentationMobileLandscape() {
   overlay.classList.toggle("pp-natural-landscape", isMobile && isLandscape);
   overlay.classList.toggle("pp-natural-portrait", isMobile && !isLandscape);
   document.body.classList.toggle("play-presentation-mobile", isMobile);
+  autoApplyPlayPresentationLandscapeCleanView(isMobile, isLandscape);
+  updatePlayPresentationProjectorPrompt();
   updatePlayPresentationRotateHint();
 }
 
@@ -1099,6 +1148,8 @@ function openPlayPresentation(items, startIndex, source) {
   setPlayPresentationOverlayOpen(overlay, true);
   document.body.classList.add("play-presentation-open");
   setPlayPresentationCleanView(false);
+  playPresentationCleanViewUserSet = false;
+  playPresentationProjectorPromptDismissed = false;
   resetPlayPresentationZoom();
   setPlayPresentationTelestrator(false);
   clearPlayPresentationTele();
@@ -1179,6 +1230,8 @@ function closePlayPresentation() {
   stopPlayPresentationAutoAdvance();
   closePlayPresentationSetup();
   setPlayPresentationCleanView(false);
+  playPresentationCleanViewUserSet = false;
+  playPresentationProjectorPromptDismissed = false;
   clearTimeout(playPresentationHudTimer);
   playPresentationWakeLockDesired = false;
   releasePlayPresentationWakeLock();

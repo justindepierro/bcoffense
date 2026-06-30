@@ -1104,6 +1104,85 @@ body.play-presentation-open {
   background: var(--color-overlay-md);
 }
 
+/* M-042 — In-landscape projector install prompt (top-center, clear of the
+   bottom zoom/telestrator controls). Stays visible until dismissed so the
+   chrome-free install path is discoverable. */
+.pp-projector-prompt {
+  position: absolute;
+  left: 50%;
+  top: calc(var(--space-md) + env(safe-area-inset-top, 0px));
+  transform: translateX(-50%);
+  z-index: var(--z-toast);
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  max-width: min(94vw, 560px);
+  padding: var(--space-xs) var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  color: var(--color-text-inverse);
+  background: var(--color-info);
+  box-shadow: var(--shadow-lg);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+}
+
+.pp-projector-prompt[hidden] {
+  display: none;
+}
+
+.pp-projector-prompt-icon {
+  font-size: var(--font-size-sm);
+  line-height: 1;
+}
+
+.pp-projector-prompt-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.pp-projector-prompt-btn {
+  flex-shrink: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-white);
+  font: inherit;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pp-projector-prompt-btn:hover {
+  background: var(--color-bg-light);
+}
+
+.pp-projector-prompt-dismiss {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 24px;
+  height: 24px;
+  padding: 0;
+  border: none;
+  border-radius: var(--radius-pill);
+  color: var(--color-text-inverse);
+  background: var(--color-overlay-sm);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pp-projector-prompt-dismiss:hover {
+  background: var(--color-overlay-md);
+}
+
+.pp-projector-prompt-btn:focus-visible,
+.pp-projector-prompt-dismiss:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
 /* ===== M-041 — Icon buttons, setup sheet, iPad help, theme override ===== */
 .pp-icon-btn {
   display: inline-flex;
