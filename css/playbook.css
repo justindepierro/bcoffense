@@ -239,7 +239,12 @@ table.sortable th {
   font-size: var(--font-size-xs);
   line-height: 1;
   vertical-align: baseline;
+  cursor: pointer;
   user-select: none;
+}
+.pb-clip-badge:hover,
+.pb-clip-badge:focus {
+  filter: drop-shadow(0 0 2px var(--color-primary));
 }
 
 .pb-usage {

@@ -345,8 +345,18 @@
       select.value = String(state.index);
       prevBtn.disabled = state.index <= 0;
       nextBtn.disabled = state.index >= state.clips.length - 1;
-      const play = video.play();
-      if (play && typeof play.catch === "function") play.catch(() => {});
+      // Start playback immediately. If the browser blocks autoplay with sound,
+      // retry muted so the clip still plays — a paused video keeps its controls
+      // pinned on screen, which feels sluggish.
+      video.muted = false;
+      const attempt = video.play();
+      if (attempt && typeof attempt.catch === "function") {
+        attempt.catch(() => {
+          video.muted = true;
+          const retry = video.play();
+          if (retry && typeof retry.catch === "function") retry.catch(() => {});
+        });
+      }
     };
 
     const close = () => {
