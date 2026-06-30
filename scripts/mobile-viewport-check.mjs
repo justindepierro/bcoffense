@@ -94,7 +94,7 @@ async function findPlaywright() {
   }
   throw new Error(
     `Playwright not found. Install it with: npm install --prefix ${DEFAULT_TOOL_ROOT} playwright && ` +
-      `${DEFAULT_TOOL_ROOT}/node_modules/.bin/playwright install chromium`,
+    `${DEFAULT_TOOL_ROOT}/node_modules/.bin/playwright install chromium`,
   );
 }
 
@@ -203,7 +203,7 @@ function slug(value) {
 async function loginAs(page, role) {
   await page.waitForFunction(() => document.body && document.body.dataset.authRole, null, {
     timeout: 10000,
-  }).catch(() => {});
+  }).catch(() => { });
   const currentRole = await page.evaluate(() => document.body?.dataset.authRole || "");
   if (currentRole === role) return;
 
@@ -363,6 +363,77 @@ async function inspectPage(page) {
   });
 }
 
+// Scroll-ancestry probe: report visible vertical scroll owners inside the active
+// page so we can prove a single owner per mode (M-011). Owners inside approved
+// wrappers (tables, modal/drawer bodies, presentation surfaces) are exempt.
+async function probeScrollOwners(page) {
+  return page.evaluate(() => {
+    const APPROVED =
+      ".callsheet-table, .playbook-table-wrap, .playbook-table-wrapper, .wristband-grid," +
+      " .custom-modal, .app-layer-active, .pp-detail-body, .pp-coach-detail," +
+      " .cs-table-scroll, .help-panel-body, [data-approved-scroller]," +
+      " .pb-action-sheet, .pb-action-sheet-body, .action-sheet, .action-sheet-body," +
+      " .bottom-sheet, .bottom-sheet-body, [role='dialog'], [data-layer-open='true']";
+    const isVisible = (el) => {
+      if (!el) return false;
+      const s = getComputedStyle(el);
+      if (s.visibility === "hidden" || s.display === "none" || Number(s.opacity) === 0 || el.hidden) {
+        return false;
+      }
+      const r = el.getBoundingClientRect();
+      return r.width > 0 && r.height > 0;
+    };
+    const describe = (el) => {
+      if (el.id) return `#${el.id}`;
+      const classes = [...el.classList].slice(0, 3).join(".");
+      return `${el.tagName.toLowerCase()}${classes ? `.${classes}` : ""}`;
+    };
+    const panel = document.querySelector("#mainApp .panel.active");
+    const owners = [];
+    if (panel) {
+      const candidates = [panel, ...panel.querySelectorAll("*")];
+      candidates.forEach((el) => {
+        if (!isVisible(el)) return;
+        const s = getComputedStyle(el);
+        const oy = s.overflowY;
+        const scrolls =
+          (oy === "auto" || oy === "scroll") && el.scrollHeight > el.clientHeight + 2;
+        if (!scrolls) return;
+        const approved = el.matches(APPROVED) || Boolean(el.closest(APPROVED));
+        owners.push({ selector: describe(el), approved });
+      });
+    }
+    const docScrolls =
+      document.documentElement.scrollHeight > document.documentElement.clientHeight + 2;
+    const unapproved = owners.filter((o) => !o.approved).map((o) => o.selector);
+    return { docScrolls, ownerCount: owners.length, unapproved: unapproved.slice(0, 10) };
+  });
+}
+
+// Walk the major tabs available to the role and probe scroll ownership on each.
+async function probeTabsScrollOwnership(page) {
+  const TABS = ["playbook", "script", "wristband", "callsheet", "tendencies", "gameplan", "dashboard"];
+  const out = [];
+  for (const tab of TABS) {
+    const switched = await page.evaluate((t) => {
+      const btn = document.querySelector(`[data-action="showTab"][data-arg="${t}"]`);
+      if (!btn || btn.hidden || btn.offsetParent === null) return false;
+      if (typeof window.showTab !== "function") return false;
+      try {
+        window.showTab(t);
+        return true;
+      } catch (_e) {
+        return false;
+      }
+    }, tab);
+    if (!switched) continue;
+    await page.waitForTimeout(220);
+    const probe = await probeScrollOwners(page);
+    out.push({ tab, ...probe });
+  }
+  return out;
+}
+
 async function run() {
   const args = parseArgs(process.argv.slice(2));
   const { chromium } = await findPlaywright();
@@ -404,6 +475,10 @@ async function run() {
         await loginAs(page, role);
         await page.waitForTimeout(350);
         const inspection = await inspectPage(page);
+        const scrollTabs =
+          inspection.screenSize === "phone"
+            ? await probeTabsScrollOwnership(page)
+            : [];
 
         const screenshotName = `${slug(role)}-${viewportName}.png`;
         const screenshotPath = path.join(args.outputDir, screenshotName);
@@ -419,6 +494,7 @@ async function run() {
           consoleErrors,
           httpErrors,
           ...inspection,
+          scrollTabs,
         };
         const blankMobileStart =
           result.screenSize === "phone" &&
@@ -428,6 +504,15 @@ async function run() {
           result.screenSize === "phone" &&
           Boolean(result.role) &&
           result.scrollOwner !== "document";
+        // A phone page must not have a second vertical scroll owner competing
+        // with the document. Owners inside approved wrappers are exempt.
+        const scrollConflictTabs = (result.scrollTabs || [])
+          .filter((t) => t.docScrolls && t.unapproved.length > 0)
+          .map((t) => `${t.tab}:${t.unapproved.join("|")}`);
+        const scrollConflict =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          scrollConflictTabs.length > 0;
         const badTabletShell =
           IPAD_VIEWPORTS.includes(result.viewport) &&
           Boolean(result.role) &&
@@ -448,6 +533,7 @@ async function run() {
         const failed =
           blankMobileStart ||
           badPhoneScrollOwner ||
+          scrollConflict ||
           badTabletShell ||
           badDisplayState ||
           result.overflow ||
@@ -463,6 +549,8 @@ async function run() {
           badTabletShell,
           badDisplayState,
           badSmallTargets,
+          scrollConflict,
+          scrollConflictTabs,
           failed,
         });
       }
@@ -479,6 +567,7 @@ async function run() {
     const flags = [
       result.blankMobileStart ? "blank mobile start" : "",
       result.badPhoneScrollOwner ? `phone scroll owner ${result.scrollOwner || "unset"}` : "",
+      result.scrollConflict ? `scroll conflict ${result.scrollConflictTabs.join(", ")}` : "",
       result.badTabletShell ? `tablet shell ${result.shellSize || "unset"}` : "",
       result.badDisplayState ? "bad display/device state" : "",
       result.overflow ? `overflow ${result.scrollWidth}>${result.viewportWidth}` : "",
@@ -489,9 +578,9 @@ async function run() {
     ].filter(Boolean);
     console.log(
       `${result.failed ? "FAIL" : "OK"} ${result.role} ${result.viewport} ` +
-        `${result.screenSize}/${result.orientation} shell=${result.shellSize}/${result.shellOrientation}` +
-        ` device=${result.device || "unset"} display=${result.displayMode || "unset"}` +
-        `${flags.length ? ` - ${flags.join(", ")}` : ""}`,
+      `${result.screenSize}/${result.orientation} shell=${result.shellSize}/${result.shellOrientation}` +
+      ` device=${result.device || "unset"} display=${result.displayMode || "unset"}` +
+      `${flags.length ? ` - ${flags.join(", ")}` : ""}`,
     );
     if (result.screenshot) console.log(`  screenshot: ${result.screenshot}`);
   });

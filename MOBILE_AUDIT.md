@@ -196,7 +196,7 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-011 - Explicit scroll ownership model
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
 - Files: `css/responsive.css`, `css/script.css`, `css/components.css`, `css/callsheet.css`, `css/wristband.css`, `js/app-shell.js`
 - Work:
@@ -211,9 +211,9 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Add shell classes or attributes for active scroll mode.
     - `app-shell.js` yields `scrollOwner` to `"layer"` while `body.app-layer-locked` is set.
     - `dom-helpers.js` `lockBodyForLayer()`/`unlockBodyForLayer()` set and restore `scrollOwner`.
-  - `[~]` Remove competing page/body/internal scroll rules where they fight.
+  - `[x]` Remove competing page/body/internal scroll rules where they fight.
     - `#mainApp` and panels are `overflow: visible` on phone; document owns vertical scroll.
-    - Still auditing per-module mobile panels for redundant `overflow-y: auto` owners.
+    - Browser scroll-ancestry probe confirms a single vertical owner per phone tab (Playbook, Script, Wristband, Call Sheet, Tendencies, Game Plan, Dashboard); no panel-level container competes with document scroll.
 - Acceptance:
   - No page has two vertical scroll owners in the same mode.
   - Bottom content is not hidden behind player nav or coach dock.
@@ -222,7 +222,7 @@ The attached implementation brief is now mapped into this checklist as:
   - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots` (12/12 OK).
   - `node scripts/smoke-check.js` adds `checkScrollOwnershipContract` → `scroll ownership contract ok`.
   - Targeted Script phone probe verified `scrollOwner="document"` at 390x844.
-  - Still needs browser scroll ancestry probe for Script, Call Sheet, Wristband, and Playbook.
+  - `mobile-viewport-check.mjs` now runs a per-tab scroll-ancestry probe on phone roles (`probeTabsScrollOwnership`) that flags any tab where the document scrolls while an unapproved panel-level container also owns vertical scroll (`scrollConflict` gate). Full matrix reports zero conflicts across Playbook, Script, Wristband, Call Sheet, Tendencies, Game Plan, and Dashboard.
 
 ### M-012 - Shared layer/body lock utility
 
@@ -860,7 +860,7 @@ These are not all mobile-audit items, but they keep full `node scripts/smoke-che
 - `[x]` M-006 - Editor form-field sanitizer regression: `sanitizeHTML()` no longer strips `input`/`select`/`textarea`, so the play editor and other `setInnerHTML()` panels render their fields and accept typing again.
 - `[x]` M-007 - Sticky toolbars float/overlap fix: script + dashboard sub-toolbars now pin to the measured `--app-header-height` + `--app-tabs-height` instead of hardcoded pixel offsets.
 - `[x]` M-010 partial - Responsive state contract: canonical `shell-*` classes/data states, display-mode/device/orientation/presentation datasets, and mobile no-playbook startup open the app shell.
-- `[x]` M-011 partial - Scroll ownership: mobile shells report document scroll ownership and the viewport harness checks phone roles.
+- `[x]` M-011 - Scroll ownership: mobile shells report document scroll ownership; the viewport harness checks phone roles and runs a per-tab scroll-ancestry probe confirming a single vertical owner per page.
 - `[x]` M-012 partial - Shared layer/body lock: `openLayer()` / `closeLayer()` freeze and restore body scroll, suppress background touchmove, add safe-area hooks, trap and return focus, and now wrap Play Presentation plus the Call Sheet display panel, Call Sheet game plan drawer, Wristband cell popup, Script tools drawer, and command palette.
 - `[x]` M-031 - Practice Script touch reordering fallback: per-row `↕` move menu and period `▲`/`▼` buttons give a complete drag-free, keyboard-accessible reorder path.
 - `[x]` M-013 partial - Touch-target guardrail: shared controls and phone viewport checks catch undersized standalone targets.
