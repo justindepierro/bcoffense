@@ -1874,6 +1874,44 @@ function checkServiceWorkerLifecycle() {
   console.log("service worker lifecycle preserves active work");
 }
 
+function checkScrollOwnershipContract() {
+  const shell = read("js/app-shell.js");
+  const domHelpers = read("js/dom-helpers.js");
+  const components = read("css/components.css");
+
+  // Single source of truth: app-shell decides document vs panel ownership and
+  // yields to the layer when a blocking overlay is locked.
+  if (!/body\.dataset\.scrollOwner\s*=/.test(shell)) {
+    fail("app-shell.js does not assign body.dataset.scrollOwner");
+  }
+  if (
+    !/app-layer-locked[\s\S]{0,120}?"layer"/.test(shell) &&
+    !/"layer"[\s\S]{0,120}?app-layer-locked/.test(shell)
+  ) {
+    fail("app-shell.js scroll owner does not defer to an active blocking layer");
+  }
+  if (!/"document"/.test(shell) || !/"panel"/.test(shell)) {
+    fail("app-shell.js scroll owner is missing the document/panel modes");
+  }
+
+  // The body lock utility must own the scroll attribute and restore it so the
+  // contract has no stale "layer" owner after a modal closes.
+  if (!/dataset\.scrollOwner\s*=\s*"layer"/.test(domHelpers)) {
+    fail("dom-helpers lockBodyForLayer does not set scrollOwner to layer");
+  }
+  if (!/scrollOwner/.test(domHelpers) || !/unlockBodyForLayer/.test(domHelpers)) {
+    fail("dom-helpers does not restore scrollOwner on layer unlock");
+  }
+
+  // Locked body must actually stop document scroll.
+  const lockRule = components.match(/body\.app-layer-locked\s*\{[\s\S]*?\}/)?.[0] || "";
+  if (!/overflow:\s*hidden/.test(lockRule) || !/position:\s*fixed/.test(lockRule)) {
+    fail("body.app-layer-locked does not freeze document scroll");
+  }
+
+  console.log("scroll ownership contract ok");
+}
+
 function checkServiceWorkerCachePolicy() {
   const source = extractFunctionSource(read("sw.js"), "isCacheableResponse");
   if (!source) {
@@ -2155,6 +2193,7 @@ checkSevenOnSevenTemplate();
 checkCacheBusters();
 checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();
+checkScrollOwnershipContract();
 checkTopLevelSymbolOwnership();
 checkWristbandConstantUsage();
 checkScriptPacketPrintContracts();

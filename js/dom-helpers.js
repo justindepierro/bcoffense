@@ -146,6 +146,7 @@ function lockBodyForLayer() {
     scrollY: window.scrollY || 0,
     bodyTop: document.body.style.top,
     bodyLeft: document.body.style.left,
+    scrollOwner: document.body.dataset.scrollOwner || "",
   };
   document.documentElement.style.setProperty(
     "--app-layer-scroll-y",
@@ -154,6 +155,9 @@ function lockBodyForLayer() {
   document.body.style.top = `-${appLayerBodyLockState.scrollY}px`;
   document.body.style.left = `-${appLayerBodyLockState.scrollX}px`;
   document.body.classList.add("app-layer-locked");
+  // While a blocking layer is open the layer owns scroll, not the document or
+  // workbench panel. Record it so the scroll-ownership contract has one truth.
+  document.body.dataset.scrollOwner = "layer";
   appLayerTouchMoveHandler = preventBackgroundLayerTouch;
   document.addEventListener("touchmove", appLayerTouchMoveHandler, {
     passive: false,
@@ -162,11 +166,13 @@ function lockBodyForLayer() {
 
 function unlockBodyForLayer() {
   if (!appLayerBodyLockState || activeAppLayers.size > 0) return;
-  const { scrollX, scrollY, bodyTop, bodyLeft } = appLayerBodyLockState;
+  const { scrollX, scrollY, bodyTop, bodyLeft, scrollOwner } = appLayerBodyLockState;
   appLayerBodyLockState = null;
   document.body.classList.remove("app-layer-locked");
   document.body.style.top = bodyTop;
   document.body.style.left = bodyLeft;
+  if (scrollOwner) document.body.dataset.scrollOwner = scrollOwner;
+  else delete document.body.dataset.scrollOwner;
   document.documentElement.style.removeProperty("--app-layer-scroll-y");
   if (appLayerTouchMoveHandler) {
     document.removeEventListener("touchmove", appLayerTouchMoveHandler);

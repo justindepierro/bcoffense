@@ -325,7 +325,11 @@ function syncMobileShellState() {
   body.dataset.shellShort = isShort ? "true" : "false";
   body.dataset.shellOrientation = isLandscape ? "landscape" : "portrait";
   body.dataset.shellPointer = isTouch ? "coarse" : "fine";
-  body.dataset.scrollOwner = isMobile ? "document" : "panel";
+  body.dataset.scrollOwner = body.classList.contains("app-layer-locked")
+    ? "layer"
+    : isMobile
+      ? "document"
+      : "panel";
   const isStaffPhoneScript =
     shellPhone &&
     isMobile &&

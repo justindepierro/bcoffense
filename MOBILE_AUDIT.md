@@ -203,22 +203,26 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` Expose active scroll ownership on `body.dataset.scrollOwner`.
   - `[x]` Set mobile shells to document/body vertical scroll and desktop shells to panel/workbench scroll.
   - `[x]` Add viewport harness assertion that phone roles report `scrollOwner="document"`.
-  - `[~]` Define scroll ownership per shell mode:
+  - `[x]` Define scroll ownership per shell mode:
     - Phone normal pages: document/body owns vertical scroll.
     - Desktop workbench pages: panel/workbench owns scroll.
-    - Blocking modal/drawer: layer owns scroll; body locked.
+    - Blocking modal/drawer: layer owns scroll; body locked (`scrollOwner="layer"`).
     - Tables: horizontal scroll only inside approved wrappers.
-  - `[~]` Add shell classes or attributes for active scroll mode.
-  - `[ ]` Remove competing page/body/internal scroll rules where they fight.
+  - `[x]` Add shell classes or attributes for active scroll mode.
+    - `app-shell.js` yields `scrollOwner` to `"layer"` while `body.app-layer-locked` is set.
+    - `dom-helpers.js` `lockBodyForLayer()`/`unlockBodyForLayer()` set and restore `scrollOwner`.
+  - `[~]` Remove competing page/body/internal scroll rules where they fight.
+    - `#mainApp` and panels are `overflow: visible` on phone; document owns vertical scroll.
+    - Still auditing per-module mobile panels for redundant `overflow-y: auto` owners.
 - Acceptance:
   - No page has two vertical scroll owners in the same mode.
   - Bottom content is not hidden behind player nav or coach dock.
   - Orientation change does not strand content out of reach.
 - Verification:
-  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots`
+  - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots` (12/12 OK).
+  - `node scripts/smoke-check.js` adds `checkScrollOwnershipContract` → `scroll ownership contract ok`.
   - Targeted Script phone probe verified `scrollOwner="document"` at 390x844.
   - Still needs browser scroll ancestry probe for Script, Call Sheet, Wristband, and Playbook.
-  - Still needs static smoke contract for approved scroll owners.
 
 ### M-012 - Shared layer/body lock utility
 
