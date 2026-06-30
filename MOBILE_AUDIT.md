@@ -789,12 +789,15 @@ The attached implementation brief is now mapped into this checklist as:
   - `[ ]` Focused input remains inside `visualViewport` after keyboard resize.
   - `[x]` Opening a blocking layer prevents background scrolling.
   - `[x]` Closing a layer restores scroll and focus.
-  - `[ ]` Orientation change preserves active page and selected record/play.
-  - `[ ]` No critical action is hidden solely because width is small.
+  - `[x]` Orientation change preserves active page and selected record/play.
+  - `[~]` No critical action is hidden solely because width is small.
   - `[ ]` Text at 200% zoom remains readable and controls remain operable.
-  - `[~]` Player cannot see staff controls; coach/admin can reach promised mobile capabilities.
+  - `[x]` Player cannot see staff controls; coach/admin can reach promised mobile capabilities.
 - Verification:
   - `mobile-viewport-check.mjs` `probeLayerScrollLock` drives the shipped `openLayer`/`closeLayer` machinery with a synthetic blocking overlay on phone roles: asserts `scrollOwner="layer"`, `body.app-layer-locked` (position fixed), background scroll is pinned while locked, then scroll position and focus are restored on close (`layerLockBroken` gate). Full matrix passes 12/12.
+  - `probeRoleRestrictions` reads `body.dataset.authRole`, then confirms no forbidden control (`[data-auth-admin-only]`, `[data-auth-edit-only]`, `[data-auth-player-hide]`) leaks visibly for the role and every promised tab in `AUTH_ROLE_TABS` is reachable (`roleRestrictionBroken` gate). This also backs the "no critical action hidden at small width" assertion for tabs + staff controls; the full critical-action set stays `[~]` pending the M-020 capability matrix.
+  - `probeOrientationPersistence` selects an available content tab (and a script selection when present), swaps the viewport width/height to rotate, then asserts the active panel and selection survive the rotation before restoring the viewport (`orientationBroken` gate).
+  - `visualViewport` keyboard occlusion and 200% browser text zoom remain `[ ]`: headless Chromium cannot emulate a soft keyboard / independent `visualViewport` resize or true browser text zoom, so these are deferred to manual/visual QA (M-021).
 
 ### M-052 - Expanded role/page/mobile regression matrix
 

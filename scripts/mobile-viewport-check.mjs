@@ -513,6 +513,127 @@ async function probeLayerScrollLock(page) {
   });
 }
 
+// Role restriction probe (M-051): players must not see staff-only controls and
+// each role must be able to reach its promised tabs. Auth hides forbidden
+// controls document-wide via hidden/authHidden, so a forbidden control that is
+// not hidden is a real leak regardless of which panel is active.
+async function probeRoleRestrictions(page) {
+  return page.evaluate(() => {
+    const role = document.body && document.body.dataset.authRole ? document.body.dataset.authRole : "";
+    const ROLE_TABS = {
+      admin: ["playbook", "script", "wristband", "tendencies", "gameplan", "callsheet", "installation", "identity", "offensebuilder", "dashboard"],
+      coach: ["playbook", "script", "wristband", "tendencies", "gameplan", "callsheet", "installation", "identity", "offensebuilder", "dashboard"],
+      player: ["dashboard", "playbook", "script"],
+    };
+    // Controls each role must never see.
+    const FORBIDDEN = {
+      player: "[data-auth-player-hide], [data-auth-admin-only='true'], [data-auth-edit-only]",
+      coach: "[data-auth-admin-only='true']",
+      admin: "",
+    };
+    if (!ROLE_TABS[role]) return { supported: false, role };
+
+    const describe = (el) =>
+      el.id
+        ? `#${el.id}`
+        : `${el.tagName.toLowerCase()}${el.dataset && el.dataset.action ? `[${el.dataset.action}]` : ""}`;
+    const notRoleHidden = (el) => {
+      if (el.hidden || (el.dataset && el.dataset.authHidden === "true")) return false;
+      if (el.getAttribute("aria-hidden") === "true") return false;
+      const cs = getComputedStyle(el);
+      return cs.display !== "none" && cs.visibility !== "hidden";
+    };
+
+    const sel = FORBIDDEN[role] || "";
+    const leaked = sel
+      ? [...document.querySelectorAll(sel)].filter(notRoleHidden).map(describe).slice(0, 10)
+      : [];
+
+    const missingTabs = (ROLE_TABS[role] || []).filter((t) => {
+      const btn = document.querySelector(`[data-action="showTab"][data-arg="${t}"]`);
+      return !btn || !notRoleHidden(btn);
+    });
+
+    return { supported: true, role, leaked, missingTabs, ok: leaked.length === 0 && missingTabs.length === 0 };
+  });
+}
+
+// Orientation persistence probe (M-051): rotating the device must keep the
+// active page and any selected record/play. Switch to a content tab, set a
+// selection where possible, swap width/height, then confirm both survive.
+async function probeOrientationPersistence(page) {
+  const setup = await page.evaluate(() => {
+    const TABS = ["script", "playbook", "wristband", "callsheet"];
+    let chosen = "";
+    for (const t of TABS) {
+      const btn = document.querySelector(`[data-action="showTab"][data-arg="${t}"]`);
+      if (btn && !btn.hidden && btn.offsetParent !== null) {
+        chosen = t;
+        break;
+      }
+    }
+    if (!chosen || typeof window.showTab !== "function") return { supported: false };
+    try {
+      window.showTab(chosen);
+    } catch (_e) {
+      return { supported: false };
+    }
+    const panel = document.querySelector("#mainApp .panel.active");
+    const panelId = panel ? panel.id : "";
+
+    // Selection: only use known, side-effect-free selection checkboxes on the
+    // script tab (available/script play selectors).
+    let selectionApplied = false;
+    let selScope = "";
+    if (chosen === "script") {
+      const scope = document.querySelector("#availablePlays") || document.querySelector("#scriptPlays");
+      if (scope) {
+        const boxes = [...scope.querySelectorAll("input[type=checkbox]")].filter((b) => b.offsetParent !== null);
+        if (boxes.length) {
+          const b = boxes[0];
+          if (!b.checked) b.click();
+          selectionApplied = b.checked;
+          selScope = scope.id;
+        }
+      }
+    }
+    return { supported: true, chosen, panelId, selectionApplied, selScope };
+  });
+
+  if (!setup.supported) return { supported: false };
+
+  const vp = page.viewportSize();
+  await page.setViewportSize({ width: vp.height, height: vp.width });
+  await page.waitForTimeout(320);
+
+  const after = await page.evaluate((s) => {
+    const panel = document.querySelector("#mainApp .panel.active");
+    const panelId = panel ? panel.id : "";
+    let selectionPreserved = true;
+    if (s.selectionApplied) {
+      const scope = s.selScope ? document.getElementById(s.selScope) : null;
+      const b = scope ? scope.querySelector("input[type=checkbox]") : null;
+      selectionPreserved = Boolean(b && b.checked);
+    }
+    return { panelId, selectionPreserved };
+  }, setup);
+
+  await page.setViewportSize(vp);
+  await page.waitForTimeout(120);
+
+  const pagePreserved = Boolean(setup.panelId) && after.panelId === setup.panelId;
+  return {
+    supported: true,
+    tab: setup.chosen,
+    panelBefore: setup.panelId,
+    panelAfter: after.panelId,
+    selectionApplied: setup.selectionApplied,
+    selectionPreserved: after.selectionPreserved,
+    pagePreserved,
+    ok: pagePreserved && after.selectionPreserved,
+  };
+}
+
 async function run() {
   const args = parseArgs(process.argv.slice(2));
   const { chromium } = await findPlaywright();
@@ -562,6 +683,14 @@ async function run() {
           inspection.screenSize === "phone"
             ? await probeLayerScrollLock(page)
             : null;
+        const roleRestriction =
+          inspection.screenSize === "phone" && role
+            ? await probeRoleRestrictions(page)
+            : null;
+        const orientation =
+          inspection.screenSize === "phone" && role
+            ? await probeOrientationPersistence(page)
+            : null;
 
         const screenshotName = `${slug(role)}-${viewportName}.png`;
         const screenshotPath = path.join(args.outputDir, screenshotName);
@@ -579,6 +708,8 @@ async function run() {
           ...inspection,
           scrollTabs,
           layerLock,
+          roleRestriction,
+          orientationProbe: orientation,
         };
         const blankMobileStart =
           result.screenSize === "phone" &&
@@ -605,6 +736,21 @@ async function run() {
           result.layerLock &&
           result.layerLock.supported === true &&
           (!result.layerLock.lockOk || !result.layerLock.restoreOk);
+        // M-051: players must not see staff controls; every role must reach its
+        // promised tabs.
+        const roleRestrictionBroken =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          result.roleRestriction &&
+          result.roleRestriction.supported === true &&
+          result.roleRestriction.ok === false;
+        // M-051: orientation change must preserve the active page and selection.
+        const orientationBroken =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          result.orientationProbe &&
+          result.orientationProbe.supported === true &&
+          result.orientationProbe.ok === false;
         const badTabletShell =
           IPAD_VIEWPORTS.includes(result.viewport) &&
           Boolean(result.role) &&
@@ -627,6 +773,8 @@ async function run() {
           badPhoneScrollOwner ||
           scrollConflict ||
           layerLockBroken ||
+          roleRestrictionBroken ||
+          orientationBroken ||
           badTabletShell ||
           badDisplayState ||
           result.overflow ||
@@ -645,6 +793,8 @@ async function run() {
           scrollConflict,
           scrollConflictTabs,
           layerLockBroken,
+          roleRestrictionBroken,
+          orientationBroken,
           failed,
         });
       }
@@ -664,6 +814,12 @@ async function run() {
       result.scrollConflict ? `scroll conflict ${result.scrollConflictTabs.join(", ")}` : "",
       result.layerLockBroken
         ? `layer lock ${result.layerLock && result.layerLock.lockOk ? "ok" : "fail"}/restore ${result.layerLock && result.layerLock.restoreOk ? "ok" : "fail"}`
+        : "",
+      result.roleRestrictionBroken
+        ? `role leak ${(result.roleRestriction.leaked || []).join("|") || "tabs:" + (result.roleRestriction.missingTabs || []).join("|")}`
+        : "",
+      result.orientationBroken
+        ? `orientation ${result.orientationProbe.pagePreserved ? "page-ok" : "page-lost"}/${result.orientationProbe.selectionPreserved ? "sel-ok" : "sel-lost"}`
         : "",
       result.badTabletShell ? `tablet shell ${result.shellSize || "unset"}` : "",
       result.badDisplayState ? "bad display/device state" : "",
