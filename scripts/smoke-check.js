@@ -1501,6 +1501,62 @@ function checkCallSheetMobileContracts() {
   console.log("call sheet mobile contracts ok");
 }
 
+function checkMobileCapabilityMatrix() {
+  // M-020: every critical phone control promised by the mobile capability matrix
+  // must exist. Role hiding is device-independent and out of scope here; this
+  // guards the phone-only (width / run-mode) replacements so staff phone stays a
+  // distinct run product instead of desktop-with-controls-hidden.
+  const html = read("index.html");
+  const appShell = read("js/app-shell.js");
+  const responsiveCss = read("css/responsive.css");
+
+  // Header overflow replacement for hidden secondary actions.
+  if (
+    !/class="tool-menu-wrap header-overflow"/.test(html) ||
+    !/class="header-action-secondary/.test(html) ||
+    !/\.header-action-secondary\s*\{[^}]*display:\s*none/.test(responsiveCss) ||
+    !/\.header-overflow\s*\{[^}]*display:\s*inline-flex/.test(responsiveCss)
+  ) {
+    fail("phone header overflow replacement for secondary actions is incomplete");
+  }
+
+  // Coach run-mode card: current call + navigation + score + jump + edit toggle.
+  if (
+    !/id="mobileScriptCoachNow"/.test(html) ||
+    !/id="mobileScriptCoachCall"/.test(html) ||
+    !/id="mobileScriptCoachPeriodJump"/.test(html) ||
+    !/class="mobile-script-coach-now__score"/.test(html) ||
+    !/id="mobileScriptEditToggle"[^>]*data-action="toggleMobileScriptEditMode"/.test(
+      html,
+    )
+  ) {
+    fail("coach phone run-mode card controls promised by the matrix are missing");
+  }
+
+  // Edit Sheet toggle must restore the full builder (run mode is reversible).
+  if (
+    !/function toggleMobileScriptEditMode\(\)/.test(appShell) ||
+    !/body\.classList\.toggle\("mobile-script-editing"/.test(appShell) ||
+    !/:not\(\.mobile-script-editing\)/.test(responsiveCss)
+  ) {
+    fail("phone run mode is not reversible via the Edit Sheet toggle");
+  }
+
+  // Always-on mobile coach dock for staff navigation between run surfaces.
+  if (
+    !/data-coach-tab="script"/.test(html) ||
+    !/data-coach-tab="callsheet"/.test(html) ||
+    !/data-coach-tab="wristband"/.test(html) ||
+    !/data-coach-tab="gameplan"/.test(html) ||
+    !/data-coach-tab="dashboard"/.test(html) ||
+    !/id="mobileCoachLockToggle"/.test(html)
+  ) {
+    fail("mobile coach dock promised by the matrix is incomplete");
+  }
+
+  console.log("mobile capability matrix contracts ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2187,6 +2243,7 @@ checkScriptPlayerPublishingContracts();
 checkPlayReadinessContracts();
 checkPlayerPortalContracts();
 checkCallSheetMobileContracts();
+checkMobileCapabilityMatrix();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

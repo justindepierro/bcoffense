@@ -311,22 +311,77 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-020 - Mobile capability matrix
 
-- Status: `[ ]`
+- Status: `[x]`
 - Priority: P1
-- Files: `MOBILE_AUDIT.md`, then code files per matrix result
+- Files: `MOBILE_AUDIT.md`, `scripts/smoke-check.js`
 - Work:
-  - Define which capabilities belong to each mobile role:
+  - `[x]` Define which capabilities belong to each mobile role:
     - Player phone: consume, navigate, study.
     - Coach phone: run practice, reorder lightly, score reps, add quick notes, publish.
     - Admin phone: emergency settings/account tasks.
     - Tablet staff: near-full editing.
-  - Audit all mobile-hidden controls against this matrix.
+  - `[x]` Audit all mobile-hidden controls against this matrix.
 - Acceptance:
-  - Every hidden phone capability is either intentionally unavailable or has a mobile replacement.
-  - Staff phone is not just desktop with controls hidden.
+  - `[x]` Every hidden phone capability is either intentionally unavailable or has a mobile replacement.
+  - `[x]` Staff phone is not just desktop with controls hidden.
 - Verification:
-  - Matrix committed in this checklist or separate doc.
-  - Smoke check for critical controls promised by matrix.
+  - `[x]` Matrix committed below.
+  - `[x]` Smoke check (`checkMobileCapabilityMatrix`) asserts the critical phone controls promised by the matrix exist.
+
+#### Two independent hiding axes
+
+The audit found two distinct mechanisms, and the matrix rules them separately:
+
+- **Role hiding (device-independent):** `data-auth-player-hide`, `data-auth-admin-only`,
+  `data-auth-edit-only`, and `AUTH_ROLE_TABS` hide controls by role on _every_ screen
+  size, not just phones. These are **not** "hidden solely because width is small" — a
+  player never sees staff tools on desktop either. Ruling for all of these is
+  **intentionally unavailable** (read-only / role-scoped product), so they are out of
+  scope for the "no critical action hidden at small width" concern.
+- **Width / run-mode hiding (phone-only, staff):** `body.is-mobile-screen`,
+  `body.is-phone-screen.is-staff-mobile-shell`, and the `mobile-script-editing` run-mode
+  class hide controls based on viewport. This is the axis the "staff phone is not just
+  desktop with controls hidden" criterion governs.
+
+#### Role capability sets (phone)
+
+| Role | Phone capabilities (in scope) | Out of scope on phone (use tablet/desktop) |
+| --- | --- | --- |
+| Player | Consume, navigate, study: dashboard home card, read-only playbook + Situations/Touches reports, published-script run view, landscape presentation | All editing, analytics management, wristband/call sheet/tendencies/identity/offense-builder editing |
+| Coach | Run practice: current call, prev/next, jump period, score reps (1–5), quick rep log, present, light edit via Edit Sheet, publish/lock | Bulk script building, timeline reorder, deep playbook data management |
+| Admin | Coach set + emergency account/settings access (Import/Export tab) | Bulk building (same as coach) |
+| Staff tablet | Near-full editing (two-pane Script restored, full toolbars) | — |
+
+#### Ruling matrix (phone-only hiding)
+
+| Surface hidden on staff phone | Mechanism | Replacement on phone | Ruling |
+| --- | --- | --- | --- |
+| Header secondary actions (Search, Print, Vision, Import/Export) | CSS `.header-action-secondary { display:none }` | `.header-overflow` (`⋯`) menu (`#headerOverflowAccount`, Log Out, dupes) | Replaced |
+| Save-status indicator | CSS `.save-status { display:none }` | Autosave still runs; status is non-critical | Intentional |
+| Script header panel (title/date/workbench) | Run-mode `display:none !important` | `#mobileScriptCoachNow` card (title/date/current call) | Replaced |
+| Period buttons (add/insert/template) | Run-mode `display:none !important` | `#mobileScriptCoachPeriodJump` dropdown in coach card | Replaced |
+| Per-row rep/readiness widgets | Run-mode `display:none !important` | `.mobile-script-coach-now__score` quick-score (1–5) | Replaced |
+| Current play call + navigation | n/a (new view) | `#mobileScriptCoachCall` + Prev/Current/Next/Log Rep/Present | Provided |
+| Library pane, toolbar, timeline, tools drawer, row edit fields, drag handles | Run-mode `display:none !important` | **Edit Sheet** toggle (`#mobileScriptEditToggle` → `toggleMobileScriptEditMode`) restores the full builder; bulk building is tablet/desktop-first by design | Intentional (restorable) |
+| Mobile coach dock (Script/Call Sheet/Wristband/Game Plan/Dashboard) | n/a (new chrome) | `data-coach-tab` dock always visible for staff; `#mobileCoachLockToggle` for review lock | Provided |
+
+#### Identified gap (carried forward)
+
+- **Coach phone "publish/lock status"** — the coach phone capability set promises
+  publish, but run mode currently exposes no publish/lock control. Tracked as the open
+  `[ ]` item in **M-030** (publish/lock status). This is the only capability in a phone
+  role's in-scope set that lacks a phone surface; everything else is replaced or
+  intentionally tablet/desktop-only.
+
+#### Verdict
+
+Every phone-hidden surface is either (a) role-hidden on all devices (intentional,
+out of scope for width), (b) replaced by a purpose-built phone surface (overflow menu,
+coach card, dock), or (c) intentionally tablet/desktop-first and restorable on staff
+phones via Edit Sheet. Staff phone is a distinct run product, not desktop-with-controls-
+hidden. The single outstanding capability gap (coach publish/lock on phone) is owned by
+M-030.
+
 
 ### M-021 - Login visual QA matrix
 
