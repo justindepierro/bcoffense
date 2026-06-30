@@ -233,6 +233,14 @@ table.sortable th {
 .pb-img-badge:focus {
   filter: drop-shadow(0 0 2px var(--color-primary));
 }
+.pb-clip-badge {
+  display: inline-block;
+  margin-right: 4px;
+  font-size: var(--font-size-xs);
+  line-height: 1;
+  vertical-align: baseline;
+  user-select: none;
+}
 
 .pb-usage {
   display: inline-flex;
@@ -368,6 +376,76 @@ table.sortable th {
   margin: var(--space-xs) 0 0;
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
+}
+
+/* Editor — video clips section */
+.pb-editor-clips-count {
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-muted);
+}
+.pb-editor-clips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+}
+.pb-editor-clips-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm);
+  border: 1px dashed var(--color-border-med);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+  text-align: center;
+}
+.pb-editor-clip {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-lighter);
+}
+.pb-editor-clip-video {
+  flex: 0 0 200px;
+  width: 200px;
+  max-height: 130px;
+  border-radius: var(--radius-sm);
+  background: #000;
+}
+.pb-editor-clip-meta {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pb-editor-clip-label {
+  font-weight: 600;
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.pb-editor-clip-sub {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+.pb-editor-clips-actions {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+@media (max-width: 540px) {
+  .pb-editor-clip {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  .pb-editor-clip-video {
+    flex-basis: auto;
+    width: 100%;
+  }
 }
 
 /* Game Plan indicators */

@@ -96,6 +96,12 @@ function renderPlaybook() {
         installBadge: typeof getPlayStarBadge === "function" ? getPlayStarBadge(play) : "",
         picturePill: picturePillFor(play),
         imageSig: imageSignatureFor(play, tagSig),
+        hasClips:
+          typeof window !== "undefined" &&
+            window.playClips &&
+            typeof window.playClips.hasForPlay === "function"
+            ? window.playClips.hasForPlay(play)
+            : false,
         usage: usageIndex ? usageIndex.get(play) : null,
         readinessBadge,
         readinessCardBadge,
@@ -127,6 +133,9 @@ function renderPlaybook() {
           imageSig
             ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
+        const clipBadge = item.hasClips
+          ? '<span class="pb-clip-badge" title="Has video clips" aria-label="Has video clips">\ud83c\udfac</span>'
+          : "";
 
         const gpToggle = activeOpponent
           ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
@@ -141,7 +150,7 @@ function renderPlaybook() {
                 title="${rowTitle}">
                 <td class="col-gameplan">${gpToggle}</td>
                 <td class="col-install">${item.installBadge}</td>
-                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
+                <td class="col-type col-type--${(play.type || '').toLowerCase().replace(/\s+/g, '-').replace(/[^a-z-]/g, '')}">${wbIndicator}${jvBadge}${wbFlagBadge}${imgBadge}${clipBadge}<span class="play-type-chip">${highlight(play.type)}</span></td>
                 <td class="col-formation">${highlight(play.formation)}</td>
                 <td class="col-tags">${escapeHtml([play.formTag1, play.formTag2].filter(Boolean).join(", ") || "-")}</td>
                 <td class="col-back">${highlight(play.back || "-")}</td>
@@ -179,6 +188,9 @@ function renderPlaybook() {
           imageSig
             ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
+        const cardClipBadge = item.hasClips
+          ? '<span class="pb-clip-badge" title="Has video clips" aria-label="Has video clips">\ud83c\udfac</span>'
+          : "";
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
@@ -190,7 +202,7 @@ function renderPlaybook() {
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
-            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
+            <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
             ${item.readinessCardBadge}

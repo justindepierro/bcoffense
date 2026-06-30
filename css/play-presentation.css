@@ -1266,6 +1266,26 @@ body.play-presentation-open {
   font-size: var(--font-size-sm);
 }
 
+/* Detail panel — video clips */
+.pp-detail-clips-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+}
+.pp-detail-clip {
+  margin: 0;
+}
+.pp-detail-clip-video {
+  width: 100%;
+  border-radius: var(--radius-sm);
+  background: #000;
+}
+.pp-detail-clip-caption {
+  margin-top: 4px;
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+}
+
 @media (orientation: portrait) {
   .pp-detail-panel {
     top: auto;

@@ -310,6 +310,47 @@ function renderPlayPresentationDetailPanel() {
   if (!body) return;
   const item = playPresentationState.items[playPresentationState.index];
   setInnerHTML(body, getPlayPresentationDetailPanelMarkup(item));
+  loadPlayPresentationDetailClips(item, body);
+}
+
+// Asynchronously fetch and prepend any cloud video clips for the current play.
+// Uses a stale token so navigating away mid-fetch never injects the wrong clips.
+// Built with direct innerHTML (not setInnerHTML) so <video controls> survives.
+async function loadPlayPresentationDetailClips(item, body) {
+  if (!body || !item || !item.play) return;
+  if (typeof window.playClips === "undefined") return;
+  const play = item.play;
+  const sig = window.playClips.sigForPlay(play);
+  if (!sig) return;
+  const token = `${sig}#${playPresentationState.index}`;
+  body.dataset.ppClipToken = token;
+  let clips = [];
+  try {
+    clips = await window.playClips.list(play);
+  } catch (_err) {
+    return;
+  }
+  if (body.dataset.ppClipToken !== token) return;
+  if (!Array.isArray(clips) || !clips.length) return;
+
+  const section = document.createElement("section");
+  section.className = "pp-coach-section pp-detail-clips";
+  section.setAttribute("aria-label", "Video clips");
+  const clipMarkup = clips
+    .map((clip) => {
+      const url = window.playClips.fileUrl(play, clip.id);
+      return `<figure class="pp-detail-clip">
+        <video class="pp-detail-clip-video" controls preload="metadata" playsinline src="${escapeHtml(url)}"></video>
+        ${clip.label ? `<figcaption class="pp-detail-clip-caption">${escapeHtml(clip.label)}</figcaption>` : ""}
+      </figure>`;
+    })
+    .join("");
+  section.innerHTML = `<div class="pp-coach-section-head">
+      <h3>🎬 Video Clips</h3>
+      <span>${clips.length} clip${clips.length === 1 ? "" : "s"}</span>
+    </div>
+    <div class="pp-detail-clips-list">${clipMarkup}</div>`;
+  body.insertBefore(section, body.firstChild);
 }
 
 function updatePlayPresentationDetailButton() {

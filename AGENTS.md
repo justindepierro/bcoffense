@@ -53,6 +53,7 @@ js/
   play-images.js        ← IndexedDB play-image storage and backup image import/export
   cloud-sync.js         ← Cloudflare-backed complete backup push/pull sync
   auth.js               ← Simple local login and role-based UI restrictions
+  play-clips.js         ← Remote play video clips (R2-backed) client API
   vision.js             ← Vision mode UI state
   team-settings.js      ← Team identity, roster, packages, depth chart runtime
   playbook.js           ← Shared playbook helpers and compatibility surface
@@ -152,108 +153,109 @@ All scripts use `defer` and load in this exact order from index.html:
 7.   js/play-images.js            ← IndexedDB play-image storage and backup image import/export
 8.   js/cloud-sync.js             ← Cloudflare-backed complete backup push/pull sync
 9.   js/auth.js                   ← Simple local login and role-based UI restrictions
-10.  js/vision.js
-11.  js/team-settings.js
-12.  js/playbook.js
-13.  js/playbook-collections.js
-14.  js/playbook-print.js
-15.  js/playbook-editor.js
-16.  js/playbook-import.js
-17.  js/playbook-export.js
-18.  js/playbook-chrome.js
-19.  js/playbook-reports.js       ← Balance + Situation + Touch report engines
-20.  js/playbook-reports-identity.js ← Constraint Map + Identity Alignment engines
-21.  js/playbook-state.js
-22.  js/playbook-filters.js
-23.  js/playbook-navigation.js
-24.  js/playbook-actions.js
-25.  js/playbook-render.js
-26.  js/playbook-sanitize.js
-27.  js/playbook-analytics.js     ← Data health analysis engine
-28.  js/playbook-analytics-render.js ← Data health report rendering
-29.  js/playbook-identity.js
-30.  js/script-state.js
-31.  js/script-shared.js
-32.  js/script-players.js
-33.  js/script-display-options.js
-34.  js/play-readiness.js
-35.  js/script-add.js
-36.  js/script-sort.js
-37.  js/script-export.js
-38.  js/script-available.js
-39.  js/script-selection.js
-40.  js/script-timeline.js
-41.  js/script-render.js
-42.  js/script-health.js
-43.  js/script-periods.js
-44.  js/script-period-sync.js
-45.  js/script-smart.js
-46.  js/script-storage.js
-47.  js/script-player.js          ← Saved-script / player-facing script functions
-48.  js/script-integrations.js
-49.  js/play-presentation.js
-50.  js/wristband.js
-51.  js/wristband-library.js
-52.  js/wristband-render.js
-53.  js/wristband-cards.js
-54.  js/wristband-export.js
-55.  js/wristband-chrome.js       ← Mode management + player card UI
-56.  js/wristband-logo.js         ← Logo card feature
-57.  js/wristband-search.js
-58.  js/wristband-modals.js
-59.  js/wristband-cell-popup.js
-60.  js/wristband-cell-actions.js
-61.  js/wristband-sort.js
-62.  js/wristband-storage.js
-63.  js/wristband-runtime.js
-64.  js/callsheet-render.js
-65.  js/callsheet.js
-66.  js/callsheet-print.js
-67.  js/callsheet-sort.js
-68.  js/callsheet-filters.js
-69.  js/callsheet-smart.js
-70.  js/callsheet-export.js
-71.  js/callsheet-display.js
-72.  js/callsheet-categories.js
-73.  js/callsheet-metadata.js
-74.  js/callsheet-layout.js
-75.  js/callsheet-templates.js
-76.  js/callsheet-picker-runtime.js
-77.  js/callsheet-gameplan-drawer.js
-78.  js/constraints.js            ← Constraint engine; depends on callsheet.js globals
-79.  js/constraints-ui.js         ← Constraint panel UI, touch analysis, snapshot
-80.  js/script-vision.js
-81.  js/tendencies-render.js
-82.  js/tendencies.js
-83.  js/tendencies-print.js       ← Print/export/import for tendencies
-84.  js/installation-render.js
-85.  js/installation.js
-86.  js/installation-print.js     ← Smart install report print
-87.  js/identity.js
-88.  js/offensebuilder.js
-89.  js/help.js
-90.  js/dashboard-render.js       ← Dashboard render helpers (before dashboard.js)
-91.  js/dashboard.js
-92.  js/gameplan.js               ← Must load before all gameplan-* split files
-93.  js/gameplan-render.js
-94.  js/gameplan-dnd.js
-95.  js/gameplan-actions.js
-96.  js/gameplan-smart.js
-97.  js/gameplan-health.js        ← Health/spotlight/coverage analysis
-98.  js/gameplan-print.js
-99.  js/gameplan-integrations.js
-100. js/gameplan-snapshots.js
-101. js/print-studio.js           ← Unified print/export hub
-102. js/script-events.js
-103. js/app-events.js
-104. js/app-command.js            ← Command palette (before app-shell.js)
-105. js/app-shell.js
-106. js/app-session.js
-107. js/app-navigation.js
-108. js/app-module-init.js
-109. js/app-bootstrap.js
-110. js/app-init.js
-111. js/app.js                    ← Must be last; shared global state only
+10.  js/play-clips.js             ← Remote play video clips (R2-backed) client API
+11.  js/vision.js
+12.  js/team-settings.js
+13.  js/playbook.js
+14.  js/playbook-collections.js
+15.  js/playbook-print.js
+16.  js/playbook-editor.js
+17.  js/playbook-import.js
+18.  js/playbook-export.js
+19.  js/playbook-chrome.js
+20.  js/playbook-reports.js       ← Balance + Situation + Touch report engines
+21.  js/playbook-reports-identity.js ← Constraint Map + Identity Alignment engines
+22.  js/playbook-state.js
+23.  js/playbook-filters.js
+24.  js/playbook-navigation.js
+25.  js/playbook-actions.js
+26.  js/playbook-render.js
+27.  js/playbook-sanitize.js
+28.  js/playbook-analytics.js     ← Data health analysis engine
+29.  js/playbook-analytics-render.js ← Data health report rendering
+30.  js/playbook-identity.js
+31.  js/script-state.js
+32.  js/script-shared.js
+33.  js/script-players.js
+34.  js/script-display-options.js
+35.  js/play-readiness.js
+36.  js/script-add.js
+37.  js/script-sort.js
+38.  js/script-export.js
+39.  js/script-available.js
+40.  js/script-selection.js
+41.  js/script-timeline.js
+42.  js/script-render.js
+43.  js/script-health.js
+44.  js/script-periods.js
+45.  js/script-period-sync.js
+46.  js/script-smart.js
+47.  js/script-storage.js
+48.  js/script-player.js          ← Saved-script / player-facing script functions
+49.  js/script-integrations.js
+50.  js/play-presentation.js
+51.  js/wristband.js
+52.  js/wristband-library.js
+53.  js/wristband-render.js
+54.  js/wristband-cards.js
+55.  js/wristband-export.js
+56.  js/wristband-chrome.js       ← Mode management + player card UI
+57.  js/wristband-logo.js         ← Logo card feature
+58.  js/wristband-search.js
+59.  js/wristband-modals.js
+60.  js/wristband-cell-popup.js
+61.  js/wristband-cell-actions.js
+62.  js/wristband-sort.js
+63.  js/wristband-storage.js
+64.  js/wristband-runtime.js
+65.  js/callsheet-render.js
+66.  js/callsheet.js
+67.  js/callsheet-print.js
+68.  js/callsheet-sort.js
+69.  js/callsheet-filters.js
+70.  js/callsheet-smart.js
+71.  js/callsheet-export.js
+72.  js/callsheet-display.js
+73.  js/callsheet-categories.js
+74.  js/callsheet-metadata.js
+75.  js/callsheet-layout.js
+76.  js/callsheet-templates.js
+77.  js/callsheet-picker-runtime.js
+78.  js/callsheet-gameplan-drawer.js
+79.  js/constraints.js            ← Constraint engine; depends on callsheet.js globals
+80.  js/constraints-ui.js         ← Constraint panel UI, touch analysis, snapshot
+81.  js/script-vision.js
+82.  js/tendencies-render.js
+83.  js/tendencies.js
+84.  js/tendencies-print.js       ← Print/export/import for tendencies
+85.  js/installation-render.js
+86.  js/installation.js
+87.  js/installation-print.js     ← Smart install report print
+88.  js/identity.js
+89.  js/offensebuilder.js
+90.  js/help.js
+91.  js/dashboard-render.js       ← Dashboard render helpers (before dashboard.js)
+92.  js/dashboard.js
+93.  js/gameplan.js               ← Must load before all gameplan-* split files
+94.  js/gameplan-render.js
+95.  js/gameplan-dnd.js
+96.  js/gameplan-actions.js
+97.  js/gameplan-smart.js
+98.  js/gameplan-health.js        ← Health/spotlight/coverage analysis
+99.  js/gameplan-print.js
+100. js/gameplan-integrations.js
+101. js/gameplan-snapshots.js
+102. js/print-studio.js           ← Unified print/export hub
+103. js/script-events.js
+104. js/app-events.js
+105. js/app-command.js            ← Command palette (before app-shell.js)
+106. js/app-shell.js
+107. js/app-session.js
+108. js/app-navigation.js
+109. js/app-module-init.js
+110. js/app-bootstrap.js
+111. js/app-init.js
+112. js/app.js                    ← Must be last; shared global state only
 ```
 
 All files share the **global scope** — there are no modules, imports, or bundling. Any function or variable declared at the top level of any file is accessible from any other file, but only after that file's script has executed. If you create a new JS file, you must add it to both `index.html` (in the correct position) and the `LOCAL_ASSETS` array in `sw.js`.

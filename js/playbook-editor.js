@@ -425,6 +425,22 @@ function _populateEditorForm(play, isNew) {
     </div>
   </div>`;
 
+  // Play video clips (Cloudflare R2-backed, player-accessible)
+  if (typeof window.playClips !== "undefined") {
+    const _peCanManageClips = window.playClips.canManage();
+    html += `<div class="pb-editor-section pb-editor-clips">
+    <div class="pb-editor-section-title">🎬 Video Clips <span class="pb-editor-clips-count" id="peClipsCount"></span></div>
+    <div class="pb-editor-clips-list" id="peClipsList">
+      <div class="pb-editor-clips-empty">Loading clips…</div>
+    </div>
+    <div class="pb-editor-clips-actions" id="peClipsActions"${_peCanManageClips ? "" : " style=\"display:none\""}>
+      <input type="file" id="peClipFile" accept="video/*" style="display:none" />
+      <button type="button" class="btn btn-sm btn-secondary" data-action="triggerClick" data-target="peClipFile">Add Clip…</button>
+      <p class="pb-editor-hint">Up to 3 short clips (~15s, max 25 MB each). Stored in the cloud so players can watch them.</p>
+    </div>
+  </div>`;
+  }
+
   _EDITOR_SECTIONS.forEach((section) => {
     html += `<div class="pb-editor-section">`;
     html += `<div class="pb-editor-section-title">${section.title}</div>`;
@@ -471,6 +487,7 @@ function _populateEditorForm(play, isNew) {
 
   // Wire up the play image controls
   _wirePlayEditorImage(play, isNew);
+  _wirePlayEditorClips(play, isNew);
 
   body.querySelectorAll("select[data-can-add-new]").forEach((sel) => {
     sel.addEventListener("change", async () => {
@@ -785,6 +802,142 @@ function _wirePlayEditorImage(play, isNew) {
       await _refreshPreview();
       showToast("Image removed", { duration: 2000 });
       requestPlaybookRefresh();
+    });
+  }
+}
+
+function _wirePlayEditorClips(play, isNew) {
+  if (typeof window.playClips === "undefined") return;
+  const listEl = document.getElementById("peClipsList");
+  if (!listEl) return;
+  const actionsEl = document.getElementById("peClipsActions");
+  const countEl = document.getElementById("peClipsCount");
+  const fileInput = document.getElementById("peClipFile");
+  const canManage = window.playClips.canManage();
+
+  if (isNew) {
+    listEl.innerHTML = `<div class="pb-editor-clips-empty">Save the play first, then re-open to add clips.</div>`;
+    if (actionsEl) actionsEl.style.display = "none";
+    return;
+  }
+
+  const sig = window.playClips.sigForPlay(play);
+  if (!sig) {
+    listEl.innerHTML = `<div class="pb-editor-clips-empty">This play has no stable signature for clips.</div>`;
+    if (actionsEl) actionsEl.style.display = "none";
+    return;
+  }
+
+  const trigger = actionsEl
+    ? actionsEl.querySelector('button[data-target="peClipFile"]')
+    : null;
+
+  const requestPlaybookRefresh = () => {
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    else if (typeof renderPlaybook === "function") renderPlaybook();
+  };
+
+  const render = (clips) => {
+    const safeClips = Array.isArray(clips) ? clips : [];
+    if (countEl) {
+      countEl.textContent = safeClips.length
+        ? `(${safeClips.length}/${window.playClips.MAX_CLIPS})`
+        : "";
+    }
+    if (!safeClips.length) {
+      listEl.innerHTML = `<div class="pb-editor-clips-empty">No clips yet.</div>`;
+    } else {
+      listEl.innerHTML = safeClips
+        .map((clip) => {
+          const url = window.playClips.fileUrl(play, clip.id);
+          const meta = [];
+          if (clip.duration) meta.push(`${clip.duration}s`);
+          if (clip.size) meta.push(`${(clip.size / (1024 * 1024)).toFixed(1)} MB`);
+          return `<div class="pb-editor-clip" data-clip-id="${escapeHtml(clip.id)}">
+        <video class="pb-editor-clip-video" controls preload="metadata" playsinline src="${escapeHtml(url)}"></video>
+        <div class="pb-editor-clip-meta">
+          <span class="pb-editor-clip-label">${escapeHtml(clip.label || "Clip")}</span>
+          <span class="pb-editor-clip-sub">${escapeHtml(meta.join(" • "))}</span>
+        </div>
+        ${canManage ? `<button type="button" class="btn btn-sm btn-danger pb-editor-clip-remove" data-clip-remove="${escapeHtml(clip.id)}">Remove</button>` : ""}
+      </div>`;
+        })
+        .join("");
+    }
+    if (trigger) {
+      const atMax = safeClips.length >= window.playClips.MAX_CLIPS;
+      trigger.disabled = atMax;
+      trigger.textContent = atMax ? "Max 3 clips" : "Add Clip…";
+    }
+    if (canManage) {
+      listEl.querySelectorAll("[data-clip-remove]").forEach((btn) => {
+        btn.addEventListener("click", async () => {
+          const id = btn.getAttribute("data-clip-remove");
+          const ok = await showConfirm("Remove this clip for everyone?", {
+            title: "Remove Clip",
+            icon: "🗑️",
+            confirmText: "Remove",
+            danger: true,
+          });
+          if (!ok) return;
+          try {
+            btn.disabled = true;
+            const res = await window.playClips.remove(play, id);
+            render(res.clips || []);
+            showToast("Clip removed", { duration: 1800 });
+            requestPlaybookRefresh();
+          } catch (err) {
+            btn.disabled = false;
+            showToast(err && err.message ? err.message : "Could not remove clip.", {
+              type: "error",
+              duration: 4000,
+            });
+          }
+        });
+      });
+    }
+  };
+
+  (async () => {
+    let clips = [];
+    try {
+      clips = await window.playClips.list(play);
+    } catch (_err) {
+      clips = [];
+    }
+    render(clips);
+  })();
+
+  if (canManage && fileInput) {
+    fileInput.addEventListener("change", async () => {
+      const file = fileInput.files && fileInput.files[0];
+      fileInput.value = "";
+      if (!file) return;
+      const label = await showPrompt("Label this clip (optional):", "", {
+        title: "Add Clip",
+        icon: "🎬",
+        placeholder: "e.g. vs Cover 3",
+      });
+      if (label === null) return;
+      try {
+        if (trigger) {
+          trigger.disabled = true;
+          trigger.textContent = "Uploading…";
+        }
+        await window.playClips.upload(play, file, label);
+        render(await window.playClips.list(play));
+        showToast("Clip uploaded", { duration: 2000, type: "success" });
+        requestPlaybookRefresh();
+      } catch (err) {
+        if (trigger) {
+          trigger.disabled = false;
+          trigger.textContent = "Add Clip…";
+        }
+        showToast(err && err.message ? err.message : "Upload failed.", {
+          type: "error",
+          duration: 4500,
+        });
+      }
     });
   }
 }
