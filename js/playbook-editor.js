@@ -849,7 +849,7 @@ function _wirePlayEditorClips(play, isNew) {
     } else {
       listEl.innerHTML = safeClips
         .map((clip) => {
-          const url = window.playClips.fileUrl(play, clip.id);
+          const url = clip.url || window.playClips.fileUrl(play, clip.id);
           const meta = [];
           if (clip.duration) meta.push(`${clip.duration}s`);
           if (clip.size) meta.push(`${(clip.size / (1024 * 1024)).toFixed(1)} MB`);

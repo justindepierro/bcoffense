@@ -338,7 +338,7 @@ async function loadPlayPresentationDetailClips(item, body) {
   section.setAttribute("aria-label", "Video clips");
   const clipMarkup = clips
     .map((clip) => {
-      const url = window.playClips.fileUrl(play, clip.id);
+      const url = clip.url || window.playClips.fileUrl(play, clip.id);
       return `<figure class="pp-detail-clip">
         <video class="pp-detail-clip-video" controls preload="metadata" playsinline src="${escapeHtml(url)}"></video>
         ${clip.label ? `<figcaption class="pp-detail-clip-caption">${escapeHtml(clip.label)}</figcaption>` : ""}

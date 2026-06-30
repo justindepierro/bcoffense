@@ -24,19 +24,50 @@
   let _indexSet = null;
   let _indexPromise = null;
 
-  function sigForPlay(play) {
-    if (!play) return "";
+  // Candidate signature keys for a play, most-canonical first. Clips are SHARED
+  // across devices via R2, so the primary key must be content-derived and
+  // device-stable. getPlayIdentityKey(play,"tag") is derived purely from play
+  // fields, so a coach and a player compute the same key for the same play.
+  // NEVER key by play.id / playSignature here: play.id is a random per-device
+  // id (createPlayId), so it would never match across devices. Alternate keys
+  // are kept only as read-side fallbacks for clips uploaded under older keys.
+  function candidateSigs(play) {
+    if (!play) return [];
+    const out = [];
+    const push = (value) => {
+      const v = value ? String(value) : "";
+      if (v && !out.includes(v)) out.push(v);
+    };
+    if (typeof getPlayIdentityKey === "function") {
+      push(getPlayIdentityKey(play, "tag"));
+    }
     if (
       window.playImages &&
       typeof window.playImages.signaturesForPlay === "function"
     ) {
       const sigs = window.playImages.signaturesForPlay(play);
-      if (Array.isArray(sigs) && sigs.length) return String(sigs[0]);
+      if (Array.isArray(sigs)) sigs.forEach(push);
     }
-    if (typeof playSignature === "function") {
-      return String(playSignature(play) || "");
+    if (!out.length && typeof playSignature === "function") {
+      push(playSignature(play));
     }
-    return "";
+    return out;
+  }
+
+  function sigForPlay(play) {
+    const cands = candidateSigs(play);
+    return cands.length ? cands[0] : "";
+  }
+
+  // The candidate that actually has clips per the cached index, else the
+  // canonical signature. Used when deleting so we target the right manifest.
+  function resolveStoredSig(play) {
+    const cands = candidateSigs(play);
+    if (_indexSet) {
+      const found = cands.find((s) => _indexSet.has(s));
+      if (found) return found;
+    }
+    return cands.length ? cands[0] : "";
   }
 
   function canManage() {
@@ -50,7 +81,10 @@
   }
 
   function fileUrl(play, id) {
-    const sig = sigForPlay(play);
+    return fileUrlForSig(resolveStoredSig(play), id);
+  }
+
+  function fileUrlForSig(sig, id) {
     if (!sig || !id) return "";
     return `/clips/file?sig=${encodeURIComponent(sig)}&id=${encodeURIComponent(id)}`;
   }
@@ -83,12 +117,10 @@
 
   function hasForPlay(play) {
     if (!_indexSet) return false;
-    return has(sigForPlay(play));
+    return candidateSigs(play).some((s) => _indexSet.has(s));
   }
 
-  async function list(play) {
-    const sig = sigForPlay(play);
-    if (!sig) return [];
+  async function fetchManifest(sig) {
     const response = await fetch(manifestUrl(sig), {
       credentials: "same-origin",
       headers: { Accept: "application/json" },
@@ -96,6 +128,32 @@
     if (!response.ok) return [];
     const data = await response.json().catch(() => null);
     return data && Array.isArray(data.clips) ? data.clips : [];
+  }
+
+  // Returns clips for a play, searching every candidate signature so clips
+  // stored under the canonical content key are found regardless of which device
+  // (coach/player) is viewing. Each clip is decorated with its resolved `sig`
+  // and a ready-to-use `url` for a <video> src.
+  async function list(play) {
+    const cands = candidateSigs(play);
+    if (!cands.length) return [];
+    let ordered = cands;
+    if (_indexSet) {
+      // The index is authoritative for the current session; only probe keys it
+      // knows about to avoid needless requests for clip-less plays.
+      ordered = cands.filter((s) => _indexSet.has(s));
+    }
+    for (const sig of ordered) {
+      const clips = await fetchManifest(sig);
+      if (clips.length) {
+        return clips.map((clip) => ({
+          ...clip,
+          sig,
+          url: fileUrlForSig(sig, clip.id),
+        }));
+      }
+    }
+    return [];
   }
 
   // Best-effort client-side duration probe so we reject long clips before
@@ -183,7 +241,7 @@
     if (!canManage()) {
       throw new Error("Only admin or coach can delete clips.");
     }
-    const sig = sigForPlay(play);
+    const sig = resolveStoredSig(play);
     if (!sig || !id) {
       throw new Error("Missing clip reference.");
     }
@@ -208,6 +266,7 @@
     sigForPlay,
     canManage,
     fileUrl,
+    fileUrlForSig,
     list,
     upload,
     remove,
