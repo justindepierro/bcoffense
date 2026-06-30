@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v746";
+const CACHE_NAME = "bcoffense-v747";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -30,6 +30,9 @@ function shouldUseNetworkFirst(request, url) {
 
 function isCacheableResponse(response, allowOpaque = false) {
   if (!response) return false;
+  // Partial (206) responses from Range requests (e.g. video streaming) cannot
+  // be stored in the Cache API and must never be cached.
+  if (response.status === 206) return false;
   if (!response.ok && !(allowOpaque && response.type === "opaque")) return false;
   const cacheControl = response.headers.get("Cache-Control") || "";
   return !/\bno-store\b/i.test(cacheControl);
@@ -245,6 +248,10 @@ self.addEventListener("fetch", (event) => {
 
   // Skip non-http(s) schemes (e.g. chrome-extension://) — can't be cached
   if (!event.request.url.startsWith("http")) return;
+
+  // Video clips stream from R2 via Range requests — let them bypass the worker
+  // entirely so the browser handles partial (206) responses directly.
+  if (url.pathname.startsWith("/clips/")) return;
 
   // Item 40: serve /auth/me from cache for up to 30s to unblock slow-network PWA opens
   if (url.pathname === "/auth/me") {
