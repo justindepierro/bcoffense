@@ -1183,6 +1183,103 @@ body.play-presentation-open {
   outline-offset: 2px;
 }
 
+/* M-042 — Optional detail panel: right-side panel in landscape, bottom sheet in
+   portrait. The body is the only scroll surface (overscroll contained). */
+.pp-detail-panel {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  width: min(380px, 86vw);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--color-bg-body);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.pp-detail-panel[hidden] {
+  display: none;
+}
+
+.pp-detail-panel-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.pp-detail-panel-head h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.pp-detail-panel-close {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 32px;
+  height: 32px;
+  padding: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  color: var(--color-text);
+  background: var(--color-bg-light);
+  font: inherit;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pp-detail-panel-close:hover {
+  background: var(--color-bg-lighter);
+}
+
+.pp-detail-panel-close:focus-visible {
+  outline: 3px solid var(--color-warning);
+  outline-offset: 2px;
+}
+
+.pp-detail-panel-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+  padding: var(--space-md);
+}
+
+.pp-detail-panel-empty {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+}
+
+@media (orientation: portrait) {
+  .pp-detail-panel {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 62vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-right: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* ===== M-041 — Icon buttons, setup sheet, iPad help, theme override ===== */
 .pp-icon-btn {
   display: inline-flex;

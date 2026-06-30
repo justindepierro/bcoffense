@@ -61,6 +61,11 @@ let playPresentationTeleActive = null;
 let playPresentationTeleCanvas = null;
 let playPresentationTeleCtx = null;
 
+// M-042 — Optional detail panel (session-local, side panel on landscape /
+// bottom sheet on portrait). Shows full play detail without leaving the
+// diagram-focused mode.
+let playPresentationDetailOpen = false;
+
 const PLAY_PRESENTATION_DEFAULT_OPTIONS = {
   order: "listed", // "listed" | "reverse"
   showPersonnel: true,
@@ -246,6 +251,115 @@ function openPlayPresentationProjectorGuide() {
 function dismissPlayPresentationProjectorPrompt() {
   playPresentationProjectorPromptDismissed = true;
   updatePlayPresentationProjectorPrompt();
+}
+
+// M-042 — Optional detail panel -----------------------------------------------
+// An on-demand reference panel that shows the full play detail (call structure,
+// situation, defensive look, coaching points, notes, and player rules) without
+// switching out of the current Minimum/Player/Coaches mode. It renders as a
+// right-side panel in landscape and a bottom sheet in portrait, with the panel
+// body the only scroll surface.
+function getPlayPresentationDetailPanelMarkup(item) {
+  if (!item || !item.play) {
+    return `<p class="pp-detail-panel-empty">No play selected.</p>`;
+  }
+  const play = item.play;
+  const { callRows, situationRows, defenseRows, coachingRows } =
+    getPlayPresentationDetailRowGroups(play);
+  const assignmentMarkup = getPlayPresentationPositions()
+    .filter((position) => String(play[position.key] || "").trim())
+    .map(
+      (position) => `
+        <div class="pp-assignment-card">
+          <strong>${escapeHtml(position.label)}</strong>
+          <span>${escapeHtml(play[position.key])}</span>
+        </div>
+      `,
+    )
+    .join("");
+  const sections = [
+    getPlayPresentationCoachSection(
+      "Call Structure",
+      "Formation, motion, and call mechanics",
+      callRows,
+      "pp-coach-section-call",
+    ),
+    getPlayPresentationCoachSection(
+      "Situation",
+      "When and where this fits",
+      situationRows,
+      "pp-coach-section-situation",
+    ),
+    getPlayPresentationCoachSection(
+      "Defensive Look",
+      "Practice picture and defensive answers",
+      defenseRows,
+      "pp-coach-section-defense",
+    ),
+    getPlayPresentationCoachSection(
+      "Coaching Points",
+      "Keys, complements, alerts, and targets",
+      coachingRows,
+      "pp-coach-section-tools",
+    ),
+    assignmentMarkup
+      ? `
+        <section class="pp-coach-section pp-coach-section-rules" aria-label="Player rules">
+          <div class="pp-coach-section-head">
+            <h3>Player Rules</h3>
+            <span>Assignment by position</span>
+          </div>
+          <div class="pp-assignment-grid">${assignmentMarkup}</div>
+        </section>
+      `
+      : "",
+    getPlayPresentationCoachNotesMarkup(play),
+  ]
+    .filter(Boolean)
+    .join("");
+  return sections || `<p class="pp-detail-panel-empty">No extra detail for this play.</p>`;
+}
+
+function renderPlayPresentationDetailPanel() {
+  const body = document.getElementById("playPresentationDetailBody");
+  if (!body) return;
+  const item = playPresentationState.items[playPresentationState.index];
+  setInnerHTML(body, getPlayPresentationDetailPanelMarkup(item));
+}
+
+function updatePlayPresentationDetailButton() {
+  const btn = document.getElementById("playPresentationDetailBtn");
+  if (!btn) return;
+  btn.classList.toggle("active", playPresentationDetailOpen);
+  btn.setAttribute("aria-pressed", playPresentationDetailOpen ? "true" : "false");
+  const label = playPresentationDetailOpen ? "Hide play detail" : "Show play detail";
+  btn.title = label;
+  btn.setAttribute("aria-label", label);
+}
+
+function setPlayPresentationDetailPanel(on) {
+  playPresentationDetailOpen = !!on;
+  const overlay = document.getElementById("playPresentationOverlay");
+  const panel = document.getElementById("playPresentationDetailPanel");
+  if (overlay) overlay.classList.toggle("pp-detail-open", playPresentationDetailOpen);
+  if (panel) {
+    panel.hidden = !playPresentationDetailOpen;
+    panel.setAttribute("aria-hidden", playPresentationDetailOpen ? "false" : "true");
+  }
+  if (playPresentationDetailOpen) {
+    renderPlayPresentationDetailPanel();
+    const scroll = document.getElementById("playPresentationDetailBody");
+    if (scroll) scroll.scrollTop = 0;
+  }
+  updatePlayPresentationDetailButton();
+}
+
+function togglePlayPresentationDetailPanel() {
+  setPlayPresentationDetailPanel(!playPresentationDetailOpen);
+}
+
+function closePlayPresentationDetailPanel() {
+  setPlayPresentationDetailPanel(false);
 }
 
 // Non-critical toasts emitted by the presentation route through this so they
@@ -1153,6 +1267,7 @@ function openPlayPresentation(items, startIndex, source) {
   resetPlayPresentationZoom();
   setPlayPresentationTelestrator(false);
   clearPlayPresentationTele();
+  setPlayPresentationDetailPanel(false);
   if (typeof openLayer === "function") {
     openLayer(overlay, {
       id: "play-presentation",
@@ -1238,6 +1353,7 @@ function closePlayPresentation() {
   resetPlayPresentationZoom();
   setPlayPresentationTelestrator(false);
   clearPlayPresentationTele();
+  setPlayPresentationDetailPanel(false);
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -1342,6 +1458,7 @@ function movePlayPresentation(direction) {
   resetPlayPresentationZoom();
   clearPlayPresentationTele();
   renderPlayPresentation();
+  if (playPresentationDetailOpen) renderPlayPresentationDetailPanel();
 }
 
 function getPlayPresentationChipMarkup(play) {
@@ -1960,6 +2077,97 @@ function getPlayPresentationCoachNotesMarkup(play) {
   `;
 }
 
+function getPlayPresentationDetailRowGroups(play) {
+  return {
+    callRows: [
+      {
+        label: "Personnel / Type",
+        values: [play.personnel, play.type],
+      },
+      {
+        label: "Formation",
+        values: [
+          play.formation,
+          [play.formTag1, play.formTag2].filter(Boolean).join(", "),
+        ],
+      },
+      {
+        label: "Backfield",
+        values: [play.under, play.back, play.shift, play.motion],
+      },
+      {
+        label: "Protection",
+        values: [play.protection, play.lineCall],
+      },
+      {
+        label: "Play Call",
+        values: [
+          play.play,
+          [play.playTag1, play.playTag2].filter(Boolean).join(", "),
+          play.basePlay,
+        ],
+      },
+    ],
+    situationRows: [
+      {
+        label: "Down / Distance",
+        values: [play.preferredDown, play.preferredDistance],
+      },
+      {
+        label: "Field / Hash",
+        values: [
+          play.hash || play.preferredHash,
+          play.preferredSituation,
+          play.preferredFieldPosition,
+        ],
+      },
+      {
+        label: "Tempo / Word",
+        values: [play.tempo, play.oneWord],
+      },
+    ],
+    defenseRows: [
+      {
+        label: "Front / Structure",
+        values: [play.defFront || play.practiceFront, play.practiceDefense],
+      },
+      {
+        label: "Coverage",
+        values: [play.defCoverage || play.practiceCoverage],
+      },
+      {
+        label: "Pressure",
+        values: [
+          play.defBlitz || play.practiceBlitz,
+          play.defStunt || play.practiceStunt,
+        ],
+      },
+    ],
+    coachingRows: [
+      {
+        label: "Key Players",
+        values: [
+          [play.keyPlayer1, play.keyPlayerName1].filter(Boolean).join(" "),
+          [play.keyPlayer2, play.keyPlayerName2].filter(Boolean).join(" "),
+          [play.keyPlayer3, play.keyPlayerName3].filter(Boolean).join(" "),
+        ],
+      },
+      {
+        label: "Complements",
+        values: [play.constraint1, play.constraint2, play.constraint3],
+      },
+      {
+        label: "Hit Chart",
+        values: [play.hitChart1, play.hitChart2, play.hitChart3],
+      },
+      {
+        label: "Alerts",
+        values: [play.deadVs, play.opponent],
+      },
+    ],
+  };
+}
+
 function getPlayPresentationCoachMarkup(item) {
   const play = item.play;
   const responsibilityMarkup = getPlayPresentationPositions()
@@ -1973,103 +2181,8 @@ function getPlayPresentationCoachMarkup(item) {
       `,
     )
     .join("");
-  const callRows = [
-    {
-      label: "Personnel / Type",
-      values: [
-        play.personnel,
-        play.type,
-      ],
-    },
-    {
-      label: "Formation",
-      values: [
-        play.formation,
-        [play.formTag1, play.formTag2].filter(Boolean).join(", "),
-      ],
-    },
-    {
-      label: "Backfield",
-      values: [play.under, play.back, play.shift, play.motion],
-    },
-    {
-      label: "Protection",
-      values: [play.protection, play.lineCall],
-    },
-    {
-      label: "Play Call",
-      values: [
-        play.play,
-        [play.playTag1, play.playTag2].filter(Boolean).join(", "),
-        play.basePlay,
-      ],
-    },
-  ];
-  const situationRows = [
-    {
-      label: "Down / Distance",
-      values: [play.preferredDown, play.preferredDistance],
-    },
-    {
-      label: "Field / Hash",
-      values: [
-        play.hash || play.preferredHash,
-        play.preferredSituation,
-        play.preferredFieldPosition,
-      ],
-    },
-    {
-      label: "Tempo / Word",
-      values: [
-        play.tempo,
-        play.oneWord,
-      ],
-    },
-  ];
-  const defenseRows = [
-    {
-      label: "Front / Structure",
-      values: [
-        play.defFront || play.practiceFront,
-        play.practiceDefense,
-      ],
-    },
-    {
-      label: "Coverage",
-      values: [
-        play.defCoverage || play.practiceCoverage,
-      ],
-    },
-    {
-      label: "Pressure",
-      values: [
-        play.defBlitz || play.practiceBlitz,
-        play.defStunt || play.practiceStunt,
-      ],
-    },
-  ];
-  const coachingRows = [
-    {
-      label: "Key Players",
-      values: [
-        [play.keyPlayer1, play.keyPlayerName1].filter(Boolean).join(" "),
-        [play.keyPlayer2, play.keyPlayerName2].filter(Boolean).join(" "),
-        [play.keyPlayer3, play.keyPlayerName3].filter(Boolean).join(" "),
-      ],
-    },
-    {
-      label: "Complements",
-      values: [play.constraint1, play.constraint2, play.constraint3],
-    },
-    {
-      label: "Hit Chart",
-      values: [play.hitChart1, play.hitChart2, play.hitChart3],
-    },
-    {
-      label: "Alerts",
-      values: [play.deadVs, play.opponent],
-    },
-  ];
+  const { callRows, situationRows, defenseRows, coachingRows } =
+    getPlayPresentationDetailRowGroups(play);
   const coachSections = [
     playPresentationOptions.showPersonnel
       ? getPlayPresentationCoachSection(

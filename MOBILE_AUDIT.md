@@ -678,13 +678,13 @@ The attached implementation brief is now mapped into this checklist as:
 
 ### M-042 - Projector clean view, Wake Lock, detail panel, and telestrator
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P1
 - Files: `js/play-presentation.js`, `css/play-presentation.css`, presentation setup/layer files as they split out
 - Work:
   - `[x]` Add Projector Clean View toggle that hides touch instructions, noncritical HUD, coach-only notes when selected, edit/account controls, and noncritical toasts.
   - `[x]` Add HUD auto-hide with tap/pointer reveal and controls that stay clear of diagram content.
-  - `[ ]` Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
+  - `[x]` Add optional detail panel: side panel on iPad landscape, bottom sheet on portrait, internal scroll only.
   - `[x]` Add Wake Lock toggle with explicit user action, release on exit/hidden page, and graceful fallback.
   - `[x]` Add optional session-local telestrator with pen, arrow/circle, eraser, clear, undo, line width, high-contrast colors, Pointer Events, Apple Pencil support, and resize-aligned coordinates.
   - `[x]` Add zoom-to-fit, manual zoom/pan, and reset-view controls that do not conflict with swipe navigation.
@@ -723,6 +723,11 @@ The attached implementation brief is now mapped into this checklist as:
   - Added an in-landscape projector install prompt (`#playPresentationProjectorPrompt`). iPad/iOS Safari cannot hide its address bar or tab bar from web code, so the only chrome-free projector view is the installed PWA. The prompt appears top-center on iPad Safari in landscape (non-standalone, help not dismissed) and its "Show me" button opens the existing Add-to-Home-Screen guide; dismissible for the session.
   - Documented the platform limit: true full-screen on iPad = Add to Home Screen (manifest `display: standalone` + Apple meta tags already set). Desktop/Chrome still use the real Fullscreen API via the `⛶` button.
   - Remaining: detail panel still pending.
+- Implementation notes (SW v743):
+  - Added an optional detail panel (`ℹ️` `#playPresentationDetailBtn` → `togglePlayPresentationDetailPanel`). It surfaces the full play detail (call structure, situation, defensive look, coaching points, player rules, and coach notes) without leaving the current Minimum/Player/Coaches mode.
+  - Renders as a right-side panel in landscape and a bottom sheet in portrait (`@media (orientation: portrait)`); the panel body is the only scroll surface (`overflow-y:auto` + `overscroll-behavior: contain`).
+  - Content re-renders on every play change and resets/closes on open and close. Extracted `getPlayPresentationDetailRowGroups()` so the panel and the Coaches-mode sections share one row definition.
+  - M-042 complete: clean view, HUD auto-hide, Wake Lock, zoom/pan, smarter landscape + projector prompt, telestrator, and detail panel all shipped.
 
 ---
 
