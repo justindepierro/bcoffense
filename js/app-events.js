@@ -600,6 +600,14 @@ document.addEventListener("DOMContentLoaded", () => {
         togglePlaybookGamePlan(parseInt(gpBtn.dataset.idx, 10));
         return;
       }
+      const clipBtn = e.target.closest("[data-action='openPlaybookClipViewer']");
+      if (clipBtn) {
+        e.stopPropagation();
+        if (typeof openPlaybookClipViewer === "function") {
+          openPlaybookClipViewer(clipBtn.dataset.arg);
+        }
+        return;
+      }
       const row = e.target.closest("tr[data-action]");
       if (!row) return;
       const idx = parseInt(row.dataset.idx, 10);
