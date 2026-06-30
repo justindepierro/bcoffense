@@ -154,6 +154,14 @@ function serveStatic(port) {
       res.end();
       return;
     }
+    if (parsed.pathname.startsWith("/clips/")) {
+      // Clip routes are Cloudflare Pages Functions in production. Stub them as
+      // an empty index so the static harness mirrors a signed-in user with no
+      // clips instead of reporting a 404 on every page load.
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      res.end(JSON.stringify({ ok: true, sigs: [], clips: [] }));
+      return;
+    }
 
     const filePath = safePathFromUrl(req.url || "/");
     if (!filePath || !existsSync(filePath) || !statSync(filePath).isFile()) {
