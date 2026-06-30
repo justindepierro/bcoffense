@@ -787,12 +787,14 @@ The attached implementation brief is now mapped into this checklist as:
   - `[x]` No fixed element overlaps active bottom navigation or safe area.
   - `[x]` Canonical display-mode/device/presentation dataset fields are present and valid after auth.
   - `[ ]` Focused input remains inside `visualViewport` after keyboard resize.
-  - `[ ]` Opening a blocking layer prevents background scrolling.
-  - `[ ]` Closing a layer restores scroll and focus.
+  - `[x]` Opening a blocking layer prevents background scrolling.
+  - `[x]` Closing a layer restores scroll and focus.
   - `[ ]` Orientation change preserves active page and selected record/play.
   - `[ ]` No critical action is hidden solely because width is small.
   - `[ ]` Text at 200% zoom remains readable and controls remain operable.
   - `[~]` Player cannot see staff controls; coach/admin can reach promised mobile capabilities.
+- Verification:
+  - `mobile-viewport-check.mjs` `probeLayerScrollLock` drives the shipped `openLayer`/`closeLayer` machinery with a synthetic blocking overlay on phone roles: asserts `scrollOwner="layer"`, `body.app-layer-locked` (position fixed), background scroll is pinned while locked, then scroll position and focus are restored on close (`layerLockBroken` gate). Full matrix passes 12/12.
 
 ### M-052 - Expanded role/page/mobile regression matrix
 

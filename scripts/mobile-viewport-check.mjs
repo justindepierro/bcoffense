@@ -434,6 +434,85 @@ async function probeTabsScrollOwnership(page) {
   return out;
 }
 
+// Layer scroll-lock probe (M-051): drive the real openLayer/closeLayer machinery
+// with a synthetic blocking overlay and verify the document cannot scroll while
+// the layer owns scroll, then that scroll position and focus are restored on
+// close. Uses the shipped dom-helpers primitives so it exercises production code.
+async function probeLayerScrollLock(page) {
+  return page.evaluate(async () => {
+    if (typeof window.openLayer !== "function" || typeof window.closeLayer !== "function") {
+      return { supported: false, reason: "layer api missing" };
+    }
+
+    const spacer = document.createElement("div");
+    spacer.style.height = "4000px";
+    spacer.setAttribute("data-probe-spacer", "true");
+    document.body.appendChild(spacer);
+
+    const anchor = document.createElement("button");
+    anchor.type = "button";
+    anchor.textContent = "probe-anchor";
+    anchor.setAttribute("data-probe-anchor", "true");
+    document.body.appendChild(anchor);
+
+    const overlay = document.createElement("div");
+    overlay.id = "__probeLayer";
+    overlay.innerHTML = '<div class="app-layer-panel"><button type="button" id="__probeLayerBtn">ok</button></div>';
+    document.body.appendChild(overlay);
+
+    try {
+      // Focus the anchor first — focusing an off-screen control scrolls the
+      // document, so establish the scroll baseline only after focus settles.
+      anchor.focus();
+      const anchorFocusedBefore = document.activeElement === anchor;
+      window.scrollTo(0, 600);
+      const beforeScrollY = Math.round(window.scrollY);
+
+      const opened = window.openLayer(overlay, { blocking: true });
+      const lockedOwner = document.body.dataset.scrollOwner || "";
+      const lockedClass = document.body.classList.contains("app-layer-locked");
+      const bodyPosition = getComputedStyle(document.body).position;
+      // Attempt to scroll the background while the layer is locked.
+      window.scrollTo(0, 1800);
+      const scrolledWhileLocked = Math.abs(window.scrollY) > 2;
+
+      const closed = window.closeLayer(overlay);
+      const restoredOwner = document.body.dataset.scrollOwner || "";
+      const restoredClass = document.body.classList.contains("app-layer-locked");
+      const restoredScrollY = Math.round(window.scrollY);
+      const focusRestored = document.activeElement === anchor;
+
+      const lockOk = opened && lockedClass && lockedOwner === "layer" &&
+        bodyPosition === "fixed" && !scrolledWhileLocked;
+      const restoreOk = closed && !restoredClass && restoredOwner !== "layer" &&
+        Math.abs(restoredScrollY - beforeScrollY) <= 2 && focusRestored;
+
+      return {
+        supported: true,
+        anchorFocusedBefore,
+        opened,
+        lockedOwner,
+        lockedClass,
+        bodyPosition,
+        scrolledWhileLocked,
+        closed,
+        restoredOwner,
+        restoredClass,
+        beforeScrollY,
+        restoredScrollY,
+        focusRestored,
+        lockOk,
+        restoreOk,
+      };
+    } finally {
+      overlay.remove();
+      anchor.remove();
+      spacer.remove();
+      window.scrollTo(0, 0);
+    }
+  });
+}
+
 async function run() {
   const args = parseArgs(process.argv.slice(2));
   const { chromium } = await findPlaywright();
@@ -479,6 +558,10 @@ async function run() {
           inspection.screenSize === "phone"
             ? await probeTabsScrollOwnership(page)
             : [];
+        const layerLock =
+          inspection.screenSize === "phone"
+            ? await probeLayerScrollLock(page)
+            : null;
 
         const screenshotName = `${slug(role)}-${viewportName}.png`;
         const screenshotPath = path.join(args.outputDir, screenshotName);
@@ -495,6 +578,7 @@ async function run() {
           httpErrors,
           ...inspection,
           scrollTabs,
+          layerLock,
         };
         const blankMobileStart =
           result.screenSize === "phone" &&
@@ -513,6 +597,14 @@ async function run() {
           result.screenSize === "phone" &&
           Boolean(result.role) &&
           scrollConflictTabs.length > 0;
+        // M-051: a blocking layer must lock background scroll and restore scroll
+        // + focus on close. Only assert when the layer API is present.
+        const layerLockBroken =
+          result.screenSize === "phone" &&
+          Boolean(result.role) &&
+          result.layerLock &&
+          result.layerLock.supported === true &&
+          (!result.layerLock.lockOk || !result.layerLock.restoreOk);
         const badTabletShell =
           IPAD_VIEWPORTS.includes(result.viewport) &&
           Boolean(result.role) &&
@@ -534,6 +626,7 @@ async function run() {
           blankMobileStart ||
           badPhoneScrollOwner ||
           scrollConflict ||
+          layerLockBroken ||
           badTabletShell ||
           badDisplayState ||
           result.overflow ||
@@ -551,6 +644,7 @@ async function run() {
           badSmallTargets,
           scrollConflict,
           scrollConflictTabs,
+          layerLockBroken,
           failed,
         });
       }
@@ -568,6 +662,9 @@ async function run() {
       result.blankMobileStart ? "blank mobile start" : "",
       result.badPhoneScrollOwner ? `phone scroll owner ${result.scrollOwner || "unset"}` : "",
       result.scrollConflict ? `scroll conflict ${result.scrollConflictTabs.join(", ")}` : "",
+      result.layerLockBroken
+        ? `layer lock ${result.layerLock && result.layerLock.lockOk ? "ok" : "fail"}/restore ${result.layerLock && result.layerLock.restoreOk ? "ok" : "fail"}`
+        : "",
       result.badTabletShell ? `tablet shell ${result.shellSize || "unset"}` : "",
       result.badDisplayState ? "bad display/device state" : "",
       result.overflow ? `overflow ${result.scrollWidth}>${result.viewportWidth}` : "",
