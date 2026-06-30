@@ -485,6 +485,13 @@ function renderScriptDefenseInputs(play, index, playLabel, defenseDatalistState)
 }
 
 function renderScriptPlayControls(play, index, playLabel, reps) {
+  const hasClip =
+    typeof window.playClips !== "undefined" &&
+    typeof window.playClips.hasForPlay === "function" &&
+    window.playClips.hasForPlay(play);
+  const clipBtn = hasClip
+    ? `<button class="script-clip-btn" data-action="openScriptClipViewer" data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬</button>`
+    : "";
   return `
       <div class="play-controls">
         <div class="play-control-fields">
@@ -492,6 +499,7 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
           <input class="play-notes-input" type="text" value="${escapeHtml(play.notes || "")}" placeholder="Notes" data-field="notes" data-idx="${index}" aria-label="Notes for ${escapeHtml(playLabel)}">
         </div>
         <div class="play-control-actions">
+          ${clipBtn}
           <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
           <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
           <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
@@ -608,11 +616,21 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         aria-label="Play ${playNumber}: ${escapeHtml(playLabel)}">
         <div class="script-player-card-head">
           <div class="script-player-card-badge">Play ${playNumber}${wbBadge}</div>
-          <button class="script-player-open-btn" data-action="openScriptPresentation"
-            data-idx="${index}" title="Open ${escapeHtml(playLabel)} in swipe view"
-            aria-label="Open ${escapeHtml(playLabel)} in swipe view">
-            Open Rules
-          </button>
+          <div class="script-player-card-actions">
+            ${
+              typeof window.playClips !== "undefined" &&
+              typeof window.playClips.hasForPlay === "function" &&
+              window.playClips.hasForPlay(play)
+                ? `<button class="script-player-clip-btn" data-action="openScriptClipViewer"
+            data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬 Watch</button>`
+                : ""
+            }
+            <button class="script-player-open-btn" data-action="openScriptPresentation"
+              data-idx="${index}" title="Open ${escapeHtml(playLabel)} in swipe view"
+              aria-label="Open ${escapeHtml(playLabel)} in swipe view">
+              Open Rules
+            </button>
+          </div>
         </div>
         <div class="script-player-card-call">${fullCall}</div>
         ${metaItems.length

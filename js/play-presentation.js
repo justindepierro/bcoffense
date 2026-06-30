@@ -363,6 +363,26 @@ function updatePlayPresentationDetailButton() {
   btn.setAttribute("aria-label", label);
 }
 
+// Show the 🎬 header button only when the current play actually has clips, so
+// coaches and players have one obvious tap target to watch video.
+function updatePlayPresentationClipsButton() {
+  const btn = document.getElementById("playPresentationClipsBtn");
+  if (!btn) return;
+  const item = playPresentationState.items[playPresentationState.index];
+  const hasClips =
+    !!item &&
+    typeof window.playClips !== "undefined" &&
+    typeof window.playClips.hasForPlay === "function" &&
+    window.playClips.hasForPlay(item.play);
+  btn.hidden = !hasClips;
+}
+
+function openPlayPresentationClips() {
+  const item = playPresentationState.items[playPresentationState.index];
+  if (!item || typeof window.openPlayClipViewer !== "function") return;
+  window.openPlayClipViewer(item.play, getPlayPresentationPlayLabel(item.play));
+}
+
 function setPlayPresentationDetailPanel(on) {
   playPresentationDetailOpen = !!on;
   const overlay = document.getElementById("playPresentationOverlay");
@@ -2339,6 +2359,8 @@ function renderPlayPresentation() {
   }
   const token = ++playPresentationState.imageToken;
   loadPlayPresentationDiagram(item.play, token);
+
+  updatePlayPresentationClipsButton();
 
   const announcer = document.getElementById("liveAnnouncer");
   if (announcer) {

@@ -134,7 +134,7 @@ function renderPlaybook() {
             ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
         const clipBadge = item.hasClips
-          ? '<span class="pb-clip-badge" title="Has video clips" aria-label="Has video clips">\ud83c\udfac</span>'
+          ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
           : "";
 
         const gpToggle = activeOpponent
@@ -189,7 +189,7 @@ function renderPlaybook() {
             ? `<span class="pb-img-badge" data-img-sig="${escapeHtml(imageSig)}" role="button" tabindex="0" aria-label="Preview play image" title="Hover to preview image">\ud83d\uddbc\ufe0f</span>`
             : "";
         const cardClipBadge = item.hasClips
-          ? '<span class="pb-clip-badge" title="Has video clips" aria-label="Has video clips">\ud83c\udfac</span>'
+          ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
           : "";
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`

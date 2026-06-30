@@ -259,6 +259,199 @@
     return data;
   }
 
+  // ---------------------------------------------------------------------------
+  // Clip viewer modal — a single, intuitive player surface reused everywhere
+  // (playbook table/cards, practice script, presentation). Built with direct
+  // DOM nodes so <video controls> is preserved and labels are set as text.
+  // ---------------------------------------------------------------------------
+  let _viewer = null;
+
+  function buildClipViewer() {
+    const overlay = document.createElement("div");
+    overlay.className = "pc-viewer-overlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Video clip viewer");
+
+    const panel = document.createElement("div");
+    panel.className = "pc-viewer";
+
+    const head = document.createElement("div");
+    head.className = "pc-viewer-head";
+    const title = document.createElement("div");
+    title.className = "pc-viewer-title";
+    const closeBtn = document.createElement("button");
+    closeBtn.type = "button";
+    closeBtn.className = "pc-viewer-close";
+    closeBtn.setAttribute("aria-label", "Close video viewer");
+    closeBtn.title = "Close";
+    closeBtn.textContent = "\u2715";
+    head.appendChild(title);
+    head.appendChild(closeBtn);
+
+    const video = document.createElement("video");
+    video.className = "pc-viewer-video";
+    video.controls = true;
+    video.playsInline = true;
+    video.setAttribute("playsinline", "");
+    video.preload = "metadata";
+
+    const controls = document.createElement("div");
+    controls.className = "pc-viewer-controls";
+    const prevBtn = document.createElement("button");
+    prevBtn.type = "button";
+    prevBtn.className = "pc-viewer-nav";
+    prevBtn.setAttribute("aria-label", "Previous clip");
+    prevBtn.title = "Previous clip";
+    prevBtn.textContent = "\u2039";
+    const select = document.createElement("select");
+    select.className = "pc-viewer-select";
+    select.setAttribute("aria-label", "Choose clip");
+    const nextBtn = document.createElement("button");
+    nextBtn.type = "button";
+    nextBtn.className = "pc-viewer-nav";
+    nextBtn.setAttribute("aria-label", "Next clip");
+    nextBtn.title = "Next clip";
+    nextBtn.textContent = "\u203a";
+    controls.appendChild(prevBtn);
+    controls.appendChild(select);
+    controls.appendChild(nextBtn);
+
+    const caption = document.createElement("div");
+    caption.className = "pc-viewer-caption";
+
+    panel.appendChild(head);
+    panel.appendChild(video);
+    panel.appendChild(controls);
+    panel.appendChild(caption);
+    overlay.appendChild(panel);
+    document.body.appendChild(overlay);
+
+    const state = { clips: [], index: 0 };
+
+    const show = (i) => {
+      if (!state.clips.length) return;
+      state.index = Math.max(0, Math.min(i, state.clips.length - 1));
+      const clip = state.clips[state.index];
+      video.pause();
+      video.src = clip.url || fileUrl(state.play, clip.id);
+      video.load();
+      const meta = [];
+      if (clip.duration) meta.push(`${clip.duration}s`);
+      if (clip.size) meta.push(`${(clip.size / (1024 * 1024)).toFixed(1)} MB`);
+      caption.textContent = [clip.label || `Clip ${state.index + 1}`, meta.join(" \u2022 ")]
+        .filter(Boolean)
+        .join("  \u2014  ");
+      select.value = String(state.index);
+      prevBtn.disabled = state.index <= 0;
+      nextBtn.disabled = state.index >= state.clips.length - 1;
+      const play = video.play();
+      if (play && typeof play.catch === "function") play.catch(() => {});
+    };
+
+    const close = () => {
+      video.pause();
+      video.removeAttribute("src");
+      video.load();
+      overlay.classList.remove("visible");
+      document.removeEventListener("keydown", onKey, true);
+    };
+
+    const onKey = (e) => {
+      if (e.key === "Escape") {
+        e.stopPropagation();
+        close();
+      } else if (e.key === "ArrowRight" && !nextBtn.disabled) {
+        show(state.index + 1);
+      } else if (e.key === "ArrowLeft" && !prevBtn.disabled) {
+        show(state.index - 1);
+      }
+    };
+
+    closeBtn.addEventListener("click", close);
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) close();
+    });
+    prevBtn.addEventListener("click", () => show(state.index - 1));
+    nextBtn.addEventListener("click", () => show(state.index + 1));
+    select.addEventListener("change", () => show(Number(select.value) || 0));
+
+    return {
+      overlay,
+      title,
+      select,
+      controls,
+      state,
+      show,
+      open() {
+        overlay.classList.add("visible");
+        document.addEventListener("keydown", onKey, true);
+      },
+    };
+  }
+
+  async function openPlayClipViewer(play, label) {
+    if (!play) return;
+    let clips = [];
+    try {
+      clips = await list(play);
+    } catch (_err) {
+      clips = [];
+    }
+    if (!Array.isArray(clips) || !clips.length) {
+      if (typeof showToast === "function") {
+        showToast("No video clips for this play yet.", { type: "info" });
+      }
+      return;
+    }
+    if (!_viewer) _viewer = buildClipViewer();
+    const v = _viewer;
+    v.state.play = play;
+    v.state.clips = clips;
+    v.title.textContent =
+      label ||
+      [play.formation, play.protection, play.play].filter(Boolean).join(" ") ||
+      "Video clips";
+    const multi = clips.length > 1;
+    v.controls.style.display = multi ? "" : "none";
+    v.select.innerHTML = "";
+    clips.forEach((clip, i) => {
+      const opt = document.createElement("option");
+      opt.value = String(i);
+      opt.textContent = clip.label || `Clip ${i + 1}`;
+      v.select.appendChild(opt);
+    });
+    v.open();
+    v.show(0);
+  }
+
+  function _resolvePlayFromList(source, idx) {
+    const n = Number(idx);
+    if (!Array.isArray(source) || !Number.isInteger(n)) return null;
+    return source[n] || null;
+  }
+
+  function openPlaybookClipViewer(idx) {
+    const source =
+      typeof filteredPlays !== "undefined" && Array.isArray(filteredPlays)
+        ? filteredPlays
+        : typeof plays !== "undefined"
+          ? plays
+          : [];
+    const play = _resolvePlayFromList(source, idx);
+    if (play) openPlayClipViewer(play);
+  }
+
+  function openScriptClipViewer(idx) {
+    const source = typeof script !== "undefined" && Array.isArray(script) ? script : [];
+    const play = _resolvePlayFromList(source, idx);
+    if (play) openPlayClipViewer(play);
+  }
+
+  window.openPlayClipViewer = openPlayClipViewer;
+  window.openPlaybookClipViewer = openPlaybookClipViewer;
+  window.openScriptClipViewer = openScriptClipViewer;
+
   window.playClips = {
     MAX_CLIPS,
     MAX_BYTES,
@@ -273,6 +466,7 @@
     loadIndex,
     has,
     hasForPlay,
+    openViewer: openPlayClipViewer,
   };
 
   // Warm the clip index once the page is interactive so the playbook can show
@@ -281,6 +475,8 @@
     loadIndex().then(() => {
       if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
       else if (typeof renderPlaybook === "function") renderPlaybook();
+      if (typeof requestRenderScript === "function") requestRenderScript();
+      else if (typeof renderScript === "function") renderScript();
     });
   }
   if (document.readyState === "loading") {
