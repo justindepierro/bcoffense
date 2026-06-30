@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v751";
+const CACHE_NAME = "bcoffense-v752";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -36,6 +36,15 @@ function isCacheableResponse(response, allowOpaque = false) {
   if (!response.ok && !(allowOpaque && response.type === "opaque")) return false;
   const cacheControl = response.headers.get("Cache-Control") || "";
   return !/\bno-store\b/i.test(cacheControl);
+}
+
+// Fire-and-forget cache write that never surfaces an uncaught rejection.
+// cache.put can reject (e.g. 206 partial responses, quota errors); swallow it.
+function cachePut(request, response) {
+  return caches
+    .open(CACHE_NAME)
+    .then((cache) => cache.put(request, response))
+    .catch(() => {});
 }
 
 // Allow the app to trigger a cache refresh
@@ -266,7 +275,7 @@ self.addEventListener("fetch", (event) => {
           const response = await fetch(event.request);
           if (response.ok) {
             _authMeCacheTime = Date.now();
-            cache.put(event.request, response.clone());
+            cachePut(event.request, response.clone());
           }
           return response;
         } catch {
@@ -287,9 +296,7 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (isCacheableResponse(response, true)) {
             const clone = response.clone();
-            caches
-              .open(CACHE_NAME)
-              .then((cache) => cache.put(event.request, clone));
+            cachePut(event.request, clone);
           }
           return response;
         })
@@ -305,9 +312,7 @@ self.addEventListener("fetch", (event) => {
         .then((response) => {
           if (isCacheableResponse(response)) {
             const clone = response.clone();
-            caches
-              .open(CACHE_NAME)
-              .then((cache) => cache.put(event.request, clone));
+            cachePut(event.request, clone);
           }
           return response;
         })
@@ -327,9 +332,7 @@ self.addEventListener("fetch", (event) => {
           .then((response) => {
             if (isCacheableResponse(response)) {
               const clone = response.clone();
-              caches
-                .open(CACHE_NAME)
-                .then((cache) => cache.put(event.request, clone));
+              cachePut(event.request, clone);
             }
             return response;
           })
