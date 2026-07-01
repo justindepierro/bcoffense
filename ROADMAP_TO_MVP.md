@@ -451,7 +451,7 @@ Example:
 
 ## Phase 11 — Unified dropdown and floating-layer system
 
-- [ ] **176.** Inventory all `.tool-menu`, column menus, quick menus, context menus, and page-specific popovers.
+- [x] **176.** Inventory all `.tool-menu`, column menus, quick menus, context menus, and page-specific popovers.\n  - Complete inventory: Header overflow, Tabs utilities, Playbook Analytics, Playbook Data, Wristband Templates, Wristband More, Call Sheet More, Script More Tools, GP context menus (showContextMenu). All accounted for across Phases 11 #197-202. Commit `abe5f3e`.
 - [x] **177.** Create one `AnchoredMenu` or equivalent shared utility.
 - [x] **178.** Portal anchored menus to a shared floating-layer root under `document.body`.
 - [x] **179.** Position menus from the trigger’s `getBoundingClientRect()`.
@@ -464,20 +464,31 @@ Example:
 - [x] **186.** Account for browser zoom and visual viewport offsets.
 - [x] **187.** Add max-height and internal scrolling for tall menus.
 - [x] **188.** Keep the menu attached visually to its trigger.
-- [ ] **189.** Close when the trigger leaves the viewport or relevant container.
+- [x] **189.** Close when the trigger leaves the viewport or relevant container.
+  - `IntersectionObserver` on the trigger element closes the menu automatically when it scrolls off-screen. Commit `abe5f3e` (SW v781).
 - [x] **190.** Close on outside click, Escape, route/page change, and another menu opening.
-- [ ] **191.** Restore focus to the trigger.
-- [ ] **192.** Add roving keyboard navigation for menu items.
-- [ ] **193.** Add Home, End, ArrowUp, and ArrowDown support.
-- [ ] **194.** Add correct menu/menuitem semantics where appropriate.
-- [ ] **195.** Do not use menu semantics for form-heavy popovers; use dialog/popover semantics instead.
-- [ ] **196.** Prevent nested menus from closing before their action executes.
+- [x] **191.** Restore focus to the trigger.
+  - `closeAnchoredMenu(wrap)` calls `trigger.focus({ preventScroll: true })` after removing `open`; used by `removeParentOpen` and keyboard Escape. Commit `abe5f3e` (SW v781).
+- [x] **192.** Add roving keyboard navigation for menu items.
+  - Document-level `keydown` handler intercepts ArrowUp/Down while an anchored menu is open and moves focus between visible menu items. Commit `abe5f3e` (SW v781).
+- [x] **193.** Add Home, End, ArrowUp, and ArrowDown support.
+  - Home → first item, End → last item, ArrowUp/Down → prev/next with wrap-around. Tab closes and continues tabbing. Commit `abe5f3e` (SW v781).
+- [x] **194.** Add correct menu/menuitem semantics where appropriate.
+  - `_applyAriaSemantics(wrap)` adds `role="menu"` to `.tool-menu` and `role="menuitem"` to direct button/anchor children on first open. Commit `abe5f3e` (SW v781).
+- [x] **195.** Do not use menu semantics for form-heavy popovers; use dialog/popover semantics instead.
+  - `_applyAriaSemantics` only targets `.tool-menu` (action lists). Display panel, sort modal, filter overlay etc. use `role="dialog"` or default semantics (verified).
+- [x] **196.** Prevent nested menus from closing before their action executes.
+  - `data-action` on the button fires its handler before the `removeParentOpen` bubble closes the menu — verified delegation order is correct. No code change required.
 - [x] **197.** Migrate header overflow first.
-- [ ] **198.** Migrate Playbook analytics/data menus.
+- [x] **198.** Migrate Playbook analytics/data menus.
+  - `data-anchored` added to Playbook Analytics dropdown and Playbook Data dropdown. Commit `abe5f3e` (SW v781).
 - [x] **199.** Migrate Call Sheet More menu.
-- [ ] **200.** Migrate Wristband menus.
-- [ ] **201.** Migrate Script tools.
-- [ ] **202.** Migrate Game Plan context menus.
+- [x] **200.** Migrate Wristband menus.
+  - `data-anchored` added to Wristband Templates dropdown and Wristband More (⋯) dropdown. Commit `abe5f3e` (SW v781).
+- [x] **201.** Migrate Script tools.
+  - `.more-tools-wrap` gets `data-anchored`; `anchored-menu.js` extended to handle `.more-tools-wrap[data-anchored]` + `.more-tools-menu` (positioning, keyboard nav, ARIA, IntersectionObserver). Commit `abe5f3e` (SW v781).
+- [x] **202.** Migrate Game Plan context menus.
+  - GP uses `showContextMenu()` from `dom-helpers.js` — already a shared, viewport-aware utility. Verified no `position:absolute` overflow issues.
 - [ ] **203.** Migrate Opponent Scout action menus.
 - [ ] **204.** Migrate column visibility menus.
 - [ ] **205.** Add automated edge tests at all four viewport corners.
