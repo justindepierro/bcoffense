@@ -594,7 +594,7 @@ Example:
 - [x] **3.** Add explicit render-error and loading states to `tendenciesContent`.
   - Home render wrapped in try/catch with `.td-state` loading spinner + error card with Retry; respects reduced-motion. Commit `08150e6` (SW v756).
 - [x] **4.** Build one shared anchored-menu utility and migrate the header and Call Sheet menus first.
-  - New `js/anchored-menu.js` positions any `.tool-menu-wrap[data-anchored]` via `position: fixed` from the trigger rect — flips vertically, clamps horizontally, scrolls when tall, honors safe-area insets + visual viewport (iPad split-screen), and repositions on scroll/resize. Header overflow and Call Sheet "More" menus opted in. Smoke contract `checkAnchoredMenuContract`. Commit `149043f` (SW v757).
+  - New `js/anchored-menu.js` positions any `.tool-menu-wrap[data-anchored]` via `position: fixed` from the trigger rect — flips vertically, clamps horizontally, scrolls when tall, honors safe-area insets + visual viewport (iPad split-screen), and repositions on scroll/resize. Header overflow and Call Sheet "More" menus opted in. Smoke contract `checkAnchoredMenuContract`. Commit `4fa5037` (SW v757).
 - [ ] **5.** Replace permanent mobile instruction blocks with expandable help.
 - [ ] **6.** Build one shared responsive action-grid/toolbar contract.
 - [ ] **7.** Reduce the main navigation to the six core workflow tools plus Utilities.
