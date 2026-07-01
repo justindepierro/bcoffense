@@ -878,6 +878,21 @@ function applyMobileCoachLockUi() {
   if (icon) icon.textContent = activeOnMobile ? "🔒" : "🔓";
   if (label) label.textContent = activeOnMobile ? "Locked" : "Lock";
 
+  const lockPill = document.getElementById("mobileScriptCoachLock");
+  const lockPillLabel = document.getElementById("mobileScriptCoachLockLabel");
+  if (lockPill) {
+    lockPill.classList.toggle("is-on", activeOnMobile);
+    lockPill.setAttribute("aria-pressed", activeOnMobile ? "true" : "false");
+    lockPill.title = activeOnMobile
+      ? "Unlock review mode"
+      : "Lock practice for review";
+    lockPill.setAttribute(
+      "aria-label",
+      activeOnMobile ? "Unlock review mode" : "Lock practice for review",
+    );
+  }
+  if (lockPillLabel) lockPillLabel.textContent = activeOnMobile ? "Locked" : "Lock";
+
   const banner = document.getElementById("mobileCoachLockBanner");
   if (banner) banner.hidden = !activeOnMobile;
 
@@ -1168,6 +1183,91 @@ function _setMobileScriptCoachControlsDisabled(disabled) {
     });
 }
 
+function _findMobileCoachCurrentSavedScript() {
+  if (typeof getSavedScripts !== "function") return null;
+  const name = (document.getElementById("scriptName")?.value || "").trim();
+  if (!name) return null;
+  const date = document.getElementById("scriptDate")?.value || "";
+  const saved = getSavedScripts();
+  const byName = saved.filter(
+    (record) =>
+      String(record?.name || "").trim().toLowerCase() === name.toLowerCase(),
+  );
+  if (!byName.length) return null;
+  return byName.find((record) => (record.date || "") === date) || byName[0];
+}
+
+function _isMobileCoachScriptPublished(record) {
+  if (!record) return false;
+  return typeof isSavedScriptPlayerVisible === "function"
+    ? isSavedScriptPlayerVisible(record)
+    : Boolean(record.playerVisible);
+}
+
+function _updateMobileCoachPublishStatus() {
+  const button = document.getElementById("mobileScriptCoachPublish");
+  const label = document.getElementById("mobileScriptCoachPublishLabel");
+  if (!button || !label) return;
+  const record = _findMobileCoachCurrentSavedScript();
+  const published = _isMobileCoachScriptPublished(record);
+  button.classList.toggle("is-on", published);
+  button.setAttribute("aria-pressed", published ? "true" : "false");
+  if (published) {
+    label.textContent = "Published";
+    button.title = "Players can load this practice. Tap to unpublish.";
+    button.setAttribute("aria-label", "Unpublish this practice from players");
+  } else if (record) {
+    label.textContent = "Publish";
+    button.title = "Publish this practice to player logins";
+    button.setAttribute("aria-label", "Publish this practice to player logins");
+  } else {
+    label.textContent = "Publish";
+    button.title = "Save this practice to publish it to players";
+    button.setAttribute(
+      "aria-label",
+      "Save this practice to publish it to players",
+    );
+  }
+}
+
+async function mobileCoachTogglePublish() {
+  if (typeof getSavedScripts !== "function") return;
+  let record = _findMobileCoachCurrentSavedScript();
+  if (!record) {
+    const ok =
+      typeof showConfirm === "function"
+        ? await showConfirm(
+          "Save this practice before publishing it to players?",
+          { title: "Publish Practice", icon: "📣", confirmText: "Save & Publish" },
+        )
+        : true;
+    if (!ok) return;
+    if (typeof saveScript === "function") {
+      const saved = await saveScript();
+      if (!saved) return;
+    }
+    record = _findMobileCoachCurrentSavedScript();
+    if (!record) return;
+  }
+
+  const saved = getSavedScripts();
+  const target = saved.find((entry) => String(entry.id) === String(record.id));
+  if (!target) return;
+  const nowPublished = !_isMobileCoachScriptPublished(target);
+  target.playerVisible = nowPublished;
+  storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, saved);
+  if (typeof loadSavedScriptsList === "function") loadSavedScriptsList();
+  _updateMobileCoachPublishStatus();
+  if (typeof showToast === "function") {
+    showToast(
+      nowPublished
+        ? `Published "${target.name}" to player logins.`
+        : `Unpublished "${target.name}" from player logins.`,
+      { type: nowPublished ? "success" : "warning", duration: 2400 },
+    );
+  }
+}
+
 function updateMobileCoachScriptNow() {
   const panel = document.getElementById("mobileScriptCoachNow");
   if (!panel) return;
@@ -1194,6 +1294,7 @@ function updateMobileCoachScriptNow() {
     _renderMobileScriptPeriodOptions(-1);
     _updateMobileScriptScoreButtons(0);
     _setMobileScriptCoachControlsDisabled(true);
+    _updateMobileCoachPublishStatus();
     return;
   }
 
@@ -1210,6 +1311,7 @@ function updateMobileCoachScriptNow() {
   _renderMobileScriptPeriodOptions(currentIndex);
   _updateMobileScriptScoreButtons(_getMobileScriptLastScore(play));
   _setMobileScriptCoachControlsDisabled(false);
+  _updateMobileCoachPublishStatus();
 
   const row = document.querySelector(`#scriptPlays .script-item[data-idx="${currentIndex}"]`);
   if (row) row.classList.add("coach-current");

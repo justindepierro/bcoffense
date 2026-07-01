@@ -345,33 +345,32 @@ The audit found two distinct mechanisms, and the matrix rules them separately:
 
 #### Role capability sets (phone)
 
-| Role | Phone capabilities (in scope) | Out of scope on phone (use tablet/desktop) |
-| --- | --- | --- |
-| Player | Consume, navigate, study: dashboard home card, read-only playbook + Situations/Touches reports, published-script run view, landscape presentation | All editing, analytics management, wristband/call sheet/tendencies/identity/offense-builder editing |
-| Coach | Run practice: current call, prev/next, jump period, score reps (1–5), quick rep log, present, light edit via Edit Sheet, publish/lock | Bulk script building, timeline reorder, deep playbook data management |
-| Admin | Coach set + emergency account/settings access (Import/Export tab) | Bulk building (same as coach) |
-| Staff tablet | Near-full editing (two-pane Script restored, full toolbars) | — |
+| Role         | Phone capabilities (in scope)                                                                                                                     | Out of scope on phone (use tablet/desktop)                                                          |
+| ------------ | ------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------- |
+| Player       | Consume, navigate, study: dashboard home card, read-only playbook + Situations/Touches reports, published-script run view, landscape presentation | All editing, analytics management, wristband/call sheet/tendencies/identity/offense-builder editing |
+| Coach        | Run practice: current call, prev/next, jump period, score reps (1–5), quick rep log, present, light edit via Edit Sheet, publish/lock             | Bulk script building, timeline reorder, deep playbook data management                               |
+| Admin        | Coach set + emergency account/settings access (Import/Export tab)                                                                                 | Bulk building (same as coach)                                                                       |
+| Staff tablet | Near-full editing (two-pane Script restored, full toolbars)                                                                                       | —                                                                                                   |
 
 #### Ruling matrix (phone-only hiding)
 
-| Surface hidden on staff phone | Mechanism | Replacement on phone | Ruling |
-| --- | --- | --- | --- |
-| Header secondary actions (Search, Print, Vision, Import/Export) | CSS `.header-action-secondary { display:none }` | `.header-overflow` (`⋯`) menu (`#headerOverflowAccount`, Log Out, dupes) | Replaced |
-| Save-status indicator | CSS `.save-status { display:none }` | Autosave still runs; status is non-critical | Intentional |
-| Script header panel (title/date/workbench) | Run-mode `display:none !important` | `#mobileScriptCoachNow` card (title/date/current call) | Replaced |
-| Period buttons (add/insert/template) | Run-mode `display:none !important` | `#mobileScriptCoachPeriodJump` dropdown in coach card | Replaced |
-| Per-row rep/readiness widgets | Run-mode `display:none !important` | `.mobile-script-coach-now__score` quick-score (1–5) | Replaced |
-| Current play call + navigation | n/a (new view) | `#mobileScriptCoachCall` + Prev/Current/Next/Log Rep/Present | Provided |
-| Library pane, toolbar, timeline, tools drawer, row edit fields, drag handles | Run-mode `display:none !important` | **Edit Sheet** toggle (`#mobileScriptEditToggle` → `toggleMobileScriptEditMode`) restores the full builder; bulk building is tablet/desktop-first by design | Intentional (restorable) |
-| Mobile coach dock (Script/Call Sheet/Wristband/Game Plan/Dashboard) | n/a (new chrome) | `data-coach-tab` dock always visible for staff; `#mobileCoachLockToggle` for review lock | Provided |
+| Surface hidden on staff phone                                                | Mechanism                                       | Replacement on phone                                                                                                                                        | Ruling                   |
+| ---------------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------ |
+| Header secondary actions (Search, Print, Vision, Import/Export)              | CSS `.header-action-secondary { display:none }` | `.header-overflow` (`⋯`) menu (`#headerOverflowAccount`, Log Out, dupes)                                                                                    | Replaced                 |
+| Save-status indicator                                                        | CSS `.save-status { display:none }`             | Autosave still runs; status is non-critical                                                                                                                 | Intentional              |
+| Script header panel (title/date/workbench)                                   | Run-mode `display:none !important`              | `#mobileScriptCoachNow` card (title/date/current call)                                                                                                      | Replaced                 |
+| Period buttons (add/insert/template)                                         | Run-mode `display:none !important`              | `#mobileScriptCoachPeriodJump` dropdown in coach card                                                                                                       | Replaced                 |
+| Per-row rep/readiness widgets                                                | Run-mode `display:none !important`              | `.mobile-script-coach-now__score` quick-score (1–5)                                                                                                         | Replaced                 |
+| Current play call + navigation                                               | n/a (new view)                                  | `#mobileScriptCoachCall` + Prev/Current/Next/Log Rep/Present                                                                                                | Provided                 |
+| Library pane, toolbar, timeline, tools drawer, row edit fields, drag handles | Run-mode `display:none !important`              | **Edit Sheet** toggle (`#mobileScriptEditToggle` → `toggleMobileScriptEditMode`) restores the full builder; bulk building is tablet/desktop-first by design | Intentional (restorable) |
+| Mobile coach dock (Script/Call Sheet/Wristband/Game Plan/Dashboard)          | n/a (new chrome)                                | `data-coach-tab` dock always visible for staff; `#mobileCoachLockToggle` for review lock                                                                    | Provided                 |
 
-#### Identified gap (carried forward)
+#### Closed gap
 
-- **Coach phone "publish/lock status"** — the coach phone capability set promises
-  publish, but run mode currently exposes no publish/lock control. Tracked as the open
-  `[ ]` item in **M-030** (publish/lock status). This is the only capability in a phone
-  role's in-scope set that lacks a phone surface; everything else is replaced or
-  intentionally tablet/desktop-only.
+- **Coach phone "publish/lock status"** — now surfaced in the run-mode coach card as a
+  publish pill (`mobileCoachTogglePublish`) that toggles the current practice's
+  `playerVisible` flag (saving first when needed) and a lock pill
+  (`toggleMobileCoachLock`) that mirrors the review-lock state. Closed under **M-030**.
 
 #### Verdict
 
@@ -379,9 +378,7 @@ Every phone-hidden surface is either (a) role-hidden on all devices (intentional
 out of scope for width), (b) replaced by a purpose-built phone surface (overflow menu,
 coach card, dock), or (c) intentionally tablet/desktop-first and restorable on staff
 phones via Edit Sheet. Staff phone is a distinct run product, not desktop-with-controls-
-hidden. The single outstanding capability gap (coach publish/lock on phone) is owned by
-M-030.
-
+hidden. All in-scope phone-role capabilities now have a phone surface.
 
 ### M-021 - Login visual QA matrix
 
@@ -466,7 +463,7 @@ M-030.
 
 ### M-030 - Practice Script phone run mode
 
-- Status: `[~]`
+- Status: `[x]`
 - Priority: P0
 - Files: `index.html`, `js/app-shell.js`, `css/components.css`, `css/responsive.css`
 - Work:
@@ -477,7 +474,7 @@ M-030.
     - `[x]` quick rep log
     - `[x]` personnel and assignment summary
     - `[x]` jump to period
-    - `[ ]` publish/lock status
+    - `[x]` publish/lock status
     - `[x]` full edit sheet only when needed
   - `[x]` Keep full available-play browsing and bulk building tablet/desktop first by hiding it only in phone run mode.
   - `[x]` Add Edit Sheet / Run Mode toggle for staff phones.
@@ -496,6 +493,18 @@ M-030.
     - `#mobileScriptCoachNow` controls meet touch target guardrail
   - `node scripts/mobile-viewport-check.mjs --roles=admin,coach,player --viewports=320x568,390x844,568x320,820x1180 --warn-only --no-screenshots`
   - `node scripts/smoke-check.js` includes a static run-mode contract for markup, actions, mode state, and hidden run-mode surfaces.
+- Implementation notes:
+  - The run-mode coach card now carries a publish/lock status strip: a publish pill
+    (`mobileCoachTogglePublish`) and a lock pill (`toggleMobileCoachLock`).
+  - Publish resolves the current practice to its saved record by name+date; when the
+    practice is unsaved it offers Save & Publish (`saveScript`) first, then flips
+    `playerVisible` and refreshes the saved-scripts list so `getPlayerPublishedScripts`
+    picks it up. `_updateMobileCoachPublishStatus()` runs from
+    `updateMobileCoachScriptNow()`; the lock pill mirrors `applyMobileCoachLockUi()`.
+  - Publish is a mutating action, so it stays gated by the mobile coach lock (the lock
+    pill uses the allow-listed `toggleMobileCoachLock` and remains operable).
+  - `checkMobileCapabilityMatrix()` asserts both pills and `mobileCoachTogglePublish`
+    exist.
 
 ### M-031 - Practice Script touch reordering fallback
 

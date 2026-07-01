@@ -1533,6 +1533,20 @@ function checkMobileCapabilityMatrix() {
     fail("coach phone run-mode card controls promised by the matrix are missing");
   }
 
+  // Coach run-mode publish/lock status controls (M-030).
+  if (
+    !/id="mobileScriptCoachPublish"[^>]*data-action="mobileCoachTogglePublish"/.test(
+      html,
+    ) ||
+    !/id="mobileScriptCoachLock"[^>]*data-action="toggleMobileCoachLock"/.test(
+      html,
+    ) ||
+    !/function mobileCoachTogglePublish\(\)/.test(appShell) ||
+    !/target\.playerVisible = nowPublished/.test(appShell)
+  ) {
+    fail("coach phone publish/lock status controls are incomplete");
+  }
+
   // Edit Sheet toggle must restore the full builder (run mode is reversible).
   if (
     !/function toggleMobileScriptEditMode\(\)/.test(appShell) ||
