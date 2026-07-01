@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v807";
+const CACHE_NAME = "bcoffense-v808";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -232,14 +232,22 @@ const LOCAL_ASSETS = [
   "./offline.html",
 ];
 
-// Install: pre-cache all local assets
+// Install: pre-cache all local assets — resilient, one failure won't block activation
 self.addEventListener("install", (event) => {
   event.waitUntil(
-    caches.open(CACHE_NAME).then((cache) => cache.addAll(LOCAL_ASSETS)),
+    caches.open(CACHE_NAME).then((cache) =>
+      Promise.allSettled(
+        LOCAL_ASSETS.map((url) =>
+          fetch(url, { cache: "reload" })
+            .then((res) => { if (res.ok) cache.put(url, res); })
+            .catch(() => { /* skip missing/failed assets silently */ }),
+        ),
+      ),
+    ),
   );
 });
 
-// Activate: clean up old caches
+// Activate: clean up old caches, claim all clients, notify them of new version
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -250,9 +258,17 @@ self.addEventListener("activate", (event) => {
             .filter((key) => key !== CACHE_NAME)
             .map((key) => caches.delete(key)),
         ),
-      ),
+      )
+      .then(() => {
+        self.clients.claim();
+        // Notify all open tabs that a new version is active
+        self.clients.matchAll({ type: "window" }).then((clients) => {
+          clients.forEach((client) =>
+            client.postMessage({ type: "SW_ACTIVATED", version: CACHE_NAME }),
+          );
+        });
+      }),
   );
-  self.clients.claim();
 });
 
 // Fetch: network-first for app-shell/external resources, SWR for other local assets
