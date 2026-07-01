@@ -28,10 +28,10 @@ const Q_PAGE_SIZE = 25;
 // ── State badge helper ─────────────────────────────────────────────────────────
 function _qStateBadge(state) {
   const map = {
-    open:      { label: "Open",     cls: "q-state-open" },
-    answered:  { label: "Answered", cls: "q-state-answered" },
-    resolved:  { label: "Resolved", cls: "q-state-resolved" },
-    reopened:  { label: "Reopened", cls: "q-state-reopened" },
+    open: { label: "Open", cls: "q-state-open" },
+    answered: { label: "Answered", cls: "q-state-answered" },
+    resolved: { label: "Resolved", cls: "q-state-resolved" },
+    reopened: { label: "Reopened", cls: "q-state-reopened" },
   };
   const m = map[state] || { label: state, cls: "q-state-open" };
   return `<span class="q-state-badge ${m.cls}">${m.label}</span>`;
@@ -320,7 +320,7 @@ async function qInboxResolve(arg) {
 
     showToast("Question resolved.", { type: "success", duration: 2500 });
     // Refresh summary badge counts
-    refreshQuestionsCard().catch(() => {});
+    refreshQuestionsCard().catch(() => { });
   } catch (err) {
     showToast("Network error resolving question.", { type: "error" });
   }

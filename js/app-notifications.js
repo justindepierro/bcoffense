@@ -8,6 +8,7 @@
 // ── State ─────────────────────────────────────────────────────────────────────
 
 let _notifPollInterval = null;
+let _notifInitialized = false;
 let _notifDrawerOpen = false;
 let _notifOffset = 0;
 let _notifHasMore = false;
@@ -20,6 +21,12 @@ const NOTIF_POLL_INTERVAL_MS = 60_000; // 60 s
  * the bell button.
  */
 function initNotifications() {
+  if (_notifInitialized) {
+    // Already running — just trigger an immediate poll for fresh count
+    _pollUnreadCount();
+    return;
+  }
+  _notifInitialized = true;
   _pollUnreadCount();
   clearInterval(_notifPollInterval);
   _notifPollInterval = setInterval(_pollUnreadCount, NOTIF_POLL_INTERVAL_MS);
@@ -51,7 +58,11 @@ async function _pollUnreadCount() {
 function _updateBellBadge(count) {
   const btn = document.getElementById("notifBellBtn");
   if (!btn) return;
-  btn.dataset.count = count > 0 ? Math.min(count, 99) : "";
+  if (count > 0) {
+    btn.setAttribute("data-count", Math.min(count, 99));
+  } else {
+    btn.removeAttribute("data-count");
+  }
   btn.setAttribute("aria-label", count > 0 ? `Notifications — ${count} unread` : "Notifications");
 }
 

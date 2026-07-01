@@ -274,8 +274,10 @@ function _discComposerHtml(playId, playSig) {
 // so they receive (arg, element).  startEditPost receives (arg) only.
 
 async function submitDiscPost(arg, el) {
-  const playId = el?.dataset?.playId;
-  const playSig = el?.dataset?.playSig || "";
+  // When called from _ELEMENT_FNS with no data-arg, element is first param
+  const btn = (el instanceof Element) ? el : (arg instanceof Element ? arg : null);
+  const playId = btn?.dataset?.playId;
+  const playSig = btn?.dataset?.playSig || "";
   if (!playId) return;
 
   const textarea = document.getElementById(`discCompose-${playId}`);
@@ -285,8 +287,8 @@ async function submitDiscPost(arg, el) {
   const body = textarea.value.trim();
   if (!body) { textarea.focus(); return; }
 
-  el.disabled = true;
-  el.textContent = "Posting…";
+  btn.disabled = true;
+  btn.textContent = "Posting…";
 
   try {
     const res = await fetch(`/api/threads/${playId}`, {
@@ -305,7 +307,6 @@ async function submitDiscPost(arg, el) {
     if (list) {
       list.querySelector(".disc-empty")?.remove();
       const wrap = document.createElement("div");
-      // We need to add the HTML safely — use a DocumentFragment approach
       wrap.innerHTML = _discPostHtml(data.post, playId);
       const node = wrap.firstElementChild;
       if (node) {
@@ -319,8 +320,8 @@ async function submitDiscPost(arg, el) {
   } catch (_) {
     showToast("Network error — try again.", { duration: 3000, type: "error" });
   } finally {
-    el.disabled = false;
-    el.textContent = "Post";
+    btn.disabled = false;
+    btn.textContent = "Post";
   }
 }
 
@@ -433,12 +434,14 @@ async function deleteDiscPost(postId, el) {
 }
 
 async function loadMoreDiscussion(arg, el) {
-  const playId = el?.dataset?.playId;
-  const cursor = el?.dataset?.cursor;
+  // When called from _ELEMENT_FNS with no data-arg, element is first param
+  const btn = (el instanceof Element) ? el : (arg instanceof Element ? arg : null);
+  const playId = btn?.dataset?.playId;
+  const cursor = btn?.dataset?.cursor;
   if (!playId) return;
 
-  el.disabled = true;
-  el.textContent = "Loading…";
+  btn.disabled = true;
+  btn.textContent = "Loading\u2026";
 
   try {
     const url = `/api/threads/${playId}?limit=25` + (cursor ? `&cursor=${encodeURIComponent(cursor)}` : "");
@@ -457,15 +460,15 @@ async function loadMoreDiscussion(arg, el) {
     }
 
     if (data.hasMore && data.posts.length) {
-      el.dataset.cursor = data.posts[data.posts.length - 1]?.id || cursor;
-      el.disabled = false;
-      el.textContent = "Load more…";
+      btn.dataset.cursor = data.posts[data.posts.length - 1]?.id || cursor;
+      btn.disabled = false;
+      btn.textContent = "Load more…";
     } else {
-      el.remove();
+      btn.remove();
     }
   } catch (_) {
-    el.disabled = false;
-    el.textContent = "Load more…";
+    btn.disabled = false;
+    btn.textContent = "Load more…";
     showToast("Failed to load more.", { duration: 2500, type: "error" });
   }
 }
