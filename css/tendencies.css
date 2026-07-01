@@ -189,6 +189,132 @@
   outline-offset: 2px;
 }
 
+/* ── Scout Overview (roadmap fix #10) ────────────────────────────────── */
+.td-overview-warning {
+  background: var(--color-warning-light);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-md);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  padding: var(--space-sm) var(--space-md);
+  margin-bottom: var(--space-md);
+}
+.td-overview-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: var(--space-md);
+  margin-bottom: var(--space-lg);
+}
+.td-ov-card {
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-md);
+}
+.td-ov-card--split {
+  grid-column: 1 / -1;
+}
+.td-ov-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  color: var(--color-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  margin: 0 0 var(--space-sm);
+}
+.td-ov-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-sm);
+  margin-bottom: 4px;
+}
+.td-ov-label {
+  width: 100px;
+  flex-shrink: 0;
+  color: var(--color-text);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.td-ov-bar-wrap {
+  flex: 1;
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-pill);
+  height: 8px;
+  overflow: hidden;
+}
+.td-ov-bar {
+  height: 100%;
+  background: var(--color-primary);
+  border-radius: var(--radius-pill);
+  min-width: 2px;
+  transition: width 0.3s ease;
+}
+.td-ov-pct {
+  width: 36px;
+  text-align: right;
+  font-weight: 600;
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+}
+.td-ov-count {
+  width: 30px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+}
+.td-ov-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
+  font-style: italic;
+}
+/* Run/Pass split */
+.td-ov-split {
+  margin-bottom: var(--space-sm);
+}
+.td-ov-split-bar {
+  display: flex;
+  height: 12px;
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+  background: var(--color-bg-lighter);
+  margin-bottom: 6px;
+}
+.td-ov-split-run {
+  background: var(--color-success);
+  transition: width 0.3s ease;
+}
+.td-ov-split-pass {
+  background: var(--color-info);
+  transition: width 0.3s ease;
+}
+.td-ov-split-labels {
+  display: flex;
+  justify-content: space-between;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+}
+.td-ov-split-label--run { color: var(--color-success); }
+.td-ov-split-label--pass { color: var(--color-info); }
+.td-ov-totals {
+  display: flex;
+  gap: var(--space-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  margin-top: var(--space-xs);
+}
+.td-ov-actions {
+  margin-top: var(--space-md);
+  padding-top: var(--space-md);
+  border-top: 1px solid var(--color-border-light);
+}
+
+@media (max-width: 640px) {
+  .td-overview-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
 /* Export section */
 .td-export-section {
   margin-top: var(--space-lg);

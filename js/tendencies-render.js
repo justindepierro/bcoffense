@@ -105,6 +105,162 @@ function renderTendenciesHome() {
   }
 }
 
+// ── Scout Overview screen (roadmap fix #10) ─────────────────────────────────
+// Shown by default when selecting an opponent with charted plays.
+// Summarises run/pass split, top fronts, coverages, blitz rate, and
+// formations so a coach sees intel before diving into the raw table.
+let tdShowScoutOverview = true;
+
+function renderScoutOverview() {
+  const container = document.getElementById("tendenciesContent");
+  if (!container || tendenciesCurrentOpponent === null) return;
+  const opp = tendenciesOpponents[tendenciesCurrentOpponent];
+  if (!opp) return;
+
+  const totalPlays = opp.plays.length;
+  const isActive = isActiveGameWeekOpponent(tendenciesCurrentOpponent);
+
+  // Compute full-data summary (no filters)
+  const intel =
+    typeof queryTendencies === "function"
+      ? queryTendencies(opp, {})
+      : { topFront: [], topCoverage: [], topBlitz: [], blitzRate: 0, total: 0 };
+
+  const runPlays = opp.plays.filter((p) =>
+    ["Run", "Draw", "QB Run", "Option"].includes(p.offensePlayType),
+  ).length;
+  const passPlays = opp.plays.filter((p) =>
+    ["Pass", "Screen", "PA"].includes(p.offensePlayType),
+  ).length;
+  const runPct = totalPlays > 0 ? Math.round((runPlays / totalPlays) * 100) : 0;
+  const passPct = totalPlays > 0 ? Math.round((passPlays / totalPlays) * 100) : 0;
+
+  // Top formations
+  const formCounts = {};
+  opp.plays.forEach((p) => {
+    if (p.offenseFormation) formCounts[p.offenseFormation] = (formCounts[p.offenseFormation] || 0) + 1;
+  });
+  const topFormations = Object.entries(formCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 4)
+    .map(([name, count]) => ({ name, count, pct: Math.round((count / totalPlays) * 100) }));
+
+  // Sample-size warning
+  const SAMPLE_MIN = 20;
+  const sampleWarning = totalPlays < SAMPLE_MIN && totalPlays > 0
+    ? `<div class="td-overview-warning" role="alert">
+        ⚠️ Small sample size (${totalPlays} play${totalPlays !== 1 ? "s" : ""}) — tendencies below may not be reliable. Chart at least ${SAMPLE_MIN} plays for confident analysis.
+       </div>`
+    : "";
+
+  const noData = totalPlays === 0;
+
+  function barHtml(items, label) {
+    if (!items || items.length === 0) return `<p class="td-ov-empty">No ${label} data charted yet.</p>`;
+    return items.map((item) =>
+      `<div class="td-ov-row">
+        <span class="td-ov-label">${escapeHtml(item.term || item.name)}</span>
+        <div class="td-ov-bar-wrap"><div class="td-ov-bar" style="width:${item.pct}%"></div></div>
+        <span class="td-ov-pct">${item.pct}%</span>
+        <span class="td-ov-count">(${item.count})</span>
+      </div>`,
+    ).join("");
+  }
+
+  container.innerHTML = `
+    <div class="td-detail">
+      <div class="td-detail-header">
+        <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
+        <h2>${escapeHtml(opp.name)}</h2>
+        <div class="td-detail-actions action-grid">
+          <button class="btn btn-primary" data-action="startNewPlay">＋ Chart Play</button>
+          <button class="btn btn-secondary" data-action="showTdFilmLog">📋 Film Log</button>
+          <button class="btn btn-secondary" data-action="exportSingleOpponentCSV" data-idx="${tendenciesCurrentOpponent}">📄 CSV</button>
+          <button class="btn btn-secondary" data-action="printTendencies">🖨️ Print</button>
+          <button class="btn ${isActive ? "btn-success" : "btn-secondary"}" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}"
+            title="${isActive ? "Active opponent for this week" : "Set as this week's opponent"}">
+            ${isActive ? "✅ Active" : "🏈 Set Active"}
+          </button>
+        </div>
+      </div>
+
+      ${sampleWarning}
+
+      ${noData
+      ? `<div class="empty-state empty-state--bordered empty-state--spaced">
+           <span class="empty-state__icon">📋</span>
+           <p class="empty-state__text">No plays charted yet. Start by adding your first play.</p>
+           <button class="btn btn-primary" data-action="startNewPlay">＋ Chart First Play</button>
+         </div>`
+      : `
+      <div class="td-overview-grid">
+        <div class="td-ov-card td-ov-card--split">
+          <h3 class="td-ov-title">🏃 Run / Pass Split</h3>
+          <div class="td-ov-split">
+            <div class="td-ov-split-bar">
+              <div class="td-ov-split-run" style="width:${runPct}%"></div>
+              <div class="td-ov-split-pass" style="width:${passPct}%"></div>
+            </div>
+            <div class="td-ov-split-labels">
+              <span class="td-ov-split-label td-ov-split-label--run">🏃 Run ${runPct}% (${runPlays})</span>
+              <span class="td-ov-split-label td-ov-split-label--pass">🎯 Pass ${passPct}% (${passPlays})</span>
+            </div>
+          </div>
+          <div class="td-ov-totals">
+            <span>${totalPlays} plays charted</span>
+            ${intel.blitzRate > 0 ? `<span>⚡ Blitz ${intel.blitzRate}%</span>` : ""}
+          </div>
+        </div>
+
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">🛡️ Top Fronts</h3>
+          ${barHtml(intel.topFront, "defensive front")}
+        </div>
+
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">🔭 Top Coverages</h3>
+          ${barHtml(intel.topCoverage, "coverage")}
+        </div>
+
+        ${intel.topBlitz && intel.topBlitz.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">⚡ Blitz Types</h3>
+          ${barHtml(intel.topBlitz.filter((b) => b.term !== "None"), "blitz")}
+        </div>` : ""}
+
+        ${topFormations.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">🏟️ Off. Formations Faced</h3>
+          ${barHtml(topFormations, "formation")}
+        </div>` : ""}
+      </div>
+
+      <div class="td-ov-actions action-grid">
+        <button class="btn btn-primary full-width-primary" data-action="showTdFilmLog">
+          📋 View Full Film Log (${totalPlays} plays)
+        </button>
+        <button class="btn btn-secondary" data-action="startNewPlay">＋ Chart Another Play</button>
+        <button class="btn btn-secondary" data-action="openGamePlanFromScout">🎯 View in Game Plan</button>
+      </div>
+      `}
+    </div>
+  `;
+}
+
+function showTdFilmLog() {
+  tdShowScoutOverview = false;
+  renderOpponentDetail();
+}
+
+function showTdOverview() {
+  tdShowScoutOverview = true;
+  renderScoutOverview();
+}
+
+function openGamePlanFromScout() {
+  if (typeof showTab === "function") showTab("gameplan");
+}
+
 function renderOpponentDetail() {
   const container = document.getElementById("tendenciesContent");
   if (!container || tendenciesCurrentOpponent === null) return;
@@ -131,7 +287,8 @@ function renderOpponentDetail() {
     <div class="td-detail">
       <div class="td-detail-header">
         <button class="btn btn-secondary" data-action="tendenciesGoHome">← Back</button>
-        <h2>🎯 ${escapeHtml(opp.name)}</h2>
+        ${totalPlays > 0 ? `<button class="btn btn-secondary" data-action="showTdOverview">⬅ Overview</button>` : ""}
+        <h2>📋 ${escapeHtml(opp.name)} — Film Log</h2>
         <div class="td-detail-actions">
           <button class="btn" id="tendenciesUndoBtn" data-action="undoTendencies" disabled title="Nothing to undo">↩️</button>
           <button class="btn" id="tendenciesRedoBtn" data-action="redoTendencies" disabled title="Nothing to redo">↪️</button>

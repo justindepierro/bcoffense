@@ -1129,7 +1129,14 @@ function selectTendenciesOpponent(idx) {
   tdShowStats = false;
   tdShowFilters = false;
   historyManager.clear("tendencies");
-  renderOpponentDetail();
+  // Default to Overview when there are charted plays; Film Log when empty.
+  const opp = tendenciesOpponents[idx];
+  tdShowScoutOverview = opp && opp.plays && opp.plays.length > 0;
+  if (tdShowScoutOverview) {
+    renderScoutOverview();
+  } else {
+    renderOpponentDetail();
+  }
 }
 
 

@@ -1779,6 +1779,34 @@ function checkTransferReceiptContract() {
   console.log("transfer receipt contract ok");
 }
 
+function checkScoutOverviewContract() {
+  // Immediate fix #10: Scout Overview screen between opponent select and raw table.
+  const render = read("js/tendencies-render.js");
+  const tendencies = read("js/tendencies.js");
+  const css = read("css/tendencies.css");
+
+  if (!/function renderScoutOverview\(\)/.test(render)) {
+    fail("renderScoutOverview() is missing from tendencies-render.js");
+  }
+  if (!/function showTdFilmLog\(\)/.test(render)) {
+    fail("showTdFilmLog() is missing (Film Log navigation from Overview)");
+  }
+  if (!/SAMPLE_MIN/.test(render)) {
+    fail("Sample-size warning (SAMPLE_MIN) is missing from renderScoutOverview");
+  }
+  if (!/td-ov-bar/.test(render)) {
+    fail("Horizontal bar rows (td-ov-bar) are missing from overview");
+  }
+  if (!/tdShowScoutOverview = opp && opp\.plays/.test(tendencies)) {
+    fail("selectTendenciesOpponent does not set tdShowScoutOverview based on play count");
+  }
+  if (!/.td-ov-card/.test(css)) {
+    fail(".td-ov-card styles are missing from tendencies.css");
+  }
+
+  console.log("scout overview contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2472,6 +2500,7 @@ checkActionGridContract();
 checkPrimaryNavContract();
 checkGameWeekBarContract();
 checkTransferReceiptContract();
+checkScoutOverviewContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();
