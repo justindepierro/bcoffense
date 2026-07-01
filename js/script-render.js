@@ -1121,6 +1121,7 @@ function renderScript() {
   // element); a proper render follows once the app finishes initializing.
   if (typeof script === "undefined" || !Array.isArray(script)) return;
   updateScriptOpponentBadge();
+  if (typeof updateScriptReconcileStatus === "function") updateScriptReconcileStatus();
   try {
     const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");

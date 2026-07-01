@@ -167,7 +167,7 @@ function setWristbandZoom(level, opts = {}) {
 function shouldRenderWristbandPhoneEditor() {
   return Boolean(
     document.body?.classList.contains("shell-phone") &&
-      !(typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode),
+    !(typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode),
   );
 }
 

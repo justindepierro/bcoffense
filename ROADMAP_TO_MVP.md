@@ -362,28 +362,44 @@ Example:
 - [ ] **137.** Show plays not yet scripted.
 - [ ] **138.** Show scripted plays no longer in Game Plan.
 - [ ] **139.** Add reconcile actions rather than silently changing the script.
-- [ ] **140.** Add Send Script Plays to Wristband.
+- [x] **140.** Add Send Script Plays to Wristband.
+  - `sendScriptToWristband()` already in `script-integrations.js`; "🃏 Wristband" button in "Send To" drawer. Commit pre-existing.
 - [ ] **141.** Add Send Selected Script Plays to Call Sheet.
 - [ ] **142.** Add quiz creation entry point from a published script.
-- [ ] **143.** Preserve focused Team Run mode.
+- [x] **143.** Preserve focused Team Run mode.
+  - Team Run mode in `script-render.js` unchanged; no regression introduced.
 - [ ] **144.** Add an artifact status bar for Save, Publish, Quiz, Present, Print.
-- [ ] **145.** Keep secondary editing tools in a drawer.
+- [x] **145.** Keep secondary editing tools in a drawer.
+  - Script "⋯ More Tools" drawer already contains all secondary editing tools.
 
 ## Phase 9 — Wristband integration
 
-- [ ] **146.** Add Create Wristband from Game Plan.
-- [ ] **147.** Add Create Wristband from Practice Script.
-- [ ] **148.** Preserve the source order when requested.
-- [ ] **149.** Show source and synchronization state.
-- [ ] **150.** Show call-sheet usage for each wristband play.
-- [ ] **151.** Add a compact “Not yet on Wristband” source list.
-- [ ] **152.** Add update/reconcile instead of destructive reload.
-- [ ] **153.** Add conflict handling when a source play changed.
-- [ ] **154.** Preserve manual cell customization during source refresh.
-- [ ] **155.** Add Send Wristband to Call Sheet with mapping preview.
-- [ ] **156.** Add Return to Practice and Continue to Call Sheet actions.
-- [ ] **157.** Preserve the printing suite as a first-class output.
-- [ ] **158.** Keep print settings separate from normal cell entry on phone.
+- [x] **146.** Add Create Wristband from Game Plan.
+  - `createWristbandCardFromGamePlan()` in `wristband-chrome.js` — new named card from all GP box plays in box order; undo-able. Commit `9ff5701` (SW v777).
+- [x] **147.** Add Create Wristband from Practice Script.
+  - `createWristbandCardFromScript()` in `wristband-chrome.js` — new card from script plays in script order. Commit `9ff5701` (SW v777).
+- [x] **148.** Preserve the source order when requested.
+  - Source order (GP box order / script order) maintained natively by both create functions. Commit `9ff5701` (SW v777).
+- [x] **149.** Show source and synchronization state.
+  - `updateWristbandSourceBadge()` + `#wbSourceBadge` pill in card tab row shows creation source and date; updates on card switch. Commit `9ff5701` (SW v777).
+- [x] **150.** Show call-sheet usage for each wristband play.
+  - `_wbCsDot()` in `wristband-render.js` adds a small blue dot to any cell whose play appears on the call sheet (with category tooltip). Hidden in print. Commit `9ff5701` (SW v777).
+- [x] **151.** Add a compact "Not yet on Wristband" source list.
+  - `showWristbandNotYetList()` in `wristband-chrome.js` — modal listing source plays (GP or Script) not yet placed on any card. ⋯ → "Not Yet on Wristband". Commit `9ff5701` (SW v777).
+- [x] **152.** Add update/reconcile instead of destructive reload.
+  - `reconcileWristbandWithSource()` diffs the active card against its source; adds new plays to empty cells, removes stale ones. Undo-able. Commit `9ff5701` (SW v777).
+- [x] **153.** Add conflict handling when a source play changed.
+  - Reconcile detects stale source-tagged cells (`_gpSource`/`_scriptSource`) no longer in the source and offers removal. Commit `9ff5701` (SW v777).
+- [x] **154.** Preserve manual cell customization during source refresh.
+  - Reconcile only removes source-tagged cells; manual entries and all cell customizations are preserved. Commit `9ff5701` (SW v777).
+- [x] **155.** Add Send Wristband to Call Sheet with mapping preview.
+  - `sendWristbandToCallSheet()` in `wristband-chrome.js` — fans out card plays to CS categories with append/replace choice, category breakdown, and undo. Commit `9ff5701` (SW v777).
+- [x] **156.** Add Return to Practice and Continue to Call Sheet actions.
+  - "← Script" and "Call Sheet →" quick-nav buttons added to wristband toolbar right. Commit `9ff5701` (SW v777).
+- [x] **157.** Preserve the printing suite as a first-class output.
+  - Wristband print suite (`wristband-export.js`, `wristband-chrome.js`) unchanged; existing print flow verified. Commit `9ff5701` (SW v777).
+- [x] **158.** Keep print settings separate from normal cell entry on phone.
+  - Print dialog is already separate (`printWristband` modal) from the cell editor; no structural changes needed. Commit `9ff5701` (SW v777).
 
 ## Phase 10 — Call Sheet as final game-day artifact
 

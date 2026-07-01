@@ -33,22 +33,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=777" />
-  <link rel="stylesheet" href="css/layout.css?v=777" />
-  <link rel="stylesheet" href="css/components.css?v=777" />
-  <link rel="stylesheet" href="css/playbook.css?v=777" />
-  <link rel="stylesheet" href="css/script.css?v=777" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=777" />
-  <link rel="stylesheet" href="css/wristband.css?v=777" />
-  <link rel="stylesheet" href="css/callsheet.css?v=777" />
-  <link rel="stylesheet" href="css/tendencies.css?v=777" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=777" />
-  <link rel="stylesheet" href="css/dashboard.css?v=777" />
-  <link rel="stylesheet" href="css/gameplan.css?v=777" />
-  <link rel="stylesheet" href="css/installation.css?v=777" />
-  <link rel="stylesheet" href="css/identity.css?v=777" />
-  <link rel="stylesheet" href="css/print.css?v=777" />
-  <link rel="stylesheet" href="css/responsive.css?v=777" />
+  <link rel="stylesheet" href="css/base.css?v=778" />
+  <link rel="stylesheet" href="css/layout.css?v=778" />
+  <link rel="stylesheet" href="css/components.css?v=778" />
+  <link rel="stylesheet" href="css/playbook.css?v=778" />
+  <link rel="stylesheet" href="css/script.css?v=778" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=778" />
+  <link rel="stylesheet" href="css/wristband.css?v=778" />
+  <link rel="stylesheet" href="css/callsheet.css?v=778" />
+  <link rel="stylesheet" href="css/tendencies.css?v=778" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=778" />
+  <link rel="stylesheet" href="css/dashboard.css?v=778" />
+  <link rel="stylesheet" href="css/gameplan.css?v=778" />
+  <link rel="stylesheet" href="css/installation.css?v=778" />
+  <link rel="stylesheet" href="css/identity.css?v=778" />
+  <link rel="stylesheet" href="css/print.css?v=778" />
+  <link rel="stylesheet" href="css/responsive.css?v=778" />
 </head>
 
 <body class="app-booting">
@@ -1136,6 +1136,8 @@
             <input type="text" id="scriptName" class="script-name-input" value="Practice Script"
               placeholder="e.g., Tuesday Team Install" />
             <span id="scriptOpponentBadge" class="script-opp-badge" hidden></span>
+            <!-- #137: GP sync status badge -->
+            <span id="scriptGpSyncBadge" class="script-gp-sync-badge hidden" title="Game Plan sync status — click to reconcile" data-action="reconcileScriptWithGamePlan"></span>
           </div>
           <div class="script-date-group page-header-field">
             <label class="script-label">Date</label>
@@ -1586,6 +1588,10 @@
                       title="Send selected Script plays, or the full Script, to Wristband cards">
                       🃏 Wristband
                     </button>
+                    <button class="btn btn-sm btn-success" data-action="sendScriptToCallSheet"
+                      title="Send selected Script plays, or the full Script, to matching Call Sheet categories">
+                      📄 Call Sheet
+                    </button>
                     <button class="btn btn-sm btn-primary" data-action="openPrintStudio"
                       title="Open unified print and export controls">
                       🖨️ Print Studio
@@ -1598,6 +1604,15 @@
                     ⋯ More Tools
                   </button>
                   <div class="more-tools-menu" data-action="removeParentOpen">
+                    <button data-action="showScoutPeriodSuggestions"
+                      title="Get period suggestions based on scout data for the active opponent">
+                      🔍 Scout Period Suggestions
+                    </button>
+                    <button data-action="reconcileScriptWithGamePlan"
+                      title="Sync script with Game Plan — add new GP plays, remove stale source plays">
+                      🔄 Reconcile with Game Plan
+                    </button>
+                    <div class="tool-divider"></div>
                     <button data-action="applyPreferredFields"
                       title="Apply preferred metadata to selected plays (or all if none selected)">
                       ★ Apply Preferred Fields
@@ -2067,423 +2082,416 @@
                 title="Return to Practice Script">← Script</button>
               <button class="btn btn-sm btn-secondary" data-action="showTab" data-arg="callsheet"
                 title="Continue to Call Sheet">Call Sheet →</button>
-                  </button>
-                </div>
-              </div>
+              </button>
             </div>
           </div>
+        </div>
+      </div>
 
-          <!-- Player Wristband Toolbar (shown when Player Wristband type is active) -->
-          <div id="pcModeBar" class="pc-mode-bar" aria-label="Player Wristband controls" aria-hidden="true">
-            <span class="pc-mode-label">🃏 Player Wristband</span>
-            <label class="pc-mode-control-label" for="pcPosSelect">Position</label>
-            <select id="pcPosSelect" class="wb-preset-select" data-onchange="updatePlayerCardPreview">
-              <option value="respQ">Q</option>
-              <option value="respT">T</option>
-              <option value="respH">H</option>
-              <option value="respZ">Z</option>
-              <option value="respX">X</option>
-              <option value="respY">Y</option>
-              <option value="respLT">LT</option>
-              <option value="respLG">LG</option>
-              <option value="respC">C</option>
-              <option value="respRG">RG</option>
-              <option value="respRT">RT</option>
+      <!-- Player Wristband Toolbar (shown when Player Wristband type is active) -->
+      <div id="pcModeBar" class="pc-mode-bar" aria-label="Player Wristband controls" aria-hidden="true">
+        <span class="pc-mode-label">🃏 Player Wristband</span>
+        <label class="pc-mode-control-label" for="pcPosSelect">Position</label>
+        <select id="pcPosSelect" class="wb-preset-select" data-onchange="updatePlayerCardPreview">
+          <option value="respQ">Q</option>
+          <option value="respT">T</option>
+          <option value="respH">H</option>
+          <option value="respZ">Z</option>
+          <option value="respX">X</option>
+          <option value="respY">Y</option>
+          <option value="respLT">LT</option>
+          <option value="respLG">LG</option>
+          <option value="respC">C</option>
+          <option value="respRG">RG</option>
+          <option value="respRT">RT</option>
+        </select>
+        <label class="player-card-toggle">
+          <input type="checkbox" id="pcLineCallOnly" data-onchange="handlePlayerLineCallOnlyChange" />
+          Line Only
+        </label>
+        <label class="player-card-toggle">
+          <input type="checkbox" id="pcBlankPlayerRules" data-onchange="handlePlayerBlankRulesChange" />
+          Blank Rules
+        </label>
+        <button class="btn btn-success btn-sm" data-action="printAllPlayerCards"
+          title="Print all positions as exact-size cards with standard or flag sizing">🖨️ Print All</button>
+        <button class="btn btn-sm btn-secondary" data-action="printOnePlayerCard"
+          title="Print one exact-size wristband per letter page">📄 1 / Page</button>
+        <button class="btn btn-sm btn-secondary" data-action="printThreePlayerCardCopies"
+          title="Print multiple exact-size copies of this position on each sheet">📋 Copies</button>
+        <button class="btn btn-sm" data-action="openWbLogoCardModal"
+          title="Upload and print a school logo card at wristband size">🖼️ Logo Card</button>
+        <button class="btn btn-sm" data-action="sendWristbandToGamePlan"
+          title="Send plays from this card to the game plan">📋 Game Plan</button>
+        <button class="btn btn-sm" data-action="toggleWbSelectionMode" aria-pressed="false"
+          title="Select cells for batch actions">Select Cells</button>
+        <button class="btn btn-danger btn-sm" data-action="clearWristband">🗑 Clear</button>
+        <button class="btn btn-sm" data-action="startNewWristband" title="Start a new wristband">⟵
+          New</button>
+      </div>
+      <div class="wb-card-controls">
+        <div class="card-tabs" id="cardTabs" role="tablist" aria-label="Wristband cards"></div>
+        <!-- #149: Source/sync state badge -->
+        <span id="wbSourceBadge" class="wb-source-badge hidden" title="Card source"></span>
+        <div class="wb-zoom-controls" role="group" aria-label="Card preview zoom">
+          <button class="btn btn-xs active" data-action="setWristbandZoom" data-arg="fit" data-wb-zoom="fit"
+            aria-pressed="true">Fit</button>
+          <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="75" data-wb-zoom="75"
+            aria-pressed="false">75%</button>
+          <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="100" data-wb-zoom="100"
+            aria-pressed="false">100%</button>
+          <button class="btn btn-xs" data-action="toggleWristbandFullscreen"
+            title="Open the card builder full screen">Full Screen</button>
+        </div>
+      </div>
+      <div id="wbCardViewport" class="wb-card-viewport">
+        <div class="wristband-card" id="wristbandCard">
+          <div id="wristbandGrid" class="wristband-grid" role="grid" aria-label="Wristband card grid"
+            data-testid="wristband-grid"></div>
+        </div>
+      </div>
+
+      <!-- Batch Edit Action Bar (visible when cells are shift+clicked) -->
+      <div id="wbBatchBar" class="wb-batch-bar" aria-live="polite" aria-label="Batch edit selected cells"
+        aria-hidden="true">
+        <div class="wb-batch-bar-info">
+          <span class="wb-batch-count" id="wbBatchCount">0 cells selected</span>
+          <button class="btn btn-sm wb-batch-deselect" data-action="clearBatchSelect" title="Clear selection">✕
+            Clear</button>
+        </div>
+        <div class="wb-batch-controls">
+          <div class="wb-batch-group">
+            <span class="wb-batch-label">Color:</span>
+            <div class="wb-batch-swatches" id="wbBatchSwatches">
+              <div class="wb-batch-swatch" data-color="" title="Clear"></div>
+              <div class="wb-batch-swatch" data-color="#ffeb3b" title="Yellow"></div>
+              <div class="wb-batch-swatch" data-color="#ff9800" title="Orange"></div>
+              <div class="wb-batch-swatch" data-color="#f44336" title="Red"></div>
+              <div class="wb-batch-swatch" data-color="#e91e63" title="Pink"></div>
+              <div class="wb-batch-swatch" data-color="#9c27b0" title="Purple"></div>
+              <div class="wb-batch-swatch" data-color="#2196f3" title="Blue"></div>
+              <div class="wb-batch-swatch" data-color="#4caf50" title="Green"></div>
+            </div>
+          </div>
+          <div class="wb-batch-group">
+            <label for="wbBatchCadence" class="wb-batch-label">Marker:</label>
+            <select id="wbBatchCadence" class="wb-batch-select">
+              <option value="__skip__">— keep —</option>
+              <option value="">None</option>
+              <option value="$">💲 On Two</option>
+              <option value="$$">💲💲 Double</option>
             </select>
-            <label class="player-card-toggle">
-              <input type="checkbox" id="pcLineCallOnly" data-onchange="handlePlayerLineCallOnlyChange" />
-              Line Only
+          </div>
+          <div class="wb-batch-group">
+            <label for="wbBatchPersonnel" class="wb-batch-label">Personnel:</label>
+            <input type="text" id="wbBatchPersonnel" class="wb-batch-input" list="wbPersonnelOptions"
+              placeholder="— keep —" autocomplete="off" />
+          </div>
+          <div class="wb-batch-group">
+            <label for="wbBatchPreShift" class="wb-batch-label">Pre Shift:</label>
+            <input type="text" id="wbBatchPreShift" class="wb-batch-input" list="wbPreShiftOptions"
+              placeholder="— keep —" autocomplete="off" />
+          </div>
+          <button class="btn btn-primary btn-sm" data-action="applyBatchEdit"
+            title="Apply to all selected cells">Apply</button>
+          <div class="wb-batch-group">
+            <label for="wbBatchMoveCard" class="wb-batch-label">Move to:</label>
+            <select id="wbBatchMoveCard" class="wb-batch-select"></select>
+            <button class="btn btn-sm" data-action="moveSelectedWbCellsToCard">Move</button>
+          </div>
+          <button class="btn btn-danger btn-sm" data-action="clearSelectedWbCells">Clear Selected</button>
+        </div>
+      </div>
+
+      <!-- Display Options Panel (collapsible) -->
+      <div class="display-options-panel wb-display-panel">
+        <button type="button" class="display-options-header" data-action="toggleCollapsiblePanel" aria-expanded="false">
+          <strong>🖨️ Display Options</strong>
+          <span class="toggle-icon">▶</span>
+        </button>
+        <div class="display-options-content collapsed">
+          <div class="wb-preset-bar">
+            <span class="wb-preset-title">Presets:</span>
+            <label class="wb-preset-option">
+              <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset"
+                data-pass="value" />
+              Minimal
             </label>
-            <label class="player-card-toggle">
-              <input type="checkbox" id="pcBlankPlayerRules" data-onchange="handlePlayerBlankRulesChange" />
-              Blank Rules
+            <label class="wb-preset-option">
+              <input type="radio" name="wbDisplayPreset" value="standard" checked data-onchange="applyWbDisplayPreset"
+                data-pass="value" />
+              Standard
             </label>
-            <button class="btn btn-success btn-sm" data-action="printAllPlayerCards"
-              title="Print all positions as exact-size cards with standard or flag sizing">🖨️ Print All</button>
-            <button class="btn btn-sm btn-secondary" data-action="printOnePlayerCard"
-              title="Print one exact-size wristband per letter page">📄 1 / Page</button>
-            <button class="btn btn-sm btn-secondary" data-action="printThreePlayerCardCopies"
-              title="Print multiple exact-size copies of this position on each sheet">📋 Copies</button>
-            <button class="btn btn-sm" data-action="openWbLogoCardModal"
-              title="Upload and print a school logo card at wristband size">🖼️ Logo Card</button>
-            <button class="btn btn-sm" data-action="sendWristbandToGamePlan"
-              title="Send plays from this card to the game plan">📋 Game Plan</button>
-            <button class="btn btn-sm" data-action="toggleWbSelectionMode" aria-pressed="false"
-              title="Select cells for batch actions">Select Cells</button>
-            <button class="btn btn-danger btn-sm" data-action="clearWristband">🗑 Clear</button>
-            <button class="btn btn-sm" data-action="startNewWristband" title="Start a new wristband">⟵
-              New</button>
+            <label class="wb-preset-option">
+              <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset"
+                data-pass="value" />
+              Full
+            </label>
           </div>
-          <div class="wb-card-controls">
-            <div class="card-tabs" id="cardTabs" role="tablist" aria-label="Wristband cards"></div>
-            <!-- #149: Source/sync state badge -->
-            <span id="wbSourceBadge" class="wb-source-badge hidden" title="Card source"></span>
-            <div class="wb-zoom-controls" role="group" aria-label="Card preview zoom">
-              <button class="btn btn-xs active" data-action="setWristbandZoom" data-arg="fit" data-wb-zoom="fit"
-                aria-pressed="true">Fit</button>
-              <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="75" data-wb-zoom="75"
-                aria-pressed="false">75%</button>
-              <button class="btn btn-xs" data-action="setWristbandZoom" data-arg="100" data-wb-zoom="100"
-                aria-pressed="false">100%</button>
-              <button class="btn btn-xs" data-action="toggleWristbandFullscreen"
-                title="Open the card builder full screen">Full Screen</button>
-            </div>
-          </div>
-          <div id="wbCardViewport" class="wb-card-viewport">
-            <div class="wristband-card" id="wristbandCard">
-              <div id="wristbandGrid" class="wristband-grid" role="grid" aria-label="Wristband card grid"
-                data-testid="wristband-grid"></div>
-            </div>
-          </div>
-
-          <!-- Batch Edit Action Bar (visible when cells are shift+clicked) -->
-          <div id="wbBatchBar" class="wb-batch-bar" aria-live="polite" aria-label="Batch edit selected cells"
-            aria-hidden="true">
-            <div class="wb-batch-bar-info">
-              <span class="wb-batch-count" id="wbBatchCount">0 cells selected</span>
-              <button class="btn btn-sm wb-batch-deselect" data-action="clearBatchSelect" title="Clear selection">✕
-                Clear</button>
-            </div>
-            <div class="wb-batch-controls">
-              <div class="wb-batch-group">
-                <span class="wb-batch-label">Color:</span>
-                <div class="wb-batch-swatches" id="wbBatchSwatches">
-                  <div class="wb-batch-swatch" data-color="" title="Clear"></div>
-                  <div class="wb-batch-swatch" data-color="#ffeb3b" title="Yellow"></div>
-                  <div class="wb-batch-swatch" data-color="#ff9800" title="Orange"></div>
-                  <div class="wb-batch-swatch" data-color="#f44336" title="Red"></div>
-                  <div class="wb-batch-swatch" data-color="#e91e63" title="Pink"></div>
-                  <div class="wb-batch-swatch" data-color="#9c27b0" title="Purple"></div>
-                  <div class="wb-batch-swatch" data-color="#2196f3" title="Blue"></div>
-                  <div class="wb-batch-swatch" data-color="#4caf50" title="Green"></div>
-                </div>
-              </div>
-              <div class="wb-batch-group">
-                <label for="wbBatchCadence" class="wb-batch-label">Marker:</label>
-                <select id="wbBatchCadence" class="wb-batch-select">
-                  <option value="__skip__">— keep —</option>
-                  <option value="">None</option>
-                  <option value="$">💲 On Two</option>
-                  <option value="$$">💲💲 Double</option>
-                </select>
-              </div>
-              <div class="wb-batch-group">
-                <label for="wbBatchPersonnel" class="wb-batch-label">Personnel:</label>
-                <input type="text" id="wbBatchPersonnel" class="wb-batch-input" list="wbPersonnelOptions"
-                  placeholder="— keep —" autocomplete="off" />
-              </div>
-              <div class="wb-batch-group">
-                <label for="wbBatchPreShift" class="wb-batch-label">Pre Shift:</label>
-                <input type="text" id="wbBatchPreShift" class="wb-batch-input" list="wbPreShiftOptions"
-                  placeholder="— keep —" autocomplete="off" />
-              </div>
-              <button class="btn btn-primary btn-sm" data-action="applyBatchEdit"
-                title="Apply to all selected cells">Apply</button>
-              <div class="wb-batch-group">
-                <label for="wbBatchMoveCard" class="wb-batch-label">Move to:</label>
-                <select id="wbBatchMoveCard" class="wb-batch-select"></select>
-                <button class="btn btn-sm" data-action="moveSelectedWbCellsToCard">Move</button>
-              </div>
-              <button class="btn btn-danger btn-sm" data-action="clearSelectedWbCells">Clear Selected</button>
-            </div>
-          </div>
-
-          <!-- Display Options Panel (collapsible) -->
-          <div class="display-options-panel wb-display-panel">
-            <button type="button" class="display-options-header" data-action="toggleCollapsiblePanel"
-              aria-expanded="false">
-              <strong>🖨️ Display Options</strong>
-              <span class="toggle-icon">▶</span>
+          <div class="display-options-btns">
+            <button class="btn btn-xs" data-action="selectAllWbOptions">
+              All
             </button>
-            <div class="display-options-content collapsed">
-              <div class="wb-preset-bar">
-                <span class="wb-preset-title">Presets:</span>
-                <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset"
-                    data-pass="value" />
-                  Minimal
-                </label>
-                <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="standard" checked
-                    data-onchange="applyWbDisplayPreset" data-pass="value" />
-                  Standard
-                </label>
-                <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset"
-                    data-pass="value" />
-                  Full
-                </label>
-              </div>
-              <div class="display-options-btns">
-                <button class="btn btn-xs" data-action="selectAllWbOptions">
-                  All
-                </button>
-                <button class="btn btn-xs" data-action="clearAllWbOptions">
-                  Clear
-                </button>
-              </div>
-              <div class="display-options-grid">
-                <label><input type="checkbox" id="wbShowEmoji" checked
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🔵 Personnel Color</label>
-                <label><input type="checkbox" id="wbUseSquares" data-onchange="handleWristbandDisplayOptionsChange" />
-                  🟦 Use Squares</label>
-                <label><input type="checkbox" id="wbUnderEmoji" data-onchange="handleWristbandDisplayOptionsChange" />
-                  🍑 Under = Peach</label>
-                <label><input type="checkbox" id="wbBoldShifts" data-onchange="handleWristbandDisplayOptionsChange" />
-                  <b>Bold</b> Shifts</label>
-                <label><input type="checkbox" id="wbRedShifts" data-onchange="handleWristbandDisplayOptionsChange" />
-                  <span class="red">Red</span> Shifts</label>
-                <label><input type="checkbox" id="wbItalicMotions"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  <i>Italic</i> Motions</label>
-                <label><input type="checkbox" id="wbRedMotions" data-onchange="handleWristbandDisplayOptionsChange" />
-                  <span class="red">Red</span> Motions</label>
-                <label><input type="checkbox" id="wbRemoveVowels" data-onchange="handleWristbandDisplayOptionsChange" />
-                  Remove Vowels</label>
-                <label><input type="checkbox" id="wbShowLineCall" checked
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  Show [Line Call]</label>
-                <label><input type="checkbox" id="wbLineCallOnly" data-onchange="handleWristbandDisplayOptionsChange" />
-                  Line Call Only</label>
-                <label><input type="checkbox" id="wbBlankPlayerRules"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  Blank Player Rules</label>
-                <label><input type="checkbox" id="wbCadenceReminder"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🏷️ Marker Reminder (postfix)</label>
-                <label><input type="checkbox" id="wbHighlightHuddle"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🟡 Highlight Huddle</label>
-                <label><input type="checkbox" id="wbHighlightCandy"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🩷 Highlight Candy</label>
-              </div>
-            </div>
-          </div>
-
-          <!-- Sort Panel (collapsible) -->
-          <div class="wb-sort-panel">
-            <button type="button" class="wb-sort-header" data-action="toggleCollapsiblePanel" aria-expanded="false">
-              <strong>🔄 Sort & Organize</strong>
-              <span class="toggle-icon">▶</span>
-            </button>
-            <div class="wb-sort-content collapsed">
-              <div class="wb-sort-toolbar">
-                <button class="btn btn-sm btn-primary" data-action="applyWristbandSort">
-                  🔄 Apply Sort
-                </button>
-                <span class="wb-sort-divider">|</span>
-                <select id="sortPresetDropdown" data-onchange="loadSortPreset" class="wb-sort-select">
-                  <option value="">-- Select Preset --</option>
-                </select>
-                <button class="btn btn-sm" data-action="saveSortPreset" title="Save current sort as preset">
-                  💾 Save
-                </button>
-                <button class="btn btn-sm btn-danger" data-action="deleteSortPreset" title="Delete selected preset">
-                  🗑️
-                </button>
-              </div>
-              <div class="wb-sort-hint">
-                Drag to reorder priority • Click ⚙️ to set custom value order
-                • Click ↕ to toggle direction
-              </div>
-              <div id="sortCriteriaList" class="sort-criteria-list"></div>
-              <div class="wb-sort-actions">
-                <button class="btn btn-sm" data-action="addSortCriteria">
-                  + Add Sort Field
-                </button>
-                <label class="wb-sort-across-label">
-                  <input type="checkbox" id="sortAcrossCardsCheckbox" data-onchange="toggleSortAcrossCards" />
-                  Sort across all cards
-                  <span
-                    title="When enabled, sorts ALL plays across all cards as one pool, then redistributes them starting from Card 1"
-                    class="wb-sort-info">ⓘ</span>
-                </label>
-              </div>
-            </div>
-          </div>
-
-        </div>
-      </div>
-    </div>
-
-    <!-- Installation Tracker Panel -->
-    <div id="installation" class="panel" role="tabpanel" aria-label="Installation Tracker">
-      <div id="installationContent"></div>
-    </div>
-
-    <!-- Offense Builder Panel -->
-    <div id="offensebuilder" class="panel" role="tabpanel" aria-label="Offense Builder">
-      <div id="offenseBuilderContent"></div>
-    </div>
-
-    <!-- Identity Panel (2026 Vision Framework) -->
-    <div id="identity" class="panel" role="tabpanel" aria-label="Offensive Identity"></div>
-
-    <!-- Game Week Dashboard Panel -->
-    <div id="dashboard" class="panel" role="tabpanel" aria-label="Dashboard">
-      <div class="dash-container">
-        <section id="playerDashboardHome" class="player-dashboard-home" aria-label="Player home" hidden></section>
-        <!-- Opponent Selector Bar -->
-        <div class="dash-opponent-bar" data-auth-player-hide="true">
-          <div class="dash-opponent-left">
-            <h2 class="dash-title">📊 Game Week Dashboard</h2>
-            <div class="dash-opponent-select-group">
-              <input type="text" id="dashSearchInput" class="dash-search-input"
-                placeholder="Search opponents or schedule..." data-oninput="debouncedOnDashSearchInput"
-                data-pass="value" aria-label="Search dashboard opponents and schedule" />
-              <label for="dashOpponentSelect" class="dash-label">Active Opponent:</label>
-              <select id="dashOpponentSelect" class="dash-select" data-onchange="onDashOpponentChange"
-                data-pass="value">
-                <option value="">— Select Opponent —</option>
-              </select>
-              <input type="text" id="dashWeekLabel" class="dash-week-input" placeholder="e.g., Week 3"
-                data-onchange="onDashWeekLabelChange" data-pass="value" />
-            </div>
-          </div>
-          <div class="dash-opponent-right">
-            <span id="dashActiveOpponentBadge" class="dash-opp-badge"></span>
-          </div>
-        </div>
-
-        <section id="mobileCoachNotesCard" class="mobile-coach-notes-card" data-auth-player-hide="true"
-          aria-label="Mobile coach notes and reminders">
-        </section>
-
-        <section id="dashCommandCenter" class="dash-command-center" data-auth-player-hide="true"
-          aria-label="Game week command center summary">
-        </section>
-
-        <!-- Game Week Notes -->
-        <div class="dash-notes-section" id="dashNotesSection" data-auth-player-hide="true">
-          <h3 class="dash-section-title">📝 Game Week Notes</h3>
-          <textarea id="dashNotesArea" class="dash-notes-textarea" placeholder="e.g., Key matchups, adjustments…"
-            data-oninput="onDashNotesChange" data-pass="value"></textarea>
-        </div>
-
-        <!-- Season Schedule -->
-        <div class="dash-schedule-section" id="dashScheduleSection" data-auth-player-hide="true">
-          <div class="dash-schedule-header">
-            <h3 class="dash-section-title">📅 Season Schedule</h3>
-            <button class="btn btn-sm btn-primary" data-action="addScheduleGame">
-              + Add Game
+            <button class="btn btn-xs" data-action="clearAllWbOptions">
+              Clear
             </button>
           </div>
-          <div id="dashScheduleBody"></div>
-        </div>
-
-        <!-- Game Plan Summary -->
-        <div class="dash-gameplan-section" id="dashGamePlanSection" data-auth-player-hide="true"></div>
-
-        <!-- Call Sheet Cleanup -->
-        <div class="dash-cleanup-section" id="dashCleanupSection" data-auth-player-hide="true"></div>
-
-        <!-- Status Cards Row -->
-        <div class="dash-cards" id="dashCards" data-auth-player-hide="true"></div>
-
-        <!-- Scouting Summary -->
-        <div class="dash-scouting-section" id="dashScoutingSection" data-auth-player-hide="true"></div>
-
-        <!-- Quick Links -->
-        <div class="dash-quick-links" id="dashQuickLinks" data-auth-player-hide="true"></div>
-      </div>
-    </div>
-
-    <!-- Opponent Scout Panel -->
-    <div id="tendencies" class="panel" role="tabpanel" aria-label="Opponent Scout">
-      <div id="tendenciesContent"></div>
-    </div>
-
-    <!-- Game Plan Panel -->
-    <div id="gameplan" class="panel" role="tabpanel" aria-label="Game Plan"></div>
-
-    <!-- Call Sheet Panel -->
-    <div id="callsheet" class="panel" role="tabpanel" aria-label="Call Sheet">
-      <!-- Toolbar -->
-      <div class="cs-toolbar">
-        <div class="cs-toolbar-left">
-          <h2 class="cs-title">📋 Call Sheet</h2>
-          <div class="cs-toggle-group page-toggle">
-            <button id="callsheetFrontBtn" class="cs-toggle active" data-action="switchCallSheetPage"
-              data-arg="front">Front</button>
-            <button id="callsheetBackBtn" class="cs-toggle" data-action="switchCallSheetPage"
-              data-arg="back">Back</button>
-          </div>
-          <div class="cs-toggle-group orientation-toggle">
-            <button id="callsheetPortraitBtn" class="cs-toggle active" data-action="setCallSheetOrientation"
-              data-arg="portrait" title="Portrait">📄</button>
-            <button id="callsheetLandscapeBtn" class="cs-toggle" data-action="setCallSheetOrientation"
-              data-arg="landscape" title="Landscape">📃</button>
-          </div>
-        </div>
-        <div class="cs-toolbar-right">
-          <button id="callsheetUndoBtn" class="btn btn-sm cs-undo-redo-btn" data-action="undoCallSheet" disabled
-            title="Undo">↩</button>
-          <button id="callsheetRedoBtn" class="btn btn-sm cs-undo-redo-btn" data-action="redoCallSheet" disabled
-            title="Redo">↪</button>
-          <div class="cs-toolbar-divider"></div>
-          <button class="btn btn-sm cs-display-btn" data-action="openDisplayPanel" id="csDisplayPanelBtn">⚙️
-            Display</button>
-          <button class="btn btn-primary btn-sm" data-action="autoPopulateCallSheet">⚡ Auto-Populate</button>
-          <button class="btn btn-success btn-sm" data-action="printCallSheet" data-testid="print-callsheet">🖨️
-            Print</button>
-          <button class="btn btn-primary btn-sm" data-action="saveCallSheetTemplate" data-testid="save-callsheet">💾
-            Save</button>
-          <div class="tool-menu-wrap" data-anchored>
-            <button class="btn btn-sm" data-action="toggleParentOpen" title="More call sheet tools">⋯ More ▾</button>
-            <div class="tool-menu" data-action="removeParentOpen">
-              <button data-action="openLoadCallSheetModal" data-testid="load-callsheet">📂 Load Call Sheet</button>
-              <button data-action="openTemplatesModal" data-arg="manage">📁 Saved Call Sheets</button>
-              <div class="tool-divider"></div>
-              <button data-action="openLoadWristbandModal">📋 Load Wristband</button>
-              <span id="loadedWristbandDisplay" class="cs-wb-display"
-                style="display:block;padding:4px 14px;font-size:var(--font-size-xs);color:var(--color-text-muted);"></span>
-              <div class="tool-divider"></div>
-              <button data-action="toggleScoutingOverlay" id="csScoutingToggle">🎯 Scouting Intel</button>
-              <button data-action="toggleStatsPanel">📊 Stats</button>
-              <button data-action="toggleNotOnSheet">🔍 Not On Sheet</button>
-              <div class="tool-divider"></div>
-              <button data-action="openAddCallSheetCategoryModal">➕ Add Category</button>
-              <button data-action="smartReorderCategories">🧩 Smart Layout</button>
-              <button data-action="openCallSheetLayoutModal">🗂️ Reorder</button>
-              <button data-action="resetCategoryOrder">↩️ Reset Layout</button>
-              <div class="tool-divider"></div>
-              <button data-action="expandAllCategories">▼ Expand All</button>
-              <button data-action="collapseAllCategories">▶ Collapse All</button>
-              <div class="tool-divider"></div>
-              <button data-action="exportCallSheetCSV">📄 Export CSV</button>
-              <button data-action="runConstraintCheck">🛡️ Check Constraints</button>
-              <div class="tool-divider"></div>
-              <button data-action="clearCallSheet" data-testid="clear-callsheet" class="tool-menu-danger">🗑️ Clear
-                Sheet</button>
-            </div>
+          <div class="display-options-grid">
+            <label><input type="checkbox" id="wbShowEmoji" checked
+                data-onchange="handleWristbandDisplayOptionsChange" />
+              🔵 Personnel Color</label>
+            <label><input type="checkbox" id="wbUseSquares" data-onchange="handleWristbandDisplayOptionsChange" />
+              🟦 Use Squares</label>
+            <label><input type="checkbox" id="wbUnderEmoji" data-onchange="handleWristbandDisplayOptionsChange" />
+              🍑 Under = Peach</label>
+            <label><input type="checkbox" id="wbBoldShifts" data-onchange="handleWristbandDisplayOptionsChange" />
+              <b>Bold</b> Shifts</label>
+            <label><input type="checkbox" id="wbRedShifts" data-onchange="handleWristbandDisplayOptionsChange" />
+              <span class="red">Red</span> Shifts</label>
+            <label><input type="checkbox" id="wbItalicMotions" data-onchange="handleWristbandDisplayOptionsChange" />
+              <i>Italic</i> Motions</label>
+            <label><input type="checkbox" id="wbRedMotions" data-onchange="handleWristbandDisplayOptionsChange" />
+              <span class="red">Red</span> Motions</label>
+            <label><input type="checkbox" id="wbRemoveVowels" data-onchange="handleWristbandDisplayOptionsChange" />
+              Remove Vowels</label>
+            <label><input type="checkbox" id="wbShowLineCall" checked
+                data-onchange="handleWristbandDisplayOptionsChange" />
+              Show [Line Call]</label>
+            <label><input type="checkbox" id="wbLineCallOnly" data-onchange="handleWristbandDisplayOptionsChange" />
+              Line Call Only</label>
+            <label><input type="checkbox" id="wbBlankPlayerRules" data-onchange="handleWristbandDisplayOptionsChange" />
+              Blank Player Rules</label>
+            <label><input type="checkbox" id="wbCadenceReminder" data-onchange="handleWristbandDisplayOptionsChange" />
+              🏷️ Marker Reminder (postfix)</label>
+            <label><input type="checkbox" id="wbHighlightHuddle" data-onchange="handleWristbandDisplayOptionsChange" />
+              🟡 Highlight Huddle</label>
+            <label><input type="checkbox" id="wbHighlightCandy" data-onchange="handleWristbandDisplayOptionsChange" />
+              🩷 Highlight Candy</label>
           </div>
         </div>
       </div>
 
-      <details class="page-help">
-        <summary class="page-help__summary">
-          <span aria-hidden="true">💡</span>
-          <span class="page-help__label">Call sheet tips</span>
-          <span class="page-help__chevron" aria-hidden="true">▾</span>
-        </summary>
-        <div class="page-help__body">
-          Double-click plays to highlight • Right-click play to customize
-          (border, background, text style, notes) • Double-click headers to
-          rename • Drag plays to reorder • Drag category headers to rearrange •
-          Click ⋯ for category options
+      <!-- Sort Panel (collapsible) -->
+      <div class="wb-sort-panel">
+        <button type="button" class="wb-sort-header" data-action="toggleCollapsiblePanel" aria-expanded="false">
+          <strong>🔄 Sort & Organize</strong>
+          <span class="toggle-icon">▶</span>
+        </button>
+        <div class="wb-sort-content collapsed">
+          <div class="wb-sort-toolbar">
+            <button class="btn btn-sm btn-primary" data-action="applyWristbandSort">
+              🔄 Apply Sort
+            </button>
+            <span class="wb-sort-divider">|</span>
+            <select id="sortPresetDropdown" data-onchange="loadSortPreset" class="wb-sort-select">
+              <option value="">-- Select Preset --</option>
+            </select>
+            <button class="btn btn-sm" data-action="saveSortPreset" title="Save current sort as preset">
+              💾 Save
+            </button>
+            <button class="btn btn-sm btn-danger" data-action="deleteSortPreset" title="Delete selected preset">
+              🗑️
+            </button>
+          </div>
+          <div class="wb-sort-hint">
+            Drag to reorder priority • Click ⚙️ to set custom value order
+            • Click ↕ to toggle direction
+          </div>
+          <div id="sortCriteriaList" class="sort-criteria-list"></div>
+          <div class="wb-sort-actions">
+            <button class="btn btn-sm" data-action="addSortCriteria">
+              + Add Sort Field
+            </button>
+            <label class="wb-sort-across-label">
+              <input type="checkbox" id="sortAcrossCardsCheckbox" data-onchange="toggleSortAcrossCards" />
+              Sort across all cards
+              <span
+                title="When enabled, sorts ALL plays across all cards as one pool, then redistributes them starting from Card 1"
+                class="wb-sort-info">ⓘ</span>
+            </label>
+          </div>
         </div>
-      </details>
+      </div>
 
-      <!-- Stats Panel (hidden by default) -->
-      <div id="csStatsPanel" class="cs-stats-panel hidden"></div>
-
-      <!-- Not On Sheet Panel (hidden by default) -->
-      <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
-
-      <div id="callSheetGrid" class="callsheet-grid" data-testid="callsheet-grid"></div>
     </div>
+  </div>
+  </div>
+
+  <!-- Installation Tracker Panel -->
+  <div id="installation" class="panel" role="tabpanel" aria-label="Installation Tracker">
+    <div id="installationContent"></div>
+  </div>
+
+  <!-- Offense Builder Panel -->
+  <div id="offensebuilder" class="panel" role="tabpanel" aria-label="Offense Builder">
+    <div id="offenseBuilderContent"></div>
+  </div>
+
+  <!-- Identity Panel (2026 Vision Framework) -->
+  <div id="identity" class="panel" role="tabpanel" aria-label="Offensive Identity"></div>
+
+  <!-- Game Week Dashboard Panel -->
+  <div id="dashboard" class="panel" role="tabpanel" aria-label="Dashboard">
+    <div class="dash-container">
+      <section id="playerDashboardHome" class="player-dashboard-home" aria-label="Player home" hidden></section>
+      <!-- Opponent Selector Bar -->
+      <div class="dash-opponent-bar" data-auth-player-hide="true">
+        <div class="dash-opponent-left">
+          <h2 class="dash-title">📊 Game Week Dashboard</h2>
+          <div class="dash-opponent-select-group">
+            <input type="text" id="dashSearchInput" class="dash-search-input"
+              placeholder="Search opponents or schedule..." data-oninput="debouncedOnDashSearchInput" data-pass="value"
+              aria-label="Search dashboard opponents and schedule" />
+            <label for="dashOpponentSelect" class="dash-label">Active Opponent:</label>
+            <select id="dashOpponentSelect" class="dash-select" data-onchange="onDashOpponentChange" data-pass="value">
+              <option value="">— Select Opponent —</option>
+            </select>
+            <input type="text" id="dashWeekLabel" class="dash-week-input" placeholder="e.g., Week 3"
+              data-onchange="onDashWeekLabelChange" data-pass="value" />
+          </div>
+        </div>
+        <div class="dash-opponent-right">
+          <span id="dashActiveOpponentBadge" class="dash-opp-badge"></span>
+        </div>
+      </div>
+
+      <section id="mobileCoachNotesCard" class="mobile-coach-notes-card" data-auth-player-hide="true"
+        aria-label="Mobile coach notes and reminders">
+      </section>
+
+      <section id="dashCommandCenter" class="dash-command-center" data-auth-player-hide="true"
+        aria-label="Game week command center summary">
+      </section>
+
+      <!-- Game Week Notes -->
+      <div class="dash-notes-section" id="dashNotesSection" data-auth-player-hide="true">
+        <h3 class="dash-section-title">📝 Game Week Notes</h3>
+        <textarea id="dashNotesArea" class="dash-notes-textarea" placeholder="e.g., Key matchups, adjustments…"
+          data-oninput="onDashNotesChange" data-pass="value"></textarea>
+      </div>
+
+      <!-- Season Schedule -->
+      <div class="dash-schedule-section" id="dashScheduleSection" data-auth-player-hide="true">
+        <div class="dash-schedule-header">
+          <h3 class="dash-section-title">📅 Season Schedule</h3>
+          <button class="btn btn-sm btn-primary" data-action="addScheduleGame">
+            + Add Game
+          </button>
+        </div>
+        <div id="dashScheduleBody"></div>
+      </div>
+
+      <!-- Game Plan Summary -->
+      <div class="dash-gameplan-section" id="dashGamePlanSection" data-auth-player-hide="true"></div>
+
+      <!-- Call Sheet Cleanup -->
+      <div class="dash-cleanup-section" id="dashCleanupSection" data-auth-player-hide="true"></div>
+
+      <!-- Status Cards Row -->
+      <div class="dash-cards" id="dashCards" data-auth-player-hide="true"></div>
+
+      <!-- Scouting Summary -->
+      <div class="dash-scouting-section" id="dashScoutingSection" data-auth-player-hide="true"></div>
+
+      <!-- Quick Links -->
+      <div class="dash-quick-links" id="dashQuickLinks" data-auth-player-hide="true"></div>
+    </div>
+  </div>
+
+  <!-- Opponent Scout Panel -->
+  <div id="tendencies" class="panel" role="tabpanel" aria-label="Opponent Scout">
+    <div id="tendenciesContent"></div>
+  </div>
+
+  <!-- Game Plan Panel -->
+  <div id="gameplan" class="panel" role="tabpanel" aria-label="Game Plan"></div>
+
+  <!-- Call Sheet Panel -->
+  <div id="callsheet" class="panel" role="tabpanel" aria-label="Call Sheet">
+    <!-- Toolbar -->
+    <div class="cs-toolbar">
+      <div class="cs-toolbar-left">
+        <h2 class="cs-title">📋 Call Sheet</h2>
+        <div class="cs-toggle-group page-toggle">
+          <button id="callsheetFrontBtn" class="cs-toggle active" data-action="switchCallSheetPage"
+            data-arg="front">Front</button>
+          <button id="callsheetBackBtn" class="cs-toggle" data-action="switchCallSheetPage"
+            data-arg="back">Back</button>
+        </div>
+        <div class="cs-toggle-group orientation-toggle">
+          <button id="callsheetPortraitBtn" class="cs-toggle active" data-action="setCallSheetOrientation"
+            data-arg="portrait" title="Portrait">📄</button>
+          <button id="callsheetLandscapeBtn" class="cs-toggle" data-action="setCallSheetOrientation"
+            data-arg="landscape" title="Landscape">📃</button>
+        </div>
+      </div>
+      <div class="cs-toolbar-right">
+        <button id="callsheetUndoBtn" class="btn btn-sm cs-undo-redo-btn" data-action="undoCallSheet" disabled
+          title="Undo">↩</button>
+        <button id="callsheetRedoBtn" class="btn btn-sm cs-undo-redo-btn" data-action="redoCallSheet" disabled
+          title="Redo">↪</button>
+        <div class="cs-toolbar-divider"></div>
+        <button class="btn btn-sm cs-display-btn" data-action="openDisplayPanel" id="csDisplayPanelBtn">⚙️
+          Display</button>
+        <button class="btn btn-primary btn-sm" data-action="autoPopulateCallSheet">⚡ Auto-Populate</button>
+        <button class="btn btn-success btn-sm" data-action="printCallSheet" data-testid="print-callsheet">🖨️
+          Print</button>
+        <button class="btn btn-primary btn-sm" data-action="saveCallSheetTemplate" data-testid="save-callsheet">💾
+          Save</button>
+        <div class="tool-menu-wrap" data-anchored>
+          <button class="btn btn-sm" data-action="toggleParentOpen" title="More call sheet tools">⋯ More ▾</button>
+          <div class="tool-menu" data-action="removeParentOpen">
+            <button data-action="openLoadCallSheetModal" data-testid="load-callsheet">📂 Load Call Sheet</button>
+            <button data-action="openTemplatesModal" data-arg="manage">📁 Saved Call Sheets</button>
+            <div class="tool-divider"></div>
+            <button data-action="openLoadWristbandModal">📋 Load Wristband</button>
+            <span id="loadedWristbandDisplay" class="cs-wb-display"
+              style="display:block;padding:4px 14px;font-size:var(--font-size-xs);color:var(--color-text-muted);"></span>
+            <div class="tool-divider"></div>
+            <button data-action="toggleScoutingOverlay" id="csScoutingToggle">🎯 Scouting Intel</button>
+            <button data-action="toggleStatsPanel">📊 Stats</button>
+            <button data-action="toggleNotOnSheet">🔍 Not On Sheet</button>
+            <div class="tool-divider"></div>
+            <button data-action="openAddCallSheetCategoryModal">➕ Add Category</button>
+            <button data-action="smartReorderCategories">🧩 Smart Layout</button>
+            <button data-action="openCallSheetLayoutModal">🗂️ Reorder</button>
+            <button data-action="resetCategoryOrder">↩️ Reset Layout</button>
+            <div class="tool-divider"></div>
+            <button data-action="expandAllCategories">▼ Expand All</button>
+            <button data-action="collapseAllCategories">▶ Collapse All</button>
+            <div class="tool-divider"></div>
+            <button data-action="exportCallSheetCSV">📄 Export CSV</button>
+            <button data-action="runConstraintCheck">🛡️ Check Constraints</button>
+            <div class="tool-divider"></div>
+            <button data-action="clearCallSheet" data-testid="clear-callsheet" class="tool-menu-danger">🗑️ Clear
+              Sheet</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <details class="page-help">
+      <summary class="page-help__summary">
+        <span aria-hidden="true">💡</span>
+        <span class="page-help__label">Call sheet tips</span>
+        <span class="page-help__chevron" aria-hidden="true">▾</span>
+      </summary>
+      <div class="page-help__body">
+        Double-click plays to highlight • Right-click play to customize
+        (border, background, text style, notes) • Double-click headers to
+        rename • Drag plays to reorder • Drag category headers to rearrange •
+        Click ⋯ for category options
+      </div>
+    </details>
+
+    <!-- Stats Panel (hidden by default) -->
+    <div id="csStatsPanel" class="cs-stats-panel hidden"></div>
+
+    <!-- Not On Sheet Panel (hidden by default) -->
+    <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
+
+    <div id="callSheetGrid" class="callsheet-grid" data-testid="callsheet-grid"></div>
+  </div>
   </div>
   <!-- Display & Format Panel (position:fixed side drawer, opened from ⚙️ Display button) -->
   <div id="csDisplayPanel" class="cs-display-panel-overlay" data-action="closeDisplayPanelOverlay">
@@ -3907,119 +3915,119 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=777"></script>
-  <script defer src="js/history.js?v=777"></script>
-  <script defer src="js/dom-helpers.js?v=777"></script>
-  <script defer src="js/lz-string.min.js?v=777"></script>
-  <script defer src="js/storage.js?v=777"></script>
-  <script defer src="js/storage-ui.js?v=777"></script>
-  <script defer src="js/play-images.js?v=777"></script>
-  <script defer src="js/cloud-sync.js?v=777"></script>
-  <script defer src="js/auth.js?v=777"></script>
-  <script defer src="js/play-clips.js?v=777"></script>
-  <script defer src="js/vision.js?v=777"></script>
-  <script defer src="js/team-settings.js?v=777"></script>
-  <script defer src="js/playbook.js?v=777"></script>
-  <script defer src="js/playbook-collections.js?v=777"></script>
-  <script defer src="js/playbook-print.js?v=777"></script>
-  <script defer src="js/playbook-editor.js?v=777"></script>
-  <script defer src="js/playbook-import.js?v=777"></script>
-  <script defer src="js/playbook-export.js?v=777"></script>
-  <script defer src="js/playbook-chrome.js?v=777"></script>
-  <script defer src="js/playbook-reports.js?v=777"></script>
-  <script defer src="js/playbook-reports-identity.js?v=777"></script>
-  <script defer src="js/playbook-state.js?v=777"></script>
-  <script defer src="js/playbook-filters.js?v=777"></script>
-  <script defer src="js/playbook-navigation.js?v=777"></script>
-  <script defer src="js/playbook-actions.js?v=777"></script>
-  <script defer src="js/playbook-render.js?v=777"></script>
-  <script defer src="js/playbook-sanitize.js?v=777"></script>
-  <script defer src="js/playbook-analytics.js?v=777"></script>
-  <script defer src="js/playbook-analytics-render.js?v=777"></script>
-  <script defer src="js/playbook-identity.js?v=777"></script>
-  <script defer src="js/script-state.js?v=777"></script>
-  <script defer src="js/script-shared.js?v=777"></script>
-  <script defer src="js/script-players.js?v=777"></script>
-  <script defer src="js/script-display-options.js?v=777"></script>
-  <script defer src="js/play-readiness.js?v=777"></script>
-  <script defer src="js/script-add.js?v=777"></script>
-  <script defer src="js/script-sort.js?v=777"></script>
-  <script defer src="js/script-export.js?v=777"></script>
-  <script defer src="js/script-available.js?v=777"></script>
-  <script defer src="js/script-selection.js?v=777"></script>
-  <script defer src="js/script-timeline.js?v=777"></script>
-  <script defer src="js/script-render.js?v=777"></script>
-  <script defer src="js/script-health.js?v=777"></script>
-  <script defer src="js/script-periods.js?v=777"></script>
-  <script defer src="js/script-period-sync.js?v=777"></script>
-  <script defer src="js/script-smart.js?v=777"></script>
-  <script defer src="js/script-storage.js?v=777"></script>
-  <script defer src="js/script-player.js?v=777"></script>
-  <script defer src="js/script-integrations.js?v=777"></script>
-  <script defer src="js/play-presentation.js?v=777"></script>
-  <script defer src="js/wristband.js?v=777"></script>
-  <script defer src="js/wristband-library.js?v=777"></script>
-  <script defer src="js/wristband-render.js?v=777"></script>
-  <script defer src="js/wristband-cards.js?v=777"></script>
-  <script defer src="js/wristband-export.js?v=777"></script>
-  <script defer src="js/wristband-chrome.js?v=777"></script>
-  <script defer src="js/wristband-logo.js?v=777"></script>
-  <script defer src="js/wristband-search.js?v=777"></script>
-  <script defer src="js/wristband-modals.js?v=777"></script>
-  <script defer src="js/wristband-cell-popup.js?v=777"></script>
-  <script defer src="js/wristband-cell-actions.js?v=777"></script>
-  <script defer src="js/wristband-sort.js?v=777"></script>
-  <script defer src="js/wristband-storage.js?v=777"></script>
-  <script defer src="js/wristband-runtime.js?v=777"></script>
-  <script defer src="js/callsheet-render.js?v=777"></script>
-  <script defer src="js/callsheet.js?v=777"></script>
-  <script defer src="js/callsheet-print.js?v=777"></script>
-  <script defer src="js/callsheet-sort.js?v=777"></script>
-  <script defer src="js/callsheet-filters.js?v=777"></script>
-  <script defer src="js/callsheet-smart.js?v=777"></script>
-  <script defer src="js/callsheet-export.js?v=777"></script>
-  <script defer src="js/callsheet-display.js?v=777"></script>
-  <script defer src="js/callsheet-categories.js?v=777"></script>
-  <script defer src="js/callsheet-metadata.js?v=777"></script>
-  <script defer src="js/callsheet-layout.js?v=777"></script>
-  <script defer src="js/callsheet-templates.js?v=777"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=777"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=777"></script>
-  <script defer src="js/constraints.js?v=777"></script>
-  <script defer src="js/constraints-ui.js?v=777"></script>
-  <script defer src="js/script-vision.js?v=777"></script>
-  <script defer src="js/tendencies-render.js?v=777"></script>
-  <script defer src="js/tendencies.js?v=777"></script>
-  <script defer src="js/tendencies-print.js?v=777"></script>
-  <script defer src="js/installation-render.js?v=777"></script>
-  <script defer src="js/installation.js?v=777"></script>
-  <script defer src="js/installation-print.js?v=777"></script>
-  <script defer src="js/identity.js?v=777"></script>
-  <script defer src="js/offensebuilder.js?v=777"></script>
-  <script defer src="js/help.js?v=777"></script>
-  <script defer src="js/dashboard-render.js?v=777"></script>
-  <script defer src="js/dashboard.js?v=777"></script>
-  <script defer src="js/gameplan.js?v=777"></script>
-  <script defer src="js/gameplan-render.js?v=777"></script>
-  <script defer src="js/gameplan-dnd.js?v=777"></script>
-  <script defer src="js/gameplan-actions.js?v=777"></script>
-  <script defer src="js/gameplan-smart.js?v=777"></script>
-  <script defer src="js/gameplan-health.js?v=777"></script>
-  <script defer src="js/gameplan-print.js?v=777"></script>
-  <script defer src="js/gameplan-integrations.js?v=777"></script>
-  <script defer src="js/gameplan-snapshots.js?v=777"></script>
-  <script defer src="js/print-studio.js?v=777"></script>
-  <script defer src="js/script-events.js?v=777"></script>
-  <script defer src="js/anchored-menu.js?v=777"></script>
-  <script defer src="js/app-events.js?v=777"></script>
-  <script defer src="js/app-command.js?v=777"></script>
-  <script defer src="js/app-shell.js?v=777"></script>
-  <script defer src="js/app-session.js?v=777"></script>
-  <script defer src="js/app-navigation.js?v=777"></script>
-  <script defer src="js/app-module-init.js?v=777"></script>
-  <script defer src="js/app-bootstrap.js?v=777"></script>
-  <script defer src="js/app-init.js?v=777"></script>
-  <script defer src="js/app.js?v=777"></script>
+  <script defer src="js/utils.js?v=778"></script>
+  <script defer src="js/history.js?v=778"></script>
+  <script defer src="js/dom-helpers.js?v=778"></script>
+  <script defer src="js/lz-string.min.js?v=778"></script>
+  <script defer src="js/storage.js?v=778"></script>
+  <script defer src="js/storage-ui.js?v=778"></script>
+  <script defer src="js/play-images.js?v=778"></script>
+  <script defer src="js/cloud-sync.js?v=778"></script>
+  <script defer src="js/auth.js?v=778"></script>
+  <script defer src="js/play-clips.js?v=778"></script>
+  <script defer src="js/vision.js?v=778"></script>
+  <script defer src="js/team-settings.js?v=778"></script>
+  <script defer src="js/playbook.js?v=778"></script>
+  <script defer src="js/playbook-collections.js?v=778"></script>
+  <script defer src="js/playbook-print.js?v=778"></script>
+  <script defer src="js/playbook-editor.js?v=778"></script>
+  <script defer src="js/playbook-import.js?v=778"></script>
+  <script defer src="js/playbook-export.js?v=778"></script>
+  <script defer src="js/playbook-chrome.js?v=778"></script>
+  <script defer src="js/playbook-reports.js?v=778"></script>
+  <script defer src="js/playbook-reports-identity.js?v=778"></script>
+  <script defer src="js/playbook-state.js?v=778"></script>
+  <script defer src="js/playbook-filters.js?v=778"></script>
+  <script defer src="js/playbook-navigation.js?v=778"></script>
+  <script defer src="js/playbook-actions.js?v=778"></script>
+  <script defer src="js/playbook-render.js?v=778"></script>
+  <script defer src="js/playbook-sanitize.js?v=778"></script>
+  <script defer src="js/playbook-analytics.js?v=778"></script>
+  <script defer src="js/playbook-analytics-render.js?v=778"></script>
+  <script defer src="js/playbook-identity.js?v=778"></script>
+  <script defer src="js/script-state.js?v=778"></script>
+  <script defer src="js/script-shared.js?v=778"></script>
+  <script defer src="js/script-players.js?v=778"></script>
+  <script defer src="js/script-display-options.js?v=778"></script>
+  <script defer src="js/play-readiness.js?v=778"></script>
+  <script defer src="js/script-add.js?v=778"></script>
+  <script defer src="js/script-sort.js?v=778"></script>
+  <script defer src="js/script-export.js?v=778"></script>
+  <script defer src="js/script-available.js?v=778"></script>
+  <script defer src="js/script-selection.js?v=778"></script>
+  <script defer src="js/script-timeline.js?v=778"></script>
+  <script defer src="js/script-render.js?v=778"></script>
+  <script defer src="js/script-health.js?v=778"></script>
+  <script defer src="js/script-periods.js?v=778"></script>
+  <script defer src="js/script-period-sync.js?v=778"></script>
+  <script defer src="js/script-smart.js?v=778"></script>
+  <script defer src="js/script-storage.js?v=778"></script>
+  <script defer src="js/script-player.js?v=778"></script>
+  <script defer src="js/script-integrations.js?v=778"></script>
+  <script defer src="js/play-presentation.js?v=778"></script>
+  <script defer src="js/wristband.js?v=778"></script>
+  <script defer src="js/wristband-library.js?v=778"></script>
+  <script defer src="js/wristband-render.js?v=778"></script>
+  <script defer src="js/wristband-cards.js?v=778"></script>
+  <script defer src="js/wristband-export.js?v=778"></script>
+  <script defer src="js/wristband-chrome.js?v=778"></script>
+  <script defer src="js/wristband-logo.js?v=778"></script>
+  <script defer src="js/wristband-search.js?v=778"></script>
+  <script defer src="js/wristband-modals.js?v=778"></script>
+  <script defer src="js/wristband-cell-popup.js?v=778"></script>
+  <script defer src="js/wristband-cell-actions.js?v=778"></script>
+  <script defer src="js/wristband-sort.js?v=778"></script>
+  <script defer src="js/wristband-storage.js?v=778"></script>
+  <script defer src="js/wristband-runtime.js?v=778"></script>
+  <script defer src="js/callsheet-render.js?v=778"></script>
+  <script defer src="js/callsheet.js?v=778"></script>
+  <script defer src="js/callsheet-print.js?v=778"></script>
+  <script defer src="js/callsheet-sort.js?v=778"></script>
+  <script defer src="js/callsheet-filters.js?v=778"></script>
+  <script defer src="js/callsheet-smart.js?v=778"></script>
+  <script defer src="js/callsheet-export.js?v=778"></script>
+  <script defer src="js/callsheet-display.js?v=778"></script>
+  <script defer src="js/callsheet-categories.js?v=778"></script>
+  <script defer src="js/callsheet-metadata.js?v=778"></script>
+  <script defer src="js/callsheet-layout.js?v=778"></script>
+  <script defer src="js/callsheet-templates.js?v=778"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=778"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=778"></script>
+  <script defer src="js/constraints.js?v=778"></script>
+  <script defer src="js/constraints-ui.js?v=778"></script>
+  <script defer src="js/script-vision.js?v=778"></script>
+  <script defer src="js/tendencies-render.js?v=778"></script>
+  <script defer src="js/tendencies.js?v=778"></script>
+  <script defer src="js/tendencies-print.js?v=778"></script>
+  <script defer src="js/installation-render.js?v=778"></script>
+  <script defer src="js/installation.js?v=778"></script>
+  <script defer src="js/installation-print.js?v=778"></script>
+  <script defer src="js/identity.js?v=778"></script>
+  <script defer src="js/offensebuilder.js?v=778"></script>
+  <script defer src="js/help.js?v=778"></script>
+  <script defer src="js/dashboard-render.js?v=778"></script>
+  <script defer src="js/dashboard.js?v=778"></script>
+  <script defer src="js/gameplan.js?v=778"></script>
+  <script defer src="js/gameplan-render.js?v=778"></script>
+  <script defer src="js/gameplan-dnd.js?v=778"></script>
+  <script defer src="js/gameplan-actions.js?v=778"></script>
+  <script defer src="js/gameplan-smart.js?v=778"></script>
+  <script defer src="js/gameplan-health.js?v=778"></script>
+  <script defer src="js/gameplan-print.js?v=778"></script>
+  <script defer src="js/gameplan-integrations.js?v=778"></script>
+  <script defer src="js/gameplan-snapshots.js?v=778"></script>
+  <script defer src="js/print-studio.js?v=778"></script>
+  <script defer src="js/script-events.js?v=778"></script>
+  <script defer src="js/anchored-menu.js?v=778"></script>
+  <script defer src="js/app-events.js?v=778"></script>
+  <script defer src="js/app-command.js?v=778"></script>
+  <script defer src="js/app-shell.js?v=778"></script>
+  <script defer src="js/app-session.js?v=778"></script>
+  <script defer src="js/app-navigation.js?v=778"></script>
+  <script defer src="js/app-module-init.js?v=778"></script>
+  <script defer src="js/app-bootstrap.js?v=778"></script>
+  <script defer src="js/app-init.js?v=778"></script>
+  <script defer src="js/app.js?v=778"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>

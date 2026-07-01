@@ -5786,6 +5786,29 @@ body[data-active-tab="script"] .script-display-fab {
   margin-left: var(--space-xs);
 }
 
+/* #137: GP sync status badge */
+.script-gp-sync-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  white-space: nowrap;
+  margin-left: var(--space-xs);
+  cursor: default;
+}
+.script-gp-sync-badge.hidden { display: none; }
+.script-gp-sync-badge.ok {
+  background: var(--color-success-light, #d4edda);
+  color: var(--color-success);
+}
+.script-gp-sync-badge.warn {
+  background: var(--color-warning-light, #fff3cd);
+  color: var(--color-warning);
+  cursor: pointer;
+}
+
 /* Play-type accents: left stripe + matching type chip */
 #script .play-item--run {
   border-left-color: var(--color-success);

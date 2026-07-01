@@ -2876,7 +2876,9 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
   overflow: hidden;
   text-overflow: ellipsis;
 }
-.wb-source-badge.hidden { display: none; }
+.wb-source-badge.hidden {
+  display: none;
+}
 .wb-source-ts {
   color: var(--color-text-light);
   font-size: var(--font-size-micro);
@@ -2897,5 +2899,7 @@ body.shell-phone #wristband .wb-phone-editor-row .cell-write-in {
 
 @media print {
   .wb-source-badge,
-  .wb-cs-dot { display: none !important; }
+  .wb-cs-dot {
+    display: none !important;
+  }
 }
