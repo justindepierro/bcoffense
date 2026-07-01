@@ -319,11 +319,11 @@ Example:
 - [ ] **91.** Create a phone-native charting workflow using one step/card at a time.
 - [ ] **92.** Create an iPad split view with play list, charting form, and live summary.
 - [ ] **93.** Replace wide tables on phone with cards or focused detail sheets.
-- [ ] **94.** Add direct import validation with field mapping preview.
+- [x] **94.** Add direct import validation with field mapping preview.
 - [x] **95.** Add duplicate-play/import detection.
 - [x] **96.** Add a scout report print preset using the existing print suite.
 - [x] **97.** Add presentation mode for opponent summaries.
-- [ ] **98.** Add export to Game Plan as structured recommendations, not just notes.
+- [x] **98.** Add export to Game Plan as structured recommendations, not just notes.
 - [x] **99.** Add opponent-specific archived reports by season/week.
 - [ ] **100.** Add tests for all opponent card and handoff actions.
 

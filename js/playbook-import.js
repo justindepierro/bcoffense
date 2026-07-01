@@ -243,7 +243,25 @@ function parseCSV(text) {
   if (skippedRows.length > 0) {
     console.warn(`parseCSV: skipped ${skippedRows.length} invalid row(s)`);
   }
-  return { plays: result, skipped: skippedRows };
+
+  // #94: Build field-mapping summary for import preview
+  const fieldMapping = {
+    recognized: [],
+    unrecognized: [],
+    usedHeaders: useHeaders,
+  };
+  if (useHeaders) {
+    norm.forEach((h) => {
+      if (h === "") return;
+      if (_CSV_COLUMN_MAP[h]) {
+        fieldMapping.recognized.push(_CSV_COLUMN_MAP[h]);
+      } else {
+        fieldMapping.unrecognized.push(h);
+      }
+    });
+  }
+
+  return { plays: result, skipped: skippedRows, fieldMapping };
 }
 
 const _MERGE_FIELDS = [
@@ -653,6 +671,7 @@ function handleFileUpload(event) {
         const csvResult = parseCSV(text);
         const parsed = csvResult.plays || csvResult;
         const skippedRows = csvResult.skipped || [];
+        const fieldMapping = csvResult.fieldMapping || { recognized: [], unrecognized: [], usedHeaders: false };
         if (typeof ensurePlaybookPlayIds === "function") ensurePlaybookPlayIds(parsed);
 
         if (parsed.length === 0) {
@@ -675,6 +694,13 @@ function handleFileUpload(event) {
           ? ` <span style="color:var(--color-warning)">⚠️ ${internalDupCount} duplicate play${internalDupCount > 1 ? "s" : ""} detected within this CSV.</span>`
           : "";
 
+        // #94: Field mapping preview
+        const mappingNote = (fieldMapping.usedHeaders && fieldMapping.unrecognized.length > 0)
+          ? `<br><small style="color:var(--color-text-muted)">⚠️ Unrecognized columns (ignored): ${fieldMapping.unrecognized.slice(0, 5).map((h) => escapeHtml(h)).join(", ")}${fieldMapping.unrecognized.length > 5 ? "…" : ""}</small>`
+          : (fieldMapping.usedHeaders && fieldMapping.recognized.length > 0)
+          ? `<br><small style="color:var(--color-text-muted)">✓ Mapped: ${fieldMapping.recognized.slice(0, 8).map((h) => escapeHtml(h)).join(", ")}${fieldMapping.recognized.length > 8 ? "…" : ""}</small>`
+          : "";
+
         const sample = parsed
           .slice(0, 3)
           .map(
@@ -691,7 +717,7 @@ function handleFileUpload(event) {
               ? ` <strong>(${skippedRows.length} row${skippedRows.length === 1 ? "" : "s"} skipped)</strong>`
               : "";
           const choiceMsg =
-            `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"} in new CSV.${skipNote}${dupNote}<br>` +
+            `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"} in new CSV.${skipNote}${dupNote}${mappingNote}<br>` +
             `Current playbook has <strong>${plays.length}</strong> plays.<br><br>` +
             `<em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>` +
             `<strong>🔄 Smart Merge</strong> — Matches plays by name, updates changed fields, adds new plays. ` +
@@ -768,7 +794,7 @@ function handleFileUpload(event) {
           );
           if (!replaceOk) return;
         } else {
-          const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}${dupNote}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
+          const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}${dupNote}${mappingNote}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
           const ok = await showConfirm(msg, {
             title: "Confirm CSV Import",
             icon: "📋",

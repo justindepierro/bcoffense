@@ -546,6 +546,7 @@ function renderOpponentDetail() {
           <button class="btn btn-secondary" data-action="archiveTendenciesReport" title="Archive this report snapshot by season/week">📦 Archive</button>
           <button class="btn btn-secondary" data-action="showTendenciesReportArchive" title="View and restore archived scout reports">📂 Reports</button>
           <button class="btn btn-secondary" data-action="toggleScoutPresentation" title="Present stats dashboard fullscreen">📊 Present</button>
+          <button class="btn btn-secondary" data-action="sendScoutRecsToGamePlan" title="Send scout recommendations to Game Plan boxes">🏈 → GP</button>
           <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "btn-success" : "btn-danger"}" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active Opponent" : "🏈 Set Active"}</button>
         </div>
       </div>

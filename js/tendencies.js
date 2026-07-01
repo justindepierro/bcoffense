@@ -1929,3 +1929,87 @@ function toggleScoutPresentation() {
     <div class="scout-present-body">${statsHtml}</div>`;
   document.body.appendChild(overlay);
 }
+
+// ── Send Scout Recommendations to Game Plan (#98) ─────────────
+/**
+ * Find plays in the playbook that counter the opponent's top fronts/coverages
+ * and offer to add them to a Game Plan box.
+ */
+async function sendScoutRecsToGamePlan() {
+  if (tendenciesCurrentOpponent === null) return;
+  const opp = tendenciesOpponents[tendenciesCurrentOpponent];
+  if (!opp || opp.plays.length === 0) {
+    showModal("No scouting data to base recommendations on.", { title: "Send to Game Plan", icon: "🏈" });
+    return;
+  }
+
+  // Tally top fronts and coverages
+  const frontMap = {}, covMap = {};
+  opp.plays.forEach((p) => {
+    if (p.defFront) frontMap[p.defFront] = (frontMap[p.defFront] || 0) + 1;
+    if (p.defCoverage) covMap[p.defCoverage] = (covMap[p.defCoverage] || 0) + 1;
+  });
+  const topFronts = Object.entries(frontMap).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
+  const topCovs = Object.entries(covMap).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k]) => k);
+
+  // Find playbook plays matching those fronts/coverages
+  const sourcePlays = Array.isArray(plays) ? plays : [];
+  const matched = sourcePlays.filter((p) =>
+    (p.practiceFront && topFronts.some((f) => String(p.practiceFront).includes(f))) ||
+    (p.practiceCoverage && topCovs.some((c) => String(p.practiceCoverage).includes(c))),
+  );
+
+  if (matched.length === 0) {
+    showModal(
+      `No plays found with matching Practice Front or Coverage fields for ${escapeHtml(opp.name)}.<br><br>Set <strong>practiceFront</strong> or <strong>practiceCoverage</strong> fields on your plays to get suggestions.`,
+      { title: "No Matches", icon: "🔍" },
+    );
+    return;
+  }
+
+  // Show pick list of matched plays
+  const pickItems = matched.slice(0, 30).map((p, i) => ({
+    value: String(i),
+    label: `${escapeHtml(p.formation || "")} ${escapeHtml(p.play || "")} (${escapeHtml(p.type || "")})`,
+  }));
+
+  const picked = await showListPicker(
+    `${matched.length} play${matched.length === 1 ? "" : "s"} match the top defensive looks of ${escapeHtml(opp.name)}. Select plays to send to Game Plan:`,
+    pickItems,
+    { title: "Scout → Game Plan", icon: "🏈", multiSelect: true },
+  );
+  if (!picked) return;
+
+  const pickedArr = Array.isArray(picked) ? picked : [picked];
+  const chosenPlays = pickedArr.map((i) => matched[parseInt(i, 10)]).filter(Boolean);
+  if (chosenPlays.length === 0) return;
+
+  // Get GP boxes
+  const board = typeof _gpEnsureBoard === "function" ? _gpEnsureBoard() : null;
+  if (!board) {
+    showModal("Game Plan module not loaded.", { title: "Game Plan", icon: "⚠️" });
+    return;
+  }
+
+  const allBoxes = [
+    ...(typeof GP_HOLDING_BOX !== "undefined" ? [GP_HOLDING_BOX] : []),
+    ...(typeof GP_DEFAULT_BOXES !== "undefined" ? GP_DEFAULT_BOXES : []),
+    ...(board.customBoxes || []),
+  ];
+
+  const boxChoice = await showListPicker(
+    `Add ${chosenPlays.length} play${chosenPlays.length === 1 ? "" : "s"} to which Game Plan box?`,
+    allBoxes.map((b) => ({ value: b.id, label: b.label || b.id })),
+    { title: "Select Game Plan Box", icon: "📋" },
+  );
+  if (!boxChoice) return;
+
+  const sigs = chosenPlays
+    .map((p) => (typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null))
+    .filter(Boolean);
+
+  if (typeof _gpAddSigsToBox === "function") {
+    _gpAddSigsToBox(sigs, boxChoice);
+    showToast(`${chosenPlays.length} play${chosenPlays.length === 1 ? "" : "s"} sent to Game Plan.`, { type: "success" });
+  }
+}
