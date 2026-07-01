@@ -294,8 +294,12 @@
   font-size: var(--font-size-xs);
   font-weight: 600;
 }
-.td-ov-split-label--run { color: var(--color-success); }
-.td-ov-split-label--pass { color: var(--color-info); }
+.td-ov-split-label--run {
+  color: var(--color-success);
+}
+.td-ov-split-label--pass {
+  color: var(--color-info);
+}
 .td-ov-totals {
   display: flex;
   gap: var(--space-md);

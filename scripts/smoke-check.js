@@ -1689,8 +1689,14 @@ function checkPrimaryNavContract() {
       fail(`${id} is not inside the Utilities menu as a menuitem`);
     }
   }
-  if (!/data-action="showUpload"[^>]*role="menuitem"/.test(util)) {
-    fail("Load New CSV is not inside the Utilities menu");
+  // Load New CSV button must be inside the Utilities block with role="menuitem"
+  const uploadBtnMatch = (util.match(/<button[^>]*data-action="showUpload"[^>]*>/g) || []).join("");
+  if (!uploadBtnMatch || !/role="menuitem"/.test(uploadBtnMatch)) {
+    // Try reversed attribute order (role before data-action)
+    const uploadBtnMatch2 = (util.match(/<button[^>]*role="menuitem"[^>]*data-action="showUpload"[^>]*>/g) || []).join("");
+    if (!uploadBtnMatch2) {
+      fail("Load New CSV is not inside the Utilities menu");
+    }
   }
 
   // The six core tools must remain primary role="tab" buttons.

@@ -779,7 +779,8 @@ async function sendWristbandToGamePlan() {
   const msg = added > 0
     ? `Sent ${added} play${added === 1 ? "" : "s"} to the Game Plan${skipped ? ` (${skipped} skipped)` : ""}.`
     : `No plays added \u2014 ${skipped} skipped.`;
-  showToast(msg, { duration: 4000, type: added > 0 ? "success" : "warning",
+  showToast(msg, {
+    duration: 4000, type: added > 0 ? "success" : "warning",
     ...(added > 0 ? { actionLabel: "→ Game Plan", action: () => showTab("gameplan") } : {}),
   });
   if (added > 0 && typeof showTab === "function") showTab("gameplan");

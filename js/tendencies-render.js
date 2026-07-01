@@ -145,6 +145,40 @@ function renderScoutOverview() {
     .slice(0, 4)
     .map(([name, count]) => ({ name, count, pct: Math.round((count / totalPlays) * 100) }));
 
+  // Down distribution
+  const _dnKey = { "1": "1st Down", "2": "2nd Down", "3": "3rd Down", "4": "4th Down" };
+  const _dnCounts = {};
+  opp.plays.forEach((p) => {
+    const k = _dnKey[String(p.down || "").trim()];
+    if (k) _dnCounts[k] = (_dnCounts[k] || 0) + 1;
+  });
+  const downItems = ["1st Down", "2nd Down", "3rd Down", "4th Down"]
+    .filter((k) => _dnCounts[k])
+    .map((name) => ({ name, count: _dnCounts[name], pct: Math.round((_dnCounts[name] / totalPlays) * 100) }));
+
+  // Non-normal situations
+  const _sitCounts = {};
+  opp.plays.forEach((p) => {
+    const s = (p.situation || "").trim();
+    if (s && s !== "Normal") _sitCounts[s] = (_sitCounts[s] || 0) + 1;
+  });
+  const topSituations = Object.entries(_sitCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count, pct: Math.round((count / totalPlays) * 100) }));
+
+  // Hash tendency
+  const _hashKey = { L: "Left", M: "Middle", R: "Right" };
+  const _hashCounts = {};
+  opp.plays.forEach((p) => {
+    const k = _hashKey[(p.hash || "").trim().toUpperCase()];
+    if (k) _hashCounts[k] = (_hashCounts[k] || 0) + 1;
+  });
+  const _hashTotal = Object.values(_hashCounts).reduce((a, b) => a + b, 0);
+  const hashItems = ["Left", "Middle", "Right"]
+    .filter((k) => _hashCounts[k])
+    .map((name) => ({ name, count: _hashCounts[name], pct: _hashTotal > 0 ? Math.round((_hashCounts[name] / _hashTotal) * 100) : 0 }));
+
   // Sample-size warning
   const SAMPLE_MIN = 20;
   const sampleWarning = totalPlays < SAMPLE_MIN && totalPlays > 0
@@ -233,6 +267,24 @@ function renderScoutOverview() {
           <h3 class="td-ov-title">🏟️ Off. Formations Faced</h3>
           ${barHtml(topFormations, "formation")}
         </div>` : ""}
+
+        ${downItems.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">📊 Down Distribution</h3>
+          ${barHtml(downItems, "down")}
+        </div>` : ""}
+
+        ${topSituations.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">🎯 Situational</h3>
+          ${barHtml(topSituations, "situation")}
+        </div>` : ""}
+
+        ${hashItems.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">📍 Hash Tendency</h3>
+          ${barHtml(hashItems, "hash")}
+        </div>` : ""}
       </div>
 
       <div class="td-ov-actions action-grid">
@@ -258,6 +310,25 @@ function showTdOverview() {
 }
 
 function openGamePlanFromScout() {
+  // Show a scout brief toast so the coach sees key intel right when game plan opens
+  try {
+    const opp = tendenciesCurrentOpponent !== null ? tendenciesOpponents[tendenciesCurrentOpponent] : null;
+    if (opp && opp.plays.length > 0 && typeof queryTendencies === "function") {
+      const intel = queryTendencies(opp, {});
+      const parts = [];
+      if (intel.topFront && intel.topFront.length) parts.push(`${escapeHtml(intel.topFront[0].term)} ${intel.topFront[0].pct}%`);
+      if (intel.topCoverage && intel.topCoverage.length) parts.push(`${escapeHtml(intel.topCoverage[0].term)} ${intel.topCoverage[0].pct}%`);
+      if (intel.blitzRate > 0) parts.push(`⚡ Blitz ${intel.blitzRate}%`);
+      if (parts.length) {
+        showToast(`📋 ${escapeHtml(opp.name)}: ${parts.join(" • ")}`, {
+          duration: 6000,
+          type: "info",
+          actionLabel: "← Scout",
+          action: () => { if (typeof showTab === "function") showTab("tendencies"); },
+        });
+      }
+    }
+  } catch (_) { /* non-critical */ }
   if (typeof showTab === "function") showTab("gameplan");
 }
 
