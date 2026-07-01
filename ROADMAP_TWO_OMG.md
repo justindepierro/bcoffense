@@ -50,18 +50,18 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Allow Call Sheet entries to open the canonical play thread without creating a duplicate thread.
 - [ ] Allow Wristband cells to open the canonical play thread without creating a duplicate thread.
 - [ ] Allow Opponent Scout recommendations to link to related Playbook discussions.
-- [ ] Define version-one post types: Comment, Question, Coach Clarification, and Announcement.
-- [ ] Define version-one reaction types: Like, Helpful, and I Have This Question Too.
-- [ ] Define question states: Open, Answered, Resolved, and Reopened.
-- [ ] Define which roles may create comments.
-- [ ] Define which roles may create questions.
-- [ ] Define which roles may create announcements.
-- [ ] Define which roles may post official coach clarifications.
-- [ ] Define which roles may resolve or reopen questions.
+- [x] Define version-one post types: Comment, Question, Coach Clarification, and Announcement.
+- [x] Define version-one reaction types: Like, Helpful, and I Have This Question Too.
+- [x] Define question states: Open, Answered, Resolved, and Reopened.
+- [x] Define which roles may create comments.
+- [x] Define which roles may create questions.
+- [x] Define which roles may create announcements.
+- [x] Define which roles may post official coach clarifications.
+- [x] Define which roles may resolve or reopen questions.
 - [ ] Define which roles may pin official answers.
 - [ ] Define which roles may lock threads.
-- [ ] Define which roles may delete or hide posts.
-- [ ] Define whether assistant coaches receive the same moderation permissions as head coaches.
+- [x] Define which roles may delete or hide posts.
+- [x] Define whether assistant coaches receive the same moderation permissions as head coaches.
 - [ ] Define whether players may reply to other players or only to coaches.
 - [ ] Define whether comments can be disabled while questions remain enabled.
 - [ ] Define whether likes can be disabled independently.
@@ -72,20 +72,20 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Ensure copying a play does not silently copy the original discussion.
 - [ ] Define whether a major play revision starts a new discussion version or continues the same thread.
 - [ ] Document features explicitly out of scope for version one.
-- [ ] Keep live chat, private messaging, follower systems, public profiles, and social feeds out of scope.
+- [x] Keep live chat, private messaging, follower systems, public profiles, and social feeds out of scope.
 - [ ] Create an architecture decision record for the complete communication system.
 
 # Phase 1 — Current Architecture and Cost Audit
 
-- [ ] Inventory the existing Cloudflare Pages project configuration.
-- [ ] Inventory all Pages Functions and Worker routes.
-- [ ] Inventory the existing KV namespace and its current data responsibilities.
-- [ ] Inventory the existing R2 bucket and its current data responsibilities.
-- [ ] Confirm whether a D1 database already exists.
-- [ ] Audit the existing custom authentication middleware and cookie/session format.
-- [ ] Audit current coach, admin, and player role handling.
-- [ ] Audit the existing service worker and notification-related code.
-- [ ] Audit GitHub Actions and deployment workflows.
+- [x] Inventory the existing Cloudflare Pages project configuration.
+- [x] Inventory all Pages Functions and Worker routes.
+- [x] Inventory the existing KV namespace and its current data responsibilities.
+- [x] Inventory the existing R2 bucket and its current data responsibilities.
+- [x] Confirm whether a D1 database already exists.
+- [x] Audit the existing custom authentication middleware and cookie/session format.
+- [x] Audit current coach, admin, and player role handling.
+- [x] Audit the existing service worker and notification-related code.
+- [x] Audit GitHub Actions and deployment workflows.
 - [ ] Document current monthly Cloudflare usage.
 - [ ] Document current Worker and Pages Functions request volume.
 - [ ] Document current KV reads, writes, lists, and storage volume.
@@ -122,57 +122,57 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Compare Cloudflare compatibility for every option.
 - [ ] Compare vendor lock-in and migration difficulty.
 - [ ] Compare privacy and data-processing implications for student users.
-- [ ] Reject GitHub OAuth as the required player login method.
-- [ ] Consider GitHub OAuth only as an optional coach/developer login.
-- [ ] Evaluate Cloudflare Access for staging and private administrative routes.
-- [ ] Do not use Cloudflare Access as the primary roster/player account database.
+- [x] Reject GitHub OAuth as the required player login method.
+- [x] Consider GitHub OAuth only as an optional coach/developer login.
+- [x] Evaluate Cloudflare Access for staging and private administrative routes.
+- [x] Do not use Cloudflare Access as the primary roster/player account database.
 - [ ] Evaluate Resend for account and password-reset email.
 - [ ] Evaluate Brevo for higher-volume free transactional email.
 - [ ] Compare domain verification and DNS setup for Resend and Brevo.
 - [ ] Compare daily and monthly send limits.
 - [ ] Compare delivery logs and retention.
-- [ ] Choose one initial email provider and create an adapter interface.
-- [ ] Evaluate standards-based Web Push as the primary external notification method.
-- [ ] Do not buy OneSignal, Firebase Cloud Messaging, or another push platform before testing native Web Push.
+- [x] Choose one initial email provider and create an adapter interface.
+- [x] Evaluate standards-based Web Push as the primary external notification method.
+- [x] Do not buy OneSignal, Firebase Cloud Messaging, or another push platform before testing native Web Push.
 - [ ] Document the selected stack and the reasons for every provider choice.
 
 # Phase 3 — Cloudflare D1 Data Foundation
 
-- [ ] Create a production D1 database for relational application data.
+- [x] Create a production D1 database for relational application data.
 - [ ] Create a separate preview or staging D1 database.
-- [ ] Add D1 bindings to wrangler configuration.
-- [ ] Create a migration directory.
-- [ ] Create repeatable D1 schema migrations.
+- [x] Add D1 bindings to wrangler configuration.
+- [x] Create a migration directory.
+- [x] Create repeatable D1 schema migrations.
 - [ ] Add a migration journal.
-- [ ] Create a users table.
+- [x] Create a users table.
 - [ ] Create an accounts table if required by the auth library.
-- [ ] Create a sessions table.
-- [ ] Create a verification tokens table.
-- [ ] Create a teams table.
+- [x] Create a sessions table.
+- [x] Create a verification tokens table.
+- [x] Create a teams table.
 - [ ] Create a team memberships table.
-- [ ] Create a roster players table or migrate the existing roster model.
+- [x] Create a roster players table or migrate the existing roster model.
 - [ ] Create a player profile table.
 - [ ] Create a positions table or normalize the existing position model.
 - [ ] Create a player positions join table.
-- [ ] Create a play threads table.
-- [ ] Create a discussion posts table.
-- [ ] Create a question state history table.
-- [ ] Create a reactions table.
-- [ ] Create a notifications table.
-- [ ] Create a push subscriptions table.
-- [ ] Create a notification preferences table.
-- [ ] Create a moderation actions table.
+- [x] Create a play threads table.
+- [x] Create a discussion posts table.
+- [x] Create a question state history table.
+- [x] Create a reactions table.
+- [x] Create a notifications table.
+- [x] Create a push subscriptions table.
+- [x] Create a notification preferences table.
+- [x] Create a moderation actions table.
 - [ ] Create a post edit history table.
-- [ ] Create an audit events table.
-- [ ] Create appropriate foreign keys.
-- [ ] Create indexes for team, play, author, state, and creation time.
-- [ ] Create uniqueness constraints to prevent duplicate reactions.
-- [ ] Create soft-delete fields where historical recovery is required.
-- [ ] Add created, updated, deleted, and resolved timestamps.
+- [x] Create an audit events table.
+- [x] Create appropriate foreign keys.
+- [x] Create indexes for team, play, author, state, and creation time.
+- [x] Create uniqueness constraints to prevent duplicate reactions.
+- [x] Create soft-delete fields where historical recovery is required.
+- [x] Add created, updated, deleted, and resolved timestamps.
 - [ ] Add migration tests.
 - [ ] Add backup and restore documentation.
-- [ ] Keep large media and video out of D1.
-- [ ] Keep temporary cache-only values in KV rather than D1.
+- [x] Keep large media and video out of D1.
+- [x] Keep temporary cache-only values in KV rather than D1.
 - [ ] Document which data belongs in D1, KV, and R2.
 
 # Phase 4 — Player Account Model
@@ -340,7 +340,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 # Phase 8A — Comment and Message Content Moderation
 
 - [x] Create a server-side content-moderation service for comments, questions, replies, and announcements.
-- [ ] Do not rely only on a basic profanity blacklist.
+- [x] Do not rely only on a basic profanity blacklist.
 - [x] Define moderation categories for profanity, vulgarity, slurs, sexual content, threats, bullying, harassment, self-harm, personal information, and spam.
 - [x] Define severity levels: Clear, Warning, Review, and Block.
 - [x] Define moderation outcomes: Allow, Warn, Hold for Review, and Block.
@@ -401,7 +401,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Add Lock Thread action.
 - [ ] Add Temporary Mute action.
 - [ ] Add Account Review action.
-- [ ] Require a moderation reason for rejection, muting, or account action.
+- [x] Require a moderation reason for rejection, muting, or account action.
 - [x] Store moderation decisions in an audit table.
 - [x] Store moderator identity.
 - [x] Store decision timestamp.
@@ -471,8 +471,8 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Store reply depth.
 - [x] Limit visible reply nesting to a manageable depth.
 - [x] Use a maximum of two visual indentation levels.
-- [ ] Flatten deeper technical reply chains beneath the nearest supported visual parent.
-- [ ] Preserve the complete logical parent relationship in the database.
+- [x] Flatten deeper technical reply chains beneath the nearest supported visual parent.
+- [x] Preserve the complete logical parent relationship in the database.
 - [x] Allow replies to comments.
 - [x] Allow replies to questions.
 - [ ] Allow replies to coach clarifications.
@@ -535,7 +535,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 # 8B.3 — Reply Composer
 
-- [ ] Add a Reply action to comments and questions.
+- [x] Add a Reply action to comments and questions.
 - [ ] Show the author being replied to.
 - [ ] Show a short preview of the parent message.
 - [x] Allow plain-text replies.
@@ -555,7 +555,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Show processing state.
 - [ ] Show retry after failed upload.
 - [x] Prevent accidental duplicate replies.
-- [ ] Run text through the Phase 8A moderation system.
+- [x] Run text through the Phase 8A moderation system.
 - [ ] Scan attachment metadata and file types.
 - [ ] Enforce reply-length limits.
 - [ ] Enforce attachment-count limits.
@@ -763,19 +763,19 @@ Initial reactions:
 
 # 8B.9 — Reaction Picker Interface
 
-- [ ] Open the quick reaction picker by tapping or clicking React.
+- [x] Open the quick reaction picker by tapping or clicking React.
 - [ ] Support press-and-hold on touch devices where reliable.
 - [ ] Do not require press-and-hold as the only access method.
-- [ ] Anchor the picker to the React button using the shared dropdown system.
-- [ ] Keep the picker onscreen.
-- [ ] Flip above the trigger when needed.
+- [x] Anchor the picker to the React button using the shared dropdown system.
+- [x] Keep the picker onscreen.
+- [x] Flip above the trigger when needed.
 - [ ] Use a bottom sheet on very narrow screens when necessary.
-- [ ] Display reactions in an orderly grid.
-- [ ] Use large touch targets.
-- [ ] Show a tooltip or label for each reaction.
+- [x] Display reactions in an orderly grid.
+- [x] Use large touch targets.
+- [x] Show a tooltip or label for each reaction.
 - [ ] Allow keyboard arrow navigation.
 - [ ] Close on Escape.
-- [ ] Close on outside click.
+- [x] Close on outside click.
 - [ ] Restore focus to the React button.
 - [ ] Show the user’s current reaction.
 - [ ] Animate reaction selection subtly.
