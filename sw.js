@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v808";
+const CACHE_NAME = "bcoffense-v809";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -232,8 +232,10 @@ const LOCAL_ASSETS = [
   "./offline.html",
 ];
 
-// Install: pre-cache all local assets — resilient, one failure won't block activation
+// Install: skip waiting immediately so the new SW activates without requiring
+// any tabs to be closed. Pre-cache assets resiliently — one failure won't block.
 self.addEventListener("install", (event) => {
+  self.skipWaiting(); // take over immediately on all open tabs
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       Promise.allSettled(
