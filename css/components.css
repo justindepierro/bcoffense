@@ -3051,6 +3051,66 @@ kbd {
   padding: 8px;
 }
 
+/* ── Toolbar sub-region primitives (#226-229, #232) ── */
+/* Primary: main actions, left-aligned, no-wrap */
+.toolbar-primary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex: 1 1 auto;
+  min-width: 0;
+  flex-wrap: nowrap;
+}
+/* Secondary: supporting actions, may wrap */
+.toolbar-secondary {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+/* Status: badges, counts, sync indicators */
+.toolbar-status {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+/* Overflow: the ⋯ menu and its siblings, pushed to the right */
+.toolbar-overflow {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-left: auto;
+  flex-shrink: 0;
+}
+/* Icon-action: compact icon-forward buttons (36×36 min) */
+.icon-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 36px;
+  min-height: 36px;
+  padding: 0 var(--space-xs);
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-input);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  line-height: 1;
+  transition: background var(--transition-fast);
+}
+.icon-action:hover {
+  background: var(--color-bg-hover-row);
+  border-color: var(--color-border);
+}
+.icon-action:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 1px;
+}
+
 .control-cluster {
   display: flex;
   flex-wrap: wrap;

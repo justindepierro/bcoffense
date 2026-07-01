@@ -438,3 +438,24 @@ function showReorderModal(values, opts) {
 
   bindDragHandlers();
 }
+
+// ============================================================
+// Page-Help Persistence (#213)
+// Saves <details class="page-help" data-help-key="…"> open/closed
+// state per page across sessions using storageManager.
+// ============================================================
+function initPageHelp() {
+  const saved = storageManager.get(STORAGE_KEYS.PAGE_HELP_OPEN, {});
+  document.querySelectorAll("details.page-help[data-help-key]").forEach((el) => {
+    const key = el.dataset.helpKey;
+    if (!key) return;
+    // Restore saved state
+    if (saved[key] === true) el.open = true;
+    // Persist on toggle
+    el.addEventListener("toggle", () => {
+      const state = storageManager.get(STORAGE_KEYS.PAGE_HELP_OPEN, {});
+      state[key] = el.open;
+      storageManager.set(STORAGE_KEYS.PAGE_HELP_OPEN, state);
+    });
+  });
+}

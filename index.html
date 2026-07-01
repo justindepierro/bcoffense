@@ -1200,6 +1200,18 @@
         </div>
       </div>
 
+      <details class="page-help" data-help-key="script">
+        <summary class="page-help__summary">
+          <span aria-hidden="true">💡</span>
+          <span class="page-help__label">Script builder tips</span>
+          <span class="page-help__chevron" aria-hidden="true">▾</span>
+        </summary>
+        <div class="page-help__body">
+          Drag plays from the Library into the script • Click a row to expand settings • Right-click for quick actions •
+          Use ⋯ More Tools for period suggestions and Game Plan sync • 🧩 Quiz tests your play calls from scenarios
+        </div>
+      </details>
+
       <div class="script-builder app-workspace-grid">
         <div class="script-rail-backdrop" id="scriptRailBackdrop" data-action="toggleScriptPlayRail" aria-hidden="true">
         </div>
@@ -1934,7 +1946,7 @@
 
           <!-- Wristband Toolbar -->
           <div class="wb-toolbar">
-            <div class="wb-toolbar-left">
+            <div class="wb-toolbar-left toolbar-primary">
               <div class="wb-toolbar-group">
                 <button id="wristbandUndoBtn" class="btn btn-undo btn-sm" data-action="undoWristband" disabled
                   title="Nothing to undo">
@@ -1955,7 +1967,7 @@
               <button class="btn btn-sm" data-action="toggleWbSelectionMode" aria-pressed="false"
                 title="Select cells for batch actions">Select Cells</button>
             </div>
-            <div class="wb-toolbar-right">
+            <div class="wb-toolbar-right toolbar-overflow">
               <details class="wb-appearance-panel">
                 <summary class="btn btn-sm">🎨 Appearance</summary>
                 <div class="wb-appearance-popover">
@@ -2409,6 +2421,17 @@
 
   <!-- Opponent Scout Panel -->
   <div id="tendencies" class="panel" role="tabpanel" aria-label="Opponent Scout">
+    <details class="page-help" data-help-key="scout">
+      <summary class="page-help__summary">
+        <span aria-hidden="true">💡</span>
+        <span class="page-help__label">Scout tips</span>
+        <span class="page-help__chevron" aria-hidden="true">▾</span>
+      </summary>
+      <div class="page-help__body">
+        Add opponents in the Wizard • Log film data per game or series • Use Analyze to generate tendency reports •
+        Activate an opponent from Dashboard to enable Call Sheet scouting intel • Recommendations feed directly into Game Plan
+      </div>
+    </details>
     <div id="tendenciesContent"></div>
   </div>
 
@@ -2419,7 +2442,7 @@
   <div id="callsheet" class="panel" role="tabpanel" aria-label="Call Sheet">
     <!-- Toolbar -->
     <div class="cs-toolbar">
-      <div class="cs-toolbar-left">
+      <div class="cs-toolbar-left toolbar-primary">
         <h2 class="cs-title">📋 Call Sheet</h2>
         <div class="cs-toggle-group page-toggle">
           <button id="callsheetFrontBtn" class="cs-toggle active" data-action="switchCallSheetPage"
@@ -2434,7 +2457,7 @@
             data-arg="landscape" title="Landscape">📃</button>
         </div>
       </div>
-      <div class="cs-toolbar-right">
+      <div class="cs-toolbar-right toolbar-overflow">
         <button id="callsheetUndoBtn" class="btn btn-sm cs-undo-redo-btn" data-action="undoCallSheet" disabled
           title="Undo">↩</button>
         <button id="callsheetRedoBtn" class="btn btn-sm cs-undo-redo-btn" data-action="redoCallSheet" disabled
@@ -2482,8 +2505,11 @@
     <!-- Source Status Bar (#159-161) — shown when an opponent is active -->
     <div id="csSourceBar" class="cs-source-bar hidden" role="status" aria-live="polite"></div>
 
-    <details class="page-help">
-      <span class="page-help__chevron" aria-hidden="true">▾</span>
+    <details class="page-help" data-help-key="callsheet">
+      <summary class="page-help__summary">
+        <span aria-hidden="true">💡</span>
+        <span class="page-help__label">Call sheet tips</span>
+        <span class="page-help__chevron" aria-hidden="true">▾</span>
       </summary>
       <div class="page-help__body">
         Double-click plays to highlight • Right-click play to customize

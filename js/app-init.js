@@ -34,6 +34,7 @@ async function initApp() {
     initScriptDropZone();
     initDefaultScriptDate();
     initTeamIdentityUi(runOptionalInit);
+    if (typeof initPageHelp === "function") initPageHelp();
   } catch (err) {
     startupFailed = true;
     console.error("initApp error:", err);
