@@ -4130,6 +4130,7 @@
   <script defer src="js/app-events.js?v=779"></script>
   <script defer src="js/app-command.js?v=779"></script>
   <script defer src="js/app-notifications.js?v=801"></script>
+  <script defer src="js/dashboard-questions.js?v=803"></script>
   <script defer src="js/app-shell.js?v=779"></script>
   <script defer src="js/app-session.js?v=779"></script>
   <script defer src="js/app-navigation.js?v=779"></script>
@@ -4158,6 +4159,35 @@
     </div>
   </aside>
   <div class="notif-backdrop" id="notifBackdrop" data-action="closeNotifDrawer" aria-hidden="true" hidden></div>
+
+  <!-- Question Inbox overlay (coaches) -->
+  <div id="qInboxOverlay" class="q-inbox-overlay" data-action="closeQuestionInboxOverlay" aria-hidden="true" hidden>
+    <div class="q-inbox-panel" role="dialog" aria-modal="true" aria-label="Player Question Inbox">
+      <header class="q-inbox-head">
+        <h2 class="q-inbox-title">❓ Player Questions</h2>
+        <button class="q-inbox-close" data-action="closeQuestionInbox" aria-label="Close question inbox">✕</button>
+      </header>
+      <div class="q-inbox-toolbar">
+        <div id="qInboxSummary" class="q-inbox-summary"></div>
+        <div class="q-inbox-controls">
+          <select id="qInboxStateFilter" class="q-inbox-select" data-onchange="qInboxStateChanged" data-pass="value" aria-label="Filter by state">
+            <option value="open">Open &amp; Reopened</option>
+            <option value="answered">Answered</option>
+            <option value="resolved">Resolved</option>
+            <option value="">All Active</option>
+          </select>
+          <select id="qInboxSort" class="q-inbox-select" data-onchange="qInboxSortChanged" data-pass="value" aria-label="Sort by">
+            <option value="newest">Newest</option>
+            <option value="oldest">Oldest First</option>
+            <option value="same_question">Most Asked</option>
+          </select>
+        </div>
+      </div>
+      <div id="qInboxBody" class="q-inbox-body">
+        <ul id="qInboxList" class="q-inbox-list" aria-live="polite" aria-label="Questions"></ul>
+      </div>
+    </div>
+  </div>
 
   <!-- Service Worker Registration -->
   <script>

@@ -1577,6 +1577,7 @@ function renderDashboard() {
     renderSchedule();
     renderGamePlanSummary();
     renderDashCallSheetCleanup();
+    if (typeof refreshQuestionsCard === "function") refreshQuestionsCard();
   } catch (err) {
     console.error("renderDashboard error:", err);
     showToast("❌ Error loading dashboard.", { duration: 3000, type: "error" });
