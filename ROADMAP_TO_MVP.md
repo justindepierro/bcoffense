@@ -233,13 +233,16 @@ Example:
 - [x] **26.** Allow opponent switching from the shared context bar.
 - [ ] **27.** Warn before switching opponents when unsaved page state exists.
 - [ ] **28.** Preserve each opponent’s last active page and artifact selections.
-- [ ] **29.** Add Previous Step and Next Step controls where they provide a natural handoff.
-- [ ] **30.** Do not force a strictly linear workflow; support branching from Playbook to Scout, Game Plan, or Practice.
+- [x] **29.** Add Previous Step and Next Step controls where they provide a natural handoff.
+  - Wristband toolbar: "← Script" and "Call Sheet →" quick-nav buttons. GP header: "→ Call Sheet", "📋 Script", "🏈 Wristband" handoff buttons. Dashboard: "Continue" buttons per artifact. Commit `9ff5701` (SW v777).
+- [x] **30.** Do not force a strictly linear workflow; support branching from Playbook to Scout, Game Plan, or Practice.
+  - Workflow chips on every Playbook row + side panel navigate to any destination. GP header buttons branch to Script/Wristband/CS freely. Playbook workflow filter bar links to scout, plan, and week. Commit `a156973` (SW v776).
 
 ## Phase 3 — Shared Game Week data model
 
 - [ ] **31.** Audit the existing game-week and active-opponent storage models.
-- [ ] **32.** Create one canonical game-week accessor.
+- [x] **32.** Create one canonical game-week accessor.
+  - `getGameWeek()` in `utils.js` is the single shared read accessor used by all modules; `setGameWeek()` is the canonical write path that also fires `updateGameWeekBar()`. Commit `1f16995` (SW v762).
 - [ ] **33.** Replace duplicate opponent-name matching with stable opponent IDs where possible.
 - [ ] **34.** Add migration logic for existing name-based data.
 - [ ] **35.** Add artifact references for scout report, plan, scripts, wristband, and call sheet.
@@ -248,11 +251,13 @@ Example:
 - [ ] **38.** Add last-modified timestamps.
 - [ ] **39.** Add created-by and last-edited-by fields where authentication supports them.
 - [ ] **40.** Add team-level scope and Varsity/JV scope.
-- [ ] **41.** Add a safe unassigned-game-week state.
+- [x] **41.** Add a safe unassigned-game-week state.
+  - `#gameWeekBar` is hidden when no opponent is set; all modules guard with `gw && gw.opponentName` checks before reading opponent data. Commit `1f16995` (SW v762).
 - [ ] **42.** Add validation for orphaned artifact references.
 - [ ] **43.** Add a game-week duplication command for recurring opponents or rematches.
 - [ ] **44.** Add archive and restore support.
-- [ ] **45.** Add backward-compatible reads for older locally stored data.
+- [x] **45.** Add backward-compatible reads for older locally stored data.
+  - `storageManager.get(key, default)` returns the default on parse failure or missing key; `runMigrations()` applies versioned transforms (v1→v3) on boot. Commit pre-existing, verified stable.
 
 ## Phase 4 — Game Week command center
 
@@ -358,19 +363,24 @@ Example:
 - [x] **133.** Add a compact “Available this week” play rail.
 - [x] **134.** Separate Game Plan selections from the entire Playbook in the rail.
 - [x] **135.** Add Create Script from Game Plan with period templates.
-- [ ] **136.** Add scout-driven period suggestions such as pressure pickup or red-zone tendency.
-- [ ] **137.** Show plays not yet scripted.
-- [ ] **138.** Show scripted plays no longer in Game Plan.
-- [ ] **139.** Add reconcile actions rather than silently changing the script.
+- [x] **136.** Add scout-driven period suggestions such as pressure pickup or red-zone tendency.
+  - `showScoutPeriodSuggestions()` in `script-integrations.js` — maps `_tdScoutRecs` themes to named periods (Blitz Pickup, Cover 3 Attack, Red Zone, 3rd Down, etc.); add-all or pick-one flow; creates separator entries directly. ⋯ More Tools → "Scout Period Suggestions". Commit `c5897a6` (SW v778).
+- [x] **137.** Show plays not yet scripted.
+  - `updateScriptReconcileStatus()` renders a `#scriptGpSyncBadge` in the script title row: amber pill "X GP plays not yet scripted" or green "✓ All GP plays scripted"; clicking the badge triggers reconcile. Updates on every `renderScript()`. Commit `c5897a6` (SW v778).
+- [x] **138.** Show scripted plays no longer in Game Plan.
+  - `reconcileScriptWithGamePlan()` detects `_gpSource`-tagged script plays absent from the current GP and offers to remove them. Commit `c5897a6` (SW v778).
+- [x] **139.** Add reconcile actions rather than silently changing the script.
+  - `reconcileScriptWithGamePlan()` shows a confirm modal with new + stale counts, appends new GP plays, removes stale ones, and wraps the change in `historyManager` undo. ⋯ More Tools → "Reconcile with Game Plan". Commit `c5897a6` (SW v778).
 - [x] **140.** Add Send Script Plays to Wristband.
   - `sendScriptToWristband()` already in `script-integrations.js`; "🃏 Wristband" button in "Send To" drawer. Commit pre-existing.
-- [ ] **141.** Add Send Selected Script Plays to Call Sheet.
+- [x] **141.** Add Send Selected Script Plays to Call Sheet.
+  - `sendScriptToCallSheet()` in `script-integrations.js` — fans out selected/all script plays to matching CS categories via `_gpComputeCallSheetTargets`; append/replace choice, category breakdown preview, undo. "📄 Call Sheet" button added to the "Send To" drawer. Commit `c5897a6` (SW v778).
 - [x] **142.** Add quiz creation entry point from a published script.
-  - `startScriptQuiz()` in `script-render.js` — full-screen play quiz overlay driven by the current script. Shows scenario (down/distance/field position/defense), hides the call; Space/Enter reveals; ← → navigate; Escape closes. Shuffle mode via `toggleScriptQuizShuffle()`. "🧩 Quiz" button added to the Actions block. Commit `next` (SW v779).
+  - `startScriptQuiz()` in `script-render.js` — full-screen play quiz overlay driven by the current script. Shows scenario (down/distance/field position/defense), hides the call; Space/Enter reveals; ← → navigate; Escape closes. Shuffle mode via `toggleScriptQuizShuffle()`. "🧩 Quiz" button added to the Actions block. Commit `a290b4f` (SW v779).
 - [x] **143.** Preserve focused Team Run mode.
   - Team Run mode in `script-render.js` unchanged; no regression introduced.
 - [x] **144.** Add an artifact status bar for Save, Publish, Quiz, Present, Print.
-  - `updateScriptArtifactStatus()` in `script-render.js` — `#scriptSaveStatus` shows "● Unsaved · X plays · Y periods" or "✓ Saved · …" below the Actions buttons; updated on every `markScriptDirty`/`markScriptClean`/`renderScript` call. Commit `next` (SW v779).
+  - `updateScriptArtifactStatus()` in `script-render.js` — `#scriptSaveStatus` shows "● Unsaved · X plays · Y periods" or "✓ Saved · …" below the Actions buttons; updated on every `markScriptDirty`/`markScriptClean`/`renderScript` call. Commit `a290b4f` (SW v779).
 - [x] **145.** Keep secondary editing tools in a drawer.
   - Script "⋯ More Tools" drawer already contains all secondary editing tools.
 
@@ -415,7 +425,8 @@ Example:
 - [ ] **166.** Keep scouting intel contextually available.
 - [ ] **167.** Convert scouting intel into category-specific recommendations.
 - [ ] **168.** Add one-click insert from recommendations.
-- [ ] **169.** Preserve the full print layout and existing print suite.
+- [x] **169.** Preserve the full print layout and existing print suite.
+  - Call Sheet print modal, layout, and CSS unchanged throughout all workflow additions. Verified no regressions.
 - [ ] **170.** Separate editing view, sideline situation view, and print preview.
 - [ ] **171.** Add Finalize Week action with validation checklist.
 - [ ] **172.** Validate that critical situations have calls.
@@ -474,25 +485,29 @@ Example:
 - [ ] **219.** Use one-line compact subtitles on tablet.
 - [ ] **220.** Preserve full descriptive headers in desktop onboarding states.
 - [ ] **221.** Avoid repeating the page title in both global navigation and local header when space is constrained.
-- [ ] **222.** Add `aria-expanded` and accessible labels to help disclosures.
+- [x] **222.** Add `aria-expanded` and accessible labels to help disclosures.
+  - Native `<details>`/`<summary>` elements expose `aria-expanded` automatically via browser accessibility tree; all `.page-help` disclosures use this pattern. Commit `0488e0c` (SW v758).
 - [ ] **223.** Test header height with long opponent names and localization-safe wrapping.
 
 ## Phase 13 — Responsive button layout system
 
 - [ ] **224.** Create shared toolbar primitives:
-- [ ] **225.** `toolbar-surface`
+- [x] **225.** `toolbar-surface`
+  - `.toolbar-surface` and `.toolbar-surface--compact` defined in `components.css`; used by script, game plan, and playbook panels. Commit `ff5f213` (SW v759).
 - [ ] **226.** `toolbar-primary`
 - [ ] **227.** `toolbar-secondary`
 - [ ] **228.** `toolbar-status`
 - [ ] **229.** `toolbar-overflow`
 - [x] **230.** `action-grid`
-- [ ] **231.** `segmented-control`
+- [x] **231.** `segmented-control`
+  - `.segmented-control` + `.segmented-control__item` defined in `components.css`; used by script workspace view switcher and wristband zoom controls. Commit `ff5f213` (SW v759).
 - [ ] **232.** `icon-action`
 - [x] **233.** `full-width-primary`
 - [x] **234.** Define action priority levels: primary, frequent, secondary, destructive, contextual.
 - [x] **235.** Desktop: keep primary and frequent actions on one row where width permits.
 - [x] **236.** Desktop: allow compact icon-label buttons with stable heights.
-- [ ] **237.** Desktop: move rarely used tools into one overflow menu.
+- [x] **237.** Desktop: move rarely used tools into one overflow menu.
+  - Every module has an overflow menu for secondary tools: Script "⋯ More Tools", Wristband "⋯", Game Plan "⋯", Call Sheet "More", Playbook "⋯". All rare/administrative actions are inside those menus, not on the primary toolbar.
 - [ ] **238.** Tablet: keep one or two primary actions visible and group the rest logically.
 - [x] **239.** Phone: use an even two-column grid for normal action groups.
 - [x] **240.** Phone: allow three columns only for short, icon-forward controls.
@@ -589,9 +604,12 @@ Example:
 
 - [ ] Stable play identity across modules.
 - [x] Transfer receipts.
-- [ ] Reconcile instead of overwrite.
-- [ ] Out-of-sync detection.
-- [ ] Game Plan → Practice/Wristband/Call Sheet improvements.
+- [x] Reconcile instead of overwrite.
+  - Script reconcile (`reconcileScriptWithGamePlan`), Wristband reconcile (`reconcileWristbandWithSource`), CS pre-snapshot undo on every push. Commits `c5897a6`, `9ff5701`.
+- [x] Out-of-sync detection.
+  - `#scriptGpSyncBadge` warns when GP plays are unscripted. Wristband `#wbSourceBadge` shows source + last-sync date. Dashboard warning badges for out-of-sync artifacts. Commits `c5897a6`, `9ff5701`, `1f16995`.
+- [x] Game Plan → Practice/Wristband/Call Sheet improvements.
+  - `pushGamePlanToScript`, `pushGamePlanToWristband`, `pushGamePlanToCallSheet` all ship dup-detection, undo, and handoff receipts. Commits `a156973`, `9ff5701`.
 
 ## Release 4 — Final game-week workspace
 
