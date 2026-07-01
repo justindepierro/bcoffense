@@ -1319,7 +1319,9 @@ body.play-presentation-open {
   padding-right: env(safe-area-inset-right, 0px);
 }
 
-.pp-disc-drawer[hidden] { display: none; }
+.pp-disc-drawer[hidden] {
+  display: none;
+}
 
 .pp-disc-drawer-head {
   display: flex;
@@ -1348,9 +1350,17 @@ body.play-presentation-open {
 }
 
 /* Keep disc-* components readable inside the dark presentation overlay */
-.pp-disc-drawer .disc-post-body { white-space: pre-wrap; }
-.pp-disc-drawer .disc-composer { border-top-color: var(--color-border); }
-.pp-disc-drawer .disc-section { border: none; background: none; padding: 0; }
+.pp-disc-drawer .disc-post-body {
+  white-space: pre-wrap;
+}
+.pp-disc-drawer .disc-composer {
+  border-top-color: var(--color-border);
+}
+.pp-disc-drawer .disc-section {
+  border: none;
+  background: none;
+  padding: 0;
+}
 
 /* Reactions in dark drawer context */
 .pp-disc-drawer .disc-react-btn {

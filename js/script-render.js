@@ -492,6 +492,9 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
   const clipBtn = hasClip
     ? `<button class="script-clip-btn" data-action="openScriptClipViewer" data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬</button>`
     : "";
+  const discBtn = typeof getPlayThreadId === "function"
+    ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>`
+    : "";
   return `
       <div class="play-controls">
         <div class="play-control-fields">
@@ -500,6 +503,7 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
         </div>
         <div class="play-control-actions">
           ${clipBtn}
+          ${discBtn}
           <button class="script-present-btn" data-action="openScriptPresentation" data-idx="${index}" title="Present this play" aria-label="Present ${escapeHtml(playLabel)}">▶</button>
           <button class="script-edit-play-btn" data-action="openPlayEditorFromScript" data-arg="${index}" title="Edit this play in the playbook" aria-label="Edit play ${escapeHtml(playLabel)}">✏️</button>
           <button class="dup-btn" data-action="duplicatePlay" data-idx="${index}" title="Duplicate" aria-label="Duplicate ${escapeHtml(playLabel)}">⧉</button>
@@ -624,6 +628,12 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
             data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬 Watch</button>`
         : ""
       }
+            ${(() => {
+        const discPlayId = typeof getPlayThreadId === "function" ? getPlayThreadId(play) : null;
+        return discPlayId
+          ? `<button class="script-player-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" data-disc-play-id="${escapeHtml(discPlayId)}" title="Discussion" aria-label="View discussion for ${escapeHtml(playLabel)}">💬</button>`
+          : "";
+      })()}
             <button class="script-player-open-btn" data-action="openScriptPresentation"
               data-idx="${index}" title="Open ${escapeHtml(playLabel)} in swipe view"
               aria-label="Open ${escapeHtml(playLabel)} in swipe view">
@@ -669,6 +679,13 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
           ${playbookSigSet && playbookSigSet.has(playSignature(play)) ? `<button type="button" class="script-pb-chip" data-action="jumpToPlayInPlaybook" data-arg="${index}" title="View this play in the Playbook" aria-label="View ${escapeHtml(playLabel)} in Playbook">📖</button>` : ""}
           ${play._gpSource ? `<span class="script-gp-source-badge" title="Added from Game Plan">🎯 GP</span>` : ""}
           ${readinessBadge}
+          ${(() => {
+      if (opts.printStyle) return "";
+      const discPlayId = typeof getPlayThreadId === "function" ? getPlayThreadId(play) : null;
+      return discPlayId
+        ? `<button class="script-disc-badge" data-action="openScriptDiscussion" data-arg="${index}" data-disc-play-id="${escapeHtml(discPlayId)}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬 <span class="script-disc-count"></span></button>`
+        : "";
+    })()}
         </div>
         ${renderScriptInlineCallEdits(play, index, playLabel)}
       </div>
@@ -1215,6 +1232,7 @@ function renderScript() {
     }
 
     if (typeof updateTabBadges === "function") updateTabBadges();
+    if (typeof loadScriptDiscussionCounts === "function") loadScriptDiscussionCounts();
     if (typeof renderScriptVisionPanel === "function") {
       try {
         renderScriptVisionPanel();

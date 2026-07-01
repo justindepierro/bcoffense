@@ -1075,15 +1075,15 @@ Initial reactions:
 - [ ] Automatically include the authenticated player's primary position.
 - [ ] Allow the player to change the question position context.
 - [ ] Add question categories: Assignment, Technique, Front, Coverage, Motion, Protection, Read, and General.
-- [ ] Require a clear question body.
-- [ ] Allow coaches to reply.
+- [x] Require a clear question body.
+- [x] Allow coaches to reply.
 - [ ] Allow assistant coaches to reply according to permissions.
 - [ ] Mark a question Answered when a coach posts an official reply.
-- [ ] Allow a coach to mark a question Resolved.
+- [x] Allow a coach to mark a question Resolved.
 - [ ] Allow a player to request reopening.
-- [ ] Allow a coach to reopen directly.
+- [x] Allow a coach to reopen directly.
 - [ ] Store every state transition.
-- [ ] Display a visible state badge.
+- [x] Display a visible state badge.
 - [ ] Allow a coach to pin one official answer.
 - [ ] Allow replacing the pinned answer.
 - [ ] Preserve the previously pinned answer in history.
@@ -1100,16 +1100,16 @@ Initial reactions:
 - [ ] Allow a user to remove their like.
 - [ ] Show aggregate like count.
 - [ ] Do not display public popularity leaderboards by default.
-- [ ] Add Helpful reactions to coach answers.
-- [ ] Ensure each user may mark an answer Helpful only once.
-- [ ] Allow a user to remove Helpful.
-- [ ] Add I Have This Question Too to questions.
-- [ ] Use the same-question count to help coaches prioritize.
-- [ ] Do not create duplicate questions when a player selects I Have This Question Too.
+- [x] Add Helpful reactions to coach answers.
+- [x] Ensure each user may mark an answer Helpful only once.
+- [x] Allow a user to remove Helpful.
+- [x] Add I Have This Question Too to questions.
+- [x] Use the same-question count to help coaches prioritize.
+- [x] Do not create duplicate questions when a player selects I Have This Question Too.
 - [ ] Allow the reacting player to optionally add private context later as a deferred feature.
-- [ ] Add reaction endpoints.
-- [ ] Add reaction permission checks.
-- [ ] Add optimistic reaction updates with rollback.
+- [x] Add reaction endpoints.
+- [x] Add reaction permission checks.
+- [x] Add optimistic reaction updates with rollback.
 - [ ] Add reaction accessibility labels.
 - [ ] Add reaction analytics.
 - [ ] Add reaction abuse-rate limits.

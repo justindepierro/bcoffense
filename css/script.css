@@ -7010,3 +7010,67 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     font-size: var(--font-size-lg);
   }
 }
+
+/* ── Script discussion badge (Phase 11) ──────────────────────────────────────── */
+.script-disc-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  border: 1px solid transparent;
+  background: transparent;
+  font-size: 11px;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast),
+    background var(--transition-fast);
+  line-height: 1.5;
+}
+.script-disc-badge:hover {
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 8%, transparent);
+}
+.script-disc-badge.has-activity {
+  color: var(--color-text);
+  border-color: var(--color-border);
+  background: var(--color-bg-light);
+}
+.script-disc-badge.has-open-q {
+  color: var(--color-warning);
+  border-color: color-mix(in srgb, var(--color-warning) 40%, transparent);
+  background: var(--color-warning-light);
+}
+.script-disc-count {
+  font-size: 10px;
+  font-weight: 700;
+}
+/* Standalone discussion button in play-controls action row */
+.script-disc-btn {
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast);
+}
+.script-disc-btn:hover {
+  color: var(--color-primary);
+}
+
+/* Player card discussion button */
+.script-player-disc-btn {
+  padding: 6px 10px;
+  border: 1px solid rgb(255 255 255 / 20%);
+  border-radius: var(--radius-sm);
+  background: transparent;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: var(--font-size-sm);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+.script-player-disc-btn:hover {
+  background: rgb(255 255 255 / 12%);
+  color: #fff;
+}

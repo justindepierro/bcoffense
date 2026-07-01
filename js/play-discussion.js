@@ -51,8 +51,8 @@ const _DISC_ROLE_COLORS = {
 // ── Reaction helpers ──────────────────────────────────────────────────────────
 
 const _REACTION_META = {
-  thumbs_up:     { emoji: "👍", label: "Like" },
-  football:      { emoji: "🏈", label: "Great play" },
+  thumbs_up: { emoji: "👍", label: "Like" },
+  football: { emoji: "🏈", label: "Great play" },
   same_question: { emoji: "❓", label: "Same question" },
 };
 
@@ -82,7 +82,7 @@ function _discReactionsHtml(postId, reactions) {
 // ── Question state helpers ────────────────────────────────────────────────────
 
 const _Q_STATE_META = {
-  open:     { label: "Open",     icon: "❓", cls: "open" },
+  open: { label: "Open", icon: "❓", cls: "open" },
   answered: { label: "Answered", icon: "✅", cls: "answered" },
   resolved: { label: "Resolved", icon: "✅", cls: "resolved" },
   reopened: { label: "Reopened", icon: "🔄", cls: "reopened" },
@@ -194,10 +194,10 @@ function _discRenderBody(container, data, playId, playSig) {
 
   const lockCtrl = isStaff && thread
     ? `<div class="disc-thread-controls">` +
-      `<button class="btn btn-xs disc-lock-btn" data-action="toggleDiscThreadLock"` +
-      ` data-arg="${escapeHtml(playId)}::${isLocked ? "0" : "1"}">` +
-      `${isLocked ? "🔓 Unlock Thread" : "🔒 Lock Thread"}</button>` +
-      `</div>`
+    `<button class="btn btn-xs disc-lock-btn" data-action="toggleDiscThreadLock"` +
+    ` data-arg="${escapeHtml(playId)}::${isLocked ? "0" : "1"}">` +
+    `${isLocked ? "🔓 Unlock Thread" : "🔒 Lock Thread"}</button>` +
+    `</div>`
     : "";
 
   setInnerHTML(
@@ -226,8 +226,8 @@ function _discPostHtml(p, playId) {
   const isResolved = p.questionState === "resolved" || p.questionState === "answered";
   const resolveBtn = (isStaff && isQuestion)
     ? (isResolved
-        ? `<button class="disc-action-btn" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::reopened" title="Reopen">🔄 Reopen</button>`
-        : `<button class="disc-action-btn disc-action-btn--resolve" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::resolved" title="Resolve">✅ Resolve</button>`)
+      ? `<button class="disc-action-btn" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::reopened" title="Reopen">🔄 Reopen</button>`
+      : `<button class="disc-action-btn disc-action-btn--resolve" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::resolved" title="Resolve">✅ Resolve</button>`)
     : "";
 
   const qStateBadge = isQuestion ? _discQStateBadge(p.questionState) : "";
@@ -659,6 +659,64 @@ async function toggleDiscThreadLock(arg) {
     showToast(isNowLocked ? "Thread locked." : "Thread unlocked.", { duration: 2500, type: "success" });
   } catch (_) {
     showToast("Network error.", { duration: 2500, type: "error" });
+  }
+}
+
+// ── Script Integration (Phase 11) ─────────────────────────────────────────────
+
+/**
+ * Batch-load thread counts for all script play rows and update badges.
+ * Called after renderScript() completes.
+ */
+async function loadScriptDiscussionCounts() {
+  const badges = document.querySelectorAll("[data-disc-play-id]");
+  if (!badges.length) return;
+
+  const playIds = [...new Set([...badges].map((b) => b.dataset.discPlayId))];
+  if (!playIds.length) return;
+
+  try {
+    const params = playIds.map((id) => encodeURIComponent(id)).join(",");
+    const res = await fetch(`/api/threads/batch-counts?plays=${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const counts = data.counts || {};
+    for (const badge of badges) {
+      const playId = badge.dataset.discPlayId;
+      const info = counts[playId];
+      if (!info || info.total === 0) continue;
+
+      // Update count span
+      const countEl = badge.querySelector(".script-disc-count");
+      if (countEl) countEl.textContent = String(info.total);
+
+      badge.classList.add("has-activity");
+      if (info.openQuestions > 0) badge.classList.add("has-open-q");
+    }
+  } catch (_) {
+    // Silent — counts are a progressive enhancement
+  }
+}
+
+/**
+ * Open the swipe presentation at idx and immediately open the discussion drawer.
+ * Used by data-action="openScriptDiscussion".
+ */
+async function openScriptDiscussion(idxStr) {
+  const idx = parseInt(idxStr, 10);
+  if (isNaN(idx)) return;
+
+  if (typeof openScriptPresentation === "function") {
+    openScriptPresentation(idx);
+  }
+
+  // Brief wait for the presentation overlay to render
+  await new Promise((r) => setTimeout(r, 250));
+
+  if (typeof openPresentationDiscussion === "function") {
+    openPresentationDiscussion();
   }
 }
 
