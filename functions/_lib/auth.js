@@ -125,8 +125,13 @@ const PUBLIC_PATHS = new Set(["/manifest.json", "/sw.js", "/offline.html"]);
 
 export function isAuthRoute(pathname) {
   if (pathname === "/auth/login" || pathname === "/auth/logout" || pathname === "/auth/me") return true;
+  // Public player auth routes — token-protected, no session required
+  if (
+    pathname === "/auth/accept-invite" ||
+    pathname === "/auth/reset-password" ||
+    pathname === "/auth/reset-confirm"
+  ) return true;
   if (PUBLIC_PATHS.has(pathname)) return true;
-  // PWA icons and any other static assets under /icons/
   if (pathname.startsWith("/icons/")) return true;
   return false;
 }
@@ -158,28 +163,38 @@ export function clearSessionCookie() {
 
 export async function verifyCredentials(username, password, env) {
   const cleanUsername = String(username || "").trim().toLowerCase();
+
+  // 1. Hardcoded staff accounts (admin / coach) — env-var hash, no D1 needed
   const user = USERS[cleanUsername];
-  if (!user) return null;
+  if (user) {
+    const expectedHash = getRequiredEnv(env, user.hashEnv).trim().toLowerCase();
+    const actualHash = await sha256Hex(`${cleanUsername}:${String(password || "")}`);
+    if (!timingSafeEqual(actualHash, expectedHash)) return null;
+    return { username: cleanUsername, role: user.role, label: user.label };
+  }
 
-  const expectedHash = getRequiredEnv(env, user.hashEnv).trim().toLowerCase();
-  const actualHash = await sha256Hex(`${cleanUsername}:${String(password || "")}`);
-  if (!timingSafeEqual(actualHash, expectedHash)) return null;
-
-  return {
-    username: cleanUsername,
-    role: user.role,
-    label: user.label,
-  };
+  // 2. D1 player accounts — fall through when username not in USERS map
+  if (!env.DB) return null;
+  try {
+    const { verifyD1Credentials } = await import("./d1-auth.js");
+    return verifyD1Credentials(cleanUsername, password, env.DB);
+  } catch (_) {
+    return null;
+  }
 }
 
 export async function createSessionCookie(user, env) {
   const now = Math.floor(Date.now() / 1000);
+  // D1 player sessions carry d1:true + d1_user_id so the middleware can
+  // validate them without consulting the USERS map.
+  const extra = user.d1 ? { d1: true, d1_user_id: user.d1_user_id } : {};
   const payload = base64UrlEncodeJson({
     username: user.username,
     role: user.role,
     label: user.label,
     iat: now,
     exp: now + SESSION_TTL_SECONDS,
+    ...extra,
   });
   const signature = await signPayload(payload, env);
   return `${SESSION_COOKIE}=${payload}.${signature}; Path=/; Max-Age=${SESSION_TTL_SECONDS}; HttpOnly; Secure; SameSite=Lax`;
@@ -197,15 +212,20 @@ export async function getSessionFromRequest(request, env) {
     if (!timingSafeEqual(signature, expectedSignature)) return null;
 
     const session = base64UrlDecodeJson(payload);
-    if (!session || !USERS[session.username] || USERS[session.username].role !== session.role) {
-      return null;
-    }
+    if (!session) return null;
     if (!session.exp || session.exp < Math.floor(Date.now() / 1000)) return null;
+
+    // D1 player sessions have d1: true and d1_user_id
+    const isD1Session = session.d1 === true && !!session.d1_user_id;
+    // Static staff sessions must match the USERS map
+    const isStaticSession = !isD1Session && USERS[session.username] && USERS[session.username].role === session.role;
+    if (!isD1Session && !isStaticSession) return null;
 
     return {
       username: session.username,
       role: session.role,
-      label: session.label || USERS[session.username].label,
+      label: session.label || (isStaticSession ? USERS[session.username].label : ""),
+      d1UserId: session.d1_user_id || null,
       loginAt: session.iat ? new Date(session.iat * 1000).toISOString() : "",
       expiresAt: new Date(session.exp * 1000).toISOString(),
     };
