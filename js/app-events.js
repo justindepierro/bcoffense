@@ -1,30 +1,37 @@
-document.addEventListener("click", (e) => {
-  if (!e.target.closest(".more-tools-wrap")) {
-    document
-      .querySelectorAll(".more-tools-wrap.open")
-      .forEach((el) => el.classList.remove("open"));
-  }
-  // Close generic tool-menu dropdowns
-  if (!e.target.closest(".tool-menu-wrap")) {
-    document.querySelectorAll(".tool-menu-wrap.open").forEach((el) => {
+// ── Close all open dropdown menus ───────────────────────────────────
+function _closeAllOpenMenus(exceptWrap) {
+  // Close tool-menu-wraps
+  document.querySelectorAll(".tool-menu-wrap.open").forEach((el) => {
+    if (el === exceptWrap) return;
+    if (el.hasAttribute("data-anchored") && typeof closeAnchoredMenu === "function") {
+      closeAnchoredMenu(el);
+    } else {
       el.classList.remove("open");
-      const trigger = el.querySelector("[data-action='toggleParentOpen']");
-      if (trigger) trigger.setAttribute("aria-expanded", "false");
-      if (el.hasAttribute("data-anchored") && typeof resetAnchoredMenu === "function") {
-        resetAnchoredMenu(el);
-      }
-    });
-  } else if (e.target.closest(".tool-menu")) {
-    // Clicking an action inside a tool-menu closes that specific dropdown
-    const wrap = e.target.closest(".tool-menu-wrap");
-    if (wrap) {
-      wrap.classList.remove("open");
-      const trigger = wrap.querySelector("[data-action='toggleParentOpen']");
-      if (trigger) trigger.setAttribute("aria-expanded", "false");
-      if (wrap.hasAttribute("data-anchored") && typeof resetAnchoredMenu === "function") {
-        resetAnchoredMenu(wrap);
-      }
+      const t = el.querySelector("[data-action='toggleParentOpen']");
+      if (t) t.setAttribute("aria-expanded", "false");
     }
+  });
+  // Close more-tools-wraps
+  document.querySelectorAll(".more-tools-wrap.open").forEach((el) => {
+    if (el === exceptWrap) return;
+    if (el.hasAttribute("data-anchored") && typeof closeAnchoredMenu === "function") {
+      closeAnchoredMenu(el);
+    } else {
+      el.classList.remove("open");
+    }
+  });
+}
+
+document.addEventListener("click", (e) => {
+  const insideWrap = e.target.closest(".tool-menu-wrap, .more-tools-wrap");
+  if (!insideWrap) {
+    // Clicked outside all menus — close everything
+    _closeAllOpenMenus(null);
+    return;
+  }
+  // Clicked inside a menu item (not the toggle button itself) — close that menu
+  if (e.target.closest(".tool-menu, .more-tools-menu")) {
+    _closeAllOpenMenus(null);
   }
 });
 
@@ -320,6 +327,8 @@ document.addEventListener("click", (e) => {
   if (action === "toggleParentOpen") {
     const wrap = el.parentElement;
     const willOpen = !wrap.classList.contains("open");
+    // Close all other open menus before opening this one (#190)
+    if (willOpen) _closeAllOpenMenus(wrap);
     wrap.classList.toggle("open");
     const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
     if (triggerBtn) triggerBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
