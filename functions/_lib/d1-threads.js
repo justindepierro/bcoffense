@@ -111,7 +111,7 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
 
 /** Create a new post. Returns the new post row. */
 export async function createPost(db, { threadId, authorId, postType, body }) {
-  const trimmed = String(body || "").trim();
+  const trimmed = sanitizePostBody(body);
   if (!trimmed) return { error: "Post body is required." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
 
@@ -151,7 +151,7 @@ export async function editPost(db, postId, newBody, session) {
     if (age > PLAYER_EDIT_WINDOW_SECONDS) return { error: "The edit window has passed." };
   }
 
-  const trimmed = String(newBody || "").trim();
+  const trimmed = sanitizePostBody(newBody);
   if (!trimmed) return { error: "Post body cannot be empty." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
 
