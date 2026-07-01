@@ -375,6 +375,9 @@
   function syncPlayerPortalChrome() {
     const isPlayer = currentAuthUser?.role === "player";
     document.body?.classList.toggle("player-portal", isPlayer);
+    // Show My Questions button only for player accounts
+    const portalBtn = document.getElementById("playerPortalBtn");
+    if (portalBtn) portalBtn.hidden = !isPlayer;
     [
       ["tab-playbook", "Playbook", "Playbook"],
       ["tab-dashboard", "📊 Dashboard", "Home"],
