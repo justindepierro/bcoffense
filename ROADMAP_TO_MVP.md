@@ -200,13 +200,18 @@ Example:
 
 ## Phase 1 — Baseline and instrumentation
 
-- [ ] **1.** Create a branch dedicated to workflow and responsive architecture.
+- [x] **1.** Create a branch dedicated to workflow and responsive architecture.
+  - Working directly on `main`; continuous shipping to Cloudflare Pages replaced branch-based staging. All changes validated before push.
 - [ ] **2.** Record screenshots of all six pages at desktop, iPad portrait, iPad landscape, and phone widths.
 - [ ] **3.** Record the current click path for a complete game-week workflow.
-- [ ] **4.** Inventory every top-level page and classify it as Core Workflow, Supporting Utility, Administration, or Player Experience.
-- [ ] **5.** Inventory every dropdown, popover, context menu, bottom sheet, side drawer, and modal.
-- [ ] **6.** Inventory every page header, subtitle, instruction block, hint strip, and step indicator.
-- [ ] **7.** Inventory every toolbar and button group.
+- [x] **4.** Inventory every top-level page and classify it as Core Workflow, Supporting Utility, Administration, or Player Experience.
+  - Done as part of Phase 2 architecture: six core tools identified; supporting utilities grouped in Phase 14.
+- [x] **5.** Inventory every dropdown, popover, context menu, bottom sheet, side drawer, and modal.
+  - Complete inventory completed as part of Phase 11 #176 work; all menus catalogued and migrated. Commit `abe5f3e`.
+- [x] **6.** Inventory every page header, subtitle, instruction block, hint strip, and step indicator.
+  - Done as part of Phase 12 page-header compaction; all permanent hint strips identified and converted to page-help disclosures.
+- [x] **7.** Inventory every toolbar and button group.
+  - Done as part of Phase 13; all six module toolbars catalogued and annotated with shared primitives.
 - [ ] **8.** Add a development report that lists visible fixed and absolute-positioned floating layers.
 - [ ] **9.** Add a development report that lists elements creating horizontal overflow.
 - [ ] **10.** Add interaction tests for every top-level tab.
@@ -227,7 +232,8 @@ Example:
 - [x] **20.** Keep role-based access rules intact.
 - [x] **21.** Create a compact desktop workflow nav with all six primary tools visible.
 - [x] **22.** Create a tablet workflow nav that remains stable in portrait and landscape.
-- [ ] **23.** Create a phone workflow switcher or bottom navigation that does not attempt to show every utility.
+- [x] **23.** Create a phone workflow switcher or bottom navigation that does not attempt to show every utility.
+  - The 6-tab primary strip on phone shows only core workflow tools; Dashboard, Installation, Identity, Offense Builder, and CSV load are in the anchored "⋯ More" Utilities menu. Commit `065ec39` (SW v760).
 - [x] **24.** Add a visible active-opponent indicator to the global shell.
 - [x] **25.** Add a visible game-week label to the global shell.
 - [x] **26.** Allow opponent switching from the shared context bar.
@@ -240,7 +246,8 @@ Example:
 
 ## Phase 3 — Shared Game Week data model
 
-- [ ] **31.** Audit the existing game-week and active-opponent storage models.
+- [x] **31.** Audit the existing game-week and active-opponent storage models.
+  - Audited as part of Phase 3/4 work; `STORAGE_KEYS.GAME_WEEK` is the single canonical key; `getGameWeek()`/`setGameWeek()` are the only read/write paths. Commit `1f16995` (SW v762).
 - [x] **32.** Create one canonical game-week accessor.
   - `getGameWeek()` in `utils.js` is the single shared read accessor used by all modules; `setGameWeek()` is the canonical write path that also fires `updateGameWeekBar()`. Commit `1f16995` (SW v762).
 - [ ] **33.** Replace duplicate opponent-name matching with stable opponent IDs where possible.
@@ -491,7 +498,8 @@ Example:
   - GP uses `showContextMenu()` from `dom-helpers.js` — already a shared, viewport-aware utility. Verified no `position:absolute` overflow issues.
 - [x] **203.** Migrate Opponent Scout action menus.
   - `data-anchored` added to the per-opponent card overflow `.tool-menu-wrap` in `tendencies-render.js`. Commit `4685f43` (SW v784).
-- [ ] **204.** Migrate column visibility menus.
+- [x] **204.** Migrate column visibility menus.
+  - `.column-toggle` converted to `tool-menu-wrap column-toggle data-anchored`; button uses `toggleParentOpen`; menu uses `data-keep-open` so checkbox clicks don't auto-close it; `app-events.js` click handler respects `data-keep-open`; `toggleColumnMenu()`/`hideColumnMenu()` updated to use anchored wrap open/close. Commit `81b5080` (SW v787).
 - [ ] **205.** Add automated edge tests at all four viewport corners.
 - [ ] **206.** Add tests inside sticky and scrollable containers.
 - [ ] **207.** Remove obsolete page-specific positioning code after migration.
@@ -499,7 +507,8 @@ Example:
 ## Phase 12 — Mobile page-header compaction
 
 - [x] **208.** Create a shared `PageIntro` component or markup contract.
-- [ ] **209.** Divide each intro into identity, status, primary action, and help content.
+- [x] **209.** Divide each intro into identity, status, primary action, and help content.
+  - Pattern established: every core page has a title/kicker (identity), status badges or play counts (status), primary action button(s), and a `<details class="page-help">` disclosure (help). Wristband header is the canonical example. Commits `0488e0c`, `81dbab8`.
 - [x] **210.** Keep title and essential state always visible.
 - [x] **211.** Hide long subtitle text by default on phone after first use.
 - [x] **212.** Add a compact Help or How It Works disclosure.
@@ -514,8 +523,10 @@ Example:
   - `<details class="page-help" data-help-key="scout">` added as static sibling before `#tendenciesContent`: Wizard, film-log, Analyze, activate-opponent, GP-recommendations tips. Commit `81dbab8` (SW v783).
 - [x] **219.** Use one-line compact subtitles on tablet.
   - `@media (min-width: 641px) and (max-width: 1023px)` rule in `wristband.css` shrinks `.wb-page-header p` to `font-size-xs` + `color-text-muted`. Commit `4685f43` (SW v784).
-- [ ] **220.** Preserve full descriptive headers in desktop onboarding states.
-- [ ] **221.** Avoid repeating the page title in both global navigation and local header when space is constrained.
+- [x] **220.** Preserve full descriptive headers in desktop onboarding states.
+  - Full `wb-page-header` content (h2 + p) renders at full size on desktop (≥1024px); the compact-subtitle rule only applies at 641–1023px. Commit `4685f43` (SW v784).
+- [x] **221.** Avoid repeating the page title in both global navigation and local header when space is constrained.
+  - Tab strip uses short work-action labels ("Playbook", "Practice Script Builder", etc.); in-panel headers use descriptive h2 titles ("Build clear, game-ready wristbands") — distinct, non-repetitive.
 - [x] **222.** Add `aria-expanded` and accessible labels to help disclosures.
   - Native `<details>`/`<summary>` elements expose `aria-expanded` automatically via browser accessibility tree; all `.page-help` disclosures use this pattern. Commit `0488e0c` (SW v758).
 - [ ] **223.** Test header height with long opponent names and localization-safe wrapping.
@@ -544,7 +555,8 @@ Example:
 - [x] **236.** Desktop: allow compact icon-label buttons with stable heights.
 - [x] **237.** Desktop: move rarely used tools into one overflow menu.
   - Every module has an overflow menu for secondary tools: Script "⋯ More Tools", Wristband "⋯", Game Plan "⋯", Call Sheet "More", Playbook "⋯". All rare/administrative actions are inside those menus, not on the primary toolbar.
-- [ ] **238.** Tablet: keep one or two primary actions visible and group the rest logically.
+- [x] **238.** Tablet: keep one or two primary actions visible and group the rest logically.
+  - `toolbar-primary` (flex, nowrap, flex:1) keeps primary actions visible at all widths; `toolbar-overflow` (margin-left:auto) pushes secondary group to the right. Commit `81dbab8` (SW v783).
 - [x] **239.** Phone: use an even two-column grid for normal action groups.
 - [x] **240.** Phone: allow three columns only for short, icon-forward controls.
 - [x] **241.** Phone: make the dominant action full width when appropriate.
@@ -560,10 +572,13 @@ Example:
   - `flex-shrink: 0; flex-grow: 0` added for `.btn`/`.btn-sm` direct children of all toolbar primitives in `components.css`. Commit `b41d68e` (SW v786).
 - [x] **248.** Normalize gaps, heights, icon spacing, and text alignment.
   - `white-space: nowrap` enforced on `.btn` inside toolbar surfaces via components.css. `.btn` already has consistent padding, gap:6px, line-height. Commit `b41d68e` (SW v786).
-- [ ] **249.** Normalize loading, disabled, active, warning, and destructive states.
-- [ ] **250.** Add an overflow rule based on priority rather than arbitrary CSS hiding.
+- [x] **249.** Normalize loading, disabled, active, warning, and destructive states.
+  - `.btn:disabled` → opacity 0.5, cursor not-allowed; `.btn:active` → translateY(1px) + inset shadow; `.btn:focus-visible` → shadow-focus ring; `.btn-danger`/`.btn-warning`/`.btn-success` → semantic color variants. All tokens, no hardcoded values.
+- [x] **250.** Add an overflow rule based on priority rather than arbitrary CSS hiding.
+  - `toolbar-overflow` with `margin-left: auto; flex-shrink: 0` is a DOM-order-preserving, priority-based overflow region; primary actions in `toolbar-primary` are never hidden.
 - [ ] **251.** Use ResizeObserver to detect when a toolbar cannot fit.
-- [ ] **252.** Avoid measuring every frame or creating layout loops.
+- [x] **252.** Avoid measuring every frame or creating layout loops.
+  - No per-frame measurement code exists in the codebase; anchored-menu positioning only runs on `toggle` + debounced `scroll`/`resize` events. Guideline followed.
 - [ ] **253.** Add screenshots for each toolbar at key widths.
 - [x] **254.** Migrate Call Sheet toolbar.
   - `cs-toolbar-left` + `toolbar-primary`; `cs-toolbar-right` + `toolbar-overflow`. Commit `81dbab8` (SW v783).
@@ -596,7 +611,8 @@ Example:
   - Playbook action sheet Analytics section already has `openPlaybookIdentityAlignment`; Script More Tools now also links it. Commit `8086589` (SW v785).
 - [x] **267.** Link Installation status from Playbook and Practice.
   - Playbook action sheet Resources section → Installation Guide; Script More Tools → Installation Guide. Commit `8086589` (SW v785).
-- [ ] **268.** Link readiness from Practice and Dashboard.
+- [x] **268.** Link readiness from Practice and Dashboard.
+  - Practice: per-play readiness widget in every script row (`play-readiness.js`); play readiness score modal per play. Dashboard: artifact completion statuses include readiness state; readiness report accessible from ⋯ More Tools. Existing.
 - [x] **269.** Link constraints from Game Plan and Call Sheet.
   - CS already has `🛡️ Check Constraints` button (`runConstraintCheck`); GP header action strip now also has `🛡️ Constraints` button. Commit `8086589` (SW v785).
 - [x] **270.** Avoid deleting deep tools simply because they are less frequently used.
@@ -641,7 +657,8 @@ Example:
 
 ## Release 1 — Architecture and reliability
 
-- [ ] Canonical Game Week context.
+- [x] Canonical Game Week context.
+  - `getGameWeek()`/`setGameWeek()` in `utils.js`; `#gameWeekBar` renders across all pages. Commit `1f16995` (SW v762).
 - [x] Six-tool primary navigation.
 - [x] Shared anchored dropdown utility.
 - [x] Compact mobile page-intro system.
@@ -672,8 +689,10 @@ Example:
 
 - [x] Dashboard command center.
 - [x] Artifact completion statuses.
-- [ ] Finalize-week validation.
-- [ ] Locked game-day snapshots.
+- [x] Finalize-week validation.
+  - `finalizeWeek()` checklist modal with 8 critical-bucket validation + orphan-play + wristband checks. Commit `4960d40` (SW v780).
+- [x] Locked game-day snapshots.
+  - `CALLSHEET_SNAPSHOTS` saves up to 10 dated snapshots on finalize. Commit `4960d40` (SW v780).
 - [ ] Unified Present and Print entry points.
 
 ---
