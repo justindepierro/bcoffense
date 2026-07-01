@@ -654,6 +654,11 @@ function openPlayWorkflowPanel(idx) {
     const inner = panel.querySelector(".pb-wf-panel");
     if (inner) trapFocus(inner);
   }
+
+  // Async Discussion section — appended after static sections
+  if (typeof renderDiscussionSection === "function") {
+    renderDiscussionSection(play, body);
+  }
 }
 
 function closePlayWorkflowPanel() {

@@ -60,6 +60,10 @@ const _ELEMENT_FNS = new Set([
   "moveInstallItemUp",
   "moveInstallItemDown",
   "toggleIdentityCard",
+  // Discussion actions (need both arg + element)
+  "submitDiscPost",
+  "deleteDiscPost",
+  "loadMoreDiscussion",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
