@@ -1735,6 +1735,26 @@ function setGameWeek(opponentIndex, weekLabel) {
   storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   // Invalidate script's scouting cache so next render fetches fresh data
   if (typeof invalidateScoutCache === "function") invalidateScoutCache();
+  // Sync the persistent game-week bar across all pages
+  if (typeof updateGameWeekBar === "function") updateGameWeekBar();
+}
+
+/**
+ * Render the compact game-week context bar that sits beneath the tab strip.
+ * Called once on app init and any time the active opponent / week label changes.
+ */
+function updateGameWeekBar() {
+  const bar = document.getElementById("gameWeekBar");
+  if (!bar) return;
+  const gw = getGameWeek();
+  const hasOpponent = Boolean(gw.opponentName);
+  bar.hidden = !hasOpponent;
+  if (!hasOpponent) return;
+
+  const oppEl = document.getElementById("gwBarOpponent");
+  const weekEl = document.getElementById("gwBarWeek");
+  if (oppEl) oppEl.textContent = gw.opponentName;
+  if (weekEl) weekEl.textContent = gw.weekLabel ? `— ${gw.weekLabel}` : "";
 }
 
 /**

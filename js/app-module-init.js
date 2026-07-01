@@ -24,6 +24,9 @@ function initAllModules() {
   filterPlays();
   scriptWorkspaceNeedsInit = true;
 
+  // Sync the game-week bar with stored state (runs on every session restore).
+  if (typeof updateGameWeekBar === "function") updateGameWeekBar();
+
   const idle =
     typeof requestIdleCallback === "function"
       ? requestIdleCallback

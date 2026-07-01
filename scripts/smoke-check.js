@@ -1718,6 +1718,34 @@ function checkPrimaryNavContract() {
   console.log("primary nav contract ok");
 }
 
+function checkGameWeekBarContract() {
+  // Immediate fix #8: shared active-opponent/game-week bar beneath the tab strip.
+  const html = read("index.html");
+  const utils = read("js/utils.js");
+  const moduleInit = read("js/app-module-init.js");
+
+  if (!/id="gameWeekBar"[^>]*class="gw-bar"/.test(html)) {
+    fail("#gameWeekBar element is missing from index.html");
+  }
+  if (!/id="gwBarOpponent"/.test(html)) {
+    fail("#gwBarOpponent element is missing from the game-week bar");
+  }
+  if (!/data-action="focusDashOpponentSelect"/.test(html)) {
+    fail("game-week bar edit button must use data-action=focusDashOpponentSelect");
+  }
+  if (!/function updateGameWeekBar\(\)/.test(utils)) {
+    fail("updateGameWeekBar() is missing from utils.js");
+  }
+  if (!/if \(typeof invalidateScoutCache/.test(utils) || !/updateGameWeekBar\(\)/.test(utils)) {
+    fail("setGameWeek() does not call updateGameWeekBar() after persisting");
+  }
+  if (!/updateGameWeekBar\(\)/.test(moduleInit)) {
+    fail("initAllModules does not call updateGameWeekBar() on session restore");
+  }
+
+  console.log("game week bar contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2409,6 +2437,7 @@ checkAnchoredMenuContract();
 checkPageHelpContract();
 checkActionGridContract();
 checkPrimaryNavContract();
+checkGameWeekBarContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

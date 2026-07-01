@@ -334,6 +334,67 @@ body[data-auth-role="player"] .save-status {
   font-weight: 700;
 }
 
+/* ── Game Week bar (roadmap fix #8) ─────────────────────────────
+   Compact sticky context strip showing the active opponent + week
+   label across all six core pages.                              */
+.gw-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: 4px 20px;
+  background: var(--color-primary);
+  color: #fff;
+  font-size: var(--font-size-xs);
+  font-weight: 500;
+  min-height: 28px;
+  flex-shrink: 0;
+}
+.gw-bar[hidden] {
+  display: none;
+}
+.gw-bar__label {
+  flex-shrink: 0;
+  font-size: var(--font-size-sm);
+}
+.gw-bar__opponent {
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 220px;
+}
+.gw-bar__week {
+  color: rgba(255, 255, 255, 0.75);
+  white-space: nowrap;
+}
+.gw-bar__edit {
+  margin-left: auto;
+  flex-shrink: 0;
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  border: 1px solid rgba(255, 255, 255, 0.25);
+  padding: 2px 8px;
+  font-size: var(--font-size-2xs);
+  min-height: 22px;
+  border-radius: var(--radius-sm);
+}
+.gw-bar__edit:hover {
+  background: rgba(255, 255, 255, 0.25);
+}
+[data-theme="dark"] .gw-bar {
+  background: var(--color-primary-dark);
+}
+
+@media (max-width: 480px) {
+  .gw-bar {
+    padding: 4px 12px;
+    gap: var(--space-xs);
+  }
+  .gw-bar__opponent {
+    max-width: 130px;
+  }
+}
+
 body[data-auth-role="player"] .tabs {
   gap: 10px;
   justify-content: center;
