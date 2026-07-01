@@ -311,10 +311,10 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add separate Comments and Questions filters within Discussion.
 - [x] Display author name.
 - [x] Display author role.
-- [ ] Display position when useful.
+- [x] Display position when useful.
 - [x] Display relative and exact timestamp.
 - [x] Display edited status.
-- [ ] Display source context such as Tuesday Practice, Period 3.
+- [x] Display source context such as Tuesday Practice, Period 3.
 - [x] Display a simple avatar fallback using initials.
 - [x] Do not require profile photos.
 - [x] Add a plain text comment composer.
@@ -503,14 +503,14 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Use modest indentation rather than deeply nested cards.
 - [x] Display author name prominently.
 - [x] Display author role.
-- [ ] Display player position when relevant.
+- [x] Display player position when relevant.
 - [x] Display timestamp.
 - [x] Display edited status.
 - [x] Display question state.
-- [ ] Display script and practice context when relevant.
+- [x] Display script and practice context when relevant.
 - [x] Highlight official coach replies.
 - [ ] Highlight pinned answers.
-- [ ] Distinguish coaches from players without relying only on color.
+- [x] Distinguish coaches from players without relying only on color.
 - [x] Add a compact Reply action beneath every eligible post.
 - [x] Add a compact React action beneath every eligible post.
 - [x] Add a compact More menu beneath every eligible post.
@@ -518,7 +518,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Display the most-used reactions first.
 - [x] Show total reply count.
 - [x] Add View Replies and Hide Replies controls.
-- [ ] Keep replies expanded when the user has actively opened the thread.
+- [x] Keep replies expanded when the user has actively opened the thread.
 - [ ] Preserve expanded-thread state while navigating within the play.
 - [x] Use a single-column feed on phones.
 - [x] Use a wider centered feed on tablets.
@@ -557,7 +557,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Prevent accidental duplicate replies.
 - [x] Run text through the Phase 8A moderation system.
 - [ ] Scan attachment metadata and file types.
-- [ ] Enforce reply-length limits.
+- [x] Enforce reply-length limits.
 - [ ] Enforce attachment-count limits.
 - [ ] Add reply-composer tests.
 
@@ -714,16 +714,16 @@ Use a curated team reaction set rather than the entire emoji keyboard as the def
 
 Initial reactions:
 
-- [ ] 👍 Thumbs Up
-- [ ] 👎 Thumbs Down
-- [ ] ❤️ Heart
-- [ ] 🏈 Football
-- [ ] 🥇 Gold Medal
-- [ ] 6️⃣ Six / Touchdown
-- [ ] 😀 Happy
-- [ ] 💪 Strong
-- [ ] ❓ Same Question or Confused, depending on context
-- [ ] ✅ Got It
+- [x] 👍 Thumbs Up
+- [x] 👎 Thumbs Down
+- [x] ❤️ Heart
+- [x] 🏈 Football
+- [x] 🥇 Gold Medal
+- [x] 6️⃣ Six / Touchdown
+- [x] 😀 Happy
+- [x] 💪 Strong
+- [x] ❓ Same Question or Confused, depending on context
+- [x] ✅ Got It
 - [x] Add Thumbs Up reaction.
 - [x] Add Thumbs Down reaction.
 - [x] Add Heart reaction.
@@ -735,12 +735,12 @@ Initial reactions:
 - [x] Add Got It reaction.
 - [x] Retain Helpful as a semantically meaningful reaction.
 - [x] Retain I Have This Question Too as a semantically meaningful reaction.
-- [ ] Decide whether Same Question uses an emoji or a labeled button.
+- [x] Decide whether Same Question uses an emoji or a labeled button.
 - [x] Use stable internal reaction keys rather than storing only raw emoji.
 - [x] Map each reaction key to a display emoji.
 - [x] Store one reaction of each type per user per post.
-- [ ] Allow a user to use multiple different reactions on one post only if the product decision permits it.
-- [ ] Prefer one selected reaction per user per post for Facebook-style simplicity.
+- [x] Allow a user to use multiple different reactions on one post only if the product decision permits it.
+- [x] Prefer one selected reaction per user per post for Facebook-style simplicity.
 - [x] Allow changing a reaction.
 - [x] Allow removing a reaction.
 - [x] Show aggregate counts.
@@ -750,12 +750,12 @@ Initial reactions:
 - [ ] Decide whether players may see the full list of reacting users.
 - [ ] Avoid public negative-reaction leaderboards.
 - [ ] Treat Thumbs Down as feedback, not disciplinary evidence.
-- [ ] Consider renaming Thumbs Down to Still Confused for player-facing football use.
-- [ ] Consider using 😕 for Still Confused.
+- [x] Consider renaming Thumbs Down to Still Confused for player-facing football use.
+- [x] Consider using 😕 for Still Confused.
 - [ ] Keep reaction choices configurable by administrators.
-- [ ] Do not allow arbitrary custom emoji in version one.
+- [x] Do not allow arbitrary custom emoji in version one.
 - [x] Add accessible labels for every reaction.
-- [ ] Do not rely on emoji appearance alone to communicate meaning.
+- [x] Do not rely on emoji appearance alone to communicate meaning.
 - [ ] Add reaction unit tests.
 - [ ] Add reaction aggregation tests.
 
@@ -765,7 +765,7 @@ Initial reactions:
 
 - [x] Open the quick reaction picker by tapping or clicking React.
 - [ ] Support press-and-hold on touch devices where reliable.
-- [ ] Do not require press-and-hold as the only access method.
+- [x] Do not require press-and-hold as the only access method.
 - [x] Anchor the picker to the React button using the shared dropdown system.
 - [x] Keep the picker onscreen.
 - [x] Flip above the trigger when needed.
@@ -850,11 +850,11 @@ Initial reactions:
 - [ ] Support finger drawing as a fallback.
 - [ ] Allow the coach to hide the drawing toolbar temporarily.
 - [ ] Allow full-screen visual viewing.
-- [ ] Preserve unsent content during rotation.
+- [x] Preserve unsent content during rotation.
 - [x] Keep reaction pickers attached to their trigger.
 - [x] Use an even emoji grid on phones.
-- [ ] Avoid oversized discussion page headers.
-- [ ] Preserve the compact mobile page-header system.
+- [x] Avoid oversized discussion page headers.
+- [x] Preserve the compact mobile page-header system.
 - [ ] Add screenshots for phone and iPad states.
 
 ⸻

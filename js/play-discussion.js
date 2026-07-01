@@ -259,7 +259,8 @@ function _discQStateBadge(state) {
 }
 
 function _discRoleBadge(role) {
-  const label = { admin: "Admin", coach: "Coach", player: "Player" }[role] || role;
+  if (!role || role === "player") return "";
+  const label = { admin: "Admin", coach: "Coach" }[role] || String(role);
   return `<span class="disc-role-badge disc-role-badge--${escapeHtml(role)}">${escapeHtml(label)}</span>`;
 }
 
@@ -357,10 +358,10 @@ function _discRenderBody(container, data, playId, playSig) {
 
   const filterBar = posts.length
     ? `<div class="disc-filter-bar" role="group" aria-label="Filter discussion">` +
-      `<button class="disc-filter-btn active" data-action="setDiscFilter" data-arg="all::${escapeHtml(playId)}" aria-pressed="true">All</button>` +
-      `<button class="disc-filter-btn" data-action="setDiscFilter" data-arg="comment::${escapeHtml(playId)}" aria-pressed="false">💬 Comments</button>` +
-      `<button class="disc-filter-btn" data-action="setDiscFilter" data-arg="question::${escapeHtml(playId)}" aria-pressed="false">❓ Questions</button>` +
-      `</div>`
+    `<button class="disc-filter-btn active" data-action="setDiscFilter" data-arg="all::${escapeHtml(playId)}" aria-pressed="true">All</button>` +
+    `<button class="disc-filter-btn" data-action="setDiscFilter" data-arg="comment::${escapeHtml(playId)}" aria-pressed="false">💬 Comments</button>` +
+    `<button class="disc-filter-btn" data-action="setDiscFilter" data-arg="question::${escapeHtml(playId)}" aria-pressed="false">❓ Questions</button>` +
+    `</div>`
     : "";
 
   const loadMore = hasMore && posts.length
@@ -389,6 +390,15 @@ function _discRenderBody(container, data, playId, playSig) {
     composer +
     lockCtrl,
   );
+
+  // Auto-restore previously expanded reply threads from sessionStorage
+  requestAnimationFrame(() => {
+    container.querySelectorAll(".disc-load-replies[data-action='loadMoreDiscReplies']").forEach((btn) => {
+      const pid = btn.dataset.arg;
+      if (!pid) return;
+      try { if (sessionStorage.getItem(`disc-exp-${pid}`)) loadMoreDiscReplies(null, btn); } catch (_) {}
+    });
+  });
 
   // Async: check moderation queue count for coaches
   if (isStaff) _discCheckModerationQueue();
@@ -501,9 +511,11 @@ function _discPostHtml(p, playId, isReply = false) {
     `<div class="disc-post-meta">` +
     `<span class="disc-author">${escapeHtml(p.authorName)}</span>` +
     _discRoleBadge(p.authorRole) +
+    (p.authorPosition ? `<span class="disc-author-pos">${escapeHtml(p.authorPosition)}</span>` : "") +
     typeIcon + qStateBadge + qCatBadge +
     `<span class="disc-time" title="${escapeHtml(_discExactTime(p.createdAt))}">${escapeHtml(_discRelTime(p.createdAt))}</span>` +
     (p.editedAt ? `<span class="disc-edited">(edited)</span>` : "") +
+    (p.sourceContext ? `<span class="disc-post-ctx">${escapeHtml(p.sourceContext)}</span>` : "") +
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
     _discReactionsHtml(p.id, p.reactions, (isQuestion && !isReply) ? "same_question" : null) +
@@ -749,7 +761,7 @@ function _discCloseAllReplyComposers() {
     sheet.classList.remove("visible");
     document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
     _discRemoveVpListeners(sheet);
-    if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) {}
+    if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) { }
     setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
   }
 }
@@ -772,9 +784,9 @@ function _discWireReplyComposerDraft(container, parentPostId) {
       const charEl = document.getElementById(`discChars-reply-${parentPostId}`);
       if (charEl) charEl.textContent = `${draft.length} / 2000`;
     }
-  } catch (_) {}
+  } catch (_) { }
   ta.addEventListener("input", () => {
-    try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) {}
+    try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) { }
   });
   // Adjust sheet position when on-screen keyboard resizes the viewport
   const sheet = document.getElementById("discReplySheet");
@@ -875,7 +887,7 @@ async function closeDiscReplyComposer(parentPostId) {
     _discRemoveVpListeners(sheet);
     sheet.classList.remove("visible");
     document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
-    try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) {}
+    try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { }
     setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
     return;
   }
@@ -891,7 +903,7 @@ async function closeDiscReplyComposer(parentPostId) {
     });
     if (!confirmed) return;
   }
-  try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) {}
+  try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { }
   slot.innerHTML = "";
 }
 
@@ -997,6 +1009,8 @@ async function loadMoreDiscReplies(arg, el) {
       btn.disabled = false;
       btn.textContent = "Load more replies…";
     } else {
+      // Mark this thread as expanded so it auto-restores next render
+      try { sessionStorage.setItem(`disc-exp-${rootPostId}`, "1"); } catch (_) {}
       btn.remove();
     }
   } catch (_) {
@@ -1620,7 +1634,12 @@ document.addEventListener("input", (e) => {
   const id = raw.startsWith("discCompose-") ? raw.slice("discCompose-".length) : null;
   if (!id) return;
   const el = document.getElementById(`discChars-${id}`);
-  if (el) el.textContent = `${ta.value.length} / 2000`;
+  if (el) {
+    const len = ta.value.length;
+    el.textContent = `${len} / 2000`;
+    el.classList.toggle("disc-char-warn", len > 1800 && len < 1950);
+    el.classList.toggle("disc-char-limit", len >= 1950);
+  }
 });
 
 document.addEventListener("keydown", (e) => {

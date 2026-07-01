@@ -4635,10 +4635,18 @@ body.shell-phone .pb-action-sheet {
 .disc-role-badge--coach {
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   color: var(--color-primary);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 40%, transparent);
+}
+.disc-role-badge--coach::before {
+  content: "▸ ";
 }
 .disc-role-badge--admin {
   background: color-mix(in srgb, var(--color-danger) 15%, transparent);
   color: var(--color-danger);
+  border: 1px solid color-mix(in srgb, var(--color-danger) 40%, transparent);
+}
+.disc-role-badge--admin::before {
+  content: "★ ";
 }
 .disc-role-badge--player {
   background: color-mix(in srgb, var(--color-success) 15%, transparent);
@@ -4646,6 +4654,26 @@ body.shell-phone .pb-action-sheet {
 }
 .disc-type-icon {
   font-size: var(--font-size-xs);
+}
+.disc-author-pos {
+  font-size: 9px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  border-radius: var(--radius-pill);
+  padding: 1px 5px;
+  background: var(--color-bg-hover-row);
+  color: var(--color-text-muted);
+  border: 1px solid var(--color-border-light);
+}
+.disc-post-ctx {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 120px;
 }
 
 /* Question category badge */
@@ -4955,6 +4983,15 @@ body.shell-phone .pb-action-sheet {
   font-size: 10px;
   color: var(--color-text-muted);
   margin-left: auto;
+  transition: color var(--transition-fast);
+}
+.disc-char-warn {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+.disc-char-limit {
+  color: var(--color-danger);
+  font-weight: 700;
 }
 
 /* ── Reactions ──────────────────────────────────────────────────────────────── */
@@ -5034,8 +5071,14 @@ body.shell-phone .pb-action-sheet {
   animation: discPickerIn 0.14s ease;
 }
 @keyframes discPickerIn {
-  from { opacity: 0; transform: scale(0.92) translateY(4px); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: scale(0.92) translateY(4px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 /* Bottom sheet on very narrow screens */
 .disc-reaction-picker.is-bottom-sheet {
@@ -5050,8 +5093,14 @@ body.shell-phone .pb-action-sheet {
   animation: discPickerUp 0.18s ease;
 }
 @keyframes discPickerUp {
-  from { opacity: 0; transform: translateY(100%); }
-  to   { opacity: 1; transform: none; }
+  from {
+    opacity: 0;
+    transform: translateY(100%);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 .disc-reaction-picker.is-bottom-sheet .disc-picker-emoji {
   font-size: 26px;
@@ -5213,7 +5262,10 @@ body.shell-phone .pb-action-sheet {
   font-weight: 600;
   color: var(--color-text-secondary);
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
   min-height: 32px;
 }
 .disc-same-q-btn:hover {
@@ -5251,7 +5303,10 @@ body.shell-phone .pb-action-sheet {
   font-weight: 600;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .disc-q-cat-btn:hover {
   border-color: var(--color-border-med);
@@ -5363,8 +5418,12 @@ body.shell-phone .pb-action-sheet {
   }
 }
 @keyframes discOverlayIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 /* ── Coach post highlight ───────────────────────────────────────────────────── */
