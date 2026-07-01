@@ -9,3 +9,10 @@ id = "aa7a47d6139544bc9bb2aef6622c8bb2"
 [[r2_buckets]]
 binding = "CLIPS"
 bucket_name = "bcoffense-clips"
+
+# D1 relational database — OMG Phase 3
+# Run `wrangler d1 create bcoffense-db` to provision, then fill in the id below.
+[[d1_databases]]
+binding = "DB"
+database_name = "bcoffense-db"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"

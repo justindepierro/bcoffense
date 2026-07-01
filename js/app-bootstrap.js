@@ -66,6 +66,13 @@ function restoreStoredPlaybookSession(storedPlaybook) {
     const changed = ensurePlaybookPlayIds(plays);
     if (changed > 0) storageManager.setPlaybook(plays);
   }
+  // Backfill stable IDs on existing opponents (#34)
+  if (typeof ensureOpponentIds === "function") {
+    const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+    if (ensureOpponentIds(opponents) > 0) {
+      storageManager.set(STORAGE_KEYS.DEFENSIVE_TENDENCIES, opponents);
+    }
+  }
   if (typeof invalidatePlaybookRuntimeIndex === "function") invalidatePlaybookRuntimeIndex();
   filteredPlays = [...plays];
   setWorkspaceSurface("app");

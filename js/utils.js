@@ -1697,6 +1697,7 @@ function getGameWeek() {
   const defaults = {
     opponentName: null,
     opponentIndex: null,
+    opponentId: null,
     weekLabel: "",
     notes: "",
     lastModified: {},
@@ -1709,8 +1710,33 @@ function getGameWeek() {
     : defaults;
 }
 
+/**
+ * Ensure every opponent in the array has a stable UUID (#33/#34).
+ * Returns the number of opponents that were updated.
+ */
+function ensureOpponentIds(opponents) {
+  if (!Array.isArray(opponents)) return 0;
+  let changed = 0;
+  opponents.forEach((opp) => {
+    if (opp && typeof opp === "object" && !opp.id) {
+      opp.id = createPlayId("opp");
+      changed += 1;
+    }
+  });
+  return changed;
+}
+
 function resolveGameWeekOpponent(opponents, gameWeek = getGameWeek()) {
   const source = Array.isArray(opponents) ? opponents : [];
+
+  // Prefer stable ID-based lookup first (#33)
+  const gwId = gameWeek?.opponentId;
+  if (gwId) {
+    const idIndex = source.findIndex((o) => o && o.id === gwId);
+    if (idIndex >= 0) return { opponent: source[idIndex], index: idIndex };
+  }
+
+  // Fall back to name-based lookup
   const normalizedName = String(gameWeek?.opponentName || "")
     .trim()
     .toLowerCase();
@@ -1740,10 +1766,12 @@ function resolveGameWeekOpponent(opponents, gameWeek = getGameWeek()) {
  */
 function setGameWeek(opponentIndex, weekLabel) {
   const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+  ensureOpponentIds(opponents);
   const opp = opponentIndex !== null ? opponents[opponentIndex] : null;
   const gw = getGameWeek();
   gw.opponentIndex = opponentIndex;
   gw.opponentName = opp ? opp.name : null;
+  gw.opponentId = opp ? (opp.id || null) : null;  // stable ID (#33)
   if (weekLabel !== undefined) gw.weekLabel = weekLabel;
   storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
   // Invalidate script's scouting cache so next render fetches fresh data

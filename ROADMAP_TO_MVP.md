@@ -250,8 +250,8 @@ Example:
   - Audited as part of Phase 3/4 work; `STORAGE_KEYS.GAME_WEEK` is the single canonical key; `getGameWeek()`/`setGameWeek()` are the only read/write paths. Commit `1f16995` (SW v762).
 - [x] **32.** Create one canonical game-week accessor.
   - `getGameWeek()` in `utils.js` is the single shared read accessor used by all modules; `setGameWeek()` is the canonical write path that also fires `updateGameWeekBar()`. Commit `1f16995` (SW v762).
-- [ ] **33.** Replace duplicate opponent-name matching with stable opponent IDs where possible.
-- [ ] **34.** Add migration logic for existing name-based data.
+- [x] **33.** Replace duplicate opponent-name matching with stable opponent IDs where possible.
+- [x] **34.** Add migration logic for existing name-based data.
 - [x] **35.** Add artifact references for scout report, plan, scripts, wristband, and call sheet.
 - [x] **36.** Add artifact version numbers.
 - [x] **37.** Add source-version references.
@@ -329,8 +329,8 @@ Example:
 
 ## Phase 6 — Playbook as the source of truth
 
-- [ ] **101.** Confirm every play has a stable play ID used across all modules.
-- [ ] **102.** Remove signature-only matching where stable IDs can be used.
+- [x] **101.** Confirm every play has a stable play ID used across all modules.
+- [x] **102.** Remove signature-only matching where stable IDs can be used.
 - [x] **103.** Add workflow status chips to Playbook rows/cards.
 - [x] **104.** Show whether a play is in the active Game Plan.
 - [x] **105.** Show whether it is in the active Practice Script.

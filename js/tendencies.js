@@ -553,7 +553,12 @@ function ensureTendenciesOpponent(name) {
       normalizedName.toLowerCase(),
   );
   if (existingIndex >= 0) return existingIndex;
-  tendenciesOpponents.push({ name: normalizedName, plays: [] });
+  const newOpp = {
+    id: typeof createPlayId === "function" ? createPlayId("opp") : null, // stable ID (#33)
+    name: normalizedName,
+    plays: [],
+  };
+  tendenciesOpponents.push(newOpp);
   saveTendencies();
   return tendenciesOpponents.length - 1;
 }
