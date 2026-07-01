@@ -36,6 +36,9 @@ async function initApp() {
     initTeamIdentityUi(runOptionalInit);
     if (typeof initPageHelp === "function") initPageHelp();
     if (typeof initToolbarResizeObserver === "function") initToolbarResizeObserver();
+    if (typeof maybeShowFirstUseWalkthrough === "function") {
+      setTimeout(maybeShowFirstUseWalkthrough, 500);
+    }
   } catch (err) {
     startupFailed = true;
     console.error("initApp error:", err);

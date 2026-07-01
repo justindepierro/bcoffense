@@ -1507,3 +1507,29 @@
   padding: var(--space-lg);
   font-size: var(--font-size-md);
 }
+
+/* ── Charting Template Bar (#89) ─────────────────────────────── */
+.td-chart-tpl-bar {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg-lighter);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.td-chart-tpl-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+.td-chart-tpl-btn {
+  font-size: var(--font-size-xs);
+  padding: 2px var(--space-xs);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border);
+}
+.td-chart-tpl-btn:hover {
+  background: var(--color-bg-hover-row);
+}

@@ -2013,3 +2013,49 @@ async function sendScoutRecsToGamePlan() {
     showToast(`${chosenPlays.length} play${chosenPlays.length === 1 ? "" : "s"} sent to Game Plan.`, { type: "success" });
   }
 }
+
+// ── Charting Templates (#89) ────────────────────────────────────
+const BUILTIN_CHARTING_TEMPLATES = [
+  { id: "4-3-cover2",   label: "4-3 / Cover 2",   front: "4-3",   coverage: "Cover 2" },
+  { id: "4-3-cover3",   label: "4-3 / Cover 3",   front: "4-3",   coverage: "Cover 3" },
+  { id: "3-4-cover2",   label: "3-4 / Cover 2",   front: "3-4",   coverage: "Cover 2" },
+  { id: "3-4-cover3",   label: "3-4 / Cover 3",   front: "3-4",   coverage: "Cover 3" },
+  { id: "odd-quarters", label: "Odd / Quarters",   front: "Odd",   coverage: "Quarters" },
+  { id: "4-2-5-cover1", label: "4-2-5 / Cover 1",  front: "4-2-5", coverage: "Cover 1" },
+  { id: "3-3-5-cover4", label: "3-3-5 / Cover 4",  front: "3-3-5", coverage: "Cover 4" },
+  { id: "nickel-cover2","label": "Nickel / Cover 2", front: "Nickel", coverage: "Cover 2" },
+];
+
+/**
+ * Render the charting template quick-select bar for the rapid chart form (#89).
+ */
+function renderChartingTemplateBar() {
+  const btns = BUILTIN_CHARTING_TEMPLATES.map((tpl) =>
+    `<button class="btn btn-sm td-chart-tpl-btn" data-action="applyChartingTemplate" data-arg="${escapeHtml(tpl.id)}" title="${escapeHtml(tpl.front)} / ${escapeHtml(tpl.coverage)}">${escapeHtml(tpl.label)}</button>`,
+  ).join("");
+  return `<div class="td-chart-tpl-bar"><span class="td-chart-tpl-label">Quick:</span>${btns}</div>`;
+}
+
+/**
+ * Apply a charting template to the current rapid-chart play fields (#89).
+ * @param {string} id - template ID
+ */
+function applyChartingTemplate(id) {
+  const tpl = BUILTIN_CHARTING_TEMPLATES.find((t) => t.id === id);
+  if (!tpl || !tendenciesCurrentPlay) return;
+
+  const frontEl = document.querySelector(`[data-td-field="defFront"]`);
+  const covEl = document.querySelector(`[data-td-field="defCoverage"]`);
+
+  if (frontEl) {
+    frontEl.value = tpl.front;
+    frontEl.dispatchEvent(new Event("change"));
+  }
+  if (covEl) {
+    covEl.value = tpl.coverage;
+    covEl.dispatchEvent(new Event("change"));
+  }
+
+  tendenciesCurrentPlay.defFront = tpl.front;
+  tendenciesCurrentPlay.defCoverage = tpl.coverage;
+}

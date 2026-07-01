@@ -314,7 +314,7 @@ Example:
 - [x] **86.** Add game/film source records to opponent data.
 - [x] **87.** Support charting separate games rather than one undifferentiated play pool.
 - [ ] **88.** Add quarter, score state, hash, field position, and drive context where useful.
-- [ ] **89.** Add charting templates for common opponent data.
+- [x] **89.** Add charting templates for common opponent data.
 - [x] **90.** Retain Rapid and Wizard modes, but make their purpose obvious.
 - [ ] **91.** Create a phone-native charting workflow using one step/card at a time.
 - [ ] **92.** Create an iPad split view with play list, charting form, and live summary.
@@ -647,7 +647,7 @@ Example:
 - [x] **295.** Regress the printing suite after every structural page change.
 - [x] **296.** Preserve print-only DOM and CSS separation.
 - [ ] **297.** Document the final workflow for coaches.
-- [ ] **298.** Add a one-screen first-use walkthrough.
+- [x] **298.** Add a one-screen first-use walkthrough.
 - [ ] **299.** Collect coach feedback on terminology and ordering.
 - [ ] **300.** Archive obsolete CSS and JavaScript only after successful regression testing.
 

@@ -1047,6 +1047,7 @@ function renderRapidChart() {
         <h3>⚡ ${isEditing ? "Edit" : "Rapid Chart"} — All Fields</h3>
         <div></div>
       </div>
+      ${typeof renderChartingTemplateBar === "function" ? renderChartingTemplateBar() : ""}
       <div class="td-rapid-body">${fieldsHtml}</div>
       <div class="td-wizard-nav">
         <div></div>

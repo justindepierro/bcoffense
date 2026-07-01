@@ -146,3 +146,32 @@ function initTeamIdentityUi(runOptionalInit) {
   runOptionalInit("initSwatchHandlers", () => initSwatchHandlers());
   runOptionalInit("initScriptKeyboard", () => initScriptKeyboard());
 }
+
+/**
+ * Show a first-use welcome walkthrough the first time a new user opens the app.
+ * Displayed when the playbook is empty and the walkthrough has not been dismissed.
+ * (#298)
+ */
+async function maybeShowFirstUseWalkthrough() {
+  if (storageManager.get(STORAGE_KEYS.FIRST_USE_DISMISSED, false)) return;
+  if (Array.isArray(plays) && plays.length > 0) return;
+
+  const msg = `
+    <p>Welcome to <strong>BCOffense</strong> — your football practice management tool.</p>
+    <p>Here's the core workflow:</p>
+    <ol style="padding-left:1.4em;line-height:1.8;">
+      <li><strong>Playbook</strong> — Import your plays from a CSV file.</li>
+      <li><strong>Script Builder</strong> — Build and organize a practice script.</li>
+      <li><strong>Wristband</strong> — Create a wristband card for signaling plays.</li>
+      <li><strong>Call Sheet</strong> — Lay out your game call sheet by situation.</li>
+      <li><strong>Game Plan</strong> — Organize the week's plan in flexible boxes.</li>
+      <li><strong>Scout</strong> — Chart opponent defensive tendencies from film.</li>
+    </ol>
+    <p style="margin-top:.75em">Start by importing a playbook CSV on the <strong>Playbook</strong> tab.</p>`;
+
+  await showModal(msg, { title: "👋 Welcome to BCOffense", icon: "🏈" });
+  storageManager.set(STORAGE_KEYS.FIRST_USE_DISMISSED, true);
+
+  if (typeof showTab === "function") showTab("playbook");
+  if (typeof showUpload === "function") showUpload();
+}
