@@ -40,6 +40,7 @@ function renderCardTabs() {
 function refreshWristbandCardView(opts = {}) {
   renderCardTabs();
   renderWristbandGrid();
+  if (typeof updateWristbandSourceBadge === "function") updateWristbandSourceBadge();
   if (opts.updateCardColorPicker) {
     updateCardColorPicker();
   }

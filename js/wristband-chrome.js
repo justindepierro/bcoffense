@@ -291,3 +291,348 @@ function renderPlayerCardGrid() {
     });
   }
 }
+
+// ─── #146: Create wristband card from Game Plan ───────────────────────────────
+async function createWristbandCardFromGamePlan() {
+  if (typeof _gpEnsureBoard !== "function") {
+    showToast("Open the Game Plan tab first", { type: "warning" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const sourcePlays = [];
+  allBoxes.forEach((b) => (board.assignments[b.id] || []).forEach((p) => sourcePlays.push(p)));
+
+  if (!sourcePlays.length) {
+    showToast("No drafted plays in the Game Plan", { type: "warning" });
+    return;
+  }
+  if (wristbandCards.length >= MAX_CARDS) {
+    showToast(`Max ${MAX_CARDS} cards reached — remove a card first`, { type: "warning" });
+    return;
+  }
+
+  const gw = getGameWeek();
+  const opp = gw && gw.opponentName ? `vs ${gw.opponentName}` : "Game Plan";
+  const cardName = await showPrompt("Card name:", opp, { title: "Create Card from Game Plan", icon: "🎯" });
+  if (!cardName) return;
+
+  // #148: Preserve source order — GP box order is maintained
+  const cardData = Array(CELLS_PER_CARD).fill(null);
+  sourcePlays.slice(0, CELLS_PER_CARD).forEach((p, i) => {
+    cardData[i] = { ...p, _gpSource: true };
+  });
+
+  historyManager.saveState("wristband", getWristbandState());
+  wristbandCards.push({
+    name: cardName.trim(),
+    data: cardData,
+    _source: { type: "gameplan", opponent: gw ? gw.opponentName || "" : "", ts: Date.now() },
+  });
+  currentCardIndex = wristbandCards.length - 1;
+
+  markWristbandDirty();
+  scheduleWristbandAutosave();
+  if (typeof refreshWristbandCardView === "function") refreshWristbandCardView();
+  if (typeof renderWristbandGrid === "function") renderWristbandGrid();
+  updateWristbandSourceBadge();
+
+  const capped = Math.min(sourcePlays.length, CELLS_PER_CARD);
+  const overflow = sourcePlays.length - capped;
+  showToast(
+    `Card "${cardName.trim()}" created — ${capped} play${capped !== 1 ? "s" : ""}${overflow > 0 ? ` (${overflow} didn't fit)` : ""}`,
+    { type: "success", duration: 4000 }
+  );
+}
+
+// ─── #147/#148: Create wristband card from Practice Script ───────────────────
+async function createWristbandCardFromScript() {
+  if (!Array.isArray(script) || !script.length) {
+    showToast("Script is empty", { type: "warning" });
+    return;
+  }
+  const scriptPlays = script.filter((s) => !s.isSeparator);
+  if (!scriptPlays.length) {
+    showToast("No plays in the current script", { type: "warning" });
+    return;
+  }
+  if (wristbandCards.length >= MAX_CARDS) {
+    showToast(`Max ${MAX_CARDS} cards reached — remove a card first`, { type: "warning" });
+    return;
+  }
+
+  const defaultName = (document.getElementById("scriptName") || {}).value || "From Script";
+  const cardName = await showPrompt("Card name:", defaultName, { title: "Create Card from Script", icon: "📋" });
+  if (!cardName) return;
+
+  // #148: Preserve script order
+  const cardData = Array(CELLS_PER_CARD).fill(null);
+  scriptPlays.slice(0, CELLS_PER_CARD).forEach((p, i) => {
+    cardData[i] = { ...p, _scriptSource: true };
+  });
+
+  historyManager.saveState("wristband", getWristbandState());
+  wristbandCards.push({
+    name: cardName.trim(),
+    data: cardData,
+    _source: { type: "script", ts: Date.now() },
+  });
+  currentCardIndex = wristbandCards.length - 1;
+
+  markWristbandDirty();
+  scheduleWristbandAutosave();
+  if (typeof refreshWristbandCardView === "function") refreshWristbandCardView();
+  if (typeof renderWristbandGrid === "function") renderWristbandGrid();
+  updateWristbandSourceBadge();
+
+  const capped = Math.min(scriptPlays.length, CELLS_PER_CARD);
+  const overflow = scriptPlays.length - capped;
+  showToast(
+    `Card "${cardName.trim()}" created — ${capped} play${capped !== 1 ? "s" : ""}${overflow > 0 ? ` (${overflow} didn't fit)` : ""}`,
+    { type: "success", duration: 4000 }
+  );
+}
+
+// ─── #149: Source badge update ────────────────────────────────────────────────
+function updateWristbandSourceBadge() {
+  const badge = document.getElementById("wbSourceBadge");
+  if (!badge) return;
+  const card = wristbandCards[currentCardIndex];
+  const src = card && card._source;
+  if (!src) {
+    badge.textContent = "";
+    badge.className = "wb-source-badge hidden";
+    return;
+  }
+  const icon = src.type === "gameplan" ? "🎯" : "📋";
+  const label = src.type === "gameplan"
+    ? `From Game Plan${src.opponent ? ` · vs ${escapeHtml(src.opponent)}` : ""}`
+    : "From Script";
+  const ts = src.ts ? new Date(src.ts).toLocaleDateString(undefined, { month: "short", day: "numeric" }) : "";
+  badge.innerHTML = `${icon} ${label}${ts ? ` <span class="wb-source-ts">${ts}</span>` : ""}`;
+  badge.className = "wb-source-badge";
+}
+
+// ─── #151: Show plays not yet on wristband ────────────────────────────────────
+async function showWristbandNotYetList() {
+  const card = wristbandCards[currentCardIndex];
+  const src = card && card._source;
+  let sourcePlays = [];
+  let sourceLabel = "";
+
+  if (src && src.type === "gameplan" && typeof _gpEnsureBoard === "function") {
+    const board = _gpEnsureBoard();
+    const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+    allBoxes.forEach((b) => (board.assignments[b.id] || []).forEach((p) => sourcePlays.push(p)));
+    sourceLabel = `Game Plan${src.opponent ? ` (vs ${src.opponent})` : ""}`;
+  } else if (src && src.type === "script" && Array.isArray(script)) {
+    sourcePlays = script.filter((s) => !s.isSeparator);
+    sourceLabel = "Practice Script";
+  } else if (typeof _gpEnsureBoard === "function") {
+    const board = _gpEnsureBoard();
+    const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+    allBoxes.forEach((b) => (board.assignments[b.id] || []).forEach((p) => sourcePlays.push(p)));
+    sourceLabel = "Game Plan";
+  } else {
+    showToast("No source available — create a card from Game Plan or Script first", { type: "info" });
+    return;
+  }
+
+  if (!sourcePlays.length) {
+    showToast(`No plays found in ${sourceLabel}`, { type: "info" });
+    return;
+  }
+
+  const existingSigs = new Set();
+  wristbandCards.forEach((c) =>
+    c.data.forEach((cell) => {
+      if (cell) existingSigs.add(typeof _gpPlaySignature === "function" ? _gpPlaySignature(cell) : JSON.stringify(cell));
+    })
+  );
+  const notYet = sourcePlays.filter((p) => {
+    const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p);
+    return !existingSigs.has(sig);
+  });
+
+  if (!notYet.length) {
+    showToast(`All ${sourcePlays.length} ${sourceLabel} plays are on the wristband ✓`, { type: "success" });
+    return;
+  }
+
+  const listHtml = notYet
+    .map(
+      (p) =>
+        `<li style="padding:var(--space-xs) 0;">${escapeHtml([p.formation, p.play].filter(Boolean).join(" — ") || "Unnamed Play")}</li>`
+    )
+    .join("");
+
+  await showModal(
+    `<p style="margin-bottom:var(--space-sm);"><strong>${notYet.length}</strong> of ${sourcePlays.length} ${escapeHtml(sourceLabel)} play${sourcePlays.length !== 1 ? "s" : ""} not yet on wristband:</p>
+     <ul style="list-style:disc;margin-left:var(--space-md);max-height:240px;overflow-y:auto;font-size:var(--font-size-sm);">${listHtml}</ul>`,
+    { title: `Not Yet on Wristband (${notYet.length})`, icon: "📋" }
+  );
+}
+
+// ─── #152/#153/#154: Reconcile wristband card with source ────────────────────
+async function reconcileWristbandWithSource() {
+  const card = wristbandCards[currentCardIndex];
+  if (!card) { showToast("No active card", { type: "warning" }); return; }
+
+  const src = card._source;
+  let sourcePlays = [];
+  let sourceLabel = "";
+
+  if (src && src.type === "gameplan" && typeof _gpEnsureBoard === "function") {
+    const board = _gpEnsureBoard();
+    const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+    allBoxes.forEach((b) => (board.assignments[b.id] || []).forEach((p) => sourcePlays.push(p)));
+    sourceLabel = `Game Plan${src.opponent ? ` vs ${src.opponent}` : ""}`;
+  } else if (src && src.type === "script" && Array.isArray(script)) {
+    sourcePlays = script.filter((s) => !s.isSeparator);
+    sourceLabel = "Practice Script";
+  } else {
+    showToast("No source linked to this card. Create from Game Plan or Script first.", { type: "warning" });
+    return;
+  }
+
+  if (!sourcePlays.length) {
+    showToast(`${sourceLabel} has no plays`, { type: "warning" });
+    return;
+  }
+
+  const sig = (p) => (typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p));
+  const sourceSigs = new Set(sourcePlays.map(sig));
+  const cardSigs = new Set(card.data.filter(Boolean).map(sig));
+
+  const newPlays = sourcePlays.filter((p) => !cardSigs.has(sig(p)));
+  // #153: detect cells that came from source but are no longer in it
+  const removedIndices = card.data.reduce((acc, cell, i) => {
+    if (cell && (cell._gpSource || cell._scriptSource) && !sourceSigs.has(sig(cell))) acc.push(i);
+    return acc;
+  }, []);
+
+  if (!newPlays.length && !removedIndices.length) {
+    showToast(`Wristband is already in sync with ${escapeHtml(sourceLabel)} ✓`, { type: "success" });
+    return;
+  }
+
+  const parts = [
+    newPlays.length ? `<strong>${newPlays.length}</strong> new play${newPlays.length !== 1 ? "s" : ""} to add` : "",
+    removedIndices.length ? `<strong>${removedIndices.length}</strong> stale play${removedIndices.length !== 1 ? "s" : ""} to remove` : "",
+  ].filter(Boolean).join(" · ");
+
+  const ok = await showConfirm(
+    `<p>${parts}</p><p style="margin-top:var(--space-sm);font-size:var(--font-size-sm);color:var(--color-text-muted);">Manual cell colors and write-ins are preserved. Only source-tagged cells are removed.</p>`,
+    { title: `Reconcile with ${sourceLabel}`, icon: "🔄", confirmText: "Reconcile" }
+  );
+  if (!ok) return;
+
+  // #154: snapshot for undo — preserves all customizations
+  const preSnapshot = safeDeepClone(card.data);
+  historyManager.saveState("wristband", getWristbandState());
+
+  // Remove stale source-tagged plays (#153)
+  removedIndices.forEach((i) => { card.data[i] = null; });
+
+  // Fill empty cells with new plays (#152)
+  const emptyIndices = card.data.map((c, i) => (c === null ? i : -1)).filter((i) => i >= 0);
+  let added = 0;
+  newPlays.forEach((p, pi) => {
+    if (pi >= emptyIndices.length) return;
+    card.data[emptyIndices[pi]] = { ...p, _gpSource: src.type === "gameplan", _scriptSource: src.type === "script" };
+    added++;
+  });
+
+  if (card._source) card._source.ts = Date.now();
+
+  markWristbandDirty();
+  scheduleWristbandAutosave();
+  if (typeof renderWristbandGrid === "function") renderWristbandGrid();
+  updateWristbandSourceBadge();
+
+  const summary = [added > 0 ? `+${added} added` : "", removedIndices.length > 0 ? `-${removedIndices.length} removed` : ""].filter(Boolean).join(", ");
+  showUndoToast(`Reconciled: ${summary}`, () => {
+    card.data = preSnapshot;
+    if (card._source) card._source.ts = src.ts;
+    markWristbandDirty();
+    if (typeof renderWristbandGrid === "function") renderWristbandGrid();
+    updateWristbandSourceBadge();
+    showToast("Reconcile undone", { type: "info" });
+  }, 8000);
+}
+
+// ─── #155: Send wristband card to Call Sheet ─────────────────────────────────
+async function sendWristbandToCallSheet() {
+  if (typeof callSheet === "undefined" || typeof CALLSHEET_CATEGORIES === "undefined") {
+    showToast("Open Call Sheet tab first to initialize it", { type: "warning" });
+    return;
+  }
+  const card = wristbandCards[currentCardIndex];
+  if (!card) { showToast("No active card", { type: "warning" }); return; }
+
+  const plays = card.data.filter(Boolean);
+  if (!plays.length) { showToast("Current card is empty", { type: "warning" }); return; }
+
+  if (typeof _gpComputeCallSheetTargets !== "function" || typeof _gpPushPlayIntoCategory !== "function") {
+    showToast("Call sheet mapping unavailable", { type: "warning" });
+    return;
+  }
+
+  const fanOut = plays.map((play) => ({ play, targets: _gpComputeCallSheetTargets(play, play.type || "") }));
+  const byCat = {};
+  fanOut.forEach(({ targets }) => targets.forEach((id) => { byCat[id] = (byCat[id] || 0) + 1; }));
+  const filledCatIds = Object.keys(byCat);
+
+  if (!filledCatIds.length) {
+    showToast(
+      "Wristband plays don't match any call sheet category. Set Preferred Down/Distance/Type on those plays.",
+      { type: "warning", duration: 5000 }
+    );
+    return;
+  }
+
+  const summaryItems = CALLSHEET_CATEGORIES.filter((c) => byCat[c.id])
+    .map((c) => {
+      const dn = typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(c) : c.name;
+      return `<li>${escapeHtml(dn)}: <strong>${byCat[c.id]}</strong></li>`;
+    })
+    .join("");
+
+  const choice = await showChoice(
+    `<p>Send <strong>${plays.length}</strong> play${plays.length !== 1 ? "s" : ""} from <strong>${escapeHtml(card.name || "this card")}</strong> into <strong>${filledCatIds.length}</strong> call sheet categor${filledCatIds.length !== 1 ? "ies" : "y"}?</p>
+     <details style="font-size:var(--font-size-sm);"><summary style="cursor:pointer;color:var(--color-text-muted);">Show breakdown</summary><ul style="margin:var(--space-xs) 0 0 var(--space-md);">${summaryItems}</ul></details>`,
+    { title: "Send to Call Sheet", icon: "📄", option1: "Append to existing", option2: "Replace categories" }
+  );
+  if (!choice) return;
+
+  const csPreSnapshot = safeDeepClone(callSheet);
+
+  if (choice === "option2") {
+    filledCatIds.forEach((id) => {
+      if (!callSheet[id]) callSheet[id] = { left: [], right: [] };
+      callSheet[id].left = [];
+      callSheet[id].right = [];
+    });
+  }
+
+  let pushed = 0;
+  fanOut.forEach(({ play, targets }) =>
+    targets.forEach((id) => { if (_gpPushPlayIntoCategory(play, id)) pushed++; })
+  );
+
+  if (typeof saveCallSheet === "function") saveCallSheet();
+  if (typeof renderCallSheet === "function") renderCallSheet();
+
+  showUndoToast(
+    `${pushed} entr${pushed !== 1 ? "ies" : "y"} sent to ${filledCatIds.length} call sheet categor${filledCatIds.length !== 1 ? "ies" : "y"}`,
+    () => {
+      Object.assign(callSheet, csPreSnapshot);
+      Object.keys(callSheet).forEach((k) => { if (!(k in csPreSnapshot)) delete callSheet[k]; });
+      if (typeof saveCallSheet === "function") saveCallSheet();
+      if (typeof renderCallSheet === "function") renderCallSheet();
+      showToast("Wristband → Call Sheet undone", { type: "info" });
+    },
+    8000
+  );
+  if (pushed > 0 && typeof showTab === "function") showTab("callsheet");
+}

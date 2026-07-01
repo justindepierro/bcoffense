@@ -1,3 +1,12 @@
+// ─── #150: Call-sheet usage dot for wristband cells ─────────────────────────
+function _wbCsDot(play) {
+  if (!play || typeof getCallSheetPlayLocations !== "function") return "";
+  const locs = getCallSheetPlayLocations(play);
+  if (!locs.length) return "";
+  const cats = [...new Set(locs.map((l) => l.replace(/ - (Left|Right)$/, "")))].join(", ");
+  return `<span class="wb-cs-dot" title="On call sheet: ${escapeHtml(cats)}" aria-label="On call sheet"></span>`;
+}
+
 function setHeaderColor(color, btn) {
   wristbandHeaderColor = color;
   document
@@ -359,6 +368,7 @@ function renderWristbandGrid() {
       const oddWriteInHtml = oddCustom.customWriteIn
         ? `<span class="cell-write-in">${escapeHtml(oddCustom.customWriteIn)}</span>`
         : "";
+      const oddCsDot = _wbCsDot(oddPlay);
       html += `
         <div class="wristband-cell filled" style="${oddStyle}" 
              draggable="true"
@@ -367,7 +377,7 @@ function renderWristbandGrid() {
              data-drag="wbCell" data-cell-idx="${oddIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${oddCellHtml}</span></span>
-          ${oddWriteInHtml}
+          ${oddWriteInHtml}${oddCsDot}
         </div>
       `;
     } else {
@@ -384,6 +394,7 @@ function renderWristbandGrid() {
       const evenWriteInHtml = evenCustom.customWriteIn
         ? `<span class="cell-write-in">${escapeHtml(evenCustom.customWriteIn)}</span>`
         : "";
+      const evenCsDot = _wbCsDot(evenPlay);
       html += `
         <div class="wristband-cell filled" style="${evenStyle}" 
              draggable="true"
@@ -392,7 +403,7 @@ function renderWristbandGrid() {
              data-drag="wbCell" data-cell-idx="${evenIndex}"
              data-card="${currentCardIndex}">
           <span class="cell-play"><span class="cell-drag-handle">☰</span><span class="cell-play-text">${evenCellHtml}</span></span>
-          ${evenWriteInHtml}
+          ${evenWriteInHtml}${evenCsDot}
         </div>
       `;
     } else {
