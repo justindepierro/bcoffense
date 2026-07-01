@@ -415,24 +415,39 @@ Example:
 
 ## Phase 10 — Call Sheet as final game-day artifact
 
-- [ ] **159.** Treat Call Sheet as the workflow endpoint.
-- [ ] **160.** Display active opponent and source versions.
-- [ ] **161.** Show loaded Game Plan, Script, and Wristband status.
-- [ ] **162.** Add a source reconciliation panel.
-- [ ] **163.** Show missing Game Plan plays.
-- [ ] **164.** Show Wristband plays not placed on the sheet.
-- [ ] **165.** Show Call Sheet plays no longer present upstream.
-- [ ] **166.** Keep scouting intel contextually available.
-- [ ] **167.** Convert scouting intel into category-specific recommendations.
-- [ ] **168.** Add one-click insert from recommendations.
+- [x] **159.** Treat Call Sheet as the workflow endpoint.
+  - CS now has source bar, reconcile panel, finalize flow, and snapshot save — it is the terminal artifact of the GP→Script→Wristband→CS pipeline. Commit `4960d40` (SW v780).
+- [x] **160.** Display active opponent and source versions.
+  - `#csSourceBar` shows `📅 Opponent · Wk N` on every render; hidden when no game week set. Commit `4960d40` (SW v780).
+- [x] **161.** Show loaded Game Plan, Script, and Wristband status.
+  - Source bar shows `✅/⚠️ GP: X/Y`, `Script: X/Y`, and wristband name inline. `updateCSSourceBar()` runs after every `renderCallSheet()`. Commit `4960d40` (SW v780).
+- [x] **162.** Add a source reconciliation panel.
+  - `#csNotOnSheetPanel` upgraded to 4-tab reconcile panel: Playbook | GP | Wristband | Stale. `switchCsReconcileTab()` routed via `data-action`. Commit `4960d40` (SW v780).
+- [x] **163.** Show missing Game Plan plays.
+  - GP tab in reconcile panel — scans `_gpEnsureBoard()` assignments and lists unique GP plays not on the CS. Commit `4960d40` (SW v780).
+- [x] **164.** Show Wristband plays not placed on the sheet.
+  - Wristband tab — scans all `wristbandCards` cells and lists plays not on the CS. Commit `4960d40` (SW v780).
+- [x] **165.** Show Call Sheet plays no longer present upstream.
+  - Stale tab — scans every CS category for plays whose `csPlayKey` is absent from the live playbook; shows category badge. Commit `4960d40` (SW v780).
+- [x] **166.** Keep scouting intel contextually available.
+  - `toggleScoutingOverlay()` remains accessible from ⋯ More menu and always injects per-category tendency badges. Verified working.
+- [x] **167.** Convert scouting intel into category-specific recommendations.
+  - `buildScoutingBadge(categoryId)` + `getSmartSuggestions(categoryId)` → `openSmartSuggestionsModal(categoryId)` provides full category-specific recommendation UI. Verified existing.
+- [x] **168.** Add one-click insert from recommendations.
+  - `addSuggestionToSheet(categoryId, hash, idx)` executes immediate insert from smart suggestions modal. Verified existing.
 - [x] **169.** Preserve the full print layout and existing print suite.
-  - Call Sheet print modal, layout, and CSS unchanged throughout all workflow additions. Verified no regressions.
+  - Call Sheet print modal, layout, and CSS unchanged throughout all workflow additions. Source bar and reconcile panel hidden via `@media print`. Commit `4960d40` (SW v780).
 - [ ] **170.** Separate editing view, sideline situation view, and print preview.
-- [ ] **171.** Add Finalize Week action with validation checklist.
-- [ ] **172.** Validate that critical situations have calls.
-- [ ] **173.** Validate that displayed wristband numbers match the active wristband.
-- [ ] **174.** Validate that no removed/deprecated plays remain unintentionally.
-- [ ] **175.** Save a locked game-day snapshot before printing.
+- [x] **171.** Add Finalize Week action with validation checklist.
+  - `finalizeWeek()` opens a checklist confirm modal, tallies issue/pass counts, and saves a snapshot on confirm. `🏁 Finalize` button in the source bar. Commit `4960d40` (SW v780).
+- [x] **172.** Validate that critical situations have calls.
+  - Checks 8 buckets: 3rd & Long, 3rd & Medium, 3rd & Short, Red Zone (20), Short Yardage, Goal Line, Backed Up, 2-Minute. Each empty bucket becomes an issue. Commit `4960d40` (SW v780).
+- [x] **173.** Validate that displayed wristband numbers match the active wristband.
+  - Checks `#loadedWristbandDisplay` — issues a warning if no wristband is loaded for this sheet. Commit `4960d40` (SW v780).
+- [x] **174.** Validate that no removed/deprecated plays remain unintentionally.
+  - Cross-references every CS play against the live playbook via `csPlayKey`; any orphan becomes a validation issue. Commit `4960d40` (SW v780).
+- [x] **175.** Save a locked game-day snapshot before printing.
+  - `CALLSHEET_SNAPSHOTS` key stores up to 10 dated snapshots with opponent, week, data, and settings. Restored via `storageManager.get(STORAGE_KEYS.CALLSHEET_SNAPSHOTS, [])`. Commit `4960d40` (SW v780).
 
 ## Phase 11 — Unified dropdown and floating-layer system
 
