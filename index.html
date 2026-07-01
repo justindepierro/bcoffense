@@ -132,6 +132,12 @@
         <span id="visionModeIcon">🧭</span>
         <span class="header-action-label">Vision</span>
       </button>
+      <button id="notifBellBtn" class="header-action-btn header-notif-btn"
+        data-action="toggleNotifDrawer"
+        aria-label="Notifications" aria-expanded="false" aria-haspopup="dialog"
+        aria-controls="notifDrawer" title="Notifications" hidden>
+        <span aria-hidden="true">🔔</span>
+      </button>
       <button class="header-action-btn" data-action="toggleDarkMode" title="Toggle dark mode">
         <span id="darkModeIcon">🌙</span>
       </button>
@@ -4124,6 +4130,7 @@
   <script defer src="js/anchored-menu.js?v=779"></script>
   <script defer src="js/app-events.js?v=779"></script>
   <script defer src="js/app-command.js?v=779"></script>
+  <script defer src="js/app-notifications.js?v=801"></script>
   <script defer src="js/app-shell.js?v=779"></script>
   <script defer src="js/app-session.js?v=779"></script>
   <script defer src="js/app-navigation.js?v=779"></script>
@@ -4134,6 +4141,24 @@
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
+
+  <!-- Notification drawer -->
+  <aside id="notifDrawer" class="notif-drawer" role="dialog" aria-modal="false"
+    aria-label="Notifications" aria-hidden="true">
+    <div class="notif-drawer-inner">
+      <header class="notif-drawer-head">
+        <h2 class="notif-drawer-title">🔔 Notifications</h2>
+        <div class="notif-drawer-head-actions">
+          <button class="btn btn-xs" data-action="markAllNotifsRead">Mark all read</button>
+          <button class="notif-close-btn" data-action="closeNotifDrawer" aria-label="Close notifications">✕</button>
+        </div>
+      </header>
+      <div id="notifDrawerBody" class="notif-drawer-body">
+        <ul id="notifList" class="notif-list"></ul>
+      </div>
+    </div>
+  </aside>
+  <div class="notif-backdrop" id="notifBackdrop" data-action="closeNotifDrawer" aria-hidden="true" hidden></div>
 
   <!-- Service Worker Registration -->
   <script>

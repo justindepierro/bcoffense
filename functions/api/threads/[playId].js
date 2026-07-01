@@ -16,6 +16,7 @@ import {
   countThreadPosts,
   setQuestionState,
 } from "../../_lib/d1-threads.js";
+import { notifyOnCoachPost } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -101,6 +102,13 @@ export async function onRequest(context) {
     });
 
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
+
+    // Notify players in the thread when a coach replies (fire-and-forget)
+    const isStaff = session.role === "coach" || session.role === "admin";
+    if (isStaff) {
+      const posterName = session.label || session.username;
+      notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody).catch(() => {});
+    }
 
     return withSecurityHeaders(authJson({ ok: true, post: formatPost(result) }));
   }

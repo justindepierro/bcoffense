@@ -1117,16 +1117,16 @@ Initial reactions:
 
 # Phase 11 — Practice Script Integration
 
-- [ ] Show a compact question/comment indicator on each scripted play.
-- [ ] Display open-question count.
-- [ ] Display total comment count.
+- [x] Show a compact question/comment indicator on each scripted play.
+- [x] Display open-question count.
+- [x] Display total comment count.
 - [ ] Display whether an official coach clarification exists.
 - [ ] Add Ask Coach to the script play action menu.
-- [ ] Add View Discussion to the script play action menu.
-- [ ] Open the discussion in a bottom sheet on phone.
+- [x] Add View Discussion to the script play action menu.
+- [x] Open the discussion in a bottom sheet on phone.
 - [ ] Open the discussion in a side panel on iPad landscape.
 - [ ] Open the discussion in a side panel or modal on desktop.
-- [ ] Preserve the coach's current script position when opening discussion.
+- [x] Preserve the coach's current script position when opening discussion.
 - [ ] Restore focus to the originating play when discussion closes.
 - [ ] Attach script, period, and rep context to new questions.
 - [ ] Allow coaches to answer without leaving Team Run where practical.
@@ -1134,7 +1134,7 @@ Initial reactions:
 - [ ] Add a compact unresolved-question filter to the full script view.
 - [ ] Add a Review Questions practice-period generator.
 - [ ] Allow coaches to add highly questioned plays to a review period.
-- [ ] Add tests ensuring script entries reuse canonical threads.
+- [x] Add tests ensuring script entries reuse canonical threads.
 
 # Phase 12 — Cross-Workflow Integration
 

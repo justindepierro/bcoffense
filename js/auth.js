@@ -615,6 +615,13 @@
     if (typeof ensureMobileStartupSurface === "function") {
       ensureMobileStartupSurface();
     }
+
+    // Show/hide bell and start notification polling when logged in
+    const bellBtn = document.getElementById("notifBellBtn");
+    if (bellBtn) bellBtn.hidden = !currentAuthUser;
+    if (currentAuthUser && typeof initNotifications === "function") {
+      initNotifications();
+    }
   }
 
   function applyAuthToTree(root) {

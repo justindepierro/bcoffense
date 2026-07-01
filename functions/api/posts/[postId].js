@@ -5,6 +5,7 @@
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
 import { editPost, deletePost, setQuestionState } from "../../_lib/d1-threads.js";
+import { notifyOnQuestionResolved } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -38,6 +39,23 @@ export async function onRequest(context) {
       const newState = body.action === "resolve" ? "resolved" : "reopened";
       const result = await setQuestionState(env.DB, postId, newState, session);
       if (result.error) return authJson({ ok: false, error: result.error }, { status: 403 });
+
+      // Notify question author when resolved (fire-and-forget)
+      if (newState === "resolved") {
+        const resolverName = session.label || session.username;
+        // Look up the play_id via thread relationship
+        const threadRow = await env.DB
+          .prepare(
+            `SELECT t.play_id FROM discussion_posts p
+             JOIN play_threads t ON t.id = p.thread_id
+             WHERE p.id = ? LIMIT 1`,
+          )
+          .bind(postId).first();
+        if (threadRow?.play_id) {
+          notifyOnQuestionResolved(env.DB, postId, resolverName, threadRow.play_id).catch(() => {});
+        }
+      }
+
       return withSecurityHeaders(authJson({ ok: true, questionState: result.questionState }));
     }
 
