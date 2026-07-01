@@ -2,8 +2,8 @@
  * PATCH /api/notifications/:id — mark one notification read
  */
 
-import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../_lib/auth.js";
-import { markRead } from "../../../_lib/d1-notifications.js";
+import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
+import { markRead } from "../../_lib/d1-notifications.js";
 
 async function resolveUserId(db, session) {
   if (session.d1UserId) return session.d1UserId;

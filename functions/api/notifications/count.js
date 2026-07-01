@@ -2,8 +2,8 @@
  * GET /api/notifications/count — unread count only (lightweight poll)
  */
 
-import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../_lib/auth.js";
-import { countUnread } from "../../../_lib/d1-notifications.js";
+import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
+import { countUnread } from "../../_lib/d1-notifications.js";
 
 async function resolveUserId(db, session) {
   if (session.d1UserId) return session.d1UserId;
