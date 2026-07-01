@@ -536,12 +536,12 @@
 
           <div class="pb-utility-group">
             <!-- Columns visibility toggle -->
-            <div class="column-toggle">
-              <button class="btn btn-sm" data-action="toggleColumnMenu" title="Show/hide table columns"
-                aria-label="Show/hide table columns">
+            <div class="tool-menu-wrap column-toggle" data-anchored>
+              <button class="btn btn-sm" data-action="toggleParentOpen" title="Show/hide table columns"
+                aria-label="Show/hide table columns" aria-haspopup="true" aria-expanded="false">
                 &#9881; Columns
               </button>
-              <div class="column-menu" id="columnMenu">
+              <div class="tool-menu column-menu" id="columnMenu" data-keep-open>
                 <label><input type="checkbox" checked data-onchange="toggleColumn" data-arg="install" />
                   &#9733; Install</label>
                 <label><input type="checkbox" checked data-onchange="toggleColumn" data-arg="type" />

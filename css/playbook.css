@@ -2338,23 +2338,17 @@ body.shell-phone .pb-action-sheet {
 
 /* Column Toggle Menu */
 .column-toggle {
-  position: relative;
+  /* position:relative provided by .tool-menu-wrap */
 }
 
 .column-menu {
-  display: none;
-  position: absolute;
-  top: 100%;
-  left: 0;
-  background: var(--color-white);
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
+  /* anchored-menu.js handles position: fixed + top/left;
+     base .tool-menu styles provide display:none, background, border, shadow */
   padding: 10px;
-  box-shadow: var(--shadow-md);
-  z-index: var(--z-header);
   min-width: 150px;
 }
 
+/* .column-menu.show kept for backward compat with any legacy callers */
 .column-menu.show {
   display: block;
 }

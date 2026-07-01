@@ -92,8 +92,17 @@ function resetColumnVisibility() {
 }
 
 function toggleColumnMenu() {
-  const menu = document.getElementById("columnMenu");
-  menu.classList.toggle("show");
+  const wrap = document.querySelector(".column-toggle.tool-menu-wrap");
+  if (wrap) {
+    const willOpen = !wrap.classList.contains("open");
+    if (willOpen) {
+      wrap.classList.add("open");
+      if (typeof positionAnchoredMenu === "function") positionAnchoredMenu(wrap);
+    } else {
+      if (typeof closeAnchoredMenu === "function") closeAnchoredMenu(wrap);
+      else wrap.classList.remove("open");
+    }
+  }
 }
 
 // ── Playbook filter drawer ──
@@ -179,8 +188,13 @@ function closePbActionSheet() {
 }
 
 function hideColumnMenu() {
-  const menu = document.getElementById("columnMenu");
-  if (menu) menu.classList.remove("show");
+  const wrap = document.querySelector(".column-toggle.tool-menu-wrap");
+  if (wrap && typeof closeAnchoredMenu === "function") {
+    closeAnchoredMenu(wrap);
+  } else {
+    const menu = document.getElementById("columnMenu");
+    if (menu) menu.classList.remove("show");
+  }
 }
 
 function showKeyboardShortcuts() {

@@ -30,7 +30,8 @@ document.addEventListener("click", (e) => {
     return;
   }
   // Clicked inside a menu item (not the toggle button itself) — close that menu
-  if (e.target.closest(".tool-menu, .more-tools-menu")) {
+  // Exception: menus with data-keep-open (e.g. Columns) stay open for checkbox interaction
+  if (e.target.closest(".tool-menu:not([data-keep-open]), .more-tools-menu")) {
     _closeAllOpenMenus(null);
   }
 });
