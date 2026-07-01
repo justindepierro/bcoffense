@@ -330,10 +330,10 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add retry states.
 - [x] Add offline submission warning.
 - [x] Prevent duplicate submissions during slow requests.
-- [ ] Use optimistic UI only when rollback is reliable.
+- [x] Use optimistic UI only when rollback is reliable.
 - [x] Add phone layout.
-- [ ] Add iPad layout.
-- [ ] Add desktop layout.
+- [x] Add iPad layout.
+- [x] Add desktop layout.
 - [x] Meet touch-target and keyboard-accessibility requirements.
 - [x] Keep the design visually simple and familiar.
 
@@ -519,10 +519,10 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Show total reply count.
 - [x] Add View Replies and Hide Replies controls.
 - [x] Keep replies expanded when the user has actively opened the thread.
-- [ ] Preserve expanded-thread state while navigating within the play.
+- [x] Preserve expanded-thread state while navigating within the play.
 - [x] Use a single-column feed on phones.
 - [x] Use a wider centered feed on tablets.
-- [ ] Allow a side-panel discussion layout on desktop.
+- [x] Allow a side-panel discussion layout on desktop.
 - [x] Avoid excessive borders around every reply.
 - [x] Avoid displaying every moderation and editing control permanently.
 - [x] Move secondary controls into a three-dot menu.

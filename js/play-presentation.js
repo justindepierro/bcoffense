@@ -2105,6 +2105,12 @@ function getPlayPresentationPlayerMarkup(item) {
       ? `<div class="pp-resp-notes"><strong>Responsibility Notes</strong>${escapeHtml(play.respNotes)}</div>`
       : ""
     }
+        <div class="pp-player-chat-row">
+          <button class="btn btn-primary pp-player-chat-btn" data-action="togglePresentationDiscussion"
+            aria-label="Ask a question or view discussion for this play">
+            💬 Ask About This Play
+          </button>
+        </div>
       </section>
     </div>
   `;

@@ -218,6 +218,10 @@ function renderPlayerScriptLauncher() {
                   data-arg="${scriptId}" title="Load this published script into the script tab">
                   Open Script
                 </button>`}
+            <button type="button" class="btn btn-sm" data-action="openPlayerScriptChat"
+              data-arg="${scriptId}" title="Ask questions and chat about this practice">
+              💬 Chat
+            </button>
             <button type="button" class="btn btn-primary btn-sm" data-action="openPlayerCurrentScriptPresentation"
               data-arg="${scriptId}" title="Open this published script in swipe view">
               Swipe View
@@ -227,6 +231,17 @@ function renderPlayerScriptLauncher() {
       `;
     })
     .join("");
+}
+
+function openPlayerScriptChat(id = "") {
+  const opened = openPlayerCurrentScriptPresentation(String(id || ""));
+  if (opened) {
+    setTimeout(() => {
+      if (typeof openPresentationDiscussion === "function") {
+        openPresentationDiscussion();
+      }
+    }, 350);
+  }
 }
 
 function renderPlayerLoadedScriptBar() {

@@ -5188,6 +5188,16 @@ body.shell-phone .pb-action-sheet {
   padding: 0 0 var(--space-xs);
   border-bottom: 1px solid var(--color-border-light);
 }
+/* Sticky filter bar on wide desktop screens */
+@media (min-width: 1100px) {
+  .disc-section .disc-filter-bar {
+    position: sticky;
+    top: 0;
+    background: var(--color-bg-body);
+    z-index: 1;
+    padding-top: var(--space-xs);
+  }
+}
 .disc-filter-btn {
   background: none;
   border: 1px solid var(--color-border);
@@ -5433,6 +5443,19 @@ body.shell-phone .pb-action-sheet {
 }
 .disc-post--coach .disc-post-avatar {
   box-shadow: 0 0 0 2px var(--color-primary);
+}
+/* Pending optimistic post — shown immediately before server confirms */
+.disc-post--pending {
+  opacity: 0.55;
+  pointer-events: none;
+  animation: discPendingPulse 1.4s ease-in-out infinite;
+}
+@keyframes discPendingPulse {
+  0%, 100% { opacity: 0.55; }
+  50%  { opacity: 0.75; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .disc-post--pending { animation: none; }
 }
 
 /* ── Moderation ─────────────────────────────────────────────────────────────── */

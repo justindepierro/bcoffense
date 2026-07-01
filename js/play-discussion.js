@@ -699,6 +699,36 @@ async function submitDiscPost(arg, el) {
   btn.disabled = true;
   btn.textContent = "Posting…";
 
+  // ── Optimistic render ──────────────────────────────────────────────────────
+  const optimisticPost = {
+    id: `opt-${Date.now()}`,
+    body,
+    postType: typeSelect?.value || "comment",
+    questionCategory: document.getElementById(`discQCat-${playId}`)?.value || "",
+    authorName: window.currentAuthUser?.name || window.currentAuthUser?.username || "You",
+    authorRole: window.currentAuthUser?.role || "player",
+    authorId: _discCurrentUserId || "me",
+    reactions: [], replyCount: 0, replies: [],
+    createdAt: new Date().toISOString(),
+  };
+  const list = document.getElementById(`discPosts-${playId}`);
+  let optimisticNode = null;
+  if (list) {
+    list.querySelector(".disc-empty")?.remove();
+    const wrap = document.createElement("div");
+    wrap.innerHTML = _discPostHtml(optimisticPost, playId);
+    optimisticNode = wrap.firstElementChild;
+    if (optimisticNode) {
+      optimisticNode.classList.add("disc-post--pending");
+      list.appendChild(optimisticNode);
+      optimisticNode.scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+  }
+  // Clear composer immediately for snappy feel
+  textarea.value = "";
+  const charElOpt = document.getElementById(`discChars-${playId}`);
+  if (charElOpt) { charElOpt.textContent = "0 / 2000"; charElOpt.classList.remove("disc-char-warn", "disc-char-limit"); }
+
   try {
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
@@ -706,7 +736,13 @@ async function submitDiscPost(arg, el) {
       body: JSON.stringify({ body, post_type: typeSelect?.value || "comment", question_category: document.getElementById(`discQCat-${playId}`)?.value || null, play_signature: playSig }),
     });
     const data = await res.json();
-    if (!data.ok) { showToast(data.error || "Failed to post.", { duration: 3000, type: "error" }); return; }
+    if (!data.ok) {
+      optimisticNode?.remove();
+      // Restore composer text on hard failure
+      if (textarea && !textarea.value) textarea.value = body;
+      showToast(data.error || "Failed to post.", { duration: 3000, type: "error" });
+      return;
+    }
 
     // Show moderation warning if content was held or warned
     const mod = data.moderation || {};
@@ -714,32 +750,24 @@ async function submitDiscPost(arg, el) {
       showToast(mod.displayWarning, { duration: 5000, type: mod.outcome === "block" ? "error" : "warning" });
     }
 
-    // Only append to feed if post was approved
     if (data.post?.moderationStatus === "approved") {
-      textarea.value = "";
-      const charEl = document.getElementById(`discChars-${playId}`);
-      if (charEl) charEl.textContent = "0 / 2000";
-
-      const list = document.getElementById(`discPosts-${playId}`);
-      if (list) {
-        list.querySelector(".disc-empty")?.remove();
-        const wrap = document.createElement("div");
-        wrap.innerHTML = _discPostHtml(data.post, playId);
-        const node = wrap.firstElementChild;
-        if (node) {
-          list.appendChild(node);
-          node.scrollIntoView({ behavior: "smooth", block: "nearest" });
-        }
+      // Replace optimistic node with real post from server
+      if (optimisticNode && list) {
+        const realWrap = document.createElement("div");
+        realWrap.innerHTML = _discPostHtml(data.post, playId);
+        const realNode = realWrap.firstElementChild;
+        if (realNode) list.replaceChild(realNode, optimisticNode);
+        else optimisticNode.classList.remove("disc-post--pending");
       }
       const countEl = document.getElementById("discCount");
       if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "0", 10) + 1));
-    } else if (mod.outcome !== "block") {
-      // Held — clear composer but don't add to feed
-      textarea.value = "";
-      const charEl = document.getElementById(`discChars-${playId}`);
-      if (charEl) charEl.textContent = "0 / 2000";
+    } else {
+      // Held or blocked — remove optimistic post
+      optimisticNode?.remove();
     }
   } catch (_) {
+    optimisticNode?.remove();
+    if (textarea && !textarea.value) textarea.value = body;
     showToast("Network error — try again.", { duration: 3000, type: "error" });
   } finally {
     btn.disabled = false;
@@ -928,6 +956,40 @@ async function submitDiscReply(arg, el) {
   btn.disabled = true;
   btn.textContent = "Posting…";
 
+  // ── Optimistic reply render ────────────────────────────────────────────────
+  const optimisticReply = {
+    id: `opt-${Date.now()}`,
+    body,
+    postType: "comment",
+    authorName: window.currentAuthUser?.name || window.currentAuthUser?.username || "You",
+    authorRole: window.currentAuthUser?.role || "player",
+    authorId: _discCurrentUserId || "me",
+    reactions: [], replyCount: 0, replies: [],
+    createdAt: new Date().toISOString(),
+  };
+  let repliesEl = document.getElementById(`disc-replies-${parentPostId}`);
+  if (!repliesEl) {
+    repliesEl = document.createElement("div");
+    repliesEl.className = "disc-replies";
+    repliesEl.id = `disc-replies-${parentPostId}`;
+    const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+    slot?.insertAdjacentElement("beforebegin", repliesEl);
+  }
+  const optWrap = document.createElement("div");
+  optWrap.innerHTML = _discPostHtml(optimisticReply, playId, true);
+  let optimisticReplyNode = optWrap.firstElementChild;
+  if (optimisticReplyNode) {
+    optimisticReplyNode.classList.add("disc-post--pending");
+    repliesEl.querySelector(".disc-load-replies")?.remove();
+    repliesEl.appendChild(optimisticReplyNode);
+    optimisticReplyNode.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+
+  // Close the reply composer immediately (clear text first to skip confirm)
+  const _replyTa = document.getElementById(`discCompose-reply-${parentPostId}`);
+  if (_replyTa) _replyTa.value = "";
+  closeDiscReplyComposer(parentPostId);
+
   try {
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
@@ -935,39 +997,31 @@ async function submitDiscReply(arg, el) {
       body: JSON.stringify({ body, post_type: "comment", play_signature: playSig, parent_post_id: parentPostId }),
     });
     const data = await res.json();
-    if (!data.ok) { showToast(data.error || "Failed to post.", { duration: 3000, type: "error" }); return; }
+    if (!data.ok) {
+      optimisticReplyNode?.remove();
+      showToast(data.error || "Failed to post.", { duration: 3000, type: "error" });
+      return;
+    }
 
     const mod = data.moderation || {};
     if (mod.displayWarning) {
       showToast(mod.displayWarning, { duration: 5000, type: mod.outcome === "block" ? "error" : "warning" });
     }
 
-    // Close the reply composer (clear textarea first so confirm doesn't fire)
-    const _replyTa = document.getElementById(`discCompose-reply-${parentPostId}`);
-    if (_replyTa) _replyTa.value = "";
-    closeDiscReplyComposer(parentPostId);
-
     if (data.post?.moderationStatus === "approved") {
-      // Append reply to the replies list
-      let repliesEl = document.getElementById(`disc-replies-${parentPostId}`);
-      if (!repliesEl) {
-        repliesEl = document.createElement("div");
-        repliesEl.className = "disc-replies";
-        repliesEl.id = `disc-replies-${parentPostId}`;
-        const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
-        slot?.insertAdjacentElement("beforebegin", repliesEl);
+      // Replace optimistic with real reply
+      if (optimisticReplyNode && repliesEl) {
+        const realWrap = document.createElement("div");
+        realWrap.innerHTML = _discPostHtml(data.post, playId, true);
+        const realNode = realWrap.firstElementChild;
+        if (realNode) repliesEl.replaceChild(realNode, optimisticReplyNode);
+        else optimisticReplyNode.classList.remove("disc-post--pending");
       }
-      const wrap = document.createElement("div");
-      wrap.innerHTML = _discPostHtml(data.post, playId, true);
-      const node = wrap.firstElementChild;
-      if (node) {
-        // Remove "View N more" button before appending
-        repliesEl.querySelector(".disc-load-replies")?.remove();
-        repliesEl.appendChild(node);
-        node.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
+    } else {
+      optimisticReplyNode?.remove();
     }
   } catch (_) {
+    optimisticReplyNode?.remove();
     showToast("Network error — try again.", { duration: 3000, type: "error" });
   } finally {
     btn.disabled = false;

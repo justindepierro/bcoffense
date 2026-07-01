@@ -810,6 +810,19 @@ body.play-presentation-open {
   display: grid;
   gap: 3px;
 }
+.pp-player-chat-row {
+  margin-top: var(--space-sm);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--color-border-light);
+}
+.pp-player-chat-btn {
+  width: 100%;
+  justify-content: center;
+  font-size: var(--font-size-sm);
+  min-height: 44px;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
+}
 
 .pp-layout-coaches {
   grid-template-columns: minmax(340px, 0.78fr) minmax(0, 1.22fr);
