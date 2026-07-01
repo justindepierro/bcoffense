@@ -4325,6 +4325,65 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   pointer-events: none;
 }
 
+/* ── Page Help (expandable "How this works") ─────────────────────
+   Reusable disclosure that replaces permanent instruction blocks.
+   Collapsed by default: the <summary> is the compact one-line page
+   identity; expanding reveals the full guidance. Native <details>,
+   no JS, keyboard-accessible.
+
+   Usage:
+     <details class="page-help">
+       <summary class="page-help__summary">
+         <span aria-hidden="true">💡</span>
+         <span class="page-help__label">Call sheet tips</span>
+         <span class="page-help__chevron" aria-hidden="true">▾</span>
+       </summary>
+       <div class="page-help__body">…full instructions…</div>
+     </details>
+──────────────────────────────────────────────────────────────── */
+.page-help {
+  margin-bottom: 8px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  border-left: 3px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-light);
+}
+.page-help__summary {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  min-height: 40px;
+  padding: 6px 10px;
+  cursor: pointer;
+  list-style: none;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+}
+.page-help__summary::-webkit-details-marker {
+  display: none;
+}
+.page-help__summary:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-radius: var(--radius-sm);
+}
+.page-help__label {
+  flex: 1 1 auto;
+}
+.page-help__chevron {
+  margin-left: auto;
+  transition: transform var(--transition-fast);
+}
+.page-help[open] .page-help__chevron {
+  transform: rotate(180deg);
+}
+.page-help__body {
+  padding: 0 10px 8px;
+  line-height: 1.4;
+}
+
 /* Consolidated hover styles */
 @media (hover: hover) {
   .csv-tpl-table tbody tr:hover {

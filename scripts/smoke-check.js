@@ -1611,6 +1611,37 @@ function checkAnchoredMenuContract() {
   console.log("anchored menu contract ok");
 }
 
+function checkPageHelpContract() {
+  // Immediate fix #5: permanent mobile instruction blocks replaced with an
+  // expandable "How this works" disclosure. Guards the reusable .page-help
+  // component and its adoption on the Call Sheet (the named example), and
+  // that the old permanent .cs-hint block is gone.
+  const html = read("index.html");
+  const components = read("css/components.css");
+  const callsheetCss = read("css/callsheet.css");
+
+  if (
+    !/\.page-help\s*\{/.test(components) ||
+    !/\.page-help__summary\s*\{/.test(components) ||
+    !/\.page-help\[open\]\s*\.page-help__chevron/.test(components)
+  ) {
+    fail("reusable .page-help expandable-help component is missing from components.css");
+  }
+
+  if (
+    !/<details class="page-help">/.test(html) ||
+    !/class="page-help__summary"/.test(html)
+  ) {
+    fail("Call Sheet does not use the expandable .page-help disclosure");
+  }
+
+  if (/class="cs-hint"/.test(html) || /\.cs-hint\s*\{/.test(callsheetCss)) {
+    fail("legacy permanent .cs-hint block still present instead of expandable help");
+  }
+
+  console.log("page help contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2299,6 +2330,7 @@ checkPlayerPortalContracts();
 checkCallSheetMobileContracts();
 checkMobileCapabilityMatrix();
 checkAnchoredMenuContract();
+checkPageHelpContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

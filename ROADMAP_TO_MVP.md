@@ -595,7 +595,8 @@ Example:
   - Home render wrapped in try/catch with `.td-state` loading spinner + error card with Retry; respects reduced-motion. Commit `08150e6` (SW v756).
 - [x] **4.** Build one shared anchored-menu utility and migrate the header and Call Sheet menus first.
   - New `js/anchored-menu.js` positions any `.tool-menu-wrap[data-anchored]` via `position: fixed` from the trigger rect — flips vertically, clamps horizontally, scrolls when tall, honors safe-area insets + visual viewport (iPad split-screen), and repositions on scroll/resize. Header overflow and Call Sheet "More" menus opted in. Smoke contract `checkAnchoredMenuContract`. Commit `4fa5037` (SW v757).
-- [ ] **5.** Replace permanent mobile instruction blocks with expandable help.
+- [x] **5.** Replace permanent mobile instruction blocks with expandable help.
+  - New reusable `.page-help` `<details>` component (compact one-line summary + expandable "How this works", native/no-JS, keyboard-accessible). Call Sheet hint (the named example) converted from a permanent `.cs-hint` block that was hidden on phone to the expandable disclosure that now shows collapsed on every width; dead `.cs-hint` CSS removed. Smoke contract `checkPageHelpContract`. Commit `PENDING5` (SW v758).
 - [ ] **6.** Build one shared responsive action-grid/toolbar contract.
 - [ ] **7.** Reduce the main navigation to the six core workflow tools plus Utilities.
 - [ ] **8.** Create a shared active-opponent/game-week bar.

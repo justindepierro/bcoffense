@@ -306,10 +306,6 @@
 }
 
 /* Phone call sheet: readable situation cards instead of the print-like board. */
-body.shell-phone #callsheet .cs-hint {
-  display: none;
-}
-
 body.shell-phone #callsheet .cs-toolbar {
   align-items: stretch;
   gap: 8px;
@@ -341,7 +337,9 @@ body.shell-phone #callsheet .orientation-toggle {
 
 body.shell-phone #callSheetGrid.callsheet-phone-cards {
   overflow-x: clip;
-  padding-bottom: calc(18px + var(--coach-dock-height, 0px) + env(safe-area-inset-bottom));
+  padding-bottom: calc(
+    18px + var(--coach-dock-height, 0px) + env(safe-area-inset-bottom)
+  );
 }
 
 .cs-mobile-situation-list {
@@ -1426,17 +1424,6 @@ body.shell-phone #callsheet .cs-empty-cat {
   background: var(--color-white);
 }
 
-/* Call Sheet Hint */
-.cs-hint {
-  color: var(--color-text-light);
-  font-size: var(--font-size-xs);
-  margin-bottom: 8px;
-  padding: 6px 10px;
-  background: var(--color-bg-light);
-  border-radius: var(--radius-md);
-  border-left: 3px solid var(--color-border);
-}
-
 /* Call Sheet Title */
 .cs-title {
   margin: 0;
@@ -1697,10 +1684,6 @@ body.shell-phone #callsheet .cs-empty-cat {
   text-align: center;
   margin-bottom: 10px;
   font-size: var(--font-size-base);
-}
-
-.cs-hint {
-  line-height: 1.4;
 }
 
 /* ===== Call Sheet Sort Button & Modal ===== */
@@ -4120,37 +4103,36 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 
 /* Consolidated hover styles */
 @media (hover: hover) {
-
-.callsheet-play:hover {
+  .callsheet-play:hover {
     background: var(--color-bg-blue-light);
     border-color: var(--color-primary);
   }
 
-.callsheet-play:hover .remove-play {
+  .callsheet-play:hover .remove-play {
     opacity: 1;
   }
 
-.callsheet-dropzone:hover {
+  .callsheet-dropzone:hover {
     background: var(--color-bg-blue-light);
     border-color: var(--color-primary);
     color: var(--color-primary);
   }
 
-.cs-add-blank-btn:hover {
+  .cs-add-blank-btn:hover {
     border-color: var(--color-text-muted);
     color: var(--color-text);
     background: var(--color-bg-hover-row);
   }
 
-.picker-play:hover {
+  .picker-play:hover {
     background: var(--color-bg-blue-light);
   }
 
-.category-header:hover .edit-hint {
+  .category-header:hover .edit-hint {
     opacity: 1;
   }
 
-.cs-tool-btn:hover {
+  .cs-tool-btn:hover {
     background: var(--color-primary-light);
     border-color: var(--color-primary);
     color: var(--color-primary);
@@ -4158,42 +4140,42 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     transform: translateY(-1px);
   }
 
-.cs-unified-header:hover {
+  .cs-unified-header:hover {
     background: var(--color-primary-dark);
   }
 
-.cs-preset-save-btn:hover {
+  .cs-preset-save-btn:hover {
     background: var(--color-bg-hover-row);
   }
 
-.cs-option-tile:hover {
+  .cs-option-tile:hover {
     border-color: var(--color-primary);
     box-shadow: 0 0 0 2px var(--color-primary-light);
     transform: translateY(-1px);
   }
 
-.cs-loaded-wb-clear:hover {
+  .cs-loaded-wb-clear:hover {
     opacity: 0.7;
   }
 
-.cs-picker-popup .cs-border-swatch:hover {
+  .cs-picker-popup .cs-border-swatch:hover {
     background: var(--color-border-light);
     transform: scale(1.2);
   }
 
-.cs-sort-btn:hover {
+  .cs-sort-btn:hover {
     opacity: 1;
   }
 
-.cs-sort-close:hover {
+  .cs-sort-close:hover {
     color: var(--color-text);
   }
 
-.cs-sort-criteria-item:hover {
+  .cs-sort-criteria-item:hover {
     background: var(--color-border-light);
   }
 
-.cs-sort-criteria-item .sort-dir-btn:hover,
+  .cs-sort-criteria-item .sort-dir-btn:hover,
   .cs-sort-criteria-item .custom-order-btn:hover {
     background: var(--color-border-light);
   }
@@ -4203,28 +4185,28 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     color: var(--color-danger);
   }
 
-.cs-sort-add-btn:hover {
+  .cs-sort-add-btn:hover {
     background: var(--color-bg-input);
     border-color: var(--color-text-muted);
   }
 
-.cs-custom-order-item:hover {
+  .cs-custom-order-item:hover {
     background: var(--color-bg-light);
   }
 
-.cs-collapse-btn:hover {
+  .cs-collapse-btn:hover {
     opacity: 1;
   }
 
-.cs-cat-menu-btn:hover {
+  .cs-cat-menu-btn:hover {
     opacity: 1;
   }
 
-.cs-cat-note:hover {
+  .cs-cat-note:hover {
     background: var(--color-accent-light);
   }
 
-.callsheet-play:hover .cs-hash-swap {
+  .callsheet-play:hover .cs-hash-swap {
     display: inline-block;
   }
   .cs-hash-swap:hover {
@@ -4232,67 +4214,67 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     color: var(--color-text-inverse);
   }
 
-.cs-ctx-item:hover {
+  .cs-ctx-item:hover {
     background: var(--color-bg-input);
   }
 
-.cs-ctx-item.cs-ctx-clear:hover {
+  .cs-ctx-item.cs-ctx-clear:hover {
     background: var(--color-danger-light);
   }
 
-.cs-ctx-colors .cs-border-swatch:hover {
+  .cs-ctx-colors .cs-border-swatch:hover {
     background: var(--color-border-med);
     transform: scale(1.15);
   }
 
-.cs-color-swatch:hover {
+  .cs-color-swatch:hover {
     transform: scale(1.15);
     border-color: var(--color-text-light);
   }
 
-.cs-style-btn:hover {
+  .cs-style-btn:hover {
     background: var(--color-border-light);
     border-color: var(--color-text-placeholder);
   }
 
-.cs-size-btn:hover {
+  .cs-size-btn:hover {
     background: var(--color-border-light);
     border-color: var(--color-text-placeholder);
   }
 
-.cs-ctx-note-save:hover {
+  .cs-ctx-note-save:hover {
     background: var(--color-success-hover);
   }
   .cs-ctx-note-clear:hover {
     background: var(--color-danger-hover);
   }
 
-.cs-ctx-cat-btn:hover {
+  .cs-ctx-cat-btn:hover {
     background: var(--color-primary-light);
   }
 
-.cs-cell-note-badge:hover {
+  .cs-cell-note-badge:hover {
     opacity: 1;
   }
 
-.cs-import-cat-item:hover {
+  .cs-import-cat-item:hover {
     background: var(--color-bg-lighter);
   }
 
-.pat-btn-import-cs:hover {
+  .pat-btn-import-cs:hover {
     background: var(--color-info-hover) !important;
   }
 
-.cs-suggest-btn:hover {
+  .cs-suggest-btn:hover {
     opacity: 1;
     transform: scale(1.2);
   }
 
-.cs-suggest-item:hover {
+  .cs-suggest-item:hover {
     background: var(--color-bg-light);
   }
 
-.cs-display-btn:hover {
+  .cs-display-btn:hover {
     background: var(--color-primary-light);
     border-color: var(--color-primary);
   }
