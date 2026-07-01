@@ -1,0 +1,53 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Ship (commit + GitHub + deploy)",
+      "type": "shell",
+      "command": "./ship.sh \"${input:commitMessage}\"",
+      "group": { "kind": "build", "isDefault": true },
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Ship + Bump SW",
+      "type": "shell",
+      "command": "./ship.sh --bump \"${input:commitMessage}\"",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Bump SW version only",
+      "type": "shell",
+      "command": "./bump-version.sh",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": false },
+      "problemMatcher": []
+    },
+    {
+      "label": "Deploy to Cloudflare only",
+      "type": "shell",
+      "command": "./scripts/deploy-cloudflare.sh",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "problemMatcher": []
+    },
+    {
+      "label": "Push to GitHub only",
+      "type": "shell",
+      "command": "git push origin main",
+      "group": "build",
+      "presentation": { "reveal": "always", "panel": "shared", "clear": false },
+      "problemMatcher": []
+    }
+  ],
+  "inputs": [
+    {
+      "id": "commitMessage",
+      "type": "promptString",
+      "description": "Commit message (e.g. feat: add player portal)",
+      "default": "fix: "
+    }
+  ]
+}

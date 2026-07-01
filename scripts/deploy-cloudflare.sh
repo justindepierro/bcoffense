@@ -5,6 +5,9 @@ set -euo pipefail
 
 cd "$(dirname "$0")/.."
 
+# Use globally-installed wrangler directly (faster than npx)
+WRANGLER="$(which wrangler 2>/dev/null || echo "npx wrangler")"
+
 tmpdir="$(mktemp -d)"
 cleanup() {
   rm -rf "$tmpdir"
@@ -23,7 +26,7 @@ printf 'Not available\n' > "$tmpdir/public/wrangler.toml"
 commit_hash="$(git rev-parse HEAD)"
 commit_message="$(git log -1 --pretty=%s)"
 
-npx wrangler pages deploy "$tmpdir/public" \
+$WRANGLER pages deploy "$tmpdir/public" \
   --project-name bcoffense \
   --branch main \
   --commit-hash "$commit_hash" \
@@ -32,9 +35,9 @@ npx wrangler pages deploy "$tmpdir/public" \
 expected_source="${commit_hash:0:7}"
 deployed_source=""
 
-for attempt in {1..12}; do
+for attempt in {1..20}; do
   deployments="$(
-    npx wrangler pages deployment list \
+    $WRANGLER pages deployment list \
       --project-name bcoffense \
       --environment production \
       --json
@@ -51,8 +54,8 @@ for attempt in {1..12}; do
     exit 0
   fi
 
-  if (( attempt < 12 )); then
-    sleep 5
+  if (( attempt < 20 )); then
+    sleep 2
   fi
 done
 
