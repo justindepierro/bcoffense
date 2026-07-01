@@ -1159,29 +1159,29 @@ Initial reactions:
 
 # Phase 13 — In-App Notifications
 
-- [ ] Create an in-app notification center.
-- [ ] Add an unread notification badge.
-- [ ] Create a notification when a coach replies to a player's question.
-- [ ] Create a notification when a question is marked resolved.
+- [x] Create an in-app notification center.
+- [x] Add an unread notification badge.
+- [x] Create a notification when a coach replies to a player's question.
+- [x] Create a notification when a question is marked resolved.
 - [ ] Create a notification when a resolved question is reopened.
 - [ ] Create a notification when a coach posts a clarification on an assigned play.
 - [ ] Create a notification when a player is mentioned only if mentions are later enabled.
 - [ ] Create a notification when a new quiz is assigned.
 - [ ] Create a notification when a Practice Script is published.
-- [ ] Allow notification links to open the exact play or question.
-- [ ] Mark a notification read when opened.
-- [ ] Allow Mark All Read.
+- [x] Allow notification links to open the exact play or question.
+- [x] Mark a notification read when opened.
+- [x] Allow Mark All Read.
 - [ ] Allow deleting or archiving old notifications.
-- [ ] Paginate notification history.
-- [ ] Store notifications in D1.
-- [ ] Do not use KV as the primary notification record.
+- [x] Paginate notification history.
+- [x] Store notifications in D1.
+- [x] Do not use KV as the primary notification record.
 - [ ] Add notification preference categories.
 - [ ] Allow players to mute play-like activity.
 - [ ] Do not send a notification for every ordinary Like.
 - [ ] Bundle repeated same-question reactions where possible.
 - [ ] Add notification deduplication.
 - [ ] Add notification retention cleanup.
-- [ ] Add notification authorization checks.
+- [x] Add notification authorization checks.
 - [ ] Add notification integration tests.
 
 # Phase 14 — Web Push Notifications

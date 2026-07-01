@@ -107,7 +107,7 @@ export async function onRequest(context) {
     const isStaff = session.role === "coach" || session.role === "admin";
     if (isStaff) {
       const posterName = session.label || session.username;
-      notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody).catch(() => {});
+      notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody).catch(() => { });
     }
 
     return withSecurityHeaders(authJson({ ok: true, post: formatPost(result) }));

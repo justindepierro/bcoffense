@@ -139,10 +139,10 @@ async function _loadNotifications(append = false) {
 // ── HTML helpers ──────────────────────────────────────────────────────────────
 
 const _NOTIF_ICONS = {
-  coach_reply:        "💬",
-  question_resolved:  "✅",
-  script_published:   "📋",
-  new_quiz:           "📝",
+  coach_reply: "💬",
+  question_resolved: "✅",
+  script_published: "📋",
+  new_quiz: "📝",
 };
 
 function _notifRelTime(unixSec) {
@@ -186,7 +186,7 @@ async function openNotifDeepLink(arg) {
     itemEl.classList.remove("notif-item--unread");
     itemEl.querySelector(".notif-unread-dot")?.remove();
   }
-  fetch(`/api/notifications/${encodeURIComponent(notifId)}`, { method: "PATCH" }).catch(() => {});
+  fetch(`/api/notifications/${encodeURIComponent(notifId)}`, { method: "PATCH" }).catch(() => { });
 
   closeNotifDrawer();
 
