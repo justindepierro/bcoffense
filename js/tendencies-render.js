@@ -6,20 +6,30 @@ function renderTendenciesHome() {
   if (!container) return;
 
   const opponentList = tendenciesOpponents
-    .map(
-      (opp, i) => `
-    <div class="td-opponent-card" data-action="selectTendenciesOpponent" data-idx="${i}">
-      <div class="td-opponent-card-info">
-        <span class="td-opponent-name">${escapeHtml(opp.name)}</span>
-        <span class="td-opponent-count">${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}</span>
-      </div>
-      <div class="td-opponent-card-actions">
-        <button class="btn btn-sm" data-action="renameTendenciesOpponent" data-idx="${i}" title="Rename">✏️</button>
-        <button class="btn btn-sm btn-danger" data-action="deleteTendenciesOpponent" data-idx="${i}" title="Delete">🗑️</button>
+    .map((opp, i) => {
+      const safeName = escapeHtml(opp.name);
+      const playLabel = `${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}`;
+      return `
+    <div class="td-opponent-card" data-idx="${i}">
+      <button type="button" class="td-opponent-card-main" data-action="selectTendenciesOpponent" data-idx="${i}" aria-label="Open scouting report for ${safeName}">
+        <span class="td-opponent-card-info">
+          <span class="td-opponent-name">${safeName}</span>
+          <span class="td-opponent-count">${playLabel}</span>
+        </span>
+        <span class="td-opponent-card-chevron" aria-hidden="true">›</span>
+      </button>
+      <div class="td-opponent-card-menu tool-menu-wrap">
+        <button type="button" class="td-opponent-menu-btn" data-action="toggleParentOpen" aria-haspopup="true" aria-expanded="false" aria-label="More actions for ${safeName}">
+          <span aria-hidden="true">⋯</span>
+        </button>
+        <div class="tool-menu" data-action="removeParentOpen">
+          <button type="button" data-action="renameTendenciesOpponent" data-idx="${i}">✏️ Rename</button>
+          <button type="button" class="tool-menu-danger" data-action="deleteTendenciesOpponent" data-idx="${i}">🗑️ Delete</button>
+        </div>
       </div>
     </div>
-  `,
-    )
+  `;
+    })
     .join("");
 
   container.innerHTML = `

@@ -39,30 +39,50 @@
 }
 .td-opponent-card {
   display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 14px 18px;
+  align-items: stretch;
   background: var(--color-bg-light);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
-  cursor: pointer;
+  overflow: visible;
   transition:
     border-color var(--transition-fast),
-    background var(--transition-fast),
-    transform var(--transition-fast),
     box-shadow var(--transition-fast);
 }
 @media (hover: hover) {
   .td-opponent-card:hover {
     border-color: var(--color-primary);
-    background: var(--color-bg-blue-light);
-    transform: translateX(4px);
     box-shadow: var(--shadow-sm);
   }
 }
-.td-opponent-card:focus-visible {
+.td-opponent-card-main {
+  flex: 1 1 auto;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: var(--space-md);
+  padding: 14px 6px 14px 18px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  font-family: inherit;
+  color: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: background var(--transition-fast);
+}
+@media (hover: hover) {
+  .td-opponent-card-main:hover {
+    background: var(--color-bg-blue-light);
+  }
+}
+.td-opponent-card-main:focus-visible {
   outline: 2px solid var(--color-primary);
-  outline-offset: 2px;
+  outline-offset: -2px;
+}
+.td-opponent-card-chevron {
+  color: var(--color-text-light);
+  font-size: var(--font-size-xl);
+  line-height: 1;
 }
 
 .td-opponent-card-info {
@@ -78,9 +98,37 @@
   color: var(--color-text-light);
   font-size: var(--font-size-sm);
 }
-.td-opponent-card-actions {
-  display: flex;
-  gap: var(--space-xs);
+.td-opponent-card-menu {
+  align-items: center;
+  padding-right: 8px;
+  flex-shrink: 0;
+}
+.td-opponent-menu-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 40px;
+  min-height: 40px;
+  padding: 0 8px;
+  background: none;
+  border: none;
+  border-radius: var(--radius-sm);
+  color: var(--color-text-light);
+  font-size: var(--font-size-lg);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
+}
+@media (hover: hover) {
+  .td-opponent-menu-btn:hover {
+    background: var(--color-bg-hover-row);
+    color: var(--color-text);
+  }
+}
+.td-opponent-menu-btn:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
 }
 
 /* Export section */
