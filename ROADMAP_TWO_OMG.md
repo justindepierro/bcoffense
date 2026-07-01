@@ -328,13 +328,13 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add empty states.
 - [x] Add loading states.
 - [x] Add retry states.
-- [ ] Add offline submission warning.
+- [x] Add offline submission warning.
 - [x] Prevent duplicate submissions during slow requests.
 - [ ] Use optimistic UI only when rollback is reliable.
-- [ ] Add phone layout.
+- [x] Add phone layout.
 - [ ] Add iPad layout.
 - [ ] Add desktop layout.
-- [ ] Meet touch-target and keyboard-accessibility requirements.
+- [x] Meet touch-target and keyboard-accessibility requirements.
 - [x] Keep the design visually simple and familiar.
 
 # Phase 8A — Comment and Message Content Moderation
@@ -499,7 +499,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 - [x] Display each root comment or question as a clean discussion card.
 - [x] Display replies directly beneath the parent post.
-- [ ] Use a subtle connector line for reply branches.
+- [x] Use a subtle connector line for reply branches.
 - [x] Use modest indentation rather than deeply nested cards.
 - [x] Display author name prominently.
 - [x] Display author role.
@@ -513,7 +513,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Distinguish coaches from players without relying only on color.
 - [x] Add a compact Reply action beneath every eligible post.
 - [x] Add a compact React action beneath every eligible post.
-- [ ] Add a compact More menu beneath every eligible post.
+- [x] Add a compact More menu beneath every eligible post.
 - [x] Display reaction summary beneath the post.
 - [ ] Display the most-used reactions first.
 - [x] Show total reply count.
@@ -524,8 +524,8 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Use a wider centered feed on tablets.
 - [ ] Allow a side-panel discussion layout on desktop.
 - [ ] Avoid excessive borders around every reply.
-- [ ] Avoid displaying every moderation and editing control permanently.
-- [ ] Move secondary controls into a three-dot menu.
+- [x] Avoid displaying every moderation and editing control permanently.
+- [x] Move secondary controls into a three-dot menu.
 - [x] Add skeleton loading states.
 - [x] Add empty-thread states.
 - [x] Add failed-load retry states.
@@ -536,8 +536,8 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 # 8B.3 — Reply Composer
 
 - [x] Add a Reply action to comments and questions.
-- [ ] Show the author being replied to.
-- [ ] Show a short preview of the parent message.
+- [x] Show the author being replied to.
+- [x] Show a short preview of the parent message.
 - [x] Allow plain-text replies.
 - [x] Allow emoji insertion.
 - [ ] Allow a marked-up play attachment.
@@ -774,7 +774,7 @@ Initial reactions:
 - [x] Use large touch targets.
 - [x] Show a tooltip or label for each reaction.
 - [ ] Allow keyboard arrow navigation.
-- [ ] Close on Escape.
+- [x] Close on Escape.
 - [x] Close on outside click.
 - [ ] Restore focus to the React button.
 - [ ] Show the user’s current reaction.

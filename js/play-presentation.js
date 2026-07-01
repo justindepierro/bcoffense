@@ -24,6 +24,9 @@ let playPresentationDiagramResizeObserver = null;
 let playPresentationDiagramResizeFrame = 0;
 let playPresentationDiagramSizeKey = "";
 let playPresentationSwipeStart = null;
+
+// Portrait-to-landscape rotate state
+let _ppPortraitRotateActive = false;
 let playPresentationViewportSyncFrame = 0;
 let playPresentationViewportKey = "";
 let playPresentationRotateHintDismissed = false;
@@ -582,6 +585,7 @@ function resetPlayPresentationZoom() {
 
 // Attaches drag-to-pan to a freshly rendered diagram frame. Pointer Events keep
 // mouse, touch, and Apple Pencil consistent; panning only runs while zoomed.
+// Also adds pinch-to-zoom and double-tap-to-zoom for phones.
 function attachPlayPresentationPan(frame) {
   if (!frame) return;
   frame.addEventListener("pointerdown", (event) => {
@@ -620,6 +624,52 @@ function attachPlayPresentationPan(frame) {
   };
   frame.addEventListener("pointerup", endPan);
   frame.addEventListener("pointercancel", endPan);
+
+  // ── Pinch-to-zoom ──────────────────────────────────────────────────────────
+  let _pinchStart = null;
+  frame.addEventListener("touchstart", (e) => {
+    if (e.touches.length === 2) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      _pinchStart = { dist: Math.hypot(dx, dy), scale: playPresentationZoom.scale };
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  frame.addEventListener("touchmove", (e) => {
+    if (e.touches.length === 2 && _pinchStart) {
+      const dx = e.touches[1].clientX - e.touches[0].clientX;
+      const dy = e.touches[1].clientY - e.touches[0].clientY;
+      const newDist = Math.hypot(dx, dy);
+      if (_pinchStart.dist > 0) {
+        setPlayPresentationZoomScale(_pinchStart.scale * (newDist / _pinchStart.dist));
+      }
+      e.preventDefault();
+    }
+  }, { passive: false });
+
+  frame.addEventListener("touchend", (e) => {
+    if (e.touches.length < 2) _pinchStart = null;
+  }, { passive: true });
+
+  // ── Double-tap to zoom in / reset ─────────────────────────────────────────
+  let _lastTapTime = 0;
+  frame.addEventListener("touchend", (e) => {
+    if (_pinchStart) return; // Ignore during pinch
+    if (e.changedTouches.length !== 1 || e.touches.length > 0) return;
+    const now = Date.now();
+    const elapsed = now - _lastTapTime;
+    _lastTapTime = now;
+    if (elapsed < 320) {
+      // Double tap: toggle zoom
+      e.preventDefault();
+      if (playPresentationZoom.scale > 1.001) {
+        resetPlayPresentationZoom();
+      } else {
+        setPlayPresentationZoomScale(2.5);
+      }
+    }
+  }, { passive: false });
 }
 
 // ---- Telestrator (M-042) ----------------------------------------------------
@@ -1397,6 +1447,7 @@ function closePlayPresentation() {
   setPlayPresentationTelestrator(false);
   clearPlayPresentationTele();
   setPlayPresentationDetailPanel(false);
+  _ppResetPortraitRotate();
   if (typeof closePresentationDiscussion === "function") closePresentationDiscussion();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
@@ -2411,8 +2462,16 @@ function handlePlayPresentationTouchEnd(event) {
   if (elapsed > PLAY_PRESENTATION_SWIPE_MAX_MS) return;
 
   let direction = 0;
-  if (absX >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absX >= absY * 1.1) {
-    direction = dx < 0 ? 1 : -1;
+  if (_ppPortraitRotateActive) {
+    // In rotated mode, the overlay is 90° CW. Vertical swipes = landscape-horizontal.
+    // Swipe UP (dy < 0) = landscape "swipe left" = next play.
+    if (absY >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absY >= absX * 1.1) {
+      direction = dy < 0 ? 1 : -1;
+    }
+  } else {
+    if (absX >= PLAY_PRESENTATION_SWIPE_MIN_DISTANCE && absX >= absY * 1.1) {
+      direction = dx < 0 ? 1 : -1;
+    }
   }
   if (!direction) return;
 
@@ -2571,6 +2630,40 @@ function togglePlayPresentationFullscreen() {
     exitPlayPresentationFullscreen();
   } else {
     enterPlayPresentationFullscreen();
+  }
+}
+
+// ── Portrait Landscape Rotate (works on iOS Safari without fullscreen API) ────
+
+function togglePresentationPortraitRotate() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (!overlay) return;
+  _ppPortraitRotateActive = !_ppPortraitRotateActive;
+  overlay.classList.toggle("pp-portrait-rotate", _ppPortraitRotateActive);
+  document.body.classList.toggle("play-presentation-portrait-rotated", _ppPortraitRotateActive);
+  const btn = document.getElementById("playPresentationPortraitBtn");
+  if (btn) {
+    btn.classList.toggle("active", _ppPortraitRotateActive);
+    btn.setAttribute("aria-pressed", _ppPortraitRotateActive ? "true" : "false");
+    btn.setAttribute("aria-label", _ppPortraitRotateActive ? "Exit landscape view" : "Force landscape view");
+    btn.title = _ppPortraitRotateActive ? "Exit landscape view" : "Force landscape view";
+    btn.textContent = _ppPortraitRotateActive ? "⤡" : "⤢";
+  }
+}
+
+function _ppResetPortraitRotate() {
+  if (!_ppPortraitRotateActive) return;
+  _ppPortraitRotateActive = false;
+  const overlay = document.getElementById("playPresentationOverlay");
+  overlay?.classList.remove("pp-portrait-rotate");
+  document.body.classList.remove("play-presentation-portrait-rotated");
+  const btn = document.getElementById("playPresentationPortraitBtn");
+  if (btn) {
+    btn.classList.remove("active");
+    btn.setAttribute("aria-pressed", "false");
+    btn.setAttribute("aria-label", "Force landscape view");
+    btn.title = "Force landscape view";
+    btn.textContent = "⤢";
   }
 }
 

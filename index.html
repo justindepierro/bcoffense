@@ -3022,7 +3022,8 @@
         <button data-action="showPlaySelector" class="btn btn-info btn-sm btn-inline-offset">
           🔄 Change Play
         </button>
-        <button data-action="openWristbandCellDiscussion" class="btn btn-sm btn-inline-offset" title="View player discussion for this play">
+        <button data-action="openWristbandCellDiscussion" class="btn btn-sm btn-inline-offset"
+          title="View player discussion for this play">
           💬 Discussion
         </button>
       </div>
@@ -3896,12 +3897,17 @@
           aria-pressed="false" aria-label="Show play detail" title="Show play detail">ℹ️</button>
         <button id="playPresentationDiscBtn" class="pp-icon-btn" data-action="togglePresentationDiscussion"
           aria-pressed="false" aria-label="Play discussion" title="Play discussion">💬</button>
+        <button id="playPresentationPortraitBtn" class="pp-icon-btn pp-portrait-only" data-action="togglePresentationPortraitRotate"
+          aria-pressed="false" aria-label="Force landscape view" title="Force landscape view">⤢</button>
         <button id="playPresentationFullscreenBtn" class="pp-icon-btn" data-action="togglePlayPresentationFullscreen"
           aria-pressed="false" aria-label="Enter Full Screen" title="Enter Full Screen" hidden>⛶</button>
         <button id="playPresentationClose" class="pp-close-btn" data-action="closePlayPresentation"
           aria-label="Close presentation" title="Close presentation">✕</button>
       </div>
     </header>
+    <div class="pp-portrait-hint" aria-live="polite">
+      📱 Tap <strong>⤢</strong> for landscape view — diagrams look much bigger!
+    </div>
     <main id="playPresentationBody" class="pp-body"></main>
     <div class="pp-telestrator-bar" id="playPresentationTeleBar" role="group" aria-label="Telestrator tools" hidden>
       <div class="pp-tele-group" role="group" aria-label="Tool">
