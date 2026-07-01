@@ -111,6 +111,51 @@ function renderTendenciesHome() {
 // formations so a coach sees intel before diving into the raw table.
 let tdShowScoutOverview = true;
 
+// Playbook plays that match the current opponent's top tendencies (#79-82)
+let _tdScoutRecs = [];
+let _tdScoutRecTerms = { front: "", coverage: "", blitz: "" };
+
+// Find plays from plays[] that match the opponent's dominant front/coverage/blitz.
+function _computeScoutRecs(intel, totalPlays) {
+  if (!Array.isArray(plays) || plays.length === 0) return [];
+  if (!totalPlays) return [];
+
+  const topFront = intel.topFront && intel.topFront.length ? intel.topFront[0].term : "";
+  const topCoverage = intel.topCoverage && intel.topCoverage.length ? intel.topCoverage[0].term : "";
+  const blitzEntry = intel.topBlitz && intel.blitzRate >= 20
+    ? (intel.topBlitz.find((b) => b.term !== "None") || null)
+    : null;
+  const topBlitz = blitzEntry ? blitzEntry.term : "";
+
+  _tdScoutRecTerms = { front: topFront, coverage: topCoverage, blitz: topBlitz };
+  if (!topFront && !topCoverage && !topBlitz) return [];
+
+  const frontLower = topFront.toLowerCase();
+  const covLower = topCoverage.toLowerCase();
+  const blitzLower = topBlitz.toLowerCase();
+
+  return plays
+    .map((play, idx) => {
+      const pFront = (play.practiceFront || "").toLowerCase();
+      const pDef = (play.practiceDefense || "").toLowerCase();
+      const pCov = (play.practiceCoverage || "").toLowerCase();
+      const pBlitz = (play.practiceBlitz || "").toLowerCase();
+
+      const matchFront = frontLower && (pFront.includes(frontLower) || pDef.includes(frontLower));
+      const matchCov = covLower && pCov.includes(covLower);
+      const matchBlitz = blitzLower && pBlitz.includes(blitzLower);
+
+      if (!matchFront && !matchCov && !matchBlitz) return null;
+
+      const reasons = [];
+      if (matchFront) reasons.push(topFront);
+      if (matchCov) reasons.push(topCoverage);
+      if (matchBlitz) reasons.push(topBlitz + " blitz");
+      return { play, idx, reasons };
+    })
+    .filter(Boolean);
+}
+
 function renderScoutOverview() {
   const container = document.getElementById("tendenciesContent");
   if (!container || tendenciesCurrentOpponent === null) return;
@@ -189,17 +234,58 @@ function renderScoutOverview() {
 
   const noData = totalPlays === 0;
 
-  function barHtml(items, label) {
+  // sampleSize enables confidence dots: ≥15 high, ≥5 moderate, <5 low
+  function barHtml(items, label, sampleSize) {
     if (!items || items.length === 0) return `<p class="td-ov-empty">No ${label} data charted yet.</p>`;
-    return items.map((item) =>
-      `<div class="td-ov-row">
+    return items.map((item) => {
+      let confClass = "", confTitle = "";
+      if (sampleSize) {
+        if (item.count >= 15) { confClass = "td-ov-conf--high"; confTitle = "High confidence"; }
+        else if (item.count >= 5) { confClass = "td-ov-conf--med"; confTitle = "Moderate confidence"; }
+        else { confClass = "td-ov-conf--low"; confTitle = "Low sample — chart more plays"; }
+      }
+      const confDot = confClass
+        ? `<span class="td-ov-conf ${confClass}" title="${confTitle}" aria-label="${confTitle}">●</span>`
+        : "";
+      return `<div class="td-ov-row">
         <span class="td-ov-label">${escapeHtml(item.term || item.name)}</span>
         <div class="td-ov-bar-wrap"><div class="td-ov-bar" style="width:${item.pct}%"></div></div>
         <span class="td-ov-pct">${item.pct}%</span>
         <span class="td-ov-count">(${item.count})</span>
+        ${confDot}
+      </div>`;
+    }).join("");
+  }
+
+  // Compute recommendations from playbook (#79-82)
+  _tdScoutRecs = _computeScoutRecs(intel, totalPlays);
+  const recsCardHtml = (() => {
+    if (_tdScoutRecs.length === 0 || noData) return "";
+    const termList = [_tdScoutRecTerms.front, _tdScoutRecTerms.coverage, _tdScoutRecTerms.blitz]
+      .filter(Boolean)
+      .map((t) => `<strong>${escapeHtml(t)}</strong>`)
+      .join(" / ");
+    const recItems = _tdScoutRecs.slice(0, 6).map((r) =>
+      `<div class="td-ov-rec">
+        <span class="td-ov-rec-call">${getFullCall(r.play, {})}</span>
+        <span class="td-ov-rec-tags">${r.reasons.map((t) => `<span class="td-ov-rec-tag">${escapeHtml(t)}</span>`).join("")}</span>
+        <button class="btn btn-sm btn-primary" data-action="sendOneRecToGamePlan" data-arg="${r.idx}" title="Send to Game Plan">+ Plan</button>
       </div>`,
     ).join("");
-  }
+    const moreHtml = _tdScoutRecs.length > 6
+      ? `<p class="td-ov-recs-more">+${_tdScoutRecs.length - 6} more match in your playbook</p>`
+      : "";
+    return `
+      <div class="td-ov-card td-ov-card--full td-ov-card--recs">
+        <h3 class="td-ov-title">💡 What This Means For Us</h3>
+        <p class="td-ov-recs-sub">${_tdScoutRecs.length} play${_tdScoutRecs.length !== 1 ? "s" : ""} designed vs ${termList}</p>
+        <div class="td-ov-recs-list">${recItems}${moreHtml}</div>
+        <div class="td-ov-recs-footer action-grid">
+          <button class="btn btn-secondary" data-action="filterPlaybookForScout">🔍 All ${_tdScoutRecs.length} in Playbook</button>
+          <button class="btn btn-primary" data-action="sendScoutRecsToGamePlan">📋 Send All to Game Plan</button>
+        </div>
+      </div>`;
+  })();
 
   container.innerHTML = `
     <div class="td-detail">
@@ -248,43 +334,45 @@ function renderScoutOverview() {
 
         <div class="td-ov-card">
           <h3 class="td-ov-title">🛡️ Top Fronts</h3>
-          ${barHtml(intel.topFront, "defensive front")}
+          ${barHtml(intel.topFront, "defensive front", totalPlays)}
         </div>
 
         <div class="td-ov-card">
           <h3 class="td-ov-title">🔭 Top Coverages</h3>
-          ${barHtml(intel.topCoverage, "coverage")}
+          ${barHtml(intel.topCoverage, "coverage", totalPlays)}
         </div>
 
         ${intel.topBlitz && intel.topBlitz.length > 0 ? `
         <div class="td-ov-card">
           <h3 class="td-ov-title">⚡ Blitz Types</h3>
-          ${barHtml(intel.topBlitz.filter((b) => b.term !== "None"), "blitz")}
+          ${barHtml(intel.topBlitz.filter((b) => b.term !== "None"), "blitz", totalPlays)}
         </div>` : ""}
 
         ${topFormations.length > 0 ? `
         <div class="td-ov-card">
           <h3 class="td-ov-title">🏟️ Off. Formations Faced</h3>
-          ${barHtml(topFormations, "formation")}
+          ${barHtml(topFormations, "formation", totalPlays)}
         </div>` : ""}
 
         ${downItems.length > 0 ? `
         <div class="td-ov-card">
           <h3 class="td-ov-title">📊 Down Distribution</h3>
-          ${barHtml(downItems, "down")}
+          ${barHtml(downItems, "down", totalPlays)}
         </div>` : ""}
 
         ${topSituations.length > 0 ? `
         <div class="td-ov-card">
           <h3 class="td-ov-title">🎯 Situational</h3>
-          ${barHtml(topSituations, "situation")}
+          ${barHtml(topSituations, "situation", totalPlays)}
         </div>` : ""}
 
         ${hashItems.length > 0 ? `
         <div class="td-ov-card">
           <h3 class="td-ov-title">📍 Hash Tendency</h3>
-          ${barHtml(hashItems, "hash")}
+          ${barHtml(hashItems, "hash", _hashTotal)}
         </div>` : ""}
+
+        ${recsCardHtml}
       </div>
 
       <div class="td-ov-actions action-grid">
@@ -948,3 +1036,144 @@ function renderFieldHtml(field, mode) {
     </div>
   `;
 }
+
+// ── Scout Recommendations: global action functions (#79-82) ─────────────────
+
+// Navigate to Playbook with top scout terms pre-loaded in the search field.
+function filterPlaybookForScout() {
+  const terms = [_tdScoutRecTerms.coverage, _tdScoutRecTerms.front]
+    .filter(Boolean)
+    .join(" ");
+  if (typeof showTab === "function") showTab("playbook");
+  requestAnimationFrame(() => {
+    const input = document.getElementById("searchPlay");
+    if (input && terms) {
+      input.value = terms;
+      if (typeof filterPlays === "function") filterPlays();
+    }
+  });
+}
+
+// Send a single recommended play (plays[] index via data-arg) to the game plan.
+async function sendOneRecToGamePlan(arg) {
+  const idx = parseInt(arg, 10);
+  if (isNaN(idx) || !Array.isArray(plays) || !plays[idx]) {
+    showToast("Play not found.", { type: "warning" });
+    return;
+  }
+  const play = plays[idx];
+  if (typeof _gpEnsureBoard !== "function") {
+    showToast("Game Plan not available.", { type: "warning" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const items = typeof _gpGetBoardBoxes === "function"
+    ? _gpGetBoardBoxes(board, { includeHolding: true }).map((b) => ({ value: b.id, label: b.label }))
+    : [];
+  let boxId;
+  if (items.length > 0) {
+    const choice = await showListPicker("Send to which game plan box?", items, {
+      title: "📋 Send to Game Plan",
+      icon: "📋",
+    });
+    if (!choice) return;
+    boxId = choice;
+  } else {
+    boxId = typeof _gpAutoDestinationForPlay === "function"
+      ? _gpAutoDestinationForPlay(play, board)
+      : "Pass";
+  }
+  let added = 0;
+  if (typeof _gpUpdateBoard === "function") {
+    _gpUpdateBoard((b) => {
+      if (!Array.isArray(b.assignments[boxId])) b.assignments[boxId] = [];
+      const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : JSON.stringify(play);
+      const existing = new Set(b.assignments[boxId].map((p) => typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p)));
+      if (!existing.has(sig)) { b.assignments[boxId].push({ ...play }); added++; }
+    });
+  }
+  if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+  if (added) {
+    showToast(`Sent to ${boxId} in Game Plan.`, {
+      duration: 3000, type: "success",
+      actionLabel: "→ Game Plan", action: () => showTab("gameplan"),
+    });
+  } else {
+    showToast("Play already in that box.", { type: "warning" });
+  }
+}
+
+// Send all current scout recommendations to the game plan.
+async function sendScoutRecsToGamePlan() {
+  if (!Array.isArray(_tdScoutRecs) || _tdScoutRecs.length === 0) {
+    showToast("No recommendations — chart plays first to generate intel.", { type: "warning" });
+    return;
+  }
+  if (typeof _gpEnsureBoard !== "function") {
+    showToast("Game Plan not available.", { type: "warning" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const items = typeof _gpGetBoardBoxes === "function"
+    ? _gpGetBoardBoxes(board, { includeHolding: true }).map((b) => ({ value: b.id, label: b.label }))
+    : [];
+
+  const routeChoice = items.length > 0
+    ? await showChoice(
+        `<p>Send <strong>${_tdScoutRecs.length}</strong> recommended play${_tdScoutRecs.length === 1 ? "" : "s"} to the game plan?</p>`,
+        {
+          title: "📋 Send Scout Recs to Game Plan",
+          icon: "📋",
+          option1: "Auto-route by play type",
+          option2: "Pick a box",
+        },
+      )
+    : "option1";
+  if (!routeChoice) return;
+
+  let added = 0, skipped = 0;
+
+  if (routeChoice === "option1") {
+    if (typeof _gpUpdateBoard === "function") {
+      _gpUpdateBoard((b) => {
+        _tdScoutRecs.forEach(({ play }) => {
+          const boxId = typeof _gpAutoDestinationForPlay === "function"
+            ? _gpAutoDestinationForPlay(play, b)
+            : "Pass";
+          if (!Array.isArray(b.assignments[boxId])) b.assignments[boxId] = [];
+          const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : JSON.stringify(play);
+          const existing = new Set(b.assignments[boxId].map((p) => typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p)));
+          if (!existing.has(sig)) { b.assignments[boxId].push({ ...play }); added++; }
+          else skipped++;
+        });
+      });
+    }
+  } else {
+    const choice = await showListPicker("Choose a game plan box:", items, {
+      title: "📋 Send to Box", icon: "📋",
+    });
+    if (!choice) return;
+    if (typeof _gpUpdateBoard === "function") {
+      _gpUpdateBoard((b) => {
+        if (!Array.isArray(b.assignments[choice])) b.assignments[choice] = [];
+        const existing = new Set(b.assignments[choice].map((p) => typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p)));
+        _tdScoutRecs.forEach(({ play }) => {
+          const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : JSON.stringify(play);
+          if (!existing.has(sig)) { b.assignments[choice].push({ ...play }); added++; existing.add(sig); }
+          else skipped++;
+        });
+      });
+    }
+  }
+
+  if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+  const msg = added > 0
+    ? `Sent ${added} play${added === 1 ? "" : "s"} to Game Plan${skipped ? ` (${skipped} already there)` : ""}.`
+    : `No plays added — ${skipped} already in Game Plan.`;
+  showToast(msg, {
+    duration: 4000, type: added > 0 ? "success" : "warning",
+    ...(added > 0 ? { actionLabel: "→ Game Plan", action: () => showTab("gameplan") } : {}),
+  });
+  if (added > 0 && typeof showTab === "function") showTab("gameplan");
+}
+

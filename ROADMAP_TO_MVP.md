@@ -292,11 +292,11 @@ Example:
 - [ ] **76.** Show motion/shift summary.
 - [x] **77.** Show pressure/blitz summary if charted.
 - [x] **78.** Show coverage/front summary if charted.
-- [ ] **79.** Show top tendencies with confidence indicators.
-- [ ] **80.** Show “What this means for us” recommendations.
-- [ ] **81.** Add links from each recommendation to matching Playbook plays.
-- [ ] **82.** Add “Send recommendation to Game Plan.”
-- [ ] **83.** Add “Filter Playbook against this tendency.”
+- [x] **79.** Show top tendencies with confidence indicators.
+- [x] **80.** Show “What this means for us” recommendations.
+- [x] **81.** Add links from each recommendation to matching Playbook plays.
+- [x] **82.** Add “Send recommendation to Game Plan.”
+- [x] **83.** Add “Filter Playbook against this tendency.”
 - [ ] **84.** Add “Create Practice Period from tendency.”
 - [ ] **85.** Add “Add scouting note to Call Sheet.”
 - [ ] **86.** Add game/film source records to opponent data.
