@@ -1244,13 +1244,13 @@ Initial reactions:
 
 # Phase 16 — Coach Question Inbox
 
-- [ ] Add a Player Questions card to the coach dashboard.
-- [ ] Show total open questions.
-- [ ] Show unanswered questions.
-- [ ] Show answered but unresolved questions.
-- [ ] Show questions asked today.
+- [x] Add a Player Questions card to the coach dashboard.
+- [x] Show total open questions.
+- [x] Show unanswered questions.
+- [x] Show answered but unresolved questions.
+- [x] Show questions asked today.
 - [ ] Show questions by active Game Week.
-- [ ] Create a dedicated coach question inbox.
+- [x] Create a dedicated coach question inbox.
 - [ ] Filter by team.
 - [ ] Filter by player.
 - [ ] Filter by position.
@@ -1258,18 +1258,18 @@ Initial reactions:
 - [ ] Filter by script.
 - [ ] Filter by opponent.
 - [ ] Filter by category.
-- [ ] Filter by state.
-- [ ] Sort by newest.
-- [ ] Sort by oldest unanswered.
-- [ ] Sort by same-question count.
+- [x] Filter by state.
+- [x] Sort by newest.
+- [x] Sort by oldest unanswered.
+- [x] Sort by same-question count.
 - [ ] Sort by active Game Week relevance.
-- [ ] Allow inline coach reply.
-- [ ] Allow inline resolve.
+- [x] Allow inline coach reply.
+- [x] Allow inline resolve.
 - [ ] Allow pinning an answer.
-- [ ] Allow opening full play detail.
+- [x] Allow opening full play detail.
 - [ ] Allow adding the play to a practice review period.
 - [ ] Show response-time metrics carefully without turning them into punitive rankings.
-- [ ] Add mobile coach inbox layout.
+- [x] Add mobile coach inbox layout.
 - [ ] Add iPad split-view inbox layout.
 - [ ] Add desktop triage layout.
 
