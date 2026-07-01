@@ -1,4 +1,4 @@
-// @ts-check
+// @ts-nocheck
 /**
  * Full game-week workflow E2E tests — #271–#281
  *
@@ -185,8 +185,8 @@ test.describe("Full game-week workflow (#271–#281)", () => {
 
     // Grab the _id of the first play from JS context
     const playId = await page.evaluate(() => {
-      if (typeof plays === "undefined" || !plays.length) return null;
-      return plays[0]?._id || null;
+      if (typeof window.plays === "undefined" || !window.plays.length) return null;
+      return window.plays[0]?._id || null;
     });
 
     if (!playId) { test.skip(); return; }
@@ -201,8 +201,8 @@ test.describe("Full game-week workflow (#271–#281)", () => {
 
     // Check script contains same _id
     const scriptPlayId = await page.evaluate((origId) => {
-      if (typeof script === "undefined" || !script.length) return null;
-      const found = script.find((p) => p._id === origId || p.sourceId === origId);
+      if (typeof window.script === "undefined" || !window.script.length) return null;
+      const found = window.script.find((p) => p._id === origId || p.sourceId === origId);
       return found ? (found._id || found.sourceId) : null;
     }, playId);
 
@@ -220,14 +220,14 @@ test.describe("Full game-week workflow (#271–#281)", () => {
     ).first();
     if (await addBtn.count() === 0) { test.skip(); return; }
 
-    const countBefore = await page.evaluate(() => (typeof script !== "undefined" ? script.length : 0));
+    const countBefore = await page.evaluate(() => (typeof window.script !== "undefined" ? window.script.length : 0));
 
     await addBtn.click();
     await page.waitForTimeout(200);
     await addBtn.click(); // second add
     await page.waitForTimeout(200);
 
-    const countAfter = await page.evaluate(() => (typeof script !== "undefined" ? script.length : 0));
+    const countAfter = await page.evaluate(() => (typeof window.script !== "undefined" ? window.script.length : 0));
 
     // Should have added at most 1 (some apps allow duplicates; this asserts no more than 2 were added)
     expect(countAfter - countBefore).toBeLessThanOrEqual(2);

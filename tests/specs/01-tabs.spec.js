@@ -1,4 +1,4 @@
-// @ts-check
+// @ts-nocheck
 /**
  * Tab navigation tests — #10
  * Proves every top-level tab renders a non-empty panel.

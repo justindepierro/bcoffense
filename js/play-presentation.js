@@ -1397,6 +1397,7 @@ function closePlayPresentation() {
   setPlayPresentationTelestrator(false);
   clearPlayPresentationTele();
   setPlayPresentationDetailPanel(false);
+  if (typeof closePresentationDiscussion === "function") closePresentationDiscussion();
   playPresentationState.imageToken += 1;
   cleanupPlayPresentationDiagramRenderer();
   cleanupPlayPresentationMobileLandscape();
@@ -1502,6 +1503,7 @@ function movePlayPresentation(direction) {
   clearPlayPresentationTele();
   renderPlayPresentation();
   if (playPresentationDetailOpen) renderPlayPresentationDetailPanel();
+  if (typeof syncPresentationDiscussion === "function") syncPresentationDiscussion();
 }
 
 function getPlayPresentationChipMarkup(play) {

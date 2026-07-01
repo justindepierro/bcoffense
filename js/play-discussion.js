@@ -411,6 +411,113 @@ function retryDiscussion() {
   }
 }
 
+// ── Presentation (Swipe View) Discussion Drawer ───────────────────────────────
+
+/**
+ * Get the play currently displayed in the presentation overlay.
+ * Returns null if the presentation isn't open or no play is loaded.
+ */
+function _ppCurrentPlay() {
+  if (typeof playPresentationState === "undefined") return null;
+  const item = playPresentationState.items?.[playPresentationState.index];
+  return item?.play || item || null;
+}
+
+/**
+ * Open (or refresh) the discussion drawer for the current presentation play.
+ * Called by the 💬 button and by syncPresentationDiscussion() on navigation.
+ */
+async function openPresentationDiscussion() {
+  const play = _ppCurrentPlay();
+  const drawer = document.getElementById("ppDiscDrawer");
+  const btn = document.getElementById("playPresentationDiscBtn");
+  if (!drawer) return;
+
+  drawer.hidden = false;
+  drawer.setAttribute("aria-hidden", "false");
+  if (btn) btn.setAttribute("aria-pressed", "true");
+
+  // Title
+  const titleEl = document.getElementById("ppDiscDrawerTitle");
+  if (titleEl && play) {
+    const label = [play.formation, play.play].filter(Boolean).join(" ");
+    titleEl.textContent = `💬 ${label || "Discussion"}`;
+  }
+
+  if (!play) {
+    const body = document.getElementById("ppDiscDrawerBody");
+    if (body) setInnerHTML(body, `<p class="disc-empty">No play selected.</p>`);
+    return;
+  }
+
+  const playId = getPlayThreadId(play);
+  const playSig = [play.formation, play.play].filter(Boolean).join(" ");
+
+  const body = document.getElementById("ppDiscDrawerBody");
+  if (body) {
+    body.innerHTML = `<p class="disc-loading">Loading…</p>`;
+  }
+
+  await _discEnsureUserId();
+
+  // Re-use the same load path as the workflow panel, targeting the drawer body
+  if (body) {
+    try {
+      const res = await fetch(`/api/threads/${playId}`);
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
+      const data = await res.json();
+      if (!data.ok) throw new Error(data.error || "Failed to load");
+
+      // Update button count badge
+      if (btn && data.thread) {
+        if (data.thread.total > 0) btn.dataset.count = data.thread.total;
+        else delete btn.dataset.count;
+      }
+
+      _discRenderBody(body, data, playId, playSig);
+    } catch (err) {
+      setInnerHTML(
+        body,
+        `<p class="disc-error">Couldn't load: ${escapeHtml(err.message)}</p>` +
+        `<button class="btn btn-xs" data-action="retryPresentationDiscussion">Retry</button>`,
+      );
+    }
+  }
+}
+
+function closePresentationDiscussion() {
+  const drawer = document.getElementById("ppDiscDrawer");
+  if (drawer) {
+    drawer.hidden = true;
+    drawer.setAttribute("aria-hidden", "true");
+  }
+  const btn = document.getElementById("playPresentationDiscBtn");
+  if (btn) btn.setAttribute("aria-pressed", "false");
+}
+
+function togglePresentationDiscussion() {
+  const drawer = document.getElementById("ppDiscDrawer");
+  if (!drawer || drawer.hidden) {
+    openPresentationDiscussion();
+  } else {
+    closePresentationDiscussion();
+  }
+}
+
+/**
+ * Called by play-presentation.js after navigation to refresh the drawer
+ * if it's already open. The button count badge is also reset.
+ */
+function syncPresentationDiscussion() {
+  const drawer = document.getElementById("ppDiscDrawer");
+  if (!drawer || drawer.hidden) return;
+  openPresentationDiscussion();
+}
+
+function retryPresentationDiscussion() {
+  openPresentationDiscussion();
+}
+
 // ── Char count + keyboard shortcut ───────────────────────────────────────────
 
 document.addEventListener("input", (e) => {

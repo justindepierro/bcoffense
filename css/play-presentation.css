@@ -1300,6 +1300,87 @@ body.play-presentation-open {
   }
 }
 
+/* ===== Discussion drawer — pp-disc-drawer ===== */
+.pp-disc-drawer {
+  position: absolute;
+  top: 0;
+  right: 0;
+  bottom: 0;
+  z-index: var(--z-toast);
+  display: flex;
+  flex-direction: column;
+  width: min(420px, 90vw);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg) 0 0 var(--radius-lg);
+  background: var(--color-bg-body);
+  color: var(--color-text);
+  box-shadow: var(--shadow-lg);
+  padding-top: env(safe-area-inset-top, 0px);
+  padding-right: env(safe-area-inset-right, 0px);
+}
+
+.pp-disc-drawer[hidden] { display: none; }
+
+.pp-disc-drawer-head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  flex-shrink: 0;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+}
+.pp-disc-drawer-head h2 {
+  margin: 0;
+  font-size: var(--font-size-md);
+  font-weight: 700;
+}
+
+.pp-disc-drawer-body {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding: var(--space-md);
+  display: flex;
+  flex-direction: column;
+}
+
+/* Keep disc-* components readable inside the dark presentation overlay */
+.pp-disc-drawer .disc-post-body { white-space: pre-wrap; }
+.pp-disc-drawer .disc-composer { border-top-color: var(--color-border); }
+.pp-disc-drawer .disc-section { border: none; background: none; padding: 0; }
+
+/* Indicator badge on the 💬 header button */
+#playPresentationDiscBtn[data-count]::after {
+  content: attr(data-count);
+  display: inline-block;
+  margin-left: 3px;
+  font-size: 10px;
+  font-weight: 700;
+  background: var(--color-primary);
+  color: #fff;
+  border-radius: var(--radius-pill);
+  padding: 0 5px;
+  vertical-align: middle;
+  line-height: 16px;
+}
+
+@media (orientation: portrait) {
+  .pp-disc-drawer {
+    top: auto;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    width: auto;
+    max-height: 68vh;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+    padding-right: 0;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+}
+
 /* ===== M-041 — Icon buttons, setup sheet, iPad help, theme override ===== */
 .pp-icon-btn {
   display: inline-flex;

@@ -3881,6 +3881,8 @@
           aria-label="Watch video clips" title="Watch video clips" hidden>🎬</button>
         <button id="playPresentationDetailBtn" class="pp-icon-btn" data-action="togglePlayPresentationDetailPanel"
           aria-pressed="false" aria-label="Show play detail" title="Show play detail">ℹ️</button>
+        <button id="playPresentationDiscBtn" class="pp-icon-btn" data-action="togglePresentationDiscussion"
+          aria-pressed="false" aria-label="Play discussion" title="Play discussion">💬</button>
         <button id="playPresentationFullscreenBtn" class="pp-icon-btn" data-action="togglePlayPresentationFullscreen"
           aria-pressed="false" aria-label="Enter Full Screen" title="Enter Full Screen" hidden>⛶</button>
         <button id="playPresentationClose" class="pp-close-btn" data-action="closePlayPresentation"
@@ -3963,6 +3965,15 @@
           aria-label="Close play detail" title="Close">✕</button>
       </header>
       <div id="playPresentationDetailBody" class="pp-detail-panel-body"></div>
+    </aside>
+    <aside id="ppDiscDrawer" class="pp-disc-drawer" role="dialog" aria-modal="false"
+      aria-label="Play discussion" hidden>
+      <header class="pp-disc-drawer-head">
+        <h2 id="ppDiscDrawerTitle">💬 Discussion</h2>
+        <button type="button" class="pp-detail-panel-close" data-action="closePresentationDiscussion"
+          aria-label="Close discussion" title="Close">✕</button>
+      </header>
+      <div id="ppDiscDrawerBody" class="pp-disc-drawer-body"></div>
     </aside>
     <footer class="pp-footer" id="playPresentationFooterHint">
       Swipe or arrow keys change plays · 1 Minimum · 2 Player · 3 Coaches · L Lock Position · Esc closes

@@ -4542,8 +4542,12 @@ body.shell-phone .pb-action-sheet {
   font-weight: 600;
   margin-bottom: var(--space-sm);
 }
-.pb-wf-s-icon { font-style: normal; }
-.pb-wf-s-title { flex: 1; }
+.pb-wf-s-icon {
+  font-style: normal;
+}
+.pb-wf-s-title {
+  flex: 1;
+}
 .disc-count {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);
@@ -4562,7 +4566,9 @@ body.shell-phone .pb-action-sheet {
   margin: var(--space-xs) 0;
   padding: 0;
 }
-.disc-error { color: var(--color-danger); }
+.disc-error {
+  color: var(--color-danger);
+}
 
 /* Post list */
 .disc-posts {
@@ -4613,10 +4619,21 @@ body.shell-phone .pb-action-sheet {
   padding: 1px 5px;
   letter-spacing: 0.4px;
 }
-.disc-role-badge--coach { background: color-mix(in srgb, var(--color-primary) 15%, transparent); color: var(--color-primary); }
-.disc-role-badge--admin { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }
-.disc-role-badge--player { background: color-mix(in srgb, var(--color-success) 15%, transparent); color: var(--color-success); }
-.disc-type-icon { font-size: var(--font-size-xs); }
+.disc-role-badge--coach {
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+}
+.disc-role-badge--admin {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+.disc-role-badge--player {
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  color: var(--color-success);
+}
+.disc-type-icon {
+  font-size: var(--font-size-xs);
+}
 .disc-time {
   color: var(--color-text-muted);
   cursor: default;
@@ -4652,7 +4669,9 @@ body.shell-phone .pb-action-sheet {
   cursor: pointer;
   font-size: 12px;
   color: var(--color-text-muted);
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 .disc-action-btn:hover {
   background: var(--color-bg-hover-row);
@@ -4689,7 +4708,9 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-bg-input);
   resize: vertical;
   min-height: 54px;
-  transition: border-color var(--transition-fast), box-shadow var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    box-shadow var(--transition-fast);
 }
 .disc-textarea:focus {
   outline: none;

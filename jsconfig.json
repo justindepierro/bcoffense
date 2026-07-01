@@ -1,0 +1,9 @@
+{
+  "compilerOptions": {
+    "checkJs": false,
+    "module": "commonjs",
+    "lib": ["ES2020", "DOM"]
+  },
+  "include": ["js/**/*.js"],
+  "exclude": ["tests", "node_modules", "functions"]
+}
