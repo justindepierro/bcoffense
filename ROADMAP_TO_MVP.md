@@ -267,7 +267,7 @@ Example:
 - [x] **54.** Add a “Start New Game Week” guided action.
 - [x] **55.** Add a “Resume Current Week” action.
 - [x] **56.** Add quick access to printing without making print controls dominate editing pages.
-- [ ] **57.** Add a consolidated recent activity feed.
+- [x] **57.** Add a consolidated recent activity feed.
 - [x] **58.** Add a small notes/reminders area rather than allowing notes to compete with workflow.
 - [x] **59.** Add role-specific command-center content.
 - [x] **60.** Keep analytics and administrative details behind secondary links.

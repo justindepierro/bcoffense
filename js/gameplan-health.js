@@ -167,7 +167,7 @@ function _gpRenderTouchTracker(board, draftedPlays) {
       </button>`;
   }).join("");
   return `
-    <details class="gp-touch-tracker" ${entries.length <= 8 ? "open" : ""}>
+    <details class="gp-touch-tracker">
       <summary>👥 Touch Tracker <span class="gp-touch-hint">${entries.length} player${entries.length === 1 ? "" : "s"} • click a tile to spotlight buckets</span></summary>
       <div class="gp-touch-grid">${tiles}</div>
     </details>`;

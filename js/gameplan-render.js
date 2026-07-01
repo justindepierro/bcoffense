@@ -399,7 +399,10 @@ function renderGamePlan() {
         <button class="gp-spotlight-clear" data-action="clearGamePlanSpotlight" title="Clear spotlight (Esc)">✕ Clear</button>
       </div>`;
   }
-  wrapper.innerHTML = headerHtml + distHtml + scoreboardHtml + touchHtml + chipsHtml + toolbarHtml + jumpBarHtml + spotlightBannerHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  const statsBarHtml = (distHtml || scoreboardHtml || touchHtml)
+    ? `<div class="gp-stats-bar">${distHtml}${scoreboardHtml}${touchHtml}</div>`
+    : "";
+  wrapper.innerHTML = headerHtml + statsBarHtml + chipsHtml + toolbarHtml + jumpBarHtml + spotlightBannerHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
@@ -1140,7 +1143,7 @@ function _gpRenderScoreboard(board, draftedPlays) {
       </details>`;
   }
   return `
-    <details class="gp-scoreboard" open>
+    <details class="gp-scoreboard">
       <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to spotlight matching buckets &amp; plays</span></summary>
       <div class="gp-score-grid">${tiles}</div>
     </details>`;

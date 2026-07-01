@@ -888,6 +888,33 @@
    v340 — chips, scoreboard, distribution, jump pills, trash zone
    ----------------------------------------------------------------- */
 
+/* Stats bar — distribution + scoreboard + touch tracker in one compact row */
+.gp-stats-bar {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) 0;
+  margin-bottom: var(--space-xs);
+}
+
+.gp-stats-bar .gp-dist-strip {
+  flex: 1 1 160px;
+  min-width: 80px;
+  margin: 0;
+}
+
+.gp-stats-bar > details {
+  flex: 0 0 auto;
+  margin: 0;
+}
+
+/* When a stats panel is opened, expand it to full width below the row items */
+.gp-stats-bar > details[open] {
+  flex-basis: 100%;
+  order: 10;
+}
+
 /* Distribution strip */
 .gp-dist-strip {
   display: flex;

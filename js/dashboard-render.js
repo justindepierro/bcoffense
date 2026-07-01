@@ -96,8 +96,113 @@ function _dashGetTimestamp(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function _dashFormatSavedAge(value) {
-  const timestamp = _dashGetTimestamp(value);
+function _dashGetTimestamp(value) {
+  if (!value) return 0;
+  if (typeof value === "number" && Number.isFinite(value)) return value;
+  const parsed = new Date(value).getTime();
+  return Number.isFinite(parsed) ? parsed : 0;
+}
+
+function _dashBuildActivityFeed(gw) {
+  const events = [];
+
+  const addDraftEvent = (key, icon, label, detailFn) => {
+    const draft = storageManager.get(key, null);
+    if (!draft) return;
+    const ts = typeof getDraftTimestamp === "function" ? getDraftTimestamp(draft) : 0;
+    if (!ts || (typeof isDraftExpired === "function" && isDraftExpired(draft))) return;
+    events.push({ icon, label, detail: detailFn ? detailFn(draft) : "", ts, tab: null });
+  };
+
+  // Script draft
+  const scriptDraft = storageManager.get(STORAGE_KEYS.SCRIPT_DRAFT, null);
+  if (scriptDraft) {
+    const ts = typeof getDraftTimestamp === "function" ? getDraftTimestamp(scriptDraft) : 0;
+    if (ts && !(typeof isDraftExpired === "function" && isDraftExpired(scriptDraft))) {
+      const count = Array.isArray(scriptDraft.plays)
+        ? scriptDraft.plays.filter((p) => !p?.isSeparator).length : 0;
+      events.push({ icon: "📋", label: "Script updated", detail: count ? `${count} plays` : "", ts, tab: "script" });
+    }
+  }
+
+  // Wristband draft
+  const wbDraft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
+  if (wbDraft) {
+    const ts = typeof getDraftTimestamp === "function" ? getDraftTimestamp(wbDraft) : 0;
+    if (ts && !(typeof isDraftExpired === "function" && isDraftExpired(wbDraft))) {
+      const count = _dashCountDraftWristbandPlays(wbDraft);
+      events.push({ icon: "📎", label: "Wristband updated", detail: count ? `${count} calls` : "", ts, tab: "wristband" });
+    }
+  }
+
+  // Call sheet draft
+  const csDraft = storageManager.get(STORAGE_KEYS.CALLSHEET_DRAFT, null);
+  if (csDraft) {
+    const ts = typeof getDraftTimestamp === "function" ? getDraftTimestamp(csDraft) : 0;
+    if (ts && !(typeof isDraftExpired === "function" && isDraftExpired(csDraft))) {
+      const count = _dashCountDraftCallSheetPlays(csDraft);
+      events.push({ icon: "📄", label: "Call Sheet updated", detail: count ? `${count} plays` : "", ts, tab: "callsheet" });
+    }
+  }
+
+  // Tendencies draft
+  const tdDraft = storageManager.get(STORAGE_KEYS.TENDENCIES_DRAFT, null);
+  if (tdDraft) {
+    const ts = typeof getDraftTimestamp === "function" ? getDraftTimestamp(tdDraft) : 0;
+    if (ts && !(typeof isDraftExpired === "function" && isDraftExpired(tdDraft))) {
+      events.push({ icon: "🔍", label: "Scouting draft started", detail: "", ts, tab: "tendencies" });
+    }
+  }
+
+  // Latest saved script
+  const savedScripts = typeof getSavedScripts === "function"
+    ? getSavedScripts()
+    : storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+  const latestScript = _dashGetLatestSaved(savedScripts);
+  if (latestScript) {
+    const ts = _dashGetTimestamp(latestScript.savedAt);
+    if (ts) events.push({ icon: "💾", label: "Script saved", detail: latestScript.name || "Untitled", ts, tab: "script" });
+  }
+
+  // Latest saved wristband
+  const savedWB = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
+  const latestWB = _dashGetLatestSaved(savedWB);
+  if (latestWB) {
+    const ts = _dashGetTimestamp(latestWB.savedAt);
+    if (ts) events.push({ icon: "💾", label: "Wristband saved", detail: latestWB.title || "Untitled", ts, tab: "wristband" });
+  }
+
+  // Latest game plan snapshot for this week
+  const snapshots = _dashGetGamePlanSnapshotsForWeek(gw);
+  const latestSnap = _dashGetLatestSaved(snapshots);
+  if (latestSnap) {
+    const ts = _dashGetTimestamp(latestSnap.savedAt);
+    if (ts) events.push({ icon: "🎯", label: "Game Plan saved", detail: latestSnap.name || "Untitled", ts, tab: "gameplan" });
+  }
+
+  events.sort((a, b) => b.ts - a.ts);
+  return events.slice(0, 6);
+}
+
+function _dashBuildActivityItem(event) {
+  const timeLabel = event.ts
+    ? new Date(event.ts).toLocaleString("en-US", { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" })
+    : "";
+  const actionAttr = event.tab ? `data-action="continueToModule" data-arg="${escapeHtml(event.tab)}"` : "";
+  const tag = event.tab ? "button" : "div";
+  const typeAttr = event.tab ? 'type="button"' : "";
+  return `
+    <li class="dash-activity-item">
+      <${tag} class="dash-activity-row${event.tab ? " dash-activity-link" : ""}" ${actionAttr} ${typeAttr}>
+        <span class="dash-activity-icon" aria-hidden="true">${event.icon}</span>
+        <span class="dash-activity-label">${escapeHtml(event.label)}</span>
+        ${event.detail ? `<span class="dash-activity-detail">${escapeHtml(event.detail)}</span>` : ""}
+        <span class="dash-activity-time">${escapeHtml(timeLabel)}</span>
+      </${tag}>
+    </li>`;
+}
+
+
   if (!timestamp) return "no saved date";
   const ageMs = Date.now() - timestamp;
   if (ageMs < 60 * 60 * 1000) return "saved this hour";
@@ -1062,6 +1167,8 @@ function renderGameWeekCommandCenter(gw, opponents) {
   const queue = _dashBuildActionQueue(metrics, gw);
   const queueHtml = queue.map(_dashBuildActionQueueItem).join("");
   const activeQueueCount = queue.filter((item) => item.level !== "clean").length;
+  const activityFeed = _dashBuildActivityFeed(gw);
+  const activityHtml = activityFeed.map(_dashBuildActivityItem).join("");
   const weeklyFocus = _dashBuildWeeklyFocus(gw);
   const installPriorityHtml = _dashBuildInstallPriorityRows(
     weeklyFocus.install.priorities,
@@ -1178,6 +1285,17 @@ function renderGameWeekCommandCenter(gw, opponents) {
       <div class="dash-action-list">
         ${queueHtml}
       </div>
+    </div>
+    <div class="dash-activity-feed" aria-label="Recent module activity">
+      <div class="dash-activity-header">
+        <span class="dash-command-eyebrow">Recent Activity</span>
+        <h4>${activityFeed.length === 0 ? "No recent activity" : "Latest changes across modules"}</h4>
+      </div>
+      <ul class="dash-activity-list" role="list">
+        ${activityFeed.length > 0
+          ? activityHtml
+          : `<li class="dash-activity-empty">Start working in any module — activity will appear here.</li>`}
+      </ul>
     </div>
     <div class="dash-weekly-focus" aria-label="Weekly notes and install priorities">
       <div class="dash-focus-header">
