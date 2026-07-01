@@ -7,6 +7,10 @@
 
 const PBKDF2_ITERATIONS = 100_000;
 
+// ── Lockout policy ───────────────────────────────────────────────────────────
+const LOCKOUT_MAX_ATTEMPTS = 5;          // failed logins before lockout
+const LOCKOUT_DURATION_SECONDS = 15 * 60; // 15-minute cooldown
+
 function enc() { return new TextEncoder(); }
 
 function bytesToHex(bytes) {
@@ -89,7 +93,8 @@ export async function findUserById(db, id) {
 
 /**
  * Verify D1 player credentials.
- * Returns a session user object on success, null on failure.
+ * Returns a session user object on success, null on failure,
+ * or { locked: true, until: <unix> } when the account is locked out.
  */
 export async function verifyD1Credentials(email, password, db) {
   const user = await findUserByEmail(db, email);
@@ -97,12 +102,33 @@ export async function verifyD1Credentials(email, password, db) {
   if (user.status === "invited" || user.status === "disabled") return null;
   if (!user.password_hash) return null;
 
-  const ok = await verifyPassword(password, user.password_hash);
-  if (!ok) return null;
+  const now = Math.floor(Date.now() / 1000);
 
-  // Update last_login_at
-  await db.prepare("UPDATE users SET last_login_at = ? WHERE id = ?")
-    .bind(Math.floor(Date.now() / 1000), user.id)
+  // ── Lockout check ──────────────────────────────────────────────────────────
+  if (user.lockout_until && user.lockout_until > now) {
+    return { locked: true, until: user.lockout_until };
+  }
+
+  const ok = await verifyPassword(password, user.password_hash);
+
+  if (!ok) {
+    // Increment failure counter, set lockout if threshold reached
+    const newCount = (user.failed_login_count || 0) + 1;
+    const lockUntil = newCount >= LOCKOUT_MAX_ATTEMPTS
+      ? now + LOCKOUT_DURATION_SECONDS
+      : null;
+    await db
+      .prepare("UPDATE users SET failed_login_count = ?, lockout_until = ?, updated_at = ? WHERE id = ?")
+      .bind(newCount, lockUntil, now, user.id)
+      .run();
+    if (lockUntil) return { locked: true, until: lockUntil };
+    return null;
+  }
+
+  // ── Success: reset lockout + update last_login_at ──────────────────────────
+  await db
+    .prepare("UPDATE users SET failed_login_count = 0, lockout_until = NULL, last_login_at = ?, updated_at = ? WHERE id = ?")
+    .bind(now, now, user.id)
     .run();
 
   return {
@@ -111,7 +137,38 @@ export async function verifyD1Credentials(email, password, db) {
     role: user.role,
     label: user.display_name,
     d1: true,
+    iat: now,
   };
+}
+
+/**
+ * Change a D1 player's password after verifying the current one.
+ * Returns null on success, or an error string on failure.
+ */
+export async function changeD1Password(db, userId, currentPassword, newPassword) {
+  const user = await findUserById(db, userId);
+  if (!user || !user.password_hash) return "Account not found.";
+
+  const ok = await verifyPassword(currentPassword, user.password_hash);
+  if (!ok) return "Current password is incorrect.";
+
+  const err = validatePassword(newPassword);
+  if (err) return err;
+
+  await updateD1Password(db, userId, newPassword);
+  return null;
+}
+
+/**
+ * Invalidate all existing sessions for a user by updating sessions_invalid_before.
+ * Any cookie issued before this timestamp will be rejected at API endpoints.
+ */
+export async function invalidateAllD1Sessions(db, userId) {
+  const now = Math.floor(Date.now() / 1000);
+  await db
+    .prepare("UPDATE users SET sessions_invalid_before = ?, updated_at = ? WHERE id = ?")
+    .bind(now, now, userId)
+    .run();
 }
 
 /**

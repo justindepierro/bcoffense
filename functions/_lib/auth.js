@@ -1,5 +1,6 @@
 const SESSION_COOKIE = "bc_auth";
-const SESSION_TTL_SECONDS = 12 * 60 * 60;
+const SESSION_TTL_SECONDS = 12 * 60 * 60;       // staff: 12h
+const PLAYER_SESSION_TTL_SECONDS = 72 * 60 * 60;  // players: 72h
 
 const USERS = {
   admin: {
@@ -189,17 +190,19 @@ export async function createSessionCookie(user, env) {
   const now = Math.floor(Date.now() / 1000);
   // D1 player sessions carry d1:true + d1_user_id so the middleware can
   // validate them without consulting the USERS map.
-  const extra = user.d1 ? { d1: true, d1_user_id: user.d1_user_id } : {};
+  const isPlayer = !!user.d1;
+  const ttl = isPlayer ? PLAYER_SESSION_TTL_SECONDS : SESSION_TTL_SECONDS;
+  const extra = isPlayer ? { d1: true, d1_user_id: user.d1_user_id } : {};
   const payload = base64UrlEncodeJson({
     username: user.username,
     role: user.role,
     label: user.label,
     iat: now,
-    exp: now + SESSION_TTL_SECONDS,
+    exp: now + ttl,
     ...extra,
   });
   const signature = await signPayload(payload, env);
-  return `${SESSION_COOKIE}=${payload}.${signature}; Path=/; Max-Age=${SESSION_TTL_SECONDS}; HttpOnly; Secure; SameSite=Lax`;
+  return `${SESSION_COOKIE}=${payload}.${signature}; Path=/; Max-Age=${ttl}; HttpOnly; Secure; SameSite=Lax`;
 }
 
 export async function getSessionFromRequest(request, env) {
@@ -222,6 +225,21 @@ export async function getSessionFromRequest(request, env) {
     // Static staff sessions must match the USERS map
     const isStaticSession = !isD1Session && USERS[session.username] && USERS[session.username].role === session.role;
     if (!isD1Session && !isStaticSession) return null;
+
+    // For D1 sessions: check sessions_invalid_before (logout-all support)
+    if (isD1Session && env && env.DB && session.iat) {
+      try {
+        const row = await env.DB
+          .prepare("SELECT sessions_invalid_before FROM users WHERE id = ? LIMIT 1")
+          .bind(session.d1_user_id)
+          .first();
+        if (row && row.sessions_invalid_before && session.iat < row.sessions_invalid_before) {
+          return null; // session was invalidated by logout-all
+        }
+      } catch (_) {
+        // If D1 check fails, allow the session (fail open for availability)
+      }
+    }
 
     return {
       username: session.username,

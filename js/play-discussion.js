@@ -100,6 +100,7 @@ function _discReactionsHtml(postId, reactions) {
 // ── Reaction picker ───────────────────────────────────────────────────────────
 
 let _discPickerPostId = null;
+let _discPickerEscHandler = null;
 
 function openDiscReactionPicker(postId) {
   _discPickerPostId = postId;
@@ -128,6 +129,11 @@ function openDiscReactionPicker(postId) {
   setInnerHTML(picker, closeBtn + `<div class="disc-picker-grid">${btns}</div>`);
   picker.classList.add("visible");
 
+  // Escape key closes the picker
+  if (_discPickerEscHandler) document.removeEventListener("keydown", _discPickerEscHandler);
+  _discPickerEscHandler = (e) => { if (e.key === "Escape") closeDiscReactionPicker(); };
+  document.addEventListener("keydown", _discPickerEscHandler);
+
   // Position near the react button
   const triggerBtn = document.querySelector(`[data-action="openDiscReactionPicker"][data-arg="${escapeHtml(postId)}"]`);
   if (triggerBtn) {
@@ -146,6 +152,10 @@ function closeDiscReactionPicker() {
   const picker = document.getElementById("discReactionPicker");
   picker?.classList.remove("visible");
   _discPickerPostId = null;
+  if (_discPickerEscHandler) {
+    document.removeEventListener("keydown", _discPickerEscHandler);
+    _discPickerEscHandler = null;
+  }
 }
 
 async function selectDiscReaction(arg) {
@@ -367,6 +377,18 @@ function _discPostHtml(p, playId, isReply = false) {
   const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
   const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin") ? " disc-post--coach" : "";
 
+  // ── Actions: Reply always visible; edit/delete/moderate in ⋯ more menu ──
+  const inlineActions = replyBtn;
+  const moreItems = [resolveBtn, reopenBtn, editBtn, deleteBtn].filter(Boolean).join("");
+  const moreMenu = moreItems
+    ? `<details class="disc-more-wrap">` +
+      `<summary class="disc-more-btn" title="More options" aria-label="More options">⋯</summary>` +
+      `<div class="disc-more-menu">${moreItems}</div></details>`
+    : "";
+  const actionsHtml = (inlineActions || moreMenu)
+    ? `<div class="disc-post-actions">${inlineActions}${moreMenu}</div>`
+    : `<div class="disc-post-actions"></div>`;
+
   // Render inline replies
   const replies = p.replies || [];
   const replyCount = p.replyCount || 0;
@@ -397,7 +419,8 @@ function _discPostHtml(p, playId, isReply = false) {
 
   return (
     `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
-    ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}">` +
+    ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}"` +
+    ` data-author-name="${escapeHtml(p.authorName)}" data-body-text="${escapeHtml((p.body || "").slice(0, 80))}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
     `<div class="disc-post-content">` +
     `<div class="disc-post-meta">` +
@@ -409,7 +432,7 @@ function _discPostHtml(p, playId, isReply = false) {
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
     _discReactionsHtml(p.id, p.reactions) +
-    `<div class="disc-post-actions">` + replyBtn + resolveBtn + reopenBtn + editBtn + deleteBtn + `</div>` +
+    actionsHtml +
     `</div>` +
     replyComposerPlaceholder +
     repliesHtml +
@@ -473,6 +496,11 @@ async function submitDiscPost(arg, el) {
 
   const body = textarea.value.trim();
   if (!body) { textarea.focus(); return; }
+
+  if (!navigator.onLine) {
+    showToast("You're offline — reconnect and try again.", { duration: 4000, type: "warning" });
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = "Posting…";
@@ -542,7 +570,20 @@ function openDiscReplyComposer(arg) {
   // Find playSig from the main composer if available
   const playSig = _discLastPlaySig || "";
 
-  slot.innerHTML = _discComposerHtml(playId, playSig, parentPostId);
+  // Build reply-to context banner from parent post attributes
+  const parentPostEl = document.getElementById(`disc-post-${parentPostId}`);
+  const parentAuthor = parentPostEl?.dataset?.authorName || "";
+  const parentBody = parentPostEl?.dataset?.bodyText || "";
+  const bannerHtml = parentAuthor
+    ? `<div class="disc-reply-to-banner">` +
+      `↩ Replying to <strong>${escapeHtml(parentAuthor)}</strong>` +
+      (parentBody
+        ? `: <em class="disc-reply-preview">${escapeHtml(parentBody.slice(0, 60))}${parentBody.length >= 60 ? "…" : ""}</em>`
+        : "") +
+      `</div>`
+    : "";
+
+  slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
   slot.querySelector("textarea")?.focus();
 }
 
@@ -563,6 +604,11 @@ async function submitDiscReply(arg, el) {
 
   const body = textarea.value.trim();
   if (!body) { textarea.focus(); return; }
+
+  if (!navigator.onLine) {
+    showToast("You're offline — reconnect and try again.", { duration: 4000, type: "warning" });
+    return;
+  }
 
   btn.disabled = true;
   btn.textContent = "Posting…";

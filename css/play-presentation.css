@@ -1353,13 +1353,44 @@ body.play-presentation-open {
 .pp-disc-drawer .disc-post-body {
   white-space: pre-wrap;
 }
-.pp-disc-drawer .disc-composer {
-  border-top-color: var(--color-border);
-}
 .pp-disc-drawer .disc-section {
   border: none;
   background: none;
   padding: 0;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+
+/* Sticky composer at bottom of drawer — works in both landscape and portrait */
+.pp-disc-drawer-body .disc-body {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 0;
+}
+.pp-disc-drawer-body .disc-posts {
+  flex: 1;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  -webkit-overflow-scrolling: touch;
+  padding-bottom: var(--space-xs);
+}
+.pp-disc-drawer-body .disc-composer {
+  flex-shrink: 0;
+  margin-top: 0;
+  border-top: 1px solid var(--color-border);
+  padding: var(--space-sm);
+  padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom, 0px));
+  background: var(--color-bg-body);
+  z-index: 1;
+}
+.pp-disc-drawer-body .disc-thread-controls {
+  flex-shrink: 0;
+  padding: var(--space-xs) var(--space-sm);
+  border-top: 1px solid var(--color-border-light);
 }
 
 /* Reactions in dark drawer context */
@@ -1387,6 +1418,36 @@ body.play-presentation-open {
   color: var(--color-warning);
 }
 
+/* More menu in dark drawer context */
+.pp-disc-drawer .disc-more-menu {
+  background: #1e2a38;
+  border-color: rgb(255 255 255 / 15%);
+}
+.pp-disc-drawer .disc-more-btn,
+.pp-disc-drawer .disc-reply-btn,
+.pp-disc-drawer .disc-action-btn {
+  color: rgb(255 255 255 / 55%);
+}
+.pp-disc-drawer .disc-more-btn:hover,
+.pp-disc-drawer .disc-reply-btn:hover,
+.pp-disc-drawer .disc-action-btn:hover {
+  background: rgb(255 255 255 / 10%);
+  color: #fff;
+}
+
+/* Reply-to banner in dark drawer */
+.pp-disc-drawer .disc-reply-to-banner {
+  background: rgb(255 255 255 / 5%);
+  border-left-color: var(--color-primary);
+  color: rgb(255 255 255 / 60%);
+}
+
+/* Offline banner in dark drawer */
+.pp-disc-drawer .disc-offline-banner {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: color-mix(in srgb, var(--color-warning) 35%, transparent);
+}
+
 /* Indicator badge on the 💬 header button */
 #playPresentationDiscBtn[data-count]::after {
   content: attr(data-count);
@@ -1412,7 +1473,10 @@ body.play-presentation-open {
     max-height: 68vh;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding-right: 0;
-    padding-bottom: env(safe-area-inset-bottom, 0px);
+    padding-bottom: 0;
+  }
+  .pp-disc-drawer-body .disc-composer {
+    padding-bottom: max(var(--space-md), env(safe-area-inset-bottom, 16px));
   }
 }
 
