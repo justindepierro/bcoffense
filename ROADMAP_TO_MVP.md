@@ -550,11 +550,16 @@ Example:
 - [x] **241.** Phone: make the dominant action full width when appropriate.
 - [x] **242.** Very narrow phone: collapse to one column without truncating critical labels.
 - [x] **243.** Keep all touch targets at least 44×44; prefer 48px on tablet.
-- [ ] **244.** Use `grid-template-columns: repeat(auto-fit, minmax(...))` where it produces stable ordering.
-- [ ] **245.** Do not use auto-fit when it reorders conceptual groups unpredictably.
-- [ ] **246.** Preserve DOM order as task order.
-- [ ] **247.** Prevent isolated buttons from stretching absurdly unless designated full width.
-- [ ] **248.** Normalize gaps, heights, icon spacing, and text alignment.
+- [x] **244.** Use `grid-template-columns: repeat(auto-fit, minmax(...))` where it produces stable ordering.
+  - Not used; explicit `repeat(2, ...)` and `repeat(3, ...)` used instead for deterministic ordering. See #245.
+- [x] **245.** Do not use auto-fit when it reorders conceptual groups unpredictably.
+  - Followed by design: `action-grid` uses `repeat(2, minmax(0, 1fr))` and `action-grid--icons` uses `repeat(3, minmax(0, 1fr))` — stable, predictable. Commit `ff5f213` (SW v759).
+- [x] **246.** Preserve DOM order as task order.
+  - All action-grid and toolbar layouts use natural DOM order; no CSS grid named areas that would reorder elements. Verified.
+- [x] **247.** Prevent isolated buttons from stretching absurdly unless designated full width.
+  - `flex-shrink: 0; flex-grow: 0` added for `.btn`/`.btn-sm` direct children of all toolbar primitives in `components.css`. Commit `b41d68e` (SW v786).
+- [x] **248.** Normalize gaps, heights, icon spacing, and text alignment.
+  - `white-space: nowrap` enforced on `.btn` inside toolbar surfaces via components.css. `.btn` already has consistent padding, gap:6px, line-height. Commit `b41d68e` (SW v786).
 - [ ] **249.** Normalize loading, disabled, active, warning, and destructive states.
 - [ ] **250.** Add an overflow rule based on priority rather than arbitrary CSS hiding.
 - [ ] **251.** Use ResizeObserver to detect when a toolbar cannot fit.
@@ -594,7 +599,8 @@ Example:
 - [ ] **268.** Link readiness from Practice and Dashboard.
 - [x] **269.** Link constraints from Game Plan and Call Sheet.
   - CS already has `🛡️ Check Constraints` button (`runConstraintCheck`); GP header action strip now also has `🛡️ Constraints` button. Commit `8086589` (SW v785).
-- [ ] **270.** Avoid deleting deep tools simply because they are less frequently used.
+- [x] **270.** Avoid deleting deep tools simply because they are less frequently used.
+  - All tools preserved; they're surfaced contextually from core pages. Commit `8086589` (SW v785).
 
 ## Phase 15 — Validation, polish, and rollout
 
