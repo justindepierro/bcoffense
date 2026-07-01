@@ -354,7 +354,7 @@
         attempt.catch(() => {
           video.muted = true;
           const retry = video.play();
-          if (retry && typeof retry.catch === "function") retry.catch(() => {});
+          if (retry && typeof retry.catch === "function") retry.catch(() => { });
         });
       }
     };

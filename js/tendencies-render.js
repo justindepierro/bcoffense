@@ -25,7 +25,7 @@ function renderTendenciesHome() {
   container.innerHTML = `
     <div class="td-home">
       <div class="td-home-header">
-        <h2>🎯 Defensive Tendencies</h2>
+        <h2>🎯 Opponent Scout</h2>
         <p class="td-subtitle">Chart defensive plays while watching film. Build opponent scouting reports and export for analysis.</p>
       </div>
       <div class="td-opponent-section">

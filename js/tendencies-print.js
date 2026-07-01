@@ -67,7 +67,7 @@ function printTendencies() {
       .join("");
 
     content.innerHTML = `
-      <h1 class="td-print-title">🎯 ${escapeHtml(opp.name)} — Defensive Tendencies</h1>
+      <h1 class="td-print-title">🎯 ${escapeHtml(opp.name)} — Scouting Report</h1>
       <div class="td-print-stats">
         <span>Plays: <strong>${total}</strong></span>
         <span>Run: <strong>${runP}</strong> (${total > 0 ? Math.round((runP / total) * 100) : 0}%)</span>

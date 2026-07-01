@@ -62,7 +62,7 @@ function _buildCommandBaseItems() {
     ["gameplan", "Game Plan", "Plan openers, must-haves, answers, and weekly calls"],
     ["callsheet", "Call Sheet", "Organize calls by situation and game-day category"],
     ["dashboard", "Dashboard", "Review game week status, notes, and scouting links"],
-    ["tendencies", "Defensive Tendencies", "Chart opponents and review defensive patterns"],
+    ["tendencies", "Opponent Scout", "Chart opponents and review defensive tendencies"],
     ["identity", "Identity", "Review offensive identity and team direction"],
     ["offensebuilder", "Offense Builder", "Rate concepts and build offensive packages"],
     ["installation", "Installation", "Track installs, teaching progress, and packages"],

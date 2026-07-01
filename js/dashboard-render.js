@@ -1413,7 +1413,7 @@ function renderDashboard() {
         scoutEl.innerHTML = `
         <div class="dash-no-scouting">
           <p>📊 Select an opponent above to see scouting intel here</p>
-          <p class="dash-hint">Go to the <strong>Def Tendencies</strong> tab to add opponents and chart plays</p>
+          <p class="dash-hint">Go to the <strong>Opponent Scout</strong> tab to add opponents and chart plays</p>
         </div>
       `;
       }

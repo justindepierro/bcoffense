@@ -2,7 +2,7 @@
   "id": "./",
   "name": "Practice Script & Playbook",
   "short_name": "Playbook",
-  "description": "Football practice script builder, wristband maker, call sheet creator, and defensive tendencies tracker.",
+  "description": "Football practice script builder, wristband maker, call sheet creator, and opponent scouting reports.",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

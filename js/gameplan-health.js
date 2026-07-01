@@ -293,7 +293,7 @@ function _gpResolveOpponentTendencies() {
 function openGamePlanTendencyMirror() {
   const opp = _gpResolveOpponentTendencies();
   if (!opp || !Array.isArray(opp.plays) || opp.plays.length === 0) {
-    showToast("No defensive tendencies recorded for this opponent. Chart some on the Tendencies tab first.", { type: "warning", duration: 4000 });
+    showToast("No defensive tendencies recorded for this opponent. Chart some on the Opponent Scout tab first.", { type: "warning", duration: 4000 });
     return;
   }
   const board = _gpEnsureBoard();

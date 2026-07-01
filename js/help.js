@@ -399,7 +399,7 @@ function getHelpDataForTab(tab) {
     },
   };
   data.tendencies = {
-    title: "🎯 Def Tendencies — Shortcuts & Features",
+    title: "🎯 Opponent Scout — Shortcuts & Features",
     sections: [
       {
         icon: "🏠",

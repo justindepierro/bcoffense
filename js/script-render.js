@@ -617,14 +617,13 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
         <div class="script-player-card-head">
           <div class="script-player-card-badge">Play ${playNumber}${wbBadge}</div>
           <div class="script-player-card-actions">
-            ${
-              typeof window.playClips !== "undefined" &&
-              typeof window.playClips.hasForPlay === "function" &&
-              window.playClips.hasForPlay(play)
-                ? `<button class="script-player-clip-btn" data-action="openScriptClipViewer"
+            ${typeof window.playClips !== "undefined" &&
+        typeof window.playClips.hasForPlay === "function" &&
+        window.playClips.hasForPlay(play)
+        ? `<button class="script-player-clip-btn" data-action="openScriptClipViewer"
             data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬 Watch</button>`
-                : ""
-            }
+        : ""
+      }
             <button class="script-player-open-btn" data-action="openScriptPresentation"
               data-idx="${index}" title="Open ${escapeHtml(playLabel)} in swipe view"
               aria-label="Open ${escapeHtml(playLabel)} in swipe view">
