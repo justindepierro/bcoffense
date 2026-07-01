@@ -360,6 +360,11 @@ async function onDashOpponentChange(value) {
   const gw = getGameWeek();
   if (gw.opponentName) {
     showToast(`🏈 Active opponent: ${gw.opponentName}`);
+    // #28: Restore last active tab for this opponent if recorded
+    const savedTab = gw.lastTabs?.[String(idx)];
+    if (savedTab && typeof showTab === "function" && savedTab !== "dashboard") {
+      setTimeout(() => showTab(savedTab), 0);
+    }
   } else {
     showToast("Opponent cleared");
   }

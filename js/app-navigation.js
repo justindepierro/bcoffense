@@ -11,6 +11,9 @@ const TAB_INDEX_MAP = {
   dashboard: 9,
 };
 
+// Timer for debounced last-tab persistence per opponent (#28)
+let _lastTabSaveTimer = null;
+
 // Supporting utilities surfaced through the Utilities menu rather than as
 // equal-weight primary tabs (roadmap immediate fix #7).
 const UTILITY_TABS = new Set([
@@ -164,4 +167,14 @@ function showTab(tabName) {
 
   if (typeof updateMobileCoachDock === "function") updateMobileCoachDock();
   if (typeof queueMobileShellStateSync === "function") queueMobileShellStateSync();
+
+  // #28: Persist last active tab per opponent (debounced to avoid excessive writes)
+  clearTimeout(_lastTabSaveTimer);
+  _lastTabSaveTimer = setTimeout(() => {
+    const gw = getGameWeek();
+    if (gw.opponentIndex === null) return;
+    if (!gw.lastTabs || typeof gw.lastTabs !== "object") gw.lastTabs = {};
+    gw.lastTabs[String(gw.opponentIndex)] = tabName;
+    storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
+  }, 600);
 }

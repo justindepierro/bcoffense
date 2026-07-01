@@ -1793,6 +1793,31 @@ function getActiveOpponent() {
   return resolveGameWeekOpponent(opponents, gw).opponent;
 }
 
+/**
+ * Validate game week artifact references and return any issues (#42).
+ * Returns an array of issue objects; empty array = no issues.
+ */
+function validateGameWeekArtifacts() {
+  const gw = getGameWeek();
+  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+  const issues = [];
+
+  if (gw.opponentIndex !== null && !opponents[gw.opponentIndex]) {
+    issues.push({ type: "game-week", field: "opponentIndex", issue: "Points to a missing opponent", value: gw.opponentIndex });
+  }
+  if (gw.opponentName) {
+    const match = opponents.find((o) => String(o?.name || "").trim().toLowerCase() === String(gw.opponentName).trim().toLowerCase());
+    if (!match) {
+      issues.push({ type: "game-week", field: "opponentName", issue: "Opponent name not found in scout data", value: gw.opponentName });
+    }
+  }
+
+  if (issues.length > 0) {
+    console.warn("BCOffense: Orphaned artifact references detected:", issues);
+  }
+  return issues;
+}
+
 // ============ Schedule Manager ============
 
 /**

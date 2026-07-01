@@ -212,8 +212,8 @@ Example:
   - Done as part of Phase 12 page-header compaction; all permanent hint strips identified and converted to page-help disclosures.
 - [x] **7.** Inventory every toolbar and button group.
   - Done as part of Phase 13; all six module toolbars catalogued and annotated with shared primitives.
-- [ ] **8.** Add a development report that lists visible fixed and absolute-positioned floating layers.
-- [ ] **9.** Add a development report that lists elements creating horizontal overflow.
+- [x] **8.** Add a development report that lists visible fixed and absolute-positioned floating layers.
+- [x] **9.** Add a development report that lists elements creating horizontal overflow.
 - [ ] **10.** Add interaction tests for every top-level tab.
 - [ ] **11.** Add a test proving Opponent Scout renders a nonempty home state.
 - [ ] **12.** Add a test proving an opponent card opens its detail view.
@@ -238,7 +238,7 @@ Example:
 - [x] **25.** Add a visible game-week label to the global shell.
 - [x] **26.** Allow opponent switching from the shared context bar.
 - [x] **27.** Warn before switching opponents when unsaved page state exists.
-- [ ] **28.** Preserve each opponent’s last active page and artifact selections.
+- [x] **28.** Preserve each opponent’s last active page and artifact selections.
 - [x] **29.** Add Previous Step and Next Step controls where they provide a natural handoff.
   - Wristband toolbar: "← Script" and "Call Sheet →" quick-nav buttons. GP header: "→ Call Sheet", "📋 Script", "🏈 Wristband" handoff buttons. Dashboard: "Continue" buttons per artifact. Commit `9ff5701` (SW v777).
 - [x] **30.** Do not force a strictly linear workflow; support branching from Playbook to Scout, Game Plan, or Practice.
@@ -260,7 +260,7 @@ Example:
 - [ ] **40.** Add team-level scope and Varsity/JV scope.
 - [x] **41.** Add a safe unassigned-game-week state.
   - `#gameWeekBar` is hidden when no opponent is set; all modules guard with `gw && gw.opponentName` checks before reading opponent data. Commit `1f16995` (SW v762).
-- [ ] **42.** Add validation for orphaned artifact references.
+- [x] **42.** Add validation for orphaned artifact references.
 - [x] **43.** Add a game-week duplication command for recurring opponents or rematches.
 - [x] **44.** Add archive and restore support.
 - [x] **45.** Add backward-compatible reads for older locally stored data.
@@ -533,7 +533,7 @@ Example:
 
 ## Phase 13 — Responsive button layout system
 
-- [ ] **224.** Create shared toolbar primitives:
+- [x] **224.** Create shared toolbar primitives:
 - [x] **225.** `toolbar-surface`
   - `.toolbar-surface` and `.toolbar-surface--compact` defined in `components.css`; used by script, game plan, and playbook panels. Commit `ff5f213` (SW v759).
 - [x] **226.** `toolbar-primary`

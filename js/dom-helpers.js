@@ -520,3 +520,51 @@ function runContractChecks() {
   console.groupEnd();
   return { pass, fail, results };
 }
+
+/**
+ * Dev report: list all visible fixed/absolute floating layers (#8).
+ * Run in browser console: reportFloatingLayers()
+ */
+function reportFloatingLayers() {
+  const results = [];
+  document.querySelectorAll("*").forEach((el) => {
+    const style = window.getComputedStyle(el);
+    const pos = style.position;
+    if (pos !== "fixed" && pos !== "absolute") return;
+    if (style.display === "none" || style.visibility === "hidden") return;
+    const r = el.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return;
+    results.push({
+      position: pos,
+      selector: (el.id ? "#" + el.id : "") + (el.className ? "." + String(el.className).split(" ")[0] : el.tagName.toLowerCase()),
+      size: `${Math.round(r.width)}×${Math.round(r.height)}`,
+      top: Math.round(r.top),
+    });
+  });
+  console.group(`Floating layers (#8): ${results.length}`);
+  results.forEach((r) => console.log(`${r.position}: ${r.selector} — ${r.size} @ top:${r.top}`));
+  console.groupEnd();
+  return results;
+}
+
+/**
+ * Dev report: list all elements causing horizontal overflow (#9).
+ * Run in browser console: reportHorizontalOverflow()
+ */
+function reportHorizontalOverflow() {
+  const results = [];
+  const docWidth = document.documentElement.clientWidth;
+  document.querySelectorAll("*").forEach((el) => {
+    const r = el.getBoundingClientRect();
+    if (r.right > docWidth + 1) {
+      results.push({
+        selector: (el.id ? "#" + el.id : "") + (el.className ? "." + String(el.className).split(" ")[0] : el.tagName.toLowerCase()),
+        overflowBy: Math.round(r.right - docWidth),
+      });
+    }
+  });
+  console.group(`Horizontal overflow (#9): ${results.length} element(s)`);
+  results.forEach((r) => console.log(`${r.selector} overflows by ${r.overflowBy}px`));
+  console.groupEnd();
+  return results;
+}
