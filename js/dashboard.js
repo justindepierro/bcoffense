@@ -369,3 +369,73 @@ function onDashWeekLabelChange(value) {
 function dashGoToTab(tabName) {
   document.getElementById("tab-" + tabName)?.click();
 }
+
+// ── Game Week lifecycle actions (#54-55) ────────────────────────────────────
+
+/**
+ * Guided wizard to start a fresh game week (#54).
+ * Prompts for week label and opponent, then calls setGameWeek().
+ * Does not delete any saved data — only changes the active assignment.
+ */
+async function startNewGameWeek() {
+  const gw = getGameWeek();
+
+  if (gw.opponentName) {
+    const ok = await showConfirm(
+      `<p>Start a new game week? The current assignment (<strong>${escapeHtml(gw.opponentName)}${gw.weekLabel ? " — " + escapeHtml(gw.weekLabel) : ""}</strong>) will be replaced.</p>
+       <p>Your scouting reports, game plan, script, and other saved data are not deleted.</p>`,
+      { title: "🏈 Start New Game Week", confirmText: "Start New Week", cancelText: "Keep Current" },
+    );
+    if (!ok) return;
+  }
+
+  const weekLabel = await showPrompt(
+    "Enter a label for this game week:",
+    gw.weekLabel || "",
+    { title: "🏈 New Game Week", placeholder: "Week 8" },
+  );
+  if (weekLabel === null) return;
+
+  const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+  let opponentIndex = null;
+
+  if (opponents.length > 0) {
+    const items = [
+      { value: "__none__", label: "— No opponent (clear current)" },
+      ...opponents.map((opp, i) => ({ value: String(i), label: opp.name })),
+    ];
+    const picked = await showListPicker(
+      "Select the opponent for this week:",
+      items,
+      { title: "🏈 New Game Week — Opponent", icon: "🏈" },
+    );
+    if (picked === null) return;
+    if (picked !== "__none__") opponentIndex = parseInt(picked, 10);
+  }
+
+  setGameWeek(opponentIndex, weekLabel.trim());
+
+  const oppName = opponentIndex !== null && opponents[opponentIndex] ? opponents[opponentIndex].name : "";
+  showToast(
+    `Game week started${weekLabel.trim() ? ": " + weekLabel.trim() : ""}${oppName ? " vs " + oppName : ""}.`,
+    { duration: 3500, type: "success" },
+  );
+
+  if (typeof renderDashboard === "function") renderDashboard();
+}
+
+/**
+ * Resume the current game week by navigating to the last active work module (#55).
+ * Falls back to the game plan tab if no prior tab is recorded.
+ */
+function resumeCurrentWeek() {
+  const gw = getGameWeek();
+  if (!gw.opponentName) {
+    showToast("No active game week. Use \"Start New Week\" to begin.", { type: "info", duration: 3000 });
+    return;
+  }
+  const lastTab = storageManager.get(STORAGE_KEYS.LAST_ACTIVE_TAB, "gameplan");
+  const workTabs = new Set(["gameplan", "script", "callsheet", "wristband", "tendencies"]);
+  const target = workTabs.has(lastTab) && lastTab !== "dashboard" ? lastTab : "gameplan";
+  if (typeof showTab === "function") showTab(target);
+}

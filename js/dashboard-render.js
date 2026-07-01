@@ -1129,6 +1129,10 @@ function renderGameWeekCommandCenter(gw, opponents) {
       <button class="btn btn-sm" data-action="showTab" data-arg="callsheet">Call Sheet</button>
       <button class="btn btn-sm" data-action="printFullGamePlan">Print Packet</button>
     </div>
+    <div class="dash-week-actions">
+      <button class="btn btn-sm btn-secondary" data-action="startNewGameWeek">🏈 Start New Week</button>
+      ${gw.opponentName ? `<button class="btn btn-sm" data-action="resumeCurrentWeek">↩ Resume Week</button>` : ""}
+    </div>
     <div class="dash-prep-checklist" aria-label="Game week prep checklist">
       <div class="dash-prep-header">
         <div>

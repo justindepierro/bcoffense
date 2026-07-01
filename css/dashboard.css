@@ -1060,6 +1060,14 @@
   gap: var(--space-xs);
 }
 
+.dash-week-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-light);
+}
+
 .dash-prep-checklist {
   display: grid;
   gap: var(--space-sm);
