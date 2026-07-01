@@ -1822,3 +1822,110 @@ function _tdGetGameGroups(plays) {
   return [...seen.entries()].map(([label, count]) => ({ label, count }));
 }
 
+
+// ── Scout Report Archives (#99) ────────────────────────────────
+/**
+ * Archive the current opponent's scouting data as a labelled report snapshot.
+ */
+async function archiveTendenciesReport() {
+  if (tendenciesCurrentOpponent === null) return;
+  const opp = tendenciesOpponents[tendenciesCurrentOpponent];
+  if (!opp || opp.plays.length === 0) {
+    showModal("No plays to archive.", { title: "Archive Report", icon: "📦" });
+    return;
+  }
+  const gw = getGameWeek();
+  const defaultLabel = gw.weekLabel || new Date().toLocaleDateString();
+  const label = await showPrompt(
+    "Label for this scout report archive:",
+    defaultLabel,
+    { title: "Archive Scout Report", placeholder: "Week 8 vs Opponent" },
+  );
+  if (label === null) return;
+
+  const archives = storageManager.get(STORAGE_KEYS.TENDENCIES_REPORTS, []);
+  archives.unshift({
+    opponentName: opp.name,
+    label: label.trim(),
+    archivedAt: new Date().toISOString(),
+    plays: JSON.parse(JSON.stringify(opp.plays)),
+  });
+  if (archives.length > 30) archives.splice(30);
+  storageManager.set(STORAGE_KEYS.TENDENCIES_REPORTS, archives);
+  showToast("Scout report archived.", { type: "success" });
+}
+
+/**
+ * Show the scout report archives for the current opponent and optionally restore.
+ */
+async function showTendenciesReportArchive() {
+  const archives = storageManager.get(STORAGE_KEYS.TENDENCIES_REPORTS, []);
+  if (tendenciesCurrentOpponent === null) return;
+  const opp = tendenciesOpponents[tendenciesCurrentOpponent];
+  const oppArchives = opp
+    ? archives.filter((a) => a.opponentName === opp.name)
+    : archives;
+
+  if (oppArchives.length === 0) {
+    await showModal("No archived reports for this opponent.", { title: "Scout Report Archives", icon: "📦" });
+    return;
+  }
+
+  const items = oppArchives.map((entry, i) => {
+    const date = entry.archivedAt ? new Date(entry.archivedAt).toLocaleDateString() : "";
+    return {
+      value: String(archives.indexOf(entry)),
+      label: `${escapeHtml(entry.label)} — ${entry.plays.length} plays${date ? " (" + date + ")" : ""}`,
+    };
+  });
+
+  const picked = await showListPicker("Select a report to restore:", items, {
+    title: "Scout Report Archives",
+    icon: "📦",
+  });
+  if (picked === null) return;
+
+  const entry = archives[parseInt(picked, 10)];
+  if (!entry) return;
+
+  const ok = await showConfirm(
+    `Restore archived report: <strong>${escapeHtml(entry.label)}</strong> (${entry.plays.length} plays)?<br>This will replace the current plays for <strong>${escapeHtml(opp.name)}</strong>.`,
+    { title: "Restore Scout Report", confirmText: "Restore", cancelText: "Cancel", danger: true },
+  );
+  if (!ok) return;
+
+  tendenciesOpponents[tendenciesCurrentOpponent].plays = JSON.parse(JSON.stringify(entry.plays));
+  saveTendencies();
+  renderOpponentDetail();
+  showToast("Scout report restored.", { type: "success" });
+}
+
+// ── Scout Presentation Mode (#97) ──────────────────────────────
+/**
+ * Toggle fullscreen presentation overlay for the stats dashboard.
+ */
+function toggleScoutPresentation() {
+  let overlay = document.getElementById("scoutPresentOverlay");
+  if (overlay) {
+    overlay.remove();
+    return;
+  }
+  if (tendenciesCurrentOpponent === null) return;
+  const opp = tendenciesOpponents[tendenciesCurrentOpponent];
+  if (!opp) return;
+
+  const statsHtml = typeof renderStatsDashboard === "function"
+    ? renderStatsDashboard(opp)
+    : "<p>No stats available.</p>";
+
+  overlay = document.createElement("div");
+  overlay.id = "scoutPresentOverlay";
+  overlay.className = "scout-present-overlay";
+  overlay.innerHTML = `
+    <div class="scout-present-header">
+      <span class="scout-present-title">${escapeHtml(opp.name)} — Scout Overview</span>
+      <button class="btn btn-sm" data-action="toggleScoutPresentation">✕ Exit</button>
+    </div>
+    <div class="scout-present-body">${statsHtml}</div>`;
+  document.body.appendChild(overlay);
+}

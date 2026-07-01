@@ -35,6 +35,7 @@ async function initApp() {
     initDefaultScriptDate();
     initTeamIdentityUi(runOptionalInit);
     if (typeof initPageHelp === "function") initPageHelp();
+    if (typeof initToolbarResizeObserver === "function") initToolbarResizeObserver();
   } catch (err) {
     startupFailed = true;
     console.error("initApp error:", err);

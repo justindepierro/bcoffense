@@ -320,11 +320,11 @@ Example:
 - [ ] **92.** Create an iPad split view with play list, charting form, and live summary.
 - [ ] **93.** Replace wide tables on phone with cards or focused detail sheets.
 - [ ] **94.** Add direct import validation with field mapping preview.
-- [ ] **95.** Add duplicate-play/import detection.
+- [x] **95.** Add duplicate-play/import detection.
 - [x] **96.** Add a scout report print preset using the existing print suite.
-- [ ] **97.** Add presentation mode for opponent summaries.
+- [x] **97.** Add presentation mode for opponent summaries.
 - [ ] **98.** Add export to Game Plan as structured recommendations, not just notes.
-- [ ] **99.** Add opponent-specific archived reports by season/week.
+- [x] **99.** Add opponent-specific archived reports by season/week.
 - [ ] **100.** Add tests for all opponent card and handoff actions.
 
 ## Phase 6 — Playbook as the source of truth
@@ -576,7 +576,7 @@ Example:
   - `.btn:disabled` → opacity 0.5, cursor not-allowed; `.btn:active` → translateY(1px) + inset shadow; `.btn:focus-visible` → shadow-focus ring; `.btn-danger`/`.btn-warning`/`.btn-success` → semantic color variants. All tokens, no hardcoded values.
 - [x] **250.** Add an overflow rule based on priority rather than arbitrary CSS hiding.
   - `toolbar-overflow` with `margin-left: auto; flex-shrink: 0` is a DOM-order-preserving, priority-based overflow region; primary actions in `toolbar-primary` are never hidden.
-- [ ] **251.** Use ResizeObserver to detect when a toolbar cannot fit.
+- [x] **251.** Use ResizeObserver to detect when a toolbar cannot fit.
 - [x] **252.** Avoid measuring every frame or creating layout loops.
   - No per-frame measurement code exists in the codebase; anchored-menu positioning only runs on `toggle` + debounced `scroll`/`resize` events. Guideline followed.
 - [ ] **253.** Add screenshots for each toolbar at key widths.

@@ -1477,3 +1477,33 @@
 .sr-bar-track { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
 .sr-bar-fill { height: 100%; background: #333; border-radius: 4px; }
 .sr-bar-count { font-size: 8pt; color: #555; min-width: 60px; text-align: right; }
+
+/* ── Scout Presentation Overlay (#97) ──────────────────────── */
+.scout-present-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal, 1000);
+  background: var(--color-bg-body);
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.scout-present-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-light);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.scout-present-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+}
+.scout-present-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-lg);
+  font-size: var(--font-size-md);
+}

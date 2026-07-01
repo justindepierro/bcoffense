@@ -4525,6 +4525,9 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   white-space: nowrap;
 }
 
+/* #251 — When ResizeObserver detects overflow, hide secondary items */
+.toolbar-surface.toolbar-overflowing .toolbar-overflow { display: none; }
+
 /* Consolidated hover styles */
 @media (hover: hover) {
   .csv-tpl-table tbody tr:hover {

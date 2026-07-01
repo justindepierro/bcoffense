@@ -664,6 +664,17 @@ function handleFileUpload(event) {
           return;
         }
 
+        // #95: Detect duplicates within the imported CSV
+        const _keyMap = {};
+        parsed.forEach((p) => {
+          const k = _mFullKey ? _mFullKey(p) : `${p.formation}|${p.play}`;
+          _keyMap[k] = (_keyMap[k] || 0) + 1;
+        });
+        const internalDupCount = Object.values(_keyMap).filter((v) => v > 1).length;
+        const dupNote = internalDupCount > 0
+          ? ` <span style="color:var(--color-warning)">⚠️ ${internalDupCount} duplicate play${internalDupCount > 1 ? "s" : ""} detected within this CSV.</span>`
+          : "";
+
         const sample = parsed
           .slice(0, 3)
           .map(
@@ -680,7 +691,7 @@ function handleFileUpload(event) {
               ? ` <strong>(${skippedRows.length} row${skippedRows.length === 1 ? "" : "s"} skipped)</strong>`
               : "";
           const choiceMsg =
-            `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"} in new CSV.${skipNote}<br>` +
+            `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"} in new CSV.${skipNote}${dupNote}<br>` +
             `Current playbook has <strong>${plays.length}</strong> plays.<br><br>` +
             `<em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>` +
             `<strong>🔄 Smart Merge</strong> — Matches plays by name, updates changed fields, adds new plays. ` +
@@ -757,7 +768,7 @@ function handleFileUpload(event) {
           );
           if (!replaceOk) return;
         } else {
-          const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
+          const msg = `Found <strong>${parsed.length}</strong> play${parsed.length === 1 ? "" : "s"}.${skippedRows.length > 0 ? " <strong>(" + skippedRows.length + " row" + (skippedRows.length === 1 ? "" : "s") + " skipped)</strong>" : ""}${dupNote}<br><br><em>Sample:</em><br>${sample}${parsed.length > 3 ? "<br>…" : ""}<br><br>Import these plays?`;
           const ok = await showConfirm(msg, {
             title: "Confirm CSV Import",
             icon: "📋",

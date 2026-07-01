@@ -130,6 +130,7 @@ const STORAGE_KEYS = {
   PLAYER_READY: "playerReady",
   PLAYER_PORTAL_BRANDING: "playerPortalBranding",
   GAME_WEEK_ARCHIVE: "gameWeekArchive",
+  TENDENCIES_REPORTS: "tendenciesReports",
 };
 
 const MIGRATIONS = {

@@ -568,3 +568,20 @@ function reportHorizontalOverflow() {
   console.groupEnd();
   return results;
 }
+
+// ── Toolbar ResizeObserver (#251) ────────────────────────────
+/**
+ * Watch all .toolbar-surface elements for overflow and toggle
+ * the .toolbar-overflowing class when their content exceeds their width.
+ * Called once from app-init.js after DOM bootstrap.
+ */
+function initToolbarResizeObserver() {
+  if (!window.ResizeObserver) return;
+  const ro = new ResizeObserver((entries) => {
+    entries.forEach(({ target }) => {
+      const overflowing = target.scrollWidth > target.clientWidth + 2;
+      target.classList.toggle("toolbar-overflowing", overflowing);
+    });
+  });
+  document.querySelectorAll(".toolbar-surface").forEach((el) => ro.observe(el));
+}
