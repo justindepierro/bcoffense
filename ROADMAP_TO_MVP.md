@@ -262,7 +262,7 @@ Example:
 - [x] **49.** Show six workflow cards in order.
 - [x] **50.** Display each card’s status and last modified time.
 - [x] **51.** Display counts such as selected plays, scripted plays, wristband cells, and call-sheet calls.
-- [ ] **52.** Add Continue buttons that reopen the exact prior state.
+- [x] **52.** Add Continue buttons that reopen the exact prior state.
 - [x] **53.** Add warning badges for out-of-sync artifacts.
 - [x] **54.** Add a “Start New Game Week” guided action.
 - [x] **55.** Add a “Resume Current Week” action.

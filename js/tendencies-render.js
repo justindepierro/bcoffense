@@ -329,10 +329,10 @@ function renderScoutOverview() {
           <div class="td-ov-totals">
             <span>${totalPlays} plays charted</span>
             ${(() => {
-              const groups = typeof _tdGetGameGroups === "function" ? _tdGetGameGroups(opp.plays) : [];
-              const gc = groups.filter((g) => g.label !== "No Game Label").length;
-              return gc > 0 ? `<span>📅 ${gc} game${gc !== 1 ? "s" : ""}</span>` : "";
-            })()}
+        const groups = typeof _tdGetGameGroups === "function" ? _tdGetGameGroups(opp.plays) : [];
+        const gc = groups.filter((g) => g.label !== "No Game Label").length;
+        return gc > 0 ? `<span>📅 ${gc} game${gc !== 1 ? "s" : ""}</span>` : "";
+      })()}
             ${intel.blitzRate > 0 ? `<span>⚡ Blitz ${intel.blitzRate}%</span>` : ""}
           </div>
         </div>
@@ -469,12 +469,12 @@ function renderOpponentDetail() {
         <div class="td-stat td-stat-pass"><span class="td-stat-value">${passPlays}</span><span class="td-stat-label">Pass</span></div>
         <div class="td-stat td-stat-blitz"><span class="td-stat-value">${blitzPlays}</span><span class="td-stat-label">Blitz</span></div>
         ${(() => {
-          const games = typeof _tdGetGameGroups === "function" ? _tdGetGameGroups(opp.plays) : [];
-          const gameCount = games.filter((g) => g.label !== "No Game Label").length;
-          return gameCount > 0
-            ? `<div class="td-stat td-stat-games"><span class="td-stat-value">${gameCount}</span><span class="td-stat-label">Game${gameCount !== 1 ? "s" : ""}</span></div>`
-            : "";
-        })()}
+      const games = typeof _tdGetGameGroups === "function" ? _tdGetGameGroups(opp.plays) : [];
+      const gameCount = games.filter((g) => g.label !== "No Game Label").length;
+      return gameCount > 0
+        ? `<div class="td-stat td-stat-games"><span class="td-stat-value">${gameCount}</span><span class="td-stat-label">Game${gameCount !== 1 ? "s" : ""}</span></div>`
+        : "";
+    })()}
         ${totalPlays > 0
       ? `
           <div class="td-stat td-stat-pct"><span class="td-stat-value">${Math.round((runPlays / totalPlays) * 100)}%</span><span class="td-stat-label">Run %</span></div>

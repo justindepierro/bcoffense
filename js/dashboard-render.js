@@ -1024,10 +1024,29 @@ function renderPlayerDashboardHome() {
   }
 }
 
+function _dashGetModuleTimestamps() {
+  const fmt = (key) => {
+    if (typeof storageManager === "undefined" || typeof formatDraftSavedAt !== "function") return "";
+    const draft = storageManager.get(key, null);
+    if (!draft) return "";
+    return formatDraftSavedAt(draft, "en-US", {
+      fallback: "",
+      formatOptions: { month: "short", day: "numeric", hour: "numeric", minute: "2-digit" },
+    });
+  };
+  return {
+    script: fmt(STORAGE_KEYS.SCRIPT_DRAFT),
+    wristband: fmt(STORAGE_KEYS.WRISTBAND_DRAFT),
+    callsheet: fmt(STORAGE_KEYS.CALLSHEET_DRAFT),
+    tendencies: fmt(STORAGE_KEYS.TENDENCIES_DRAFT),
+  };
+}
+
 function renderGameWeekCommandCenter(gw, opponents) {
   const section = document.getElementById("dashCommandCenter");
   if (!section) return;
   const metrics = _dashBuildGameWeekMetrics(gw, opponents);
+  const ts = _dashGetModuleTimestamps();
   const statusClass = _dashStatusClass(metrics.readiness);
   const checklist = _dashBuildPrepChecklist(metrics, gw);
   const openItems = checklist.filter((item) => !item.done).length;
@@ -1094,29 +1113,33 @@ function renderGameWeekCommandCenter(gw, opponents) {
       </div>
     </div>
     <div class="dash-command-metrics" aria-label="Game week status metrics">
-      <button class="dash-command-metric ${_dashMetricStatus(metrics.scoutCount)}" type="button" data-action="showTab" data-arg="tendencies">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.scoutCount)}" type="button" data-action="continueToModule" data-arg="tendencies">
         <strong>${metrics.scoutCount}</strong>
         <span>Scout Plays</span>
+        ${ts.tendencies ? `<span class="dash-metric-time">${escapeHtml(ts.tendencies)}</span>` : ""}
       </button>
-      <button class="dash-command-metric ${_dashMetricStatus(metrics.taggedPlanCount)}" type="button" data-action="showTab" data-arg="gameplan">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.taggedPlanCount)}" type="button" data-action="continueToModule" data-arg="gameplan">
         <strong>${metrics.taggedPlanCount}</strong>
         <span>Tagged Calls</span>
       </button>
-      <button class="dash-command-metric ${_dashMetricStatus(metrics.boardPlanCount)}" type="button" data-action="showTab" data-arg="gameplan">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.boardPlanCount)}" type="button" data-action="continueToModule" data-arg="gameplan">
         <strong>${metrics.boardPlanCount}</strong>
         <span>Board Calls</span>
       </button>
-      <button class="dash-command-metric ${_dashMetricStatus(metrics.scriptCount)}" type="button" data-action="showTab" data-arg="script">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.scriptCount)}" type="button" data-action="continueToModule" data-arg="script">
         <strong>${metrics.scriptCount}</strong>
         <span>Script Calls</span>
+        ${ts.script ? `<span class="dash-metric-time">${escapeHtml(ts.script)}</span>` : ""}
       </button>
-      <button class="dash-command-metric ${_dashMetricStatus(metrics.wristbandCount)}" type="button" data-action="showTab" data-arg="wristband">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.wristbandCount)}" type="button" data-action="continueToModule" data-arg="wristband">
         <strong>${metrics.wristbandCount}</strong>
         <span>Wristband</span>
+        ${ts.wristband ? `<span class="dash-metric-time">${escapeHtml(ts.wristband)}</span>` : ""}
       </button>
-      <button class="dash-command-metric ${_dashMetricStatus(metrics.callSheetCount)}" type="button" data-action="showTab" data-arg="callsheet">
+      <button class="dash-command-metric ${_dashMetricStatus(metrics.callSheetCount)}" type="button" data-action="continueToModule" data-arg="callsheet">
         <strong>${metrics.callSheetCount}</strong>
         <span>Sheet Calls</span>
+        ${ts.callsheet ? `<span class="dash-metric-time">${escapeHtml(ts.callsheet)}</span>` : ""}
       </button>
       <button class="dash-command-metric ${metrics.notesReady ? "is-good" : "is-empty"}" type="button" data-action="focusMobileCoachNotes">
         <strong>${metrics.notesReady ? "Yes" : "No"}</strong>

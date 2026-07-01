@@ -1054,6 +1054,15 @@
   font-weight: 800;
 }
 
+.dash-metric-time {
+  font-size: 9px;
+  color: var(--color-text-muted);
+  font-weight: 400;
+  line-height: 1;
+  margin-top: 2px;
+  opacity: 0.85;
+}
+
 .dash-command-actions {
   display: flex;
   flex-wrap: wrap;

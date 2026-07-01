@@ -439,3 +439,20 @@ function resumeCurrentWeek() {
   const target = workTabs.has(lastTab) && lastTab !== "dashboard" ? lastTab : "gameplan";
   if (typeof showTab === "function") showTab(target);
 }
+
+function continueToModule(tabName) {
+  if (typeof showTab === "function") showTab(tabName);
+  if (tabName === "tendencies") {
+    requestAnimationFrame(() => {
+      const gw = getGameWeek();
+      if (!gw.opponentName) return;
+      const opponents = storageManager.get(STORAGE_KEYS.DEFENSIVE_TENDENCIES, []);
+      const idx = opponents.findIndex(
+        (o) => String(o.name || "").toLowerCase() === String(gw.opponentName || "").toLowerCase(),
+      );
+      if (idx >= 0 && typeof selectTendenciesOpponent === "function") {
+        selectTendenciesOpponent(idx);
+      }
+    });
+  }
+}
