@@ -451,7 +451,7 @@ Example:
 
 ## Phase 11 — Unified dropdown and floating-layer system
 
-- [x] **176.** Inventory all `.tool-menu`, column menus, quick menus, context menus, and page-specific popovers.\n  - Complete inventory: Header overflow, Tabs utilities, Playbook Analytics, Playbook Data, Wristband Templates, Wristband More, Call Sheet More, Script More Tools, GP context menus (showContextMenu). All accounted for across Phases 11 #197-202. Commit `abe5f3e`.
+- [x] **176.** Inventory all `.tool-menu`, column menus, quick menus, context menus, and page-specific popovers.\n - Complete inventory: Header overflow, Tabs utilities, Playbook Analytics, Playbook Data, Wristband Templates, Wristband More, Call Sheet More, Script More Tools, GP context menus (showContextMenu). All accounted for across Phases 11 #197-202. Commit `abe5f3e`.
 - [x] **177.** Create one `AnchoredMenu` or equivalent shared utility.
 - [x] **178.** Portal anchored menus to a shared floating-layer root under `document.body`.
 - [x] **179.** Position menus from the trigger’s `getBoundingClientRect()`.
@@ -502,12 +502,15 @@ Example:
 - [x] **210.** Keep title and essential state always visible.
 - [x] **211.** Hide long subtitle text by default on phone after first use.
 - [x] **212.** Add a compact Help or How It Works disclosure.
-- [ ] **213.** Save dismissal/expanded preference by page.
+- [x] **213.** Save dismissal/expanded preference by page.
+  - `initPageHelp()` in `dom-helpers.js` wires all `<details class="page-help" data-help-key="...">` elements: reads/writes open state per key in `STORAGE_KEYS.PAGE_HELP_OPEN`; called from `app-init.js` after DOM bootstrap; key added to `storage.js`. Commit `81dbab8` (SW v783).
 - [ ] **214.** Show onboarding prose automatically only for new/empty states.
 - [x] **215.** Replace permanent hint strips with small contextual help buttons.
 - [x] **216.** Convert the Call Sheet long hint to an expandable help sheet.
-- [ ] **217.** Convert Script instructions into contextual help near relevant tools.
-- [ ] **218.** Convert Opponent Scout subtitle into first-use guidance.
+- [x] **217.** Convert Script instructions into contextual help near relevant tools.
+  - `<details class="page-help" data-help-key="script">` added after script-header-panel: drag, right-click, Quiz, More Tools, GP-sync tips. Commit `81dbab8` (SW v783).
+- [x] **218.** Convert Opponent Scout subtitle into first-use guidance.
+  - `<details class="page-help" data-help-key="scout">` added as static sibling before `#tendenciesContent`: Wizard, film-log, Analyze, activate-opponent, GP-recommendations tips. Commit `81dbab8` (SW v783).
 - [ ] **219.** Use one-line compact subtitles on tablet.
 - [ ] **220.** Preserve full descriptive headers in desktop onboarding states.
 - [ ] **221.** Avoid repeating the page title in both global navigation and local header when space is constrained.
@@ -520,14 +523,19 @@ Example:
 - [ ] **224.** Create shared toolbar primitives:
 - [x] **225.** `toolbar-surface`
   - `.toolbar-surface` and `.toolbar-surface--compact` defined in `components.css`; used by script, game plan, and playbook panels. Commit `ff5f213` (SW v759).
-- [ ] **226.** `toolbar-primary`
-- [ ] **227.** `toolbar-secondary`
-- [ ] **228.** `toolbar-status`
-- [ ] **229.** `toolbar-overflow`
+- [x] **226.** `toolbar-primary`
+  - Defined in `components.css`; `flex: 1 1 auto`, nowrap, for primary/frequent toolbar actions. Commit `81dbab8` (SW v783).
+- [x] **227.** `toolbar-secondary`
+  - Defined in `components.css`; flex row, wrappable, for secondary/supporting actions. Commit `81dbab8` (SW v783).
+- [x] **228.** `toolbar-status`
+  - Defined in `components.css`; compact row for badges, counts, and sync indicators. Commit `81dbab8` (SW v783).
+- [x] **229.** `toolbar-overflow`
+  - Defined in `components.css`; `margin-left: auto`, flex-shrink: 0, for overflow menus pushed to far right. Commit `81dbab8` (SW v783).
 - [x] **230.** `action-grid`
 - [x] **231.** `segmented-control`
   - `.segmented-control` + `.segmented-control__item` defined in `components.css`; used by script workspace view switcher and wristband zoom controls. Commit `ff5f213` (SW v759).
-- [ ] **232.** `icon-action`
+- [x] **232.** `icon-action`
+  - Defined in `components.css`; 36×36 min compact icon-forward button with border-radius, token colors, and hover/focus states. Commit `81dbab8` (SW v783).
 - [x] **233.** `full-width-primary`
 - [x] **234.** Define action priority levels: primary, frequent, secondary, destructive, contextual.
 - [x] **235.** Desktop: keep primary and frequent actions on one row where width permits.
@@ -550,8 +558,10 @@ Example:
 - [ ] **251.** Use ResizeObserver to detect when a toolbar cannot fit.
 - [ ] **252.** Avoid measuring every frame or creating layout loops.
 - [ ] **253.** Add screenshots for each toolbar at key widths.
-- [ ] **254.** Migrate Call Sheet toolbar.
-- [ ] **255.** Migrate Wristband toolbar.
+- [x] **254.** Migrate Call Sheet toolbar.
+  - `cs-toolbar-left` + `toolbar-primary`; `cs-toolbar-right` + `toolbar-overflow`. Commit `81dbab8` (SW v783).
+- [x] **255.** Migrate Wristband toolbar.
+  - `wb-toolbar-left` + `toolbar-primary`; `wb-toolbar-right` + `toolbar-overflow`. Commit `81dbab8` (SW v783).
 - [ ] **256.** Migrate Practice Script toolbar.
 - [ ] **257.** Migrate Game Plan toolbar.
 - [ ] **258.** Migrate Playbook toolbar.

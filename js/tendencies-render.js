@@ -97,7 +97,7 @@ function renderTendenciesHome() {
         </span>
         <span class="td-opponent-card-chevron" aria-hidden="true">›</span>
       </button>
-      <div class="td-opponent-card-menu tool-menu-wrap">
+      <div class="td-opponent-card-menu tool-menu-wrap" data-anchored>
         <button type="button" class="td-opponent-menu-btn" data-action="toggleParentOpen" aria-haspopup="true" aria-expanded="false" aria-label="More actions for ${safeName}">
           <span aria-hidden="true">⋯</span>
         </button>
@@ -569,7 +569,7 @@ function renderOpponentDetail() {
 
       <!-- Toolbar -->
       <div class="td-toolbar">
-        <div class="td-toolbar-left">
+        <div class="td-toolbar-left toolbar-primary">
           <div class="td-search-box">
             <input type="text" class="td-search-input" id="tdSearchInput" placeholder="🔍 Search plays…"
                    value="${escapeHtml(tdSearchText)}" data-oninput="setTdSearch" data-pass="value">
@@ -585,7 +585,7 @@ function renderOpponentDetail() {
       : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
     }
         </div>
-        <div class="td-toolbar-right">
+        <div class="td-toolbar-right toolbar-overflow">
           <button class="btn btn-sm" data-action="toggleColumnPanel" title="Column visibility">👁️ Columns</button>
           <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" data-action="toggleRapidMode" title="Toggle rapid chart mode">⚡ ${tendenciesRapidMode ? "Wizard" : "Rapid"}</button>
           <span class="td-play-count">${filtered.length === totalPlays ? `${totalPlays} plays` : `${filtered.length} of ${totalPlays}`}</span>

@@ -507,7 +507,7 @@
       <!-- Playbook Controls -->
       <div class="pb-controls">
         <!-- Row 1: Search + Utilities -->
-        <div class="pb-controls-row pb-top-row">
+        <div class="pb-controls-row pb-top-row toolbar-primary">
           <button class="btn btn-sm pb-filter-toggle-btn" id="pbFilterToggleBtn" data-action="togglePbFilterDrawer"
             title="Filters, sort &amp; actions">&#9776; Filters<span id="pbFilterCount" class="pb-filter-count-badge"
               hidden></span></button>
@@ -1458,7 +1458,7 @@
 
           <!-- Script Toolbar -->
           <div class="script-toolbar" data-auth-player-hide="true">
-            <div class="script-toolbar-left">
+            <div class="script-toolbar-left toolbar-primary">
               <label class="bulk-select-label">
                 <input type="checkbox" id="bulkSelectAll" data-onchange="selectAllScriptItems" />
                 <span>Select All</span>
@@ -1491,7 +1491,7 @@
               </button>
               <span id="scriptSortStatus" class="script-sort-status" role="status" aria-live="polite"></span>
             </div>
-            <div class="script-toolbar-right">
+            <div class="script-toolbar-right toolbar-overflow">
               <button class="btn btn-sm toolbar-btn-xs" data-action="openScriptReorderModal"
                 title="Reorder plays in a chosen period">
                 🗂️ Reorder
@@ -2429,7 +2429,8 @@
       </summary>
       <div class="page-help__body">
         Add opponents in the Wizard • Log film data per game or series • Use Analyze to generate tendency reports •
-        Activate an opponent from Dashboard to enable Call Sheet scouting intel • Recommendations feed directly into Game Plan
+        Activate an opponent from Dashboard to enable Call Sheet scouting intel • Recommendations feed directly into
+        Game Plan
       </div>
     </details>
     <div id="tendenciesContent"></div>

@@ -2503,6 +2503,15 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 }
 
+/* Phase 12 #219 — Compact subtitle on tablet (641–1023px) */
+@media screen and (min-width: 641px) and (max-width: 1023px) {
+  .wb-page-header p {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    margin-top: 0;
+  }
+}
+
 @media screen and (max-width: 768px) {
   .wb-page-header {
     flex-direction: column;

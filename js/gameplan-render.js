@@ -305,7 +305,7 @@ function renderGamePlan() {
     </div>` : "";
 
   const toolbarHtml = `
-    <div class="gp-toolbar">
+    <div class="gp-toolbar toolbar-surface">
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
         data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />
