@@ -1135,22 +1135,24 @@ Initial reactions:
 - [ ] Add a Review Questions practice-period generator.
 - [ ] Allow coaches to add highly questioned plays to a review period.
 - [x] Add tests ensuring script entries reuse canonical threads.
+- [x] Surface discussion counts in Game Plan play rows.
+- [x] Surface open questions in Game Plan play detail.
 
 # Phase 12 — Cross-Workflow Integration
 
-- [ ] Surface discussion counts in Game Plan play rows.
-- [ ] Surface open questions in Game Plan play detail.
+- [x] Surface discussion counts in Game Plan play rows.
+- [x] Surface open questions in Game Plan play detail.
 - [ ] Allow Game Plan questions to include opponent context.
 - [ ] Surface official clarifications in Game Plan.
-- [ ] Surface discussion counts in Call Sheet play detail.
-- [ ] Allow Call Sheet to show a warning when a called play has unresolved assignment questions.
+- [x] Surface discussion counts in Call Sheet play detail.
+- [x] Allow Call Sheet to show a warning when a called play has unresolved assignment questions.
 - [ ] Keep comments hidden from printed Call Sheets unless explicitly selected.
-- [ ] Surface discussion access from Wristband cell detail.
+- [x] Surface discussion access from Wristband cell detail.
 - [ ] Do not place discussion controls in the printed Wristband.
 - [ ] Allow Opponent Scout recommendations to link to related play discussions.
 - [ ] Allow coaches to ask a staff-only planning question from Opponent Scout as a future extension.
-- [ ] Add a Game Week Questions summary card.
-- [ ] Show open questions across the active Game Week.
+- [x] Add a Game Week Questions summary card.
+- [x] Show open questions across the active Game Week.
 - [ ] Show questions grouped by play.
 - [ ] Show questions grouped by position.
 - [ ] Show questions grouped by script period.
