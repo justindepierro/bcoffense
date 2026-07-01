@@ -161,6 +161,12 @@ function renderGamePlan() {
           <button class="btn btn-sm btn-success" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
             📋 Script
           </button>
+          <button class="btn btn-sm btn-success" data-action="pushGamePlanToWristband" title="Fill wristband cells with drafted plays">
+            🏈 Wristband
+          </button>
+          <button class="btn btn-sm" data-action="createScriptFromGamePlan" title="Create a new practice script with one period per game plan box">
+            ⚡ Create Script
+          </button>
           ${board.loadedWristband
       ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
       : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}

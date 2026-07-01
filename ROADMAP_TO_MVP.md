@@ -339,25 +339,25 @@ Example:
 - [x] **117.** Add a source badge showing Playbook and Scout inputs.
 - [x] **118.** Show why a play was recommended for the active opponent.
 - [x] **119.** Add recommendation confidence and supporting tendency.
-- [ ] **120.** Add a preview of downstream Practice, Wristband, and Call Sheet placement.
-- [ ] **121.** Add one-click Push to Practice with a period-mapping preview.
-- [ ] **122.** Add one-click Send to Wristband with card/cell mapping preview.
-- [ ] **123.** Add one-click Push to Call Sheet with category mapping preview.
-- [ ] **124.** Detect and skip duplicates using stable IDs.
+- [x] **120.** Add a preview of downstream Practice, Wristband, and Call Sheet placement.
+- [x] **121.** Add one-click Push to Practice with a period-mapping preview.
+- [x] **122.** Add one-click Send to Wristband with card/cell mapping preview.
+- [x] **123.** Add one-click Push to Call Sheet with category mapping preview.
+- [x] **124.** Detect and skip duplicates using stable IDs.
 - [x] **125.** Show a handoff receipt after every transfer.
-- [ ] **126.** Include Added, Updated, Skipped, Conflict, and Removed counts.
-- [ ] **127.** Allow Undo Transfer immediately after handoff.
-- [ ] **128.** Mark destination artifacts out of sync when Game Plan changes later.
-- [ ] **129.** Add Compare with Destination before overwriting.
-- [ ] **130.** Preserve manual destination edits unless the coach explicitly replaces them.
+- [x] **126.** Include Added, Updated, Skipped, Conflict, and Removed counts.
+- [x] **127.** Allow Undo Transfer immediately after handoff.
+- [x] **128.** Mark destination artifacts out of sync when Game Plan changes later.
+- [x] **129.** Add Compare with Destination before overwriting.
+- [x] **130.** Preserve manual destination edits unless the coach explicitly replaces them.
 
 ## Phase 8 — Practice Script integration
 
-- [ ] **131.** Add a visible source indicator for Game Plan-loaded plays.
-- [ ] **132.** Add an active-opponent badge to the Script workspace.
-- [ ] **133.** Add a compact “Available this week” play rail.
-- [ ] **134.** Separate Game Plan selections from the entire Playbook in the rail.
-- [ ] **135.** Add Create Script from Game Plan with period templates.
+- [x] **131.** Add a visible source indicator for Game Plan-loaded plays.
+- [x] **132.** Add an active-opponent badge to the Script workspace.
+- [x] **133.** Add a compact “Available this week” play rail.
+- [x] **134.** Separate Game Plan selections from the entire Playbook in the rail.
+- [x] **135.** Add Create Script from Game Plan with period templates.
 - [ ] **136.** Add scout-driven period suggestions such as pressure pickup or red-zone tendency.
 - [ ] **137.** Show plays not yet scripted.
 - [ ] **138.** Show scripted plays no longer in Game Plan.

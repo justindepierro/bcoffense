@@ -667,6 +667,7 @@ function renderScriptPlayRow(play, index, playNumber, renderContext) {
       return `${typeChip}${tempo}`;
     })()}</span>
           ${playbookSigSet && playbookSigSet.has(playSignature(play)) ? `<button type="button" class="script-pb-chip" data-action="jumpToPlayInPlaybook" data-arg="${index}" title="View this play in the Playbook" aria-label="View ${escapeHtml(playLabel)} in Playbook">📖</button>` : ""}
+          ${play._gpSource ? `<span class="script-gp-source-badge" title="Added from Game Plan">🎯 GP</span>` : ""}
           ${readinessBadge}
         </div>
         ${renderScriptInlineCallEdits(play, index, playLabel)}
@@ -1119,6 +1120,7 @@ function renderScript() {
   // global (where the identifier would otherwise resolve to the #script DOM
   // element); a proper render follows once the app finishes initializing.
   if (typeof script === "undefined" || !Array.isArray(script)) return;
+  updateScriptOpponentBadge();
   try {
     const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");
@@ -1365,4 +1367,18 @@ function updateDefField(index, field, value) {
     defBlitz: "blitz",
   };
   updateScriptPreviewField(index, previewClassMap[field], value);
+}
+
+// #132: Active-opponent badge in script workspace header
+function updateScriptOpponentBadge() {
+  const badge = document.getElementById("scriptOpponentBadge");
+  if (!badge) return;
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opp = gw && gw.opponentName ? gw.opponentName : "";
+  if (opp) {
+    badge.textContent = `vs ${opp}`;
+    badge.hidden = false;
+  } else {
+    badge.hidden = true;
+  }
 }

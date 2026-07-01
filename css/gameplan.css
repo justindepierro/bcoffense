@@ -775,9 +775,15 @@
   background: var(--color-warning-light, #fef3c7);
   color: var(--color-warning);
 }
-.gp-scout-high { opacity: 1; }
-.gp-scout-med  { opacity: 0.85; }
-.gp-scout-low  { opacity: 0.65; }
+.gp-scout-high {
+  opacity: 1;
+}
+.gp-scout-med {
+  opacity: 0.85;
+}
+.gp-scout-low {
+  opacity: 0.65;
+}
 
 /* Advanced filters bar (toggled via ⚙️ Advanced) */
 .gp-toolbar-advanced {

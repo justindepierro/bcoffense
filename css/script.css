@@ -5756,6 +5756,36 @@ body[data-active-tab="script"] .script-display-fab {
     color var(--transition-fast);
   vertical-align: middle;
 }
+
+/* #131: Game Plan source badge in script play rows */
+#script .script-gp-source-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  background: var(--color-warning-light, #fef3c7);
+  color: var(--color-warning);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+  vertical-align: middle;
+}
+
+/* #132: Active-opponent badge in script header */
+.script-opp-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-accent-light, var(--color-primary-light));
+  color: var(--color-primary);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  white-space: nowrap;
+  margin-left: var(--space-xs);
+}
+
 /* Play-type accents: left stripe + matching type chip */
 #script .play-item--run {
   border-left-color: var(--color-success);

@@ -162,7 +162,10 @@ async function pushGamePlanToCallSheet() {
   if (!choice) return;
   const replace = choice === "option2";
 
-  // If replace: only clear categories we're about to fill
+  // #127: snapshot for undo
+  const csPreSnapshot = typeof safeDeepClone === "function" ? safeDeepClone(callSheet) : JSON.parse(JSON.stringify(callSheet));
+
+  // If replace: only clear categories we're about to fill (#130: preserve rest)
   if (replace) {
     filledCatIds.forEach((id) => {
       if (!callSheet[id]) callSheet[id] = { left: [], right: [] };
@@ -184,10 +187,22 @@ async function pushGamePlanToCallSheet() {
   } else if (typeof renderCallSheet === "function") {
     renderCallSheet();
   }
-  showToast(
-    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCount} categor${filledCount === 1 ? "y" : "ies"} on the Call Sheet`,
-    { type: "success", duration: 4000, actionLabel: "→ Call Sheet", action: () => showTab("callsheet") },
+
+  _gpStorePushReceipt("callsheet", pushed, 0);
+
+  // #126 + #127: counts in undo toast
+  showUndoToast(
+    `${pushed} entr${pushed === 1 ? "y" : "ies"} pushed to ${filledCount} Call Sheet categor${filledCount === 1 ? "y" : "ies"}`,
+    () => {
+      Object.assign(callSheet, csPreSnapshot);
+      Object.keys(callSheet).forEach((k) => { if (!(k in csPreSnapshot)) delete callSheet[k]; });
+      if (typeof saveCallSheet === "function") saveCallSheet();
+      if (typeof renderCallSheet === "function") renderCallSheet();
+      showToast("Call sheet push undone", { type: "info", duration: 2000 });
+    },
+    8000,
   );
+  if (pushed > 0 && typeof showTab === "function") showTab("callsheet");
 }
 /* -------------------------------------------------------------------------
    Send tagged plays from the dashboard's active game plan to the boxes
@@ -422,7 +437,17 @@ async function pushGamePlanToScript() {
 
   const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
   const opp = gw && gw.opponentName ? gw.opponentName : "";
-  let pushed = 0;
+
+  // #124: Duplicate detection — build set of existing script play signatures
+  const existingSigs = new Set();
+  if (typeof _gpPlaySignature === "function") {
+    script.filter((s) => !s.isSeparator).forEach((s) => existingSigs.add(_gpPlaySignature(s)));
+  }
+
+  // #127: snapshot for undo
+  const preSnapshot = typeof safeDeepClone === "function" ? safeDeepClone(script) : JSON.parse(JSON.stringify(script));
+
+  let pushed = 0, skipped = 0;
 
   targetBoxes.forEach((b) => {
     const list = board.assignments[b.id] || [];
@@ -435,21 +460,185 @@ async function pushGamePlanToScript() {
       });
     }
     list.forEach((p) => {
+      // #124: skip duplicates already in script
+      const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
+      if (sig && existingSigs.has(sig)) { skipped++; return; }
+      if (sig) existingSigs.add(sig);
       script.push({
         ...p,
         playbookId: p.playbookId || p.sourcePlayId || p.id || null,
+        _gpSource: true,
         id: Date.now() + Math.random(),
       });
-      pushed += 1;
+      pushed++;
     });
   });
 
   if (typeof markScriptDirty === "function") markScriptDirty();
   if (typeof scheduleScriptAutosave === "function") scheduleScriptAutosave();
   if (typeof renderScript === "function") renderScript();
-  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to the Practice Script`,
-    { type: "success", duration: 4000, actionLabel: "→ Script", action: () => showTab("script") });
+
+  // #128: store push receipt
+  _gpStorePushReceipt("script", pushed, skipped);
+
+  // #126 + #127: counts in undo toast
+  const msg = `${pushed} play${pushed !== 1 ? "s" : ""} added to Script${skipped > 0 ? ` · ${skipped} skipped (duplicates)` : ""}`;
+  showUndoToast(msg, () => {
+    script.splice(0, script.length, ...preSnapshot);
+    if (typeof markScriptDirty === "function") markScriptDirty();
+    if (typeof renderScript === "function") renderScript();
+    showToast("Script push undone", { type: "info", duration: 2000 });
+  }, 8000);
+  if (pushed > 0 && typeof showTab === "function") showTab("script");
 }
+
+// #122: Push all Game Plan plays to active wristband
+async function pushGamePlanToWristband() {
+  if (!Array.isArray(typeof wristbandCards !== "undefined" ? wristbandCards : null) || !wristbandCards.length) {
+    if (typeof showTab === "function") showTab("wristband");
+    showToast("Open and set up the Wristband first, then try again.", { type: "warning", duration: 4000 });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const allPlays = [];
+  allBoxes.forEach((b) => (board.assignments[b.id] || []).forEach((p) => allPlays.push(p)));
+  if (!allPlays.length) {
+    showToast("No drafted plays to send.", { type: "warning" });
+    return;
+  }
+
+  // #124: Duplicate detection on wristband
+  const existingWbSigs = new Set();
+  wristbandCards.forEach((card) => {
+    if (!Array.isArray(card.data)) return;
+    card.data.forEach((cell) => {
+      if (cell && typeof _gpPlaySignature === "function") existingWbSigs.add(_gpPlaySignature(cell));
+    });
+  });
+  const toAdd = allPlays.filter((p) => {
+    const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
+    return !sig || !existingWbSigs.has(sig);
+  });
+  const skippedCount = allPlays.length - toAdd.length;
+
+  if (!toAdd.length) {
+    showToast(`All ${allPlays.length} plays already on wristband`, { type: "info" });
+    return;
+  }
+
+  // #120: preview — count empty slots available
+  const totalEmpty = wristbandCards.reduce((n, c) => n + (Array.isArray(c.data) ? c.data.filter((x) => x === null).length : 0), 0);
+  const willAdd = Math.min(toAdd.length, totalEmpty);
+  const cardOptions = [
+    { value: "__auto__", label: `📦 Fill across all cards (${toAdd.length} plays, ${totalEmpty} open slots)` },
+    ...wristbandCards.map((card, ci) => {
+      const open = Array.isArray(card.data) ? card.data.filter((x) => x === null).length : 0;
+      return { value: ci.toString(), label: `${card.name || `Card ${ci + 1}`} — ${open} open slot${open !== 1 ? "s" : ""}` };
+    }),
+  ];
+
+  const targetCard = await showListPicker(`Send ${toAdd.length} new plays to wristband:`, cardOptions, {
+    title: "🏈 Send to Wristband",
+    icon: "🏈",
+  });
+  if (!targetCard) return;
+
+  // #127: snapshot for undo
+  const preSnapshot = typeof safeDeepClone === "function" ? safeDeepClone(wristbandCards) : JSON.parse(JSON.stringify(wristbandCards));
+
+  let added = 0;
+  const fillCard = (card, plays) => {
+    let pi = 0;
+    if (!Array.isArray(card.data)) return plays;
+    for (let ci = 0; ci < card.data.length && pi < plays.length; ci++) {
+      if (card.data[ci] === null) { card.data[ci] = { ...plays[pi++], _gpSource: true }; added++; }
+    }
+    return plays.slice(pi);
+  };
+
+  if (targetCard === "__auto__") {
+    let remaining = [...toAdd];
+    for (const card of wristbandCards) {
+      if (!remaining.length) break;
+      remaining = fillCard(card, remaining);
+    }
+  } else {
+    const cardIdx = parseInt(targetCard, 10);
+    if (wristbandCards[cardIdx]) fillCard(wristbandCards[cardIdx], toAdd);
+  }
+
+  if (typeof markWristbandDirty === "function") markWristbandDirty();
+  if (typeof scheduleWristbandAutosave === "function") scheduleWristbandAutosave();
+  if (typeof renderWristband === "function") renderWristband();
+
+  _gpStorePushReceipt("wristband", added, skippedCount);
+
+  // #126 + #127: counts in undo toast
+  const msg = `${added} play${added !== 1 ? "s" : ""} sent to Wristband${skippedCount > 0 ? ` · ${skippedCount} skipped (duplicates)` : ""}`;
+  showUndoToast(msg, () => {
+    wristbandCards.splice(0, wristbandCards.length, ...preSnapshot);
+    if (typeof markWristbandDirty === "function") markWristbandDirty();
+    if (typeof renderWristband === "function") renderWristband();
+    showToast("Wristband push undone", { type: "info", duration: 2000 });
+  }, 8000);
+  if (added > 0 && typeof showTab === "function") showTab("wristband");
+}
+
+// #128: Store push receipt (lightweight sync tracking)
+function _gpStorePushReceipt(dest, added, skipped) {
+  try {
+    const key = `_gpPushReceipt_${dest}`;
+    const receipt = { dest, added, skipped, ts: Date.now() };
+    storageManager.set(key, receipt);
+  } catch (e) { /* silent */ }
+}
+
+// #135: One-click Create Script from Game Plan (period-per-box, no dialog)
+async function createScriptFromGamePlan() {
+  if (typeof script === "undefined" || !Array.isArray(script)) {
+    showToast("Script tab isn't ready yet.", { type: "error" });
+    return;
+  }
+  const board = _gpEnsureBoard();
+  const allBoxes = [...GP_DEFAULT_BOXES, ...(board.customBoxes || [])];
+  const populated = allBoxes.filter((b) => (board.assignments[b.id] || []).length > 0);
+  if (!populated.length) {
+    showToast("No drafted plays in the Game Plan.", { type: "warning" });
+    return;
+  }
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const opp = gw && gw.opponentName ? gw.opponentName : "";
+  const preSnapshot = typeof safeDeepClone === "function" ? safeDeepClone(script) : JSON.parse(JSON.stringify(script));
+  const existingSigs = new Set();
+  if (typeof _gpPlaySignature === "function") {
+    script.filter((s) => !s.isSeparator).forEach((s) => existingSigs.add(_gpPlaySignature(s)));
+  }
+  let pushed = 0, skipped = 0;
+  populated.forEach((b) => {
+    const list = board.assignments[b.id] || [];
+    if (!list.length) return;
+    script.push({ isSeparator: true, label: opp ? `${b.label} — vs ${opp}` : b.label, id: Date.now() + Math.random() });
+    list.forEach((p) => {
+      const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : null;
+      if (sig && existingSigs.has(sig)) { skipped++; return; }
+      if (sig) existingSigs.add(sig);
+      script.push({ ...p, playbookId: p.id || null, _gpSource: true, id: Date.now() + Math.random() });
+      pushed++;
+    });
+  });
+  if (typeof markScriptDirty === "function") markScriptDirty();
+  if (typeof scheduleScriptAutosave === "function") scheduleScriptAutosave();
+  if (typeof renderScript === "function") renderScript();
+  showUndoToast(`Script created: ${pushed} play${pushed !== 1 ? "s" : ""} in ${populated.length} periods${skipped > 0 ? ` · ${skipped} skipped` : ""}`, () => {
+    script.splice(0, script.length, ...preSnapshot);
+    if (typeof markScriptDirty === "function") markScriptDirty();
+    if (typeof renderScript === "function") renderScript();
+    showToast("Create from Game Plan undone", { type: "info", duration: 2000 });
+  }, 8000);
+  if (typeof showTab === "function") showTab("script");
+}
+
 /* -------------------------------------------------------------------------
    Plan Comparison (snapshot diff)
    ------------------------------------------------------------------------- */
