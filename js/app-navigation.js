@@ -11,6 +11,15 @@ const TAB_INDEX_MAP = {
   dashboard: 9,
 };
 
+// Supporting utilities surfaced through the Utilities menu rather than as
+// equal-weight primary tabs (roadmap immediate fix #7).
+const UTILITY_TABS = new Set([
+  "dashboard",
+  "installation",
+  "identity",
+  "offensebuilder",
+]);
+
 function scrollTabStripToTab(tab) {
   if (!(tab instanceof HTMLElement)) return;
   const strip = tab.closest(".tabs");
@@ -59,11 +68,21 @@ function showTab(tabName) {
     tab.setAttribute("aria-selected", "false");
   });
 
-  const index = TAB_INDEX_MAP[tabName];
-  if (index !== undefined && tabs[index]) {
-    tabs[index].classList.add("active");
-    tabs[index].setAttribute("aria-selected", "true");
-    requestAnimationFrame(() => scrollTabStripToTab(tabs[index]));
+  // Highlight by id (robust to tab reordering and to utility tabs that live
+  // inside the Utilities menu rather than the primary strip).
+  const activeTabBtn = document.getElementById("tab-" + tabName);
+  if (activeTabBtn) {
+    activeTabBtn.classList.add("active");
+    activeTabBtn.setAttribute("aria-selected", "true");
+    if (activeTabBtn.classList.contains("tab")) {
+      requestAnimationFrame(() => scrollTabStripToTab(activeTabBtn));
+    }
+  }
+
+  // Reflect utility-page selection on the Utilities menu trigger.
+  const utilitiesBtn = document.getElementById("utilitiesMenuBtn");
+  if (utilitiesBtn) {
+    utilitiesBtn.classList.toggle("active", UTILITY_TABS.has(tabName));
   }
 
   // Item 32: haptic feedback on player tab switch

@@ -1669,6 +1669,55 @@ function checkActionGridContract() {
   console.log("action grid contract ok");
 }
 
+function checkPrimaryNavContract() {
+  // Immediate fix #7: reduce main navigation to six core workflow tools plus
+  // a single Utilities ("More") menu holding the supporting pages.
+  const html = read("index.html");
+  const nav = read("js/app-navigation.js");
+
+  const utilBlock = html.match(
+    /<div class="tool-menu-wrap tabs-utilities" data-anchored>[\s\S]*?<\/div>\s*<\/div>/,
+  );
+  if (!utilBlock) {
+    fail("Utilities menu (.tabs-utilities[data-anchored]) is missing from the tab strip");
+  }
+  const util = utilBlock ? utilBlock[0] : "";
+
+  // Supporting pages must live inside the Utilities menu, not as primary tabs.
+  for (const id of ["tab-dashboard", "tab-installation", "tab-identity", "tab-offensebuilder"]) {
+    if (!new RegExp(`id="${id}"[^>]*role="menuitem"`).test(util)) {
+      fail(`${id} is not inside the Utilities menu as a menuitem`);
+    }
+  }
+  if (!/data-action="showUpload"[^>]*role="menuitem"/.test(util)) {
+    fail("Load New CSV is not inside the Utilities menu");
+  }
+
+  // The six core tools must remain primary role="tab" buttons.
+  for (const id of [
+    "tab-playbook",
+    "tab-tendencies",
+    "tab-gameplan",
+    "tab-script",
+    "tab-wristband",
+    "tab-callsheet",
+  ]) {
+    if (!new RegExp(`id="${id}"[^>]*class="tab[^"]*"[^>]*role="tab"`).test(html)) {
+      fail(`core tab ${id} is missing from the primary strip`);
+    }
+  }
+
+  // Active-tab highlighting must be id-based (robust to reorder / menu items).
+  if (
+    !/getElementById\("tab-" \+ tabName\)/.test(nav) ||
+    !/const UTILITY_TABS = new Set\(/.test(nav)
+  ) {
+    fail("app-navigation.js does not use id-based tab highlighting + UTILITY_TABS");
+  }
+
+  console.log("primary nav contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2359,6 +2408,7 @@ checkMobileCapabilityMatrix();
 checkAnchoredMenuContract();
 checkPageHelpContract();
 checkActionGridContract();
+checkPrimaryNavContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

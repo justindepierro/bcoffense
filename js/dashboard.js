@@ -367,9 +367,5 @@ function onDashWeekLabelChange(value) {
  * Navigate to a tab from the dashboard quick links
  */
 function dashGoToTab(tabName) {
-  const tabs = document.querySelectorAll(".tab");
-  const idx = TAB_INDEX_MAP[tabName];
-  if (idx !== undefined && tabs[idx]) {
-    tabs[idx].click();
-  }
+  document.getElementById("tab-" + tabName)?.click();
 }

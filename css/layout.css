@@ -315,6 +315,25 @@ body[data-auth-role="player"] .save-status {
   right: 0;
 }
 
+/* Utilities menu inside the primary tab strip (roadmap fix #7).
+   Supporting pages live behind one "More" trigger instead of competing
+   as equal-weight primary tabs. */
+.tabs-utilities {
+  display: inline-flex;
+  align-items: stretch;
+  flex-shrink: 0;
+  margin-left: auto;
+}
+.tab-utilities {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+}
+.tabs-utilities-menu button.active {
+  color: var(--color-primary);
+  font-weight: 700;
+}
+
 body[data-auth-role="player"] .tabs {
   gap: 10px;
   justify-content: center;

@@ -481,7 +481,11 @@
     if (el.matches("[type='file']") && !canEditUser()) return true;
 
     const tabName = el.dataset.arg || el.getAttribute("aria-controls");
-    if (el.classList.contains("tab") && tabName && !canAccessTab(tabName)) {
+    if (
+      tabName &&
+      (el.classList.contains("tab") || el.dataset.action === "showTab") &&
+      !canAccessTab(tabName)
+    ) {
       return true;
     }
 
