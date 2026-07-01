@@ -218,8 +218,10 @@ Example:
 
 ## Phase 2 — Canonical workflow and information architecture
 
-- [ ] **16.** Rename the user-facing “Def Tendencies” tab to “Opponent Scout.”
-- [ ] **17.** Preserve internal IDs temporarily to avoid unnecessary migration risk.
+- [x] **16.** Rename the user-facing “Def Tendencies” tab to “Opponent Scout.”
+  - Done via immediate fix #1. Commit `8ef1d3c` (SW v754).
+- [x] **17.** Preserve internal IDs temporarily to avoid unnecessary migration risk.
+  - `tendencies` tab id, storage keys, and function/variable names left untouched.
 - [ ] **18.** Define the six primary workflow destinations.
 - [ ] **19.** Move supporting pages into a single Utilities or More destination.
 - [ ] **20.** Keep role-based access rules intact.
@@ -585,9 +587,12 @@ Example:
 
 # Highest-priority immediate fixes
 
-- [ ] **1.** Rename Defensive Tendencies to Opponent Scout in the UI.
-- [ ] **2.** Make each opponent card a true accessible navigation target and isolate rename/delete controls.
-- [ ] **3.** Add explicit render-error and loading states to `tendenciesContent`.
+- [x] **1.** Rename Defensive Tendencies to Opponent Scout in the UI.
+  - UI-only rename (tab, nav, headings, short label "Scout"); internal `tendencies` IDs/keys/functions preserved. Commit `8ef1d3c` (SW v754).
+- [x] **2.** Make each opponent card a true accessible navigation target and isolate rename/delete controls.
+  - Card is now a real `<button>` primary target plus a sibling `⋯` overflow menu (Rename/Delete) using the shared `.tool-menu` pattern — no more nested-interactive antipattern. Commit `ccacfec` (SW v755).
+- [x] **3.** Add explicit render-error and loading states to `tendenciesContent`.
+  - Home render wrapped in try/catch with `.td-state` loading spinner + error card with Retry; respects reduced-motion. Commit `08150e6` (SW v756).
 - [ ] **4.** Build one shared anchored-menu utility and migrate the header and Call Sheet menus first.
 - [ ] **5.** Replace permanent mobile instruction blocks with expandable help.
 - [ ] **6.** Build one shared responsive action-grid/toolbar contract.
