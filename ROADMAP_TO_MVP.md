@@ -489,7 +489,8 @@ Example:
   - `.more-tools-wrap` gets `data-anchored`; `anchored-menu.js` extended to handle `.more-tools-wrap[data-anchored]` + `.more-tools-menu` (positioning, keyboard nav, ARIA, IntersectionObserver). Commit `abe5f3e` (SW v781).
 - [x] **202.** Migrate Game Plan context menus.
   - GP uses `showContextMenu()` from `dom-helpers.js` — already a shared, viewport-aware utility. Verified no `position:absolute` overflow issues.
-- [ ] **203.** Migrate Opponent Scout action menus.
+- [x] **203.** Migrate Opponent Scout action menus.
+  - `data-anchored` added to the per-opponent card overflow `.tool-menu-wrap` in `tendencies-render.js`. Commit `4685f43` (SW v784).
 - [ ] **204.** Migrate column visibility menus.
 - [ ] **205.** Add automated edge tests at all four viewport corners.
 - [ ] **206.** Add tests inside sticky and scrollable containers.
@@ -511,7 +512,8 @@ Example:
   - `<details class="page-help" data-help-key="script">` added after script-header-panel: drag, right-click, Quiz, More Tools, GP-sync tips. Commit `81dbab8` (SW v783).
 - [x] **218.** Convert Opponent Scout subtitle into first-use guidance.
   - `<details class="page-help" data-help-key="scout">` added as static sibling before `#tendenciesContent`: Wizard, film-log, Analyze, activate-opponent, GP-recommendations tips. Commit `81dbab8` (SW v783).
-- [ ] **219.** Use one-line compact subtitles on tablet.
+- [x] **219.** Use one-line compact subtitles on tablet.
+  - `@media (min-width: 641px) and (max-width: 1023px)` rule in `wristband.css` shrinks `.wb-page-header p` to `font-size-xs` + `color-text-muted`. Commit `4685f43` (SW v784).
 - [ ] **220.** Preserve full descriptive headers in desktop onboarding states.
 - [ ] **221.** Avoid repeating the page title in both global navigation and local header when space is constrained.
 - [x] **222.** Add `aria-expanded` and accessible labels to help disclosures.
@@ -562,10 +564,14 @@ Example:
   - `cs-toolbar-left` + `toolbar-primary`; `cs-toolbar-right` + `toolbar-overflow`. Commit `81dbab8` (SW v783).
 - [x] **255.** Migrate Wristband toolbar.
   - `wb-toolbar-left` + `toolbar-primary`; `wb-toolbar-right` + `toolbar-overflow`. Commit `81dbab8` (SW v783).
-- [ ] **256.** Migrate Practice Script toolbar.
-- [ ] **257.** Migrate Game Plan toolbar.
-- [ ] **258.** Migrate Playbook toolbar.
-- [ ] **259.** Migrate Opponent Scout toolbar.
+- [x] **256.** Migrate Practice Script toolbar.
+  - `script-toolbar-left` + `toolbar-primary`; `script-toolbar-right` + `toolbar-overflow`. Commit `4685f43` (SW v784).
+- [x] **257.** Migrate Game Plan toolbar.
+  - `gp-toolbar` + `toolbar-surface` in `gameplan-render.js`. Commit `4685f43` (SW v784).
+- [x] **258.** Migrate Playbook toolbar.
+  - `pb-controls-row pb-top-row` + `toolbar-primary`. Commit `4685f43` (SW v784).
+- [x] **259.** Migrate Opponent Scout toolbar.
+  - `td-toolbar-left` + `toolbar-primary`; `td-toolbar-right` + `toolbar-overflow` in `tendencies-render.js`. Commit `4685f43` (SW v784).
 
 ## Phase 14 — Supporting-feature consolidation
 

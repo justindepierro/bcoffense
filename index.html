@@ -469,6 +469,8 @@
             data-testid="tab-dashboard" data-default-label="📊 Dashboard" data-player-label="Home">
             📊 Dashboard
           </button>
+          <div class="tool-divider"></div>
+          <span class="tool-menu-section-label">Offense Setup</span>
           <button id="tab-installation" type="button" role="menuitem" data-action="showTab" data-arg="installation"
             data-testid="tab-installation">
             📦 Installation
@@ -482,8 +484,17 @@
             🧠 Offense Builder
           </button>
           <div class="tool-divider"></div>
+          <span class="tool-menu-section-label">Print &amp; Export</span>
+          <button type="button" role="menuitem" data-action="openPrintStudio">
+            🖨️ Print Studio
+          </button>
+          <div class="tool-divider"></div>
+          <span class="tool-menu-section-label">Data Tools</span>
           <button type="button" role="menuitem" data-action="showUpload" data-auth-admin-only="true">
             📁 Load New CSV
+          </button>
+          <button type="button" role="menuitem" data-action="showStorageInfo">
+            💾 Storage &amp; Sync
           </button>
         </div>
       </div>
@@ -904,6 +915,10 @@
             <button class="pb-sheet-btn" data-action="showStorageInfo">&#128190; Storage Info</button>
             <button class="pb-sheet-btn" data-action="openCloudSyncModal">☁️ Cloud Sync</button>
             <button class="pb-sheet-btn" data-action="showKeyboardShortcuts">&#9000; Shortcuts</button>
+          </div>
+          <div class="pb-action-sheet-section" data-auth-player-hide="true">
+            <span class="pb-action-sheet-label">&#128279; Resources</span>
+            <button class="pb-sheet-btn" data-action="showTab" data-arg="installation">📦 Installation Guide</button>
           </div>
         </div>
       </div><!-- /pb-action-sheet -->
@@ -1677,6 +1692,13 @@
                     </button>
                     <button data-action="showScriptShortcutsModal" title="Show keyboard shortcuts (?)">
                       ⌨️ Keyboard Shortcuts
+                    </button>
+                    <div class="tool-divider"></div>
+                    <button data-action="showTab" data-arg="installation" title="View play installation guide">
+                      📦 Installation Guide
+                    </button>
+                    <button data-action="openPlaybookIdentityAlignment" title="Check identity alignment across call sheet categories">
+                      🧭 Identity Alignment
                     </button>
                   </div>
                 </div>

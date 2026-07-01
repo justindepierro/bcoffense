@@ -167,6 +167,9 @@ function renderGamePlan() {
           <button class="btn btn-sm" data-action="createScriptFromGamePlan" title="Create a new practice script with one period per game plan box">
             ⚡ Create Script
           </button>
+          <button class="btn btn-sm" data-action="runConstraintCheck" title="Check call sheet constraint compliance">
+            🛡️ Constraints
+          </button>
           ${board.loadedWristband
       ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
       : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}
