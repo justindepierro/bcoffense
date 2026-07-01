@@ -664,22 +664,68 @@ async function submitDiscPost(arg, el) {
 
 // ── Reply composer actions ────────────────────────────────────────────────────
 
+// ── Reply composer helpers ───────────────────────────────────────────────────
+
+function _discCloseAllReplyComposers() {
+  // Close any open inline composers
+  document.querySelectorAll(".disc-composer--reply").forEach((c) => c.remove());
+  // Force-close bottom sheet without confirm (used when opening a new one)
+  const sheet = document.getElementById("discReplySheet");
+  if (sheet?.classList.contains("visible")) {
+    const pid = sheet.dataset.parentPostId;
+    sheet.classList.remove("visible");
+    document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
+    _discRemoveVpListeners(sheet);
+    if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) {}
+    setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
+  }
+}
+
+function _discRemoveVpListeners(sheet) {
+  if (sheet._vpAdjust && window.visualViewport) {
+    window.visualViewport.removeEventListener("resize", sheet._vpAdjust);
+    window.visualViewport.removeEventListener("scroll", sheet._vpAdjust);
+    delete sheet._vpAdjust;
+  }
+}
+
+function _discWireReplyComposerDraft(container, parentPostId) {
+  const ta = container.querySelector("textarea.disc-textarea");
+  if (!ta) return;
+  try {
+    const draft = sessionStorage.getItem(`disc-reply-draft-${parentPostId}`);
+    if (draft) {
+      ta.value = draft;
+      const charEl = document.getElementById(`discChars-reply-${parentPostId}`);
+      if (charEl) charEl.textContent = `${draft.length} / 2000`;
+    }
+  } catch (_) {}
+  ta.addEventListener("input", () => {
+    try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) {}
+  });
+  // Adjust sheet position when on-screen keyboard resizes the viewport
+  const sheet = document.getElementById("discReplySheet");
+  if (sheet && window.visualViewport) {
+    const adjust = () => {
+      const offset = Math.max(0, window.innerHeight - window.visualViewport.height - window.visualViewport.offsetTop);
+      sheet.style.paddingBottom = offset > 0
+        ? `max(${offset + 12}px, env(safe-area-inset-bottom))`
+        : "";
+    };
+    window.visualViewport.addEventListener("resize", adjust);
+    window.visualViewport.addEventListener("scroll", adjust);
+    sheet._vpAdjust = adjust;
+  }
+  ta.focus();
+}
+
 function openDiscReplyComposer(arg) {
   const sep = String(arg || "").indexOf("::");
   if (sep < 0) return;
   const parentPostId = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
 
-  // Close any other open reply composer
-  document.querySelectorAll(".disc-composer--reply").forEach((c) => c.remove());
-
-  const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
-  if (!slot) return;
-
-  // Find playSig from the main composer if available
   const playSig = _discLastPlaySig || "";
-
-  // Build reply-to context banner from parent post attributes
   const parentPostEl = document.getElementById(`disc-post-${parentPostId}`);
   const parentAuthor = parentPostEl?.dataset?.authorName || "";
   const parentBody = parentPostEl?.dataset?.bodyText || "";
@@ -692,27 +738,75 @@ function openDiscReplyComposer(arg) {
     `</div>`
     : "";
 
-  slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
+  const isMobile = window.matchMedia("(max-width: 600px)").matches;
 
-  // Restore saved draft and wire up draft autosave
-  const ta = slot.querySelector("textarea.disc-textarea");
-  if (ta) {
-    try {
-      const draft = sessionStorage.getItem(`disc-reply-draft-${parentPostId}`);
-      if (draft) {
-        ta.value = draft;
-        const charEl = document.getElementById(`discChars-reply-${parentPostId}`);
-        if (charEl) charEl.textContent = `${draft.length} / 2000`;
-      }
-    } catch (_) {}
-    ta.addEventListener("input", () => {
-      try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) {}
-    });
-    ta.focus();
+  if (isMobile) {
+    // If sheet is already open for this post, just re-focus
+    const existingSheet = document.getElementById("discReplySheet");
+    if (existingSheet?.classList.contains("visible") && existingSheet.dataset.parentPostId === String(parentPostId)) {
+      existingSheet.querySelector("textarea.disc-textarea")?.focus();
+      return;
+    }
+    // Close any other open composers first
+    _discCloseAllReplyComposers();
+
+    const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+    if (!slot) return;
+
+    let overlay = document.getElementById("discReplySheetOverlay");
+    let sheet = document.getElementById("discReplySheet");
+    if (!overlay) {
+      overlay = document.createElement("div");
+      overlay.id = "discReplySheetOverlay";
+      overlay.className = "disc-reply-sheet-overlay";
+      document.body.appendChild(overlay);
+    }
+    if (!sheet) {
+      sheet = document.createElement("div");
+      sheet.id = "discReplySheet";
+      sheet.className = "disc-reply-sheet";
+      sheet.setAttribute("role", "dialog");
+      sheet.setAttribute("aria-label", "Reply composer");
+      document.body.appendChild(sheet);
+    }
+    overlay.onclick = () => closeDiscReplyComposer(parentPostId);
+    sheet.dataset.parentPostId = String(parentPostId);
+    setInnerHTML(sheet, `<div class="disc-reply-sheet-handle" aria-hidden="true"></div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId));
+    overlay.classList.add("visible");
+    requestAnimationFrame(() => sheet.classList.add("visible"));
+    _discWireReplyComposerDraft(sheet, parentPostId);
+    return;
   }
+
+  // Desktop/tablet: close other composers, render inline
+  _discCloseAllReplyComposers();
+  const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+  if (!slot) return;
+  slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
+  _discWireReplyComposerDraft(slot, parentPostId);
 }
 
 async function closeDiscReplyComposer(parentPostId) {
+  // Handle bottom sheet mode first
+  const sheet = document.getElementById("discReplySheet");
+  if (sheet?.classList.contains("visible") && sheet.dataset.parentPostId === String(parentPostId)) {
+    const textarea = sheet.querySelector("textarea.disc-textarea");
+    if (textarea?.value?.trim()) {
+      const confirmed = await showConfirm("Discard your unsaved reply?", {
+        confirmText: "Discard",
+        cancelText: "Keep Writing",
+        danger: true,
+      });
+      if (!confirmed) return;
+    }
+    _discRemoveVpListeners(sheet);
+    sheet.classList.remove("visible");
+    document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
+    try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) {}
+    setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
+    return;
+  }
+  // Handle inline slot mode
   const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
   if (!slot) return;
   const textarea = slot.querySelector("textarea.disc-textarea");

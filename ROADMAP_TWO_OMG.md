@@ -521,7 +521,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Keep replies expanded when the user has actively opened the thread.
 - [ ] Preserve expanded-thread state while navigating within the play.
 - [x] Use a single-column feed on phones.
-- [ ] Use a wider centered feed on tablets.
+- [x] Use a wider centered feed on tablets.
 - [ ] Allow a side-panel discussion layout on desktop.
 - [ ] Avoid excessive borders around every reply.
 - [x] Avoid displaying every moderation and editing control permanently.
@@ -839,10 +839,10 @@ Initial reactions:
 
 - [ ] Make the root discussion feed document-scroll on phones.
 - [ ] Avoid nested scrolling inside individual reply cards.
-- [ ] Open the reply composer as a bottom sheet on phones.
+- [x] Open the reply composer as a bottom sheet on phones.
 - [ ] Open visual markup as a full-screen mode on phones.
-- [ ] Preserve safe-area spacing.
-- [ ] Keep Post and Cancel controls reachable above the keyboard.
+- [x] Preserve safe-area spacing.
+- [x] Keep Post and Cancel controls reachable above the keyboard.
 - [ ] Keep drawing tools reachable in portrait.
 - [ ] Optimize drawing tools for iPad landscape.
 - [ ] Use 48-pixel or larger drawing controls on iPad.
@@ -851,8 +851,8 @@ Initial reactions:
 - [ ] Allow the coach to hide the drawing toolbar temporarily.
 - [ ] Allow full-screen visual viewing.
 - [ ] Preserve unsent content during rotation.
-- [ ] Keep reaction pickers attached to their trigger.
-- [ ] Use an even emoji grid on phones.
+- [x] Keep reaction pickers attached to their trigger.
+- [x] Use an even emoji grid on phones.
 - [ ] Avoid oversized discussion page headers.
 - [ ] Preserve the compact mobile page-header system.
 - [ ] Add screenshots for phone and iPad states.

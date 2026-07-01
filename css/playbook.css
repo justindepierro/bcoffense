@@ -4534,6 +4534,19 @@ body.shell-phone .pb-action-sheet {
 .disc-section {
   padding: var(--space-sm) var(--space-md) var(--space-md);
 }
+/* Centered feed on tablets+ for comfortable reading width */
+@media (min-width: 768px) {
+  .disc-section .disc-body {
+    max-width: 680px;
+    margin-inline: auto;
+  }
+}
+/* Safe-area on main composer for iPhone home bar */
+@media (max-width: 600px) {
+  .disc-section .disc-composer:last-child {
+    padding-bottom: max(var(--space-sm), env(safe-area-inset-bottom));
+  }
+}
 .pb-wf-s-header {
   display: flex;
   align-items: center;
@@ -5222,6 +5235,69 @@ body.shell-phone .pb-action-sheet {
 }
 .disc-reply-composer-slot {
   /* empty by default, filled on demand */
+}
+
+/* ── Reply composer bottom sheet (phones ≤ 600px) ─────────────────────────── */
+.disc-reply-sheet-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: calc(var(--z-modal) - 1);
+  display: none;
+  animation: discOverlayIn 0.18s ease;
+}
+.disc-reply-sheet-overlay.visible {
+  display: block;
+}
+.disc-reply-sheet {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: -110%;
+  z-index: var(--z-modal);
+  background: var(--color-bg-body);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-sm) var(--space-md);
+  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+  max-height: 82dvh;
+  overflow-y: auto;
+  transition: bottom 0.2s cubic-bezier(0.34, 1.2, 0.64, 1);
+}
+.disc-reply-sheet.visible {
+  bottom: 0;
+}
+.disc-reply-sheet-handle {
+  width: 36px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border-med);
+  margin: 0 auto var(--space-sm);
+}
+/* Inside the sheet the composer needs no extra top border */
+.disc-reply-sheet .disc-composer {
+  border-top: none;
+  margin-top: 0;
+  padding-top: 0;
+}
+/* Sheet is phone-only — never show it on wider viewports */
+@media (min-width: 601px) {
+  .disc-reply-sheet,
+  .disc-reply-sheet-overlay {
+    display: none !important;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .disc-reply-sheet {
+    transition: none;
+  }
+  .disc-reply-sheet-overlay {
+    animation: none;
+  }
+}
+@keyframes discOverlayIn {
+  from { opacity: 0; }
+  to   { opacity: 1; }
 }
 
 /* ── Coach post highlight ───────────────────────────────────────────────────── */
