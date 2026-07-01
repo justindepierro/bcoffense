@@ -222,15 +222,15 @@ Example:
   - Done via immediate fix #1. Commit `8ef1d3c` (SW v754).
 - [x] **17.** Preserve internal IDs temporarily to avoid unnecessary migration risk.
   - `tendencies` tab id, storage keys, and function/variable names left untouched.
-- [ ] **18.** Define the six primary workflow destinations.
-- [ ] **19.** Move supporting pages into a single Utilities or More destination.
-- [ ] **20.** Keep role-based access rules intact.
-- [ ] **21.** Create a compact desktop workflow nav with all six primary tools visible.
-- [ ] **22.** Create a tablet workflow nav that remains stable in portrait and landscape.
+- [x] **18.** Define the six primary workflow destinations.
+- [x] **19.** Move supporting pages into a single Utilities or More destination.
+- [x] **20.** Keep role-based access rules intact.
+- [x] **21.** Create a compact desktop workflow nav with all six primary tools visible.
+- [x] **22.** Create a tablet workflow nav that remains stable in portrait and landscape.
 - [ ] **23.** Create a phone workflow switcher or bottom navigation that does not attempt to show every utility.
-- [ ] **24.** Add a visible active-opponent indicator to the global shell.
-- [ ] **25.** Add a visible game-week label to the global shell.
-- [ ] **26.** Allow opponent switching from the shared context bar.
+- [x] **24.** Add a visible active-opponent indicator to the global shell.
+- [x] **25.** Add a visible game-week label to the global shell.
+- [x] **26.** Allow opponent switching from the shared context bar.
 - [ ] **27.** Warn before switching opponents when unsaved page state exists.
 - [ ] **28.** Preserve each opponent’s last active page and artifact selections.
 - [ ] **29.** Add Previous Step and Next Step controls where they provide a natural handoff.
@@ -276,22 +276,22 @@ Example:
 
 - [ ] **61.** Replace the current plain opponent list with opponent workspace cards.
 - [ ] **62.** Show opponent name, record/date metadata if available, charted-play count, games charted, and last updated.
-- [ ] **63.** Show whether the opponent is active for the current week.
+- [x] **63.** Show whether the opponent is active for the current week.
 - [ ] **64.** Show a scout completeness score based on sample size and field coverage.
-- [ ] **65.** Make the full card a reliable accessible button or link.
-- [ ] **66.** Move rename/delete into an explicit overflow menu.
-- [ ] **67.** Stop nested action bubbling from triggering card navigation.
-- [ ] **68.** Add loading, render-error, and empty states so the page never appears silently blank.
-- [ ] **69.** Add a Scout Overview screen before the raw play table.
-- [ ] **70.** Show sample-size warnings.
-- [ ] **71.** Show run/pass tendency summary.
+- [x] **65.** Make the full card a reliable accessible button or link.
+- [x] **66.** Move rename/delete into an explicit overflow menu.
+- [x] **67.** Stop nested action bubbling from triggering card navigation.
+- [x] **68.** Add loading, render-error, and empty states so the page never appears silently blank.
+- [x] **69.** Add a Scout Overview screen before the raw play table.
+- [x] **70.** Show sample-size warnings.
+- [x] **71.** Show run/pass tendency summary.
 - [ ] **72.** Show personnel summary.
-- [ ] **73.** Show formation summary.
+- [x] **73.** Show formation summary.
 - [ ] **74.** Show down-and-distance summary.
 - [ ] **75.** Show field-zone summary.
 - [ ] **76.** Show motion/shift summary.
-- [ ] **77.** Show pressure/blitz summary if charted.
-- [ ] **78.** Show coverage/front summary if charted.
+- [x] **77.** Show pressure/blitz summary if charted.
+- [x] **78.** Show coverage/front summary if charted.
 - [ ] **79.** Show top tendencies with confidence indicators.
 - [ ] **80.** Show “What this means for us” recommendations.
 - [ ] **81.** Add links from each recommendation to matching Playbook plays.
@@ -344,7 +344,7 @@ Example:
 - [ ] **122.** Add one-click Send to Wristband with card/cell mapping preview.
 - [ ] **123.** Add one-click Push to Call Sheet with category mapping preview.
 - [ ] **124.** Detect and skip duplicates using stable IDs.
-- [ ] **125.** Show a handoff receipt after every transfer.
+- [x] **125.** Show a handoff receipt after every transfer.
 - [ ] **126.** Include Added, Updated, Skipped, Conflict, and Removed counts.
 - [ ] **127.** Allow Undo Transfer immediately after handoff.
 - [ ] **128.** Mark destination artifacts out of sync when Game Plan changes later.
@@ -408,29 +408,29 @@ Example:
 ## Phase 11 — Unified dropdown and floating-layer system
 
 - [ ] **176.** Inventory all `.tool-menu`, column menus, quick menus, context menus, and page-specific popovers.
-- [ ] **177.** Create one `AnchoredMenu` or equivalent shared utility.
-- [ ] **178.** Portal anchored menus to a shared floating-layer root under `document.body`.
-- [ ] **179.** Position menus from the trigger’s `getBoundingClientRect()`.
-- [ ] **180.** Reposition on open, resize, orientation change, visualViewport resize, and relevant scroll events.
-- [ ] **181.** Support preferred placements: bottom-start, bottom-end, top-start, top-end.
-- [ ] **182.** Automatically flip when insufficient space exists.
-- [ ] **183.** Shift/clamp within safe viewport margins.
-- [ ] **184.** Account for safe-area insets.
-- [ ] **185.** Account for iPad split-screen widths.
-- [ ] **186.** Account for browser zoom and visual viewport offsets.
-- [ ] **187.** Add max-height and internal scrolling for tall menus.
-- [ ] **188.** Keep the menu attached visually to its trigger.
+- [x] **177.** Create one `AnchoredMenu` or equivalent shared utility.
+- [x] **178.** Portal anchored menus to a shared floating-layer root under `document.body`.
+- [x] **179.** Position menus from the trigger’s `getBoundingClientRect()`.
+- [x] **180.** Reposition on open, resize, orientation change, visualViewport resize, and relevant scroll events.
+- [x] **181.** Support preferred placements: bottom-start, bottom-end, top-start, top-end.
+- [x] **182.** Automatically flip when insufficient space exists.
+- [x] **183.** Shift/clamp within safe viewport margins.
+- [x] **184.** Account for safe-area insets.
+- [x] **185.** Account for iPad split-screen widths.
+- [x] **186.** Account for browser zoom and visual viewport offsets.
+- [x] **187.** Add max-height and internal scrolling for tall menus.
+- [x] **188.** Keep the menu attached visually to its trigger.
 - [ ] **189.** Close when the trigger leaves the viewport or relevant container.
-- [ ] **190.** Close on outside click, Escape, route/page change, and another menu opening.
+- [x] **190.** Close on outside click, Escape, route/page change, and another menu opening.
 - [ ] **191.** Restore focus to the trigger.
 - [ ] **192.** Add roving keyboard navigation for menu items.
 - [ ] **193.** Add Home, End, ArrowUp, and ArrowDown support.
 - [ ] **194.** Add correct menu/menuitem semantics where appropriate.
 - [ ] **195.** Do not use menu semantics for form-heavy popovers; use dialog/popover semantics instead.
 - [ ] **196.** Prevent nested menus from closing before their action executes.
-- [ ] **197.** Migrate header overflow first.
+- [x] **197.** Migrate header overflow first.
 - [ ] **198.** Migrate Playbook analytics/data menus.
-- [ ] **199.** Migrate Call Sheet More menu.
+- [x] **199.** Migrate Call Sheet More menu.
 - [ ] **200.** Migrate Wristband menus.
 - [ ] **201.** Migrate Script tools.
 - [ ] **202.** Migrate Game Plan context menus.
@@ -442,15 +442,15 @@ Example:
 
 ## Phase 12 — Mobile page-header compaction
 
-- [ ] **208.** Create a shared `PageIntro` component or markup contract.
+- [x] **208.** Create a shared `PageIntro` component or markup contract.
 - [ ] **209.** Divide each intro into identity, status, primary action, and help content.
-- [ ] **210.** Keep title and essential state always visible.
-- [ ] **211.** Hide long subtitle text by default on phone after first use.
-- [ ] **212.** Add a compact Help or How It Works disclosure.
+- [x] **210.** Keep title and essential state always visible.
+- [x] **211.** Hide long subtitle text by default on phone after first use.
+- [x] **212.** Add a compact Help or How It Works disclosure.
 - [ ] **213.** Save dismissal/expanded preference by page.
 - [ ] **214.** Show onboarding prose automatically only for new/empty states.
-- [ ] **215.** Replace permanent hint strips with small contextual help buttons.
-- [ ] **216.** Convert the Call Sheet long hint to an expandable help sheet.
+- [x] **215.** Replace permanent hint strips with small contextual help buttons.
+- [x] **216.** Convert the Call Sheet long hint to an expandable help sheet.
 - [ ] **217.** Convert Script instructions into contextual help near relevant tools.
 - [ ] **218.** Convert Opponent Scout subtitle into first-use guidance.
 - [ ] **219.** Use one-line compact subtitles on tablet.
@@ -467,20 +467,20 @@ Example:
 - [ ] **227.** `toolbar-secondary`
 - [ ] **228.** `toolbar-status`
 - [ ] **229.** `toolbar-overflow`
-- [ ] **230.** `action-grid`
+- [x] **230.** `action-grid`
 - [ ] **231.** `segmented-control`
 - [ ] **232.** `icon-action`
-- [ ] **233.** `full-width-primary`
-- [ ] **234.** Define action priority levels: primary, frequent, secondary, destructive, contextual.
-- [ ] **235.** Desktop: keep primary and frequent actions on one row where width permits.
-- [ ] **236.** Desktop: allow compact icon-label buttons with stable heights.
+- [x] **233.** `full-width-primary`
+- [x] **234.** Define action priority levels: primary, frequent, secondary, destructive, contextual.
+- [x] **235.** Desktop: keep primary and frequent actions on one row where width permits.
+- [x] **236.** Desktop: allow compact icon-label buttons with stable heights.
 - [ ] **237.** Desktop: move rarely used tools into one overflow menu.
 - [ ] **238.** Tablet: keep one or two primary actions visible and group the rest logically.
-- [ ] **239.** Phone: use an even two-column grid for normal action groups.
-- [ ] **240.** Phone: allow three columns only for short, icon-forward controls.
-- [ ] **241.** Phone: make the dominant action full width when appropriate.
-- [ ] **242.** Very narrow phone: collapse to one column without truncating critical labels.
-- [ ] **243.** Keep all touch targets at least 44×44; prefer 48px on tablet.
+- [x] **239.** Phone: use an even two-column grid for normal action groups.
+- [x] **240.** Phone: allow three columns only for short, icon-forward controls.
+- [x] **241.** Phone: make the dominant action full width when appropriate.
+- [x] **242.** Very narrow phone: collapse to one column without truncating critical labels.
+- [x] **243.** Keep all touch targets at least 44×44; prefer 48px on tablet.
 - [ ] **244.** Use `grid-template-columns: repeat(auto-fit, minmax(...))` where it produces stable ordering.
 - [ ] **245.** Do not use auto-fit when it reorders conceptual groups unpredictably.
 - [ ] **246.** Preserve DOM order as task order.
@@ -552,25 +552,25 @@ Example:
 ## Release 1 — Architecture and reliability
 
 - [ ] Canonical Game Week context.
-- [ ] Six-tool primary navigation.
-- [ ] Shared anchored dropdown utility.
-- [ ] Compact mobile page-intro system.
-- [ ] Shared responsive toolbar/action-grid system.
-- [ ] Opponent Scout card click reliability and nonblank states.
+- [x] Six-tool primary navigation.
+- [x] Shared anchored dropdown utility.
+- [x] Compact mobile page-intro system.
+- [x] Shared responsive toolbar/action-grid system.
+- [x] Opponent Scout card click reliability and nonblank states.
 
 ## Release 2 — Opponent Scout product rebuild
 
-- [ ] Scout Overview.
+- [x] Scout Overview.
 - [ ] Film/game grouping.
 - [ ] Tendency summaries.
-- [ ] Confidence/sample-size indicators.
+- [x] Confidence/sample-size indicators.
 - [ ] Recommendations linked to Playbook and Game Plan.
 - [ ] Mobile/iPad charting redesign.
 
 ## Release 3 — Workflow handoffs
 
 - [ ] Stable play identity across modules.
-- [ ] Transfer receipts.
+- [x] Transfer receipts.
 - [ ] Reconcile instead of overwrite.
 - [ ] Out-of-sync detection.
 - [ ] Game Plan → Practice/Wristband/Call Sheet improvements.
