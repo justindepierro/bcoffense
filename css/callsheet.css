@@ -4279,3 +4279,175 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
     border-color: var(--color-primary);
   }
 }
+
+/* ============================================================
+   Source Status Bar (#159-161) — Phase 10
+   ============================================================ */
+.cs-source-bar {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-xs) var(--space-md);
+  background: var(--color-bg-light);
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  flex-wrap: wrap;
+  min-height: 32px;
+}
+.cs-source-bar.hidden { display: none; }
+.csb-opponent {
+  font-weight: 600;
+  color: var(--color-text);
+}
+.csb-sep {
+  color: var(--color-border-med);
+  user-select: none;
+}
+.csb-item {
+  white-space: nowrap;
+}
+.csb-wb em { color: var(--color-text-muted); font-style: italic; }
+.csb-finalize-btn {
+  margin-left: auto;
+  background: var(--color-success);
+  color: #fff;
+  border: none;
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-sm);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.csb-finalize-btn:hover { background: var(--color-success-hover); }
+
+/* ============================================================
+   Source Reconcile Panel — tabs (#162-165)
+   ============================================================ */
+.cs-not-on-sheet-panel {
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+  font-size: var(--font-size-xs);
+  max-height: 240px;
+  overflow-y: auto;
+}
+.cs-nos-header {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-lighter);
+  position: sticky;
+  top: 0;
+  z-index: 1;
+}
+.cs-nos-tabs {
+  display: flex;
+  gap: 2px;
+  flex: 1;
+  flex-wrap: wrap;
+}
+.cs-nos-tab {
+  background: none;
+  border: 1px solid transparent;
+  border-radius: var(--radius-sm);
+  padding: 2px var(--space-xs);
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  white-space: nowrap;
+}
+.cs-nos-tab.active {
+  background: var(--color-primary);
+  color: #fff;
+  border-color: var(--color-primary);
+}
+.cs-nos-tab:not(.active):hover {
+  background: var(--color-bg-hover-row);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.cs-nos-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--color-danger);
+  color: #fff;
+  border-radius: 99px;
+  font-size: 9px;
+  min-width: 14px;
+  height: 14px;
+  padding: 0 3px;
+  margin-left: 2px;
+  vertical-align: middle;
+}
+.cs-nos-close {
+  background: none;
+  border: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font-size: var(--font-size-sm);
+  padding: 0 var(--space-xs);
+  line-height: 1;
+}
+.cs-nos-close:hover { color: var(--color-danger); }
+.cs-nos-empty {
+  padding: var(--space-sm) var(--space-md);
+  color: var(--color-success);
+}
+.cs-nos-count {
+  padding: var(--space-xs) var(--space-md);
+  color: var(--color-text-muted);
+  font-weight: 600;
+}
+.cs-nos-list {
+  padding: 0 var(--space-md) var(--space-xs);
+}
+.cs-nos-play {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: 2px 0;
+}
+.cs-nos-stale-cat {
+  font-size: 9px;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  border-radius: 3px;
+  padding: 1px 4px;
+  margin-right: 2px;
+  white-space: nowrap;
+}
+
+/* ============================================================
+   Finalize Week modal content
+   ============================================================ */
+.cs-finalize-issues {
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-danger-light);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-danger);
+}
+.cs-finalize-issues ul,
+.cs-finalize-checks ul {
+  margin: var(--space-xs) 0 0;
+  padding-left: var(--space-md);
+  font-size: var(--font-size-sm);
+}
+.cs-finalize-checks {
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm);
+  background: var(--color-success-light);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-success);
+}
+
+/* ============================================================
+   Print — hide source bar and reconcile panel
+   ============================================================ */
+@media print {
+  .cs-source-bar,
+  .cs-not-on-sheet-panel { display: none !important; }
+}

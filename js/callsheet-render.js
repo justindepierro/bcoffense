@@ -806,6 +806,11 @@ function renderCallSheet() {
   if (typeof refreshCallSheetGamePlanDrawer === "function") {
     refreshCallSheetGamePlanDrawer();
   }
+
+  // Update source status bar (#159-161)
+  if (typeof updateCSSourceBar === "function") {
+    updateCSSourceBar();
+  }
 }
 
 function renderCallSheetPhoneCards(categories, dupeMap, displayOptions) {

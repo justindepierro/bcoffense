@@ -1185,7 +1185,8 @@
               </button>
             </div>
             <!-- #144: Artifact status indicator -->
-            <span id="scriptSaveStatus" class="script-save-status" aria-live="polite" title="Script save and artifact status"></span>
+            <span id="scriptSaveStatus" class="script-save-status" aria-live="polite"
+              title="Script save and artifact status"></span>
           </div>
           <div class="script-workbench-control-block script-workbench-control-block--mode control-block">
             <label class="script-controls-mode-label" for="scriptControlsMode">
@@ -2478,10 +2479,10 @@
       </div>
     </div>
 
+    <!-- Source Status Bar (#159-161) — shown when an opponent is active -->
+    <div id="csSourceBar" class="cs-source-bar hidden" role="status" aria-live="polite"></div>
+
     <details class="page-help">
-      <summary class="page-help__summary">
-        <span aria-hidden="true">💡</span>
-        <span class="page-help__label">Call sheet tips</span>
         <span class="page-help__chevron" aria-hidden="true">▾</span>
       </summary>
       <div class="page-help__body">
@@ -2495,8 +2496,8 @@
     <!-- Stats Panel (hidden by default) -->
     <div id="csStatsPanel" class="cs-stats-panel hidden"></div>
 
-    <!-- Not On Sheet Panel (hidden by default) -->
-    <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden"></div>
+    <!-- Source Reconcile Panel (#162-165) — tabs: Playbook | GP | Wristband | Stale -->
+    <div id="csNotOnSheetPanel" class="cs-not-on-sheet-panel hidden" data-tab="playbook"></div>
 
     <div id="callSheetGrid" class="callsheet-grid" data-testid="callsheet-grid"></div>
   </div>
@@ -4065,7 +4066,8 @@
   </div>
 
   <!-- #142: Script Play Quiz Overlay -->
-  <div id="scriptQuizOverlay" class="script-quiz-overlay hidden" role="dialog" aria-modal="true" aria-labelledby="scriptQuizTitle">
+  <div id="scriptQuizOverlay" class="script-quiz-overlay hidden" role="dialog" aria-modal="true"
+    aria-labelledby="scriptQuizTitle">
     <div class="script-quiz-panel">
       <div class="script-quiz-header">
         <div class="script-quiz-header-left">
@@ -4075,23 +4077,27 @@
         </div>
         <div class="script-quiz-header-right">
           <span class="script-quiz-progress" id="scriptQuizProgress" aria-live="polite"></span>
-          <button class="btn btn-sm" data-action="toggleScriptQuizShuffle" id="scriptQuizShuffleBtn" title="Shuffle play order">🔀 Shuffle</button>
+          <button class="btn btn-sm" data-action="toggleScriptQuizShuffle" id="scriptQuizShuffleBtn"
+            title="Shuffle play order">🔀 Shuffle</button>
           <button class="btn btn-sm btn-danger" data-action="closeScriptQuiz" aria-label="Close quiz">✕ Close</button>
         </div>
       </div>
       <div class="script-quiz-card" id="scriptQuizCard">
         <div class="script-quiz-scenario" id="scriptQuizScenario" aria-live="polite"></div>
         <div class="script-quiz-reveal-row">
-          <button class="btn btn-primary script-quiz-reveal-btn" id="scriptQuizRevealBtn" data-action="revealScriptQuizAnswer">
+          <button class="btn btn-primary script-quiz-reveal-btn" id="scriptQuizRevealBtn"
+            data-action="revealScriptQuizAnswer">
             Show Play Call
           </button>
         </div>
         <div class="script-quiz-answer hidden" id="scriptQuizAnswer" aria-live="polite"></div>
       </div>
       <div class="script-quiz-nav" role="group" aria-label="Quiz navigation">
-        <button class="btn btn-sm script-quiz-nav-btn" data-action="prevScriptQuizPlay" id="scriptQuizPrevBtn">◀ Prev</button>
+        <button class="btn btn-sm script-quiz-nav-btn" data-action="prevScriptQuizPlay" id="scriptQuizPrevBtn">◀
+          Prev</button>
         <span class="script-quiz-score" id="scriptQuizScore" aria-live="polite"></span>
-        <button class="btn btn-sm script-quiz-nav-btn" data-action="nextScriptQuizPlay" id="scriptQuizNextBtn">Next ▶</button>
+        <button class="btn btn-sm script-quiz-nav-btn" data-action="nextScriptQuizPlay" id="scriptQuizNextBtn">Next
+          ▶</button>
       </div>
     </div>
   </div>

@@ -86,6 +86,7 @@ const STORAGE_KEYS = {
   CALLSHEET_TARGETS: "callSheetTargets",
   CALLSHEET_COLLAPSED: "callSheetCollapsed",
   CALLSHEET_QUICK_ACTIONS_OPEN: "csQuickActionsOpen",
+  CALLSHEET_SNAPSHOTS: "callSheetSnapshots",
   DEFENSIVE_TENDENCIES: "defensiveTendencies",
   TENDENCIES_DRAFT: "tendenciesDraft",
   TENDENCIES_SETTINGS: "tendenciesSettings",

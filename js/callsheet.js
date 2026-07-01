@@ -1507,7 +1507,7 @@ function updateStatsPanel() {
   `;
 }
 
-// ============ Not On Sheet View ============
+// ============ Not On Sheet + Source Reconcile (#162-165) ============
 
 function toggleNotOnSheet() {
   const panel = document.getElementById("csNotOnSheetPanel");
@@ -1517,44 +1517,291 @@ function toggleNotOnSheet() {
   if (isHidden) updateNotOnSheetPanel();
 }
 
-function updateNotOnSheetPanel() {
+function updateNotOnSheetPanel(tab) {
   const panel = document.getElementById("csNotOnSheetPanel");
   if (!panel) return;
+  if (tab) panel.dataset.tab = tab;
+  const activeTab = panel.dataset.tab || "playbook";
 
   const onSheet = getCallSheetUsedPlayKeys();
-  const missing = plays.filter((p) => !onSheet.has(csPlayKey(p)));
 
-  if (missing.length === 0) {
-    panel.innerHTML =
-      '<div class="empty-state">✅ All playbook plays are on the call sheet!</div>';
-    return;
+  // --- Tab counts ---
+  // Playbook: playbook plays not on CS
+  const pbMissing = plays.filter((p) => !onSheet.has(csPlayKey(p)));
+
+  // GP: game plan plays not on CS (#163)
+  const gpMissing = [];
+  try {
+    const board = _gpEnsureBoard();
+    const seen = new Set();
+    Object.values(board.assignments || {}).forEach((boxPlays) => {
+      (boxPlays || []).forEach((p) => {
+        const k = csPlayKey(p);
+        if (!seen.has(k)) {
+          seen.add(k);
+          if (!onSheet.has(k)) gpMissing.push(p);
+        }
+      });
+    });
+  } catch (_) {}
+
+  // Wristband: wristband plays not on CS (#164)
+  const wbMissing = [];
+  try {
+    if (typeof wristbandCards !== "undefined") {
+      const seen = new Set();
+      wristbandCards.forEach((card) => {
+        (card.data || []).forEach((p) => {
+          if (p && p.play) {
+            const k = csPlayKey(p);
+            if (!seen.has(k)) {
+              seen.add(k);
+              if (!onSheet.has(k)) wbMissing.push(p);
+            }
+          }
+        });
+      });
+    }
+  } catch (_) {}
+
+  // Stale: CS plays not in the playbook (#165)
+  const stale = [];
+  try {
+    const allPlayKeys = new Set(plays.map((p) => csPlayKey(p)));
+    Object.entries(callSheet).forEach(([catId, cat]) => {
+      [...(cat.left || []), ...(cat.right || [])].forEach((p) => {
+        if (!allPlayKeys.has(csPlayKey(p))) stale.push({ play: p, catId });
+      });
+    });
+  } catch (_) {}
+
+  // --- Tab bar ---
+  const tabs = [
+    { id: "playbook", label: "📚 Playbook", count: pbMissing.length },
+    { id: "gp", label: "📋 GP", count: gpMissing.length },
+    { id: "wristband", label: "📟 Wristband", count: wbMissing.length },
+    { id: "stale", label: "⚠️ Stale", count: stale.length },
+  ];
+
+  let html = `<div class="cs-nos-header"><div class="cs-nos-tabs">`;
+  tabs.forEach((t) => {
+    const isCurrent = t.id === activeTab;
+    const badge = t.count > 0 ? ` <span class="cs-nos-badge">${t.count}</span>` : "";
+    html += `<button class="cs-nos-tab${isCurrent ? " active" : ""}" data-action="switchCsReconcileTab" data-arg="${t.id}">${t.label}${badge}</button>`;
+  });
+  html += `</div><button class="btn btn-xs cs-nos-close" data-action="toggleNotOnSheet" title="Close">✕</button></div>`;
+
+  // --- Tab content ---
+  if (activeTab === "playbook") {
+    html += _renderCsNosPlays(pbMissing, "All playbook plays are on the call sheet!", "📚 Missing from Playbook");
+  } else if (activeTab === "gp") {
+    html += _renderCsNosPlays(gpMissing, "All Game Plan plays are on the call sheet!", "📋 GP Plays Not on Call Sheet");
+  } else if (activeTab === "wristband") {
+    html += _renderCsNosPlays(wbMissing, "All wristband plays are on the call sheet!", "📟 Wristband Plays Not on Call Sheet");
+  } else if (activeTab === "stale") {
+    if (stale.length === 0) {
+      html += `<div class="cs-nos-empty">✅ No stale plays — all sheet plays exist in the playbook.</div>`;
+    } else {
+      html += `<div class="cs-nos-count">⚠️ ${stale.length} plays on the sheet no longer exist in the playbook:</div>`;
+      stale.forEach(({ play: p, catId }) => {
+        const cat = [...CALLSHEET_FRONT, ...CALLSHEET_BACK].find((c) => c.id === catId);
+        const catName = cat ? getCategoryDisplayName(cat) : catId;
+        html += `<div class="cs-nos-play cs-nos-stale">
+          <span class="cs-nos-stale-cat">${escapeHtml(catName)}</span>
+          ${escapeHtml(p.formation || "")} ${escapeHtml(p.play || "")}
+        </div>`;
+      });
+    }
   }
 
-  // Group by type
+  panel.innerHTML = html;
+}
+
+function switchCsReconcileTab(tab) {
+  updateNotOnSheetPanel(tab);
+}
+
+function _renderCsNosPlays(missing, emptyMsg, heading) {
+  if (missing.length === 0) {
+    return `<div class="cs-nos-empty">✅ ${emptyMsg}</div>`;
+  }
   const groups = {};
   missing.forEach((p) => {
     const t = p.type || "Unknown";
     if (!groups[t]) groups[t] = [];
     groups[t].push(p);
   });
-
-  let html = `<div class="cs-nos-count">⚠️ ${missing.length} of ${plays.length} plays are NOT on the call sheet:</div>`;
-
+  let html = `<div class="cs-nos-count">${heading}: ${missing.length} plays</div>`;
   Object.entries(groups)
     .sort((a, b) => a[0].localeCompare(b[0]))
-    .forEach(([type, plays]) => {
-      html += `<details><summary>${type} (${plays.length})</summary><div class="cs-nos-list">`;
-      plays.forEach((p) => {
+    .forEach(([type, typePlays]) => {
+      html += `<details><summary>${escapeHtml(type)} (${typePlays.length})</summary><div class="cs-nos-list">`;
+      typePlays.forEach((p) => {
         const code = getPersonnelCode(p.personnel);
         const bg = getPersonnelBgColor(p.personnel);
         const tc = getPersonnelTextColor(p.personnel);
         html += `<div class="cs-nos-play">
-        <span class="personnel-code" style="background: ${bg}; color: ${tc};">${code}</span>
-        ${escapeHtml(p.formation || "")} ${escapeHtml(p.play || "")}
-      </div>`;
+          <span class="personnel-code" style="background: ${bg}; color: ${tc};">${escapeHtml(code)}</span>
+          ${escapeHtml(p.formation || "")} ${escapeHtml(p.play || "")}
+        </div>`;
       });
       html += `</div></details>`;
     });
+  return html;
+}
 
-  panel.innerHTML = html;
+// ============ Source Status Bar (#159-161) ============
+
+function updateCSSourceBar() {
+  const bar = document.getElementById("csSourceBar");
+  if (!bar) return;
+
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  if (!gw || !gw.opponentName) {
+    bar.classList.add("hidden");
+    return;
+  }
+  bar.classList.remove("hidden");
+
+  // GP: count unique plays across all GP boxes for this opponent
+  let gpOnCS = 0, gpTotal = 0;
+  try {
+    const board = _gpEnsureBoard();
+    const seen = new Set();
+    Object.values(board.assignments || {}).forEach((boxPlays) => {
+      (boxPlays || []).forEach((p) => {
+        const k = csPlayKey(p);
+        if (!seen.has(k)) {
+          seen.add(k);
+          gpTotal++;
+          if (isPlayOnCallSheet(p)) gpOnCS++;
+        }
+      });
+    });
+  } catch (_) {}
+
+  // Script: count script plays on CS
+  let scriptOnCS = 0, scriptTotal = 0;
+  try {
+    if (typeof script !== "undefined") {
+      const rows = script.filter((s) => !s.isSeparator);
+      scriptTotal = rows.length;
+      scriptOnCS = rows.filter((p) => isPlayOnCallSheet(p)).length;
+    }
+  } catch (_) {}
+
+  // Wristband: loaded name from display element
+  let wbName = "";
+  try {
+    const wbEl = document.getElementById("loadedWristbandDisplay");
+    wbName = wbEl ? wbEl.textContent.trim() : "";
+  } catch (_) {}
+
+  const gpIcon = gpTotal === 0 ? "—" : gpOnCS === gpTotal ? "✅" : "⚠️";
+  const scrIcon = scriptTotal === 0 ? "—" : scriptOnCS === scriptTotal ? "✅" : "⚠️";
+
+  bar.innerHTML = `
+    <span class="csb-opponent">📅 ${escapeHtml(gw.opponentName)}${gw.week ? ` · Wk ${escapeHtml(String(gw.week))}` : ""}</span>
+    <span class="csb-sep" aria-hidden="true">|</span>
+    <span class="csb-item" title="Game Plan plays currently on this call sheet">${gpIcon} GP: ${gpOnCS}/${gpTotal}</span>
+    <span class="csb-sep" aria-hidden="true">|</span>
+    <span class="csb-item" title="Script plays currently on this call sheet">${scrIcon} Script: ${scriptOnCS}/${scriptTotal}</span>
+    <span class="csb-sep" aria-hidden="true">|</span>
+    <span class="csb-item csb-wb" title="Loaded wristband">📟 ${wbName ? escapeHtml(wbName) : "<em>No wristband</em>"}</span>
+    <button class="btn btn-xs csb-finalize-btn" data-action="finalizeWeek" title="Validate and save game-day snapshot">🏁 Finalize</button>
+  `;
+}
+
+// ============ Finalize Week (#171-175) ============
+
+async function finalizeWeek() {
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  const issues = [];
+  const checks = [];
+
+  // #172: Critical situation buckets must have plays
+  const CRITICAL_CATS = [
+    { id: "3rd-long", label: "3rd & Long" },
+    { id: "3rd-medium", label: "3rd & Medium" },
+    { id: "3rd-short-1-3", label: "3rd & Short" },
+    { id: "rz-20", label: "Red Zone (20)" },
+    { id: "short-yardage", label: "Short Yardage" },
+    { id: "goal-line", label: "Goal Line" },
+    { id: "backed-up", label: "Backed Up" },
+    { id: "2-minute", label: "2-Minute" },
+  ];
+  for (const { id, label } of CRITICAL_CATS) {
+    const cat = callSheet[id];
+    const count = cat ? (cat.left || []).length + (cat.right || []).length : 0;
+    if (count === 0) {
+      issues.push(`<li>⚠️ <strong>${escapeHtml(label)}</strong> — no plays assigned</li>`);
+    } else {
+      checks.push(`<li>✅ ${escapeHtml(label)}: ${count} play${count !== 1 ? "s" : ""}</li>`);
+    }
+  }
+
+  // #173: Wristband should be loaded
+  const wbEl = document.getElementById("loadedWristbandDisplay");
+  const wbName = wbEl ? wbEl.textContent.trim() : "";
+  if (!wbName) {
+    issues.push("<li>⚠️ No wristband loaded for this sheet</li>");
+  } else {
+    checks.push(`<li>✅ Wristband: ${escapeHtml(wbName)}</li>`);
+  }
+
+  // #174: No stale plays (plays in CS but deleted from playbook)
+  const allPlayKeys = new Set(plays.map((p) => csPlayKey(p)));
+  let stalePlays = 0;
+  Object.values(callSheet).forEach((cat) => {
+    [...(cat.left || []), ...(cat.right || [])].forEach((p) => {
+      if (!allPlayKeys.has(csPlayKey(p))) stalePlays++;
+    });
+  });
+  if (stalePlays > 0) {
+    issues.push(`<li>⚠️ ${stalePlays} play${stalePlays !== 1 ? "s" : ""} on the sheet no longer exist in the playbook</li>`);
+  } else {
+    checks.push("<li>✅ No stale/removed plays on the sheet</li>");
+  }
+
+  const hasIssues = issues.length > 0;
+  const issueBlock = hasIssues
+    ? `<div class="cs-finalize-issues"><strong>Issues to review:</strong><ul>${issues.join("")}</ul></div>`
+    : "";
+  const checkBlock = checks.length
+    ? `<div class="cs-finalize-checks"><ul>${checks.join("")}</ul></div>`
+    : "";
+  const prompt = hasIssues
+    ? "<p>Save a game-day snapshot anyway?</p>"
+    : "<p>Everything looks good — save game-day snapshot?</p>";
+
+  const confirmed = await showConfirm(issueBlock + checkBlock + prompt, {
+    title: "🏁 Finalize Week" + (gw && gw.opponentName ? ` — vs ${escapeHtml(gw.opponentName)}` : ""),
+    confirmText: "📸 Save Snapshot",
+    cancelText: "Cancel",
+  });
+  if (!confirmed) return;
+
+  // #175: Save locked game-day snapshot
+  const opponent = gw && gw.opponentName ? gw.opponentName : "Unknown";
+  const week = gw && gw.week ? ` Wk ${gw.week}` : "";
+  const dateStr = new Date().toLocaleDateString(undefined, { month: "short", day: "numeric" });
+  const snapName = `🏁 vs ${opponent}${week} — ${dateStr}`;
+
+  const snaps = storageManager.get(STORAGE_KEYS.CALLSHEET_SNAPSHOTS, []);
+  snaps.push({
+    id: `snap_${Date.now()}`,
+    name: snapName,
+    data: safeDeepClone(callSheet),
+    settings: safeDeepClone(callSheetSettings),
+    savedAt: new Date().toISOString(),
+    opponent,
+    week: gw && gw.week ? gw.week : "",
+    issueCount: issues.length,
+  });
+  // Keep last 10 snapshots
+  while (snaps.length > 10) snaps.shift();
+  storageManager.set(STORAGE_KEYS.CALLSHEET_SNAPSHOTS, snaps);
+
+  showToast(`📸 Snapshot saved: ${snapName}`, { duration: 4000, type: "success" });
+  updateCSSourceBar();
 }
