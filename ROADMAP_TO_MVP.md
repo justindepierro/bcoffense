@@ -365,10 +365,12 @@ Example:
 - [x] **140.** Add Send Script Plays to Wristband.
   - `sendScriptToWristband()` already in `script-integrations.js`; "🃏 Wristband" button in "Send To" drawer. Commit pre-existing.
 - [ ] **141.** Add Send Selected Script Plays to Call Sheet.
-- [ ] **142.** Add quiz creation entry point from a published script.
+- [x] **142.** Add quiz creation entry point from a published script.
+  - `startScriptQuiz()` in `script-render.js` — full-screen play quiz overlay driven by the current script. Shows scenario (down/distance/field position/defense), hides the call; Space/Enter reveals; ← → navigate; Escape closes. Shuffle mode via `toggleScriptQuizShuffle()`. "🧩 Quiz" button added to the Actions block. Commit `next` (SW v779).
 - [x] **143.** Preserve focused Team Run mode.
   - Team Run mode in `script-render.js` unchanged; no regression introduced.
-- [ ] **144.** Add an artifact status bar for Save, Publish, Quiz, Present, Print.
+- [x] **144.** Add an artifact status bar for Save, Publish, Quiz, Present, Print.
+  - `updateScriptArtifactStatus()` in `script-render.js` — `#scriptSaveStatus` shows "● Unsaved · X plays · Y periods" or "✓ Saved · …" below the Actions buttons; updated on every `markScriptDirty`/`markScriptClean`/`renderScript` call. Commit `next` (SW v779).
 - [x] **145.** Keep secondary editing tools in a drawer.
   - Script "⋯ More Tools" drawer already contains all secondary editing tools.
 

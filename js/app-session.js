@@ -37,11 +37,13 @@ function runDraftRestoreCheckForTab(tabName) {
 function markScriptDirty() {
   scriptDirty = true;
   updateSaveStatus("unsaved");
+  if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
 }
 
 function markScriptClean() {
   scriptDirty = false;
   updateSaveStatus("saved");
+  if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
 }
 
 function markWristbandDirty() {

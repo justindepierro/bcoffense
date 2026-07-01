@@ -613,6 +613,31 @@ document.addEventListener("keydown", (e) => {
   toggleCollapsiblePanel(el);
 });
 
+// #142: Quiz keyboard shortcuts (← → Space/Enter)
+document.addEventListener("keydown", (e) => {
+  const overlay = document.getElementById("scriptQuizOverlay");
+  if (!overlay || overlay.classList.contains("hidden")) return;
+  if (e.target.matches("input, textarea, select, button")) return;
+  if (e.key === "ArrowRight" || e.key === "ArrowDown") {
+    e.preventDefault();
+    if (typeof nextScriptQuizPlay === "function") nextScriptQuizPlay();
+  } else if (e.key === "ArrowLeft" || e.key === "ArrowUp") {
+    e.preventDefault();
+    if (typeof prevScriptQuizPlay === "function") prevScriptQuizPlay();
+  } else if (e.key === " " || e.key === "Enter") {
+    e.preventDefault();
+    const answerEl = document.getElementById("scriptQuizAnswer");
+    if (answerEl && answerEl.classList.contains("hidden")) {
+      if (typeof revealScriptQuizAnswer === "function") revealScriptQuizAnswer();
+    } else {
+      if (typeof nextScriptQuizPlay === "function") nextScriptQuizPlay();
+    }
+  } else if (e.key === "Escape") {
+    e.preventDefault();
+    if (typeof closeScriptQuiz === "function") closeScriptQuiz();
+  }
+});
+
 document.addEventListener("DOMContentLoaded", () => {
   if (typeof initScriptEvents === "function") {
     initScriptEvents();

@@ -1122,6 +1122,7 @@ function renderScript() {
   if (typeof script === "undefined" || !Array.isArray(script)) return;
   updateScriptOpponentBadge();
   if (typeof updateScriptReconcileStatus === "function") updateScriptReconcileStatus();
+  if (typeof updateScriptArtifactStatus === "function") updateScriptArtifactStatus();
   try {
     const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");
@@ -1382,4 +1383,183 @@ function updateScriptOpponentBadge() {
   } else {
     badge.hidden = true;
   }
+}
+
+// ─── #144: Artifact status bar ────────────────────────────────────────────────
+function updateScriptArtifactStatus() {
+  const el = document.getElementById("scriptSaveStatus");
+  if (!el) return;
+  const playCount = Array.isArray(script) ? script.filter((s) => !s.isSeparator).length : 0;
+  const periodCount = Array.isArray(script) ? script.filter((s) => s.isSeparator).length : 0;
+  const countLabel = playCount
+    ? `${playCount} play${playCount !== 1 ? "s" : ""}${periodCount ? ` · ${periodCount} period${periodCount !== 1 ? "s" : ""}` : ""}`
+    : "";
+  if (scriptDirty) {
+    el.textContent = countLabel ? `● Unsaved · ${countLabel}` : "● Unsaved changes";
+    el.className = "script-save-status dirty";
+  } else {
+    el.textContent = countLabel ? `✓ Saved · ${countLabel}` : "✓ Saved";
+    el.className = "script-save-status clean";
+  }
+}
+
+// ─── #142: Script Play Quiz ───────────────────────────────────────────────────
+let _quizPlays = [];     // [{ play, period }]
+let _quizIndex = 0;
+let _quizShuffled = false;
+let _quizRevealed = false;
+
+function _buildQuizPlays(shuffled) {
+  const items = [];
+  let currentPeriod = "";
+  script.forEach((item) => {
+    if (item.isSeparator) {
+      currentPeriod = item.label || "";
+    } else {
+      items.push({ play: item, period: currentPeriod });
+    }
+  });
+  if (shuffled) {
+    for (let i = items.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [items[i], items[j]] = [items[j], items[i]];
+    }
+  }
+  return items;
+}
+
+function startScriptQuiz() {
+  const plays = Array.isArray(script) ? script.filter((s) => !s.isSeparator) : [];
+  if (!plays.length) {
+    showToast("Add plays to the script before starting a quiz", { type: "warning" });
+    return;
+  }
+  _quizShuffled = false;
+  _quizPlays = _buildQuizPlays(false);
+  _quizIndex = 0;
+
+  const overlay = document.getElementById("scriptQuizOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("hidden");
+  if (typeof trapFocus === "function") trapFocus(overlay);
+  renderScriptQuizPlay();
+}
+
+function closeScriptQuiz() {
+  const overlay = document.getElementById("scriptQuizOverlay");
+  if (overlay) overlay.classList.add("hidden");
+}
+
+function toggleScriptQuizShuffle() {
+  _quizShuffled = !_quizShuffled;
+  _quizPlays = _buildQuizPlays(_quizShuffled);
+  _quizIndex = 0;
+  const btn = document.getElementById("scriptQuizShuffleBtn");
+  if (btn) btn.classList.toggle("active", _quizShuffled);
+  renderScriptQuizPlay();
+  showToast(_quizShuffled ? "Quiz shuffled" : "Quiz in script order", { type: "info" });
+}
+
+function revealScriptQuizAnswer() {
+  _quizRevealed = true;
+  const revealRow = document.querySelector(".script-quiz-reveal-row");
+  const answerEl = document.getElementById("scriptQuizAnswer");
+  if (revealRow) revealRow.classList.add("hidden");
+  if (answerEl) answerEl.classList.remove("hidden");
+}
+
+function nextScriptQuizPlay() {
+  if (_quizIndex < _quizPlays.length - 1) {
+    _quizIndex++;
+    renderScriptQuizPlay();
+  }
+}
+
+function prevScriptQuizPlay() {
+  if (_quizIndex > 0) {
+    _quizIndex--;
+    renderScriptQuizPlay();
+  }
+}
+
+function renderScriptQuizPlay() {
+  const item = _quizPlays[_quizIndex];
+  if (!item) return;
+  const { play, period } = item;
+  _quizRevealed = false;
+
+  // Progress
+  const progressEl = document.getElementById("scriptQuizProgress");
+  if (progressEl) progressEl.textContent = `${_quizIndex + 1} / ${_quizPlays.length}`;
+
+  // Period label
+  const periodEl = document.getElementById("scriptQuizPeriod");
+  if (periodEl) {
+    periodEl.textContent = period ? period : "";
+    periodEl.className = period ? "script-quiz-period" : "script-quiz-period hidden";
+  }
+
+  // Nav buttons
+  const prevBtn = document.getElementById("scriptQuizPrevBtn");
+  const nextBtn = document.getElementById("scriptQuizNextBtn");
+  if (prevBtn) prevBtn.disabled = _quizIndex === 0;
+  if (nextBtn) nextBtn.disabled = _quizIndex === _quizPlays.length - 1;
+
+  // Score / context
+  const scoreEl = document.getElementById("scriptQuizScore");
+  if (scoreEl) scoreEl.textContent = `Play ${_quizIndex + 1} of ${_quizPlays.length}`;
+
+  // Scenario — show the SITUATION without revealing the call
+  const downLabel = play.preferredDown ? `${_ordinalDown(play.preferredDown)} Down` : "";
+  const distLabel = play.preferredDistance ? `& ${play.preferredDistance}` : "";
+  const posLabel = play.preferredFieldPosition ? play.preferredFieldPosition : "";
+  const hashLabel = play.preferredHash ? play.preferredHash : "";
+  const situationLabel = play.preferredSituation ? play.preferredSituation : "";
+  const personnelLabel = play.personnel ? play.personnel : "";
+  const tempoLabel = play.tempo ? play.tempo : "";
+  const typeLabel = play.type ? play.type : "";
+
+  const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
+  const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
+
+  const scenarioHtml = `
+    <div class="sq-scenario-block">
+      <div class="sq-scenario-label">Situation</div>
+      <div class="sq-scenario-value sq-situation">${situationParts.length ? situationParts.map(escapeHtml).join(" · ") : "<em style='opacity:.5'>No situation set</em>"}</div>
+    </div>
+    ${callContextParts.length ? `
+    <div class="sq-scenario-block">
+      <div class="sq-scenario-label">Context</div>
+      <div class="sq-scenario-value">${callContextParts.map(escapeHtml).join(" · ")}</div>
+    </div>` : ""}
+    ${play.practiceFront || play.practiceCoverage || play.practiceBlitz ? `
+    <div class="sq-scenario-block">
+      <div class="sq-scenario-label">Defense</div>
+      <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
+    </div>` : ""}
+    <div class="sq-scenario-hint">What's the call?</div>
+  `;
+  const scenarioEl = document.getElementById("scriptQuizScenario");
+  if (scenarioEl) setInnerHTML(scenarioEl, scenarioHtml);
+
+  // Answer — hidden until revealed
+  const fullCall = typeof getFullCall === "function" ? getFullCall(play, { showEmoji: false }) : escapeHtml([play.formation, play.play].filter(Boolean).join(" "));
+  const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
+  const answerHtml = `
+    <div class="sq-answer-call">${fullCall}</div>
+    ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
+    ${play.notes ? `<div class="sq-answer-notes">${escapeHtml(play.notes)}</div>` : ""}
+  `;
+  const answerEl = document.getElementById("scriptQuizAnswer");
+  if (answerEl) {
+    setInnerHTML(answerEl, answerHtml);
+    answerEl.classList.add("hidden");
+  }
+  const revealRow = document.querySelector(".script-quiz-reveal-row");
+  if (revealRow) revealRow.classList.remove("hidden");
+}
+
+function _ordinalDown(n) {
+  const map = { "1": "1st", "2": "2nd", "3": "3rd", "4": "4th" };
+  return map[String(n)] || `${n}th`;
 }
