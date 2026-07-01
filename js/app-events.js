@@ -64,6 +64,8 @@ const _ELEMENT_FNS = new Set([
   "submitDiscPost",
   "deleteDiscPost",
   "loadMoreDiscussion",
+  "submitDiscReply",
+  "loadMoreDiscReplies",
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 

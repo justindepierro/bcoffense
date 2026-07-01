@@ -4744,11 +4744,13 @@ body.shell-phone .pb-action-sheet {
 /* ── Reactions ──────────────────────────────────────────────────────────────── */
 .disc-reactions {
   display: flex;
+  align-items: center;
   gap: var(--space-xs);
   flex-wrap: wrap;
   margin-top: var(--space-xs);
 }
-.disc-react-btn {
+/* Compact reaction chip (shows emoji + count) */
+.disc-react-chip {
   display: inline-flex;
   align-items: center;
   gap: 3px;
@@ -4758,27 +4760,197 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-bg-light);
   font-size: var(--font-size-xs);
   cursor: pointer;
-  transition:
-    border-color var(--transition-fast),
-    background var(--transition-fast);
+  transition: border-color var(--transition-fast), background var(--transition-fast);
   color: var(--color-text-muted);
   line-height: 1.4;
 }
-.disc-react-btn:hover {
+.disc-react-chip:hover {
   border-color: var(--color-primary);
   background: var(--color-bg-hover-row);
   color: var(--color-text);
 }
-.disc-react-btn.is-mine {
+.disc-react-chip.is-mine {
   border-color: var(--color-primary);
   background: color-mix(in srgb, var(--color-primary) 15%, transparent);
   color: var(--color-primary);
   font-weight: 600;
 }
+/* "React" open button */
+.disc-react-open-btn {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px dashed var(--color-border);
+  background: transparent;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), color var(--transition-fast);
+}
+.disc-react-open-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
 .disc-react-count {
   font-size: 11px;
   font-weight: 600;
 }
+
+/* ── Reaction picker popup ──────────────────────────────────────────────────── */
+.disc-reaction-picker {
+  position: absolute;
+  z-index: var(--z-modal);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-lg);
+  padding: var(--space-sm);
+  width: 220px;
+  display: none;
+}
+.disc-reaction-picker.visible { display: block; }
+.disc-picker-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 4px;
+}
+.disc-picker-btn {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 6px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  background: transparent;
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast);
+  font-size: 11px;
+  color: var(--color-text-muted);
+  gap: 2px;
+}
+.disc-picker-btn:hover {
+  background: var(--color-bg-hover-row);
+  border-color: var(--color-border);
+  color: var(--color-text);
+}
+.disc-picker-emoji { font-size: 20px; line-height: 1; }
+.disc-picker-label { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50px; }
+.disc-picker-close {
+  position: absolute;
+  top: 6px; right: 8px;
+  background: none; border: none;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  font-size: 12px;
+  padding: 2px;
+}
+.disc-picker-close:hover { color: var(--color-text); }
+
+/* ── Reply button ───────────────────────────────────────────────────────────── */
+.disc-reply-btn {
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 11px;
+  color: var(--color-text-muted);
+  padding: 2px 6px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.disc-reply-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-hover-row);
+}
+
+/* ── Reply tree ─────────────────────────────────────────────────────────────── */
+.disc-replies {
+  margin-left: calc(var(--space-sm) + 32px);
+  margin-top: var(--space-xs);
+  border-left: 2px solid var(--color-border-light);
+  padding-left: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.disc-post--reply {
+  padding: var(--space-xs) var(--space-sm);
+}
+.disc-post--reply .disc-post-avatar {
+  width: 28px;
+  height: 28px;
+  min-width: 28px;
+  font-size: 10px;
+}
+.disc-load-replies {
+  align-self: flex-start;
+  margin-top: 2px;
+  color: var(--color-primary);
+  font-size: 11px;
+}
+
+/* ── Reply composer ─────────────────────────────────────────────────────────── */
+.disc-composer--reply {
+  margin-top: var(--space-xs);
+  margin-left: calc(var(--space-sm) + 32px);
+  border-left: 2px solid var(--color-primary-light, var(--color-primary));
+  padding-left: var(--space-sm);
+}
+.disc-reply-composer-slot { /* empty by default, filled on demand */ }
+
+/* ── Coach post highlight ───────────────────────────────────────────────────── */
+.disc-post--coach {
+  background: color-mix(in srgb, var(--color-primary) 4%, transparent);
+  border-radius: var(--radius-sm);
+}
+.disc-post--coach .disc-post-avatar {
+  box-shadow: 0 0 0 2px var(--color-primary);
+}
+
+/* ── Moderation ─────────────────────────────────────────────────────────────── */
+.disc-mod-banner {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  background: color-mix(in srgb, var(--color-warning) 10%, transparent);
+  border: 1px solid var(--color-warning);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs) var(--space-sm);
+  margin-bottom: var(--space-sm);
+  font-size: var(--font-size-xs);
+}
+.disc-mod-badge { color: var(--color-warning); font-weight: 600; flex: 1; }
+.disc-mod-placeholder { color: var(--color-text-muted); font-style: italic; font-size: var(--font-size-xs); }
+.disc-mod-queue { display: flex; flex-direction: column; gap: var(--space-sm); max-height: 400px; overflow-y: auto; }
+.disc-mod-item {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.disc-mod-item-meta { font-size: 11px; color: var(--color-text-muted); }
+.disc-mod-body {
+  font-size: var(--font-size-xs);
+  white-space: pre-wrap;
+  word-break: break-word;
+  max-height: 80px;
+  overflow-y: auto;
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-sm);
+  padding: var(--space-xs);
+}
+.disc-mod-status {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+.disc-mod-actions { display: flex; gap: var(--space-xs); }
 
 /* ── Question state badge ───────────────────────────────────────────────────── */
 .disc-q-state {

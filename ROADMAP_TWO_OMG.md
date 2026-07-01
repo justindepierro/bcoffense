@@ -339,104 +339,104 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 # Phase 8A — Comment and Message Content Moderation
 
-- Create a server-side content-moderation service for comments, questions, replies, and announcements.
-- Do not rely only on a basic profanity blacklist.
-- Define moderation categories for profanity, vulgarity, slurs, sexual content, threats, bullying, harassment, self-harm, personal information, and spam.
-- Define severity levels: Clear, Warning, Review, and Block.
-- Define moderation outcomes: Allow, Warn, Hold for Review, and Block.
-- Create a configurable team communication policy.
-- Allow administrators to choose whether mild profanity produces a warning or automatic block.
-- Always hold or block clear identity-based slurs.
-- Always hold or block explicit sexual content involving minors.
-- Always hold or block direct threats.
-- Create a normalization pipeline before moderation checks.
-- Convert text to lowercase for comparison.
-- Normalize Unicode characters and visual lookalikes.
-- Collapse repeated whitespace.
-- Detect letters separated by spaces or punctuation.
-- Detect common number-for-letter substitutions.
-- Detect punctuation-for-letter substitutions.
-- Normalize excessive repeated characters.
-- Detect words split across multiple lines.
-- Detect common attempts to bypass the filter.
-- Keep the restricted-term rules on the server rather than exposing them in client JavaScript.
-- Encrypt or otherwise restrict access to sensitive moderation configuration.
-- Create an extensible restricted-language dictionary.
-- Categorize restricted terms rather than storing one undifferentiated list.
-- Assign severity values to restricted terms and patterns.
-- Support exact-match patterns.
-- Support normalized-match patterns.
-- Support phrase patterns.
-- Support fuzzy matching for deliberate misspellings.
-- Add safeguards against excessive fuzzy-match false positives.
-- Create a football terminology allowlist.
-- Add legitimate terms such as blitz, pistol, gun, bomb, kill, smash, crack, trap, naked, bullet, shoot, and execution to context-aware review rules.
-- Do not globally allow a football term when the surrounding sentence is threatening or abusive.
-- Create context rules for football language.
-- Distinguish descriptions of plays from statements directed at a person.
-- Detect second-person threatening constructions such as direct threats toward “you.”
-- Detect targeted insults using names, roster identities, or tagged users.
-- Detect repeated harassment across multiple posts.
-- Detect sexualized comments directed toward another user.
-- Detect attempts to reveal phone numbers, addresses, or other personal information.
-- Detect spam and repeated-message flooding.
-- Apply moderation to edited posts as well as new posts.
-- Apply moderation to coach posts and player posts.
-- Apply moderation before content becomes publicly visible when severity requires review.
-- Allow low-risk messages to publish immediately.
-- Show a neutral revision warning for mild or uncertain violations.
-- Allow the player to edit and resubmit a warned message.
-- Do not reveal the exact blocked-term dictionary to users.
-- Add a coach moderation queue.
-- Show the original submitted text only to authorized moderators.
-- Show detected category.
-- Show severity score.
-- Show detected patterns or reasons.
-- Show author and source context.
-- Show play, script, opponent, and position context.
-- Add Approve action.
-- Add Reject action.
-- Add Edit and Approve action for coaches where policy permits.
-- Add Warn User action.
-- Add Lock Thread action.
-- Add Temporary Mute action.
-- Add Account Review action.
-- Require a moderation reason for rejection, muting, or account action.
-- Store moderation decisions in an audit table.
-- Store moderator identity.
-- Store decision timestamp.
-- Preserve the submitted message securely for audit purposes where school policy permits.
-- Prevent ordinary users from accessing rejected content.
-- Do not automatically create a disciplinary record from one filter match.
-- Track false-positive reversals.
-- Allow administrators to add a term to the football allowlist after review.
-- Allow administrators to increase the severity of newly observed slang or coded language.
-- Add a process for regularly reviewing moderation terms.
-- Add rate limits for repeated blocked submissions.
-- Add escalating cooldowns for repeated bypass attempts.
-- Notify coaches after repeated severe violations.
-- Avoid notifying the entire staff for mild isolated profanity.
-- Add player-facing language explaining that team communication is monitored.
-- Add team communication expectations to account onboarding.
-- Add an acceptable-use acknowledgment.
-- Add privacy language explaining moderation and audit logging.
-- Add unit tests for ordinary football terminology.
-- Add unit tests for profanity.
-- Add unit tests for disguised profanity.
-- Add unit tests for racial and identity-based slurs.
-- Add unit tests for sexual language.
-- Add unit tests for threats.
-- Add unit tests for targeted harassment.
-- Add unit tests for personal-information sharing.
-- Add unit tests for Unicode and punctuation bypasses.
-- Add tests ensuring legitimate football phrases are not falsely blocked.
-- Add tests ensuring threatening uses of football terms are still detected.
-- Add moderation permission tests.
-- Add moderation audit-history tests.
-- Add mobile moderation-queue layouts.
-- Add iPad moderation-queue layouts.
-- Add accessibility labels and status announcements.
-- Add production monitoring for false-positive and false-negative reports.
+- [x] Create a server-side content-moderation service for comments, questions, replies, and announcements.
+- [ ] Do not rely only on a basic profanity blacklist.
+- [x] Define moderation categories for profanity, vulgarity, slurs, sexual content, threats, bullying, harassment, self-harm, personal information, and spam.
+- [x] Define severity levels: Clear, Warning, Review, and Block.
+- [x] Define moderation outcomes: Allow, Warn, Hold for Review, and Block.
+- [x] Create a configurable team communication policy.
+- [x] Allow administrators to choose whether mild profanity produces a warning or automatic block.
+- [x] Always hold or block clear identity-based slurs.
+- [x] Always hold or block explicit sexual content involving minors.
+- [x] Always hold or block direct threats.
+- [x] Create a normalization pipeline before moderation checks.
+- [x] Convert text to lowercase for comparison.
+- [x] Normalize Unicode characters and visual lookalikes.
+- [x] Collapse repeated whitespace.
+- [x] Detect letters separated by spaces or punctuation.
+- [x] Detect common number-for-letter substitutions.
+- [x] Detect punctuation-for-letter substitutions.
+- [x] Normalize excessive repeated characters.
+- [ ] Detect words split across multiple lines.
+- [x] Detect common attempts to bypass the filter.
+- [x] Keep the restricted-term rules on the server rather than exposing them in client JavaScript.
+- [ ] Encrypt or otherwise restrict access to sensitive moderation configuration.
+- [x] Create an extensible restricted-language dictionary.
+- [x] Categorize restricted terms rather than storing one undifferentiated list.
+- [x] Assign severity values to restricted terms and patterns.
+- [x] Support exact-match patterns.
+- [x] Support normalized-match patterns.
+- [x] Support phrase patterns.
+- [ ] Support fuzzy matching for deliberate misspellings.
+- [ ] Add safeguards against excessive fuzzy-match false positives.
+- [x] Create a football terminology allowlist.
+- [x] Add legitimate terms such as blitz, pistol, gun, bomb, kill, smash, crack, trap, naked, bullet, shoot, and execution to context-aware review rules.
+- [x] Do not globally allow a football term when the surrounding sentence is threatening or abusive.
+- [x] Create context rules for football language.
+- [x] Distinguish descriptions of plays from statements directed at a person.
+- [x] Detect second-person threatening constructions such as direct threats toward “you.”
+- [x] Detect targeted insults using names, roster identities, or tagged users.
+- [ ] Detect repeated harassment across multiple posts.
+- [x] Detect sexualized comments directed toward another user.
+- [x] Detect attempts to reveal phone numbers, addresses, or other personal information.
+- [x] Detect spam and repeated-message flooding.
+- [x] Apply moderation to edited posts as well as new posts.
+- [x] Apply moderation to coach posts and player posts.
+- [x] Apply moderation before content becomes publicly visible when severity requires review.
+- [x] Allow low-risk messages to publish immediately.
+- [x] Show a neutral revision warning for mild or uncertain violations.
+- [x] Allow the player to edit and resubmit a warned message.
+- [x] Do not reveal the exact blocked-term dictionary to users.
+- [x] Add a coach moderation queue.
+- [x] Show the original submitted text only to authorized moderators.
+- [x] Show detected category.
+- [x] Show severity score.
+- [ ] Show detected patterns or reasons.
+- [x] Show author and source context.
+- [ ] Show play, script, opponent, and position context.
+- [x] Add Approve action.
+- [x] Add Reject action.
+- [ ] Add Edit and Approve action for coaches where policy permits.
+- [ ] Add Warn User action.
+- [ ] Add Lock Thread action.
+- [ ] Add Temporary Mute action.
+- [ ] Add Account Review action.
+- [ ] Require a moderation reason for rejection, muting, or account action.
+- [x] Store moderation decisions in an audit table.
+- [x] Store moderator identity.
+- [x] Store decision timestamp.
+- [x] Preserve the submitted message securely for audit purposes where school policy permits.
+- [x] Prevent ordinary users from accessing rejected content.
+- [ ] Do not automatically create a disciplinary record from one filter match.
+- [ ] Track false-positive reversals.
+- [ ] Allow administrators to add a term to the football allowlist after review.
+- [ ] Allow administrators to increase the severity of newly observed slang or coded language.
+- [ ] Add a process for regularly reviewing moderation terms.
+- [ ] Add rate limits for repeated blocked submissions.
+- [ ] Add escalating cooldowns for repeated bypass attempts.
+- [ ] Notify coaches after repeated severe violations.
+- [ ] Avoid notifying the entire staff for mild isolated profanity.
+- [ ] Add player-facing language explaining that team communication is monitored.
+- [ ] Add team communication expectations to account onboarding.
+- [ ] Add an acceptable-use acknowledgment.
+- [ ] Add privacy language explaining moderation and audit logging.
+- [ ] Add unit tests for ordinary football terminology.
+- [ ] Add unit tests for profanity.
+- [ ] Add unit tests for disguised profanity.
+- [ ] Add unit tests for racial and identity-based slurs.
+- [ ] Add unit tests for sexual language.
+- [ ] Add unit tests for threats.
+- [ ] Add unit tests for targeted harassment.
+- [ ] Add unit tests for personal-information sharing.
+- [ ] Add unit tests for Unicode and punctuation bypasses.
+- [ ] Add tests ensuring legitimate football phrases are not falsely blocked.
+- [ ] Add tests ensuring threatening uses of football terms are still detected.
+- [ ] Add moderation permission tests.
+- [ ] Add moderation audit-history tests.
+- [ ] Add mobile moderation-queue layouts.
+- [ ] Add iPad moderation-queue layouts.
+- [ ] Add accessibility labels and status announcements.
+- [ ] Add production monitoring for false-positive and false-negative reports.
 
 # Phase 8B — Visual Coach Replies, Reply Trees, Attachments, and Emoji Reactions
 
@@ -444,20 +444,20 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 **Allow coaches and authorized staff to answer player questions using:**
 
-- A normal text reply
-- A marked-up copy of the play
-- An uploaded image
-- A marked-up uploaded image
-- A combination of text and visual explanation
+- [ ] A normal text reply
+- [ ] A marked-up copy of the play
+- [ ] An uploaded image
+- [ ] A marked-up uploaded image
+- [ ] A combination of text and visual explanation
 
 **The discussion interface should use a simple Facebook-style reply tree:**
 
-- Original comment or question
-- Direct replies underneath it
-- One additional reply level where appropriate
-- Collapsible reply groups
-- Clear coach-answer highlighting
-- Easy emoji reactions
+- [ ] Original comment or question
+- [ ] Direct replies underneath it
+- [ ] One additional reply level where appropriate
+- [ ] Collapsible reply groups
+- [ ] Clear coach-answer highlighting
+- [ ] Easy emoji reactions
 
 **The feature must reuse the application’s existing telestrator tools wherever practical.**
 
@@ -465,246 +465,246 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 # 8B.1 — Reply and Thread Architecture
 
-- Add parent-post support to the discussion-post data model.
-- Store parentPostId for replies.
-- Store rootPostId for efficient thread retrieval.
-- Store reply depth.
-- Limit visible reply nesting to a manageable depth.
-- Use a maximum of two visual indentation levels.
-- Flatten deeper technical reply chains beneath the nearest supported visual parent.
-- Preserve the complete logical parent relationship in the database.
-- Allow replies to comments.
-- Allow replies to questions.
-- Allow replies to coach clarifications.
-- Allow replies to visual attachments.
-- Prevent replies to deleted or locked posts unless a coach restores them.
-- Allow coaches to lock one reply branch without locking the entire play discussion.
-- Add reply-count fields to post summaries.
-- Add efficient thread-query indexes.
-- Avoid one database query per reply.
-- Load root posts and visible replies in batches.
-- Paginate large root-level discussions.
-- Add Load More Replies for long reply groups.
-- Preserve thread order after new replies are submitted.
-- Sort replies chronologically by default.
-- Keep the official pinned coach answer above ordinary replies.
-- Allow coaches to pin a reply as the official answer.
-- Allow only one official pinned answer per question by default.
-- Preserve previous pinned-answer history.
-- Add thread architecture tests.
+- [x] Add parent-post support to the discussion-post data model.
+- [x] Store parentPostId for replies.
+- [x] Store rootPostId for efficient thread retrieval.
+- [x] Store reply depth.
+- [x] Limit visible reply nesting to a manageable depth.
+- [x] Use a maximum of two visual indentation levels.
+- [ ] Flatten deeper technical reply chains beneath the nearest supported visual parent.
+- [ ] Preserve the complete logical parent relationship in the database.
+- [x] Allow replies to comments.
+- [x] Allow replies to questions.
+- [ ] Allow replies to coach clarifications.
+- [ ] Allow replies to visual attachments.
+- [x] Prevent replies to deleted or locked posts unless a coach restores them.
+- [ ] Allow coaches to lock one reply branch without locking the entire play discussion.
+- [x] Add reply-count fields to post summaries.
+- [ ] Add efficient thread-query indexes.
+- [ ] Avoid one database query per reply.
+- [ ] Load root posts and visible replies in batches.
+- [x] Paginate large root-level discussions.
+- [x] Add Load More Replies for long reply groups.
+- [x] Preserve thread order after new replies are submitted.
+- [x] Sort replies chronologically by default.
+- [ ] Keep the official pinned coach answer above ordinary replies.
+- [ ] Allow coaches to pin a reply as the official answer.
+- [ ] Allow only one official pinned answer per question by default.
+- [ ] Preserve previous pinned-answer history.
+- [ ] Add thread architecture tests.
 
 ⸻
 
 # 8B.2 — Facebook-Style Discussion Layout
 
-- Display each root comment or question as a clean discussion card.
-- Display replies directly beneath the parent post.
-- Use a subtle connector line for reply branches.
-- Use modest indentation rather than deeply nested cards.
-- Display author name prominently.
-- Display author role.
-- Display player position when relevant.
-- Display timestamp.
-- Display edited status.
-- Display question state.
-- Display script and practice context when relevant.
-- Highlight official coach replies.
-- Highlight pinned answers.
-- Distinguish coaches from players without relying only on color.
-- Add a compact Reply action beneath every eligible post.
-- Add a compact React action beneath every eligible post.
-- Add a compact More menu beneath every eligible post.
-- Display reaction summary beneath the post.
-- Display the most-used reactions first.
-- Show total reply count.
-- Add View Replies and Hide Replies controls.
-- Keep replies expanded when the user has actively opened the thread.
-- Preserve expanded-thread state while navigating within the play.
-- Use a single-column feed on phones.
-- Use a wider centered feed on tablets.
-- Allow a side-panel discussion layout on desktop.
-- Avoid excessive borders around every reply.
-- Avoid displaying every moderation and editing control permanently.
-- Move secondary controls into a three-dot menu.
-- Add skeleton loading states.
-- Add empty-thread states.
-- Add failed-load retry states.
-- Add accessible thread semantics.
+- [x] Display each root comment or question as a clean discussion card.
+- [x] Display replies directly beneath the parent post.
+- [ ] Use a subtle connector line for reply branches.
+- [x] Use modest indentation rather than deeply nested cards.
+- [x] Display author name prominently.
+- [x] Display author role.
+- [ ] Display player position when relevant.
+- [x] Display timestamp.
+- [x] Display edited status.
+- [x] Display question state.
+- [ ] Display script and practice context when relevant.
+- [x] Highlight official coach replies.
+- [ ] Highlight pinned answers.
+- [ ] Distinguish coaches from players without relying only on color.
+- [x] Add a compact Reply action beneath every eligible post.
+- [x] Add a compact React action beneath every eligible post.
+- [ ] Add a compact More menu beneath every eligible post.
+- [x] Display reaction summary beneath the post.
+- [ ] Display the most-used reactions first.
+- [x] Show total reply count.
+- [x] Add View Replies and Hide Replies controls.
+- [ ] Keep replies expanded when the user has actively opened the thread.
+- [ ] Preserve expanded-thread state while navigating within the play.
+- [x] Use a single-column feed on phones.
+- [ ] Use a wider centered feed on tablets.
+- [ ] Allow a side-panel discussion layout on desktop.
+- [ ] Avoid excessive borders around every reply.
+- [ ] Avoid displaying every moderation and editing control permanently.
+- [ ] Move secondary controls into a three-dot menu.
+- [x] Add skeleton loading states.
+- [x] Add empty-thread states.
+- [x] Add failed-load retry states.
+- [ ] Add accessible thread semantics.
 
 ⸻
 
 # 8B.3 — Reply Composer
 
-- Add a Reply action to comments and questions.
-- Show the author being replied to.
-- Show a short preview of the parent message.
-- Allow plain-text replies.
-- Allow emoji insertion.
-- Allow a marked-up play attachment.
-- Allow an uploaded image attachment.
-- Allow an uploaded image to be marked up before posting.
-- Allow text and one or more supported attachments in the same reply.
-- Preserve an unfinished reply while the composer remains open.
-- Preserve an unfinished reply during device rotation.
-- Warn before closing a composer with unsaved text or markup.
-- Add Cancel.
-- Add Post Reply.
-- Add Save Draft for coaches as a later enhancement.
-- Disable repeated submissions while a reply is uploading.
-- Show upload progress.
-- Show processing state.
-- Show retry after failed upload.
-- Prevent accidental duplicate replies.
-- Run text through the Phase 8A moderation system.
-- Scan attachment metadata and file types.
-- Enforce reply-length limits.
-- Enforce attachment-count limits.
-- Add reply-composer tests.
+- [ ] Add a Reply action to comments and questions.
+- [ ] Show the author being replied to.
+- [ ] Show a short preview of the parent message.
+- [x] Allow plain-text replies.
+- [x] Allow emoji insertion.
+- [ ] Allow a marked-up play attachment.
+- [ ] Allow an uploaded image attachment.
+- [ ] Allow an uploaded image to be marked up before posting.
+- [ ] Allow text and one or more supported attachments in the same reply.
+- [x] Preserve an unfinished reply while the composer remains open.
+- [ ] Preserve an unfinished reply during device rotation.
+- [ ] Warn before closing a composer with unsaved text or markup.
+- [x] Add Cancel.
+- [x] Add Post Reply.
+- [ ] Add Save Draft for coaches as a later enhancement.
+- [x] Disable repeated submissions while a reply is uploading.
+- [ ] Show upload progress.
+- [ ] Show processing state.
+- [ ] Show retry after failed upload.
+- [x] Prevent accidental duplicate replies.
+- [ ] Run text through the Phase 8A moderation system.
+- [ ] Scan attachment metadata and file types.
+- [ ] Enforce reply-length limits.
+- [ ] Enforce attachment-count limits.
+- [ ] Add reply-composer tests.
 
 ⸻
 
 # 8B.4 — Mark Up This Play
 
-- Add a Mark Up Play action to the coach reply composer.
-- Open the current canonical play in the existing telestrator.
-- Load the correct play revision.
-- Load the play exactly as the player saw it when the question was asked where possible.
-- Preserve script-specific context when relevant.
-- Do not modify the canonical Playbook drawing.
-- Create an independent reply-annotation document.
-- Store the source play ID.
-- Store the source play revision ID.
-- Store the source script ID when relevant.
-- Store the source opponent and Game Week context when relevant.
-- Allow coaches to draw freehand.
-- Allow coaches to draw arrows.
-- Allow coaches to draw circles.
-- Allow coaches to draw lines.
-- Allow coaches to add text labels.
-- Allow coaches to add position labels.
-- Allow coaches to erase individual marks.
-- Allow Undo.
-- Allow Redo.
-- Allow Clear All.
-- Allow zooming and panning.
-- Support Apple Pencil.
-- Support touch.
-- Support mouse.
-- Support trackpad.
-- Preserve accurate drawing coordinates across screen sizes.
-- Preserve accurate coordinates after rotation.
-- Save annotations as vector data where practical.
-- Generate a display preview for quick thread rendering.
-- Keep the editable vector source for future reopening.
-- Add an optional caption.
-- Add an optional coach explanation beneath the image.
-- Add Preview Reply.
-- Add Post Marked-Up Reply.
-- Add Save and Continue Editing.
-- Add Discard Markup.
-- Confirm before discarding meaningful markup.
-- Restore the coach to the exact discussion thread after posting.
-- Add markup creation tests.
-- Add coordinate-scaling tests.
-- Add Apple Pencil manual testing instructions.
+- [ ] Add a Mark Up Play action to the coach reply composer.
+- [ ] Open the current canonical play in the existing telestrator.
+- [ ] Load the correct play revision.
+- [ ] Load the play exactly as the player saw it when the question was asked where possible.
+- [ ] Preserve script-specific context when relevant.
+- [ ] Do not modify the canonical Playbook drawing.
+- [ ] Create an independent reply-annotation document.
+- [ ] Store the source play ID.
+- [ ] Store the source play revision ID.
+- [ ] Store the source script ID when relevant.
+- [ ] Store the source opponent and Game Week context when relevant.
+- [ ] Allow coaches to draw freehand.
+- [ ] Allow coaches to draw arrows.
+- [ ] Allow coaches to draw circles.
+- [ ] Allow coaches to draw lines.
+- [ ] Allow coaches to add text labels.
+- [ ] Allow coaches to add position labels.
+- [ ] Allow coaches to erase individual marks.
+- [ ] Allow Undo.
+- [ ] Allow Redo.
+- [ ] Allow Clear All.
+- [ ] Allow zooming and panning.
+- [ ] Support Apple Pencil.
+- [ ] Support touch.
+- [ ] Support mouse.
+- [ ] Support trackpad.
+- [ ] Preserve accurate drawing coordinates across screen sizes.
+- [ ] Preserve accurate coordinates after rotation.
+- [ ] Save annotations as vector data where practical.
+- [ ] Generate a display preview for quick thread rendering.
+- [ ] Keep the editable vector source for future reopening.
+- [ ] Add an optional caption.
+- [ ] Add an optional coach explanation beneath the image.
+- [ ] Add Preview Reply.
+- [ ] Add Post Marked-Up Reply.
+- [ ] Add Save and Continue Editing.
+- [ ] Add Discard Markup.
+- [ ] Confirm before discarding meaningful markup.
+- [ ] Restore the coach to the exact discussion thread after posting.
+- [ ] Add markup creation tests.
+- [ ] Add coordinate-scaling tests.
+- [ ] Add Apple Pencil manual testing instructions.
 
 ⸻
 
 # 8B.5 — Upload Another Picture
 
-- Add an Upload Image action to the reply composer.
-- Support JPEG.
-- Support PNG.
-- Support WebP.
-- Consider HEIC conversion for iPhone and iPad uploads.
-- Reject unsupported file types.
-- Validate the actual file signature rather than trusting the extension.
-- Enforce maximum file size.
-- Resize excessively large images.
-- Create an optimized preview.
-- Preserve a reasonable high-resolution original when necessary.
-- Remove unnecessary metadata.
-- Remove location metadata.
-- Correct image orientation.
-- Store uploads in Cloudflare R2.
-- Store attachment metadata in D1.
-- Use protected or signed delivery where required.
-- Do not expose raw R2 administrative URLs.
-- Add an image caption.
-- Add alternative text.
-- Prompt the coach for useful alternative text.
-- Allow the uploaded image to be opened in the telestrator.
-- Allow drawing over an uploaded image.
-- Save the original image separately from the annotation layer.
-- Allow the coach to reset to the unmarked original.
-- Allow image replacement before posting.
-- Add image-upload progress.
-- Add image-upload retry.
-- Add image deletion before posting.
-- Add image security tests.
-- Add mobile camera/photo-library testing.
+- [ ] Add an Upload Image action to the reply composer.
+- [ ] Support JPEG.
+- [ ] Support PNG.
+- [ ] Support WebP.
+- [ ] Consider HEIC conversion for iPhone and iPad uploads.
+- [ ] Reject unsupported file types.
+- [ ] Validate the actual file signature rather than trusting the extension.
+- [ ] Enforce maximum file size.
+- [ ] Resize excessively large images.
+- [ ] Create an optimized preview.
+- [ ] Preserve a reasonable high-resolution original when necessary.
+- [ ] Remove unnecessary metadata.
+- [ ] Remove location metadata.
+- [ ] Correct image orientation.
+- [ ] Store uploads in Cloudflare R2.
+- [ ] Store attachment metadata in D1.
+- [ ] Use protected or signed delivery where required.
+- [ ] Do not expose raw R2 administrative URLs.
+- [ ] Add an image caption.
+- [ ] Add alternative text.
+- [ ] Prompt the coach for useful alternative text.
+- [ ] Allow the uploaded image to be opened in the telestrator.
+- [ ] Allow drawing over an uploaded image.
+- [ ] Save the original image separately from the annotation layer.
+- [ ] Allow the coach to reset to the unmarked original.
+- [ ] Allow image replacement before posting.
+- [ ] Add image-upload progress.
+- [ ] Add image-upload retry.
+- [ ] Add image deletion before posting.
+- [ ] Add image security tests.
+- [ ] Add mobile camera/photo-library testing.
 
 ⸻
 
 # 8B.6 — Visual Reply Attachment Model
 
-- Create a discussion attachments table.
-- Store attachment ID.
-- Store parent post ID.
-- Store attachment type.
-- Support play_markup.
-- Support uploaded_image.
-- Support annotated_image.
-- Add future support for short video without implementing it yet.
-- Store source R2 object key.
-- Store preview R2 object key.
-- Store annotation document key or annotation JSON.
-- Store source play ID when applicable.
-- Store source play revision ID when applicable.
-- Store width.
-- Store height.
-- Store MIME type.
-- Store byte size.
-- Store caption.
-- Store alternative text.
-- Store uploader ID.
-- Store creation time.
-- Store deletion time.
-- Store moderation status.
-- Store processing status.
-- Add indexes for post and play lookups.
-- Add cascading or guarded deletion rules.
-- Preserve attachments when a post is soft-deleted for moderation.
-- Prevent ordinary users from loading attachments from hidden posts.
-- Add attachment authorization tests.
+- [ ] Create a discussion attachments table.
+- [ ] Store attachment ID.
+- [ ] Store parent post ID.
+- [ ] Store attachment type.
+- [ ] Support play_markup.
+- [ ] Support uploaded_image.
+- [ ] Support annotated_image.
+- [ ] Add future support for short video without implementing it yet.
+- [ ] Store source R2 object key.
+- [ ] Store preview R2 object key.
+- [ ] Store annotation document key or annotation JSON.
+- [ ] Store source play ID when applicable.
+- [ ] Store source play revision ID when applicable.
+- [ ] Store width.
+- [ ] Store height.
+- [ ] Store MIME type.
+- [ ] Store byte size.
+- [ ] Store caption.
+- [ ] Store alternative text.
+- [ ] Store uploader ID.
+- [ ] Store creation time.
+- [ ] Store deletion time.
+- [ ] Store moderation status.
+- [ ] Store processing status.
+- [ ] Add indexes for post and play lookups.
+- [ ] Add cascading or guarded deletion rules.
+- [ ] Preserve attachments when a post is soft-deleted for moderation.
+- [ ] Prevent ordinary users from loading attachments from hidden posts.
+- [ ] Add attachment authorization tests.
 
 ⸻
 
 # 8B.7 — Viewing Marked-Up Replies
 
-- Display a compact visual preview within the reply tree.
-- Preserve the play’s aspect ratio.
-- Avoid cropping meaningful football content.
-- Add Tap to Expand.
-- Open the visual reply in a full-screen viewer on phones.
-- Open the visual reply in a large modal or panel on tablets and desktop.
-- Allow zoom.
-- Allow pan.
-- Add Reset View.
-- Display the coach caption.
-- Display the accompanying text reply.
-- Display the source play name.
-- Display source script context where appropriate.
-- Display whether the canonical play has changed since the reply was posted.
-- Add Open Current Play.
-- Add Compare to Current Version as a later enhancement.
-- Allow another coach to reply to the visual explanation.
-- Allow players to react to the visual explanation.
-- Add Helpful reaction prominently.
-- Add download restrictions according to team policy.
-- Do not include private comments in projector mode by default.
-- Allow a coach to present a marked-up answer during film or practice.
-- Add visual-reply accessibility support.
+- [ ] Display a compact visual preview within the reply tree.
+- [ ] Preserve the play’s aspect ratio.
+- [ ] Avoid cropping meaningful football content.
+- [ ] Add Tap to Expand.
+- [ ] Open the visual reply in a full-screen viewer on phones.
+- [ ] Open the visual reply in a large modal or panel on tablets and desktop.
+- [ ] Allow zoom.
+- [ ] Allow pan.
+- [ ] Add Reset View.
+- [ ] Display the coach caption.
+- [ ] Display the accompanying text reply.
+- [ ] Display the source play name.
+- [ ] Display source script context where appropriate.
+- [ ] Display whether the canonical play has changed since the reply was posted.
+- [ ] Add Open Current Play.
+- [ ] Add Compare to Current Version as a later enhancement.
+- [ ] Allow another coach to reply to the visual explanation.
+- [ ] Allow players to react to the visual explanation.
+- [ ] Add Helpful reaction prominently.
+- [ ] Add download restrictions according to team policy.
+- [ ] Do not include private comments in projector mode by default.
+- [ ] Allow a coach to present a marked-up answer during film or practice.
+- [ ] Add visual-reply accessibility support.
 
 ⸻
 
@@ -714,295 +714,295 @@ Use a curated team reaction set rather than the entire emoji keyboard as the def
 
 Initial reactions:
 
-- 👍 Thumbs Up
-- 👎 Thumbs Down
-- ❤️ Heart
-- 🏈 Football
-- 🥇 Gold Medal
-- 6️⃣ Six / Touchdown
-- 😀 Happy
-- 💪 Strong
-- ❓ Same Question or Confused, depending on context
-- ✅ Got It
-- Add Thumbs Up reaction.
-- Add Thumbs Down reaction.
-- Add Heart reaction.
-- Add Football reaction.
-- Add Gold Medal reaction.
-- Add Six reaction.
-- Add Happy reaction.
-- Add Strong reaction.
-- Add Got It reaction.
-- Retain Helpful as a semantically meaningful reaction.
-- Retain I Have This Question Too as a semantically meaningful reaction.
-- Decide whether Same Question uses an emoji or a labeled button.
-- Use stable internal reaction keys rather than storing only raw emoji.
-- Map each reaction key to a display emoji.
-- Store one reaction of each type per user per post.
-- Allow a user to use multiple different reactions on one post only if the product decision permits it.
-- Prefer one selected reaction per user per post for Facebook-style simplicity.
-- Allow changing a reaction.
-- Allow removing a reaction.
-- Show aggregate counts.
-- Show the top three reaction types in the compact summary.
-- Open a full reaction breakdown when tapped.
-- Allow authorized coaches to see which users selected each reaction.
-- Decide whether players may see the full list of reacting users.
-- Avoid public negative-reaction leaderboards.
-- Treat Thumbs Down as feedback, not disciplinary evidence.
-- Consider renaming Thumbs Down to Still Confused for player-facing football use.
-- Consider using 😕 for Still Confused.
-- Keep reaction choices configurable by administrators.
-- Do not allow arbitrary custom emoji in version one.
-- Add accessible labels for every reaction.
-- Do not rely on emoji appearance alone to communicate meaning.
-- Add reaction unit tests.
-- Add reaction aggregation tests.
+- [ ] 👍 Thumbs Up
+- [ ] 👎 Thumbs Down
+- [ ] ❤️ Heart
+- [ ] 🏈 Football
+- [ ] 🥇 Gold Medal
+- [ ] 6️⃣ Six / Touchdown
+- [ ] 😀 Happy
+- [ ] 💪 Strong
+- [ ] ❓ Same Question or Confused, depending on context
+- [ ] ✅ Got It
+- [x] Add Thumbs Up reaction.
+- [x] Add Thumbs Down reaction.
+- [x] Add Heart reaction.
+- [x] Add Football reaction.
+- [x] Add Gold Medal reaction.
+- [x] Add Six reaction.
+- [x] Add Happy reaction.
+- [x] Add Strong reaction.
+- [x] Add Got It reaction.
+- [x] Retain Helpful as a semantically meaningful reaction.
+- [x] Retain I Have This Question Too as a semantically meaningful reaction.
+- [ ] Decide whether Same Question uses an emoji or a labeled button.
+- [x] Use stable internal reaction keys rather than storing only raw emoji.
+- [x] Map each reaction key to a display emoji.
+- [x] Store one reaction of each type per user per post.
+- [ ] Allow a user to use multiple different reactions on one post only if the product decision permits it.
+- [ ] Prefer one selected reaction per user per post for Facebook-style simplicity.
+- [x] Allow changing a reaction.
+- [x] Allow removing a reaction.
+- [x] Show aggregate counts.
+- [x] Show the top three reaction types in the compact summary.
+- [ ] Open a full reaction breakdown when tapped.
+- [ ] Allow authorized coaches to see which users selected each reaction.
+- [ ] Decide whether players may see the full list of reacting users.
+- [ ] Avoid public negative-reaction leaderboards.
+- [ ] Treat Thumbs Down as feedback, not disciplinary evidence.
+- [ ] Consider renaming Thumbs Down to Still Confused for player-facing football use.
+- [ ] Consider using 😕 for Still Confused.
+- [ ] Keep reaction choices configurable by administrators.
+- [ ] Do not allow arbitrary custom emoji in version one.
+- [x] Add accessible labels for every reaction.
+- [ ] Do not rely on emoji appearance alone to communicate meaning.
+- [ ] Add reaction unit tests.
+- [ ] Add reaction aggregation tests.
 
 ⸻
 
 # 8B.9 — Reaction Picker Interface
 
-- Open the quick reaction picker by tapping or clicking React.
-- Support press-and-hold on touch devices where reliable.
-- Do not require press-and-hold as the only access method.
-- Anchor the picker to the React button using the shared dropdown system.
-- Keep the picker onscreen.
-- Flip above the trigger when needed.
-- Use a bottom sheet on very narrow screens when necessary.
-- Display reactions in an orderly grid.
-- Use large touch targets.
-- Show a tooltip or label for each reaction.
-- Allow keyboard arrow navigation.
-- Close on Escape.
-- Close on outside click.
-- Restore focus to the React button.
-- Show the user’s current reaction.
-- Animate reaction selection subtly.
-- Respect reduced-motion preferences.
-- Use optimistic updates with rollback.
-- Add reaction-picker responsive tests.
+- [ ] Open the quick reaction picker by tapping or clicking React.
+- [ ] Support press-and-hold on touch devices where reliable.
+- [ ] Do not require press-and-hold as the only access method.
+- [ ] Anchor the picker to the React button using the shared dropdown system.
+- [ ] Keep the picker onscreen.
+- [ ] Flip above the trigger when needed.
+- [ ] Use a bottom sheet on very narrow screens when necessary.
+- [ ] Display reactions in an orderly grid.
+- [ ] Use large touch targets.
+- [ ] Show a tooltip or label for each reaction.
+- [ ] Allow keyboard arrow navigation.
+- [ ] Close on Escape.
+- [ ] Close on outside click.
+- [ ] Restore focus to the React button.
+- [ ] Show the user’s current reaction.
+- [ ] Animate reaction selection subtly.
+- [ ] Respect reduced-motion preferences.
+- [ ] Use optimistic updates with rollback.
+- [ ] Add reaction-picker responsive tests.
 
 ⸻
 
 # 8B.10 — Coach Official Answer Workflow
 
-- Allow a coach to answer with text only.
-- Allow a coach to answer with markup only.
-- Allow a coach to answer with text and markup.
-- Allow a coach to answer with an uploaded image.
-- Allow a coach to mark an uploaded image before posting.
-- Add Mark as Official Answer.
-- Add Pin Answer.
-- Automatically mark the question Answered when an official coach answer is posted.
-- Allow the coach to leave the question open after answering.
-- Allow the coach to mark the question Resolved immediately.
-- Notify the original player.
-- Notify players who selected I Have This Question Too.
-- Notify players assigned to that play only when the coach marks the reply as a team clarification.
-- Avoid notifying the entire team for an ordinary one-player reply.
-- Add Send to Position Group.
-- Add Send to Everyone Assigned to This Play.
-- Add Do Not Send Additional Notification.
-- Add a notification preview before broad distribution.
-- Add official-answer workflow tests.
+- [ ] Allow a coach to answer with text only.
+- [ ] Allow a coach to answer with markup only.
+- [ ] Allow a coach to answer with text and markup.
+- [ ] Allow a coach to answer with an uploaded image.
+- [ ] Allow a coach to mark an uploaded image before posting.
+- [ ] Add Mark as Official Answer.
+- [ ] Add Pin Answer.
+- [ ] Automatically mark the question Answered when an official coach answer is posted.
+- [ ] Allow the coach to leave the question open after answering.
+- [ ] Allow the coach to mark the question Resolved immediately.
+- [ ] Notify the original player.
+- [ ] Notify players who selected I Have This Question Too.
+- [ ] Notify players assigned to that play only when the coach marks the reply as a team clarification.
+- [ ] Avoid notifying the entire team for an ordinary one-player reply.
+- [ ] Add Send to Position Group.
+- [ ] Add Send to Everyone Assigned to This Play.
+- [ ] Add Do Not Send Additional Notification.
+- [ ] Add a notification preview before broad distribution.
+- [ ] Add official-answer workflow tests.
 
 ⸻
 
 # 8B.11 — Telestrator Reuse and Refactoring
 
-- Audit the existing telestrator implementation.
-- Separate reusable drawing-engine logic from presentation-specific UI.
-- Create a shared telestrator core module.
-- Reuse the same pointer-event system.
-- Reuse drawing primitives.
-- Reuse undo and redo history.
-- Reuse zoom and pan logic.
-- Reuse annotation serialization.
-- Keep Presentation Mode controls separate from Reply Markup controls.
-- Allow different toolbars to use the same drawing engine.
-- Prevent reply markup from inheriting projector-only behavior.
-- Prevent Presentation Mode temporary annotations from being saved as replies accidentally.
-- Add explicit annotation modes:
+- [ ] Audit the existing telestrator implementation.
+- [ ] Separate reusable drawing-engine logic from presentation-specific UI.
+- [ ] Create a shared telestrator core module.
+- [ ] Reuse the same pointer-event system.
+- [ ] Reuse drawing primitives.
+- [ ] Reuse undo and redo history.
+- [ ] Reuse zoom and pan logic.
+- [ ] Reuse annotation serialization.
+- [ ] Keep Presentation Mode controls separate from Reply Markup controls.
+- [ ] Allow different toolbars to use the same drawing engine.
+- [ ] Prevent reply markup from inheriting projector-only behavior.
+- [ ] Prevent Presentation Mode temporary annotations from being saved as replies accidentally.
+- [ ] Add explicit annotation modes:
   - Temporary Presentation
   - Saved Coach Reply
   - Uploaded Image Markup
-- Create shared coordinate-conversion utilities.
-- Create shared resize handling.
-- Create shared export/preview generation.
-- Remove duplicated telestrator code only after regression testing.
-- Add reusable drawing-engine documentation.
+- [ ] Create shared coordinate-conversion utilities.
+- [ ] Create shared resize handling.
+- [ ] Create shared export/preview generation.
+- [ ] Remove duplicated telestrator code only after regression testing.
+- [ ] Add reusable drawing-engine documentation.
 
 ⸻
 
 # 8B.12 — Mobile and iPad Experience
 
-- Make the root discussion feed document-scroll on phones.
-- Avoid nested scrolling inside individual reply cards.
-- Open the reply composer as a bottom sheet on phones.
-- Open visual markup as a full-screen mode on phones.
-- Preserve safe-area spacing.
-- Keep Post and Cancel controls reachable above the keyboard.
-- Keep drawing tools reachable in portrait.
-- Optimize drawing tools for iPad landscape.
-- Use 48-pixel or larger drawing controls on iPad.
-- Support Apple Pencil without accidental page movement.
-- Support finger drawing as a fallback.
-- Allow the coach to hide the drawing toolbar temporarily.
-- Allow full-screen visual viewing.
-- Preserve unsent content during rotation.
-- Keep reaction pickers attached to their trigger.
-- Use an even emoji grid on phones.
-- Avoid oversized discussion page headers.
-- Preserve the compact mobile page-header system.
-- Add screenshots for phone and iPad states.
+- [ ] Make the root discussion feed document-scroll on phones.
+- [ ] Avoid nested scrolling inside individual reply cards.
+- [ ] Open the reply composer as a bottom sheet on phones.
+- [ ] Open visual markup as a full-screen mode on phones.
+- [ ] Preserve safe-area spacing.
+- [ ] Keep Post and Cancel controls reachable above the keyboard.
+- [ ] Keep drawing tools reachable in portrait.
+- [ ] Optimize drawing tools for iPad landscape.
+- [ ] Use 48-pixel or larger drawing controls on iPad.
+- [ ] Support Apple Pencil without accidental page movement.
+- [ ] Support finger drawing as a fallback.
+- [ ] Allow the coach to hide the drawing toolbar temporarily.
+- [ ] Allow full-screen visual viewing.
+- [ ] Preserve unsent content during rotation.
+- [ ] Keep reaction pickers attached to their trigger.
+- [ ] Use an even emoji grid on phones.
+- [ ] Avoid oversized discussion page headers.
+- [ ] Preserve the compact mobile page-header system.
+- [ ] Add screenshots for phone and iPad states.
 
 ⸻
 
 # 8B.13 — Moderation of Visual Attachments
 
-- Apply Phase 8A text moderation to captions and text replies.
-- Do not attempt to rely entirely on automated image moderation.
-- Restrict image uploads to authenticated authorized users.
-- Allow players to upload images only if school policy explicitly permits it.
-- Default version one to coach-only image uploads.
-- Default version one to coach-only telestrator replies.
-- Scan file types and signatures.
-- Remove image metadata.
-- Limit attachment size.
-- Limit attachment frequency.
-- Allow players to report a visual attachment.
-- Allow coaches to hide or remove an attachment.
-- Preserve restricted moderation history.
-- Add attachment moderation status.
-- Add audit logs for deleted attachments.
-- Prevent access to hidden attachment URLs.
-- Add image-upload abuse protections.
-- Review student privacy policy before allowing player image uploads.
+- [ ] Apply Phase 8A text moderation to captions and text replies.
+- [ ] Do not attempt to rely entirely on automated image moderation.
+- [ ] Restrict image uploads to authenticated authorized users.
+- [ ] Allow players to upload images only if school policy explicitly permits it.
+- [ ] Default version one to coach-only image uploads.
+- [ ] Default version one to coach-only telestrator replies.
+- [ ] Scan file types and signatures.
+- [ ] Remove image metadata.
+- [ ] Limit attachment size.
+- [ ] Limit attachment frequency.
+- [ ] Allow players to report a visual attachment.
+- [ ] Allow coaches to hide or remove an attachment.
+- [ ] Preserve restricted moderation history.
+- [ ] Add attachment moderation status.
+- [ ] Add audit logs for deleted attachments.
+- [ ] Prevent access to hidden attachment URLs.
+- [ ] Add image-upload abuse protections.
+- [ ] Review student privacy policy before allowing player image uploads.
 
 ⸻
 
 # 8B.14 — Storage and Cost Controls
 
-- Store uploaded images and generated previews in Cloudflare R2.
-- Store metadata and thread relationships in D1.
-- Keep annotation JSON in D1 only if documents remain small.
-- Store large annotation documents in R2 when appropriate.
-- Generate thumbnails or previews.
-- Avoid loading full-resolution images in the feed.
-- Load the full image only when expanded.
-- Compress uploads.
-- Set maximum image dimensions.
-- Track storage usage by team.
-- Track upload operations.
-- Add per-team attachment limits.
-- Add per-user daily upload limits.
-- Add cleanup for abandoned unfinished uploads.
-- Add cleanup for deleted temporary previews.
-- Preserve attachments required for moderation audit.
-- Add storage usage reporting.
-- Add budget warnings before free-tier limits are approached.
-- Document R2 lifecycle and retention rules.
+- [ ] Store uploaded images and generated previews in Cloudflare R2.
+- [ ] Store metadata and thread relationships in D1.
+- [ ] Keep annotation JSON in D1 only if documents remain small.
+- [ ] Store large annotation documents in R2 when appropriate.
+- [ ] Generate thumbnails or previews.
+- [ ] Avoid loading full-resolution images in the feed.
+- [ ] Load the full image only when expanded.
+- [ ] Compress uploads.
+- [ ] Set maximum image dimensions.
+- [ ] Track storage usage by team.
+- [ ] Track upload operations.
+- [ ] Add per-team attachment limits.
+- [ ] Add per-user daily upload limits.
+- [ ] Add cleanup for abandoned unfinished uploads.
+- [ ] Add cleanup for deleted temporary previews.
+- [ ] Preserve attachments required for moderation audit.
+- [ ] Add storage usage reporting.
+- [ ] Add budget warnings before free-tier limits are approached.
+- [ ] Document R2 lifecycle and retention rules.
 
 ⸻
 
 # 8B.15 — Notifications
 
-- Notify the original author when someone replies.
-- Notify a player when a coach posts a visual reply.
-- Label the notification as Coach added a marked-up answer.
-- Notify users who selected I Have This Question Too.
-- Notify users when an official answer is pinned.
-- Notify users when a question is resolved.
-- Bundle multiple ordinary player replies.
-- Do not send push notifications for every emoji reaction.
-- Show reaction activity inside the application.
-- Allow reaction notifications to be disabled.
-- Deep-link notifications to the exact reply.
-- Scroll and focus the relevant reply after opening.
-- Expand the correct reply branch automatically.
-- Add notification deep-link tests.
+- [ ] Notify the original author when someone replies.
+- [ ] Notify a player when a coach posts a visual reply.
+- [ ] Label the notification as Coach added a marked-up answer.
+- [ ] Notify users who selected I Have This Question Too.
+- [ ] Notify users when an official answer is pinned.
+- [ ] Notify users when a question is resolved.
+- [ ] Bundle multiple ordinary player replies.
+- [ ] Do not send push notifications for every emoji reaction.
+- [ ] Show reaction activity inside the application.
+- [ ] Allow reaction notifications to be disabled.
+- [ ] Deep-link notifications to the exact reply.
+- [ ] Scroll and focus the relevant reply after opening.
+- [ ] Expand the correct reply branch automatically.
+- [ ] Add notification deep-link tests.
 
 ⸻
 
 # 8B.16 — Analytics
 
-- Track visual replies separately from text-only replies.
-- Track which plays receive the most marked-up explanations.
-- Track which positions receive the most visual explanations.
-- Track Helpful reactions on coach visual replies.
-- Track Got It reactions.
-- Track Still Confused or Thumbs Down reactions carefully.
-- Do not treat a negative reaction as misconduct.
-- Allow coaches to identify explanations that may need revision.
-- Track whether questions receive follow-up questions after visual replies.
-- Track whether quiz performance improves after coach clarifications.
-- Track whether repeated questions decrease after a pinned visual answer.
-- Add a Most Helpful Visual Explanations report.
-- Allow a helpful visual explanation to be promoted into permanent Playbook coaching notes.
-- Require coach confirmation before promoting discussion content into canonical Playbook content.
+- [ ] Track visual replies separately from text-only replies.
+- [ ] Track which plays receive the most marked-up explanations.
+- [ ] Track which positions receive the most visual explanations.
+- [ ] Track Helpful reactions on coach visual replies.
+- [ ] Track Got It reactions.
+- [ ] Track Still Confused or Thumbs Down reactions carefully.
+- [ ] Do not treat a negative reaction as misconduct.
+- [ ] Allow coaches to identify explanations that may need revision.
+- [ ] Track whether questions receive follow-up questions after visual replies.
+- [ ] Track whether quiz performance improves after coach clarifications.
+- [ ] Track whether repeated questions decrease after a pinned visual answer.
+- [ ] Add a Most Helpful Visual Explanations report.
+- [ ] Allow a helpful visual explanation to be promoted into permanent Playbook coaching notes.
+- [ ] Require coach confirmation before promoting discussion content into canonical Playbook content.
 
 ⸻
 
 # 8B.17 — Security and Authorization
 
-- Enforce team boundaries for all attachments.
-- Enforce role permissions for markup creation.
-- Enforce role permissions for image upload.
-- Validate every attachment request server-side.
-- Prevent guessing R2 object identifiers.
-- Use signed or authorized delivery where appropriate.
-- Prevent unauthorized users from accessing archived team attachments.
-- Prevent deleted accounts from creating replies.
-- Preserve historical author attribution after account deactivation.
-- Rate-limit reply creation.
-- Rate-limit image uploads.
-- Rate-limit reaction changes.
-- Prevent malicious SVG uploads.
-- Do not render arbitrary uploaded HTML.
-- Sanitize annotation text labels.
-- Add authorization and security tests.
+- [ ] Enforce team boundaries for all attachments.
+- [ ] Enforce role permissions for markup creation.
+- [ ] Enforce role permissions for image upload.
+- [ ] Validate every attachment request server-side.
+- [ ] Prevent guessing R2 object identifiers.
+- [ ] Use signed or authorized delivery where appropriate.
+- [ ] Prevent unauthorized users from accessing archived team attachments.
+- [ ] Prevent deleted accounts from creating replies.
+- [ ] Preserve historical author attribution after account deactivation.
+- [ ] Rate-limit reply creation.
+- [ ] Rate-limit image uploads.
+- [ ] Rate-limit reaction changes.
+- [ ] Prevent malicious SVG uploads.
+- [ ] Do not render arbitrary uploaded HTML.
+- [ ] Sanitize annotation text labels.
+- [ ] Add authorization and security tests.
 
 ⸻
 
 # 8B.18 — Testing
 
-- Test replying to a root comment.
-- Test replying to a question.
-- Test replying to another reply.
-- Test maximum visual nesting.
-- Test collapsed reply branches.
-- Test pinned official answer behavior.
-- Test text-only coach reply.
-- Test play-markup coach reply.
-- Test uploaded-image reply.
-- Test uploaded-image markup.
-- Test attachment upload failure.
-- Test interrupted upload recovery.
-- Test attachment authorization.
-- Test deleted-post attachment protection.
-- Test emoji reaction creation.
-- Test reaction replacement.
-- Test reaction removal.
-- Test duplicate-reaction prevention.
-- Test reaction aggregation.
-- Test notification generation.
-- Test exact-reply deep links.
-- Test telestrator coordinate accuracy.
-- Test play revision references.
-- Test phone portrait.
-- Test phone landscape.
-- Test iPad portrait.
-- Test iPad landscape.
-- Test Apple Pencil manually.
-- Test mouse and trackpad.
-- Test keyboard navigation.
-- Test screen-reader labels.
-- Test reduced-motion mode.
-- Test slow connections.
-- Test offline interruption.
-- Test R2 storage cleanup.
-- Test D1 thread-query performance.
+- [ ] Test replying to a root comment.
+- [ ] Test replying to a question.
+- [ ] Test replying to another reply.
+- [ ] Test maximum visual nesting.
+- [ ] Test collapsed reply branches.
+- [ ] Test pinned official answer behavior.
+- [ ] Test text-only coach reply.
+- [ ] Test play-markup coach reply.
+- [ ] Test uploaded-image reply.
+- [ ] Test uploaded-image markup.
+- [ ] Test attachment upload failure.
+- [ ] Test interrupted upload recovery.
+- [ ] Test attachment authorization.
+- [ ] Test deleted-post attachment protection.
+- [ ] Test emoji reaction creation.
+- [ ] Test reaction replacement.
+- [ ] Test reaction removal.
+- [ ] Test duplicate-reaction prevention.
+- [ ] Test reaction aggregation.
+- [ ] Test notification generation.
+- [ ] Test exact-reply deep links.
+- [ ] Test telestrator coordinate accuracy.
+- [ ] Test play revision references.
+- [ ] Test phone portrait.
+- [ ] Test phone landscape.
+- [ ] Test iPad portrait.
+- [ ] Test iPad landscape.
+- [ ] Test Apple Pencil manually.
+- [ ] Test mouse and trackpad.
+- [ ] Test keyboard navigation.
+- [ ] Test screen-reader labels.
+- [ ] Test reduced-motion mode.
+- [ ] Test slow connections.
+- [ ] Test offline interruption.
+- [ ] Test R2 storage cleanup.
+- [ ] Test D1 thread-query performance.
 
 ⸻
 
@@ -1010,38 +1010,38 @@ Initial reactions:
 
 **Release 8B.1 — Reply Trees and Reactions**
 
-- Implement root comments and one-level replies.
-- Implement Facebook-style branch layout.
-- Implement Thumbs Up, Heart, Football, Gold Medal, Six, Happy, Strong, Helpful, and Got It.
-- Implement reaction summaries.
-- Implement pinned coach answers.
-- Implement notification deep links.
+- [ ] Implement root comments and one-level replies.
+- [ ] Implement Facebook-style branch layout.
+- [ ] Implement Thumbs Up, Heart, Football, Gold Medal, Six, Happy, Strong, Helpful, and Got It.
+- [ ] Implement reaction summaries.
+- [ ] Implement pinned coach answers.
+- [ ] Implement notification deep links.
 
 **Release 8B.2 — Coach Play Markup**
 
-- Refactor the existing telestrator into reusable modules.
-- Add Mark Up Play to coach replies.
-- Save annotation data without changing the canonical play.
-- Display visual reply previews.
-- Add full-screen visual viewer.
-- Add Helpful and Got It reactions to visual replies.
+- [ ] Refactor the existing telestrator into reusable modules.
+- [ ] Add Mark Up Play to coach replies.
+- [ ] Save annotation data without changing the canonical play.
+- [ ] Display visual reply previews.
+- [ ] Add full-screen visual viewer.
+- [ ] Add Helpful and Got It reactions to visual replies.
 
 **Release 8B.3 — Uploaded Images**
 
-- Add coach-only image uploads.
-- Store images in R2.
-- Add metadata and attachment records to D1.
-- Allow markup over uploaded images.
-- Add image moderation and authorization.
-- Add storage and cost controls.
+- [ ] Add coach-only image uploads.
+- [ ] Store images in R2.
+- [ ] Add metadata and attachment records to D1.
+- [ ] Allow markup over uploaded images.
+- [ ] Add image moderation and authorization.
+- [ ] Add storage and cost controls.
 
 **Release 8B.4 — Workflow Intelligence**
 
-- Connect visual replies to Practice Script.
-- Add Game Week question summaries.
-- Add visual-explanation analytics.
-- Allow promoting a visual answer into permanent Playbook coaching notes.
-- Connect questions and visual replies to assignment quiz analytics.
+- [ ] Connect visual replies to Practice Script.
+- [ ] Add Game Week question summaries.
+- [ ] Add visual-explanation analytics.
+- [ ] Allow promoting a visual answer into permanent Playbook coaching notes.
+- [ ] Connect questions and visual replies to assignment quiz analytics.
 
 ⸻
 
@@ -1049,20 +1049,20 @@ Initial reactions:
 
 **Phase 8B is complete only when:**
 
-- Replies display in a stable Facebook-style tree.
-- Reply nesting remains readable on phones.
-- Emoji reactions are easy to use and accessible.
-- Coaches can mark up the current play without modifying the canonical diagram.
-- Coaches can upload and mark up another image.
-- Visual replies remain attached to the correct canonical play and question.
-- Attachments are protected by team and role permissions.
-- Images are stored efficiently in R2.
-- Metadata and thread relationships are stored reliably in D1.
-- The telestrator works with Apple Pencil, touch, mouse, and trackpad.
-- Notifications open the exact relevant reply.
-- Moderation applies to reply text and attachment captions.
-- Mobile, iPad, and desktop tests pass.
-- Storage usage and costs can be monitored.
+- [ ] Replies display in a stable Facebook-style tree.
+- [ ] Reply nesting remains readable on phones.
+- [ ] Emoji reactions are easy to use and accessible.
+- [ ] Coaches can mark up the current play without modifying the canonical diagram.
+- [ ] Coaches can upload and mark up another image.
+- [ ] Visual replies remain attached to the correct canonical play and question.
+- [ ] Attachments are protected by team and role permissions.
+- [ ] Images are stored efficiently in R2.
+- [ ] Metadata and thread relationships are stored reliably in D1.
+- [ ] The telestrator works with Apple Pencil, touch, mouse, and trackpad.
+- [ ] Notifications open the exact relevant reply.
+- [ ] Moderation applies to reply text and attachment captions.
+- [ ] Mobile, iPad, and desktop tests pass.
+- [ ] Storage usage and costs can be monitored.
 
 # Phase 9 — Structured Questions and Coach Replies
 

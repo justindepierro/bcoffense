@@ -2,11 +2,17 @@
  * D1 helpers for play discussion threads and posts.
  */
 
+import { moderateContent, outcomeToStatus } from "./moderation.js";
+
 const MAX_POST_LENGTH = 2000;
 const PLAYER_EDIT_WINDOW_SECONDS = 900; // 15 minutes
 
-/** Allowed reaction keys. */
-const REACTION_KEYS = new Set(["thumbs_up", "football", "same_question", "helpful"]);
+/** Allowed reaction keys (extended emoji set). */
+const REACTION_KEYS = new Set([
+  "thumbs_up", "thumbs_down", "heart", "football",
+  "gold_medal", "six", "happy", "strong", "got_it",
+  "same_question", "helpful",
+]);
 
 // ── Team helpers ──────────────────────────────────────────────────────────────
 
@@ -63,13 +69,17 @@ export async function getThread(db, teamId, playId) {
 // ── Post helpers ──────────────────────────────────────────────────────────────
 
 const POST_SELECT = `
-  p.id, p.thread_id, p.post_type, p.body, p.question_state,
+  p.id, p.thread_id, p.parent_post_id, p.root_post_id, p.depth,
+  p.post_type, p.body, p.question_state,
   p.created_at, p.updated_at, p.edited_at, p.deleted_at,
   p.author_id, p.moderation_status,
   u.display_name AS author_name, u.role AS author_role
 `;
 
-/** Load posts for a thread (paginated, flat, oldest first). Includes reaction counts. */
+/**
+ * Load root posts for a thread (paginated, depth=0, oldest first).
+ * Includes first few replies and reaction counts.
+ */
 export async function getThreadPosts(db, threadId, { limit = 20, afterId = null, userId = null } = {}) {
   let query, binds;
   if (afterId) {
@@ -81,6 +91,7 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
                JOIN users u ON u.id = p.author_id
                WHERE p.thread_id = ? AND p.deleted_at IS NULL
                  AND p.moderation_status = 'approved'
+                 AND (p.parent_post_id IS NULL OR p.depth = 0)
                  AND p.created_at > ?
                ORDER BY p.created_at ASC LIMIT ?`;
       binds = [threadId, cursor.created_at, limit + 1];
@@ -91,6 +102,7 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
              JOIN users u ON u.id = p.author_id
              WHERE p.thread_id = ? AND p.deleted_at IS NULL
                AND p.moderation_status = 'approved'
+               AND (p.parent_post_id IS NULL OR p.depth = 0)
              ORDER BY p.created_at ASC LIMIT ?`;
     binds = [threadId, limit + 1];
   }
@@ -100,20 +112,123 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
   const hasMore = all.length > limit;
   const page = hasMore ? all.slice(0, limit) : all;
 
-  // Attach reactions
-  if (page.length > 0) {
-    const postIds = page.map((p) => p.id);
-    const reactionsMap = await getReactionsForPosts(db, postIds, userId);
-    return { posts: page.map((p) => ({ ...p, reactions: reactionsMap[p.id] || [] })), hasMore };
+  if (!page.length) return { posts: [], hasMore };
+
+  // Attach reactions to root posts
+  const postIds = page.map((p) => p.id);
+  const reactionsMap = await getReactionsForPosts(db, postIds, userId);
+
+  // Load first 3 replies per root post
+  const replyRows = await db
+    .prepare(
+      `SELECT ${POST_SELECT},
+         (SELECT COUNT(*) FROM discussion_posts r2
+          WHERE r2.root_post_id = p.root_post_id AND r2.deleted_at IS NULL
+            AND r2.moderation_status = 'approved') AS sibling_count
+       FROM discussion_posts p
+       JOIN users u ON u.id = p.author_id
+       WHERE p.root_post_id IN (${postIds.map(() => '?').join(',')})
+         AND p.deleted_at IS NULL AND p.moderation_status = 'approved'
+         AND p.depth > 0
+       ORDER BY p.created_at ASC`,
+    )
+    .bind(...postIds)
+    .all();
+
+  // Group replies by root_post_id, take first 3
+  const repliesByRoot = {};
+  const replyTotalByRoot = {};
+  const replyIds = [];
+  for (const r of (replyRows.results || [])) {
+    const rid = r.root_post_id;
+    if (!repliesByRoot[rid]) repliesByRoot[rid] = [];
+    replyTotalByRoot[rid] = r.sibling_count || 0;
+    if (repliesByRoot[rid].length < 3) {
+      repliesByRoot[rid].push(r);
+      replyIds.push(r.id);
+    }
   }
-  return { posts: page, hasMore };
+
+  // Attach reactions to replies too
+  const replyReactionsMap = replyIds.length
+    ? await getReactionsForPosts(db, replyIds, userId)
+    : {};
+
+  const posts = page.map((p) => {
+    const rootReplies = (repliesByRoot[p.id] || []).map((r) => ({
+      ...r,
+      reactions: replyReactionsMap[r.id] || [],
+    }));
+    return {
+      ...p,
+      reactions: reactionsMap[p.id] || [],
+      replies: rootReplies,
+      replyCount: replyTotalByRoot[p.id] || 0,
+    };
+  });
+
+  return { posts, hasMore };
 }
 
-/** Create a new post. Returns the new post row. */
-export async function createPost(db, { threadId, authorId, postType, body }) {
+/** Load replies for a specific root post (for "load more replies" expansion). */
+export async function getPostReplies(db, rootPostId, { limit = 20, afterId = null, userId = null } = {}) {
+  let query, binds;
+  if (afterId) {
+    const cursor = await db
+      .prepare("SELECT created_at FROM discussion_posts WHERE id = ? LIMIT 1")
+      .bind(afterId).first();
+    if (cursor) {
+      query = `SELECT ${POST_SELECT} FROM discussion_posts p
+               JOIN users u ON u.id = p.author_id
+               WHERE p.root_post_id = ? AND p.deleted_at IS NULL
+                 AND p.moderation_status = 'approved' AND p.depth > 0
+                 AND p.created_at > ?
+               ORDER BY p.created_at ASC LIMIT ?`;
+      binds = [rootPostId, cursor.created_at, limit + 1];
+    }
+  }
+  if (!query) {
+    query = `SELECT ${POST_SELECT} FROM discussion_posts p
+             JOIN users u ON u.id = p.author_id
+             WHERE p.root_post_id = ? AND p.deleted_at IS NULL
+               AND p.moderation_status = 'approved' AND p.depth > 0
+             ORDER BY p.created_at ASC LIMIT ?`;
+    binds = [rootPostId, limit + 1];
+  }
+  const rows = await db.prepare(query).bind(...binds).all();
+  const all = rows.results || [];
+  const hasMore = all.length > limit;
+  const page = hasMore ? all.slice(0, limit) : all;
+  if (!page.length) return { replies: [], hasMore };
+  const ids = page.map((r) => r.id);
+  const reactionsMap = await getReactionsForPosts(db, ids, userId);
+  return { replies: page.map((r) => ({ ...r, reactions: reactionsMap[r.id] || [] })), hasMore };
+}
+
+/**
+ * Create a new post (or reply). Returns the new post row + moderation info.
+ * parentPostId: set to create a reply; omit for root posts.
+ */
+export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null }) {
   const trimmed = sanitizePostBody(body);
   if (!trimmed) return { error: "Post body is required." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
+
+  // ── Reply ancestry ──────────────────────────────────────────────────────
+  let rootPostId = null;
+  let depth = 0;
+  if (parentPostId) {
+    const parent = await db
+      .prepare("SELECT id, root_post_id, depth FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+      .bind(parentPostId).first();
+    if (!parent) return { error: "Parent post not found." };
+    rootPostId = parent.root_post_id || parent.id; // parent is root if it has no root_post_id
+    depth = Math.min((parent.depth || 0) + 1, 2);  // cap visual depth at 2
+  }
+
+  // ── Content moderation ──────────────────────────────────────────────────
+  const modResult = moderateContent(trimmed);
+  const moderationStatus = outcomeToStatus(modResult.outcome);
 
   const id = crypto.randomUUID();
   const now = Math.floor(Date.now() / 1000);
@@ -122,19 +237,37 @@ export async function createPost(db, { threadId, authorId, postType, body }) {
 
   await db.prepare(
     `INSERT INTO discussion_posts
-       (id, thread_id, author_id, post_type, body, question_state, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, threadId, authorId, type, trimmed, questionState, now, now).run();
+       (id, thread_id, author_id, post_type, body, question_state,
+        parent_post_id, root_post_id, depth, moderation_status,
+        created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, threadId, authorId, type, trimmed, questionState,
+    parentPostId, rootPostId, depth, moderationStatus, now, now).run();
 
-  // Update thread updated_at
+  // ── Store moderation action if held/blocked ──────────────────────────────
+  if (modResult.outcome === "review" || modResult.outcome === "block") {
+    const actionId = crypto.randomUUID();
+    const actionType = modResult.outcome === "block" ? "auto_block" : "auto_review";
+    const reason = modResult.category
+      ? `Auto-${actionType}: ${modResult.category} (severity ${modResult.severity})`
+      : `Auto-${actionType}`;
+    await db.prepare(
+      `INSERT INTO moderation_actions (id, post_id, action, reason, original_body, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).bind(actionId, id, actionType, reason, trimmed, now).run();
+  }
+
+  // Update thread updated_at (even for held posts — activity still happened)
   await db.prepare("UPDATE play_threads SET updated_at = ? WHERE id = ?").bind(now, threadId).run();
 
   // Return the post with author info
-  return db.prepare(`SELECT ${POST_SELECT} FROM discussion_posts p
+  const row = await db.prepare(`SELECT ${POST_SELECT} FROM discussion_posts p
     JOIN users u ON u.id = p.author_id WHERE p.id = ? LIMIT 1`).bind(id).first();
+
+  return { ...row, _moderation: modResult };
 }
 
-/** Edit a post. Returns updated post or { error }. */
+/** Edit a post. Runs moderation on new body. Returns updated post or { error }. */
 export async function editPost(db, postId, newBody, session) {
   const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
     .bind(postId).first();
@@ -155,12 +288,29 @@ export async function editPost(db, postId, newBody, session) {
   if (!trimmed) return { error: "Post body cannot be empty." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
 
-  const now = Math.floor(Date.now() / 1000);
-  await db.prepare("UPDATE discussion_posts SET body = ?, edited_at = ?, updated_at = ? WHERE id = ?")
-    .bind(trimmed, now, now, postId).run();
+  // Run moderation on the new body
+  const modResult = moderateContent(trimmed);
+  const newStatus = outcomeToStatus(modResult.outcome);
 
-  return db.prepare(`SELECT ${POST_SELECT} FROM discussion_posts p
+  const now = Math.floor(Date.now() / 1000);
+  await db.prepare("UPDATE discussion_posts SET body = ?, edited_at = ?, updated_at = ?, moderation_status = ? WHERE id = ?")
+    .bind(trimmed, now, now, newStatus, postId).run();
+
+  // Store moderation action if edited content is held/blocked
+  if (modResult.outcome === "review" || modResult.outcome === "block") {
+    const actionId = crypto.randomUUID();
+    const actionType = modResult.outcome === "block" ? "auto_block" : "auto_review";
+    const reason = `Edit ${actionType}: ${modResult.category || "policy"}` ;
+    await db.prepare(
+      `INSERT INTO moderation_actions (id, post_id, action, reason, original_body, created_at)
+       VALUES (?, ?, ?, ?, ?, ?)`,
+    ).bind(actionId, postId, actionType, reason, trimmed, now).run();
+  }
+
+  const row = await db.prepare(`SELECT ${POST_SELECT} FROM discussion_posts p
     JOIN users u ON u.id = p.author_id WHERE p.id = ? LIMIT 1`).bind(postId).first();
+
+  return { ...row, _moderation: modResult };
 }
 
 /** Soft-delete a post. Returns { ok } or { error }. */
@@ -310,3 +460,55 @@ export async function setThreadLock(db, teamId, playId, locked, session) {
 
   return { ok: true, locked: !!locked };
 }
+
+// ── Moderation queue helpers ──────────────────────────────────────────────────
+
+/** Return posts pending moderation review for a team. Coaches only. */
+export async function getPendingPosts(db, teamId, { limit = 50 } = {}) {
+  const rows = await db.prepare(
+    `SELECT ${POST_SELECT},
+       t.play_id,
+       ma.action AS mod_action, ma.reason AS mod_reason
+     FROM discussion_posts p
+     JOIN users u ON u.id = p.author_id
+     JOIN play_threads t ON t.id = p.thread_id
+     LEFT JOIN moderation_actions ma ON ma.post_id = p.id
+     WHERE t.team_id = ?
+       AND p.deleted_at IS NULL
+       AND p.moderation_status IN ('pending_review', 'blocked')
+     ORDER BY p.created_at ASC LIMIT ?`,
+  ).bind(teamId, limit).all();
+  return rows.results || [];
+}
+
+/**
+ * Apply a moderation action to a post. Returns { ok } or { error }.
+ * actions: "approve" | "reject" | "block" | "warn"
+ */
+export async function moderatePostAction(db, postId, action, reason, moderatorId) {
+  const validActions = new Set(["approve", "reject", "block", "warn"]);
+  if (!validActions.has(action)) return { error: "Invalid action." };
+
+  const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? LIMIT 1")
+    .bind(postId).first();
+  if (!post) return { error: "Post not found." };
+
+  const now = Math.floor(Date.now() / 1000);
+
+  let newStatus;
+  if (action === "approve") newStatus = "approved";
+  else if (action === "reject" || action === "block") newStatus = "blocked";
+  else newStatus = post.moderation_status; // warn doesn't change visibility
+
+  await db.prepare("UPDATE discussion_posts SET moderation_status = ?, updated_at = ? WHERE id = ?")
+    .bind(newStatus, now, postId).run();
+
+  const actionId = crypto.randomUUID();
+  await db.prepare(
+    `INSERT INTO moderation_actions (id, post_id, moderator_id, action, reason, original_body, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(actionId, postId, moderatorId, action, reason || null, post.body, now).run();
+
+  return { ok: true, newStatus };
+}
+

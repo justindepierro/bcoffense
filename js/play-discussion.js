@@ -51,33 +51,116 @@ const _DISC_ROLE_COLORS = {
 // ── Reaction helpers ──────────────────────────────────────────────────────────
 
 const _REACTION_META = {
-  thumbs_up: { emoji: "👍", label: "Like" },
-  football: { emoji: "🏈", label: "Great play" },
+  thumbs_up:     { emoji: "👍", label: "Like" },
+  thumbs_down:   { emoji: "😕", label: "Still Confused" },
+  heart:         { emoji: "❤️", label: "Love it" },
+  football:      { emoji: "🏈", label: "Great play" },
+  gold_medal:    { emoji: "🥇", label: "Gold" },
+  six:           { emoji: "6️⃣", label: "Touchdown" },
+  happy:         { emoji: "😀", label: "Happy" },
+  strong:        { emoji: "💪", label: "Strong" },
+  got_it:        { emoji: "✅", label: "Got It" },
   same_question: { emoji: "❓", label: "Same question" },
+  helpful:       { emoji: "🙌", label: "Helpful" },
 };
 
-const _REACTION_ORDER = ["thumbs_up", "football", "same_question"];
+const _REACTION_SUMMARY_ORDER = [
+  "thumbs_up", "heart", "football", "helpful", "got_it",
+  "same_question", "gold_medal", "six", "happy", "strong", "thumbs_down",
+];
+const _REACTION_PICKER_ORDER = [
+  "thumbs_up", "heart", "football", "gold_medal",
+  "six", "happy", "strong", "got_it",
+  "same_question", "helpful", "thumbs_down",
+];
 
 function _discReactionsHtml(postId, reactions) {
   const reactionMap = {};
   for (const r of (reactions || [])) reactionMap[r.key] = r;
 
-  const btns = _REACTION_ORDER.map((key) => {
-    const meta = _REACTION_META[key];
-    const r = reactionMap[key];
-    const count = r?.count || 0;
-    const isMine = r?.mine;
+  const active = _REACTION_SUMMARY_ORDER
+    .map((key) => ({ key, ...(reactionMap[key] || { count: 0, mine: false }) }))
+    .filter((r) => r.count > 0)
+    .slice(0, 3);
+
+  const chips = active.map((r) => {
+    const meta = _REACTION_META[r.key] || { emoji: "❓", label: r.key };
     return (
-      `<button class="disc-react-btn${isMine ? " is-mine" : ""}"` +
-      ` data-action="toggleDiscReaction" data-arg="${escapeHtml(postId)}::${key}"` +
-      ` title="${escapeHtml(meta.label)}" aria-pressed="${isMine ? "true" : "false"}">` +
-      meta.emoji +
-      (count > 0 ? ` <span class="disc-react-count">${count}</span>` : "") +
+      `<button class="disc-react-chip${r.mine ? " is-mine" : ""}"` +
+      ` data-action="toggleDiscReaction" data-arg="${escapeHtml(postId)}::${r.key}"` +
+      ` title="${escapeHtml(meta.label)}" aria-pressed="${r.mine ? "true" : "false"}">` +
+      meta.emoji + ` <span class="disc-react-count">${r.count}</span></button>`
+    );
+  }).join("");
+
+  const openBtn = `<button class="disc-react-open-btn" data-action="openDiscReactionPicker" data-arg="${escapeHtml(postId)}" aria-label="React">+ React</button>`;
+  return `<div class="disc-reactions">${chips}${openBtn}</div>`;
+}
+
+// ── Reaction picker ───────────────────────────────────────────────────────────
+
+let _discPickerPostId = null;
+
+function openDiscReactionPicker(postId) {
+  _discPickerPostId = postId;
+  let picker = document.getElementById("discReactionPicker");
+  if (!picker) {
+    picker = document.createElement("div");
+    picker.id = "discReactionPicker";
+    picker.className = "disc-reaction-picker";
+    picker.setAttribute("role", "dialog");
+    picker.setAttribute("aria-label", "Choose a reaction");
+    document.body.appendChild(picker);
+  }
+
+  const btns = _REACTION_PICKER_ORDER.map((key) => {
+    const meta = _REACTION_META[key] || { emoji: "?", label: key };
+    return (
+      `<button class="disc-picker-btn" data-action="selectDiscReaction" data-arg="${escapeHtml(postId)}::${key}"` +
+      ` title="${escapeHtml(meta.label)}" aria-label="${escapeHtml(meta.label)}">` +
+      `<span class="disc-picker-emoji">${meta.emoji}</span>` +
+      `<span class="disc-picker-label">${escapeHtml(meta.label)}</span>` +
       `</button>`
     );
   }).join("");
-  return `<div class="disc-reactions">${btns}</div>`;
+
+  const closeBtn = `<button class="disc-picker-close" data-action="closeDiscReactionPicker" aria-label="Close">✕</button>`;
+  setInnerHTML(picker, closeBtn + `<div class="disc-picker-grid">${btns}</div>`);
+  picker.classList.add("visible");
+
+  // Position near the react button
+  const triggerBtn = document.querySelector(`[data-action="openDiscReactionPicker"][data-arg="${escapeHtml(postId)}"]`);
+  if (triggerBtn) {
+    const rect = triggerBtn.getBoundingClientRect();
+    const pickerH = 200;
+    const top = rect.bottom + 6 + window.scrollY;
+    const adjustedTop = (rect.bottom + pickerH + 10 > window.innerHeight)
+      ? rect.top - pickerH - 6 + window.scrollY
+      : top;
+    picker.style.top = `${adjustedTop}px`;
+    picker.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 220))}px`;
+  }
 }
+
+function closeDiscReactionPicker() {
+  const picker = document.getElementById("discReactionPicker");
+  picker?.classList.remove("visible");
+  _discPickerPostId = null;
+}
+
+async function selectDiscReaction(arg) {
+  closeDiscReactionPicker();
+  await toggleDiscReaction(arg);
+}
+
+// Close picker on outside click
+document.addEventListener("click", (e) => {
+  const picker = document.getElementById("discReactionPicker");
+  if (!picker || !picker.classList.contains("visible")) return;
+  if (!picker.contains(e.target) && !e.target.closest("[data-action='openDiscReactionPicker']")) {
+    closeDiscReactionPicker();
+  }
+});
 
 // ── Question state helpers ────────────────────────────────────────────────────
 
@@ -179,9 +262,17 @@ function _discRenderBody(container, data, playId, playSig) {
   const isStaff = userRole === "coach" || userRole === "admin";
   const canPost = !isLocked || isStaff;
 
+  // Coach moderation queue banner
+  const modBanner = isStaff
+    ? `<div class="disc-mod-banner" id="discModBanner" style="display:none">` +
+      `<span class="disc-mod-badge" id="discModCount"></span>` +
+      `<button class="btn btn-xs" data-action="openDiscModerationQueue">Review</button>` +
+      `</div>`
+    : "";
+
   const postsHtml = posts.length
     ? posts.map((p) => _discPostHtml(p, playId)).join("")
-    : `<p class="disc-empty">No comments yet.</p>`;
+    : `<p class="disc-empty">No comments yet. Be the first!</p>`;
 
   const loadMore = hasMore && posts.length
     ? `<button class="btn btn-xs disc-load-more"
@@ -202,18 +293,27 @@ function _discRenderBody(container, data, playId, playSig) {
 
   setInnerHTML(
     container,
+    modBanner +
     `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}">${postsHtml}</div>` +
     loadMore +
     composer +
     lockCtrl,
   );
+
+  // Async: check moderation queue count for coaches
+  if (isStaff) _discCheckModerationQueue();
 }
 
-function _discPostHtml(p, playId) {
+function _discPostHtml(p, playId, isReply = false) {
   const mine = p.authorId === _discCurrentUserId;
   const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
   const canAct = mine || isStaff;
   const isQuestion = p.postType === "question";
+  const isResolved = p.questionState === "resolved" || p.questionState === "answered";
+
+  const replyBtn = !isReply
+    ? `<button class="disc-reply-btn" data-action="openDiscReplyComposer" data-arg="${escapeHtml(p.id)}::${escapeHtml(playId)}" title="Reply">↩ Reply</button>`
+    : "";
 
   const editBtn = canAct
     ? `<button class="disc-action-btn" data-action="startEditPost" data-arg="${escapeHtml(p.id)}" title="Edit">✏️</button>`
@@ -222,49 +322,95 @@ function _discPostHtml(p, playId) {
     ? `<button class="disc-action-btn disc-action-btn--danger" data-action="deleteDiscPost" data-arg="${escapeHtml(p.id)}" data-play-id="${escapeHtml(playId)}" title="Delete">🗑</button>`
     : "";
 
-  // Coaches can resolve/reopen questions
-  const isResolved = p.questionState === "resolved" || p.questionState === "answered";
   const resolveBtn = (isStaff && isQuestion)
     ? (isResolved
       ? `<button class="disc-action-btn" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::reopened" title="Reopen">🔄 Reopen</button>`
       : `<button class="disc-action-btn disc-action-btn--resolve" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::resolved" title="Resolve">✅ Resolve</button>`)
     : "";
 
+  // Moderation — held posts show a neutral placeholder to non-authors
+  const isMine = p.authorId === _discCurrentUserId;
+  const bodyContent = (p.moderationStatus === "pending_review" && !isStaff && !isMine)
+    ? `<em class="disc-mod-placeholder">This post is under review.</em>`
+    : escapeHtml(p.body);
+
   const qStateBadge = isQuestion ? _discQStateBadge(p.questionState) : "";
   const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
+  const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin") ? " disc-post--coach" : "";
+
+  // Render inline replies
+  const replies = p.replies || [];
+  const replyCount = p.replyCount || 0;
+  const shownCount = replies.length;
+  const hiddenCount = replyCount - shownCount;
+
+  const repliesHtml = replies.length
+    ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}">` +
+      replies.map((r) => _discPostHtml(r, playId, true)).join("") +
+      (hiddenCount > 0
+        ? `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
+          ` data-arg="${escapeHtml(p.id)}" data-cursor="${escapeHtml(replies[replies.length - 1]?.id || "")}">` +
+          `View ${hiddenCount} more repl${hiddenCount === 1 ? "y" : "ies"}…</button>`
+        : "") +
+      `</div>`
+    : (replyCount > 0
+      ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}">` +
+        `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
+        ` data-arg="${escapeHtml(p.id)}" data-cursor="">` +
+        `View ${replyCount} repl${replyCount === 1 ? "y" : "ies"}…</button>` +
+        `</div>`
+      : "");
+
+  // Inline reply composer placeholder (rendered on demand)
+  const replyComposerPlaceholder = !isReply
+    ? `<div class="disc-reply-composer-slot" id="disc-reply-slot-${escapeHtml(p.id)}"></div>`
+    : "";
 
   return (
-    `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}" id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}">` +
+    `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
+    ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
     `<div class="disc-post-content">` +
     `<div class="disc-post-meta">` +
     `<span class="disc-author">${escapeHtml(p.authorName)}</span>` +
     _discRoleBadge(p.authorRole) +
-    typeIcon +
-    qStateBadge +
+    typeIcon + qStateBadge +
     `<span class="disc-time" title="${escapeHtml(_discExactTime(p.createdAt))}">${escapeHtml(_discRelTime(p.createdAt))}</span>` +
     (p.editedAt ? `<span class="disc-edited">(edited)</span>` : "") +
     `</div>` +
-    `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${escapeHtml(p.body)}</div>` +
+    `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
     _discReactionsHtml(p.id, p.reactions) +
-    ((canAct || resolveBtn) ? `<div class="disc-post-actions">${resolveBtn}${editBtn}${deleteBtn}</div>` : "") +
-    `</div></div>`
+    `<div class="disc-post-actions">` + replyBtn + resolveBtn + editBtn + deleteBtn + `</div>` +
+    `</div>` +
+    replyComposerPlaceholder +
+    repliesHtml +
+    `</div>`
   );
 }
 
-function _discComposerHtml(playId, playSig) {
-  return (
-    `<div class="disc-composer">` +
-    `<textarea class="disc-textarea" id="discCompose-${escapeHtml(playId)}"` +
-    ` placeholder="Add a comment… (Ctrl+Enter to post)" rows="2" maxlength="2000" aria-label="Write a comment"></textarea>` +
-    `<div class="disc-composer-actions">` +
+function _discComposerHtml(playId, playSig, parentPostId = null) {
+  const isReply = !!parentPostId;
+  const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
+  const idSuffix = isReply ? `reply-${parentPostId}` : playId;
+  const typeSelect = isReply ? "" :
     `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type">` +
     `<option value="comment">Comment</option>` +
     `<option value="question">Question ❓</option>` +
-    `</select>` +
-    `<span class="disc-char-count" id="discChars-${escapeHtml(playId)}">0 / 2000</span>` +
-    `<button class="btn btn-sm btn-primary" data-action="submitDiscPost"` +
-    ` data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Post</button>` +
+    `</select>`;
+
+  return (
+    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">` +
+    `<textarea class="disc-textarea" id="discCompose-${escapeHtml(idSuffix)}"` +
+    ` placeholder="${escapeHtml(placeholder)}" rows="2" maxlength="2000" aria-label="${escapeHtml(placeholder)}"></textarea>` +
+    `<div class="disc-composer-actions">` +
+    typeSelect +
+    `<span class="disc-char-count" id="discChars-${escapeHtml(idSuffix)}">0 / 2000</span>` +
+    (isReply
+      ? `<button class="btn btn-xs" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}">Cancel</button>` +
+        `<button class="btn btn-xs btn-primary" data-action="submitDiscReply"` +
+        ` data-post-id="${escapeHtml(parentPostId)}" data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Reply</button>`
+      : `<button class="btn btn-sm btn-primary" data-action="submitDiscPost"` +
+        ` data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Post</button>`) +
     `</div></div>`
   );
 }
@@ -299,24 +445,37 @@ async function submitDiscPost(arg, el) {
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Failed to post.", { duration: 3000, type: "error" }); return; }
 
-    textarea.value = "";
-    const charEl = document.getElementById(`discChars-${playId}`);
-    if (charEl) charEl.textContent = "0 / 2000";
-
-    const list = document.getElementById(`discPosts-${playId}`);
-    if (list) {
-      list.querySelector(".disc-empty")?.remove();
-      const wrap = document.createElement("div");
-      wrap.innerHTML = _discPostHtml(data.post, playId);
-      const node = wrap.firstElementChild;
-      if (node) {
-        list.appendChild(node);
-        node.scrollIntoView({ behavior: "smooth", block: "nearest" });
-      }
+    // Show moderation warning if content was held or warned
+    const mod = data.moderation || {};
+    if (mod.displayWarning) {
+      showToast(mod.displayWarning, { duration: 5000, type: mod.outcome === "block" ? "error" : "warning" });
     }
 
-    const countEl = document.getElementById("discCount");
-    if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "0", 10) + 1));
+    // Only append to feed if post was approved
+    if (data.post?.moderationStatus === "approved") {
+      textarea.value = "";
+      const charEl = document.getElementById(`discChars-${playId}`);
+      if (charEl) charEl.textContent = "0 / 2000";
+
+      const list = document.getElementById(`discPosts-${playId}`);
+      if (list) {
+        list.querySelector(".disc-empty")?.remove();
+        const wrap = document.createElement("div");
+        wrap.innerHTML = _discPostHtml(data.post, playId);
+        const node = wrap.firstElementChild;
+        if (node) {
+          list.appendChild(node);
+          node.scrollIntoView({ behavior: "smooth", block: "nearest" });
+        }
+      }
+      const countEl = document.getElementById("discCount");
+      if (countEl) countEl.textContent = String(Math.max(0, parseInt(countEl.textContent || "0", 10) + 1));
+    } else if (mod.outcome !== "block") {
+      // Held — clear composer but don't add to feed
+      textarea.value = "";
+      const charEl = document.getElementById(`discChars-${playId}`);
+      if (charEl) charEl.textContent = "0 / 2000";
+    }
   } catch (_) {
     showToast("Network error — try again.", { duration: 3000, type: "error" });
   } finally {
@@ -324,6 +483,228 @@ async function submitDiscPost(arg, el) {
     btn.textContent = "Post";
   }
 }
+
+// ── Reply composer actions ────────────────────────────────────────────────────
+
+function openDiscReplyComposer(arg) {
+  const sep = String(arg || "").indexOf("::");
+  if (sep < 0) return;
+  const parentPostId = arg.slice(0, sep);
+  const playId = arg.slice(sep + 2);
+
+  // Close any other open reply composer
+  document.querySelectorAll(".disc-composer--reply").forEach((c) => c.remove());
+
+  const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+  if (!slot) return;
+
+  // Find playSig from the main composer if available
+  const playSig = _discLastPlaySig || "";
+
+  slot.innerHTML = _discComposerHtml(playId, playSig, parentPostId);
+  slot.querySelector("textarea")?.focus();
+}
+
+function closeDiscReplyComposer(parentPostId) {
+  const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+  if (slot) slot.innerHTML = "";
+}
+
+async function submitDiscReply(arg, el) {
+  const btn = (el instanceof Element) ? el : (arg instanceof Element ? arg : null);
+  const parentPostId = btn?.dataset?.postId;
+  const playId = btn?.dataset?.playId;
+  const playSig = btn?.dataset?.playSig || "";
+  if (!parentPostId || !playId) return;
+
+  const textarea = document.getElementById(`discCompose-reply-${parentPostId}`);
+  if (!textarea) return;
+
+  const body = textarea.value.trim();
+  if (!body) { textarea.focus(); return; }
+
+  btn.disabled = true;
+  btn.textContent = "Posting…";
+
+  try {
+    const res = await fetch(`/api/threads/${playId}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ body, post_type: "comment", play_signature: playSig, parent_post_id: parentPostId }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || "Failed to post.", { duration: 3000, type: "error" }); return; }
+
+    const mod = data.moderation || {};
+    if (mod.displayWarning) {
+      showToast(mod.displayWarning, { duration: 5000, type: mod.outcome === "block" ? "error" : "warning" });
+    }
+
+    // Close the reply composer
+    closeDiscReplyComposer(parentPostId);
+
+    if (data.post?.moderationStatus === "approved") {
+      // Append reply to the replies list
+      let repliesEl = document.getElementById(`disc-replies-${parentPostId}`);
+      if (!repliesEl) {
+        repliesEl = document.createElement("div");
+        repliesEl.className = "disc-replies";
+        repliesEl.id = `disc-replies-${parentPostId}`;
+        const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
+        slot?.insertAdjacentElement("beforebegin", repliesEl);
+      }
+      const wrap = document.createElement("div");
+      wrap.innerHTML = _discPostHtml(data.post, playId, true);
+      const node = wrap.firstElementChild;
+      if (node) {
+        // Remove "View N more" button before appending
+        repliesEl.querySelector(".disc-load-replies")?.remove();
+        repliesEl.appendChild(node);
+        node.scrollIntoView({ behavior: "smooth", block: "nearest" });
+      }
+    }
+  } catch (_) {
+    showToast("Network error — try again.", { duration: 3000, type: "error" });
+  } finally {
+    btn.disabled = false;
+    btn.textContent = "Reply";
+  }
+}
+
+async function loadMoreDiscReplies(arg, el) {
+  const btn = (el instanceof Element) ? el : (arg instanceof Element ? arg : null);
+  const rootPostId = btn?.dataset?.arg || String(arg || "");
+  const cursor = btn?.dataset?.cursor || "";
+  if (!rootPostId) return;
+
+  btn.disabled = true;
+  btn.textContent = "Loading…";
+
+  try {
+    const params = new URLSearchParams({ parentId: rootPostId });
+    if (cursor) params.set("cursor", cursor);
+    const res = await fetch(`/api/threads/_/replies?${params}`);
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const repliesEl = document.getElementById(`disc-replies-${rootPostId}`);
+    if (repliesEl && data.replies.length) {
+      // Find current play
+      const discSection = repliesEl.closest("[data-play-id]");
+      const playId = discSection?.dataset?.playId || _discLastPlayId || "";
+      data.replies.forEach((r) => {
+        const wrap = document.createElement("div");
+        wrap.innerHTML = _discPostHtml(r, playId, true);
+        const node = wrap.firstElementChild;
+        if (node) repliesEl.insertBefore(node, btn);
+      });
+    }
+
+    if (data.hasMore && data.replies.length) {
+      btn.dataset.cursor = data.replies[data.replies.length - 1]?.id || cursor;
+      btn.disabled = false;
+      btn.textContent = "Load more replies…";
+    } else {
+      btn.remove();
+    }
+  } catch (_) {
+    btn.disabled = false;
+    btn.textContent = "Load more replies…";
+    showToast("Failed to load replies.", { duration: 2500, type: "error" });
+  }
+}
+
+// ── Moderation queue (coaches) ────────────────────────────────────────────────
+
+async function _discCheckModerationQueue() {
+  try {
+    const res = await fetch("/api/moderation/queue");
+    if (!res.ok) return;
+    const data = await res.json();
+    const count = data.count || 0;
+    const banner = document.getElementById("discModBanner");
+    const countEl = document.getElementById("discModCount");
+    if (banner) banner.style.display = count > 0 ? "flex" : "none";
+    if (countEl) countEl.textContent = `${count} post${count === 1 ? "" : "s"} pending review`;
+  } catch (_) { /* silent */ }
+}
+
+async function openDiscModerationQueue() {
+  try {
+    const res = await fetch("/api/moderation/queue");
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Failed");
+
+    if (!data.posts.length) {
+      await showModal("No posts are currently pending review.", { title: "Moderation Queue", icon: "✅" });
+      return;
+    }
+
+    // Build a modal with each post and approve/reject actions
+    let html = `<div class="disc-mod-queue">`;
+    for (const p of data.posts) {
+      html += `<div class="disc-mod-item" data-post-id="${escapeHtml(p.id)}">` +
+        `<div class="disc-mod-item-meta">` +
+        `<strong>${escapeHtml(p.authorName)}</strong>` +
+        ` <span class="disc-role-badge disc-role-badge--${escapeHtml(p.authorRole)}">${escapeHtml(p.authorRole)}</span>` +
+        ` <span class="disc-mod-status">${escapeHtml(p.moderationStatus)}</span>` +
+        ` — ${escapeHtml(p.modReason || "Auto-flagged")}` +
+        `</div>` +
+        `<div class="disc-mod-body">${escapeHtml(p.body)}</div>` +
+        `<div class="disc-mod-actions">` +
+        `<button class="btn btn-xs btn-success" data-action="approveDiscPost" data-arg="${escapeHtml(p.id)}">✅ Approve</button>` +
+        `<button class="btn btn-xs btn-danger" data-action="rejectDiscPost" data-arg="${escapeHtml(p.id)}">🗑 Reject</button>` +
+        `</div>` +
+        `</div>`;
+    }
+    html += `</div>`;
+
+    await showModal(html, { title: `Moderation Queue (${data.posts.length})`, icon: "🛡️" });
+  } catch (err) {
+    showToast("Failed to load queue: " + err.message, { duration: 3000, type: "error" });
+  }
+}
+
+async function approveDiscPost(postId) {
+  await _discModerationAction(postId, "approve", "Approved by coach");
+}
+
+async function rejectDiscPost(postId) {
+  const reason = await showPrompt("Reason for rejection (optional):", "", { title: "Reject Post", icon: "🗑" });
+  if (reason === null) return; // cancelled
+  await _discModerationAction(postId, "reject", reason || "Rejected by coach");
+}
+
+async function _discModerationAction(postId, action, reason) {
+  try {
+    const res = await fetch(`/api/moderation/${encodeURIComponent(postId)}`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action, reason }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || "Action failed.", { duration: 3000, type: "error" }); return; }
+
+    // Remove from queue UI if modal is still open
+    document.querySelector(`.disc-mod-item[data-post-id="${postId}"]`)?.remove();
+
+    // If approved, refresh the discussion to show the post
+    if (action === "approve" && _discLastPlayId) {
+      const bodyEl = document.getElementById("discBody");
+      if (bodyEl) {
+        bodyEl.innerHTML = `<p class="disc-loading">Refreshing…</p>`;
+        await _discLoadBody(_discLastPlayId, _discLastPlaySig, bodyEl);
+      }
+    }
+
+    showToast(action === "approve" ? "Post approved." : "Post rejected.", { duration: 2500, type: "success" });
+    await _discCheckModerationQueue();
+  } catch (_) {
+    showToast("Network error.", { duration: 2500, type: "error" });
+  }
+}
+
+// ── Reaction update helper ────────────────────────────────────────────────────
 
 function startEditPost(postId) {
   if (_discEditState) _discCancelEdit();
@@ -516,31 +897,15 @@ async function toggleDiscReaction(arg) {
 }
 
 function _discUpdateReactions(postId, reactions) {
-  const reactionMap = {};
-  for (const r of (reactions || [])) reactionMap[r.key] = r;
-
-  for (const key of _REACTION_ORDER) {
-    const btn = document.querySelector(`[data-arg="${postId}::${key}"]`);
-    if (!btn) continue;
-    const r = reactionMap[key];
-    const mine = !!r?.mine;
-    const count = r?.count || 0;
-    btn.classList.toggle("is-mine", mine);
-    btn.setAttribute("aria-pressed", mine ? "true" : "false");
-    const countEl = btn.querySelector(".disc-react-count");
-    if (count > 0) {
-      if (countEl) {
-        countEl.textContent = String(count);
-      } else {
-        const span = document.createElement("span");
-        span.className = "disc-react-count";
-        span.textContent = String(count);
-        btn.appendChild(span);
-      }
-    } else {
-      countEl?.remove();
-    }
-  }
+  // Replace the whole reactions bar with fresh HTML
+  const postEl = document.getElementById(`disc-post-${postId}`);
+  if (!postEl) return;
+  const existing = postEl.querySelector(".disc-reactions");
+  if (!existing) return;
+  const tmp = document.createElement("div");
+  tmp.innerHTML = _discReactionsHtml(postId, reactions);
+  const newBar = tmp.firstElementChild;
+  if (newBar) existing.replaceWith(newBar);
 }
 
 // ── Q&A controls (coaches) ────────────────────────────────────────────────────

@@ -15,6 +15,7 @@ import {
   createPost,
   countThreadPosts,
   setQuestionState,
+  getPostReplies,
 } from "../../_lib/d1-threads.js";
 import { notifyOnCoachPost } from "../../_lib/d1-notifications.js";
 
@@ -83,6 +84,7 @@ export async function onRequest(context) {
     const postBody = String(body.body || "").trim();
     const postType = body.post_type === "question" ? "question" : "comment";
     const playSig = String(body.play_signature || "").trim() || null;
+    const parentPostId = String(body.parent_post_id || "").trim() || null;
 
     if (!postBody) return authJson({ ok: false, error: "Post body required." }, { status: 422 });
 
@@ -99,6 +101,7 @@ export async function onRequest(context) {
       authorId,
       postType,
       body: postBody,
+      parentPostId,
     });
 
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
@@ -110,7 +113,17 @@ export async function onRequest(context) {
       notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody, env).catch(() => { });
     }
 
-    return withSecurityHeaders(authJson({ ok: true, post: formatPost(result) }));
+    const modInfo = result._moderation || {};
+    const postData = formatPost(result);
+
+    return withSecurityHeaders(authJson({
+      ok: true,
+      post: postData,
+      moderation: {
+        outcome: modInfo.outcome || "allow",
+        displayWarning: modInfo.displayWarning || null,
+      },
+    }));
   }
 
   return authJson({ ok: false, error: "Method not allowed." }, { status: 405 });
@@ -128,7 +141,12 @@ function formatPost(p) {
     createdAt: p.created_at,
     editedAt: p.edited_at || null,
     moderationStatus: p.moderation_status,
+    parentPostId: p.parent_post_id || null,
+    rootPostId: p.root_post_id || null,
+    depth: p.depth || 0,
     reactions: p.reactions || [],
+    replies: (p.replies || []).map(formatPost),
+    replyCount: p.replyCount || 0,
   };
 }
 
