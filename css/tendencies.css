@@ -1360,3 +1360,36 @@
     }
   }
 }
+
+/* Film grouping by game (#86-87) */
+.td-game-groups {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.td-game-group {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+.td-game-group-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-xs) var(--space-sm);
+  background: var(--color-bg-lighter);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.td-game-group-label {
+  font-weight: 600;
+  font-size: var(--font-size-sm);
+}
+.td-game-group-count {
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+}
+.td-game-group .td-table-container {
+  border-radius: 0;
+  border: none;
+}
+

@@ -328,6 +328,11 @@ function renderScoutOverview() {
           </div>
           <div class="td-ov-totals">
             <span>${totalPlays} plays charted</span>
+            ${(() => {
+              const groups = typeof _tdGetGameGroups === "function" ? _tdGetGameGroups(opp.plays) : [];
+              const gc = groups.filter((g) => g.label !== "No Game Label").length;
+              return gc > 0 ? `<span>📅 ${gc} game${gc !== 1 ? "s" : ""}</span>` : "";
+            })()}
             ${intel.blitzRate > 0 ? `<span>⚡ Blitz ${intel.blitzRate}%</span>` : ""}
           </div>
         </div>
@@ -463,6 +468,13 @@ function renderOpponentDetail() {
         <div class="td-stat td-stat-run"><span class="td-stat-value">${runPlays}</span><span class="td-stat-label">Run</span></div>
         <div class="td-stat td-stat-pass"><span class="td-stat-value">${passPlays}</span><span class="td-stat-label">Pass</span></div>
         <div class="td-stat td-stat-blitz"><span class="td-stat-value">${blitzPlays}</span><span class="td-stat-label">Blitz</span></div>
+        ${(() => {
+          const games = typeof _tdGetGameGroups === "function" ? _tdGetGameGroups(opp.plays) : [];
+          const gameCount = games.filter((g) => g.label !== "No Game Label").length;
+          return gameCount > 0
+            ? `<div class="td-stat td-stat-games"><span class="td-stat-value">${gameCount}</span><span class="td-stat-label">Game${gameCount !== 1 ? "s" : ""}</span></div>`
+            : "";
+        })()}
         ${totalPlays > 0
       ? `
           <div class="td-stat td-stat-pct"><span class="td-stat-value">${Math.round((runPlays / totalPlays) * 100)}%</span><span class="td-stat-label">Run %</span></div>
@@ -484,6 +496,7 @@ function renderOpponentDetail() {
             🔽 Filters${activeFilters > 0 ? ` <span class="td-filter-badge">${activeFilters}</span>` : ""}
           </button>
           <button class="btn btn-sm ${tdShowStats ? "btn-primary" : ""}" data-action="toggleTdStats">📊 Stats</button>
+          <button class="btn btn-sm ${tdGroupByGame ? "btn-primary" : ""}" data-action="toggleGroupByGame" title="Group plays by game">📅 By Game</button>
           ${!tdBulkMode
       ? '<button class="btn btn-sm" data-action="enterBulkMode">☑️ Select</button>'
       : '<button class="btn btn-sm btn-primary" data-action="exitBulkMode">✕ Exit Select</button>'
@@ -580,20 +593,48 @@ function renderPlayLogTable(filtered) {
     })
     .join("");
 
-  const rows = filtered
-    .map((play, i) => {
+  const colCount = visibleCols.length + (tdBulkMode ? 1 : 0);
+
+  function buildRows(plays) {
+    return plays.map((play, i) => {
       const isSelected = tdSelectedPlays.has(play._origIndex);
-      const cells = visibleCols
-        .map((c) => renderCellValue(c, play, i))
-        .join("");
+      const cells = visibleCols.map((c) => renderCellValue(c, play, i)).join("");
       return `<tr class="${isSelected ? "td-row-bulk-selected" : ""} ${i === tdSelectedRow ? "td-row-selected" : ""}"
                 draggable="${!tdBulkMode}"
                 data-orig="${play._origIndex}"
                 data-drag="tdPlayRow">
               ${tdBulkMode ? `<td><input type="checkbox" ${isSelected ? "checked" : ""} data-onchange="tdToggleBulkSelect" data-arg="${play._origIndex}"></td>` : ""}${cells}
             </tr>`;
-    })
-    .join("");
+    }).join("");
+  }
+
+  // Group by game (#87)
+  if (tdGroupByGame && typeof _tdGameKey === "function") {
+    const groups = new Map();
+    filtered.forEach((play) => {
+      const key = _tdGameKey(play);
+      if (!groups.has(key)) groups.set(key, []);
+      groups.get(key).push(play);
+    });
+
+    const sections = [...groups.entries()].map(([label, groupPlays]) => `
+      <div class="td-game-group">
+        <div class="td-game-group-header">
+          <span class="td-game-group-label">📅 ${escapeHtml(label)}</span>
+          <span class="td-game-group-count">${groupPlays.length} play${groupPlays.length !== 1 ? "s" : ""}</span>
+        </div>
+        <div class="td-table-container">
+          <table class="td-table">
+            <thead><tr>${tdBulkMode ? '<th><input type="checkbox" data-onchange="tdSelectAllToggle" title="Select all"></th>' : ""}${headerCells}</tr></thead>
+            <tbody>${buildRows(groupPlays)}</tbody>
+          </table>
+        </div>
+      </div>`).join("");
+
+    return `<div class="td-game-groups">${sections}</div>`;
+  }
+
+  const rows = buildRows(filtered);
 
   return `<div class="td-table-container">
     <table class="td-table">

@@ -299,8 +299,8 @@ Example:
 - [x] **83.** Add “Filter Playbook against this tendency.”
 - [ ] **84.** Add “Create Practice Period from tendency.”
 - [ ] **85.** Add “Add scouting note to Call Sheet.”
-- [ ] **86.** Add game/film source records to opponent data.
-- [ ] **87.** Support charting separate games rather than one undifferentiated play pool.
+- [x] **86.** Add game/film source records to opponent data.
+- [x] **87.** Support charting separate games rather than one undifferentiated play pool.
 - [ ] **88.** Add quarter, score state, hash, field position, and drive context where useful.
 - [ ] **89.** Add charting templates for common opponent data.
 - [ ] **90.** Retain Rapid and Wizard modes, but make their purpose obvious.

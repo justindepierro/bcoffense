@@ -35,6 +35,7 @@ let tdDragIndex = null;
 
 // Stats dashboard toggle
 let tdShowStats = false;
+let tdGroupByGame = false; // Group film log by game/week (#87)
 
 // Default values users can quick-pick (big buttons). Users can always type custom.
 const TENDENCIES_OPTIONS = {
@@ -456,6 +457,8 @@ Object.entries(KEY_TO_CSV).forEach(([k, v]) => {
 // Columns for the play log table
 const TD_COLUMNS = [
   { key: "_num", label: "#", sortable: false, width: "40px" },
+  { key: "week", label: "Wk", sortable: true },
+  { key: "game", label: "Game", sortable: true },
   { key: "quarter", label: "Qtr", sortable: true },
   { key: "_downDist", label: "Down & Dist", sortable: true, sortKey: "down" },
   { key: "hash", label: "Hash", sortable: true },
@@ -488,6 +491,8 @@ const TD_DEFAULT_VISIBLE = [
 
 // Filterable fields
 const TD_FILTER_FIELDS = [
+  { key: "week", label: "Week" },
+  { key: "game", label: "Game" },
   { key: "quarter", label: "Quarter", options: "quarter" },
   { key: "down", label: "Down", options: "down" },
   { key: "hash", label: "Hash", options: "hash" },
@@ -1127,6 +1132,7 @@ function selectTendenciesOpponent(idx) {
   tdSelectedPlays.clear();
   tdBulkMode = false;
   tdShowStats = false;
+  tdGroupByGame = false;
   tdShowFilters = false;
   historyManager.clear("tendencies");
   // Default to Overview when there are charted plays; Film Log when empty.
@@ -1784,3 +1790,27 @@ function scorePlayForSituation(play, category, intel) {
 
   return { score, reasons, warnings };
 }
+
+// ── Film grouping by game (#86-87) ──────────────────────────────────────────
+
+function toggleGroupByGame() {
+  tdGroupByGame = !tdGroupByGame;
+  renderOpponentDetail();
+}
+
+// Returns a display label for a play's game source.
+function _tdGameKey(play) {
+  const parts = [play.week ? `Wk ${play.week}` : "", play.game || ""].filter(Boolean);
+  return parts.join(" — ") || "No Game Label";
+}
+
+// Returns all unique game keys for an opponent's plays, in charting order.
+function _tdGetGameGroups(plays) {
+  const seen = new Map();
+  plays.forEach((p) => {
+    const key = _tdGameKey(p);
+    seen.set(key, (seen.get(key) || 0) + 1);
+  });
+  return [...seen.entries()].map(([label, count]) => ({ label, count }));
+}
+
