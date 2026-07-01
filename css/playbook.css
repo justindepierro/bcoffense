@@ -5200,6 +5200,73 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-bg-hover-row);
 }
 
+/* ── "I Have This Question Too" button ──────────────────────────────────────── */
+.disc-same-q-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+  min-height: 32px;
+}
+.disc-same-q-btn:hover {
+  border-color: var(--color-border-med);
+  color: var(--color-text);
+  background: var(--color-bg-hover-row);
+}
+.disc-same-q-btn.is-mine {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+.disc-same-q-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+}
+.disc-same-q-count {
+  font-weight: 700;
+}
+
+/* ── Question category sub-filter ───────────────────────────────────────────── */
+.disc-q-cat-filter-bar {
+  display: flex;
+  gap: 4px;
+  flex-wrap: wrap;
+  padding: var(--space-xs) 0 var(--space-sm);
+  margin-bottom: 2px;
+}
+.disc-q-cat-btn {
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  transition: background var(--transition-fast), border-color var(--transition-fast), color var(--transition-fast);
+}
+.disc-q-cat-btn:hover {
+  border-color: var(--color-border-med);
+  color: var(--color-text);
+}
+.disc-q-cat-btn.active {
+  background: color-mix(in srgb, var(--color-warning) 12%, transparent);
+  border-color: var(--color-warning);
+  color: var(--color-warning);
+}
+/* Hide posts filtered by sub-category */
+.disc-post--q-cat-hidden {
+  display: none !important;
+}
+
 /* ── Reply tree ─────────────────────────────────────────────────────────────── */
 .disc-replies {
   margin-left: calc(var(--space-sm) + 32px);

@@ -74,16 +74,16 @@ const _REACTION_PICKER_ORDER = [
   "same_question", "helpful", "thumbs_down",
 ];
 
-function _discReactionsHtml(postId, reactions) {
+function _discReactionsHtml(postId, reactions, excludeKey = null) {
   const reactionMap = {};
   for (const r of (reactions || [])) reactionMap[r.key] = r;
 
   const active = _REACTION_SUMMARY_ORDER
     .map((key) => ({ key, ...(reactionMap[key] || { count: 0, mine: false }) }))
-    .filter((r) => r.count > 0)
+    .filter((r) => r.count > 0 && r.key !== excludeKey)
     .sort((a, b) => b.count - a.count)
     .slice(0, 3);
-  const mineReaction = (reactions || []).find((r) => r.mine);
+  const mineReaction = (reactions || []).find((r) => r.mine && r.key !== excludeKey);
 
   const chips = active.map((r) => {
     const meta = _REACTION_META[r.key] || { emoji: "❓", label: r.key };
@@ -435,8 +435,22 @@ function _discPostHtml(p, playId, isReply = false) {
   const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
   const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin") ? " disc-post--coach" : "";
 
+  // ── Prominent "I Have This Question Too" button for question root posts ──
+  const sameQReaction = (isQuestion && !isReply)
+    ? (p.reactions || []).find((r) => r.key === "same_question")
+    : null;
+  const sameQCount = sameQReaction?.count || 0;
+  const userHasSameQ = sameQReaction?.mine || false;
+  const sameQBtn = (isQuestion && !isReply)
+    ? `<button class="disc-same-q-btn${userHasSameQ ? " is-mine" : ""}"` +
+    ` data-action="toggleDiscReaction" data-arg="${escapeHtml(p.id)}::same_question"` +
+    ` aria-pressed="${userHasSameQ ? "true" : "false"}" title="I have this question too">` +
+    `❓ I have this${sameQCount > 1 ? ` <span class="disc-same-q-count">· ${sameQCount}</span>` : ""}` +
+    `</button>`
+    : "";
+
   // ── Actions: Reply always visible; edit/delete/moderate in ⋯ more menu ──
-  const inlineActions = replyBtn;
+  const inlineActions = replyBtn + sameQBtn;
   const moreItems = [resolveBtn, reopenBtn, editBtn, deleteBtn].filter(Boolean).join("");
   const moreMenu = moreItems
     ? `<details class="disc-more-wrap">` +
@@ -479,6 +493,7 @@ function _discPostHtml(p, playId, isReply = false) {
     `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
     ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}"` +
     ` data-post-type="${escapeHtml(p.postType || "comment")}"` +
+    (p.questionCategory ? ` data-q-category="${escapeHtml(p.questionCategory)}"` : "") +
     ` role="article"` +
     ` data-author-name="${escapeHtml(p.authorName)}" data-body-text="${escapeHtml((p.body || "").slice(0, 80))}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
@@ -491,7 +506,7 @@ function _discPostHtml(p, playId, isReply = false) {
     (p.editedAt ? `<span class="disc-edited">(edited)</span>` : "") +
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
-    _discReactionsHtml(p.id, p.reactions) +
+    _discReactionsHtml(p.id, p.reactions, (isQuestion && !isReply) ? "same_question" : null) +
     actionsHtml +
     `</div>` +
     replyComposerPlaceholder +
@@ -506,9 +521,12 @@ function setDiscFilter(arg) {
   const filter = arg.slice(0, sep);
   const playId = arg.slice(sep + 2);
 
-  // Update filter button states
   const postsEl = document.getElementById(`discPosts-${playId}`);
-  const filterBar = postsEl?.closest(".disc-body")?.querySelector(".disc-filter-bar");
+  // Use parentElement — works for both discBody and ppDiscDrawerBody contexts
+  const container = postsEl?.parentElement;
+
+  // Update main filter button states
+  const filterBar = container?.querySelector(".disc-filter-bar");
   if (filterBar) {
     filterBar.querySelectorAll(".disc-filter-btn").forEach((btn) => {
       const btnFilter = (btn.dataset.arg || "").split("::")[0];
@@ -519,6 +537,37 @@ function setDiscFilter(arg) {
   }
 
   if (!postsEl) return;
+
+  // Show/hide sub-category bar for Questions
+  const existingQBar = container?.querySelector(".disc-q-cat-filter-bar");
+  if (filter === "question") {
+    if (!existingQBar) {
+      const qBar = document.createElement("div");
+      qBar.className = "disc-q-cat-filter-bar";
+      qBar.setAttribute("role", "group");
+      qBar.setAttribute("aria-label", "Filter by category");
+      const categories = [
+        { id: "all", label: "All" },
+        { id: "assignment", label: "Assignment" },
+        { id: "technique", label: "Technique" },
+        { id: "front", label: "Front" },
+        { id: "coverage", label: "Coverage" },
+        { id: "motion", label: "Motion" },
+        { id: "protection", label: "Protection" },
+        { id: "read", label: "Read" },
+      ];
+      setInnerHTML(qBar, categories.map((c) =>
+        `<button class="disc-q-cat-btn${c.id === "all" ? " active" : ""}" ` +
+        `data-action="setDiscQCategory" data-arg="${escapeHtml(c.id)}::${escapeHtml(playId)}" ` +
+        `aria-pressed="${c.id === "all" ? "true" : "false"}">${escapeHtml(c.label)}</button>`,
+      ).join(""));
+      filterBar?.insertAdjacentElement("afterend", qBar) || postsEl.insertAdjacentElement("beforebegin", qBar);
+    }
+  } else {
+    // Remove sub-bar and clear any category-based hiding
+    existingQBar?.remove();
+    postsEl.querySelectorAll(".disc-post--q-cat-hidden").forEach((p) => p.classList.remove("disc-post--q-cat-hidden"));
+  }
 
   // Show/hide top-level posts and their associated reply areas
   postsEl.querySelectorAll(".disc-post:not(.disc-post--reply)").forEach((post) => {
@@ -547,6 +596,30 @@ function setDiscFilter(arg) {
   } else {
     emptyMsg?.remove();
   }
+}
+
+function setDiscQCategory(arg) {
+  const sep = String(arg || "").indexOf("::");
+  if (sep < 0) return;
+  const cat = arg.slice(0, sep);
+  const playId = arg.slice(sep + 2);
+
+  const postsEl = document.getElementById(`discPosts-${playId}`);
+  const container = postsEl?.parentElement;
+  const qBar = container?.querySelector(".disc-q-cat-filter-bar");
+  if (qBar) {
+    qBar.querySelectorAll(".disc-q-cat-btn").forEach((btn) => {
+      const btnCat = (btn.dataset.arg || "").split("::")[0];
+      const isActive = btnCat === cat;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+  if (!postsEl) return;
+  postsEl.querySelectorAll(".disc-post:not(.disc-post--reply)[data-post-type='question']").forEach((post) => {
+    const postCat = post.dataset.qCategory || "";
+    post.classList.toggle("disc-post--q-cat-hidden", cat !== "all" && postCat !== cat);
+  });
 }
 
 function _discComposerHtml(playId, playSig, parentPostId = null) {
@@ -1221,10 +1294,34 @@ function _discUpdateReactions(postId, reactions) {
   if (!postEl) return;
   const existing = postEl.querySelector(".disc-reactions");
   if (!existing) return;
+  const isQuestion = postEl.dataset.postType === "question";
+  const isReply = postEl.classList.contains("disc-post--reply");
+  const excludeKey = (isQuestion && !isReply) ? "same_question" : null;
   const tmp = document.createElement("div");
-  tmp.innerHTML = _discReactionsHtml(postId, reactions);
+  tmp.innerHTML = _discReactionsHtml(postId, reactions, excludeKey);
   const newBar = tmp.firstElementChild;
   if (newBar) existing.replaceWith(newBar);
+  // Also update the dedicated "same question" button if present
+  if (isQuestion && !isReply) {
+    const sameQBtn = postEl.querySelector(".disc-same-q-btn");
+    if (sameQBtn) {
+      const sameQReaction = (reactions || []).find((r) => r.key === "same_question");
+      const count = sameQReaction?.count || 0;
+      const isMine = sameQReaction?.mine || false;
+      sameQBtn.classList.toggle("is-mine", isMine);
+      sameQBtn.setAttribute("aria-pressed", isMine ? "true" : "false");
+      const countSpan = sameQBtn.querySelector(".disc-same-q-count");
+      if (count > 1) {
+        if (countSpan) {
+          countSpan.textContent = `\u00b7 ${count}`;
+        } else {
+          sameQBtn.insertAdjacentHTML("beforeend", ` <span class="disc-same-q-count">\u00b7 ${count}</span>`);
+        }
+      } else {
+        countSpan?.remove();
+      }
+    }
+  }
 }
 
 // ── Q&A controls (coaches) ────────────────────────────────────────────────────

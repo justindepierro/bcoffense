@@ -523,7 +523,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Use a single-column feed on phones.
 - [x] Use a wider centered feed on tablets.
 - [ ] Allow a side-panel discussion layout on desktop.
-- [ ] Avoid excessive borders around every reply.
+- [x] Avoid excessive borders around every reply.
 - [x] Avoid displaying every moderation and editing control permanently.
 - [x] Move secondary controls into a three-dot menu.
 - [x] Add skeleton loading states.
