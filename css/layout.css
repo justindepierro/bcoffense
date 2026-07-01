@@ -713,6 +713,10 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   color: var(--color-white-alpha-80);
 }
 
+.team-settings-hero-actions {
+  margin-top: var(--space-sm);
+}
+
 .team-settings-hero-notes {
   display: flex;
   align-items: flex-start;
@@ -1384,3 +1388,147 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
     var(--shadow-lg),
     0 0 0 4px var(--color-primary-light);
 }
+
+/* ── Player Accounts Admin Panel (pa-*) ──────────────────────────── */
+.pa-overlay {
+  position: fixed;
+  inset: 0;
+  background: var(--color-overlay-bg, rgba(0,0,0,.5));
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+.pa-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pa-panel {
+  background: var(--color-bg-body);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: min(96vw, 660px);
+  max-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+.pa-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-lg);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+.pa-header h3 { margin: 0; font-size: var(--font-size-lg); }
+.pa-close-btn {
+  background: none;
+  border: none;
+  font-size: 22px;
+  line-height: 1;
+  cursor: pointer;
+  color: var(--color-text-muted);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+.pa-close-btn:hover { background: var(--color-bg-hover-row); color: var(--color-text); }
+.pa-body {
+  overflow-y: auto;
+  padding: var(--space-md) var(--space-lg);
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-md);
+}
+.pa-stats {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.pa-stat {
+  padding: 5px 12px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+}
+.pa-stat--active { color: var(--color-success); }
+.pa-stat--invited { color: var(--color-info); }
+.pa-stat--disabled { color: var(--color-text-muted); }
+.pa-list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+.pa-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+}
+.pa-row:hover { background: var(--color-bg-hover-row); }
+.pa-row-info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+.pa-row-name { font-weight: 700; font-size: var(--font-size-sm); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-row-email { font-size: var(--font-size-xs); color: var(--color-text-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.pa-row-meta { font-size: var(--font-size-xs); color: var(--color-text-secondary); }
+.pa-row-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-shrink: 0;
+}
+.pa-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border);
+}
+.pa-badge--active { background: var(--color-success-light); color: var(--color-success); border-color: var(--color-success); }
+.pa-badge--invited { background: var(--color-info-light, #e0f2fe); color: var(--color-info); border-color: var(--color-info); }
+.pa-badge--disabled { background: var(--color-bg-light); color: var(--color-text-muted); }
+.pa-action-btn { font-size: var(--font-size-xs); }
+.pa-empty, .pa-loading { color: var(--color-text-muted); font-size: var(--font-size-sm); text-align: center; padding: var(--space-lg) 0; }
+.pa-error { color: var(--color-danger); font-size: var(--font-size-sm); }
+.pa-invite-section {
+  border-top: 1px solid var(--color-border);
+  padding-top: var(--space-md);
+}
+.pa-invite-heading { margin: 0 0 var(--space-sm); font-size: var(--font-size-md); }
+.pa-invite-form {
+  display: flex;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+}
+.pa-input {
+  flex: 1;
+  min-width: 160px;
+  padding: 10px 14px;
+  border: 2px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
+.pa-input:focus { outline: none; border-color: var(--color-primary); box-shadow: var(--shadow-focus); }
+.pa-invite-status { font-size: var(--font-size-sm); min-height: 20px; margin: var(--space-xs) 0 0; }
+.pa-invite-status--success { color: var(--color-success); font-weight: 700; }
+.pa-invite-status--error { color: var(--color-danger); font-weight: 700; }

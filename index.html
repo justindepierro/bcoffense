@@ -237,6 +237,9 @@
               <span id="teamSettingsSaveStatus" class="team-settings-chip team-settings-chip--status"
                 aria-live="polite">Autosave on</span>
             </div>
+            <div class="team-settings-hero-actions" data-auth-player-hide="true">
+              <button class="btn btn-sm btn-outline" data-action="openPlayersAdmin">👤 Player Accounts</button>
+            </div>
           </div>
 
           <div class="team-settings-topbar">
@@ -3809,6 +3812,20 @@
   </div>
 
   <!-- ── Game Plan Constraints Panel ─────────────────────────── -->
+  <!-- Player Accounts Admin Panel (coach/admin only) -->
+  <div class="pa-overlay" id="playersAdminOverlay" data-action="closePlayersAdminOverlay"
+    aria-label="Player Accounts" aria-hidden="true" inert>
+    <div class="pa-panel">
+      <div class="pa-header">
+        <h3>👤 Player Accounts</h3>
+        <button class="pa-close-btn" data-action="closePlayersAdmin" aria-label="Close">×</button>
+      </div>
+      <div class="pa-body" id="playersAdminBody">
+        <p class="pa-loading">Loading…</p>
+      </div>
+    </div>
+  </div>
+
   <div class="constraint-panel-overlay" id="constraintPanel" data-action="closeConstraintPanelOverlay"
     aria-label="Game Plan Constraints" aria-hidden="true" inert>
     <div class="constraint-panel">
@@ -3993,7 +4010,8 @@
   <script defer src="js/auth.js?v=779"></script>
   <script defer src="js/play-clips.js?v=779"></script>
   <script defer src="js/vision.js?v=779"></script>
-  <script defer src="js/team-settings.js?v=779"></script>
+  <script defer src="js/team-settings.js?v=796"></script>
+  <script defer src="js/players-admin.js?v=796"></script>
   <script defer src="js/playbook.js?v=779"></script>
   <script defer src="js/playbook-collections.js?v=779"></script>
   <script defer src="js/playbook-print.js?v=779"></script>
