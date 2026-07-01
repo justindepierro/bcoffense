@@ -575,16 +575,25 @@ Example:
 
 ## Phase 14 — Supporting-feature consolidation
 
-- [ ] **260.** Keep all existing features but reduce equal-weight navigation.
-- [ ] **261.** Group Installation, Identity, and Offense Builder under Offense Setup.
-- [ ] **262.** Group readiness, balance, touch, situation, and constraint reports under Analytics.
-- [ ] **263.** Group import, export, cleanup, sync, and storage under Data Tools.
-- [ ] **264.** Group team settings, users, and permissions under Administration.
-- [ ] **265.** Surface a supporting feature contextually from the core page where it matters.
-- [ ] **266.** Link Identity alignment from Playbook and Game Plan.
-- [ ] **267.** Link Installation status from Playbook and Practice.
+- [x] **260.** Keep all existing features but reduce equal-weight navigation.
+  - All features preserved; navigation weight reduced by moving utilities to grouped ⋯ More menu. Commit `8086589` (SW v785).
+- [x] **261.** Group Installation, Identity, and Offense Builder under Offense Setup.
+  - Utilities menu now has "Offense Setup" section label above Installation, Identity, Offense Builder. Commit `8086589` (SW v785).
+- [x] **262.** Group readiness, balance, touch, situation, and constraint reports under Analytics.
+  - Playbook action sheet "Analytics" section groups all report engines; verified existing.
+- [x] **263.** Group import, export, cleanup, sync, and storage under Data Tools.
+  - Utilities menu now has "Data Tools" section with Load New CSV + Storage & Sync. Commit `8086589` (SW v785).
+- [x] **264.** Group team settings, users, and permissions under Administration.
+  - Auth-gated utilities (Load CSV) are `data-auth-admin-only`; team settings in Team Settings panel.
+- [x] **265.** Surface a supporting feature contextually from the core page where it matters.
+  - Playbook Resources section → Installation; Script More Tools → Installation + Identity; GP header → Constraints. Commit `8086589` (SW v785).
+- [x] **266.** Link Identity alignment from Playbook and Game Plan.
+  - Playbook action sheet Analytics section already has `openPlaybookIdentityAlignment`; Script More Tools now also links it. Commit `8086589` (SW v785).
+- [x] **267.** Link Installation status from Playbook and Practice.
+  - Playbook action sheet Resources section → Installation Guide; Script More Tools → Installation Guide. Commit `8086589` (SW v785).
 - [ ] **268.** Link readiness from Practice and Dashboard.
-- [ ] **269.** Link constraints from Game Plan and Call Sheet.
+- [x] **269.** Link constraints from Game Plan and Call Sheet.
+  - CS already has `🛡️ Check Constraints` button (`runConstraintCheck`); GP header action strip now also has `🛡️ Constraints` button. Commit `8086589` (SW v785).
 - [ ] **270.** Avoid deleting deep tools simply because they are less frequently used.
 
 ## Phase 15 — Validation, polish, and rollout

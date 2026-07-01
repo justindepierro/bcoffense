@@ -4504,6 +4504,27 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   }
 }
 
+/* #247 — Prevent isolated buttons from stretching: toolbar children never grow */
+.toolbar-primary > .btn,
+.toolbar-primary > .btn-sm,
+.toolbar-secondary > .btn,
+.toolbar-secondary > .btn-sm,
+.toolbar-overflow > .btn,
+.toolbar-overflow > .btn-sm,
+.toolbar-status > .btn,
+.toolbar-status > .btn-sm {
+  flex-shrink: 0;
+  flex-grow: 0;
+}
+
+/* #248 — Normalize button labels in toolbar context (no wrapping) */
+.toolbar-surface .btn,
+.toolbar-primary .btn,
+.toolbar-secondary .btn,
+.toolbar-overflow .btn {
+  white-space: nowrap;
+}
+
 /* Consolidated hover styles */
 @media (hover: hover) {
   .csv-tpl-table tbody tr:hover {
