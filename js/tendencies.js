@@ -2030,14 +2030,14 @@ async function sendScoutRecsToGamePlan() {
 
 // ── Charting Templates (#89) ────────────────────────────────────
 const BUILTIN_CHARTING_TEMPLATES = [
-  { id: "4-3-cover2",   label: "4-3 / Cover 2",   front: "4-3",   coverage: "Cover 2" },
-  { id: "4-3-cover3",   label: "4-3 / Cover 3",   front: "4-3",   coverage: "Cover 3" },
-  { id: "3-4-cover2",   label: "3-4 / Cover 2",   front: "3-4",   coverage: "Cover 2" },
-  { id: "3-4-cover3",   label: "3-4 / Cover 3",   front: "3-4",   coverage: "Cover 3" },
-  { id: "odd-quarters", label: "Odd / Quarters",   front: "Odd",   coverage: "Quarters" },
-  { id: "4-2-5-cover1", label: "4-2-5 / Cover 1",  front: "4-2-5", coverage: "Cover 1" },
-  { id: "3-3-5-cover4", label: "3-3-5 / Cover 4",  front: "3-3-5", coverage: "Cover 4" },
-  { id: "nickel-cover2","label": "Nickel / Cover 2", front: "Nickel", coverage: "Cover 2" },
+  { id: "4-3-cover2", label: "4-3 / Cover 2", front: "4-3", coverage: "Cover 2" },
+  { id: "4-3-cover3", label: "4-3 / Cover 3", front: "4-3", coverage: "Cover 3" },
+  { id: "3-4-cover2", label: "3-4 / Cover 2", front: "3-4", coverage: "Cover 2" },
+  { id: "3-4-cover3", label: "3-4 / Cover 3", front: "3-4", coverage: "Cover 3" },
+  { id: "odd-quarters", label: "Odd / Quarters", front: "Odd", coverage: "Quarters" },
+  { id: "4-2-5-cover1", label: "4-2-5 / Cover 1", front: "4-2-5", coverage: "Cover 1" },
+  { id: "3-3-5-cover4", label: "3-3-5 / Cover 4", front: "3-3-5", coverage: "Cover 4" },
+  { id: "nickel-cover2", "label": "Nickel / Cover 2", front: "Nickel", coverage: "Cover 2" },
 ];
 
 /**

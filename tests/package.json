@@ -1,0 +1,18 @@
+{
+  "name": "bcoffense-tests",
+  "version": "1.0.0",
+  "description": "Playwright E2E tests for BCOffense — isolated from app, no build tools",
+  "private": true,
+  "scripts": {
+    "test":        "playwright test --project=chromium-desktop",
+    "test:all":    "playwright test",
+    "test:ipad":   "playwright test --project=ipad-portrait --project=ipad-landscape",
+    "test:phone":  "playwright test --project=iphone --project=phone-narrow",
+    "test:headed": "playwright test --project=chromium-desktop --headed",
+    "screenshots": "playwright test --project=chromium-desktop --grep @screenshots",
+    "report":      "playwright show-report"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.45.0"
+  }
+}

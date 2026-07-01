@@ -651,11 +651,10 @@ function renderSavedWristbandManager() {
     });
 
   if (filtered.length === 0) {
-    container.innerHTML = `<div class="wb-saved-empty">${
-      saved.length === 0
+    container.innerHTML = `<div class="wb-saved-empty">${saved.length === 0
         ? "No saved wristbands yet."
         : "No saved wristbands match that search."
-    }</div>`;
+      }</div>`;
     return;
   }
 

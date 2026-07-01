@@ -698,8 +698,8 @@ function handleFileUpload(event) {
         const mappingNote = (fieldMapping.usedHeaders && fieldMapping.unrecognized.length > 0)
           ? `<br><small style="color:var(--color-text-muted)">⚠️ Unrecognized columns (ignored): ${fieldMapping.unrecognized.slice(0, 5).map((h) => escapeHtml(h)).join(", ")}${fieldMapping.unrecognized.length > 5 ? "…" : ""}</small>`
           : (fieldMapping.usedHeaders && fieldMapping.recognized.length > 0)
-          ? `<br><small style="color:var(--color-text-muted)">✓ Mapped: ${fieldMapping.recognized.slice(0, 8).map((h) => escapeHtml(h)).join(", ")}${fieldMapping.recognized.length > 8 ? "…" : ""}</small>`
-          : "";
+            ? `<br><small style="color:var(--color-text-muted)">✓ Mapped: ${fieldMapping.recognized.slice(0, 8).map((h) => escapeHtml(h)).join(", ")}${fieldMapping.recognized.length > 8 ? "…" : ""}</small>`
+            : "";
 
         const sample = parsed
           .slice(0, 3)

@@ -4,3 +4,4 @@
 .dev.vars
 .wrangler/
 .mobile-debug/
+tests/.env.test

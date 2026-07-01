@@ -4526,7 +4526,9 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 }
 
 /* #251 — When ResizeObserver detects overflow, hide secondary items */
-.toolbar-surface.toolbar-overflowing .toolbar-overflow { display: none; }
+.toolbar-surface.toolbar-overflowing .toolbar-overflow {
+  display: none;
+}
 
 /* Consolidated hover styles */
 @media (hover: hover) {
