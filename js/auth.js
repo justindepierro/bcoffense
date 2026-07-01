@@ -622,6 +622,9 @@
     if (currentAuthUser && typeof initNotifications === "function") {
       initNotifications();
     }
+    if (currentAuthUser && typeof initPushNotifications === "function") {
+      initPushNotifications();
+    }
   }
 
   function applyAuthToTree(root) {

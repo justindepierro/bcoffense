@@ -1,7 +1,10 @@
 /**
  * d1-notifications.js
  * CRUD helpers for in-app notifications stored in D1.
+ * Also fires Web Push when env is provided.
  */
+
+import { sendPushToUser } from "./d1-push.js";
 
 const NOTIF_EXPIRY_DAYS = 30;
 
@@ -28,7 +31,7 @@ export async function createNotification(db, { userId, type, title, body = null,
  * Notify all players who have posted in a thread, when a coach replies.
  * Excludes the poster themselves. Caps at 20 recipients.
  */
-export async function notifyOnCoachPost(db, threadId, coachId, coachName, playId, postBody) {
+export async function notifyOnCoachPost(db, threadId, coachId, coachName, playId, postBody, env = null) {
   const truncBody = String(postBody || "").slice(0, 120);
   const players = await db
     .prepare(
@@ -49,13 +52,21 @@ export async function notifyOnCoachPost(db, threadId, coachId, coachName, playId
       body: truncBody,
       deepLink: playId,
     });
+    if (env) {
+      sendPushToUser(env, db, row.author_id, {
+        title: `${coachName} replied`,
+        body: truncBody,
+        url: "/",
+        tag: `coach-reply-${playId}`,
+      }).catch(() => {});
+    }
   }
 }
 
 /**
  * Notify the author of a question post when it is resolved.
  */
-export async function notifyOnQuestionResolved(db, postId, resolverName, playId) {
+export async function notifyOnQuestionResolved(db, postId, resolverName, playId, env = null) {
   const post = await db
     .prepare(
       `SELECT p.author_id, p.body, u.role FROM discussion_posts p
@@ -72,6 +83,15 @@ export async function notifyOnQuestionResolved(db, postId, resolverName, playId)
     body: String(post.body || "").slice(0, 120),
     deepLink: playId,
   });
+
+  if (env) {
+    sendPushToUser(env, db, post.author_id, {
+      title: `${resolverName} resolved your question ✅`,
+      body: String(post.body || "").slice(0, 100),
+      url: "/",
+      tag: `resolved-${postId}`,
+    }).catch(() => {});
+  }
 }
 
 /**

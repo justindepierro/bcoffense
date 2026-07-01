@@ -52,7 +52,7 @@ export async function onRequest(context) {
           )
           .bind(postId).first();
         if (threadRow?.play_id) {
-          notifyOnQuestionResolved(env.DB, postId, resolverName, threadRow.play_id).catch(() => { });
+          notifyOnQuestionResolved(env.DB, postId, resolverName, threadRow.play_id, env).catch(() => { });
         }
       }
 
