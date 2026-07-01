@@ -313,12 +313,12 @@ Example:
 - [x] **85.** Add “Add scouting note to Call Sheet.”
 - [x] **86.** Add game/film source records to opponent data.
 - [x] **87.** Support charting separate games rather than one undifferentiated play pool.
-- [ ] **88.** Add quarter, score state, hash, field position, and drive context where useful.
+- [x] **88.** Add quarter, score state, hash, field position, and drive context where useful.
 - [x] **89.** Add charting templates for common opponent data.
 - [x] **90.** Retain Rapid and Wizard modes, but make their purpose obvious.
-- [ ] **91.** Create a phone-native charting workflow using one step/card at a time.
-- [ ] **92.** Create an iPad split view with play list, charting form, and live summary.
-- [ ] **93.** Replace wide tables on phone with cards or focused detail sheets.
+- [x] **91.** Create a phone-native charting workflow using one step/card at a time.
+- [x] **92.** Create an iPad split view with play list, charting form, and live summary.
+- [x] **93.** Replace wide tables on phone with cards or focused detail sheets.
 - [x] **94.** Add direct import validation with field mapping preview.
 - [x] **95.** Add duplicate-play/import detection.
 - [x] **96.** Add a scout report print preset using the existing print suite.

@@ -137,6 +137,8 @@ const TENDENCIES_OPTIONS = {
     "Sim Pressure",
     "Overload",
   ],
+  scoreState: ["Losing 8+", "Losing 1-7", "Tied", "Winning 1-7", "Winning 8+"],
+  driveResult: ["TD", "FG Made", "FG Miss", "Punt", "Turnover", "Downs", "Kneel", "Half", "End"],
   direction: ["Left", "Right", "Middle", "Field", "Boundary", "Weak", "Strong"],
   turnover: ["None", "Fumble", "INT", "Strip Sack", "Downs"],
   penalty: [
@@ -167,6 +169,8 @@ const TENDENCIES_STEPS = [
       },
       { key: "quarter", type: "buttons", label: "Quarter", options: "quarter" },
       { key: "time", type: "text", label: "Time", placeholder: "e.g. 12:35" },
+      { key: "scoreState", type: "buttons", label: "Score State", options: "scoreState" },
+      { key: "driveResult", type: "buttons", label: "Drive Result", options: "driveResult" },
     ],
   },
   {
@@ -431,6 +435,8 @@ const KEY_TO_CSV = {
   offensePlayType: "Offense Play Type",
   offenseFormation: "Offense Formation",
   offensePersonnel: "Offense Personnel",
+  scoreState: "Score State",
+  driveResult: "Drive Result",
   defFront: "Def Front",
   defCoverage: "Def Coverage",
   defStunt: "Def Stunt",
@@ -470,6 +476,7 @@ const TD_COLUMNS = [
   { key: "_downDist", label: "Down & Dist", sortable: true, sortKey: "down" },
   { key: "hash", label: "Hash", sortable: true },
   { key: "_fieldPos", label: "Field Pos", sortable: true, sortKey: "yardLine" },
+  { key: "scoreState", label: "Score", sortable: true },
   { key: "situation", label: "Situation", sortable: true },
   { key: "offenseFormation", label: "Off Form", sortable: true },
   { key: "offensePersonnel", label: "Personnel", sortable: true },
@@ -519,6 +526,8 @@ const TD_FILTER_FIELDS = [
   { key: "defCoverage", label: "Def Coverage", options: "defCoverage" },
   { key: "defBlitz", label: "Blitz", options: "defBlitz" },
   { key: "defStunt", label: "Stunt", options: "defStunt" },
+  { key: "scoreState", label: "Score State", options: "scoreState" },
+  { key: "driveResult", label: "Drive Result", options: "driveResult" },
 ];
 
 // ============ Persistence ============

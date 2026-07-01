@@ -686,7 +686,14 @@ function renderPlayLogTable(filtered) {
   function buildRows(plays) {
     return plays.map((play, i) => {
       const isSelected = tdSelectedPlays.has(play._origIndex);
-      const cells = visibleCols.map((c) => renderCellValue(c, play, i)).join("");
+      const cells = visibleCols.map((c) => {
+        const raw = renderCellValue(c, play, i);
+        // Inject data-label on first <td> for mobile card view (#93)
+        if (c.label && c.key !== "_num" && c.key !== "_actions") {
+          return raw.replace(/^<td/, `<td data-label="${escapeHtml(c.label)}"`);
+        }
+        return raw;
+      }).join("");
       return `<tr class="${isSelected ? "td-row-bulk-selected" : ""} ${i === tdSelectedRow ? "td-row-selected" : ""}"
                 draggable="${!tdBulkMode}"
                 data-orig="${play._origIndex}"
@@ -744,6 +751,8 @@ function renderCellValue(col, play, idx) {
       return `<td><span class="td-tag td-tag-front">${escapeHtml(play.defFront || "—")}</span></td>`;
     case "defCoverage":
       return `<td><span class="td-tag td-tag-cov">${escapeHtml(play.defCoverage || "—")}</span></td>`;
+    case "scoreState":
+      return `<td>${escapeHtml(play.scoreState || "—")}</td>`;
     case "defBlitz":
       return `<td>${play.defBlitz && play.defBlitz !== "None" ? '<span class="td-tag td-tag-blitz">🔴 ' + escapeHtml(play.defBlitz) + "</span>" : "—"}</td>`;
     case "defStunt":
