@@ -331,14 +331,14 @@ Example:
 - [x] **112.** Add a compact active-opponent filter.
 - [x] **113.** Add a scout-recommended filter.
 - [x] **114.** Add a not-yet-used-this-week filter.
-- [ ] **115.** Add a workflow side panel showing downstream status for the selected play.
+- [x] **115.** Add a workflow side panel showing downstream status for the selected play.
 
 ## Phase 7 — Game Plan handoffs
 
-- [ ] **116.** Make Game Plan the main curation workspace for coaches who use it.
-- [ ] **117.** Add a source badge showing Playbook and Scout inputs.
-- [ ] **118.** Show why a play was recommended for the active opponent.
-- [ ] **119.** Add recommendation confidence and supporting tendency.
+- [x] **116.** Make Game Plan the main curation workspace for coaches who use it.
+- [x] **117.** Add a source badge showing Playbook and Scout inputs.
+- [x] **118.** Show why a play was recommended for the active opponent.
+- [x] **119.** Add recommendation confidence and supporting tendency.
 - [ ] **120.** Add a preview of downstream Practice, Wristband, and Call Sheet placement.
 - [ ] **121.** Add one-click Push to Practice with a period-mapping preview.
 - [ ] **122.** Add one-click Send to Wristband with card/cell mapping preview.

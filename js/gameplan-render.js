@@ -868,6 +868,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
   const callHtml = _gpRenderCallHtml(play, renderCtx);
   const meta = [play.formation, play.personnel].filter(Boolean).join(" • ");
   const matchupBadges = _gpMatchupBadges(play);
+  const scoutBadge = _gpScoutBadge(play);
   const isSpotlit = _gpPlayMatchesSpotlight(play);
   const wbOn = _gpHasFlag(play, "wb");
   const jvOn = _gpHasFlag(play, "jv");
@@ -894,7 +895,7 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
          data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}">
       <div class="gp-box-play-body">
         <div class="gp-box-play-call">${callHtml}${matchupBadges}</div>
-        ${meta ? `<div class="gp-box-play-meta">${escapeHtml(meta)}</div>` : ""}
+        ${meta || scoutBadge ? `<div class="gp-box-play-meta">${meta ? escapeHtml(meta) : ""}${scoutBadge}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
         ${flagBtns}
@@ -915,6 +916,19 @@ function _gpMatchupBadges(play) {
   if (play.goodVsBear) parts.push(`<span class="gp-matchup-badge" title="Good vs. Bear">🐻</span>`);
   if (play.goodVsOkie) parts.push(`<span class="gp-matchup-badge" title="Good vs. Okie">🤠</span>`);
   return parts.length ? ` <span class="gp-matchup-badges">${parts.join("")}</span>` : "";
+}
+
+// #117-119: Scout source badge — shows if GP play is scout-recommended + why
+function _gpScoutBadge(play) {
+  if (typeof _tdScoutRecs === "undefined" || !Array.isArray(_tdScoutRecs) || !_tdScoutRecs.length) return "";
+  if (typeof playsMatch !== "function") return "";
+  const rec = _tdScoutRecs.find((r) => playsMatch(r.play, play));
+  if (!rec) return "";
+  const reasons = Array.isArray(rec.reasons) && rec.reasons.length > 0 ? rec.reasons : [];
+  // Confidence: 3 = all 3 factors, 2 = 2 factors, 1 = 1 factor
+  const conf = reasons.length >= 3 ? "high" : reasons.length === 2 ? "med" : "low";
+  const tip = reasons.length > 0 ? `Scout: ${reasons.join(" · ")}` : "Scout recommended";
+  return `<span class="gp-scout-badge gp-scout-${conf}" title="${escapeHtml(tip)}">🔍${reasons.length > 0 ? " " + escapeHtml(reasons[0]) : ""}</span>`;
 }
 
 /* Sort helpers for per-box sort modes.

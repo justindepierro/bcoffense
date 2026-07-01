@@ -198,7 +198,9 @@ table.sortable th {
   border-radius: var(--radius-sm);
   cursor: pointer;
   color: var(--color-text-muted);
-  transition: opacity var(--transition-fast), color var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast);
 }
 @media (hover: hover) {
   #playbookTable tbody tr:hover .pb-add-week-btn {
@@ -229,9 +231,18 @@ table.sortable th {
   line-height: 1.5;
   white-space: nowrap;
 }
-.pb-wf-script { background: var(--color-success-light, #d1fae5); color: var(--color-success); }
-.pb-wf-sheet  { background: var(--color-info-light, #dbeafe); color: var(--color-info); }
-.pb-wf-scout  { background: var(--color-warning-light, #fef3c7); color: var(--color-warning); }
+.pb-wf-script {
+  background: var(--color-success-light, #d1fae5);
+  color: var(--color-success);
+}
+.pb-wf-sheet {
+  background: var(--color-info-light, #dbeafe);
+  color: var(--color-info);
+}
+.pb-wf-scout {
+  background: var(--color-warning-light, #fef3c7);
+  color: var(--color-warning);
+}
 
 #playbookTable tbody tr.selected {
   background: var(--color-primary-light);
@@ -4406,3 +4417,107 @@ body.shell-phone .pb-action-sheet {
   border-color: var(--color-primary);
   box-shadow: var(--shadow-focus);
 }
+
+/* ── #115: Workflow Side Panel ────────────────────────────────────────────── */
+.pb-wf-panel-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.35);
+  z-index: var(--z-modal, 500);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-normal);
+}
+.pb-wf-panel-overlay.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+.pb-wf-panel {
+  position: absolute;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  width: min(360px, 92vw);
+  background: var(--color-bg-body);
+  border-left: 1px solid var(--color-border);
+  box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  transform: translateX(100%);
+  transition: transform var(--transition-normal);
+  overflow: hidden;
+}
+.pb-wf-panel-overlay.visible .pb-wf-panel {
+  transform: translateX(0);
+}
+.pb-wf-panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-md) var(--space-md) var(--space-sm);
+  border-bottom: 1px solid var(--color-border-light);
+  flex-shrink: 0;
+}
+.pb-wf-panel-title {
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  margin: 0;
+  color: var(--color-text);
+  line-height: 1.3;
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.pb-wf-panel-body {
+  flex: 1;
+  overflow-y: auto;
+  padding: var(--space-sm);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-xs);
+}
+.pb-wf-section {
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-bg-lighter);
+}
+.pb-wf-section--on {
+  border-color: var(--color-border-med);
+  background: var(--color-bg-body);
+}
+.pb-wf-sh {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-bottom: 4px;
+  font-size: var(--font-size-sm);
+}
+.pb-wf-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-border-med);
+  flex-shrink: 0;
+}
+.pb-wf-dot--on {
+  background: var(--color-success);
+}
+.pb-wf-sb {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  padding-left: 16px;
+}
+.pb-wf-s-ok   { color: var(--color-success); font-weight: 600; }
+.pb-wf-s-scout { color: var(--color-warning); font-weight: 600; }
+.pb-wf-s-empty { color: var(--color-text-muted); }
+.pb-wf-s-meta  { color: var(--color-text-secondary); }
+
+/* Chips become clickable when idx is attached */
+.pb-wf-chips[data-action] { cursor: pointer; }
+.pb-wf-chips[data-action]:hover .pb-wf-chip { opacity: 0.8; }

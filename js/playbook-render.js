@@ -159,7 +159,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button></td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button></td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -292,7 +292,7 @@ function renderPlaybook() {
   }
 }
 
-function _renderWorkflowChips(play) {
+function _renderWorkflowChips(play, idx) {
   const chips = [];
   // Script membership (#105)
   if (Array.isArray(script) && typeof playsMatch === "function") {
@@ -315,7 +315,9 @@ function _renderWorkflowChips(play) {
       chips.push(`<span class="pb-wf-chip pb-wf-scout" title="Scout recommended for current opponent">🔍 Scout</span>`);
     }
   }
-  return chips.length > 0 ? `<span class="pb-wf-chips">${chips.join("")}</span>` : "";
+  if (!chips.length) return "";
+  const idxAttr = idx !== undefined ? ` data-action="openPlayWorkflowPanel" data-arg="${idx}" role="button" tabindex="0" title="View workflow status"` : "";
+  return `<span class="pb-wf-chips"${idxAttr}>${chips.join("")}</span>`;
 }
 
 async function addPlayToWeek(idx) {
@@ -575,4 +577,143 @@ function updateStatsBar() {
 
   if (!activeTypeChips?.size) _statsBarCache = totalChip + html;
   statsBar.innerHTML = totalChip + html;
+}
+
+// ── #115: Workflow Side Panel ─────────────────────────────────────────────
+function openPlayWorkflowPanel(idx) {
+  const play = typeof plays !== "undefined" && plays[idx];
+  if (!play) return;
+  const panel = document.getElementById("pbWorkflowPanel");
+  const titleEl = document.getElementById("pbWfPanelTitle");
+  const body = document.getElementById("pbWfPanelBody");
+  if (!panel || !body) return;
+
+  const playLabel = [play.formation, play.motion ? `(${play.motion})` : "", play.play]
+    .filter(Boolean).join(" ");
+  if (titleEl) titleEl.textContent = playLabel || "Play Workflow";
+
+  const sections = [];
+
+  // ── Script ──
+  const scriptMatches = Array.isArray(script)
+    ? script.reduce((acc, s, i) => { if (!s.isSeparator && typeof playsMatch === "function" && playsMatch(s, play)) acc.push(i); return acc; }, [])
+    : [];
+  const periodNames = _wfScriptPeriods(scriptMatches);
+  if (scriptMatches.length > 0) {
+    sections.push(_wfSection("📋 Practice Script", true,
+      `<span class="pb-wf-s-ok">${scriptMatches.length} rep${scriptMatches.length > 1 ? "s" : ""} in script</span>` +
+      (periodNames ? `<span class="pb-wf-s-meta"> · ${escapeHtml(periodNames)}</span>` : "")
+    ));
+  } else {
+    sections.push(_wfSection("📋 Practice Script", false,
+      `<span class="pb-wf-s-empty">Not in current script</span>` +
+      `<button class="btn btn-xs btn-primary" data-action="addPlayToWeek" data-arg="${idx}">Add…</button>`
+    ));
+  }
+
+  // ── Call Sheet ──
+  const csLocs = typeof getCallSheetPlayLocations === "function" ? getCallSheetPlayLocations(play) : [];
+  const csNames = [...new Set(csLocs.map((l) => l.replace(/ - (Left|Right)$/, "")))];
+  if (csNames.length > 0) {
+    sections.push(_wfSection("📄 Call Sheet", true,
+      `<span class="pb-wf-s-ok">${csNames.map((n) => escapeHtml(n)).join(", ")}</span>`
+    ));
+  } else {
+    sections.push(_wfSection("📄 Call Sheet", false,
+      `<span class="pb-wf-s-empty">Not on call sheet</span>`
+    ));
+  }
+
+  // ── Wristband ──
+  const wbInfo = _wfFindOnWristband(play);
+  sections.push(_wfSection("🏈 Wristband", wbInfo.found,
+    wbInfo.found
+      ? `<span class="pb-wf-s-ok">${escapeHtml(wbInfo.label)}</span>`
+      : `<span class="pb-wf-s-empty">Not on active wristband</span>`
+  ));
+
+  // ── Game Plan ──
+  const gpInfo = _wfFindInGamePlan(play);
+  sections.push(_wfSection("🎯 Game Plan", gpInfo.found,
+    gpInfo.found
+      ? `<span class="pb-wf-s-ok">${escapeHtml(gpInfo.label)}</span>`
+      : `<span class="pb-wf-s-empty">Not in game plan</span>`
+  ));
+
+  // ── Scout ──
+  const scoutInfo = _wfGetScoutInfo(play);
+  sections.push(_wfSection("🔍 Scout", !!scoutInfo,
+    scoutInfo
+      ? `<span class="pb-wf-s-scout">${escapeHtml(scoutInfo)}</span>`
+      : `<span class="pb-wf-s-empty">No recommendation for active opponent</span>`
+  ));
+
+  setInnerHTML(body, sections.join(""));
+  panel.classList.add("visible");
+  if (typeof trapFocus === "function") {
+    const inner = panel.querySelector(".pb-wf-panel");
+    if (inner) trapFocus(inner);
+  }
+}
+
+function closePlayWorkflowPanel() {
+  document.getElementById("pbWorkflowPanel")?.classList.remove("visible");
+}
+
+function _wfSection(title, active, content) {
+  return `<div class="pb-wf-section${active ? " pb-wf-section--on" : ""}">
+    <div class="pb-wf-sh"><span class="pb-wf-dot${active ? " pb-wf-dot--on" : ""}"></span><strong>${title}</strong></div>
+    <div class="pb-wf-sb">${content}</div>
+  </div>`;
+}
+
+function _wfScriptPeriods(indices) {
+  if (!Array.isArray(script) || !indices.length) return "";
+  const periods = new Set();
+  indices.forEach((i) => {
+    for (let j = i - 1; j >= 0; j--) {
+      if (script[j]?.isSeparator && script[j].label) { periods.add(script[j].label); break; }
+    }
+  });
+  return [...periods].join(", ");
+}
+
+function _wfFindOnWristband(play) {
+  if (!Array.isArray(wristbandCards) || !wristbandCards.length) return { found: false };
+  for (const card of wristbandCards) {
+    if (!Array.isArray(card.data)) continue;
+    const cellIdx = card.data.findIndex((cell) => cell !== null && typeof playsMatch === "function" && playsMatch(cell, play));
+    if (cellIdx >= 0) {
+      const col = cellIdx < 20 ? "A" : "B";
+      const row = (cellIdx % 20) + 1;
+      return { found: true, label: `${card.name || "Card"} — ${col}${row}` };
+    }
+  }
+  return { found: false };
+}
+
+function _wfFindInGamePlan(play) {
+  try {
+    if (typeof _gpEnsureBoard !== "function") return { found: false };
+    const board = _gpEnsureBoard();
+    if (!board?.assignments) return { found: false };
+    const allBoxes = [...(typeof GP_DEFAULT_BOXES !== "undefined" ? GP_DEFAULT_BOXES : []), ...(board.customBoxes || [])];
+    for (const [boxId, boxPlays] of Object.entries(board.assignments)) {
+      if (!Array.isArray(boxPlays)) continue;
+      if (boxPlays.some((bp) => typeof playsMatch === "function" && playsMatch(bp, play))) {
+        const box = allBoxes.find((b) => b.id === boxId);
+        const label = (board.boxLabels && board.boxLabels[boxId]) || box?.label || boxId;
+        return { found: true, label };
+      }
+    }
+  } catch (e) { /* silent */ }
+  return { found: false };
+}
+
+function _wfGetScoutInfo(play) {
+  if (typeof _tdScoutRecs === "undefined" || !Array.isArray(_tdScoutRecs)) return null;
+  const rec = _tdScoutRecs.find((r) => typeof playsMatch === "function" && playsMatch(r.play, play));
+  if (!rec) return null;
+  if (Array.isArray(rec.reasons) && rec.reasons.length > 0) return rec.reasons.slice(0, 2).join(" · ");
+  return "Recommended for active opponent";
 }
