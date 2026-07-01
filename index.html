@@ -4254,8 +4254,8 @@
         .register("./sw.js")
         .then((reg) => {
           // Check for a new version immediately, then every 30 minutes.
-          reg.update().catch(() => {});
-          setInterval(() => reg.update().catch(() => {}), 30 * 60 * 1000);
+          reg.update().catch(() => { });
+          setInterval(() => reg.update().catch(() => { }), 30 * 60 * 1000);
         })
         .catch((err) => console.warn("SW registration failed:", err));
 

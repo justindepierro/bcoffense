@@ -6,7 +6,11 @@
       "type": "shell",
       "command": "./ship.sh \"${input:commitMessage}\"",
       "group": { "kind": "build", "isDefault": true },
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
       "problemMatcher": []
     },
     {
@@ -14,7 +18,11 @@
       "type": "shell",
       "command": "./ship.sh --bump \"${input:commitMessage}\"",
       "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
       "problemMatcher": []
     },
     {
@@ -30,7 +38,11 @@
       "type": "shell",
       "command": "./scripts/deploy-cloudflare.sh",
       "group": "build",
-      "presentation": { "reveal": "always", "panel": "dedicated", "clear": true },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated",
+        "clear": true
+      },
       "problemMatcher": []
     },
     {

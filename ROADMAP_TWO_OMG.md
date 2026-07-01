@@ -1186,54 +1186,54 @@ Initial reactions:
 
 # Phase 14 — Web Push Notifications
 
-- [ ] Audit the existing service worker before adding push.
-- [ ] Generate VAPID keys and store the private key only as a Cloudflare secret.
-- [ ] Add a PushManager subscription flow.
-- [ ] Request notification permission only after explaining the benefit.
-- [ ] Do not request permission immediately on first page load.
-- [ ] Require a user gesture before the permission prompt.
-- [ ] Store push subscriptions in D1.
-- [ ] Associate each subscription with a user and device.
-- [ ] Support multiple devices per user.
-- [ ] Support deleting expired subscriptions.
+- [x] Audit the existing service worker before adding push.
+- [x] Generate VAPID keys and store the private key only as a Cloudflare secret.
+- [x] Add a PushManager subscription flow.
+- [x] Request notification permission only after explaining the benefit.
+- [x] Do not request permission immediately on first page load.
+- [x] Require a user gesture before the permission prompt.
+- [x] Store push subscriptions in D1.
+- [x] Associate each subscription with a user and device.
+- [x] Support multiple devices per user.
+- [x] Support deleting expired subscriptions.
 - [ ] Handle pushsubscriptionchange where supported.
-- [ ] Add a Cloudflare Worker or Pages Function for sending push.
-- [ ] Send a push when a coach replies to the player's question.
+- [x] Add a Cloudflare Worker or Pages Function for sending push.
+- [x] Send a push when a coach replies to the player's question.
 - [ ] Send a push when a Practice Script is published if enabled.
 - [ ] Send a push when a quiz is assigned if enabled.
 - [ ] Do not send push for Likes by default.
 - [ ] Add quiet-hour preferences.
 - [ ] Add per-category push preferences.
-- [ ] Add unsubscribe controls.
+- [x] Add unsubscribe controls.
 - [ ] Add a test-notification control.
 - [ ] Add iOS installed-web-app instructions.
-- [ ] Detect unsupported browsers gracefully.
-- [ ] Fall back to in-app notifications when push is unavailable.
+- [x] Detect unsupported browsers gracefully.
+- [x] Fall back to in-app notifications when push is unavailable.
 - [ ] Rate-limit bulk notification sends.
 - [ ] Add push delivery attempt logs without storing unnecessary device details.
-- [ ] Remove invalid endpoints after permanent delivery failures.
+- [x] Remove invalid endpoints after permanent delivery failures.
 - [ ] Add Web Push tests and manual device test instructions.
 
 # Phase 15 — Email Notifications and Account Mail
 
-- [ ] Create a provider-neutral email adapter.
-- [ ] Implement the selected initial provider.
+- [x] Create a provider-neutral email adapter.
+- [x] Implement the selected initial provider.
 - [ ] Add domain verification.
 - [ ] Configure SPF.
 - [ ] Configure DKIM.
 - [ ] Configure DMARC with an appropriate starting policy.
-- [ ] Add invitation email.
-- [ ] Add password-reset email.
+- [x] Add invitation email.
+- [x] Add password-reset email.
 - [ ] Add email-address verification if required.
 - [ ] Add account-disabled notice where appropriate.
 - [ ] Add coach-reply email as an optional preference.
 - [ ] Add weekly unresolved-question digest as a future option.
 - [ ] Do not email players for every Like.
-- [ ] Use text and HTML versions.
-- [ ] Keep email content concise.
+- [x] Use text and HTML versions.
+- [x] Keep email content concise.
 - [ ] Do not expose private team data in subject lines.
-- [ ] Use expiring, single-use reset tokens.
-- [ ] Do not log full reset links.
+- [x] Use expiring, single-use reset tokens.
+- [x] Do not log full reset links.
 - [ ] Add bounce and complaint handling if the provider exposes it.
 - [ ] Add provider failure fallback logging.
 - [ ] Add email send limits.
@@ -1275,24 +1275,24 @@ Initial reactions:
 
 # Phase 17 — Player Portal Communication Area
 
-- [ ] Add My Questions to the player portal.
-- [ ] Show open questions.
-- [ ] Show coach replies.
-- [ ] Show resolved questions.
+- [x] Add My Questions to the player portal.
+- [x] Show open questions.
+- [x] Show coach replies.
+- [x] Show resolved questions.
 - [ ] Show questions the player marked Same Question.
 - [ ] Show unread coach clarifications.
 - [ ] Show discussions on assigned plays.
 - [ ] Allow filtering by active Practice Script.
 - [ ] Allow filtering by Playbook collection.
 - [ ] Allow filtering by position.
-- [ ] Add direct links back to play detail.
+- [x] Add direct links back to play detail.
 - [ ] Add a simple notification-preferences page.
 - [ ] Add push-subscription status.
 - [ ] Add email-notification status.
 - [ ] Add account and password settings.
 - [ ] Add session/device management.
 - [ ] Add accessible empty states.
-- [ ] Add phone-first layout.
+- [x] Add phone-first layout.
 - [ ] Add installed-iPad web-app layout.
 
 # Phase 18 — Moderation and Safety
