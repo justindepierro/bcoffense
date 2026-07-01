@@ -274,15 +274,15 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 # Phase 7 — Canonical Play Discussion Model
 
-- [ ] Create exactly one default discussion thread per canonical Playbook play.
-- [ ] Create the thread lazily when the first post is made.
-- [ ] Store the canonical play ID on every thread.
-- [ ] Store team ID on every thread.
-- [ ] Store thread enabled/disabled state.
-- [ ] Store thread locked/unlocked state.
-- [ ] Store whether comments are enabled.
-- [ ] Store whether questions are enabled.
-- [ ] Store whether reactions are enabled.
+- [x] Create exactly one default discussion thread per canonical Playbook play.
+- [x] Create the thread lazily when the first post is made.
+- [x] Store the canonical play ID on every thread.
+- [x] Store team ID on every thread.
+- [x] Store thread enabled/disabled state.
+- [x] Store thread locked/unlocked state.
+- [x] Store whether comments are enabled.
+- [x] Store whether questions are enabled.
+- [x] Store whether reactions are enabled.
 - [ ] Allow optional topic threads later without breaking the default thread.
 - [ ] Store source context when a post originates from Practice Script.
 - [ ] Store script ID when relevant.
@@ -291,51 +291,51 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Store game-week ID when relevant.
 - [ ] Store position context when relevant.
 - [ ] Store play revision identifier when relevant.
-- [ ] Do not duplicate posts when the thread is surfaced on another page.
-- [ ] Add canonical thread lookup utilities.
-- [ ] Add thread counts to play query results efficiently.
+- [x] Do not duplicate posts when the thread is surfaced on another page.
+- [x] Add canonical thread lookup utilities.
+- [x] Add thread counts to play query results efficiently.
 - [ ] Add open-question counts to play query results efficiently.
 - [ ] Add unread-count queries without loading complete threads.
-- [ ] Add pagination or cursor loading for long threads.
-- [ ] Add server-side validation for every post.
-- [ ] Sanitize user-generated text.
-- [ ] Prevent HTML and script injection.
-- [ ] Set reasonable post-length limits.
+- [x] Add pagination or cursor loading for long threads.
+- [x] Add server-side validation for every post.
+- [x] Sanitize user-generated text.
+- [x] Prevent HTML and script injection.
+- [x] Set reasonable post-length limits.
 - [ ] Set reasonable reply-depth limits.
-- [ ] Keep version one visually flat or one-level threaded.
+- [x] Keep version one visually flat or one-level threaded.
 - [ ] Add discussion model unit tests.
 
 # Phase 8 — Comments and Old-School Feed UI
 
-- [ ] Add a Discussion tab to Playbook play detail.
+- [x] Add a Discussion tab to Playbook play detail.
 - [ ] Add separate Comments and Questions filters within Discussion.
-- [ ] Display author name.
-- [ ] Display author role.
+- [x] Display author name.
+- [x] Display author role.
 - [ ] Display position when useful.
-- [ ] Display relative and exact timestamp.
-- [ ] Display edited status.
+- [x] Display relative and exact timestamp.
+- [x] Display edited status.
 - [ ] Display source context such as Tuesday Practice, Period 3.
-- [ ] Display a simple avatar fallback using initials.
-- [ ] Do not require profile photos.
-- [ ] Add a plain text comment composer.
-- [ ] Add a clear Post button.
-- [ ] Support keyboard submission without accidental posting.
-- [ ] Allow players to edit their own recent comments.
-- [ ] Allow players to delete their own eligible comments.
-- [ ] Allow coaches to edit their own comments.
+- [x] Display a simple avatar fallback using initials.
+- [x] Do not require profile photos.
+- [x] Add a plain text comment composer.
+- [x] Add a clear Post button.
+- [x] Support keyboard submission without accidental posting.
+- [x] Allow players to edit their own recent comments.
+- [x] Allow players to delete their own eligible comments.
+- [x] Allow coaches to edit their own comments.
 - [ ] Preserve edit history for moderation.
-- [ ] Add Load More for long threads.
-- [ ] Add empty states.
-- [ ] Add loading states.
-- [ ] Add retry states.
+- [x] Add Load More for long threads.
+- [x] Add empty states.
+- [x] Add loading states.
+- [x] Add retry states.
 - [ ] Add offline submission warning.
-- [ ] Prevent duplicate submissions during slow requests.
+- [x] Prevent duplicate submissions during slow requests.
 - [ ] Use optimistic UI only when rollback is reliable.
 - [ ] Add phone layout.
 - [ ] Add iPad layout.
 - [ ] Add desktop layout.
 - [ ] Meet touch-target and keyboard-accessibility requirements.
-- [ ] Keep the design visually simple and familiar.
+- [x] Keep the design visually simple and familiar.
 
 # Phase 8A — Comment and Message Content Moderation
 
