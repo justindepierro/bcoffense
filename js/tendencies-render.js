@@ -1,11 +1,42 @@
 // Tendencies Render Functions
 // Owns: All UI rendering and templating
 
+function renderTendenciesLoading() {
+  const container = document.getElementById("tendenciesContent");
+  if (!container) return;
+  container.innerHTML = `
+    <div class="td-home">
+      <div class="td-state td-state--loading" role="status" aria-live="polite">
+        <span class="td-state__spinner" aria-hidden="true"></span>
+        <p class="td-state__text">Loading Opponent Scout…</p>
+      </div>
+    </div>
+  `;
+}
+
+function renderTendenciesError(err, retryAction = "initTendencies") {
+  const container = document.getElementById("tendenciesContent");
+  if (!container) return;
+  const detail = err && err.message ? escapeHtml(String(err.message)) : "";
+  container.innerHTML = `
+    <div class="td-home">
+      <div class="td-state td-state--error" role="alert">
+        <span class="td-state__icon" aria-hidden="true">⚠️</span>
+        <h2 class="td-state__title">Opponent Scout couldn't load</h2>
+        <p class="td-state__text">Something went wrong while building this page. Your saved scouting data is safe.</p>
+        ${detail ? `<p class="td-state__detail">${detail}</p>` : ""}
+        <button class="btn btn-primary" data-action="${escapeHtml(retryAction)}">↻ Retry</button>
+      </div>
+    </div>
+  `;
+}
+
 function renderTendenciesHome() {
   const container = document.getElementById("tendenciesContent");
   if (!container) return;
 
-  const opponentList = tendenciesOpponents
+  try {
+    const opponentList = tendenciesOpponents
     .map((opp, i) => {
       const safeName = escapeHtml(opp.name);
       const playLabel = `${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}`;
@@ -68,6 +99,10 @@ function renderTendenciesHome() {
     }
     </div>
   `;
+  } catch (err) {
+    console.error("renderTendenciesHome failed", err);
+    renderTendenciesError(err, "initTendencies");
+  }
 }
 
 function renderOpponentDetail() {

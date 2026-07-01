@@ -654,8 +654,15 @@ function redoTendencies() {
 // ============ Initialization ============
 
 function initTendencies() {
-  loadTendencies();
-  renderTendenciesHome();
+  renderTendenciesLoading();
+  try {
+    loadTendencies();
+    renderTendenciesHome();
+  } catch (err) {
+    console.error("initTendencies failed", err);
+    renderTendenciesError(err, "initTendencies");
+    return;
+  }
   initTendenciesKeyboard();
 }
 
