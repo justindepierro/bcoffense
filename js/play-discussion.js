@@ -48,6 +48,52 @@ const _DISC_ROLE_COLORS = {
   player: "var(--color-success)",
 };
 
+// ── Reaction helpers ──────────────────────────────────────────────────────────
+
+const _REACTION_META = {
+  thumbs_up:     { emoji: "👍", label: "Like" },
+  football:      { emoji: "🏈", label: "Great play" },
+  same_question: { emoji: "❓", label: "Same question" },
+};
+
+const _REACTION_ORDER = ["thumbs_up", "football", "same_question"];
+
+function _discReactionsHtml(postId, reactions) {
+  const reactionMap = {};
+  for (const r of (reactions || [])) reactionMap[r.key] = r;
+
+  const btns = _REACTION_ORDER.map((key) => {
+    const meta = _REACTION_META[key];
+    const r = reactionMap[key];
+    const count = r?.count || 0;
+    const isMine = r?.mine;
+    return (
+      `<button class="disc-react-btn${isMine ? " is-mine" : ""}"` +
+      ` data-action="toggleDiscReaction" data-arg="${escapeHtml(postId)}::${key}"` +
+      ` title="${escapeHtml(meta.label)}" aria-pressed="${isMine ? "true" : "false"}">` +
+      meta.emoji +
+      (count > 0 ? ` <span class="disc-react-count">${count}</span>` : "") +
+      `</button>`
+    );
+  }).join("");
+  return `<div class="disc-reactions">${btns}</div>`;
+}
+
+// ── Question state helpers ────────────────────────────────────────────────────
+
+const _Q_STATE_META = {
+  open:     { label: "Open",     icon: "❓", cls: "open" },
+  answered: { label: "Answered", icon: "✅", cls: "answered" },
+  resolved: { label: "Resolved", icon: "✅", cls: "resolved" },
+  reopened: { label: "Reopened", icon: "🔄", cls: "reopened" },
+};
+
+function _discQStateBadge(state) {
+  if (!state || state === "open") return "";
+  const m = _Q_STATE_META[state] || { label: state, icon: "❓", cls: "open" };
+  return `<span class="disc-q-state disc-q-state--${m.cls}">${m.icon} ${escapeHtml(m.label)}</span>`;
+}
+
 function _discRoleBadge(role) {
   const label = { admin: "Admin", coach: "Coach", player: "Player" }[role] || role;
   return `<span class="disc-role-badge disc-role-badge--${escapeHtml(role)}">${escapeHtml(label)}</span>`;
@@ -130,7 +176,8 @@ function _discRenderBody(container, data, playId, playSig) {
   const { thread, posts, hasMore } = data;
   const isLocked = thread?.locked;
   const userRole = window.currentAuthUser?.role;
-  const canPost = !isLocked || userRole === "coach" || userRole === "admin";
+  const isStaff = userRole === "coach" || userRole === "admin";
+  const canPost = !isLocked || isStaff;
 
   const postsHtml = posts.length
     ? posts.map((p) => _discPostHtml(p, playId)).join("")
@@ -143,13 +190,22 @@ function _discRenderBody(container, data, playId, playSig) {
          data-cursor="${escapeHtml(posts[posts.length - 1]?.id || "")}">Load more…</button>`
     : "";
 
-  const composer = canPost ? _discComposerHtml(playId, playSig) : `<p class="disc-locked">Thread is locked.</p>`;
+  const composer = canPost ? _discComposerHtml(playId, playSig) : `<p class="disc-locked">🔒 Thread is locked.</p>`;
+
+  const lockCtrl = isStaff && thread
+    ? `<div class="disc-thread-controls">` +
+      `<button class="btn btn-xs disc-lock-btn" data-action="toggleDiscThreadLock"` +
+      ` data-arg="${escapeHtml(playId)}::${isLocked ? "0" : "1"}">` +
+      `${isLocked ? "🔓 Unlock Thread" : "🔒 Lock Thread"}</button>` +
+      `</div>`
+    : "";
 
   setInnerHTML(
     container,
     `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}">${postsHtml}</div>` +
     loadMore +
-    composer,
+    composer +
+    lockCtrl,
   );
 }
 
@@ -157,7 +213,7 @@ function _discPostHtml(p, playId) {
   const mine = p.authorId === _discCurrentUserId;
   const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
   const canAct = mine || isStaff;
-  const typeIcon = p.postType === "question" ? "❓ " : "";
+  const isQuestion = p.postType === "question";
 
   const editBtn = canAct
     ? `<button class="disc-action-btn" data-action="startEditPost" data-arg="${escapeHtml(p.id)}" title="Edit">✏️</button>`
@@ -166,19 +222,32 @@ function _discPostHtml(p, playId) {
     ? `<button class="disc-action-btn disc-action-btn--danger" data-action="deleteDiscPost" data-arg="${escapeHtml(p.id)}" data-play-id="${escapeHtml(playId)}" title="Delete">🗑</button>`
     : "";
 
+  // Coaches can resolve/reopen questions
+  const isResolved = p.questionState === "resolved" || p.questionState === "answered";
+  const resolveBtn = (isStaff && isQuestion)
+    ? (isResolved
+        ? `<button class="disc-action-btn" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::reopened" title="Reopen">🔄 Reopen</button>`
+        : `<button class="disc-action-btn disc-action-btn--resolve" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::resolved" title="Resolve">✅ Resolve</button>`)
+    : "";
+
+  const qStateBadge = isQuestion ? _discQStateBadge(p.questionState) : "";
+  const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
+
   return (
-    `<div class="disc-post" id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}">` +
+    `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}" id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
     `<div class="disc-post-content">` +
     `<div class="disc-post-meta">` +
     `<span class="disc-author">${escapeHtml(p.authorName)}</span>` +
     _discRoleBadge(p.authorRole) +
-    (typeIcon ? `<span class="disc-type-icon">${typeIcon}</span>` : "") +
+    typeIcon +
+    qStateBadge +
     `<span class="disc-time" title="${escapeHtml(_discExactTime(p.createdAt))}">${escapeHtml(_discRelTime(p.createdAt))}</span>` +
     (p.editedAt ? `<span class="disc-edited">(edited)</span>` : "") +
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${escapeHtml(p.body)}</div>` +
-    (canAct ? `<div class="disc-post-actions">${editBtn}${deleteBtn}</div>` : "") +
+    _discReactionsHtml(p.id, p.reactions) +
+    ((canAct || resolveBtn) ? `<div class="disc-post-actions">${resolveBtn}${editBtn}${deleteBtn}</div>` : "") +
     `</div></div>`
   );
 }
@@ -408,6 +477,188 @@ function retryDiscussion() {
   if (bodyEl) {
     bodyEl.innerHTML = `<p class="disc-loading">Loading…</p>`;
     _discLoadBody(_discLastPlayId, _discLastPlaySig, bodyEl);
+  }
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+
+async function toggleDiscReaction(arg) {
+  const sep = String(arg || "").lastIndexOf("::");
+  if (sep < 0) return;
+  const postId = arg.slice(0, sep);
+  const reactionKey = arg.slice(sep + 2);
+  if (!postId || !reactionKey) return;
+
+  // Disable all reaction buttons for this post while requesting
+  const postEl = document.getElementById(`disc-post-${postId}`);
+  postEl?.querySelectorAll(".disc-react-btn").forEach((b) => { b.disabled = true; });
+
+  try {
+    const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/react`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ reaction_key: reactionKey }),
+    });
+    const data = await res.json();
+    if (!data.ok) {
+      showToast(data.error || "Failed to react.", { duration: 2500, type: "error" });
+      return;
+    }
+    _discUpdateReactions(postId, data.reactions);
+  } catch (_) {
+    showToast("Network error.", { duration: 2500, type: "error" });
+  } finally {
+    postEl?.querySelectorAll(".disc-react-btn").forEach((b) => { b.disabled = false; });
+  }
+}
+
+function _discUpdateReactions(postId, reactions) {
+  const reactionMap = {};
+  for (const r of (reactions || [])) reactionMap[r.key] = r;
+
+  for (const key of _REACTION_ORDER) {
+    const btn = document.querySelector(`[data-arg="${postId}::${key}"]`);
+    if (!btn) continue;
+    const r = reactionMap[key];
+    const mine = !!r?.mine;
+    const count = r?.count || 0;
+    btn.classList.toggle("is-mine", mine);
+    btn.setAttribute("aria-pressed", mine ? "true" : "false");
+    const countEl = btn.querySelector(".disc-react-count");
+    if (count > 0) {
+      if (countEl) {
+        countEl.textContent = String(count);
+      } else {
+        const span = document.createElement("span");
+        span.className = "disc-react-count";
+        span.textContent = String(count);
+        btn.appendChild(span);
+      }
+    } else {
+      countEl?.remove();
+    }
+  }
+}
+
+// ── Q&A controls (coaches) ────────────────────────────────────────────────────
+
+async function resolveDiscPost(arg) {
+  const sep = String(arg || "").lastIndexOf("::");
+  if (sep < 0) return;
+  const postId = arg.slice(0, sep);
+  const targetState = arg.slice(sep + 2); // "resolved" or "reopened"
+  if (!postId || !targetState) return;
+
+  const action = targetState === "resolved" ? "resolve" : "reopen";
+  try {
+    const res = await fetch(`/api/posts/${encodeURIComponent(postId)}`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || "Failed.", { duration: 2500, type: "error" }); return; }
+    _discUpdateQState(postId, data.questionState);
+  } catch (_) {
+    showToast("Network error.", { duration: 2500, type: "error" });
+  }
+}
+
+function _discUpdateQState(postId, newState) {
+  const postEl = document.getElementById(`disc-post-${postId}`);
+  if (!postEl) return;
+
+  // Toggle resolved styling
+  const isResolved = newState === "resolved" || newState === "answered";
+  postEl.classList.toggle("disc-post--resolved", isResolved);
+
+  // Update/insert state badge
+  const newBadgeHtml = _discQStateBadge(newState);
+  const existing = postEl.querySelector(".disc-q-state");
+  if (existing) {
+    if (newBadgeHtml) {
+      const tmp = document.createElement("span");
+      tmp.innerHTML = newBadgeHtml;
+      existing.replaceWith(tmp.firstElementChild);
+    } else {
+      existing.remove();
+    }
+  } else if (newBadgeHtml) {
+    const meta = postEl.querySelector(".disc-post-meta");
+    if (meta) {
+      const tmp = document.createElement("span");
+      tmp.innerHTML = newBadgeHtml;
+      if (tmp.firstElementChild) meta.appendChild(tmp.firstElementChild);
+    }
+  }
+
+  // Update resolve button
+  const resolveBtn = postEl.querySelector("[data-action='resolveDiscPost']");
+  if (resolveBtn) {
+    const nowResolved = isResolved;
+    resolveBtn.dataset.arg = `${postId}::${nowResolved ? "reopened" : "resolved"}`;
+    resolveBtn.title = nowResolved ? "Reopen" : "Resolve";
+    resolveBtn.textContent = nowResolved ? "🔄 Reopen" : "✅ Resolve";
+    resolveBtn.classList.toggle("disc-action-btn--resolve", !nowResolved);
+  }
+}
+
+async function toggleDiscThreadLock(arg) {
+  const sep = String(arg || "").lastIndexOf("::");
+  if (sep < 0) return;
+  const playId = arg.slice(0, sep);
+  const lockVal = arg.slice(sep + 2); // "1" = lock, "0" = unlock
+  if (!playId) return;
+
+  const locked = lockVal === "1";
+  try {
+    const res = await fetch(`/api/threads/${encodeURIComponent(playId)}/manage`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ action: locked ? "lock" : "unlock" }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || "Failed.", { duration: 2500, type: "error" }); return; }
+
+    const isNowLocked = data.locked;
+
+    // Update the lock button
+    const btn = document.querySelector("[data-action='toggleDiscThreadLock']");
+    if (btn) {
+      btn.textContent = isNowLocked ? "🔓 Unlock Thread" : "🔒 Lock Thread";
+      btn.dataset.arg = `${playId}::${isNowLocked ? "0" : "1"}`;
+    }
+
+    // Toggle composer visibility
+    const composerEl = document.querySelector(".disc-composer");
+    const lockedEl = document.querySelector(".disc-locked");
+    if (isNowLocked) {
+      composerEl?.remove();
+      if (!lockedEl) {
+        const p = document.createElement("p");
+        p.className = "disc-locked";
+        p.textContent = "🔒 Thread is locked.";
+        document.querySelector(`#discPosts-${playId}`)?.insertAdjacentElement("afterend", p);
+      }
+    } else {
+      lockedEl?.remove();
+      if (!composerEl && _discLastPlaySig !== null) {
+        const playSig = _discLastPlaySig || "";
+        const tmp = document.createElement("div");
+        tmp.innerHTML = _discComposerHtml(playId, playSig);
+        const lockCtrlEl = document.querySelector(".disc-thread-controls");
+        if (lockCtrlEl) {
+          lockCtrlEl.insertAdjacentElement("beforebegin", tmp.firstElementChild);
+        } else {
+          const body = document.getElementById("discBody");
+          if (body) body.appendChild(tmp.firstElementChild);
+        }
+      }
+    }
+
+    showToast(isNowLocked ? "Thread locked." : "Thread unlocked.", { duration: 2500, type: "success" });
+  } catch (_) {
+    showToast("Network error.", { duration: 2500, type: "error" });
   }
 }
 

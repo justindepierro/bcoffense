@@ -1352,6 +1352,31 @@ body.play-presentation-open {
 .pp-disc-drawer .disc-composer { border-top-color: var(--color-border); }
 .pp-disc-drawer .disc-section { border: none; background: none; padding: 0; }
 
+/* Reactions in dark drawer context */
+.pp-disc-drawer .disc-react-btn {
+  background: rgb(255 255 255 / 8%);
+  border-color: rgb(255 255 255 / 15%);
+  color: rgb(255 255 255 / 70%);
+}
+.pp-disc-drawer .disc-react-btn:hover {
+  background: rgb(255 255 255 / 16%);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+.pp-disc-drawer .disc-react-btn.is-mine {
+  background: color-mix(in srgb, var(--color-primary) 25%, transparent);
+  border-color: var(--color-primary);
+  color: #fff;
+}
+
+/* Thread controls in dark drawer */
+.pp-disc-drawer .disc-lock-btn {
+  color: rgb(255 255 255 / 50%);
+}
+.pp-disc-drawer .disc-lock-btn:hover {
+  color: var(--color-warning);
+}
+
 /* Indicator badge on the 💬 header button */
 #playPresentationDiscBtn[data-count]::after {
   content: attr(data-count);

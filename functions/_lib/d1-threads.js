@@ -5,6 +5,9 @@
 const MAX_POST_LENGTH = 2000;
 const PLAYER_EDIT_WINDOW_SECONDS = 900; // 15 minutes
 
+/** Allowed reaction keys. */
+const REACTION_KEYS = new Set(["thumbs_up", "football", "same_question", "helpful"]);
+
 // ── Team helpers ──────────────────────────────────────────────────────────────
 
 /** Return the first team in DB, or create a default one. */
@@ -66,8 +69,8 @@ const POST_SELECT = `
   u.display_name AS author_name, u.role AS author_role
 `;
 
-/** Load posts for a thread (paginated, flat, oldest first). */
-export async function getThreadPosts(db, threadId, { limit = 20, afterId = null } = {}) {
+/** Load posts for a thread (paginated, flat, oldest first). Includes reaction counts. */
+export async function getThreadPosts(db, threadId, { limit = 20, afterId = null, userId = null } = {}) {
   let query, binds;
   if (afterId) {
     const cursor = await db
@@ -95,7 +98,15 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null 
   const rows = await db.prepare(query).bind(...binds).all();
   const all = rows.results || [];
   const hasMore = all.length > limit;
-  return { posts: hasMore ? all.slice(0, limit) : all, hasMore };
+  const page = hasMore ? all.slice(0, limit) : all;
+
+  // Attach reactions
+  if (page.length > 0) {
+    const postIds = page.map((p) => p.id);
+    const reactionsMap = await getReactionsForPosts(db, postIds, userId);
+    return { posts: page.map((p) => ({ ...p, reactions: reactionsMap[p.id] || [] })), hasMore };
+  }
+  return { posts: page, hasMore };
 }
 
 /** Create a new post. Returns the new post row. */
@@ -191,4 +202,111 @@ export function sanitizePostBody(text) {
     .replace(/</g, "&lt;")
     .replace(/>/g, "&gt;")
     .trim();
+}
+
+// ── Reactions ─────────────────────────────────────────────────────────────────
+
+/**
+ * Get reaction counts (and "mine" flag) for a set of post IDs.
+ * Returns { [postId]: [{key, count, mine}] }
+ */
+export async function getReactionsForPosts(db, postIds, userId) {
+  if (!postIds || !postIds.length) return {};
+  const placeholders = postIds.map(() => "?").join(",");
+  const uid = userId || "";
+  // Build query: group by post + key, flag user's own reactions
+  const rows = await db
+    .prepare(
+      `SELECT post_id, reaction_key, COUNT(*) AS cnt,
+       MAX(CASE WHEN user_id = ? THEN 1 ELSE 0 END) AS mine
+       FROM reactions WHERE post_id IN (${placeholders})
+       GROUP BY post_id, reaction_key`,
+    )
+    .bind(uid, ...postIds)
+    .all();
+
+  const result = {};
+  for (const row of rows.results || []) {
+    if (!result[row.post_id]) result[row.post_id] = [];
+    result[row.post_id].push({ key: row.reaction_key, count: row.cnt, mine: !!row.mine });
+  }
+  return result;
+}
+
+/**
+ * Toggle a reaction on a post. Returns { ok, added, reactions } or { error }.
+ * reactions is the updated list for the post.
+ */
+export async function toggleReaction(db, postId, userId, reactionKey) {
+  if (!REACTION_KEYS.has(reactionKey)) return { error: "Invalid reaction." };
+  if (!userId) return { error: "Player account required to react." };
+
+  const post = await db.prepare("SELECT id FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+    .bind(postId).first();
+  if (!post) return { error: "Post not found." };
+
+  const existing = await db
+    .prepare("SELECT id FROM reactions WHERE post_id = ? AND user_id = ? AND reaction_key = ? LIMIT 1")
+    .bind(postId, userId, reactionKey).first();
+
+  if (existing) {
+    await db.prepare("DELETE FROM reactions WHERE id = ?").bind(existing.id).run();
+  } else {
+    const id = crypto.randomUUID();
+    const now = Math.floor(Date.now() / 1000);
+    await db.prepare("INSERT INTO reactions (id, post_id, user_id, reaction_key, created_at) VALUES (?,?,?,?,?)")
+      .bind(id, postId, userId, reactionKey, now).run();
+  }
+
+  // Return updated reactions for this post
+  const reactionsMap = await getReactionsForPosts(db, [postId], userId);
+  return { ok: true, added: !existing, reactions: reactionsMap[postId] || [] };
+}
+
+// ── Question state (Slice 6) ──────────────────────────────────────────────────
+
+const VALID_QUESTION_STATES = new Set(["open", "answered", "resolved", "reopened"]);
+
+/**
+ * Set question state on a question post. Coaches can set any state;
+ * question authors can set 'reopened' only.
+ */
+export async function setQuestionState(db, postId, newState, session) {
+  if (!VALID_QUESTION_STATES.has(newState)) return { error: "Invalid state." };
+
+  const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1")
+    .bind(postId).first();
+  if (!post) return { error: "Post not found." };
+  if (post.post_type !== "question") return { error: "Only questions have a state." };
+
+  const isStaff = session.role === "coach" || session.role === "admin";
+  const isAuthor = session.d1UserId === post.author_id;
+  if (!isStaff && !isAuthor) return { error: "Not authorized." };
+  // Players can only reopen, not resolve
+  if (!isStaff && newState !== "reopened") return { error: "Players can only reopen questions." };
+
+  const now = Math.floor(Date.now() / 1000);
+  await db.prepare("UPDATE discussion_posts SET question_state = ?, updated_at = ? WHERE id = ?")
+    .bind(newState, now, postId).run();
+
+  return { ok: true, questionState: newState };
+}
+
+/**
+ * Lock or unlock a thread. Coaches only.
+ */
+export async function setThreadLock(db, teamId, playId, locked, session) {
+  const isStaff = session.role === "coach" || session.role === "admin";
+  if (!isStaff) return { error: "Coaches only." };
+
+  const thread = await db
+    .prepare("SELECT id FROM play_threads WHERE team_id = ? AND play_id = ? LIMIT 1")
+    .bind(teamId, playId).first();
+  if (!thread) return { error: "Thread not found." };
+
+  const now = Math.floor(Date.now() / 1000);
+  await db.prepare("UPDATE play_threads SET locked = ?, updated_at = ? WHERE id = ?")
+    .bind(locked ? 1 : 0, now, thread.id).run();
+
+  return { ok: true, locked: !!locked };
 }

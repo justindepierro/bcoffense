@@ -4740,3 +4740,78 @@ body.shell-phone .pb-action-sheet {
   color: var(--color-text-muted);
   margin-left: auto;
 }
+
+/* ── Reactions ──────────────────────────────────────────────────────────────── */
+.disc-reactions {
+  display: flex;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+  margin-top: var(--space-xs);
+}
+.disc-react-btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 3px;
+  padding: 2px 8px;
+  border-radius: var(--radius-pill);
+  border: 1px solid var(--color-border);
+  background: var(--color-bg-light);
+  font-size: var(--font-size-xs);
+  cursor: pointer;
+  transition: border-color var(--transition-fast), background var(--transition-fast);
+  color: var(--color-text-muted);
+  line-height: 1.4;
+}
+.disc-react-btn:hover {
+  border-color: var(--color-primary);
+  background: var(--color-bg-hover-row);
+  color: var(--color-text);
+}
+.disc-react-btn.is-mine {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 15%, transparent);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+.disc-react-count {
+  font-size: 11px;
+  font-weight: 600;
+}
+
+/* ── Question state badge ───────────────────────────────────────────────────── */
+.disc-q-state {
+  display: inline-block;
+  font-size: 10px;
+  font-weight: 600;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  margin-left: var(--space-xs);
+  vertical-align: middle;
+}
+.disc-q-state--open     { background: var(--color-warning-light); color: var(--color-warning); }
+.disc-q-state--answered,
+.disc-q-state--resolved { background: var(--color-success-light); color: var(--color-success); }
+.disc-q-state--reopened { background: var(--color-info-light);    color: var(--color-info); }
+
+/* Resolved post dims slightly */
+.disc-post--resolved .disc-post-body { opacity: 0.72; }
+
+/* Resolve/reopen action button accent */
+.disc-action-btn--resolve { color: var(--color-success); }
+
+/* ── Thread controls (lock/unlock) ──────────────────────────────────────────── */
+.disc-thread-controls {
+  display: flex;
+  justify-content: flex-end;
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-light);
+  margin-top: var(--space-sm);
+}
+.disc-lock-btn {
+  color: var(--color-text-muted);
+  font-size: 11px;
+}
+.disc-lock-btn:hover {
+  color: var(--color-warning);
+}
+

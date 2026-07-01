@@ -1,10 +1,10 @@
 /**
- * PATCH  /api/posts/:postId  — edit post body
+ * PATCH  /api/posts/:postId  — edit post body, or set question state (action: "resolve"|"reopen")
  * DELETE /api/posts/:postId  — soft-delete post
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
-import { editPost, deletePost } from "../../_lib/d1-threads.js";
+import { editPost, deletePost, setQuestionState } from "../../_lib/d1-threads.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -23,7 +23,7 @@ export async function onRequest(context) {
     return withSecurityHeaders(authJson({ ok: true }));
   }
 
-  // ── PATCH — edit body ─────────────────────────────────────────────────────
+  // ── PATCH — edit body or set question state ───────────────────────────────
   if (request.method === "PATCH") {
     let body = {};
     try {
@@ -31,6 +31,14 @@ export async function onRequest(context) {
       body = ct.includes("application/json") ? await request.json() : Object.fromEntries(await request.formData());
     } catch (_) {
       return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
+    }
+
+    // Question state action (resolve / reopen)
+    if (body.action === "resolve" || body.action === "reopen") {
+      const newState = body.action === "resolve" ? "resolved" : "reopened";
+      const result = await setQuestionState(env.DB, postId, newState, session);
+      if (result.error) return authJson({ ok: false, error: result.error }, { status: 403 });
+      return withSecurityHeaders(authJson({ ok: true, questionState: result.questionState }));
     }
 
     const result = await editPost(env.DB, postId, body.body, session);

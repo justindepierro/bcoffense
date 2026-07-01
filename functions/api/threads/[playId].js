@@ -14,6 +14,7 @@ import {
   getThreadPosts,
   createPost,
   countThreadPosts,
+  setQuestionState,
 } from "../../_lib/d1-threads.js";
 
 export async function onRequest(context) {
@@ -39,7 +40,8 @@ export async function onRequest(context) {
       return withSecurityHeaders(authJson({ ok: true, thread: null, posts: [], hasMore: false }));
     }
 
-    const { posts, hasMore } = await getThreadPosts(env.DB, thread.id, { limit, afterId });
+    const userId = session.d1UserId || null;
+    const { posts, hasMore } = await getThreadPosts(env.DB, thread.id, { limit, afterId, userId });
     const total = await countThreadPosts(env.DB, thread.id);
 
     return withSecurityHeaders(
@@ -118,6 +120,7 @@ function formatPost(p) {
     createdAt: p.created_at,
     editedAt: p.edited_at || null,
     moderationStatus: p.moderation_status,
+    reactions: p.reactions || [],
   };
 }
 
