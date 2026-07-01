@@ -185,8 +185,8 @@ async function pushGamePlanToCallSheet() {
     renderCallSheet();
   }
   showToast(
-    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCount} categor${filledCount === 1 ? "y" : "ies"}`,
-    { type: "success", duration: 3500 },
+    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCount} categor${filledCount === 1 ? "y" : "ies"} on the Call Sheet`,
+    { type: "success", duration: 4000, actionLabel: "→ Call Sheet", action: () => showTab("callsheet") },
   );
 }
 /* -------------------------------------------------------------------------
@@ -277,8 +277,8 @@ async function sendDashboardGamePlanToBoxes() {
   renderGamePlan();
   const holdingCount = (byBox[GP_HOLDING_ID] || []).length;
   showToast(
-    `Sent ${added} play${added === 1 ? "" : "s"} to game plan${holdingCount > 0 ? ` (${holdingCount} in Holding)` : ""}`,
-    { type: "success" },
+    `Sent ${added} play${added === 1 ? "" : "s"} to the Game Plan${holdingCount > 0 ? ` (${holdingCount} in Holding — check that box)` : ""}`,
+    { type: "success", duration: 4000, actionLabel: "→ Game Plan", action: () => showTab("gameplan") },
   );
 
   // Navigate to the gameplan tab so the user sees the result
@@ -374,8 +374,8 @@ async function pushGamePlanBoxToCallSheet(boxId) {
     renderCallSheet();
   }
   showToast(
-    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCatIds.length} categor${filledCatIds.length === 1 ? "y" : "ies"}`,
-    { type: "success" },
+    `Pushed ${pushed} entr${pushed === 1 ? "y" : "ies"} into ${filledCatIds.length} Call Sheet categor${filledCatIds.length === 1 ? "y" : "ies"}`,
+    { type: "success", duration: 4000, actionLabel: "→ Call Sheet", action: () => showTab("callsheet") },
   );
 }
 /* -------------------------------------------------------------------------
@@ -447,8 +447,8 @@ async function pushGamePlanToScript() {
   if (typeof markScriptDirty === "function") markScriptDirty();
   if (typeof scheduleScriptAutosave === "function") scheduleScriptAutosave();
   if (typeof renderScript === "function") renderScript();
-  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to the script`,
-    { type: "success", duration: 3000 });
+  showToast(`Pushed ${pushed} play${pushed === 1 ? "" : "s"} to the Practice Script`,
+    { type: "success", duration: 4000, actionLabel: "→ Script", action: () => showTab("script") });
 }
 /* -------------------------------------------------------------------------
    Plan Comparison (snapshot diff)
@@ -777,8 +777,10 @@ async function sendWristbandToGamePlan() {
   else if (typeof renderGamePlan === "function") renderGamePlan();
 
   const msg = added > 0
-    ? `Sent ${added} play${added === 1 ? "" : "s"} to game plan${skipped ? ` (${skipped} skipped)` : ""}.`
+    ? `Sent ${added} play${added === 1 ? "" : "s"} to the Game Plan${skipped ? ` (${skipped} skipped)` : ""}.`
     : `No plays added \u2014 ${skipped} skipped.`;
-  showToast(msg, { duration: 3000, type: added > 0 ? "success" : "warning" });
+  showToast(msg, { duration: 4000, type: added > 0 ? "success" : "warning",
+    ...(added > 0 ? { actionLabel: "→ Game Plan", action: () => showTab("gameplan") } : {}),
+  });
   if (added > 0 && typeof showTab === "function") showTab("gameplan");
 }

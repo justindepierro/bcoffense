@@ -1746,6 +1746,39 @@ function checkGameWeekBarContract() {
   console.log("game week bar contract ok");
 }
 
+function checkTransferReceiptContract() {
+  // Immediate fix #9: transfer receipts on every cross-page push/send action.
+  // showToast now accepts action as a function (callback) or string delegate.
+  const utils = read("js/utils.js");
+  const gpInt = read("js/gameplan-integrations.js");
+  const scInt = read("js/script-integrations.js");
+
+  if (!/typeof action === "function"/.test(utils)) {
+    fail("showToast does not support function callbacks for action");
+  }
+
+  // Every major cross-page success toast should carry an actionLabel/action.
+  const crossPageToasts = [
+    // GP → Call Sheet (two sites)
+    { file: gpInt, name: "GP→CallSheet", pattern: /Call Sheet.*actionLabel.*\u2192 Call Sheet/s },
+    // GP → Script
+    { file: gpInt, name: "GP→Script", pattern: /Practice Script.*actionLabel.*\u2192 Script/s },
+    // GP → GamePlan (dashboard send)
+    { file: gpInt, name: "Dashboard→GP", pattern: /Game Plan.*actionLabel.*\u2192 Game Plan/s },
+    // Script → GamePlan
+    { file: scInt, name: "Script→GP", pattern: /Game Plan.*actionLabel.*\u2192 Game Plan/s },
+    // Script → Wristband
+    { file: scInt, name: "Script→Wristband", pattern: /Wristband.*actionLabel.*\u2192 Wristband/s },
+  ];
+  for (const { file, name, pattern } of crossPageToasts) {
+    if (!pattern.test(file)) {
+      fail(`transfer receipt missing for ${name}`);
+    }
+  }
+
+  console.log("transfer receipt contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2438,6 +2471,7 @@ checkPageHelpContract();
 checkActionGridContract();
 checkPrimaryNavContract();
 checkGameWeekBarContract();
+checkTransferReceiptContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

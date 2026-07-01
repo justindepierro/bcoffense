@@ -208,7 +208,9 @@ function showToast(message, durationOrOpts = 2000) {
     duration = durationOrOpts.duration || 2000;
     type = durationOrOpts.type || null;
     actionLabel = String(durationOrOpts.actionLabel || "");
-    action = String(durationOrOpts.action || "");
+    action = typeof durationOrOpts.action === "function"
+      ? durationOrOpts.action
+      : String(durationOrOpts.action || "");
   } else {
     duration = durationOrOpts;
   }
@@ -227,7 +229,15 @@ function showToast(message, durationOrOpts = 2000) {
     const actionButton = document.createElement("button");
     actionButton.type = "button";
     actionButton.className = "btn btn-sm btn-ghost-current btn-inline-offset-sm";
-    actionButton.dataset.action = action;
+    if (typeof action === "function") {
+      // Callback form — not delegated; call directly and dismiss the toast.
+      actionButton.addEventListener("click", () => {
+        action();
+        toast.remove();
+      });
+    } else {
+      actionButton.dataset.action = action;
+    }
     actionButton.textContent = actionLabel;
     toast.append(" ", actionButton);
   }

@@ -211,7 +211,7 @@ async function sendScriptToGamePlan() {
   if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
   showToast(
     `Sent ${added} Script play${added === 1 ? "" : "s"} to the Game Plan${skipped ? ` (${skipped} skipped)` : ""}.`,
-    { type: "success", duration: 3500 },
+    { type: "success", duration: 4000, actionLabel: "→ Game Plan", action: () => showTab("gameplan") },
   );
   if (typeof showTab === "function") showTab("gameplan");
 }
@@ -410,6 +410,6 @@ async function sendScriptToWristband() {
   }
   showToast(
     `Sent ${added} Script play${added === 1 ? "" : "s"} to the Wristband${repeatedCount ? ` (${repeatedCount} repeat${repeatedCount === 1 ? "" : "s"} skipped)` : ""}.`,
-    { type: "success", duration: 3500 },
+    { type: "success", duration: 4000, actionLabel: "→ Wristband", action: () => showTab("wristband") },
   );
 }
