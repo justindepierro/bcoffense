@@ -185,6 +185,54 @@ table.sortable th {
   }
 }
 
+/* Add-to-week button (#109) */
+#playbookTable .pb-add-week-btn {
+  opacity: 0;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+}
+@media (hover: hover) {
+  #playbookTable tbody tr:hover .pb-add-week-btn {
+    opacity: 1;
+  }
+  #playbookTable .pb-add-week-btn:hover {
+    color: var(--color-primary);
+    border-color: var(--color-primary);
+  }
+}
+
+/* Workflow status chips (#103-108) */
+.pb-wf-chips {
+  display: inline-flex;
+  gap: 3px;
+  align-items: center;
+  flex-wrap: wrap;
+  vertical-align: middle;
+  margin-left: 4px;
+}
+.pb-wf-chip {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 5px;
+  border-radius: var(--radius-pill);
+  font-size: 9px;
+  font-weight: 700;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.pb-wf-script { background: var(--color-success-light, #d1fae5); color: var(--color-success); }
+.pb-wf-sheet  { background: var(--color-info-light, #dbeafe); color: var(--color-info); }
+.pb-wf-scout  { background: var(--color-warning-light, #fef3c7); color: var(--color-warning); }
+
 #playbookTable tbody tr.selected {
   background: var(--color-primary-light);
   outline: 2px solid var(--color-primary);

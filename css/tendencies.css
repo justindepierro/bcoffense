@@ -178,7 +178,9 @@
   color: var(--color-text-light);
   font-size: var(--font-size-sm);
 }
-.td-opp-sep { color: var(--color-border); }
+.td-opp-sep {
+  color: var(--color-border);
+}
 .td-opp-completeness {
   display: flex;
   align-items: center;
@@ -198,10 +200,18 @@
   border-radius: var(--radius-pill);
   transition: width 0.3s ease;
 }
-.td-comp-high  { background: var(--color-success); }
-.td-comp-med   { background: var(--color-warning); }
-.td-comp-low   { background: var(--color-danger); }
-.td-comp-empty { background: var(--color-border); }
+.td-comp-high {
+  background: var(--color-success);
+}
+.td-comp-med {
+  background: var(--color-warning);
+}
+.td-comp-low {
+  background: var(--color-danger);
+}
+.td-comp-empty {
+  background: var(--color-border);
+}
 .td-opp-completeness-label {
   font-size: var(--font-size-xs);
   color: var(--color-text-muted);

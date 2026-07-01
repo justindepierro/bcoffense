@@ -159,7 +159,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button></td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -289,6 +289,66 @@ function renderPlaybook() {
       duration: 3000,
       type: "error",
     });
+  }
+}
+
+function _renderWorkflowChips(play) {
+  const chips = [];
+  // Script membership (#105)
+  if (Array.isArray(script) && typeof playsMatch === "function") {
+    if (script.some((s) => !s.isSeparator && playsMatch(s, play))) {
+      chips.push(`<span class="pb-wf-chip pb-wf-script" title="In current practice script">📋 Script</span>`);
+    }
+  }
+  // Call Sheet location (#107)
+  if (typeof getCallSheetPlayLocations === "function") {
+    const locs = getCallSheetPlayLocations(play);
+    if (locs.length > 0) {
+      const label = locs[0].replace(/ - (Left|Right)$/, "");
+      const allNames = [...new Set(locs.map((l) => l.replace(/ - (Left|Right)$/, "")))].join(", ");
+      chips.push(`<span class="pb-wf-chip pb-wf-sheet" title="On call sheet: ${escapeHtml(allNames)}">📄 ${escapeHtml(label)}</span>`);
+    }
+  }
+  // Scout recommended (#108)
+  if (typeof _tdScoutRecs !== "undefined" && Array.isArray(_tdScoutRecs) && _tdScoutRecs.length > 0 && typeof playsMatch === "function") {
+    if (_tdScoutRecs.some((r) => playsMatch(r.play, play))) {
+      chips.push(`<span class="pb-wf-chip pb-wf-scout" title="Scout recommended for current opponent">🔍 Scout</span>`);
+    }
+  }
+  return chips.length > 0 ? `<span class="pb-wf-chips">${chips.join("")}</span>` : "";
+}
+
+async function addPlayToWeek(idx) {
+  const play = typeof plays !== "undefined" && plays[idx];
+  if (!play) return;
+  const playLabel = play.play || play.formation || "this play";
+  const destinations = [
+    { label: "🎯 Game Plan", value: "gameplan" },
+    { label: "📋 Practice Script", value: "script" },
+    { label: "🏈 Wristband", value: "wristband" },
+    { label: "📄 Call Sheet", value: "callsheet" },
+  ];
+  const dest = await showListPicker(`Add "${escapeHtml(playLabel)}" to:`, destinations, {
+    title: "Add to Week",
+    icon: "⊕",
+  });
+  if (!dest) return;
+  if (dest === "gameplan") {
+    if (typeof showTab === "function") showTab("gameplan");
+    showToast("Drag or use ⊕ on a box to add this play", { duration: 3000 });
+  } else if (dest === "script") {
+    if (typeof addToScript === "function") {
+      await addToScript(idx);
+    } else {
+      if (typeof showTab === "function") showTab("script");
+      showToast("Add the play from the Available Plays panel");
+    }
+  } else if (dest === "wristband") {
+    if (typeof showTab === "function") showTab("wristband");
+    showToast("Find the play in Library and drag or tap to add", { duration: 3000 });
+  } else if (dest === "callsheet") {
+    if (typeof showTab === "function") showTab("callsheet");
+    showToast("Use the call sheet picker to place this play", { duration: 3000 });
   }
 }
 

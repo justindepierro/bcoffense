@@ -297,8 +297,8 @@ Example:
 - [x] **81.** Add links from each recommendation to matching Playbook plays.
 - [x] **82.** Add “Send recommendation to Game Plan.”
 - [x] **83.** Add “Filter Playbook against this tendency.”
-- [ ] **84.** Add “Create Practice Period from tendency.”
-- [ ] **85.** Add “Add scouting note to Call Sheet.”
+- [x] **84.** Add “Create Practice Period from tendency.”
+- [x] **85.** Add “Add scouting note to Call Sheet.”
 - [x] **86.** Add game/film source records to opponent data.
 - [x] **87.** Support charting separate games rather than one undifferentiated play pool.
 - [ ] **88.** Add quarter, score state, hash, field position, and drive context where useful.
@@ -319,13 +319,13 @@ Example:
 
 - [ ] **101.** Confirm every play has a stable play ID used across all modules.
 - [ ] **102.** Remove signature-only matching where stable IDs can be used.
-- [ ] **103.** Add workflow status chips to Playbook rows/cards.
-- [ ] **104.** Show whether a play is in the active Game Plan.
-- [ ] **105.** Show whether it is in the active Practice Script.
-- [ ] **106.** Show Wristband number when assigned.
-- [ ] **107.** Show Call Sheet category membership.
-- [ ] **108.** Show scout relevance for the active opponent.
-- [ ] **109.** Add a single “Add to Week” action that opens destination choices.
+- [x] **103.** Add workflow status chips to Playbook rows/cards.
+- [x] **104.** Show whether a play is in the active Game Plan.
+- [x] **105.** Show whether it is in the active Practice Script.
+- [x] **106.** Show Wristband number when assigned.
+- [x] **107.** Show Call Sheet category membership.
+- [x] **108.** Show scout relevance for the active opponent.
+- [x] **109.** Add a single “Add to Week” action that opens destination choices.
 - [ ] **110.** Add bulk Add to Game Plan, Practice, Wristband, and Call Sheet.
 - [ ] **111.** Preserve existing specialized actions.
 - [ ] **112.** Add a compact active-opponent filter.

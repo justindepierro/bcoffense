@@ -43,9 +43,9 @@ function _tdComputeCompleteness(opp) {
   const samplePts = Math.min(plays.length / TARGET_SAMPLE, 1) * 40;
   const fieldPts = plays.length > 0
     ? (plays.reduce((sum, play) => {
-        const filled = KEY_FIELDS.filter((k) => play[k] && String(play[k]).trim()).length;
-        return sum + (filled / KEY_FIELDS.length);
-      }, 0) / plays.length) * 60
+      const filled = KEY_FIELDS.filter((k) => play[k] && String(play[k]).trim()).length;
+      return sum + (filled / KEY_FIELDS.length);
+    }, 0) / plays.length) * 60
     : 0;
   const score = Math.round(samplePts + fieldPts);
   const level = score >= 80 ? "high" : score >= 50 ? "med" : "low";
@@ -467,6 +467,8 @@ function renderScoutOverview() {
         </button>
         <button class="btn btn-secondary" data-action="startNewPlay">＋ Chart Another Play</button>
         <button class="btn btn-secondary" data-action="openGamePlanFromScout">🎯 View in Game Plan</button>
+        <button class="btn btn-secondary" data-action="createPracticeFromTendency">📋 Create Practice Period</button>
+        <button class="btn btn-secondary" data-action="addScoutNoteToCallSheet">📝 Scout Note → Call Sheet</button>
       </div>
       `}
     </div>
@@ -1299,3 +1301,67 @@ async function sendScoutRecsToGamePlan() {
   if (added > 0 && typeof showTab === "function") showTab("gameplan");
 }
 
+
+// ── #84: Create Practice Period from Tendency ─────────────────────────────
+async function createPracticeFromTendency() {
+  const opp = tendenciesCurrentOpponent !== null ? tendenciesOpponents[tendenciesCurrentOpponent] : null;
+  if (!opp) { showToast("No opponent selected", { type: "warning" }); return; }
+  const intel = typeof queryTendencies === "function" ? queryTendencies(opp, {}) : {};
+  const topFront = intel.topFront?.[0]?.term || "";
+  const topCov = intel.topCoverage?.[0]?.term || "";
+  const defaultName = `vs ${opp.name}${topFront ? " — " + topFront : ""}${topCov ? " / " + topCov : ""}`;
+  const name = await showPrompt("Period name:", defaultName, {
+    title: "Create Practice Period",
+    icon: "📋",
+    placeholder: "e.g., vs North — 4-2-5 Cover 3",
+  });
+  if (!name || !name.trim()) return;
+  const minutesStr = await showPrompt("Minutes:", "10", { title: "Period Length", icon: "⏱️", placeholder: "10" });
+  const minutes = parseInt(minutesStr, 10) || 10;
+  if (!Array.isArray(script)) { showToast("Script not ready", { type: "error" }); return; }
+  script.push({
+    isSeparator: true,
+    label: name.trim(),
+    minutes,
+    color: (typeof getActiveColorPreset === "function" && getActiveColorPreset()?.primary) || "#3b82f6",
+    id: Date.now() + Math.random(),
+  });
+  if (typeof markScriptDirty === "function") markScriptDirty();
+  if (typeof requestRenderScript === "function") requestRenderScript();
+  showToast(`Period "${name.trim()}" added to Script`, {
+    duration: 3500, type: "success",
+    actionLabel: "→ Script", action: () => typeof showTab === "function" && showTab("script"),
+  });
+}
+
+// ── #85: Add Scout Note to Call Sheet ────────────────────────────────────
+async function addScoutNoteToCallSheet() {
+  const opp = tendenciesCurrentOpponent !== null ? tendenciesOpponents[tendenciesCurrentOpponent] : null;
+  if (!opp || !opp.plays.length) { showToast("No scout data to add", { type: "warning" }); return; }
+  if (typeof CALLSHEET_CATEGORIES === "undefined" || !CALLSHEET_CATEGORIES.length) {
+    showToast("Open Call Sheet first to load categories", { type: "warning" }); return;
+  }
+  const intel = typeof queryTendencies === "function" ? queryTendencies(opp, {}) : {};
+  const noteLines = [`Scout: ${opp.name} (${opp.plays.length} plays)`];
+  if (intel.topFront?.[0]) noteLines.push(`Front: ${intel.topFront[0].term} ${intel.topFront[0].pct}%`);
+  if (intel.topCoverage?.[0]) noteLines.push(`Cov: ${intel.topCoverage[0].term} ${intel.topCoverage[0].pct}%`);
+  if (intel.blitzRate > 0) noteLines.push(`Blitz: ${intel.blitzRate}%`);
+  const noteText = noteLines.join(" | ");
+  const items = CALLSHEET_CATEGORIES
+    .filter((cat) => !cat.manual)
+    .map((cat) => ({
+      label: typeof getCategoryDisplayName === "function" ? getCategoryDisplayName(cat) : cat.name,
+      value: cat.id,
+    }));
+  const catId = await showListPicker("Add scout note to which category?", items, {
+    title: "Scout → Call Sheet Note", icon: "📝",
+  });
+  if (!catId) return;
+  const csNotes = storageManager.get(STORAGE_KEYS.CALLSHEET_NOTES, {});
+  csNotes[catId] = csNotes[catId] ? `${csNotes[catId]}\n${noteText}` : noteText;
+  storageManager.set(STORAGE_KEYS.CALLSHEET_NOTES, csNotes);
+  showToast("Scout note added to call sheet", {
+    type: "success", duration: 3000,
+    actionLabel: "→ Call Sheet", action: () => typeof showTab === "function" && showTab("callsheet"),
+  });
+}
