@@ -1257,3 +1257,163 @@ document.addEventListener("keydown", (e) => {
   if (btn) btn.click();
 });
 
+// ── Game Plan Discussion Counts ───────────────────────────────────────────────
+
+/**
+ * Load discussion counts for all plays rendered in the game plan board.
+ * Updates .gp-disc-badge visibility and adds has-open-q class to the button.
+ */
+async function loadGamePlanDiscussionCounts() {
+  const els = document.querySelectorAll("#gameplan [data-disc-play-id]");
+  if (!els.length) return;
+
+  const playIds = [...new Set([...els].map((el) => el.dataset.discPlayId))];
+  if (!playIds.length) return;
+
+  try {
+    const params = playIds.map((id) => encodeURIComponent(id)).join(",");
+    const res = await fetch(`/api/threads/batch-counts?plays=${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const counts = data.counts || {};
+    for (const el of els) {
+      const playId = el.dataset.discPlayId;
+      const info = counts[playId];
+      const btn = el.querySelector(".gp-box-play-disc");
+      const badge = el.querySelector(".gp-disc-badge");
+      if (!btn || !badge) continue;
+      if (!info || info.total === 0) continue;
+
+      badge.textContent = String(info.total);
+      badge.classList.remove("hidden");
+      if (info.openQuestions > 0) btn.classList.add("has-open-q");
+    }
+  } catch (_) {
+    // Silent — counts are progressive enhancement
+  }
+}
+
+// ── Call Sheet Discussion Counts ──────────────────────────────────────────────
+
+/**
+ * Load discussion counts for all plays rendered in the call sheet.
+ * Shows .cs-disc-warning badge when openQuestions > 0.
+ */
+async function loadCallSheetDiscussionCounts() {
+  const els = document.querySelectorAll("#callSheetGrid [data-disc-play-id]");
+  if (!els.length) return;
+
+  const playIds = [...new Set([...els].map((el) => el.dataset.discPlayId))];
+  if (!playIds.length) return;
+
+  try {
+    const params = playIds.map((id) => encodeURIComponent(id)).join(",");
+    const res = await fetch(`/api/threads/batch-counts?plays=${params}`);
+    if (!res.ok) return;
+    const data = await res.json();
+    if (!data.ok) return;
+
+    const counts = data.counts || {};
+    for (const el of els) {
+      const playId = el.dataset.discPlayId;
+      const info = counts[playId];
+      if (!info || info.openQuestions === 0) continue;
+
+      const warn = el.querySelector(".cs-disc-warning");
+      if (warn) {
+        warn.classList.remove("hidden");
+        warn.title = `${info.openQuestions} open player question${info.openQuestions === 1 ? "" : "s"}`;
+      }
+    }
+  } catch (_) {
+    // Silent
+  }
+}
+
+// ── Game Plan / Wristband Floating Discussion Modal ───────────────────────────
+
+function _getOrCreateDiscModal() {
+  let overlay = document.getElementById("gpDiscModalOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "gpDiscModalOverlay";
+    overlay.className = "disc-floating-overlay";
+    overlay.setAttribute("data-action", "closeGPDiscModalOverlay");
+    overlay.innerHTML = `
+      <div class="disc-floating-panel" role="dialog" aria-modal="true" aria-label="Play Discussion">
+        <div class="disc-floating-header">
+          <span id="gpDiscModalTitle" class="disc-floating-title">💬 Discussion</span>
+          <button class="disc-floating-close" data-action="closeGPDiscModal" aria-label="Close discussion">×</button>
+        </div>
+        <div id="gpDiscModalBody" class="disc-floating-body"></div>
+      </div>`;
+    document.body.appendChild(overlay);
+  }
+  return overlay;
+}
+
+/**
+ * Open a floating discussion modal for a game plan play.
+ * Called via data-action="openGamePlanPlayDiscussion" with the play's disc ID.
+ */
+async function openGamePlanPlayDiscussion(discPlayId) {
+  if (!discPlayId) return;
+
+  // Find the matching play in the playbook
+  const play = Array.isArray(plays)
+    ? plays.find((p) => getPlayThreadId(p) === discPlayId)
+    : null;
+  if (!play) {
+    showToast("Play not found in playbook", { duration: 2000, type: "error" });
+    return;
+  }
+
+  const overlay = _getOrCreateDiscModal();
+  const body = document.getElementById("gpDiscModalBody");
+  const title = document.getElementById("gpDiscModalTitle");
+  if (!body || !title) return;
+
+  title.textContent = `💬 ${play.formation || ""} ${play.play || ""}`.trim();
+  body.innerHTML = "";
+
+  overlay.classList.add("visible");
+  if (typeof trapFocus === "function") trapFocus(overlay);
+
+  await renderDiscussionSection(play, body);
+}
+
+function closeGPDiscModal() {
+  const overlay = document.getElementById("gpDiscModalOverlay");
+  if (overlay) overlay.classList.remove("visible");
+}
+
+// ── Wristband Cell Popup Discussion ──────────────────────────────────────────
+
+/**
+ * Open discussion for the play currently loaded in the wristband cell popup.
+ * Called via data-action="openWristbandCellDiscussion".
+ */
+async function openWristbandCellDiscussion() {
+  const cell = typeof currentEditingCell !== "undefined" ? currentEditingCell : null;
+  if (!cell) { showToast("No cell selected", { duration: 1500 }); return; }
+
+  const cardData = Array.isArray(wristbandCards) ? wristbandCards[cell.cardIdx]?.data : null;
+  const play = cardData ? cardData[cell.cellIdx] : null;
+  if (!play) { showToast("No play in this cell", { duration: 1500 }); return; }
+
+  const overlay = _getOrCreateDiscModal();
+  const body = document.getElementById("gpDiscModalBody");
+  const title = document.getElementById("gpDiscModalTitle");
+  if (!body || !title) return;
+
+  title.textContent = `💬 ${play.formation || ""} ${play.play || ""}`.trim();
+  body.innerHTML = "";
+
+  overlay.classList.add("visible");
+  if (typeof trapFocus === "function") trapFocus(overlay);
+
+  await renderDiscussionSection(play, body);
+}
+

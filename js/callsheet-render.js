@@ -811,6 +811,11 @@ function renderCallSheet() {
   if (typeof updateCSSourceBar === "function") {
     updateCSSourceBar();
   }
+
+  // Load discussion counts for plays (progressive enhancement)
+  if (typeof loadCallSheetDiscussionCounts === "function") {
+    setTimeout(loadCallSheetDiscussionCounts, 150);
+  }
 }
 
 function renderCallSheetPhoneCards(categories, dupeMap, displayOptions) {
@@ -1395,12 +1400,15 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
 
   // Build accessible play label
   const playLabel = (play.formation || "") + " " + (play.play || "");
+  const discPlayId = typeof getPlayThreadId === "function" ? getPlayThreadId(play) : null;
+  const discAttr = discPlayId ? ` data-disc-play-id="${escapeHtml(discPlayId)}"` : "";
+  const discWarn = discPlayId ? `<span class="cs-disc-warning hidden" title="Open player questions">❓</span>` : "";
 
   return `
     <div class="callsheet-play ${highlightClass} ${tempoClass}${deadVsBadgeHtml ? " cs-play-has-warning" : ""}" draggable="true"
          style="${cellStyleStr}"
          role="row" aria-label="${escapeHtml(playLabel.trim())}"
-         data-category="${categoryId}" data-hash="${hash}" data-index="${index}">
+         data-category="${categoryId}" data-hash="${hash}" data-index="${index}"${discAttr}>
       ${personnelHtml}
       <span class="play-text" role="cell">${visiblePlayText}</span>
       ${displayIndicator}
@@ -1408,6 +1416,7 @@ function renderCallSheetPlay(play, categoryId, hash, index, dupeMap, options) {
       ${noteBadge}
       ${dupeBadge}
       ${deadVsBadgeHtml}
+      ${discWarn}
       ${swapBtn}
       <button class="remove-play" data-action="removeCallSheetPlay" data-category="${categoryId}" data-hash="${hash}" data-index="${index}" aria-label="Remove ${escapeHtml(playLabel.trim())}">×</button>
     </div>

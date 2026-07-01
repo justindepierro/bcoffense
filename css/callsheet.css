@@ -4461,3 +4461,24 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 #callsheet.cs-sideline-mode .cs-cell { font-size: var(--font-size-md); min-height: 28px; }
 #callsheet.cs-sideline-mode .cs-page { padding: var(--space-sm); }
 #callsheet.cs-sideline-mode .cs-category-header { font-size: var(--font-size-md); }
+
+/* ── Call Sheet Discussion Warning Badge ──────────────────────────────────── */
+
+.cs-disc-warning {
+  display: inline-flex;
+  align-items: center;
+  font-size: 10px;
+  cursor: default;
+  position: absolute;
+  top: 2px;
+  right: 22px;
+  opacity: 0.85;
+  pointer-events: none;
+  animation: csDiscWarnPop 0.25s ease;
+}
+.cs-disc-warning.hidden { display: none; }
+
+@keyframes csDiscWarnPop {
+  from { transform: scale(0.7); opacity: 0; }
+  to   { transform: scale(1);   opacity: 0.85; }
+}

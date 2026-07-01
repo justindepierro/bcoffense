@@ -3220,3 +3220,50 @@ body.gp-printing .gp-print-detail-val {
     color: #a02020;
   }
 }
+
+/* ── Game Plan Discussion Badges ────────────────────────────────────────────── */
+
+.gp-box-play-disc {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  font-size: var(--font-size-sm);
+  color: var(--color-text-muted);
+  transition: color var(--transition-fast), background var(--transition-fast);
+  position: relative;
+}
+.gp-box-play-disc:hover {
+  color: var(--color-primary);
+  background: var(--color-bg-hover-row);
+}
+.gp-box-play-disc.has-open-q {
+  color: var(--color-warning);
+}
+.gp-box-play-disc.has-open-q:hover {
+  color: var(--color-warning-hover);
+}
+
+.gp-disc-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  border-radius: var(--radius-pill);
+  background: var(--color-info);
+  color: var(--color-text-light);
+  font-size: 10px;
+  font-weight: 700;
+  line-height: 1;
+}
+.gp-disc-badge.hidden { display: none; }
+
+.has-open-q .gp-disc-badge {
+  background: var(--color-warning);
+}

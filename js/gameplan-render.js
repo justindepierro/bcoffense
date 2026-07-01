@@ -416,6 +416,9 @@ function renderGamePlan() {
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();
   _gpAttachTrashZoneHandlers();
+  if (typeof loadGamePlanDiscussionCounts === "function") {
+    setTimeout(loadGamePlanDiscussionCounts, 150);
+  }
 }
 
 function _gpCreateRenderContext() {
@@ -882,6 +885,11 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
   const wbOn = _gpHasFlag(play, "wb");
   const jvOn = _gpHasFlag(play, "jv");
   const flagClasses = `${wbOn ? " gp-flag-wb" : ""}${jvOn ? " gp-flag-jv" : ""}`;
+  const discPlayId = typeof getPlayThreadId === "function" ? getPlayThreadId(play) : null;
+  const discAttr = discPlayId ? ` data-disc-play-id="${escapeHtml(discPlayId)}"` : "";
+  const discBtn = discPlayId
+    ? `<button class="gp-box-play-disc" data-action="openGamePlanPlayDiscussion" data-arg="${escapeHtml(discPlayId)}" title="View discussion">💬<span class="gp-disc-badge hidden"></span></button>`
+    : "";
   const reorderBtns = allowReorder ? `
     <button class="gp-box-play-btn gp-box-play-up" aria-label="Move up"
       data-action="moveGamePlanPlayUp" data-arg="${escapeHtml(actionArg)}" title="Move up">▲</button>
@@ -901,12 +909,13 @@ function _gpRenderBoxPlay(boxId, play, idx, allowReorder, rawIdx, renderCtx) {
          data-box-id="${escapeHtml(boxId)}"
          data-sig="${escapeHtml(sig)}"
          data-idx="${idx}"
-         data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}">
+         data-raw-idx="${stableRawIdx === null ? "" : stableRawIdx}"${discAttr}>
       <div class="gp-box-play-body">
         <div class="gp-box-play-call">${callHtml}${matchupBadges}</div>
         ${meta || scoutBadge ? `<div class="gp-box-play-meta">${meta ? escapeHtml(meta) : ""}${scoutBadge}</div>` : ""}
       </div>
       <div class="gp-box-play-actions">
+        ${discBtn}
         ${flagBtns}
         ${reorderBtns}
         <button class="gp-box-play-btn" aria-label="Move to another box"

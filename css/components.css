@@ -5299,3 +5299,70 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
     width: 100vw;
   }
 }
+
+/* ── Floating Discussion Modal (Game Plan + Wristband) ───────────────────── */
+
+.disc-floating-overlay {
+  display: none;
+  position: fixed;
+  inset: 0;
+  background: rgba(0,0,0,0.45);
+  z-index: var(--z-modal, 9000);
+  align-items: center;
+  justify-content: center;
+}
+.disc-floating-overlay.visible {
+  display: flex;
+}
+
+.disc-floating-panel {
+  background: var(--color-bg-body);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  width: min(640px, 95vw);
+  max-height: 85vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.disc-floating-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: var(--space-sm) var(--space-md);
+  border-bottom: 1px solid var(--color-border);
+  flex-shrink: 0;
+}
+
+.disc-floating-title {
+  font-weight: 600;
+  font-size: var(--font-size-md);
+  color: var(--color-text);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: calc(100% - 48px);
+}
+
+.disc-floating-close {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  font-size: 20px;
+  line-height: 1;
+  color: var(--color-text-muted);
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  transition: color var(--transition-fast), background var(--transition-fast);
+}
+.disc-floating-close:hover {
+  color: var(--color-danger);
+  background: var(--color-bg-hover-row);
+}
+
+.disc-floating-body {
+  overflow-y: auto;
+  flex: 1;
+  padding: var(--space-sm);
+}
