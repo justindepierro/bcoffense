@@ -70,7 +70,7 @@ export async function getThread(db, teamId, playId) {
 
 const POST_SELECT = `
   p.id, p.thread_id, p.parent_post_id, p.root_post_id, p.depth,
-  p.post_type, p.body, p.question_state,
+  p.post_type, p.body, p.question_state, p.question_category,
   p.created_at, p.updated_at, p.edited_at, p.deleted_at,
   p.author_id, p.moderation_status,
   u.display_name AS author_name, u.role AS author_role
@@ -209,7 +209,7 @@ export async function getPostReplies(db, rootPostId, { limit = 20, afterId = nul
  * Create a new post (or reply). Returns the new post row + moderation info.
  * parentPostId: set to create a reply; omit for root posts.
  */
-export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null }) {
+export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null, questionCategory = null }) {
   const trimmed = sanitizePostBody(body);
   if (!trimmed) return { error: "Post body is required." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
@@ -234,14 +234,15 @@ export async function createPost(db, { threadId, authorId, postType, body, paren
   const now = Math.floor(Date.now() / 1000);
   const type = postType === "question" ? "question" : "comment";
   const questionState = type === "question" ? "open" : null;
+  const qCategory = (type === "question" && questionCategory) ? String(questionCategory).slice(0, 64) : null;
 
   await db.prepare(
     `INSERT INTO discussion_posts
-       (id, thread_id, author_id, post_type, body, question_state,
+       (id, thread_id, author_id, post_type, body, question_state, question_category,
         parent_post_id, root_post_id, depth, moderation_status,
         created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(id, threadId, authorId, type, trimmed, questionState,
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(id, threadId, authorId, type, trimmed, questionState, qCategory,
     parentPostId, rootPostId, depth, moderationStatus, now, now).run();
 
   // ── Store moderation action if held/blocked ──────────────────────────────
@@ -300,7 +301,7 @@ export async function editPost(db, postId, newBody, session) {
   if (modResult.outcome === "review" || modResult.outcome === "block") {
     const actionId = crypto.randomUUID();
     const actionType = modResult.outcome === "block" ? "auto_block" : "auto_review";
-    const reason = `Edit ${actionType}: ${modResult.category || "policy"}` ;
+    const reason = `Edit ${actionType}: ${modResult.category || "policy"}`;
     await db.prepare(
       `INSERT INTO moderation_actions (id, post_id, action, reason, original_body, created_at)
        VALUES (?, ?, ?, ?, ?, ?)`,
@@ -438,6 +439,16 @@ export async function setQuestionState(db, postId, newState, session) {
   const now = Math.floor(Date.now() / 1000);
   await db.prepare("UPDATE discussion_posts SET question_state = ?, updated_at = ? WHERE id = ?")
     .bind(newState, now, postId).run();
+
+  // Write state transition to history (best-effort)
+  const changedById = session.d1UserId || null;
+  if (changedById) {
+    const histId = crypto.randomUUID();
+    await db.prepare(
+      `INSERT INTO question_state_history (id, post_id, from_state, to_state, changed_by, changed_at)
+       VALUES (?, ?, ?, ?, ?, ?)`
+    ).bind(histId, postId, post.question_state, newState, changedById, now).run();
+  }
 
   return { ok: true, questionState: newState };
 }

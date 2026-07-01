@@ -51,17 +51,17 @@ const _DISC_ROLE_COLORS = {
 // ── Reaction helpers ──────────────────────────────────────────────────────────
 
 const _REACTION_META = {
-  thumbs_up:     { emoji: "👍", label: "Like" },
-  thumbs_down:   { emoji: "😕", label: "Still Confused" },
-  heart:         { emoji: "❤️", label: "Love it" },
-  football:      { emoji: "🏈", label: "Great play" },
-  gold_medal:    { emoji: "🥇", label: "Gold" },
-  six:           { emoji: "6️⃣", label: "Touchdown" },
-  happy:         { emoji: "😀", label: "Happy" },
-  strong:        { emoji: "💪", label: "Strong" },
-  got_it:        { emoji: "✅", label: "Got It" },
+  thumbs_up: { emoji: "👍", label: "Like" },
+  thumbs_down: { emoji: "😕", label: "Still Confused" },
+  heart: { emoji: "❤️", label: "Love it" },
+  football: { emoji: "🏈", label: "Great play" },
+  gold_medal: { emoji: "🥇", label: "Gold" },
+  six: { emoji: "6️⃣", label: "Touchdown" },
+  happy: { emoji: "😀", label: "Happy" },
+  strong: { emoji: "💪", label: "Strong" },
+  got_it: { emoji: "✅", label: "Got It" },
   same_question: { emoji: "❓", label: "Same question" },
-  helpful:       { emoji: "🙌", label: "Helpful" },
+  helpful: { emoji: "🙌", label: "Helpful" },
 };
 
 const _REACTION_SUMMARY_ORDER = [
@@ -171,6 +171,28 @@ const _Q_STATE_META = {
   reopened: { label: "Reopened", icon: "🔄", cls: "reopened" },
 };
 
+const _DISC_Q_CATEGORIES = {
+  assignment: "Assignment",
+  technique: "Technique",
+  front: "Front",
+  coverage: "Coverage",
+  motion: "Motion",
+  protection: "Protection",
+  read: "Read",
+};
+
+function _discQCategoryBadge(category) {
+  if (!category) return "";
+  const label = _DISC_Q_CATEGORIES[category] || category;
+  return `<span class="disc-q-cat-badge disc-q-cat-badge--${escapeHtml(category)}">${escapeHtml(label)}</span>`;
+}
+
+function discToggleQCategory(e) {
+  const el = (e && e.target) ? e.target : e;
+  const row = el?.closest(".disc-composer")?.querySelector(".disc-q-category-row");
+  if (row) row.style.display = el?.value === "question" ? "" : "none";
+}
+
 function _discQStateBadge(state) {
   if (!state || state === "open") return "";
   const m = _Q_STATE_META[state] || { label: state, icon: "❓", cls: "open" };
@@ -265,9 +287,9 @@ function _discRenderBody(container, data, playId, playSig) {
   // Coach moderation queue banner
   const modBanner = isStaff
     ? `<div class="disc-mod-banner" id="discModBanner" style="display:none">` +
-      `<span class="disc-mod-badge" id="discModCount"></span>` +
-      `<button class="btn btn-xs" data-action="openDiscModerationQueue">Review</button>` +
-      `</div>`
+    `<span class="disc-mod-badge" id="discModCount"></span>` +
+    `<button class="btn btn-xs" data-action="openDiscModerationQueue">Review</button>` +
+    `</div>`
     : "";
 
   const postsHtml = posts.length
@@ -311,6 +333,12 @@ function _discPostHtml(p, playId, isReply = false) {
   const isQuestion = p.postType === "question";
   const isResolved = p.questionState === "resolved" || p.questionState === "answered";
 
+  // Player can request reopen on their own resolved question
+  const canReopen = isQuestion && mine && !isStaff && isResolved;
+  const reopenBtn = canReopen
+    ? `<button class="disc-action-btn" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::reopened" title="Request reopen">↩ Reopen</button>`
+    : "";
+
   const replyBtn = !isReply
     ? `<button class="disc-reply-btn" data-action="openDiscReplyComposer" data-arg="${escapeHtml(p.id)}::${escapeHtml(playId)}" title="Reply">↩ Reply</button>`
     : "";
@@ -335,6 +363,7 @@ function _discPostHtml(p, playId, isReply = false) {
     : escapeHtml(p.body);
 
   const qStateBadge = isQuestion ? _discQStateBadge(p.questionState) : "";
+  const qCatBadge = isQuestion ? _discQCategoryBadge(p.questionCategory) : "";
   const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
   const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin") ? " disc-post--coach" : "";
 
@@ -346,19 +375,19 @@ function _discPostHtml(p, playId, isReply = false) {
 
   const repliesHtml = replies.length
     ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}">` +
-      replies.map((r) => _discPostHtml(r, playId, true)).join("") +
-      (hiddenCount > 0
-        ? `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
-          ` data-arg="${escapeHtml(p.id)}" data-cursor="${escapeHtml(replies[replies.length - 1]?.id || "")}">` +
-          `View ${hiddenCount} more repl${hiddenCount === 1 ? "y" : "ies"}…</button>`
-        : "") +
-      `</div>`
+    replies.map((r) => _discPostHtml(r, playId, true)).join("") +
+    (hiddenCount > 0
+      ? `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
+      ` data-arg="${escapeHtml(p.id)}" data-cursor="${escapeHtml(replies[replies.length - 1]?.id || "")}">` +
+      `View ${hiddenCount} more repl${hiddenCount === 1 ? "y" : "ies"}…</button>`
+      : "") +
+    `</div>`
     : (replyCount > 0
       ? `<div class="disc-replies" id="disc-replies-${escapeHtml(p.id)}">` +
-        `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
-        ` data-arg="${escapeHtml(p.id)}" data-cursor="">` +
-        `View ${replyCount} repl${replyCount === 1 ? "y" : "ies"}…</button>` +
-        `</div>`
+      `<button class="btn btn-xs disc-load-replies" data-action="loadMoreDiscReplies"` +
+      ` data-arg="${escapeHtml(p.id)}" data-cursor="">` +
+      `View ${replyCount} repl${replyCount === 1 ? "y" : "ies"}…</button>` +
+      `</div>`
       : "");
 
   // Inline reply composer placeholder (rendered on demand)
@@ -374,13 +403,13 @@ function _discPostHtml(p, playId, isReply = false) {
     `<div class="disc-post-meta">` +
     `<span class="disc-author">${escapeHtml(p.authorName)}</span>` +
     _discRoleBadge(p.authorRole) +
-    typeIcon + qStateBadge +
+    typeIcon + qStateBadge + qCatBadge +
     `<span class="disc-time" title="${escapeHtml(_discExactTime(p.createdAt))}">${escapeHtml(_discRelTime(p.createdAt))}</span>` +
     (p.editedAt ? `<span class="disc-edited">(edited)</span>` : "") +
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
     _discReactionsHtml(p.id, p.reactions) +
-    `<div class="disc-post-actions">` + replyBtn + resolveBtn + editBtn + deleteBtn + `</div>` +
+    `<div class="disc-post-actions">` + replyBtn + resolveBtn + reopenBtn + editBtn + deleteBtn + `</div>` +
     `</div>` +
     replyComposerPlaceholder +
     repliesHtml +
@@ -393,10 +422,22 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
   const idSuffix = isReply ? `reply-${parentPostId}` : playId;
   const typeSelect = isReply ? "" :
-    `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type">` +
+    `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type"
+      data-onchange="discToggleQCategory" data-pass="event">` +
     `<option value="comment">Comment</option>` +
     `<option value="question">Question ❓</option>` +
-    `</select>`;
+    `</select>` +
+    `<div class="disc-q-category-row" style="display:none">` +
+    `<select class="disc-cat-select" id="discQCat-${escapeHtml(playId)}" aria-label="Question category">` +
+    `<option value="">General</option>` +
+    `<option value="assignment">Assignment</option>` +
+    `<option value="technique">Technique</option>` +
+    `<option value="front">Front</option>` +
+    `<option value="coverage">Coverage</option>` +
+    `<option value="motion">Motion</option>` +
+    `<option value="protection">Protection</option>` +
+    `<option value="read">Read</option>` +
+    `</select></div>`;
 
   return (
     `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">` +
@@ -407,10 +448,10 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     `<span class="disc-char-count" id="discChars-${escapeHtml(idSuffix)}">0 / 2000</span>` +
     (isReply
       ? `<button class="btn btn-xs" data-action="closeDiscReplyComposer" data-arg="${escapeHtml(parentPostId)}">Cancel</button>` +
-        `<button class="btn btn-xs btn-primary" data-action="submitDiscReply"` +
-        ` data-post-id="${escapeHtml(parentPostId)}" data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Reply</button>`
+      `<button class="btn btn-xs btn-primary" data-action="submitDiscReply"` +
+      ` data-post-id="${escapeHtml(parentPostId)}" data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Reply</button>`
       : `<button class="btn btn-sm btn-primary" data-action="submitDiscPost"` +
-        ` data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Post</button>`) +
+      ` data-play-id="${escapeHtml(playId)}" data-play-sig="${escapeHtml(playSig)}">Post</button>`) +
     `</div></div>`
   );
 }
@@ -440,7 +481,7 @@ async function submitDiscPost(arg, el) {
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body, post_type: typeSelect?.value || "comment", play_signature: playSig }),
+      body: JSON.stringify({ body, post_type: typeSelect?.value || "comment", question_category: document.getElementById(`discQCat-${playId}`)?.value || null, play_signature: playSig }),
     });
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Failed to post.", { duration: 3000, type: "error" }); return; }

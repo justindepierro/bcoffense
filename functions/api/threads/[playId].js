@@ -85,6 +85,7 @@ export async function onRequest(context) {
     const postType = body.post_type === "question" ? "question" : "comment";
     const playSig = String(body.play_signature || "").trim() || null;
     const parentPostId = String(body.parent_post_id || "").trim() || null;
+    const questionCategory = String(body.question_category || "").trim() || null;
 
     if (!postBody) return authJson({ ok: false, error: "Post body required." }, { status: 422 });
 
@@ -102,9 +103,20 @@ export async function onRequest(context) {
       postType,
       body: postBody,
       parentPostId,
+      questionCategory,
     });
 
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
+
+    // Auto-answer parent question when a staff member replies
+    if (isStaff && parentPostId) {
+      const parent = await env.DB.prepare(
+        "SELECT post_type, question_state FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1"
+      ).bind(parentPostId).first();
+      if (parent?.post_type === "question" && (parent.question_state === "open" || parent.question_state === "reopened")) {
+        await setQuestionState(env.DB, parentPostId, "answered", session);
+      }
+    }
 
     // Notify players in the thread when a coach replies (fire-and-forget)
     const isStaff = session.role === "coach" || session.role === "admin";
@@ -135,6 +147,7 @@ function formatPost(p) {
     postType: p.post_type,
     body: p.body,
     questionState: p.question_state,
+    questionCategory: p.question_category || null,
     authorId: p.author_id,
     authorName: p.author_name,
     authorRole: p.author_role,

@@ -4634,6 +4634,50 @@ body.shell-phone .pb-action-sheet {
 .disc-type-icon {
   font-size: var(--font-size-xs);
 }
+
+/* Question category badge */
+.disc-q-cat-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .03em;
+  background: var(--color-bg-hover-row);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border-light);
+}
+.disc-q-cat-badge--assignment { background: #ede9fe; color: #5b21b6; border-color: #c4b5fd; }
+.disc-q-cat-badge--technique  { background: #dcfce7; color: #15803d; border-color: #86efac; }
+.disc-q-cat-badge--front      { background: #fef9c3; color: #854d0e; border-color: #fde047; }
+.disc-q-cat-badge--coverage   { background: #dbeafe; color: #1d4ed8; border-color: #93c5fd; }
+.disc-q-cat-badge--motion     { background: #fce7f3; color: #9d174d; border-color: #f9a8d4; }
+.disc-q-cat-badge--protection { background: #ffedd5; color: #c2410c; border-color: #fdba74; }
+.disc-q-cat-badge--read       { background: #f0fdf4; color: #166534; border-color: #4ade80; }
+[data-theme="dark"] .disc-q-cat-badge--assignment { background: #2e1065; color: #c4b5fd; border-color: #5b21b6; }
+[data-theme="dark"] .disc-q-cat-badge--technique  { background: #052e16; color: #86efac; border-color: #15803d; }
+[data-theme="dark"] .disc-q-cat-badge--front      { background: #1c1505; color: #fde047; border-color: #854d0e; }
+[data-theme="dark"] .disc-q-cat-badge--coverage   { background: #0c1a3a; color: #93c5fd; border-color: #1d4ed8; }
+[data-theme="dark"] .disc-q-cat-badge--motion     { background: #2d0a1a; color: #f9a8d4; border-color: #9d174d; }
+[data-theme="dark"] .disc-q-cat-badge--protection { background: #2c0f00; color: #fdba74; border-color: #c2410c; }
+[data-theme="dark"] .disc-q-cat-badge--read       { background: #001a09; color: #4ade80; border-color: #166534; }
+
+/* Category row in composer (shown when type=question) */
+.disc-q-category-row {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.disc-cat-select {
+  font-size: var(--font-size-xs);
+  padding: 2px 6px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+}
+
 .disc-time {
   color: var(--color-text-muted);
   cursor: default;
@@ -4760,7 +4804,9 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-bg-light);
   font-size: var(--font-size-xs);
   cursor: pointer;
-  transition: border-color var(--transition-fast), background var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    background var(--transition-fast);
   color: var(--color-text-muted);
   line-height: 1.4;
 }
@@ -4786,7 +4832,9 @@ body.shell-phone .pb-action-sheet {
   font-size: 11px;
   color: var(--color-text-muted);
   cursor: pointer;
-  transition: border-color var(--transition-fast), color var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    color var(--transition-fast);
 }
 .disc-react-open-btn:hover {
   border-color: var(--color-primary);
@@ -4809,7 +4857,9 @@ body.shell-phone .pb-action-sheet {
   width: 220px;
   display: none;
 }
-.disc-reaction-picker.visible { display: block; }
+.disc-reaction-picker.visible {
+  display: block;
+}
 .disc-picker-grid {
   display: grid;
   grid-template-columns: repeat(4, 1fr);
@@ -4824,7 +4874,9 @@ body.shell-phone .pb-action-sheet {
   border: 1px solid transparent;
   background: transparent;
   cursor: pointer;
-  transition: background var(--transition-fast), border-color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast);
   font-size: 11px;
   color: var(--color-text-muted);
   gap: 2px;
@@ -4834,18 +4886,31 @@ body.shell-phone .pb-action-sheet {
   border-color: var(--color-border);
   color: var(--color-text);
 }
-.disc-picker-emoji { font-size: 20px; line-height: 1; }
-.disc-picker-label { font-size: 9px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 50px; }
+.disc-picker-emoji {
+  font-size: 20px;
+  line-height: 1;
+}
+.disc-picker-label {
+  font-size: 9px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 50px;
+}
 .disc-picker-close {
   position: absolute;
-  top: 6px; right: 8px;
-  background: none; border: none;
+  top: 6px;
+  right: 8px;
+  background: none;
+  border: none;
   cursor: pointer;
   color: var(--color-text-muted);
   font-size: 12px;
   padding: 2px;
 }
-.disc-picker-close:hover { color: var(--color-text); }
+.disc-picker-close:hover {
+  color: var(--color-text);
+}
 
 /* ── Reply button ───────────────────────────────────────────────────────────── */
 .disc-reply-btn {
@@ -4856,7 +4921,9 @@ body.shell-phone .pb-action-sheet {
   color: var(--color-text-muted);
   padding: 2px 6px;
   border-radius: var(--radius-sm);
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 .disc-reply-btn:hover {
   color: var(--color-primary);
@@ -4896,7 +4963,9 @@ body.shell-phone .pb-action-sheet {
   border-left: 2px solid var(--color-primary-light, var(--color-primary));
   padding-left: var(--space-sm);
 }
-.disc-reply-composer-slot { /* empty by default, filled on demand */ }
+.disc-reply-composer-slot {
+  /* empty by default, filled on demand */
+}
 
 /* ── Coach post highlight ───────────────────────────────────────────────────── */
 .disc-post--coach {
@@ -4919,9 +4988,23 @@ body.shell-phone .pb-action-sheet {
   margin-bottom: var(--space-sm);
   font-size: var(--font-size-xs);
 }
-.disc-mod-badge { color: var(--color-warning); font-weight: 600; flex: 1; }
-.disc-mod-placeholder { color: var(--color-text-muted); font-style: italic; font-size: var(--font-size-xs); }
-.disc-mod-queue { display: flex; flex-direction: column; gap: var(--space-sm); max-height: 400px; overflow-y: auto; }
+.disc-mod-badge {
+  color: var(--color-warning);
+  font-weight: 600;
+  flex: 1;
+}
+.disc-mod-placeholder {
+  color: var(--color-text-muted);
+  font-style: italic;
+  font-size: var(--font-size-xs);
+}
+.disc-mod-queue {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-sm);
+  max-height: 400px;
+  overflow-y: auto;
+}
 .disc-mod-item {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-sm);
@@ -4930,7 +5013,10 @@ body.shell-phone .pb-action-sheet {
   flex-direction: column;
   gap: var(--space-xs);
 }
-.disc-mod-item-meta { font-size: 11px; color: var(--color-text-muted); }
+.disc-mod-item-meta {
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
 .disc-mod-body {
   font-size: var(--font-size-xs);
   white-space: pre-wrap;
@@ -4950,7 +5036,10 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-warning-light);
   color: var(--color-warning);
 }
-.disc-mod-actions { display: flex; gap: var(--space-xs); }
+.disc-mod-actions {
+  display: flex;
+  gap: var(--space-xs);
+}
 
 /* ── Question state badge ───────────────────────────────────────────────────── */
 .disc-q-state {
