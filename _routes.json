@@ -1,5 +1,12 @@
 {
   "version": 1,
   "include": ["/*"],
-  "exclude": []
+  "exclude": [
+    "/js/*",
+    "/css/*",
+    "/icons/*",
+    "/manifest.json",
+    "/sw.js",
+    "/offline.html"
+  ]
 }

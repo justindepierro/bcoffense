@@ -58,7 +58,7 @@ export async function notifyOnCoachPost(db, threadId, coachId, coachName, playId
         body: truncBody,
         url: "/",
         tag: `coach-reply-${playId}`,
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 }
@@ -90,7 +90,7 @@ export async function notifyOnQuestionResolved(db, postId, resolverName, playId,
       body: String(post.body || "").slice(0, 100),
       url: "/",
       tag: `resolved-${postId}`,
-    }).catch(() => {});
+    }).catch(() => { });
   }
 }
 

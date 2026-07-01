@@ -145,7 +145,7 @@ async function disablePushNotifications() {
       credentials: "same-origin",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({ endpoint: subscription.endpoint }),
-    }).catch(() => {});
+    }).catch(() => { });
 
     // Unsubscribe from browser
     await subscription.unsubscribe();

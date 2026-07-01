@@ -91,7 +91,7 @@ export async function sendPushToUser(env, db, userId, notification) {
     subs.map(async (sub) => {
       const result = await sendWebPush(env, sub, notification);
       if (result.gone) {
-        await markSubscriptionFailed(db, sub.endpoint).catch(() => {});
+        await markSubscriptionFailed(db, sub.endpoint).catch(() => { });
       }
       return result;
     }),
