@@ -256,21 +256,21 @@ Example:
 
 ## Phase 4 — Game Week command center
 
-- [ ] **46.** Redesign Dashboard as a Game Week command center.
-- [ ] **47.** Show the active opponent prominently.
-- [ ] **48.** Show the next game/date if available.
-- [ ] **49.** Show six workflow cards in order.
-- [ ] **50.** Display each card’s status and last modified time.
-- [ ] **51.** Display counts such as selected plays, scripted plays, wristband cells, and call-sheet calls.
+- [x] **46.** Redesign Dashboard as a Game Week command center.
+- [x] **47.** Show the active opponent prominently.
+- [x] **48.** Show the next game/date if available.
+- [x] **49.** Show six workflow cards in order.
+- [x] **50.** Display each card’s status and last modified time.
+- [x] **51.** Display counts such as selected plays, scripted plays, wristband cells, and call-sheet calls.
 - [ ] **52.** Add Continue buttons that reopen the exact prior state.
-- [ ] **53.** Add warning badges for out-of-sync artifacts.
+- [x] **53.** Add warning badges for out-of-sync artifacts.
 - [ ] **54.** Add a “Start New Game Week” guided action.
 - [ ] **55.** Add a “Resume Current Week” action.
-- [ ] **56.** Add quick access to printing without making print controls dominate editing pages.
+- [x] **56.** Add quick access to printing without making print controls dominate editing pages.
 - [ ] **57.** Add a consolidated recent activity feed.
-- [ ] **58.** Add a small notes/reminders area rather than allowing notes to compete with workflow.
-- [ ] **59.** Add role-specific command-center content.
-- [ ] **60.** Keep analytics and administrative details behind secondary links.
+- [x] **58.** Add a small notes/reminders area rather than allowing notes to compete with workflow.
+- [x] **59.** Add role-specific command-center content.
+- [x] **60.** Keep analytics and administrative details behind secondary links.
 
 ## Phase 5 — Opponent Scout rebuild
 
@@ -287,8 +287,8 @@ Example:
 - [x] **71.** Show run/pass tendency summary.
 - [ ] **72.** Show personnel summary.
 - [x] **73.** Show formation summary.
-- [ ] **74.** Show down-and-distance summary.
-- [ ] **75.** Show field-zone summary.
+- [x] **74.** Show down-and-distance summary.
+- [x] **75.** Show field-zone summary.
 - [ ] **76.** Show motion/shift summary.
 - [x] **77.** Show pressure/blitz summary if charted.
 - [x] **78.** Show coverage/front summary if charted.
@@ -577,8 +577,8 @@ Example:
 
 ## Release 4 — Final game-week workspace
 
-- [ ] Dashboard command center.
-- [ ] Artifact completion statuses.
+- [x] Dashboard command center.
+- [x] Artifact completion statuses.
 - [ ] Finalize-week validation.
 - [ ] Locked game-day snapshots.
 - [ ] Unified Present and Print entry points.
