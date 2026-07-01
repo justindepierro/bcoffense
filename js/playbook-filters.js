@@ -102,6 +102,12 @@ function filterPlays() {
     document.getElementById("pbGamePlanFilter")?.checked || false;
   const jvOnly =
     document.getElementById("pbJvFilter")?.checked || false;
+  const scoutOnly =
+    document.getElementById("pbScoutFilter")?.checked || false;
+  const inWeekOnly =
+    document.getElementById("pbInWeekFilter")?.checked || false;
+  const unusedOnly =
+    document.getElementById("pbUnusedFilter")?.checked || false;
   const gameWeek = getGameWeek();
   const taggedForOpponent = gamePlanOnly && gameWeek.opponentName && typeof getGamePlanTags === "function"
     ? new Set((getGamePlanTags()[gameWeek.opponentName] || []))
@@ -121,6 +127,17 @@ function filterPlays() {
       if (!jvFlagged || typeof _gpPlaySignature !== "function") return false;
       const gpSig = meta ? meta.gpSig : _gpPlaySignature(play);
       if (!jvFlagged.has(gpSig)) return false;
+    }
+    if (scoutOnly) {
+      const recs = typeof _tdScoutRecs !== "undefined" && Array.isArray(_tdScoutRecs) ? _tdScoutRecs : [];
+      if (!recs.some((r) => typeof playsMatch === "function" && playsMatch(r.play, play))) return false;
+    }
+    if (inWeekOnly || unusedOnly) {
+      const inScript = Array.isArray(script) && script.some((s) => !s.isSeparator && typeof playsMatch === "function" && playsMatch(s, play));
+      const onSheet = typeof getCallSheetPlayLocations === "function" && getCallSheetPlayLocations(play).length > 0;
+      const inWeek = inScript || onSheet;
+      if (inWeekOnly && !inWeek) return false;
+      if (unusedOnly && inWeek) return false;
     }
     if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;
     if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
@@ -194,6 +211,10 @@ function clearFilters() {
   if (gpFilter) gpFilter.checked = false;
   const jvFilter = document.getElementById("pbJvFilter");
   if (jvFilter) jvFilter.checked = false;
+  ["pbScoutFilter", "pbInWeekFilter", "pbUnusedFilter"].forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) el.checked = false;
+  });
 
   [
     "filterFormation",
@@ -305,6 +326,21 @@ function updateActiveFilterBar() {
   if (search) {
     parts.push({ label: `"${search}"`, layer: "search", value: search });
   }
+
+  // Workflow filters (#112-114)
+  const workflowFilters = [
+    { id: "pbScoutFilter", label: "🔍 Scout Recs" },
+    { id: "pbInWeekFilter", label: "📋 In Week" },
+    { id: "pbUnusedFilter", label: "📄 Unused" },
+  ];
+  workflowFilters.forEach(({ id, label }) => {
+    if (document.getElementById(id)?.checked) {
+      parts.push({ label, layer: id, value: "1" });
+    }
+  });
+  // Show/hide bulk add button based on whether any plays are filtered
+  const bulkBtn = document.getElementById("pbBulkAddBtn");
+  if (bulkBtn) bulkBtn.style.display = filteredPlays.length < plays.length ? "" : "none";
 
   if (parts.length === 0) {
     if (clearBtn) clearBtn.hidden = true;

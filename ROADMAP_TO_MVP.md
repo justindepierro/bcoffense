@@ -326,11 +326,11 @@ Example:
 - [x] **107.** Show Call Sheet category membership.
 - [x] **108.** Show scout relevance for the active opponent.
 - [x] **109.** Add a single “Add to Week” action that opens destination choices.
-- [ ] **110.** Add bulk Add to Game Plan, Practice, Wristband, and Call Sheet.
-- [ ] **111.** Preserve existing specialized actions.
-- [ ] **112.** Add a compact active-opponent filter.
-- [ ] **113.** Add a scout-recommended filter.
-- [ ] **114.** Add a not-yet-used-this-week filter.
+- [x] **110.** Add bulk Add to Game Plan, Practice, Wristband, and Call Sheet.
+- [x] **111.** Preserve existing specialized actions.
+- [x] **112.** Add a compact active-opponent filter.
+- [x] **113.** Add a scout-recommended filter.
+- [x] **114.** Add a not-yet-used-this-week filter.
 - [ ] **115.** Add a workflow side panel showing downstream status for the selected play.
 
 ## Phase 7 — Game Plan handoffs

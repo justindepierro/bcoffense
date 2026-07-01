@@ -249,3 +249,45 @@ function hidePlayPreview() {
   if (tooltip) tooltip.classList.remove("show");
 }
 
+
+// ── #110: Bulk Add Filtered Plays to Week Destination ────────────────────
+async function bulkAddFilteredToWeek() {
+  const count = Array.isArray(filteredPlays) ? filteredPlays.length : 0;
+  if (!count) { showToast("No plays in current filter to add", { type: "warning" }); return; }
+  const destinations = [
+    { label: `📋 Practice Script (${count} plays)`, value: "script" },
+    { label: `🎯 Game Plan (${count} plays)`, value: "gameplan" },
+    { label: `📄 Call Sheet (${count} plays)`, value: "callsheet" },
+    { label: `🏈 Wristband (${count} plays)`, value: "wristband" },
+  ];
+  const dest = await showListPicker(`Send ${count} filtered plays to:`, destinations, {
+    title: "Add All Filtered to Week",
+    icon: "⊕",
+  });
+  if (!dest) return;
+  if (dest === "script") {
+    if (typeof addToScript !== "function") {
+      if (typeof showTab === "function") showTab("script");
+      showToast("Use Available Plays to add them to the script");
+      return;
+    }
+    let added = 0;
+    for (const play of filteredPlays) {
+      const idx = Array.isArray(plays) ? plays.indexOf(play) : -1;
+      if (idx >= 0) { await addToScript(idx); added++; }
+    }
+    showToast(`${added} play${added === 1 ? "" : "s"} added to Script`, {
+      type: "success", duration: 3500,
+      actionLabel: "→ Script", action: () => typeof showTab === "function" && showTab("script"),
+    });
+  } else if (dest === "gameplan") {
+    if (typeof showTab === "function") showTab("gameplan");
+    showToast(`Select boxes in Game Plan to assign these ${count} plays`, { duration: 4000 });
+  } else if (dest === "callsheet") {
+    if (typeof showTab === "function") showTab("callsheet");
+    showToast(`Use the call sheet picker to place these ${count} plays`, { duration: 3500 });
+  } else if (dest === "wristband") {
+    if (typeof showTab === "function") showTab("wristband");
+    showToast(`Use Library search to find and add these ${count} plays`, { duration: 3500 });
+  }
+}
