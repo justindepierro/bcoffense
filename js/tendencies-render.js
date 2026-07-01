@@ -1120,14 +1120,14 @@ async function sendScoutRecsToGamePlan() {
 
   const routeChoice = items.length > 0
     ? await showChoice(
-        `<p>Send <strong>${_tdScoutRecs.length}</strong> recommended play${_tdScoutRecs.length === 1 ? "" : "s"} to the game plan?</p>`,
-        {
-          title: "📋 Send Scout Recs to Game Plan",
-          icon: "📋",
-          option1: "Auto-route by play type",
-          option2: "Pick a box",
-        },
-      )
+      `<p>Send <strong>${_tdScoutRecs.length}</strong> recommended play${_tdScoutRecs.length === 1 ? "" : "s"} to the game plan?</p>`,
+      {
+        title: "📋 Send Scout Recs to Game Plan",
+        icon: "📋",
+        option1: "Auto-route by play type",
+        option2: "Pick a box",
+      },
+    )
     : "option1";
   if (!routeChoice) return;
 

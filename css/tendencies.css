@@ -320,9 +320,15 @@
   margin-left: var(--space-xs);
   flex-shrink: 0;
 }
-.td-ov-conf--high { color: var(--color-success); }
-.td-ov-conf--med  { color: var(--color-warning); }
-.td-ov-conf--low  { color: var(--color-text-muted); }
+.td-ov-conf--high {
+  color: var(--color-success);
+}
+.td-ov-conf--med {
+  color: var(--color-warning);
+}
+.td-ov-conf--low {
+  color: var(--color-text-muted);
+}
 
 /* Recommendations card (#79-82) */
 .td-ov-card--recs {
@@ -381,7 +387,6 @@
   padding-top: var(--space-sm);
   border-top: 1px solid var(--color-border-light);
 }
-
 
 @media (max-width: 640px) {
   .td-overview-grid {

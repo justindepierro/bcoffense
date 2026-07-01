@@ -484,6 +484,21 @@ document.addEventListener("click", (e) => {
         parseInt(el.dataset.idx, 10),
       );
       return;
+    case "selectTendenciesOpponent":
+      selectTendenciesOpponent(parseInt(el.dataset.idx, 10));
+      return;
+    case "renameTendenciesOpponent":
+      renameTendenciesOpponent(parseInt(el.dataset.idx, 10));
+      return;
+    case "deleteTendenciesOpponent":
+      deleteTendenciesOpponent(parseInt(el.dataset.idx, 10));
+      return;
+    case "exportSingleOpponentCSV":
+      exportSingleOpponentCSV(parseInt(el.dataset.idx, 10));
+      return;
+    case "setAsActiveOpponent":
+      setAsActiveOpponent(parseInt(el.dataset.idx, 10));
+      return;
     case "editTendenciesPlay":
       editTendenciesPlay(parseInt(el.dataset.idx, 10));
       return;
