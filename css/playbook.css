@@ -5006,7 +5006,7 @@ body.shell-phone .pb-action-sheet {
 
 /* ── Reaction picker popup ──────────────────────────────────────────────────── */
 .disc-reaction-picker {
-  position: absolute;
+  position: fixed;
   z-index: var(--z-modal);
   background: var(--color-bg-light);
   border: 1px solid var(--color-border);
@@ -5018,6 +5018,33 @@ body.shell-phone .pb-action-sheet {
 }
 .disc-reaction-picker.visible {
   display: block;
+  animation: discPickerIn 0.14s ease;
+}
+@keyframes discPickerIn {
+  from { opacity: 0; transform: scale(0.92) translateY(4px); }
+  to   { opacity: 1; transform: none; }
+}
+/* Bottom sheet on very narrow screens */
+.disc-reaction-picker.is-bottom-sheet {
+  top: auto !important;
+  left: 0 !important;
+  right: 0 !important;
+  bottom: max(0px, env(safe-area-inset-bottom)) !important;
+  width: 100% !important;
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  border-bottom: none;
+  padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));
+  animation: discPickerUp 0.18s ease;
+}
+@keyframes discPickerUp {
+  from { opacity: 0; transform: translateY(100%); }
+  to   { opacity: 1; transform: none; }
+}
+.disc-reaction-picker.is-bottom-sheet .disc-picker-emoji {
+  font-size: 26px;
+}
+.disc-reaction-picker.is-bottom-sheet .disc-picker-btn {
+  padding: var(--space-sm) var(--space-xs);
 }
 .disc-picker-grid {
   display: grid;
@@ -5035,7 +5062,8 @@ body.shell-phone .pb-action-sheet {
   cursor: pointer;
   transition:
     background var(--transition-fast),
-    border-color var(--transition-fast);
+    border-color var(--transition-fast),
+    transform 0.08s ease;
   font-size: 11px;
   color: var(--color-text-muted);
   gap: 2px;
@@ -5044,6 +5072,24 @@ body.shell-phone .pb-action-sheet {
   background: var(--color-bg-hover-row);
   border-color: var(--color-border);
   color: var(--color-text);
+}
+.disc-picker-btn:active {
+  transform: scale(0.88);
+}
+/* Highlight the user's current reaction */
+.disc-picker-btn.is-mine {
+  border-color: var(--color-primary);
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  color: var(--color-primary);
+}
+.disc-picker-btn.is-mine:hover {
+  background: color-mix(in srgb, var(--color-primary) 20%, transparent);
+}
+/* Keyboard focus ring */
+.disc-picker-btn:focus-visible {
+  outline: none;
+  box-shadow: var(--shadow-focus);
+  border-color: var(--color-primary);
 }
 .disc-picker-emoji {
   font-size: 20px;
@@ -5069,6 +5115,53 @@ body.shell-phone .pb-action-sheet {
 }
 .disc-picker-close:hover {
   color: var(--color-text);
+}
+
+/* ── Discussion filter bar ───────────────────────────────────────────────────── */
+.disc-filter-bar {
+  display: flex;
+  gap: 6px;
+  flex-wrap: wrap;
+  margin-bottom: var(--space-sm);
+  padding: 0 0 var(--space-xs);
+  border-bottom: 1px solid var(--color-border-light);
+}
+.disc-filter-btn {
+  background: none;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  padding: 3px 10px;
+  font-size: var(--font-size-xs);
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition:
+    background var(--transition-fast),
+    border-color var(--transition-fast),
+    color var(--transition-fast);
+}
+.disc-filter-btn:hover {
+  border-color: var(--color-border-med);
+  color: var(--color-text);
+}
+.disc-filter-btn.active {
+  background: color-mix(in srgb, var(--color-primary) 12%, transparent);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+/* ── Reduced-motion: disable all disc animations ────────────────────────────── */
+@media (prefers-reduced-motion: reduce) {
+  .disc-reaction-picker.visible,
+  .disc-reaction-picker.is-bottom-sheet {
+    animation: none;
+  }
+  .disc-picker-btn {
+    transition: none;
+  }
+  .disc-filter-btn {
+    transition: none;
+  }
 }
 
 /* ── Reply button ───────────────────────────────────────────────────────────── */

@@ -308,7 +308,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 # Phase 8 — Comments and Old-School Feed UI
 
 - [x] Add a Discussion tab to Playbook play detail.
-- [ ] Add separate Comments and Questions filters within Discussion.
+- [x] Add separate Comments and Questions filters within Discussion.
 - [x] Display author name.
 - [x] Display author role.
 - [ ] Display position when useful.
@@ -515,7 +515,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add a compact React action beneath every eligible post.
 - [x] Add a compact More menu beneath every eligible post.
 - [x] Display reaction summary beneath the post.
-- [ ] Display the most-used reactions first.
+- [x] Display the most-used reactions first.
 - [x] Show total reply count.
 - [x] Add View Replies and Hide Replies controls.
 - [ ] Keep replies expanded when the user has actively opened the thread.
@@ -529,7 +529,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add skeleton loading states.
 - [x] Add empty-thread states.
 - [x] Add failed-load retry states.
-- [ ] Add accessible thread semantics.
+- [x] Add accessible thread semantics.
 
 ⸻
 
@@ -545,8 +545,8 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [ ] Allow an uploaded image to be marked up before posting.
 - [ ] Allow text and one or more supported attachments in the same reply.
 - [x] Preserve an unfinished reply while the composer remains open.
-- [ ] Preserve an unfinished reply during device rotation.
-- [ ] Warn before closing a composer with unsaved text or markup.
+- [x] Preserve an unfinished reply during device rotation.
+- [x] Warn before closing a composer with unsaved text or markup.
 - [x] Add Cancel.
 - [x] Add Post Reply.
 - [ ] Add Save Draft for coaches as a later enhancement.
@@ -769,17 +769,17 @@ Initial reactions:
 - [x] Anchor the picker to the React button using the shared dropdown system.
 - [x] Keep the picker onscreen.
 - [x] Flip above the trigger when needed.
-- [ ] Use a bottom sheet on very narrow screens when necessary.
+- [x] Use a bottom sheet on very narrow screens when necessary.
 - [x] Display reactions in an orderly grid.
 - [x] Use large touch targets.
 - [x] Show a tooltip or label for each reaction.
-- [ ] Allow keyboard arrow navigation.
+- [x] Allow keyboard arrow navigation.
 - [x] Close on Escape.
 - [x] Close on outside click.
-- [ ] Restore focus to the React button.
-- [ ] Show the user’s current reaction.
-- [ ] Animate reaction selection subtly.
-- [ ] Respect reduced-motion preferences.
+- [x] Restore focus to the React button.
+- [x] Show the user’s current reaction.
+- [x] Animate reaction selection subtly.
+- [x] Respect reduced-motion preferences.
 - [ ] Use optimistic updates with rollback.
 - [ ] Add reaction-picker responsive tests.
 

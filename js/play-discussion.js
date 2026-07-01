@@ -81,7 +81,9 @@ function _discReactionsHtml(postId, reactions) {
   const active = _REACTION_SUMMARY_ORDER
     .map((key) => ({ key, ...(reactionMap[key] || { count: 0, mine: false }) }))
     .filter((r) => r.count > 0)
+    .sort((a, b) => b.count - a.count)
     .slice(0, 3);
+  const mineReaction = (reactions || []).find((r) => r.mine);
 
   const chips = active.map((r) => {
     const meta = _REACTION_META[r.key] || { emoji: "❓", label: r.key };
@@ -94,16 +96,21 @@ function _discReactionsHtml(postId, reactions) {
   }).join("");
 
   const openBtn = `<button class="disc-react-open-btn" data-action="openDiscReactionPicker" data-arg="${escapeHtml(postId)}" aria-label="React">+ React</button>`;
-  return `<div class="disc-reactions">${chips}${openBtn}</div>`;
+  const userReactionAttr = mineReaction ? ` data-user-reaction="${escapeHtml(mineReaction.key)}"` : "";
+  return `<div class="disc-reactions"${userReactionAttr}>${chips}${openBtn}</div>`;
 }
 
 // ── Reaction picker ───────────────────────────────────────────────────────────
 
 let _discPickerPostId = null;
+let _discPickerTrigger = null;
 let _discPickerEscHandler = null;
+let _discPickerArrowHandler = null;
 
 function openDiscReactionPicker(postId) {
   _discPickerPostId = postId;
+  _discPickerTrigger = document.querySelector(`[data-action="openDiscReactionPicker"][data-arg="${escapeHtml(postId)}"]`);
+
   let picker = document.getElementById("discReactionPicker");
   if (!picker) {
     picker = document.createElement("div");
@@ -114,11 +121,17 @@ function openDiscReactionPicker(postId) {
     document.body.appendChild(picker);
   }
 
+  // Find user's current reaction for this post from the reactions bar
+  const reactionsEl = document.querySelector(`[data-post-id="${escapeHtml(postId)}"] .disc-reactions`);
+  const userReaction = reactionsEl?.dataset?.userReaction || null;
+
   const btns = _REACTION_PICKER_ORDER.map((key) => {
     const meta = _REACTION_META[key] || { emoji: "?", label: key };
+    const isMine = key === userReaction;
     return (
-      `<button class="disc-picker-btn" data-action="selectDiscReaction" data-arg="${escapeHtml(postId)}::${key}"` +
-      ` title="${escapeHtml(meta.label)}" aria-label="${escapeHtml(meta.label)}">` +
+      `<button class="disc-picker-btn${isMine ? " is-mine" : ""}" data-action="selectDiscReaction" data-arg="${escapeHtml(postId)}::${key}"` +
+      ` title="${escapeHtml(meta.label)}" aria-label="${escapeHtml(meta.label)}"` +
+      ` aria-pressed="${isMine ? "true" : "false"}">` +
       `<span class="disc-picker-emoji">${meta.emoji}</span>` +
       `<span class="disc-picker-label">${escapeHtml(meta.label)}</span>` +
       `</button>`
@@ -126,36 +139,72 @@ function openDiscReactionPicker(postId) {
   }).join("");
 
   const closeBtn = `<button class="disc-picker-close" data-action="closeDiscReactionPicker" aria-label="Close">✕</button>`;
-  setInnerHTML(picker, closeBtn + `<div class="disc-picker-grid">${btns}</div>`);
+  setInnerHTML(picker, closeBtn + `<div class="disc-picker-grid" role="group" aria-label="Reaction options">${btns}</div>`);
+
+  // Bottom sheet on very narrow screens; use fixed positioning throughout
+  const useBottomSheet = window.innerWidth <= 480;
+  picker.classList.toggle("is-bottom-sheet", useBottomSheet);
   picker.classList.add("visible");
 
-  // Escape key closes the picker
+  if (!useBottomSheet && _discPickerTrigger) {
+    const rect = _discPickerTrigger.getBoundingClientRect();
+    const pickerH = 220;
+    const spaceBelow = window.innerHeight - rect.bottom;
+    const top = spaceBelow >= pickerH + 10
+      ? rect.bottom + 6
+      : rect.top - pickerH - 6;
+    picker.style.top = `${Math.max(8, top)}px`;
+    picker.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 240))}px`;
+  } else {
+    picker.style.top = "";
+    picker.style.left = "";
+  }
+
+  // Focus: user's current reaction button, or the first button
+  const focusBtn = picker.querySelector(".disc-picker-btn.is-mine") || picker.querySelector(".disc-picker-btn");
+  focusBtn?.focus();
+
+  // Escape key handler
   if (_discPickerEscHandler) document.removeEventListener("keydown", _discPickerEscHandler);
-  _discPickerEscHandler = (e) => { if (e.key === "Escape") closeDiscReactionPicker(); };
+  _discPickerEscHandler = (e) => { if (e.key === "Escape") { e.stopPropagation(); closeDiscReactionPicker(); } };
   document.addEventListener("keydown", _discPickerEscHandler);
 
-  // Position near the react button
-  const triggerBtn = document.querySelector(`[data-action="openDiscReactionPicker"][data-arg="${escapeHtml(postId)}"]`);
-  if (triggerBtn) {
-    const rect = triggerBtn.getBoundingClientRect();
-    const pickerH = 200;
-    const top = rect.bottom + 6 + window.scrollY;
-    const adjustedTop = (rect.bottom + pickerH + 10 > window.innerHeight)
-      ? rect.top - pickerH - 6 + window.scrollY
-      : top;
-    picker.style.top = `${adjustedTop}px`;
-    picker.style.left = `${Math.max(8, Math.min(rect.left, window.innerWidth - 220))}px`;
-  }
+  // Arrow key navigation (4-column grid)
+  if (_discPickerArrowHandler) document.removeEventListener("keydown", _discPickerArrowHandler);
+  _discPickerArrowHandler = (e) => {
+    const p = document.getElementById("discReactionPicker");
+    if (!p?.classList.contains("visible")) return;
+    if (!["ArrowRight", "ArrowLeft", "ArrowDown", "ArrowUp"].includes(e.key)) return;
+    const pickerBtns = Array.from(p.querySelectorAll(".disc-picker-btn"));
+    const idx = pickerBtns.indexOf(document.activeElement);
+    if (idx < 0) { pickerBtns[0]?.focus(); return; }
+    e.preventDefault();
+    let next = idx;
+    if (e.key === "ArrowRight") next = (idx + 1) % pickerBtns.length;
+    else if (e.key === "ArrowLeft") next = (idx - 1 + pickerBtns.length) % pickerBtns.length;
+    else if (e.key === "ArrowDown") next = Math.min(idx + 4, pickerBtns.length - 1);
+    else if (e.key === "ArrowUp") next = Math.max(idx - 4, 0);
+    pickerBtns[next]?.focus();
+  };
+  document.addEventListener("keydown", _discPickerArrowHandler);
 }
 
 function closeDiscReactionPicker() {
   const picker = document.getElementById("discReactionPicker");
   picker?.classList.remove("visible");
+  picker?.classList.remove("is-bottom-sheet");
   _discPickerPostId = null;
   if (_discPickerEscHandler) {
     document.removeEventListener("keydown", _discPickerEscHandler);
     _discPickerEscHandler = null;
   }
+  if (_discPickerArrowHandler) {
+    document.removeEventListener("keydown", _discPickerArrowHandler);
+    _discPickerArrowHandler = null;
+  }
+  // Restore focus to the trigger button that opened the picker
+  _discPickerTrigger?.focus();
+  _discPickerTrigger = null;
 }
 
 async function selectDiscReaction(arg) {
@@ -306,6 +355,14 @@ function _discRenderBody(container, data, playId, playSig) {
     ? posts.map((p) => _discPostHtml(p, playId)).join("")
     : `<p class="disc-empty">No comments yet. Be the first!</p>`;
 
+  const filterBar = posts.length
+    ? `<div class="disc-filter-bar" role="group" aria-label="Filter discussion">` +
+      `<button class="disc-filter-btn active" data-action="setDiscFilter" data-arg="all::${escapeHtml(playId)}" aria-pressed="true">All</button>` +
+      `<button class="disc-filter-btn" data-action="setDiscFilter" data-arg="comment::${escapeHtml(playId)}" aria-pressed="false">💬 Comments</button>` +
+      `<button class="disc-filter-btn" data-action="setDiscFilter" data-arg="question::${escapeHtml(playId)}" aria-pressed="false">❓ Questions</button>` +
+      `</div>`
+    : "";
+
   const loadMore = hasMore && posts.length
     ? `<button class="btn btn-xs disc-load-more"
          data-action="loadMoreDiscussion"
@@ -326,7 +383,8 @@ function _discRenderBody(container, data, playId, playSig) {
   setInnerHTML(
     container,
     modBanner +
-    `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}">${postsHtml}</div>` +
+    filterBar +
+    `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}" role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
     loadMore +
     composer +
     lockCtrl,
@@ -382,8 +440,8 @@ function _discPostHtml(p, playId, isReply = false) {
   const moreItems = [resolveBtn, reopenBtn, editBtn, deleteBtn].filter(Boolean).join("");
   const moreMenu = moreItems
     ? `<details class="disc-more-wrap">` +
-      `<summary class="disc-more-btn" title="More options" aria-label="More options">⋯</summary>` +
-      `<div class="disc-more-menu">${moreItems}</div></details>`
+    `<summary class="disc-more-btn" title="More options" aria-label="More options">⋯</summary>` +
+    `<div class="disc-more-menu">${moreItems}</div></details>`
     : "";
   const actionsHtml = (inlineActions || moreMenu)
     ? `<div class="disc-post-actions">${inlineActions}${moreMenu}</div>`
@@ -420,6 +478,8 @@ function _discPostHtml(p, playId, isReply = false) {
   return (
     `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
     ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}"` +
+    ` data-post-type="${escapeHtml(p.postType || "comment")}"` +
+    ` role="article"` +
     ` data-author-name="${escapeHtml(p.authorName)}" data-body-text="${escapeHtml((p.body || "").slice(0, 80))}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
     `<div class="disc-post-content">` +
@@ -438,6 +498,55 @@ function _discPostHtml(p, playId, isReply = false) {
     repliesHtml +
     `</div>`
   );
+}
+
+function setDiscFilter(arg) {
+  const sep = String(arg || "").indexOf("::");
+  if (sep < 0) return;
+  const filter = arg.slice(0, sep);
+  const playId = arg.slice(sep + 2);
+
+  // Update filter button states
+  const postsEl = document.getElementById(`discPosts-${playId}`);
+  const filterBar = postsEl?.closest(".disc-body")?.querySelector(".disc-filter-bar");
+  if (filterBar) {
+    filterBar.querySelectorAll(".disc-filter-btn").forEach((btn) => {
+      const btnFilter = (btn.dataset.arg || "").split("::")[0];
+      const isActive = btnFilter === filter;
+      btn.classList.toggle("active", isActive);
+      btn.setAttribute("aria-pressed", isActive ? "true" : "false");
+    });
+  }
+
+  if (!postsEl) return;
+
+  // Show/hide top-level posts and their associated reply areas
+  postsEl.querySelectorAll(".disc-post:not(.disc-post--reply)").forEach((post) => {
+    const postType = post.dataset.postType || "comment";
+    const show = filter === "all" || filter === postType;
+    post.hidden = !show;
+    const pid = post.dataset.postId || "";
+    if (pid) {
+      const replySlot = document.getElementById(`disc-reply-slot-${pid}`);
+      const replies = document.getElementById(`disc-replies-${pid}`);
+      if (replySlot) replySlot.hidden = !show;
+      if (replies) replies.hidden = !show;
+    }
+  });
+
+  // Show "no results" message when all posts are filtered out
+  let emptyMsg = postsEl.querySelector(".disc-filter-empty");
+  const anyVisible = !postsEl.querySelector(".disc-post:not(.disc-post--reply):not([hidden])");
+  if (anyVisible && postsEl.querySelector(".disc-post:not(.disc-post--reply)")) {
+    if (!emptyMsg) {
+      emptyMsg = document.createElement("p");
+      emptyMsg.className = "disc-empty disc-filter-empty";
+      postsEl.appendChild(emptyMsg);
+    }
+    emptyMsg.textContent = filter === "question" ? "No questions in this thread yet." : "No comments in this thread yet.";
+  } else {
+    emptyMsg?.remove();
+  }
 }
 
 function _discComposerHtml(playId, playSig, parentPostId = null) {
@@ -576,20 +685,47 @@ function openDiscReplyComposer(arg) {
   const parentBody = parentPostEl?.dataset?.bodyText || "";
   const bannerHtml = parentAuthor
     ? `<div class="disc-reply-to-banner">` +
-      `↩ Replying to <strong>${escapeHtml(parentAuthor)}</strong>` +
-      (parentBody
-        ? `: <em class="disc-reply-preview">${escapeHtml(parentBody.slice(0, 60))}${parentBody.length >= 60 ? "…" : ""}</em>`
-        : "") +
-      `</div>`
+    `↩ Replying to <strong>${escapeHtml(parentAuthor)}</strong>` +
+    (parentBody
+      ? `: <em class="disc-reply-preview">${escapeHtml(parentBody.slice(0, 60))}${parentBody.length >= 60 ? "…" : ""}</em>`
+      : "") +
+    `</div>`
     : "";
 
   slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
-  slot.querySelector("textarea")?.focus();
+
+  // Restore saved draft and wire up draft autosave
+  const ta = slot.querySelector("textarea.disc-textarea");
+  if (ta) {
+    try {
+      const draft = sessionStorage.getItem(`disc-reply-draft-${parentPostId}`);
+      if (draft) {
+        ta.value = draft;
+        const charEl = document.getElementById(`discChars-reply-${parentPostId}`);
+        if (charEl) charEl.textContent = `${draft.length} / 2000`;
+      }
+    } catch (_) {}
+    ta.addEventListener("input", () => {
+      try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) {}
+    });
+    ta.focus();
+  }
 }
 
-function closeDiscReplyComposer(parentPostId) {
+async function closeDiscReplyComposer(parentPostId) {
   const slot = document.getElementById(`disc-reply-slot-${parentPostId}`);
-  if (slot) slot.innerHTML = "";
+  if (!slot) return;
+  const textarea = slot.querySelector("textarea.disc-textarea");
+  if (textarea?.value?.trim()) {
+    const confirmed = await showConfirm("Discard your unsaved reply?", {
+      confirmText: "Discard",
+      cancelText: "Keep Writing",
+      danger: true,
+    });
+    if (!confirmed) return;
+  }
+  try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) {}
+  slot.innerHTML = "";
 }
 
 async function submitDiscReply(arg, el) {
@@ -627,7 +763,9 @@ async function submitDiscReply(arg, el) {
       showToast(mod.displayWarning, { duration: 5000, type: mod.outcome === "block" ? "error" : "warning" });
     }
 
-    // Close the reply composer
+    // Close the reply composer (clear textarea first so confirm doesn't fire)
+    const _replyTa = document.getElementById(`discCompose-reply-${parentPostId}`);
+    if (_replyTa) _replyTa.value = "";
     closeDiscReplyComposer(parentPostId);
 
     if (data.post?.moderationStatus === "approved") {
