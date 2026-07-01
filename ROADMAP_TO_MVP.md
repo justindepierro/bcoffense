@@ -202,8 +202,8 @@ Example:
 
 - [x] **1.** Create a branch dedicated to workflow and responsive architecture.
   - Working directly on `main`; continuous shipping to Cloudflare Pages replaced branch-based staging. All changes validated before push.
-- [ ] **2.** Record screenshots of all six pages at desktop, iPad portrait, iPad landscape, and phone widths.
-- [ ] **3.** Record the current click path for a complete game-week workflow.
+- [ ] **2.** `TODO: MANUAL` — Record screenshots of all six pages at desktop, iPad portrait, iPad landscape, and phone widths. *(Take screenshots using browser DevTools or Playwright `npm run screenshots`)*
+- [ ] **3.** `TODO: MANUAL` — Record the current click path for a complete game-week workflow. *(Screen-record one full loop: Import → Scout → Game Plan → Script → Wristband → Call Sheet)*
 - [x] **4.** Inventory every top-level page and classify it as Core Workflow, Supporting Utility, Administration, or Player Experience.
   - Done as part of Phase 2 architecture: six core tools identified; supporting utilities grouped in Phase 14.
 - [x] **5.** Inventory every dropdown, popover, context menu, bottom sheet, side drawer, and modal.
@@ -219,7 +219,7 @@ Example:
 - [x] **12.** Add a test proving an opponent card opens its detail view.
 - [x] **13.** Add a test proving nested rename/delete actions do not also open the card.
 - [x] **14.** Add screenshots for empty, populated, and active Opponent Scout states.
-- [ ] **15.** Establish baseline task times for Playbook-to-Call-Sheet workflow.
+- [ ] **15.** `TODO: MANUAL` — Establish baseline task times for Playbook-to-Call-Sheet workflow. *(Time yourself doing the full loop; note click count and minutes)*
 
 ## Phase 2 — Canonical workflow and information architecture
 
@@ -257,7 +257,7 @@ Example:
 - [x] **37.** Add source-version references.
 - [x] **38.** Add last-modified timestamps.
 - [x] **39.** Add created-by and last-edited-by fields where authentication supports them.
-- [ ] **40.** Add team-level scope and Varsity/JV scope.
+- [ ] **40.** `TODO: OMG ROADMAP` — Add team-level scope and Varsity/JV scope. *(Requires D1 teams table + multi-team auth — tracked in ROADMAP_TWO_OMG.md Phase 4)*
 - [x] **41.** Add a safe unassigned-game-week state.
   - `#gameWeekBar` is hidden when no opponent is set; all modules guard with `gw && gw.opponentName` checks before reading opponent data. Commit `1f16995` (SW v762).
 - [x] **42.** Add validation for orphaned artifact references.
@@ -637,18 +637,18 @@ Example:
 - [x] **285.** Assert button grids remain orderly at 320, 360, 390, 430, 768, 820, 1024, 1366, and 1440 widths.
 - [x] **286.** Assert no button drops below minimum touch target size.
 - [x] **287.** Assert no page-level horizontal overflow.
-- [ ] **288.** Run manual iPad Safari and installed-web-app testing.
-- [ ] **289.** Run iPad portrait, landscape, split-screen, and external-display tests.
-- [ ] **290.** Run phone Safari and Chrome tests.
-- [ ] **291.** Measure the updated full-workflow task time.
-- [ ] **292.** Compare clicks, page switches, and duplicate data entry against baseline.
+- [ ] **288.** `TODO: MANUAL` — Run manual iPad Safari and installed-web-app testing. *(Add to Home Screen on iPad, verify all tabs and print flows work)*
+- [ ] **289.** `TODO: MANUAL` — Run iPad portrait, landscape, split-screen, and external-display tests. *(Run `cd tests && npm run test:ipad` + physical split-screen check)*
+- [ ] **290.** `TODO: MANUAL` — Run phone Safari and Chrome tests. *(Run `npm run test:phone` + open Safari on iPhone to verify)*
+- [ ] **291.** `TODO: MANUAL` — Measure the updated full-workflow task time. *(Compare against #15 baseline; note any regressions)*
+- [ ] **292.** `TODO: MANUAL` — Compare clicks, page switches, and duplicate data entry against baseline. *(Requires #15 baseline to exist first)*
 - [x] **293.** Roll out the shared menu utility before redesigning every page simultaneously.
 - [x] **294.** Roll out the shared header and toolbar systems page by page.
 - [x] **295.** Regress the printing suite after every structural page change.
 - [x] **296.** Preserve print-only DOM and CSS separation.
-- [ ] **297.** Document the final workflow for coaches.
+- [ ] **297.** `TODO: MANUAL` — Document the final workflow for coaches. *(Write a 1-page PDF or in-app help guide: Import → Scout → Plan → Script → Wristband → Call Sheet)*
 - [x] **298.** Add a one-screen first-use walkthrough.
-- [ ] **299.** Collect coach feedback on terminology and ordering.
+- [ ] **299.** `TODO: MANUAL` — Collect coach feedback on terminology and ordering. *(Share the app with coaches and gather notes on confusing labels or missing steps)*
 - [x] **300.** Archive obsolete CSS and JavaScript only after successful regression testing.
 
 ---
