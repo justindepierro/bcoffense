@@ -1571,6 +1571,46 @@ function checkMobileCapabilityMatrix() {
   console.log("mobile capability matrix contracts ok");
 }
 
+function checkAnchoredMenuContract() {
+  // Immediate fix #4: one shared anchored-menu utility, with the header and
+  // Call Sheet "More" menus migrated onto it first. Guards that the utility
+  // exists, is loaded, and both menus opt in via data-anchored.
+  const html = read("index.html");
+  const anchored = read("js/anchored-menu.js");
+  const appEvents = read("js/app-events.js");
+  const sw = read("sw.js");
+
+  if (
+    !/function positionAnchoredMenu\(/.test(anchored) ||
+    !/function resetAnchoredMenu\(/.test(anchored) ||
+    !/window\.positionAnchoredMenu\s*=/.test(anchored) ||
+    !/window\.resetAnchoredMenu\s*=/.test(anchored)
+  ) {
+    fail("anchored-menu utility is missing its public positioning functions");
+  }
+
+  if (
+    !/src="js\/anchored-menu\.js/.test(html) ||
+    !/\.\/js\/anchored-menu\.js/.test(sw)
+  ) {
+    fail("anchored-menu.js is not registered in index.html and sw.js");
+  }
+
+  if (!/positionAnchoredMenu\(/.test(appEvents)) {
+    fail("app-events.js does not invoke positionAnchoredMenu on open");
+  }
+
+  // Both migrated menus must opt in.
+  if (
+    !/class="tool-menu-wrap header-overflow"\s+data-anchored/.test(html) ||
+    !/class="tool-menu-wrap"\s+data-anchored/.test(html)
+  ) {
+    fail("header overflow and Call Sheet menus are not both marked data-anchored");
+  }
+
+  console.log("anchored menu contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2258,6 +2298,7 @@ checkPlayReadinessContracts();
 checkPlayerPortalContracts();
 checkCallSheetMobileContracts();
 checkMobileCapabilityMatrix();
+checkAnchoredMenuContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

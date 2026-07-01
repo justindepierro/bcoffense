@@ -6,13 +6,25 @@ document.addEventListener("click", (e) => {
   }
   // Close generic tool-menu dropdowns
   if (!e.target.closest(".tool-menu-wrap")) {
-    document
-      .querySelectorAll(".tool-menu-wrap.open")
-      .forEach((el) => el.classList.remove("open"));
+    document.querySelectorAll(".tool-menu-wrap.open").forEach((el) => {
+      el.classList.remove("open");
+      const trigger = el.querySelector("[data-action='toggleParentOpen']");
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+      if (el.hasAttribute("data-anchored") && typeof resetAnchoredMenu === "function") {
+        resetAnchoredMenu(el);
+      }
+    });
   } else if (e.target.closest(".tool-menu")) {
     // Clicking an action inside a tool-menu closes that specific dropdown
     const wrap = e.target.closest(".tool-menu-wrap");
-    if (wrap) wrap.classList.remove("open");
+    if (wrap) {
+      wrap.classList.remove("open");
+      const trigger = wrap.querySelector("[data-action='toggleParentOpen']");
+      if (trigger) trigger.setAttribute("aria-expanded", "false");
+      if (wrap.hasAttribute("data-anchored") && typeof resetAnchoredMenu === "function") {
+        resetAnchoredMenu(wrap);
+      }
+    }
   }
 });
 
@@ -307,9 +319,14 @@ document.addEventListener("click", (e) => {
 
   if (action === "toggleParentOpen") {
     const wrap = el.parentElement;
+    const willOpen = !wrap.classList.contains("open");
     wrap.classList.toggle("open");
     const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
-    if (triggerBtn) triggerBtn.setAttribute("aria-expanded", wrap.classList.contains("open") ? "true" : "false");
+    if (triggerBtn) triggerBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
+    if (wrap.hasAttribute("data-anchored")) {
+      if (willOpen && typeof positionAnchoredMenu === "function") positionAnchoredMenu(wrap);
+      else if (!willOpen && typeof resetAnchoredMenu === "function") resetAnchoredMenu(wrap);
+    }
     return;
   }
   if (action === "removeParentOpen") {
@@ -317,6 +334,9 @@ document.addEventListener("click", (e) => {
     wrap.classList.remove("open");
     const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
     if (triggerBtn) triggerBtn.setAttribute("aria-expanded", "false");
+    if (wrap.hasAttribute("data-anchored") && typeof resetAnchoredMenu === "function") {
+      resetAnchoredMenu(wrap);
+    }
     return;
   }
   if (action === "reloadPage") {

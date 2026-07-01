@@ -266,7 +266,7 @@ function openGamePlanCoverageMatrix() {
 function _gpResolveOpponentTendencies() {
   let opponents =
     typeof tendenciesOpponents !== "undefined" &&
-    Array.isArray(tendenciesOpponents)
+      Array.isArray(tendenciesOpponents)
       ? tendenciesOpponents
       : [];
   if (opponents.length === 0 && typeof storageManager !== "undefined" && typeof STORAGE_KEYS !== "undefined") {

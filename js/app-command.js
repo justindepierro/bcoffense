@@ -544,8 +544,8 @@ function _buildCommandPlayActionItems(match, index) {
         kind: "Plan",
         title: `Add ${title} to Game Plan`,
         subtitle: `Routes to ${typeof _gpBoxLabel === "function"
-            ? _gpBoxLabel(_getCommandGamePlanBoxId(play))
-            : "the matching"
+          ? _gpBoxLabel(_getCommandGamePlanBoxId(play))
+          : "the matching"
           } box`,
         keywords: `add game plan board box ${match.haystack}`,
         priority: actionPriority + 0.01,

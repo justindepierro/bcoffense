@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v756";
+const CACHE_NAME = "bcoffense-v757";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -44,7 +44,7 @@ function cachePut(request, response) {
   return caches
     .open(CACHE_NAME)
     .then((cache) => cache.put(request, response))
-    .catch(() => {});
+    .catch(() => { });
 }
 
 // Allow the app to trigger a cache refresh
@@ -209,6 +209,7 @@ const LOCAL_ASSETS = [
   "./js/gameplan-snapshots.js",
   "./js/print-studio.js",
   "./js/script-events.js",
+  "./js/anchored-menu.js",
   "./js/app-events.js",
   "./js/app-command.js",
   "./js/app-shell.js",

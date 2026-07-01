@@ -37,10 +37,10 @@ function renderTendenciesHome() {
 
   try {
     const opponentList = tendenciesOpponents
-    .map((opp, i) => {
-      const safeName = escapeHtml(opp.name);
-      const playLabel = `${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}`;
-      return `
+      .map((opp, i) => {
+        const safeName = escapeHtml(opp.name);
+        const playLabel = `${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}`;
+        return `
     <div class="td-opponent-card" data-idx="${i}">
       <button type="button" class="td-opponent-card-main" data-action="selectTendenciesOpponent" data-idx="${i}" aria-label="Open scouting report for ${safeName}">
         <span class="td-opponent-card-info">
@@ -60,10 +60,10 @@ function renderTendenciesHome() {
       </div>
     </div>
   `;
-    })
-    .join("");
+      })
+      .join("");
 
-  container.innerHTML = `
+    container.innerHTML = `
     <div class="td-home">
       <div class="td-home-header">
         <h2>🎯 Opponent Scout</h2>
@@ -75,12 +75,12 @@ function renderTendenciesHome() {
           <button class="btn btn-primary" data-action="addTendenciesOpponent">＋ New Opponent</button>
         </div>
         ${tendenciesOpponents.length === 0
-      ? '<div class="empty-state empty-state--bordered empty-state--spaced"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
-      : `<div class="td-opponent-list">${opponentList}</div>`
-    }
+        ? '<div class="empty-state empty-state--bordered empty-state--spaced"><span class="empty-state__icon">🏈</span><p class="empty-state__text">No opponents yet. Add one to start charting!</p></div>'
+        : `<div class="td-opponent-list">${opponentList}</div>`
+      }
       </div>
       ${tendenciesOpponents.length > 0
-      ? `<div class="td-export-section">
+        ? `<div class="td-export-section">
             <div class="td-section-header"><h3>📤 Export / Import</h3></div>
             <div class="td-export-buttons">
               <button class="btn btn-secondary" data-action="exportTendenciesCSV">📄 Export All (CSV)</button>
@@ -89,14 +89,14 @@ function renderTendenciesHome() {
               <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>
           </div>`
-      : `<div class="td-export-section">
+        : `<div class="td-export-section">
             <div class="td-section-header"><h3>📥 Import</h3></div>
             <div class="td-export-buttons">
               <button class="btn btn-secondary" data-action="importTendenciesJSON">📥 Import JSON</button>
               <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>
           </div>`
-    }
+      }
     </div>
   `;
   } catch (err) {
