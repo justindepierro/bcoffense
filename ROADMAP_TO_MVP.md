@@ -214,11 +214,11 @@ Example:
   - Done as part of Phase 13; all six module toolbars catalogued and annotated with shared primitives.
 - [x] **8.** Add a development report that lists visible fixed and absolute-positioned floating layers.
 - [x] **9.** Add a development report that lists elements creating horizontal overflow.
-- [ ] **10.** Add interaction tests for every top-level tab.
-- [ ] **11.** Add a test proving Opponent Scout renders a nonempty home state.
-- [ ] **12.** Add a test proving an opponent card opens its detail view.
-- [ ] **13.** Add a test proving nested rename/delete actions do not also open the card.
-- [ ] **14.** Add screenshots for empty, populated, and active Opponent Scout states.
+- [x] **10.** Add interaction tests for every top-level tab.
+- [x] **11.** Add a test proving Opponent Scout renders a nonempty home state.
+- [x] **12.** Add a test proving an opponent card opens its detail view.
+- [x] **13.** Add a test proving nested rename/delete actions do not also open the card.
+- [x] **14.** Add screenshots for empty, populated, and active Opponent Scout states.
 - [ ] **15.** Establish baseline task times for Playbook-to-Call-Sheet workflow.
 
 ## Phase 2 — Canonical workflow and information architecture
@@ -256,7 +256,7 @@ Example:
 - [x] **36.** Add artifact version numbers.
 - [x] **37.** Add source-version references.
 - [x] **38.** Add last-modified timestamps.
-- [ ] **39.** Add created-by and last-edited-by fields where authentication supports them.
+- [x] **39.** Add created-by and last-edited-by fields where authentication supports them.
 - [ ] **40.** Add team-level scope and Varsity/JV scope.
 - [x] **41.** Add a safe unassigned-game-week state.
   - `#gameWeekBar` is hidden when no opponent is set; all modules guard with `gw && gw.opponentName` checks before reading opponent data. Commit `1f16995` (SW v762).
@@ -325,7 +325,7 @@ Example:
 - [x] **97.** Add presentation mode for opponent summaries.
 - [x] **98.** Add export to Game Plan as structured recommendations, not just notes.
 - [x] **99.** Add opponent-specific archived reports by season/week.
-- [ ] **100.** Add tests for all opponent card and handoff actions.
+- [x] **100.** Add tests for all opponent card and handoff actions.
 
 ## Phase 6 — Playbook as the source of truth
 
@@ -500,8 +500,8 @@ Example:
   - `data-anchored` added to the per-opponent card overflow `.tool-menu-wrap` in `tendencies-render.js`. Commit `4685f43` (SW v784).
 - [x] **204.** Migrate column visibility menus.
   - `.column-toggle` converted to `tool-menu-wrap column-toggle data-anchored`; button uses `toggleParentOpen`; menu uses `data-keep-open` so checkbox clicks don't auto-close it; `app-events.js` click handler respects `data-keep-open`; `toggleColumnMenu()`/`hideColumnMenu()` updated to use anchored wrap open/close. Commit `81b5080` (SW v787).
-- [ ] **205.** Add automated edge tests at all four viewport corners.
-- [ ] **206.** Add tests inside sticky and scrollable containers.
+- [x] **205.** Add automated edge tests at all four viewport corners.
+- [x] **206.** Add tests inside sticky and scrollable containers.
 - [x] **207.** Remove obsolete page-specific positioning code after migration.
 
 ## Phase 12 — Mobile page-header compaction
@@ -529,7 +529,7 @@ Example:
   - Tab strip uses short work-action labels ("Playbook", "Practice Script Builder", etc.); in-panel headers use descriptive h2 titles ("Build clear, game-ready wristbands") — distinct, non-repetitive.
 - [x] **222.** Add `aria-expanded` and accessible labels to help disclosures.
   - Native `<details>`/`<summary>` elements expose `aria-expanded` automatically via browser accessibility tree; all `.page-help` disclosures use this pattern. Commit `0488e0c` (SW v758).
-- [ ] **223.** Test header height with long opponent names and localization-safe wrapping.
+- [x] **223.** Test header height with long opponent names and localization-safe wrapping.
 
 ## Phase 13 — Responsive button layout system
 
@@ -579,7 +579,7 @@ Example:
 - [x] **251.** Use ResizeObserver to detect when a toolbar cannot fit.
 - [x] **252.** Avoid measuring every frame or creating layout loops.
   - No per-frame measurement code exists in the codebase; anchored-menu positioning only runs on `toggle` + debounced `scroll`/`resize` events. Guideline followed.
-- [ ] **253.** Add screenshots for each toolbar at key widths.
+- [x] **253.** Add screenshots for each toolbar at key widths.
 - [x] **254.** Migrate Call Sheet toolbar.
   - `cs-toolbar-left` + `toolbar-primary`; `cs-toolbar-right` + `toolbar-overflow`. Commit `81dbab8` (SW v783).
 - [x] **255.** Migrate Wristband toolbar.
@@ -620,17 +620,17 @@ Example:
 
 ## Phase 15 — Validation, polish, and rollout
 
-- [ ] **271.** Add end-to-end test: select active opponent.
-- [ ] **272.** Add end-to-end test: chart scout data.
-- [ ] **273.** Add end-to-end test: send recommendation to Game Plan.
-- [ ] **274.** Add end-to-end test: push Game Plan to Practice.
-- [ ] **275.** Add end-to-end test: create/load Wristband.
-- [ ] **276.** Add end-to-end test: load Wristband into Call Sheet.
-- [ ] **277.** Add end-to-end test: print final artifacts.
-- [ ] **278.** Assert stable play IDs survive every transfer.
-- [ ] **279.** Assert no duplicate play creation during repeated handoffs.
-- [ ] **280.** Assert manual destination edits survive reconcile unless replacement is confirmed.
-- [ ] **281.** Assert out-of-sync badges appear after upstream changes.
+- [x] **271.** Add end-to-end test: select active opponent.
+- [x] **272.** Add end-to-end test: chart scout data.
+- [x] **273.** Add end-to-end test: send recommendation to Game Plan.
+- [x] **274.** Add end-to-end test: push Game Plan to Practice.
+- [x] **275.** Add end-to-end test: create/load Wristband.
+- [x] **276.** Add end-to-end test: load Wristband into Call Sheet.
+- [x] **277.** Add end-to-end test: print final artifacts.
+- [x] **278.** Assert stable play IDs survive every transfer.
+- [x] **279.** Assert no duplicate play creation during repeated handoffs.
+- [x] **280.** Assert manual destination edits survive reconcile unless replacement is confirmed.
+- [x] **281.** Assert out-of-sync badges appear after upstream changes.
 - [x] **282.** Assert every dropdown stays inside viewport.
 - [x] **283.** Assert every dropdown remains anchored during scroll and resize.
 - [x] **284.** Assert headers remain compact on phone.
@@ -649,7 +649,7 @@ Example:
 - [ ] **297.** Document the final workflow for coaches.
 - [x] **298.** Add a one-screen first-use walkthrough.
 - [ ] **299.** Collect coach feedback on terminology and ordering.
-- [ ] **300.** Archive obsolete CSS and JavaScript only after successful regression testing.
+- [x] **300.** Archive obsolete CSS and JavaScript only after successful regression testing.
 
 ---
 
@@ -668,15 +668,15 @@ Example:
 ## Release 2 — Opponent Scout product rebuild
 
 - [x] Scout Overview.
-- [ ] Film/game grouping.
-- [ ] Tendency summaries.
+- [x] Film/game grouping.
+- [x] Tendency summaries.
 - [x] Confidence/sample-size indicators.
-- [ ] Recommendations linked to Playbook and Game Plan.
-- [ ] Mobile/iPad charting redesign.
+- [x] Recommendations linked to Playbook and Game Plan.
+- [x] Mobile/iPad charting redesign.
 
 ## Release 3 — Workflow handoffs
 
-- [ ] Stable play identity across modules.
+- [x] Stable play identity across modules.
 - [x] Transfer receipts.
 - [x] Reconcile instead of overwrite.
   - Script reconcile (`reconcileScriptWithGamePlan`), Wristband reconcile (`reconcileWristbandWithSource`), CS pre-snapshot undo on every push. Commits `c5897a6`, `9ff5701`.
@@ -693,7 +693,7 @@ Example:
   - `finalizeWeek()` checklist modal with 8 critical-bucket validation + orphan-play + wristband checks. Commit `4960d40` (SW v780).
 - [x] Locked game-day snapshots.
   - `CALLSHEET_SNAPSHOTS` saves up to 10 dated snapshots on finalize. Commit `4960d40` (SW v780).
-- [ ] Unified Present and Print entry points.
+- [x] Unified Present and Print entry points.
 
 ---
 

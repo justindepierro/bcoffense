@@ -557,6 +557,10 @@ function savePlayEditor(opts = {}) {
     });
     existing.playerAssignments = data.playerAssignments;
     existing.updatedAt = Date.now();
+    if (typeof getCurrentAuthUser === "function") {
+      const u = getCurrentAuthUser();
+      if (u && u.username) existing._lastEditedBy = u.username;
+    }
     _syncGamePlanCheckbox(existing);
     showToast("✏️ Play updated", { duration: 2000, type: "success" });
   } else {
@@ -571,6 +575,13 @@ function savePlayEditor(opts = {}) {
     newPlay.respNotes = data.respNotes || "";
     if (typeof createPlayId === "function") newPlay.id = createPlayId();
     newPlay.createdAt = Date.now();
+    if (typeof getCurrentAuthUser === "function") {
+      const u = getCurrentAuthUser();
+      if (u && u.username) {
+        newPlay._createdBy = u.username;
+        newPlay._lastEditedBy = u.username;
+      }
+    }
     if (data.playerAssignments) newPlay.playerAssignments = data.playerAssignments;
     plays.push(newPlay);
     _syncGamePlanCheckbox(newPlay);
