@@ -274,10 +274,10 @@ Example:
 
 ## Phase 5 — Opponent Scout rebuild
 
-- [ ] **61.** Replace the current plain opponent list with opponent workspace cards.
-- [ ] **62.** Show opponent name, record/date metadata if available, charted-play count, games charted, and last updated.
+- [x] **61.** Replace the current plain opponent list with opponent workspace cards.
+- [x] **62.** Show opponent name, record/date metadata if available, charted-play count, games charted, and last updated.
 - [x] **63.** Show whether the opponent is active for the current week.
-- [ ] **64.** Show a scout completeness score based on sample size and field coverage.
+- [x] **64.** Show a scout completeness score based on sample size and field coverage.
 - [x] **65.** Make the full card a reliable accessible button or link.
 - [x] **66.** Move rename/delete into an explicit overflow menu.
 - [x] **67.** Stop nested action bubbling from triggering card navigation.
@@ -285,11 +285,11 @@ Example:
 - [x] **69.** Add a Scout Overview screen before the raw play table.
 - [x] **70.** Show sample-size warnings.
 - [x] **71.** Show run/pass tendency summary.
-- [ ] **72.** Show personnel summary.
+- [x] **72.** Show personnel summary.
 - [x] **73.** Show formation summary.
 - [x] **74.** Show down-and-distance summary.
 - [x] **75.** Show field-zone summary.
-- [ ] **76.** Show motion/shift summary.
+- [x] **76.** Show motion/shift summary.
 - [x] **77.** Show pressure/blitz summary if charted.
 - [x] **78.** Show coverage/front summary if charted.
 - [x] **79.** Show top tendencies with confidence indicators.

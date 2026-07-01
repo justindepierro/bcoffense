@@ -219,6 +219,12 @@ const TENDENCIES_STEPS = [
         label: "Off. Formation",
         options: "offenseFormation",
       },
+      {
+        key: "offensePersonnel",
+        type: "text",
+        label: "Personnel",
+        placeholder: "e.g. 11, 12, 20",
+      },
     ],
   },
   {
@@ -424,6 +430,7 @@ const KEY_TO_CSV = {
   situation: "Situation",
   offensePlayType: "Offense Play Type",
   offenseFormation: "Offense Formation",
+  offensePersonnel: "Offense Personnel",
   defFront: "Def Front",
   defCoverage: "Def Coverage",
   defStunt: "Def Stunt",
@@ -465,6 +472,7 @@ const TD_COLUMNS = [
   { key: "_fieldPos", label: "Field Pos", sortable: true, sortKey: "yardLine" },
   { key: "situation", label: "Situation", sortable: true },
   { key: "offenseFormation", label: "Off Form", sortable: true },
+  { key: "offensePersonnel", label: "Personnel", sortable: true },
   { key: "offensePlayType", label: "Off Type", sortable: true },
   { key: "defFront", label: "Def Front", sortable: true },
   { key: "defCoverage", label: "Def Cov", sortable: true },

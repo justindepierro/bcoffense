@@ -203,11 +203,11 @@ function _dashBuildActivityItem(event) {
 }
 
 
-  if (!timestamp) return "no saved date";
-  const ageMs = Date.now() - timestamp;
-  if (ageMs < 60 * 60 * 1000) return "saved this hour";
-  const days = Math.max(1, Math.round(ageMs / (24 * 60 * 60 * 1000)));
-  return `saved ${days} day${days === 1 ? "" : "s"} ago`;
+if (!timestamp) return "no saved date";
+const ageMs = Date.now() - timestamp;
+if (ageMs < 60 * 60 * 1000) return "saved this hour";
+const days = Math.max(1, Math.round(ageMs / (24 * 60 * 60 * 1000)));
+return `saved ${days} day${days === 1 ? "" : "s"} ago`;
 }
 
 function _dashIsStaleSavedAt(value) {
@@ -1293,8 +1293,8 @@ function renderGameWeekCommandCenter(gw, opponents) {
       </div>
       <ul class="dash-activity-list" role="list">
         ${activityFeed.length > 0
-          ? activityHtml
-          : `<li class="dash-activity-empty">Start working in any module — activity will appear here.</li>`}
+      ? activityHtml
+      : `<li class="dash-activity-empty">Start working in any module — activity will appear here.</li>`}
       </ul>
     </div>
     <div class="dash-weekly-focus" aria-label="Weekly notes and install priorities">

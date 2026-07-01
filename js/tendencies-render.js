@@ -31,6 +31,28 @@ function renderTendenciesError(err, retryAction = "initTendencies") {
   `;
 }
 
+function _tdComputeCompleteness(opp) {
+  const KEY_FIELDS = [
+    "down", "distance", "hash", "situation",
+    "offenseFormation", "offensePlayType", "offensePersonnel",
+    "defFront", "defCoverage", "defBlitz",
+  ];
+  const TARGET_SAMPLE = 20;
+  const plays = opp.plays || [];
+  if (plays.length === 0) return { score: 0, pct: 0, label: "No data", level: "empty" };
+  const samplePts = Math.min(plays.length / TARGET_SAMPLE, 1) * 40;
+  const fieldPts = plays.length > 0
+    ? (plays.reduce((sum, play) => {
+        const filled = KEY_FIELDS.filter((k) => play[k] && String(play[k]).trim()).length;
+        return sum + (filled / KEY_FIELDS.length);
+      }, 0) / plays.length) * 60
+    : 0;
+  const score = Math.round(samplePts + fieldPts);
+  const level = score >= 80 ? "high" : score >= 50 ? "med" : "low";
+  const label = score >= 80 ? "Strong" : score >= 50 ? "Developing" : "Thin";
+  return { score, pct: score, label, level };
+}
+
 function renderTendenciesHome() {
   const container = document.getElementById("tendenciesContent");
   if (!container) return;
@@ -40,12 +62,38 @@ function renderTendenciesHome() {
       .map((opp, i) => {
         const safeName = escapeHtml(opp.name);
         const playLabel = `${opp.plays.length} play${opp.plays.length !== 1 ? "s" : ""}`;
+        const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+        const isActiveOpp = gw && String(gw.opponentName || "").toLowerCase() === String(opp.name || "").toLowerCase();
+        const gameCnt = typeof _tdGetGameGroups === "function"
+          ? _tdGetGameGroups(opp.plays).filter((g) => g.label !== "No Game Label").length
+          : 0;
+        const lastGame = (() => {
+          const labeled = opp.plays.filter((p) => p.game || p.week)
+            .map((p) => [p.week, p.game].filter(Boolean).join(" – "))
+            .filter(Boolean);
+          return labeled.length > 0 ? labeled[labeled.length - 1] : "";
+        })();
+        const comp = _tdComputeCompleteness(opp);
         return `
     <div class="td-opponent-card" data-idx="${i}">
       <button type="button" class="td-opponent-card-main" data-action="selectTendenciesOpponent" data-idx="${i}" aria-label="Open scouting report for ${safeName}">
         <span class="td-opponent-card-info">
-          <span class="td-opponent-name">${safeName}</span>
-          <span class="td-opponent-count">${playLabel}</span>
+          <span class="td-opp-name-row">
+            <span class="td-opponent-name">${safeName}</span>
+            ${isActiveOpp ? `<span class="td-opp-badge td-opp-badge--active">✅ Active</span>` : ""}
+          </span>
+          <span class="td-opp-meta">
+            <span class="td-opponent-count">${playLabel}</span>
+            ${gameCnt > 0 ? `<span class="td-opp-sep">·</span><span class="td-opp-games">${gameCnt} game${gameCnt !== 1 ? "s" : ""}</span>` : ""}
+            ${lastGame ? `<span class="td-opp-sep">·</span><span class="td-opp-last-game">${escapeHtml(lastGame)}</span>` : ""}
+          </span>
+          ${opp.plays.length > 0 ? `
+          <span class="td-opp-completeness" title="${comp.label} scout — ${comp.score}% complete">
+            <span class="td-opp-completeness-bar">
+              <span class="td-opp-completeness-fill td-comp-${comp.level}" style="width:${comp.pct}%"></span>
+            </span>
+            <span class="td-opp-completeness-label">${comp.score}% complete</span>
+          </span>` : ""}
         </span>
         <span class="td-opponent-card-chevron" aria-hidden="true">›</span>
       </button>
@@ -55,6 +103,7 @@ function renderTendenciesHome() {
         </button>
         <div class="tool-menu" data-action="removeParentOpen">
           <button type="button" data-action="renameTendenciesOpponent" data-idx="${i}">✏️ Rename</button>
+          <button type="button" data-action="exportSingleOpponentCSV" data-idx="${i}">📄 Export CSV</button>
           <button type="button" class="tool-menu-danger" data-action="deleteTendenciesOpponent" data-idx="${i}">🗑️ Delete</button>
         </div>
       </div>
@@ -224,6 +273,26 @@ function renderScoutOverview() {
     .filter((k) => _hashCounts[k])
     .map((name) => ({ name, count: _hashCounts[name], pct: _hashTotal > 0 ? Math.round((_hashCounts[name] / _hashTotal) * 100) : 0 }));
 
+  // Personnel distribution (#72)
+  const personnelCounts = {};
+  opp.plays.forEach((p) => {
+    if (p.offensePersonnel) personnelCounts[p.offensePersonnel] = (personnelCounts[p.offensePersonnel] || 0) + 1;
+  });
+  const topPersonnel = Object.entries(personnelCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count, pct: Math.round((count / totalPlays) * 100) }));
+
+  // Field position distribution (#76)
+  const fieldPosCounts = {};
+  opp.plays.forEach((p) => {
+    if (p.fieldPosition) fieldPosCounts[p.fieldPosition] = (fieldPosCounts[p.fieldPosition] || 0) + 1;
+  });
+  const topFieldPos = Object.entries(fieldPosCounts)
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 5)
+    .map(([name, count]) => ({ name, count, pct: Math.round((count / totalPlays) * 100) }));
+
   // Sample-size warning
   const SAMPLE_MIN = 20;
   const sampleWarning = totalPlays < SAMPLE_MIN && totalPlays > 0
@@ -375,6 +444,18 @@ function renderScoutOverview() {
         <div class="td-ov-card">
           <h3 class="td-ov-title">📍 Hash Tendency</h3>
           ${barHtml(hashItems, "hash", _hashTotal)}
+        </div>` : ""}
+
+        ${topPersonnel.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">👥 Off. Personnel</h3>
+          ${barHtml(topPersonnel, "personnel", totalPlays)}
+        </div>` : ""}
+
+        ${topFieldPos.length > 0 ? `
+        <div class="td-ov-card">
+          <h3 class="td-ov-title">📌 Field Position</h3>
+          ${barHtml(topFieldPos, "field position", totalPlays)}
         </div>` : ""}
 
         ${recsCardHtml}

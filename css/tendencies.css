@@ -146,11 +146,66 @@
 .td-opponent-card-info {
   display: flex;
   flex-direction: column;
-  gap: 2px;
+  gap: 4px;
+}
+.td-opp-name-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
 }
 .td-opponent-name {
   font-weight: 600;
   font-size: var(--font-size-lg);
+}
+.td-opp-badge {
+  display: inline-block;
+  padding: 1px 7px;
+  border-radius: var(--radius-pill);
+  font-size: var(--font-size-xs);
+  font-weight: 700;
+  line-height: 1.6;
+}
+.td-opp-badge--active {
+  background: var(--color-success-light, #d1fae5);
+  color: var(--color-success);
+}
+.td-opp-meta {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  flex-wrap: wrap;
+  color: var(--color-text-light);
+  font-size: var(--font-size-sm);
+}
+.td-opp-sep { color: var(--color-border); }
+.td-opp-completeness {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  margin-top: 2px;
+}
+.td-opp-completeness-bar {
+  flex: 1 1 auto;
+  height: 4px;
+  max-width: 100px;
+  background: var(--color-border-light);
+  border-radius: var(--radius-pill);
+  overflow: hidden;
+}
+.td-opp-completeness-fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  transition: width 0.3s ease;
+}
+.td-comp-high  { background: var(--color-success); }
+.td-comp-med   { background: var(--color-warning); }
+.td-comp-low   { background: var(--color-danger); }
+.td-comp-empty { background: var(--color-border); }
+.td-opp-completeness-label {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
 }
 .td-opponent-count {
   color: var(--color-text-light);
