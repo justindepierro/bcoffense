@@ -1642,6 +1642,33 @@ function checkPageHelpContract() {
   console.log("page help contract ok");
 }
 
+function checkActionGridContract() {
+  // Immediate fix #6: one shared responsive action-grid/toolbar contract.
+  // Guards the reusable .action-grid primitive (two-column phone grid,
+  // single column when very narrow, full-width-primary spanning) and its
+  // first adoption on the Opponent Scout export/import group.
+  const components = read("css/components.css");
+  const tendencies = read("js/tendencies-render.js");
+
+  if (
+    !/\.action-grid\s*\{/.test(components) ||
+    !/grid-template-columns:\s*repeat\(2,\s*minmax\(0,\s*1fr\)\)/.test(components) ||
+    !/\.action-grid\s*>\s*\.full-width-primary/.test(components)
+  ) {
+    fail("shared .action-grid responsive contract is missing from components.css");
+  }
+
+  if (!/repeat\(3,\s*minmax\(0,\s*1fr\)\)/.test(components)) {
+    fail(".action-grid--icons three-column variant is missing");
+  }
+
+  if (!/class="td-export-buttons action-grid"/.test(tendencies)) {
+    fail("Opponent Scout export group does not adopt the .action-grid contract");
+  }
+
+  console.log("action grid contract ok");
+}
+
 function checkWristbandWorkspaceContracts() {
   const html = read("index.html");
   const wristband = read("js/wristband.js");
@@ -2331,6 +2358,7 @@ checkCallSheetMobileContracts();
 checkMobileCapabilityMatrix();
 checkAnchoredMenuContract();
 checkPageHelpContract();
+checkActionGridContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();

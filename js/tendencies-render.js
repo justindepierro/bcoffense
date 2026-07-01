@@ -82,7 +82,7 @@ function renderTendenciesHome() {
       ${tendenciesOpponents.length > 0
         ? `<div class="td-export-section">
             <div class="td-section-header"><h3>📤 Export / Import</h3></div>
-            <div class="td-export-buttons">
+            <div class="td-export-buttons action-grid">
               <button class="btn btn-secondary" data-action="exportTendenciesCSV">📄 Export All (CSV)</button>
               <button class="btn btn-secondary" data-action="exportTendenciesJSON">💾 Export All (JSON)</button>
               <button class="btn btn-secondary" data-action="importTendenciesJSON">📥 Import JSON</button>
@@ -91,7 +91,7 @@ function renderTendenciesHome() {
           </div>`
         : `<div class="td-export-section">
             <div class="td-section-header"><h3>📥 Import</h3></div>
-            <div class="td-export-buttons">
+            <div class="td-export-buttons action-grid">
               <button class="btn btn-secondary" data-action="importTendenciesJSON">📥 Import JSON</button>
               <button class="btn btn-secondary" data-action="importTendenciesCSV">📥 Import CSV</button>
             </div>

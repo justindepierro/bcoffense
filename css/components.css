@@ -4384,6 +4384,66 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   line-height: 1.4;
 }
 
+/* ── Responsive Action Grid (shared toolbar contract) ────────────
+   One control-layout primitive that transforms by width instead of
+   each page reinventing its own wrapping (roadmap #6 / Phase 13).
+
+   Desktop: actions flow on one row, sized to content, wrapping only
+     when the row runs out of space.
+   Phone (≤640px): even two-column grid with ≥44px touch targets and
+     stable DOM order (no auto-fit reordering).
+   Very narrow phone (≤380px): single column, labels intact.
+
+   Modifiers / helpers:
+     .action-grid--icons  → three columns on phone for short,
+                             icon-forward controls.
+     .full-width-primary  → a designated dominant action spans the
+       (or [data-action-span="full"]) full grid width on phone.
+
+   Usage:
+     <div class="action-grid">
+       <button class="btn btn-primary full-width-primary">Save</button>
+       <button class="btn">Export</button>
+       <button class="btn">Import</button>
+     </div>
+──────────────────────────────────────────────────────────────── */
+.action-grid {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-sm);
+}
+.action-grid > * {
+  min-height: 40px;
+}
+
+@media (max-width: 640px) {
+  .action-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    align-items: stretch;
+    gap: var(--space-sm);
+  }
+  .action-grid > * {
+    width: 100%;
+    min-height: 44px;
+  }
+  .action-grid--icons {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .action-grid > .full-width-primary,
+  .action-grid > [data-action-span="full"] {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 380px) {
+  .action-grid,
+  .action-grid--icons {
+    grid-template-columns: minmax(0, 1fr);
+  }
+}
+
 /* Consolidated hover styles */
 @media (hover: hover) {
   .csv-tpl-table tbody tr:hover {

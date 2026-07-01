@@ -39,20 +39,17 @@
   .td-section-header,
   .td-opponent-card,
   .td-detail-actions,
-  .td-export-buttons,
   .td-toolbar-left,
   .td-toolbar-right {
     align-items: stretch;
     flex-direction: column;
   }
   .td-opponent-card-actions,
-  .td-detail-actions,
-  .td-export-buttons {
+  .td-detail-actions {
     width: 100%;
   }
   .td-opponent-card-actions .btn,
   .td-detail-actions .btn,
-  .td-export-buttons .btn,
   .td-toolbar .btn {
     flex: 1 1 auto;
     min-height: 42px;
