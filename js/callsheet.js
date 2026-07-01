@@ -1543,7 +1543,7 @@ function updateNotOnSheetPanel(tab) {
         }
       });
     });
-  } catch (_) {}
+  } catch (_) { }
 
   // Wristband: wristband plays not on CS (#164)
   const wbMissing = [];
@@ -1562,7 +1562,7 @@ function updateNotOnSheetPanel(tab) {
         });
       });
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // Stale: CS plays not in the playbook (#165)
   const stale = [];
@@ -1573,7 +1573,7 @@ function updateNotOnSheetPanel(tab) {
         if (!allPlayKeys.has(csPlayKey(p))) stale.push({ play: p, catId });
       });
     });
-  } catch (_) {}
+  } catch (_) { }
 
   // --- Tab bar ---
   const tabs = [
@@ -1678,7 +1678,7 @@ function updateCSSourceBar() {
         }
       });
     });
-  } catch (_) {}
+  } catch (_) { }
 
   // Script: count script plays on CS
   let scriptOnCS = 0, scriptTotal = 0;
@@ -1688,14 +1688,14 @@ function updateCSSourceBar() {
       scriptTotal = rows.length;
       scriptOnCS = rows.filter((p) => isPlayOnCallSheet(p)).length;
     }
-  } catch (_) {}
+  } catch (_) { }
 
   // Wristband: loaded name from display element
   let wbName = "";
   try {
     const wbEl = document.getElementById("loadedWristbandDisplay");
     wbName = wbEl ? wbEl.textContent.trim() : "";
-  } catch (_) {}
+  } catch (_) { }
 
   const gpIcon = gpTotal === 0 ? "—" : gpOnCS === gpTotal ? "✅" : "⚠️";
   const scrIcon = scriptTotal === 0 ? "—" : scriptOnCS === scriptTotal ? "✅" : "⚠️";

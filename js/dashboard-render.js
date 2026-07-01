@@ -96,13 +96,6 @@ function _dashGetTimestamp(value) {
   return Number.isFinite(parsed) ? parsed : 0;
 }
 
-function _dashGetTimestamp(value) {
-  if (!value) return 0;
-  if (typeof value === "number" && Number.isFinite(value)) return value;
-  const parsed = new Date(value).getTime();
-  return Number.isFinite(parsed) ? parsed : 0;
-}
-
 function _dashBuildActivityFeed(gw) {
   const events = [];
 
@@ -202,12 +195,13 @@ function _dashBuildActivityItem(event) {
     </li>`;
 }
 
-
-if (!timestamp) return "no saved date";
-const ageMs = Date.now() - timestamp;
-if (ageMs < 60 * 60 * 1000) return "saved this hour";
-const days = Math.max(1, Math.round(ageMs / (24 * 60 * 60 * 1000)));
-return `saved ${days} day${days === 1 ? "" : "s"} ago`;
+function _dashFormatSavedAge(value) {
+  const timestamp = _dashGetTimestamp(value);
+  if (!timestamp) return "no saved date";
+  const ageMs = Date.now() - timestamp;
+  if (ageMs < 60 * 60 * 1000) return "saved this hour";
+  const days = Math.max(1, Math.round(ageMs / (24 * 60 * 60 * 1000)));
+  return `saved ${days} day${days === 1 ? "" : "s"} ago`;
 }
 
 function _dashIsStaleSavedAt(value) {

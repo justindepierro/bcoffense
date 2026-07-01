@@ -325,17 +325,18 @@ document.addEventListener("click", (e) => {
     if (triggerBtn) triggerBtn.setAttribute("aria-expanded", willOpen ? "true" : "false");
     if (wrap.hasAttribute("data-anchored")) {
       if (willOpen && typeof positionAnchoredMenu === "function") positionAnchoredMenu(wrap);
-      else if (!willOpen && typeof resetAnchoredMenu === "function") resetAnchoredMenu(wrap);
+      else if (!willOpen && typeof closeAnchoredMenu === "function") closeAnchoredMenu(wrap);
     }
     return;
   }
   if (action === "removeParentOpen") {
     const wrap = el.parentElement;
-    wrap.classList.remove("open");
-    const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
-    if (triggerBtn) triggerBtn.setAttribute("aria-expanded", "false");
-    if (wrap.hasAttribute("data-anchored") && typeof resetAnchoredMenu === "function") {
-      resetAnchoredMenu(wrap);
+    if (wrap.hasAttribute("data-anchored") && typeof closeAnchoredMenu === "function") {
+      closeAnchoredMenu(wrap);
+    } else {
+      wrap.classList.remove("open");
+      const triggerBtn = wrap.querySelector("[data-action='toggleParentOpen']");
+      if (triggerBtn) triggerBtn.setAttribute("aria-expanded", "false");
     }
     return;
   }
