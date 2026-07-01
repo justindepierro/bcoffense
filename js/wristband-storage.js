@@ -186,6 +186,8 @@ async function saveWristband() {
     );
     storageManager.set(STORAGE_KEYS.SAVED_WRISTBANDS, saved);
     finalizeWristbandSave(active);
+    // Record artifact modified timestamp (#38)
+    if (typeof recordArtifactModified === "function") recordArtifactModified("wristband");
     showToast(`"${active.title}" updated!`, { type: "success" });
   } catch (err) {
     console.error("saveWristband error:", err);

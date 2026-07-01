@@ -338,9 +338,21 @@ function filterPlaybookToGamePlan() {
 
 
 /**
- * Handle opponent selection change on dashboard
+ * Handle opponent selection change on dashboard (#27: warn on unsaved state)
  */
-function onDashOpponentChange(value) {
+async function onDashOpponentChange(value) {
+  if (scriptDirty || wristbandDirty) {
+    const proceed = await showConfirm(
+      "You have unsaved changes to your script or wristband. Switch opponents anyway?",
+      { title: "Unsaved Changes", confirmText: "Switch Anyway", cancelText: "Stay", danger: true },
+    );
+    if (!proceed) {
+      const gw = getGameWeek();
+      const sel = document.getElementById("dashOpponentSelect");
+      if (sel) sel.value = gw.opponentIndex !== null ? String(gw.opponentIndex) : "";
+      return;
+    }
+  }
   const idx = value === "" ? null : parseInt(value, 10);
   const weekLabel = document.getElementById("dashWeekLabel")?.value || "";
   setGameWeek(idx, weekLabel);
@@ -422,6 +434,77 @@ async function startNewGameWeek() {
   );
 
   if (typeof renderDashboard === "function") renderDashboard();
+}
+
+/**
+ * Duplicate the current game week for a rematch or repeat matchup (#43).
+ */
+async function duplicateGameWeek() {
+  const gw = getGameWeek();
+  const defaultLabel = gw.weekLabel ? `${gw.weekLabel} (Rematch)` : "Rematch";
+  const weekLabel = await showPrompt(
+    "Enter a label for the duplicate game week:",
+    defaultLabel,
+    { title: "Duplicate Game Week", placeholder: "Week 12 — Rematch" },
+  );
+  if (weekLabel === null) return;
+  setGameWeek(gw.opponentIndex, weekLabel.trim());
+  showToast("Game week duplicated.", { type: "success" });
+  if (typeof renderDashboard === "function") renderDashboard();
+}
+
+/**
+ * Archive the current game week snapshot (#44).
+ */
+function archiveGameWeek() {
+  const gw = getGameWeek();
+  if (!gw.opponentName && !gw.weekLabel) {
+    showModal("No active game week to archive.", { title: "Archive", icon: "📦" });
+    return;
+  }
+  const archive = storageManager.get(STORAGE_KEYS.GAME_WEEK_ARCHIVE, []);
+  archive.unshift({ ...gw, archivedAt: new Date().toISOString() });
+  if (archive.length > 20) archive.splice(20);
+  storageManager.set(STORAGE_KEYS.GAME_WEEK_ARCHIVE, archive);
+  showToast("Game week archived.", { type: "success" });
+}
+
+/**
+ * Show the game week archive and optionally restore an entry (#44).
+ */
+async function showGameWeekArchive() {
+  const archive = storageManager.get(STORAGE_KEYS.GAME_WEEK_ARCHIVE, []);
+  if (archive.length === 0) {
+    await showModal("No archived game weeks.", { title: "Game Week Archive", icon: "📦" });
+    return;
+  }
+  const items = archive.map((entry, i) => {
+    const opp = entry.opponentName || "(no opponent)";
+    const week = entry.weekLabel || "(no label)";
+    const date = entry.archivedAt ? new Date(entry.archivedAt).toLocaleDateString() : "";
+    return {
+      value: String(i),
+      label: `${opp} — ${week}${date ? " (archived " + date + ")" : ""}`,
+    };
+  });
+  const picked = await showListPicker("Restore a game week:", items, {
+    title: "Game Week Archive",
+    icon: "📦",
+  });
+  if (picked === null) return;
+  const entry = archive[parseInt(picked, 10)];
+  if (!entry) return;
+  const ok = await showConfirm(
+    `Restore game week: <strong>${escapeHtml(entry.opponentName || "(no opponent)")}</strong>${entry.weekLabel ? " — " + escapeHtml(entry.weekLabel) : ""}?`,
+    { title: "Restore Game Week", confirmText: "Restore", cancelText: "Cancel" },
+  );
+  if (!ok) return;
+  // eslint-disable-next-line no-unused-vars
+  const { archivedAt, ...gwData } = entry;
+  storageManager.set(STORAGE_KEYS.GAME_WEEK, gwData);
+  if (typeof updateGameWeekBar === "function") updateGameWeekBar();
+  if (typeof renderDashboard === "function") renderDashboard();
+  showToast("Game week restored.", { type: "success" });
 }
 
 /**

@@ -237,7 +237,7 @@ Example:
 - [x] **24.** Add a visible active-opponent indicator to the global shell.
 - [x] **25.** Add a visible game-week label to the global shell.
 - [x] **26.** Allow opponent switching from the shared context bar.
-- [ ] **27.** Warn before switching opponents when unsaved page state exists.
+- [x] **27.** Warn before switching opponents when unsaved page state exists.
 - [ ] **28.** Preserve each opponent’s last active page and artifact selections.
 - [x] **29.** Add Previous Step and Next Step controls where they provide a natural handoff.
   - Wristband toolbar: "← Script" and "Call Sheet →" quick-nav buttons. GP header: "→ Call Sheet", "📋 Script", "🏈 Wristband" handoff buttons. Dashboard: "Continue" buttons per artifact. Commit `9ff5701` (SW v777).
@@ -252,17 +252,17 @@ Example:
   - `getGameWeek()` in `utils.js` is the single shared read accessor used by all modules; `setGameWeek()` is the canonical write path that also fires `updateGameWeekBar()`. Commit `1f16995` (SW v762).
 - [ ] **33.** Replace duplicate opponent-name matching with stable opponent IDs where possible.
 - [ ] **34.** Add migration logic for existing name-based data.
-- [ ] **35.** Add artifact references for scout report, plan, scripts, wristband, and call sheet.
-- [ ] **36.** Add artifact version numbers.
-- [ ] **37.** Add source-version references.
-- [ ] **38.** Add last-modified timestamps.
+- [x] **35.** Add artifact references for scout report, plan, scripts, wristband, and call sheet.
+- [x] **36.** Add artifact version numbers.
+- [x] **37.** Add source-version references.
+- [x] **38.** Add last-modified timestamps.
 - [ ] **39.** Add created-by and last-edited-by fields where authentication supports them.
 - [ ] **40.** Add team-level scope and Varsity/JV scope.
 - [x] **41.** Add a safe unassigned-game-week state.
   - `#gameWeekBar` is hidden when no opponent is set; all modules guard with `gw && gw.opponentName` checks before reading opponent data. Commit `1f16995` (SW v762).
 - [ ] **42.** Add validation for orphaned artifact references.
-- [ ] **43.** Add a game-week duplication command for recurring opponents or rematches.
-- [ ] **44.** Add archive and restore support.
+- [x] **43.** Add a game-week duplication command for recurring opponents or rematches.
+- [x] **44.** Add archive and restore support.
 - [x] **45.** Add backward-compatible reads for older locally stored data.
   - `storageManager.get(key, default)` returns the default on parse failure or missing key; `runMigrations()` applies versioned transforms (v1→v3) on boot. Commit pre-existing, verified stable.
 
@@ -315,13 +315,13 @@ Example:
 - [x] **87.** Support charting separate games rather than one undifferentiated play pool.
 - [ ] **88.** Add quarter, score state, hash, field position, and drive context where useful.
 - [ ] **89.** Add charting templates for common opponent data.
-- [ ] **90.** Retain Rapid and Wizard modes, but make their purpose obvious.
+- [x] **90.** Retain Rapid and Wizard modes, but make their purpose obvious.
 - [ ] **91.** Create a phone-native charting workflow using one step/card at a time.
 - [ ] **92.** Create an iPad split view with play list, charting form, and live summary.
 - [ ] **93.** Replace wide tables on phone with cards or focused detail sheets.
 - [ ] **94.** Add direct import validation with field mapping preview.
 - [ ] **95.** Add duplicate-play/import detection.
-- [ ] **96.** Add a scout report print preset using the existing print suite.
+- [x] **96.** Add a scout report print preset using the existing print suite.
 - [ ] **97.** Add presentation mode for opponent summaries.
 - [ ] **98.** Add export to Game Plan as structured recommendations, not just notes.
 - [ ] **99.** Add opponent-specific archived reports by season/week.
@@ -444,7 +444,7 @@ Example:
   - `addSuggestionToSheet(categoryId, hash, idx)` executes immediate insert from smart suggestions modal. Verified existing.
 - [x] **169.** Preserve the full print layout and existing print suite.
   - Call Sheet print modal, layout, and CSS unchanged throughout all workflow additions. Source bar and reconcile panel hidden via `@media print`. Commit `4960d40` (SW v780).
-- [ ] **170.** Separate editing view, sideline situation view, and print preview.
+- [x] **170.** Separate editing view, sideline situation view, and print preview.
 - [x] **171.** Add Finalize Week action with validation checklist.
   - `finalizeWeek()` opens a checklist confirm modal, tallies issue/pass counts, and saves a snapshot on confirm. `🏁 Finalize` button in the source bar. Commit `4960d40` (SW v780).
 - [x] **172.** Validate that critical situations have calls.
@@ -502,7 +502,7 @@ Example:
   - `.column-toggle` converted to `tool-menu-wrap column-toggle data-anchored`; button uses `toggleParentOpen`; menu uses `data-keep-open` so checkbox clicks don't auto-close it; `app-events.js` click handler respects `data-keep-open`; `toggleColumnMenu()`/`hideColumnMenu()` updated to use anchored wrap open/close. Commit `81b5080` (SW v787).
 - [ ] **205.** Add automated edge tests at all four viewport corners.
 - [ ] **206.** Add tests inside sticky and scrollable containers.
-- [ ] **207.** Remove obsolete page-specific positioning code after migration.
+- [x] **207.** Remove obsolete page-specific positioning code after migration.
 
 ## Phase 12 — Mobile page-header compaction
 
@@ -514,7 +514,7 @@ Example:
 - [x] **212.** Add a compact Help or How It Works disclosure.
 - [x] **213.** Save dismissal/expanded preference by page.
   - `initPageHelp()` in `dom-helpers.js` wires all `<details class="page-help" data-help-key="...">` elements: reads/writes open state per key in `STORAGE_KEYS.PAGE_HELP_OPEN`; called from `app-init.js` after DOM bootstrap; key added to `storage.js`. Commit `81dbab8` (SW v783).
-- [ ] **214.** Show onboarding prose automatically only for new/empty states.
+- [x] **214.** Show onboarding prose automatically only for new/empty states.
 - [x] **215.** Replace permanent hint strips with small contextual help buttons.
 - [x] **216.** Convert the Call Sheet long hint to an expandable help sheet.
 - [x] **217.** Convert Script instructions into contextual help near relevant tools.
@@ -631,21 +631,21 @@ Example:
 - [ ] **279.** Assert no duplicate play creation during repeated handoffs.
 - [ ] **280.** Assert manual destination edits survive reconcile unless replacement is confirmed.
 - [ ] **281.** Assert out-of-sync badges appear after upstream changes.
-- [ ] **282.** Assert every dropdown stays inside viewport.
-- [ ] **283.** Assert every dropdown remains anchored during scroll and resize.
-- [ ] **284.** Assert headers remain compact on phone.
-- [ ] **285.** Assert button grids remain orderly at 320, 360, 390, 430, 768, 820, 1024, 1366, and 1440 widths.
-- [ ] **286.** Assert no button drops below minimum touch target size.
-- [ ] **287.** Assert no page-level horizontal overflow.
+- [x] **282.** Assert every dropdown stays inside viewport.
+- [x] **283.** Assert every dropdown remains anchored during scroll and resize.
+- [x] **284.** Assert headers remain compact on phone.
+- [x] **285.** Assert button grids remain orderly at 320, 360, 390, 430, 768, 820, 1024, 1366, and 1440 widths.
+- [x] **286.** Assert no button drops below minimum touch target size.
+- [x] **287.** Assert no page-level horizontal overflow.
 - [ ] **288.** Run manual iPad Safari and installed-web-app testing.
 - [ ] **289.** Run iPad portrait, landscape, split-screen, and external-display tests.
 - [ ] **290.** Run phone Safari and Chrome tests.
 - [ ] **291.** Measure the updated full-workflow task time.
 - [ ] **292.** Compare clicks, page switches, and duplicate data entry against baseline.
-- [ ] **293.** Roll out the shared menu utility before redesigning every page simultaneously.
-- [ ] **294.** Roll out the shared header and toolbar systems page by page.
-- [ ] **295.** Regress the printing suite after every structural page change.
-- [ ] **296.** Preserve print-only DOM and CSS separation.
+- [x] **293.** Roll out the shared menu utility before redesigning every page simultaneously.
+- [x] **294.** Roll out the shared header and toolbar systems page by page.
+- [x] **295.** Regress the printing suite after every structural page change.
+- [x] **296.** Preserve print-only DOM and CSS separation.
 - [ ] **297.** Document the final workflow for coaches.
 - [ ] **298.** Add a one-screen first-use walkthrough.
 - [ ] **299.** Collect coach feedback on terminology and ordering.

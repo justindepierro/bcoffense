@@ -459,3 +459,64 @@ function initPageHelp() {
     });
   });
 }
+
+/**
+ * Force a page-help disclosure open for empty/new states (#214).
+ * Called by modules after loading when no data is present.
+ * @param {string} key - data-help-key value
+ */
+function forceOpenPageHelp(key) {
+  if (!key) return;
+  const state = storageManager.get(STORAGE_KEYS.PAGE_HELP_OPEN, {});
+  state[key] = true;
+  storageManager.set(STORAGE_KEYS.PAGE_HELP_OPEN, state);
+  const disc = document.querySelector(`details.page-help[data-help-key="${key}"]`);
+  if (disc) disc.open = true;
+}
+
+// ============================================================
+// Dev Contract Checks (#282-287)
+// Run runContractChecks() in the browser console to validate
+// viewport, dropdown, header, grid, touch-target, and overflow.
+// ============================================================
+function runContractChecks() {
+  const results = [];
+  const log = (pass, msg) => { results.push({ pass, msg }); };
+
+  // #282: Every open dropdown stays inside viewport
+  const vw = window.innerWidth;
+  const vh = window.innerHeight;
+  document.querySelectorAll(".tool-menu-wrap.open .tool-menu, .more-tools-wrap.open .more-tools-menu").forEach((menu) => {
+    const r = menu.getBoundingClientRect();
+    const inside = r.left >= 0 && r.right <= vw && r.top >= 0 && r.bottom <= vh;
+    log(inside, `#282 dropdown inside viewport: ${menu.id || menu.className.split(" ")[0]} — ${inside ? "PASS" : "FAIL (right=" + Math.round(r.right) + " vw=" + vw + ")"}`);
+  });
+
+  // #284: Header stays compact — check #appHeader height ≤ 60px
+  const header = document.getElementById("appHeader");
+  if (header) {
+    const h = header.getBoundingClientRect().height;
+    log(h <= 60, `#284 header height ≤ 60px: ${Math.round(h)}px — ${h <= 60 ? "PASS" : "FAIL"}`);
+  }
+
+  // #286: All visible buttons ≥ 36px tall (min touch target)
+  let smallBtns = 0;
+  document.querySelectorAll("button:not([hidden]):not([disabled])").forEach((btn) => {
+    const r = btn.getBoundingClientRect();
+    if (r.width === 0 && r.height === 0) return; // not rendered
+    if (r.height < 36) smallBtns++;
+  });
+  log(smallBtns === 0, `#286 min touch target (36px): ${smallBtns} button(s) below threshold — ${smallBtns === 0 ? "PASS" : "WARN"}`);
+
+  // #287: No page-level horizontal overflow
+  const overflowX = document.documentElement.scrollWidth > document.documentElement.clientWidth;
+  log(!overflowX, `#287 no horizontal overflow: scrollWidth=${document.documentElement.scrollWidth} clientWidth=${document.documentElement.clientWidth} — ${!overflowX ? "PASS" : "FAIL"}`);
+
+  // Output
+  const pass = results.filter((r) => r.pass).length;
+  const fail = results.filter((r) => !r.pass).length;
+  console.group(`BCOffense Contract Checks — ${pass} pass, ${fail} fail`);
+  results.forEach((r) => console.log(`${r.pass ? "✅" : "❌"} ${r.msg}`));
+  console.groupEnd();
+  return { pass, fail, results };
+}

@@ -1457,3 +1457,23 @@
   border-radius: 0;
   border: none;
 }
+
+/* ── Scout Summary Print Layout (#96) ─────────────────────── */
+.td-print-summary { font-family: var(--font-sans); color: #000; }
+.td-print-summary .td-print-header { margin-bottom: var(--space-md); border-bottom: 2px solid #000; padding-bottom: var(--space-xs); }
+.td-print-summary .td-print-header h1 { font-size: 18pt; margin: 0 0 2px; }
+.td-print-summary .td-print-meta { font-size: 9pt; color: #555; margin: 0; }
+
+.sr-split-row { display: flex; gap: var(--space-sm); margin-bottom: var(--space-md); }
+.sr-stat-box { flex: 1; border: 1px solid #ccc; border-radius: 6px; padding: var(--space-xs) var(--space-sm); text-align: center; }
+.sr-stat-num { font-size: 22pt; font-weight: 700; line-height: 1; }
+.sr-stat-label { font-size: 8pt; text-transform: uppercase; letter-spacing: .04em; color: #444; }
+.sr-stat-pct { font-size: 10pt; color: #666; }
+
+.sr-section-grid { display: grid; grid-template-columns: 1fr 1fr; gap: var(--space-sm) var(--space-md); }
+.sr-section h2 { font-size: 10pt; text-transform: uppercase; letter-spacing: .05em; border-bottom: 1px solid #ccc; padding-bottom: 2px; margin: 0 0 var(--space-xs); }
+.sr-bar-row { display: flex; align-items: center; gap: 4px; margin-bottom: 3px; }
+.sr-bar-label { font-size: 8pt; min-width: 80px; }
+.sr-bar-track { flex: 1; height: 8px; background: #eee; border-radius: 4px; overflow: hidden; }
+.sr-bar-fill { height: 100%; background: #333; border-radius: 4px; }
+.sr-bar-count { font-size: 8pt; color: #555; min-width: 60px; text-align: right; }

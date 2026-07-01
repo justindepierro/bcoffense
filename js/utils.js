@@ -1699,6 +1699,9 @@ function getGameWeek() {
     opponentIndex: null,
     weekLabel: "",
     notes: "",
+    lastModified: {},
+    artifactVersions: {},
+    lastTabs: {},
   };
   const stored = storageManager.get(STORAGE_KEYS.GAME_WEEK, defaults);
   return stored && typeof stored === "object"
@@ -1747,6 +1750,19 @@ function setGameWeek(opponentIndex, weekLabel) {
   if (typeof invalidateScoutCache === "function") invalidateScoutCache();
   // Sync the persistent game-week bar across all pages
   if (typeof updateGameWeekBar === "function") updateGameWeekBar();
+}
+
+/**
+ * Record the last-modified timestamp and increment version for an artifact (#35-38).
+ * @param {string} type - "script" | "wristband" | "callsheet" | "gameplan" | "scout"
+ */
+function recordArtifactModified(type) {
+  const gw = getGameWeek();
+  if (!gw.lastModified || typeof gw.lastModified !== "object") gw.lastModified = {};
+  if (!gw.artifactVersions || typeof gw.artifactVersions !== "object") gw.artifactVersions = {};
+  gw.lastModified[type] = Date.now();
+  gw.artifactVersions[type] = (gw.artifactVersions[type] || 0) + 1;
+  storageManager.set(STORAGE_KEYS.GAME_WEEK, gw);
 }
 
 /**

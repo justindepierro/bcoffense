@@ -519,3 +519,21 @@ function restoreCallSheetDisplayOptions() {
   const opts = storageManager.get(STORAGE_KEYS.CALLSHEET_DISPLAY_OPTIONS, null);
   applyCallSheetDisplayState(opts);
 }
+
+// ── Sideline Mode (#170) ─────────────────────────────────────
+// Toggles a read-only presentation view: larger text, editing controls hidden.
+let _csSidelineMode = false;
+
+function toggleCsSidelineMode() {
+  _csSidelineMode = !_csSidelineMode;
+  const panel = document.getElementById("callsheet");
+  const btn = document.getElementById("csSidelineModeBtn");
+  if (panel) panel.classList.toggle("cs-sideline-mode", _csSidelineMode);
+  if (btn) {
+    btn.classList.toggle("btn-primary", _csSidelineMode);
+    btn.title = _csSidelineMode
+      ? "Exit sideline view"
+      : "Toggle sideline read-only view (larger text, no editing controls)";
+    btn.textContent = _csSidelineMode ? "✏️ Edit View" : "📋 Sideline View";
+  }
+}

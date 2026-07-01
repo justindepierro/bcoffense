@@ -4507,11 +4507,25 @@ body.shell-phone .pb-action-sheet {
   font-size: var(--font-size-xs);
   padding-left: 16px;
 }
-.pb-wf-s-ok   { color: var(--color-success); font-weight: 600; }
-.pb-wf-s-scout { color: var(--color-warning); font-weight: 600; }
-.pb-wf-s-empty { color: var(--color-text-muted); }
-.pb-wf-s-meta  { color: var(--color-text-secondary); }
+.pb-wf-s-ok {
+  color: var(--color-success);
+  font-weight: 600;
+}
+.pb-wf-s-scout {
+  color: var(--color-warning);
+  font-weight: 600;
+}
+.pb-wf-s-empty {
+  color: var(--color-text-muted);
+}
+.pb-wf-s-meta {
+  color: var(--color-text-secondary);
+}
 
 /* Chips become clickable when idx is attached */
-.pb-wf-chips[data-action] { cursor: pointer; }
-.pb-wf-chips[data-action]:hover .pb-wf-chip { opacity: 0.8; }
+.pb-wf-chips[data-action] {
+  cursor: pointer;
+}
+.pb-wf-chips[data-action]:hover .pb-wf-chip {
+  opacity: 0.8;
+}

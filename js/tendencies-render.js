@@ -542,6 +542,7 @@ function renderOpponentDetail() {
           <button class="btn btn-primary td-new-play-btn" data-action="startNewPlay">＋ New Play</button>
           <button class="btn btn-secondary" data-action="exportSingleOpponentCSV" data-idx="${tendenciesCurrentOpponent}">📄 CSV</button>
           <button class="btn btn-secondary" data-action="printTendencies">🖨️ Print</button>
+          <button class="btn btn-secondary" data-action="printScoutSummary" title="Print one-page scout report summary">📋 Summary</button>
           <button class="btn ${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "btn-success" : "btn-danger"}" data-action="setAsActiveOpponent" data-idx="${tendenciesCurrentOpponent}" title="Set this team as this week's opponent for scouting integration">${isActiveGameWeekOpponent(tendenciesCurrentOpponent) ? "✅ Active Opponent" : "🏈 Set Active"}</button>
         </div>
       </div>
@@ -587,7 +588,7 @@ function renderOpponentDetail() {
         </div>
         <div class="td-toolbar-right toolbar-overflow">
           <button class="btn btn-sm" data-action="toggleColumnPanel" title="Column visibility">👁️ Columns</button>
-          <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" data-action="toggleRapidMode" title="Toggle rapid chart mode">⚡ ${tendenciesRapidMode ? "Wizard" : "Rapid"}</button>
+          <button class="btn btn-sm ${tendenciesRapidMode ? "btn-primary" : ""}" data-action="toggleRapidMode" title="${tendenciesRapidMode ? 'Return to standard film log view' : 'Switch to all-fields rapid entry'}">⚡ ${tendenciesRapidMode ? "Exit Quick" : "Quick Chart"}</button>
           <span class="td-play-count">${filtered.length === totalPlays ? `${totalPlays} plays` : `${filtered.length} of ${totalPlays}`}</span>
         </div>
       </div>

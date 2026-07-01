@@ -4451,3 +4451,13 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   .cs-source-bar,
   .cs-not-on-sheet-panel { display: none !important; }
 }
+
+/* ── Sideline View Mode (#170) ─────────────────────────────── */
+/* Hide most toolbar controls but keep the exit button visible */
+#callsheet.cs-sideline-mode .cs-toolbar > *:not(#csSidelineModeBtn) { display: none; }
+#callsheet.cs-sideline-mode .cs-toolbar { justify-content: flex-end; }
+#callsheet.cs-sideline-mode .cs-quick-actions-wrap { display: none; }
+#callsheet.cs-sideline-mode .cs-constraints-panel { display: none; }
+#callsheet.cs-sideline-mode .cs-cell { font-size: var(--font-size-md); min-height: 28px; }
+#callsheet.cs-sideline-mode .cs-page { padding: var(--space-sm); }
+#callsheet.cs-sideline-mode .cs-category-header { font-size: var(--font-size-md); }

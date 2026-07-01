@@ -331,3 +331,137 @@ function downloadFile(content, filename, mimeType) {
   document.body.removeChild(a);
   URL.revokeObjectURL(url);
 }
+
+/**
+ * Print a one-page Scout Report Summary (#96) — overview stats, top fronts,
+ * coverages, and tendency bars without the raw play-by-play table.
+ */
+function printScoutSummary() {
+  if (tendenciesCurrentOpponent === null) return;
+  const opp = tendenciesOpponents[tendenciesCurrentOpponent];
+  if (!opp || opp.plays.length === 0) {
+    showModal("No plays to summarise.", { title: "Scout Report", icon: "🖨️" });
+    return;
+  }
+
+  try {
+    showToast("🖨️ Building scout summary…", 2500);
+
+    const plays = opp.plays;
+    const total = plays.length;
+
+    // Run/Pass split
+    const runTypes = new Set(["Run", "Draw", "QB Run", "Option"]);
+    const passTypes = new Set(["Pass", "Screen", "PA"]);
+    const runP = plays.filter((p) => runTypes.has(p.offensePlayType)).length;
+    const passP = plays.filter((p) => passTypes.has(p.offensePlayType)).length;
+    const blitzP = plays.filter((p) => p.defBlitz && p.defBlitz !== "None").length;
+    const pct = (n) => (total > 0 ? Math.round((n / total) * 100) : 0);
+
+    // Distribution helpers
+    const dist = (field) => {
+      const map = {};
+      plays.forEach((p) => { if (p[field]) map[p[field]] = (map[p[field]] || 0) + 1; });
+      return Object.entries(map).sort((a, b) => b[1] - a[1]);
+    };
+
+    const barHtml = (entries, cap = 8) =>
+      entries
+        .slice(0, cap)
+        .map(([k, v]) => {
+          const w = pct(v);
+          return `<div class="sr-bar-row">
+            <span class="sr-bar-label">${escapeHtml(k)}</span>
+            <div class="sr-bar-track"><div class="sr-bar-fill" style="width:${w}%"></div></div>
+            <span class="sr-bar-count">${v} (${w}%)</span>
+          </div>`;
+        })
+        .join("");
+
+    const frontDist = dist("defFront");
+    const covDist = dist("defCoverage");
+    const blitzDist = dist("defBlitz").filter(([k]) => k && k !== "None");
+    const downDist = dist("down");
+    const formDist = dist("offenseFormation");
+
+    const gw = getGameWeek();
+    const weekLabel = gw.weekLabel ? ` — ${escapeHtml(gw.weekLabel)}` : "";
+
+    const container = document.getElementById("tendenciesPrint");
+    const content = document.getElementById("tendenciesPrintContent");
+    if (!container || !content) return;
+
+    content.innerHTML = `
+      <div class="td-print-summary">
+        <div class="td-print-header">
+          <h1>${escapeHtml(opp.name)} Scout Report${weekLabel}</h1>
+          <p class="td-print-meta">${total} plays charted &nbsp;|&nbsp; Generated ${new Date().toLocaleDateString()}</p>
+        </div>
+
+        <div class="sr-split-row">
+          <div class="sr-stat-box">
+            <div class="sr-stat-num">${runP}</div>
+            <div class="sr-stat-label">Run Plays</div>
+            <div class="sr-stat-pct">${pct(runP)}%</div>
+          </div>
+          <div class="sr-stat-box">
+            <div class="sr-stat-num">${passP}</div>
+            <div class="sr-stat-label">Pass Plays</div>
+            <div class="sr-stat-pct">${pct(passP)}%</div>
+          </div>
+          <div class="sr-stat-box">
+            <div class="sr-stat-num">${blitzP}</div>
+            <div class="sr-stat-label">Blitz</div>
+            <div class="sr-stat-pct">${pct(blitzP)}%</div>
+          </div>
+          <div class="sr-stat-box">
+            <div class="sr-stat-num">${total}</div>
+            <div class="sr-stat-label">Total Plays</div>
+            <div class="sr-stat-pct">&nbsp;</div>
+          </div>
+        </div>
+
+        <div class="sr-section-grid">
+          <div class="sr-section">
+            <h2>Defensive Fronts</h2>
+            ${frontDist.length ? barHtml(frontDist) : "<p>No data</p>"}
+          </div>
+          <div class="sr-section">
+            <h2>Coverage Shell</h2>
+            ${covDist.length ? barHtml(covDist) : "<p>No data</p>"}
+          </div>
+          <div class="sr-section">
+            <h2>Blitz Packages</h2>
+            ${blitzDist.length ? barHtml(blitzDist) : "<p>None recorded</p>"}
+          </div>
+          <div class="sr-section">
+            <h2>Down Distribution</h2>
+            ${downDist.length ? barHtml(downDist, 4) : "<p>No data</p>"}
+          </div>
+          <div class="sr-section">
+            <h2>Offense Formations Faced</h2>
+            ${formDist.length ? barHtml(formDist) : "<p>No data</p>"}
+          </div>
+        </div>
+      </div>`;
+
+    document.body.dataset.printMode = "scout-summary";
+    container.classList.remove("hidden");
+
+    setTimeout(() => {
+      try {
+        const restoreTitle = setPrintTitle("Scout Summary", opp.name);
+        window.print();
+        restoreTitle();
+      } finally {
+        container.classList.add("hidden");
+        delete document.body.dataset.printMode;
+      }
+    }, 100);
+  } catch (err) {
+    console.error("printScoutSummary error:", err);
+    document.getElementById("tendenciesPrint")?.classList?.add("hidden");
+    delete document.body.dataset.printMode;
+    showToast("❌ Error printing scout summary.", { duration: 4000, type: "error" });
+  }
+}

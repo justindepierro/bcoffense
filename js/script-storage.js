@@ -373,6 +373,8 @@ async function saveScript() {
     loadSavedScriptsList();
     markScriptClean();
     discardDraftData(STORAGE_KEYS.SCRIPT_DRAFT);
+    // Record artifact modified timestamp (#38)
+    if (typeof recordArtifactModified === "function") recordArtifactModified("script");
     showToast(`✅ "${name}" saved!`);
     return true;
   } catch (err) {

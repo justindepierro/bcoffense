@@ -129,6 +129,7 @@ const STORAGE_KEYS = {
   MOTD: "motd",
   PLAYER_READY: "playerReady",
   PLAYER_PORTAL_BRANDING: "playerPortalBranding",
+  GAME_WEEK_ARCHIVE: "gameWeekArchive",
 };
 
 const MIGRATIONS = {
