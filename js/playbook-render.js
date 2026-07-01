@@ -1,4 +1,7 @@
 function renderPlaybook() {
+  // Guard against early renders (e.g. clip-index warm-up) firing before app.js
+  // has declared the `plays` global; a proper render follows once it loads.
+  if (typeof plays === "undefined" || !Array.isArray(plays)) return;
   try {
     const tbody = document.querySelector("#playbookTable tbody");
     const searchTerm =

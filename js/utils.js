@@ -1323,7 +1323,8 @@ function invalidatePlaybookRuntimeIndex() {
 }
 
 function getPlaybookRuntimeIndex() {
-  const list = Array.isArray(plays) ? plays : [];
+  const list =
+    typeof plays !== "undefined" && Array.isArray(plays) ? plays : [];
   if (_playbookRuntimeIndex && _playbookRuntimeIndexSource === list) {
     return _playbookRuntimeIndex;
   }

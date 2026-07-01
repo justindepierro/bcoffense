@@ -1115,6 +1115,10 @@ function jumpToPlayInPlaybook(idxOrStr) {
 }
 
 function renderScript() {
+  // Guard against early renders firing before app.js has declared the `script`
+  // global (where the identifier would otherwise resolve to the #script DOM
+  // element); a proper render follows once the app finishes initializing.
+  if (typeof script === "undefined" || !Array.isArray(script)) return;
   try {
     const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");
