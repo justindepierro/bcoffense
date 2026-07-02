@@ -1853,7 +1853,8 @@
   z-index: var(--z-modal);
   justify-content: center;
   align-items: flex-start;
-  padding-top: 15vh;
+  padding: clamp(var(--space-md), 12vh, var(--space-3xl)) var(--space-md)
+    var(--space-md);
 }
 .wb-quicksearch-overlay.visible {
   display: flex;
@@ -1862,6 +1863,9 @@
   background: var(--color-white);
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
+  display: flex;
+  flex-direction: column;
+  max-height: calc((var(--app-vh, 1vh) * 100) - (var(--space-xl) * 2));
   width: 90%;
   max-width: 520px;
   overflow: hidden;
@@ -1876,8 +1880,9 @@
   box-sizing: border-box;
 }
 .wb-quicksearch-results {
-  max-height: 40vh;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .wb-quicksearch-item {
   padding: 10px 20px;

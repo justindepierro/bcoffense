@@ -51,6 +51,74 @@ function initScriptControlsMode() {
   applyScriptControlsMode();
   applyScriptPlayRailState();
   closeScriptToolsDrawer();
+  initScriptWheelScrollBridge();
+}
+
+function isScriptWheelBridgeActive() {
+  const body = document.body;
+  return Boolean(
+    body &&
+    body.dataset.activeTab === "script" &&
+    !body.classList.contains("is-mobile-screen") &&
+    !body.classList.contains("app-layer-locked"),
+  );
+}
+
+function isScriptWheelBridgeInteractiveTarget(target) {
+  return Boolean(
+    target.closest(
+      "input, textarea, select, option, button, [contenteditable='true'], " +
+      ".script-tools-drawer, .script-display-panel, .tool-menu, " +
+      ".custom-modal, .modal-content, .cell-popup, [data-layer-open='true']",
+    ),
+  );
+}
+
+function getScriptWheelScrollableAncestor(target, boundary) {
+  let el = target;
+  while (el && el !== boundary) {
+    if (el.nodeType === Node.ELEMENT_NODE) {
+      const style = window.getComputedStyle(el);
+      const canScroll = /auto|scroll/.test(style.overflowY) &&
+        el.scrollHeight > el.clientHeight + 1;
+      if (canScroll) return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+}
+
+function handleScriptWheelScrollBridge(event) {
+  if (!isScriptWheelBridgeActive()) return;
+  if (Math.abs(event.deltaX) > Math.abs(event.deltaY)) return;
+
+  const scriptList = document.querySelector("#script .script-list");
+  const scriptContainer = document.getElementById("scriptPlays");
+  if (!scriptList || !scriptContainer || !scriptList.contains(event.target)) return;
+  if (scriptContainer.contains(event.target)) return;
+  if (isScriptWheelBridgeInteractiveTarget(event.target)) return;
+  if (getScriptWheelScrollableAncestor(event.target, scriptList)) return;
+
+  const multiplier = event.deltaMode === WheelEvent.DOM_DELTA_LINE
+    ? 16
+    : event.deltaMode === WheelEvent.DOM_DELTA_PAGE
+      ? scriptContainer.clientHeight
+      : 1;
+  const deltaY = event.deltaY * multiplier;
+  if (!deltaY) return;
+
+  const before = scriptContainer.scrollTop;
+  scriptContainer.scrollTop += deltaY;
+  if (scriptContainer.scrollTop !== before) {
+    event.preventDefault();
+  }
+}
+
+function initScriptWheelScrollBridge() {
+  const scriptList = document.querySelector("#script .script-list");
+  if (!scriptList || scriptList.dataset.wheelBridgeBound === "true") return;
+  scriptList.addEventListener("wheel", handleScriptWheelScrollBridge, { passive: false });
+  scriptList.dataset.wheelBridgeBound = "true";
 }
 
 function applyScriptPlayRailState() {

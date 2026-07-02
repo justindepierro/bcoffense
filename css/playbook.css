@@ -1564,8 +1564,10 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
 /* Drawer inner content scrollable */
 .pb-filter-drawer-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overflow-x: hidden;
+  overscroll-behavior: contain;
 }
 
 .pb-filter-drawer-body .pb-controls-row,
@@ -1629,7 +1631,7 @@ body.shell-phone .pb-utility-group {
   right: 0;
   bottom: 0;
   z-index: var(--z-modal);
-  max-height: 82vh;
+  max-height: calc(var(--app-vh, 1vh) * 82);
   background: var(--color-bg-body);
   border-top: 1px solid var(--color-border);
   border-top-left-radius: var(--radius-lg);
@@ -1667,7 +1669,9 @@ body.shell-phone .pb-action-sheet {
 }
 .pb-action-sheet-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 16px 20px;
   display: flex;
   flex-direction: column;
@@ -2191,6 +2195,7 @@ body.shell-phone .pb-action-sheet {
 .pb-drawer-overlay {
   position: fixed;
   inset: 0;
+  height: calc(var(--app-vh, 1vh) * 100);
   z-index: var(--z-modal);
   display: flex;
   justify-content: flex-end;
@@ -2250,7 +2255,9 @@ body.shell-phone .pb-action-sheet {
 }
 .pb-drawer-body {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 14px 16px;
 }
 
@@ -2786,7 +2793,7 @@ body.shell-phone .pb-action-sheet {
 .pb-sanitize-modal {
   max-width: 760px;
   width: 95vw;
-  max-height: calc(100vh - clamp(32px, 8vh, 64px));
+  max-height: calc((var(--app-vh, 1vh) * 100) - clamp(32px, 8vh, 64px));
   display: flex !important;
   flex-direction: column;
   overflow: hidden !important;
@@ -2865,12 +2872,13 @@ body.shell-phone .pb-action-sheet {
 }
 .pb-sanitize-list {
   flex: 1 1 auto;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-sm) 22px;
   display: flex;
   flex-direction: column;
   gap: var(--space-xs);
-  min-height: 200px;
   background: var(--color-bg-body);
 }
 .pb-sanitize-modal .custom-modal-actions {
@@ -4523,7 +4531,9 @@ body.shell-phone .pb-action-sheet {
   font-size: var(--font-size-xs);
   gap: 3px;
   opacity: 0.7;
-  transition: opacity var(--transition-fast), color var(--transition-fast);
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast);
   flex-shrink: 0;
 }
 .pb-wf-like-btn:hover {

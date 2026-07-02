@@ -154,8 +154,9 @@
 
 /* Readiness Modal */
 .readiness-modal-list {
-  max-height: 55vh;
+  max-height: calc(var(--app-vh, 1vh) * 55);
   overflow-y: auto;
+  overscroll-behavior: contain;
   display: flex;
   flex-direction: column;
   gap: 10px;
@@ -704,8 +705,9 @@
   font-weight: 600;
 }
 .sir-container {
-  max-height: 70vh;
+  max-height: calc(var(--app-vh, 1vh) * 70);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 2px;
 }
 /* Overview banner */

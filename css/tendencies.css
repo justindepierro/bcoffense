@@ -1274,8 +1274,9 @@
     opacity var(--transition-fast),
     transform var(--transition-fast);
   pointer-events: none;
-  max-height: 400px;
+  max-height: min(400px, calc((var(--app-vh, 1vh) * 100) - (var(--space-xl) * 2)));
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .td-tip-visible {
   opacity: 1;
@@ -1400,8 +1401,9 @@
     right: 0;
     bottom: 0;
     margin: 0;
-    max-height: 75vh;
+    max-height: calc(var(--app-vh, 1vh) * 75);
     overflow-y: auto;
+    overscroll-behavior: contain;
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     border-bottom: none;
     padding-bottom: max(var(--space-md), env(safe-area-inset-bottom));

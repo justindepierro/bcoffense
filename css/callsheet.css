@@ -1712,12 +1712,16 @@ body.shell-phone #callsheet .cs-empty-cat {
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: var(--space-md);
   z-index: var(--z-modal);
 }
 .cs-sort-modal {
   background: var(--color-white);
   border-radius: var(--radius-lg);
+  display: flex;
+  flex-direction: column;
   max-width: 480px;
+  max-height: calc((var(--app-vh, 1vh) * 100) - (var(--space-xl) * 2));
   width: 92%;
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
   overflow: hidden;
@@ -1738,6 +1742,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-shrink: 0;
   padding: 16px 20px;
   border-bottom: 1px solid var(--color-border-light);
 }
@@ -1756,6 +1761,9 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 .cs-sort-body {
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 16px 20px;
 }
 .cs-sort-desc {
@@ -1765,6 +1773,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 .cs-sort-actions {
   display: flex;
+  flex-shrink: 0;
   gap: 10px;
   justify-content: flex-end;
   padding: 12px 20px;
@@ -3450,6 +3459,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   top: 0;
   right: 0;
   bottom: 0;
+  height: calc(var(--app-vh, 1vh) * 100);
   width: 380px;
   max-width: 90vw;
   background: var(--color-bg-light);
@@ -3482,6 +3492,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   background: var(--color-bg-lighter);
   display: flex;
   flex-direction: column;
+  flex-shrink: 0;
   gap: var(--space-sm);
 }
 .gp-drawer-title-row {
@@ -3697,7 +3708,9 @@ body.shell-phone #callsheet .cs-empty-cat {
 
 .gp-drawer-list {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-sm);
   display: flex;
   flex-direction: column;
@@ -3842,6 +3855,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 }
 
 .gp-drawer-footer {
+  flex-shrink: 0;
   padding: 8px var(--space-md);
   border-top: 1px solid var(--color-border);
   background: var(--color-bg-lighter);
