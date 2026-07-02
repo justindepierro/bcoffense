@@ -5307,7 +5307,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   display: none;
   position: fixed;
   inset: 0;
-  background: rgba(0,0,0,0.45);
+  background: rgba(0, 0, 0, 0.45);
   z-index: var(--z-modal, 9000);
   align-items: center;
   justify-content: center;
@@ -5355,7 +5355,9 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   color: var(--color-text-muted);
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
 }
 .disc-floating-close:hover {
   color: var(--color-danger);

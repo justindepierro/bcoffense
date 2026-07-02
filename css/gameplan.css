@@ -3234,7 +3234,9 @@ body.gp-printing .gp-print-detail-val {
   border-radius: var(--radius-sm);
   font-size: var(--font-size-sm);
   color: var(--color-text-muted);
-  transition: color var(--transition-fast), background var(--transition-fast);
+  transition:
+    color var(--transition-fast),
+    background var(--transition-fast);
   position: relative;
 }
 .gp-box-play-disc:hover {
@@ -3262,7 +3264,9 @@ body.gp-printing .gp-print-detail-val {
   font-weight: 700;
   line-height: 1;
 }
-.gp-disc-badge.hidden { display: none; }
+.gp-disc-badge.hidden {
+  display: none;
+}
 
 .has-open-q .gp-disc-badge {
   background: var(--color-warning);

@@ -376,6 +376,11 @@ function _discRenderBody(container, data, playId, playSig) {
 
   const composer = canPost ? _discComposerHtml(playId, playSig) : `<p class="disc-locked">🔒 Thread is locked.</p>`;
 
+  // Monitoring notice — only for non-staff (players)
+  const monitoringNotice = !isStaff
+    ? `<p class="disc-monitoring-notice" role="note">Team communications are reviewed by coaching staff. Messages that don't meet team standards may be held or removed.</p>`
+    : "";
+
   const lockCtrl = isStaff && thread
     ? `<div class="disc-thread-controls">` +
     `<button class="btn btn-xs disc-lock-btn" data-action="toggleDiscThreadLock"` +
@@ -391,6 +396,7 @@ function _discRenderBody(container, data, playId, playSig) {
     `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}" role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
     loadMore +
     composer +
+    monitoringNotice +
     lockCtrl,
   );
 
@@ -754,7 +760,13 @@ async function submitDiscPost(arg, el) {
       optimisticNode?.remove();
       // Restore composer text on hard failure
       if (textarea && !textarea.value) textarea.value = body;
-      showToast(data.error || "Failed to post.", { duration: 3000, type: "error" });
+      if (data.rateLimited) {
+        showToast(data.error || "Too many flagged messages. Please try again later.", { duration: 6000, type: "error" });
+      } else if (data.muted) {
+        showToast(data.error || "You are temporarily unable to post.", { duration: 6000, type: "error" });
+      } else {
+        showToast(data.error || "Failed to post.", { duration: 3000, type: "error" });
+      }
       return;
     }
 
@@ -1114,20 +1126,26 @@ async function openDiscModerationQueue() {
       return;
     }
 
-    // Build a modal with each post and approve/reject actions
-    let html = `<div class="disc-mod-queue">`;
+    // Build a modal with each post and all available actions
+    let html = `<div class="disc-mod-queue" role="list" aria-label="Moderation queue">`;
     for (const p of data.posts) {
-      html += `<div class="disc-mod-item" data-post-id="${escapeHtml(p.id)}">` +
+      const categoryBadge = p.moderationCategory
+        ? `<span class="disc-mod-category disc-mod-category--${escapeHtml(p.moderationCategory)}" aria-label="Flagged for: ${escapeHtml(p.moderationCategory)}">${escapeHtml(p.moderationCategory)}</span>`
+        : "";
+      html += `<div class="disc-mod-item" data-post-id="${escapeHtml(p.id)}" role="listitem" aria-label="Post by ${escapeHtml(p.authorName)}">` +
         `<div class="disc-mod-item-meta">` +
         `<strong>${escapeHtml(p.authorName)}</strong>` +
-        ` <span class="disc-role-badge disc-role-badge--${escapeHtml(p.authorRole)}">${escapeHtml(p.authorRole)}</span>` +
-        ` <span class="disc-mod-status">${escapeHtml(p.moderationStatus)}</span>` +
-        ` — ${escapeHtml(p.modReason || "Auto-flagged")}` +
+        ` <span class="disc-role-badge disc-role-badge--${escapeHtml(p.authorRole)}" aria-label="Role: ${escapeHtml(p.authorRole)}">${escapeHtml(p.authorRole)}</span>` +
+        ` ${categoryBadge}` +
+        ` <span class="disc-mod-status" aria-label="Status: ${escapeHtml(p.moderationStatus)}">${escapeHtml(p.moderationStatus)}</span>` +
         `</div>` +
-        `<div class="disc-mod-body">${escapeHtml(p.body)}</div>` +
-        `<div class="disc-mod-actions">` +
-        `<button class="btn btn-xs btn-success" data-action="approveDiscPost" data-arg="${escapeHtml(p.id)}">✅ Approve</button>` +
-        `<button class="btn btn-xs btn-danger" data-action="rejectDiscPost" data-arg="${escapeHtml(p.id)}">🗑 Reject</button>` +
+        `<div class="disc-mod-body" role="region" aria-label="Post content">${escapeHtml(p.body)}</div>` +
+        `<div class="disc-mod-actions" role="group" aria-label="Actions for post by ${escapeHtml(p.authorName)}">` +
+        `<button class="btn btn-xs btn-success" data-action="approveDiscPost" data-arg="${escapeHtml(p.id)}" aria-label="Approve post">✅ Approve</button>` +
+        `<button class="btn btn-xs btn-warning" data-action="editApproveDiscPost" data-arg="${escapeHtml(p.id)}" title="Edit the post body then approve" aria-label="Edit and approve post">✏️ Edit &amp; Approve</button>` +
+        `<button class="btn btn-xs" data-action="warnDiscPost" data-arg="${escapeHtml(p.id)}" title="Publish post but record a warning" aria-label="Warn author and publish post">⚠️ Warn</button>` +
+        `<button class="btn btn-xs" data-action="muteDiscPost" data-arg="${escapeHtml(p.id)}" title="Publish post but temporarily mute the author" aria-label="Mute author">🔇 Mute</button>` +
+        `<button class="btn btn-xs btn-danger" data-action="rejectDiscPost" data-arg="${escapeHtml(p.id)}" aria-label="Reject post">🗑 Reject</button>` +
         `</div>` +
         `</div>`;
     }
@@ -1149,12 +1167,37 @@ async function rejectDiscPost(postId) {
   await _discModerationAction(postId, "reject", reason || "Rejected by coach");
 }
 
-async function _discModerationAction(postId, action, reason) {
+async function editApproveDiscPost(postId) {
+  // Find the post body in the current queue DOM
+  const item = document.querySelector(`.disc-mod-item[data-post-id="${postId}"]`);
+  const currentBody = item ? (item.querySelector(".disc-mod-body")?.textContent || "") : "";
+  const editedBody = await showPrompt("Edit the post before approving:", currentBody, { title: "Edit & Approve", icon: "✏️", placeholder: "Revised post content…" });
+  if (editedBody === null) return; // cancelled
+  if (!editedBody.trim()) { showToast("Post body cannot be empty.", { duration: 2500, type: "error" }); return; }
+  await _discModerationAction(postId, "edit_approve", "Edited and approved by coach", { editedBody });
+}
+
+async function warnDiscPost(postId) {
+  const reason = await showPrompt("Warning reason (visible in moderation log):", "", { title: "Warn Author", icon: "⚠️", placeholder: "e.g. Language did not meet team standards" });
+  if (reason === null) return; // cancelled
+  await _discModerationAction(postId, "warn", reason || "Warning issued by coach");
+}
+
+async function muteDiscPost(postId) {
+  const daysStr = await showPrompt("Mute author for how many days? (1–30):", "1", { title: "Mute Author", icon: "🔇" });
+  if (daysStr === null) return; // cancelled
+  const days = parseInt(daysStr, 10);
+  if (!days || days < 1 || days > 30) { showToast("Enter a number between 1 and 30.", { duration: 2500, type: "error" }); return; }
+  const reason = `Muted for ${days} day${days === 1 ? "" : "s"} by coach`;
+  await _discModerationAction(postId, "mute", reason, { muteDays: days });
+}
+
+async function _discModerationAction(postId, action, reason, extras = {}) {
   try {
     const res = await fetch(`/api/moderation/${encodeURIComponent(postId)}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ action, reason }),
+      body: JSON.stringify({ action, reason, ...extras }),
     });
     const data = await res.json();
     if (!data.ok) { showToast(data.error || "Action failed.", { duration: 3000, type: "error" }); return; }

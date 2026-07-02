@@ -3872,7 +3872,9 @@ body.gp-drag-active .hash-column.gp-drag-over {
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-  z-index: var(--z-drawer-scrim); /* one below the open drawer — above header (1000) */
+  z-index: var(
+    --z-drawer-scrim
+  ); /* one below the open drawer — above header (1000) */
   display: none; /* only visible on the call sheet tab */
   align-items: center;
   gap: 6px;
@@ -4307,7 +4309,9 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   flex-wrap: wrap;
   min-height: 32px;
 }
-.cs-source-bar.hidden { display: none; }
+.cs-source-bar.hidden {
+  display: none;
+}
 .csb-opponent {
   font-weight: 600;
   color: var(--color-text);
@@ -4319,7 +4323,10 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .csb-item {
   white-space: nowrap;
 }
-.csb-wb em { color: var(--color-text-muted); font-style: italic; }
+.csb-wb em {
+  color: var(--color-text-muted);
+  font-style: italic;
+}
 .csb-finalize-btn {
   margin-left: auto;
   background: var(--color-success);
@@ -4331,7 +4338,9 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   cursor: pointer;
   white-space: nowrap;
 }
-.csb-finalize-btn:hover { background: var(--color-success-hover); }
+.csb-finalize-btn:hover {
+  background: var(--color-success-hover);
+}
 
 /* ============================================================
    Source Reconcile Panel — tabs (#162-165)
@@ -4403,7 +4412,9 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   padding: 0 var(--space-xs);
   line-height: 1;
 }
-.cs-nos-close:hover { color: var(--color-danger); }
+.cs-nos-close:hover {
+  color: var(--color-danger);
+}
 .cs-nos-empty {
   padding: var(--space-sm) var(--space-md);
   color: var(--color-success);
@@ -4461,18 +4472,35 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
    ============================================================ */
 @media print {
   .cs-source-bar,
-  .cs-not-on-sheet-panel { display: none !important; }
+  .cs-not-on-sheet-panel {
+    display: none !important;
+  }
 }
 
 /* ── Sideline View Mode (#170) ─────────────────────────────── */
 /* Hide most toolbar controls but keep the exit button visible */
-#callsheet.cs-sideline-mode .cs-toolbar > *:not(#csSidelineModeBtn) { display: none; }
-#callsheet.cs-sideline-mode .cs-toolbar { justify-content: flex-end; }
-#callsheet.cs-sideline-mode .cs-quick-actions-wrap { display: none; }
-#callsheet.cs-sideline-mode .cs-constraints-panel { display: none; }
-#callsheet.cs-sideline-mode .cs-cell { font-size: var(--font-size-md); min-height: 28px; }
-#callsheet.cs-sideline-mode .cs-page { padding: var(--space-sm); }
-#callsheet.cs-sideline-mode .cs-category-header { font-size: var(--font-size-md); }
+#callsheet.cs-sideline-mode .cs-toolbar > *:not(#csSidelineModeBtn) {
+  display: none;
+}
+#callsheet.cs-sideline-mode .cs-toolbar {
+  justify-content: flex-end;
+}
+#callsheet.cs-sideline-mode .cs-quick-actions-wrap {
+  display: none;
+}
+#callsheet.cs-sideline-mode .cs-constraints-panel {
+  display: none;
+}
+#callsheet.cs-sideline-mode .cs-cell {
+  font-size: var(--font-size-md);
+  min-height: 28px;
+}
+#callsheet.cs-sideline-mode .cs-page {
+  padding: var(--space-sm);
+}
+#callsheet.cs-sideline-mode .cs-category-header {
+  font-size: var(--font-size-md);
+}
 
 /* ── Call Sheet Discussion Warning Badge ──────────────────────────────────── */
 
@@ -4488,9 +4516,17 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   pointer-events: none;
   animation: csDiscWarnPop 0.25s ease;
 }
-.cs-disc-warning.hidden { display: none; }
+.cs-disc-warning.hidden {
+  display: none;
+}
 
 @keyframes csDiscWarnPop {
-  from { transform: scale(0.7); opacity: 0; }
-  to   { transform: scale(1);   opacity: 0.85; }
+  from {
+    transform: scale(0.7);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 0.85;
+  }
 }

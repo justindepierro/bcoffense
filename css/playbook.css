@@ -5544,6 +5544,60 @@ body.shell-phone .pb-action-sheet {
 .disc-mod-actions {
   display: flex;
   gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
+/* ── Moderation category badge ──────────────────────────────────────────────── */
+.disc-mod-category {
+  display: inline-block;
+  padding: 1px 6px;
+  border-radius: var(--radius-pill);
+  font-size: 10px;
+  font-weight: 600;
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+  text-transform: capitalize;
+}
+.disc-mod-category--spam { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); }
+.disc-mod-category--mild_profanity { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); }
+.disc-mod-category--harassment { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }
+.disc-mod-category--threat { background: var(--color-danger); color: #fff; }
+.disc-mod-category--slur { background: var(--color-danger); color: #fff; }
+.disc-mod-category--sexual { background: var(--color-danger); color: #fff; }
+
+/* ── Player monitoring notice ───────────────────────────────────────────────── */
+.disc-monitoring-notice {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  text-align: center;
+  padding: var(--space-xs) var(--space-sm);
+  margin-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-light);
+}
+
+/* ── Mobile moderation queue ────────────────────────────────────────────────── */
+@media (max-width: 600px) {
+  .disc-mod-queue {
+    max-height: 60dvh;
+  }
+  .disc-mod-item {
+    gap: var(--space-sm);
+  }
+  .disc-mod-actions {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+  }
+  .disc-mod-actions .btn {
+    justify-content: center;
+    text-align: center;
+  }
+}
+
+@media (min-width: 768px) and (max-width: 1024px) {
+  /* iPad: slightly wider queue */
+  .disc-mod-queue {
+    max-height: 55dvh;
+  }
 }
 
 /* ── Question state badge ───────────────────────────────────────────────────── */

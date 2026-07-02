@@ -1,6 +1,12 @@
 /**
  * POST /api/moderation/:postId — coach moderation action on a post
- * Body: { action: "approve"|"reject"|"block"|"warn", reason?: string }
+ *
+ * Body: {
+ *   action:      "approve" | "reject" | "warn" | "edit_approve" | "mute" | "account_review"
+ *   reason?:     string
+ *   editedBody?: string          (required for edit_approve)
+ *   muteDays?:   number 1-30     (for mute action; defaults to 1)
+ * }
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../_lib/auth.js";
@@ -30,9 +36,15 @@ export async function onRequest(context) {
 
   const action = String(body.action || "").trim();
   const reason = String(body.reason || "").trim() || null;
+  const editedBody = body.editedBody ? String(body.editedBody).trim() : null;
+  const muteDays = body.muteDays ? parseInt(body.muteDays, 10) : 1;
+
+  if (action === "edit_approve" && !editedBody) {
+    return authJson({ ok: false, error: "editedBody is required for edit_approve." }, { status: 400 });
+  }
 
   const moderatorId = await resolveModeratorId(env.DB, session);
-  const result = await moderatePostAction(env.DB, postId, action, reason, moderatorId);
+  const result = await moderatePostAction(env.DB, postId, action, reason, moderatorId, { editedBody, muteDays });
 
   if (result.error) return authJson({ ok: false, error: result.error }, { status: 422 });
   return withSecurityHeaders(authJson({ ok: true, newStatus: result.newStatus }));

@@ -493,11 +493,19 @@ export async function getPendingPosts(db, teamId, { limit = 50 } = {}) {
 }
 
 /**
- * Apply a moderation action to a post. Returns { ok } or { error }.
- * actions: "approve" | "reject" | "block" | "warn"
+ * Apply a moderation action to a post. Returns { ok, newStatus } or { error }.
+ *
+ * actions:
+ *   "approve"      — publish the post as-is
+ *   "reject"       — block the post permanently
+ *   "warn"         — publish but record a warning against the author
+ *   "edit_approve" — replace body with editedBody then publish (requires opts.editedBody)
+ *   "mute"         — approve post but temporarily mute the author (requires opts.muteDays)
+ *   "account_review" — flag author for manual account review (post stays pending)
+ *   "lock_thread" — caller handles thread locking separately; here we just log the action
  */
-export async function moderatePostAction(db, postId, action, reason, moderatorId) {
-  const validActions = new Set(["approve", "reject", "block", "warn"]);
+export async function moderatePostAction(db, postId, action, reason, moderatorId, opts = {}) {
+  const validActions = new Set(["approve", "reject", "block", "warn", "edit_approve", "mute", "account_review", "lock_thread"]);
   if (!validActions.has(action)) return { error: "Invalid action." };
 
   const post = await db.prepare("SELECT * FROM discussion_posts WHERE id = ? LIMIT 1")
@@ -506,20 +514,111 @@ export async function moderatePostAction(db, postId, action, reason, moderatorId
 
   const now = Math.floor(Date.now() / 1000);
 
+  // ── Determine new visibility status ──────────────────────────────────────
   let newStatus;
-  if (action === "approve") newStatus = "approved";
-  else if (action === "reject" || action === "block") newStatus = "blocked";
-  else newStatus = post.moderation_status; // warn doesn't change visibility
+  if (action === "approve" || action === "warn" || action === "mute") {
+    newStatus = "approved";          // post becomes visible; author gets logged warning / mute
+  } else if (action === "reject" || action === "block") {
+    newStatus = "blocked";
+  } else if (action === "edit_approve") {
+    newStatus = "approved";
+  } else {
+    newStatus = post.moderation_status; // account_review / lock_thread — no visibility change
+  }
 
-  await db.prepare("UPDATE discussion_posts SET moderation_status = ?, updated_at = ? WHERE id = ?")
-    .bind(newStatus, now, postId).run();
+  // ── Update post ──────────────────────────────────────────────────────────
+  if (action === "edit_approve" && opts.editedBody) {
+    const sanitized = sanitizePostBody(opts.editedBody);
+    if (!sanitized) return { error: "Edited body is empty." };
+    await db.prepare("UPDATE discussion_posts SET body = ?, moderation_status = ?, edited_at = ?, updated_at = ? WHERE id = ?")
+      .bind(sanitized, newStatus, now, now, postId).run();
+  } else {
+    await db.prepare("UPDATE discussion_posts SET moderation_status = ?, updated_at = ? WHERE id = ?")
+      .bind(newStatus, now, postId).run();
+  }
 
+  // ── Apply mute if requested ──────────────────────────────────────────────
+  if (action === "mute" && post.author_id) {
+    const muteDays = Math.min(Math.max(parseInt(opts.muteDays || 1, 10), 1), 30);
+    const muteUntil = now + muteDays * 86400;
+    await db.prepare("UPDATE users SET muted_until = ?, updated_at = ? WHERE id = ?")
+      .bind(muteUntil, now, post.author_id).run();
+  }
+
+  // ── Log moderation action ─────────────────────────────────────────────────
   const actionId = crypto.randomUUID();
+  const dbAction = (action === "block") ? "reject" : action; // normalize "block" alias
   await db.prepare(
-    `INSERT INTO moderation_actions (id, post_id, moderator_id, action, reason, original_body, created_at)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-  ).bind(actionId, postId, moderatorId, action, reason || null, post.body, now).run();
+    `INSERT INTO moderation_actions (id, post_id, user_id, moderator_id, action, reason, original_body, created_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+  ).bind(actionId, postId, post.author_id || null, moderatorId, dbAction, reason || null, post.body, now).run();
 
   return { ok: true, newStatus };
+}
+
+// ── Rate-limit helpers ────────────────────────────────────────────────────────
+
+/**
+ * Count auto-flagged submissions (auto_review + auto_block) by an author within
+ * the given time window. Used for rate limiting.
+ */
+export async function getRecentFlaggedCount(db, authorId, windowSecs) {
+  const since = Math.floor(Date.now() / 1000) - windowSecs;
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS cnt FROM moderation_actions ma
+       JOIN discussion_posts p ON p.id = ma.post_id
+       WHERE p.author_id = ? AND ma.action IN ('auto_review', 'auto_block')
+         AND ma.created_at >= ?`,
+    )
+    .bind(authorId, since)
+    .first();
+  return (row && row.cnt) || 0;
+}
+
+/**
+ * Count posts auto-blocked (severe violations) by an author within the window.
+ * Used to trigger coach notifications on repeated severe behaviour.
+ */
+export async function getRecentSevereCount(db, authorId, windowSecs) {
+  const since = Math.floor(Date.now() / 1000) - windowSecs;
+  const row = await db
+    .prepare(
+      `SELECT COUNT(*) AS cnt FROM moderation_actions ma
+       JOIN discussion_posts p ON p.id = ma.post_id
+       WHERE p.author_id = ? AND ma.action = 'auto_block'
+         AND ma.created_at >= ?`,
+    )
+    .bind(authorId, since)
+    .first();
+  return (row && row.cnt) || 0;
+}
+
+/**
+ * Return the Unix timestamp for when a user's mute expires, or null if not muted.
+ */
+export async function getPlayerMuteUntil(db, userId) {
+  const row = await db.prepare("SELECT muted_until FROM users WHERE id = ? LIMIT 1").bind(userId).first();
+  if (!row || !row.muted_until) return null;
+  const now = Math.floor(Date.now() / 1000);
+  return row.muted_until > now ? row.muted_until : null; // expired mutes return null
+}
+
+/**
+ * Get coach/admin user IDs who have engaged in a team's threads.
+ * Used to target repeated-violation notifications.
+ */
+export async function getActiveCoachIds(db, teamId) {
+  const rows = await db
+    .prepare(
+      `SELECT DISTINCT u.id FROM users u
+       JOIN discussion_posts p ON p.author_id = u.id
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE t.team_id = ? AND u.role IN ('coach', 'admin', 'assistant_coach')
+         AND p.deleted_at IS NULL`,
+    )
+    .bind(teamId)
+    .all();
+  return (rows.results || []).map((r) => r.id);
 }
 

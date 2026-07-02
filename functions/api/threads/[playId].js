@@ -16,8 +16,12 @@ import {
   countThreadPosts,
   setQuestionState,
   getPostReplies,
+  getRecentFlaggedCount,
+  getRecentSevereCount,
+  getPlayerMuteUntil,
+  getActiveCoachIds,
 } from "../../_lib/d1-threads.js";
-import { notifyOnCoachPost } from "../../_lib/d1-notifications.js";
+import { notifyOnCoachPost, createNotification } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -89,6 +93,27 @@ export async function onRequest(context) {
 
     if (!postBody) return authJson({ ok: false, error: "Post body required." }, { status: 422 });
 
+    // ── Mute check (temporary post ban from coach action) ─────────────────
+    const muteUntil = await getPlayerMuteUntil(env.DB, authorId);
+    if (muteUntil) {
+      const minutesLeft = Math.ceil((muteUntil - Math.floor(Date.now() / 1000)) / 60);
+      return authJson({
+        ok: false,
+        error: `You are temporarily unable to post. Your posting ability will be restored in approximately ${minutesLeft} minute${minutesLeft === 1 ? "" : "s"}.`,
+        muted: true,
+      }, { status: 403 });
+    }
+
+    // ── Rate limit: block users with 3+ flagged submissions in the last hour ─
+    const recentFlagged = await getRecentFlaggedCount(env.DB, authorId, 3600);
+    if (recentFlagged >= 3) {
+      return authJson({
+        ok: false,
+        error: "Your recent messages have been flagged multiple times. Please review the team communication standards and try again later.",
+        rateLimited: true,
+      }, { status: 429 });
+    }
+
     // Get or create thread (lazy)
     const thread = await getOrCreateThread(env.DB, teamId, playId, playSig);
 
@@ -109,6 +134,7 @@ export async function onRequest(context) {
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
 
     // Auto-answer parent question when a staff member replies
+    const isStaff = session.role === "coach" || session.role === "admin";
     if (isStaff && parentPostId) {
       const parent = await env.DB.prepare(
         "SELECT post_type, question_state FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1"
@@ -119,7 +145,6 @@ export async function onRequest(context) {
     }
 
     // Notify players in the thread when a coach replies (fire-and-forget)
-    const isStaff = session.role === "coach" || session.role === "admin";
     if (isStaff) {
       const posterName = session.label || session.username;
       notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody, env).catch(() => { });
@@ -127,6 +152,11 @@ export async function onRequest(context) {
 
     const modInfo = result._moderation || {};
     const postData = formatPost(result);
+
+    // ── Notify coaches on repeated severe violations (fire-and-forget) ────
+    if (modInfo.outcome === "block") {
+      _notifyCoachesOnRepeatedViolation(env.DB, authorId, teamId, session, result.id).catch(() => { });
+    }
 
     return withSecurityHeaders(authJson({
       ok: true,
@@ -180,4 +210,30 @@ async function resolveAuthorId(db, session) {
   ).bind(id, email, session.label || session.username, session.role, now, now).run();
 
   return id;
+}
+
+/**
+ * If a player has 3+ auto_block actions in the last 24 hours, notify engaged
+ * coaches so they are aware of repeated severe violations.
+ * Only notifies on the 3rd violation (not on every subsequent one) to avoid spam.
+ */
+async function _notifyCoachesOnRepeatedViolation(db, authorId, teamId, session, postId) {
+  try {
+    const severeCount = await getRecentSevereCount(db, authorId, 86400);
+    if (severeCount !== 3) return; // only notify at exactly 3 (not on every subsequent block)
+
+    const authorRow = await db.prepare("SELECT display_name FROM users WHERE id = ? LIMIT 1").bind(authorId).first();
+    const authorName = authorRow?.display_name || "A player";
+
+    const coachIds = await getActiveCoachIds(db, teamId);
+    for (const coachId of coachIds) {
+      await createNotification(db, {
+        userId: coachId,
+        type: "moderation_alert",
+        title: "Repeated policy violations detected",
+        body: `${authorName} has had 3 posts auto-blocked in the last 24 hours. Consider reviewing their account.`,
+        deepLink: null,
+      });
+    }
+  } catch (_) { /* fire-and-forget, never surface errors */ }
 }
