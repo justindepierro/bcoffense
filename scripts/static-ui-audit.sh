@@ -178,6 +178,11 @@ run_rg review \
   "Review operational pages for marketing-style hero/header blocks that should be compact or moved to Help." \
   -g 'index.html' -g 'css/*.css' -e 'hero|banner|page-header|player-summary|launcher|empty-state|subtitle|description' .
 
+run_cmd review \
+  "wrapping chip/stat rows" \
+  "Review chip/stat/badge rows that wrap vertically; use a single horizontal scroll row when space is tight." \
+  'perl -0ne '\''my $css=$_; $css =~ s!/\*.*?\*/!!gs; while ($css =~ /([^{}]+)\{([^{}]*)\}/g) { my ($sel,$body)=($1,$2); next unless $sel =~ /(?:chip|stat|badge|pill)/i && $body =~ /flex-wrap:\s*wrap/; my $start=substr($css,0,$-[0]); my $line=1+($start=~tr/\n//); $sel =~ s/\s+/ /g; $sel =~ s/^\s+|\s+$//g; print "$ARGV:$line:$sel { flex-wrap: wrap; }\n"; } close ARGV if eof'\'' css/*.css'
+
 run_rg review \
   "small touch target candidates" \
   "Review interactive controls below typical 44px touch sizing; desktop-only density may be intentional." \

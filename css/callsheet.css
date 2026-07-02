@@ -604,6 +604,11 @@ body.shell-phone #callsheet .cs-empty-cat {
   color: var(--color-text-inverse);
 }
 
+.cs-template-open-btn {
+  flex-shrink: 0;
+  white-space: nowrap;
+}
+
 /* Call Sheet Display Panel (legacy, kept for script/wristband panels) */
 .cs-display-panel {
   margin-bottom: 8px;
