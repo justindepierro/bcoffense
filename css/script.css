@@ -3900,6 +3900,49 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   display: none !important;
 }
 
+/* Player screen mobile compactness — reduce header real estate */
+@media (max-width: 640px) {
+  /* Hide the verbose description paragraph; the script cards speak for themselves */
+  .player-script-launcher-header p {
+    display: none;
+  }
+
+  /* Shrink the launcher section header padding */
+  .player-script-launcher-header {
+    padding-bottom: 4px;
+  }
+
+  /* Tighter launcher header title on mobile */
+  .player-script-launcher-header h4 {
+    font-size: var(--font-size-base);
+  }
+
+  /* Compact the "Current Practice" bar — remove horizontal flex gap, use smaller padding */
+  .player-script-now {
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 10px 14px;
+  }
+
+  /* Smaller script title on mobile player now-bar */
+  .player-script-now__title {
+    font-size: var(--font-size-lg);
+  }
+
+  /* Shrink card padding on mobile player script cards */
+  .player-script-card {
+    flex-wrap: wrap;
+    gap: 10px;
+    padding: 10px 12px;
+  }
+
+  /* Action buttons full-width on narrow screens */
+  .player-script-card__actions {
+    width: 100%;
+    justify-content: flex-start;
+  }
+}
+
 /* Add Period button */
 .btn-add-period {
   background: var(--color-accent);

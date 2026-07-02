@@ -331,7 +331,7 @@ These build on the existing feature set without breaking it.
 #### 6-E: Board Density and Readability
 
 - [ ] Evaluate whether a "compact" display density preset makes sense (tighter line height, smaller font)
-- [ ] Sticky category headers while scrolling through a long board
+- [x] Sticky category headers while scrolling through a long board
 - [x] Better visual treatment for collapsed categories (show play count in the collapsed header)
 
 ---

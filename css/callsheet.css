@@ -42,7 +42,9 @@
 .callsheet-category {
   border: 2px solid var(--color-text);
   border-radius: var(--radius-md);
-  overflow: hidden;
+  /* clip instead of hidden so position:sticky on cs-cat-header can escape
+     the overflow box and stick to the panel scroll container */
+  overflow: clip;
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
 }
@@ -1948,7 +1950,17 @@ body.shell-phone #callsheet .cs-empty-cat {
   display: flex;
   align-items: center;
   gap: 4px;
-  position: relative;
+  /* Sticky within the panel scroll container on desktop;
+     on mobile the body scrolls so we offset past header + tabs. */
+  position: sticky;
+  top: 0;
+  z-index: var(--z-panel-sticky);
+}
+
+@media (max-width: 820px) {
+  .cs-cat-header {
+    top: calc(var(--app-header-height) + var(--app-tabs-height));
+  }
 }
 .cs-cat-header .header-text {
   flex: 1;

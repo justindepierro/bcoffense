@@ -233,6 +233,10 @@
   --transition-fast: 0.15s ease;
   --transition-normal: 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 
+  /* App chrome heights — used for sticky offset calculations */
+  --app-header-height: 52px;
+  --app-tabs-height: 44px;
+
   /* Z-index scale */
   --z-base: 1;
   --z-sticky: 2;
