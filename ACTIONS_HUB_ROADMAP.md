@@ -80,8 +80,14 @@ obvious front door.
 
 ### Phase 6 (optional) — Swipe view upgrades (separate track)
 
-- Comment/questions in swipe/present view for players.
-- Player-facing action set in swipe view (bigger, fewer, "what do I do next").
+- ✅ **Comment/questions in swipe/present view for players** — shipped. The player
+  script cards expose **💬 Chat** + **Swipe View**, the landscape presenter has a
+  **💬** toolbar button and a **💬 Ask About This Play** button, and all routes call
+  `renderDiscussionSection` → `_discRenderBody`. Role detection was broken (read the
+  never-set `window.currentAuthUser`); fixed in SW v865 to use `getCurrentAuthUser()`,
+  so coaches now get staff/moderation tools and players get the "Ask a Question" flow.
+- ⬜ Player-facing action set in swipe view (bigger, fewer, "what do I do next") —
+  remaining optional UX polish; needs design direction.
 
 ## Guardrails
 
