@@ -309,6 +309,9 @@ const CALLSHEET_CATEGORIES = [...CALLSHEET_FRONT, ...CALLSHEET_BACK];
 const BASE_CALLSHEET_FRONT = CALLSHEET_FRONT.slice();
 const BASE_CALLSHEET_BACK = CALLSHEET_BACK.slice();
 
+// Built-in 7-on-7 call sheet template identifier (consumed by callsheet-templates.js)
+const CS_SEVEN_ON_SEVEN_TEMPLATE_ID = "builtin-7on7-callsheet";
+
 const CS_SEVEN_ON_SEVEN_CATEGORIES = [
   {
     id: "cs-7on7-openers",

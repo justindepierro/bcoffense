@@ -3250,13 +3250,12 @@ kbd {
 .page-actions-fab {
   display: none;
   position: fixed;
-  left: 50%;
-  transform: translateX(-50%);
-  bottom: calc(env(safe-area-inset-bottom, 0px) + 14px);
+  right: max(16px, env(safe-area-inset-right));
+  bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   z-index: var(--z-fab);
   align-items: center;
   gap: 6px;
-  padding: 12px 22px;
+  padding: 12px 20px;
   border: none;
   border-radius: var(--radius-pill);
   background: var(--color-primary);
@@ -3269,12 +3268,16 @@ kbd {
   touch-action: manipulation;
 }
 .page-actions-fab:active {
-  transform: translateX(-50%) translateY(1px);
+  transform: translateY(1px);
 }
 body.is-mobile-screen[data-active-tab="script"] .page-actions-fab,
 body.is-mobile-screen[data-active-tab="callsheet"] .page-actions-fab,
 body.is-mobile-screen[data-active-tab="wristband"] .page-actions-fab {
   display: inline-flex;
+}
+/* On mobile the bottom-right pill replaces the inline header Actions button */
+body.is-mobile-screen .page-actions-open-btn {
+  display: none;
 }
 /* Coach-only surface: never show the pill for player accounts */
 body[data-auth-role="player"] .page-actions-fab {
