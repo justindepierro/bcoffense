@@ -104,33 +104,6 @@
 }
 
 /* Toolbar / filters */
-/* Unified control deck: search/filters + jump pills read as one surface */
-.gp-controls {
-  margin-bottom: var(--space-md);
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-surface-raised);
-  overflow: hidden;
-}
-.gp-controls .gp-toolbar {
-  margin-bottom: 0;
-  border: none;
-  border-radius: 0;
-  background: transparent;
-}
-.gp-controls .gp-toolbar-advanced {
-  border-top: 1px solid var(--color-border-light);
-  border-radius: 0;
-}
-.gp-controls .gp-jump-bar {
-  position: static;
-  margin: 0;
-  padding: var(--space-xs) var(--space-md) var(--space-sm);
-  border-top: 1px dashed var(--color-border);
-  border-bottom: none;
-  background: transparent;
-}
-
 .gp-toolbar {
   display: flex;
   flex-wrap: wrap;
