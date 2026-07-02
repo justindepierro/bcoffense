@@ -353,7 +353,9 @@ function renderGamePlan() {
   const statsBarHtml = (distHtml || scoreboardHtml || touchHtml)
     ? `<div class="gp-stats-bar">${distHtml}${scoreboardHtml}${touchHtml}</div>`
     : "";
-  wrapper.innerHTML = headerHtml + statsBarHtml + chipsHtml + toolbarHtml + jumpBarHtml + spotlightBannerHtml + trashZoneHtml + `<div class="gp-layout">${libraryHtml}${boxesHtml}</div>`;
+  wrapper.innerHTML =
+    `<div class="gp-command-zone">${headerHtml}${statsBarHtml}${chipsHtml}${toolbarHtml}${jumpBarHtml}${spotlightBannerHtml}</div>` +
+    `<div class="gp-board-scroll">${trashZoneHtml}<div class="gp-layout">${libraryHtml}${boxesHtml}</div></div>`;
   while (wrapper.firstChild) root.appendChild(wrapper.firstChild);
   _gpAttachLibraryHandlers();
   _gpAttachBoxHandlers();

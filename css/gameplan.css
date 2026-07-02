@@ -569,6 +569,37 @@
   position: static;
 }
 
+/* Desktop: pin a compact command zone at the top and scroll the board inside
+   the panel. Mirrors the Script page pattern and avoids the sticky+transform
+   trap entirely — the command zone stays visible while the boards scroll. */
+body:not(.is-mobile-screen) #gameplan.panel.active {
+  overflow: hidden;
+  gap: 0;
+}
+body:not(.is-mobile-screen) .gp-command-zone {
+  flex: 0 0 auto;
+}
+body:not(.is-mobile-screen) .gp-board-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+/* Tighten the pinned rows so the command zone doesn't eat board space */
+.gp-command-zone > .gp-header,
+.gp-command-zone > .gp-stats-bar,
+.gp-command-zone > .gp-toolbar,
+.gp-command-zone > .gp-jump-bar {
+  margin-bottom: var(--space-xs);
+}
+/* The jump bar's own sticky/border is redundant inside the pinned zone */
+.gp-command-zone > .gp-jump-bar {
+  position: static;
+  top: auto;
+  border-bottom: none;
+  background: transparent;
+}
+
 /* Color accent left-border (set via inline --gp-box-accent) */
 .gp-box {
   border-left: 4px solid var(--gp-box-accent, var(--color-border));
