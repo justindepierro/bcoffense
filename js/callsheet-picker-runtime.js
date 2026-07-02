@@ -35,6 +35,7 @@ function openCallSheetPlayPicker(categoryId, hash) {
 
   populateCallSheetPickerFilters();
   updatePickerSourceUI();
+  _csPickerRestoreFilters();
   populateCallSheetPlayList();
 
   const overlay = setCallSheetOverlayVisibility("callSheetPickerOverlay", true);
@@ -146,8 +147,40 @@ function clearCsPickerFilters() {
   populateCallSheetPlayList();
 }
 
+// Persist last picker filter state within the session
+let _csPickerLastFilters = null;
+
+function _csPickerSaveFilters() {
+  _csPickerLastFilters = {
+    personnel: document.getElementById("callSheetPickerPersonnel")?.value || "",
+    formation: document.getElementById("callSheetPickerFormation")?.value || "",
+    playType: document.getElementById("callSheetPickerPlayType")?.value || "",
+    back: document.getElementById("callSheetPickerBack")?.value || "",
+    tempo: document.getElementById("callSheetPickerTempo")?.value || "",
+    sort: document.getElementById("callSheetPickerSort")?.value || "",
+  };
+}
+
+function _csPickerRestoreFilters() {
+  if (!_csPickerLastFilters) return;
+  const f = _csPickerLastFilters;
+  const ids = [
+    ["callSheetPickerPersonnel", f.personnel],
+    ["callSheetPickerFormation", f.formation],
+    ["callSheetPickerPlayType", f.playType],
+    ["callSheetPickerBack", f.back],
+    ["callSheetPickerTempo", f.tempo],
+    ["callSheetPickerSort", f.sort],
+  ];
+  ids.forEach(([id, val]) => {
+    const el = document.getElementById(id);
+    if (el && val) el.value = val;
+  });
+}
+
 function closeCallSheetPicker(event) {
   if (event && event.target !== event.currentTarget) return;
+  _csPickerSaveFilters();
   setCallSheetOverlayVisibility("callSheetPickerOverlay", false);
 }
 

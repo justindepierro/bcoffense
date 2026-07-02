@@ -174,11 +174,11 @@ This is the full feature inventory. Every item must work after any refactor batc
 The `callsheet-render.js` legacy functions shadow nothing at runtime but create confusion for future editors. Anyone adding code to `callsheet-render.js` may be editing dead functions.
 
 - [ ] Audit each function in `callsheet-render.js` against the live version in `callsheet.js`
-- [ ] Document any meaningful differences (if any function in `callsheet-render.js` has logic not in `callsheet.js`, merge it first)
-- [ ] Remove all duplicate function bodies from `callsheet-render.js`
-- [ ] Keep in `callsheet-render.js`: CS_COLORS, CALLSHEET_FRONT/BACK/CATEGORIES constants, BASE_CALLSHEET_FRONT/BACK snapshots, helper functions that are NOT duplicated in `callsheet.js`
-- [ ] Run `node --check` on both files after cleanup
-- [ ] Run smoke-check and verify the call sheet renders, sorts, prints, and drafts-restore correctly
+- [x] Document any meaningful differences (if any function in `callsheet-render.js` has logic not in `callsheet.js`, merge it first)
+- [x] Remove all duplicate function bodies from `callsheet-render.js`
+- [x] Keep in `callsheet-render.js`: CS_COLORS, CALLSHEET_FRONT/BACK/CATEGORIES constants, BASE_CALLSHEET_FRONT/BACK snapshots, helper functions that are NOT duplicated in `callsheet.js`
+- [x] Run `node --check` on both files after cleanup
+- [x] Run smoke-check and verify the call sheet renders, sorts, prints, and drafts-restore correctly
 
 Definition of done:
 
@@ -210,11 +210,11 @@ Also move `renderCallSheetPrintPage` out of `callsheet-render.js` (its copy ther
 
 Steps:
 
-- [ ] Create `js/callsheet-print.js` with the extracted functions
+- [x] Create `js/callsheet-print.js` with the extracted functions
 - [ ] Add to `LOCAL_ASSETS` in `sw.js` and `<script defer>` in `index.html` (after `callsheet.js`, before `callsheet-categories.js`)
-- [ ] Remove the extracted functions from `callsheet.js`
-- [ ] Bump SW version
-- [ ] Smoke check: open print modal, change options, print preview renders correctly
+- [x] Remove the extracted functions from `callsheet.js`
+- [x] Bump SW version
+- [x] Smoke check: open print modal, change options, print preview renders correctly
 
 Definition of done:
 
@@ -244,9 +244,9 @@ openCsCustomOrderModal, applyCsSort, sortPlaysByCriteria
 
 Steps:
 
-- [ ] Create `js/callsheet-sort.js`
-- [ ] Add to `LOCAL_ASSETS` and `index.html`
-- [ ] Remove from `callsheet.js`
+- [x] Create `js/callsheet-sort.js`
+- [x] Add to `LOCAL_ASSETS` and `index.html`
+- [x] Remove from `callsheet.js`
 - [ ] Bump SW version
 - [ ] Smoke check: open sort modal, add criteria, drag reorder, apply sort, verify play order changes
 
@@ -273,11 +273,11 @@ buildPlayerCategoryAutoFillTargets, autoPopulateCallSheet (or keep as orchestrat
 
 Steps:
 
-- [ ] Create `js/callsheet-filters.js`
-- [ ] Add to `LOCAL_ASSETS` and `index.html` (before `callsheet.js`)
+- [x] Create `js/callsheet-filters.js`
+- [x] Add to `LOCAL_ASSETS` and `index.html` (before `callsheet.js`)
 - [ ] Remove from `callsheet.js`
 - [ ] Bump SW version
-- [ ] Smoke check: clear + re-populate a full call sheet from playbook, verify all categories fill correctly
+- [x] Smoke check: clear + re-populate a full call sheet from playbook, verify all categories fill correctly
 
 ---
 
@@ -289,12 +289,12 @@ These are small, self-contained blocks at the bottom of `callsheet.js`.
 
 Target: `callsheet-export.js` (new) for CSV/location helpers; `callsheet-smart.js` (new) for suggestions modal.
 
-- [ ] Move `exportCallSheetCSV`, `isPlayOnCallSheet`, `getCallSheetPlayLocations` → `callsheet-export.js`
-- [ ] Move `openSmartSuggestionsModal`, `addSuggestionToSheet` → `callsheet-smart.js` (or into `callsheet-layout.js` if small enough)
-- [ ] Move scouting functions (`toggleScoutingOverlay`, `toggleScouting`, `buildScoutingBadge`, `buildDeadVsBadge`) into `callsheet-render.js` or a new `callsheet-scouting.js`
-- [ ] Add new files to `LOCAL_ASSETS` and `index.html`
+- [x] Move `exportCallSheetCSV`, `isPlayOnCallSheet`, `getCallSheetPlayLocations` → `callsheet-export.js`
+- [x] Move `openSmartSuggestionsModal`, `addSuggestionToSheet` → `callsheet-smart.js` (or into `callsheet-layout.js` if small enough)
+- [x] Move scouting functions (`toggleScoutingOverlay`, `toggleScouting`, `buildScoutingBadge`, `buildDeadVsBadge`) into `callsheet-render.js` or a new `callsheet-scouting.js`
+- [x] Add new files to `LOCAL_ASSETS` and `index.html`
 - [ ] Bump SW version
-- [ ] Smoke check: export CSV, open suggestions modal, toggle scouting overlay
+- [x] Smoke check: export CSV, open suggestions modal, toggle scouting overlay
 
 ---
 
@@ -312,14 +312,14 @@ These build on the existing feature set without breaking it.
 
 #### 6-B: Category Health Indicators
 
-- [ ] Show a small count badge on each category header: `plays / target` (e.g. `8/10`)
-- [ ] Color the badge green/yellow/red based on fill percentage relative to the target count stored in `callsheet-metadata.js`
-- [ ] Render these badges in print so coaches see fill status at a glance
+- [x] Show a small count badge on each category header: `plays / target` (e.g. `8/10`)
+- [x] Color the badge green/yellow/red based on fill percentage relative to the target count stored in `callsheet-metadata.js`
+- [x] Render these badges in print so coaches see fill status at a glance
 
 #### 6-C: Picker UX
 
-- [ ] Remember last picker filter state (type/personnel) per session so re-opening picker doesn't reset
-- [ ] Add a "plays already on sheet" indicator in the picker list (dim or badge plays that are already placed)
+- [x] Remember last picker filter state (type/personnel) per session so re-opening picker doesn't reset
+- [x] Add a "plays already on sheet" indicator in the picker list (dim or badge plays that are already placed)
 - [ ] Add keyboard shortcut to open the picker for the focused/last category
 
 #### 6-D: Print Modal Improvements
@@ -332,7 +332,7 @@ These build on the existing feature set without breaking it.
 
 - [ ] Evaluate whether a "compact" display density preset makes sense (tighter line height, smaller font)
 - [ ] Sticky category headers while scrolling through a long board
-- [ ] Better visual treatment for collapsed categories (show play count in the collapsed header)
+- [x] Better visual treatment for collapsed categories (show play count in the collapsed header)
 
 ---
 
