@@ -309,8 +309,38 @@ const CALLSHEET_CATEGORIES = [...CALLSHEET_FRONT, ...CALLSHEET_BACK];
 const BASE_CALLSHEET_FRONT = CALLSHEET_FRONT.slice();
 const BASE_CALLSHEET_BACK = CALLSHEET_BACK.slice();
 
+// Passing-oriented play types + aliases (consumed by callsheet-filters.js and
+// callsheet-templates.js). Restored after commit 942f0ec dropped them.
+const CS_PASSING_PLAY_TYPES = [
+  "Pass",
+  "Quick",
+  "Screen",
+  "Play Action",
+  "Movement",
+];
+const CS_PLAY_TYPE_ALIASES = {
+  "base pass": "Pass",
+  drop: "Pass",
+  "drop back": "Pass",
+  "play pass": "Play Action",
+  "play-action": "Play Action",
+};
+
+// Header color choices for category color pickers (consumed by
+// callsheet-categories.js and callsheet-layout.js). Restored after 942f0ec.
+const CS_HEADER_COLOR_OPTIONS = [
+  { name: "Red", value: CS_COLORS.red },
+  { name: "Yellow", value: CS_COLORS.yellow },
+  { name: "Orange", value: CS_COLORS.orange },
+  { name: "Green", value: CS_COLORS.green },
+  { name: "Blue", value: CS_COLORS.blue },
+  { name: "Purple", value: CS_COLORS.purple },
+  { name: "Teal", value: CS_COLORS.teal },
+  { name: "Gray", value: CS_COLORS.gray },
+];
+
 // Built-in 7-on-7 call sheet template identifier (consumed by callsheet-templates.js)
-const CS_SEVEN_ON_SEVEN_TEMPLATE_ID = "builtin-7on7-callsheet";
+const CS_SEVEN_ON_SEVEN_TEMPLATE_ID = "builtin-7on7-passing";
 
 const CS_SEVEN_ON_SEVEN_CATEGORIES = [
   {
