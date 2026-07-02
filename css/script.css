@@ -63,16 +63,17 @@
 
 .player-script-launcher {
   display: grid;
-  gap: 14px;
-  padding: 16px;
+  grid-template-rows: auto minmax(0, 1fr);
+  gap: 8px;
+  padding: 10px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, var(--color-primary-light), transparent 65%),
-    var(--color-surface-muted);
+  border-radius: var(--radius-md);
+  background: var(--color-surface-muted);
   box-shadow: var(--shadow-xs);
   min-width: 0;
+  min-height: 0;
   max-width: 100%;
+  max-height: min(230px, calc(var(--app-vh, 1vh) * 32));
   overflow: hidden;
   box-sizing: border-box;
 }
@@ -80,7 +81,7 @@
 .player-script-launcher-header h4 {
   margin: 0;
   color: var(--color-text);
-  font-size: var(--font-size-lg);
+  font-size: var(--font-size-base);
 }
 
 .player-script-launcher-header p {
@@ -93,7 +94,12 @@
 
 .player-script-launcher-list {
   display: grid;
-  gap: 10px;
+  gap: 8px;
+  min-height: 0;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding-right: 2px;
+  scrollbar-gutter: stable;
 }
 
 .player-script-now {
@@ -162,7 +168,7 @@
   align-items: center;
   justify-content: space-between;
   gap: 14px;
-  padding: 14px 16px;
+  padding: 10px 12px;
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-lg);
   background: var(--color-surface);
@@ -3566,7 +3572,7 @@ body[data-auth-role="player"] .script-builder {
 }
 .script-packet-print-toggles {
   grid-template-columns: 1fr;
-  gap: var(--space-xs);
+  gap: 6px;
   padding-top: var(--space-sm);
   border-top: 1px dashed var(--color-border-light);
 }
@@ -4835,7 +4841,8 @@ body[data-auth-role="player"] #script .script-tools-drawer {
   }
 
   .player-script-launcher {
-    padding: 12px;
+    max-height: calc(var(--app-vh, 1vh) * 36);
+    padding: 8px;
   }
 
   .player-script-now {

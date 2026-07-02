@@ -859,21 +859,16 @@ table.sortable th {
 }
 
 .pb-player-summary {
-  display: flex;
-  flex-direction: column;
-  gap: var(--space-md);
-  margin-bottom: var(--space-md);
-  padding: 20px 22px;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  margin-bottom: var(--space-sm);
+  padding: 10px 12px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(
-      135deg,
-      var(--color-navy-alpha-03),
-      var(--color-navy-alpha-08)
-    ),
-    var(--color-surface);
-  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
   min-width: 0;
   max-width: 100%;
   overflow: hidden;
@@ -882,77 +877,72 @@ table.sortable th {
 
 .pb-player-summary__main {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-lg);
+  gap: var(--space-sm);
+  min-width: 0;
 }
 
 .pb-player-summary__copy {
   min-width: 0;
-  max-width: 720px;
 }
 
 .pb-player-summary__eyebrow {
   display: inline-flex;
   align-items: center;
-  margin-bottom: var(--space-xs);
+  margin-bottom: 1px;
   color: var(--color-primary);
-  font-size: var(--font-size-xs);
+  font-size: var(--font-size-2xs);
   font-weight: 800;
-  letter-spacing: 0.16em;
+  letter-spacing: 0.08em;
   text-transform: uppercase;
 }
 
 .pb-player-summary h2 {
   margin: 0;
   color: var(--color-dark);
-  font-size: var(--font-size-3xl);
-  line-height: 1.05;
-  letter-spacing: 0.01em;
+  font-size: var(--font-size-lg);
+  line-height: 1.15;
+  letter-spacing: 0;
   overflow-wrap: anywhere;
 }
 
 .pb-player-summary p {
-  margin: var(--space-sm) 0 0;
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-lg);
-  line-height: 1.55;
-  overflow-wrap: anywhere;
+  display: none;
 }
 
 .pb-player-summary__actions {
   display: flex;
   flex-wrap: wrap;
   justify-content: flex-end;
-  gap: var(--space-sm);
-  min-width: 260px;
+  gap: var(--space-xs);
+  min-width: 0;
 }
 
 .pb-player-summary__stats {
   display: flex;
   flex-wrap: wrap;
-  gap: var(--space-sm);
+  gap: var(--space-xs);
+  justify-content: flex-end;
 }
 
 .pb-player-summary__stats span,
 .pb-player-summary__filter-pill {
   display: inline-flex;
   align-items: center;
-  min-height: 36px;
-  padding: 0 14px;
+  min-height: 26px;
+  padding: 0 9px;
   border-radius: var(--radius-pill);
   border: 1px solid var(--color-border-light);
-  background: rgba(255 255 255 / 0.88);
+  background: var(--color-bg-light);
   color: var(--color-text);
-  font-size: var(--font-size-sm);
+  font-size: var(--font-size-xs);
   font-weight: 700;
   white-space: nowrap;
 }
 
 .pb-player-summary__filters {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 8px;
+  display: none;
 }
 
 body[data-auth-role="player"] #playbookTable .col-gameplan,
@@ -2697,19 +2687,17 @@ body.shell-phone .pb-action-sheet {
   (pointer: coarse) and (max-width: 820px),
   (pointer: coarse) and (max-height: 640px) {
   .pb-player-summary {
-    padding: 16px;
+    grid-template-columns: 1fr;
+    padding: 8px;
   }
 
   .pb-player-summary__main {
     flex-direction: column;
-    gap: var(--space-md);
+    align-items: stretch;
+    gap: var(--space-xs);
   }
 
   .pb-player-summary h2 {
-    font-size: var(--font-size-2xl);
-  }
-
-  .pb-player-summary p {
     font-size: var(--font-size-base);
   }
 
@@ -2724,6 +2712,10 @@ body.shell-phone .pb-action-sheet {
     min-height: 48px;
     justify-content: center;
     touch-action: manipulation;
+  }
+
+  .pb-player-summary__stats {
+    justify-content: flex-start;
   }
 
   .pb-controls-row,
