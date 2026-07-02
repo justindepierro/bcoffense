@@ -47,11 +47,11 @@ function describe(group, fn) {
 function expect(text) {
   const result = moderateContent(text);
   return {
-    toAllow:  (label) => assert(result.outcome === "allow",  label || `"${text.slice(0,40)}" → allow`),
-    toWarn:   (label) => assert(result.outcome === "warn",   label || `"${text.slice(0,40)}" → warn`),
-    toReview: (label) => assert(result.outcome === "review", label || `"${text.slice(0,40)}" → review`),
-    toBlock:  (label) => assert(result.outcome === "block",  label || `"${text.slice(0,40)}" → block`),
-    notToBlock: (label) => assert(result.outcome !== "block", label || `"${text.slice(0,40)}" not blocked`),
+    toAllow: (label) => assert(result.outcome === "allow", label || `"${text.slice(0, 40)}" → allow`),
+    toWarn: (label) => assert(result.outcome === "warn", label || `"${text.slice(0, 40)}" → warn`),
+    toReview: (label) => assert(result.outcome === "review", label || `"${text.slice(0, 40)}" → review`),
+    toBlock: (label) => assert(result.outcome === "block", label || `"${text.slice(0, 40)}" → block`),
+    notToBlock: (label) => assert(result.outcome !== "block", label || `"${text.slice(0, 40)}" not blocked`),
     result,
   };
 }

@@ -22,7 +22,7 @@ import {
   getActiveCoachIds,
   getCustomTermOpts,
 } from "../../_lib/d1-threads.js";
-import { notifyOnCoachPost, createNotification } from "../../_lib/d1-notifications.js";
+import { notifyOnCoachPost, notifyOnReply, createNotification } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -152,6 +152,12 @@ export async function onRequest(context) {
     if (isStaff) {
       const posterName = session.label || session.username;
       notifyOnCoachPost(env.DB, thread.id, authorId, posterName, playId, postBody, env).catch(() => { });
+    }
+
+    // Notify the parent post author when someone replies to their post (fire-and-forget)
+    if (parentPostId) {
+      const posterName = session.label || session.username;
+      notifyOnReply(env.DB, parentPostId, authorId, posterName, playId, postBody, env).catch(() => { });
     }
 
     const modInfo = result._moderation || {};

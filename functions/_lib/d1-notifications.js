@@ -5,6 +5,7 @@
  */
 
 import { sendPushToUser } from "./d1-push.js";
+import { getReactorsByKey } from "./d1-threads.js";
 
 const NOTIF_EXPIRY_DAYS = 30;
 
@@ -147,4 +148,92 @@ export async function markAllRead(db, userId) {
     .prepare(`UPDATE notifications SET read_at = ? WHERE user_id = ? AND read_at IS NULL`)
     .bind(now, userId)
     .run();
+}
+
+/**
+ * Notify the author of a post when someone replies to it.
+ * Skips notification if the replier is the post author (self-reply).
+ */
+export async function notifyOnReply(db, parentPostId, replyAuthorId, replyAuthorName, playId, replyBody, env = null) {
+  const post = await db
+    .prepare(
+      `SELECT p.author_id, u.role FROM discussion_posts p
+       JOIN users u ON u.id = p.author_id WHERE p.id = ? LIMIT 1`,
+    )
+    .bind(parentPostId)
+    .first();
+  if (!post || post.author_id === replyAuthorId) return; // no self-notify
+
+  const truncBody = String(replyBody || "").slice(0, 120);
+  await createNotification(db, {
+    userId: post.author_id,
+    type: "reply",
+    title: `${replyAuthorName} replied to your post`,
+    body: truncBody,
+    deepLink: playId,
+  });
+
+  if (env) {
+    sendPushToUser(env, db, post.author_id, {
+      title: `${replyAuthorName} replied`,
+      body: truncBody,
+      url: "/",
+      tag: `reply-${parentPostId}`,
+    }).catch(() => { });
+  }
+}
+
+/**
+ * Notify when a coach marks a reply as the official answer:
+ *   1. Notifies the question author.
+ *   2. Notifies all users who reacted with "same_question" on the question.
+ * Caps at 50 recipients total.
+ */
+export async function notifyOnOfficialAnswer(db, questionPostId, coachName, playId, env = null) {
+  // Get the question author
+  const question = await db
+    .prepare(
+      `SELECT p.author_id, p.body, u.role FROM discussion_posts p
+       JOIN users u ON u.id = p.author_id WHERE p.id = ? LIMIT 1`,
+    )
+    .bind(questionPostId)
+    .first();
+
+  const recipientSet = new Set();
+
+  if (question && question.role === "player") {
+    recipientSet.add(question.author_id);
+  }
+
+  // Add "same_question" reactors (interested in the same answer)
+  const sameQReactors = await getReactorsByKey(db, questionPostId, "same_question");
+  for (const uid of sameQReactors) {
+    if (recipientSet.size >= 50) break;
+    recipientSet.add(uid);
+  }
+
+  for (const userId of recipientSet) {
+    const isQuestionAuthor = question && userId === question.author_id;
+    const title = isQuestionAuthor
+      ? `${coachName} answered your question`
+      : `${coachName} answered a question you followed`;
+    const body = String(question?.body || "").slice(0, 100);
+
+    await createNotification(db, {
+      userId,
+      type: "official_answer",
+      title,
+      body,
+      deepLink: playId,
+    });
+
+    if (env) {
+      sendPushToUser(env, db, userId, {
+        title,
+        body,
+        url: "/",
+        tag: `official-answer-${questionPostId}`,
+      }).catch(() => { });
+    }
+  }
 }

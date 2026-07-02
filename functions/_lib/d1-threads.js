@@ -71,6 +71,7 @@ export async function getThread(db, teamId, playId) {
 const POST_SELECT = `
   p.id, p.thread_id, p.parent_post_id, p.root_post_id, p.depth,
   p.post_type, p.body, p.question_state, p.question_category,
+  p.is_official, p.is_branch_locked,
   p.created_at, p.updated_at, p.edited_at, p.deleted_at,
   p.author_id, p.moderation_status,
   u.display_name AS author_name, u.role AS author_role
@@ -701,5 +702,140 @@ export async function getActiveCoachIds(db, teamId) {
     .bind(teamId)
     .all();
   return (rows.results || []).map((r) => r.id);
+}
+
+/**
+ * Mark (or unmark) a reply as the official coach answer for its parent question.
+ *
+ * When marking official:
+ *   - Sets is_official = 1 on the reply post.
+ *   - Clears is_official from any previous official reply on the same question.
+ *   - Sets pinned_reply_id on the root/question post to this reply.
+ *
+ * When unmarking:
+ *   - Clears is_official on this post.
+ *   - If pinned_reply_id on the question points to this post, clears it.
+ *
+ * Returns { ok, official } or { error }.
+ */
+export async function setOfficialAnswer(db, teamId, postId, official, session) {
+  const isStaff = session?.role === "coach" || session?.role === "admin";
+  if (!isStaff) return { error: "Coaches only." };
+
+  const now = Math.floor(Date.now() / 1000);
+
+  // Load the reply post and verify it belongs to this team
+  const post = await db
+    .prepare(
+      `SELECT p.id, p.thread_id, p.root_post_id, p.parent_post_id, p.depth
+       FROM discussion_posts p
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE p.id = ? AND t.team_id = ? AND p.deleted_at IS NULL LIMIT 1`,
+    )
+    .bind(postId, teamId)
+    .first();
+  if (!post) return { error: "Post not found." };
+  if (post.depth === 0) return { error: "Cannot mark a root post as the official answer." };
+
+  const questionId = post.root_post_id || post.parent_post_id;
+
+  if (official) {
+    // Clear any existing official answer on this question (only one allowed)
+    await db
+      .prepare(
+        `UPDATE discussion_posts SET is_official = 0, updated_at = ?
+         WHERE root_post_id = ? AND is_official = 1 AND id != ?`,
+      )
+      .bind(now, questionId, postId)
+      .run();
+
+    // Mark this reply as official
+    await db
+      .prepare(`UPDATE discussion_posts SET is_official = 1, updated_at = ? WHERE id = ?`)
+      .bind(now, postId)
+      .run();
+
+    // Pin it on the parent question
+    await db
+      .prepare(`UPDATE discussion_posts SET pinned_reply_id = ?, updated_at = ? WHERE id = ?`)
+      .bind(postId, now, questionId)
+      .run();
+  } else {
+    // Unmark official
+    await db
+      .prepare(`UPDATE discussion_posts SET is_official = 0, updated_at = ? WHERE id = ?`)
+      .bind(now, postId)
+      .run();
+
+    // Clear pinned_reply_id on the question only if it pointed to this post
+    await db
+      .prepare(
+        `UPDATE discussion_posts SET pinned_reply_id = NULL, updated_at = ?
+         WHERE id = ? AND pinned_reply_id = ?`,
+      )
+      .bind(now, questionId, postId)
+      .run();
+  }
+
+  return { ok: true, official: !!official, questionId };
+}
+
+/**
+ * Lock or unlock a single reply branch.
+ * Locked branches prevent further replies under that root post.
+ * Does not affect the rest of the play discussion.
+ *
+ * Returns { ok, locked } or { error }.
+ */
+export async function lockReplyBranch(db, teamId, postId, lock, session) {
+  const isStaff = session?.role === "coach" || session?.role === "admin";
+  if (!isStaff) return { error: "Coaches only." };
+
+  const now = Math.floor(Date.now() / 1000);
+
+  const post = await db
+    .prepare(
+      `SELECT p.id FROM discussion_posts p
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE p.id = ? AND t.team_id = ? AND p.deleted_at IS NULL LIMIT 1`,
+    )
+    .bind(postId, teamId)
+    .first();
+  if (!post) return { error: "Post not found." };
+
+  await db
+    .prepare(`UPDATE discussion_posts SET is_branch_locked = ?, updated_at = ? WHERE id = ?`)
+    .bind(lock ? 1 : 0, now, postId)
+    .run();
+
+  return { ok: true, locked: !!lock };
+}
+
+/**
+ * Look up the author_id and play_id for a post (for notification targeting).
+ */
+export async function getPostContext(db, postId) {
+  return db
+    .prepare(
+      `SELECT p.author_id, p.body, p.post_type, p.root_post_id,
+              t.play_id, t.team_id
+       FROM discussion_posts p
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE p.id = ? AND p.deleted_at IS NULL LIMIT 1`,
+    )
+    .bind(postId)
+    .first();
+}
+
+/**
+ * Get all user IDs who reacted with a specific key on a given post.
+ * Used to target "same question" reactors when a question is answered.
+ */
+export async function getReactorsByKey(db, postId, reactionKey) {
+  const rows = await db
+    .prepare(`SELECT user_id FROM reactions WHERE post_id = ? AND reaction_key = ?`)
+    .bind(postId, reactionKey)
+    .all();
+  return (rows.results || []).map((r) => r.user_id);
 }
 

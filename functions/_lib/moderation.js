@@ -156,7 +156,7 @@ function fuzzyCheckWords(text, extraAllowlist = new Set()) {
     const strictWord = normalizeStrict(raw);
     // Skip if this word is in the football allowlist
     if (FOOTBALL_TERMS.has(word) || FOOTBALL_TERMS.has(strictWord) ||
-        extraAllowlist.has(word) || extraAllowlist.has(strictWord)) continue;
+      extraAllowlist.has(word) || extraAllowlist.has(strictWord)) continue;
     for (const entry of FUZZY_BLOCKED) {
       if (Math.abs(word.length - entry.word.length) > 1) continue; // length guard
       const dist = levenshtein(word, entry.word, 1);

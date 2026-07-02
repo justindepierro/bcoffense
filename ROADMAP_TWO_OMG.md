@@ -475,12 +475,12 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Preserve the complete logical parent relationship in the database.
 - [x] Allow replies to comments.
 - [x] Allow replies to questions.
-- [ ] Allow replies to coach clarifications.
+- [x] Allow replies to coach clarifications.
 - [ ] Allow replies to visual attachments.
 - [x] Prevent replies to deleted or locked posts unless a coach restores them.
-- [ ] Allow coaches to lock one reply branch without locking the entire play discussion.
+- [x] Allow coaches to lock one reply branch without locking the entire play discussion.
 - [x] Add reply-count fields to post summaries.
-- [ ] Add efficient thread-query indexes.
+- [x] Add efficient thread-query indexes.
 - [ ] Avoid one database query per reply.
 - [ ] Load root posts and visible replies in batches.
 - [x] Paginate large root-level discussions.
@@ -490,7 +490,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Keep the official pinned coach answer above ordinary replies.
 - [x] Allow coaches to pin a reply as the official answer.
 - [x] Allow only one official pinned answer per question by default.
-- [ ] Preserve previous pinned-answer history.
+- [x] Preserve previous pinned-answer history.
 - [ ] Add thread architecture tests.
 
 ⸻
@@ -756,8 +756,8 @@ Initial reactions:
 - [x] Do not allow arbitrary custom emoji in version one.
 - [x] Add accessible labels for every reaction.
 - [x] Do not rely on emoji appearance alone to communicate meaning.
-- [ ] Add reaction unit tests.
-- [ ] Add reaction aggregation tests.
+- [x] Add reaction unit tests.
+- [x] Add reaction aggregation tests.
 
 ⸻
 
@@ -797,8 +797,8 @@ Initial reactions:
 - [x] Automatically mark the question Answered when an official coach answer is posted.
 - [x] Allow the coach to leave the question open after answering.
 - [x] Allow the coach to mark the question Resolved immediately.
-- [ ] Notify the original player.
-- [ ] Notify players who selected I Have This Question Too.
+- [x] Notify the original player.
+- [x] Notify players who selected I Have This Question Too.
 - [ ] Notify players assigned to that play only when the coach marks the reply as a team clarification.
 - [x] Avoid notifying the entire team for an ordinary one-player reply.
 - [ ] Add Send to Position Group.
@@ -908,12 +908,12 @@ Initial reactions:
 
 # 8B.15 — Notifications
 
-- [ ] Notify the original author when someone replies.
+- [x] Notify the original author when someone replies.
 - [ ] Notify a player when a coach posts a visual reply.
 - [ ] Label the notification as Coach added a marked-up answer.
-- [ ] Notify users who selected I Have This Question Too.
-- [ ] Notify users when an official answer is pinned.
-- [ ] Notify users when a question is resolved.
+- [x] Notify users who selected I Have This Question Too.
+- [x] Notify users when an official answer is pinned.
+- [x] Notify users when a question is resolved.
 - [ ] Bundle multiple ordinary player replies.
 - [ ] Do not send push notifications for every emoji reaction.
 - [ ] Show reaction activity inside the application.
