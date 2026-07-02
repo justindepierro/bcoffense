@@ -22,6 +22,16 @@ function getPlayThreadId(play) {
   return encodeURIComponent(key);
 }
 
+// ── Current auth user ───────────────────────────────────────────────────────────
+// auth.js exposes window.getCurrentAuthUser(); window.currentAuthUser is never set.
+function _discAuthUser() {
+  return typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+}
+function _discIsStaff() {
+  const role = _discAuthUser()?.role;
+  return role === "coach" || role === "admin" || role === "assistant";
+}
+
 // ── Relative time ─────────────────────────────────────────────────────────────
 
 function _discRelTime(unixSec) {
@@ -312,7 +322,7 @@ function _discGetScriptPeriodForIdx(idx) {
 }
 
 function _discGetPlayerPosition() {
-  const user = window.currentAuthUser;
+  const user = _discAuthUser();
   if (!user || (user.role !== "player")) return null;
   if (typeof storageManager === "undefined" || typeof STORAGE_KEYS === "undefined") return null;
   const roster = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
@@ -371,7 +381,7 @@ async function _discLoadBody(playId, playSig, bodyEl) {
 function _discRenderBody(container, data, playId, playSig) {
   const { thread, posts, hasMore } = data;
   const isLocked = thread?.locked;
-  const userRole = window.currentAuthUser?.role;
+  const userRole = _discAuthUser()?.role;
   const isStaff = userRole === "coach" || userRole === "admin" || userRole === "assistant";
   const canPost = !isLocked || isStaff;
 
@@ -473,7 +483,7 @@ function _discAttachmentsHtml(attachments) {
 
 function _discPostHtml(p, playId, isReply = false) {
   const mine = p.authorId === _discCurrentUserId;
-  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin" || window.currentAuthUser?.role === "assistant";
+  const isStaff = _discIsStaff();
   const canAct = mine || isStaff;
   const isQuestion = p.postType === "question";
   const isResolved = p.questionState === "resolved" || p.questionState === "answered";
@@ -721,7 +731,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const isReply = !!parentPostId;
   const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
   const idSuffix = isReply ? `reply-${parentPostId}` : playId;
-  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin" || window.currentAuthUser?.role === "assistant";
+  const isStaff = _discIsStaff();
   const playerPos = !isReply && !isStaff ? _discGetPlayerPosition() : null;
   const gw = (typeof getGameWeek === "function") ? getGameWeek() : null;
   const opponentCtx = (!isReply && gw?.opponentName) ? ` · vs ${escapeHtml(gw.opponentName)}` : "";
@@ -829,8 +839,8 @@ async function submitDiscPost(arg, el) {
     body,
     postType: typeSelect?.value || "comment",
     questionCategory: document.getElementById(`discQCat-${playId}`)?.value || "",
-    authorName: window.currentAuthUser?.name || window.currentAuthUser?.username || "You",
-    authorRole: window.currentAuthUser?.role || "player",
+    authorName: _discAuthUser()?.name || _discAuthUser()?.username || "You",
+    authorRole: _discAuthUser()?.role || "player",
     authorId: _discCurrentUserId || "me",
     reactions: [], replyCount: 0, replies: [],
     createdAt: new Date().toISOString(),
@@ -1103,8 +1113,8 @@ async function submitDiscReply(arg, el) {
     id: `opt-${Date.now()}`,
     body,
     postType: "comment",
-    authorName: window.currentAuthUser?.name || window.currentAuthUser?.username || "You",
-    authorRole: window.currentAuthUser?.role || "player",
+    authorName: _discAuthUser()?.name || _discAuthUser()?.username || "You",
+    authorRole: _discAuthUser()?.role || "player",
     authorId: _discCurrentUserId || "me",
     reactions: [], replyCount: 0, replies: [],
     createdAt: new Date().toISOString(),
@@ -1881,7 +1891,7 @@ async function openDiscReactionBreakdown(postId) {
   if (!postId) return;
   const postEl = document.getElementById(`disc-post-${postId}`);
   const playId = postEl?.closest("[data-play-id]")?.dataset?.playId || _discLastPlayId;
-  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin" || window.currentAuthUser?.role === "assistant";
+  const isStaff = _discIsStaff();
 
   // Build fallback from DOM if fetch fails
   const buildFallbackHtml = () => {
