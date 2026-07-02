@@ -116,6 +116,10 @@ function showTab(tabName) {
       populateWristbandCheckboxFilters();
       renderWristbandPlays();
       renderCardTabs();
+      // Render the card grid on tab activation. On mobile this also happens via
+      // syncMobileShellState's shell-size change, but on desktop the size never
+      // changes — without this the card diagram stays a blank white pane.
+      if (typeof renderWristbandGrid === "function") renderWristbandGrid();
     }
     // Show type-choice landing if wristband is empty and no type chosen yet
     if (typeof checkShowWbLanding === "function") checkShowWbLanding();
