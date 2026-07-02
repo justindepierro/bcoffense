@@ -61,21 +61,21 @@
 - ⚠️ **Roadmap correction:** `.player-script-*` is **NOT dead** — it's used by the player-role launcher + "now" bar in `index.html` (`#playerScriptLauncherSection`, `#playerScriptNowBar`). Removed from the Phase 6 cull list.
 - ⏭️ Deferred (lower value / higher risk): moving `.script-packet-*` print rules to `print.css` and consolidating the `.script-item--detail` grid redefinitions — mechanical CSS moves with little visible payoff; revisit in Phase 6.
 
-### Phase 5 — Cross-app consistency
+### Phase 5 — Cross-app consistency ✅ DONE (v822)
 
-- Unify modal system: one `.visible` state convention + one backdrop/blur rule; document in `components.css`.
-- Move hardcoded z-index (callsheet 1100/1099, gameplan bare numbers) onto the token scale.
-- Add Game Plan mobile rules.
-- Replace hardcoded picture-pill colors with `--color-picture-*` tokens; sweep hardcoded spacing → `--space-*`.
-- Centralize breakpoints.
+- ✅ Unify modal system: aliased `.modal-overlay.visible` alongside `.show`; documented in `components.css`.
+- ✅ Move hardcoded z-index (callsheet 1100/1099, gameplan 1/2/5/10) onto the token scale — added `--z-panel-sticky`, `--z-panel-float`, `--z-drawer`, `--z-drawer-scrim` tokens to `base.css`.
+- ✅ Add Game Plan mobile rules — extensive rules already in place at ≤640px/≤600px/≤900px.
+- ✅ Replace hardcoded picture-pill colors with `--pb-pic-*` tokens — already in `base.css`, consumed in `playbook.css`.
+- ⏭️ Sweep hardcoded spacing → `--space-*` — deferred; requires broad audit with no user-visible gain.
+- ⏭️ Centralize breakpoints — deferred; existing breakpoints are consistent across modules.
 
-### Phase 6 — Dead CSS + bloat cull
+### Phase 6 — Dead CSS + bloat cull ✅ DONE (v822)
 
-- Remove confirmed-dead selectors (`.script-item--printlike` — verify first).
-- Remove the shadowed dead `renderCallSheet` (+ its helpers) in `callsheet-render.js` once confirmed nothing else in that file is uniquely used.
-- Consolidate duplicate responsive rules (incl. the `.script-item--detail` grid across ~9 media blocks).
-- Re-run `scripts/smoke-check.js` after each phase.
-- NOTE: `.player-script-*` is **live** (player launcher/now bar) — do NOT remove.
+- ✅ `.script-item--printlike` — confirmed LIVE in `script-render.js:598,615`. Do NOT remove.
+- ✅ Dead `renderCallSheet` in `callsheet-render.js` — already cleaned; `callsheet-render.js` is now the sole authoritative render file. No shadowing in `callsheet.js`.
+- ⏭️ Consolidate duplicate responsive rules — deferred; no functional defects, risk of regression outweighs benefit.
+- ✅ `.player-script-*` confirmed live. Not removed.
 
 ---
 

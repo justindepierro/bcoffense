@@ -551,7 +551,7 @@
 #gameplan .gp-header {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: var(--z-panel-sticky);
   background: var(--color-bg-light);
 }
 
@@ -1129,7 +1129,7 @@
 .gp-jump-bar {
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: var(--z-panel-sticky);
   display: flex;
   gap: var(--space-xs);
   overflow-x: auto;
@@ -1197,7 +1197,7 @@
   display: none;
   position: sticky;
   bottom: var(--space-sm);
-  z-index: 10;
+  z-index: var(--z-panel-float);
   margin: var(--space-sm) auto;
   max-width: 480px;
   padding: var(--space-sm) var(--space-md);
@@ -2465,7 +2465,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   background: var(--color-bg-light);
   position: sticky;
   left: 0;
-  z-index: 2;
+  z-index: var(--z-sticky);
 }
 .gp-cmx-row-head {
   text-align: left;
@@ -2473,7 +2473,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   background: var(--color-bg-light);
   position: sticky;
   left: 0;
-  z-index: 1;
+  z-index: var(--z-base);
   white-space: nowrap;
 }
 .gp-cmx-col-head {
@@ -2652,7 +2652,7 @@ body.gp-dragging-from-box .gp-trash-zone {
   font-size: var(--font-size-sm);
   position: sticky;
   top: 0;
-  z-index: 5;
+  z-index: var(--z-panel-sticky);
   box-shadow: var(--shadow-sm);
 }
 .gp-spotlight-icon {
@@ -2689,7 +2689,7 @@ body.gp-dragging-from-box .gp-trash-zone {
     0 0 0 4px var(--color-navy-alpha-12),
     var(--shadow-md);
   position: relative;
-  z-index: 2;
+  z-index: var(--z-sticky);
 }
 /* When a box does NOT match: dim it so the matches pop */
 .gp-box.gp-box-dim {

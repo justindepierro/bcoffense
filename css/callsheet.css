@@ -3447,7 +3447,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   flex-direction: column;
   transform: translateX(100%);
   transition: transform var(--transition-normal);
-  z-index: 1100; /* above app header (1000) and tabs (999) */
+  z-index: var(--z-drawer); /* above app header (1000) and tabs (999) */
   font-family: var(--font-sans);
 }
 .gp-drawer.gp-drawer-open {
@@ -3860,7 +3860,7 @@ body.gp-drag-active .hash-column.gp-drag-over {
   top: 50%;
   right: 0;
   transform: translateY(-50%);
-  z-index: 1099; /* one below the open drawer (1100) — above header (1000) */
+  z-index: var(--z-drawer-scrim); /* one below the open drawer — above header (1000) */
   display: none; /* only visible on the call sheet tab */
   align-items: center;
   gap: 6px;
@@ -4340,7 +4340,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   background: var(--color-bg-lighter);
   position: sticky;
   top: 0;
-  z-index: 1;
+  z-index: var(--z-base);
 }
 .cs-nos-tabs {
   display: flex;

@@ -603,12 +603,12 @@ After the split, `playbook-chrome.js` should be ~200 lines and `playbook-reports
 
 **Checklist:**
 
-- [ ] Create `js/playbook-reports.js`
-- [ ] Move the 5 report-engine function groups there
-- [ ] Add `<script defer src="js/playbook-reports.js">` to `index.html` after `playbook-chrome.js`
-- [ ] Add `js/playbook-reports.js` to `LOCAL_ASSETS` in `sw.js`
-- [ ] Update `AGENTS.md` file structure and load-order docs
-- [ ] Bump SW version
+- [x] Create `js/playbook-reports.js`
+- [x] Move the 5 report-engine function groups there
+- [x] Add `<script defer src="js/playbook-reports.js">` to `index.html` after `playbook-chrome.js`
+- [x] Add `js/playbook-reports.js` to `LOCAL_ASSETS` in `sw.js`
+- [x] Update `AGENTS.md` file structure and load-order docs
+- [x] Bump SW version
 
 ---
 
