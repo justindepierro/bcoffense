@@ -374,12 +374,78 @@
     return null;
   }
 
+  // ── Remote (R2-backed) image helpers ───────────────────────────────────
+  // Images are pushed to R2 under the content-derived identity key so all
+  // auth roles (including players) can fetch them cross-device.
+
+  function _remoteAvailable() {
+    return (
+      typeof location !== "undefined" &&
+      location.protocol !== "file:" &&
+      typeof fetch === "function"
+    );
+  }
+
+  function _remoteIdentityKey(play) {
+    if (!play || typeof getPlayIdentityKey !== "function") return "";
+    return getPlayIdentityKey(play, "tag") || "";
+  }
+
+  async function _fetchRemoteForPlay(play) {
+    if (!_remoteAvailable()) return null;
+    const identityKey = _remoteIdentityKey(play);
+    if (!identityKey) return null;
+    try {
+      const res = await fetch(
+        `/images/file?sig=${encodeURIComponent(identityKey)}`,
+      );
+      if (!res.ok) return null;
+      const blob = await res.blob();
+      if (!blob || blob.size === 0) return null;
+      // Cache in IndexedDB under the identity key for future local lookups
+      await set(identityKey, blob);
+      return _urlCache.get(_normalizeSig(identityKey)) || null;
+    } catch (_e) {
+      return null;
+    }
+  }
+
+  async function pushRemote(play, blob) {
+    if (!_remoteAvailable() || !play || !blob) return;
+    const identityKey = _remoteIdentityKey(play);
+    if (!identityKey) return;
+    try {
+      await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
+        method: "PUT",
+        headers: { "Content-Type": blob.type || "image/jpeg" },
+        body: blob,
+      });
+    } catch (_e) {
+      // Fire and forget — remote push failure does not affect local storage
+    }
+  }
+
+  async function deleteRemote(play) {
+    if (!_remoteAvailable() || !play) return;
+    const identityKey = _remoteIdentityKey(play);
+    if (!identityKey) return;
+    try {
+      await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
+        method: "DELETE",
+      });
+    } catch (_e) {
+      // Fire and forget
+    }
+  }
+  // ────────────────────────────────────────────────────────────────────────
+
   async function ensureUrlForPlay(play) {
     for (const signature of signaturesForPlay(play)) {
       const url = await ensureUrl(signature);
       if (url) return url;
     }
-    return null;
+    // Not found locally — try R2 using the content-derived identity key
+    return _fetchRemoteForPlay(play);
   }
 
   function hasForPlay(play) {
@@ -668,6 +734,8 @@
     stats,
     exportAll,
     importAll,
+    pushRemote,
+    deleteRemote,
   };
 
   // Convenience helpers that take a Play object directly
@@ -681,6 +749,8 @@
     return hasForPlay(play);
   };
   window.deletePlayImage = function (play) {
+    // Remove from R2 so all devices reflect the deletion
+    deleteRemote(play).catch(() => {});
     return deleteForPlay(play);
   };
 

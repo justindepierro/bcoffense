@@ -774,6 +774,10 @@ function _wirePlayEditorImage(play, isNew) {
         quality: 0.92,
       });
       await window.playImages.set(sig, blob);
+      // Push to R2 for cross-device sharing (fire and forget)
+      if (window.playImages.pushRemote) {
+        window.playImages.pushRemote(play, blob).catch(() => {});
+      }
       await _refreshPreview();
       clearImageBusy();
       const summary =
