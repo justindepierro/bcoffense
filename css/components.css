@@ -3272,7 +3272,8 @@ kbd {
 }
 body.is-mobile-screen[data-active-tab="script"] .page-actions-fab,
 body.is-mobile-screen[data-active-tab="callsheet"] .page-actions-fab,
-body.is-mobile-screen[data-active-tab="wristband"] .page-actions-fab {
+body.is-mobile-screen[data-active-tab="wristband"] .page-actions-fab,
+body.is-mobile-screen[data-active-tab="gameplan"] .page-actions-fab {
   display: inline-flex;
 }
 /* On mobile the bottom-right pill replaces the inline header Actions button */

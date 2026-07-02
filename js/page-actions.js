@@ -75,6 +75,34 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🗑️", label: "Clear", run: () => _paCall("clearWristband") },
     ],
   },
+
+  gameplan: {
+    title: "Game Plan",
+    verbs: [
+      { icon: "📂", label: "Load", run: () => _paCall("openGamePlanSnapshotsMenu") },
+      { icon: "💾", label: "Save", run: () => _paCall("saveGamePlanSnapshot") },
+      { icon: "🖨️", label: "Print", run: () => _paCall("openGamePlanPrintModal") },
+      { icon: "⚙️", label: "Density", run: () => _paCall("cycleGamePlanDensity") },
+    ],
+    extras: [
+      { icon: "🧠", label: "Build Plan", run: () => _paCall("openSmartGamePlanBuilder") },
+      { icon: "➡️", label: "Send to Call Sheet", run: () => _paCall("pushGamePlanToCallSheet") },
+      { icon: "📋", label: "Send to Script", run: () => _paCall("pushGamePlanToScript") },
+      { icon: "🃏", label: "Send to Wristband", run: () => _paCall("pushGamePlanToWristband") },
+      { icon: "📋", label: "Create Script", run: () => _paCall("createScriptFromGamePlan") },
+      { icon: "🛡️", label: "Constraints", run: () => _paCall("runConstraintCheck") },
+      { icon: "💾", label: "Save Template", run: () => _paCall("saveGamePlanTemplate") },
+      { icon: "📂", label: "Templates", run: () => _paCall("openGamePlanTemplatesMenu") },
+      { icon: "🔁", label: "Compare Plans", run: () => _paCall("openGamePlanCompare") },
+      { icon: "📊", label: "Variety", run: () => _paCall("openGamePlanStats") },
+      { icon: "🗺️", label: "Coverage", run: () => _paCall("openGamePlanCoverageMatrix") },
+      { icon: "🎯", label: "vs Defense", run: () => _paCall("openGamePlanTendencyMirror") },
+      { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
+      { icon: "🔀", label: "Reorder Boxes", run: () => _paCall("openGamePlanReorderBoxes") },
+      { icon: "👁️", label: "Manage Boxes", run: () => _paCall("openGamePlanManageBoxes") },
+      { icon: "🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
+    ],
+  },
 };
 
 function _paCall(name, ...args) {
