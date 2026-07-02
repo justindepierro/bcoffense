@@ -66,6 +66,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "⚡", label: "Auto-Fill", run: () => _paCall("autoFillWristband") },
       { icon: "🧠", label: "Smart Fill", run: () => _paCall("smartFillBySituation") },
       { icon: "📂", label: "Load Templates", run: () => _paCall("openWristbandTemplatesMenu") },
+      { icon: "💾", label: "Save Template", run: () => _paCall("saveWristbandTemplate") },
       { icon: "💾", label: "Save As", run: () => _paCall("saveWristbandAs") },
       { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendWristbandToCallSheet") },
       { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendWristbandToGamePlan") },
