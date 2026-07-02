@@ -1629,6 +1629,32 @@ body.shell-phone .pb-utility-group {
   display: none;
 }
 
+/* Phone: compact top row — Filters + Actions pills on one line, search below.
+   Present / Add Play / Help live in the #pbActionSheet, so hide the duplicated
+   top-row copies (they otherwise stack full-width and balloon the container). */
+body.shell-phone .pb-top-row {
+  flex-direction: row;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+}
+body.shell-phone .pb-top-row > [data-action="openSelectedPlaybookPresentation"],
+body.shell-phone .pb-top-row > [data-action="addNewPlay"],
+body.shell-phone .pb-top-row > .pb-shortcuts-hint {
+  display: none;
+}
+body.shell-phone .pb-filter-toggle-btn,
+body.shell-phone .pb-action-sheet-toggle {
+  flex: 0 0 auto;
+  border-radius: var(--radius-pill);
+}
+body.shell-phone .pb-search-wrap {
+  flex: 1 1 100%;
+  max-width: 100%;
+  order: 5;
+}
+
 .pb-action-sheet-backdrop {
   display: none;
   position: fixed;
