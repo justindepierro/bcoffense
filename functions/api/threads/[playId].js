@@ -20,6 +20,7 @@ import {
   getRecentSevereCount,
   getPlayerMuteUntil,
   getActiveCoachIds,
+  getCustomTermOpts,
 } from "../../_lib/d1-threads.js";
 import { notifyOnCoachPost, createNotification } from "../../_lib/d1-notifications.js";
 
@@ -122,6 +123,8 @@ export async function onRequest(context) {
       return authJson({ ok: false, error: "This thread is locked." }, { status: 403 });
     }
 
+    const moderationOpts = await getCustomTermOpts(env.DB, teamId).catch(() => ({}));
+
     const result = await createPost(env.DB, {
       threadId: thread.id,
       authorId,
@@ -129,6 +132,7 @@ export async function onRequest(context) {
       body: postBody,
       parentPostId,
       questionCategory,
+      moderationOpts,
     });
 
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });

@@ -5558,12 +5558,79 @@ body.shell-phone .pb-action-sheet {
   color: var(--color-danger);
   text-transform: capitalize;
 }
-.disc-mod-category--spam { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); }
-.disc-mod-category--mild_profanity { background: color-mix(in srgb, var(--color-warning) 15%, transparent); color: var(--color-warning); }
-.disc-mod-category--harassment { background: color-mix(in srgb, var(--color-danger) 15%, transparent); color: var(--color-danger); }
-.disc-mod-category--threat { background: var(--color-danger); color: #fff; }
-.disc-mod-category--slur { background: var(--color-danger); color: #fff; }
-.disc-mod-category--sexual { background: var(--color-danger); color: #fff; }
+.disc-mod-category--spam {
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
+}
+.disc-mod-category--mild_profanity {
+  background: color-mix(in srgb, var(--color-warning) 15%, transparent);
+  color: var(--color-warning);
+}
+.disc-mod-category--harassment {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+.disc-mod-category--threat {
+  background: var(--color-danger);
+  color: #fff;
+}
+.disc-mod-category--slur {
+  background: var(--color-danger);
+  color: #fff;
+}
+.disc-mod-category--sexual {
+  background: var(--color-danger);
+  color: #fff;
+}
+.disc-mod-category--allow {
+  background: color-mix(in srgb, var(--color-success) 15%, transparent);
+  color: var(--color-success);
+}
+.disc-mod-category--blocked {
+  background: color-mix(in srgb, var(--color-danger) 15%, transparent);
+  color: var(--color-danger);
+}
+
+/* ── Play context in queue ──────────────────────────────────────────────────── */
+.disc-mod-play-ctx {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  background: var(--color-bg-lighter);
+  border-radius: var(--radius-sm);
+  padding: 1px 5px;
+}
+
+/* ── Moderation settings panel ──────────────────────────────────────────────── */
+.disc-mod-settings { display: flex; flex-direction: column; gap: var(--space-xs); }
+.disc-mod-stat-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: var(--font-size-xs);
+}
+.disc-mod-terms-list { display: flex; flex-direction: column; gap: var(--space-xs); margin-bottom: var(--space-sm); }
+.disc-mod-term-row {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  font-size: var(--font-size-xs);
+  padding: var(--space-xs) 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+.disc-mod-add-term {
+  display: flex;
+  gap: var(--space-xs);
+  align-items: center;
+  flex-wrap: wrap;
+  margin-top: var(--space-xs);
+}
+.disc-mod-queue-footer {
+  margin: var(--space-xs) 0 0;
+  text-align: right;
+  font-size: var(--font-size-xs);
+}
 
 /* ── Player monitoring notice ───────────────────────────────────────────────── */
 .disc-monitoring-notice {

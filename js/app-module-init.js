@@ -67,7 +67,7 @@ function initAllModules() {
               },
             );
           }
-        }).catch(() => {});
+        }).catch(() => { });
       }
     },
     { timeout: 2000 },

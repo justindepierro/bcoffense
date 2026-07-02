@@ -209,7 +209,7 @@ export async function getPostReplies(db, rootPostId, { limit = 20, afterId = nul
  * Create a new post (or reply). Returns the new post row + moderation info.
  * parentPostId: set to create a reply; omit for root posts.
  */
-export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null, questionCategory = null }) {
+export async function createPost(db, { threadId, authorId, postType, body, parentPostId = null, questionCategory = null, moderationOpts = {} }) {
   const trimmed = sanitizePostBody(body);
   if (!trimmed) return { error: "Post body is required." };
   if (trimmed.length > MAX_POST_LENGTH) return { error: `Posts must be ${MAX_POST_LENGTH} characters or fewer.` };
@@ -227,7 +227,7 @@ export async function createPost(db, { threadId, authorId, postType, body, paren
   }
 
   // ── Content moderation ──────────────────────────────────────────────────
-  const modResult = moderateContent(trimmed);
+  const modResult = moderateContent(trimmed, {}, moderationOpts);
   const moderationStatus = outcomeToStatus(modResult.outcome);
 
   const id = crypto.randomUUID();
@@ -605,7 +605,86 @@ export async function getPlayerMuteUntil(db, userId) {
 }
 
 /**
- * Get coach/admin user IDs who have engaged in a team's threads.
+ * Load team-specific custom moderation terms from D1 and return them as
+ * opts for moderateContent(). Called once per post creation request.
+ * Returns { extraAllowlist: Set, extraBlocked: [] }
+ */
+export async function getCustomTermOpts(db, teamId) {
+  if (!teamId) return { extraAllowlist: new Set(), extraBlocked: [] };
+  const rows = await db.prepare(
+    "SELECT term_normalized, type, category, severity FROM moderation_custom_terms WHERE team_id = ? LIMIT 200",
+  ).bind(teamId).all();
+
+  const extraAllowlist = new Set();
+  const extraBlocked = [];
+
+  for (const row of rows.results || []) {
+    if (row.type === "allowlist") {
+      extraAllowlist.add(String(row.term_normalized));
+    } else if (row.type === "blocked" && row.category && row.severity) {
+      const escaped = String(row.term_normalized).replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      extraBlocked.push({
+        re: new RegExp(`\\b${escaped}\\b`, "i"),
+        category: row.category,
+        severity: Number(row.severity),
+        normCheck: true,
+      });
+    }
+  }
+  return { extraAllowlist, extraBlocked };
+}
+
+/**
+ * Get moderation action counts by category for the past 7 and 30 days.
+ * Used by the monitoring stats endpoint.
+ */
+export async function getModerationStats(db, teamId) {
+  const now = Math.floor(Date.now() / 1000);
+  const d7 = now - 7 * 86400;
+  const d30 = now - 30 * 86400;
+
+  // Count by action type for each time window
+  const [total, week, month] = await Promise.all([
+    db.prepare(
+      `SELECT COUNT(*) AS cnt FROM moderation_actions ma
+       JOIN discussion_posts p ON p.id = ma.post_id
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE t.team_id = ?`,
+    ).bind(teamId).first(),
+    db.prepare(
+      `SELECT COUNT(*) AS cnt FROM moderation_actions ma
+       JOIN discussion_posts p ON p.id = ma.post_id
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE t.team_id = ? AND ma.created_at >= ?`,
+    ).bind(teamId, d7).first(),
+    db.prepare(
+      `SELECT COUNT(*) AS cnt FROM moderation_actions ma
+       JOIN discussion_posts p ON p.id = ma.post_id
+       JOIN play_threads t ON t.id = p.thread_id
+       WHERE t.team_id = ? AND ma.created_at >= ?`,
+    ).bind(teamId, d30).first(),
+  ]);
+
+  // Count false-positive reversals (approve of auto-flagged post)
+  const reversals = await db.prepare(
+    `SELECT COUNT(*) AS cnt FROM moderation_actions ma
+     JOIN discussion_posts p ON p.id = ma.post_id
+     JOIN play_threads t ON t.id = p.thread_id
+     WHERE t.team_id = ? AND ma.action = 'approve'
+       AND EXISTS (
+         SELECT 1 FROM moderation_actions ma2
+         WHERE ma2.post_id = ma.post_id AND ma2.action IN ('auto_review', 'auto_block')
+       )`,
+  ).bind(teamId).first();
+
+  return {
+    total: total?.cnt || 0,
+    last7Days: week?.cnt || 0,
+    last30Days: month?.cnt || 0,
+    falsePositiveReversals: reversals?.cnt || 0,
+  };
+}
+
  * Used to target repeated-violation notifications.
  */
 export async function getActiveCoachIds(db, teamId) {

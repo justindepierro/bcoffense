@@ -357,18 +357,18 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Detect common number-for-letter substitutions.
 - [x] Detect punctuation-for-letter substitutions.
 - [x] Normalize excessive repeated characters.
-- [ ] Detect words split across multiple lines.
+- [x] Detect words split across multiple lines.
 - [x] Detect common attempts to bypass the filter.
 - [x] Keep the restricted-term rules on the server rather than exposing them in client JavaScript.
-- [ ] Encrypt or otherwise restrict access to sensitive moderation configuration.
+- [x] Encrypt or otherwise restrict access to sensitive moderation configuration.
 - [x] Create an extensible restricted-language dictionary.
 - [x] Categorize restricted terms rather than storing one undifferentiated list.
 - [x] Assign severity values to restricted terms and patterns.
 - [x] Support exact-match patterns.
 - [x] Support normalized-match patterns.
 - [x] Support phrase patterns.
-- [ ] Support fuzzy matching for deliberate misspellings.
-- [ ] Add safeguards against excessive fuzzy-match false positives.
+- [x] Support fuzzy matching for deliberate misspellings.
+- [x] Add safeguards against excessive fuzzy-match false positives.
 - [x] Create a football terminology allowlist.
 - [x] Add legitimate terms such as blitz, pistol, gun, bomb, kill, smash, crack, trap, naked, bullet, shoot, and execution to context-aware review rules.
 - [x] Do not globally allow a football term when the surrounding sentence is threatening or abusive.
@@ -376,7 +376,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Distinguish descriptions of plays from statements directed at a person.
 - [x] Detect second-person threatening constructions such as direct threats toward “you.”
 - [x] Detect targeted insults using names, roster identities, or tagged users.
-- [ ] Detect repeated harassment across multiple posts.
+- [x] Detect repeated harassment across multiple posts.
 - [x] Detect sexualized comments directed toward another user.
 - [x] Detect attempts to reveal phone numbers, addresses, or other personal information.
 - [x] Detect spam and repeated-message flooding.
@@ -391,52 +391,52 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Show the original submitted text only to authorized moderators.
 - [x] Show detected category.
 - [x] Show severity score.
-- [ ] Show detected patterns or reasons.
+- [x] Show detected patterns or reasons.
 - [x] Show author and source context.
-- [ ] Show play, script, opponent, and position context.
+- [x] Show play, script, opponent, and position context.
 - [x] Add Approve action.
 - [x] Add Reject action.
-- [ ] Add Edit and Approve action for coaches where policy permits.
-- [ ] Add Warn User action.
-- [ ] Add Lock Thread action.
-- [ ] Add Temporary Mute action.
-- [ ] Add Account Review action.
+- [x] Add Edit and Approve action for coaches where policy permits.
+- [x] Add Warn User action.
+- [x] Add Lock Thread action.
+- [x] Add Temporary Mute action.
+- [x] Add Account Review action.
 - [x] Require a moderation reason for rejection, muting, or account action.
 - [x] Store moderation decisions in an audit table.
 - [x] Store moderator identity.
 - [x] Store decision timestamp.
 - [x] Preserve the submitted message securely for audit purposes where school policy permits.
 - [x] Prevent ordinary users from accessing rejected content.
-- [ ] Do not automatically create a disciplinary record from one filter match.
-- [ ] Track false-positive reversals.
-- [ ] Allow administrators to add a term to the football allowlist after review.
-- [ ] Allow administrators to increase the severity of newly observed slang or coded language.
-- [ ] Add a process for regularly reviewing moderation terms.
-- [ ] Add rate limits for repeated blocked submissions.
-- [ ] Add escalating cooldowns for repeated bypass attempts.
-- [ ] Notify coaches after repeated severe violations.
-- [ ] Avoid notifying the entire staff for mild isolated profanity.
-- [ ] Add player-facing language explaining that team communication is monitored.
-- [ ] Add team communication expectations to account onboarding.
-- [ ] Add an acceptable-use acknowledgment.
-- [ ] Add privacy language explaining moderation and audit logging.
-- [ ] Add unit tests for ordinary football terminology.
-- [ ] Add unit tests for profanity.
-- [ ] Add unit tests for disguised profanity.
-- [ ] Add unit tests for racial and identity-based slurs.
-- [ ] Add unit tests for sexual language.
-- [ ] Add unit tests for threats.
-- [ ] Add unit tests for targeted harassment.
-- [ ] Add unit tests for personal-information sharing.
-- [ ] Add unit tests for Unicode and punctuation bypasses.
-- [ ] Add tests ensuring legitimate football phrases are not falsely blocked.
-- [ ] Add tests ensuring threatening uses of football terms are still detected.
-- [ ] Add moderation permission tests.
-- [ ] Add moderation audit-history tests.
-- [ ] Add mobile moderation-queue layouts.
-- [ ] Add iPad moderation-queue layouts.
-- [ ] Add accessibility labels and status announcements.
-- [ ] Add production monitoring for false-positive and false-negative reports.
+- [x] Do not automatically create a disciplinary record from one filter match.
+- [x] Track false-positive reversals.
+- [x] Allow administrators to add a term to the football allowlist after review.
+- [x] Allow administrators to increase the severity of newly observed slang or coded language.
+- [x] Add a process for regularly reviewing moderation terms.
+- [x] Add rate limits for repeated blocked submissions.
+- [x] Add escalating cooldowns for repeated bypass attempts.
+- [x] Notify coaches after repeated severe violations.
+- [x] Avoid notifying the entire staff for mild isolated profanity.
+- [x] Add player-facing language explaining that team communication is monitored.
+- [x] Add team communication expectations to account onboarding.
+- [x] Add an acceptable-use acknowledgment.
+- [x] Add privacy language explaining moderation and audit logging.
+- [x] Add unit tests for ordinary football terminology.
+- [x] Add unit tests for profanity.
+- [x] Add unit tests for disguised profanity.
+- [x] Add unit tests for racial and identity-based slurs.
+- [x] Add unit tests for sexual language.
+- [x] Add unit tests for threats.
+- [x] Add unit tests for targeted harassment.
+- [x] Add unit tests for personal-information sharing.
+- [x] Add unit tests for Unicode and punctuation bypasses.
+- [x] Add tests ensuring legitimate football phrases are not falsely blocked.
+- [x] Add tests ensuring threatening uses of football terms are still detected.
+- [x] Add moderation permission tests.
+- [x] Add moderation audit-history tests.
+- [x] Add mobile moderation-queue layouts.
+- [x] Add iPad moderation-queue layouts.
+- [x] Add accessibility labels and status announcements.
+- [x] Add production monitoring for false-positive and false-negative reports.
 
 # Phase 8B — Visual Coach Replies, Reply Trees, Attachments, and Emoji Reactions
 

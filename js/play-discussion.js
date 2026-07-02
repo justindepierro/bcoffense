@@ -1132,12 +1132,21 @@ async function openDiscModerationQueue() {
       const categoryBadge = p.moderationCategory
         ? `<span class="disc-mod-category disc-mod-category--${escapeHtml(p.moderationCategory)}" aria-label="Flagged for: ${escapeHtml(p.moderationCategory)}">${escapeHtml(p.moderationCategory)}</span>`
         : "";
-      html += `<div class="disc-mod-item" data-post-id="${escapeHtml(p.id)}" role="listitem" aria-label="Post by ${escapeHtml(p.authorName)}">` +
+      // Decode play context from the encoded playId ("formation::play::personnel")
+      let playContext = "";
+      if (p.playId) {
+        try {
+          const parts = decodeURIComponent(p.playId).split("::");
+          if (parts.length >= 2) playContext = `<span class="disc-mod-play-ctx" title="Play context">${escapeHtml(parts[0])} · ${escapeHtml(parts[1])}${parts[2] ? " · " + escapeHtml(parts[2]) : ""}</span>`;
+        } catch (_) { playContext = `<span class="disc-mod-play-ctx">${escapeHtml(p.playId)}</span>`; }
+      }
+      html += `<div class="disc-mod-item" data-post-id="${escapeHtml(p.id)}" data-play-id="${escapeHtml(p.playId || "")}" role="listitem" aria-label="Post by ${escapeHtml(p.authorName)}">` +
         `<div class="disc-mod-item-meta">` +
         `<strong>${escapeHtml(p.authorName)}</strong>` +
         ` <span class="disc-role-badge disc-role-badge--${escapeHtml(p.authorRole)}" aria-label="Role: ${escapeHtml(p.authorRole)}">${escapeHtml(p.authorRole)}</span>` +
         ` ${categoryBadge}` +
         ` <span class="disc-mod-status" aria-label="Status: ${escapeHtml(p.moderationStatus)}">${escapeHtml(p.moderationStatus)}</span>` +
+        (playContext ? ` ${playContext}` : "") +
         `</div>` +
         `<div class="disc-mod-body" role="region" aria-label="Post content">${escapeHtml(p.body)}</div>` +
         `<div class="disc-mod-actions" role="group" aria-label="Actions for post by ${escapeHtml(p.authorName)}">` +
@@ -1145,11 +1154,14 @@ async function openDiscModerationQueue() {
         `<button class="btn btn-xs btn-warning" data-action="editApproveDiscPost" data-arg="${escapeHtml(p.id)}" title="Edit the post body then approve" aria-label="Edit and approve post">✏️ Edit &amp; Approve</button>` +
         `<button class="btn btn-xs" data-action="warnDiscPost" data-arg="${escapeHtml(p.id)}" title="Publish post but record a warning" aria-label="Warn author and publish post">⚠️ Warn</button>` +
         `<button class="btn btn-xs" data-action="muteDiscPost" data-arg="${escapeHtml(p.id)}" title="Publish post but temporarily mute the author" aria-label="Mute author">🔇 Mute</button>` +
+        `<button class="btn btn-xs" data-action="lockDiscThreadFromQueue" data-arg="${escapeHtml(p.id)}::${escapeHtml(encodeURIComponent(p.playId || ""))}" title="Lock the thread this post came from" aria-label="Lock thread">🔒 Lock Thread</button>` +
+        `<button class="btn btn-xs" data-action="accountReviewDiscPost" data-arg="${escapeHtml(p.id)}" title="Flag author account for review" aria-label="Flag account for review">🔍 Acct Review</button>` +
         `<button class="btn btn-xs btn-danger" data-action="rejectDiscPost" data-arg="${escapeHtml(p.id)}" aria-label="Reject post">🗑 Reject</button>` +
         `</div>` +
         `</div>`;
     }
     html += `</div>`;
+    html += `<p class="disc-mod-queue-footer"><button class="btn btn-xs" data-action="openDiscModerationSettings" style="margin-top:var(--space-xs)">⚙️ Moderation Settings</button></p>`;
 
     await showModal(html, { title: `Moderation Queue (${data.posts.length})`, icon: "🛡️" });
   } catch (err) {
@@ -1190,6 +1202,103 @@ async function muteDiscPost(postId) {
   if (!days || days < 1 || days > 30) { showToast("Enter a number between 1 and 30.", { duration: 2500, type: "error" }); return; }
   const reason = `Muted for ${days} day${days === 1 ? "" : "s"} by coach`;
   await _discModerationAction(postId, "mute", reason, { muteDays: days });
+}
+
+async function lockDiscThreadFromQueue(arg) {
+  const [postId, playIdEncoded] = String(arg || "").split("::");
+  const playId = decodeURIComponent(playIdEncoded || "");
+  if (!playId) { showToast("No play ID to lock.", { duration: 2500, type: "error" }); return; }
+  const confirmed = await showConfirm(`Lock this thread? Players will no longer be able to reply.`, { title: "Lock Thread", icon: "🔒", confirmText: "Lock", danger: false });
+  if (!confirmed) return;
+  try {
+    const res = await fetch(`/api/threads/${encodeURIComponent(playId)}/manage`, {
+      method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ action: "lock" }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || "Failed to lock thread.", { duration: 3000, type: "error" }); return; }
+    // Also log moderation action on the flagged post
+    await _discModerationAction(postId, "lock_thread", "Thread locked from moderation queue");
+    showToast("Thread locked.", { duration: 2500, type: "success" });
+  } catch (_) { showToast("Network error.", { duration: 2500, type: "error" }); }
+}
+
+async function accountReviewDiscPost(postId) {
+  const reason = await showPrompt("Reason for account review flag (visible in moderation log):", "", { title: "Flag Account for Review", icon: "🔍", placeholder: "e.g. Repeated policy violations" });
+  if (reason === null) return; // cancelled
+  await _discModerationAction(postId, "account_review", reason || "Flagged for account review");
+}
+
+async function openDiscModerationSettings() {
+  try {
+    const [termsRes, statsRes] = await Promise.all([
+      fetch("/api/moderation/terms"),
+      fetch("/api/moderation/stats"),
+    ]);
+    const termsData = await termsRes.json();
+    const statsData = await statsRes.json();
+    const terms = termsData.terms || [];
+    const stats = statsData.stats || {};
+
+    let html = `<div class="disc-mod-settings">`;
+    html += `<h3 style="margin:0 0 var(--space-sm)">📊 Moderation Activity</h3>`;
+    html += `<div class="disc-mod-stat-row"><span>Last 7 days</span><strong>${stats.last7Days || 0} actions</strong></div>`;
+    html += `<div class="disc-mod-stat-row"><span>Last 30 days</span><strong>${stats.last30Days || 0} actions</strong></div>`;
+    html += `<div class="disc-mod-stat-row"><span>False-positive reversals</span><strong>${stats.falsePositiveReversals || 0}</strong></div>`;
+
+    html += `<h3 style="margin:var(--space-md) 0 var(--space-sm)">⚙️ Custom Term List</h3>`;
+    html += `<p style="font-size:var(--font-size-xs);color:var(--color-text-muted)">Add terms to the football allowlist (prevent false blocks) or increase severity of observed coded language. Review this list monthly.</p>`;
+
+    if (terms.length) {
+      html += `<div class="disc-mod-terms-list">`;
+      for (const t of terms) {
+        html += `<div class="disc-mod-term-row">` +
+          `<span class="disc-mod-category disc-mod-category--${t.type === "allowlist" ? "allow" : "blocked"}">${escapeHtml(t.type)}</span>` +
+          ` <strong>${escapeHtml(t.term_display)}</strong>` +
+          (t.category ? ` <em>${escapeHtml(t.category)}</em>` : "") +
+          ` <button class="btn btn-xs btn-danger" data-action="deleteCustomModTerm" data-arg="${escapeHtml(t.id)}">✕</button>` +
+          `</div>`;
+      }
+      html += `</div>`;
+    } else {
+      html += `<p class="disc-empty">No custom terms. Use the form below to add one.</p>`;
+    }
+
+    html += `<div class="disc-mod-add-term">` +
+      `<input id="discModTermInput" placeholder="Term (e.g. hash route)" style="flex:1;padding:6px 10px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font:inherit;font-size:var(--font-size-xs)">` +
+      `<select id="discModTermType" style="padding:6px;border:1px solid var(--color-border);border-radius:var(--radius-sm);font:inherit;font-size:var(--font-size-xs)">` +
+      `<option value="allowlist">Allowlist (football term)</option><option value="blocked">Blocked (escalate severity)</option></select>` +
+      `<button class="btn btn-xs btn-primary" data-action="addCustomModTerm">Add</button>` +
+      `</div>`;
+    html += `</div>`;
+
+    await showModal(html, { title: "Moderation Settings", icon: "⚙️" });
+  } catch (err) {
+    showToast("Failed to load settings: " + err.message, { duration: 3000, type: "error" });
+  }
+}
+
+async function addCustomModTerm() {
+  const term = document.getElementById("discModTermInput")?.value?.trim();
+  const type = document.getElementById("discModTermType")?.value || "allowlist";
+  if (!term) { showToast("Enter a term.", { duration: 2000, type: "error" }); return; }
+  try {
+    const res = await fetch("/api/moderation/terms", {
+      method: "POST", headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ term, type, category: "profanity", severity: 3 }),
+    });
+    const data = await res.json();
+    if (!data.ok) { showToast(data.error || "Failed.", { duration: 3000, type: "error" }); return; }
+    showToast(`"${term}" added to ${type}.`, { duration: 2500, type: "success" });
+    openDiscModerationSettings(); // refresh
+  } catch (_) { showToast("Network error.", { duration: 2500, type: "error" }); }
+}
+
+async function deleteCustomModTerm(termId) {
+  try {
+    await fetch(`/api/moderation/terms?id=${encodeURIComponent(termId)}`, { method: "DELETE" });
+    showToast("Term removed.", { duration: 2000, type: "success" });
+    openDiscModerationSettings(); // refresh
+  } catch (_) { showToast("Network error.", { duration: 2500, type: "error" }); }
 }
 
 async function _discModerationAction(postId, action, reason, extras = {}) {

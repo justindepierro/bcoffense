@@ -366,7 +366,7 @@
       // Fire and forget — runs in background after the backup confirms success.
       if (window.playImages && typeof window.playImages.syncToRemote === "function") {
         const _playsRef = typeof plays !== "undefined" ? plays : [];
-        window.playImages.syncToRemote(_playsRef).catch(() => {});
+        window.playImages.syncToRemote(_playsRef).catch(() => { });
       }
       return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "" };
     } finally {

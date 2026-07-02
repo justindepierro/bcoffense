@@ -42,8 +42,15 @@ function renderForm(opts = {}) {
     input{width:100%;padding:12px 14px;border:2px solid #d0ccd0;border-radius:10px;font:inherit;color:#0a122a;background:#fff}
     input:focus{outline:none;border-color:#192a51;box-shadow:0 0 0 3px rgba(25,42,81,.18)}
     button{min-height:44px;border:0;border-radius:10px;background:#192a51;color:#fff;font:inherit;font-weight:800;cursor:pointer}
+    button:disabled{opacity:.55;cursor:not-allowed}
     .error{color:#c62828;font-size:13px;font-weight:800;min-height:20px}
     .hint{color:#64748b;font-size:12px}
+    .policy-box{background:#f8f9fb;border:1px solid #d0ccd0;border-radius:8px;padding:12px 14px;font-size:12px;color:#475569;line-height:1.55}
+    .policy-box h2{margin:0 0 6px;font-size:13px;color:#334155}
+    .policy-box ul{margin:4px 0 0;padding-left:18px}
+    .policy-box li{margin-bottom:3px}
+    .ack-label{display:flex;flex-direction:row;align-items:flex-start;gap:10px;font-size:12px;color:#334155;font-weight:600;cursor:pointer}
+    .ack-label input[type=checkbox]{width:18px;height:18px;flex-shrink:0;margin-top:1px;accent-color:#192a51}
   </style>
 </head>
 <body>
@@ -59,6 +66,24 @@ function renderForm(opts = {}) {
       <input name="confirmPassword" type="password" autocomplete="new-password" required minlength="8">
     </label>
     <p class="hint">Minimum 8 characters.</p>
+
+    <div class="policy-box" role="note" aria-label="Team communication expectations">
+      <h2>Team Communication Standards</h2>
+      <ul>
+        <li>All messages in this app are part of your official team communication.</li>
+        <li>Treat teammates and coaches with respect. No bullying, harassment, or threats.</li>
+        <li>No sharing of personal information (phone numbers, addresses, social media handles).</li>
+        <li>No profanity, slurs, or sexual content.</li>
+        <li>Coaching staff reviews flagged messages. Violations may result in account suspension.</li>
+      </ul>
+      <p style="margin:6px 0 0;color:#94a3b8;font-size:11px"><strong>Privacy notice:</strong> Messages are stored and may be reviewed by coaching staff for safety purposes. Auto-moderation detects potential policy violations before messages are visible to the team. Moderation decisions are logged.</p>
+    </div>
+
+    <label class="ack-label">
+      <input type="checkbox" name="ack" required>
+      <span>I have read and agree to the team communication standards above.</span>
+    </label>
+
     ${err}
     <button type="submit">Activate Account</button>
   </form>
