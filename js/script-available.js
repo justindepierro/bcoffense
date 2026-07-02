@@ -55,7 +55,7 @@ function syncScriptSearchClearButton() {
   const clearBtn = document.getElementById("clearSearchPlay");
   if (!clearBtn) return;
   const { search } = getScriptPlayFilterState();
-  clearBtn.style.display = search ? "flex" : "none";
+  clearBtn.classList.toggle("hidden", !search);
 }
 
 function syncScriptCheckboxFilterSelections() {

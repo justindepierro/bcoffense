@@ -2,16 +2,15 @@
 
 .wb-page-header {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: space-between;
-  gap: var(--space-lg);
-  margin-bottom: var(--space-lg);
-  padding: var(--space-lg);
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
-  background:
-    linear-gradient(135deg, var(--color-primary-light), transparent 70%),
-    var(--color-surface);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  flex-wrap: wrap;
 }
 
 .wb-page-header h2,
@@ -22,15 +21,12 @@
 
 .wb-page-header h2 {
   margin-top: 2px;
-  font-size: var(--font-size-2xl);
+  font-size: var(--font-size-lg);
   color: var(--color-text);
 }
 
 .wb-page-header p {
-  max-width: 700px;
-  margin: var(--space-xs) 0 0;
-  color: var(--color-text-secondary);
-  line-height: 1.5;
+  display: none;
 }
 
 .wb-page-kicker,
@@ -55,8 +51,8 @@
 .wb-size-badge {
   display: inline-flex;
   align-items: center;
-  min-height: 30px;
-  padding: 4px 10px;
+  min-height: 26px;
+  padding: 3px 8px;
   border-radius: var(--radius-pill);
   font-size: var(--font-size-xs);
   font-weight: 700;
@@ -1145,6 +1141,10 @@
   cursor: pointer;
   font-size: var(--font-size-sm);
 }
+.cell-popup-hint {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
 .cell-play-option {
   padding: 8px 12px;
   cursor: pointer;
@@ -2128,7 +2128,7 @@
   border: none;
   border-radius: var(--radius-sm);
   background: var(--color-warning);
-  color: white;
+  color: var(--color-text-inverse);
   cursor: pointer;
   opacity: 0.75;
   display: flex;
@@ -2521,12 +2521,13 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
 @media screen and (max-width: 768px) {
   .wb-page-header {
     flex-direction: column;
-    gap: var(--space-md);
-    padding: var(--space-md);
+    align-items: stretch;
+    gap: var(--space-xs);
+    padding: var(--space-sm);
   }
 
   .wb-page-header h2 {
-    font-size: var(--font-size-xl);
+    font-size: var(--font-size-lg);
   }
 
   .wb-page-status {

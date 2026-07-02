@@ -313,7 +313,7 @@ function renderScriptEmptyPeriodHeaders() {
       ? `Show protection for ${periodLabel}`
       : `Hide protection for ${periodLabel}`;
     periodHeaders += `
-      <div class="script-item period-header" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="background: ${periodColor}; color: white;" role="group" aria-label="${escapeHtml(periodLabel)} period header">
+      <div class="script-item period-header" data-period-id="${periodId}" data-period-drop-id="${periodId}" style="background: ${periodColor}; color: var(--color-text-inverse);" role="group" aria-label="${escapeHtml(periodLabel)} period header">
         <div class="ph-top">
           <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>
@@ -440,7 +440,7 @@ function renderScriptPeriodHeader(separator, index, renderContext) {
 
   return `
     <div class="period-header-wrapper" data-separator-id="${periodId}" data-period-id="${periodId}" data-period-drop-id="${periodId}" data-period-index="${index}" style="border-left: 4px solid ${periodColor};" role="region" aria-label="${escapeHtml(periodLabel)} period">
-      <div class="script-item period-header" style="background: ${periodColor}; color: white;">
+      <div class="script-item period-header" style="background: ${periodColor}; color: var(--color-text-inverse);">
         <div class="ph-top">
           <textarea class="ph-notes-input" data-field="periodNotes" data-idx="${index}" rows="2" placeholder="Period notes" aria-label="Notes for ${escapeHtml(periodLabel)}">${escapeHtml(periodNotes)}</textarea>
         </div>

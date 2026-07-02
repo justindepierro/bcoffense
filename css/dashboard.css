@@ -38,7 +38,7 @@
   width: 100%;
   padding: var(--space-sm) var(--space-md);
   background: var(--color-success);
-  color: #fff;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-md);
   cursor: pointer;

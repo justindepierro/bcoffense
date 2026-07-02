@@ -515,7 +515,7 @@ function previewSmartScript() {
 
   periods.forEach((period) => {
     if (period.separator) {
-      html += `<tr style="background:${UI_COLORS.bgDarkNav};color:white;font-weight:600;"><td colspan="10">${period.separator.label || "Period"}</td></tr>`;
+      html += `<tr style="background:${UI_COLORS.bgDarkNav};color:var(--color-text-inverse);font-weight:600;"><td colspan="10">${period.separator.label || "Period"}</td></tr>`;
     }
     const sorted = runSmartScript(period.plays, config);
     const breakdownConfig = { ...config, _returnBreakdown: true };
@@ -578,7 +578,7 @@ function previewSmartScript() {
     const total = runs + passes;
     if (total > 0) {
       const runPct = Math.round((runs / total) * 100);
-      html += `<tr style="background:${UI_COLORS.bgDarkNav};color:#aaa;font-size:0.85em;"><td colspan="10">📊 Period R/P: ${runs}R / ${passes}P (${runPct}% run)</td></tr>`;
+      html += `<tr style="background:${UI_COLORS.bgDarkNav};color:var(--color-white-alpha-70);font-size:0.85em;"><td colspan="10">📊 Period R/P: ${runs}R / ${passes}P (${runPct}% run)</td></tr>`;
     }
   });
 

@@ -1640,6 +1640,13 @@ body.shell-phone #callsheet .cs-empty-cat {
   justify-content: flex-end;
 }
 
+.cs-wb-display {
+  display: block;
+  padding: 4px 14px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+}
+
 /* Picker match count */
 .cs-picker-match-count {
   font-size: var(--font-size-xs);
@@ -4347,7 +4354,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .csb-finalize-btn {
   margin-left: auto;
   background: var(--color-success);
-  color: #fff;
+  color: var(--color-text-inverse);
   border: none;
   border-radius: var(--radius-sm);
   padding: 2px var(--space-sm);
@@ -4398,7 +4405,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 }
 .cs-nos-tab.active {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
 }
 .cs-nos-tab:not(.active):hover {
@@ -4411,7 +4418,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
   align-items: center;
   justify-content: center;
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
   border-radius: 99px;
   font-size: 9px;
   min-width: 14px;

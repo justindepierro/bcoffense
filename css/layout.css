@@ -343,7 +343,7 @@ body[data-auth-role="player"] .save-status {
   gap: var(--space-sm);
   padding: 4px 20px;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: var(--font-size-xs);
   font-weight: 500;
   min-height: 28px;
@@ -364,15 +364,15 @@ body[data-auth-role="player"] .save-status {
   max-width: 220px;
 }
 .gw-bar__week {
-  color: rgba(255, 255, 255, 0.75);
+  color: var(--color-white-alpha-70);
   white-space: nowrap;
 }
 .gw-bar__edit {
   margin-left: auto;
   flex-shrink: 0;
-  background: rgba(255, 255, 255, 0.15);
-  color: #fff;
-  border: 1px solid rgba(255, 255, 255, 0.25);
+  background: var(--color-white-alpha-15);
+  color: var(--color-text-inverse);
+  border: 1px solid var(--color-white-alpha-20);
   padding: 2px 8px;
   font-size: var(--font-size-2xs);
   min-height: 22px;
@@ -661,24 +661,26 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 }
 
 .team-settings-shell {
-  margin-top: var(--space-lg);
-  padding: calc(var(--space-lg) + var(--space-sm));
+  margin-top: var(--space-md);
+  padding: var(--space-md);
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-xl);
+  border-radius: var(--radius-lg);
   background: var(--color-surface);
-  box-shadow: var(--shadow-lg);
+  box-shadow: var(--shadow-sm);
 }
 
 .team-settings-hero {
-  display: grid;
-  grid-template-columns: minmax(0, 1.3fr) minmax(260px, 0.7fr);
-  gap: var(--space-lg);
-  padding: var(--space-lg);
-  border-radius: var(--radius-xl);
-  background: var(--color-primary);
-  color: var(--color-text-inverse);
+  display: flex;
+  align-items: center;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text);
   overflow: hidden;
   position: relative;
+  flex-wrap: wrap;
 }
 
 .team-settings-hero-copy,
@@ -690,7 +692,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 .team-settings-eyebrow {
   display: inline-flex;
   align-items: center;
-  padding: 6px 10px;
+  padding: 3px 8px;
   border-radius: var(--radius-pill);
   background: var(--color-accent-light);
   color: var(--color-primary-dark);
@@ -701,16 +703,14 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 }
 
 .team-settings-hero h3 {
-  margin: var(--space-sm) 0 var(--space-xs);
-  color: var(--color-text-inverse);
-  font-size: var(--font-size-3xl);
-  line-height: 1.05;
+  margin: 2px 0 0;
+  color: var(--color-text);
+  font-size: var(--font-size-lg);
+  line-height: 1.15;
 }
 
 .team-settings-hero p {
-  margin: 0;
-  max-width: 58ch;
-  color: var(--color-white-alpha-80);
+  display: none;
 }
 
 .team-settings-hero-actions {
@@ -724,23 +724,24 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   align-content: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
+  margin-left: auto;
 }
 
 .team-settings-chip {
   display: inline-flex;
   align-items: center;
-  padding: 9px 12px;
-  border-radius: var(--radius-md);
-  background: var(--color-white-alpha-10);
-  border: 1px solid var(--color-white-alpha-15);
-  color: var(--color-text-inverse);
-  font-size: var(--font-size-sm);
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-lighter);
+  border: 1px solid var(--color-border-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
   font-weight: 600;
-  backdrop-filter: blur(8px);
 }
 
 .team-settings-chip--status {
-  background: var(--color-white-alpha-15);
+  background: var(--color-primary-light);
+  color: var(--color-primary);
 }
 
 .team-settings-chip--status.is-saved {
@@ -1269,7 +1270,7 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   }
 
   .team-settings-hero {
-    grid-template-columns: 1fr;
+    align-items: flex-start;
   }
 
   .team-settings-grid {
@@ -1286,11 +1287,14 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 
 @media (max-width: 640px) {
   .team-settings-shell,
-  .team-settings-hero,
   .team-settings-name-card,
   .team-settings-panel,
   .team-package-card {
     padding: var(--space-md);
+  }
+
+  .team-settings-hero {
+    padding: var(--space-sm);
   }
 
   .team-settings-panel-header,

@@ -671,13 +671,13 @@ let _wfCurrentLikePlayId = null;  // playId of the play currently in the panel
 async function _wfLoadLikeState(play) {
   const btn = document.getElementById("pbWfLikeBtn");
   if (!btn) return;
-  if (!window.currentAuthUser) { btn.style.display = "none"; return; }
+  if (!window.currentAuthUser) { btn.hidden = true; return; }
 
   const playId = typeof getPlayThreadId === "function" ? getPlayThreadId(play) : null;
-  if (!playId) { btn.style.display = "none"; return; }
+  if (!playId) { btn.hidden = true; return; }
   _wfCurrentLikePlayId = playId;
 
-  btn.style.display = "";
+  btn.hidden = false;
   btn.disabled = true;
 
   try {
@@ -686,7 +686,7 @@ async function _wfLoadLikeState(play) {
     const data = await res.json();
     _wfUpdateLikeBtn(btn, data.liked, data.count);
   } catch (_) {
-    btn.style.display = "none";
+    btn.hidden = true;
   }
 
   btn.disabled = false;

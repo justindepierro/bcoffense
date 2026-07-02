@@ -354,8 +354,9 @@ function initScriptKeyboard() {
         if (id === "scriptSearchBox") filterScriptItems();
         else {
           filterScriptPlays();
-          const clearBtn = document.getElementById("clearSearchPlay");
-          if (clearBtn) clearBtn.style.display = "none";
+          if (typeof syncScriptSearchClearButton === "function") {
+            syncScriptSearchClearButton();
+          }
         }
       }
     });

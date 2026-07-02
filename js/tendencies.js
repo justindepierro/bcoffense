@@ -868,7 +868,7 @@ function setTdSearch(val) {
   tdSearchText = val;
   tdSelectedRow = -1;
   const clearBtn = document.querySelector("#tdSearchInput + .search-clear-btn");
-  if (clearBtn) clearBtn.style.display = val ? "" : "none";
+  if (clearBtn) clearBtn.classList.toggle("hidden", !val);
   debouncedRenderPlayLog();
 }
 

@@ -120,7 +120,7 @@ function clearCsPickerSearch() {
     input.focus();
   }
   const button = document.getElementById("clearCsPickerSearch");
-  if (button) button.style.display = "none";
+  if (button) button.classList.add("hidden");
   populateCallSheetPlayList();
 }
 
@@ -128,7 +128,7 @@ function clearCsPickerFilters() {
   const search = document.getElementById("callSheetPlaySearch");
   if (search) search.value = "";
   const button = document.getElementById("clearCsPickerSearch");
-  if (button) button.style.display = "none";
+  if (button) button.classList.add("hidden");
   [
     "callSheetPickerPersonnel",
     "callSheetPickerFormation",
@@ -213,7 +213,7 @@ function populateCallSheetPlayList() {
 
   const search = document.getElementById("callSheetPlaySearch").value.toLowerCase().trim();
   const clearBtn = document.getElementById("clearCsPickerSearch");
-  if (clearBtn) clearBtn.style.display = search ? "" : "none";
+  if (clearBtn) clearBtn.classList.toggle("hidden", !search);
 
   const personnelFilter = document.getElementById("callSheetPickerPersonnel")?.value || "";
   const formationFilter = document.getElementById("callSheetPickerFormation")?.value || "";

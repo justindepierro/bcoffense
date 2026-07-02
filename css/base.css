@@ -93,6 +93,11 @@
   /* UI swatches */
   --color-swatch-black: #333333;
   --color-swatch-blue: #007bff;
+  --color-telestrator-yellow: #ffd400;
+  --color-telestrator-red: #ff3b30;
+  --color-telestrator-cyan: #00e5ff;
+  --color-telestrator-green: #39ff14;
+  --color-telestrator-white: #ffffff;
   --color-swatch-green: #28a745;
   --color-swatch-red: #dc3545;
   --color-swatch-purple: #6f42c1;

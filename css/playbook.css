@@ -4689,7 +4689,7 @@ body.shell-phone .pb-action-sheet {
   justify-content: center;
   font-size: var(--font-size-xs);
   font-weight: 700;
-  color: #fff;
+  color: var(--color-text-inverse);
   letter-spacing: -0.5px;
 }
 .disc-post-content {
@@ -5656,15 +5656,15 @@ body.shell-phone .pb-action-sheet {
 }
 .disc-mod-category--threat {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .disc-mod-category--slur {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .disc-mod-category--sexual {
   background: var(--color-danger);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .disc-mod-category--allow {
   background: color-mix(in srgb, var(--color-success) 15%, transparent);
@@ -6112,7 +6112,7 @@ label.disc-attach-btn {
 .disc-markup-tool.active,
 .disc-markup-tool:hover {
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
   border-color: var(--color-primary);
 }
 
@@ -6197,7 +6197,7 @@ label.disc-attach-btn {
   right: -8px;
   background: none;
   border: none;
-  color: #fff;
+  color: var(--color-text-inverse);
   font-size: 22px;
   cursor: pointer;
   padding: 4px 10px;

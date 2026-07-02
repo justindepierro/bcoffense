@@ -67,7 +67,7 @@ body.play-presentation-open {
 /* Highlight the rotate button when active */
 #playPresentationPortraitBtn.active {
   background: var(--color-primary) !important;
-  color: #fff !important;
+  color: var(--color-text-inverse) !important;
   border-color: var(--color-primary) !important;
 }
 
@@ -1484,12 +1484,12 @@ body.play-presentation-open {
 .pp-disc-drawer .disc-react-btn:hover {
   background: rgb(255 255 255 / 16%);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 .pp-disc-drawer .disc-react-btn.is-mine {
   background: color-mix(in srgb, var(--color-primary) 25%, transparent);
   border-color: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* Thread controls in dark drawer */
@@ -1514,7 +1514,7 @@ body.play-presentation-open {
 .pp-disc-drawer .disc-reply-btn:hover,
 .pp-disc-drawer .disc-action-btn:hover {
   background: rgb(255 255 255 / 10%);
-  color: #fff;
+  color: var(--color-text-inverse);
 }
 
 /* Reply-to banner in dark drawer */
@@ -1538,7 +1538,7 @@ body.play-presentation-open {
   font-size: 10px;
   font-weight: 700;
   background: var(--color-primary);
-  color: #fff;
+  color: var(--color-text-inverse);
   border-radius: var(--radius-pill);
   padding: 0 5px;
   vertical-align: middle;
@@ -1761,6 +1761,7 @@ body.play-presentation-open {
 .pp-tele-swatch {
   width: 30px;
   height: 30px;
+  background: var(--pp-tele-swatch-color, var(--color-accent));
   border-radius: var(--radius-pill);
   border: 2px solid var(--color-white-alpha-20);
   cursor: pointer;
@@ -1775,6 +1776,26 @@ body.play-presentation-open {
 
 .pp-tele-swatch-light {
   border-color: var(--color-border-med);
+}
+
+.pp-tele-swatch[data-pp-tele-color="#ffd400"] {
+  --pp-tele-swatch-color: var(--color-telestrator-yellow);
+}
+
+.pp-tele-swatch[data-pp-tele-color="#ff3b30"] {
+  --pp-tele-swatch-color: var(--color-telestrator-red);
+}
+
+.pp-tele-swatch[data-pp-tele-color="#00e5ff"] {
+  --pp-tele-swatch-color: var(--color-telestrator-cyan);
+}
+
+.pp-tele-swatch[data-pp-tele-color="#39ff14"] {
+  --pp-tele-swatch-color: var(--color-telestrator-green);
+}
+
+.pp-tele-swatch[data-pp-tele-color="#ffffff"] {
+  --pp-tele-swatch-color: var(--color-telestrator-white);
 }
 
 .pp-tele-btn:disabled,
