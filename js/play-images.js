@@ -806,7 +806,7 @@
   };
   window.deletePlayImage = function (play) {
     // Remove from R2 so all devices reflect the deletion
-    deleteRemote(play).catch(() => {});
+    deleteRemote(play).catch(() => { });
     return deleteForPlay(play);
   };
 
@@ -819,21 +819,25 @@
       return;
     }
     const allKeys = await loadKeys();
+    // eslint-disable-next-line no-console
+    console.log("[Diagrams] IndexedDB keys found:", allKeys.length, allKeys);
     if (!allKeys.length) {
       if (typeof showToast === "function") {
-        showToast("No play diagrams found on this device.", { duration: 2500 });
+        showToast("No play diagrams found on THIS device. Open the app on the device where you uploaded images, then sync from there.", { duration: 6000 });
       }
       return;
     }
     if (typeof showToast === "function") {
-      showToast(`Syncing ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} to cloud…`, { duration: 60000 });
+      showToast(`Found ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} — syncing to cloud…`, { duration: 60000 });
     }
     const count = await syncToRemote(typeof plays !== "undefined" ? plays : []);
+    // eslint-disable-next-line no-console
+    console.log("[Diagrams] Pushed to R2:", count, "of", allKeys.length);
     if (typeof showToast === "function") {
       if (count > 0) {
-        showToast(`${count} diagram${count === 1 ? "" : "s"} synced to cloud — players can now view them.`, { type: "success", duration: 4000 });
+        showToast(`${count} of ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} synced — players can now view them.`, { type: "success", duration: 4000 });
       } else {
-        showToast("No new diagrams to sync (already up to date or none found).", { duration: 3000 });
+        showToast(`Found ${allKeys.length} local diagram${allKeys.length === 1 ? "" : "s"} but 0 pushed. Check console for details.`, { type: "error", duration: 5000 });
       }
     }
   };
