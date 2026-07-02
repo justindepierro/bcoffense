@@ -310,10 +310,10 @@ async function openGamePlanPrintModal() {
           </div>
         </div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="gpPrintCancel">Cancel</button>
+          <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="gpPrintCancel">Cancel</button>
           <button class="btn btn-secondary custom-modal-btn" id="gpPrintSevenOnSeven" type="button" title="Letter landscape, compact tournament buckets, one page">🏈 7-on-7 preset</button>
           <button class="btn btn-secondary custom-modal-btn" id="gpPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns, no bucket overflow">✨ Smart defaults</button>
-          <button class="btn btn-primary custom-modal-btn" id="gpPrintConfirm">Print</button>
+          <button type="button" class="btn btn-primary custom-modal-btn" id="gpPrintConfirm">Print</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);

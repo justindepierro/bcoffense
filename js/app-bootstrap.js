@@ -162,6 +162,10 @@ function initTeamIdentityUi(runOptionalInit) {
 async function maybeShowFirstUseWalkthrough() {
   if (storageManager.get(STORAGE_KEYS.FIRST_USE_DISMISSED, false)) return;
   if (Array.isArray(plays) && plays.length > 0) return;
+  if (isMobileStartupShell()) return;
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (!currentUser || currentUser.role === "player") return;
 
   const msg = `
     <p>Welcome to <strong>BCOffense</strong> — your football practice management tool.</p>

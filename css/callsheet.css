@@ -1712,7 +1712,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   display: flex;
   align-items: center;
   justify-content: center;
-  z-index: var(--z-popover);
+  z-index: var(--z-modal);
 }
 .cs-sort-modal {
   background: var(--color-white);

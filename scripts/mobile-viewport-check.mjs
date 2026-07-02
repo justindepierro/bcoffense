@@ -34,6 +34,8 @@ const VIEWPORTS = {
 };
 
 const IPAD_VIEWPORTS = ["768x1024", "820x1180", "834x1112", "1024x768", "1024x1366"];
+const DEFAULT_CASE_TIMEOUT_MS = 25000;
+const DEFAULT_MAX_RUN_MS = 180000;
 
 const MIME_TYPES = new Map([
   [".html", "text/html; charset=utf-8"],
@@ -51,6 +53,7 @@ const MIME_TYPES = new Map([
 
 function parseArgs(argv) {
   const args = {
+    help: false,
     url: "",
     roles: ["admin", "coach", "player"],
     viewports: ["320x568", "390x844", "568x320", ...IPAD_VIEWPORTS],
@@ -59,10 +62,13 @@ function parseArgs(argv) {
     warnOnly: false,
     port: 4187,
     outputDir: path.join(root, ".mobile-debug"),
+    caseTimeoutMs: DEFAULT_CASE_TIMEOUT_MS,
+    maxRunMs: DEFAULT_MAX_RUN_MS,
   };
 
   argv.forEach((arg) => {
-    if (arg.startsWith("--url=")) args.url = arg.slice("--url=".length);
+    if (arg === "--help" || arg === "-h") args.help = true;
+    else if (arg.startsWith("--url=")) args.url = arg.slice("--url=".length);
     else if (arg.startsWith("--roles=")) {
       args.roles = arg.slice("--roles=".length).split(",").map((v) => v.trim()).filter(Boolean);
     } else if (arg.startsWith("--viewports=")) {
@@ -74,9 +80,37 @@ function parseArgs(argv) {
     else if (arg === "--warn-only") args.warnOnly = true;
     else if (arg.startsWith("--port=")) args.port = Number(arg.slice("--port=".length)) || args.port;
     else if (arg.startsWith("--output=")) args.outputDir = path.resolve(arg.slice("--output=".length));
+    else if (arg.startsWith("--case-timeout-ms=")) {
+      args.caseTimeoutMs = Number(arg.slice("--case-timeout-ms=".length)) || args.caseTimeoutMs;
+    } else if (arg.startsWith("--max-run-ms=")) {
+      args.maxRunMs = Number(arg.slice("--max-run-ms=".length)) || args.maxRunMs;
+    }
   });
 
   return args;
+}
+
+function printUsage() {
+  console.log(`Usage: node scripts/mobile-viewport-check.mjs [options]
+
+Options:
+  --roles=admin,coach,player       Comma-separated roles to test
+  --viewports=390x844,834x1112     Comma-separated viewport names to test
+  --all-viewports                  Test every built-in viewport
+  --ipad-viewports                 Test only iPad/tablet viewports
+  --no-screenshots                 Skip screenshot capture
+  --warn-only                      Write/report failures without nonzero exit
+  --url=http://127.0.0.1:4187      Use an existing server instead of starting one
+  --port=4187                      Local static server port
+  --output=.mobile-debug           Report/screenshot output directory
+  --case-timeout-ms=${DEFAULT_CASE_TIMEOUT_MS}          Max time per role/viewport case
+  --max-run-ms=${DEFAULT_MAX_RUN_MS}             Hard stop for the whole run
+  --help                           Show this message and exit`);
+}
+
+function closeServer(server) {
+  if (!server) return;
+  server.close(() => { });
 }
 
 async function findPlaywright() {
@@ -142,6 +176,15 @@ function serveStatic(port) {
           },
         }));
       });
+      return;
+    }
+    if (parsed.pathname.startsWith("/api/notifications")) {
+      res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
+      if (parsed.pathname === "/api/notifications/count") {
+        res.end(JSON.stringify({ count: 0 }));
+      } else {
+        res.end(JSON.stringify({ notifications: [], hasMore: false }));
+      }
       return;
     }
     if (parsed.pathname === "/favicon.ico") {
@@ -248,11 +291,12 @@ async function inspectPage(page) {
       const rect = el.getBoundingClientRect();
       return rect.width > 0 && rect.height > 0;
     };
-    const mainAppVisible = isVisible(document.getElementById("mainApp"));
+    const mainAppEl = document.getElementById("mainApp");
     const uploadVisible = isVisible(document.getElementById("uploadSection"));
     const tabBarVisible = isVisible(document.querySelector("#mainApp .tabs"));
-    const activePanel = document.querySelector("#mainApp .panel.active");
+    const activePanel = document.querySelector(".panel.active");
     const activePanelVisible = isVisible(activePanel);
+    const mainAppVisible = isVisible(mainAppEl) || activePanelVisible;
 
     const bottomNav = document.querySelector(".tabs, #mobileCoachDock");
     const bottomNavRect = bottomNav?.getBoundingClientRect();
@@ -371,7 +415,7 @@ async function probeScrollOwners(page) {
     const APPROVED =
       ".callsheet-table, .playbook-table-wrap, .playbook-table-wrapper, .wristband-grid," +
       " .custom-modal, .app-layer-active, .pp-detail-body, .pp-coach-detail," +
-      " .cs-table-scroll, .help-panel-body, [data-approved-scroller]," +
+      " .cs-table-scroll, .help-panel-body, .pb-filter-drawer-body, [data-approved-scroller]," +
       " .pb-action-sheet, .pb-action-sheet-body, .action-sheet, .action-sheet-body," +
       " .bottom-sheet, .bottom-sheet-body, [role='dialog'], [data-layer-open='true']";
     const isVisible = (el) => {
@@ -388,7 +432,7 @@ async function probeScrollOwners(page) {
       const classes = [...el.classList].slice(0, 3).join(".");
       return `${el.tagName.toLowerCase()}${classes ? `.${classes}` : ""}`;
     };
-    const panel = document.querySelector("#mainApp .panel.active");
+    const panel = document.querySelector(".panel.active");
     const owners = [];
     if (panel) {
       const candidates = [panel, ...panel.querySelectorAll("*")];
@@ -558,6 +602,62 @@ async function probeRoleRestrictions(page) {
   });
 }
 
+async function probeTapDispatch(page) {
+  const role = await page.evaluate(() => document.body?.dataset.authRole || "");
+  const tabsByRole = {
+    admin: ["playbook", "script", "wristband", "callsheet"],
+    coach: ["playbook", "script", "wristband", "callsheet"],
+    player: ["dashboard", "playbook", "script"],
+  };
+  const taps = [];
+
+  for (const tab of tabsByRole[role] || []) {
+    const selector = `[data-action="showTab"][data-arg="${tab}"]`;
+    const locator = page.locator(selector).filter({ visible: true }).first();
+    const visible = await locator.isVisible().catch(() => false);
+    if (!visible) {
+      taps.push({ target: `tab:${tab}`, ok: false, reason: "not visible" });
+      continue;
+    }
+    await locator.click({ timeout: 4000 });
+    const switched = await page.waitForFunction(
+      (expectedTab) => document.body?.dataset.activeTab === expectedTab,
+      tab,
+      { timeout: 2500 },
+    ).then(() => true).catch(() => false);
+    const state = await page.evaluate(() => ({
+      activeTab: document.body?.dataset.activeTab || "",
+      activePanel: document.querySelector(".panel.active")?.id || "",
+    }));
+    taps.push({
+      target: `tab:${tab}`,
+      ok: switched && state.activeTab === tab && state.activePanel === tab,
+      ...state,
+    });
+  }
+
+  const overflow = page.locator(".header-overflow-btn").filter({ visible: true }).first();
+  if (await overflow.isVisible().catch(() => false)) {
+    await overflow.click({ timeout: 4000 });
+    const menuState = await page.evaluate(() => {
+      const button = document.querySelector(".header-overflow-btn");
+      const wrap = button?.closest(".tool-menu-wrap");
+      return {
+        open: Boolean(wrap?.classList.contains("open")),
+        expanded: button?.getAttribute("aria-expanded") || "",
+      };
+    });
+    taps.push({
+      target: "header-overflow",
+      ok: menuState.open && menuState.expanded === "true",
+      ...menuState,
+    });
+    await page.keyboard.press("Escape").catch(() => { });
+  }
+
+  return { supported: true, role, taps, ok: taps.every((tap) => tap.ok) };
+}
+
 // Orientation persistence probe (M-051): rotating the device must keep the
 // active page and any selected record/play. Switch to a content tab, set a
 // selection where possible, swap width/height, then confirm both survive.
@@ -636,12 +736,44 @@ async function probeOrientationPersistence(page) {
 
 async function run() {
   const args = parseArgs(process.argv.slice(2));
+  if (args.help) {
+    printUsage();
+    return;
+  }
+
+  let server = null;
+  let browser = null;
+  let maxRunTimer = null;
+  let forceExitTimer = null;
+  const cleanup = async () => {
+    if (maxRunTimer) clearTimeout(maxRunTimer);
+    if (forceExitTimer) clearTimeout(forceExitTimer);
+    if (browser) await browser.close().catch(() => { });
+    closeServer(server);
+  };
+  const exitAfterCleanup = (exitCode, message) => {
+    if (message) console.error(message);
+    forceExitTimer = setTimeout(() => process.exit(exitCode), 2000);
+    forceExitTimer.unref?.();
+    cleanup().finally(() => process.exit(exitCode));
+  };
+
   const { chromium } = await findPlaywright();
   const served = args.url ? { url: args.url, server: null } : await serveStatic(args.port);
-  const { url, server } = served;
+  const { url } = served;
+  server = served.server;
 
   mkdirSync(args.outputDir, { recursive: true });
-  const browser = await chromium.launch({ headless: !args.headed });
+  browser = await chromium.launch({ headless: !args.headed });
+  if (args.maxRunMs > 0) {
+    maxRunTimer = setTimeout(() => {
+      exitAfterCleanup(1, `mobile viewport check timed out after ${args.maxRunMs}ms`);
+    }, args.maxRunMs);
+    maxRunTimer.unref?.();
+  }
+  process.once("SIGINT", () => exitAfterCleanup(130));
+  process.once("SIGTERM", () => exitAfterCleanup(143));
+
   const results = [];
   let failureCount = 0;
 
@@ -656,6 +788,8 @@ async function run() {
           hasTouch: true,
           deviceScaleFactor: 2,
         });
+        context.setDefaultTimeout(args.caseTimeoutMs);
+        context.setDefaultNavigationTimeout(args.caseTimeoutMs);
         const page = await context.newPage();
         const consoleErrors = [];
         const httpErrors = [];
@@ -671,6 +805,7 @@ async function run() {
 
         await page.goto(`${url}?mobileDebugRole=${encodeURIComponent(role)}`, {
           waitUntil: "domcontentloaded",
+          timeout: args.caseTimeoutMs,
         });
         await loginAs(page, role);
         await page.waitForTimeout(350);
@@ -686,6 +821,10 @@ async function run() {
         const roleRestriction =
           inspection.screenSize === "phone" && role
             ? await probeRoleRestrictions(page)
+            : null;
+        const tapDispatch =
+          ["phone", "mobile"].includes(inspection.screenSize) && role
+            ? await probeTapDispatch(page)
             : null;
         const orientation =
           inspection.screenSize === "phone" && role
@@ -709,6 +848,7 @@ async function run() {
           scrollTabs,
           layerLock,
           roleRestriction,
+          tapDispatch,
           orientationProbe: orientation,
         };
         const blankMobileStart =
@@ -744,6 +884,12 @@ async function run() {
           result.roleRestriction &&
           result.roleRestriction.supported === true &&
           result.roleRestriction.ok === false;
+        const tapDispatchBroken =
+          ["phone", "mobile"].includes(result.screenSize) &&
+          Boolean(result.role) &&
+          result.tapDispatch &&
+          result.tapDispatch.supported === true &&
+          result.tapDispatch.ok === false;
         // M-051: orientation change must preserve the active page and selection.
         const orientationBroken =
           result.screenSize === "phone" &&
@@ -774,6 +920,7 @@ async function run() {
           scrollConflict ||
           layerLockBroken ||
           roleRestrictionBroken ||
+          tapDispatchBroken ||
           orientationBroken ||
           badTabletShell ||
           badDisplayState ||
@@ -794,14 +941,14 @@ async function run() {
           scrollConflictTabs,
           layerLockBroken,
           roleRestrictionBroken,
+          tapDispatchBroken,
           orientationBroken,
           failed,
         });
       }
     }
   } finally {
-    await browser.close();
-    server?.close();
+    await cleanup();
   }
 
   const reportPath = path.join(args.outputDir, "mobile-viewport-report.json");
@@ -817,6 +964,9 @@ async function run() {
         : "",
       result.roleRestrictionBroken
         ? `role leak ${(result.roleRestriction.leaked || []).join("|") || "tabs:" + (result.roleRestriction.missingTabs || []).join("|")}`
+        : "",
+      result.tapDispatchBroken
+        ? `tap dispatch ${(result.tapDispatch.taps || []).filter((tap) => !tap.ok).map((tap) => `${tap.target}:${tap.reason || tap.activeTab || "no-state"}`).join("|")}`
         : "",
       result.orientationBroken
         ? `orientation ${result.orientationProbe.pagePreserved ? "page-ok" : "page-lost"}/${result.orientationProbe.selectionPreserved ? "sel-ok" : "sel-lost"}`

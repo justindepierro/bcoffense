@@ -7,11 +7,13 @@ body.play-presentation-open {
 .play-presentation-overlay {
   position: fixed;
   inset: 0;
-  z-index: var(--z-skip-link);
+  z-index: var(--z-modal);
   display: none;
   flex-direction: column;
-  min-width: 100vw;
-  min-height: 100vh;
+  width: 100%;
+  height: 100%;
+  min-width: 0;
+  min-height: 0;
   color: var(--color-text);
   background: var(--color-bg-body);
   font-family: var(--font-sans);
@@ -29,8 +31,8 @@ body.play-presentation-open {
 }
 
 .play-presentation-overlay:fullscreen {
-  width: 100vw;
-  height: 100vh;
+  width: 100%;
+  height: 100%;
 }
 
 /* ── Portrait → Landscape rotation mode ──────────────────────────────────────
@@ -149,7 +151,7 @@ body.play-presentation-open {
 .pp-mode-btn,
 .pp-nav-btn,
 .pp-close-btn {
-  min-height: 38px;
+  min-height: 44px;
   border: 1px solid transparent;
   border-radius: var(--radius-sm);
   color: var(--color-text-inverse);
@@ -178,7 +180,7 @@ body.play-presentation-open {
 
 .pp-nav-btn,
 .pp-close-btn {
-  min-width: 42px;
+  min-width: 44px;
   padding: 6px 10px;
   border-color: rgb(255 255 255 / 30%);
 }
@@ -223,6 +225,15 @@ body.play-presentation-open {
 .pp-layout-player {
   grid-template-columns: minmax(0, 1.2fr) minmax(360px, 0.8fr);
   gap: clamp(16px, 2.5vw, 36px);
+}
+
+@media (max-width: 820px), (pointer: coarse) and (max-width: 900px) {
+  .pp-layout-player {
+    grid-template-columns: 1fr;
+    grid-template-rows: minmax(0, 1fr) auto;
+    overflow-y: auto;
+    overscroll-behavior: contain;
+  }
 }
 
 .pp-layout-minimum {

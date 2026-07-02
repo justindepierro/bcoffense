@@ -702,10 +702,10 @@
           </div>
         </div>
         <div class="custom-modal-actions cloud-sync-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
-          <button class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check</button>
-          <button class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Pull</button>
-          ${canPush ? '<button class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Push</button>' : ""}
+          <button type="button" class="btn custom-modal-btn custom-modal-cancel" data-action="closeCloudSyncModal">Close</button>
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="testCloudSyncConnection" data-cloud-sync-action="test">Check</button>
+          <button type="button" class="btn btn-secondary custom-modal-btn" data-action="pullCloudBackup" data-cloud-sync-action="pull">Pull</button>
+          ${canPush ? '<button type="button" class="btn btn-primary custom-modal-btn" data-action="pushCloudBackup" data-cloud-sync-action="push" data-auth-admin-only="true">Push</button>' : ""}
         </div>
       </div>
     `;

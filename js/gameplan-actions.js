@@ -811,13 +811,13 @@ async function openGamePlanManageBoxes() {
           <p class="gp-mgb-help">Uncheck boxes to hide them from the board. Hidden boxes keep their plays — they're just out of sight.</p>
           <div class="gp-mgb-list">${rowsHtml}</div>
           <div class="gp-mgb-bulk">
-            <button class="btn btn-sm" id="gpMgbAll">☑ Show All</button>
-            <button class="btn btn-sm" id="gpMgbNone">▢ Hide All Defaults</button>
+            <button type="button" class="btn btn-sm" id="gpMgbAll">☑ Show All</button>
+            <button type="button" class="btn btn-sm" id="gpMgbNone">▢ Hide All Defaults</button>
           </div>
         </div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="gpMgbCancel">Cancel</button>
-          <button class="btn btn-primary custom-modal-btn" id="gpMgbSave">Save</button>
+          <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="gpMgbCancel">Cancel</button>
+          <button type="button" class="btn btn-primary custom-modal-btn" id="gpMgbSave">Save</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);

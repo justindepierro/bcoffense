@@ -841,6 +841,25 @@
   }
 }
 
+body.shell-tablet.is-mobile-screen .app-header-actions {
+  max-width: min(58vw, 500px);
+}
+
+body.shell-tablet.is-mobile-screen .header-action-secondary {
+  display: none;
+}
+
+body.shell-tablet.is-mobile-screen .header-overflow {
+  display: inline-flex;
+}
+
+body.shell-tablet.is-mobile-screen .auth-user-badge:not([hidden]) {
+  max-width: min(124px, 18vw);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
 /* Staff tablets keep a near-full editing workspace instead of inheriting phone run mode. */
 body.shell-tablet.is-staff-mobile-shell #script .script-builder {
   grid-template-columns: minmax(250px, 0.72fr) minmax(0, 1.28fr);

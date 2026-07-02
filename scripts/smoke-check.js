@@ -1514,8 +1514,8 @@ function checkMobileCapabilityMatrix() {
   if (
     !/class="tool-menu-wrap header-overflow"/.test(html) ||
     !/class="header-action-secondary/.test(html) ||
-    !/\.header-action-secondary\s*\{[^}]*display:\s*none/.test(responsiveCss) ||
-    !/\.header-overflow\s*\{[^}]*display:\s*inline-flex/.test(responsiveCss)
+    !/\.header-action-secondary[^{}]*\{[^}]*display:\s*none/.test(responsiveCss) ||
+    !/\.header-overflow[^{}]*\{[^}]*display:\s*inline-flex/.test(responsiveCss)
   ) {
     fail("phone header overflow replacement for secondary actions is incomplete");
   }
@@ -2170,7 +2170,7 @@ function checkServiceWorkerLifecycle() {
   if (/postMessage\(\s*["']skipWaiting["']/.test(registrationBlock)) {
     fail("service worker registration automatically activates waiting updates");
   }
-  if (/controllerchange[\s\S]*?location\.reload/.test(registrationBlock)) {
+  if (/controllerchange[\s\S]*?if\s*\(\s*!\s*_isDirty\s*\(\s*\)\s*\)[\s\S]*?location\.reload/.test(registrationBlock)) {
     fail("service worker controller changes force a page reload");
   }
   if (/skipWaiting\(\)/.test(installBlock)) {

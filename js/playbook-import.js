@@ -978,7 +978,7 @@ function showCSVTemplateModal() {
         </div>
       </div>
       <div class="custom-modal-actions">
-        <button class="btn btn-primary custom-modal-btn" id="csvTplOk">OK</button>
+        <button type="button" class="btn btn-primary custom-modal-btn" id="csvTplOk">OK</button>
       </div>
     </div>
   `;

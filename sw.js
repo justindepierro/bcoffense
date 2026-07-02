@@ -10,7 +10,7 @@
  *   - Stale-while-revalidate for other same-origin assets
  */
 
-const CACHE_NAME = "bcoffense-v838";
+const CACHE_NAME = "bcoffense-v845";
 
 // Item 40: in-memory TTL tracker for /auth/me short-term cache
 let _authMeCacheTime = 0;
@@ -46,13 +46,6 @@ function cachePut(request, response) {
     .then((cache) => cache.put(request, response))
     .catch(() => { });
 }
-
-// Allow the app to trigger a cache refresh
-self.addEventListener("message", (event) => {
-  if (event.data === "skipWaiting") {
-    self.skipWaiting();
-  }
-});
 
 // Item 47: Web Push scaffolding (Phase 2 — requires VAPID keys + server endpoint)
 self.addEventListener("push", (event) => {
@@ -232,10 +225,9 @@ const LOCAL_ASSETS = [
   "./offline.html",
 ];
 
-// Install: skip waiting immediately so the new SW activates without requiring
-// any tabs to be closed. Pre-cache assets resiliently — one failure won't block.
+// Install: let an updated worker wait until existing app tabs close. Pre-cache
+// assets resiliently — one failure won't block.
 self.addEventListener("install", (event) => {
-  self.skipWaiting(); // take over immediately on all open tabs
   event.waitUntil(
     caches.open(CACHE_NAME).then((cache) =>
       Promise.allSettled(
@@ -249,7 +241,7 @@ self.addEventListener("install", (event) => {
   );
 });
 
-// Activate: clean up old caches, claim all clients, notify them of new version
+// Activate: clean up old caches and notify any newly controlled tabs.
 self.addEventListener("activate", (event) => {
   event.waitUntil(
     caches
@@ -262,8 +254,7 @@ self.addEventListener("activate", (event) => {
         ),
       )
       .then(() => {
-        self.clients.claim();
-        // Notify all open tabs that a new version is active
+        // Notify open tabs that the active worker version changed.
         self.clients.matchAll({ type: "window" }).then((clients) => {
           clients.forEach((client) =>
             client.postMessage({ type: "SW_ACTIVATED", version: CACHE_NAME }),

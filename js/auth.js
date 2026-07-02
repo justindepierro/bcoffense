@@ -231,7 +231,7 @@
     /sort/i,
   ];
 
-  let currentAuthUser = { username: "admin", role: "admin", label: "Admin" };
+  let currentAuthUser = null;
   let authReady = false;
   let lastBlockedAt = 0;
   const AUTH_SESSION_MAX_AGE_MS = 12 * 60 * 60 * 1000;
@@ -375,6 +375,27 @@
   function syncPlayerPortalChrome() {
     const isPlayer = currentAuthUser?.role === "player";
     document.body?.classList.toggle("player-portal", isPlayer);
+    const dashboardTab = document.getElementById("tab-dashboard");
+    const playbookTab = document.getElementById("tab-playbook");
+    const tabStrip = playbookTab?.parentElement;
+    const utilitiesWrap = document.querySelector(".tabs-utilities");
+    const utilitiesMenu = utilitiesWrap?.querySelector(".tabs-utilities-menu");
+    if (dashboardTab && tabStrip && utilitiesMenu) {
+      if (isPlayer) {
+        dashboardTab.classList.add("tab");
+        dashboardTab.setAttribute("role", "tab");
+        dashboardTab.setAttribute("aria-controls", "dashboard");
+        dashboardTab.dataset.shortLabel = "Home";
+        tabStrip.insertBefore(dashboardTab, playbookTab);
+      } else {
+        dashboardTab.classList.remove("tab");
+        dashboardTab.setAttribute("role", "menuitem");
+        dashboardTab.removeAttribute("aria-controls");
+        delete dashboardTab.dataset.shortLabel;
+        utilitiesMenu.insertBefore(dashboardTab, utilitiesMenu.firstElementChild);
+      }
+    }
+    if (utilitiesWrap) utilitiesWrap.hidden = isPlayer;
     // Show My Questions button only for player accounts
     const portalBtn = document.getElementById("playerPortalBtn");
     if (portalBtn) portalBtn.hidden = !isPlayer;
@@ -1047,6 +1068,7 @@
       if (canUseStored) {
         currentAuthUser = storedUser;
       } else {
+        currentAuthUser = null;
         clearStoredAuthUser();
       }
     }
@@ -1087,9 +1109,7 @@
       if (!pendingAuthRoots.size) return;
       queueApplyAuthToPendingRoots();
     });
-    // Item 44: narrow MutationObserver to #mainApp to avoid firing on every toast/modal
-    const _observerRoot = document.getElementById("mainApp") || document.body;
-    observer.observe(_observerRoot, { childList: true, subtree: true });
+    observer.observe(document.body, { childList: true, subtree: true });
   });
 
   window.getCurrentAuthUser = () => currentAuthUser;

@@ -1079,8 +1079,8 @@ function openScriptPacketPrintModal(selectedScripts = _getSelectedScriptPacketRe
           <p class="script-packet-print-hint">Use Large or Full Page diagrams when Chalk exports or clipped screenshots need more space. Only images attached in the Playbook can be printed.</p>
         </div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
-          <button class="btn btn-primary custom-modal-btn" id="scriptPacketPrintConfirm">Build Preview</button>
+          <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="scriptPacketPrintCancel">Cancel</button>
+          <button type="button" class="btn btn-primary custom-modal-btn" id="scriptPacketPrintConfirm">Build Preview</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);

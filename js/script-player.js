@@ -350,6 +350,29 @@ function loadSavedScriptsList() {
   renderPlayerLoadedScriptBar();
 }
 
+function openMobileScriptLoader() {
+  if (typeof setMobileScriptEditMode === "function") {
+    setMobileScriptEditMode(true, { focusCurrent: false });
+  }
+  if (typeof openScriptToolsDrawer === "function") {
+    openScriptToolsDrawer();
+  }
+  loadSavedScriptsList();
+
+  requestAnimationFrame(() => {
+    const savedSection = document.getElementById("savedScriptsSection");
+    const drawerBody = document.querySelector("#scriptToolsDrawer .script-tools-drawer-body");
+    if (!savedSection || savedSection.classList.contains("hidden")) {
+      showToast("No saved scripts yet.", { duration: 2500, type: "info" });
+      return;
+    }
+    savedSection.scrollIntoView({ block: "start", behavior: "smooth" });
+    if (drawerBody) drawerBody.scrollTop = savedSection.offsetTop;
+    savedSection.classList.add("saved-scripts--spotlight");
+    setTimeout(() => savedSection.classList.remove("saved-scripts--spotlight"), 1600);
+  });
+}
+
 function loadSavedScriptRecord(scriptData, opts = {}) {
   if (!scriptData) return false;
   try {

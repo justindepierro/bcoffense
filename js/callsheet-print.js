@@ -133,9 +133,9 @@ async function openCallSheetPrintModal() {
           </div>
         </div>
         <div class="custom-modal-actions">
-          <button class="btn custom-modal-btn custom-modal-cancel" id="csPrintCancel">Cancel</button>
+          <button type="button" class="btn custom-modal-btn custom-modal-cancel" id="csPrintCancel">Cancel</button>
           <button class="btn btn-secondary custom-modal-btn" id="csPrintSmart" type="button" title="Reset to smart defaults: portrait, 2 columns">✨ Smart defaults</button>
-          <button class="btn btn-primary custom-modal-btn" id="csPrintConfirm">Print</button>
+          <button type="button" class="btn btn-primary custom-modal-btn" id="csPrintConfirm">Print</button>
         </div>
       </div>`;
     document.body.appendChild(overlay);

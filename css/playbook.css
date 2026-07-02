@@ -1514,7 +1514,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   display: none;
   position: absolute;
   inset: 0;
-  z-index: 29;
+  z-index: var(--z-drawer-scrim);
   background: var(--color-overlay-xs);
   cursor: pointer;
 }
@@ -1530,7 +1530,7 @@ body.app-ready:not(.is-mobile-screen) #playbook #playbookContainer {
   bottom: 0;
   width: 380px;
   max-width: 92%;
-  z-index: 30;
+  z-index: var(--z-drawer);
   transform: translateX(calc(-100% - 2px));
   transition: transform 0.22s cubic-bezier(0.4, 0, 0.2, 1);
   background: var(--color-bg-body);
