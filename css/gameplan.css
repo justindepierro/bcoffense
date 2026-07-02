@@ -585,19 +585,28 @@ body:not(.is-mobile-screen) .gp-board-scroll {
   overflow: auto;
   overscroll-behavior: contain;
 }
-/* Tighten the pinned rows so the command zone doesn't eat board space */
+/* Compact the pinned command zone (header + toolbar) so it doesn't eat board space */
 .gp-command-zone > .gp-header,
-.gp-command-zone > .gp-stats-bar,
-.gp-command-zone > .gp-toolbar,
-.gp-command-zone > .gp-jump-bar {
+.gp-command-zone > .gp-toolbar {
   margin-bottom: var(--space-xs);
 }
-/* The jump bar's own sticky/border is redundant inside the pinned zone */
-.gp-command-zone > .gp-jump-bar {
-  position: static;
-  top: auto;
-  border-bottom: none;
-  background: transparent;
+body:not(.is-mobile-screen) .gp-command-zone .gp-header {
+  padding: var(--space-sm) var(--space-md);
+}
+body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar {
+  gap: var(--space-xs);
+  padding: var(--space-xs) var(--space-sm);
+}
+body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar input[type="search"],
+body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar select {
+  min-width: 108px;
+}
+body:not(.is-mobile-screen) .gp-command-zone .gp-multi-filter {
+  min-width: 116px;
+}
+body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
+  flex-grow: 0;
+  flex-basis: var(--space-xs);
 }
 
 /* Color accent left-border (set via inline --gp-box-accent) */
