@@ -284,7 +284,7 @@
   display: grid;
   gap: var(--space-md);
   width: min(760px, calc(100vw - 32px));
-  max-height: min(760px, calc(100vh - 32px));
+  max-height: min(760px, calc((var(--app-vh, 1vh) * 100) - 32px));
 }
 
 .wb-saved-manager h3 {
@@ -301,6 +301,7 @@
   display: grid;
   gap: var(--space-sm);
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .wb-saved-manager .saved-script-card {
@@ -337,7 +338,7 @@
   grid-template-rows: auto minmax(0, 1fr) auto;
   width: min(1120px, calc(100vw - 32px));
   max-width: min(1120px, calc(100vw - 32px));
-  max-height: min(860px, calc(100vh - 32px));
+  max-height: min(860px, calc((var(--app-vh, 1vh) * 100) - 32px));
   overflow: hidden;
 }
 
@@ -2765,7 +2766,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   }
 
   .wb-available-plays {
-    max-height: 45vh;
+    max-height: calc(var(--app-vh, 1vh) * 45);
   }
 
   .pc-mode-bar {

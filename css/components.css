@@ -51,7 +51,7 @@ body.app-layer-locked {
   box-shadow: var(--shadow-lg);
   width: 100%;
   max-width: 420px;
-  max-height: calc(100vh - clamp(32px, 8vh, 64px));
+  max-height: calc((var(--app-vh, 1vh) * 100) - clamp(32px, 8vh, 64px));
   display: flex;
   flex-direction: column;
   min-width: 0;
@@ -679,8 +679,9 @@ body.is-short-screen .auth-login-player-shortcut,
   max-width: 700px;
 }
 .csv-tpl-body {
-  max-height: 65vh;
+  max-height: calc(var(--app-vh, 1vh) * 65);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .csv-tpl-section {
   margin-bottom: 24px;
@@ -2018,7 +2019,7 @@ body.is-short-screen .auth-login-player-shortcut,
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(var(--app-vh, 1vh) * 100);
   background: var(--color-overlay);
   z-index: var(--z-modal);
   justify-content: center;
@@ -2041,7 +2042,7 @@ body.is-short-screen .auth-login-player-shortcut,
   padding: 25px;
   box-shadow: var(--shadow-lg);
   width: min(720px, 100%);
-  max-height: calc(100vh - clamp(32px, 8vh, 64px));
+  max-height: calc((var(--app-vh, 1vh) * 100) - clamp(32px, 8vh, 64px));
   min-width: 0;
   overflow: auto;
   overscroll-behavior: contain;
@@ -2179,8 +2180,9 @@ body.is-short-screen .auth-login-player-shortcut,
   display: flex;
   flex-direction: column;
   gap: 12px;
-  max-height: 50vh;
+  max-height: calc(var(--app-vh, 1vh) * 50);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding-right: 4px;
 }
 
@@ -2324,7 +2326,7 @@ input.smart-input-sm[type="number"] {
   top: 0;
   left: 0;
   width: 100%;
-  height: 100%;
+  height: calc(var(--app-vh, 1vh) * 100);
   background: var(--color-overlay);
   z-index: var(--z-modal);
   justify-content: center;
@@ -2340,8 +2342,9 @@ input.smart-input-sm[type="number"] {
   padding: 20px;
   width: min(680px, 100%);
   min-width: 300px;
-  max-height: calc(100vh - clamp(32px, 8vh, 64px));
+  max-height: calc((var(--app-vh, 1vh) * 100) - clamp(32px, 8vh, 64px));
   overflow-y: auto;
+  overscroll-behavior: contain;
   box-sizing: border-box;
   box-shadow: var(--shadow-lg);
 }
@@ -2579,7 +2582,7 @@ kbd {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: 380px;
-  max-height: calc(100vh - 80px);
+  max-height: calc((var(--app-vh, 1vh) * 100) - 80px);
   display: flex;
   flex-direction: column;
   overflow: hidden;
@@ -2626,8 +2629,10 @@ kbd {
 
 .help-panel-body {
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: 12px 16px 16px;
   flex: 1;
+  min-height: 0;
 }
 
 /* Help Sections */
@@ -4842,7 +4847,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 
 .pc-viewer-video {
   width: 100%;
-  max-height: 64vh;
+  max-height: calc(var(--app-vh, 1vh) * 64);
   min-height: 0;
   background: #000;
   border-radius: var(--radius-md);
@@ -4937,6 +4942,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   top: 0;
   right: 0;
   bottom: 0;
+  height: calc(var(--app-vh, 1vh) * 100);
   width: min(360px, 100vw);
   z-index: var(--z-modal);
   background: var(--color-bg-body);
@@ -4957,6 +4963,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 .notif-drawer-inner {
   display: flex;
   flex-direction: column;
+  min-height: 0;
   height: 100%;
   overflow: hidden;
 }
@@ -4996,7 +5003,9 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
 
 .notif-drawer-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 .notif-list {
@@ -5371,7 +5380,7 @@ body[data-active-tab="script"] .quick-tools .script-display-fab {
   border-radius: var(--radius-lg);
   box-shadow: var(--shadow-lg);
   width: min(640px, 95vw);
-  max-height: 85vh;
+  max-height: calc(var(--app-vh, 1vh) * 85);
   display: flex;
   flex-direction: column;
   overflow: hidden;

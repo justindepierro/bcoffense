@@ -1375,7 +1375,7 @@ body.play-presentation-open {
     right: 0;
     bottom: 0;
     width: auto;
-    max-height: 62vh;
+    max-height: calc(var(--app-vh, 1vh) * 62);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding-right: 0;
     padding-bottom: env(safe-area-inset-bottom, 0px);
@@ -1552,7 +1552,7 @@ body.play-presentation-open {
     right: 0;
     bottom: 0;
     width: auto;
-    max-height: 68vh;
+    max-height: calc(var(--app-vh, 1vh) * 68);
     border-radius: var(--radius-lg) var(--radius-lg) 0 0;
     padding-right: 0;
     padding-bottom: 0;

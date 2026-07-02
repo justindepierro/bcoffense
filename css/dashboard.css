@@ -2590,6 +2590,7 @@
 }
 .q-inbox-panel {
   width: min(560px, 100vw);
+  height: calc(var(--app-vh, 1vh) * 100);
   background: var(--color-bg-body);
   display: flex;
   flex-direction: column;
@@ -2694,7 +2695,9 @@
 
 .q-inbox-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
+  overscroll-behavior: contain;
   -webkit-overflow-scrolling: touch;
 }
 .q-inbox-list {

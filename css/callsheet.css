@@ -2076,8 +2076,9 @@ body.shell-phone #callsheet .cs-empty-cat {
   max-width: 260px;
   padding: 6px 0;
   font-size: var(--font-size-sm);
-  max-height: 90vh;
+  max-height: calc(var(--app-vh, 1vh) * 90);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .cs-context-menu.cs-ctx-wide {
   min-width: 240px;
@@ -2736,7 +2737,7 @@ body.shell-phone #callsheet .cs-empty-cat {
 /* ============ Smart Suggestions Modal ============ */
 .cs-suggest-modal {
   max-width: 700px !important;
-  max-height: 85vh;
+  max-height: calc(var(--app-vh, 1vh) * 85);
   display: flex;
   flex-direction: column;
 }
@@ -2769,8 +2770,9 @@ body.shell-phone #callsheet .cs-empty-cat {
 
 .cs-suggest-list {
   overflow-y: auto;
+  overscroll-behavior: contain;
   flex: 1;
-  min-height: 200px;
+  min-height: 0;
 }
 
 .cs-suggest-item {
@@ -3992,7 +3994,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 .cs-display-panel {
   width: 540px;
   max-width: 95vw;
-  height: 100dvh;
+  height: calc(var(--app-vh, 1vh) * 100);
   background: var(--color-surface);
   display: flex;
   flex-direction: column;
@@ -4033,6 +4035,7 @@ body[data-active-tab="callsheet"] .gp-drawer-tab.gp-drawer-toggle-active {
 }
 .cs-display-panel-body {
   flex: 1;
+  min-height: 0;
   overflow-y: auto;
   overscroll-behavior: contain;
 }

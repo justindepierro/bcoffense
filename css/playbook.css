@@ -2553,7 +2553,7 @@ body.shell-phone .pb-action-sheet {
 /* ============ Play Editor Modal ============ */
 .pb-editor-modal {
   max-width: 680px;
-  max-height: 90vh;
+  max-height: calc(var(--app-vh, 1vh) * 90);
 }
 .pb-editor-header {
   flex-direction: row;
@@ -2609,8 +2609,9 @@ body.shell-phone .pb-action-sheet {
   cursor: default;
 }
 .pb-editor-body {
-  max-height: 60vh;
+  max-height: calc(var(--app-vh, 1vh) * 60);
   overflow-y: auto;
+  overscroll-behavior: contain;
   padding: var(--space-md) var(--space-lg) !important;
 }
 .pb-editor-section {
@@ -2990,8 +2991,9 @@ body.shell-phone .pb-action-sheet {
 .pb-balance-body {
   display: grid;
   gap: var(--space-md);
-  max-height: min(72vh, 780px);
+  max-height: min(calc(var(--app-vh, 1vh) * 72), 780px);
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .pb-balance-summary {
@@ -3551,8 +3553,9 @@ body.shell-phone .pb-action-sheet {
 .pb-health-body {
   display: grid;
   gap: var(--space-md);
-  max-height: min(72vh, 780px);
+  max-height: min(calc(var(--app-vh, 1vh) * 72), 780px);
   overflow: auto;
+  overscroll-behavior: contain;
 }
 
 .pb-health-summary {
@@ -4342,8 +4345,9 @@ body.shell-phone .pb-action-sheet {
 .cat-cleanup-list {
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-sm);
-  max-height: 56vh;
+  max-height: calc(var(--app-vh, 1vh) * 56);
   overflow: auto;
+  overscroll-behavior: contain;
   background: var(--color-bg-body);
 }
 .cat-cleanup-row {
@@ -6065,7 +6069,7 @@ label.disc-attach-btn {
   border-radius: var(--radius-lg);
   overflow: hidden;
   width: min(90vw, 860px);
-  max-height: 90vh;
+  max-height: calc(var(--app-vh, 1vh) * 90);
   box-shadow: var(--shadow-lg);
 }
 
@@ -6184,7 +6188,7 @@ label.disc-attach-btn {
   align-items: center;
   gap: var(--space-xs);
   max-width: 95vw;
-  max-height: 95vh;
+  max-height: calc(var(--app-vh, 1vh) * 95);
 }
 
 .disc-attachment-viewer-close {
@@ -6206,7 +6210,7 @@ label.disc-attach-btn {
 
 .disc-attachment-viewer-img {
   max-width: 100%;
-  max-height: 80vh;
+  max-height: calc(var(--app-vh, 1vh) * 80);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-lg);
   object-fit: contain;
@@ -6230,7 +6234,7 @@ label.disc-attach-btn {
 
   .disc-markup-panel {
     width: 100vw;
-    max-height: 100dvh;
+    max-height: calc(var(--app-vh, 1vh) * 100);
     border-radius: 0;
   }
 

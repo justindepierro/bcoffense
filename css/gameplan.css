@@ -2308,8 +2308,9 @@ body.gp-dragging-from-box .gp-trash-zone {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  max-height: 70vh;
+  max-height: calc(var(--app-vh, 1vh) * 70);
   overflow: auto;
+  overscroll-behavior: contain;
 }
 .gp-cmp-summary {
   display: flex;
@@ -2404,8 +2405,9 @@ body.gp-dragging-from-box .gp-trash-zone {
   display: flex;
   flex-direction: column;
   gap: 2px;
-  max-height: 50vh;
+  max-height: calc(var(--app-vh, 1vh) * 50);
   overflow-y: auto;
+  overscroll-behavior: contain;
 }
 .gp-mgb-row {
   display: grid;
@@ -2450,7 +2452,8 @@ body.gp-dragging-from-box .gp-trash-zone {
 }
 .gp-cmx-scroll {
   overflow: auto;
-  max-height: 70vh;
+  overscroll-behavior: contain;
+  max-height: calc(var(--app-vh, 1vh) * 70);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
 }
@@ -2514,8 +2517,9 @@ body.gp-dragging-from-box .gp-trash-zone {
   display: flex;
   flex-direction: column;
   gap: var(--space-md);
-  max-height: 70vh;
+  max-height: calc(var(--app-vh, 1vh) * 70);
   overflow: auto;
+  overscroll-behavior: contain;
 }
 .gp-tm-summary {
   padding: var(--space-sm) var(--space-md);

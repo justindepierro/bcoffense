@@ -138,7 +138,7 @@
   }
 
   .ob-play-list {
-    max-height: 42vh;
+    max-height: calc(var(--app-vh, 1vh) * 42);
     padding-right: 0;
   }
 

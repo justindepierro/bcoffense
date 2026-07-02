@@ -1582,7 +1582,8 @@
   #tendenciesContent.td-ipad-split .td-film-log-panel {
     grid-column: 1;
     overflow-y: auto;
-    max-height: calc(100vh - 160px);
+    overscroll-behavior: contain;
+    max-height: calc((var(--app-vh, 1vh) * 100) - 160px);
   }
   #tendenciesContent.td-ipad-split .td-chart-panel {
     grid-column: 2;
