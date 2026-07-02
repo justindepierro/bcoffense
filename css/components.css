@@ -3246,19 +3246,23 @@ kbd {
   text-align: center;
 }
 
-/* Mobile Actions pill (FAB) — always reachable when toolbars squish */
-.page-actions-fab {
+/* Mobile pill cluster (FAB) — thumb-reachable Library + Actions */
+.page-fab-cluster {
   display: none;
   position: fixed;
   right: max(16px, env(safe-area-inset-right));
   bottom: calc(env(safe-area-inset-bottom, 0px) + 16px);
   z-index: var(--z-fab);
+  gap: 8px;
+  align-items: center;
+}
+.page-fab {
+  display: inline-flex;
   align-items: center;
   gap: 6px;
-  padding: 12px 20px;
+  padding: 12px 18px;
   border: none;
   border-radius: var(--radius-pill);
-  background: var(--color-primary);
   color: var(--color-text-inverse);
   font: inherit;
   font-size: var(--font-size-sm);
@@ -3267,22 +3271,45 @@ kbd {
   cursor: pointer;
   touch-action: manipulation;
 }
-.page-actions-fab:active {
+.page-fab:active {
   transform: translateY(1px);
 }
-body.is-mobile-screen[data-active-tab="script"] .page-actions-fab,
-body.is-mobile-screen[data-active-tab="callsheet"] .page-actions-fab,
-body.is-mobile-screen[data-active-tab="wristband"] .page-actions-fab,
-body.is-mobile-screen[data-active-tab="gameplan"] .page-actions-fab {
-  display: inline-flex;
+.page-actions-fab {
+  background: var(--color-primary);
 }
-/* On mobile the bottom-right pill replaces the inline header Actions button */
-body.is-mobile-screen .page-actions-open-btn {
+.page-library-fab {
+  background: var(--color-warning);
+  color: var(--color-text);
+}
+body.is-mobile-screen[data-active-tab="script"] .page-fab-cluster,
+body.is-mobile-screen[data-active-tab="callsheet"] .page-fab-cluster,
+body.is-mobile-screen[data-active-tab="wristband"] .page-fab-cluster,
+body.is-mobile-screen[data-active-tab="gameplan"] .page-fab-cluster {
+  display: flex;
+}
+/* Library pill only on pages with a browsable library (not call sheet) */
+body[data-active-tab="callsheet"] .page-library-fab {
   display: none;
 }
-/* Coach-only surface: never show the pill for player accounts */
-body[data-auth-role="player"] .page-actions-fab {
+/* On mobile the pills replace the inline header buttons */
+body.is-mobile-screen .page-actions-open-btn,
+body.is-mobile-screen .page-library-btn {
+  display: none;
+}
+/* Coach-only surface: never show the pills for player accounts */
+body[data-auth-role="player"] .page-fab-cluster {
   display: none !important;
+}
+/* Desktop header Library button — warning-orange to stand out (dark text for contrast) */
+.page-library-btn {
+  background: var(--color-warning);
+  border-color: var(--color-warning);
+  color: var(--color-text);
+}
+@media (hover: hover) {
+  .page-library-btn:hover {
+    filter: brightness(1.08);
+  }
 }
 @media (max-width: 640px), (pointer: coarse) and (max-width: 820px) {
   .page-actions-overlay {

@@ -152,6 +152,9 @@ function renderGamePlan() {
       <div class="gp-header-actions">
         ${_gpRenderHealthGauge(board, draftedPlays)}
         <div class="gp-header-group gp-header-group-primary">
+          <button class="btn btn-sm page-library-btn" data-action="openPlayLibrary" title="Jump to the play library">
+            📚 Library
+          </button>
           <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
             🖨️ Print
           </button>

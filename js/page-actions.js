@@ -366,3 +366,37 @@ function _runPageActionsCommand(key, verb) {
     }
   });
 }
+
+// ── Play library (📚 Library button) ────────────────────────────────────────
+// Reveals the active page's browsable play library so plays can be added.
+// Script / Wristband / Game Plan each have a library pane; other pages don't.
+function openPlayLibrary() {
+  const key = getActivePageActionsKey();
+  if (key === "script") {
+    if (
+      typeof scriptPlayRailCollapsed !== "undefined" &&
+      scriptPlayRailCollapsed &&
+      typeof toggleScriptPlayRail === "function"
+    ) {
+      toggleScriptPlayRail();
+    }
+    _paRevealLibrary("#scriptPlayRail");
+  } else if (key === "wristband") {
+    if (typeof setWristbandMobileView === "function") {
+      setWristbandMobileView("library");
+    }
+    _paRevealLibrary(".wristband-plays");
+  } else if (key === "gameplan") {
+    _paRevealLibrary(".gp-library");
+  } else if (typeof showToast === "function") {
+    showToast("No play library on this page.");
+  }
+}
+
+function _paRevealLibrary(selector) {
+  const el = document.querySelector(selector);
+  if (!el) return;
+  requestAnimationFrame(() =>
+    el.scrollIntoView({ behavior: "smooth", block: "start" }),
+  );
+}
