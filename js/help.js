@@ -11,6 +11,16 @@ function getHelpDataForTab(tab) {
       title: "🏈 Playbook — Shortcuts & Features",
       sections: [
         {
+          icon: "💡",
+          name: "Playbook Flow",
+          items: [
+            { key: "Search", desc: "Find plays fast without opening the filter drawer" },
+            { key: "Filters", desc: "Open sort, tags, game-plan, and this-week filters" },
+            { key: "Analytics", desc: "Run data health, balance, situations, touches, complements, and identity reports" },
+            { key: "Actions", desc: "On phones, use the Actions sheet for add, print, analytics, cleanup, and data tools" },
+          ],
+        },
+        {
           icon: "⌨️",
           name: "Keyboard Shortcuts",
           items: [
@@ -77,6 +87,17 @@ function getHelpDataForTab(tab) {
     script: {
       title: "📝 Script Builder — Shortcuts & Features",
       sections: [
+        {
+          icon: "💡",
+          name: "Script Flow",
+          items: [
+            { key: "Library", desc: "Drag or add filtered plays into the script" },
+            { key: "Rows", desc: "Click a play row to expand settings; right-click for quick actions" },
+            { key: "Tools", desc: "Open period suggestions, Game Plan sync, wristband, call sheet, and packet tools" },
+            { key: "Display", desc: "Tune columns, compactness, print colors, and saved display presets" },
+            { key: "Quiz", desc: "Test play calls from script scenarios" },
+          ],
+        },
         {
           icon: "⌨️",
           name: "Keyboard",

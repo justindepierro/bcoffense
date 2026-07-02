@@ -3822,10 +3822,12 @@ body[data-auth-role="player"] .script-builder {
 
 /* Redesigned Script Header Panel */
 .script-header-panel {
-  background: var(--gradient-dark);
-  border-radius: var(--radius-lg);
-  padding: 10px 16px;
-  margin-bottom: 12px;
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: none;
+  padding: 6px 8px;
+  margin-bottom: 6px;
 }
 .script-header-top {
   display: flex;
@@ -3846,17 +3848,17 @@ body[data-auth-role="player"] .script-builder {
   font-weight: 600;
   text-transform: uppercase;
   letter-spacing: 0.5px;
-  color: var(--color-white-alpha-60);
-  margin-bottom: 4px;
+  color: var(--color-text-secondary);
+  margin-bottom: 2px;
 }
 .script-name-input {
   width: 100%;
   padding: 6px 12px;
   font-size: var(--font-size-md);
   font-weight: 600;
-  color: var(--color-text-inverse);
-  background: var(--color-white-alpha-10);
-  border: 1px solid var(--color-white-alpha-20);
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   outline: none;
   transition: border-color 0.2s;
@@ -3865,17 +3867,17 @@ body[data-auth-role="player"] .script-builder {
   border-color: var(--color-accent);
 }
 .script-name-input::placeholder {
-  color: rgba(255, 255, 255, 0.35);
+  color: var(--color-text-placeholder);
 }
 .script-date-input {
   padding: 6px 12px;
   font-size: var(--font-size-sm);
-  color: var(--color-text-inverse);
-  background: var(--color-white-alpha-10);
-  border: 1px solid var(--color-white-alpha-20);
+  color: var(--color-text);
+  background: var(--color-bg-input);
+  border: 1px solid var(--color-border-input);
   border-radius: var(--radius-md);
   outline: none;
-  color-scheme: dark;
+  color-scheme: light;
 }
 .script-date-input:focus {
   border-color: var(--color-accent);
@@ -4493,16 +4495,21 @@ body[data-auth-role="player"] #script .script-tools-drawer {
 
 @media (max-width: 640px) {
   .script-header-panel {
-    margin-bottom: 12px;
-    padding: 12px;
+    margin-bottom: 5px;
+    padding: 6px;
     border-radius: var(--radius-md);
   }
 
   .script-header-top {
     display: grid;
-    grid-template-columns: 1fr;
-    gap: 10px;
+    grid-template-columns: minmax(0, 1fr) minmax(132px, auto);
+    gap: 6px;
     align-items: stretch;
+  }
+
+  .script-label,
+  #script .script-workbench-group-label {
+    display: none;
   }
 
   .script-title-group,
@@ -4513,6 +4520,11 @@ body[data-auth-role="player"] #script .script-tools-drawer {
 
   .script-date-input {
     width: 100%;
+  }
+
+  #script .script-name-input,
+  #script .script-date-input {
+    min-height: 34px;
   }
 
   .script-builder {
@@ -5334,7 +5346,7 @@ body[data-active-tab="script"] .script-display-fab {
 
 /* Modernized practice script workbench */
 #script .script-header-panel {
-  margin-bottom: 10px;
+  margin-bottom: 6px;
 }
 
 #script .script-header-top {
@@ -5387,11 +5399,11 @@ body[data-active-tab="script"] .script-display-fab {
    viewport goes to play data. Shared toolbar/control tokens stay untouched
    for other tabs. */
 #script .script-header-panel {
-  margin-bottom: 8px;
+  margin-bottom: 5px;
 }
 #script .page-header-surface {
-  gap: 6px;
-  padding: 7px 10px;
+  gap: 5px;
+  padding: 5px 8px;
 }
 #script .page-header-field {
   gap: 3px;
@@ -5400,12 +5412,12 @@ body[data-active-tab="script"] .script-display-fab {
   padding: 5px 10px;
 }
 #script .toolbar-surface--compact {
-  gap: 6px;
-  padding: 6px;
+  gap: 5px;
+  padding: 5px;
 }
 #script .control-block {
   gap: 3px;
-  padding: 5px 7px;
+  padding: 4px 6px;
 }
 #script .segmented-control__item {
   min-height: 28px;

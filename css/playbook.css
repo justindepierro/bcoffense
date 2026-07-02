@@ -1414,10 +1414,10 @@ body.is-mobile-screen .pb-shortcuts-hint {
 .pb-meta-bar {
   display: flex;
   align-items: center;
-  gap: 10px;
-  margin-bottom: 8px;
+  gap: 6px;
+  margin-bottom: 5px;
   flex-wrap: wrap;
-  min-height: 28px;
+  min-height: 24px;
 }
 
 /* When a play is selected the full card is wide — let it break to its own row */
@@ -1726,10 +1726,10 @@ body.shell-phone .pb-action-sheet {
   display: flex;
   flex-direction: column;
   gap: 0;
-  margin-bottom: 6px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-white);
+  margin-bottom: 4px;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
   overflow: visible;
 }
 
@@ -1738,13 +1738,13 @@ body.shell-phone .pb-action-sheet {
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 7px 12px;
+  padding: 4px 8px;
 }
 .pb-top-row {
   background: var(--color-bg-light);
-  border-bottom: 1px solid var(--color-border-light);
+  border: 1px solid var(--color-border-light);
   flex-wrap: wrap;
-  border-radius: var(--radius-md) var(--radius-md) 0 0;
+  border-radius: var(--radius-md);
 }
 
 /* Search */
