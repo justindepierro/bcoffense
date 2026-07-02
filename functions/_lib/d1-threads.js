@@ -685,6 +685,8 @@ export async function getModerationStats(db, teamId) {
   };
 }
 
+/**
+ * Returns IDs of coaches/admins who are active in the team's discussions.
  * Used to target repeated-violation notifications.
  */
 export async function getActiveCoachIds(db, teamId) {
