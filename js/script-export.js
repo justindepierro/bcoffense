@@ -1367,7 +1367,7 @@ async function _waitForScriptPacketImages(host) {
   await Promise.all(
     images.map((image) => {
       if (image.complete) return Promise.resolve();
-      if (typeof image.decode === "function") return image.decode().catch(() => {});
+      if (typeof image.decode === "function") return image.decode().catch(() => { });
       return new Promise((resolve) => {
         image.addEventListener("load", resolve, { once: true });
         image.addEventListener("error", resolve, { once: true });
