@@ -34,6 +34,46 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🖨️", label: "Print Studio", run: () => _paCall("openPrintStudio") },
     ],
   },
+
+  callsheet: {
+    title: "Call Sheet",
+    verbs: [
+      { icon: "📂", label: "Load", run: () => _paCall("openLoadCallSheetModal") },
+      { icon: "💾", label: "Save", run: () => _paCall("saveCallSheetTemplate") },
+      { icon: "🖨️", label: "Print", run: () => _paCall("printCallSheet") },
+      { icon: "⚙️", label: "Display", run: () => _paCall("openDisplayPanel") },
+    ],
+    extras: [
+      { icon: "⚡", label: "Auto-Populate", run: () => _paCall("autoPopulateCallSheet") },
+      { icon: "📁", label: "Saved Call Sheets", run: () => _paCall("openTemplatesModal", "manage") },
+      { icon: "📋", label: "Load Wristband", run: () => _paCall("openLoadWristbandModal") },
+      { icon: "🎯", label: "Scouting Intel", run: () => _paCall("toggleScoutingOverlay") },
+      { icon: "📋", label: "Sideline View", run: () => _paCall("toggleCsSidelineMode") },
+      { icon: "📄", label: "Export CSV", run: () => _paCall("exportCallSheetCSV") },
+      { icon: "🗑️", label: "Clear Sheet", run: () => _paCall("clearCallSheet") },
+    ],
+  },
+
+  wristband: {
+    title: "Wristband",
+    verbs: [
+      { icon: "📂", label: "Load", run: () => _paCall("openSavedWristbandManager") },
+      { icon: "💾", label: "Save", run: () => _paCall("saveWristband") },
+      { icon: "🖨️", label: "Print", run: () => _paCall("printWristband") },
+      { icon: "⚙️", label: "Display", run: () => openWristbandAppearance() },
+    ],
+    extras: [
+      { icon: "⚡", label: "Auto-Fill", run: () => _paCall("autoFillWristband") },
+      { icon: "🧠", label: "Smart Fill", run: () => _paCall("smartFillBySituation") },
+      { icon: "📂", label: "Load Templates", run: () => _paCall("openWristbandTemplatesMenu") },
+      { icon: "💾", label: "Save As", run: () => _paCall("saveWristbandAs") },
+      { icon: "📄", label: "Send to Call Sheet", run: () => _paCall("sendWristbandToCallSheet") },
+      { icon: "🎯", label: "Send to Game Plan", run: () => _paCall("sendWristbandToGamePlan") },
+      { icon: "🖼️", label: "Logo Card", run: () => _paCall("openWbLogoCardModal") },
+      { icon: "📊", label: "Export CSV", run: () => _paCall("exportWristbandCSV") },
+      { icon: "🗑️", label: "Clear", run: () => _paCall("clearWristband") },
+    ],
+  },
 };
 
 function _paCall(name, ...args) {
@@ -190,4 +230,15 @@ function openScriptDayTemplatesFromActions() {
   setTimeout(() => {
     if (typeof openScriptTemplatesMenu === "function") openScriptTemplatesMenu();
   }, 60);
+}
+
+// ── Wristband "Display" → open the appearance popover ──────────────────────
+function openWristbandAppearance() {
+  closePageActions();
+  setTimeout(() => {
+    const panel = document.querySelector(".wb-appearance-panel");
+    if (!panel) return;
+    panel.open = true;
+    panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+  }, 80);
 }

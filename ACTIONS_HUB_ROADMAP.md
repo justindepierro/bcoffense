@@ -38,7 +38,7 @@ obvious front door.
 
 ## Phases
 
-### Phase 1 — Shared hub + Script page (PROOF) ✅ in progress
+### Phase 1 — Shared hub + Script page (PROOF) ✅ shipped (SW v856)
 
 - Add `js/page-actions.js`: shared `openPageActions()` sheet + per-page verb
   registry, calling existing globals.
@@ -52,7 +52,7 @@ obvious front door.
   - More → packet, present, Send to Game Plan/Wristband/Call Sheet, Print Studio
 - **Acceptance:** load a saved practice script in 2 taps, no drawer, no scroll.
 
-### Phase 2 — Roll the hub to Call Sheet + Wristband
+### Phase 2 — Roll the hub to Call Sheet + Wristband ✅ shipped (SW v857)
 
 - Register Call Sheet verbs: Load (built-in 7-on-7/Standard + saved), Save
   (`saveCallSheetTemplate`), Print (`printCallSheet`), Display (`openDisplayPanel`).
