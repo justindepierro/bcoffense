@@ -263,7 +263,7 @@ function _discQStateBadge(state) {
 
 function _discRoleBadge(role) {
   if (!role || role === "player") return "";
-  const label = { admin: "Admin", coach: "Coach" }[role] || String(role);
+  const label = { admin: "Admin", coach: "Coach", assistant: "Asst. Coach" }[role] || String(role);
   return `<span class="disc-role-badge disc-role-badge--${escapeHtml(role)}">${escapeHtml(label)}</span>`;
 }
 
@@ -288,6 +288,7 @@ async function _discEnsureUserId() {
 let _discEditState = null;       // { postId, original }
 let _discLastPlayId = null;      // for retryDiscussion()
 let _discLastPlaySig = null;
+let _discScriptContext = null;   // { periodName, playIndex } — set by openScriptDiscussion
 
 // ── Main render ───────────────────────────────────────────────────────────────
 
@@ -299,6 +300,17 @@ let _discLastPlaySig = null;
  * Look up the current player's primary position from the local team roster.
  * Returns a string like "QB" or null if not found / not a player.
  */
+/**
+ * Return the period label for a script play index (walks backwards to find the separator).
+ */
+function _discGetScriptPeriodForIdx(idx) {
+  if (typeof script === "undefined" || !Array.isArray(script)) return null;
+  for (let i = idx - 1; i >= 0; i--) {
+    if (script[i]?.isSeparator) return script[i].label || "Period";
+  }
+  return null;
+}
+
 function _discGetPlayerPosition() {
   const user = window.currentAuthUser;
   if (!user || (user.role !== "player")) return null;
@@ -360,7 +372,7 @@ function _discRenderBody(container, data, playId, playSig) {
   const { thread, posts, hasMore } = data;
   const isLocked = thread?.locked;
   const userRole = window.currentAuthUser?.role;
-  const isStaff = userRole === "coach" || userRole === "admin";
+  const isStaff = userRole === "coach" || userRole === "admin" || userRole === "assistant";
   const canPost = !isLocked || isStaff;
 
   // Coach moderation queue banner
@@ -461,7 +473,7 @@ function _discAttachmentsHtml(attachments) {
 
 function _discPostHtml(p, playId, isReply = false) {
   const mine = p.authorId === _discCurrentUserId;
-  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
+  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin" || window.currentAuthUser?.role === "assistant";
   const canAct = mine || isStaff;
   const isQuestion = p.postType === "question";
   const isResolved = p.questionState === "resolved" || p.questionState === "answered";
@@ -511,7 +523,7 @@ function _discPostHtml(p, playId, isReply = false) {
   const qStateBadge = isQuestion ? _discQStateBadge(p.questionState) : "";
   const qCatBadge = isQuestion ? _discQCategoryBadge(p.questionCategory) : "";
   const typeIcon = isQuestion ? `<span class="disc-type-icon">❓</span>` : "";
-  const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin") ? " disc-post--coach" : "";
+  const coachHighlight = (p.authorRole === "coach" || p.authorRole === "admin" || p.authorRole === "assistant") ? " disc-post--coach" : "";
 
   // ── Prominent "I Have This Question Too" button for question root posts ──
   const sameQReaction = (isQuestion && !isReply)
@@ -709,12 +721,25 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const isReply = !!parentPostId;
   const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
   const idSuffix = isReply ? `reply-${parentPostId}` : playId;
-  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
+  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin" || window.currentAuthUser?.role === "assistant";
   const playerPos = !isReply && !isStaff ? _discGetPlayerPosition() : null;
-  const posCtx = playerPos
-    ? `<p class="disc-position-ctx" aria-label="Your position context">Asking as: <strong>${escapeHtml(playerPos)}</strong></p>`
+  const gw = (typeof getGameWeek === "function") ? getGameWeek() : null;
+  const opponentCtx = (!isReply && gw?.opponentName) ? ` · vs ${escapeHtml(gw.opponentName)}` : "";
+  const periodCtx = (!isReply && _discScriptContext?.periodName) ? ` · ${escapeHtml(_discScriptContext.periodName)}` : "";
+  const posCtx = (!isReply && (playerPos || opponentCtx || periodCtx))
+    ? `<p class="disc-position-ctx" aria-label="Question context">` +
+    (playerPos ? `Asking as: <strong>${escapeHtml(playerPos)}</strong>` : "Asking") +
+    periodCtx + opponentCtx +
+    `</p>`
     : "";
-  const typeSelect = isReply ? "" :
+  // Clarification reply type for staff (lets coaches add context without marking question answered)
+  const clarifySelect = isReply && isStaff
+    ? `<select class="disc-type-select disc-type-select--reply" id="discType-${escapeHtml(idSuffix)}" aria-label="Reply type">` +
+    `<option value="comment">Reply</option>` +
+    `<option value="coach_clarification">Clarification 📋</option>` +
+    `</select>`
+    : "";
+  const typeSelect = isReply ? clarifySelect :
     `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type"
       data-onchange="discToggleQCategory" data-pass="event">` +
     `<option value="comment">Comment</option>` +
@@ -1110,12 +1135,14 @@ async function submitDiscReply(arg, el) {
   try {
     const replyComposerId = `reply-${parentPostId}`;
     const pendingAttach = _discPendingAttachments.get(replyComposerId) || null;
+    const replyTypeEl = document.getElementById(`discType-reply-${parentPostId}`);
+    const replyPostType = replyTypeEl?.value === "coach_clarification" ? "coach_clarification" : "comment";
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         body,
-        post_type: "comment",
+        post_type: replyPostType,
         play_signature: playSig,
         parent_post_id: parentPostId,
         attachment: pendingAttach || undefined,
@@ -1854,7 +1881,7 @@ async function openDiscReactionBreakdown(postId) {
   if (!postId) return;
   const postEl = document.getElementById(`disc-post-${postId}`);
   const playId = postEl?.closest("[data-play-id]")?.dataset?.playId || _discLastPlayId;
-  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
+  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin" || window.currentAuthUser?.role === "assistant";
 
   // Build fallback from DOM if fetch fails
   const buildFallbackHtml = () => {
@@ -2009,6 +2036,10 @@ async function openScriptDiscussion(idxStr) {
   const idx = parseInt(idxStr, 10);
   if (isNaN(idx)) return;
 
+  // Capture script context so composer can show period + opponent
+  const periodName = _discGetScriptPeriodForIdx(idx);
+  _discScriptContext = periodName ? { periodName, playIndex: idx } : null;
+
   if (typeof openScriptPresentation === "function") {
     openScriptPresentation(idx);
   }
@@ -2019,6 +2050,37 @@ async function openScriptDiscussion(idxStr) {
   if (typeof openPresentationDiscussion === "function") {
     openPresentationDiscussion();
   }
+}
+
+/**
+ * Open the script discussion and immediately pre-select the Question type.
+ * data-action="scriptAskCoachQuestion" data-arg="{scriptIndex}"
+ */
+async function scriptAskCoachQuestion(idxStr) {
+  await openScriptDiscussion(idxStr);
+  // Give discussion body a moment to render before pre-selecting question type
+  await new Promise((r) => setTimeout(r, 400));
+  if (typeof _discLastPlayId === "string" && _discLastPlayId) {
+    discAskCoachQuestion(_discLastPlayId);
+  }
+}
+
+/**
+ * Open the playbook workflow panel for a play index, then pre-select Question type.
+ * data-action="askCoachAboutPlay" data-arg="{playbookIndex}"
+ */
+async function askCoachAboutPlay(idxStr) {
+  const idx = parseInt(idxStr, 10);
+  if (isNaN(idx)) return;
+  if (typeof openPlayWorkflowPanel !== "function") return;
+  _discScriptContext = null; // playbook context, not script
+  openPlayWorkflowPanel(idx);
+  // Give workflow panel + discussion time to render
+  await new Promise((r) => setTimeout(r, 600));
+  const play = (typeof plays !== "undefined" && Array.isArray(plays)) ? plays[idx] : null;
+  if (!play) return;
+  const playId = getPlayThreadId(play);
+  discAskCoachQuestion(playId);
 }
 
 // ── Presentation (Swipe View) Discussion Drawer ───────────────────────────────
@@ -2923,6 +2985,31 @@ function _discApplyDeepLink(playId) {
 }
 
 // ── Wire file inputs whenever a composer is rendered ─────────────────────────
+
+/**
+ * On page load with ?disc={playId}, find the matching play and open the workflow
+ * panel so the deep link resolves to the correct discussion.
+ * Runs after DOMContentLoaded so the playbook is accessible.
+ */
+document.addEventListener("DOMContentLoaded", () => {
+  if (!_discDeepLinkPlayId) return;
+  // Poll briefly until plays array is populated (async playbook load)
+  let attempts = 0;
+  const interval = setInterval(() => {
+    if (typeof plays === "undefined" || !Array.isArray(plays) || plays.length === 0) {
+      if (++attempts > 20) clearInterval(interval); // give up after ~5 s
+      return;
+    }
+    clearInterval(interval);
+    const idx = plays.findIndex(
+      (p) => typeof getPlayThreadId === "function" && getPlayThreadId(p) === _discDeepLinkPlayId
+    );
+    if (idx === -1) return; // play not found — deep link post highlight will still work if panel opens
+    if (typeof openPlayWorkflowPanel === "function") {
+      openPlayWorkflowPanel(idx);
+    }
+  }, 250);
+});
 
 /**
  * Wire attachment-related inputs in new composer nodes.

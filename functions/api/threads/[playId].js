@@ -87,13 +87,14 @@ export async function onRequest(context) {
       return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
     }
 
-    const postBody        = String(body.body || "").trim();
-    const postType        = body.post_type === "question" ? "question" : "comment";
-    const playSig         = String(body.play_signature || "").trim() || null;
-    const parentPostId    = String(body.parent_post_id || "").trim() || null;
+    const postBody = String(body.body || "").trim();
+    const _validTypes = ["question", "comment", "coach_clarification"];
+    const postType = _validTypes.includes(body.post_type) ? body.post_type : "comment";
+    const playSig = String(body.play_signature || "").trim() || null;
+    const parentPostId = String(body.parent_post_id || "").trim() || null;
     const questionCategory = String(body.question_category || "").trim() || null;
     // Optional attachment: { id, r2_key, type, caption, sourcePlayId, sizeBytes }
-    const attachmentMeta  = body.attachment && typeof body.attachment === "object"
+    const attachmentMeta = body.attachment && typeof body.attachment === "object"
       ? body.attachment : null;
 
     if (!postBody) return authJson({ ok: false, error: "Post body required." }, { status: 422 });
@@ -144,19 +145,19 @@ export async function onRequest(context) {
     // ── Create attachment record if image was uploaded before posting ──────
     if (attachmentMeta?.r2_key && isStaff) {
       await createPostAttachment(env.DB, {
-        id:          attachmentMeta.id || crypto.randomUUID(),
-        postId:      result.id,
-        type:        attachmentMeta.type === "markup" ? "markup" : "image",
-        r2Key:       String(attachmentMeta.r2_key),
-        caption:     String(attachmentMeta.caption || "").slice(0, 500) || null,
+        id: attachmentMeta.id || crypto.randomUUID(),
+        postId: result.id,
+        type: attachmentMeta.type === "markup" ? "markup" : "image",
+        r2Key: String(attachmentMeta.r2_key),
+        caption: String(attachmentMeta.caption || "").slice(0, 500) || null,
         sourcePlayId: String(attachmentMeta.sourcePlayId || "").slice(0, 512) || null,
-        sizeBytes:   Number(attachmentMeta.sizeBytes) || null,
+        sizeBytes: Number(attachmentMeta.sizeBytes) || null,
       }).catch(() => { /* non-fatal — attachment metadata loss is acceptable */ });
     }
 
-    // Auto-answer parent question when a staff member replies
-    const isStaff = session.role === "coach" || session.role === "admin";
-    if (isStaff && parentPostId) {
+    // Auto-answer parent question when a staff member replies (but not for clarifications)
+    const isStaff = session.role === "coach" || session.role === "admin" || session.role === "assistant";
+    if (isStaff && parentPostId && postType !== "coach_clarification") {
       const parent = await env.DB.prepare(
         "SELECT post_type, question_state FROM discussion_posts WHERE id = ? AND deleted_at IS NULL LIMIT 1"
       ).bind(parentPostId).first();

@@ -10,7 +10,7 @@
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
 
 const PREFIX = "disc-attachments";
-const EXTS   = ["jpg", "png", "webp"];
+const EXTS = ["jpg", "png", "webp"];
 
 export async function onRequestGet(context) {
   const { request, env, params } = context;
@@ -39,7 +39,7 @@ export async function onRequestGet(context) {
   if (!obj) return new Response("Not found", { status: 404 });
 
   const headers = new Headers({
-    "Content-Type":  obj.httpMetadata?.contentType || "image/jpeg",
+    "Content-Type": obj.httpMetadata?.contentType || "image/jpeg",
     "Cache-Control": "private, max-age=86400",
     "X-Content-Type-Options": "nosniff",
   });

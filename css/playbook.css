@@ -212,6 +212,61 @@ table.sortable th {
   }
 }
 
+/* Ask Coach button on playbook rows */
+#playbookTable .pb-ask-coach-btn {
+  opacity: 0;
+  min-width: 22px;
+  min-height: 22px;
+  padding: 0;
+  font-size: var(--font-size-xs);
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition:
+    opacity var(--transition-fast),
+    color var(--transition-fast);
+}
+@media (hover: hover) {
+  #playbookTable tbody tr:hover .pb-ask-coach-btn {
+    opacity: 1;
+  }
+  #playbookTable .pb-ask-coach-btn:hover {
+    color: var(--color-warning);
+    border-color: var(--color-warning);
+  }
+}
+
+/* Script Ask Coach button */
+.script-ask-coach-btn {
+  font-size: var(--font-size-xs);
+  padding: 2px 5px;
+  background: none;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  cursor: pointer;
+  color: var(--color-text-muted);
+  transition:
+    color var(--transition-fast),
+    border-color var(--transition-fast);
+}
+.script-ask-coach-btn:hover {
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+}
+
+/* Clarification reply type select */
+.disc-type-select--reply {
+  font-size: var(--font-size-xs);
+  padding: 2px 4px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-input);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
 /* Workflow status chips (#103-108) */
 .pb-wf-chips {
   display: inline-flex;
@@ -4464,6 +4519,21 @@ body.shell-phone .pb-action-sheet {
   text-overflow: ellipsis;
   white-space: nowrap;
 }
+.pb-wf-like-btn {
+  font-size: var(--font-size-xs);
+  gap: 3px;
+  opacity: 0.7;
+  transition: opacity var(--transition-fast), color var(--transition-fast);
+  flex-shrink: 0;
+}
+.pb-wf-like-btn:hover {
+  opacity: 1;
+}
+.pb-wf-like-btn--liked {
+  opacity: 1;
+  color: var(--color-info);
+  border-color: var(--color-info);
+}
 .pb-wf-panel-body {
   flex: 1;
   overflow-y: auto;
@@ -5951,9 +6021,15 @@ label.disc-attach-btn {
 }
 
 @keyframes disc-highlight-fade {
-  0%   { outline-color: var(--color-primary); }
-  75%  { outline-color: var(--color-primary); }
-  100% { outline-color: transparent; }
+  0% {
+    outline-color: var(--color-primary);
+  }
+  75% {
+    outline-color: var(--color-primary);
+  }
+  100% {
+    outline-color: transparent;
+  }
 }
 
 /* ── Markup overlay ─────────────────────────────────────────────────────────── */

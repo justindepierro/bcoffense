@@ -30,7 +30,7 @@ function assert(condition, label) {
 
 const VALID_STATES = ["open", "answered", "resolved", "reopened"];
 const VALID_TRANSITIONS = {
-  open:     ["answered", "resolved"],
+  open: ["answered", "resolved"],
   answered: ["resolved", "reopened"],
   resolved: ["reopened"],
   reopened: ["answered", "resolved"],
@@ -41,8 +41,8 @@ function canTransition(from, to) {
 }
 
 describe("Question state machine — valid transitions", () => {
-  assert(canTransition("open",     "answered"), "open → answered (coach posts official reply)");
-  assert(canTransition("open",     "resolved"), "open → resolved (coach marks resolved)");
+  assert(canTransition("open", "answered"), "open → answered (coach posts official reply)");
+  assert(canTransition("open", "resolved"), "open → resolved (coach marks resolved)");
   assert(canTransition("answered", "resolved"), "answered → resolved");
   assert(canTransition("answered", "reopened"), "answered → reopened (player requests)");
   assert(canTransition("resolved", "reopened"), "resolved → reopened");
@@ -50,17 +50,17 @@ describe("Question state machine — valid transitions", () => {
 });
 
 describe("Question state machine — invalid transitions", () => {
-  assert(!canTransition("open",     "open"),     "open → open invalid");
-  assert(!canTransition("open",     "reopened"), "open → reopened invalid (use answered first)");
+  assert(!canTransition("open", "open"), "open → open invalid");
+  assert(!canTransition("open", "reopened"), "open → reopened invalid (use answered first)");
   assert(!canTransition("resolved", "answered"), "resolved → answered invalid");
-  assert(!canTransition("reopened", "open"),     "reopened → open invalid");
-  assert(!canTransition("answered", "open"),     "answered → open invalid");
+  assert(!canTransition("reopened", "open"), "reopened → open invalid");
+  assert(!canTransition("answered", "open"), "answered → open invalid");
 });
 
 describe("Question state machine — state badge display", () => {
   function stateBadge(state) {
     const MAP = {
-      open:     { label: "Open",     cls: "disc-q-state--open"     },
+      open: { label: "Open", cls: "disc-q-state--open" },
       answered: { label: "Answered", cls: "disc-q-state--answered" },
       resolved: { label: "Resolved", cls: "disc-q-state--resolved" },
       reopened: { label: "Reopened", cls: "disc-q-state--reopened" },
@@ -68,18 +68,18 @@ describe("Question state machine — state badge display", () => {
     return MAP[state] || null;
   }
 
-  assert(stateBadge("open")?.label === "Open",         "open badge label");
+  assert(stateBadge("open")?.label === "Open", "open badge label");
   assert(stateBadge("answered")?.label === "Answered", "answered badge label");
   assert(stateBadge("resolved")?.label === "Resolved", "resolved badge label");
   assert(stateBadge("reopened")?.label === "Reopened", "reopened badge label");
-  assert(stateBadge("unknown") === null,               "unknown state has no badge");
+  assert(stateBadge("unknown") === null, "unknown state has no badge");
 });
 
 // ── Question Categories ──────────────────────────────────────────────────────
 
 const VALID_CATEGORIES = [
   "assignment", "technique", "front", "coverage",
-  "motion",     "protection", "read", "general",
+  "motion", "protection", "read", "general",
 ];
 
 describe("Question categories — valid set", () => {
@@ -87,18 +87,18 @@ describe("Question categories — valid set", () => {
     return VALID_CATEGORIES.includes(cat) || !cat; // empty = general
   }
 
-  assert(isValidCategory("assignment"),  "assignment valid");
-  assert(isValidCategory("technique"),   "technique valid");
-  assert(isValidCategory("front"),       "front valid");
-  assert(isValidCategory("coverage"),    "coverage valid");
-  assert(isValidCategory("motion"),      "motion valid");
-  assert(isValidCategory("protection"),  "protection valid");
-  assert(isValidCategory("read"),        "read valid");
-  assert(isValidCategory("general"),     "general valid");
-  assert(isValidCategory(""),            "empty → treated as general");
-  assert(!isValidCategory("video"),      "video not a valid category");
-  assert(!isValidCategory("random"),     "random not a valid category");
-  assert(VALID_CATEGORIES.length === 8,  "exactly 8 base categories");
+  assert(isValidCategory("assignment"), "assignment valid");
+  assert(isValidCategory("technique"), "technique valid");
+  assert(isValidCategory("front"), "front valid");
+  assert(isValidCategory("coverage"), "coverage valid");
+  assert(isValidCategory("motion"), "motion valid");
+  assert(isValidCategory("protection"), "protection valid");
+  assert(isValidCategory("read"), "read valid");
+  assert(isValidCategory("general"), "general valid");
+  assert(isValidCategory(""), "empty → treated as general");
+  assert(!isValidCategory("video"), "video not a valid category");
+  assert(!isValidCategory("random"), "random not a valid category");
+  assert(VALID_CATEGORIES.length === 8, "exactly 8 base categories");
 });
 
 // ── Official Answer Pinning ──────────────────────────────────────────────────
@@ -117,13 +117,13 @@ describe("Official answer — single pin per question", () => {
 
   let pinned = setOfficial(replies, "r2");
   const officialCount = pinned.filter((r) => r.is_official).length;
-  assert(officialCount === 1,                   "exactly one official reply");
+  assert(officialCount === 1, "exactly one official reply");
   assert(pinned.find((r) => r.id === "r2")?.is_official, "r2 is pinned");
   assert(!pinned.find((r) => r.id === "r1")?.is_official, "r1 not pinned");
 
   // Replace: set r3 as official
   pinned = setOfficial(pinned, "r3");
-  assert(pinned.find((r) => r.id === "r3")?.is_official,  "r3 is now pinned");
+  assert(pinned.find((r) => r.id === "r3")?.is_official, "r3 is now pinned");
   assert(!pinned.find((r) => r.id === "r2")?.is_official, "r2 unpinned after replacement");
   assert(pinned.filter((r) => r.is_official).length === 1, "still exactly one official");
 });
@@ -132,7 +132,7 @@ describe("Official answer — previous answer preserved in history", () => {
   // When a new reply is pinned, the old one is un-marked but still present in DB
   const history = [
     { id: "r1", is_official: false, was_official_at: 1000 },
-    { id: "r2", is_official: true,  was_official_at: null },
+    { id: "r2", is_official: true, was_official_at: null },
   ];
 
   // After switching to r3, r2 is un-pinned but still in history
@@ -158,19 +158,19 @@ describe("Player position context — roster lookup", () => {
   }
 
   const roster = [
-    { name: "Justin Player",  position: "QB",  positionGroup: "skill"   },
-    { name: "Marcus Run",     position: "RB",  positionGroup: "skill"   },
-    { name: "Big Block",      position: "OT",  positionGroup: "linemen" },
-    { name: "No Position",    position: "",    positionGroup: ""        },
+    { name: "Justin Player", position: "QB", positionGroup: "skill" },
+    { name: "Marcus Run", position: "RB", positionGroup: "skill" },
+    { name: "Big Block", position: "OT", positionGroup: "linemen" },
+    { name: "No Position", position: "", positionGroup: "" },
   ];
 
-  assert(getPlayerPosition({ role: "player",  label: "Justin Player" }, roster) === "QB",  "QB found by label");
-  assert(getPlayerPosition({ role: "player",  label: "Marcus Run"    }, roster) === "RB",  "RB found by label");
-  assert(getPlayerPosition({ role: "player",  label: "Big Block"     }, roster) === "OT",  "OT found by label");
-  assert(getPlayerPosition({ role: "player",  label: "No Position"   }, roster) === null,  "empty position returns null");
-  assert(getPlayerPosition({ role: "player",  label: "Unknown Name"  }, roster) === null,  "unmatched name returns null");
-  assert(getPlayerPosition({ role: "coach",   label: "Justin Player" }, roster) === null,  "coach returns null");
-  assert(getPlayerPosition({ role: "admin",   label: "Justin Player" }, roster) === null,  "admin returns null");
+  assert(getPlayerPosition({ role: "player", label: "Justin Player" }, roster) === "QB", "QB found by label");
+  assert(getPlayerPosition({ role: "player", label: "Marcus Run" }, roster) === "RB", "RB found by label");
+  assert(getPlayerPosition({ role: "player", label: "Big Block" }, roster) === "OT", "OT found by label");
+  assert(getPlayerPosition({ role: "player", label: "No Position" }, roster) === null, "empty position returns null");
+  assert(getPlayerPosition({ role: "player", label: "Unknown Name" }, roster) === null, "unmatched name returns null");
+  assert(getPlayerPosition({ role: "coach", label: "Justin Player" }, roster) === null, "coach returns null");
+  assert(getPlayerPosition({ role: "admin", label: "Justin Player" }, roster) === null, "admin returns null");
   assert(getPlayerPosition(null, roster) === null, "null user returns null");
 });
 
@@ -248,17 +248,17 @@ describe("Ask Coach button — question type pre-selection", () => {
 
   function discAskCoachQuestion(playId) {
     const sel = mockSelects.get(playId);
-    const ta  = mockTextareas.get(playId);
+    const ta = mockTextareas.get(playId);
     if (sel) { sel.value = "question"; sel.eventFired = true; }
-    if (ta)  { ta.focused = true; ta.placeholder = "What's your question? (Ctrl+Enter to post)"; }
+    if (ta) { ta.focused = true; ta.placeholder = "What's your question? (Ctrl+Enter to post)"; }
   }
 
   mockComposer("play-test-1");
   discAskCoachQuestion("play-test-1");
 
-  assert(mockSelects.get("play-test-1").value === "question",     "type select set to question");
-  assert(mockSelects.get("play-test-1").eventFired === true,      "change event dispatched");
-  assert(mockTextareas.get("play-test-1").focused === true,       "textarea focused");
+  assert(mockSelects.get("play-test-1").value === "question", "type select set to question");
+  assert(mockSelects.get("play-test-1").eventFired === true, "change event dispatched");
+  assert(mockTextareas.get("play-test-1").focused === true, "textarea focused");
   assert(
     mockTextareas.get("play-test-1").placeholder.includes("question"),
     "placeholder updated",
@@ -272,11 +272,11 @@ describe("Coach authorization — who can post official answers", () => {
     return role === "coach" || role === "admin";
   }
 
-  assert(canMarkOfficial("coach"),  "coach can mark official");
-  assert(canMarkOfficial("admin"),  "admin can mark official");
+  assert(canMarkOfficial("coach"), "coach can mark official");
+  assert(canMarkOfficial("admin"), "admin can mark official");
   assert(!canMarkOfficial("player"), "player cannot mark official");
-  assert(!canMarkOfficial("guest"),  "guest cannot mark official");
-  assert(!canMarkOfficial(null),     "null role cannot mark official");
+  assert(!canMarkOfficial("guest"), "guest cannot mark official");
+  assert(!canMarkOfficial(null), "null role cannot mark official");
 });
 
 describe("Coach authorization — who can resolve questions", () => {
@@ -290,10 +290,10 @@ describe("Coach authorization — who can resolve questions", () => {
     return isAuthor;
   }
 
-  assert(canResolve("coach"),  "coach can resolve");
+  assert(canResolve("coach"), "coach can resolve");
   assert(!canResolve("player"), "player cannot resolve");
-  assert(canReopen("coach", false),  "coach can reopen");
-  assert(canReopen("player", true),  "author player can reopen own question");
+  assert(canReopen("coach", false), "coach can reopen");
+  assert(canReopen("player", true), "author player can reopen own question");
   assert(!canReopen("player", false), "non-author player cannot reopen");
 });
 

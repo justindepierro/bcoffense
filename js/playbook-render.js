@@ -159,7 +159,7 @@ function renderPlaybook() {
                 <td class="col-back">${highlight(play.back || "-")}</td>
                 <td class="col-motion">${highlight(play.motion || "-")}</td>
                 <td class="col-protection">${highlight(play.protection || "-")}</td>
-                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button></td>
+                <td class="col-play play-cell" data-action="copyPlayName" data-play="${escapeHtml(play.play)}"><strong>${highlight(play.play)}</strong> ${escapeHtml([play.playTag1, play.playTag2].filter(Boolean).join(" "))}${item.picturePill}${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}${_renderWorkflowChips(play, idx)}${item.readinessBadge}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-idx="${idx}" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button><button class="pb-add-week-btn" data-action="addPlayToWeek" data-arg="${idx}" title="Add to week — Game Plan, Script, Wristband, or Call Sheet">⊕</button>${typeof askCoachAboutPlay === "function" ? `<button class="pb-ask-coach-btn" data-action="askCoachAboutPlay" data-arg="${idx}" title="Ask a question about this play" aria-label="Ask a question about ${escapeHtml(play.play)}">❓</button>` : ""}</td>
                 <td class="col-basePlay">${escapeHtml(play.basePlay || "-")}</td>
                 <td class="col-tempo">${escapeHtml(play.tempo || "-")}</td>
             </tr>
@@ -659,6 +659,79 @@ function openPlayWorkflowPanel(idx) {
   if (typeof renderDiscussionSection === "function") {
     renderDiscussionSection(play, body);
   }
+
+  // Async Like state
+  _wfLoadLikeState(play);
+}
+
+// ── Play Like (Phase 10) ──────────────────────────────────────────────────────
+
+let _wfCurrentLikePlayId = null;  // playId of the play currently in the panel
+
+async function _wfLoadLikeState(play) {
+  const btn = document.getElementById("pbWfLikeBtn");
+  if (!btn) return;
+  if (!window.currentAuthUser) { btn.style.display = "none"; return; }
+
+  const playId = typeof getPlayThreadId === "function" ? getPlayThreadId(play) : null;
+  if (!playId) { btn.style.display = "none"; return; }
+  _wfCurrentLikePlayId = playId;
+
+  btn.style.display = "";
+  btn.disabled = true;
+
+  try {
+    const res = await fetch(`/api/plays/${encodeURIComponent(playId)}/like`);
+    if (!res.ok) throw new Error("Like fetch failed");
+    const data = await res.json();
+    _wfUpdateLikeBtn(btn, data.liked, data.count);
+  } catch (_) {
+    btn.style.display = "none";
+  }
+
+  btn.disabled = false;
+}
+
+function _wfUpdateLikeBtn(btn, liked, count) {
+  const countEl = document.getElementById("pbWfLikeCount");
+  if (countEl) countEl.textContent = count || 0;
+  btn.setAttribute("aria-pressed", liked ? "true" : "false");
+  btn.classList.toggle("pb-wf-like-btn--liked", !!liked);
+  btn.title = liked ? "Unlike this play" : "Like this play";
+  btn.setAttribute("aria-label", (liked ? "Unlike" : "Like") + " this play");
+}
+
+async function togglePlayLike() {
+  if (!_wfCurrentLikePlayId) return;
+  const btn = document.getElementById("pbWfLikeBtn");
+  if (!btn || btn.disabled) return;
+
+  btn.disabled = true;
+  // Optimistic toggle
+  const wasLiked = btn.getAttribute("aria-pressed") === "true";
+  const countEl = document.getElementById("pbWfLikeCount");
+  const prevCount = parseInt(countEl?.textContent || "0", 10);
+  _wfUpdateLikeBtn(btn, !wasLiked, wasLiked ? Math.max(0, prevCount - 1) : prevCount + 1);
+
+  try {
+    const res = await fetch(`/api/plays/${encodeURIComponent(_wfCurrentLikePlayId)}/like`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+    });
+    const data = await res.json();
+    if (data.ok) {
+      _wfUpdateLikeBtn(btn, data.liked, data.count);
+    } else {
+      // Revert on error
+      _wfUpdateLikeBtn(btn, wasLiked, prevCount);
+      showToast(data.error || "Failed to update like.", { duration: 3000, type: "error" });
+    }
+  } catch (_) {
+    _wfUpdateLikeBtn(btn, wasLiked, prevCount);
+    showToast("Network error — try again.", { duration: 3000, type: "error" });
+  }
+
+  btn.disabled = false;
 }
 
 function closePlayWorkflowPanel() {

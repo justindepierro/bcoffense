@@ -1066,18 +1066,18 @@ Initial reactions:
 
 # Phase 9 — Structured Questions and Coach Replies
 
-- [ ] Add an Ask Coach action to Playbook play detail.
-- [ ] Add an Ask Coach action to every eligible Practice Script play.
+- [x] Add an Ask Coach action to Playbook play detail.
+- [x] Add an Ask Coach action to every eligible Practice Script play.
 - [x] Open the question composer without leaving the current page.
 - [x] Automatically include canonical play context.
-- [ ] Automatically include script context when launched from Practice Script.
-- [ ] Automatically include opponent and week context when available.
+- [x] Automatically include script context when launched from Practice Script.
+- [x] Automatically include opponent and week context when available.
 - [x] Automatically include the authenticated player's primary position.
 - [x] Allow the player to change the question position context.
 - [x] Add question categories: Assignment, Technique, Front, Coverage, Motion, Protection, Read, and General.
 - [x] Require a clear question body.
 - [x] Allow coaches to reply.
-- [ ] Allow assistant coaches to reply according to permissions.
+- [x] Allow assistant coaches to reply according to permissions.
 - [x] Mark a question Answered when a coach posts an official reply.
 - [x] Allow a coach to mark a question Resolved.
 - [x] Allow a player to request reopening.
@@ -1087,19 +1087,19 @@ Initial reactions:
 - [x] Allow a coach to pin one official answer.
 - [x] Allow replacing the pinned answer.
 - [x] Preserve the previously pinned answer in history.
-- [ ] Allow a coach to add a clarification without changing the original player question.
+- [x] Allow a coach to add a clarification without changing the original player question.
 - [x] Add a Copy Link action for a question.
-- [ ] Add a direct route to a specific question.
+- [x] Add a direct route to a specific question.
 - [x] Enforce authorization on direct question links.
 - [x] Add question lifecycle tests.
 
 # Phase 10 — Likes, Helpful, and Same Question
 
-- [ ] Add Like to canonical Playbook plays.
-- [ ] Ensure each user may like a play only once.
-- [ ] Allow a user to remove their like.
-- [ ] Show aggregate like count.
-- [ ] Do not display public popularity leaderboards by default.
+- [x] Add Like to canonical Playbook plays.
+- [x] Ensure each user may like a play only once.
+- [x] Allow a user to remove their like.
+- [x] Show aggregate like count.
+- [x] Do not display public popularity leaderboards by default.
 - [x] Add Helpful reactions to coach answers.
 - [x] Ensure each user may mark an answer Helpful only once.
 - [x] Allow a user to remove Helpful.
@@ -1112,8 +1112,8 @@ Initial reactions:
 - [x] Add optimistic reaction updates with rollback.
 - [ ] Add reaction accessibility labels.
 - [ ] Add reaction analytics.
-- [ ] Add reaction abuse-rate limits.
-- [ ] Add reaction unit and integration tests.
+- [x] Add reaction abuse-rate limits.
+- [x] Add reaction unit and integration tests.
 
 # Phase 11 — Practice Script Integration
 

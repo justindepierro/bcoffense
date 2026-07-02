@@ -164,15 +164,15 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
   const posts = page.map((p) => {
     const rootReplies = (repliesByRoot[p.id] || []).map((r) => ({
       ...r,
-      reactions:   replyReactionsMap[r.id] || [],
+      reactions: replyReactionsMap[r.id] || [],
       attachments: attachmentsMap[r.id] || [],
     }));
     return {
       ...p,
-      reactions:   reactionsMap[p.id] || [],
+      reactions: reactionsMap[p.id] || [],
       attachments: attachmentsMap[p.id] || [],
-      replies:     rootReplies,
-      replyCount:  replyTotalByRoot[p.id] || 0,
+      replies: rootReplies,
+      replyCount: replyTotalByRoot[p.id] || 0,
     };
   });
 
@@ -215,7 +215,7 @@ export async function getPostReplies(db, rootPostId, { limit = 20, afterId = nul
   return {
     replies: page.map((r) => ({
       ...r,
-      reactions:   reactionsMap[r.id] || [],
+      reactions: reactionsMap[r.id] || [],
       attachments: attachmentsMap[r.id] || [],
     })),
     hasMore,
@@ -890,14 +890,14 @@ export async function getAttachmentsForPosts(db, postIds) {
   for (const row of (rows.results || [])) {
     if (!map[row.post_id]) map[row.post_id] = [];
     map[row.post_id].push({
-      id:           row.id,
-      type:         row.type,
-      r2_key:       row.r2_key,
-      caption:      row.caption,
+      id: row.id,
+      type: row.type,
+      r2_key: row.r2_key,
+      caption: row.caption,
       sourcePlayId: row.source_play_id,
-      sizeBytes:    row.size_bytes,
-      width:        row.width,
-      height:       row.height,
+      sizeBytes: row.size_bytes,
+      width: row.width,
+      height: row.height,
     });
   }
   return map;

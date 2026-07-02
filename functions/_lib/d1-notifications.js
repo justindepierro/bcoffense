@@ -262,10 +262,10 @@ export async function notifyOnVisualReply(db, parentPostId, coachName, playId, e
 
   for (const userId of recipientSet) {
     const title = `${coachName} added a marked-up answer`;
-    const body  = String(parent.body || "").slice(0, 100);
+    const body = String(parent.body || "").slice(0, 100);
     await createNotification(db, {
       userId,
-      type:     "visual_reply",
+      type: "visual_reply",
       title,
       body,
       deepLink: playId,
@@ -276,7 +276,7 @@ export async function notifyOnVisualReply(db, parentPostId, coachName, playId, e
         body,
         url: "/",
         tag: `visual-reply-${parentPostId}`,
-      }).catch(() => {});
+      }).catch(() => { });
     }
   }
 }

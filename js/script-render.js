@@ -493,7 +493,8 @@ function renderScriptPlayControls(play, index, playLabel, reps) {
     ? `<button class="script-clip-btn" data-action="openScriptClipViewer" data-arg="${index}" title="Watch video clips" aria-label="Watch video clips for ${escapeHtml(playLabel)}">🎬</button>`
     : "";
   const discBtn = typeof getPlayThreadId === "function"
-    ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>`
+    ? `<button class="script-disc-btn" data-action="openScriptDiscussion" data-arg="${index}" title="View discussion" aria-label="Discussion for ${escapeHtml(playLabel)}">💬</button>` +
+    `<button class="script-ask-coach-btn" data-action="scriptAskCoachQuestion" data-arg="${index}" title="Ask a question about this play" aria-label="Ask coach about ${escapeHtml(playLabel)}">❓</button>`
     : "";
   return `
       <div class="play-controls">

@@ -47,16 +47,16 @@ function buildThread(defs) {
   const posts = [];
   for (const d of defs) {
     posts.push({
-      id:           d.id,
-      parent_id:    d.parent_id    || null,
+      id: d.id,
+      parent_id: d.parent_id || null,
       root_post_id: d.root_post_id || null,
-      depth:        d.depth        || 0,
-      body:         d.body         || "test",
-      is_official:  d.is_official  || false,
+      depth: d.depth || 0,
+      body: d.body || "test",
+      is_official: d.is_official || false,
       is_branch_locked: d.is_branch_locked || false,
-      status:       d.status       || "approved",
-      created_at:   d.created_at   || Date.now(),
-      attachments:  d.attachments  || [],
+      status: d.status || "approved",
+      created_at: d.created_at || Date.now(),
+      attachments: d.attachments || [],
     });
   }
   return posts;
@@ -119,7 +119,7 @@ describe("Reply nesting — thread grouping", () => {
 describe("Official answer — pinning sort order", () => {
   const posts = buildThread([
     { id: "p1", created_at: 1000, is_official: false },
-    { id: "p2", created_at: 2000, is_official: true  },
+    { id: "p2", created_at: 2000, is_official: true },
     { id: "p3", created_at: 3000, is_official: false },
   ]);
 
@@ -131,7 +131,7 @@ describe("Official answer — pinning sort order", () => {
 
 describe("Official answer — only one official per thread", () => {
   const posts = buildThread([
-    { id: "p1", is_official: true  },
+    { id: "p1", is_official: true },
     { id: "p2", is_official: false },
     { id: "p3", is_official: false },
   ]);
@@ -156,7 +156,7 @@ describe("Branch locking — reply prevention", () => {
 
   const locked = thread.find((p) => p.id === "branch1");
   assert(!canReplyTo(locked, false), "player cannot reply to locked branch");
-  assert(canReplyTo(locked, true),  "coach can still reply to locked branch");
+  assert(canReplyTo(locked, true), "coach can still reply to locked branch");
   assert(canReplyTo(thread[0], false), "unlocked root allows player replies");
 });
 
@@ -178,7 +178,7 @@ describe("Branch locking — does not lock entire thread", () => {
 describe("Attachment metadata — structure validation", () => {
   function validateAttachment(a) {
     const errors = [];
-    if (!a.id)     errors.push("missing id");
+    if (!a.id) errors.push("missing id");
     if (!a.post_id) errors.push("missing post_id");
     if (!["markup", "image"].includes(a.type)) errors.push("invalid type");
     if (!a.r2_key) errors.push("missing r2_key");
@@ -206,7 +206,7 @@ describe("Attachment metadata — post can have one attachment", () => {
 
 describe("Attachment metadata — cascading delete safety", () => {
   // Simulate what ON DELETE CASCADE would do:
-  const posts  = [{ id: "p1" }, { id: "p2" }];
+  const posts = [{ id: "p1" }, { id: "p2" }];
   const attachments = [
     { id: "a1", post_id: "p1" },
     { id: "a2", post_id: "p2" },
@@ -229,10 +229,10 @@ describe("File signature validation — magic bytes", () => {
   function checkMagicBytes(buf, mime) {
     const b = new Uint8Array(buf.slice(0, 12));
     if (mime === "image/jpeg") return b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
-    if (mime === "image/png")  return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+    if (mime === "image/png") return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
     if (mime === "image/webp") {
       return b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46
-          && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+        && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
     }
     return false;
   }
@@ -240,11 +240,11 @@ describe("File signature validation — magic bytes", () => {
   const jpegMagic = new ArrayBuffer(12);
   new Uint8Array(jpegMagic).set([0xFF, 0xD8, 0xFF, 0xE0]);
   assert(checkMagicBytes(jpegMagic, "image/jpeg"), "valid JPEG magic bytes accepted");
-  assert(!checkMagicBytes(jpegMagic, "image/png"),  "JPEG bytes rejected as PNG");
+  assert(!checkMagicBytes(jpegMagic, "image/png"), "JPEG bytes rejected as PNG");
 
   const pngMagic = new ArrayBuffer(12);
   new Uint8Array(pngMagic).set([0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A]);
-  assert(checkMagicBytes(pngMagic, "image/png"),  "valid PNG magic bytes accepted");
+  assert(checkMagicBytes(pngMagic, "image/png"), "valid PNG magic bytes accepted");
   assert(!checkMagicBytes(pngMagic, "image/jpeg"), "PNG bytes rejected as JPEG");
 
   const webpMagic = new ArrayBuffer(12);
@@ -255,7 +255,7 @@ describe("File signature validation — magic bytes", () => {
   const fakePdf = new ArrayBuffer(12);
   new Uint8Array(fakePdf).set([0x25, 0x50, 0x44, 0x46]); // %PDF
   assert(!checkMagicBytes(fakePdf, "image/jpeg"), "PDF disguised as JPEG rejected");
-  assert(!checkMagicBytes(fakePdf, "image/png"),  "PDF disguised as PNG rejected");
+  assert(!checkMagicBytes(fakePdf, "image/png"), "PDF disguised as PNG rejected");
 });
 
 // ── Post Status Filtering ────────────────────────────────────────────────────
@@ -281,8 +281,8 @@ describe("Notification targeting — visual reply only to parent author", () => 
     return isCoachPost && postHasAttachment && parentAuthorRole === "player";
   }
 
-  assert(shouldNotifyForVisual("player", true, true),   "coach visual reply to player question → notify");
-  assert(!shouldNotifyForVisual("coach", true, true),   "coach visual reply to coach post → no notify");
+  assert(shouldNotifyForVisual("player", true, true), "coach visual reply to player question → notify");
+  assert(!shouldNotifyForVisual("coach", true, true), "coach visual reply to coach post → no notify");
   assert(!shouldNotifyForVisual("player", false, true), "no attachment → no visual notify");
   assert(!shouldNotifyForVisual("player", true, false), "player post with attachment → no visual notify");
 });

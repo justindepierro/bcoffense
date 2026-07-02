@@ -134,10 +134,10 @@ describe("Caption validation — moderation check mirrors upload endpoint", () =
     return outcome === "block";
   }
 
-  assert(!shouldBlockCaption("allow"),        "clean caption allowed");
-  assert(!shouldBlockCaption("warn"),         "warned caption still allowed");
+  assert(!shouldBlockCaption("allow"), "clean caption allowed");
+  assert(!shouldBlockCaption("warn"), "warned caption still allowed");
   assert(!shouldBlockCaption("pending_review"), "review-flagged caption allowed (coach)");
-  assert(shouldBlockCaption("block"),          "blocked outcome rejects caption");
+  assert(shouldBlockCaption("block"), "blocked outcome rejects caption");
 });
 
 // ── Composer Reset ───────────────────────────────────────────────────────────
@@ -187,13 +187,13 @@ describe("Attachment type — markup vs image distinction", () => {
   }
 
   const markup = buildAttachmentPayload("markup", "disc-attachments/m1.jpg", "play-123", "See this route");
-  assert(markup !== null,                    "markup attachment built");
-  assert(markup.type === "markup",           "type is markup");
+  assert(markup !== null, "markup attachment built");
+  assert(markup.type === "markup", "type is markup");
   assert(markup.sourcePlayId === "play-123", "markup carries sourcePlayId");
 
   const image = buildAttachmentPayload("image", "disc-attachments/i1.jpg", "play-123", "Photo");
-  assert(image !== null,              "image attachment built");
-  assert(image.type === "image",      "type is image");
+  assert(image !== null, "image attachment built");
+  assert(image.type === "image", "type is image");
   assert(image.sourcePlayId === null, "image does not carry sourcePlayId");
 
   const invalid = buildAttachmentPayload("video", "disc-attachments/v1.mp4", null, null);
@@ -211,11 +211,11 @@ describe("File size gate — client-side validation", () => {
     return "ok";
   }
 
-  assert(validateSize(50) === "empty",       "< 100 bytes rejected as empty");
+  assert(validateSize(50) === "empty", "< 100 bytes rejected as empty");
   assert(validateSize(9 * 1024 * 1024) === "too_large", "9 MB rejected");
-  assert(validateSize(MAX_BYTES) === "ok",   "8 MB exactly accepted");
+  assert(validateSize(MAX_BYTES) === "ok", "8 MB exactly accepted");
   assert(validateSize(1024 * 1024) === "ok", "1 MB accepted");
-  assert(validateSize(100) === "ok",         "exactly 100 bytes accepted");
+  assert(validateSize(100) === "ok", "exactly 100 bytes accepted");
 });
 
 // ── Markup Overlay State ─────────────────────────────────────────────────────
@@ -230,10 +230,10 @@ describe("Markup overlay — tool state management", () => {
     return true;
   }
 
-  assert(setTool("arrow"),    "arrow tool selected");
+  assert(setTool("arrow"), "arrow tool selected");
   assert(activeTool === "arrow", "active tool is arrow");
-  assert(setTool("eraser"),   "eraser selected");
-  assert(!setTool("text"),    "unsupported tool rejected");
+  assert(setTool("eraser"), "eraser selected");
+  assert(!setTool("text"), "unsupported tool rejected");
   assert(activeTool === "eraser", "active tool unchanged after invalid selection");
 });
 

@@ -18,16 +18,16 @@
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
 import { moderateContent } from "../../_lib/moderation.js";
 
-const MAX_BYTES        = 8 * 1024 * 1024; // 8 MB
-const ALLOWED_TYPES    = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
-const PREFIX           = "disc-attachments";
+const MAX_BYTES = 8 * 1024 * 1024; // 8 MB
+const ALLOWED_TYPES = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
+const PREFIX = "disc-attachments";
 
 function uuid() {
   return crypto.randomUUID();
 }
 
 function extForType(mime) {
-  if (mime === "image/png")  return "png";
+  if (mime === "image/png") return "png";
   if (mime === "image/webp") return "webp";
   return "jpg";
 }
@@ -47,7 +47,7 @@ function checkMagicBytes(buf, mime) {
   if (mime === "image/webp") {
     // RIFF....WEBP
     return b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46
-        && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+      && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
   }
   return false;
 }
@@ -82,8 +82,8 @@ export async function onRequestPost(context) {
     return authJson({ ok: false, error: "No file provided." }, { status: 422 });
   }
 
-  const type    = String(formData.get("type")    || "image").trim();
-  const playId  = String(formData.get("playId")  || "").trim();
+  const type = String(formData.get("type") || "image").trim();
+  const playId = String(formData.get("playId") || "").trim();
   const caption = String(formData.get("caption") || "").slice(0, 500).trim();
 
   if (type !== "markup" && type !== "image") {
@@ -101,7 +101,7 @@ export async function onRequestPost(context) {
 
   // ── Validate size ───────────────────────────────────────────────────────
   const arrayBuffer = await file.arrayBuffer();
-  const sizeBytes   = arrayBuffer.byteLength;
+  const sizeBytes = arrayBuffer.byteLength;
   if (sizeBytes > MAX_BYTES) {
     return authJson(
       { ok: false, error: `File too large. Maximum is ${MAX_BYTES / 1024 / 1024} MB.` },
@@ -132,16 +132,16 @@ export async function onRequestPost(context) {
   }
 
   // ── Upload to R2 ────────────────────────────────────────────────────────
-  const id     = uuid();
-  const ext    = extForType(mimeType);
-  const r2Key  = `${PREFIX}/${id}.${ext}`;
+  const id = uuid();
+  const ext = extForType(mimeType);
+  const r2Key = `${PREFIX}/${id}.${ext}`;
 
   try {
     await env.CLIPS.put(r2Key, arrayBuffer, {
       httpMetadata: { contentType: mimeType },
       customMetadata: {
         uploadedBy: session.userId,
-        teamId:     session.teamId || "",
+        teamId: session.teamId || "",
         type,
         playId,
       },
@@ -155,10 +155,10 @@ export async function onRequestPost(context) {
     authJson({
       ok: true,
       id,
-      r2_key:  r2Key,
+      r2_key: r2Key,
       type,
       caption: caption || null,
-      playId:  playId  || null,
+      playId: playId || null,
       sizeBytes,
     }),
   );
