@@ -704,20 +704,23 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   // Coach-only attachment buttons (hidden input + markup overlay trigger)
   const attachBtns = isStaff
     ? `<div class="disc-composer-attach-row">` +
-      `<button class="btn btn-xs disc-attach-btn" data-action="discOpenMarkupOverlay"` +
-      ` data-arg="${escapeHtml(idSuffix)}::${escapeHtml(playId)}" title="Annotate play diagram">` +
-      `✏️ Mark Up Play</button>` +
-      `<label class="btn btn-xs disc-attach-btn" title="Attach image">` +
-      `📎 Image` +
-      `<input type="file" accept="image/jpeg,image/png,image/webp" class="disc-img-file-input"` +
-      ` data-composer-id="${escapeHtml(idSuffix)}" data-play-id="${escapeHtml(playId)}" style="display:none">` +
-      `</label>` +
-      `<div class="disc-pending-attachment" id="disc-pending-${escapeHtml(idSuffix)}" style="display:none">` +
-      `<img class="disc-pending-thumb" id="disc-pending-thumb-${escapeHtml(idSuffix)}" alt="Pending attachment" src="">` +
-      `<button class="btn btn-xs disc-remove-attach-btn" data-action="discRemovePendingAttachment"` +
-      ` data-arg="${escapeHtml(idSuffix)}">✕</button>` +
-      `</div>` +
-      `</div>`
+    `<button class="btn btn-xs disc-attach-btn" data-action="discOpenMarkupOverlay"` +
+    ` data-arg="${escapeHtml(idSuffix)}::${escapeHtml(playId)}" title="Annotate play diagram">` +
+    `✏️ Mark Up Play</button>` +
+    `<label class="btn btn-xs disc-attach-btn" title="Attach image">` +
+    `📎 Image` +
+    `<input type="file" accept="image/jpeg,image/png,image/webp" class="disc-img-file-input"` +
+    ` data-composer-id="${escapeHtml(idSuffix)}" data-play-id="${escapeHtml(playId)}" style="display:none">` +
+    `</label>` +
+    `<div class="disc-pending-attachment" id="disc-pending-${escapeHtml(idSuffix)}" style="display:none">` +
+    `<img class="disc-pending-thumb" id="disc-pending-thumb-${escapeHtml(idSuffix)}" alt="Pending attachment" src="">` +
+    `<span class="disc-upload-spinner" id="disc-upload-spinner-${escapeHtml(idSuffix)}" aria-hidden="true"></span>` +
+    `<button class="btn btn-xs disc-upload-retry-btn" id="disc-upload-retry-${escapeHtml(idSuffix)}"` +
+    ` style="display:none" data-action="discRetryAttachmentUpload" data-arg="${escapeHtml(idSuffix)}">↺ Retry</button>` +
+    `<button class="btn btn-xs disc-remove-attach-btn" id="disc-remove-${escapeHtml(idSuffix)}" data-action="discRemovePendingAttachment"` +
+    ` data-arg="${escapeHtml(idSuffix)}">✕</button>` +
+    `</div>` +
+    `</div>`
     : "";
 
   return (
@@ -2287,21 +2290,50 @@ async function openWristbandCellDiscussion() {
  * Populated after a successful upload, consumed on post submit.
  */
 const _discPendingAttachments = new Map();
+/** Stores { file, playId } for failed uploads so the coach can retry. */
+const _discFailedUploads = new Map();
+
+/** Show/hide the uploading spinner and grey out the thumb. */
+function _discSetUploadingState(composerId, isUploading) {
+  const pendingEl = document.getElementById(`disc-pending-${composerId}`);
+  const spinnerEl = document.getElementById(`disc-upload-spinner-${composerId}`);
+  const retryEl = document.getElementById(`disc-upload-retry-${composerId}`);
+  const removeEl = document.getElementById(`disc-remove-${composerId}`);
+  if (!pendingEl) return;
+  if (isUploading) {
+    pendingEl.classList.add("disc-pending--uploading");
+    if (spinnerEl) spinnerEl.style.display = "inline-block";
+    if (retryEl) retryEl.style.display = "none";
+    if (removeEl) removeEl.disabled = true;
+  } else {
+    pendingEl.classList.remove("disc-pending--uploading");
+    if (spinnerEl) spinnerEl.style.display = "none";
+    if (removeEl) removeEl.disabled = false;
+  }
+}
+
+/** Show the retry button after a failed upload. */
+function _discShowRetryState(composerId) {
+  const retryEl = document.getElementById(`disc-upload-retry-${composerId}`);
+  const removeEl = document.getElementById(`disc-remove-${composerId}`);
+  if (retryEl) retryEl.style.display = "inline-flex";
+  if (removeEl) removeEl.disabled = false;
+}
 
 /** Clear the pending attachment thumbnail UI for a given composer. */
 function _discClearPendingAttachmentUI(composerId) {
   const pendingEl = document.getElementById(`disc-pending-${composerId}`);
-  const thumbEl   = document.getElementById(`disc-pending-thumb-${composerId}`);
+  const thumbEl = document.getElementById(`disc-pending-thumb-${composerId}`);
   if (pendingEl) pendingEl.style.display = "none";
-  if (thumbEl)   thumbEl.src = "";
+  if (thumbEl) thumbEl.src = "";
 }
 
 /** Show the pending attachment thumbnail in the composer. */
 function _discShowPendingAttachmentUI(composerId, previewUrl) {
   const pendingEl = document.getElementById(`disc-pending-${composerId}`);
-  const thumbEl   = document.getElementById(`disc-pending-thumb-${composerId}`);
+  const thumbEl = document.getElementById(`disc-pending-thumb-${composerId}`);
   if (pendingEl) pendingEl.style.display = "flex";
-  if (thumbEl)   thumbEl.src = previewUrl;
+  if (thumbEl) thumbEl.src = previewUrl;
 }
 
 /**
@@ -2312,11 +2344,11 @@ async function _discUploadAttachment(blob, type, caption, sourcePlayId) {
   const formData = new FormData();
   formData.append("file", blob, `disc-attach.${type === "markup" ? "png" : blob.name || "jpg"}`);
   formData.append("type", type === "markup" ? "markup" : "image");
-  if (caption)      formData.append("caption", caption);
+  if (caption) formData.append("caption", caption);
   if (sourcePlayId) formData.append("playId", sourcePlayId);
 
   try {
-    const res  = await fetch("/api/attachments/upload", { method: "POST", body: formData });
+    const res = await fetch("/api/attachments/upload", { method: "POST", body: formData });
     const data = await res.json();
     if (!data.ok) {
       showToast(data.error || "Attachment upload failed.", { duration: 4000, type: "error" });
@@ -2334,8 +2366,41 @@ async function _discUploadAttachment(blob, type, caption, sourcePlayId) {
  * data-action="discRemovePendingAttachment" data-arg="{composerId}"
  */
 function discRemovePendingAttachment(composerId) {
-  _discPendingAttachments.delete(String(composerId));
-  _discClearPendingAttachmentUI(String(composerId));
+  composerId = String(composerId);
+  _discPendingAttachments.delete(composerId);
+  _discFailedUploads.delete(composerId);
+  _discClearPendingAttachmentUI(composerId);
+  // Also reset retry/spinner state in case it was showing
+  const retryEl = document.getElementById(`disc-upload-retry-${composerId}`);
+  const spinnerEl = document.getElementById(`disc-upload-spinner-${composerId}`);
+  if (retryEl) retryEl.style.display = "none";
+  if (spinnerEl) spinnerEl.style.display = "none";
+}
+
+/**
+ * Retry a failed image upload using the stored file reference.
+ * data-action="discRetryAttachmentUpload" data-arg="{composerId}"
+ */
+async function discRetryAttachmentUpload(composerId) {
+  composerId = String(composerId);
+  const failed = _discFailedUploads.get(composerId);
+  if (!failed) return;
+  const { file, playId, previewUrl } = failed;
+
+  // Restore the preview and start uploading again
+  _discShowPendingAttachmentUI(composerId, previewUrl);
+  _discSetUploadingState(composerId, true);
+
+  const result = await _discUploadAttachment(file, "image", "", playId);
+  _discSetUploadingState(composerId, false);
+  if (!result) {
+    _discShowRetryState(composerId);
+    return;
+  }
+  _discFailedUploads.delete(composerId);
+  result.sourcePlayId = playId;
+  _discPendingAttachments.set(composerId, result);
+  showToast("Image ready to post.", { duration: 2000, type: "success" });
 }
 
 // ── Image file picker upload ──────────────────────────────────────────────────
@@ -2357,22 +2422,24 @@ function _discWireAttachmentInputs(container) {
         return;
       }
       const composerId = input.dataset.composerId;
-      const playId     = input.dataset.playId;
-      // Show local preview immediately
+      const playId = input.dataset.playId;
+      // Show local preview immediately and start uploading state
       const previewUrl = URL.createObjectURL(file);
       _discShowPendingAttachmentUI(composerId, previewUrl);
+      _discSetUploadingState(composerId, true);
+      _discFailedUploads.delete(composerId);
 
-      // Upload to R2
-      const uploadBtn = input.closest(".disc-composer")?.querySelector(".disc-attach-btn");
-      showToast("Uploading image…", { duration: 2000 });
       const result = await _discUploadAttachment(file, "image", "", playId);
       input.value = "";
+      _discSetUploadingState(composerId, false);
       if (!result) {
-        _discClearPendingAttachmentUI(composerId);
+        // Keep the preview visible but show retry — don't clear the thumb
+        _discFailedUploads.set(composerId, { file, playId, previewUrl });
+        _discShowRetryState(composerId);
         _discPendingAttachments.delete(composerId);
-        URL.revokeObjectURL(previewUrl);
         return;
       }
+      URL.revokeObjectURL(previewUrl);
       result.sourcePlayId = playId;
       _discPendingAttachments.set(composerId, result);
       showToast("Image ready to post.", { duration: 2000, type: "success" });
@@ -2387,15 +2454,15 @@ function _discWireAttachmentInputs(container) {
  * @type {{ strokes: Array, currentTool: string, color: string, lineWidth: number, canvas: HTMLCanvasElement|null, baseImg: HTMLImageElement|null, composerId: string, playId: string }}
  */
 const _discMarkup = {
-  strokes:     [],
+  strokes: [],
   currentTool: "pen",
-  color:       "#ffd400",
-  lineWidth:   5,
-  canvas:      null,
-  baseImg:     null,
-  composerId:  "",
-  playId:      "",
-  drawing:     false,
+  color: "#ffd400",
+  lineWidth: 5,
+  canvas: null,
+  baseImg: null,
+  composerId: "",
+  playId: "",
+  drawing: false,
   currentPath: null,
 };
 
@@ -2404,15 +2471,15 @@ async function discOpenMarkupOverlay(arg) {
   const sep = String(arg).indexOf("::");
   if (sep < 0) return;
   const composerId = arg.slice(0, sep);
-  const playId     = arg.slice(sep + 2);
+  const playId = arg.slice(sep + 2);
 
-  _discMarkup.composerId  = composerId;
-  _discMarkup.playId      = playId;
-  _discMarkup.strokes     = [];
+  _discMarkup.composerId = composerId;
+  _discMarkup.playId = playId;
+  _discMarkup.strokes = [];
   _discMarkup.currentTool = "pen";
-  _discMarkup.color       = "#ffd400";
-  _discMarkup.lineWidth   = 5;
-  _discMarkup.drawing     = false;
+  _discMarkup.color = "#ffd400";
+  _discMarkup.lineWidth = 5;
+  _discMarkup.drawing = false;
   _discMarkup.currentPath = null;
 
   // Get or build the overlay
@@ -2454,7 +2521,7 @@ async function discOpenMarkupOverlay(arg) {
 
 function _discBuildMarkupOverlay() {
   const overlay = document.createElement("div");
-  overlay.id        = "discMarkupOverlay";
+  overlay.id = "discMarkupOverlay";
   overlay.className = "disc-markup-overlay";
   overlay.setAttribute("role", "dialog");
   overlay.setAttribute("aria-modal", "true");
@@ -2470,7 +2537,7 @@ function _discBuildMarkupOverlay() {
     `<button class="disc-markup-tool" data-action="discMarkupTool" data-arg="eraser" title="Eraser">🧹</button>` +
     `</div>` +
     `<div class="disc-markup-colors">` +
-    ["#ffd400","#ff4444","#44aaff","#44cc44","#ffffff","#000000"].map((c) =>
+    ["#ffd400", "#ff4444", "#44aaff", "#44cc44", "#ffffff", "#000000"].map((c) =>
       `<button class="disc-markup-color-swatch${c === "#ffd400" ? " active" : ""}"` +
       ` data-action="discMarkupColor" data-arg="${c}" style="background:${c}" title="${c}"></button>`
     ).join("") +
@@ -2534,7 +2601,7 @@ function _discMarkupWirePointer(overlay) {
     _discMarkupRedraw();
     e?.preventDefault();
   };
-  overlay.addEventListener("pointerup",     endDraw, { passive: false });
+  overlay.addEventListener("pointerup", endDraw, { passive: false });
   overlay.addEventListener("pointercancel", endDraw, { passive: false });
 }
 
@@ -2542,7 +2609,7 @@ function _discMarkupNorm(canvas, e) {
   const rect = canvas.getBoundingClientRect();
   return {
     x: (e.clientX - rect.left) / rect.width,
-    y: (e.clientY - rect.top)  / rect.height,
+    y: (e.clientY - rect.top) / rect.height,
   };
 }
 
@@ -2557,10 +2624,10 @@ function _discMarkupEraseAt(canvas, nx, ny) {
 function _discMarkupRedraw() {
   const canvas = _discMarkup.canvas || document.getElementById("discMarkupCanvas");
   if (!canvas) return;
-  const ctx   = canvas.getContext("2d");
-  const W     = canvas.width  || canvas.offsetWidth  || 800;
-  const H     = canvas.height || canvas.offsetHeight || 450;
-  canvas.width  = W;
+  const ctx = canvas.getContext("2d");
+  const W = canvas.width || canvas.offsetWidth || 800;
+  const H = canvas.height || canvas.offsetHeight || 450;
+  canvas.width = W;
   canvas.height = H;
 
   ctx.clearRect(0, 0, W, H);
@@ -2572,7 +2639,7 @@ function _discMarkupRedraw() {
     ctx.fillStyle = "#1a1a2e";
     ctx.fillRect(0, 0, W, H);
     ctx.fillStyle = "#4a4a6a";
-    ctx.font      = "18px sans-serif";
+    ctx.font = "18px sans-serif";
     ctx.textAlign = "center";
     ctx.fillText("Draw on blank canvas — no play image found", W / 2, H / 2);
     ctx.textAlign = "left";
@@ -2594,29 +2661,29 @@ function _discDrawStroke(ctx, stroke, W, H) {
   if (!pts || pts.length === 0) return;
   ctx.save();
   ctx.strokeStyle = stroke.color || "#ffd400";
-  ctx.lineWidth   = stroke.lineWidth || 5;
-  ctx.lineCap     = "round";
-  ctx.lineJoin    = "round";
+  ctx.lineWidth = stroke.lineWidth || 5;
+  ctx.lineCap = "round";
+  ctx.lineJoin = "round";
 
   if (stroke.tool === "circle" && pts.length >= 2) {
-    const cx  = pts[0].x * W;
-    const cy  = pts[0].y * H;
-    const lx  = pts[pts.length - 1].x * W;
-    const ly  = pts[pts.length - 1].y * H;
-    const rx  = Math.abs(lx - cx) / 2;
-    const ry  = Math.abs(ly - cy) / 2;
+    const cx = pts[0].x * W;
+    const cy = pts[0].y * H;
+    const lx = pts[pts.length - 1].x * W;
+    const ly = pts[pts.length - 1].y * H;
+    const rx = Math.abs(lx - cx) / 2;
+    const ry = Math.abs(ly - cy) / 2;
     const ecx = (cx + lx) / 2;
     const ecy = (cy + ly) / 2;
     ctx.beginPath();
     ctx.ellipse(ecx, ecy, Math.max(rx, 4), Math.max(ry, 4), 0, 0, Math.PI * 2);
     ctx.stroke();
   } else if (stroke.tool === "arrow" && pts.length >= 2) {
-    const sx  = pts[0].x * W;
-    const sy  = pts[0].y * H;
-    const ex  = pts[pts.length - 1].x * W;
-    const ey  = pts[pts.length - 1].y * H;
+    const sx = pts[0].x * W;
+    const sy = pts[0].y * H;
+    const ex = pts[pts.length - 1].x * W;
+    const ey = pts[pts.length - 1].y * H;
     const ang = Math.atan2(ey - sy, ex - sx);
-    const hw  = 14;
+    const hw = 14;
     ctx.beginPath();
     ctx.moveTo(sx, sy);
     ctx.lineTo(ex, ey);
@@ -2720,14 +2787,14 @@ async function discMarkupAttach() {
  * arg = "{id}::{caption}"
  */
 function openDiscAttachmentViewer(arg) {
-  const sep     = String(arg).indexOf("::");
-  const id      = sep >= 0 ? arg.slice(0, sep) : arg;
+  const sep = String(arg).indexOf("::");
+  const id = sep >= 0 ? arg.slice(0, sep) : arg;
   const caption = sep >= 0 ? arg.slice(sep + 2) : "";
 
   let viewer = document.getElementById("discAttachmentViewer");
   if (!viewer) {
     viewer = document.createElement("div");
-    viewer.id        = "discAttachmentViewer";
+    viewer.id = "discAttachmentViewer";
     viewer.className = "disc-attachment-viewer";
     viewer.setAttribute("role", "dialog");
     viewer.setAttribute("aria-modal", "true");
@@ -2744,9 +2811,9 @@ function openDiscAttachmentViewer(arg) {
     document.body.appendChild(viewer);
   }
 
-  const img     = document.getElementById("discAttachmentViewerImg");
-  const capEl   = document.getElementById("discAttachmentViewerCaption");
-  if (img)   { img.src = `/api/attachments/${encodeURIComponent(id)}`; img.alt = caption; }
+  const img = document.getElementById("discAttachmentViewerImg");
+  const capEl = document.getElementById("discAttachmentViewerCaption");
+  if (img) { img.src = `/api/attachments/${encodeURIComponent(id)}`; img.alt = caption; }
   if (capEl) { capEl.textContent = caption; capEl.style.display = caption ? "" : "none"; }
 
   viewer.classList.add("visible");

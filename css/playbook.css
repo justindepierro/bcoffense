@@ -5890,6 +5890,35 @@ label.disc-attach-btn {
   height: 36px;
   object-fit: cover;
   border-radius: 4px;
+  transition: opacity var(--transition-fast);
+}
+
+.disc-pending--uploading .disc-pending-thumb {
+  opacity: 0.45;
+}
+
+@keyframes disc-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.disc-upload-spinner {
+  display: none;
+  width: 16px;
+  height: 16px;
+  border: 2px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: disc-spin 0.7s linear infinite;
+  flex-shrink: 0;
+}
+
+.disc-upload-retry-btn {
+  display: none;
+  color: var(--color-warning);
+  border-color: var(--color-warning);
+  font-size: 11px;
 }
 
 .disc-remove-attach-btn {
@@ -5955,7 +5984,9 @@ label.disc-attach-btn {
   cursor: pointer;
   font-size: 15px;
   color: var(--color-text-muted);
-  transition: background var(--transition-fast), color var(--transition-fast);
+  transition:
+    background var(--transition-fast),
+    color var(--transition-fast);
 }
 
 .disc-markup-tool.active,
@@ -5977,7 +6008,9 @@ label.disc-attach-btn {
   border: 2px solid transparent;
   cursor: pointer;
   padding: 0;
-  transition: border-color var(--transition-fast), transform var(--transition-fast);
+  transition:
+    border-color var(--transition-fast),
+    transform var(--transition-fast);
 }
 
 .disc-markup-color-swatch.active,
@@ -6094,4 +6127,3 @@ label.disc-attach-btn {
     display: none;
   }
 }
-

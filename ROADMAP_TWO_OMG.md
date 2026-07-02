@@ -444,20 +444,20 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 **Allow coaches and authorized staff to answer player questions using:**
 
-- [ ] A normal text reply
-- [ ] A marked-up copy of the play
-- [ ] An uploaded image
+- [x] A normal text reply
+- [x] A marked-up copy of the play
+- [x] An uploaded image
 - [ ] A marked-up uploaded image
-- [ ] A combination of text and visual explanation
+- [x] A combination of text and visual explanation
 
 **The discussion interface should use a simple Facebook-style reply tree:**
 
-- [ ] Original comment or question
-- [ ] Direct replies underneath it
-- [ ] One additional reply level where appropriate
-- [ ] Collapsible reply groups
-- [ ] Clear coach-answer highlighting
-- [ ] Easy emoji reactions
+- [x] Original comment or question
+- [x] Direct replies underneath it
+- [x] One additional reply level where appropriate
+- [x] Collapsible reply groups
+- [x] Clear coach-answer highlighting
+- [x] Easy emoji reactions
 
 **The feature must reuse the application’s existing telestrator tools wherever practical.**
 
@@ -491,7 +491,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Allow coaches to pin a reply as the official answer.
 - [x] Allow only one official pinned answer per question by default.
 - [x] Preserve previous pinned-answer history.
-- [ ] Add thread architecture tests.
+- [x] Add thread architecture tests.
 
 ⸻
 
@@ -540,10 +540,10 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Show a short preview of the parent message.
 - [x] Allow plain-text replies.
 - [x] Allow emoji insertion.
-- [ ] Allow a marked-up play attachment.
-- [ ] Allow an uploaded image attachment.
+- [x] Allow a marked-up play attachment.
+- [x] Allow an uploaded image attachment.
 - [ ] Allow an uploaded image to be marked up before posting.
-- [ ] Allow text and one or more supported attachments in the same reply.
+- [x] Allow text and one or more supported attachments in the same reply.
 - [x] Preserve an unfinished reply while the composer remains open.
 - [x] Preserve an unfinished reply during device rotation.
 - [x] Warn before closing a composer with unsaved text or markup.
@@ -551,58 +551,58 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add Post Reply.
 - [ ] Add Save Draft for coaches as a later enhancement.
 - [x] Disable repeated submissions while a reply is uploading.
-- [ ] Show upload progress.
-- [ ] Show processing state.
-- [ ] Show retry after failed upload.
+- [x] Show upload progress.
+- [x] Show processing state.
+- [x] Show retry after failed upload.
 - [x] Prevent accidental duplicate replies.
 - [x] Run text through the Phase 8A moderation system.
-- [ ] Scan attachment metadata and file types.
+- [x] Scan attachment metadata and file types.
 - [x] Enforce reply-length limits.
-- [ ] Enforce attachment-count limits.
-- [ ] Add reply-composer tests.
+- [x] Enforce attachment-count limits.
+- [x] Add reply-composer tests.
 
 ⸻
 
 # 8B.4 — Mark Up This Play
 
-- [ ] Add a Mark Up Play action to the coach reply composer.
-- [ ] Open the current canonical play in the existing telestrator.
+- [x] Add a Mark Up Play action to the coach reply composer.
+- [x] Open the current canonical play in the existing telestrator.
 - [ ] Load the correct play revision.
 - [ ] Load the play exactly as the player saw it when the question was asked where possible.
 - [ ] Preserve script-specific context when relevant.
-- [ ] Do not modify the canonical Playbook drawing.
-- [ ] Create an independent reply-annotation document.
-- [ ] Store the source play ID.
+- [x] Do not modify the canonical Playbook drawing.
+- [x] Create an independent reply-annotation document.
+- [x] Store the source play ID.
 - [ ] Store the source play revision ID.
 - [ ] Store the source script ID when relevant.
 - [ ] Store the source opponent and Game Week context when relevant.
-- [ ] Allow coaches to draw freehand.
-- [ ] Allow coaches to draw arrows.
-- [ ] Allow coaches to draw circles.
+- [x] Allow coaches to draw freehand.
+- [x] Allow coaches to draw arrows.
+- [x] Allow coaches to draw circles.
 - [ ] Allow coaches to draw lines.
 - [ ] Allow coaches to add text labels.
 - [ ] Allow coaches to add position labels.
-- [ ] Allow coaches to erase individual marks.
-- [ ] Allow Undo.
+- [x] Allow coaches to erase individual marks.
+- [x] Allow Undo.
 - [ ] Allow Redo.
-- [ ] Allow Clear All.
+- [x] Allow Clear All.
 - [ ] Allow zooming and panning.
 - [ ] Support Apple Pencil.
-- [ ] Support touch.
-- [ ] Support mouse.
-- [ ] Support trackpad.
+- [x] Support touch.
+- [x] Support mouse.
+- [x] Support trackpad.
 - [ ] Preserve accurate drawing coordinates across screen sizes.
 - [ ] Preserve accurate coordinates after rotation.
 - [ ] Save annotations as vector data where practical.
 - [ ] Generate a display preview for quick thread rendering.
 - [ ] Keep the editable vector source for future reopening.
-- [ ] Add an optional caption.
+- [x] Add an optional caption.
 - [ ] Add an optional coach explanation beneath the image.
 - [ ] Add Preview Reply.
-- [ ] Add Post Marked-Up Reply.
+- [x] Add Post Marked-Up Reply.
 - [ ] Add Save and Continue Editing.
-- [ ] Add Discard Markup.
-- [ ] Confirm before discarding meaningful markup.
+- [x] Add Discard Markup.
+- [x] Confirm before discarding meaningful markup.
 - [ ] Restore the coach to the exact discussion thread after posting.
 - [ ] Add markup creation tests.
 - [ ] Add coordinate-scaling tests.
@@ -612,35 +612,35 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 # 8B.5 — Upload Another Picture
 
-- [ ] Add an Upload Image action to the reply composer.
-- [ ] Support JPEG.
-- [ ] Support PNG.
-- [ ] Support WebP.
+- [x] Add an Upload Image action to the reply composer.
+- [x] Support JPEG.
+- [x] Support PNG.
+- [x] Support WebP.
 - [ ] Consider HEIC conversion for iPhone and iPad uploads.
-- [ ] Reject unsupported file types.
-- [ ] Validate the actual file signature rather than trusting the extension.
-- [ ] Enforce maximum file size.
+- [x] Reject unsupported file types.
+- [x] Validate the actual file signature rather than trusting the extension.
+- [x] Enforce maximum file size.
 - [ ] Resize excessively large images.
 - [ ] Create an optimized preview.
 - [ ] Preserve a reasonable high-resolution original when necessary.
 - [ ] Remove unnecessary metadata.
 - [ ] Remove location metadata.
 - [ ] Correct image orientation.
-- [ ] Store uploads in Cloudflare R2.
-- [ ] Store attachment metadata in D1.
+- [x] Store uploads in Cloudflare R2.
+- [x] Store attachment metadata in D1.
 - [ ] Use protected or signed delivery where required.
-- [ ] Do not expose raw R2 administrative URLs.
-- [ ] Add an image caption.
+- [x] Do not expose raw R2 administrative URLs.
+- [x] Add an image caption.
 - [ ] Add alternative text.
 - [ ] Prompt the coach for useful alternative text.
 - [ ] Allow the uploaded image to be opened in the telestrator.
 - [ ] Allow drawing over an uploaded image.
 - [ ] Save the original image separately from the annotation layer.
 - [ ] Allow the coach to reset to the unmarked original.
-- [ ] Allow image replacement before posting.
-- [ ] Add image-upload progress.
-- [ ] Add image-upload retry.
-- [ ] Add image deletion before posting.
+- [x] Allow image replacement before posting.
+- [x] Add image-upload progress.
+- [x] Add image-upload retry.
+- [x] Add image deletion before posting.
 - [ ] Add image security tests.
 - [ ] Add mobile camera/photo-library testing.
 
@@ -648,32 +648,32 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 
 # 8B.6 — Visual Reply Attachment Model
 
-- [ ] Create a discussion attachments table.
-- [ ] Store attachment ID.
-- [ ] Store parent post ID.
-- [ ] Store attachment type.
-- [ ] Support play_markup.
-- [ ] Support uploaded_image.
+- [x] Create a discussion attachments table.
+- [x] Store attachment ID.
+- [x] Store parent post ID.
+- [x] Store attachment type.
+- [x] Support play_markup.
+- [x] Support uploaded_image.
 - [ ] Support annotated_image.
 - [ ] Add future support for short video without implementing it yet.
-- [ ] Store source R2 object key.
+- [x] Store source R2 object key.
 - [ ] Store preview R2 object key.
 - [ ] Store annotation document key or annotation JSON.
-- [ ] Store source play ID when applicable.
+- [x] Store source play ID when applicable.
 - [ ] Store source play revision ID when applicable.
 - [ ] Store width.
 - [ ] Store height.
 - [ ] Store MIME type.
-- [ ] Store byte size.
-- [ ] Store caption.
+- [x] Store byte size.
+- [x] Store caption.
 - [ ] Store alternative text.
 - [ ] Store uploader ID.
-- [ ] Store creation time.
+- [x] Store creation time.
 - [ ] Store deletion time.
 - [ ] Store moderation status.
 - [ ] Store processing status.
-- [ ] Add indexes for post and play lookups.
-- [ ] Add cascading or guarded deletion rules.
+- [x] Add indexes for post and play lookups.
+- [x] Add cascading or guarded deletion rules.
 - [ ] Preserve attachments when a post is soft-deleted for moderation.
 - [ ] Prevent ordinary users from loading attachments from hidden posts.
 - [ ] Add attachment authorization tests.
@@ -781,7 +781,7 @@ Initial reactions:
 - [x] Animate reaction selection subtly.
 - [x] Respect reduced-motion preferences.
 - [x] Use optimistic updates with rollback.
-- [ ] Add reaction-picker responsive tests.
+- [x] Add reaction-picker responsive tests.
 
 ⸻
 
@@ -861,15 +861,15 @@ Initial reactions:
 
 # 8B.13 — Moderation of Visual Attachments
 
-- [ ] Apply Phase 8A text moderation to captions and text replies.
-- [ ] Do not attempt to rely entirely on automated image moderation.
-- [ ] Restrict image uploads to authenticated authorized users.
+- [x] Apply Phase 8A text moderation to captions and text replies.
+- [x] Do not attempt to rely entirely on automated image moderation.
+- [x] Restrict image uploads to authenticated authorized users.
 - [ ] Allow players to upload images only if school policy explicitly permits it.
-- [ ] Default version one to coach-only image uploads.
-- [ ] Default version one to coach-only telestrator replies.
-- [ ] Scan file types and signatures.
+- [x] Default version one to coach-only image uploads.
+- [x] Default version one to coach-only telestrator replies.
+- [x] Scan file types and signatures.
 - [ ] Remove image metadata.
-- [ ] Limit attachment size.
+- [x] Limit attachment size.
 - [ ] Limit attachment frequency.
 - [ ] Allow players to report a visual attachment.
 - [ ] Allow coaches to hide or remove an attachment.
@@ -909,8 +909,8 @@ Initial reactions:
 # 8B.15 — Notifications
 
 - [x] Notify the original author when someone replies.
-- [ ] Notify a player when a coach posts a visual reply.
-- [ ] Label the notification as Coach added a marked-up answer.
+- [x] Notify a player when a coach posts a visual reply.
+- [x] Label the notification as Coach added a marked-up answer.
 - [x] Notify users who selected I Have This Question Too.
 - [x] Notify users when an official answer is pinned.
 - [x] Notify users when a question is resolved.
@@ -946,47 +946,47 @@ Initial reactions:
 
 # 8B.17 — Security and Authorization
 
-- [ ] Enforce team boundaries for all attachments.
-- [ ] Enforce role permissions for markup creation.
-- [ ] Enforce role permissions for image upload.
-- [ ] Validate every attachment request server-side.
-- [ ] Prevent guessing R2 object identifiers.
+- [x] Enforce team boundaries for all attachments.
+- [x] Enforce role permissions for markup creation.
+- [x] Enforce role permissions for image upload.
+- [x] Validate every attachment request server-side.
+- [x] Prevent guessing R2 object identifiers.
 - [ ] Use signed or authorized delivery where appropriate.
 - [ ] Prevent unauthorized users from accessing archived team attachments.
-- [ ] Prevent deleted accounts from creating replies.
-- [ ] Preserve historical author attribution after account deactivation.
+- [x] Prevent deleted accounts from creating replies.
+- [x] Preserve historical author attribution after account deactivation.
 - [ ] Rate-limit reply creation.
 - [ ] Rate-limit image uploads.
 - [ ] Rate-limit reaction changes.
-- [ ] Prevent malicious SVG uploads.
-- [ ] Do not render arbitrary uploaded HTML.
-- [ ] Sanitize annotation text labels.
+- [x] Prevent malicious SVG uploads.
+- [x] Do not render arbitrary uploaded HTML.
+- [x] Sanitize annotation text labels.
 - [ ] Add authorization and security tests.
 
 ⸻
 
 # 8B.18 — Testing
 
-- [ ] Test replying to a root comment.
-- [ ] Test replying to a question.
-- [ ] Test replying to another reply.
-- [ ] Test maximum visual nesting.
+- [x] Test replying to a root comment.
+- [x] Test replying to a question.
+- [x] Test replying to another reply.
+- [x] Test maximum visual nesting.
 - [ ] Test collapsed reply branches.
-- [ ] Test pinned official answer behavior.
-- [ ] Test text-only coach reply.
-- [ ] Test play-markup coach reply.
-- [ ] Test uploaded-image reply.
+- [x] Test pinned official answer behavior.
+- [x] Test text-only coach reply.
+- [x] Test play-markup coach reply.
+- [x] Test uploaded-image reply.
 - [ ] Test uploaded-image markup.
-- [ ] Test attachment upload failure.
-- [ ] Test interrupted upload recovery.
-- [ ] Test attachment authorization.
+- [x] Test attachment upload failure.
+- [x] Test interrupted upload recovery.
+- [x] Test attachment authorization.
 - [ ] Test deleted-post attachment protection.
-- [ ] Test emoji reaction creation.
-- [ ] Test reaction replacement.
-- [ ] Test reaction removal.
-- [ ] Test duplicate-reaction prevention.
-- [ ] Test reaction aggregation.
-- [ ] Test notification generation.
+- [x] Test emoji reaction creation.
+- [x] Test reaction replacement.
+- [x] Test reaction removal.
+- [x] Test duplicate-reaction prevention.
+- [x] Test reaction aggregation.
+- [x] Test notification generation.
 - [ ] Test exact-reply deep links.
 - [ ] Test telestrator coordinate accuracy.
 - [ ] Test play revision references.
