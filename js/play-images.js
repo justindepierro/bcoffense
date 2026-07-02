@@ -440,30 +440,58 @@
   // ────────────────────────────────────────────────────────────────────────
 
   // Sync all locally-stored images to R2 for cross-device access.
-  // Called once per session for coach/admin after the playbook is loaded.
+  // Iterates ALL IndexedDB keys directly — does not rely on play matching.
+  // Returns the number of images successfully pushed.
   let _remoteSyncDone = false;
   async function syncToRemote(playsArray) {
-    if (_remoteSyncDone) return;
-    if (!_remoteAvailable()) return;
-    if (!Array.isArray(playsArray) || !playsArray.length) return;
+    if (!_remoteAvailable()) return 0;
     _remoteSyncDone = true;
 
-    // Wait for the key cache to be warm before scanning
-    await loadKeys();
-    const withImages = playsArray.filter(hasForPlay);
-    if (!withImages.length) return;
+    const allKeys = await loadKeys();
+    if (!allKeys.length) return 0;
 
-    await _withConcurrency(withImages, 2, async (play) => {
+    // Build a reverse map: localSig → identity key for R2
+    // An identity key contains "|" (field separator). UUID-style keys don't.
+    const identityKeyFor = (localSig) => {
+      // If the key is already content-derived (contains "|"), use it directly
+      if (localSig.includes("|")) return localSig;
+      // Otherwise find a matching play and derive the identity key
+      if (Array.isArray(playsArray)) {
+        for (const play of playsArray) {
+          const sigs = signaturesForPlay(play);
+          if (sigs.includes(localSig)) {
+            const ik =
+              typeof getPlayIdentityKey === "function"
+                ? getPlayIdentityKey(play, "tag")
+                : "";
+            if (ik) return ik;
+          }
+        }
+      }
+      return "";
+    };
+
+    let pushed = 0;
+    await _withConcurrency(allKeys, 2, async (localSig) => {
       try {
-        const sig = storedSignatureForPlay(play);
-        if (!sig) return;
-        const blob = await get(sig);
+        const identityKey = identityKeyFor(localSig);
+        if (!identityKey) return;
+        const blob = await get(localSig);
         if (!blob) return;
-        await pushRemote(play, blob);
+        const res = await fetch(
+          `/images/file?sig=${encodeURIComponent(identityKey)}`,
+          {
+            method: "PUT",
+            headers: { "Content-Type": blob.type || "image/jpeg" },
+            body: blob,
+          },
+        );
+        if (res.ok) pushed += 1;
       } catch (_e) {
-        // Ignore individual failures — next session will retry
+        // Continue — individual failures don't abort the batch
       }
     });
+    return pushed;
   }
 
   async function ensureUrlForPlay(play) {
@@ -780,6 +808,34 @@
     // Remove from R2 so all devices reflect the deletion
     deleteRemote(play).catch(() => {});
     return deleteForPlay(play);
+  };
+
+  // Coach-triggered manual sync — pushes all local images to R2 with feedback.
+  window.syncPlayImagesToCloud = async function () {
+    if (!_remoteAvailable()) {
+      if (typeof showToast === "function") {
+        showToast("Cloud sync is not available in this environment.", { type: "error", duration: 3000 });
+      }
+      return;
+    }
+    const allKeys = await loadKeys();
+    if (!allKeys.length) {
+      if (typeof showToast === "function") {
+        showToast("No play diagrams found on this device.", { duration: 2500 });
+      }
+      return;
+    }
+    if (typeof showToast === "function") {
+      showToast(`Syncing ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} to cloud…`, { duration: 60000 });
+    }
+    const count = await syncToRemote(typeof plays !== "undefined" ? plays : []);
+    if (typeof showToast === "function") {
+      if (count > 0) {
+        showToast(`${count} diagram${count === 1 ? "" : "s"} synced to cloud — players can now view them.`, { type: "success", duration: 4000 });
+      } else {
+        showToast("No new diagrams to sync (already up to date or none found).", { duration: 3000 });
+      }
+    }
   };
 
   // Load only keys on startup so render paths can show badges without turning
