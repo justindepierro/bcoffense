@@ -23,7 +23,7 @@ import {
   getCustomTermOpts,
   createPostAttachment,
 } from "../../_lib/d1-threads.js";
-import { notifyOnCoachPost, notifyOnReply, createNotification } from "../../_lib/d1-notifications.js";
+import { notifyOnCoachPost, notifyOnReply, notifyOnVisualReply, createNotification } from "../../_lib/d1-notifications.js";
 
 export async function onRequest(context) {
   const { request, env, params } = context;
@@ -175,6 +175,12 @@ export async function onRequest(context) {
     if (parentPostId) {
       const posterName = session.label || session.username;
       notifyOnReply(env.DB, parentPostId, authorId, posterName, playId, postBody, env).catch(() => { });
+    }
+
+    // Notify when a coach posts a visual (markup/image) reply (fire-and-forget)
+    if (isStaff && parentPostId && attachmentMeta?.r2_key) {
+      const posterName = session.label || session.username;
+      notifyOnVisualReply(env.DB, parentPostId, posterName, playId, env).catch(() => { });
     }
 
     const modInfo = result._moderation || {};

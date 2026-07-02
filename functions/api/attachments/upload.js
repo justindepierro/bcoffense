@@ -16,6 +16,7 @@
  */
 
 import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../_lib/auth.js";
+import { moderateContent } from "../../_lib/moderation.js";
 
 const MAX_BYTES        = 8 * 1024 * 1024; // 8 MB
 const ALLOWED_TYPES    = ["image/jpeg", "image/jpg", "image/png", "image/webp"];
@@ -29,6 +30,26 @@ function extForType(mime) {
   if (mime === "image/png")  return "png";
   if (mime === "image/webp") return "webp";
   return "jpg";
+}
+
+/**
+ * Verify the actual file signature (magic bytes) matches the declared MIME type.
+ * Prevents type confusion and malicious file uploads.
+ */
+function checkMagicBytes(buf, mime) {
+  const b = new Uint8Array(buf.slice(0, 12));
+  if (mime === "image/jpeg" || mime === "image/jpg") {
+    return b[0] === 0xFF && b[1] === 0xD8 && b[2] === 0xFF;
+  }
+  if (mime === "image/png") {
+    return b[0] === 0x89 && b[1] === 0x50 && b[2] === 0x4E && b[3] === 0x47;
+  }
+  if (mime === "image/webp") {
+    // RIFF....WEBP
+    return b[0] === 0x52 && b[1] === 0x49 && b[2] === 0x46 && b[3] === 0x46
+        && b[8] === 0x57 && b[9] === 0x45 && b[10] === 0x42 && b[11] === 0x50;
+  }
+  return false;
 }
 
 export async function onRequestPost(context) {
@@ -89,6 +110,25 @@ export async function onRequestPost(context) {
   }
   if (sizeBytes < 100) {
     return authJson({ ok: false, error: "File appears to be empty." }, { status: 422 });
+  }
+
+  // ── Validate file signature (magic bytes) ───────────────────────────────
+  if (!checkMagicBytes(arrayBuffer, mimeType)) {
+    return authJson(
+      { ok: false, error: "File content does not match declared type." },
+      { status: 415 },
+    );
+  }
+
+  // ── Moderate caption text ───────────────────────────────────────────────
+  if (caption) {
+    const modResult = moderateContent(caption);
+    if (modResult.outcome === "block") {
+      return authJson(
+        { ok: false, error: "Caption contains content that is not allowed." },
+        { status: 422 },
+      );
+    }
   }
 
   // ── Upload to R2 ────────────────────────────────────────────────────────

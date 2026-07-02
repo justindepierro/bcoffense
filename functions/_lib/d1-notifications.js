@@ -237,3 +237,46 @@ export async function notifyOnOfficialAnswer(db, questionPostId, coachName, play
     }
   }
 }
+
+/**
+ * Notify the original post author (and same_question reactors) that a coach
+ * posted a visual (markup or image) reply to their post.
+ */
+export async function notifyOnVisualReply(db, parentPostId, coachName, playId, env = null) {
+  const parent = await db
+    .prepare(
+      `SELECT p.author_id, p.body, u.role FROM discussion_posts p
+       JOIN users u ON u.id = p.author_id WHERE p.id = ? LIMIT 1`,
+    )
+    .bind(parentPostId)
+    .first();
+
+  if (!parent || parent.role !== "player") return;
+
+  const recipientSet = new Set([parent.author_id]);
+  const sameQReactors = await getReactorsByKey(db, parentPostId, "same_question");
+  for (const uid of sameQReactors) {
+    if (recipientSet.size >= 50) break;
+    recipientSet.add(uid);
+  }
+
+  for (const userId of recipientSet) {
+    const title = `${coachName} added a marked-up answer`;
+    const body  = String(parent.body || "").slice(0, 100);
+    await createNotification(db, {
+      userId,
+      type:     "visual_reply",
+      title,
+      body,
+      deepLink: playId,
+    });
+    if (env) {
+      sendPushToUser(env, db, userId, {
+        title,
+        body,
+        url: "/",
+        tag: `visual-reply-${parentPostId}`,
+      }).catch(() => {});
+    }
+  }
+}
