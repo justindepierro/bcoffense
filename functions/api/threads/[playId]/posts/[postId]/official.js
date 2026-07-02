@@ -6,9 +6,9 @@
  * Coach-only. Fires notifications to the question author and same_question reactors.
  */
 
-import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../../_lib/auth.js";
-import { setOfficialAnswer, getPostContext } from "../../../../_lib/d1-threads.js";
-import { notifyOnOfficialAnswer } from "../../../../_lib/d1-notifications.js";
+import { getSessionFromRequest, authJson, withSecurityHeaders } from "../../../../../_lib/auth.js";
+import { setOfficialAnswer, getPostContext } from "../../../../../_lib/d1-threads.js";
+import { notifyOnOfficialAnswer } from "../../../../../_lib/d1-notifications.js";
 
 export async function onRequestPost(context) {
   const { request, env, params } = context;
