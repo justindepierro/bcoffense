@@ -58,7 +58,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Define which roles may create announcements.
 - [x] Define which roles may post official coach clarifications.
 - [x] Define which roles may resolve or reopen questions.
-- [ ] Define which roles may pin official answers.
+- [x] Define which roles may pin official answers.
 - [ ] Define which roles may lock threads.
 - [x] Define which roles may delete or hide posts.
 - [x] Define whether assistant coaches receive the same moderation permissions as head coaches.
@@ -487,9 +487,9 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Add Load More Replies for long reply groups.
 - [x] Preserve thread order after new replies are submitted.
 - [x] Sort replies chronologically by default.
-- [ ] Keep the official pinned coach answer above ordinary replies.
-- [ ] Allow coaches to pin a reply as the official answer.
-- [ ] Allow only one official pinned answer per question by default.
+- [x] Keep the official pinned coach answer above ordinary replies.
+- [x] Allow coaches to pin a reply as the official answer.
+- [x] Allow only one official pinned answer per question by default.
 - [ ] Preserve previous pinned-answer history.
 - [ ] Add thread architecture tests.
 
@@ -509,7 +509,7 @@ Add a simple, football-focused communication layer that feels like old-school Fa
 - [x] Display question state.
 - [x] Display script and practice context when relevant.
 - [x] Highlight official coach replies.
-- [ ] Highlight pinned answers.
+- [x] Highlight pinned answers.
 - [x] Distinguish coaches from players without relying only on color.
 - [x] Add a compact Reply action beneath every eligible post.
 - [x] Add a compact React action beneath every eligible post.
@@ -745,14 +745,14 @@ Initial reactions:
 - [x] Allow removing a reaction.
 - [x] Show aggregate counts.
 - [x] Show the top three reaction types in the compact summary.
-- [ ] Open a full reaction breakdown when tapped.
-- [ ] Allow authorized coaches to see which users selected each reaction.
-- [ ] Decide whether players may see the full list of reacting users.
-- [ ] Avoid public negative-reaction leaderboards.
-- [ ] Treat Thumbs Down as feedback, not disciplinary evidence.
+- [x] Open a full reaction breakdown when tapped.
+- [x] Allow authorized coaches to see which users selected each reaction.
+- [x] Decide whether players may see the full list of reacting users.
+- [x] Avoid public negative-reaction leaderboards.
+- [x] Treat Thumbs Down as feedback, not disciplinary evidence.
 - [x] Consider renaming Thumbs Down to Still Confused for player-facing football use.
 - [x] Consider using 😕 for Still Confused.
-- [ ] Keep reaction choices configurable by administrators.
+- [x] Keep reaction choices configurable by administrators.
 - [x] Do not allow arbitrary custom emoji in version one.
 - [x] Add accessible labels for every reaction.
 - [x] Do not rely on emoji appearance alone to communicate meaning.
@@ -787,23 +787,23 @@ Initial reactions:
 
 # 8B.10 — Coach Official Answer Workflow
 
-- [ ] Allow a coach to answer with text only.
+- [x] Allow a coach to answer with text only.
 - [ ] Allow a coach to answer with markup only.
 - [ ] Allow a coach to answer with text and markup.
 - [ ] Allow a coach to answer with an uploaded image.
 - [ ] Allow a coach to mark an uploaded image before posting.
-- [ ] Add Mark as Official Answer.
-- [ ] Add Pin Answer.
-- [ ] Automatically mark the question Answered when an official coach answer is posted.
-- [ ] Allow the coach to leave the question open after answering.
-- [ ] Allow the coach to mark the question Resolved immediately.
+- [x] Add Mark as Official Answer.
+- [x] Add Pin Answer.
+- [x] Automatically mark the question Answered when an official coach answer is posted.
+- [x] Allow the coach to leave the question open after answering.
+- [x] Allow the coach to mark the question Resolved immediately.
 - [ ] Notify the original player.
 - [ ] Notify players who selected I Have This Question Too.
 - [ ] Notify players assigned to that play only when the coach marks the reply as a team clarification.
-- [ ] Avoid notifying the entire team for an ordinary one-player reply.
+- [x] Avoid notifying the entire team for an ordinary one-player reply.
 - [ ] Add Send to Position Group.
 - [ ] Add Send to Everyone Assigned to This Play.
-- [ ] Add Do Not Send Additional Notification.
+- [x] Add Do Not Send Additional Notification.
 - [ ] Add a notification preview before broad distribution.
 - [ ] Add official-answer workflow tests.
 
@@ -837,8 +837,8 @@ Initial reactions:
 
 # 8B.12 — Mobile and iPad Experience
 
-- [ ] Make the root discussion feed document-scroll on phones.
-- [ ] Avoid nested scrolling inside individual reply cards.
+- [x] Make the root discussion feed document-scroll on phones.
+- [x] Avoid nested scrolling inside individual reply cards.
 - [x] Open the reply composer as a bottom sheet on phones.
 - [ ] Open visual markup as a full-screen mode on phones.
 - [x] Preserve safe-area spacing.

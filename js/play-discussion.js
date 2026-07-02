@@ -96,8 +96,11 @@ function _discReactionsHtml(postId, reactions, excludeKey = null) {
   }).join("");
 
   const openBtn = `<button class="disc-react-open-btn" data-action="openDiscReactionPicker" data-arg="${escapeHtml(postId)}" aria-label="React">+ React</button>`;
+  const seeAllBtn = active.length > 0
+    ? `<button class="disc-react-see-all" data-action="openDiscReactionBreakdown" data-arg="${escapeHtml(postId)}" title="See who reacted" aria-label="See all reactions">⋯</button>`
+    : "";
   const userReactionAttr = mineReaction ? ` data-user-reaction="${escapeHtml(mineReaction.key)}"` : "";
-  return `<div class="disc-reactions"${userReactionAttr}>${chips}${openBtn}</div>`;
+  return `<div class="disc-reactions"${userReactionAttr}>${chips}${seeAllBtn}${openBtn}</div>`;
 }
 
 // ── Reaction picker ───────────────────────────────────────────────────────────
@@ -410,6 +413,7 @@ function _discPostHtml(p, playId, isReply = false) {
   const canAct = mine || isStaff;
   const isQuestion = p.postType === "question";
   const isResolved = p.questionState === "resolved" || p.questionState === "answered";
+  const isOfficial = p.isOfficial === true;
 
   // Player can request reopen on their own resolved question
   const canReopen = isQuestion && mine && !isStaff && isResolved;
@@ -432,6 +436,14 @@ function _discPostHtml(p, playId, isReply = false) {
     ? (isResolved
       ? `<button class="disc-action-btn" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::reopened" title="Reopen">🔄 Reopen</button>`
       : `<button class="disc-action-btn disc-action-btn--resolve" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::resolved" title="Resolve">✅ Resolve</button>`)
+    : "";
+
+  // Coach-only: pin a reply as the official answer
+  const pinBtn = (isStaff && isReply)
+    ? `<button class="disc-action-btn disc-action-btn--pin${isOfficial ? " is-official" : ""}"
+        data-action="markDiscPostOfficial" data-arg="${escapeHtml(p.id)}::${escapeHtml(playId)}"
+        title="${isOfficial ? "Unpin official answer" : "Mark as official answer"}">
+        📌 ${isOfficial ? "Unpin" : "Official"}</button>`
     : "";
 
   // Moderation — held posts show a neutral placeholder to non-authors
@@ -461,7 +473,7 @@ function _discPostHtml(p, playId, isReply = false) {
 
   // ── Actions: Reply always visible; edit/delete/moderate in ⋯ more menu ──
   const inlineActions = replyBtn + sameQBtn;
-  const moreItems = [resolveBtn, reopenBtn, editBtn, deleteBtn].filter(Boolean).join("");
+  const moreItems = [resolveBtn, reopenBtn, pinBtn, editBtn, deleteBtn].filter(Boolean).join("");
   const moreMenu = moreItems
     ? `<details class="disc-more-wrap">` +
     `<summary class="disc-more-btn" title="More options" aria-label="More options">⋯</summary>` +
@@ -500,14 +512,16 @@ function _discPostHtml(p, playId, isReply = false) {
     : "";
 
   return (
-    `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
+    `<div class="disc-post${isResolved ? " disc-post--resolved" : ""}${isOfficial ? " disc-post--official" : ""}${coachHighlight}${isReply ? " disc-post--reply" : ""}"` +
     ` id="disc-post-${escapeHtml(p.id)}" data-post-id="${escapeHtml(p.id)}"` +
     ` data-post-type="${escapeHtml(p.postType || "comment")}"` +
     (p.questionCategory ? ` data-q-category="${escapeHtml(p.questionCategory)}"` : "") +
+    ` data-is-official="${isOfficial ? "1" : "0"}"` +
     ` role="article"` +
     ` data-author-name="${escapeHtml(p.authorName)}" data-body-text="${escapeHtml((p.body || "").slice(0, 80))}">` +
     `<div class="disc-post-avatar" style="background:${_DISC_ROLE_COLORS[p.authorRole] || "var(--color-text-muted)"}" aria-hidden="true">${escapeHtml(_discInitials(p.authorName))}</div>` +
     `<div class="disc-post-content">` +
+    (isOfficial ? `<div class="disc-official-badge">⭐ Official Answer</div>` : "") +
     `<div class="disc-post-meta">` +
     `<span class="disc-author">${escapeHtml(p.authorName)}</span>` +
     _discRoleBadge(p.authorRole) +
@@ -1452,6 +1466,135 @@ function _discUpdateQState(postId, newState) {
     resolveBtn.title = nowResolved ? "Reopen" : "Resolve";
     resolveBtn.textContent = nowResolved ? "🔄 Reopen" : "✅ Resolve";
     resolveBtn.classList.toggle("disc-action-btn--resolve", !nowResolved);
+  }
+}
+
+// ── Official Answer ───────────────────────────────────────────────────────────
+
+async function markDiscPostOfficial(arg) {
+  const sep = String(arg || "").indexOf("::");
+  if (sep < 0) return;
+  const postId = arg.slice(0, sep);
+  const playId = arg.slice(sep + 2);
+  const postEl = document.getElementById(`disc-post-${postId}`);
+  if (!postEl || !playId) return;
+
+  const isCurrentlyOfficial = postEl.dataset.isOfficial === "1";
+
+  try {
+    const res = await fetch(`/api/threads/${playId}/posts/${postId}/official`, {
+      method: "PATCH",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ official: !isCurrentlyOfficial }),
+    });
+    if (!res.ok) {
+      if (res.status === 404) {
+        showToast("Official answer feature requires a server update.", { duration: 3500, type: "warning" });
+      } else {
+        throw new Error(`HTTP ${res.status}`);
+      }
+      return;
+    }
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error || "Failed");
+
+    const nowOfficial = data.official === true;
+    postEl.dataset.isOfficial = nowOfficial ? "1" : "0";
+    postEl.classList.toggle("disc-post--official", nowOfficial);
+
+    // Update official badge
+    let badge = postEl.querySelector(".disc-official-badge");
+    const contentEl = postEl.querySelector(".disc-post-content");
+    if (nowOfficial && !badge && contentEl) {
+      contentEl.insertAdjacentHTML("afterbegin", `<div class="disc-official-badge">⭐ Official Answer</div>`);
+    } else if (!nowOfficial && badge) {
+      badge.remove();
+    }
+
+    // Update pin button label
+    const pinBtn = postEl.querySelector("[data-action='markDiscPostOfficial']");
+    if (pinBtn) {
+      pinBtn.classList.toggle("is-official", nowOfficial);
+      pinBtn.title = nowOfficial ? "Unpin official answer" : "Mark as official answer";
+      pinBtn.innerHTML = `📌 ${nowOfficial ? "Unpin" : "Official"}`;
+    }
+
+    // Move official reply to top of the replies container
+    if (nowOfficial) {
+      const repliesContainer = postEl.closest(".disc-replies");
+      if (repliesContainer) repliesContainer.insertAdjacentElement("afterbegin", postEl);
+    }
+
+    // If marking official on a reply to a question, auto-mark question as answered
+    if (nowOfficial) {
+      const parentPost = postEl.closest(".disc-post:not(.disc-post--reply)");
+      if (parentPost?.dataset?.postType === "question") {
+        const qBadge = parentPost.querySelector(".disc-q-state");
+        if (!qBadge) {
+          const meta = parentPost.querySelector(".disc-post-meta");
+          if (meta) meta.insertAdjacentHTML("beforeend",
+            `<span class="disc-q-state disc-q-state--answered">✅ Answered</span>`);
+        }
+      }
+    }
+
+    showToast(nowOfficial ? "⭐ Marked as Official Answer" : "Official answer unpinned", { type: "success", duration: 2500 });
+  } catch (err) {
+    showToast("Couldn't update — try again.", { duration: 3000, type: "error" });
+  }
+}
+
+// ── Reaction breakdown ────────────────────────────────────────────────────────
+
+async function openDiscReactionBreakdown(postId) {
+  if (!postId) return;
+  const postEl = document.getElementById(`disc-post-${postId}`);
+  const playId = postEl?.closest("[data-play-id]")?.dataset?.playId || _discLastPlayId;
+  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
+
+  // Build fallback from DOM if fetch fails
+  const buildFallbackHtml = () => {
+    const chips = Array.from(postEl?.querySelectorAll(".disc-react-chip") || []);
+    if (!chips.length) return `<p class="disc-empty">No reactions yet.</p>`;
+    return `<div class="disc-breakdown">` +
+      chips.map((chip) => {
+        const key = (chip.dataset.arg || "").split("::")[1] || "";
+        const meta = _REACTION_META[key] || { emoji: "❓", label: key };
+        const count = chip.querySelector(".disc-react-count")?.textContent || "0";
+        return `<div class="disc-breakdown-row"><span class="disc-breakdown-emoji">${meta.emoji}</span>` +
+          `<span class="disc-breakdown-label">${escapeHtml(meta.label)}</span>` +
+          `<span class="disc-breakdown-count">${escapeHtml(count)}</span></div>`;
+      }).join("") + `</div>`;
+  };
+
+  try {
+    const res = await fetch(`/api/threads/${playId}/posts/${postId}/reactions`);
+    if (!res.ok) {
+      // Graceful fallback — show counts we already have in DOM
+      await showModal(buildFallbackHtml(), { title: "Reactions", icon: "👍" });
+      return;
+    }
+    const data = await res.json();
+    if (!data.ok) throw new Error(data.error);
+
+    const rows = Object.entries(data.reactions || {})
+      .filter(([, r]) => (r.count || 0) > 0)
+      .sort(([, a], [, b]) => (b.count || 0) - (a.count || 0))
+      .map(([key, r]) => {
+        const meta = _REACTION_META[key] || { emoji: "❓", label: key };
+        const usersHtml = isStaff && Array.isArray(r.users) && r.users.length
+          ? `<span class="disc-breakdown-users">${r.users.map((u) => escapeHtml(u.name || u)).join(", ")}</span>`
+          : "";
+        return `<div class="disc-breakdown-row">` +
+          `<span class="disc-breakdown-emoji">${meta.emoji}</span>` +
+          `<span class="disc-breakdown-label">${escapeHtml(meta.label)}</span>` +
+          `<span class="disc-breakdown-count">${r.count || 0}</span>` +
+          usersHtml + `</div>`;
+      }).join("") || `<p class="disc-empty">No reactions yet.</p>`;
+
+    await showModal(`<div class="disc-breakdown">${rows}</div>`, { title: "Reactions", icon: "👍" });
+  } catch (_) {
+    await showModal(buildFallbackHtml(), { title: "Reactions", icon: "👍" });
   }
 }
 
