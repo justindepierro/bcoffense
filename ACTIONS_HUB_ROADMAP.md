@@ -60,7 +60,7 @@ obvious front door.
   Print (print preview), Display (appearance/scheme).
 - Same shell, same order — just registration.
 
-### Phase 3 — Display state clarity
+### Phase 3 — Display state clarity ✅ shipped (SW v858)
 
 - Display tile/menu shows active preset name + "unsaved changes" hint.
 - Toggling a display option fires a short toast ("Wristband: showing personnel").

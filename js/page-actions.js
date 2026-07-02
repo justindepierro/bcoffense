@@ -23,7 +23,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "📂", label: "Load", keepOpen: true, run: openScriptLoadView },
       { icon: "💾", label: "Save", run: () => _paCall("saveScript") },
       { icon: "🖨️", label: "Print", run: () => _paCall("generatePDF") },
-      { icon: "⚙️", label: "Display", run: () => _paCall("toggleScriptDisplayPanel") },
+      { icon: "⚙️", label: "Display", sublabel: _paScriptDisplayStatus, run: () => _paCall("toggleScriptDisplayPanel") },
     ],
     extras: [
       { icon: "🗂️", label: "Print Packet", run: () => _paCall("openScriptPacketBuilder") },
@@ -41,7 +41,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "📂", label: "Load", run: () => _paCall("openLoadCallSheetModal") },
       { icon: "💾", label: "Save", run: () => _paCall("saveCallSheetTemplate") },
       { icon: "🖨️", label: "Print", run: () => _paCall("printCallSheet") },
-      { icon: "⚙️", label: "Display", run: () => _paCall("openDisplayPanel") },
+      { icon: "⚙️", label: "Display", sublabel: _paCallsheetDisplayStatus, run: () => _paCall("openDisplayPanel") },
     ],
     extras: [
       { icon: "⚡", label: "Auto-Populate", run: () => _paCall("autoPopulateCallSheet") },
@@ -60,7 +60,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "📂", label: "Load", run: () => _paCall("openSavedWristbandManager") },
       { icon: "💾", label: "Save", run: () => _paCall("saveWristband") },
       { icon: "🖨️", label: "Print", run: () => _paCall("printWristband") },
-      { icon: "⚙️", label: "Display", run: () => openWristbandAppearance() },
+      { icon: "⚙️", label: "Display", sublabel: _paWristbandDisplayStatus, run: () => openWristbandAppearance() },
     ],
     extras: [
       { icon: "⚡", label: "Auto-Fill", run: () => _paCall("autoFillWristband") },
@@ -125,9 +125,18 @@ function renderPageActionsRoot(config) {
 
   let html = '<div class="page-actions-grid">';
   (config.verbs || []).forEach((verb, index) => {
+    let sub = "";
+    if (typeof verb.sublabel === "function") {
+      try {
+        sub = verb.sublabel() || "";
+      } catch (e) {
+        sub = "";
+      }
+    }
     html += `<button type="button" class="page-actions-tile" data-action="runPageAction" data-arg="verb:${index}">
       <span class="page-actions-tile__icon" aria-hidden="true">${verb.icon || ""}</span>
       <span class="page-actions-tile__label">${escapeHtml(verb.label)}</span>
+      ${sub ? `<span class="page-actions-tile__sub">${escapeHtml(sub)}</span>` : ""}
     </button>`;
   });
   html += "</div>";
@@ -241,4 +250,49 @@ function openWristbandAppearance() {
     panel.open = true;
     panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
   }, 80);
+}
+
+// ── Display state readers (Phase 3: show current display state on the tile) ──
+function _paScriptDisplayStatus() {
+  const mode = document.querySelector(
+    'input[name="scriptLayoutMode"]:checked',
+  )?.value;
+  return mode === "compact" ? "Compact view" : "Detailed view";
+}
+
+function _paCallsheetDisplayStatus() {
+  const ids = [
+    "callsheetShowNumbers",
+    "callsheetShowPersonnel",
+    "callsheetShowFormation",
+    "callsheetShowFormationTags",
+    "callsheetShowBack",
+    "callsheetShowProtection",
+    "callsheetShowPlayName",
+    "callsheetShowTags",
+    "callsheetShowMotion",
+    "callsheetShowLineCall",
+  ];
+  let on = 0;
+  let total = 0;
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      total += 1;
+      if (el.checked) on += 1;
+    }
+  });
+  return total ? `${on} of ${total} fields` : "";
+}
+
+function _paWristbandDisplayStatus() {
+  const preset = document.querySelector(
+    'input[name="wbDisplayPreset"]:checked',
+  )?.value;
+  const presetName = preset
+    ? preset.charAt(0).toUpperCase() + preset.slice(1)
+    : "Standard";
+  const sel = document.getElementById("wbColorSchemeSelect");
+  const scheme = sel && sel.value ? sel.options[sel.selectedIndex]?.text : "";
+  return scheme ? `${presetName} · ${scheme}` : presetName;
 }

@@ -1220,6 +1220,9 @@ function handleWristbandDisplayOptionsChange() {
   syncWristbandLineCallOnlyControls("classic");
   syncWristbandBlankPlayerRulesControls("classic");
   commitWristbandDisplayOptions();
+  if (typeof showToast === "function") {
+    showToast("Wristband display updated", { duration: 1300 });
+  }
 }
 
 function handlePlayerLineCallOnlyChange() {
@@ -1272,6 +1275,10 @@ function applyWbDisplayPreset(preset) {
   syncWristbandLineCallOnlyControls("classic");
   syncWristbandBlankPlayerRulesControls("classic");
   commitWristbandDisplayOptions();
+  if (typeof showToast === "function") {
+    const name = WB_DISPLAY_PRESETS[preset] ? preset : "standard";
+    showToast(`Wristband display: ${name} preset`, { duration: 1400 });
+  }
 }
 
 /* toggleWbDisplayOptions and toggleWbSortPanel merged into shared toggleCollapsiblePanel() in utils.js */
