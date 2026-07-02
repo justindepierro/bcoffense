@@ -42,6 +42,17 @@ function initAllModules() {
       }
 
       updateTabBadges();
+
+      // Push any locally-stored play images to R2 so players can access them.
+      // Runs once per session, coach/admin only, fire-and-forget.
+      if (
+        typeof canEditUser === "function" &&
+        canEditUser() &&
+        window.playImages &&
+        typeof window.playImages.syncToRemote === "function"
+      ) {
+        window.playImages.syncToRemote(plays).catch(() => {});
+      }
     },
     { timeout: 2000 },
   );

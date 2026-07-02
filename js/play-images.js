@@ -439,6 +439,33 @@
   }
   // ────────────────────────────────────────────────────────────────────────
 
+  // Sync all locally-stored images to R2 for cross-device access.
+  // Called once per session for coach/admin after the playbook is loaded.
+  let _remoteSyncDone = false;
+  async function syncToRemote(playsArray) {
+    if (_remoteSyncDone) return;
+    if (!_remoteAvailable()) return;
+    if (!Array.isArray(playsArray) || !playsArray.length) return;
+    _remoteSyncDone = true;
+
+    // Wait for the key cache to be warm before scanning
+    await loadKeys();
+    const withImages = playsArray.filter(hasForPlay);
+    if (!withImages.length) return;
+
+    await _withConcurrency(withImages, 2, async (play) => {
+      try {
+        const sig = storedSignatureForPlay(play);
+        if (!sig) return;
+        const blob = await get(sig);
+        if (!blob) return;
+        await pushRemote(play, blob);
+      } catch (_e) {
+        // Ignore individual failures — next session will retry
+      }
+    });
+  }
+
   async function ensureUrlForPlay(play) {
     for (const signature of signaturesForPlay(play)) {
       const url = await ensureUrl(signature);
@@ -736,6 +763,7 @@
     importAll,
     pushRemote,
     deleteRemote,
+    syncToRemote,
   };
 
   // Convenience helpers that take a Play object directly
