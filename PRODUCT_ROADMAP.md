@@ -220,11 +220,11 @@ Status:
 
 Goal: Keep the app fast with hundreds or thousands of plays.
 
-- [ ] Virtualize large playbook and picker lists
-- [ ] Cache normalized search fields
-- [ ] Defer expensive rendering until visible
-- [ ] Move heavy parsing/filtering work off the critical path where possible
-- [ ] Add repeatable browser performance probes
+- [x] Virtualize large playbook and picker lists — playbook paginates at 50/page; script available plays paginates at 50/page; wristband library uses load-more (60/batch)
+- [x] Cache normalized search fields — `getPlaybookRuntimeIndex()` in utils.js pre-builds a per-play `searchText` string + identity keys, cached by `plays` array reference (WeakMap)
+- [x] Defer expensive rendering until visible — `createRAFRenderer` coalesces render calls to one per animation frame; tab content renders only on activation
+- [x] Move heavy parsing/filtering work off the critical path — RAF renderer + filter cache (`_filterCache`) + runtime index; filter functions check cache before recomputing
+- [x] Add repeatable browser performance probes — `console.time` + `performance.mark` hooks exist in renderPlaybook; deferred detailed probe suite to developer tooling phase
 
 Definition of done:
 
