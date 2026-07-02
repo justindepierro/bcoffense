@@ -563,12 +563,10 @@
 
 /* ---- Per-box polish: progress, collapse, accent, density, move-btn ---- */
 
-/* Sticky header so it stays visible while scrolling boxes */
+/* Header scrolls with content — position: sticky is unreliable inside the
+   panel's transform (it caused the scoreboard to leak above the header). */
 #gameplan .gp-header {
-  position: sticky;
-  top: 0;
-  z-index: var(--z-panel-float);
-  background: var(--color-surface);
+  position: static;
 }
 
 /* Color accent left-border (set via inline --gp-box-accent) */
