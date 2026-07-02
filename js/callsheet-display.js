@@ -467,10 +467,10 @@ function manageDisplayPresets() {
   overlay.id = "csManagePresetsOverlay";
   overlay.className = "cs-sort-overlay";
   overlay.innerHTML = `
-    <div class="cs-sort-modal cs-sort-modal-sm">
+    <div class="cs-sort-modal cs-sort-modal-sm" role="dialog" aria-modal="true" aria-labelledby="csManagePresetsTitle">
       <div class="cs-sort-header">
-        <h3>🗑️ Manage Display Presets</h3>
-        <button class="cs-sort-close" data-action="closeCsManagePresets">&times;</button>
+        <h3 id="csManagePresetsTitle">🗑️ Manage Display Presets</h3>
+        <button class="cs-sort-close" data-action="closeCsManagePresets" aria-label="Close display presets modal">&times;</button>
       </div>
       <div class="cs-sort-body"><div class="cs-template-list">${listHtml}</div></div>
       <div class="cs-sort-actions">

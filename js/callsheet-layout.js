@@ -196,13 +196,13 @@ function openCallSheetLayoutModal() {
 
   const modalHtml = `
     <div id="csLayoutOverlay" class="modal-overlay show" data-action="closeCallSheetLayoutModalOverlay">
-      <div class="modal-content cs-layout-modal">
+      <div class="modal-content cs-layout-modal" role="dialog" aria-modal="true" aria-labelledby="csLayoutTitle">
         <div class="modal-header cs-layout-modal-header">
           <div>
-            <h3>🗂️ Reorder Call Sheet</h3>
+            <h3 id="csLayoutTitle">🗂️ Reorder Call Sheet</h3>
             <p class="cs-layout-modal-copy">Use Pick Up + Place Here as the primary layout tool, or drag by the handle if you prefer. You can also nudge categories up or down and move them between front and back.</p>
           </div>
-          <button class="cs-sort-close" data-action="closeCallSheetLayoutModal">&times;</button>
+          <button class="cs-sort-close" data-action="closeCallSheetLayoutModal" aria-label="Close call sheet layout modal">&times;</button>
         </div>
         <div class="modal-body cs-layout-modal-body">
           <div class="cs-layout-grid">

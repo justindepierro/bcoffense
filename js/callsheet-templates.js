@@ -289,13 +289,13 @@ function openTemplatesModal(mode = "manage") {
 
   const modalHtml = `
     <div id="csTemplateOverlay" class="cs-sort-overlay">
-      <div class="cs-sort-modal cs-sort-modal-lg cs-template-modal">
+      <div class="cs-sort-modal cs-sort-modal-lg cs-template-modal" role="dialog" aria-modal="true" aria-labelledby="csTemplateTitle">
         <div class="cs-sort-header">
           <div>
-            <h3>${title}</h3>
+            <h3 id="csTemplateTitle">${title}</h3>
             <p class="cs-template-copy">${modalCopy}</p>
           </div>
-          <button class="cs-sort-close" data-action="closeTemplateModal">&times;</button>
+          <button class="cs-sort-close" data-action="closeTemplateModal" aria-label="Close call sheet templates modal">&times;</button>
         </div>
         <div class="cs-sort-body">
           <div class="cs-template-section-head">

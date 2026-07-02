@@ -22,8 +22,8 @@ function addSeparator() {
   const overlay = document.createElement("div");
   overlay.className = "period-create-overlay";
   overlay.innerHTML = `
-    <div class="period-create-modal">
-      <h4>➕ New Period</h4>
+    <div class="period-create-modal" role="dialog" aria-modal="true" aria-labelledby="newPeriodModalTitle">
+      <h4 id="newPeriodModalTitle">➕ New Period</h4>
       <div class="period-create-fields">
         <div class="pcf-row">
           <label>Period Name</label>
@@ -673,7 +673,7 @@ function renderPeriodTemplateModal() {
     overlay.className = "period-create-overlay template-picker-overlay";
     wireScriptOverlayDismiss(overlay);
     overlay.innerHTML = `
-      <div class="period-create-modal template-picker-modal">
+      <div class="period-create-modal template-picker-modal" role="dialog" aria-modal="true" aria-labelledby="periodTemplateModalTitle">
         <h4 id="periodTemplateModalTitle"></h4>
         <div class="template-picker-toolbar">
           <input

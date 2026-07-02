@@ -1024,7 +1024,7 @@ function openDiscReplyComposer(arg) {
     }
     overlay.onclick = () => closeDiscReplyComposer(parentPostId);
     sheet.dataset.parentPostId = String(parentPostId);
-    setInnerHTML(sheet, `<div class="disc-reply-sheet-handle" aria-hidden="true"></div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId));
+    sheet.innerHTML = `<div class="disc-reply-sheet-handle" aria-hidden="true"></div>` + bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
     overlay.classList.add("visible");
     requestAnimationFrame(() => sheet.classList.add("visible"));
     _discWireReplyComposerDraft(sheet, parentPostId);

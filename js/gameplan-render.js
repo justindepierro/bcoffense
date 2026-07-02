@@ -638,10 +638,10 @@ function showGamePlanBoxInfo(boxId) {
   const overlay = document.createElement("div");
   overlay.className = "custom-modal-overlay gp-info-modal-overlay";
   overlay.innerHTML = `
-    <div class="custom-modal gp-info-modal" role="dialog" aria-modal="true" style="--gp-info-accent:${accent}">
+    <div class="custom-modal gp-info-modal" role="dialog" aria-modal="true" aria-labelledby="gpBoxInfoTitle" style="--gp-info-accent:${accent}">
       <div class="custom-modal-header">
         <span class="custom-modal-icon">ℹ️</span>
-        <h3 class="custom-modal-title">${escapeHtml(box.label)}</h3>
+        <h3 class="custom-modal-title" id="gpBoxInfoTitle">${escapeHtml(box.label)}</h3>
       </div>
       <div class="custom-modal-body">
         ${countHtml}

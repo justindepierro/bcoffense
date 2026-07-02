@@ -78,10 +78,10 @@ function openCsSortModal(categoryId) {
 
   const modalHtml = `
     <div id="csSortOverlay" class="cs-sort-overlay">
-      <div class="cs-sort-modal">
+      <div class="cs-sort-modal" role="dialog" aria-modal="true" aria-labelledby="csSortTitle">
         <div class="cs-sort-header">
-          <h3>⇅ Sort Plays</h3>
-          <button class="cs-sort-close" data-action="closeCsSortModal">&times;</button>
+          <h3 id="csSortTitle">⇅ Sort Plays</h3>
+          <button class="cs-sort-close" data-action="closeCsSortModal" aria-label="Close sort modal">&times;</button>
         </div>
 
         <div class="cs-sort-body">

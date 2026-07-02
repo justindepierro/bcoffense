@@ -802,10 +802,10 @@ async function openGamePlanManageBoxes() {
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal" role="dialog" aria-modal="true">
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpManageBoxesTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">👁️</span>
-          <h3 class="custom-modal-title">Manage Box Visibility</h3>
+          <h3 class="custom-modal-title" id="gpManageBoxesTitle">Manage Box Visibility</h3>
         </div>
         <div class="custom-modal-body">
           <p class="gp-mgb-help">Uncheck boxes to hide them from the board. Hidden boxes keep their plays — they're just out of sight.</p>

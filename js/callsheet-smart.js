@@ -175,10 +175,10 @@ function openSmartSuggestionsModal(categoryId) {
 
   const modalHtml = `
     <div id="csSuggestOverlay" class="modal-overlay show">
-      <div class="modal-content cs-suggest-modal">
+      <div class="modal-content cs-suggest-modal" role="dialog" aria-modal="true" aria-labelledby="csSuggestTitle">
         <div class="cs-suggest-header">
-          <h3>💡 Smart Suggestions — ${escapeHtml(catName)}</h3>
-          <button data-action="closeCsSuggestOverlay" class="modal-close-btn">✕</button>
+          <h3 id="csSuggestTitle">💡 Smart Suggestions — ${escapeHtml(catName)}</h3>
+          <button data-action="closeCsSuggestOverlay" class="modal-close-btn" aria-label="Close smart suggestions">✕</button>
         </div>
         ${intelHtml}
         <div class="cs-suggest-list">${listHtml}</div>
@@ -195,8 +195,7 @@ function openSmartSuggestionsModal(categoryId) {
   document
     .getElementById("csSuggestOverlay")
     ?.addEventListener("click", (e) => {
-      if (e.target.id === "csSuggestOverlay")
-        document.getElementById("csSuggestOverlay")?.remove();
+      if (e.target.id === "csSuggestOverlay") closeCsSuggestOverlay();
     });
 }
 

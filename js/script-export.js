@@ -20,10 +20,10 @@ function openLoadWristbandToScriptModal() {
 
   const modalHtml = `
     <div id="loadWbToScriptModal" class="modal-overlay show" data-action="closeLoadWbToScriptModalOverlay">
-      <div class="modal-content modal-content-sm">
+      <div class="modal-content modal-content-sm" role="dialog" aria-modal="true" aria-labelledby="loadWbToScriptTitle">
         <div class="modal-header-row">
-          <h3 class="modal-title">➕ Load Wristband Plays to Script</h3>
-          <button data-action="closeLoadWbToScriptModal" class="modal-close-btn">✕</button>
+          <h3 class="modal-title" id="loadWbToScriptTitle">➕ Load Wristband Plays to Script</h3>
+          <button data-action="closeLoadWbToScriptModal" class="modal-close-btn" aria-label="Close load wristband modal">✕</button>
         </div>
 
         <div class="mb-md">

@@ -83,10 +83,10 @@ function buildUniqueCallSheetCategoryId(name) {
 function openAddCallSheetCategoryModal() {
   const modalHtml = `
     <div id="csAddCategoryOverlay" class="cs-sort-overlay">
-      <div class="cs-sort-modal cs-sort-modal-md">
+      <div class="cs-sort-modal cs-sort-modal-md" role="dialog" aria-modal="true" aria-labelledby="csAddCategoryTitle">
         <div class="cs-sort-header">
-          <h3>➕ Add Category</h3>
-          <button class="cs-sort-close" data-action="closeAddCallSheetCategoryModal">&times;</button>
+          <h3 id="csAddCategoryTitle">➕ Add Category</h3>
+          <button class="cs-sort-close" data-action="closeAddCallSheetCategoryModal" aria-label="Close add category modal">&times;</button>
         </div>
         <div class="cs-sort-body">
           <div class="cs-add-cat-form">
