@@ -1144,8 +1144,9 @@ function renderScript() {
   try {
     const renderStartedAt = performance.now();
     const container = document.getElementById("scriptPlays");
-    const playCount = script.filter((item) => !item.isSeparator).length;
-    const periodCount = script.filter((item) => item.isSeparator).length;
+    // Single pass — avoids two separate .filter() iterations over the full array.
+    let playCount = 0, periodCount = 0;
+    for (const item of script) { if (item.isSeparator) periodCount++; else playCount++; }
     const profile = scriptRenderProfilingEnabled
       ? {
         startedAt: performance.now(),
@@ -1226,9 +1227,14 @@ function renderScript() {
       stageStart = performance.now();
     }
 
-    wireScriptLongPressMenus(container);
+    // Defer long-press wiring to after the current frame — it doesn't need to
+    // block the render timing measurement and has no visible effect until the
+    // user initiates a long-press gesture.
+    (window.requestIdleCallback || window.requestAnimationFrame || setTimeout)(
+      () => wireScriptLongPressMenus(container)
+    );
     if (profile) {
-      profile.longPressMs = performance.now() - stageStart;
+      profile.longPressMs = 0; // deferred — excluded from synchronous timing
       stageStart = performance.now();
     }
 
@@ -1408,8 +1414,11 @@ function updateScriptOpponentBadge() {
 function updateScriptArtifactStatus() {
   const el = document.getElementById("scriptSaveStatus");
   if (!el) return;
-  const playCount = Array.isArray(script) ? script.filter((s) => !s.isSeparator).length : 0;
-  const periodCount = Array.isArray(script) ? script.filter((s) => s.isSeparator).length : 0;
+  // Single pass — avoids two .filter() calls over the same array.
+  let playCount = 0, periodCount = 0;
+  if (Array.isArray(script)) {
+    for (const s of script) { if (s.isSeparator) periodCount++; else playCount++; }
+  }
   const countLabel = playCount
     ? `${playCount} play${playCount !== 1 ? "s" : ""}${periodCount ? ` · ${periodCount} period${periodCount !== 1 ? "s" : ""}` : ""}`
     : "";

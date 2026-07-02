@@ -65,6 +65,12 @@ function applyScriptPlayRailState() {
     // inert keeps keyboard focus inside the drawer when open.
     rail.toggleAttribute("inert", scriptPlayRailCollapsed);
   }
+  // Backdrop: inert when rail is closed (hidden by CSS), no aria-hidden so
+  // focus on the element itself doesn't trigger the "aria-hidden + focus" warning.
+  const backdrop = document.getElementById("scriptRailBackdrop");
+  if (backdrop) {
+    backdrop.toggleAttribute("inert", scriptPlayRailCollapsed);
+  }
   trigger?.classList.toggle("is-active", !scriptPlayRailCollapsed);
   trigger?.setAttribute("aria-pressed", scriptPlayRailCollapsed ? "false" : "true");
 }
