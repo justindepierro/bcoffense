@@ -341,6 +341,10 @@ function _buildCommandBaseItems() {
     });
   }
 
+  if (typeof getPageActionsCommandItems === "function") {
+    getPageActionsCommandItems().forEach((item) => items.push(item));
+  }
+
   return items;
 }
 

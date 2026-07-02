@@ -163,11 +163,11 @@ function getPlayerAssignmentText(play, custom, basePosition) {
 function hasPlayerAssignmentCustomization(custom, basePosition) {
   return Boolean(
     custom?.playerRuleSources?.[basePosition] ||
-      (custom?.playerAssignmentOverrides &&
-        Object.prototype.hasOwnProperty.call(
-          custom.playerAssignmentOverrides,
-          basePosition,
-        )),
+    (custom?.playerAssignmentOverrides &&
+      Object.prototype.hasOwnProperty.call(
+        custom.playerAssignmentOverrides,
+        basePosition,
+      )),
   );
 }
 

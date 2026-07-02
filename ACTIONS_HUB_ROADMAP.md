@@ -72,7 +72,7 @@ obvious front door.
   `⋯ More` menus (their contents now live in Load/Save/Print/Display + More).
 - Keep task modals (edit play, print dialog); remove _hidden action homes_.
 
-### Phase 5 — Command palette as the universal spine (desktop) + mobile pill
+### Phase 5 — Command palette as the universal spine (desktop) + mobile pill ✅ shipped (SW v861)
 
 - Feed every hub verb into the command palette so typing "load", "print",
   "templates" jumps straight there.

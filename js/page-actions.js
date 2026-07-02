@@ -297,3 +297,44 @@ function _paWristbandDisplayStatus() {
   const scheme = sel && sel.value ? sel.options[sel.selectedIndex]?.text : "";
   return scheme ? `${presetName} · ${scheme}` : presetName;
 }
+
+// ── Command palette integration (Phase 5) ──────────────────────────────────
+// Feed every hub verb into the universal command palette so typing
+// "load" / "save" / "print" / "display" jumps straight to the action.
+function getPageActionsCommandItems() {
+  if (typeof PAGE_ACTIONS_CONFIG !== "object" || !PAGE_ACTIONS_CONFIG) {
+    return [];
+  }
+  const activeKey = getActivePageActionsKey();
+  const items = [];
+  Object.keys(PAGE_ACTIONS_CONFIG).forEach((key) => {
+    const config = PAGE_ACTIONS_CONFIG[key];
+    (config.verbs || []).forEach((verb, index) => {
+      items.push({
+        kind: "Action",
+        title: `${config.title}: ${verb.label}`,
+        subtitle: `Jump to ${config.title} and ${verb.label.toLowerCase()}`,
+        keywords: `${verb.label} ${config.title} ${key} actions hub ${verb.label.toLowerCase()}`,
+        priority: (key === activeKey ? 12 : 42) + index,
+        run: () => _runPageActionsCommand(key, verb),
+      });
+    });
+  });
+  return items;
+}
+
+function _runPageActionsCommand(key, verb) {
+  if (typeof showTab === "function") showTab(key);
+  requestAnimationFrame(() => {
+    try {
+      if (verb.keepOpen) {
+        openPageActions();
+        verb.run();
+      } else {
+        verb.run();
+      }
+    } catch (e) {
+      /* verb target unavailable — ignore */
+    }
+  });
+}
