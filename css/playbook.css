@@ -5467,11 +5467,18 @@ body.shell-phone .pb-action-sheet {
   animation: discPendingPulse 1.4s ease-in-out infinite;
 }
 @keyframes discPendingPulse {
-  0%, 100% { opacity: 0.55; }
-  50%  { opacity: 0.75; }
+  0%,
+  100% {
+    opacity: 0.55;
+  }
+  50% {
+    opacity: 0.75;
+  }
 }
 @media (prefers-reduced-motion: reduce) {
-  .disc-post--pending { animation: none; }
+  .disc-post--pending {
+    animation: none;
+  }
 }
 
 /* ── Moderation ─────────────────────────────────────────────────────────────── */

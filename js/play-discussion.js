@@ -399,7 +399,7 @@ function _discRenderBody(container, data, playId, playSig) {
     container.querySelectorAll(".disc-load-replies[data-action='loadMoreDiscReplies']").forEach((btn) => {
       const pid = btn.dataset.arg;
       if (!pid) return;
-      try { if (sessionStorage.getItem(`disc-exp-${pid}`)) loadMoreDiscReplies(null, btn); } catch (_) {}
+      try { if (sessionStorage.getItem(`disc-exp-${pid}`)) loadMoreDiscReplies(null, btn); } catch (_) { }
     });
   });
 
@@ -1078,7 +1078,7 @@ async function loadMoreDiscReplies(arg, el) {
       btn.textContent = "Load more replies…";
     } else {
       // Mark this thread as expanded so it auto-restores next render
-      try { sessionStorage.setItem(`disc-exp-${rootPostId}`, "1"); } catch (_) {}
+      try { sessionStorage.setItem(`disc-exp-${rootPostId}`, "1"); } catch (_) { }
       btn.remove();
     }
   } catch (_) {
@@ -1347,9 +1347,44 @@ async function toggleDiscReaction(arg) {
   const reactionKey = arg.slice(sep + 2);
   if (!postId || !reactionKey) return;
 
-  // Disable all reaction buttons for this post while requesting
   const postEl = document.getElementById(`disc-post-${postId}`);
-  postEl?.querySelectorAll(".disc-react-btn").forEach((b) => { b.disabled = true; });
+
+  // ── Optimistic update ──────────────────────────────────────────────────────
+  const reactionsBar = postEl?.querySelector(".disc-reactions");
+  const snapHtml = reactionsBar?.outerHTML || null; // for rollback
+
+  if (reactionsBar) {
+    const chip = reactionsBar.querySelector(`[data-arg="${CSS.escape(postId + "::" + reactionKey)}"]`);
+    if (chip) {
+      const wasActive = chip.classList.contains("is-mine");
+      chip.classList.toggle("is-mine", !wasActive);
+      chip.setAttribute("aria-pressed", (!wasActive).toString());
+      const countEl = chip.querySelector(".disc-react-count");
+      if (countEl) {
+        const n = parseInt(countEl.textContent, 10) || 0;
+        const next = wasActive ? n - 1 : n + 1;
+        if (next <= 0) {
+          chip.remove(); // remove chip if count hits 0
+        } else {
+          countEl.textContent = next;
+        }
+      }
+    } else {
+      // New reaction — add chip immediately
+      const meta = _REACTION_META[reactionKey] || { emoji: "❓", label: reactionKey };
+      const tempChip = document.createElement("button");
+      tempChip.className = "disc-react-chip is-mine";
+      tempChip.dataset.action = "toggleDiscReaction";
+      tempChip.dataset.arg = `${postId}::${reactionKey}`;
+      tempChip.setAttribute("aria-pressed", "true");
+      tempChip.setAttribute("title", meta.label);
+      tempChip.innerHTML = `${meta.emoji} <span class="disc-react-count">1</span>`;
+      reactionsBar.insertBefore(tempChip, reactionsBar.lastElementChild);
+    }
+  }
+
+  // Disable chips while in flight
+  reactionsBar?.querySelectorAll(".disc-react-chip").forEach((b) => { b.disabled = true; });
 
   try {
     const res = await fetch(`/api/posts/${encodeURIComponent(postId)}/react`, {
@@ -1359,14 +1394,29 @@ async function toggleDiscReaction(arg) {
     });
     const data = await res.json();
     if (!data.ok) {
+      // Rollback optimistic update
+      if (snapHtml && reactionsBar) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = snapHtml;
+        reactionsBar.replaceWith(tmp.firstElementChild);
+      }
       showToast(data.error || "Failed to react.", { duration: 2500, type: "error" });
       return;
     }
     _discUpdateReactions(postId, data.reactions);
   } catch (_) {
+    // Rollback on network error
+    if (snapHtml) {
+      const currentBar = postEl?.querySelector(".disc-reactions");
+      if (currentBar) {
+        const tmp = document.createElement("div");
+        tmp.innerHTML = snapHtml;
+        currentBar.replaceWith(tmp.firstElementChild);
+      }
+    }
     showToast("Network error.", { duration: 2500, type: "error" });
   } finally {
-    postEl?.querySelectorAll(".disc-react-btn").forEach((b) => { b.disabled = false; });
+    postEl?.querySelector(".disc-reactions")?.querySelectorAll(".disc-react-chip").forEach((b) => { b.disabled = false; });
   }
 }
 

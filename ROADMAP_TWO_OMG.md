@@ -764,7 +764,7 @@ Initial reactions:
 # 8B.9 — Reaction Picker Interface
 
 - [x] Open the quick reaction picker by tapping or clicking React.
-- [ ] Support press-and-hold on touch devices where reliable.
+- [x] Support press-and-hold on touch devices where reliable.
 - [x] Do not require press-and-hold as the only access method.
 - [x] Anchor the picker to the React button using the shared dropdown system.
 - [x] Keep the picker onscreen.
@@ -780,7 +780,7 @@ Initial reactions:
 - [x] Show the user’s current reaction.
 - [x] Animate reaction selection subtly.
 - [x] Respect reduced-motion preferences.
-- [ ] Use optimistic updates with rollback.
+- [x] Use optimistic updates with rollback.
 - [ ] Add reaction-picker responsive tests.
 
 ⸻

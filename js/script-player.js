@@ -213,8 +213,8 @@ function renderPlayerScriptLauncher() {
           </div>
           <div class="player-script-card__actions">
             ${isCurrent
-              ? '<span class="player-script-card__loaded-label">Script Loaded</span>'
-              : `<button type="button" class="btn btn-sm" data-action="loadPublishedPlayerScript"
+          ? '<span class="player-script-card__loaded-label">Script Loaded</span>'
+          : `<button type="button" class="btn btn-sm" data-action="loadPublishedPlayerScript"
                   data-arg="${scriptId}" title="Load this published script into the script tab">
                   Open Script
                 </button>`}
