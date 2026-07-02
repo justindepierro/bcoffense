@@ -594,8 +594,8 @@
 #gameplan .gp-header {
   position: sticky;
   top: 0;
-  z-index: var(--z-panel-sticky);
-  background: var(--color-bg-light);
+  z-index: var(--z-panel-float);
+  background: var(--color-surface);
 }
 
 /* Color accent left-border (set via inline --gp-box-accent) */
@@ -1016,9 +1016,8 @@
 /* Scoreboard */
 .gp-scoreboard {
   margin: 0 0 var(--space-sm) 0;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-md);
-  background: var(--color-bg-light);
+  border: none;
+  background: transparent;
 }
 .gp-scoreboard > summary {
   cursor: pointer;
@@ -1042,16 +1041,12 @@
 .gp-scoreboard[open] > summary::before {
   transform: rotate(90deg);
 }
-/* Desktop: Coverage Scoreboard is an always-open thin bar (not collapsible) */
+/* Desktop: Coverage Scoreboard is an always-open thin bar (no title, no collapse) */
 body:not(.is-mobile-screen) .gp-scoreboard > summary {
-  pointer-events: none;
-  padding-bottom: 0;
-}
-body:not(.is-mobile-screen) .gp-scoreboard > summary::before {
   display: none;
 }
 body:not(.is-mobile-screen) .gp-score-grid {
-  padding: var(--space-xs) var(--space-md) var(--space-sm);
+  padding: 0 0 var(--space-sm);
 }
 body:not(.is-mobile-screen) .gp-score-tile {
   flex-direction: row;

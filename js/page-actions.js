@@ -382,20 +382,19 @@ function openPlayLibrary() {
     if (isMobile && typeof setWristbandMobileView === "function") {
       setWristbandMobileView("library");
     } else {
-      _paToggleLibraryPane("wristband", "wb-library-collapsed", ".wristband-plays");
+      _paToggleLibraryPane("wristband", "wb-library-collapsed");
     }
   } else if (key === "gameplan") {
-    _paToggleLibraryPane("gameplan", "gp-library-collapsed", ".gp-library");
+    _paToggleLibraryPane("gameplan", "gp-library-collapsed");
   } else if (typeof showToast === "function") {
     showToast("No play library on this page.");
   }
 }
 
-function _paToggleLibraryPane(panelId, collapsedClass, revealSelector) {
+function _paToggleLibraryPane(panelId, collapsedClass) {
   const panel = document.getElementById(panelId);
   if (!panel) return;
   panel.classList.toggle(collapsedClass);
-  if (!panel.classList.contains(collapsedClass)) _paRevealLibrary(revealSelector);
 }
 
 function _paRevealLibrary(selector) {

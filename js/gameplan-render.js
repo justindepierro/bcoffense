@@ -1116,13 +1116,13 @@ function _gpRenderScoreboard(board, draftedPlays) {
   if (drafted.length === 0) {
     return `
       <details class="gp-scoreboard"${scoreboardOpen}>
-        <summary>📋 Coverage Scoreboard <span class="gp-score-hint">draft plays to populate</span></summary>
+        <summary>📋 Coverage</summary>
         <div class="gp-score-grid">${tiles}</div>
       </details>`;
   }
   return `
     <details class="gp-scoreboard"${scoreboardOpen}>
-      <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to spotlight matching buckets &amp; plays</span></summary>
+      <summary>📋 Coverage</summary>
       <div class="gp-score-grid">${tiles}</div>
     </details>`;
 }
