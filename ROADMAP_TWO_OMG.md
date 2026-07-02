@@ -1068,12 +1068,12 @@ Initial reactions:
 
 - [ ] Add an Ask Coach action to Playbook play detail.
 - [ ] Add an Ask Coach action to every eligible Practice Script play.
-- [ ] Open the question composer without leaving the current page.
+- [x] Open the question composer without leaving the current page.
 - [x] Automatically include canonical play context.
 - [ ] Automatically include script context when launched from Practice Script.
 - [ ] Automatically include opponent and week context when available.
-- [ ] Automatically include the authenticated player's primary position.
-- [ ] Allow the player to change the question position context.
+- [x] Automatically include the authenticated player's primary position.
+- [x] Allow the player to change the question position context.
 - [x] Add question categories: Assignment, Technique, Front, Coverage, Motion, Protection, Read, and General.
 - [x] Require a clear question body.
 - [x] Allow coaches to reply.
@@ -1084,14 +1084,14 @@ Initial reactions:
 - [x] Allow a coach to reopen directly.
 - [x] Store every state transition.
 - [x] Display a visible state badge.
-- [ ] Allow a coach to pin one official answer.
-- [ ] Allow replacing the pinned answer.
-- [ ] Preserve the previously pinned answer in history.
+- [x] Allow a coach to pin one official answer.
+- [x] Allow replacing the pinned answer.
+- [x] Preserve the previously pinned answer in history.
 - [ ] Allow a coach to add a clarification without changing the original player question.
-- [ ] Add a Copy Link action for a question.
+- [x] Add a Copy Link action for a question.
 - [ ] Add a direct route to a specific question.
-- [ ] Enforce authorization on direct question links.
-- [ ] Add question lifecycle tests.
+- [x] Enforce authorization on direct question links.
+- [x] Add question lifecycle tests.
 
 # Phase 10 — Likes, Helpful, and Same Question
 

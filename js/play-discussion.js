@@ -295,6 +295,21 @@ let _discLastPlaySig = null;
  * Render the Discussion section into `container`.
  * Appends a disc-section div and async-populates it.
  */
+/**
+ * Look up the current player's primary position from the local team roster.
+ * Returns a string like "QB" or null if not found / not a player.
+ */
+function _discGetPlayerPosition() {
+  const user = window.currentAuthUser;
+  if (!user || (user.role !== "player")) return null;
+  if (typeof storageManager === "undefined" || typeof STORAGE_KEYS === "undefined") return null;
+  const roster = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
+  if (!Array.isArray(roster)) return null;
+  const label = (user.label || user.username || "").toLowerCase();
+  const entry = roster.find((p) => p.name && p.name.toLowerCase() === label);
+  return entry?.position ? String(entry.position).toUpperCase() : null;
+}
+
 async function renderDiscussionSection(play, container) {
   if (!play || !container) return;
 
@@ -331,6 +346,7 @@ async function _discLoadBody(playId, playSig, bodyEl) {
     if (countEl && data.thread) countEl.textContent = String(data.thread.total);
 
     _discRenderBody(bodyEl, data, playId, playSig);
+    _discApplyDeepLink(playId);
   } catch (err) {
     setInnerHTML(
       bodyEl,
@@ -389,12 +405,19 @@ function _discRenderBody(container, data, playId, playSig) {
     `</div>`
     : "";
 
+  // Player-only "Ask a Question" quick shortcut above the composer
+  const askCoachBtn = (!isStaff && canPost)
+    ? `<button class="btn btn-xs disc-ask-coach-btn" data-action="discAskCoachQuestion" data-arg="${escapeHtml(playId)}"` +
+    ` aria-label="Ask the coach a question about this play">❓ Ask a Question</button>`
+    : "";
+
   setInnerHTML(
     container,
     modBanner +
     filterBar +
     `<div class="disc-posts" id="discPosts-${escapeHtml(playId)}" role="feed" aria-label="Discussion thread">${postsHtml}</div>` +
     loadMore +
+    askCoachBtn +
     composer +
     monitoringNotice +
     lockCtrl,
@@ -467,6 +490,10 @@ function _discPostHtml(p, playId, isReply = false) {
       : `<button class="disc-action-btn disc-action-btn--resolve" data-action="resolveDiscPost" data-arg="${escapeHtml(p.id)}::resolved" title="Resolve">✅ Resolve</button>`)
     : "";
 
+  const copyLinkBtn = isQuestion
+    ? `<button class="disc-action-btn" data-action="discCopyQuestionLink" data-arg="${escapeHtml(p.id)}" title="Copy link to this question">🔗 Copy Link</button>`
+    : "";
+
   // Coach-only: pin a reply as the official answer
   const pinBtn = (isStaff && isReply)
     ? `<button class="disc-action-btn disc-action-btn--pin${isOfficial ? " is-official" : ""}"
@@ -502,7 +529,7 @@ function _discPostHtml(p, playId, isReply = false) {
 
   // ── Actions: Reply always visible; edit/delete/moderate in ⋯ more menu ──
   const inlineActions = replyBtn + sameQBtn;
-  const moreItems = [resolveBtn, reopenBtn, pinBtn, editBtn, deleteBtn].filter(Boolean).join("");
+  const moreItems = [resolveBtn, reopenBtn, pinBtn, copyLinkBtn, editBtn, deleteBtn].filter(Boolean).join("");
   const moreMenu = moreItems
     ? `<details class="disc-more-wrap">` +
     `<summary class="disc-more-btn" title="More options" aria-label="More options">⋯</summary>` +
@@ -683,6 +710,10 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
   const idSuffix = isReply ? `reply-${parentPostId}` : playId;
   const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
+  const playerPos = !isReply && !isStaff ? _discGetPlayerPosition() : null;
+  const posCtx = playerPos
+    ? `<p class="disc-position-ctx" aria-label="Your position context">Asking as: <strong>${escapeHtml(playerPos)}</strong></p>`
+    : "";
   const typeSelect = isReply ? "" :
     `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type"
       data-onchange="discToggleQCategory" data-pass="event">` +
@@ -724,7 +755,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     : "";
 
   return (
-    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">` +
+    `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">${posCtx}` +
     attachBtns +
     `<textarea class="disc-textarea" id="discCompose-${escapeHtml(idSuffix)}"` +
     ` placeholder="${escapeHtml(placeholder)}" rows="2" maxlength="2000" aria-label="${escapeHtml(placeholder)}"></textarea>` +
@@ -2822,6 +2853,73 @@ function openDiscAttachmentViewer(arg) {
 
 function closeDiscAttachmentViewer() {
   document.getElementById("discAttachmentViewer")?.classList.remove("visible");
+}
+
+// ── Phase 9: Ask Coach & Question Links ──────────────────────────────────────
+
+/**
+ * Pre-select the question type in the root composer for a given play.
+ * data-action="discAskCoachQuestion" data-arg="{playId}"
+ */
+function discAskCoachQuestion(playId) {
+  const sel = document.getElementById(`discType-${playId}`);
+  const textarea = document.getElementById(`discCompose-${playId}`);
+  if (sel) {
+    sel.value = "question";
+    sel.dispatchEvent(new Event("change", { bubbles: true }));
+  }
+  if (textarea) {
+    textarea.placeholder = "What's your question? (Ctrl+Enter to post)";
+    textarea.focus();
+    textarea.scrollIntoView({ behavior: "smooth", block: "nearest" });
+  }
+}
+
+/**
+ * Copy a deep link to a specific question to the clipboard.
+ * data-action="discCopyQuestionLink" data-arg="{postId}"
+ */
+async function discCopyQuestionLink(postId) {
+  const playId = _discLastPlayId;
+  if (!playId || !postId) return;
+  const url = `${window.location.origin}${window.location.pathname}?disc=${encodeURIComponent(playId)}&post=${encodeURIComponent(postId)}`;
+  try {
+    await navigator.clipboard.writeText(url);
+    showToast("Question link copied!", { duration: 2500, type: "success" });
+  } catch (_) {
+    showToast("Copy failed — try selecting the URL manually.", { duration: 3000, type: "error" });
+  }
+}
+
+// ── URL deep-link: ?disc={playId}&post={postId} ───────────────────────────────
+// When the app loads with these params, store them and highlight the target post
+// once the matching discussion renders.
+
+let _discDeepLinkPlayId = null;
+let _discDeepLinkPostId = null;
+
+(function _discParseDeepLink() {
+  try {
+    const p = new URLSearchParams(window.location.search);
+    _discDeepLinkPlayId = p.get("disc") || null;
+    _discDeepLinkPostId = p.get("post") || null;
+  } catch (_) { }
+})();
+
+/**
+ * Called after a discussion section renders — if deep-link params match the
+ * current playId, scroll to and highlight the target post.
+ */
+function _discApplyDeepLink(playId) {
+  if (!_discDeepLinkPlayId || _discDeepLinkPlayId !== playId || !_discDeepLinkPostId) return;
+  const targetEl = document.getElementById(`disc-post-${_discDeepLinkPostId}`);
+  if (!targetEl) return;
+  targetEl.classList.add("disc-post--highlighted");
+  targetEl.scrollIntoView({ behavior: "smooth", block: "center" });
+  setTimeout(() => targetEl.classList.remove("disc-post--highlighted"), 4000);
+  // Clear so we don't re-apply on subsequent renders
+  _discDeepLinkPlayId = null;
+  _discDeepLinkPostId = null;
 }
 
 // ── Wire file inputs whenever a composer is rendered ─────────────────────────

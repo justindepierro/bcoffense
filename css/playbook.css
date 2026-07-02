@@ -5926,6 +5926,36 @@ label.disc-attach-btn {
   font-size: 11px;
 }
 
+/* ── Phase 9: Ask Coach + position context ──────────────────────────────────── */
+
+.disc-ask-coach-btn {
+  margin: var(--space-xs) 0 4px;
+  font-size: 12px;
+}
+
+.disc-position-ctx {
+  margin: 0 0 4px;
+  font-size: 11px;
+  color: var(--color-text-muted);
+}
+
+.disc-position-ctx strong {
+  color: var(--color-text-secondary);
+}
+
+/* Deep-link highlight flash */
+.disc-post--highlighted {
+  outline: 2px solid var(--color-primary);
+  border-radius: var(--radius-sm);
+  animation: disc-highlight-fade 4s ease forwards;
+}
+
+@keyframes disc-highlight-fade {
+  0%   { outline-color: var(--color-primary); }
+  75%  { outline-color: var(--color-primary); }
+  100% { outline-color: transparent; }
+}
+
 /* ── Markup overlay ─────────────────────────────────────────────────────────── */
 
 .disc-markup-overlay {
