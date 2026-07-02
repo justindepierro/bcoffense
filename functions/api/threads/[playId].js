@@ -21,6 +21,7 @@ import {
   getPlayerMuteUntil,
   getActiveCoachIds,
   getCustomTermOpts,
+  createPostAttachment,
 } from "../../_lib/d1-threads.js";
 import { notifyOnCoachPost, notifyOnReply, createNotification } from "../../_lib/d1-notifications.js";
 
@@ -86,11 +87,14 @@ export async function onRequest(context) {
       return authJson({ ok: false, error: "Invalid request body." }, { status: 400 });
     }
 
-    const postBody = String(body.body || "").trim();
-    const postType = body.post_type === "question" ? "question" : "comment";
-    const playSig = String(body.play_signature || "").trim() || null;
-    const parentPostId = String(body.parent_post_id || "").trim() || null;
+    const postBody        = String(body.body || "").trim();
+    const postType        = body.post_type === "question" ? "question" : "comment";
+    const playSig         = String(body.play_signature || "").trim() || null;
+    const parentPostId    = String(body.parent_post_id || "").trim() || null;
     const questionCategory = String(body.question_category || "").trim() || null;
+    // Optional attachment: { id, r2_key, type, caption, sourcePlayId, sizeBytes }
+    const attachmentMeta  = body.attachment && typeof body.attachment === "object"
+      ? body.attachment : null;
 
     if (!postBody) return authJson({ ok: false, error: "Post body required." }, { status: 422 });
 
@@ -136,6 +140,19 @@ export async function onRequest(context) {
     });
 
     if (result?.error) return authJson({ ok: false, error: result.error }, { status: 422 });
+
+    // ── Create attachment record if image was uploaded before posting ──────
+    if (attachmentMeta?.r2_key && isStaff) {
+      await createPostAttachment(env.DB, {
+        id:          attachmentMeta.id || crypto.randomUUID(),
+        postId:      result.id,
+        type:        attachmentMeta.type === "markup" ? "markup" : "image",
+        r2Key:       String(attachmentMeta.r2_key),
+        caption:     String(attachmentMeta.caption || "").slice(0, 500) || null,
+        sourcePlayId: String(attachmentMeta.sourcePlayId || "").slice(0, 512) || null,
+        sizeBytes:   Number(attachmentMeta.sizeBytes) || null,
+      }).catch(() => { /* non-fatal — attachment metadata loss is acceptable */ });
+    }
 
     // Auto-answer parent question when a staff member replies
     const isStaff = session.role === "coach" || session.role === "admin";
@@ -198,8 +215,11 @@ function formatPost(p) {
     rootPostId: p.root_post_id || null,
     depth: p.depth || 0,
     reactions: p.reactions || [],
+    attachments: p.attachments || [],
     replies: (p.replies || []).map(formatPost),
     replyCount: p.replyCount || 0,
+    isOfficial: !!p.is_official,
+    isBranchLocked: !!p.is_branch_locked,
   };
 }
 

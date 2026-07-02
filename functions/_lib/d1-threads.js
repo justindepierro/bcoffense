@@ -155,16 +155,24 @@ export async function getThreadPosts(db, threadId, { limit = 20, afterId = null,
     ? await getReactionsForPosts(db, replyIds, userId)
     : {};
 
+  // Batch-fetch attachments for all posts and visible replies
+  const allFetchedIds = [...postIds, ...replyIds];
+  const attachmentsMap = allFetchedIds.length
+    ? await getAttachmentsForPosts(db, allFetchedIds)
+    : {};
+
   const posts = page.map((p) => {
     const rootReplies = (repliesByRoot[p.id] || []).map((r) => ({
       ...r,
-      reactions: replyReactionsMap[r.id] || [],
+      reactions:   replyReactionsMap[r.id] || [],
+      attachments: attachmentsMap[r.id] || [],
     }));
     return {
       ...p,
-      reactions: reactionsMap[p.id] || [],
-      replies: rootReplies,
-      replyCount: replyTotalByRoot[p.id] || 0,
+      reactions:   reactionsMap[p.id] || [],
+      attachments: attachmentsMap[p.id] || [],
+      replies:     rootReplies,
+      replyCount:  replyTotalByRoot[p.id] || 0,
     };
   });
 
@@ -203,7 +211,15 @@ export async function getPostReplies(db, rootPostId, { limit = 20, afterId = nul
   if (!page.length) return { replies: [], hasMore };
   const ids = page.map((r) => r.id);
   const reactionsMap = await getReactionsForPosts(db, ids, userId);
-  return { replies: page.map((r) => ({ ...r, reactions: reactionsMap[r.id] || [] })), hasMore };
+  const attachmentsMap = await getAttachmentsForPosts(db, ids);
+  return {
+    replies: page.map((r) => ({
+      ...r,
+      reactions:   reactionsMap[r.id] || [],
+      attachments: attachmentsMap[r.id] || [],
+    })),
+    hasMore,
+  };
 }
 
 /**
@@ -838,4 +854,53 @@ export async function getReactorsByKey(db, postId, reactionKey) {
     .all();
   return (rows.results || []).map((r) => r.user_id);
 }
+
+// ── Attachment helpers ────────────────────────────────────────────────────────
+
+/**
+ * Create a post_attachments record after a post has been created.
+ */
+export async function createPostAttachment(db, { id, postId, type, r2Key, caption, sourcePlayId, sizeBytes }) {
+  await db
+    .prepare(
+      `INSERT INTO post_attachments (id, post_id, type, r2_key, caption, source_play_id, size_bytes, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, unixepoch())`,
+    )
+    .bind(id, postId, type, r2Key, caption || null, sourcePlayId || null, sizeBytes || null)
+    .run();
+}
+
+/**
+ * Load attachments for a list of post IDs.
+ * Returns { [postId]: [{ id, type, r2_key, caption, sourcePlayId }] }
+ */
+export async function getAttachmentsForPosts(db, postIds) {
+  if (!postIds || postIds.length === 0) return {};
+  const ph = postIds.map(() => "?").join(",");
+  const rows = await db
+    .prepare(
+      `SELECT id, post_id, type, r2_key, caption, source_play_id, size_bytes, width, height
+       FROM post_attachments WHERE post_id IN (${ph})
+       ORDER BY created_at ASC`,
+    )
+    .bind(...postIds)
+    .all();
+
+  const map = {};
+  for (const row of (rows.results || [])) {
+    if (!map[row.post_id]) map[row.post_id] = [];
+    map[row.post_id].push({
+      id:           row.id,
+      type:         row.type,
+      r2_key:       row.r2_key,
+      caption:      row.caption,
+      sourcePlayId: row.source_play_id,
+      sizeBytes:    row.size_bytes,
+      width:        row.width,
+      height:       row.height,
+    });
+  }
+  return map;
+}
+
 

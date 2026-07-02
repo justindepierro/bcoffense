@@ -407,10 +407,33 @@ function _discRenderBody(container, data, playId, playSig) {
       if (!pid) return;
       try { if (sessionStorage.getItem(`disc-exp-${pid}`)) loadMoreDiscReplies(null, btn); } catch (_) { }
     });
+    // Wire attachment file inputs in the root composer
+    _discWireComposerAttachments(container);
   });
 
   // Async: check moderation queue count for coaches
   if (isStaff) _discCheckModerationQueue();
+}
+
+function _discAttachmentsHtml(attachments) {
+  if (!attachments || attachments.length === 0) return "";
+  const items = attachments.map((a) => {
+    const src = `/api/attachments/${escapeHtml(a.id)}`;
+    const caption = a.caption ? `<span class="disc-attachment-caption">${escapeHtml(a.caption)}</span>` : "";
+    const badge = a.type === "markup"
+      ? `<span class="disc-attachment-badge disc-attachment-badge--markup">✏️ Play Markup</span>`
+      : `<span class="disc-attachment-badge disc-attachment-badge--image">📎 Image</span>`;
+    return (
+      `<div class="disc-attachment-item">` +
+      badge +
+      `<img class="disc-attachment-thumb" src="${src}" alt="${a.caption ? escapeHtml(a.caption) : "Attachment"}"` +
+      ` data-action="openDiscAttachmentViewer" data-arg="${escapeHtml(a.id)}::${escapeHtml(a.caption || "")}"` +
+      ` loading="lazy">` +
+      caption +
+      `</div>`
+    );
+  }).join("");
+  return `<div class="disc-attachments">${items}</div>`;
 }
 
 function _discPostHtml(p, playId, isReply = false) {
@@ -538,6 +561,7 @@ function _discPostHtml(p, playId, isReply = false) {
     (p.sourceContext ? `<span class="disc-post-ctx">${escapeHtml(p.sourceContext)}</span>` : "") +
     `</div>` +
     `<div class="disc-post-body" id="disc-body-${escapeHtml(p.id)}">${bodyContent}</div>` +
+    _discAttachmentsHtml(p.attachments) +
     _discReactionsHtml(p.id, p.reactions, (isQuestion && !isReply) ? "same_question" : null) +
     actionsHtml +
     `</div>` +
@@ -658,6 +682,7 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
   const isReply = !!parentPostId;
   const placeholder = isReply ? "Write a reply… (Ctrl+Enter to post)" : "Add a comment… (Ctrl+Enter to post)";
   const idSuffix = isReply ? `reply-${parentPostId}` : playId;
+  const isStaff = window.currentAuthUser?.role === "coach" || window.currentAuthUser?.role === "admin";
   const typeSelect = isReply ? "" :
     `<select class="disc-type-select" id="discType-${escapeHtml(playId)}" aria-label="Post type"
       data-onchange="discToggleQCategory" data-pass="event">` +
@@ -676,8 +701,28 @@ function _discComposerHtml(playId, playSig, parentPostId = null) {
     `<option value="read">Read</option>` +
     `</select></div>`;
 
+  // Coach-only attachment buttons (hidden input + markup overlay trigger)
+  const attachBtns = isStaff
+    ? `<div class="disc-composer-attach-row">` +
+      `<button class="btn btn-xs disc-attach-btn" data-action="discOpenMarkupOverlay"` +
+      ` data-arg="${escapeHtml(idSuffix)}::${escapeHtml(playId)}" title="Annotate play diagram">` +
+      `✏️ Mark Up Play</button>` +
+      `<label class="btn btn-xs disc-attach-btn" title="Attach image">` +
+      `📎 Image` +
+      `<input type="file" accept="image/jpeg,image/png,image/webp" class="disc-img-file-input"` +
+      ` data-composer-id="${escapeHtml(idSuffix)}" data-play-id="${escapeHtml(playId)}" style="display:none">` +
+      `</label>` +
+      `<div class="disc-pending-attachment" id="disc-pending-${escapeHtml(idSuffix)}" style="display:none">` +
+      `<img class="disc-pending-thumb" id="disc-pending-thumb-${escapeHtml(idSuffix)}" alt="Pending attachment" src="">` +
+      `<button class="btn btn-xs disc-remove-attach-btn" data-action="discRemovePendingAttachment"` +
+      ` data-arg="${escapeHtml(idSuffix)}">✕</button>` +
+      `</div>` +
+      `</div>`
+    : "";
+
   return (
     `<div class="disc-composer${isReply ? " disc-composer--reply" : ""}">` +
+    attachBtns +
     `<textarea class="disc-textarea" id="discCompose-${escapeHtml(idSuffix)}"` +
     ` placeholder="${escapeHtml(placeholder)}" rows="2" maxlength="2000" aria-label="${escapeHtml(placeholder)}"></textarea>` +
     `<div class="disc-composer-actions">` +
@@ -750,10 +795,17 @@ async function submitDiscPost(arg, el) {
   if (charElOpt) { charElOpt.textContent = "0 / 2000"; charElOpt.classList.remove("disc-char-warn", "disc-char-limit"); }
 
   try {
+    const pendingAttach = _discPendingAttachments.get(playId) || null;
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body, post_type: typeSelect?.value || "comment", question_category: document.getElementById(`discQCat-${playId}`)?.value || null, play_signature: playSig }),
+      body: JSON.stringify({
+        body,
+        post_type: typeSelect?.value || "comment",
+        question_category: document.getElementById(`discQCat-${playId}`)?.value || null,
+        play_signature: playSig,
+        attachment: pendingAttach || undefined,
+      }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -777,6 +829,9 @@ async function submitDiscPost(arg, el) {
     }
 
     if (data.post?.moderationStatus === "approved") {
+      // Clear pending attachment after successful post
+      _discPendingAttachments.delete(playId);
+      _discClearPendingAttachmentUI(playId);
       // Replace optimistic node with real post from server
       if (optimisticNode && list) {
         const realWrap = document.createElement("div");
@@ -914,6 +969,7 @@ function openDiscReplyComposer(arg) {
     overlay.classList.add("visible");
     requestAnimationFrame(() => sheet.classList.add("visible"));
     _discWireReplyComposerDraft(sheet, parentPostId);
+    _discWireComposerAttachments(sheet);
     return;
   }
 
@@ -923,6 +979,7 @@ function openDiscReplyComposer(arg) {
   if (!slot) return;
   slot.innerHTML = bannerHtml + _discComposerHtml(playId, playSig, parentPostId);
   _discWireReplyComposerDraft(slot, parentPostId);
+  _discWireComposerAttachments(slot);
 }
 
 async function closeDiscReplyComposer(parentPostId) {
@@ -1017,10 +1074,18 @@ async function submitDiscReply(arg, el) {
   closeDiscReplyComposer(parentPostId);
 
   try {
+    const replyComposerId = `reply-${parentPostId}`;
+    const pendingAttach = _discPendingAttachments.get(replyComposerId) || null;
     const res = await fetch(`/api/threads/${playId}`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ body, post_type: "comment", play_signature: playSig, parent_post_id: parentPostId }),
+      body: JSON.stringify({
+        body,
+        post_type: "comment",
+        play_signature: playSig,
+        parent_post_id: parentPostId,
+        attachment: pendingAttach || undefined,
+      }),
     });
     const data = await res.json();
     if (!data.ok) {
@@ -1035,6 +1100,9 @@ async function submitDiscReply(arg, el) {
     }
 
     if (data.post?.moderationStatus === "approved") {
+      // Clear pending attachment
+      _discPendingAttachments.delete(replyComposerId);
+      _discClearPendingAttachmentUI(replyComposerId);
       // Replace optimistic with real reply
       if (optimisticReplyNode && repliesEl) {
         const realWrap = document.createElement("div");
@@ -1843,13 +1911,15 @@ async function toggleDiscThreadLock(arg) {
         const playSig = _discLastPlaySig || "";
         const tmp = document.createElement("div");
         tmp.innerHTML = _discComposerHtml(playId, playSig);
+        const newComposer = tmp.firstElementChild;
         const lockCtrlEl = document.querySelector(".disc-thread-controls");
         if (lockCtrlEl) {
-          lockCtrlEl.insertAdjacentElement("beforebegin", tmp.firstElementChild);
+          lockCtrlEl.insertAdjacentElement("beforebegin", newComposer);
         } else {
           const body = document.getElementById("discBody");
-          if (body) body.appendChild(tmp.firstElementChild);
+          if (body) body.appendChild(newComposer);
         }
+        _discWireComposerAttachments(newComposer?.parentElement || document.body);
       }
     }
 
@@ -2209,4 +2279,493 @@ async function openWristbandCellDiscussion() {
 
   await renderDiscussionSection(play, body);
 }
+
+// ── Discussion Visual Attachments ─────────────────────────────────────────────
+
+/**
+ * Map of composerId → { id, r2_key, type, caption, sizeBytes, sourcePlayId }
+ * Populated after a successful upload, consumed on post submit.
+ */
+const _discPendingAttachments = new Map();
+
+/** Clear the pending attachment thumbnail UI for a given composer. */
+function _discClearPendingAttachmentUI(composerId) {
+  const pendingEl = document.getElementById(`disc-pending-${composerId}`);
+  const thumbEl   = document.getElementById(`disc-pending-thumb-${composerId}`);
+  if (pendingEl) pendingEl.style.display = "none";
+  if (thumbEl)   thumbEl.src = "";
+}
+
+/** Show the pending attachment thumbnail in the composer. */
+function _discShowPendingAttachmentUI(composerId, previewUrl) {
+  const pendingEl = document.getElementById(`disc-pending-${composerId}`);
+  const thumbEl   = document.getElementById(`disc-pending-thumb-${composerId}`);
+  if (pendingEl) pendingEl.style.display = "flex";
+  if (thumbEl)   thumbEl.src = previewUrl;
+}
+
+/**
+ * Upload a blob/file to /api/attachments/upload and return { id, r2_key, type, sizeBytes }.
+ * Returns null on failure (already shows a toast).
+ */
+async function _discUploadAttachment(blob, type, caption, sourcePlayId) {
+  const formData = new FormData();
+  formData.append("file", blob, `disc-attach.${type === "markup" ? "png" : blob.name || "jpg"}`);
+  formData.append("type", type === "markup" ? "markup" : "image");
+  if (caption)      formData.append("caption", caption);
+  if (sourcePlayId) formData.append("playId", sourcePlayId);
+
+  try {
+    const res  = await fetch("/api/attachments/upload", { method: "POST", body: formData });
+    const data = await res.json();
+    if (!data.ok) {
+      showToast(data.error || "Attachment upload failed.", { duration: 4000, type: "error" });
+      return null;
+    }
+    return { id: data.id, r2_key: data.r2_key, type: data.type, sizeBytes: data.sizeBytes };
+  } catch (_) {
+    showToast("Network error — attachment not uploaded.", { duration: 3000, type: "error" });
+    return null;
+  }
+}
+
+/**
+ * Remove the pending attachment for a composer (called by "✕" remove button).
+ * data-action="discRemovePendingAttachment" data-arg="{composerId}"
+ */
+function discRemovePendingAttachment(composerId) {
+  _discPendingAttachments.delete(String(composerId));
+  _discClearPendingAttachmentUI(String(composerId));
+}
+
+// ── Image file picker upload ──────────────────────────────────────────────────
+
+/**
+ * Wire file input change events in a composer container.
+ * Called after a composer is injected into the DOM.
+ */
+function _discWireAttachmentInputs(container) {
+  container.querySelectorAll(".disc-img-file-input").forEach((input) => {
+    if (input._discWired) return;
+    input._discWired = true;
+    input.addEventListener("change", async (e) => {
+      const file = e.target.files?.[0];
+      if (!file) return;
+      if (file.size > 8 * 1024 * 1024) {
+        showToast("Image must be under 8 MB.", { duration: 3000, type: "error" });
+        input.value = "";
+        return;
+      }
+      const composerId = input.dataset.composerId;
+      const playId     = input.dataset.playId;
+      // Show local preview immediately
+      const previewUrl = URL.createObjectURL(file);
+      _discShowPendingAttachmentUI(composerId, previewUrl);
+
+      // Upload to R2
+      const uploadBtn = input.closest(".disc-composer")?.querySelector(".disc-attach-btn");
+      showToast("Uploading image…", { duration: 2000 });
+      const result = await _discUploadAttachment(file, "image", "", playId);
+      input.value = "";
+      if (!result) {
+        _discClearPendingAttachmentUI(composerId);
+        _discPendingAttachments.delete(composerId);
+        URL.revokeObjectURL(previewUrl);
+        return;
+      }
+      result.sourcePlayId = playId;
+      _discPendingAttachments.set(composerId, result);
+      showToast("Image ready to post.", { duration: 2000, type: "success" });
+    });
+  });
+}
+
+// ── Mark Up Play overlay ──────────────────────────────────────────────────────
+
+/**
+ * State for the markup overlay.
+ * @type {{ strokes: Array, currentTool: string, color: string, lineWidth: number, canvas: HTMLCanvasElement|null, baseImg: HTMLImageElement|null, composerId: string, playId: string }}
+ */
+const _discMarkup = {
+  strokes:     [],
+  currentTool: "pen",
+  color:       "#ffd400",
+  lineWidth:   5,
+  canvas:      null,
+  baseImg:     null,
+  composerId:  "",
+  playId:      "",
+  drawing:     false,
+  currentPath: null,
+};
+
+/** Open the play markup overlay. arg = "{composerId}::{playId}" */
+async function discOpenMarkupOverlay(arg) {
+  const sep = String(arg).indexOf("::");
+  if (sep < 0) return;
+  const composerId = arg.slice(0, sep);
+  const playId     = arg.slice(sep + 2);
+
+  _discMarkup.composerId  = composerId;
+  _discMarkup.playId      = playId;
+  _discMarkup.strokes     = [];
+  _discMarkup.currentTool = "pen";
+  _discMarkup.color       = "#ffd400";
+  _discMarkup.lineWidth   = 5;
+  _discMarkup.drawing     = false;
+  _discMarkup.currentPath = null;
+
+  // Get or build the overlay
+  let overlay = document.getElementById("discMarkupOverlay");
+  if (!overlay) {
+    overlay = _discBuildMarkupOverlay();
+    document.body.appendChild(overlay);
+  }
+  overlay.classList.add("visible");
+  if (typeof trapFocus === "function") trapFocus(overlay);
+
+  // Load the play image (use play-images.js if available)
+  const img = new Image();
+  img.crossOrigin = "anonymous";
+  _discMarkup.baseImg = img;
+
+  // Try to find the play image from IndexedDB via playImages
+  const canvas = document.getElementById("discMarkupCanvas");
+  _discMarkup.canvas = canvas;
+
+  // Load play image from play-images.js if the function exists
+  if (typeof playImages !== "undefined" && typeof playImages.getImage === "function") {
+    const playImgData = await playImages.getImage(playId).catch(() => null);
+    if (playImgData) {
+      img.src = playImgData;
+    } else {
+      img.src = ""; // blank canvas — coach can still draw freely
+    }
+  } else {
+    img.src = "";
+  }
+
+  img.onload = () => _discMarkupRedraw();
+  img.onerror = () => { _discMarkup.baseImg = null; _discMarkupRedraw(); };
+
+  // Immediately redraw (may be blank initially)
+  _discMarkupRedraw();
+}
+
+function _discBuildMarkupOverlay() {
+  const overlay = document.createElement("div");
+  overlay.id        = "discMarkupOverlay";
+  overlay.className = "disc-markup-overlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-label", "Mark up play diagram");
+  overlay.innerHTML =
+    `<div class="disc-markup-panel">` +
+    `<div class="disc-markup-toolbar">` +
+    `<span class="disc-markup-title">✏️ Mark Up Play</span>` +
+    `<div class="disc-markup-tools">` +
+    `<button class="disc-markup-tool active" data-action="discMarkupTool" data-arg="pen" title="Pen">✏️</button>` +
+    `<button class="disc-markup-tool" data-action="discMarkupTool" data-arg="arrow" title="Arrow">→</button>` +
+    `<button class="disc-markup-tool" data-action="discMarkupTool" data-arg="circle" title="Circle">⭕</button>` +
+    `<button class="disc-markup-tool" data-action="discMarkupTool" data-arg="eraser" title="Eraser">🧹</button>` +
+    `</div>` +
+    `<div class="disc-markup-colors">` +
+    ["#ffd400","#ff4444","#44aaff","#44cc44","#ffffff","#000000"].map((c) =>
+      `<button class="disc-markup-color-swatch${c === "#ffd400" ? " active" : ""}"` +
+      ` data-action="discMarkupColor" data-arg="${c}" style="background:${c}" title="${c}"></button>`
+    ).join("") +
+    `</div>` +
+    `<div class="disc-markup-width">` +
+    `<label class="sr-only" for="discMarkupWidth">Brush size</label>` +
+    `<input type="range" id="discMarkupWidth" min="2" max="20" value="5" step="1"` +
+    ` data-oninput="discMarkupSetWidth" data-pass="value">` +
+    `</div>` +
+    `<div class="disc-markup-btns">` +
+    `<button class="btn btn-xs" data-action="discMarkupUndo" title="Undo">↩ Undo</button>` +
+    `<button class="btn btn-xs" data-action="discMarkupClear" title="Clear">🗑 Clear</button>` +
+    `<button class="btn btn-xs btn-primary" data-action="discMarkupAttach" title="Attach to reply">✓ Attach</button>` +
+    `<button class="btn btn-xs" data-action="discMarkupClose" title="Cancel">✕ Cancel</button>` +
+    `</div>` +
+    `</div>` +
+    `<canvas id="discMarkupCanvas" class="disc-markup-canvas"></canvas>` +
+    `</div>`;
+
+  _discMarkupWirePointer(overlay);
+  return overlay;
+}
+
+function _discMarkupWirePointer(overlay) {
+  const getCanvas = () => document.getElementById("discMarkupCanvas");
+
+  overlay.addEventListener("pointerdown", (e) => {
+    const canvas = getCanvas();
+    if (!canvas || e.target !== canvas) return;
+    _discMarkup.drawing = true;
+    canvas.setPointerCapture(e.pointerId);
+    const { x, y } = _discMarkupNorm(canvas, e);
+    if (_discMarkup.currentTool === "eraser") {
+      _discMarkupEraseAt(canvas, x, y);
+    } else {
+      _discMarkup.currentPath = { tool: _discMarkup.currentTool, color: _discMarkup.color, lineWidth: _discMarkup.lineWidth, points: [{ x, y }] };
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  overlay.addEventListener("pointermove", (e) => {
+    const canvas = getCanvas();
+    if (!canvas || !_discMarkup.drawing) return;
+    const { x, y } = _discMarkupNorm(canvas, e);
+    if (_discMarkup.currentTool === "eraser") {
+      _discMarkupEraseAt(canvas, x, y);
+    } else if (_discMarkup.currentPath) {
+      _discMarkup.currentPath.points.push({ x, y });
+      _discMarkupRedraw();
+    }
+    e.preventDefault();
+  }, { passive: false });
+
+  const endDraw = (e) => {
+    if (!_discMarkup.drawing) return;
+    _discMarkup.drawing = false;
+    if (_discMarkup.currentPath && _discMarkup.currentPath.points.length > 0) {
+      _discMarkup.strokes.push(_discMarkup.currentPath);
+    }
+    _discMarkup.currentPath = null;
+    _discMarkupRedraw();
+    e?.preventDefault();
+  };
+  overlay.addEventListener("pointerup",     endDraw, { passive: false });
+  overlay.addEventListener("pointercancel", endDraw, { passive: false });
+}
+
+function _discMarkupNorm(canvas, e) {
+  const rect = canvas.getBoundingClientRect();
+  return {
+    x: (e.clientX - rect.left) / rect.width,
+    y: (e.clientY - rect.top)  / rect.height,
+  };
+}
+
+function _discMarkupEraseAt(canvas, nx, ny) {
+  const r = 0.04; // normalized eraser radius
+  _discMarkup.strokes = _discMarkup.strokes.filter((stroke) => {
+    return !stroke.points.some((pt) => Math.hypot(pt.x - nx, pt.y - ny) < r);
+  });
+  _discMarkupRedraw();
+}
+
+function _discMarkupRedraw() {
+  const canvas = _discMarkup.canvas || document.getElementById("discMarkupCanvas");
+  if (!canvas) return;
+  const ctx   = canvas.getContext("2d");
+  const W     = canvas.width  || canvas.offsetWidth  || 800;
+  const H     = canvas.height || canvas.offsetHeight || 450;
+  canvas.width  = W;
+  canvas.height = H;
+
+  ctx.clearRect(0, 0, W, H);
+
+  // Draw base image if loaded
+  if (_discMarkup.baseImg?.complete && _discMarkup.baseImg.naturalWidth > 0) {
+    ctx.drawImage(_discMarkup.baseImg, 0, 0, W, H);
+  } else {
+    ctx.fillStyle = "#1a1a2e";
+    ctx.fillRect(0, 0, W, H);
+    ctx.fillStyle = "#4a4a6a";
+    ctx.font      = "18px sans-serif";
+    ctx.textAlign = "center";
+    ctx.fillText("Draw on blank canvas — no play image found", W / 2, H / 2);
+    ctx.textAlign = "left";
+  }
+
+  // Draw committed strokes
+  for (const stroke of _discMarkup.strokes) {
+    _discDrawStroke(ctx, stroke, W, H);
+  }
+
+  // Draw in-progress stroke
+  if (_discMarkup.currentPath) {
+    _discDrawStroke(ctx, _discMarkup.currentPath, W, H);
+  }
+}
+
+function _discDrawStroke(ctx, stroke, W, H) {
+  const pts = stroke.points;
+  if (!pts || pts.length === 0) return;
+  ctx.save();
+  ctx.strokeStyle = stroke.color || "#ffd400";
+  ctx.lineWidth   = stroke.lineWidth || 5;
+  ctx.lineCap     = "round";
+  ctx.lineJoin    = "round";
+
+  if (stroke.tool === "circle" && pts.length >= 2) {
+    const cx  = pts[0].x * W;
+    const cy  = pts[0].y * H;
+    const lx  = pts[pts.length - 1].x * W;
+    const ly  = pts[pts.length - 1].y * H;
+    const rx  = Math.abs(lx - cx) / 2;
+    const ry  = Math.abs(ly - cy) / 2;
+    const ecx = (cx + lx) / 2;
+    const ecy = (cy + ly) / 2;
+    ctx.beginPath();
+    ctx.ellipse(ecx, ecy, Math.max(rx, 4), Math.max(ry, 4), 0, 0, Math.PI * 2);
+    ctx.stroke();
+  } else if (stroke.tool === "arrow" && pts.length >= 2) {
+    const sx  = pts[0].x * W;
+    const sy  = pts[0].y * H;
+    const ex  = pts[pts.length - 1].x * W;
+    const ey  = pts[pts.length - 1].y * H;
+    const ang = Math.atan2(ey - sy, ex - sx);
+    const hw  = 14;
+    ctx.beginPath();
+    ctx.moveTo(sx, sy);
+    ctx.lineTo(ex, ey);
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(ex, ey);
+    ctx.lineTo(ex - hw * Math.cos(ang - 0.4), ey - hw * Math.sin(ang - 0.4));
+    ctx.lineTo(ex - hw * Math.cos(ang + 0.4), ey - hw * Math.sin(ang + 0.4));
+    ctx.closePath();
+    ctx.fillStyle = stroke.color || "#ffd400";
+    ctx.fill();
+  } else {
+    ctx.beginPath();
+    ctx.moveTo(pts[0].x * W, pts[0].y * H);
+    for (let i = 1; i < pts.length; i++) {
+      ctx.lineTo(pts[i].x * W, pts[i].y * H);
+    }
+    ctx.stroke();
+  }
+  ctx.restore();
+}
+
+/** Select markup tool. data-action="discMarkupTool" data-arg="{tool}" */
+function discMarkupTool(tool) {
+  _discMarkup.currentTool = String(tool);
+  document.querySelectorAll(".disc-markup-tool").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.arg === tool);
+  });
+}
+
+/** Select markup color. data-action="discMarkupColor" data-arg="{hex}" */
+function discMarkupColor(color) {
+  _discMarkup.color = String(color);
+  document.querySelectorAll(".disc-markup-color-swatch").forEach((btn) => {
+    btn.classList.toggle("active", btn.dataset.arg === color);
+  });
+}
+
+/** Set brush width from range input. data-oninput="discMarkupSetWidth" data-pass="value" */
+function discMarkupSetWidth(val) {
+  _discMarkup.lineWidth = Math.max(1, Math.min(30, parseInt(val, 10) || 5));
+}
+
+/** Undo last stroke. data-action="discMarkupUndo" */
+function discMarkupUndo() {
+  _discMarkup.strokes.pop();
+  _discMarkupRedraw();
+}
+
+/** Clear all strokes. data-action="discMarkupClear" */
+function discMarkupClear() {
+  _discMarkup.strokes = [];
+  _discMarkupRedraw();
+}
+
+/** Close the markup overlay without attaching. data-action="discMarkupClose" */
+function discMarkupClose() {
+  const overlay = document.getElementById("discMarkupOverlay");
+  if (overlay) overlay.classList.remove("visible");
+}
+
+/**
+ * Export the canvas as PNG blob, upload to R2, store as pending attachment.
+ * data-action="discMarkupAttach"
+ */
+async function discMarkupAttach() {
+  const canvas = document.getElementById("discMarkupCanvas");
+  if (!canvas) return;
+
+  // Prompt for optional caption
+  let caption = "";
+  if (typeof showPrompt === "function") {
+    caption = (await showPrompt("Add a caption for this markup (optional):", "", { title: "Caption", icon: "✏️" })) || "";
+  }
+
+  showToast("Uploading markup…", { duration: 2500 });
+
+  canvas.toBlob(async (blob) => {
+    if (!blob) { showToast("Could not export canvas.", { duration: 3000, type: "error" }); return; }
+
+    const result = await _discUploadAttachment(blob, "markup", caption.trim(), _discMarkup.playId);
+    if (!result) return;
+    result.sourcePlayId = _discMarkup.playId;
+
+    const composerId = _discMarkup.composerId;
+    _discPendingAttachments.set(composerId, result);
+
+    // Show thumbnail in composer
+    const previewUrl = URL.createObjectURL(blob);
+    _discShowPendingAttachmentUI(composerId, previewUrl);
+
+    discMarkupClose();
+    showToast("Play markup ready to post.", { duration: 2500, type: "success" });
+  }, "image/png");
+}
+
+// ── Attachment viewer (lightbox) ──────────────────────────────────────────────
+
+/**
+ * Open a full-screen image viewer. data-action="openDiscAttachmentViewer"
+ * arg = "{id}::{caption}"
+ */
+function openDiscAttachmentViewer(arg) {
+  const sep     = String(arg).indexOf("::");
+  const id      = sep >= 0 ? arg.slice(0, sep) : arg;
+  const caption = sep >= 0 ? arg.slice(sep + 2) : "";
+
+  let viewer = document.getElementById("discAttachmentViewer");
+  if (!viewer) {
+    viewer = document.createElement("div");
+    viewer.id        = "discAttachmentViewer";
+    viewer.className = "disc-attachment-viewer";
+    viewer.setAttribute("role", "dialog");
+    viewer.setAttribute("aria-modal", "true");
+    viewer.setAttribute("aria-label", "Attachment viewer");
+    viewer.innerHTML =
+      `<div class="disc-attachment-viewer-inner">` +
+      `<button class="disc-attachment-viewer-close" data-action="closeDiscAttachmentViewer" aria-label="Close">✕</button>` +
+      `<img id="discAttachmentViewerImg" class="disc-attachment-viewer-img" alt="" src="">` +
+      `<p id="discAttachmentViewerCaption" class="disc-attachment-viewer-caption"></p>` +
+      `</div>`;
+    viewer.addEventListener("click", (e) => {
+      if (e.target === viewer) closeDiscAttachmentViewer();
+    });
+    document.body.appendChild(viewer);
+  }
+
+  const img     = document.getElementById("discAttachmentViewerImg");
+  const capEl   = document.getElementById("discAttachmentViewerCaption");
+  if (img)   { img.src = `/api/attachments/${encodeURIComponent(id)}`; img.alt = caption; }
+  if (capEl) { capEl.textContent = caption; capEl.style.display = caption ? "" : "none"; }
+
+  viewer.classList.add("visible");
+  if (typeof trapFocus === "function") trapFocus(viewer);
+}
+
+function closeDiscAttachmentViewer() {
+  document.getElementById("discAttachmentViewer")?.classList.remove("visible");
+}
+
+// ── Wire file inputs whenever a composer is rendered ─────────────────────────
+
+/**
+ * Wire attachment-related inputs in new composer nodes.
+ * Called from openDiscReplyComposer and renderDiscussionSection.
+ */
+function _discWireComposerAttachments(container) {
+  if (!container) return;
+  _discWireAttachmentInputs(container);
+}
+
 
