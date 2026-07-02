@@ -99,6 +99,13 @@
   align-items: start;
   gap: var(--space-lg);
 }
+/* Library collapse toggle (📚 Library button) — reclaim room for the card */
+#wristband.wb-library-collapsed .wristband-container {
+  grid-template-columns: 1fr;
+}
+#wristband.wb-library-collapsed .wristband-plays {
+  display: none;
+}
 .wristband-plays {
   position: sticky;
   top: calc(

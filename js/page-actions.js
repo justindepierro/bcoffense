@@ -100,7 +100,9 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
       { icon: "🔀", label: "Reorder Boxes", run: () => _paCall("openGamePlanReorderBoxes") },
       { icon: "👁️", label: "Manage Boxes", run: () => _paCall("openGamePlanManageBoxes") },
-      { icon: "🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
+      { icon: "�", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
+      { icon: "⌨️", label: "Shortcuts", run: () => _paCall("openGamePlanShortcutsHelp") },
+      { icon: "�🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
     ],
   },
 };

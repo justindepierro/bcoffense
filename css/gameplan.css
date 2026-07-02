@@ -243,6 +243,14 @@
   }
 }
 
+/* Library collapse toggle (📚 Library button) — reclaim room for the boxes */
+#gameplan.gp-library-collapsed .gp-layout {
+  grid-template-columns: 1fr;
+}
+#gameplan.gp-library-collapsed .gp-library {
+  display: none;
+}
+
 /* Library (left column) */
 .gp-library {
   background: var(--color-bg-light);

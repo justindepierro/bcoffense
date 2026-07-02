@@ -152,79 +152,21 @@ function renderGamePlan() {
       <div class="gp-header-actions">
         ${_gpRenderHealthGauge(board, draftedPlays)}
         <div class="gp-header-group gp-header-group-primary">
-          <button class="btn btn-sm page-library-btn" data-action="openPlayLibrary" title="Jump to the play library">
+          <button class="btn btn-sm page-library-btn" data-action="openPlayLibrary" title="Show or hide the play library">
             📚 Library
           </button>
-          <button class="btn btn-sm btn-primary" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
+          <button class="btn btn-sm btn-primary page-actions-open-btn" data-action="openPageActions" title="Load, Save, Print, Send, Templates, and more" aria-haspopup="dialog">
+            ⚡ Actions
+          </button>
+          <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
+            🧠 Build Plan
+          </button>
+          <button class="btn btn-sm btn-success" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
             🖨️ Print
-          </button>
-          <button class="btn btn-sm btn-success" data-action="pushGamePlanToCallSheet" title="Copy drafted plays into the call sheet">
-            ➡️ Call Sheet
-          </button>
-          <button class="btn btn-sm btn-success" data-action="pushGamePlanToScript" title="Copy drafted plays into the practice script">
-            📋 Script
-          </button>
-          <button class="btn btn-sm btn-success" data-action="pushGamePlanToWristband" title="Fill wristband cells with drafted plays">
-            🏈 Wristband
-          </button>
-          <button class="btn btn-sm" data-action="createScriptFromGamePlan" title="Create a new practice script with one period per game plan box">
-            ⚡ Create Script
-          </button>
-          <button class="btn btn-sm" data-action="runConstraintCheck" title="Check call sheet constraint compliance">
-            🛡️ Constraints
           </button>
           ${board.loadedWristband
       ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
       : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}
-          ${(() => {
-      const wbCount = (typeof getGamePlanFlaggedCount === "function") ? getGamePlanFlaggedCount("wb") : 0;
-      return `<button class="btn btn-sm btn-success" data-action="sendGamePlanToWristbandCard"
-          title="Build a new wristband card from plays you've marked with 📋"${wbCount === 0 ? " disabled" : ""}>
-          📋 Build WB Card${wbCount ? ` (${wbCount})` : ""}
-        </button>`;
-    })()}
-        </div>
-        <div class="gp-header-group">
-          <button class="btn btn-sm" data-action="saveGamePlanSnapshot" title="Save the current board as a named plan">
-            💾 Save Plan
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanSnapshotsMenu" title="Load or delete a saved plan">
-            📂 Plans
-          </button>
-          <button class="btn btn-sm" data-action="saveGamePlanTemplate" title="Save this board as a reusable template">
-            💾 Template
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanTemplatesMenu" title="Load or delete reusable game plan templates">
-            📁 Templates
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanCompare" title="Compare two saved plans">
-            🔄 Compare
-          </button>
-        </div>
-        <div class="gp-header-group">
-          <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
-            🧠 Build Plan
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanStats" title="Show variety stats across all drafted plays">
-            📊 Variety
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanCoverageMatrix" title="Heatmap of bucket coverage across game scenarios">
-            🌡️ Coverage
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanTendencyMirror" title="Compare opponent's defensive tendencies vs your plan">
-            🪞 vs Defense
-          </button>
-        </div>
-        <div class="gp-header-group">
-          <button class="btn btn-sm" data-action="openGamePlanAddBucket" title="Add a new bucket from a template">
-            ➕ Add Bucket
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanReorderBoxes" title="Drag boxes into a custom order">
-            ↕️ Reorder
-          </button>
-          <button class="btn btn-sm" data-action="openGamePlanManageBoxes" title="Hide or show boxes">
-            👁️ Manage
-          </button>
         </div>
         <div class="gp-header-group">
           <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
@@ -236,13 +178,10 @@ function renderGamePlan() {
           <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
             ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
           </button>
-          <button class="btn btn-sm" data-action="openGamePlanShortcutsHelp" title="Keyboard shortcuts (?)">
-            ⌨️
+          <button class="btn btn-sm btn-danger" data-action="clearGamePlanBoard" title="Remove every play from every box for this opponent">
+            🗑️ Clear All
           </button>
         </div>
-        <button class="btn btn-sm btn-danger" data-action="clearGamePlanBoard" title="Remove every play from every box for this opponent">
-          🗑️ Clear All
-        </button>
       </div>
     </div>`;
 
