@@ -1042,6 +1042,24 @@
 .gp-scoreboard[open] > summary::before {
   transform: rotate(90deg);
 }
+/* Desktop: Coverage Scoreboard is an always-open thin bar (not collapsible) */
+body:not(.is-mobile-screen) .gp-scoreboard > summary {
+  pointer-events: none;
+  padding-bottom: 0;
+}
+body:not(.is-mobile-screen) .gp-scoreboard > summary::before {
+  display: none;
+}
+body:not(.is-mobile-screen) .gp-score-grid {
+  padding: var(--space-xs) var(--space-md) var(--space-sm);
+}
+body:not(.is-mobile-screen) .gp-score-tile {
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-xs);
+  padding: 3px var(--space-sm);
+}
 .gp-score-hint {
   font-weight: 400;
   font-size: var(--font-size-xs);

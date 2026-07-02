@@ -370,29 +370,32 @@ function _runPageActionsCommand(key, verb) {
 }
 
 // ── Play library (📚 Library button) ────────────────────────────────────────
-// Reveals the active page's browsable play library so plays can be added.
-// Script / Wristband / Game Plan each have a library pane; other pages don't.
+// Toggles the active page's play library pane so it can be closed for more room
+// and reopened to add plays. Script / Wristband / Game Plan each have a pane.
 function openPlayLibrary() {
   const key = getActivePageActionsKey();
+  const isMobile = document.body?.classList.contains("is-mobile-screen");
   if (key === "script") {
-    if (
-      typeof scriptPlayRailCollapsed !== "undefined" &&
-      scriptPlayRailCollapsed &&
-      typeof toggleScriptPlayRail === "function"
-    ) {
-      toggleScriptPlayRail();
-    }
-    _paRevealLibrary("#scriptPlayRail");
+    // The script play rail already toggles collapse/expand.
+    if (typeof toggleScriptPlayRail === "function") toggleScriptPlayRail();
   } else if (key === "wristband") {
-    if (typeof setWristbandMobileView === "function") {
+    if (isMobile && typeof setWristbandMobileView === "function") {
       setWristbandMobileView("library");
+    } else {
+      _paToggleLibraryPane("wristband", "wb-library-collapsed", ".wristband-plays");
     }
-    _paRevealLibrary(".wristband-plays");
   } else if (key === "gameplan") {
-    _paRevealLibrary(".gp-library");
+    _paToggleLibraryPane("gameplan", "gp-library-collapsed", ".gp-library");
   } else if (typeof showToast === "function") {
     showToast("No play library on this page.");
   }
+}
+
+function _paToggleLibraryPane(panelId, collapsedClass, revealSelector) {
+  const panel = document.getElementById(panelId);
+  if (!panel) return;
+  panel.classList.toggle(collapsedClass);
+  if (!panel.classList.contains(collapsedClass)) _paRevealLibrary(revealSelector);
 }
 
 function _paRevealLibrary(selector) {

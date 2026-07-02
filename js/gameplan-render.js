@@ -1095,6 +1095,10 @@ function _gpRenderScoreboard(board, draftedPlays) {
     ? draftedPlays
     : _gpAllDraftedPlays(board);
   const spot = _gpFilters.spotlight;
+  // Desktop: keep the scoreboard open as a thin, always-visible bar.
+  const scoreboardOpen = document.body?.classList.contains("is-mobile-screen")
+    ? ""
+    : " open";
   const tiles = GP_COVERAGE_SCENARIOS.map((s) => {
     const count = drafted.filter(s.match).length;
     let status = "ok";
@@ -1111,13 +1115,13 @@ function _gpRenderScoreboard(board, draftedPlays) {
   }).join("");
   if (drafted.length === 0) {
     return `
-      <details class="gp-scoreboard">
+      <details class="gp-scoreboard"${scoreboardOpen}>
         <summary>📋 Coverage Scoreboard <span class="gp-score-hint">draft plays to populate</span></summary>
         <div class="gp-score-grid">${tiles}</div>
       </details>`;
   }
   return `
-    <details class="gp-scoreboard">
+    <details class="gp-scoreboard"${scoreboardOpen}>
       <summary>📋 Coverage Scoreboard <span class="gp-score-hint">click a tile to spotlight matching buckets &amp; plays</span></summary>
       <div class="gp-score-grid">${tiles}</div>
     </details>`;
