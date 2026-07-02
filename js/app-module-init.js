@@ -43,15 +43,31 @@ function initAllModules() {
 
       updateTabBadges();
 
-      // Push any locally-stored play images to R2 so players can access them.
-      // Runs once per session, coach/admin only, fire-and-forget.
+      // For coach/admin: if this device has local play images, prompt to sync.
+      // Gives a visible, actionable toast instead of a silent background push.
       if (
         typeof canEditUser === "function" &&
         canEditUser() &&
         window.playImages &&
-        typeof window.playImages.syncToRemote === "function"
+        typeof window.playImages.loadKeys === "function"
       ) {
-        window.playImages.syncToRemote(plays).catch(() => {});
+        window.playImages.loadKeys().then((keys) => {
+          if (!keys.length) return;
+          if (typeof showToast === "function") {
+            showToast(
+              `${keys.length} play diagram${keys.length === 1 ? "" : "s"} found on this device — sync so players can view them`,
+              {
+                duration: 15000,
+                actionLabel: "Sync Now",
+                action: () => {
+                  if (typeof syncPlayImagesToCloud === "function") {
+                    syncPlayImagesToCloud();
+                  }
+                },
+              },
+            );
+          }
+        }).catch(() => {});
       }
     },
     { timeout: 2000 },

@@ -810,34 +810,43 @@
     return deleteForPlay(play);
   };
 
-  // Coach-triggered manual sync — pushes all local images to R2 with feedback.
+  // Coach-triggered manual sync — pushes all local images to R2 with progress modal.
   window.syncPlayImagesToCloud = async function () {
     if (!_remoteAvailable()) {
-      if (typeof showToast === "function") {
-        showToast("Cloud sync is not available in this environment.", { type: "error", duration: 3000 });
+      if (typeof showModal === "function") {
+        showModal("Cloud sync is not available. Make sure you are on bcoffense.com (not a file:// URL).", { title: "Sync Diagrams", icon: "⚠️" });
       }
       return;
     }
     const allKeys = await loadKeys();
     // eslint-disable-next-line no-console
-    console.log("[Diagrams] IndexedDB keys found:", allKeys.length, allKeys);
+    console.log("[Diagrams] Keys on this device:", allKeys.length, allKeys);
     if (!allKeys.length) {
-      if (typeof showToast === "function") {
-        showToast("No play diagrams found on THIS device. Open the app on the device where you uploaded images, then sync from there.", { duration: 6000 });
+      if (typeof showModal === "function") {
+        showModal(
+          "No play diagrams were found on this device.\n\nImages are stored per-device in your browser. Open the app on the computer or device where you originally uploaded your play diagrams, then press Sync Diagrams from there.",
+          { title: "No Diagrams Found", icon: "ℹ️" },
+        );
       }
       return;
     }
     if (typeof showToast === "function") {
-      showToast(`Found ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} — syncing to cloud…`, { duration: 60000 });
+      showToast(`Syncing ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} to cloud…`, { duration: 60000 });
     }
     const count = await syncToRemote(typeof plays !== "undefined" ? plays : []);
     // eslint-disable-next-line no-console
     console.log("[Diagrams] Pushed to R2:", count, "of", allKeys.length);
-    if (typeof showToast === "function") {
+    if (typeof showModal === "function") {
       if (count > 0) {
-        showToast(`${count} of ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} synced — players can now view them.`, { type: "success", duration: 4000 });
+        showModal(
+          `${count} of ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} synced to cloud.\n\nPlayers can now see play diagrams in the swipe view. Have them reload the app if they are already in a session.`,
+          { title: "Sync Complete ✓", icon: "🖼️" },
+        );
       } else {
-        showToast(`Found ${allKeys.length} local diagram${allKeys.length === 1 ? "" : "s"} but 0 pushed. Check console for details.`, { type: "error", duration: 5000 });
+        showModal(
+          `Found ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} locally but 0 were pushed to R2.\n\nCheck the browser console (F12) for error details. The images may have already been synced, or there may be a network issue.`,
+          { title: "Sync Issue", icon: "⚠️" },
+        );
       }
     }
   };
