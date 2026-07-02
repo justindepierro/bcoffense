@@ -683,12 +683,33 @@ function togglePlaybookGamePlan(filteredIdx) {
     return;
   }
   const nowTagged = togglePlayGamePlanTag(play, gw.opponentName);
-  showToast(
-    nowTagged
-      ? `🎯 Added to game plan vs ${gw.opponentName}`
-      : `Removed from game plan`,
-    { duration: 1500, type: nowTagged ? "success" : undefined },
-  );
+  if (nowTagged) {
+    // Drop the play straight into the Game Plan "Holding" bucket so it is ready
+    // to sort on the Game Plan board — no separate "send to game plan" step.
+    if (typeof _gpAddSigsToBox === "function" && typeof _gpPlaySignature === "function"
+      && typeof GP_HOLDING_ID !== "undefined") {
+      _gpAddSigsToBox([_gpPlaySignature(play)], GP_HOLDING_ID);
+    } else {
+      showToast(`🎯 Added to game plan vs ${gw.opponentName}`, {
+        duration: 1500,
+        type: "success",
+      });
+    }
+  } else {
+    // Untag → pull the play out of every box on the active board.
+    if (typeof _gpUpdateBoard === "function" && typeof _gpPlaySignature === "function") {
+      const sig = _gpPlaySignature(play);
+      _gpUpdateBoard((board) => {
+        Object.keys(board.assignments || {}).forEach((boxId) => {
+          board.assignments[boxId] = (board.assignments[boxId] || []).filter(
+            (p) => _gpPlaySignature(p) !== sig,
+          );
+        });
+      });
+      if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+    }
+    showToast(`Removed from game plan`, { duration: 1500 });
+  }
   renderPlaybook();
 }
 

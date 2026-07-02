@@ -480,7 +480,11 @@ body[data-auth-role="player"] .tab.active {
   min-height: 0;
   flex-direction: column;
   animation: panelFadeIn 0.25s ease both;
-  will-change: opacity, transform;
+  /* NOTE: do NOT add `will-change: transform` or leave a lingering transform
+     on the settled panel — either one turns .panel.active into the containing
+     block for `position: fixed` descendants, which traps anchored dropdown
+     menus (they anchor to the panel, ~230px too low, instead of the viewport). */
+  will-change: opacity;
 }
 
 /* Desktop shell: header + tabs pinned to the top, each panel owns its own
@@ -554,7 +558,9 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
   }
   to {
     opacity: 1;
-    transform: translateY(0);
+    /* `none` (not translateY(0)) so the settled panel is NOT a containing
+       block for position:fixed anchored menus. */
+    transform: none;
   }
 }
 
