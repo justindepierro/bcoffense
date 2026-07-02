@@ -16,6 +16,7 @@ This checklist converts the mobile audit into work items we can execute and veri
 - For phone staff workflows, design for sideline use rather than compressing the desktop editor.
 - Every completed item needs at least one static check, smoke-check assertion, or viewport/browser verification.
 - When full smoke remains red for unrelated contracts, record the local verification separately.
+- Use `./scripts/static-ui-audit.sh` for safe static scans before reaching for browser automation. It is bash + `rg` only, exits quickly, and does not start Node, Playwright, a server, or a watcher. Strict findings fail by default; review findings are intentionally broad inspection leads. Add `--warn-only` while triaging noisy output.
 
 ---
 

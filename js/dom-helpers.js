@@ -379,7 +379,7 @@ function showReorderModal(values, opts) {
       <div class="modal-content modal-content-xs">
         <div class="modal-header-row">
           <h3 class="modal-title">${opts.title || "Custom Order"}</h3>
-          <button data-action="_reorderClose" class="modal-close-btn">✕</button>
+          <button data-action="_reorderClose" class="modal-close-btn" aria-label="Close reorder modal">✕</button>
         </div>
         <div class="modal-body">
           <p class="modal-copy-note">

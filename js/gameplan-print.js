@@ -204,10 +204,10 @@ async function openGamePlanPrintModal() {
     const overlay = document.createElement("div");
     overlay.className = "custom-modal-overlay";
     overlay.innerHTML = `
-      <div class="custom-modal" role="dialog" aria-modal="true">
+      <div class="custom-modal" role="dialog" aria-modal="true" aria-labelledby="gpPrintTitle">
         <div class="custom-modal-header">
           <span class="custom-modal-icon">🖨️</span>
-          <h3 class="custom-modal-title">Print Game Plan Board</h3>
+          <h3 class="custom-modal-title" id="gpPrintTitle">Print Game Plan Board</h3>
         </div>
         <div class="custom-modal-body">
           <div class="gp-print-form">
