@@ -66,7 +66,7 @@ obvious front door.
 - Toggling a display option fires a short toast ("Wristband: showing personnel").
 - Fixes "sometimes I don't know when I'm changing display options."
 
-### Phase 4 — Consolidate + declutter ✅ first pass shipped (SW v859)
+### Phase 4 — Consolidate + declutter ✅ shipped (SW v860)
 
 - Once the hub proves itself, retire duplicate scattered buttons and thin the
   `⋯ More` menus (their contents now live in Load/Save/Print/Display + More).
