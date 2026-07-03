@@ -1419,6 +1419,12 @@ function checkPlayerPortalContracts() {
     !/body:not\(\.is-mobile-screen\) #script \.script-container[\s\S]*min-height:\s*0[\s\S]*overflow-y:\s*auto/.test(
       scriptCss,
     ) ||
+    !/html:not\(\.is-mobile-screen\)[\s\S]*overflow:\s*hidden/.test(layoutCss) ||
+    !/function repairDesktopDocumentScroll\(reason = "scroll"\)/.test(appShell) ||
+    !/window\.addEventListener\("scroll", \(\) => queueDesktopDocumentScrollRepair\("window scroll"\)/.test(
+      appShell,
+    ) ||
+    !/window\.bcDebugShellScroll = function bcDebugShellScroll/.test(appShell) ||
     !/\.script-workbench-control-block/.test(scriptCss) ||
     !/\.page-header-surface[\s\S]*display:\s*grid/.test(componentsCss) ||
     !/\.app-workspace-pane[\s\S]*display:\s*flex[\s\S]*flex-direction:\s*column/.test(componentsCss) ||

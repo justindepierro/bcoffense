@@ -491,6 +491,11 @@ body[data-auth-role="player"] .tab.active {
    its children instead of the tab bar floating away from the header.
    Below 821px the mobile shell in responsive.css scrolls the body instead. */
 @media (min-width: 821px) {
+  html:not(.is-mobile-screen) {
+    height: 100%;
+    overflow: hidden;
+    overscroll-behavior: none;
+  }
   body.app-ready:not(.is-mobile-screen) {
     display: flex;
     flex-direction: column;
@@ -498,6 +503,7 @@ body[data-auth-role="player"] .tab.active {
     height: calc(var(--app-vh, 1vh) * 100);
     min-height: 0;
     overflow: hidden;
+    overscroll-behavior: none;
   }
   body.app-ready:not(.is-mobile-screen) #mainApp .tabs {
     position: relative;

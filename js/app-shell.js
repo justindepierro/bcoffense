@@ -46,6 +46,7 @@ let _mobileShellScrollTimer = 0;
 let _mobileShellLastStateKey = "";
 let _mobileShellResizeObserver = null;
 let _mobileOverflowTraceTimer = 0;
+let _desktopShellScrollRepairFrame = 0;
 const APP_DISPLAY_MODE_MEDIA_QUERIES = [
   "(display-mode: standalone)",
   "(display-mode: fullscreen)",
@@ -75,6 +76,139 @@ function setMobileShellCssVar(root, name, value) {
 function removeMobileShellCssVar(root, name) {
   if (!root.style.getPropertyValue(name)) return;
   root.style.removeProperty(name);
+}
+
+function isDesktopShellPanelScrollOwner() {
+  const body = document.body;
+  if (!body) return false;
+  return (
+    body.classList.contains("app-ready") &&
+    !body.classList.contains("is-mobile-screen") &&
+    !body.classList.contains("app-layer-locked") &&
+    body.dataset.scrollOwner === "panel"
+  );
+}
+
+function getDocumentScrollPosition() {
+  const doc = document.documentElement;
+  const body = document.body;
+  return {
+    x: Math.round(window.scrollX || doc?.scrollLeft || body?.scrollLeft || 0),
+    y: Math.round(window.scrollY || doc?.scrollTop || body?.scrollTop || 0),
+    docTop: Math.round(doc?.scrollTop || 0),
+    bodyTop: Math.round(body?.scrollTop || 0),
+  };
+}
+
+function getShellElementSnapshot(selector) {
+  const element = document.querySelector(selector);
+  if (!element) return null;
+  const rect = element.getBoundingClientRect();
+  const style = getComputedStyle(element);
+  return {
+    selector,
+    display: style.display,
+    position: style.position,
+    overflowY: style.overflowY,
+    top: Math.round(rect.top),
+    bottom: Math.round(rect.bottom),
+    height: Math.round(rect.height),
+    scrollTop: element.scrollTop || 0,
+    scrollHeight: element.scrollHeight || 0,
+    clientHeight: element.clientHeight || 0,
+  };
+}
+
+function getDesktopShellScrollSnapshot(extra = {}) {
+  const activePanel = document.querySelector("#mainApp .panel.active");
+  return {
+    timestamp: new Date().toISOString(),
+    activeTab: document.body?.dataset.activeTab || "",
+    scrollOwner: document.body?.dataset.scrollOwner || "",
+    documentScroll: getDocumentScrollPosition(),
+    header: getShellElementSnapshot(".app-header"),
+    tabs: getShellElementSnapshot("#mainApp .tabs"),
+    gameWeekBar: getShellElementSnapshot("#gameWeekBar"),
+    mainApp: getShellElementSnapshot("#mainApp"),
+    activePanel: activePanel ? getShellElementSnapshot(`#${activePanel.id}`) : null,
+    gamePlanBoardScroll: getShellElementSnapshot("#gameplan .gp-board-scroll"),
+    ...extra,
+  };
+}
+
+function isDesktopShellScrollTraceEnabled() {
+  try {
+    return (
+      window.BC_SHELL_SCROLL_TRACE === true ||
+      window.BC_ACTION_TRACE === true ||
+      localStorage.getItem("bcShellScrollTrace") === "1" ||
+      localStorage.getItem("bcActionTrace") === "1"
+    );
+  } catch (_err) {
+    return window.BC_SHELL_SCROLL_TRACE === true || window.BC_ACTION_TRACE === true;
+  }
+}
+
+function traceDesktopShellScrollRepair(reason, snapshot) {
+  if (isDesktopShellScrollTraceEnabled()) {
+    console.warn("[BC shell scroll repair]", reason, snapshot);
+  }
+  if (typeof traceAppAction === "function") {
+    traceAppAction("desktop shell scroll repair", {
+      phaseAction: "repairDesktopDocumentScroll",
+      reason,
+      ...snapshot,
+    }, {}, "warn");
+  }
+}
+
+function repairDesktopDocumentScroll(reason = "scroll") {
+  if (!isDesktopShellPanelScrollOwner()) return false;
+  const before = getDocumentScrollPosition();
+  if (before.x === 0 && before.y === 0 && before.docTop === 0 && before.bodyTop === 0) {
+    return false;
+  }
+  const snapshot = getDesktopShellScrollSnapshot({ reason, before });
+  if (document.documentElement) {
+    document.documentElement.scrollTop = 0;
+    document.documentElement.scrollLeft = 0;
+  }
+  if (document.body) {
+    document.body.scrollTop = 0;
+    document.body.scrollLeft = 0;
+  }
+  window.scrollTo(0, 0);
+  snapshot.after = getDocumentScrollPosition();
+  traceDesktopShellScrollRepair(reason, snapshot);
+  return true;
+}
+
+function queueDesktopDocumentScrollRepair(reason = "scroll") {
+  if (_desktopShellScrollRepairFrame) return;
+  _desktopShellScrollRepairFrame = requestAnimationFrame(() => {
+    _desktopShellScrollRepairFrame = 0;
+    repairDesktopDocumentScroll(reason);
+  });
+}
+
+if (typeof window !== "undefined") {
+  window.bcDebugShellScroll = function bcDebugShellScroll() {
+    const snapshot = getDesktopShellScrollSnapshot({ manual: true });
+    console.info("[BC shell scroll]", snapshot);
+    return snapshot;
+  };
+  window.bcRepairShellScroll = function bcRepairShellScroll() {
+    return repairDesktopDocumentScroll("manual");
+  };
+  window.bcEnableShellScrollTrace = function bcEnableShellScrollTrace() {
+    try {
+      localStorage.setItem("bcShellScrollTrace", "1");
+    } catch (_err) {
+      window.BC_SHELL_SCROLL_TRACE = true;
+    }
+    window.BC_SHELL_SCROLL_TRACE = true;
+    return window.bcDebugShellScroll();
+  };
 }
 
 function isMobileOverflowTraceEnabled() {
@@ -330,6 +464,9 @@ function syncMobileShellState() {
     : isMobile
       ? "document"
       : "panel";
+  if (body.dataset.scrollOwner === "panel") {
+    queueDesktopDocumentScrollRepair("shell sync");
+  }
   const isStaffPhoneScript =
     shellPhone &&
     isMobile &&
@@ -402,6 +539,10 @@ document.addEventListener("DOMContentLoaded", () => {
 });
 window.addEventListener("load", queueMobileShellMeasuredSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
+window.addEventListener("scroll", () => queueDesktopDocumentScrollRepair("window scroll"), {
+  passive: true,
+  capture: true,
+});
 window.visualViewport?.addEventListener("resize", queueMobileShellStateSync, {
   passive: true,
 });
