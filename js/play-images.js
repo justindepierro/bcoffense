@@ -391,6 +391,45 @@
     return getPlayIdentityKey(play, "tag") || "";
   }
 
+  async function _remoteErrorMessage(res, fallback) {
+    let detail = "";
+    try {
+      const data = await res.clone().json();
+      detail = data && data.error ? data.error : "";
+    } catch (_e) {
+      try {
+        detail = await res.clone().text();
+      } catch (_err) {
+        detail = "";
+      }
+    }
+    return detail || fallback || `HTTP ${res.status}`;
+  }
+
+  async function _putRemoteImage(identityKey, blob) {
+    const response = await fetch(
+      `/images/file?sig=${encodeURIComponent(identityKey)}`,
+      {
+        method: "PUT",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "X-BC-Auth-Mode": "json",
+          "Content-Type": blob.type || "image/jpeg",
+        },
+        body: blob,
+      },
+    );
+    if (!response.ok) {
+      return {
+        ok: false,
+        status: response.status,
+        error: await _remoteErrorMessage(response, "Play diagram upload failed."),
+      };
+    }
+    return { ok: true, status: response.status };
+  }
+
   async function _fetchRemoteForPlay(play) {
     if (!_remoteAvailable()) return null;
     const identityKey = _remoteIdentityKey(play);
@@ -411,17 +450,23 @@
   }
 
   async function pushRemote(play, blob) {
-    if (!_remoteAvailable() || !play || !blob) return;
+    if (!_remoteAvailable()) {
+      return { ok: false, skipped: true, error: "Cloud image sync is not available on this page." };
+    }
+    if (!play || !blob) {
+      return { ok: false, skipped: true, error: "Missing play or image data." };
+    }
     const identityKey = _remoteIdentityKey(play);
-    if (!identityKey) return;
+    if (!identityKey) {
+      return { ok: false, skipped: true, error: "This play does not have a stable cloud image key." };
+    }
     try {
-      await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
-        method: "PUT",
-        headers: { "Content-Type": blob.type || "image/jpeg" },
-        body: blob,
-      });
-    } catch (_e) {
-      // Fire and forget — remote push failure does not affect local storage
+      return await _putRemoteImage(identityKey, blob);
+    } catch (err) {
+      return {
+        ok: false,
+        error: err && err.message ? err.message : "Network error while uploading play diagram.",
+      };
     }
   }
 
@@ -432,6 +477,11 @@
     try {
       await fetch(`/images/file?sig=${encodeURIComponent(identityKey)}`, {
         method: "DELETE",
+        credentials: "same-origin",
+        headers: {
+          Accept: "application/json",
+          "X-BC-Auth-Mode": "json",
+        },
       });
     } catch (_e) {
       // Fire and forget
@@ -441,14 +491,26 @@
 
   // Sync all locally-stored images to R2 for cross-device access.
   // Iterates ALL IndexedDB keys directly — does not rely on play matching.
-  // Returns the number of images successfully pushed.
+  // Returns a detailed result so upload/auth/R2 errors are visible to coaches.
   let _remoteSyncDone = false;
   async function syncToRemote(playsArray) {
-    if (!_remoteAvailable()) return 0;
+    const result = {
+      total: 0,
+      attempted: 0,
+      pushed: 0,
+      skipped: 0,
+      failed: 0,
+      errors: [],
+    };
+    if (!_remoteAvailable()) {
+      result.errors.push({ error: "Cloud image sync is not available on this page." });
+      return result;
+    }
     _remoteSyncDone = true;
 
     const allKeys = await loadKeys();
-    if (!allKeys.length) return 0;
+    result.total = allKeys.length;
+    if (!allKeys.length) return result;
 
     // Build a reverse map: localSig → identity key for R2
     // An identity key contains "|" (field separator). UUID-style keys don't.
@@ -471,27 +533,49 @@
       return "";
     };
 
-    let pushed = 0;
     await _withConcurrency(allKeys, 2, async (localSig) => {
       try {
         const identityKey = identityKeyFor(localSig);
-        if (!identityKey) return;
+        if (!identityKey) {
+          result.skipped += 1;
+          if (result.errors.length < 5) {
+            result.errors.push({ sig: localSig, error: "No matching play was found for this local diagram." });
+          }
+          return;
+        }
         const blob = await get(localSig);
-        if (!blob) return;
-        const res = await fetch(
-          `/images/file?sig=${encodeURIComponent(identityKey)}`,
-          {
-            method: "PUT",
-            headers: { "Content-Type": blob.type || "image/jpeg" },
-            body: blob,
-          },
-        );
-        if (res.ok) pushed += 1;
-      } catch (_e) {
-        // Continue — individual failures don't abort the batch
+        if (!blob) {
+          result.skipped += 1;
+          if (result.errors.length < 5) {
+            result.errors.push({ sig: localSig, error: "The local diagram blob could not be read." });
+          }
+          return;
+        }
+        result.attempted += 1;
+        const uploaded = await _putRemoteImage(identityKey, blob);
+        if (uploaded.ok) {
+          result.pushed += 1;
+        } else {
+          result.failed += 1;
+          if (result.errors.length < 5) {
+            result.errors.push({
+              sig: localSig,
+              status: uploaded.status || 0,
+              error: uploaded.error || "Upload failed.",
+            });
+          }
+        }
+      } catch (err) {
+        result.failed += 1;
+        if (result.errors.length < 5) {
+          result.errors.push({
+            sig: localSig,
+            error: err && err.message ? err.message : "Network error while uploading diagram.",
+          });
+        }
       }
     });
-    return pushed;
+    return result;
   }
 
   async function ensureUrlForPlay(play) {
@@ -833,18 +917,29 @@
     if (typeof showToast === "function") {
       showToast(`Syncing ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} to cloud…`, { duration: 60000 });
     }
-    const count = await syncToRemote(typeof plays !== "undefined" ? plays : []);
+    const result = await syncToRemote(typeof plays !== "undefined" ? plays : []);
     // eslint-disable-next-line no-console
-    console.log("[Diagrams] Pushed to R2:", count, "of", allKeys.length);
+    console.log("[Diagrams] R2 sync result:", result);
     if (typeof showModal === "function") {
-      if (count > 0) {
+      if (result.pushed > 0 && result.failed === 0 && result.skipped === 0) {
         showModal(
-          `${count} of ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} synced to cloud.\n\nPlayers can now see play diagrams in the swipe view. Have them reload the app if they are already in a session.`,
+          `${result.pushed} of ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} synced to cloud.\n\nPlayers can now see play diagrams in the swipe view. Have them reload the app if they are already in a session.`,
           { title: "Sync Complete ✓", icon: "🖼️" },
         );
-      } else {
+      } else if (result.pushed > 0) {
+        const details = result.errors
+          .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
+          .join("\n");
         showModal(
-          `Found ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} locally but 0 were pushed to R2.\n\nCheck the browser console (F12) for error details. The images may have already been synced, or there may be a network issue.`,
+          `${result.pushed} of ${allKeys.length} diagrams synced.\n\n${result.failed} failed and ${result.skipped} were skipped.${details ? `\n\nFirst issues:\n${details}` : ""}`,
+          { title: "Sync Partially Complete", icon: "⚠️" },
+        );
+      } else {
+        const details = result.errors
+          .map((item) => `- ${item.status ? `${item.status}: ` : ""}${item.error}`)
+          .join("\n");
+        showModal(
+          `Found ${allKeys.length} diagram${allKeys.length === 1 ? "" : "s"} locally but 0 were pushed to cloud.${details ? `\n\nFirst issues:\n${details}` : ""}`,
           { title: "Sync Issue", icon: "⚠️" },
         );
       }

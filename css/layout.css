@@ -480,10 +480,9 @@ body[data-auth-role="player"] .tab.active {
   min-height: 0;
   flex-direction: column;
   animation: panelFadeIn 0.25s ease both;
-  /* NOTE: do NOT add `will-change: transform` or leave a lingering transform
-     on the settled panel — either one turns .panel.active into the containing
-     block for `position: fixed` descendants, which traps anchored dropdown
-     menus (they anchor to the panel, ~230px too low, instead of the viewport). */
+  /* NOTE: keep panel animations opacity-only. Any transform, including an
+     identity matrix from animation fill, turns .panel.active into the containing
+     block for `position: fixed` descendants and traps anchored dropdown menus. */
   will-change: opacity;
 }
 
@@ -554,13 +553,9 @@ body.app-ready:not(.is-mobile-screen) #script.panel {
 @keyframes panelFadeIn {
   from {
     opacity: 0;
-    transform: translateY(6px);
   }
   to {
     opacity: 1;
-    /* `none` (not translateY(0)) so the settled panel is NOT a containing
-       block for position:fixed anchored menus. */
-    transform: none;
   }
 }
 

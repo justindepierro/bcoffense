@@ -366,7 +366,16 @@
       // Fire and forget — runs in background after the backup confirms success.
       if (window.playImages && typeof window.playImages.syncToRemote === "function") {
         const _playsRef = typeof plays !== "undefined" ? plays : [];
-        window.playImages.syncToRemote(_playsRef).catch(() => { });
+        window.playImages
+          .syncToRemote(_playsRef)
+          .then((result) => {
+            if (result && (result.failed || result.skipped)) {
+              console.warn("Cloud backup completed, but diagram sync had issues:", result);
+            }
+          })
+          .catch((err) => {
+            console.warn("Cloud backup completed, but diagram sync failed:", err);
+          });
       }
       return { backup, summary, size: payloadSize, updatedAt: data.updatedAt || "" };
     } finally {

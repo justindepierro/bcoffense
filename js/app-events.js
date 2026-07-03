@@ -22,8 +22,15 @@ function _closeAllOpenMenus(exceptWrap) {
   });
 }
 
+function _getMenuWrapFromEventTarget(target) {
+  const wrap = target.closest(".tool-menu-wrap, .more-tools-wrap");
+  if (wrap) return wrap;
+  const portaledMenu = target.closest(".tool-menu, .more-tools-menu");
+  return portaledMenu?._anchoredWrap || null;
+}
+
 document.addEventListener("click", (e) => {
-  const insideWrap = e.target.closest(".tool-menu-wrap, .more-tools-wrap");
+  const insideWrap = _getMenuWrapFromEventTarget(e.target);
   if (!insideWrap) {
     // Clicked outside all menus — close everything
     _closeAllOpenMenus(null);

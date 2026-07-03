@@ -744,6 +744,15 @@ function checkPlayPresentationContracts() {
     fail("presentation-grade play image optimization contracts are incomplete");
   }
   if (
+    !/async function _putRemoteImage\(identityKey, blob\)/.test(playImages) ||
+    !/"X-BC-Auth-Mode": "json"/.test(playImages) ||
+    !/credentials: "same-origin"/.test(playImages) ||
+    !/const result = \{[\s\S]*pushed: 0,[\s\S]*failed: 0,[\s\S]*errors: \[\]/.test(playImages) ||
+    !/cloud upload failed/.test(playbookEditor)
+  ) {
+    fail("play diagram cloud sync diagnostics are incomplete");
+  }
+  if (
     !/positionLocked:\s*false/.test(presenter) ||
     !/function togglePlayPresentationPositionLock\(\)/.test(presenter) ||
     !/function syncPlayPresentationPlayerPosition\(item\)/.test(presenter) ||
@@ -1578,6 +1587,7 @@ function checkAnchoredMenuContract() {
   const html = read("index.html");
   const anchored = read("js/anchored-menu.js");
   const appEvents = read("js/app-events.js");
+  const layoutCss = read("css/layout.css");
   const sw = read("sw.js");
 
   if (
@@ -1598,6 +1608,23 @@ function checkAnchoredMenuContract() {
 
   if (!/positionAnchoredMenu\(/.test(appEvents)) {
     fail("app-events.js does not invoke positionAnchoredMenu on open");
+  }
+
+  if (
+    !/document\.body\.appendChild\(menu\)/.test(anchored) ||
+    !/_anchoredWrap/.test(anchored) ||
+    !/_getMenuWrapFromEventTarget/.test(appEvents)
+  ) {
+    fail("anchored menus are not portaled through body-aware event routing");
+  }
+
+  const panelFadeInStart = layoutCss.indexOf("@keyframes panelFadeIn");
+  const panelFadeInBlock =
+    panelFadeInStart >= 0
+      ? layoutCss.slice(panelFadeInStart, layoutCss.indexOf("/* Filters */", panelFadeInStart))
+      : "";
+  if (!panelFadeInBlock || /transform\s*:/.test(panelFadeInBlock)) {
+    fail("panelFadeIn must stay opacity-only so fixed anchored menus are not trapped by panels");
   }
 
   // Both migrated menus must opt in.

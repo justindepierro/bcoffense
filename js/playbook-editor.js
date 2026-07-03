@@ -795,9 +795,9 @@ function _wirePlayEditorImage(play, isNew) {
         quality: 0.92,
       });
       await window.playImages.set(sig, blob);
-      // Push to R2 for cross-device sharing (fire and forget)
+      let cloudResult = null;
       if (window.playImages.pushRemote) {
-        window.playImages.pushRemote(play, blob).catch(() => { });
+        cloudResult = await window.playImages.pushRemote(play, blob);
       }
       await _refreshPreview();
       clearImageBusy();
@@ -808,9 +808,20 @@ function _wirePlayEditorImage(play, isNew) {
       const suffix = summary
         ? `${summary.dimensions ? `${summary.dimensions} • ` : ""}${summary.outputFormatted}${summary.savedPct ? `, ${summary.savedPct}% smaller` : ""}`
         : `${Math.round(blob.size / 1024)} KB`;
-      showToast(`Image added (${suffix})`, {
-        duration: 2200, type: "success",
-      });
+      if (cloudResult && cloudResult.ok === false && !cloudResult.skipped) {
+        showToast(
+          `Image saved locally, but cloud upload failed: ${cloudResult.error || "Unknown error"}`,
+          { duration: 7000, type: "warning" },
+        );
+      } else if (cloudResult && cloudResult.ok) {
+        showToast(`Image added and synced (${suffix})`, {
+          duration: 2600, type: "success",
+        });
+      } else {
+        showToast(`Image added (${suffix})`, {
+          duration: 2200, type: "success",
+        });
+      }
       requestPlaybookRefresh();
     } catch (err) {
       // eslint-disable-next-line no-console

@@ -41,12 +41,29 @@
     return { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
   }
 
+  function _getMenu(wrap) {
+    return wrap?._anchoredMenu || wrap?.querySelector(".tool-menu, .more-tools-menu") || null;
+  }
+
+  function _portalMenu(wrap, menu) {
+    if (!wrap || !menu || menu.parentElement === document.body) return;
+    wrap._anchoredMenu = menu;
+    menu._anchoredWrap = wrap;
+    menu._anchoredHome = wrap;
+    document.body.appendChild(menu);
+  }
+
+  function _restoreMenu(wrap, menu) {
+    if (!wrap || !menu || menu.parentElement === wrap) return;
+    wrap.appendChild(menu);
+  }
+
   // ── #194 — ARIA menu semantics ───────────────────────────────────
   function _applyAriaSemantics(wrap) {
     if (wrap._ariaApplied) return;
     wrap._ariaApplied = true;
-    const menu = wrap.querySelector(".tool-menu");
-    if (menu && !menu.hasAttribute("role")) menu.setAttribute("role", "menu");
+    const menu = _getMenu(wrap);
+    if (menu) menu.setAttribute("role", "menu");
     if (menu) {
       menu.querySelectorAll(":scope > button, :scope > a").forEach((item) => {
         if (!item.hasAttribute("role")) item.setAttribute("role", "menuitem");
@@ -83,12 +100,14 @@
   function positionAnchoredMenu(wrap) {
     if (!wrap) return;
     const trigger = wrap.querySelector("[data-action='toggleParentOpen']");
-    const menu = wrap.querySelector(".tool-menu, .more-tools-menu");
+    const menu = _getMenu(wrap);
     if (!trigger || !menu) return;
 
     _applyAriaSemantics(wrap);
+    _portalMenu(wrap, menu);
 
     // Reset positioning so the menu measures at its natural size.
+    menu.style.display = "block";
     menu.style.position = "fixed";
     menu.style.top = "0px";
     menu.style.left = "0px";
@@ -153,8 +172,10 @@
 
   function resetAnchoredMenu(wrap) {
     if (!wrap) return;
-    const menu = wrap.querySelector(".tool-menu");
+    const menu = _getMenu(wrap);
     if (!menu) return;
+    _restoreMenu(wrap, menu);
+    menu.style.display = "";
     menu.style.position = "";
     menu.style.top = "";
     menu.style.left = "";
@@ -190,7 +211,7 @@
   document.addEventListener("keydown", (e) => {
     const openWrap = document.querySelector(".tool-menu-wrap[data-anchored].open, .more-tools-wrap[data-anchored].open");
     if (!openWrap) return;
-    const menu = openWrap.querySelector(".tool-menu, .more-tools-menu");
+    const menu = _getMenu(openWrap);
     if (!menu) return;
 
     // Don't intercept if typing in a field inside the menu
