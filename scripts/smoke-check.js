@@ -1351,6 +1351,10 @@ function checkPlayerPortalContracts() {
     !/\(pointer: coarse\) and \(max-width: 820px\)/.test(responsiveCss) ||
     !/body\[data-auth-role="player"\] #playbook\.panel/.test(layoutCss) ||
     !/\.auth-login-overlay/.test(componentsCss) ||
+    !/function removeLoginOverlayIfAuthenticated\(\)/.test(auth) ||
+    !/removeLoginOverlayIfAuthenticated\(\);[\s\S]*ensureLoginOverlayVisible\(\);/.test(auth) ||
+    !/"startClassicWristband"/.test(appEvents) ||
+    !/"startPlayerWristband"/.test(appEvents) ||
     !/body\.is-short-screen \.auth-login-overlay/.test(componentsCss) ||
     !/\.auth-login-overlay\.is-keyboard-open/.test(componentsCss) ||
     !/body\.is-short-screen \.auth-login-hero,[\s\S]*\.auth-login-overlay\.is-keyboard-open \.auth-login-hero[\s\S]*display:\s*none/.test(

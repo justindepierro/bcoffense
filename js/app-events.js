@@ -84,6 +84,8 @@ const ACTION_TRACE_ACTIONS = new Set([
   "openPlaybookPresentation",
   "openSelectedPlaybookPresentation",
   "showTab",
+  "startClassicWristband",
+  "startPlayerWristband",
 ]);
 
 function isAppActionFullTraceEnabled() {

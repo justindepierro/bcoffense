@@ -559,6 +559,7 @@
   function applyRoleUi() {
     if (!document.body) return;
     document.body.classList.toggle("auth-locked", !currentAuthUser);
+    removeLoginOverlayIfAuthenticated();
     ensureLoginOverlayVisible();
     document.body.dataset.authRole = currentAuthUser?.role || "locked";
     document.body.dataset.authCanEdit = canEditUser() ? "true" : "false";
@@ -671,6 +672,15 @@
       pendingAuthRoots.forEach((root) => applyAuthToTree(root));
       pendingAuthRoots.clear();
     });
+  }
+
+  function removeLoginOverlayIfAuthenticated() {
+    if (!currentAuthUser) return;
+    const overlay = document.getElementById("authLoginOverlay");
+    if (!overlay) return;
+    overlay.setAttribute("aria-hidden", "true");
+    overlay.inert = true;
+    overlay.remove();
   }
 
   function scheduleCloudAutoPull() {
