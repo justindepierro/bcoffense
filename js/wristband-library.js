@@ -1,5 +1,8 @@
 function initWristband() {
   try {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("init start", { action: "initWristband" });
+    }
     if (wristbandCards.length === 0) {
       wristbandCards = [{ name: "Card 1", data: Array(CELLS_PER_CARD).fill(null) }];
     }
@@ -13,7 +16,16 @@ function initWristband() {
     initSortCriteria();
     setWristbandMobileView(wbMobileView);
     updateWristbandSaveChrome();
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("init complete", { action: "initWristband" });
+    }
   } catch (err) {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("init error", {
+        action: "initWristband",
+        error: err && err.message ? err.message : String(err),
+      }, "error");
+    }
     console.error("initWristband error:", err);
     showToast("❌ Error initializing wristband.", {
       duration: 3000,

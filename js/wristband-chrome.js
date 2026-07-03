@@ -2,18 +2,38 @@
 // Extracted from wristband-export.js
 
 function checkShowWbLanding() {
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("check landing start", { action: "checkShowWbLanding" });
+  }
   if (wristbandType) {
     syncWristbandModeSurface(wristbandType);
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("check landing existing type", {
+        action: "checkShowWbLanding",
+      });
+    }
     return; // type already chosen
   }
   const isEmpty = wristbandCards.every((c) => !c.data?.some(Boolean));
   if (isEmpty) {
     showWbTypeChoice();
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("check landing show choice", {
+        action: "checkShowWbLanding",
+        isEmpty,
+      });
+    }
     return;
   }
   wristbandType = "classic";
   wbPlayerCardMode = false;
   syncWristbandModeSurface("classic");
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("check landing default classic", {
+      action: "checkShowWbLanding",
+      isEmpty,
+    });
+  }
 }
 
 function updateWristbandModeChrome(mode) {
@@ -39,6 +59,14 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   const grid = document.getElementById("wristbandGrid");
   const playerBar = document.getElementById("pcModeBar");
 
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("mode surface before", {
+      action: "syncWristbandModeSurface",
+      requestedMode: mode,
+      normalizedMode,
+    });
+  }
+
   updateWristbandModeChrome(normalizedMode);
   typeChoice?.classList.toggle("hidden", hasMode);
   toolbar?.classList.toggle("wb-toolbar-hidden", !hasMode || isPlayer);
@@ -48,9 +76,23 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   playerBar?.setAttribute("aria-hidden", isPlayer ? "false" : "true");
   grid?.classList.toggle("pc-grid-active", isPlayer);
   card?.classList.toggle("pc-card-active", isPlayer);
+
+  if (typeof traceWristbandAction === "function") {
+    const level = hasMode && card?.classList.contains("wb-hidden") ? "warn" : "info";
+    traceWristbandAction("mode surface after", {
+      action: "syncWristbandModeSurface",
+      requestedMode: mode,
+      normalizedMode,
+      hasMode,
+      isPlayer,
+    }, level);
+  }
 }
 
 function showWbTypeChoice() {
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("show type choice start", { action: "showWbTypeChoice" });
+  }
   resetActiveWristbandIdentity();
   wristbandType = "";
   // Deactivate player mode if it was on
@@ -58,17 +100,29 @@ function showWbTypeChoice() {
     wbPlayerCardMode = false;
   }
   syncWristbandModeSurface("");
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("show type choice complete", { action: "showWbTypeChoice" });
+  }
 }
 
 function startClassicWristband() {
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("classic start", { action: "startClassicWristband" });
+  }
   wristbandType = "classic";
   wbPlayerCardMode = false;
   syncWristbandModeSurface("classic");
   renderCardTabs();
   renderWristbandGrid();
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("classic complete", { action: "startClassicWristband" });
+  }
 }
 
 function startPlayerWristband() {
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("player start", { action: "startPlayerWristband" });
+  }
   const hiddenPlayCount = wristbandCards.reduce(
     (sum, card) =>
       sum + (card.data || []).slice(WB_ROWS, CELLS_PER_CARD).filter(Boolean).length,
@@ -89,6 +143,12 @@ function startPlayerWristband() {
   syncWristbandModeSurface("player");
   renderCardTabs();
   renderPlayerCardGrid();
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("player complete", {
+      action: "startPlayerWristband",
+      hiddenPlayCount,
+    });
+  }
 }
 
 function openPlayerCardPrint() {
@@ -142,13 +202,28 @@ function _updatePlayerCellCustomization(cardIdx, cellIdx, update) {
 
 function renderPlayerCardGrid() {
   const grid = document.getElementById("wristbandGrid");
-  if (!grid) return;
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("player render start", { action: "renderPlayerCardGrid" });
+  }
+  if (!grid) {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("player render missing grid", {
+        action: "renderPlayerCardGrid",
+      }, "error");
+    }
+    return;
+  }
   syncWristbandModeSurface("player");
 
   const card = wristbandCards[currentCardIndex];
   if (!card) {
     grid.innerHTML = "";
     syncWristbandGridEmptyState([], WB_ROWS);
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("player render missing card", {
+        action: "renderPlayerCardGrid",
+      }, "warn");
+    }
     return;
   }
 
@@ -231,6 +306,12 @@ function renderPlayerCardGrid() {
   grid.style.gridTemplateRows = `repeat(${WB_ROWS}, 1fr)`;
   grid.innerHTML = html;
   finalizeWristbandGridRender(grid, card.data, WB_ROWS);
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("player render complete", {
+      action: "renderPlayerCardGrid",
+      generatedHTMLLength: html.length,
+    }, grid.children.length === 0 ? "warn" : "info");
+  }
 
   // Wire assignment change + reset click events — only once per grid element lifetime
   if (!grid._pcListenerWired) {

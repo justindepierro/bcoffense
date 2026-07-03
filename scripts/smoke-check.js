@@ -1887,6 +1887,8 @@ function checkWristbandWorkspaceContracts() {
     !/finalizeWristbandGridRender\(grid, cardData, CELLS_PER_CARD\)/.test(render) ||
     !/function shouldRenderWristbandPhoneEditor\(\)/.test(render) ||
     !/syncWristbandModeSurface\(wristbandType \|\| ""\)/.test(render) ||
+    !/traceWristbandAction\("classic render start"/.test(render) ||
+    !/traceWristbandAction\("classic render complete"/.test(render) ||
     !/wb-phone-editor-grid/.test(render) ||
     !/wb-phone-editor-row/.test(render) ||
     !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime) ||
@@ -1897,9 +1899,22 @@ function checkWristbandWorkspaceContracts() {
     fail("wristband shared rendering or keyboard navigation is incomplete");
   }
   if (
+    !/function isWristbandTraceEnabled\(\)/.test(wristband) ||
+    !/function getWristbandTraceSnapshot\(extra = \{\}\)/.test(wristband) ||
+    !/function auditWristbandSnapshot\(snapshot = getWristbandTraceSnapshot\(\)\)/.test(wristband) ||
+    !/function traceWristbandAction\(phase, payload = \{\}, level = "info"\)/.test(wristband) ||
+    !/window\.bcDebugWristband = function bcDebugWristband/.test(wristband) ||
+    !/window\.bcAuditWristband = function bcAuditWristband/.test(wristband) ||
+    !/window\.bcEnableWristbandTrace = function bcEnableWristbandTrace/.test(wristband) ||
+    !/window\.__bcWristbandTrace/.test(wristband) ||
+    !/traceWristbandAction\("tab activation start"/.test(read("js/app-navigation.js")) ||
+    !/traceWristbandAction\("grid cell click"/.test(runtime) ||
     !/function syncWristbandModeSurface\(mode = wristbandType \|\| ""\)/.test(read("js/wristband-chrome.js")) ||
     !/syncWristbandModeSurface\("classic"\)/.test(read("js/wristband-chrome.js")) ||
     !/syncWristbandModeSurface\("player"\)/.test(read("js/wristband-chrome.js")) ||
+    !/traceWristbandAction\("classic start"/.test(read("js/wristband-chrome.js")) ||
+    !/traceWristbandAction\("player render complete"/.test(read("js/wristband-chrome.js")) ||
+    !/traceWristbandAction\("hydrate start"/.test(storage) ||
     !/function toggleWbSelectionMode\(/.test(actions) ||
     !/function moveSelectedWbCellsToCard\(/.test(actions) ||
     !/function clearSelectedWbCells\(/.test(actions) ||

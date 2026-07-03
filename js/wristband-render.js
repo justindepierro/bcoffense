@@ -186,6 +186,13 @@ function toggleWristbandFullscreen() {
 }
 
 function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("finalize grid start", {
+      action: "finalizeWristbandGridRender",
+      cellsPerCard,
+      cardDataLength: Array.isArray(cardData) ? cardData.length : 0,
+    });
+  }
   syncWristbandGridEmptyState(cardData, cellsPerCard);
   historyManager.updateButtons("wristband");
 
@@ -209,11 +216,25 @@ function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
     renderWristbandPlays();
   }
   if (typeof updateTabBadges === "function") updateTabBadges();
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("finalize grid complete", {
+      action: "finalizeWristbandGridRender",
+      cellsPerCard,
+      cardDataLength: Array.isArray(cardData) ? cardData.length : 0,
+    }, grid.children.length === 0 ? "warn" : "info");
+  }
 }
 
 function renderWristbandGrid() {
   const grid = document.getElementById("wristbandGrid");
   const cardEl = document.getElementById("wristbandCard");
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("classic render start", {
+      action: "renderWristbandGrid",
+      hasGrid: Boolean(grid),
+      hasCard: Boolean(cardEl),
+    });
+  }
   if (typeof syncWristbandModeSurface === "function") {
     syncWristbandModeSurface(wristbandType || "");
   }
@@ -222,6 +243,14 @@ function renderWristbandGrid() {
     grid?.classList.remove("wb-phone-editor-grid");
     cardEl?.classList.remove("wb-phone-editor-card");
     if (typeof renderPlayerCardGrid === "function") renderPlayerCardGrid();
+    return;
+  }
+  if (!grid) {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("classic render missing grid", {
+        action: "renderWristbandGrid",
+      }, "error");
+    }
     return;
   }
   const cardData = getCurrentCardData();
@@ -419,6 +448,12 @@ function renderWristbandGrid() {
 
   grid.innerHTML = html;
   finalizeWristbandGridRender(grid, cardData, CELLS_PER_CARD);
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("classic render complete", {
+      action: "renderWristbandGrid",
+      generatedHTMLLength: html.length,
+    }, grid.children.length === 0 ? "warn" : "info");
+  }
 }
 
 function setWristbandOverlayVisibility(target, isOpen, opts = {}) {

@@ -110,6 +110,12 @@ function showTab(tabName) {
       initScriptWorkspace();
     }
   } else if (tabName === "wristband") {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("tab activation start", {
+        action: "showTab",
+        tabName,
+      });
+    }
     if (wristbandCards.length === 0) {
       initWristband();
     } else {
@@ -123,6 +129,12 @@ function showTab(tabName) {
     }
     // Show type-choice landing if wristband is empty and no type chosen yet
     if (typeof checkShowWbLanding === "function") checkShowWbLanding();
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("tab activation complete", {
+        action: "showTab",
+        tabName,
+      });
+    }
   } else if (tabName === "tendencies") {
     initTendencies();
   } else if (tabName === "gameplan") {

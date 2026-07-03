@@ -44,6 +44,16 @@ function syncWristbandHeaderColorPicker() {
 }
 
 function hydrateWristbandState(source, opts = {}) {
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("hydrate start", {
+      action: "hydrateWristbandState",
+      sourceType: source?.wristbandType || "",
+      sourceCardCount: Array.isArray(source?.cards) ? source.cards.length : 0,
+      hasLegacyData: Array.isArray(source?.data),
+      markDirty: !!opts.markDirty,
+      discardDraft: !!opts.discardDraft,
+    });
+  }
   if (source?.wristbandType === "player" || source?.wristbandType === "classic") {
     wristbandType = source.wristbandType;
     wbPlayerCardMode = wristbandType === "player";
@@ -88,6 +98,12 @@ function hydrateWristbandState(source, opts = {}) {
 
   if (opts.discardDraft) {
     discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+  }
+  if (typeof traceWristbandAction === "function") {
+    traceWristbandAction("hydrate complete", {
+      action: "hydrateWristbandState",
+      sourceType: source?.wristbandType || "",
+    });
   }
 }
 
@@ -718,9 +734,23 @@ function refreshWristbandSavedReferences() {
 
 function loadWristband(id) {
   try {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("load saved start", {
+        action: "loadWristband",
+        id,
+      });
+    }
     const saved = storageManager.get(STORAGE_KEYS.SAVED_WRISTBANDS, []);
     const wb = saved.find((s) => s.id === id);
-    if (!wb) return;
+    if (!wb) {
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("load saved missing", {
+          action: "loadWristband",
+          id,
+        }, "warn");
+      }
+      return;
+    }
 
     hydrateWristbandState(wb, { discardDraft: true });
     historyManager.clear("wristband");
@@ -735,7 +765,21 @@ function loadWristband(id) {
 
     showToast(`Loaded "${wb.title}"`);
     closeSavedWristbandManager();
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("load saved complete", {
+        action: "loadWristband",
+        id,
+        sourceType: wb.wristbandType || "",
+      });
+    }
   } catch (err) {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("load saved error", {
+        action: "loadWristband",
+        id,
+        error: err && err.message ? err.message : String(err),
+      }, "error");
+    }
     console.error("loadWristband error:", err);
     showToast("❌ Error loading wristband.", { duration: 4000, type: "error" });
   }

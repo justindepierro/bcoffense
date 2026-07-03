@@ -31,9 +31,27 @@ document.addEventListener("DOMContentLoaded", () => {
   if (grid) {
     grid.addEventListener("click", (e) => {
       const cell = e.target.closest("[data-drag='wbCell']");
-      if (!cell) return;
+      if (!cell) {
+        if (typeof traceWristbandAction === "function") {
+          traceWristbandAction("grid click outside cell", {
+            action: "wristbandGridClick",
+            targetTag: e.target?.tagName || "",
+            targetClassName: String(e.target?.className || "").slice(0, 120),
+          });
+        }
+        return;
+      }
       const cardIdx = parseInt(cell.dataset.card, 10);
       const cellIdx = parseInt(cell.dataset.cellIdx, 10);
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("grid cell click", {
+          action: "wristbandGridClick",
+          cardIdx,
+          cellIdx,
+          shiftKey: e.shiftKey,
+          selectionMode: wbSelectionMode,
+        });
+      }
 
       if (e.shiftKey || wbSelectionMode) {
         e.preventDefault();

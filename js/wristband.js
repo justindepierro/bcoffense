@@ -112,6 +112,297 @@ function resetActiveWristbandIdentity() {
   }
 }
 
+function isWristbandTraceEnabled() {
+  try {
+    return (
+      window.BC_WRISTBAND_TRACE === true ||
+      window.BC_ACTION_TRACE === true ||
+      localStorage.getItem("bcWristbandTrace") === "1" ||
+      localStorage.getItem("bcActionTrace") === "1"
+    );
+  } catch (_err) {
+    return window.BC_WRISTBAND_TRACE === true || window.BC_ACTION_TRACE === true;
+  }
+}
+
+function getWristbandElementSnapshot(selector) {
+  const element =
+    typeof selector === "string" ? document.querySelector(selector) : selector;
+  if (!(element instanceof Element)) return null;
+  const rect = element.getBoundingClientRect();
+  const computed = window.getComputedStyle(element);
+  return {
+    tag: element.tagName.toLowerCase(),
+    id: element.id || "",
+    className: String(element.className || "").slice(0, 180),
+    hidden: Boolean(element.hidden),
+    display: computed.display,
+    visibility: computed.visibility,
+    opacity: computed.opacity,
+    position: computed.position,
+    overflowX: computed.overflowX,
+    overflowY: computed.overflowY,
+    pointerEvents: computed.pointerEvents,
+    width: Math.round(rect.width),
+    height: Math.round(rect.height),
+    x: Math.round(rect.x),
+    y: Math.round(rect.y),
+    scrollWidth: element.scrollWidth,
+    scrollHeight: element.scrollHeight,
+    clientWidth: element.clientWidth,
+    clientHeight: element.clientHeight,
+    childCount: element.children.length,
+  };
+}
+
+function getWristbandScrollAncestry(targetOrSelector = "#wristbandCard") {
+  const start =
+    typeof targetOrSelector === "string"
+      ? document.querySelector(targetOrSelector)
+      : targetOrSelector;
+  const rows = [];
+  let element = start instanceof Element ? start : null;
+  while (element) {
+    const computed = window.getComputedStyle(element);
+    rows.push({
+      tag: element.tagName.toLowerCase(),
+      id: element.id || "",
+      className: String(element.className || "").slice(0, 120),
+      display: computed.display,
+      overflowX: computed.overflowX,
+      overflowY: computed.overflowY,
+      position: computed.position,
+      height: Math.round(element.getBoundingClientRect().height),
+      width: Math.round(element.getBoundingClientRect().width),
+      scrollHeight: element.scrollHeight,
+      clientHeight: element.clientHeight,
+      scrollTop: element.scrollTop,
+    });
+    element = element.parentElement;
+  }
+  return rows;
+}
+
+function getWristbandTraceSnapshot(extra = {}) {
+  const card = wristbandCards[currentCardIndex] || null;
+  const cardData = Array.isArray(card?.data) ? card.data : [];
+  const grid = document.getElementById("wristbandGrid");
+  const cardEl = document.getElementById("wristbandCard");
+  const activeCellCount =
+    typeof getActiveWristbandCellCount === "function"
+      ? getActiveWristbandCellCount()
+      : wbPlayerCardMode
+        ? WB_ROWS
+        : CELLS_PER_CARD;
+  const gridCells = grid ? [...grid.querySelectorAll(".wristband-cell")] : [];
+  return {
+    timestamp: new Date().toISOString(),
+    activeTab:
+      typeof currentActiveTab !== "undefined"
+        ? currentActiveTab
+        : document.body?.dataset.activeTab || "",
+    authRole: document.body?.dataset.authRole || "",
+    wristbandType,
+    wbPlayerCardMode,
+    wbPlayerCardPos,
+    currentCardIndex,
+    cardCount: wristbandCards.length,
+    activeCellCount,
+    currentCardName: card?.name || "",
+    currentCardDataLength: cardData.length,
+    currentCardPlayCount: cardData.slice(0, activeCellCount).filter(Boolean).length,
+    totalPlayCount: wristbandCards.reduce(
+      (sum, item) => sum + (item.data || []).filter(Boolean).length,
+      0,
+    ),
+    gridCellCount: gridCells.length,
+    filledGridCellCount: gridCells.filter((cell) => cell.classList.contains("filled")).length,
+    emptyGridCellCount: gridCells.filter((cell) => !cell.classList.contains("filled")).length,
+    gridInnerHTMLLength: grid?.innerHTML?.length || 0,
+    cardHasHiddenClass: Boolean(cardEl?.classList.contains("wb-hidden")),
+    gridHasPlayerClass: Boolean(grid?.classList.contains("pc-grid-active")),
+    cardHasPlayerClass: Boolean(cardEl?.classList.contains("pc-card-active")),
+    typeChoice: getWristbandElementSnapshot("#wbTypeChoice"),
+    toolbar: getWristbandElementSnapshot(".wb-toolbar"),
+    playerModeBar: getWristbandElementSnapshot("#pcModeBar"),
+    cardTabs: getWristbandElementSnapshot("#cardTabs"),
+    preview: getWristbandElementSnapshot(".wristband-preview"),
+    viewport: getWristbandElementSnapshot("#wbCardViewport"),
+    card: getWristbandElementSnapshot("#wristbandCard"),
+    grid: getWristbandElementSnapshot("#wristbandGrid"),
+    scrollAncestry: getWristbandScrollAncestry("#wristbandCard"),
+    ...extra,
+  };
+}
+
+function auditWristbandSnapshot(snapshot = getWristbandTraceSnapshot()) {
+  const issues = [];
+  const expectedGridCells =
+    snapshot.wristbandType === "player"
+      ? WB_ROWS * 3
+      : snapshot.wristbandType === "classic"
+        ? WB_ROWS * 4
+        : 0;
+
+  if (!snapshot.wristbandType && snapshot.totalPlayCount > 0) {
+    issues.push({
+      severity: "warn",
+      code: "missing-type-with-plays",
+      message: "Wristband has plays but no selected wristband type.",
+    });
+  }
+  if (snapshot.wristbandType && snapshot.cardHasHiddenClass) {
+    issues.push({
+      severity: "error",
+      code: "card-hidden-with-mode",
+      message: "A wristband type is selected but #wristbandCard still has wb-hidden.",
+    });
+  }
+  if (snapshot.wristbandType && snapshot.typeChoice && snapshot.typeChoice.display !== "none") {
+    issues.push({
+      severity: "error",
+      code: "landing-visible-with-mode",
+      message: "The type-choice landing is visible while a wristband type is selected.",
+    });
+  }
+  if (snapshot.wristbandType && snapshot.card && (snapshot.card.width === 0 || snapshot.card.height === 0)) {
+    issues.push({
+      severity: "error",
+      code: "card-zero-size",
+      message: "The wristband card has zero rendered size.",
+    });
+  }
+  if (snapshot.wristbandType && snapshot.grid && (snapshot.grid.width === 0 || snapshot.grid.height === 0)) {
+    issues.push({
+      severity: "error",
+      code: "grid-zero-size",
+      message: "The wristband grid has zero rendered size.",
+    });
+  }
+  if (expectedGridCells && snapshot.gridCellCount !== expectedGridCells) {
+    issues.push({
+      severity: "error",
+      code: "grid-cell-count-mismatch",
+      message: `${snapshot.wristbandType} wristband expected ${expectedGridCells} rendered grid cells, got ${snapshot.gridCellCount}.`,
+    });
+  }
+  if (snapshot.wristbandType && snapshot.gridInnerHTMLLength === 0) {
+    issues.push({
+      severity: "error",
+      code: "grid-empty-html",
+      message: "The wristband grid has no rendered HTML.",
+    });
+  }
+  if (snapshot.wristbandType === "player" && !snapshot.gridHasPlayerClass) {
+    issues.push({
+      severity: "error",
+      code: "player-grid-class-missing",
+      message: "Player mode is active but the grid is missing pc-grid-active.",
+    });
+  }
+  if (snapshot.wristbandType !== "player" && snapshot.gridHasPlayerClass) {
+    issues.push({
+      severity: "warn",
+      code: "player-grid-class-stale",
+      message: "Player grid class is still present outside Player mode.",
+    });
+  }
+  if (
+    snapshot.wristbandType === "player" &&
+    snapshot.playerModeBar &&
+    snapshot.playerModeBar.display === "none"
+  ) {
+    issues.push({
+      severity: "error",
+      code: "player-bar-hidden",
+      message: "Player mode is active but the player controls are hidden.",
+    });
+  }
+  if (
+    Number.isInteger(snapshot.currentCardIndex) &&
+    (snapshot.currentCardIndex < 0 || snapshot.currentCardIndex >= snapshot.cardCount)
+  ) {
+    issues.push({
+      severity: "error",
+      code: "card-index-out-of-range",
+      message: `currentCardIndex ${snapshot.currentCardIndex} is outside ${snapshot.cardCount} cards.`,
+    });
+  }
+  if (snapshot.currentCardDataLength > 0 && snapshot.currentCardDataLength < snapshot.activeCellCount) {
+    issues.push({
+      severity: "warn",
+      code: "short-card-data",
+      message: `Current card has ${snapshot.currentCardDataLength} cells; active format expects at least ${snapshot.activeCellCount}.`,
+    });
+  }
+  return issues;
+}
+
+function traceWristbandAction(phase, payload = {}, level = "info") {
+  const snapshot = getWristbandTraceSnapshot(payload);
+  const auditIssues = auditWristbandSnapshot(snapshot);
+  if (auditIssues.length) snapshot.auditIssues = auditIssues;
+  window.__bcWristbandTrace = Array.isArray(window.__bcWristbandTrace)
+    ? window.__bcWristbandTrace
+    : [];
+  window.__bcWristbandTrace.push({ phase, level, snapshot });
+  window.__bcWristbandTrace = window.__bcWristbandTrace.slice(-80);
+
+  if (!isWristbandTraceEnabled() && level === "info") return snapshot;
+  const logger =
+    level === "error"
+      ? console.error
+      : level === "warn"
+        ? console.warn
+        : console.info;
+  logger.call(console, `[BC wristband trace] ${phase}`, snapshot);
+  if (typeof traceAppAction === "function") {
+    traceAppAction(`wristband ${phase}`, {
+      phaseAction: payload.action || "wristbandTrace",
+      ...snapshot,
+    }, {}, level);
+  }
+  return snapshot;
+}
+
+if (typeof window !== "undefined") {
+  window.bcDebugWristband = function bcDebugWristband(opts = {}) {
+    const snapshot = getWristbandTraceSnapshot(opts);
+    const auditIssues = auditWristbandSnapshot(snapshot);
+    if (auditIssues.length) snapshot.auditIssues = auditIssues;
+    console.info("[BC wristband debug]", snapshot);
+    if (auditIssues.length) console.table(auditIssues);
+    if (snapshot.scrollAncestry) console.table(snapshot.scrollAncestry);
+    return snapshot;
+  };
+  window.bcAuditWristband = function bcAuditWristband() {
+    const snapshot = getWristbandTraceSnapshot();
+    const issues = auditWristbandSnapshot(snapshot);
+    const result = { ok: issues.length === 0, issues, snapshot };
+    console.info("[BC wristband audit]", result);
+    if (issues.length) console.table(issues);
+    return result;
+  };
+  window.bcEnableWristbandTrace = function bcEnableWristbandTrace() {
+    try {
+      localStorage.setItem("bcWristbandTrace", "1");
+    } catch (_err) {
+      window.BC_WRISTBAND_TRACE = true;
+    }
+    window.BC_WRISTBAND_TRACE = true;
+    return window.bcDebugWristband({ enabled: true });
+  };
+  window.bcDisableWristbandTrace = function bcDisableWristbandTrace() {
+    try {
+      localStorage.removeItem("bcWristbandTrace");
+    } catch (_err) {
+      /* ignore */
+    }
+    window.BC_WRISTBAND_TRACE = false;
+    return true;
+  };
+}
+
 function getCellMarkerValue(custom) {
   return custom.cadence || (custom.onTwo ? "$" : "");
 }
@@ -765,11 +1056,25 @@ function scheduleWristbandAutosave() {
  */
 async function checkWristbandDraft() {
   try {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("draft check start", { action: "checkWristbandDraft" });
+    }
     const draft = storageManager.get(STORAGE_KEYS.WRISTBAND_DRAFT, null);
-    if (!draft || !draft.cards || draft.cards.length === 0) return;
+    if (!draft || !draft.cards || draft.cards.length === 0) {
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("draft check none", { action: "checkWristbandDraft" });
+      }
+      return;
+    }
 
     if (isDraftExpired(draft)) {
       discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("draft expired", {
+          action: "checkWristbandDraft",
+          draftType: draft.wristbandType || "",
+        });
+      }
       return;
     }
 
@@ -782,7 +1087,15 @@ async function checkWristbandDraft() {
           : 0),
       0,
     );
-    if (draftPlays === 0) return;
+    if (draftPlays === 0) {
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("draft empty", {
+          action: "checkWristbandDraft",
+          draftType: draft.wristbandType || "",
+        });
+      }
+      return;
+    }
 
     // Only offer if current wristband is empty
     const currentCellsPerCard = getActiveWristbandCellCount();
@@ -794,7 +1107,17 @@ async function checkWristbandDraft() {
           : 0),
       0,
     );
-    if (currentPlays > 0) return;
+    if (currentPlays > 0) {
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("draft skipped existing current", {
+          action: "checkWristbandDraft",
+          draftType: draft.wristbandType || "",
+          draftPlays,
+          currentPlays,
+        });
+      }
+      return;
+    }
 
     const savedTime = formatDraftSavedAt(draft);
 
@@ -808,6 +1131,13 @@ async function checkWristbandDraft() {
       },
     );
     if (doRestore) {
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("draft restore accepted", {
+          action: "checkWristbandDraft",
+          draftType: draft.wristbandType || "",
+          draftPlays,
+        });
+      }
       hydrateWristbandState(draft, { markDirty: true });
       if (draft.wristbandType === "player") {
         startPlayerWristband();
@@ -816,9 +1146,22 @@ async function checkWristbandDraft() {
       }
       showToast("🃏 Draft restored");
     } else {
+      if (typeof traceWristbandAction === "function") {
+        traceWristbandAction("draft restore declined", {
+          action: "checkWristbandDraft",
+          draftType: draft.wristbandType || "",
+          draftPlays,
+        });
+      }
       discardDraftData(STORAGE_KEYS.WRISTBAND_DRAFT);
     }
   } catch (err) {
+    if (typeof traceWristbandAction === "function") {
+      traceWristbandAction("draft check error", {
+        action: "checkWristbandDraft",
+        error: err && err.message ? err.message : String(err),
+      }, "error");
+    }
     console.error("checkWristbandDraft error:", err);
     showToast("❌ Error restoring wristband draft.", {
       duration: 3000,
