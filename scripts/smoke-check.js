@@ -1008,16 +1008,17 @@ function checkPlayReadinessContracts() {
   if (
     !/const PLAY_READINESS_REP_TYPES = \[/.test(readiness) ||
     !/weight:\s*0\.25/.test(readiness) ||
-    !/weight:\s*1\.25/.test(readiness) ||
-    !/weight:\s*2/.test(readiness) ||
+    !/weight:\s*0\.5/.test(readiness) ||
+    !/weight:\s*0\.75/.test(readiness) ||
+    !/weight:\s*1\.5/.test(readiness) ||
     !/const PLAY_READINESS_THRESHOLDS = \{/.test(readiness) ||
-    !/"Identity Play":/.test(readiness) ||
+    !/const PLAY_READINESS_SHOWN_POINTS = \{/.test(readiness) ||
+    !/Identity Play/.test(readiness) ||
     !/function getPlayReadinessSummary\(play\)/.test(readiness) ||
+    !/function getPlayReadinessShownStatus\(play\)/.test(readiness) ||
     !/function getPlayReadinessCompactSummary\(summary\)/.test(readiness) ||
-    !/function getPlayReadinessScoreTrend\(summary\)/.test(readiness) ||
-    !/readinessPercent \* 0\.6 \+ liveScore \* 0\.3 \+ mistakeScore \* 0\.1/.test(
-      readiness,
-    )
+    !/repScorePart \+ volumePart \+ recencyPart/.test(readiness) ||
+    !/practiceScore \+ shownStatus\.shownPoints/.test(readiness)
   ) {
     fail("play readiness scoring model is incomplete");
   }
@@ -1059,7 +1060,6 @@ function checkPlayReadinessContracts() {
     !/readinessBadge/.test(playbookRender) ||
     !/\$\{readinessMarkup\}/.test(scriptRender) ||
     !/quickPlayReadinessScriptScore/.test(readiness) ||
-    !/play-readiness-quick-score/.test(readiness) ||
     !/renderSelectedPlaybookReadinessPanel\(index\)/.test(playbookNavigation) ||
     !/renderSelectedPlaybookReadinessPanel\(selectedRowIndex\)/.test(playbookRender) ||
     !/renderPlayReadinessPresentationCoachCard\(play\)/.test(presentation) ||
@@ -1097,10 +1097,10 @@ function checkPlayReadinessContracts() {
     !/\.pp-readiness-score-rail/.test(presentationCss) ||
     !/\.pp-readiness-rail-buttons/.test(presentationCss) ||
     !/\.pp-minimum-score-grid/.test(presentationCss) ||
-    !/play-presentation-mobile\.is-landscape-screen\.is-phone-screen \.pp-minimum-readiness-dock/.test(
+    !/body\.play-presentation-mobile\.is-landscape-screen\.is-phone-screen[\s\S]*\.pp-minimum-readiness-dock/.test(
       presentationCss,
     ) ||
-    !/play-presentation-mobile\.is-landscape-screen\.is-compact-screen \.pp-minimum-readiness-dock/.test(
+    !/body\.play-presentation-mobile\.is-landscape-screen\.is-compact-screen[\s\S]*\.pp-minimum-readiness-dock/.test(
       presentationCss,
     ) ||
     !/pp-coach-section-readiness \.play-readiness-rollup/.test(presentationCss)
@@ -1886,6 +1886,7 @@ function checkWristbandWorkspaceContracts() {
     !/function finalizeWristbandGridRender\(/.test(render) ||
     !/finalizeWristbandGridRender\(grid, cardData, CELLS_PER_CARD\)/.test(render) ||
     !/function shouldRenderWristbandPhoneEditor\(\)/.test(render) ||
+    !/syncWristbandModeSurface\(wristbandType \|\| ""\)/.test(render) ||
     !/wb-phone-editor-grid/.test(render) ||
     !/wb-phone-editor-row/.test(render) ||
     !/finalizeWristbandGridRender\(grid, card\.data, WB_ROWS\)/.test(playerRuntime) ||
@@ -1896,6 +1897,9 @@ function checkWristbandWorkspaceContracts() {
     fail("wristband shared rendering or keyboard navigation is incomplete");
   }
   if (
+    !/function syncWristbandModeSurface\(mode = wristbandType \|\| ""\)/.test(read("js/wristband-chrome.js")) ||
+    !/syncWristbandModeSurface\("classic"\)/.test(read("js/wristband-chrome.js")) ||
+    !/syncWristbandModeSurface\("player"\)/.test(read("js/wristband-chrome.js")) ||
     !/function toggleWbSelectionMode\(/.test(actions) ||
     !/function moveSelectedWbCellsToCard\(/.test(actions) ||
     !/function clearSelectedWbCells\(/.test(actions) ||
@@ -2401,6 +2405,53 @@ function checkScriptPacketPrintContracts() {
   console.log("script packet print contracts ok");
 }
 
+function checkGamePlanMediaReadinessContracts() {
+  const gameplanRender = read("js/gameplan-render.js");
+  const gameplanCss = read("css/gameplan.css");
+  const readiness = read("js/play-readiness.js");
+  const clips = read("js/play-clips.js");
+  const appModuleInit = read("js/app-module-init.js");
+
+  if (
+    !/function _gpRenderMediaCompletionScore\(board, draftedPlays\)/.test(gameplanRender) ||
+    !/function _gpUniqueDraftedPlays\(drafted\)/.test(gameplanRender) ||
+    !/diagramPct \* 85/.test(gameplanRender) ||
+    !/videoPct \* 15/.test(gameplanRender) ||
+    !/gp-media-scoreboard/.test(gameplanRender)
+  ) {
+    fail("game plan media completion score is incomplete");
+  }
+
+  if (
+    !/\.gp-media-scoreboard \.gp-score-grid/.test(gameplanCss) ||
+    !/body:not\(\.is-mobile-screen\) \.gp-stats-bar > details\.gp-media-scoreboard\[open\]/.test(gameplanCss)
+  ) {
+    fail("game plan media completion styling is incomplete");
+  }
+
+  if (
+    !/const PLAY_READINESS_SHOWN_POINTS = \{/.test(readiness) ||
+    !/function getPlayReadinessShownStatus\(play\)/.test(readiness) ||
+    !/shownPoints/.test(readiness) ||
+    !/play-images-changed/.test(readiness) ||
+    !/play-clips-changed/.test(readiness)
+  ) {
+    fail("play readiness shown bonus is incomplete");
+  }
+
+  if (
+    !/function _emitClipChange\(sig\)/.test(clips) ||
+    !/play-clips-changed/.test(clips) ||
+    !/requestRenderGamePlan/.test(clips) ||
+    !/refreshPlayReadinessSurfaces/.test(clips) ||
+    !/refreshPlayReadinessSurfaces\("play-images"\)/.test(appModuleInit)
+  ) {
+    fail("media score refresh hooks are incomplete");
+  }
+
+  console.log("game plan media readiness contracts ok");
+}
+
 function checkGuideContracts() {
   const html = read("index.html");
   const guide = read("AGENTS.md");
@@ -2537,6 +2588,7 @@ checkScoutOverviewContract();
 checkWristbandWorkspaceContracts();
 checkPlayerWristbandRuleOverrides();
 checkSevenOnSevenTemplate();
+checkGamePlanMediaReadinessContracts();
 checkCacheBusters();
 checkServiceWorkerLifecycle();
 checkServiceWorkerCachePolicy();

@@ -28,6 +28,11 @@ const PLAY_READINESS_THRESHOLDS = {
   core: { target: 80 },
 };
 
+const PLAY_READINESS_SHOWN_POINTS = {
+  diagram: 5,
+  video: 5,
+};
+
 // Legacy rep type id → new id mapping (for migration)
 const _PR_LEGACY_TYPE_MAP = {
   mental: "mental", walkthrough: "walkthrough", indy_low: "walkthrough",
@@ -259,6 +264,38 @@ function getPlayReadinessConfidenceLabel(score) {
   return "Automatic";
 }
 
+function getPlayReadinessShownStatus(play) {
+  const hasDiagram = Boolean(
+    play &&
+    window.playImages &&
+    typeof window.playImages.hasForPlay === "function" &&
+    window.playImages.hasForPlay(play)
+  );
+  const hasVideo = Boolean(
+    play &&
+    window.playClips &&
+    typeof window.playClips.hasForPlay === "function" &&
+    window.playClips.hasForPlay(play)
+  );
+  const shownPoints =
+    (hasDiagram ? PLAY_READINESS_SHOWN_POINTS.diagram : 0) +
+    (hasVideo ? PLAY_READINESS_SHOWN_POINTS.video : 0);
+  return {
+    hasDiagram,
+    hasVideo,
+    shownPoints,
+    maxShownPoints:
+      PLAY_READINESS_SHOWN_POINTS.diagram + PLAY_READINESS_SHOWN_POINTS.video,
+    label: hasDiagram && hasVideo
+      ? "Shown"
+      : hasDiagram
+        ? "Diagram"
+        : hasVideo
+          ? "Video"
+          : "Unshown",
+  };
+}
+
 function getPlayReadinessSummary(play) {
   let record = getPlayReadinessRecord(play);
   // Inline migration if needed
@@ -301,7 +338,12 @@ function getPlayReadinessSummary(play) {
   const repScorePart = avgScore > 0 ? (avgScore / 5) * 60 : 0;
   const volumePart = volumeProgress * 30;
   const recencyPart = recencyBoost * 10;
-  const confidenceScore = Math.round(repScorePart + volumePart + recencyPart);
+  const shownStatus = getPlayReadinessShownStatus(play);
+  const practiceScore = Math.round(repScorePart + volumePart + recencyPart);
+  const confidenceScore = Math.min(
+    100,
+    Math.round(practiceScore + shownStatus.shownPoints),
+  );
 
   // Progress bar (0–100% toward target)
   const progressPct = Math.min(100, Math.round(volumeProgress * 100));
@@ -338,6 +380,9 @@ function getPlayReadinessSummary(play) {
     avgScore: Math.round(avgScore * 10) / 10,
     progressPct,
     volumeProgress,
+    practiceScore,
+    shownStatus,
+    shownPoints: shownStatus.shownPoints,
     confidenceScore,
     confidenceLabel: getPlayReadinessConfidenceLabel(confidenceScore),
     lastLog,
@@ -380,8 +425,8 @@ function getPlayReadinessCompactSummary(summary) {
     trend: summary.scoreTrend,
     label: summary.repCount ? summary.confidenceLabel : "Not Yet Scored",
     sublabel: summary.repCount
-      ? `${summary.repCount} ${repLabel} \u00b7 avg ${avgText}/5`
-      : "Log your first rep",
+      ? `${summary.repCount} ${repLabel} \u00b7 avg ${avgText}/5${summary.shownPoints ? ` \u00b7 +${summary.shownPoints} shown` : ""}`
+      : (summary.shownPoints ? `${summary.shownStatus.label} \u00b7 +${summary.shownPoints}` : "Log your first rep"),
   };
 }
 
@@ -398,12 +443,14 @@ function renderPlayReadinessCompactBadgeFromSummary(summary, opts = {}) {
     : `<span class="play-readiness-badge-detail">
         <span>${escapeHtml(compact.lastText)} last</span>
         <span>${summary.repCount} reps</span>
+        ${summary.shownPoints ? `<span>+${summary.shownPoints} shown</span>` : ""}
         <span>${escapeHtml(compact.trend.short)}</span>
       </span>`;
   const title = [
     compact.label,
     `${summary.repCount} reps`,
     `avg ${compact.avgText}/5`,
+    summary.shownPoints ? `${summary.shownStatus.label} media +${summary.shownPoints}` : "No diagram/video shown bonus",
     compact.trend.label,
     `Readiness ${summary.confidenceScore}`,
   ].join(" \u2022 ");
@@ -433,6 +480,7 @@ function renderPlayReadinessRollup(summary, opts = {}) {
     ["Score", `${summary.confidenceScore}`],
     ["Avg", `${compact.avgText}/5`],
     ["Reps", `${summary.repCount}`],
+    ["Shown", summary.shownPoints ? `+${summary.shownPoints}` : "0"],
     ["Trend", compact.trend.short],
   ];
   return `
@@ -453,6 +501,9 @@ function refreshPlayReadinessSurfaces(source = "") {
   } else if (typeof renderSelectedPlaybookReadinessPanel === "function") {
     renderSelectedPlaybookReadinessPanel(selectedRowIndex);
   }
+  if (typeof requestRenderGamePlan === "function") {
+    requestRenderGamePlan({ debounceMs: 60 });
+  }
   const overlay = document.getElementById("playPresentationOverlay");
   if (
     overlay?.classList.contains("show") &&
@@ -464,6 +515,14 @@ function refreshPlayReadinessSurfaces(source = "") {
     renderSelectedPlaybookReadinessPanel(selectedRowIndex);
   }
 }
+
+window.addEventListener("play-images-changed", () => {
+  refreshPlayReadinessSurfaces("media");
+});
+
+window.addEventListener("play-clips-changed", () => {
+  refreshPlayReadinessSurfaces("clips");
+});
 
 function getPlayReadinessPlaybookPlay(index) {
   const idx = parseInt(index, 10);
@@ -496,8 +555,8 @@ function renderPlayReadinessScriptWidget(play, index, opts = {}) {
   const hasData = summary.repCount > 0;
   const confidenceDisplay = hasData ? summary.confidenceLabel : "Not Yet Scored";
   const statsText = hasData
-    ? `${summary.repCount} reps \u00b7 avg ${summary.avgScore.toFixed(1)}/5`
-    : "Score 1\u20135 after each rep";
+    ? `${summary.repCount} reps \u00b7 avg ${summary.avgScore.toFixed(1)}/5${summary.shownPoints ? ` \u00b7 +${summary.shownPoints} shown` : ""}`
+    : (summary.shownPoints ? `${summary.shownStatus.label} \u00b7 +${summary.shownPoints} shown before practice` : "Score 1\u20135 after each rep");
   const lastLine = summary.lastLog
     ? `Last: ${summary.lastLogDate}${compact.daysText ? " (" + compact.daysText + ")" : ""} \u00b7 ${summary.lastLogScore}/5`
     : null;
@@ -568,6 +627,7 @@ function renderPlayReadinessPresentationCoachCard(play) {
         <div class="pp-readiness-plain-stats">
           <span>${summary.repCount} reps</span>
           <span>avg ${summary.avgScore.toFixed(1)}/5</span>
+          ${summary.shownPoints ? `<span>${escapeHtml(summary.shownStatus.label)} +${summary.shownPoints}</span>` : ""}
           ${compact.daysText ? `<span>last ${escapeHtml(compact.daysText)}</span>` : ""}
         </div>
         <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${summary.progressPct}% readiness">
@@ -602,6 +662,7 @@ function renderPlayReadinessPresentationMinimumDock(play) {
         <span>Score Rep</span>
         <strong>${summary.confidenceScore}</strong>
         <small class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)}</small>
+        ${summary.shownPoints ? `<small>${escapeHtml(summary.shownStatus.label)} +${summary.shownPoints}</small>` : ""}
       </div>
       <div class="pp-minimum-score-grid" role="group" aria-label="Score this play 1 to 5">
         ${renderPlayReadinessScoreButtons("quickPlayReadinessPresentationScore", summary.lastLogScore)}
@@ -619,7 +680,7 @@ function renderPlayReadinessPresentationScoreRail(play) {
       <div class="pp-readiness-rail-copy">
         <span>Coach Score</span>
         <strong>${summary.confidenceScore}</strong>
-        <small class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)} \u00b7 ${summary.repCount} reps</small>
+        <small class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)} \u00b7 ${summary.repCount} reps${summary.shownPoints ? ` \u00b7 +${summary.shownPoints} shown` : ""}</small>
       </div>
       <div class="pp-readiness-rail-buttons" role="group" aria-label="Score this rep 1 to 5">
         ${renderPlayReadinessScoreButtons("quickPlayReadinessPresentationScore", summary.lastLogScore)}
@@ -665,7 +726,7 @@ function renderPlayReadinessPlaybookPanel(play, filteredIndex) {
       <div class="pb-readiness-score-hero">
         <strong class="pb-readiness-big-number">${summary.confidenceScore}</strong>
         <span class="pr-confidence pr-confidence--${escapeHtml(compact.tone)}">${escapeHtml(summary.confidenceLabel)}</span>
-        <small>${summary.repCount} reps \u00b7 avg ${escapeHtml(avgText)}/5${escapeHtml(daysStr)}</small>
+        <small>${summary.repCount} reps \u00b7 avg ${escapeHtml(avgText)}/5${summary.shownPoints ? ` \u00b7 +${summary.shownPoints} shown` : ""}${escapeHtml(daysStr)}</small>
       </div>
       <div class="pb-readiness-progress">
         <div class="play-readiness-track" style="--pr-progress:${summary.progressPct}%" aria-label="${summary.progressPct}% toward ${escapeHtml(summary.installTierDisplay)} target">
@@ -796,7 +857,7 @@ function openPlayReadinessLogModalForPlay(play, context = {}) {
             <div class="play-readiness-score-grid play-readiness-score-grid--large pr-log-score-grid" role="group" aria-label="Score 1 to 5">
               ${[1, 2, 3, 4, 5].map((s) => `
                 <button type="button" class="play-readiness-score-btn${summary.lastLogScore === s ? " active" : ""}"
-                  data-action="prLogSetScore" data-arg="${s}"
+                  data-arg="${s}"
                   title="${s} \u2014 ${_SCORE_LABELS[s]}"
                   aria-label="Score ${s}/5: ${_SCORE_LABELS[s]}">${s}</button>`).join("")}
             </div>

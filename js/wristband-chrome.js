@@ -2,9 +2,18 @@
 // Extracted from wristband-export.js
 
 function checkShowWbLanding() {
-  if (wristbandType) return; // type already chosen
+  if (wristbandType) {
+    syncWristbandModeSurface(wristbandType);
+    return; // type already chosen
+  }
   const isEmpty = wristbandCards.every((c) => !c.data?.some(Boolean));
-  if (isEmpty) showWbTypeChoice();
+  if (isEmpty) {
+    showWbTypeChoice();
+    return;
+  }
+  wristbandType = "classic";
+  wbPlayerCardMode = false;
+  syncWristbandModeSurface("classic");
 }
 
 function updateWristbandModeChrome(mode) {
@@ -19,37 +28,42 @@ function updateWristbandModeChrome(mode) {
   }
 }
 
+function syncWristbandModeSurface(mode = wristbandType || "") {
+  const normalizedMode = mode === "player" || mode === "classic" ? mode : "";
+  const hasMode = Boolean(normalizedMode);
+  const isPlayer = normalizedMode === "player";
+  const typeChoice = document.getElementById("wbTypeChoice");
+  const toolbar = document.querySelector(".wb-toolbar");
+  const cardTabs = document.querySelector(".card-tabs");
+  const card = document.getElementById("wristbandCard");
+  const grid = document.getElementById("wristbandGrid");
+  const playerBar = document.getElementById("pcModeBar");
+
+  updateWristbandModeChrome(normalizedMode);
+  typeChoice?.classList.toggle("hidden", hasMode);
+  toolbar?.classList.toggle("wb-toolbar-hidden", !hasMode || isPlayer);
+  cardTabs?.classList.toggle("wb-hidden", !hasMode);
+  card?.classList.toggle("wb-hidden", !hasMode);
+  playerBar?.classList.toggle("visible", isPlayer);
+  playerBar?.setAttribute("aria-hidden", isPlayer ? "false" : "true");
+  grid?.classList.toggle("pc-grid-active", isPlayer);
+  card?.classList.toggle("pc-card-active", isPlayer);
+}
+
 function showWbTypeChoice() {
   resetActiveWristbandIdentity();
   wristbandType = "";
-  updateWristbandModeChrome("");
   // Deactivate player mode if it was on
   if (wbPlayerCardMode) {
     wbPlayerCardMode = false;
-    document.getElementById("pcModeBar")?.classList.remove("visible");
-    const grid = document.getElementById("wristbandGrid");
-    if (grid) grid.classList.remove("pc-grid-active");
-    document.getElementById("wristbandCard")?.classList.remove("pc-card-active");
   }
-  // Toggle visibility
-  document.getElementById("wbTypeChoice")?.classList.remove("hidden");
-  document.getElementById("pcModeBar")?.classList.remove("visible");
-  document.querySelector(".wb-toolbar")?.classList.add("wb-toolbar-hidden");
-  document.querySelector(".card-tabs")?.classList.add("wb-hidden");
-  document.getElementById("wristbandCard")?.classList.add("wb-hidden");
+  syncWristbandModeSurface("");
 }
 
 function startClassicWristband() {
   wristbandType = "classic";
-  updateWristbandModeChrome("classic");
   wbPlayerCardMode = false;
-  document.getElementById("wbTypeChoice")?.classList.add("hidden");
-  document.querySelector(".wb-toolbar")?.classList.remove("wb-toolbar-hidden");
-  document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
-  document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
-  document.getElementById("pcModeBar")?.classList.remove("visible");
-  document.getElementById("wristbandGrid")?.classList.remove("pc-grid-active");
-  document.getElementById("wristbandCard")?.classList.remove("pc-card-active");
+  syncWristbandModeSurface("classic");
   renderCardTabs();
   renderWristbandGrid();
 }
@@ -67,17 +81,12 @@ function startPlayerWristband() {
     );
   }
   wristbandType = "player";
-  updateWristbandModeChrome("player");
-  document.getElementById("wbTypeChoice")?.classList.add("hidden");
-  document.querySelector(".wb-toolbar")?.classList.add("wb-toolbar-hidden");
-  document.querySelector(".card-tabs")?.classList.remove("wb-hidden");
-  document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
   // Activate player wristband mode
   wbPlayerCardMode = true;
   const posSelect = document.getElementById("pcPosSelect");
   wbPlayerCardPos = posSelect ? posSelect.value || "respQ" : "respQ";
   syncWristbandLineCallOnlyControls("classic");
-  document.getElementById("pcModeBar")?.classList.add("visible");
+  syncWristbandModeSurface("player");
   renderCardTabs();
   renderPlayerCardGrid();
 }
@@ -134,6 +143,7 @@ function _updatePlayerCellCustomization(cardIdx, cellIdx, update) {
 function renderPlayerCardGrid() {
   const grid = document.getElementById("wristbandGrid");
   if (!grid) return;
+  syncWristbandModeSurface("player");
 
   const card = wristbandCards[currentCardIndex];
   if (!card) {

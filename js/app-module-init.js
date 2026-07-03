@@ -52,6 +52,10 @@ function initAllModules() {
         typeof window.playImages.loadKeys === "function"
       ) {
         window.playImages.loadKeys().then((keys) => {
+          if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+          if (typeof refreshPlayReadinessSurfaces === "function") {
+            refreshPlayReadinessSurfaces("play-images");
+          }
           if (!keys.length) return;
           if (typeof showToast === "function") {
             showToast(

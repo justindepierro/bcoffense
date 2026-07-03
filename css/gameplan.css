@@ -994,6 +994,15 @@ body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar-spacer {
   order: 10;
 }
 
+body:not(.is-mobile-screen) .gp-stats-bar > details.gp-scoreboard[open] {
+  flex: 1 1 360px;
+  order: 0;
+}
+
+body:not(.is-mobile-screen) .gp-stats-bar > details.gp-media-scoreboard[open] {
+  flex: 1 1 420px;
+}
+
 /* Distribution strip */
 .gp-dist-strip {
   display: flex;
@@ -1132,6 +1141,23 @@ body:not(.is-mobile-screen) .gp-score-tile {
 }
 .gp-score-ok .gp-score-count {
   color: var(--color-success);
+}
+.gp-media-scoreboard .gp-score-grid {
+  grid-template-columns: repeat(4, minmax(92px, 1fr));
+}
+.gp-media-scoreboard .gp-score-tile {
+  cursor: default;
+}
+.gp-media-scoreboard .gp-score-tile:hover {
+  transform: none;
+  box-shadow: none;
+}
+.gp-media-scoreboard .gp-score-count {
+  font-size: var(--font-size-lg);
+  white-space: nowrap;
+}
+.gp-media-scoreboard .gp-score-media-total .gp-score-count {
+  font-size: var(--font-size-xl);
 }
 
 /* Filter chips */

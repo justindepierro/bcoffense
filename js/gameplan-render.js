@@ -327,6 +327,7 @@ function renderGamePlan() {
   const wrapper = document.createElement("div");
   const distHtml = _gpRenderDistributionStrip(board, draftedPlays);
   const scoreboardHtml = _gpRenderScoreboard(board, draftedPlays);
+  const mediaScoreHtml = _gpRenderMediaCompletionScore(board, draftedPlays);
   const touchHtml = _gpRenderTouchTracker(board, draftedPlays);
   const chipsHtml = _gpRenderFilterChips();
   const jumpBarHtml = _gpRenderJumpPills(allBoxes, board);
@@ -350,8 +351,8 @@ function renderGamePlan() {
         <button class="gp-spotlight-clear" data-action="clearGamePlanSpotlight" title="Clear spotlight (Esc)">✕ Clear</button>
       </div>`;
   }
-  const statsBarHtml = (distHtml || scoreboardHtml || touchHtml)
-    ? `<div class="gp-stats-bar">${distHtml}${scoreboardHtml}${touchHtml}</div>`
+  const statsBarHtml = (distHtml || scoreboardHtml || mediaScoreHtml || touchHtml)
+    ? `<div class="gp-stats-bar">${distHtml}${scoreboardHtml}${mediaScoreHtml}${touchHtml}</div>`
     : "";
   wrapper.innerHTML =
     `<div class="gp-command-zone">${headerHtml}${toolbarHtml}</div>` +
@@ -1126,6 +1127,93 @@ function _gpRenderScoreboard(board, draftedPlays) {
     <details class="gp-scoreboard"${scoreboardOpen}>
       <summary>📋 Coverage</summary>
       <div class="gp-score-grid">${tiles}</div>
+    </details>`;
+}
+
+function _gpMediaStatusForPlay(play) {
+  return {
+    hasDiagram: Boolean(
+      play &&
+      window.playImages &&
+      typeof window.playImages.hasForPlay === "function" &&
+      window.playImages.hasForPlay(play)
+    ),
+    hasVideo: Boolean(
+      play &&
+      window.playClips &&
+      typeof window.playClips.hasForPlay === "function" &&
+      window.playClips.hasForPlay(play)
+    ),
+  };
+}
+
+function _gpUniqueDraftedPlays(drafted) {
+  const unique = new Map();
+  (drafted || []).forEach((play) => {
+    if (!play || typeof play !== "object") return;
+    const sig = _gpPlaySignature(play) || JSON.stringify([
+      play.personnel || "",
+      play.formation || "",
+      play.play || "",
+      play.basePlay || "",
+    ]);
+    if (!unique.has(sig)) unique.set(sig, play);
+  });
+  return [...unique.values()];
+}
+
+function _gpRenderMediaCompletionScore(board, draftedPlays) {
+  const drafted = Array.isArray(draftedPlays)
+    ? draftedPlays
+    : _gpAllDraftedPlays(board);
+  const uniquePlays = _gpUniqueDraftedPlays(drafted);
+  const total = uniquePlays.length;
+  const media = uniquePlays.reduce(
+    (acc, play) => {
+      const status = _gpMediaStatusForPlay(play);
+      if (status.hasDiagram) acc.diagrams += 1;
+      if (status.hasVideo) acc.videos += 1;
+      if (status.hasDiagram && status.hasVideo) acc.shown += 1;
+      return acc;
+    },
+    { diagrams: 0, videos: 0, shown: 0 },
+  );
+  const diagramPct = total ? media.diagrams / total : 0;
+  const videoPct = total ? media.videos / total : 0;
+  const score = total ? Math.round((diagramPct * 85) + (videoPct * 15)) : 0;
+  const status = score >= 85 ? "ok" : score >= 60 ? "warn" : "empty";
+  const scoreboardOpen = document.body?.classList.contains("is-mobile-screen")
+    ? ""
+    : " open";
+  const summaryText = total
+    ? `🖼️ Diagrams ${score}`
+    : "🖼️ Diagrams";
+  return `
+    <details class="gp-scoreboard gp-media-scoreboard"${scoreboardOpen}
+      title="Play diagram completion uses unique drafted plays; videos add bonus credit.">
+      <summary>${summaryText}</summary>
+      <div class="gp-score-grid gp-media-score-grid">
+        <div class="gp-score-tile gp-score-${status} gp-score-media-total"
+          title="Completion score: diagrams are 85% of the score, videos add a 15% bonus.">
+          <span class="gp-score-label">Media Score</span>
+          <span class="gp-score-count">${score}</span>
+        </div>
+        <div class="gp-score-tile ${media.diagrams === total && total ? "gp-score-ok" : media.diagrams ? "gp-score-warn" : "gp-score-empty"}"
+          title="${media.diagrams} of ${total} unique drafted plays have diagrams.">
+          <span class="gp-score-label">Diagrams</span>
+          <span class="gp-score-count">${media.diagrams}/${total}</span>
+        </div>
+        <div class="gp-score-tile ${media.videos ? "gp-score-ok" : "gp-score-empty"}"
+          title="${media.videos} of ${total} unique drafted plays have video clips.">
+          <span class="gp-score-label">Video Bonus</span>
+          <span class="gp-score-count">${media.videos}</span>
+        </div>
+        <div class="gp-score-tile ${media.shown ? "gp-score-ok" : "gp-score-empty"}"
+          title="${media.shown} unique drafted plays have both a diagram and a video clip.">
+          <span class="gp-score-label">Shown</span>
+          <span class="gp-score-count">${media.shown}</span>
+        </div>
+      </div>
     </details>`;
 }
 

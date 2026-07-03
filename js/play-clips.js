@@ -120,6 +120,14 @@
     return candidateSigs(play).some((s) => _indexSet.has(s));
   }
 
+  function _emitClipChange(sig) {
+    try {
+      window.dispatchEvent(new CustomEvent("play-clips-changed", { detail: { sig } }));
+    } catch (_err) {
+      /* ignore */
+    }
+  }
+
   async function fetchManifest(sig) {
     const response = await fetch(manifestUrl(sig), {
       credentials: "same-origin",
@@ -234,6 +242,7 @@
       throw new Error((data && data.error) || "Upload failed.");
     }
     if (_indexSet) _indexSet.add(sig);
+    _emitClipChange(sig);
     return data;
   }
 
@@ -256,6 +265,7 @@
     if (_indexSet && Array.isArray(data.clips) && !data.clips.length) {
       _indexSet.delete(sig);
     }
+    _emitClipChange(sig);
     return data;
   }
 
@@ -480,13 +490,17 @@
   };
 
   // Warm the clip index once the page is interactive so the playbook can show
-  // its 🎬 indicators on first render. Re-render the playbook once it lands.
+  // its 🎬 indicators on first render. Re-render media-aware surfaces once it lands.
   function _initClipIndex() {
     loadIndex().then(() => {
       if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
       else if (typeof renderPlaybook === "function") renderPlaybook();
       if (typeof requestRenderScript === "function") requestRenderScript();
       else if (typeof renderScript === "function") renderScript();
+      if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+      if (typeof refreshPlayReadinessSurfaces === "function") {
+        refreshPlayReadinessSurfaces("clips");
+      }
     });
   }
   if (document.readyState === "loading") {

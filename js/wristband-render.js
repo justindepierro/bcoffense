@@ -214,6 +214,9 @@ function finalizeWristbandGridRender(grid, cardData, cellsPerCard) {
 function renderWristbandGrid() {
   const grid = document.getElementById("wristbandGrid");
   const cardEl = document.getElementById("wristbandCard");
+  if (typeof syncWristbandModeSurface === "function") {
+    syncWristbandModeSurface(wristbandType || "");
+  }
   // If player wristband mode is active, delegate to its renderer.
   if (typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode) {
     grid?.classList.remove("wb-phone-editor-grid");
