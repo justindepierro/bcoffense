@@ -762,6 +762,28 @@ queueMobileShellStateSync();
 document.addEventListener("DOMContentLoaded", () => {
   observeMobileShellChrome();
   queueMobileShellMeasuredSync();
+  // Bulletproof nav-bar guard: #mainApp is overflow:hidden on desktop and must
+  // never scroll (panels own their own scroll). But programmatic scrollTop
+  // (scrollIntoView, focus, etc.) can still push it, hiding the tab bar +
+  // game-week bar. Reset it SYNCHRONOUSLY the instant it moves — no rAF delay,
+  // so there is no visible flash. Runs only when the panel is the scroll owner.
+  const mainApp = document.getElementById("mainApp");
+  if (mainApp) {
+    mainApp.addEventListener(
+      "scroll",
+      () => {
+        if (
+          typeof isDesktopShellPanelScrollOwner === "function" &&
+          isDesktopShellPanelScrollOwner() &&
+          (mainApp.scrollTop !== 0 || mainApp.scrollLeft !== 0)
+        ) {
+          mainApp.scrollTop = 0;
+          mainApp.scrollLeft = 0;
+        }
+      },
+      { passive: true },
+    );
+  }
 });
 window.addEventListener("load", queueMobileShellMeasuredSync);
 window.addEventListener("resize", queueMobileShellStateSync, { passive: true });
