@@ -196,8 +196,8 @@ Implement the communication layer intended to allow players to ask questions and
 
 ### 0.E — Dead Code & Bloat Reduction (35–41)
 
-- [ ] **35.** Static dead-code sweep: for each top-level function, grep for references; produce a candidate-unused list for manual review.
-- [ ] **36.** Remove confirmed dead code (start with the newly-orphaned patterns exposed by removing the `sendScoutRecsToGamePlan` duplicate).
+- [x] **35.** Static dead-code sweep run: 32 candidate-unused top-level functions identified (heuristic, accounting for `data-action` + dynamic `window[]` calls). Verified individually before any removal. (2026-07, SW v896)
+- [x] **36.** Removed 2 confirmed-dead helpers (`_catFieldPosAliasGroup` in `playbook-identity.js`, `_paRevealLibrary` in `page-actions.js`, both 0 references). Re-wired the orphaned `showWristbandNotYetList` feature into the Wristband Actions menu instead of deleting it (its button was dropped during the toolbar cleanup). Also fixed 3 pre-existing corrupt emoji icons in the Actions config. (2026-07, SW v896)
 - [ ] **37.** Split the 5 largest JS files (`play-discussion.js` 3033, `play-presentation.js` 2948, `utils.js` 2286, `tendencies.js` 2075, `app-shell.js` 1967) along clear ownership lines.
 - [ ] **38.** Split `utils.js` — it mixes constants, modals, CSV parsing, and DOM helpers; separate into focused files.
 - [ ] **39.** Audit `_paRevealLibrary` and other known-unused helpers flagged during the Actions Hub work; delete or wire up.
@@ -209,7 +209,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **42.** Define ONE canonical play-signature function and route every dedup/match through it (audit `_gpPlaySignature`, `playsMatch`, `playSignature`, ad-hoc `JSON.stringify`).
 - [ ] **43.** Verify stable play identity survives every handoff (Playbook → Script → Wristband → Call Sheet → Game Plan) with a round-trip test.
 - [ ] **44.** Ensure deleting/editing a play updates or flags downstream artifacts (no orphaned references in call sheet / wristband / game plan).
-- [ ] **45.** Validate all `STORAGE_KEYS` are actually used; remove dead keys and document each key's owning module.
+- [x] **45.** Audited all 71 `STORAGE_KEYS` — every key has at least one live read/write reference. No dead keys to remove. (2026-07, SW v896)
 - [ ] **46.** Add a migration test harness that runs `runMigrations()` against fixtures for each `STORAGE_VERSION`.
 
 ### 0.G — Workflow, Tooling & Docs (47–50)

@@ -72,6 +72,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🎯", label: "Create from Game Plan", run: () => _paCall("createWristbandCardFromGamePlan") },
       { icon: "📋", label: "Create from Script", run: () => _paCall("createWristbandCardFromScript") },
       { icon: "🔄", label: "Reconcile with Source", run: () => _paCall("reconcileWristbandWithSource") },
+      { icon: "📥", label: "Not Yet on Wristband", run: () => _paCall("showWristbandNotYetList") },
       { icon: "📂", label: "Load Templates", run: () => _paCall("openWristbandTemplatesMenu") },
       { icon: "💾", label: "Save Template", run: () => _paCall("saveWristbandTemplate") },
       { icon: "💾", label: "Save As", run: () => _paCall("saveWristbandAs") },
@@ -108,9 +109,9 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "➕", label: "Add Bucket", run: () => _paCall("openGamePlanAddBucket") },
       { icon: "🔀", label: "Reorder Boxes", run: () => _paCall("openGamePlanReorderBoxes") },
       { icon: "👁️", label: "Manage Boxes", run: () => _paCall("openGamePlanManageBoxes") },
-      { icon: "�", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
+      { icon: "🃏", label: "Build WB Card", run: () => _paCall("sendGamePlanToWristbandCard") },
       { icon: "⌨️", label: "Shortcuts", run: () => _paCall("openGamePlanShortcutsHelp") },
-      { icon: "�🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
+      { icon: "🗑️", label: "Clear Board", run: () => _paCall("clearGamePlanBoard") },
     ],
   },
 };
@@ -451,12 +452,4 @@ function _paToggleLibraryPane(panelId, collapsedClass) {
   const panel = document.getElementById(panelId);
   if (!panel) return;
   panel.classList.toggle(collapsedClass);
-}
-
-function _paRevealLibrary(selector) {
-  const el = document.querySelector(selector);
-  if (!el) return;
-  requestAnimationFrame(() =>
-    el.scrollIntoView({ behavior: "smooth", block: "start" }),
-  );
 }

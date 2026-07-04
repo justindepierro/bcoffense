@@ -24,23 +24,6 @@ function _catCategoryDisplayName(cat) {
   return cat && cat.name ? cat.name : "";
 }
 
-function _catFieldPosAliasGroup(value) {
-  const map = {
-    green: ["green", "fringe"],
-    fringe: ["green", "fringe"],
-    "lo-rz": ["lo-rz", "low red zone", "low rz"],
-    "hi-rz": ["hi-rz", "high red zone", "high rz", "red zone"],
-    "red zone": ["hi-rz", "red zone"],
-    "goal line": ["goal line", "goalline"],
-    goalline: ["goal line", "goalline"],
-    "backed up": ["backed up", "backedup", "own territory"],
-    backedup: ["backed up", "backedup"],
-    saigon: ["saigon"],
-  };
-  const v = (value || "").toLowerCase();
-  return map[v] || [v];
-}
-
 /** True if the play already matches this category (uses findMatchingCategories when available). */
 function _catPlayMatches(play, cat) {
   if (!play || !cat) return false;
