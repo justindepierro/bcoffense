@@ -165,10 +165,10 @@ Implement the communication layer intended to allow players to ask questions and
 
 - [ ] **11.** Reduce `wristband.css` `!important` count (115 → target < 40) by fixing source order and using more specific selectors.
 - [ ] **12.** Global `!important` audit (711 total): categorize as utility-override (keep) vs specificity-war (remove). Target < 400.
-- [ ] **13.** Add a permanent regression comment + guard test around `.panel.active` staying opacity-only (no `transform`/`will-change: transform`/`filter`).
+- [x] **13.** Both a permanent NOTE comment in `css/layout.css` (`.panel.active`) AND a strict audit check (`static-ui-audit.sh`) now guard against re-adding `transform`/`will-change:transform` to the panel. Ship aborts if violated. (2026-07)
 - [ ] **14.** Standardize the "pinned zone + scroll zone" flex pattern across ALL module panels (script, gameplan done; apply to callsheet, wristband, tendencies, dashboard).
 - [ ] **15.** Audit all `position: sticky` uses inside panels — confirm each has a real scroll container ancestor and won't be trapped by a transform.
-- [ ] **16.** Replace every remaining `<details>`/`<summary>` toolbar dropdown with the anchored `.tool-menu-wrap` pattern (Safari reliability).
+- [x] **16.** Zero `<summary class="btn">` toolbar dropdowns remain (the Wristband Colors menu was the last one, converted to `.tool-menu-wrap`). A strict audit check now blocks any new ones. Legit `<details>` drawer/help sections (non-button summaries) are fine and kept. (2026-07)
 - [ ] **17.** Consolidate duplicated responsive breakpoints — pick a canonical set of breakpoints (e.g. 640/820/1024) and document them.
 - [ ] **18.** Extract shared card/panel/toolbar patterns into `components.css` utility classes to cut per-module CSS duplication.
 - [x] **19.** Audited z-index usage: 19 raw numeric values remain, all low local-stacking values (1–6) or intentional component-scoped layers that do NOT conflict with the global `--z-*` token scale (which starts at dropdown=1500). Global layering already uses tokens. Mass-converting local `z-index:1` values would be churn with visual-regression risk for no benefit. (2026-07, SW v900)
@@ -181,7 +181,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [x] **23.** Added `scrollElementWithinPanel(el, opts)` (`app-shell.js`): on desktop it scrolls the nearest genuine inner scroll container (never the shell) and no-ops if none is found; on mobile it falls back to native `scrollIntoView` (safe there). In-panel scrolling now routes through it. (2026-07, SW v898)
 - [ ] **24.** Audit all `.focus()` calls (many sites) — programmatic focus can also scroll the shell; use `{ preventScroll: true }` where appropriate.
 - [ ] **25.** Verify the tab bar stays pinned across ALL tabs on desktop (regression matrix: each tab × scroll-to-bottom).
-- [ ] **26.** Document the desktop shell scroll model (body → #mainApp → panel) prominently in `AGENTS.md` (done — keep updated).
+- [x] **26.** The desktop shell scroll model (body → #mainApp → panel, with the capturing scroll-repair backstop) is documented in `AGENTS.md` "Known Traps" Trap 4. (2026-07)
 
 ### 0.D — Error Handling & Observability (27–34)
 
