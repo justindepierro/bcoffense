@@ -137,51 +137,30 @@ function renderGamePlan() {
   const totalAssigned = assignedSigs.size;
 
   const headerHtml = `
-    <div class="gp-header">
-      <div class="gp-header-meta">
-        <div class="gp-header-title">
-          🎯 Game Plan
-          ${opponent
+    <div class="gp-cmd-bar">
+      <div class="gp-cmd-identity">
+        <span class="gp-cmd-title">🎯 Game Plan</span>
+        ${opponent
       ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
-      : `<span class="gp-header-empty">No opponent set — pick one in the Dashboard to keep boards per opponent</span>`}
-          ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
-          ${board.sheetTitle ? `<span class="gp-header-template">${escapeHtml(board.sheetTitle)}</span>` : ""}
-        </div>
-        <div class="gp-header-week">${totalAssigned} plays drafted across ${allBoxes.length} boxes</div>
-      </div>
-      <div class="gp-header-actions">
+      : `<span class="gp-header-empty">No opponent — set one in Dashboard</span>`}
+        ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
+        ${board.sheetTitle ? `<span class="gp-header-template">${escapeHtml(board.sheetTitle)}</span>` : ""}
+        <span class="gp-cmd-count">${totalAssigned} plays · ${allBoxes.length} boxes</span>
         ${_gpRenderHealthGauge(board, draftedPlays)}
-        <div class="gp-header-group gp-header-group-primary">
-          <button class="btn btn-sm page-library-btn" data-action="openPlayLibrary" title="Show or hide the play library">
-            📚 Library
-          </button>
-          <button class="btn btn-sm btn-primary page-actions-open-btn" data-action="openPageActions" title="Load, Save, Print, Send, Templates, and more" aria-haspopup="dialog">
-            ⚡ Actions
-          </button>
-          <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
-            🧠 Build Plan
-          </button>
-          <button class="btn btn-sm btn-success" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
-            🖨️ Print
-          </button>
-          ${board.loadedWristband
-      ? `<button class="btn btn-sm" data-action="clearGamePlanWristband" title="Unload wristband (currently: ${escapeHtml(board.loadedWristband.name || "")})">📋 ${escapeHtml(board.loadedWristband.name || "Wristband")} ✕</button>`
-      : `<button class="btn btn-sm" data-action="loadGamePlanWristband" title="Load a wristband to match plays and show numbers">📋 Load Wristband</button>`}
-        </div>
-        <div class="gp-header-group">
-          <button class="btn btn-sm" data-action="expandAllGamePlanBoxes" title="Expand every box">
-            ▼
-          </button>
-          <button class="btn btn-sm" data-action="collapseAllGamePlanBoxes" title="Collapse every box">
-            ▶
-          </button>
-          <button class="btn btn-sm" data-action="cycleGamePlanDensity" title="Toggle density (Comfortable / Compact / Detail)">
-            ${_gpFilters.density === "compact" ? "▭" : _gpFilters.density === "detail" ? "🗂️" : "▥"} ${_gpFilters.density.charAt(0).toUpperCase() + _gpFilters.density.slice(1)}
-          </button>
-          <button class="btn btn-sm btn-danger" data-action="clearGamePlanBoard" title="Remove every play from every box for this opponent">
-            🗑️ Clear All
-          </button>
-        </div>
+      </div>
+      <div class="gp-cmd-actions">
+        <button class="btn btn-sm gp-filters-btn${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters" title="Search &amp; filter the play library" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">
+          🔎 Filters${_gpActiveFilterCount() > 0 ? ` <span class="gp-adv-badge">${_gpActiveFilterCount()}</span>` : ""}
+        </button>
+        <button class="btn btn-sm btn-primary" data-action="openSmartGamePlanBuilder" title="Recommend a first-draft plan from the playbook">
+          🧠 Build Plan
+        </button>
+        <button class="btn btn-sm btn-success" data-action="openGamePlanPrintModal" title="Print the board-only game plan">
+          🖨️ Print
+        </button>
+        <button class="btn btn-sm btn-primary page-actions-open-btn" data-action="openPageActions" title="Library, Load Wristband, Density, Templates, Clear, and more" aria-haspopup="dialog">
+          ⚡ Actions
+        </button>
       </div>
     </div>`;
 
@@ -249,7 +228,8 @@ function renderGamePlan() {
   ])}
     </div>` : "";
 
-  const toolbarHtml = `
+  const toolbarHtml = _gpFilters.showFilters ? `
+    <div class="gp-filters-drawer" role="region" aria-label="Play filters">
     <div class="gp-toolbar toolbar-surface">
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
@@ -286,7 +266,8 @@ function renderGamePlan() {
         ➕ Add Selected to…
       </button>
     </div>
-    ${advancedHtml}`;
+    ${advancedHtml}
+    </div>` : "";
 
   const filtered = _gpFilteredLibrary(board);
   const libraryHtml = `
@@ -956,6 +937,29 @@ function _gpAdvancedFilterCount() {
 function toggleGamePlanAdvancedFilters() {
   _gpFilters.showAdvanced = !_gpFilters.showAdvanced;
   requestRenderGamePlan();
+}
+
+// Redesign: toggle the 🔎 Filters drawer (desktop slide-down / mobile sheet).
+function toggleGamePlanFilters() {
+  _gpFilters.showFilters = !_gpFilters.showFilters;
+  requestRenderGamePlan();
+}
+
+// Total active filters (for the Filters button badge). Counts search, play
+// type(s), formation, personnel, matchup chips, hide-drafted, plus advanced.
+function _gpActiveFilterCount() {
+  const f = _gpFilters;
+  let n = 0;
+  if (f.search && f.search.trim()) n += 1;
+  if (Array.isArray(f.type) && f.type.length) n += f.type.length;
+  if (f.formation) n += 1;
+  if (Array.isArray(f.personnel) && f.personnel.length) n += f.personnel.length;
+  if (f.goodVsMan) n += 1;
+  if (f.goodVsBear) n += 1;
+  if (f.goodVsOkie) n += 1;
+  if (f.hideAssigned) n += 1;
+  n += _gpAdvancedFilterCount();
+  return n;
 }
 
 // Phone-only: toggle the bulk-operations action sheet. On larger screens the

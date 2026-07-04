@@ -79,6 +79,62 @@
   color: var(--color-warning);
 }
 
+/* ── Redesign: unified command bar (single pinned row) ── */
+.gp-cmd-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: var(--space-sm) var(--space-md);
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
+}
+.gp-cmd-identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-sm);
+  flex-wrap: wrap;
+  min-width: 0;
+}
+.gp-cmd-title {
+  font-size: var(--font-size-lg);
+  font-weight: 700;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+.gp-cmd-count {
+  font-size: var(--font-size-xs);
+  color: var(--color-text-muted);
+  white-space: nowrap;
+}
+.gp-cmd-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+.gp-filters-btn.is-active {
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  border-color: var(--color-primary);
+}
+/* Filters drawer — opacity-only animation (never transform: containing-block trap) */
+.gp-filters-drawer {
+  margin-top: var(--space-xs);
+  animation: gpFadeIn 0.15s ease;
+}
+@keyframes gpFadeIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+
 .gp-header-actions {
   display: flex;
   flex-wrap: wrap;
@@ -565,7 +621,8 @@
 
 /* Header scrolls with content — position: sticky is unreliable inside the
    panel's transform (it caused the scoreboard to leak above the header). */
-#gameplan .gp-header {
+#gameplan .gp-header,
+#gameplan .gp-cmd-bar {
   position: static;
 }
 
@@ -585,13 +642,10 @@ body:not(.is-mobile-screen) .gp-board-scroll {
   overflow: auto;
   overscroll-behavior: contain;
 }
-/* Compact the pinned command zone (header + toolbar) so it doesn't eat board space */
-.gp-command-zone > .gp-header,
-.gp-command-zone > .gp-toolbar {
+/* Compact the pinned command zone so it doesn't eat board space */
+.gp-command-zone > .gp-cmd-bar,
+.gp-command-zone > .gp-filters-drawer {
   margin-bottom: var(--space-xs);
-}
-body:not(.is-mobile-screen) .gp-command-zone .gp-header {
-  padding: var(--space-sm) var(--space-md);
 }
 body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar {
   gap: var(--space-xs);

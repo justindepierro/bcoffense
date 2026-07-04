@@ -98,6 +98,7 @@ let _gpFilters = {
   goodVsBear: false,
   goodVsOkie: false,
   showAdvanced: false,
+  showFilters: false, // redesign: 🔎 Filters drawer open state (desktop) / sheet (mobile)
   // Spotlight mode: when active, dims non-matching boxes and pulses matching plays.
   // Shape: null | { kind: "scenario", id: "3rd-long" } | { kind: "player", name: "Marco" }
   spotlight: null,

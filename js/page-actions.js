@@ -88,13 +88,18 @@ const PAGE_ACTIONS_CONFIG = {
   gameplan: {
     title: "Game Plan",
     verbs: [
-      { icon: "📂", label: "Load", run: () => _paCall("openGamePlanSnapshotsMenu") },
-      { icon: "💾", label: "Save", run: () => _paCall("saveGamePlanSnapshot") },
-      { icon: "🖨️", label: "Print", run: () => _paCall("openGamePlanPrintModal") },
+      { icon: "�", label: "Library", run: () => _paCall("openPlayLibrary") },
+      { icon: "📋", label: "Load Wristband", run: () => _paCall("loadGamePlanWristband") },
+      { icon: "▼", label: "Expand All", run: () => _paCall("expandAllGamePlanBoxes") },
+      { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllGamePlanBoxes") },
       { icon: "⚙️", label: "Density", run: () => _paCall("cycleGamePlanDensity") },
+      { icon: "💾", label: "Save", run: () => _paCall("saveGamePlanSnapshot") },
     ],
     extras: [
+      { icon: "📂", label: "Load Snapshot", run: () => _paCall("openGamePlanSnapshotsMenu") },
+      { icon: "🖨️", label: "Print", run: () => _paCall("openGamePlanPrintModal") },
       { icon: "🧠", label: "Build Plan", run: () => _paCall("openSmartGamePlanBuilder") },
+      { icon: "🚫", label: "Unload Wristband", run: () => _paCall("clearGamePlanWristband") },
       { icon: "➡️", label: "Send to Call Sheet", run: () => _paCall("pushGamePlanToCallSheet") },
       { icon: "📋", label: "Send to Script", run: () => _paCall("pushGamePlanToScript") },
       { icon: "🃏", label: "Send to Wristband", run: () => _paCall("pushGamePlanToWristband") },
