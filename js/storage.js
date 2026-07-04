@@ -262,6 +262,32 @@ function _lzsDecompress(raw) {
     return raw; // graceful fallback — parse will fail safely downstream
   }
 }
+
+function _isLzsEncoded(raw) {
+  return typeof raw === "string" && raw.startsWith(_LZS_PREFIX);
+}
+
+function _storageByteSize(value) {
+  return new Blob([value || ""]).size;
+}
+
+function _parseStoredJson(raw, fallback = null) {
+  if (raw === null || raw === undefined) return fallback;
+  return safeJSONParse(_lzsDecompress(raw), fallback);
+}
+
+function _storedJsonValue(value) {
+  return _lzsCompress(JSON.stringify(value));
+}
+
+function _isDraftStorageKey(key) {
+  return (
+    key === STORAGE_KEYS.SCRIPT_DRAFT ||
+    key === STORAGE_KEYS.WRISTBAND_DRAFT ||
+    key === STORAGE_KEYS.CALLSHEET_DRAFT ||
+    key === STORAGE_KEYS.TENDENCIES_DRAFT
+  );
+}
 // ──────────────────────────────────────────────────────────────────────────
 
 // ── IndexedDB Playbook Storage ─────────────────────────────────────────────
@@ -341,6 +367,7 @@ function _idbClearPlaybook() {
 
 const storageManager = {
   _lastPressureWarningAt: 0,
+  _compactedThisSession: false,
 
   get(key, defaultValue = null) {
     try {
@@ -505,9 +532,11 @@ const storageManager = {
       if (backup[key] !== undefined) {
         const value =
           typeof backup[key] === "string"
-            ? backup[key]
-            : JSON.stringify(backup[key]);
-        localStorage.setItem(key, value);
+            ? safeJSONParse(backup[key], undefined)
+            : backup[key];
+        if (value !== undefined) {
+          localStorage.setItem(key, _storedJsonValue(value));
+        }
       }
     });
 
@@ -526,6 +555,7 @@ const storageManager = {
       }
     }
 
+    this.compactLocalStorage({ removeExpiredDrafts: true });
     return true;
   },
 
@@ -545,10 +575,14 @@ const storageManager = {
 
     const estimatedQuotaBytes = 5 * 1024 * 1024;
     const usageRatio = totalSize / estimatedQuotaBytes;
+    const largestItems = Object.entries(itemSizes)
+      .map(([key, size]) => ({ key, size }))
+      .sort((a, b) => b.size - a.size);
     return {
       totalSize,
       totalSizeFormatted: this.formatBytes(totalSize),
       itemSizes,
+      largestItems,
       itemCount: Object.keys(itemSizes).length,
       estimatedQuotaBytes,
       estimatedQuotaFormatted: this.formatBytes(estimatedQuotaBytes),
@@ -560,17 +594,91 @@ const storageManager = {
     };
   },
 
+  compactLocalStorage(opts = {}) {
+    const removeExpiredDrafts = opts.removeExpiredDrafts !== false;
+    let beforeBytes = 0;
+    let afterBytes = 0;
+    let compressedCount = 0;
+    let removedDrafts = 0;
+    let skippedCount = 0;
+
+    Object.values(STORAGE_KEYS).forEach((key) => {
+      if (key === STORAGE_KEYS.PLAYBOOK) return; // playbook belongs in IndexedDB
+      const raw = localStorage.getItem(key);
+      if (raw === null) return;
+
+      beforeBytes += _storageByteSize(raw);
+      const parsed = _parseStoredJson(raw, undefined);
+      if (parsed === undefined) {
+        afterBytes += _storageByteSize(raw);
+        skippedCount += 1;
+        return;
+      }
+
+      if (
+        removeExpiredDrafts &&
+        _isDraftStorageKey(key) &&
+        typeof isDraftExpired === "function" &&
+        isDraftExpired(parsed)
+      ) {
+        localStorage.removeItem(key);
+        removedDrafts += 1;
+        return;
+      }
+
+      const next = _storedJsonValue(parsed);
+      if (next !== raw) {
+        try {
+          localStorage.setItem(key, next);
+          if (!_isLzsEncoded(raw) && _isLzsEncoded(next)) compressedCount += 1;
+          afterBytes += _storageByteSize(next);
+        } catch (err) {
+          console.warn(`Storage compaction skipped ${key}:`, err);
+          afterBytes += _storageByteSize(raw);
+          skippedCount += 1;
+        }
+        return;
+      }
+
+      afterBytes += _storageByteSize(raw);
+    });
+
+    this._compactedThisSession = true;
+    const savedBytes = Math.max(0, beforeBytes - afterBytes);
+    return {
+      beforeBytes,
+      afterBytes,
+      savedBytes,
+      savedFormatted: this.formatBytes(savedBytes),
+      compressedCount,
+      removedDrafts,
+      skippedCount,
+    };
+  },
+
   maybeWarnStoragePressure() {
     const now = Date.now();
     if (now - this._lastPressureWarningAt < 10 * 60 * 1000) return;
+    if (!this._compactedThisSession) {
+      this.compactLocalStorage({ removeExpiredDrafts: true });
+    }
     const info = this.getStorageInfo();
     if (info.warningLevel === "ok") return;
     this._lastPressureWarningAt = now;
+    const largest = info.largestItems && info.largestItems[0];
+    const largestText = largest
+      ? ` Largest: ${largest.key} (${this.formatBytes(largest.size)}).`
+      : "";
     const message =
       info.warningLevel === "danger"
-        ? "Storage is almost full. Export a backup and clear old data soon."
-        : "Storage is getting full. Consider exporting a backup.";
-    showToast(message, { type: "warning", duration: 6000 });
+        ? `Storage is almost full: ${info.totalSizeFormatted} of ${info.estimatedQuotaFormatted}.${largestText}`
+        : `Storage is getting full: ${info.totalSizeFormatted} of ${info.estimatedQuotaFormatted}.${largestText}`;
+    showToast(message, {
+      type: "warning",
+      duration: 9000,
+      actionLabel: "Review",
+      action: "showStorageInfo",
+    });
   },
 
   formatBytes(bytes) {

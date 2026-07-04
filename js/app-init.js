@@ -15,6 +15,7 @@ async function initApp() {
     runMigrations();
 
     const storedPlaybook = await storageManager.getPlaybook();
+    storageManager.compactLocalStorage({ removeExpiredDrafts: true });
     if (storedPlaybook) {
       if (typeof setStartupLoadingMessage === "function") {
         setStartupLoadingMessage("Restoring playbook...");

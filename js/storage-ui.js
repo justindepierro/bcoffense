@@ -135,6 +135,28 @@ async function showStorageInfo() {
     wristbandDraft: "Wristband Autosave Draft",
     gamePlanTemplates: "Game Plan Templates",
     installationTemplates: "Installation Templates",
+    callSheetDisplayOptions: "Call Sheet Display Options",
+    callSheetDisplayPresets: "Call Sheet Display Presets",
+    callSheetDraft: "Call Sheet Autosave Draft",
+    callSheetSnapshots: "Call Sheet Snapshots",
+    callSheetNotes: "Call Sheet Notes",
+    callSheetTargets: "Call Sheet Targets",
+    defensiveTendencies: "Defensive Tendencies",
+    tendenciesDraft: "Tendencies Autosave Draft",
+    tendenciesSettings: "Tendencies Settings",
+    gameWeek: "Game Week",
+    gameWeekArchive: "Game Week Archive",
+    gamePlanBoards: "Game Plan Boards",
+    gamePlanSnapshots: "Game Plan Snapshots",
+    gamePlanTags: "Game Plan Tags",
+    playCollections: "Play Collections",
+    teamRoster: "Team Roster",
+    teamPersonnelPackages: "Personnel Packages",
+    teamSwapGroups: "Team Swap Groups",
+    playerReady: "Player Readiness",
+    playerPortalBranding: "Player Portal Branding",
+    tendenciesReports: "Tendency Reports",
+    cloudSyncSettings: "Cloud Sync Settings",
   };
 
   const counts = {};
@@ -189,12 +211,17 @@ async function showStorageInfo() {
   }
 
   let itemsHtml = "";
-  Object.entries(info.itemSizes).forEach(([key, size]) => {
+  if (info.playbookIDBBytes > 0) {
+    itemsHtml += `<tr><td class="si-td">Playbook (IndexedDB)${counts.playbook !== undefined ? ` (${escapeHtml(String(counts.playbook))} plays)` : ""}</td><td class="si-td si-td-right">${escapeHtml(info.playbookIDBFormatted)}</td></tr>`;
+  }
+  Object.entries(info.itemSizes)
+    .sort((a, b) => b[1] - a[1])
+    .forEach(([key, size]) => {
     const name = friendlyNames[key] || key;
     const sizeStr = storageManager.formatBytes(size);
     const countStr = counts[key] !== undefined ? ` (${counts[key]} items)` : "";
     itemsHtml += `<tr><td class="si-td">${escapeHtml(name)}${escapeHtml(countStr)}</td><td class="si-td si-td-right">${escapeHtml(sizeStr)}</td></tr>`;
-  });
+    });
   if (imageStats && imageStats.count > 0) {
     itemsHtml += `<tr><td class="si-td">Play Images (${imageStats.count} images)</td><td class="si-td si-td-right">${escapeHtml(imageStats.totalSizeFormatted)}</td></tr>`;
   }
@@ -214,7 +241,7 @@ async function showStorageInfo() {
 
   const body = `
     <div class="si-summary">
-      <strong>Total Storage Used:</strong> ${escapeHtml(info.totalSizeFormatted)}
+      <strong>Local Save Space Used:</strong> ${escapeHtml(info.totalSizeFormatted)}
       <div class="si-hint">Estimated localStorage budget: ${escapeHtml(info.estimatedQuotaFormatted)}</div>
       <div class="si-pressure ${pressureClass}">${escapeHtml(pressureText)}</div>
     </div>
@@ -223,6 +250,7 @@ async function showStorageInfo() {
       <tbody>${itemsHtml || '<tr><td colspan="2" class="si-empty">No data stored</td></tr>'}</tbody>
     </table>
     <div class="si-actions">
+      <button id="siOptimizeBtn" class="btn">🧹 Optimize Storage</button>
       <button id="siExportBtn" class="btn btn-primary">📥 Export Backup</button>
       <button id="siClearBtn" class="btn btn-danger">🗑️ Clear All Data</button>
     </div>`;
@@ -230,6 +258,20 @@ async function showStorageInfo() {
   showModal(body, { title: "💾 Storage Information", confirmText: "Close" });
 
   setTimeout(() => {
+    document.getElementById("siOptimizeBtn")?.addEventListener("click", () => {
+      const result = storageManager.compactLocalStorage({ removeExpiredDrafts: true });
+      const details = [];
+      if (result.savedBytes > 0) details.push(`freed ${result.savedFormatted}`);
+      if (result.removedDrafts > 0) {
+        details.push(`removed ${result.removedDrafts} expired draft${result.removedDrafts === 1 ? "" : "s"}`);
+      }
+      showToast(
+        details.length ? `Storage optimized: ${details.join(", ")}.` : "Storage is already optimized.",
+        { type: "success", duration: 3500 },
+      );
+      document.querySelector(".custom-modal-overlay")?.remove();
+      showStorageInfo();
+    });
     document
       .getElementById("siExportBtn")
       ?.addEventListener("click", () => exportBackup());
