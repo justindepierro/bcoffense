@@ -129,6 +129,11 @@ function showTab(tabName) {
     }
     // Show type-choice landing if wristband is empty and no type chosen yet
     if (typeof checkShowWbLanding === "function") checkShowWbLanding();
+    // Safety net: if a type is active, guarantee the card is not hidden by any
+    // wb-hidden class left over from a previous syncWristbandModeSurface("") call.
+    if (typeof wristbandType !== "undefined" && wristbandType) {
+      document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
+    }
     if (typeof traceWristbandAction === "function") {
       traceWristbandAction("tab activation complete", {
         action: "showTab",

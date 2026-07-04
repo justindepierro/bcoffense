@@ -28,6 +28,8 @@ function checkShowWbLanding() {
   wristbandType = "classic";
   wbPlayerCardMode = false;
   syncWristbandModeSurface("classic");
+  // Hard guarantee matching startClassicWristband — ensure card is unblocked.
+  document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
   if (typeof traceWristbandAction === "function") {
     traceWristbandAction("check landing default classic", {
       action: "checkShowWbLanding",
@@ -114,6 +116,10 @@ function startClassicWristband() {
   syncWristbandModeSurface("classic");
   renderCardTabs();
   renderWristbandGrid();
+  // Hard guarantee: wb-hidden must not survive into classic mode regardless of
+  // any ordering quirk in the render pipeline above.
+  document.getElementById("wristbandCard")?.classList.remove("wb-hidden");
+  document.getElementById("wbCardViewport")?.classList.remove("wb-hidden");
   if (typeof traceWristbandAction === "function") {
     traceWristbandAction("classic complete", { action: "startClassicWristband" });
   }
