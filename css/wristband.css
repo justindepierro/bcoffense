@@ -3042,6 +3042,60 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     height: 44px;
   }
 
+  body.is-mobile-screen #wristband .wb-cmd-bar {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
+    padding: 10px;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-identity {
+    gap: 2px;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-actions {
+    display: grid;
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+    width: 100%;
+    gap: 6px;
+    align-items: stretch;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-actions > .btn,
+  body.is-mobile-screen #wristband .wb-cmd-actions > .tool-menu-wrap,
+  body.is-mobile-screen #wristband .wb-cmd-actions > .wb-toolbar-group {
+    width: auto;
+    min-width: 0;
+    flex: initial;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-actions > .tool-menu-wrap > .btn,
+  body.is-mobile-screen #wristband .wb-cmd-actions > .btn {
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 8px;
+    justify-content: center;
+    font-size: var(--font-size-xs);
+    white-space: nowrap;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-actions > .wb-toolbar-group {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 4px;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-actions > .wb-toolbar-group .btn {
+    width: 100%;
+    min-height: 40px;
+    padding: 6px 4px;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-actions .page-library-btn,
+  body.is-mobile-screen #wristband .wb-cmd-actions .page-actions-open-btn {
+    display: none;
+  }
+
   .wb-available-plays {
     max-height: calc(var(--app-vh, 1vh) * 45);
   }

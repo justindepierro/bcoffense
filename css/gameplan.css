@@ -3149,12 +3149,21 @@ body.gp-dragging-from-box .gp-trash-zone {
   }
 
   .gp-box-actions {
-    justify-content: stretch;
+    justify-content: flex-start;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    overscroll-behavior-x: contain;
+    padding-bottom: 2px;
+    scrollbar-width: none;
+  }
+
+  .gp-box-actions::-webkit-scrollbar {
+    display: none;
   }
 
   .gp-box-actions .btn-sm,
   .gp-box-actions .gp-box-sort {
-    flex: 1 1 88px;
+    flex: 0 0 auto;
     max-width: none;
     min-height: 36px;
   }
