@@ -69,7 +69,7 @@
 // becomes a dead feature. Rather than rewrite 1000 call sites (high risk), this
 // verifies a manifest of critical globals exists after load and screams LOUDLY
 // for any that are missing. Converts the silent-no-op failure mode into a
-// visible one. Purely additive — only reads `typeof window[name]`.
+// visible one. Purely additive — only probes global identifiers.
 const BC_CRITICAL_GLOBALS = [
   // Foundation utils (utils.js — always script #1)
   "escapeHtml", "sanitizeHTML", "setInnerHTML", "showToast", "showModal",
@@ -86,12 +86,28 @@ const BC_CRITICAL_GLOBALS = [
   "_gpPlaySignature", "getCategoryDisplayName", "getCurrentAuthUser",
 ];
 
+// Probe a global by NAME. Critical: `const`/`let`/`class` globals do NOT become
+// properties of `window` (only `var` and `function` declarations do), so
+// `window[name]` gives false negatives for e.g. `const storageManager`. Running
+// `typeof <name>` inside a `new Function` evaluates in global scope and sees all
+// declaration kinds. The names are a hardcoded manifest (never user input), so
+// this is injection-safe.
+function bcGlobalExists(name) {
+  try {
+    return new Function(
+      `return typeof ${name} !== "undefined" && ${name} !== null;`,
+    )();
+  } catch (_e) {
+    // A Content-Security-Policy without 'unsafe-eval' can block Function().
+    // Degrade gracefully to the window probe — accurate for var/function
+    // globals, though it may false-negative for const/let (which aren't on
+    // window). Better than crashing the integrity check.
+    return typeof window !== "undefined" && window[name] != null;
+  }
+}
+
 function bcIntegrityCheck(opts = {}) {
-  const missing = BC_CRITICAL_GLOBALS.filter((name) => {
-    const v = typeof window !== "undefined" ? window[name] : undefined;
-    // storageManager/STORAGE_KEYS/historyManager are objects; the rest functions.
-    return v === undefined || v === null;
-  });
+  const missing = BC_CRITICAL_GLOBALS.filter((name) => !bcGlobalExists(name));
   if (missing.length > 0) {
     console.error(
       `[BC integrity] ${missing.length} critical global(s) MISSING after load — features depending on them will silently fail:`,
