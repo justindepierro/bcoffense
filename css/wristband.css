@@ -171,10 +171,14 @@ body.app-ready:not(.is-mobile-screen) #wristband .wristband-preview {
 }
 
 /* Library-collapsed: hide pane, card takes full width */
-body.app-ready:not(.is-mobile-screen) #wristband.wb-library-collapsed .wristband-plays {
+body.app-ready:not(.is-mobile-screen)
+  #wristband.wb-library-collapsed
+  .wristband-plays {
   display: none;
 }
-body.app-ready:not(.is-mobile-screen) #wristband.wb-library-collapsed .wristband-container {
+body.app-ready:not(.is-mobile-screen)
+  #wristband.wb-library-collapsed
+  .wristband-container {
   grid-template-columns: unset;
 }
 

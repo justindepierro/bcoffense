@@ -1,27 +1,56 @@
+function _quickSetWbCellBg(cardIdx, cellIdx, color) {
+  const key = `${cardIdx}-${cellIdx}`;
+  const existing = cellCustomizations[key] || {};
+  const custom = { ...existing };
+  if (!color) {
+    delete custom.bgColor;
+    custom.textColor = UI_COLORS.textBlack;
+  } else {
+    custom.bgColor = color;
+    custom.textColor =
+      typeof isColorDark === "function" && isColorDark(color)
+        ? UI_COLORS.textWhite
+        : UI_COLORS.textBlack;
+  }
+  mutateWristbandState(() => setWristbandCellCustomization(key, custom));
+}
+
 function _showWbCellContextMenu(e, cardIdx, cellIdx) {
   const hasPlay = wristbandCards[cardIdx]?.data[cellIdx] !== null;
   const menuItems = [];
-  if (hasPlay) {
+
+  // ── Quick cell colors ──────────────────────────────────────────────────
+  // Always show color shortcuts so users can tint a cell in one right-click.
+  const QUICK_COLORS = [
+    { label: "⬜ Clear color",   color: ""        },
+    { label: "🟡 Yellow",        color: "#ffeb3b" },
+    { label: "🟠 Orange",        color: "#ff9800" },
+    { label: "🔴 Red",           color: "#f44336" },
+    { label: "🟢 Green",         color: "#4caf50" },
+    { label: "🔵 Blue",          color: "#2196f3" },
+    { label: "🟣 Purple",        color: "#9c27b0" },
+  ];
+  QUICK_COLORS.forEach(({ label, color }) => {
     menuItems.push({
-      label: "📋 Copy Cell",
-      action: () => copyWbCell(cardIdx, cellIdx),
+      label,
+      action: () => _quickSetWbCellBg(cardIdx, cellIdx, color),
     });
+  });
+
+  // ── Full editor ────────────────────────────────────────────────────────
+  menuItems.push({ label: "🎨 Edit Style (popup)…", action: () => openCellPopup(cardIdx, cellIdx, e) });
+
+  if (hasPlay) {
+    menuItems.push({ label: "📋 Copy Cell", action: () => copyWbCell(cardIdx, cellIdx) });
   }
   if (copiedCell) {
-    menuItems.push({
-      label: "📌 Paste Cell",
-      action: () => pasteWbCell(cardIdx, cellIdx),
-    });
+    menuItems.push({ label: "📌 Paste Cell", action: () => pasteWbCell(cardIdx, cellIdx) });
   }
   if (hasPlay) {
-    menuItems.push({
-      label: "🗑️ Clear Cell",
-      action: () => clearWristbandCell(cardIdx, cellIdx),
-    });
+    menuItems.push({ label: "🗑️ Clear Cell", action: () => clearWristbandCell(cardIdx, cellIdx) });
   }
-  if (menuItems.length > 0) {
-    showContextMenu(e, menuItems);
-  }
+
+  showContextMenu(e, menuItems);
 }
 
 document.addEventListener("DOMContentLoaded", () => {
