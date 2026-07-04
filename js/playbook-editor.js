@@ -661,8 +661,8 @@ function openReadinessFromPlayEditor() {
     if (currentActiveTab !== "script" && typeof showTab === "function") showTab("script");
     setTimeout(() => {
       toggleScriptReadinessPanel(scriptIdx);
-      document.querySelector(`.script-item[data-idx="${scriptIdx}"]`)
-        ?.scrollIntoView({ block: "center", behavior: "smooth" });
+      const _si = document.querySelector(`.script-item[data-idx="${scriptIdx}"]`);
+      if (_si) scrollElementWithinPanel(_si, { block: "center", behavior: "smooth" });
     }, 150);
   } else if (typeof openPlayReadinessRepModalForPlay === "function") {
     openPlayReadinessRepModalForPlay(play, { source: "editor" });

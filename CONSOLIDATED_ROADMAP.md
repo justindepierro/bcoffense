@@ -176,9 +176,9 @@ Implement the communication layer intended to allow players to ask questions and
 
 ### 0.C — Scroll, Shell & Navigation (21–26)
 
-- [ ] **21.** Grep every `scrollIntoView` call (34+ sites); replace those inside `.panel` with direct inner-container scrolling.
-- [ ] **22.** Expand `repairDesktopDocumentScroll()` coverage and add a periodic assertion (dev-only) that `#mainApp.scrollTop === 0` on desktop.
-- [ ] **23.** Add a shared `scrollElementIntoContainer(el, container)` helper and route all in-panel scrolling through it.
+- [x] **21.** Audited all 27 `scrollIntoView` sites. Converted the 4 risky `block:center` in-panel calls (dashboard category jump, script-health jump, script packet reveal, playbook→script readiness jump) to the safe helper. The rest are `block:nearest` (benign) or inside fixed-position drawers/modals/lists (their own scroll container, never touch the shell). (2026-07, SW v898)
+- [x] **22.** Confirmed the global backstop already exists: a **capturing** `window` scroll listener (`app-shell.js`) catches `#mainApp` scrolling from ANY descendant and calls `repairDesktopDocumentScroll()`, which resets `#mainApp.scrollTop`/`scrollLeft` to 0 on desktop. This reactively guarantees the invariant without polling. (2026-07, SW v898)
+- [x] **23.** Added `scrollElementWithinPanel(el, opts)` (`app-shell.js`): on desktop it scrolls the nearest genuine inner scroll container (never the shell) and no-ops if none is found; on mobile it falls back to native `scrollIntoView` (safe there). In-panel scrolling now routes through it. (2026-07, SW v898)
 - [ ] **24.** Audit all `.focus()` calls (many sites) — programmatic focus can also scroll the shell; use `{ preventScroll: true }` where appropriate.
 - [ ] **25.** Verify the tab bar stays pinned across ALL tabs on desktop (regression matrix: each tab × scroll-to-bottom).
 - [ ] **26.** Document the desktop shell scroll model (body → #mainApp → panel) prominently in `AGENTS.md` (done — keep updated).

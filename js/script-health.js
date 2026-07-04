@@ -113,8 +113,8 @@ async function showScriptHealthIssues() {
   const issue = issues[Number(choice)];
   if (!issue || issue.index == null) return;
   const target = document.querySelector(`.script-item[data-idx="${issue.index}"], .period-header-wrapper[data-period-index="${issue.index}"]`);
-  if (target && typeof target.scrollIntoView === "function") {
-    target.scrollIntoView({ behavior: "smooth", block: "center" });
+  if (target) {
+    scrollElementWithinPanel(target, { behavior: "smooth", block: "center" });
     target.classList.add("script-health-flash");
     setTimeout(() => target.classList.remove("script-health-flash"), 2000);
   }

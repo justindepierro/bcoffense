@@ -962,7 +962,7 @@ function openScriptPacketBuilder() {
   if (!section) return;
   section.classList.remove("hidden");
   requestAnimationFrame(() => {
-    section.scrollIntoView({ behavior: "smooth", block: "center" });
+    scrollElementWithinPanel(section, { behavior: "smooth", block: "center" });
     document.getElementById("scriptPacketTitle")?.focus({ preventScroll: true });
   });
 }

@@ -189,8 +189,8 @@ function dashOpenCallSheetCategory(categoryId) {
   if (typeof showTab === "function") showTab("callsheet");
   setTimeout(() => {
     const el = document.querySelector(`[data-cs-category="${categoryId}"], #cs-cat-${categoryId}, .cs-category[data-id="${categoryId}"]`);
-    if (el && typeof el.scrollIntoView === "function") {
-      el.scrollIntoView({ behavior: "smooth", block: "center" });
+    if (el) {
+      scrollElementWithinPanel(el, { behavior: "smooth", block: "center" });
       el.classList.add("highlighted");
       setTimeout(() => el.classList.remove("highlighted"), 1600);
     }

@@ -318,6 +318,67 @@ function queueDesktopDocumentScrollRepair(reason = "scroll") {
   });
 }
 
+// ── Safe in-panel scrolling (Hardening #21/#23) ──
+// scrollIntoView walks EVERY scrollable ancestor including #mainApp (overflow:
+// hidden but scriptable), which pushes the desktop tab bar off-screen. This
+// helper scrolls the nearest genuine inner scroll container instead, and never
+// touches the shell. On mobile (document is the scroll owner) it falls back to
+// native scrollIntoView, which is safe there. If no inner container is found on
+// desktop it no-ops — a row that fails to auto-scroll is a far better failure
+// than a vanished tab bar.
+function scrollElementWithinPanel(el, opts = {}) {
+  if (!el || typeof el.getBoundingClientRect !== "function") return;
+  const behavior = opts.behavior || "smooth";
+  const block = opts.block || "nearest";
+
+  const isDesktopPanel =
+    typeof isDesktopShellPanelScrollOwner === "function" &&
+    isDesktopShellPanelScrollOwner();
+  if (!isDesktopPanel) {
+    try {
+      el.scrollIntoView({ behavior, block });
+    } catch (_e) {
+      /* benign: some detached nodes throw on scrollIntoView */
+    }
+    return;
+  }
+
+  let container = el.parentElement;
+  while (container && container !== document.body) {
+    if (container.id === "mainApp") break; // never scroll the shell
+    const style = getComputedStyle(container);
+    const oy = style.overflowY;
+    if (
+      (oy === "auto" || oy === "scroll") &&
+      container.scrollHeight > container.clientHeight + 4
+    ) {
+      const cRect = container.getBoundingClientRect();
+      const eRect = el.getBoundingClientRect();
+      let target;
+      if (block === "center") {
+        target =
+          container.scrollTop +
+          (eRect.top - cRect.top) -
+          container.clientHeight / 2 +
+          eRect.height / 2;
+      } else if (block === "start") {
+        target = container.scrollTop + (eRect.top - cRect.top) - 8;
+      } else {
+        const above = eRect.top < cRect.top;
+        const below = eRect.bottom > cRect.bottom;
+        if (!above && !below) return; // already fully visible
+        target = above
+          ? container.scrollTop + (eRect.top - cRect.top) - 8
+          : container.scrollTop + (eRect.bottom - cRect.bottom) + 8;
+      }
+      container.scrollTo({ top: Math.max(0, target), behavior });
+      return;
+    }
+    container = container.parentElement;
+  }
+  // No inner scroll container found on desktop — intentionally do nothing.
+}
+
 if (typeof window !== "undefined") {
   window.bcDebugShellScroll = function bcDebugShellScroll() {
     const snapshot = getDesktopShellScrollSnapshot({ manual: true });
