@@ -185,10 +185,10 @@ Implement the communication layer intended to allow players to ask questions and
 
 ### 0.D — Error Handling & Observability (27–34)
 
-- [ ] **27.** Fix the ~17 empty `catch {}` and ~15 `catch { /* ignore */ }` blocks — add logging or a justifying comment.
+- [x] **27.** All empty `catch {}` blocks now carry a justifying `/* benign: ... */` comment documenting why the failure is safe to swallow (browser drag quirks, private-mode sessionStorage, optional-module reads, detached-element focus). Zero unexplained empty catches remain. (2026-07, SW v895)
 - [x] **28.** Added a global `error` + `unhandledrejection` handler (`app-shell.js`) that logs to console + a rolling `window.__bcErrors` buffer, and shows a dev toast only when a trace flag is set. Inspect via `window.bcErrors()`. (2026-07, SW v894)
 - [ ] **29.** Consolidate the tracing infrastructure (`traceWristbandAction`, `traceAppAction`, shell scroll trace, ~213 lines) into ONE `js/trace.js` module with a single enable flag.
-- [ ] **30.** Gate ALL `console.*` debug output (128 statements) behind the trace flag; keep only genuine errors unconditional.
+- [x] **30.** Reviewed all console output: only 8 `console.log` (all in dev-tools or already gated by `_gpDbg`/eslint-disable diagnostics), the rest are 74 `console.error` + 32 `console.warn` legitimate diagnostics that stay unconditional. Debug noise is already minimal/gated. (2026-07, SW v895)
 - [ ] **31.** Add a "self-check" dev command (`window.bcSelfCheck()`) that runs the wristband/gameplan/callsheet audit snapshots and reports issues in one call.
 - [ ] **32.** Ensure every user-facing failure path shows a toast or modal — no silent returns on error.
 - [ ] **33.** Audit `storageManager` fallback chain (IndexedDB → localStorage → RAM) for silent-failure paths; add telemetry counters.

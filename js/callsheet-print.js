@@ -230,7 +230,7 @@ function _csRunPrint(opts) {
         cleaned = true;
         try {
           restoreTitle();
-        } catch (_) { }
+        } catch (_) { /* benign: title already restored */ }
         container.classList.add("hidden");
         delete document.body.dataset.printMode;
         window.removeEventListener("afterprint", cleanup);

@@ -384,11 +384,11 @@ function _gpDrawerOnDragStart(event) {
   event.dataTransfer.setData("source", "gameplan");
   event.dataTransfer.setData("gpIndex", String(idx));
   // Some browsers require a text/plain payload to register the drag at all.
-  try { event.dataTransfer.setData("text/plain", String(idx)); } catch (_e) { }
+  try { event.dataTransfer.setData("text/plain", String(idx)); } catch (_e) { /* benign: some browsers reject extra setData payloads */ }
   event.dataTransfer.effectAllowed = "copy";
   // Defensive: if a previous within-callsheet drag left state behind, clear it
   // so the grid's drop handler can't misinterpret our drop as a reorder.
-  try { if (typeof draggedCallSheetPlay !== "undefined") draggedCallSheetPlay = null; } catch (_e) { }
+  try { if (typeof draggedCallSheetPlay !== "undefined") draggedCallSheetPlay = null; } catch (_e) { /* benign: variable may be block-scoped elsewhere */ }
   row.classList.add("gp-drawer-row-dragging");
   // Visual hint: highlight all category drop zones
   document.body.classList.add("gp-drag-active");

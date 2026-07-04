@@ -450,7 +450,7 @@ function _discRenderBody(container, data, playId, playSig) {
     container.querySelectorAll(".disc-load-replies[data-action='loadMoreDiscReplies']").forEach((btn) => {
       const pid = btn.dataset.arg;
       if (!pid) return;
-      try { if (sessionStorage.getItem(`disc-exp-${pid}`)) loadMoreDiscReplies(null, btn); } catch (_) { }
+      try { if (sessionStorage.getItem(`disc-exp-${pid}`)) loadMoreDiscReplies(null, btn); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
     });
     // Wire attachment file inputs in the root composer
     _discWireComposerAttachments(container);
@@ -939,7 +939,7 @@ function _discCloseAllReplyComposers() {
     sheet.classList.remove("visible");
     document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
     _discRemoveVpListeners(sheet);
-    if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) { }
+    if (pid) try { sessionStorage.removeItem(`disc-reply-draft-${pid}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
     setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
   }
 }
@@ -962,9 +962,9 @@ function _discWireReplyComposerDraft(container, parentPostId) {
       const charEl = document.getElementById(`discChars-reply-${parentPostId}`);
       if (charEl) charEl.textContent = `${draft.length} / 2000`;
     }
-  } catch (_) { }
+  } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
   ta.addEventListener("input", () => {
-    try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) { }
+    try { sessionStorage.setItem(`disc-reply-draft-${parentPostId}`, ta.value); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
   });
   // Adjust sheet position when on-screen keyboard resizes the viewport
   const sheet = document.getElementById("discReplySheet");
@@ -1067,7 +1067,7 @@ async function closeDiscReplyComposer(parentPostId) {
     _discRemoveVpListeners(sheet);
     sheet.classList.remove("visible");
     document.getElementById("discReplySheetOverlay")?.classList.remove("visible");
-    try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { }
+    try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
     setTimeout(() => { sheet.innerHTML = ""; delete sheet.dataset.parentPostId; }, 220);
     return;
   }
@@ -1083,7 +1083,7 @@ async function closeDiscReplyComposer(parentPostId) {
     });
     if (!confirmed) return;
   }
-  try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { }
+  try { sessionStorage.removeItem(`disc-reply-draft-${parentPostId}`); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
   slot.innerHTML = "";
 }
 
@@ -1229,7 +1229,7 @@ async function loadMoreDiscReplies(arg, el) {
       btn.textContent = "Load more replies…";
     } else {
       // Mark this thread as expanded so it auto-restores next render
-      try { sessionStorage.setItem(`disc-exp-${rootPostId}`, "1"); } catch (_) { }
+      try { sessionStorage.setItem(`disc-exp-${rootPostId}`, "1"); } catch (_) { /* benign: sessionStorage blocked (private mode) */ }
       btn.remove();
     }
   } catch (_) {
@@ -2975,7 +2975,7 @@ let _discDeepLinkPostId = null;
     const p = new URLSearchParams(window.location.search);
     _discDeepLinkPlayId = p.get("disc") || null;
     _discDeepLinkPostId = p.get("post") || null;
-  } catch (_) { }
+  } catch (_) { /* benign: malformed query string */ }
 })();
 
 /**
