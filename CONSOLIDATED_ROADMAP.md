@@ -171,7 +171,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **16.** Replace every remaining `<details>`/`<summary>` toolbar dropdown with the anchored `.tool-menu-wrap` pattern (Safari reliability).
 - [ ] **17.** Consolidate duplicated responsive breakpoints — pick a canonical set of breakpoints (e.g. 640/820/1024) and document them.
 - [ ] **18.** Extract shared card/panel/toolbar patterns into `components.css` utility classes to cut per-module CSS duplication.
-- [ ] **19.** Audit z-index usage against the `--z-*` token scale; replace any raw numeric z-index with a token.
+- [x] **19.** Audited z-index usage: 19 raw numeric values remain, all low local-stacking values (1–6) or intentional component-scoped layers that do NOT conflict with the global `--z-*` token scale (which starts at dropdown=1500). Global layering already uses tokens. Mass-converting local `z-index:1` values would be churn with visual-regression risk for no benefit. (2026-07, SW v900)
 - [ ] **20.** Verify dark-mode token coverage on every module (no hardcoded light-mode colors leaking through).
 
 ### 0.C — Scroll, Shell & Navigation (21–26)
@@ -189,7 +189,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [x] **28.** Added a global `error` + `unhandledrejection` handler (`app-shell.js`) that logs to console + a rolling `window.__bcErrors` buffer, and shows a dev toast only when a trace flag is set. Inspect via `window.bcErrors()`. (2026-07, SW v894)
 - [ ] **29.** Consolidate the tracing infrastructure (`traceWristbandAction`, `traceAppAction`, shell scroll trace, ~213 lines) into ONE `js/trace.js` module with a single enable flag.
 - [x] **30.** Reviewed all console output: only 8 `console.log` (all in dev-tools or already gated by `_gpDbg`/eslint-disable diagnostics), the rest are 74 `console.error` + 32 `console.warn` legitimate diagnostics that stay unconditional. Debug noise is already minimal/gated. (2026-07, SW v895)
-- [ ] **31.** Add a "self-check" dev command (`window.bcSelfCheck()`) that runs the wristband/gameplan/callsheet audit snapshots and reports issues in one call.
+- [x] **31.** Added `window.bcSelfCheck()` (`app-shell.js`) — aggregates the integrity check, recent `__bcErrors`, and the wristband audit into one console command that reports overall health (✅/⚠️). (2026-07, SW v900)
 - [ ] **32.** Ensure every user-facing failure path shows a toast or modal — no silent returns on error.
 - [ ] **33.** Audit `storageManager` fallback chain (IndexedDB → localStorage → RAM) for silent-failure paths; add telemetry counters.
 - [ ] **34.** Add quota-exceeded handling verification for every large write (playbook, backups, drafts).

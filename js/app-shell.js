@@ -119,6 +119,28 @@ if (typeof window !== "undefined") {
   });
 }
 
+// ── One-shot self-check (Hardening #31) ──
+// Aggregates the app's diagnostics into a single console command so a coach or
+// dev can sanity-check the running app without knowing each subsystem's helper.
+if (typeof window !== "undefined") {
+  window.bcSelfCheck = function bcSelfCheck() {
+    const result = { at: new Date().toISOString() };
+    result.integrity = typeof bcIntegrityCheck === "function"
+      ? bcIntegrityCheck({ verbose: true })
+      : { ok: false, missing: ["bcIntegrityCheck"] };
+    result.recentErrors = Array.isArray(window.__bcErrors) ? window.__bcErrors.slice(-10) : [];
+    result.wristband = typeof window.bcAuditWristband === "function"
+      ? window.bcAuditWristband()
+      : null;
+    result.ok = result.integrity.ok && result.recentErrors.length === 0;
+    console.info(
+      `[BC self-check] ${result.ok ? "✅ healthy" : "⚠️ issues found"}`,
+      result,
+    );
+    return result;
+  };
+}
+
 // ── Startup loading cover ──
 function setStartupLoadingMessage(message) {
   const el = document.getElementById("startupLoaderStatus");
