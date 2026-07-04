@@ -720,6 +720,24 @@ document.addEventListener("DOMContentLoaded", () => {
       }
       e.stopPropagation();
     });
+    // Mobile: touchend double-tap detection (dblclick rarely fires on touch)
+    let _pbLastTap = 0;
+    pbBody.addEventListener("touchend", (e) => {
+      const now = Date.now();
+      const gap = now - _pbLastTap;
+      _pbLastTap = now;
+      if (gap > 50 && gap < 350) {
+        const row = e.target.closest("tr[data-idx]");
+        if (!row) return;
+        const rowIdx = parseInt(row.dataset.idx, 10);
+        if (typeof isAdminUser === "function" && !isAdminUser()) {
+          openPlaybookPresentation(rowIdx);
+        } else if (typeof openPlayEditor === "function") {
+          openPlayEditor(rowIdx);
+        }
+        e.preventDefault();
+      }
+    }, { passive: false });
     pbBody.addEventListener(
       "mouseenter",
       (e) => {

@@ -88,6 +88,10 @@ h1 {
   padding: 12px 24px;
   background: var(--gradient-dark);
   color: var(--color-text-inverse);
+  /* On desktop the body is a fixed-height flex column (overflow:hidden).
+     position:sticky inside a non-scrollable flex container still works, but
+     `flex: 0 0 auto` is what actually keeps the header from being pushed out
+     of view when any panel content grows. Keep both for belt+suspenders. */
   position: sticky;
   top: 0;
   z-index: var(--z-header);

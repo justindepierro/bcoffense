@@ -235,8 +235,12 @@ function renderWristbandGrid() {
       hasCard: Boolean(cardEl),
     });
   }
-  if (typeof syncWristbandModeSurface === "function") {
-    syncWristbandModeSurface(wristbandType || "");
+  // Only sync mode surface when a type is KNOWN. Passing "" would call
+  // syncWristbandModeSurface("") which sets hasMode=false and adds wb-hidden to
+  // the card, making the grid invisible even after the HTML is rendered.
+  // checkShowWbLanding() handles the no-type case after renderWristbandGrid returns.
+  if (wristbandType && typeof syncWristbandModeSurface === "function") {
+    syncWristbandModeSurface(wristbandType);
   }
   // If player wristband mode is active, delegate to its renderer.
   if (typeof wbPlayerCardMode !== "undefined" && wbPlayerCardMode) {
