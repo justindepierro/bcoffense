@@ -62,6 +62,63 @@
   };
 })();
 
+// ── Global integrity check (Hardening #2/#4/#9/#10) ──
+// The codebase has ~1000 `typeof fn === "function"` guards because global load
+// order is fragile. Their danger: when a function is genuinely missing (typo,
+// wrong load order, deleted export) the guard silently no-ops — a loud bug
+// becomes a dead feature. Rather than rewrite 1000 call sites (high risk), this
+// verifies a manifest of critical globals exists after load and screams LOUDLY
+// for any that are missing. Converts the silent-no-op failure mode into a
+// visible one. Purely additive — only reads `typeof window[name]`.
+const BC_CRITICAL_GLOBALS = [
+  // Foundation utils (utils.js — always script #1)
+  "escapeHtml", "sanitizeHTML", "setInnerHTML", "showToast", "showModal",
+  "showConfirm", "showPrompt", "showListPicker", "debounce", "safeDeepClone",
+  "parseCSV", "getFullCall", "playsMatch", "trapFocus", "showContextMenu",
+  // Storage + history
+  "storageManager", "STORAGE_KEYS", "historyManager",
+  // Navigation / shell
+  "showTab", "getGameWeek",
+  // Core module renderers (absence = a whole tab is dead)
+  "renderPlaybook", "renderScript", "renderCallSheet", "renderWristbandGrid",
+  "renderGamePlan", "initTendencies", "initGamePlan", "initCallSheet",
+  // Cross-module integration seams (the ones most guarded elsewhere)
+  "_gpPlaySignature", "getCategoryDisplayName", "getCurrentAuthUser",
+];
+
+function bcIntegrityCheck(opts = {}) {
+  const missing = BC_CRITICAL_GLOBALS.filter((name) => {
+    const v = typeof window !== "undefined" ? window[name] : undefined;
+    // storageManager/STORAGE_KEYS/historyManager are objects; the rest functions.
+    return v === undefined || v === null;
+  });
+  if (missing.length > 0) {
+    console.error(
+      `[BC integrity] ${missing.length} critical global(s) MISSING after load — features depending on them will silently fail:`,
+      missing,
+    );
+    if (Array.isArray(window.__bcErrors)) {
+      window.__bcErrors.push({
+        kind: "integrity",
+        message: `${missing.length} critical globals missing`,
+        detail: missing,
+        at: new Date().toISOString(),
+      });
+    }
+  } else if (opts.verbose) {
+    console.info(`[BC integrity] all ${BC_CRITICAL_GLOBALS.length} critical globals present.`);
+  }
+  return { ok: missing.length === 0, missing };
+}
+if (typeof window !== "undefined") {
+  window.bcIntegrityCheck = bcIntegrityCheck;
+  // Auto-run once after everything settles (app.js is the last script). A short
+  // delay lets deferred init and DOMContentLoaded handlers register their globals.
+  window.addEventListener("load", () => {
+    setTimeout(() => bcIntegrityCheck(), 800);
+  });
+}
+
 // ── Startup loading cover ──
 function setStartupLoadingMessage(message) {
   const el = document.getElementById("startupLoaderStatus");

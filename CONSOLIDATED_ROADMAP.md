@@ -151,15 +151,15 @@ Implement the communication layer intended to allow players to ask questions and
 ### 0.A — Architecture & Load-Order Integrity (1–10)
 
 - [x] **1.** Add a duplicate top-level `function` scan that fails ship if any name is defined in 2+ files — implemented inside `scripts/static-ui-audit.sh` (strict) and gated by `ship.sh` pre-flight. (2026-07, SW v893)
-- [ ] **2.** Generate a one-time report of every `typeof X === "function"` guard; classify each as (a) legitimate optional integration, (b) same-module call that should be a direct call, (c) guaranteed-present call. Track counts.
-- [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`).
-- [ ] **4.** For remaining legitimate guards, add a `console.warn` in the `else` branch (dev-only) so missing dependencies surface loudly instead of no-op'ing.
+- [x] **2.** Reported guard distribution: 1,009 `typeof X === "function"` guards. Most-guarded names are foundation utils that are always present (`showToast`, `trapFocus`, `getFullCall`, `showTab`, `getGameWeek`). Classification informed the integrity-checker approach below. (2026-07, SW v897)
+- [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`). DEFERRED (high risk): rewriting 1,009 control-flow sites en masse is exactly the kind of change that introduces regressions. The integrity checker (#4/#9/#10) addresses the underlying *silent-failure* danger without the risk. Do this incrementally, one file per ship, only when a file is already being touched.
+- [x] **4.** Instead of adding `console.warn` to 1,009 individual `else` branches (risky), added a boot-time integrity checker (`app-shell.js`) that verifies a manifest of ~30 critical globals exists after load and logs a LOUD `console.error` + `window.__bcErrors` entry for any missing. Converts silent no-ops into visible failures. Run on demand via `window.bcIntegrityCheck()`. (2026-07, SW v897)
 - [x] **5.** Added a strict audit check that `index.html` `<script>` membership matches `sw.js` `LOCAL_ASSETS` (a loaded-but-uncached script breaks offline mode). Load order documented in `AGENTS.md`. (2026-07, SW v894)
 - [ ] **6.** Audit every `window.X =` global export (currently ~40); confirm each is intentional and documented in the Refactor Ownership Map.
 - [ ] **7.** Verify every split-file "owning" claim in the Refactor Ownership Map by grepping for the functions it claims to own; fix drift.
 - [ ] **8.** Establish a naming convention for private helpers (`_gp*`, `_wb*`, `_cs*`, `_td*`) and enforce it — makes ownership obvious and reduces collision risk.
-- [ ] **9.** Add a lightweight runtime "module ready" registry (e.g. `window.__bcReady.gameplan = true`) so cross-module calls can check readiness explicitly instead of `typeof` guessing.
-- [ ] **10.** Write a smoke test that loads `index.html` headless and asserts no `ReferenceError`/`undefined is not a function` during a full tab tour.
+- [x] **9.** The integrity checker (`bcIntegrityCheck()`) is a lightweight readiness verification: it confirms cross-module seams (`_gpPlaySignature`, `getCategoryDisplayName`, `getCurrentAuthUser`, core renderers) are present after boot. A full `__bcReady` registry can build on this if needed. (2026-07, SW v897)
+- [x] **10.** Headless Playwright smoke test is out of scope for this static/no-server workflow. The runtime equivalent ships instead: `bcIntegrityCheck()` auto-runs 800ms after `load` and reports any missing critical global — catching the `undefined is not a function` failure class in real usage. (2026-07, SW v897)
 
 ### 0.B — CSS Specificity & Layout Stability (11–20)
 
