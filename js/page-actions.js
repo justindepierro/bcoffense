@@ -284,17 +284,16 @@ function openScriptDayTemplatesFromActions() {
 function openWristbandAppearance() {
   closePageActions();
   setTimeout(() => {
-    const panel = document.querySelector(".wb-appearance-panel");
-    if (!panel) return;
-    panel.open = true;
-    // Scroll directly within .wristband-preview (not scrollIntoView which
-    // would propagate to #mainApp and push the tab bar out of view).
-    const preview = document.querySelector(".wristband-preview");
-    if (preview) {
-      const rect = panel.getBoundingClientRect();
-      const pRect = preview.getBoundingClientRect();
-      preview.scrollTo({ top: Math.max(0, preview.scrollTop + rect.top - pRect.top - 8), behavior: "smooth" });
+    // New structure: anchored tool-menu-wrap#wbColorsMenuWrap
+    const wrap = document.getElementById("wbColorsMenuWrap");
+    if (wrap) {
+      wrap.classList.add("open");
+      if (typeof positionAnchoredMenu === "function") positionAnchoredMenu(wrap);
+      return;
     }
+    // Fallback: legacy <details> element
+    const panel = document.querySelector(".wb-appearance-panel");
+    if (panel) panel.open = true;
   }, 80);
 }
 

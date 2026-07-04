@@ -1394,6 +1394,13 @@ body.app-ready:not(.is-mobile-screen)
   border-color: var(--color-primary);
 }
 
+/* When wb-appearance-popover is inside a tool-menu-wrap (anchored dropdown),
+   override tool-menu's list display with the color picker grid layout. */
+.tool-menu-wrap.open .tool-menu.wb-appearance-popover {
+  display: grid;
+  white-space: normal;
+}
+
 .wb-appearance-popover {
   position: absolute;
   top: calc(100% + var(--space-xs));
