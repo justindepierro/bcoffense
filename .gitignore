@@ -5,3 +5,5 @@
 .wrangler/
 .mobile-debug/
 tests/.env.test
+tests/node_modules/
+node_modules/

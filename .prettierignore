@@ -1,0 +1,7 @@
+# Never format vendored, minified, or generated files.
+js/lz-string.min.js
+tests/node_modules/
+**/node_modules/
+icons/
+*.min.js
+*.min.css

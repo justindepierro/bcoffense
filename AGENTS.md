@@ -1066,3 +1066,41 @@ for `!important` only for utility/override classes (`.wb-hidden`,
 6. Bump `CACHE_NAME` in `sw.js` AND restamp `?v=N` in `index.html`.
 7. `./ship.sh "message (SW vN)"` and confirm
    `Verified Cloudflare production source: <hash>` matches `HEAD`.
+
+---
+
+## Type Safety & Formatting (no-build tooling)
+
+The frontend stays no-build, but these tools add safety WITHOUT a bundler:
+
+### Type checking (opt-in, zero runtime cost)
+
+- `types/bcoffense.d.ts` declares the core data shapes (`Play`,
+  `CallSheetCategory`, `GamePlanBoard`) plus foundation utilities. These are
+  **ambient** declarations — compile-time only, nothing ships.
+- Autocomplete on the `Play` object works everywhere already (VS Code reads the
+  ambient interface). In JSDoc use `/** @param {Play} play */` or
+  `/** @type {Play} */` to get field checking.
+- `jsconfig.json` keeps `checkJs: false` globally so the Problems panel stays
+  quiet. To type-check a specific file, add `// @ts-check` at the top. Because
+  the codebase is global-scope, a checked file may report "Cannot find name X"
+  for cross-file globals — declare those in `types/bcoffense.d.ts` as you adopt
+  checking module-by-module.
+- Incremental adoption path: pick a file → add `// @ts-check` → declare any
+  globals it needs → fix what surfaces → move on. Never flip `checkJs: true`
+  globally in one shot (it would flood thousands of pre-existing findings).
+
+### Formatting (deterministic)
+
+- `.prettierrc.json` pins the exact style the codebase already uses
+  (printWidth 80, 2-space, double quotes, semicolons, trailing commas). It
+  matches the current formatting, so committing it does NOT reflow existing
+  code.
+- `.prettierignore` keeps the formatter off vendored/minified files
+  (`lz-string.min.js`, `node_modules`, icons).
+- `.editorconfig` freezes indentation/charset/EOL across editors.
+
+### Do not commit dependencies
+
+- `tests/node_modules/` is git-ignored (Playwright deps are regenerable via
+  `npm install` inside `tests/`). Never re-track it.
