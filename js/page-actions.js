@@ -60,11 +60,18 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "📂", label: "Load", run: () => _paCall("openSavedWristbandManager") },
       { icon: "💾", label: "Save", run: () => _paCall("saveWristband") },
       { icon: "🖨️", label: "Print", run: () => _paCall("printWristband") },
-      { icon: "⚙️", label: "Display", sublabel: _paWristbandDisplayStatus, run: () => openWristbandAppearance() },
+      { icon: "🎨", label: "Appearance", sublabel: _paWristbandDisplayStatus, run: () => openWristbandAppearance() },
+      { icon: "⚙️", label: "Display Options", run: () => openWbDisplayPanel() },
+      { icon: "🔀", label: "Sort & Organize", run: () => openWbSortPanel() },
     ],
     extras: [
       { icon: "⚡", label: "Auto-Fill", run: () => _paCall("autoFillWristband") },
       { icon: "🧠", label: "Smart Fill", run: () => _paCall("smartFillBySituation") },
+      { icon: "🔍", label: "Find/Replace", run: () => _paCall("openWbFindReplaceModal") },
+      { icon: "🃏", label: "Player Wristband", run: () => _paCall("startPlayerWristband") },
+      { icon: "🎯", label: "Create from Game Plan", run: () => _paCall("createWristbandCardFromGamePlan") },
+      { icon: "📋", label: "Create from Script", run: () => _paCall("createWristbandCardFromScript") },
+      { icon: "🔄", label: "Reconcile with Source", run: () => _paCall("reconcileWristbandWithSource") },
       { icon: "📂", label: "Load Templates", run: () => _paCall("openWristbandTemplatesMenu") },
       { icon: "💾", label: "Save Template", run: () => _paCall("saveWristbandTemplate") },
       { icon: "💾", label: "Save As", run: () => _paCall("saveWristbandAs") },
@@ -73,6 +80,7 @@ const PAGE_ACTIONS_CONFIG = {
       { icon: "🖼️", label: "Logo Card", run: () => _paCall("openWbLogoCardModal") },
       { icon: "📊", label: "Export CSV", run: () => _paCall("exportWristbandCSV") },
       { icon: "🗑️", label: "Clear", run: () => _paCall("clearWristband") },
+      { icon: "❓", label: "Help", run: () => _paCall("showWbShortcutHelp") },
     ],
   },
 
@@ -272,14 +280,63 @@ function openScriptDayTemplatesFromActions() {
   }, 60);
 }
 
-// ── Wristband "Display" → open the appearance popover ──────────────────────
+// ── Wristband “Appearance” → open the appearance popover ──────────────────────
 function openWristbandAppearance() {
   closePageActions();
   setTimeout(() => {
     const panel = document.querySelector(".wb-appearance-panel");
     if (!panel) return;
     panel.open = true;
-    panel.scrollIntoView({ block: "nearest", behavior: "smooth" });
+    // Scroll directly within .wristband-preview (not scrollIntoView which
+    // would propagate to #mainApp and push the tab bar out of view).
+    const preview = document.querySelector(".wristband-preview");
+    if (preview) {
+      const rect = panel.getBoundingClientRect();
+      const pRect = preview.getBoundingClientRect();
+      preview.scrollTo({ top: Math.max(0, preview.scrollTop + rect.top - pRect.top - 8), behavior: "smooth" });
+    }
+  }, 80);
+}
+
+// ── Wristband “Display Options” → expand and scroll to display panel ──────────
+function openWbDisplayPanel() {
+  closePageActions();
+  setTimeout(() => {
+    const panel = document.querySelector(".display-options-panel.wb-display-panel");
+    if (!panel) return;
+    const content = panel.querySelector(".display-options-content");
+    const icon = panel.querySelector(".toggle-icon");
+    if (content?.classList.contains("collapsed")) {
+      content.classList.remove("collapsed");
+      if (icon) icon.textContent = "▼";
+    }
+    const preview = document.querySelector(".wristband-preview");
+    if (preview) {
+      const rect = panel.getBoundingClientRect();
+      const pRect = preview.getBoundingClientRect();
+      preview.scrollTo({ top: Math.max(0, preview.scrollTop + rect.top - pRect.top - 8), behavior: "smooth" });
+    }
+  }, 80);
+}
+
+// ── Wristband “Sort & Organize” → expand and scroll to sort panel ────────────
+function openWbSortPanel() {
+  closePageActions();
+  setTimeout(() => {
+    const panel = document.querySelector(".wb-sort-panel");
+    if (!panel) return;
+    const content = panel.querySelector(".wb-sort-content");
+    const icon = panel.querySelector(".toggle-icon");
+    if (content?.classList.contains("collapsed")) {
+      content.classList.remove("collapsed");
+      if (icon) icon.textContent = "▼";
+    }
+    const preview = document.querySelector(".wristband-preview");
+    if (preview) {
+      const rect = panel.getBoundingClientRect();
+      const pRect = preview.getBoundingClientRect();
+      preview.scrollTo({ top: Math.max(0, preview.scrollTop + rect.top - pRect.top - 8), behavior: "smooth" });
+    }
   }, 80);
 }
 

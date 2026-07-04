@@ -122,6 +122,62 @@
   min-width: 0;
 }
 
+/* ═══════════════════════════════════════════════════════════════════════════
+   Desktop: wristband uses the dual-scroll workspace pattern — library and
+   card-builder panes each scroll independently, tab bar stays visible.
+   Mirrors the script / game-plan approach; the panel is overflow:hidden and
+   each pane owns its scroll, so mainApp.scrollTop stays 0.
+   ════════════════════════════════════════════════════════════════════════ */
+body.app-ready:not(.is-mobile-screen) #wristband.panel.active {
+  padding: 0;
+  overflow: hidden;
+}
+
+body.app-ready:not(.is-mobile-screen) #wristband .wristband-container {
+  /* Switch from CSS Grid to flex so both columns fill the full panel height */
+  display: flex;
+  flex-direction: row;
+  flex: 1 1 auto;
+  min-height: 0;
+  gap: 0;
+  align-items: stretch;
+  /* Cancel responsive grid column overrides that target this selector */
+  grid-template-columns: unset;
+}
+
+/* Library pane — fixed-width left column, independent scroll */
+body.app-ready:not(.is-mobile-screen) #wristband .wristband-plays {
+  position: static; /* remove sticky — the pane itself scrolls */
+  flex: 0 0 300px;
+  min-width: 240px;
+  max-width: 340px;
+  min-height: 0;
+  overflow-y: auto;
+  border: none;
+  border-right: 1px solid var(--color-border-light);
+  border-radius: 0;
+  box-shadow: none;
+  padding: var(--space-md);
+  background: var(--color-surface);
+}
+
+/* Card-builder pane — takes remaining width, independent scroll */
+body.app-ready:not(.is-mobile-screen) #wristband .wristband-preview {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  overflow-y: auto;
+  padding: var(--space-md);
+}
+
+/* Library-collapsed: hide pane, card takes full width */
+body.app-ready:not(.is-mobile-screen) #wristband.wb-library-collapsed .wristband-plays {
+  display: none;
+}
+body.app-ready:not(.is-mobile-screen) #wristband.wb-library-collapsed .wristband-container {
+  grid-template-columns: unset;
+}
+
 .wb-library-header,
 .wb-preview-header {
   display: flex;
