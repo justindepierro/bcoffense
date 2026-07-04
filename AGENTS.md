@@ -976,3 +976,93 @@ To disable entirely: set `CONSTRAINTS_ENABLED = false`.
 - **Never create `package.json`** — this is intentionally dependency-free
 - **Never forget to bump `sw.js`** cache version after code changes
 - **Never use `innerHTML` with unsanitized user content** — use `setInnerHTML()` or `escapeHtml()`
+- **Never define the same top-level `function name` in two files** — the last-loaded file silently shadows the earlier one (a "shadow bug"). Put a function in exactly one owning file.
+- **Never use `<details>`/`<summary>` for toolbar dropdowns** — Safari renders them inconsistently (the summary button can be invisible/unclickable). Use the anchored `.tool-menu-wrap` + `data-anchored` pattern instead.
+- **Never call `element.scrollIntoView()` inside a `.panel`** — it propagates up to `#mainApp` (which is `overflow:hidden` on desktop but still accepts programmatic `scrollTop`), pushing the tab bar off-screen. Scroll the specific inner scroll container directly instead.
+- **Never add `transform`, `will-change: transform`, `filter`, or `perspective` to `.panel.active`** — any of these makes the panel a containing block for `position: fixed`/`sticky` descendants, which traps anchored menus ~230px too low and breaks sticky headers. Keep panel animations opacity-only.
+
+---
+
+## Known Traps & Hardening Standards
+
+> These are the recurring root causes behind past regressions. Check this list
+> FIRST when a symptom matches — most "new" bugs are one of these repeating.
+
+### Trap 1 — The `.panel.active` containing-block trap
+
+`css/layout.css` `.panel.active` must stay **opacity-only** for animation and
+`will-change`. A `transform` (even `translateY(0)` left over from an animation
+`fill: both`) or `will-change: transform` turns the panel into the containing
+block for every `position: fixed`/`position: sticky` descendant. Symptoms:
+
+- Anchored dropdown menus float ~230px below their trigger button.
+- Sticky module headers (game plan, call sheet) leak / detach on scroll.
+
+Fix pattern: remove the transform/will-change; if you need a pinned region,
+use a flex column (`overflow:hidden` panel → `flex:0 0 auto` pinned zone →
+`flex:1 1 auto; min-height:0; overflow:auto` scroll zone). See the Script and
+Game Plan pages for the reference implementation.
+
+### Trap 2 — Load-order shadowing of global functions
+
+All 120 JS files share one global scope and load in a fixed order. If two files
+define `function foo`, the **last-loaded one wins** and silently shadows the
+other. This has caused live bugs (e.g. a stale `sendScoutRecsToGamePlan` in
+`tendencies.js` shadowed the modern one in `tendencies-render.js`). Guardrails:
+
+- Every function has exactly ONE owning file (see the Refactor Ownership Map).
+- The smoke check / audit greps for duplicate top-level `function` names.
+- When splitting a file, move the function — do not copy it.
+
+### Trap 3 — `typeof X === "function"` guards mask missing dependencies
+
+There are ~1000 `typeof fn === "function"` guards across the codebase. They exist
+because global load order is fragile. The danger: a guard silently **no-ops**
+when a function is genuinely missing (typo, wrong load order, deleted export),
+turning a loud error into a silent dead feature. Standard going forward:
+
+- Use a guard ONLY for a genuinely optional cross-module integration
+  (e.g. calling into a module that may not be initialized yet).
+- Do NOT wrap same-module or guaranteed-present calls in guards.
+- When a guard is required, prefer failing loudly in dev: log a `console.warn`
+  in the `else` branch so a missing dependency is visible, not swallowed.
+
+### Trap 4 — `scrollIntoView` breaks the desktop shell
+
+On desktop the shell is a fixed-height flex column: `body` → `#mainApp`
+(`overflow:hidden`) → `.panel.active` (own scroll). `element.scrollIntoView()`
+walks EVERY scrollable ancestor including `#mainApp`, and browsers honor
+programmatic `scrollTop` even on `overflow:hidden`. Result: the tab bar scrolls
+out of view. Always scroll the specific inner container (`.gp-board-scroll`,
+`.wristband-preview`, etc.) by computing the offset delta yourself.
+`repairDesktopDocumentScroll()` in `app-shell.js` resets `#mainApp.scrollTop` as
+a safety net.
+
+### Trap 5 — Swallowed errors
+
+Empty `catch {}` and `catch (e) { /* ignore */ }` blocks hide real failures.
+When adding error handling, log via `console.warn`/`console.error` (or surface a
+toast) unless the failure is genuinely expected and benign — and say why in a
+comment.
+
+### Trap 6 — CSS specificity wars (`!important`)
+
+High `!important` counts (esp. in churn-heavy modules like `wristband.css`) make
+layout changes unpredictable and force MORE `!important`. Before adding one,
+check whether a more specific selector or fixing source order solves it. Reach
+for `!important` only for utility/override classes (`.wb-hidden`,
+`.wb-toolbar-hidden`) where overriding inline/computed styles is the intent.
+
+### Validation ritual before every ship
+
+1. `node --check <changed>.js` for each edited JS file.
+2. `get_errors` on edited files.
+3. `git diff --check` (whitespace/merge markers).
+4. `bash scripts/static-ui-audit.sh --warn-only --max-lines=0 | tail -1` →
+   require `strict=0` (review count is heuristic noise; watch for large jumps).
+5. Duplicate-function scan:
+   `grep -rhoE "^(async )?function [A-Za-z0-9_]+" js/*.js | sed -E 's/async //; s/function //' | sort | uniq -d`
+   → must be empty.
+6. Bump `CACHE_NAME` in `sw.js` AND restamp `?v=N` in `index.html`.
+7. `./ship.sh "message (SW vN)"` and confirm
+   `Verified Cloudflare production source: <hash>` matches `HEAD`.

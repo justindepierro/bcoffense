@@ -110,4 +110,93 @@ Implement the communication layer intended to allow players to ask questions and
   - [ ] Add explicit annotation modes (Temporary Presentation, Saved Coach Reply, Uploaded Image Markup).
 
 ---
+
+## Phase 0: 50-Point Hardening Roadmap (Do This First)
+
+> **Why this exists.** A deep audit (2026-07, SW v891) found the codebase is
+> _mostly_ clean on the obvious metrics (0 hardcoded colors in JS, 0 `debugger`,
+> 1 stray inline handler comment, raw `localStorage` only in debug flags) — but
+> it carries **structural fragility** that turns small changes into recurring
+> bugs. The three biggest offenders:
+>
+> - **~1,012 `typeof X === "function"` guards** — every cross-file call is
+>   defensively wrapped because global load order is fragile. When a function is
+>   actually missing, the guard silently no-ops → a dead feature instead of a
+>   loud error.
+> - **711 `!important` rules** (115 in `wristband.css` alone) — a CSS
+>   specificity war that makes every layout change unpredictable.
+> - **The `.panel.active` transform trap + `scrollIntoView` shell breakage** —
+>   one root cause behind ~4 separate "nav bar / floating menu" bugs this cycle.
+>
+> Audit snapshot: 120 JS files / ~82.7k lines, 16 CSS files / ~44.5k lines.
+> Largest JS: `play-discussion.js` (3033), `play-presentation.js` (2948),
+> `utils.js` (2286). Largest CSS: `script.css` (7168), `playbook.css` (6293).
+> Findings already fixed during the audit: removed the shadowed duplicate
+> `sendScoutRecsToGamePlan` in `tendencies.js`; duplicate-function scan is now 0.
+
+### 0.A — Architecture & Load-Order Integrity (1–10)
+- [ ] **1.** Add a `scripts/audit-duplicates.sh` that fails CI/ship if any top-level `function` name is defined in 2+ files. Wire it into `ship.sh`.
+- [ ] **2.** Generate a one-time report of every `typeof X === "function"` guard; classify each as (a) legitimate optional integration, (b) same-module call that should be a direct call, (c) guaranteed-present call. Track counts.
+- [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`).
+- [ ] **4.** For remaining legitimate guards, add a `console.warn` in the `else` branch (dev-only) so missing dependencies surface loudly instead of no-op'ing.
+- [ ] **5.** Document the authoritative load order in ONE place (`AGENTS.md`) and add a check that `index.html` script order matches `sw.js` `LOCAL_ASSETS` order.
+- [ ] **6.** Audit every `window.X =` global export (currently ~40); confirm each is intentional and documented in the Refactor Ownership Map.
+- [ ] **7.** Verify every split-file "owning" claim in the Refactor Ownership Map by grepping for the functions it claims to own; fix drift.
+- [ ] **8.** Establish a naming convention for private helpers (`_gp*`, `_wb*`, `_cs*`, `_td*`) and enforce it — makes ownership obvious and reduces collision risk.
+- [ ] **9.** Add a lightweight runtime "module ready" registry (e.g. `window.__bcReady.gameplan = true`) so cross-module calls can check readiness explicitly instead of `typeof` guessing.
+- [ ] **10.** Write a smoke test that loads `index.html` headless and asserts no `ReferenceError`/`undefined is not a function` during a full tab tour.
+
+### 0.B — CSS Specificity & Layout Stability (11–20)
+- [ ] **11.** Reduce `wristband.css` `!important` count (115 → target < 40) by fixing source order and using more specific selectors.
+- [ ] **12.** Global `!important` audit (711 total): categorize as utility-override (keep) vs specificity-war (remove). Target < 400.
+- [ ] **13.** Add a permanent regression comment + guard test around `.panel.active` staying opacity-only (no `transform`/`will-change: transform`/`filter`).
+- [ ] **14.** Standardize the "pinned zone + scroll zone" flex pattern across ALL module panels (script, gameplan done; apply to callsheet, wristband, tendencies, dashboard).
+- [ ] **15.** Audit all `position: sticky` uses inside panels — confirm each has a real scroll container ancestor and won't be trapped by a transform.
+- [ ] **16.** Replace every remaining `<details>`/`<summary>` toolbar dropdown with the anchored `.tool-menu-wrap` pattern (Safari reliability).
+- [ ] **17.** Consolidate duplicated responsive breakpoints — pick a canonical set of breakpoints (e.g. 640/820/1024) and document them.
+- [ ] **18.** Extract shared card/panel/toolbar patterns into `components.css` utility classes to cut per-module CSS duplication.
+- [ ] **19.** Audit z-index usage against the `--z-*` token scale; replace any raw numeric z-index with a token.
+- [ ] **20.** Verify dark-mode token coverage on every module (no hardcoded light-mode colors leaking through).
+
+### 0.C — Scroll, Shell & Navigation (21–26)
+- [ ] **21.** Grep every `scrollIntoView` call (34+ sites); replace those inside `.panel` with direct inner-container scrolling.
+- [ ] **22.** Expand `repairDesktopDocumentScroll()` coverage and add a periodic assertion (dev-only) that `#mainApp.scrollTop === 0` on desktop.
+- [ ] **23.** Add a shared `scrollElementIntoContainer(el, container)` helper and route all in-panel scrolling through it.
+- [ ] **24.** Audit all `.focus()` calls (many sites) — programmatic focus can also scroll the shell; use `{ preventScroll: true }` where appropriate.
+- [ ] **25.** Verify the tab bar stays pinned across ALL tabs on desktop (regression matrix: each tab × scroll-to-bottom).
+- [ ] **26.** Document the desktop shell scroll model (body → #mainApp → panel) prominently in `AGENTS.md` (done — keep updated).
+
+### 0.D — Error Handling & Observability (27–34)
+- [ ] **27.** Fix the ~17 empty `catch {}` and ~15 `catch { /* ignore */ }` blocks — add logging or a justifying comment.
+- [ ] **28.** Add a global `window.onerror` / `unhandledrejection` handler that surfaces a dev toast (behind a debug flag) so silent failures become visible.
+- [ ] **29.** Consolidate the tracing infrastructure (`traceWristbandAction`, `traceAppAction`, shell scroll trace, ~213 lines) into ONE `js/trace.js` module with a single enable flag.
+- [ ] **30.** Gate ALL `console.*` debug output (128 statements) behind the trace flag; keep only genuine errors unconditional.
+- [ ] **31.** Add a "self-check" dev command (`window.bcSelfCheck()`) that runs the wristband/gameplan/callsheet audit snapshots and reports issues in one call.
+- [ ] **32.** Ensure every user-facing failure path shows a toast or modal — no silent returns on error.
+- [ ] **33.** Audit `storageManager` fallback chain (IndexedDB → localStorage → RAM) for silent-failure paths; add telemetry counters.
+- [ ] **34.** Add quota-exceeded handling verification for every large write (playbook, backups, drafts).
+
+### 0.E — Dead Code & Bloat Reduction (35–41)
+- [ ] **35.** Static dead-code sweep: for each top-level function, grep for references; produce a candidate-unused list for manual review.
+- [ ] **36.** Remove confirmed dead code (start with the newly-orphaned patterns exposed by removing the `sendScoutRecsToGamePlan` duplicate).
+- [ ] **37.** Split the 5 largest JS files (`play-discussion.js` 3033, `play-presentation.js` 2948, `utils.js` 2286, `tendencies.js` 2075, `app-shell.js` 1967) along clear ownership lines.
+- [ ] **38.** Split `utils.js` — it mixes constants, modals, CSV parsing, and DOM helpers; separate into focused files.
+- [ ] **39.** Audit `_paRevealLibrary` and other known-unused helpers flagged during the Actions Hub work; delete or wire up.
+- [ ] **40.** Deduplicate near-identical helpers across modules (e.g. multiple play-signature / play-matching implementations) into shared utils.
+- [ ] **41.** Trim commented-out code blocks and stale "restored after commit X" archaeology comments once the fix is stable.
+
+### 0.F — Data Model & Handoff Integrity (42–46)
+- [ ] **42.** Define ONE canonical play-signature function and route every dedup/match through it (audit `_gpPlaySignature`, `playsMatch`, `playSignature`, ad-hoc `JSON.stringify`).
+- [ ] **43.** Verify stable play identity survives every handoff (Playbook → Script → Wristband → Call Sheet → Game Plan) with a round-trip test.
+- [ ] **44.** Ensure deleting/editing a play updates or flags downstream artifacts (no orphaned references in call sheet / wristband / game plan).
+- [ ] **45.** Validate all `STORAGE_KEYS` are actually used; remove dead keys and document each key's owning module.
+- [ ] **46.** Add a migration test harness that runs `runMigrations()` against fixtures for each `STORAGE_VERSION`.
+
+### 0.G — Workflow, Tooling & Docs (47–50)
+- [ ] **47.** Expand `scripts/static-ui-audit.sh` with the new checks (duplicate functions, `.panel.active` transform, `<details>` dropdowns, `scrollIntoView` in panels) so ship-time catches regressions automatically.
+- [ ] **48.** Add a pre-ship checklist runner that executes the full validation ritual (node --check, duplicate scan, audit, SW-version consistency) in one command.
+- [ ] **49.** Keep `AGENTS.md` "Known Traps & Hardening Standards" current — every new class of bug fixed gets a trap entry so it never recurs silently.
+- [ ] **50.** Establish a "consistency budget" dashboard: track `!important` count, `typeof` guard count, largest-file line counts, and duplicate-function count over time; require each ship to not regress them.
+
+---
 *This roadmap replaces the previous dispersed documents. Any new feature requests should be categorized and added to this file.*
