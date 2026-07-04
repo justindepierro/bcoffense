@@ -55,7 +55,7 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
   const hasMode = Boolean(normalizedMode);
   const isPlayer = normalizedMode === "player";
   const typeChoice = document.getElementById("wbTypeChoice");
-  const toolbar = document.querySelector(".wb-toolbar");
+  const toolbar = document.querySelector(".wb-cmd-bar");
   const cardTabs = document.querySelector(".card-tabs");
   const card = document.getElementById("wristbandCard");
   const grid = document.getElementById("wristbandGrid");
@@ -71,7 +71,10 @@ function syncWristbandModeSurface(mode = wristbandType || "") {
 
   updateWristbandModeChrome(normalizedMode);
   typeChoice?.classList.toggle("hidden", hasMode);
-  toolbar?.classList.toggle("wb-toolbar-hidden", !hasMode || isPlayer);
+  // The unified command bar (identity + Save/Library/Actions/Colors) stays
+  // visible whenever a mode is active — classic AND player. Only the type-choice
+  // landing hides it.
+  toolbar?.classList.toggle("wb-toolbar-hidden", !hasMode);
   cardTabs?.classList.toggle("wb-hidden", !hasMode);
   card?.classList.toggle("wb-hidden", !hasMode);
   playerBar?.classList.toggle("visible", isPlayer);

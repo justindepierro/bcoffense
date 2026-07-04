@@ -67,6 +67,7 @@ const PAGE_ACTIONS_CONFIG = {
     extras: [
       { icon: "⚡", label: "Auto-Fill", run: () => _paCall("autoFillWristband") },
       { icon: "🧠", label: "Smart Fill", run: () => _paCall("smartFillBySituation") },
+      { icon: "☑️", label: "Select Cells", run: () => _paCall("toggleWbSelectionMode") },
       { icon: "🔍", label: "Find/Replace", run: () => _paCall("openWbFindReplaceModal") },
       { icon: "🃏", label: "Player Wristband", run: () => _paCall("startPlayerWristband") },
       { icon: "🎯", label: "Create from Game Plan", run: () => _paCall("createWristbandCardFromGamePlan") },

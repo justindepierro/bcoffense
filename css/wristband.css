@@ -300,6 +300,37 @@ body.app-ready:not(.is-mobile-screen)
   gap: var(--space-xs);
 }
 
+/* ── Redesign: unified wristband command bar ── */
+.wb-cmd-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  margin-bottom: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xs);
+  flex-wrap: wrap;
+}
+.wb-cmd-identity {
+  display: grid;
+  min-width: 0;
+}
+.wb-cmd-identity strong,
+.wb-cmd-identity span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.wb-cmd-actions {
+  display: flex;
+  align-items: center;
+  gap: var(--space-xs);
+  flex-wrap: wrap;
+}
+
 .wb-card-controls {
   justify-content: space-between;
   margin-bottom: var(--space-sm);
@@ -2775,6 +2806,8 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .wb-toolbar-left,
   .wb-toolbar-right,
   .wb-toolbar-group,
+  .wb-cmd-bar,
+  .wb-cmd-actions,
   .wb-sort-toolbar,
   .wb-sort-actions,
   .wb-batch-controls,
@@ -2785,6 +2818,7 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .wb-toolbar-left,
   .wb-toolbar-right,
   .wb-toolbar-group,
+  .wb-cmd-actions,
   .wb-sort-toolbar,
   .wb-sort-actions {
     width: 100%;
@@ -2794,6 +2828,8 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
   .wb-toolbar-left > .btn,
   .wb-toolbar-right > .btn,
   .wb-toolbar-right > .tool-menu-wrap,
+  .wb-cmd-actions > .btn,
+  .wb-cmd-actions > .tool-menu-wrap,
   .wb-sort-toolbar .btn,
   .wb-sort-actions .btn {
     flex: 1 1 140px;
