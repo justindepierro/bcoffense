@@ -1,3 +1,4 @@
+// @ts-check
 // History management for undo/redo (max 25 states per module)
 const historyManager = {
   script: { past: [], future: [] },
