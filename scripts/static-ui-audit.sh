@@ -188,6 +188,45 @@ run_rg review \
   "Review interactive controls below typical 44px touch sizing; desktop-only density may be intentional." \
   -g 'css/*.css' -e 'min-height:\s*(1[0-9]|2[0-9]|3[0-5])px|min-width:\s*(1[0-9]|2[0-9]|3[0-5])px|padding:\s*[0-4]px(?:\s|;)' .
 
+# ── Hardening checks (Phase 0 roadmap) ───────────────────────────────────────
+
+run_rg strict \
+  "<details>/<summary> used as a toolbar dropdown" \
+  "Safari renders summary-as-button inconsistently (invisible/unclickable). Use the anchored .tool-menu-wrap + data-anchored pattern instead." \
+  -g 'index.html' -e '<summary[^>]*class="[^"]*\bbtn\b' .
+
+run_cmd strict \
+  "transform/will-change:transform on a panel (containing-block trap)" \
+  "transform or will-change:transform on .panel.active makes it the containing block for position:fixed/sticky descendants, trapping anchored menus and breaking sticky headers. Keep panel animations opacity-only (transform:none is allowed)." \
+  'perl -0ne '\''while (/\.panel\.active[^{]*\{([^}]*)\}/g) { my $body=$1; my $start=substr($_,0,$-[0]); my $line=1+($start=~tr/\n//); print "$ARGV:$line: .panel.active declares a trapping transform\n" if $body =~ /will-change:\s*[^;]*transform/ || $body =~ /transform:\s*(?!none)[A-Za-z]/; } close ARGV if eof'\'' css/layout.css'
+
+run_rg review \
+  "scrollIntoView inside module code (desktop shell risk)" \
+  "scrollIntoView walks every scroll ancestor including #mainApp (overflow:hidden but scriptable), hiding the tab bar. Prefer scrolling the specific inner container. Some modal/overlay uses are fine." \
+  -g 'js/*.js' -e '\.scrollIntoView\(' .
+
+# ── Duplicate top-level function definitions (global-scope shadow bug) ────────
+# All JS shares one global scope; two files defining the same top-level function
+# means the last-loaded one silently shadows the other. Must be zero.
+DUP_TMP=$(mktemp)
+grep -rhoE "^(async )?function [A-Za-z0-9_]+" js/*.js \
+  | sed -E 's/^(async )?function //' \
+  | sort | uniq -d > "$DUP_TMP"
+DUP_COUNT=$(wc -l < "$DUP_TMP" | tr -d ' ')
+if [[ "$DUP_COUNT" != "0" ]]; then
+  CHECKS_WITH_FINDINGS=$((CHECKS_WITH_FINDINGS + 1))
+  STRICT_HITS=$((STRICT_HITS + DUP_COUNT))
+  echo
+  echo "[strict] duplicate top-level function definitions ($DUP_COUNT name$([[ "$DUP_COUNT" == "1" ]] || echo "s"))"
+  echo "  Two files define the same top-level function; the last-loaded one silently shadows the other. Move the function to one owning file."
+  while IFS= read -r name; do
+    [[ -z "$name" ]] && continue
+    echo "  duplicate: $name"
+    grep -rnE "^(async )?function ${name}\b" js/*.js | sed 's/^/    /'
+  done < "$DUP_TMP"
+fi
+rm -f "$DUP_TMP"
+
 echo
 echo "Summary: strict=${STRICT_HITS}, review=${REVIEW_HITS}, checks_with_findings=${CHECKS_WITH_FINDINGS}"
 

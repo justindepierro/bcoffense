@@ -39,6 +39,23 @@ fi
 
 START=$(date +%s)
 
+# ── Pre-flight hardening gate ─────────────────────────────────────────────────
+# Fail fast on the regression classes we keep re-introducing (duplicate global
+# functions, panel transform trap, <details> toolbar dropdowns). Runs strict:
+# any strict finding aborts the ship. Skip with SKIP_AUDIT=1 for docs-only ships.
+if [[ "${SKIP_AUDIT:-0}" != "1" ]]; then
+  if [[ -x scripts/static-ui-audit.sh ]]; then
+    echo "→ Running hardening audit (strict gate)..."
+    if ! scripts/static-ui-audit.sh >/tmp/bc-audit.log 2>&1; then
+      echo "✗ Hardening audit found STRICT issues — aborting ship."
+      echo "  (Set SKIP_AUDIT=1 to override for docs-only changes.)"
+      grep -E "^\[strict\]|duplicate:|declares a trapping|toolbar dropdown" /tmp/bc-audit.log | head -40
+      exit 1
+    fi
+    echo "→ Hardening audit passed (no strict issues)."
+  fi
+fi
+
 # ── Bump SW version if requested ──────────────────────────────────────────────
 if [[ "$BUMP" == "true" ]]; then
   CURRENT=$(grep -oE 'bcoffense-v[0-9]+' sw.js | head -1 | sed 's/bcoffense-v//')

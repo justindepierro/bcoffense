@@ -3,6 +3,7 @@
 This document serves as the master roadmap for the BCOffense application, consolidating all incomplete tasks from previous roadmaps (`ROADMAP_TO_MVP.md`, `ROADMAP_TWO_OMG.md`, `ACTIONS_HUB_ROADMAP.md`, `PRODUCT_ROADMAP.md`).
 
 ## Phase 1: Deep Clean, Audit, and Performance Stabilization
+
 Before adding any new features, the codebase must undergo a rigorous audit to ensure stability, reduce technical debt, and prevent regressions.
 
 - [ ] **Global Code Consistency Audit**
@@ -21,6 +22,7 @@ Before adding any new features, the codebase must undergo a rigorous audit to en
   - [ ] Ensure that deleting or updating a play correctly updates downstream artifacts without orphans.
 
 ## Phase 2: Completion of Planned Workflow Enhancements
+
 Complete the remaining tasks from the previous Core Workflow and UX Implementation Roadmap.
 
 - [ ] `TODO: MANUAL` — Establish baseline task times for Playbook-to-Call-Sheet workflow.
@@ -34,9 +36,11 @@ Complete the remaining tasks from the previous Core Workflow and UX Implementati
 - [ ] `TODO: MANUAL` — Collect coach feedback on terminology and ordering.
 
 ## Phase 3: Player Experience and Play Discussion (The "Facebook-Style" Communication Layer)
+
 Implement the communication layer intended to allow players to ask questions and interact with plays.
 
 ### 3.1 Architecture, Auth, and Storage Prep
+
 - [ ] **Storage & Infrastructure Audit**
   - [ ] Document current monthly Cloudflare usage, Worker/Pages Functions request volume, and KV reads/writes.
   - [ ] Estimate expected accounts, comments, questions per week, and in-app/push notification volume.
@@ -50,7 +54,9 @@ Implement the communication layer intended to allow players to ask questions and
   - [ ] Create teams table, team memberships table, player profile table, position tables.
   - [ ] Create post edit history table.
   - [ ] Add migration tests.
+
 ### 3.2 Player Account Model and Roster Management
+
 - [ ] **Account Model**
   - [ ] Link authenticated player accounts to a roster player record.
   - [ ] Allow one roster player to have at most one active primary account by default.
@@ -68,7 +74,9 @@ Implement the communication layer intended to allow players to ask questions and
   - [ ] Prevent two users from claiming the same roster record.
   - [ ] Add roster account-status filter, counts to dash, reminder list, and activation completion percentage.
   - [ ] Add account onboarding instructions, QR-code invitations, direct login URL, and audit logs.
+
 ### 3.3 Core Discussion Features (Replies, Visuals, Reactions)
+
 - [ ] **Discussion Logic**
   - [ ] Store source context (Script ID, opponent, week, position context) on posts.
   - [ ] Add unread-count queries without loading complete threads.
@@ -86,25 +94,31 @@ Implement the communication layer intended to allow players to ask questions and
   - [ ] Bundle multiple ordinary player replies.
   - [ ] Show reaction activity inside the application.
   - [ ] Deep-link notifications to exact replies.
+
 ### 3.4 Notifications & Analytics
+
 - [ ] **Analytics**
   - [ ] Track visual replies, most-explained plays/positions.
   - [ ] Add a "Most Helpful Visual Explanations" report.
   - [ ] Allow promoting helpful discussions to canonical Playbook notes.
 
 ## Phase 4: Large Playbook Performance Track (From PRODUCT_ROADMAP.md)
+
 - [ ] Implement virtualization/lazy loading for massive playbooks to ensure buttery smooth performance on older mobile devices.
 - [ ] Optimize filter application logic for heavy playbooks.
 
 ## Phase 5: Swipe View Upgrades (From ACTIONS_HUB_ROADMAP.md)
-- [ ] **Player-facing action set in swipe view** 
+
+- [ ] **Player-facing action set in swipe view**
   - Bigger, fewer, "what do I do next" options. Needs design direction for final polish.
 
 ## Phase 6: Cloudflare D1 Team and Varsity/JV Management
+
 - [ ] Implement a `teams` table to support multi-team architecture.
 - [ ] Segment data by Varsity, JV, and Freshman scoping where appropriate.
 
 ## Phase 7: Outstanding Playbook/Module Enhancements
+
 - [ ] **Telestrator Refactor**
   - [ ] Separate reusable drawing-engine logic from presentation-specific UI.
   - [ ] Add explicit annotation modes (Temporary Presentation, Saved Coach Reply, Uploaded Image Markup).
@@ -135,7 +149,8 @@ Implement the communication layer intended to allow players to ask questions and
 > `sendScoutRecsToGamePlan` in `tendencies.js`; duplicate-function scan is now 0.
 
 ### 0.A — Architecture & Load-Order Integrity (1–10)
-- [ ] **1.** Add a `scripts/audit-duplicates.sh` that fails CI/ship if any top-level `function` name is defined in 2+ files. Wire it into `ship.sh`.
+
+- [x] **1.** Add a duplicate top-level `function` scan that fails ship if any name is defined in 2+ files — implemented inside `scripts/static-ui-audit.sh` (strict) and gated by `ship.sh` pre-flight. (2026-07, SW v893)
 - [ ] **2.** Generate a one-time report of every `typeof X === "function"` guard; classify each as (a) legitimate optional integration, (b) same-module call that should be a direct call, (c) guaranteed-present call. Track counts.
 - [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`).
 - [ ] **4.** For remaining legitimate guards, add a `console.warn` in the `else` branch (dev-only) so missing dependencies surface loudly instead of no-op'ing.
@@ -147,6 +162,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **10.** Write a smoke test that loads `index.html` headless and asserts no `ReferenceError`/`undefined is not a function` during a full tab tour.
 
 ### 0.B — CSS Specificity & Layout Stability (11–20)
+
 - [ ] **11.** Reduce `wristband.css` `!important` count (115 → target < 40) by fixing source order and using more specific selectors.
 - [ ] **12.** Global `!important` audit (711 total): categorize as utility-override (keep) vs specificity-war (remove). Target < 400.
 - [ ] **13.** Add a permanent regression comment + guard test around `.panel.active` staying opacity-only (no `transform`/`will-change: transform`/`filter`).
@@ -159,6 +175,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **20.** Verify dark-mode token coverage on every module (no hardcoded light-mode colors leaking through).
 
 ### 0.C — Scroll, Shell & Navigation (21–26)
+
 - [ ] **21.** Grep every `scrollIntoView` call (34+ sites); replace those inside `.panel` with direct inner-container scrolling.
 - [ ] **22.** Expand `repairDesktopDocumentScroll()` coverage and add a periodic assertion (dev-only) that `#mainApp.scrollTop === 0` on desktop.
 - [ ] **23.** Add a shared `scrollElementIntoContainer(el, container)` helper and route all in-panel scrolling through it.
@@ -167,6 +184,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **26.** Document the desktop shell scroll model (body → #mainApp → panel) prominently in `AGENTS.md` (done — keep updated).
 
 ### 0.D — Error Handling & Observability (27–34)
+
 - [ ] **27.** Fix the ~17 empty `catch {}` and ~15 `catch { /* ignore */ }` blocks — add logging or a justifying comment.
 - [ ] **28.** Add a global `window.onerror` / `unhandledrejection` handler that surfaces a dev toast (behind a debug flag) so silent failures become visible.
 - [ ] **29.** Consolidate the tracing infrastructure (`traceWristbandAction`, `traceAppAction`, shell scroll trace, ~213 lines) into ONE `js/trace.js` module with a single enable flag.
@@ -177,6 +195,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **34.** Add quota-exceeded handling verification for every large write (playbook, backups, drafts).
 
 ### 0.E — Dead Code & Bloat Reduction (35–41)
+
 - [ ] **35.** Static dead-code sweep: for each top-level function, grep for references; produce a candidate-unused list for manual review.
 - [ ] **36.** Remove confirmed dead code (start with the newly-orphaned patterns exposed by removing the `sendScoutRecsToGamePlan` duplicate).
 - [ ] **37.** Split the 5 largest JS files (`play-discussion.js` 3033, `play-presentation.js` 2948, `utils.js` 2286, `tendencies.js` 2075, `app-shell.js` 1967) along clear ownership lines.
@@ -186,6 +205,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **41.** Trim commented-out code blocks and stale "restored after commit X" archaeology comments once the fix is stable.
 
 ### 0.F — Data Model & Handoff Integrity (42–46)
+
 - [ ] **42.** Define ONE canonical play-signature function and route every dedup/match through it (audit `_gpPlaySignature`, `playsMatch`, `playSignature`, ad-hoc `JSON.stringify`).
 - [ ] **43.** Verify stable play identity survives every handoff (Playbook → Script → Wristband → Call Sheet → Game Plan) with a round-trip test.
 - [ ] **44.** Ensure deleting/editing a play updates or flags downstream artifacts (no orphaned references in call sheet / wristband / game plan).
@@ -193,10 +213,12 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **46.** Add a migration test harness that runs `runMigrations()` against fixtures for each `STORAGE_VERSION`.
 
 ### 0.G — Workflow, Tooling & Docs (47–50)
-- [ ] **47.** Expand `scripts/static-ui-audit.sh` with the new checks (duplicate functions, `.panel.active` transform, `<details>` dropdowns, `scrollIntoView` in panels) so ship-time catches regressions automatically.
+
+- [x] **47.** Expand `scripts/static-ui-audit.sh` with new checks (duplicate functions, `.panel.active` transform trap, `<details>`/`<summary>` toolbar dropdowns, `scrollIntoView` in modules) and gate them at ship time via `ship.sh`. (2026-07, SW v893)
 - [ ] **48.** Add a pre-ship checklist runner that executes the full validation ritual (node --check, duplicate scan, audit, SW-version consistency) in one command.
 - [ ] **49.** Keep `AGENTS.md` "Known Traps & Hardening Standards" current — every new class of bug fixed gets a trap entry so it never recurs silently.
 - [ ] **50.** Establish a "consistency budget" dashboard: track `!important` count, `typeof` guard count, largest-file line counts, and duplicate-function count over time; require each ship to not regress them.
 
 ---
-*This roadmap replaces the previous dispersed documents. Any new feature requests should be categorized and added to this file.*
+
+_This roadmap replaces the previous dispersed documents. Any new feature requests should be categorized and added to this file._
