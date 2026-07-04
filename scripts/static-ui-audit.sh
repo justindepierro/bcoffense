@@ -205,6 +205,25 @@ run_rg review \
   "scrollIntoView walks every scroll ancestor including #mainApp (overflow:hidden but scriptable), hiding the tab bar. Prefer scrolling the specific inner container. Some modal/overlay uses are fine." \
   -g 'js/*.js' -e '\.scrollIntoView\(' .
 
+# ── Script cache consistency (index.html <script> vs sw.js LOCAL_ASSETS) ──────
+# Every JS file loaded by index.html MUST be in sw.js LOCAL_ASSETS or it won't
+# be cached and offline mode breaks. And vice versa (no stale cache entries).
+SCRIPT_MISMATCH_TMP=$(mktemp)
+grep -oE 'src="js/[a-zA-Z0-9._-]+\.js' index.html | sed 's|src="||' | sort -u > "${SCRIPT_MISMATCH_TMP}.html"
+grep -oE '"\./js/[a-zA-Z0-9._-]+\.js"' sw.js | sed 's|"\./||; s|"||' | sort -u > "${SCRIPT_MISMATCH_TMP}.sw"
+comm -23 "${SCRIPT_MISMATCH_TMP}.html" "${SCRIPT_MISMATCH_TMP}.sw" | sed 's/^/  loaded in index.html but MISSING from sw.js LOCAL_ASSETS: /' > "$SCRIPT_MISMATCH_TMP"
+comm -13 "${SCRIPT_MISMATCH_TMP}.html" "${SCRIPT_MISMATCH_TMP}.sw" | sed 's/^/  in sw.js LOCAL_ASSETS but NOT loaded in index.html: /' >> "$SCRIPT_MISMATCH_TMP"
+SCRIPT_MISMATCH_COUNT=$(grep -c . "$SCRIPT_MISMATCH_TMP" || true)
+if [[ "$SCRIPT_MISMATCH_COUNT" != "0" ]]; then
+  CHECKS_WITH_FINDINGS=$((CHECKS_WITH_FINDINGS + 1))
+  STRICT_HITS=$((STRICT_HITS + SCRIPT_MISMATCH_COUNT))
+  echo
+  echo "[strict] script cache mismatch between index.html and sw.js ($SCRIPT_MISMATCH_COUNT)"
+  echo "  A loaded script missing from LOCAL_ASSETS breaks offline mode; a stale entry wastes cache."
+  cat "$SCRIPT_MISMATCH_TMP"
+fi
+rm -f "$SCRIPT_MISMATCH_TMP" "${SCRIPT_MISMATCH_TMP}.html" "${SCRIPT_MISMATCH_TMP}.sw"
+
 # ── Duplicate top-level function definitions (global-scope shadow bug) ────────
 # All JS shares one global scope; two files defining the same top-level function
 # means the last-loaded one silently shadows the other. Must be zero.

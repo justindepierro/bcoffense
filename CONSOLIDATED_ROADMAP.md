@@ -154,7 +154,7 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **2.** Generate a one-time report of every `typeof X === "function"` guard; classify each as (a) legitimate optional integration, (b) same-module call that should be a direct call, (c) guaranteed-present call. Track counts.
 - [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`).
 - [ ] **4.** For remaining legitimate guards, add a `console.warn` in the `else` branch (dev-only) so missing dependencies surface loudly instead of no-op'ing.
-- [ ] **5.** Document the authoritative load order in ONE place (`AGENTS.md`) and add a check that `index.html` script order matches `sw.js` `LOCAL_ASSETS` order.
+- [x] **5.** Added a strict audit check that `index.html` `<script>` membership matches `sw.js` `LOCAL_ASSETS` (a loaded-but-uncached script breaks offline mode). Load order documented in `AGENTS.md`. (2026-07, SW v894)
 - [ ] **6.** Audit every `window.X =` global export (currently ~40); confirm each is intentional and documented in the Refactor Ownership Map.
 - [ ] **7.** Verify every split-file "owning" claim in the Refactor Ownership Map by grepping for the functions it claims to own; fix drift.
 - [ ] **8.** Establish a naming convention for private helpers (`_gp*`, `_wb*`, `_cs*`, `_td*`) and enforce it — makes ownership obvious and reduces collision risk.
@@ -186,7 +186,7 @@ Implement the communication layer intended to allow players to ask questions and
 ### 0.D — Error Handling & Observability (27–34)
 
 - [ ] **27.** Fix the ~17 empty `catch {}` and ~15 `catch { /* ignore */ }` blocks — add logging or a justifying comment.
-- [ ] **28.** Add a global `window.onerror` / `unhandledrejection` handler that surfaces a dev toast (behind a debug flag) so silent failures become visible.
+- [x] **28.** Added a global `error` + `unhandledrejection` handler (`app-shell.js`) that logs to console + a rolling `window.__bcErrors` buffer, and shows a dev toast only when a trace flag is set. Inspect via `window.bcErrors()`. (2026-07, SW v894)
 - [ ] **29.** Consolidate the tracing infrastructure (`traceWristbandAction`, `traceAppAction`, shell scroll trace, ~213 lines) into ONE `js/trace.js` module with a single enable flag.
 - [ ] **30.** Gate ALL `console.*` debug output (128 statements) behind the trace flag; keep only genuine errors unconditional.
 - [ ] **31.** Add a "self-check" dev command (`window.bcSelfCheck()`) that runs the wristband/gameplan/callsheet audit snapshots and reports issues in one call.
@@ -215,7 +215,7 @@ Implement the communication layer intended to allow players to ask questions and
 ### 0.G — Workflow, Tooling & Docs (47–50)
 
 - [x] **47.** Expand `scripts/static-ui-audit.sh` with new checks (duplicate functions, `.panel.active` transform trap, `<details>`/`<summary>` toolbar dropdowns, `scrollIntoView` in modules) and gate them at ship time via `ship.sh`. (2026-07, SW v893)
-- [ ] **48.** Add a pre-ship checklist runner that executes the full validation ritual (node --check, duplicate scan, audit, SW-version consistency) in one command.
+- [x] **48.** `ship.sh` now runs the full strict audit as a pre-flight gate (duplicate functions, panel transform, details dropdowns, script-cache membership) and aborts the ship on any strict finding. (2026-07, SW v894)
 - [ ] **49.** Keep `AGENTS.md` "Known Traps & Hardening Standards" current — every new class of bug fixed gets a trap entry so it never recurs silently.
 - [ ] **50.** Establish a "consistency budget" dashboard: track `!important` count, `typeof` guard count, largest-file line counts, and duplicate-function count over time; require each ship to not regress them.
 

@@ -1,5 +1,67 @@
 // App shell runtime helpers: theme, chrome, global shortcuts, and page-level listeners.
 
+// ── Global error surfacing (Hardening #28) ──
+// The app is global-scope with fragile load order, so a single uncaught error
+// or unhandled promise rejection can silently kill a feature. This normalizes
+// those into a clear console log + a rolling buffer (window.__bcErrors) for
+// debugging, and shows a dev toast ONLY when a trace flag is enabled so end
+// users never see noise. Purely additive — cannot change existing behavior.
+(function installGlobalErrorSurfacing() {
+  if (typeof window === "undefined" || window.__bcErrorHandlerInstalled) return;
+  window.__bcErrorHandlerInstalled = true;
+  window.__bcErrors = window.__bcErrors || [];
+
+  function bcErrorTraceEnabled() {
+    try {
+      return (
+        window.BC_ACTION_TRACE === true ||
+        window.BC_ERROR_TRACE === true ||
+        localStorage.getItem("bcActionTrace") === "1" ||
+        localStorage.getItem("bcErrorTrace") === "1"
+      );
+    } catch (_e) {
+      return window.BC_ACTION_TRACE === true || window.BC_ERROR_TRACE === true;
+    }
+  }
+
+  function record(kind, message, detail) {
+    const entry = { kind, message, detail, at: new Date().toISOString() };
+    window.__bcErrors.push(entry);
+    if (window.__bcErrors.length > 50) window.__bcErrors.shift();
+    console.error(`[BC ${kind}]`, message, detail || "");
+    if (bcErrorTraceEnabled() && typeof showToast === "function") {
+      showToast(`⚠️ ${kind}: ${String(message).slice(0, 120)}`, {
+        type: "error",
+        duration: 6000,
+      });
+    }
+  }
+
+  window.addEventListener("error", (event) => {
+    // Ignore benign resource-load errors (img/script 404s) — those are not JS bugs.
+    if (event && event.target && event.target !== window && event.target.tagName) return;
+    record("uncaught error", event?.message || "Unknown error", {
+      source: event?.filename,
+      line: event?.lineno,
+      col: event?.colno,
+    });
+  });
+
+  window.addEventListener("unhandledrejection", (event) => {
+    const reason = event?.reason;
+    record(
+      "unhandled promise rejection",
+      (reason && (reason.message || reason)) || "Unknown rejection",
+      reason && reason.stack ? { stack: String(reason.stack).slice(0, 400) } : null,
+    );
+  });
+
+  window.bcErrors = function bcErrors() {
+    console.table(window.__bcErrors);
+    return window.__bcErrors;
+  };
+})();
+
 // ── Startup loading cover ──
 function setStartupLoadingMessage(message) {
   const el = document.getElementById("startupLoaderStatus");
