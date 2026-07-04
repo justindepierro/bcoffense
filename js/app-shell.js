@@ -165,8 +165,16 @@ function traceDesktopShellScrollRepair(reason, snapshot) {
 function repairDesktopDocumentScroll(reason = "scroll") {
   if (!isDesktopShellPanelScrollOwner()) return false;
   const before = getDocumentScrollPosition();
-  if (before.x === 0 && before.y === 0 && before.docTop === 0 && before.bodyTop === 0) {
+  // Also check #mainApp — scrollIntoView on elements inside overflow:hidden
+  // containers can set mainApp.scrollTop which hides the tab bar.
+  const mainApp = document.getElementById("mainApp");
+  const mainAppScrolled = mainApp && (mainApp.scrollTop !== 0 || mainApp.scrollLeft !== 0);
+  if (before.x === 0 && before.y === 0 && before.docTop === 0 && before.bodyTop === 0 && !mainAppScrolled) {
     return false;
+  }
+  if (mainAppScrolled) {
+    mainApp.scrollTop = 0;
+    mainApp.scrollLeft = 0;
   }
   const snapshot = getDesktopShellScrollSnapshot({ reason, before });
   if (document.documentElement) {

@@ -1262,18 +1262,30 @@ function jumpToGamePlanBox(boxId) {
   if (!boxId) return;
   const el = document.querySelector(`.gp-box[data-box-id="${CSS.escape(boxId)}"]`);
   if (!el) return;
+  // Scroll within .gp-board-scroll only — NOT scrollIntoView, which also
+  // programmatically scrolls #mainApp (overflow:hidden allows JS scrollTop
+  // changes) and hides the tab bar.
+  const scrollArea = document.querySelector(".gp-board-scroll");
+  const doScroll = (target) => {
+    if (scrollArea) {
+      const areaRect = scrollArea.getBoundingClientRect();
+      const elRect = target.getBoundingClientRect();
+      const targetTop = scrollArea.scrollTop + (elRect.top - areaRect.top) - 12;
+      scrollArea.scrollTo({ top: Math.max(0, targetTop), behavior: "smooth" });
+    }
+    target.classList.add("gp-box-flash");
+    setTimeout(() => target.classList.remove("gp-box-flash"), 900);
+  };
   // If the box is collapsed, expand first so the user actually sees content
   if (el.classList.contains("is-collapsed")) {
     toggleGamePlanBoxCollapse(boxId);
     requestAnimationFrame(() => {
       const re = document.querySelector(`.gp-box[data-box-id="${CSS.escape(boxId)}"]`);
-      if (re) re.scrollIntoView({ behavior: "smooth", block: "start" });
+      if (re) doScroll(re);
     });
     return;
   }
-  el.scrollIntoView({ behavior: "smooth", block: "start" });
-  el.classList.add("gp-box-flash");
-  setTimeout(() => el.classList.remove("gp-box-flash"), 900);
+  doScroll(el);
 }
 
 /* -------------------------------------------------------------------------
