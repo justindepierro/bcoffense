@@ -670,7 +670,7 @@ function checkPlayPresentationContracts() {
     !/reason: "no-script-items"/.test(presenter) ||
     !/reason: !overlay \? "overlay-missing" : "no-items"/.test(presenter) ||
     !/return true;/.test(presenter) ||
-    !/requestAnimationFrame\(\s*syncPlayPresentationMobileLandscape/.test(
+    !/requestAnimationFrame\(\(\) => \{[\s\S]*syncPlayPresentationMobileLandscape\(\);[\s\S]*syncPlayPresentationHeaderOffset\(\);/.test(
       presenter,
     ) ||
     !/cancelAnimationFrame\(playPresentationViewportSyncFrame\)/.test(
@@ -694,9 +694,8 @@ function checkPlayPresentationContracts() {
     !/data-action="openPlaybookPresentation"/.test(playbookRender) ||
     !/data-action="openScriptPresentation"/.test(scriptRender) ||
     !/case "openScriptPresentation"/.test(appEvents) ||
-    !/openPlaybookPresentation\(parseInt\(presentBtn\.dataset\.idx/.test(
-      appEvents,
-    )
+    !/function _getPlaybookActionIndex\(el\)/.test(appEvents) ||
+    !/openPlaybookPresentation\(_getPlaybookActionIndex\(presentBtn\)\)/.test(appEvents)
   ) {
     fail("playbook or script presentation row actions are not delegated correctly");
   }

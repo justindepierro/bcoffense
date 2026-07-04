@@ -187,6 +187,14 @@ function updatePlayPresentationCleanViewButton() {
   btn.setAttribute("aria-label", label);
 }
 
+function syncPlayPresentationHeaderOffset() {
+  const overlay = document.getElementById("playPresentationOverlay");
+  const header = overlay?.querySelector(".pp-header");
+  if (!overlay || !header) return;
+  const height = Math.ceil(header.getBoundingClientRect().height || 62);
+  overlay.style.setProperty("--pp-header-offset", `${Math.max(48, height)}px`);
+}
+
 function setPlayPresentationCleanView(on) {
   playPresentationCleanView = !!on;
   const overlay = document.getElementById("playPresentationOverlay");
@@ -1243,9 +1251,11 @@ function queuePlayPresentationViewportSync() {
   const overlay = document.getElementById("playPresentationOverlay");
   if (!overlay?.classList.contains("is-open")) return;
   if (playPresentationViewportSyncFrame) return;
-  playPresentationViewportSyncFrame = requestAnimationFrame(
-    syncPlayPresentationMobileLandscape,
-  );
+  playPresentationViewportSyncFrame = requestAnimationFrame(() => {
+    playPresentationViewportSyncFrame = 0;
+    syncPlayPresentationMobileLandscape();
+    syncPlayPresentationHeaderOffset();
+  });
 }
 
 function setPlayPresentationOverlayOpen(overlay, open) {
@@ -2372,6 +2382,7 @@ function renderPlayPresentation() {
     playPresentationState.mode,
   );
   syncPlayPresentationRoleUi();
+  syncPlayPresentationHeaderOffset();
 
   const sourceLabel = document.getElementById("playPresentationSource");
   const counter = document.getElementById("playPresentationCounter");
@@ -2426,6 +2437,7 @@ function renderPlayPresentation() {
     announcer.textContent = `Showing ${getPlayPresentationPlayLabel(item.play)}, slide ${playPresentationState.index + 1} of ${playPresentationState.items.length}`;
   }
   requestAnimationFrame(updatePlayPresentationRotateHint);
+  requestAnimationFrame(syncPlayPresentationHeaderOffset);
 }
 
 function isPlayPresentationInteractiveSwipeTarget(target) {
@@ -2945,4 +2957,3 @@ function setPlayPresentationThemeOption(value) {
 }
 
 loadPlayPresentationOptions();
-

@@ -34,6 +34,8 @@ function pbPageNext() {
 }
 
 function selectPlaybookRow(index) {
+  index = parseInt(index, 10);
+  if (!Number.isInteger(index)) return;
   const tbody = document.querySelector("#playbookTable tbody");
   const cards = document.querySelectorAll("#pbCards .pb-card");
   if (!tbody) return;

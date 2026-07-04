@@ -141,14 +141,14 @@ function renderPlaybook() {
           : "";
 
         const gpToggle = activeOpponent
-          ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
+          ? `<button class="gp-toggle-btn${gpActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
         const rowTitle = isReadOnlyViewer
           ? "Click to select and use Present to study this play"
           : "Click to select, double-click to edit";
 
         return `
-            <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}"  
+            <tr class="${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}"
                 data-preview="${idx}"
                 title="${rowTitle}">
                 <td class="col-gameplan">${gpToggle}</td>
@@ -195,14 +195,14 @@ function renderPlaybook() {
           ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
           : "";
         const gpCardToggle = activeOpponent
-          ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
+          ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
         const pills = [play.type, play.back, play.motion, play.tempo]
           .filter(Boolean)
           .map((value) => `<span class="pb-card-pill">${escapeHtml(value)}</span>`)
           .join("");
         return `
-          <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-preview="${idx}"
+          <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
@@ -321,8 +321,13 @@ function _renderWorkflowChips(play, idx) {
 }
 
 async function addPlayToWeek(idx) {
-  const play = typeof plays !== "undefined" && plays[idx];
+  const filteredIdx = parseInt(idx, 10);
+  const play =
+    Number.isInteger(filteredIdx) && Array.isArray(filteredPlays)
+      ? filteredPlays[filteredIdx]
+      : null;
   if (!play) return;
+  const masterIdx = Array.isArray(plays) ? plays.indexOf(play) : -1;
   const playLabel = play.play || play.formation || "this play";
   const destinations = [
     { label: "🎯 Game Plan", value: "gameplan" },
@@ -339,8 +344,8 @@ async function addPlayToWeek(idx) {
     if (typeof showTab === "function") showTab("gameplan");
     showToast("Drag or use ⊕ on a box to add this play", { duration: 3000 });
   } else if (dest === "script") {
-    if (typeof addToScript === "function") {
-      await addToScript(idx);
+    if (typeof addToScript === "function" && masterIdx >= 0) {
+      await addToScript(masterIdx);
     } else {
       if (typeof showTab === "function") showTab("script");
       showToast("Add the play from the Available Plays panel");
@@ -499,6 +504,24 @@ function initPlaybookKeyboard() {
   if (!container) return;
 
   if (!container._kbInit) {
+    const selectAndRevealIndex = (nextIndex) => {
+      if (!filteredPlays.length) return;
+      const bounded = Math.max(0, Math.min(nextIndex, filteredPlays.length - 1));
+      const nextPage = Math.floor(bounded / PLAYS_PER_PAGE);
+      selectedRowIndex = bounded;
+      if (nextPage !== currentPage) {
+        currentPage = nextPage;
+        renderPlaybook();
+      } else {
+        selectPlaybookRow(bounded);
+      }
+      requestAnimationFrame(() => {
+        document
+          .querySelector(`#playbookTable tbody tr[data-idx="${bounded}"]`)
+          ?.scrollIntoView({ block: "nearest" });
+      });
+    };
+
     container.addEventListener("keydown", (e) => {
       const rows = document.querySelectorAll("#playbookTable tbody tr");
       if (rows.length === 0) return;
@@ -506,15 +529,19 @@ function initPlaybookKeyboard() {
       switch (e.key) {
         case "ArrowDown":
           e.preventDefault();
-          selectedRowIndex = Math.min(selectedRowIndex + 1, rows.length - 1);
-          selectPlaybookRow(selectedRowIndex);
-          rows[selectedRowIndex]?.scrollIntoView({ block: "nearest" });
+          selectAndRevealIndex(
+            selectedRowIndex >= 0
+              ? selectedRowIndex + 1
+              : currentPage * PLAYS_PER_PAGE,
+          );
           break;
         case "ArrowUp":
           e.preventDefault();
-          selectedRowIndex = Math.max(selectedRowIndex - 1, 0);
-          selectPlaybookRow(selectedRowIndex);
-          rows[selectedRowIndex]?.scrollIntoView({ block: "nearest" });
+          selectAndRevealIndex(
+            selectedRowIndex >= 0
+              ? selectedRowIndex - 1
+              : currentPage * PLAYS_PER_PAGE,
+          );
           break;
         case "Enter":
           e.preventDefault();
@@ -581,7 +608,11 @@ function updateStatsBar() {
 
 // ── #115: Workflow Side Panel ─────────────────────────────────────────────
 function openPlayWorkflowPanel(idx) {
-  const play = typeof plays !== "undefined" && plays[idx];
+  const filteredIdx = parseInt(idx, 10);
+  const play =
+    Number.isInteger(filteredIdx) && Array.isArray(filteredPlays)
+      ? filteredPlays[filteredIdx]
+      : null;
   if (!play) return;
   const panel = document.getElementById("pbWorkflowPanel");
   const titleEl = document.getElementById("pbWfPanelTitle");

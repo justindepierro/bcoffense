@@ -76,6 +76,16 @@ const _ELEMENT_FNS = new Set([
 ]);
 const _BOOL_FNS = new Set(["toggleAllPbPrintOptions", "csSelectAllFields"]);
 
+function _getPlaybookActionIndex(el) {
+  if (!el || !el.dataset) return NaN;
+  const raw =
+    el.dataset.idx ??
+    el.dataset.arg ??
+    el.closest("[data-idx]")?.dataset.idx ??
+    el.closest("[data-arg]")?.dataset.arg;
+  return parseInt(raw, 10);
+}
+
 const ACTION_TRACE_ACTIONS = new Set([
   "loadPublishedPlayerScript",
   "presentPublishedPlayerScript",
@@ -677,13 +687,13 @@ document.addEventListener("DOMContentLoaded", () => {
       );
       if (presentBtn) {
         e.stopPropagation();
-        openPlaybookPresentation(parseInt(presentBtn.dataset.idx, 10));
+        openPlaybookPresentation(_getPlaybookActionIndex(presentBtn));
         return;
       }
       const gpBtn = e.target.closest("[data-action='togglePlaybookGamePlan']");
       if (gpBtn) {
         e.stopPropagation();
-        togglePlaybookGamePlan(parseInt(gpBtn.dataset.idx, 10));
+        togglePlaybookGamePlan(_getPlaybookActionIndex(gpBtn));
         return;
       }
       const clipBtn = e.target.closest("[data-action='openPlaybookClipViewer']");
@@ -698,6 +708,10 @@ document.addEventListener("DOMContentLoaded", () => {
       if (!row) return;
       const idx = parseInt(row.dataset.idx, 10);
       const cell = e.target.closest("[data-action='copyPlayName']");
+      const nestedAction = e.target.closest("[data-action]");
+      if (nestedAction && nestedAction !== row && nestedAction !== cell) {
+        return;
+      }
       if (cell) {
         e.stopPropagation();
         copyPlayName(cell.dataset.play);

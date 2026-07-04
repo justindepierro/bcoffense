@@ -94,6 +94,8 @@ body.play-presentation-open {
 }
 
 .pp-header {
+  position: relative;
+  z-index: 4;
   display: grid;
   grid-template-columns: minmax(160px, 0.7fr) auto minmax(220px, 0.9fr);
   align-items: center;
@@ -1269,10 +1271,10 @@ body.play-presentation-open {
    portrait. The body is the only scroll surface (overscroll contained). */
 .pp-detail-panel {
   position: absolute;
-  top: 0;
+  top: var(--pp-header-offset, 62px);
   right: 0;
   bottom: 0;
-  z-index: var(--z-toast);
+  z-index: 3;
   display: flex;
   flex-direction: column;
   width: min(380px, 86vw);
@@ -1385,10 +1387,10 @@ body.play-presentation-open {
 /* ===== Discussion drawer — pp-disc-drawer ===== */
 .pp-disc-drawer {
   position: absolute;
-  top: 0;
+  top: var(--pp-header-offset, 62px);
   right: 0;
   bottom: 0;
-  z-index: var(--z-toast);
+  z-index: 3;
   display: flex;
   flex-direction: column;
   width: min(420px, 90vw);
