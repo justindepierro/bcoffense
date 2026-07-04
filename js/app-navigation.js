@@ -144,6 +144,11 @@ function showTab(tabName) {
     initTendencies();
   } else if (tabName === "gameplan") {
     if (typeof initGamePlan === "function") initGamePlan();
+    // Game plan uses overflow:hidden + internal scroll — ensure body scroll is
+    // repaired in case tab activation briefly scrolled the document.
+    if (typeof queueDesktopDocumentScrollRepair === "function") {
+      queueDesktopDocumentScrollRepair("gameplan-tab");
+    }
   } else if (tabName === "callsheet") {
     if (Object.keys(callSheet).length === 0) {
       initCallSheet();
