@@ -89,7 +89,7 @@ const PAGE_ACTIONS_CONFIG = {
   gameplan: {
     title: "Game Plan",
     verbs: [
-      { icon: "�", label: "Library", run: () => _paCall("openPlayLibrary") },
+      { icon: "📚", label: "Library", run: () => _paCall("openPlayLibrary") },
       { icon: "📋", label: "Load Wristband", run: () => _paCall("loadGamePlanWristband") },
       { icon: "▼", label: "Expand All", run: () => _paCall("expandAllGamePlanBoxes") },
       { icon: "▶", label: "Collapse All", run: () => _paCall("collapseAllGamePlanBoxes") },
@@ -287,62 +287,95 @@ function openScriptDayTemplatesFromActions() {
   }, 60);
 }
 
-// ── Wristband “Appearance” → open the appearance popover ──────────────────────
+let _wbSettingsModalReturn = null;
+
+function _wbRestoreSettingsModalContent() {
+  if (!_wbSettingsModalReturn || !_wbSettingsModalReturn.node) return;
+  const { node, parent, nextSibling } = _wbSettingsModalReturn;
+  if (parent && parent.isConnected) {
+    parent.insertBefore(node, nextSibling && nextSibling.isConnected ? nextSibling : null);
+  }
+  _wbSettingsModalReturn = null;
+}
+
+function _wbOpenSettingsModal(title, node, opts = {}) {
+  const overlay = document.getElementById("wbSettingsModal");
+  const titleEl = document.getElementById("wbSettingsModalTitle");
+  const bodyEl = document.getElementById("wbSettingsModalBody");
+  if (!overlay || !titleEl || !bodyEl || !node) return;
+
+  _wbRestoreSettingsModalContent();
+  if (typeof closeAnchoredMenu === "function") {
+    document
+      .querySelectorAll(".tool-menu-wrap[data-anchored].open, .more-tools-wrap[data-anchored].open")
+      .forEach((wrap) => closeAnchoredMenu(wrap));
+  }
+
+  _wbSettingsModalReturn = {
+    node,
+    parent: node.parentNode,
+    nextSibling: node.nextSibling,
+  };
+  titleEl.textContent = title || "Settings";
+  bodyEl.replaceChildren(node);
+  if (opts.expandContent) {
+    node.querySelectorAll(".collapsed").forEach((el) => el.classList.remove("collapsed"));
+    node
+      .querySelectorAll("[aria-expanded='false']")
+      .forEach((el) => el.setAttribute("aria-expanded", "true"));
+    node.querySelectorAll(".toggle-icon").forEach((el) => {
+      el.textContent = "▼";
+    });
+  }
+  overlay.hidden = false;
+  overlay.removeAttribute("inert");
+  overlay.setAttribute("aria-hidden", "false");
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function closeWbSettingsModal() {
+  const overlay = document.getElementById("wbSettingsModal");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  overlay.setAttribute("aria-hidden", "true");
+  overlay.setAttribute("inert", "");
+  setTimeout(() => {
+    _wbRestoreSettingsModalContent();
+    overlay.hidden = true;
+  }, 160);
+}
+
+function openWbColorsModal() {
+  const panel = document.querySelector("#wbColorsMenuWrap .wb-appearance-popover");
+  _wbOpenSettingsModal("Colors", panel);
+}
+
+// ── Wristband “Appearance” → open the appearance modal ────────────────────────
 function openWristbandAppearance() {
   closePageActions();
   setTimeout(() => {
-    // New structure: anchored tool-menu-wrap#wbColorsMenuWrap
-    const wrap = document.getElementById("wbColorsMenuWrap");
-    if (wrap) {
-      wrap.classList.add("open");
-      if (typeof positionAnchoredMenu === "function") positionAnchoredMenu(wrap);
-      return;
-    }
-    // Fallback: legacy <details> element
-    const panel = document.querySelector(".wb-appearance-panel");
-    if (panel) panel.open = true;
+    openWbColorsModal();
   }, 80);
 }
 
-// ── Wristband “Display Options” → expand and scroll to display panel ──────────
+// ── Wristband “Display Options” → modal ───────────────────────────────────────
 function openWbDisplayPanel() {
   closePageActions();
   setTimeout(() => {
     const panel = document.querySelector(".display-options-panel.wb-display-panel");
     if (!panel) return;
-    const content = panel.querySelector(".display-options-content");
-    const icon = panel.querySelector(".toggle-icon");
-    if (content?.classList.contains("collapsed")) {
-      content.classList.remove("collapsed");
-      if (icon) icon.textContent = "▼";
-    }
-    const preview = document.querySelector(".wristband-preview");
-    if (preview) {
-      const rect = panel.getBoundingClientRect();
-      const pRect = preview.getBoundingClientRect();
-      preview.scrollTo({ top: Math.max(0, preview.scrollTop + rect.top - pRect.top - 8), behavior: "smooth" });
-    }
+    _wbOpenSettingsModal("Display Options", panel, { expandContent: true });
   }, 80);
 }
 
-// ── Wristband “Sort & Organize” → expand and scroll to sort panel ────────────
+// ── Wristband “Sort & Organize” → modal ──────────────────────────────────────
 function openWbSortPanel() {
   closePageActions();
   setTimeout(() => {
     const panel = document.querySelector(".wb-sort-panel");
     if (!panel) return;
-    const content = panel.querySelector(".wb-sort-content");
-    const icon = panel.querySelector(".toggle-icon");
-    if (content?.classList.contains("collapsed")) {
-      content.classList.remove("collapsed");
-      if (icon) icon.textContent = "▼";
-    }
-    const preview = document.querySelector(".wristband-preview");
-    if (preview) {
-      const rect = panel.getBoundingClientRect();
-      const pRect = preview.getBoundingClientRect();
-      preview.scrollTo({ top: Math.max(0, preview.scrollTop + rect.top - pRect.top - 8), behavior: "smooth" });
-    }
+    _wbOpenSettingsModal("Sort & Organize", panel, { expandContent: true });
   }, 80);
 }
 

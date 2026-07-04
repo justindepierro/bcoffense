@@ -353,6 +353,131 @@ body.app-ready:not(.is-mobile-screen)
   background: var(--color-bg-lighter);
 }
 
+.wb-settings-dock[hidden] {
+  display: none !important;
+}
+
+.wb-settings-modal {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal-top);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: clamp(16px, 4vh, 32px);
+  background: var(--color-overlay);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity var(--transition-fast);
+  overflow: auto;
+  overscroll-behavior: contain;
+}
+
+.wb-settings-modal.visible {
+  opacity: 1;
+  pointer-events: auto;
+}
+
+.wb-settings-modal[hidden] {
+  display: none;
+}
+
+.wb-settings-dialog {
+  width: min(720px, 100%);
+  max-height: calc((var(--app-vh, 1vh) * 100) - clamp(32px, 8vh, 64px));
+  display: flex;
+  flex-direction: column;
+  background: var(--color-surface);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.wb-settings-modal-header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-md);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-surface-raised);
+}
+
+.wb-settings-modal-kicker {
+  display: block;
+  margin-bottom: 2px;
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--color-primary);
+}
+
+.wb-settings-modal-header h2 {
+  margin: 0;
+  font-size: var(--font-size-lg);
+  color: var(--color-text);
+}
+
+.wb-settings-modal-close {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: pointer;
+  font: inherit;
+  font-size: var(--font-size-lg);
+  line-height: 1;
+  touch-action: manipulation;
+}
+
+.wb-settings-modal-body {
+  min-height: 0;
+  overflow: auto;
+  padding: 16px;
+  overscroll-behavior: contain;
+}
+
+.wb-settings-modal-body .tool-menu,
+.wb-settings-modal-body .wb-appearance-popover {
+  position: static;
+  display: grid;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+}
+
+.wb-settings-modal-body .wb-appearance-popover .color-picker {
+  display: grid;
+  grid-template-columns: 72px repeat(auto-fit, minmax(44px, 1fr));
+  align-items: center;
+  gap: 8px;
+}
+
+.wb-settings-modal-body .wb-appearance-popover .color-picker > span,
+.wb-settings-modal-body .wb-appearance-field > span {
+  min-width: 0;
+}
+
+.wb-settings-modal-body .wb-appearance-field {
+  display: grid;
+  grid-template-columns: 72px minmax(0, 1fr);
+  gap: 8px;
+}
+
+.wb-settings-modal-body .color-btn {
+  min-height: 40px;
+}
+
 .wristband-preview:fullscreen,
 .wristband-preview.wb-preview-fullscreen {
   padding: var(--space-lg);
@@ -1432,6 +1557,10 @@ body.app-ready:not(.is-mobile-screen)
   white-space: normal;
 }
 
+#wbColorsMenuWrap:not(.open) > .wb-appearance-popover {
+  display: none;
+}
+
 .wb-appearance-popover {
   position: absolute;
   top: calc(100% + var(--space-xs));
@@ -1477,6 +1606,12 @@ body.app-ready:not(.is-mobile-screen)
   border-radius: var(--radius-md);
   overflow: hidden;
 }
+
+.wb-settings-modal-body .wb-sort-panel {
+  margin-top: 0;
+  border-color: var(--color-border-light);
+}
+
 .wb-sort-header {
   width: 100%;
   display: flex;
@@ -1504,6 +1639,19 @@ body.app-ready:not(.is-mobile-screen)
 .wb-sort-content.collapsed {
   display: none;
 }
+
+.wb-settings-modal-body .wb-sort-header {
+  display: none;
+}
+
+.wb-settings-modal-body .wb-sort-content,
+.wb-settings-modal-body .wb-sort-content.collapsed {
+  display: grid;
+  gap: var(--space-sm);
+  padding: 0;
+  background: transparent;
+}
+
 .wb-sort-toolbar {
   display: flex;
   align-items: center;
@@ -1543,11 +1691,29 @@ body.app-ready:not(.is-mobile-screen)
   margin-top: 15px;
 }
 
+.wb-settings-modal-body .wb-display-panel {
+  margin-top: 0;
+}
+
 .wb-display-panel .display-options-header {
   width: 100%;
   border: 0;
   font-family: inherit;
   text-align: left;
+}
+
+.wb-settings-modal-body .display-options-header {
+  display: none;
+}
+
+.wb-settings-modal-body .display-options-content,
+.wb-settings-modal-body .display-options-content.collapsed {
+  display: grid;
+  gap: var(--space-sm);
+}
+
+.wb-settings-modal-body .display-options-grid {
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
 }
 
 /* ── Display Preset Radio Buttons ── */

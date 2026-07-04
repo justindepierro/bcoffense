@@ -33,22 +33,22 @@
     href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500&family=Inter:wght@400;500;600&display=swap"
     rel="stylesheet" />
   <!-- Modular CSS: base → layout → components → features → print → responsive -->
-  <link rel="stylesheet" href="css/base.css?v=905" />
-  <link rel="stylesheet" href="css/layout.css?v=905" />
-  <link rel="stylesheet" href="css/components.css?v=905" />
-  <link rel="stylesheet" href="css/playbook.css?v=905" />
-  <link rel="stylesheet" href="css/script.css?v=905" />
-  <link rel="stylesheet" href="css/play-presentation.css?v=905" />
-  <link rel="stylesheet" href="css/wristband.css?v=905" />
-  <link rel="stylesheet" href="css/callsheet.css?v=905" />
-  <link rel="stylesheet" href="css/tendencies.css?v=905" />
-  <link rel="stylesheet" href="css/offense-builder.css?v=905" />
-  <link rel="stylesheet" href="css/dashboard.css?v=905" />
-  <link rel="stylesheet" href="css/gameplan.css?v=905" />
-  <link rel="stylesheet" href="css/installation.css?v=905" />
-  <link rel="stylesheet" href="css/identity.css?v=905" />
-  <link rel="stylesheet" href="css/print.css?v=905" />
-  <link rel="stylesheet" href="css/responsive.css?v=905" />
+  <link rel="stylesheet" href="css/base.css?v=906" />
+  <link rel="stylesheet" href="css/layout.css?v=906" />
+  <link rel="stylesheet" href="css/components.css?v=906" />
+  <link rel="stylesheet" href="css/playbook.css?v=906" />
+  <link rel="stylesheet" href="css/script.css?v=906" />
+  <link rel="stylesheet" href="css/play-presentation.css?v=906" />
+  <link rel="stylesheet" href="css/wristband.css?v=906" />
+  <link rel="stylesheet" href="css/callsheet.css?v=906" />
+  <link rel="stylesheet" href="css/tendencies.css?v=906" />
+  <link rel="stylesheet" href="css/offense-builder.css?v=906" />
+  <link rel="stylesheet" href="css/dashboard.css?v=906" />
+  <link rel="stylesheet" href="css/gameplan.css?v=906" />
+  <link rel="stylesheet" href="css/installation.css?v=906" />
+  <link rel="stylesheet" href="css/identity.css?v=906" />
+  <link rel="stylesheet" href="css/print.css?v=906" />
+  <link rel="stylesheet" href="css/responsive.css?v=906" />
 </head>
 
 <body class="app-booting">
@@ -204,6 +204,22 @@
       </div>
       <div id="pageActionsBody" class="page-actions-body"></div>
     </div>
+  </div>
+
+  <!-- Wristband Settings modal: reliable home for Colors, Display Options, and Sort -->
+  <div id="wbSettingsModal" class="wb-settings-modal" data-action="closeWbSettingsModalOverlay" role="dialog"
+    aria-modal="true" aria-labelledby="wbSettingsModalTitle" aria-hidden="true" inert hidden>
+    <section class="wb-settings-dialog">
+      <header class="wb-settings-modal-header">
+        <div>
+          <span class="wb-settings-modal-kicker">Wristband</span>
+          <h2 id="wbSettingsModalTitle">Settings</h2>
+        </div>
+        <button type="button" class="wb-settings-modal-close" data-action="closeWbSettingsModal"
+          aria-label="Close wristband settings">×</button>
+      </header>
+      <div id="wbSettingsModalBody" class="wb-settings-modal-body"></div>
+    </section>
   </div>
 
   <!-- Mobile pill cluster — thumb-reachable Library + Actions -->
@@ -1957,9 +1973,9 @@
                 <button id="wristbandRedoBtn" class="btn btn-redo btn-sm" data-action="redoWristband" disabled
                   title="Nothing to redo">↪️</button>
               </div>
-              <!-- Colors menu — anchored dropdown (Safari-safe) -->
-              <div class="tool-menu-wrap" id="wbColorsMenuWrap" data-anchored>
-                <button class="btn btn-sm" data-action="toggleParentOpen"
+              <!-- Colors menu — opened in the reliable Wristband settings modal -->
+              <div class="tool-menu-wrap" id="wbColorsMenuWrap">
+                <button class="btn btn-sm" data-action="openWbColorsModal"
                   title="Header color · Card color · Team color scheme">🎨 Colors</button>
                 <div class="tool-menu wb-appearance-popover">
                   <div class="color-picker">
@@ -2190,118 +2206,121 @@
             </div>
           </div>
 
-          <!-- Display Options Panel (collapsible) -->
-          <div class="display-options-panel wb-display-panel">
-            <button type="button" class="display-options-header" data-action="toggleCollapsiblePanel"
-              aria-expanded="false">
-              <strong>🖨️ Display Options</strong>
-              <span class="toggle-icon">▶</span>
-            </button>
-            <div class="display-options-content collapsed">
-              <div class="wb-preset-bar">
-                <span class="wb-preset-title">Presets:</span>
-                <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset"
-                    data-pass="value" />
-                  Minimal
-                </label>
-                <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="standard" checked
-                    data-onchange="applyWbDisplayPreset" data-pass="value" />
-                  Standard
-                </label>
-                <label class="wb-preset-option">
-                  <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset"
-                    data-pass="value" />
-                  Full
-                </label>
-              </div>
-              <div class="display-options-btns">
-                <button class="btn btn-xs" data-action="selectAllWbOptions">
-                  All
-                </button>
-                <button class="btn btn-xs" data-action="clearAllWbOptions">
-                  Clear
-                </button>
-              </div>
-              <div class="display-options-grid">
-                <label><input type="checkbox" id="wbShowEmoji" checked
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🔵 Personnel Color</label>
-                <label><input type="checkbox" id="wbUseSquares" data-onchange="handleWristbandDisplayOptionsChange" />
-                  🟦 Use Squares</label>
-                <label><input type="checkbox" id="wbUnderEmoji" data-onchange="handleWristbandDisplayOptionsChange" />
-                  🍑 Under = Peach</label>
-                <label><input type="checkbox" id="wbBoldShifts" data-onchange="handleWristbandDisplayOptionsChange" />
-                  <b>Bold</b> Shifts</label>
-                <label><input type="checkbox" id="wbRedShifts" data-onchange="handleWristbandDisplayOptionsChange" />
-                  <span class="red">Red</span> Shifts</label>
-                <label><input type="checkbox" id="wbItalicMotions"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  <i>Italic</i> Motions</label>
-                <label><input type="checkbox" id="wbRedMotions" data-onchange="handleWristbandDisplayOptionsChange" />
-                  <span class="red">Red</span> Motions</label>
-                <label><input type="checkbox" id="wbRemoveVowels" data-onchange="handleWristbandDisplayOptionsChange" />
-                  Remove Vowels</label>
-                <label><input type="checkbox" id="wbShowLineCall" checked
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  Show [Line Call]</label>
-                <label><input type="checkbox" id="wbLineCallOnly" data-onchange="handleWristbandDisplayOptionsChange" />
-                  Line Call Only</label>
-                <label><input type="checkbox" id="wbBlankPlayerRules"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  Blank Player Rules</label>
-                <label><input type="checkbox" id="wbCadenceReminder"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🏷️ Marker Reminder (postfix)</label>
-                <label><input type="checkbox" id="wbHighlightHuddle"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🟡 Highlight Huddle</label>
-                <label><input type="checkbox" id="wbHighlightCandy"
-                    data-onchange="handleWristbandDisplayOptionsChange" />
-                  🩷 Highlight Candy</label>
+          <div id="wbSettingsDock" class="wb-settings-dock" hidden>
+            <!-- Display Options Panel (modal content) -->
+            <div class="display-options-panel wb-display-panel">
+              <button type="button" class="display-options-header" data-action="toggleCollapsiblePanel"
+                aria-expanded="false">
+                <strong>🖨️ Display Options</strong>
+                <span class="toggle-icon">▶</span>
+              </button>
+              <div class="display-options-content collapsed">
+                <div class="wb-preset-bar">
+                  <span class="wb-preset-title">Presets:</span>
+                  <label class="wb-preset-option">
+                    <input type="radio" name="wbDisplayPreset" value="minimal" data-onchange="applyWbDisplayPreset"
+                      data-pass="value" />
+                    Minimal
+                  </label>
+                  <label class="wb-preset-option">
+                    <input type="radio" name="wbDisplayPreset" value="standard" checked
+                      data-onchange="applyWbDisplayPreset" data-pass="value" />
+                    Standard
+                  </label>
+                  <label class="wb-preset-option">
+                    <input type="radio" name="wbDisplayPreset" value="full" data-onchange="applyWbDisplayPreset"
+                      data-pass="value" />
+                    Full
+                  </label>
+                </div>
+                <div class="display-options-btns">
+                  <button class="btn btn-xs" data-action="selectAllWbOptions">
+                    All
+                  </button>
+                  <button class="btn btn-xs" data-action="clearAllWbOptions">
+                    Clear
+                  </button>
+                </div>
+                <div class="display-options-grid">
+                  <label><input type="checkbox" id="wbShowEmoji" checked
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    🔵 Personnel Color</label>
+                  <label><input type="checkbox" id="wbUseSquares" data-onchange="handleWristbandDisplayOptionsChange" />
+                    🟦 Use Squares</label>
+                  <label><input type="checkbox" id="wbUnderEmoji" data-onchange="handleWristbandDisplayOptionsChange" />
+                    🍑 Under = Peach</label>
+                  <label><input type="checkbox" id="wbBoldShifts" data-onchange="handleWristbandDisplayOptionsChange" />
+                    <b>Bold</b> Shifts</label>
+                  <label><input type="checkbox" id="wbRedShifts" data-onchange="handleWristbandDisplayOptionsChange" />
+                    <span class="red">Red</span> Shifts</label>
+                  <label><input type="checkbox" id="wbItalicMotions"
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    <i>Italic</i> Motions</label>
+                  <label><input type="checkbox" id="wbRedMotions" data-onchange="handleWristbandDisplayOptionsChange" />
+                    <span class="red">Red</span> Motions</label>
+                  <label><input type="checkbox" id="wbRemoveVowels" data-onchange="handleWristbandDisplayOptionsChange" />
+                    Remove Vowels</label>
+                  <label><input type="checkbox" id="wbShowLineCall" checked
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    Show [Line Call]</label>
+                  <label><input type="checkbox" id="wbLineCallOnly"
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    Line Call Only</label>
+                  <label><input type="checkbox" id="wbBlankPlayerRules"
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    Blank Player Rules</label>
+                  <label><input type="checkbox" id="wbCadenceReminder"
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    🏷️ Marker Reminder (postfix)</label>
+                  <label><input type="checkbox" id="wbHighlightHuddle"
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    🟡 Highlight Huddle</label>
+                  <label><input type="checkbox" id="wbHighlightCandy"
+                      data-onchange="handleWristbandDisplayOptionsChange" />
+                    🩷 Highlight Candy</label>
+                </div>
               </div>
             </div>
-          </div>
 
-          <!-- Sort Panel (collapsible) -->
-          <div class="wb-sort-panel">
-            <button type="button" class="wb-sort-header" data-action="toggleCollapsiblePanel" aria-expanded="false">
-              <strong>🔄 Sort & Organize</strong>
-              <span class="toggle-icon">▶</span>
-            </button>
-            <div class="wb-sort-content collapsed">
-              <div class="wb-sort-toolbar">
-                <button class="btn btn-sm btn-primary" data-action="applyWristbandSort">
-                  🔄 Apply Sort
-                </button>
-                <span class="wb-sort-divider">|</span>
-                <select id="sortPresetDropdown" data-onchange="loadSortPreset" class="wb-sort-select">
-                  <option value="">-- Select Preset --</option>
-                </select>
-                <button class="btn btn-sm" data-action="saveSortPreset" title="Save current sort as preset">
-                  💾 Save
-                </button>
-                <button class="btn btn-sm btn-danger" data-action="deleteSortPreset" title="Delete selected preset">
-                  🗑️
-                </button>
-              </div>
-              <div class="wb-sort-hint">
-                Drag to reorder priority • Click ⚙️ to set custom value order
-                • Click ↕ to toggle direction
-              </div>
-              <div id="sortCriteriaList" class="sort-criteria-list"></div>
-              <div class="wb-sort-actions">
-                <button class="btn btn-sm" data-action="addSortCriteria">
-                  + Add Sort Field
-                </button>
-                <label class="wb-sort-across-label">
-                  <input type="checkbox" id="sortAcrossCardsCheckbox" data-onchange="toggleSortAcrossCards" />
-                  Sort across all cards
-                  <span
-                    title="When enabled, sorts ALL plays across all cards as one pool, then redistributes them starting from Card 1"
-                    class="wb-sort-info">ⓘ</span>
-                </label>
+            <!-- Sort Panel (modal content) -->
+            <div class="wb-sort-panel">
+              <button type="button" class="wb-sort-header" data-action="toggleCollapsiblePanel" aria-expanded="false">
+                <strong>🔄 Sort & Organize</strong>
+                <span class="toggle-icon">▶</span>
+              </button>
+              <div class="wb-sort-content collapsed">
+                <div class="wb-sort-toolbar">
+                  <button class="btn btn-sm btn-primary" data-action="applyWristbandSort">
+                    🔄 Apply Sort
+                  </button>
+                  <span class="wb-sort-divider">|</span>
+                  <select id="sortPresetDropdown" data-onchange="loadSortPreset" class="wb-sort-select">
+                    <option value="">-- Select Preset --</option>
+                  </select>
+                  <button class="btn btn-sm" data-action="saveSortPreset" title="Save current sort as preset">
+                    💾 Save
+                  </button>
+                  <button class="btn btn-sm btn-danger" data-action="deleteSortPreset" title="Delete selected preset">
+                    🗑️
+                  </button>
+                </div>
+                <div class="wb-sort-hint">
+                  Drag to reorder priority • Click ⚙️ to set custom value order
+                  • Click ↕ to toggle direction
+                </div>
+                <div id="sortCriteriaList" class="sort-criteria-list"></div>
+                <div class="wb-sort-actions">
+                  <button class="btn btn-sm" data-action="addSortCriteria">
+                    + Add Sort Field
+                  </button>
+                  <label class="wb-sort-across-label">
+                    <input type="checkbox" id="sortAcrossCardsCheckbox" data-onchange="toggleSortAcrossCards" />
+                    Sort across all cards
+                    <span
+                      title="When enabled, sorts ALL plays across all cards as one pool, then redistributes them starting from Card 1"
+                      class="wb-sort-info">ⓘ</span>
+                  </label>
+                </div>
               </div>
             </div>
           </div>
@@ -3961,126 +3980,126 @@
   </div>
 
   <!-- JavaScript Files -->
-  <script defer src="js/utils.js?v=905"></script>
-  <script defer src="js/history.js?v=905"></script>
-  <script defer src="js/dom-helpers.js?v=905"></script>
-  <script defer src="js/lz-string.min.js?v=905"></script>
-  <script defer src="js/storage.js?v=905"></script>
-  <script defer src="js/storage-ui.js?v=905"></script>
-  <script defer src="js/play-images.js?v=905"></script>
-  <script defer src="js/cloud-sync.js?v=905"></script>
-  <script defer src="js/auth.js?v=905"></script>
-  <script defer src="js/play-clips.js?v=905"></script>
-  <script defer src="js/vision.js?v=905"></script>
-  <script defer src="js/team-settings.js?v=905"></script>
-  <script defer src="js/players-admin.js?v=905"></script>
-  <script defer src="js/play-discussion.js?v=905"></script>
-  <script defer src="js/playbook.js?v=905"></script>
-  <script defer src="js/playbook-collections.js?v=905"></script>
-  <script defer src="js/playbook-print.js?v=905"></script>
-  <script defer src="js/playbook-editor.js?v=905"></script>
-  <script defer src="js/playbook-import.js?v=905"></script>
-  <script defer src="js/playbook-export.js?v=905"></script>
-  <script defer src="js/playbook-chrome.js?v=905"></script>
-  <script defer src="js/playbook-reports.js?v=905"></script>
-  <script defer src="js/playbook-reports-identity.js?v=905"></script>
-  <script defer src="js/playbook-state.js?v=905"></script>
-  <script defer src="js/playbook-filters.js?v=905"></script>
-  <script defer src="js/playbook-navigation.js?v=905"></script>
-  <script defer src="js/playbook-actions.js?v=905"></script>
-  <script defer src="js/playbook-render.js?v=905"></script>
-  <script defer src="js/playbook-sanitize.js?v=905"></script>
-  <script defer src="js/playbook-analytics.js?v=905"></script>
-  <script defer src="js/playbook-analytics-render.js?v=905"></script>
-  <script defer src="js/playbook-identity.js?v=905"></script>
-  <script defer src="js/script-state.js?v=905"></script>
-  <script defer src="js/script-shared.js?v=905"></script>
-  <script defer src="js/script-players.js?v=905"></script>
-  <script defer src="js/script-display-options.js?v=905"></script>
-  <script defer src="js/play-readiness.js?v=905"></script>
-  <script defer src="js/script-add.js?v=905"></script>
-  <script defer src="js/script-sort.js?v=905"></script>
-  <script defer src="js/script-export.js?v=905"></script>
-  <script defer src="js/script-available.js?v=905"></script>
-  <script defer src="js/script-selection.js?v=905"></script>
-  <script defer src="js/script-timeline.js?v=905"></script>
-  <script defer src="js/script-render.js?v=905"></script>
-  <script defer src="js/script-health.js?v=905"></script>
-  <script defer src="js/script-periods.js?v=905"></script>
-  <script defer src="js/script-period-sync.js?v=905"></script>
-  <script defer src="js/script-smart.js?v=905"></script>
-  <script defer src="js/script-storage.js?v=905"></script>
-  <script defer src="js/script-player.js?v=905"></script>
-  <script defer src="js/script-integrations.js?v=905"></script>
-  <script defer src="js/play-presentation.js?v=905"></script>
-  <script defer src="js/wristband.js?v=905"></script>
-  <script defer src="js/wristband-library.js?v=905"></script>
-  <script defer src="js/wristband-render.js?v=905"></script>
-  <script defer src="js/wristband-cards.js?v=905"></script>
-  <script defer src="js/wristband-export.js?v=905"></script>
-  <script defer src="js/wristband-chrome.js?v=905"></script>
-  <script defer src="js/wristband-logo.js?v=905"></script>
-  <script defer src="js/wristband-search.js?v=905"></script>
-  <script defer src="js/wristband-modals.js?v=905"></script>
-  <script defer src="js/wristband-cell-popup.js?v=905"></script>
-  <script defer src="js/wristband-cell-actions.js?v=905"></script>
-  <script defer src="js/wristband-sort.js?v=905"></script>
-  <script defer src="js/wristband-storage.js?v=905"></script>
-  <script defer src="js/wristband-runtime.js?v=905"></script>
-  <script defer src="js/callsheet-render.js?v=905"></script>
-  <script defer src="js/callsheet.js?v=905"></script>
-  <script defer src="js/callsheet-print.js?v=905"></script>
-  <script defer src="js/callsheet-sort.js?v=905"></script>
-  <script defer src="js/callsheet-filters.js?v=905"></script>
-  <script defer src="js/callsheet-smart.js?v=905"></script>
-  <script defer src="js/callsheet-export.js?v=905"></script>
-  <script defer src="js/callsheet-display.js?v=905"></script>
-  <script defer src="js/callsheet-categories.js?v=905"></script>
-  <script defer src="js/callsheet-metadata.js?v=905"></script>
-  <script defer src="js/callsheet-layout.js?v=905"></script>
-  <script defer src="js/callsheet-templates.js?v=905"></script>
-  <script defer src="js/callsheet-picker-runtime.js?v=905"></script>
-  <script defer src="js/callsheet-gameplan-drawer.js?v=905"></script>
-  <script defer src="js/constraints.js?v=905"></script>
-  <script defer src="js/constraints-ui.js?v=905"></script>
-  <script defer src="js/script-vision.js?v=905"></script>
-  <script defer src="js/tendencies-render.js?v=905"></script>
-  <script defer src="js/tendencies.js?v=905"></script>
-  <script defer src="js/tendencies-print.js?v=905"></script>
-  <script defer src="js/installation-render.js?v=905"></script>
-  <script defer src="js/installation.js?v=905"></script>
-  <script defer src="js/installation-print.js?v=905"></script>
-  <script defer src="js/identity.js?v=905"></script>
-  <script defer src="js/offensebuilder.js?v=905"></script>
-  <script defer src="js/help.js?v=905"></script>
-  <script defer src="js/dashboard-render.js?v=905"></script>
-  <script defer src="js/dashboard.js?v=905"></script>
-  <script defer src="js/gameplan.js?v=905"></script>
-  <script defer src="js/gameplan-render.js?v=905"></script>
-  <script defer src="js/gameplan-dnd.js?v=905"></script>
-  <script defer src="js/gameplan-actions.js?v=905"></script>
-  <script defer src="js/gameplan-smart.js?v=905"></script>
-  <script defer src="js/gameplan-health.js?v=905"></script>
-  <script defer src="js/gameplan-print.js?v=905"></script>
-  <script defer src="js/gameplan-integrations.js?v=905"></script>
-  <script defer src="js/gameplan-snapshots.js?v=905"></script>
-  <script defer src="js/print-studio.js?v=905"></script>
-  <script defer src="js/script-events.js?v=905"></script>
-  <script defer src="js/anchored-menu.js?v=905"></script>
-  <script defer src="js/app-events.js?v=905"></script>
-  <script defer src="js/app-command.js?v=905"></script>
-  <script defer src="js/page-actions.js?v=905"></script>
-  <script defer src="js/app-notifications.js?v=905"></script>
-  <script defer src="js/push-notifications.js?v=905"></script>
-  <script defer src="js/player-portal.js?v=905"></script>
-  <script defer src="js/dashboard-questions.js?v=905"></script>
-  <script defer src="js/app-shell.js?v=905"></script>
-  <script defer src="js/app-session.js?v=905"></script>
-  <script defer src="js/app-navigation.js?v=905"></script>
-  <script defer src="js/app-module-init.js?v=905"></script>
-  <script defer src="js/app-bootstrap.js?v=905"></script>
-  <script defer src="js/app-init.js?v=905"></script>
-  <script defer src="js/app.js?v=905"></script>
+  <script defer src="js/utils.js?v=906"></script>
+  <script defer src="js/history.js?v=906"></script>
+  <script defer src="js/dom-helpers.js?v=906"></script>
+  <script defer src="js/lz-string.min.js?v=906"></script>
+  <script defer src="js/storage.js?v=906"></script>
+  <script defer src="js/storage-ui.js?v=906"></script>
+  <script defer src="js/play-images.js?v=906"></script>
+  <script defer src="js/cloud-sync.js?v=906"></script>
+  <script defer src="js/auth.js?v=906"></script>
+  <script defer src="js/play-clips.js?v=906"></script>
+  <script defer src="js/vision.js?v=906"></script>
+  <script defer src="js/team-settings.js?v=906"></script>
+  <script defer src="js/players-admin.js?v=906"></script>
+  <script defer src="js/play-discussion.js?v=906"></script>
+  <script defer src="js/playbook.js?v=906"></script>
+  <script defer src="js/playbook-collections.js?v=906"></script>
+  <script defer src="js/playbook-print.js?v=906"></script>
+  <script defer src="js/playbook-editor.js?v=906"></script>
+  <script defer src="js/playbook-import.js?v=906"></script>
+  <script defer src="js/playbook-export.js?v=906"></script>
+  <script defer src="js/playbook-chrome.js?v=906"></script>
+  <script defer src="js/playbook-reports.js?v=906"></script>
+  <script defer src="js/playbook-reports-identity.js?v=906"></script>
+  <script defer src="js/playbook-state.js?v=906"></script>
+  <script defer src="js/playbook-filters.js?v=906"></script>
+  <script defer src="js/playbook-navigation.js?v=906"></script>
+  <script defer src="js/playbook-actions.js?v=906"></script>
+  <script defer src="js/playbook-render.js?v=906"></script>
+  <script defer src="js/playbook-sanitize.js?v=906"></script>
+  <script defer src="js/playbook-analytics.js?v=906"></script>
+  <script defer src="js/playbook-analytics-render.js?v=906"></script>
+  <script defer src="js/playbook-identity.js?v=906"></script>
+  <script defer src="js/script-state.js?v=906"></script>
+  <script defer src="js/script-shared.js?v=906"></script>
+  <script defer src="js/script-players.js?v=906"></script>
+  <script defer src="js/script-display-options.js?v=906"></script>
+  <script defer src="js/play-readiness.js?v=906"></script>
+  <script defer src="js/script-add.js?v=906"></script>
+  <script defer src="js/script-sort.js?v=906"></script>
+  <script defer src="js/script-export.js?v=906"></script>
+  <script defer src="js/script-available.js?v=906"></script>
+  <script defer src="js/script-selection.js?v=906"></script>
+  <script defer src="js/script-timeline.js?v=906"></script>
+  <script defer src="js/script-render.js?v=906"></script>
+  <script defer src="js/script-health.js?v=906"></script>
+  <script defer src="js/script-periods.js?v=906"></script>
+  <script defer src="js/script-period-sync.js?v=906"></script>
+  <script defer src="js/script-smart.js?v=906"></script>
+  <script defer src="js/script-storage.js?v=906"></script>
+  <script defer src="js/script-player.js?v=906"></script>
+  <script defer src="js/script-integrations.js?v=906"></script>
+  <script defer src="js/play-presentation.js?v=906"></script>
+  <script defer src="js/wristband.js?v=906"></script>
+  <script defer src="js/wristband-library.js?v=906"></script>
+  <script defer src="js/wristband-render.js?v=906"></script>
+  <script defer src="js/wristband-cards.js?v=906"></script>
+  <script defer src="js/wristband-export.js?v=906"></script>
+  <script defer src="js/wristband-chrome.js?v=906"></script>
+  <script defer src="js/wristband-logo.js?v=906"></script>
+  <script defer src="js/wristband-search.js?v=906"></script>
+  <script defer src="js/wristband-modals.js?v=906"></script>
+  <script defer src="js/wristband-cell-popup.js?v=906"></script>
+  <script defer src="js/wristband-cell-actions.js?v=906"></script>
+  <script defer src="js/wristband-sort.js?v=906"></script>
+  <script defer src="js/wristband-storage.js?v=906"></script>
+  <script defer src="js/wristband-runtime.js?v=906"></script>
+  <script defer src="js/callsheet-render.js?v=906"></script>
+  <script defer src="js/callsheet.js?v=906"></script>
+  <script defer src="js/callsheet-print.js?v=906"></script>
+  <script defer src="js/callsheet-sort.js?v=906"></script>
+  <script defer src="js/callsheet-filters.js?v=906"></script>
+  <script defer src="js/callsheet-smart.js?v=906"></script>
+  <script defer src="js/callsheet-export.js?v=906"></script>
+  <script defer src="js/callsheet-display.js?v=906"></script>
+  <script defer src="js/callsheet-categories.js?v=906"></script>
+  <script defer src="js/callsheet-metadata.js?v=906"></script>
+  <script defer src="js/callsheet-layout.js?v=906"></script>
+  <script defer src="js/callsheet-templates.js?v=906"></script>
+  <script defer src="js/callsheet-picker-runtime.js?v=906"></script>
+  <script defer src="js/callsheet-gameplan-drawer.js?v=906"></script>
+  <script defer src="js/constraints.js?v=906"></script>
+  <script defer src="js/constraints-ui.js?v=906"></script>
+  <script defer src="js/script-vision.js?v=906"></script>
+  <script defer src="js/tendencies-render.js?v=906"></script>
+  <script defer src="js/tendencies.js?v=906"></script>
+  <script defer src="js/tendencies-print.js?v=906"></script>
+  <script defer src="js/installation-render.js?v=906"></script>
+  <script defer src="js/installation.js?v=906"></script>
+  <script defer src="js/installation-print.js?v=906"></script>
+  <script defer src="js/identity.js?v=906"></script>
+  <script defer src="js/offensebuilder.js?v=906"></script>
+  <script defer src="js/help.js?v=906"></script>
+  <script defer src="js/dashboard-render.js?v=906"></script>
+  <script defer src="js/dashboard.js?v=906"></script>
+  <script defer src="js/gameplan.js?v=906"></script>
+  <script defer src="js/gameplan-render.js?v=906"></script>
+  <script defer src="js/gameplan-dnd.js?v=906"></script>
+  <script defer src="js/gameplan-actions.js?v=906"></script>
+  <script defer src="js/gameplan-smart.js?v=906"></script>
+  <script defer src="js/gameplan-health.js?v=906"></script>
+  <script defer src="js/gameplan-print.js?v=906"></script>
+  <script defer src="js/gameplan-integrations.js?v=906"></script>
+  <script defer src="js/gameplan-snapshots.js?v=906"></script>
+  <script defer src="js/print-studio.js?v=906"></script>
+  <script defer src="js/script-events.js?v=906"></script>
+  <script defer src="js/anchored-menu.js?v=906"></script>
+  <script defer src="js/app-events.js?v=906"></script>
+  <script defer src="js/app-command.js?v=906"></script>
+  <script defer src="js/page-actions.js?v=906"></script>
+  <script defer src="js/app-notifications.js?v=906"></script>
+  <script defer src="js/push-notifications.js?v=906"></script>
+  <script defer src="js/player-portal.js?v=906"></script>
+  <script defer src="js/dashboard-questions.js?v=906"></script>
+  <script defer src="js/app-shell.js?v=906"></script>
+  <script defer src="js/app-session.js?v=906"></script>
+  <script defer src="js/app-navigation.js?v=906"></script>
+  <script defer src="js/app-module-init.js?v=906"></script>
+  <script defer src="js/app-bootstrap.js?v=906"></script>
+  <script defer src="js/app-init.js?v=906"></script>
+  <script defer src="js/app.js?v=906"></script>
 
   <!-- Screen reader live region for toast announcements -->
   <div id="liveAnnouncer" class="sr-only" aria-live="polite" aria-atomic="true"></div>
