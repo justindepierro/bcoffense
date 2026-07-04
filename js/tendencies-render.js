@@ -1226,8 +1226,8 @@ async function sendOneRecToGamePlan(arg) {
   if (typeof _gpUpdateBoard === "function") {
     _gpUpdateBoard((b) => {
       if (!Array.isArray(b.assignments[boxId])) b.assignments[boxId] = [];
-      const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : JSON.stringify(play);
-      const existing = new Set(b.assignments[boxId].map((p) => typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p)));
+      const sig = _gpPlaySignature(play);
+      const existing = new Set(b.assignments[boxId].map((p) => _gpPlaySignature(p)));
       if (!existing.has(sig)) { b.assignments[boxId].push({ ...play }); added++; }
     });
   }
@@ -1280,8 +1280,8 @@ async function sendScoutRecsToGamePlan() {
             ? _gpAutoDestinationForPlay(play, b)
             : "Pass";
           if (!Array.isArray(b.assignments[boxId])) b.assignments[boxId] = [];
-          const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : JSON.stringify(play);
-          const existing = new Set(b.assignments[boxId].map((p) => typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p)));
+          const sig = _gpPlaySignature(play);
+          const existing = new Set(b.assignments[boxId].map((p) => _gpPlaySignature(p)));
           if (!existing.has(sig)) { b.assignments[boxId].push({ ...play }); added++; }
           else skipped++;
         });
@@ -1295,9 +1295,9 @@ async function sendScoutRecsToGamePlan() {
     if (typeof _gpUpdateBoard === "function") {
       _gpUpdateBoard((b) => {
         if (!Array.isArray(b.assignments[choice])) b.assignments[choice] = [];
-        const existing = new Set(b.assignments[choice].map((p) => typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p)));
+        const existing = new Set(b.assignments[choice].map((p) => _gpPlaySignature(p)));
         _tdScoutRecs.forEach(({ play }) => {
-          const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(play) : JSON.stringify(play);
+          const sig = _gpPlaySignature(play);
           if (!existing.has(sig)) { b.assignments[choice].push({ ...play }); added++; existing.add(sig); }
           else skipped++;
         });

@@ -543,11 +543,11 @@ async function showWristbandNotYetList() {
   const existingSigs = new Set();
   wristbandCards.forEach((c) =>
     c.data.forEach((cell) => {
-      if (cell) existingSigs.add(typeof _gpPlaySignature === "function" ? _gpPlaySignature(cell) : JSON.stringify(cell));
+      if (cell) existingSigs.add(_gpPlaySignature(cell));
     })
   );
   const notYet = sourcePlays.filter((p) => {
-    const sig = typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p);
+    const sig = _gpPlaySignature(p);
     return !existingSigs.has(sig);
   });
 
@@ -597,7 +597,7 @@ async function reconcileWristbandWithSource() {
     return;
   }
 
-  const sig = (p) => (typeof _gpPlaySignature === "function" ? _gpPlaySignature(p) : JSON.stringify(p));
+  const sig = (p) => _gpPlaySignature(p);
   const sourceSigs = new Set(sourcePlays.map(sig));
   const cardSigs = new Set(card.data.filter(Boolean).map(sig));
 

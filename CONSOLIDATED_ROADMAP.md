@@ -152,7 +152,7 @@ Implement the communication layer intended to allow players to ask questions and
 
 - [x] **1.** Add a duplicate top-level `function` scan that fails ship if any name is defined in 2+ files — implemented inside `scripts/static-ui-audit.sh` (strict) and gated by `ship.sh` pre-flight. (2026-07, SW v893)
 - [x] **2.** Reported guard distribution: 1,009 `typeof X === "function"` guards. Most-guarded names are foundation utils that are always present (`showToast`, `trapFocus`, `getFullCall`, `showTab`, `getGameWeek`). Classification informed the integrity-checker approach below. (2026-07, SW v897)
-- [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`). DEFERRED (high risk): rewriting 1,009 control-flow sites en masse is exactly the kind of change that introduces regressions. The integrity checker (#4/#9/#10) addresses the underlying *silent-failure* danger without the risk. Do this incrementally, one file per ship, only when a file is already being touched.
+- [ ] **3.** Remove category-(b)/(c) guards in the 5 most-churned files first (`wristband*.js`, `callsheet*.js`, `gameplan*.js`, `app-*.js`, `script-*.js`). DEFERRED (high risk): rewriting 1,009 control-flow sites en masse is exactly the kind of change that introduces regressions. The integrity checker (#4/#9/#10) addresses the underlying _silent-failure_ danger without the risk. Do this incrementally, one file per ship, only when a file is already being touched.
 - [x] **4.** Instead of adding `console.warn` to 1,009 individual `else` branches (risky), added a boot-time integrity checker (`app-shell.js`) that verifies a manifest of ~30 critical globals exists after load and logs a LOUD `console.error` + `window.__bcErrors` entry for any missing. Converts silent no-ops into visible failures. Run on demand via `window.bcIntegrityCheck()`. (2026-07, SW v897)
 - [x] **5.** Added a strict audit check that `index.html` `<script>` membership matches `sw.js` `LOCAL_ASSETS` (a loaded-but-uncached script breaks offline mode). Load order documented in `AGENTS.md`. (2026-07, SW v894)
 - [ ] **6.** Audit every `window.X =` global export (currently ~40); confirm each is intentional and documented in the Refactor Ownership Map.
@@ -201,12 +201,12 @@ Implement the communication layer intended to allow players to ask questions and
 - [ ] **37.** Split the 5 largest JS files (`play-discussion.js` 3033, `play-presentation.js` 2948, `utils.js` 2286, `tendencies.js` 2075, `app-shell.js` 1967) along clear ownership lines.
 - [ ] **38.** Split `utils.js` — it mixes constants, modals, CSV parsing, and DOM helpers; separate into focused files.
 - [ ] **39.** Audit `_paRevealLibrary` and other known-unused helpers flagged during the Actions Hub work; delete or wire up.
-- [ ] **40.** Deduplicate near-identical helpers across modules (e.g. multiple play-signature / play-matching implementations) into shared utils.
+- [x] **40.** Confirmed play-signature helpers already converge on the canonical `getPlayIdentityKey()` (utils.js): `_gpPlaySignature` and `playSignature` both delegate to it; `getPlayThreadId` is intentionally separate (discussion routing). Removed 9 dead `: JSON.stringify(play)` fallbacks that would have produced divergent keys if ever reached. (2026-07, SW v899)
 - [ ] **41.** Trim commented-out code blocks and stale "restored after commit X" archaeology comments once the fix is stable.
 
 ### 0.F — Data Model & Handoff Integrity (42–46)
 
-- [ ] **42.** Define ONE canonical play-signature function and route every dedup/match through it (audit `_gpPlaySignature`, `playsMatch`, `playSignature`, ad-hoc `JSON.stringify`).
+- [x] **42.** `getPlayIdentityKey(play, mode, options)` in utils.js IS the single canonical identity function (field-list driven by `PLAY_IDENTITY_FIELDS[mode]`). `_gpPlaySignature` (gameplan mode) and `playSignature` (id-or-tag mode) delegate to it. All ad-hoc `JSON.stringify` dedup fallbacks removed. (2026-07, SW v899)
 - [ ] **43.** Verify stable play identity survives every handoff (Playbook → Script → Wristband → Call Sheet → Game Plan) with a round-trip test.
 - [ ] **44.** Ensure deleting/editing a play updates or flags downstream artifacts (no orphaned references in call sheet / wristband / game plan).
 - [x] **45.** Audited all 71 `STORAGE_KEYS` — every key has at least one live read/write reference. No dead keys to remove. (2026-07, SW v896)
