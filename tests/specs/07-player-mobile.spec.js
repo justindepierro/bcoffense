@@ -52,7 +52,9 @@ async function seedPlayerPractice(page) {
           ...play,
           id: `play-${index + 1}`,
           reps: index + 1,
-          playerRule: index === 0 ? "Secure the edge and finish through contact." : "Win vertical leverage.",
+          respQ: index === 0 ? "Secure the edge and finish through contact." : "Win vertical leverage.",
+          respNotes: index === 0 ? "If force folds inside, climb now. If they widen, pin and call it out." : "",
+          playerNotes: index === 0 ? "Coach says: watch the force defender first, then ask about your landmark if it changes." : "",
         })),
       ],
     };
@@ -69,6 +71,54 @@ async function seedPlayerPractice(page) {
     if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
     if (typeof showTab === "function") showTab("dashboard");
   }, PLAYER_PLAYS);
+}
+
+async function seedFirstPracticeDiagram(page) {
+  await page.evaluate(async () => {
+    if (!window.playImages || typeof playSignature !== "function") return;
+    const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+    const play = savedScripts?.[0]?.plays?.find((item) => item && !item.isSeparator);
+    if (!play) return;
+
+    await playImages.ready();
+    const canvas = document.createElement("canvas");
+    canvas.width = 960;
+    canvas.height = 600;
+    const ctx = canvas.getContext("2d");
+    ctx.fillStyle = "#fff";
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
+    ctx.strokeStyle = "#d8dee8";
+    ctx.lineWidth = 2;
+    for (let x = 48; x < canvas.width; x += 64) {
+      ctx.beginPath();
+      ctx.moveTo(x, 0);
+      ctx.lineTo(x, canvas.height);
+      ctx.stroke();
+    }
+    for (let y = 48; y < canvas.height; y += 64) {
+      ctx.beginPath();
+      ctx.moveTo(0, y);
+      ctx.lineTo(canvas.width, y);
+      ctx.stroke();
+    }
+    ctx.fillStyle = "#0f1f45";
+    ctx.font = "bold 42px Arial";
+    ctx.fillText("TRIPS RT BUCK SWEEP", 48, 76);
+    ctx.strokeStyle = "#1d4ed8";
+    ctx.lineWidth = 8;
+    ctx.beginPath();
+    ctx.moveTo(190, 326);
+    ctx.bezierCurveTo(320, 190, 455, 190, 590, 300);
+    ctx.stroke();
+    ctx.strokeStyle = "#16a34a";
+    ctx.lineWidth = 6;
+    ctx.beginPath();
+    ctx.moveTo(180, 420);
+    ctx.lineTo(730, 420);
+    ctx.stroke();
+    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
+    await playImages.set(playSignature(play), blob);
+  });
 }
 
 test.describe("Player mobile experience", () => {
@@ -244,6 +294,7 @@ test.describe("Player mobile experience", () => {
     await login(page, { role: "player", username: "player" });
     await dismissFirstUse(page);
     await seedPlayerPractice(page);
+    await seedFirstPracticeDiagram(page);
 
     await page.getByRole("button", { name: /Open Practice/i }).first().click();
     await page.locator("#playerScriptNowBar").getByRole("button", { name: /Open Swipe View/i }).click();
@@ -254,7 +305,18 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("body")).toHaveClass(/play-presentation-open/);
     await expect(presentation.locator(".pp-player-study-strip")).toBeVisible();
     await expect(presentation.getByText("Your Job")).toBeVisible();
+    await expect(presentation.getByText("Secure the edge and finish through contact.")).toBeVisible();
+    await expect(presentation.getByText("Coach says: watch the force defender first")).toBeVisible();
+    await expect(presentation.locator(".pp-diagram-canvas")).toBeVisible();
     await expect(presentation.locator(".pp-zoom-controls")).toBeHidden();
+    await expect.poll(async () => {
+      return page.evaluate(() => {
+        const diagram = document.querySelector("#playPresentationDiagram")?.getBoundingClientRect();
+        const rule = document.querySelector(".pp-player-rule")?.getBoundingClientRect();
+        if (!diagram || !rule) return false;
+        return diagram.top < rule.top && diagram.top < window.innerHeight * 0.35;
+      });
+    }).toBe(true);
 
     await presentation.getByRole("button", { name: /Ask the coach/i }).click();
     const drawer = page.locator("#ppDiscDrawer");

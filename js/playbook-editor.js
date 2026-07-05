@@ -266,6 +266,11 @@ function _buildPlayEditorResponsibilitiesSection(play) {
           <label for="pe-respNotes">Resp. Notes</label>
           <textarea id="pe-respNotes" data-field="respNotes" rows="2">${escapeHtml(play?.respNotes || "")}</textarea>
         </div>
+        <div class="pb-editor-field pb-editor-field-wide pb-resp-notes">
+          <label for="pe-playerNotes">Player Notes</label>
+          <textarea id="pe-playerNotes" data-field="playerNotes" rows="2"
+            placeholder="Coach note players see in Swipe View">${escapeHtml(play?.playerNotes || "")}</textarea>
+        </div>
       </div>
     </div>`;
 }
@@ -573,6 +578,7 @@ function savePlayEditor(opts = {}) {
     // Copy responsibility fields
     RESP_POSITIONS.forEach((pos) => { newPlay[pos.key] = data[pos.key] || ""; });
     newPlay.respNotes = data.respNotes || "";
+    newPlay.playerNotes = data.playerNotes || "";
     if (typeof createPlayId === "function") newPlay.id = createPlayId();
     newPlay.createdAt = Date.now();
     if (typeof getCurrentAuthUser === "function") {

@@ -108,6 +108,10 @@ const _CSV_COLUMN_MAP = {
   deadvs: "deadVs",
   opponent: "opponent",
   notes: "notes",
+  playernotes: "playerNotes",
+  playernote: "playerNotes",
+  coachnotes: "playerNotes",
+  coachesnotes: "playerNotes",
 };
 
 const _CSV_POS_KEYS = [
@@ -153,6 +157,7 @@ const _CSV_POS_KEYS = [
   "deadVs",
   "opponent",
   "notes",
+  "playerNotes",
 ];
 
 function parseCSV(text) {
@@ -307,6 +312,7 @@ const _MERGE_FIELDS = [
   "deadVs",
   "opponent",
   "notes",
+  "playerNotes",
 ];
 
 const _MERGE_KEEP = new Set([
@@ -900,6 +906,7 @@ function showCSVTemplateModal() {
     ["DeadVs", "Killed vs this defense", ""],
     ["Opponent", "Opponent tag", ""],
     ["Notes", "Free-form notes", ""],
+    ["PlayerNotes", "Coach note shown to players in Swipe View", ""],
   ];
 
   const defenseHeaders = [

@@ -2067,6 +2067,8 @@ function getPlayPresentationPlayerMarkup(item) {
   const play = item.play;
   const selected = getPlayPresentationSelectedPosition();
   const assignment = String(play[selected.key] || "").trim();
+  const responsibilityNotes = String(play.respNotes || "").trim();
+  const playerNotes = String(play.playerNotes || "").trim();
   const playerChips = [
     play.type,
     play.personnel ? `${play.personnel} pers` : "",
@@ -2108,6 +2110,26 @@ function getPlayPresentationPlayerMarkup(item) {
         .join("")}</div>`
       : ""
     }
+        <div class="pp-player-rule">
+          <div class="pp-player-rule-head">
+            <div class="pp-player-rule-title">
+              <span class="pp-player-rule-eyebrow">Your Job</span>
+              <span class="pp-player-position">${escapeHtml(selected.label)}</span>
+            </div>
+          </div>
+          <div class="pp-player-rule-text">${assignment
+      ? escapeHtml(assignment)
+      : "No player rule entered for this position."
+    }</div>
+        </div>
+        ${responsibilityNotes
+      ? `<div class="pp-resp-notes"><strong>Responsibility Notes</strong>${escapeHtml(responsibilityNotes)}</div>`
+      : ""
+    }
+        ${playerNotes
+      ? `<div class="pp-player-notes"><strong>Coach Notes</strong>${escapeHtml(playerNotes)}</div>`
+      : ""
+    }
         <div class="pp-player-controls-card">
           <div class="pp-player-controls-head">
             <strong>Choose your position</strong>
@@ -2121,22 +2143,6 @@ function getPlayPresentationPlayerMarkup(item) {
               id="playPresentationPositionLockStatus"></span>
           </div>
         </div>
-        <div class="pp-player-rule">
-          <div class="pp-player-rule-head">
-            <div class="pp-player-rule-title">
-              <span class="pp-player-rule-eyebrow">Your Job</span>
-              <span class="pp-player-position">${escapeHtml(selected.label)}</span>
-            </div>
-          </div>
-          <div class="pp-player-rule-text">${assignment
-      ? escapeHtml(assignment)
-      : "No player rule entered for this position."
-    }</div>
-        </div>
-        ${play.respNotes
-      ? `<div class="pp-resp-notes"><strong>Responsibility Notes</strong>${escapeHtml(play.respNotes)}</div>`
-      : ""
-    }
         <div class="pp-player-chat-row">
           <button class="btn btn-primary pp-player-chat-btn" data-action="askPresentationQuestion"
             aria-label="Ask the coach a question about this play">

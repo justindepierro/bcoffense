@@ -880,7 +880,8 @@ body.play-presentation-open .quick-tools {
   overflow-wrap: anywhere;
 }
 
-.pp-resp-notes {
+.pp-resp-notes,
+.pp-player-notes {
   padding: 10px 14px;
   border-radius: var(--radius-md);
   color: var(--color-text-secondary);
@@ -888,9 +889,25 @@ body.play-presentation-open .quick-tools {
   font-size: var(--font-size-sm);
 }
 
-.pp-resp-notes {
+.pp-resp-notes,
+.pp-player-notes {
   display: grid;
   gap: 3px;
+}
+
+.pp-player-notes {
+  border: 1px solid color-mix(in srgb, var(--color-info) 26%, var(--color-border-light));
+  background:
+    linear-gradient(180deg, rgb(255 255 255 / 0.72), rgb(255 255 255 / 0.48)),
+    var(--color-info-light);
+}
+
+.pp-resp-notes strong,
+.pp-player-notes strong {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  letter-spacing: 0.03em;
 }
 .pp-player-chat-row {
   display: grid;
@@ -2425,17 +2442,24 @@ body.play-presentation-mobile.is-portrait-screen .pp-layout-player {
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-layout-player {
-  grid-template-rows: auto minmax(220px, auto);
+  grid-template-rows: minmax(230px, 34vh) auto;
 }
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-player-panel {
-  order: 1;
+  order: 2;
+  grid-template-rows: none;
 }
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-diagram-panel {
-  order: 2;
+  order: 1;
+  min-height: 0;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-diagram-frame {
+  min-height: 0;
 }
 
 body.play-presentation-mobile.is-portrait-screen .pp-player-panel {
@@ -3138,7 +3162,7 @@ body.play-presentation-mobile.is-portrait-screen:not(.is-phone-screen)
   order: 0;
   min-height: 0;
   overflow: auto;
-  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: none;
   padding-right: 2px;
   -webkit-overflow-scrolling: touch;
 }

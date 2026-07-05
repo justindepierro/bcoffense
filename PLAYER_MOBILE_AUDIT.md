@@ -99,6 +99,22 @@ Fix:
 - Ask Coach opens the presentation discussion drawer and preselects the question composer.
 - Added seeded coverage for Practice -> Swipe View -> Ask Coach -> post question -> close drawer -> next play -> close back to Practice.
 
+### P1 - Swipe View Diagram Was Buried On Phone
+
+Status: fixed in the diagram-first Swipe View follow-up.
+
+Symptoms/risk:
+- With an actual stored play diagram, phone portrait placed the picture below the player controls and rule card.
+- Players had to scroll before seeing the diagram, even though their real study flow is diagram -> rule -> coach note -> question.
+- Position selection was too prominent and pushed the actual learning content down.
+
+Fix:
+- Phone portrait now renders the diagram first in a stable frame.
+- Player rule, responsibility notes, and coach notes appear before the position picker.
+- Added a coach/admin `Player Notes` field in the play editor; those notes render as kid-facing Coach Notes in Swipe View.
+- CSV import/update recognizes `PlayerNotes`, `PlayerNote`, `CoachNotes`, and `CoachesNotes`.
+- Added seeded diagram coverage so the test checks that the diagram appears before the rule near the top of the phone viewport.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`
