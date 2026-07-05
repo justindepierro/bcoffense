@@ -55,11 +55,28 @@ async function seedTinyPlaybook(page) {
     if (typeof invalidateFilterCache === "function") invalidateFilterCache();
     if (typeof populateFilters === "function") populateFilters();
     if (typeof filterPlays === "function") filterPlays();
-    if (typeof backToApp === "function") backToApp();
+    if (typeof setWorkspaceSurface === "function") {
+      setWorkspaceSurface("app", { initModules: true });
+    } else if (typeof backToApp === "function") {
+      backToApp();
+    }
     if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
     if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
   }, SAMPLE_PLAYS);
-  await expect(page.locator("#mainApp")).toBeVisible({ timeout: 5_000 });
+  await expect
+    .poll(
+      () =>
+        page.evaluate(() => {
+          const mainApp = document.getElementById("mainApp");
+          return Boolean(
+            mainApp &&
+              !mainApp.classList.contains("hidden") &&
+              !document.body.classList.contains("auth-locked")
+          );
+        }),
+      { timeout: 5_000 }
+    )
+    .toBe(true);
 }
 
 async function assertAppChromeTopLayer(page) {
@@ -194,5 +211,48 @@ test.describe("Header and toolbar contract", () => {
     await expect(filterModal).toBeVisible();
     await expect(filterModal.locator('[data-filter-group="gamePlan"]')).toBeVisible();
     await expect(filterModal.getByRole("button", { name: /Current Game Plan/i })).toBeVisible();
+  });
+});
+
+test.describe("Player mobile playbook command surface", () => {
+  test.use({
+    viewport: { width: 393, height: 852 },
+    isMobile: true,
+    hasTouch: true,
+  });
+
+  test("keeps player actions compact and hides duplicate staff controls", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedTinyPlaybook(page);
+    await goToTab(page, "playbook");
+
+    const summary = page.locator("#playerPlaybookSummary");
+    await expect(summary).toBeVisible();
+    await expect(page.locator("#playbook .pb-controls")).toBeHidden();
+    await expect(summary.getByRole("button", { name: /Filter Plays/i })).toBeVisible();
+    await expect(summary.getByRole("button", { name: /Present Showing/i })).toBeVisible();
+
+    const layout = await page.evaluate(() => {
+      const summaryEl = document.getElementById("playerPlaybookSummary");
+      const actions = Array.from(document.querySelectorAll(".pb-player-summary__actions .btn"));
+      const filters = document.querySelector(".pb-player-summary__filters");
+      const stats = document.querySelector(".pb-player-summary__stats");
+      return {
+        summaryHeight: Math.round(summaryEl?.getBoundingClientRect().height || 0),
+        actionRows: new Set(actions.map((btn) => Math.round(btn.getBoundingClientRect().top))).size,
+        actionWidths: actions.map((btn) => Math.round(btn.getBoundingClientRect().width)),
+        filtersHorizontal: Boolean(filters && filters.scrollWidth > filters.clientWidth),
+        statsHorizontal: Boolean(stats && stats.scrollWidth >= stats.clientWidth),
+        overflow: document.body.scrollWidth > window.innerWidth,
+      };
+    });
+
+    expect(layout.summaryHeight).toBeLessThanOrEqual(220);
+    expect(layout.actionRows).toBe(1);
+    expect(Math.min(...layout.actionWidths)).toBeGreaterThanOrEqual(96);
+    expect(layout.filtersHorizontal).toBe(true);
+    expect(layout.statsHorizontal).toBe(true);
+    expect(layout.overflow).toBe(false);
   });
 });
