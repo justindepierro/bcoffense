@@ -1,0 +1,15 @@
+{
+  "name": "bcoffense",
+  "version": "1.0.0",
+  "private": true,
+  "description": "BCOffense app shell and root test command shortcuts",
+  "scripts": {
+    "test:e2e": "npm --prefix tests test",
+    "test:e2e:all": "npm --prefix tests run test:all",
+    "test:e2e:phone": "npm --prefix tests run test:phone",
+    "test:e2e:ipad": "npm --prefix tests run test:ipad",
+    "test:e2e:headers": "npm --prefix tests run test:headers",
+    "test:e2e:screenshots": "npm --prefix tests run screenshots",
+    "playwright": "cd tests && npm exec -- playwright"
+  }
+}

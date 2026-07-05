@@ -282,8 +282,18 @@ test.describe("Player mobile experience", () => {
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Buck Sweep");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Coach note");
     await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await expect(quiz.locator(".sq-exit-card")).toContainText("You scored");
+    await expect(quiz.locator(".sq-exit-card")).toContainText("1 question left");
+    await quiz.getByRole("button", { name: /Save & Close/i }).click();
     await expect(quiz).toBeHidden();
     await expect(page.locator("body")).not.toHaveClass(/app-layer-locked/);
+    await goToTab(page, "dashboard");
+    await page.locator("#playerDashboardHome").getByRole("button", { name: /^Quiz$/i }).click();
+    const draftHub = page.locator("#playerQuizHubOverlay");
+    await expect(draftHub.locator("#playerQuizResumeSlot")).toContainText("Pick up where you left off");
+    await expect(draftHub.getByRole("button", { name: /^Resume$/i })).toBeVisible();
+    await draftHub.getByRole("button", { name: /Close Quiz Center/i }).click();
+    await expect(draftHub).toBeHidden();
 
     await page.evaluate(() => {
       script = [
@@ -328,6 +338,11 @@ test.describe("Player mobile experience", () => {
     await quiz.getByRole("button", { name: /Secure the edge/i }).click();
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Q Rule");
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await expect(quiz.locator(".sq-exit-card")).toContainText("You scored 100 points");
+    await expect(quiz.locator(".sq-exit-card")).toContainText("3 questions left");
+    await quiz.getByRole("button", { name: /Pick up where left off/i }).click();
+    await expect(quiz.getByText("What's your Q responsibility?")).toBeVisible();
     await quiz.getByRole("button", { name: /Next/i }).click();
     await expect(quiz.getByText("Which play has this Q rule?")).toBeVisible();
     await quiz.getByRole("button", { name: /Verts/i }).click();
@@ -391,6 +406,51 @@ test.describe("Player mobile experience", () => {
     await expect(quizHub.getByRole("button", { name: /Start Game Plan Quiz/i })).toBeVisible();
     await quizHub.getByRole("button", { name: /Close Quiz Center/i }).click();
     await expect(quizHub).toBeHidden();
+    await page.evaluate(() => {
+      const weekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(new Date()) : "2026-W27";
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
+        id: "mobile-ended-quiz",
+        player: "player",
+        sourceType: "script",
+        title: "Friday Walkthrough",
+        totalPoints: 475,
+        correct: 5,
+        wrong: 1,
+        answered: 6,
+        totalQuestions: 10,
+        remaining: 4,
+        percent: 83,
+        completed: false,
+        weekKey,
+      }]);
+      storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
+        { id: "reward-q", player: "player", type: "question", points: 25, weekKey },
+        { id: "reward-a", player: "player", type: "answer", points: 40, weekKey },
+        { id: "reward-g", player: "player", type: "gift", points: 100, weekKey },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [{
+        id: "sticker-job",
+        player: "player",
+        label: "Do Your Job",
+        icon: "🧠",
+        color: "blue",
+        weekKey,
+      }]);
+    });
+    await expect(page.locator("#tab-leaderboard")).toBeVisible();
+    await goToTab(page, "leaderboard");
+    await expect(page.locator("#leaderboard.panel.active")).toBeVisible();
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Quiz points and weekly standard");
+    await expect(page.locator("#playerLeaderboardPage").getByRole("button", { name: /Start Quiz/i })).toBeVisible();
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Weekly board");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("640 / 1000");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Point sources");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Questions");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Answers");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Gifted");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Do Your Job");
+    await assertNoHorizontalOverflow(page);
+    await goToTab(page, "dashboard");
     await expect.poll(async () => page.evaluate(() => {
       const hero = document.querySelector(".player-home-hero")?.getBoundingClientRect();
       const actions = document.querySelector(".player-home-quick-actions")?.getBoundingClientRect();

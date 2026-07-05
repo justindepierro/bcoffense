@@ -1450,6 +1450,7 @@ let _quizTitle = "Play Quiz";
 let _quizPositionKey = "respQ";
 let _quizFinished = false;
 let _quizSavedAttemptId = "";
+let _quizExitSummaryOpen = false;
 
 const SCRIPT_QUIZ_CHOICE_COLORS = ["blue", "red", "gold", "green"];
 const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
@@ -1463,11 +1464,43 @@ const PLAYER_QUIZ_BADGES = [
   { min: 90, label: "High Honor Roll", bonus: 100 },
   { min: 85, label: "Honor Roll", bonus: 50 },
 ];
+const PLAYER_QUIZ_REWARD_POINT_DEFAULTS = {
+  question: 25,
+  answer: 40,
+  gift: 100,
+};
+const PLAYER_HELMET_STICKER_TYPES = [
+  { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green" },
+  { key: "do-your-job", label: "Do Your Job", icon: "🧠", color: "blue" },
+  { key: "big-hit", label: "Big Hit", icon: "💥", color: "red" },
+  { key: "explosive-play", label: "Explosive Play", icon: "⚡", color: "gold" },
+  { key: "great-teammate", label: "Great Teammate", icon: "🤝", color: "purple" },
+  { key: "trust-process", label: "Trust the Process", icon: "🏅", color: "navy" },
+];
+let _leaderboardSelectedPlayer = "";
 
 function _getPlayerQuizStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_RESULTS
     ? STORAGE_KEYS.PLAYER_QUIZ_RESULTS
     : "playerQuizResults";
+}
+
+function _getPlayerQuizDraftStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_DRAFT
+    ? STORAGE_KEYS.PLAYER_QUIZ_DRAFT
+    : "playerQuizDraft";
+}
+
+function _getPlayerRewardStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_REWARD_EVENTS
+    ? STORAGE_KEYS.PLAYER_REWARD_EVENTS
+    : "playerRewardEvents";
+}
+
+function _getPlayerHelmetStickerStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_HELMET_STICKERS
+    ? STORAGE_KEYS.PLAYER_HELMET_STICKERS
+    : "playerHelmetStickers";
 }
 
 function _getPlayerQuizAttempts() {
@@ -1482,6 +1515,79 @@ function _savePlayerQuizAttempts(attempts) {
     .filter((attempt) => attempt && typeof attempt === "object")
     .slice(-150);
   storageManager.set(_getPlayerQuizStorageKey(), normalized);
+}
+
+function _getPlayerRewardEvents() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return [];
+  const events = storageManager.get(_getPlayerRewardStorageKey(), []);
+  return Array.isArray(events) ? events.filter((event) => event && typeof event === "object") : [];
+}
+
+function _savePlayerRewardEvents(events) {
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const normalized = (Array.isArray(events) ? events : [])
+    .filter((event) => event && typeof event === "object")
+    .slice(-400);
+  storageManager.set(_getPlayerRewardStorageKey(), normalized);
+}
+
+function _getPlayerHelmetStickers() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return [];
+  const stickers = storageManager.get(_getPlayerHelmetStickerStorageKey(), []);
+  return Array.isArray(stickers) ? stickers.filter((sticker) => sticker && typeof sticker === "object") : [];
+}
+
+function _savePlayerHelmetStickers(stickers) {
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const normalized = (Array.isArray(stickers) ? stickers : [])
+    .filter((sticker) => sticker && typeof sticker === "object")
+    .slice(-500);
+  storageManager.set(_getPlayerHelmetStickerStorageKey(), normalized);
+}
+
+function _getPlayerQuizDraft() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return null;
+  const draft = storageManager.get(_getPlayerQuizDraftStorageKey(), null);
+  return draft && typeof draft === "object" && Array.isArray(draft.plays) ? draft : null;
+}
+
+function _savePlayerQuizDraft() {
+  if (!_quizPlays.length || _quizFinished) return null;
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return null;
+  const draft = {
+    savedAt: new Date().toISOString(),
+    title: _quizTitle,
+    sourceType: _quizSourceType,
+    sourceWeight: _quizSourceWeight,
+    positionKey: _quizPositionKey,
+    shuffled: _quizShuffled,
+    index: _quizIndex,
+    score: _quizScore,
+    streak: _quizStreak,
+    bestStreak: _quizBestStreak,
+    basePlays: _quizBasePlays,
+    plays: _quizPlays,
+    answers: Array.from(_quizAnswers.entries()),
+  };
+  storageManager.set(_getPlayerQuizDraftStorageKey(), draft);
+  return draft;
+}
+
+function _clearPlayerQuizDraft() {
+  if (typeof storageManager === "undefined" || typeof storageManager.remove !== "function") return;
+  storageManager.remove(_getPlayerQuizDraftStorageKey());
+}
+
+function _formatQuizDraftMeta(draft) {
+  if (!draft) return "";
+  const answers = Array.isArray(draft.answers) ? draft.answers : [];
+  const total = Array.isArray(draft.plays) ? draft.plays.length : 0;
+  const remaining = Math.max(0, total - answers.length);
+  const saved = draft.savedAt ? new Date(draft.savedAt) : null;
+  const savedLabel = saved && !Number.isNaN(saved.getTime())
+    ? saved.toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })
+    : "recently";
+  return `${answers.length}/${total} answered · ${remaining} left · saved ${savedLabel}`;
 }
 
 function _quizDateKey(date = new Date()) {
@@ -1514,34 +1620,672 @@ function _getQuizTier(points) {
 }
 
 function _getQuizPlayerName() {
+  if (typeof getCurrentAuthUser === "function") {
+    const user = getCurrentAuthUser();
+    if (user?.username) return user.username;
+  }
   if (typeof currentAuthUser !== "undefined" && currentAuthUser?.username) {
     return currentAuthUser.username;
   }
   return "You";
 }
 
+function _normalizeQuizPlayerName(name) {
+  return String(name || "").trim() || _getQuizPlayerName();
+}
+
+function _quizEventId(prefix) {
+  return `${prefix}-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`;
+}
+
+function _quizCurrentCoachName() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  return user?.username || user?.label || _getQuizPlayerName();
+}
+
+function _getQuizRewardsForPlayer(player, weekKey = "") {
+  const target = _normalizeQuizPlayerName(player);
+  return _getPlayerRewardEvents().filter((event) => {
+    if (_normalizeQuizPlayerName(event.player) !== target) return false;
+    return weekKey ? event.weekKey === weekKey : true;
+  });
+}
+
+function _getQuizStickersForPlayer(player) {
+  const target = _normalizeQuizPlayerName(player);
+  return _getPlayerHelmetStickers().filter((sticker) => _normalizeQuizPlayerName(sticker.player) === target);
+}
+
+function _sumQuizRewards(events, type = "") {
+  return (Array.isArray(events) ? events : [])
+    .filter((event) => !type || event.type === type)
+    .reduce((sum, event) => sum + Number(event.points || 0), 0);
+}
+
+function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
+  const totals = new Map();
+  const addPoints = (name, points) => {
+    const playerName = _normalizeQuizPlayerName(name);
+    totals.set(playerName, (totals.get(playerName) || 0) + Number(points || 0));
+  };
+  (Array.isArray(attempts) ? attempts : []).forEach((attempt) => {
+    if (weekKey && attempt.weekKey !== weekKey) return;
+    addPoints(attempt.player || player, attempt.totalPoints || 0);
+  });
+  (Array.isArray(rewards) ? rewards : []).forEach((event) => {
+    if (weekKey && event.weekKey !== weekKey) return;
+    addPoints(event.player || player, event.points || 0);
+  });
+  if (!totals.size) totals.set(_normalizeQuizPlayerName(player), 0);
+  return Array.from(totals.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 8)
+    .map(([name, points], idx) => ({ name, points, rank: idx + 1, tier: _getQuizTier(points) }));
+}
+
 function _summarizeQuizAttempts() {
   const attempts = _getPlayerQuizAttempts();
+  const rewards = _getPlayerRewardEvents();
   const now = new Date();
   const weekKey = _quizWeekKey(now);
   const player = _getQuizPlayerName();
   const playerAttempts = attempts.filter((attempt) => (attempt.player || "You") === player);
   const weeklyAttempts = playerAttempts.filter((attempt) => attempt.weekKey === weekKey);
-  const weeklyPoints = weeklyAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
-  const seasonPoints = playerAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const playerRewards = rewards.filter((event) => _normalizeQuizPlayerName(event.player) === player);
+  const weeklyRewards = playerRewards.filter((event) => event.weekKey === weekKey);
+  const weeklyQuizPoints = weeklyAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const weeklyRewardPoints = _sumQuizRewards(weeklyRewards);
+  const weeklyQuestionPoints = _sumQuizRewards(weeklyRewards, "question");
+  const weeklyAnswerPoints = _sumQuizRewards(weeklyRewards, "answer");
+  const weeklyGiftPoints = _sumQuizRewards(weeklyRewards, "gift");
+  const weeklyPoints = weeklyQuizPoints + weeklyRewardPoints;
+  const seasonQuizPoints = playerAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const seasonRewardPoints = _sumQuizRewards(playerRewards);
+  const seasonPoints = seasonQuizPoints + seasonRewardPoints;
   const bestPercent = playerAttempts.reduce((best, attempt) => Math.max(best, Number(attempt.percent || 0)), 0);
   const bestBadge = _getQuizBadge(bestPercent);
   return {
     attempts,
+    rewards,
     player,
     weekKey,
     weeklyAttempts,
+    weeklyRewards,
+    weeklyQuizPoints,
+    weeklyRewardPoints,
+    weeklyQuestionPoints,
+    weeklyAnswerPoints,
+    weeklyGiftPoints,
     weeklyPoints,
+    seasonQuizPoints,
+    seasonRewardPoints,
     seasonPoints,
     bestPercent,
     bestBadge,
     tier: _getQuizTier(weeklyPoints),
+    leaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
   };
+}
+
+function _renderPlayerQuizResumeCard(draft, variant = "hub") {
+  if (!draft) return "";
+  const title = draft.title || "Quiz in progress";
+  const meta = _formatQuizDraftMeta(draft);
+  const source = draft.sourceType === "gameplan" ? "Game Plan" : "Practice Script";
+  return `
+    <div class="player-quiz-resume-card player-quiz-resume-card--${escapeAttr(variant)}">
+      <div>
+        <span class="player-quiz-resume-kicker">Pick up where you left off</span>
+        <strong>${escapeHtml(title)}</strong>
+        <small>${escapeHtml(source)} · ${escapeHtml(meta)}</small>
+      </div>
+      <div class="player-quiz-resume-actions">
+        <button type="button" class="btn btn-primary" data-action="resumePlayerQuizDraft">Resume</button>
+        <button type="button" class="btn btn-outline" data-action="discardPlayerQuizDraft">End Quiz</button>
+      </div>
+    </div>
+  `;
+}
+
+function _renderPlayerQuizResumeSlot() {
+  const slot = document.getElementById("playerQuizResumeSlot");
+  if (!slot) return;
+  const draft = _getPlayerQuizDraft();
+  slot.hidden = !draft;
+  slot.innerHTML = draft ? _renderPlayerQuizResumeCard(draft, "hub") : "";
+}
+
+function _renderQuizLeaderRows(rows, player) {
+  const safeRows = Array.isArray(rows) && rows.length
+    ? rows
+    : [{ name: player, points: 0, rank: 1, tier: _getQuizTier(0) }];
+  return safeRows
+    .map((row) => `
+      <button type="button" class="player-quiz-leader-row" data-action="openPlayerLeaderboardDetail" data-arg="${escapeAttr(row.name)}">
+        <span class="player-quiz-rank">#${row.rank}</span>
+        <strong>${escapeHtml(row.name)}</strong>
+        <span>${escapeHtml(row.tier)}</span>
+        <b>${Math.round(row.points)} pts</b>
+      </button>
+    `)
+    .join("");
+}
+
+function _renderPlayerLeaderboardDetail(player, summary) {
+  const name = _normalizeQuizPlayerName(player || summary.player);
+  const weekAttempts = summary.attempts.filter((attempt) => {
+    return _normalizeQuizPlayerName(attempt.player || summary.player) === name && attempt.weekKey === summary.weekKey;
+  });
+  const weekRewards = _getQuizRewardsForPlayer(name, summary.weekKey);
+  const stickers = _getQuizStickersForPlayer(name).slice(-12).reverse();
+  const quizPoints = weekAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const questionPoints = _sumQuizRewards(weekRewards, "question");
+  const answerPoints = _sumQuizRewards(weekRewards, "answer");
+  const giftPoints = _sumQuizRewards(weekRewards, "gift");
+  const stickerHtml = stickers.length
+    ? stickers.map((sticker) => `
+        <span class="player-leaderboard-sticker player-leaderboard-sticker--${escapeAttr(sticker.color || "blue")}">
+          <b aria-hidden="true">${escapeHtml(sticker.icon || "🏅")}</b>
+          ${escapeHtml(sticker.label || "Sticker")}
+        </span>
+      `).join("")
+    : `<span class="player-leaderboard-no-stickers">No helmet stickers yet.</span>`;
+  return `
+    <section class="player-leaderboard-detail" id="playerLeaderboardDetail" aria-label="${escapeAttr(name)} leaderboard detail">
+      <div class="player-leaderboard-section-head">
+        <h3>${escapeHtml(name)}</h3>
+        <span>${Math.round(quizPoints + questionPoints + answerPoints + giftPoints)} pts this week</span>
+      </div>
+      <div class="player-leaderboard-breakdown">
+        <span><strong>${Math.round(quizPoints)}</strong><small>Quiz</small></span>
+        <span><strong>${Math.round(questionPoints)}</strong><small>Questions</small></span>
+        <span><strong>${Math.round(answerPoints)}</strong><small>Answers</small></span>
+        <span><strong>${Math.round(giftPoints)}</strong><small>Gifted</small></span>
+      </div>
+      <div class="player-leaderboard-stickers">${stickerHtml}</div>
+    </section>
+  `;
+}
+
+function openPlayerLeaderboardDetail(playerName) {
+  _leaderboardSelectedPlayer = _normalizeQuizPlayerName(playerName);
+  renderPlayerLeaderboardPage();
+}
+
+function renderPlayerLeaderboardPage() {
+  const page = document.getElementById("playerLeaderboardPage");
+  if (!page) return;
+  const summary = _summarizeQuizAttempts();
+  const draft = _getPlayerQuizDraft();
+  if (!_leaderboardSelectedPlayer) _leaderboardSelectedPlayer = summary.player;
+  const recentAttempts = summary.weeklyAttempts.slice(-5).reverse();
+  const goalPct = Math.min(100, Math.round((summary.weeklyPoints / PLAYER_QUIZ_WEEKLY_GOAL) * 100));
+  const remaining = Math.max(0, PLAYER_QUIZ_WEEKLY_GOAL - summary.weeklyPoints);
+  const recentHtml = recentAttempts.length
+    ? recentAttempts.map((attempt) => `
+        <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
+          <div>
+            <strong>${escapeHtml(attempt.title || "Quiz")}</strong>
+            <small>${escapeHtml(attempt.sourceType === "gameplan" ? "Game Plan" : "Script")} · ${attempt.correct}/${attempt.answered} right${attempt.remaining ? ` · ${attempt.remaining} left` : ""}</small>
+          </div>
+          <span>${Math.round(attempt.totalPoints || 0)} pts</span>
+        </div>
+      `).join("")
+    : `<div class="player-leaderboard-empty">No quiz attempts yet. Start with your current practice or game plan.</div>`;
+
+  setInnerHTML(page, `
+    <div class="player-leaderboard-shell">
+      <section class="player-leaderboard-hero">
+        <div>
+          <span class="player-leaderboard-kicker">Leaderboard</span>
+          <h2>Quiz points and weekly standard</h2>
+          <p>Get to ${PLAYER_QUIZ_WEEKLY_GOAL} points this week. Game Plan quizzes count 1.25x.</p>
+        </div>
+        <button type="button" class="btn btn-primary" data-action="openPlayerQuizHub">Start Quiz</button>
+      </section>
+      ${draft ? _renderPlayerQuizResumeCard(draft, "page") : ""}
+      <section class="player-leaderboard-grid" aria-label="Quiz progress">
+        <article class="player-leaderboard-card player-leaderboard-card--goal">
+          <span>Weekly Goal</span>
+          <strong>${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL}</strong>
+          <div class="player-leaderboard-meter" aria-hidden="true"><i class="player-leaderboard-meter-fill"></i></div>
+          <small>${remaining ? `${Math.round(remaining)} points to Champion` : "Champion standard met"}</small>
+        </article>
+        <article class="player-leaderboard-card player-leaderboard-card--tier">
+          <span>Current Tier</span>
+          <strong>${escapeHtml(summary.tier)}</strong>
+          <small>${summary.weeklyAttempts.length} attempt${summary.weeklyAttempts.length === 1 ? "" : "s"} this week</small>
+        </article>
+        <article class="player-leaderboard-card player-leaderboard-card--badge">
+          <span>Best Badge</span>
+          <strong>${summary.bestPercent ? escapeHtml(summary.bestBadge.label) : "No attempts"}</strong>
+          <small>${summary.bestPercent ? `${Math.round(summary.bestPercent)}% best score` : "85% unlocks Honor Roll"}</small>
+        </article>
+      </section>
+      <section class="player-leaderboard-board">
+        <div class="player-leaderboard-section-head">
+          <h3>Point sources</h3>
+          <span>Week ${escapeHtml(summary.weekKey)}</span>
+        </div>
+        <div class="player-leaderboard-breakdown">
+          <span><strong>${Math.round(summary.weeklyQuizPoints)}</strong><small>Quiz</small></span>
+          <span><strong>${Math.round(summary.weeklyQuestionPoints)}</strong><small>Questions</small></span>
+          <span><strong>${Math.round(summary.weeklyAnswerPoints)}</strong><small>Answers</small></span>
+          <span><strong>${Math.round(summary.weeklyGiftPoints)}</strong><small>Gifted</small></span>
+        </div>
+      </section>
+      <section class="player-leaderboard-board">
+        <div class="player-leaderboard-section-head">
+          <h3>Weekly board</h3>
+          <span>Tap a name for stickers</span>
+        </div>
+        <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(summary.leaderboardRows, summary.player)}</div>
+      </section>
+      ${_renderPlayerLeaderboardDetail(_leaderboardSelectedPlayer, summary)}
+      <section class="player-leaderboard-board">
+        <div class="player-leaderboard-section-head">
+          <h3>Recent attempts</h3>
+          <span>Completed and ended quizzes</span>
+        </div>
+        <div class="player-leaderboard-attempts">${recentHtml}</div>
+      </section>
+    </div>
+  `);
+  const meterFill = page.querySelector(".player-leaderboard-meter-fill");
+  if (meterFill) meterFill.style.width = `${goalPct}%`;
+}
+
+function _quizUniquePlaysFromList(list) {
+  const seen = new Set();
+  return (Array.isArray(list) ? list : [])
+    .filter((play) => play && !play.isSeparator)
+    .filter((play, idx) => {
+      const sig = typeof playSignature === "function"
+        ? playSignature(play)
+        : `${_quizPlainCall(play)}::${idx}`;
+      if (seen.has(sig)) return false;
+      seen.add(sig);
+      return true;
+    });
+}
+
+function _quizCompletenessStats(playList) {
+  const playsForSource = _quizUniquePlaysFromList(playList);
+  const totals = {
+    playCount: playsForSource.length,
+    diagrams: 0,
+    rules: 0,
+    notes: 0,
+    situation: 0,
+    defense: 0,
+  };
+  playsForSource.forEach((play) => {
+    if (
+      window.playImages &&
+      typeof window.playImages.hasForPlay === "function" &&
+      window.playImages.hasForPlay(play)
+    ) {
+      totals.diagrams += 1;
+    }
+    if (_getQuizPositions().some((position) => String(play[position.key] || "").trim())) {
+      totals.rules += 1;
+    }
+    if (String(play.playerNotes || play.respNotes || play.notes || "").trim()) {
+      totals.notes += 1;
+    }
+    if (
+      String(play.preferredDown || "").trim() ||
+      String(play.preferredDistance || "").trim() ||
+      String(play.preferredFieldPosition || "").trim() ||
+      String(play.preferredHash || "").trim() ||
+      String(play.preferredSituation || "").trim()
+    ) {
+      totals.situation += 1;
+    }
+    if (
+      String(play.practiceFront || "").trim() ||
+      String(play.practiceDefense || "").trim() ||
+      String(play.practiceCoverage || "").trim() ||
+      String(play.practiceBlitz || "").trim() ||
+      String(play.practiceStunt || "").trim()
+    ) {
+      totals.defense += 1;
+    }
+  });
+  const pct = (value) => totals.playCount ? Math.round((value / totals.playCount) * 100) : 0;
+  const score = totals.playCount
+    ? Math.round(
+      pct(totals.diagrams) * 0.22 +
+      pct(totals.rules) * 0.30 +
+      pct(totals.notes) * 0.16 +
+      pct(totals.situation) * 0.16 +
+      pct(totals.defense) * 0.16,
+    )
+    : 0;
+  return {
+    ...totals,
+    diagramPct: pct(totals.diagrams),
+    rulePct: pct(totals.rules),
+    notePct: pct(totals.notes),
+    situationPct: pct(totals.situation),
+    defensePct: pct(totals.defense),
+    score,
+  };
+}
+
+function _quizReadinessLabel(score) {
+  if (score >= 88) return { label: "Player ready", tone: "ready" };
+  if (score >= 68) return { label: "Close", tone: "close" };
+  if (score >= 40) return { label: "Needs work", tone: "needs" };
+  return { label: "Thin", tone: "thin" };
+}
+
+function _quizReadinessActions(stats, extras = {}) {
+  const actions = [];
+  if (!stats.playCount) actions.push("Add plays before publishing a quiz.");
+  if (stats.rulePct < 80) actions.push("Write more player rules by position.");
+  if (stats.diagramPct < 70) actions.push("Attach diagrams so visual questions can work.");
+  if (stats.notePct < 50) actions.push("Add coach notes for teaching feedback.");
+  if (stats.situationPct < 70) actions.push("Fill down, distance, field zone, or hash metadata.");
+  if (stats.defensePct < 60) actions.push("Add defensive front/coverage tags for context.");
+  if (extras.needsVisibility) actions.push("Turn on Player login for this script.");
+  if (extras.bucketCount !== undefined && extras.bucketCount < 2) actions.push("Add plays to more Game Plan buckets.");
+  return actions.slice(0, 4);
+}
+
+function _quizMetric(label, value, total) {
+  const pct = total ? Math.round((value / total) * 100) : 0;
+  return `
+    <div class="coach-quiz-metric">
+      <span>${escapeHtml(label)}</span>
+      <strong>${value}/${total}</strong>
+      <i aria-hidden="true"><b data-pct="${pct}"></b></i>
+    </div>
+  `;
+}
+
+function _getCoachQuizGamePlanSources() {
+  const boards = typeof _gpLoadBoards === "function"
+    ? _gpLoadBoards()
+    : storageManager.get(STORAGE_KEYS.GAME_PLAN_BOARDS, {});
+  return Object.entries(boards && typeof boards === "object" ? boards : {})
+    .map(([key, board]) => {
+      const assignments = board?.assignments && typeof board.assignments === "object" ? board.assignments : {};
+      const playsForBoard = [];
+      let bucketCount = 0;
+      Object.entries(assignments).forEach(([boxId, list]) => {
+        if (boxId === "holding") return;
+        const clean = Array.isArray(list) ? list.filter((play) => play && !play.isSeparator) : [];
+        if (clean.length) bucketCount += 1;
+        clean.forEach((play) => playsForBoard.push(play));
+      });
+      const title = board?.sheetTitle || key || "Game Plan";
+      return {
+        id: key,
+        title,
+        subtitle: key === "__unassigned__" ? "Unassigned board" : key,
+        plays: playsForBoard,
+        bucketCount,
+      };
+    })
+    .filter((source) => source.plays.length || source.id !== "__unassigned__");
+}
+
+function _renderCoachQuizSourceCard(source, kind) {
+  const stats = _quizCompletenessStats(source.plays);
+  const readiness = _quizReadinessLabel(stats.score);
+  const actions = _quizReadinessActions(stats, {
+    needsVisibility: kind === "script" && !source.playerVisible,
+    bucketCount: kind === "gameplan" ? source.bucketCount : undefined,
+  });
+  const meta = kind === "script"
+    ? `${source.playCount || stats.playCount} plays · ${source.periodCount || 0} periods · ${source.playerVisible ? "Player visible" : "Not player visible"}`
+    : `${stats.playCount} plays · ${source.bucketCount || 0} populated buckets`;
+  return `
+    <article class="coach-quiz-source-card coach-quiz-source-card--${escapeAttr(readiness.tone)}">
+      <div class="coach-quiz-source-head">
+        <div>
+          <span class="coach-quiz-source-kind">${kind === "gameplan" ? "Game Plan" : "Practice Script"}</span>
+          <h3>${escapeHtml(source.title)}</h3>
+          <p>${escapeHtml(source.subtitle || meta)}</p>
+        </div>
+        <div class="coach-quiz-score-ring" data-tone="${escapeAttr(readiness.tone)}">
+          <strong>${stats.score}</strong>
+          <span>${escapeHtml(readiness.label)}</span>
+        </div>
+      </div>
+      <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
+      <div class="coach-quiz-metrics">
+        ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}
+        ${_quizMetric("Rules", stats.rules, stats.playCount)}
+        ${_quizMetric("Notes", stats.notes, stats.playCount)}
+        ${_quizMetric("Situation", stats.situation, stats.playCount)}
+        ${_quizMetric("Defense", stats.defense, stats.playCount)}
+      </div>
+      <div class="coach-quiz-next-actions">
+        <strong>Next best work</strong>
+        ${actions.length
+      ? `<ul>${actions.map((action) => `<li>${escapeHtml(action)}</li>`).join("")}</ul>`
+      : `<p>This source is ready for player quizzes.</p>`}
+      </div>
+    </article>
+  `;
+}
+
+function _renderCoachStickerButtons() {
+  return PLAYER_HELMET_STICKER_TYPES.map((sticker) => `
+    <button type="button"
+      class="coach-quiz-sticker-btn coach-quiz-sticker-btn--${escapeAttr(sticker.color)}"
+      data-action="coachAwardHelmetSticker"
+      data-arg="${escapeAttr(sticker.key)}">
+      <span aria-hidden="true">${escapeHtml(sticker.icon)}</span>
+      ${escapeHtml(sticker.label)}
+    </button>
+  `).join("");
+}
+
+async function _coachPromptRewardPlayer(defaultName = "") {
+  if (typeof showPrompt !== "function") return null;
+  const player = await showPrompt("Who should receive this?", defaultName, {
+    title: "Player Name",
+    icon: "👤",
+    placeholder: "Player name",
+  });
+  return player === null ? null : _normalizeQuizPlayerName(player);
+}
+
+async function coachAwardQuestionPoints(type = "question") {
+  const safeType = ["question", "answer", "gift"].includes(type) ? type : "question";
+  const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
+  if (!player) return;
+  const defaultPoints = PLAYER_QUIZ_REWARD_POINT_DEFAULTS[safeType] || 25;
+  const rawPoints = typeof showPrompt === "function"
+    ? await showPrompt("How many points?", String(defaultPoints), {
+      title: "Award Points",
+      icon: "🏆",
+      placeholder: String(defaultPoints),
+    })
+    : String(defaultPoints);
+  if (rawPoints === null) return;
+  const points = Math.max(0, Math.min(500, Math.round(Number(rawPoints) || defaultPoints)));
+  const note = typeof showPrompt === "function"
+    ? await showPrompt("Optional note for the player", "", {
+      title: "Reward Note",
+      icon: "✍️",
+      placeholder: safeType === "question" ? "Great question in install." : "Helped a teammate understand the rule.",
+    })
+    : "";
+  if (note === null) return;
+  const now = new Date();
+  const events = _getPlayerRewardEvents();
+  events.push({
+    id: _quizEventId("reward"),
+    player,
+    type: safeType,
+    label: safeType === "gift" ? "Coach Gift" : safeType === "answer" ? "Teammate Answer" : "Football Question",
+    points,
+    note: String(note || "").trim(),
+    awardedBy: _quizCurrentCoachName(),
+    createdAt: now.toISOString(),
+    dateKey: _quizDateKey(now),
+    weekKey: _quizWeekKey(now),
+  });
+  _savePlayerRewardEvents(events);
+  _leaderboardSelectedPlayer = player;
+  renderCoachQuizSetupPage();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast(`${player} earned ${points} points.`, { type: "success" });
+}
+
+async function coachAwardHelmetSticker(stickerKey = "") {
+  const sticker = PLAYER_HELMET_STICKER_TYPES.find((item) => item.key === stickerKey) || PLAYER_HELMET_STICKER_TYPES[0];
+  const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
+  if (!player) return;
+  const note = typeof showPrompt === "function"
+    ? await showPrompt("Optional sticker note", "", {
+      title: sticker.label,
+      icon: sticker.icon,
+      placeholder: "Why did they earn it?",
+    })
+    : "";
+  if (note === null) return;
+  const now = new Date();
+  const stickers = _getPlayerHelmetStickers();
+  stickers.push({
+    id: _quizEventId("sticker"),
+    player,
+    stickerKey: sticker.key,
+    label: sticker.label,
+    icon: sticker.icon,
+    color: sticker.color,
+    note: String(note || "").trim(),
+    awardedBy: _quizCurrentCoachName(),
+    context: "Practice",
+    createdAt: now.toISOString(),
+    dateKey: _quizDateKey(now),
+    weekKey: _quizWeekKey(now),
+  });
+  _savePlayerHelmetStickers(stickers);
+  _leaderboardSelectedPlayer = player;
+  renderCoachQuizSetupPage();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast(`${player} earned ${sticker.label}.`, { type: "success" });
+}
+
+function renderCoachQuizSetupPage() {
+  const page = document.getElementById("coachQuizSetupPage");
+  if (!page) return;
+  const currentUser = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (currentUser?.role === "player") {
+    page.innerHTML = "";
+    return;
+  }
+  if (window.playImages && typeof window.playImages.loadKeys === "function") {
+    window.playImages.loadKeys().catch(() => { });
+  }
+  const scripts = (typeof getSavedScripts === "function" ? getSavedScripts() : [])
+    .map((savedScript) => {
+      const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : {};
+      return {
+        id: String(savedScript.id || ""),
+        title: savedScript.name || "Saved Script",
+        subtitle: savedScript.date || stats.dateStr || "No date",
+        plays: savedScript.plays || [],
+        playerVisible: typeof isSavedScriptPlayerVisible === "function"
+          ? isSavedScriptPlayerVisible(savedScript)
+          : Boolean(savedScript.playerVisible),
+        playCount: stats.playCount || 0,
+        periodCount: stats.periodCount || 0,
+      };
+    });
+  const gamePlans = _getCoachQuizGamePlanSources();
+  const allStats = [...scripts.map((s) => _quizCompletenessStats(s.plays)), ...gamePlans.map((g) => _quizCompletenessStats(g.plays))];
+  const avgScore = allStats.length
+    ? Math.round(allStats.reduce((sum, stats) => sum + stats.score, 0) / allStats.length)
+    : 0;
+  const readyCount = allStats.filter((stats) => stats.score >= 88).length;
+  const rewardEvents = _getPlayerRewardEvents();
+  const stickers = _getPlayerHelmetStickers();
+  const weekKey = _quizWeekKey(new Date());
+  const weeklyRewardEvents = rewardEvents.filter((event) => event.weekKey === weekKey);
+  const weeklyStickerEvents = stickers.filter((event) => event.weekKey === weekKey);
+
+  setInnerHTML(page, `
+    <div class="coach-quiz-setup-shell">
+      <section class="coach-quiz-setup-hero">
+        <div>
+          <span class="coach-quiz-kicker">Set Up Quizzes</span>
+          <h2>Make every quiz source player-ready</h2>
+          <p>Check whether scripts and game plans have enough diagrams, rules, notes, and metadata for kids to learn from the quiz instead of guessing.</p>
+        </div>
+        <div class="coach-quiz-hero-score">
+          <strong>${avgScore}</strong>
+          <span>${readyCount}/${allStats.length || 0} ready</span>
+        </div>
+      </section>
+      <section class="coach-quiz-reward-panel">
+        <article>
+          <span>Question points</span>
+          <strong>Incentivize asking</strong>
+          <p>Award weekly points for good questions so players learn that asking is part of preparation.</p>
+          <button type="button" class="btn btn-primary" data-action="coachAwardQuestionPoints" data-arg="question">Award Question</button>
+        </article>
+        <article>
+          <span>Gifted points</span>
+          <strong>Reward teammates</strong>
+          <p>Give answer or bonus points when a player helps a teammate understand a call, rule, or adjustment.</p>
+          <div class="coach-quiz-reward-actions">
+            <button type="button" class="btn btn-outline" data-action="coachAwardQuestionPoints" data-arg="answer">Answer Points</button>
+            <button type="button" class="btn btn-outline" data-action="coachAwardQuestionPoints" data-arg="gift">Gift Points</button>
+          </div>
+        </article>
+        <article>
+          <span>Helmet stickers</span>
+          <strong>Post-practice awards</strong>
+          <p>Award stickers after practice. Players see them when their leaderboard name is opened.</p>
+          <div class="coach-quiz-sticker-grid">${_renderCoachStickerButtons()}</div>
+        </article>
+      </section>
+      <section class="coach-quiz-setup-section">
+        <div class="coach-quiz-section-head">
+          <h3>This week's rewards</h3>
+          <span>${weeklyRewardEvents.length} point awards · ${weeklyStickerEvents.length} stickers</span>
+        </div>
+        <div class="coach-quiz-reward-summary">
+          <span><strong>${Math.round(_sumQuizRewards(weeklyRewardEvents, "question"))}</strong><small>Question pts</small></span>
+          <span><strong>${Math.round(_sumQuizRewards(weeklyRewardEvents, "answer"))}</strong><small>Answer pts</small></span>
+          <span><strong>${Math.round(_sumQuizRewards(weeklyRewardEvents, "gift"))}</strong><small>Gift pts</small></span>
+          <span><strong>${weeklyStickerEvents.length}</strong><small>Stickers</small></span>
+        </div>
+      </section>
+      <section class="coach-quiz-setup-section">
+        <div class="coach-quiz-section-head">
+          <h3>Practice scripts</h3>
+          <span>${scripts.length} saved</span>
+        </div>
+        <div class="coach-quiz-source-grid">
+          ${scripts.length
+      ? scripts.map((source) => _renderCoachQuizSourceCard(source, "script")).join("")
+      : `<div class="coach-quiz-empty">No saved practice scripts yet.</div>`}
+        </div>
+      </section>
+      <section class="coach-quiz-setup-section">
+        <div class="coach-quiz-section-head">
+          <h3>Game plans</h3>
+          <span>${gamePlans.length} boards</span>
+        </div>
+        <div class="coach-quiz-source-grid">
+          ${gamePlans.length
+      ? gamePlans.map((source) => _renderCoachQuizSourceCard(source, "gameplan")).join("")
+      : `<div class="coach-quiz-empty">No game plans with plays yet.</div>`}
+        </div>
+      </section>
+    </div>
+  `);
+  page.querySelectorAll(".coach-quiz-metric i b").forEach((bar) => {
+    const width = bar.dataset.pct || "0";
+    bar.style.width = `${Math.max(0, Math.min(100, Number(width) || 0))}%`;
+  });
 }
 
 function _buildQuizPlays(shuffled) {
@@ -1657,15 +2401,9 @@ function _renderPlayerQuizHub() {
   }
   const leaderboardEl = document.getElementById("playerQuizLeaderboardPreview");
   if (leaderboardEl) {
-    leaderboardEl.innerHTML = `
-      <div class="player-quiz-leader-row">
-        <span class="player-quiz-rank">#1</span>
-        <strong>${escapeHtml(summary.player)}</strong>
-        <span>${escapeHtml(summary.tier)}</span>
-        <b>${Math.round(summary.weeklyPoints)} pts</b>
-      </div>
-    `;
+    leaderboardEl.innerHTML = _renderQuizLeaderRows(summary.leaderboardRows, summary.player);
   }
+  _renderPlayerQuizResumeSlot();
 
   const picker = document.getElementById("playerQuizPositionPicker");
   if (picker) {
@@ -1696,6 +2434,10 @@ function _renderPlayerQuizHub() {
     } else {
       select.innerHTML = `<option value="">Current practice</option>`;
     }
+  }
+
+  if (document.getElementById("leaderboard")?.classList.contains("active")) {
+    renderPlayerLeaderboardPage();
   }
 }
 
@@ -1796,6 +2538,7 @@ function _resetQuizGameState() {
   _quizBestStreak = 0;
   _quizFinished = false;
   _quizSavedAttemptId = "";
+  _quizExitSummaryOpen = false;
 }
 
 function _quizItemKey(item) {
@@ -2034,6 +2777,7 @@ function startScriptQuiz(options = {}) {
   _setQuizPlays(normalizedItems, false);
   _quizIndex = 0;
   _resetQuizGameState();
+  _clearPlayerQuizDraft();
 
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
@@ -2053,11 +2797,20 @@ function startScriptQuiz(options = {}) {
 function closeScriptQuiz() {
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
+  if (!_quizFinished && _quizPlays.length && !_quizExitSummaryOpen) {
+    _savePlayerQuizDraft();
+    _renderQuizExitSummary();
+    return;
+  }
   if (_quizFinished) _renderPlayerQuizHub();
   if (typeof closeLayer === "function") {
     closeLayer(overlay);
   }
   overlay.classList.add("hidden");
+  _quizExitSummaryOpen = false;
+  if (document.getElementById("leaderboard")?.classList.contains("active")) {
+    renderPlayerLeaderboardPage();
+  }
 }
 
 function toggleScriptQuizShuffle() {
@@ -2065,6 +2818,7 @@ function toggleScriptQuizShuffle() {
   _setQuizPlays(_quizBasePlays, _quizShuffled);
   _quizIndex = 0;
   _resetQuizGameState();
+  _clearPlayerQuizDraft();
   const btn = document.getElementById("scriptQuizShuffleBtn");
   if (btn) btn.classList.toggle("active", _quizShuffled);
   renderScriptQuizPlay();
@@ -2095,6 +2849,7 @@ function nextScriptQuizPlay() {
   if (_quizIndex < _quizPlays.length - 1) {
     _quizIndex++;
     renderScriptQuizPlay();
+    _savePlayerQuizDraft();
   }
 }
 
@@ -2102,6 +2857,7 @@ function prevScriptQuizPlay() {
   if (_quizIndex > 0) {
     _quizIndex--;
     renderScriptQuizPlay();
+    _savePlayerQuizDraft();
   }
 }
 
@@ -2123,16 +2879,22 @@ function answerScriptQuizChoice(choiceKey) {
   }
   _quizAnswers.set(questionKey, { choiceKey, correct, questionType: selected.questionType || "call" });
   renderScriptQuizPlay();
+  _savePlayerQuizDraft();
 }
 
-function _buildQuizAttemptSummary() {
+function _buildQuizAttemptSummary(options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
+  const partial = Boolean(opts.partial);
   const answers = Array.from(_quizAnswers.values());
   const answered = answers.length;
   const correct = answers.filter((answer) => answer.correct).length;
+  const wrong = answered - correct;
   const percent = answered ? Math.round((correct / answered) * 100) : 0;
   const badge = _getQuizBadge(percent);
-  const bonusPoints = answered ? badge.bonus : 0;
+  const bonusPoints = answered && !partial ? badge.bonus : 0;
   const totalPoints = _quizScore + bonusPoints;
+  const totalQuestions = _quizPlays.length;
+  const remaining = Math.max(0, totalQuestions - answered);
   const now = new Date();
   return {
     id: _quizSavedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
@@ -2146,9 +2908,13 @@ function _buildQuizAttemptSummary() {
     totalPoints,
     answered,
     correct,
+    wrong,
+    totalQuestions,
+    remaining,
     percent,
     badge: badge.label,
     bestStreak: _quizBestStreak,
+    completed: !partial,
     completedAt: now.toISOString(),
     dateKey: _quizDateKey(now),
     weekKey: _quizWeekKey(now),
@@ -2165,24 +2931,160 @@ function _saveQuizAttempt(summary) {
   return summary;
 }
 
+function _setScriptQuizOverlayOpen(open) {
+  const overlay = document.getElementById("scriptQuizOverlay");
+  if (!overlay) return;
+  overlay.classList.toggle("hidden", !open);
+  if (open) {
+    if (typeof openLayer === "function") {
+      openLayer(overlay, {
+        id: "scriptQuizOverlay",
+        scrollElement: "scriptQuizCard",
+        blocking: true,
+      });
+    } else if (typeof trapFocus === "function") {
+      trapFocus(overlay);
+    }
+  } else if (typeof closeLayer === "function") {
+    closeLayer(overlay);
+  }
+}
+
+function _renderQuizExitSummary() {
+  _quizExitSummaryOpen = true;
+  const summary = _buildQuizAttemptSummary({ partial: true });
+  const scenarioEl = document.getElementById("scriptQuizScenario");
+  const answerEl = document.getElementById("scriptQuizAnswer");
+  const revealRow = document.querySelector(".script-quiz-reveal-row");
+  const progressEl = document.getElementById("scriptQuizProgress");
+  const scoreEl = document.getElementById("scriptQuizScore");
+  const prevBtn = document.getElementById("scriptQuizPrevBtn");
+  const nextBtn = document.getElementById("scriptQuizNextBtn");
+  if (progressEl) progressEl.textContent = "Paused";
+  if (scoreEl) scoreEl.textContent = `${Math.round(summary.totalPoints)} pts · ${summary.correct} right · ${summary.wrong} wrong`;
+  if (prevBtn) prevBtn.disabled = true;
+  if (nextBtn) {
+    nextBtn.disabled = true;
+    nextBtn.textContent = "Paused";
+  }
+  if (answerEl) answerEl.classList.add("hidden");
+  if (revealRow) revealRow.classList.add("hidden");
+  if (scenarioEl) {
+    setInnerHTML(scenarioEl, `
+      <div class="sq-exit-card">
+        <div class="sq-exit-kicker">Quiz paused</div>
+        <h3>You scored ${Math.round(summary.totalPoints)} points</h3>
+        <p>${summary.correct} right · ${summary.wrong} wrong · ${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${summary.sourceType === "gameplan" ? "game plan" : "script"}.</p>
+        <div class="sq-exit-grid">
+          <span><strong>${summary.answered}</strong><small>Answered</small></span>
+          <span><strong>${summary.totalQuestions}</strong><small>Total</small></span>
+          <span><strong>${summary.bestStreak}</strong><small>Best streak</small></span>
+          <span><strong>${Math.round(summary.totalPoints)}</strong><small>Points</small></span>
+        </div>
+        <div class="sq-exit-actions">
+          <button type="button" class="btn btn-primary" data-action="resumeScriptQuiz">Pick up where left off</button>
+          <button type="button" class="btn btn-outline" data-action="saveAndCloseScriptQuiz">Save &amp; Close</button>
+          <button type="button" class="btn btn-danger" data-action="endScriptQuiz">End Quiz</button>
+        </div>
+      </div>
+    `);
+  }
+}
+
+function resumeScriptQuiz() {
+  if (!_quizPlays.length) return;
+  _quizExitSummaryOpen = false;
+  renderScriptQuizPlay();
+}
+
+function saveAndCloseScriptQuiz() {
+  _savePlayerQuizDraft();
+  _quizExitSummaryOpen = false;
+  _setScriptQuizOverlayOpen(false);
+  _renderPlayerQuizHub();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) {
+    renderPlayerLeaderboardPage();
+  }
+}
+
+function endScriptQuiz() {
+  if (_quizFinished) return;
+  const summary = _buildQuizAttemptSummary({ partial: true });
+  _saveQuizAttempt(summary);
+  _clearPlayerQuizDraft();
+  _quizFinished = true;
+  _quizExitSummaryOpen = false;
+  _renderQuizResults(summary);
+  _renderPlayerQuizHub();
+}
+
+function resumePlayerQuizDraft() {
+  const draft = _getPlayerQuizDraft();
+  if (!draft) {
+    showToast("No quiz in progress.", { type: "info" });
+    return false;
+  }
+  const playsFromDraft = _normalizeQuizItems(draft.plays);
+  if (!playsFromDraft.length) {
+    _clearPlayerQuizDraft();
+    showToast("That saved quiz is no longer available.", { type: "warning" });
+    return false;
+  }
+  _quizBasePlays = _normalizeQuizItems(draft.basePlays?.length ? draft.basePlays : draft.plays);
+  _quizPlays = playsFromDraft;
+  _quizIndex = Math.max(0, Math.min(Number(draft.index || 0), _quizPlays.length - 1));
+  _quizShuffled = Boolean(draft.shuffled);
+  _quizSourceType = draft.sourceType === "gameplan" ? "gameplan" : "script";
+  _quizSourceWeight = PLAYER_QUIZ_SOURCE_WEIGHTS[_quizSourceType] || Number(draft.sourceWeight || 1) || 1;
+  _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {
+    _quizPositionKey = draft.positionKey;
+  }
+  _quizAnswers = new Map(Array.isArray(draft.answers) ? draft.answers : []);
+  _quizChoiceCache = new Map();
+  _quizCurrentChoices = [];
+  _quizCurrentQuestion = null;
+  _quizScore = Number(draft.score || 0);
+  _quizStreak = Number(draft.streak || 0);
+  _quizBestStreak = Number(draft.bestStreak || 0);
+  _quizFinished = false;
+  _quizSavedAttemptId = "";
+  _quizExitSummaryOpen = false;
+  closePlayerQuizHub();
+  _setScriptQuizOverlayOpen(true);
+  renderScriptQuizPlay();
+  return true;
+}
+
+function discardPlayerQuizDraft() {
+  _clearPlayerQuizDraft();
+  _renderPlayerQuizHub();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) {
+    renderPlayerLeaderboardPage();
+  }
+  showToast("Saved quiz ended.", { type: "info" });
+}
+
 function _renderQuizResults(summary) {
   const scenarioEl = document.getElementById("scriptQuizScenario");
   const answerEl = document.getElementById("scriptQuizAnswer");
   const revealRow = document.querySelector(".script-quiz-reveal-row");
   const sourceLabel = summary.sourceType === "gameplan" ? "Game Plan" : "Script";
+  const statusLabel = summary.completed === false ? `${sourceLabel} Ended` : `${sourceLabel} Complete`;
   const tierAfter = _getQuizTier(_summarizeQuizAttempts().weeklyPoints);
   if (scenarioEl) {
     setInnerHTML(scenarioEl, `
       <div class="sq-result-card">
-        <div class="sq-result-kicker">${escapeHtml(sourceLabel)} Complete</div>
+        <div class="sq-result-kicker">${escapeHtml(statusLabel)}</div>
         <div class="sq-result-score">${summary.percent}%</div>
         <div class="sq-result-title">${escapeHtml(summary.badge)}</div>
         <div class="sq-result-grid">
           <span><strong>${summary.correct}</strong><small>Correct</small></span>
-          <span><strong>${summary.answered}</strong><small>Answered</small></span>
+          <span><strong>${summary.wrong || 0}</strong><small>Wrong</small></span>
           <span><strong>${summary.bestStreak}</strong><small>Best streak</small></span>
           <span><strong>${Math.round(summary.totalPoints)}</strong><small>Total points</small></span>
         </div>
+        ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${summary.sourceType === "gameplan" ? "game plan" : "script"}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
         <div class="sq-result-tier">Weekly tier now: <strong>${escapeHtml(tierAfter)}</strong></div>
         <button type="button" class="btn btn-primary sq-result-close" data-action="closeScriptQuiz">Done</button>
@@ -2198,6 +3100,7 @@ function finishScriptQuiz() {
   _quizFinished = true;
   const summary = _buildQuizAttemptSummary();
   _saveQuizAttempt(summary);
+  _clearPlayerQuizDraft();
   const progressEl = document.getElementById("scriptQuizProgress");
   if (progressEl) progressEl.textContent = "Complete";
   const periodEl = document.getElementById("scriptQuizPeriod");

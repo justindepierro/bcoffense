@@ -169,6 +169,10 @@ function showTab(tabName) {
     } else {
       setTimeout(renderDashboard, 0);
     }
+  } else if (tabName === "leaderboard") {
+    if (typeof renderPlayerLeaderboardPage === "function") renderPlayerLeaderboardPage();
+  } else if (tabName === "quizsetup") {
+    if (typeof renderCoachQuizSetupPage === "function") renderCoachQuizSetupPage();
   }
 
   runDraftRestoreCheckForTab(tabName);
@@ -184,6 +188,8 @@ function showTab(tabName) {
     identity: "Identity",
     offensebuilder: "Offense Builder",
     dashboard: "Dashboard",
+    leaderboard: "Leaderboard",
+    quizsetup: "Set Up Quizzes",
   };
   document.title = `${TAB_TITLES[tabName] || tabName} — Practice Script & Playbook`;
 

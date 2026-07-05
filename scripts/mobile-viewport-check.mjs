@@ -116,6 +116,7 @@ function closeServer(server) {
 async function findPlaywright() {
   const candidates = [
     path.join(root, "node_modules/playwright"),
+    path.join(root, "tests", "node_modules", "playwright"),
     path.join(DEFAULT_TOOL_ROOT, "node_modules/playwright"),
   ];
   for (const candidate of candidates) {
@@ -127,8 +128,8 @@ async function findPlaywright() {
     }
   }
   throw new Error(
-    `Playwright not found. Install it with: npm install --prefix ${DEFAULT_TOOL_ROOT} playwright && ` +
-    `${DEFAULT_TOOL_ROOT}/node_modules/.bin/playwright install chromium`,
+    "Playwright not found. Install it with: npm install --prefix tests && " +
+    "npx --prefix tests playwright install chromium",
   );
 }
 

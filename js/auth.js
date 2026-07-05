@@ -10,6 +10,7 @@
       "installation",
       "identity",
       "offensebuilder",
+      "quizsetup",
       "dashboard",
     ],
     coach: [
@@ -22,9 +23,10 @@
       "installation",
       "identity",
       "offensebuilder",
+      "quizsetup",
       "dashboard",
     ],
-    player: ["dashboard", "playbook", "script"],
+    player: ["dashboard", "playbook", "script", "leaderboard"],
   };
 
   const AUTH_ROLE_DEFAULT_TAB = {
@@ -168,6 +170,11 @@
     "startPlayerScriptQuiz",
     "startScriptQuiz",
     "closeScriptQuiz",
+    "resumeScriptQuiz",
+    "saveAndCloseScriptQuiz",
+    "endScriptQuiz",
+    "resumePlayerQuizDraft",
+    "discardPlayerQuizDraft",
     "toggleScriptQuizShuffle",
     "revealScriptQuizAnswer",
     "answerScriptQuizChoice",
@@ -444,6 +451,7 @@
       ["tab-playbook", "Playbook", "Playbook"],
       ["tab-dashboard", "📊 Dashboard", "Home"],
       ["tab-script", "Practice Script Builder", "Practice"],
+      ["tab-leaderboard", "Leaderboard", "Leaderboard"],
     ].forEach(([id, defaultLabel, playerLabel]) => {
       const tab = document.getElementById(id);
       if (!tab) return;
