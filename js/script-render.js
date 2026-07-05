@@ -1439,6 +1439,7 @@ let _quizRevealed = false;
 let _quizAnswers = new Map();
 let _quizChoiceCache = new Map();
 let _quizCurrentChoices = [];
+let _quizCurrentQuestion = null;
 let _quizScore = 0;
 let _quizStreak = 0;
 let _quizBestStreak = 0;
@@ -1664,6 +1665,7 @@ function _resetQuizGameState() {
   _quizAnswers = new Map();
   _quizChoiceCache = new Map();
   _quizCurrentChoices = [];
+  _quizCurrentQuestion = null;
   _quizScore = 0;
   _quizStreak = 0;
   _quizBestStreak = 0;
@@ -1677,6 +1679,10 @@ function _quizItemKey(item) {
 
 function _quizChoiceKey(item) {
   return _quizItemKey(item);
+}
+
+function _quizCleanText(value) {
+  return String(value || "").replace(/\s+/g, " ").trim();
 }
 
 function _quizPlainCall(play) {
@@ -1708,25 +1714,95 @@ function _quizShuffle(items) {
   return copy;
 }
 
+function _quizUniqueChoices(items, getLabel) {
+  const seen = new Set();
+  return items
+    .map((item) => ({ item, label: _quizCleanText(getLabel(item)) }))
+    .filter((entry) => {
+      const key = entry.label.toLowerCase();
+      if (!key || seen.has(key)) return false;
+      seen.add(key);
+      return true;
+    });
+}
+
+function _buildQuizQuestion(item) {
+  const position = _getQuizPosition();
+  const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
+  const rulePool = _quizUniqueChoices(
+    _quizPlays.filter((candidate) => candidate?.play && candidate.play !== item.play),
+    (candidate) => position?.key ? candidate.play[position.key] : "",
+  );
+  const callPool = _quizUniqueChoices(
+    _quizPlays.filter((candidate) => candidate?.play && candidate !== item),
+    (candidate) => _quizPlainCall(candidate.play),
+  );
+  const positionLabel = position?.label || "your";
+
+  if (positionRule && rulePool.length >= 3 && _quizIndex % 3 !== 1) {
+    return {
+      type: "responsibility",
+      prompt: `What's your ${positionLabel} responsibility?`,
+      detailLabel: "Call",
+      detailValue: _quizPlainCall(item.play),
+      rule: positionRule,
+      position,
+    };
+  }
+
+  if (positionRule && callPool.length >= 1 && _quizIndex % 2 === 1) {
+    return {
+      type: "play_from_rule",
+      prompt: `Which play has this ${positionLabel} rule?`,
+      detailLabel: `${positionLabel} Rule`,
+      detailValue: positionRule,
+      rule: positionRule,
+      position,
+    };
+  }
+
+  return {
+    type: "call",
+    prompt: "What's the call?",
+    detailLabel: "",
+    detailValue: "",
+    rule: positionRule,
+    position,
+  };
+}
+
 function _buildQuizChoices(item) {
   const questionKey = _quizItemKey(item);
-  if (_quizChoiceCache.has(questionKey)) return _quizChoiceCache.get(questionKey);
+  if (_quizChoiceCache.has(questionKey)) {
+    const cached = _quizChoiceCache.get(questionKey);
+    return Array.isArray(cached) ? cached : cached.choices || [];
+  }
 
-  const correctLabel = _quizPlainCall(item.play);
+  const question = _buildQuizQuestion(item);
+  const correctLabel = question.type === "responsibility"
+    ? question.rule
+    : _quizPlainCall(item.play);
   const correct = {
-    key: _quizChoiceKey(item),
+    key: `${_quizChoiceKey(item)}::${question.type}::correct`,
     play: item.play,
     label: correctLabel,
     correct: true,
+    questionType: question.type,
   };
   const labels = new Set([correctLabel.toLowerCase()]);
-  const pool = _quizShuffle(_quizPlays.filter((candidate) => candidate !== item))
-    .map((candidate) => ({
-      key: _quizChoiceKey(candidate),
-      play: candidate.play,
-      label: _quizPlainCall(candidate.play),
-      correct: false,
-    }))
+  const pool = _quizShuffle(_quizPlays.filter((candidate) => candidate !== item && candidate?.play))
+    .map((candidate) => {
+      const label = question.type === "responsibility"
+        ? _quizCleanText(question.position?.key ? candidate.play[question.position.key] : "")
+        : _quizPlainCall(candidate.play);
+      return {
+        key: `${_quizChoiceKey(candidate)}::${question.type}`,
+        play: candidate.play,
+        label,
+        correct: false,
+        questionType: question.type,
+      };
+    })
     .filter((choice) => {
       const labelKey = choice.label.toLowerCase();
       if (!labelKey || labels.has(labelKey)) return false;
@@ -1739,8 +1815,18 @@ function _buildQuizChoices(item) {
     color: SCRIPT_QUIZ_CHOICE_COLORS[idx % SCRIPT_QUIZ_CHOICE_COLORS.length],
   }));
   const result = choices.length >= 2 ? choices : [];
-  _quizChoiceCache.set(questionKey, result);
+  _quizChoiceCache.set(questionKey, { question, choices: result });
   return result;
+}
+
+function _getQuizQuestionAndChoices(item) {
+  const questionKey = _quizItemKey(item);
+  const cached = _quizChoiceCache.get(questionKey);
+  if (cached && Array.isArray(cached.choices)) return cached;
+  const choices = _buildQuizChoices(item);
+  const next = _quizChoiceCache.get(questionKey);
+  if (next && Array.isArray(next.choices)) return next;
+  return { question: _buildQuizQuestion(item), choices };
 }
 
 function _quizCoachDetails(play) {
@@ -1798,7 +1884,7 @@ function _renderQuizFeedback(item, answer) {
 function isScriptQuizAwaitingAnswer() {
   const item = _quizPlays[_quizIndex];
   if (!item) return false;
-  const choices = _quizCurrentChoices.length ? _quizCurrentChoices : _buildQuizChoices(item);
+  const choices = _quizCurrentChoices.length ? _quizCurrentChoices : _getQuizQuestionAndChoices(item).choices;
   return choices.length >= 2 && !_quizAnswers.has(_quizItemKey(item));
 }
 
@@ -1892,7 +1978,7 @@ function answerScriptQuizChoice(choiceKey) {
   if (!item) return;
   const questionKey = _quizItemKey(item);
   if (_quizAnswers.has(questionKey)) return;
-  const choices = _quizCurrentChoices.length ? _quizCurrentChoices : _buildQuizChoices(item);
+  const choices = _quizCurrentChoices.length ? _quizCurrentChoices : _getQuizQuestionAndChoices(item).choices;
   const selected = choices.find((choice) => choice.key === choiceKey);
   if (!selected) return;
   const correct = Boolean(selected.correct);
@@ -1903,7 +1989,7 @@ function answerScriptQuizChoice(choiceKey) {
   } else {
     _quizStreak = 0;
   }
-  _quizAnswers.set(questionKey, { choiceKey, correct });
+  _quizAnswers.set(questionKey, { choiceKey, correct, questionType: selected.questionType || "call" });
   renderScriptQuizPlay();
 }
 
@@ -1913,7 +1999,9 @@ function renderScriptQuizPlay() {
   const { play, period } = item;
   const questionKey = _quizItemKey(item);
   const answer = _quizAnswers.get(questionKey) || null;
-  _quizCurrentChoices = _buildQuizChoices(item);
+  const questionData = _getQuizQuestionAndChoices(item);
+  _quizCurrentQuestion = questionData.question;
+  _quizCurrentChoices = questionData.choices;
   const gameMode = _quizCurrentChoices.length >= 2;
   _quizRevealed = Boolean(answer);
 
@@ -1961,6 +2049,8 @@ function renderScriptQuizPlay() {
   const positionRule = position?.key ? play[position.key] : "";
   const sourceLabel = _quizSourceType === "gameplan" ? "Game Plan" : "Script";
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
+  const question = _quizCurrentQuestion || _buildQuizQuestion(item);
+  const detailValue = _quizCleanText(question.detailValue);
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
   const callContextParts = [sourceLabel, `${weightLabel} points`, personnelLabel, tempoLabel, typeLabel].filter(Boolean);
@@ -1977,6 +2067,12 @@ function renderScriptQuizPlay() {
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
       <span class="sq-game-pill">Best ${_quizBestStreak}</span>
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
+      <span class="sq-game-pill">${escapeHtml(question.type === "responsibility" ? "Rule Match" : question.type === "play_from_rule" ? "Rule to Play" : "Call ID")}</span>
+    </div>` : ""}
+    ${detailValue ? `
+    <div class="sq-scenario-block sq-scenario-block--quiz-detail">
+      <div class="sq-scenario-label">${escapeHtml(question.detailLabel)}</div>
+      <div class="sq-scenario-value">${escapeHtml(detailValue)}</div>
     </div>` : ""}
     <div class="sq-scenario-block">
       <div class="sq-scenario-label">Situation</div>
@@ -1997,7 +2093,7 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-label">Your Spot</div>
       <div class="sq-scenario-value">${escapeHtml(position.label)}${positionRule ? ` · rule ready` : " · no rule yet"}</div>
     </div>` : ""}
-    <div class="sq-scenario-hint">What's the call?</div>
+    <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
     ${choicesHtml}
   `;
   const scenarioEl = document.getElementById("scriptQuizScenario");

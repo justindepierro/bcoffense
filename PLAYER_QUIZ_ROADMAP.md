@@ -19,11 +19,11 @@
 
 - [x] Reuse the existing Kahoot-style multiple-choice runner for the first safe slice.
 - [x] Track quiz source type and selected position inside the runner.
-- [ ] Prioritize responsibility questions: "On this play, what is your responsibility?"
-- [ ] Add play-from-rule questions: "Which play has you kick the EMLOS?"
+- [x] Prioritize responsibility questions: "On this play, what is your responsibility?"
+- [x] Add play-from-rule questions: "Which play has you kick the EMLOS?"
 - [ ] Add diagram-identification questions when rules are missing.
 - [ ] Add smart diagram title redaction/blur as an experiment behind one helper.
-- [ ] Add source-aware fallback rules so thin scripts/game plans still produce useful quizzes.
+- [x] Add source-aware fallback rules so thin scripts/game plans still produce useful quizzes.
 
 ## Scoring And Goals
 
@@ -53,6 +53,6 @@
 
 - [x] Add player mobile regression coverage for opening Quiz Center from Home.
 - [ ] Add tests for Game Plan source when a board has assignments.
-- [ ] Add tests for responsibility-question generation.
+- [x] Add tests for responsibility-question generation.
 - [ ] Add tests for local attempt scoring and badge thresholds.
 - [ ] Run Chromium and WebKit mobile checks before each shipped quiz slice.

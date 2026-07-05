@@ -284,6 +284,52 @@ test.describe("Player mobile experience", () => {
     await quiz.getByRole("button", { name: /Close quiz/i }).click();
     await expect(quiz).toBeHidden();
     await expect(page.locator("body")).not.toHaveClass(/app-layer-locked/);
+
+    await page.evaluate(() => {
+      script = [
+        {
+          personnel: "11",
+          formation: "Trips Rt",
+          play: "Buck Sweep",
+          preferredDown: "1",
+          preferredDistance: "Medium",
+          respQ: "Secure the edge and finish through contact.",
+        },
+        {
+          personnel: "10",
+          formation: "Doubles",
+          play: "Verts",
+          preferredDown: "3",
+          preferredDistance: "Long",
+          respQ: "Win vertical leverage.",
+        },
+        {
+          personnel: "12",
+          formation: "Wing Lt",
+          play: "Power",
+          preferredDown: "2",
+          preferredDistance: "Short",
+          respQ: "Open play side and carry out keep fake.",
+        },
+        {
+          personnel: "11",
+          formation: "Trips Lt",
+          play: "Bubble",
+          preferredDown: "1",
+          preferredDistance: "Short",
+          respQ: "Catch, replace, and get north.",
+        },
+      ];
+      startScriptQuiz({ positionKey: "respQ", title: "Responsibility Quiz" });
+    });
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("What's your Q responsibility?")).toBeVisible();
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(4);
+    await quiz.getByRole("button", { name: /Secure the edge/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Q Rule");
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await expect(quiz).toBeHidden();
   });
 
   test("opens every core player page without staff controls or overflow", async ({ page }) => {
