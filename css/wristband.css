@@ -1,16 +1,15 @@
 /* ============ Wristband: Maker, Cards, Grid ============ */
 
 .wb-page-header {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
   margin-bottom: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  flex-wrap: wrap;
+  box-shadow: var(--shadow-xs);
+}
+
+.wb-page-header-row {
+  justify-content: space-between;
 }
 
 .wb-page-header h2,
@@ -302,20 +301,19 @@ body.app-ready:not(.is-mobile-screen)
 
 /* ── Redesign: unified wristband command bar ── */
 .wb-cmd-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
   margin-bottom: var(--space-sm);
-  padding: var(--space-sm) var(--space-md);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   background: var(--color-surface);
   box-shadow: var(--shadow-xs);
-  flex-wrap: wrap;
+}
+.wb-cmd-main {
+  justify-content: space-between;
 }
 .wb-cmd-identity {
-  display: grid;
+  display: flex;
+  align-items: center;
+  flex: 1 1 280px;
   min-width: 0;
 }
 .wb-cmd-identity strong,
@@ -325,10 +323,8 @@ body.app-ready:not(.is-mobile-screen)
   white-space: nowrap;
 }
 .wb-cmd-actions {
-  display: flex;
-  align-items: center;
+  justify-content: flex-end;
   gap: var(--space-xs);
-  flex-wrap: wrap;
 }
 
 .wb-card-controls {
@@ -3047,6 +3043,12 @@ body[data-print-mode="playerCards"] > *:not(.player-card-print) {
     grid-template-columns: minmax(0, 1fr);
     gap: 8px;
     padding: 10px;
+  }
+
+  body.is-mobile-screen #wristband .wb-cmd-main {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 8px;
   }
 
   body.is-mobile-screen #wristband .wb-cmd-identity {

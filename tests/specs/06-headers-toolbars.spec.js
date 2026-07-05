@@ -142,6 +142,40 @@ test.describe("Header and toolbar contract", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("wristband command bar uses the shared header/toolbar pattern", async ({ page }) => {
+    await login(page, { role: "coach", username: "coach" });
+    await dismissFirstUse(page);
+    await seedTinyPlaybook(page);
+    await goToTab(page, "wristband");
+
+    const classicChoice = page.getByRole("button", { name: /Classic Wristband/i });
+    if (await classicChoice.isVisible().catch(() => false)) {
+      await classicChoice.click();
+      await expect(page.locator("#wbTypeChoice")).toHaveClass(/hidden/);
+    }
+
+    await expect(page.locator(".wb-page-header")).toHaveClass(/page-header-surface/);
+    await expect(page.locator(".wb-page-header-row")).toHaveClass(/page-header-row/);
+
+    const commandBar = page.locator(".wb-cmd-bar");
+    await expect(commandBar).toBeVisible();
+    await expect(commandBar).toHaveClass(/page-header-surface/);
+    await expect(page.locator(".wb-cmd-main")).toHaveClass(/page-header-row/);
+    await expect(page.locator(".wb-cmd-identity")).toHaveClass(/toolbar-status/);
+    await expect(page.locator(".wb-cmd-actions")).toHaveClass(/toolbar-secondary/);
+
+    for (const label of ["Colors", "Display", "Sort", "Print", "Actions", "Save"]) {
+      await expect(commandBar.getByRole("button", { name: new RegExp(label, "i") })).toBeVisible();
+    }
+
+    await assertAppChromeTopLayer(page);
+    await assertNoHorizontalOverflow(page);
+
+    await commandBar.getByRole("button", { name: /Display/i }).click();
+    await expect(page.locator("#wbSettingsModal")).toBeVisible();
+    await expect(page.locator("#wbSettingsModalTitle")).toHaveText(/Display Options/i);
+  });
+
   test("player playbook shows study actions and hides staff tools", async ({ page }) => {
     await login(page, { role: "player", username: "player" });
     await dismissFirstUse(page);

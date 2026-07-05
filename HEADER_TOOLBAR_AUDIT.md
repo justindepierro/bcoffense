@@ -94,12 +94,14 @@ Professionalization direction:
 
 Current state:
 
-- Recently improved with a reliable settings modal.
-- Still has many dense controls, bottom panels, and older module-specific styling.
+- Uses the shared `page-header-surface` / `page-header-row` command pattern for the page header and card-builder command bar.
+- Colors, Display, Sort, Print, Actions, and Save are now direct top-level command choices.
+- Reliable settings modal owns Colors, Display Options, and Sort content.
+- Still has dense lower construction controls and older module-specific styling around card tabs, batch edit, and player-card mode.
 
 Professionalization direction:
 
-- Promote Save/Print/Appearance/Display/Sort into a single command hierarchy.
+- Continue slimming the lower construction controls into a clearer card-management hierarchy.
 - Keep Colors, Display Options, and Sort in the reliable modal family.
 - Collapse lower-frequency construction tools behind Actions.
 
@@ -179,6 +181,7 @@ Minimum useful scenarios:
 - Header and tab bar remain visible above panel drawers/FABs.
 - Playbook filters/actions do not wrap into clutter at 1280px.
 - Game Plan command bar keeps Filters, Build Plan, Print, Actions visible.
+- Wristband command bar keeps Colors, Display, Sort, Print, Actions, Save visible.
 - Player role shows only study/presentation/practice actions.
 - Coach/admin role shows daily workflow actions first and data/admin actions in overflow.
 

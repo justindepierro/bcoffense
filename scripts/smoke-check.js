@@ -1909,9 +1909,16 @@ function checkWristbandWorkspaceContracts() {
   const cloudSync = read("js/cloud-sync.js");
 
   if (
-    !/class="wb-page-header"/.test(html) ||
+    !/class="wb-page-header page-header-surface"/.test(html) ||
+    !/class="wb-page-header-row page-header-row"/.test(html) ||
+    !/class="wb-cmd-bar page-header-surface"/.test(html) ||
+    !/class="wb-cmd-main page-header-row"/.test(html) ||
+    !/class="wb-cmd-identity toolbar-status"/.test(html) ||
+    !/class="wb-cmd-actions toolbar-secondary"/.test(html) ||
     !/id="wbLibraryStatus"/.test(html) ||
-    !/class="wb-appearance-panel"/.test(html) ||
+    !/class="[^"]*\bwb-appearance-panel\b[^"]*"/.test(html) ||
+    !/data-action="openWbDisplayPanel"/.test(html) ||
+    !/data-action="openWbSortPanel"/.test(html) ||
     !/data-oninput="scheduleWristbandPlayFilter"/.test(html) ||
     !/data-wb-mobile-view="library"/.test(html) ||
     !/id="wbLoadMore"/.test(html) ||
