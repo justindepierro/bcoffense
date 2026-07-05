@@ -536,6 +536,91 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("starts a Game Plan quiz from populated board assignments", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedPlayerPractice(page);
+    await page.evaluate(() => {
+      const gamePlanPlays = [
+        {
+          type: "Run",
+          personnel: "11",
+          formation: "Trips Rt",
+          play: "Buck Sweep",
+          respQ: "Read the force defender and get vertical.",
+        },
+        {
+          type: "Pass",
+          personnel: "10",
+          formation: "Doubles",
+          play: "Verts",
+          respQ: "Hold the safety and win the hash.",
+        },
+      ];
+      storageManager.set(STORAGE_KEYS.GAME_WEEK, {
+        opponentName: "Monticello",
+        opponentIndex: 0,
+        weekLabel: "Camp",
+      });
+      storageManager.set(STORAGE_KEYS.GAME_PLAN_BOARDS, {
+        Monticello: {
+          assignments: {
+            Run: [gamePlanPlays[0]],
+            Pass: [gamePlanPlays[1]],
+          },
+          customBoxes: [],
+          targets: {},
+          collapsed: [],
+          notes: {},
+          sort: {},
+          hiddenBoxes: [],
+          boxOrder: [],
+          boxLabels: {},
+          boxMeta: {},
+          allowedPlayTypes: [],
+          sheetTitle: "Monticello Camp",
+          printPreset: "",
+          wristbandAutoBoxId: "",
+        },
+      });
+    });
+
+    await page.locator("#playerDashboardHome").getByRole("button", { name: /^Quiz$/i }).click();
+    const hub = page.locator("#playerQuizHubOverlay");
+    await expect(hub).toBeVisible();
+    await hub.getByRole("button", { name: /Start Game Plan Quiz/i }).click();
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz).toContainText("Game Plan Quiz");
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(2);
+    await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
+    await quiz.getByRole("button", { name: /Next/i }).click();
+    await quiz.getByRole("button", { name: /Verts/i }).click();
+    await quiz.locator("#scriptQuizNextBtn").click();
+    await expect(quiz.locator(".sq-result-card")).toContainText("Game Plan");
+    await expect(quiz.locator(".sq-result-card")).toContainText("431");
+    await quiz.getByRole("button", { name: /^Done$/i }).click();
+    await expect(quiz).toBeHidden();
+    await expect.poll(async () => page.evaluate(() => {
+      const attempts = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, []);
+      const latest = attempts.at(-1);
+      return {
+        sourceType: latest?.sourceType,
+        title: latest?.title,
+        totalPoints: latest?.totalPoints,
+        completed: latest?.completed,
+      };
+    })).toEqual({
+      sourceType: "gameplan",
+      title: "Game Plan Quiz",
+      totalPoints: 431,
+      completed: true,
+    });
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("makes player notifications and offline states clear", async ({ page, context }) => {
     await page.route("**/api/notifications/count", async (route) => {
       await route.fulfill({

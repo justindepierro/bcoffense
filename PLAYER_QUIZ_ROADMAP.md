@@ -89,7 +89,7 @@
 ## Verification
 
 - [x] Add player mobile regression coverage for opening Quiz Center from Home.
-- [ ] Add tests for Game Plan source when a board has assignments.
+- [x] Add tests for Game Plan source when a board has assignments.
 - [x] Add tests for responsibility-question generation.
 - [x] Add tests for local attempt scoring and badge thresholds.
 - [ ] Run Chromium and WebKit mobile checks before each shipped quiz slice.
