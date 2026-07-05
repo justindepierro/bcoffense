@@ -115,6 +115,22 @@ Fix:
 - CSV import/update recognizes `PlayerNotes`, `PlayerNote`, `CoachNotes`, and `CoachesNotes`.
 - Added seeded diagram coverage so the test checks that the diagram appears before the rule near the top of the phone viewport.
 
+### P1 - Swipe View Rule/Diagram Source Was Not Obvious Enough
+
+Status: fixed in this hardening slice.
+
+Symptoms/risk:
+- Kids could see a rule and diagram, but the screen did not clearly say whether the current play had a synced diagram or which position rule was being shown.
+- When a diagram was missing, the empty state did not tell the player what was wrong in player-safe language.
+- Auto-position is useful, but it can feel like the app changed pages or changed roles unless the UI confirms the selected rule.
+
+Fix:
+- Player Swipe View now shows compact status chips for rule position, diagram state, and coach-note presence.
+- Diagram status changes from `Diagram checking` to `Diagram ready`, `Needs diagram`, or `Diagram issue` as the actual image loader resolves.
+- Missing/error diagram messages now tell players to ask a coach to sync diagrams instead of leaving a generic blank state.
+- The rule card now includes a `Showing [position] rule` meta line so auto-position is legible.
+- Added regression coverage for rule status, diagram-ready status, coach notes, and the full Ask Coach flow.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`
@@ -122,7 +138,7 @@ Fix:
 
 ## Next Implementation Slices
 
-1. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and presentation buttons are visible without staff tools.
+1. Player workflow walkthrough: audit Home -> Practice -> Swipe View -> Ask Coach -> Questions with a kid-first lens for confusing copy, too many choices, and missing next actions.
 2. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
 3. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, and Questions.
 4. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.

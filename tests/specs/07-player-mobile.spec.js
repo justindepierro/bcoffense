@@ -342,10 +342,14 @@ test.describe("Player mobile experience", () => {
     await expect(presentation).toHaveAttribute("data-presentation-open", "true");
     await expect(page.locator("body")).toHaveClass(/play-presentation-open/);
     await expect(presentation.locator(".pp-player-study-strip")).toBeVisible();
+    await expect(presentation.locator(".pp-player-status-row")).toBeVisible();
+    await expect(presentation.locator(".pp-player-status-pill").filter({ hasText: /Rule: Q/i })).toBeVisible();
     await expect(presentation.getByText("Your Job")).toBeVisible();
+    await expect(presentation.getByText("Showing Q rule")).toBeVisible();
     await expect(presentation.getByText("Secure the edge and finish through contact.")).toBeVisible();
     await expect(presentation.getByText("Coach says: watch the force defender first")).toBeVisible();
     await expect(presentation.locator(".pp-diagram-canvas")).toBeVisible();
+    await expect(presentation.locator("#playPresentationDiagramStatus")).toContainText("Diagram ready");
     await expect(presentation.locator(".pp-zoom-controls")).toBeHidden();
     await expect.poll(async () => {
       return page.evaluate(() => {

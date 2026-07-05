@@ -696,6 +696,56 @@ body.play-presentation-open .quick-tools {
   font-weight: 950;
 }
 
+.pp-player-status-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  min-width: 0;
+}
+
+.pp-player-status-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 28px;
+  padding: 3px 10px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+  line-height: 1;
+  white-space: nowrap;
+}
+
+.pp-player-status-pill.is-ready,
+.pp-player-status-pill[data-status="ready"] {
+  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
+  background: var(--color-success-light);
+  color: var(--color-success-hover);
+}
+
+.pp-player-status-pill.is-missing,
+.pp-player-status-pill[data-status="missing"],
+.pp-player-status-pill[data-status="error"] {
+  border-color: color-mix(in srgb, var(--color-danger) 34%, var(--color-border-light));
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.pp-player-status-pill.is-checking,
+.pp-player-status-pill[data-status="checking"] {
+  border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
+  background: var(--color-info-light);
+  color: var(--color-info-hover);
+}
+
+.pp-player-status-pill.is-note {
+  border-color: color-mix(in srgb, var(--color-warning) 36%, var(--color-border-light));
+  background: var(--color-warning-light);
+  color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
+}
+
 .pp-player-call {
   padding: clamp(14px, 2vw, 22px);
   border: 1px solid var(--color-border-light);
@@ -878,6 +928,12 @@ body.play-presentation-open .quick-tools {
   font-weight: 850;
   line-height: 1.12;
   overflow-wrap: anywhere;
+}
+
+.pp-player-rule-meta {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
 }
 
 .pp-resp-notes,
@@ -2891,7 +2947,7 @@ body.play-presentation-mobile.is-landscape-screen.is-compact-screen
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-player-panel {
-  grid-template-rows: auto auto auto minmax(0, 1fr) auto;
+  grid-template-rows: auto auto auto auto minmax(0, 1fr) auto;
   gap: 6px;
   overflow: hidden;
 }
@@ -2936,6 +2992,27 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   width: 16px;
   height: 16px;
   font-size: 0.54rem;
+}
+
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-status-row {
+  flex-wrap: nowrap;
+  gap: 4px;
+  overflow-x: auto;
+  scrollbar-width: none;
+}
+
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-status-row::-webkit-scrollbar {
+  display: none;
+}
+
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-status-pill {
+  flex: 0 0 auto;
+  min-height: 24px;
+  padding: 2px 7px;
+  font-size: 0.62rem;
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
@@ -3029,6 +3106,11 @@ body.play-presentation-mobile.is-landscape-screen.is-phone-screen
 }
 
 body.play-presentation-mobile.is-landscape-screen.is-phone-screen
+  .pp-player-rule-meta {
+  font-size: 0.68rem;
+}
+
+body.play-presentation-mobile.is-landscape-screen.is-phone-screen
   .pp-player-chat-row {
   gap: 4px;
   margin-top: 0;
@@ -3065,6 +3147,25 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
 }
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-player-status-row {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  padding-bottom: 2px;
+  scrollbar-width: none;
+  -webkit-overflow-scrolling: touch;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-player-status-row::-webkit-scrollbar {
+  display: none;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-player-status-pill {
+  flex: 0 0 auto;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-player-position {
   font-size: 2.2rem;
 }
@@ -3073,6 +3174,11 @@ body.play-presentation-mobile.is-portrait-screen.is-phone-screen
   .pp-player-rule-text {
   font-size: 1.45rem;
   line-height: 1.16;
+}
+
+body.play-presentation-mobile.is-portrait-screen.is-phone-screen
+  .pp-player-rule-meta {
+  font-size: var(--font-size-xs);
 }
 
 body.play-presentation-mobile.is-portrait-screen.is-phone-screen

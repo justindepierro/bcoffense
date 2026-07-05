@@ -1607,6 +1607,14 @@ function setPlayPresentationDiagramMessage(frame, message) {
   frame.replaceChildren(emptyState);
 }
 
+function updatePlayPresentationDiagramStatus(status, label) {
+  const statusEl = document.getElementById("playPresentationDiagramStatus");
+  if (!statusEl) return;
+  const safeStatus = status || "checking";
+  statusEl.dataset.status = safeStatus;
+  statusEl.textContent = label || "Diagram checking";
+}
+
 function cleanupPlayPresentationDiagramRenderer() {
   if (playPresentationDiagramResizeObserver) {
     playPresentationDiagramResizeObserver.disconnect();
@@ -1882,6 +1890,7 @@ function installPlayPresentationDiagramRenderer(frame, image, play, token) {
   );
   const contentBounds = getPlayPresentationContentBounds(image);
   frame.replaceChildren(canvas);
+  updatePlayPresentationDiagramStatus("ready", "Diagram ready");
   attachPlayPresentationPan(frame);
   applyPlayPresentationZoomTransform();
   ensurePlayPresentationTeleCanvas();
@@ -1925,8 +1934,10 @@ async function loadPlayPresentationDiagram(play, token) {
   const frame = document.getElementById("playPresentationDiagram");
   if (!frame) return;
   cleanupPlayPresentationDiagramRenderer();
+  updatePlayPresentationDiagramStatus("checking", "Diagram checking");
   if (!window.playImages) {
-    setPlayPresentationDiagramMessage(frame, "No play diagram attached");
+    setPlayPresentationDiagramMessage(frame, "No play diagram attached. Ask your coach to sync diagrams.");
+    updatePlayPresentationDiagramStatus("missing", "Needs diagram");
     return;
   }
 
@@ -1941,8 +1952,9 @@ async function loadPlayPresentationDiagram(play, token) {
     if (!imageUrl) {
       setPlayPresentationDiagramMessage(
         currentFrame,
-        "No play diagram attached",
+        "No play diagram attached. Ask your coach to sync diagrams.",
       );
+      updatePlayPresentationDiagramStatus("missing", "Needs diagram");
       return;
     }
     const image = await loadPlayPresentationImage(imageUrl, play);
@@ -1958,6 +1970,7 @@ async function loadPlayPresentationDiagram(play, token) {
       console.warn("smart diagram rendering failed:", renderError);
       image.className = "pp-diagram-image";
       currentFrame.replaceChildren(image);
+      updatePlayPresentationDiagramStatus("ready", "Diagram ready");
     }
   } catch (err) {
     console.warn("play presentation image load failed:", err);
@@ -1965,9 +1978,27 @@ async function loadPlayPresentationDiagram(play, token) {
     const currentFrame = document.getElementById("playPresentationDiagram");
     setPlayPresentationDiagramMessage(
       currentFrame,
-      "Diagram could not be loaded",
+      "Diagram could not be loaded. Reload or ask your coach to sync diagrams.",
     );
+    updatePlayPresentationDiagramStatus("error", "Diagram issue");
   }
+}
+
+function getPlayPresentationPlayerStatusMarkup({ assignment, selected, responsibilityNotes, playerNotes }) {
+  const ruleReady = Boolean(assignment);
+  return `
+    <div class="pp-player-status-row" aria-label="Play study status">
+      <span class="pp-player-status-pill${ruleReady ? " is-ready" : " is-missing"}">
+        Rule: ${escapeHtml(selected?.label || "Position")}
+      </span>
+      <span class="pp-player-status-pill is-checking" id="playPresentationDiagramStatus" data-status="checking">
+        Diagram checking
+      </span>
+      ${responsibilityNotes || playerNotes
+      ? '<span class="pp-player-status-pill is-note">Coach note</span>'
+      : ""
+    }
+    </div>`;
 }
 
 function getPlayPresentationMinimumMarkup(item) {
@@ -2079,6 +2110,9 @@ function getPlayPresentationPlayerMarkup(item) {
         : "",
     play.preferredFieldPosition,
   ].filter(Boolean);
+  const ruleStatusCopy = assignment
+    ? `Showing ${selected.label} rule`
+    : `No ${selected.label} rule entered`;
 
   return `
     <div class="pp-layout pp-layout-player">
@@ -2098,6 +2132,12 @@ function getPlayPresentationPlayerMarkup(item) {
           <span><strong>2</strong> Rule</span>
           <span><strong>3</strong> Ask</span>
         </div>
+        ${getPlayPresentationPlayerStatusMarkup({
+      assignment,
+      selected,
+      responsibilityNotes,
+      playerNotes,
+    })}
         <div class="pp-player-call">${getFullCall(play, {
     showEmoji: true,
     showLineCall: true,
@@ -2117,6 +2157,7 @@ function getPlayPresentationPlayerMarkup(item) {
               <span class="pp-player-position">${escapeHtml(selected.label)}</span>
             </div>
           </div>
+          <div class="pp-player-rule-meta">${escapeHtml(ruleStatusCopy)}</div>
           <div class="pp-player-rule-text">${assignment
       ? escapeHtml(assignment)
       : "No player rule entered for this position."
