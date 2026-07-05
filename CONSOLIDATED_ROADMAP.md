@@ -17,6 +17,10 @@ Before adding any new features, the codebase must undergo a rigorous audit to en
 - [ ] **Workflow Friction Points**
   - [ ] Identify and smooth out any remaining friction points in the primary Game Week workflow.
   - [ ] Consolidate or eliminate redundant UI components that clutter the mobile experience.
+- [ ] **Header and Toolbar Professionalization**
+  - [ ] Use `HEADER_TOOLBAR_AUDIT.md` as the source of truth for role-based command surfaces.
+  - [ ] Migrate each module toward shared header/toolbar primitives instead of bespoke toolbar CSS.
+  - [ ] Verify player, coach, and admin command sets separately on desktop, iPad, and phone.
 - [ ] **Data Model Validation**
   - [ ] Verify that all stable play IDs are correctly tracked and preserved across all modules and handoffs.
   - [ ] Ensure that deleting or updating a play correctly updates downstream artifacts without orphans.

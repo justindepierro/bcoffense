@@ -886,9 +886,9 @@ table.sortable th {
 
 .pb-player-summary {
   display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--space-sm);
+  grid-template-columns: minmax(0, 1fr);
+  align-items: stretch;
+  gap: 8px;
   margin-bottom: var(--space-sm);
   padding: 10px 12px;
   border: 1px solid var(--color-border-light);
@@ -902,10 +902,10 @@ table.sortable th {
 }
 
 .pb-player-summary__main {
-  display: flex;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
   align-items: center;
-  justify-content: space-between;
-  gap: var(--space-sm);
+  gap: 12px;
   min-width: 0;
 }
 
@@ -945,11 +945,16 @@ table.sortable th {
   min-width: 0;
 }
 
+.pb-player-summary__actions .btn {
+  min-height: 34px;
+}
+
 .pb-player-summary__stats {
   display: flex;
+  min-width: 0;
   flex-wrap: wrap;
   gap: var(--space-xs);
-  justify-content: flex-end;
+  justify-content: flex-start;
 }
 
 .pb-player-summary__stats span,
@@ -972,6 +977,17 @@ table.sortable th {
   font-family: inherit;
 }
 
+.pb-player-summary__filter-label {
+  display: inline-flex;
+  align-items: center;
+  min-height: 26px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-2xs);
+  font-weight: 900;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
 .pb-player-summary__filter-pill:hover,
 .pb-player-summary__filter-pill:focus-visible {
   border-color: var(--color-primary);
@@ -982,9 +998,11 @@ table.sortable th {
 .pb-player-summary__filters {
   display: flex;
   flex-wrap: wrap;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--space-xs);
   min-width: 0;
+  padding-top: 8px;
+  border-top: 1px solid var(--color-border-light);
 }
 
 .pb-player-filter-overlay {
@@ -1920,10 +1938,18 @@ body.shell-phone .pb-action-sheet {
   padding: 4px 8px;
 }
 .pb-top-row {
-  background: var(--color-bg-light);
-  border: 1px solid var(--color-border-light);
   flex-wrap: wrap;
-  border-radius: var(--radius-md);
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.pb-top-row.toolbar-surface {
+  background: var(--color-surface-raised);
+}
+
+.pb-top-row .btn {
+  min-height: 34px;
 }
 
 /* Search */
@@ -2056,8 +2082,10 @@ body.shell-phone .pb-action-sheet {
   align-items: center;
   gap: 6px;
   margin-left: auto;
-  flex-shrink: 0;
-  flex-wrap: nowrap;
+  flex: 0 1 auto;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  min-width: 0;
 }
 
 /* Wristband highlight row — inside filter drawer */

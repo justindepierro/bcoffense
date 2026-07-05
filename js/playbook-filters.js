@@ -84,6 +84,14 @@ function debouncedFilterPlays() {
 }
 
 const PLAYER_PLAYBOOK_FILTER_GROUPS = [
+  {
+    key: "gamePlan",
+    label: "Game Plan",
+    options: [
+      { label: "Current Game Plan", value: "current", inputId: "pbGamePlanFilter" },
+      { label: "JV Only", value: "jv", inputId: "pbJvFilter" },
+    ],
+  },
   { key: "type", label: "Type", cacheKey: "types", chipGroup: "pbChipsType", activeSet: () => activeTypeChips },
   { key: "personnel", label: "Personnel", cacheKey: "personnels", chipGroup: "pbChipsPersonnel", activeSet: () => activePersonnelChips },
   { key: "formation", label: "Formation", cacheKey: "formations", inputId: "filterFormation" },
@@ -288,7 +296,11 @@ function _getPlayerPlaybookFilterGroups() {
       }, {});
   return PLAYER_PLAYBOOK_FILTER_GROUPS.map((group) => ({
     ...group,
-    values: Array.isArray(cache[group.cacheKey]) ? cache[group.cacheKey] : [],
+    values: Array.isArray(group.options)
+      ? group.options
+      : Array.isArray(cache[group.cacheKey])
+        ? cache[group.cacheKey]
+        : [],
   }));
 }
 
@@ -332,9 +344,11 @@ function openPlayerPlaybookFilters(focusKey = "") {
       const values = group.values.slice(0, 36);
       const options = values.length
         ? values
-          .map((value) => {
+          .map((option) => {
+            const value = typeof option === "object" ? option.value : option;
+            const label = typeof option === "object" ? option.label : option;
             const arg = _playerPlaybookFilterArg(group.key, value);
-            return `<button type="button" class="pb-player-filter-option" data-action="applyPlayerPlaybookFilter" data-arg="${escapeHtml(arg)}">${escapeHtml(value)}</button>`;
+            return `<button type="button" class="pb-player-filter-option" data-action="applyPlayerPlaybookFilter" data-arg="${escapeHtml(arg)}">${escapeHtml(label)}</button>`;
           })
           .join("")
         : '<span class="pb-player-filter-empty">No options yet</span>';
@@ -381,7 +395,11 @@ function applyPlayerPlaybookFilter(arg) {
   const group = PLAYER_PLAYBOOK_FILTER_GROUPS.find((item) => item.key === parsed.key);
   if (!group) return;
 
-  if (group.activeSet) {
+  if (Array.isArray(group.options)) {
+    const option = group.options.find((item) => item.value === parsed.value);
+    const input = option?.inputId ? document.getElementById(option.inputId) : null;
+    if (input) input.checked = true;
+  } else if (group.activeSet) {
     const activeSet = group.activeSet();
     activeSet.clear();
     activeSet.add(parsed.value);

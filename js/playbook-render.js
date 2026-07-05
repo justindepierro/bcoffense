@@ -450,20 +450,15 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       : `${publishedScripts.length} published practice${publishedScripts.length === 1 ? "" : "s"}`,
   ];
   const featuredScriptId = featuredScript ? escapeHtml(String(featuredScript.id)) : "";
-  const primaryAction = loadedScriptStats
+  const practiceAction = loadedScriptStats
     ? '<button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice</button>'
     : featuredScript
       ? `<button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">Load Latest Practice</button>`
-      : '<button type="button" class="btn btn-primary" data-action="showTab" data-arg="script">Open Practice Tab</button>';
-  const secondaryAction = loadedScriptStats
-    ? '<button type="button" class="btn btn-secondary" data-action="openScriptPresentation">Swipe Loaded Script</button>'
-    : featuredScript
-      ? `<button type="button" class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}">Open Swipe View</button>`
       : '<button type="button" class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
   const playbookFilterAction =
-    '<button type="button" class="btn btn-secondary" data-action="openPlayerPlaybookFilters">Filter Plays</button>';
+    '<button type="button" class="btn btn-primary" data-action="openPlayerPlaybookFilters">Filter Plays</button>';
   const playbookPresentAction =
-    '<button type="button" class="btn btn-primary" data-action="openSelectedPlaybookPresentation">Present Showing</button>';
+    '<button type="button" class="btn btn-secondary" data-action="openSelectedPlaybookPresentation">Present Showing</button>';
   const tertiaryAction = hasFilters
     ? '<button type="button" class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>'
     : "";
@@ -477,10 +472,9 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
         <p>Search by play name, personnel, formation, motion, protection, and tempo. Use Present on any play to see the diagram full screen.</p>
       </div>
       <div class="pb-player-summary__actions">
-        ${primaryAction}
-        ${secondaryAction}
         ${playbookFilterAction}
         ${playbookPresentAction}
+        ${practiceAction}
         ${tertiaryAction}
       </div>
     </div>
@@ -488,6 +482,8 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       ${stats.map((value) => `<span>${escapeHtml(value)}</span>`).join("")}
     </div>
     <div class="pb-player-summary__filters" aria-label="Suggested player filters">
+      <span class="pb-player-summary__filter-label">Quick filters</span>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="gamePlan">Game Plan</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="personnel">Personnel</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="formation">Formation</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="basePlay">Base Play</button>
