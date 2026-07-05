@@ -2925,7 +2925,6 @@ function _getPlayerQuizScriptOptions() {
         totalReps: stats?.totalReps || 0,
         date: savedScript.date || "",
         dateStr: stats?.dateStr || savedScript.date || "No date",
-        readiness: _quizCompletenessStats(savedScript.plays || []),
       };
       return {
         ...option,
@@ -2943,7 +2942,6 @@ function _renderPlayerQuizScriptPicker(options) {
   }
   return options.map((option) => {
     const selected = option.id === _playerQuizSelectedScriptId;
-    const readiness = _quizReadinessLabel(option.readiness?.score || 0);
     const progress = option.progress || _getQuizScriptProgress(option);
     const progressText = progress.points ? `${progress.label} · ${progress.points} pts` : progress.label;
     return `
@@ -2958,7 +2956,6 @@ function _renderPlayerQuizScriptPicker(options) {
         </span>
         <span class="player-quiz-script-option__status">
           <b class="player-quiz-progress-badge${progress.icon ? " has-icon" : ""}">${progress.icon ? `${escapeHtml(progress.icon)} ` : ""}${escapeHtml(progressText)}</b>
-          <i class="player-quiz-readiness-pill player-quiz-readiness-pill--${escapeAttr(readiness.tone)}">${escapeHtml(readiness.label)} · ${option.readiness?.score || 0}</i>
         </span>
       </button>
     `;
@@ -2994,7 +2991,7 @@ function _renderPlayerQuizHub() {
   }
   const leaderboardEl = document.getElementById("playerQuizLeaderboardPreview");
   if (leaderboardEl) {
-    leaderboardEl.innerHTML = _renderQuizLeaderRows(summary.leaderboardRows, summary.player);
+    leaderboardEl.innerHTML = _renderQuizLeaderRows(summary.weeklyLeaderboardRows, summary.player);
   }
   _renderPlayerQuizResumeSlot();
 

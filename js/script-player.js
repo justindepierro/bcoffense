@@ -376,16 +376,6 @@ function renderPlayerLoadedScriptBar() {
     date: document.getElementById("scriptDate")?.value || "",
     savedAt: "",
   });
-  const studyStats = getPlayerScriptStudyStats(script);
-  const diagramStatus = studyStats.diagramCount > 0
-    ? `${studyStats.diagramCount}/${studyStats.playCount} diagrams`
-    : "Needs diagrams";
-  const ruleStatus = studyStats.ruleCount > 0
-    ? `${studyStats.ruleCount}/${studyStats.playCount} rules`
-    : "Needs rules";
-  const noteStatus = studyStats.noteCount > 0
-    ? `${studyStats.noteCount} coach ${studyStats.noteCount === 1 ? "note" : "notes"}`
-    : "No coach notes";
   section.hidden = false;
   title.textContent = document.getElementById("scriptName")?.value || "Practice Script";
   meta.innerHTML = [
@@ -399,11 +389,6 @@ function renderPlayerLoadedScriptBar() {
     .join("");
   hint.innerHTML = `
     <span>Start in Swipe View, lock your position, then quiz yourself or ask a question.</span>
-    <span class="player-script-now__mission" aria-label="Practice study status">
-      <span class="player-script-now__chip player-script-now__chip--diagram">${escapeHtml(diagramStatus)}</span>
-      <span class="player-script-now__chip player-script-now__chip--rule">${escapeHtml(ruleStatus)}</span>
-      <span class="player-script-now__chip player-script-now__chip--note">${escapeHtml(noteStatus)}</span>
-    </span>
   `;
   queuePlayerScriptImageStatusRefresh();
 }

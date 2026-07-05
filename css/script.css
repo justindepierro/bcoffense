@@ -160,46 +160,6 @@
   line-height: 1.45;
 }
 
-.player-script-now__mission {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-  min-width: 0;
-}
-
-.player-script-now__chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 28px;
-  padding: 3px 9px;
-  border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-pill);
-  background: var(--color-bg-light);
-  color: var(--color-text-secondary);
-  font-size: var(--font-size-xs);
-  font-weight: 900;
-  line-height: 1;
-  white-space: nowrap;
-}
-
-.player-script-now__chip--diagram {
-  border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
-  background: var(--color-info-light);
-  color: var(--color-info-hover);
-}
-
-.player-script-now__chip--rule {
-  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
-  background: var(--color-success-light);
-  color: var(--color-success-hover);
-}
-
-.player-script-now__chip--note {
-  border-color: color-mix(in srgb, var(--color-warning) 36%, var(--color-border-light));
-  background: var(--color-warning-light);
-  color: color-mix(in srgb, var(--color-warning-hover) 68%, var(--color-dark));
-}
-
 .player-script-now__actions {
   display: flex;
   flex-wrap: wrap;
@@ -4014,22 +3974,6 @@ body[data-auth-role="player"] #script .script-tools-drawer {
     font-size: var(--font-size-lg);
   }
 
-  .player-script-now__mission {
-    flex-wrap: nowrap;
-    overflow-x: auto;
-    padding-bottom: 2px;
-    scrollbar-width: none;
-    -webkit-overflow-scrolling: touch;
-  }
-
-  .player-script-now__mission::-webkit-scrollbar {
-    display: none;
-  }
-
-  .player-script-now__chip {
-    flex: 0 0 auto;
-  }
-
   /* Shrink card padding on mobile player script cards */
   .player-script-card {
     flex-wrap: wrap;
@@ -4945,12 +4889,6 @@ body[data-auth-role="player"] #script .script-tools-drawer {
     margin-top: 6px;
     font-size: var(--font-size-xs);
     line-height: 1.35;
-  }
-
-  .player-script-now__chip {
-    min-height: 24px;
-    padding: 2px 7px;
-    font-size: var(--font-size-2xs);
   }
 
   .player-script-now__actions {
@@ -7760,8 +7698,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   justify-items: end;
 }
 
-.player-quiz-progress-badge,
-.player-quiz-readiness-pill {
+.player-quiz-progress-badge {
   min-height: 26px;
   display: inline-flex;
   align-items: center;
@@ -7780,30 +7717,6 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .player-quiz-progress-badge.has-icon {
   background: color-mix(in srgb, var(--color-warning) 14%, var(--color-bg-body));
   color: var(--color-text);
-}
-
-.player-quiz-readiness-pill--ready {
-  border-color: color-mix(in srgb, var(--color-success) 34%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-success) 10%, var(--color-bg-body));
-  color: var(--color-success-hover);
-}
-
-.player-quiz-readiness-pill--close {
-  border-color: color-mix(in srgb, var(--color-info) 34%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-info) 10%, var(--color-bg-body));
-  color: var(--color-info-hover);
-}
-
-.player-quiz-readiness-pill--needs {
-  border-color: color-mix(in srgb, var(--color-warning) 34%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-warning) 12%, var(--color-bg-body));
-  color: color-mix(in srgb, var(--color-warning-hover) 70%, var(--color-dark));
-}
-
-.player-quiz-readiness-pill--thin {
-  border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border-light));
-  background: color-mix(in srgb, var(--color-danger) 8%, var(--color-bg-body));
-  color: var(--color-danger-hover);
 }
 
 .player-quiz-script-empty {

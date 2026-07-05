@@ -262,9 +262,8 @@ test.describe("Player mobile experience", () => {
     await expect(scriptPanel.locator("#playerScriptNowTitle")).toHaveText("Friday Walkthrough");
     await expect(scriptPanel.locator("#playerScriptNowMeta")).toContainText("2 plays");
     await expect(scriptPanel.locator("#playerScriptNowHint")).toContainText("Start in Swipe View");
-    await expect(scriptPanel.locator(".player-script-now__mission")).toContainText("1/2 diagrams");
-    await expect(scriptPanel.locator(".player-script-now__mission")).toContainText("2/2 rules");
-    await expect(scriptPanel.locator(".player-script-now__mission")).toContainText("1 coach note");
+    await expect(scriptPanel.locator(".player-script-now__mission")).toHaveCount(0);
+    await expect(scriptPanel.locator("#playerScriptNowBar")).not.toContainText(/diagrams|rules|coach note|needs/i);
     for (const label of ["Questions", "Quiz", "Playbook", "Open Swipe View"]) {
       await expect(scriptPanel.locator("#playerScriptNowBar").getByRole("button", { name: new RegExp(label, "i") })).toBeVisible();
     }
@@ -406,7 +405,8 @@ test.describe("Player mobile experience", () => {
     await expect(quizHub.getByRole("button", { name: /Start Game Plan Quiz/i })).toBeVisible();
     await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText("Friday Walkthrough");
     await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText("2 plays");
-    await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText(/Player ready|Close|Needs work|Thin/);
+    await expect(quizHub.locator("#playerQuizScriptPicker")).not.toContainText(/Player ready|Close|Needs work|Thin|\d+\s*\/\s*100/);
+    await expect(quizHub.locator(".player-quiz-readiness-pill")).toHaveCount(0);
     await quizHub.getByRole("button", { name: /Close Quiz Center/i }).click();
     await expect(quizHub).toBeHidden();
     await page.evaluate(() => {
