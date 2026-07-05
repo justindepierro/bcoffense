@@ -161,10 +161,16 @@ Every major module should converge on:
 
 Do not add Playwright as a runtime app dependency. BCOffense is intentionally a static, no-build PWA.
 
-Useful next step:
+Approved exception:
+
+- Keep Playwright isolated in `tests/`; it is not part of the app runtime, service worker cache, or shipped static shell.
+- Use `BASE_URL=http://127.0.0.1:4173 npm run test:headers` from `tests/` after starting a local static server.
+- The focused header suite covers app-chrome stacking, Playbook drawers, Game Plan command bar structure, and player Playbook actions/filters.
+
+Useful next steps:
 
 - Add an optional visual QA harness outside the shipped app path.
-- Run it with `npx` or a local tool cache against a local static server.
+- Extend the existing local tool cache against a local static server.
 - Cover desktop, tablet, phone, player, coach, and admin roles.
 - Capture nav/header screenshots and layout assertions for each primary module.
 

@@ -8,7 +8,8 @@
 const { expect } = require("@playwright/test");
 
 // Credentials pulled from env so they never land in source.
-const COACH_USER = process.env.BCOFFENSE_USER || "coach";
+const TEST_ROLE = process.env.BCOFFENSE_ROLE || "";
+const COACH_USER = process.env.BCOFFENSE_USER || TEST_ROLE || "coach";
 const COACH_PASS = process.env.BCOFFENSE_PASS || "password";
 
 /**
@@ -16,17 +17,41 @@ const COACH_PASS = process.env.BCOFFENSE_PASS || "password";
  * Skips if already authenticated (session cookie present).
  * @param {import('@playwright/test').Page} page
  */
-async function login(page) {
+async function login(page, opts = {}) {
   await page.goto("/");
+  await page
+    .waitForSelector('#authLoginOverlay, #mainApp:not(.hidden), form#loginForm, input[name="username"]', {
+      timeout: 10_000,
+    })
+    .catch(() => {});
 
-  // If redirected to login, fill the form
+  const role = opts.role || TEST_ROLE || COACH_USER || "coach";
+  const username = opts.username || (["admin", "coach", "player"].includes(role) ? role : COACH_USER);
+  const password = opts.password || COACH_PASS;
+
+  // App-native role login overlay (localhost/dev and production app shell).
+  const appLogin = page.locator("#authLoginOverlay");
+  if (await appLogin.count() > 0) {
+    const roleButton = appLogin.locator(`[data-login-role="${role}"]`);
+    if (await roleButton.count() > 0) await roleButton.click();
+    await appLogin.locator("#authUsername").fill(username);
+    await appLogin.locator("#authPassword").fill(password);
+    await appLogin.locator("#authLoginSubmit").click();
+    await expect(appLogin).toBeHidden({ timeout: 10_000 });
+    await expect(page.locator("#mainApp")).toBeVisible({ timeout: 10_000 }).catch(() => {});
+    return;
+  }
+
+  // If redirected to a hosting/login form, fill that form.
   const loginForm = page.locator("form#loginForm, form[action*='login'], input[name='username']");
   if (await loginForm.count() > 0) {
-    await page.fill("input[name='username'], input[type='text']", COACH_USER);
-    await page.fill("input[name='password'], input[type='password']", COACH_PASS);
+    await page.fill("input[name='username'], input[type='text']", username);
+    await page.fill("input[name='password'], input[type='password']", password);
     await page.locator("button[type='submit'], input[type='submit']").click();
     await page.waitForLoadState("networkidle");
   }
+
+  await expect(page.locator("#mainApp")).toBeVisible({ timeout: 10_000 }).catch(() => {});
 }
 
 /**
@@ -35,9 +60,20 @@ async function login(page) {
  * @param {string} tabName - data-arg value, e.g. "playbook", "script"
  */
 async function goToTab(page, tabName) {
-  await page.locator(`[data-action="showTab"][data-arg="${tabName}"]`).click();
-  await page.waitForLoadState("networkidle");
-  await page.waitForTimeout(300); // allow animations
+  const tab = page.locator(`#tab-${tabName}`);
+  if ((await tab.count()) > 0 && await tab.isVisible()) {
+    await tab.click();
+  } else {
+    await page.evaluate((name) => {
+      if (typeof showTab === "function") showTab(name);
+    }, tabName);
+  }
+
+  const activePanel = page.locator(`#${tabName}.panel.active`).first();
+  if ((await activePanel.count()) > 0) {
+    await expect(activePanel).toBeVisible({ timeout: 5_000 });
+  }
+  await page.waitForTimeout(150); // allow short shell transitions
 }
 
 /**
@@ -45,12 +81,20 @@ async function goToTab(page, tabName) {
  * @param {import('@playwright/test').Page} page
  */
 async function dismissFirstUse(page) {
-  const modal = page.locator(".modal-overlay.visible, .modal-wrap.visible");
-  if (await modal.count() > 0) {
-    const confirmBtn = modal.locator("button.btn-primary, button:has-text('OK'), button:has-text('Close')").first();
+  for (let i = 0; i < 3; i++) {
+    const modal = page
+      .locator(".custom-modal-overlay.visible, .modal-overlay.visible, .modal-wrap.visible")
+      .first();
+    if ((await modal.count()) === 0 || !(await modal.isVisible())) return;
+
+    const confirmBtn = modal
+      .locator("button.btn-primary, button:has-text('OK'), button:has-text('Close')")
+      .first();
     if (await confirmBtn.count() > 0) {
       await confirmBtn.click();
-      await page.waitForTimeout(200);
+      await expect(modal).toBeHidden({ timeout: 2_000 }).catch(() => {});
+    } else {
+      await page.keyboard.press("Escape");
     }
   }
 }

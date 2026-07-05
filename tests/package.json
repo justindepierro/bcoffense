@@ -10,6 +10,7 @@
     "test:phone":  "playwright test --project=iphone --project=phone-narrow",
     "test:headed": "playwright test --project=chromium-desktop --headed",
     "screenshots": "playwright test --project=chromium-desktop --grep @screenshots",
+    "test:headers": "playwright test --project=chromium-desktop specs/06-headers-toolbars.spec.js",
     "report":      "playwright show-report"
   },
   "devDependencies": {
