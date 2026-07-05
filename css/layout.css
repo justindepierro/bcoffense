@@ -242,15 +242,19 @@ body[data-auth-role="player"] .save-status {
   margin-bottom: 0;
   justify-content: flex-start;
   flex-wrap: nowrap;
+  flex: 0 0 auto;
+  min-height: 46px;
   overflow-x: auto;
   scrollbar-width: none;
   background: var(--color-surface);
+  background-color: var(--color-surface);
   padding: 0 20px;
   border-bottom: 1px solid var(--color-border-light);
   position: sticky;
   top: var(--app-header-height, 52px);
   z-index: var(--z-tab-bar);
   isolation: isolate;
+  box-shadow: 0 1px 0 var(--color-border-light);
 }
 .tabs::after {
   content: "";
@@ -271,6 +275,8 @@ body[data-auth-role="player"] .save-status {
   display: none;
 }
 .tab {
+  display: inline-flex;
+  align-items: center;
   padding: 12px 18px;
   background: transparent;
   border: none;

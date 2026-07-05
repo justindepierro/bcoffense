@@ -644,6 +644,9 @@
 body:not(.is-mobile-screen) #gameplan.panel.active {
   overflow: hidden;
   gap: 0;
+  margin-top: 24px;
+  flex: 1 1 0;
+  min-height: 0;
 }
 body:not(.is-mobile-screen) .gp-command-zone {
   flex: 0 0 auto;
@@ -1067,6 +1070,70 @@ body:not(.is-mobile-screen) .gp-stats-bar > details.gp-scoreboard[open] {
 
 body:not(.is-mobile-screen) .gp-stats-bar > details.gp-media-scoreboard[open] {
   flex: 1 1 420px;
+}
+
+body:not(.is-mobile-screen) .gp-stats-bar {
+  flex-wrap: nowrap;
+  gap: 8px;
+  min-height: 44px;
+  overflow-x: auto;
+  overflow-y: hidden;
+  padding: 4px 0 6px;
+  scrollbar-width: thin;
+}
+
+body:not(.is-mobile-screen) .gp-stats-bar .gp-dist-strip {
+  flex: 0 0 240px;
+  height: 18px;
+}
+
+body:not(.is-mobile-screen) .gp-stats-bar > details[open],
+body:not(.is-mobile-screen) .gp-stats-bar > details.gp-scoreboard[open],
+body:not(.is-mobile-screen) .gp-stats-bar > details.gp-media-scoreboard[open] {
+  flex: 0 0 auto;
+  order: 0;
+}
+
+body:not(.is-mobile-screen) .gp-score-grid,
+body:not(.is-mobile-screen) .gp-media-scoreboard .gp-score-grid {
+  display: flex;
+  grid-template-columns: none;
+  gap: 6px;
+  padding: 0;
+}
+
+body:not(.is-mobile-screen) .gp-score-tile,
+body:not(.is-mobile-screen) .gp-media-scoreboard .gp-score-tile {
+  flex: 0 0 auto;
+  min-width: 94px;
+  min-height: 34px;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+}
+
+body:not(.is-mobile-screen) .gp-score-label {
+  max-width: 72px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+body:not(.is-mobile-screen) .gp-score-count,
+body:not(.is-mobile-screen) .gp-media-scoreboard .gp-score-count,
+body:not(.is-mobile-screen) .gp-media-scoreboard .gp-score-media-total .gp-score-count {
+  font-size: var(--font-size-lg);
+}
+
+body:not(.is-mobile-screen) .gp-touch-tracker {
+  flex: 0 0 auto;
+  min-width: 300px;
+  margin: 0;
+}
+
+body:not(.is-mobile-screen) .gp-touch-tracker > summary {
+  min-height: 34px;
+  padding: 5px 10px;
+  white-space: nowrap;
 }
 
 /* Distribution strip */

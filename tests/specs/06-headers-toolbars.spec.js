@@ -47,6 +47,27 @@ const SAMPLE_PLAYS = [
   },
 ];
 
+const BUSY_GAME_PLAN_PLAYS = Array.from({ length: 72 }, (_, index) => {
+  const types = ["Run", "Pass", "Screen", "Quick", "Play Action", "RPO", "Run Option", "Movement"];
+  const formations = ["Trips", "Doubles", "Bunch", "Empty", "Pro", "Navy Rt"];
+  const downs = ["1", "2", "3", "3", "3", "4"];
+  const distances = ["Short", "Medium", "Long"];
+  const fieldPositions = ["Green", "Lo-RZ", "Hi-RZ", "Goal Line", "Backed Up"];
+  const situations = ["", "2 Minute", "4 Minute", "Short Yardage"];
+  return {
+    type: types[index % types.length],
+    personnel: String([10, 11, 12, 20, 21][index % 5]),
+    formation: formations[index % formations.length],
+    play: `${["Buck", "Verts", "Bubble", "Stick", "Boot", "Zone Read", "Counter", "Hack"][index % 8]} ${index + 1}`,
+    basePlay: ["Buck", "Verts", "Bubble", "Stick", "Boot", "Zone", "Counter", "Hack"][index % 8],
+    preferredDown: downs[index % downs.length],
+    preferredDistance: distances[index % distances.length],
+    preferredFieldPosition: fieldPositions[index % fieldPositions.length],
+    preferredSituation: situations[index % situations.length],
+    keyPlayerName1: ["Marco", "Lucas", "Lebron", "Ali", "Warren", "Michael"][index % 6],
+  };
+});
+
 async function seedTinyPlaybook(page) {
   await page.evaluate((samplePlays) => {
     if (typeof plays === "undefined") return;
@@ -77,6 +98,47 @@ async function seedTinyPlaybook(page) {
       { timeout: 5_000 }
     )
     .toBe(true);
+}
+
+async function seedBusyGamePlan(page) {
+  await page.evaluate((samplePlays) => {
+    if (typeof plays === "undefined") return;
+    plays = samplePlays.map((play) => ({ ...play }));
+    filteredPlays = plays.slice();
+    if (typeof setWorkspaceSurface === "function") {
+      setWorkspaceSurface("app", { initModules: true });
+    }
+    if (typeof setGameWeek === "function") {
+      setGameWeek({ opponentName: "Monticello", weekLabel: "Camp" });
+    }
+    const assignments = { [GP_HOLDING_ID]: [] };
+    GP_DEFAULT_BOXES.forEach((box) => {
+      assignments[box.id] = [];
+    });
+    plays.forEach((play, index) => {
+      const boxId = index < 4
+        ? GP_HOLDING_ID
+        : (GP_DEFAULT_BOXES[index % GP_DEFAULT_BOXES.length]?.id || "Run");
+      assignments[boxId].push({ ...play });
+    });
+    const board = _gpCreateEmptyBoard();
+    board.assignments = assignments;
+    board.targets = {
+      Run: 8,
+      Pass: 8,
+      Screen: 6,
+      Quick: 6,
+      "Play Action": 6,
+      RPO: 6,
+      "Run Option": 4,
+      Movement: 4,
+    };
+    board.sheetTitle = "Camp";
+    const allBoards = {};
+    allBoards[_gpActiveOpponentKey()] = board;
+    storageManager.set(STORAGE_KEYS.GAME_PLAN_BOARDS, allBoards);
+    if (typeof requestRenderGamePlan === "function") requestRenderGamePlan();
+  }, BUSY_GAME_PLAN_PLAYS);
 }
 
 async function assertAppChromeTopLayer(page) {
@@ -131,6 +193,7 @@ test.describe("Header and toolbar contract", () => {
     await login(page, { role: "coach", username: "coach" });
     await dismissFirstUse(page);
     await seedTinyPlaybook(page);
+    await seedBusyGamePlan(page);
     await goToTab(page, "gameplan");
 
     const commandBar = page.locator(".gp-cmd-bar");
@@ -150,11 +213,36 @@ test.describe("Header and toolbar contract", () => {
 
     const spacing = await page.evaluate(() => {
       const tabs = document.querySelector("#mainApp .tabs")?.getBoundingClientRect();
+      const panel = document.querySelector("#gameplan.panel.active")?.getBoundingClientRect();
       const bar = document.querySelector(".gp-cmd-bar")?.getBoundingClientRect();
-      return tabs && bar ? { tabsBottom: tabs.bottom, barTop: bar.top } : null;
+      return tabs && panel && bar
+        ? {
+          tabsBottom: tabs.bottom,
+          panelTop: panel.top,
+          barTop: bar.top,
+        }
+        : null;
     });
     expect(spacing).not.toBeNull();
+    expect(spacing.panelTop).toBeGreaterThanOrEqual(spacing.tabsBottom);
     expect(spacing.barTop).toBeGreaterThanOrEqual(spacing.tabsBottom - 1);
+
+    const statsLayout = await page.evaluate(() => {
+      const stats = document.querySelector(".gp-stats-bar");
+      const children = Array.from(document.querySelectorAll(".gp-stats-bar > *"));
+      const centers = children.map((el) => {
+        const rect = el.getBoundingClientRect();
+        return Math.round(rect.top + rect.height / 2);
+      });
+      return {
+        centerSpread: centers.length ? Math.max(...centers) - Math.min(...centers) : 0,
+        height: Math.round(stats?.getBoundingClientRect().height || 0),
+        overflow: document.body.scrollWidth > window.innerWidth,
+      };
+    });
+    expect(statsLayout.centerSpread).toBeLessThanOrEqual(8);
+    expect(statsLayout.height).toBeLessThanOrEqual(56);
+    expect(statsLayout.overflow).toBe(false);
     await assertAppChromeTopLayer(page);
     await assertNoHorizontalOverflow(page);
   });
