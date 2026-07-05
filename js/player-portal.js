@@ -9,13 +9,30 @@ let _pportOffset = 0;
 let _pportHasMore = false;
 let _pportLoading = false;
 
+function _syncPlayerPortalFilterButtons() {
+  document.querySelectorAll(".pport-filter-btn").forEach((btn) => {
+    const active = (btn.dataset.arg || "") === _pportState;
+    btn.classList.toggle("active", active);
+    btn.setAttribute("aria-pressed", active ? "true" : "false");
+  });
+}
+
 // ── Open / Close ─────────────────────────────────────────────────────────────
 
 function openPlayerPortal() {
   const overlay = document.getElementById("playerPortalOverlay");
   if (!overlay) return;
+  _pportState = "open";
+  _syncPlayerPortalFilterButtons();
   overlay.hidden = false;
   overlay.removeAttribute("aria-hidden");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "playerPortalOverlay",
+      scrollElement: "playerPortalBody",
+      blocking: true,
+    });
+  }
   _pportOffset = 0;
   _pportQuestions = [];
   _loadPlayerPortal();
@@ -24,6 +41,9 @@ function openPlayerPortal() {
 function closePlayerPortal() {
   const overlay = document.getElementById("playerPortalOverlay");
   if (!overlay) return;
+  if (typeof closeLayer === "function") {
+    closeLayer(overlay);
+  }
   overlay.hidden = true;
   overlay.setAttribute("aria-hidden", "true");
 }
@@ -35,12 +55,7 @@ function ppFilter(state) {
   _pportState = state;
   _pportOffset = 0;
   _pportQuestions = [];
-
-  // Update active tab
-  document.querySelectorAll(".pport-filter-btn").forEach((btn) => {
-    btn.classList.toggle("active", btn.dataset.arg === state);
-    btn.setAttribute("aria-pressed", btn.dataset.arg === state ? "true" : "false");
-  });
+  _syncPlayerPortalFilterButtons();
 
   _loadPlayerPortal();
 }
@@ -68,16 +83,17 @@ async function _loadPlayerPortal(append = false) {
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Failed to load");
 
-    _pportHasMore = data.hasMore;
+    _pportHasMore = Boolean(data.hasMore ?? data.has_more);
+    const nextQuestions = Array.isArray(data.questions) ? data.questions : [];
 
     if (append) {
-      _pportQuestions = [..._pportQuestions, ...data.questions];
-      _pportOffset += data.questions.length;
-      _renderPlayerPortal(data.summary, append);
+      _pportQuestions = [..._pportQuestions, ...nextQuestions];
+      _pportOffset += nextQuestions.length;
+      _renderPlayerPortal(data.summary, append, nextQuestions);
     } else {
-      _pportQuestions = data.questions;
-      _pportOffset = data.questions.length;
-      _renderPlayerPortal(data.summary, false);
+      _pportQuestions = nextQuestions;
+      _pportOffset = nextQuestions.length;
+      _renderPlayerPortal(data.summary, false, nextQuestions);
     }
   } catch (err) {
     if (!append) {
@@ -100,7 +116,7 @@ function loadMorePlayerPortal() {
   if (_pportHasMore && !_pportLoading) _loadPlayerPortal(true);
 }
 
-function _renderPlayerPortal(summary, append) {
+function _renderPlayerPortal(summary, append, renderedQuestions = _pportQuestions) {
   const body = document.getElementById("playerPortalBody");
   if (!body) return;
 
@@ -129,8 +145,7 @@ function _renderPlayerPortal(summary, append) {
   const list = document.getElementById("pportList");
   if (!list) return;
 
-  const newItems = append ? _pportQuestions.slice(_pportOffset - (body._lastAppendCount || 0)) : _pportQuestions;
-  const fragment = newItems.map(_renderQuestion).join("");
+  const fragment = renderedQuestions.map(_renderQuestion).join("");
 
   if (append) {
     list.insertAdjacentHTML("beforeend", fragment);
