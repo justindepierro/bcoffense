@@ -218,6 +218,10 @@ function renderPlayerScriptLauncher() {
                   data-arg="${scriptId}" title="Load this published script into the script tab">
                   Open Script
                 </button>`}
+            <button type="button" class="btn btn-sm" data-action="startPlayerScriptQuiz"
+              data-arg="${scriptId}" title="Quiz yourself on this practice">
+              Quiz
+            </button>
             <button type="button" class="btn btn-sm" data-action="openPlayerScriptChat"
               data-arg="${scriptId}" title="Ask questions and chat about this practice">
               💬 Chat
@@ -281,6 +285,43 @@ function renderPlayerLoadedScriptBar() {
     .join("");
   hint.textContent =
     "Use Swipe View to move play-to-play and see the rule for your position without coach-only details.";
+}
+
+function startPlayerScriptQuiz(id = "") {
+  const requestedId = id !== undefined && id !== null ? String(id) : "";
+  const loadedPlayCount = Array.isArray(script)
+    ? script.filter((entry) => entry && !entry.isSeparator).length
+    : 0;
+  if (requestedId) {
+    const loaded = loadPublishedPlayerScript(requestedId, {
+      skipToast: true,
+      toastMessage: "Practice loaded for quiz.",
+    });
+    if (!loaded) return false;
+  } else if (!loadedPlayCount) {
+    const fallbackScript = getDefaultPlayerPublishedScript("");
+    if (!fallbackScript) {
+      showToast("Open a published practice before starting Quiz.", {
+        type: "warning",
+      });
+      if (typeof showTab === "function") showTab("script");
+      return false;
+    }
+    const loaded = loadPublishedPlayerScript(fallbackScript.id, {
+      skipToast: true,
+      toastMessage: "Practice loaded for quiz.",
+    });
+    if (!loaded) return false;
+  } else if (typeof showTab === "function") {
+    showTab("script");
+  }
+
+  if (typeof startScriptQuiz === "function") {
+    startScriptQuiz();
+    return true;
+  }
+  showToast("Quiz is not available yet.", { type: "warning" });
+  return false;
 }
 
 function loadSavedScriptsList() {

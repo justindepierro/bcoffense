@@ -1469,13 +1469,25 @@ function startScriptQuiz() {
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
   overlay.classList.remove("hidden");
-  if (typeof trapFocus === "function") trapFocus(overlay);
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "scriptQuizOverlay",
+      scrollElement: "scriptQuizCard",
+      blocking: true,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
   renderScriptQuizPlay();
 }
 
 function closeScriptQuiz() {
   const overlay = document.getElementById("scriptQuizOverlay");
-  if (overlay) overlay.classList.add("hidden");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") {
+    closeLayer(overlay);
+  }
+  overlay.classList.add("hidden");
 }
 
 function toggleScriptQuizShuffle() {

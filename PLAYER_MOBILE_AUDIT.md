@@ -69,12 +69,19 @@ Fix:
 
 ### P1 - Remaining Surfaces Need Seeded Player Flow Coverage
 
+Status: in progress.
+
+Completed in the Home/Quiz slice:
+- Home now exposes Practice, Swipe View, Quiz, Questions, and Playbook as visible player actions.
+- Practice now exposes a player-safe Quiz action in the current-practice bar and each published-practice card.
+- Quiz opens through the shared layer lock, restores the page when closed, and has larger mobile reveal/navigation/close targets.
+- Added seeded coverage for Home, Practice, Quiz, Playbook, and Questions surfaces on a phone viewport.
+
 Next coverage targets:
 - Practice -> Swipe View -> discussion drawer -> ask question -> close -> return to same play.
-- Practice -> Play Quiz -> reveal/next/close on phone portrait and landscape.
 - Playbook -> filter sheet -> current game plan filter -> row media thumbnail/presentation.
 - Notification drawer -> push opt-in/offline states.
-- iPad portrait and landscape for My Questions, discussion drawer, and presentation detail panel.
+- iPad portrait and landscape for My Questions, Quiz, discussion drawer, and presentation detail panel.
 
 ## Verification Commands
 
@@ -84,7 +91,7 @@ Next coverage targets:
 ## Next Implementation Slices
 
 1. Seeded discussion drawer flow: open from Practice and Swipe View, ask a question, verify body lock/focus/page return.
-2. Player quiz polish: make the quiz feel game-like on phone with progress, big reveal/next targets, and no hidden close controls.
-3. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and presentation buttons are visible without staff tools.
-4. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
-5. iPad player pass: treat tablet as a roomy study product, not a stretched phone.
+2. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and presentation buttons are visible without staff tools.
+3. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
+4. iPad player pass: treat tablet as a roomy study product, not a stretched phone.
+5. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.

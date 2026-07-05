@@ -918,6 +918,12 @@ function renderPlayerDashboardHome() {
       ? `data-action="openPlayerCurrentScriptPresentation" data-arg="${featuredScriptId}"`
       : 'data-action="showTab" data-arg="script"';
   const playbookAction = 'data-action="showTab" data-arg="playbook"';
+  const quizAction = featuredScript
+    ? `data-action="startPlayerScriptQuiz" data-arg="${featuredScriptId}"`
+    : loadedScript
+      ? 'data-action="startPlayerScriptQuiz"'
+      : 'data-action="showTab" data-arg="script"';
+  const questionsAction = 'data-action="openPlayerPortal"';
   const statusTitle =
     featuredScript?.name || loadedScript?.name || "No practice published yet";
   const statusCopy = featuredStats
@@ -984,12 +990,22 @@ function renderPlayerDashboardHome() {
         <strong>Open Practice</strong>
         <small>Script, periods, and calls</small>
       </button>
-      <button type="button" class="player-home-quick-action" ${swipeAction}>
+      <button type="button" class="player-home-quick-action player-home-quick-action--film" ${swipeAction}>
         <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2" ry="2"/><line x1="8" y1="21" x2="16" y2="21"/><line x1="12" y1="17" x2="12" y2="21"/></svg></span>
         <strong>Swipe View</strong>
         <small>Diagram plus your rules</small>
       </button>
-      <button type="button" class="player-home-quick-action" ${playbookAction}>
+      <button type="button" class="player-home-quick-action player-home-quick-action--quiz" ${quizAction}>
+        <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 11h6"/><path d="M12 8v6"/><path d="M20 6.5 17.5 4 15 6.5"/><path d="M4 17.5 6.5 20 9 17.5"/><rect x="4" y="4" width="16" height="16" rx="3"/></svg></span>
+        <strong>Quiz</strong>
+        <small>Test the call before reveal</small>
+      </button>
+      <button type="button" class="player-home-quick-action player-home-quick-action--questions" ${questionsAction}>
+        <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a4 4 0 0 1-4 4H7l-4 3V7a4 4 0 0 1 4-4h10a4 4 0 0 1 4 4z"/><path d="M9 9h6"/><path d="M9 13h4"/></svg></span>
+        <strong>Questions</strong>
+        <small>Ask, review, and follow up</small>
+      </button>
+      <button type="button" class="player-home-quick-action player-home-quick-action--playbook" ${playbookAction}>
         <span class="player-home-quick-icon"><svg aria-hidden="true" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M2 3h6a4 4 0 0 1 4 4v14a3 3 0 0 0-3-3H2z"/><path d="M22 3h-6a4 4 0 0 0-4 4v14a3 3 0 0 1 3-3h7z"/></svg></span>
         <strong>Playbook</strong>
         <small>Search, filter, and study</small>
@@ -1044,7 +1060,7 @@ function renderPlayerDashboardHome() {
         <div class="player-home-study-list">
           <div><strong>1</strong><span>Load the practice so the day's script is ready.</span></div>
           <div><strong>2</strong><span>Use Swipe View and lock your position for rules.</span></div>
-          <div><strong>3</strong><span>Use Playbook filters when you need more reps on a family.</span></div>
+          <div><strong>3</strong><span>Take Quiz, then ask a question if anything is unclear.</span></div>
         </div>
       </article>
       <article class="player-home-card player-home-card--recent">

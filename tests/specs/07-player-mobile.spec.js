@@ -6,7 +6,7 @@
  * the real player journey, not just an empty shell.
  */
 const { test, expect } = require("@playwright/test");
-const { login, dismissFirstUse } = require("./helpers");
+const { login, goToTab, dismissFirstUse, assertNoHorizontalOverflow } = require("./helpers");
 
 const PLAYER_PLAYS = [
   {
@@ -144,5 +144,57 @@ test.describe("Player mobile experience", () => {
     await expect(scriptPanel).toBeVisible();
     await expect(scriptPanel.locator("#playerScriptNowTitle")).toHaveText("Friday Walkthrough");
     await expect(scriptPanel.locator("#playerScriptNowMeta")).toContainText("2 plays");
+
+    await scriptPanel.locator("#playerScriptNowBar").getByRole("button", { name: /^Quiz$/i }).click();
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(page.locator("body")).toHaveClass(/app-layer-locked/);
+    await expect.poll(() => page.evaluate(() => document.body.dataset.scrollOwner)).toBe("layer");
+    await expect(quiz.getByText("What's the call?")).toBeVisible();
+    await quiz.getByRole("button", { name: /Show Play Call/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Buck Sweep");
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await expect(quiz).toBeHidden();
+    await expect(page.locator("body")).not.toHaveClass(/app-layer-locked/);
+  });
+
+  test("opens every core player page without staff controls or overflow", async ({ page }) => {
+    await page.route("**/api/questions/mine?**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          summary: { open: 0, answered: 0, resolved: 0 },
+          questions: [],
+          hasMore: false,
+        }),
+      });
+    });
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedPlayerPractice(page);
+
+    await expect(page.locator("#playerDashboardHome")).toBeVisible();
+    for (const label of ["Open Practice", "Swipe View", "Quiz", "Questions", "Playbook"]) {
+      await expect(page.locator("#playerDashboardHome").getByRole("button", { name: new RegExp(label, "i") }).first()).toBeVisible();
+    }
+    await expect(page.getByRole("button", { name: /Add Play/i })).toHaveCount(0);
+    await assertNoHorizontalOverflow(page);
+
+    await goToTab(page, "playbook");
+    await expect(page.locator("#playbook.panel.active")).toBeVisible();
+    await expect(page.getByRole("button", { name: /Filter Plays/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Present Showing/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /Add Play/i })).toHaveCount(0);
+    await assertNoHorizontalOverflow(page);
+
+    await goToTab(page, "script");
+    await expect(page.locator("#playerScriptLauncherSection")).toBeVisible();
+    await expect(page.locator(".player-script-card").first()).toBeVisible();
+    await expect(page.locator(".player-script-card").first().getByRole("button", { name: /^Quiz$/i })).toBeVisible();
+    await expect(page.locator(".script-header-panel")).toBeHidden();
+    await assertNoHorizontalOverflow(page);
   });
 });
