@@ -1,6 +1,23 @@
 // script-player.js — Saved script management and player-facing script loading
 // Extracted from script-storage.js
 
+let playerScriptImageStatusRefreshPending = false;
+let playerScriptImageKeysLoaded = false;
+
+const PLAYER_SCRIPT_RESP_KEYS = [
+  "respQ",
+  "respT",
+  "respH",
+  "respZ",
+  "respX",
+  "respY",
+  "respLT",
+  "respLG",
+  "respC",
+  "respRG",
+  "respRT",
+];
+
 function isSavedScriptPlayerVisible(record) {
   return (
     record?.playerVisible === true ||
@@ -60,6 +77,58 @@ function getSavedScripts() {
   }
 
   return normalizedScripts;
+}
+
+function getPlayerScriptStudyStats(scriptPlays = []) {
+  const playsForDay = Array.isArray(scriptPlays)
+    ? scriptPlays.filter((item) => item && !item.isSeparator)
+    : [];
+  const stats = {
+    playCount: playsForDay.length,
+    diagramCount: 0,
+    ruleCount: 0,
+    noteCount: 0,
+  };
+
+  playsForDay.forEach((play) => {
+    if (
+      window.playImages &&
+      typeof window.playImages.hasForPlay === "function" &&
+      window.playImages.hasForPlay(play)
+    ) {
+      stats.diagramCount += 1;
+    }
+    if (PLAYER_SCRIPT_RESP_KEYS.some((key) => String(play[key] || "").trim())) {
+      stats.ruleCount += 1;
+    }
+    if (String(play.playerNotes || play.respNotes || "").trim()) {
+      stats.noteCount += 1;
+    }
+  });
+
+  return stats;
+}
+
+function queuePlayerScriptImageStatusRefresh() {
+  if (
+    playerScriptImageKeysLoaded ||
+    playerScriptImageStatusRefreshPending ||
+    !window.playImages ||
+    typeof window.playImages.loadKeys !== "function"
+  ) {
+    return;
+  }
+  playerScriptImageStatusRefreshPending = true;
+  window.playImages
+    .loadKeys()
+    .then(() => {
+      playerScriptImageKeysLoaded = true;
+      playerScriptImageStatusRefreshPending = false;
+      renderPlayerLoadedScriptBar();
+    })
+    .catch(() => {
+      playerScriptImageStatusRefreshPending = false;
+    });
 }
 
 function getSavedScriptStats(savedScript) {
@@ -272,6 +341,16 @@ function renderPlayerLoadedScriptBar() {
     date: document.getElementById("scriptDate")?.value || "",
     savedAt: "",
   });
+  const studyStats = getPlayerScriptStudyStats(script);
+  const diagramStatus = studyStats.diagramCount > 0
+    ? `${studyStats.diagramCount}/${studyStats.playCount} diagrams`
+    : "Needs diagrams";
+  const ruleStatus = studyStats.ruleCount > 0
+    ? `${studyStats.ruleCount}/${studyStats.playCount} rules`
+    : "Needs rules";
+  const noteStatus = studyStats.noteCount > 0
+    ? `${studyStats.noteCount} coach ${studyStats.noteCount === 1 ? "note" : "notes"}`
+    : "No coach notes";
   section.hidden = false;
   title.textContent = document.getElementById("scriptName")?.value || "Practice Script";
   meta.innerHTML = [
@@ -283,8 +362,15 @@ function renderPlayerLoadedScriptBar() {
     .filter(Boolean)
     .map((value) => `<span>${escapeHtml(value)}</span>`)
     .join("");
-  hint.textContent =
-    "Use Swipe View to move play-to-play and see the rule for your position without coach-only details.";
+  hint.innerHTML = `
+    <span>Start in Swipe View, lock your position, then quiz yourself or ask a question.</span>
+    <span class="player-script-now__mission" aria-label="Practice study status">
+      <span class="player-script-now__chip player-script-now__chip--diagram">${escapeHtml(diagramStatus)}</span>
+      <span class="player-script-now__chip player-script-now__chip--rule">${escapeHtml(ruleStatus)}</span>
+      <span class="player-script-now__chip player-script-now__chip--note">${escapeHtml(noteStatus)}</span>
+    </span>
+  `;
+  queuePlayerScriptImageStatusRefresh();
 }
 
 function startPlayerScriptQuiz(id = "") {

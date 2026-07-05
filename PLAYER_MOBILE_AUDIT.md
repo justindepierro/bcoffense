@@ -131,6 +131,21 @@ Fix:
 - The rule card now includes a `Showing [position] rule` meta line so auto-position is legible.
 - Added regression coverage for rule status, diagram-ready status, coach notes, and the full Ask Coach flow.
 
+### P1 - Practice Page Needed A Player Mission Card
+
+Status: fixed in this workflow slice.
+
+Symptoms/risk:
+- Home had a clear player workflow, but once a kid landed on Practice, the current-practice card only showed title/meta plus Quiz and Swipe View.
+- Players needed a stronger answer to: "Do I have diagrams? Are rules entered? Are there coach notes? What should I tap next?"
+- Adding more toolbar rows would repeat the header clutter problem, so the fix needed to be compact and glanceable.
+
+Fix:
+- Current Practice now includes a short mission sentence and compact chips for diagram coverage, player-rule coverage, and coach-note coverage.
+- The same card now exposes Questions, Quiz, Playbook, and Open Swipe View as the next actions, in a phone-friendly two-column grid.
+- Diagram chip counts refresh after local image keys load, so synced diagrams show up without opening every row first.
+- Added seeded mobile coverage for the new Practice mission copy, status chips, and action buttons.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`
@@ -138,7 +153,7 @@ Fix:
 
 ## Next Implementation Slices
 
-1. Player workflow walkthrough: audit Home -> Practice -> Swipe View -> Ask Coach -> Questions with a kid-first lens for confusing copy, too many choices, and missing next actions.
+1. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and player-safe action buttons stay clear on phone and iPad.
 2. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
 3. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, and Questions.
 4. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.

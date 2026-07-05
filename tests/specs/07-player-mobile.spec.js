@@ -216,6 +216,13 @@ test.describe("Player mobile experience", () => {
     await expect(scriptPanel).toBeVisible();
     await expect(scriptPanel.locator("#playerScriptNowTitle")).toHaveText("Friday Walkthrough");
     await expect(scriptPanel.locator("#playerScriptNowMeta")).toContainText("2 plays");
+    await expect(scriptPanel.locator("#playerScriptNowHint")).toContainText("Start in Swipe View");
+    await expect(scriptPanel.locator(".player-script-now__mission")).toContainText("1/2 diagrams");
+    await expect(scriptPanel.locator(".player-script-now__mission")).toContainText("2/2 rules");
+    await expect(scriptPanel.locator(".player-script-now__mission")).toContainText("1 coach note");
+    for (const label of ["Questions", "Quiz", "Playbook", "Open Swipe View"]) {
+      await expect(scriptPanel.locator("#playerScriptNowBar").getByRole("button", { name: new RegExp(label, "i") })).toBeVisible();
+    }
 
     await scriptPanel.locator("#playerScriptNowBar").getByRole("button", { name: /^Quiz$/i }).click();
     const quiz = page.locator("#scriptQuizOverlay");
