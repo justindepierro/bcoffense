@@ -46,6 +46,14 @@ function closePlayerPortal() {
   }
   overlay.hidden = true;
   overlay.setAttribute("aria-hidden", "true");
+  requestAnimationFrame(() => {
+    const active = document.activeElement;
+    if (active && active !== document.body && active !== document.documentElement) return;
+    const fallback = document.getElementById("playerPortalBtn");
+    if (fallback && !fallback.hidden && typeof fallback.focus === "function") {
+      fallback.focus({ preventScroll: true });
+    }
+  });
 }
 
 // ── Filter ────────────────────────────────────────────────────────────────────

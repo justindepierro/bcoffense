@@ -118,13 +118,54 @@ async function seedFirstPracticeDiagram(page) {
     ctx.moveTo(180, 420);
     ctx.lineTo(730, 420);
     ctx.stroke();
-    const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    if (!blob) return;
+    const dataUrl = canvas.toDataURL("image/png");
     const signatures = [practicePlay, playbookPlay]
       .filter(Boolean)
       .map((play) => playSignature(play))
       .filter(Boolean);
-    await Promise.all([...new Set(signatures)].map((sig) => playImages.set(sig, blob)));
+    const uniqueSignatures = [...new Set(signatures)];
+    try {
+      await playImages.ready();
+      for (const sig of uniqueSignatures) {
+        const blob = await fetch(dataUrl).then((res) => res.blob());
+        await playImages.set(sig, blob);
+      }
+    } catch (_err) {
+      const mockUrls = new Map(uniqueSignatures.map((sig) => [sig, dataUrl]));
+      const api = window.playImages;
+      if (!api.__playerMobileMockPatched) {
+        const original = {
+          hasForPlay: api.hasForPlay?.bind(api),
+          storedSignatureForPlay: api.storedSignatureForPlay?.bind(api),
+          urlFor: api.urlFor?.bind(api),
+          urlForPlay: api.urlForPlay?.bind(api),
+          ensureUrlForPlay: api.ensureUrlForPlay?.bind(api),
+          hasPlayImage: window.hasPlayImage?.bind(window),
+          getPlayImageUrl: window.getPlayImageUrl?.bind(window),
+          ensurePlayImageUrl: window.ensurePlayImageUrl?.bind(window),
+        };
+        api.__playerMobileMockUrls = new Map();
+        api.hasForPlay = (play) =>
+          Boolean(original.hasForPlay?.(play)) ||
+          api.signaturesForPlay(play).some((sig) => api.__playerMobileMockUrls.has(sig));
+        api.storedSignatureForPlay = (play) =>
+          original.storedSignatureForPlay?.(play) ||
+          api.signaturesForPlay(play).find((sig) => api.__playerMobileMockUrls.has(sig)) ||
+          "";
+        api.urlFor = (sig) => api.__playerMobileMockUrls.get(sig) || original.urlFor?.(sig) || null;
+        api.urlForPlay = (play) => {
+          const sig = api.storedSignatureForPlay(play);
+          return sig ? api.urlFor(sig) : original.urlForPlay?.(play) || null;
+        };
+        api.ensureUrlForPlay = async (play) => api.urlForPlay(play) || original.ensureUrlForPlay?.(play) || null;
+        window.hasPlayImage = (play) => api.hasForPlay(play) || Boolean(original.hasPlayImage?.(play));
+        window.getPlayImageUrl = (play) => api.urlForPlay(play) || original.getPlayImageUrl?.(play) || null;
+        window.ensurePlayImageUrl = async (play) =>
+          api.urlForPlay(play) || original.ensurePlayImageUrl?.(play) || null;
+        api.__playerMobileMockPatched = true;
+      }
+      mockUrls.forEach((url, sig) => api.__playerMobileMockUrls.set(sig, url));
+    }
     if (typeof playImages.loadKeys === "function") await playImages.loadKeys();
   });
   await expect

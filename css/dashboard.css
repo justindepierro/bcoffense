@@ -2613,6 +2613,7 @@
   display: grid;
   gap: var(--space-sm);
   animation: authShellIn 0.22s ease-out both;
+  pointer-events: none;
 }
 
 .player-a2hs-banner.is-hiding {
@@ -2630,6 +2631,7 @@
   display: flex;
   gap: var(--space-xs);
   justify-content: flex-end;
+  pointer-events: auto;
 }
 
 /* ======= Player Portal: empty state (item 29) ======= */
