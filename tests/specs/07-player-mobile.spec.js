@@ -274,20 +274,28 @@ test.describe("Player mobile experience", () => {
       if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
     });
     await expect(page.locator("#playbook.panel.active")).toBeVisible();
-    await expect(page.getByText("Find the play, study the picture, ask the question.")).toBeVisible();
-    await expect(page.getByRole("button", { name: /Filter Plays/i })).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => {
+      const summary = document.querySelector("#playerPlaybookSummary")?.getBoundingClientRect();
+      return Boolean(summary && summary.height < 150);
+    })).toBe(true);
+    await expect(page.getByRole("button", { name: /^Filters$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Present Showing/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Diagrams$/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /^Coach Notes$/i })).toBeVisible();
+    await expect(page.locator(".pb-card-media--diagram").first()).toBeVisible();
+    await expect(page.locator(".pb-card-media--diagram img:not([hidden])").first()).toBeVisible();
     await expect(page.locator(".pb-card-study-badge--diagram").first()).toBeVisible();
     await expect(page.locator(".pb-card-study-badge--notes").first()).toBeVisible();
+    await expect(page.locator(".pb-card-note").first()).toContainText("Coach says");
     await expect(page.locator(".pb-card-action--study").first()).toBeVisible();
     await expect(page.locator(".pb-card-action--ask").first()).toBeVisible();
     await page.getByRole("button", { name: /^Diagrams$/i }).click();
+    await expect(page.locator("#pbActivePills")).toContainText("Diagram ready");
+    await expect(page.getByRole("button", { name: /^Diagrams$/i })).toHaveClass(/is-active/);
+    await page.getByRole("button", { name: /^Filters$/i }).click();
     await expect(page.locator("#playerPlaybookFilterOverlay")).toBeVisible();
     await expect(page.locator("[data-filter-group='study']")).toContainText("Study Status");
-    await page.getByRole("button", { name: /^Has Diagram$/i }).click();
-    await expect(page.locator("#pbActivePills")).toContainText("Diagram ready");
+    await page.locator("#playerPlaybookFilterOverlay").getByRole("button", { name: /Close filters/i }).click();
     await expect(page.getByRole("button", { name: /Add Play/i })).toHaveCount(0);
     await assertNoHorizontalOverflow(page);
 

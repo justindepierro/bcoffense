@@ -469,7 +469,7 @@ function applyPlayerPlaybookFilter(arg) {
     } else {
       const option = group.options.find((item) => item.value === parsed.value);
       const input = option?.inputId ? document.getElementById(option.inputId) : null;
-      if (input) input.checked = true;
+      if (input) input.checked = !input.checked;
     }
   } else if (group.activeSet) {
     const activeSet = group.activeSet();

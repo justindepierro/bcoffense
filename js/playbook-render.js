@@ -239,13 +239,19 @@ function renderPlaybook() {
           .filter(Boolean)
           .map((value) => `<span class="pb-card-pill">${escapeHtml(value)}</span>`)
           .join("");
+        const playerCardMedia =
+          currentUser?.role === "player" ? _renderPlayerPlaybookCardMedia(item) : "";
+        const playerCardNote =
+          currentUser?.role === "player" ? _renderPlayerPlaybookCardNote(play) : "";
         return `
           <div class="pb-card${wbClass}${gpClass}" data-action="selectPlaybookRow" data-idx="${idx}" data-arg="${idx}" data-preview="${idx}"
                tabindex="0" role="button"
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
+            ${playerCardMedia}
             <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
             <div class="pb-card-study-row">${studyBadges}</div>
+            ${playerCardNote}
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
             ${item.readinessCardBadge}
             <div class="pb-card-pills">${pills}</div>
@@ -254,6 +260,9 @@ function renderPlaybook() {
         `;
       })
       .join("");
+    if (currentUser?.role === "player") {
+      hydratePlayerPlaybookThumbnails(cardsEl);
+    }
 
     let emptyEl = document.getElementById("pbEmptyState");
     if (!emptyEl) {
@@ -383,6 +392,90 @@ function _renderPlayerPlaybookCardActions(item) {
     </div>`;
 }
 
+function _renderPlayerPlaybookCardMedia(item) {
+  if (!item?.imageSig) {
+    return `
+      <div class="pb-card-media pb-card-media--missing" aria-label="No diagram attached">
+        <span class="pb-card-media__state">Needs diagram</span>
+      </div>`;
+  }
+  const playLabel =
+    typeof getPlayPresentationPlayLabel === "function"
+      ? getPlayPresentationPlayLabel(item.play)
+      : item.play?.play || "play";
+  return `
+    <button type="button" class="pb-card-media pb-card-media--diagram" data-action="openPlaybookPresentation"
+      data-arg="${item.idx}" data-pb-thumb-sig="${escapeHtml(item.imageSig)}"
+      aria-label="Study diagram for ${escapeHtml(playLabel)}">
+      <img alt="Diagram for ${escapeHtml(playLabel)}" loading="lazy" hidden />
+      <span class="pb-card-media__state">Loading diagram</span>
+    </button>`;
+}
+
+function _renderPlayerPlaybookCardNote(play) {
+  const note = String(play?.playerNotes || "").trim();
+  if (!note) return "";
+  return `<div class="pb-card-note"><span>Coach</span>${escapeHtml(_truncatePlayerPlaybookText(note, 92))}</div>`;
+}
+
+function _truncatePlayerPlaybookText(text, maxLength) {
+  const clean = String(text || "").replace(/\s+/g, " ").trim();
+  if (!clean || clean.length <= maxLength) return clean;
+  return `${clean.slice(0, Math.max(0, maxLength - 1)).trim()}…`;
+}
+
+function hydratePlayerPlaybookThumbnails(root = document) {
+  if (
+    typeof window === "undefined" ||
+    !window.playImages ||
+    typeof window.playImages.ensureUrl !== "function"
+  ) {
+    return;
+  }
+  root.querySelectorAll("[data-pb-thumb-sig]").forEach((media) => {
+    if (media.dataset.pbThumbLoading === "true" || media.dataset.pbThumbLoaded === "true") {
+      return;
+    }
+    const sig = media.dataset.pbThumbSig || "";
+    const img = media.querySelector("img");
+    const state = media.querySelector(".pb-card-media__state");
+    if (!sig || !img) return;
+
+    const setUrl = (url) => {
+      if (!url || !media.isConnected) {
+        media.classList.add("pb-card-media--error");
+        if (state) state.textContent = "Diagram issue";
+        return;
+      }
+      img.src = url;
+      img.hidden = false;
+      media.dataset.pbThumbLoaded = "true";
+      media.classList.add("is-loaded");
+      if (state) state.textContent = "Open diagram";
+    };
+
+    const cachedUrl =
+      typeof window.playImages.urlFor === "function" ? window.playImages.urlFor(sig) : null;
+    if (cachedUrl) {
+      setUrl(cachedUrl);
+      return;
+    }
+
+    media.dataset.pbThumbLoading = "true";
+    window.playImages
+      .ensureUrl(sig)
+      .then(setUrl)
+      .catch(() => {
+        if (!media.isConnected) return;
+        media.classList.add("pb-card-media--error");
+        if (state) state.textContent = "Diagram issue";
+      })
+      .finally(() => {
+        if (media.isConnected) media.dataset.pbThumbLoading = "false";
+      });
+  });
+}
+
 async function addPlayToWeek(idx) {
   const filteredIdx = parseInt(idx, 10);
   const play =
@@ -496,7 +589,7 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       ? `<button type="button" class="btn btn-primary" data-action="loadPublishedPlayerScript" data-arg="${featuredScriptId}">Load Latest Practice</button>`
       : '<button type="button" class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
   const playbookFilterAction =
-    '<button type="button" class="btn btn-primary" data-action="openPlayerPlaybookFilters">Filter Plays</button>';
+    '<button type="button" class="btn btn-primary" data-action="openPlayerPlaybookFilters">Filters</button>';
   const playbookPresentAction =
     '<button type="button" class="btn btn-secondary" data-action="openSelectedPlaybookPresentation">Present Showing</button>';
   const tertiaryAction = hasFilters
@@ -523,9 +616,9 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     </div>
     <div class="pb-player-summary__filters" aria-label="Suggested player filters">
       <span class="pb-player-summary__filter-label">Quick filters</span>
-      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="gamePlan">Game Plan</button>
-      <button type="button" class="pb-player-summary__filter-pill pb-player-summary__filter-pill--media" data-action="openPlayerPlaybookFilters" data-arg="study">Diagrams</button>
-      <button type="button" class="pb-player-summary__filter-pill pb-player-summary__filter-pill--notes" data-action="openPlayerPlaybookFilters" data-arg="study">Coach Notes</button>
+      <button type="button" class="pb-player-summary__filter-pill${_isPlayerSummaryQuickFilterActive("gamePlan", "current") ? " is-active" : ""}" data-action="applyPlayerPlaybookFilter" data-arg="gamePlan:current">Game Plan</button>
+      <button type="button" class="pb-player-summary__filter-pill pb-player-summary__filter-pill--media${_isPlayerSummaryQuickFilterActive("study", "diagram") ? " is-active" : ""}" data-action="applyPlayerPlaybookFilter" data-arg="study:diagram">Diagrams</button>
+      <button type="button" class="pb-player-summary__filter-pill pb-player-summary__filter-pill--notes${_isPlayerSummaryQuickFilterActive("study", "notes") ? " is-active" : ""}" data-action="applyPlayerPlaybookFilter" data-arg="study:notes">Coach Notes</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="personnel">Personnel</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="formation">Formation</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="basePlay">Base Play</button>
@@ -534,6 +627,25 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="tempo">Tempo</button>
     </div>
   `;
+}
+
+function _isPlayerSummaryQuickFilterActive(key, value) {
+  if (key === "study") {
+    return (
+      typeof playerPlaybookStudyFilters !== "undefined" &&
+      playerPlaybookStudyFilters.has(value)
+    );
+  }
+  if (key === "gamePlan") {
+    const group =
+      typeof PLAYER_PLAYBOOK_FILTER_GROUPS !== "undefined"
+        ? PLAYER_PLAYBOOK_FILTER_GROUPS.find((item) => item.key === "gamePlan")
+        : null;
+    const option = group?.options?.find((item) => item.value === value);
+    const input = option?.inputId ? document.getElementById(option.inputId) : null;
+    return Boolean(input?.checked);
+  }
+  return false;
 }
 
 function createSearchHighlighter(searchTerm) {

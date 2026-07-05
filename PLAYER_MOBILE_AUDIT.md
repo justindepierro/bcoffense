@@ -162,6 +162,22 @@ Fix:
 - Loaded Practice mission card spacing, chips, and meta are tighter on phone while preserving 44px action buttons.
 - Added seeded mobile coverage that guards the Home hero/quick-action height and loaded-Practice launcher behavior.
 
+### P1 - Player Playbook Needed Real Study Cards
+
+Status: fixed in this Playbook study slice.
+
+Symptoms/risk:
+- Player Playbook cards only showed tiny diagram/status badges, so stored diagrams were not visible in the row list until a player opened a play.
+- Common player filters required opening the full filter sheet, even for obvious study decisions like Game Plan, Diagrams, and Coach Notes.
+- Touch-tablet players still got the dense staff table instead of a study-first card/grid view.
+
+Fix:
+- Player phone and iPad/tablet Playbook views now use study cards instead of the staff table.
+- Stored IndexedDB diagrams hydrate into visible 16:9 thumbnails on the current page without opening each row first.
+- Game Plan, Diagrams, and Coach Notes are one-tap quick filters with active visual state; deeper filters remain available in the filter sheet.
+- Player cards now surface coach-note snippets and clear Study / Ask / Film actions without exposing staff controls.
+- Added seeded mobile coverage for compact Playbook summary height, thumbnail hydration, quick filters, coach notes, and player-safe actions.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`
@@ -169,7 +185,7 @@ Fix:
 
 ## Next Implementation Slices
 
-1. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and player-safe action buttons stay clear on phone and iPad.
-2. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
-3. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, and Questions.
-4. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.
+1. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
+2. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, and Questions.
+3. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.
+4. Practice/Home polish: reduce repeated section styling and add stronger color hierarchy where the next action is ambiguous.
