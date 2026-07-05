@@ -197,4 +197,82 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator(".script-header-panel")).toBeHidden();
     await assertNoHorizontalOverflow(page);
   });
+
+  test("keeps Swipe View discussion and play navigation stable", async ({ page }) => {
+    await page.route("**/api/threads/**", async (route) => {
+      const method = route.request().method();
+      if (method === "POST") {
+        const body = route.request().postDataJSON?.() || {};
+        await route.fulfill({
+          status: 200,
+          contentType: "application/json",
+          body: JSON.stringify({
+            ok: true,
+            post: {
+              id: "post-1",
+              body: body.body || "I need help with my rule.",
+              postType: body.post_type || "question",
+              questionState: "open",
+              questionCategory: body.question_category || "assignment",
+              moderationStatus: "approved",
+              authorName: "player",
+              authorRole: "player",
+              authorId: "player",
+              reactions: [],
+              replies: [],
+              replyCount: 0,
+              createdAt: new Date().toISOString(),
+            },
+            moderation: { outcome: "approve" },
+          }),
+        });
+        return;
+      }
+
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          thread: { id: "thread-1", total: 0, locked: false },
+          posts: [],
+          hasMore: false,
+        }),
+      });
+    });
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedPlayerPractice(page);
+
+    await page.getByRole("button", { name: /Open Practice/i }).first().click();
+    await page.locator("#playerScriptNowBar").getByRole("button", { name: /Open Swipe View/i }).click();
+
+    const presentation = page.locator("#playPresentationOverlay");
+    await expect(presentation).toBeVisible();
+    await expect(presentation).toHaveAttribute("data-presentation-open", "true");
+    await expect(page.locator("body")).toHaveClass(/play-presentation-open/);
+    await expect(presentation.locator(".pp-player-study-strip")).toBeVisible();
+    await expect(presentation.getByText("Your Job")).toBeVisible();
+    await expect(presentation.locator(".pp-zoom-controls")).toBeHidden();
+
+    await presentation.getByRole("button", { name: /Ask the coach/i }).click();
+    const drawer = page.locator("#ppDiscDrawer");
+    await expect(drawer).toBeVisible();
+    await expect(drawer.locator(".disc-type-select")).toHaveValue("question");
+    await drawer.locator(".disc-textarea").fill("What should I do if the edge widens?");
+    await drawer.getByRole("button", { name: /^Post$/i }).click();
+    await expect(drawer.getByText("What should I do if the edge widens?")).toBeVisible();
+
+    await drawer.getByRole("button", { name: /Close discussion/i }).click();
+    await expect(drawer).toBeHidden();
+
+    await presentation.getByRole("button", { name: /Next play/i }).click();
+    await expect(presentation.locator("#playPresentationCounter")).toContainText("2 / 2");
+
+    await presentation.getByRole("button", { name: /Close presentation/i }).click();
+    await expect(presentation).toBeHidden();
+    await expect(page.locator("#script.panel.active")).toBeVisible();
+    await expect(page.locator("body")).not.toHaveClass(/play-presentation-open/);
+  });
 });

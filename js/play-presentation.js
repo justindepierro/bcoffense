@@ -1218,6 +1218,7 @@ function updatePlayPresentationRotateHint() {
   const shouldShow =
     isPlayPresentationMobileViewport() &&
     !isLandscape &&
+    playPresentationState.mode !== "player" &&
     !playPresentationRotateHintDismissed &&
     overflow;
   hint.hidden = !shouldShow;
@@ -2066,6 +2067,16 @@ function getPlayPresentationPlayerMarkup(item) {
   const play = item.play;
   const selected = getPlayPresentationSelectedPosition();
   const assignment = String(play[selected.key] || "").trim();
+  const playerChips = [
+    play.type,
+    play.personnel ? `${play.personnel} pers` : "",
+    play.preferredDown && play.preferredDistance
+      ? `${_ordinalDown(play.preferredDown)} & ${play.preferredDistance}`
+      : play.preferredDown
+        ? `${_ordinalDown(play.preferredDown)} down`
+        : "",
+    play.preferredFieldPosition,
+  ].filter(Boolean);
 
   return `
     <div class="pp-layout pp-layout-player">
@@ -2075,10 +2086,15 @@ function getPlayPresentationPlayerMarkup(item) {
       <section class="pp-player-panel">
         <div class="pp-player-overview">
           <div>
-            <div class="pp-player-kicker">Player View</div>
+            <div class="pp-player-kicker">Swipe Study</div>
             <div class="pp-player-context">${escapeHtml(item.context || "Practice Script")} • Play ${item.number}</div>
           </div>
           <span class="pp-player-mode-chip">${playPresentationState.positionLocked ? "Position Locked" : "Auto Position"}</span>
+        </div>
+        <div class="pp-player-study-strip" aria-label="Study steps">
+          <span><strong>1</strong> Call</span>
+          <span><strong>2</strong> Rule</span>
+          <span><strong>3</strong> Ask</span>
         </div>
         <div class="pp-player-call">${getFullCall(play, {
     showEmoji: true,
@@ -2086,10 +2102,16 @@ function getPlayPresentationPlayerMarkup(item) {
     boldShifts: true,
     italicMotions: true,
   })}</div>
+        ${playerChips.length
+      ? `<div class="pp-player-chips">${playerChips
+        .map((chip) => `<span>${escapeHtml(chip)}</span>`)
+        .join("")}</div>`
+      : ""
+    }
         <div class="pp-player-controls-card">
           <div class="pp-player-controls-head">
             <strong>Choose your position</strong>
-            <span>Tap your spot, then lock it if you want the same rule on every play.</span>
+            <span>Tap your spot once. Lock it when you want the same rule on every play.</span>
           </div>
           <div class="pp-position-picker" id="playPresentationPositionPicker"
             role="group" aria-label="Choose player position"></div>
@@ -2102,7 +2124,7 @@ function getPlayPresentationPlayerMarkup(item) {
         <div class="pp-player-rule">
           <div class="pp-player-rule-head">
             <div class="pp-player-rule-title">
-              <span class="pp-player-rule-eyebrow">Your Rule</span>
+              <span class="pp-player-rule-eyebrow">Your Job</span>
               <span class="pp-player-position">${escapeHtml(selected.label)}</span>
             </div>
           </div>
@@ -2116,9 +2138,13 @@ function getPlayPresentationPlayerMarkup(item) {
       : ""
     }
         <div class="pp-player-chat-row">
-          <button class="btn btn-primary pp-player-chat-btn" data-action="togglePresentationDiscussion"
-            aria-label="Ask a question or view discussion for this play">
-            💬 Ask About This Play
+          <button class="btn btn-primary pp-player-chat-btn" data-action="askPresentationQuestion"
+            aria-label="Ask the coach a question about this play">
+            Ask Coach
+          </button>
+          <button class="btn btn-secondary pp-player-chat-btn" data-action="togglePresentationDiscussion"
+            aria-label="Review discussion for this play">
+            Review Thread
           </button>
         </div>
       </section>
@@ -2381,6 +2407,8 @@ function renderPlayPresentation() {
   playPresentationState.mode = ensurePlayPresentationModeAllowed(
     playPresentationState.mode,
   );
+  const overlay = document.getElementById("playPresentationOverlay");
+  if (overlay) overlay.dataset.ppMode = playPresentationState.mode;
   syncPlayPresentationRoleUi();
   syncPlayPresentationHeaderOffset();
 

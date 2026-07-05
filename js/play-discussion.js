@@ -2200,6 +2200,14 @@ function retryPresentationDiscussion() {
   openPresentationDiscussion();
 }
 
+async function askPresentationQuestion() {
+  await openPresentationDiscussion();
+  await new Promise((resolve) => setTimeout(resolve, 250));
+  const play = _ppCurrentPlay();
+  if (!play) return;
+  discAskCoachQuestion(getPlayThreadId(play));
+}
+
 // ── Char count + keyboard shortcut ───────────────────────────────────────────
 
 document.addEventListener("input", (e) => {
@@ -3029,5 +3037,4 @@ function _discWireComposerAttachments(container) {
   if (!container) return;
   _discWireAttachmentInputs(container);
 }
-
 

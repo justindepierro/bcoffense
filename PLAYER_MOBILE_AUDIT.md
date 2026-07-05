@@ -78,10 +78,26 @@ Completed in the Home/Quiz slice:
 - Added seeded coverage for Home, Practice, Quiz, Playbook, and Questions surfaces on a phone viewport.
 
 Next coverage targets:
-- Practice -> Swipe View -> discussion drawer -> ask question -> close -> return to same play.
 - Playbook -> filter sheet -> current game plan filter -> row media thumbnail/presentation.
 - Notification drawer -> push opt-in/offline states.
 - iPad portrait and landscape for My Questions, Quiz, discussion drawer, and presentation detail panel.
+
+### P1 - Swipe View Felt Like Compressed Coach UI
+
+Status: fixed in the Swipe View mobile/iPad slice.
+
+Symptoms/risk:
+- Player Swipe View exposed the right engine, but the visual hierarchy did not strongly guide players through call, rule, question.
+- Phone portrait showed the diagram before the player study content, which made the first viewport feel sparse when a diagram was missing.
+- iPad portrait used the stacked phone layout instead of a roomy two-column study board.
+- Asking a question from Swipe View required opening a generic discussion drawer and then finding the question type.
+
+Fix:
+- Player mode now renders a study strip, stronger call/rule cards, metadata chips, and distinct Ask Coach / Review Thread actions.
+- Phone portrait prioritizes player study content first, then diagram review.
+- iPad portrait keeps a two-column diagram + player study layout.
+- Ask Coach opens the presentation discussion drawer and preselects the question composer.
+- Added seeded coverage for Practice -> Swipe View -> Ask Coach -> post question -> close drawer -> next play -> close back to Practice.
 
 ## Verification Commands
 
@@ -90,8 +106,7 @@ Next coverage targets:
 
 ## Next Implementation Slices
 
-1. Seeded discussion drawer flow: open from Practice and Swipe View, ask a question, verify body lock/focus/page return.
-2. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and presentation buttons are visible without staff tools.
-3. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
-4. iPad player pass: treat tablet as a roomy study product, not a stretched phone.
-5. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.
+1. Player Playbook study filters: verify Game Plan filter, media thumbnails, row state, and presentation buttons are visible without staff tools.
+2. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
+3. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, and Questions.
+4. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.
