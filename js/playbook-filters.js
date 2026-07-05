@@ -92,6 +92,16 @@ const PLAYER_PLAYBOOK_FILTER_GROUPS = [
       { label: "JV Only", value: "jv", inputId: "pbJvFilter" },
     ],
   },
+  {
+    key: "study",
+    label: "Study Status",
+    options: [
+      { label: "Has Diagram", value: "diagram" },
+      { label: "Needs Diagram", value: "missingDiagram" },
+      { label: "Has Video", value: "video" },
+      { label: "Coach Notes", value: "notes" },
+    ],
+  },
   { key: "type", label: "Type", cacheKey: "types", chipGroup: "pbChipsType", activeSet: () => activeTypeChips },
   { key: "personnel", label: "Personnel", cacheKey: "personnels", chipGroup: "pbChipsPersonnel", activeSet: () => activePersonnelChips },
   { key: "formation", label: "Formation", cacheKey: "formations", inputId: "filterFormation" },
@@ -100,6 +110,32 @@ const PLAYER_PLAYBOOK_FILTER_GROUPS = [
   { key: "protection", label: "Protection", cacheKey: "protections", inputId: "pbFilterProtection" },
   { key: "tempo", label: "Tempo", cacheKey: "tempos", inputId: "pbFilterTempo" },
 ];
+
+const playerPlaybookStudyFilters = new Set();
+
+function _playbookHasStoredDiagram(play) {
+  return Boolean(
+    play &&
+      typeof window !== "undefined" &&
+      window.playImages &&
+      typeof window.playImages.hasForPlay === "function" &&
+      window.playImages.hasForPlay(play)
+  );
+}
+
+function _playbookHasClip(play) {
+  return Boolean(
+    play &&
+      typeof window !== "undefined" &&
+      window.playClips &&
+      typeof window.playClips.hasForPlay === "function" &&
+      window.playClips.hasForPlay(play)
+  );
+}
+
+function _playbookHasPlayerNotes(play) {
+  return Boolean(play && String(play.playerNotes || "").trim());
+}
 
 function filterPlays() {
   const activeTypes = activeTypeChips;
@@ -156,6 +192,12 @@ function filterPlays() {
       const inWeek = inScript || onSheet;
       if (inWeekOnly && !inWeek) return false;
       if (unusedOnly && inWeek) return false;
+    }
+    if (playerPlaybookStudyFilters.size > 0) {
+      if (playerPlaybookStudyFilters.has("diagram") && !_playbookHasStoredDiagram(play)) return false;
+      if (playerPlaybookStudyFilters.has("missingDiagram") && _playbookHasStoredDiagram(play)) return false;
+      if (playerPlaybookStudyFilters.has("video") && !_playbookHasClip(play)) return false;
+      if (playerPlaybookStudyFilters.has("notes") && !_playbookHasPlayerNotes(play)) return false;
     }
     if (activeTypes.size > 0 && !activeTypes.has(play.type)) return false;
     if (activePersonnel.size > 0 && !activePersonnel.has(play.personnel)) {
@@ -229,6 +271,7 @@ function clearFilters() {
   if (gpFilter) gpFilter.checked = false;
   const jvFilter = document.getElementById("pbJvFilter");
   if (jvFilter) jvFilter.checked = false;
+  playerPlaybookStudyFilters.clear();
   ["pbScoutFilter", "pbInWeekFilter", "pbUnusedFilter"].forEach((id) => {
     const el = document.getElementById(id);
     if (el) el.checked = false;
@@ -323,6 +366,9 @@ function _decodePlayerPlaybookFilterArg(arg) {
 
 function openPlayerPlaybookFilters(focusKey = "") {
   closePlayerPlaybookFilters();
+  if (typeof ensurePlaybookImageBadgesReady === "function") {
+    ensurePlaybookImageBadgesReady();
+  }
 
   const groups = _getPlayerPlaybookFilterGroups();
   const orderedGroups = focusKey
@@ -348,7 +394,10 @@ function openPlayerPlaybookFilters(focusKey = "") {
             const value = typeof option === "object" ? option.value : option;
             const label = typeof option === "object" ? option.label : option;
             const arg = _playerPlaybookFilterArg(group.key, value);
-            return `<button type="button" class="pb-player-filter-option" data-action="applyPlayerPlaybookFilter" data-arg="${escapeHtml(arg)}">${escapeHtml(label)}</button>`;
+            const activeClass = _isPlayerPlaybookFilterActive(group, value)
+              ? " is-active"
+              : "";
+            return `<button type="button" class="pb-player-filter-option${activeClass}" data-action="applyPlayerPlaybookFilter" data-arg="${escapeHtml(arg)}">${escapeHtml(label)}</button>`;
           })
           .join("")
         : '<span class="pb-player-filter-empty">No options yet</span>';
@@ -382,6 +431,19 @@ function openPlayerPlaybookFilters(focusKey = "") {
   if (typeof trapFocus === "function") trapFocus(overlay);
 }
 
+function _isPlayerPlaybookFilterActive(group, value) {
+  if (!group || !value) return false;
+  if (group.key === "study") return playerPlaybookStudyFilters.has(value);
+  if (Array.isArray(group.options)) {
+    const option = group.options.find((item) => item.value === value);
+    const input = option?.inputId ? document.getElementById(option.inputId) : null;
+    return Boolean(input?.checked);
+  }
+  if (group.activeSet) return group.activeSet().has(value);
+  if (group.inputId) return document.getElementById(group.inputId)?.value === value;
+  return false;
+}
+
 function closePlayerPlaybookFilters() {
   const overlay = document.getElementById("playerPlaybookFilterOverlay");
   if (!overlay) return;
@@ -396,9 +458,19 @@ function applyPlayerPlaybookFilter(arg) {
   if (!group) return;
 
   if (Array.isArray(group.options)) {
-    const option = group.options.find((item) => item.value === parsed.value);
-    const input = option?.inputId ? document.getElementById(option.inputId) : null;
-    if (input) input.checked = true;
+    if (group.key === "study") {
+      if (parsed.value === "diagram") playerPlaybookStudyFilters.delete("missingDiagram");
+      if (parsed.value === "missingDiagram") playerPlaybookStudyFilters.delete("diagram");
+      if (playerPlaybookStudyFilters.has(parsed.value)) {
+        playerPlaybookStudyFilters.delete(parsed.value);
+      } else {
+        playerPlaybookStudyFilters.add(parsed.value);
+      }
+    } else {
+      const option = group.options.find((item) => item.value === parsed.value);
+      const input = option?.inputId ? document.getElementById(option.inputId) : null;
+      if (input) input.checked = true;
+    }
   } else if (group.activeSet) {
     const activeSet = group.activeSet();
     activeSet.clear();
@@ -488,6 +560,19 @@ function updateActiveFilterBar() {
       parts.push({ label, layer: id, value: "1" });
     }
   });
+  const studyFilterLabels = {
+    diagram: "Diagram ready",
+    missingDiagram: "Needs diagram",
+    video: "Video ready",
+    notes: "Coach notes",
+  };
+  playerPlaybookStudyFilters.forEach((value) => {
+    parts.push({
+      label: studyFilterLabels[value] || value,
+      layer: "playerStudy",
+      value,
+    });
+  });
   // Show/hide bulk add button based on whether any plays are filtered
   const bulkBtn = document.getElementById("pbBulkAddBtn");
   if (bulkBtn) bulkBtn.style.display = filteredPlays.length < plays.length ? "" : "none";
@@ -543,6 +628,8 @@ function removeFilter(layer, value) {
   } else if (layer === "search") {
     const el = document.getElementById("searchPlay");
     if (el) el.value = "";
+  } else if (layer === "playerStudy") {
+    playerPlaybookStudyFilters.delete(value);
   } else {
     const el = document.getElementById(layer);
     if (el) el.value = "";

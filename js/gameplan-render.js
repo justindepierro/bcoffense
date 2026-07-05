@@ -6,7 +6,7 @@
 function _gpUniqueFilterValues(fields) {
   const sourceFields = Array.isArray(fields) ? fields : [fields];
   const values = new Set();
-  if (!Array.isArray(plays)) return [];
+  if (typeof plays === "undefined" || !Array.isArray(plays)) return [];
   plays.forEach((play) => {
     sourceFields.forEach((field) => {
       const value = String(play?.[field] || "").trim();
@@ -114,7 +114,7 @@ function _gpRenderMultiFilterDropdown(field, label, values) {
 function renderGamePlan() {
   const root = document.getElementById("gameplan");
   if (!root) return;
-  if (!Array.isArray(plays) || plays.length === 0) {
+  if (typeof plays === "undefined" || !Array.isArray(plays) || plays.length === 0) {
     root.innerHTML = `
       <div class="gp-header">
         <div class="gp-header-meta">

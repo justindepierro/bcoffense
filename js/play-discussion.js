@@ -2087,7 +2087,12 @@ async function askCoachAboutPlay(idxStr) {
   openPlayWorkflowPanel(idx);
   // Give workflow panel + discussion time to render
   await new Promise((r) => setTimeout(r, 600));
-  const play = (typeof plays !== "undefined" && Array.isArray(plays)) ? plays[idx] : null;
+  const play =
+    typeof filteredPlays !== "undefined" && Array.isArray(filteredPlays)
+      ? filteredPlays[idx]
+      : typeof plays !== "undefined" && Array.isArray(plays)
+        ? plays[idx]
+        : null;
   if (!play) return;
   const playId = getPlayThreadId(play);
   discAskCoachQuestion(playId);
@@ -3037,4 +3042,3 @@ function _discWireComposerAttachments(container) {
   if (!container) return;
   _discWireAttachmentInputs(container);
 }
-

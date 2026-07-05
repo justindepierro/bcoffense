@@ -18,6 +18,7 @@ const PLAYER_PLAYS = [
     preferredDown: "1",
     preferredDistance: "Medium",
     keyPlayerName1: "Lucas",
+    playerNotes: "Coach says: watch the force defender first, then ask about your landmark if it changes.",
   },
   {
     type: "Pass",
@@ -77,8 +78,9 @@ async function seedFirstPracticeDiagram(page) {
   await page.evaluate(async () => {
     if (!window.playImages || typeof playSignature !== "function") return;
     const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
-    const play = savedScripts?.[0]?.plays?.find((item) => item && !item.isSeparator);
-    if (!play) return;
+    const practicePlay = savedScripts?.[0]?.plays?.find((item) => item && !item.isSeparator);
+    const playbookPlay = Array.isArray(plays) ? plays[0] : null;
+    if (!practicePlay && !playbookPlay) return;
 
     await playImages.ready();
     const canvas = document.createElement("canvas");
@@ -117,8 +119,27 @@ async function seedFirstPracticeDiagram(page) {
     ctx.lineTo(730, 420);
     ctx.stroke();
     const blob = await new Promise((resolve) => canvas.toBlob(resolve, "image/png"));
-    await playImages.set(playSignature(play), blob);
+    if (!blob) return;
+    const signatures = [practicePlay, playbookPlay]
+      .filter(Boolean)
+      .map((play) => playSignature(play))
+      .filter(Boolean);
+    await Promise.all([...new Set(signatures)].map((sig) => playImages.set(sig, blob)));
+    if (typeof playImages.loadKeys === "function") await playImages.loadKeys();
   });
+  await expect
+    .poll(async () => {
+      return page.evaluate(() => {
+        const play = Array.isArray(plays) ? plays[0] : null;
+        return Boolean(
+          play &&
+            window.playImages &&
+            typeof playImages.hasForPlay === "function" &&
+            playImages.hasForPlay(play)
+        );
+      });
+    })
+    .toBe(true);
 }
 
 test.describe("Player mobile experience", () => {
@@ -167,6 +188,7 @@ test.describe("Player mobile experience", () => {
     await login(page, { role: "player", username: "player" });
     await dismissFirstUse(page);
     await seedPlayerPractice(page);
+    await seedFirstPracticeDiagram(page);
 
     await expect(page.locator("#playerDashboardHome")).toBeVisible();
     await expect(page.getByRole("button", { name: /Open Practice/i }).first()).toBeVisible();
@@ -234,9 +256,25 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
 
     await goToTab(page, "playbook");
+    await seedFirstPracticeDiagram(page);
+    await page.evaluate(() => {
+      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    });
     await expect(page.locator("#playbook.panel.active")).toBeVisible();
+    await expect(page.getByText("Find the play, study the picture, ask the question.")).toBeVisible();
     await expect(page.getByRole("button", { name: /Filter Plays/i })).toBeVisible();
     await expect(page.getByRole("button", { name: /Present Showing/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Diagrams$/i })).toBeVisible();
+    await expect(page.getByRole("button", { name: /^Coach Notes$/i })).toBeVisible();
+    await expect(page.locator(".pb-card-study-badge--diagram").first()).toBeVisible();
+    await expect(page.locator(".pb-card-study-badge--notes").first()).toBeVisible();
+    await expect(page.locator(".pb-card-action--study").first()).toBeVisible();
+    await expect(page.locator(".pb-card-action--ask").first()).toBeVisible();
+    await page.getByRole("button", { name: /^Diagrams$/i }).click();
+    await expect(page.locator("#playerPlaybookFilterOverlay")).toBeVisible();
+    await expect(page.locator("[data-filter-group='study']")).toContainText("Study Status");
+    await page.getByRole("button", { name: /^Has Diagram$/i }).click();
+    await expect(page.locator("#pbActivePills")).toContainText("Diagram ready");
     await expect(page.getByRole("button", { name: /Add Play/i })).toHaveCount(0);
     await assertNoHorizontalOverflow(page);
 

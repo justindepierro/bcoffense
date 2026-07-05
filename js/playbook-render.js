@@ -224,6 +224,14 @@ function renderPlaybook() {
         const cardClipBadge = item.hasClips
           ? `<span class="pb-clip-badge" data-action="openPlaybookClipViewer" data-arg="${idx}" role="button" tabindex="0" title="Watch video clips" aria-label="Watch video clips">\ud83c\udfac</span>`
           : "";
+        const hasCoachNotes = String(play.playerNotes || "").trim();
+        const studyBadges = [
+          imageSig
+            ? '<span class="pb-card-study-badge pb-card-study-badge--diagram">Diagram</span>'
+            : '<span class="pb-card-study-badge pb-card-study-badge--missing">Needs diagram</span>',
+          item.hasClips ? '<span class="pb-card-study-badge pb-card-study-badge--film">Film</span>' : "",
+          hasCoachNotes ? '<span class="pb-card-study-badge pb-card-study-badge--notes">Coach note</span>' : "",
+        ].filter(Boolean).join("");
         const gpCardToggle = activeOpponent
           ? `<button class="gp-toggle-btn gp-card-btn${gpCardActive ? " gp-active" : ""}" data-action="togglePlaybookGamePlan" data-idx="${idx}" data-arg="${idx}" title="${gpCardActive ? "Remove from" : "Add to"} game plan">🎯</button>`
           : "";
@@ -237,9 +245,11 @@ function renderPlaybook() {
                aria-label="${escapeHtml(play.formation)} ${escapeHtml(play.play)}">
             <div class="pb-card-play">${gpCardToggle}${item.installBadge}${cardJv}${cardWbFlag}${cardImgBadge}${cardClipBadge} ${highlight(play.formation)} ${highlight(play.protection || "")} ${highlight(play.play)}${item.picturePill}<button class="pb-present-btn" data-action="openPlaybookPresentation" data-arg="${idx}" title="Present this play" aria-label="Present ${escapeHtml(getPlayPresentationPlayLabel(play))}">▶</button></div>
             <div class="pb-card-sub">${highlight(play.type)}${play.motion ? " · " + highlight(play.motion) : ""}${play.back ? " · " + highlight(play.back) : ""}</div>
+            <div class="pb-card-study-row">${studyBadges}</div>
             ${_renderPlayUsagePills(item.usage, usageIndex?.weekLabel)}
             ${item.readinessCardBadge}
             <div class="pb-card-pills">${pills}</div>
+            ${_renderPlayerPlaybookCardActions(item)}
           </div>
         `;
       })
@@ -350,6 +360,29 @@ function _renderWorkflowChips(play, idx) {
   return `<span class="pb-wf-chips"${idxAttr}>${chips.join("")}</span>`;
 }
 
+function _renderPlayerPlaybookCardActions(item) {
+  const currentUser =
+    typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : null;
+  if (currentUser?.role !== "player" || !item) return "";
+  const playLabel =
+    typeof getPlayPresentationPlayLabel === "function"
+      ? getPlayPresentationPlayLabel(item.play)
+      : item.play?.play || "play";
+  const askButton =
+    typeof askCoachAboutPlay === "function"
+      ? `<button type="button" class="pb-card-action pb-card-action--ask" data-action="askCoachAboutPlay" data-arg="${item.idx}" aria-label="Ask coach about ${escapeHtml(playLabel)}">Ask</button>`
+      : "";
+  const filmButton = item.hasClips
+    ? `<button type="button" class="pb-card-action pb-card-action--film" data-action="openPlaybookClipViewer" data-arg="${item.idx}" aria-label="Watch film for ${escapeHtml(playLabel)}">Film</button>`
+    : "";
+  return `
+    <div class="pb-card-actions" aria-label="Player study actions">
+      <button type="button" class="pb-card-action pb-card-action--study" data-action="openPlaybookPresentation" data-arg="${item.idx}" aria-label="Study ${escapeHtml(playLabel)}">Study</button>
+      ${askButton}
+      ${filmButton}
+    </div>`;
+}
+
 async function addPlayToWeek(idx) {
   const filteredIdx = parseInt(idx, 10);
   const play =
@@ -439,12 +472,19 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       "pbFilterProtection",
       "pbFilterTempo",
     ].some((id) => Boolean(document.getElementById(id)?.value)) ||
+    (typeof playerPlaybookStudyFilters !== "undefined" && playerPlaybookStudyFilters.size > 0) ||
     Boolean(document.getElementById("pbGamePlanFilter")?.checked) ||
     Boolean(document.getElementById("pbJvFilter")?.checked);
 
+  const diagramCount =
+    typeof _playbookHasStoredDiagram === "function"
+      ? plays.filter((play) => _playbookHasStoredDiagram(play)).length
+      : 0;
+  const notesCount = plays.filter((play) => String(play.playerNotes || "").trim()).length;
   const stats = [
-    `${plays.length} total plays`,
     `${filteredCount} showing`,
+    `${diagramCount} diagrams ready`,
+    `${notesCount} coach notes`,
     loadedScriptStats
       ? `${loadedScriptStats.playCount} practice plays loaded`
       : `${publishedScripts.length} published practice${publishedScripts.length === 1 ? "" : "s"}`,
@@ -468,8 +508,8 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     <div class="pb-player-summary__main">
       <div class="pb-player-summary__copy">
         <span class="pb-player-summary__eyebrow">Player Playbook</span>
-        <h2>Study the full menu without the staff clutter.</h2>
-        <p>Search by play name, personnel, formation, motion, protection, and tempo. Use Present on any play to see the diagram full screen.</p>
+        <h2>Find the play, study the picture, ask the question.</h2>
+        <p>Use quick filters for diagrams, coach notes, game plan calls, personnel, and formations. Open Study when you need the full-screen swipe view.</p>
       </div>
       <div class="pb-player-summary__actions">
         ${playbookFilterAction}
@@ -484,6 +524,8 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     <div class="pb-player-summary__filters" aria-label="Suggested player filters">
       <span class="pb-player-summary__filter-label">Quick filters</span>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="gamePlan">Game Plan</button>
+      <button type="button" class="pb-player-summary__filter-pill pb-player-summary__filter-pill--media" data-action="openPlayerPlaybookFilters" data-arg="study">Diagrams</button>
+      <button type="button" class="pb-player-summary__filter-pill pb-player-summary__filter-pill--notes" data-action="openPlayerPlaybookFilters" data-arg="study">Coach Notes</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="personnel">Personnel</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="formation">Formation</button>
       <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="basePlay">Base Play</button>
