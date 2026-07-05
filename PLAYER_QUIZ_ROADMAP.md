@@ -29,15 +29,15 @@
 
 - [x] Add weighted point scoring: Script 1.0x, Game Plan 1.25x.
 - [x] Show the weekly 1000-point standard in the Quiz Center.
-- [ ] Persist attempts locally as a staging layer.
-- [ ] Award threshold badges: Honor Roll 85%, High Honor Roll 90%, Coaches List 95%.
+- [x] Persist attempts locally as a staging layer.
+- [x] Award threshold badges: Honor Roll 85%, High Honor Roll 90%, Coaches List 95%.
 - [ ] Add daily and weekly streak calculations.
 - [ ] Add weekly and season views.
 
 ## Leaderboard
 
 - [x] Define football tiers: Champion, Baller, Starter, Contributor, Defense.
-- [ ] Build local leaderboard preview from stored attempts.
+- [x] Build local leaderboard preview from stored attempts.
 - [ ] Build coach/admin leaderboard view with week and season toggles.
 - [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [ ] Add achievements/stars above the 1000-point goal.
@@ -54,5 +54,5 @@
 - [x] Add player mobile regression coverage for opening Quiz Center from Home.
 - [ ] Add tests for Game Plan source when a board has assignments.
 - [x] Add tests for responsibility-question generation.
-- [ ] Add tests for local attempt scoring and badge thresholds.
+- [x] Add tests for local attempt scoring and badge thresholds.
 - [ ] Run Chromium and WebKit mobile checks before each shipped quiz slice.

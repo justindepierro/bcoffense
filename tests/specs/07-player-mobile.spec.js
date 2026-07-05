@@ -328,8 +328,36 @@ test.describe("Player mobile experience", () => {
     await quiz.getByRole("button", { name: /Secure the edge/i }).click();
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Q Rule");
-    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /Next/i }).click();
+    await expect(quiz.getByText("Which play has this Q rule?")).toBeVisible();
+    await quiz.getByRole("button", { name: /Verts/i }).click();
+    await quiz.getByRole("button", { name: /Next/i }).click();
+    await quiz.getByRole("button", { name: /Open play side/i }).click();
+    await quiz.getByRole("button", { name: /Next/i }).click();
+    await quiz.getByRole("button", { name: /Catch, replace/i }).click();
+    await quiz.locator("#scriptQuizNextBtn").click();
+    await expect(quiz.locator(".sq-result-card")).toContainText("100%");
+    await expect(quiz.locator(".sq-result-card")).toContainText("Coaches List");
+    await expect(quiz.locator(".sq-result-card")).toContainText("700");
+    await expect.poll(async () => page.evaluate(() => {
+      const attempts = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, []);
+      return {
+        count: attempts.length,
+        badge: attempts.at(-1)?.badge,
+        totalPoints: attempts.at(-1)?.totalPoints,
+      };
+    })).toEqual({ count: 1, badge: "Coaches List", totalPoints: 700 });
+    await quiz.getByRole("button", { name: /^Done$/i }).click();
     await expect(quiz).toBeHidden();
+
+    await goToTab(page, "dashboard");
+    await page.locator("#playerDashboardHome").getByRole("button", { name: /^Quiz$/i }).click();
+    const resultHub = page.locator("#playerQuizHubOverlay");
+    await expect(resultHub.locator("#playerQuizWeeklyPoints")).toContainText("700 / 1000");
+    await expect(resultHub.locator("#playerQuizCurrentTier")).toContainText("Starter");
+    await expect(resultHub.locator("#playerQuizBestBadge")).toContainText("Coaches List");
+    await expect(resultHub.locator("#playerQuizLeaderboardPreview")).toContainText("700 pts");
+    await resultHub.getByRole("button", { name: /Close Quiz Center/i }).click();
   });
 
   test("opens every core player page without staff controls or overflow", async ({ page }) => {

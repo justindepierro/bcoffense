@@ -1448,6 +1448,8 @@ let _quizSourceType = "script";
 let _quizSourceWeight = 1;
 let _quizTitle = "Play Quiz";
 let _quizPositionKey = "respQ";
+let _quizFinished = false;
+let _quizSavedAttemptId = "";
 
 const SCRIPT_QUIZ_CHOICE_COLORS = ["blue", "red", "gold", "green"];
 const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
@@ -1456,6 +1458,91 @@ const PLAYER_QUIZ_SOURCE_WEIGHTS = {
   gameplan: 1.25,
 };
 const PLAYER_QUIZ_TIERS = ["Champion", "Baller", "Starter", "Contributor", "Defense"];
+const PLAYER_QUIZ_BADGES = [
+  { min: 95, label: "Coaches List", bonus: 150 },
+  { min: 90, label: "High Honor Roll", bonus: 100 },
+  { min: 85, label: "Honor Roll", bonus: 50 },
+];
+
+function _getPlayerQuizStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_RESULTS
+    ? STORAGE_KEYS.PLAYER_QUIZ_RESULTS
+    : "playerQuizResults";
+}
+
+function _getPlayerQuizAttempts() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return [];
+  const attempts = storageManager.get(_getPlayerQuizStorageKey(), []);
+  return Array.isArray(attempts) ? attempts.filter((attempt) => attempt && typeof attempt === "object") : [];
+}
+
+function _savePlayerQuizAttempts(attempts) {
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const normalized = (Array.isArray(attempts) ? attempts : [])
+    .filter((attempt) => attempt && typeof attempt === "object")
+    .slice(-150);
+  storageManager.set(_getPlayerQuizStorageKey(), normalized);
+}
+
+function _quizDateKey(date = new Date()) {
+  return date.toISOString().slice(0, 10);
+}
+
+function _quizWeekKey(date = new Date()) {
+  const d = new Date(Date.UTC(date.getFullYear(), date.getMonth(), date.getDate()));
+  const dayNum = d.getUTCDay() || 7;
+  d.setUTCDate(d.getUTCDate() + 4 - dayNum);
+  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
+  const weekNo = Math.ceil((((d - yearStart) / 86400000) + 1) / 7);
+  return `${d.getUTCFullYear()}-W${String(weekNo).padStart(2, "0")}`;
+}
+
+function _getQuizBadge(percent) {
+  return PLAYER_QUIZ_BADGES.find((badge) => percent >= badge.min) || {
+    min: 0,
+    label: "Keep Climbing",
+    bonus: 0,
+  };
+}
+
+function _getQuizTier(points) {
+  if (points >= PLAYER_QUIZ_WEEKLY_GOAL) return "Champion";
+  if (points >= 750) return "Baller";
+  if (points >= 500) return "Starter";
+  if (points >= 250) return "Contributor";
+  return "Defense";
+}
+
+function _getQuizPlayerName() {
+  if (typeof currentAuthUser !== "undefined" && currentAuthUser?.username) {
+    return currentAuthUser.username;
+  }
+  return "You";
+}
+
+function _summarizeQuizAttempts() {
+  const attempts = _getPlayerQuizAttempts();
+  const now = new Date();
+  const weekKey = _quizWeekKey(now);
+  const player = _getQuizPlayerName();
+  const playerAttempts = attempts.filter((attempt) => (attempt.player || "You") === player);
+  const weeklyAttempts = playerAttempts.filter((attempt) => attempt.weekKey === weekKey);
+  const weeklyPoints = weeklyAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const seasonPoints = playerAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const bestPercent = playerAttempts.reduce((best, attempt) => Math.max(best, Number(attempt.percent || 0)), 0);
+  const bestBadge = _getQuizBadge(bestPercent);
+  return {
+    attempts,
+    player,
+    weekKey,
+    weeklyAttempts,
+    weeklyPoints,
+    seasonPoints,
+    bestPercent,
+    bestBadge,
+    tier: _getQuizTier(weeklyPoints),
+  };
+}
 
 function _buildQuizPlays(shuffled) {
   const items = [];
@@ -1542,6 +1629,44 @@ function _getPlayerQuizScriptOptions() {
 }
 
 function _renderPlayerQuizHub() {
+  const summary = _summarizeQuizAttempts();
+  const weeklyPointsEl = document.getElementById("playerQuizWeeklyPoints");
+  if (weeklyPointsEl) {
+    weeklyPointsEl.textContent = `${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL}`;
+  }
+  const weeklyMetaEl = document.getElementById("playerQuizWeeklyMeta");
+  if (weeklyMetaEl) {
+    weeklyMetaEl.textContent = `${summary.weeklyAttempts.length} attempt${summary.weeklyAttempts.length === 1 ? "" : "s"} this week`;
+  }
+  const tierEl = document.getElementById("playerQuizCurrentTier");
+  if (tierEl) tierEl.textContent = summary.tier;
+  const tierMetaEl = document.getElementById("playerQuizTierMeta");
+  if (tierMetaEl) {
+    const remaining = Math.max(0, PLAYER_QUIZ_WEEKLY_GOAL - summary.weeklyPoints);
+    tierMetaEl.textContent = remaining ? `${Math.round(remaining)} to Champion` : "Champion standard met";
+  }
+  const bestBadgeEl = document.getElementById("playerQuizBestBadge");
+  if (bestBadgeEl) {
+    bestBadgeEl.textContent = summary.bestPercent ? summary.bestBadge.label : "No attempts";
+  }
+  const badgeMetaEl = document.getElementById("playerQuizBadgeMeta");
+  if (badgeMetaEl) {
+    badgeMetaEl.textContent = summary.bestPercent
+      ? `Best ${Math.round(summary.bestPercent)}% · season ${Math.round(summary.seasonPoints)} pts`
+      : "85 / 90 / 95 unlock bonuses";
+  }
+  const leaderboardEl = document.getElementById("playerQuizLeaderboardPreview");
+  if (leaderboardEl) {
+    leaderboardEl.innerHTML = `
+      <div class="player-quiz-leader-row">
+        <span class="player-quiz-rank">#1</span>
+        <strong>${escapeHtml(summary.player)}</strong>
+        <span>${escapeHtml(summary.tier)}</span>
+        <b>${Math.round(summary.weeklyPoints)} pts</b>
+      </div>
+    `;
+  }
+
   const picker = document.getElementById("playerQuizPositionPicker");
   if (picker) {
     picker.innerHTML = _getQuizPositions()
@@ -1669,6 +1794,8 @@ function _resetQuizGameState() {
   _quizScore = 0;
   _quizStreak = 0;
   _quizBestStreak = 0;
+  _quizFinished = false;
+  _quizSavedAttemptId = "";
 }
 
 function _quizItemKey(item) {
@@ -1926,6 +2053,7 @@ function startScriptQuiz(options = {}) {
 function closeScriptQuiz() {
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
+  if (_quizFinished) _renderPlayerQuizHub();
   if (typeof closeLayer === "function") {
     closeLayer(overlay);
   }
@@ -1958,6 +2086,10 @@ function revealScriptQuizAnswer() {
 function nextScriptQuizPlay() {
   if (isScriptQuizAwaitingAnswer()) {
     showToast("Pick an answer first.", { type: "warning" });
+    return;
+  }
+  if (_quizIndex >= _quizPlays.length - 1) {
+    finishScriptQuiz();
     return;
   }
   if (_quizIndex < _quizPlays.length - 1) {
@@ -1993,9 +2125,110 @@ function answerScriptQuizChoice(choiceKey) {
   renderScriptQuizPlay();
 }
 
+function _buildQuizAttemptSummary() {
+  const answers = Array.from(_quizAnswers.values());
+  const answered = answers.length;
+  const correct = answers.filter((answer) => answer.correct).length;
+  const percent = answered ? Math.round((correct / answered) * 100) : 0;
+  const badge = _getQuizBadge(percent);
+  const bonusPoints = answered ? badge.bonus : 0;
+  const totalPoints = _quizScore + bonusPoints;
+  const now = new Date();
+  return {
+    id: _quizSavedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
+    player: _getQuizPlayerName(),
+    sourceType: _quizSourceType,
+    title: _quizTitle,
+    positionKey: _quizPositionKey,
+    positionLabel: _getQuizPosition()?.label || "",
+    score: _quizScore,
+    bonusPoints,
+    totalPoints,
+    answered,
+    correct,
+    percent,
+    badge: badge.label,
+    bestStreak: _quizBestStreak,
+    completedAt: now.toISOString(),
+    dateKey: _quizDateKey(now),
+    weekKey: _quizWeekKey(now),
+  };
+}
+
+function _saveQuizAttempt(summary) {
+  if (!summary || !summary.answered) return null;
+  if (_quizSavedAttemptId) return summary;
+  const attempts = _getPlayerQuizAttempts();
+  attempts.push(summary);
+  _savePlayerQuizAttempts(attempts);
+  _quizSavedAttemptId = summary.id;
+  return summary;
+}
+
+function _renderQuizResults(summary) {
+  const scenarioEl = document.getElementById("scriptQuizScenario");
+  const answerEl = document.getElementById("scriptQuizAnswer");
+  const revealRow = document.querySelector(".script-quiz-reveal-row");
+  const sourceLabel = summary.sourceType === "gameplan" ? "Game Plan" : "Script";
+  const tierAfter = _getQuizTier(_summarizeQuizAttempts().weeklyPoints);
+  if (scenarioEl) {
+    setInnerHTML(scenarioEl, `
+      <div class="sq-result-card">
+        <div class="sq-result-kicker">${escapeHtml(sourceLabel)} Complete</div>
+        <div class="sq-result-score">${summary.percent}%</div>
+        <div class="sq-result-title">${escapeHtml(summary.badge)}</div>
+        <div class="sq-result-grid">
+          <span><strong>${summary.correct}</strong><small>Correct</small></span>
+          <span><strong>${summary.answered}</strong><small>Answered</small></span>
+          <span><strong>${summary.bestStreak}</strong><small>Best streak</small></span>
+          <span><strong>${Math.round(summary.totalPoints)}</strong><small>Total points</small></span>
+        </div>
+        ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
+        <div class="sq-result-tier">Weekly tier now: <strong>${escapeHtml(tierAfter)}</strong></div>
+        <button type="button" class="btn btn-primary sq-result-close" data-action="closeScriptQuiz">Done</button>
+      </div>
+    `);
+  }
+  if (answerEl) answerEl.classList.add("hidden");
+  if (revealRow) revealRow.classList.add("hidden");
+}
+
+function finishScriptQuiz() {
+  if (_quizFinished) return;
+  _quizFinished = true;
+  const summary = _buildQuizAttemptSummary();
+  _saveQuizAttempt(summary);
+  const progressEl = document.getElementById("scriptQuizProgress");
+  if (progressEl) progressEl.textContent = "Complete";
+  const periodEl = document.getElementById("scriptQuizPeriod");
+  if (periodEl) {
+    periodEl.textContent = "";
+    periodEl.className = "script-quiz-period hidden";
+  }
+  const prevBtn = document.getElementById("scriptQuizPrevBtn");
+  const nextBtn = document.getElementById("scriptQuizNextBtn");
+  if (prevBtn) prevBtn.disabled = true;
+  if (nextBtn) {
+    nextBtn.disabled = true;
+    nextBtn.textContent = "Complete";
+  }
+  const scoreEl = document.getElementById("scriptQuizScore");
+  if (scoreEl) {
+    scoreEl.textContent = summary.answered
+      ? `${Math.round(summary.totalPoints)} pts · ${summary.badge}`
+      : "Review complete";
+  }
+  _renderQuizResults(summary);
+  _renderPlayerQuizHub();
+}
+
 function renderScriptQuizPlay() {
   const item = _quizPlays[_quizIndex];
   if (!item) return;
+  if (_quizFinished) {
+    _renderQuizResults(_buildQuizAttemptSummary());
+    return;
+  }
   const { play, period } = item;
   const questionKey = _quizItemKey(item);
   const answer = _quizAnswers.get(questionKey) || null;
@@ -2024,7 +2257,7 @@ function renderScriptQuizPlay() {
   const nextBtn = document.getElementById("scriptQuizNextBtn");
   if (prevBtn) prevBtn.disabled = _quizIndex === 0;
   if (nextBtn) {
-    nextBtn.disabled = _quizIndex === _quizPlays.length - 1 || (gameMode && !answer);
+    nextBtn.disabled = gameMode && !answer;
     nextBtn.textContent = _quizIndex === _quizPlays.length - 1 ? "Finish" : "Next ▶";
   }
 

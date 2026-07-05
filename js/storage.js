@@ -129,6 +129,7 @@ const STORAGE_KEYS = {
   MOTD: "motd",
   PLAYER_READY: "playerReady",
   PLAYER_PORTAL_BRANDING: "playerPortalBranding",
+  PLAYER_QUIZ_RESULTS: "playerQuizResults",
   GAME_WEEK_ARCHIVE: "gameWeekArchive",
   TENDENCIES_REPORTS: "tendenciesReports",
   FIRST_USE_DISMISSED: "firstUseDismissed",
