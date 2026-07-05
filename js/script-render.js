@@ -1436,15 +1436,23 @@ let _quizPlays = [];     // [{ play, period }]
 let _quizIndex = 0;
 let _quizShuffled = false;
 let _quizRevealed = false;
+let _quizAnswers = new Map();
+let _quizChoiceCache = new Map();
+let _quizCurrentChoices = [];
+let _quizScore = 0;
+let _quizStreak = 0;
+let _quizBestStreak = 0;
+
+const SCRIPT_QUIZ_CHOICE_COLORS = ["blue", "red", "gold", "green"];
 
 function _buildQuizPlays(shuffled) {
   const items = [];
   let currentPeriod = "";
-  script.forEach((item) => {
+  script.forEach((item, scriptIndex) => {
     if (item.isSeparator) {
       currentPeriod = item.label || "";
     } else {
-      items.push({ play: item, period: currentPeriod });
+      items.push({ play: item, period: currentPeriod, scriptIndex });
     }
   });
   if (shuffled) {
@@ -1456,6 +1464,147 @@ function _buildQuizPlays(shuffled) {
   return items;
 }
 
+function _resetQuizGameState() {
+  _quizRevealed = false;
+  _quizAnswers = new Map();
+  _quizChoiceCache = new Map();
+  _quizCurrentChoices = [];
+  _quizScore = 0;
+  _quizStreak = 0;
+  _quizBestStreak = 0;
+}
+
+function _quizItemKey(item) {
+  if (!item || !item.play) return "";
+  const sig = typeof playSignature === "function" ? playSignature(item.play) : "";
+  return `${item.scriptIndex ?? _quizIndex}::${sig || _quizPlainCall(item.play)}`;
+}
+
+function _quizChoiceKey(item) {
+  return _quizItemKey(item);
+}
+
+function _quizPlainCall(play) {
+  if (!play) return "Unnamed Play";
+  const parts = [
+    play.personnel,
+    play.formation,
+    play.formTag1,
+    play.formTag2,
+    play.shift,
+    play.motion,
+    play.protection,
+    play.play,
+    play.playTag1,
+    play.playTag2,
+  ]
+    .filter(Boolean)
+    .map((part) => String(part).trim())
+    .filter(Boolean);
+  return parts.join(" ").replace(/\s+/g, " ").trim() || "Unnamed Play";
+}
+
+function _quizShuffle(items) {
+  const copy = items.slice();
+  for (let i = copy.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [copy[i], copy[j]] = [copy[j], copy[i]];
+  }
+  return copy;
+}
+
+function _buildQuizChoices(item) {
+  const questionKey = _quizItemKey(item);
+  if (_quizChoiceCache.has(questionKey)) return _quizChoiceCache.get(questionKey);
+
+  const correctLabel = _quizPlainCall(item.play);
+  const correct = {
+    key: _quizChoiceKey(item),
+    play: item.play,
+    label: correctLabel,
+    correct: true,
+  };
+  const labels = new Set([correctLabel.toLowerCase()]);
+  const pool = _quizShuffle(_quizPlays.filter((candidate) => candidate !== item))
+    .map((candidate) => ({
+      key: _quizChoiceKey(candidate),
+      play: candidate.play,
+      label: _quizPlainCall(candidate.play),
+      correct: false,
+    }))
+    .filter((choice) => {
+      const labelKey = choice.label.toLowerCase();
+      if (!labelKey || labels.has(labelKey)) return false;
+      labels.add(labelKey);
+      return true;
+    });
+
+  const choices = _quizShuffle([correct, ...pool.slice(0, 3)]).map((choice, idx) => ({
+    ...choice,
+    color: SCRIPT_QUIZ_CHOICE_COLORS[idx % SCRIPT_QUIZ_CHOICE_COLORS.length],
+  }));
+  const result = choices.length >= 2 ? choices : [];
+  _quizChoiceCache.set(questionKey, result);
+  return result;
+}
+
+function _quizCoachDetails(play) {
+  const ruleParts = [play.respQ, play.respNotes].filter(Boolean);
+  const noteParts = [play.playerNotes, play.notes].filter(Boolean);
+  return { ruleParts, noteParts };
+}
+
+function _renderQuizChoice(choice, answer) {
+  const answered = Boolean(answer);
+  const selected = answer && answer.choiceKey === choice.key;
+  const stateClass = answered && choice.correct
+    ? " is-correct"
+    : answered && selected
+      ? " is-wrong"
+      : "";
+  const selectedAttr = selected ? ' aria-pressed="true"' : ' aria-pressed="false"';
+  const disabledAttr = answered ? " disabled" : "";
+  const icon = choice.color === "blue" ? "▲" : choice.color === "red" ? "◆" : choice.color === "gold" ? "●" : "■";
+  return `
+    <button type="button"
+      class="script-quiz-choice script-quiz-choice--${escapeAttr(choice.color)}${stateClass}"
+      data-action="answerScriptQuizChoice"
+      data-arg="${escapeAttr(choice.key)}"
+      ${selectedAttr}${disabledAttr}>
+      <span class="sq-choice-icon" aria-hidden="true">${icon}</span>
+      <span class="sq-choice-label">${escapeHtml(choice.label)}</span>
+    </button>
+  `;
+}
+
+function _renderQuizFeedback(item, answer) {
+  if (!answer) return "";
+  const { play } = item;
+  const fullCall = typeof getFullCall === "function"
+    ? getFullCall(play, { showEmoji: false })
+    : escapeHtml(_quizPlainCall(play));
+  const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
+  const { ruleParts, noteParts } = _quizCoachDetails(play);
+  const resultText = answer.correct ? "Correct" : "Not this one";
+  const resultClass = answer.correct ? "is-correct" : "is-wrong";
+  return `
+    <div class="sq-feedback ${resultClass}">
+      <div class="sq-feedback-result">${resultText}</div>
+      <div class="sq-answer-call">${fullCall}</div>
+      ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
+      ${ruleParts.length ? `<div class="sq-answer-note"><strong>Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
+      ${noteParts.length ? `<div class="sq-answer-note"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
+    </div>
+  `;
+}
+
+function isScriptQuizAwaitingAnswer() {
+  const item = _quizPlays[_quizIndex];
+  if (!item) return false;
+  const choices = _quizCurrentChoices.length ? _quizCurrentChoices : _buildQuizChoices(item);
+  return choices.length >= 2 && !_quizAnswers.has(_quizItemKey(item));
+}
+
 function startScriptQuiz() {
   const plays = Array.isArray(script) ? script.filter((s) => !s.isSeparator) : [];
   if (!plays.length) {
@@ -1465,6 +1614,7 @@ function startScriptQuiz() {
   _quizShuffled = false;
   _quizPlays = _buildQuizPlays(false);
   _quizIndex = 0;
+  _resetQuizGameState();
 
   const overlay = document.getElementById("scriptQuizOverlay");
   if (!overlay) return;
@@ -1494,6 +1644,7 @@ function toggleScriptQuizShuffle() {
   _quizShuffled = !_quizShuffled;
   _quizPlays = _buildQuizPlays(_quizShuffled);
   _quizIndex = 0;
+  _resetQuizGameState();
   const btn = document.getElementById("scriptQuizShuffleBtn");
   if (btn) btn.classList.toggle("active", _quizShuffled);
   renderScriptQuizPlay();
@@ -1501,6 +1652,10 @@ function toggleScriptQuizShuffle() {
 }
 
 function revealScriptQuizAnswer() {
+  if (isScriptQuizAwaitingAnswer()) {
+    showToast("Pick an answer first.", { type: "warning" });
+    return;
+  }
   _quizRevealed = true;
   const revealRow = document.querySelector(".script-quiz-reveal-row");
   const answerEl = document.getElementById("scriptQuizAnswer");
@@ -1509,6 +1664,10 @@ function revealScriptQuizAnswer() {
 }
 
 function nextScriptQuizPlay() {
+  if (isScriptQuizAwaitingAnswer()) {
+    showToast("Pick an answer first.", { type: "warning" });
+    return;
+  }
   if (_quizIndex < _quizPlays.length - 1) {
     _quizIndex++;
     renderScriptQuizPlay();
@@ -1522,11 +1681,35 @@ function prevScriptQuizPlay() {
   }
 }
 
+function answerScriptQuizChoice(choiceKey) {
+  const item = _quizPlays[_quizIndex];
+  if (!item) return;
+  const questionKey = _quizItemKey(item);
+  if (_quizAnswers.has(questionKey)) return;
+  const choices = _quizCurrentChoices.length ? _quizCurrentChoices : _buildQuizChoices(item);
+  const selected = choices.find((choice) => choice.key === choiceKey);
+  if (!selected) return;
+  const correct = Boolean(selected.correct);
+  if (correct) {
+    _quizStreak += 1;
+    _quizBestStreak = Math.max(_quizBestStreak, _quizStreak);
+    _quizScore += 100 + Math.min(_quizStreak - 1, 4) * 25;
+  } else {
+    _quizStreak = 0;
+  }
+  _quizAnswers.set(questionKey, { choiceKey, correct });
+  renderScriptQuizPlay();
+}
+
 function renderScriptQuizPlay() {
   const item = _quizPlays[_quizIndex];
   if (!item) return;
   const { play, period } = item;
-  _quizRevealed = false;
+  const questionKey = _quizItemKey(item);
+  const answer = _quizAnswers.get(questionKey) || null;
+  _quizCurrentChoices = _buildQuizChoices(item);
+  const gameMode = _quizCurrentChoices.length >= 2;
+  _quizRevealed = Boolean(answer);
 
   // Progress
   const progressEl = document.getElementById("scriptQuizProgress");
@@ -1543,11 +1726,18 @@ function renderScriptQuizPlay() {
   const prevBtn = document.getElementById("scriptQuizPrevBtn");
   const nextBtn = document.getElementById("scriptQuizNextBtn");
   if (prevBtn) prevBtn.disabled = _quizIndex === 0;
-  if (nextBtn) nextBtn.disabled = _quizIndex === _quizPlays.length - 1;
+  if (nextBtn) {
+    nextBtn.disabled = _quizIndex === _quizPlays.length - 1 || (gameMode && !answer);
+    nextBtn.textContent = _quizIndex === _quizPlays.length - 1 ? "Finish" : "Next ▶";
+  }
 
   // Score / context
   const scoreEl = document.getElementById("scriptQuizScore");
-  if (scoreEl) scoreEl.textContent = `Play ${_quizIndex + 1} of ${_quizPlays.length}`;
+  if (scoreEl) {
+    scoreEl.textContent = gameMode
+      ? `Score ${_quizScore} · Streak ${_quizStreak}`
+      : `Play ${_quizIndex + 1} of ${_quizPlays.length}`;
+  }
 
   // Scenario — show the SITUATION without revealing the call
   const downLabel = play.preferredDown ? `${_ordinalDown(play.preferredDown)} Down` : "";
@@ -1561,8 +1751,19 @@ function renderScriptQuizPlay() {
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
   const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
+  const choicesHtml = gameMode
+    ? `<div class="script-quiz-choices" role="group" aria-label="Answer choices">
+        ${_quizCurrentChoices.map((choice) => _renderQuizChoice(choice, answer)).join("")}
+      </div>`
+    : "";
 
   const scenarioHtml = `
+    ${gameMode ? `
+    <div class="sq-game-topline">
+      <span class="sq-game-pill">Score ${_quizScore}</span>
+      <span class="sq-game-pill">Streak ${_quizStreak}</span>
+      <span class="sq-game-pill">Best ${_quizBestStreak}</span>
+    </div>` : ""}
     <div class="sq-scenario-block">
       <div class="sq-scenario-label">Situation</div>
       <div class="sq-scenario-value sq-situation">${situationParts.length ? situationParts.map(escapeHtml).join(" · ") : "<em style='opacity:.5'>No situation set</em>"}</div>
@@ -1578,6 +1779,7 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
     </div>` : ""}
     <div class="sq-scenario-hint">What's the call?</div>
+    ${choicesHtml}
   `;
   const scenarioEl = document.getElementById("scriptQuizScenario");
   if (scenarioEl) setInnerHTML(scenarioEl, scenarioHtml);
@@ -1592,11 +1794,11 @@ function renderScriptQuizPlay() {
   `;
   const answerEl = document.getElementById("scriptQuizAnswer");
   if (answerEl) {
-    setInnerHTML(answerEl, answerHtml);
-    answerEl.classList.add("hidden");
+    setInnerHTML(answerEl, gameMode ? _renderQuizFeedback(item, answer) : answerHtml);
+    answerEl.classList.toggle("hidden", gameMode ? !answer : true);
   }
   const revealRow = document.querySelector(".script-quiz-reveal-row");
-  if (revealRow) revealRow.classList.remove("hidden");
+  if (revealRow) revealRow.classList.toggle("hidden", gameMode);
 }
 
 function _ordinalDown(n) {

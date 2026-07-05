@@ -75,6 +75,7 @@ Completed in the Home/Quiz slice:
 - Home now exposes Practice, Swipe View, Quiz, Questions, and Playbook as visible player actions.
 - Practice now exposes a player-safe Quiz action in the current-practice bar and each published-practice card.
 - Quiz opens through the shared layer lock, restores the page when closed, and has larger mobile reveal/navigation/close targets.
+- Quiz now runs a Kahoot-style multiple-choice mode when a practice has enough plays: colored answer tiles, score, streak, locked feedback, correct call, rule, and coach-note reveal. Single-play practices still fall back to the reveal-card flow.
 - Added seeded coverage for Home, Practice, Quiz, Playbook, and Questions surfaces on a phone viewport.
 
 Next coverage targets:

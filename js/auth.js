@@ -165,6 +165,7 @@
     "closeScriptQuiz",
     "toggleScriptQuizShuffle",
     "revealScriptQuizAnswer",
+    "answerScriptQuizChoice",
     "nextScriptQuizPlay",
     "prevScriptQuizPlay",
     "closePlayPresentation",

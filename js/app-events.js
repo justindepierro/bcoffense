@@ -662,6 +662,10 @@ document.addEventListener("keydown", (e) => {
     if (typeof prevScriptQuizPlay === "function") prevScriptQuizPlay();
   } else if (e.key === " " || e.key === "Enter") {
     e.preventDefault();
+    if (typeof isScriptQuizAwaitingAnswer === "function" && isScriptQuizAwaitingAnswer()) {
+      document.querySelector(".script-quiz-choice:not([disabled])")?.focus();
+      return;
+    }
     const answerEl = document.getElementById("scriptQuizAnswer");
     if (answerEl && answerEl.classList.contains("hidden")) {
       if (typeof revealScriptQuizAnswer === "function") revealScriptQuizAnswer();

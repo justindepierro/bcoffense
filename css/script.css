@@ -7102,6 +7102,119 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   text-align: center;
 }
 
+.sq-game-topline {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+  justify-content: center;
+  margin-bottom: var(--space-xs);
+}
+
+.sq-game-pill {
+  display: inline-flex;
+  align-items: center;
+  min-height: 30px;
+  padding: 3px 10px;
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border);
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.script-quiz-choices {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-sm);
+  margin-top: var(--space-sm);
+}
+
+.script-quiz-choice {
+  min-height: 76px;
+  width: 100%;
+  border: 2px solid transparent;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  color: var(--color-text-inverse);
+  cursor: pointer;
+  display: grid;
+  grid-template-columns: 34px minmax(0, 1fr);
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  text-align: left;
+  transition:
+    transform var(--transition-fast),
+    box-shadow var(--transition-fast),
+    filter var(--transition-fast),
+    border-color var(--transition-fast);
+}
+
+.script-quiz-choice:hover:not(:disabled),
+.script-quiz-choice:focus-visible {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
+}
+
+.script-quiz-choice:disabled {
+  cursor: default;
+}
+
+.script-quiz-choice--blue {
+  background: var(--color-info);
+}
+
+.script-quiz-choice--red {
+  background: var(--color-danger);
+}
+
+.script-quiz-choice--gold {
+  background: var(--color-warning);
+  color: var(--color-text);
+}
+
+.script-quiz-choice--green {
+  background: var(--color-success);
+}
+
+.script-quiz-choice.is-correct {
+  border-color: color-mix(in srgb, var(--color-success) 45%, white);
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--color-success) 20%, transparent);
+}
+
+.script-quiz-choice.is-wrong {
+  filter: saturate(0.75) brightness(0.88);
+  border-color: color-mix(in srgb, var(--color-danger) 45%, white);
+}
+
+.script-quiz-choice:disabled:not(.is-correct):not(.is-wrong) {
+  filter: grayscale(0.35) opacity(0.62);
+}
+
+.sq-choice-icon {
+  display: grid;
+  place-items: center;
+  width: 34px;
+  height: 34px;
+  border-radius: var(--radius-sm);
+  background: rgba(255, 255, 255, 0.22);
+  font-size: var(--font-size-lg);
+  font-weight: 900;
+}
+
+.script-quiz-choice--gold .sq-choice-icon {
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.sq-choice-label {
+  min-width: 0;
+  overflow-wrap: anywhere;
+  font-size: var(--font-size-md);
+  font-weight: 900;
+  line-height: 1.2;
+}
+
 .script-quiz-reveal-row {
   display: flex;
   justify-content: center;
@@ -7131,6 +7244,30 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .script-quiz-answer.hidden {
   display: none;
 }
+
+.sq-feedback {
+  display: grid;
+  gap: var(--space-xs);
+}
+
+.sq-feedback-result {
+  justify-self: center;
+  border-radius: var(--radius-pill);
+  padding: 3px 12px;
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-sm);
+  font-weight: 900;
+  background: var(--color-primary);
+}
+
+.sq-feedback.is-correct .sq-feedback-result {
+  background: var(--color-success);
+}
+
+.sq-feedback.is-wrong .sq-feedback-result {
+  background: var(--color-danger);
+}
+
 @keyframes sqReveal {
   from {
     opacity: 0;
@@ -7161,6 +7298,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-style: italic;
 }
 
+.sq-answer-note {
+  font-size: var(--font-size-sm);
+  color: var(--color-text);
+  margin-top: var(--space-xs);
+  line-height: 1.35;
+}
+
 /* Navigation bar */
 .script-quiz-nav {
   display: flex;
@@ -7185,7 +7329,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 /* Keyboard shortcut hint */
 @media (pointer: fine) {
   .script-quiz-panel::after {
-    content: "← → arrow keys to navigate · Space to reveal";
+    content: "Pick an answer · Arrow keys navigate · Space focuses choices";
     display: block;
     text-align: center;
     font-size: var(--font-size-xs);
@@ -7245,6 +7389,19 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   .sq-scenario-hint {
     margin-top: var(--space-sm);
+  }
+
+  .script-quiz-choices {
+    grid-template-columns: 1fr;
+  }
+
+  .script-quiz-choice {
+    min-height: 66px;
+    padding: 10px 12px;
+  }
+
+  .sq-choice-label {
+    font-size: var(--font-size-sm);
   }
 
   .sq-answer-call {

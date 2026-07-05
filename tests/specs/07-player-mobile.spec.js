@@ -234,8 +234,12 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("body")).toHaveClass(/app-layer-locked/);
     await expect.poll(() => page.evaluate(() => document.body.dataset.scrollOwner)).toBe("layer");
     await expect(quiz.getByText("What's the call?")).toBeVisible();
-    await quiz.getByRole("button", { name: /Show Play Call/i }).click();
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(2);
+    await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
+    await expect(quiz.locator("#scriptQuizScore")).toContainText("Score");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Buck Sweep");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Coach note");
     await quiz.getByRole("button", { name: /Close quiz/i }).click();
     await expect(quiz).toBeHidden();
     await expect(page.locator("body")).not.toHaveClass(/app-layer-locked/);
