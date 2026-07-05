@@ -644,9 +644,13 @@
 body:not(.is-mobile-screen) #gameplan.panel.active {
   overflow: hidden;
   gap: 0;
-  margin-top: 24px;
-  flex: 1 1 0;
+  margin-top: 12px;
+  flex: 1 1 auto;
   min-height: 0;
+}
+body:not(.is-mobile-screen)[data-active-tab="gameplan"] #mainApp {
+  flex: 0 0 auto;
+  overflow: visible;
 }
 body:not(.is-mobile-screen) .gp-command-zone {
   flex: 0 0 auto;

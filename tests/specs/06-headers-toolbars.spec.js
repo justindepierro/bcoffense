@@ -213,11 +213,13 @@ test.describe("Header and toolbar contract", () => {
 
     const spacing = await page.evaluate(() => {
       const tabs = document.querySelector("#mainApp .tabs")?.getBoundingClientRect();
+      const gameWeek = document.querySelector(".gw-bar:not([hidden])")?.getBoundingClientRect();
       const panel = document.querySelector("#gameplan.panel.active")?.getBoundingClientRect();
       const bar = document.querySelector(".gp-cmd-bar")?.getBoundingClientRect();
       return tabs && panel && bar
         ? {
           tabsBottom: tabs.bottom,
+          anchorBottom: gameWeek?.bottom || tabs.bottom,
           panelTop: panel.top,
           barTop: bar.top,
         }
@@ -225,6 +227,7 @@ test.describe("Header and toolbar contract", () => {
     });
     expect(spacing).not.toBeNull();
     expect(spacing.panelTop).toBeGreaterThanOrEqual(spacing.tabsBottom);
+    expect(spacing.panelTop - spacing.anchorBottom).toBeLessThanOrEqual(36);
     expect(spacing.barTop).toBeGreaterThanOrEqual(spacing.tabsBottom - 1);
 
     const statsLayout = await page.evaluate(() => {
