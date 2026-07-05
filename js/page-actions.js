@@ -17,6 +17,17 @@
 // ============================================================
 
 const PAGE_ACTIONS_CONFIG = {
+  playbook: {
+    title: "Playbook",
+    verbs: [
+      { icon: "🔎", label: "Filter", run: () => _paCall("openPlayerPlaybookFilters") },
+      { icon: "▶", label: "Present", run: () => _paCall("openSelectedPlaybookPresentation") },
+      { icon: "✕", label: "Clear", run: () => _paCall("clearAllFilters") },
+      { icon: "↑", label: "Top", run: () => _paCall("scrollToTop") },
+    ],
+    extras: [],
+  },
+
   script: {
     title: "Practice Script",
     verbs: [

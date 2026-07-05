@@ -920,7 +920,7 @@ table.sortable th {
   color: var(--color-primary);
   font-size: var(--font-size-2xs);
   font-weight: 800;
-  letter-spacing: 0.08em;
+  letter-spacing: 0;
   text-transform: uppercase;
 }
 
@@ -967,8 +967,145 @@ table.sortable th {
   white-space: nowrap;
 }
 
+.pb-player-summary__filter-pill {
+  cursor: pointer;
+  font-family: inherit;
+}
+
+.pb-player-summary__filter-pill:hover,
+.pb-player-summary__filter-pill:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
 .pb-player-summary__filters {
-  display: none;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: var(--space-xs);
+  min-width: 0;
+}
+
+.pb-player-filter-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--z-modal);
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 16px;
+  background: rgba(15, 23, 42, 0.52);
+  opacity: 0;
+  transition: opacity 160ms ease;
+}
+
+.pb-player-filter-overlay.visible {
+  opacity: 1;
+}
+
+.pb-player-filter-dialog {
+  width: min(760px, 100%);
+  max-height: min(760px, calc(100vh - 32px));
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-lg);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-xl);
+}
+
+.pb-player-filter-header,
+.pb-player-filter-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-sm);
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.pb-player-filter-footer {
+  border-top: 1px solid var(--color-border-light);
+  border-bottom: 0;
+  justify-content: flex-end;
+}
+
+.pb-player-filter-kicker {
+  display: block;
+  color: var(--color-primary);
+  font-size: var(--font-size-2xs);
+  font-weight: 800;
+  letter-spacing: 0;
+  text-transform: uppercase;
+}
+
+.pb-player-filter-header h2 {
+  margin: 0;
+  color: var(--color-dark);
+  font-size: var(--font-size-xl);
+  line-height: 1.1;
+}
+
+.pb-player-filter-close {
+  width: 40px;
+  height: 40px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  font-size: 24px;
+  line-height: 1;
+  cursor: pointer;
+}
+
+.pb-player-filter-body {
+  display: grid;
+  gap: var(--space-md);
+  padding: 14px 16px;
+  overflow: auto;
+}
+
+.pb-player-filter-group h3 {
+  margin: 0 0 8px;
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 800;
+}
+
+.pb-player-filter-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.pb-player-filter-option {
+  min-height: 36px;
+  padding: 7px 11px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text);
+  font: inherit;
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  cursor: pointer;
+}
+
+.pb-player-filter-option:hover,
+.pb-player-filter-option:focus-visible {
+  border-color: var(--color-primary);
+  background: var(--color-primary-light);
+  color: var(--color-primary-dark);
+}
+
+.pb-player-filter-empty {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-sm);
 }
 
 body[data-auth-role="player"] #playbookTable .col-gameplan,
@@ -2768,6 +2905,35 @@ body.shell-phone .pb-action-sheet {
 
   .pb-player-summary__stats {
     justify-content: flex-start;
+  }
+
+  .pb-player-summary__filters {
+    justify-content: flex-start;
+  }
+
+  .pb-player-filter-overlay {
+    padding: 0;
+  }
+
+  .pb-player-filter-dialog {
+    width: 100%;
+    max-height: calc(100vh - env(safe-area-inset-top, 0px) - 12px);
+    border-right: 0;
+    border-bottom: 0;
+    border-left: 0;
+    border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  }
+
+  .pb-player-filter-footer {
+    flex-direction: column;
+    align-items: stretch;
+    padding-bottom: calc(14px + env(safe-area-inset-bottom, 0px));
+  }
+
+  .pb-player-filter-footer .btn {
+    width: 100%;
+    min-height: 46px;
+    justify-content: center;
   }
 
   .pb-controls-row,
@@ -4734,7 +4900,7 @@ body.shell-phone .pb-action-sheet {
   font-size: var(--font-size-xs);
   font-weight: 700;
   color: var(--color-text-inverse);
-  letter-spacing: -0.5px;
+  letter-spacing: 0;
 }
 .disc-post-content {
   flex: 1;

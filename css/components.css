@@ -3300,6 +3300,15 @@ body.is-mobile-screen .page-library-btn {
 body[data-auth-role="player"] .page-fab-cluster {
   display: none !important;
 }
+body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-fab-cluster {
+  display: flex !important;
+}
+body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-library-fab {
+  display: none;
+}
+body.is-mobile-screen[data-auth-role="player"][data-active-tab="playbook"] .page-actions-fab {
+  display: inline-flex;
+}
 /* Desktop header Library button — warning-orange to stand out (dark text for contrast) */
 .page-library-btn {
   background: var(--color-warning);

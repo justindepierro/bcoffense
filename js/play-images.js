@@ -80,6 +80,7 @@
   const _urlVersions = new Map(); // sig → invalidation counter
   const _knownKeys = new Set();
   let _keysPromise = null;
+  let _keysLoaded = false;
   let _hoverPreviewInstalled = false;
 
   function _normalizeSig(sig) {
@@ -167,13 +168,26 @@
         const normalized = allKeys.map(_normalizeSig).filter(Boolean);
         _knownKeys.clear();
         normalized.forEach((sig) => _knownKeys.add(sig));
+        _keysLoaded = true;
+        try {
+          window.dispatchEvent(
+            new CustomEvent("play-images-ready", {
+              detail: { count: normalized.length },
+            }),
+          );
+        } catch (_e) { /* ignore */ }
         return normalized;
       })
       .catch((err) => {
         _keysPromise = null;
+        _keysLoaded = false;
         throw err;
       });
     return _keysPromise;
+  }
+
+  function isKeyCacheReady() {
+    return _keysLoaded;
   }
 
   function _bumpUrlVersion(sig) {
@@ -867,6 +881,7 @@
     storedSignatureForPlay,
     deleteForPlay,
     loadKeys,
+    isKeyCacheReady,
     prefetchAll,
     compress,
     describeCompression,

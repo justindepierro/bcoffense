@@ -83,6 +83,16 @@ function debouncedFilterPlays() {
   _debouncedFilterPlays();
 }
 
+const PLAYER_PLAYBOOK_FILTER_GROUPS = [
+  { key: "type", label: "Type", cacheKey: "types", chipGroup: "pbChipsType", activeSet: () => activeTypeChips },
+  { key: "personnel", label: "Personnel", cacheKey: "personnels", chipGroup: "pbChipsPersonnel", activeSet: () => activePersonnelChips },
+  { key: "formation", label: "Formation", cacheKey: "formations", inputId: "filterFormation" },
+  { key: "basePlay", label: "Base Play", cacheKey: "basePlays", inputId: "filterBasePlay" },
+  { key: "motion", label: "Motion", cacheKey: "motions", inputId: "pbFilterMotion" },
+  { key: "protection", label: "Protection", cacheKey: "protections", inputId: "pbFilterProtection" },
+  { key: "tempo", label: "Tempo", cacheKey: "tempos", inputId: "pbFilterTempo" },
+];
+
 function filterPlays() {
   const activeTypes = activeTypeChips;
   const activePersonnel = activePersonnelChips;
@@ -266,6 +276,128 @@ function clearPbSearch() {
   const clearBtn = document.getElementById("clearPbSearch");
   if (clearBtn) clearBtn.classList.add("hidden");
   filterPlays();
+}
+
+function _getPlayerPlaybookFilterGroups() {
+  const cache =
+    typeof getFilterCache === "function"
+      ? getFilterCache()
+      : PLAYER_PLAYBOOK_FILTER_GROUPS.reduce((acc, group) => {
+        acc[group.cacheKey] = [];
+        return acc;
+      }, {});
+  return PLAYER_PLAYBOOK_FILTER_GROUPS.map((group) => ({
+    ...group,
+    values: Array.isArray(cache[group.cacheKey]) ? cache[group.cacheKey] : [],
+  }));
+}
+
+function _playerPlaybookFilterArg(key, value) {
+  return `${key}:${encodeURIComponent(value)}`;
+}
+
+function _decodePlayerPlaybookFilterArg(arg) {
+  const raw = String(arg || "");
+  const splitAt = raw.indexOf(":");
+  if (splitAt < 1) return null;
+  const key = raw.slice(0, splitAt);
+  const encoded = raw.slice(splitAt + 1);
+  try {
+    return { key, value: decodeURIComponent(encoded) };
+  } catch (_err) {
+    return { key, value: encoded };
+  }
+}
+
+function openPlayerPlaybookFilters(focusKey = "") {
+  closePlayerPlaybookFilters();
+
+  const groups = _getPlayerPlaybookFilterGroups();
+  const orderedGroups = focusKey
+    ? [
+      ...groups.filter((group) => group.key === focusKey),
+      ...groups.filter((group) => group.key !== focusKey),
+    ]
+    : groups;
+  const overlay = document.createElement("div");
+  overlay.id = "playerPlaybookFilterOverlay";
+  overlay.className = "pb-player-filter-overlay";
+  overlay.dataset.action = "closePlayerPlaybookFiltersOverlay";
+  overlay.setAttribute("role", "dialog");
+  overlay.setAttribute("aria-modal", "true");
+  overlay.setAttribute("aria-labelledby", "playerPlaybookFilterTitle");
+
+  const groupsHtml = orderedGroups
+    .map((group) => {
+      const values = group.values.slice(0, 36);
+      const options = values.length
+        ? values
+          .map((value) => {
+            const arg = _playerPlaybookFilterArg(group.key, value);
+            return `<button type="button" class="pb-player-filter-option" data-action="applyPlayerPlaybookFilter" data-arg="${escapeHtml(arg)}">${escapeHtml(value)}</button>`;
+          })
+          .join("")
+        : '<span class="pb-player-filter-empty">No options yet</span>';
+      return `<section class="pb-player-filter-group" data-filter-group="${escapeHtml(group.key)}">
+        <h3>${escapeHtml(group.label)}</h3>
+        <div class="pb-player-filter-options">${options}</div>
+      </section>`;
+    })
+    .join("");
+
+  overlay.innerHTML = `
+    <section class="pb-player-filter-dialog">
+      <header class="pb-player-filter-header">
+        <div>
+          <span class="pb-player-filter-kicker">Player Playbook</span>
+          <h2 id="playerPlaybookFilterTitle">Filter plays</h2>
+        </div>
+        <button type="button" class="pb-player-filter-close" data-action="closePlayerPlaybookFilters" aria-label="Close filters">×</button>
+      </header>
+      <div class="pb-player-filter-body">
+        ${groupsHtml}
+      </div>
+      <footer class="pb-player-filter-footer">
+        <button type="button" class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>
+        <button type="button" class="btn btn-primary" data-action="openSelectedPlaybookPresentation">Present Showing</button>
+      </footer>
+    </section>`;
+
+  document.body.appendChild(overlay);
+  requestAnimationFrame(() => overlay.classList.add("visible"));
+  if (typeof trapFocus === "function") trapFocus(overlay);
+}
+
+function closePlayerPlaybookFilters() {
+  const overlay = document.getElementById("playerPlaybookFilterOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("visible");
+  setTimeout(() => overlay.remove(), 160);
+}
+
+function applyPlayerPlaybookFilter(arg) {
+  const parsed = _decodePlayerPlaybookFilterArg(arg);
+  if (!parsed || !parsed.value) return;
+  const group = PLAYER_PLAYBOOK_FILTER_GROUPS.find((item) => item.key === parsed.key);
+  if (!group) return;
+
+  if (group.activeSet) {
+    const activeSet = group.activeSet();
+    activeSet.clear();
+    activeSet.add(parsed.value);
+    if (group.chipGroup) {
+      document
+        .querySelectorAll(`#${group.chipGroup} .pb-chip`)
+        .forEach((chip) => chip.classList.toggle("active", chip.dataset.value === parsed.value));
+    }
+  } else if (group.inputId) {
+    const input = document.getElementById(group.inputId);
+    if (input) input.value = parsed.value;
+  }
+
+  currentPage = 0;
+  filterPlays();
+  closePlayerPlaybookFilters();
 }
 
 function initPlaybookSearch() {

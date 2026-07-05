@@ -1,3 +1,32 @@
+let _playbookImageKeyRefreshPending = false;
+
+function ensurePlaybookImageBadgesReady() {
+  if (
+    typeof window === "undefined" ||
+    !window.playImages ||
+    typeof window.playImages.loadKeys !== "function"
+  ) {
+    return;
+  }
+  if (
+    typeof window.playImages.isKeyCacheReady === "function" &&
+    window.playImages.isKeyCacheReady()
+  ) {
+    return;
+  }
+  if (_playbookImageKeyRefreshPending) return;
+  _playbookImageKeyRefreshPending = true;
+  window.playImages
+    .loadKeys()
+    .then(() => {
+      _playbookImageKeyRefreshPending = false;
+      if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+    })
+    .catch(() => {
+      _playbookImageKeyRefreshPending = false;
+    });
+}
+
 function renderPlaybook() {
   // Guard against early renders (e.g. clip-index warm-up) firing before app.js
   // has declared the `plays` global; a proper render follows once it loads.
@@ -47,6 +76,7 @@ function renderPlaybook() {
     const wbFlagged = typeof _gpFlaggedSigs === "function" ? _gpFlaggedSigs("wb") : new Set();
     const usageIndex =
       typeof getPlayUsageIndex === "function" ? getPlayUsageIndex() : null;
+    ensurePlaybookImageBadgesReady();
     const imageSignatureFor = (play, fallbackSig) => {
       if (
         typeof window !== "undefined" &&
@@ -430,6 +460,10 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
     : featuredScript
       ? `<button type="button" class="btn btn-secondary" data-action="presentPublishedPlayerScript" data-arg="${featuredScriptId}">Open Swipe View</button>`
       : '<button type="button" class="btn btn-secondary" data-action="showTab" data-arg="dashboard">Player Home</button>';
+  const playbookFilterAction =
+    '<button type="button" class="btn btn-secondary" data-action="openPlayerPlaybookFilters">Filter Plays</button>';
+  const playbookPresentAction =
+    '<button type="button" class="btn btn-primary" data-action="openSelectedPlaybookPresentation">Present Showing</button>';
   const tertiaryAction = hasFilters
     ? '<button type="button" class="btn btn-secondary" data-action="clearAllFilters">Clear Filters</button>'
     : "";
@@ -445,6 +479,8 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       <div class="pb-player-summary__actions">
         ${primaryAction}
         ${secondaryAction}
+        ${playbookFilterAction}
+        ${playbookPresentAction}
         ${tertiaryAction}
       </div>
     </div>
@@ -452,12 +488,12 @@ function renderPlayerPlaybookSummary({ searchTerm = "", filteredCount = 0, curre
       ${stats.map((value) => `<span>${escapeHtml(value)}</span>`).join("")}
     </div>
     <div class="pb-player-summary__filters" aria-label="Suggested player filters">
-      <span class="pb-player-summary__filter-pill">Personnel</span>
-      <span class="pb-player-summary__filter-pill">Formation</span>
-      <span class="pb-player-summary__filter-pill">Base Play</span>
-      <span class="pb-player-summary__filter-pill">Motion</span>
-      <span class="pb-player-summary__filter-pill">Protection</span>
-      <span class="pb-player-summary__filter-pill">Tempo</span>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="personnel">Personnel</button>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="formation">Formation</button>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="basePlay">Base Play</button>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="motion">Motion</button>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="protection">Protection</button>
+      <button type="button" class="pb-player-summary__filter-pill" data-action="openPlayerPlaybookFilters" data-arg="tempo">Tempo</button>
     </div>
   `;
 }
@@ -476,6 +512,15 @@ const _scheduleRenderPlaybook = createRAFRenderer(renderPlaybook);
 
 function requestRenderPlaybook() {
   _scheduleRenderPlaybook();
+}
+
+if (typeof window !== "undefined") {
+  window.addEventListener("play-images-ready", () => {
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+  });
+  window.addEventListener("play-images-changed", () => {
+    if (typeof requestRenderPlaybook === "function") requestRenderPlaybook();
+  });
 }
 
 function _playbookDocKeydown(e) {
