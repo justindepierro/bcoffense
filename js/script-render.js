@@ -2031,6 +2031,85 @@ function _getCoachQuizGamePlanSources() {
     .filter((source) => source.plays.length || source.id !== "__unassigned__");
 }
 
+function _coachQuizQuestionPreviewStats(playList) {
+  const sourcePlays = _quizUniquePlaysFromList(playList);
+  const position = _getQuizPosition();
+  const positionKey = position?.key || "";
+  const positionLabel = position?.label || "Player";
+  const calls = new Set();
+  const rules = new Set();
+  let playsWithRule = 0;
+  let playsWithDiagram = 0;
+  sourcePlays.forEach((play) => {
+    const call = _quizPlainCall(play).toLowerCase();
+    if (call) calls.add(call);
+    const rule = _quizCleanText(positionKey ? play[positionKey] : "");
+    if (rule) {
+      playsWithRule += 1;
+      rules.add(rule.toLowerCase());
+    }
+    if (
+      window.playImages &&
+      typeof window.playImages.hasForPlay === "function" &&
+      window.playImages.hasForPlay(play)
+    ) {
+      playsWithDiagram += 1;
+    }
+  });
+  const responsibilityReady = rules.size >= 4 ? playsWithRule : 0;
+  const playFromRuleReady = playsWithRule && calls.size >= 2 ? playsWithRule : 0;
+  return {
+    positionLabel,
+    playCount: sourcePlays.length,
+    calls: calls.size,
+    playsWithRule,
+    uniqueRules: rules.size,
+    playsWithDiagram,
+    responsibilityReady,
+    playFromRuleReady,
+    callIdReady: sourcePlays.length,
+  };
+}
+
+function _coachQuizPreviewRow(label, count, note, tone = "") {
+  return `
+    <div class="coach-quiz-preview-row${tone ? ` coach-quiz-preview-row--${escapeAttr(tone)}` : ""}">
+      <strong>${escapeHtml(label)}</strong>
+      <span>${escapeHtml(String(count))}</span>
+      <small>${escapeHtml(note)}</small>
+    </div>
+  `;
+}
+
+function _renderCoachQuizQuestionPreview(source) {
+  const preview = _coachQuizQuestionPreviewStats(source.plays);
+  const responsibilityNote = preview.responsibilityReady
+    ? `${preview.positionLabel} rules are varied enough for multiple-choice responsibility questions.`
+    : preview.playsWithRule
+      ? `Needs 4 unique ${preview.positionLabel} rules; currently ${preview.uniqueRules}.`
+      : `No ${preview.positionLabel} rules found yet.`;
+  const ruleToPlayNote = preview.playFromRuleReady
+    ? "Players can match a responsibility rule back to the right call."
+    : "Needs player rules plus at least 2 distinct calls.";
+  const diagramNote = preview.playsWithDiagram
+    ? "Diagram ID questions are staged until title redaction is enabled."
+    : "Add diagrams before visual questions can work.";
+  return `
+    <div class="coach-quiz-question-preview">
+      <div class="coach-quiz-question-preview-head">
+        <strong>Question preview</strong>
+        <span>${escapeHtml(preview.positionLabel)} position</span>
+      </div>
+      <div class="coach-quiz-preview-grid">
+        ${_coachQuizPreviewRow("Responsibility", preview.responsibilityReady, responsibilityNote, preview.responsibilityReady ? "ready" : "needs")}
+        ${_coachQuizPreviewRow("Rule → Play", preview.playFromRuleReady, ruleToPlayNote, preview.playFromRuleReady ? "ready" : "needs")}
+        ${_coachQuizPreviewRow("Call ID", preview.callIdReady, "Fallback for thin sources; works with distinct calls.", preview.callIdReady ? "ready" : "needs")}
+        ${_coachQuizPreviewRow("Diagram ID", preview.playsWithDiagram, diagramNote, preview.playsWithDiagram ? "planned" : "needs")}
+      </div>
+    </div>
+  `;
+}
+
 function _renderCoachQuizSourceCard(source, kind) {
   const stats = _quizCompletenessStats(source.plays);
   const readiness = _quizReadinessLabel(stats.score);
@@ -2062,6 +2141,7 @@ function _renderCoachQuizSourceCard(source, kind) {
         ${_quizMetric("Situation", stats.situation, stats.playCount)}
         ${_quizMetric("Defense", stats.defense, stats.playCount)}
       </div>
+      ${_renderCoachQuizQuestionPreview(source)}
       <div class="coach-quiz-next-actions">
         <strong>Next best work</strong>
         ${actions.length
@@ -2082,6 +2162,37 @@ function _renderCoachStickerButtons() {
       ${escapeHtml(sticker.label)}
     </button>
   `).join("");
+}
+
+function _renderCoachQuizPositionPicker() {
+  const current = _getQuizPosition();
+  return `
+    <section class="coach-quiz-preview-toolbar">
+      <div>
+        <span class="coach-quiz-kicker">Question Preview</span>
+        <h3>Preview by player position</h3>
+        <p>Use this to catch sources that will only create call-ID questions because player rules are missing for a position.</p>
+      </div>
+      <div class="coach-quiz-position-picker" role="group" aria-label="Question preview position">
+        ${_getQuizPositions().map((position) => `
+          <button type="button"
+            class="coach-quiz-position-btn${position.key === current?.key ? " is-active" : ""}"
+            data-action="setCoachQuizPreviewPosition"
+            data-arg="${escapeAttr(position.key)}"
+            aria-pressed="${position.key === current?.key ? "true" : "false"}">
+            ${escapeHtml(position.label)}
+          </button>
+        `).join("")}
+      </div>
+    </section>
+  `;
+}
+
+function setCoachQuizPreviewPosition(key) {
+  const next = _getQuizPositions().find((position) => position.key === key);
+  if (!next) return;
+  _quizPositionKey = next.key;
+  renderCoachQuizSetupPage();
 }
 
 async function _coachPromptRewardPlayer(defaultName = "") {
@@ -2258,6 +2369,7 @@ function renderCoachQuizSetupPage() {
           <span><strong>${weeklyStickerEvents.length}</strong><small>Stickers</small></span>
         </div>
       </section>
+      ${_renderCoachQuizPositionPicker()}
       <section class="coach-quiz-setup-section">
         <div class="coach-quiz-section-head">
           <h3>Practice scripts</h3>

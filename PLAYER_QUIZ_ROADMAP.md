@@ -52,7 +52,7 @@
 - [ ] Add quiz controls to saved Practice Script publishing.
 - [ ] Add quiz controls to Game Plan publishing.
 - [x] Add coach/admin "Set Up Quizzes" nav page for customization, readiness, and leaderboard review.
-- [ ] Add coach preview mode for each source and position.
+- [x] Add coach preview mode for each source and position.
 - [ ] Add player attempt review with weak-position and weak-rule summaries.
 
 ## Learning Readiness
@@ -61,7 +61,7 @@
 - [x] Show Game Plan completeness by diagrams, player rules, coach notes, situation tags, defense tags, and populated buckets.
 - [x] Flag thin sources before players quiz: no diagrams, missing rules, missing defense, or too few distinct calls.
 - [x] Suggest the next best coach action: add diagrams, add player rules, add notes, or add situation/defense metadata.
-- [ ] Let coaches preview what question types will be generated for each script/game plan.
+- [x] Let coaches preview what question types will be generated for each script/game plan.
 
 ## Question Incentives
 
