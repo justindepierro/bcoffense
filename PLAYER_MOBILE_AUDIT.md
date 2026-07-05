@@ -146,6 +146,22 @@ Fix:
 - Diagram chip counts refresh after local image keys load, so synced diagrams show up without opening every row first.
 - Added seeded mobile coverage for the new Practice mission copy, status chips, and action buttons.
 
+### P1 - Player Pages Were Spending Too Much Phone Height On Headers
+
+Status: fixed in this real-estate slice.
+
+Symptoms/risk:
+- Home used nearly the whole first phone viewport on hero/status/quick actions before players reached actual work.
+- The phone Home hero inherited a desktop `flex-basis` from the Today card, turning it into unnecessary vertical height.
+- Practice kept the published-script launcher visible after a practice was already loaded, duplicating the new Current Practice mission card.
+
+Fix:
+- Phone Home now uses a compact hero/status block and a two-column quick-action grid with Open Practice as the full-width lead action.
+- Phone-only duplicate hero/status copy is hidden while preserving the actionable Today status.
+- Loaded Practice hides the duplicate launcher when there are no other practices to switch to; the mission card becomes the top working surface.
+- Loaded Practice mission card spacing, chips, and meta are tighter on phone while preserving 44px action buttons.
+- Added seeded mobile coverage that guards the Home hero/quick-action height and loaded-Practice launcher behavior.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`

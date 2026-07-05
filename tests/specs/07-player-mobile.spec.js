@@ -214,6 +214,7 @@ test.describe("Player mobile experience", () => {
     await page.getByRole("button", { name: /Open Practice/i }).first().click();
     const scriptPanel = page.locator("#script.panel.active");
     await expect(scriptPanel).toBeVisible();
+    await expect(scriptPanel.locator("#playerScriptLauncherSection")).toBeHidden();
     await expect(scriptPanel.locator("#playerScriptNowTitle")).toHaveText("Friday Walkthrough");
     await expect(scriptPanel.locator("#playerScriptNowMeta")).toContainText("2 plays");
     await expect(scriptPanel.locator("#playerScriptNowHint")).toContainText("Start in Swipe View");
@@ -259,6 +260,11 @@ test.describe("Player mobile experience", () => {
     for (const label of ["Open Practice", "Swipe View", "Quiz", "Questions", "Playbook"]) {
       await expect(page.locator("#playerDashboardHome").getByRole("button", { name: new RegExp(label, "i") }).first()).toBeVisible();
     }
+    await expect.poll(async () => page.evaluate(() => {
+      const hero = document.querySelector(".player-home-hero")?.getBoundingClientRect();
+      const actions = document.querySelector(".player-home-quick-actions")?.getBoundingClientRect();
+      return Boolean(hero && actions && hero.height < 180 && actions.height < 220);
+    })).toBe(true);
     await expect(page.getByRole("button", { name: /Add Play/i })).toHaveCount(0);
     await assertNoHorizontalOverflow(page);
 

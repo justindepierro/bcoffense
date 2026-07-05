@@ -643,8 +643,12 @@
 
   body.is-phone-screen[data-auth-role="player"] .player-home-hero,
   body.is-phone-screen[data-auth-role="player"] .player-home-card {
-    padding: 12px;
+    padding: 10px;
     border-radius: var(--radius-lg);
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-hero {
+    gap: 8px;
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-hero h2 {
@@ -653,17 +657,22 @@
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-hero p {
-    font-size: var(--font-size-xs);
+    display: none;
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-quick-action {
-    grid-template-columns: 34px minmax(0, 1fr);
-    min-height: 58px;
-    padding: 10px 12px;
+    grid-template-columns: 32px minmax(0, 1fr);
+    min-height: 54px;
+    padding: 9px 10px;
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-quick-actions {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body.is-phone-screen[data-auth-role="player"]
+    .player-home-quick-action--primary {
+    grid-column: 1 / -1;
   }
 
   body.is-phone-screen[data-auth-role="player"]
@@ -673,7 +682,13 @@
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-today-card {
-    padding: 12px;
+    flex: 0 0 auto;
+    gap: 3px;
+    padding: 9px 10px;
+  }
+
+  body.is-phone-screen[data-auth-role="player"] .player-home-today-card p {
+    display: none;
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-today-card strong,
@@ -693,8 +708,8 @@
   }
 
   body.is-phone-screen[data-auth-role="player"] .player-home-quick-icon {
-    width: 36px;
-    height: 36px;
+    width: 32px;
+    height: 32px;
     border-radius: var(--radius-md);
   }
 

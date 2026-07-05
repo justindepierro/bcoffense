@@ -245,9 +245,18 @@ function renderPlayerScriptLauncher() {
   const currentName = document.getElementById("scriptName")?.value || "";
   const currentDate = document.getElementById("scriptDate")?.value || "";
   const todayValue = new Date().toISOString().slice(0, 10);
-  section.hidden = false;
+  const hasLoadedPlayerScript = Array.isArray(script)
+    ? script.some((entry) => entry && !entry.isSeparator)
+    : false;
+  const headerTitle = section.querySelector(".player-script-launcher-header h4");
+  if (headerTitle) {
+    headerTitle.textContent = hasLoadedPlayerScript
+      ? "Other Practice Scripts"
+      : "Player Practice Scripts";
+  }
 
   if (publishedScripts.length === 0) {
+    section.hidden = false;
     list.innerHTML = `
       <div class="player-script-empty">
         No practice script has been published for player logins yet.
@@ -256,12 +265,26 @@ function renderPlayerScriptLauncher() {
     return;
   }
 
-  list.innerHTML = publishedScripts
+  const visibleScripts = publishedScripts
     .map((savedScript) => {
       const stats = getSavedScriptStats(savedScript);
       const isCurrent =
         currentName === savedScript.name &&
         currentDate === (savedScript.date || "");
+      return { savedScript, stats, isCurrent };
+    })
+    .filter((entry) => !hasLoadedPlayerScript || !entry.isCurrent);
+
+  if (hasLoadedPlayerScript && visibleScripts.length === 0) {
+    section.hidden = true;
+    list.innerHTML = "";
+    return;
+  }
+
+  section.hidden = false;
+
+  list.innerHTML = visibleScripts
+    .map(({ savedScript, stats, isCurrent }) => {
       const eyebrow = savedScript.date === todayValue ? "Today" : "Published Script";
       const scriptId = escapeHtml(String(savedScript.id));
 
