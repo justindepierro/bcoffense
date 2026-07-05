@@ -248,11 +248,11 @@
   --z-panel-sticky: 5; /* sticky headers/bars inside module panels */
   --z-panel-float: 10; /* floating controls within module panels (e.g. trash zone) */
   --z-dropdown: 1500;
-  --z-tab-bar: 999;
-  --z-header: 1000;
-  --z-drawer: 1100; /* slide-in side/bottom drawers above the header */
-  --z-drawer-scrim: 1099; /* scrim behind an open drawer */
-  --z-fab: 9000;
+  --z-drawer-scrim: 2990; /* scrim behind an open in-panel drawer */
+  --z-drawer: 3000; /* slide-in side/bottom drawers below app chrome */
+  --z-fab: 9100;
+  --z-tab-bar: 9200;
+  --z-header: 9210;
   --z-overlay: 9500;
   --z-modal: 9999;
   --z-toast: 10000;

@@ -3485,7 +3485,7 @@ body.shell-phone #callsheet .cs-empty-cat {
   flex-direction: column;
   transform: translateX(100%);
   transition: transform var(--transition-normal);
-  z-index: var(--z-drawer); /* above app header (1000) and tabs (999) */
+  z-index: var(--z-drawer); /* below app chrome, above panel content */
   font-family: var(--font-sans);
 }
 .gp-drawer.gp-drawer-open {

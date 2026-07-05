@@ -81,22 +81,28 @@
 
 /* ── Redesign: unified command bar (single pinned row) ── */
 .gp-cmd-bar {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--space-md);
-  padding: var(--space-sm) var(--space-md);
+  display: grid;
+  gap: 8px;
+  padding: 10px 12px;
   background: var(--color-surface);
   border: 1px solid var(--color-border-light);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-xs);
+}
+.gp-cmd-main {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
   flex-wrap: wrap;
+  min-width: 0;
 }
 .gp-cmd-identity {
   display: flex;
   align-items: center;
   gap: var(--space-sm);
   flex-wrap: wrap;
+  flex: 1 1 420px;
   min-width: 0;
 }
 .gp-cmd-title {
@@ -115,6 +121,12 @@
   align-items: center;
   gap: var(--space-xs);
   flex-wrap: wrap;
+  justify-content: flex-end;
+  flex: 0 1 auto;
+  min-width: 0;
+}
+.gp-cmd-actions .btn {
+  min-height: 34px;
 }
 .gp-filters-btn.is-active {
   background: var(--color-primary);
@@ -649,7 +661,7 @@ body:not(.is-mobile-screen) .gp-board-scroll {
 }
 body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar {
   gap: var(--space-xs);
-  padding: var(--space-xs) var(--space-sm);
+  padding: 8px;
 }
 body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar input[type="search"],
 body:not(.is-mobile-screen) .gp-command-zone .gp-toolbar select {

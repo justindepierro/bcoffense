@@ -17,6 +17,20 @@ The app should feel dense and operational, not like each module invented a separ
 
 ## Current Findings
 
+### App Chrome and Navigation
+
+Current state:
+
+- The global header and tab bar must always remain above panel-level drawers, FABs, and command surfaces.
+- True overlays, modals, toasts, and skip links may still sit above the app chrome.
+- `#mainApp` must never become the scroll owner on desktop; inner panels own scroll.
+
+Professionalization direction:
+
+- Treat the app header and tab bar as a formal app-chrome layer.
+- Keep in-panel drawers below app chrome unless they are true modal overlays.
+- Guard the z-index order in smoke checks so future UI layers cannot bury navigation.
+
 ### Shared primitives already exist
 
 `css/components.css` already provides the preferred primitives:
@@ -54,13 +68,13 @@ Professionalization direction:
 
 Current state:
 
-- Uses a compact JS-rendered `gp-cmd-bar`.
+- Uses a compact JS-rendered `gp-cmd-bar`, now migrated onto `page-header-surface` / `page-header-row`.
 - Filter drawer is already separated from the board scroll region.
 - Partially uses `toolbar-surface`.
 
 Professionalization direction:
 
-- Convert `gp-cmd-bar` to the shared page-header/toolbar pattern.
+- Continue slimming Game Plan local CSS now that `gp-cmd-bar` uses the shared page-header/toolbar pattern.
 - Keep identity, opponent, board name, health, and count in a status cluster.
 - Keep `Filters`, `Build Plan`, `Print`, and `Actions` as the only top-level commands.
 
@@ -143,6 +157,25 @@ Every major module should converge on:
 4. Overflow/action hub: templates, data, exports, destructive actions, rare tools.
 5. Role gate: player/coach/admin views should hide irrelevant commands before layout is calculated.
 
+## QA Tooling Recommendation
+
+Do not add Playwright as a runtime app dependency. BCOffense is intentionally a static, no-build PWA.
+
+Useful next step:
+
+- Add an optional visual QA harness outside the shipped app path.
+- Run it with `npx` or a local tool cache against a local static server.
+- Cover desktop, tablet, phone, player, coach, and admin roles.
+- Capture nav/header screenshots and layout assertions for each primary module.
+
+Minimum useful scenarios:
+
+- Header and tab bar remain visible above panel drawers/FABs.
+- Playbook filters/actions do not wrap into clutter at 1280px.
+- Game Plan command bar keeps Filters, Build Plan, Print, Actions visible.
+- Player role shows only study/presentation/practice actions.
+- Coach/admin role shows daily workflow actions first and data/admin actions in overflow.
+
 ## Migration Order
 
 1. Playbook command surface and player filters.
@@ -161,3 +194,4 @@ Every major module should converge on:
 - Coach role: daily workflow actions are top-level.
 - Admin role: data/storage tools are available but grouped.
 - App shell: command zones do not scroll `#mainApp` or bury tabs.
+- Stacking: `--z-header` > `--z-tab-bar` > `--z-fab` > `--z-drawer`, while `--z-overlay` / `--z-modal` remain above app chrome.

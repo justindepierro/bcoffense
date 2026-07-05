@@ -137,18 +137,19 @@ function renderGamePlan() {
   const totalAssigned = assignedSigs.size;
 
   const headerHtml = `
-    <div class="gp-cmd-bar">
-      <div class="gp-cmd-identity">
-        <span class="gp-cmd-title">🎯 Game Plan</span>
-        ${opponent
+    <div class="gp-cmd-bar page-header-surface">
+      <div class="gp-cmd-main page-header-row">
+        <div class="gp-cmd-identity toolbar-status">
+          <span class="gp-cmd-title">🎯 Game Plan</span>
+          ${opponent
       ? `<span class="gp-header-opponent">vs ${escapeHtml(opponent)}</span>`
       : `<span class="gp-header-empty">No opponent — set one in Dashboard</span>`}
-        ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
-        ${board.sheetTitle ? `<span class="gp-header-template">${escapeHtml(board.sheetTitle)}</span>` : ""}
-        <span class="gp-cmd-count">${totalAssigned} plays · ${allBoxes.length} boxes</span>
-        ${_gpRenderHealthGauge(board, draftedPlays)}
-      </div>
-      <div class="gp-cmd-actions">
+          ${weekLabel ? `<span class="gp-header-week">${escapeHtml(weekLabel)}</span>` : ""}
+          ${board.sheetTitle ? `<span class="gp-header-template">${escapeHtml(board.sheetTitle)}</span>` : ""}
+          <span class="gp-cmd-count">${totalAssigned} plays · ${allBoxes.length} boxes</span>
+          ${_gpRenderHealthGauge(board, draftedPlays)}
+        </div>
+        <div class="gp-cmd-actions toolbar-secondary">
         <button class="btn btn-sm gp-filters-btn${_gpFilters.showFilters ? " is-active" : ""}" data-action="toggleGamePlanFilters" title="Search &amp; filter the play library" aria-expanded="${_gpFilters.showFilters ? "true" : "false"}">
           🔎 Filters${_gpActiveFilterCount() > 0 ? ` <span class="gp-adv-badge">${_gpActiveFilterCount()}</span>` : ""}
         </button>
@@ -161,6 +162,7 @@ function renderGamePlan() {
         <button class="btn btn-sm btn-primary page-actions-open-btn" data-action="openPageActions" title="Library, Load Wristband, Density, Templates, Clear, and more" aria-haspopup="dialog">
           ⚡ Actions
         </button>
+        </div>
       </div>
     </div>`;
 
@@ -230,7 +232,7 @@ function renderGamePlan() {
 
   const toolbarHtml = _gpFilters.showFilters ? `
     <div class="gp-filters-drawer" role="region" aria-label="Play filters">
-    <div class="gp-toolbar toolbar-surface">
+    <div class="gp-toolbar toolbar-surface toolbar-surface--compact">
       <input type="search" id="gpSearch" placeholder="Search plays…"
         value="${escapeHtml(_gpFilters.search || "")}"
         data-oninput="updateGamePlanFilter" data-arg="search" data-pass="value" />

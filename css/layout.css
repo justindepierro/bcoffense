@@ -95,6 +95,7 @@ h1 {
   position: sticky;
   top: 0;
   z-index: var(--z-header);
+  isolation: isolate;
   box-shadow: 0 2px 12px rgba(10, 18, 42, 0.2);
   border-bottom: 3px solid var(--color-accent);
 }
@@ -249,6 +250,7 @@ body[data-auth-role="player"] .save-status {
   position: sticky;
   top: var(--app-header-height, 52px);
   z-index: var(--z-tab-bar);
+  isolation: isolate;
 }
 .tabs::after {
   content: "";

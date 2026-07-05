@@ -144,6 +144,50 @@ function checkCssGuardrails() {
   console.log(`css guardrails ok (${files.length} files)`);
 }
 
+function checkAppChromeStackingContract() {
+  const base = read("css/base.css");
+  const valueOf = (name) => {
+    const match = base.match(new RegExp(`--${name}:\\s*(\\d+)\\s*;`));
+    return match ? Number(match[1]) : NaN;
+  };
+  const z = {
+    panelSticky: valueOf("z-panel-sticky"),
+    panelFloat: valueOf("z-panel-float"),
+    dropdown: valueOf("z-dropdown"),
+    drawerScrim: valueOf("z-drawer-scrim"),
+    drawer: valueOf("z-drawer"),
+    fab: valueOf("z-fab"),
+    tabBar: valueOf("z-tab-bar"),
+    header: valueOf("z-header"),
+    overlay: valueOf("z-overlay"),
+    modal: valueOf("z-modal"),
+    toast: valueOf("z-toast"),
+    tooltip: valueOf("z-tooltip"),
+    modalTop: valueOf("z-modal-top"),
+  };
+  Object.entries(z).forEach(([name, value]) => {
+    if (!Number.isFinite(value)) fail(`missing numeric z-index token: ${name}`);
+  });
+  if (!(z.header > z.tabBar && z.tabBar > z.fab && z.fab > z.drawer)) {
+    fail("app chrome z-index order must be header > tab bar > FAB > drawer");
+  }
+  if (!(z.drawer > z.drawerScrim && z.drawerScrim > z.dropdown && z.dropdown > z.panelFloat)) {
+    fail("panel/drawer z-index order must be drawer > scrim > dropdown > panel float");
+  }
+  if (!(z.modalTop > z.tooltip && z.tooltip > z.toast && z.toast > z.modal && z.modal > z.overlay && z.overlay > z.header)) {
+    fail("global overlay z-index order must stay above app chrome");
+  }
+
+  const layout = read("css/layout.css");
+  if (!/\.app-header\s*\{[\s\S]*?z-index:\s*var\(--z-header\)/.test(layout)) {
+    fail("app header does not use --z-header");
+  }
+  if (!/\.tabs\s*\{[\s\S]*?z-index:\s*var\(--z-tab-bar\)/.test(layout)) {
+    fail("tab bar does not use --z-tab-bar");
+  }
+  console.log("app chrome stacking contract ok");
+}
+
 function attrValue(tag, name) {
   const match = tag.match(new RegExp(`\\s${name}=(["'])(.*?)\\1`, "i"));
   return match ? match[2].trim() : "";
@@ -2587,6 +2631,7 @@ checkJsSyntax();
 checkServiceWorkerAssets();
 checkIndexReferences();
 checkCssGuardrails();
+checkAppChromeStackingContract();
 checkAccessibilityBasics();
 checkDeclarativeHandlers();
 checkStorageKeyUsage();
