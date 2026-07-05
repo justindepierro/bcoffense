@@ -834,6 +834,42 @@ function getPlayerDashboardLoadedScriptSummary() {
   };
 }
 
+function getPlayerHomeNotificationStatus() {
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    return {
+      tone: "offline",
+      title: "Offline Mode",
+      body: "Loaded practice still works. Alerts will refresh when you reconnect.",
+    };
+  }
+  if (!("serviceWorker" in navigator) || !("PushManager" in window) || !("Notification" in window)) {
+    return {
+      tone: "muted",
+      title: "Practice Updates",
+      body: "Check Home before practice for coach posts and replies.",
+    };
+  }
+  if (Notification.permission === "granted") {
+    return {
+      tone: "on",
+      title: "Alerts On",
+      body: "Coach posts and replies can reach this device.",
+    };
+  }
+  if (Notification.permission === "denied") {
+    return {
+      tone: "blocked",
+      title: "Alerts Blocked",
+      body: "Use Home for updates, or change browser notification settings.",
+    };
+  }
+  return {
+    tone: "ready",
+    title: "Practice Alerts",
+    body: "Get a heads-up when practice is posted or coach replies.",
+  };
+}
+
 function renderPlayerDashboardHome() {
   const section = document.getElementById("playerDashboardHome");
   if (!section) return;
@@ -931,6 +967,7 @@ function renderPlayerDashboardHome() {
     : loadedScript?.stats
       ? `${loadedScript.stats.playCount} loaded plays are ready in the Practice tab`
       : "Practice will appear here when your coach publishes it.";
+  const notificationStatus = getPlayerHomeNotificationStatus();
   const recentScriptsMarkup = publishedScripts.length
     ? publishedScripts
       .slice(0, 4)
@@ -1107,9 +1144,15 @@ function renderPlayerDashboardHome() {
       </article>
     </div>
     <div class="player-notify-row">
-      <button type="button" class="player-notify-btn" data-action="subscribeToPlayerNotifications">
-        <svg aria-hidden="true" width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
-        Notify me when practice is posted
+      <button type="button" class="player-notify-btn player-notify-btn--${escapeHtml(notificationStatus.tone)}"
+        data-action="openPlayerNotificationSettings" aria-label="${escapeHtml(notificationStatus.title)}">
+        <span class="player-notify-btn__icon" aria-hidden="true">
+          <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.15" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8A6 6 0 0 0 6 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>
+        </span>
+        <span class="player-notify-btn__copy">
+          <strong>${escapeHtml(notificationStatus.title)}</strong>
+          <small>${escapeHtml(notificationStatus.body)}</small>
+        </span>
       </button>
     </div>
   `;

@@ -181,9 +181,9 @@ function serveStatic(port) {
     if (parsed.pathname.startsWith("/api/notifications")) {
       res.writeHead(200, { "Content-Type": "application/json; charset=utf-8" });
       if (parsed.pathname === "/api/notifications/count") {
-        res.end(JSON.stringify({ count: 0 }));
+        res.end(JSON.stringify({ ok: true, unread: 0 }));
       } else {
-        res.end(JSON.stringify({ notifications: [], hasMore: false }));
+        res.end(JSON.stringify({ ok: true, notifications: [], hasMore: false, unread: 0 }));
       }
       return;
     }

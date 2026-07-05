@@ -79,7 +79,7 @@ async function seedFirstPracticeDiagram(page) {
     if (!window.playImages || typeof playSignature !== "function") return;
     const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
     const practicePlay = savedScripts?.[0]?.plays?.find((item) => item && !item.isSeparator);
-    const playbookPlay = Array.isArray(plays) ? plays[0] : null;
+    const playbookPlay = typeof plays !== "undefined" && Array.isArray(plays) ? plays[0] : null;
     if (!practicePlay && !playbookPlay) return;
 
     await playImages.ready();
@@ -130,7 +130,10 @@ async function seedFirstPracticeDiagram(page) {
   await expect
     .poll(async () => {
       return page.evaluate(() => {
-        const play = Array.isArray(plays) ? plays[0] : null;
+        const savedScripts = storageManager.get(STORAGE_KEYS.SAVED_SCRIPTS, []);
+        const play =
+          savedScripts?.[0]?.plays?.find((item) => item && !item.isSeparator) ||
+          (typeof plays !== "undefined" && Array.isArray(plays) ? plays[0] : null);
         return Boolean(
           play &&
             window.playImages &&
@@ -304,6 +307,72 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator(".player-script-card").first()).toBeVisible();
     await expect(page.locator(".player-script-card").first().getByRole("button", { name: /^Quiz$/i })).toBeVisible();
     await expect(page.locator(".script-header-panel")).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
+  test("makes player notifications and offline states clear", async ({ page, context }) => {
+    await page.route("**/api/notifications/count", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({ ok: true, unread: 1 }),
+      });
+    });
+    await page.route("**/api/notifications?**", async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: "application/json",
+        body: JSON.stringify({
+          ok: true,
+          unread: 1,
+          hasMore: false,
+          notifications: [{
+            id: "notif-practice-1",
+            type: "script_published",
+            title: "Coach posted Friday Walkthrough",
+            body: "Open it before practice and review your rules.",
+            read: false,
+            createdAt: Math.floor(Date.now() / 1000) - 90,
+            deepLink: "",
+          }],
+        }),
+      });
+    });
+
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await seedPlayerPractice(page);
+
+    const alertsBtn = page.locator("#playerDashboardHome .player-notify-btn");
+    await expect(alertsBtn).toBeVisible();
+    await expect(alertsBtn).not.toContainText(/coming soon/i);
+    await alertsBtn.click();
+
+    const drawer = page.locator("#notifDrawer");
+    await expect(drawer).toHaveClass(/is-open/);
+    await expect(page.locator("#notifBackdrop")).not.toHaveAttribute("hidden", "");
+    await expect(drawer.getByText("Coach posted Friday Walkthrough")).toBeVisible();
+    await expect(drawer.locator("#pushNotifFooter")).toBeVisible();
+    await expect(drawer.locator("#pushNotifStatus")).toContainText(
+      /Practice alerts|Alerts are not supported|Checking alert settings|Alerts are blocked/i,
+    );
+    await expect(drawer).not.toContainText(/coming soon/i);
+
+    await drawer.getByRole("button", { name: /Close notifications/i }).click();
+    await expect(drawer).not.toHaveClass(/is-open/);
+    await expect(page.locator("#notifBackdrop")).toHaveAttribute("hidden", "");
+
+    await context.setOffline(true);
+    await page.evaluate(() => {
+      window.dispatchEvent(new Event("offline"));
+      if (typeof renderPlayerDashboardHome === "function") renderPlayerDashboardHome();
+    });
+    await expect(page.locator("#playerDashboardHome .player-notify-btn")).toContainText("Offline Mode");
+    await page.locator("#playerDashboardHome .player-notify-btn").click();
+    await expect(drawer).toHaveClass(/is-open/);
+    await expect(drawer.getByText("You’re offline")).toBeVisible();
+    await expect(drawer).toContainText(/loaded practice still works/i);
+    await expect(drawer.locator("#pushNotifStatus")).toContainText(/Alert settings need internet|Alerts are not supported/i);
     await assertNoHorizontalOverflow(page);
   });
 

@@ -78,15 +78,17 @@ function setPlayerReady(scriptId) {
   if (typeof vibrateHaptic === "function") vibrateHaptic("medium");
 }
 
-// Item 47: Push notification subscribe (Phase 2 scaffolding)
+// Item 47: Push notification subscribe/settings entry point
 function subscribeToPlayerNotifications() {
-  if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
-    showToast("Push notifications aren\u2019t supported on this device", { duration: 3500, type: "info" });
+  if (typeof openPlayerNotificationSettings === "function") {
+    openPlayerNotificationSettings();
     return;
   }
-  // Phase 2: requires a VAPID public key and server-side subscription endpoint
-  // When ready, call: navigator.serviceWorker.ready.then(sw => sw.pushManager.subscribe({...}))
-  showToast("Push notifications are coming soon \u2014 check back for updates", { duration: 4000, type: "info" });
+  if (typeof openNotifDrawer === "function") {
+    openNotifDrawer();
+    return;
+  }
+  showToast("Open Home before practice for coach posts and replies.", { duration: 3500, type: "info" });
 }
 
 /**

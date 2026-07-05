@@ -71,20 +71,25 @@ function _updateBellBadge(count) {
 async function openNotifDrawer() {
   const drawer = document.getElementById("notifDrawer");
   if (!drawer) return;
+  const backdrop = document.getElementById("notifBackdrop");
   _notifDrawerOpen = true;
   _notifOffset = 0;
+  if (backdrop) backdrop.hidden = false;
   drawer.classList.add("is-open");
   drawer.setAttribute("aria-hidden", "false");
   document.getElementById("notifBellBtn")?.setAttribute("aria-expanded", "true");
+  if (typeof _refreshPushUI === "function") _refreshPushUI();
   await _loadNotifications(false);
 }
 
 function closeNotifDrawer() {
   const drawer = document.getElementById("notifDrawer");
   if (!drawer) return;
+  const backdrop = document.getElementById("notifBackdrop");
   _notifDrawerOpen = false;
   drawer.classList.remove("is-open");
   drawer.setAttribute("aria-hidden", "true");
+  if (backdrop) backdrop.hidden = true;
   document.getElementById("notifBellBtn")?.setAttribute("aria-expanded", "false");
 }
 
@@ -98,8 +103,29 @@ async function _loadNotifications(append = false) {
   const listEl = document.getElementById("notifList");
   if (!listEl) return;
 
+  document.getElementById("notifLoadMore")?.remove();
+
   if (!append) {
-    listEl.innerHTML = `<p class="notif-loading">Loading…</p>`;
+    listEl.innerHTML = _notifStateHtml({
+      icon: "⏳",
+      title: "Checking updates",
+      body: "Looking for new practice notes, coach replies, and quizzes.",
+      tone: "loading",
+    });
+  }
+
+  if (typeof navigator !== "undefined" && navigator.onLine === false) {
+    listEl.innerHTML = _notifStateHtml({
+      icon: "📵",
+      title: "You’re offline",
+      body: _isPlayerNotificationUser()
+        ? "Your loaded practice still works. New coach replies and published practices will show here when you reconnect."
+        : "Local work is still available. New notifications will show when you reconnect.",
+      action: "retryNotifs",
+      actionLabel: "Check Again",
+      tone: "offline",
+    });
+    return;
   }
 
   try {
@@ -107,19 +133,30 @@ async function _loadNotifications(append = false) {
     if (!res.ok) throw new Error(`HTTP ${res.status}`);
     const data = await res.json();
     if (!data.ok) throw new Error(data.error || "Failed to load");
+    const notifications = Array.isArray(data.notifications) ? data.notifications : [];
 
-    _notifHasMore = data.hasMore;
-    _notifOffset += data.notifications.length;
+    _notifHasMore = Boolean(data.hasMore || data.has_more);
+    _notifOffset += notifications.length;
 
     if (!append) {
-      if (data.notifications.length === 0) {
-        listEl.innerHTML = `<p class="notif-empty">You're all caught up! No notifications yet.</p>`;
+      if (notifications.length === 0) {
+        listEl.innerHTML = _notifStateHtml({
+          icon: "✅",
+          title: _isPlayerNotificationUser() ? "No new practice updates" : "All caught up",
+          body: _isPlayerNotificationUser()
+            ? "When coach publishes a practice, replies to a question, or sends a quiz, it will land here."
+            : "New updates will show here when there is something to review.",
+          action: _isPlayerNotificationUser() ? "showTab" : "",
+          actionArg: _isPlayerNotificationUser() ? "script" : "",
+          actionLabel: _isPlayerNotificationUser() ? "Open Practice" : "",
+          tone: "empty",
+        });
       } else {
-        listEl.innerHTML = data.notifications.map(_notifItemHtml).join("");
+        listEl.innerHTML = notifications.map(_notifItemHtml).join("");
       }
     } else {
       listEl.querySelector(".notif-loading")?.remove();
-      data.notifications.forEach((n) => {
+      notifications.forEach((n) => {
         const tmp = document.createElement("div");
         tmp.innerHTML = _notifItemHtml(n);
         if (tmp.firstElementChild) listEl.appendChild(tmp.firstElementChild);
@@ -130,8 +167,6 @@ async function _loadNotifications(append = false) {
     _updateBellBadge(data.unread || 0);
 
     // Load More button
-    const existingMore = document.getElementById("notifLoadMore");
-    existingMore?.remove();
     if (_notifHasMore) {
       const btn = document.createElement("button");
       btn.id = "notifLoadMore";
@@ -141,9 +176,17 @@ async function _loadNotifications(append = false) {
       document.getElementById("notifDrawerBody")?.appendChild(btn);
     }
   } catch (err) {
-    listEl.innerHTML =
-      `<p class="notif-error">Couldn't load notifications.</p>` +
-      `<button class="btn btn-xs" data-action="retryNotifs">Retry</button>`;
+    const unavailable = /\b(?:503|404)\b/.test(String(err?.message || ""));
+    listEl.innerHTML = _notifStateHtml({
+      icon: unavailable ? "🛠️" : "⚠️",
+      title: unavailable ? "Notifications are not ready here yet" : "Couldn’t load updates",
+      body: unavailable
+        ? "Practice, Playbook, Swipe View, and Questions still work. Alerts will appear once the team notification service is available."
+        : "This does not affect your saved practice. Try again when your connection is stronger.",
+      action: "retryNotifs",
+      actionLabel: "Retry",
+      tone: "error",
+    });
   }
 }
 
@@ -164,14 +207,35 @@ function _notifRelTime(unixSec) {
   return `${Math.floor(diff / 86400)}d ago`;
 }
 
+function _isPlayerNotificationUser() {
+  return document.body?.dataset?.authRole === "player";
+}
+
+function _notifStateHtml({ icon, title, body, action = "", actionArg = "", actionLabel = "", tone = "" }) {
+  const actionAttrs = action
+    ? ` data-action="${escapeHtml(action)}"${actionArg ? ` data-arg="${escapeHtml(actionArg)}"` : ""}`
+    : "";
+  return (
+    `<li class="notif-state${tone ? ` notif-state--${escapeHtml(tone)}` : ""}">` +
+    `<span class="notif-state__icon" aria-hidden="true">${icon}</span>` +
+    `<strong>${escapeHtml(title)}</strong>` +
+    `<span>${escapeHtml(body)}</span>` +
+    (action && actionLabel
+      ? `<button type="button" class="btn btn-xs btn-secondary notif-state__action"${actionAttrs}>${escapeHtml(actionLabel)}</button>`
+      : "") +
+    `</li>`
+  );
+}
+
 function _notifItemHtml(n) {
   const icon = _NOTIF_ICONS[n.type] || "🔔";
   const unreadCls = n.read ? "" : " notif-item--unread";
+  const typeCls = n.type ? ` notif-item--${escapeHtml(String(n.type).replace(/[^a-z0-9_-]/gi, "-"))}` : "";
   const link = n.deepLink
     ? ` data-action="openNotifDeepLink" data-arg="${escapeHtml(n.id)}::${escapeHtml(n.deepLink)}"`
     : "";
   return (
-    `<div class="notif-item${unreadCls}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
+    `<li class="notif-item${unreadCls}${typeCls}" id="notif-${escapeHtml(n.id)}"${link} role="button" tabindex="0">` +
     `<div class="notif-item-icon" aria-hidden="true">${icon}</div>` +
     `<div class="notif-item-content">` +
     `<div class="notif-item-title">${escapeHtml(n.title)}</div>` +
@@ -179,7 +243,7 @@ function _notifItemHtml(n) {
     `<div class="notif-item-time">${escapeHtml(_notifRelTime(n.createdAt))}</div>` +
     `</div>` +
     (n.read ? "" : `<span class="notif-unread-dot" aria-hidden="true"></span>`) +
-    `</div>`
+    `</li>`
   );
 }
 
@@ -233,6 +297,16 @@ async function loadMoreNotifs() {
 function retryNotifs() {
   _notifOffset = 0;
   _loadNotifications(false);
+}
+
+async function openPlayerNotificationSettings() {
+  if (typeof initPushNotifications === "function") await initPushNotifications();
+  await openNotifDrawer();
+  const footer = document.getElementById("pushNotifFooter");
+  if (!footer) return;
+  const drawerBody = document.getElementById("notifDrawerBody");
+  if (drawerBody) drawerBody.scrollTop = drawerBody.scrollHeight;
+  footer.querySelector("button")?.focus();
 }
 
 // ── Deep link handler ─────────────────────────────────────────────────────────

@@ -200,6 +200,11 @@ body[data-auth-role="player"] .save-status {
 .app-header .header-overflow {
   display: none;
 }
+.app-header .header-overflow-btn {
+  flex: 0 0 44px;
+  min-width: 44px;
+  width: 44px;
+}
 .header-overflow-account {
   padding: 8px 14px;
   font-size: var(--font-size-xs2);
