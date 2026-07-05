@@ -404,10 +404,19 @@ test.describe("Player mobile experience", () => {
     await expect(quizHub.getByRole("button", { name: /^Q$/i })).toHaveClass(/is-active/);
     await expect(quizHub.getByRole("button", { name: /Start Script Quiz/i })).toBeVisible();
     await expect(quizHub.getByRole("button", { name: /Start Game Plan Quiz/i })).toBeVisible();
+    await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText("Friday Walkthrough");
+    await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText("2 plays");
+    await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText(/Player ready|Close|Needs work|Thin/);
     await quizHub.getByRole("button", { name: /Close Quiz Center/i }).click();
     await expect(quizHub).toBeHidden();
     await page.evaluate(() => {
-      const weekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(new Date()) : "2026-W27";
+      const now = new Date();
+      const previousWeek = new Date(now);
+      previousWeek.setDate(now.getDate() - 7);
+      const weekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(now) : "2026-W27";
+      const previousWeekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(previousWeek) : "2026-W26";
+      const dateKey = typeof _quizDateKey === "function" ? _quizDateKey(now) : now.toISOString().slice(0, 10);
+      const previousDateKey = typeof _quizDateKey === "function" ? _quizDateKey(previousWeek) : previousWeek.toISOString().slice(0, 10);
       storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
         id: "mobile-ended-quiz",
         player: "player",
@@ -421,12 +430,29 @@ test.describe("Player mobile experience", () => {
         remaining: 4,
         percent: 83,
         completed: false,
+        dateKey,
         weekKey,
+      }, {
+        id: "mobile-prior-quiz",
+        player: "player",
+        sourceType: "gameplan",
+        title: "September Install",
+        totalPoints: 200,
+        correct: 4,
+        wrong: 0,
+        answered: 4,
+        totalQuestions: 4,
+        remaining: 0,
+        percent: 100,
+        completed: true,
+        dateKey: previousDateKey,
+        weekKey: previousWeekKey,
       }]);
       storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
-        { id: "reward-q", player: "player", type: "question", points: 25, weekKey },
-        { id: "reward-a", player: "player", type: "answer", points: 40, weekKey },
-        { id: "reward-g", player: "player", type: "gift", points: 100, weekKey },
+        { id: "reward-q", player: "player", type: "question", points: 25, dateKey, weekKey },
+        { id: "reward-a", player: "player", type: "answer", points: 40, dateKey, weekKey },
+        { id: "reward-g", player: "player", type: "gift", points: 100, dateKey, weekKey },
+        { id: "reward-old-q", player: "player", type: "question", points: 25, dateKey: previousDateKey, weekKey: previousWeekKey },
       ]);
       storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [{
         id: "sticker-job",
@@ -444,11 +470,21 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerLeaderboardPage").getByRole("button", { name: /Start Quiz/i })).toBeVisible();
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Weekly board");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("640 / 1000");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Streaks");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("2 weeks active");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Point sources");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Questions");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Answers");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Gifted");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Do Your Job");
+    await page.locator("#playerLeaderboardPage").getByRole("button", { name: /^Season$/i }).click();
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Season points and weekly pace");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Season board");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Season attempts");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("865");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("September Install");
+    await page.locator("#playerLeaderboardPage").getByRole("button", { name: /^Week$/i }).click();
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Weekly board");
     await assertNoHorizontalOverflow(page);
     await goToTab(page, "dashboard");
     await expect.poll(async () => page.evaluate(() => {
@@ -493,6 +529,8 @@ test.describe("Player mobile experience", () => {
     await goToTab(page, "script");
     await expect(page.locator("#playerScriptLauncherSection")).toBeVisible();
     await expect(page.locator(".player-script-card").first()).toBeVisible();
+    await expect(page.locator(".player-script-card").first()).toContainText("60% done");
+    await expect(page.locator(".player-script-card").first()).toContainText("475 pts");
     await expect(page.locator(".player-script-card").first().getByRole("button", { name: /^Quiz$/i })).toBeVisible();
     await expect(page.locator(".script-header-panel")).toBeHidden();
     await assertNoHorizontalOverflow(page);
@@ -656,5 +694,102 @@ test.describe("Player mobile experience", () => {
     await expect(presentation).toBeHidden();
     await expect(page.locator("#script.panel.active")).toBeVisible();
     await expect(page.locator("body")).not.toHaveClass(/play-presentation-open/);
+  });
+
+  test("shows coach quiz leaderboard week and season review", async ({ page }) => {
+    await login(page, { role: "admin", username: "admin" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      const now = new Date();
+      const previousWeek = new Date(now);
+      previousWeek.setDate(now.getDate() - 7);
+      const weekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(now) : "2026-W27";
+      const previousWeekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(previousWeek) : "2026-W26";
+      const dateKey = typeof _quizDateKey === "function" ? _quizDateKey(now) : now.toISOString().slice(0, 10);
+      const previousDateKey = typeof _quizDateKey === "function" ? _quizDateKey(previousWeek) : previousWeek.toISOString().slice(0, 10);
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
+        id: "coach-week-q",
+        player: "Lucas",
+        sourceType: "script",
+        title: "Friday Walkthrough",
+        positionKey: "respQ",
+        positionLabel: "Q",
+        totalPoints: 500,
+        answered: 5,
+        correct: 3,
+        wrong: 2,
+        percent: 60,
+        completed: true,
+        questionBreakdown: {
+          responsibility: { total: 3, correct: 1, wrong: 2 },
+          call: { total: 2, correct: 2, wrong: 0 },
+        },
+        dateKey,
+        weekKey,
+      }, {
+        id: "coach-week-h",
+        player: "Marco",
+        sourceType: "gameplan",
+        title: "Game Plan",
+        positionKey: "respH",
+        positionLabel: "H",
+        totalPoints: 250,
+        answered: 4,
+        correct: 4,
+        wrong: 0,
+        percent: 100,
+        completed: true,
+        questionBreakdown: {
+          play_from_rule: { total: 2, correct: 2, wrong: 0 },
+          call: { total: 2, correct: 2, wrong: 0 },
+        },
+        dateKey,
+        weekKey,
+      }, {
+        id: "coach-season-q",
+        player: "Lucas",
+        sourceType: "script",
+        title: "Prior Install",
+        positionKey: "respQ",
+        positionLabel: "Q",
+        totalPoints: 175,
+        answered: 4,
+        correct: 4,
+        wrong: 0,
+        percent: 100,
+        completed: true,
+        questionBreakdown: {
+          responsibility: { total: 2, correct: 2, wrong: 0 },
+          call: { total: 2, correct: 2, wrong: 0 },
+        },
+        dateKey: previousDateKey,
+        weekKey: previousWeekKey,
+      }]);
+      storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
+        { id: "coach-reward-q", player: "Lucas", type: "question", points: 25, dateKey, weekKey },
+        { id: "coach-reward-a", player: "Marco", type: "answer", points: 40, dateKey, weekKey },
+        { id: "coach-reward-old", player: "Lucas", type: "gift", points: 100, dateKey: previousDateKey, weekKey: previousWeekKey },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [
+        { id: "coach-sticker", player: "Lucas", label: "Do Your Job", icon: "🧠", color: "blue", dateKey, weekKey },
+      ]);
+    });
+
+    await goToTab(page, "quizsetup");
+    const setup = page.locator("#coachQuizSetupPage");
+    await expect(setup).toContainText("Leaderboard review");
+    await expect(setup).toContainText("Week ");
+    await expect(setup).toContainText("Lucas");
+    await expect(setup).toContainText("525 pts");
+    await expect(setup).toContainText("Weak positions");
+    await expect(setup).toContainText("Q");
+    await expect(setup).toContainText("Weak question types");
+    await expect(setup).toContainText("Responsibility");
+    await setup.getByRole("button", { name: /^Season$/i }).click();
+    await expect(setup).toContainText("Season");
+    await expect(setup).toContainText("800 pts");
+    await setup.getByRole("button", { name: /^Week$/i }).click();
+    await expect(setup).toContainText("525 pts");
+    await assertNoHorizontalOverflow(page);
   });
 });

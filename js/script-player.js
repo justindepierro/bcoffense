@@ -287,6 +287,12 @@ function renderPlayerScriptLauncher() {
     .map(({ savedScript, stats, isCurrent }) => {
       const eyebrow = savedScript.date === todayValue ? "Today" : "Published Script";
       const scriptId = escapeHtml(String(savedScript.id));
+      const quizProgress = typeof getPlayerQuizScriptProgress === "function"
+        ? getPlayerQuizScriptProgress(savedScript.id, savedScript.name, stats.playCount)
+        : null;
+      const quizProgressText = quizProgress
+        ? `${quizProgress.icon ? `${quizProgress.icon} ` : ""}${quizProgress.points ? `${quizProgress.label} · ${quizProgress.points} pts` : quizProgress.label}`
+        : "";
 
       return `
         <article class="player-script-card${isCurrent ? " is-current" : ""}">
@@ -302,6 +308,12 @@ function renderPlayerScriptLauncher() {
               <span>${stats.totalReps} reps</span>
               ${stats.periodCount > 0 ? `<span>${stats.periodCount} periods</span>` : ""}
             </div>
+            ${quizProgress ? `
+              <div class="player-script-card__quiz-progress">
+                <span class="player-quiz-progress-badge${quizProgress.icon ? " has-icon" : ""}">${escapeHtml(quizProgressText)}</span>
+                ${quizProgress.latest ? `<span>${quizProgress.answered}/${quizProgress.total || stats.playCount} questions</span>` : `<span>Start here for first score</span>`}
+              </div>
+            ` : ""}
           </div>
           <div class="player-script-card__actions">
             ${isCurrent
@@ -398,10 +410,14 @@ function renderPlayerLoadedScriptBar() {
 
 function startPlayerScriptQuiz(id = "") {
   const requestedId = id !== undefined && id !== null ? String(id) : "";
+  let quizSourceId = requestedId;
+  let quizTitle = "Practice Script Quiz";
   const loadedPlayCount = Array.isArray(script)
     ? script.filter((entry) => entry && !entry.isSeparator).length
     : 0;
   if (requestedId) {
+    const requestedScript = getPlayerPublishedScripts().find((savedScript) => String(savedScript.id) === requestedId);
+    if (requestedScript?.name) quizTitle = requestedScript.name;
     const loaded = loadPublishedPlayerScript(requestedId, {
       skipToast: true,
       toastMessage: "Practice loaded for quiz.",
@@ -416,6 +432,8 @@ function startPlayerScriptQuiz(id = "") {
       if (typeof showTab === "function") showTab("script");
       return false;
     }
+    quizSourceId = String(fallbackScript.id || "");
+    quizTitle = fallbackScript.name || quizTitle;
     const loaded = loadPublishedPlayerScript(fallbackScript.id, {
       skipToast: true,
       toastMessage: "Practice loaded for quiz.",
@@ -426,7 +444,14 @@ function startPlayerScriptQuiz(id = "") {
   }
 
   if (typeof startScriptQuiz === "function") {
-    startScriptQuiz();
+    if (!quizTitle || quizTitle === "Practice Script Quiz") {
+      quizTitle = document.getElementById("scriptName")?.value || quizTitle;
+    }
+    startScriptQuiz({
+      sourceType: "script",
+      sourceId: quizSourceId,
+      title: quizTitle || "Practice Script Quiz",
+    });
     return true;
   }
   showToast("Quiz is not available yet.", { type: "warning" });

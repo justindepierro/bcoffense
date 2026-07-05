@@ -1445,6 +1445,7 @@ let _quizStreak = 0;
 let _quizBestStreak = 0;
 let _quizBasePlays = [];
 let _quizSourceType = "script";
+let _quizSourceId = "";
 let _quizSourceWeight = 1;
 let _quizTitle = "Play Quiz";
 let _quizPositionKey = "respQ";
@@ -1478,6 +1479,9 @@ const PLAYER_HELMET_STICKER_TYPES = [
   { key: "trust-process", label: "Trust the Process", icon: "🏅", color: "navy" },
 ];
 let _leaderboardSelectedPlayer = "";
+let _playerLeaderboardView = "week";
+let _coachQuizLeaderboardView = "week";
+let _playerQuizSelectedScriptId = "";
 
 function _getPlayerQuizStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_RESULTS
@@ -1558,6 +1562,7 @@ function _savePlayerQuizDraft() {
     savedAt: new Date().toISOString(),
     title: _quizTitle,
     sourceType: _quizSourceType,
+    sourceId: _quizSourceId,
     sourceWeight: _quizSourceWeight,
     positionKey: _quizPositionKey,
     shuffled: _quizShuffled,
@@ -1611,6 +1616,60 @@ function _getQuizBadge(percent) {
   };
 }
 
+function _quizScriptAttemptMatches(attempt, scriptOption) {
+  if (!attempt || attempt.sourceType !== "script" || !scriptOption) return false;
+  if (attempt.sourceId && scriptOption.id) return String(attempt.sourceId) === String(scriptOption.id);
+  return String(attempt.title || "").trim() === String(scriptOption.name || "").trim();
+}
+
+function _getQuizScriptProgress(scriptOption) {
+  const attempts = _getPlayerQuizAttempts()
+    .filter((attempt) => _quizScriptAttemptMatches(attempt, scriptOption))
+    .sort((a, b) => String(b.completedAt || "").localeCompare(String(a.completedAt || "")));
+  const latest = attempts[0] || null;
+  const bestPercent = attempts.reduce((best, attempt) => Math.max(best, Number(attempt.percent || 0)), 0);
+  const total = latest ? Number(latest.totalQuestions || scriptOption.playCount || 0) : Number(scriptOption.playCount || 0);
+  const answered = latest ? Number(latest.answered || 0) : 0;
+  const pct = total ? Math.min(100, Math.round((answered / total) * 100)) : 0;
+  let icon = "";
+  let label = "No quiz yet";
+  if (latest) {
+    if (latest.completed === false) {
+      label = `${pct}% done`;
+    } else if (Number(latest.percent || 0) >= 100) {
+      icon = "🏆";
+      label = "Aced";
+    } else if (Number(latest.percent || 0) >= 80) {
+      icon = "🎖️";
+      label = `${Math.round(Number(latest.percent || 0))}%`;
+    } else if (latest.completed !== false) {
+      icon = "🎗️";
+      label = "Complete";
+    } else {
+      label = `${pct}% done`;
+    }
+  }
+  return {
+    latest,
+    attempts,
+    bestPercent,
+    total,
+    answered,
+    pct,
+    icon,
+    label,
+    points: latest ? Math.round(Number(latest.totalPoints || 0)) : 0,
+  };
+}
+
+function getPlayerQuizScriptProgress(scriptId = "", scriptName = "", playCount = 0) {
+  return _getQuizScriptProgress({
+    id: String(scriptId || ""),
+    name: String(scriptName || ""),
+    playCount: Number(playCount || 0),
+  });
+}
+
 function _getQuizTier(points) {
   if (points >= PLAYER_QUIZ_WEEKLY_GOAL) return "Champion";
   if (points >= 750) return "Baller";
@@ -1662,6 +1721,89 @@ function _sumQuizRewards(events, type = "") {
     .reduce((sum, event) => sum + Number(event.points || 0), 0);
 }
 
+function _quizPlayerNameFromAttempt(attempt, fallback = "") {
+  return _normalizeQuizPlayerName(attempt?.player || fallback || _getQuizPlayerName());
+}
+
+function _quizEventDateKey(event) {
+  if (event?.dateKey) return String(event.dateKey);
+  const raw = event?.completedAt || event?.savedAt || event?.createdAt || event?.awardedAt || event?.date;
+  const date = raw ? new Date(raw) : null;
+  return date && !Number.isNaN(date.getTime()) ? _quizDateKey(date) : "";
+}
+
+function _quizDateFromWeekKey(weekKey) {
+  const match = /^(\d{4})-W(\d{2})$/.exec(String(weekKey || ""));
+  if (!match) return null;
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+  const simple = new Date(Date.UTC(year, 0, 1 + (week - 1) * 7));
+  const day = simple.getUTCDay() || 7;
+  simple.setUTCDate(simple.getUTCDate() + 1 - day);
+  return simple;
+}
+
+function _quizPreviousDateKey(dateKey) {
+  const date = new Date(`${dateKey}T00:00:00Z`);
+  if (Number.isNaN(date.getTime())) return "";
+  date.setUTCDate(date.getUTCDate() - 1);
+  return _quizDateKey(date);
+}
+
+function _quizPreviousWeekKey(weekKey) {
+  const match = /^(\d{4})-W(\d{2})$/.exec(String(weekKey || ""));
+  if (!match) return "";
+  const year = Number(match[1]);
+  const week = Number(match[2]);
+  if (week > 1) return `${year}-W${String(week - 1).padStart(2, "0")}`;
+  const date = new Date(Date.UTC(year, 0, 1));
+  date.setUTCDate(date.getUTCDate() - 7);
+  return _quizWeekKey(date);
+}
+
+function _quizCurrentStreak(keys, currentKey, previousKeyFn) {
+  const activeKeys = new Set(Array.from(keys || []).filter(Boolean));
+  if (!activeKeys.size) return 0;
+  const sortedKeys = Array.from(activeKeys).sort();
+  let cursor = activeKeys.has(currentKey) ? currentKey : sortedKeys.at(-1);
+  let streak = 0;
+  while (cursor && activeKeys.has(cursor)) {
+    streak += 1;
+    cursor = previousKeyFn(cursor);
+  }
+  return streak;
+}
+
+function _quizActivityDateKeys(attempts, rewards, player) {
+  const target = _normalizeQuizPlayerName(player);
+  const keys = new Set();
+  (Array.isArray(attempts) ? attempts : []).forEach((attempt) => {
+    if (_quizPlayerNameFromAttempt(attempt, player) !== target) return;
+    const key = _quizEventDateKey(attempt);
+    if (key) keys.add(key);
+  });
+  (Array.isArray(rewards) ? rewards : []).forEach((event) => {
+    if (_normalizeQuizPlayerName(event.player) !== target) return;
+    const key = _quizEventDateKey(event);
+    if (key) keys.add(key);
+  });
+  return keys;
+}
+
+function _quizActivityWeekKeys(attempts, rewards, player) {
+  const target = _normalizeQuizPlayerName(player);
+  const keys = new Set();
+  (Array.isArray(attempts) ? attempts : []).forEach((attempt) => {
+    if (_quizPlayerNameFromAttempt(attempt, player) !== target) return;
+    if (attempt.weekKey) keys.add(String(attempt.weekKey));
+  });
+  (Array.isArray(rewards) ? rewards : []).forEach((event) => {
+    if (_normalizeQuizPlayerName(event.player) !== target) return;
+    if (event.weekKey) keys.add(String(event.weekKey));
+  });
+  return keys;
+}
+
 function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
   const totals = new Map();
   const addPoints = (name, points) => {
@@ -1683,13 +1825,174 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     .map(([name, points], idx) => ({ name, points, rank: idx + 1, tier: _getQuizTier(points) }));
 }
 
+function _quizFilteredAttemptsForView(attempts, weekKey, season = false) {
+  return (Array.isArray(attempts) ? attempts : []).filter((attempt) => {
+    if (!attempt || typeof attempt !== "object") return false;
+    return season || attempt.weekKey === weekKey;
+  });
+}
+
+function _quizFilteredRewardsForView(rewards, weekKey, season = false) {
+  return (Array.isArray(rewards) ? rewards : []).filter((event) => {
+    if (!event || typeof event !== "object") return false;
+    return season || event.weekKey === weekKey;
+  });
+}
+
+function _formatQuizQuestionType(type) {
+  if (type === "responsibility") return "Responsibility";
+  if (type === "play_from_rule") return "Rule to Play";
+  if (type === "call") return "Call ID";
+  return String(type || "Question").replace(/[_-]+/g, " ").replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
+function _summarizeQuizQuestionBreakdown(answers) {
+  const summary = {};
+  (Array.isArray(answers) ? answers : []).forEach((answer) => {
+    const type = answer?.questionType || "call";
+    if (!summary[type]) summary[type] = { total: 0, correct: 0, wrong: 0 };
+    summary[type].total += 1;
+    if (answer.correct) {
+      summary[type].correct += 1;
+    } else {
+      summary[type].wrong += 1;
+    }
+  });
+  return summary;
+}
+
+function _quizAddQuestionBreakdown(target, breakdown) {
+  Object.entries(breakdown || {}).forEach(([type, stats]) => {
+    if (!target[type]) target[type] = { total: 0, correct: 0, wrong: 0 };
+    target[type].total += Number(stats?.total || 0);
+    target[type].correct += Number(stats?.correct || 0);
+    target[type].wrong += Number(stats?.wrong || 0);
+  });
+}
+
+function _buildCoachQuizLeaderboardSummary() {
+  const attempts = _getPlayerQuizAttempts();
+  const rewards = _getPlayerRewardEvents();
+  const weekKey = _quizWeekKey(new Date());
+  const isSeason = _coachQuizLeaderboardView === "season";
+  const viewAttempts = _quizFilteredAttemptsForView(attempts, weekKey, isSeason);
+  const viewRewards = _quizFilteredRewardsForView(rewards, weekKey, isSeason);
+  const rows = new Map();
+  const positionTotals = new Map();
+  const questionTotals = {};
+  const ensureRow = (name) => {
+    const playerName = _normalizeQuizPlayerName(name || "Player");
+    if (!rows.has(playerName)) {
+      rows.set(playerName, {
+        name: playerName,
+        quizPoints: 0,
+        rewardPoints: 0,
+        questionPoints: 0,
+        answerPoints: 0,
+        giftPoints: 0,
+        attempts: 0,
+        answered: 0,
+        correct: 0,
+        stickers: 0,
+      });
+    }
+    return rows.get(playerName);
+  };
+
+  viewAttempts.forEach((attempt) => {
+    const row = ensureRow(attempt.player || "Player");
+    row.quizPoints += Number(attempt.totalPoints || 0);
+    row.attempts += 1;
+    row.answered += Number(attempt.answered || 0);
+    row.correct += Number(attempt.correct || 0);
+    const posKey = attempt.positionKey || "unknown";
+    const posLabel = attempt.positionLabel || _getQuizPositions().find((position) => position.key === posKey)?.label || "Unknown";
+    if (!positionTotals.has(posKey)) {
+      positionTotals.set(posKey, { key: posKey, label: posLabel, attempts: 0, answered: 0, correct: 0 });
+    }
+    const pos = positionTotals.get(posKey);
+    pos.attempts += 1;
+    pos.answered += Number(attempt.answered || 0);
+    pos.correct += Number(attempt.correct || 0);
+    _quizAddQuestionBreakdown(questionTotals, attempt.questionBreakdown || {});
+  });
+
+  viewRewards.forEach((event) => {
+    const row = ensureRow(event.player || "Player");
+    const points = Number(event.points || 0);
+    row.rewardPoints += points;
+    if (event.type === "question") row.questionPoints += points;
+    if (event.type === "answer") row.answerPoints += points;
+    if (event.type === "gift") row.giftPoints += points;
+  });
+
+  _getPlayerHelmetStickers()
+    .filter((sticker) => isSeason || sticker.weekKey === weekKey)
+    .forEach((sticker) => {
+      ensureRow(sticker.player || "Player").stickers += 1;
+    });
+
+  const leaderboardRows = Array.from(rows.values())
+    .map((row) => {
+      const totalPoints = row.quizPoints + row.rewardPoints;
+      const percent = row.answered ? Math.round((row.correct / row.answered) * 100) : 0;
+      return { ...row, totalPoints, percent, tier: _getQuizTier(totalPoints) };
+    })
+    .sort((a, b) => b.totalPoints - a.totalPoints || b.percent - a.percent || a.name.localeCompare(b.name))
+    .map((row, idx) => ({ ...row, rank: idx + 1 }));
+
+  const weakPositions = Array.from(positionTotals.values())
+    .filter((item) => item.answered > 0 && Math.round((item.correct / item.answered) * 100) < 85)
+    .map((item) => ({
+      ...item,
+      percent: Math.round((item.correct / item.answered) * 100),
+      wrong: item.answered - item.correct,
+    }))
+    .sort((a, b) => a.percent - b.percent || b.wrong - a.wrong)
+    .slice(0, 4);
+
+  const weakQuestionTypes = Object.entries(questionTotals)
+    .map(([type, stats]) => ({
+      type,
+      label: _formatQuizQuestionType(type),
+      total: Number(stats.total || 0),
+      correct: Number(stats.correct || 0),
+      wrong: Number(stats.wrong || 0),
+      percent: stats.total ? Math.round((Number(stats.correct || 0) / Number(stats.total || 0)) * 100) : 0,
+    }))
+    .filter((item) => item.total > 0 && item.percent < 85)
+    .sort((a, b) => a.percent - b.percent || b.wrong - a.wrong)
+    .slice(0, 4);
+
+  return {
+    isSeason,
+    weekKey,
+    label: isSeason ? "Season" : `Week ${weekKey}`,
+    attempts: viewAttempts,
+    rewards: viewRewards,
+    rows: leaderboardRows,
+    weakPositions,
+    weakQuestionTypes,
+    totals: {
+      players: leaderboardRows.length,
+      attempts: viewAttempts.length,
+      quizPoints: leaderboardRows.reduce((sum, row) => sum + row.quizPoints, 0),
+      questionPoints: leaderboardRows.reduce((sum, row) => sum + row.questionPoints, 0),
+      answerPoints: leaderboardRows.reduce((sum, row) => sum + row.answerPoints, 0),
+      giftPoints: leaderboardRows.reduce((sum, row) => sum + row.giftPoints, 0),
+      stickers: leaderboardRows.reduce((sum, row) => sum + row.stickers, 0),
+    },
+  };
+}
+
 function _summarizeQuizAttempts() {
   const attempts = _getPlayerQuizAttempts();
   const rewards = _getPlayerRewardEvents();
   const now = new Date();
   const weekKey = _quizWeekKey(now);
+  const todayKey = _quizDateKey(now);
   const player = _getQuizPlayerName();
-  const playerAttempts = attempts.filter((attempt) => (attempt.player || "You") === player);
+  const playerAttempts = attempts.filter((attempt) => _quizPlayerNameFromAttempt(attempt, player) === player);
   const weeklyAttempts = playerAttempts.filter((attempt) => attempt.weekKey === weekKey);
   const playerRewards = rewards.filter((event) => _normalizeQuizPlayerName(event.player) === player);
   const weeklyRewards = playerRewards.filter((event) => event.weekKey === weekKey);
@@ -1701,7 +2004,12 @@ function _summarizeQuizAttempts() {
   const weeklyPoints = weeklyQuizPoints + weeklyRewardPoints;
   const seasonQuizPoints = playerAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
   const seasonRewardPoints = _sumQuizRewards(playerRewards);
+  const seasonQuestionPoints = _sumQuizRewards(playerRewards, "question");
+  const seasonAnswerPoints = _sumQuizRewards(playerRewards, "answer");
+  const seasonGiftPoints = _sumQuizRewards(playerRewards, "gift");
   const seasonPoints = seasonQuizPoints + seasonRewardPoints;
+  const dailyStreak = _quizCurrentStreak(_quizActivityDateKeys(playerAttempts, playerRewards, player), todayKey, _quizPreviousDateKey);
+  const weeklyStreak = _quizCurrentStreak(_quizActivityWeekKeys(playerAttempts, playerRewards, player), weekKey, _quizPreviousWeekKey);
   const bestPercent = playerAttempts.reduce((best, attempt) => Math.max(best, Number(attempt.percent || 0)), 0);
   const bestBadge = _getQuizBadge(bestPercent);
   return {
@@ -1709,6 +2017,8 @@ function _summarizeQuizAttempts() {
     rewards,
     player,
     weekKey,
+    playerAttempts,
+    playerRewards,
     weeklyAttempts,
     weeklyRewards,
     weeklyQuizPoints,
@@ -1719,11 +2029,17 @@ function _summarizeQuizAttempts() {
     weeklyPoints,
     seasonQuizPoints,
     seasonRewardPoints,
+    seasonQuestionPoints,
+    seasonAnswerPoints,
+    seasonGiftPoints,
     seasonPoints,
+    dailyStreak,
+    weeklyStreak,
     bestPercent,
     bestBadge,
     tier: _getQuizTier(weeklyPoints),
-    leaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
+    weeklyLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player, weekKey),
+    seasonLeaderboardRows: _buildQuizLeaderboardRows(attempts, rewards, player),
   };
 }
 
@@ -1773,15 +2089,18 @@ function _renderQuizLeaderRows(rows, player) {
 
 function _renderPlayerLeaderboardDetail(player, summary) {
   const name = _normalizeQuizPlayerName(player || summary.player);
-  const weekAttempts = summary.attempts.filter((attempt) => {
-    return _normalizeQuizPlayerName(attempt.player || summary.player) === name && attempt.weekKey === summary.weekKey;
+  const isSeason = _playerLeaderboardView === "season";
+  const viewAttempts = summary.attempts.filter((attempt) => {
+    if (_quizPlayerNameFromAttempt(attempt, summary.player) !== name) return false;
+    return isSeason || attempt.weekKey === summary.weekKey;
   });
-  const weekRewards = _getQuizRewardsForPlayer(name, summary.weekKey);
+  const viewRewards = _getQuizRewardsForPlayer(name, isSeason ? "" : summary.weekKey);
   const stickers = _getQuizStickersForPlayer(name).slice(-12).reverse();
-  const quizPoints = weekAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
-  const questionPoints = _sumQuizRewards(weekRewards, "question");
-  const answerPoints = _sumQuizRewards(weekRewards, "answer");
-  const giftPoints = _sumQuizRewards(weekRewards, "gift");
+  const quizPoints = viewAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
+  const questionPoints = _sumQuizRewards(viewRewards, "question");
+  const answerPoints = _sumQuizRewards(viewRewards, "answer");
+  const giftPoints = _sumQuizRewards(viewRewards, "gift");
+  const detailLabel = isSeason ? "this season" : "this week";
   const stickerHtml = stickers.length
     ? stickers.map((sticker) => `
         <span class="player-leaderboard-sticker player-leaderboard-sticker--${escapeAttr(sticker.color || "blue")}">
@@ -1794,7 +2113,7 @@ function _renderPlayerLeaderboardDetail(player, summary) {
     <section class="player-leaderboard-detail" id="playerLeaderboardDetail" aria-label="${escapeAttr(name)} leaderboard detail">
       <div class="player-leaderboard-section-head">
         <h3>${escapeHtml(name)}</h3>
-        <span>${Math.round(quizPoints + questionPoints + answerPoints + giftPoints)} pts this week</span>
+        <span>${Math.round(quizPoints + questionPoints + answerPoints + giftPoints)} pts ${escapeHtml(detailLabel)}</span>
       </div>
       <div class="player-leaderboard-breakdown">
         <span><strong>${Math.round(quizPoints)}</strong><small>Quiz</small></span>
@@ -1812,13 +2131,28 @@ function openPlayerLeaderboardDetail(playerName) {
   renderPlayerLeaderboardPage();
 }
 
+function setPlayerLeaderboardView(view) {
+  _playerLeaderboardView = view === "season" ? "season" : "week";
+  renderPlayerLeaderboardPage();
+}
+
 function renderPlayerLeaderboardPage() {
   const page = document.getElementById("playerLeaderboardPage");
   if (!page) return;
   const summary = _summarizeQuizAttempts();
   const draft = _getPlayerQuizDraft();
   if (!_leaderboardSelectedPlayer) _leaderboardSelectedPlayer = summary.player;
-  const recentAttempts = summary.weeklyAttempts.slice(-5).reverse();
+  const isSeason = _playerLeaderboardView === "season";
+  const viewLabel = isSeason ? "Season" : `Week ${summary.weekKey}`;
+  const viewAttempts = isSeason ? summary.playerAttempts : summary.weeklyAttempts;
+  const viewQuizPoints = isSeason ? summary.seasonQuizPoints : summary.weeklyQuizPoints;
+  const viewQuestionPoints = isSeason ? summary.seasonQuestionPoints : summary.weeklyQuestionPoints;
+  const viewAnswerPoints = isSeason ? summary.seasonAnswerPoints : summary.weeklyAnswerPoints;
+  const viewGiftPoints = isSeason ? summary.seasonGiftPoints : summary.weeklyGiftPoints;
+  const viewPoints = isSeason ? summary.seasonPoints : summary.weeklyPoints;
+  const viewRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
+  const viewTier = _getQuizTier(viewPoints);
+  const recentAttempts = viewAttempts.slice(-5).reverse();
   const goalPct = Math.min(100, Math.round((summary.weeklyPoints / PLAYER_QUIZ_WEEKLY_GOAL) * 100));
   const remaining = Math.max(0, PLAYER_QUIZ_WEEKLY_GOAL - summary.weeklyPoints);
   const recentHtml = recentAttempts.length
@@ -1838,53 +2172,62 @@ function renderPlayerLeaderboardPage() {
       <section class="player-leaderboard-hero">
         <div>
           <span class="player-leaderboard-kicker">Leaderboard</span>
-          <h2>Quiz points and weekly standard</h2>
-          <p>Get to ${PLAYER_QUIZ_WEEKLY_GOAL} points this week. Game Plan quizzes count 1.25x.</p>
+          <h2>${isSeason ? "Season points and weekly pace" : "Quiz points and weekly standard"}</h2>
+          <p>${isSeason ? "Track the whole season while still chasing the weekly standard." : `Get to ${PLAYER_QUIZ_WEEKLY_GOAL} points this week. Game Plan quizzes count 1.25x.`}</p>
         </div>
         <button type="button" class="btn btn-primary" data-action="openPlayerQuizHub">Start Quiz</button>
       </section>
       ${draft ? _renderPlayerQuizResumeCard(draft, "page") : ""}
+      <div class="player-leaderboard-view-toggle" role="group" aria-label="Leaderboard view">
+        <button type="button" class="${!isSeason ? "is-active" : ""}" data-action="setPlayerLeaderboardView" data-arg="week">Week</button>
+        <button type="button" class="${isSeason ? "is-active" : ""}" data-action="setPlayerLeaderboardView" data-arg="season">Season</button>
+      </div>
       <section class="player-leaderboard-grid" aria-label="Quiz progress">
         <article class="player-leaderboard-card player-leaderboard-card--goal">
-          <span>Weekly Goal</span>
-          <strong>${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL}</strong>
+          <span>${isSeason ? "Season Points" : "Weekly Goal"}</span>
+          <strong>${isSeason ? Math.round(summary.seasonPoints) : `${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL}`}</strong>
           <div class="player-leaderboard-meter" aria-hidden="true"><i class="player-leaderboard-meter-fill"></i></div>
-          <small>${remaining ? `${Math.round(remaining)} points to Champion` : "Champion standard met"}</small>
+          <small>${isSeason ? `${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL} this week` : (remaining ? `${Math.round(remaining)} points to Champion` : "Champion standard met")}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--tier">
           <span>Current Tier</span>
-          <strong>${escapeHtml(summary.tier)}</strong>
-          <small>${summary.weeklyAttempts.length} attempt${summary.weeklyAttempts.length === 1 ? "" : "s"} this week</small>
+          <strong>${escapeHtml(viewTier)}</strong>
+          <small>${viewAttempts.length} attempt${viewAttempts.length === 1 ? "" : "s"} ${isSeason ? "this season" : "this week"}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--badge">
           <span>Best Badge</span>
           <strong>${summary.bestPercent ? escapeHtml(summary.bestBadge.label) : "No attempts"}</strong>
           <small>${summary.bestPercent ? `${Math.round(summary.bestPercent)}% best score` : "85% unlocks Honor Roll"}</small>
         </article>
+        <article class="player-leaderboard-card player-leaderboard-card--streak">
+          <span>Streaks</span>
+          <strong>${summary.dailyStreak} day${summary.dailyStreak === 1 ? "" : "s"}</strong>
+          <small>${summary.weeklyStreak} week${summary.weeklyStreak === 1 ? "" : "s"} active</small>
+        </article>
       </section>
       <section class="player-leaderboard-board">
         <div class="player-leaderboard-section-head">
           <h3>Point sources</h3>
-          <span>Week ${escapeHtml(summary.weekKey)}</span>
+          <span>${escapeHtml(viewLabel)}</span>
         </div>
         <div class="player-leaderboard-breakdown">
-          <span><strong>${Math.round(summary.weeklyQuizPoints)}</strong><small>Quiz</small></span>
-          <span><strong>${Math.round(summary.weeklyQuestionPoints)}</strong><small>Questions</small></span>
-          <span><strong>${Math.round(summary.weeklyAnswerPoints)}</strong><small>Answers</small></span>
-          <span><strong>${Math.round(summary.weeklyGiftPoints)}</strong><small>Gifted</small></span>
+          <span><strong>${Math.round(viewQuizPoints)}</strong><small>Quiz</small></span>
+          <span><strong>${Math.round(viewQuestionPoints)}</strong><small>Questions</small></span>
+          <span><strong>${Math.round(viewAnswerPoints)}</strong><small>Answers</small></span>
+          <span><strong>${Math.round(viewGiftPoints)}</strong><small>Gifted</small></span>
         </div>
       </section>
       <section class="player-leaderboard-board">
         <div class="player-leaderboard-section-head">
-          <h3>Weekly board</h3>
+          <h3>${isSeason ? "Season board" : "Weekly board"}</h3>
           <span>Tap a name for stickers</span>
         </div>
-        <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(summary.leaderboardRows, summary.player)}</div>
+        <div class="player-quiz-leaderboard-preview">${_renderQuizLeaderRows(viewRows, summary.player)}</div>
       </section>
       ${_renderPlayerLeaderboardDetail(_leaderboardSelectedPlayer, summary)}
       <section class="player-leaderboard-board">
         <div class="player-leaderboard-section-head">
-          <h3>Recent attempts</h3>
+          <h3>${isSeason ? "Season attempts" : "Recent attempts"}</h3>
           <span>Completed and ended quizzes</span>
         </div>
         <div class="player-leaderboard-attempts">${recentHtml}</div>
@@ -2195,6 +2538,100 @@ function setCoachQuizPreviewPosition(key) {
   renderCoachQuizSetupPage();
 }
 
+function setCoachQuizLeaderboardView(view) {
+  _coachQuizLeaderboardView = view === "season" ? "season" : "week";
+  renderCoachQuizSetupPage();
+}
+
+function selectCoachQuizLeaderboardPlayer(playerName) {
+  _leaderboardSelectedPlayer = _normalizeQuizPlayerName(playerName);
+  renderCoachQuizSetupPage();
+}
+
+function _renderCoachQuizLeaderboardRows(rows) {
+  if (!Array.isArray(rows) || !rows.length) {
+    return `<div class="coach-quiz-empty">No quiz attempts yet. Player results will appear here after they take quizzes.</div>`;
+  }
+  return rows.slice(0, 10).map((row) => {
+    const selected = _normalizeQuizPlayerName(row.name) === _normalizeQuizPlayerName(_leaderboardSelectedPlayer || "");
+    return `
+      <button type="button"
+        class="coach-quiz-leader-row${selected ? " is-selected" : ""}"
+        data-action="selectCoachQuizLeaderboardPlayer"
+        data-arg="${escapeAttr(row.name)}">
+        <span class="coach-quiz-leader-rank">#${row.rank}</span>
+        <strong>${escapeHtml(row.name)}</strong>
+        <span>${escapeHtml(row.tier)} · ${row.percent || 0}%</span>
+        <b>${Math.round(row.totalPoints)} pts</b>
+      </button>
+    `;
+  }).join("");
+}
+
+function _renderCoachQuizWeakList(items, emptyText) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="coach-quiz-weak-empty">${escapeHtml(emptyText)}</div>`;
+  }
+  return items.map((item) => `
+    <div class="coach-quiz-weak-row">
+      <strong>${escapeHtml(item.label)}</strong>
+      <span>${Math.round(item.percent || 0)}%</span>
+      <small>${Math.round(item.correct || 0)}/${Math.round(item.total || item.answered || 0)} correct · ${Math.round(item.wrong || 0)} miss${Number(item.wrong || 0) === 1 ? "" : "es"}</small>
+    </div>
+  `).join("");
+}
+
+function _renderCoachQuizLeaderboardPanel(summary) {
+  const topPlayer = summary.rows[0];
+  const selectedPlayer = _leaderboardSelectedPlayer || topPlayer?.name || "";
+  const selected = summary.rows.find((row) => _normalizeQuizPlayerName(row.name) === _normalizeQuizPlayerName(selectedPlayer));
+  const selectedMeta = selected
+    ? `${selected.attempts} attempt${selected.attempts === 1 ? "" : "s"} · ${Math.round(selected.quizPoints)} quiz pts · ${Math.round(selected.rewardPoints)} reward pts`
+    : "Select a player to stage reward prompts faster.";
+  return `
+    <section class="coach-quiz-setup-section coach-quiz-leaderboard-panel">
+      <div class="coach-quiz-section-head">
+        <h3>Leaderboard review</h3>
+        <span>${escapeHtml(summary.label)} · ${summary.totals.players} players · ${summary.totals.attempts} attempts</span>
+      </div>
+      <div class="coach-quiz-leaderboard-toolbar">
+        <div class="coach-quiz-view-toggle" role="group" aria-label="Coach leaderboard view">
+          <button type="button" class="${!summary.isSeason ? "is-active" : ""}" data-action="setCoachQuizLeaderboardView" data-arg="week">Week</button>
+          <button type="button" class="${summary.isSeason ? "is-active" : ""}" data-action="setCoachQuizLeaderboardView" data-arg="season">Season</button>
+        </div>
+        <div class="coach-quiz-selected-player">
+          <strong>${selected ? escapeHtml(selected.name) : "No player selected"}</strong>
+          <span>${escapeHtml(selectedMeta)}</span>
+        </div>
+      </div>
+      <div class="coach-quiz-leaderboard-summary">
+        <span><strong>${Math.round(summary.totals.quizPoints)}</strong><small>Quiz pts</small></span>
+        <span><strong>${Math.round(summary.totals.questionPoints)}</strong><small>Question pts</small></span>
+        <span><strong>${Math.round(summary.totals.answerPoints)}</strong><small>Answer pts</small></span>
+        <span><strong>${Math.round(summary.totals.giftPoints)}</strong><small>Gift pts</small></span>
+        <span><strong>${Math.round(summary.totals.stickers)}</strong><small>Stickers</small></span>
+      </div>
+      <div class="coach-quiz-leaderboard-grid">
+        <div class="coach-quiz-leaderboard-list">${_renderCoachQuizLeaderboardRows(summary.rows)}</div>
+        <div class="coach-quiz-weak-card">
+          <div class="coach-quiz-weak-head">
+            <strong>Weak positions</strong>
+            <span>Under 85%</span>
+          </div>
+          ${_renderCoachQuizWeakList(summary.weakPositions, "No weak position trend yet.")}
+        </div>
+        <div class="coach-quiz-weak-card">
+          <div class="coach-quiz-weak-head">
+            <strong>Weak question types</strong>
+            <span>Under 85%</span>
+          </div>
+          ${_renderCoachQuizWeakList(summary.weakQuestionTypes, "No weak question-type trend yet.")}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
 async function _coachPromptRewardPlayer(defaultName = "") {
   if (typeof showPrompt !== "function") return null;
   const player = await showPrompt("Who should receive this?", defaultName, {
@@ -2320,6 +2757,10 @@ function renderCoachQuizSetupPage() {
   const weekKey = _quizWeekKey(new Date());
   const weeklyRewardEvents = rewardEvents.filter((event) => event.weekKey === weekKey);
   const weeklyStickerEvents = stickers.filter((event) => event.weekKey === weekKey);
+  const leaderboardSummary = _buildCoachQuizLeaderboardSummary();
+  if (!_leaderboardSelectedPlayer && leaderboardSummary.rows[0]?.name) {
+    _leaderboardSelectedPlayer = leaderboardSummary.rows[0].name;
+  }
 
   setInnerHTML(page, `
     <div class="coach-quiz-setup-shell">
@@ -2369,6 +2810,7 @@ function renderCoachQuizSetupPage() {
           <span><strong>${weeklyStickerEvents.length}</strong><small>Stickers</small></span>
         </div>
       </section>
+      ${_renderCoachQuizLeaderboardPanel(leaderboardSummary)}
       ${_renderCoachQuizPositionPicker()}
       <section class="coach-quiz-setup-section">
         <div class="coach-quiz-section-head">
@@ -2475,13 +2917,52 @@ function _getPlayerQuizScriptOptions() {
     .filter((savedScript) => savedScript && savedScript.id)
     .map((savedScript) => {
       const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : null;
-      return {
+      const option = {
         id: String(savedScript.id),
         name: savedScript.name || "Published Practice",
         playCount: stats?.playCount || 0,
+        periodCount: stats?.periodCount || 0,
+        totalReps: stats?.totalReps || 0,
         date: savedScript.date || "",
+        dateStr: stats?.dateStr || savedScript.date || "No date",
+        readiness: _quizCompletenessStats(savedScript.plays || []),
+      };
+      return {
+        ...option,
+        progress: _getQuizScriptProgress(option),
       };
     });
+}
+
+function _renderPlayerQuizScriptPicker(options) {
+  if (!Array.isArray(options) || !options.length) {
+    return `<div class="player-quiz-script-empty">Current practice only. Published scripts will appear here when your coach posts them.</div>`;
+  }
+  if (!_playerQuizSelectedScriptId || !options.some((option) => option.id === _playerQuizSelectedScriptId)) {
+    _playerQuizSelectedScriptId = options[0].id;
+  }
+  return options.map((option) => {
+    const selected = option.id === _playerQuizSelectedScriptId;
+    const readiness = _quizReadinessLabel(option.readiness?.score || 0);
+    const progress = option.progress || _getQuizScriptProgress(option);
+    const progressText = progress.points ? `${progress.label} · ${progress.points} pts` : progress.label;
+    return `
+      <button type="button"
+        class="player-quiz-script-option${selected ? " is-selected" : ""}"
+        data-action="setPlayerQuizScriptSource"
+        data-arg="${escapeAttr(option.id)}"
+        aria-pressed="${selected ? "true" : "false"}">
+        <span class="player-quiz-script-option__main">
+          <strong>${escapeHtml(option.name)}</strong>
+          <small>${escapeHtml(option.dateStr)} · ${option.playCount} plays${option.periodCount ? ` · ${option.periodCount} periods` : ""}</small>
+        </span>
+        <span class="player-quiz-script-option__status">
+          <b class="player-quiz-progress-badge${progress.icon ? " has-icon" : ""}">${progress.icon ? `${escapeHtml(progress.icon)} ` : ""}${escapeHtml(progressText)}</b>
+          <i class="player-quiz-readiness-pill player-quiz-readiness-pill--${escapeAttr(readiness.tone)}">${escapeHtml(readiness.label)} · ${option.readiness?.score || 0}</i>
+        </span>
+      </button>
+    `;
+  }).join("");
 }
 
 function _renderPlayerQuizHub() {
@@ -2533,19 +3014,29 @@ function _renderPlayerQuizHub() {
   }
 
   const select = document.getElementById("playerQuizScriptSelect");
+  const scriptPicker = document.getElementById("playerQuizScriptPicker");
   if (select) {
     const options = _getPlayerQuizScriptOptions();
     if (options.length) {
+      if (!_playerQuizSelectedScriptId || !options.some((option) => option.id === _playerQuizSelectedScriptId)) {
+        _playerQuizSelectedScriptId = options[0].id;
+      }
       select.innerHTML = options
         .map((option) => {
           const count = option.playCount ? ` · ${option.playCount} plays` : "";
-          const date = option.date ? `${option.date} · ` : "";
+          const date = option.dateStr ? `${option.dateStr} · ` : "";
           return `<option value="${escapeAttr(option.id)}">${escapeHtml(date + option.name + count)}</option>`;
         })
         .join("");
+      select.value = _playerQuizSelectedScriptId;
     } else {
       select.innerHTML = `<option value="">Current practice</option>`;
+      _playerQuizSelectedScriptId = "";
     }
+    select.hidden = true;
+  }
+  if (scriptPicker) {
+    scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
   }
 
   if (document.getElementById("leaderboard")?.classList.contains("active")) {
@@ -2585,9 +3076,16 @@ function setPlayerQuizPosition(key) {
   _renderPlayerQuizHub();
 }
 
+function setPlayerQuizScriptSource(id) {
+  _playerQuizSelectedScriptId = String(id || "");
+  const select = document.getElementById("playerQuizScriptSelect");
+  if (select) select.value = _playerQuizSelectedScriptId;
+  _renderPlayerQuizHub();
+}
+
 function startPlayerQuizHubScript() {
   const select = document.getElementById("playerQuizScriptSelect");
-  const id = select ? select.value : "";
+  const id = _playerQuizSelectedScriptId || (select ? select.value : "");
   closePlayerQuizHub();
   if (typeof startPlayerScriptQuiz === "function") {
     startPlayerScriptQuiz(id || "");
@@ -2595,6 +3093,7 @@ function startPlayerQuizHubScript() {
   }
   startScriptQuiz({
     sourceType: "script",
+    sourceId: id || "",
     title: "Practice Script Quiz",
     positionKey: _quizPositionKey,
   });
@@ -2881,6 +3380,7 @@ function startScriptQuiz(options = {}) {
   }
   _quizShuffled = false;
   _quizSourceType = sourceType;
+  _quizSourceId = String(opts.sourceId || "");
   _quizSourceWeight = PLAYER_QUIZ_SOURCE_WEIGHTS[sourceType] || 1;
   _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
   if (opts.positionKey && _getQuizPositions().some((position) => position.key === opts.positionKey)) {
@@ -3001,6 +3501,7 @@ function _buildQuizAttemptSummary(options = {}) {
   const answered = answers.length;
   const correct = answers.filter((answer) => answer.correct).length;
   const wrong = answered - correct;
+  const questionBreakdown = _summarizeQuizQuestionBreakdown(answers);
   const percent = answered ? Math.round((correct / answered) * 100) : 0;
   const badge = _getQuizBadge(percent);
   const bonusPoints = answered && !partial ? badge.bonus : 0;
@@ -3012,6 +3513,7 @@ function _buildQuizAttemptSummary(options = {}) {
     id: _quizSavedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     player: _getQuizPlayerName(),
     sourceType: _quizSourceType,
+    sourceId: _quizSourceId,
     title: _quizTitle,
     positionKey: _quizPositionKey,
     positionLabel: _getQuizPosition()?.label || "",
@@ -3021,6 +3523,7 @@ function _buildQuizAttemptSummary(options = {}) {
     answered,
     correct,
     wrong,
+    questionBreakdown,
     totalQuestions,
     remaining,
     percent,
@@ -3147,6 +3650,7 @@ function resumePlayerQuizDraft() {
   _quizIndex = Math.max(0, Math.min(Number(draft.index || 0), _quizPlays.length - 1));
   _quizShuffled = Boolean(draft.shuffled);
   _quizSourceType = draft.sourceType === "gameplan" ? "gameplan" : "script";
+  _quizSourceId = String(draft.sourceId || "");
   _quizSourceWeight = PLAYER_QUIZ_SOURCE_WEIGHTS[_quizSourceType] || Number(draft.sourceWeight || 1) || 1;
   _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
   if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {

@@ -13,8 +13,8 @@
 - [x] Support Practice Script quiz entry from the hub.
 - [x] Support Game Plan quiz entry from the hub using current board assignments.
 - [x] Add a standalone player Leaderboard bottom-nav page with quiz launch access.
-- [ ] Add script picker polish: date, play count, readiness, and last-attempt status.
-- [ ] Add script-card quiz progress: percent complete, trophy for ace, ribbon for complete, medal for 80%+.
+- [x] Add script picker polish: date, play count, readiness, and last-attempt status.
+- [x] Add script-card quiz progress: percent complete, trophy for ace, ribbon for complete, medal for 80%+.
 
 ## Question Engine
 
@@ -34,8 +34,8 @@
 - [x] Award threshold badges: Honor Roll 85%, High Honor Roll 90%, Coaches List 95%.
 - [x] Persist resumable in-progress quiz drafts with "pick up where left off."
 - [x] Show exit summaries for interrupted quizzes: points, right/wrong, and remaining questions.
-- [ ] Add daily and weekly streak calculations.
-- [ ] Add weekly and season views.
+- [x] Add daily and weekly streak calculations.
+- [x] Add weekly and season views.
 - [x] Award weekly question points when players ask good football questions. Local coach staging control added.
 - [x] Allow coaches to gift bonus points to players who answer teammates' questions. Local coach staging control added.
 
@@ -43,7 +43,7 @@
 
 - [x] Define football tiers: Champion, Baller, Starter, Contributor, Defense.
 - [x] Build local leaderboard preview from stored attempts.
-- [ ] Build coach/admin leaderboard view with week and season toggles. Local weekly reward totals now appear on Set Up Quizzes.
+- [x] Build coach/admin leaderboard view with week and season toggles. Local weekly reward totals now appear on Set Up Quizzes.
 - [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [ ] Add achievements/stars above the 1000-point goal.
 
@@ -53,7 +53,7 @@
 - [ ] Add quiz controls to Game Plan publishing.
 - [x] Add coach/admin "Set Up Quizzes" nav page for customization, readiness, and leaderboard review.
 - [x] Add coach preview mode for each source and position.
-- [ ] Add player attempt review with weak-position and weak-rule summaries.
+- [x] Add player attempt review with weak-position and weak-rule summaries.
 
 ## Learning Readiness
 
@@ -84,7 +84,7 @@
 - [x] Make the question prompt the strongest visual element on the quiz screen.
 - [ ] Keep answer labels readable with long play calls and long responsibility rules.
 - [x] Add safe exit flow: Resume, Save & Close, or End Quiz.
-- [ ] Make partial attempts visible in recent history without pretending they were completed.
+- [x] Make partial attempts visible in recent history without pretending they were completed.
 
 ## Verification
 
