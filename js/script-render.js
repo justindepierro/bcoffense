@@ -3341,6 +3341,15 @@ function _renderQuizChoice(choice, answer) {
   `;
 }
 
+function _getQuizChoiceLengthTone(choices) {
+  const maxLength = (Array.isArray(choices) ? choices : []).reduce((max, choice) => (
+    Math.max(max, _quizCleanText(choice?.label || "").length)
+  ), 0);
+  if (maxLength >= 86) return "very-long";
+  if (maxLength >= 48) return "long";
+  return "";
+}
+
 function _renderQuizFeedback(item, answer) {
   if (!answer) return "";
   const { play } = item;
@@ -3811,6 +3820,12 @@ function renderScriptQuizPlay() {
         ${_quizCurrentChoices.map((choice) => _renderQuizChoice(choice, answer)).join("")}
       </div>`
     : "";
+  const choiceLengthTone = gameMode ? _getQuizChoiceLengthTone(_quizCurrentChoices) : "";
+  const scenarioClasses = [
+    "script-quiz-scenario",
+    gameMode ? "script-quiz-scenario--game" : "",
+    choiceLengthTone ? `script-quiz-scenario--${choiceLengthTone}-choices` : "",
+  ].filter(Boolean).join(" ");
 
   const scenarioHtml = `
     ${gameMode ? `
@@ -3826,17 +3841,17 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-label">${escapeHtml(question.detailLabel)}</div>
       <div class="sq-scenario-value">${escapeHtml(detailValue)}</div>
     </div>` : ""}
-    <div class="sq-scenario-block">
+    <div class="sq-scenario-block sq-scenario-block--situation">
       <div class="sq-scenario-label">Situation</div>
       <div class="sq-scenario-value sq-situation">${situationParts.length ? situationParts.map(escapeHtml).join(" · ") : "<em style='opacity:.5'>No situation set</em>"}</div>
     </div>
     ${callContextParts.length ? `
-    <div class="sq-scenario-block">
+    <div class="sq-scenario-block sq-scenario-block--context">
       <div class="sq-scenario-label">Context</div>
       <div class="sq-scenario-value">${callContextParts.map(escapeHtml).join(" · ")}</div>
     </div>` : ""}
     ${play.practiceFront || play.practiceCoverage || play.practiceBlitz ? `
-    <div class="sq-scenario-block">
+    <div class="sq-scenario-block sq-scenario-block--defense">
       <div class="sq-scenario-label">Defense</div>
       <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
     </div>` : ""}
@@ -3849,7 +3864,10 @@ function renderScriptQuizPlay() {
     ${choicesHtml}
   `;
   const scenarioEl = document.getElementById("scriptQuizScenario");
-  if (scenarioEl) setInnerHTML(scenarioEl, scenarioHtml);
+  if (scenarioEl) {
+    scenarioEl.className = scenarioClasses;
+    setInnerHTML(scenarioEl, scenarioHtml);
+  }
 
   // Answer — hidden until revealed
   const fullCall = typeof getFullCall === "function" ? getFullCall(play, { showEmoji: false }) : escapeHtml([play.formation, play.play].filter(Boolean).join(" "));

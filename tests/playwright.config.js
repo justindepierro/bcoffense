@@ -55,11 +55,15 @@ module.exports = defineConfig({
     },
     {
       name: "iphone",
-      use: { ...devices["iPhone 15"], viewport: { width: 393, height: 852 } },
+      use: { ...devices["iPhone 15"], browserName: "chromium", viewport: { width: 393, height: 852 } },
+    },
+    {
+      name: "webkit-iphone",
+      use: { ...devices["iPhone 15"], browserName: "webkit", viewport: { width: 393, height: 852 } },
     },
     {
       name: "phone-narrow",
-      use: { ...devices["iPhone SE"], viewport: { width: 320, height: 568 } },
+      use: { ...devices["iPhone SE"], browserName: "chromium", viewport: { width: 320, height: 568 } },
     },
   ],
 });

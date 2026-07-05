@@ -82,7 +82,7 @@
 
 - [x] Compress the quiz top information so all four answers fit on phone without forced scrolling.
 - [x] Make the question prompt the strongest visual element on the quiz screen.
-- [ ] Keep answer labels readable with long play calls and long responsibility rules.
+- [x] Keep answer labels readable with long play calls and long responsibility rules.
 - [x] Add safe exit flow: Resume, Save & Close, or End Quiz.
 - [x] Make partial attempts visible in recent history without pretending they were completed.
 
@@ -92,4 +92,4 @@
 - [x] Add tests for Game Plan source when a board has assignments.
 - [x] Add tests for responsibility-question generation.
 - [x] Add tests for local attempt scoring and badge thresholds.
-- [ ] Run Chromium and WebKit mobile checks before each shipped quiz slice.
+- [x] Run Chromium and WebKit mobile checks before each shipped quiz slice.

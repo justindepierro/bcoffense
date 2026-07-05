@@ -621,6 +621,93 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("keeps long quiz answer labels readable on mobile", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+
+    await page.evaluate(() => {
+      script = [
+        {
+          personnel: "11",
+          formation: "Trips Rt Stack Nasty",
+          play: "Buck Sweep Keep Alert",
+          preferredDown: "2",
+          preferredDistance: "Long",
+          preferredFieldPosition: "Green",
+          respQ: "Secure the force defender, keep outside leverage, and climb only after the safety folds inside.",
+        },
+        {
+          personnel: "10",
+          formation: "Doubles Nub Rt",
+          play: "Verts Switch Read",
+          preferredDown: "3",
+          preferredDistance: "Medium",
+          respQ: "Stem vertical, hold the near safety with your eyes, and win the hash before snapping flat.",
+        },
+        {
+          personnel: "12",
+          formation: "Wing Lt Tight",
+          play: "Power Read Bluff",
+          preferredDown: "1",
+          preferredDistance: "Short",
+          respQ: "Open play side, sell the mesh with tempo, then carry the keep fake through the alley.",
+        },
+        {
+          personnel: "11",
+          formation: "Trips Lt Bunch",
+          play: "Bubble Gift Lock",
+          preferredDown: "1",
+          preferredDistance: "Medium",
+          respQ: "Catch, replace the blitzing overhang, and get north after the first color declares.",
+        },
+      ];
+      startScriptQuiz({ positionKey: "respQ", title: "Long Rule Quiz" });
+    });
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.locator("#scriptQuizScenario")).toHaveClass(/script-quiz-scenario--(?:very-)?long-choices/);
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(4);
+
+    const metrics = await page.evaluate(() => {
+      const panel = document.querySelector("#scriptQuizOverlay .script-quiz-panel");
+      const nav = document.querySelector("#scriptQuizOverlay .script-quiz-nav");
+      const choices = Array.from(document.querySelectorAll("#scriptQuizOverlay .script-quiz-choice"));
+      const labels = Array.from(document.querySelectorAll("#scriptQuizOverlay .sq-choice-label"));
+      const choiceRects = choices.map((choice) => choice.getBoundingClientRect());
+      const labelStyles = labels.map((label) => {
+        const style = getComputedStyle(label);
+        return {
+          fontSize: parseFloat(style.fontSize),
+          lineClamp: style.webkitLineClamp,
+          overflow: style.overflow,
+        };
+      });
+      const panelRect = panel?.getBoundingClientRect();
+      const navRect = nav?.getBoundingClientRect();
+      return {
+        panelBottom: panelRect?.bottom || 0,
+        viewportHeight: window.innerHeight,
+        choices: choiceRects.map((rect) => ({
+          height: rect.height,
+          top: rect.top,
+          bottom: rect.bottom,
+        })),
+        navTop: navRect?.top || 0,
+        minFontSize: Math.min(...labelStyles.map((style) => style.fontSize)),
+        allClamped: labelStyles.every((style) => style.lineClamp === "2" && style.overflow === "hidden"),
+      };
+    });
+
+    expect(metrics.panelBottom).toBeLessThanOrEqual(metrics.viewportHeight + 1);
+    expect(metrics.choices).toHaveLength(4);
+    expect(Math.min(...metrics.choices.map((choice) => choice.height))).toBeGreaterThanOrEqual(44);
+    expect(Math.max(...metrics.choices.map((choice) => choice.bottom))).toBeLessThanOrEqual(metrics.navTop + 1);
+    expect(metrics.minFontSize).toBeGreaterThanOrEqual(12);
+    expect(metrics.allClamped).toBe(true);
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("makes player notifications and offline states clear", async ({ page, context }) => {
     await page.route("**/api/notifications/count", async (route) => {
       await route.fulfill({
