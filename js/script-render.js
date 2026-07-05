@@ -1442,8 +1442,19 @@ let _quizCurrentChoices = [];
 let _quizScore = 0;
 let _quizStreak = 0;
 let _quizBestStreak = 0;
+let _quizBasePlays = [];
+let _quizSourceType = "script";
+let _quizSourceWeight = 1;
+let _quizTitle = "Play Quiz";
+let _quizPositionKey = "respQ";
 
 const SCRIPT_QUIZ_CHOICE_COLORS = ["blue", "red", "gold", "green"];
+const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
+const PLAYER_QUIZ_SOURCE_WEIGHTS = {
+  script: 1,
+  gameplan: 1.25,
+};
+const PLAYER_QUIZ_TIERS = ["Champion", "Baller", "Starter", "Contributor", "Defense"];
 
 function _buildQuizPlays(shuffled) {
   const items = [];
@@ -1462,6 +1473,190 @@ function _buildQuizPlays(shuffled) {
     }
   }
   return items;
+}
+
+function _normalizeQuizItems(items) {
+  return (Array.isArray(items) ? items : [])
+    .map((item, index) => {
+      if (!item) return null;
+      if (item.play) {
+        return {
+          play: item.play,
+          period: item.period || "",
+          scriptIndex: item.scriptIndex ?? index,
+          sourceBox: item.sourceBox || "",
+        };
+      }
+      return {
+        play: item,
+        period: "",
+        scriptIndex: index,
+        sourceBox: "",
+      };
+    })
+    .filter((item) => item && item.play && !item.play.isSeparator);
+}
+
+function _setQuizPlays(items, shuffled = false) {
+  _quizBasePlays = _normalizeQuizItems(items);
+  _quizPlays = shuffled ? _quizShuffle(_quizBasePlays) : _quizBasePlays.slice();
+}
+
+function _getQuizPositions() {
+  if (typeof getPlayPresentationPositions === "function") {
+    return getPlayPresentationPositions();
+  }
+  return [
+    { key: "respQ", label: "Q" },
+    { key: "respT", label: "T" },
+    { key: "respH", label: "H" },
+    { key: "respZ", label: "Z" },
+    { key: "respX", label: "X" },
+    { key: "respY", label: "Y" },
+    { key: "respLT", label: "LT" },
+    { key: "respLG", label: "LG" },
+    { key: "respC", label: "C" },
+    { key: "respRG", label: "RG" },
+    { key: "respRT", label: "RT" },
+  ];
+}
+
+function _getQuizPosition(key = _quizPositionKey) {
+  return _getQuizPositions().find((position) => position.key === key) || _getQuizPositions()[0];
+}
+
+function _getPlayerQuizScriptOptions() {
+  const savedScripts = typeof getSavedScripts === "function" ? getSavedScripts() : [];
+  return (Array.isArray(savedScripts) ? savedScripts : [])
+    .filter((savedScript) => savedScript && savedScript.id)
+    .map((savedScript) => {
+      const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : null;
+      return {
+        id: String(savedScript.id),
+        name: savedScript.name || "Published Practice",
+        playCount: stats?.playCount || 0,
+        date: savedScript.date || "",
+      };
+    });
+}
+
+function _renderPlayerQuizHub() {
+  const picker = document.getElementById("playerQuizPositionPicker");
+  if (picker) {
+    picker.innerHTML = _getQuizPositions()
+      .map((position) => `
+        <button type="button"
+          class="player-quiz-position-btn${position.key === _quizPositionKey ? " is-active" : ""}"
+          data-action="setPlayerQuizPosition"
+          data-arg="${escapeAttr(position.key)}"
+          aria-pressed="${position.key === _quizPositionKey ? "true" : "false"}">
+          ${escapeHtml(position.label)}
+        </button>
+      `)
+      .join("");
+  }
+
+  const select = document.getElementById("playerQuizScriptSelect");
+  if (select) {
+    const options = _getPlayerQuizScriptOptions();
+    if (options.length) {
+      select.innerHTML = options
+        .map((option) => {
+          const count = option.playCount ? ` · ${option.playCount} plays` : "";
+          const date = option.date ? `${option.date} · ` : "";
+          return `<option value="${escapeAttr(option.id)}">${escapeHtml(date + option.name + count)}</option>`;
+        })
+        .join("");
+    } else {
+      select.innerHTML = `<option value="">Current practice</option>`;
+    }
+  }
+}
+
+function openPlayerQuizHub() {
+  _renderPlayerQuizHub();
+  const overlay = document.getElementById("playerQuizHubOverlay");
+  if (!overlay) return;
+  overlay.classList.remove("hidden");
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "playerQuizHubOverlay",
+      scrollElement: "playerQuizHubPanel",
+      blocking: true,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+}
+
+function closePlayerQuizHub() {
+  const overlay = document.getElementById("playerQuizHubOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") {
+    closeLayer(overlay);
+  }
+  overlay.classList.add("hidden");
+}
+
+function setPlayerQuizPosition(key) {
+  const next = _getQuizPositions().find((position) => position.key === key);
+  if (!next) return;
+  _quizPositionKey = next.key;
+  _renderPlayerQuizHub();
+}
+
+function startPlayerQuizHubScript() {
+  const select = document.getElementById("playerQuizScriptSelect");
+  const id = select ? select.value : "";
+  closePlayerQuizHub();
+  if (typeof startPlayerScriptQuiz === "function") {
+    startPlayerScriptQuiz(id || "");
+    return;
+  }
+  startScriptQuiz({
+    sourceType: "script",
+    title: "Practice Script Quiz",
+    positionKey: _quizPositionKey,
+  });
+}
+
+function _buildGamePlanQuizItems() {
+  if (typeof _gpEnsureBoard !== "function") return [];
+  const board = _gpEnsureBoard();
+  const seen = new Set();
+  const items = [];
+  Object.entries(board.assignments || {}).forEach(([boxId, list]) => {
+    (Array.isArray(list) ? list : []).forEach((play, rawIdx) => {
+      if (!play) return;
+      const sig = typeof _gpPlaySignature === "function"
+        ? _gpPlaySignature(play)
+        : `${_quizPlainCall(play)}::${rawIdx}`;
+      if (seen.has(sig)) return;
+      seen.add(sig);
+      items.push({
+        play,
+        period: board.boxLabels?.[boxId] || boxId,
+        scriptIndex: items.length,
+        sourceBox: boxId,
+      });
+    });
+  });
+  return items;
+}
+
+function startPlayerQuizHubGamePlan() {
+  const items = _buildGamePlanQuizItems();
+  if (!items.length) {
+    showToast("Add plays to the Game Plan before starting this quiz.", { type: "warning" });
+    return;
+  }
+  closePlayerQuizHub();
+  startScriptQuiz({
+    items,
+    sourceType: "gameplan",
+    title: "Game Plan Quiz",
+    positionKey: _quizPositionKey,
+  });
 }
 
 function _resetQuizGameState() {
@@ -1549,9 +1744,11 @@ function _buildQuizChoices(item) {
 }
 
 function _quizCoachDetails(play) {
-  const ruleParts = [play.respQ, play.respNotes].filter(Boolean);
+  const position = _getQuizPosition();
+  const positionRule = position?.key ? play[position.key] : "";
+  const ruleParts = [positionRule, play.respNotes].filter(Boolean);
   const noteParts = [play.playerNotes, play.notes].filter(Boolean);
-  return { ruleParts, noteParts };
+  return { ruleParts, noteParts, position };
 }
 
 function _renderQuizChoice(choice, answer) {
@@ -1584,7 +1781,7 @@ function _renderQuizFeedback(item, answer) {
     ? getFullCall(play, { showEmoji: false })
     : escapeHtml(_quizPlainCall(play));
   const defenseItems = [play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean);
-  const { ruleParts, noteParts } = _quizCoachDetails(play);
+  const { ruleParts, noteParts, position } = _quizCoachDetails(play);
   const resultText = answer.correct ? "Correct" : "Not this one";
   const resultClass = answer.correct ? "is-correct" : "is-wrong";
   return `
@@ -1592,7 +1789,7 @@ function _renderQuizFeedback(item, answer) {
       <div class="sq-feedback-result">${resultText}</div>
       <div class="sq-answer-call">${fullCall}</div>
       ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
-      ${ruleParts.length ? `<div class="sq-answer-note"><strong>Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
+      ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${noteParts.length ? `<div class="sq-answer-note"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
     </div>
   `;
@@ -1605,14 +1802,23 @@ function isScriptQuizAwaitingAnswer() {
   return choices.length >= 2 && !_quizAnswers.has(_quizItemKey(item));
 }
 
-function startScriptQuiz() {
-  const plays = Array.isArray(script) ? script.filter((s) => !s.isSeparator) : [];
-  if (!plays.length) {
+function startScriptQuiz(options = {}) {
+  const opts = options && typeof options === "object" ? options : {};
+  const sourceType = opts.sourceType === "gameplan" ? "gameplan" : "script";
+  const items = Array.isArray(opts.items) ? opts.items : _buildQuizPlays(false);
+  const normalizedItems = _normalizeQuizItems(items);
+  if (!normalizedItems.length) {
     showToast("Add plays to the script before starting a quiz", { type: "warning" });
     return;
   }
   _quizShuffled = false;
-  _quizPlays = _buildQuizPlays(false);
+  _quizSourceType = sourceType;
+  _quizSourceWeight = PLAYER_QUIZ_SOURCE_WEIGHTS[sourceType] || 1;
+  _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
+  if (opts.positionKey && _getQuizPositions().some((position) => position.key === opts.positionKey)) {
+    _quizPositionKey = opts.positionKey;
+  }
+  _setQuizPlays(normalizedItems, false);
   _quizIndex = 0;
   _resetQuizGameState();
 
@@ -1642,7 +1848,7 @@ function closeScriptQuiz() {
 
 function toggleScriptQuizShuffle() {
   _quizShuffled = !_quizShuffled;
-  _quizPlays = _buildQuizPlays(_quizShuffled);
+  _setQuizPlays(_quizBasePlays, _quizShuffled);
   _quizIndex = 0;
   _resetQuizGameState();
   const btn = document.getElementById("scriptQuizShuffleBtn");
@@ -1693,7 +1899,7 @@ function answerScriptQuizChoice(choiceKey) {
   if (correct) {
     _quizStreak += 1;
     _quizBestStreak = Math.max(_quizBestStreak, _quizStreak);
-    _quizScore += 100 + Math.min(_quizStreak - 1, 4) * 25;
+    _quizScore += Math.round((100 + Math.min(_quizStreak - 1, 4) * 25) * _quizSourceWeight);
   } else {
     _quizStreak = 0;
   }
@@ -1710,6 +1916,9 @@ function renderScriptQuizPlay() {
   _quizCurrentChoices = _buildQuizChoices(item);
   const gameMode = _quizCurrentChoices.length >= 2;
   _quizRevealed = Boolean(answer);
+
+  const titleEl = document.getElementById("scriptQuizTitle");
+  if (titleEl) titleEl.textContent = _quizTitle;
 
   // Progress
   const progressEl = document.getElementById("scriptQuizProgress");
@@ -1748,9 +1957,13 @@ function renderScriptQuizPlay() {
   const personnelLabel = play.personnel ? play.personnel : "";
   const tempoLabel = play.tempo ? play.tempo : "";
   const typeLabel = play.type ? play.type : "";
+  const position = _getQuizPosition();
+  const positionRule = position?.key ? play[position.key] : "";
+  const sourceLabel = _quizSourceType === "gameplan" ? "Game Plan" : "Script";
+  const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
-  const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
+  const callContextParts = [sourceLabel, `${weightLabel} points`, personnelLabel, tempoLabel, typeLabel].filter(Boolean);
   const choicesHtml = gameMode
     ? `<div class="script-quiz-choices" role="group" aria-label="Answer choices">
         ${_quizCurrentChoices.map((choice) => _renderQuizChoice(choice, answer)).join("")}
@@ -1763,6 +1976,7 @@ function renderScriptQuizPlay() {
       <span class="sq-game-pill">Score ${_quizScore}</span>
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
       <span class="sq-game-pill">Best ${_quizBestStreak}</span>
+      <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
     </div>` : ""}
     <div class="sq-scenario-block">
       <div class="sq-scenario-label">Situation</div>
@@ -1777,6 +1991,11 @@ function renderScriptQuizPlay() {
     <div class="sq-scenario-block">
       <div class="sq-scenario-label">Defense</div>
       <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
+    </div>` : ""}
+    ${position ? `
+    <div class="sq-scenario-block sq-scenario-block--position">
+      <div class="sq-scenario-label">Your Spot</div>
+      <div class="sq-scenario-value">${escapeHtml(position.label)}${positionRule ? ` · rule ready` : " · no rule yet"}</div>
     </div>` : ""}
     <div class="sq-scenario-hint">What's the call?</div>
     ${choicesHtml}

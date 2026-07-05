@@ -308,6 +308,15 @@ test.describe("Player mobile experience", () => {
     for (const label of ["Open Practice", "Swipe View", "Quiz", "Questions", "Playbook"]) {
       await expect(page.locator("#playerDashboardHome").getByRole("button", { name: new RegExp(label, "i") }).first()).toBeVisible();
     }
+    await page.locator("#playerDashboardHome").getByRole("button", { name: /^Quiz$/i }).click();
+    const quizHub = page.locator("#playerQuizHubOverlay");
+    await expect(quizHub).toBeVisible();
+    await expect(quizHub.getByRole("heading", { name: /Choose your challenge/i })).toBeVisible();
+    await expect(quizHub.getByRole("button", { name: /^Q$/i })).toHaveClass(/is-active/);
+    await expect(quizHub.getByRole("button", { name: /Start Script Quiz/i })).toBeVisible();
+    await expect(quizHub.getByRole("button", { name: /Start Game Plan Quiz/i })).toBeVisible();
+    await quizHub.getByRole("button", { name: /Close Quiz Center/i }).click();
+    await expect(quizHub).toBeHidden();
     await expect.poll(async () => page.evaluate(() => {
       const hero = document.querySelector(".player-home-hero")?.getBoundingClientRect();
       const actions = document.querySelector(".player-home-quick-actions")?.getBoundingClientRect();

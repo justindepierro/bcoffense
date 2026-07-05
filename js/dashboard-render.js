@@ -954,11 +954,7 @@ function renderPlayerDashboardHome() {
       ? `data-action="openPlayerCurrentScriptPresentation" data-arg="${featuredScriptId}"`
       : 'data-action="showTab" data-arg="script"';
   const playbookAction = 'data-action="showTab" data-arg="playbook"';
-  const quizAction = featuredScript
-    ? `data-action="startPlayerScriptQuiz" data-arg="${featuredScriptId}"`
-    : loadedScript
-      ? 'data-action="startPlayerScriptQuiz"'
-      : 'data-action="showTab" data-arg="script"';
+  const quizAction = 'data-action="openPlayerQuizHub"';
   const questionsAction = 'data-action="openPlayerPortal"';
   const statusTitle =
     featuredScript?.name || loadedScript?.name || "No practice published yet";
