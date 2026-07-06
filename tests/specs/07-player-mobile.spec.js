@@ -377,6 +377,104 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerLeaderboardPage")).toContainText("46 pts");
   });
 
+  test("shows wrong-answer review and recap guidance", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.evaluate(async () => {
+      script = [
+        {
+          personnel: "11",
+          formation: "Trips Rt",
+          play: "Buck Sweep",
+          preferredDown: "1",
+          preferredDistance: "Medium",
+          respQ: "Secure the edge and finish through contact.",
+          respNotes: "If force folds inside, climb now.",
+          playerNotes: "Coach says: your eyes start on the force defender.",
+        },
+        {
+          personnel: "10",
+          formation: "Doubles",
+          play: "Verts",
+          preferredDown: "3",
+          preferredDistance: "Long",
+          respQ: "Win vertical leverage.",
+        },
+        {
+          personnel: "12",
+          formation: "Wing Lt",
+          play: "Power",
+          preferredDown: "2",
+          preferredDistance: "Short",
+          respQ: "Open play side and carry out keep fake.",
+        },
+        {
+          personnel: "11",
+          formation: "Trips Lt",
+          play: "Bubble",
+          preferredDown: "1",
+          preferredDistance: "Short",
+          respQ: "Catch, replace, and get north.",
+        },
+      ];
+      const canvas = document.createElement("canvas");
+      canvas.width = 480;
+      canvas.height = 300;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.strokeStyle = "#1d4ed8";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(72, 210);
+      ctx.bezierCurveTo(160, 96, 300, 96, 406, 186);
+      ctx.stroke();
+      ctx.fillStyle = "#0f172a";
+      ctx.font = "bold 26px Arial";
+      ctx.fillText("BUCK SWEEP", 32, 48);
+      const diagramDataUrl = canvas.toDataURL("image/png");
+      const originalGetPlayImageUrl = window.getPlayImageUrl;
+      window.getPlayImageUrl = (play) => (
+        play && play.play === "Buck Sweep"
+          ? diagramDataUrl
+          : (typeof originalGetPlayImageUrl === "function" ? originalGetPlayImageUrl(play) : "")
+      );
+      startScriptQuiz({ positionKey: "respQ", title: "Review Quiz" });
+    });
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await quiz.locator(".script-quiz-choice:not([data-arg$='::correct'])").first().click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Not this one");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Review this one");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("You picked");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct answer");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Secure the edge");
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Coach note");
+    await expect(quiz.locator(".sq-review-diagram img")).toBeVisible();
+
+    for (let i = 0; i < 3; i += 1) {
+      await quiz.locator("#scriptQuizNextBtn").click();
+      await quiz.locator(".script-quiz-choice[data-arg$='::correct']").click();
+    }
+    await quiz.locator("#scriptQuizNextBtn").click();
+    await expect(quiz.locator(".sq-result-card")).toContainText("75%");
+    await expect(quiz.locator(".sq-result-card")).toContainText("Review next");
+    await expect(quiz.locator(".sq-result-card")).toContainText("Responsibility");
+    await expect(quiz.locator(".sq-result-card")).toContainText("Secure the edge");
+    await expect(quiz.getByRole("button", { name: /^Quiz Center$/i })).toBeVisible();
+    await expect.poll(async () => page.evaluate(() => {
+      const attempts = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, []);
+      return attempts.at(-1)?.review || null;
+    })).toMatchObject({
+      missedCount: 1,
+      missTypes: ["Responsibility"],
+    });
+    await quiz.getByRole("button", { name: /^Done$/i }).click();
+    await expect(quiz).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("opens every core player page without staff controls or overflow", async ({ page }) => {
     await page.route("**/api/questions/mine?**", async (route) => {
       await route.fulfill({

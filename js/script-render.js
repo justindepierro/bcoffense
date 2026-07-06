@@ -4304,6 +4304,74 @@ function _quizCoachDetails(play) {
   return { ruleParts, noteParts, position };
 }
 
+function _quizQuestionTypeLabel(type) {
+  const labels = {
+    responsibility: "Responsibility",
+    play_from_rule: "Rule to Play",
+    call: "Call ID",
+  };
+  return labels[type] || "Quiz";
+}
+
+function _getQuizAnswerContext(item, answer) {
+  if (!item || !answer) return null;
+  const data = _getQuizQuestionAndChoices(item);
+  const choices = Array.isArray(data.choices) ? data.choices : [];
+  const selected = choices.find((choice) => choice.key === answer.choiceKey) || null;
+  const correctChoice = choices.find((choice) => choice.correct) || null;
+  const question = data.question || _buildQuizQuestion(item);
+  return {
+    question,
+    selected,
+    correctChoice,
+    questionType: answer.questionType || question?.type || "call",
+  };
+}
+
+function _quizDiagramUrl(play) {
+  if (!play) return "";
+  if (typeof window.getPlayImageUrl === "function") {
+    return window.getPlayImageUrl(play) || "";
+  }
+  if (window.playImages && typeof window.playImages.urlForPlay === "function") {
+    return window.playImages.urlForPlay(play) || "";
+  }
+  return "";
+}
+
+function _renderQuizWrongReview(item, answer) {
+  const context = _getQuizAnswerContext(item, answer);
+  if (!context || answer.correct) return "";
+  const { play } = item;
+  const { ruleParts, noteParts, position } = _quizCoachDetails(play);
+  const diagramUrl = _quizDiagramUrl(play);
+  const correctLabel = context.correctChoice?.label || _quizPlainCall(play);
+  const selectedLabel = context.selected?.label || "That answer";
+  const sourceHint = context.questionType === "responsibility"
+    ? `Study the ${position?.label || "your"} rule and connect it back to the call.`
+    : context.questionType === "play_from_rule"
+      ? "Match the rule language back to the full call."
+      : "Use the formation, personnel, and tags to identify the call.";
+  return `
+    <div class="sq-review-card" role="note" aria-label="Wrong answer review">
+      <div class="sq-review-kicker">Review this one</div>
+      <div class="sq-review-main">
+        <span><strong>You picked</strong><small>${escapeHtml(selectedLabel)}</small></span>
+        <span><strong>Correct answer</strong><small>${escapeHtml(correctLabel)}</small></span>
+      </div>
+      ${ruleParts.length ? `<div class="sq-review-detail"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
+      ${noteParts.length ? `<div class="sq-review-detail"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
+      ${diagramUrl ? `
+        <figure class="sq-review-diagram">
+          <img src="${escapeAttr(diagramUrl)}" alt="Correct play diagram" loading="lazy">
+          <figcaption>Diagram to study</figcaption>
+        </figure>
+      ` : ""}
+      <div class="sq-review-next">${escapeHtml(sourceHint)}</div>
+    </div>
+  `;
+}
+
 function _renderQuizChoice(choice, answer) {
   const answered = Boolean(answer);
   const selected = answer && answer.choiceKey === choice.key;
@@ -4353,6 +4421,7 @@ function _renderQuizFeedback(item, answer) {
       ${defenseItems.length ? `<div class="sq-answer-defense">vs ${defenseItems.map(escapeHtml).join(" / ")}</div>` : ""}
       ${ruleParts.length ? `<div class="sq-answer-note"><strong>${escapeHtml(position?.label || "Your")} Rule:</strong> ${ruleParts.map(escapeHtml).join(" ")}</div>` : ""}
       ${noteParts.length ? `<div class="sq-answer-note"><strong>Coach note:</strong> ${noteParts.map(escapeHtml).join(" ")}</div>` : ""}
+      ${_renderQuizWrongReview(item, answer)}
     </div>
   `;
 }
@@ -4484,9 +4553,88 @@ function answerScriptQuizChoice(choiceKey) {
   } else {
     _quizStreak = 0;
   }
-  _quizAnswers.set(questionKey, { choiceKey, correct, questionType: selected.questionType || "call" });
+  _quizAnswers.set(questionKey, {
+    choiceKey,
+    correct,
+    questionType: selected.questionType || "call",
+    selectedLabel: selected.label || "",
+    correctLabel: choices.find((choice) => choice.correct)?.label || "",
+    prompt: _quizCurrentQuestion?.prompt || "",
+    playCall: _quizPlainCall(item.play),
+  });
   renderScriptQuizPlay();
   _savePlayerQuizDraft();
+}
+
+function _getQuizAnswerReviewRows() {
+  return _quizPlays
+    .map((item) => {
+      const answer = _quizAnswers.get(_quizItemKey(item));
+      if (!answer) return null;
+      const context = _getQuizAnswerContext(item, answer);
+      const correctLabel = context?.correctChoice?.label || answer.correctLabel || _quizPlainCall(item.play);
+      const selectedLabel = context?.selected?.label || answer.selectedLabel || "";
+      return {
+        item,
+        answer,
+        correct: Boolean(answer.correct),
+        questionType: answer.questionType || context?.questionType || "call",
+        questionLabel: _quizQuestionTypeLabel(answer.questionType || context?.questionType || "call"),
+        prompt: context?.question?.prompt || answer.prompt || "",
+        selectedLabel,
+        correctLabel,
+        playCall: _quizPlainCall(item.play),
+      };
+    })
+    .filter(Boolean);
+}
+
+function _summarizeQuizReviewRows(rows) {
+  const list = Array.isArray(rows) ? rows : [];
+  const misses = list.filter((row) => !row.correct);
+  const strengths = list.filter((row) => row.correct);
+  const missTypes = [...new Set(misses.map((row) => row.questionLabel).filter(Boolean))];
+  const strengthTypes = [...new Set(strengths.map((row) => row.questionLabel).filter(Boolean))];
+  return {
+    misses,
+    strengths,
+    missTypes,
+    strengthTypes,
+    nextReview: misses[0]?.playCall || "",
+  };
+}
+
+function _renderQuizResultReview(summary, review) {
+  const data = review || _summarizeQuizReviewRows(_getQuizAnswerReviewRows());
+  const sourceLabel = summary.sourceType === "gameplan" ? "game plan" : "script";
+  if (!data.misses.length) {
+    const strengthText = data.strengthTypes.length
+      ? `You were strongest on ${data.strengthTypes.slice(0, 2).join(" and ")} questions.`
+      : `You handled every answered ${sourceLabel} question.`;
+    return `
+      <div class="sq-result-review sq-result-review--clean">
+        <strong>Clean finish</strong>
+        <span>${escapeHtml(strengthText)} Keep reviewing the next ${sourceLabel} before practice.</span>
+      </div>
+    `;
+  }
+  const missText = data.missTypes.length
+    ? `Missed area${data.missTypes.length === 1 ? "" : "s"}: ${data.missTypes.slice(0, 3).join(", ")}.`
+    : "Missed area: review the call and rule language.";
+  return `
+    <div class="sq-result-review">
+      <strong>Review next: ${escapeHtml(data.nextReview || sourceLabel)}</strong>
+      <span>${escapeHtml(missText)}</span>
+      <div class="sq-result-miss-list">
+        ${data.misses.slice(0, 3).map((row) => `
+          <span>
+            <b>${escapeHtml(row.questionLabel)}</b>
+            <small>${escapeHtml(row.correctLabel)}</small>
+          </span>
+        `).join("")}
+      </div>
+    </div>
+  `;
 }
 
 function _buildQuizAttemptSummary(options = {}) {
@@ -4504,6 +4652,8 @@ function _buildQuizAttemptSummary(options = {}) {
   const totalQuestions = _quizPlays.length;
   const remaining = Math.max(0, totalQuestions - answered);
   const now = new Date();
+  const reviewRows = _getQuizAnswerReviewRows();
+  const review = _summarizeQuizReviewRows(reviewRows);
   return {
     id: _quizSavedAttemptId || `quiz-${Date.now()}-${Math.random().toString(36).slice(2, 8)}`,
     player: _getQuizPlayerName(),
@@ -4524,6 +4674,12 @@ function _buildQuizAttemptSummary(options = {}) {
     percent,
     badge: badge.label,
     bestStreak: _quizBestStreak,
+    review: {
+      missedCount: review.misses.length,
+      missTypes: review.missTypes,
+      strengthTypes: review.strengthTypes,
+      nextReview: review.nextReview,
+    },
     completed: !partial,
     completedAt: now.toISOString(),
     dateKey: _quizDateKey(now),
@@ -4683,6 +4839,7 @@ function _renderQuizResults(summary) {
   const sourceLabel = summary.sourceType === "gameplan" ? "Game Plan" : "Script";
   const statusLabel = summary.completed === false ? `${sourceLabel} Ended` : `${sourceLabel} Complete`;
   const tierAfter = _getQuizTier(_summarizeQuizAttempts().weeklyPoints);
+  const review = _summarizeQuizReviewRows(_getQuizAnswerReviewRows());
   if (scenarioEl) {
     setInnerHTML(scenarioEl, `
       <div class="sq-result-card">
@@ -4697,8 +4854,12 @@ function _renderQuizResults(summary) {
         </div>
         ${summary.remaining ? `<div class="sq-result-tier">${summary.remaining} question${summary.remaining === 1 ? "" : "s"} left in this ${summary.sourceType === "gameplan" ? "game plan" : "script"}.</div>` : ""}
         ${summary.bonusPoints ? `<div class="sq-result-bonus">+${summary.bonusPoints} bonus points · ${escapeHtml(summary.badge)}</div>` : ""}
+        ${_renderQuizResultReview(summary, review)}
         <div class="sq-result-tier">Weekly tier now: <strong>${escapeHtml(tierAfter)}</strong></div>
-        <button type="button" class="btn btn-primary sq-result-close" data-action="closeScriptQuiz">Done</button>
+        <div class="sq-result-actions">
+          <button type="button" class="btn btn-primary sq-result-close" data-action="closeScriptQuiz">Done</button>
+          <button type="button" class="btn btn-outline sq-result-close" data-action="closeScriptQuizToHub">Quiz Center</button>
+        </div>
       </div>
     `);
   }
@@ -4734,6 +4895,11 @@ function finishScriptQuiz() {
   }
   _renderQuizResults(summary);
   _renderPlayerQuizHub();
+}
+
+function closeScriptQuizToHub() {
+  closeScriptQuiz();
+  openPlayerQuizHub();
 }
 
 function renderScriptQuizPlay() {

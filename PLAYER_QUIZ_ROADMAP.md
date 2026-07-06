@@ -34,7 +34,7 @@
 - [x] Add source-aware fallback rules so thin scripts/game plans still produce useful quizzes.
 - [ ] Add diagram-identification questions when rules are missing.
 - [ ] Add smart diagram title redaction/blur behind one helper before diagram-identification questions ship broadly.
-- [ ] Add wrong-answer review cards that show the diagram, correct rule, and coach note after an answer.
+- [x] Add wrong-answer review cards that show the diagram, correct rule, and coach note after an answer.
 
 ## Scoring And Goals
 
@@ -121,6 +121,7 @@
 - [x] Add tests for quiz settings persistence and scoring effects.
 - [x] Add tests for local quiz source publishing controls.
 - [x] Add tests for player-facing source readiness chips and thin-source status.
+- [x] Add tests for wrong-answer review cards and recap guidance.
 - [ ] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
@@ -143,9 +144,9 @@
 
 ### Milestone 3 — Better Learning Loop
 
-- [ ] Add wrong-answer review cards after each answer.
+- [x] Add wrong-answer review cards after each answer.
 - [ ] Add diagram-identification questions with title redaction guarded behind a helper.
-- [ ] Add final recap with strengths, misses, suggested review source, and next quiz CTA.
+- [x] Add final recap with strengths, misses, suggested review source, and next quiz CTA.
 - [ ] Add player profile detail modal with reward history, stickers, weak areas, and trend.
 - [ ] Add mobile/WebKit screenshots for quiz answer, recap, leaderboard, and profile detail.
 

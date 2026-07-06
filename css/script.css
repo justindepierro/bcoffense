@@ -7285,6 +7285,101 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   line-height: 1.35;
 }
 
+.sq-review-card {
+  margin-top: var(--space-sm);
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 45%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body)), var(--color-bg-body));
+  text-align: left;
+}
+
+.sq-review-kicker {
+  width: fit-content;
+  min-height: 22px;
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 9px;
+  border-radius: var(--radius-pill);
+  background: var(--color-warning);
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.sq-review-main {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.sq-review-main span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+}
+
+.sq-review-main strong,
+.sq-review-detail strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.sq-review-main small {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  line-height: 1.2;
+  overflow-wrap: anywhere;
+}
+
+.sq-review-detail,
+.sq-review-next {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 750;
+  line-height: 1.32;
+}
+
+.sq-review-diagram {
+  margin: 0;
+  overflow: hidden;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--color-border-light);
+  background: var(--color-bg-light);
+}
+
+.sq-review-diagram img {
+  display: block;
+  width: 100%;
+  max-height: 150px;
+  object-fit: contain;
+  background: var(--color-bg-body);
+}
+
+.sq-review-diagram figcaption {
+  padding: 4px 8px;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  text-align: center;
+}
+
+.sq-review-next {
+  padding-top: var(--space-xs);
+  border-top: 1px solid var(--color-border-light);
+}
+
 /* Navigation bar */
 .script-quiz-nav {
   display: flex;
@@ -7381,8 +7476,74 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-weight: 900;
 }
 
+.sq-result-review {
+  width: 100%;
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 16%, var(--color-bg-body)), var(--color-bg-body));
+  text-align: left;
+}
+
+.sq-result-review--clean {
+  border-color: color-mix(in srgb, var(--color-success) 38%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-success) 13%, var(--color-bg-body)), var(--color-bg-body));
+}
+
+.sq-result-review > strong {
+  color: var(--color-text);
+  font-size: var(--font-size-md);
+  font-weight: 950;
+}
+
+.sq-result-review > span {
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 760;
+}
+
+.sq-result-miss-list {
+  display: grid;
+  gap: 5px;
+}
+
+.sq-result-miss-list span {
+  display: grid;
+  gap: 1px;
+  padding: 6px 8px;
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  border: 1px solid var(--color-border-light);
+}
+
+.sq-result-miss-list b {
+  color: var(--color-danger);
+  font-size: var(--font-size-xs);
+  font-weight: 950;
+  text-transform: uppercase;
+}
+
+.sq-result-miss-list small {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 850;
+  overflow-wrap: anywhere;
+}
+
+.sq-result-actions {
+  width: 100%;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: var(--space-xs);
+}
+
 .sq-result-close {
-  min-width: 180px;
+  min-width: min(180px, 100%);
 }
 
 .sq-exit-card {
