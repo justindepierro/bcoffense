@@ -8118,6 +8118,46 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   gap: var(--space-xs);
 }
 
+.player-leaderboard-section-head p {
+  margin: 3px 0 0;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+}
+
+.player-leaderboard-profile-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-xs);
+  margin-bottom: var(--space-xs);
+}
+
+.player-leaderboard-profile-grid span {
+  min-height: 58px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  padding: var(--space-xs);
+  border: 1px solid color-mix(in srgb, var(--color-primary) 16%, var(--color-border-light));
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+  text-align: center;
+}
+
+.player-leaderboard-profile-grid strong {
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-md);
+  line-height: 1;
+}
+
+.player-leaderboard-profile-grid small {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
 .player-leaderboard-breakdown span {
   min-height: 64px;
   display: grid;
@@ -8150,13 +8190,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .player-leaderboard-sticker {
-  min-height: 34px;
+  min-height: 44px;
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 6px;
-  padding: 5px 10px;
+  padding: 7px 10px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   background: var(--color-bg-light);
   color: var(--color-text);
   font-size: var(--font-size-sm);
@@ -8165,6 +8205,24 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .player-leaderboard-sticker b {
   font-size: var(--font-size-md);
+}
+
+.player-leaderboard-sticker span {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.player-leaderboard-sticker strong {
+  color: var(--color-text);
+  line-height: 1.1;
+}
+
+.player-leaderboard-sticker small {
+  color: var(--color-text-muted);
+  font-size: 0.7rem;
+  font-weight: 800;
+  line-height: 1.25;
 }
 
 .player-leaderboard-sticker--green {
@@ -8321,6 +8379,10 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   margin-top: var(--space-xs);
 }
 
+.coach-quiz-reward-panel .coach-quiz-custom-sticker-btn {
+  width: 100%;
+}
+
 .coach-quiz-reward-actions {
   display: flex;
   flex-wrap: wrap;
@@ -8335,18 +8397,35 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 }
 
 .coach-quiz-sticker-btn {
-  min-height: 34px;
+  min-height: 48px;
   display: inline-flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 5px;
-  padding: 5px 9px;
+  padding: 7px 9px;
   border: 1px solid var(--color-border-light);
-  border-radius: var(--radius-pill);
+  border-radius: var(--radius-sm);
   background: var(--color-bg-body);
   color: var(--color-text);
   font-size: var(--font-size-xs);
   font-weight: 900;
   cursor: pointer;
+}
+
+.coach-quiz-sticker-btn strong,
+.coach-quiz-sticker-btn small {
+  display: block;
+}
+
+.coach-quiz-sticker-btn strong {
+  font-size: var(--font-size-xs);
+  line-height: 1.1;
+}
+
+.coach-quiz-sticker-btn small {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
+  line-height: 1.2;
 }
 
 .coach-quiz-sticker-btn:hover,

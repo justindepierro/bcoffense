@@ -420,6 +420,14 @@ test.describe("Player mobile experience", () => {
       const previousWeekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(previousWeek) : "2026-W26";
       const dateKey = typeof _quizDateKey === "function" ? _quizDateKey(now) : now.toISOString().slice(0, 10);
       const previousDateKey = typeof _quizDateKey === "function" ? _quizDateKey(previousWeek) : previousWeek.toISOString().slice(0, 10);
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [{
+        id: "roster-lucas",
+        name: "Lucas",
+        number: "7",
+        position: "QB",
+        positionGroup: "skill",
+        accountUsername: "player",
+      }]);
       storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
         id: "mobile-ended-quiz",
         player: "player",
@@ -460,9 +468,12 @@ test.describe("Player mobile experience", () => {
       storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [{
         id: "sticker-job",
         player: "player",
+        stickerKey: "do-your-job",
         label: "Do Your Job",
         icon: "🧠",
         color: "blue",
+        description: "Handled the assignment without needing extra coaching.",
+        note: "Clean checks all week.",
         weekKey,
       }]);
     });
@@ -479,7 +490,12 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Questions");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Answers");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Gifted");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Lucas");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("#7");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("QB");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("@player");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Do Your Job");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Handled the assignment");
     await page.locator("#playerLeaderboardPage").getByRole("button", { name: /^Season$/i }).click();
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season points and weekly pace");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season board");
@@ -889,6 +905,18 @@ test.describe("Player mobile experience", () => {
       const previousWeekKey = typeof _quizWeekKey === "function" ? _quizWeekKey(previousWeek) : "2026-W26";
       const dateKey = typeof _quizDateKey === "function" ? _quizDateKey(now) : now.toISOString().slice(0, 10);
       const previousDateKey = typeof _quizDateKey === "function" ? _quizDateKey(previousWeek) : previousWeek.toISOString().slice(0, 10);
+      storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
+        { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", positionGroup: "skill", accountUsername: "lucas7" },
+        { id: "roster-marco", name: "Marco", number: "12", position: "H", positionGroup: "skill", accountUsername: "marco12" },
+      ]);
+      storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES, [{
+        key: "film-junkie",
+        label: "Film Junkie",
+        icon: "🎥",
+        color: "purple",
+        description: "Watched the install and asked sharp questions.",
+        custom: true,
+      }]);
       storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, [{
         id: "coach-week-q",
         player: "Lucas",
@@ -963,6 +991,9 @@ test.describe("Player mobile experience", () => {
     await expect(setup).toContainText("Week ");
     await expect(setup).toContainText("Lucas");
     await expect(setup).toContainText("525 pts");
+    await expect(setup).toContainText("Film Junkie");
+    await expect(setup).toContainText("Watched the install");
+    await expect(setup.getByRole("button", { name: /Custom Sticker/i })).toBeVisible();
     await expect(setup).toContainText("Weak positions");
     await expect(setup).toContainText("Q");
     await expect(setup).toContainText("Weak question types");

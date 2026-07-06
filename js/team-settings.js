@@ -328,6 +328,7 @@ function renderTeamSettings() {
           <input type="text" class="team-roster-cell team-roster-cell--num" value="${escapeAttr(player.number)}" data-field="teamPlayerNumber" data-player-id="${escapeAttr(player.id)}" placeholder="#" aria-label="Number for ${escapeHtml(player.name)}" />
           <input type="text" class="team-roster-cell team-roster-cell--name" value="${escapeAttr(player.name)}" data-field="teamPlayerName" data-player-id="${escapeAttr(player.id)}" placeholder="Player name" aria-label="Name for ${escapeHtml(player.name)}" />
           <input type="text" class="team-roster-cell team-roster-cell--pos" value="${escapeAttr(player.position)}" data-field="teamPlayerPosition" data-player-id="${escapeAttr(player.id)}" placeholder="POS" aria-label="Position for ${escapeHtml(player.name)}" />
+          <input type="text" class="team-roster-cell team-roster-cell--account" value="${escapeAttr(player.accountUsername)}" data-field="teamPlayerAccount" data-player-id="${escapeAttr(player.id)}" placeholder="login" aria-label="Account username for ${escapeHtml(player.name)}" />
           <select class="team-roster-cell team-roster-cell--group" data-field="teamPlayerPositionGroup" data-player-id="${escapeAttr(player.id)}" aria-label="Position group for ${escapeHtml(player.name)}">
             <option value="" ${player.positionGroup ? "" : "selected"}>Role type</option>
             <option value="skill" ${player.positionGroup === "skill" ? "selected" : ""}>Skill</option>
@@ -791,6 +792,7 @@ function initTeamSettings() {
     if (field === "teamPlayerNumber") player.number = input.value;
     if (field === "teamPlayerName") player.name = input.value;
     if (field === "teamPlayerPosition") player.position = input.value.toUpperCase();
+    if (field === "teamPlayerAccount") player.accountUsername = input.value.trim();
     if (field === "teamPlayerPositionGroup") player.positionGroup = input.value;
 
     saveTeamRoster(roster);
@@ -1015,6 +1017,7 @@ function normalizeTeamPlayer(player = {}) {
   const name = String(player.name || "").trim();
   const number = String(player.number || "").trim();
   const position = String(player.position || "").trim().toUpperCase();
+  const accountUsername = String(player.accountUsername || player.username || "").trim().toLowerCase();
   const positionGroup = ["skill", "linemen"].includes(String(player.positionGroup || "").trim().toLowerCase())
     ? String(player.positionGroup || "").trim().toLowerCase()
     : "";
@@ -1027,6 +1030,7 @@ function normalizeTeamPlayer(player = {}) {
     name,
     number,
     position,
+    accountUsername,
     positionGroup,
     personnel,
   };

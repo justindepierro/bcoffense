@@ -1474,13 +1474,13 @@ const PLAYER_QUIZ_REWARD_POINT_DEFAULTS = {
   answer: 25,
   gift: 50,
 };
-const PLAYER_HELMET_STICKER_TYPES = [
-  { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green" },
-  { key: "do-your-job", label: "Do Your Job", icon: "🧠", color: "blue" },
-  { key: "big-hit", label: "Big Hit", icon: "💥", color: "red" },
-  { key: "explosive-play", label: "Explosive Play", icon: "⚡", color: "gold" },
-  { key: "great-teammate", label: "Great Teammate", icon: "🤝", color: "purple" },
-  { key: "trust-process", label: "Trust the Process", icon: "🏅", color: "navy" },
+const DEFAULT_PLAYER_HELMET_STICKER_TYPES = [
+  { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green", description: "Caught the ball, finished the rep, or protected possession." },
+  { key: "do-your-job", label: "Do Your Job", icon: "🧠", color: "blue", description: "Handled the assignment without needing extra coaching." },
+  { key: "big-hit", label: "Big Hit", icon: "💥", color: "red", description: "Brought physicality and set the tone in practice." },
+  { key: "explosive-play", label: "Explosive Play", icon: "⚡", color: "gold", description: "Created a chunk play, fast finish, or game-changing rep." },
+  { key: "great-teammate", label: "Great Teammate", icon: "🤝", color: "purple", description: "Helped another player learn, line up, or compete." },
+  { key: "trust-process", label: "Trust the Process", icon: "🏅", color: "navy", description: "Stacked good habits and stayed locked into the plan." },
 ];
 let _leaderboardSelectedPlayer = "";
 let _playerLeaderboardView = "week";
@@ -1509,6 +1509,12 @@ function _getPlayerHelmetStickerStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_HELMET_STICKERS
     ? STORAGE_KEYS.PLAYER_HELMET_STICKERS
     : "playerHelmetStickers";
+}
+
+function _getPlayerHelmetStickerTypesStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES
+    ? STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES
+    : "playerHelmetStickerTypes";
 }
 
 function _getPlayerQuizAttempts() {
@@ -1551,6 +1557,62 @@ function _savePlayerHelmetStickers(stickers) {
     .filter((sticker) => sticker && typeof sticker === "object")
     .slice(-500);
   storageManager.set(_getPlayerHelmetStickerStorageKey(), normalized);
+}
+
+function _normalizeHelmetStickerType(sticker = {}, fallback = {}) {
+  const label = String(sticker.label || fallback.label || "Helmet Sticker").trim() || "Helmet Sticker";
+  const key = String(sticker.key || fallback.key || label)
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "") || `sticker-${Date.now()}`;
+  const color = ["green", "blue", "red", "gold", "purple", "navy"].includes(String(sticker.color || fallback.color || "").trim())
+    ? String(sticker.color || fallback.color).trim()
+    : "blue";
+  return {
+    key,
+    label,
+    icon: String(sticker.icon || fallback.icon || "🏅").trim().slice(0, 8) || "🏅",
+    color,
+    description: String(sticker.description || fallback.description || "").trim(),
+    custom: Boolean(sticker.custom || fallback.custom),
+  };
+}
+
+function _getPlayerHelmetStickerTypes() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") {
+    return DEFAULT_PLAYER_HELMET_STICKER_TYPES.map((sticker) => _normalizeHelmetStickerType(sticker));
+  }
+  const custom = storageManager.get(_getPlayerHelmetStickerTypesStorageKey(), []);
+  const merged = [
+    ...DEFAULT_PLAYER_HELMET_STICKER_TYPES,
+    ...(Array.isArray(custom) ? custom : []),
+  ];
+  const byKey = new Map();
+  merged.forEach((sticker) => {
+    const normalized = _normalizeHelmetStickerType(sticker);
+    byKey.set(normalized.key, normalized);
+  });
+  return Array.from(byKey.values());
+}
+
+function _savePlayerHelmetStickerTypes(stickers) {
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const defaultKeys = new Set(DEFAULT_PLAYER_HELMET_STICKER_TYPES.map((sticker) => sticker.key));
+  const normalized = (Array.isArray(stickers) ? stickers : [])
+    .map((sticker) => _normalizeHelmetStickerType({ ...sticker, custom: true }))
+    .filter((sticker) => sticker.label && !defaultKeys.has(sticker.key))
+    .slice(-40);
+  storageManager.set(_getPlayerHelmetStickerTypesStorageKey(), normalized);
+}
+
+function _getPlayerHelmetStickerType(stickerKey = "", fallbackLabel = "") {
+  const key = String(stickerKey || "").trim();
+  const label = String(fallbackLabel || "").trim().toLowerCase();
+  return _getPlayerHelmetStickerTypes().find((sticker) => (
+    (key && sticker.key === key) ||
+    (label && sticker.label.toLowerCase() === label)
+  )) || null;
 }
 
 function _getPlayerQuizDraft() {
@@ -1695,7 +1757,63 @@ function _getQuizTier(points) {
   return "Defense";
 }
 
+function _normalizeQuizIdentity(value) {
+  return String(value || "").trim().toLowerCase();
+}
+
+function _getQuizRosterPlayers() {
+  if (typeof getTeamRoster === "function") return getTeamRoster();
+  if (typeof storageManager !== "undefined" && typeof storageManager.get === "function" && typeof STORAGE_KEYS !== "undefined") {
+    const stored = storageManager.get(STORAGE_KEYS.TEAM_ROSTER, []);
+    return Array.isArray(stored)
+      ? stored
+        .map((player) => ({
+          ...player,
+          name: String(player?.name || "").trim(),
+          number: String(player?.number || "").trim(),
+          position: String(player?.position || "").trim().toUpperCase(),
+          accountUsername: String(player?.accountUsername || player?.username || "").trim().toLowerCase(),
+        }))
+        .filter((player) => player.name)
+      : [];
+  }
+  return [];
+}
+
+function _quizRosterPlayerMatches(player, value = "") {
+  const target = _normalizeQuizIdentity(value);
+  if (!player || !target) return false;
+  return [
+    player.id,
+    player.name,
+    player.accountUsername,
+    player.username,
+  ].some((candidate) => _normalizeQuizIdentity(candidate) === target);
+}
+
+function _getQuizRosterPlayerByName(value = "") {
+  return _getQuizRosterPlayers().find((player) => _quizRosterPlayerMatches(player, value)) || null;
+}
+
+function _getQuizRosterPlayerForCurrentUser() {
+  const user = typeof getCurrentAuthUser === "function" ? getCurrentAuthUser() : (typeof currentAuthUser !== "undefined" ? currentAuthUser : null);
+  const username = user?.username || user?.label || "";
+  return _getQuizRosterPlayers().find((player) => _normalizeQuizIdentity(player.accountUsername) === _normalizeQuizIdentity(username))
+    || _getQuizRosterPlayerByName(username);
+}
+
+function _formatQuizRosterMeta(player) {
+  if (!player) return "";
+  const bits = [];
+  if (player.number) bits.push(`#${player.number}`);
+  if (player.position) bits.push(player.position);
+  if (player.accountUsername) bits.push(`@${player.accountUsername}`);
+  return bits.join(" · ");
+}
+
 function _getQuizPlayerName() {
+  const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
+  if (rosterPlayer?.name) return rosterPlayer.name;
   if (typeof getCurrentAuthUser === "function") {
     const user = getCurrentAuthUser();
     if (user?.username) return user.username;
@@ -1707,7 +1825,12 @@ function _getQuizPlayerName() {
 }
 
 function _normalizeQuizPlayerName(name) {
-  return String(name || "").trim() || _getQuizPlayerName();
+  const raw = String(name || "").trim();
+  if (raw) {
+    const rosterPlayer = _getQuizRosterPlayerByName(raw);
+    return rosterPlayer?.name || raw;
+  }
+  return _getQuizPlayerName();
 }
 
 function _quizEventId(prefix) {
@@ -1835,6 +1958,7 @@ function _buildQuizLeaderboardRows(attempts, rewards, player, weekKey = "") {
     if (weekKey && event.weekKey !== weekKey) return;
     addPoints(event.player || player, event.points || 0);
   });
+  _getQuizRosterPlayers().forEach((rosterPlayer) => addPoints(rosterPlayer.name, 0));
   if (!totals.size) totals.set(_normalizeQuizPlayerName(player), 0);
   return Array.from(totals.entries())
     .sort((a, b) => b[1] - a[1])
@@ -1948,6 +2072,7 @@ function _buildCoachQuizLeaderboardSummary() {
     .forEach((sticker) => {
       ensureRow(sticker.player || "Player").stickers += 1;
     });
+  _getQuizRosterPlayers().forEach((player) => ensureRow(player.name));
 
   const leaderboardRows = Array.from(rows.values())
     .map((row) => {
@@ -2107,6 +2232,14 @@ function _renderQuizLeaderRows(rows, player) {
 function _renderPlayerLeaderboardDetail(player, summary) {
   const name = _normalizeQuizPlayerName(player || summary.player);
   const isSeason = _playerLeaderboardView === "season";
+  const leaderboardRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
+  const row = leaderboardRows.find((item) => _normalizeQuizPlayerName(item.name) === name) || {
+    rank: leaderboardRows.length + 1,
+    tier: _getQuizTier(0),
+    points: 0,
+  };
+  const rosterPlayer = _getQuizRosterPlayerByName(name);
+  const rosterMeta = _formatQuizRosterMeta(rosterPlayer);
   const viewAttempts = summary.attempts.filter((attempt) => {
     if (_quizPlayerNameFromAttempt(attempt, summary.player) !== name) return false;
     return isSeason || attempt.weekKey === summary.weekKey;
@@ -2119,18 +2252,35 @@ function _renderPlayerLeaderboardDetail(player, summary) {
   const giftPoints = _sumQuizRewards(viewRewards, "gift");
   const detailLabel = isSeason ? "this season" : "this week";
   const stickerHtml = stickers.length
-    ? stickers.map((sticker) => `
-        <span class="player-leaderboard-sticker player-leaderboard-sticker--${escapeAttr(sticker.color || "blue")}">
+    ? stickers.map((sticker) => {
+      const stickerType = _getPlayerHelmetStickerType(sticker.stickerKey, sticker.label);
+      const description = String(sticker.description || stickerType?.description || sticker.note || "").trim();
+      const title = [sticker.label || "Sticker", description, sticker.note ? `Coach note: ${sticker.note}` : ""].filter(Boolean).join(" - ");
+      return `
+        <span class="player-leaderboard-sticker player-leaderboard-sticker--${escapeAttr(sticker.color || stickerType?.color || "blue")}" title="${escapeAttr(title)}">
           <b aria-hidden="true">${escapeHtml(sticker.icon || "🏅")}</b>
-          ${escapeHtml(sticker.label || "Sticker")}
+          <span>
+            <strong>${escapeHtml(sticker.label || stickerType?.label || "Sticker")}</strong>
+            ${description ? `<small>${escapeHtml(description)}</small>` : ""}
+          </span>
         </span>
-      `).join("")
+      `;
+    }).join("")
     : `<span class="player-leaderboard-no-stickers">No helmet stickers yet.</span>`;
   return `
     <section class="player-leaderboard-detail" id="playerLeaderboardDetail" aria-label="${escapeAttr(name)} leaderboard detail">
       <div class="player-leaderboard-section-head">
-        <h3>${escapeHtml(name)}</h3>
+        <div>
+          <h3>${escapeHtml(name)}</h3>
+          ${rosterMeta ? `<p>${escapeHtml(rosterMeta)}</p>` : ""}
+        </div>
         <span>${Math.round(quizPoints + questionPoints + answerPoints + giftPoints)} pts ${escapeHtml(detailLabel)}</span>
+      </div>
+      <div class="player-leaderboard-profile-grid">
+        <span><strong>#${Math.round(row.rank || 1)}</strong><small>Rank</small></span>
+        <span><strong>${escapeHtml(row.tier || _getQuizTier(row.points || 0))}</strong><small>Tier</small></span>
+        <span><strong>${viewAttempts.length}</strong><small>Quiz tries</small></span>
+        <span><strong>${stickers.length}</strong><small>Stickers</small></span>
       </div>
       <div class="player-leaderboard-breakdown">
         <span><strong>${Math.round(quizPoints)}</strong><small>Quiz</small></span>
@@ -2513,13 +2663,14 @@ function _renderCoachQuizSourceCard(source, kind) {
 }
 
 function _renderCoachStickerButtons() {
-  return PLAYER_HELMET_STICKER_TYPES.map((sticker) => `
+  return _getPlayerHelmetStickerTypes().map((sticker) => `
     <button type="button"
       class="coach-quiz-sticker-btn coach-quiz-sticker-btn--${escapeAttr(sticker.color)}"
       data-action="coachAwardHelmetSticker"
       data-arg="${escapeAttr(sticker.key)}">
       <span aria-hidden="true">${escapeHtml(sticker.icon)}</span>
-      ${escapeHtml(sticker.label)}
+      <strong>${escapeHtml(sticker.label)}</strong>
+      ${sticker.description ? `<small>${escapeHtml(sticker.description)}</small>` : ""}
     </button>
   `).join("");
 }
@@ -2650,13 +2801,90 @@ function _renderCoachQuizLeaderboardPanel(summary) {
 }
 
 async function _coachPromptRewardPlayer(defaultName = "") {
-  if (typeof showPrompt !== "function") return null;
-  const player = await showPrompt("Who should receive this?", defaultName, {
-    title: "Player Name",
-    icon: "👤",
-    placeholder: "Player name",
+  const roster = _getQuizRosterPlayers();
+  if (roster.length && typeof showListPicker === "function") {
+    const defaultPlayer = _getQuizRosterPlayerByName(defaultName);
+    const items = roster
+      .map((player) => ({
+        label: player.name,
+        sublabel: _formatQuizRosterMeta(player) || "Roster player",
+        value: player.name,
+        recommended: defaultPlayer && player.id === defaultPlayer.id,
+        ariaLabel: `${player.name} ${_formatQuizRosterMeta(player)}`,
+      }))
+      .sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.label.localeCompare(b.label));
+    const picked = await showListPicker("Pick from the active roster so rewards attach to the right player account.", items, {
+      title: "Award Roster Player",
+      icon: "👤",
+    });
+    return picked === null ? null : _normalizeQuizPlayerName(picked);
+  }
+  if (roster.length && typeof showListPicker !== "function") return null;
+  if (typeof showModal === "function") {
+    await showModal("Add players to the active roster first, then assign stickers and points from that roster.", {
+      title: "Roster Required",
+      icon: "📋",
+    });
+  } else if (typeof showToast === "function") {
+    showToast("Add active roster players before awarding points.", { type: "warning" });
+  }
+  return null;
+}
+
+async function coachCreateHelmetSticker() {
+  if (typeof showPrompt !== "function") return;
+  const label = await showPrompt("Name this helmet sticker.", "", {
+    title: "Sticker Label",
+    icon: "🏅",
+    placeholder: "Film Junkie",
   });
-  return player === null ? null : _normalizeQuizPlayerName(player);
+  if (label === null) return;
+  const safeLabel = String(label || "").trim();
+  if (!safeLabel) {
+    showToast("Sticker needs a name.", { type: "warning" });
+    return;
+  }
+  const icon = await showPrompt("Choose one emoji for the sticker.", "🏅", {
+    title: safeLabel,
+    icon: "😀",
+    placeholder: "🏅",
+  });
+  if (icon === null) return;
+  const description = await showPrompt("What does this sticker mean?", "", {
+    title: "Sticker Description",
+    icon: String(icon || "🏅").trim() || "🏅",
+    placeholder: "Watched film and asked sharp questions.",
+  });
+  if (description === null) return;
+  const colorChoices = ["blue", "green", "gold", "red", "purple", "navy"].map((color) => ({
+    label: color.charAt(0).toUpperCase() + color.slice(1),
+    value: color,
+  }));
+  const color = typeof showListPicker === "function"
+    ? await showListPicker("Choose how this sticker should pop on the leaderboard.", colorChoices, {
+      title: "Sticker Color",
+      icon: String(icon || "🏅").trim() || "🏅",
+    })
+    : "blue";
+  if (color === null) return;
+  const currentTypes = _getPlayerHelmetStickerTypes();
+  const customTypes = currentTypes.filter((sticker) => sticker.custom);
+  const normalized = _normalizeHelmetStickerType({
+    label: safeLabel,
+    icon,
+    description,
+    color,
+    custom: true,
+  });
+  const duplicate = currentTypes.find((sticker) => sticker.key === normalized.key);
+  if (duplicate) {
+    showToast("That sticker already exists.", { type: "warning" });
+    return;
+  }
+  customTypes.push(normalized);
+  _savePlayerHelmetStickerTypes(customTypes);
+  renderCoachQuizSetupPage();
+  showToast(`${safeLabel} sticker added.`, { type: "success" });
 }
 
 async function coachAwardQuestionPoints(type = "question") {
@@ -2703,7 +2931,7 @@ async function coachAwardQuestionPoints(type = "question") {
 }
 
 async function coachAwardHelmetSticker(stickerKey = "") {
-  const sticker = PLAYER_HELMET_STICKER_TYPES.find((item) => item.key === stickerKey) || PLAYER_HELMET_STICKER_TYPES[0];
+  const sticker = _getPlayerHelmetStickerType(stickerKey) || _getPlayerHelmetStickerTypes()[0];
   const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
   if (!player) return;
   const note = typeof showPrompt === "function"
@@ -2723,6 +2951,7 @@ async function coachAwardHelmetSticker(stickerKey = "") {
     label: sticker.label,
     icon: sticker.icon,
     color: sticker.color,
+    description: sticker.description || "",
     note: String(note || "").trim(),
     awardedBy: _quizCurrentCoachName(),
     context: "Practice",
@@ -2812,6 +3041,7 @@ function renderCoachQuizSetupPage() {
           <span>Helmet stickers</span>
           <strong>Post-practice awards</strong>
           <p>Award stickers after practice. Players see them when their leaderboard name is opened.</p>
+          <button type="button" class="btn btn-outline coach-quiz-custom-sticker-btn" data-action="coachCreateHelmetSticker">+ Custom Sticker</button>
           <div class="coach-quiz-sticker-grid">${_renderCoachStickerButtons()}</div>
         </article>
       </section>

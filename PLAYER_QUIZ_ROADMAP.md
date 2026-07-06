@@ -4,6 +4,7 @@
 
 - [x] Define quiz as its own player workflow, not just a button inside Practice.
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
+- [x] Link local quiz identity to the active team roster through a roster account username field.
 - [ ] Add coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local reward staging exists; formal settings still need controls.
 - [ ] Add a server-backed attempts API so leaderboards can aggregate across all player accounts.
 
@@ -45,6 +46,8 @@
 - [x] Define football tiers: Champion, Baller, Starter, Contributor, Defense.
 - [x] Build local leaderboard preview from stored attempts.
 - [x] Build coach/admin leaderboard view with week and season toggles. Local weekly reward totals now appear on Set Up Quizzes.
+- [x] Include active roster players in the local leaderboard even before they score.
+- [x] Show roster number, position, linked login, rank, tier, attempts, and sticker detail when opening a player.
 - [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [ ] Add achievements/stars above the 1000-point goal.
 
@@ -67,6 +70,7 @@
 ## Question Incentives
 
 - [x] Define weekly points for asking questions, answering teammates, and coach-marked helpful answers.
+- [x] Restrict local coach point awards to active roster players so names stay clean.
 - [ ] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers.
 - [ ] Add coach controls for gifting question/answer points from the discussion workflow. Coach staging controls exist; discussion-thread affordances still need wiring.
 - [x] Include question points in week and season leaderboard totals with a visible source breakdown.
@@ -77,7 +81,8 @@
 - [x] Start with sticker types: Sure Hands, Do Your Job, Big Hit, Explosive Play, Great Teammate, Trust the Process.
 - [x] Show stickers on the player leaderboard detail drawer when a coach/player opens a name.
 - [x] Add coach post-practice award flow with optional notes and practice/game context. Local staging flow added.
-- [ ] Let teams customize sticker names, colors, and icons later.
+- [x] Let teams customize sticker names, descriptions, colors, and icons locally.
+- [x] Restrict sticker awards to active roster players so awards attach to the right profile.
 
 ## Mobile Quiz UX
 

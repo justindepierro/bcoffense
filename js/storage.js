@@ -132,6 +132,7 @@ const STORAGE_KEYS = {
   PLAYER_QUIZ_RESULTS: "playerQuizResults",
   PLAYER_QUIZ_DRAFT: "playerQuizDraft",
   PLAYER_REWARD_EVENTS: "playerRewardEvents",
+  PLAYER_HELMET_STICKER_TYPES: "playerHelmetStickerTypes",
   PLAYER_HELMET_STICKERS: "playerHelmetStickers",
   GAME_WEEK_ARCHIVE: "gameWeekArchive",
   TENDENCIES_REPORTS: "tendenciesReports",
