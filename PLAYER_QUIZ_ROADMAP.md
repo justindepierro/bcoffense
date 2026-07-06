@@ -120,6 +120,7 @@
 - [x] Add tests for custom sticker edit/delete flows.
 - [x] Add tests for quiz settings persistence and scoring effects.
 - [x] Add tests for local quiz source publishing controls.
+- [x] Add tests for player-facing source readiness chips and thin-source status.
 - [ ] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
@@ -136,8 +137,8 @@
 
 - [x] Add quiz publish controls to saved Practice Script cards.
 - [x] Add quiz publish controls to Game Plan boards.
-- [ ] Show player-facing eligibility: available, locked, thin, or coach-only. Available/locked and coach-only hiding are in place; thin remains coach-side readiness only.
-- [ ] Include completeness chips for diagrams, rules, notes, defense, and metadata.
+- [x] Show player-facing eligibility: available, locked, thin, or coach-only.
+- [x] Include completeness chips for diagrams, rules, notes, defense, and metadata.
 - [x] Add tests that locked and coach-only sources do not appear as normal player quiz options.
 
 ### Milestone 3 — Better Learning Loop

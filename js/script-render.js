@@ -2656,6 +2656,36 @@ function _quizCompletenessStats(playList) {
   };
 }
 
+function _quizCompletenessChipItems(stats = {}) {
+  const total = Number(stats.playCount || 0);
+  const chip = (key, label, value, pct, readyAt = 70) => ({
+    key,
+    label,
+    value: `${Number(value || 0)}/${total}`,
+    tone: !total ? "empty" : Number(pct || 0) >= readyAt ? "ready" : Number(value || 0) ? "partial" : "missing",
+  });
+  return [
+    chip("diagrams", "Diagrams", stats.diagrams, stats.diagramPct, 70),
+    chip("rules", "Rules", stats.rules, stats.rulePct, 80),
+    chip("notes", "Notes", stats.notes, stats.notePct, 50),
+    chip("defense", "Defense", stats.defense, stats.defensePct, 60),
+    chip("metadata", "Metadata", stats.situation, stats.situationPct, 70),
+  ];
+}
+
+function _renderQuizCompletenessChips(stats = {}, className = "quiz-completeness-chips") {
+  return `
+    <div class="${escapeAttr(className)}" aria-label="Quiz source completeness">
+      ${_quizCompletenessChipItems(stats).map((item) => `
+        <span class="quiz-completeness-chip quiz-completeness-chip--${escapeAttr(item.tone)}">
+          <strong>${escapeHtml(item.label)}</strong>
+          <small>${escapeHtml(item.value)}</small>
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+
 function _quizReadinessLabel(score) {
   if (score >= 88) return { label: "Player ready", tone: "ready" };
   if (score >= 68) return { label: "Close", tone: "close" };
@@ -2849,6 +2879,7 @@ function _renderCoachQuizSourceCard(source, kind) {
       </div>
       <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
       ${_renderCoachQuizSourceControls(source, kind, stats)}
+      ${_renderQuizCompletenessChips(stats, "quiz-completeness-chips coach-quiz-completeness-chips")}
       <div class="coach-quiz-metrics">
         ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}
         ${_quizMetric("Rules", stats.rules, stats.playCount)}
@@ -3767,6 +3798,7 @@ function _getPlayerQuizScriptOptions() {
     .filter((savedScript) => savedScript && savedScript.id)
     .map((savedScript) => {
       const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : null;
+      const quizStats = _quizCompletenessStats(savedScript.plays || []);
       const state = _getQuizSourceState("script", savedScript);
       const option = {
         id: String(savedScript.id),
@@ -3777,6 +3809,8 @@ function _getPlayerQuizScriptOptions() {
         date: savedScript.date || "",
         dateStr: stats?.dateStr || savedScript.date || "No date",
         state,
+        quizStats,
+        readiness: _quizReadinessLabel(quizStats.score),
         playerSelectable: savedScript.playerVisible && state === "available",
         playerVisible: Boolean(savedScript.playerVisible),
       };
@@ -3801,7 +3835,13 @@ function _renderPlayerQuizScriptPicker(options) {
     const progress = option.progress || _getQuizScriptProgress(option);
     const progressText = progress.points ? `${progress.label} · ${progress.points} pts` : progress.label;
     const locked = !option.playerSelectable;
-    const stateLabel = option.state === "locked" ? "Locked" : option.state === "coach" ? "Coach-only" : "";
+    const stateLabel = option.state === "locked"
+      ? "Locked"
+      : option.state === "coach"
+        ? "Coach-only"
+        : option.quizStats?.score < 40
+          ? "Thin"
+          : "";
     return `
       <button type="button"
         class="player-quiz-script-option${selected ? " is-selected" : ""}${locked ? " is-locked" : ""}"
@@ -3812,6 +3852,7 @@ function _renderPlayerQuizScriptPicker(options) {
         <span class="player-quiz-script-option__main">
           <strong>${escapeHtml(option.name)}</strong>
           <small>${escapeHtml(option.dateStr)} · ${option.playCount} plays${option.periodCount ? ` · ${option.periodCount} periods` : ""}</small>
+          ${_renderQuizCompletenessChips(option.quizStats, "quiz-completeness-chips player-quiz-source-chips")}
         </span>
         <span class="player-quiz-script-option__status">
           <b class="player-quiz-progress-badge${progress.icon ? " has-icon" : ""}">${escapeHtml(stateLabel || progressText)}</b>
@@ -3912,7 +3953,10 @@ function _renderPlayerQuizHub() {
     gamePlanBtn.textContent = gamePlanStatus.available ? "Start Game Plan Quiz" : gamePlanStatus.label;
   }
   if (gamePlanStatusEl) {
-    gamePlanStatusEl.textContent = gamePlanStatus.detail;
+    setInnerHTML(gamePlanStatusEl, `
+      <span>${escapeHtml(gamePlanStatus.detail)}</span>
+      ${_renderQuizCompletenessChips(gamePlanStatus.stats, "quiz-completeness-chips player-quiz-source-chips")}
+    `);
     gamePlanStatusEl.hidden = !gamePlanStatus.detail;
   }
 
@@ -3993,6 +4037,7 @@ function _getActiveGamePlanQuizStatus() {
   const id = _getActiveGamePlanQuizSourceId();
   const state = _getQuizSourceState("gameplan", { id });
   const items = _buildGamePlanQuizItems();
+  const stats = _quizCompletenessStats(items.map((item) => item.play));
   if (state === "coach") {
     return {
       id,
@@ -4000,6 +4045,7 @@ function _getActiveGamePlanQuizStatus() {
       available: false,
       label: "Game Plan Coach-only",
       detail: "Coach has not opened this Game Plan quiz to players.",
+      stats,
     };
   }
   if (state === "locked") {
@@ -4009,6 +4055,7 @@ function _getActiveGamePlanQuizStatus() {
       available: false,
       label: "Game Plan Locked",
       detail: "Coach locked this Game Plan quiz for now.",
+      stats,
     };
   }
   if (!items.length) {
@@ -4018,14 +4065,17 @@ function _getActiveGamePlanQuizStatus() {
       available: false,
       label: "No Game Plan Quiz",
       detail: "No Game Plan calls are ready for quiz yet.",
+      stats,
     };
   }
+  const thinText = stats.score < 40 ? " Thin source: expect mostly call-ID questions." : "";
   return {
     id,
     state,
     available: true,
     label: "Start Game Plan Quiz",
-    detail: `${items.length} Game Plan call${items.length === 1 ? "" : "s"} ready.`,
+    detail: `${items.length} Game Plan call${items.length === 1 ? "" : "s"} ready.${thinText}`,
+    stats,
   };
 }
 

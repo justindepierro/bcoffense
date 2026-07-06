@@ -607,6 +607,9 @@ test.describe("Player mobile experience", () => {
     await page.locator("#playerDashboardHome").getByRole("button", { name: /^Quiz$/i }).click();
     const hub = page.locator("#playerQuizHubOverlay");
     await expect(hub).toBeVisible();
+    await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Thin source");
+    await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Rules");
+    await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Diagrams");
     await hub.getByRole("button", { name: /Start Game Plan Quiz/i }).click();
 
     const quiz = page.locator("#scriptQuizOverlay");
@@ -1041,6 +1044,9 @@ test.describe("Player mobile experience", () => {
     const friday = setup.locator(".coach-quiz-source-card").filter({ hasText: "Friday Quiz" });
     const hidden = setup.locator(".coach-quiz-source-card").filter({ hasText: "Hidden Quiz" });
     const gamePlan = setup.locator(".coach-quiz-source-card").filter({ hasText: "Monticello Camp" });
+    await expect(friday).toContainText("Rules");
+    await expect(friday).toContainText("Diagrams");
+    await expect(friday).toContainText("Metadata");
 
     await friday.getByRole("button", { name: /^Locked$/i }).click();
     await expect(friday).toContainText("Locked");
@@ -1061,11 +1067,16 @@ test.describe("Player mobile experience", () => {
     const picker = hub.locator("#playerQuizScriptPicker");
     await expect(picker).toContainText("Friday Quiz");
     await expect(picker).toContainText("Locked");
+    await expect(picker).toContainText("Rules");
+    await expect(picker).toContainText("Diagrams");
+    await expect(picker).toContainText("Metadata");
     await expect(picker).not.toContainText("Hidden Quiz");
     await expect(hub.locator("#playerQuizStartScriptBtn")).toBeDisabled();
     await expect(hub.locator("#playerQuizStartGamePlanBtn")).toBeDisabled();
     await expect(hub.locator("#playerQuizStartGamePlanBtn")).toContainText("Game Plan Locked");
     await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Coach locked this Game Plan quiz");
+    await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Rules");
+    await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Diagrams");
     await assertNoHorizontalOverflow(page);
   });
 
