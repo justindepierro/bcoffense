@@ -606,7 +606,7 @@ test.describe("Player mobile experience", () => {
         player: "player",
         sourceType: "script",
         title: "Friday Walkthrough",
-        totalPoints: 475,
+        totalPoints: 1110,
         correct: 5,
         wrong: 1,
         answered: 6,
@@ -664,7 +664,9 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Quiz points and weekly standard");
     await expect(page.locator("#playerLeaderboardPage").getByRole("button", { name: /Start Quiz/i })).toBeVisible();
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Weekly board");
-    await expect(page.locator("#playerLeaderboardPage")).toContainText("640 / 1000");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("1275 / 1000");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Champion Stars");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("Champion +1");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Streaks");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("2 weeks active");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Point sources");
@@ -686,6 +688,8 @@ test.describe("Player mobile experience", () => {
     await expect(profile).toContainText("QB");
     await expect(profile).toContainText("@player");
     await expect(profile).toContainText("Best quiz");
+    await expect(profile).toContainText("Champion stars");
+    await expect(profile).toContainText("Champion Star");
     await expect(profile).toContainText("September Install");
     await expect(profile).toContainText("Season trend");
     await expect(profile).toContainText("Weak areas");
@@ -703,7 +707,7 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season points and weekly pace");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season board");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season attempts");
-    await expect(page.locator("#playerLeaderboardPage")).toContainText("865");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("1500");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("September Install");
     await page.locator("#playerLeaderboardPage").getByRole("button", { name: /^Week$/i }).click();
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Weekly board");
@@ -752,7 +756,7 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerScriptLauncherSection")).toBeVisible();
     await expect(page.locator(".player-script-card").first()).toBeVisible();
     await expect(page.locator(".player-script-card").first()).toContainText("60% done");
-    await expect(page.locator(".player-script-card").first()).toContainText("475 pts");
+    await expect(page.locator(".player-script-card").first()).toContainText("1110 pts");
     await expect(page.locator(".player-script-card").first().getByRole("button", { name: /^Quiz$/i })).toBeVisible();
     await expect(page.locator(".script-header-panel")).toBeHidden();
     await assertNoHorizontalOverflow(page);

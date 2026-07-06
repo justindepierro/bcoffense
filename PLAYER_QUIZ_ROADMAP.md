@@ -57,7 +57,7 @@
 - [x] Build coach/admin leaderboard view with week and season toggles. Local weekly reward totals now appear on Set Up Quizzes.
 - [x] Include active roster players in the local leaderboard even before they score.
 - [x] Show roster number, position, linked login, rank, tier, attempts, and sticker detail when opening a player.
-- [ ] Add achievements/stars above the 1000-point goal.
+- [x] Add achievements/stars above the 1000-point goal. Local Champion stars now appear every 250 points above the weekly goal.
 - [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [x] Add player profile detail modal with season trend, sticker history, best quiz, weak areas, and recent activity.
 

@@ -1928,6 +1928,31 @@ function _getQuizTier(points) {
   return "Defense";
 }
 
+function _getQuizAchievementSummary(points, settings = _getPlayerQuizSettings()) {
+  const goal = Math.max(1, Number(settings.weeklyGoal || PLAYER_QUIZ_WEEKLY_GOAL || 1000));
+  const total = Math.max(0, Math.round(Number(points || 0)));
+  const overGoal = Math.max(0, total - goal);
+  const starStep = Math.max(100, Math.round(goal * 0.25));
+  const stars = Math.min(5, Math.floor(overGoal / starStep));
+  const starLabels = [
+    "Champion Star",
+    "Two-Star Champion",
+    "Three-Star Champion",
+    "Four-Star Champion",
+    "Five-Star Champion",
+  ];
+  const nextAt = stars >= 5 ? null : goal + (stars + 1) * starStep;
+  return {
+    stars,
+    overGoal,
+    label: stars ? starLabels[stars - 1] : "No stars yet",
+    shortLabel: stars ? `Champion +${stars}` : "No stars",
+    starText: stars ? "★".repeat(stars) : "☆",
+    nextAt,
+    nextRemaining: nextAt ? Math.max(0, nextAt - total) : 0,
+  };
+}
+
 function _normalizeQuizIdentity(value) {
   return String(value || "").trim().toLowerCase();
 }
@@ -2389,14 +2414,19 @@ function _renderQuizLeaderRows(rows, player) {
     ? rows
     : [{ name: player, points: 0, rank: 1, tier: _getQuizTier(0) }];
   return safeRows
-    .map((row) => `
-      <button type="button" class="player-quiz-leader-row" data-action="openPlayerLeaderboardDetail" data-arg="${escapeAttr(row.name)}">
-        <span class="player-quiz-rank">#${row.rank}</span>
-        <strong>${escapeHtml(row.name)}</strong>
-        <span>${escapeHtml(row.tier)}</span>
-        <b>${Math.round(row.points)} pts</b>
-      </button>
-    `)
+    .map((row) => {
+      const rowPoints = Number(row.points ?? row.totalPoints ?? 0);
+      const achievement = _getQuizAchievementSummary(rowPoints);
+      return `
+        <button type="button" class="player-quiz-leader-row" data-action="openPlayerLeaderboardDetail" data-arg="${escapeAttr(row.name)}">
+          <span class="player-quiz-rank">#${row.rank}</span>
+          <strong>${escapeHtml(row.name)}</strong>
+          <span>${escapeHtml(row.tier)}</span>
+          <span class="player-quiz-achievement${achievement.stars ? " has-stars" : ""}" aria-label="${escapeAttr(achievement.label)}">${escapeHtml(achievement.stars ? `${achievement.starText} ${achievement.shortLabel}` : "No stars")}</span>
+          <b>${Math.round(rowPoints)} pts</b>
+        </button>
+      `;
+    })
     .join("");
 }
 
@@ -2477,6 +2507,7 @@ function _getPlayerLeaderboardProfileData(player, summary) {
     ...seasonRewards.map((event) => ({ kind: event.type || "reward", event, points: Number(event.points || 0) })),
     ...stickers.map((sticker) => ({ kind: "sticker", event: sticker, points: 0 })),
   ].sort((a, b) => _quizEventTimestamp(b.event) - _quizEventTimestamp(a.event)).slice(0, 8);
+  const achievement = _getQuizAchievementSummary(row.points || quizPoints + questionPoints + answerPoints + giftPoints);
   return {
     name,
     isSeason,
@@ -2499,6 +2530,7 @@ function _getPlayerLeaderboardProfileData(player, summary) {
     trend,
     trendMax,
     recentActivity,
+    achievement,
   };
 }
 
@@ -2632,9 +2664,14 @@ function _renderPlayerLeaderboardProfileModal(profile) {
           <span><strong>#${Math.round(profile.row.rank || 1)}</strong><small>Rank</small></span>
           <span><strong>${escapeHtml(profile.row.tier || _getQuizTier(profile.row.points || 0))}</strong><small>Tier</small></span>
           <span><strong>${Math.round(profile.totalPoints)}</strong><small>Points ${escapeHtml(profile.detailLabel)}</small></span>
-          <span><strong>${profile.stickers.length}</strong><small>Stickers</small></span>
+          <span><strong>${escapeHtml(profile.achievement.stars ? profile.achievement.starText : String(profile.stickers.length))}</strong><small>${profile.achievement.stars ? "Stars" : "Stickers"}</small></span>
         </section>
         <section class="player-profile-grid">
+          <article class="player-profile-card player-profile-card--achievement">
+            <span>Champion stars</span>
+            <strong>${escapeHtml(profile.achievement.label)}</strong>
+            <p>${profile.achievement.stars ? `${Math.round(profile.achievement.overGoal)} points above Champion. ${profile.achievement.nextRemaining ? `${Math.round(profile.achievement.nextRemaining)} to the next star.` : "Max local star level reached."}` : `Reach ${_getQuizWeeklyGoal()} weekly points, then keep going to earn stars.`}</p>
+          </article>
           ${bestHtml}
           <article class="player-profile-card">
             <span>Season trend</span>
@@ -2732,6 +2769,7 @@ function renderPlayerLeaderboardPage() {
   const viewPoints = isSeason ? summary.seasonPoints : summary.weeklyPoints;
   const viewRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
   const viewTier = _getQuizTier(viewPoints);
+  const achievement = _getQuizAchievementSummary(summary.weeklyPoints, settings);
   const recentAttempts = viewAttempts.slice(-5).reverse();
   const goalPct = Math.min(100, Math.round((summary.weeklyPoints / settings.weeklyGoal) * 100));
   const remaining = Math.max(0, settings.weeklyGoal - summary.weeklyPoints);
@@ -2768,12 +2806,17 @@ function renderPlayerLeaderboardPage() {
           <span>${isSeason ? "Season Points" : "Weekly Goal"}</span>
           <strong>${isSeason ? Math.round(summary.seasonPoints) : `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal}`}</strong>
           <div class="player-leaderboard-meter" aria-hidden="true"><i class="player-leaderboard-meter-fill"></i></div>
-          <small>${isSeason ? `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal} this week` : (remaining ? `${Math.round(remaining)} points to Champion` : "Champion standard met")}</small>
+          <small>${isSeason ? `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal} this week` : (remaining ? `${Math.round(remaining)} points to Champion` : (achievement.stars ? `${achievement.shortLabel} · ${Math.round(achievement.overGoal)} above` : "Champion standard met"))}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--tier">
           <span>Current Tier</span>
           <strong>${escapeHtml(viewTier)}</strong>
           <small>${viewAttempts.length} attempt${viewAttempts.length === 1 ? "" : "s"} ${isSeason ? "this season" : "this week"}</small>
+        </article>
+        <article class="player-leaderboard-card player-leaderboard-card--achievement">
+          <span>Champion Stars</span>
+          <strong>${escapeHtml(achievement.stars ? achievement.starText : "0")}</strong>
+          <small>${achievement.stars ? `${achievement.shortLabel}${achievement.nextRemaining ? ` · ${Math.round(achievement.nextRemaining)} to next` : ""}` : `${Math.round(settings.weeklyGoal + Math.max(100, settings.weeklyGoal * 0.25))} unlocks star 1`}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--badge">
           <span>Best Badge</span>
@@ -3307,6 +3350,7 @@ function _renderCoachQuizLeaderboardRows(rows) {
   }
   return rows.slice(0, 10).map((row) => {
     const selected = _normalizeQuizPlayerName(row.name) === _normalizeQuizPlayerName(_leaderboardSelectedPlayer || "");
+    const achievement = _getQuizAchievementSummary(row.totalPoints || 0);
     return `
       <button type="button"
         class="coach-quiz-leader-row${selected ? " is-selected" : ""}"
@@ -3315,6 +3359,7 @@ function _renderCoachQuizLeaderboardRows(rows) {
         <span class="coach-quiz-leader-rank">#${row.rank}</span>
         <strong>${escapeHtml(row.name)}</strong>
         <span>${escapeHtml(row.tier)} · ${row.percent || 0}%</span>
+        <span class="coach-quiz-achievement${achievement.stars ? " has-stars" : ""}">${escapeHtml(achievement.stars ? `${achievement.starText} ${achievement.shortLabel}` : "No stars")}</span>
         <b>${Math.round(row.totalPoints)} pts</b>
       </button>
     `;
@@ -4122,7 +4167,10 @@ function _renderPlayerQuizHub() {
   const tierMetaEl = document.getElementById("playerQuizTierMeta");
   if (tierMetaEl) {
     const remaining = Math.max(0, settings.weeklyGoal - summary.weeklyPoints);
-    tierMetaEl.textContent = remaining ? `${Math.round(remaining)} to Champion` : "Champion standard met";
+    const achievement = _getQuizAchievementSummary(summary.weeklyPoints, settings);
+    tierMetaEl.textContent = remaining
+      ? `${Math.round(remaining)} to Champion`
+      : (achievement.stars ? `${achievement.shortLabel} · ${Math.round(achievement.overGoal)} above` : "Champion standard met");
   }
   const bestBadgeEl = document.getElementById("playerQuizBestBadge");
   if (bestBadgeEl) {

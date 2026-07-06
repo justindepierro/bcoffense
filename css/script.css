@@ -8250,7 +8250,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 .player-leaderboard-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(5, minmax(0, 1fr));
   gap: var(--space-sm);
 }
 
@@ -8369,7 +8369,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   width: 100%;
   min-height: 46px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-sm);
@@ -8403,6 +8403,30 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   color: var(--color-text-muted);
   font-size: var(--font-size-xs);
   font-weight: 850;
+}
+
+.player-quiz-achievement,
+.coach-quiz-achievement {
+  width: fit-content;
+  max-width: 150px;
+  overflow: hidden;
+  padding: 3px 8px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-pill);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 950;
+  line-height: 1;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.player-quiz-achievement.has-stars,
+.coach-quiz-achievement.has-stars {
+  border-color: color-mix(in srgb, var(--color-warning) 48%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-warning) 18%, var(--color-bg-body));
+  color: color-mix(in srgb, var(--color-warning) 44%, var(--color-text));
 }
 
 .player-quiz-leader-row b {
@@ -8683,6 +8707,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .player-profile-card--best {
   border-color: color-mix(in srgb, var(--color-warning) 40%, var(--color-border-light));
   background: color-mix(in srgb, var(--color-warning) 8%, var(--color-surface));
+}
+
+.player-leaderboard-card--achievement,
+.player-profile-card--achievement {
+  border-color: color-mix(in srgb, var(--color-warning) 44%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-warning) 14%, var(--color-surface)), var(--color-surface));
 }
 
 .player-profile-card strong {
@@ -9431,7 +9462,7 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 .coach-quiz-leader-row {
   min-height: 48px;
   display: grid;
-  grid-template-columns: auto minmax(0, 1fr) auto auto;
+  grid-template-columns: auto minmax(0, 1fr) auto auto auto;
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-xs) var(--space-sm);
