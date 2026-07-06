@@ -894,6 +894,94 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("body")).not.toHaveClass(/play-presentation-open/);
   });
 
+  test("saves coach quiz settings and applies custom scoring", async ({ page }) => {
+    await login(page, { role: "admin", username: "admin" });
+    await dismissFirstUse(page);
+
+    await goToTab(page, "quizsetup");
+    const setup = page.locator("#coachQuizSetupPage");
+    await expect(setup).toContainText("Quiz settings");
+    await setup.locator("#coachQuizWeeklyGoal").fill("1200");
+    await setup.locator("#coachQuizBaseCorrectPoints").fill("12");
+    await setup.locator("#coachQuizScriptWeight").fill("2");
+    await setup.locator("#coachQuizGameplanWeight").fill("1.5");
+    await setup.locator("#coachQuizHonorRollMin").fill("80");
+    await setup.locator("#coachQuizHonorRollBonus").fill("10");
+    await setup.locator("#coachQuizHighHonorRollMin").fill("85");
+    await setup.locator("#coachQuizHighHonorRollBonus").fill("20");
+    await setup.locator("#coachQuizCoachesListMin").fill("90");
+    await setup.locator("#coachQuizCoachesListBonus").fill("30");
+    await setup.locator("#coachQuizMinBonusAnswers").fill("1");
+    await setup.locator("#coachQuizQuestionPoints").fill("20");
+    await setup.locator("#coachQuizAnswerPoints").fill("35");
+    await setup.locator("#coachQuizGiftPoints").fill("60");
+    await setup.locator("#coachQuizDailyRewardCap").fill("75");
+    await setup.locator("#coachQuizWeeklyRewardCap").fill("200");
+    await setup.locator("#coachQuizTypeResponsibility").uncheck();
+    await setup.locator("#coachQuizTypeRuleToPlay").uncheck();
+    await setup.getByRole("button", { name: /Save Settings/i }).click();
+
+    await expect.poll(() => page.evaluate(() => storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, null))).toMatchObject({
+      weeklyGoal: 1200,
+      baseCorrectPoints: 12,
+      scriptWeight: 2,
+      gameplanWeight: 1.5,
+      honorRollMin: 80,
+      honorRollBonus: 10,
+      highHonorRollMin: 85,
+      highHonorRollBonus: 20,
+      coachesListMin: 90,
+      coachesListBonus: 30,
+      minBonusAnswers: 1,
+      questionPoints: 20,
+      answerPoints: 35,
+      giftPoints: 60,
+      dailyRewardCap: 75,
+      weeklyRewardCap: 200,
+      enabledQuestionTypes: ["call"],
+    });
+    await expect(setup).toContainText("1200 point goal");
+
+    await page.evaluate(() => {
+      script = [{
+        personnel: "11",
+        formation: "Trips Rt",
+        play: "Buck Sweep",
+        respQ: "Secure the edge.",
+      }, {
+        personnel: "10",
+        formation: "Doubles",
+        play: "Verts",
+        respQ: "Win vertical leverage.",
+      }];
+      startScriptQuiz({ positionKey: "respQ", title: "Settings Scoring Quiz" });
+    });
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("What's the call?")).toBeVisible();
+    await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
+    await quiz.getByRole("button", { name: /Next/i }).click();
+    await expect(quiz.getByText("What's the call?")).toBeVisible();
+    await quiz.getByRole("button", { name: /Verts/i }).click();
+    await quiz.locator("#scriptQuizNextBtn").click();
+    await expect(quiz.locator(".sq-result-card")).toContainText("Coaches List");
+    await expect(quiz.locator(".sq-result-card")).toContainText("80");
+    await expect.poll(async () => page.evaluate(() => {
+      const attempts = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, []);
+      return {
+        totalPoints: attempts.at(-1)?.totalPoints,
+        badge: attempts.at(-1)?.badge,
+      };
+    })).toMatchObject({ totalPoints: 80, badge: "Coaches List" });
+    await quiz.getByRole("button", { name: /^Done$/i }).click();
+
+    await page.evaluate(() => openPlayerQuizHub());
+    const hub = page.locator("#playerQuizHubOverlay");
+    await expect(hub.locator("#playerQuizWeeklyPoints")).toContainText("80 / 1200");
+    await hub.getByRole("button", { name: /Close Quiz Center/i }).click();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("shows coach quiz leaderboard week and season review", async ({ page }) => {
     await login(page, { role: "admin", username: "admin" });
     await dismissFirstUse(page);

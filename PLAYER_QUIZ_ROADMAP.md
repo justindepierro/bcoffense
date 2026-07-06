@@ -13,7 +13,7 @@
 - [x] Define quiz as its own player workflow, not just a button inside Practice.
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
 - [x] Link local quiz identity to the active team roster through a roster account username field.
-- [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules.
+- [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, and question types; source eligibility and tier-name controls remain pending.
 - [ ] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
 
 ## Player Quiz Center
@@ -68,7 +68,7 @@
 - [x] Add player attempt review with weak-position and weak-rule summaries.
 - [ ] Add quiz controls to saved Practice Script publishing.
 - [ ] Add quiz controls to Game Plan publishing.
-- [ ] Add a settings panel for weekly goal, scoring weights, bonus thresholds, tier names, reward caps, and enabled question types.
+- [x] Add a settings panel for weekly goal, scoring weights, bonus thresholds, reward caps, and enabled question types. Tier names remain fixed for now.
 - [ ] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
 
 ## Learning Readiness
@@ -84,7 +84,7 @@
 - [x] Define weekly points for asking questions, answering teammates, and coach-marked helpful answers.
 - [x] Restrict local coach point awards to active roster players so names stay clean.
 - [x] Include question points in week and season leaderboard totals with a visible source breakdown.
-- [ ] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers.
+- [ ] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers. Local reward caps are in place; discussion approval still needs wiring.
 - [ ] Add coach controls for gifting question/answer points from the discussion workflow. Coach staging controls exist; discussion-thread affordances still need wiring.
 - [ ] Add question/answer reward history to the player profile detail modal.
 
@@ -118,17 +118,18 @@
 - [x] Run Chromium and WebKit mobile checks before each shipped quiz slice.
 - [ ] Add tests for roster-link validation and roster-only reward assignment.
 - [x] Add tests for custom sticker edit/delete flows.
+- [x] Add tests for quiz settings persistence and scoring effects.
 - [ ] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
 
 ### Milestone 1 — Local Admin Controls
 
-- [ ] Build the Set Up Quizzes settings panel.
-- [ ] Persist quiz settings locally through `STORAGE_KEYS`.
-- [ ] Apply settings to scoring, question mix, weekly goal, bonus thresholds, and reward caps.
-- [ ] Add validation for bad settings and reset-to-default.
-- [ ] Add focused Playwright coverage for settings persistence and scoring effects.
+- [x] Build the Set Up Quizzes settings panel.
+- [x] Persist quiz settings locally through `STORAGE_KEYS`.
+- [x] Apply settings to scoring, question mix, weekly goal, bonus thresholds, and reward caps.
+- [x] Add validation for bad settings and reset-to-default.
+- [x] Add focused Playwright coverage for settings persistence and scoring effects.
 
 ### Milestone 2 — Source Publishing Controls
 
@@ -150,7 +151,7 @@
 
 - [ ] Add coach/admin reward actions directly to player questions and answers.
 - [ ] Require coach approval before question/answer points affect leaderboard totals.
-- [ ] Add daily/weekly reward caps and clear warnings when caps are reached.
+- [x] Add daily/weekly reward caps and clear warnings when caps are reached.
 - [ ] Show reward history on player leaderboard detail.
 - [ ] Add tests for approval, cap enforcement, and history display.
 

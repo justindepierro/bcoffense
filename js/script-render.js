@@ -1474,6 +1474,25 @@ const PLAYER_QUIZ_REWARD_POINT_DEFAULTS = {
   answer: 25,
   gift: 50,
 };
+const PLAYER_QUIZ_DEFAULT_SETTINGS = {
+  weeklyGoal: PLAYER_QUIZ_WEEKLY_GOAL,
+  baseCorrectPoints: PLAYER_QUIZ_BASE_CORRECT_POINTS,
+  scriptWeight: PLAYER_QUIZ_SOURCE_WEIGHTS.script,
+  gameplanWeight: PLAYER_QUIZ_SOURCE_WEIGHTS.gameplan,
+  honorRollMin: 85,
+  honorRollBonus: 30,
+  highHonorRollMin: 90,
+  highHonorRollBonus: 50,
+  coachesListMin: 95,
+  coachesListBonus: 75,
+  minBonusAnswers: PLAYER_QUIZ_MIN_BONUS_ANSWERS,
+  questionPoints: PLAYER_QUIZ_REWARD_POINT_DEFAULTS.question,
+  answerPoints: PLAYER_QUIZ_REWARD_POINT_DEFAULTS.answer,
+  giftPoints: PLAYER_QUIZ_REWARD_POINT_DEFAULTS.gift,
+  dailyRewardCap: 125,
+  weeklyRewardCap: 350,
+  enabledQuestionTypes: ["responsibility", "play_from_rule", "call"],
+};
 const DEFAULT_PLAYER_HELMET_STICKER_TYPES = [
   { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green", description: "Caught the ball, finished the rep, or protected possession." },
   { key: "do-your-job", label: "Do Your Job", icon: "🧠", color: "blue", description: "Handled the assignment without needing extra coaching." },
@@ -1499,10 +1518,91 @@ function _getPlayerQuizDraftStorageKey() {
     : "playerQuizDraft";
 }
 
+function _getPlayerQuizSettingsStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_SETTINGS
+    ? STORAGE_KEYS.PLAYER_QUIZ_SETTINGS
+    : "playerQuizSettings";
+}
+
 function _getPlayerRewardStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_REWARD_EVENTS
     ? STORAGE_KEYS.PLAYER_REWARD_EVENTS
     : "playerRewardEvents";
+}
+
+function _clampQuizNumber(value, fallback, min, max, opts = {}) {
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return fallback;
+  const clamped = Math.max(min, Math.min(max, parsed));
+  return opts.integer ? Math.round(clamped) : Number(clamped.toFixed(opts.decimals ?? 2));
+}
+
+function _normalizePlayerQuizSettings(raw = {}) {
+  const src = raw && typeof raw === "object" ? raw : {};
+  const defaults = PLAYER_QUIZ_DEFAULT_SETTINGS;
+  const enabled = Array.isArray(src.enabledQuestionTypes)
+    ? src.enabledQuestionTypes.filter((type) => ["responsibility", "play_from_rule", "call"].includes(type))
+    : defaults.enabledQuestionTypes;
+  return {
+    weeklyGoal: _clampQuizNumber(src.weeklyGoal, defaults.weeklyGoal, 250, 5000, { integer: true }),
+    baseCorrectPoints: _clampQuizNumber(src.baseCorrectPoints, defaults.baseCorrectPoints, 1, 50, { integer: true }),
+    scriptWeight: _clampQuizNumber(src.scriptWeight, defaults.scriptWeight, 0.25, 5),
+    gameplanWeight: _clampQuizNumber(src.gameplanWeight, defaults.gameplanWeight, 0.25, 5),
+    honorRollMin: _clampQuizNumber(src.honorRollMin, defaults.honorRollMin, 50, 100, { integer: true }),
+    honorRollBonus: _clampQuizNumber(src.honorRollBonus, defaults.honorRollBonus, 0, 500, { integer: true }),
+    highHonorRollMin: _clampQuizNumber(src.highHonorRollMin, defaults.highHonorRollMin, 50, 100, { integer: true }),
+    highHonorRollBonus: _clampQuizNumber(src.highHonorRollBonus, defaults.highHonorRollBonus, 0, 500, { integer: true }),
+    coachesListMin: _clampQuizNumber(src.coachesListMin, defaults.coachesListMin, 50, 100, { integer: true }),
+    coachesListBonus: _clampQuizNumber(src.coachesListBonus, defaults.coachesListBonus, 0, 500, { integer: true }),
+    minBonusAnswers: _clampQuizNumber(src.minBonusAnswers, defaults.minBonusAnswers, 1, 50, { integer: true }),
+    questionPoints: _clampQuizNumber(src.questionPoints, defaults.questionPoints, 0, 250, { integer: true }),
+    answerPoints: _clampQuizNumber(src.answerPoints, defaults.answerPoints, 0, 250, { integer: true }),
+    giftPoints: _clampQuizNumber(src.giftPoints, defaults.giftPoints, 0, 500, { integer: true }),
+    dailyRewardCap: _clampQuizNumber(src.dailyRewardCap, defaults.dailyRewardCap, 0, 1000, { integer: true }),
+    weeklyRewardCap: _clampQuizNumber(src.weeklyRewardCap, defaults.weeklyRewardCap, 0, 3000, { integer: true }),
+    enabledQuestionTypes: enabled.length ? Array.from(new Set(enabled)) : ["call"],
+  };
+}
+
+function _getPlayerQuizSettings() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") {
+    return _normalizePlayerQuizSettings(PLAYER_QUIZ_DEFAULT_SETTINGS);
+  }
+  return _normalizePlayerQuizSettings(storageManager.get(_getPlayerQuizSettingsStorageKey(), PLAYER_QUIZ_DEFAULT_SETTINGS));
+}
+
+function _savePlayerQuizSettings(settings) {
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return _getPlayerQuizSettings();
+  const normalized = _normalizePlayerQuizSettings(settings);
+  storageManager.set(_getPlayerQuizSettingsStorageKey(), normalized);
+  return normalized;
+}
+
+function _getQuizWeeklyGoal() {
+  return _getPlayerQuizSettings().weeklyGoal;
+}
+
+function _getQuizSourceWeight(sourceType = _quizSourceType) {
+  const settings = _getPlayerQuizSettings();
+  return sourceType === "gameplan" ? settings.gameplanWeight : settings.scriptWeight;
+}
+
+function _getQuizBadges() {
+  const settings = _getPlayerQuizSettings();
+  return [
+    { min: settings.coachesListMin, label: "Coaches List", bonus: settings.coachesListBonus },
+    { min: settings.highHonorRollMin, label: "High Honor Roll", bonus: settings.highHonorRollBonus },
+    { min: settings.honorRollMin, label: "Honor Roll", bonus: settings.honorRollBonus },
+  ].sort((a, b) => b.min - a.min);
+}
+
+function _getQuizRewardDefaults() {
+  const settings = _getPlayerQuizSettings();
+  return {
+    question: settings.questionPoints,
+    answer: settings.answerPoints,
+    gift: settings.giftPoints,
+  };
 }
 
 function _getPlayerHelmetStickerStorageKey() {
@@ -1675,7 +1775,7 @@ function _quizWeekKey(date = new Date()) {
 }
 
 function _getQuizBadge(percent) {
-  return PLAYER_QUIZ_BADGES.find((badge) => percent >= badge.min) || {
+  return _getQuizBadges().find((badge) => percent >= badge.min) || {
     min: 0,
     label: "Keep Climbing",
     bonus: 0,
@@ -1683,15 +1783,16 @@ function _getQuizBadge(percent) {
 }
 
 function _getQuizCorrectAnswerPoints(streak, sourceWeight = _quizSourceWeight) {
+  const settings = _getPlayerQuizSettings();
   const streakBonus = Math.min(
     Math.max(0, Number(streak || 1) - 1),
     PLAYER_QUIZ_MAX_STREAK_BONUS,
   ) * PLAYER_QUIZ_STREAK_STEP_POINTS;
-  return Math.round((PLAYER_QUIZ_BASE_CORRECT_POINTS + streakBonus) * (Number(sourceWeight) || 1));
+  return Math.round((settings.baseCorrectPoints + streakBonus) * (Number(sourceWeight) || 1));
 }
 
 function _getQuizBonusPoints(badge, answered, partial = false) {
-  if (partial || !badge || Number(answered || 0) < PLAYER_QUIZ_MIN_BONUS_ANSWERS) return 0;
+  if (partial || !badge || Number(answered || 0) < _getPlayerQuizSettings().minBonusAnswers) return 0;
   return Number(badge.bonus || 0);
 }
 
@@ -1750,10 +1851,11 @@ function getPlayerQuizScriptProgress(scriptId = "", scriptName = "", playCount =
 }
 
 function _getQuizTier(points) {
-  if (points >= PLAYER_QUIZ_WEEKLY_GOAL) return "Champion";
-  if (points >= 750) return "Baller";
-  if (points >= 500) return "Starter";
-  if (points >= 250) return "Contributor";
+  const goal = _getQuizWeeklyGoal();
+  if (points >= goal) return "Champion";
+  if (points >= goal * 0.75) return "Baller";
+  if (points >= goal * 0.5) return "Starter";
+  if (points >= goal * 0.25) return "Contributor";
   return "Defense";
 }
 
@@ -2307,6 +2409,7 @@ function renderPlayerLeaderboardPage() {
   const page = document.getElementById("playerLeaderboardPage");
   if (!page) return;
   const summary = _summarizeQuizAttempts();
+  const settings = _getPlayerQuizSettings();
   const draft = _getPlayerQuizDraft();
   if (!_leaderboardSelectedPlayer) _leaderboardSelectedPlayer = summary.player;
   const isSeason = _playerLeaderboardView === "season";
@@ -2320,8 +2423,9 @@ function renderPlayerLeaderboardPage() {
   const viewRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
   const viewTier = _getQuizTier(viewPoints);
   const recentAttempts = viewAttempts.slice(-5).reverse();
-  const goalPct = Math.min(100, Math.round((summary.weeklyPoints / PLAYER_QUIZ_WEEKLY_GOAL) * 100));
-  const remaining = Math.max(0, PLAYER_QUIZ_WEEKLY_GOAL - summary.weeklyPoints);
+  const goalPct = Math.min(100, Math.round((summary.weeklyPoints / settings.weeklyGoal) * 100));
+  const remaining = Math.max(0, settings.weeklyGoal - summary.weeklyPoints);
+  const badgeFloor = Math.min(settings.honorRollMin, settings.highHonorRollMin, settings.coachesListMin);
   const recentHtml = recentAttempts.length
     ? recentAttempts.map((attempt) => `
         <div class="player-leaderboard-attempt${attempt.completed === false ? " is-partial" : ""}">
@@ -2340,7 +2444,7 @@ function renderPlayerLeaderboardPage() {
         <div>
           <span class="player-leaderboard-kicker">Leaderboard</span>
           <h2>${isSeason ? "Season points and weekly pace" : "Quiz points and weekly standard"}</h2>
-          <p>${isSeason ? "Track the whole season while still chasing the weekly standard." : `Get to ${PLAYER_QUIZ_WEEKLY_GOAL} points this week. Game Plan quizzes count 1.25x.`}</p>
+          <p>${isSeason ? "Track the whole season while still chasing the weekly standard." : `Get to ${settings.weeklyGoal} points this week. Game Plan quizzes count ${settings.gameplanWeight}x.`}</p>
         </div>
         <button type="button" class="btn btn-primary" data-action="openPlayerQuizHub">Start Quiz</button>
       </section>
@@ -2352,9 +2456,9 @@ function renderPlayerLeaderboardPage() {
       <section class="player-leaderboard-grid" aria-label="Quiz progress">
         <article class="player-leaderboard-card player-leaderboard-card--goal">
           <span>${isSeason ? "Season Points" : "Weekly Goal"}</span>
-          <strong>${isSeason ? Math.round(summary.seasonPoints) : `${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL}`}</strong>
+          <strong>${isSeason ? Math.round(summary.seasonPoints) : `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal}`}</strong>
           <div class="player-leaderboard-meter" aria-hidden="true"><i class="player-leaderboard-meter-fill"></i></div>
-          <small>${isSeason ? `${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL} this week` : (remaining ? `${Math.round(remaining)} points to Champion` : "Champion standard met")}</small>
+          <small>${isSeason ? `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal} this week` : (remaining ? `${Math.round(remaining)} points to Champion` : "Champion standard met")}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--tier">
           <span>Current Tier</span>
@@ -2364,7 +2468,7 @@ function renderPlayerLeaderboardPage() {
         <article class="player-leaderboard-card player-leaderboard-card--badge">
           <span>Best Badge</span>
           <strong>${summary.bestPercent ? escapeHtml(summary.bestBadge.label) : "No attempts"}</strong>
-          <small>${summary.bestPercent ? `${Math.round(summary.bestPercent)}% best score` : "85% unlocks Honor Roll"}</small>
+          <small>${summary.bestPercent ? `${Math.round(summary.bestPercent)}% best score` : `${badgeFloor}% unlocks bonuses`}</small>
         </article>
         <article class="player-leaderboard-card player-leaderboard-card--streak">
           <span>Streaks</span>
@@ -2705,6 +2809,80 @@ function _renderCoachCustomStickerManager() {
         </div>
       `).join("")}
     </div>
+  `;
+}
+
+function _renderCoachQuizSettingsPanel(settings = _getPlayerQuizSettings()) {
+  const enabled = new Set(settings.enabledQuestionTypes || []);
+  const field = (id, label, value, attrs = "") => `
+    <label class="coach-quiz-setting-field" for="${escapeAttr(id)}">
+      <span>${escapeHtml(label)}</span>
+      <input id="${escapeAttr(id)}" type="number" value="${escapeAttr(value)}" ${attrs}>
+    </label>
+  `;
+  const toggle = (id, label, value, note) => `
+    <label class="coach-quiz-type-toggle" for="${escapeAttr(id)}">
+      <input id="${escapeAttr(id)}" type="checkbox" value="${escapeAttr(value)}" ${enabled.has(value) ? "checked" : ""}>
+      <span>
+        <strong>${escapeHtml(label)}</strong>
+        <small>${escapeHtml(note)}</small>
+      </span>
+    </label>
+  `;
+  return `
+    <section class="coach-quiz-setup-section coach-quiz-settings-panel" aria-label="Quiz settings">
+      <div class="coach-quiz-section-head">
+        <h3>Quiz settings</h3>
+        <span>${settings.weeklyGoal} point goal · Script ${settings.scriptWeight}x · Game Plan ${settings.gameplanWeight}x</span>
+      </div>
+      <div class="coach-quiz-settings-grid">
+        <article>
+          <span>Goals and pacing</span>
+          <div class="coach-quiz-setting-fields">
+            ${field("coachQuizWeeklyGoal", "Weekly goal", settings.weeklyGoal, 'min="250" max="5000" step="50"')}
+            ${field("coachQuizBaseCorrectPoints", "Correct answer points", settings.baseCorrectPoints, 'min="1" max="50" step="1"')}
+            ${field("coachQuizMinBonusAnswers", "Min answers for bonus", settings.minBonusAnswers, 'min="1" max="50" step="1"')}
+          </div>
+        </article>
+        <article>
+          <span>Source weights</span>
+          <div class="coach-quiz-setting-fields">
+            ${field("coachQuizScriptWeight", "Script weight", settings.scriptWeight, 'min="0.25" max="5" step="0.05"')}
+            ${field("coachQuizGameplanWeight", "Game Plan weight", settings.gameplanWeight, 'min="0.25" max="5" step="0.05"')}
+          </div>
+        </article>
+        <article>
+          <span>Honor bonuses</span>
+          <div class="coach-quiz-setting-fields coach-quiz-setting-fields--pairs">
+            ${field("coachQuizHonorRollMin", "Honor Roll %", settings.honorRollMin, 'min="50" max="100" step="1"')}
+            ${field("coachQuizHonorRollBonus", "Honor Roll pts", settings.honorRollBonus, 'min="0" max="500" step="5"')}
+            ${field("coachQuizHighHonorRollMin", "High Honor %", settings.highHonorRollMin, 'min="50" max="100" step="1"')}
+            ${field("coachQuizHighHonorRollBonus", "High Honor pts", settings.highHonorRollBonus, 'min="0" max="500" step="5"')}
+            ${field("coachQuizCoachesListMin", "Coaches List %", settings.coachesListMin, 'min="50" max="100" step="1"')}
+            ${field("coachQuizCoachesListBonus", "Coaches List pts", settings.coachesListBonus, 'min="0" max="500" step="5"')}
+          </div>
+        </article>
+        <article>
+          <span>Reward points and caps</span>
+          <div class="coach-quiz-setting-fields coach-quiz-setting-fields--pairs">
+            ${field("coachQuizQuestionPoints", "Question pts", settings.questionPoints, 'min="0" max="250" step="5"')}
+            ${field("coachQuizAnswerPoints", "Answer pts", settings.answerPoints, 'min="0" max="250" step="5"')}
+            ${field("coachQuizGiftPoints", "Gift pts", settings.giftPoints, 'min="0" max="500" step="5"')}
+            ${field("coachQuizDailyRewardCap", "Daily cap", settings.dailyRewardCap, 'min="0" max="1000" step="25"')}
+            ${field("coachQuizWeeklyRewardCap", "Weekly cap", settings.weeklyRewardCap, 'min="0" max="3000" step="25"')}
+          </div>
+        </article>
+      </div>
+      <div class="coach-quiz-question-type-settings">
+        ${toggle("coachQuizTypeResponsibility", "Responsibility", "responsibility", "Player matches their rule on a known call.")}
+        ${toggle("coachQuizTypeRuleToPlay", "Rule to Play", "play_from_rule", "Player sees a rule and picks the call.")}
+        ${toggle("coachQuizTypeCall", "Call ID", "call", "Fallback that keeps thin sources usable.")}
+      </div>
+      <div class="coach-quiz-settings-actions">
+        <button type="button" class="btn btn-primary" data-action="coachSaveQuizSettings">Save Settings</button>
+        <button type="button" class="btn btn-outline" data-action="coachResetQuizSettings">Reset Defaults</button>
+      </div>
+    </section>
   `;
 }
 
@@ -3109,11 +3287,83 @@ async function coachDeleteHelmetSticker(stickerKey = "") {
   showToast(`${sticker.label} removed from custom stickers.`, { type: "success" });
 }
 
+function _readCoachQuizSettingNumber(id) {
+  const el = document.getElementById(id);
+  return el ? el.value : undefined;
+}
+
+function coachSaveQuizSettings() {
+  const enabledQuestionTypes = [
+    ["coachQuizTypeResponsibility", "responsibility"],
+    ["coachQuizTypeRuleToPlay", "play_from_rule"],
+    ["coachQuizTypeCall", "call"],
+  ]
+    .filter(([id]) => document.getElementById(id)?.checked)
+    .map(([, value]) => value);
+  const settings = _savePlayerQuizSettings({
+    weeklyGoal: _readCoachQuizSettingNumber("coachQuizWeeklyGoal"),
+    baseCorrectPoints: _readCoachQuizSettingNumber("coachQuizBaseCorrectPoints"),
+    minBonusAnswers: _readCoachQuizSettingNumber("coachQuizMinBonusAnswers"),
+    scriptWeight: _readCoachQuizSettingNumber("coachQuizScriptWeight"),
+    gameplanWeight: _readCoachQuizSettingNumber("coachQuizGameplanWeight"),
+    honorRollMin: _readCoachQuizSettingNumber("coachQuizHonorRollMin"),
+    honorRollBonus: _readCoachQuizSettingNumber("coachQuizHonorRollBonus"),
+    highHonorRollMin: _readCoachQuizSettingNumber("coachQuizHighHonorRollMin"),
+    highHonorRollBonus: _readCoachQuizSettingNumber("coachQuizHighHonorRollBonus"),
+    coachesListMin: _readCoachQuizSettingNumber("coachQuizCoachesListMin"),
+    coachesListBonus: _readCoachQuizSettingNumber("coachQuizCoachesListBonus"),
+    questionPoints: _readCoachQuizSettingNumber("coachQuizQuestionPoints"),
+    answerPoints: _readCoachQuizSettingNumber("coachQuizAnswerPoints"),
+    giftPoints: _readCoachQuizSettingNumber("coachQuizGiftPoints"),
+    dailyRewardCap: _readCoachQuizSettingNumber("coachQuizDailyRewardCap"),
+    weeklyRewardCap: _readCoachQuizSettingNumber("coachQuizWeeklyRewardCap"),
+    enabledQuestionTypes,
+  });
+  renderCoachQuizSetupPage();
+  _renderPlayerQuizHub();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast(`Quiz settings saved. Weekly goal is ${settings.weeklyGoal}.`, { type: "success" });
+}
+
+async function coachResetQuizSettings() {
+  const ok = typeof showConfirm === "function"
+    ? await showConfirm("Reset quiz goals, scoring, rewards, and question types to defaults?", {
+      title: "Reset Quiz Settings",
+      icon: "⚙️",
+      confirmText: "Reset",
+      cancelText: "Keep",
+      danger: false,
+    })
+    : true;
+  if (!ok) return;
+  _savePlayerQuizSettings(PLAYER_QUIZ_DEFAULT_SETTINGS);
+  renderCoachQuizSetupPage();
+  _renderPlayerQuizHub();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast("Quiz settings reset.", { type: "success" });
+}
+
 async function coachAwardQuestionPoints(type = "question") {
   const safeType = ["question", "answer", "gift"].includes(type) ? type : "question";
   const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
   if (!player) return;
-  const defaultPoints = PLAYER_QUIZ_REWARD_POINT_DEFAULTS[safeType] || 25;
+  const settings = _getPlayerQuizSettings();
+  const now = new Date();
+  const events = _getPlayerRewardEvents();
+  const dateKey = _quizDateKey(now);
+  const weekKey = _quizWeekKey(now);
+  const playerEvents = events.filter((event) => _normalizeQuizPlayerName(event.player) === _normalizeQuizPlayerName(player));
+  const dailyUsed = _sumQuizRewards(playerEvents.filter((event) => event.dateKey === dateKey));
+  const weeklyUsed = _sumQuizRewards(playerEvents.filter((event) => event.weekKey === weekKey));
+  const dailyRemaining = settings.dailyRewardCap ? Math.max(0, settings.dailyRewardCap - dailyUsed) : 500;
+  const weeklyRemaining = settings.weeklyRewardCap ? Math.max(0, settings.weeklyRewardCap - weeklyUsed) : 500;
+  const capRemaining = Math.min(500, dailyRemaining, weeklyRemaining);
+  if (capRemaining <= 0) {
+    showToast(`${player} is at the reward point cap.`, { type: "warning" });
+    return;
+  }
+  const rewardDefaults = _getQuizRewardDefaults();
+  const defaultPoints = Math.min(capRemaining, rewardDefaults[safeType] || 25);
   const rawPoints = typeof showPrompt === "function"
     ? await showPrompt("How many points?", String(defaultPoints), {
       title: "Award Points",
@@ -3122,7 +3372,12 @@ async function coachAwardQuestionPoints(type = "question") {
     })
     : String(defaultPoints);
   if (rawPoints === null) return;
-  const points = Math.max(0, Math.min(500, Math.round(Number(rawPoints) || defaultPoints)));
+  const requestedPoints = Math.max(0, Math.min(500, Math.round(Number(rawPoints) || defaultPoints)));
+  const points = Math.min(requestedPoints, capRemaining);
+  if (points <= 0) {
+    showToast("No points were awarded.", { type: "info" });
+    return;
+  }
   const note = typeof showPrompt === "function"
     ? await showPrompt("Optional note for the player", "", {
       title: "Reward Note",
@@ -3131,8 +3386,6 @@ async function coachAwardQuestionPoints(type = "question") {
     })
     : "";
   if (note === null) return;
-  const now = new Date();
-  const events = _getPlayerRewardEvents();
   events.push({
     id: _quizEventId("reward"),
     player,
@@ -3142,14 +3395,14 @@ async function coachAwardQuestionPoints(type = "question") {
     note: String(note || "").trim(),
     awardedBy: _quizCurrentCoachName(),
     createdAt: now.toISOString(),
-    dateKey: _quizDateKey(now),
-    weekKey: _quizWeekKey(now),
+    dateKey,
+    weekKey,
   });
   _savePlayerRewardEvents(events);
   _leaderboardSelectedPlayer = player;
   renderCoachQuizSetupPage();
   if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
-  showToast(`${player} earned ${points} points.`, { type: "success" });
+  showToast(`${player} earned ${points} points${points < requestedPoints ? " after cap" : ""}.`, { type: "success" });
 }
 
 async function coachAwardHelmetSticker(stickerKey = "") {
@@ -3226,6 +3479,7 @@ function renderCoachQuizSetupPage() {
   const weeklyRewardEvents = rewardEvents.filter((event) => event.weekKey === weekKey);
   const weeklyStickerEvents = stickers.filter((event) => event.weekKey === weekKey);
   const leaderboardSummary = _buildCoachQuizLeaderboardSummary();
+  const quizSettings = _getPlayerQuizSettings();
   if (!_leaderboardSelectedPlayer && leaderboardSummary.rows[0]?.name) {
     _leaderboardSelectedPlayer = leaderboardSummary.rows[0].name;
   }
@@ -3243,6 +3497,7 @@ function renderCoachQuizSetupPage() {
           <span>${readyCount}/${allStats.length || 0} ready</span>
         </div>
       </section>
+      ${_renderCoachQuizSettingsPanel(quizSettings)}
       <section class="coach-quiz-reward-panel">
         <article>
           <span>Question points</span>
@@ -3434,9 +3689,11 @@ function _renderPlayerQuizScriptPicker(options) {
 
 function _renderPlayerQuizHub() {
   const summary = _summarizeQuizAttempts();
+  const settings = _getPlayerQuizSettings();
+  const badgeFloor = Math.min(settings.honorRollMin, settings.highHonorRollMin, settings.coachesListMin);
   const weeklyPointsEl = document.getElementById("playerQuizWeeklyPoints");
   if (weeklyPointsEl) {
-    weeklyPointsEl.textContent = `${Math.round(summary.weeklyPoints)} / ${PLAYER_QUIZ_WEEKLY_GOAL}`;
+    weeklyPointsEl.textContent = `${Math.round(summary.weeklyPoints)} / ${settings.weeklyGoal}`;
   }
   const weeklyMetaEl = document.getElementById("playerQuizWeeklyMeta");
   if (weeklyMetaEl) {
@@ -3446,7 +3703,7 @@ function _renderPlayerQuizHub() {
   if (tierEl) tierEl.textContent = summary.tier;
   const tierMetaEl = document.getElementById("playerQuizTierMeta");
   if (tierMetaEl) {
-    const remaining = Math.max(0, PLAYER_QUIZ_WEEKLY_GOAL - summary.weeklyPoints);
+    const remaining = Math.max(0, settings.weeklyGoal - summary.weeklyPoints);
     tierMetaEl.textContent = remaining ? `${Math.round(remaining)} to Champion` : "Champion standard met";
   }
   const bestBadgeEl = document.getElementById("playerQuizBestBadge");
@@ -3457,7 +3714,7 @@ function _renderPlayerQuizHub() {
   if (badgeMetaEl) {
     badgeMetaEl.textContent = summary.bestPercent
       ? `Best ${Math.round(summary.bestPercent)}% · season ${Math.round(summary.seasonPoints)} pts`
-      : "85 / 90 / 95 unlock bonuses";
+      : `${badgeFloor} / ${settings.highHonorRollMin} / ${settings.coachesListMin} unlock bonuses`;
   }
   const leaderboardEl = document.getElementById("playerQuizLeaderboardPreview");
   if (leaderboardEl) {
@@ -3676,6 +3933,7 @@ function _quizUniqueChoices(items, getLabel) {
 
 function _buildQuizQuestion(item) {
   const position = _getQuizPosition();
+  const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || ["responsibility", "play_from_rule", "call"]);
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
   const rulePool = _quizUniqueChoices(
     _quizPlays.filter((candidate) => candidate?.play && candidate.play !== item.play),
@@ -3687,7 +3945,7 @@ function _buildQuizQuestion(item) {
   );
   const positionLabel = position?.label || "your";
 
-  if (positionRule && rulePool.length >= 3 && _quizIndex % 3 !== 1) {
+  if (enabledTypes.has("responsibility") && positionRule && rulePool.length >= 3 && _quizIndex % 3 !== 1) {
     return {
       type: "responsibility",
       prompt: `What's your ${positionLabel} responsibility?`,
@@ -3698,7 +3956,7 @@ function _buildQuizQuestion(item) {
     };
   }
 
-  if (positionRule && callPool.length >= 1 && _quizIndex % 2 === 1) {
+  if (enabledTypes.has("play_from_rule") && positionRule && callPool.length >= 1 && _quizIndex % 2 === 1) {
     return {
       type: "play_from_rule",
       prompt: `Which play has this ${positionLabel} rule?`,
@@ -3857,7 +4115,7 @@ function startScriptQuiz(options = {}) {
   _quizShuffled = false;
   _quizSourceType = sourceType;
   _quizSourceId = String(opts.sourceId || "");
-  _quizSourceWeight = PLAYER_QUIZ_SOURCE_WEIGHTS[sourceType] || 1;
+  _quizSourceWeight = _getQuizSourceWeight(sourceType);
   _quizTitle = opts.title || (sourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
   if (opts.positionKey && _getQuizPositions().some((position) => position.key === opts.positionKey)) {
     _quizPositionKey = opts.positionKey;
@@ -4127,7 +4385,7 @@ function resumePlayerQuizDraft() {
   _quizShuffled = Boolean(draft.shuffled);
   _quizSourceType = draft.sourceType === "gameplan" ? "gameplan" : "script";
   _quizSourceId = String(draft.sourceId || "");
-  _quizSourceWeight = PLAYER_QUIZ_SOURCE_WEIGHTS[_quizSourceType] || Number(draft.sourceWeight || 1) || 1;
+  _quizSourceWeight = Number(draft.sourceWeight || 0) || _getQuizSourceWeight(_quizSourceType);
   _quizTitle = draft.title || (_quizSourceType === "gameplan" ? "Game Plan Quiz" : "Practice Script Quiz");
   if (draft.positionKey && _getQuizPositions().some((position) => position.key === draft.positionKey)) {
     _quizPositionKey = draft.positionKey;
