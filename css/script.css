@@ -8434,6 +8434,127 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   box-shadow: var(--shadow-xs);
 }
 
+.coach-roster-picker-body {
+  display: grid;
+  gap: var(--space-sm);
+  padding: 0 var(--space-lg) var(--space-md);
+  overflow: hidden;
+}
+
+.coach-roster-picker-body p {
+  margin: 0;
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-sm);
+  font-weight: 700;
+  line-height: 1.35;
+}
+
+.coach-roster-picker-search {
+  width: 100%;
+  min-height: 44px;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border-input);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-input);
+  color: var(--color-text);
+  font: inherit;
+  font-weight: 750;
+}
+
+.coach-roster-picker-search:focus {
+  outline: 0;
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-focus);
+}
+
+.coach-roster-picker-list {
+  display: grid;
+  gap: var(--space-xs);
+  max-height: min(360px, calc((var(--app-vh, 1vh) * 100) - 260px));
+  overflow-y: auto;
+  padding-right: 2px;
+  -webkit-overflow-scrolling: touch;
+}
+
+.coach-roster-picker-row {
+  min-height: 58px;
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-sm);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+.coach-roster-picker-row:hover,
+.coach-roster-picker-row:focus-visible,
+.coach-roster-picker-row.is-recommended {
+  outline: 0;
+  border-color: color-mix(in srgb, var(--color-primary) 42%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-primary) 7%, var(--color-surface));
+}
+
+.coach-roster-picker-avatar {
+  min-width: 44px;
+  min-height: 38px;
+  display: grid;
+  place-items: center;
+  padding: 0 8px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-body));
+  color: var(--color-primary-dark);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.coach-roster-picker-main {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+}
+
+.coach-roster-picker-main strong {
+  overflow: hidden;
+  color: var(--color-text);
+  font-size: var(--font-size-base);
+  font-weight: 950;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coach-roster-picker-main small {
+  overflow: hidden;
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coach-roster-picker-badge {
+  padding: 4px 8px;
+  border-radius: var(--radius-pill);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: 0.68rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.coach-roster-picker-empty {
+  padding: var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  font-weight: 850;
+  text-align: center;
+}
+
 .coach-quiz-reward-summary {
   display: grid;
   grid-template-columns: repeat(4, minmax(0, 1fr));

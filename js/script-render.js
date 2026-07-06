@@ -2800,26 +2800,128 @@ function _renderCoachQuizLeaderboardPanel(summary) {
   `;
 }
 
+function _showCoachRosterRewardPicker(defaultName = "") {
+  return new Promise((resolve) => {
+    const roster = _getQuizRosterPlayers();
+    if (!roster.length) {
+      resolve(null);
+      return;
+    }
+    const previouslyFocused = document.activeElement;
+    const defaultPlayer = _getQuizRosterPlayerByName(defaultName);
+    const modalId = `coachRosterRewardPicker-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+    const sortedRoster = roster
+      .map((player) => ({
+        ...player,
+        isRecommended: Boolean(defaultPlayer && player.id === defaultPlayer.id),
+      }))
+      .sort((a, b) => Number(b.isRecommended) - Number(a.isRecommended) || a.name.localeCompare(b.name));
+    const rowsHtml = sortedRoster.map((player) => {
+      const meta = _formatQuizRosterMeta(player) || "Roster player";
+      const search = [
+        player.name,
+        player.number,
+        player.position,
+        player.accountUsername,
+        player.positionGroup,
+      ].join(" ").toLowerCase();
+      return `
+        <button type="button"
+          class="coach-roster-picker-row${player.isRecommended ? " is-recommended" : ""}"
+          data-player-name="${escapeAttr(player.name)}"
+          data-search="${escapeAttr(search)}">
+          <span class="coach-roster-picker-avatar">${escapeHtml(player.number ? `#${player.number}` : "ID")}</span>
+          <span class="coach-roster-picker-main">
+            <strong>${escapeHtml(player.name)}</strong>
+            <small>${escapeHtml(meta)}</small>
+          </span>
+          ${player.isRecommended ? '<span class="coach-roster-picker-badge">Selected</span>' : ""}
+        </button>
+      `;
+    }).join("");
+    const overlay = document.createElement("div");
+    overlay.className = "custom-modal-overlay";
+    overlay.innerHTML = `
+      <div class="custom-modal custom-modal-wide coach-roster-picker-modal" role="dialog" aria-modal="true" aria-labelledby="${modalId}-title">
+        <div class="custom-modal-header">
+          <span class="custom-modal-icon">👤</span>
+          <h3 class="custom-modal-title" id="${modalId}-title">Award Roster Player</h3>
+        </div>
+        <div class="coach-roster-picker-body">
+          <p>Search the active roster. Rewards and stickers can only attach to these linked roster names.</p>
+          <input type="search"
+            class="coach-roster-picker-search"
+            placeholder="Search name, #, POS, or login"
+            aria-label="Search active roster players" />
+          <div class="coach-roster-picker-list">${rowsHtml}</div>
+          <div class="coach-roster-picker-empty" hidden>No active roster player matches that search.</div>
+        </div>
+        <div class="custom-modal-actions">
+          <button type="button" class="btn custom-modal-btn custom-modal-cancel">Cancel</button>
+        </div>
+      </div>
+    `;
+    document.body.appendChild(overlay);
+
+    const searchInput = overlay.querySelector(".coach-roster-picker-search");
+    const rows = Array.from(overlay.querySelectorAll(".coach-roster-picker-row"));
+    const empty = overlay.querySelector(".coach-roster-picker-empty");
+
+    function close(value) {
+      overlay.classList.remove("visible");
+      setTimeout(() => {
+        overlay.remove();
+        if (previouslyFocused && typeof previouslyFocused.focus === "function") {
+          previouslyFocused.focus();
+        }
+      }, 200);
+      resolve(value);
+    }
+
+    function updateFilter() {
+      const query = String(searchInput?.value || "").trim().toLowerCase();
+      let visibleCount = 0;
+      rows.forEach((row) => {
+        const matches = !query || String(row.dataset.search || "").includes(query);
+        row.hidden = !matches;
+        if (matches) visibleCount += 1;
+      });
+      if (empty) empty.hidden = visibleCount > 0;
+    }
+
+    rows.forEach((row) => {
+      row.addEventListener("click", () => close(_normalizeQuizPlayerName(row.dataset.playerName || "")));
+    });
+    searchInput?.addEventListener("input", updateFilter);
+    searchInput?.addEventListener("keydown", (event) => {
+      if (event.key !== "Enter") return;
+      const firstVisible = rows.find((row) => !row.hidden);
+      if (!firstVisible) return;
+      event.preventDefault();
+      close(_normalizeQuizPlayerName(firstVisible.dataset.playerName || ""));
+    });
+    overlay.querySelector(".custom-modal-cancel")?.addEventListener("click", () => close(null));
+    overlay.addEventListener("click", (event) => {
+      if (event.target === overlay) close(null);
+    });
+    overlay.addEventListener("keydown", (event) => {
+      if (event.key === "Escape") {
+        event.preventDefault();
+        close(null);
+      }
+    });
+
+    if (typeof trapFocus === "function") trapFocus(overlay);
+    requestAnimationFrame(() => overlay.classList.add("visible"));
+    setTimeout(() => searchInput?.focus(), 0);
+  });
+}
+
 async function _coachPromptRewardPlayer(defaultName = "") {
   const roster = _getQuizRosterPlayers();
-  if (roster.length && typeof showListPicker === "function") {
-    const defaultPlayer = _getQuizRosterPlayerByName(defaultName);
-    const items = roster
-      .map((player) => ({
-        label: player.name,
-        sublabel: _formatQuizRosterMeta(player) || "Roster player",
-        value: player.name,
-        recommended: defaultPlayer && player.id === defaultPlayer.id,
-        ariaLabel: `${player.name} ${_formatQuizRosterMeta(player)}`,
-      }))
-      .sort((a, b) => Number(b.recommended) - Number(a.recommended) || a.label.localeCompare(b.label));
-    const picked = await showListPicker("Pick from the active roster so rewards attach to the right player account.", items, {
-      title: "Award Roster Player",
-      icon: "👤",
-    });
-    return picked === null ? null : _normalizeQuizPlayerName(picked);
+  if (roster.length) {
+    return _showCoachRosterRewardPicker(defaultName);
   }
-  if (roster.length && typeof showListPicker !== "function") return null;
   if (typeof showModal === "function") {
     await showModal("Add players to the active roster first, then assign stickers and points from that roster.", {
       title: "Roster Required",

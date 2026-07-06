@@ -100,6 +100,7 @@ function restoreTeamSettingsViewState(state) {
 function buildTeamSettingsRosterSummary(roster) {
   if (!roster.length) return "No roster loaded yet.";
   const positionCounts = new Map();
+  const linkedCount = roster.filter((player) => player.accountUsername).length;
   roster.forEach((player) => {
     const key = String(player.position || "UNASSIGNED").trim() || "UNASSIGNED";
     positionCounts.set(key, (positionCounts.get(key) || 0) + 1);
@@ -109,7 +110,54 @@ function buildTeamSettingsRosterSummary(roster) {
     .slice(0, 3)
     .map(([position, count]) => `${position} ${count}`)
     .join(" | ");
-  return `${formatTeamCountLabel(roster.length, "player")} | ${topPositions}`;
+  return `${formatTeamCountLabel(roster.length, "player")} | ${formatTeamCountLabel(linkedCount, "linked account")} | ${topPositions}`;
+}
+
+function getTeamRosterHealth(roster) {
+  const accountCounts = new Map();
+  const missingPosition = [];
+  const unlinked = [];
+  roster.forEach((player) => {
+    const account = String(player.accountUsername || "").trim().toLowerCase();
+    if (account) accountCounts.set(account, (accountCounts.get(account) || 0) + 1);
+    if (!account) unlinked.push(player);
+    if (!String(player.position || "").trim()) missingPosition.push(player);
+  });
+  const duplicateAccounts = [...accountCounts.entries()]
+    .filter(([, count]) => count > 1)
+    .map(([account]) => account);
+  return {
+    total: roster.length,
+    linked: roster.length - unlinked.length,
+    unlinked,
+    missingPosition,
+    duplicateAccounts,
+  };
+}
+
+function buildTeamRosterHealthMarkup(roster) {
+  if (!roster.length) {
+    return `
+      <span class="team-roster-health-chip team-roster-health-chip--empty">No active roster yet</span>
+      <span class="team-roster-health-copy">Add players here first. Quiz rewards and stickers will pull from this roster.</span>
+    `;
+  }
+  const health = getTeamRosterHealth(roster);
+  const linkedState = health.unlinked.length ? "warning" : "good";
+  const duplicateState = health.duplicateAccounts.length ? "danger" : "good";
+  const positionState = health.missingPosition.length ? "warning" : "good";
+  return `
+    <span class="team-roster-health-chip team-roster-health-chip--${linkedState}">
+      ${escapeHtml(`${health.linked}/${health.total} linked`)}
+    </span>
+    <span class="team-roster-health-chip team-roster-health-chip--${duplicateState}">
+      ${health.duplicateAccounts.length ? escapeHtml(`${health.duplicateAccounts.length} duplicate login${health.duplicateAccounts.length === 1 ? "" : "s"}`) : "Unique logins"}
+    </span>
+    <span class="team-roster-health-chip team-roster-health-chip--${positionState}">
+      ${health.missingPosition.length ? escapeHtml(`${health.missingPosition.length} missing POS`) : "Positions set"}
+    </span>
+    <span class="team-roster-health-copy">Use the login column to connect each player account to the roster name shown on leaderboards.</span>
+  `;
 }
 
 function buildTeamSettingsPackagesSummary(packages) {
@@ -241,6 +289,7 @@ function renderTeamSettings() {
   const rosterBadge = document.getElementById("teamRosterCountBadge");
   const packagesBadge = document.getElementById("teamPackagesCountBadge");
   const swapGroupsBadge = document.getElementById("teamSwapGroupsCountBadge");
+  const rosterHealth = document.getElementById("teamRosterHealth");
   const rosterSummary = document.getElementById("teamRosterSummary");
   const packagesSummary = document.getElementById("teamPackagesSummary");
   const swapGroupsSummary = document.getElementById("teamSwapGroupsSummary");
@@ -270,6 +319,7 @@ function renderTeamSettings() {
     swapGroupsBadge.textContent = `${formatTeamCountLabel(swapGroups.length, "preset")} | ${formatTeamCountLabel(totalSwapAssignments, "slot")} | ${formatTeamCountLabel(totalSwapBackups, "backup")}`;
   }
   if (rosterSummary) rosterSummary.textContent = buildTeamSettingsRosterSummary(roster);
+  if (rosterHealth) rosterHealth.innerHTML = buildTeamRosterHealthMarkup(roster);
   if (packagesSummary) packagesSummary.textContent = buildTeamSettingsPackagesSummary(packages);
   if (swapGroupsSummary) swapGroupsSummary.textContent = buildTeamSettingsSwapSummary(swapGroups);
   const renderAssignmentRow = (

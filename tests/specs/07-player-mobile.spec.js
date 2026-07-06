@@ -994,6 +994,16 @@ test.describe("Player mobile experience", () => {
     await expect(setup).toContainText("Film Junkie");
     await expect(setup).toContainText("Watched the install");
     await expect(setup.getByRole("button", { name: /Custom Sticker/i })).toBeVisible();
+    await setup.getByRole("button", { name: /Award Question/i }).click();
+    const rosterPicker = page.locator(".coach-roster-picker-modal");
+    await expect(rosterPicker).toBeVisible();
+    await expect(rosterPicker).toContainText("Search the active roster");
+    await rosterPicker.getByLabel(/Search active roster players/i).fill("marco12");
+    await expect(rosterPicker.locator('[data-player-name="Marco"]')).toBeVisible();
+    await expect(rosterPicker.locator('[data-player-name="Lucas"]')).toBeHidden();
+    await expect(rosterPicker).not.toContainText("Outside");
+    await rosterPicker.getByRole("button", { name: /Cancel/i }).click();
+    await expect(rosterPicker).toBeHidden();
     await expect(setup).toContainText("Weak positions");
     await expect(setup).toContainText("Q");
     await expect(setup).toContainText("Weak question types");
