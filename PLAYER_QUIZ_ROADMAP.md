@@ -1,12 +1,20 @@
 # Player Quiz Roadmap
 
+## Current Status
+
+- Local player Quiz Center is usable for Practice Script and Game Plan quizzes.
+- Player leaderboard is available from the player bottom nav and can launch quizzes.
+- Coach/admin Set Up Quizzes page exists with readiness, preview, rewards, local leaderboard review, custom helmet stickers, and roster-linked reward assignment.
+- Local scoring is intentionally paced: a few questions should not hit the 1000-point weekly standard.
+- Remaining work is split into local polish and server-backed team-wide persistence.
+
 ## Product Contract
 
 - [x] Define quiz as its own player workflow, not just a button inside Practice.
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
 - [x] Link local quiz identity to the active team roster through a roster account username field.
-- [ ] Add coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local reward staging exists; formal settings still need controls.
-- [ ] Add a server-backed attempts API so leaderboards can aggregate across all player accounts.
+- [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules.
+- [ ] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
 
 ## Player Quiz Center
 
@@ -23,9 +31,10 @@
 - [x] Track quiz source type and selected position inside the runner.
 - [x] Prioritize responsibility questions: "On this play, what is your responsibility?"
 - [x] Add play-from-rule questions: "Which play has you kick the EMLOS?"
-- [ ] Add diagram-identification questions when rules are missing.
-- [ ] Add smart diagram title redaction/blur as an experiment behind one helper.
 - [x] Add source-aware fallback rules so thin scripts/game plans still produce useful quizzes.
+- [ ] Add diagram-identification questions when rules are missing.
+- [ ] Add smart diagram title redaction/blur behind one helper before diagram-identification questions ship broadly.
+- [ ] Add wrong-answer review cards that show the diagram, correct rule, and coach note after an answer.
 
 ## Scoring And Goals
 
@@ -48,16 +57,19 @@
 - [x] Build coach/admin leaderboard view with week and season toggles. Local weekly reward totals now appear on Set Up Quizzes.
 - [x] Include active roster players in the local leaderboard even before they score.
 - [x] Show roster number, position, linked login, rank, tier, attempts, and sticker detail when opening a player.
-- [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
 - [ ] Add achievements/stars above the 1000-point goal.
+- [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
+- [ ] Add player profile detail modal with season trend, sticker history, best quiz, weak areas, and recent activity.
 
 ## Coach/Admin Workflow
 
-- [ ] Add quiz controls to saved Practice Script publishing.
-- [ ] Add quiz controls to Game Plan publishing.
 - [x] Add coach/admin "Set Up Quizzes" nav page for customization, readiness, and leaderboard review.
 - [x] Add coach preview mode for each source and position.
 - [x] Add player attempt review with weak-position and weak-rule summaries.
+- [ ] Add quiz controls to saved Practice Script publishing.
+- [ ] Add quiz controls to Game Plan publishing.
+- [ ] Add a settings panel for weekly goal, scoring weights, bonus thresholds, tier names, reward caps, and enabled question types.
+- [ ] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
 
 ## Learning Readiness
 
@@ -71,9 +83,10 @@
 
 - [x] Define weekly points for asking questions, answering teammates, and coach-marked helpful answers.
 - [x] Restrict local coach point awards to active roster players so names stay clean.
+- [x] Include question points in week and season leaderboard totals with a visible source breakdown.
 - [ ] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers.
 - [ ] Add coach controls for gifting question/answer points from the discussion workflow. Coach staging controls exist; discussion-thread affordances still need wiring.
-- [x] Include question points in week and season leaderboard totals with a visible source breakdown.
+- [ ] Add question/answer reward history to the player profile detail modal.
 
 ## Helmet Stickers
 
@@ -83,6 +96,8 @@
 - [x] Add coach post-practice award flow with optional notes and practice/game context. Local staging flow added.
 - [x] Let teams customize sticker names, descriptions, colors, and icons locally.
 - [x] Restrict sticker awards to active roster players so awards attach to the right profile.
+- [ ] Add edit/delete controls for custom sticker definitions.
+- [ ] Add sticker award history and revoke controls for coach/admin mistakes.
 
 ## Mobile Quiz UX
 
@@ -91,6 +106,8 @@
 - [x] Keep answer labels readable with long play calls and long responsibility rules.
 - [x] Add safe exit flow: Resume, Save & Close, or End Quiz.
 - [x] Make partial attempts visible in recent history without pretending they were completed.
+- [ ] Add a post-answer learning moment with tighter copy, correct answer, rule, and diagram.
+- [ ] Add a final quiz recap that calls out one strength and one fix-it area.
 
 ## Verification
 
@@ -99,3 +116,58 @@
 - [x] Add tests for responsibility-question generation.
 - [x] Add tests for local attempt scoring and badge thresholds.
 - [x] Run Chromium and WebKit mobile checks before each shipped quiz slice.
+- [ ] Add tests for roster-link validation and roster-only reward assignment.
+- [ ] Add tests for custom sticker create/edit/delete flows.
+- [ ] Add tests for server-backed leaderboard sync once APIs exist.
+
+## Remaining Milestones
+
+### Milestone 1 — Local Admin Controls
+
+- [ ] Build the Set Up Quizzes settings panel.
+- [ ] Persist quiz settings locally through `STORAGE_KEYS`.
+- [ ] Apply settings to scoring, question mix, weekly goal, bonus thresholds, and reward caps.
+- [ ] Add validation for bad settings and reset-to-default.
+- [ ] Add focused Playwright coverage for settings persistence and scoring effects.
+
+### Milestone 2 — Source Publishing Controls
+
+- [ ] Add quiz publish controls to saved Practice Script cards.
+- [ ] Add quiz publish controls to Game Plan boards.
+- [ ] Show player-facing eligibility: available, locked, thin, or coach-only.
+- [ ] Include completeness chips for diagrams, rules, notes, defense, and metadata.
+- [ ] Add tests that locked/thin sources do not appear as normal player quiz options.
+
+### Milestone 3 — Better Learning Loop
+
+- [ ] Add wrong-answer review cards after each answer.
+- [ ] Add diagram-identification questions with title redaction guarded behind a helper.
+- [ ] Add final recap with strengths, misses, suggested review source, and next quiz CTA.
+- [ ] Add player profile detail modal with reward history, stickers, weak areas, and trend.
+- [ ] Add mobile/WebKit screenshots for quiz answer, recap, leaderboard, and profile detail.
+
+### Milestone 4 — Discussion Rewards
+
+- [ ] Add coach/admin reward actions directly to player questions and answers.
+- [ ] Require coach approval before question/answer points affect leaderboard totals.
+- [ ] Add daily/weekly reward caps and clear warnings when caps are reached.
+- [ ] Show reward history on player leaderboard detail.
+- [ ] Add tests for approval, cap enforcement, and history display.
+
+### Milestone 5 — Cloudflare Team Leaderboard
+
+- [ ] Add server-backed player quiz attempts storage.
+- [ ] Add server-backed reward events and helmet stickers storage.
+- [ ] Sync local attempts/rewards/stickers to the team account.
+- [ ] Merge local/offline results without duplicate attempts.
+- [ ] Make leaderboard rankings reflect all player accounts, not only one device.
+- [ ] Add deploy verification and end-to-end tests against local/mock API paths.
+
+## Definition Of Done
+
+- Player can start, leave, resume, finish, and review quizzes without losing progress.
+- Coach can control what quiz sources are eligible and can see readiness before players use them.
+- Coach rewards only attach to active roster players.
+- Leaderboard shows weekly and season rank, points, tiers, streaks, stickers, and meaningful player detail.
+- Points pace supports the weekly goal: roughly 15-20 minutes across several days should matter more than one short burst.
+- Every shipped slice passes syntax checks, static UI audit strict gate, Chromium mobile, and WebKit mobile focused coverage.
