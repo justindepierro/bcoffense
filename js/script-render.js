@@ -1491,7 +1491,7 @@ const PLAYER_QUIZ_DEFAULT_SETTINGS = {
   giftPoints: PLAYER_QUIZ_REWARD_POINT_DEFAULTS.gift,
   dailyRewardCap: 125,
   weeklyRewardCap: 350,
-  enabledQuestionTypes: ["responsibility", "play_from_rule", "call"],
+  enabledQuestionTypes: ["responsibility", "play_from_rule", "diagram", "call"],
 };
 const DEFAULT_PLAYER_HELMET_STICKER_TYPES = [
   { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green", description: "Caught the ball, finished the rep, or protected possession." },
@@ -1547,7 +1547,7 @@ function _normalizePlayerQuizSettings(raw = {}) {
   const src = raw && typeof raw === "object" ? raw : {};
   const defaults = PLAYER_QUIZ_DEFAULT_SETTINGS;
   const enabled = Array.isArray(src.enabledQuestionTypes)
-    ? src.enabledQuestionTypes.filter((type) => ["responsibility", "play_from_rule", "call"].includes(type))
+    ? src.enabledQuestionTypes.filter((type) => ["responsibility", "play_from_rule", "diagram", "call"].includes(type))
     : defaults.enabledQuestionTypes;
   return {
     weeklyGoal: _clampQuizNumber(src.weeklyGoal, defaults.weeklyGoal, 250, 5000, { integer: true }),
@@ -2805,7 +2805,7 @@ function _renderCoachQuizQuestionPreview(source) {
     ? "Players can match a responsibility rule back to the right call."
     : "Needs player rules plus at least 2 distinct calls.";
   const diagramNote = preview.playsWithDiagram
-    ? "Diagram ID questions are staged until title redaction is enabled."
+    ? "Redacted diagram questions can fill in when player rules are missing."
     : "Add diagrams before visual questions can work.";
   return `
     <div class="coach-quiz-question-preview">
@@ -2817,7 +2817,7 @@ function _renderCoachQuizQuestionPreview(source) {
         ${_coachQuizPreviewRow("Responsibility", preview.responsibilityReady, responsibilityNote, preview.responsibilityReady ? "ready" : "needs")}
         ${_coachQuizPreviewRow("Rule → Play", preview.playFromRuleReady, ruleToPlayNote, preview.playFromRuleReady ? "ready" : "needs")}
         ${_coachQuizPreviewRow("Call ID", preview.callIdReady, "Fallback for thin sources; works with distinct calls.", preview.callIdReady ? "ready" : "needs")}
-        ${_coachQuizPreviewRow("Diagram ID", preview.playsWithDiagram, diagramNote, preview.playsWithDiagram ? "planned" : "needs")}
+        ${_coachQuizPreviewRow("Diagram ID", preview.playsWithDiagram, diagramNote, preview.playsWithDiagram ? "ready" : "needs")}
       </div>
     </div>
   `;
@@ -3008,6 +3008,7 @@ function _renderCoachQuizSettingsPanel(settings = _getPlayerQuizSettings()) {
       <div class="coach-quiz-question-type-settings">
         ${toggle("coachQuizTypeResponsibility", "Responsibility", "responsibility", "Player matches their rule on a known call.")}
         ${toggle("coachQuizTypeRuleToPlay", "Rule to Play", "play_from_rule", "Player sees a rule and picks the call.")}
+        ${toggle("coachQuizTypeDiagram", "Diagram ID", "diagram", "Player sees a redacted diagram and picks the call.")}
         ${toggle("coachQuizTypeCall", "Call ID", "call", "Fallback that keeps thin sources usable.")}
       </div>
       <div class="coach-quiz-settings-actions">
@@ -3428,6 +3429,7 @@ function coachSaveQuizSettings() {
   const enabledQuestionTypes = [
     ["coachQuizTypeResponsibility", "responsibility"],
     ["coachQuizTypeRuleToPlay", "play_from_rule"],
+    ["coachQuizTypeDiagram", "diagram"],
     ["coachQuizTypeCall", "call"],
   ]
     .filter(([id]) => document.getElementById(id)?.checked)
@@ -4194,7 +4196,7 @@ function _quizUniqueChoices(items, getLabel) {
 
 function _buildQuizQuestion(item) {
   const position = _getQuizPosition();
-  const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || ["responsibility", "play_from_rule", "call"]);
+  const enabledTypes = new Set(_getPlayerQuizSettings().enabledQuestionTypes || ["responsibility", "play_from_rule", "diagram", "call"]);
   const positionRule = _quizCleanText(position?.key ? item.play[position.key] : "");
   const rulePool = _quizUniqueChoices(
     _quizPlays.filter((candidate) => candidate?.play && candidate.play !== item.play),
@@ -4205,6 +4207,7 @@ function _buildQuizQuestion(item) {
     (candidate) => _quizPlainCall(candidate.play),
   );
   const positionLabel = position?.label || "your";
+  const diagramUrl = _quizDiagramUrl(item.play);
 
   if (enabledTypes.has("responsibility") && positionRule && rulePool.length >= 3 && _quizIndex % 3 !== 1) {
     return {
@@ -4224,6 +4227,18 @@ function _buildQuizQuestion(item) {
       detailLabel: `${positionLabel} Rule`,
       detailValue: positionRule,
       rule: positionRule,
+      position,
+    };
+  }
+
+  if (enabledTypes.has("diagram") && !positionRule && diagramUrl && callPool.length >= 1) {
+    return {
+      type: "diagram",
+      prompt: "What play is this diagram?",
+      detailLabel: "",
+      detailValue: "",
+      diagramUrl,
+      rule: "",
       position,
     };
   }
@@ -4308,6 +4323,7 @@ function _quizQuestionTypeLabel(type) {
   const labels = {
     responsibility: "Responsibility",
     play_from_rule: "Rule to Play",
+    diagram: "Diagram ID",
     call: "Call ID",
   };
   return labels[type] || "Quiz";
@@ -4337,6 +4353,21 @@ function _quizDiagramUrl(play) {
     return window.playImages.urlForPlay(play) || "";
   }
   return "";
+}
+
+function _renderQuizRedactedDiagram(play, diagramUrl = _quizDiagramUrl(play)) {
+  if (!diagramUrl) return "";
+  const label = _quizPlainCall(play);
+  return `
+    <figure class="sq-diagram-prompt" aria-label="Redacted play diagram">
+      <div class="sq-diagram-prompt__stage">
+        <img src="${escapeAttr(diagramUrl)}" alt="Redacted diagram for quiz question" loading="lazy">
+        <span class="sq-diagram-redaction-band" aria-hidden="true"></span>
+      </div>
+      <figcaption>Top title band hidden for quiz</figcaption>
+      <span class="sr-only">Diagram for ${escapeHtml(label)} with title area redacted.</span>
+    </figure>
+  `;
 }
 
 function _renderQuizWrongReview(item, answer) {
@@ -4962,6 +4993,9 @@ function renderScriptQuizPlay() {
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
   const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   const detailValue = _quizCleanText(question.detailValue);
+  const diagramPromptHtml = question.type === "diagram"
+    ? _renderQuizRedactedDiagram(play, question.diagramUrl)
+    : "";
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
   const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
@@ -4983,9 +5017,10 @@ function renderScriptQuizPlay() {
       <span class="sq-game-pill">Score ${_quizScore}</span>
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
-      <span class="sq-game-pill">${escapeHtml(question.type === "responsibility" ? "Rule Match" : question.type === "play_from_rule" ? "Rule to Play" : "Call ID")}</span>
+      <span class="sq-game-pill">${escapeHtml(question.type === "responsibility" ? "Rule Match" : question.type === "play_from_rule" ? "Rule to Play" : question.type === "diagram" ? "Diagram ID" : "Call ID")}</span>
     </div>` : ""}
     <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
+    ${diagramPromptHtml}
     ${detailValue ? `
     <div class="sq-scenario-block sq-scenario-block--quiz-detail">
       <div class="sq-scenario-label">${escapeHtml(question.detailLabel)}</div>

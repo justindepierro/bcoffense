@@ -32,8 +32,8 @@
 - [x] Prioritize responsibility questions: "On this play, what is your responsibility?"
 - [x] Add play-from-rule questions: "Which play has you kick the EMLOS?"
 - [x] Add source-aware fallback rules so thin scripts/game plans still produce useful quizzes.
-- [ ] Add diagram-identification questions when rules are missing.
-- [ ] Add smart diagram title redaction/blur behind one helper before diagram-identification questions ship broadly.
+- [x] Add diagram-identification questions when rules are missing.
+- [x] Add smart diagram title redaction/blur behind one helper before diagram-identification questions ship broadly.
 - [x] Add wrong-answer review cards that show the diagram, correct rule, and coach note after an answer.
 
 ## Scoring And Goals
@@ -106,8 +106,8 @@
 - [x] Keep answer labels readable with long play calls and long responsibility rules.
 - [x] Add safe exit flow: Resume, Save & Close, or End Quiz.
 - [x] Make partial attempts visible in recent history without pretending they were completed.
-- [ ] Add a post-answer learning moment with tighter copy, correct answer, rule, and diagram.
-- [ ] Add a final quiz recap that calls out one strength and one fix-it area.
+- [x] Add a post-answer learning moment with tighter copy, correct answer, rule, and diagram.
+- [x] Add a final quiz recap that calls out one strength and one fix-it area.
 
 ## Verification
 
@@ -122,6 +122,7 @@
 - [x] Add tests for local quiz source publishing controls.
 - [x] Add tests for player-facing source readiness chips and thin-source status.
 - [x] Add tests for wrong-answer review cards and recap guidance.
+- [x] Add tests for diagram-identification questions and title redaction.
 - [ ] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
@@ -145,7 +146,7 @@
 ### Milestone 3 — Better Learning Loop
 
 - [x] Add wrong-answer review cards after each answer.
-- [ ] Add diagram-identification questions with title redaction guarded behind a helper.
+- [x] Add diagram-identification questions with title redaction guarded behind a helper.
 - [x] Add final recap with strengths, misses, suggested review source, and next quiz CTA.
 - [ ] Add player profile detail modal with reward history, stickers, weak areas, and trend.
 - [ ] Add mobile/WebKit screenshots for quiz answer, recap, leaderboard, and profile detail.

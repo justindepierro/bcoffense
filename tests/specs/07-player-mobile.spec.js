@@ -475,6 +475,81 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("uses redacted diagram identification when player rules are missing", async ({ page }) => {
+    await login(page, { role: "player", username: "player" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      storageManager.set(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, {
+        enabledQuestionTypes: ["diagram", "call"],
+      });
+      script = [
+        {
+          personnel: "11",
+          formation: "Trips Rt",
+          play: "Buck Sweep",
+          preferredDown: "1",
+          preferredDistance: "Medium",
+        },
+        {
+          personnel: "10",
+          formation: "Doubles",
+          play: "Verts",
+          preferredDown: "3",
+          preferredDistance: "Long",
+        },
+        {
+          personnel: "12",
+          formation: "Wing Lt",
+          play: "Power",
+          preferredDown: "2",
+          preferredDistance: "Short",
+        },
+      ];
+      const canvas = document.createElement("canvas");
+      canvas.width = 480;
+      canvas.height = 300;
+      const ctx = canvas.getContext("2d");
+      ctx.fillStyle = "#ffffff";
+      ctx.fillRect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "#111827";
+      ctx.font = "bold 30px Arial";
+      ctx.fillText("TRIPS RT BUCK SWEEP", 28, 48);
+      ctx.strokeStyle = "#1d4ed8";
+      ctx.lineWidth = 8;
+      ctx.beginPath();
+      ctx.moveTo(72, 214);
+      ctx.bezierCurveTo(160, 96, 305, 100, 408, 184);
+      ctx.stroke();
+      const diagramDataUrl = canvas.toDataURL("image/png");
+      const originalGetPlayImageUrl = window.getPlayImageUrl;
+      window.getPlayImageUrl = (play) => (
+        play && play.play === "Buck Sweep"
+          ? diagramDataUrl
+          : (typeof originalGetPlayImageUrl === "function" ? originalGetPlayImageUrl(play) : "")
+      );
+      startScriptQuiz({ positionKey: "respQ", title: "Diagram Quiz" });
+    });
+
+    const quiz = page.locator("#scriptQuizOverlay");
+    await expect(quiz).toBeVisible();
+    await expect(quiz.getByText("What play is this diagram?")).toBeVisible();
+    await expect(quiz.locator(".sq-game-pill").filter({ hasText: "Diagram ID" })).toBeVisible();
+    await expect(quiz.locator(".sq-diagram-prompt img")).toBeVisible();
+    await expect(quiz.locator(".sq-diagram-redaction-band")).toBeVisible();
+    await expect(quiz.locator(".sq-diagram-prompt")).toContainText("Top title band hidden for quiz");
+    await expect(quiz.locator(".script-quiz-choice")).toHaveCount(3);
+    await quiz.getByRole("button", { name: /Buck Sweep/i }).click();
+    await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
+    await expect.poll(() => page.evaluate(() => {
+      const item = Array.from(_quizAnswers.values()).at(-1);
+      return item?.questionType || "";
+    })).toBe("diagram");
+    await quiz.getByRole("button", { name: /Close quiz/i }).click();
+    await quiz.getByRole("button", { name: /Save & Close/i }).click();
+    await expect(quiz).toBeHidden();
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("opens every core player page without staff controls or overflow", async ({ page }) => {
     await page.route("**/api/questions/mine?**", async (route) => {
       await route.fulfill({
@@ -1020,6 +1095,7 @@ test.describe("Player mobile experience", () => {
     await setup.locator("#coachQuizWeeklyRewardCap").fill("200");
     await setup.locator("#coachQuizTypeResponsibility").uncheck();
     await setup.locator("#coachQuizTypeRuleToPlay").uncheck();
+    await setup.locator("#coachQuizTypeDiagram").uncheck();
     await setup.getByRole("button", { name: /Save Settings/i }).click();
 
     await expect.poll(() => page.evaluate(() => storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SETTINGS, null))).toMatchObject({
