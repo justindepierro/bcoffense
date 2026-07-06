@@ -578,7 +578,7 @@ test.describe("Player mobile experience", () => {
     await expect(quizHub.getByRole("heading", { name: /Choose your challenge/i })).toBeVisible();
     await expect(quizHub.getByRole("button", { name: /^Q$/i })).toHaveClass(/is-active/);
     await expect(quizHub.getByRole("button", { name: /Start Script Quiz/i })).toBeVisible();
-    await expect(quizHub.getByRole("button", { name: /Start Game Plan Quiz/i })).toBeVisible();
+    await expect(quizHub.getByRole("button", { name: /No Game Plan Quiz/i })).toBeDisabled();
     await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText("Friday Walkthrough");
     await expect(quizHub.locator("#playerQuizScriptPicker")).toContainText("2 plays");
     await expect(quizHub.locator("#playerQuizScriptPicker")).not.toContainText(/Player ready|Close|Needs work|Thin|\d+\s*\/\s*100/);
@@ -616,6 +616,10 @@ test.describe("Player mobile experience", () => {
         completed: false,
         dateKey,
         weekKey,
+        questionBreakdown: {
+          responsibility: { total: 4, correct: 3, wrong: 1 },
+          call: { total: 2, correct: 2, wrong: 0 },
+        },
       }, {
         id: "mobile-prior-quiz",
         player: "player",
@@ -631,6 +635,9 @@ test.describe("Player mobile experience", () => {
         completed: true,
         dateKey: previousDateKey,
         weekKey: previousWeekKey,
+        questionBreakdown: {
+          diagram: { total: 4, correct: 4, wrong: 0 },
+        },
       }]);
       storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
         { id: "reward-q", player: "player", type: "question", points: 25, dateKey, weekKey },
@@ -647,6 +654,7 @@ test.describe("Player mobile experience", () => {
         color: "blue",
         description: "Handled the assignment without needing extra coaching.",
         note: "Clean checks all week.",
+        dateKey,
         weekKey,
       }]);
     });
@@ -669,6 +677,28 @@ test.describe("Player mobile experience", () => {
     await expect(page.locator("#playerLeaderboardPage")).toContainText("@player");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Do Your Job");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Handled the assignment");
+    await page.locator("#playerLeaderboardPage").getByRole("button", { name: /Lucas/i }).click();
+    const profile = page.locator("#playerLeaderboardProfileOverlay");
+    await expect(profile).toBeVisible();
+    await expect(profile).toContainText("Player profile");
+    await expect(profile).toContainText("Lucas");
+    await expect(profile).toContainText("#7");
+    await expect(profile).toContainText("QB");
+    await expect(profile).toContainText("@player");
+    await expect(profile).toContainText("Best quiz");
+    await expect(profile).toContainText("September Install");
+    await expect(profile).toContainText("Season trend");
+    await expect(profile).toContainText("Weak areas");
+    await expect(profile).toContainText("Responsibility");
+    await expect(profile).toContainText("Reward history");
+    await expect(profile).toContainText("Question");
+    await expect(profile).toContainText("Answer");
+    await expect(profile).toContainText("Gift");
+    await expect(profile).toContainText("Helmet stickers");
+    await expect(profile).toContainText("Do Your Job");
+    await expect(profile).toContainText("Recent activity");
+    await profile.getByRole("button", { name: /Close player profile/i }).click();
+    await expect(profile).toBeHidden();
     await page.locator("#playerLeaderboardPage").getByRole("button", { name: /^Season$/i }).click();
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season points and weekly pace");
     await expect(page.locator("#playerLeaderboardPage")).toContainText("Season board");

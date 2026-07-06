@@ -2400,7 +2400,24 @@ function _renderQuizLeaderRows(rows, player) {
     .join("");
 }
 
-function _renderPlayerLeaderboardDetail(player, summary) {
+function _quizEventTimestamp(event = {}) {
+  const raw = event.completedAt || event.savedAt || event.createdAt || event.awardedAt || event.date || event.dateKey || "";
+  const date = raw ? new Date(String(raw).includes("T") ? raw : `${raw}T12:00:00`) : null;
+  return date && !Number.isNaN(date.getTime()) ? date.getTime() : 0;
+}
+
+function _formatQuizProfileDate(event = {}) {
+  const key = _quizEventDateKey(event);
+  if (key) {
+    const date = new Date(`${key}T12:00:00`);
+    if (!Number.isNaN(date.getTime())) {
+      return date.toLocaleDateString([], { month: "short", day: "numeric" });
+    }
+  }
+  return event.weekKey ? `Week ${event.weekKey}` : "Recently";
+}
+
+function _getPlayerLeaderboardProfileData(player, summary) {
   const name = _normalizeQuizPlayerName(player || summary.player);
   const isSeason = _playerLeaderboardView === "season";
   const leaderboardRows = isSeason ? summary.seasonLeaderboardRows : summary.weeklyLeaderboardRows;
@@ -2411,25 +2428,89 @@ function _renderPlayerLeaderboardDetail(player, summary) {
   };
   const rosterPlayer = _getQuizRosterPlayerByName(name);
   const rosterMeta = _formatQuizRosterMeta(rosterPlayer);
-  const viewAttempts = summary.attempts.filter((attempt) => {
-    if (_quizPlayerNameFromAttempt(attempt, summary.player) !== name) return false;
-    return isSeason || attempt.weekKey === summary.weekKey;
-  });
-  const viewRewards = _getQuizRewardsForPlayer(name, isSeason ? "" : summary.weekKey);
-  const stickers = _getQuizStickersForPlayer(name).slice(-12).reverse();
+  const playerAttempts = summary.attempts.filter((attempt) => _quizPlayerNameFromAttempt(attempt, summary.player) === name);
+  const viewAttempts = playerAttempts.filter((attempt) => isSeason || attempt.weekKey === summary.weekKey);
+  const seasonRewards = _getQuizRewardsForPlayer(name);
+  const viewRewards = isSeason ? seasonRewards : seasonRewards.filter((event) => event.weekKey === summary.weekKey);
+  const stickers = _getQuizStickersForPlayer(name);
+  const viewStickers = stickers.filter((sticker) => isSeason || sticker.weekKey === summary.weekKey);
   const quizPoints = viewAttempts.reduce((sum, attempt) => sum + Number(attempt.totalPoints || 0), 0);
   const questionPoints = _sumQuizRewards(viewRewards, "question");
   const answerPoints = _sumQuizRewards(viewRewards, "answer");
   const giftPoints = _sumQuizRewards(viewRewards, "gift");
-  const detailLabel = isSeason ? "this season" : "this week";
-  const stickerHtml = stickers.length
+  const bestAttempt = playerAttempts
+    .slice()
+    .sort((a, b) => (
+      Number(b.percent || 0) - Number(a.percent || 0) ||
+      Number(b.totalPoints || 0) - Number(a.totalPoints || 0) ||
+      _quizEventTimestamp(b) - _quizEventTimestamp(a)
+    ))[0] || null;
+  const questionTotals = {};
+  playerAttempts.forEach((attempt) => _quizAddQuestionBreakdown(questionTotals, attempt.questionBreakdown || {}));
+  const weakAreas = Object.entries(questionTotals)
+    .map(([type, stats]) => ({
+      type,
+      label: _formatQuizQuestionType(type),
+      total: Number(stats.total || 0),
+      correct: Number(stats.correct || 0),
+      wrong: Number(stats.wrong || 0),
+      percent: stats.total ? Math.round((Number(stats.correct || 0) / Number(stats.total || 0)) * 100) : 0,
+    }))
+    .filter((item) => item.total > 0 && (item.percent < 85 || item.wrong > 0))
+    .sort((a, b) => a.percent - b.percent || b.wrong - a.wrong)
+    .slice(0, 4);
+  const weekTotals = new Map();
+  const addWeekPoints = (weekKey, points) => {
+    const key = String(weekKey || summary.weekKey || "Current");
+    weekTotals.set(key, (weekTotals.get(key) || 0) + Number(points || 0));
+  };
+  playerAttempts.forEach((attempt) => addWeekPoints(attempt.weekKey, attempt.totalPoints));
+  seasonRewards.forEach((event) => addWeekPoints(event.weekKey, event.points));
+  if (!weekTotals.size) weekTotals.set(summary.weekKey, 0);
+  const trend = Array.from(weekTotals.entries())
+    .sort(([a], [b]) => a.localeCompare(b))
+    .slice(-5)
+    .map(([weekKey, points]) => ({ weekKey, points: Math.round(points) }));
+  const trendMax = Math.max(1, ...trend.map((item) => item.points));
+  const recentActivity = [
+    ...playerAttempts.map((attempt) => ({ kind: "quiz", event: attempt, points: Number(attempt.totalPoints || 0) })),
+    ...seasonRewards.map((event) => ({ kind: event.type || "reward", event, points: Number(event.points || 0) })),
+    ...stickers.map((sticker) => ({ kind: "sticker", event: sticker, points: 0 })),
+  ].sort((a, b) => _quizEventTimestamp(b.event) - _quizEventTimestamp(a.event)).slice(0, 8);
+  return {
+    name,
+    isSeason,
+    row,
+    rosterPlayer,
+    rosterMeta,
+    playerAttempts,
+    viewAttempts,
+    viewRewards,
+    stickers,
+    viewStickers,
+    quizPoints,
+    questionPoints,
+    answerPoints,
+    giftPoints,
+    totalPoints: quizPoints + questionPoints + answerPoints + giftPoints,
+    detailLabel: isSeason ? "this season" : "this week",
+    bestAttempt,
+    weakAreas,
+    trend,
+    trendMax,
+    recentActivity,
+  };
+}
+
+function _renderPlayerLeaderboardStickerList(stickers, emptyText = "No helmet stickers yet.") {
+  return stickers.length
     ? stickers.map((sticker) => {
       const stickerType = _getPlayerHelmetStickerType(sticker.stickerKey, sticker.label);
       const description = String(sticker.description || stickerType?.description || sticker.note || "").trim();
       const title = [sticker.label || "Sticker", description, sticker.note ? `Coach note: ${sticker.note}` : ""].filter(Boolean).join(" - ");
       return `
         <span class="player-leaderboard-sticker player-leaderboard-sticker--${escapeAttr(sticker.color || stickerType?.color || "blue")}" title="${escapeAttr(title)}">
-          <b aria-hidden="true">${escapeHtml(sticker.icon || "🏅")}</b>
+          <b aria-hidden="true">${escapeHtml(sticker.icon || stickerType?.icon || "🏅")}</b>
           <span>
             <strong>${escapeHtml(sticker.label || stickerType?.label || "Sticker")}</strong>
             ${description ? `<small>${escapeHtml(description)}</small>` : ""}
@@ -2437,36 +2518,196 @@ function _renderPlayerLeaderboardDetail(player, summary) {
         </span>
       `;
     }).join("")
-    : `<span class="player-leaderboard-no-stickers">No helmet stickers yet.</span>`;
+    : `<span class="player-leaderboard-no-stickers">${escapeHtml(emptyText)}</span>`;
+}
+
+function _renderPlayerLeaderboardDetail(player, summary) {
+  const profile = _getPlayerLeaderboardProfileData(player, summary);
+  const stickers = profile.viewStickers.slice(-12).reverse();
   return `
-    <section class="player-leaderboard-detail" id="playerLeaderboardDetail" aria-label="${escapeAttr(name)} leaderboard detail">
+    <section class="player-leaderboard-detail" id="playerLeaderboardDetail" aria-label="${escapeAttr(profile.name)} leaderboard detail">
       <div class="player-leaderboard-section-head">
         <div>
-          <h3>${escapeHtml(name)}</h3>
-          ${rosterMeta ? `<p>${escapeHtml(rosterMeta)}</p>` : ""}
+          <h3>${escapeHtml(profile.name)}</h3>
+          ${profile.rosterMeta ? `<p>${escapeHtml(profile.rosterMeta)}</p>` : ""}
         </div>
-        <span>${Math.round(quizPoints + questionPoints + answerPoints + giftPoints)} pts ${escapeHtml(detailLabel)}</span>
+        <span>${Math.round(profile.totalPoints)} pts ${escapeHtml(profile.detailLabel)}</span>
       </div>
       <div class="player-leaderboard-profile-grid">
-        <span><strong>#${Math.round(row.rank || 1)}</strong><small>Rank</small></span>
-        <span><strong>${escapeHtml(row.tier || _getQuizTier(row.points || 0))}</strong><small>Tier</small></span>
-        <span><strong>${viewAttempts.length}</strong><small>Quiz tries</small></span>
+        <span><strong>#${Math.round(profile.row.rank || 1)}</strong><small>Rank</small></span>
+        <span><strong>${escapeHtml(profile.row.tier || _getQuizTier(profile.row.points || 0))}</strong><small>Tier</small></span>
+        <span><strong>${profile.viewAttempts.length}</strong><small>Quiz tries</small></span>
         <span><strong>${stickers.length}</strong><small>Stickers</small></span>
       </div>
       <div class="player-leaderboard-breakdown">
-        <span><strong>${Math.round(quizPoints)}</strong><small>Quiz</small></span>
-        <span><strong>${Math.round(questionPoints)}</strong><small>Questions</small></span>
-        <span><strong>${Math.round(answerPoints)}</strong><small>Answers</small></span>
-        <span><strong>${Math.round(giftPoints)}</strong><small>Gifted</small></span>
+        <span><strong>${Math.round(profile.quizPoints)}</strong><small>Quiz</small></span>
+        <span><strong>${Math.round(profile.questionPoints)}</strong><small>Questions</small></span>
+        <span><strong>${Math.round(profile.answerPoints)}</strong><small>Answers</small></span>
+        <span><strong>${Math.round(profile.giftPoints)}</strong><small>Gifted</small></span>
       </div>
-      <div class="player-leaderboard-stickers">${stickerHtml}</div>
+      <div class="player-leaderboard-stickers">${_renderPlayerLeaderboardStickerList(stickers)}</div>
     </section>
   `;
+}
+
+function _renderPlayerLeaderboardProfileModal(profile) {
+  const best = profile.bestAttempt;
+  const bestHtml = best
+    ? `
+      <article class="player-profile-card player-profile-card--best">
+        <span>Best quiz</span>
+        <strong>${escapeHtml(best.title || "Quiz")}</strong>
+        <p>${Math.round(Number(best.percent || 0))}% · ${Number(best.correct || 0)}/${Number(best.answered || 0)} right · ${Math.round(Number(best.totalPoints || 0))} pts</p>
+      </article>
+    `
+    : `
+      <article class="player-profile-card player-profile-card--best">
+        <span>Best quiz</span>
+        <strong>No attempts yet</strong>
+        <p>Start with a script or game plan quiz to build the profile.</p>
+      </article>
+    `;
+  const weakHtml = profile.weakAreas.length
+    ? profile.weakAreas.map((area) => `
+      <div class="player-profile-weak-row">
+        <strong>${escapeHtml(area.label)}</strong>
+        <span>${area.percent}%</span>
+        <small>${area.wrong} miss${area.wrong === 1 ? "" : "es"} on ${area.total} question${area.total === 1 ? "" : "s"}</small>
+      </div>
+    `).join("")
+    : `<div class="player-profile-empty">No weak trend yet. Keep stacking reps.</div>`;
+  const trendHtml = profile.trend.map((item) => `
+    <span class="player-profile-trend-bar" data-height="${Math.max(8, Math.round((item.points / profile.trendMax) * 100))}">
+      <i></i>
+      <b>${item.points}</b>
+      <small>${escapeHtml(item.weekKey.replace(/^\\d{4}-W/, "W"))}</small>
+    </span>
+  `).join("");
+  const rewardHistory = profile.viewRewards.slice().sort((a, b) => _quizEventTimestamp(b) - _quizEventTimestamp(a)).slice(0, 8);
+  const rewardHtml = rewardHistory.length
+    ? rewardHistory.map((event) => `
+      <div class="player-profile-history-row">
+        <strong>${escapeHtml(_formatQuizQuestionType(event.type || "reward"))}</strong>
+        <span>${Math.round(Number(event.points || 0))} pts</span>
+        <small>${escapeHtml(_formatQuizProfileDate(event))}${event.note ? ` · ${escapeHtml(event.note)}` : ""}</small>
+      </div>
+    `).join("")
+    : `<div class="player-profile-empty">No question or answer rewards ${escapeHtml(profile.detailLabel)}.</div>`;
+  const activityHtml = profile.recentActivity.length
+    ? profile.recentActivity.map((item) => {
+      const event = item.event || {};
+      let label = "Activity";
+      let detail = "";
+      if (item.kind === "quiz") {
+        label = event.completed === false ? "Ended quiz" : "Quiz";
+        detail = `${event.title || "Quiz"} · ${Number(event.correct || 0)}/${Number(event.answered || 0)} right`;
+      } else if (item.kind === "sticker") {
+        label = "Helmet sticker";
+        detail = `${event.icon || "🏅"} ${event.label || "Sticker"}${event.note ? ` · ${event.note}` : ""}`;
+      } else {
+        label = _formatQuizQuestionType(item.kind);
+        detail = `${Math.round(Number(item.points || 0))} points`;
+      }
+      return `
+        <div class="player-profile-activity-row">
+          <strong>${escapeHtml(label)}</strong>
+          <span>${item.points ? `${Math.round(item.points)} pts` : escapeHtml(_formatQuizProfileDate(event))}</span>
+          <small>${escapeHtml(detail)}</small>
+        </div>
+      `;
+    }).join("")
+    : `<div class="player-profile-empty">No recent profile activity.</div>`;
+  return `
+    <div class="player-leaderboard-profile-panel" id="playerLeaderboardProfilePanel" role="document">
+      <header class="player-profile-header">
+        <div>
+          <span class="player-leaderboard-kicker">Player profile</span>
+          <h2>${escapeHtml(profile.name)}</h2>
+          ${profile.rosterMeta ? `<p>${escapeHtml(profile.rosterMeta)}</p>` : ""}
+        </div>
+        <button type="button" class="modal-close" data-action="closePlayerLeaderboardProfile" aria-label="Close player profile">×</button>
+      </header>
+      <div class="player-profile-body">
+        <section class="player-profile-summary" aria-label="Player leaderboard summary">
+          <span><strong>#${Math.round(profile.row.rank || 1)}</strong><small>Rank</small></span>
+          <span><strong>${escapeHtml(profile.row.tier || _getQuizTier(profile.row.points || 0))}</strong><small>Tier</small></span>
+          <span><strong>${Math.round(profile.totalPoints)}</strong><small>Points ${escapeHtml(profile.detailLabel)}</small></span>
+          <span><strong>${profile.stickers.length}</strong><small>Stickers</small></span>
+        </section>
+        <section class="player-profile-grid">
+          ${bestHtml}
+          <article class="player-profile-card">
+            <span>Season trend</span>
+            <div class="player-profile-trend">${trendHtml}</div>
+          </article>
+          <article class="player-profile-card">
+            <span>Weak areas</span>
+            <div class="player-profile-weak-list">${weakHtml}</div>
+          </article>
+          <article class="player-profile-card">
+            <span>Reward history</span>
+            <div class="player-profile-history">${rewardHtml}</div>
+          </article>
+          <article class="player-profile-card player-profile-card--wide">
+            <span>Helmet stickers</span>
+            <div class="player-leaderboard-stickers">${_renderPlayerLeaderboardStickerList(profile.stickers.slice(-16).reverse(), "No helmet stickers yet.")}</div>
+          </article>
+          <article class="player-profile-card player-profile-card--wide">
+            <span>Recent activity</span>
+            <div class="player-profile-history">${activityHtml}</div>
+          </article>
+        </section>
+      </div>
+    </div>
+  `;
+}
+
+function openPlayerLeaderboardProfile(playerName) {
+  const summary = _summarizeQuizAttempts();
+  const profile = _getPlayerLeaderboardProfileData(playerName, summary);
+  let overlay = document.getElementById("playerLeaderboardProfileOverlay");
+  if (!overlay) {
+    overlay = document.createElement("div");
+    overlay.id = "playerLeaderboardProfileOverlay";
+    overlay.className = "player-leaderboard-profile-overlay";
+    overlay.dataset.action = "closePlayerLeaderboardProfileOverlay";
+    overlay.setAttribute("role", "dialog");
+    overlay.setAttribute("aria-modal", "true");
+    overlay.setAttribute("aria-label", "Player leaderboard profile");
+    document.body.appendChild(overlay);
+  }
+  setInnerHTML(overlay, _renderPlayerLeaderboardProfileModal(profile));
+  overlay.querySelectorAll(".player-profile-trend-bar").forEach((bar) => {
+    const height = Math.max(8, Math.min(100, Number(bar.dataset.height || 0)));
+    const fill = bar.querySelector("i");
+    if (fill) fill.style.height = `${height}%`;
+  });
+  overlay.hidden = false;
+  if (typeof openLayer === "function") {
+    openLayer(overlay, {
+      id: "player-leaderboard-profile",
+      scrollElement: "playerLeaderboardProfilePanel",
+      blocking: true,
+    });
+  } else if (typeof trapFocus === "function") {
+    trapFocus(overlay);
+  }
+  overlay.querySelector("[data-action='closePlayerLeaderboardProfile']")?.focus();
+}
+
+function closePlayerLeaderboardProfile() {
+  const overlay = document.getElementById("playerLeaderboardProfileOverlay");
+  if (!overlay) return;
+  if (typeof closeLayer === "function") {
+    closeLayer("player-leaderboard-profile");
+  }
+  overlay.hidden = true;
 }
 
 function openPlayerLeaderboardDetail(playerName) {
   _leaderboardSelectedPlayer = _normalizeQuizPlayerName(playerName);
   renderPlayerLeaderboardPage();
+  openPlayerLeaderboardProfile(_leaderboardSelectedPlayer);
 }
 
 function setPlayerLeaderboardView(view) {

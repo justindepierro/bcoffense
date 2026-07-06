@@ -59,7 +59,7 @@
 - [x] Show roster number, position, linked login, rank, tier, attempts, and sticker detail when opening a player.
 - [ ] Add achievements/stars above the 1000-point goal.
 - [ ] Move leaderboard data to Cloudflare-backed storage for real cross-player ranking.
-- [ ] Add player profile detail modal with season trend, sticker history, best quiz, weak areas, and recent activity.
+- [x] Add player profile detail modal with season trend, sticker history, best quiz, weak areas, and recent activity.
 
 ## Coach/Admin Workflow
 
@@ -86,7 +86,7 @@
 - [x] Include question points in week and season leaderboard totals with a visible source breakdown.
 - [ ] Prevent spam by capping question points per day/week and requiring coach approval for bonus answers. Local reward caps are in place; discussion approval still needs wiring.
 - [ ] Add coach controls for gifting question/answer points from the discussion workflow. Coach staging controls exist; discussion-thread affordances still need wiring.
-- [ ] Add question/answer reward history to the player profile detail modal.
+- [x] Add question/answer reward history to the player profile detail modal.
 
 ## Helmet Stickers
 
@@ -148,7 +148,8 @@
 - [x] Add wrong-answer review cards after each answer.
 - [x] Add diagram-identification questions with title redaction guarded behind a helper.
 - [x] Add final recap with strengths, misses, suggested review source, and next quiz CTA.
-- [ ] Add player profile detail modal with reward history, stickers, weak areas, and trend.
+- [x] Add player profile detail modal with reward history, stickers, weak areas, and trend.
+- [x] Add focused mobile/WebKit test coverage for opening the player leaderboard profile detail modal.
 - [ ] Add mobile/WebKit screenshots for quiz answer, recap, leaderboard, and profile detail.
 
 ### Milestone 4 — Discussion Rewards
