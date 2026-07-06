@@ -9349,6 +9349,136 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   text-transform: uppercase;
 }
 
+.coach-quiz-roster-health-panel {
+  display: grid;
+  gap: var(--space-md);
+  padding: var(--space-md);
+  border: 1px solid color-mix(in srgb, var(--color-info) 20%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-info) 5%, var(--color-surface)), var(--color-surface));
+}
+
+.coach-quiz-roster-health-summary {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-xs);
+}
+
+.coach-quiz-roster-health-summary span {
+  min-height: 66px;
+  display: grid;
+  place-items: center;
+  align-content: center;
+  gap: 2px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-body);
+  text-align: center;
+}
+
+.coach-quiz-roster-health-summary span.is-good {
+  border-color: color-mix(in srgb, var(--color-success) 35%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-success) 9%, var(--color-bg-body));
+}
+
+.coach-quiz-roster-health-summary span.is-warning {
+  border-color: color-mix(in srgb, var(--color-warning) 42%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-warning) 10%, var(--color-bg-body));
+}
+
+.coach-quiz-roster-health-summary span.is-danger {
+  border-color: color-mix(in srgb, var(--color-danger) 40%, var(--color-border-light));
+  background: color-mix(in srgb, var(--color-danger) 9%, var(--color-bg-body));
+}
+
+.coach-quiz-roster-health-summary strong {
+  color: var(--color-text);
+  font-size: var(--font-size-xl);
+  line-height: 1;
+}
+
+.coach-quiz-roster-health-summary small {
+  color: var(--color-text-muted);
+  font-size: 0.66rem;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.coach-quiz-roster-health-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-sm);
+}
+
+.coach-quiz-roster-health-grid article {
+  min-width: 0;
+  display: grid;
+  align-content: start;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: var(--color-surface);
+}
+
+.coach-quiz-roster-health-head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-sm);
+}
+
+.coach-quiz-roster-health-head strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.coach-quiz-roster-health-head span {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 900;
+}
+
+.coach-quiz-roster-health-row {
+  min-width: 0;
+  display: grid;
+  gap: 2px;
+  padding: var(--space-xs);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-primary) 5%, var(--color-bg-body));
+}
+
+.coach-quiz-roster-health-row strong,
+.coach-quiz-roster-health-row small {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.coach-quiz-roster-health-row strong {
+  color: var(--color-text);
+  font-size: var(--font-size-sm);
+  font-weight: 950;
+}
+
+.coach-quiz-roster-health-row small,
+.coach-quiz-roster-health-empty,
+.coach-quiz-roster-health-more {
+  color: var(--color-text-muted);
+  font-size: var(--font-size-xs);
+  font-weight: 800;
+}
+
+.coach-quiz-roster-health-empty,
+.coach-quiz-roster-health-more {
+  padding: var(--space-sm);
+  border-radius: var(--radius-sm);
+  background: var(--color-bg-light);
+  text-align: center;
+}
+
 .coach-quiz-leaderboard-panel {
   padding: var(--space-md);
   border: 1px solid color-mix(in srgb, var(--color-primary) 18%, var(--color-border-light));
@@ -10370,6 +10500,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   .coach-quiz-reward-panel,
   .coach-quiz-source-grid,
   .coach-quiz-metrics,
+  .coach-quiz-roster-health-summary,
+  .coach-quiz-roster-health-grid,
   .coach-quiz-leaderboard-toolbar,
   .coach-quiz-leaderboard-grid {
     grid-template-columns: 1fr;
@@ -10403,8 +10535,13 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
 @media (min-width: 481px) and (max-width: 900px) {
   .coach-quiz-reward-panel,
+  .coach-quiz-roster-health-grid,
   .coach-quiz-source-grid {
     grid-template-columns: 1fr;
+  }
+
+  .coach-quiz-roster-health-summary {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
   }
 
   .coach-quiz-leaderboard-grid {

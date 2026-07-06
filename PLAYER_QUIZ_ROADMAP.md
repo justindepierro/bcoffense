@@ -69,7 +69,7 @@
 - [x] Add quiz controls to saved Practice Script publishing.
 - [x] Add quiz controls to Game Plan publishing.
 - [x] Add a settings panel for weekly goal, scoring weights, bonus thresholds, reward caps, and enabled question types. Tier names remain fixed for now.
-- [ ] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
+- [x] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
 
 ## Learning Readiness
 
@@ -116,7 +116,7 @@
 - [x] Add tests for responsibility-question generation.
 - [x] Add tests for local attempt scoring and badge thresholds.
 - [x] Run Chromium and WebKit mobile checks before each shipped quiz slice.
-- [ ] Add tests for roster-link validation and roster-only reward assignment.
+- [x] Add tests for roster-link validation and roster-only reward assignment.
 - [x] Add tests for custom sticker edit/delete flows.
 - [x] Add tests for quiz settings persistence and scoring effects.
 - [x] Add tests for local quiz source publishing controls.

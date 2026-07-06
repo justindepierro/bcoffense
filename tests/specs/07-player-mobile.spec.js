@@ -1302,6 +1302,9 @@ test.describe("Player mobile experience", () => {
       storageManager.set(STORAGE_KEYS.TEAM_ROSTER, [
         { id: "roster-lucas", name: "Lucas", number: "7", position: "QB", positionGroup: "skill", accountUsername: "lucas7" },
         { id: "roster-marco", name: "Marco", number: "12", position: "H", positionGroup: "skill", accountUsername: "marco12" },
+        { id: "roster-noah", name: "Noah", number: "22", position: "X", positionGroup: "skill", accountUsername: "" },
+        { id: "roster-ty", name: "Ty", number: "3", position: "Z", positionGroup: "skill", accountUsername: "dup1" },
+        { id: "roster-taj", name: "Taj", number: "4", position: "Y", positionGroup: "skill", accountUsername: "dup1" },
       ]);
       storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKER_TYPES, [{
         key: "film-junkie",
@@ -1350,6 +1353,24 @@ test.describe("Player mobile experience", () => {
         dateKey,
         weekKey,
       }, {
+        id: "coach-unknown-attempt",
+        player: "Mystery Player",
+        sourceType: "script",
+        title: "Unlinked Attempt",
+        positionKey: "respZ",
+        positionLabel: "Z",
+        totalPoints: 80,
+        answered: 1,
+        correct: 1,
+        wrong: 0,
+        percent: 100,
+        completed: true,
+        questionBreakdown: {
+          call: { total: 1, correct: 1, wrong: 0 },
+        },
+        dateKey,
+        weekKey,
+      }, {
         id: "coach-season-q",
         player: "Lucas",
         sourceType: "script",
@@ -1372,10 +1393,12 @@ test.describe("Player mobile experience", () => {
       storageManager.set(STORAGE_KEYS.PLAYER_REWARD_EVENTS, [
         { id: "coach-reward-q", player: "Lucas", type: "question", points: 25, dateKey, weekKey },
         { id: "coach-reward-a", player: "Marco", type: "answer", points: 40, dateKey, weekKey },
+        { id: "coach-reward-unknown", player: "Ghost Login", type: "gift", points: 10, dateKey, weekKey },
         { id: "coach-reward-old", player: "Lucas", type: "gift", points: 100, dateKey: previousDateKey, weekKey: previousWeekKey },
       ]);
       storageManager.set(STORAGE_KEYS.PLAYER_HELMET_STICKERS, [
         { id: "coach-sticker", player: "Lucas", label: "Do Your Job", icon: "🧠", color: "blue", dateKey, weekKey },
+        { id: "coach-sticker-unknown", player: "Old Name", label: "Great Teammate", icon: "🤝", color: "green", dateKey, weekKey },
       ]);
     });
 
@@ -1385,6 +1408,17 @@ test.describe("Player mobile experience", () => {
     await expect(setup).toContainText("Week ");
     await expect(setup).toContainText("Lucas");
     await expect(setup).toContainText("525 pts");
+    await expect(setup).toContainText("Roster link health");
+    await expect(setup).toContainText("Linked accounts");
+    await expect(setup).toContainText("Unlinked roster");
+    await expect(setup).toContainText("Noah");
+    await expect(setup).toContainText("Duplicate logins");
+    await expect(setup).toContainText("@dup1");
+    await expect(setup).toContainText("Unknown activity");
+    await expect(setup).toContainText("Mystery Player");
+    await expect(setup).toContainText("Ghost Login");
+    await expect(setup).toContainText("Old Name");
+    await expect(setup).toContainText("No quiz activity");
     await expect(setup).toContainText("Film Junkie");
     await expect(setup).toContainText("Watched the install");
     await expect(setup.getByRole("button", { name: /Custom Sticker/i })).toBeVisible();
@@ -1411,6 +1445,12 @@ test.describe("Player mobile experience", () => {
     const rosterPicker = page.locator(".coach-roster-picker-modal");
     await expect(rosterPicker).toBeVisible();
     await expect(rosterPicker).toContainText("Search the active roster");
+    await expect(rosterPicker.locator('[data-player-name="Noah"]')).toBeVisible();
+    await expect(rosterPicker.locator('[data-player-name="Ty"]')).toBeVisible();
+    await expect(rosterPicker.locator('[data-player-name="Taj"]')).toBeVisible();
+    await expect(rosterPicker.locator('[data-player-name="Mystery Player"]')).toHaveCount(0);
+    await expect(rosterPicker.locator('[data-player-name="Ghost Login"]')).toHaveCount(0);
+    await expect(rosterPicker.locator('[data-player-name="Old Name"]')).toHaveCount(0);
     await rosterPicker.getByLabel(/Search active roster players/i).fill("marco12");
     await expect(rosterPicker.locator('[data-player-name="Marco"]')).toBeVisible();
     await expect(rosterPicker.locator('[data-player-name="Lucas"]')).toBeHidden();

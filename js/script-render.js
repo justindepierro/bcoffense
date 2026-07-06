@@ -2007,6 +2007,174 @@ function _formatQuizRosterMeta(player) {
   return bits.join(" · ");
 }
 
+function _buildCoachQuizRosterHealthSummary() {
+  const roster = _getQuizRosterPlayers();
+  const attempts = _getPlayerQuizAttempts();
+  const rewards = _getPlayerRewardEvents();
+  const stickers = _getPlayerHelmetStickers();
+  const linked = roster.filter((player) => _normalizeQuizIdentity(player.accountUsername));
+  const unlinked = roster.filter((player) => !_normalizeQuizIdentity(player.accountUsername));
+  const accountMap = new Map();
+  roster.forEach((player) => {
+    const account = _normalizeQuizIdentity(player.accountUsername);
+    if (!account) return;
+    if (!accountMap.has(account)) accountMap.set(account, []);
+    accountMap.get(account).push(player);
+  });
+  const duplicateAccounts = Array.from(accountMap.entries())
+    .filter(([, players]) => players.length > 1)
+    .map(([account, players]) => ({ account, players }));
+  const knownRosterIds = new Set();
+  roster.forEach((player) => {
+    [player.id, player.name, player.accountUsername, player.username].forEach((value) => {
+      const normalized = _normalizeQuizIdentity(value);
+      if (normalized) knownRosterIds.add(normalized);
+    });
+  });
+  const activeRosterNames = new Set();
+  const unknownMap = new Map();
+  const addKnownOrUnknown = (kind, rawName, event = {}) => {
+    const name = String(rawName || "").trim();
+    if (!name) return;
+    const rosterPlayer = _getQuizRosterPlayerByName(name);
+    if (rosterPlayer) {
+      activeRosterNames.add(_normalizeQuizIdentity(rosterPlayer.name));
+      return;
+    }
+    const key = _normalizeQuizIdentity(name);
+    if (!key || knownRosterIds.has(key)) return;
+    if (!unknownMap.has(key)) {
+      unknownMap.set(key, {
+        name,
+        attempts: 0,
+        rewards: 0,
+        stickers: 0,
+        points: 0,
+        latest: "",
+      });
+    }
+    const row = unknownMap.get(key);
+    if (kind === "attempt") {
+      row.attempts += 1;
+      row.points += Number(event.totalPoints || 0);
+    } else if (kind === "reward") {
+      row.rewards += 1;
+      row.points += Number(event.points || 0);
+    } else if (kind === "sticker") {
+      row.stickers += 1;
+    }
+    row.latest = _formatQuizProfileDate(event) || row.latest;
+  };
+  attempts.forEach((attempt) => addKnownOrUnknown("attempt", attempt.player, attempt));
+  rewards.forEach((event) => addKnownOrUnknown("reward", event.player, event));
+  stickers.forEach((sticker) => addKnownOrUnknown("sticker", sticker.player, sticker));
+  const inactive = roster.filter((player) => !activeRosterNames.has(_normalizeQuizIdentity(player.name)));
+  const unknownActivity = Array.from(unknownMap.values())
+    .sort((a, b) => (b.points - a.points) || a.name.localeCompare(b.name));
+  const issueCount = unlinked.length + duplicateAccounts.length + unknownActivity.length;
+  return {
+    roster,
+    attempts,
+    rewards,
+    stickers,
+    linked,
+    unlinked,
+    duplicateAccounts,
+    unknownActivity,
+    inactive,
+    issueCount,
+    status: roster.length ? (issueCount ? "warning" : "good") : "empty",
+  };
+}
+
+function _renderCoachQuizRosterHealthRows(items, emptyText, rowRenderer, limit = 6) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="coach-quiz-roster-health-empty">${escapeHtml(emptyText)}</div>`;
+  }
+  const visible = items.slice(0, limit).map(rowRenderer).join("");
+  const remaining = items.length > limit
+    ? `<div class="coach-quiz-roster-health-more">+${items.length - limit} more</div>`
+    : "";
+  return `${visible}${remaining}`;
+}
+
+function _renderCoachQuizRosterHealthPanel(summary = _buildCoachQuizRosterHealthSummary()) {
+  const statusText = summary.status === "good"
+    ? "Roster links look clean"
+    : summary.status === "empty"
+      ? "No roster loaded"
+      : `${summary.issueCount} issue${summary.issueCount === 1 ? "" : "s"} to clean up`;
+  const playerRow = (player) => `
+    <div class="coach-quiz-roster-health-row">
+      <strong>${escapeHtml(player.name)}</strong>
+      <small>${escapeHtml(_formatQuizRosterMeta(player) || "No linked login")}</small>
+    </div>
+  `;
+  const duplicateRow = (item) => `
+    <div class="coach-quiz-roster-health-row">
+      <strong>@${escapeHtml(item.account)}</strong>
+      <small>${escapeHtml(item.players.map((player) => player.name).join(" · "))}</small>
+    </div>
+  `;
+  const unknownRow = (item) => {
+    const parts = [];
+    if (item.attempts) parts.push(`${item.attempts} attempt${item.attempts === 1 ? "" : "s"}`);
+    if (item.rewards) parts.push(`${item.rewards} reward${item.rewards === 1 ? "" : "s"}`);
+    if (item.stickers) parts.push(`${item.stickers} sticker${item.stickers === 1 ? "" : "s"}`);
+    if (item.points) parts.push(`${Math.round(item.points)} pts`);
+    return `
+      <div class="coach-quiz-roster-health-row">
+        <strong>${escapeHtml(item.name)}</strong>
+        <small>${escapeHtml(parts.join(" · ") || "Activity")} · ${escapeHtml(item.latest || "Recently")}</small>
+      </div>
+    `;
+  };
+  return `
+    <section class="coach-quiz-setup-section coach-quiz-roster-health-panel">
+      <div class="coach-quiz-section-head">
+        <h3>Roster link health</h3>
+        <span>${summary.linked.length}/${summary.roster.length || 0} linked · ${escapeHtml(statusText)}</span>
+      </div>
+      <div class="coach-quiz-roster-health-summary">
+        <span class="${summary.linked.length ? "is-good" : ""}"><strong>${summary.linked.length}</strong><small>Linked accounts</small></span>
+        <span class="${summary.unlinked.length ? "is-warning" : "is-good"}"><strong>${summary.unlinked.length}</strong><small>Unlinked roster</small></span>
+        <span class="${summary.duplicateAccounts.length ? "is-danger" : "is-good"}"><strong>${summary.duplicateAccounts.length}</strong><small>Duplicate logins</small></span>
+        <span class="${summary.unknownActivity.length ? "is-danger" : "is-good"}"><strong>${summary.unknownActivity.length}</strong><small>Unknown activity</small></span>
+      </div>
+      <div class="coach-quiz-roster-health-grid">
+        <article>
+          <div class="coach-quiz-roster-health-head">
+            <strong>Unlinked roster</strong>
+            <span>Needs account</span>
+          </div>
+          ${_renderCoachQuizRosterHealthRows(summary.unlinked, "Every roster player has a linked login.", playerRow)}
+        </article>
+        <article>
+          <div class="coach-quiz-roster-health-head">
+            <strong>Duplicate logins</strong>
+            <span>Resolve before scoring</span>
+          </div>
+          ${_renderCoachQuizRosterHealthRows(summary.duplicateAccounts, "No duplicate roster logins.", duplicateRow)}
+        </article>
+        <article>
+          <div class="coach-quiz-roster-health-head">
+            <strong>Unknown activity</strong>
+            <span>Not on active roster</span>
+          </div>
+          ${_renderCoachQuizRosterHealthRows(summary.unknownActivity, "All quiz activity maps to roster players.", unknownRow)}
+        </article>
+        <article>
+          <div class="coach-quiz-roster-health-head">
+            <strong>No quiz activity</strong>
+            <span>Follow up</span>
+          </div>
+          ${_renderCoachQuizRosterHealthRows(summary.inactive, "Every roster player has quiz, question, or sticker activity.", playerRow)}
+        </article>
+      </div>
+    </section>
+  `;
+}
+
 function _getQuizPlayerName() {
   const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
   if (rosterPlayer?.name) return rosterPlayer.name;
@@ -3924,6 +4092,7 @@ function renderCoachQuizSetupPage() {
   const weeklyStickerEvents = stickers.filter((event) => event.weekKey === weekKey);
   const leaderboardSummary = _buildCoachQuizLeaderboardSummary();
   const quizSettings = _getPlayerQuizSettings();
+  const rosterHealthSummary = _buildCoachQuizRosterHealthSummary();
   if (!_leaderboardSelectedPlayer && leaderboardSummary.rows[0]?.name) {
     _leaderboardSelectedPlayer = leaderboardSummary.rows[0].name;
   }
@@ -3942,6 +4111,7 @@ function renderCoachQuizSetupPage() {
         </div>
       </section>
       ${_renderCoachQuizSettingsPanel(quizSettings)}
+      ${_renderCoachQuizRosterHealthPanel(rosterHealthSummary)}
       <section class="coach-quiz-reward-panel">
         <article>
           <span>Question points</span>
