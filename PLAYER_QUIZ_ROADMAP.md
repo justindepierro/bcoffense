@@ -29,6 +29,7 @@
 ## Scoring And Goals
 
 - [x] Add weighted point scoring: Script 1.0x, Game Plan 1.25x.
+- [x] Rebalance quiz scoring so 15-20 minutes earns roughly one third of the weekly goal instead of one short quiz hitting 1000+.
 - [x] Show the weekly 1000-point standard in the Quiz Center.
 - [x] Persist attempts locally as a staging layer.
 - [x] Award threshold badges: Honor Roll 85%, High Honor Roll 90%, Coaches List 95%.

@@ -7036,6 +7036,22 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-weight: 600;
   color: var(--color-text);
 }
+.sq-scenario-block--quiz-detail {
+  align-items: flex-start;
+  padding: var(--space-md);
+  border: 2px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border-light));
+  border-radius: var(--radius-md);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-primary) 12%, var(--color-bg-body)), var(--color-bg-body));
+}
+.sq-scenario-block--quiz-detail .sq-scenario-label {
+  color: var(--color-primary);
+}
+.sq-scenario-block--quiz-detail .sq-scenario-value {
+  font-size: var(--font-size-xl);
+  font-weight: 950;
+  line-height: 1.18;
+}
 .sq-situation {
   font-size: var(--font-size-lg);
   font-weight: 800;
@@ -7044,10 +7060,14 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   color: var(--color-danger);
 }
 .sq-scenario-hint {
-  margin-top: var(--space-md);
-  font-size: var(--font-size-lg);
-  font-weight: 700;
-  color: var(--color-text-muted);
+  margin-top: var(--space-sm);
+  padding: var(--space-sm) var(--space-md);
+  border-radius: var(--radius-md);
+  background: var(--color-primary);
+  color: var(--color-text-inverse);
+  font-size: var(--font-size-2xl);
+  font-weight: 950;
+  line-height: 1.08;
   text-align: center;
 }
 
@@ -9009,10 +9029,8 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
     padding: 5px 8px;
   }
 
-  .script-quiz-scenario--long-choices .sq-scenario-block--context,
-  .script-quiz-scenario--long-choices .sq-scenario-block--position,
-  .script-quiz-scenario--very-long-choices .sq-scenario-block--context,
-  .script-quiz-scenario--very-long-choices .sq-scenario-block--position,
+  .script-quiz-scenario--long-choices .sq-scenario-block--call-meta,
+  .script-quiz-scenario--very-long-choices .sq-scenario-block--call-meta,
   .script-quiz-scenario--very-long-choices .sq-scenario-block--defense,
   .script-quiz-scenario--very-long-choices .sq-scenario-block--situation {
     display: none;
@@ -9031,14 +9049,23 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
 
   .sq-scenario-hint {
     margin-top: 2px;
-    padding: 8px 10px;
+    padding: 10px 10px;
     border-radius: var(--radius-md);
-    border: 1px solid color-mix(in srgb, var(--color-primary) 28%, var(--color-border-light));
-    background: color-mix(in srgb, var(--color-primary) 10%, var(--color-bg-body));
-    color: var(--color-text);
-    font-size: var(--font-size-lg);
+    border: 1px solid color-mix(in srgb, var(--color-primary) 45%, var(--color-border-light));
+    background: var(--color-primary);
+    color: var(--color-text-inverse);
+    font-size: var(--font-size-xl);
     font-weight: 950;
     line-height: 1.12;
+  }
+
+  .sq-scenario-block--quiz-detail {
+    padding: 8px 10px;
+  }
+
+  .sq-scenario-block--quiz-detail .sq-scenario-value {
+    font-size: var(--font-size-md);
+    line-height: 1.14;
   }
 
   .script-quiz-choices {

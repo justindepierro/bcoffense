@@ -338,7 +338,7 @@ test.describe("Player mobile experience", () => {
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Correct");
     await expect(quiz.locator("#scriptQuizAnswer")).toContainText("Q Rule");
     await quiz.getByRole("button", { name: /Close quiz/i }).click();
-    await expect(quiz.locator(".sq-exit-card")).toContainText("You scored 100 points");
+    await expect(quiz.locator(".sq-exit-card")).toContainText("You scored 10 points");
     await expect(quiz.locator(".sq-exit-card")).toContainText("3 questions left");
     await quiz.getByRole("button", { name: /Pick up where left off/i }).click();
     await expect(quiz.getByText("What's your Q responsibility?")).toBeVisible();
@@ -352,7 +352,7 @@ test.describe("Player mobile experience", () => {
     await quiz.locator("#scriptQuizNextBtn").click();
     await expect(quiz.locator(".sq-result-card")).toContainText("100%");
     await expect(quiz.locator(".sq-result-card")).toContainText("Coaches List");
-    await expect(quiz.locator(".sq-result-card")).toContainText("700");
+    await expect(quiz.locator(".sq-result-card")).toContainText("46");
     await expect.poll(async () => page.evaluate(() => {
       const attempts = storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_RESULTS, []);
       return {
@@ -360,18 +360,21 @@ test.describe("Player mobile experience", () => {
         badge: attempts.at(-1)?.badge,
         totalPoints: attempts.at(-1)?.totalPoints,
       };
-    })).toEqual({ count: 1, badge: "Coaches List", totalPoints: 700 });
+    })).toEqual({ count: 1, badge: "Coaches List", totalPoints: 46 });
     await quiz.getByRole("button", { name: /^Done$/i }).click();
     await expect(quiz).toBeHidden();
 
     await goToTab(page, "dashboard");
     await page.locator("#playerDashboardHome").getByRole("button", { name: /^Quiz$/i }).click();
     const resultHub = page.locator("#playerQuizHubOverlay");
-    await expect(resultHub.locator("#playerQuizWeeklyPoints")).toContainText("700 / 1000");
-    await expect(resultHub.locator("#playerQuizCurrentTier")).toContainText("Starter");
+    await expect(resultHub.locator("#playerQuizWeeklyPoints")).toContainText("46 / 1000");
+    await expect(resultHub.locator("#playerQuizCurrentTier")).toContainText("Defense");
     await expect(resultHub.locator("#playerQuizBestBadge")).toContainText("Coaches List");
-    await expect(resultHub.locator("#playerQuizLeaderboardPreview")).toContainText("700 pts");
+    await expect(resultHub.locator("#playerQuizLeaderboardPreview")).toContainText("46 pts");
     await resultHub.getByRole("button", { name: /Close Quiz Center/i }).click();
+    await goToTab(page, "leaderboard");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("46 / 1000");
+    await expect(page.locator("#playerLeaderboardPage")).toContainText("46 pts");
   });
 
   test("opens every core player page without staff controls or overflow", async ({ page }) => {
@@ -600,7 +603,7 @@ test.describe("Player mobile experience", () => {
     await quiz.getByRole("button", { name: /Verts/i }).click();
     await quiz.locator("#scriptQuizNextBtn").click();
     await expect(quiz.locator(".sq-result-card")).toContainText("Game Plan");
-    await expect(quiz.locator(".sq-result-card")).toContainText("431");
+    await expect(quiz.locator(".sq-result-card")).toContainText("27");
     await quiz.getByRole("button", { name: /^Done$/i }).click();
     await expect(quiz).toBeHidden();
     await expect.poll(async () => page.evaluate(() => {
@@ -615,7 +618,7 @@ test.describe("Player mobile experience", () => {
     })).toEqual({
       sourceType: "gameplan",
       title: "Game Plan Quiz",
-      totalPoints: 431,
+      totalPoints: 27,
       completed: true,
     });
     await assertNoHorizontalOverflow(page);
@@ -667,11 +670,14 @@ test.describe("Player mobile experience", () => {
     const quiz = page.locator("#scriptQuizOverlay");
     await expect(quiz).toBeVisible();
     await expect(quiz.locator("#scriptQuizScenario")).toHaveClass(/script-quiz-scenario--(?:very-)?long-choices/);
+    await expect(quiz.locator("#scriptQuizScenario")).not.toContainText(/Context|Your Spot/i);
     await expect(quiz.locator(".script-quiz-choice")).toHaveCount(4);
 
     const metrics = await page.evaluate(() => {
       const panel = document.querySelector("#scriptQuizOverlay .script-quiz-panel");
       const nav = document.querySelector("#scriptQuizOverlay .script-quiz-nav");
+      const question = document.querySelector("#scriptQuizOverlay .sq-scenario-hint");
+      const detail = document.querySelector("#scriptQuizOverlay .sq-scenario-block--quiz-detail .sq-scenario-value");
       const choices = Array.from(document.querySelectorAll("#scriptQuizOverlay .script-quiz-choice"));
       const labels = Array.from(document.querySelectorAll("#scriptQuizOverlay .sq-choice-label"));
       const choiceRects = choices.map((choice) => choice.getBoundingClientRect());
@@ -694,6 +700,8 @@ test.describe("Player mobile experience", () => {
           bottom: rect.bottom,
         })),
         navTop: navRect?.top || 0,
+        questionFontSize: question ? parseFloat(getComputedStyle(question).fontSize) : 0,
+        detailFontSize: detail ? parseFloat(getComputedStyle(detail).fontSize) : 0,
         minFontSize: Math.min(...labelStyles.map((style) => style.fontSize)),
         allClamped: labelStyles.every((style) => style.lineClamp === "2" && style.overflow === "hidden"),
       };
@@ -703,6 +711,8 @@ test.describe("Player mobile experience", () => {
     expect(metrics.choices).toHaveLength(4);
     expect(Math.min(...metrics.choices.map((choice) => choice.height))).toBeGreaterThanOrEqual(44);
     expect(Math.max(...metrics.choices.map((choice) => choice.bottom))).toBeLessThanOrEqual(metrics.navTop + 1);
+    expect(metrics.questionFontSize).toBeGreaterThanOrEqual(20);
+    expect(metrics.detailFontSize).toBeGreaterThanOrEqual(16);
     expect(metrics.minFontSize).toBeGreaterThanOrEqual(12);
     expect(metrics.allClamped).toBe(true);
     await assertNoHorizontalOverflow(page);

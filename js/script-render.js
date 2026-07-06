@@ -1455,20 +1455,24 @@ let _quizExitSummaryOpen = false;
 
 const SCRIPT_QUIZ_CHOICE_COLORS = ["blue", "red", "gold", "green"];
 const PLAYER_QUIZ_WEEKLY_GOAL = 1000;
+const PLAYER_QUIZ_BASE_CORRECT_POINTS = 10;
+const PLAYER_QUIZ_STREAK_STEP_POINTS = 1;
+const PLAYER_QUIZ_MAX_STREAK_BONUS = 4;
+const PLAYER_QUIZ_MIN_BONUS_ANSWERS = 5;
 const PLAYER_QUIZ_SOURCE_WEIGHTS = {
   script: 1,
   gameplan: 1.25,
 };
 const PLAYER_QUIZ_TIERS = ["Champion", "Baller", "Starter", "Contributor", "Defense"];
 const PLAYER_QUIZ_BADGES = [
-  { min: 95, label: "Coaches List", bonus: 150 },
-  { min: 90, label: "High Honor Roll", bonus: 100 },
-  { min: 85, label: "Honor Roll", bonus: 50 },
+  { min: 95, label: "Coaches List", bonus: 75 },
+  { min: 90, label: "High Honor Roll", bonus: 50 },
+  { min: 85, label: "Honor Roll", bonus: 30 },
 ];
 const PLAYER_QUIZ_REWARD_POINT_DEFAULTS = {
-  question: 25,
-  answer: 40,
-  gift: 100,
+  question: 15,
+  answer: 25,
+  gift: 50,
 };
 const PLAYER_HELMET_STICKER_TYPES = [
   { key: "sure-hands", label: "Sure Hands", icon: "🤲", color: "green" },
@@ -1614,6 +1618,19 @@ function _getQuizBadge(percent) {
     label: "Keep Climbing",
     bonus: 0,
   };
+}
+
+function _getQuizCorrectAnswerPoints(streak, sourceWeight = _quizSourceWeight) {
+  const streakBonus = Math.min(
+    Math.max(0, Number(streak || 1) - 1),
+    PLAYER_QUIZ_MAX_STREAK_BONUS,
+  ) * PLAYER_QUIZ_STREAK_STEP_POINTS;
+  return Math.round((PLAYER_QUIZ_BASE_CORRECT_POINTS + streakBonus) * (Number(sourceWeight) || 1));
+}
+
+function _getQuizBonusPoints(badge, answered, partial = false) {
+  if (partial || !badge || Number(answered || 0) < PLAYER_QUIZ_MIN_BONUS_ANSWERS) return 0;
+  return Number(badge.bonus || 0);
 }
 
 function _quizScriptAttemptMatches(attempt, scriptOption) {
@@ -3491,7 +3508,7 @@ function answerScriptQuizChoice(choiceKey) {
   if (correct) {
     _quizStreak += 1;
     _quizBestStreak = Math.max(_quizBestStreak, _quizStreak);
-    _quizScore += Math.round((100 + Math.min(_quizStreak - 1, 4) * 25) * _quizSourceWeight);
+    _quizScore += _getQuizCorrectAnswerPoints(_quizStreak);
   } else {
     _quizStreak = 0;
   }
@@ -3510,7 +3527,7 @@ function _buildQuizAttemptSummary(options = {}) {
   const questionBreakdown = _summarizeQuizQuestionBreakdown(answers);
   const percent = answered ? Math.round((correct / answered) * 100) : 0;
   const badge = _getQuizBadge(percent);
-  const bonusPoints = answered && !partial ? badge.bonus : 0;
+  const bonusPoints = answered ? _getQuizBonusPoints(badge, answered, partial) : 0;
   const totalPoints = _quizScore + bonusPoints;
   const totalQuestions = _quizPlays.length;
   const remaining = Math.max(0, totalQuestions - answered);
@@ -3803,15 +3820,13 @@ function renderScriptQuizPlay() {
   const personnelLabel = play.personnel ? play.personnel : "";
   const tempoLabel = play.tempo ? play.tempo : "";
   const typeLabel = play.type ? play.type : "";
-  const position = _getQuizPosition();
-  const positionRule = position?.key ? play[position.key] : "";
   const sourceLabel = _quizSourceType === "gameplan" ? "Game Plan" : "Script";
   const weightLabel = _quizSourceWeight === 1 ? "1.0x" : `${_quizSourceWeight}x`;
   const question = _quizCurrentQuestion || _buildQuizQuestion(item);
   const detailValue = _quizCleanText(question.detailValue);
 
   const situationParts = [downLabel && distLabel ? `${downLabel} ${distLabel}` : downLabel || distLabel, posLabel, hashLabel, situationLabel].filter(Boolean);
-  const callContextParts = [sourceLabel, `${weightLabel} points`, personnelLabel, tempoLabel, typeLabel].filter(Boolean);
+  const callContextParts = [personnelLabel, tempoLabel, typeLabel].filter(Boolean);
   const choicesHtml = gameMode
     ? `<div class="script-quiz-choices" role="group" aria-label="Answer choices">
         ${_quizCurrentChoices.map((choice) => _renderQuizChoice(choice, answer)).join("")}
@@ -3829,10 +3844,10 @@ function renderScriptQuizPlay() {
     <div class="sq-game-topline">
       <span class="sq-game-pill">Score ${_quizScore}</span>
       <span class="sq-game-pill">Streak ${_quizStreak}</span>
-      <span class="sq-game-pill">Best ${_quizBestStreak}</span>
       <span class="sq-game-pill">${escapeHtml(sourceLabel)} · ${escapeHtml(weightLabel)}</span>
       <span class="sq-game-pill">${escapeHtml(question.type === "responsibility" ? "Rule Match" : question.type === "play_from_rule" ? "Rule to Play" : "Call ID")}</span>
     </div>` : ""}
+    <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
     ${detailValue ? `
     <div class="sq-scenario-block sq-scenario-block--quiz-detail">
       <div class="sq-scenario-label">${escapeHtml(question.detailLabel)}</div>
@@ -3843,8 +3858,8 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-value sq-situation">${situationParts.length ? situationParts.map(escapeHtml).join(" · ") : "<em style='opacity:.5'>No situation set</em>"}</div>
     </div>
     ${callContextParts.length ? `
-    <div class="sq-scenario-block sq-scenario-block--context">
-      <div class="sq-scenario-label">Context</div>
+    <div class="sq-scenario-block sq-scenario-block--call-meta">
+      <div class="sq-scenario-label">Tags</div>
       <div class="sq-scenario-value">${callContextParts.map(escapeHtml).join(" · ")}</div>
     </div>` : ""}
     ${play.practiceFront || play.practiceCoverage || play.practiceBlitz ? `
@@ -3852,12 +3867,6 @@ function renderScriptQuizPlay() {
       <div class="sq-scenario-label">Defense</div>
       <div class="sq-scenario-value sq-defense">${[play.practiceFront, play.practiceCoverage, play.practiceBlitz, play.practiceStunt].filter(Boolean).map(escapeHtml).join(" / ")}</div>
     </div>` : ""}
-    ${position ? `
-    <div class="sq-scenario-block sq-scenario-block--position">
-      <div class="sq-scenario-label">Your Spot</div>
-      <div class="sq-scenario-value">${escapeHtml(position.label)}${positionRule ? ` · rule ready` : " · no rule yet"}</div>
-    </div>` : ""}
-    <div class="sq-scenario-hint">${escapeHtml(question.prompt)}</div>
     ${choicesHtml}
   `;
   const scenarioEl = document.getElementById("scriptQuizScenario");
