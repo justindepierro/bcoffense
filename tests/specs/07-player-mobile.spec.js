@@ -1419,6 +1419,14 @@ test.describe("Player mobile experience", () => {
     await expect(setup).toContainText("Ghost Login");
     await expect(setup).toContainText("Old Name");
     await expect(setup).toContainText("No quiz activity");
+    const awardHistory = setup.locator(".coach-quiz-award-history-panel");
+    await expect(awardHistory).toContainText("Award history");
+    await expect(awardHistory).toContainText("Point awards");
+    await expect(awardHistory).toContainText("Helmet stickers");
+    await expect(awardHistory).toContainText("Ghost Login");
+    await expect(awardHistory).toContainText("Old Name");
+    await expect(awardHistory.getByRole("button", { name: /Revoke Gift reward from Ghost Login/i })).toBeVisible();
+    await expect(awardHistory.getByRole("button", { name: /Revoke Great Teammate sticker from Old Name/i })).toBeVisible();
     await expect(setup).toContainText("Film Junkie");
     await expect(setup).toContainText("Watched the install");
     await expect(setup.getByRole("button", { name: /Custom Sticker/i })).toBeVisible();
@@ -1457,6 +1465,18 @@ test.describe("Player mobile experience", () => {
     await expect(rosterPicker).not.toContainText("Outside");
     await rosterPicker.getByRole("button", { name: /Cancel/i }).click();
     await expect(rosterPicker).toBeHidden();
+    await awardHistory.getByRole("button", { name: /Revoke Gift reward from Ghost Login/i }).click();
+    await expect(page.getByRole("dialog", { name: /Revoke Reward/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Revoke$/i }).click();
+    await expect(awardHistory).not.toContainText("Ghost Login");
+    await awardHistory.getByRole("button", { name: /Revoke Great Teammate sticker from Old Name/i }).click();
+    await expect(page.getByRole("dialog", { name: /Revoke Sticker/i })).toBeVisible();
+    await page.getByRole("button", { name: /^Revoke$/i }).click();
+    await expect(awardHistory).not.toContainText("Old Name");
+    await expect.poll(() => page.evaluate(() => ({
+      rewards: storageManager.get(STORAGE_KEYS.PLAYER_REWARD_EVENTS, []).some((event) => event.id === "coach-reward-unknown"),
+      stickers: storageManager.get(STORAGE_KEYS.PLAYER_HELMET_STICKERS, []).some((sticker) => sticker.id === "coach-sticker-unknown"),
+    }))).toEqual({ rewards: false, stickers: false });
     await expect(setup).toContainText("Weak positions");
     await expect(setup).toContainText("Q");
     await expect(setup).toContainText("Weak question types");

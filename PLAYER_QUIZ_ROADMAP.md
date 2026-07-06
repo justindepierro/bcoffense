@@ -97,7 +97,7 @@
 - [x] Let teams customize sticker names, descriptions, colors, and icons locally.
 - [x] Restrict sticker awards to active roster players so awards attach to the right profile.
 - [x] Add edit/delete controls for custom sticker definitions.
-- [ ] Add sticker award history and revoke controls for coach/admin mistakes.
+- [x] Add sticker award history and revoke controls for coach/admin mistakes.
 
 ## Mobile Quiz UX
 

@@ -2175,6 +2175,93 @@ function _renderCoachQuizRosterHealthPanel(summary = _buildCoachQuizRosterHealth
   `;
 }
 
+function _formatCoachAwardDate(event = {}) {
+  const label = _formatQuizProfileDate(event);
+  const coach = String(event.awardedBy || "").trim();
+  return coach ? `${label} · ${coach}` : label;
+}
+
+function _renderCoachQuizAwardHistoryRows(items, emptyText, rowRenderer) {
+  if (!Array.isArray(items) || !items.length) {
+    return `<div class="coach-quiz-award-history-empty">${escapeHtml(emptyText)}</div>`;
+  }
+  return items
+    .slice()
+    .sort((a, b) => _quizEventTimestamp(b) - _quizEventTimestamp(a))
+    .slice(0, 12)
+    .map(rowRenderer)
+    .join("");
+}
+
+function _renderCoachQuizAwardHistoryPanel(rewardEvents = [], stickerEvents = []) {
+  const pointRows = _renderCoachQuizAwardHistoryRows(
+    rewardEvents,
+    "No point awards this week.",
+    (event) => `
+      <div class="coach-quiz-award-history-row">
+        <span class="coach-quiz-award-history-icon" aria-hidden="true">+${Math.round(Number(event.points || 0))}</span>
+        <span class="coach-quiz-award-history-main">
+          <strong>${escapeHtml(_normalizeQuizPlayerName(event.player))}</strong>
+          <small>${escapeHtml(_formatQuizQuestionType(event.type || "reward"))} · ${Math.round(Number(event.points || 0))} pts${event.note ? ` · ${escapeHtml(event.note)}` : ""}</small>
+        </span>
+        <span class="coach-quiz-award-history-meta">${escapeHtml(_formatCoachAwardDate(event))}</span>
+        <button type="button"
+          class="btn btn-xs btn-danger"
+          data-action="coachRevokeQuizReward"
+          data-arg="${escapeAttr(event.id || "")}"
+          aria-label="Revoke ${escapeAttr(_formatQuizQuestionType(event.type || "reward"))} reward from ${escapeAttr(_normalizeQuizPlayerName(event.player))}">
+          Revoke
+        </button>
+      </div>
+    `
+  );
+  const stickerRows = _renderCoachQuizAwardHistoryRows(
+    stickerEvents,
+    "No helmet stickers this week.",
+    (sticker) => `
+      <div class="coach-quiz-award-history-row">
+        <span class="coach-quiz-award-history-icon" aria-hidden="true">${escapeHtml(sticker.icon || "🏅")}</span>
+        <span class="coach-quiz-award-history-main">
+          <strong>${escapeHtml(_normalizeQuizPlayerName(sticker.player))}</strong>
+          <small>${escapeHtml(sticker.label || "Helmet Sticker")}${sticker.note ? ` · ${escapeHtml(sticker.note)}` : ""}</small>
+        </span>
+        <span class="coach-quiz-award-history-meta">${escapeHtml(_formatCoachAwardDate(sticker))}</span>
+        <button type="button"
+          class="btn btn-xs btn-danger"
+          data-action="coachRevokeHelmetStickerAward"
+          data-arg="${escapeAttr(sticker.id || "")}"
+          aria-label="Revoke ${escapeAttr(sticker.label || "Helmet Sticker")} sticker from ${escapeAttr(_normalizeQuizPlayerName(sticker.player))}">
+          Revoke
+        </button>
+      </div>
+    `
+  );
+  return `
+    <section class="coach-quiz-setup-section coach-quiz-award-history-panel">
+      <div class="coach-quiz-section-head">
+        <h3>Award history</h3>
+        <span>${rewardEvents.length} point awards · ${stickerEvents.length} stickers this week</span>
+      </div>
+      <div class="coach-quiz-award-history-grid">
+        <article>
+          <div class="coach-quiz-award-history-head">
+            <strong>Point awards</strong>
+            <span>Questions, answers, gifts</span>
+          </div>
+          ${pointRows}
+        </article>
+        <article>
+          <div class="coach-quiz-award-history-head">
+            <strong>Helmet stickers</strong>
+            <span>Practice awards</span>
+          </div>
+          ${stickerRows}
+        </article>
+      </div>
+    </section>
+  `;
+}
+
 function _getQuizPlayerName() {
   const rosterPlayer = _getQuizRosterPlayerForCurrentUser();
   if (rosterPlayer?.name) return rosterPlayer.name;
@@ -4017,6 +4104,31 @@ async function coachAwardQuestionPoints(type = "question") {
   showToast(`${player} earned ${points} points${points < requestedPoints ? " after cap" : ""}.`, { type: "success" });
 }
 
+async function coachRevokeQuizReward(rewardId = "") {
+  const events = _getPlayerRewardEvents();
+  const reward = events.find((event) => String(event.id || "") === String(rewardId || ""));
+  if (!reward) {
+    showToast("That reward is no longer available.", { type: "warning" });
+    return;
+  }
+  const player = _normalizeQuizPlayerName(reward.player);
+  const ok = typeof showConfirm === "function"
+    ? await showConfirm(`Remove ${Math.round(Number(reward.points || 0))} ${_formatQuizQuestionType(reward.type || "reward").toLowerCase()} points from ${player}?`, {
+      title: "Revoke Reward",
+      icon: "↩️",
+      confirmText: "Revoke",
+      cancelText: "Keep",
+      danger: true,
+    })
+    : false;
+  if (!ok) return;
+  _savePlayerRewardEvents(events.filter((event) => String(event.id || "") !== String(rewardId || "")));
+  _leaderboardSelectedPlayer = player;
+  renderCoachQuizSetupPage();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast(`Reward removed for ${player}.`, { type: "success" });
+}
+
 async function coachAwardHelmetSticker(stickerKey = "") {
   const sticker = _getPlayerHelmetStickerType(stickerKey) || _getPlayerHelmetStickerTypes()[0];
   const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
@@ -4051,6 +4163,31 @@ async function coachAwardHelmetSticker(stickerKey = "") {
   renderCoachQuizSetupPage();
   if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
   showToast(`${player} earned ${sticker.label}.`, { type: "success" });
+}
+
+async function coachRevokeHelmetStickerAward(stickerId = "") {
+  const stickers = _getPlayerHelmetStickers();
+  const sticker = stickers.find((event) => String(event.id || "") === String(stickerId || ""));
+  if (!sticker) {
+    showToast("That sticker award is no longer available.", { type: "warning" });
+    return;
+  }
+  const player = _normalizeQuizPlayerName(sticker.player);
+  const ok = typeof showConfirm === "function"
+    ? await showConfirm(`Remove "${sticker.label || "Helmet Sticker"}" from ${player}'s profile?`, {
+      title: "Revoke Sticker",
+      icon: sticker.icon || "🏅",
+      confirmText: "Revoke",
+      cancelText: "Keep",
+      danger: true,
+    })
+    : false;
+  if (!ok) return;
+  _savePlayerHelmetStickers(stickers.filter((event) => String(event.id || "") !== String(stickerId || "")));
+  _leaderboardSelectedPlayer = player;
+  renderCoachQuizSetupPage();
+  if (document.getElementById("leaderboard")?.classList.contains("active")) renderPlayerLeaderboardPage();
+  showToast(`${sticker.label || "Sticker"} removed for ${player}.`, { type: "success" });
 }
 
 function renderCoachQuizSetupPage() {
@@ -4149,6 +4286,7 @@ function renderCoachQuizSetupPage() {
           <span><strong>${weeklyStickerEvents.length}</strong><small>Stickers</small></span>
         </div>
       </section>
+      ${_renderCoachQuizAwardHistoryPanel(weeklyRewardEvents, weeklyStickerEvents)}
       ${_renderCoachQuizLeaderboardPanel(leaderboardSummary)}
       ${_renderCoachQuizPositionPicker()}
       <section class="coach-quiz-setup-section">
