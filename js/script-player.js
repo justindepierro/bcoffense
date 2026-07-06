@@ -401,6 +401,13 @@ function startPlayerScriptQuiz(id = "") {
     ? script.filter((entry) => entry && !entry.isSeparator).length
     : 0;
   if (requestedId) {
+    if (
+      typeof isPlayerQuizSourceAvailable === "function" &&
+      !isPlayerQuizSourceAvailable("script", requestedId)
+    ) {
+      showToast("Coach has not opened that script quiz yet.", { type: "warning" });
+      return false;
+    }
     const requestedScript = getPlayerPublishedScripts().find((savedScript) => String(savedScript.id) === requestedId);
     if (requestedScript?.name) quizTitle = requestedScript.name;
     const loaded = loadPublishedPlayerScript(requestedId, {

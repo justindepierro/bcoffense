@@ -13,7 +13,7 @@
 - [x] Define quiz as its own player workflow, not just a button inside Practice.
 - [x] Keep the existing Practice-tab quiz path working while the new Quiz Center grows.
 - [x] Link local quiz identity to the active team roster through a roster account username field.
-- [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, and question types; source eligibility and tier-name controls remain pending.
+- [ ] Add formal coach/admin quiz settings for question mix, scoring weights, goals, tiers, eligible sources, and reward rules. Local settings now control scoring, goals, badges, rewards, caps, source eligibility, and question types; tier-name controls remain pending.
 - [ ] Add server-backed attempts/rewards/stickers APIs so leaderboards aggregate across all player accounts.
 
 ## Player Quiz Center
@@ -66,8 +66,8 @@
 - [x] Add coach/admin "Set Up Quizzes" nav page for customization, readiness, and leaderboard review.
 - [x] Add coach preview mode for each source and position.
 - [x] Add player attempt review with weak-position and weak-rule summaries.
-- [ ] Add quiz controls to saved Practice Script publishing.
-- [ ] Add quiz controls to Game Plan publishing.
+- [x] Add quiz controls to saved Practice Script publishing.
+- [x] Add quiz controls to Game Plan publishing.
 - [x] Add a settings panel for weekly goal, scoring weights, bonus thresholds, reward caps, and enabled question types. Tier names remain fixed for now.
 - [ ] Add roster-link health checks: unlinked roster players, duplicate account usernames, and quiz activity from unknown accounts.
 
@@ -119,6 +119,7 @@
 - [ ] Add tests for roster-link validation and roster-only reward assignment.
 - [x] Add tests for custom sticker edit/delete flows.
 - [x] Add tests for quiz settings persistence and scoring effects.
+- [x] Add tests for local quiz source publishing controls.
 - [ ] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
@@ -133,11 +134,11 @@
 
 ### Milestone 2 — Source Publishing Controls
 
-- [ ] Add quiz publish controls to saved Practice Script cards.
-- [ ] Add quiz publish controls to Game Plan boards.
-- [ ] Show player-facing eligibility: available, locked, thin, or coach-only.
+- [x] Add quiz publish controls to saved Practice Script cards.
+- [x] Add quiz publish controls to Game Plan boards.
+- [ ] Show player-facing eligibility: available, locked, thin, or coach-only. Available/locked and coach-only hiding are in place; thin remains coach-side readiness only.
 - [ ] Include completeness chips for diagrams, rules, notes, defense, and metadata.
-- [ ] Add tests that locked/thin sources do not appear as normal player quiz options.
+- [x] Add tests that locked and coach-only sources do not appear as normal player quiz options.
 
 ### Milestone 3 — Better Learning Loop
 

@@ -1524,6 +1524,12 @@ function _getPlayerQuizSettingsStorageKey() {
     : "playerQuizSettings";
 }
 
+function _getPlayerQuizSourceSettingsStorageKey() {
+  return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS
+    ? STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS
+    : "playerQuizSourceSettings";
+}
+
 function _getPlayerRewardStorageKey() {
   return typeof STORAGE_KEYS !== "undefined" && STORAGE_KEYS.PLAYER_REWARD_EVENTS
     ? STORAGE_KEYS.PLAYER_REWARD_EVENTS
@@ -1603,6 +1609,69 @@ function _getQuizRewardDefaults() {
     answer: settings.answerPoints,
     gift: settings.giftPoints,
   };
+}
+
+function _quizSourceKey(kind, id) {
+  return `${kind}:${String(id || "").trim() || "__current__"}`;
+}
+
+function _normalizeQuizSourceState(value, fallback = "available") {
+  const state = String(value || fallback || "available").trim().toLowerCase();
+  return ["available", "locked", "coach"].includes(state) ? state : fallback;
+}
+
+function _getPlayerQuizSourceSettings() {
+  if (typeof storageManager === "undefined" || typeof storageManager.get !== "function") return {};
+  const raw = storageManager.get(_getPlayerQuizSourceSettingsStorageKey(), {});
+  return raw && typeof raw === "object" && !Array.isArray(raw) ? raw : {};
+}
+
+function _savePlayerQuizSourceSettings(settings) {
+  if (typeof storageManager === "undefined" || typeof storageManager.set !== "function") return;
+  const clean = {};
+  Object.entries(settings && typeof settings === "object" ? settings : {}).forEach(([key, value]) => {
+    const state = _normalizeQuizSourceState(value?.state || value, "");
+    if (!state) return;
+    clean[key] = {
+      state,
+      updatedAt: value?.updatedAt || new Date().toISOString(),
+    };
+  });
+  storageManager.set(_getPlayerQuizSourceSettingsStorageKey(), clean);
+}
+
+function _getQuizSourceSetting(kind, id) {
+  const settings = _getPlayerQuizSourceSettings();
+  const entry = settings[_quizSourceKey(kind, id)];
+  return entry && typeof entry === "object" ? entry : {};
+}
+
+function _setQuizSourceState(kind, id, state) {
+  const settings = _getPlayerQuizSourceSettings();
+  settings[_quizSourceKey(kind, id)] = {
+    state: _normalizeQuizSourceState(state),
+    updatedAt: new Date().toISOString(),
+  };
+  _savePlayerQuizSourceSettings(settings);
+}
+
+function _getQuizSourceState(kind, source = {}) {
+  const setting = _getQuizSourceSetting(kind, source.id);
+  if (setting.state) return _normalizeQuizSourceState(setting.state);
+  if (kind === "script") return source.playerVisible ? "available" : "coach";
+  return "available";
+}
+
+function _quizSourceStateLabel(state, stats = null) {
+  if (state === "available" && stats && stats.score < 40) return { label: "Available · Thin", tone: "thin" };
+  if (state === "available") return { label: "Available", tone: "ready" };
+  if (state === "locked") return { label: "Locked", tone: "locked" };
+  return { label: "Coach-only", tone: "coach" };
+}
+
+function isPlayerQuizSourceAvailable(kind, id) {
+  const state = _getQuizSourceState(kind, { id });
+  return state === "available";
 }
 
 function _getPlayerHelmetStickerStorageKey() {
@@ -2724,6 +2793,37 @@ function _renderCoachQuizQuestionPreview(source) {
   `;
 }
 
+function _renderCoachQuizSourceControls(source, kind, stats) {
+  const state = _getQuizSourceState(kind, source);
+  const status = _quizSourceStateLabel(state, stats);
+  const sourceArg = `${kind}:${source.id}`;
+  const button = (nextState, label) => `
+    <button type="button"
+      class="btn btn-xs ${state === nextState ? "btn-primary" : "btn-outline"}"
+      data-action="setCoachQuizSourceState"
+      data-arg="${escapeAttr(`${sourceArg}:${nextState}`)}"
+      aria-pressed="${state === nextState ? "true" : "false"}">
+      ${escapeHtml(label)}
+    </button>
+  `;
+  const helper = state === "available"
+    ? "Players can choose this quiz source."
+    : state === "locked"
+      ? "Players can see this is locked, but cannot start it yet."
+      : "Hidden from player quiz choices.";
+  return `
+    <div class="coach-quiz-source-controls">
+      <span class="coach-quiz-source-status coach-quiz-source-status--${escapeAttr(status.tone)}">${escapeHtml(status.label)}</span>
+      <div class="coach-quiz-source-control-actions" role="group" aria-label="${escapeAttr(source.title)} quiz publishing">
+        ${button("available", "Available")}
+        ${button("locked", "Locked")}
+        ${button("coach", "Coach-only")}
+      </div>
+      <small>${escapeHtml(helper)}</small>
+    </div>
+  `;
+}
+
 function _renderCoachQuizSourceCard(source, kind) {
   const stats = _quizCompletenessStats(source.plays);
   const readiness = _quizReadinessLabel(stats.score);
@@ -2748,6 +2848,7 @@ function _renderCoachQuizSourceCard(source, kind) {
         </div>
       </div>
       <div class="coach-quiz-source-meta">${escapeHtml(meta)}</div>
+      ${_renderCoachQuizSourceControls(source, kind, stats)}
       <div class="coach-quiz-metrics">
         ${_quizMetric("Diagrams", stats.diagrams, stats.playCount)}
         ${_quizMetric("Rules", stats.rules, stats.playCount)}
@@ -3343,6 +3444,30 @@ async function coachResetQuizSettings() {
   showToast("Quiz settings reset.", { type: "success" });
 }
 
+function setCoachQuizSourceState(arg = "") {
+  const [kind, ...rest] = String(arg || "").split(":");
+  const state = rest.pop();
+  const id = rest.join(":");
+  if (!["script", "gameplan"].includes(kind) || !id || !["available", "locked", "coach"].includes(state)) {
+    showToast("Could not update quiz source.", { type: "warning" });
+    return;
+  }
+  _setQuizSourceState(kind, id, state);
+  if (kind === "script" && typeof getSavedScripts === "function" && typeof storageManager !== "undefined") {
+    const saved = getSavedScripts();
+    const target = saved.find((scriptRecord) => String(scriptRecord?.id || "") === id);
+    if (target) {
+      target.playerVisible = state !== "coach";
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, saved);
+      if (typeof loadSavedScriptsList === "function") loadSavedScriptsList();
+      if (typeof renderPlayerScriptLauncher === "function") renderPlayerScriptLauncher();
+    }
+  }
+  renderCoachQuizSetupPage();
+  _renderPlayerQuizHub();
+  showToast(`Quiz source set to ${state === "coach" ? "coach-only" : state}.`, { type: "success" });
+}
+
 async function coachAwardQuestionPoints(type = "question") {
   const safeType = ["question", "answer", "gift"].includes(type) ? type : "question";
   const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
@@ -3642,6 +3767,7 @@ function _getPlayerQuizScriptOptions() {
     .filter((savedScript) => savedScript && savedScript.id)
     .map((savedScript) => {
       const stats = typeof getSavedScriptStats === "function" ? getSavedScriptStats(savedScript) : null;
+      const state = _getQuizSourceState("script", savedScript);
       const option = {
         id: String(savedScript.id),
         name: savedScript.name || "Published Practice",
@@ -3650,37 +3776,45 @@ function _getPlayerQuizScriptOptions() {
         totalReps: stats?.totalReps || 0,
         date: savedScript.date || "",
         dateStr: stats?.dateStr || savedScript.date || "No date",
+        state,
+        playerSelectable: savedScript.playerVisible && state === "available",
+        playerVisible: Boolean(savedScript.playerVisible),
       };
       return {
         ...option,
         progress: _getQuizScriptProgress(option),
       };
-    });
+    })
+    .filter((option) => option.playerVisible && option.state !== "coach");
 }
 
 function _renderPlayerQuizScriptPicker(options) {
   if (!Array.isArray(options) || !options.length) {
     return `<div class="player-quiz-script-empty">Current practice only. Published scripts will appear here when your coach posts them.</div>`;
   }
-  if (!_playerQuizSelectedScriptId || !options.some((option) => option.id === _playerQuizSelectedScriptId)) {
-    _playerQuizSelectedScriptId = options[0].id;
+  const selectable = options.filter((option) => option.playerSelectable);
+  if (!_playerQuizSelectedScriptId || !selectable.some((option) => option.id === _playerQuizSelectedScriptId)) {
+    _playerQuizSelectedScriptId = selectable[0]?.id || "";
   }
   return options.map((option) => {
     const selected = option.id === _playerQuizSelectedScriptId;
     const progress = option.progress || _getQuizScriptProgress(option);
     const progressText = progress.points ? `${progress.label} · ${progress.points} pts` : progress.label;
+    const locked = !option.playerSelectable;
+    const stateLabel = option.state === "locked" ? "Locked" : option.state === "coach" ? "Coach-only" : "";
     return `
       <button type="button"
-        class="player-quiz-script-option${selected ? " is-selected" : ""}"
+        class="player-quiz-script-option${selected ? " is-selected" : ""}${locked ? " is-locked" : ""}"
         data-action="setPlayerQuizScriptSource"
         data-arg="${escapeAttr(option.id)}"
-        aria-pressed="${selected ? "true" : "false"}">
+        aria-pressed="${selected ? "true" : "false"}"
+        ${locked ? "disabled" : ""}>
         <span class="player-quiz-script-option__main">
           <strong>${escapeHtml(option.name)}</strong>
           <small>${escapeHtml(option.dateStr)} · ${option.playCount} plays${option.periodCount ? ` · ${option.periodCount} periods` : ""}</small>
         </span>
         <span class="player-quiz-script-option__status">
-          <b class="player-quiz-progress-badge${progress.icon ? " has-icon" : ""}">${progress.icon ? `${escapeHtml(progress.icon)} ` : ""}${escapeHtml(progressText)}</b>
+          <b class="player-quiz-progress-badge${progress.icon ? " has-icon" : ""}">${escapeHtml(stateLabel || progressText)}</b>
         </span>
       </button>
     `;
@@ -3739,13 +3873,15 @@ function _renderPlayerQuizHub() {
 
   const select = document.getElementById("playerQuizScriptSelect");
   const scriptPicker = document.getElementById("playerQuizScriptPicker");
+  const scriptStartBtn = document.getElementById("playerQuizStartScriptBtn");
   if (select) {
     const options = _getPlayerQuizScriptOptions();
-    if (options.length) {
-      if (!_playerQuizSelectedScriptId || !options.some((option) => option.id === _playerQuizSelectedScriptId)) {
-        _playerQuizSelectedScriptId = options[0].id;
+    const selectableOptions = options.filter((option) => option.playerSelectable);
+    if (selectableOptions.length) {
+      if (!_playerQuizSelectedScriptId || !selectableOptions.some((option) => option.id === _playerQuizSelectedScriptId)) {
+        _playerQuizSelectedScriptId = selectableOptions[0].id;
       }
-      select.innerHTML = options
+      select.innerHTML = selectableOptions
         .map((option) => {
           const count = option.playCount ? ` · ${option.playCount} plays` : "";
           const date = option.dateStr ? `${option.dateStr} · ` : "";
@@ -3759,8 +3895,25 @@ function _renderPlayerQuizHub() {
     }
     select.hidden = true;
   }
+  if (scriptStartBtn) {
+    const hasScriptOption = _getPlayerQuizScriptOptions().some((option) => option.playerSelectable);
+    scriptStartBtn.disabled = !hasScriptOption;
+    scriptStartBtn.textContent = hasScriptOption ? "Start Script Quiz" : "Script Quiz Locked";
+  }
   if (scriptPicker) {
     scriptPicker.innerHTML = _renderPlayerQuizScriptPicker(_getPlayerQuizScriptOptions());
+  }
+
+  const gamePlanStatus = _getActiveGamePlanQuizStatus();
+  const gamePlanBtn = document.getElementById("playerQuizStartGamePlanBtn");
+  const gamePlanStatusEl = document.getElementById("playerQuizGamePlanStatus");
+  if (gamePlanBtn) {
+    gamePlanBtn.disabled = !gamePlanStatus.available;
+    gamePlanBtn.textContent = gamePlanStatus.available ? "Start Game Plan Quiz" : gamePlanStatus.label;
+  }
+  if (gamePlanStatusEl) {
+    gamePlanStatusEl.textContent = gamePlanStatus.detail;
+    gamePlanStatusEl.hidden = !gamePlanStatus.detail;
   }
 
   if (document.getElementById("leaderboard")?.classList.contains("active")) {
@@ -3801,7 +3954,9 @@ function setPlayerQuizPosition(key) {
 }
 
 function setPlayerQuizScriptSource(id) {
-  _playerQuizSelectedScriptId = String(id || "");
+  const target = _getPlayerQuizScriptOptions().find((option) => option.id === String(id || ""));
+  if (target && !target.playerSelectable) return;
+  _playerQuizSelectedScriptId = target ? target.id : "";
   const select = document.getElementById("playerQuizScriptSelect");
   if (select) select.value = _playerQuizSelectedScriptId;
   _renderPlayerQuizHub();
@@ -3810,6 +3965,11 @@ function setPlayerQuizScriptSource(id) {
 function startPlayerQuizHubScript() {
   const select = document.getElementById("playerQuizScriptSelect");
   const id = _playerQuizSelectedScriptId || (select ? select.value : "");
+  const selected = _getPlayerQuizScriptOptions().find((option) => option.id === id);
+  if (!selected || !selected.playerSelectable) {
+    showToast("Coach has not opened that script quiz yet.", { type: "warning" });
+    return;
+  }
   closePlayerQuizHub();
   if (typeof startPlayerScriptQuiz === "function") {
     startPlayerScriptQuiz(id || "");
@@ -3821,6 +3981,52 @@ function startPlayerQuizHubScript() {
     title: "Practice Script Quiz",
     positionKey: _quizPositionKey,
   });
+}
+
+function _getActiveGamePlanQuizSourceId() {
+  if (typeof _gpActiveOpponentKey === "function") return _gpActiveOpponentKey();
+  const gw = typeof getGameWeek === "function" ? getGameWeek() : null;
+  return gw?.opponentName || "__unassigned__";
+}
+
+function _getActiveGamePlanQuizStatus() {
+  const id = _getActiveGamePlanQuizSourceId();
+  const state = _getQuizSourceState("gameplan", { id });
+  const items = _buildGamePlanQuizItems();
+  if (state === "coach") {
+    return {
+      id,
+      state,
+      available: false,
+      label: "Game Plan Coach-only",
+      detail: "Coach has not opened this Game Plan quiz to players.",
+    };
+  }
+  if (state === "locked") {
+    return {
+      id,
+      state,
+      available: false,
+      label: "Game Plan Locked",
+      detail: "Coach locked this Game Plan quiz for now.",
+    };
+  }
+  if (!items.length) {
+    return {
+      id,
+      state,
+      available: false,
+      label: "No Game Plan Quiz",
+      detail: "No Game Plan calls are ready for quiz yet.",
+    };
+  }
+  return {
+    id,
+    state,
+    available: true,
+    label: "Start Game Plan Quiz",
+    detail: `${items.length} Game Plan call${items.length === 1 ? "" : "s"} ready.`,
+  };
 }
 
 function _buildGamePlanQuizItems() {
@@ -3848,6 +4054,11 @@ function _buildGamePlanQuizItems() {
 }
 
 function startPlayerQuizHubGamePlan() {
+  const status = _getActiveGamePlanQuizStatus();
+  if (!status.available) {
+    showToast(status.detail || "Game Plan quiz is not open yet.", { type: "warning" });
+    return;
+  }
   const items = _buildGamePlanQuizItems();
   if (!items.length) {
     showToast("Add plays to the Game Plan before starting this quiz.", { type: "warning" });

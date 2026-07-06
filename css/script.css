@@ -7695,6 +7695,21 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   box-shadow: var(--shadow-xs);
 }
 
+.player-quiz-script-option.is-locked,
+.player-quiz-script-option:disabled {
+  border-style: dashed;
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+  cursor: not-allowed;
+  opacity: 0.82;
+}
+
+.player-quiz-script-option.is-locked .player-quiz-progress-badge {
+  border-color: color-mix(in srgb, var(--color-danger) 28%, var(--color-border-light));
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
 .player-quiz-script-option__main,
 .player-quiz-script-option__status {
   min-width: 0;
@@ -7732,6 +7747,16 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   font-style: normal;
   font-weight: 900;
   white-space: nowrap;
+}
+
+.player-quiz-source-status {
+  width: fit-content;
+  padding: 4px 8px;
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-info) 8%, var(--color-bg-body));
+  color: var(--color-text-secondary);
+  font-size: var(--font-size-xs);
+  font-weight: 850;
 }
 
 .player-quiz-progress-badge.has-icon {
@@ -9158,6 +9183,55 @@ body:not(.is-mobile-screen) #script.panel.active .script-container {
   padding: var(--space-xs) var(--space-sm);
   border-radius: var(--radius-sm);
   background: var(--color-bg-light);
+}
+
+.coach-quiz-source-controls {
+  display: grid;
+  gap: var(--space-xs);
+  padding: var(--space-sm);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--color-info) 6%, var(--color-bg-body));
+}
+
+.coach-quiz-source-status {
+  width: fit-content;
+  padding: 3px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 0.68rem;
+  font-weight: 950;
+}
+
+.coach-quiz-source-status--ready {
+  background: var(--color-success-light);
+  color: var(--color-success);
+}
+
+.coach-quiz-source-status--thin {
+  background: var(--color-warning-light);
+  color: var(--color-warning);
+}
+
+.coach-quiz-source-status--locked {
+  background: var(--color-danger-light);
+  color: var(--color-danger);
+}
+
+.coach-quiz-source-status--coach {
+  background: var(--color-bg-light);
+  color: var(--color-text-muted);
+}
+
+.coach-quiz-source-control-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-xs);
+}
+
+.coach-quiz-source-controls small {
+  color: var(--color-text-muted);
+  font-size: 0.68rem;
+  font-weight: 800;
 }
 
 .coach-quiz-metrics {

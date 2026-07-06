@@ -982,6 +982,93 @@ test.describe("Player mobile experience", () => {
     await assertNoHorizontalOverflow(page);
   });
 
+  test("honors coach quiz source publishing controls", async ({ page }) => {
+    await login(page, { role: "admin", username: "admin" });
+    await dismissFirstUse(page);
+    await page.evaluate(() => {
+      const basePlay = {
+        type: "Run",
+        personnel: "11",
+        formation: "Trips Rt",
+        play: "Buck Sweep",
+        respQ: "Read force and get vertical.",
+        playerNotes: "Win the edge.",
+      };
+      storageManager.set(STORAGE_KEYS.SAVED_SCRIPTS, [{
+        id: "script-friday-quiz",
+        name: "Friday Quiz",
+        date: "2026-07-06",
+        playerVisible: true,
+        savedAt: new Date().toISOString(),
+        plays: [{ ...basePlay }],
+      }, {
+        id: "script-hidden-quiz",
+        name: "Hidden Quiz",
+        date: "2026-07-05",
+        playerVisible: true,
+        savedAt: new Date().toISOString(),
+        plays: [{ ...basePlay, play: "Verts", type: "Pass" }],
+      }]);
+      storageManager.set(STORAGE_KEYS.GAME_WEEK, {
+        opponentName: "Monticello",
+        opponentIndex: 0,
+        weekLabel: "Camp",
+      });
+      storageManager.set(STORAGE_KEYS.GAME_PLAN_BOARDS, {
+        Monticello: {
+          assignments: {
+            Run: [{ ...basePlay }],
+          },
+          customBoxes: [],
+          targets: {},
+          collapsed: [],
+          notes: {},
+          sort: {},
+          hiddenBoxes: [],
+          boxOrder: [],
+          boxLabels: {},
+          boxMeta: {},
+          allowedPlayTypes: [],
+          sheetTitle: "Monticello Camp",
+          printPreset: "",
+          wristbandAutoBoxId: "",
+        },
+      });
+    });
+
+    await goToTab(page, "quizsetup");
+    const setup = page.locator("#coachQuizSetupPage");
+    const friday = setup.locator(".coach-quiz-source-card").filter({ hasText: "Friday Quiz" });
+    const hidden = setup.locator(".coach-quiz-source-card").filter({ hasText: "Hidden Quiz" });
+    const gamePlan = setup.locator(".coach-quiz-source-card").filter({ hasText: "Monticello Camp" });
+
+    await friday.getByRole("button", { name: /^Locked$/i }).click();
+    await expect(friday).toContainText("Locked");
+    await hidden.getByRole("button", { name: /^Coach-only$/i }).click();
+    await expect(hidden).toContainText("Coach-only");
+    await gamePlan.getByRole("button", { name: /^Locked$/i }).click();
+    await expect(gamePlan).toContainText("Locked");
+
+    await expect.poll(() => page.evaluate(() => storageManager.get(STORAGE_KEYS.PLAYER_QUIZ_SOURCE_SETTINGS, {}))).toMatchObject({
+      "script:script-friday-quiz": { state: "locked" },
+      "script:script-hidden-quiz": { state: "coach" },
+      "gameplan:Monticello": { state: "locked" },
+    });
+
+    await page.evaluate(() => openPlayerQuizHub());
+    const hub = page.locator("#playerQuizHubOverlay");
+    await expect(hub).toBeVisible();
+    const picker = hub.locator("#playerQuizScriptPicker");
+    await expect(picker).toContainText("Friday Quiz");
+    await expect(picker).toContainText("Locked");
+    await expect(picker).not.toContainText("Hidden Quiz");
+    await expect(hub.locator("#playerQuizStartScriptBtn")).toBeDisabled();
+    await expect(hub.locator("#playerQuizStartGamePlanBtn")).toBeDisabled();
+    await expect(hub.locator("#playerQuizStartGamePlanBtn")).toContainText("Game Plan Locked");
+    await expect(hub.locator("#playerQuizGamePlanStatus")).toContainText("Coach locked this Game Plan quiz");
+    await assertNoHorizontalOverflow(page);
+  });
+
   test("shows coach quiz leaderboard week and season review", async ({ page }) => {
     await login(page, { role: "admin", username: "admin" });
     await dismissFirstUse(page);
