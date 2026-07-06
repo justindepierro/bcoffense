@@ -2675,6 +2675,39 @@ function _renderCoachStickerButtons() {
   `).join("");
 }
 
+function _getCustomHelmetStickerTypes() {
+  return _getPlayerHelmetStickerTypes().filter((sticker) => sticker.custom);
+}
+
+function _renderCoachCustomStickerManager() {
+  const customStickers = _getCustomHelmetStickerTypes();
+  if (!customStickers.length) {
+    return `
+      <div class="coach-quiz-custom-sticker-empty">
+        Custom stickers will appear here after you add one.
+      </div>
+    `;
+  }
+  return `
+    <div class="coach-quiz-custom-sticker-manager" aria-label="Custom helmet sticker library">
+      <span class="coach-quiz-custom-sticker-title">Custom sticker library</span>
+      ${customStickers.map((sticker) => `
+        <div class="coach-quiz-custom-sticker-row">
+          <span class="coach-quiz-custom-sticker-icon" aria-hidden="true">${escapeHtml(sticker.icon)}</span>
+          <span class="coach-quiz-custom-sticker-copy">
+            <strong>${escapeHtml(sticker.label)}</strong>
+            ${sticker.description ? `<small>${escapeHtml(sticker.description)}</small>` : ""}
+          </span>
+          <span class="coach-quiz-custom-sticker-actions">
+            <button type="button" class="btn btn-xs btn-outline" data-action="coachEditHelmetSticker" data-arg="${escapeAttr(sticker.key)}" aria-label="Edit ${escapeAttr(sticker.label)}">Edit</button>
+            <button type="button" class="btn btn-xs btn-danger" data-action="coachDeleteHelmetSticker" data-arg="${escapeAttr(sticker.key)}" aria-label="Delete ${escapeAttr(sticker.label)}">Delete</button>
+          </span>
+        </div>
+      `).join("")}
+    </div>
+  `;
+}
+
 function _renderCoachQuizPositionPicker() {
   const current = _getQuizPosition();
   return `
@@ -2989,6 +3022,93 @@ async function coachCreateHelmetSticker() {
   showToast(`${safeLabel} sticker added.`, { type: "success" });
 }
 
+async function coachEditHelmetSticker(stickerKey = "") {
+  if (typeof showPrompt !== "function") return;
+  const currentTypes = _getPlayerHelmetStickerTypes();
+  const customTypes = currentTypes.filter((sticker) => sticker.custom);
+  const sticker = customTypes.find((item) => item.key === stickerKey);
+  if (!sticker) {
+    showToast("Only custom stickers can be edited.", { type: "warning" });
+    return;
+  }
+  const label = await showPrompt("Update the sticker name.", sticker.label, {
+    title: "Edit Sticker Label",
+    icon: sticker.icon || "🏅",
+    placeholder: "Film Junkie",
+    confirmText: "Save",
+  });
+  if (label === null) return;
+  const safeLabel = String(label || "").trim();
+  if (!safeLabel) {
+    showToast("Sticker needs a name.", { type: "warning" });
+    return;
+  }
+  const icon = await showPrompt("Choose one emoji for the sticker.", sticker.icon || "🏅", {
+    title: safeLabel,
+    icon: "😀",
+    placeholder: "🏅",
+    confirmText: "Save",
+  });
+  if (icon === null) return;
+  const description = await showPrompt("Update what this sticker means.", sticker.description || "", {
+    title: "Edit Sticker Description",
+    icon: String(icon || sticker.icon || "🏅").trim() || "🏅",
+    placeholder: "Watched film and asked sharp questions.",
+    confirmText: "Save",
+  });
+  if (description === null) return;
+  const colorChoices = ["blue", "green", "gold", "red", "purple", "navy"].map((color) => ({
+    label: color.charAt(0).toUpperCase() + color.slice(1),
+    value: color,
+    recommended: color === sticker.color,
+  }));
+  const color = typeof showListPicker === "function"
+    ? await showListPicker("Choose how this sticker should pop on the leaderboard.", colorChoices, {
+      title: "Edit Sticker Color",
+      icon: String(icon || sticker.icon || "🏅").trim() || "🏅",
+    })
+    : sticker.color || "blue";
+  if (color === null) return;
+  const updated = _normalizeHelmetStickerType({
+    ...sticker,
+    label: safeLabel,
+    icon,
+    description,
+    color,
+    custom: true,
+  });
+  const duplicate = currentTypes.find((item) => item.key !== sticker.key && item.label.toLowerCase() === updated.label.toLowerCase());
+  if (duplicate) {
+    showToast("A sticker with that name already exists.", { type: "warning" });
+    return;
+  }
+  _savePlayerHelmetStickerTypes(customTypes.map((item) => (item.key === sticker.key ? updated : item)));
+  renderCoachQuizSetupPage();
+  showToast(`${updated.label} sticker updated.`, { type: "success" });
+}
+
+async function coachDeleteHelmetSticker(stickerKey = "") {
+  const customTypes = _getCustomHelmetStickerTypes();
+  const sticker = customTypes.find((item) => item.key === stickerKey);
+  if (!sticker) {
+    showToast("Only custom stickers can be deleted.", { type: "warning" });
+    return;
+  }
+  const ok = typeof showConfirm === "function"
+    ? await showConfirm(`Delete "${sticker.label}" from future sticker awards? Existing player awards stay in history.`, {
+      title: "Delete Sticker",
+      icon: sticker.icon || "🏅",
+      confirmText: "Delete",
+      cancelText: "Keep",
+      danger: true,
+    })
+    : false;
+  if (!ok) return;
+  _savePlayerHelmetStickerTypes(customTypes.filter((item) => item.key !== sticker.key));
+  renderCoachQuizSetupPage();
+  showToast(`${sticker.label} removed from custom stickers.`, { type: "success" });
+}
+
 async function coachAwardQuestionPoints(type = "question") {
   const safeType = ["question", "answer", "gift"].includes(type) ? type : "question";
   const player = await _coachPromptRewardPlayer(_leaderboardSelectedPlayer || "");
@@ -3145,6 +3265,7 @@ function renderCoachQuizSetupPage() {
           <p>Award stickers after practice. Players see them when their leaderboard name is opened.</p>
           <button type="button" class="btn btn-outline coach-quiz-custom-sticker-btn" data-action="coachCreateHelmetSticker">+ Custom Sticker</button>
           <div class="coach-quiz-sticker-grid">${_renderCoachStickerButtons()}</div>
+          ${_renderCoachCustomStickerManager()}
         </article>
       </section>
       <section class="coach-quiz-setup-section">

@@ -96,7 +96,7 @@
 - [x] Add coach post-practice award flow with optional notes and practice/game context. Local staging flow added.
 - [x] Let teams customize sticker names, descriptions, colors, and icons locally.
 - [x] Restrict sticker awards to active roster players so awards attach to the right profile.
-- [ ] Add edit/delete controls for custom sticker definitions.
+- [x] Add edit/delete controls for custom sticker definitions.
 - [ ] Add sticker award history and revoke controls for coach/admin mistakes.
 
 ## Mobile Quiz UX
@@ -117,7 +117,7 @@
 - [x] Add tests for local attempt scoring and badge thresholds.
 - [x] Run Chromium and WebKit mobile checks before each shipped quiz slice.
 - [ ] Add tests for roster-link validation and roster-only reward assignment.
-- [ ] Add tests for custom sticker create/edit/delete flows.
+- [x] Add tests for custom sticker edit/delete flows.
 - [ ] Add tests for server-backed leaderboard sync once APIs exist.
 
 ## Remaining Milestones
