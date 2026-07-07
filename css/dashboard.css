@@ -39,8 +39,9 @@
   padding: var(--space-sm) var(--space-md);
   background: var(--color-success);
   color: var(--color-text-inverse);
-  border: none;
+  border: 1px solid color-mix(in srgb, var(--color-success) 88%, white);
   border-radius: var(--radius-md);
+  box-shadow: 0 10px 24px color-mix(in srgb, var(--color-success) 24%, transparent);
   cursor: pointer;
   font-weight: 600;
   font-size: var(--font-size-sm);
@@ -68,8 +69,9 @@
   align-items: center;
   gap: var(--space-sm);
   padding: var(--space-sm) var(--space-md);
-  background: var(--color-bg-light);
-  border: 1.5px solid var(--color-success);
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--color-success) 12%, var(--color-surface)), var(--color-surface));
+  border: 1.5px solid color-mix(in srgb, var(--color-success) 60%, var(--color-border-light));
   border-radius: var(--radius-md);
   color: var(--color-text);
 }
@@ -326,10 +328,23 @@
   text-align: left;
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
+  position: relative;
+  overflow: hidden;
   transition:
     border-color var(--transition-fast),
     box-shadow var(--transition-fast),
     transform var(--transition-fast);
+}
+
+.player-home-quick-action::after {
+  content: "";
+  position: absolute;
+  inset: auto 14px 10px 14px;
+  height: 3px;
+  border-radius: var(--radius-pill);
+  background: color-mix(in srgb, var(--player-action-accent) 58%, transparent);
+  opacity: 0.5;
+  pointer-events: none;
 }
 
 .player-home-quick-action--primary {
@@ -344,6 +359,9 @@
     var(--color-primary),
     var(--color-primary-dark)
   );
+  box-shadow:
+    0 14px 30px color-mix(in srgb, var(--color-primary) 28%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 12%, transparent);
   color: var(--color-text-inverse);
 }
 
@@ -439,14 +457,41 @@
   box-shadow: var(--shadow-xs);
   box-sizing: border-box;
   overflow: clip;
+  position: relative;
+  --player-card-accent: var(--color-primary);
+  --player-card-tint: var(--color-primary-light);
+  border-color: color-mix(in srgb, var(--player-card-accent) 18%, var(--color-border-light));
+  background:
+    linear-gradient(135deg, color-mix(in srgb, var(--player-card-tint) 68%, var(--color-surface)) 0%, var(--color-surface) 56%);
+}
+
+.player-home-card::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 5px;
+  background: var(--player-card-accent);
+  pointer-events: none;
 }
 
 .player-home-card--feature {
-  background: linear-gradient(
-    180deg,
-    rgb(255 255 255 / 0.98),
-    var(--color-bg-light)
-  );
+  --player-card-accent: var(--color-primary);
+  --player-card-tint: var(--color-primary-light);
+}
+
+.player-home-card--study {
+  --player-card-accent: var(--color-warning);
+  --player-card-tint: var(--color-warning-light);
+}
+
+.player-home-card--recent {
+  --player-card-accent: var(--color-info);
+  --player-card-tint: var(--color-info-light);
+}
+
+.player-home-card--current {
+  --player-card-accent: var(--color-success);
+  --player-card-tint: var(--color-success-light);
 }
 
 .player-home-stat-row {
@@ -459,10 +504,10 @@
   display: inline-flex;
   align-items: center;
   padding: 6px 10px;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid color-mix(in srgb, var(--player-card-accent, var(--color-primary)) 20%, var(--color-border-light));
   border-radius: var(--radius-pill);
   color: var(--color-text-secondary);
-  background: var(--color-bg-lighter);
+  background: color-mix(in srgb, var(--player-card-tint, var(--color-primary-light)) 54%, var(--color-surface));
   font-size: var(--font-size-xs);
   font-weight: 800;
 }
@@ -502,9 +547,21 @@
   align-items: start;
   gap: var(--space-sm);
   padding: 10px;
-  border: 1px solid var(--color-border-light);
+  --player-study-accent: var(--color-primary);
+  --player-study-tint: var(--color-primary-light);
+  border: 1px solid color-mix(in srgb, var(--player-study-accent) 28%, var(--color-border-light));
   border-radius: var(--radius-lg);
-  background: var(--color-bg-light);
+  background: color-mix(in srgb, var(--player-study-tint) 62%, var(--color-surface));
+}
+
+.player-home-study-list div:nth-child(2) {
+  --player-study-accent: var(--color-info);
+  --player-study-tint: var(--color-info-light);
+}
+
+.player-home-study-list div:nth-child(3) {
+  --player-study-accent: var(--color-warning);
+  --player-study-tint: var(--color-warning-light);
 }
 
 .player-home-study-list strong {
@@ -513,7 +570,8 @@
   width: 28px;
   height: 28px;
   border-radius: var(--radius-pill);
-  background: var(--color-primary-light);
+  background: var(--player-study-accent);
+  color: var(--color-text-inverse);
   letter-spacing: 0;
 }
 
@@ -539,9 +597,11 @@
   width: 100%;
   min-width: 0;
   padding: 12px 14px;
-  border: 1px solid var(--color-border-light);
+  border: 1px solid color-mix(in srgb, var(--color-info) 20%, var(--color-border-light));
+  border-left: 4px solid var(--color-info);
   border-radius: var(--radius-lg);
-  background: var(--color-bg-light);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--color-info) 7%, var(--color-surface)), var(--color-surface));
   color: var(--color-text);
   font: inherit;
   text-align: left;

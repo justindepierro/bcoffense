@@ -179,6 +179,21 @@ Fix:
 - Player cards now surface coach-note snippets and clear Study / Ask / Film actions without exposing staff controls.
 - Added seeded mobile coverage for compact Playbook summary height, thumbnail hydration, quick filters, coach notes, and player-safe actions.
 
+### P1 - Player Surfaces Needed Stronger Eye Travel
+
+Status: fixed in this visual hierarchy slice.
+
+Symptoms/risk:
+- Home, Practice, Quiz, and Leaderboard all had the right actions, but too many sections shared the same white-card styling.
+- Primary work, quiz work, questions, playbook study, and earned progress did not visually separate quickly enough for kids scanning on a phone.
+- Adding more text would crowd the screen, so the fix needed to guide eyes through color, accents, and action hierarchy instead.
+
+Fix:
+- Home quick actions now have stronger role accents and a clearer primary Practice action.
+- Player Home cards now use distinct visual roles for Today, Study Flow, Recent Scripts, and Current Practice without adding height.
+- Published Practice cards now better highlight the current script, quiz progress, and Swipe View / Quiz actions.
+- Quiz Center and Leaderboard stat cards now use distinct accents for points, streaks, tier, badges, and goals.
+
 ## Verification Commands
 
 - `BASE_URL=http://127.0.0.1:4173 npx playwright test --project=chromium-desktop specs/07-player-mobile.spec.js`
@@ -187,6 +202,6 @@ Fix:
 ## Next Implementation Slices
 
 1. Notifications/offline: make opt-in, denied, offline, and newly published practice states feel clear and non-scary.
-2. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, and Questions.
-3. Visual polish pass: keep using color and icon accents to show the next best action without crowding phone screens.
-4. Practice/Home polish: reduce repeated section styling and add stronger color hierarchy where the next action is ambiguous.
+2. iPad player pass: continue screenshot review on Home, Playbook, Practice, Swipe View, Quiz, Leaderboard, and Questions.
+3. Player delight pass: add selective motion/feedback for completed quiz answers, streaks, sticker awards, and ready confirmation.
+4. Practice/Home polish follow-up: screenshot-test the new hierarchy against real team data and trim any remaining repeated copy.
